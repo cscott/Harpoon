@@ -1455,6 +1455,16 @@ public class SemanticChecker {
             RelationDescriptor relation = lookupRelation(pn.getChild("dotinv").getChild("relation").getTerminal());
             relation.addUsage(RelationDescriptor.INVIMAGE);
             return new ImageSetExpr(ImageSetExpr.INVERSE, vd, relation);
+        } else if (pn.getChild("dotset") != null) {
+            ImageSetExpr ise = (ImageSetExpr) parse_setexpr(pn.getChild("dotset").getChild("setexpr"));
+            RelationDescriptor relation = lookupRelation(pn.getChild("dotset").getChild("relation").getTerminal());
+            relation.addUsage(RelationDescriptor.IMAGE);
+            return new ImageSetExpr(ise, relation);
+        } else if (pn.getChild("dotinvset") != null) {
+            ImageSetExpr ise = (ImageSetExpr) parse_setexpr(pn.getChild("dotinvset").getChild("setexpr"));
+            RelationDescriptor relation = lookupRelation(pn.getChild("dotinvset").getChild("relation").getTerminal());
+            relation.addUsage(RelationDescriptor.INVIMAGE);
+            return new ImageSetExpr(ImageSetExpr.INVERSE, ise, relation);
         } else {
             throw new IRException();
         }

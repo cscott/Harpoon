@@ -348,6 +348,7 @@ public class OpExpr extends Expr {
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
         VarDescriptor ld = VarDescriptor.makeNew("leftop");
+	/* Check for loop invariant hoisting. */
 	if (writer.getInvariantValue()!=null&&
 	    writer.getInvariantValue().isInvariant(this)) {
 	    writer.outputline("maybe="+writer.getInvariantValue().getMaybe(this).getSafeSymbol()+";");
@@ -355,7 +356,7 @@ public class OpExpr extends Expr {
 	    return;
 	}
 
-        left.generate(writer, ld);
+	left.generate(writer, ld);
         VarDescriptor rd = null;
 	VarDescriptor lm=VarDescriptor.makeNew("lm");
 	VarDescriptor rm=VarDescriptor.makeNew("rm");
@@ -390,8 +391,8 @@ public class OpExpr extends Expr {
 	    writer.outputline("int "+dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " || " + rd.getSafeSymbol() + ";");
 	} else if (opcode != Opcode.NOT) { /* two operands */
             assert rd != null;
-            writer.outputline("int " + dest.getSafeSymbol() + " = " + 
-                              ld.getSafeSymbol() + " " + opcode.toString() + " " + rd.getSafeSymbol() + ";");
+	    writer.outputline("int " + dest.getSafeSymbol() + " = " + 
+			      ld.getSafeSymbol() + " " + opcode.toString() + " " + rd.getSafeSymbol() + ";");
         } else if (opcode == Opcode.NOT) {
             writer.outputline("int " + dest.getSafeSymbol() + " = !" + ld.getSafeSymbol() + ";");
         }

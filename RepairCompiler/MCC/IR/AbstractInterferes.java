@@ -180,6 +180,25 @@ class AbstractInterferes {
 	    //)
 	    return false;
 
+
+	// If the update changes something in the middle of a size
+	// expression, it interferes with it.
+	if ((dp.getPredicate() instanceof ExprPredicate)&&
+	    (((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.SIZE)&&
+	    (((SizeofExpr)((OpExpr)((ExprPredicate)dp.getPredicate()).expr).left).setexpr instanceof ImageSetExpr)&&
+	    ((ImageSetExpr)((SizeofExpr)((OpExpr)((ExprPredicate)dp.getPredicate()).expr).left).setexpr).isimageset&&
+	    ((ImageSetExpr)((SizeofExpr)((OpExpr)((ExprPredicate)dp.getPredicate()).expr).left).setexpr).ise.usesDescriptor(ar.getDescriptor())) {
+	    return true;
+	}
+
+	// If the update changes something in the middle of a
+	// comparison expression, it interferes with it.
+	if ((dp.getPredicate() instanceof ExprPredicate)&&
+	    (((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.COMPARISON)&&
+	    (((RelationExpr)((OpExpr)((ExprPredicate)dp.getPredicate()).expr).left).getExpr().usesDescriptor(ar.getDescriptor()))) {
+	    return true;
+	}
+
 	/* This if handles all the c comparisons in the paper */
 	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
 	    (ar.getType()==AbstractRepair.ADDTOSET||ar.getType()==AbstractRepair.ADDTORELATION)&&
@@ -212,6 +231,53 @@ class AbstractInterferes {
 		    return false;
 	    }
 	}
+
+	/* This if handles all the c comparisons in the paper */
+	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
+	    (ar.getType()==AbstractRepair.ADDTOSET||ar.getType()==AbstractRepair.ADDTORELATION)&&
+	    (ar.getPredicate().getPredicate() instanceof ExprPredicate)&&
+	    (dp.getPredicate() instanceof ExprPredicate)&&
+	    (dp.getPredicate().inverted()==ar.getPredicate().getPredicate().inverted())&&
+	    (((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.COMPARISON)) {
+	    boolean neg1=ar.getPredicate().isNegated();
+	    Opcode op1=((ExprPredicate)ar.getPredicate().getPredicate()).getOp();
+	    int size1=((ExprPredicate)ar.getPredicate().getPredicate()).rightSize();
+	    int size2=1;
+	    op1=Opcode.translateOpcode(neg1,op1);
+
+	    if ((op1==Opcode.EQ)||(op1==Opcode.NE)||(op1==Opcode.GT)||op1==Opcode.GE) {
+		int size1a=0;
+		if((op1==Opcode.EQ)||(op1==Opcode.GE))
+		    size1a=size1;
+		if((op1==Opcode.GT)||(op1==Opcode.NE))
+		    size1a=size1+1;
+		if (size1a==size2)
+		    return false;
+	    }
+	}
+
+	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
+	    (ar.getType()==AbstractRepair.MODIFYRELATION)&&
+	    (dp.getPredicate() instanceof ExprPredicate)&&
+	    (dp.getPredicate().inverted()==ar.getPredicate().getPredicate().inverted())&&
+	    (((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.SIZE)) {
+	    int size1=1;
+
+	    boolean neg2=dp.isNegated();
+	    Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
+	    int size2=((ExprPredicate)dp.getPredicate()).rightSize();
+
+	    op2=Opcode.translateOpcode(neg2,op2);
+	    
+	    if (((op2==Opcode.EQ)&&(size1==size2))||
+		((op2==Opcode.NE)&&(size1!=size2))||
+		((op2==Opcode.GE)&&(size1>=size2))||
+		((op2==Opcode.GT)&&(size1>size2))||
+		((op2==Opcode.LE)&&(size1<=size2))||
+		((op2==Opcode.LT)&&(size1<size2)))
+		return false;
+	}
+
 	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
 	    (ar.getType()==AbstractRepair.ADDTOSET||ar.getType()==AbstractRepair.ADDTORELATION)&&
 	    (dp.getPredicate() instanceof ExprPredicate)&&
@@ -235,6 +301,8 @@ class AbstractInterferes {
 		(op2==Opcode.GT))
 		return false;
 	}
+
+
 	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
 	    (ar.getType()==AbstractRepair.MODIFYRELATION)&&
 	    (dp.getPredicate() instanceof ExprPredicate)&&
@@ -370,6 +438,33 @@ class AbstractInterferes {
 		    (op2==Opcode.LT)||
    		    ((op2==Opcode.GE)&&(size1a>=size2))||
 		    ((op2==Opcode.GT)&&(size1a>size2)))
+		    return false;
+	    }
+	}
+
+	/* This handles all the c comparisons in the paper */
+	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
+	    (ar.getType()==AbstractRepair.REMOVEFROMSET||ar.getType()==AbstractRepair.REMOVEFROMRELATION)&&
+	    (ar.getPredicate().getPredicate() instanceof ExprPredicate)&&
+	    (dp.getPredicate() instanceof ExprPredicate)&&
+	    (dp.getPredicate().inverted()==ar.getPredicate().getPredicate().inverted())&&
+	    (((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.COMPARISON)) {
+	    boolean neg1=ar.getPredicate().isNegated();
+	    Opcode op1=((ExprPredicate)ar.getPredicate().getPredicate()).getOp();
+	    int size1=((ExprPredicate)ar.getPredicate().getPredicate()).rightSize();
+	    int size2=1;
+	    /* Translate the opcodes */
+	    op1=Opcode.translateOpcode(neg1,op1);
+
+	    if (((op1==Opcode.EQ)||(op1==Opcode.LT)||op1==Opcode.LE)||(op1==Opcode.NE)) {
+		int size1a=0;
+
+		if((op1==Opcode.EQ)||(op1==Opcode.LE))
+		    size1a=size1;
+		if((op1==Opcode.LT)||(op1==Opcode.NE))
+		    size1a=size1-1;
+
+		if (size1a==size2)
 		    return false;
 	    }
 	}

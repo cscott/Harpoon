@@ -107,18 +107,9 @@ public class RelationExpr extends Expr {
         String found = (VarDescriptor.makeNew("found")).getSafeSymbol();
         expr.generate(writer, domain);
         writer.outputline(relation.getRange().getType().getGenerateType().getSafeSymbol() + " " + dest.getSafeSymbol() + ";");
-        writer.outputline("int " + found + " = " + relation.getSafeSymbol() + "_hash" + strinverse + "->get(" + domain.getSafeSymbol() + ", " + dest.getSafeSymbol() + ");");
-        writer.outputline("if (!" + found + ") { maybe = 1; }");
+	writer.outputline("int "+found+" = "+relation.getSafeSymbol() + "_hash" + strinverse + "->get(" + domain.getSafeSymbol() + ", " + dest.getSafeSymbol() + ");");
+	writer.outputline("if (!" + found + ") { maybe = 1; }");
     }
-
-    // #TBD#: don't think this method is needed (or even called/referenced)
-    /*
-      public void generate_set(CodeWriter writer, VarDescriptor dest) {
-      VarDescriptor domain = VarDescriptor.makeNew("domain");
-      expr.generate(writer, domain);
-      writer.outputline(relation.getRange().getType().getGenerateType().getSafeSymbol() + " " + dest.getSafeSymbol() + " = " + relation.getSafeSymbol() + "_hash->get(" + domain.getSafeSymbol() + ");");
-      }
-    */
 
     public void prettyPrint(PrettyPrinter pp) {
         expr.prettyPrint(pp);

@@ -1222,11 +1222,11 @@ public class RepairGenerator {
 	    VarDescriptor rightvar=VarDescriptor.makeNew("rightvar");
 	    if (d instanceof RelationDescriptor) {
 		if (ep.inverted()) {
-		    rightvar=((ImageSetExpr)((SizeofExpr)((OpExpr)expr).left).setexpr).getVar();
+		    ((ImageSetExpr)((SizeofExpr)expr.left).setexpr).generate_leftside(cr,rightvar);
 		    cr.outputline("int "+leftvar.getSafeSymbol()+";");
 		    cr.outputline(d.getSafeSymbol()+"_hashinv->get((int)"+rightvar.getSafeSymbol()+","+leftvar.getSafeSymbol()+");");
 		} else {
-		    leftvar=((ImageSetExpr)((SizeofExpr)((OpExpr)expr).left).setexpr).getVar();
+		    ((ImageSetExpr)((SizeofExpr)expr.left).setexpr).generate_leftside(cr,leftvar);
 		    cr.outputline("int "+rightvar.getSafeSymbol()+"=0;");
 		    cr.outputline(d.getSafeSymbol()+"_hash->get((int)"+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+");");
 		}
@@ -1265,13 +1265,21 @@ public class RepairGenerator {
 	    }
 	    cr.endblock();
 	}
+
+// In some cases the analysis has determined that generating removes
+// is unnecessary
+	if (generateadd&&munadd==null) 
+	    generateadd=false;
+
 	if (generateadd) {
 
 	    cr.outputline("for(;"+change.getSafeSymbol()+">0;"+change.getSafeSymbol()+"--)");
 	    cr.startblock();
 	    VarDescriptor newobject=VarDescriptor.makeNew("newobject");
 	    if (d instanceof RelationDescriptor) {
-		VarDescriptor otherside=((ImageSetExpr)((SizeofExpr)((OpExpr)ep.expr).left).setexpr).vd;
+		VarDescriptor otherside=VarDescriptor.makeNew("otherside");
+		((ImageSetExpr)((SizeofExpr)expr.left).setexpr).generate_leftside(cr,otherside);
+		
 		RelationDescriptor rd=(RelationDescriptor)d;
 		if (termination.sources.relsetSource(rd,!ep.inverted())) {
 		    /* Set Source */

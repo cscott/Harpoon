@@ -54,7 +54,7 @@ public class Sources {
 			String vtable="_ZTV";
 			vtable+=td.getSymbol().length();
 			vtable+=td.getSymbol();
-			cr.outputline("((int**) &"+vd.getSafeSymbol()+")[0] = (int *)"+vtable+"+2;");
+			cr.outputline("((int**) "+vd.getSafeSymbol()+")[0] = (int *) & "+vtable+"+2;");
 		    }
 		}
 	    }

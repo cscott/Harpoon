@@ -386,10 +386,35 @@ public class Termination {
 	    GraphNode gn=(GraphNode)conjiterator.next();
 	    TermNode tn=(TermNode)gn.getOwner();
 	    Conjunction conj=tn.getConjunction();
+	loop:
 	    for(int i=0;i<conj.size();i++) {
 		DNFPredicate dp=conj.get(i);
 		int[] array=dp.getPredicate().getRepairs(dp.isNegated(),this);
 		Descriptor d=dp.getPredicate().getDescriptor();
+		if ((dp.getPredicate() instanceof ExprPredicate)&&
+		    (((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.SIZE)) {
+		    boolean neg=dp.isNegated();
+		    Opcode op=((ExprPredicate)dp.getPredicate()).getOp();
+		    int size=((ExprPredicate)dp.getPredicate()).rightSize();
+		    op=Opcode.translateOpcode(neg,op);
+		    if (((size==1)&&(op==Opcode.EQ))||
+			((size!=1)&&(op==Opcode.NE))||
+			((size<=1)&&(op==Opcode.GE))||
+			((size<1)&&(op==Opcode.GT))||
+			((size>1)&&(op==Opcode.LT))||
+			((size>=1)&&(op==Opcode.LE))) {
+			for(int i2=0;i2<conj.size();i2++) {
+			    DNFPredicate dp2=conj.get(i2);
+			    if ((dp2.getPredicate() instanceof ExprPredicate)&&
+				(((ExprPredicate)dp2.getPredicate()).getType()==ExprPredicate.COMPARISON)) {
+				if (equivalent(((SizeofExpr)((OpExpr)((ExprPredicate)dp.getPredicate()).expr).left).setexpr,
+					       (RelationExpr)((OpExpr)((ExprPredicate)dp2.getPredicate()).expr).left))
+				    continue loop; // comparison predicate ensure that size expr is true - no need to generate abstract repairs...
+			    }
+			}
+		    }
+		}
+
 		for(int j=0;j<array.length;j++) {
 		    AbstractRepair ar=new AbstractRepair(dp,array[j],d,sources);
 		    TermNode tn2=new TermNode(ar);
@@ -1335,5 +1360,30 @@ public class Termination {
 	    }
 	}
 	return true;
+    }
+
+    boolean equivalent(SetExpr se, RelationExpr re) {
+	if (!(se instanceof ImageSetExpr))
+	    return false;
+	ImageSetExpr ise=(ImageSetExpr)se;
+	while(re!=null&&ise!=null) {
+	    if (re.getRelation()!=ise.getRelation())
+		return false;
+	    if (re.inverted()!=ise.inverted())
+		return false;
+	    if (ise.isimageset) {
+		ise=ise.getImageSetExpr();
+		if (!(re.getExpr() instanceof RelationExpr))
+		    return false;
+		re=(RelationExpr)re.getExpr();
+	    } else {
+		if (!(re.getExpr() instanceof VarExpr))
+		    return false;
+		if (((VarExpr)re.getExpr()).getVar()==ise.getVar())
+		    return true; //everything matches
+		return false;
+	    }
+	}
+	return false;
     }
 }
