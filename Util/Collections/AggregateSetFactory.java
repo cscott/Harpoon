@@ -23,7 +23,7 @@ import java.util.Set;
  * but the iterator is as fast as <code>ArrayList</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AggregateSetFactory.java,v 1.1.2.1 2000-11-10 23:36:59 cananian Exp $
+ * @version $Id: AggregateSetFactory.java,v 1.1.2.2 2000-11-14 17:45:11 cananian Exp $
  */
 public class AggregateSetFactory extends SetFactory
     implements java.io.Serializable {
@@ -46,7 +46,9 @@ public class AggregateSetFactory extends SetFactory
 	    /* backing store for efficient iteration */
 	    final List elements = new ArrayList(c.size());
 	    public boolean add(Object o) {
-		return s.add(Default.pair(IDENTITY, o));
+		boolean r = s.add(Default.pair(IDENTITY, o));
+		if (r) elements.add(o);
+		return r;
 	    }
 	    public boolean contains(Object o) {
 		return s.contains(Default.pair(IDENTITY, o));
