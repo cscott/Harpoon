@@ -6,7 +6,7 @@ import harpoon.ClassFile.*;
  * <code>NOP</code> nodes do nothing.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NOP.java,v 1.3 1998-09-11 17:13:57 cananian Exp $
+ * @version $Id: NOP.java,v 1.4 1998-09-11 18:23:17 cananian Exp $
  */
 
 public class NOP extends Quad {
@@ -16,7 +16,7 @@ public class NOP extends Quad {
         super(source);
     }
 
-    public void accept(Visitor v) { v.visit(this); }
+    public void visit(Visitor v) { v.visit(this); }
 
     /** Returns human-readable representation. */
     public String toString() { return "NOP"; }

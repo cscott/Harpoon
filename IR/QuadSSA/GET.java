@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>GET</code> represent field access (get) operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.13 1998-09-11 17:13:57 cananian Exp $
+ * @version $Id: GET.java,v 1.14 1998-09-11 18:23:17 cananian Exp $
  */
 
 public class GET extends Quad {
@@ -46,7 +46,7 @@ public class GET extends Quad {
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }
 
-    public void accept(Visitor v) { v.visit(this); }
+    public void visit(Visitor v) { v.visit(this); }
 
     /** Returns human-readable representation. */
     public String toString() {

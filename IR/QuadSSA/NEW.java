@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>NEW</code> represents an object creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NEW.java,v 1.9 1998-09-11 17:13:57 cananian Exp $
+ * @version $Id: NEW.java,v 1.10 1998-09-11 18:23:17 cananian Exp $
  */
 
 public class NEW extends Quad {
@@ -35,7 +35,7 @@ public class NEW extends Quad {
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }
 
-    public void accept(Visitor v) { v.visit(this); }
+    public void visit(Visitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this quad. */
     public String toString() {

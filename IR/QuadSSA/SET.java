@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>SET</code> represents field assignment-to operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SET.java,v 1.11 1998-09-11 17:13:57 cananian Exp $
+ * @version $Id: SET.java,v 1.12 1998-09-11 18:23:18 cananian Exp $
  */
 
 public class SET extends Quad {
@@ -44,7 +44,7 @@ public class SET extends Quad {
 	else return new Temp[] { objectref, src };
     }
 
-    public void accept(Visitor v) { v.visit(this); }
+    public void visit(Visitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this Quad. */
     public String toString() {
