@@ -56,7 +56,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.62 2000-01-26 02:12:37 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.63 2000-01-26 21:06:19 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
@@ -270,13 +270,13 @@ public abstract class RegAlloc  {
     }
     
     public static 
-	IntermediateCodeFactory firstFactory(HCodeFactory parent,
-					     Frame frame) {
+	IntermediateCodeFactory abstractSpillFactory(HCodeFactory parent,
+						     Frame frame) {
 	return (IntermediateCodeFactory) parent;
     }
     
-    public static HCodeFactory secondFactory(IntermediateCodeFactory parent, 
-					     Frame frame) { 
+    public static HCodeFactory concreteSpillFactory(IntermediateCodeFactory parent, 
+						    Frame frame) { 
 	return parent;
     }
     
@@ -300,7 +300,7 @@ public abstract class RegAlloc  {
 	    HashMap tempsToOffsets = new HashMap();
 	    int nextOffset = 1;
 
-	    public void visit(FskLoad m) {
+	    public void visitLoad(FskLoad m) {
 		// look for non-Register Temps in use, adding
 		// them to internal map
 		Iterator uses = m.useC().iterator();
@@ -313,7 +313,7 @@ public abstract class RegAlloc  {
 		    }
 		}
 	    } 
-	    public void visit(FskStore m) {
+	    public void visitStore(FskStore m) {
 		// look for non-Register Temps in def, adding
 		// them to internal map
 		Iterator defs = m.defC().iterator();
@@ -330,15 +330,11 @@ public abstract class RegAlloc  {
 
 
 	    public void visit(Instr m) {
-		try { visit((FskStore) m); return;
-		} catch(ClassCastException e) { }
-		try { visit((FskLoad) m); return;
-		} catch(ClassCastException e) { }
-		
-
-		// can no longer check Instr directly for registers,
-		// because register association is done indirectly in
-		// the Code now
+		if (m instanceof FskStore)
+		    visitStore((FskStore) m); 
+		else if (m instanceof FskLoad) {
+		    visitLoad((FskLoad) m); 
+		}
 	    }
 	}
 	
