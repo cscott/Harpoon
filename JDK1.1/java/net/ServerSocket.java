@@ -199,19 +199,19 @@ class ServerSocket {
 	//offset by 1 for jdk1.1
 	if (NativeIO.canAcceptJNI(impl.fd.fd-1)) {
 	    //System.out.println("Calling accept 1... ");
-	    ObjectContinuation.result= accept(); 
 	    //System.out.println("Accept done.");
-	    return null;
+	    return new ObjectContinuationOpt(accept());
 	}
 	//System.out.println("doing continuations");
 	return new acceptAsyncC();
     }
-    
+
     class acceptAsyncC extends ObjectContinuation implements IOContinuation {
     	Socket s;
 	public void exception(Throwable t) {};
 	
     	public acceptAsyncC() {
+	    done=false;
 	    s= new Socket();
 	    Scheduler.addRead(this);
     	}

@@ -130,9 +130,9 @@ class FileInputStream extends InputStream
 	switch(b)
 	    {
 	    case NativeIO.ERROR: throw new IOException();
-	    case NativeIO.EOF: IntContinuation.result= -1; return null;
-    case NativeIO.TRYAGAIN: return new readAsyncC();
-	    default: IntContinuation.result= b; return null;
+	    case NativeIO.EOF: return new IntContinuationOpt(-1);
+	    case NativeIO.TRYAGAIN: return new readAsyncC();
+	    default: return new IntContinuationOpt(b);
     }
     }
 
@@ -140,7 +140,7 @@ class FileInputStream extends InputStream
     {
 	public void exception(Throwable t) {}
 	
-	public readAsyncC() { Scheduler.addRead(this); }
+	public readAsyncC() { done=false; Scheduler.addRead(this); }
 	public void resume()
 	{
 	    //offset by 1 for jdk 1.1
@@ -215,17 +215,16 @@ class FileInputStream extends InputStream
 		   ((ofs + len) > b.length) || ((ofs + len) < 0)) {
 	    throw new IndexOutOfBoundsException();
 	} else if (len == 0) {
-	    IntContinuation.result= 0;
-	    return null;
+	    return new IntContinuationOpt(0);
 	}
 	//offset by one for jdk1.1
 	int n= NativeIO.readJNI(fd.fd-1, b, ofs, len);
 	switch(n)
 	    {
 	    case NativeIO.ERROR: throw new IOException();
-	    case NativeIO.EOF: IntContinuation.result= -1; return null;
+	    case NativeIO.EOF: return new IntContinuationOpt(-1);
 	    case NativeIO.TRYAGAIN: return new readAsync2C(b, ofs, len);
-	    default: IntContinuation.result= n; return null;
+	    default: return new IntContinuationOpt(n);
 	    }
     }
     // Reuses the continuation passed to it if it's not null
@@ -237,21 +236,20 @@ class FileInputStream extends InputStream
 		   ((ofs + len) > b.length) || ((ofs + len) < 0)) {
 	    throw new IndexOutOfBoundsException();
 	} else if (len == 0) {
-	    IntContinuation.result= 0;
-	    return null;
+	    return new IntContinuationOpt(0);
 	}
 	//offset by 1 for jdk1.1
 	int n= NativeIO.readJNI(fd.fd-1, b, ofs, len);
 	switch(n)
 	    {
 	    case NativeIO.ERROR: throw new IOException();
-	    case NativeIO.EOF: IntContinuation.result= -1; return null;
+	    case NativeIO.EOF: return new IntContinuationOpt(-1);
 	    case NativeIO.TRYAGAIN:
 		if (prev!=null) {
 		    ((readAsync2C) prev) .init (b, ofs, len);
 		    return prev;
 		} else return new readAsync2C(b, ofs, len);
-	    default: IntContinuation.result= n; return null;
+	    default: return new IntContinuationOpt(n);
 	    }
     }
     class readAsync2C extends IntContinuation implements IOContinuation
@@ -261,6 +259,7 @@ class FileInputStream extends InputStream
 	byte b[];
 	int ofs, len;
 	public readAsync2C(byte b[], int ofs, int len) {
+	    done=false;
 	    init(b, ofs, len);
 	}
 
