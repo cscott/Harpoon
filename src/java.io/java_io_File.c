@@ -8,6 +8,9 @@
 #include <dirent.h>
 #include <unistd.h>
 #include "flexthread.h" /* for mutex ops */
+#ifdef WITH_DMALLOC
+#include "dmalloc.h"
+#endif
 
 static jfieldID pathID = 0; /* The field ID of File.path */
 static int inited = 0; /* whether the above variables have been initialized */
@@ -197,9 +200,9 @@ JNIEXPORT jboolean JNICALL Java_java_io_File_mkdir0(JNIEnv *env, jobject this) {
   r = mkdir(cstr, 0777);	
   (*env)->ReleaseStringUTFChars(env,jstr,cstr);
   if (r != 0)
-    return ((jboolean)0);
+    return JNI_FALSE;
   else
-    return ((jboolean)1);
+    return JNI_TRUE;
 }
 
 
@@ -262,12 +265,12 @@ JNIEXPORT jobjectArray JNICALL Java_java_io_File_list0(JNIEnv *env, jobject this
   
   /* XXX make part of jsyscall interface !? */
   dir = opendir(path);
-  if (dir == 0) {
+  if (dir == NULL) { /* if path not a directory, return NULL. */
     (*env)->ReleaseStringUTFChars(env,jstr,path);
-    return (0);
+    return NULL;
   }
   
-  dirlist = 0;
+  dirlist = NULL;
   count = 0;
   /* XXX make part of jsyscall interface !? */
   while ((entry = readdir(dir)) != 0) {
@@ -276,19 +279,9 @@ JNIEXPORT jobjectArray JNICALL Java_java_io_File_list0(JNIEnv *env, jobject this
 	strcmp("..", entry->d_name) == 0) {
       continue;
     }
+    /** no pointers to garbage-collected memory; safe to use malloc. */
     mentry = malloc(sizeof(struct dentry) + _D_EXACT_NAMLEN(entry));
-
-    if (!mentry) {
-      while (dirlist) {
-	mentry = dirlist;
-	dirlist = dirlist->next;
-	free(mentry);
-      }
-
-      (*env)->ReleaseStringUTFChars(env,jstr,path);
-      (*env)->Throw(env, MEMExcCls);
-      return NULL;
-    }
+    if (!mentry) { oom=1; goto error1; } /* free memory and throw exception */
     strcpy(mentry->name, entry->d_name);
     mentry->next = dirlist;
     dirlist = mentry;
@@ -298,12 +291,9 @@ JNIEXPORT jobjectArray JNICALL Java_java_io_File_list0(JNIEnv *env, jobject this
   closedir(dir);
   clscls=(*env)->FindClass(env, "java/lang/String");
 
-  if (!clscls) return NULL;
+  if (!clscls) goto error1; /* free memory and return */
   r = (*env)->NewObjectArray(env, array, clscls, NULL);
-  if (!r) return NULL;
-
-  /* XXX: This assert is a noop.  If AllocObjectArray throws an
-     exception, we leak. */
+  if (!r) { oom=1; goto error1; }
 
   for (i = 0; i < count; i++) {
     jstring jstr;
@@ -313,13 +303,19 @@ JNIEXPORT jobjectArray JNICALL Java_java_io_File_list0(JNIEnv *env, jobject this
     (*env)->SetObjectArrayElement(env, array, i, jstr);
     free(mentry);
   }
-  if (oom) {
-    (*env)->ReleaseStringUTFChars(env,jstr,path);
-    (*env)->Throw(env, MEMExcCls);
-    return NULL;
-  }
   (*env)->ReleaseStringUTFChars(env,jstr,path);
   return (array);
+
+ error1:
+  while (dirlist) {
+      mentry = dirlist;
+      dirlist = dirlist->next;
+      free(mentry);
+  }
+ error0:
+  (*env)->ReleaseStringUTFChars(env,jstr,path);
+  if (oom) (*env)->Throw(env, MEMExcCls);
+  return NULL;
 }
 
 /*
