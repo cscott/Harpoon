@@ -12,7 +12,7 @@ import harpoon.Temp.Label;
  * total size of an <code>HClass</code> object.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: OffsetMap.java,v 1.1.2.7 1999-01-27 03:11:32 duncan Exp $
+ * @version $Id: OffsetMap.java,v 1.1.2.8 1999-01-28 18:56:10 duncan Exp $
  */
 public abstract class OffsetMap // use an abstract class, if we can.
 {
@@ -43,9 +43,14 @@ public abstract class OffsetMap // use an abstract class, if we can.
   public abstract int size(HClass hc);
 
   /** Maps an <code>HClass</code> to an offset (in bytes).  
-   *  If <code>hc</code> is an array type, returns the offset of the
-   *  array's length field. */
-  public abstract int lengthOffset(HClass hc); 
+   *  Returns the offset of the class pointer
+  public abstract int classOffset(HClass hc);
+
+  /** Maps an <code>HClass</code> to an offset (in bytes).
+   *  Returns the offset from the class pointer of the specified
+   *  class.  This will be some function of the class's depth in
+   *  the class hierarchy. */
+  public abstract int displayOffset(HClass hc);
 
   /** Maps an <code>HClass</code> to an offset (in bytes).  
    *  If hc is an array type, returns the offset of the
@@ -53,8 +58,10 @@ public abstract class OffsetMap // use an abstract class, if we can.
   public abstract int elementsOffset(HClass hc);
 
   /** Maps an <code>HClass</code> to an offset (in bytes).  
-   *  Returns the offset of the pointer to the method table */
-  public abstract int methodOffset(HClass hc);
+   *  If <code>hc</code> is an array type, returns the offset of the
+   *  array's length field. */
+  public abstract int lengthOffset(HClass hc); 
+
 }
 
 
