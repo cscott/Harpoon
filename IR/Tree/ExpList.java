@@ -12,7 +12,7 @@ import java.util.Enumeration;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ExpList.java,v 1.1.2.4 1999-04-05 21:50:44 duncan Exp $
+ * @version $Id: ExpList.java,v 1.1.2.5 1999-04-12 08:42:05 duncan Exp $
  */
 public final class ExpList {
     /** The expression at this list entry. */
@@ -28,7 +28,7 @@ public final class ExpList {
 	else
 	    return new ExpList
 	      ((Exp)((e.head==null)?null:e.head.rename(tf, ctm)),
-	       rename(e, tf, ctm));
+	       rename(e.tail, tf, ctm));
     }
     
     public static Set useSet(ExpList expList) {
