@@ -61,11 +61,14 @@ void *NTHR_malloc_first(size_t size) {
 #endif
 }
 void *NTHR_malloc_other(size_t size, struct oobj *oobj) {
-  clheap_t clh;
+  clheap_t clh; void *result;
   UPDATE_STATS(thr, size);
 #ifdef REALLY_DO_ALLOC
   clh = CLHEAP_FROM_OOBJ(oobj);
-  return clheap_alloc(clh, size);
+  result = clheap_alloc(clh, size);
+  if (result!=NULL) return result;
+  printf("OVERFLOW FROM THREAD HEAP %p: %d bytes\n", clh, size);
+  return NGBL_malloc_noupdate(size);
 #else
   return NGBL_malloc_noupdate(size);
 #endif
