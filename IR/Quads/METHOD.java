@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * (ie, the 1-edge) is the innermost nested try-block.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHOD.java,v 1.1.2.4 1998-12-28 23:52:40 cananian Exp $
+ * @version $Id: METHOD.java,v 1.1.2.5 1999-01-12 08:50:21 cananian Exp $
  * @see HEADER
  * @see HANDLER
  */
@@ -85,7 +85,6 @@ public class METHOD extends Quad {
 		sb.append(", ");
 	}
 	sb.append(")");
-	sb.append("["+arity()+"]");
 	return sb.toString();
     }
 }
