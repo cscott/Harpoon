@@ -26,13 +26,17 @@ import java.util.Iterator;
     a given set of <code>Instr</code>s.  It uses the
     conservative-furthest-first algorithm laid out in the paper <A
     HREF="http://lm.lcs.mit.edu/~pnkfelix/OnLocalRegAlloc.ps.gz">
-    "On Local Register Allocation"</A> as the basis for the algorithm
-    it uses to allocate and assign registers.
+    "On Local Register Allocation"</A> and <A
+    HREF="http://lm.lcs.mit.edu/~pnkfelix/hardnessLRA.ps">Hardness and
+    Algorithms for Local Register Allocation</A> as the basis for the
+    algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.11 1999-05-27 23:00:27 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.12 1999-05-28 01:51:51 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
+
+    
     
     /** Creates a <code>LocalRegAlloc</code>. 
 	
@@ -54,29 +58,15 @@ public class LocalCffRegAlloc extends RegAlloc {
 	Instr root = (Instr) code.getRootElement();
 	BasicBlock block = BasicBlock.computeBasicBlocks(root);
 	
-	// first calculate Reaching Definitions for code
-	DataFlowBasicBlockVisitor reachingDefs =  new ReachingDefs(root);
-	InstrSolver.worklistSolver(block, reachingDefs);
+	// first calculate Live Variables for code
+	Iterator iter = new CloneableIterator(BasicBlock.basicBlockIterator(block));
+	LiveVars livevars =  new LiveVars(iter.clone());
+	InstrSolver.worklistSolver(block, livevars);
 	
 	// Now perform local reg alloc on each basic block
-	WorkSet blocksToAnalyze = new WorkSet();
-	Set finishedBlocks = new WorkSet();
-
-	blocksToAnalyze.add(block);
-
-	while(! blocksToAnalyze.isEmpty()) {
-	    BasicBlock b = (BasicBlock) blocksToAnalyze.pull();
-	    localRegAlloc(b);
-	    finishedBlocks.add(b);
-
-	    Enumeration enum = b.next();
-	    while(enum.hasMoreElements()) {
-		Object o = enum.nextElement();
-		if (!finishedBlocks.contains(o)) {
-		    blocksToAnalyze.add(o);
-		}
-	    }
-	    
+	while(iter.hasNext()) {
+	    BasicBlock b = (BasicBlock) iter.next();
+	    localRegAlloc(b, livevars);
 	}
 	return null;
     }
@@ -86,11 +76,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	     1. <code>bb</code> is a <code>BasicBlock</code> of
 	        <code>Instr</code>s.
 
-	NOTE: CHANGE THIS!  Should not be using Reaching Defs, but
-	rather liveness info (IE, don't care if a Def reaches the
-	block; we want to know if there is Use after bb).
     */
-    private void localRegAlloc(BasicBlock bb) {
+    private void localRegAlloc(BasicBlock bb, LiveVars lv) {
 	CloneableIterator iter = new CloneableIterator(bb.listIterator());
 	Temp[] registers = frame.getGeneralRegisters();
 	
@@ -139,7 +126,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 			instr.src[u] = registers[i];
 		    } else {
 			// Evict a value (storing it to memory).
-			int index = findFurthest((Iterator)iter.clone(), values); 
+			int index = findFurthest
+			    ((Iterator)iter.clone(), values, lv); 
 			
 			InstrMEM store = new InstrMEM (null, null, null, 
 				new Temp[] { values[index] },
@@ -152,113 +140,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 		}
 	    }
 	}
-    }
+    } // end localRegAlloc(BasicBlock, LiveVars)
 
-    /** 
-	<BR> <B>requires:</B> 
-	     1. <code>iter</code> iterates through a linear list of
-	                          <code>Instr</code>s. 
-	     2. <code>values</code> f
-	<BR> <B>modifies:</B> <code>iter</code>
-	<BR> <B>effects:</B> Returns the index 'i' of the
-	     <code>Temp</code>, <code>values</code>[i], which is the
-	     one that 
-
-	<BR> NOTE: to perform true CFF, we need to know which
-	variables were *DEFINED* in this round, versus just being
-	used.  Thus we need a more complex data structure.  For now,
-	just deal without checking for clean variables.  
-    */
-    private int findFurthest(Iterator iter, Temp[] values) {
-	int count=0;
-	
-	final int REDEFINED_BEFORE_USED = -1;
-	final int UNUSED_AND_UNDEFINED = 0;
-	// Dist definitions: 
-	// (-1) means that the value will be redefined before usage
-	// (0)  means that the value has not been used or redefined
-	// (x) and x > 0 ;  means that the value will be used x
-	//          steps in the future 
-	int[] valToDist = new int[values.length];
-	
-	while(iter.hasNext()) {
-	    Instr i = (Instr) iter.next();
-	    count++;
-	    Temp[] dsts = i.def();
-	    Temp[] uses = i.use();
-	    for (int j=0; j<values.length; j++) {
-		for (int u=0; u<uses.length; u++) {
-		    if (values[j] != null &&
-			values[j].equals(uses[u]) &&
-			valToDist[j] != REDEFINED_BEFORE_USED) {
-			valToDist[j] = count;
-		    }
-		}
-		for (int d=0; d<dsts.length; d++) {
-		    if (values[j] != null && 
-			values[j].equals(dsts[d]) &&
-			valToDist[j] == UNUSED_AND_UNDEFINED) {
-			valToDist[j] = REDEFINED_BEFORE_USED;
-		    }
-		}
-	    }
-	}
-	
-	// check if any slot is dead or unused
-	for (int i=0; i<valToDist.length; i++) {
-	    if (valToDist[i] == UNUSED_AND_UNDEFINED ||
-		valToDist[i] == REDEFINED_BEFORE_USED) {
-		return i;
-	    }
-	}
-
-	// else find the set of furthest variables
-	Set indexSet = new HashSet();
-	int distance = 0;
-	for (int i=0; i<valToDist.length; i++) {
-	    if (valToDist[i] == distance) {
-		indexSet.add(new Integer(i));
-	    } else if (valToDist[i] > distance) {
-		indexSet.clear();
-		indexSet.add(new Integer(i));
-		distance = valToDist[i];
-	    }
-	}
-	
-	// now use Conservative Furthest-First to select which
-	// variable to evict 
-	//
-	// TODO: Fix the below code to
-	//       1. Use LiveVariable Analysis
-	Iterator setIter;
-
-
-	// Is there a variable thats not alive?
-	setIter = indexSet.iterator();
-	while (setIter.hasNext()) {
-	    Integer index = (Integer) setIter.next();
-	    if (false) { // if (alive(values[index.intValue()])
-		return index.intValue();
-	    }
-	}
-
-	// Is there a variable thats clean
-	setIter = indexSet.iterator();
-	while (setIter.hasNext()) {
-	    Integer index = (Integer) setIter.next();
-	    if (false) { // if (clean(values[index.intValue()])
-		return index.intValue();
-	    }
-	}
-
-	// If there all are alive and dirty, choose arbitrarily
-	setIter = indexSet.iterator();
-	Integer index = (Integer) setIter.next();
-	return index.intValue();
-	
-    }
 }
-
 
 
 
