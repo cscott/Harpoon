@@ -5,7 +5,7 @@ import harpoon.ClassFile.*;
 import harpoon.IR.QuadSSA.*;
 import harpoon.Temp.*;
 import harpoon.Util.Util;
-import harpoon.Util.UniqueStack;
+import harpoon.Util.UniqueFIFO;
 
 import java.util.Vector;
 import java.util.Hashtable;
@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.2 1998-09-10 23:19:53 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.3 1998-09-11 03:56:50 cananian Exp $
  */
 
 public class TypeInfo implements TypeMap {
@@ -29,12 +29,12 @@ public class TypeInfo implements TypeMap {
     void analyze(HMethod method) {
 	Quad ql[] = (Quad[])harpoon.IR.QuadSSA.Code.code(method).getElements();
 
-	UniqueStack worklist = new UniqueStack();
-	for (int i=ql.length-1; i>=0; i--)
+	UniqueFIFO worklist = new UniqueFIFO();
+	for (int i=0; i<ql.length; i++)
 	    worklist.push(ql[i]);
 	
-	while(!worklist.isEmpty()) {
-	    Quad q = (Quad) worklist.pop();
+	while(!worklist.empty()) {
+	    Quad q = (Quad) worklist.pull();
 	    boolean isChanged = analyze(method, q);
 	    if (isChanged) {
 		Temp[] d = q.def();
