@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.36 2001-06-12 03:56:54 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.37 2001-06-12 21:50:44 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -257,9 +257,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	    (comType==HClass.Byte || comType==HClass.Boolean) ? 1 :
 	    (comType==HClass.Char || comType==HClass.Short) ? 2 :
 	    WORD_SIZE;
-	return new Translation.Ex
-	   (new ESEQ
-	    (tf, source,
+        Stm stm =
 	     new SEQ
 	     (tf, source,
 	      new SEQ
@@ -293,7 +291,32 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		 DECLARE(dg, arrayType/*not an obj yet*/, Tarr,
 			 new TEMP(tf, source, Type.POINTER, Tarr)),
 		 new CONST(tf, source, OBJ_ALENGTH_OFF))),
-	       new TEMP(tf, source, Type.INT, Tlen))), // length from Tlen
+	       new TEMP(tf, source, Type.INT, Tlen))); // length from Tlen
+        /* now, if there are fields of java.lang.Object that need to be
+         * initialized, zero fill them. */
+        if (OBJ_ALENGTH_OFF != OBJ_FZERO_OFF) {
+            stm = new SEQ
+                (tf, source, stm,
+                 new NATIVECALL
+                 (tf, source, null,
+                  DECLARE(dg, HClass.Void/*c library function*/,
+                  new NAME(tf, source, new Label
+                           (runtime.nameMap.c_function_name("memset")))),
+                  new ExpList
+                  (new BINOP
+                   (tf, source, Type.POINTER, Bop.ADD,
+                    DECLARE(dg, arrayType/*not an obj yet*/, Tarr,
+                    new TEMP(tf, source, Type.POINTER, Tarr)),
+                    new CONST(tf, source, OBJ_FZERO_OFF)),
+                   new ExpList
+                   (new CONST(tf, source, 0),
+                    new ExpList
+                    (new CONST(tf, source, OBJ_ALENGTH_OFF-OBJ_FZERO_OFF),
+                     null)))));
+        }
+        return new Translation.Ex
+            (new ESEQ
+             (tf, source, stm,
 	     // result of whole expression is the array pointer, in Tarr
 	     DECLARE(dg, arrayType/*finally an obj*/, Tarr,
 		     new TEMP(tf, source, Type.POINTER, Tarr))));
