@@ -49,8 +49,8 @@ Proof of Lemma~\ref{lem:sese_child}.
 \begin{proof}
 Let us assume a \phifunction for $v$ is needed at some node $Z$
 inside an SESE not containing a definition of $v$.  
-Then by condition \ref{crit_phiplace} of the SSI
-form definition, there exist paths $X \pathplus Z$ and $Y \pathplus Z$
+Then by the path-convergence criterion for \phifunction{s},
+there exist paths $X \pathplus Z$ and $Y \pathplus Z$
 having no nodes but $Z$ in common where $X$ and $Y$ contain either
 definitions of $v$ or \phisigfunction[or]{s} for $v$.  Choose any such
 paths:
@@ -69,7 +69,7 @@ was chosen to contain no definitions of $v$.
 \end{description}
 
 A symmetric argument holds for \sigfunction{s} for $v$, using
-condition \ref{crit_sigplace} of the SSI form definition, and the fact
+the path-convergence criterion for \sigfunction{s}, and the fact
 that there exists one exit edge from the SESE.
 \end{proof}
 
@@ -79,14 +79,14 @@ Proof of Lemma~\ref{lem:ssi_place_dom}.
 We will first prove that a node $N$ failing any one of the conditions does
 not need a \phisigfunction[or].
 \begin{itemize}
-\item Conditions \ref{crit_phiplace} and \ref{crit_sigplace} of the
-SSI form definition require node $N$ to be the first convergence
+\item The path-convergence criteria for \phifunction{s} (\sigfunction{s})
+require node $N$ to be the first convergence
 (divergence) of some paths $X \pathplus N$ and $Y \pathplus N$ ($N
 \pathplus X$ and $N \pathplus Y$).  If the input arity is less than 2
 or there is no path from a definition of $v$, than it fails the
-$\phi$-placement criterion \ref{crit_phiplace}.  If the output arity
+path-convergence criterion for \phifunction{s}.  If the output arity
 is less than 2 or there is no path to a use of $v$, then it fails the
-$\sigma$-placement criterion \ref{crit_sigplace}.
+path-convergence criterion for \sigfunction{s}.
 \item If there exists a SESE containing $N$ that does not contain any
 definition, \phisigfunction[or]{} $D$ for $v$, then $N$ does not require a
 \phisigfunction[or]{} for $v$ by lemma~\ref{lem:sese_child}.
@@ -106,9 +106,8 @@ dominate $N$ if $N$ is required to have a \phifunction for $v$.  The
 symmetric argument holds for post-dominance and \sigfunction{s}.
 \end{itemize}
 This proves that the conditions are necessary.  It is obvious from an
-examination of conditions \ref{crit_phiplace} and \ref{crit_sigplace}
-of the SSI form definition and lemma \ref{lem:sese_child} that they are
-sufficient.
+examination of the path convergence criteria for \phisigfunction{s}
+and lemma \ref{lem:sese_child} that they are sufficient.
 \end{proof}
 
 The SSI renaming algorithm presented in Figures~\ref{alg:SSIrename1}
@@ -160,11 +159,11 @@ once by \code{Search}, so $CP(e)$ exists and is unique for every edge
 $e$ in the CFG.
 
 \begin{lemma}\label{lem:renamephi}
-SSI form condition~\ref{crit_phiname} (\phifunction{} naming) holds
+SSI form property~\ref{crit_phiname} (\phifunction{} naming) holds
 for variables renamed according to Algorithm~\ref{alg:SSIrename1}.
 \end{lemma}
 \begin{proof}
-We restate SSI form condition~\ref{crit_phiname} for reference:
+We restate SSI form property~\ref{crit_phiname} for reference:
 \begin{quote}
 For every node $X$ containing a definition of a variable $V$ in
 the new program and node $Y$ containing a use of that variable, there
@@ -218,11 +217,11 @@ path may exist, completing the proof of the lemma.
 \end{proof}
 
 \begin{lemma}\label{lem:renamesig}
-SSI form condition~\ref{crit_signame} (\sigfunction{} naming) holds for
+SSI form property~\ref{crit_signame} (\sigfunction{} naming) holds for
 variables renamed according to Algorithm~\ref{alg:SSIrename1}.
 \end{lemma}
 \begin{proof}
-We restate SSI form condition~\ref{crit_signame} for reference:
+We restate SSI form property~\ref{crit_signame} for reference:
 \begin{quote}
 For every pair of nodes $X$ and $Y$ containing uses of a
 variable $V$ defined at node $Z$ in the new program, either every path
@@ -241,8 +240,9 @@ There are two cases:
 \begin{description}
 \item[Case I:] $P_3$ does not contains $Y$.  Then there is some last
 node $N$ present on both $P_2: Z\pathstar N\pathplus Y$ and
-$P_3: \code{START}\pathplus Z\pathstar N\pathplus X$.  By SSI
-condition~\ref{crit_sigplace} this node $N$ requires a \sigfunction{}
+$P_3: \code{START}\pathplus Z\pathstar N\pathplus X$.  By 
+the path-convergence criterion for \sigfunction{s},
+this node $N$ requires a \sigfunction{}
 for $V$.  If $N\not=Z$ then line~\ref{line:rendef1} of
 Algorithm~\ref{alg:SSIrename1} would rename $V$ along $P_3$
 and $X$ would not use the same variable $Z$ defined; if
@@ -253,7 +253,7 @@ $X$, $Y$, and $Z$.
 $\code{START}\pathplus Z\pathplus Y$ along $P_3$, which does not
 contain $X$.  The argument of case I applies with $X$ and $Y$ reversed.
 \end{description}
-Any assumed violation of condition~\ref{crit_signame} leads to
+Any assumed violation of property~\ref{crit_signame} leads to
 contradiction, proving the lemma.
 \end{proof}
 
@@ -272,7 +272,7 @@ when $N_p$ and $N_s$, respectively, are also single-predecessor
 single-successor nodes.
 
 \begin{lemma}\label{lem:correctness}
-SSI form condition~\ref{crit_correct} (correctness) holds for
+SSI form property~\ref{crit_correct} (correctness) holds for
 variables renamed according to Algorithm~\ref{alg:SSIrename1}.  That
 is, along any possible control-flow path in a program being executed a
 use of a variable $V_i$ in the new program will always have the same
