@@ -1,5 +1,5 @@
 // PANode.java, created Sun Jan  9 16:24:57 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -7,8 +7,8 @@ package harpoon.Analysis.PointerAnalysis;
  * <code>PANode</code> class models a node for the Pointer Analysis
  * algorithm.
  * 
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PANode.java,v 1.1.2.3 2000-01-18 04:49:40 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
+ * @version $Id: PANode.java,v 1.1.2.4 2000-01-22 20:56:24 salcianu Exp $
  */
 public class PANode {
     
@@ -20,13 +20,14 @@ public class PANode {
     public static final int LOAD            = 4;
     public static final int PARAM           = 8;
     public static final int RETURN          = 16;
+    public static final int EXCEPT          = 32;
     /** The class nodes from the original algorithm have been renamed
      *  STATIC now (just for confusion :-)) */
-    public static final int STATIC          = 32;
+    public static final int STATIC          = 64;
 
     /** The null pointers are modeled as pointing to the special node
      * NULL_Node of the special type NULL */
-    public static final int NULL       = 64;
+    public static final int NULL       = 128;
     /** A symbolic node for the null pointers */ 
     public static final PANode NULL_Node = new PANode(NULL);
 
@@ -64,9 +65,11 @@ public class PANode {
 	case LOAD:   str="L";break;
 	case PARAM:  str="P";break;
 	case RETURN: str="R";break;
+	case EXCEPT: str="E";break;
 	case STATIC: str="S";break;
 	}
 	return str + number;
     }
 
 }
+

@@ -1,5 +1,5 @@
 // PointerAnalysis.java, created Sat Jan  8 23:22:24 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@mit.edu>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -36,6 +36,7 @@ import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.FOOTER;
 
 
@@ -47,8 +48,8 @@ import harpoon.IR.Quads.FOOTER;
  * the construction time; the queries are only retrieving the already
  * computed results from the caches.
  * 
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.1.2.5 2000-01-18 04:49:40 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
+ * @version $Id: PointerAnalysis.java,v 1.1.2.6 2000-01-22 20:56:24 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -342,6 +343,16 @@ public class PointerAnalysis {
 		
 	    bbpig.G.I.addEdges(set1,f,set2);
 	    bbpig.G.propagate(set1);
+	}
+	
+
+	public void visit(CALL q){
+	    InterProcPA.analyze_call(current_intra_method,
+				     q,     // the CALL site
+				     bbpig, // the graph before the call
+				     cg,    // the CallGraph
+				     PointerAnalysis.this,
+				     nodes);// the node repository 
 	}
 	
 

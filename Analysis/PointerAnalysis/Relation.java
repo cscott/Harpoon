@@ -1,5 +1,5 @@
 // Relation.java, created Tue Jan 11 14:52:48 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -18,8 +18,8 @@ import java.util.Map;
  * and better tailored for the implementation of the Pointer Analysis
  * algorithm.
  *
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Relation.java,v 1.1.2.5 2000-01-18 04:49:41 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
+ * @version $Id: Relation.java,v 1.1.2.6 2000-01-22 20:56:24 salcianu Exp $
  */
 public class Relation{
     
@@ -71,6 +71,12 @@ public class Relation{
 	HashSet set = (HashSet)hash.get(key);
 	if(set==null) return false;
 	return set.contains(value);
+    }
+
+    /** Checks the existence of the <code>key</code> key in
+     * <code>this</code> relation. */
+    public boolean containsKey(Object key){
+	return hash.containsKey(key);
     }
 
     /** Returns the image of <code>key</code> through <code>this</code>

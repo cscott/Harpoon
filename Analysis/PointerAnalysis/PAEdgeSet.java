@@ -1,5 +1,5 @@
 // PTEdgesSet.java, created Sat Jan  8 23:37:30 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -15,15 +15,15 @@ import java.util.Enumeration;
 import harpoon.Temp.Temp;
 
 /**
- * <code>PTEdgesSet</code> models the concept of a set of edges. It tries
+ * <code>PAEdgesSet</code> models the concept of a set of edges. It tries
  * to optimize the frequent operations on such a set. It is designed to
  * handle the different types of edges (i.e. <code>var --> node</code> and
  * <code>node1 --f-> node2</code>) in a convenient and type safe manner.
  * It is also intended to be more performant in terms of space and time
  * than the straightforward solution of a <code>HashSet</code> of edges.
  * 
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEdgeSet.java,v 1.1.2.5 2000-01-18 04:49:40 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
+ * @version $Id: PAEdgeSet.java,v 1.1.2.6 2000-01-22 20:56:24 salcianu Exp $
  */
 public class PAEdgeSet {
 
