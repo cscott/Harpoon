@@ -6,33 +6,7 @@
 void CheckTimeSwitch();
 #endif
 
-#ifndef WITH_REALTIME_THREADS
-JNIEXPORT jint JNICALL Java_javax_realtime_Scheduler_beginAtomic
-  (JNIEnv *env, jobject scheduler) {
-  assert(0);
-}
-
-JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_endAtomic
-  (JNIEnv *env, jobject scheduler, jint state) {
-  assert(0);
-}
-
-JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_addThreadInC
-(JNIEnv* env, jobject _this, jobject thread, jlong threadID) {
-  assert(0);
-}
-
-JNIEXPORT jlong JNICALL Java_javax_realtime_Scheduler_removeThreadInC
-(JNIEnv* env, jobject _this, jobject thread) {
-  assert(0);
-}
-
-JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_setQuanta
-(JNIEnv* env, jobject _this, jlong microsecs) {
-  assert(0);
-}
-
-#else
+#ifdef WITH_REALTIME_THREADS
 #include <jni-private.h>
 #include <signal.h>
 #include <sys/time.h>
@@ -70,63 +44,18 @@ static int mainStarted = 0;
 
 struct itimerval quanta;
 
-static jclass RealtimeThreadClaz;
-static jmethodID RealtimeThread_getScheduler;
-static jmethodID RealtimeThread_initScheduler;
-static jmethodID RealtimeThread_schedule;
-static jmethodID RealtimeThread_unschedule;
-
-static jclass SchedulerClaz;
-static jmethodID Scheduler_jAddCThread;
-static jmethodID Scheduler_jChooseThread;
-static jmethodID Scheduler_jDisableThread;
-static jmethodID Scheduler_jEnableThread;
-static jmethodID Scheduler_jNumThreads;
-static jmethodID Scheduler_jRemoveCThread;
-static jmethodID Scheduler_print;
-
 void Threads_init(JNIEnv *env) {
-  RealtimeThreadClaz = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
-  assert(!((*env)->ExceptionOccurred(env)));
-  RealtimeThreadClaz = (*env)->NewGlobalRef(env, RealtimeThreadClaz);
-  assert(!((*env)->ExceptionOccurred(env)));
-  RealtimeThread_getScheduler = (*env)->GetMethodID(env, RealtimeThreadClaz, "getScheduler",
-						    "()Ljavax/realtime/Scheduler;");
-  assert(!((*env)->ExceptionOccurred(env)));
-  RealtimeThread_initScheduler = (*env)->GetMethodID(env, RealtimeThreadClaz, "initScheduler", "()V");
-  assert(!((*env)->ExceptionOccurred(env)));
-  RealtimeThread_schedule = (*env)->GetMethodID(env, RealtimeThreadClaz, "schedule", "()V");
-  assert(!((*env)->ExceptionOccurred(env)));
-  RealtimeThread_unschedule = (*env)->GetMethodID(env, RealtimeThreadClaz, "unschedule", "()V");
-  assert(!((*env)->ExceptionOccurred(env)));
-
-  SchedulerClaz = (*env)->FindClass(env, "javax/realtime/Scheduler");
-  assert(!((*env)->ExceptionOccurred(env)));
-  SchedulerClaz = (*env)->NewGlobalRef(env, SchedulerClaz);
-  assert(!((*env)->ExceptionOccurred(env)));
-  Scheduler_jAddCThread = (*env)->GetStaticMethodID(env, SchedulerClaz, "jAddCThread", "(J)V");
-  assert(!((*env)->ExceptionOccurred(env)));
-  Scheduler_jChooseThread = (*env)->GetMethodID(env, SchedulerClaz, "jChooseThread", "(J)J");
-  assert(!((*env)->ExceptionOccurred(env)));
-  Scheduler_jDisableThread = (*env)->GetStaticMethodID(env, SchedulerClaz, "jDisableThread", 
-						       "(Ljavax/realtime/RealtimeThread;J)V");
-  assert(!((*env)->ExceptionOccurred(env)));
-  Scheduler_jEnableThread = (*env)->GetStaticMethodID(env, SchedulerClaz, "jEnableThread", 
-						      "(Ljavax/realtime/RealtimeThread;J)V");
-  assert(!((*env)->ExceptionOccurred(env)));
-  Scheduler_jNumThreads = (*env)->GetStaticMethodID(env, SchedulerClaz, "jNumThreads", "()J");
-  assert(!((*env)->ExceptionOccurred(env)));
-  Scheduler_jRemoveCThread = (*env)->GetStaticMethodID(env, SchedulerClaz, "jRemoveCThread", "(J)V");
-  assert(!((*env)->ExceptionOccurred(env)));
-  Scheduler_print = (*env)->GetStaticMethodID(env, SchedulerClaz, "print", "()V");
-  assert(!((*env)->ExceptionOccurred(env)));
+  RealtimeThread_init(env);
+  Scheduler_init(env);
   setQuanta((jlong)0);
   settimer();
 }
 
-#ifndef WITH_REALTIME_THREADS_PREEMPT
+#if defined(WITH_REALTIME_THREADS_MEASURE_JITTER) || (!defined(WITH_REALTIME_THREADS_PREEMPT))
 struct timeval compareSwitch;
+#endif
 
+#ifndef WITH_REALTIME_THREADS_PREEMPT
 void CheckTimeSwitch() {
   struct timeval time;
   if (((!quanta.it_value.tv_sec)&&(!quanta.it_value.tv_usec))||
@@ -136,6 +65,13 @@ void CheckTimeSwitch() {
   if ((time.tv_sec>compareSwitch.tv_sec)||
       ((time.tv_sec==compareSwitch.tv_sec)&&
        (time.tv_usec>=compareSwitch.tv_usec))) {
+#ifdef RTJ_DEBUG_THREADS
+    printf("\nCheckTimeSwitch((%lld s, %lld us)>=(%lld s, %lld us))",
+	   (long long int)time.tv_sec, 
+	   (long long int)time.tv_usec, 
+	   (long long int)compareSwitch.tv_sec,
+	   (long long int)compareSwitch.tv_usec);
+#endif
     context_switch();
   }  
 }
@@ -154,7 +90,7 @@ void context_switch() {
   raise(SIGALRM);
 }
 
-inline int IsSwitching() {
+int IsSwitching() {
   sigset_t mask;
   sigset_t empty;
   sigemptyset(&empty);
@@ -220,16 +156,6 @@ inline void EndNoHeap(JNIEnv* env, int state) {
 }
 #endif
 
-JNIEXPORT jint JNICALL Java_javax_realtime_Scheduler_beginAtomic
-  (JNIEnv *env, jobject scheduler) {
-  return StopSwitching();
-}
-
-JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_endAtomic
-  (JNIEnv *env, jobject scheduler, jint state) {
-  RestoreSwitching(state);
-}
-
 void setQuanta(jlong microsecs) {
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  setQuanta(%lld)", (long long)microsecs);
@@ -237,26 +163,6 @@ void setQuanta(jlong microsecs) {
   memset(&quanta, 0, sizeof(struct itimerval));
   quanta.it_value.tv_sec  = microsecs/1000000;
   quanta.it_value.tv_usec = microsecs%1000000;
-}
-
-JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_setQuanta
-(JNIEnv* env, jobject _this, jlong microsecs) {
-#ifdef RTJ_DEBUG_THREADS
-  printf("\n  Scheduler.setQuanta(%p, %p, %lld)", env, 
-	 _this, (long long)microsecs);
-#endif
-  setQuanta(microsecs);
-}
-
-JNIEXPORT jlong JNICALL Java_javax_realtime_RealtimeClock_getTimeInC
-(JNIEnv* env, jobject _this) {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-#ifdef RTJ_DEBUG_THREADS
-  printf("\n  (%d s,%d us) = RealtimeClock.getTimeInC(%p, %p)", 
-	 (int)time.tv_sec, (int)time.tv_usec, env, _this);
-#endif
-  return time.tv_sec * 1000000 + time.tv_usec;
 }
 
 /* check the time and possibly check for a needed thread switch */
@@ -272,11 +178,16 @@ void CheckQuanta(int signal)
 #ifdef WITH_NOHEAP_SUPPORT
   int noheap;
 #endif
+  gettimeofday(&time, NULL);
+#ifdef WITH_REALTIME_THREADS_MEASURE_JITTER
+  printf("\nJitter = %lld\n", 
+	 (((long long int)time.tv_sec)*1000000+((long long int)time.tv_usec))-
+	 (((long long int)compareSwitch.tv_sec)*1000000+((long long int)compareSwitch.tv_usec)));
+#endif
   setQuanta((jlong)0); /* Don't switch until setup for next period */
   settimer(); /* Register handler */
   sigpending(&pending);
   if (sigismember(&pending, SIGALRM)) return; /* Make sure CheckQuanta is top before switching */
-  gettimeofday(&time, NULL);
 #ifdef RTJ_DEBUG_THREADS  
   printf("\nCheckQuanta()");
 #endif
@@ -288,8 +199,8 @@ void CheckQuanta(int signal)
 #endif
 
   /* Get the current scheduler */
-  scheduler = (*env)->CallObjectMethod(env, ((struct FNI_Thread_State*)env)->thread, 
-				       RealtimeThread_getScheduler, NULL);
+  scheduler = (*env)->CallStaticObjectMethod(env, SchedulerClaz, 
+					     Scheduler_getScheduler);
   assert(!((*env)->ExceptionOccurred(env)));
   if(scheduler == NULL) { //if there is no scheduler
     FNI_DeleteLocalRefsUpTo(env, ref_marker);
@@ -307,9 +218,9 @@ void CheckQuanta(int signal)
   threadID = (*env)->CallLongMethod(env, scheduler, Scheduler_jChooseThread,
 				    time.tv_sec*1000000 + time.tv_usec);
 #ifdef RTJ_DEBUG_THREADS
-  printf("\n  %d = ChooseThread(%p, %p, (%d s, %d us))", 
+  printf("\n  %d = ChooseThread(%p, %p, (%lld s, %lld us))", 
 	 (int)threadID, env, FNI_UNWRAP_MASKED(scheduler), 
-	 (int)time.tv_sec, (int)time.tv_usec);
+	 (long long int)time.tv_sec, (long long int)time.tv_usec);
 #endif
   if((*env)->ExceptionOccurred(env))
     (*env)->ExceptionDescribe(env);
@@ -335,11 +246,10 @@ void CheckQuanta(int signal)
 
 void settimer() {
   struct sigaction timer;
-#ifndef WITH_REALTIME_THREADS_PREEMPT
+#if defined(WITH_REALTIME_THREADS_MEASURE_JITTER) || (!defined(WITH_REALTIME_THREADS_PREEMPT))
   struct timeval time;
   long long int microsecs;
-#endif
-#ifdef RTJ_DEBUG_THREADS
+#elif defined(RTJ_DEBUG_THREADS)
   printf("\n  settimer()");
 #endif
   timer.sa_handler=&CheckQuanta;
@@ -349,12 +259,24 @@ void settimer() {
   siginterrupt(SIGALRM, 0); /* Allow system calls to be restarted after CheckQuanta */
 #ifdef WITH_REALTIME_THREADS_PREEMPT
   setitimer(ITIMER_REAL, &quanta, NULL);
-#else
+#endif
+#if defined(WITH_REALTIME_THREADS_MEASURE_JITTER) || (!defined(WITH_REALTIME_THREADS_PREEMPT))
   gettimeofday(&time, NULL);
-  microsecs = time.tv_sec * 1000000 + time.tv_usec;
-  microsecs += quanta.it_value.tv_sec * 1000000 + quanta.it_value.tv_usec;
-  compareSwitch.tv_sec  = microsecs/1000000;
-  compareSwitch.tv_usec = microsecs%1000000;
+  microsecs = ((long long int)time.tv_sec) * ((long long int)1000000) + 
+    ((long long int)time.tv_usec);
+  microsecs += ((long long int)quanta.it_value.tv_sec) * 
+    ((long long int)1000000) + ((long long int)quanta.it_value.tv_usec);
+  compareSwitch.tv_sec  = microsecs/((long long int)1000000);
+  compareSwitch.tv_usec = microsecs%((long long int)1000000);
+#ifdef RTJ_DEBUG_THREADS
+  printf("\n  settimer((%lld s, %lld us)+(%lld s, %lld us)=(%lld s, %lld us))",
+	 (long long int)time.tv_sec, 
+	 (long long int)time.tv_usec, 
+	 (long long int)quanta.it_value.tv_sec, 
+	 (long long int)quanta.it_value.tv_usec,
+	 (long long int)compareSwitch.tv_sec, 
+	 (long long int)compareSwitch.tv_usec);
+#endif
 #endif
 }
 
@@ -371,13 +293,27 @@ void print_queue(struct thread_queue_struct* q, char* message) {
   printScheduler();
 }
 
-JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_addThreadInC
-(JNIEnv* env, jobject _this, jobject thread, jlong threadID) {
+void cleanupThreadQueue(JNIEnv* env) {
+  struct thread_queue_struct* nextPiece;
+
+#ifdef RTJ_DEBUG_THREADS
+  printf("\ncleanupThreadQueue(%p)", env);
+#endif
+  while(thread_queue != NULL) {
+    nextPiece = thread_queue->next;
+    if(thread_queue->jthread != NULL)
+      (*env)->DeleteGlobalRef(env, thread_queue->jthread);
+    RTJ_FREE(thread_queue);
+    thread_queue = nextPiece;
+  }
+}
+
+void addThreadInC(JNIEnv* env, jobject thread, jlong threadID) {
   struct thread_queue_struct* open_spot = 
     RTJ_CALLOC_UNCOLLECTABLE(sizeof(struct thread_queue_struct), 1);
   struct inflated_oobj* infObj =
     (struct inflated_oobj*)getInflatedObject(env, thread);
-
+  
 #ifdef RTJ_DEBUG_THREADS
   printf("\naddThreadInC(%lld)", (long long int)threadID);
 #endif
@@ -400,12 +336,11 @@ JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_addThreadInC
   print_queue(thread_queue, "END addThreadInC queue");
 }
 
-JNIEXPORT jlong JNICALL Java_javax_realtime_Scheduler_removeThreadInC
-(JNIEnv* env, jobject _this, jobject thread) {
+jlong removeThreadInC(JNIEnv* env, jobject thread) {
   struct thread_queue_struct* prev_queue = thread_queue;
   struct thread_queue_struct* lthread_queue = thread_queue;
   print_queue(thread_queue, "BEG removeThreadInC queue");
-
+  
   while (lthread_queue != NULL) { 
     if(FNI_UNWRAP_MASKED(lthread_queue->jthread) == 
        FNI_UNWRAP_MASKED(thread)) {
@@ -413,11 +348,11 @@ JNIEXPORT jlong JNICALL Java_javax_realtime_Scheduler_removeThreadInC
       jlong l = lthread_queue->threadID;
       FNI_DeleteGlobalRef(env, (remove_spot = lthread_queue)->jthread);
       if (prev_queue == lthread_queue) {
-	  thread_queue = thread_queue->next;
+	thread_queue = thread_queue->next;
       } else {
-	  prev_queue->next = lthread_queue->next;
+	prev_queue->next = lthread_queue->next;
       }
-//      RTJ_FREE(remove_spot);
+      //      RTJ_FREE(remove_spot);
       print_queue(thread_queue, "END removeThreadInC queue");
       return l;
     }
@@ -427,21 +362,6 @@ JNIEXPORT jlong JNICALL Java_javax_realtime_Scheduler_removeThreadInC
   return 0;
 }
 
-void cleanupThreadQueue(JNIEnv* env)
-{
-  struct thread_queue_struct* nextPiece;
-
-#ifdef RTJ_DEBUG_THREADS
-  printf("\ncleanupThreadQueue(%p)", env);
-#endif
-  while(thread_queue != NULL) {
-    nextPiece = thread_queue->next;
-    if(thread_queue->jthread != NULL)
-      (*env)->DeleteGlobalRef(env, thread_queue->jthread);
-    RTJ_FREE(thread_queue);
-    thread_queue = nextPiece;
-  }
-}
 
 struct thread_queue_struct* lookupThread(jlong threadID)
 {
@@ -848,6 +768,7 @@ void initScheduler(JNIEnv *env, jobject thread) {
   (*env)->CallVoidMethod(env, thread, RealtimeThread_initScheduler, NULL);
   assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
+  RealtimeThread_setHandlerMask(env, thread);
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
 }
 

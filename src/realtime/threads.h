@@ -1,14 +1,20 @@
 #ifndef REALTIME_THREAD_H_INCLUDED
 #define REALTIME_THREAD_H_INCLUDED
 
+#include "SchedulerData.h"
+#include "RealtimeThreadData.h"
 # include <setjmp.h> //for setjmp and longjmp
 # include "../java.lang/threadlist.h" /* for add_running_thread */
+
+#define WITH_REALTIME_THREADS_MEASURE_JITTER 1
 
 jmp_buf main_return_jump; //a jump point for when the main thread exits
 
 void StartSwitching(); //turn thread switching on
 
 int StopSwitching();  //turn thread switching off
+
+int IsSwitching();
 
 void RestoreSwitching(int state); //restore prev switching state
 
@@ -30,6 +36,10 @@ void settimer();
 void setQuanta(jlong microsecs);
 
 void context_switch();
+
+void addThreadInC(JNIEnv* env, jobject thread, jlong threadID);
+
+jlong removeThreadInC(JNIEnv* env, jobject thread);
 
 #define IN_ACTIVE_QUEUE 0
 #define IN_MUTEX_QUEUE 1
