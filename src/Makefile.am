@@ -104,3 +104,4 @@ libflexc_la_LIBADD = \
 libflexc_la_LDFLAGS = -version-info 0:0:0 # -lbfd -liberty
 # this library depends on -lbfd and -liberty, but these ought to be in $LIBS
 
+

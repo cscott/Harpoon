@@ -63,10 +63,12 @@ int main(int argc, char *argv[]) {
 #endif
   FNI_java_lang_Thread_setupMain(env);
 #ifdef WITH_REALTIME_JAVA
+
   RTJ_init();
 #endif
   thrCls  = (*env)->FindClass(env, "java/lang/Thread");
   CHECK_EXCEPTIONS(env);
+
   mainthread = Java_java_lang_Thread_currentThread(env, thrCls);
   CHECK_EXCEPTIONS(env);
 
@@ -124,12 +126,22 @@ int main(int argc, char *argv[]) {
   { void print_statistics(void); print_statistics(); }
 #endif
 
+#ifdef WITH_REALTIME_THREADS
+  Start_QuantaThread(env);
+#endif
+
   /* Execute main() method. */
   cls = (*env)->FindClass(env, FNI_javamain);
   CHECK_EXCEPTIONS(env);
   mid = (*env)->GetStaticMethodID(env, cls, "main", "([Ljava/lang/String;)V");
   CHECK_EXCEPTIONS(env);
   (*env)->CallStaticVoidMethod(env, cls, mid, args);
+
+#ifdef WITH_REALTIME_THREADS
+  //stop quantathread
+  Stop_QuantaThread(env);
+#endif
+
   // handle uncaught exception in main thread. (see also thread_startup)
   if ( (threadexc = (*env)->ExceptionOccurred(env)) != NULL) {
     // call thread.getThreadGroup().uncaughtException(thread, exception)
