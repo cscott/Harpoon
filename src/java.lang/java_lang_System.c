@@ -78,17 +78,30 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
   (JNIEnv *env, jclass syscls,
    jobject src, jint srcpos, jobject dst, jint dstpos,
    jint length) {
-    jclass arrcls = (*env)->FindClass(env, "[Ljava/lang/Object;");
-    jclass asecls = (*env)->FindClass(env, "java/lang/ArrayStoreException");
-    jclass oobcls = (*env)->FindClass(env, "java/lang/ArrayIndexOutOfBoundsException");
+    static jclass arrcls=NULL;
     jsize srclen, dstlen;
     int isPrimitive=0;
+
+    /* arrcls race should be harmless here. */
+    if (!arrcls) arrcls = (*env)->NewGlobalRef(env, (*env)->FindClass(env, "[Ljava/lang/Object;"));
+
     /* do checks */
+    if (src==NULL || dst==NULL) {
+      /* throw NullPointerException */
+      jclass nulcls = (*env)->FindClass(env, "java/lang/NullPointerException");
+      jmethodID methodID=(*env)->GetMethodID(env, nulcls, "<init>", "()V");
+      (*env)->Throw(env, (*env)->NewObject(env, nulcls, methodID));
+      return;
+    }
     if (FNI_UNWRAP(src)->claz->component_claz==NULL) {
+      jclass asecls = (*env)->FindClass
+	(env, "java/lang/ArrayIndexOutOfBoundsException");
       (*env)->ThrowNew(env, asecls, "src not an array");
       return;
     }
     if (FNI_UNWRAP(dst)->claz->component_claz==NULL) {
+      jclass asecls = (*env)->FindClass
+	(env, "java/lang/ArrayIndexOutOfBoundsException");
       (*env)->ThrowNew(env, asecls, "dst not an array");
       return;
     }
@@ -97,6 +110,8 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
       /* one or both is an array of primitive type... */
       if (FNI_UNWRAP(src)->claz !=
 	  FNI_UNWRAP(dst)->claz ) {
+	jclass asecls = (*env)->FindClass
+	  (env, "java/lang/ArrayIndexOutOfBoundsException");
 	(*env)->ThrowNew(env, asecls, "primitive array types don't match");
 	return;
       }
@@ -107,6 +122,8 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
     dstlen = (*env)->GetArrayLength(env, (jarray) dst);
     if ((srcpos < 0) || (dstpos < 0) || (length < 0) ||
 	(srcpos+length > srclen) || (dstpos+length > dstlen)) {
+      jclass oobcls = (*env)->FindClass
+	(env,"java/lang/ArrayIndexOutOfBoundsException");
       (*env)->ThrowNew(env, oobcls, "index out of bounds");
       return;
     }
