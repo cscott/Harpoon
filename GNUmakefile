@@ -1,4 +1,6 @@
-# $Id: GNUmakefile,v 1.64 2002-02-25 20:55:56 cananian Exp $
+# $Id: GNUmakefile,v 1.65 2002-03-10 02:31:39 cananian Exp $
+# CAUTION: this makefile doesn't work with GNU make 3.77
+#          it works w/ make 3.79.1, maybe some others.
 
 empty:=
 space:= $(empty) $(empty)
@@ -7,10 +9,18 @@ JAVA:=java
 JFLAGS=-d . -g
 JFLAGSVERB=#-verbose -J-Djavac.pipe.output=true
 JIKES:=jikes $(JIKES_OPT)
-JCC=javac -J-mx64m -source 1.3
-JDOC=javadoc
+JCC:=javac -J-mx64m
+JDOC:=javadoc
 JAR=jar
-JDOCFLAGS=-J-mx128m -version -author # -package
+JDOCFLAGS:=-J-mx128m -version -author # -package
+JDOCGROUPS:=\
+  -group "Basic Class/Method/Field handling" "harpoon.ClassFile.*" \
+  -group "Intermediate Representations" "harpoon.IR.*:harpoon.Temp.*" \
+  -group "Interpreters for IRs" "harpoon.Interpret.*" \
+  -group "Analyses and Transformations" "harpoon.Analysis.*:harpoon.Runtime.*" \
+  -group "Backends (including code selection and runtime support)" "harpoon.Backend.*" \
+  -group "Tools and Utilities" "harpoon.Tools.*:harpoon.Util.*" \
+  -group "Contributed packages" "gnu.*"
 JDOCIMAGES=/usr/local/jdk/docs/api/images
 SSH=ssh
 SCP=scp -q
@@ -27,10 +37,18 @@ CVSWEBLINK = http://flexc.lcs.mit.edu/Harpoon/cvsweb.cgi
 ifndef CURDIR
 	CURDIR := $(shell pwd)
 endif
+# add '-source' option to JCC if it supports it
+JCC += \
+	$(shell if $(JCC) -help 2>&1 | grep -- "-source " > /dev/null ; \
+	then echo -source 1.3 ; fi)
 # Add "-link" to jdk's javadoc if we are using a javadoc that supports it
 JDOCFLAGS += \
-	$(shell if javadoc -help 2>&1 | grep -q -- -link; \
+	$(shell if $(JDOC) -help 2>&1 | grep -- "-link " > /dev/null ; \
 	then echo -link $(JDKDOCLINK) ; fi)
+# Add "-group" options to JDOCFLAGS if we're using a javadoc that supports it
+JDOCFLAGS += \
+	$(shell if $(JDOC) -help 2>&1 | grep -- "-group " > /dev/null ; \
+	then echo $(JDOCGROUPS) ; fi)
 
 SUPPORT := Support/Lex.jar Support/CUP.jar Support/jasmin.jar \
 	   $(wildcard SupportNP/ref.jar) $(wildcard SupportNP/collections.jar)
@@ -377,7 +395,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 		grep -v "^@see warning:"
 	$(RM) -r doc-link
 	$(MUNGE) doc | \
-	  sed -e 's/<\([a-z]\+\)@\([a-z.]\+\).edu>/\&lt;\1@\2.edu\&gt;/g' \
+	  sed -e 's/<\([a-z]\+\)@\([-A-Za-z.]\+\).\(edu\|EDU\)>/\&lt;\1@\2.edu\&gt;/g' \
 	      -e 's/<dd> "The,/<dd> /g' -e 's/<body>/<body bgcolor=white>/' | \
 		bin/annotate.perl -link $(JDKDOCLINK) -u $(CVSWEBLINK) | \
 		$(UNMUNGE)
