@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.44 2002-08-01 17:00:57 cananian Exp $
+% $Id: ptran.tex,v 1.45 2002-08-01 17:21:34 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.44 $ $}
+\date{\today \\ $ $Revision: 1.45 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -648,6 +648,61 @@ present rules.  don't need to say how we choose to eval
 polymorphically yet.  Just keep the companion edges accurate,
 keep updating mutual-singularity of field gets,
 and rename internal nodes by call-site.
+
+Initial rules:
+\[\dfrac
+{0\leq i \leq k, \tuple{l_i, n}\in I}
+{n\in\mu(n_{p_i})}
+\]
+\[\dfrac
+{1\leq i\leq j}
+{\bigvar{cl}_i \in\mu(\bigvar{cl}_i)}
+\]
+\[\dfrac
+{\tuple{\tuple{n_1,f}, n_2}\in O_R, \tuple{\tuple{n_3,f},n_4}\in I,
+ n_3\in\mu(n_1), n_1\notin N_I}
+{n_4 \in \mu(n_2)}
+\]
+
+Rules for $\mu$ and 
+\tuple{O_M, I_M, e_m, \func{c}_{\text{from}_m}, \func{c}_{\text{to}_m}, r_m}:
+\[ O\subseteq O_M \quad
+   \left(I-I(l)\right)\subseteq I_M \quad
+   \func{e}(n)\subseteq\func{e}_M(n) \quad
+   r_M = r % is this right?  *equals*?
+\]
+\[\dfrac
+{\tuple{\tuple{n_1,f},n2}\in I_R}
+{\left(\mu(n_1)\times\{f\}\right)\times\mu(n_2)\subseteq I_M}
+\]
+\[\dfrac
+{\tuple{\tuple{n_1,f},n_2}\in I_R,
+  n\in\mu(n_1),
+  n_2\in N_I\cup N_R}
+{n_2\in\mu(n_2)}
+\]
+\[\dfrac
+{\tuple{\tuple{n_1,f},n_2}\in O_R,
+ n\in\mu(n_1),
+ \func{escaped}(
+\tuple{O_M, I_M, e_m, \func{c}_{\text{from}_m}, \func{c}_{\text{to}_m}, r_m}
+ ,n) }
+{\tuple{\tuple{n,f},n_2}\in O_M,
+ n_2\in\mu(n_2) }
+\]
+\[\dfrac
+{n\in r_R\cap\left(N_I\cup N_R\right)}
+{n\in\mu(n)}
+\]
+\[\dfrac
+{\func{e}_R(n)\neq\emptyset,
+ n'\in\mu(n)}
+{m\in\func{e}_M(n')}
+\]
+\[\dfrac
+{n\in r_R, n'\in\mu(n)}
+{\tuple{l,n'}\in I_M}
+\]
 
 \subsection{Evaluating a call-site monomorphically}
 
