@@ -62,7 +62,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.63 2000-02-16 06:28:21 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.64 2000-02-16 22:38:04 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -269,9 +269,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    
 	    info("\t--- INSTR FORM (basic block check)  ---");
 	    if (hc != null) {
-		HCodeElement root = hc.getRootElement();
 		BasicBlock.Factory bbFact = 
-		    new BasicBlock.Factory(root, CFGrapher.DEFAULT);
+		    new BasicBlock.Factory(hc, CFGrapher.DEFAULT);
 		// wrong but makes it compile for now
 		LiveTemps livevars = 
 		    new LiveTemps(bbFact, Collections.EMPTY_SET); 

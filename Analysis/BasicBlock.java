@@ -9,6 +9,7 @@ import harpoon.Util.WorkSet;
 import harpoon.Util.Worklist;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCode;
 import harpoon.IR.Properties.CFGrapher;
 
 import harpoon.Analysis.DataFlow.ReversePostOrderEnumerator;
@@ -50,7 +51,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.22 2000-02-14 04:22:27 cananian Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.23 2000-02-16 22:37:52 cananian Exp $
 */
 public class BasicBlock {
     
@@ -301,26 +302,29 @@ public class BasicBlock {
 	/** Constructs a <code>BasicBlock.Factory</code> and generates
 	    <code>BasicBlock</code>s for a given <code>HCode</code>.
 	    <BR> <B>requires:</B> 
-	         <code>head</code> is an appropriate entry point for a 
-		 basic block (perhaps require that an actual
-		 <code>HCode</code> is passed in instead?) 
+	         <code>grapher.getFirstElement(hcode)</code>
+	         is an appropriate entry point for a 
+		 basic block.
 	    <BR> <B>effects:</B>  Creates a set of
 	         <code>BasicBlock</code>s corresponding to the blocks
-		 implicitly contained in <code>head</code> and the
-		 <code>HCodeElement</code> objects that
-		 <code>head</code> points to, and returns the
-		 <code>BasicBlock</code> that <code>head</code> is an
+		 implicitly contained in
+		 <code>grapher.getFirstElement(hcode)</code> and the
+		 <code>HCodeElement</code> objects that this
+		 points to, and returns the
+		 <code>BasicBlock</code> that
+		 <code>grapher.getFirstElement(hcode)</code> is an
 		 instruction in.  The <code>BasicBlock</code> returned
 		 is considered to be the root (entry-point) of the set
 		 of <code>BasicBlock</code>s created.   
 	*/
-	public Factory(HCodeElement head, final CFGrapher gr) {
+	public Factory(HCode hcode, final CFGrapher grapher) {
 	    // maps HCodeElement 'e' -> BasicBlock 'b' starting with 'e'
 	    HashMap h = new HashMap(); 
 	    // stores BasicBlocks to be processed
 	    Worklist w = new WorkSet();
 
-	    grapher = gr;
+	    HCodeElement head = grapher.getFirstElement(hcode);
+	    this.grapher = grapher;
 
 	    // modifable util classes for construction use only
 	    HashSet myLeaves = new HashSet();
@@ -343,7 +347,7 @@ public class BasicBlock {
 		HCodeElement last = current.getFirst();
 		boolean foundEnd = false;
 		while(!foundEnd) {
-		    int n = gr.succC(last).size();
+		    int n = grapher.succC(last).size();
 		    if (n == 0) {
 			if(DEBUG) System.out.println("found end:   "+last);
 			
@@ -354,7 +358,7 @@ public class BasicBlock {
 			if(DEBUG) System.out.println("found split: "+last);
 			
 			for (int i=0; i<n; i++) {
-			    HCodeElement e_n = gr.succ(last)[i].to();
+			    HCodeElement e_n = grapher.succ(last)[i].to();
 			    BasicBlock bb = (BasicBlock) h.get(e_n);
 			    if (bb == null) {
 				h.put(e_n, bb=new BasicBlock(e_n, this));
@@ -367,8 +371,8 @@ public class BasicBlock {
 			
 		    } else { // one successor
 			Util.assert(n == 1, "must have one successor");
-			HCodeElement next = gr.succ(last)[0].to();
-			int m = gr.predC(next).size();
+			HCodeElement next = grapher.succ(last)[0].to();
+			int m = grapher.predC(next).size();
 			if (m > 1) { // control flow join
 			    if(DEBUG) System.out.println("found join:  "+next);
 			    
@@ -397,15 +401,15 @@ public class BasicBlock {
 
 		final HCodeElement flast = last;
 		final BasicBlock fcurr = current;
-		Util.assert( gr.succC(last).size() != 1 ||
-			     gr.predC(gr.succ(last)[0].
+		Util.assert( grapher.succC(last).size() != 1 ||
+			     grapher.predC(grapher.succ(last)[0].
 				      to()).size() > 1,
 			     new Object() { 
 				 public String toString() {
 				     return 
 				     "last elem: "+flast+" of "+ 
 				     fcurr+" breaks succC "+
-				     "invariant: "+gr.succC(flast)+
+				     "invariant: "+grapher.succC(flast)+
 				     " BB: " + fcurr.dumpElems();
 				 }
 			     });

@@ -65,7 +65,7 @@ import java.io.PrintWriter;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparcMain.java,v 1.1.2.15 2000-02-16 06:28:21 cananian Exp $
+ * @version $Id: SparcMain.java,v 1.1.2.16 2000-02-16 22:38:05 cananian Exp $
  */
 public class SparcMain extends harpoon.IR.Registration {
  
@@ -272,9 +272,8 @@ public class SparcMain extends harpoon.IR.Registration {
 	    
 	    info("\t--- INSTR FORM (basic block check)  ---");
 	    if (hc != null) {
-		HCodeElement root = hc.getRootElement();
 		BasicBlock.Factory bbFact =
-		    new BasicBlock.Factory(root, CFGrapher.DEFAULT);
+		    new BasicBlock.Factory(hc, CFGrapher.DEFAULT);
 		// wrong but makes it compile for now
 		LiveTemps livevars = 
 		    new LiveTemps(bbFact, Collections.EMPTY_SET); 

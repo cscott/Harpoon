@@ -48,7 +48,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.7 2000-02-11 00:10:30 pnkfelix Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.8 2000-02-16 22:38:03 cananian Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -151,11 +151,10 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 	    }
 	    // do liveness analysis and return analysis
 	    private LiveTemps analyzeLiveness(HCode intermediateCode) {
-		HCodeElement hce = intermediateCode.getRootElement();
 		// use CFGrapher.DEFAULT for now at Felix's bequest
 		// Instrs should graduate to having their own CFGrapher
 		BasicBlock.Factory bbFact =
-		    new BasicBlock.Factory(hce, cfger);
+		    new BasicBlock.Factory(intermediateCode, cfger);
 		Set liveOnExit = f.getRegFileInfo().liveOnExit();
 		LiveTemps ltAnalysis = new LiveTemps(bbFact, liveOnExit);
 		// get an iterator for the solver

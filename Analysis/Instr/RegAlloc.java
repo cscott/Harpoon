@@ -70,7 +70,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.78 2000-02-11 00:10:29 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.79 2000-02-16 22:38:01 cananian Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -169,8 +169,7 @@ public abstract class RegAlloc  {
     protected RegAlloc(Code code) {
         this.frame = code.getFrame();
 	this.code = code;
-	Instr first = (Instr) code.getRootElement();
-	bbFact = new BasicBlock.Factory(first, CFGrapher.DEFAULT);
+	bbFact = new BasicBlock.Factory(code, CFGrapher.DEFAULT);
     }
 
     

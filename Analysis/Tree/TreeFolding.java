@@ -72,7 +72,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.18 2000-02-16 19:47:20 cananian Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.19 2000-02-16 22:38:02 cananian Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -120,7 +120,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	this.DUChains     = new HashMap();
 	this.UDChains     = new HashMap();
 	this.tempsToPrsvs = new HashMap();
-	this.bbfactory    = new BasicBlock.Factory(RS(this.root), grapher);
+	this.bbfactory    = new BasicBlock.Factory(code, grapher);
 	BasicBlock rootbb = bbfactory.getRoot();
 	
 	initTempsToPrsvs(tempsToPrsvs);

@@ -25,7 +25,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.3 2000-02-10 17:09:44 kkz Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.4 2000-02-16 22:37:52 cananian Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -40,7 +40,7 @@ public class ReachingDefsImpl extends ReachingDefs {
     public ReachingDefsImpl(HCode hc, CFGrapher cfger) {
 	super(hc);
 	this.cfger = cfger;
-	this.bbf = new BasicBlock.Factory(hc.getRootElement(), cfger);
+	this.bbf = new BasicBlock.Factory(hc, cfger);
 	report("Entering analyze()");
 	analyze();
 	report("Leaving analyze()");
