@@ -18,6 +18,7 @@ import harpoon.IR.Quads.HANDLER;
 import harpoon.IR.Quads.INSTANCEOF;
 import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Util.ArraySet;
@@ -44,7 +45,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.27 2001-02-22 01:13:31 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.28 2001-02-22 01:25:17 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -155,7 +156,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 			  .getConstructor(new HClass[0]));
 	}
 	// state.
-	State S = new State();
+	final State S = new State();
 
 	// make initial worklist from roots collection.
 	for (Iterator it=roots.iterator(); it.hasNext(); ) {
@@ -198,50 +199,52 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 		    // of its return type.
 		    discoverInstantiatedClass(S, m.getReturnType());
 	    } else { // look for CALLs, NEWs, and ANEWs
-		for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
-		    Quad Q = (Quad) it.next();
-		    HClass createdClass=null;
-		    if (Q instanceof ANEW)
-			createdClass = ((ANEW)Q).hclass();
-		    if (Q instanceof NEW)
-			createdClass = ((NEW)Q).hclass();
-		    if (Q instanceof CONST &&
-			!((CONST)Q).type().isPrimitive())
-			createdClass = ((CONST)Q).type();
-		    // handle creation of a (possibly-new) class.
-		    if (createdClass!=null) {
-			discoverInstantiatedClass(S, createdClass);
-			if (Q instanceof CONST) //string constants use intern()
-			    discoverMethod(S, HMstrIntern);
-		    }			
-		    if (Q instanceof CALL) {
-			CALL q = (CALL) Q;
+		QuadVisitor qv = new QuadVisitor() {
+		    public void visit(Quad q) { /* do nothing */ }
+		    // creation of a (possibly-new) class
+		    public void visit(ANEW q) {
+			discoverInstantiatedClass(S, q.hclass());
+		    }
+		    public void visit(NEW q) {
+			discoverInstantiatedClass(S, q.hclass());
+		    }
+		    public void visit(CONST q) {
+			if (q.type().isPrimitive()) return;
+			discoverInstantiatedClass(S, q.type());
+			// string constants use intern()
+			discoverMethod(S, HMstrIntern);
+		    }
+		    // CALLs:
+		    public void visit(CALL q) {
 			if (q.isStatic() || !q.isVirtual())
 			    discoverSpecial(S, q.method());
 			else
 			    discoverMethod(S, q.method());
 		    }
 		    // get and set discover classes (don't instantiate, though)
-		    if (Q instanceof GET || Q instanceof SET) {
-			HField f = (Q instanceof GET)
-			    ? ((GET) Q).field() : ((SET) Q).field();
-			discoverClass(S, f.getDeclaringClass());
+		    public void visit(GET q) {
+			discoverClass(S, q.field().getDeclaringClass());
+		    }
+		    public void visit(SET q) {
+			discoverClass(S, q.field().getDeclaringClass());
 		    }
 		    // make sure we have the class we're testing against
 		    // handy.
-		    if (Q instanceof INSTANCEOF) {
-			discoverClass(S, ((INSTANCEOF)Q).hclass());
+		    public void visit(INSTANCEOF q) {
+			discoverClass(S, q.hclass());
 		    }
-		    if (Q instanceof TYPESWITCH) {
-			TYPESWITCH q = (TYPESWITCH) Q;
+		    public void visit(TYPESWITCH q) {
 			for (int i=0; i<q.keysLength(); i++)
 			    discoverClass(S, q.keys(i));
 		    }
-		    if (Q instanceof HANDLER &&
-			((HANDLER)Q).caughtException() != null) {
-			discoverClass(S, ((HANDLER)Q).caughtException());
+		    public void visit(HANDLER q) {
+			if (q.caughtException()==null) return;
+			discoverClass(S, q.caughtException());
 		    }
-		}
+		};
+		// iterate through quads with visitor.
+		for (Iterator it = hc.getElementsI(); it.hasNext(); )
+		    ((Quad) it.next()).accept(qv);
 	    }
 	} // END worklist.
 	
@@ -389,17 +392,17 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     // State for algorithm.
     private static class State {
 	// keeps track of methods which are actually invoked at some point.
-	Map classMethodsUsed = new HashMap(); // class->set map.
+	final Map classMethodsUsed = new HashMap(); // class->set map.
 	// keeps track of methods which might be called, if someone gets
 	// around to instantiating an object of the proper type.
-	Map classMethodsPending = new HashMap(); // class->set map
+	final Map classMethodsPending = new HashMap(); // class->set map
 	// keeps track of all known children of a given class.
-	Map classKnownChildren = new HashMap(); // class->set map.
+	final Map classKnownChildren = new HashMap(); // class->set map.
 	// keeps track of which methods we've done already.
-	Set done = new HashSet();
+	final Set done = new HashSet();
 
 	// Worklist.
-	WorkSet W = new WorkSet();
+	final WorkSet W = new WorkSet();
     }
 
     // useful utility method
