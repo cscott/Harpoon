@@ -12,6 +12,8 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrDIRECTIVE;
+import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Exp;
@@ -33,7 +35,7 @@ import harpoon.Util.Util;
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.6 1999-03-08 09:03:51 andyb Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.7 1999-05-17 20:02:08 andyb Exp $
  */
 public class SAFrame extends Frame implements DefaultAllocationInfo {
     private static Temp[] reg = new Temp[16];
@@ -163,16 +165,22 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
 
     public Instr[] procAssemDirectives(Instr[] body) { 
         Util.assert((body != null) && (body.length > 0));
-        Instr[] newbody = new Instr[body.length + 4];
+        Instr[] newbody = new Instr[body.length + 7];
         HCodeElement src = body[0];
         InstrFactory inf = ((Instr)src).getFactory();
-        newbody[0] = new Instr(inf, src, ".text", null, null);
-        newbody[1] = new Instr(inf, src, ".align 0", null, null);
-        newbody[2] = new Instr(inf, src, ".global " + 
-                        offmap.label(inf.getMethod()) + ":", null, null);
-        newbody[3] = new Instr(inf, src, 
-                        offmap.label(inf.getMethod()) + ":", null, null);
-        System.arraycopy(body, 0, newbody, 4, body.length);
+        newbody[0] = new InstrDIRECTIVE(inf, src, ".text");
+        newbody[1] = new InstrDIRECTIVE(inf, src, ".align 0");
+        newbody[2] = new InstrDIRECTIVE(inf, src, ".global " + 
+                        offmap.label(inf.getMethod()));
+        /* this should be a label */
+        newbody[3] = new InstrLABEL(inf, src, 
+                        offmap.label(inf.getMethod()) + ":",
+                        offmap.label(inf.getMethod()));
+        newbody[4] = new Instr(inf, src, "mov ip, sp", null, null);
+        newbody[5] = new Instr(inf, src, "stmfd sp!, {fp, ip, lr, pc}",
+                              null, null);
+        newbody[6] = new Instr(inf, src, "sub fp, ip, #4", null, null);
+        System.arraycopy(body, 0, newbody, 7, body.length);
         return newbody; 
     }
 }
