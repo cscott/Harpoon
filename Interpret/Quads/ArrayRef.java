@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * by the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayRef.java,v 1.1.2.7 1999-08-07 11:20:19 cananian Exp $
+ * @version $Id: ArrayRef.java,v 1.1.2.8 2000-01-23 05:53:28 cananian Exp $
  */
 final class ArrayRef extends Ref implements java.io.Serializable {
     /** Elements of the array (primitives or Refs) */
@@ -53,6 +53,19 @@ final class ArrayRef extends Ref implements java.io.Serializable {
     int length() { return this.elements.length; }
     Object get(int i) { return this.elements[i]; }
     void update(int i, Object value) { this.elements[i] = value; }
+
+    /** for profiling. */
+    protected int size() { // approx. array size, in bytes.
+	HClass ct = type.getComponentType();
+	int elsize;
+	if (!ct.isPrimitive()) elsize = 4; // for 32-bit archs, at least.
+	else if (ct==HClass.Boolean || ct==HClass.Byte) elsize = 1;
+	else if (ct==HClass.Char || ct==HClass.Short) elsize = 2;
+	else if (ct==HClass.Int || ct==HClass.Float) elsize = 4;
+	else if (ct==HClass.Double || ct==HClass.Long) elsize = 8;
+	else throw new Error("ugh: what kind of primitive type is "+ct+"?");
+	return 8 + elsize*length();
+    }
 
     /** For debugging. */
     public String toString() {

@@ -19,7 +19,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.11 2000-01-21 08:57:13 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.12 2000-01-23 05:53:29 cananian Exp $
  */
 final class StaticState extends HCLibrary implements java.io.Serializable {
     /** which linker to use. */
@@ -212,8 +212,9 @@ final class StaticState extends HCLibrary implements java.io.Serializable {
 			  start+" "+end);
     }
     // profile lifetime of an object instance
-    final synchronized void profile(HClass cls, long start, long end) {
+    final synchronized void profile(HClass cls, long start, long end,
+				    long size) {
 	if (prof==null) return;
-	else prof.println("N "+cls.getDescriptor()+" "+start+" "+end);
+	else prof.println("N "+cls.getDescriptor()+" "+start+" "+end+" "+size);
     }
 }
