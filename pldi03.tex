@@ -1,7 +1,7 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi03.tex,v 1.5 2002-11-15 22:37:47 cananian Exp $
+% $Id: pldi03.tex,v 1.6 2002-11-16 08:45:07 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[preprint]{acmconf}
+\documentclass{acmconf}
 %\usepackage[section,plain]{algorithm}
 %\usepackage{amsthm} % proof environment
 %\usepackage{amstext} % the \text command for math mode (replaces \mbox)
@@ -987,7 +987,9 @@ reducing space; however, many of the algorithms also eliminate the
 need to store the complicated locking objects required to support the
 most general lock usage pattern possible in a Java program. These
 techniques typically reduce the lock space overhead to 24 header bits
-\cite{bacon98}.
+\cite{bacon98}; Bacon in \cite{bacon02:efficient} shows modest speed
+improvements from header-size reduction, in agreement with the results
+presented here.
 
 Research in escape analysis and related analyses can enable the
 compiler to find objects whose locks are never 
@@ -1019,14 +1021,20 @@ elimination is very dependent on the coding style of a particular
 application.  The collection of techniques we have presented here
 gives much more consistent savings over a wide range of benchmarks.
 
-%Aggarwal and Randall \cite{aggarwal01} described a array bounds check
-%removal method using {\it related fields}.  This work attempted to
-%discover fields, such as {\tt Vector.size}, which are guaranteed to be
-%less than or equal to the length of some array, for example, the
-%backing array stored in {\tt Vector.data}.  Tests against the related
-%field could then provide information about bounds checks on accesses
-%to the array.  A similar technique could be used in this work to
-%extend the utility of bitwidth information discovered on related fields.
+Aggarwal and Randall \cite{aggarwal01} described a array bounds check
+removal method using {\it related fields}.  This work attempted to
+discover fields, such as {\tt Vector.size}, which are guaranteed to be
+less than or equal to the length of some array, for example, the
+backing array stored in {\tt Vector.data}.  Tests against the related
+field could then provide information about bounds checks on accesses
+to the array.  This technique could be used to infer additional
+bitwidth information on related fields from our analysis.
+
+Marinov and O'Callahan have submitted a paper for publication
+\cite{marinov03} which determines when several instances of an
+object may be safely represented by a single representative instance.
+This is an additional and orthogonal memory-saving technique which
+could be used in addition to the ones described here.
 
 \section{Conclusions}
 %
