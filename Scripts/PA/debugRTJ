@@ -1,0 +1,29 @@
+#!/bin/bash
+
+echo nb. of params = $#
+
+if [ $# -ne 4 ]
+then
+    echo "Usage debugRTJ <class> <name> <dir> <levels>"
+    echo "  <class>  the class that contains the main method"
+    echo "  <name>   a purely arbitrary name used for the application"
+    echo "  <dir>    the directory that contains the .java files"
+    echo "  <levels> the call context sensitivity (e.g. 2)"
+    echo " Ex:"
+    echo "  debugRTJ main Fib $HOME/Harpoon/Benchmarks/FibPaper 2"
+    exit 1;
+fi
+
+SCR_DIR=`dirname $0`
+source ${SCR_DIR}/elim_common
+
+echo "HARPOON_OPTIONS = "${HARPOON_OPTIONS}
+
+java \
+    ${HARPOON_OPTIONS} \
+harpoon.Main.PAMain ${PREANALYSIS_OPT} \
+    -s --ccs=$levels --wts \
+    --rtj_debug \
+$cls
+
+exit $?

@@ -7,9 +7,9 @@
 # Building the RealTime Java benchmarks
 #OLD_CLASSPATH=$CLASSPATH
 
-#export CLASSPATH=/home/salcianu/Harpoon/Code/Support/realtime.jar:$CLASSPATH
+#export CLASSPATH=$HOME/Harpoon/Code/SupportNP/classes.zip:/home/salcianu/Harpoon/Code/Support/realtime.jar:$CLASSPATH
 
-#./buildone FibPaper
+./buildone FibPaper
 
 ./buildone Water/Water_RTJ
 

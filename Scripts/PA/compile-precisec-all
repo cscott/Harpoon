@@ -49,9 +49,8 @@ function build_executable() {
     ls -l ${CALL_DIR}/execs/${exec_name}
 }
 
-
-BUILDS="none"
-INLINING_LEVELS="2"
+INLINING_LEVELS="1"
+BUILDS="intra"
 
 SCR_DIR=`dirname $0`
 CALL_DIR=`pwd`
@@ -102,15 +101,9 @@ then
     cd ${CALL_DIR}
 
     for name in $APPLICATIONS; do
-	echo "Producing executable for ${name}.none" && \
-	${SCR_DIR}/compile-precisec-one \
+	build_executable \
 	    ${name}.none \
-	    ${CALL_DIR}/none/${name}.none && \
-	ls -l ${CALL_DIR}/none/${name}.none/run${name}.none && \
-	mv \
-	    ${CALL_DIR}/none/${name}.none/run${name}.none \
-	    ${CALL_DIR}/execs/run${name}.none && \
-	ls -l execs
+	    ${CALL_DIR}/none/${name}.none;
     done;
 fi 
 

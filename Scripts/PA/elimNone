@@ -4,7 +4,7 @@ SCR_DIR=`dirname $0`
 
 source ${SCR_DIR}/elim_common
 
-HARPOON_OPTIONS=" -mx128m -oss100m \
+HARPOON_OPTIONS=" -mx512m -oss100m \
     	          -Dharpoon.alloc.strategy=bdw \
                   -Dharpoon.class.path=$stdPath:$dir"
 
@@ -24,7 +24,7 @@ fi
 echo "pwd="`pwd`
 echo "HARPOON_OPTIONS="${HARPOON_OPTIONS}
 
-java -mx128m -oss100m \
+java \
     ${HARPOON_OPTIONS} \
 harpoon.Main.SAMain \
     ${SAMAIN_OPTIONS} \

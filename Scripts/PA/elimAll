@@ -1,7 +1,9 @@
 #!/bin/bash
 
 export INLINING_LEVELS="1"
-export DESIRED_ANALYSIS="none"
+export DESIRED_ANALYSIS="intra"
+
+export CLASSPATH=$FLEX:$CLASSPATH
 
 # the directory where the scripts are located
 SCR_DIR=`dirname $0`
@@ -19,7 +21,7 @@ fi
 
 
 # creating four sub-directories (inter, intra, none and pre-analysis
-for directory in inter intra none pre-analysis; do
+for directory in inter intra none pre-analysis rtj; do
     if test ! -d $directory
     then
 	mkdir $directory
@@ -59,4 +61,15 @@ done
 #${SCR_DIR}/elimOne  java_cup.Main JCUP  ${HARPOON_DIR}/Code/Support/CUP.jar 2
 
 # ADDITIONAL BENCHMARKS
-${SCR_DIR}/elimOne    Main        db    ${BENCHS_DIR}/martin-db            2
+#${SCR_DIR}/elimOne    Main        db    ${BENCHS_DIR}/martin-db            2
+
+
+# RTJ stuff
+
+#${SCR_DIR}/elimRTJ  ToyArray     ToyArray     ${BENCHS_DIR}/ToyArray       2 | tee rtj/ToyArray.rtj.out
+
+${SCR_DIR}/elimRTJ  ToyTree     ToyTree     ${BENCHS_DIR}/ToyTree       2 | tee rtj/ToyTree.rtj.out
+
+#${SCR_DIR}/elimRTJ  main         Fib          ${BENCHS_DIR}/FibPaper       2 |  tee rtj/Fib.rtj.out
+
+

@@ -10,4 +10,4 @@ fleaves=1.0
 tstop=0.075
 dtout=0.25
 dump=1
-parallel=1
+parallel=0

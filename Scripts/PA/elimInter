@@ -6,20 +6,23 @@ source ${SCR_DIR}/elim_common
 il=$5
 
 BUILD_OUT_DIR=${CALL_DIR}/inter/${name}.inter.$il
-MAMAPS_FILE=${CALL_DIR}/inter/analyze-${name}.inter.$il
 
 rm -rf ${BUILD_OUT_DIR} 
 mkdir ${BUILD_OUT_DIR}
 
 echo "HARPOON_OPTIONS = "${HARPOON_OPTIONS}
 
-java -mx128m -oss100m \
+java \
     ${HARPOON_OPTIONS} \
 harpoon.Main.PAMain ${PREANALYSIS_OPT} \
     -s --ccs=$levels --wts \
-    --mamaps=${MAMAPS_FILE} --wit \
-    --sa 1 --ta 1 --ns 1 \
-    --inline $il \
+    --wit \
+    --sa 1 \
+    --ta 1 \
+    --ns 1 \
+    --inline_for_sa 1 \
+    --inline_for_ta 0 \
+    --inline_depth $il \
     --output ${BUILD_OUT_DIR} --backend precisec \
 $cls
 

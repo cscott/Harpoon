@@ -1,15 +1,26 @@
 #!/bin/bash
 
-echo "Compiling everything in $1"
+if [ -z ${PA_CLASSPATH} ]
+then
+    echo "Please set the PA_CLASSPATH variable!"
+    echo "My \$HOME/.bashrc contains the following line:"
+    echo "export PA_CLASSPATH=\$HOME/Harpoon/Code/SupportNP/NewThread.jar:\
+\$HOME/Harpoon/Code/Support/reflect-thunk.jar:\
+\$HOME/Harpoon/Code/SupportNP/sunthunk.jar:\
+\$HOME/Harpoon/Code/SupportNP/collections.jar:\
+\$HOME/Harpoon/Code/SupportNP/classes.zip:\
+\$HOME/Harpoon/Code/Support/realtime.jar"
+    exit 1;
+fi
 
-export CLASSPATH=$CLASSPATH:`pwd`
+echo "Compiling everything in $1"
 
 cd $1 && \
 rm -f *.class && \
 rm -f *~ && \
 for file in *.java; do \
     echo -n "  Compiling $file ..."; \
-    javac -classpath $CLASSPATH $file; \
+    javac -classpath ${PA_CLASSPATH}:. $file; \
     echo done; \
 done;
 

@@ -8,10 +8,10 @@
 
 #APPLICATIONS="ETruc"
 
-APPLICATIONS="water"
+#APPLICATIONS="water"
 
 #APPLICATIONS="ETruc Nets GameServer2 JhttpServer PhoneServer QuoteServer Echo Time water barnes JLex JCUP"
  
-#APPLICATIONS="barnes"
+APPLICATIONS="barnes"
 
-APPLICATIONS="db"
+#APPLICATIONS="db"

@@ -35,7 +35,8 @@ fi
 FLEX_DIR=${HARPOON_DIR}/Code
 
 # the class path used by bin/build-precisec
-stdPath=${FLEX_DIR}/Support/NewThread.jar:${FLEX_DIR}/Support/reflect-thunk.jar:${FLEX_DIR}/SupportNP/sunthunk.jar:${FLEX_DIR}/SupportNP/collections.jar:${FLEX_DIR}/SupportNP/classes.zip:${FLEX_DIR}/Support/realtime.jar
+#stdPath=${FLEX_DIR}/Support/NewThread.jar:${FLEX_DIR}/Support/reflect-thunk.jar:${FLEX_DIR}/SupportNP/sunthunk.jar:${FLEX_DIR}/SupportNP/collections.jar:${FLEX_DIR}/SupportNP/classes.zip:${FLEX_DIR}/Support/realtime.jar
+
 
 # old stuff
 #${HARPOON_DIR}/Code/Support/AbstractList.jar:${HARPOON_DIR}/Code/Support/NewThread.jar:${HARPOON_DIR}/Code/Support/sunthunk.jar:${HARPOON_DIR}/Code/Support/reflect-thunk.jar:${HARPOON_DIR}/Code/Support/collections.jar:${HARPOON_DIR}/Code/classes.zip:${HARPOON_DIR}/Code/Support/realtime.jar:.
@@ -43,10 +44,16 @@ stdPath=${FLEX_DIR}/Support/NewThread.jar:${FLEX_DIR}/Support/reflect-thunk.jar:
 # the class path without NewThread.jar
 #stdPath=${HARPOON_DIR}/Code/Support/AbstractList.jar:${HARPOON_DIR}/Code/Support/sunthunk.jar:${HARPOON_DIR}/Code/Support/reflect-thunk.jar:${HARPOON_DIR}/Code/Support/collections.jar:${HARPOON_DIR}/Code/classes.zip:${HARPOON_DIR}/Code/Support/realtime.jar:.
 
-echo "harpoon.class.path = \""${stdPath}:${dir}"\""
+if [ -z ${PA_CLASSPATH} ]
+then
+    echo Please set the PA_CLASSPATH variable!
+    exit 1;
+fi
 
-HARPOON_OPTIONS=" -mx512m -oss100m \
+HARPOON_OPTIONS=" -mx1024m -oss200m \
 		  -Dharpoon.runtime=2 \
     	          -Dharpoon.alloc.strategy=niftystats \
     	          -Dharpoon.target.elf=yes \
-                  -Dharpoon.class.path=$stdPath:$dir"
+                  -Dharpoon.class.path=${PA_CLASSPATH}:$dir \
+		  -Dharpoon.precisec.emit_line_directives=true \
+		  -Dharpoon.precisec.emit_fake_line_directives=true"
