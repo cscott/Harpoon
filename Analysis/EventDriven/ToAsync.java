@@ -35,7 +35,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.7 2000-01-13 23:51:10 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.8 2000-01-14 22:27:11 bdemsky Exp $
  */
 public class ToAsync {
     protected final UpdateCodeFactory ucf;
@@ -69,7 +69,7 @@ public class ToAsync {
 	    final QuadLiveness ql = new QuadLiveness(selone);
 	    System.out.println("ToAsync is running AsyncCode on "+selone);
 	    AsyncCode.buildCode(selone, old2new, async_todo,
-				ql,blockingcalls,ucf,  bm, hc.getMethod(), linker);
+				ql,blockingcalls,ucf,  bm, hc.getMethod(), linker,ch);
 	}
 	return nhm;
     }

@@ -7,6 +7,7 @@ package harpoon.Analysis.EventDriven;
 import harpoon.Analysis.ContBuilder.ContBuilder;
 import harpoon.Analysis.EnvBuilder.EnvBuilder;
 import harpoon.Analysis.Quads.QuadLiveness;
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.Unreachable;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.ClassFile.HClass;
@@ -62,7 +63,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.33 2000-01-14 21:57:04 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.34 2000-01-14 22:27:11 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -92,7 +93,7 @@ public class AsyncCode {
     public static void buildCode(HCode hc, Map old2new, Set async_todo, 
 			   QuadLiveness liveness,
 			   Set blockingcalls, 
-			   UpdateCodeFactory ucf, ToAsync.BlockingMethods bm, HMethod mroot, Linker linker) 
+			   UpdateCodeFactory ucf, ToAsync.BlockingMethods bm, HMethod mroot, Linker linker, ClassHierarchy ch) 
 	throws NoClassDefFoundError
     {
 	System.out.println("Entering AsyncCode.buildCode()");
@@ -117,7 +118,7 @@ public class AsyncCode {
 					   old2new, cont_map, 
 					   env_map, liveness,
 					   blockingcalls, hc.getMethod(), 
-					   hc, ucf,bm,mroot, linker);
+					   hc, ucf,bm,mroot, linker,ch);
 	    quadc.accept(cv);
 	}
     }
@@ -133,12 +134,14 @@ public class AsyncCode {
 	UpdateCodeFactory ucf;
 	Linker linker;
 
+
 	public ContVisitor(WorkSet cont_todo, Set async_todo, 
 			   Map old2new, Map cont_map, 
 			   Map env_map, QuadLiveness liveness,
 			   Set blockingcalls, HMethod hmethod, 
 			   HCode hc, UpdateCodeFactory ucf,
-			   ToAsync.BlockingMethods bm, HMethod mroot, Linker linker) {
+			   ToAsync.BlockingMethods bm, HMethod mroot, 
+			   Linker linker, ClassHierarchy ch) {
 	    this.liveness=liveness;
 	    this.env_map=env_map;
 	    this.cont_todo=cont_todo;
@@ -153,7 +156,7 @@ public class AsyncCode {
 	    this.clonevisit=new CloningVisitor(blockingcalls, cont_todo,
 					       cont_map, env_map, liveness,
 					       async_todo, old2new,
-					       hc,ucf,bm,mroot, linker);
+					       hc,ucf,bm,mroot, linker,ch);
 	}
 
 	public void visit(Quad q) {
@@ -264,14 +267,15 @@ public class AsyncCode {
 	Set phiset;
 	HMethod mroot;
 	Linker linker;
-
+	ClassHierarchy ch;
+	
 	public CloningVisitor(Set blockingcalls, Set cont_todo,
 			      Map cont_map, Map env_map, 
 			      QuadLiveness liveness, Set async_todo,
 			      Map old2new, 
 			      HCode hc, UpdateCodeFactory ucf,
 			      ToAsync.BlockingMethods bm, HMethod mroot, 
-			      Linker linker) {
+			      Linker linker, ClassHierarchy ch) {
 	    this.liveness=liveness;
 	    this.blockingcalls=blockingcalls;
 	    this.cont_todo=cont_todo;
@@ -284,6 +288,7 @@ public class AsyncCode {
 	    this.bm=bm;
 	    this.mroot=mroot;
 	    this.linker=linker;
+	    this.ch=ch;
 	}
 
 	public void reset(HMethod nhm, TempFactory otf, boolean isCont) {
@@ -668,13 +673,28 @@ public class AsyncCode {
 		    cont_map.put(q,hclass);
 		    HMethod hm=q.method();
 		    if (!old2new.containsKey(hm)) {
-			if (bm.swop(hm)!=null) {
-			    //handle actual blocking call swapping
-			    old2new.put(hm, bm.swop(hm));
-			} else {
-			    async_todo.add(ucf.convert(hm));
-			    HMethod temp=makeAsync(old2new, q.method(),
-						   ucf,linker);
+			HClass hcl=hm.getDeclaringClass();
+			Set classes=ch.children(hcl);
+			Iterator childit=classes.iterator();
+			HMethod parent=hm;
+			while (childit.hasNext()) {
+			    try {
+				if (hm==null) {
+				    HClass child=(HClass)childit;
+				    hm=child.getDeclaredMethod(parent.getName(),
+								  parent.getParameterTypes());
+				}
+				if (bm.swop(hm)!=null) {
+				//handle actual blocking call swapping
+				    old2new.put(hm, bm.swop(hm));
+				} else {
+				    async_todo.add(ucf.convert(hm));
+				    HMethod temp=makeAsync(old2new, hm,
+							   ucf,linker);
+				}
+			    } catch (NoSuchMethodError e) {
+			    }
+			    hm=null;
 			}
 		    }
 		}
@@ -816,13 +836,28 @@ public class AsyncCode {
 							       new HClass[0]);
 		if (blockingcalls.contains(hmrun))
 		    if (!old2new.containsKey(hmrun)) {
-			if (bm.swop(hmrun)!=null) {
-			    //handle actual blocking call swapping
-			    old2new.put(hmrun, bm.swop(hmrun));
-			} else {
-			    async_todo.add(ucf.convert(hmrun));
-			    HMethod temp=makeAsync(old2new, hmrun,
-						   ucf,linker);
+			HClass hcl=old.getDeclaringClass();
+			Set classes=ch.children(hcl);
+			Iterator childit=classes.iterator();
+			HMethod parent=hmrun;
+			while (childit.hasNext()) {
+			    try {
+				if (hmrun==null) {
+				    HClass child=(HClass)childit;
+				    hmrun=child.getDeclaredMethod(parent.getName(),
+								  parent.getParameterTypes());
+				}
+				if (bm.swop(hmrun)!=null) {
+				//handle actual blocking call swapping
+				    old2new.put(hmrun, bm.swop(hmrun));
+				} else {
+				    async_todo.add(ucf.convert(hmrun));
+				    HMethod temp=makeAsync(old2new, hmrun,
+							   ucf,linker);
+				}
+			    } catch (NoSuchMethodError e) {
+			    }
+			    hmrun=null;
 			}
 		    }
 		return old.getDeclaringClass().getMethod("start_Async",
@@ -931,7 +966,7 @@ public class AsyncCode {
 	    originalClass.getMethod("run",new HClass[0]).equals(original)) {
 	    try {
 		newMethodName = methodNamePrefix;
-		originalClass.getMethod(newMethodName, 
+		originalClass.getDeclaredMethod(newMethodName, 
 					   original.getParameterTypes());
 		throw new RuntimeException("Name collision with run_Async method");
 	    } catch (NoSuchMethodError e) {
@@ -939,15 +974,12 @@ public class AsyncCode {
 	} else if (original.getName().compareTo("<init>")==0) {
 	    newMethodName = "<init>";
 	} else {
-	    int i = 0;
-	    while(true) {
-		try {
-		    newMethodName = methodNamePrefix + i++; 
-		    originalClass.getMethod(newMethodName, 
-					    original.getParameterTypes());
-		} catch (NoSuchMethodError e) {
-		    break;
-		}
+	    try {
+		newMethodName = methodNamePrefix + "___"; 
+		originalClass.getDeclaredMethod(newMethodName, 
+					original.getParameterTypes());
+		throw new RuntimeException("Name collision with "+newMethodName+ " method");
+	    } catch (NoSuchMethodError e) {
 	    }
 	}
 	// create replacement method
