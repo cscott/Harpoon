@@ -15,7 +15,7 @@ import java.util.Iterator;
     about the target machine's register file. 
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.3 1999-09-11 18:40:10 cananian Exp $
+    @version $Id: RegFileInfo.java,v 1.1.2.4 1999-09-14 23:46:28 pnkfelix Exp $
  */
 public abstract class RegFileInfo {
     
@@ -41,33 +41,13 @@ public abstract class RegFileInfo {
 	return t.tempFactory() == regTempFactory();
     }
 
-    /** Returns the size of <code>temp</code> on the stack.
-	<BR><B>effects:</B> Calculates the size that a value of the
-	    type of <code>temp</code> would have on the stack (in
-	    terms of the abstract number used for calculating stack
-	    offsets in <code>makeLoad()</code> and
-	    <code>makeStore()</code>).  
-	<BR> When constructing loads and stores, the register allocator
-	    should ensure that live values do not overlap on the
-	    stack.  Thus, given two temps <code>t1</code> and
-	    <code>t2</code>, <code>offset(t2)</code> should be at
-	    least <code>offset(t1) + getSize(t1)</code>
-	<BR> The default implementation simply returns 1; subclasses
-	     should override this and check for double word temps, etc.
-        @see Frame#makeLoad
-        @see Frame#makeStore
-    */
-    public int getSize(Temp temp) {
-	return 1;
-    }
-
     /** Analyzes <code>regfile</code> to find free registers that
 	<code>t</code> can be assigned to.  
 	<BR> <B>effects:</B> Either returns an <code>Iterator</code>
 	     of possible assignments (though this is not guaranteed to
 	     be a complete list of all possible choices, merely the
-	     ones that this <code>Frame</code> chose to find), or
-	     throws a <code>Frame.SpillException</code> with a set of
+	     ones that this <code>RegFileInfo</code> chose to find), or
+	     throws a <code>RegFileInfo.SpillException</code> with a set of
 	     possible spills. 
 	@param t <code>Temp</code> that needs to be assigned to a set
    	         of Registers. 
@@ -91,7 +71,7 @@ public abstract class RegFileInfo {
 	        returned are ordered according to proper placement of
 	        the Register-bitlength words of the value in
 	        <code>t</code>, low-order words first.  
-	@exception Frame.SpillException if the register
+	@exception RegFileInfo.SpillException if the register
 	           file represented by <code>regfile</code> does not
 		   have any Register <code>Temp</code>s free to hold a
 		   new value of the type of <code>t</code>.  This

@@ -47,7 +47,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.37 1999-09-11 16:43:40 cananian Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.38 1999-09-14 23:46:28 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = true;
@@ -77,7 +77,7 @@ public abstract class RegAlloc  {
 	"appropriate" `d# and `s# operands.
 
      */
-    protected class FskLoad extends InstrMEM {
+    /* protected (jdk1.1-is-stupid)*/ public class FskLoad extends InstrMEM {
 	FskLoad(InstrFactory inf, HCodeElement hce, 
 		String assem, Temp dst, Temp src) {
 	    super(inf, hce, assem + " `d0, `s0", 
@@ -108,7 +108,7 @@ public abstract class RegAlloc  {
 	"appropriate" `d# and `s# operands.
 
     */
-    protected class FskStore extends InstrMEM {
+    /* protected (jdk1.1-is-stupid)*/ public class FskStore extends InstrMEM {
 	FskStore(InstrFactory inf, HCodeElement hce, 
 		String assem, Temp dst, Temp src) {
 	    super(inf, hce, assem, 
@@ -250,6 +250,10 @@ public abstract class RegAlloc  {
     protected HCode resolveOutstandingTemps(HCode in) {
 	// This implementation is REALLY braindead.  Fix to do a
 	// smarter Graph-Coloring stack offset allocator
+
+	// Its also broken because it doesn't use getSize in
+	// InstrBuilder.  I need to look into incorporating that into
+	// this implementation.
 
 	Util.assert(in != null, "Don't try to resolve Temps for null HCodes");
 
