@@ -13,7 +13,7 @@ import java.util.Set;
  * singularity and mutual singularity of static values.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SingularOracle.java,v 1.1 2003-05-07 22:52:07 cananian Exp $
+ * @version $Id: SingularOracle.java,v 1.2 2003-05-12 19:29:37 cananian Exp $
  */
 public interface SingularOracle<HCE extends HCodeElement> {
     /** Returns a set of parameters the given static value is
@@ -21,12 +21,7 @@ public interface SingularOracle<HCE extends HCodeElement> {
      *  if there is no such set (the static value is not singular).
      */
     Set<Temp> conditionallySingular(HMethod m, StaticValue<HCE> sv);
-    /** Returns a set of parameters the pair of static values are
-     *  conditionally singular dependent on, or <code>null</code>
-     *  if there is no such set (the values are not pairwise singular).
-     */
-    Set<Temp> pairwiseSingular(HMethod m,
-			       StaticValue<HCE> sv1, StaticValue<HCE> sv2);
+
     /** Returns a set of parameters the given static values are
      *  conditionally singular dependent on, or <code>null</code>
      *  if there is no such set (the values are not mutually singular).
