@@ -27,7 +27,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.20 2000-03-09 03:45:37 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.21 2000-03-24 19:40:56 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -89,6 +89,14 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	return Arrays.asList(new Object[] {
 	    // implicitly called during startup
 	    HCsystem.getMethod("initializeSystemClass", "()V"),
+	    linker.forName("java.lang.Thread")
+		.getConstructor(new HClass[] {
+		    linker.forName("java.lang.ThreadGroup"),
+		    linker.forName("java.lang.Runnable"),
+		    linker.forName("java.lang.String"),
+			}),
+	    linker.forName("java.lang.ThreadGroup")
+		.getConstructor(new HClass[0]),
 	    // jni implementation uses these:
 	    linker.forName("java.lang.NoClassDefFoundError")
 		.getConstructor(new HClass[] { HCstring }),
