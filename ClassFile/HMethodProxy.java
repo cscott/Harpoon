@@ -8,13 +8,14 @@ package harpoon.ClassFile;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodProxy.java,v 1.1.2.3 2000-01-11 21:53:48 cananian Exp $
+ * @version $Id: HMethodProxy.java,v 1.1.2.4 2000-01-12 23:37:46 cananian Exp $
  * @see HMethod
  */
 class HMethodProxy implements HMethod, HMethodMutator {
     Relinker relinker;
     HMethod proxy;
     HMethodMutator proxyMutator;
+    boolean sameLinker;
     
     /** Creates a <code>HMethodProxy</code>. */
     HMethodProxy(Relinker relinker, HMethod proxy) {
@@ -24,6 +25,7 @@ class HMethodProxy implements HMethod, HMethodMutator {
     void relink(HMethod proxy) {
 	this.proxy = proxy;
 	this.proxyMutator = (proxy==null) ? null : proxy.getMutator();
+	this.sameLinker = (relinker == proxy.getDeclaringClass().getLinker());
     }
 
     public HMethodMutator getMutator() {
@@ -96,8 +98,20 @@ class HMethodProxy implements HMethod, HMethodMutator {
     void updateMemberMap() { relinker.memberMap.put(proxy, this); }
 
     // wrap/unwrap
-    private HClass wrap(HClass hc) { return relinker.wrap(hc); }
-    private HClass unwrap(HClass hc) { return relinker.unwrap(hc); }
-    private HClass[] wrap(HClass hc[]) { return relinker.wrap(hc); }
-    private HClass[] unwrap(HClass[] hc) { return relinker.unwrap(hc); }
+    private HClass wrap(HClass hc) { return sameLinker?hc:relinker.wrap(hc); }
+    private HClass unwrap(HClass hc){return sameLinker?hc:relinker.unwrap(hc);}
+
+    // array wrap/unwrap.
+    private HClass[] wrap(HClass[] hc) {
+	HClass[] result = new HClass[hc.length];
+	for (int i=0; i<result.length; i++)
+	    result[i] = wrap(hc[i]);
+	return result;
+    }
+    private HClass[] unwrap(HClass[] hc) {
+	HClass[] result = new HClass[hc.length];
+	for (int i=0; i<result.length; i++)
+	    result[i] = unwrap(hc[i]);
+	return result;
+    }
 }

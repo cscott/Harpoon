@@ -8,13 +8,14 @@ package harpoon.ClassFile;
  * <code>HField</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldProxy.java,v 1.1.2.3 2000-01-11 21:53:48 cananian Exp $
+ * @version $Id: HFieldProxy.java,v 1.1.2.4 2000-01-12 23:37:46 cananian Exp $
  * @see HField
  */
 class HFieldProxy implements HField, HFieldMutator {
     Relinker relinker;
     HField proxy;
     HFieldMutator proxyMutator;
+    boolean sameLinker;
     
     /** Creates a <code>HFieldProxy</code>. */
     HFieldProxy(Relinker relinker, HField proxy) {
@@ -24,6 +25,7 @@ class HFieldProxy implements HField, HFieldMutator {
     void relink(HField proxy) {
 	this.proxy = proxy;
 	this.proxyMutator = (proxy==null) ? null : proxy.getMutator();
+	this.sameLinker = (relinker == proxy.getDeclaringClass().getLinker());
     }
 
     public HFieldMutator getMutator() {
@@ -61,6 +63,6 @@ class HFieldProxy implements HField, HFieldMutator {
     void updateMemberMap() { relinker.memberMap.put(proxy, this); }
 
     // wrap/unwrap
-    private HClass wrap(HClass hc) { return relinker.wrap(hc); }
-    private HClass unwrap(HClass hc) { return relinker.unwrap(hc); }
+    private HClass wrap(HClass hc) { return sameLinker?hc:relinker.wrap(hc); }
+    private HClass unwrap(HClass hc){return sameLinker?hc:relinker.unwrap(hc);}
 }

@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
  * "redefined" after creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassProxy.java,v 1.1.2.3 2000-01-12 22:50:22 cananian Exp $
+ * @version $Id: HClassProxy.java,v 1.1.2.4 2000-01-12 23:37:46 cananian Exp $
  */
 class HClassProxy extends HClass implements HClassMutator {
   Relinker relinker;
@@ -59,7 +59,7 @@ class HClassProxy extends HClass implements HClassMutator {
     // okay, now that the members are updated, let's update this guy.
     this.proxy = newproxy;
     this.proxyMutator = newproxy.getMutator();
-    this.sameLinker = (getLinker() == newproxy.getLinker());
+    this.sameLinker = (relinker == newproxy.getLinker());
   }
 
   /**
@@ -235,19 +235,24 @@ class HClassProxy extends HClass implements HClassMutator {
   }
 
   // wrap/unwrap methods.
-  private HClass wrap(HClass hc) { return relinker.wrap(hc); }
+  private HClass wrap(HClass hc) { return sameLinker?hc:relinker.wrap(hc); }
+  private HClass unwrap(HClass hc) {return sameLinker?hc:relinker.unwrap(hc);}
   private HField wrap(HField hf) { return relinker.wrap(hf); }
   private HMethod wrap(HMethod hm) { return relinker.wrap(hm); }
   private HConstructor wrap(HConstructor hc) { return relinker.wrap(hc); }
   private HInitializer wrap(HInitializer hi) { return relinker.wrap(hi); }
 
   // array wrap/unwrap
-  private HClass[] wrap(HClass hc[]) { return relinker.wrap(hc); }
   private HField[] wrap(HField hf[]) { return relinker.wrap(hf); }
   private HMethod[] wrap(HMethod hm[]) { return relinker.wrap(hm); }
   private HConstructor[] wrap(HConstructor hc[]) {return relinker.wrap(hc);}
 
-  private HClass unwrap(HClass hc) {return sameLinker?hc:relinker.unwrap(hc);}
+  private HClass[] wrap(HClass[] hc) {
+    HClass[] result = new HClass[hc.length];
+    for (int i=0; i<result.length; i++)
+      result[i] = wrap(hc[i]);
+    return result;
+  }
   private HClass[] unwrap(HClass[] hc) {
     HClass[] result = new HClass[hc.length];
     for (int i=0; i<result.length; i++)
