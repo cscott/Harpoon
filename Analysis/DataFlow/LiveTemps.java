@@ -11,6 +11,7 @@ import harpoon.Util.CloneableIterator;
 import harpoon.Util.ReverseIterator;
 import harpoon.Util.Util; 
 import harpoon.Util.Collections.SetFactory;
+import harpoon.Util.Collections.BitSetFactory;
 
 import java.util.Set;
 import java.util.Map;
@@ -24,10 +25,13 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.5 2000-01-09 09:12:13 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.6 2000-01-26 21:08:33 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars {
     private Map hceToBB; 
+
+    // may be null; code using this should check
+    private Set liveOnProcExit;
     
     /** Constructs a new <code>LiveTemps</code> for <code>basicblocks</code>.
 	<BR> <B>requires:</B> <OL>
@@ -51,13 +55,25 @@ public class LiveTemps extends LiveVars {
 	      process.
 	 @param basicblocks <code>Iterator</code> of <code>BasicBlock</code>s to be analyzed.
 	 @param liveOnProcExit <code>Set</code> of <code>Temp</code>s that are live on exit from the method (for example, r0 for assembly code). 
-
-	 <P> FSK: Note to Self: Actual SUPPORT for liveOnProcExit
-	     would be nice... 
     */	     
-
     public LiveTemps(Iterator basicBlocks, Set liveOnProcExit) {
-        super(basicBlocks); 
+	// calling "special" ctor so that I can set up
+	// liveOnProcExit before calling anything else.
+        super(); 
+
+	// duplicating code from LiveVars.java
+	CloneableIterator blocks = new CloneableIterator(basicBlocks);
+	Set universe = findUniverse((Iterator) blocks.clone());
+	SetFactory setFact = new BitSetFactory(universe);
+	
+	initializeHceToBB( (Iterator)blocks.clone() ); 
+
+	// KEY difference: set liveOnProcExit before calling initBBtoLVI
+	this.liveOnProcExit = liveOnProcExit;
+
+	initializeBBtoLVI( blocks, setFact );
+	
+	
     }
     
     
@@ -184,6 +200,12 @@ public class LiveTemps extends LiveVars {
     */
     protected LiveVarInfo makeUseDef(BasicBlock bb, SetFactory sf) {
 	LiveVarInfo info = new LiveVarInfo(sf);
+
+	if (liveOnProcExit != null) {
+	    info.lvOUT.addAll(liveOnProcExit);
+	    info.lvIN.addAll(liveOnProcExit);
+	}
+
 	Iterator instrs = bb.listIterator();	
 	
 	while (instrs.hasNext()) {
