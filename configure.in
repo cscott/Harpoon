@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.147 $)dnl
+AC_REVISION($Revision: 1.148 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -38,7 +38,17 @@ AC_SUBST(FORTUNE)
 AM_CONDITIONAL(CROSS_COMPILING, test "$cross_compiling" = yes)
 
 # find a java compiler and tools
-AC_CHECK_PROGS(JAVAC, jikes javac, not-found)
+AC_MSG_CHECKING([which java compiler to use])
+AC_ARG_WITH(javac,
+[  --with-javac={none,javac,jikes,[auto]}  select an appropriate java compiler],
+with_javac="$withval", with_javac="auto")
+AC_MSG_RESULT($with_javac)
+case "$with_javac" in
+none) JAVAC=not-found ;;
+auto) AC_CHECK_PROGS(JAVAC, jikes javac, not-found) ;;
+*)    AC_CHECK_PROG(JAVAC, "$with_javac", "$with_javac", not-found) ;;
+esac
+AC_SUBST(JAVAC)
 AC_CHECK_PROGS(JAR, fastjar jar, not-found)
 AC_CHECK_PROGS(JAVAH, javah, not-found)
 AM_CONDITIONAL(BUILD_JAVA_SOURCE,
@@ -175,7 +185,8 @@ if test "$with_classpath" = "yes" ; then
      with_classpath=/usr/lib/classpath
      dnl use jikes-classpath if avail.
      AC_CHECK_PROGS(JAVACCP, jikes-classpath, not-found)
-     if test "$JAVACCP" != not-found ; then
+     if test "$JAVACCP" != not-found -a "$with_javac" = "auto" ; then
+        AC_MSG_WARN([using jikes-classpath as java compiler])
 	JAVAC="$JAVACCP"
      fi
   fi
