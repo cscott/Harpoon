@@ -12,7 +12,7 @@ import harpoon.Temp.TempFactory;
  * <code>HCode</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadFactory.java,v 1.1.2.5 1999-01-03 03:01:42 cananian Exp $
+ * @version $Id: QuadFactory.java,v 1.1.2.6 1999-01-22 22:39:41 cananian Exp $
  */
 public abstract class QuadFactory  {
     /** Returns the <code>TempFactory</code> to use for <code>Temp</code>
@@ -24,9 +24,9 @@ public abstract class QuadFactory  {
     /** Returns the <code>HMethod</code> for which all <code>Quad</code>s
      *  correspond. */
     public HMethod getMethod() { return getParent().getMethod(); }
-    /** Returns a unique number for this <code>Quad</code> within
+    /** Returns a unique number for a <code>Quad</code> within
      *  this <code>QuadFactory</code>. */
-    abstract int getUniqueID();
+    public abstract int getUniqueID();
     /** Returns a human-readable representation for this 
      *  <code>QuadFactory</code>. */
     public String toString() {

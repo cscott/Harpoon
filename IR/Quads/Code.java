@@ -3,7 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HMethod;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.Set;
@@ -21,27 +23,32 @@ import java.util.Vector;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.5 1999-01-21 03:45:07 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.6 1999-01-22 22:39:40 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
-    final HMethod parent;
+    protected final HMethod parent;
     /** The quadruples composing this code view. */
-    Quad quads;
+    protected Quad quads;
     /** Quad factory. */
-    final QuadFactory qf;
+    protected final QuadFactory qf;
 
-    Code(final HMethod parent, final Quad quads) {
-	this.parent = parent; this.quads = quads;
+    /** Create a proper QuadFactory. */
+    protected QuadFactory newQF(final HMethod parent) {
 	final String scope = parent.getDeclaringClass().getName() + "." +
 	    parent.getName() + parent.getDescriptor() + "/" + getName();
-	this.qf = new QuadFactory() {
+	return new QuadFactory() {
 	    private final TempFactory tf = Temp.tempFactory(scope);
 	    private int id=0;
 	    public TempFactory tempFactory() { return tf; }
 	    public Code getParent() { return Code.this; }
-	    synchronized int getUniqueID() { return id++; }
+	    public synchronized int getUniqueID() { return id++; }
 	};
+    }
+    /** constructor. */
+    protected Code(final HMethod parent, final Quad quads) {
+	this.parent = parent; this.quads = quads;
+	this.qf = newQF(parent);
     }
     
     /** Clone this code representation. The clone has its own
