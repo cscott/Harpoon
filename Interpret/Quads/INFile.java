@@ -12,12 +12,13 @@ import harpoon.ClassFile.HMethod;
  * methods in <code>java.io.File</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFile.java,v 1.1.2.3 2000-01-27 11:26:26 cananian Exp $
+ * @version $Id: INFile.java,v 1.1.2.4 2000-02-27 18:09:52 cananian Exp $
  */
 public class INFile {
     static final void register(StaticState ss) {
 	// JDK 1.1 only
 	try { ss.register(isFile0(ss)); } catch (NoSuchMethodError e) {}
+	try { ss.register(isDirectory0(ss)); } catch (NoSuchMethodError e) {}
     }
     // test existence of a file.
     private static final NativeMethod isFile0(StaticState ss0) {
@@ -30,6 +31,20 @@ public class INFile {
 		HField hf = ss.HCfile.getField("path");
 		String path = ss.ref2str((ObjectRef)obj.get(hf));
 		return new Boolean(new java.io.File(path).isFile());
+	    }
+	};
+    }
+    // verify that the File is a directory.
+    private static final NativeMethod isDirectory0(StaticState ss0) {
+	final HMethod hm =
+	    ss0.HCfile.getMethod("isDirectory0", new HClass[0]);
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params) {
+		ObjectRef obj = (ObjectRef) params[0];
+		HField hf = ss.HCfile.getField("path");
+		String path = ss.ref2str((ObjectRef)obj.get(hf));
+		return new Boolean(new java.io.File(path).isDirectory());
 	    }
 	};
     }
