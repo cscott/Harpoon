@@ -9,9 +9,17 @@ import java.util.NoSuchElementException;
 /**
  * A <code>FilterIterator</code> filters and maps a source
  * <code>Iterator</code> to generate a new one.
+ *
+ * Note that this implementation reads one element ahead, so if the
+ * Filter changes for an object 'o' between the time that is read
+ * (when next() is called, returning the object preceding 'o', and
+ * checking that 'o' satisfies the current Filter) and the time when
+ * hasNext() is called, 'o' will still be returned, regardless of what
+ * Filter.isElement(o) returns.  Thus, it is recommended that only
+ * Filters which remain consistent throughout the iteration be used. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FilterIterator.java,v 1.1.2.3 1999-10-26 20:31:59 pnkfelix Exp $
+ * @version $Id: FilterIterator.java,v 1.1.2.4 2000-01-13 17:54:33 pnkfelix Exp $
  */
 public class FilterIterator extends UnmodifiableIterator implements Iterator {
     /*final*/ Iterator i;

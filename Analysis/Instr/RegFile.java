@@ -20,7 +20,7 @@ import java.util.Iterator;
  * most processor architectures for storing working sets of data.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFile.java,v 1.1.2.3 2000-01-09 09:12:15 pnkfelix Exp $
+ * @version $Id: RegFile.java,v 1.1.2.4 2000-01-13 17:54:17 pnkfelix Exp $
  */
 class RegFile {
     
@@ -58,9 +58,7 @@ class RegFile {
 	     <code>this</code>, returns False.  Else returns True.
     */
     public boolean isClean(Temp preg) {
-	Util.assert(hasAssignment(preg),
-		    "temp: "+preg+" should have an assignment in "+this);
-	return !dirtyTemps.contains(preg);
+	return !isDirty(preg);
     }
 
     /** Returns whether the pseudo register is dirty.

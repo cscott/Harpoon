@@ -64,7 +64,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.117 2000-01-10 05:08:39 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.118 2000-01-13 17:54:28 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1906,7 +1906,7 @@ NATIVECALL(retval, func, arglist) %{
     emit( ROOT, "mov `d0, `s0", LR, PC );
     // note that r0-r3, LR and IP are clobbered by the call.
     // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
-    // realloc doesn't clobber these between the time they are set and
+    // regalloc doesn't clobber these between the time they are set and
     // the time the call happens.
     emit2( ROOT, "mov `d0, `s0 @clobbers r0-r3, LR, IP", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
                 // fake use of PC so that it remains live above this point.
@@ -1920,7 +1920,7 @@ NATIVECALL(retval, NAME(funcLabel), arglist) %{
     // do the call.  bl has a 24-bit offset field, which should be plenty.
     // note that r0-r3, LR and IP are clobbered by the call.
     // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
-    // realloc doesn't clobber these between the time they are set and
+    // regalloc doesn't clobber these between the time they are set and
     // the time the call happens.
     emit( ROOT, "bl "+funcLabel + " @clobbers r0-r3, LR, IP", new Temp[] { r0,r1,r2,r3,IP,LR }, new Temp[0],
           true, null );

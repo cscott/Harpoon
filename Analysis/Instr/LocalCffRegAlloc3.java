@@ -52,7 +52,7 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc3.java,v 1.1.2.3 2000-01-09 09:12:15 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc3.java,v 1.1.2.4 2000-01-13 17:54:17 pnkfelix Exp $
  */
 public class LocalCffRegAlloc3 extends RegAlloc {
     
@@ -70,47 +70,33 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 	while(blocks.hasNext()) {
 	    BasicBlock b = (BasicBlock) blocks.next();
 	    Set liveOnExit = liveTemps.getLiveOnExit(b);
-	    coalesceMoves(b, liveOnExit);
-	    localAlloc(b, liveOnExit);
+	    new LocalAllocator(b, liveOnExit).alloc();
 	}
 	
 	return code;
     }
 
-    private void coalesceMoves(BasicBlock b, Set liveOnExit) {
-	if (true) return;
-	// Set[Temp] with 1st use preceding 1st def
-	HashSet hasFutureUse = new HashSet(liveOnExit);
-	Iterator instrs = new harpoon.Util.ReverseIterator(b.iterator());
+    class LocalAllocator {
+	BasicBlock block;
+	Set liveOnExit;
 	
-	Map replaceTemps = new HashMap();
-
-	while(instrs.hasNext()) {
-	    Instr i = (Instr) instrs.next();
-	    if (i instanceof harpoon.IR.Assem.InstrMOVE) {
-		replaceTemps.put(i.def()[0], i.use()[0]);
-		i.remove();
-	    } else {
-		for(int j=0; j<i.src.length; j++) {
-		    Temp t = (Temp) replaceTemps.get(i.src[j]);
-		    while(t != null) {
-			i.src[j] = t;
-			t = (Temp) replaceTemps.get(i.src[j]);
-		    }
-		}
-	    }
+	LocalAllocator(BasicBlock b, Set lvOnExit) {
+	    block = b;
+	    liveOnExit = lvOnExit;
 	}
-    }
 
-    private void localAlloc(BasicBlock b, Set liveOnExit) {
-	RegFile regfile = new RegFile(); 
+	void alloc() {
+	final BasicBlock b = block;
+	final RegFile regfile = new RegFile(); 
 
 	// System.out.print("Bnr");
 
 	// maps (Instr:i x Temp:t) -> 2 * index of next Instr
 	//                            referencing t 
-	// (only defined for t's referenced by i) 
+	// (only defined for t's referenced by i that 
+	// have a future reference; otherwise 'null')  
 	Map nextRef = buildNextRef(b);
+
 
 	// System.out.print("Lra");
 
@@ -137,6 +123,9 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 	Instr i=null;
 	while(instrs.hasNext()) {
 	    i = (Instr) instrs.next();
+
+
+
 	    Iterator refs = new FilterIterator
 		(getRefs(i), new FilterIterator.Filter() {
 		    public boolean isElement(Object o) {
@@ -154,21 +143,25 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 
 		    // FSK: the benefits of this code block are
 		    // dubious at best, so i'm keeping it out for now 
-		    if (false) {
+		    if (true) {
 			// regfile has mappings to dead temps; such
 			// registers won't be suggested unless we spill
 			// them here...
 			final Collection temps = 
 			    regfile.getRegToTemp().values();
-			final Iterator tmpIter = temps.iterator(); 
+
+			final Iterator tmpIter = temps.iterator();
+
+			// System.out.println("regfile: "+regfile);
 			while(tmpIter.hasNext()) {
 			    Temp tt = (Temp) tmpIter.next();
 			    Integer X = (Integer) nextRef.get
 				(new TempInstrPair(i, tt));
-			    if (X == null) {
-				spillValue(tt, 
-					   new InstrEdge(i.getPrev(), i),
-					   regfile);
+			    if (X == null &&
+				!liveOnExit.contains(tt) &&
+				regfile.hasAssignment(tt) &&
+				regfile.isClean(tt)) { // only force cleanspills
+				regfile.remove(tt);
 			    }
 			}
 		    }
@@ -227,7 +220,7 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 	// register file.  Note that after the loop finishes, 'i'
 	// is the last instruction in the series.
 	emptyRegFile(regfile, i, liveOnExit);
-    }
+	}
 
     /** Gets an Iterator of suggested register assignments in
 	<code>regfile</code> for <code>t</code>.  May insert
@@ -476,15 +469,6 @@ public class LocalCffRegAlloc3 extends RegAlloc {
     }
 
 
-    private LiveTemps doLVA(Iterator blocks) {
-	LiveTemps liveTemps = 
-	    new LiveTemps(blocks, frame.getRegFileInfo().liveOnExit());
-	harpoon.Analysis.DataFlow.Solver.worklistSolve
-	    (BasicBlock.basicBlockIterator(rootBlock),
-	     liveTemps);
-	return liveTemps;
-    }
-
     /** spills 'val', adding a store if necessary at 'loc' and updates
 	the 'regfile' so that it no longer has a mapping for 'val' or
 	its associated registers.
@@ -509,6 +493,17 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 	InstrMEM spillInstr = new FskStore(loc.to, "FSK-STORE", val, regs);
 	spillInstr.insertAt(loc);
     }
+    }
+
+    private LiveTemps doLVA(Iterator blocks) {
+	LiveTemps liveTemps = 
+	    new LiveTemps(blocks, frame.getRegFileInfo().liveOnExit());
+	harpoon.Analysis.DataFlow.Solver.worklistSolve
+	    (BasicBlock.basicBlockIterator(rootBlock),
+	     liveTemps);
+	return liveTemps;
+    }
+
     
     /** wrapper around set with an associated weight. */
     private class WeightedSet extends AbstractSet implements Comparable {
