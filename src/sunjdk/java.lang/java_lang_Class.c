@@ -10,6 +10,7 @@
 #endif
 
 #include <assert.h>
+#define DEFINE_MEMBER_FUNCTIONS /* we want all the good stuff from class.h */
 #include "../../java.lang/class.h" /* useful library-indep implementations */
 
 /*

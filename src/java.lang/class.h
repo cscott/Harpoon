@@ -252,6 +252,9 @@ jclass fni_class_getPrimitiveClass(JNIEnv *env, jstring str) {
   return fni_class_forName(env, str);
 }
 
+#ifdef DEFINE_MEMBER_FUNCTIONS
+/* (often this code is unused by code which #includes class.h) */
+
 /* member accessor functions.  some types first: */
 enum _fni_class_restrictionType { NONE, ONLY_PUBLIC, ONLY_DECLARED };
 enum _fni_class_memberType { FIELDS, METHODS, CONSTRUCTORS };
@@ -427,5 +430,6 @@ jobject fni_class_getConstructor(JNIEnv *env, jclass cls,
 		    constructor_cmp, &c,
 		    "java/lang/NoSuchMethodException");
 }
+#endif /* DEFINE_MEMBER_FUNCTIONS */
 
 #endif /* INCLUDED_FNI_CLASS_H */
