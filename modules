@@ -41,6 +41,7 @@ Code	Code
 Design	Design
 Docs	Docs
 EventDriven EventDriven
+ImageRec ImageRec
 Realtime Realtime
 RoleInference RoleInference
 Runtime Runtime
