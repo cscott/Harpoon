@@ -3,4 +3,5 @@ Makefile.in
 .libs
 .deps
 *.l?
-*.class
+classes
+*.jar

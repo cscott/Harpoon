@@ -20,12 +20,7 @@ Constructor.java \
 Field.java \
 Method.java
 
-EXTRA_DIST = $(JAVASRC)
+JARFILE=reflect-thunk.jar
 
-noinst_DATA = reflect-thunk.jar
-
-reflect-thunk.jar: $(JAVASRC)
-	-$(RM) -rf java
-	jikes -d . -g $^
-	jar cf $@ java
-	-$(RM) -rf java
+# include rules to make $(JARFILE) from $(JAVASRC)
+include $(top_srcdir)/JavaRules.make

@@ -16,3 +16,9 @@ endif
 # automake won't allow EXTRA_DIST to be conditionally defined, so we
 # define it even when it's not necessary (when CAMERA is set)
 EXTRA_DIST = $(CAMSRC)
+
+JAVASRC=AltVideo.java
+JARFILE=video.jar
+
+# include rules to make $(JARFILE) from $(JAVASRC)
+include $(top_srcdir)/JavaRules.make

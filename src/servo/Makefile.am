@@ -14,3 +14,9 @@ endif
 # automake won't allow EXTRA_DIST to be conditionally defined, so we
 # define it even when it's not necessary (when SERVO is set)
 EXTRA_DIST = $(SERVOSRC)
+
+JAVASRC=IPaqServoController.java
+JARFILE=servo.jar
+
+# include rules to make $(JARFILE) from $(JAVASRC)
+include $(top_srcdir)/JavaRules.make

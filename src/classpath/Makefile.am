@@ -2,13 +2,11 @@
 
 SUBDIRS = gnu.vm.stack java.lang
 
-noinst_DATA = cpvm.jar
+JAVASRC=$(wildcard */*.java)
+JARFILE=cpvm.jar
 
-cpvm.jar: $(wildcard */*.java)
-	-$(RM) -rf $(basename $@)
-	jikes-classpath -d $(basename $@) -g $^
-	cd $(basename $@) && jar -cf ../$@ .
-	$(RM) -rf $(basename $@)
+#include rules to make $(JARFILE) from $(JAVASRC)
+include $(top_srcdir)/JavaRules.make
 
 %.h: %.java
 	javah -bootclasspath cpvm.jar `echo $< | sed -e 's:^./::' -e 's:/:.:g' -e 's:.java$::'`

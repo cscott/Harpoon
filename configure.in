@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.127 $)dnl
+AC_REVISION($Revision: 1.128 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -31,6 +31,11 @@ AM_MAINTAINER_MODE
 AC_PATH_PROG(FORTUNE, fortune, /usr/games/fortune)
 AC_SUBST(FORTUNE)
 AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
+# find a java compiler
+AC_CHECK_PROGS(JAVAC, jikes javac, not-found)
+AC_CHECK_PROGS(JAR, fastjar jar, not-found)
+AM_CONDITIONAL(BUILD_JAVA_SOURCE,
+	       test "$JAVAC" != not-found -a "$JAR" != not-found)
 
 dnl Checks for libraries.
 AC_CHECK_LIB(m, atan2) # link in math library.
@@ -152,11 +157,13 @@ if test "$with_classpath" = "yes" ; then
   if test -x $CLASSPATH_CONFIG ; then
      LIBS="$LIBS $($CLASSPATH_CONFIG --libs)"
      CFLAGS="$CFLAGS -DCLASSPATH_VERSION=$($CLASSPATH_CONFIG --version)"
+     JAVAC="$JAVAC -classpath $($CLASSPATH_CONFIG --classpath)"
      dnl should check for version > 0.04 in particular?
      with_sunjdk=no
   else
      dnl guess.
      with_classpath=/usr/lib/classpath
+     AC_CHECK_PROGS(JAVAC, jikes-classpath) dnl use jikes-classpath if avail.
   fi
 fi
 case "$with_classpath" in
