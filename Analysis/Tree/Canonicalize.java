@@ -24,7 +24,7 @@ import java.util.List;
  * <code>Canonicalize</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Canonicalize.java,v 1.1.2.1 2000-02-15 03:05:16 cananian Exp $
+ * @version $Id: Canonicalize.java,v 1.1.2.2 2000-02-15 14:55:59 cananian Exp $
  */
 public abstract class Canonicalize extends Simplification {
     // hide constructor
@@ -45,6 +45,7 @@ public abstract class Canonicalize extends Simplification {
     // static initialization: add all rules to the rule set
     static {
 
+	//          ...REDUCE TOP-LEVEL ESEQs...
 	// ESEQ(s1, ESEQ(s2, e)) --> ESEQ(SEQ(s1, s2), e)
 	Rule doubleEseq = new Rule("doubleEseq") {
 	    public boolean match(Exp e) {
@@ -61,6 +62,7 @@ public abstract class Canonicalize extends Simplification {
 				e2.getExp());
 	    }
 	};
+	//            ...REDUCE LEFT-MOST ESEQs.....
 	// BINOP(op, ESEQ(s, e1), e2) --> ESEQ(s, BINOP(op, e1, e2))
 	// MEM(ESEQ(s, e1)) --> ESEQ(s, MEM(e1))
 	// ...and other Exps with ESEQs as left-most child...
@@ -98,19 +100,23 @@ public abstract class Canonicalize extends Simplification {
 	    }
 	};
 
+	//            ...MOVE RIGHT-HAND ESEQs LEFTWARD...
 	// BINOP(op, e1, ESEQ(s, e2)) --> ESEQ(s, BINOP(op, e1, e2))
-	// ...if (s, e1) commute...
+	//    if (s, e1) commute...
+	//           --> BINOP(op, ESEQ(SEQ(MOVE(t, e1), s), t), e2)
+	// ...otherwise.
 	// CALL(..[e1, ESEQ(s, e2), e3]..)-->SEQ(s, CALL(..[e1, e2, e3]..))
-	// ...if (s, e1) commute.
-	Rule rightEseqComm = new Rule("rightEseqComm") {
+	//    if (s, e1) commute...
+	//             --> CALL(..[ESEQ(SEQ(MOVE(t, e1), s), t), e2, e3]..)
+	// ...otherwise.
+	Rule rightEseq = new Rule("rightEseq") {
 	    public boolean match(Exp e) {
 		if (contains(_KIND(e), _ESEQ)) return false;
 		ExpList el = e.kids();
 		if (el==null || el.tail==null) return false;
 		for (ExpList elp = el; elp.tail!=null; elp=elp.tail) {
 		    if (contains(_KIND(elp.tail.head), _ESEQ))
-		      return commute(((ESEQ)elp.tail.head).getStm(),
-				     elp.head);
+		      return true;
 		}
 		return false;
 	    }
@@ -120,18 +126,9 @@ public abstract class Canonicalize extends Simplification {
 		if (el==null || el.tail==null) return false;
 		for (ExpList elp = el; elp.tail!=null; elp=elp.tail) {
 		    if (contains(_KIND(elp.tail.head), _ESEQ))
-		      return commute(((ESEQ)elp.tail.head).getStm(),
-				     elp.head);
+		      return true;
 		}
 		return false;
-	    }
-	    ExpList shiftOne(TreeFactory tf, ExpList el) {
-		if (!contains(_KIND(el.tail.head), _ESEQ))
-		  return new ExpList(el.head, shiftOne(tf, el.tail));
-		Exp  e1 = el.head;
-		ESEQ e2 = (ESEQ) el.tail.head;
-		return new ExpList(new ESEQ(tf, e1, e2.getStm(), e1),
-				   new ExpList(e2.getExp(), el.tail.tail));
 	    }
 	    public Exp apply(Exp e) {
 		TreeFactory tf = e.getFactory();
@@ -141,38 +138,16 @@ public abstract class Canonicalize extends Simplification {
 		TreeFactory tf = s.getFactory();
 		return s.build(shiftOne(tf, s.kids()));
 	    }
-	};
-
-	// all other cases where an eseq is on the right but it doesn't commute
-	Rule rightEseqNoComm = new Rule("rightEseqNoComm") {
-	    public boolean match(Exp e) {
-		if (contains(_KIND(e), _ESEQ)) return false;
-		ExpList el = e.kids();
-		if (el==null || el.tail==null) return false;
-		for (ExpList elp = el; elp.tail!=null; elp=elp.tail) {
-		    if (contains(_KIND(elp.tail.head), _ESEQ))
-		      return !commute(((ESEQ)elp.tail.head).getStm(),
-				     elp.head);
-		}
-		return false;
-	    }
-	    public boolean match(Stm s) {
-		if (contains(_KIND(s), _SEQ)) return false;
-		ExpList el = s.kids();
-		if (el==null || el.tail==null) return false;
-		for (ExpList elp = el; elp.tail!=null; elp=elp.tail) {
-		    if (contains(_KIND(elp.tail.head), _ESEQ))
-		      return !commute(((ESEQ)elp.tail.head).getStm(),
-				     elp.head);
-		}
-		return false;
-	    }
 	    ExpList shiftOne(TreeFactory tf, ExpList el) {
 		if (!contains(_KIND(el.tail.head), _ESEQ))
 		  return new ExpList(el.head, shiftOne(tf, el.tail));
-		Temp t  = new Temp(tf.tempFactory(), "canon");
 		Exp  e1 = el.head;
 		ESEQ e2 = (ESEQ) el.tail.head;
+		if (commute(e2.getStm(), e1)) // simple case.
+		    return new ExpList(new ESEQ(tf, e1, e2.getStm(), e1),
+				       new ExpList(e2.getExp(), el.tail.tail));
+		// otherwise, we have to make a new temp...
+		Temp t  = new Temp(tf.tempFactory(), "canon");
 		return new ExpList
 		(new ESEQ
 		 (tf, e1,
@@ -184,21 +159,12 @@ public abstract class Canonicalize extends Simplification {
 		  new TEMP(tf, e1, e1.type(), t) ),
 		 new ExpList(e2.getExp(), el.tail.tail));
 	    }
-	    public Exp apply(Exp e) {
-		TreeFactory tf = e.getFactory();
-		return e.build(shiftOne(tf, e.kids()));
-	    }
-	    public Stm apply(Stm s) {
-		TreeFactory tf = s.getFactory();
-		return s.build(shiftOne(tf, s.kids()));
-	    }
 	};
 
 	// add rules to the rule set.
 	_RULES.add(doubleEseq);
 	_RULES.add(leftEseq);
-	_RULES.add(rightEseqComm);
-	_RULES.add(rightEseqNoComm);
+	_RULES.add(rightEseq);
     }
 
     private static boolean commute(Stm a, Exp b) {
@@ -208,6 +174,8 @@ public abstract class Canonicalize extends Simplification {
 	return contains(_KIND(a), _EXP) &&
 	    contains(_KIND(((EXP)a).getExp()), _CONST);
     }
+    /** Testing function, for use in assertions that a given tree is
+     *  canonical. */
     public static boolean containsEseq(Tree t) {
 	if (t.kind() == TreeKind.ESEQ) return true;
 	// else, recurse
