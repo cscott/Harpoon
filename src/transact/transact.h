@@ -6,6 +6,8 @@
 #include "jni-private.h"
 #include "asm/atomicity.h" /* for compare_and_swap */
 
+#define FLAG_VALUE (0xCACACACACACACACALL)
+
 /* Commit record information. Commit records are full-fledged objects. */
 #include "harpoon_Runtime_Transactions_CommitRecord.h"
 struct commitrec {

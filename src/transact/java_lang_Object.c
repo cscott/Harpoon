@@ -382,10 +382,10 @@ void Java_java_lang_Object_writeFlag##size \
     done: \
     FLEX_MUTEX_UNLOCK(&infl->mutex); \
 }
-WRITEFLAG(jbyte,  1,       ((jbyte)0xF7))
-WRITEFLAG(jshort, 2,             0x02F7)
-WRITEFLAG(jint,   4,         0x44F702F7L)
-WRITEFLAG(jlong,  8, 0x409EE05E44F702F7LL)
+WRITEFLAG(jbyte,  1, ((jbyte)  FLAG_VALUE))
+WRITEFLAG(jshort, 2, ((jshort) FLAG_VALUE))
+WRITEFLAG(jint,   4, ((jint)   FLAG_VALUE))
+WRITEFLAG(jlong,  8, (         FLAG_VALUE))
 
 /*
  * Class:     java_lang_Object
