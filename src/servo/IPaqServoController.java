@@ -1,7 +1,7 @@
 // IPaqServoController.java, created by wbeebee
 // Copyright (C) 2002 Wes Beebee <wbeebee@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package servo;
+package ipaq;
 
 import java.io.OutputStream;
 import java.io.InputStream;
