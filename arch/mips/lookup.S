@@ -24,10 +24,11 @@ _lookup_handler:
 	lw   a1, 1b		 # left
 	lw   a2, 1b + 4  # right
 2:	blt  a2, a1, 3f  # while (r >= l) ...
-    srl  a3, a1, 4
-    srl  t4, a2, 4   # High bit is set in vpekoe, so avoid int overflow
+    srl  a3, a1, 1
+    srl  t4, a2, 1   # High bit is set in vpekoe, so avoid int overflow
 	addu a3, a3, t4  # x = (l + r) / 2
-    sll  a3, a3, 3   # records are 8 byte aligned
+    srl  a3, a3, 3   # records are 8 byte aligned
+    sll  a3, a3, 3
 	lw   t4, 0(a3)   # load x->label
 	beq  a0, t4, 4f	 # compare key with x->label
     blt  a0, t4, 5f  # if (key < x->label) r = x-1;
