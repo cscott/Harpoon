@@ -11,8 +11,10 @@ import harpoon.Util.FilterIterator;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /** <code>BitSetFactory</code> is a <code>SetFactory</code> that,
@@ -29,7 +31,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.8 2000-02-02 04:17:32 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.9 2000-02-10 22:21:49 cananian Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -66,21 +68,31 @@ public class BitSetFactory extends SetFactory {
 
     /** Creates a <code>BitSetFactory</code>, given a
 	<code>universe</code> of values.  Makes a new
-	<code>Indexer</code> for <code>universe</code>.
+	<code>Indexer</code> for <code>universe</code>; the
+	created <code>Indexer</code> will implement the
+	<code>Indexer.getByID()</code> method to allow
+	efficient iteration over sets.
     */
     public BitSetFactory(final Set universe) {
 	final HashMap obj2int = new HashMap();
+	final ArrayList int2obj = new ArrayList();
 	final Iterator iter = universe.iterator();
 	this.universe = universe;
 	int i;
 	for(i=0; iter.hasNext(); i++) {
-	    obj2int.put(iter.next(), new Integer(i));
+	    Object o = iter.next();
+	    obj2int.put(o, new Integer(i));
+	    int2obj.add(i, o); 
 	}
 	this.bitStringSize = i+1;
 	this.indexer = new Indexer() {
 	    public int getID(Object o) {
 		return ((Integer)obj2int.get(o)).intValue();
 	    }
+	    public Object getByID(int id) {
+		return int2obj.get(id);
+	    }
+	    public boolean implementsReverseMapping() { return true; }
 	};
 
     }
@@ -133,14 +145,7 @@ public class BitSetFactory extends SetFactory {
 		((BitStringSet)c).fact == this.fact) {
 		BitStringSet bss = (BitStringSet) c;
 		return this.bs.or(bss.bs);
-	    } else {
-		Iterator vals = c.iterator();
-		boolean changed = false;
-		while(vals.hasNext()) {
-		    changed |= add(vals.next());
-		}
-		return changed;
-	    }
+	    } else return super.addAll(c);
 	}
 	
 	public void clear() {
@@ -170,14 +175,7 @@ public class BitSetFactory extends SetFactory {
 
 		BitStringSet bss = (BitStringSet) c;
 		return bss.bs.intersectionEmpty(notBS);
-	    } else {
-		Iterator vals = c.iterator();
-		boolean contained = true;
-		while(vals.hasNext()) {
-		    contained &= contains(vals.next());
-		}
-		return contained;
-	    }
+	    } else return super.containsAll(c);
 	}
 	
 	public boolean equals(Object o) {
@@ -198,7 +196,23 @@ public class BitSetFactory extends SetFactory {
 	}
 	
 	public Iterator iterator() {
-	    return new FilterIterator
+	    return indexer.implementsReverseMapping() ?
+	      (Iterator) new Iterator() { // fast bit-set iterator
+		int lastindex=-1;
+		public boolean hasNext() {
+		    return BitStringSet.this.bs.firstSet(lastindex)!=-1;
+		}
+		public Object next() {
+		    lastindex = BitStringSet.this.bs.firstSet(lastindex);
+		    if (lastindex<0) throw new NoSuchElementException();
+		    return indexer.getByID(lastindex);
+		}
+		public void remove() {
+		    if (lastindex<0 || !BitStringSet.this.bs.get(lastindex))
+			throw new IllegalStateException();
+		    BitStringSet.this.bs.clear(lastindex);
+		}
+	    } : (Iterator) new FilterIterator // slower fall-back
 		(universe.iterator(), 
 		 new FilterIterator.Filter() {
 		    public boolean isElement(Object o) {
@@ -230,14 +244,7 @@ public class BitSetFactory extends SetFactory {
 		notBSS.setAll(); // -> string of ones
 		notBSS.xor(bss.bs); // -> complement(bss)
 		return this.bs.and(notBSS);
-	    } else {
-		Iterator vals = c.iterator();
-		boolean changed = false;
-		while(vals.hasNext()) {
-		    changed |= remove(vals.next());
-		}
-		return changed;
-	    }
+	    } else return super.removeAll(c); // slower generic implementation
 	}
 
 	public boolean retainAll(Collection c) {
@@ -245,18 +252,7 @@ public class BitSetFactory extends SetFactory {
 		((BitStringSet)c).fact == this.fact) {
 		BitStringSet bss = (BitStringSet) c;
 		return this.bs.and(bss.bs);
-	    } else {
-		Iterator vals = this.iterator();
-		boolean changed = false;
-		while(vals.hasNext()) {
-		    Object val = vals.next();
-		    if (!c.contains(val)) {
-			this.remove(val);
-			changed = true;
-		    }
-		}
-		return changed;
-	    }
+	    } else return super.retainAll(c); // slower generic implementation
 	}
 
 	public int size() {
