@@ -2,11 +2,12 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Util.Util;
+import harpoon.Temp.Temp;
 /**
  * <code>Quad</code> is the base class for the quadruple representation.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.8 1998-08-24 23:15:55 cananian Exp $
+ * @version $Id: Quad.java,v 1.9 1998-08-26 22:01:40 cananian Exp $
  */
 public abstract class Quad implements HCodeElement {
     String sourcefile;
@@ -46,6 +47,12 @@ public abstract class Quad implements HCodeElement {
     public int getID() { return id; }
     /** Force everyone to reimplement toString() */
     public abstract String toString();
+
+    /*----------------------------------------------------------*/
+    /** Return all the Temps used by this Quad. */
+    public Temp[] use() { return new Temp[0]; }
+    /** Return all the Temps defined by this Quad. */
+    public Temp[] def() { return new Temp[0]; }
 
     /*----------------------------------------------------------*/
     // Graph structure.

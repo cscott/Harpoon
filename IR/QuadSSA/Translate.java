@@ -22,13 +22,14 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.Stack;
 
 /**
  * <code>Translate</code> is a utility class to implement the
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.13 1998-08-25 22:52:36 cananian Exp $
+ * @version $Id: Translate.java,v 1.14 1998-08-26 22:01:40 cananian Exp $
  */
 
 /*
@@ -165,7 +166,7 @@ class Translate  { // not public.
     }
 
     /** Associates State objects with Instrs. */
-    class StateMap {
+    static class StateMap {
 	Hashtable map;
 	StateMap() { map = new Hashtable(); }
 	void put(Instr in, State s) { map.put(in, s); }
@@ -203,7 +204,11 @@ class Translate  { // not public.
     }
     static final Quad trans(State initialState, ExceptionEntry allTries[],
 			    Instr in, Quad header, int which_succ) {
+	Stack todo = new Stack(); todo.push(in);
 	State s = initialState;
+	StateMap sm = new StateMap();
+
+	//while (!todo. // FIXME
 	// Are we entering a new TRY block?
 	if (countTry(in, allTries) > s.tryBlock.length) {
 	    // determine which try block we're entering
@@ -260,6 +265,7 @@ class Translate  { // not public.
 	}
 	// None of the above.
 	else {
+	    //Quad q = transInstr(initialState, in) // FIXME
 	}
 	return null; // FIXME
     }
@@ -375,8 +381,8 @@ class Translate  { // not public.
 	    }
 	case Op.ARRAYLENGTH:
 	    ns = s.pop().push(new Temp());
-	    q = new GET(in, ns.stack[0], s.stack[0],
-			objArray.getField("length")); // XXX BOGUS
+	    q = new GET(in, ns.stack[0], objArray.getField("length"), 
+			s.stack[0]); // XXX BOGUS
 	    // What if it's not an Object Array?
 	    break;
 	case Op.ASTORE:
@@ -666,7 +672,7 @@ class Translate  { // not public.
 		ns = s.pop().push(null).push(new Temp());
 	    else // 32-bit value.
 		ns = s.pop().push(new Temp());
-	    q = new GET(in, ns.stack[0], s.stack[0], opd.value());
+	    q = new GET(in, ns.stack[0], opd.value(), s.stack[0]);
 	    break;
 	    }
 	case Op.IALOAD:

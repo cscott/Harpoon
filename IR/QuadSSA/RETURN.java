@@ -8,7 +8,7 @@ import harpoon.Temp.Temp;
  * optional return value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RETURN.java,v 1.4 1998-08-24 19:30:02 cananian Exp $
+ * @version $Id: RETURN.java,v 1.5 1998-08-26 22:01:40 cananian Exp $
  */
 
 public class RETURN extends Quad {
@@ -28,6 +28,11 @@ public class RETURN extends Quad {
     }
     RETURN(HCodeElement hce) {
 	this(hce.getSourceFile(), hce.getLineNumber());
+    }
+    /** Returns all the Temps used by this Quad. */
+    public Temp[] use() {
+	if (retval==null) return new Temp[0];
+	else return new Temp[] { retval }; 
     }
     /** Returns a human-readable representation of this Quad. */
     public String toString() {

@@ -9,29 +9,39 @@ import harpoon.Temp.Temp;
  * <code>GET</code> represent field access (get) operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.6 1998-08-24 22:37:11 cananian Exp $
+ * @version $Id: GET.java,v 1.7 1998-08-26 22:01:39 cananian Exp $
  */
 
 public class GET extends Quad {
+    /** Temp in which to store the fetched field contents. */
+    public Temp dst;
+    /** The field desciption. */
     public HField field;
-    public Temp dst, src;
+    /** Reference to the object containing the field. */
+    public Temp objectref;
     /** Creates a <code>GET</code>. */
     public GET(String sourcefile, int linenumber,
-	       Temp dst, Temp src, HField field) {
+	       Temp dst, HField field, Temp objectref) {
 	super(sourcefile, linenumber);
 	this.dst = dst;
-	this.src = src;
 	this.field = field;
+	this.objectref = objectref;
     }
     GET(HCodeElement hce,
-	Temp dst, Temp src, HField field) {
-	this(hce.getSourceFile(), hce.getLineNumber(), dst, src, field);
+	Temp dst, HField field, Temp objectref) {
+	this(hce.getSourceFile(), hce.getLineNumber(), dst, field, objectref);
     }
+    /** Returns the Temp used by this Quad. 
+     * @return the <code>objectref</code> field. */
+    public Temp[] use() { return new Temp[] { objectref }; }
+    /** Returns the Temp defined by this Quad.
+     * @return the <code>dst</code> field. */
+    public Temp[] def() { return new Temp[] { dst }; }
     /** Returns human-readable representation. */
     public String toString() {
 	return "GET " + 
 	    field.getDeclaringClass().getName() + "." +
-	    field.getName() + " of " + src + " into " + dst;
+	    field.getName() + " of " + objectref + " into " + dst;
     }
     /** Determines whether the GET is of a static field. */
     public boolean isStatic() { 

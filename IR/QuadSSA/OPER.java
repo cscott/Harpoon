@@ -8,9 +8,13 @@ import harpoon.Temp.Temp;
  * including mathematical operators such as add and subtract, 
  * conversion operators such as double-to-int, and comparison
  * operators such as greater than and equals.
+ * <p>
+ * <code>OPER</code> quads never throw exceptions.  Any exception thrown
+ * implicitly by the java bytecode opcode corresponding to an OPER is
+ * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.6 1998-08-24 20:58:46 cananian Exp $
+ * @version $Id: OPER.java,v 1.7 1998-08-26 22:01:40 cananian Exp $
  */
 
 public class OPER extends Quad {
@@ -31,6 +35,10 @@ public class OPER extends Quad {
     OPER(HCodeElement hce, String opcode, Temp dst, Temp[] operands) {
 	this(hce.getSourceFile(), hce.getLineNumber(), opcode, dst, operands);
     }
+    /** Returns the Temps used by this OPER. */
+    public Temp[] use() { return (Temp[]) operands.clone(); }
+    /** Returns the Temps defined by this OPER. */
+    public Temp[] def() { return new Temp[] { dst }; }
     /** Returns a human-readable representation of this Quad. */
     public String toString() {
 	StringBuffer sb = new StringBuffer(dst.toString());

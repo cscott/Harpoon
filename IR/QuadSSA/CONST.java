@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * to a compiler temporary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.2 1998-08-24 21:07:59 cananian Exp $
+ * @version $Id: CONST.java,v 1.3 1998-08-26 22:01:39 cananian Exp $
  */
 
 public class CONST extends Quad {
@@ -28,6 +28,11 @@ public class CONST extends Quad {
     CONST(HCodeElement hce, Temp dst, Object value, HClass type) {
 	this(hce.getSourceFile(), hce.getLineNumber(), dst, value, type);
     }
+    /** Returns the Temp defined by this Quad.
+     * @return The <code>dst</code> field.
+     */
+    public Temp[] def() { return new Temp[] { dst }; }
+
     /** Returns a human-readable representation of this Quad. */
     public String toString() {
 	StringBuffer sb = new StringBuffer(dst.toString());

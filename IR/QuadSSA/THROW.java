@@ -7,23 +7,27 @@ import harpoon.Temp.Temp;
  * <code>THROW</code> represents a <Code>throw<code> statement.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: THROW.java,v 1.3 1998-08-24 19:30:03 cananian Exp $
+ * @version $Id: THROW.java,v 1.4 1998-08-26 22:01:40 cananian Exp $
  */
 
 public class THROW extends Quad {
     /* The exception object to throw. */
-    public Temp temp;
+    public Temp throwable;
 
     /** Creates a <code>THROW</code>. */
-    public THROW(String sourcefile, int linenumber, Temp temp) {
+    public THROW(String sourcefile, int linenumber, Temp throwable) {
         super(sourcefile, linenumber);
-	this.temp = temp;
+	this.throwable = throwable;
     }
-    THROW(HCodeElement hce, Temp temp) {
-	this(hce.getSourceFile(), hce.getLineNumber(), temp);
+    THROW(HCodeElement hce, Temp throwable) {
+	this(hce.getSourceFile(), hce.getLineNumber(), throwable);
     }
+    /** Returns all the Temps used by this Quad. 
+     * @return the <code>throwable</code> field. */
+    public Temp[] use() { return new Temp[] { throwable }; }
+
     /** Returns human-readable representation of this Quad. */
     public String toString() {
-	return "THROW " + temp; 
+	return "THROW " + throwable; 
     }
 }
