@@ -13,7 +13,12 @@ int main(int argc, char *argv[]) {
   env = FNI_ThreadInit();
   FNI_JNIEnv = env;
   FNI_do_static_init(env);
-  cls = (*env)->FindClass(env, "Hello3");
+  cls = (*env)->FindClass(env, "java/lang/System");
+  mid = (*env)->GetStaticMethodID(env, cls, "initializeSystemClass","()V");
+  (*env)->CallStaticVoidMethod(env, cls, mid);
+  if ((*env)->ExceptionOccurred(env)!=NULL)
+    (*env)->ExceptionDescribe(env);
+  cls = (*env)->FindClass(env, "Hello");
   mid = (*env)->GetStaticMethodID(env, cls, "main",
 				  "([Ljava/lang/String;)V");
   (*env)->CallStaticVoidMethod(env, cls, mid, NULL);
