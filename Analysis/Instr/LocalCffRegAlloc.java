@@ -18,6 +18,7 @@ import harpoon.Util.LinearSet;
 import harpoon.Util.Util;
 
 import java.util.Iterator;
+import java.util.ListIterator;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ import java.util.AbstractSet;
  * <code>LocalCffRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.34 1999-08-17 19:15:38 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.35 1999-08-17 22:31:10 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -67,31 +68,66 @@ public class LocalCffRegAlloc extends RegAlloc {
 	// the following code is an attempt to perform this O(n^2)
 	// description in O(n) time:  
 	// forall(j elem instrs(b))
-	//    forall(l elem pseudo-regs(j))
+	//    forall(l elem pseudo-regs(b))
 	//       nextRef(j, l) <- indexOf(dist to next reference to l)
-	Iterator instrs = b.listIterator();
-	Map nextRef = new HashMap();
-	Map tempToMutIntUpdata = new HashMap();
-	int index=0;
-	while(instrs.hasNext()) {
-	    index++;
-	    Instr i = (Instr) instrs.next();
+	ListIterator instrs = b.listIterator();
 
+	// nextRef: maps (Instr x Temp)->(dist to next reference)
+	Map nextRef = new HashMap();
+	
+	// index: main index counter
+	int index = 0;
+
+	// indexUpdata: maps a Temp->delta(dist)
+	// where delta(dist) is the difference from the main index
+	// counter that yields the distance to the next reference.
+	// To find the actual distance, do "index + delta(dist)"
+	Map indexUpdata = new HashMap();
+
+	// first go FORWARD through instrs and set up
+	// indexUpdata map with initial values for all refs
+	while(instrs.hasNext()) {
+	    Instr i = (Instr) instrs.next();
 	    Iterator refs = getRefs(i);
 	    while(refs.hasNext()) {
 		Temp ref = (Temp) refs.next();
 		if (isTempRegister(ref)) continue; 
-		MutInt lastRef = (MutInt) tempToMutIntUpdata.get(ref);
-		if (lastRef != null) {
-		    lastRef.i += index;
-		    // don't need to remove lastRef from Updata, it
-		    // will be implicitly removed later in
-		    // Updata.put(ref, dist)
-		}
-		MutInt dist = new MutInt(-index);
-		nextRef.put(new TempInstrPair(i, ref), dist);
-		tempToMutIntUpdata.put(ref, dist);
+		// every body starts off with +1 (so that all temps
+		// are live on exit, and have a distance of one more
+		// than the end of the list)
+		indexUpdata.put(ref, new Integer(1));
 	    }
+	}
+	
+	// temps: set of all refs in basic block
+	Set temps = indexUpdata.keySet();
+
+	// now go BACKWARD and build the nextRef table while
+	// simultaneously updating the indexUpdata
+	while(instrs.hasPrevious()) {
+	    Instr i = (Instr) instrs.previous();
+	    // first update nextRef
+	    Iterator tempIter = temps.iterator();
+	    while(tempIter.hasNext()) {
+		Temp t = (Temp) tempIter.next();
+		Integer mi = (Integer) indexUpdata.get(t);
+		nextRef.put(new TempInstrPair(i, t), 
+			    new Integer(index + mi.intValue()));
+	    }
+
+	    // second update indexUpdata
+	    Iterator refs = getRefs(i);
+	    while(refs.hasNext()) {
+		Temp ref = (Temp) refs.next();
+		if (isTempRegister(ref)) continue;
+		// this will be added to a new index later, so they
+		// will cancel eachother out to yield the real
+		// distance. 
+		indexUpdata.put(ref, new Integer(-index));
+	    }
+	    
+	    // finally increment the index
+	    index++;
 	}
 	
 	if(true) { // debugging code 
@@ -102,9 +138,11 @@ public class LocalCffRegAlloc extends RegAlloc {
 		while(refIter.hasNext()) {
 		    Temp ref = (Temp) refIter.next();
 		    if (isTempRegister(ref)) continue;
-		    MutInt dist = (MutInt) nextRef.get(new TempInstrPair(i, ref));
-		    Util.assert(dist != null, "Should have a mapping from " + i +
-				" x " + ref + " to a dist for block " + b);
+		    Integer dist = (Integer) 
+			nextRef.get(new TempInstrPair(i, ref));
+		    Util.assert(dist != null, "Should have a "+
+				"mapping from " + i + " x " + 
+				ref + " to a dist for block " + b);
 		}
 	    }
 	}
@@ -180,21 +218,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 				Util.assert(pseudoReg != null, 
 					    "pseudoReg should not be null");
 
-				// AHA!  pseudoReg is NOT necessarily
-				// used at 'i', its merely being
-				// proposed as a variable to
-				// spill...need a better way to track
-				// this (perhaps back track through
-				// the instr list?  Or make nextRef
-				// save information about all live
-				// variables, not just ones used in
-				// the current instruction?)  
-
-				MutInt dist = (MutInt) nextRef.get
+				Integer dist = (Integer) nextRef.get
 				    (new TempInstrPair(i, pseudoReg));
-				if (dist.i >= 0 && // neg -> no refs
-				    dist.i < cost) { // find Min
-				    cost = dist.i;
+				if (dist.intValue() < cost) { // find Min
+				    cost = dist.intValue();
 				}
 			    }
 			    weightedSpills.add(new WeightedSet(cand, cost));
@@ -309,9 +336,4 @@ public class LocalCffRegAlloc extends RegAlloc {
 	public Iterator iterator() { return s.iterator(); }
     }
 
-    /** mutable object wrapping around int. */
-    private class MutInt {
-	int i;
-	MutInt(int i) { this.i = i; }
-    }
 }

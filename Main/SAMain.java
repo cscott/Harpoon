@@ -21,15 +21,28 @@ import harpoon.Analysis.QuadSSA.ClassHierarchy;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.Util.Util;
 
+import gnu.getopt.Getopt;
+
 import java.util.Iterator;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.Map;
+import java.util.Vector;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
+import java.io.OptionalDataException;
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
+
+
 /**
  * <code>SAMain</code> is a program to compile java classes to some
  * approximation of StrongARM assembly.  It is for development testing
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.4 1999-08-17 19:15:40 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.5 1999-08-17 22:31:12 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -40,88 +53,142 @@ public class SAMain extends harpoon.IR.Registration {
 
     private static java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);;
         
+    private static String className;
+
+    private static String classHierarchyFilename;
+    private static ClassHierarchy classHierarchy;
+
     public static void main(String[] args) {
 	HCodeFactory hcf = // default code factory.
-	    harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
+	    // harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
 	    (harpoon.IR.Quads.QuadSSA.codeFactory()
 	     );
+	
+	Getopt g = new Getopt("SAMain", args, "m:c:");
+	
+	int c;
+	String arg;
+	while((c = g.getopt()) != -1) {
+	    switch(c) {
+	    case 'm': // serialized methToSAFactMap
+		arg = g.getOptarg();
+		classHierarchyFilename = arg;
+		try {
+		    ObjectInputStream mIS = 
+			new ObjectInputStream(new FileInputStream(arg)); 
+		    classHierarchy = (ClassHierarchy) mIS.readObject();
+		} catch (OptionalDataException e) {
+		} catch (ClassNotFoundException e) {
+		} catch (IOException e) {
+ 		    // something went wrong; rebuild the map and write
+		    // it later.
+		    classHierarchy = null;
+		    System.out.println("Error reading map from "
+				       + classHierarchyFilename);
+		}
+		break;
+	    case 'c':
+		arg = g.getOptarg();
+		System.out.println("Compiling: " + arg);
+		className = arg;
+		break;
+	    case '?':
+		break; // getopt() already printed an error
+	    default: 
+		System.out.println("getopt() returned " + c);
+		System.out.println("usage is: [-m <mapfile>] -c <class>");
+	    }
+	}
 
-	int n=0;  // count # of args/flags processed.
-	// rest of command-line options are class names.
-	HClass classes[] = new HClass[args.length-n];
-	for (int i=0; i<args.length-n; i++)
-	    classes[i] = HClass.forName(args[n+i]);
-	// Do something intelligent with these classes. XXX
-	for (int i=0; i<classes.length; i++) {
-	    HMethod hm[] = classes[i].getDeclaredMethods();
+	HClass hclass = HClass.forName(className);
+	HMethod hm[] = hclass.getDeclaredMethods();
+	HMethod mainM = null;
+	for (int j=0; j<hm.length; j++) {
+	    if (hm[j].getName().equalsIgnoreCase("main")) {
+		mainM = hm[j];
+		break;
+	    }
+	}
+	
+	Util.assert(mainM != null, "Class " + className + 
+		    " has no main method");
+
+
+    
+	HCodeFactory sahcf = saFactory(mainM, hcf);
+
+	if (classHierarchyFilename != null) {
+	    try {
+		ObjectOutputStream mOS = new
+		    ObjectOutputStream(new FileOutputStream
+				       (classHierarchyFilename));
+		mOS.writeObject(classHierarchy);
+		mOS.flush();
+	    } catch (IOException e) {
+		System.out.println("Error outputting class "+
+				   "hierarchy to " + 
+				   classHierarchyFilename);
+	    }
+	}
+
+	Set methods = classHierarchy.callableMethods();
+	
+	Iterator methodIter = methods.iterator();
+	HMethod hmethod;
+	while (methodIter.hasNext()) {
+	    hmethod = (HMethod)methodIter.next();
 
 	    if (PRINT_ORIG) {
-		for (int j=0; j<hm.length; j++) {
-		    HCode hc = hcf.convert(hm[j]);
+		HCode hc = hcf.convert(hmethod);
 
-		    out.println("\t--- TREE FORM ---");
-		    if (hc!=null) hc.print(out);
-		    out.println("\t--- end TREE FORM ---");
-		    out.println();
-		}
-
-		out.flush();
+		out.println("\t--- TREE FORM ---");
+		if (hc!=null) hc.print(out);
+		out.println("\t--- end TREE FORM ---");
+		out.println();
 	    }
 	    
+	    out.flush();
 
 	    if (PRE_REG_ALLOC) {
-		for (int j=0; j<hm.length; j++) {
-		    HCodeFactory sahcf = saFactory(hm[j], hcf);
-		    HCode hc = sahcf.convert(hm[j]);
+		HCode hc = sahcf.convert(hmethod);
 		
-		    out.println("\t--- INSTR FORM (no register allocation)  ---");
-		    if (hc!= null) hc.print(out);
-		    out.println("\t--- end INSTR FORM (no register allocation)  ---");
-		    out.println();
-		}
-		
-		out.flush();
+		out.println("\t--- INSTR FORM (no register allocation)  ---");
+		if (hc!= null) hc.print(out);
+		out.println("\t--- end INSTR FORM (no register allocation)  ---");
+		out.println();
 	    }
-
+		
+	    out.flush();
 
 	    if (LIVENESS_TEST) {
-		for (int j=0; j<hm.length; j++) {
-		    HCodeFactory sahcf = saFactory(hm[j], hcf);
-		    HCode hc = sahcf.convert(hm[j]);
-
-		    out.println("\t--- INSTR FORM (basic block check)  ---");
-		    HCodeElement root = hc.getRootElement();
-		    BasicBlock block = 
-			BasicBlock.computeBasicBlocks((HasEdges)root);
-		    Iterator iter= BasicBlock.basicBlockIterator(block);
-		    LiveVars livevars = new LiveVars(iter); 
-		    InstrSolver.worklistSolver
-			(BasicBlock.basicBlockIterator(block), livevars);
-		    out.println(livevars.dump());
-		    out.println("\t--- end INSTR FORM (basic block check)  ---");
-		}
-
-		out.flush();
-	    }
+		HCode hc = sahcf.convert(hmethod);
 		
+		out.println("\t--- INSTR FORM (basic block check)  ---");
+		HCodeElement root = hc.getRootElement();
+		BasicBlock block = 
+		    BasicBlock.computeBasicBlocks((HasEdges)root);
+		Iterator iter= BasicBlock.basicBlockIterator(block);
+		LiveVars livevars = new LiveVars(iter); 
+		InstrSolver.worklistSolver
+		    (BasicBlock.basicBlockIterator(block), livevars);
+		out.println(livevars.dump());
+		out.println("\t--- end INSTR FORM (basic block check)  ---");
+	    }
+	    
+	    out.flush();
 	    
 	    if (REG_ALLOC) {
-		for (int j=0; j<hm.length; j++) {
-		    HCodeFactory sahcf = saFactory(hm[j], hcf);
-		    HCode hc = sahcf.convert(hm[j]);
+		HCode hc = sahcf.convert(hmethod);
 			
-		    out.println("\t--- INSTR FORM (register allocation)  ---");
-		    HCodeFactory regAllocCF = RegAlloc.codeFactory(sahcf, new SAFrame());
-		    HCode rhc = regAllocCF.convert(hm[j]);
-		    if (rhc != null) rhc.print(out);
-		    out.println("\t--- end INSTR FORM (register allocation)  ---");
-		    out.println();
-		}
-
-		out.flush();
+		out.println("\t--- INSTR FORM (register allocation)  ---");
+		HCodeFactory regAllocCF = RegAlloc.codeFactory(sahcf, new SAFrame());
+		HCode rhc = regAllocCF.convert(hmethod);
+		if (rhc != null) rhc.print(out);
+		out.println("\t--- end INSTR FORM (register allocation)  ---");
+		out.println();
 	    }
-		
- 
+
+	    out.flush();
 	}
     }
 
@@ -135,24 +202,22 @@ public class SAMain extends harpoon.IR.Registration {
        only once per method lookup, by using a method->saFactory map.
     */
     
-    private static HashMap methToSAFactMap = new HashMap();
     
     private static HCodeFactory saFactory(HMethod m, HCodeFactory qhcf) {
 	HCodeFactory sahcf;
-	sahcf = (HCodeFactory) methToSAFactMap.get(m);
-	if (sahcf == null) {
-	    out.println("\t\tBeginning creation of a StrongARM Code Factory ");
-	    long time = -System.currentTimeMillis();
-	    HCode hc = qhcf.convert(m); 
-	    ClassHierarchy cha = new ClassHierarchy(m, qhcf);
-	    Util.assert(cha != null, "How the hell...");
-	    HCodeFactory tcf = CanonicalTreeCode.codeFactory
-		( qhcf, new SAFrame(new OffsetMap32(cha)) );
-	    sahcf = SACode.codeFactory(tcf);
-	    time += System.currentTimeMillis();
-	    out.println("\t\tFinished creation of a StrongARM Code Factory.  Time (ms): " + time);
-	    methToSAFactMap.put(m, sahcf);
+	out.println("\t\tBeginning creation of a StrongARM Code Factory ");
+	long time = -System.currentTimeMillis();
+	HCode hc = qhcf.convert(m); 
+	if (classHierarchy == null) {
+	    classHierarchy = new ClassHierarchy(m, qhcf);
+	    Util.assert(classHierarchy != null, "How the hell...");
 	}
+	HCodeFactory tcf = CanonicalTreeCode.codeFactory
+		( qhcf, new SAFrame(new OffsetMap32(classHierarchy)) );
+	sahcf = SACode.codeFactory(tcf);
+	time += System.currentTimeMillis();
+	out.println("\t\tFinished creation of a StrongARM Code "+
+		    "Factory.  Time (ms): " + time);
 	return sahcf;
     }
 }
