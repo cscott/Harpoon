@@ -94,7 +94,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.101 2001-04-26 18:27:31 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.102 2001-06-07 15:21:26 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -157,9 +157,28 @@ public abstract class PAMain {
     private static boolean SAVE_ANALYSIS = false;
     private static String  ANALYSIS_OUT_FILE = null;
 
-    private static boolean RTJ_REMOVE_CHECKS = false;
     private static boolean RTJ_SUPPORT = false;
     private static boolean RTJ_DEBUG = false;
+
+    // keep all the rtj related memory assignments checks
+    private final static int RTJ_CR_KEEP_ALL_CHECKS   = 0;
+    // use the inter-proc analysis for check removal
+    private final static int RTJ_CR_INTER_PROC   = 1;
+    // use the inter-thread analysis for check removal
+    private final static int RTJ_CR_INTER_THREAD = 2;
+    // policy for RTJ check removal: should be one of the previous three
+    private static int RTJ_CR_POLICY = RTJ_CR_KEEP_ALL_CHECKS;
+
+    // examine all run() methods
+    private final static int RTJ_RI_ALL_RUNS = 0;
+    // examine only the run() methods belonging to classes that are
+    // passed as arguments to MemoryArea.enter()
+    private final static int RTJ_RI_ENTER    = 1;
+    // policy for identifying the relevant run() methods
+    private static int RTJ_RI_POLICY = RTJ_RI_ALL_RUNS;
+
+    // demand the generation of code for statistics gathering
+    private static boolean RTJ_COLLECT_RUNTIME_STATS = false;
 
     // the name of the file that contains additional roots
     private static String rootSetFilename = null;
@@ -262,11 +281,31 @@ public abstract class PAMain {
 	    System.exit(0);
 	}
 
-	if(RTJ_REMOVE_CHECKS) {
-	    System.out.println( can_remove_all_checks() ?
-				"can remove all checks!" :
-				"cannot remove all checks!" );
-	    return;
+	if(RTJ_SUPPORT) {
+	    String rtj_options = "";
+	    switch(RTJ_CR_POLICY) {
+	    case RTJ_CR_KEEP_ALL_CHECKS:
+		rtj_options = "simple";
+		break;
+	    case RTJ_CR_INTER_PROC:
+	    case RTJ_CR_INTER_THREAD:
+		if(can_remove_all_checks()) {
+		    System.out.println("RTJ: can remove all checks!");
+		    rtj_options = "all";
+		}
+		else {
+		    System.out.println("RTJ: cannot remove all checks!");
+		    rtj_options = "simple";
+		}
+		break;
+	    default:
+		System.out.println("RTJ: Unknown RTJ_CR_POLICY");
+		System.exit(1);
+	    }
+	    if(RTJ_COLLECT_RUNTIME_STATS)
+		rtj_options += "_stats";
+	    System.out.println("RTJ: rtj_options = " + rtj_options);
+	    Realtime.configure(rtj_options);
 	}
 
 	if(CHECK_NO_CALLEES)
@@ -660,6 +699,8 @@ public abstract class PAMain {
 	HMethod[] hm  = hclass.getDeclaredMethods();
 	int nbmm = 0;
 
+	long start = time();
+
 	HMethod hmethod = null;		
 	for(int i = 0; i < hm.length; i++)
 	    if(hm[i].getName().equals(method.name)){
@@ -724,9 +765,11 @@ public abstract class PAMain {
 	    System.out.println("Oops!" + method.declClass + "." +
 			       method.name +
 			       " seems not to be called at all");
-	else
+	else {
+	    System.out.println
+		("do_analysis done in " + (time() - start) + " ms");
 	    System.out.println(nbmm + " ANALYZED META-METHOD(S)");
-
+	}
     }
 
     // receives a "class.name" string and cut it into pieces, separating
@@ -776,14 +819,16 @@ public abstract class PAMain {
 	    new LongOpt("loadpa",        LongOpt.REQUIRED_ARGUMENT, null, 30),
 	    new LongOpt("savepa",        LongOpt.REQUIRED_ARGUMENT, null, 31),
 	    new LongOpt("prealloc",      LongOpt.NO_ARGUMENT,       null, 32),
-	    new LongOpt("rtjchecks",     LongOpt.NO_ARGUMENT,       null, 33),
 	    new LongOpt("rtj",           LongOpt.REQUIRED_ARGUMENT, null, 34),
 	    new LongOpt("old_inlining",  LongOpt.NO_ARGUMENT,       null, 35),
 	    new LongOpt("inline_for_sa", LongOpt.REQUIRED_ARGUMENT, null, 36),
 	    new LongOpt("inline_for_ta", LongOpt.REQUIRED_ARGUMENT, null, 37),
-	    new LongOpt("rtj_debug",     LongOpt.NO_ARGUMENT,       null, 38)
+	    new LongOpt("rtj_debug",     LongOpt.NO_ARGUMENT,       null, 38),
+	    new LongOpt("rtjri",         LongOpt.REQUIRED_ARGUMENT, null, 39),
+	    new LongOpt("rtjstats",      LongOpt.NO_ARGUMENT,       null, 40)
 	};
 
+	String option;
 	Getopt g = new Getopt("PAMain", argv, "mscor:a:iIN:P:", longopts);
 
 	while((c = g.getopt()) != -1)
@@ -985,13 +1030,23 @@ public abstract class PAMain {
 	    case 32:
 		mainfo_opts.DO_PREALLOCATION = true;
 		break;
-	    case 33:
-		RTJ_REMOVE_CHECKS = true;
-		break;
 	    case 34:
 		RTJ_SUPPORT = true;
 		Realtime.REALTIME_JAVA = true;
-		String option = g.getOptarg().toLowerCase();
+
+		option = g.getOptarg().toLowerCase();
+		if(option.equals("keepallchecks"))
+		    RTJ_CR_POLICY = RTJ_CR_KEEP_ALL_CHECKS;
+		else if(option.equals("interproc"))
+		    RTJ_CR_POLICY = RTJ_CR_INTER_PROC;
+		else if(option.equals("interthread"))
+		    RTJ_CR_POLICY = RTJ_CR_INTER_THREAD;
+		else {
+		    System.out.println("Unknown option " + option);
+		    System.exit(1);
+		}
+
+		/*
 		if(option.equals("simple"))
 		    Realtime.ANALYSIS_METHOD = Realtime.SIMPLE;
 		else {
@@ -1002,6 +1057,7 @@ public abstract class PAMain {
 			System.exit(1);
 		    }
 		}
+		*/
 		break;
 	    case 35:
 		mainfo_opts.USE_OLD_INLINING = true;
@@ -1019,6 +1075,20 @@ public abstract class PAMain {
 		RTJ_SUPPORT = true;
 		Realtime.REALTIME_JAVA = true;
 		Realtime.ANALYSIS_METHOD = Realtime.SIMPLE;
+		break;
+	    case 39:
+		option = g.getOptarg().toLowerCase();
+		if(option.equals("allruns"))
+		    RTJ_RI_POLICY = RTJ_RI_ALL_RUNS;
+		else if(option.equals("enter"))
+		    RTJ_RI_POLICY = RTJ_RI_ENTER;
+		else {
+		    System.out.println("Unknown run identification policy!");
+		    System.exit(1);
+		}
+		break;
+	    case 40:
+		RTJ_COLLECT_RUNTIME_STATS = true;
 		break;
 	    }
 
@@ -1134,11 +1204,37 @@ public abstract class PAMain {
 	if(COMPILE)
 	    System.out.println("\tCOMPILE");
 
-	if(RTJ_REMOVE_CHECKS)
-	    System.out.println("\tRTJ_REMOVE_CHECKS");
-
 	if(RTJ_SUPPORT) {
-	    System.out.print("\tRTJ_SUPPORT ");
+	    System.out.println("\tRTJ_SUPPORT ");
+
+	    System.out.print("\t\tcheck removal policy: ");
+	    if(RTJ_CR_POLICY == RTJ_CR_KEEP_ALL_CHECKS)
+		System.out.println("keep all checks");
+	    else if(RTJ_CR_POLICY == RTJ_CR_INTER_PROC)
+		System.out.println("inter-proc analysis");
+	    else if(RTJ_CR_POLICY == RTJ_CR_INTER_THREAD)
+		System.out.println("inter-thread analysis");
+	    else {
+		System.out.println("\nUnknown check removal policy");
+		System.exit(1);
+	    }
+
+	    System.out.print("\t\trun identification policy: ");
+	    if(RTJ_RI_POLICY == RTJ_RI_ALL_RUNS)
+		System.out.println("all runs from Runnables");
+	    else if(RTJ_RI_POLICY == RTJ_RI_ENTER)
+		System.out.println("only runs that are passed to enter");
+	    else {
+		System.out.println("Unknown run identification policy");
+		System.exit(1);
+	    }
+
+	    if(RTJ_COLLECT_RUNTIME_STATS)
+		System.out.println("\t\tcollect stats");
+	    else
+		System.out.println("\t\tno stats");
+
+	    /*
 	    if(Realtime.ANALYSIS_METHOD == Realtime.SIMPLE)
 		System.out.println("keep all checks");
 	    else
@@ -1148,6 +1244,7 @@ public abstract class PAMain {
 		    System.out.println("unknown analysis method -> FAIL");
 		    System.exit(1);
 		}
+	    */
 	}
 
 	if(RTJ_DEBUG)
@@ -1798,9 +1895,14 @@ public abstract class PAMain {
 	"-N filename     Read in Instrumentation code factory",
 	"-P filename     Read in profile information",
 	"--rtj_debug     RTJ debug (interactive method inspection)",
-	"--rtj <policy>  generates RTJ code, using the indicared policy for",
-	"                 memory check removal. policy should be one of",
-	"                 SIMPLE, CHEESY, ALL."
+	"--rtj <cr_policy>  generates RTJ code, using the indicared policy",
+	"                for check removal. cr_policy should be one of:",
+	"                keepallchecks, interproc, interthread. Default is",
+	"                keepallchecks.",
+	"--rtjri <ri_policy> specify the policy to follow for identifying",
+	"                the relevant run() methods. ri_policy should be one",
+	"                of: allruns, enter. Default is allruns.",
+	"--rtjstats      The generated code wil collect some RTJ stats"
     };
 
 
@@ -2004,7 +2106,7 @@ public abstract class PAMain {
 
 
     //////////////////////////////////////////////////////////////////////
-    ////////////////// REALTIME STUFF STARTS /////////////////////////////
+    /////////////////////// RTJ STUFF STARTS /////////////////////////////
 
     private static boolean DEBUG_RT = true;
 
@@ -2013,7 +2115,7 @@ public abstract class PAMain {
     private static boolean can_remove_all_checks() {
 	long start = time();
 	boolean result = can_remove_all_checks2();
-	System.out.println("can_remove_all_checks ... " + 
+	System.out.println("RTJ: can_remove_all_checks ... " + 
 			   (time() - start) + " ms");
 	return result;
     }
@@ -2024,13 +2126,14 @@ public abstract class PAMain {
 	Util.assert(java_lang_Runnable != null,
 		    "java.lang.Runnable not found!");
 
-	Set runs = get_interesting_runs();
+	Set runs = get_relevant_runs();
 
-	if(runs.isEmpty()) {
+	/*
+	  if(runs.isEmpty()) {
 	    System.out.println("Pattern 1 unfound, switch to pattern 2");
 	    Set all_runs = get_all_runs();
 	    if(DEBUG_RT)
-		print_set(all_runs, "All runs in the program");
+		Util.print_collection(all_runs, "All runs in the program");
 	    for(Iterator it = all_runs.iterator(); it.hasNext(); ) {
 		HMethod hmethod = (HMethod) it.next();
 		if(!nothing_escapes_intra_thread(hmethod))
@@ -2038,9 +2141,7 @@ public abstract class PAMain {
 	    }
 	    return true;
 	}
-
-	if(DEBUG_RT)
-	    print_set(runs, "Interesting runs");
+	*/
 
 	for(Iterator it = runs.iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
@@ -2056,28 +2157,117 @@ public abstract class PAMain {
 	return new MetaMethod(hm, true);
     }
 
-    private static HMethod enter = null;
+    // Returns a set that contains all the run methods of all
+    // the Runnable classes that might be passed as arguments to
+    // javax.realtime.CTMemory.enter
+    private static Set get_relevant_runs() {
+	Set result = Collections.EMPTY_SET;
 
-    private static Set get_interesting_runs() {
-	Set result = new HashSet();
-	enter = get_enter_method();
-	MetaMethod[] callers = mac.getCallers(new MetaMethod(enter, true));
-	for(int i = 0; i < callers.length; i++)
-	    result.addAll(get_interesting_runs(callers[i].getHMethod()));
+	if(RTJ_RI_POLICY == RTJ_RI_ALL_RUNS)
+	    result = get_all_runs();
+	else if(RTJ_RI_POLICY == RTJ_RI_ENTER)
+	    result = get_entered_runs();
+	else {
+	    System.out.println("RTJ: Unknown run identification policy!");
+	    System.exit(1);
+	}
+
+	if(result.isEmpty())
+	    System.out.println("RTJ: WARNING: no run() was found!");
+	else if(DEBUG_RT)
+	    Util.print_collection(result, "RTJ: run() methods", "RTJ: ");
+
 	return result;
     }
 
 
-    private static Set get_interesting_runs(HMethod hm) {
+    // Returns the set of all the run() methods of classes that implements
+    // java.lang.Runnable
+    private static Set get_all_runs() {
+	if(DEBUG_RT)
+	    System.out.println("RTJ: get_all_runs");
+
+	Set runs = new HashSet();
+	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); ) {
+	    HMethod hm = ((MetaMethod) it.next()).getHMethod();
+	    HClass hclass = hm.getDeclaringClass();
+	    if(hm.getName().equals("run") &&
+	       hclass.isInstanceOf(java_lang_Runnable)) 
+		runs.add(hm);
+	}
+
+	return runs;
+    }
+
+
+    /////////////////// get_entered_runs START ////////////////////////
+
+    // Returns the set of run() methods of Runnable objects that are
+    // passed to the enter method of some subclass of MemoryArea.
+    private static Set get_entered_runs() {
+	if(DEBUG_RT)
+	    System.out.println("RTJ: get_entered_runs");
+	Set result = new HashSet();
+	Set enters = get_enter_methods();
+	for(Iterator it = enters.iterator(); it.hasNext(); ) {
+	    HMethod enter = (HMethod) it.next();
+	    MetaMethod[] callers = 
+		mac.getCallers(new MetaMethod(enter, true));
+	    for(int i = 0; i < callers.length; i++)
+		result.addAll(get_entered_runs(callers[i].getHMethod(),enter));
+	}
+	return result;
+    }
+
+
+    // Returns the set of enter methods declared in subclasses of MemoryArea.
+    private static Set get_enter_methods() {
+	Set result = new HashSet();
+
+	HClass javax_realtime_MemoryArea = 
+	    linker.forName("javax.realtime.MemoryArea");
+	Set children = ch.children(javax_realtime_MemoryArea);
+	for(Iterator it = children.iterator(); it.hasNext(); ) {
+	    HClass hclass = (HClass) it.next();
+	    if(!ch.instantiatedClasses().contains(hclass))
+		it.remove();
+	}
+
+	if(DEBUG_RT)
+	    Util.print_collection
+		(children, "RTJ: Subclasses of javax.realtime.MemoryArea",
+		 "RTJ: ");
+
+	for(Iterator it = children.iterator(); it.hasNext(); ) {
+	    HClass  hclass = (HClass) it.next();
+	    HMethod[] hms = hclass.getMethods();
+	    for(int i = 0; i < hms.length; i++)
+		if(hms[i].getName().equals("enter"))
+		    result.add(hms[i]);
+	}
+
+	if(DEBUG_RT)
+	    Util.print_collection(result, "RTJ: enter() methods", "RTJ: ");
+
+	return result;
+    }
+
+
+    // Goes over all the calls to method enter inside the body of hm
+    // and collect all the run methods that enter will implicitly call
+    // (enter is supposed to be a javax.realtime.MemoryArea.enter style
+    // method)
+    private static Set get_entered_runs(HMethod hm, HMethod enter) {
 	Set result = new HashSet();
 
 	if(DEBUG_RT)
-	    System.out.println("get_interesting_runs(" + hm + ")");
+	    System.out.println("RTJ: get_interesting_runs(" + hm +
+			       "," + enter + ") entered");
 
-	Set calls = get_interesting_calls(hm);
+	Set calls = get_calls_to_enter(hm, enter);
 	
 	if(DEBUG_RT)
-	    print_set(calls, "Interesting calls for " + hm);
+	    Util.print_collection(calls,"Interesting calls ", "RTJ: ");
 
 	TypeInference ti =
 	    new TypeInference(hm, hcf.convert(hm), get_ietemps(calls));
@@ -2087,13 +2277,15 @@ public abstract class PAMain {
 	    ExactTemp et = new ExactTemp(cs, cs.params(1));
 	    Set types = ti.getType(et);
 	    if(DEBUG_RT)
-		print_set(types, "Possible types for " + et);
+		Util.print_collection(types, "Possible types for " + et,
+				      "RTJ: ");
 	    for(Iterator it_t = types.iterator(); it_t.hasNext(); ) {
 		HClass hclass = (HClass) it_t.next();		
 		Set children = new HashSet(ch.children(hclass));
 		children.add(hclass);
 		if(DEBUG_RT)
-		    print_set(children, "Children for " + hclass);
+		    Util.print_collection(children, "Children for " + hclass,
+					  "RTJ: ");
 		for(Iterator it_c = children.iterator(); it_c.hasNext(); ) {
 		    HClass child = (HClass) it_c.next();
 		    if(ch.instantiatedClasses().contains(child)) {
@@ -2107,9 +2299,35 @@ public abstract class PAMain {
 	return result;
     }
 
+
+    // Returns the set of the CALLs to method enter inside the code of hm. 
+    private static Set get_calls_to_enter(HMethod hm, HMethod enter) {
+	if(DEBUG_RT)
+	    System.out.println("RTJ: get_interesting_calls(" +
+			       hm + "," + enter + ") entered");
+	Set result = new HashSet();
+	HCode hcode = hcf.convert(hm);
+	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
+	    Quad quad = (Quad) it.next();
+	    if(quad instanceof CALL) {
+		CALL cs = (CALL) quad;
+		MetaMethod[] callees =
+		    mcg.getCallees(hm2mm(hm), cs);
+		for(int i = 0; i < callees.length; i++)
+		    if(callees[i].getHMethod().equals(enter))
+			result.add(cs);
+	    }
+	}
+	return result;
+    }
+
+
+    // Given a class, verify that it's implementing java.lang.Runnable and
+    // extract its run() method. Return null if the verification fails or
+    // no run() method exists in hclass.
     private static HMethod extract_run(HClass hclass) {
 	if(DEBUG_RT)
-	    System.out.println("extract_run(" + hclass + ")");
+	    System.out.println("RTJ: extract_run(" + hclass + ") entered");
 
 	HMethod result = null;
 	if(!hclass.isInstanceOf(java_lang_Runnable))
@@ -2128,6 +2346,8 @@ public abstract class PAMain {
 	return result;
     }
 
+    // Returns a set that contains all the Temps that appear in the first
+    // position (ie the this pointer) in one of the CALLs in calls.
     private static Set get_ietemps(Set calls) {
 	Set result = new HashSet();
 	for(Iterator it = calls.iterator(); it.hasNext(); ) {
@@ -2137,29 +2357,11 @@ public abstract class PAMain {
 	return result;
     }
 
-    private static Set get_interesting_calls(HMethod hm) {
-	if(DEBUG_RT)
-	    System.out.println("get_interesting_calls(" + hm + ")");
-	Set result = new HashSet();
-	HCode hcode = hcf.convert(hm);
-	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
-	    Quad quad = (Quad) it.next();
-	    if(quad instanceof CALL) {
-		CALL cs = (CALL) quad;
-		MetaMethod[] callees =
-		    mcg.getCallees(hm2mm(hm), cs);
-		for(int i = 0; i < callees.length; i++)
-		    if(callees[i].getHMethod().equals(enter))
-			result.add(cs);
-	    }
-	}
-	return result;
-    }
-
+    /*
     private static HMethod get_enter_method() {
 	Set methods = get_methods("javax.realtime.CTMemory", "enter");
 	if(DEBUG_RT)
-	    print_set(methods, "enter methods");
+	    Util.print_collection(methods, "enter methods");
 	for(Iterator it = methods.iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
 	    if(hm.getParameterTypes().length != 1) {
@@ -2169,7 +2371,7 @@ public abstract class PAMain {
 	    }
 	}
 	if(DEBUG_RT)
-	    print_set(methods, "good enter methods");
+	    Util.print_collection(methods, "good enter methods");
 	Util.assert(methods.size() == 1, "Too many enter methods!");
 	return (HMethod) methods.iterator().next();
     }
@@ -2187,16 +2389,29 @@ public abstract class PAMain {
 
 	return result;
     }
+    */
+
+    /////////////////// get_entered_runs END  ////////////////////////
 
 
     private static boolean nothing_escapes(HMethod hm) {
-	if(DEBUG_RT)
-	    System.out.println("nothing_escapes(" + hm + ")");
+	// if(DEBUG_RT)
+	    System.out.println("RTJ: nothing_escapes(" + hm + ") entered");
 
-	ParIntGraph pig = pa.threadInteraction(hm2mm(hm));
+	ParIntGraph pig = null;
+
+	if(RTJ_CR_POLICY == RTJ_CR_INTER_PROC)
+	    pig = pa.getExtParIntGraph(hm2mm(hm));
+	else if(RTJ_CR_POLICY == RTJ_CR_INTER_THREAD)
+	    pig = pa.threadInteraction(hm2mm(hm));
+	else {
+	    System.out.println("Unknown RTJ_CR_POLICY !");
+	    System.exit(1);
+	}
+
 	pig = (ParIntGraph) pig.clone();
 	// we don't care about the exceptions; if an exception is thrown
-	// out of the run method of a thread, the program is gone stop with
+	// out of the run method of a thread, the program is gonna stop with
 	// an exception anyway.
 	pig.G.excp.clear();
 
@@ -2205,46 +2420,43 @@ public abstract class PAMain {
 	//   java.lang.Thread.isAlive() etc.
 	// make sure we clean the graph a bit before looking at it
 	// (there should be more info about this in MAInfo)
+	pig.G.flushCaches();
+	pig.G.e.removeMethodHoles
+	    (harpoon.Analysis.PointerAnalysis.InterProcPA.
+	     getUnharmfulMethods());
 
 	if(DEBUG_RT)
-	    System.out.println("threadExtInteraction = " + pig + "\n\n");
+	    System.out.println("pig = " + pig + "\n\n");
+
 	Set nodes = pig.allNodes();
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    if((node.type() == PANode.INSIDE) &&
 	       !pig.G.captured(node)) {
 		System.out.println
-		    (node + " created at " + 
+		    ("RTJ: " + node + " created at " + 
 		     Debug.code2str(pa.getNodeRepository().node2Code
 				    (node.getRoot())) +
 		     " escapes -> false");
 		return false;
 	    }
 	}
+
+	if(DEBUG_RT)
+	    System.out.println("RTJ: Nothing escapes from " + hm + " !!!");
 	return true;
     }
 
-
+    /*
     private static void print_set(Set set, String set_name) {
 	System.out.println(set_name + " {");
 	for(Iterator it = set.iterator(); it.hasNext(); )
 	    System.out.println("\t" + it.next());
 	System.out.println("}");
     }
+    */
 
-
-    private static Set get_all_runs() {
-	Set runs = new HashSet();
-	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = ((MetaMethod) it.next()).getHMethod();
-	    HClass hclass = hm.getDeclaringClass();
-	    if(hm.getName().equals("run") &&
-	       hclass.isInstanceOf(java_lang_Runnable)) 
-		runs.add(hm);
-	}
-	return runs;
-    }
-
+    /* 
     private static boolean nothing_escapes_intra_thread(HMethod hm) {
 	if(!PointerAnalysis.analyzable(hm))
 	    return true;
@@ -2266,4 +2478,5 @@ public abstract class PAMain {
 	// nothing escapes!
 	return true;
     }
+    */
 }

@@ -73,7 +73,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.83 2001-04-19 17:15:36 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.84 2001-06-07 15:21:22 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -102,7 +102,7 @@ public class PointerAnalysis implements java.io.Serializable {
     /** Turns on the printing of some timing info. */
     public static boolean TIMING = true;
     public static final boolean STATS = true;
-    public static boolean SHOW_NODES = false;
+    public static boolean SHOW_NODES = true;
     public static final boolean DETAILS2 = false;
 
 

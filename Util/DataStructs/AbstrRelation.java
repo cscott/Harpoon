@@ -17,7 +17,7 @@ import harpoon.Analysis.PointerAnalysis.Debug;
  * <code>AbstrRelation</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AbstrRelation.java,v 1.1.2.3 2000-07-02 08:37:52 salcianu Exp $
+ * @version $Id: AbstrRelation.java,v 1.1.2.4 2001-06-07 15:21:40 salcianu Exp $
  */
 public abstract class AbstrRelation implements Relation, Cloneable, 
 					java.io.Serializable {
@@ -55,6 +55,14 @@ public abstract class AbstrRelation implements Relation, Cloneable,
 	vals.remove(value);
 	if(vals.isEmpty())
 	    removeKey(key);
+    }
+
+    public void revert(final Relation result) {
+	forAllEntries(new RelationEntryVisitor() {
+		public void visit(Object key, Object value) {
+		    result.add(value, key);
+		}
+	    });
     }
 
 

@@ -9,6 +9,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.RelationImpl;
+
+import harpoon.Util.Util;
 
 /**
  * <code>Matching</code> is a wrapper for some functions related to the \
@@ -39,23 +42,28 @@ import harpoon.Util.DataStructs.Relation;
  interation of the loop. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Matching.java,v 1.1.2.9 2001-02-27 22:11:12 salcianu Exp $
+ * @version $Id: Matching.java,v 1.1.2.10 2001-06-07 15:21:22 salcianu Exp $
  */
 abstract class Matching implements java.io.Serializable {
+
+    private static final boolean DEBUG = false;
 
     /** Applies rule 0: if there is a mu[i] relation from node1 to node2
 	and there is a mu[ib]/mu[i] relation from node2 to node3, then put a
 	mu[i] relation from node1 to node2.<br>
 	<i>Note</i>: you won't find this rule in the paper; it was added
 	by me to fix the algorithm. */
-    public static final void rule0(Relation mu[], PAWorkList W[]){
-	for(int i=0;i<2;i++){
+    public static final void rule0
+	(Relation mu[], PAWorkList W[], Relation new_info[]) {
+	for(int i = 0; i < 2; i++) {
 	    int ib = 1-i;
 	    for(Iterator it_n1 = mu[i].keys().iterator(); it_n1.hasNext(); ) {
 		PANode n1 = (PANode) it_n1.next();
-		Set n1_mappings = mu[i].getValues(n1);
 
 		Set new_n1 = new HashSet();
+
+		Set debug_n2s = new HashSet(mu[i].getValues(n1));
+
 		for(Iterator it_n2 = mu[i].getValues(n1).iterator();
 		    it_n2.hasNext(); ) {
 		    PANode n2 = (PANode) it_n2.next();
@@ -63,8 +71,15 @@ abstract class Matching implements java.io.Serializable {
 		    new_n1.addAll(mu[ib].getValues(n2));
 		}
 		
-		if(n1_mappings.addAll(new_n1))
-		    W[i].add(n1);
+		for(Iterator it3 = new_n1.iterator(); it3.hasNext(); ) {
+		    PANode n3 = (PANode) it3.next();
+		    if(mu[i].add(n1, n3)) {
+			if(DEBUG)
+			    System.out.println("rule0: " + n1 + " -> " + n3);
+			W[i].add(n1);
+			new_info[i].add(n1, n3);
+		    }
+		}
 	    }
 	}
     }
@@ -75,6 +90,7 @@ abstract class Matching implements java.io.Serializable {
 	mu[i] relation from node1 to node2.<br>
 	<i>Note</i>: you won't find this rule in the paper; it was added
 	by me to fix the algorithm. */
+    /*
     public static final void rule0(PANode node1, Set new_mappings_for_node,
 		   ParIntGraph pig[],
 		   PAWorkList W[], Relation mu[], Relation new_info[], 
@@ -112,6 +128,7 @@ abstract class Matching implements java.io.Serializable {
 	    W[i].add(node1);
 	}
     }
+    */
 
 
     /** Applies rule 2: matches an outside edge starting from node1 in 
@@ -124,23 +141,28 @@ abstract class Matching implements java.io.Serializable {
     public static final void rule2(PANode node1, Set new_mappings_for_node1,
 		   ParIntGraph pig[],
 		   PAWorkList W[], Relation mu[], Relation new_info[], 
-		   int i, int ib){
+		   int i, int ib) {
 	// nodes3 stands for all the new instances of n3
 	// from the inference rule
 	Set nodes3 = new_mappings_for_node1;
 
+	/*
+	System.out.println("rule2: node1 = " + node1 + " nodes3 = " + nodes3 +
+			   " i=" + i + " ib=" + ib);
+	*/
+
 	Iterator itf = pig[i].G.O.allFlagsForNode(node1).iterator();
 	while(itf.hasNext()) {
 	    String f = (String) itf.next();
-	    
+
 	    // nodes2 stands for all the nodes that could play
 	    // the role of n2 from the inference rule
-	    Set nodes2 = pig[i].G.O.pointedNodes(node1,f);
+	    Set nodes2 = pig[i].G.O.pointedNodes(node1, f);
 	    if(nodes2.isEmpty()) continue;
-	    
+
 	    // nodes4 stands for all the nodes that could play
 	    // the role of n4 from the inference rule
-	    Set nodes4 = pig[ib].G.I.pointedNodes(nodes3,f);
+	    Set nodes4 = pig[ib].G.I.pointedNodes(nodes3, f);
 	    if(nodes4.isEmpty()) continue;
 
 	    // set up the relation mu[i] from any node from nodes2
@@ -150,7 +172,10 @@ abstract class Matching implements java.io.Serializable {
 		boolean changed = false;
 		for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
 		    PANode node4 = (PANode) it4.next();
-		    if(mu[i].add(node2, node4)){
+		    if(mu[i].add(node2, node4)) {
+			if(DEBUG)
+			    System.out.println
+				(node2 + " -" + i + "-> " + node4);
 			changed = true;
 			new_info[i].add(node2, node4);
 		    }
@@ -338,7 +363,85 @@ abstract class Matching implements java.io.Serializable {
 	}
     }
 
+
+    // Extends the mapping mu to cope with aliasing into the same scope
+    public static final void aliasingSameScopeRule
+	(Relation mu, ParIntGraph pig, PAWorkList W, Relation new_info) {
+
+	Relation um = new RelationImpl();
+	mu.revert(um);
+	
+	for(Iterator it = um.keys().iterator(); it.hasNext(); ) {
+	    PANode node5 = (PANode) it.next();
+	    Set n1n3 = um.getValues(node5);
+	    if(n1n3.size() < 2) continue;
+
+	    for(Iterator it1 = n1n3.iterator(); it1.hasNext(); ) {
+		PANode node1 = (PANode) it1.next();
+		for(Iterator it3 = n1n3.iterator(); it3.hasNext(); ) {
+		    PANode node3 = (PANode) it3.next();
+		    if(node1 == node3) continue;
+		    aliasingSameScopeRule(node1, node3, mu, pig, W, new_info);
+		}
+	    }
+	}
+    }
+
+
+    // AUX METHOD FOR aliasingSameScopeRule
+    // Extends the mapping mu to cope with aliasing between node1 and node3
+    private static final void aliasingSameScopeRule
+	(PANode node1, PANode node3,
+	 Relation mu, ParIntGraph pig, PAWorkList W, Relation new_info) {
+
+	if(DEBUG)
+	    System.out.println("aliasingSameScopeRule: node1 = " + node1 +
+			       " node3 = " + node3);
+
+	Iterator itf = pig.G.I.allFlagsForNode(node3).iterator();
+	while(itf.hasNext()) {
+	    String f = (String) itf.next();
+
+	    Set nodes2 = pig.G.O.pointedNodes(node1, f);
+	    if(nodes2.isEmpty()) continue;
+
+	    Set nodes4 = pig.G.I.pointedNodes(node3, f);
+	    if(nodes4.isEmpty()) continue;
+
+	    Set mu_nodes4 = new HashSet();
+	    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
+		PANode node4 = (PANode) it4.next();
+		mu_nodes4.addAll(mu.getValues(node4));
+	    }
+
+	    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
+		PANode node2 = (PANode) it2.next();
+
+		for(Iterator it6 = mu_nodes4.iterator(); it6.hasNext(); ) {
+		    PANode node6 = (PANode) it6.next();
+		    if(mu.add(node2, node6)) {
+			if(DEBUG)
+			    System.out.println("  " + node2 + " -> " + node6);
+			W.add(node2);
+			new_info.add(node2, node6);
+		    }
+		}
+
+
+		if(InterThreadPA.VERY_NEW_MAPPINGS) {
+		    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
+			PANode node4 = (PANode) it4.next();
+			if(mu.add(node2, node4)) {
+			    if(DEBUG)
+				System.out.println
+				    ("  " + node2 + " -> " + node4);
+			    W.add(node2);
+			    new_info.add(node2, node4);
+			}
+		    }
+		}
+	    }
+	}
+    }
+
 }
-
-
-

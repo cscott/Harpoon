@@ -21,7 +21,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.26 2001-02-27 22:11:12 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.27 2001-06-07 15:21:22 salcianu Exp $
  */
 final public class PANode implements java.io.Serializable {
     // activates some safety tests
@@ -65,7 +65,7 @@ final public class PANode implements java.io.Serializable {
     // the depth of the call chain associated with this node
     private int call_chain_depth = 0;
     // call context sensitivity: the mapping CALL -> specialized node
-    private LightMap cs_specs;
+    private LightMap cs_specs = null;
     // the parent of this PANode on the CALL specialization branch
     private PANode cs_parent = null;
     // the CALL site that specialized cs_parent into this node
@@ -80,7 +80,7 @@ final public class PANode implements java.io.Serializable {
     private PANode bottom = null;
 
     // full thread sensitivity: the mapping MetaMethod -> specialized node
-    private LightMap ts_specs;
+    private LightMap ts_specs = null;
     // the weak thread specialization of this node (if any)
     private PANode wtspec = null;
     // the parent of this PANode on the thread specialization branch
@@ -97,17 +97,57 @@ final public class PANode implements java.io.Serializable {
 	<code>type</code> must be one of <code>PANode.INSIDE</code>,
 	<code>PANode.LOAD</code> etc. */  
     public PANode(final int type, final GenType[] node_class) {
-	real_constructor(type, node_class);
+	this(type, node_class, true);
     }
 
     /** Constructor using the default <code>null</code> value for
 	<code>node_class</code>. */
     public PANode(final int type) {
-	real_constructor(type, null);
+	this(type, null);
+    }
+
+    // Make sure nobody calls the void constructor.
+    public PANode() {
+	Util.assert(false, "You should never call this void constructor!");
+    }
+
+
+    /** Returns the bar version of <code>this</code> node.
+	Each node has two versions:
+	<ul>
+	<li>a <i>genuine</i> one - the node itself;
+	<li>a <i>bar</i> one (the name comes from the way we
+	depict it graphically).
+	</ul>
+
+	To avoid fake mappings, in the caller/callee and the
+	starter/startee interaction, we work with the "bar" version of
+	the callee/startee parallel interaction graph. After we determine
+	the mapping, we go back to the "genuine" nodes.<br>
+
+	This versions are different for (and only for) <code>LOAD</code>
+	nodes. This makes sense because any non-trivial mappings are for
+	<code>LOAD</code> nodes.<br>
+    */
+    public PANode getBarVersion() {
+	return bar_version;
+    } 
+    private PANode bar_version = null;
+
+    public PANode getGenuine() { 
+	return isGenuine() ? this : genuine_version;
+    }
+    /** <code>null</code> for the genuine nodes. */
+    private PANode genuine_version = null;
+
+    /** Checks whether <code>this</code> node is a genuine one. */
+    public boolean isGenuine() {
+	return genuine_version == null;
     }
 
     // Does the real work!
-    private void real_constructor(final int type, final GenType[] node_class) {
+    private PANode
+	(final int type, final GenType[] node_class, boolean genuine) {
         this.type       = type;
 	this.node_class = node_class;
 	number = count++;
@@ -115,15 +155,25 @@ final public class PANode implements java.io.Serializable {
 	if(PointerAnalysis.DEBUG)
 	    if((number % 100) == 0)
 		System.out.println("PANODE " + this);
-	
-	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
-	    cs_specs = new LightMap();
-	else cs_specs = null;
 
-	if(PointerAnalysis.THREAD_SENSITIVE)
-	    ts_specs = new LightMap();
-	else ts_specs = null;
+	if(genuine) {
+	    if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
+		cs_specs = new LightMap();
+
+	    if(PointerAnalysis.THREAD_SENSITIVE)
+		ts_specs = new LightMap();
+
+	    bar_version = 
+		(type == LOAD) ? new PANode(type, node_class, this) : this;
+	}
     }
+
+    private PANode
+	(final int type, final GenType[] node_class, PANode genuine) {
+	this(type, node_class, false);
+	this.genuine_version = genuine;
+    }
+
 
     /** Returns the type of the node. */
     public final int type(){

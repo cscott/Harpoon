@@ -19,6 +19,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Util.Util;
 
 import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.RelationImpl;
 import harpoon.Util.DataStructs.LightRelation;
 import harpoon.Util.DataStructs.RelationEntryVisitor;
 
@@ -29,7 +30,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.47 2001-04-09 00:17:18 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.48 2001-06-07 15:21:22 salcianu Exp $
  */
 public class ParIntGraph implements java.io.Serializable {
 
@@ -115,6 +116,27 @@ public class ParIntGraph implements java.io.Serializable {
 	insertAllButArEo(pig2, mu, principal, Collections.EMPTY_SET);
     }
 
+
+    ParIntGraph getBarVersion() {
+	ParIntGraph bar_pig = new ParIntGraph();
+	bar_pig.G = this.G.specialize(get_g2b_map(allNodes()));
+	return bar_pig;
+    }
+
+    // Get the mapping "genuine node -> bar node" for node \in nodes
+    private Map get_g2b_map(Set nodes) {
+        Map g2b = new HashMap();
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    Util.assert(node.isGenuine(), node + " is not genuine!");
+	    PANode bar_node = node.getBarVersion();
+	    g2b.put(node, bar_node);
+	}
+
+	System.out.println("g2b = " + g2b);
+
+	return g2b;
+    }
 
     /** Check the equality of two <code>ParIntGraph</code>s. */
     public boolean equals(Object obj){
@@ -514,7 +536,7 @@ public class ParIntGraph implements java.io.Serializable {
 	loads that don't escape anywhere (and hence, don't represent any
 	object). In addition, the <code>&lt;&lt;n1,f&gt;,n2&gt;</code>
 	ouside (load) edges where <code>n1</code> is an unescaped node are
-	removed too. */ 
+	removed too. */
     public void removeEmptyLoads(){
 	final Set empty_loads = new HashSet();
 	final Set fake_outside_edges = new HashSet();

@@ -51,9 +51,9 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.53 2001-03-08 21:39:11 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.54 2001-06-07 15:21:21 salcianu Exp $
  */
-abstract class InterProcPA implements java.io.Serializable {
+public abstract class InterProcPA implements java.io.Serializable {
 
     /** Call sites with more than <code>MAX_CALLEES</code> callees are simply
      *  considered to be holes. */ 
@@ -95,8 +95,9 @@ abstract class InterProcPA implements java.io.Serializable {
 					       MetaMethod current_mmethod,
 					       CALL q,
 					       ParIntGraph pig_before) {
-	if(DEBUG)
-	    System.out.println("Inter-procedural analysis " + q);
+	if(DEBUG || DEBUG_MU)
+	    System.out.println("\nInter-procedural analysis " +
+			       Debug.code2str(q));
 
 	ParIntGraphPair pp_after = null;
 
@@ -397,33 +398,17 @@ abstract class InterProcPA implements java.io.Serializable {
 	    System.out.println("Pig_callee:" + pig_callee);
 	}
 
-	// get the initial mapping: formal param -> actual parameter,
-	// and class node -> class node
 	Relation mu = 
-	    get_initial_mapping(q,pig_caller,pig_callee,callee_params);
-
-	if(DEBUG) System.out.println("Initial mapping:" + mu);
-
-	// update the node mapping by matching outside edges from the caller
-	// with inside edges from the callee
-	Set redundant_ln = new HashSet();
-	match_edges(mu, pig_caller, pig_callee, redundant_ln);
-
-	if(DEBUG) System.out.println("After matching edges:" + mu);
-
-	// all the nodes from the caller (except for PARAM) are
-	// initially inserted into the caller's graph
-	compute_the_final_mapping(mu, pig_caller, pig_callee, redundant_ln);
-
-	if(DEBUG) System.out.println("Final mapping:" + mu);
-
+	    compute_mapping(q, pig_caller, pig_callee, callee_params);
 
 	PAEdgeSet old_caller_I = (PAEdgeSet) pig_caller.G.I.clone();
 
+
 	// Inserts the image of the callee's graph into the caller's graph.
 	Set params = new HashSet();
-	for(int i=0;i<callee_params.length;i++)
-	    params.add(callee_params[i]);
+	for(int i = 0; i < callee_params.length; i++)
+	    if(!pig_callee.tau.isStarted(callee_params[i]))
+		params.add(callee_params[i]);
 	pig_caller.insertAllButArEo(pig_callee, mu, false, params);
 
 	// bring the actions of the callee into the caller's graph
@@ -467,6 +452,60 @@ abstract class InterProcPA implements java.io.Serializable {
 
 	return new ParIntGraphPair(pig_caller, pig_caller1);
     }
+
+
+    // Conversion array -> set
+    private static final Set array2set(Object[] array) {
+	Set result = new HashSet();
+	for(int i = 0; i < array.length; i++)
+	    result.add(array[i]);
+	return result;
+    }
+
+    // activates the use of the new mapping constraints
+    private static boolean NEW_MAPPING_CONSTRAINTS = false;
+    public static boolean VERY_NEW_MAPPINGS = true;
+    static {
+	if(NEW_MAPPING_CONSTRAINTS) {
+	    System.out.println("InterProcPA: NEW_MAPPING_CONSTRAINTS");
+	    if(VERY_NEW_MAPPINGS)
+		System.out.println("InterProcPA: VERY_NEW_MAPPING");
+	}
+    }    // generates lots of debug messages about the construction of mu
+    private static boolean DEBUG_MU = false;
+
+    // Computes the mapping mu of the callee nodes
+    private static Relation compute_mapping
+	(CALL q,
+	 ParIntGraph pig_caller, ParIntGraph pig_callee,
+	 PANode[] callee_params) {
+
+	// use the new mapping constraints, if asked to do so
+	if(NEW_MAPPING_CONSTRAINTS)
+	    return compute_mu(q, pig_caller, pig_callee, callee_params);
+
+	// get the initial mapping: formal param -> actual parameter,
+	// and class node -> class node
+	Relation mu = 
+	    get_initial_mapping(q, pig_caller, pig_callee, callee_params);
+
+	if(DEBUG_MU) System.out.println("Initial mapping:" + mu);
+
+	// update the node mapping by matching outside edges from the caller
+	// with inside edges from the callee
+	Set redundant_ln = new HashSet();
+	match_edges(mu, pig_caller, pig_callee, redundant_ln);
+
+	if(DEBUG_MU) System.out.println("After matching edges:" + mu);
+
+	// all the nodes from the caller (except for PARAM) are
+	// initially inserted into the caller's graph
+	compute_the_final_mapping(mu, pig_callee, redundant_ln);
+
+	if(DEBUG_MU) System.out.println("Final mapping:" + mu);
+	
+	return mu;
+    }
     
 
     /** Sets the initial mapping: each formal parameter is mapped
@@ -480,6 +519,24 @@ abstract class InterProcPA implements java.io.Serializable {
 						ParIntGraph pig_callee,
 						PANode[] callee_params) {
 	Relation mu = new RelationImpl();
+
+	// first, map the parameter nodes to the actual nodes being passed
+	// as arguments in the call q
+	map_parameters(mu, q, pig_caller, callee_params);
+
+	// next, map the static nodes to themselves;
+	// only the static nodes that appear as sources of the outside edges
+	// must be initially mapped
+	process_STATICs(pig_callee.G.O.allSourceNodes(), mu);
+
+	return mu;
+    }
+
+
+    // Updates the mapping mu to contain the mappings for the parameter nodes
+    private static void map_parameters
+	(Relation mu, CALL q, ParIntGraph pig_caller, PANode[] callee_params) {
+
 	Temp[] args = q.params();
 	int object_params_count = 0;
 
@@ -500,13 +557,6 @@ abstract class InterProcPA implements java.io.Serializable {
 	    System.out.println(q);
 	    System.exit(1);
 	}
-
-	// map the static nodes to themselves;
-	// only the static nodes that appear as sources of the outside edges
-	// must be initially mapped
-	process_STATICs(pig_callee.G.O.allSourceNodes(), mu);
-
-	return mu;
     }
 
     // aux method for get_initial_mapping
@@ -521,7 +571,7 @@ abstract class InterProcPA implements java.io.Serializable {
     /** Matches outside edges from the graph of (used by ) the callee 
 	against inside edges from the graph of (created by) the caller.
 	(repeated application of constraint 2). The goal of this method is
-	to resove the load nodes from the callee, i.e. to detect the
+	to resolve the load nodes from the callee, i.e. to detect the
 	nodes from the caller that each load node might represent. */
     private static void match_edges(Relation mu,
 				    ParIntGraph pig_caller,
@@ -601,11 +651,10 @@ abstract class InterProcPA implements java.io.Serializable {
 
     // Initially, all the nodes from the callee are put into the caller's
     // graph except for the PARAM nodes. Later, after recomputing the
-    // escape info, the empy load nodes will be removed (together with
+    // escape info, the empty load nodes will be removed (together with
     // the related information)
     private static void compute_the_final_mapping
 	(final Relation mu,
-	 final ParIntGraph pig_caller,
 	 final ParIntGraph pig_callee,
 	 final Set redundant_ln) {
 	pig_callee.forAllNodes(new PANodeVisitor(){
@@ -622,11 +671,218 @@ abstract class InterProcPA implements java.io.Serializable {
 	    });
     }
 
-
     private static ParIntGraph mergeRedundantLoads(final ParIntGraph pig) {
 	// TODO: better implementation of this
 	return pig;
     }
+
+
+    /////////////////////////////////////////////////////////////////////
+    ////////////////// New mapping constraints START ////////////////////
+
+    private static Relation compute_mu
+	(CALL q,
+	 ParIntGraph pig_caller, ParIntGraph pig_callee,
+	 PANode[] callee_params) {
+
+	// M0 + M1
+	Relation mu = get_initial_mu(q, pig_caller, pig_callee, callee_params);
+
+	if(DEBUG_MU) 
+	    System.out.println("Initial mu: " + mu);
+
+	// M2 + M3
+	extend_mu(mu, pig_caller, pig_callee);
+
+	if(VERY_NEW_MAPPINGS) {
+	    if(DEBUG_MU)
+		System.out.println("mu AFTER extend_mu: " + mu);
+	    compute_the_final_mapping(mu, pig_callee, Collections.EMPTY_SET);
+	}
+
+	if(DEBUG_MU)
+	    System.out.println("Final mu: " + mu);
+
+	return mu;
+    }
+
+
+    // Returns a node mapping initialized by M0 and M1.
+    private static Relation get_initial_mu
+	(CALL q,
+	 ParIntGraph pig_caller, ParIntGraph pig_callee,
+	 PANode[] callee_params) {
+
+	Relation mu = new RelationImpl();
+
+	// constraints M0 & M0'
+	for(Iterator it = pig_callee.allNodes().iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(VERY_NEW_MAPPINGS) {
+		// constraint M0': <n,n> \in \mu \forall static nodes n
+		if(node.type == PANode.STATIC)
+		    mu.add(node, node);
+	    } else {
+		// constraint M0: <n,n> \in \mu \forall n \not\in N_P
+		if(node.type != PANode.PARAM)
+		    mu.add(node, node);
+	    }
+	}
+
+	// constraint M1
+	map_parameters(mu, q, pig_caller, callee_params);
+
+	return mu;
+    }
+
+
+    // extend mu through the rules M2 & M3 to obtain the l.f.p. of M0-3
+    private static void extend_mu
+	(Relation mu, ParIntGraph pig_caller, ParIntGraph pig_callee) {
+
+	PAWorkList W = new PAWorkList();
+	// here is the new stuff; only nodes with new stuff are
+	// put in the worklist W.
+	Relation new_info = (Relation) mu.clone();
+
+	W.addAll(mu.keys());
+	while(!W.isEmpty()) {
+	    while(!W.isEmpty()) {
+		PANode node1 = (PANode) W.remove();
+		extend_mu_M2(node1, mu, W, new_info, pig_caller, pig_callee);
+	    }
+	    extend_mu_M3(mu, W, new_info, pig_caller, pig_callee);
+	}
+    }
+
+    // try to extend mu by applying constraint M2 in node node1
+    private static void extend_mu_M2
+	(PANode node1, Relation mu, PAWorkList W, Relation new_info,
+	 ParIntGraph pig_caller, ParIntGraph pig_callee) {
+	// nodes3 stands for all the new instances of n3
+	// from the inference rule
+	HashSet nodes3 = new HashSet(new_info.getValues(node1));
+	new_info.removeKey(node1);
+	
+	Iterator itf = pig_callee.G.O.allFlagsForNode(node1).iterator();
+	while(itf.hasNext()) {
+	    String f = (String) itf.next();
+	    // nodes2 stands for all the nodes that could play
+	    // the role of n2 from the inference rule
+	    Set nodes2 = pig_callee.G.O.pointedNodes(node1, f);
+	    if(nodes2.isEmpty()) continue;
+	    
+	    // nodes4 stands for all the nodes that could play
+	    // the role of n4 from the inference rule
+	    Set nodes4 = pig_caller.G.I.pointedNodes(nodes3, f);
+	    if(!nodes4.isEmpty()) {
+		// set up the relation from any node from nodes2
+		// to any node from nodes4
+		for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
+		    PANode node2 = (PANode) it2.next();
+		    boolean changed = false;
+		    for(Iterator it4 = nodes4.iterator(); it4.hasNext();) {
+			PANode node4 = (PANode)it4.next();
+			if(mu.add(node2,node4)){
+			    changed = true;
+			    new_info.add(node2, node4);
+			}
+		    }
+		    // nodes with new info are put in the worklist
+		    if(changed) W.add(node2);
+		}
+	    }
+	}
+    }
+
+
+    // Extend mu to cope with the potential aliasing between nodes in callee
+    private static void extend_mu_M3
+	(Relation mu, PAWorkList W, Relation new_info,
+	 ParIntGraph pig_caller, ParIntGraph pig_callee) {
+	
+	Relation um = new RelationImpl();
+	mu.revert(um);
+	
+	for(Iterator it = um.keys().iterator(); it.hasNext(); ) {
+	    PANode node5 = (PANode) it.next();
+	    Set n1n3 = um.getValues(node5);
+	    if(n1n3.size() < 2) continue;
+
+	    for(Iterator it1 = n1n3.iterator(); it1.hasNext(); ) {
+		PANode node1 = (PANode) it1.next();
+		for(Iterator it3 = n1n3.iterator(); it3.hasNext(); ) {
+		    PANode node3 = (PANode) it3.next();
+		    if(node1 == node3) continue;
+		    extend_mu_M3(node1, node3, mu, W, new_info, pig_callee);
+		}
+	    }
+	}
+    }
+
+
+    // Extend mu to cope with the potential aliasing between node1 and node3
+    private static void extend_mu_M3
+	(PANode node1, PANode node3,
+	 Relation mu, PAWorkList W, Relation new_info,
+	 ParIntGraph pig_callee) {
+
+	if(DEBUG_MU)
+	    System.out.println("extend_mu_M3: node1 = " + node1 +
+			       " node3 = " + node3);
+	
+	Iterator itf = pig_callee.G.I.allFlagsForNode(node3).iterator();
+	while(itf.hasNext()) {
+	    String f = (String) itf.next();
+
+	    Set nodes2 = pig_callee.G.O.pointedNodes(node1, f);
+	    if(nodes2.isEmpty()) continue;
+
+	    Set nodes4 = pig_callee.G.I.pointedNodes(node3, f);
+	    if(nodes4.isEmpty()) continue;
+
+	    Set mu_nodes4 = new HashSet();
+	    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
+		PANode node4 = (PANode) it4.next();
+		mu_nodes4.addAll(mu.getValues(node4));
+	    }
+
+	    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
+		PANode node2 = (PANode) it2.next();
+		boolean changed = false;
+		
+		for(Iterator it6 = mu_nodes4.iterator(); it6.hasNext(); ) {
+		    PANode node6 = (PANode) it6.next();
+
+		    if(mu.add(node2, node6)) {
+			if(DEBUG_MU)
+			    System.out.println("  " + node2 + " -> " + node6);
+			changed = true;
+			new_info.add(node2, node6);
+		    }
+		}
+
+		if(VERY_NEW_MAPPINGS) {
+		    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
+			PANode node4 = (PANode) it4.next();
+			if(mu.add(node2, node4)) {
+			    if(DEBUG_MU)
+				System.out.println
+				    ("  " + node2 + " -> " + node4);
+			    changed = true;
+			    new_info.add(node2, node4);
+			}
+		    }
+		}
+
+		// nodes with new info are put in the worklist
+		if(changed) W.add(node2);
+	    }
+	}
+    }
+    
+    ////////////////// New mapping constraints END //////////////////////
+    /////////////////////////////////////////////////////////////////////
 
 
     /** Sets the edges for the result or the exception returned by the callee.
@@ -987,13 +1243,14 @@ abstract class InterProcPA implements java.io.Serializable {
 	    {"javax.realtime.Stats",          "addNewObject"},
 	    {"javax.realtime.Stats",          "addNewArrayObject"},
 	    {"javax.realtime.HeapMemory",     "instance"},
-	    {"javax.realtime.ImmortalMemory", "instance"}
+	    {"javax.realtime.ImmortalMemory", "instance"},
+	    {"javax.realtime.MemoryArea",     "enterMemBlock"}
 	};
 	for(int i = 0; i < methods.length; i++)
 	    wes_methods.addAll
 		(getMethods(methods[i][0], methods[i][1], linker));
  
-	Util.print_collection(uhms, "Wes RTJ methods");
+	Util.print_collection(wes_methods, "Wes RTJ methods");
     }
 
     // Many native methods don't do any synchronizations on their object
@@ -1010,6 +1267,7 @@ abstract class InterProcPA implements java.io.Serializable {
     private static boolean isTotallyHarmful(HMethod hm) {
 	return !isUnharmful(hm); // for the moment, conservative treatment
     }
+    public static Set getUnharmfulMethods() { return uhms; }
     private static Set uhms = new HashSet();
     private static void build_uhms(Linker linker) {
 	String[][] methods = {
@@ -1037,6 +1295,11 @@ abstract class InterProcPA implements java.io.Serializable {
 
 	    {"java.net.PlainSocketImpl", "socketClose"},
 	    {"java.net.PlainSocketImpl", "socketAvailable"},
+
+	    {"java.net.PlainSocketImpl", "socketAccept"},
+	    {"java.net.PlainSocketImpl", "socketBind"},
+	    {"java.net.PlainSocketImpl", "socketCreate"},
+	    {"java.net.PlainSocketImpl", "socketListen"},
 
 	    {"java.lang.Object", "hashCode"},
 

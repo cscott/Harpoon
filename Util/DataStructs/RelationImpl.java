@@ -24,7 +24,7 @@ import harpoon.Util.PredicateWrapper;
  * lots of memory.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: RelationImpl.java,v 1.1.2.1 2000-07-01 23:08:09 salcianu Exp $
+ * @version $Id: RelationImpl.java,v 1.1.2.2 2001-06-07 15:21:40 salcianu Exp $
  */
 public class RelationImpl implements Relation, java.io.Serializable {
     
@@ -240,6 +240,13 @@ public class RelationImpl implements Relation, java.io.Serializable {
 	return buffer.toString();
     }
 
+    public void revert(final Relation result) {
+	forAllEntries(new RelationEntryVisitor() {
+		public void visit(Object key, Object value) {
+		    result.add(value, key);
+		}
+	    });
+    }
 }
 
 

@@ -23,6 +23,7 @@ import harpoon.Analysis.MetaMethods.GenType;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
 
 import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.RelationImpl;
 import harpoon.Util.DataStructs.LightRelation;
 import harpoon.Util.DataStructs.RelationEntryVisitor;
 
@@ -40,7 +41,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.37 2001-03-08 21:39:11 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.38 2001-06-07 15:21:21 salcianu Exp $
  */
 public abstract class InterThreadPA implements java.io.Serializable {
 
@@ -88,12 +89,50 @@ public abstract class InterThreadPA implements java.io.Serializable {
 
 	ParIntGraph pig = (ParIntGraph) noit_pig.clone();
 
-	if(DEBUG)
+	if(DEBUG2)
 	    System.out.println("Initial thread map:" + pig.tau);
 
-	while(true){
-	    PANode nt = pick_an_unanalyzed_thread(pig,analyzed_threads);
-	    if(nt == null) break;
+	PANode nt;
+
+	// process first the threads nt with tau(nt) = 1
+	/*
+	while((nt = pick_an_unanalyzed_thread(pig,analyzed_threads)) != null) {
+ 	    analyzed_threads.add(nt);
+	    if(pig.tau.getValue(nt) != 1)
+		continue;
+
+	    MetaMethod[] ops = get_run_mmethods(pa, nt);
+	    pig = interaction_nt(pa, pig, nt, ops);
+
+	    if(pig.tau.getValue(nt) == 1) {
+		pig.G.e.removeNodeHoleFromAll(nt);
+		pig.removeEmptyLoads();
+		pig.tau.setToZero(nt);
+		Util.assert(pig.tau.getValue(nt) == 0, "Error");
+	    }
+	}
+	analyzed_threads.clear();
+
+	nt = pick_an_unanalyzed_thread(pig, analyzed_threads);
+	if(nt == null) return pig;
+
+	int old_tau_nt = pig.tau.getValue(nt);
+	if(old_tau_nt == 1) {
+	    MetaMethod[] ops = get_run_mmethods(pa, nt);
+	    pig = interaction_nt(pa, pig, nt, ops);
+	    int new_tau_nt = pig.tau.getValue(nt);
+	    System.out.println("nt = "  + nt);
+	    System.out.println("old_tau_nt = " + old_tau_nt);
+	    System.out.println("new_tau_nt = " + new_tau_nt);
+	    pig.G.e.removeNodeHoleFromAll(nt);
+	    pig.tau.setToZero(nt);
+	    Util.assert(pig.tau.getValue(nt) == 0, "Error");
+	    pig.removeEmptyLoads();
+	    System.out.println("RESULTING PIG (after cleaning)" + pig);
+	}
+	*/
+
+	while((nt = pick_an_unanalyzed_thread(pig,analyzed_threads)) != null) {
 
 	    if(DEBUG)
 		System.out.println(nt + " was chosen");
@@ -119,14 +158,17 @@ public abstract class InterThreadPA implements java.io.Serializable {
 	}
 
 	// the threads that have been analyzed are no longer holes
-	for(Iterator it = processed_threads.iterator(); it.hasNext();){
-	    PANode nt = (PANode) it.next();
+	for(Iterator it = processed_threads.iterator(); it.hasNext();) {
+	    nt = (PANode) it.next();
 	    if(DEBUG)
 		System.out.println("Removed thread hole: " + nt);
 	    pig.G.e.removeNodeHoleFromAll(nt);
 	}
 	// clean up some of the useless LOAD nodes
 	pig.removeEmptyLoads();
+
+	if(DEBUG2)
+	    System.out.println("RESULTING PIG (WITHOUT EMPTY LOADS): " + pig);
 
 	if(TIMING){
 	    long total_time = System.currentTimeMillis() - begin_time;
@@ -233,7 +275,7 @@ public abstract class InterThreadPA implements java.io.Serializable {
 	}
 	else{ // a fixed-point algorithm is necessary in this case
 	    new_pig = pig; // before the 1st iteration
-	    while(true){
+	    while(true) {
 		ParIntGraph previous_pig = new_pig;
 		new_pig = interact_once(pa, previous_pig, nt, ops);
 		if(new_pig.equals(previous_pig)) break;
@@ -246,6 +288,9 @@ public abstract class InterThreadPA implements java.io.Serializable {
 	new_pig.G.propagate();
 	// and restore the graph received as argument
 	pig.G.O = old_O;
+
+	if(DEBUG2)
+	    System.out.println("RESULTING PIG (unclean yet)" + new_pig);
 
 	return new_pig;
     }
@@ -321,31 +366,9 @@ public abstract class InterThreadPA implements java.io.Serializable {
  	}
 	
 	PANode[] params = pa.getParamNodes(op);
+
+	Relation mu[] = compute_mappings(pig, nt, params);
 	
-	Relation mu[] = compute_initial_mappings(pig,nt,params);
-
-	if(DEBUG2){
-	    System.out.println("INITIAL MAPPINGS:");
-	    System.out.println("starter -> startee:" + mu[0]);
-	    System.out.println("startee -> starter:" + mu[1]);
-	}
-
-	concretize_loads(pig,mu);
-	
-	if(DEBUG2){
-	    System.out.println("AFTER CONCRETIZE LOADS:");
-	    System.out.println("starter -> startee:" + mu[0]);
-	    System.out.println("startee -> starter:" + mu[1]);
-	}
-
-	compute_final_mappings(pig,mu,nt);
-
-	if(DEBUG2){
-	    System.out.println("FINAL MAPPINGS:");
-	    System.out.println("starter -> startee:" + mu[0]);
-	    System.out.println("startee -> starter:" + mu[1]);
-	}
-
 	Set actives = active_threads_outside_startee(pa, pig[0]);
 
 	if(DEBUG2)
@@ -359,6 +382,54 @@ public abstract class InterThreadPA implements java.io.Serializable {
 	}
 
 	return new_pig;
+    }
+
+
+    // activates the use of the new mapping constraints
+    private static boolean NEW_MAPPING_CONSTRAINTS = true;
+    public static boolean VERY_NEW_MAPPINGS = true;
+    static {
+	if(NEW_MAPPING_CONSTRAINTS) {
+	    System.out.println("InterThreadPA: NEW_MAPPING_CONSTRAINTS");
+	    if(VERY_NEW_MAPPINGS)
+		System.out.println("InterThreadPA: VERY_NEW_MAPPING");
+	}
+    }
+    // generates lots of debug messages about the construction of mu
+    private static boolean DEBUG_MU = false;
+
+
+    private static Relation[] compute_mappings
+	(ParIntGraph pig[], PANode nt, PANode[] params) {
+
+	if(NEW_MAPPING_CONSTRAINTS)
+	    return compute_mu(pig, nt, params[0]);
+
+	Relation mu[] = compute_initial_mappings(pig, nt, params);
+	
+	if(DEBUG_MU) {
+	    System.out.println("INITIAL MAPPINGS:");
+	    System.out.println("starter -> startee:" + mu[0]);
+	    System.out.println("startee -> starter:" + mu[1]);
+	}
+	
+	concretize_loads(pig, mu);
+	
+	if(DEBUG_MU) {
+	    System.out.println("AFTER CONCRETIZE LOADS:");
+	    System.out.println("starter -> startee:" + mu[0]);
+	    System.out.println("startee -> starter:" + mu[1]);
+	}
+
+	compute_final_mappings(pig,mu,nt);
+
+	if(DEBUG_MU) {
+	    System.out.println("FINAL MAPPINGS:");
+	    System.out.println("starter -> startee:" + mu[0]);
+	    System.out.println("startee -> starter:" + mu[1]);
+	}
+
+	return mu;
     }
 
 
@@ -409,7 +480,7 @@ public abstract class InterThreadPA implements java.io.Serializable {
 
     /* Computes the mappings by matching outside edges from one graph
        against inside edges from the other one. */
-    private static void concretize_loads(ParIntGraph[] pig, Relation[] mu){
+    private static void concretize_loads(ParIntGraph[] pig, Relation[] mu) {
 
 	PAWorkList W[] = { new PAWorkList(), new PAWorkList() };
 
@@ -425,7 +496,7 @@ public abstract class InterThreadPA implements java.io.Serializable {
 	    else 
 		if(!W[1].isEmpty()) { i=1; ib=0; }
 		else{
-		    Matching.rule0(mu,W);
+		    Matching.rule0(mu, W, new_info);
 		    if(W[0].isEmpty() && W[1].isEmpty()) break;
 		    else continue;
 		}
@@ -473,6 +544,189 @@ public abstract class InterThreadPA implements java.io.Serializable {
 
 	pig[1].forAllNodes(visitor_startee);
     }
+
+
+
+    /////////////////////////////////////////////////////////////////////
+    ////////////////// New mapping constraints START ////////////////////
+
+    private static boolean USE_BAR = false;
+    static {
+	if(USE_BAR)
+	    System.out.println("USE_BAR");
+    }
+
+    // Compute the mappings using the new constraints
+    private static Relation[] compute_mu
+	(ParIntGraph pig[], PANode nt, PANode param) {
+
+	ParIntGraph initial_pig1 = pig[1];
+	if(USE_BAR) {
+	    pig[1] = pig[1].getBarVersion();
+	}
+
+	//System.out.println("Beginning of compute_mu:");
+	//System.out.println("initial_pig1.G.O = " + initial_pig1.G.O);
+	//System.out.println("pig[1].G.O = " + pig[1].G.O);
+
+
+	// initialize the mappings mu
+	Relation mu[] = get_initial_mu(pig, nt, param);
+	if(DEBUG_MU) {
+	    System.out.println("INITIAL MAPPINGS:");
+	    System.out.println("starter -> startee:" + mu[0]);
+	    System.out.println("startee -> starter:" + mu[1]);
+	}
+
+	//System.out.println("BEFORE extend_mu pig[0] = " + pig[0]);
+	//System.out.println("BEFORE extend_mu pig[1] = " + pig[1]);
+
+	// extend the mappings mu according to the inference rules
+	extend_mu(mu, pig);
+	if(DEBUG_MU) {
+	    System.out.println("MAPPINGS AFTER extend_mu:");
+	    System.out.println("starter -> startee:" + mu[0]);
+	    System.out.println("startee -> starter:" + mu[1]);
+	}
+
+	if(VERY_NEW_MAPPINGS) {
+	    compute_final_mappings(pig, mu, nt);
+	    if(DEBUG_MU) {
+		System.out.println("MAPPINGS AFTER extend_mu:");
+		System.out.println("starter -> startee:" + mu[0]);
+		System.out.println("startee -> starter:" + mu[1]);
+	    }
+	}
+
+	if(USE_BAR)
+	    mu = get_adjusted_mu(mu);
+
+	if(DEBUG_MU) {
+	    System.out.println("FINAL MAPPINGS:");
+	    System.out.println("starter -> startee:" + mu[0]);
+	    System.out.println("startee -> starter:" + mu[1]);
+	}
+
+	if(USE_BAR) {
+	    // restore the initial graph
+	    pig[1] = initial_pig1;
+	}
+
+	return mu;
+    }
+
+    // Get the pair of initial mappings: each node in entity i
+    // (starter/startee) is mapped to itself in mu[i], except for the
+    // only param node of the 
+    private static Relation[] get_initial_mu
+	(ParIntGraph pig[], PANode nt, PANode param) {
+
+	Relation mu[] = 
+	    new Relation[] { new RelationImpl(), new RelationImpl() };
+
+	// map the "this" param node of the startee to the thread node nt
+	mu[1].add(param, nt);
+	// map the dummy current thread from the startee to nt
+	mu[1].add(ActionRepository.THIS_THREAD, nt);
+
+	if(VERY_NEW_MAPPINGS) {
+	    // map each static node to itself
+	    for(int i = 0; i < 2; i++) {
+		for(Iterator it = pig[i].allNodes().iterator();
+		    it.hasNext(); ) {
+		    PANode node = (PANode) it.next();
+		    if(node.type == PANode.STATIC)
+			mu[i].add(node, node);
+		}
+	    }
+	    return mu;
+	}
+	
+	// map every node to itself, except the "this" param node of the
+	// startee that will disappear after the thread interaction
+	//  a. first map node to node, \forall node
+	for(int i = 0; i < 2; i++) {
+	    for(Iterator it = pig[i].allNodes().iterator(); it.hasNext(); ) {
+		PANode node = (PANode) it.next();
+		mu[i].add(node, node);
+	    }
+	}
+	//  b. now, delete the mapping params[0], params[0]
+	mu[1].remove(param, param);
+
+	mu[1].remove(ActionRepository.THIS_THREAD,
+		     ActionRepository.THIS_THREAD);
+
+	return mu;
+    }
+
+
+    // extend the mappings using the inference rules coded into Matching
+    private static void extend_mu(Relation mu[], ParIntGraph pig[]) {
+	PAWorkList W[] = { new PAWorkList(), new PAWorkList() };
+
+	Relation new_info[] = { (Relation)(mu[0].clone()),
+				(Relation)(mu[1].clone()) };
+	
+	W[0].addAll(mu[0].keys());
+	W[1].addAll(mu[1].keys());
+
+	while(true){
+	    int i,ib;
+
+	    if(!W[0].isEmpty()) { i=0; ib=1; }
+	    else 
+		if(!W[1].isEmpty()) { i=1; ib=0; }
+		else {
+		    Matching.rule0(mu, W, new_info);
+
+		    for(int k = 0; k < 2; k++)
+			Matching.aliasingSameScopeRule
+			    (mu[k], pig[k], W[k], new_info[k]);
+
+		    if(W[0].isEmpty() && W[1].isEmpty()) break;
+		    else continue;
+		}
+
+	    PANode node = (PANode) W[i].remove();
+
+	    // new mappings for node
+	    Set new_mappings = new HashSet(new_info[i].getValues(node));
+	    new_info[i].removeKey(node);
+
+	    Matching.rule2(node,new_mappings,pig,W,mu,new_info,i,ib);
+	    Matching.rule22(node,new_mappings,pig,W,mu,new_info,i,ib);
+	    Matching.rule3(node,new_mappings,pig,W,mu,new_info,i,ib);
+	    Matching.rule32(node,new_mappings,pig,W,mu,new_info,i,ib);
+	}
+
+    }
+
+
+    // Adjust the relations mu[0], mu[1]: bar(n) -> n, \forall n.
+    private static Relation[] get_adjusted_mu(Relation[] mu) {
+        return
+	    new Relation[] { get_adjusted_mu(mu[0]),
+			     get_adjusted_mu(mu[1]) };
+    }
+
+
+    // Go over the mapping mu and replace every node with its
+    // genuine version.
+    private static Relation get_adjusted_mu(Relation mu) {
+	final Relation unbar_mu = new RelationImpl();
+	mu.forAllEntries(new RelationEntryVisitor() {
+		public void visit(Object key, Object value) {
+		    PANode node1 = ((PANode) key).getGenuine();
+		    PANode node2 = ((PANode) value).getGenuine();
+		    unbar_mu.add(node1, node2);
+		}
+	    });
+	return unbar_mu;
+    }
+
+    ////////////////// New mapping constraints END //////////////////////
+    /////////////////////////////////////////////////////////////////////
 
 
     /* Builds the new graph using the graphs from the starter and the startee

@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.37 2001-02-27 22:11:13 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.38 2001-06-07 15:21:22 salcianu Exp $
  */
 public class PointsToGraph implements Cloneable, java.io.Serializable{
 
@@ -173,13 +173,15 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 	flushCaches();
     }
 
-    /** Inserts the image of <code>G2</code> points-to graph
-	through the <code>mu</code> node mapping into <code>this</code> object.
-	This method is designed to be called - indirectly through 
-	<code>ParIntGraph.insertAllButArEo</code> - at the end of the
-	caller/callee or starter/startee interaction. <br>
-	<code>principal</code> controls whether the return and exception set
-        are inserted. */
+
+    /** Inserts the image of <code>G2</code> points-to graph through
+	the <code>mu</code> node mapping into <code>this</code>
+	object. This method is designed to be called - indirectly
+	through <code>ParIntGraph.insertAllButArEo</code> - at the end
+	of the caller/callee or starter/startee interaction. <br>
+
+	<code>principal</code> controls whether the return and
+	exception set are inserted. */
     public void insert(PointsToGraph G2, Relation mu,
 		       boolean principal, Set noholes){
 	insert_edges(G2.O , G2.I , mu );

@@ -17,7 +17,7 @@ import harpoon.Util.PredicateWrapper;
  * Analysis algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.1 2000-07-01 23:04:26 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.2 2001-06-07 15:21:40 salcianu Exp $
  */
 public interface Relation {
     
@@ -111,6 +111,12 @@ public interface Relation {
 
     /** Clones this relation. */
     public Object clone();
+
+
+    /** Revert <code>this</code> relation and store the result into
+    the relation <code>result</code>. &lt;a,b&gt; appears in the reverse
+    relation iff &lt;b,a&gt; appears in <code>this</code> relation. */
+    public void revert(Relation result);
 }
 
 

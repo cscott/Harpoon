@@ -23,7 +23,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.25 2001-02-27 22:11:12 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.26 2001-06-07 15:21:22 salcianu Exp $
  */
 public class PAEscapeFunc implements java.io.Serializable {
 
@@ -188,8 +188,8 @@ public class PAEscapeFunc implements java.io.Serializable {
     }
 
     /** Inserts the image of <code>e2</code> through the <code>mu</code>
-	mapping into <code>this</code> <code>PAEscapeFunc</code>. */ 
-    public void insert(PAEscapeFunc e2, final Relation mu, final Set noholes){
+	mapping into <code>this</code> <code>PAEscapeFunc</code>. */
+    public void insert(PAEscapeFunc e2, final Relation mu, final Set noholes) {
 	// insert the node holes
 	RelationEntryVisitor nvisitor =
 	    new RelationEntryVisitor(){
