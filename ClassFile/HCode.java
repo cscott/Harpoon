@@ -15,7 +15,7 @@ import java.util.Iterator;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.14 2002-04-10 03:04:15 cananian Exp $
+ * @version $Id: HCode.java,v 1.15 2002-08-31 00:27:51 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
@@ -55,11 +55,17 @@ public abstract class HCode<HCE extends HCodeElement> {
    * Return an ordered <code>Collection</code> (a <code>List</code>) of
    * the component objects making up this code view.  If there is a
    * 'root' to the code view, it should be the first element in the
-   * List.  <p>
+   * List.  Note that the object returned need not be static; i.e.
+   * the contents of the <code>List</code> may (or may not) change as
+   * the underlying representation is modified.  If you need a
+   * static view, see <code>SnapshotIterator</code>; if you need
+   * a dynamic view, don't cache the returned <code>List</code>.
+   * <p>
    * Either <code>getElementsI()</code> or <code>getElementsE()</code>
    * must have been implemented for the default implementation to work
    * properly.
    */
+  // the default implementation gives a snapshot view, for what it's worth.
   public java.util.List<HCE> getElementsL() {
     java.util.List<HCE> l = new java.util.ArrayList<HCE>();
     for (Iterator<HCE> i = getElementsI(); i.hasNext(); )
