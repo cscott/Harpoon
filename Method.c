@@ -10,6 +10,88 @@
 #include <dmalloc.h>
 #endif
 
+void exitmethod(struct heap_state *heap, struct hashtable *ht, long long uid) {
+  //Lets show the roles!!!!
+  int i=0;
+  struct genhashtable * dommap;
+  struct rolereturnstate *rrs=(struct rolereturnstate *)calloc(1, sizeof(struct rolereturnstate));
+#ifdef DEBUG
+  printf("Returning Context for method %s.%s%s:\n", heap->methodlist->methodname->classname->classname, heap->methodlist->methodname->methodname, heap->methodlist->methodname->signature);
+#endif
+
+  doincrementalreachability(heap,ht,1);
+  updateroleeffects(heap); /*Merge in this invocation's effects*/
+  dommap=builddominatormappings(heap,1);
+
+  if (heap->methodlist->numobjectargs!=0)
+    rrs->paramroles=(char **)calloc(heap->methodlist->numobjectargs, sizeof(char *));
+  for(;i<heap->methodlist->numobjectargs;i++) {
+    if (heap->methodlist->params[i]!=NULL) {
+      rrs->paramroles[i]=findrolestring(heap, dommap, heap->methodlist->params[i],1);
+    }
+  }
+  if (uid!=-1) {
+    rrs->returnrole=findrolestring(heap, dommap, gettable(ht,uid),1);
+  }
+  addrolereturn(heap->methodlist->rm,rrs);
+  /* Finished building return instantiation of method*/
+
+  /* Assign roles to all objects that might have changed*/
+  while(!setisempty(heap->changedset)) {
+    struct heap_object *ho=removeobject(heap->changedset,NULL);
+    free(findrolestring(heap, dommap, ho,1));
+  }
+  genfreekeyhashtable(dommap);
+  /* Merge in any rolechanges we've observed*/
+  mergerolechanges(heap);
+}
+
+void entermethod(struct heap_state * heap, struct hashtable * ht) {
+  //Lets show the roles!!!!
+
+  /* Create maps so we can calculate roles*/
+  int i=0;
+  struct genhashtable * dommap;
+
+  /* Create role instantiated method structure*/
+  struct rolemethod * rolem=(struct rolemethod *) calloc(1, sizeof(struct rolemethod));
+  doincrementalreachability(heap,ht,0);
+  dommap=builddominatormappings(heap,0);
+  rolem->methodname=heap->methodlist->methodname;
+  if (heap->methodlist->numobjectargs)
+    rolem->paramroles=(char **)calloc(heap->methodlist->numobjectargs, sizeof(char *));
+  rolem->numobjectargs=heap->methodlist->numobjectargs;
+  rolem->isStatic=heap->methodlist->isStatic;
+  
+#ifdef DEBUG
+  printf("Calling Context for method %s.%s%s:\n", heap->methodlist->methodname->classname->classname, heap->methodlist->methodname->methodname, heap->methodlist->methodname->signature);
+#endif
+  for(;i<heap->methodlist->numobjectargs;i++) {
+    if (heap->methodlist->params[i]!=NULL) {
+      rolem->paramroles[i]=findrolestring(heap, dommap, heap->methodlist->params[i],0);
+    }
+  }
+  methodassignhashcode(rolem);
+  rolem=methodaddtable(heap,rolem);
+  if (rolem->rolechanges==NULL)
+    rolem->rolechanges=genallocatehashtable((int (*)(void *)) &rcshashcode, (int (*)(void *,void *)) &equivalentrcs);
+
+
+  heap->methodlist->rm=rolem;
+  /* Finished with role instantiated method.*/
+
+  /* Assign roles to all objects that might have changed*/
+  while(!setisempty(heap->changedset)) {
+    struct heap_object *ho=removeobject(heap->changedset,NULL);
+    free(findrolestring(heap, dommap, ho,0));
+  }
+
+  genfreekeyhashtable(dommap);
+  freemethodlist(heap);
+} 
+
+
+
 int methodhashcode(struct rolemethod * method) {
   return method->hashcode;
 }
@@ -45,7 +127,9 @@ void freerolereturnstate(int numobjectargs, struct rolereturnstate * rrs) {
   for(i=0;i<numobjectargs;i++) {
     free(rrs->paramroles[i]);
   }
+  free(rrs->paramroles);
   free(rrs->returnrole);
+  free(rrs);
 }
 
 int equivalentrolereturnstate(int numobjectargs, struct rolereturnstate *rrs1, struct rolereturnstate *rrs2) {
@@ -125,6 +209,56 @@ void printrolemethod(struct rolemethod *method) {
    printf("   Return value=%s\n",rrs->returnrole);
     rrs=rrs->next;
   }
+  printrolechanges(method->rolechanges);
   printf("}\n\n");
 }
 
+void printrolechanges(struct genhashtable *rolechanges) {
+  struct geniterator *it=gengetiterator(rolechanges);
+  while(1) {
+    struct rolechangesum *rcs=(struct rolechangesum *)gennext(it);
+    if (rcs==NULL) break;
+    printf("%s -> %s\n",rcs->origrole, rcs->newrole);
+  }
+  genfreeiterator(it);
+}
+
+void mergerolechanges(struct heap_state *heap) {
+  struct genhashtable * rolechangetable=heap->methodlist->rolechangetable;
+  struct genhashtable * rolechanges=heap->methodlist->rm->rolechanges;
+  struct geniterator *it=gengetiterator(rolechangetable);
+  while(1) {
+    struct rolechange *rc=(struct rolechange *)gennext(it);
+    struct rolechangesum *rcs;
+    if (rc==NULL)
+      break;
+    rcs=(struct rolechangesum *)calloc(1,sizeof(struct rolechangesum));
+    rcs->origrole=rc->origrole;
+    rcs->newrole=rc->newrole;
+    if (!gencontains(rolechanges, rcs)) {
+      genputtable(rolechanges,rcs,NULL);
+    } else {
+      free(rcs->origrole);
+      free(rcs->newrole);
+      free(rcs);
+    }
+    free(rc);
+  }
+  genfreeiterator(it);
+  genfreehashtable(rolechangetable);
+  heap->methodlist->rolechangetable=NULL;
+}
+
+int rcshashcode(struct rolechangesum *rcs) {
+  int hashcode=hashstring(rcs->origrole);
+  hashcode^=hashstring(rcs->newrole);
+  return hashcode;
+}
+
+int equivalentrcs(struct rolechangesum *rcs1, struct rolechangesum *rcs2) {
+  if (equivalentstrings(rcs1->origrole, rcs2->origrole) &&
+      equivalentstrings(rcs1->newrole, rcs2->newrole))
+    return 1;
+  else
+    return 0;
+}

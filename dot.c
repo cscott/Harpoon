@@ -13,6 +13,21 @@
 
 void dotrolemethod(struct genhashtable * htable, struct genhashtable *reverseroletable, struct rolemethod *rm) {
   int i;
+  struct geniterator * it=gengetiterator(rm->rolechanges);
+  while(1) {
+    struct rolechangesum * rcs=(struct rolechangesum *) gennext(it);
+    struct role* role;
+    char buf[600];
+    if (rcs==NULL) break;
+    role=(struct role *)gengettable(reverseroletable, rcs->origrole);
+    sprintf(buf,"%s.%s\\n%s", rm->methodname->classname->classname,
+	    rm->methodname->methodname, rm->methodname->signature);
+
+    addtransition(htable, role->class, rcs->origrole,
+		  buf ,rcs->newrole,1);
+  }
+
+
   for (i=0;i<rm->numobjectargs;i++) {
     struct rolereturnstate *rs=rm->returnstates;
     if (rm->paramroles[i]!=NULL)
@@ -36,52 +51,6 @@ void dotrolemethod(struct genhashtable * htable, struct genhashtable *reverserol
       }
   }
 }
-
-void dotrolechange(struct genhashtable *htable, struct heap_state *hs,
-		   struct rolechange *rc) {
-  char *role1=rc->origrole;
-  char *role2=rc->newrole;
-  int depth=0,bdepth;
-  char buf[600];
-  int i;
-
-  struct dynamiccallmethod *dcm=(struct dynamiccallmethod *) gettable(hs->dynamiccallchain, rc->origmethod-1); 
-  
-  struct role* role=(struct role *)gengettable(hs->reverseroletable, role1);
-  /*rc is filled in now...*/
-  /*We should store it...*/
-  if (dcm->status==0) {
-    depth=1;
-    bdepth=1;
-    sprintf(buf,"%s.%s\\n%s", dcm->methodname->classname->classname, dcm->methodname->methodname, dcm->methodname->signature);
-  } else {
-    depth=-1;
-    bdepth=-1;
-    if (dcm->methodnameto==NULL)
-      sprintf(buf,"None");
-    else
-    sprintf(buf,"%s.%s\\n%s", dcm->methodnameto->classname->classname, dcm->methodnameto->methodname, dcm->methodnameto->signature);
-  }
-  
-
-  for(i=rc->origmethod;i<rc->newmethod;i++) {
-      struct dynamiccallmethod * dcm=(struct dynamiccallmethod *) gettable(hs->dynamiccallchain, i);
-      if (dcm->status==0)
-	depth++;
-      else {
-	depth--;
-	if (depth<bdepth) {
-	  if (dcm->methodnameto==NULL)
-	    sprintf(buf,"None");
-	  else
-	    sprintf(buf,"%s.%s\\n%s", dcm->methodnameto->classname->classname, dcm->methodnameto->methodname, dcm->methodnameto->signature);
-	  bdepth=depth;
-	}
-      }
-  }
-  addtransition(htable, role->class, role1, buf, role2, 1);
-}
-
 
 void addtransition(struct genhashtable *htable, struct classname *class, char *role1, char * transitionname, char *role2, int type) {
   struct dotclass *dot=NULL;

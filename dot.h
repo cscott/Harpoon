@@ -15,7 +15,5 @@ struct dottransition {
 };
 void addtransition(struct genhashtable *htable, struct classname *class, char *role1, char * transitionname, char *role2, int type);
 void dotrolemethod(struct genhashtable * htable, struct genhashtable *revtable, struct rolemethod *rm);
-void dotrolechange(struct genhashtable *htable, struct heap_state *hs,
-		   struct rolechange *rc);
 void printdot(struct classname *class, struct dotclass *dotclass);
 #endif

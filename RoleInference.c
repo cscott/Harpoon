@@ -41,6 +41,7 @@ void doanalysis() {
   
   heap.K=createobjectpair();
   heap.N=createobjectset();
+  
   heap.gl=NULL;
   heap.methodlist=0;
   heap.newreferences=NULL;
@@ -51,11 +52,11 @@ void doanalysis() {
   heap.reverseroletable=genallocatehashtable((int (*)(void *)) &hashstring, (int (*)(void *,void *)) &equivalentstrings);
   heap.methodtable=genallocatehashtable((int (*)(void *)) &methodhashcode, (int (*)(void *,void *)) &comparerolemethods);
   heap.currentmethodcount=0;
-  heap.dynamiccallchain=allocatehashtable();
-  heap.rolechangetable=genallocatehashtable((int (*)(void *)) &rchashcode, (int (*)(void *,void *)) &equivalentrc);
   heap.atomicmethodtable=genallocatehashtable((int (*)(void *)) &hashstring, (int (*)(void *,void *)) &equivalentstrings);
   heap.statechangemethodtable=genallocatehashtable((int (*)(void *)) &hashstring, (int (*)(void *,void *)) &equivalentstrings);
   heap.statechangereversetable=allocatehashtable();
+  heap.changedset=createobjectset();
+
   heap.statechangesize=0;
   setheapstate(&heap);
   
@@ -81,6 +82,7 @@ void doanalysis() {
       int srcpos, dstpos,length;
       struct arraylist *tmp=NULL, *al;
       struct heap_object *ho, *dsto;
+      struct arraylist *tmp2=NULL;
       sscanf(line,"CA: %lld %d %lld %d %d", &srcuid, &srcpos, &dstuid, &dstpos, &length);
       ho=(struct heap_object *)gettable(ht, srcuid);
       dsto=(struct heap_object *)gettable(ht, dstuid);
@@ -96,6 +98,28 @@ void doanalysis() {
 	}
 	al=al->next;
       }
+
+      al=dsto->al;
+
+      /* Kill dead edges on dst region*/
+      while(al!=NULL) {
+	if((al->index>=dstpos)&&(al->index<(dstpos+length))) {
+	  struct arraylist *tmpal=(struct arraylist *)calloc(1,sizeof(struct arraylist));
+	  tmpal->index=al->index;
+	  tmpal->object=al->object;
+	  tmpal->next=tmp2;
+	  tmp2=tmpal;
+	}
+	al=al->next;
+      }
+
+      while(tmp2!=NULL) {
+	struct arraylist *tmpal=tmp2->next;
+	doarrayassignment(&heap, dsto, tmp2->index, NULL);
+	free(tmp2);
+	tmp2=tmpal;
+      }
+
       /* Now do writes*/
       while(tmp!=NULL) {
 	struct arraylist *tmpal=tmp->next;
@@ -147,6 +171,7 @@ void doanalysis() {
 	ho->class=getclass(heap.namer,buf);
 	ho->reachable=2;
 	puttable(ht, ho->uid, ho);
+	addobject(heap.changedset, ho);
 	addnewobjpath(&heap, ho->uid);
       }
       break;
@@ -158,6 +183,7 @@ void doanalysis() {
 	sscanf(line,"UI: %s %lld",buf, &ho->uid);
 	ho->class=getclass(heap.namer,buf);
 	puttable(ht, ho->uid, ho);
+	addobject(heap.changedset, ho);
 	addnewobjpath(&heap, ho->uid);
       }
       break;
@@ -188,6 +214,7 @@ void doanalysis() {
 	  lv->object=gettable(ht, uid);
 	  doaddlocal(&heap, lv);
 	  doaddfield(&heap,lv->object);
+	  addobject(heap.changedset, lv->object);
 	}
 
 #ifdef EFFECTS
@@ -216,6 +243,7 @@ void doanalysis() {
 	  lv->object=gettable(ht, uid);
 	  doaddlocal(&heap, lv);
 	  doaddfield(&heap,lv->object);
+	  addobject(heap.changedset, lv->object);
 	}
 
 #ifdef EFFECTS
@@ -245,6 +273,7 @@ void doanalysis() {
 	  lv->object=gettable(ht, uid);
 	  doaddlocal(&heap, lv);
 	  doaddfield(&heap,lv->object);
+	  addobject(heap.changedset, lv->object);
 	}
 	/* addtolvlist add's to K set */
 	addtolvlist(&heap, lv, heap.methodlist);
@@ -267,31 +296,7 @@ void doanalysis() {
 	  if(!atomic(&heap)&&
 	     currentparam==heap.methodlist->numobjectargs) {
 	    //Lets show the roles!!!!
-	    doincrementalreachability(&heap,ht);
-	    {
-	      int i=0;
-	      struct genhashtable * dommap=builddominatormappings(&heap,0);
-	      struct rolemethod * rolem=(struct rolemethod *) calloc(1, sizeof(struct rolemethod));
-	      
-	      rolem->methodname=heap.methodlist->methodname;
-	      rolem->paramroles=(char **)calloc(heap.methodlist->numobjectargs, sizeof(char *));
-	      rolem->numobjectargs=heap.methodlist->numobjectargs;
-	      rolem->isStatic=heap.methodlist->isStatic;
-	      
-#ifdef DEBUG
-	      printf("Calling Context for method %s.%s%s:\n", heap.methodlist->methodname->classname->classname, heap.methodlist->methodname->methodname, heap.methodlist->methodname->signature);
-#endif
-	      for(;i<heap.methodlist->numobjectargs;i++) {
-		if (heap.methodlist->params[i]!=NULL) {
-		  rolem->paramroles[i]=findrolestring(&heap, dommap, heap.methodlist->params[i]);
-		}
-	      }
-	      methodassignhashcode(rolem);
-	      rolem=methodaddtable(&heap,rolem);
-	      heap.methodlist->rm=rolem;
-	      genfreekeyhashtable(dommap);
-	    }
-	    freemethodlist(&heap);
+	    entermethod(&heap,ht);
 	  } 
 	  if(currentparam==heap.methodlist->numobjectargs) {
 	    int i=0;
@@ -325,28 +330,15 @@ void doanalysis() {
 	newmethod->caller=heap.methodlist;
 	heap.methodlist=newmethod;
 	atomiceval(&heap);
-	if (!atomic(&heap))
-	  recordentry(&heap,newmethod->methodname);
 #ifdef EFFECTS
 	initializepaths(&heap);
 #endif
+	heap.methodlist->rolechangetable=genallocatehashtable((int (*)(void *)) &rchashcode, (int (*)(void *,void *)) &equivalentrc);
 	currentparam=0;
       }
       if (!atomic(&heap)&&
 	  currentparam==heap.methodlist->numobjectargs) {
-	struct rolemethod * rolem=(struct rolemethod *) calloc(1, sizeof(struct rolemethod));
-	
-	rolem->methodname=heap.methodlist->methodname;
-	if (heap.methodlist->numobjectargs!=0)
-	  rolem->paramroles=(char **)calloc(heap.methodlist->numobjectargs, sizeof(char *));
-	rolem->numobjectargs=heap.methodlist->numobjectargs;
-	rolem->isStatic=heap.methodlist->isStatic;
-	methodassignhashcode(rolem);
-	rolem=methodaddtable(&heap,rolem);
-	heap.methodlist->rm=rolem;
-#ifdef DEBUG
-	printf("Calling Context for method %s.%s%s:\n", heap.methodlist->methodname->classname->classname, heap.methodlist->methodname->methodname, heap.methodlist->methodname->signature);
-#endif
+	entermethod(&heap, ht);
       }
 #ifdef DEBUG
       showmethodstack(&heap);
@@ -360,14 +352,12 @@ void doanalysis() {
 	sscanf(line,"RM: %lld",&uid);
 	atomiceval(&heap);
 	if (!atomic(&heap)) {
-	  recordexit(&heap);
 	  doreturnmethodinference(&heap, uid, ht);
 	}
 	heap.methodlist=ptr->caller;
 	freemethod(&heap, ptr);
 	currentparam=10000;
 	/* Don't want to mess up callers parameter count.  They've all been processed by now.  No method could possibly have 10,000 parameters, so we're using this as a flag value.*/
-	
       }
 #ifdef DEBUG
       showmethodstack(&heap);
@@ -430,15 +420,6 @@ void doanalysis() {
       dotrolemethod(dotmethodtable, heap.reverseroletable, method);
     }
     genfreeiterator(it);
-    it=gengetiterator(heap.rolechangetable);
-    while(1) {
-      struct rolechange *rc=(struct rolechange *) gennext(it);
-      if (rc==NULL)
-	break;
-      printrolechange(&heap, rc);
-      dotrolechange(dotmethodtable, &heap,rc);
-    }
-    genfreeiterator(it);
     it=gengetiterator(heap.roletable);
     while(1) {
       struct role *role=(struct role *) gennext(it);
@@ -460,7 +441,6 @@ void doanalysis() {
     }
     genfreeiterator(it);
   }
-  freedatahashtable(heap.dynamiccallchain, (void (*)(void *)) &dccfree);
 }
 
 
@@ -493,29 +473,7 @@ void doreturnmethodinference(struct heap_state *heap, long long uid, struct hash
     addtolvlist(heap, lv, heap->methodlist);
   }
 
-  doincrementalreachability(heap,ht);
-  updateroleeffects(heap); /*Merge in this invocation's effects*/
-    //Lets show the roles!!!!
-  {
-    int i=0;
-    struct genhashtable * dommap=builddominatormappings(heap,1);
-    struct rolereturnstate *rrs=(struct rolereturnstate *)calloc(1, sizeof(struct rolereturnstate));
-    if (heap->methodlist->numobjectargs!=0)
-      rrs->paramroles=(char **)calloc(heap->methodlist->numobjectargs, sizeof(char *));
-#ifdef DEBUG
-    printf("Returning Context for method %s.%s%s:\n", heap->methodlist->methodname->classname->classname, heap->methodlist->methodname->methodname, heap->methodlist->methodname->signature);
-#endif
-    for(;i<heap->methodlist->numobjectargs;i++) {
-      if (heap->methodlist->params[i]!=NULL) {
-	rrs->paramroles[i]=findrolestring(heap, dommap, heap->methodlist->params[i]);
-      }
-    }
-    if (uid!=-1) {
-      rrs->returnrole=findrolestring(heap, dommap, gettable(ht,uid));
-    }
-    addrolereturn(heap->methodlist->rm,rrs);
-    genfreekeyhashtable(dommap);
-  }
+  exitmethod(heap,ht,uid);
 }
 
 void doarrayassignment(struct heap_state *heap, struct heap_object * src, int index, struct heap_object *dst) {
@@ -524,8 +482,10 @@ void doarrayassignment(struct heap_state *heap, struct heap_object * src, int in
   al->index=index;
   al->object=dst;
   al->src=src;
+  addobject(heap->changedset, src);
 
   if (dst!=NULL) {
+    addobject(heap->changedset, dst);
     doaddfield(heap, src);
     al->dstnext=dst->reversearray;
     dst->reversearray=al;
@@ -709,14 +669,17 @@ void doaddfield(struct heap_state *hs, struct heap_object *ho) {
 }
 
 void dodelfield(struct heap_state *hs, struct heap_object *src, struct heap_object *dst) {
+  addobject(hs->changedset, dst);
   addobjectpair(hs->K, src, NULL,NULL,dst);
 }
 
 void dodellvfield(struct heap_state *hs, struct localvars *src, struct heap_object *dst) {
+  addobject(hs->changedset, dst);
   addobjectpair(hs->K, NULL, src,NULL,dst);
 }
 
 void dodelglbfield(struct heap_state *hs, struct globallist *src, struct heap_object *dst) {
+  addobject(hs->changedset, dst);
   addobjectpair(hs->K, NULL, NULL,src,dst);
 }
 
@@ -726,8 +689,10 @@ void dofieldassignment(struct heap_state *hs, struct heap_object * src, struct f
   newfld->fieldname=field;
   newfld->object=dst;
   newfld->src=src;
+  addobject(hs->changedset, src);
 
   if (dst!=NULL) {
+    addobject(hs->changedset, dst);
     doaddfield(hs, src);
     newfld->dstnext=dst->reversefield;
     dst->reversefield=newfld;
@@ -796,6 +761,7 @@ void doglobalassignment(struct heap_state *hs, struct fieldname *field, struct h
   if (dst!=NULL) {
     doaddglobal(hs, newfld);
     doaddfield(hs, dst);
+    addobject(hs->changedset, dst);
   }
 
   /* Handle empty field list */

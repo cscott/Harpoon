@@ -2,13 +2,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <values.h>
 #include "ObjectSet.h"
 #ifdef MDEBUG
 #include <dmalloc.h>
 #endif
 
 struct objectset * createobjectset() {
-  return (struct objectset *) calloc(1,sizeof(struct objectset));
+  struct objectset *os=(struct objectset *) calloc(1,sizeof(struct objectset));
+  os->objectsetsize=OSINITIALSIZE;
+  os->ol=(struct objectlist **) calloc(OSINITIALSIZE, sizeof(struct objectlist *));
+  return os;
 }
 
 struct ositerator * getIterator(struct objectset *os) {
@@ -39,13 +43,36 @@ int setisempty(struct objectset *os) {
   return (os->head==NULL);
 }
 
-struct heap_object * removeobject(struct objectset *os) {
+struct heap_object * removeobject(struct objectset *os, struct heap_object *ho) {
   if (os->head!=NULL) {
-    struct objectlist * olptr=os->head;
-    struct heap_object *ho=olptr->object;
-    long int bin=oshashfunction(ho);
-    /* remove from masterlist */
-    os->head=os->head->next;
+    struct objectlist * olptr;
+    long int bin;
+
+    if (ho==NULL) {
+      olptr=os->head;
+      ho=olptr->object;
+      bin=oshashfunction(os,ho);
+      /* remove from masterlist */
+      os->head=os->head->next;
+      if (os->head!=NULL)
+	os->head->prev=NULL;
+    } else {
+      bin=oshashfunction(os,ho);
+      olptr=os->ol[bin];
+      while(olptr!=NULL&&olptr->object!=ho)
+	olptr=olptr->binnext;
+      if (olptr==NULL)
+	return NULL;
+      /* remove from masterlist */      
+      if (olptr->prev!=NULL)
+	olptr->prev->next=olptr->next;
+      else
+	os->head=os->head->next;  /* We must be first */
+      if (olptr->next!=NULL)
+	olptr->next->prev=olptr->prev;
+    }
+
+
 
     /* remove from bin */
     if (os->ol[bin]==olptr) {
@@ -63,13 +90,14 @@ struct heap_object * removeobject(struct objectset *os) {
       }
     }
     free(olptr);
+    os->counter--;
     return ho;
   } else 
     return NULL;
 }
 
 void addobject(struct objectset *os, struct heap_object *ho) {
-  long int bin=oshashfunction(ho);
+  long int bin=oshashfunction(os, ho);
   struct objectlist *binhead=os->ol[bin];
   
   if (binhead!=NULL) {
@@ -86,21 +114,42 @@ void addobject(struct objectset *os, struct heap_object *ho) {
     ol->object=ho;
     /* Add to list of objects */
     ol->next=os->head;
+    if (os->head!=NULL)
+      os->head->prev=ol;
     os->head=ol;
-    
+    os->counter++;
     /* Add into bin */
     /* Check to see if bin has item*/
     if (os->ol[bin]!=NULL) {
       ol->binnext=os->ol[bin];
     }
     os->ol[bin]=ol;
-
+    if (os->counter>os->objectsetsize&&os->objectsetsize!=MAXINT) {
+      long newcurrentsize=(os->objectsetsize<(MAXINT/2))?os->objectsetsize*2:MAXINT;
+      long oldcurrentsize=os->objectsetsize;
+      struct objectlist **newbins=(struct objectlist **)calloc(newcurrentsize, sizeof(struct objectlist *));
+      struct objectlist **oldbins=os->ol;
+      long i;
+      os->objectsetsize=newcurrentsize;
+      for(i=0;i<oldcurrentsize;i++) {
+	struct objectlist * tmpptr=oldbins[i];
+	while(tmpptr!=NULL) {
+	  int hashcode=oshashfunction(os, tmpptr->object);
+	  struct objectlist *nextptr=tmpptr->binnext;
+	  tmpptr->binnext=newbins[hashcode];
+	  newbins[hashcode]=tmpptr;
+	  tmpptr=nextptr;
+	}
+      }
+      os->ol=newbins;
+      free(oldbins);
+    }
     return;
   }
 }
 
-long int oshashfunction(struct heap_object *ho) {
-  return ((int)ho->uid) % OSHASHSIZE;
+long int oshashfunction(struct objectset *os, struct heap_object *ho) {
+  return ((int)ho->uid) % os->objectsetsize;
 }
 
 void freeobjectset(struct objectset *os) {
@@ -110,5 +159,6 @@ void freeobjectset(struct objectset *os) {
     free(olptr);
     olptr=nxtptr;
   }
+  free(os->ol);
   free(os);
 }

@@ -15,7 +15,7 @@
 #include <dmalloc.h>
 #endif
 
-void doincrementalreachability(struct heap_state *hs, struct hashtable *ht) {
+void doincrementalreachability(struct heap_state *hs, struct hashtable *ht, int enterexit) {
   struct objectset * changedset;
 
   changedset=dokills(hs);
@@ -39,13 +39,16 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht) {
 
   /* Lets do our GC now...*/
   while(1) {
-    struct heap_object * possiblegarbage=removeobject(changedset);
+    struct heap_object * possiblegarbage=removeobject(changedset,NULL);
     if (possiblegarbage==NULL)
       break;
     if ((possiblegarbage->rl==NULL)&&(possiblegarbage->reachable==0)) {
       /*We've got real garbage!!!*/
       struct fieldlist *fl;
       struct arraylist *al;
+      /* Record role change to garbage role */
+      rolechange(hs,possiblegarbage,"GARB",2+enterexit);
+      removeobject(hs->changedset, possiblegarbage);
       /* Have to remove references to ourself first*/
       fl=possiblegarbage->reversefield;
       al=possiblegarbage->reversearray;
@@ -61,7 +64,6 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht) {
 	free(al);
 	al=tmp;
       }
-
 
       /* Now remove references we own*/
       fl=possiblegarbage->fl;
@@ -82,19 +84,21 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht) {
       /*printf("Freeing Key %lld\n",possiblegarbage->uid);*/
       freekey(ht,possiblegarbage->uid);
       free(possiblegarbage);
+    } else {
+      /* Possible role change due to reachability*/
+      addobject(hs->changedset,possiblegarbage);
     }
-  }
+  } 
+
   freeobjectset(changedset);
 }
-
-
 
 struct objectset * dokills(struct heap_state *hs) {
   /* Flush out old reachability information */
   /* Remove K set */
   struct killtuplelist * kptr=NULL;
   struct objectpair * op=hs->K;
-  struct objectset *os=(struct objectset *)calloc(1,sizeof(struct objectset));
+  struct objectset *os=createobjectset();
   
   while(!isEmptyOP(op)) {
     struct objectpairlist *opl=removeobjectpair(op);
@@ -295,7 +299,7 @@ void donews(struct heap_state *hs, struct objectset * os) {
   }
 
   while(1) {
-    struct heap_object *object=removeobject(N);
+    struct heap_object *object=removeobject(N,NULL);
 
     if (object==NULL)
       break; /* We're done!!!! */

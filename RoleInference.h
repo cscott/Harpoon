@@ -40,6 +40,7 @@ struct method {
   struct rolemethod * rm; /* Appropriate role instantiated method for this method*/
   int numobjectargs; /* Number of object type arguments*/
   short isStatic; /* Is method static */
+  struct genhashtable *rolechangetable;
 #ifdef EFFECTS
   struct hashtable * pathtable; /* table of paths for effect use*/
   struct effectlist *effects; /* list of effects for methods */
@@ -109,13 +110,12 @@ struct heap_state {
   struct objectpair * K;
   struct objectset * N;
 
+  struct objectset *changedset;
   struct genhashtable *roletable;
   struct genhashtable *reverseroletable;
   struct genhashtable *methodtable;
 
   long long currentmethodcount;
-  struct hashtable *dynamiccallchain;
-  struct genhashtable *rolechangetable;
   struct genhashtable *atomicmethodtable;
   
   struct genhashtable *statechangemethodtable;
@@ -129,18 +129,11 @@ struct identity_relation {
   struct identity_relation * next;
 };
 
-struct dynamiccallmethod {
-  struct methodname * methodname;
-  struct methodname * methodnameto;
-
-  char status; /* 0=entry, 1=exit */
-};
-
 struct statechangeinfo {
   int id;
 };
 
-void doincrementalreachability(struct heap_state *hs, struct hashtable *ht);
+void doincrementalreachability(struct heap_state *hs, struct hashtable *ht, int enterexit);
 struct objectset * dokills(struct heap_state *hs);
 void donews(struct heap_state *hs, struct objectset * os);
 void removelvlist(struct heap_state *, char * lvname, struct method * method);
@@ -175,13 +168,10 @@ void removeforwardfieldreference(struct fieldlist * al);
 void freemethodlist(struct heap_state *hs);
 void calculatenumobjects(struct method * m);
 void doreturnmethodinference(struct heap_state *heap, long long uid, struct hashtable *ht);
-void recordentry(struct heap_state *heap, struct methodname *methodname);
-void recordexit(struct heap_state *heap);
 int atomic(struct heap_state *heap);
 void loadatomics(struct heap_state *heap);
 int atomicmethod(struct heap_state *hs, struct method *m);
 void atomiceval(struct heap_state *heap);
 void loadstatechange(struct heap_state *heap);
 int convertnumberingobjects(char *sig, int isStatic, int orignumber);
-void dccfree(struct dynamiccallmethod *dcm);
 #endif

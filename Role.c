@@ -85,59 +85,23 @@ void setheapstate(struct heap_state *hs) {
 }
 
 int rchashcode(struct rolechange *rc) {
-  int hashcode=0;
-  struct hashtable *ht=hshash->dynamiccallchain;
-  long long start=rc->origmethod;
-  long long end=rc->newmethod;
-  long long index;
-  hashcode^=hashstring(rc->origrole);
+  int hashcode=hashstring(rc->origrole);
   hashcode^=hashstring(rc->newrole);
-  for(index=start-1;index<end;index++) {
-    struct dynamiccallmethod *dcm=(struct dynamiccallmethod *)gettable(ht, index);
-    hashcode^=hashptr(dcm->methodname);
-    hashcode^=hashptr(dcm->methodnameto);
-    hashcode^=dcm->status;
-  }
+  hashcode^=((int)rc->uid);
   return hashcode;
 }
 
 int equivalentrc(struct rolechange *rc1, struct rolechange *rc2) {
-  struct hashtable *ht=hshash->dynamiccallchain;
-  long long start=rc1->origmethod;
-  long long end=rc1->newmethod;
-  long long index;
-  if (!equivalentstrings(rc1->origrole, rc2->origrole)||
-      !equivalentstrings(rc1->newrole, rc2->newrole))
+  if ((rc1->uid==rc2->uid) &&
+      equivalentstrings(rc1->origrole, rc2->origrole) &&
+      equivalentstrings(rc1->newrole, rc2->newrole))
+    return 1;
+  else
     return 0;
-
-  for(index=start-1;index<end;index++) {
-    struct dynamiccallmethod *dcm1=(struct dynamiccallmethod *)gettable(ht, index);
-    struct dynamiccallmethod *dcm2=(struct dynamiccallmethod *)gettable(ht, index);
-    if ((dcm1->methodname!=dcm2->methodname)||
-	(dcm1->methodnameto!=dcm2->methodnameto)||
-	dcm1->status!=dcm2->status)
-      return 0;
-  }
-  return 1;
 }
 
 void printrolechange(struct heap_state * hs, struct rolechange *rc) {
-  long long index;
   printf("Role Change: %s -> %s\n",rc->origrole, rc->newrole);
-  for(index=rc->origmethod-1;index<rc->newmethod;index++) {
-    struct dynamiccallmethod *dcm=(struct dynamiccallmethod *)gettable(hs->dynamiccallchain, index);
-    if (dcm->status)
-      printf("EXIT: ");
-    else
-      printf("ENTER: ");
-    printf("%s.%s%s\n",dcm->methodname->classname->classname,dcm->methodname->methodname,dcm->methodname->signature);
-    if (dcm->methodnameto!=NULL)
-      printf("  returning to:%s.%s%s\n",dcm->methodnameto->classname->classname,dcm->methodnameto->methodname, dcm->methodnameto->signature);
-    if ((index-rc->origmethod)>10) {
-      printf("TRUNCATED\n");
-      break;
-    }
-  }
 }
 
 int equivalentstrings(char *str1, char *str2) {
@@ -151,44 +115,51 @@ int equivalentstrings(char *str1, char *str2) {
   else return 0;
 }
 
-void rolechange(struct heap_state *hs, struct heap_object *ho, char *newrole) {
+void rolechange(struct heap_state *hs, struct heap_object *ho, char *newrole, int enterexit) {
   struct rolechange *rc=ho->rc;
-  if (rc!=NULL) {
-    int depth;
-    long long i;
-    struct dynamiccallmethod *dcm=(struct dynamiccallmethod *) gettable(hs->dynamiccallchain, rc->origmethod-1); 
-    rc->newrole=copystr(newrole);
-    rc->newmethod=hs->currentmethodcount;
-    /*rc is filled in now...*/
-    /*We should store it...*/
-    if (dcm->status==0)
-      depth=1;
-    else
-      depth=-1;
-
-    for(i=rc->origmethod;i<hs->currentmethodcount;i++) {
-      struct dynamiccallmethod * dcm=(struct dynamiccallmethod *) gettable(hs->dynamiccallchain, i);
-      if (dcm->status==0)
-	depth++;
-      else
-	depth--;
+  if (rc==NULL) {
+    if (enterexit<2) {
+      rc=(struct rolechange *) calloc(1,sizeof(struct rolechange));
+      rc->origrole=copystr(newrole);
+      ho->rc=rc;
     }
-    if ((depth!=0||dcm->status==1)&&
-	!equivalentstrings(rc->origrole, rc->newrole)&&
-	!gencontains(hs->rolechangetable, rc)) {
-      /*Maybe store it*/
-      genputtable(hs->rolechangetable, rc, NULL);
-    } else {
-      /*Forget it*/
-      free(rc->origrole);
+    return;
+  }
+  if(equivalentstrings(rc->origrole, newrole)) {
+    if (enterexit>=2) {
+      free(ho->rc->origrole);
+      free(ho->rc);
+    }
+    return;
+  }
+  rc->newrole=copystr(newrole);
+  rc->uid=ho->uid;
+  if (enterexit&1) {
+    /* Exit case*/
+    if (!gencontains(hs->methodlist->rolechangetable,rc))
+      genputtable(hs->methodlist->rolechangetable,rc,NULL);
+    else {
       free(rc->newrole);
+      free(rc->origrole);
+      free(rc);
+    }
+  } else {
+    /* Enter case*/
+    if (!gencontains(hs->methodlist->caller->rolechangetable,rc))
+      genputtable(hs->methodlist->caller->rolechangetable,rc,NULL);
+    else {
+      free(rc->newrole);
+      free(rc->origrole);
       free(rc);
     }
   }
-  rc=(struct rolechange *) calloc(1,sizeof(struct rolechange));
-  rc->origrole=copystr(newrole);
-  rc->origmethod=hs->currentmethodcount;
-  ho->rc=rc;
+  /* Build new rolechange object*/
+  if (enterexit<2) {
+    rc=(struct rolechange *) calloc(1,sizeof(struct rolechange));
+    rc->origrole=copystr(newrole);
+    ho->rc=rc;
+  }
+  return;
 }
 
 int equivalentroles(struct role *role1, struct role *role2) {
@@ -422,13 +393,13 @@ int currentrolenumber() {
 
 
 
-char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping,struct heap_object *ho) {
+char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping,struct heap_object *ho, int enterexit) {
   struct role * r=calculaterole(heap,dommapping, ho);
   if (gencontains(heap->roletable,r)) {
     /* Already seen role */
     char *str=copystr((char *)gengettable(heap->roletable,r));
     freerole(r);
-    rolechange(heap,ho, str);
+    rolechange(heap,ho, str,enterexit);
     return str;
   } else {
     /* Synthesize string */
@@ -450,7 +421,7 @@ char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping
       genputtable(heap->roletable, r, rolename);
       genputtable(heap->reverseroletable, rolename, r);
     }
-    rolechange(heap,ho, &buf[index]);
+    rolechange(heap,ho, &buf[index],enterexit);
     return copystr(&buf[index]);
   }
 }
