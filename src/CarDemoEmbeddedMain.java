@@ -44,8 +44,8 @@ public class CarDemoEmbeddedMain {
 
 		Node timer1 = new Timer(true, false, null);
 		Node timer2 = new Timer(false, false, null);
-		Node pause = new Node();
-		//Node pause = new Pause(-1, 1, null);
+		//Node pause = new Node();
+		Node pause = new Pause(-1, 1, null);
 		
 		Cache cleanCache = new Cache(1, null, null);
 		cleanCache.saveCopies(true);
