@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.11 $)dnl
+AC_REVISION($Revision: 1.12 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -62,7 +62,8 @@ arm*) archdir=arm32
       AC_DEFINE(LONG_AND_DOUBLE_ARE_REVERSED, 1,
       [Define if your system stores doubles in reverse endianness])
 	;;
-sparc) archdir=sparc ;;
+sparc) archdir=sparc32 ;;
+sparc64) archdir=sparc64 ;;
 *)    AC_MSG_ERROR([no port for $target_cpu]) ;;
 esac
 

@@ -1,0 +1,3 @@
+This directory is for machine-dependent runtime files for the
+Sparc 32-bit architecture.  These are non-UltraSPARC machines
+with 32-bit sparc processors.
