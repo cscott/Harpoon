@@ -109,7 +109,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.43 2003-04-02 20:41:23 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.44 2003-04-02 20:43:51 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -371,8 +371,12 @@ public class SAMain extends harpoon.IR.Registration {
     // top level method for compiling a program
     static void compile() {
 	build_quad_form();
-	// Now, we have a full compiler context (including class
+	// Now, we have a full compiler state (including class
 	// hierarchy). Let it roll!
+
+	// TODO: we should have a CompilerState object up here and
+	// next just obtain new variations of it (almost identical
+	// copies of it with only a few elements changed).
 
 	quad_form_processing();
 

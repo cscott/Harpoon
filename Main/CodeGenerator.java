@@ -64,7 +64,7 @@ import java.io.PrintWriter;
  * <code>CodeGenerator</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CodeGenerator.java,v 1.1 2003-04-02 20:41:22 salcianu Exp $
+ * @version $Id: CodeGenerator.java,v 1.2 2003-04-02 20:43:51 salcianu Exp $
  */
 public abstract class CodeGenerator {
 
@@ -86,7 +86,7 @@ public abstract class CodeGenerator {
     // RegAlloc.  Take out when no longer necessary.  
     // May be null (in which case no options are being passed).
     static String regAllocOptionsFilename; 
-    static RegAlloc.Factory regAllocFactory;
+    private static RegAlloc.Factory regAllocFactory;
 
     public static CompilerState generate(File dir, CompilerState cs) {
 	ASSEM_DIR = dir;
