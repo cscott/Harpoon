@@ -59,3 +59,11 @@ Arrays are problematic.  We would eventually like to unroll
   constant-size arrays, although we may never support dynamically-sized
   arrays.
 -----------
+Do we want to create an ir representation of throw/etc so that we can
+perform the rewrite in the IR? [probably not, but going from bytecode to
+IR to bytecode can be a useful sanity check on the basic conversion
+process.]
+
+
+
+
