@@ -21,6 +21,7 @@ public class Hysteresis extends Node {
 
     /** Process an image, sending the sharpened image to <code>out</code>. */ 
     public void process(ImageData id) {
+	//System.out.println("Hysteresis.process()");
 	byte[] in = id.gvals;
 	boolean[] seen = new boolean[id.gvals.length];
 	int w = id.width;

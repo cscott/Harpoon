@@ -47,6 +47,7 @@ public class Thresholding extends Node {
     /** Threshold an image by determining whether edges are "maybe" or "definite".
      */
     public void process(ImageData id) {
+	//System.out.println("Thresholding.process()");
 	byte[] in = id.gvals;
 	//first, run through image and find max/min average
 	int length = in.length;

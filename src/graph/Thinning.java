@@ -43,6 +43,9 @@ public class Thinning extends Node {
      */
     public void process(ImageData id) {
 	//System.out.println("Thinning image #"+id.id);
+	//System.out.println(" width: "+id.width);
+	//System.out.println(" height: "+id.height);
+	//System.out.println(" id.rvals.length: "+id.rvals.length);
 	int changed=1;
 	byte[] in;
 	//System.out.println("inside thinning");

@@ -101,6 +101,8 @@ public class Regulator extends Node {
      * @see CommonMemory
      */
     public void process(ImageData id) {
+	//System.out.println("Regulator.process() - "+goAheadSignal);
+	//System.out.println(" id.command="+id.command);
 	//if (wait == AFTER) {
 	//    System.out.println("Regulator #"+getUniqueID()+" processing before.");
 	//}
