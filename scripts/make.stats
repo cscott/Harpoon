@@ -1,0 +1,20 @@
+#!/bin/sh
+GNUPLOT_TITLE="Change Log: $1"
+GNUPLOT_IN=/tmp/texplot$$.in
+GNUPLOT_DAT=/tmp/texplot$$.dat
+GNUPLOT_PBM=/tmp/texplot$$.pbm
+GNUPLOT_GIF=$1.gif
+ORIGCOUNT=`cvs -q update -p -r1.1 $1.tex | wc -l | sed -e 's/ //g'`
+cvs log $1.tex \
+ | sed -n -f `dirname $0`/sed.stats \
+ | sed -e "s/ORIGCOUNT/${ORIGCOUNT}/" \
+ > $1.stats
+rm -f $GNUPLOT_IN $GNUPLOT_PBM
+tac $1.stats | `dirname $0`/groktime > $GNUPLOT_DAT
+sed -e "s?#TITLE#?$GNUPLOT_TITLE?g" \
+    -e "s?#OUTFILE#?$GNUPLOT_PBM?g" \
+    -e "s?#INFILE#?$GNUPLOT_DAT?g" \
+    < `dirname $0`/gnuplot.options > $GNUPLOT_IN
+gnuplot $GNUPLOT_IN
+ppmtogif -interlace $GNUPLOT_PBM 1> $GNUPLOT_GIF 2> /dev/null
+rm -f $GNUPLOT_IN $GNUPLOT_DAT $GNUPLOT_PBM

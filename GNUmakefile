@@ -61,6 +61,10 @@ always:
 		(xdvi $< &) ; \
 	fi
 
+# progress graphs.
+%.gif %.stats: %.tex
+	scripts/make.stats $*
+
 # latex2html
 
 html/% : %.dvi %.aux %.ps %.pdf
