@@ -1,4 +1,4 @@
-# $Revision: 1.44 $
+# $Revision: 1.45 $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -120,7 +120,7 @@ wc:
 	@wc -l $(ALLSOURCE) | sort -n | tail -6 | head -5
 
 clean:
-	-${RM} -r harpoon silicon Harpoon.jar harpoon.tgz
+	-${RM} -r harpoon silicon Harpoon.jar* harpoon.tgz*
 	-${RM} java `find . -name "*.class"`
 
 polish: clean
