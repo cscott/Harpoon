@@ -54,7 +54,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri Nov 16 18:09:12 2001"
+@timestamp def "Fri Nov 16 20:41:20 2001"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -102,7 +102,7 @@
 @g0 fixedpoint prec 6, 6
 @with g0
 @    world xmin 0.5
-@    world xmax 8.5
+@    world xmax 9.5
 @    world ymin 0
 @    world ymax 100
 @    stack world 0, 0, 0, 0
@@ -170,7 +170,7 @@
 @    xaxis  ticklabel start 0.000000
 @    xaxis  ticklabel stop type auto
 @    xaxis  ticklabel stop 0.000000
-@    xaxis  ticklabel char size 0.790000
+@    xaxis  ticklabel char size 0.690000
 @    xaxis  ticklabel font 0
 @    xaxis  ticklabel color 1
 @    xaxis  tick place both
@@ -326,8 +326,8 @@
 @    s1 symbol size 1.000000
 @    s1 symbol color 1
 @    s1 symbol pattern 1
-@    s1 symbol fill color 2
-@    s1 symbol fill pattern 13
+@    s1 symbol fill color 1
+@    s1 symbol fill pattern 9
 @    s1 symbol linewidth 1.0
 @    s1 symbol linestyle 1
 @    s1 symbol char 65
@@ -375,8 +375,8 @@
 @    s2 symbol size 1.000000
 @    s2 symbol color 1
 @    s2 symbol pattern 1
-@    s2 symbol fill color 3
-@    s2 symbol fill pattern 12
+@    s2 symbol fill color 1
+@    s2 symbol fill pattern 10
 @    s2 symbol linewidth 1.0
 @    s2 symbol linestyle 1
 @    s2 symbol char 65
@@ -424,8 +424,8 @@
 @    s3 symbol size 1.000000
 @    s3 symbol color 1
 @    s3 symbol pattern 1
-@    s3 symbol fill color 4
-@    s3 symbol fill pattern 11
+@    s3 symbol fill color 1
+@    s3 symbol fill pattern 8
 @    s3 symbol linewidth 1.0
 @    s3 symbol linestyle 1
 @    s3 symbol char 65
@@ -473,8 +473,8 @@
 @    s4 symbol size 1.000000
 @    s4 symbol color 1
 @    s4 symbol pattern 1
-@    s4 symbol fill color 2
-@    s4 symbol fill pattern 10
+@    s4 symbol fill color 1
+@    s4 symbol fill pattern 4
 @    s4 symbol linewidth 1.0
 @    s4 symbol linestyle 1
 @    s4 symbol char 65
@@ -522,8 +522,8 @@
 @    s5 symbol size 1.000000
 @    s5 symbol color 1
 @    s5 symbol pattern 1
-@    s5 symbol fill color 3
-@    s5 symbol fill pattern 9
+@    s5 symbol fill color 1
+@    s5 symbol fill pattern 11
 @    s5 symbol linewidth 1.0
 @    s5 symbol linestyle 1
 @    s5 symbol char 65
@@ -571,7 +571,7 @@
 @    s6 symbol size 1.000000
 @    s6 symbol color 1
 @    s6 symbol pattern 1
-@    s6 symbol fill color 4
+@    s6 symbol fill color 1
 @    s6 symbol fill pattern 12
 @    s6 symbol linewidth 1.0
 @    s6 symbol linestyle 1
