@@ -43,7 +43,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.18 2000-02-17 03:03:47 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.19 2000-02-23 19:51:39 cananian Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
 public abstract class AlgebraicSimplification extends Simplification { 
@@ -116,6 +116,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 	// const | exp --> exp | const
 	// const ^ exp --> exp ^ const
 	// const ==exp --> exp ==const
+	// const !=exp --> exp !=const
 	//
 	Rule commute = new Rule("commute") { 
 	    public boolean match(Exp e) { 
@@ -123,7 +124,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 		else { 
 		    BINOP b = (BINOP)e; 
 		    return 
-		    contains(_OP(b.op), _ADD|_MUL|_AND|_OR|_XOR|_CMPEQ) && 
+		    Bop.isCommutative(b.op) &&
 		    contains(_KIND(b.getLeft()), _CONST) &&
 		    !contains(_KIND(b.getRight()), _CONST) &&
 		    !b.isFloatingPoint();

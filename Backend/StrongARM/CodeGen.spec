@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.143 2000-02-19 10:49:43 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.144 2000-02-23 19:51:48 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -294,7 +294,7 @@ import java.util.Iterator;
     // helper for comparison operations
     private boolean isCmpOp(int op) {
 	switch (op) {
-	case Bop.CMPEQ:
+	case Bop.CMPEQ: case Bop.CMPNE:
 	case Bop.CMPGT: case Bop.CMPGE:
 	case Bop.CMPLT: case Bop.CMPLE: return true;
 	default: return false;
@@ -303,6 +303,7 @@ import java.util.Iterator;
     private String cmpOp2Str(int op) {
 	switch (op) {
 	case Bop.CMPEQ: return "eq";
+	case Bop.CMPNE: return "ne";
 	case Bop.CMPGT: return "gt";
 	case Bop.CMPGE: return "ge";
 	case Bop.CMPLE: return "le";
@@ -310,19 +311,10 @@ import java.util.Iterator;
 	default: throw new Error("Illegal compare operation");
 	}
     }
-    private String cmpOp2InvStr(int op) {
-	switch (op) {
-	case Bop.CMPEQ: return "ne";
-	case Bop.CMPGT: return "le";
-	case Bop.CMPGE: return "lt";
-	case Bop.CMPLE: return "gt";
-	case Bop.CMPLT: return "ge";
-	default: throw new Error("Illegal compare operation");
-	}
-    }
     private String cmpOp2Func(int op) {
 	switch (op) {
 	case Bop.CMPEQ: return "___ne";
+	case Bop.CMPNE: return "___ne";
 	case Bop.CMPGT: return "___gt";
 	case Bop.CMPGE: return "___lt";
 	case Bop.CMPLE: return "___gt";
@@ -333,6 +325,7 @@ import java.util.Iterator;
     private boolean cmpOpFuncInverted(int op) {
 	switch (op) {
 	case Bop.CMPEQ: return true;
+	case Bop.CMPNE: return false;
 	case Bop.CMPGT: return false;
 	case Bop.CMPGE: return true;
 	case Bop.CMPLE: return true;
@@ -866,7 +859,7 @@ BINOP(cmpop, j, CONST<i,p>(c)) = i
     // reordering them
     emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n"+
 		"mov"+cmpOp2Str(cmpop)+" `d0, #1\n"+
-		"mov"+cmpOp2InvStr(cmpop)+" `d0, #0", i, j );
+		"mov"+cmpOp2Str(Bop.invert(cmpop))+" `d0, #0", i, j );
 }%
 
 BINOP(cmpop, j, k) = i
@@ -878,7 +871,7 @@ BINOP(cmpop, j, k) = i
     // reordering them
     emit( ROOT, "cmp `s0, `s1\n"+
 		"mov"+cmpOp2Str(cmpop)+" `d0, #1\n"+
-		"mov"+cmpOp2InvStr(cmpop)+" `d0, #0", i, j, k );
+		"mov"+cmpOp2Str(Bop.invert(cmpop))+" `d0, #0", i, j, k );
 }%
 
 BINOP(cmpop, j, k) = i
@@ -890,7 +883,7 @@ BINOP(cmpop, j, k) = i
     emit( ROOT, "cmp `s0h, `s1h\n"+
 		"cmpeq `s0l, `s1l\n"+
 		"mov"+cmpOp2Str(cmpop)+" `d0, #1\n"+
-		"mov"+cmpOp2InvStr(cmpop)+" `d0, #0", i, j, k );
+		"mov"+cmpOp2Str(Bop.invert(cmpop))+" `d0, #0", i, j, k );
 }%
   
 BINOP(cmpop, j, k) = i

@@ -39,7 +39,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Simplification.java,v 1.1.2.6 2000-02-23 17:34:45 cananian Exp $
+ * @version $Id: Simplification.java,v 1.1.2.7 2000-02-23 19:51:39 cananian Exp $
  */
 public abstract class Simplification { 
     private static final boolean debug = false;
@@ -79,6 +79,7 @@ public abstract class Simplification {
     protected final static int _CMPLT = (1<<0);
     protected final static int _CMPLE = (1<<1);
     protected final static int _CMPEQ = (1<<2);
+    protected final static int _CMPNE = (1<<15);
     protected final static int _CMPGE = (1<<3);
     protected final static int _CMPGT = (1<<4);
     protected final static int _ADD   = (1<<5);
@@ -306,6 +307,7 @@ public abstract class Simplification {
 	case Bop.CMPLT: return _CMPLT; 
 	case Bop.CMPLE: return _CMPLE; 
 	case Bop.CMPEQ: return _CMPEQ; 
+	case Bop.CMPNE: return _CMPNE; 
 	case Bop.CMPGE: return _CMPGE;
 	case Bop.CMPGT: return _CMPGT; 
 	case Bop.ADD:   return _ADD; 

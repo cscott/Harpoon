@@ -25,7 +25,7 @@ package harpoon.IR.Tree;
  * <code>Uop.NOT</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Bop.java,v 1.1.2.6 2000-02-16 07:11:56 cananian Exp $
+ * @version $Id: Bop.java,v 1.1.2.7 2000-02-23 19:51:52 cananian Exp $
  */
 public abstract class Bop  {
     // Comparison operations
@@ -35,40 +35,42 @@ public abstract class Bop  {
     public final static int CMPLE=1;
     /** If equal-to, then 1 else 0. */
     public final static int CMPEQ=2;
+    /** If not-equal-to, then 1 else 0. */
+    public final static int CMPNE=3;
     /** If greater-than-or-equal-to, then 1 else 0. */
-    public final static int CMPGE=3;
+    public final static int CMPGE=4;
     /** If greater-than, then 1 else 0. */
-    public final static int CMPGT=4;
+    public final static int CMPGT=5;
     // General arithmetic
     /** Addition. */
-    public final static int ADD=5;
+    public final static int ADD=6;
     /** Multiplication. */
-    public final static int MUL=6;
+    public final static int MUL=7;
     /** Division. */
-    public final static int DIV=7;
+    public final static int DIV=8;
     /** Remainder operation. Note that this is valid for floating-point
      *  as well as integer arithmetic; see the JVM definition of
      *  <code>frem</code>. Basically, this is remainder after a 
      *  truncating division for both integer and floating-point. */
-    public final static int REM=8;
+    public final static int REM=9;
     // integer arithmetic
     /** Left bit-wise shift; long/integer only. */
-    public final static int SHL =9;
+    public final static int SHL =10;
     /** Right signed bit-wise shift; long/integer only. */
-    public final static int SHR =10;
+    public final static int SHR =11;
     /** Right unsigned bit-wise shift; long/integer only. */
-    public final static int USHR=11;
+    public final static int USHR=12;
     /** Bit-wise AND; long/integer only. */
-    public final static int AND =12;
+    public final static int AND =13;
     /** Bit-wise OR; long/integer only. */
-    public final static int OR  =13;
+    public final static int OR  =14;
     /** Bit-wise XOR; long/integer only. */
-    public final static int XOR =14;
+    public final static int XOR =15;
 
     /** Determines if the given <code>Bop</code> value is valid. */
     public static boolean isValid(int op) {
 	switch(op) {
-	case CMPLT: case CMPLE: case CMPEQ: case CMPGE: case CMPGT:
+	case CMPLT: case CMPLE: case CMPEQ: case CMPNE: case CMPGE: case CMPGT:
 	case ADD: case MUL: case DIV: case REM:
 	case SHL: case SHR: case USHR: case AND: case OR: case XOR:
 	    return true;
@@ -84,6 +86,7 @@ public abstract class Bop  {
 	case CMPLT:	return "cmplt";
 	case CMPLE:	return "cmple";
 	case CMPEQ:	return "cmpeq";
+	case CMPNE:	return "cmpne";
 	case CMPGE:	return "cmpge";
 	case CMPGT:	return "cmpgt";
 	case ADD:	return "add";
@@ -104,7 +107,8 @@ public abstract class Bop  {
      *  is commutative. */
     public static final boolean isCommutative(int op) {
 	switch(op) {
-	case CMPEQ: case ADD: case MUL: case AND: case OR: case XOR:
+	case CMPEQ: case CMPNE:
+	case ADD: case MUL: case AND: case OR: case XOR:
 	    return true;
 	default:
 	    return false;
@@ -118,6 +122,21 @@ public abstract class Bop  {
 	    return true;
 	default:
 	    return false;
+	}
+    }
+    /** Returns the inverted opposite for a compare <code>Bop</code>.
+     *  That is, for <code>CMPEQ</code> it will return <code>CMPNE</code>;
+     *  for <code>CMPGT</code> it will return <code>CMPLE</code>; etc. */
+    public static final int invert(int op) {
+	switch(op) {
+	case CMPLT: return CMPGE;
+	case CMPLE: return CMPGT;
+	case CMPEQ: return CMPNE;
+	case CMPNE: return CMPEQ;
+	case CMPGE: return CMPLT;
+	case CMPGT: return CMPLE;
+	default:
+	    throw new RuntimeException("Not a compare Bop: "+op);
 	}
     }
 }

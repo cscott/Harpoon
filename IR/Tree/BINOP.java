@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.1.2.26 2000-02-15 17:19:04 cananian Exp $
+ * @version $Id: BINOP.java,v 1.1.2.27 2000-02-23 19:51:52 cananian Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -36,7 +36,8 @@ public class BINOP extends OPER {
     // binops defined in harpoon.IR.Tree.Bop.
     public int type() {
 	switch(op) {
-	case Bop.CMPLT: case Bop.CMPLE: case Bop.CMPEQ:
+	case Bop.CMPLT: case Bop.CMPLE:
+	case Bop.CMPEQ: case Bop.CMPNE:
 	case Bop.CMPGE: case Bop.CMPGT:
 	    return Type.INT; // boolean comparison result
 	default:
@@ -109,6 +110,17 @@ public class BINOP extends OPER {
 		return Type.isDoubleWord(tf, optype) ?
 		    _i(_l(left)==_l(right)?1:0) :
 			_i(_i(left)==_i(right)?1:0);
+	    }
+	case Bop.CMPNE: 
+	    switch (optype) {
+	    case Type.INT:      return _i((_i(left)!=_i(right))?1:0);
+	    case Type.LONG:     return _i((_l(left)!=_l(right))?1:0);
+	    case Type.FLOAT:    return _i((_f(left)!=_f(right))?1:0);
+	    case Type.DOUBLE:   return _i((_d(left)!=_d(right))?1:0);
+	    case Type.POINTER:  
+		return Type.isDoubleWord(tf, optype) ?
+		    _i(_l(left)!=_l(right)?1:0) :
+			_i(_i(left)!=_i(right)?1:0);
 	    }
 	case Bop.CMPGE:
 	    switch (optype) {

@@ -6,7 +6,7 @@ package harpoon.Tools.PatMat;
 /** Input file lexer for instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Lexer.jlex,v 1.1.2.14 2000-01-10 05:08:44 cananian Exp $
+ * @version $Id: Lexer.jlex,v 1.1.2.15 2000-02-23 19:51:53 cananian Exp $
  */
 %%
 
@@ -222,6 +222,7 @@ NL=([\r]|[\r]?[\n])
 <RULES>		ADD		{ return tok(Sym.ADD); }
 <RULES>		AND		{ return tok(Sym.AND); }
 <RULES>		CMPEQ		{ return tok(Sym.CMPEQ); }
+<RULES>		CMPNE		{ return tok(Sym.CMPNE); }
 <RULES>		CMPGE		{ return tok(Sym.CMPGE); }
 <RULES>		CMPGT		{ return tok(Sym.CMPGT); }
 <RULES>		CMPLE		{ return tok(Sym.CMPLE); }

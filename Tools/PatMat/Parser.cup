@@ -50,7 +50,7 @@ import java_cup.runtime.lr_parser;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.33 2000-02-19 10:35:17 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.34 2000-02-23 19:51:53 cananian Exp $
  */
 
 action code {:
@@ -99,7 +99,7 @@ terminal ALIGN, DATUM, METHOD, SEGMENT;
 terminal LPAREN, RPAREN, LBRACK, RBRACK, LBRACE, RBRACE, LANGLE, RANGLE;
 terminal COLON, COMMA, EQUALS;
 // binops
-terminal ADD, AND, CMPEQ, CMPGE, CMPGT, CMPLE, CMPLT;
+terminal ADD, AND, CMPEQ, CMPNE, CMPGE, CMPGT, CMPLE, CMPLT;
 terminal DIV, MUL, OR, REM, SHL, SHR, USHR, XOR;
 // unops
 terminal _2B, _2C, _2D, _2F, _2I, _2L, _2S, NEG, NOT;
@@ -312,6 +312,7 @@ sym_unops ::=	ID:id
 binops	::=	ADD	{: RESULT=new Integer(harpoon.IR.Tree.Bop.ADD); :}
 	|	AND	{: RESULT=new Integer(harpoon.IR.Tree.Bop.AND); :}
 	|	CMPEQ	{: RESULT=new Integer(harpoon.IR.Tree.Bop.CMPEQ); :}
+	|	CMPNE	{: RESULT=new Integer(harpoon.IR.Tree.Bop.CMPNE); :}
 	|	CMPGE	{: RESULT=new Integer(harpoon.IR.Tree.Bop.CMPGE); :}
 	|	CMPGT	{: RESULT=new Integer(harpoon.IR.Tree.Bop.CMPGT); :}
 	|	CMPLE	{: RESULT=new Integer(harpoon.IR.Tree.Bop.CMPLE); :}
