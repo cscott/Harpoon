@@ -16,7 +16,7 @@ import java.util.Set;
     operate on or return <code>CollectionFactory</code>s. 
  
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: Factories.java,v 1.1.2.6 2000-07-15 15:07:19 pnkfelix Exp $
+    @version $Id: Factories.java,v 1.1.2.7 2000-07-15 15:19:51 pnkfelix Exp $
  */
 public final class Factories {
     
@@ -37,6 +37,9 @@ public final class Factories {
 	    public java.util.Set makeSet(java.util.Collection c) {
 		return new java.util.HashSet(c);
 	    }
+	    public Set makeSet(int i) {
+		return new java.util.HashSet(i);
+	    }
     };
     
     /** A <code>SetFactory</code> that generates <code>WorkSet</code>s. */
@@ -44,14 +47,21 @@ public final class Factories {
 	    public java.util.Set makeSet(java.util.Collection c) {
 		return new harpoon.Util.WorkSet(c);
 	    }
+	    public Set makeSet(int i) {
+		return new harpoon.Util.WorkSet(i);
+	    }
     };
     
-    /** A <code>SetFactory</code> that generates <code>LinearSet</code>s. */
+    /** A <code>SetFactory</code> that generates
+	<code>LinearSet</code>s backed by <code>ArrayList</code>s. */
     public static final SetFactory linearSetFactory = new SetFactory() {
 	public java.util.Set makeSet(java.util.Collection c) {
 	    Set ls = new LinearSet();
 	    ls.addAll(c);
 	    return ls;
+	}
+	public Set makeSet(int i) {
+	    return new LinearSet(i);
 	}
     };
 
@@ -75,6 +85,10 @@ public final class Factories {
 	    public java.util.List makeList(java.util.Collection c) {
 		return new java.util.ArrayList(c);
 	    }
+	public List makeList(int i) {
+	    return new java.util.ArrayList(i);
+	}
+
     };
 
     /** Returns a <code>CollectionFactory</code> that generates

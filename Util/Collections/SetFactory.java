@@ -12,7 +12,7 @@ import java.util.Set;
     <code>Set</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SetFactory.java,v 1.1.2.4 2000-07-15 15:07:19 pnkfelix Exp $
+ * @version $Id: SetFactory.java,v 1.1.2.5 2000-07-15 15:19:51 pnkfelix Exp $
  */
 public abstract class SetFactory extends CollectionFactory {
     
@@ -25,6 +25,10 @@ public abstract class SetFactory extends CollectionFactory {
 	return makeSet(c);
     }
 
+    public final Collection makeCollection(int initCapacity) {
+	return makeSet(initCapacity);
+    }
+
     /** Generates a new, mutable, empty <code>Set</code>. */
     public final java.util.Set makeSet() {
 	return makeSet(Collections.EMPTY_SET);
@@ -33,7 +37,7 @@ public abstract class SetFactory extends CollectionFactory {
     /** Generates a new, mutable, empty <code>Set</code>, using
 	<code>initialCapacity</code> as a hint to use for the capacity
 	for the produced <code>Set</code>. */
-    public final java.util.Set makeSet(int initialCapacity) {
+    public java.util.Set makeSet(int initialCapacity) {
 	return makeSet();
     }
 

@@ -16,7 +16,7 @@ import java.util.Arrays;
 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ListFactory.java,v 1.1.2.6 2000-07-15 15:07:19 pnkfelix Exp $
+ * @version $Id: ListFactory.java,v 1.1.2.7 2000-07-15 15:19:51 pnkfelix Exp $
  */
 public abstract class ListFactory extends CollectionFactory {
     
@@ -25,6 +25,10 @@ public abstract class ListFactory extends CollectionFactory {
         
     }
     
+    public final Collection makeCollection(int initCapacity) {
+	return makeList(initCapacity);
+    }
+
     public final Collection makeCollection(Collection c) {
 	return makeList(c);
     }
@@ -37,7 +41,7 @@ public abstract class ListFactory extends CollectionFactory {
     /** Generates a new, mutable, empty <code>List</code>, using 
 	<code>initialCapacity</code> as a hint to use for the capacity
 	for the produced <code>List</code>. */
-    public final List makeList(int initialCapacity) {
+    public List makeList(int initialCapacity) {
 	return makeList();
     }
 
