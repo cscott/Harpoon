@@ -17,20 +17,33 @@
 #endif
 #include "fni-stats.h" /* for stats-related macros */
 
-static int GC_FREQUENCY=100;
-/* allow GC_FREQUENCY to be modified by an env. variable.  You can also
- * reset GC_FREQUENCY in a debugger. */
-static void init_gc_frequency(void) __attribute__ ((constructor));
-static void init_gc_frequency(void) {
-  char *freq = getenv("GC_FREQUENCY");
-  if (freq!=NULL) GC_FREQUENCY=atoi(freq);
-  if (GC_FREQUENCY<=0) GC_FREQUENCY=1;
-}
-
 DECLARE_STATS_EXTERN(heap_current_live_bytes)
 DECLARE_STATS_EXTERN(heap_max_live_bytes)
 DECLARE_STATS_EXTERN(heap_total_alloc_bytes)
 DECLARE_STATS_EXTERN(heap_total_alloc_count)
+
+/* how many allocations to allow before a GC */
+static int GC_FREQUENCY=100;
+
+/* allow GC_FREQUENCY to be modified by an env. variable.  You can also
+ * reset GC_FREQUENCY in a debugger. MAX_LIVE_ESTIMATE can also be
+ * set by an env variable, for faster statistics when a valid
+ * conservatively-low estimate of heap usage is known. */
+static void init_parameters(void) __attribute__ ((constructor));
+static void init_parameters(void) {
+  char *freq, *est; int e=0;
+  /* set GC_FREQUENCY from environment. */
+  freq = getenv("GC_FREQUENCY");
+  if (freq!=NULL) GC_FREQUENCY=atoi(freq);
+  if (GC_FREQUENCY<=0) GC_FREQUENCY=1;
+  /* set 'estimated max_live_bytes' from environment.  Make sure you
+   * err on the 'too low' side!  This eliminates all GC until you
+   * reach the 'estimated' heap size, for faster runs. */
+  est = getenv("MAX_LIVE_ESTIMATE");
+  if (est!=NULL) e=atoi(est);
+  if (e<=0) e=0;
+  UPDATE_STATS(heap_max_live_bytes, e);
+}
 
 static void heapstats_finalizer(GC_PTR obj, GC_PTR _size_) {
   ptroff_t size = (ptroff_t) _size_;
@@ -46,7 +59,9 @@ void *heapstats_alloc(jsize length) {
   GC_register_finalizer_no_order(result, heapstats_finalizer,
 				 (GC_PTR) ((ptroff_t) length), NULL, NULL);
   /* (sometimes) collect all dead objects */
-  if (0 == (FETCH_STATS(heap_total_alloc_count) % GC_FREQUENCY))
+  if (0 == (FETCH_STATS(heap_total_alloc_count) % GC_FREQUENCY) &&
+      (FETCH_STATS(heap_current_live_bytes)+length)
+      > FETCH_STATS(heap_max_live_bytes))
     GC_gcollect();
   /* update total and current live */
   INCREMENT_STATS(heap_total_alloc_count, 1);
