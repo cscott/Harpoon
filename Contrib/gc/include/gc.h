@@ -69,7 +69,8 @@
 #if !defined(_REENTRANT) && (defined(GC_SOLARIS_THREADS) \
 		             || defined(GC_SOLARIS_PTHREADS) \
 			     || defined(GC_HPUX_THREADS) \
-			     || defined(GC_LINUX_THREADS))
+			     || defined(GC_LINUX_THREADS) \
+			     || defined(GC_USER_THREADS))
 # define _REENTRANT
 	/* Better late than never.  This fails if system headers that	*/
 	/* depend on this were previously included.			*/
