@@ -42,7 +42,7 @@ sub jdk12classes {
     }
     my %cls2url;
     foreach my $line (@raw) {
-	if ($line =~ m|^.*A HREF.*\"([A-Za-z_0-9/]*/[A-Za-z0-9_]*)\.html.*$|){
+	if ($line =~ m|^.*A HREF.*\"([A-Za-z_0-9/]*/[A-Za-z0-9_.]*)\.html.*$|){
 	    my $url=$1;
 	    my $cls=$1; $cls =~ s|/|.|g;
 	    $cls2url{$cls} = $baseurl . $url . ".html";
