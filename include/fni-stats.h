@@ -4,6 +4,7 @@
 
 #include <stdlib.h> /* for size_t */
 #include "config.h" /* for WITH_THREADS, WITH_STATISTICS */
+#include "flexthread.h" /* for flex_mutex_lock, etc */
 
 /* statistics counter locking */
 #ifdef WITH_THREADS
