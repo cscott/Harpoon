@@ -3,8 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
-import harpoon.IR.Properties.UseDef;
-import harpoon.Temp.Temp;
 import harpoon.Analysis.BasicBlock;
 
 import harpoon.Util.CloneableIterator;
@@ -22,9 +20,9 @@ import java.util.Iterator;
  * in the <code>BasicBlock</code>s passed to it.
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.11 1999-11-05 22:31:46 pnkfelix Exp $
+ * @version $Id: LiveVars.java,v 1.1.2.12 1999-11-09 06:28:25 pnkfelix Exp $
  */
-public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
+public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 
     private static final boolean DEBUG = false;
    
@@ -32,54 +30,47 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     private Map bbToLvi;
     
     /** Constructs a new <code>LiveVars</code> for <code>basicblocks</code>.
-	<BR> <B>requires:</B> <OL>
-	     <LI> <code>basicblocks</code> is a
-	          <code>Iterator</code> of <code>BasicBlock</code>s,	       
+	<BR> <B>requires:</B> <OL> 
+	     <LI> <code>basicblocks</code> is a 
+	          <code>Iterator</code> of <code>BasicBlock</code>s,
 	     <LI> All of the instructions in
-	          <code>basicblocks</code> implement
-		  <code>UseDef</code>
-	     <LI> No element of <code>basicblocks</code> links to a
-	          <code>BasicBlock</code> not contained within
-		  <code>basicblocks</code>
-	     <LI> No <code>BasicBlock</code> is repeatedly iterated
-	          by <code>basicblocks</code> 
-		  </OL>
-	 <BR> <B>modifies:</B> <code>basicblocks</code>
-	 <BR> <B>effects:</B> constructs a new
-	      <code>BasicBlockVisitor</code> and initializes its
-	      internal datasets for analysis of the
-	      <code>BasicBlock</code>s in <code>basicblocks</code>,
-	      iterating over all of <code>basicblocks</code> in the
+ 	          <code>basicblocks</code> implement
+ 		  <code>UseDef</code>
+	     <LI> No element of <code>basicblocks</code> links to a 
+	          <code>BasicBlock</code> not contained within 
+		  <code>basicblocks</code> 
+	     <LI> No <code>BasicBlock</code> is repeatedly iterated 
+	          by <code>basicblocks</code>
+		  </OL> 
+	 <BR> <B>modifies:</B> <code>basicblocks</code> 
+	 <BR> <B>effects:</B> constructs a new 
+	      <code>BasicBlockVisitor</code> and initializes its 
+	      internal datasets for analysis of the 
+	      <code>BasicBlock</code>s in <code>basicblocks</code>, 
+	      iterating over all of <code>basicblocks</code> in the 
 	      process.
-	 @param basicblocks Iterator of BasicBlocks to be analyzed.
-	 @param liveOnProcExit A set of Temps that are live on exit from the method (for example, r0 for assembly code).
-
-        FSK: Note to Self: Actual SUPPORT for liveOnProcExit would be
-	nice... 
+	 @param basicblocks <code>Iterator</code> of
+	        <code>BasicBlock</code>s to be analyzed. 
     */	     
-    public LiveVars(Iterator basicblocks, Set liveOnProcExit) {
+    public LiveVars(Iterator basicblocks) {
 	CloneableIterator blocks = new CloneableIterator(basicblocks);
-	Set universe = findTemps((Iterator) blocks.clone());
+	Set universe = findUniverse((Iterator) blocks.clone());
 	SetFactory setFact = new BitSetFactory(universe);
 
 	initializeBBtoLVI( blocks, setFact );
     }
 
-    /** Constructor for LiveVars that allows the user to pass in their
-	own <code>SetFactory</code> for constructing sets of the
-	<code>Temp</code>s in the analysis.  
+    /** Constructor for <code>LiveVars</code> that allows the user to
+	pass in their own <code>SetFactory</code> for constructing
+	sets of whatever variable types that are used in the analysis.  
 	<BR> <B>requires:</B> All <code>Temp</code>s in
 	     <code>basicblocks</code> are members of the universe for
 	     <code>tempSetFact</code>.
 	     
 	<BR> Doc TODO: Add all of the above documentation from the
 	     standard ctor.
-	     
-        <BR> FSK: Note to Self: Actual SUPPORT for liveOnProcExit would be 
-	nice... 
     */
     public LiveVars(Iterator basicblocks, 
-		    Set liveOnProcExit, 
 		    SetFactory tempSetFact) {
 	initializeBBtoLVI( basicblocks, tempSetFact );
     }
@@ -93,34 +84,15 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	}
     }
 
-    /** Constructs a <code>Set</code> of all of the <code>Temp</code>s
-	in <code>blocks</code>.  
-	<BR> <B>requires:</B> <OL>
-	     <LI> <code>blocks</code> is an <code>Iterator</code> of
-	          <code>BasicBlock</code>s. 
-	     <LI> All of the instructions in each element of
-	          <code>blocks</code> implement <code>UseDef</code>. 
-	     </OL>
-	<BR> <B>modifies:</B> <code>blocks</code>
-	<BR> <B>effects:</B> Iterates through all of the instructions
-	     contained in each element of <code>blocks</code>, adding
-	     each instruction's useC() and defC() to a universe of
-	     values, returning the universe after all of the
-	     instructions have been visited.
+    /** Constructs a <code>Set</code> of all of the referenced
+	variables in <code>blocks</code>.
+        For example, in some analyses this universe will be made up of
+	all of the <code>Temp</code>s referenced in
+	<code>blocks</code>.  However, for flexibility I have allowed 
+	users to define their own universe of values (such as
+	<code>Web</code>s). 
     */
-    private static Set findTemps(Iterator blocks) {
-	HashSet temps = new HashSet();
-	while(blocks.hasNext()) {
-	    BasicBlock bb = (BasicBlock) blocks.next();
-	    Iterator useDefs = bb.iterator();
-	    while(useDefs.hasNext()) {
-		UseDef useDef = (UseDef) useDefs.next();
-		temps.addAll(useDef.useC());
-		temps.addAll(useDef.defC());
-	    }
-	}
-	return temps;	
-    }
+    protected abstract Set findUniverse(Iterator blocks);
 
     /** Merge (Confluence) operator.
 	<BR> LVout(bb) = Union over (j elem Succ(bb)) of ( LVin(j) ) 
@@ -163,38 +135,14 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     }
     
     /** Initializes the USE/DEF information for bb and stores it in
-	the returned LiveVarInfo.
+	the returned LiveVarInfo.  An example implementation would
+	use <code>Temp</code>s to make up their
+	<code>LiveVarInfo</code>s. 
     */
-    private LiveVarInfo makeUseDef(BasicBlock bb, SetFactory sf) {
-	LiveVarInfo info = new LiveVarInfo(sf);
-	Iterator instrs = bb.listIterator();	
-	
-	while (instrs.hasNext()) {
-	    UseDef ud = (UseDef) instrs.next();
-	    
-	    // check for usage before definition, to handle the case
-	    // of a <- a+1 (which should lead to a USE(a), *not* a DEF
-	    
-	    // USE: set of vars used in block before being defined
-	    for(int i=0; i<ud.use().length; i++) {
-		Temp t = ud.use()[i];
-		if ( !info.def.contains(t) ) {
-		    info.use.add(t);
-		}
-	    }	    
-	    // DEF: set of vars defined in block before being used
-	    for(int i=0; i<ud.def().length; i++) {
-		Temp t = ud.def()[i];
-		if ( !info.use.contains(t) ) {
-		    info.def.add(t);
-		}
-	    }
-	}
-	return info;
-    }
+    protected abstract LiveVarInfo makeUseDef(BasicBlock bb, SetFactory sf);
 
-    /** Returns the <code>Set</code> of <code>Temp</code>s that are
-	live on entry to <code>b</code> 
+    /** Returns the <code>Set</code> of variables that are
+	live on entry to <code>b</code>.
 	<BR> <B>requires:</B> A DataFlow Solver has been run to
 	     completion on the graph of <code>BasicBlock</code>s
 	     containing <code>b</code> with <code>this</code> as the
@@ -205,11 +153,10 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	return lvi.lvIN;
     }
 
-    /** Returns the <code>Set</code> of <code>Temp</code>s that are
-	live on exit from <code>b</code>
+    /** Returns the <code>Set</code> of variables that are
+	live on exit from <code>b</code>.
 	<BR> <B>requires:</B> A DataFlow Equation Solver has been run
-             to 
-	     completion on the graph of <code>BasicBlock</code>s
+             to completion on the graph of <code>BasicBlock</code>s 
 	     containing <code>b</code> with <code>this</code> as the
 	     <code>DataFlowBasicBlockVisitor</code>.
     */
@@ -240,13 +187,13 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     //          if at all. 
     // lvIN(bb):  ( lvOUT(bb) - DEF(bb) ) U USE(bb)
     // lvOUT(bb): Union over (j elem Succ(bb)) of ( lvIN(j) )
-    private static class LiveVarInfo {
+    protected static class LiveVarInfo {
 	Set use;
 	Set def;
 	Set lvIN;
 	Set lvOUT;
 
-	LiveVarInfo(SetFactory sf) { 
+	protected LiveVarInfo(SetFactory sf) { 
 	    use = sf.makeSet();
 	    def = sf.makeSet();
 	    lvIN = sf.makeSet();

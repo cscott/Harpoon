@@ -18,7 +18,7 @@ import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
-import harpoon.Analysis.DataFlow.LiveVars;
+import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.DataFlow.InstrSolver;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.Instr.RegAlloc;
@@ -69,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.47 1999-11-02 05:52:02 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.48 1999-11-09 06:28:27 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -272,8 +272,8 @@ public class SAMain extends harpoon.IR.Registration {
 		Iterator iter= BasicBlock.basicBlockIterator(block);
 
 		// wrong but makes it compile for now
-		LiveVars livevars = 
-		    new LiveVars(iter, Collections.EMPTY_SET); 
+		LiveTemps livevars = 
+		    new LiveTemps(iter, Collections.EMPTY_SET); 
 		InstrSolver.worklistSolver
 		    (BasicBlock.basicBlockIterator(block), livevars);
 		out.println(livevars.dump());

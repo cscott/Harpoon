@@ -25,6 +25,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 import harpoon.Util.LinearMap;
 import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Collections.DefaultMultiMap;
 
 
 
@@ -53,7 +54,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.47 1999-11-05 22:32:43 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.48 1999-11-09 06:28:26 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = true;
@@ -215,6 +216,10 @@ public abstract class RegAlloc  {
 		    return null;
 		}
 
+		
+		
+/*  --- FSK needs to rethink this...I'm getting hung up on all the
+    wrong issues... ---
 		RegAlloc localCode, globalCode;
 		if (BRAIN_DEAD) {
 		    // very dumb (but correct) reg alloc
@@ -229,15 +234,17 @@ public abstract class RegAlloc  {
 		    // no global reg alloc
 		    globalCode = localCode;
 		} else {
-		    /*
-		      globalCode = 
-			new DemandDrivenRegAlloc
-			(frame, localCode.generateRegAssignment()); 
-		    */
+
+		    //  globalCode = 
+		    //	new DemandDrivenRegAlloc
+		    //	(frame, localCode.generateRegAssignment()); 
+		    
 		}
 
 		return resolveOutstandingTemps
 		    ( globalCode.generateRegAssignment() );
+*/
+		return null;
 	    }
 	    public String getCodeName() {
 		return parent.getCodeName();
@@ -495,7 +502,7 @@ public abstract class RegAlloc  {
     }
 
     /** Checks if <code>i</code> is last use of <code>reg</code> in
-	the block of instructions lists in <code>iter</code>.  
+	the block of instructions listed in <code>iter</code>.  
 	
 	<BR> <B>requires:</B> 
 	     <BR> 1. <code>i</code> is an element in <code>iter</code> 
@@ -681,13 +688,15 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	      subsequent uses in the block
     */
     class WebInfo {
-	MultiMap in = new MultiMap(); // Map[Temp, [Web] ]
-	MultiMap out = new MultiMap(); // Map[Temp, [Web] ]
-	MultiMap use = new MultiMap(new MySetFactory(), // Map[Temp, [Instr] ]
-				    harpoon.Util.Collections.Factories.hashMapFactory());
-	MultiMap def = new MultiMap(new MySetFactory(), // Map[Temp, [Instr] ]
-				    harpoon.Util.Collections.Factories.hashMapFactory());
-
+	MultiMap.Factory mmf = new MultiMap.Factory();
+	
+	MultiMap in = new DefaultMultiMap(); // Map[Temp, [Web] ]
+	MultiMap out = new DefaultMultiMap(); // Map[Temp, [Web] ]
+	MultiMap use = new DefaultMultiMap(new MySetFactory(), // Map[Temp, [Instr] ]
+					harpoon.Util.Collections.Factories.hashMapFactory());
+	MultiMap def = new DefaultMultiMap(new MySetFactory(), // Map[Temp, [Instr] ]
+					harpoon.Util.Collections.Factories.hashMapFactory());
+	
 	class MySetFactory extends harpoon.Util.Collections.SetFactory {
 	    public Set makeSet(java.util.Collection c) {
 		return new java.util.HashSet(c) {

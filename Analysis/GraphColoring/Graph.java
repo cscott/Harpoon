@@ -12,7 +12,7 @@ import java.util.Enumeration;
  * for implementing a graph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Graph.java,v 1.1.2.6 1999-08-04 05:52:21 cananian Exp $
+ * @version $Id: Graph.java,v 1.1.2.7 1999-11-09 06:28:26 pnkfelix Exp $
  */
 
 public abstract class Graph  {
@@ -25,13 +25,18 @@ public abstract class Graph  {
     }
     
     /** Adds <code>node</code> to <code>this</code>.
-	<BR> <B>requires:</B> <code>this</code> is modifiable, 
-	                     <code>node</code> is of the correct type
-	                     for the graph type implemented by
-			     <code>this</code>.
+	<BR> <B>requires:</B> <OL>
+	     <LI> <code>this</code> is modifiable, 
+	     <LI> <code>node</code> is of the correct type 
+	          for the graph type implemented by
+		  <code>this</code>. 
+	</OL>
 	<BR> <B>modifies:</B> <code>this</code>
 	<BR> <B>effects:</B>  Adds <code>node</code> to
-	                      <code>this</code>.  
+	                      <code>this</code>, if <code>node</code>
+			      is not already a member of
+			      <code>this</code>.  
+			      Else does nothing.  
     */
     public void addNode( Node node ) 
 	throws WrongNodeTypeException, ObjectNotModifiableException { 
