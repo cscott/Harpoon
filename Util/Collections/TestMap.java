@@ -23,7 +23,7 @@ import java.util.Vector;
  * implementations for correctness.  Large portions borrowed from Mauve.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestMap.java,v 1.2 2002-02-25 21:09:15 cananian Exp $
+ * @version $Id: TestMap.java,v 1.3 2003-05-07 23:38:02 cananian Exp $
  */
 class TestMap {
     private final static boolean DEBUG=false;
@@ -428,7 +428,8 @@ class TestMap {
     Map.Entry me=null;
     it.next();
     try {
-    	s.add("ADDING");
+    	//s.add("ADDING");// JSR-14 map implementations cast to Map.Entry first
+    	s.add(null);
     	th.fail("should throw an UnsupportedOperationException");
     }
     catch (UnsupportedOperationException uoe) { th.check(true); }
