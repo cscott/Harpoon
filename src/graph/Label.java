@@ -26,6 +26,8 @@ public class Label extends Node {
     //added by benji
     private double maxratio;
 
+    private static final int trackingTolerance = 40;
+
     private int numberOfImagesWithNoTank = 0;
 
     /** Construct a new {@link Label} node which will trace the outlines
@@ -198,9 +200,8 @@ public class Label extends Node {
      *
      *  @param id The image to label.
      */
-    //public synchronized void process(ImageData id) {
     public void process(ImageData id) {
-
+	//System.out.println("Label.process()");
 	int minWidthAdjust, maxWidthAdjust, minHeightAdjust, maxHeightAdjust, minSumAdjust, maxSumAdjust;
 	double maxRatioAdjust;
 	minWidthAdjust = (int)(minwidth * id.width/320.);
@@ -261,8 +262,9 @@ public class Label extends Node {
 			ImageData newImage = ImageDataManip.crop(id, x1, y1, x2-x1+1, y2-y1+1);
 			newImage.labelID = num;
 			//System.out.println("About to handleTracking");
+			boolean sendOn = true;
 			if (this.objectTracker != null) {
-			    handleTracking(newImage);
+			    sendOn = handleTracking(newImage);
 			}
 			//System.out.println("label: calling right");
 			//System.out.println("Label: ");
@@ -270,7 +272,8 @@ public class Label extends Node {
 			//System.out.println("  height: "+newImage.height);
 			//System.out.println("  x: "+newImage.x);
 			//System.out.println("  y: "+newImage.y);
-			right.process(newImage);
+			if (sendOn)
+			    right.process(newImage);
 		    }
 		    if ((--num)==0) {
 			throw new Error("Too many objects!");
@@ -352,7 +355,7 @@ public class Label extends Node {
 	}
     }
 
-    private void handleTracking(ImageData croppedImageData) {
+    private boolean handleTracking(ImageData croppedImageData) {
 	//System.out.println("Label: Handling tracking");
 	//System.out.println("       id.target# = "+croppedImageData.trackedObjectUniqueID);
 	int trackingID = croppedImageData.trackedObjectUniqueID;
@@ -371,11 +374,37 @@ public class Label extends Node {
 		int curYLoc = data.getY() + data.getHeight()/2;
 		int xLoc = croppedImageData.x + croppedImageData.width/2;
 		int yLoc = croppedImageData.y + croppedImageData.height/2;
-		if ((Math.abs(xLoc-curXLoc) < 30) &&
-		    (Math.abs(yLoc-curYLoc) < 30)) {
+		if ((Math.abs(xLoc-curXLoc) < trackingTolerance) &&
+		    (Math.abs(yLoc-curYLoc) < trackingTolerance)) {
+		    //System.out.println("     Object satisfyed distance constraints");
 		    croppedImageData.trackedObjectUniqueID = 
 			info.getUniqueID();
+		    //System.out.println("        Unique ID# = "+info.getUniqueID());
 		    info.addDataPoint(croppedImageData);
+		    Pair targetPair = getTarget(croppedImageData.trackedObjectUniqueID);
+		    if (targetPair == null)
+			System.out.println("Label: WHAT THE FUCK?????");
+		    int maxCount = maxCount();
+		    if ((!waitingForResponse) && (targetPair.getCount() == maxCount)) {
+			//System.out.println("Target "+croppedImageData.trackedObjectUniqueID+" reconfirm");
+			targetPair.resetCount();
+			if (croppedImageData.trackedObjectUniqueID == currentSelectedTrackingID) {
+			    croppedImageData.command = Command.GO_BOTH;
+			}
+			else {
+			    croppedImageData.command = Command.GO_LEFT;
+			}
+			waitingForResponse = true;
+			return true;
+		    }
+		    targetPair.inc();
+		    //System.out.println("Target "+croppedImageData.trackedObjectUniqueID+" auto-confirm");
+		    if (croppedImageData.trackedObjectUniqueID == currentSelectedTrackingID) {
+			croppedImageData.command = Command.GO_RIGHT;
+			return true;
+		    }
+		    else
+			return false;
 		}
 		else {
 		    //System.out.println("   Object not determined to be close enough");
@@ -387,9 +416,18 @@ public class Label extends Node {
 		    croppedImageData.trackedObjectUniqueID =
 			newInfo.getUniqueID();
 		    this.objectTracker.addObjectInfo(newInfo);
-		    
+		    addTarget(croppedImageData.trackedObjectUniqueID);
+		    //System.out.println("Label: new Target added #"+croppedImageData.trackedObjectUniqueID);
+		    if (!waitingForResponse) {
+			croppedImageData.command = Command.GO_LEFT;
+			waitingForResponse = true;
+			return true;
+		    }
+		    else
+			return false;
 		}
 	    }
+	    //[info == null]
 	    else {
 		//System.out.println("   No closest objet found");
 		ObjectInfo newInfo = new ObjectInfo();
@@ -397,8 +435,96 @@ public class Label extends Node {
 		croppedImageData.trackedObjectUniqueID =
 		    newInfo.getUniqueID();
 		this.objectTracker.addObjectInfo(newInfo);
+		addTarget(croppedImageData.trackedObjectUniqueID);
+		//System.out.println("Label: new Target added #"+croppedImageData.trackedObjectUniqueID);
+		if (!waitingForResponse) {
+		    croppedImageData.command = Command.GO_LEFT;
+		    waitingForResponse = true;
+		    return true;
+		}
+		else
+		    return false;
 	    }
-	    
+	}
+	//[trackingID != -1]
+	else {
+	    if (trackingID == currentSelectedTrackingID)
+		return true;
+	    else
+		return false;
 	}
     }
+
+    void confirm(int trackedObjectUniqueID) {
+	currentSelectedTrackingID = trackedObjectUniqueID;
+	waitingForResponse = false;
+    }
+
+    void deny(int trackedObjectUniqueID) {
+	if (currentSelectedTrackingID == trackedObjectUniqueID)
+	    currentSelectedTrackingID = -1;
+	waitingForResponse = false;
+    }
+
+    Pair head = null;
+    int currentSelectedTrackingID = -1;
+    boolean waitingForResponse;
+
+    private Pair addTarget(int trackedObjectUniqueID) {
+	Pair newPair = new Pair(trackedObjectUniqueID, head);
+	head = newPair;
+	return newPair;
+    }
+
+    private Pair getTarget(int targetID) {
+	Pair currentPair = head;
+	while (currentPair != null) {
+	    //System.out.println("GetTarget while loop: targetID:"+currentPair.targetID);
+	    if (currentPair.targetID == targetID) {
+		break;
+	    }
+	    currentPair = currentPair.next;
+	}
+	return currentPair;
+    }
+
+    private int maxCount() {
+	int maxCount = 0;
+	Pair currentPair = head;
+	while (currentPair != null) {
+	    if (currentPair.getCount() > maxCount)
+		maxCount = currentPair.getCount();
+	    currentPair = currentPair.next;
+	}
+	return maxCount;
+    }
+
+    private class Pair {
+	int targetID;
+	int count;
+	Pair next;
+	Pair(int targetID){
+	    init(targetID, null);
+	}
+	Pair(int targetID, Pair next) {
+	    init(targetID, next);
+	}
+	private void init(int targetID, Pair next) {
+	    this.targetID = targetID;
+	    this.next = next;
+	    this.count = 0;
+	}
+	
+	void inc() {
+	    count++;
+	}
+
+	void resetCount() {
+	    count = 0;
+	}
+	
+	int getCount() {
+	    return count;
+	}
+    }    
 }
