@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>CALL</code> objects represent method invocations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.13 1998-09-08 14:38:38 cananian Exp $
+ * @version $Id: CALL.java,v 1.14 1998-09-10 20:48:16 cananian Exp $
  */
 
 public class CALL extends Quad {
@@ -108,5 +108,5 @@ public class CALL extends Quad {
     public boolean isInterfaceMethod() { return method.isInterfaceMethod(); }
     /** Determines whether this <code>CALL</code> is to a static method. */
     public boolean isStatic() 
-    { return Modifier.isStatic(method.getModifiers()); }
+    { return method.isStatic(); }
 }

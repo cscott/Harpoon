@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>SET</code> represents field assignment-to operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SET.java,v 1.8 1998-09-08 14:38:39 cananian Exp $
+ * @version $Id: SET.java,v 1.9 1998-09-10 20:48:16 cananian Exp $
  */
 
 public class SET extends Quad {
@@ -50,7 +50,5 @@ public class SET extends Quad {
 	return sb.toString();
     }
     /** Determines whether the SET is of a static field. */
-    public boolean isStatic() { 
-	return Modifier.isStatic(field.getModifiers());
-    }
+    public boolean isStatic() { return field.isStatic(); }
 }

@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>GET</code> represent field access (get) operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.10 1998-09-08 14:38:38 cananian Exp $
+ * @version $Id: GET.java,v 1.11 1998-09-10 20:48:16 cananian Exp $
  */
 
 public class GET extends Quad {
@@ -53,7 +53,5 @@ public class GET extends Quad {
 	return sb.toString();
     }
     /** Determines whether the GET is of a static field. */
-    public boolean isStatic() { 
-	return Modifier.isStatic(field.getModifiers());
-    }
+    public boolean isStatic() { return field.isStatic(); }
 }

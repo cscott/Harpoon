@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.63 1998-09-10 20:41:21 cananian Exp $
+ * @version $Id: Translate.java,v 1.64 1998-09-10 20:48:16 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -232,8 +232,8 @@ class Translate  { // not public.
     /** Return a <code>Quad</code> representation of the method code in
      *  <code>bytecode</code>. */
     static final Quad trans(harpoon.ClassFile.Bytecode.Code bytecode) {
-	boolean isStatic = Modifier.isStatic(bytecode.getMethod().
-					     getModifiers());
+	boolean isStatic = bytecode.getMethod().isStatic();
+
 	// set up initial state.
 	HClass[] paramTypes = bytecode.getMethod().getParameterTypes();
 	String[] paramNames = bytecode.getMethod().getParameterNames();
