@@ -457,6 +457,24 @@ setexpr ::=
 	set.getChild("dotinv").addChild("relation", parser.curLine(1)).addChild(relation);
 	RESULT = set;
 	:}
+
+	| setexpr:setexpr DOT ID:relation
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode set = new ParseNode("setexpr", parser.curLine(3));
+	set.addChild("dotset").addChild(setexpr);
+	set.getChild("dotset").addChild("relation", parser.curLine(1)).addChild(relation);
+	RESULT = set;
+	:}
+
+	| setexpr:setexpr DOTINV ID:relation
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode set = new ParseNode("setexpr", parser.curLine(3));
+	set.addChild("dotinvset").addChild(setexpr);
+	set.getChild("dotinvset").addChild("relation", parser.curLine(1)).addChild(relation);
+	RESULT = set;
+	:}
 	;
 	
 expr ::=
