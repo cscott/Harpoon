@@ -23,17 +23,17 @@ import java.util.Map;
  * Algorithms</i> by Cormen, Leiserson, and Riverst, in Chapter 21.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FibonacciHeap.java,v 1.3.2.1 2002-02-27 08:37:54 cananian Exp $
+ * @version $Id: FibonacciHeap.java,v 1.3.2.2 2002-04-07 20:34:26 cananian Exp $
  */
-public class FibonacciHeap extends AbstractHeap {
+public class FibonacciHeap<K,V> extends AbstractHeap<K,V> {
     private static final boolean debug = false;
 
-    Node min=null;
+    Node<K,V> min=null;
     /** Number of nodes in this heap. */
     int n=0;
     /** Maximum degree of any node */
     int D=0;
-    final Comparator c; // convenience field.
+    final Comparator<Map.Entry<K,V>> c; // convenience field.
     
     /** Creates a new, empty <code>FibonacciHeap</code>, sorted according
      *  to its keys' natural order.  All keys inserted into the new
@@ -42,29 +42,32 @@ public class FibonacciHeap extends AbstractHeap {
     public FibonacciHeap() { this(Collections.EMPTY_SET, null); }
     /** Creates a new, empty <code>FibonacciHeap</code>, sorted according
      *  to the given <code>Comparator</code>.  O(1) time. */
-    public FibonacciHeap(Comparator c) { this(Collections.EMPTY_SET, c); }
+    public FibonacciHeap(Comparator<K> c) { this(Collections.EMPTY_SET, c); }
     /** Constructs a new heap with the same entries as the specified
      *  <code>Heap</code>. O(n) time. */
-    public FibonacciHeap(Heap h) { this(h.entries(), h.comparator()); }
+    public <V2 extends V> FibonacciHeap(Heap<K,V2> h) {
+	this(h.entries(), h.comparator());
+    }
     /** Constructs a new heap from a collection of
      *  <code>Map.Entry</code>s and a key comparator. O(n) time. */
-    public FibonacciHeap(Collection collection, Comparator comparator) {
+    public <K2 extends K, V2 extends V> FibonacciHeap(Collection<Map.Entry<K2,V2>> collection, Comparator<K> comparator) {
 	super(comparator);
 	c = entryComparator();
-	for (Iterator it=collection.iterator(); it.hasNext(); ) {
-	    Map.Entry e = (Map.Entry) it.next();
+	for (Iterator<Map.Entry<K2,V2>> it=collection.iterator();
+	     it.hasNext(); ) {
+	    Map.Entry<K2,V2> e = it.next();
 	    insert(e.getKey(), e.getValue());
 	}
     }
 
     /** Insert an entry into the heap. */
-    public Map.Entry insert(Object key, Object value) {
-	Entry e = new Entry(key, value);
+    public Map.Entry<K,V> insert(K key, V value) {
+	Entry<K,V> e = new Entry<K,V>(key, value);
 	insert(e);
 	return e;
     }
-    protected void insert(Map.Entry me) {
-	Node x = new Node((Entry)me);
+    protected void insert(Map.Entry<K,V> me) {
+	Node<K,V> x = new Node<K,V>((Entry<K,V>)me);
 	// THESE ARE DONE IN THE CONSTRUCTOR.
 	// x.degree=0; x.parent=x.child=null;
 	// x.left = x.right = x;  x.mark = false;
@@ -74,11 +77,11 @@ public class FibonacciHeap extends AbstractHeap {
 	n++; // increase size;
 	// done.
     }
-    public Map.Entry minimum() {
+    public Map.Entry<K,V> minimum() {
 	if (this.min==null) throw new java.util.NoSuchElementException();
 	return this.min.entry;
     }
-    public void union(FibonacciHeap h) {
+    public void union(FibonacciHeap<K,V> h) {
 	// if you're comparing this to CLR, this=='h1' and h=='h2'
 	_concatenateListsContaining(this.min, h.min);
 	if (this.min==null || 
@@ -88,16 +91,18 @@ public class FibonacciHeap extends AbstractHeap {
 	h.clear();
 	// done.
     }
-    public void union(Heap h) {
-	if (h instanceof FibonacciHeap &&
-	    entryComparator().equals(((FibonacciHeap)h).entryComparator()))
+    public <K2 extends K, V2 extends V> void union(Heap<K2,V2> h) {
+	if (h instanceof FibonacciHeap<K2,V2> &&
+	    entryComparator().equals(((FibonacciHeap<K2,V2>)h).entryComparator()))
+	    // the unsafe cast below from K2 to K and V2 to V should really be
+	    // safe if the entryComparators for the two Heaps are identical.
 	    union((FibonacciHeap)h);
 	else super.union(h);
     }
-    public Map.Entry extractMinimum() {
+    public Map.Entry<K,V> extractMinimum() {
 	if (this.min==null) throw new java.util.NoSuchElementException();
-	Node z = this.min;
-	Node x = z.child;
+	Node<K,V> z = this.min;
+	Node<K,V> x = z.child;
 	if (x!=null) do { // for each child x of z...
 	    x.parent=null;
 	    x=x.right;
@@ -105,7 +110,7 @@ public class FibonacciHeap extends AbstractHeap {
 	// add z's children to the root list.
 	_concatenateListsContaining(z.child, z);
 	// remove z from the root list.
-	Node zRight = z.right;
+	Node<K,V> zRight = z.right;
 	_removeFromList(z);
 	if (z==zRight) { // z was the only node on the root list
 	    assert n==1;
@@ -120,21 +125,21 @@ public class FibonacciHeap extends AbstractHeap {
     }
     // reduce the number of trees in the fibonacci heap
     private void _consolidate() {
-	Node[] A = new Node[D(n)+1];
+	Node<K,V>[] A = new Node<K,V>[D(n)+1];
 	// for each node w in the root list of H
 	// (remove each node from the root list as we iterate)
-	for (Node w = min; w!=null; ) {
-	    Node x = w;
+	for (Node<K,V> w = min; w!=null; ) {
+	    Node<K,V> x = w;
 	    { // iterator
-		Node wR = w.right; 
+		Node<K,V> wR = w.right; 
 		_removeFromList(w);
 		w = (w==wR) ? null : wR;
 	    }
 	    int  d = x.degree;
 	    while (A[d] != null) {
-		Node y = A[d];
+		Node<K,V> y = A[d];
 		if (c.compare(x.entry, y.entry) > 0) {
-		    Node t=x; x=y; y=t; // exchange x and y
+		    Node<K,V> t=x; x=y; y=t; // exchange x and y
 		}
 		_link(y, x);
 		A[d] = null;
@@ -156,7 +161,7 @@ public class FibonacciHeap extends AbstractHeap {
 	    }
 	}
     }
-    private void _link(Node y, Node x) {
+    private void _link(Node<K,V> y, Node<K,V> x) {
 	// both x and y are roots.
 	assert x.parent==null && y.parent==null;
 	// y should already have been removed from root list.
@@ -165,17 +170,17 @@ public class FibonacciHeap extends AbstractHeap {
 	y.mark = false;
     }
 
-    public void decreaseKey(Map.Entry me, Object newkey) {
-	decreaseKey((Entry)me, newkey, false);
+    public void decreaseKey(Map.Entry<K,V> me, K newkey) {
+	decreaseKey((Entry<K,V>)me, newkey, false);
     }
     // if 'delete' is true, newkey is effectively -infinity.
-    private void decreaseKey(Entry entry, Object newkey, boolean delete) {
+    private void decreaseKey(Entry<K,V> entry, K newkey, boolean delete) {
 	if (!delete && keyComparator().compare(newkey, entry.getKey()) > 0)
 	    throw new UnsupportedOperationException("New key is greater than "+
 						    "current key.");
 	setKey(entry, newkey);
-	Node x = entry.node;
-	Node y = x.parent;
+	Node<K,V> x = entry.node;
+	Node<K,V> y = x.parent;
 	if (y!=null && (delete || c.compare(x.entry, y.entry) < 0)) {
 	    _cut(x, y);
 	    _cascadingCut(y);
@@ -184,14 +189,14 @@ public class FibonacciHeap extends AbstractHeap {
 	    min = x;
 	// ta-da!
     }
-    private void _cut(Node x, Node y) {
+    private void _cut(Node<K,V> x, Node<K,V> y) {
 	y.removeChild(x);
 	_concatenateListsContaining(x, min);
 	x.parent = null;
 	x.mark = false;
     }
-    private void _cascadingCut(Node y) {
-	Node z = y.parent;
+    private void _cascadingCut(Node<K,V> y) {
+	Node<K,V> z = y.parent;
 	if (z==null) return;
 	if (y.mark == false) {
 	    y.mark = true;
@@ -200,8 +205,8 @@ public class FibonacciHeap extends AbstractHeap {
 	    _cascadingCut(z);
 	}
     }
-    public void delete(Map.Entry me) {
-	decreaseKey((Entry)me, null, true); // effectively key is -infinity
+    public void delete(Map.Entry<K,V> me) {
+	decreaseKey((Entry<K,V>)me, null, true); // effectively key is -infinity
 	extractMinimum();
 	// now that wasn't too hard, was it?
     }
@@ -209,17 +214,17 @@ public class FibonacciHeap extends AbstractHeap {
     public int size() { return n; }
     public void clear() { min=null; n=0; }
 
-    public Collection entries() {
-	return new AbstractCollection() {
+    public Collection<Map.Entry<K,V>> entries() {
+	return new AbstractCollection<Map.Entry<K,V>>() {
 	    public int size() { return n; }
-	    public Iterator iterator() {
-		return new UnmodifiableIterator() {
-		    Node next = min;
+	    public Iterator<Map.Entry<K,V>> iterator() {
+		return new UnmodifiableIterator<Map.Entry<K,V>>() {
+		    Node<K,V> next = min;
 		    public boolean hasNext() { return next!=null; }
-		    public Object next() {
+		    public Map.Entry<K,V> next() {
 			if (next==null)
 			    throw new java.util.NoSuchElementException();
-			Node n=next; next = successor(next); return n.entry;
+			Node<K,V> n=next; next=successor(next); return n.entry;
 		    }
 		};
 	    }
@@ -227,11 +232,11 @@ public class FibonacciHeap extends AbstractHeap {
     }
     /** Return the next node after the specified node in the iteration order.
      *  O(1) time. */
-    private Node successor(Node n) {
+    private Node<K,V> successor(Node<K,V> n) {
 	assert n!=null;
 	if (n.child!=null) return n.child;
 	do {
-	Node first = (n.parent==null) ? this.min : n.parent.child;
+	Node<K,V> first = (n.parent==null) ? this.min : n.parent.child;
 	assert first!=null && n.right!=null;
 	if (n.right != first) return n.right;
 	n=n.parent;
@@ -240,25 +245,25 @@ public class FibonacciHeap extends AbstractHeap {
     }
 
     /** The underlying <code>Map.Entry</code> representation. */
-    static final class Entry extends PairMapEntry {
-	Node node;
-	Entry(Object key, Object value) { super(key, value); }
-	Object _setKey(Object key) { return super.setKey(key); }
+    static final class Entry<K,V> extends PairMapEntry<K,V> {
+	Node<K,V> node;
+	Entry(K key, V value) { super(key, value); }
+	K _setKey(K key) { return super.setKey(key); }
     }
     // to implement updateKey, etc...
-    protected final Object setKey(Map.Entry me, Object newkey) {
-	Entry e = (Entry) me;
+    protected final K setKey(Map.Entry<K,V> me, K newkey) {
+	Entry<K,V> e = (Entry<K,V>) me;
 	return e._setKey(newkey);
     }
     /** The underlying node representation for the fibonacci heap. */
-    static final class Node {
-	Node parent, child;
-	Entry entry;
-	Node left, right;
+    static final class Node<K,V> {
+	Node<K,V> parent, child;
+	Entry<K,V> entry;
+	Node<K,V> left, right;
 	int degree;
 	boolean mark;
 	/*-----------------------------*/
-	Node(Entry e) {
+	Node(Entry<K,V> e) {
 	    this.entry = e;
 	    this.entry.node = this;
 	    this.parent = this.child = null;
@@ -266,14 +271,14 @@ public class FibonacciHeap extends AbstractHeap {
 	    this.left = this.right = this;
 	    this.mark = false;
 	}
-	void addChild(Node c) {
+	void addChild(Node<K,V> c) {
 	    assert c.left == c && c.right == c;
 	    if (this.child==null) this.child = c;
 	    else _concatenateListsContaining(this.child, c);
 	    c.parent = this;
 	    degree++;
 	}
-	void removeChild(Node c) {
+	void removeChild(Node<K,V> c) {
 	    assert c.parent == this;
 	    if (this.child==c) this.child=c.right;
 	    _removeFromList(c);
@@ -286,19 +291,19 @@ public class FibonacciHeap extends AbstractHeap {
 		", child:"+_2s(child)+", left:"+_2s(left)+
 		", right:"+_2s(right)+", mark:"+mark+">";
 	}
-	private String _2s(Node n) {return n==null?"(nil)":n.entry.toString();}
+	private String _2s(Node<K,V> n) {return n==null?"(nil)":n.entry.toString();}
     }
     /** Concatenate two right/left lists together. */
-    private static void _concatenateListsContaining(Node a, Node b) {
+    private static <K,V> void _concatenateListsContaining(Node<K,V> a, Node<K,V> b) {
 	if (a==null || b==null) return; // nothing to link in.
-	Node c = a.right, d = b.left;
+	Node<K,V> c = a.right, d = b.left;
 	a.right = b;
 	b.left  = a;
 	d.right = c;
 	c.left  = d;
     }
     /** Remove a node from its left/right list. */
-    private static void _removeFromList(Node a) {
+    private static <K,V> void _removeFromList(Node<K,V> a) {
 	a.left.right = a.right;
 	a.right.left = a.left;
 	a.left = a.right = a;
@@ -314,19 +319,21 @@ public class FibonacciHeap extends AbstractHeap {
 
     /** Self-test method. */
     public static void main(String[] args) {
-	Heap h = new FibonacciHeap();
+	{
+	Heap<Integer,Integer> h = new FibonacciHeap<Integer,Integer>();
 	assert h.size()==0 && h.isEmpty();
 	// example from CLR, page 146/151
-	h = new FibonacciHeap(new AbstractCollection() {
+	h = new FibonacciHeap<Integer,Integer>
+	    (new AbstractCollection<Map.Entry<Integer,Integer>>() {
 	    int el[] = { -4, -1, -3, -2, -16, -9, -10, -14, -8, -7 };
 	    public int size() { return el.length; }
-	    public Iterator iterator() {
-		return new harpoon.Util.UnmodifiableIterator() {
+	    public Iterator<Map.Entry<Integer,Integer>> iterator() {
+		return new harpoon.Util.UnmodifiableIterator<Map.Entry<Integer,Integer>>() {
 		    int i = 0;
 		    public boolean hasNext() { return i<el.length; }
-		    public Object next() {
+		    public Map.Entry<Integer,Integer> next() {
 			Integer io = new Integer(el[i++]);
-			return new PairMapEntry(io, io);
+			return new PairMapEntry<Integer,Integer>(io, io);
 		    }
 		};
 	    }
@@ -356,7 +363,10 @@ public class FibonacciHeap extends AbstractHeap {
 	assert h.isEmpty() && h.size()==0;
 	// okay, test delete and decreaseKey now.
 	h.clear(); assert h.isEmpty() && h.size()==0;
-	Map.Entry me[] = {
+	}{
+	Heap<String,String> h = new FibonacciHeap<String,String>();
+	assert h.isEmpty() && h.size()==0;
+	Map.Entry<String,String> me[] = {
 	    h.insert("C", "c1"), h.insert("S", "s1"), h.insert("A", "a"),
 	    h.insert("S", "s2"), h.insert("C", "c2"), h.insert("O", "o"),
 	    h.insert("T", "t1"), h.insert("T", "t2"), h.insert("Z", "z"),
@@ -378,5 +388,6 @@ public class FibonacciHeap extends AbstractHeap {
 	System.out.println("5: "+h);
 	// DONE.
 	System.out.println("PASSED.");
+	}
     }
 }
