@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * is the first parameter in the <code>params</code> array.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.4 1998-12-17 21:38:35 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.5 1998-12-20 07:11:59 cananian Exp $ 
  */
 public class CALL extends Quad {
     /** The method to invoke. */
@@ -31,7 +31,7 @@ public class CALL extends Quad {
      *  <code>null</code> for <code>void</code> methods. */
     protected Temp retval;
     /** Destination for any exception thrown by the method. 
-     *  Must be non-<code>null</code>. */
+     *  If <code>null</code> exceptions are thrown, not caught. */
     protected Temp retex;
     /** Special flag for non-virtual methods.
      *  (INVOKESPECIAL has different invoke semantics) */
@@ -64,7 +64,8 @@ public class CALL extends Quad {
      *        value (return type is <code>void</code>.
      * @param retex
      *        the destination <code>Temp</code> for any exception thrown
-     *        by the called method.
+     *        by the called method.  If <code>null</code> exceptions are
+     *        thrown, not caught.
      * @param isVirtual
      *        <code>true</code> if invocation semantics are that of a
      *        virtual method; <code>false</code> for constructors and
@@ -85,7 +86,7 @@ public class CALL extends Quad {
 	this.isVirtual = isStatic()?false:isVirtual;
 
 	// VERIFY legality of this CALL.
-	Util.assert(method!=null && params!=null && retex!=null);
+	Util.assert(method!=null && params!=null);
 	/* if !isVirtual, then the method is either static, a constructor,
 	 * private, or a the declaring class of the method is a superclass
 	 * of the current method.   This is hard to check, so we do it
@@ -122,7 +123,8 @@ public class CALL extends Quad {
      *  no value. */
     public Temp retval() { return retval; }
     /** Returns the <code>Temp</code> which will get any exception thrown
-     *  by the called method. */
+     *  by the called method, or <code>null</code> if exceptions are
+     *  not caught. */
     public Temp retex() { return retex; }
     /** Returns <code>true</code> if the method is dispatched virtually,
      *  or <code>false</code> otherwise.  Static methods return 
@@ -138,11 +140,13 @@ public class CALL extends Quad {
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, params);
     }
     /** Returns all the Temps defined by this Quad. 
-     * @return { retval, retex }, if retval!=null; else { retex }
+     * @return The non-null members of <code>{ retval, retex }</code>.
      */
     public Temp[] def() {
-	if (retval==null) return new Temp[] { retex };
-	else return new Temp[] { retval, retex };
+	if (retval==null)
+	    return (retex==null)?new Temp[0]:new Temp[]{retex};
+	else
+	    return (retex==null)?new Temp[]{retval}:new Temp[]{retval,retex};
     }
 
     public int kind() { return QuadKind.CALL; }
@@ -160,7 +164,8 @@ public class CALL extends Quad {
     void renameDefs(TempMap tm) {
 	if (retval!=null)
 	    retval = tm.tempMap(retval);
-	retex  = tm.tempMap(retex);
+	if (retex!=null)
+	    retex  = tm.tempMap(retex);
     }
 
     /** Properly clone <code>params[]</code> array. */
@@ -190,7 +195,10 @@ public class CALL extends Quad {
 		sb.append(", ");
 	}
 	sb.append(')');
-	sb.append(" exceptions in "+retex);
+	if (retex!=null)
+	    sb.append(" exceptions in "+retex);
+	else
+	    sb.append(" exceptions THROWN DIRECTLY.");
 	return sb.toString();
     }
     // Other information that might be useful.  Or might not.  Who knows?

@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.1.2.4 1998-12-17 21:38:37 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.1.2.5 1998-12-20 07:12:00 cananian Exp $
  */
 public class SWITCH extends SIGMA {
     /** The discriminant, compared against each value in <code>keys</code>.*/
@@ -100,8 +100,8 @@ public class SWITCH extends SIGMA {
     public String toString() {
 	StringBuffer sb = new StringBuffer("SWITCH "+index+": ");
 	for (int i=0; i<keys.length; i++)
-	    sb.append("case "+keys[i]+" => "+next(i).getID()+"; ");
-	sb.append("default => "+next(keys.length).getID());
+	    sb.append("case "+keys[i]+"; ");
+	sb.append("default");
 	sb.append(" / "); sb.append(super.toString());
 	return sb.toString();
     }

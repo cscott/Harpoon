@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.1.2.4 1998-12-17 21:38:35 cananian Exp $
+ * @version $Id: CJMP.java,v 1.1.2.5 1998-12-20 07:11:59 cananian Exp $
  */
 public class CJMP extends SIGMA {
     protected Temp test;
@@ -97,8 +97,6 @@ public class CJMP extends SIGMA {
     /** Returns human-readable representation. */
     public String toString() {
 	return "CJMP: if " + test + 
-	    " then " + next(1).getID() + 
-	    " else " + next(0).getID() +
 	    " / " + super.toString();
     }
 }
