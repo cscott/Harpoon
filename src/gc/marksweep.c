@@ -186,20 +186,21 @@ struct block *find_free_block(size_t size) {
 }
 
 /* effects: marks object as well as any objects pointed to by it */
-void marksweep_handle_reference(jobject_unwrapped *obj)
+void marksweep_handle_reference(jobject_unwrapped *ref)
 {
+  jobject_unwrapped obj = (jobject_unwrapped)PTRMASK((*ref));
   struct block_header *root;
-  if (allocated_by_marksweep((void *)(*obj)))
+  if (allocated_by_marksweep((void *)obj))
     {
       // move back to top of block
-      root = (struct block_header *)(*obj) - 1;
+      root = (struct block_header *)obj - 1;
       // mark or check for mark
       if (root->markunion.mark == 0)
 	{
 	  // if not already marked, mark and trace
 	  error_gc("being marked.\n", "");
 	  root->markunion.mark = 1;
-	  trace(*obj);
+	  trace(obj);
 	}
       else
 	// if already marked, done
@@ -333,9 +334,13 @@ void pointerreversed_handle_reference(jobject_unwrapped *obj)
 {
   struct block *root;
   jobject_unwrapped prev = NULL;
-  jobject_unwrapped curr = *obj;
+  jobject_unwrapped curr;
   jobject_unwrapped next;
+  jobject_unwrapped saved_prev;
+  jobject_unwrapped saved_curr = (*obj);
   int done = 0;
+
+  curr = PTRMASK(saved_curr);
 
   printf("Entering pointerreversed_handle_reference.\n");
   fflush(stdout);
@@ -413,10 +418,11 @@ void pointerreversed_handle_reference(jobject_unwrapped *obj)
 		  root->bheader.markunion.mark = make_mark(next_index);
 		  next = elements_and_fields[next_index];
 		  elements_and_fields[next_index] = prev;
-		  prev = curr;
+		  prev = saved_curr;
 		  printf("Setting prev = %p.\n", prev);
 		  fflush(stdout);
-		  curr = next;
+		  saved_curr = next;
+		  curr = PTRMASK(saved_curr);
 		}
 	    }
 	  else
@@ -436,10 +442,17 @@ void pointerreversed_handle_reference(jobject_unwrapped *obj)
       while (prev != NULL)
 	{
 	  // these objects are in the middle of being examined
-	  struct block *root = (void *)prev - sizeof(struct block_header);
-	  ptroff_t last_index = get_index_from_mark(root->bheader.markunion.mark);
+	  struct block *root;
+	  ptroff_t last_index;
 	  ptroff_t next_index;
 	  jobject_unwrapped *elements_and_fields;
+
+	  saved_prev = prev;
+	  prev = PTRMASK(saved_prev);
+
+	  root = (void *)prev - sizeof(struct block_header);
+	  last_index = get_index_from_mark(root->bheader.markunion.mark);
+
 	  printf("Starting prev loop with prev = %p.\n", prev);
 	  fflush(stdout);
 
@@ -463,12 +476,13 @@ void pointerreversed_handle_reference(jobject_unwrapped *obj)
 	      fflush(stdout);
 	      root->bheader.markunion.mark = 1;
 	      // restore pointers
-	      next = prev;
+	      next = saved_prev;
 	      prev = elements_and_fields[last_index];
 	      printf("Setting prev = %p.\n", prev);
 	      fflush(stdout);
-	      elements_and_fields[last_index] = curr;
-	      curr = next;
+	      elements_and_fields[last_index] = saved_curr;
+	      saved_curr = next;
+	      curr = PTRMASK(saved_curr);
 	      if (prev == NULL)
 		done = 1;
 	    }
@@ -485,8 +499,9 @@ void pointerreversed_handle_reference(jobject_unwrapped *obj)
 	      root->bheader.markunion.mark = make_mark(next_index);
 	      next = elements_and_fields[next_index];
 	      elements_and_fields[next_index] = elements_and_fields[last_index];
-	      elements_and_fields[last_index] = curr;
-	      curr = next;
+	      elements_and_fields[last_index] = saved_curr;
+	      saved_curr = next;
+	      curr = PTRMASK(saved_curr);
 	      break;
 	    }
 	}
