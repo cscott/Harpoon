@@ -46,17 +46,19 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection1.java,v 1.5 2003-10-21 02:11:02 cananian Exp $
+ * @version $Id: DataReflection1.java,v 1.5.2.1 2003-11-14 23:47:24 cananian Exp $
  */
 public class DataReflection1 extends Data {
     final NameMap m_nm;
     final ObjectBuilder m_ob;
+    final boolean pointersAreLong;
     
     /** Creates a <code>DataReflection1</code>. */
     public DataReflection1(Frame f, HClass hc, ClassHierarchy ch) {
         super("reflection-data-1", hc, f);
 	this.m_nm = f.getRuntime().getNameMap();
 	this.m_ob = ((Runtime) f.getRuntime()).ob;
+	this.pointersAreLong = f.pointersAreLong();
 	// only build one of these (so we can make sure the
 	// table is properly sorted); wait until hc is
 	// java.lang.Object
@@ -171,6 +173,10 @@ public class DataReflection1 extends Data {
 			(hf.getName().equals("signers") ||
 			 hf.getName().equals("pd")))
 			return null;
+		    if (hf.getDeclaringClass().equals(HCclass) &&
+			hf.getName().equals("$$bitfield0"))
+		    	return pointersAreLong ? (Number)
+		    		new Long(0) : new Integer(0);
 		    throw new Error("Unknown field of Class object: "+hf);
 		}
 	    };
