@@ -37,7 +37,7 @@ import java.util.Set;
  * <code>ToTreeHelpers</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTreeHelpers.java,v 1.1.2.6 2000-06-01 00:17:16 cananian Exp $
+ * @version $Id: ToTreeHelpers.java,v 1.1.2.7 2000-06-07 02:40:57 cananian Exp $
  */
 abstract class ToTreeHelpers {
     //------------ EdgeOracle IMPLEMENTATIONS ------------------
@@ -133,27 +133,6 @@ abstract class ToTreeHelpers {
 		}
 	    }
 	    return maxedge;
-	}
-    }
-
-    //------------ ReachingDefs IMPLEMENTATIONS ------------------
-    // reachingdefs for SSA/SSI form.
-    static class SSXReachingDefs extends ReachingDefs {
-	final Map m = new HashMap();
-	SSXReachingDefs(HCode hc) { this(hc, UseDefer.DEFAULT); }
-	SSXReachingDefs(HCode hc, UseDefer ud) {
-	    super(hc);
-	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
-		HCodeElement hce = (HCodeElement) it.next();
-		for (Iterator it2 = ud.defC(hce).iterator(); it2.hasNext(); ) {
-		    Temp t = (Temp) it2.next();
-		    Util.assert(!m.containsKey(t), "not in SSI form!");
-		    m.put(t, hce);
-		}
-	    }
-	}
-	public Set reachingDefs(HCodeElement hce, Temp t) {
-	    return Collections.singleton(m.get(t));
 	}
     }
 

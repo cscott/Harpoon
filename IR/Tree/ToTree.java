@@ -7,6 +7,7 @@ import harpoon.Analysis.AllocationInformationMap.AllocationPropertiesImpl;
 import harpoon.Analysis.DefMap;
 import harpoon.Analysis.ReachingDefs;
 import harpoon.Analysis.ReachingDefsImpl;
+import harpoon.Analysis.SSxReachingDefsImpl;
 import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.Analysis.Maps.Derivation;
@@ -73,7 +74,7 @@ import java.util.Stack;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.81 2000-06-01 00:17:15 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.82 2000-06-07 02:40:56 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -99,14 +100,14 @@ class ToTree {
 	     code.getAllocationInformation(),
 	     new ToTreeHelpers.MinMaxEdgeOracle(code),
 	     new ToTreeHelpers.SSXSimpleFoldNanny(code),
-	     new ToTreeHelpers.SSXReachingDefs(code));
+	     new SSxReachingDefsImpl(code));
     }
     public ToTree(final TreeFactory tf, final LowQuadSSI code) {
 	this(tf, code,
 	     code.getAllocationInformation(),
 	     new ToTreeHelpers.MinMaxEdgeOracle(code),
 	     new ToTreeHelpers.SSXSimpleFoldNanny(code),
-	     new ToTreeHelpers.SSXReachingDefs(code));
+	     new SSxReachingDefsImpl(code));
     }
     /** Class constructor. */
     public ToTree(final TreeFactory tf, harpoon.IR.LowQuad.Code code,
