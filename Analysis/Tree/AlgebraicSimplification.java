@@ -43,7 +43,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.24 2001-01-23 23:45:15 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.25 2001-07-10 00:38:04 cananian Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
 public abstract class AlgebraicSimplification extends Simplification { 
@@ -84,7 +84,11 @@ public abstract class AlgebraicSimplification extends Simplification {
 			     _ADD|_MUL|_SHL|_SHR|_USHR|_AND|_OR|_XOR) &&
 		    contains(_KIND(b.getLeft()), _CONST) &&
 		    contains(_KIND(b.getRight()), _CONST) &&
-		    !b.isFloatingPoint();
+		    (!b.isFloatingPoint()) &&
+		    // 'null' is only pointer const but we can't be sure
+		    // than null==0 (may have alternate value w/ pointer
+		    // twiddling, etc).
+		    b.type() != Type.POINTER;
 		}
 	    }
 	    
@@ -204,6 +208,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 	// exp & 0 --> 0
 	// exp * 0 --> 0
 	// exp % 1 --> 0
+	// (don't optimize '& null' case because not guaranteed that null==0)
 	//
 	Rule makeZero = new Rule("makeZero") {
 	    // NOTE: this rule creates non-canonical tree form.
@@ -242,6 +247,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 	// exp >>> 0 --> exp
 	// exp * 1   --> exp
 	// exp / 1   --> exp
+	// (don't optimize '+ null' case because not guaranteed that null==0)
 	// 
 	Rule removeZero = new Rule("removeZero") { 
 	    public boolean match(Exp e) { 

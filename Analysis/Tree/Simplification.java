@@ -39,7 +39,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Simplification.java,v 1.1.2.10 2001-06-11 17:30:02 cananian Exp $
+ * @version $Id: Simplification.java,v 1.1.2.11 2001-07-10 00:38:05 cananian Exp $
  */
 public abstract class Simplification { 
     private static final boolean debug = false;
@@ -287,6 +287,7 @@ public abstract class Simplification {
 		CONST c = (CONST)t; 
 		return _CONST |
 		    (c.isFloatingPoint() ? 0 :
+		     // note that CONSTNULL is not necessarily same as CONST0
 		     c.value            == null ? _CONSTNULL : 
 		     c.value.longValue() == 0    ? _CONST0 : 
 		     c.value.longValue() == 1    ? _CONST1 :
