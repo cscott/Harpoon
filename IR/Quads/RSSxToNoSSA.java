@@ -26,7 +26,7 @@ import java.util.Map;
  * phi or sigma functions.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: RSSxToNoSSA.java,v 1.1.2.6 2001-11-08 00:25:19 cananian Exp $
+ * @version $Id: RSSxToNoSSA.java,v 1.1.2.7 2001-11-26 18:55:17 bdemsky Exp $
  */
 public class RSSxToNoSSA {
     QuadFactory newQF;
@@ -36,6 +36,8 @@ public class RSSxToNoSSA {
     AllocationInformationMap newai;
     AllocationInformation oldai;
     HashMap quadmap;
+    HashMap newtempmap;
+
     
     /** Creates a <code>RSSxToNoSSA</code>. */
     public RSSxToNoSSA(QuadFactory newQF, Code code) {
@@ -47,6 +49,7 @@ public class RSSxToNoSSA {
 	    this.newai=new AllocationInformationMap();
 	else
 	    this.newai=null;
+	this.newtempmap=new HashMap();
 	this.header=translate();
     }
     public Quad getQuads() { return header; }
@@ -59,6 +62,10 @@ public class RSSxToNoSSA {
 
     public Map quadMap() {
 	return quadmap;
+    }
+
+    public Map newTempMap() {
+	return newtempmap;
     }
 
     private Quad translate() {
@@ -92,7 +99,7 @@ public class RSSxToNoSSA {
 	Quad newRoot=(Quad)quadmap.get(code.getRootElement());
 	WorkSet todo=new WorkSet(),done=new WorkSet();
 	todo.push(newRoot);
-	Remover v=new Remover(done);
+	Remover v=new Remover(done,newtempmap);
 	while (!todo.isEmpty()) {
 	    Quad q=(Quad)todo.pop();
 	    done.add(q);
@@ -105,9 +112,12 @@ public class RSSxToNoSSA {
     }
     static class Remover extends LowQuadVisitor {
 	Set done;
-	public Remover(Set done) {
+	Map newtempmap;
+	public Remover(Set done, Map newtempmap) {
 	    super(false/*non-strict*/);
-	    this.done=done;}
+	    this.done=done;
+	    this.newtempmap=newtempmap;
+	}
 
 
 	private static Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
@@ -134,6 +144,7 @@ public class RSSxToNoSSA {
 	public void fixphi(PHI q) {
 	    for (int i=0;i<q.numPhis();i++) {
 		Temp Tt = new Temp(q.dst(i));
+		newtempmap.put(Tt, q.dst(i));
 		addMoveAt(q.nextEdge(0), q, q.dst(i), Tt);
 		for (int j=0;j<q.arity();j++)
 		    addMoveAt(q.prevEdge(j), q, Tt, q.src(i, j));

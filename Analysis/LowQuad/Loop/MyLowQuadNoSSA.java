@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>MyLowQuadNoSSA</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadNoSSA.java,v 1.1.2.5 2001-11-26 17:59:48 bdemsky Exp $
+ * @version $Id: MyLowQuadNoSSA.java,v 1.1.2.6 2001-11-26 18:55:21 bdemsky Exp $
  */
 
 public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
@@ -37,7 +37,8 @@ public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
     Derivation parentDerivation;
     Map quadmap;
     TempMap tempMap;
-    
+
+
     MyLowQuadNoSSA(final LowQuadSSI code) {
 	super(code.getMethod(),null);
 	RSSxToNoSSA translate=new RSSxToNoSSA(qf, code);
@@ -47,11 +48,11 @@ public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
 	dT=new HashMap();
 	tT=new HashMap();
 	parentDerivation=code.getDerivation();
-	buildmaps(code);
+	buildmaps(code, translate.newTempMap());
 	setDerivation(this);
     }
 
-    private void buildmaps(final HCode code) {
+    private void buildmaps(final HCode code, Map newtempmap) {
 	Iterator iterate=((HCode)code).getElementsI();
 	while (iterate.hasNext()) {
 	    Quad q=(Quad)iterate.next();
@@ -59,14 +60,24 @@ public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
 	    for(int i=0;i<defs.length;i++) {
 		Derivation.DList parents=parentDerivation.derivation(q, defs[i]);
 		if (parents!=null) {
-		    //System.out.print("NoSSA: "+q+","+defs[i]+"->"+quadmap.get(q)+","+tempMap.tempMap(defs[i])+" "+parents);
+		    System.out.print("NoSSA: "+q+","+defs[i]+"->"+quadmap.get(q)+","+tempMap.tempMap(defs[i])+" "+parents);
 		    dT.put(tempMap.tempMap(defs[i]),Derivation.DList.rename(parents,tempMap));
-		    //System.out.println(dT.get(tempMap.tempMap(defs[i])));
+		    System.out.println(dT.get(tempMap.tempMap(defs[i])));
 		    tT.put(tempMap.tempMap(defs[i]), 
 			   null);
-		} else
+		} else {
 		    tT.put(tempMap.tempMap(defs[i]),parentDerivation.typeMap(null,defs[i]));
+		    System.out.print("NoSSA: "+q+","+defs[i]+"->"+quadmap.get(q)+","+tempMap.tempMap(defs[i])+" "+parents);
+		    System.out.println(tT.get(tempMap.tempMap(defs[i])));
+		}
 	    }
+	}
+	Iterator tempmapit=newtempmap.keySet().iterator();
+	while(tempmapit.hasNext()) {
+	    Temp newt=(Temp)tempmapit.next();
+	    Temp oldt=(Temp)newtempmap.get(newt);
+	    dT.put(newt, dT.get(oldt));
+	    tT.put(newt, tT.get(oldt));
 	}
     }
     
