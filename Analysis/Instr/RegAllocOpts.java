@@ -36,12 +36,20 @@ import java.util.StringTokenizer;
  * <br> "FORCE_LOCAL <em>method name</em> ..." forces the register allocator to
  * use a local allocation strategy on <em>method name</em> rather than
  * whatever default strategy is in place. 
+ * <br> "DISABLE_REACHING_DEFS <em>method name</em> ..." forces the
+ * register allocator to use a local allocation strategy on <em>method
+ * name</em> rather than whatever default strategy is in place, and
+ * <b>in addition</b> disables ReachingDefs analysis in local register
+ * allocation.  This is a sick hack added just to compile certain spec
+ * classes before his deadline.
  * <br> "FORCE_GLOBAL <em>method name</em> ..." forces the register
  * allocator to use a global allocation strategy on <em>method
  * name</em>, rather than whatever default stategy is in place. 
  * <br> "FORCE_COALESCE <em>method name</em> ..." forces global
  * allocation with non-conservative move coalescing to take place,
  * even when it might result in additional memory traffic.
+ * <br> "DISABLE_COALESCE <em>method name</em> ..." turns off 
+ * move coalescing on global allocation.  
  * <br> "# <em>comment</em>" is a comment line (not strictly an
  * option, since this line is ignored by this, but too useful to omit) 
  * <p>
@@ -52,19 +60,22 @@ import java.util.StringTokenizer;
  * <code>RegAlloc.Factory</code>s
  * 
  * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAllocOpts.java,v 1.1.2.3 2000-11-08 23:43:09 pnkfelix Exp $
- */
+ * @version $Id: RegAllocOpts.java,v 1.1.2.4 2000-11-14 22:46:54 pnkfelix Exp $ */
 public class RegAllocOpts {
     public static final boolean INFO = false;
+    Filter disableReachingDefs;
     Filter forceLocal;
     Filter forceGlobal;
     Filter forceCoalesce;
+    Filter disableCoalesce;
 
     /** Creates a <code>RegAllocOpts</code>. */
     public RegAllocOpts(String filename) {
+	disableReachingDefs = new Filter();
 	forceLocal = new Filter();
 	forceGlobal = new Filter();
 	forceCoalesce = new Filter();
+	disableCoalesce = new Filter();
 
         if (filename != null) {
 	    try {
@@ -74,6 +85,7 @@ public class RegAllocOpts {
 		System.out.println
 		    ("Error reading regalloc options file; no options being used");
 		forceLocal.clear(); forceGlobal.clear(); forceCoalesce.clear();
+		disableCoalesce.clear();
 	    }
 	}
     }
@@ -83,7 +95,10 @@ public class RegAllocOpts {
 	    public RegAlloc makeRegAlloc(Code c) {
 		String name = nameFor(c).trim();
 		
-		if (forceLocal.contains(name)) {
+		if (disableReachingDefs.contains(name)) {
+		    if (INFO) System.out.println(" * USING DRd FOR "+name);
+		    return LocalCffRegAlloc.RD_DISABLED_FACTORY.makeRegAlloc(c);
+		} else if (forceLocal.contains(name)) {
 		    if (INFO) System.out.println(" * USING FL FOR "+name);
 		    return RegAlloc.LOCAL.makeRegAlloc(c);
 		} else if (forceGlobal.contains(name)) {
@@ -92,6 +107,9 @@ public class RegAllocOpts {
 		} else if (forceCoalesce.contains(name)) {
 		    if (INFO) System.out.println(" * USING FC FOR "+name);
 		    return GraphColoringRegAlloc.AGGRESSIVE_FACTORY.makeRegAlloc(c);
+		} else if (disableCoalesce.contains(name)) {
+		    if (INFO) System.out.println(" * USING DC FOR "+name);
+		    return GraphColoringRegAlloc.BRAINDEAD_FACTORY.makeRegAlloc(c);		    
 		} else {
 		    if (INFO) System.out.println(" * USING NM FOR "+name);
 		    return hc.makeRegAlloc(c);
@@ -117,12 +135,16 @@ public class RegAllocOpts {
 	    StringTokenizer st = new StringTokenizer(line);
 	    String s = st.nextToken();
 	    Filter addToSet = null;
-	    if (s.toUpperCase().equals("FORCE_LOCAL")) {
+	    if (s.toUpperCase().equals("DISABLE_REACHING_DEFS")) {
+		addToSet = disableReachingDefs;
+	    } else if (s.toUpperCase().equals("FORCE_LOCAL")) {
 		addToSet = forceLocal;
 	    } else if (s.toUpperCase().equals("FORCE_GLOBAL")) {
 		addToSet = forceGlobal;
 	    } else if (s.toUpperCase().equals("FORCE_COALESCE")) {
 		addToSet = forceCoalesce;
+	    } else if (s.toUpperCase().equals("DISABLE_COALESCE")) {
+		addToSet = disableCoalesce;
 	    } else {
 		System.out.println("unknown RegAlloc option: "+s+
 				   " line: "+r.getLineNumber());
