@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.5 2002-11-27 18:29:53 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.6 2003-05-06 15:26:47 salcianu Exp $
  */
 public class PointsToGraph implements Cloneable, java.io.Serializable{
 
@@ -521,7 +521,7 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
     }
 
     /** Produces a <code>PointsToGraph</code> containing just the nodes
-	that are reachable from <i>root node</i>: the nodes that could be 
+	that are reachable from <i>root nodes</i>: the nodes that could be 
 	reached from outside
 	code (e.g. the caller): the parameter nodes (received in
 	the <code>params</code>) and the returned nodes (found 
@@ -568,7 +568,7 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 		public final void visit(PANode node){
 		    if(remaining_nodes.add(node))
 			worklist.add(node);
-		}		
+		}
 	    };
 	while(!worklist.isEmpty()){
 	    PANode node = (PANode)worklist.remove();
