@@ -45,6 +45,12 @@ public class ObjectDoneContinuation extends ObjectContinuation implements VoidRe
 	    next.exception(throwable);
     }
 
+    static public ObjectContinuation pesimistic(ObjectContinuation c) {
+	return (!c.done)? c : new ObjectDoneContinuation(c.result);
+    }
+    
     public void exception(Throwable t) {
     }
 }
+
+

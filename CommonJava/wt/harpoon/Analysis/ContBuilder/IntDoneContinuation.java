@@ -42,6 +42,16 @@ public class IntDoneContinuation extends IntContinuation implements VoidResultCo
 	    next.exception(throwable);
     }
 
+
+    // input:  optimistic continuation (can be null)
+    // output: pesimistic continuation (can't be null)
+    // depressing, huh
+    static public IntContinuation pesimistic(IntContinuation c)
+    {
+	return (!c.done)? c : new IntDoneContinuation(c.result);
+    }
+
+
     public void exception(Throwable t) {
     }
 }

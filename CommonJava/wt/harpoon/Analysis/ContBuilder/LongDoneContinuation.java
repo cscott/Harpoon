@@ -27,7 +27,14 @@ public final class LongDoneContinuation extends LongContinuation implements Void
 	else
 	    next.exception(throwable);
     }
-
+    // input:  optimistic continuation (can be null)
+    // output: pesimistic continuation (can't be null)
+    // depressing, huh
+    static public LongContinuation pesimistic(LongContinuation c)
+    {
+	return (!c.done)? c : new LongDoneContinuation(c.result);
+    }
+    
     public void exception(Throwable t) {
     }
 }

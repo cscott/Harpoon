@@ -45,6 +45,13 @@ public final class VoidDoneContinuation extends VoidContinuation implements Void
 	}
     }
 
+    // input:  optimistic continuation (can be null)
+    // output: pesimistic continuation (can't be null)
+    // depressing, huh
+    static public VoidContinuation pesimistic(VoidContinuation c) {
+	return (!c.done)? c : new VoidDoneContinuation();
+    }
+    
     public void exception(Throwable t) {
     }
 }
