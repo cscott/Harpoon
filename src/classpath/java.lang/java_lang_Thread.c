@@ -54,6 +54,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
  */
 JNIEXPORT jboolean JNICALL Java_java_lang_Thread_interrupted
   (JNIEnv *env, jclass thrcls) {
+  jobject thisthr = fni_thread_currentThread(env);
   return fni_thread_isInterrupted(env, thisthr, JNI_TRUE);
 }
 

@@ -60,12 +60,12 @@ static jobject Flex_java_lang_reflect_Method_invoke
 		       "attempted invocation of an abstract method");
       return NULL;
   }
-  /* check number of args */
+  /* check number of args (note that args==null is equiv to 0-element args) */
   desc = method->methodID->desc; assert(desc && *desc=='(');
   for (nparams=0, sigptr=desc+1; sigptr!=NULL && *sigptr!=')';
        sigptr=REFLECT_advanceDescriptor(sigptr), nparams++)
     /* do nothing */;
-  if (nparams != (*env)->GetArrayLength(env, args)) {
+  if (nparams != (args ? (*env)->GetArrayLength(env, args) : 0)) {
     jclass excls=(*env)->FindClass(env, "java/lang/IllegalArgumentException");
     (*env)->ThrowNew(env, excls, "incorrect number of arguments");
     return NULL;

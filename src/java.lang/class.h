@@ -267,11 +267,13 @@ jboolean _fni_class_isAptMember
   if (!(*env)->IsInstanceOf(env, FNI_WRAP(mptr->m.reflectinfo->method_object),
 			    memberClass))
     return JNI_FALSE;
-  /* filter out non-public if which==0 */
+  /* filter out non-public if which==ONLY_PUBLIC */
+#if 0 /* correct implementation would take into account package-visibility */
   if (which == ONLY_PUBLIC &&
       !(mptr->m.reflectinfo->modifiers & java_lang_reflect_Modifier_PUBLIC))
     return JNI_FALSE;
-  /* filter out non-local if which==1 */
+#endif
+  /* filter out non-local if which==ONLY_DECLARED */
   if (which == ONLY_DECLARED &&
       mptr->m.reflectinfo->declaring_class_object != FNI_UNWRAP_MASKED(cls))
     return JNI_FALSE;
@@ -388,7 +390,7 @@ jobject fni_class_getMethod(JNIEnv *env, jclass cls,
   jobject result;
   c.cname = (*env)->GetStringUTFChars(env, name, NULL);
   c.paramTypes = paramTypes;
-  c.nparams = (*env)->GetArrayLength(env, paramTypes);
+  c.nparams = paramTypes ? (*env)->GetArrayLength(env, paramTypes) : 0;
 
   result = _fni_class_findMember(env, cls, which, METHODS, method_cmp, &c,
 				 "java/lang/NoSuchMethodException");
@@ -417,8 +419,9 @@ jobject fni_class_getConstructor(JNIEnv *env, jclass cls,
     }
     return (i==c->nparams);
   }
+  /* note that paramTypes==null is equivalent to paramTypes=new Class[0] */
   c.paramTypes = paramTypes;
-  c.nparams = (*env)->GetArrayLength(env, paramTypes);
+  c.nparams = paramTypes ? (*env)->GetArrayLength(env, paramTypes) : 0;
   
   return _fni_class_findMember(env, cls, which, CONSTRUCTORS,
 		    constructor_cmp, &c,

@@ -190,8 +190,8 @@ static void * thread_startup_routine(void *closure) {
 #ifdef CLASSPATH_VERSION
   /* remove from thread group using ThreadGroup.removeThread(this) */
   threadgroup = (*env)->CallObjectMethod(env, thread, gettgID);
-  if (threadgroup) /* something thread groups are disabled */
-    (*env)->CallVoidMethod(env, threadgroup, removeThreadID, mainthread);
+  if (threadgroup) /* sometimes thread groups are disabled */
+    (*env)->CallVoidMethod(env, threadgroup, removeThreadID, thread);
   assert(!((*env)->ExceptionOccurred(env)));
 #else
   /* (this also removes the thread from the ThreadGroup) */
