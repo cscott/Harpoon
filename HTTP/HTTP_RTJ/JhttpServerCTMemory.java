@@ -17,9 +17,9 @@ public class JhttpServerCTMemory extends RealtimeThread {
 //****************************************************************************
 // Constructor: JhttpServer(int)
 //****************************************************************************
-    public JhttpServerCTMemory(int port, boolean logging)
+    public JhttpServerCTMemory(int port, boolean logging, long ctsize)
     {
-	super(new CTMemory(1000000000));
+	super(new CTMemory(ctsize));
 	this.logging=logging;
 	System.out.println("starting...");
 	this.port=port;
@@ -63,7 +63,7 @@ public class JhttpServerCTMemory extends RealtimeThread {
       if (args.length < 1)
 	{
 	  System.out.println("Usage:");
-	  System.out.println("   java JhttpServer <port> <logging>");
+	  System.out.println("   java JhttpServer <port> <logging> <ctsize>");
 	  System.out.println();
 	  System.out.println("Ex: java JhttpServer 10000 0");
 	  System.exit(1);
@@ -71,7 +71,8 @@ public class JhttpServerCTMemory extends RealtimeThread {
       
       
       (new JhttpServerCTMemory(Integer.parseInt(args[0]),
-			       Integer.parseInt(args[1])==1))
+			       Integer.parseInt(args[1])==1,
+			       Long.parseLong(args[2])))
 	.start();
     } catch (Exception e) {
       System.out.println(e.toString());
