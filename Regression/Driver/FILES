@@ -1,8 +1,8 @@
 This is a description of the files in this directory.
 
-run-tasks                       -- The main script that updates all machines, "tells" each machine which task(s) it should run, waits until all tasks are run and then collect the information from all machines and mails it.
+run-tasks                       -- The main script that updates all machines, "tells" each machine which task(s) it should run, waits until all tasks are run and then collect the information from all machines and mails it. For a more detailed information how the whole process works, read README.
 
-get-run-tasks                   -- cvs updated ./run-tasks and runs it; this script is run by crond daily/weekly.
+start-server                    -- cvs updated ./run-tasks and runs it; this script is run by crond daily/weekly.
 
 clean                           -- removes unnecessary files after running a session
 
