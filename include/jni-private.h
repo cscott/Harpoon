@@ -127,8 +127,8 @@ struct aarray {
 struct FNI_classinfo {
   struct claz *claz;
   const char *name;
-  struct _jmethodID *memberend;
-  struct _jmethodID memberinfo[0];
+  union _jmemberID *memberend;
+  union _jmemberID memberinfo[0];
 };
 
 struct FNI_name2class {
