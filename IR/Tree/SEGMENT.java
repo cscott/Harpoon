@@ -16,7 +16,7 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.12 1999-10-15 00:23:08 cananian Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.13 1999-10-16 19:21:27 cananian Exp $
  */
 public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     /** R/O storage for static class data (display, vmtable, etc) */
@@ -27,10 +27,9 @@ public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     public static final int GC                   = 2;
     /** R/W memory that must be initialized before use */
     public static final int INIT_DATA            = 3;
-    /** R/O memory that stores pointers to reflection data. */
-    public static final int REFLECTION_PTRS      = 4;
-    /** R/O memory that stores reflection information.  Pointed to by a pointer
-     *  from the REFLECTION_PTRS section. */
+    /** R/O memory that stores reflection data objects. */
+    public static final int REFLECTION_OBJECTS   = 4;
+    /** R/O memory that stores reflection tables and other non-object data. */
     public static final int REFLECTION_DATA      = 5;
     /** R/W storage for static aggregate data */
     public static final int STATIC_OBJECTS       = 6;
@@ -54,7 +53,7 @@ public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
 	case CODE:                return "CODE";
 	case GC:                  return "GC";
 	case INIT_DATA:           return "INIT_DATA";
-	case REFLECTION_PTRS:     return "REFLECTION_PTRS";
+	case REFLECTION_OBJECTS:  return "REFLECTION_OBJECTS";
 	case REFLECTION_DATA:     return "REFLECTION_DATA";
 	case STATIC_OBJECTS:      return "STATIC_OBJECTS";
 	case STATIC_PRIMITIVES:   return "STATIC_PRIMITIVES";

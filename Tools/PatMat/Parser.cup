@@ -48,7 +48,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.27 1999-08-26 04:41:01 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.28 1999-10-16 19:21:28 cananian Exp $
  */
 
 action code {:
@@ -333,8 +333,8 @@ sym_segtype ::=	ID:id
 		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.GC);
 		   else if (id.equals("INIT_DATA"))
 		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.INIT_DATA);
-		   else if (id.equals("REFLECTION_PTRS"))
-		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.REFLECTION_PTRS);
+		   else if (id.equals("REFLECTION_OBJECTS"))
+		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.REFLECTION_OBJECTS);
 		   else if (id.equals("REFLECTION_DATA"))
 		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.REFLECTION_DATA);
 		   else if (id.equals("STATIC_OBJECTS"))

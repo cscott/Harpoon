@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.76 1999-10-16 18:31:56 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.77 1999-10-16 19:21:17 cananian Exp $
  */
 %%
 
@@ -1519,6 +1519,14 @@ SEGMENT(STRING_CONSTANTS) %{
 
 SEGMENT(STRING_DATA) %{
     emitDIRECTIVE( ROOT, ".data 7\t@.section string_data");
+}%
+
+SEGMENT(REFLECTION_OBJECTS) %{
+    emitDIRECTIVE( ROOT, ".data 8\t@.section reflection_objects");
+}%
+
+SEGMENT(REFLECTION_DATA) %{
+    emitDIRECTIVE( ROOT, ".data 9\t@.section reflection_data");
 }%
 
 SEGMENT(TEXT) %{
