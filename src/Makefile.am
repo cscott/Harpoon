@@ -1,13 +1,13 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
-SUBDIRS = jni java.lang.reflect \
+SUBDIRS = jni java.lang java.lang.reflect \
 	$(NATIVEDIR) \
 	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) stats cam servo $(USERDIR) \
 	transact $(REALTIMEDIR) $(RTJPERFDIR) $(ROLEINFERDIR) $(MZFDIR)
 # make sure even the conditionally-compiled subdirectories are included
 # in the distribution.
-DIST_SUBDIRS = jni java.lang.reflect sunjdk \
+DIST_SUBDIRS = jni java.lang java.lang.reflect sunjdk classpath \
         gc clheap nativeio stats cam servo user \
         transact realtime rtjperf roles mzf
 EXTRA_DIST = README
