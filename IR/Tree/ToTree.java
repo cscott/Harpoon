@@ -49,7 +49,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.15 1999-07-08 06:11:16 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.16 1999-07-14 19:24:25 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -767,12 +767,13 @@ class TranslationVisitor extends LowQuadVisitor {
 	case Qop.IXOR:
 	case Qop.LXOR: optype = Bop.XOR; break;
 	case Qop.ISHL:
-	case Qop.LSHL: optype = Bop.SHL; break;
+	case Qop.LSHL: 
 	case Qop.ISHR:
-	case Qop.LSHR: optype = Bop.SHR; break;
+	case Qop.LSHR: 
 	case Qop.IUSHR:
-	case Qop.LUSHR: optype = Bop.USHR; break; 
-	default: 
+	case Qop.LUSHR: 
+	    visitShiftOper(q); return;  // Special case
+ 	default: 
 	    throw new Error("Unknown optype in ToTree");
 	}
     
@@ -797,6 +798,39 @@ class TranslationVisitor extends LowQuadVisitor {
 	else 
 	    throw new Error("Unexpected # of operands: " + q);
     
+	s0 = new MOVE(m_tf, q, MAP(q.dst(), q), oper);
+	updateDT(q.dst(), q, MAP(q.dst(), q));
+	addStmt(q, s0);
+    }
+
+    private void visitShiftOper(POPER q) { 
+	int optype; OPER oper; Stm s0; 
+	Temp[] operands = q.operands()[0];
+
+	switch (q.opcode()) { 
+	case Qop.ISHL:
+	case Qop.LSHL: 
+	    optype = Bop.SHL; break;
+	case Qop.LUSHR: 
+	case Qop.IUSHR:
+	    optype = Bop.USHR; break;
+	case Qop.ISHR:
+	case Qop.LSHR: 
+	    optype = Bop.SHR; break;
+	default: 
+	    throw new Error("Not a shift optype: " + q.opcode());
+	}
+	oper = new BINOP
+	    (m_tf, q, 
+	     // Don't merge type of shift exp with type of additive exp
+	     TYPE(q, operands[0]),
+	     optype,
+	     MAP(operands[0], q), 
+	     MAP(operands[1], q)); 
+	
+	updateDT(operands[0], q, MAP(operands[0], q));
+	updateDT(operands[1], q, MAP(operands[1], q));
+	
 	s0 = new MOVE(m_tf, q, MAP(q.dst(), q), oper);
 	updateDT(q.dst(), q, MAP(q.dst(), q));
 	addStmt(q, s0);
