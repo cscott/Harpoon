@@ -5,6 +5,7 @@ import harpoon.ClassFile.*;
 import harpoon.Util.Util;
 
 import java.io.PrintWriter;
+import java.util.Enumeration;
 import java.util.Hashtable;
 
 /**
@@ -12,7 +13,7 @@ import java.util.Hashtable;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.1.2.3 1998-12-20 07:13:04 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.4 1998-12-23 22:18:48 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
@@ -20,6 +21,7 @@ abstract class Print  {
     final static void print(PrintWriter pw, Code c) {
 	// get elements.
 	Quad[] ql = (Quad[]) c.getElements();
+	METHOD qM = ((HEADER) c.getRootElement()).method();
 	// compile list of back edges
 	Hashtable labels = new Hashtable();
 	for (int i=0; i<ql.length; i++) {
@@ -41,11 +43,24 @@ abstract class Print  {
 
 	// okay, print these pookies.
 	pw.println("Codeview \""+c.getName()+"\" for "+c.getMethod()+":");
+	HandlerSet hs = null; // no handlers at top.
 	for (int i=0; i<ql.length; i++) {
 	    String l = (labels.containsKey(ql[i])) ?
 		labels.get(ql[i]).toString()+":" : "";
 	    String s = ql[i].toString();
-	    
+
+	    // determine if HandlerSet has changed & print if necessary.
+	    HandlerSet oldHS = hs; hs = handlers(qM, ql[i]);
+	    if (!HandlerSet.equals(oldHS, hs)) { // changed, print update.
+		StringBuffer sb=new StringBuffer("-- new handlers [");
+		for (Enumeration e=HandlerSet.elements(hs);
+		     e.hasMoreElements(); ) {
+		    sb.append(labels.get(e.nextElement()));
+		    if (e.hasMoreElements()) sb.append(", ");
+		}
+		sb.append("] --");
+		indent(pw, null, sb.toString());
+	    }
 	    // Add footer tag to HEADER quads.
 	    if (ql[i] instanceof HEADER)
 		s += " [footer at "+labels.get(ql[i].next(0))+"]";
@@ -169,8 +184,19 @@ abstract class Print  {
     /** Width of the second (label) output field. */
     private static final int fieldW2 = 5;
 
-    // Label class.
-    static class Label {
+    ///////// Handler Set utility functions. //////
+    private static final HandlerSet handlers(final METHOD m, final Quad q) {
+	HandlerSet hs = null;
+	final Quad[] ql = m.next();
+	for (int i=ql.length-1; i > 0; i--) // element 0 is not a HANDLER
+	    if (((HANDLER)ql[i]).isProtected(q))
+		hs = new HandlerSet((HANDLER)ql[i], hs);
+	return hs;
+    }
+
+    ///////// Inner classes ///////////////////
+    /** Label class. */
+    private static final class Label {
 	int num = 0;
 	public void renumber(int n) { num = n; }
 	public String toString() { return "L"+num; }
