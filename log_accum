@@ -1,7 +1,7 @@
 #! /usr/bin/perl
 # -*-Perl-*-
 #
-#ident	"@(#)ccvs/contrib:$Name:  $:$Id: log_accum,v 1.12 2001-01-21 05:53:01 cananian Exp $"
+#ident	"@(#)ccvs/contrib:$Name:  $:$Id: log_accum,v 1.13 2003-04-15 02:24:44 cananian Exp $"
 #
 # Perl filter to handle the log messages from the checkin of files in
 # a directory.  This script will group the lists of files by log
@@ -260,8 +260,10 @@ $id = getpgrp();		# note, you *must* use a shell which does setpgrp()
 $state = $STATE_NONE;
 $login = getlogin || (getpwuid($<))[0] || "nobody";
 chop($hostname = `hostname`);
-chop($domainname = `domainname`);
-$hostdomain = $hostname . $domainname;
+#chop($domainname = `domainname`);
+#$hostdomain = $hostname . $domainname;
+chop($domainname = `hostname -d`);
+chop($hostdomain = `hostname --fqdn`);
 $cvsroot = $ENV{'CVSROOT'};
 $do_status = 1;
 $do_diff = 0;
