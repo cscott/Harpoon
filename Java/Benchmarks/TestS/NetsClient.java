@@ -32,6 +32,7 @@ public class NetsClient extends Thread {
 	    tarray[i]=new NetsClient(i,host,port,numberofmessages,numberofclients);
 	    if (debug)
 		System.out.println("Attempting to start "+i);
+	    tarray[i].connectt();
 	    tarray[i].start();
 	}
 	try {
@@ -69,6 +70,20 @@ public class NetsClient extends Thread {
     OutputStream out;
     DataInputStream din;
 
+    public void connectt() {
+	try{
+	    sock = new Socket(host, port); // unix server
+	    if (debug)
+		System.out.println("connection made");
+	    in = sock.getInputStream();
+	    out = sock.getOutputStream();
+	    pout = new PrintStream(out);
+	    din = new DataInputStream(in);
+	    pout.println("0|"+clientnumber+"|howdy");
+	} catch (UnknownHostException e ) {System.out.println("can't find host"); }
+        catch ( IOException e ) {System.out.println("Error connecting to host");}
+    }
+
     public void run() {
 	if (debug)
 	    System.out.println("client thread started");
@@ -76,15 +91,6 @@ public class NetsClient extends Thread {
 
 
         try {
-
-            sock = new Socket(host, port); // unix server
-	    if (debug)
-		System.out.println("connection made");
-            in = sock.getInputStream();
-            out = sock.getOutputStream();
-            pout = new PrintStream(out);
-            din = new DataInputStream(in);
-
 	    for(int nr=0;nr<noc*nom;) {
 		if (ns<nom) {
 		    ns++;
@@ -97,8 +103,7 @@ public class NetsClient extends Thread {
 		    System.out.println(request+nr);
             }
 	    pout.flush();
-
-        }
+	}
 
         catch (UnknownHostException e ) {System.out.println("can't find host"); }
         catch ( IOException e ) {System.out.println("Error connecting to host");}
@@ -106,11 +111,3 @@ public class NetsClient extends Thread {
     }
 
 } // end of client class
-
-
-
-
-
-
-
-
