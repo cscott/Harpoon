@@ -11,6 +11,7 @@ import harpoon.Backend.StrongARM.TwoWordTemp;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrMOVE;
+import harpoon.IR.Properties.UseDefer;
 import harpoon.Backend.CSAHack.Graph.Node;
 import harpoon.Backend.CSAHack.Graph.NodeList;
 import harpoon.Temp.Label;
@@ -28,11 +29,13 @@ import java.util.Iterator;
  * @see Assem.Instr
  */
 public class AssemFlowGraph extends FlowGraph {
+  UseDefer ud;
   boolean twoWord;
   /** 
    * Construct an AssemFlowGraph from a list of instructions.
    */
-  public AssemFlowGraph(Instr root, boolean twoWord) {
+  public AssemFlowGraph(Instr root, UseDefer ud, boolean twoWord) {
+    this.ud = ud;
     this.twoWord = twoWord;
     Util.assert(root.getPrev()==null);
     Hashtable instr2node;
@@ -90,7 +93,7 @@ public class AssemFlowGraph extends FlowGraph {
    */
   public TempList def(Node n) {
     // CSA'99: clunk.  def() returns an array in FLEX.  Thunk it to a TempList.
-    Temp[] d = instr(n).def();
+    Temp[] d = ud.def(instr(n));
     TempList tl = null;
     for (int i=d.length-1; i>=0; i--)
       if (twoWord && d[i] instanceof TwoWordTemp) {
@@ -109,7 +112,7 @@ public class AssemFlowGraph extends FlowGraph {
    */
   public TempList use(Node n) {
     // CSA'99: clunk.  use() returns an array in FLEX.  Thunk it to a TempList.
-    Temp[] u = instr(n).use();
+    Temp[] u = ud.use(instr(n));
     TempList tl = null;
     for (int i=u.length-1; i>=0; i--)
       if (twoWord && u[i] instanceof TwoWordTemp) {
