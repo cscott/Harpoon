@@ -21,7 +21,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * the attribute is silently ignored.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeConstantValue.java,v 1.8 1998-08-02 05:07:39 cananian Exp $
+ * @version $Id: AttributeConstantValue.java,v 1.9 1998-08-02 07:01:30 cananian Exp $
  * @see Attribute
  * @see FieldInfo
  * @see ClassFile
@@ -64,5 +64,13 @@ public class AttributeConstantValue extends Attribute {
     out.write_u2(attribute_name_index);
     out.write_u4(attribute_length());
     out.write_u2(constantvalue_index);
+  }
+
+  /** Pretty-print the contents of this attribute. */
+  public void print(java.io.PrintWriter pw, int indent) {
+    int in = indent;
+    indent(pw, in, "ConstantValue Attribute:");
+    indent(pw, in+1, "Value: " +
+	   constantvalue_index().toString() + " {"+constantvalue_index+"}");
   }
 }
