@@ -24,13 +24,14 @@ static void move_and_unwrapA(jmethodID methodID,
   int i, j;
   for (i=offset, j=0; *sigptr != ')'; sigptr++)
     switch (*sigptr) {
-    case 'B': argtable[i++] = (ptroff_t) args[j++].b; break;
-    case 'C': argtable[i++] = (ptroff_t) args[j++].c; break;
-    case 'F': argtable[i++] = (ptroff_t) args[j++].f; break;
-    case 'I': argtable[i++] = (ptroff_t) args[j++].i; break;
-    case 'S': argtable[i++] = (ptroff_t) args[j++].s; break;
-    case 'Z': argtable[i++] = (ptroff_t) args[j++].z; break;
-    case 'D': case 'J':
+    case 'B': argtable[i++] = (ptroff_t) ((jint) args[j++].b); break;
+    case 'C': argtable[i++] = (ptroff_t) ((jint) args[j++].c); break;
+    case 'F': /* floats are same size as ints. */
+    case 'I': argtable[i++] = (ptroff_t) ((jint) args[j++].i); break;
+    case 'S': argtable[i++] = (ptroff_t) ((jint) args[j++].s); break;
+    case 'Z': argtable[i++] = (ptroff_t) ((jint) args[j++].z); break;
+    case 'D': /* doubles are same size as longs. */
+    case 'J':
       if (sizeof(ptroff_t) >= sizeof(jlong))
 	argtable[i++] = (ptroff_t) args[j++].j;
       else {
@@ -50,26 +51,49 @@ static void move_and_unwrapA(jmethodID methodID,
     }
   assert(methodID->nargs==i);
 }
+
+/* weird stuff for default argument promotions. */
+/* XXX: this breaks if sizeof(int) < sizeof(jint) */
+typedef int jboolean_promoted;
+typedef int jbyte_promoted;
+typedef int jchar_promoted;
+typedef int jshort_promoted;
+typedef int jint_promoted;
+typedef jlong jlong_promoted;
+typedef double jfloat_promoted;
+typedef double jdouble_promoted;
+
 static void move_and_unwrapV(jmethodID methodID,
 			     ptroff_t *argtable, int offset,
 			     va_list args) {
   char *sigptr = methodID->desc+1;
   int i;
+  assert(sizeof(int) >= sizeof(jint)); /* see defs of _promoted types above */
   for (i=offset; *sigptr != ')'; sigptr++)
     switch (*sigptr) {
-    case 'B': argtable[i++] = (ptroff_t) va_arg(args, jbyte); break;
-    case 'C': argtable[i++] = (ptroff_t) va_arg(args, jchar); break;
-    case 'F': argtable[i++] = (ptroff_t) va_arg(args, jfloat); break;
-    case 'I': argtable[i++] = (ptroff_t) va_arg(args, jint); break;
-    case 'S': argtable[i++] = (ptroff_t) va_arg(args, jshort); break;
-    case 'Z': argtable[i++] = (ptroff_t) va_arg(args, jboolean); break;
-    case 'D': case 'J':
-      if (sizeof(ptroff_t) >= sizeof(jlong))
-	argtable[i++] = (ptroff_t) va_arg(args, jlong);
-      else {
-	int i;
-	for (i=0; i<sizeof(jlong); i+=sizeof(ptroff_t))
-	  argtable[i++] = (ptroff_t) va_arg(args, ptroff_t);
+    case 'B': argtable[i++] = (ptroff_t) va_arg(args, jbyte_promoted); break;
+    case 'C': argtable[i++] = (ptroff_t) va_arg(args, jchar_promoted); break;
+    case 'I': argtable[i++] = (ptroff_t) va_arg(args, jint_promoted); break;
+    case 'S': argtable[i++] = (ptroff_t) va_arg(args, jshort_promoted); break;
+    case 'Z': argtable[i++] = (ptroff_t) va_arg(args, jboolean_promoted);break;
+    case 'F':
+      {
+	union { jfloat f; ptroff_t p; } u;
+	u.f = (jfloat) va_arg(args, jfloat_promoted);
+	argtable[i++] = u.p;
+      }
+      break;
+    case 'J': case 'D':
+      {
+	union{ jlong l; jdouble d; struct { ptroff_t p1; ptroff_t p2; } p; } u;
+	if (*sigptr=='J')
+	  u.l = (jlong) va_arg(args, jlong_promoted);
+	else
+	  u.d = (jdouble) va_arg(args, jdouble_promoted);
+	argtable[i++] = u.p.p1;
+	if (sizeof(ptroff_t) < sizeof(jlong)) /*long and double are same size*/
+	  argtable[i++] = u.p.p2;
+	assert( (2*sizeof(ptroff_t)) >= sizeof(jlong) );
       }
       break;
     case '[':
