@@ -22,12 +22,12 @@ import harpoon.Temp.Temp;
  * representation.  The distinguishing characteristic of this codeview
  * is that is not in SSA form.  What this means is that, although there
  * are still PHI and SIGMA quads in this codeview, they do not actually
- * assign values to temporaries.  In other words, PHI and SIGMA functions
- * exist solely to indicate flow of control in a program, but their 
- * arity will always be 0. 
+ * assign values to temporaries.  In other words, PHI and SIGMA nodes
+ * exist solely to indicate flow of control in a program, but they will
+ * always be empty.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.21 2000-01-31 22:16:10 cananian Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.22 2000-02-08 21:13:09 cananian Exp $
  */
 public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
     private Derivation m_derivation;

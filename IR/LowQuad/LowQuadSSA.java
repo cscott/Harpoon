@@ -26,7 +26,7 @@ import java.util.Map;
  * representation in SSA form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.25 2000-01-31 22:16:10 cananian Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.26 2000-02-08 21:13:09 cananian Exp $
  */
 public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
     private Derivation  m_derivation;
@@ -44,7 +44,7 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
 	quads = Translate.translate((LowQuadFactory)qf, code, tym, fm, dT, tT);
       
 	final LowQuadFactory lqf =  // javac bug workaround to let qf be
-	    (LowQuadFactory) qf;    // visible in anonymous TypeMap below.
+	    (LowQuadFactory) qf;    // visible in anonymous Derivation below.
 	m_derivation = new Derivation() {
 	    public DList derivation(HCodeElement hce, Temp t) {
 		Util.assert(hce!=null && t!=null);
