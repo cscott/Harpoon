@@ -1,12 +1,13 @@
 package harpoon.Util;
 
+import java.util.Enumeration;
 import java.util.EmptyStackException;
 /**
  * The <code>FIFO</code> class represents a first-in-first-out
  * list of objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FIFO.java,v 1.2 1998-09-13 23:57:34 cananian Exp $
+ * @version $Id: FIFO.java,v 1.3 1998-09-16 00:45:06 cananian Exp $
  */
 
 public class FIFO {
@@ -66,5 +67,27 @@ public class FIFO {
      */
     public boolean isEmpty() {
 	return (head==null);
+    }
+    /**
+     * Copies contents of a FIFO into an array.
+     */
+    public void copyInto(Object[] oa) {
+	int i=0;
+	for (List l = head; l != null; l = l.next)
+	    oa[i++] = l.item;
+    }
+    /**
+     * Returns an enumeration of the contents of the FIFO.
+     */
+    public Enumeration elements() {
+	return new Enumeration() {
+	    List l = head;
+	    public boolean hasMoreElements() { return (l!=null); }
+	    public Object  nextElement() {
+		Object o = l.item;
+		l = l.next;
+		return o;
+	    }
+	};
     }
 }
