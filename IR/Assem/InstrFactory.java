@@ -16,16 +16,25 @@ import java.util.Map;
  * generic <code>Assem.Instr</code>s used in code generation.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrFactory.java,v 1.1.2.9 1999-08-27 23:27:02 pnkfelix Exp $
+ * @version $Id: InstrFactory.java,v 1.1.2.10 1999-08-30 20:30:15 pnkfelix Exp $
  */
 public abstract class InstrFactory {
     /** Maintains a
 	<code>Temp.Label</code><code>-></code><code>InstrLABEL</code>
 	<code>Map</code> for <code>Instr</code>s constructed by
 	<code>this</code>.  Used in dynamic <code>HasEdges</code>
-	resolution. 
+	successor resolution.
     */
     Map labelToInstrLABELmap = new HashMap();
+
+    /** Maintains a 
+	<code>Temp.Label</code> <code>-></code>
+	</code>Set</code><code>[</code> <code>Instr</code> <code>]</code>     
+	<code>Map</code> for <code>Instr</code>s constructed by
+	<code>this</code>.  Used in dynamic <code>HasEdges</code>
+	predecessor resolution. 
+    */
+    Map labelToBranchingInstrMap = new HashMap();
 
     /** Returns the <code>TempFactory</code> to use for creating
      *  <code>Temp</code>s which are used as arguments to <code>Instr</code>s
