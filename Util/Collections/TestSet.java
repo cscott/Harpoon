@@ -4,18 +4,18 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
-import harpoon.Util.Collections.*;
-import harpoon.Util.*;
-
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * The <code>TestSet</code> class tests our various <code>Set</code>
  * implementations for correctness.  Large portions borrowed from Mauve.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestSet.java,v 1.1.2.1 2001-11-07 23:25:01 cananian Exp $
+ * @version $Id: TestSet.java,v 1.1.2.2 2001-11-08 00:28:08 cananian Exp $
  */
 public class TestSet {
     private final static boolean DEBUG=false;
