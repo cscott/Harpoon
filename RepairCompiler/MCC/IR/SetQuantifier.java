@@ -39,7 +39,7 @@ public class SetQuantifier extends Quantifier {
 
     public void generate_open(CodeWriter writer) {
 	writer.outputline("SimpleIterator "+var.getSafeSymbol()+"_iterator;");
-        writer.outputline("for (" + set.getSafeSymbol() + "_hash->iterator(&"+var.getSafeSymbol()+"_iterator); " + var.getSafeSymbol() + "_iterator.hasNext(); )");
+        writer.outputline("for (" + set.getSafeSymbol() + "_hash->iterator("+var.getSafeSymbol()+"_iterator); " + var.getSafeSymbol() + "_iterator.hasNext(); )");
         writer.startblock();
         writer.outputline(var.getType().getGenerateType() + " " + var.getSafeSymbol() + " = (" + var.getType().getGenerateType() + ") " + var.getSafeSymbol() + "_iterator.next();");
     }

@@ -393,7 +393,7 @@ public class RepairGenerator {
             }
 
             if (relation.testUsage(RelationDescriptor.INVIMAGE)) {
-                craux.outputline("delete " + relation.getSafeSymbol() + ";");
+                craux.outputline("delete " + relation.getSafeSymbol() + "_hashinv;");
             } 
         }
         craux.outputline("}");
@@ -739,24 +739,26 @@ public class RepairGenerator {
                     Quantifier quantifier = (Quantifier) quantifiers.previous();
                     cr.endblock();
                 }
-		cr.outputline("if ("+goodflag.getSafeSymbol()+")");
-		cr.startblock();
-		cr.outputline("if ("+repairtable.getSafeSymbol()+")");
-		cr.outputline("delete "+repairtable.getSafeSymbol()+";");
-		cr.outputline("if ("+oldmodel.getSafeSymbol()+")");
-		cr.outputline("delete "+oldmodel.getSafeSymbol()+";");
-		cr.outputline("delete "+newmodel.getSafeSymbol()+";");
-		cr.outputline("delete "+worklist.getSafeSymbol()+";");
-		cr.outputline("resettypemap();");
-		cr.outputline("break;");
-		cr.endblock();
-		cr.outputline("rebuild:");
-		cr.outputline(";");
                 cr.endblock();
                 cr.outputline("");
                 cr.outputline("");
             }
         }
+	CodeWriter cr = new StandardCodeWriter(outputaux);
+	cr.outputline("if ("+goodflag.getSafeSymbol()+")");
+	cr.startblock();
+	cr.outputline("if ("+repairtable.getSafeSymbol()+")");
+	cr.outputline("delete "+repairtable.getSafeSymbol()+";");
+	cr.outputline("if ("+oldmodel.getSafeSymbol()+")");
+	cr.outputline("delete "+oldmodel.getSafeSymbol()+";");
+	cr.outputline("delete "+newmodel.getSafeSymbol()+";");
+	cr.outputline("delete "+worklist.getSafeSymbol()+";");
+	cr.outputline("resettypemap();");
+	cr.outputline("break;");
+	cr.endblock();
+	cr.outputline("rebuild:");
+	cr.outputline(";");	
+	
     }
     
     private MultUpdateNode getmultupdatenode(Conjunction conj, DNFPredicate dpred, int repairtype) {
@@ -968,7 +970,7 @@ public class RepairGenerator {
 		    cr.outputline(d.getSafeSymbol()+"_hashinv->get((int)"+rightvar.getSafeSymbol()+","+leftvar.getSafeSymbol()+");");
 		} else {
 		    leftvar=((ImageSetExpr)((SizeofExpr)((OpExpr)expr).left).setexpr).getVar();
-		    cr.outputline("int "+rightvar.getSafeSymbol()+";");
+		    cr.outputline("int "+rightvar.getSafeSymbol()+"=0;");
 		    cr.outputline(d.getSafeSymbol()+"_hash->get((int)"+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+");");
 		}
 	    } else {
@@ -980,11 +982,11 @@ public class RepairGenerator {
 		boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
 		boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
 		if (usageimage)
-		    cr.outputline(rd.getSafeSymbol() + "_hash->remove((int)" + leftvar + ", (int)" + rightvar + ");");
+		    cr.outputline(rd.getSafeSymbol() + "_hash->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
 		if (usageinvimage)
-		    cr.outputline(rd.getSafeSymbol() + "_hashinv->remove((int)" + rightvar + ", (int)" + leftvar + ");");
+		    cr.outputline(rd.getSafeSymbol() + "_hashinv->remove((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 	    } else {
-		cr.outputline(d.getSafeSymbol() + "_hash->remove((int)" + leftvar + ", (int)" + leftvar + ");");
+		cr.outputline(d.getSafeSymbol() + "_hash->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 	    }
 	    /* Generate concrete remove instruction */
 	    for(int i=0;i<state.vRules.size();i++) {
@@ -1099,14 +1101,14 @@ public class RepairGenerator {
 		boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
 		if (inverse) {
 		    if (usageimage)
-			cr.outputline(rd.getSafeSymbol() + "_hash->remove((int)" + rightvar + ", (int)" + leftvar + ");");
+			cr.outputline(rd.getSafeSymbol() + "_hash->remove((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 		    if (usageinvimage)
-			cr.outputline(rd.getSafeSymbol() + "_hashinv->remove((int)" + leftvar + ", (int)" + rightvar + ");");
+			cr.outputline(rd.getSafeSymbol() + "_hashinv->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
 		} else {
 		    if (usageimage)
-			cr.outputline(rd.getSafeSymbol() + "_hash->remove((int)" + leftvar + ", (int)" + rightvar + ");");
+			cr.outputline(rd.getSafeSymbol() + "_hash->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
 		    if (usageinvimage)
-			cr.outputline(rd.getSafeSymbol() + "_hashinv->remove((int)" + rightvar + ", (int)" + leftvar + ");");
+			cr.outputline(rd.getSafeSymbol() + "_hashinv->remove((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 		}
 		for(int i=0;i<state.vRules.size();i++) {
 		    Rule r=(Rule)state.vRules.get(i);
@@ -1127,7 +1129,7 @@ public class RepairGenerator {
 		}
 	    } else {
 		SetDescriptor sd=ip.setexpr.sd;
-		cr.outputline(sd.getSafeSymbol() + "_hash->remove((int)" + leftvar + ", (int)" + leftvar + ");");
+		cr.outputline(sd.getSafeSymbol() + "_hash->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 
 		for(int i=0;i<state.vRules.size();i++) {
 		    Rule r=(Rule)state.vRules.get(i);
@@ -1154,14 +1156,14 @@ public class RepairGenerator {
 		boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
 		if (inverse) {
 		    if (usageimage)
-			cr.outputline(rd.getSafeSymbol() + "_hash->add((int)" + rightvar + ", (int)" + leftvar + ");");
+			cr.outputline(rd.getSafeSymbol() + "_hash->add((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 		    if (usageinvimage)
-			cr.outputline(rd.getSafeSymbol() + "_hashinv->add((int)" + leftvar + ", (int)" + rightvar + ");");
+			cr.outputline(rd.getSafeSymbol() + "_hashinv->add((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
 		} else {
 		    if (usageimage)
-			cr.outputline(rd.getSafeSymbol() + "_hash->add((int)" + leftvar + ", (int)" + rightvar + ");");
+			cr.outputline(rd.getSafeSymbol() + "_hash->add((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
 		    if (usageinvimage)
-			cr.outputline(rd.getSafeSymbol() + "_hashinv->add((int)" + rightvar + ", (int)" + leftvar + ");");
+			cr.outputline(rd.getSafeSymbol() + "_hashinv->add((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 		}
 		UpdateNode un=mun.getUpdate(0);
 		String name=(String)updatenames.get(un);
@@ -1172,7 +1174,7 @@ public class RepairGenerator {
 		}
 	    } else {
 		SetDescriptor sd=ip.setexpr.sd;
-		cr.outputline(sd.getSafeSymbol() + "_hash->add((int)" + leftvar + ", (int)" + leftvar + ");");
+		cr.outputline(sd.getSafeSymbol() + "_hash->add((int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 
 		UpdateNode un=mun.getUpdate(0);
 		/* Update for rule rule r */
@@ -1319,7 +1321,7 @@ public class RepairGenerator {
         String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
 	cr.outputline("int " + addeditem + ";");
 	if (rd.testUsage(RelationDescriptor.IMAGE)) {
-	    cr.outputline(addeditem + " = " + rd.getSafeSymbol() + "_hash->add((int)" + leftvar + ", (int)" + rightvar + ");");
+	    cr.outputline(addeditem + " = " + rd.getSafeSymbol() + "_hash->add((int)" + leftvar + ", (int)" + rightvar+ ");");
 	}
 	
 	if (rd.testUsage(RelationDescriptor.INVIMAGE)) {
