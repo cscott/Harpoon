@@ -24,11 +24,11 @@ import harpoon.Util.Util;
  * leading to/coming from the <code>PHI</code>/<code>SIGMA</code> nodes.
  * 
  * @author  Brian Demsky
- * @version $Id: QuadRSSx.java,v 1.1.2.1 2000-11-13 21:05:25 cananian Exp $
+ * @version $Id: QuadRSSx.java,v 1.1.2.2 2000-11-15 19:43:59 cananian Exp $
  */
 public class QuadRSSx extends Code /* which extends HCode */ {
     /** The name of this code view. */
-    public static final String codename = "relaxed-quad-ssi";
+    public static final String codename = "relaxed-quad-ssx";
 
     /** Creates a <code>Code</code> object from a bytecode object. */
     
