@@ -27,7 +27,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.22 2000-03-30 10:31:02 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.23 2000-03-30 10:58:22 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -202,9 +202,12 @@ abstract class InterProcPA {
 	// The names of the variables closely match those used in the
 	// formal description of the algorithm (section 9.2)
 
+	HMethod hm = q.method();
+
 	// Set the edges for the result node in graph 0.
+	// avoid generating useless nodes
 	Temp l_R = q.retval();
-	if(l_R != null){
+	if((l_R != null) && !hm.getReturnType().isPrimitive()){
 	    pig_caller.G.I.removeEdges(l_R);
 	    PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
 	    pig_caller.G.I.addEdge(l_R, n_R);
@@ -567,10 +570,12 @@ abstract class InterProcPA {
 						ParIntGraph pig_before){
 
 	HMethod hm = q.method();
-	if(hm != null) return null;
+	if(hm == null) return null;
 	
 	int mod = hm.getModifiers();
 	if(!Modifier.isNative(hm.getModifiers())) return null;
+
+	System.out.println("NATIVE: " + q);
 
 	ParIntGraphPair pair = treat_arraycopy(pa, q, pig_before);
 	if(pair != null) return pair;
@@ -663,7 +668,19 @@ abstract class InterProcPA {
 	//if(DEBUG)
 	    System.out.println(q + "is treated specially (fillInStackTrace)");
 	
-	return new ParIntGraphPair(pig_before, pig_before);
+	ParIntGraph pig_after1 = (ParIntGraph) pig_before.clone();
+
+	// Set the edges for the result node in graph 0.
+	Temp l_R = q.retval();
+	if(l_R != null){
+	    NodeRepository node_rep = pa.getNodeRepository();
+	    pig_before.G.I.removeEdges(l_R);
+	    PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
+	    pig_before.G.I.addEdge(l_R, n_R);
+	    pig_before.G.e.addMethodHole(n_R);
+	}
+
+	return new ParIntGraphPair(pig_before, pig_after1);	
     }
 
     // special treatment for 
@@ -677,11 +694,12 @@ abstract class InterProcPA {
 	   !hm.getDeclaringClass().getName().equals("java.lang.Thread"))
 	    return null;
 
-	//	if(DEBUG)
+	//if(DEBUG)
 	    System.out.println(q + "is treated specially (setPriority0)"); 
 
 	return new ParIntGraphPair(pig_before, pig_before);
     }
 
 }// end of the class
+
 
