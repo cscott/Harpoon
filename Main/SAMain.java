@@ -67,7 +67,7 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.55 2003-05-01 20:13:17 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.56 2003-07-03 23:04:50 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -471,7 +471,7 @@ public class SAMain extends harpoon.IR.Registration {
 		}
 
 		String alloc_strategy = 
-		    System.getProperty("harpoon.alloc.strategy", "malloc");
+		    System.getProperty("harpoon.alloc.strategy", "bdw");
 
 		System.out.println(alloc_strategy);
 
