@@ -8,6 +8,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.Temp.Temp;
 
@@ -32,9 +33,11 @@ import java.util.List;
  * flagged as possibly incorrect.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Lint.java,v 1.1.2.4 1999-09-16 20:06:32 cananian Exp $
+ * @version $Id: Lint.java,v 1.1.2.4.4.1 2000-01-11 18:59:13 cananian Exp $
  */
 public abstract class Lint extends harpoon.IR.Registration {
+    public final static Linker linker = Loader.systemLinker;
+    
     public static void usage(String errmsg) {
 	System.err.println(errmsg);
 	System.err.println("Usage: java "+Lint.class.getName()+" "+
@@ -78,7 +81,7 @@ public abstract class Lint extends harpoon.IR.Registration {
 	for (int i=s; i<args.length; i++) {
 	    System.err.println("CHECKING PACKAGE "+args[i]);
 	    for (Iterator it=Loader.listClasses(args[i]); it.hasNext(); ) {
-		HClass hc = HClass.forName((String)it.next());
+		HClass hc = linker.forName((String)it.next());
 		System.err.println(" - " + hc);
 		HMethod[] hms = hc.getDeclaredMethods();
 		for (int j=0; j<hms.length; j++) {
@@ -152,10 +155,10 @@ public abstract class Lint extends harpoon.IR.Registration {
 	    return c;
 	}
 	private static final HClass HCqv =
-	    HClass.forName("harpoon.IR.Quads.QuadVisitor");
+	    linker.forName("harpoon.IR.Quads.QuadVisitor");
         private static final HMethod HMvC =
 	    HCqv.getMethod("visit", new HClass[]
-			   { HClass.forName("harpoon.IR.Quads.CALL") } );
+			   { linker.forName("harpoon.IR.Quads.CALL") } );
     }
 
     /** Find all places where Label.toString() is called. */
@@ -181,7 +184,7 @@ public abstract class Lint extends harpoon.IR.Registration {
 	    return c;
 	}
 	private static final HMethod label_toString =
-	    HClass.forName("harpoon.Temp.Label")
+	    linker.forName("harpoon.Temp.Label")
                   .getMethod("toString",new HClass[0]);
     }
     /** Find all places where object equality is checked with == and
@@ -216,6 +219,6 @@ public abstract class Lint extends harpoon.IR.Registration {
 	    return c;
 	}
 	private static final HClass refunique =
-	    HClass.forName("harpoon.Util.ReferenceUnique");
+	    linker.forName("harpoon.Util.ReferenceUnique");
     }
 }

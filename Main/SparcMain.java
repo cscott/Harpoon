@@ -11,6 +11,8 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Tree.Data;
@@ -71,7 +73,7 @@ import java.io.PrintWriter;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparcMain.java,v 1.1.2.4 2000-01-09 09:12:27 pnkfelix Exp $
+ * @version $Id: SparcMain.java,v 1.1.2.4.2.1 2000-01-11 18:59:13 cananian Exp $
  */
 public class SparcMain extends harpoon.IR.Registration {
  
@@ -88,6 +90,8 @@ public class SparcMain extends harpoon.IR.Registration {
     private static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     private static HClass  singleClass = null; // for testing single classes
     
+    private static Linker linker = Loader.systemLinker;
+
     private static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);
         
@@ -116,7 +120,7 @@ public class SparcMain extends harpoon.IR.Registration {
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	}
 
-	HClass hcl = HClass.forName(className);
+	HClass hcl = linker.forName(className);
 	HMethod hm[] = hcl.getDeclaredMethods();
 	HMethod mainM = null;
         HMethod startM = null;
@@ -141,10 +145,10 @@ public class SparcMain extends harpoon.IR.Registration {
 	    // Punting on this question for now, and using a hard-coded
 	    // static method. [CSA 27-Oct-1999]
 	    Set roots =new java.util.HashSet
-		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods());
+		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 	    // and our main method is a root, too...
 	    roots.add(startM);
-	    classHierarchy = new QuadClassHierarchy(roots, hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
 	callGraph = new CallGraph(classHierarchy, hcf);
@@ -340,7 +344,7 @@ public class SparcMain extends harpoon.IR.Registration {
 	throws IOException {
       Iterator it=frame.getRuntime().classData(hclass).iterator();
       // output global data with the java.lang.Object class.
-      if (hclass==HClass.forName("java.lang.Object")) {
+      if (hclass==linker.forName("java.lang.Object")) {
 	  HData data=frame.getLocationFactory().makeLocationData(frame);
 	  it=new CombineIterator(new Iterator[]
 				 { it, Default.singletonIterator(data) });
@@ -460,7 +464,7 @@ public class SparcMain extends harpoon.IR.Registration {
 		ONLY_COMPILE_MAIN = true;
 		String optclassname = g.getOptarg();
 		if (optclassname!=null)
-		    singleClass = HClass.forName(optclassname);
+		    singleClass = linker.forName(optclassname);
 		break;
 	    case '?':
 	    case 'h':

@@ -8,8 +8,11 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
 import harpoon.Util.UniqueVector;
 
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -17,13 +20,14 @@ import java.util.Vector;
  * <code>CallGraph</code> is a command-line call-graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.2.2.5 1999-09-09 21:12:20 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.2.2.5.6.1 2000-01-11 18:59:13 cananian Exp $
  */
 
 public abstract class CallGraph extends harpoon.IR.Registration {
 
     public static final void main(String args[]) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
+	Linker linker = Loader.systemLinker;
 	HMethod m = null;
 
 	if (args.length < 2) {
@@ -32,7 +36,7 @@ public abstract class CallGraph extends harpoon.IR.Registration {
 	}
 
 	{
-	    HClass cls = HClass.forName(args[0]);
+	    HClass cls = linker.forName(args[0]);
 	    HMethod hm[] = cls.getDeclaredMethods();
 	    for (int i=0; i<hm.length; i++)
 		if (hm[i].getName().equals(args[1])) {
@@ -44,7 +48,8 @@ public abstract class CallGraph extends harpoon.IR.Registration {
 	HCodeFactory hcf =
 	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
 	harpoon.Analysis.ClassHierarchy ch = 
-	    new harpoon.Analysis.Quads.QuadClassHierarchy(m, hcf);
+	    new harpoon.Analysis.Quads.QuadClassHierarchy
+	    (linker, Collections.singleton(m), hcf);
 	harpoon.Analysis.Quads.CallGraph cg =
 	    new harpoon.Analysis.Quads.CallGraph(ch, hcf);
 

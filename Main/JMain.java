@@ -8,6 +8,8 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
 import harpoon.IR.Jasmin.Jasmin;
 
 import harpoon.Analysis.SSITOSSAMap;
@@ -29,7 +31,7 @@ import harpoon.Util.WorkSet;
  * <code>JMain</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JMain.java,v 1.1.2.7 1999-11-17 18:22:16 bdemsky Exp $
+ * @version $Id: JMain.java,v 1.1.2.7.2.1 2000-01-11 18:59:13 cananian Exp $
  */
 public abstract class JMain extends harpoon.IR.Registration {
 
@@ -40,6 +42,7 @@ public abstract class JMain extends harpoon.IR.Registration {
     public static void main(String args[]) throws java.io.IOException {
 	boolean minimizemethods=false;
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
+	Linker linker = Loader.systemLinker;
 
 	HCodeFactory hcf1 = // default code factory.
 	    harpoon.IR.Quads.QuadNoSSA.codeFactory();
@@ -82,9 +85,9 @@ public abstract class JMain extends harpoon.IR.Registration {
         hcf=harpoon.IR.Quads.QuadWithTry.codeFactory(hcf);
 
 	WorkSet todo=new WorkSet();
-	WorkSet todor=new WorkSet(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods());
+	WorkSet todor=new WorkSet(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 	for (int i=0; i<args.length-n; i++) {
-	    HMethod hmx[]=(HClass.forName(args[n+i])).getDeclaredMethods();
+	    HMethod hmx[]=(linker.forName(args[n+i])).getDeclaredMethods();
 	    boolean flag=false;
 	    for (int j=0; j<hmx.length; j++) {
 		if (hmx[j].getName().equalsIgnoreCase("main")) {
@@ -93,8 +96,8 @@ public abstract class JMain extends harpoon.IR.Registration {
 		}
 	    }
 	}
-	ClassHierarchy ch1=new QuadClassHierarchy(todo,hcf1);
-	ClassHierarchy ch2=new QuadClassHierarchy(todor,hcf1);
+	ClassHierarchy ch1=new QuadClassHierarchy(linker,todo,hcf1);
+	ClassHierarchy ch2=new QuadClassHierarchy(linker,todor,hcf1);
 	Set cm1=ch1.callableMethods();
 	Set cm2=ch2.callableMethods();
 	Set cmx=ch1.classes();

@@ -10,6 +10,9 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
+import harpoon.ClassFile.Relinker;
 import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.WorkSet;
@@ -30,10 +33,11 @@ import harpoon.IR.Jasmin.Jasmin;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.3 2000-01-02 22:21:41 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.3.2.1 2000-01-11 18:59:13 cananian Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
+    public static final Linker linker = new Relinker(Loader.systemLinker);
 
     public static final void main(String args[]) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
@@ -47,7 +51,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	out.println("Class: "+args[0]);
 
         {
-            HClass cls = HClass.forName(args[0]);
+            HClass cls = linker.forName(args[0]);
             HMethod hm[] = cls.getDeclaredMethods();
             for (int i=0; i<hm.length; i++) {
                 if (hm[i].getName().equals("main")) {
@@ -66,13 +70,14 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	UpdateCodeFactory hcf = new UpdateCodeFactory(ccf);
 
 	Collection c = new WorkSet();
-	c.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods());
+	c.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
+		 (linker));
 	c.addAll(knownBlockingMethods());
 	c.add(m);
 
 
 	System.out.println("Getting ClassHierarchy");
-        ClassHierarchy ch = new QuadClassHierarchy(c, hcf);
+        ClassHierarchy ch = new QuadClassHierarchy(linker, c, hcf);
 	HCode hc = hcf.convert(m);
 	System.out.println("Done w/ set up");
 
@@ -89,7 +94,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 
 	WorkSet todo=new WorkSet();
 	todo.add(mconverted);
-	ClassHierarchy ch1=new QuadClassHierarchy(todo,hcf2);
+	ClassHierarchy ch1=new QuadClassHierarchy(linker,todo,hcf2);
 
 	//========================================================
 	//Jasmin stuff below here:
@@ -161,8 +166,8 @@ public abstract class EventDriven extends harpoon.IR.Registration {
     }
 
     private static Collection knownBlockingMethods() {
-	final HClass is = HClass.forName("java.io.InputStream");
-	final HClass ss = HClass.forName("java.net.ServerSocket");
+	final HClass is = linker.forName("java.io.InputStream");
+	final HClass ss = linker.forName("java.net.ServerSocket");
 	final HClass b = HClass.Byte;
 
 	WorkSet w = new WorkSet();
