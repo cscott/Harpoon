@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.50 2001-07-12 02:00:52 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.51 2001-07-16 18:23:21 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -129,7 +129,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	this.linker = linker;
 	this.as  = as;
 	this.cmm = new harpoon.Backend.Analysis.ClassMethodMap();
-	this.cfm = new harpoon.Backend.Analysis.ClassFieldMap() {
+	this.cfm = new harpoon.Backend.Analysis.PackedClassFieldMap() {
 	    public int fieldSize(HField hf) {
 		HClass type = hf.getType();
 		return (!type.isPrimitive()) ? POINTER_SIZE :
