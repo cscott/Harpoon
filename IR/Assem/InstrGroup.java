@@ -25,9 +25,9 @@ import java.util.Arrays;
  * required by various compiler passes.  Each set of instructions
  * collected by an <code>InstrGroup</code> must collectively form a
  * single-entry single-exit region.
- * 
+ *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrGroup.java,v 1.1.2.7 2001-06-22 16:47:32 pnkfelix Exp $ */
+ * @version $Id: InstrGroup.java,v 1.1.2.8 2001-07-07 19:17:14 pnkfelix Exp $ */
 public class InstrGroup {
     Type type;
     Instr entry, exit;
@@ -159,20 +159,14 @@ public class InstrGroup {
 	a reverse data-flow analysis, accumulating definitions, along
 	with uses that have definitions originating <i>outside</i> of
 	the group.  
-
-	This actually might be a problem in the long term, because the
-	register allocation needs to make sure that the assignments
-	given do not have conflicts <i>within</i> the group itself.
-	(This probably will not be a problem in most cases, because I
-	think that the Temps used within the InstrGroup will be seen
-	outside of the group as part of the defs, which cannot have
-	overlaps, but still need to ensure this...)  
-
-	The need for InstrDUMMYs illustrates one facet of this
-	problem...  Perhaps the semantics of InstrGroups should be
-	changed so that they represent two instructions: one
-	containing all defs, and the next containing all uses?
-    
+	<p>
+	The produced <code>UseDefer</code> then maps all of the temps
+	used by the set of instrs: (group \ {entry}) as coming from
+	the exit of the group, and all of the temps defined by the
+	entire group as coming from the entry of the group.  This is a
+	conservative view; it ensures that the resulting register
+	assignments will be distinct, even when they sometimes did not
+	need to be.
     */
     static class GroupUseDefer extends UseDefer {
 	private Map i2g;
@@ -181,10 +175,6 @@ public class InstrGroup {
 	    i2g = instrToGroup;
 	    this.t = t;
 	}
-
-	// TODO verify correctness of useC/defC.  I did
-	// guess-and-check a lot here (and this wasn't even the source
-	// of the problem at the time!)
 
 	// **NOTE** defC and useC are ASYMMETRIC.  
 	public Collection useC(HCodeElement hce) { 
@@ -244,9 +234,13 @@ public class InstrGroup {
 	}
     }
 
-    /** <code>InstrGroup.Factory</code> is responsible for maintaining
-	a collection of <code>InstrGroup</code>s for a given
-	<code>Assem.Code</code>.  */
+    /** <code>InstrGroup.Type</code> is associated with a collection
+	of <code>InstrGroup</code>s for a given
+	<code>Assem.Code</code>.  Each <code>InstrGroup.Type</code> is
+	meant to be used as a way to extract abstract <i>views</i> of
+	the <code>Assem.Code</code>.
+    
+    */
     public static class Type {
 	private String typeString;
 	private String details;
