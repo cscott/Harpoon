@@ -6,6 +6,9 @@ package harpoon.Analysis.Transactions;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.DomTree;
 import harpoon.Analysis.Counters.CounterFactory;
+import harpoon.Analysis.Maps.ExactTypeMap;
+import harpoon.Analysis.Maps.ExactTypeMapProxy;
+import harpoon.Analysis.Quads.TypeInfo;
 import harpoon.Analysis.Transactions.BitFieldNumbering.BitFieldTuple;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.CachingCodeFactory;
@@ -53,10 +56,12 @@ import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SSIToSSA;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
+import harpoon.Temp.TempMap;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
@@ -72,33 +77,30 @@ import java.util.Map;
 import java.util.Set;
 /**
  * <code>SyncTransformer</code> transforms synchronized code to
- * atomic transactions.  Works on <code>QuadSSA</code> form.
+ * atomic transactions.  Works on <code>QuadSSI</code> form
+ * (via an internal conversion to SSA).  Outputs <code>QuadRSSx</code>.
  * Use the <code>SyncTransformer.treeCodeFactory()</code> to clean 
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.5 2003-06-17 16:37:58 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.5.2.1 2003-07-11 09:47:35 cananian Exp $
  */
-//XXX: we currently have this issue with the code:
-// original input which looks like
-//     t1 = AGET(t0, ...)
-//     t2 = AGET(t1, ...)
-// doesn't type check in the conversion to LowQuad form because t0
-// is cast to Object[] type when it is created by getReadCommittedVersion().
-// It "should" be Object[][] type.  Thus in the second AGET when it is
-// deferenced t1 is of Object type when it should be of Object[] type.
-// We *could* do a typeinfo pass before we enter SyncTransformer to
-// generate "correct" types but this doesn't always get the properly
-// precise type when run in *SSA form. We currently work around the problem by
-// adding an extra type cast before the AGET.  This *should* be
-// optimized out in most cases.
-
-//XXX: could use sync-elimination analysis to remove unnecessary
-//     atomic operations?  this would reduce the overall cost by a *lot*,
+//     we can apply sync-elimination analysis to remove unnecessary
+//     atomic operations.  this may reduce the overall cost by a *lot*,
 //     but it would make it much harder to come up w/ realistic benchmarks.
-//     maybe barnes/water?
+//     maybe barnes/water? (actually, only about 30% syncs are eliminated)
 //  ACTUALLY we should skip ALL transformation on objects which are
 //     marked as non-escaping.  this too would be a big win.
+//     (not done yet)
+
+// stages:
+//  1) guts into C code.
+// X2) code dup for sync check (actually, separate pass)
+//  3) indirectize trans to support object.wait()
+//  4) separate out sync transform and implement general trans mech.
+//  5) handle 'recovery' transaction?
+//  6) separate pass to virtualize static fields?
+//  7) strictness optimizations?
 
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -135,6 +137,8 @@ public class SyncTransformer
     private final HClass HCclass;
     /** Cache the <code>java.lang.reflect.Field</code> <code>HClass</code>. */
     private final HClass HCfield;
+    /** Cache the <code>java.lang.Object</code> <code>HClass</code>. */
+    private final HClass HCobj;
     /** Cache the <code>CommitRecord</code> <code>HClass</code>. */
     private final HClass  HCcommitrec;
     private final HMethod HMcommitrec_new;
@@ -163,6 +167,8 @@ public class SyncTransformer
     /** Our version of the codefactory. */
     private final HCodeFactory hcf;
 
+    private final MethodGenerator gen;
+
     /** Creates a <code>SyncTransformer</code> with no safe methods. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
 			   HMethod mainM, Set roots) {
@@ -180,9 +186,9 @@ public class SyncTransformer
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
 			   HMethod mainM, Set roots,
 			   Set<HMethod> safeMethods) {
-	// hcf should be SSI. our input is SSA...
-        super(harpoon.IR.Quads.QuadSSA.codeFactory(hcf), ch, false);
-	// and output is NoSSA
+	// our input is SSI.  We'll convert it to SSA in the 'clone' method.
+        super(hcf, ch, false);
+	// and output is RSSx
 	assert hcf.getCodeName()
 		    .equals(harpoon.IR.Quads.QuadSSI.codename);
 	assert super.codeFactory().getCodeName()
@@ -202,7 +208,7 @@ public class SyncTransformer
 	this.HCabortex = l.forName(pkg+"TransactionAbortException");
 	this.HFabortex_upto = HCabortex.getField("abortUpTo");
 	// now create methods of java.lang.Object.
-	HClass HCobj = l.forName("java.lang.Object");
+	HCobj = l.forName("java.lang.Object");
 	HClassMutator objM = HCobj.getMutator();
 	int mod = Modifier.FINAL | Modifier.NATIVE;
 	this.HMrVersion = objM.addDeclaredMethod
@@ -242,6 +248,9 @@ public class SyncTransformer
 	// our 'unique' value.
 	this.HFflagvalue = objM.addDeclaredField("flagValue", HCobj);
 	HFflagvalue.getMutator().addModifiers(Modifier.FINAL|Modifier.STATIC);
+
+	// create a method generator in the 'ImplHelper' class.
+	gen = new MethodGenerator(l.forName(pkg+"ImplHelper"));
 
 	// set up our field oracle.
 	if (!useSmartFieldOracle) {
@@ -289,25 +298,51 @@ public class SyncTransformer
 		hm.getDescriptor().substring(1);
 	else return super.mutateDescriptor(hm, which);
     }
-    protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
-	// make SSA into RSSx.
-	assert hc.getName().equals(QuadSSA.codename);
+    protected MyHCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
+	// make SSI into RSSx.
+	assert hc.getName().equals(QuadSSI.codename);
 	return MyRSSx.cloneToRSSx((harpoon.IR.Quads.Code)hc, newmethod);
     }
     private static class MyRSSx extends QuadRSSx {
 	private MyRSSx(HMethod m) { super(m, null); }
-	public static HCodeAndMaps cloneToRSSx(harpoon.IR.Quads.Code c,
+	public static MyHCodeAndMaps cloneToRSSx(harpoon.IR.Quads.Code c,
 					       HMethod m) {
+	    // c should be SSI.
+	    assert c.getName().equals(QuadSSI.codename) : c.getName();
+	    // we first create a type info on the SSI form.
+	    TypeInfo ti = new TypeInfo(c);
+	    // now we convert to SSA
 	    MyRSSx r = new MyRSSx(m);
-	    return r.cloneHelper(c, r);
+	    SSIToSSA ssi2ssa = new SSIToSSA(c, r.qf);
+	    r.quads = ssi2ssa.rootQuad;
+	    r.setAllocationInformation(ssi2ssa.allocInfo);
+	    // make the HCodeAndMaps
+	    return new MyHCodeAndMaps
+		(r, ssi2ssa.quadMap, ssi2ssa.tempMap,
+		 c, ssi2ssa.revQuadMap, ssi2ssa.revTempMap,
+		 ti);
 	}
     }
+    static class MyHCodeAndMaps extends HCodeAndMaps<Quad> {
+	final ExactTypeMap<Quad> ancestorTypeMap;
+	final ExactTypeMap<Quad> typeMap;
+	MyHCodeAndMaps(Code hc, Map<Quad,Quad> em, TempMap tm,
+		       Code ahc, Map<Quad,Quad> aem, TempMap atm,
+		       ExactTypeMap<Quad> ancestorTypeMap) {
+	    super(hc, em, tm, ahc, aem, atm);
+	    this.ancestorTypeMap = ancestorTypeMap;
+	    this.typeMap = new ExactTypeMapProxy<Quad>(this, ancestorTypeMap);
+	}
+    }
+
     protected String mutateCodeName(String codeName) {
-	assert codeName.equals(QuadSSA.codename);
+	assert codeName.equals(QuadSSI.codename);
 	return MyRSSx.codename;
     }
     protected HCode mutateHCode(HCodeAndMaps input, Token which) {
-	HCode hc = input.hcode();
+	MyHCodeAndMaps hcam = (MyHCodeAndMaps) input;
+	HCode<Quad> hc = hcam.hcode();
+	ExactTypeMap<Quad> etm = hcam.typeMap;
 	HEADER qH = (HEADER) hc.getRootElement();
 	FOOTER qF = qH.footer();
 	METHOD qM = qH.method();
@@ -324,7 +359,7 @@ public class SyncTransformer
 		co = new HoistingCheckOracle
 		    (hc, CFGrapher.DEFAULT, UseDefer.DEFAULT, dt, co);
 	    }
-	    Tweaker tw = new Tweaker(co, qF, (which==WITH_TRANSACTION));
+	    Tweaker tw = new Tweaker(co, qF, (which==WITH_TRANSACTION), etm);
 	    tweak(new DomTree(hc, false), qM, tw);
 	    tw.fixup();
 	}
@@ -361,15 +396,18 @@ public class SyncTransformer
 	final CheckOracle co;
 	final FieldOracle fo;
 	final TempSplitter ts=new TempSplitter();
+	final ExactTypeMap<Quad> etm;
 	// mutable.
 	FOOTER footer; // we attach new stuff to the footer.
 	ListList<THROW> handlers = null; // points to current abort handler
-	Tweaker(CheckOracle co, FOOTER qF, boolean with_transaction) {
+	Tweaker(CheckOracle co, FOOTER qF, boolean with_transaction,
+		ExactTypeMap<Quad> etm) {
 	    this.co = co;
 	    this.fo = fieldOracle; // cache in this object.
 	    this.footer = qF;
 	    this.qf = qF.getFactory();
 	    this.tf = this.qf.tempFactory();
+	    this.etm = etm;
 	    // indicate that we're inside transaction context, but
 	    // that we need to rethrow TransactionAbortExceptions
 	    if (with_transaction)
@@ -565,41 +603,6 @@ public class SyncTransformer
 	    handlers = handlers.tail;
 	    if (handlers==null) q1.remove(); // unneccessary.
 	}
-	// at entry, we've already done the (initial?) read, of the
-	// original object.  The 'out' edge is the edge immediately
-	// following the read, and we'll return an edge on which we
-	// want to insert a "correcting" read of the versioned object.
-	// all this method does is insert code to determine whether
-	// we need to execute the correcting read or bypass it.
-	Edge readCheck(Edge out, HCodeElement src,
-			  Temp dst, Temp objectref, HClass type) {
-	    // if value read==FLAG, then do correcting read.
-	    Temp t0 = new Temp(tf, "readnt");
-	    out = addAt(out, makeFlagConst(qf, src, t0, type));
-	    out = addAt(out, new OPER(qf, src, cmpop(type), t0,
-				      new Temp[]{ t0, dst }));
-	    Quad q0 = new CJMP(qf, src, t0, new Temp[0]);
-	    out = addAt(out, q0);
-	    Quad q1 = new PHI(qf, src, new Temp[0], 2);
-	    out = addAt(out, q1);
-	    // transactional case: put another read here.
-	    if (handlers!=null) return Quad.addEdge(q0, 1, q1, 1);
-	    // non-transactional case: call fixup method first.
-	    // call 'getReadCommittedVersion' for the most recently
-	    // committed version of this object (probably the 'backup'
-	    // copy of the object)
-	    Quad q2 = new CALL(qf, src, HMrCommitted,
-			       new Temp[] { objectref },
-			       ts.versioned(objectref), retex,
-			       false, false, new Temp[0]);
-	    Quad q3 = new THROW(qf, src, retex);
-	    Quad.addEdge(q0, 1, q2, 0);
-	    Quad.addEdge(q2, 0, q1, 1);
-	    Quad.addEdge(q2, 1, q3, 0);
-	    footer = footer.attach(q3, 0); // add q4 to FOOTER
-	    // no check for abort because we are non-trans!
-	    return q2.nextEdge(0);// new READ goes on this edge.
-	}
 	public void visit(AGET q) {
 	    addChecks(q);
 	    if (noFieldModification || noArrayModification) return;
@@ -607,15 +610,34 @@ public class SyncTransformer
 	    CounterFactory.spliceIncrement
 		(qf, q.prevEdge(0),(handlers==null) ?
 		 "synctrans.read_nt_array" : "synctrans.read_t_array");
-	    Edge e = readCheck(q.nextEdge(0), q,
-			       q.dst(), q.objectref(), q.type());
-	    e = addArrayTypeCheck(e, q, ts.versioned(q.objectref()),
-				  q.type());
-	    addAt(e, new AGET(qf, q, q.dst(),
-			      ts.versioned(q.objectref()),
-			      q.index(), q.type()));
-	    // workaround for multi-dim arrays. yucky.
-	    addArrayTypeCheck(q.prevEdge(0), q, q.objectref(), q.type());
+
+	    Temp t1 = new Temp(tf, "retex");
+	    Quad q1;
+	    if (handlers==null) { // non-transactional read
+		q1 = new CALL(qf, q, gen.lookupMethod
+			      ("arrayReadNT",
+			       new HClass[] { HCobj, HClass.Int },
+			       etm.typeMap(q, q.dst())),
+			      new Temp[] { q.objectref(), q.index() },
+			      q.dst(), t1, false, false, new Temp[0]);
+	    } else { // transactional read
+		q1 = new CALL(qf, q, gen.lookupMethod
+			      ("arrayReadT",
+			       new HClass[] { HCobj, HClass.Int, HCobj },
+			       etm.typeMap(q, q.dst())),
+			      new Temp[] { q.objectref(), q.index(),
+					   ts.versioned(q.objectref()) },
+			      q.dst(), t1, false, false, new Temp[0]);
+	    }
+	    Quad q2 = new THROW(qf, q, t1);
+
+	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
+	    Quad.addEdge(in.from(), in.which_succ(), q1, 0);
+	    Quad.addEdge(q1, 0, out.to(), out.which_pred());
+	    Quad.addEdge(q1, 1, q2, 0);
+	    footer = footer.attach(q2, 0); // add q2 to FOOTER
+	    if (handlers!=null) // only trans can abort
+		checkForAbort(q1.nextEdge(1), q, t1);
 	    // done.
 	}
 	public void visit(GET q) {
@@ -638,11 +660,35 @@ public class SyncTransformer
 	    CounterFactory.spliceIncrement
 		(qf, q.prevEdge(0),(handlers==null) ?
 		 "synctrans.read_nt_object" : "synctrans.read_t_object");
-	    Edge e = readCheck(q.nextEdge(0), q,
-			       q.dst(), q.objectref(),
-			       q.field().getType());
-	    addAt(e, new GET(qf, q, q.dst(), q.field(),
-			     ts.versioned(q.objectref())));
+
+	    Temp t0 = new Temp(tf, "read_field");
+	    Temp t1 = new Temp(tf, "retex");
+	    Quad q0 = new CONST(qf, q, t0, q.field(), HCfield);
+	    Quad q1;
+	    if (handlers==null) { // non-transactional read
+		q1 = new CALL(qf, q, gen.lookupMethod
+			      ("readNT", new HClass[] { HCobj, HCfield },
+			       q.field().getType()),
+			      new Temp[] { q.objectref(), t0 },
+			      q.dst(), t1, false, false, new Temp[0]);
+	    } else { // transactional read
+		q1 = new CALL(qf, q, gen.lookupMethod
+			      ("readT", new HClass[] { HCobj, HCfield, HCobj },
+			       q.field().getType()),
+			      new Temp[] { q.objectref(), t0,
+					   ts.versioned(q.objectref()) },
+			      q.dst(), t1, false, false, new Temp[0]);
+	    }
+	    Quad q2 = new THROW(qf, q, t1);
+
+	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
+	    Quad.addEdge(in.from(), in.which_succ(), q0, 0);
+	    Quad.addEdge(q0, 0, q1, 0);
+	    Quad.addEdge(q1, 0, out.to(), out.which_pred());
+	    Quad.addEdge(q1, 1, q2, 0);
+	    footer = footer.attach(q2, 0); // add q2 to FOOTER
+	    if (handlers!=null) // only trans can abort
+		checkForAbort(q1.nextEdge(1), q, t1);
 	    // done.
 	}
         // this routine does the necessary checks to see if any
