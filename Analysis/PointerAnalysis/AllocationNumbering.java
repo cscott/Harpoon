@@ -12,7 +12,7 @@ import java.util.*;
  * <code>AllocationNumbering</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.1.2.1 2000-11-09 01:15:39 cananian Exp $
+ * @version $Id: AllocationNumbering.java,v 1.1.2.2 2000-11-09 05:11:24 bdemsky Exp $
  */
 public class AllocationNumbering implements java.io.Serializable {
     private final CachingCodeFactory hcf;
@@ -24,7 +24,7 @@ public class AllocationNumbering implements java.io.Serializable {
 	int n = 0;
 	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
-	    n = number(hcf.convert(hm), n);
+	    n = number(this.hcf.convert(hm), n);
 	}
     }
     /** Return the (caching) code factory this numbering was created on. */

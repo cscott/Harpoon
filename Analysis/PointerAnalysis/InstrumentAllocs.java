@@ -30,7 +30,7 @@ import java.util.Map;
  * <code>InstrumentAllocs</code> adds counters to each allocation site.
  * 
  * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: InstrumentAllocs.java,v 1.1.2.2 2000-11-09 04:21:19 bdemsky Exp $
+ * @version $Id: InstrumentAllocs.java,v 1.1.2.3 2000-11-09 05:11:24 bdemsky Exp $
  */
 public class InstrumentAllocs extends MethodMutator implements java.io.Serializable {
     int count;
@@ -73,14 +73,20 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 		TempFactory tf=qf.tempFactory();
 		Temp tconst=new Temp(tf);
 		Temp texcept=new Temp(tf);
-		CONST qconst=new CONST(qf,q,tconst,new Integer(an.allocID((Quad)ancestor.get(q))),HClass.Int);
-		CALL qcall=new CALL(qf, q, method,new Temp[] {tconst}, null, texcept,false,false,new Temp[0][2],new Temp[0]);
-		PHI qphi=new PHI(qf,q,new Temp[0],new Temp[0][2],2);
-		Quad.addEdge(qconst,0,qcall,0);
-		Quad.addEdge(qcall,0,qphi,0);
-		Quad.addEdge(qcall,1,qphi,1);
-		Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),qconst,0);
-		Quad.addEdge(qphi,0,q,0);
+		System.out.println("FOO");
+		try {
+		    CONST qconst=new CONST(qf,q,tconst,new Integer(an.allocID((Quad)ancestor.get(q))),HClass.Int);
+		    CALL qcall=new CALL(qf, q, method,new Temp[] {tconst}, null, texcept,false,false,new Temp[0][2],new Temp[0]);
+		    PHI qphi=new PHI(qf,q,new Temp[0],new Temp[0][2],2);
+		    Quad.addEdge(qconst,0,qcall,0);
+		    Quad.addEdge(qcall,0,qphi,0);
+		    Quad.addEdge(qcall,1,qphi,1);
+		    Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),qconst,0);
+		    Quad.addEdge(qphi,0,q,0);
+		} catch (Error e) {
+		    //Ignore, means that its code called only by our instrumenting
+		    //code
+		}
 	    }
 	}
 	if (hc.getMethod().equals(main)) {

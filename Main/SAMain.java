@@ -74,7 +74,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.106 2000-11-09 04:21:44 bdemsky Exp $
+ * @version $Id: SAMain.java,v 1.1.2.107 2000-11-09 05:11:21 bdemsky Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -221,8 +221,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    System.out.println(e + " was thrown:");
 		    e.printStackTrace(System.out);
 		}
-		System.exit(1);
-		
+		hcf=an.codeFactory();
 		insta=new InstrumentAllocs(hcf, mainM, linker, an);
  		hcf=insta.codeFactory();
 	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
