@@ -13,7 +13,7 @@ design.dvi: harpoon.bib
 bibnote.dvi: harpoon_.bib
 readnote.dvi: unread_.bib
 # lots dependencies for the pldi paper
-pldi99.dvi: harpoon.bib pldi99-intro.tex pldi99-abstract.tex pldi99-body.tex
+pldi99.dvi: harpoon.bib pldi99-intro.tex pldi99-abstract.tex pldi99-tech.tex
 
 # Tex rules. [have to add explicit dependencies on appropriate bibtex files.]
 %.dvi %.aux: %.tex
