@@ -32,10 +32,12 @@ public class NSMain {
 	case CORBA.JACORB: {
 	    CORBA.setupJacORB();
 	    NameServer.main(args);
+	    break;
 	}
 	case CORBA.ZEN: {
 	    CORBA.setupZen();
 	    NamingService.main(args);
+	    break;
 	}
 	default: {
 	    System.out.println("Error: No CORBA implementation selected.");
