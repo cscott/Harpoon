@@ -15,7 +15,7 @@ import java.util.Enumeration;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.1 1998-10-11 23:43:21 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.2 1998-10-12 02:30:00 cananian Exp $
  */
 
 public class ClassHierarchy  {
@@ -35,7 +35,9 @@ public class ClassHierarchy  {
     public Enumeration classes() {
 	return children.keys();
     }
+    /** Returns a human-readable representation of the hierarchy. */
     public String toString() {
+	// not the most intuitive representation...
 	StringBuffer sb = new StringBuffer("(");
 	for (Enumeration e = classes(); e.hasMoreElements(); ) {
 	    HClass c = (HClass) e.nextElement();
@@ -118,22 +120,43 @@ public class ClassHierarchy  {
     }
 
     /* when we discover a new class nc:
-        for each superclass c of this class,
-         add all called methods of c to worklist of nc, if nc implements.
+        for each superclass c or superinterface i of this class,
+         add all called methods of c/i to worklist of nc, if nc implements.
     */
     private void discoverClass(HClass c, 
 		       Worklist W, Set done, Hashtable ckc, Hashtable cmu) {
 	if (ckc.containsKey(c)) return; // not a new class.
 	// add to known-children lists.
 	ckc.put(c, new Set());
-	HClass s = c.getSuperclass();
-	if (s==null) return; // top-level.
-	discoverClass(s,W,done,ckc,cmu);// maybe discover another new class?
-	Set knownChildren = (Set) ckc.get(s);
-	Util.assert(knownChildren!=null); // after discoverClass above.
-	knownChildren.union(c);
-	// add all called methods of superclasses to worklist.
-	for (/*s is superclass of c*/; s!=null; s=s.getSuperclass()) {
+	// new worklist.
+	Worklist sW = new Set();
+	// mark superclass.
+	HClass su = c.getSuperclass();
+	if (su!=null) { // maybe discover super class?
+	    discoverClass(su, W, done, ckc, cmu);
+	    sW.push(su);
+	    Set knownChildren = (Set) ckc.get(su);
+	    knownChildren.union(c); // kC non-null after discoverClass.
+	}
+	// mark interfaces
+	HClass in[] = c.getInterfaces();
+	for (int i=0; i<in.length; i++) {
+	    discoverClass(in[i], W, done, ckc, cmu); // discover interface?
+	    sW.push(in[i]);
+	    Set knownChildren = (Set) ckc.get(in[i]);
+	    knownChildren.union(c); // kC non-null after discoverClass.
+	}
+
+	// add all called methods of superclasses/interfaces to worklist.
+	while (!sW.isEmpty()) {
+	    // pull a superclass or superinterface off the list.
+	    HClass s = (HClass)sW.pull();
+	    // add superclasses/interfaces of this one to local worklist
+	    su = s.getSuperclass();
+	    if (su!=null) sW.push(su);
+	    in = s.getInterfaces();
+	    for (int i=0; i<in.length; i++) sW.push(in[i]);
+	    // now add called methods of s to top-level worklist.
 	    Set calledMethods = (Set) cmu.get(s);
 	    if (calledMethods==null) continue; // no called methods?!
 	    for (Enumeration e = calledMethods.elements();
@@ -146,10 +169,12 @@ public class ClassHierarchy  {
 		} catch (NoSuchMethodError nsme) { }
 	    }
 	}
-	// done with this class.
+	// done with this class/interface.
     }
     /* when we hit a method call site (method in class c):
         add method of c and all children of c to worklist.
+       if method in interface i:
+        add method of c and all implementations of c.
     */
     private void discoverMethod(HMethod m, 
 			Worklist W, Set done, Hashtable ckc, Hashtable cmu) {
