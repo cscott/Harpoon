@@ -13,6 +13,7 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -22,20 +23,21 @@ import java.util.Hashtable;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.4 1999-02-04 23:09:54 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.5 1999-02-16 21:23:03 duncan Exp $
  */
-final class Translate  { // not public
+final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
 				       final harpoon.IR.Quads.Code code,
 				       TypeMap tym, FinalMap fm,
-				       Hashtable derivationTable) {
+				       Hashtable derivationTable,
+				       Hashtable typeTable) {
 	final Quad old_header = (Quad) code.getRootElement();
 	final CloningTempMap ctm =
 	    new CloningTempMap(old_header.getFactory().tempFactory(),
 			       qf.tempFactory());
 	final LowQuadMap lqm = new LowQuadMap();
 	final Visitor v = new Visitor(qf, lqm, ctm, code, tym, fm,
-				      derivationTable);
+				      derivationTable, typeTable);
 
 	// visit all.
 	for (Enumeration e = code.getElementsE(); e.hasMoreElements(); ) 
@@ -56,8 +58,8 @@ final class Translate  { // not public
     }
 
     private static class LowQuadMap {
-	final private Hashtable h = new Hashtable();
-	void put(Quad old, Quad new_header, Quad new_footer) {
+	final private Hashtable h  = new Hashtable();
+        void put(Quad old, Quad new_header, Quad new_footer) {
 	    h.put(old, new Quad[] { new_header, new_footer });
 	}
 	Quad getHead(Quad old) {
@@ -66,6 +68,7 @@ final class Translate  { // not public
 	Quad getFoot(Quad old) {
 	    Quad[] ql = (Quad[])h.get(old); return (ql==null)?null:ql[1];
 	}
+        
 	boolean contains(Quad old) { return h.containsKey(old); }
     }
 
@@ -76,20 +79,33 @@ final class Translate  { // not public
 	final harpoon.IR.Quads.Code code;
 	final TypeMap tym;
 	final FinalMap fm;
-	final Hashtable dT;
+	final Hashtable dT, tT;
 
 	Visitor(LowQuadFactory qf, LowQuadMap lqm, CloningTempMap ctm,
 		harpoon.IR.Quads.Code code, TypeMap tym, FinalMap fm,
-		Hashtable dT) {
+		Hashtable dT, Hashtable tT) {
 	    this.qf = qf; this.lqm = lqm; this.ctm = ctm;
 	    this.code = code; this.tym = tym; this.fm = fm; this.dT = dT;
+	    this.tT = tT;
 	}
-    
+
+        private void updateTypeInfo(Quad q) {
+	    for (int i=0; i<2; i++) {
+	        Temp[] tmps = (i==0)?q.def():q.use();
+	        for (int j=0; j<tmps.length; j++) {
+		    if (!tT.containsKey(map(tmps[j]))) 
+		        tT.put(map(tmps[j]), tym.typeMap(code, tmps[j]));
+		}
+	    }
+	}
+
 	/** By default, just clone and set all destinations to top. */
 	public void visit(Quad q) {
 	    Quad nq = (Quad) q.clone(qf, ctm);
 	    lqm.put(q, nq, nq);
+	    updateTypeInfo(q);
 	}
+
 	// take apart array references.
 	public final void visit(harpoon.IR.Quads.AGET q) {
 	    Quad q0 = new PARRAY(qf, q, extra(q.objectref()),
@@ -105,7 +121,13 @@ final class Translate  { // not public
 	    DList dl = new DList(map(q.objectref()), true, null);
 	    dT.put(q0.def()[0], dl);
 	    dT.put(q2.def()[0], dl);
+	    updateTypeInfo(q);
+	    // update type info
+	    tT.put(q0.def()[0], type(q.objectref()));
+	    tT.put(q1.def()[0], HClass.Int);
+	    tT.put(q2.def()[0], type(q.objectref()).getComponentType());
 	}
+
 	public final void visit(harpoon.IR.Quads.ASET q) {
 	    Quad q0 = new PARRAY(qf, q, extra(q.objectref()),
 				 map(q.objectref()));
@@ -120,12 +142,19 @@ final class Translate  { // not public
 	    DList dl = new DList(map(q.objectref()), true, null);
 	    dT.put(q0.def()[0], dl);
 	    dT.put(q2.def()[0], dl);
+	    // Update type information
+	    updateTypeInfo(q);
+	    tT.put(q0.def()[0], type(q.objectref()));
+	    tT.put(q1.def()[0], HClass.Int);
+	    tT.put(q2.def()[0], type(q.objectref()).getComponentType());
 	}
+
 	public final void visit(harpoon.IR.Quads.CALL q) {
 	    Quad q0, qN;
 	    if (!q.isVirtual() || fm.isFinal(q.method())) {
 		// non-virtual or final.  Method address is constant.
 		q0 = qN = new PMCONST(qf, q, extra(), q.method());
+		tT.put(q0.def()[0], HClass.Int); 
 	    } else { // virtual; perform table lookup.
 		q0 = new PMETHOD(qf, q, extra(q.params(0)), map(q.params(0)));
 		Quad q1 = new PMOFFSET(qf, q, extra(q.params(0)), q.method());
@@ -135,18 +164,26 @@ final class Translate  { // not public
 		Quad.addEdges(new Quad[] { q0, q1, q2 });
 		// update derivation table.
 		DList dl = new DList(map(q.params(0)), true, null);
+		System.out.println("Qp[0], type[0]: " + q.params(0) + ", " + 
+				   type(q.params(0)) + ", "+ q0.def()[0]);
 		dT.put(q0.def()[0], dl);
 		dT.put(q2.def()[0], dl);
+		tT.put(q0.def()[0], type(q.params(0)));
+		tT.put(q1.def()[0], HClass.Int);
+		tT.put(q2.def()[0], HClass.Int);
 	    }
+	    updateTypeInfo(q);
 	    Quad q3 = new PCALL(qf, q, qN.def()[0], map(q.params()),
 				map(q.retval()), map(q.retex()));
 	    Quad.addEdge(qN, 0, q3, 0);
 	    lqm.put(q, q0, q3);
 	}
+
 	public final void visit(harpoon.IR.Quads.GET q) {
 	    Quad q0, qN;
 	    if (q.isStatic()) {
 		q0 = qN = new PFCONST(qf, q, extra(), q.field());
+		tT.put(q0.def()[0], HClass.Int);
 	    } else { // virtual
 		q0 = new PFIELD(qf, q,
 				extra(q.objectref()), map(q.objectref()));
@@ -159,21 +196,29 @@ final class Translate  { // not public
 		DList dl = new DList(map(q.objectref()), true, null);
 		dT.put(q0.def()[0], dl);
 		dT.put(q2.def()[0], dl);
+		tT.put(q0.def()[0], HClass.Int);
+		tT.put(q1.def()[0], HClass.Int);
+		tT.put(q2.def()[0], type(q.dst()));
 	    }
+	    updateTypeInfo(q);
 	    Quad q3 = new PGET(qf, q, map(q.dst()), qN.def()[0]);
 	    Quad.addEdge(qN, 0, q3, 0);
 	    lqm.put(q, q0, q3);
 	}
+
 	public final void visit(harpoon.IR.Quads.OPER q) {
 	    // mutate into POPER
 	    Quad nq = new POPER(qf, q, q.opcode(),
 			       map(q.dst()), map(q.operands()));
 	    lqm.put(q, nq, nq);
+	    updateTypeInfo(q);
 	}
+
 	public final void visit(harpoon.IR.Quads.SET q) {
 	    Quad q0, qN;
 	    if (q.isStatic()) {
 		q0 = qN = new PFCONST(qf, q, extra(), q.field());
+		tT.put(q0.def()[0], HClass.Int);
 	    } else { // virtual
 		q0 = new PFIELD(qf, q,
 				extra(q.objectref()), map(q.objectref()));
@@ -186,14 +231,18 @@ final class Translate  { // not public
 		DList dl = new DList(map(q.objectref()), true, null);
 		dT.put(q0.def()[0], dl);
 		dT.put(q2.def()[0], dl);
+		tT.put(q0.def()[0], HClass.Int);
+		tT.put(q1.def()[0], HClass.Int);
+		tT.put(q2.def()[0], type(q.src()));
 	    }
+	    updateTypeInfo(q);
 	    Quad q3 = new PSET(qf, q, qN.def()[0], map(q.src()));
 	    Quad.addEdge(qN, 0, q3, 0);
 	    lqm.put(q, q0, q3);
 	}
 
 	//---------------------------------------------------------
-	// UTILITY FUNCTIONS:
+ 	// UTILITY FUNCTIONS:
 	private Temp extra() { return new Temp(qf.tempFactory(), "lq_"); }
 	private Temp extra(Temp t) { return t.clone(qf.tempFactory()); }
 	private HClass type(Temp t) { return tym.typeMap(code, t); }
