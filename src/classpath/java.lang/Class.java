@@ -1054,7 +1054,7 @@ public final class Class implements Serializable
 	  }	    
       }
     int modifiers = constructor.getModifiers();
-    if (!Modifier.isPublic(modifiers))
+    if (false&&/*CSA HACK*/!Modifier.isPublic(modifiers))
       {
 	Class caller = VMSecurityManager.getClassContext()[1];
 	if (caller != this &&
