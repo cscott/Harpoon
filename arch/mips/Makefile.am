@@ -1,9 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in Flex_MIPS.S
 EXTRA_DIST = Flex_MIPS.pl
-CFLAGS=
+#CFLAGS=
 LIBS =
 # The following is a hack, but it works...
+CCAS=$(CC)
 CCASFLAGS=@CFLAGS@ -I../../include -Dmips
 
 # changing libheader.la to libheader.lo fixes a lot of problems, but
