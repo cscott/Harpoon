@@ -7,7 +7,7 @@ import harpoon.ClassFile.HField;
  * indicated whether the <code>HField</code> should be inlined.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version 1.1.1.1
+ * @version 1.1.2.1
  */
 public interface InlineMap
 {
@@ -16,3 +16,6 @@ public interface InlineMap
    */
   public boolean shouldInline(HField);
 }
+
+
+
