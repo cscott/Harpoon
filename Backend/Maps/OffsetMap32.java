@@ -1,5 +1,6 @@
 package harpoon.Backend.Maps;
 
+import harpoon.Analysis.InterfaceMethodMap;
 import harpoon.Backend.Analysis.DisplayInfo.HClassInfo;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
@@ -15,7 +16,7 @@ import java.util.StringTokenizer;
  * specializing them for 32-bit architectures.
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.1 1999-02-03 23:43:47 duncan Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.2 1999-02-05 03:16:20 duncan Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -30,11 +31,11 @@ public class OffsetMap32 extends OffsetMap
     public int fieldOrder(HField hf) { return m_hci.getFieldOffset(hf); }
   };
 
-  private ClassMethodMap  m_cmm = new ClassMethodMap() {
+  private MethodMap  m_cmm = new MethodMap() {
     public int methodOrder(HMethod hm) { return m_hci.getMethodOffset(hm); }
   };
 
-  private MethodMap m_imm; //InterfaceMethodMap m_imm;
+  private InterfaceMethodMap m_imm; 
 
   private Hashtable  m_fields; // Cache of field-orderings
   private HClassInfo m_hci;
