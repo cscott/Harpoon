@@ -61,7 +61,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.24 2001-09-26 20:06:19 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.25 2001-09-28 20:56:58 cananian Exp $
  */
 public final class Method {
 
@@ -438,12 +438,17 @@ public final class Method {
 	    advance(0);
 	}
 	public void visit(CONST q) {
-	    if (q.type()!=ss.HCstring)
-		sf.update(q.dst(), toInternal(q.value()));
-	    else {
+	    if (q.type()==ss.HCstring) {
 		ObjectRef obj=ss.makeStringIntern((String)q.value());
 		sf.update(q.dst(), obj);
-	    }
+	    } else if (q.type()==ss.HCclass) {
+		ObjectRef obj=INClass.forClass(ss, (HClass)q.value());
+		sf.update(q.dst(), obj);
+	    } else if (!q.type().isPrimitive()) {
+		Util.assert(false,
+			    "CONST type not (yet) supported: "+q.type());
+	    } else
+		sf.update(q.dst(), toInternal(q.value()));
 	    advance(0);
 	}
 	public void visit(DEBUG q) {
