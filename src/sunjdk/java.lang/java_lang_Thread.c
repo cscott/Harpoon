@@ -823,6 +823,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
 #if !defined(WITH_REALTIME_THREADS)
   context_switch();
 #else
+  realtime_schedule_thread(env, _this);
   RestoreSwitching(switching_state);
 #endif
   /*  while (clsp->parampass_cond==0)

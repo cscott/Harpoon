@@ -303,7 +303,6 @@ void addwaitthread(user_mutex_t *x) {
   x->tl=gtl;
   transfer();
 #else
-  //  CheckQuanta(0, 0, 1);
   if(currentThread->threadID != 0) {
     print_queue(thread_queue, "BEG addwaitthread queue");
     print_queue(x->queue, "mutex");

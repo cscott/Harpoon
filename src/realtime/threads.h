@@ -2,6 +2,7 @@
 #define REALTIME_THREAD_H_INCLUDED
 
 # include <setjmp.h> //for setjmp and longjmp
+
 jmp_buf main_return_jump; //a jump point for when the main thread exits
 
 void StartSwitching(); //turn thread switching on
@@ -58,12 +59,13 @@ void enqueue(struct thread_queue_struct** h, struct thread_queue_struct** t,
 void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args, jclass thrCls);
 
 void realtime_destroy_thread(JNIEnv *env, jobject thread, void *cls);
+void realtime_schedule_thread(JNIEnv *env, jobject thread);
 void realtime_unschedule_thread(JNIEnv *env, jobject thread);
 void add_running_thread(JNIEnv *env);
 
 void* startMain(void* mclosure);
 
-void setScheduler(JNIEnv *env, jobject thread);
+void initScheduler(JNIEnv *env, jobject thread);
 
 void setupEnv(JNIEnv *env);
 void destroyEnv();
