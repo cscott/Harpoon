@@ -11,7 +11,7 @@ import java.io.PrintWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.9 1999-02-25 02:33:11 andyb Exp $
+ * @version $Id: Print.java,v 1.1.2.10 1999-03-06 04:13:53 duncan Exp $
  */
 public class Print {
     final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -46,15 +46,9 @@ public class Print {
                 pw.print(' ');
         }
 
-        public void visit(Exp e) {
-            indent(indlevel);
-            pw.print("No Exp visitor yet");
-        }
-
-        public void visit(Stm s) {
-            indent(indlevel);
-            pw.print("No Stm visitor yet");
-        }
+	public void visit(Tree e) {
+	    throw new Error("Can't print abstract class!");
+	}
 
         public void visit(BINOP e) {
             indent(indlevel++);
