@@ -49,7 +49,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.21 1999-08-05 15:48:01 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.22 1999-08-05 21:27:08 cananian Exp $
  */
 
 action code {:
@@ -219,7 +219,6 @@ stm	::=	CALL LPAREN exp:e1 COMMA exp:e2 COMMA exp:e3 COMMA ID:id RPAREN
 		{: RESULT = new StmJump(e); :}
 	|	LABEL LPAREN ID:id RPAREN
 		{: RESULT = new StmLabel(id); :}
-	/* Transitional: is this how METHOD is going to look? */
 	|	METHOD LPAREN ID:id RPAREN
 		{: RESULT = new StmMethod(id); :}
 	|	MOVE opt_types:t LPAREN exp:dst COMMA exp:src RPAREN
@@ -233,8 +232,11 @@ stm	::=	CALL LPAREN exp:e1 COMMA exp:e2 COMMA exp:e3 COMMA ID:id RPAREN
 		{: RESULT = new StmSegment(n); :}
 	|	SEQ LPAREN stm:s1 COMMA stm:s2 RPAREN
 		{: RESULT = new StmSeq(s1, s2); :}
+	/* Transitional: Remove when Felix has updated his code. */
 	|	THROW LPAREN exp:e RPAREN
 		{: RESULT = new StmThrow(e); :}
+	|	THROW LPAREN exp:e1 COMMA exp:e2 RPAREN
+		{: RESULT = new StmThrow(e1, e2); :}
 	;
 
 opt_types ::=	/* nothing */

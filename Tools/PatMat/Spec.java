@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.23 1999-08-05 15:48:01 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.24 1999-08-05 21:27:09 cananian Exp $
  */
 public class Spec  {
 
@@ -773,13 +773,19 @@ public class Spec  {
     */
     public static class StmThrow extends Stm {
 	/** The exceptional value. */
-	public final Exp exp;
+	public final Exp retex;
+	/** The location of the exception-handling code to return to. */
+	public final Exp handler;
 	/** Constructs a new <code>Spec.StmThrow</code>.
-	    @param exp The exceptional value expression.
+	    @param retex The exceptional value expression.
+	    @param handler The location of the exception-handling code.
 	*/
-	public StmThrow(Exp exp) { this.exp = exp; }
+	public StmThrow(Exp retex, Exp handler)
+	{ this.retex = retex; this.handler = handler; }
+	/** Provisional: REMOVE this. */
+	public StmThrow(Exp exp) { this.retex = exp; this.handler=null;}
 	public void accept(StmVisitor v) { v.visit(this); }
-	public String toString() { return "THROW("+exp+")"; }
+	public String toString() { return "THROW("+retex+","+handler+")"; }
     }
 
     /** Visitor class for traversing a set of <code>Spec.Leaf</code> objects 
