@@ -36,7 +36,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.6 1999-10-28 04:43:38 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.7 1999-11-02 01:24:24 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -115,11 +115,12 @@ public class DataClaz extends Data {
 	Util.assert(hc.isInterface() || hc.isPrimitive() ||
 		    clslist.get(0)==HClass.forName("java.lang.Object"));
 	// make statements.
-	List stmlist = new ArrayList(m_tb.cdm.maxDepth());
+	List stmlist = new ArrayList(m_tb.cdm.maxDepth()+1);
 	for (Iterator it=clslist.iterator(); it.hasNext(); )
 	    stmlist.add(_DATA(m_nm.label((HClass)it.next())));
-	while (stmlist.size() < m_tb.cdm.maxDepth())
+	while (stmlist.size() <= m_tb.cdm.maxDepth())
 	    stmlist.add(_DATA(new CONST(tf, null))); // pad with nulls.
+	Util.assert(stmlist.size() == m_tb.cdm.maxDepth()+1);
 	return Stm.toStm(stmlist);
     }
     /** Make class methods table. */
