@@ -25,7 +25,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.25 1998-08-08 14:38:37 cananian Exp $
+ * @version $Id: HClass.java,v 1.26 1998-08-20 22:47:07 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -1011,7 +1011,7 @@ public class HClass {
   /** The <code>HClass</code> object representing the primitive type void.*/
   public static final HClass Void=forClass((new Primitive() { }).getClass());
   /** Gratuitous inner interface */
-  interface Primitive { }
+  static interface Primitive { }
   // Dig *that*, Ken Arnold!
 
 
