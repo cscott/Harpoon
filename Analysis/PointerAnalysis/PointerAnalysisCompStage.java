@@ -57,7 +57,7 @@ import java.io.InputStreamReader;
  * <code>PointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysisCompStage.java,v 1.6 2003-10-26 16:41:19 salcianu Exp $
+ * @version $Id: PointerAnalysisCompStage.java,v 1.7 2003-11-04 16:01:13 salcianu Exp $
  */
 public class PointerAnalysisCompStage extends CompilerStageEZ {
 
@@ -110,8 +110,8 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     public List/*<Option>*/ getOptions() {
 	List/*<Option>*/ opts = new LinkedList/*<Option>*/();
 	
-	opts.add(new Option("pa:d", "Do not use the SmartCallGraph") {
-	    public void action() { SMART_CALL_GRAPH = false; }
+	opts.add(new Option("pa:s", "Use SmartCallGraph (more precise than the default callgraph, but really slow)") {
+	    public void action() { SMART_CALL_GRAPH = true; }
 	});
 	
 	opts.add(new Option("pa:load-pre-analysis", "<fileName>",
@@ -191,8 +191,8 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     private boolean SAVE_PRE_ANALYSIS = false;
     private String preAnalysisFileName = null;
     
-    // by default, use the SmartCallGraph
-    private boolean SMART_CALL_GRAPH  = true;
+    // by default, do not use the SmartCallGraph
+    private boolean SMART_CALL_GRAPH  = false;
     
     private boolean TIMING = false;
     private boolean SHOW_CG = false;
