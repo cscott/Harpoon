@@ -7,7 +7,7 @@ import harpoon.ClassFile.Raw.*;
  * interface type it belongs to.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantNameAndType.java,v 1.7 1998-07-31 07:06:00 cananian Exp $
+ * @version $Id: ConstantNameAndType.java,v 1.8 1998-07-31 13:36:14 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.6"
  * @see Constant
  */
@@ -19,7 +19,7 @@ public class ConstantNameAndType extends Constant {
       Java field name or method name stored as a simple (not fully
       qualified) name, that is, as a Java identifier. */
   public int name_index;
-  /** the valud of the <code>descriptor_index</code> must be a valid
+  /** the value of the <code>descriptor_index</code> must be a valid
       index into the <code>constant_pool</code> table.  The
       <code>constant_pool</code> entry at that index must be a
       <code>CONSTANT_Utf8_info</code> structure representing a valid

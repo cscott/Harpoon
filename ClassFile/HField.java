@@ -8,7 +8,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.1 1998-07-31 13:33:47 cananian Exp $
+ * @version $Id: HField.java,v 1.2 1998-07-31 13:36:11 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -85,7 +85,7 @@ public class HField implements HMember {
   }
   /**
    * Returns a hashcode for this <code>HField</code>.  This is
-   * computed as the exclusive-or of the hascodes for the
+   * computed as the exclusive-or of the hashcodes for the
    * underlying field's declaring class name and its name.
    */
   public int hashCode() {
