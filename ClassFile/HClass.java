@@ -25,7 +25,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.15 1998-08-02 09:25:15 cananian Exp $
+ * @version $Id: HClass.java,v 1.16 1998-08-02 09:39:12 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -502,7 +502,9 @@ public class HClass {
     String frmPackage = frmClass.getPackage();
     UniqueVector v = new UniqueVector();
     // can ignore methods from interfaces (they'll be declared methods)
-    // XXX CHECK THIS ASSERTION.
+    //  (this is correct from experiment.  The compiler adds
+    //   abstract methods from the interface to the classfile if they're
+    //   not explicitly present in the source.)
     // grab fields from superclasses, subject to access mode constraints.
     HClass sup = getSuperclass();
     HMethod supm[] = (sup==null)?new HMethod[0]:sup.getMethods(frmClass);
