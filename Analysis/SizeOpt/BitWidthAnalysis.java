@@ -84,7 +84,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.20 2001-11-08 00:23:16 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.21 2001-11-14 19:08:37 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -425,13 +425,16 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     /** Raise edge e in Ee/Eq, adding target q to Wq if necessary. */
     void raiseE(Set Ee, Set Eq, Worklist Wq, Context c, Edge e) {
 	Quad q = (Quad) e.to();
-	Ee.add(Default.entry(e, c));
-	// if the quad was already executable, we're done.  EXCEPT for
-	// phi functions, where we need to re-evaluate after making more
-	// edges executable (we skip values coming from non-exec edges)
-	if (Eq.contains(Default.entry(q,c)) && !(q instanceof PHI)) return;
-	Eq.add(Default.entry(q,c));
-	Wq.push(Default.pair(c, q));
+	if (Ee.add(Default.entry(e, c))) {
+	    // if making this edge executable for the first time, verify
+	    // that destination 'q' is marked executable, and add q to the
+	    // work list to be looked at (may be a PHI, needs to be re-eval).
+	    // NOTE that this works even if: quad's already been added
+	    // to Eq (this may happen for PHIs) and even if this edge leads
+	    // to itself (infinite loop in the program).
+	    Eq.add(Default.entry(q,c));
+	    Wq.push(Default.pair(c, q));
+	}
     }
     /** Raise element t to a in V, adding t to Wv if necessary. */
     void raiseV(MultiMap V, Worklist Wv, Context c, Temp t, LatticeVal a) {

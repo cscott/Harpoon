@@ -66,7 +66,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.27 2001-11-08 00:23:02 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.28 2001-11-14 19:08:08 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -227,13 +227,16 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     /** Raise edge e in Ee/Eq, adding target q to Wq if necessary. */
     void raiseE(Set Ee, Set Eq, Worklist Wq, Edge e) {
 	Quad q = (Quad) e.to();
-	Ee.add(e);
-	// if the quad was already executable, we're done.  EXCEPT for
-	// phi functions, where we need to re-evaluate after making more
-	// edges executable (we skip values coming from non-exec edges)
-	if (Eq.contains(q) && !(q instanceof PHI)) return;
-	Eq.add(q);
-	Wq.push(q);
+	if (Ee.add(e)) {
+	    // if making this edge executable for the first time, verify
+	    // that destination 'q' is marked executable, and add q to the
+	    // work list to be looked at (may be a PHI, needs to be re-eval).
+	    // NOTE that this works even if: quad's already been added
+	    // to Eq (this may happen for PHIs) and even if this edge leads
+	    // to itself (infinite loop in the program).
+	    Eq.add(q);
+	    Wq.push(q);
+	}
     }
     /** Raise element t to a in V, adding t to Wv if necessary. */
     void raiseV(Map V, Worklist Wv, Temp t, LatticeVal a) {
