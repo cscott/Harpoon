@@ -34,7 +34,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.4 2002-04-10 03:05:15 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.5 2003-07-28 23:24:02 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -153,9 +153,9 @@ final class ReHandler {
 	    while (iterate.hasNext()) {
 		HANDLER h=(HANDLER) iterate.next();
 		if (!reachable.contains(h)) {
-		    Enumeration enum=h.protectedQuads();
-		    while (enum.hasMoreElements()) {
-			if (reachable.contains(enum.nextElement())) {
+		    Enumeration _enum_=h.protectedQuads();
+		    while (_enum_.hasMoreElements()) {
+			if (reachable.contains(_enum_.nextElement())) {
 			    todo.push(h);
 			    handlerset.add(h);
 			    change=true;
@@ -1717,9 +1717,9 @@ static class CleanVisitor extends QuadVisitor {
 	this.todo=todo;
 	for (Iterator i=handlerset.iterator();i.hasNext();) {
 	    HANDLER h=(HANDLER)i.next();
-	    for (Enumeration enum=h.protectedQuads();
-		 enum.hasMoreElements();)
-		protectedquads.add(enum.nextElement());	    
+	    for (Enumeration _enum_=h.protectedQuads();
+		 _enum_.hasMoreElements();)
+		protectedquads.add(_enum_.nextElement());	    
 	}
     }
 
@@ -1781,9 +1781,9 @@ static class CleanVisitor extends QuadVisitor {
 		todo.add(q.prev(i));
 	    if (ishandler) {
 		//notify the handled quads
-		for (Enumeration enum=((HANDLER) q).protectedQuads();
-		     enum.hasMoreElements();)
-		    todo.add(enum.nextElement());
+		for (Enumeration _enum_=((HANDLER) q).protectedQuads();
+		     _enum_.hasMoreElements();)
+		    todo.add(_enum_.nextElement());
 	    }
 	}
     }

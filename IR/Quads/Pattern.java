@@ -22,7 +22,7 @@ import java.util.Set;
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.4 2002-04-10 03:05:15 cananian Exp $
+ * @version $Id: Pattern.java,v 1.5 2003-07-28 23:24:02 cananian Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -229,9 +229,9 @@ public class Pattern {
 	    while (iterateh.hasNext()) {
 		HANDLER h=(HANDLER) iterateh.next();
 		if (!reachable.contains(h)) {
-		    Enumeration enum=h.protectedQuads();
-		    while (enum.hasMoreElements()) {
-			Object ne=enum.nextElement();
+		    Enumeration _enum_=h.protectedQuads();
+		    while (_enum_.hasMoreElements()) {
+			Object ne=_enum_.nextElement();
 			if (reachable.contains(ne)) {
 			    todo.push(h);
 			    handlerset.push(h);
