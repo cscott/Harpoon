@@ -29,11 +29,9 @@ import java.util.Map;
  * representation in SSI form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSI.java,v 1.1.2.6 2000-05-13 20:10:28 cananian Exp $
+ * @version $Id: LowQuadSSI.java,v 1.1.2.7 2000-05-17 03:19:30 cananian Exp $
  */
 public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
-    private Derivation  m_derivation;
-
     /** The name of this code view. */
     public static final String codename  = "low-quad-ssa";
 
@@ -52,7 +50,7 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
       
 	final LowQuadFactory lqf =  // javac bug workaround to let qf be
 	    (LowQuadFactory) qf;    // visible in anonymous Derivation below.
-	m_derivation = new Derivation() {
+	setDerivation(new Derivation() {
 	    public DList derivation(HCodeElement hce, Temp t) {
 		Util.assert(hce!=null && t!=null);
 		if (dT.get(t)==null && tT.get(t)==null)
@@ -65,7 +63,7 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
 		    throw new TypeNotKnownException(hce, t);
 		return (HClass)tT.get(t);
 	    }
-	};
+	});
 	setAllocationInformation(aim);
     }
 
@@ -75,7 +73,7 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
 	super(code.getMethod(), null);
 	SSIRename rename = new SSIRename(code, qf);
 	quads = rename.rootQuad;
-	m_derivation = rename.derivation;
+	setDerivation(rename.derivation);
 	setAllocationInformation(rename.allocInfo);
     }
 
@@ -148,14 +146,5 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
      */
     public static HCodeFactory codeFactory() {  
 	return codeFactory(QuadSSI.codeFactory());
-    }
-
-    // implement derivation.
-    public DList derivation(HCodeElement hce, Temp t) {
-	return m_derivation.derivation(hce, t);
-    }
-
-    public HClass typeMap(HCodeElement hce, Temp t) {
-	return m_derivation.typeMap(hce, t);
     }
 }

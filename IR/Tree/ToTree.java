@@ -72,7 +72,7 @@ import java.util.Stack;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.79 2000-04-04 01:57:50 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.80 2000-05-17 03:19:50 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -130,7 +130,7 @@ class ToTree {
 
 	// Construct a list of harpoon.IR.Tree.Stm objects
 	TranslationVisitor tv = new TranslationVisitor
-	    (tf, rd, (Derivation) code, ai, eo, fn, m_dg, ctm);
+	    (tf, rd, code.getDerivation(), ai, eo, fn, m_dg, ctm);
 						       
 	// traverse, starting with the METHOD quad.
 	dfsTraverse((harpoon.IR.Quads.METHOD)root.next(1), 0,

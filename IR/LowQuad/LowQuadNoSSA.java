@@ -4,18 +4,11 @@
 package harpoon.IR.LowQuad;
 
 import harpoon.Analysis.Maps.Derivation;
-import harpoon.Analysis.Maps.Derivation.DList;
-import harpoon.Analysis.Maps.TypeMap;
-import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
-import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
-import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.ToNoSSA;
-import harpoon.Temp.CloningTempMap;
-import harpoon.Temp.Temp;
 
 /**
  * The <code>LowQuadNoSSA</code> codeview exposes a lowquad-based 
@@ -27,11 +20,9 @@ import harpoon.Temp.Temp;
  * always be empty.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.26 2000-04-14 04:06:22 bdemsky Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.27 2000-05-17 03:19:30 cananian Exp $
  */
 public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
-    private Derivation m_derivation;
-
     /** The name of this code view. */
     public static final String codename  = "low-quad-no-ssa";
 
@@ -43,7 +34,7 @@ public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
       
 	translator   = new ToNoSSA(qf, code, (Derivation) code);
 	quads        = translator.getQuads();
-	m_derivation = translator.getDerivation();
+	setDerivation(translator.getDerivation());
 	setAllocationInformation(translator.getAllocationInformation());
     }
   
@@ -107,13 +98,5 @@ public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
      */
     public static HCodeFactory codeFactory() {  
 	return codeFactory(LowQuadSSI.codeFactory());
-    }
-
-    public DList derivation(HCodeElement hce, Temp t) {
-	return m_derivation.derivation(hce, t);
-    }
-
-    public HClass typeMap(HCodeElement hce, Temp t) {
-	return m_derivation.typeMap(hce, t);
     }
 }

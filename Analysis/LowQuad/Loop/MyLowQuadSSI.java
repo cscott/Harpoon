@@ -23,22 +23,24 @@ import java.util.Iterator;
  * <code>MyLowQuadSSI</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadSSI.java,v 1.1.2.9 2000-04-14 18:10:36 bdemsky Exp $
+ * @version $Id: MyLowQuadSSI.java,v 1.1.2.10 2000-05-17 03:19:52 cananian Exp $
  */
 
-public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI {
-    //harpoon.IR.LowQuad.Code  {
+public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI
+    implements Derivation
+    /* ergh.  implementing Derivation directly is bad.  bdemsky should fix. */
+{
     HashMap dT;
     HashMap tT;
     public static final String codename = "low-quad-ssa";
-    harpoon.IR.LowQuad.Code parent;
+    Derivation parentDerivation;
     Map quadmap;
     TempMap tempMap;
     Map quadmapchanges;
     
     MyLowQuadSSI(final LowQuadSSI code) {
 	super(code.getMethod(),null);
-	parent=code;
+	parentDerivation=code.getDerivation();
 	Object[] Maps=Quad.cloneMaps(qf, (Quad)code.getRootElement());
 	quadmap=(Map)Maps[0];
 	tempMap=(TempMap)Maps[1];
@@ -47,6 +49,7 @@ public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI {
 	tT=new HashMap();
 	quadmapchanges=new HashMap();
 	buildmaps(code);
+	setDerivation(this);
     }
     
     private void buildmaps(final HCode code) {
@@ -55,13 +58,13 @@ public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI {
 	    Quad q=(Quad)iterate.next();
 	    Temp[] defs=q.def();
 	    for(int i=0;i<defs.length;i++) {
-		Derivation.DList parents=parent.derivation(q, defs[i]);
+		Derivation.DList parents=parentDerivation.derivation(q, defs[i]);
 		if (parents!=null) {
 		    dT.put(tempMap.tempMap(defs[i]),Derivation.DList.rename(parents,tempMap));
 		    tT.put(tempMap.tempMap(defs[i]), 
 			   new Error("Cant type derived pointer: "+tempMap.tempMap(defs[i])));
 		} else
-		    tT.put(tempMap.tempMap(defs[i]),parent.typeMap(null,defs[i]));
+		    tT.put(tempMap.tempMap(defs[i]),parentDerivation.typeMap(null,defs[i]));
 	    }
 	}
     }
@@ -71,6 +74,7 @@ public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI {
 	dT=new HashMap();
 	tT=new HashMap();
 	quadmapchanges=new HashMap();
+	setDerivation(this);
     }
     
     public Quad quadMap(Quad q) {
@@ -114,7 +118,7 @@ public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI {
     public HCode clone(HMethod newMethod) {
 	MyLowQuadSSI lqs=new MyLowQuadSSI(newMethod, null);
 	lqs.quads=Quad.clone(lqs.qf, quads);
-	lqs.parent=this;
+	lqs.parentDerivation=this.getDerivation();
 	Object[] Maps=Quad.cloneMaps(lqs.qf, (Quad)this.getRootElement());
 	lqs.quadmap=(Map)Maps[0];
 	lqs.tempMap=(TempMap)Maps[1];

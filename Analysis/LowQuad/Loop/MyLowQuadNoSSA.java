@@ -24,15 +24,17 @@ import java.util.Iterator;
  * <code>MyLowQuadNoSSA</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadNoSSA.java,v 1.1.2.2 2000-04-14 18:10:36 bdemsky Exp $
+ * @version $Id: MyLowQuadNoSSA.java,v 1.1.2.3 2000-05-17 03:19:52 cananian Exp $
  */
 
-public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA {
-    //harpoon.IR.LowQuad.Code
+public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
+    implements Derivation 
+    /* ergh.  implementing Derivation directly is bad.  bdemsky should fix. */
+{
     HashMap dT;
     HashMap tT;
     public static final String codename = "low-quad-ssa";
-    harpoon.IR.LowQuad.Code parent;
+    Derivation parentDerivation;
     Map quadmap;
     TempMap tempMap;
     
@@ -44,8 +46,9 @@ public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA {
 	quadmap=translate.quadMap();
 	dT=new HashMap();
 	tT=new HashMap();
-	parent=code;
+	parentDerivation=code.getDerivation();
 	buildmaps(code);
+	setDerivation(this);
     }
 
     private void buildmaps(final HCode code) {
@@ -54,13 +57,13 @@ public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA {
 	    Quad q=(Quad)iterate.next();
 	    Temp[] defs=q.def();
 	    for(int i=0;i<defs.length;i++) {
-		Derivation.DList parents=parent.derivation(q, defs[i]);
+		Derivation.DList parents=parentDerivation.derivation(q, defs[i]);
 		if (parents!=null) {
 		    dT.put(tempMap.tempMap(defs[i]),Derivation.DList.rename(parents,tempMap));
 		    tT.put(tempMap.tempMap(defs[i]), 
 			   new Error("Cant type derived pointer: "+tempMap.tempMap(defs[i])));
 		} else
-		    tT.put(tempMap.tempMap(defs[i]),parent.typeMap(null,defs[i]));
+		    tT.put(tempMap.tempMap(defs[i]),parentDerivation.typeMap(null,defs[i]));
 	    }
 	}
     }

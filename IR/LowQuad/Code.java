@@ -20,10 +20,9 @@ import java.util.Hashtable;
  * shared methods for the various codeviews using <code>LowQuad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.13 2000-03-29 06:52:28 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.14 2000-05-17 03:19:30 cananian Exp $
  */
 public abstract class Code extends harpoon.IR.Quads.Code 
-    implements Derivation, TypeMap
 {
     /** Make the quad factory. */
     protected harpoon.IR.Quads.QuadFactory newQF(final HMethod parent) {
@@ -44,7 +43,12 @@ public abstract class Code extends harpoon.IR.Quads.Code
 	super(parent, quads);
     }
 
-    /** Implement derivation interface. */
-    public abstract DList derivation(HCodeElement hce, Temp t);
-    public abstract HClass typeMap(HCodeElement hce, Temp t);
+    // Provide access to derivation information.
+    private Derivation m_derivation = null;
+    /** Return a <code>Derivation</code> object for this
+     *  <code>LowQuad.Code</code>. */
+    public Derivation getDerivation() { return m_derivation; }
+    /** Allow subclasses to initialize the <code>Derivation</code> for
+     *  this <code>LowQuad.Code</code>. */
+    protected void setDerivation(Derivation deriv) { m_derivation = deriv; }
 }
