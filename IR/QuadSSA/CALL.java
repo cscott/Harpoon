@@ -11,10 +11,18 @@ import harpoon.Util.Util;
  * <code>CALL</code> objects represent method invocations.<p>
  * The <code>objectref</code> field will be <code>null</code> for
  * static methods; the <code>retval</code> field will be <code>null</code>
- * for <code>void</code> methods.
+ * for <code>void</code> methods.<p>
+ *
+ * <strong>It is a semantic error for the <code>objectref</code> Temp
+ * of a non-static method <code>CALL</code> to be able to have the value
+ * <code>null</code> at run-time.</strong> A separate null-pointer
+ * test should always precede the <code>CALL</code> quad if
+ * <code>objectref</code> may be null at run-time.  Standard java
+ * invocation throws a <code>NullPointerException</code> if the object
+ * reference is <code>null</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.22 1998-10-08 21:05:28 cananian Exp $
+ * @version $Id: CALL.java,v 1.23 1998-10-10 03:27:24 cananian Exp $ 
  */
 
 public class CALL extends Quad {

@@ -8,10 +8,17 @@ import harpoon.Temp.TempMap;
  * <code>INSTANCEOF</code> objects represent an 'instanceof' evaluation.
  * <code>INSTANCEOF</code> assigns a boolean value to a temporary after
  * evaluating whether a certain temporary is an instance of a given
- * class type.
+ * class type.<p>
+ *
+ * <strong>It is a semantic error for the <code>src</code> Temp to be able to
+ * have the value <code>null</code> at run-time.</strong> A separate
+ * null-pointer test should always precede the <code>INSTANCEOF</code>
+ * quad if src may be null at run-time.  Standard java
+ * <code>instanceof</code> returns <code>true</code> given a
+ * <code>null</code> source object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSTANCEOF.java,v 1.7 1998-09-16 06:32:48 cananian Exp $
+ * @version $Id: INSTANCEOF.java,v 1.8 1998-10-10 03:27:24 cananian Exp $ 
  */
 
 public class INSTANCEOF extends Quad {
