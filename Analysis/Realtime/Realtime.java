@@ -33,11 +33,15 @@ public class Realtime {
     public static boolean REALTIME_JAVA = false;
     
     /** Determine which analysis method to use. */
-    public static int ANALYSIS_METHOD = 0;
+    public static int ANALYSIS_METHOD = 1;
     /** Very conservative analysis method - keep all checks */
     public static final int SIMPLE = 0;
     /** Pointer analysis to determine whether checks can be removed */
-    public static final int POINTER_ANALYSIS = 1;
+    public static final int CHEESY_POINTER_ANALYSIS = 1;
+    /** More complicated pointer analysis to determine which checks to 
+     *  remove. 
+     */
+    public static final int REAL_POINTER_ANALYSIS = 2;
 
 
     /** Creates a field memoryArea on <code>java.lang.Object</code>.
@@ -145,7 +149,11 @@ public class Realtime {
 	    cr = new SimpleCheckRemoval();
 	    break; 
 	}
-	case POINTER_ANALYSIS: {
+	case CHEESY_POINTER_ANALYSIS: {
+	    cr = new CheesyPACheckRemoval(linker, ch, parent, roots);
+	    break;
+	}
+	case REAL_POINTER_ANALYSIS: {
 	    cr = new PACheckRemoval(linker, ch, parent, roots);
 	    break;
 	}
