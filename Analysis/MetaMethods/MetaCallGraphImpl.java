@@ -80,7 +80,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.8 2002-05-02 22:11:39 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.9 2002-11-30 06:33:41 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -378,7 +378,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     private Collection calls = null;
 
     private void analyze_meta_method() {
-	//if(DEBUG)
+	if(DEBUG)
 	    System.out.println("\n\n%%: " + mm_work);
 
 	HMethod hm = mm_work.getHMethod();
