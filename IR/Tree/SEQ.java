@@ -14,7 +14,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.9 1999-07-30 20:20:15 pnkfelix Exp $
+ * @version $Id: SEQ.java,v 1.1.2.10 1999-08-03 21:12:58 duncan Exp $
  */
 public class SEQ extends Stm {
     /** The statement to evaluate first. */
@@ -43,6 +43,7 @@ public class SEQ extends Stm {
     public int kind() { return TreeKind.SEQ; }
 
     public Stm build(ExpList kids) {throw new Error("build() not applicable to SEQ");}
+    public Stm build(TreeFactory tf, ExpList kids) {throw new Error("build() not applicable to SEQ");}
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
 

@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.14 1999-07-30 20:20:15 pnkfelix Exp $
+ * @version $Id: UNOP.java,v 1.1.2.15 1999-08-03 21:12:58 duncan Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
@@ -160,7 +160,10 @@ public class UNOP extends OPER {
 
     public ExpList kids() { return new ExpList(operand, null); }
     public int kind() { return TreeKind.UNOP; }
-    public Exp build(ExpList kids) {
+
+    public Exp build(ExpList kids) { return build(tf, kids); } 
+    public Exp build(TreeFactory tf, ExpList kids) {
+	Util.assert(tf == kids.head.tf);
 	return new UNOP(tf, this, optype, op, kids.head);
     }
     /** Accept a visitor */

@@ -12,8 +12,8 @@ import harpoon.Temp.Temp;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The <code>ToCanonicalTree</code> class translates tree code to 
@@ -21,7 +21,7 @@ import java.util.Hashtable;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.7 1999-07-30 22:15:10 duncan Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.8 1999-08-03 21:12:58 duncan Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -37,7 +37,7 @@ public class ToCanonicalTree implements Derivation, TypeMap {
     public ToCanonicalTree(final TreeFactory tf, TreeCode code) { 
 	Util.assert(tf.getParent().getName().equals("canonical-tree"));
 	
-    	final Hashtable dT = new Hashtable();
+    	final Map dT = new HashMap();
 
 	m_tree = translate(tf, code, dT);
 	m_derivation = new Derivation() {
@@ -46,9 +46,9 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 		else {
 		    Object deriv = dT.get(new Tuple(new Object[] { hce, t }));
 		    if (deriv instanceof Error)
-			throw (Error)((Error)deriv).fillInStackTrace();
+		    throw (Error)((Error)deriv).fillInStackTrace();
 		    else
-			return (DList)deriv;
+		    return (DList)deriv;
 		}
 	    }
 	};
@@ -59,9 +59,9 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 		else {
 		    Object type = dT.get(t);   // Ignores hc parameter
 		    if (type instanceof Error) 
-			throw (Error)((Error)type).fillInStackTrace();
+		    throw (Error)((Error)type).fillInStackTrace();
 		    else                       
-			return (HClass)type;
+		    return (HClass)type;
 		}
 	    }
 	};
@@ -90,48 +90,43 @@ public class ToCanonicalTree implements Derivation, TypeMap {
     }
 
     // translate to canonical form
-    private Tree translate(TreeFactory tf, TreeCode code, Hashtable dT) {
-	CanonicalizingVisitor cv;          // Translates the TreeCode
-	Stm                   rootClone;   // root Tree of codeClone
-	TreeCode              codeClone;   // A clone of code
-	TreeMap               tm;          // maps old trees to x-lated trees
- 
-	tm        = new TreeMap();
-	codeClone = (TreeCode)(code.clone(code.getMethod(), code.getFrame()));
-	rootClone = (Stm)codeClone.getRootElement();
-	cv        = new CanonicalizingVisitor(tf, tm, codeClone, dT);
+    private Tree translate(TreeFactory tf, TreeCode code, Map dT) {
+	CanonicalizingVisitor cv;    // Translates the TreeCode
+	Stm                   root;  // The root of "code"
+	TreeMap               tm;    // maps old trees to translated trees
+
+	tm   = new TreeMap();
+	cv   = new CanonicalizingVisitor(tf, tm, code, dT);
+	root = (Stm)code.getRootElement();
 
 	// This visitor recursively visits all relevant nodes on its own
-	rootClone.visit(cv);
+	root.visit(cv);
 
 	// Return the node which rootClone has been mapped to
-	return tm.get(rootClone);
+	return tm.get(root);
     }
 
     // Visitor class to translate to canonical form
     class CanonicalizingVisitor extends TreeVisitor {
+	private CloningTempMap ctm; 
 	private Derivation  derivation;
 	private TreeCode    code;
-	private StmExpList  nopNull;	
 	private TreeFactory tf; 
 	private TreeMap     treeMap;
 	private TypeMap     typeMap;
-	private Hashtable   dT;
+	private Map         dT;
 
 	public CanonicalizingVisitor(TreeFactory tf, TreeMap tm, 
-				     TreeCode code, Hashtable dT) {
+				     TreeCode code, Map dT) {
 	    this.code       = code;
 	    this.derivation = code;
 	    this.treeMap    = tm;
 	    this.dT         = dT;
 	    this.tf         = tf;
 	    this.typeMap    = code;
-	    
-	    this.nopNull = new StmExpList
-		(new EXP
-		 (tf, code.getRootElement(), 
-		  new CONST(tf, code.getRootElement(), 0)),
-		 null);
+	    this.ctm        = new CloningTempMap
+		(((Stm)code.getRootElement()).getFactory().tempFactory(), 
+		 tf.tempFactory());
 	}
 
 	public void visit(Tree t) { 
@@ -139,25 +134,25 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	}
 
 	public void visit(MOVE s) {
-	    Tree t = treeMap.get(s);
 	    s.src.visit(this);
 
 	    if (s.dst.kind()==TreeKind.ESEQ) {
+		Util.assert(false, "Dangerous use of ESEQ");
 		ESEQ eseq = (ESEQ)s.dst;
 		eseq.exp.visit(this);
 		eseq.stm.visit(this);
 		SEQ tmp = new SEQ
-		    (tf, s, 
+		    (tf, treeMap.get(eseq.stm), 
 		     s, 
 		     new MOVE
 		     (tf, s, 
 		      treeMap.get(eseq.exp), 
 		      treeMap.get(s.src)));
 		tmp.visit(this);
-		treeMap.map(s, tmp);
+		treeMap.map(s, treeMap.get(tmp));
 	    }
 	    else {
-		treeMap.map(s, reorderStm(s));
+		treeMap.map(s, reorderMove(s));
 	    }
 	}
       
@@ -175,6 +170,11 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	    treeMap.map(e, reorderExp(e));
 	}
 
+	public void visit(TEMP e) { 
+	    TEMP tNew = _MAP(e);
+	    treeMap.map(e, reorderExp(tNew));
+	}
+
 	public void visit(ESEQ e) { 
 	    e.stm.visit(this);
 	    e.exp.visit(this);
@@ -184,31 +184,43 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 				    ((ESEQ)treeMap.get(e.exp)).exp));
 	}
 
-	/* public void visit(TEMP e) { 
-	   updateDT(e, (TEMP)treeMap.get(e));
-	   }*/
+	private Stm reorderMove(MOVE m) { 
+	    if (m.dst.kind() == TreeKind.TEMP) { 
+		TEMP tNew = _MAP((TEMP)m.dst);
+		StmExpList x = reorder(m.kids().tail);
+		return seq(x.stm, m.build(tf, new ExpList(tNew, x.exps)));
+	    }
+	    else {
+		StmExpList x = reorder(m.kids());
+		return seq(x.stm, m.build(tf, x.exps));
+	    }
+	}
 
 	private Stm reorderStm(Stm s) {
 	    StmExpList x = reorder(s.kids());
-	    return seq(x.stm, s.build(x.exps));
+	    return seq(x.stm, s.build(tf, x.exps));
 	}
 	
 	private ESEQ reorderExp (Exp e) {
 	    StmExpList x = reorder(e.kids());
-	    return new ESEQ(tf, e, x.stm, e.build(x.exps));
+	    return new ESEQ(tf, e, x.stm, e.build(tf, x.exps));
 	}
 	
         private StmExpList reorder(ExpList exps) {
-	    if (exps==null) return nopNull;
+	    if (exps==null) 
+		return new StmExpList
+		    (new EXP
+		     (this.tf, code.getRootElement(), 
+		      new CONST(this.tf, code.getRootElement(), 0)),
+		     null);
 	    else {
-		Exp a = exps.head;
-		a.visit(this);
+		Exp a = exps.head; a.visit(this);
 		ESEQ aa = (ESEQ)treeMap.get(a);
 		StmExpList bb = reorder(exps.tail);
 		if (commute(bb.stm, aa.exp))
 		    return new StmExpList(seq(aa.stm,bb.stm), 
 					  new ExpList(aa.exp,bb.exps));
-		else { // FIX: must update DT for new Temp
+		else { // FIXME: must update DT for new Temp
 		    Temp t = new Temp(tf.tempFactory());
 		    return new StmExpList
 			(seq
@@ -243,12 +255,22 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	}
 
 	Stm seq(Stm a, Stm b) {
-	    if (isNop(a)) return b;
+	    if (isNop(a))      return b;
 	    else if (isNop(b)) return a;
 	    else return new SEQ(tf, a, a, b);
 	}
+    
+	private TEMP _MAP(TEMP t) { 
+	    if (code.getFrame().isRegister(t.temp)) { 
+		return (TEMP)t.build(tf, t.kids());
+	    }
+	    else { 
+		Temp tmp = t.temp==null?null:this.ctm.tempMap(t.temp);
+		return new TEMP(tf, t, t.type(), tmp);
+	    }
+	}
     }
-
+    
     static boolean commute(Stm a, Exp b) {
 	return isNop(a) || 
 	    (b.kind()==TreeKind.NAME) || 
@@ -261,7 +283,6 @@ public class ToCanonicalTree implements Derivation, TypeMap {
     }
 }
 
-
 class StmExpList {
     Stm stm;
     ExpList exps;
@@ -269,7 +290,7 @@ class StmExpList {
 }
 
 class TreeMap {
-    private Hashtable h = new Hashtable();   
+    private Map h = new HashMap();   
     void map(Tree t1, Tree t2) { h.put(t1, t2); }
     Exp get(Exp e) { return (Exp)h.get(e); }
     Stm get(Stm s) { return (Stm)h.get(s); }

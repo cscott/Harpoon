@@ -12,6 +12,7 @@ import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 
 /*
  * The <code>TreeCode</code> codeview exposes a tree-based representation.
@@ -23,7 +24,7 @@ import harpoon.Temp.Temp;
  * The tree form is based around Andrew Appel's tree form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: TreeCode.java,v 1.1.2.8 1999-07-30 20:41:35 duncan Exp $
+ * @version $Id: TreeCode.java,v 1.1.2.9 1999-08-03 21:12:58 duncan Exp $
  * 
  */
 public class TreeCode extends Code {
@@ -57,6 +58,8 @@ public class TreeCode extends Code {
 	TreeCode             tc  = new TreeCode(newMethod, null, frame); 
 	final CloningTempMap ctm = new CloningTempMap
 	    (this.tf.tempFactory(), tc.tf.tempFactory());
+	Util.assert(tf.getFrame().regTempFactory() == this.getFrame().regTempFactory());
+
 
 	tc.tree = (Tree)(Tree.clone(tc.tf, ctm, tree));
 	tc.derivation = new Derivation() { 

@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: THROW.java,v 1.1.2.6 1999-07-30 20:20:15 pnkfelix Exp $
+ * @version  $Id: THROW.java,v 1.1.2.7 1999-08-03 21:12:58 duncan Exp $
  */
 public class THROW extends Stm implements Typed {
     /** The exceptional value to return */
@@ -28,7 +28,10 @@ public class THROW extends Stm implements Typed {
   
     public ExpList kids() { return new ExpList(retex, null); }
     public int kind() { return TreeKind.THROW; }
-    public Stm build(ExpList kids) {
+
+    public Stm build(ExpList kids) { return build(tf, kids); } 
+    public Stm build(TreeFactory tf, ExpList kids) { 
+	Util.assert(tf == kids.head.tf);
 	return new THROW(tf, this, kids.head);
     }
 

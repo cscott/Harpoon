@@ -14,8 +14,8 @@ import harpoon.Temp.Temp;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
 
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,16 +27,16 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.2 1999-07-29 01:13:15 pnkfelix Exp $
+ * @version $Id: Data.java,v 1.1.2.3 1999-08-03 21:12:57 duncan Exp $
  */
-class Data extends Code implements HData { 
+public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
 
     private final EdgeInitializer  edgeInitializer;
     private final HClass           cls;
     
     public Data(HClass cls, Frame frame) { 
-	super(cls.getMethod("<clinit>", new HClass[0]), null, frame);
+	super(cls.getMethods()[0], null, frame);
 	this.cls = cls;
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -45,10 +45,11 @@ class Data extends Code implements HData {
 	//                                                           //
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-	List       up     = new ArrayList();  // class data above the cls ptr
-	List       down   = new ArrayList();  // class data below the cls ptr
+	ArrayList  up     = new ArrayList();  // class data above the cls ptr
+	ArrayList  down   = new ArrayList();  // class data below the cls ptr
 	List       iList  = new ArrayList();  // list of class's interfaces
 	LinkedList sfList = new LinkedList(); // list of class's static fields
+	List       rList  = new ArrayList();  // tables for reflection
 	OffsetMap  offm   = frame.getOffsetMap();
 
 	// Add interface list pointer
@@ -61,10 +62,11 @@ class Data extends Code implements HData {
 	    
 	// FIX: need to lay out GC tables
 	// FIX: need tables for reflection 
+	// FIX: need tables for static methods
 
 	// Construct null-terminated list of interfaces and
 	// add all interface methods
-	iList.add(iListPtr);
+	iList.add(new LABEL(tf, null, iListPtr));
 	HClass[] interfaces = cls.getInterfaces();
 	for (int i=0; i<interfaces.length; i++) { 
 	    HClass    iFace    = interfaces[i];
@@ -79,68 +81,73 @@ class Data extends Code implements HData {
 		    down);
 	    }
 	}
-	    
+	iList.add(_DATA(new CONST(tf, null, 0)));
+
 	// Add display to list
-	for (HClass sCls=cls; sCls!=null; sCls=cls.getSuperclass()) 
+	for (HClass sCls=cls; sCls!=null; sCls=sCls.getSuperclass()) 
 	    add(offm.displayOffset(sCls),_DATA(offm.label(sCls)),up,down);
 	
-	// Add class methods to list 
+	// Add non-static class methods to list 
 	HMethod[] methods = cls.getMethods();
-	for (int i=0; i<methods.length; i++) 
-	    add(offm.offset(methods[i]),_DATA(offm.label(methods[i])),up,down);
+	for (int i=0; i<methods.length; i++) { 
+	    if (!methods[i].isStatic()) 
+		add(offm.offset(methods[i]),
+		    _DATA(offm.label(methods[i])),up,down);
+	}
 
+	sfList.addLast(new SEGMENT(tf, null, SEGMENT.STATIC_PRIMITIVES));
 	HField[]  fields  = cls.getDeclaredFields();
 	for (int i=0; i<fields.length; i++) { 
 	    HField field = fields[i];
 	    if (field.isStatic()) { 
 		if (field.getType().isPrimitive()) {
-		    sfList.addLast(offm.label(field));
+		    sfList.addLast(_DATA(offm.label(field)));
 		    sfList.addLast(_DATA(new CONST(tf, null, 0)));
 		}
 		else { 
 		    sfList.addFirst(_DATA(new CONST(tf, null, 0)));
-		    sfList.addFirst(offm.label(field));
+		    sfList.addFirst(_DATA(offm.label(field)));
 		}
 	    }
 	}
 	
-	List upR = new ArrayList(); // Reverse the upward list
-	for (int i=0; i<up.size(); i++) upR.add(up.size()-i, up.get(i));
-	
+	// Reverse the upward list
+	Collections.reverse(up);
+
 	// At last, assign the root element
 	this.tree = new SEQ
-	    (tf, null, 
-	     Stm.toStm(upR),
+	    (tf, null,
+	     new SEGMENT(tf, null, SEGMENT.CLASS), 
 	     new SEQ
-	     (tf, null, 
-	      Stm.toStm(down),
+	     (tf, null,
+	      Stm.toStm(up),
 	      new SEQ
 	      (tf, null, 
-	       Stm.toStm(sfList),
-	       Stm.toStm(iList))));
-	
+	       Stm.toStm(down),
+	       new SEQ
+	       (tf, null, 
+		new SEGMENT(tf, null, SEGMENT.STATIC_OBJECTS),
+		new SEQ
+		(tf, null, 
+		 Stm.toStm(sfList),
+		 new SEQ
+		 (tf, null, 
+		  new SEGMENT(tf, null, SEGMENT.CLASS), 
+		  Stm.toStm(iList)))))));
+	     
 	// Compute the edges of this HData
 	(this.edgeInitializer = new EdgeInitializer()).computeEdges();
     }
     
     // Copy constructor, should only be used by the clone() method 
     private Data(HClass cls, Tree tree, Frame frame) { 
-	super(cls.getMethod("<clinit>", new HClass[0]), tree, frame);
+	super(cls.getMethods()[0], tree, frame);
 	this.cls = cls;
 	final CloningTempMap ctm = 
 	    new CloningTempMap
 	    (tree.getFactory().tempFactory(), this.tf.tempFactory());
 	this.tree = (Tree)Tree.clone(this.tf, ctm, tree);
 	(this.edgeInitializer = new EdgeInitializer()).computeEdges();
-
-	// Must update the temps in your frame when you clone the tree form
-	// Failure to do this causes an inconsistency between the new temps
-	// created for the new frame, and the frame's registers mapped
-	// using ctm in Tree.clone(). 
-	Temp[] oldTemps = tree.getFactory().getFrame().getAllRegisters();
-	Temp[] newTemps = this.tf.getFrame().getAllRegisters();
-	for (int i=0; i<oldTemps.length; i++) 
-	    newTemps[i] = oldTemps[i]==null?null:ctm.tempMap(oldTemps[i]);
     }
     
     /** Clone this data representation. The clone has its own copy
@@ -157,6 +164,10 @@ class Data extends Code implements HData {
     
     /** Returns <code>true</code>.  */
     public boolean isCanonical() { return true; } 
+
+    public void print(java.io.PrintWriter pw) {
+	Print.print(pw,this, null);
+    } 
 
     /** 
      * Recomputes the control-flow graph exposed through this codeview
@@ -200,13 +211,36 @@ class Data extends Code implements HData {
      *                                                          *
      *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-    private void add(int index, Object elem, List up, List down) { 
-	if (index<0) up.add(-index, elem);
-	else         down.add(index, elem);
+    private void add(int index, Tree elem, ArrayList up, ArrayList down) { 
+	int size;
+	if (index<0) { 
+	    size = (-index)+1;
+	    if (size > up.size()) { 
+		up.ensureCapacity((-index)+1);
+		for (int i=up.size(); i<=size; i++) 
+		    up.add(new DATA(elem.getFactory(), elem));
+	    }	    
+	    up.set(-index, elem);
+	}
+	else {
+	    size = index+1;
+	    if (size > down.size()) { 
+		down.ensureCapacity(index+1);
+		for (int i=down.size(); i<=size; i++) 
+		    down.add(new DATA(elem.getFactory(), elem));
+	    }	    
+	    down.set(index, elem);
+	}
     }
   
-    private DATA _DATA(Exp e) { return new DATA(tf, null, e); }
+    private DATA _DATA(Exp e) { 
+	return new DATA(tf, null, e); 
+    }
 
-    private DATA _DATA(Label l) {return new DATA(tf,null,new NAME(tf,null,l));}
+    private DATA _DATA(Label l) {
+	return new DATA(tf,null,new NAME(tf,null,l));
+    }
+
+    private int wordsize() { return frame.pointersAreLong() ? 8 : 4; }
 }
 

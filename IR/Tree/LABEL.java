@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: LABEL.java,v 1.1.2.6 1999-06-28 18:49:16 duncan Exp $
+ * @version $Id: LABEL.java,v 1.1.2.7 1999-08-03 21:12:57 duncan Exp $
  */
 public class LABEL extends Stm { 
     /** The symbolic name to define. */
@@ -30,8 +30,10 @@ public class LABEL extends Stm {
 
     public int kind() { return TreeKind.LABEL; }
 
-    public Stm build(ExpList kids) {
-	return this;
+    public Stm build(ExpList kids) { return build(tf, kids); } 
+
+    public Stm build(TreeFactory tf, ExpList kids) {
+	return new LABEL(tf, this, label);
     }
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }

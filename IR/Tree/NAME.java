@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NAME.java,v 1.1.2.8 1999-06-29 05:43:53 cananian Exp $
+ * @version $Id: NAME.java,v 1.1.2.9 1999-08-03 21:12:57 duncan Exp $
  */
 public class NAME extends Exp {
     /** The label which this NAME refers to. */
@@ -27,7 +27,12 @@ public class NAME extends Exp {
     }
     public ExpList kids() { return null; }
     public int kind() { return TreeKind.NAME; }
-    public Exp build(ExpList kids) { return this; }
+	
+    public Exp build(ExpList kids) { return build(tf, kids); } 
+    public Exp build(TreeFactory tf, ExpList kids) { 
+	return new NAME(tf, this, label); 
+    }
+
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
 

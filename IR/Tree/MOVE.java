@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.12 1999-07-30 20:20:15 pnkfelix Exp $
+ * @version $Id: MOVE.java,v 1.1.2.13 1999-08-03 21:12:57 duncan Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** The expression giving the destination for the computed value. */
@@ -60,18 +60,19 @@ public class MOVE extends Stm implements Typed {
     }
 
     public ExpList kids() {
-        if (dst.kind()==TreeKind.MEM)
-	   return new ExpList(((MEM)dst).exp, new ExpList(src,null));
-	else return new ExpList(src,null);
+	//        if (dst.kind()==TreeKind.MEM)
+	//	   return new ExpList(((MEM)dst).exp, new ExpList(src,null));
+	//	else return new ExpList(src,null);
+	return new ExpList(dst, new ExpList(src, null));
     }
 
     public int kind() { return TreeKind.MOVE; }
 
-    public Stm build(ExpList kids) {
-        if (dst.kind()==TreeKind.MEM)
-	    return new MOVE(tf, this, dst.build(new ExpList(kids.head, null)),
-			    kids.tail.head);
-	else return new MOVE(tf, this, dst, kids.head);
+    public Stm build(ExpList kids) { return build(tf, kids); } 
+    public Stm build(TreeFactory tf, ExpList kids) {
+	Util.assert(tf == kids.head.tf);
+	Util.assert(tf == kids.tail.head.tf);
+	return new MOVE(tf, this, kids.head, kids.tail.head);
     }
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); } 

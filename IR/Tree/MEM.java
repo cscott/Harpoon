@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MEM.java,v 1.1.2.11 1999-07-30 20:20:15 pnkfelix Exp $
+ * @version $Id: MEM.java,v 1.1.2.12 1999-08-03 21:12:57 duncan Exp $
  */
 public class MEM extends Exp {
     /** A subexpression evaluating to a memory reference. */
@@ -33,7 +33,10 @@ public class MEM extends Exp {
 
     public int kind() { return TreeKind.MEM; }
 
-    public Exp build(ExpList kids) {
+    public Exp build(ExpList kids) { return build(tf, kids); } 
+
+    public Exp build(TreeFactory tf, ExpList kids) {
+	Util.assert(tf == kids.head.tf);
 	return new MEM(tf, this, type, kids.head);
     }
 

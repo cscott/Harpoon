@@ -16,7 +16,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.10 1999-07-30 20:20:15 pnkfelix Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.11 1999-08-03 21:12:57 duncan Exp $
  */
 public class ESEQ extends Exp {
     /** The statement to evaluate for side-effects. */
@@ -29,7 +29,8 @@ public class ESEQ extends Exp {
 	super(tf, source);
 	this.stm=stm; this.exp=exp;
 	Util.assert(stm!=null && exp!=null);
-	Util.assert(tf == exp.tf, "Dest and Src must have same tree factory");
+	Util.assert(tf == exp.tf);
+	Util.assert(tf == stm.tf); 
     }
 
     protected Set defSet() { 
@@ -47,6 +48,9 @@ public class ESEQ extends Exp {
     public int kind() { return TreeKind.ESEQ; }
 
     public Exp build(ExpList kids) {throw new Error("build() not applicable to ESEQ");}
+    
+    public Exp build(TreeFactory tf, ExpList kids) {throw new Error("build() not applicable to ESEQ");}
+
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
 

@@ -15,7 +15,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Stm.java,v 1.1.2.8 1999-07-28 18:09:00 duncan Exp $
+ * @version $Id: Stm.java,v 1.1.2.9 1999-08-03 21:12:58 duncan Exp $
  */
 abstract public class Stm extends Tree {
     protected Stm(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
@@ -30,6 +30,7 @@ abstract public class Stm extends Tree {
     /** Build an <code>Stm</code> of this type from the given list of
      *  subexpressions. */
     abstract public Stm build(ExpList kids);
+    abstract public Stm build(TreeFactory tf, ExpList kids);
 
     // Overridden by MOVE and INVOCATION
     protected Set defSet() { return new HashSet(); }
@@ -40,7 +41,8 @@ abstract public class Stm extends Tree {
     /** Returns a tree-based representation of <code>list</code>.  
      *
      * <br><b>Requires:</b> foreach element, <code>l</code>, of 
-     *                      <code>list</code>, <code>l instanceof Stm</code>.
+     *                      <code>list</code>, 
+     *                      <code>(l != null) && (l instanceof Stm)</code>.
      * <br><b>Modifies:</b>
      * <br><b>Effects: </b> returns a tree-based representation of 
      *                      <code>list</code>.  If <code>list</code> is null,
@@ -54,7 +56,7 @@ abstract public class Stm extends Tree {
 	else { 
 	    Stm          hce = (Stm)list.get(0); 
 	    TreeFactory  tf  = hce.getFactory();
-	    SEQ s=new SEQ(tf,hce,(Stm)list.get(size-1),(Stm)list.get(size-2));
+	    SEQ s=new SEQ(tf,hce,(Stm)list.get(size-2),(Stm)list.get(size-1));
 	    for (ListIterator li=list.listIterator(size-2);li.hasPrevious();) {
 		Stm previous = (Stm)li.previous();
 		Util.assert(previous.getFactory()==tf);

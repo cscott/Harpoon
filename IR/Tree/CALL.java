@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.12 1999-06-28 18:49:16 duncan Exp $
+ * @version $Id: CALL.java,v 1.1.2.13 1999-08-03 21:12:57 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
@@ -31,7 +31,14 @@ public class CALL extends INVOCATION {
 
     public int kind() { return TreeKind.CALL; }
 
-    public Stm build(ExpList kids) {
+    public Stm build(ExpList kids) { return build(tf, kids); }
+
+    public Stm build(TreeFactory tf, ExpList kids) {
+	Util.assert(tf == kids.head.tf && 
+		    tf == kids.tail.head.tf &&
+		    tf == kids.tail.tail.head.tf);
+	for (ExpList e = kids.tail.tail.tail; e!=null; e=e.tail)
+	    Util.assert(tf == e.head.tf);
 	return new CALL(tf, this,
 			kids.head,            // retval
 			kids.tail.head,       // retex

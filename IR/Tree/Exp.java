@@ -12,7 +12,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Exp.java,v 1.1.2.7 1999-07-07 09:47:24 duncan Exp $
+ * @version $Id: Exp.java,v 1.1.2.8 1999-08-03 21:12:57 duncan Exp $
  */
 abstract public class Exp extends Tree implements Typed {
     protected Exp(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
@@ -30,6 +30,7 @@ abstract public class Exp extends Tree implements Typed {
     /** Build an <code>Exp</code> of this type from the given list of
      *  subexpressions. */
     abstract public Exp build(ExpList kids);
+    abstract public Exp build(TreeFactory tf, ExpList kids);
 
     public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);
 

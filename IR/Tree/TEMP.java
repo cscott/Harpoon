@@ -15,7 +15,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.16 1999-07-30 20:41:35 duncan Exp $
+ * @version $Id: TEMP.java,v 1.1.2.17 1999-08-03 21:12:58 duncan Exp $
  */
 public class TEMP extends Exp {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -26,10 +26,12 @@ public class TEMP extends Exp {
     public TEMP(TreeFactory tf, HCodeElement source, int type, Temp temp) {
 	super(tf, source);
 	this.type=type; this.temp=temp;
-	Util.assert(Type.isValid(type) &&
-		    temp!=null &&
-		    (temp.tempFactory() == tf.tempFactory() ||
-                    temp.tempFactory() == tf.getFrame().regTempFactory()));
+	Util.assert(Type.isValid(type));
+	Util.assert(temp!=null);
+	Util.assert((temp.tempFactory() == tf.tempFactory()) ||
+		    (temp.tempFactory() == tf.getFrame().regTempFactory()),
+		    (tf.getFrame().isRegister(temp)?"Register factory":
+		    "Non-register factory") + " is not equal");
     }
     
     public Set useSet() {
@@ -40,7 +42,13 @@ public class TEMP extends Exp {
   
     public ExpList kids() {return null;}
     public int kind() { return TreeKind.TEMP; }
-    public Exp build(ExpList kids) {return this;}
+
+    public Exp build(ExpList kids) { return build(tf, kids); } 
+    public Exp build(TreeFactory tf, ExpList kids) {
+	Util.assert(tf.tempFactory() == temp.tempFactory() ||
+		    tf.getFrame().regTempFactory() == temp.tempFactory());
+	return new TEMP(tf, this, type, temp); 
+    }
 
     // Typed interface:
     public int type() { return type; }
@@ -50,10 +58,14 @@ public class TEMP extends Exp {
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
 	// Registers are immutable
-	if (getFactory().getFrame().isRegister(this.temp)) 
+	if (getFactory().getFrame().isRegister(this.temp)) {
+	    Util.assert(tf.getFrame().isRegister(temp));
 	    return new TEMP(tf, this, this.type, this.temp);
-	else 
+	}
+	else {
+	    Util.assert(getFactory().tempFactory() == this.temp.tempFactory());
 	    return new TEMP(tf, this, this.type, map(ctm, this.temp));
+	}
     }
 
     public String toString() {

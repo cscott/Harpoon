@@ -11,7 +11,7 @@ import java.io.PrintWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.13 1999-07-30 20:41:35 duncan Exp $
+ * @version $Id: Print.java,v 1.1.2.14 1999-08-03 21:12:57 duncan Exp $
  */
 public class Print {
     final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -123,7 +123,8 @@ public class Print {
 	public void visit(DATA s) { 
 	    indent(indlevel++);
 	    pw.print("DATA(");
-	    s.data.visit(this); 
+	    if (s.data==null) pw.print("unspecified value");
+	    else s.data.visit(this); 
 	    indent(indlevel--);
 	    pw.print(")");
 	}

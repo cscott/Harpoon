@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: EXP.java,v 1.1.2.8 1999-07-30 20:20:15 pnkfelix Exp $
+ * @version $Id: EXP.java,v 1.1.2.9 1999-08-03 21:12:57 duncan Exp $
  */
 public class EXP extends Stm {
     /** The expression to evaluate. */
@@ -31,7 +31,10 @@ public class EXP extends Stm {
 
     public int kind() { return TreeKind.EXP; }
 
-    public Stm build(ExpList kids) {
+    public Stm build(ExpList kids) { return build(tf, kids); }
+
+    public Stm build(TreeFactory tf, ExpList kids) {
+	Util.assert(tf == kids.head.tf);
 	return new EXP(tf, this, kids.head);
     }
     /** Accept a visitor */

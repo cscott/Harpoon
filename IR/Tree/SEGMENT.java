@@ -13,7 +13,7 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.2 1999-07-29 19:11:34 duncan Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.3 1999-08-03 21:12:58 duncan Exp $
  */
 public class SEGMENT extends Stm {
     /** Storage for static class data (display, vmtable, etc) */
@@ -42,7 +42,7 @@ public class SEGMENT extends Stm {
     public SEGMENT(TreeFactory tf, HCodeElement source, int segtype) { 
 	super(tf, source); 
 	this.segtype = segtype;
-	Util.assert(segtype>=0 && segtype<3);
+	Util.assert(segtype>=0 && segtype<8);
     }
 
     protected Set defSet() { return new HashSet(); }
@@ -51,7 +51,10 @@ public class SEGMENT extends Stm {
     public ExpList kids()  { return null; } 
     public int     kind()  { return TreeKind.SEGMENT; }
 
-    public Stm build(ExpList kids) { return this; } 
+    public Stm build(ExpList kids) { return build(tf, kids); } 
+    public Stm build(TreeFactory tf, ExpList kids) { 
+	return new SEGMENT(tf, this, segtype); 
+    } 
 
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
@@ -69,7 +72,7 @@ public class SEGMENT extends Stm {
 		  segtype==4 ? "STATIC_OBJECTS"    :
 		  segtype==5 ? "STATIC_PRIMITIVES" :
 		  segtype==6 ? "TEXT"              :
-		  segtype==7 ? "ZERODATA"          :
+		  segtype==7 ? "ZERO_DATA"         :
 		  "UNKNOWN SEGMENT TYPE"); 
 	sb.append(">");
 	return sb.toString();
