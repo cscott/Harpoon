@@ -158,7 +158,11 @@ public class Queue {
 		this.notify();
 		return tmp;
 	    } else {
-		Thread.sleep(java.lang.Math.random()*100);
+		try{
+		    Thread.sleep((long) java.lang.Math.random()*100);
+		} catch(InterruptedException e){
+		    System.out.println(e);
+		}
 		continue;
 	    }
 	}
@@ -188,7 +192,11 @@ public class Queue {
 		queue[write]=object;
 		break;
 	    } else {
-		Thread.sleep(java.lang.Math.random()*100);
+		try{
+		    Thread.sleep((long) java.lang.Math.random()*100);
+		} catch(InterruptedException e){
+		    System.out.println(e);
+		}
 		continue;
 	    }
 	}

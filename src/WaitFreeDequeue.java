@@ -45,8 +45,8 @@ public class WaitFreeDequeue {
 	readerThread = reader;
 	memArea = area;
 	try{
-	    readQueue=new WaitFreeReadQueue(writer, reader, maximum, area, null);
-	    writeQueue=new WaitFreeWriteQueue(writer, reader, maximum, area, null);
+	    readQueue=new WaitFreeReadQueue(writer, reader, maximum, area, false);
+	    writeQueue=new WaitFreeWriteQueue(writer, reader, maximum, area);
 	} catch (Exception e){
 	    System.out.println(e);
 	    System.exit(-1);
@@ -91,8 +91,9 @@ public class WaitFreeDequeue {
      *  @return True, if an element was overwritten. False, if there
      *          is an empty element into which the write occured.
      */
-    public boolean force(Object object) {
-	if (!isFull()) {
+    public boolean force(Object object) 
+	throws MemoryScopeException{
+	if (!writeQueue.isFull()) {
 	    if(nonBlockingWrite(object)){
 		return false;
 	    } else {
