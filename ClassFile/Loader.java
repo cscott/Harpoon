@@ -6,15 +6,18 @@ package harpoon.ClassFile;
 import java.io.File;
 import java.io.InputStream;
 import java.io.FileInputStream;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
+import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
 /** 
  * Class file loader.
@@ -22,7 +25,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.6 1999-01-06 18:45:42 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.7 1999-06-20 22:06:16 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -61,28 +64,28 @@ public abstract class Loader {
   }
 
   /** Static vector of ClasspathElements corresponding to CLASSPATH entries. */
-  static final Vector classpathVector = new Vector();
+  static final List classpathList = new ArrayList();
   static { // initialize classpathVector.
-    Hashtable duplicates = new Hashtable(); // don't add duplicates.
-    for (Enumeration e = classpaths(); e.hasMoreElements(); ) {
-      String path = (String) e.nextElement();
-      if (duplicates.containsKey(path)) continue; // skip duplicate.
-      else duplicates.put(path, path);
+    Set duplicates = new HashSet(); // don't add duplicates.
+    for (Iterator it = classpaths(); it.hasNext(); ) {
+      String path = (String) it.next();
+      if (duplicates.contains(path)) continue; // skip duplicate.
+      else duplicates.add(path);
       if (path.toLowerCase().endsWith(".zip") ||
 	  path.toLowerCase().endsWith(".jar"))
 	try {
-	  classpathVector.addElement(new ZipFileElement(new ZipFile(path)));
+	  classpathList.add(new ZipFileElement(new ZipFile(path)));
 	} catch (IOException ex) { /* skip this zip file, then. */ }
       else
-	classpathVector.addElement(new PathElement(path));
+	classpathList.add(new PathElement(path));
     }
-    classpathVector.trimToSize(); // save memory.
+    ((ArrayList) classpathList).trimToSize(); // save memory.
   }
 
-  /** Enumerate the components of the system CLASSPATH. 
+  /** Iterate over the components of the system CLASSPATH. 
    *  Each element is a <code>String</code> naming one segment of the
    *  CLASSPATH. */
-  public static final Enumeration classpaths() {
+  public static final Iterator classpaths() {
     String classpath = System.getProperty("java.class.path");
     final String pathsep = System.getProperty("path.separator");
 
@@ -91,12 +94,12 @@ public abstract class Loader {
     if (!classpath.endsWith(pathsep)) classpath = classpath + pathsep;
     final String cp = classpath;
 
-    return new Enumeration() {
+    return new UnmodifiableIterator() {
       int i=0;
-      public boolean hasMoreElements() { 
+      public boolean hasNext() { 
 	return (cp.length() > (i+pathsep.length()));
       }
-      public Object nextElement() {
+      public Object next() {
 	i+=pathsep.length(); // cp begins with pathsep.
 	String path = cp.substring(i, cp.indexOf(pathsep, i));
 	i+=path.length(); // skip over path.
@@ -120,8 +123,8 @@ public abstract class Loader {
    * @param name The filename of the resource to locate.
    */
   public static InputStream getResourceAsStream(String name) {
-    for (Enumeration e = classpathVector.elements(); e.hasMoreElements(); ) {
-      ClasspathElement cpe = (ClasspathElement) e.nextElement();
+    for (Iterator it = classpathList.iterator(); it.hasNext(); ) {
+      ClasspathElement cpe = (ClasspathElement) it.next();
       InputStream is = cpe.getResourceAsStream(name);
       if (is!=null) return is; // return stream if found.
     }
