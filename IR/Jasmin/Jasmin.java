@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.27 1999-11-09 03:20:10 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.28 1999-11-12 18:13:38 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -83,7 +83,8 @@ public class Jasmin {
 	//Get modifiers
 	int modifiers=hm[i].getModifiers();
 	//Only print method quads if it isn't Abstract
-	if (!Modifier.isAbstract(modifiers))
+	if ((!Modifier.isAbstract(modifiers))&&
+	    (!Modifier.isNative(modifiers)))
 	    outputQuads(out, hm[i], hc[i]);
 
 	out.println(".end method");
