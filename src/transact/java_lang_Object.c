@@ -25,6 +25,15 @@ compare_and_swapP(void *p/*void **, really*/, void *oldv, void *newv) {
 }
 
 /* helpers */
+static inline jboolean isPrimitive(struct claz *thisclz) {
+    /* from java_lang_Class.c: */
+    /* primitives have null in the first slot of the display. */
+    if (thisclz->display[0]!=NULL) return JNI_FALSE;
+    /* but so do interfaces.  weed them out using the interface list. */
+    if (*(thisclz->interfaces)!=NULL) return JNI_FALSE;
+    return JNI_TRUE;
+}
+
 static struct vinfo *CreateNewVersion(struct inflated_oobj *infl,
 				      struct commitrec *cr,
 				      struct oobj *template,
@@ -32,8 +41,10 @@ static struct vinfo *CreateNewVersion(struct inflated_oobj *infl,
     struct vinfo *nv; /* new version goes here */
     struct claz *claz = template->claz;
     u_int32_t size = claz->size;/* size including header */
-    if (claz->component_claz!=NULL) { /* is an array */
-	assert(0); size+=0;
+    struct claz *cclaz;
+    if (NULL != (cclaz=claz->component_claz)) { /* is an array */
+	int elsize = isPrimitive(cclaz) ? cclaz->size : sizeof(ptroff_t);
+	size += (elsize * ((struct aarray *)template)->length);
     }
     /** size includes header.  sizeof(struct vinfo) also includes header. */
     nv = MALLOC(size+sizeof(*nv)-sizeof(struct oobj));
@@ -119,9 +130,8 @@ static inline jboolean IsNAST(struct commitrec *cs, struct vinfo *v) {
     return JNI_TRUE;
 }
 static inline jint typesize(JNIEnv *env, jclass type) {
-  if (Java_java_lang_Class_isPrimitive(env, type))
-    return FNI_GetClassInfo(type)->claz->size;
-  return sizeof(ptroff_t);
+  struct claz *thisclz = FNI_GetClassInfo(type)->claz;
+  return isPrimitive(thisclz) ? thisclz->size : sizeof(ptroff_t);
 }
 
 /*
@@ -136,7 +146,6 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadableVersion
     struct inflated_oobj *infl;
     struct vinfo *v;
     struct tlist *r;
-    printf("getReadableVersion\n");
     if (!FNI_IS_INFLATED(_this)) FNI_InflateObject(env, _this);
     /* get first_version */
     infl = FNI_UNWRAP(_this)->hashunion.inflated;
@@ -144,6 +153,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadableVersion
     if (v==NULL) v = CreateNewVersion(infl, NULL, FNI_UNWRAP(_this), JNI_TRUE);
     /* make sure we're on the readers list */
     again:
+    if (v->transid==c) goto has_version_and_listed;
     r = &(v->readers);
     do {
 	if (r->transid==c) goto has_version_and_listed; /* we're on! */
@@ -175,6 +185,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadableVersion
     has_version_and_listed:
     /* v has correct version */
     return FNI_WRAP(&(v->obj));
+
     suicide:
     {
 	jclass abortcls = (*env)->FindClass
@@ -195,7 +206,57 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadableVersion
     /** Get a version suitable for reading or writing. */
 JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadWritableVersion
     (JNIEnv *env, jobject _this, jobject commitrec) {
-    assert(0);
+    struct commitrec *c = (struct commitrec *) FNI_UNWRAP(commitrec);
+    struct inflated_oobj *infl;
+    struct vinfo *v;
+    struct tlist *r;
+    if (!FNI_IS_INFLATED(_this)) FNI_InflateObject(env, _this);
+    /* get first version */
+    infl = FNI_UNWRAP(_this)->hashunion.inflated;
+    v = infl->first_version;
+    if (v==NULL) v = CreateNewVersion(infl, NULL, FNI_UNWRAP(_this), JNI_TRUE);
+    /* find last committed transaction */
+    again:
+    if (v->transid==c) goto done;
+    switch (StateP2(infl, v)) {
+    case COMMITTED: break; /* go on and kill readers */
+    case WAITING:
+	/* abort unless c is a non-aborted subtransaction of v->transid */
+	if (!IsNAST(c, v)) goto suicide;
+	else break; /* go on and kill readers */
+    default: /* ABORTED */
+	v = v->anext;
+	goto again; /* try again */
+    }
+    /* kill all readers except my parents */
+    r = &(v->readers);
+    do {
+	struct commitrec *rc=r->transid, *vc=v->transid, *cp;
+	if (rc==NULL) goto nextreader; /* skip null readers */
+	for (cp=c; ; cp=cp->parent) {
+	    if (cp==rc) goto nextreader;/* rc is a parent */
+	    if (cp==vc) break; /* needn't go any higher */
+	}
+	/* not a parent.  kill it. */
+	AbortCR(rc);
+    nextreader:
+	r = r->next;
+    } while (r!=NULL);
+    /* XXX: race condition: new non-parent created before NewVersion */
+    v = CreateNewVersion(infl, c, &v->obj, JNI_FALSE);
+    done:
+    return FNI_WRAP(&(v->obj));
+
+    suicide:
+    {
+	jclass abortcls = (*env)->FindClass
+	    (env, "L" TRANSPKG "TransactionAbortException;");
+	jmethodID methodID=(*env)->GetMethodID
+	    (env, abortcls, "<init>", "(L" TRANSPKG "CommitRecord;)V");
+	(*env)->Throw(env, (*env)->NewObject(env, abortcls, methodID,
+					     commitrec));
+	return NULL;
+    }
 }
 
 /*
@@ -206,7 +267,23 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadWritableVersion
     /** Get the most recently committed version to read from. */
 JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadCommittedVersion
     (JNIEnv *env, jobject _this) {
-    assert(0);
+    struct inflated_oobj *infl;
+    struct vinfo *v;
+    int u = 0;
+    assert(FNI_IS_INFLATED(_this));
+    infl = FNI_UNWRAP(_this)->hashunion.inflated;
+    v = infl->first_version;
+    while (1) {
+	assert(v!=NULL);
+	switch (StateP2(infl, v)) {
+	case COMMITTED: goto done;
+	case WAITING: u++; v=v->wnext; break;
+	default: /* ABORTED */ v=v->anext; break;
+	}
+    }
+    done:
+    /* XXX: unflag some fields if u==0? */
+    return FNI_WRAP(&(v->obj));
 }
 
 /*
@@ -217,7 +294,27 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadCommittedVersion
     /** Get the most recently committed version to write to (and read from). */
 JNIEXPORT jobject JNICALL Java_java_lang_Object_getWriteCommittedVersion
     (JNIEnv *env, jobject _this) {
-    assert(0);
+    struct inflated_oobj *infl;
+    struct vinfo *v;
+    struct tlist *r;
+    /* xxx: possibly downgrade this field to avoid an abort? */
+    assert(FNI_IS_INFLATED(_this));
+    infl = FNI_UNWRAP(_this)->hashunion.inflated;
+    v = infl->first_version;
+    while (AbortCR(v->transid) != COMMITTED) {
+	/* prune list for the sake of writes w/o intervening reads */
+	struct vinfo *nextv = v->anext;
+	/* we remove v carefully, knowing that v could already be removed. */
+	compare_and_swapP(&(infl->first_version), v, nextv);
+	v = nextv;
+    }
+    /* v is a committed transaction. */
+    v->anext = v->wnext = NULL; /* atomic stores, hopefully */
+    /* abort all readers of this committed transaction */
+    for (r=&(v->readers); r!=NULL; r=r->next)
+	AbortCR(r->transid);
+    /* done.  return v. */
+    return FNI_WRAP(&(v->obj));
 }
 
 /*
@@ -229,7 +326,17 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getWriteCommittedVersion
      *  to write (values equal to the FLAG) to. */
 JNIEXPORT jobject JNICALL Java_java_lang_Object_makeCommittedVersion
     (JNIEnv *env, jobject _this) {
-    assert(0);
+    struct inflated_oobj *infl;
+    struct vinfo *v;
+    if (!FNI_IS_INFLATED(_this)) FNI_InflateObject(env, _this);
+    /* are there any versions? */
+    infl = FNI_UNWRAP(_this)->hashunion.inflated;
+    v = infl->first_version;
+    if (v==NULL) v = CreateNewVersion(infl, NULL, FNI_UNWRAP(_this), JNI_TRUE);
+    /* now that there's at least one version, find one that's committed. */
+    /* XXX: if getWriteCommittedVersion does downgrades, we want to
+     *      explicitly *NOT* do one in this case. */
+    return Java_java_lang_Object_getWriteCommittedVersion(env, _this);
 }
 
 /*
@@ -258,6 +365,28 @@ JNIEXPORT void JNICALL Java_java_lang_Object_writeArrayElementFlag
     Java_java_lang_Object_writeFlag(env, _this, eloffset, elsize);
 }
 
+#define WRITEFLAG(type, size, FLAG) \
+void Java_java_lang_Object_writeFlag##size \
+    (JNIEnv *env, jobject _this, jint offset) { \
+    struct oobj *oobj = FNI_UNWRAP(_this); \
+    struct inflated_oobj *infl=oobj->hashunion.inflated; \
+    struct vinfo *v; \
+    type f; \
+    assert(FNI_IS_INFLATED(_this)); \
+    FLEX_MUTEX_LOCK(&infl->mutex); \
+    f = *((type *)(((void *)oobj)+offset)); \
+    if (f==FLAG) goto done; /* flagged before we got the lock. */ \
+    for (v=infl->first_version; v!=NULL; v=v->anext) \
+	*((type *)(((void *)&(v->obj))+offset)) = f; \
+    *((type *)(((void *)oobj)+offset)) = FLAG; \
+    done: \
+    FLEX_MUTEX_UNLOCK(&infl->mutex); \
+}
+WRITEFLAG(jbyte,  1,       ((jbyte)0xF7))
+WRITEFLAG(jshort, 2,             0x02F7)
+WRITEFLAG(jint,   4,         0x44F702F7L)
+WRITEFLAG(jlong,  8, 0x409EE05E44F702F7LL)
+
 /*
  * Class:     java_lang_Object
  * Method:    writeFlag
@@ -267,6 +396,11 @@ JNIEXPORT void JNICALL Java_java_lang_Object_writeArrayElementFlag
      *  this object. */
 JNIEXPORT void JNICALL Java_java_lang_Object_writeFlag
     (JNIEnv *env, jobject _this, jint offset, jint size) {
-  printf("WRITEFLAG %d %d\n", (int)offset, (int)size);
-    assert(0);
+  switch(size) {
+  case 1: Java_java_lang_Object_writeFlag1(env, _this, offset); break;
+  case 2: Java_java_lang_Object_writeFlag2(env, _this, offset); break;
+  case 4: Java_java_lang_Object_writeFlag4(env, _this, offset); break;
+  case 8: Java_java_lang_Object_writeFlag8(env, _this, offset); break;
+  default: assert(0);
+  }
 }
