@@ -31,7 +31,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.2.1 2002-03-11 21:18:02 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.2.2 2002-03-16 07:45:00 cananian Exp $
  */
 public class ObjectBuilder extends harpoon.Backend.Runtime1.ObjectBuilder {
     Runtime runtime;
@@ -54,8 +54,16 @@ public class ObjectBuilder extends harpoon.Backend.Runtime1.ObjectBuilder {
 	stmlist.add(new LABEL(tf, null, info.label(), exported));
 	// claz *index* XXX this is the unique part for RuntimeTiny.
 	if (runtime.clazShrink) {
+	    FieldMap cfm = ((TreeBuilder) runtime.getTreeBuilder())
+		.getClassFieldMap();
 	    int num = runtime.cn.clazNumber(info.type());
-	    stmlist.add(new DATUM(tf, null, new CONST(tf, null, num)));
+	    int bitwidth = runtime.clazBytes*8;
+	    if (bitwidth>16) bitwidth=32; // XXX no 24-bit types
+	    stmlist.add(new DATUM(tf, null, new CONST
+				  (tf, null, bitwidth, false, num)));
+	    Stm s = makeFields(tf, info, cfm.fieldList(info.type()),
+			       -8+(bitwidth/8), -4);
+	    if (s!=null) stmlist.add(s);
 	} else {
 	    // boring, same as superclass
 	    stmlist.add(new DATUM(tf, null, new NAME(tf, null,

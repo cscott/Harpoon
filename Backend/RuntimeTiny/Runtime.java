@@ -40,7 +40,7 @@ import java.util.Set;
  * fields in object layouts.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.3 2002-03-15 23:03:46 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.4 2002-03-16 07:45:00 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Runtime1.Runtime {
     // options.
@@ -57,6 +57,7 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
 
     // local fields
     protected ClazNumbering cn;
+    int clazBytes;
 
     public Runtime(Frame frame, AllocationStrategy as,
 		   HMethod main, boolean prependUnderscore) {
@@ -67,8 +68,6 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
 		   HMethod main, 
 		   boolean prependUnderscore, RootOracle rootOracle) {
 	super(frame,as,main,prependUnderscore,rootOracle);
-	if (clazShrink)
-	    configurationSet.add("check_with_claz_shrink_needed");
     }
     protected ObjectBuilder initObjectBuilder(RootOracle ro) {
 	if (ro==null)
@@ -80,9 +79,12 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
 	    (this, frame.getLinker(), as, frame.pointersAreLong());
     }
     public void setClassHierarchy(ClassHierarchy ch) {
-	super.setClassHierarchy(ch);
 	// do class numbering w/ this classhierarchy
 	this.cn = new CompleteClazNumbering(ch);
+	this.clazBytes = !clazShrink ? 4 :
+	    (Util.log2c(ch.instantiatedClasses().size())+7)/8;
+	// reset treebuilder, etc.
+	super.setClassHierarchy(ch);
     }
     // we're going to hack in our own codefactory in w/ the
     // nativetreecodefactory.  beware: tree is not yet canonicalized!
@@ -95,6 +97,11 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
     }
 
     public List<HData> classData(HClass hc) {
+	// assume classhierarchy is frozen by time this is called.
+	if (clazShrink)
+	    configurationSet.add
+		("check_with_claz_shrink_should_be_"+clazBytes);
+	// end configset
 	List<HData> r = new ArrayList<HData>(super.classData(hc));
 	r.add(new DataClazTable(frame,hc,ch,cn));
 	return r;

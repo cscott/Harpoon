@@ -62,10 +62,10 @@ import java.util.Set;
  * (but slower) object layout.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.4 2002-03-16 01:35:35 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.5 2002-03-16 07:45:00 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder { 
-    Runtime runtime;
+    final Runtime runtime;
 
     protected TreeBuilder(Runtime runtime,
 			  Linker linker,
@@ -78,8 +78,16 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
     // byte-align all fields.
     protected FieldMap initClassFieldMap() {
 	final FieldMap sfm = super.initClassFieldMap();
+	final Runtime runtime = (Runtime) super.runtime;
 	if (!runtime.byteAlign) return sfm;
-	return new TinyClassFieldMap() {
+	return new TinyClassFieldMap(-4+runtime.clazBytes) {
+		public int fieldOffset(HField hf) {
+		    // hack to allow allocating fields in the empty
+		    // space left by the small claz index.
+		    int off = super.fieldOffset(hf);
+		    if (off<0) off-=4;
+		    return off;
+		}
 		public int fieldSize(HField hf) { return sfm.fieldSize(hf); }
 		// conservative gc requires pointers to be aligned.
 		public int fieldAlignment(HField hf) {
@@ -91,6 +99,16 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 		    return sfm.fieldAlignment(hf);
 		}
 	    };
+    }
+    protected FieldMap getClassFieldMap() { return cfm; }
+
+    public int objectSize(HClass hc) {
+	int sz = super.objectSize(hc);
+	// because we can allocate fields at negative offsets, the
+	// superclass sometimes says we've got negative size!
+	// now, we know that ain't true: it just means that we need
+	// no fields past the header, i.e. that "non-header size"==0.
+	return (sz<0) ? 0 : sz;
     }
 
     // allocate 'length' bytes plus object header; fill in object header.
@@ -171,9 +189,11 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 	    (tf, source, Type.POINTER, Bop.ADD,
 	     PTRMASK(tf, source, dg, objectref.unEx(tf)),
 	     new CONST(tf, source, OBJ_CLAZ_OFF));
+	int bitwidth=runtime.clazBytes * 8;
+	if (bitwidth>16) bitwidth=32; // XXX no 24-bit types
 	Exp index_value =
 	    new MEM
-	    (tf, source, Type.INT,/*xxx should be appropriate sub-int type*/
+	    (tf, source, bitwidth, false,
 	     index_pointer);
 	// now look up index in claz table
 	Exp claz_pointer_pointer =

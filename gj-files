@@ -83,6 +83,7 @@ Backend/RuntimeTiny/ObjectBuilder.java
 Backend/RuntimeTiny/PreOrderClazNumbering.java
 Backend/RuntimeTiny/Runtime.java
 Backend/RuntimeTiny/TinyClassFieldMap.java
+Backend/RuntimeTiny/TinyPackedClassFieldMap.java
 Backend/RuntimeTiny/TreeBuilder.java
 ClassFile/Factories.java
 ClassFile/HClass.java
