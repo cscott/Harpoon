@@ -49,8 +49,6 @@ void process_command_line_options(int *pargc, char ***pargv) {
     }
   }  
 
-  printf("optind = %d\n", optind);
-
   /* optind is the index in argv of the first argument that is NOT an
      option (if no option is present, optind = 1 because argv[0] is
      the name of the executable, not an argument). we update argc and
@@ -96,15 +94,7 @@ int main(int argc, char *argv[]) {
   jmethodID getCurrentThreadMethod;
 #endif
 
-  printf("argc=%d\n\n", argc);
-  for(i = 0; i < argc; i++)
-    printf("argv[%d]=%s\n", i, argv[i]);
-
   process_command_line_options(&argc, &argv);
-
-  printf("argc=%d\n\n", argc);
-  for(i = 0; i < argc; i++)
-    printf("argv[%d]=%s\n", i, argv[i]);
 
 #ifdef WITH_REALTIME_THREADS
   StopSwitching(); //turn off thread switching to start
