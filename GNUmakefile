@@ -1,8 +1,8 @@
-# $Id: GNUmakefile,v 1.56 1998-10-16 02:23:59 cananian Exp $
+# $Id: GNUmakefile,v 1.57 1998-10-16 07:30:32 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
-JCC=javac
+JCC=javac -J-mx64m
 JDOC=javadoc
 JAR=jar
 JDOCFLAGS=-version -author # -package
@@ -37,16 +37,20 @@ java:	$(ALLSOURCE) Contrib/getopt/MessagesBundle.properties
 	fi
 	${JCC} ${JFLAGS} ${JFLAGSVERB} $(ALLSOURCE) | \
 		egrep -v '^\[[lc]'
-	@$(MAKE) properties
+	@$(MAKE) --no-print-directory properties
 	touch java
 
 jikes: 	
 	@if [ ! -d harpoon ]; then $(MAKE) first; fi
+	@echo -n Compiling... ""
 	@${JIKES} ${JFLAGS} ${ALLSOURCE}
-	@$(MAKE) properties
+	@echo done.
+	@$(MAKE) --no-print-directory properties
 
 properties:
-	cp Contrib/getopt/MessagesBundle.properties gnu/getopt
+	@echo -n Updating properties... ""
+	@cp Contrib/getopt/MessagesBundle.properties gnu/getopt
+	@echo done.
 
 first:
 	@echo Please wait...
