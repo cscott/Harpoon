@@ -29,7 +29,7 @@ import harpoon.Util.WorkSet;
  * <code>JMain</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JMain.java,v 1.1.2.4 1999-11-13 00:24:49 bdemsky Exp $
+ * @version $Id: JMain.java,v 1.1.2.5 1999-11-15 19:28:21 bdemsky Exp $
  */
 public abstract class JMain extends harpoon.IR.Registration {
 
@@ -75,14 +75,6 @@ public abstract class JMain extends harpoon.IR.Registration {
 		    todo.add(hmx[j]);
 		    flag=true;
 		}
-		if (hmx[j].getName().equalsIgnoreCase("run")) {
-		    todo.add(hmx[j]);
-		    flag=true;
-		}
-		//work around...to force class inclusion
-		if (((j+1)==hmx.length)&&(flag==false)) {
-		    todo.add(hmx[0]);
-		}
 	    }
 	}
 	ClassHierarchy ch1=new QuadClassHierarchy(todo,hcf1);
@@ -110,7 +102,7 @@ public abstract class JMain extends harpoon.IR.Registration {
 	    HMethod hm1[] = interfaceClasses[i].getDeclaredMethods();
 	    WorkSet hmo=new WorkSet();
 	    for (int ind=0;ind<hm1.length;ind++) {
-		//	if (cm1.contains(hm1[ind])||cm2.contains(hm1[ind]))
+		if (cm1.contains(hm1[ind])||cm2.contains(hm1[ind]))
 		    hmo.add(hm1[ind]);
 	    }
 	    HMethod hm[] = new HMethod[hmo.size()];
