@@ -1,11 +1,13 @@
 #include "config.h"
+
+#ifdef WITH_MEMORYSTATISTICS
 #include "flexthread.h"
 #include "gc.h"
 #include <time.h> /* time,localtime for time zone information */
 #include <sys/time.h> /* gettimeofday */
+#include <stdio.h>
+extern FILE *stderr;
 
-
-#ifdef WITH_MEMORYSTATISTICS
 long memorystat;
 #if WITH_THREADS
 flex_mutex_t memstat_mutex=FLEX_MUTEX_INITIALIZER;
@@ -39,7 +41,7 @@ void update_stats() {
     /* log the current peak value and zero it */
     if (initialclock==0)
       initialclock=t;
-    printf("\n time= %ld peak= %ld\n",t-initialclock,lastpeak);
+    fprintf(stderr,"\n time= %ld peak= %ld\n",t-initialclock,lastpeaka);
     lastpeak=0;
     lastpeaka=0;
     startclock=t;
