@@ -28,13 +28,13 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.3.2.1 2002-02-27 08:36:33 cananian Exp $
+ * @version $Id: Quad.java,v 1.3.2.2 2002-03-04 20:34:17 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
                harpoon.IR.Properties.UseDefable,
-               harpoon.IR.Properties.CFGraphable,
-               Cloneable, Comparable, java.io.Serializable
+               harpoon.IR.Properties.CFGraphable<Edge>,
+               Cloneable, Comparable<Quad>, java.io.Serializable
 {
     final QuadFactory qf;
     final String source_file;
@@ -110,13 +110,13 @@ public abstract class Quad
     public Temp[] use() { return new Temp[0]; }
     /** Return all the Temps defined by this Quad. */
     public Temp[] def() { return new Temp[0]; }
-    public Collection useC() { return Arrays.asList(use()); }
-    public Collection defC() { return Arrays.asList(def()); }
+    public Collection<Temp> useC() { return Arrays.asList(use()); }
+    public Collection<Temp> defC() { return Arrays.asList(def()); }
     /*----------------------------------------------------------*/
     /** Array factory: returns <code>Quad[]</code>s */
-    public static final ArrayFactory arrayFactory =
-	new ArrayFactory() {
-	    public Object[] newArray(int len) { return new Quad[len]; }
+    public static final ArrayFactory<Quad> arrayFactory =
+	new ArrayFactory<Quad>() {
+	    public Quad[] newArray(int len) { return new Quad[len]; }
 	};
 
     /*----------------------------------------------------------*/
@@ -152,38 +152,39 @@ public abstract class Quad
     
     /** Returns an array containing all the outgoing edges from this quad. */
     public Edge[] nextEdge() 
-    { return (Edge[]) Util.safeCopy(Edge.arrayFactory, next); }
+    { return Util.safeCopy(Edge.arrayFactory, next); }
     /** Returns an array containing all the incoming edges of this quad. */
     public Edge[] prevEdge() 
-    { return (Edge[]) Util.safeCopy(Edge.arrayFactory, prev); }
+    { return Util.safeCopy(Edge.arrayFactory, prev); }
     /** Returns the <code>i</code>th outgoing edge for this quad. */
     public Edge nextEdge(int i) { return next[i]; }
     /** Returns the <code>i</code>th incoming edge of this quad. */
     public Edge prevEdge(int i) { return prev[i]; }
 
-    // from CFGraphable:
-    public CFGEdge[] edges() {
+    // from CFGraphable<Quad>:
+    public Edge[] edges() {
 	Edge[] e = new Edge[next.length+prev.length];
 	System.arraycopy(next,0,e,0,next.length);
 	System.arraycopy(prev,0,e,next.length,prev.length);
-	return (CFGEdge[]) e;
+	return e;
     }
-    public CFGEdge[] pred() { return prevEdge(); }
-    public CFGEdge[] succ() { return nextEdge(); }
+    public Edge[] pred() { return prevEdge(); }
+    public Edge[] succ() { return nextEdge(); }
 
-    public Collection edgeC() {
-	return new AbstractCollection() {
+    public Collection<Edge> edgeC() {
+	return new AbstractCollection<Edge>() {
 	    public int size() { return next.length + prev.length; }
-	    public Iterator iterator() {
-		return new CombineIterator(new Iterator[] {
-		    new ArrayIterator(next), new ArrayIterator(prev) });
+	    public Iterator<Edge> iterator() {
+		return new CombineIterator<Edge>(new Iterator<Edge>[] {
+		    new ArrayIterator<Edge>(next),
+		    new ArrayIterator<Edge>(prev) });
 	    }
 	};
     }
-    public Collection predC() {
+    public Collection<Edge> predC() {
 	return Collections.unmodifiableList(Arrays.asList(prev));
     }
-    public Collection succC() {
+    public Collection<Edge> succC() {
 	return Collections.unmodifiableList(Arrays.asList(next));
     }
 
@@ -286,8 +287,8 @@ public abstract class Quad
     }
     //-----------------------------------------------------
     // Comparable interface.
-    public int compareTo(Object o) {
-	int cmp = ((Quad)o).getID() - this.getID();
+    public int compareTo(Quad o) {
+	int cmp = o.getID() - this.getID();
 	if (cmp==0 && !this.equals(o))
 	    throw new ClassCastException("Comparing uncomparable Quads.");
 	return cmp;

@@ -30,9 +30,10 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.3.2.1 2002-02-27 08:36:32 cananian Exp $
+ * @version $Id: Code.java,v 1.3.2.2 2002-03-04 20:34:17 cananian Exp $
  */
-public abstract class Code extends HCode implements java.io.Serializable {
+public abstract class Code extends HCode<Quad>
+    implements java.io.Serializable {
     /** The method that this code view represents. */
     protected final HMethod parent;
     /** The quadruples composing this code view. */
@@ -73,8 +74,10 @@ public abstract class Code extends HCode implements java.io.Serializable {
     protected HCodeAndMaps cloneHelper(Code _this, Code qc) {
 	HCodeAndMaps hcam = Quad.cloneWithMaps(qc.qf, _this.quads);
 	// fill in the missing info in the hcam.
-	hcam = new HCodeAndMaps(qc, hcam.elementMap(), hcam.tempMap(),
-				_this, hcam.ancestorElementMap(),
+	hcam = new HCodeAndMaps((HCode)qc, // XXX BUG IN JAVAC
+				hcam.elementMap(), hcam.tempMap(),
+				(HCode)_this, // XXX BUG IN JAVAC
+				hcam.ancestorElementMap(),
 				hcam.ancestorTempMap());
 	// finish setting up qc.
 	qc.quads = (HEADER) hcam.elementMap().get(_this.quads);
@@ -86,7 +89,7 @@ public abstract class Code extends HCode implements java.io.Serializable {
     }
     private static AllocationInformation cloneAllocationInformation
 	(HCodeAndMaps hcam) {
-	Code ocode = (Code) hcam.ancestorHCode();
+	Code ocode = (Code) ((HCode) hcam.ancestorHCode()); // XXX BUG IN JAVAC
 	AllocationInformation oaim = ocode.getAllocationInformation();
 	AllocationInformationMap naim = new AllocationInformationMap();
 	for (Iterator it=ocode.getElementsI(); it.hasNext(); ) {
@@ -126,9 +129,9 @@ public abstract class Code extends HCode implements java.io.Serializable {
     public Derivation getDerivation() { return null; }
 
     /** Returns the root of the control flow graph. */
-    public HCodeElement getRootElement() { return quads; }
+    public HEADER getRootElement() { return (HEADER) quads; }
     /** Returns the leaves of the control flow graph. */
-    public HCodeElement[] getLeafElements() {
+    public Quad[] getLeafElements() {
 	HEADER h = (HEADER) getRootElement();
 	return new Quad[] { h.footer() };
     }
@@ -138,23 +141,23 @@ public abstract class Code extends HCode implements java.io.Serializable {
      * making up this code view.  The root of the graph
      * is in element 0 of the array.
      */
-    public HCodeElement[] getElements() { return super.getElements(); }
+    public Quad[] getElements() { return super.getElements(); }
 
     /** Returns an iterator over the <code>Quad</code>s making up
      *  this code view.  The root of the graph is the first element
      *  in the iteration. */
-    public Iterator getElementsI() {
-	return new UnmodifiableIterator() {
-	    Set visited = new HashSet();
-	    Stack s = new Stack();
+    public Iterator<Quad> getElementsI() {
+	return new UnmodifiableIterator<Quad>() {
+	    Set<Quad> visited = new HashSet<Quad>();
+	    Stack<Quad> s = new Stack<Quad>();
 	    { // initialize stack/set.
 		s.push(getLeafElements()[0]); visited.add(s.peek());
 		s.push(getRootElement());     visited.add(s.peek());
 	    } 
 	    public boolean hasNext() { return !s.isEmpty(); }
-	    public Object next() {
+	    public Quad next() {
 		if (s.empty()) throw new NoSuchElementException();
-		Quad q = (Quad) s.pop();
+		Quad q = s.pop();
 		boolean forwards = false;
 		// prettiness hack! try to order elements in original source
 		// order. =)
@@ -180,10 +183,12 @@ public abstract class Code extends HCode implements java.io.Serializable {
 	};
     }
     // implement elementArrayFactory which returns Quad[]s.
-    public ArrayFactory elementArrayFactory() { return Quad.arrayFactory; }
+    public ArrayFactory<Quad> elementArrayFactory() {
+	return Quad.arrayFactory;
+    }
 
     // print this Code.
-    public void print(java.io.PrintWriter pw, PrintCallback callback) {
+    public void print(java.io.PrintWriter pw, PrintCallback<Quad> callback) {
 	Print.print(pw, this, callback);
     }
 }
