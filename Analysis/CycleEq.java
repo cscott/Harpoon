@@ -6,6 +6,9 @@ package harpoon.Analysis;
 import harpoon.ClassFile.*;
 import harpoon.IR.Properties.Edges;
 import harpoon.Util.ArrayEnumerator;
+import harpoon.Util.CombineEnumerator;
+import harpoon.Util.FilterEnumerator;
+import harpoon.Util.SingletonEnumerator;
 import harpoon.Util.Set;
 import harpoon.Util.Util;
 
@@ -18,7 +21,7 @@ import java.util.Vector;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4 1998-10-16 12:09:13 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.1 1999-01-08 04:55:24 cananian Exp $
  */
 
 public class CycleEq  {
@@ -166,7 +169,7 @@ public class CycleEq  {
 	    visited.union(n); // kilroy was here.
 	    n.dfs_num = dfs_order.size();
 	    dfs_order.addElement(n);
-	    for (Enumeration e = n.adjE(); e.hasMoreElements(); ) {
+	    for (Enumeration e = n.adj(); e.hasMoreElements(); ) {
 		Node m = (Node) e.nextElement();
 		if (!visited.contains(m)) {
 		    n.treeedges.union(m);
@@ -190,8 +193,8 @@ public class CycleEq  {
     }
     // NODE TYPES
     static abstract class Node { // abstract node types.
-	Graph g;
-	HCodeElement source;
+	final Graph g;
+	final HCodeElement source;
 	public int dfs_num;
 	public Set treeedges = new Set();
 	public Object cd_class;
@@ -201,78 +204,65 @@ public class CycleEq  {
 	Node(Graph g, HCodeElement source) {
 	    this.g = g; this.source = source;
 	}
-	public abstract Node[] adj();
-	public Enumeration adjE() { return new ArrayEnumerator(adj()); }
+	public abstract Enumeration adj();
 	public Enumeration children() {
-	    final Node[] adj = adj();
-	    return new Enumeration() {
-		int i=0;
-		private void adv() {
-		    while (i<adj.length)
-			if (treeedges.contains(adj[i]) && // a tree edge
-			    adj[i].dfs_num >= dfs_num) // and a child.
-			    break;
-			else i++;
+	    return new FilterEnumerator(adj(), new FilterEnumerator.Filter(){
+		public boolean isElement(Object o) {
+		    return (treeedges.contains((Node)o) &&  // a tree edge
+			    ((Node)o).dfs_num >= dfs_num);  // and a child.
 		}
-		public boolean hasMoreElements() {adv();return(i<adj.length);}
-		public Object nextElement() {adv(); return adj[i++]; }
-	    };
+	    });
 	}
 	public Enumeration backedges() {
-	    final Node[] adj = adj();
-	    return new Enumeration() {
-		int i=0;
-		private void adv() {
-		    while(i<adj.length)
-			if (!treeedges.contains(adj[i])) // not a tree edge
-			    break;
-			else
-			    i++;
+	    return new FilterEnumerator(adj(), new FilterEnumerator.Filter(){
+		public boolean isElement(Object o) {
+		    return !treeedges.contains(o); // not a tree edge.
 		}
-		public boolean hasMoreElements(){adv();return (i<adj.length);}
-		public Object  nextElement() { adv(); return adj[i++]; }
-	    };
+	    });
 	}
-		
 
 	// ugly hack to keep track of list cell corresponding to a back
 	// edge.  The algorithm guys made me do this, honest.  I had no
 	// choice.
 	public Hashtable be2lc = new Hashtable();
 	public String toString() { return "#"+dfs_num+": "+source; }
+	//public int hashCode() { return toString().hashCode(); }
     }
     static class StartNode extends Node {
 	StartNode(Graph g) { super(g, null); }
-	public Node[] adj() {
-	    int i=0;
-	    Node[] r = new Node[g.start_code.size() + 1];
-	    for (Enumeration e=g.start_code.elements(); e.hasMoreElements();){
-		HCodeElement hce = (HCodeElement)e.nextElement();
-		r[i++]=((NodePrime)g.code2node(hce)).ni;
-	    }
-	    r[i++] = g.end;
-	    return r;
+	public Enumeration adj() {
+	    FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
+		public Object map(Object o) {
+		    return ((NodePrime)g.code2node((HCodeElement)o)).ni;
+		}
+	    };
+	    return new CombineEnumerator(new Enumeration[] {
+		new FilterEnumerator(g.start_code.elements(), f),
+		new SingletonEnumerator(g.end) });
 	}
+
 	public String toString() { return "#"+dfs_num+": start_node"; }
     }
     static class EndNode extends Node {
 	EndNode(Graph g) { super(g, null); }
-	public Node[] adj() {
-	    int i=0;
-	    Node[] r = new Node[g.end_code.size() + 1];
-	    r[i++] = g.start;
-	    for (Enumeration e = g.end_code.elements(); e.hasMoreElements();){
-		HCodeElement hce = (HCodeElement)e.nextElement();
-		r[i++] = ((NodePrime)g.code2node(hce)).no;
-	    }
-	    return r;
+	public Enumeration adj() {
+	    FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
+		public Object map(Object o) {
+		    return ((NodePrime)g.code2node((HCodeElement)o)).no;
+		}
+	    };
+	    return new CombineEnumerator(new Enumeration[] {
+		new SingletonEnumerator(g.start),
+		new FilterEnumerator(g.end_code.elements(), f) });
 	}
 	public String toString() { return "#"+dfs_num+": end_node"; }
     }
     static class NodePrime extends Node { // represents a'
 	NodeIn  ni;
 	NodeOut no;
-	public Node[] adj() { return new Node[] { no, ni }; }
+	public Enumeration adj() { 
+	    return new ArrayEnumerator(new Node[] { no, ni });
+	}
 	NodePrime(Graph g, HCodeElement source) {
 	    super(g, source);
 	    this.ni = new NodeIn(g, source);
@@ -281,34 +271,43 @@ public class CycleEq  {
 	public String toString() { return super.toString()+"'"; }
     }
     static class NodeIn extends Node { // represents a_i
-	public Node[] adj() {
-	    // link to start node, if necessary.
-	    boolean uplink = g.start_code.contains(source);
-	    // otherwise compute edges based on underlying HCodeElement.
-	    HCodeEdge[] pred = ((Edges)source).pred();
-	    Node[] r = new Node[pred.length+1+(uplink?1:0)];
-	    r[0] = g.code2node(source); // a' first.
-	    for (int i=0; i<pred.length; i++) // then x_o where x in pred(a)
-		r[i+1] = ((NodePrime)g.code2node(pred[i].from())).no;
-	    if (uplink) r[r.length-1] = g.start;
-	    return r;
+	public Enumeration adj() {
+	    Enumeration e = new ArrayEnumerator(((Edges)source).pred());
+	    FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
+		public Object map(Object o) {
+		    HCodeEdge hce = (HCodeEdge) o;
+		    return ((NodePrime)g.code2node(hce.from())).no;
+		}
+	    };
+	    e = new CombineEnumerator(new Enumeration[] {
+		new SingletonEnumerator(g.code2node(source)), // a' first.
+	        new FilterEnumerator(e, f) }); // then x_o where x in pred(a)
+	    if (!g.start_code.contains(source)) return e;
+	    else // link to start node, too.
+		return new CombineEnumerator(new Enumeration[] {
+		    e, new SingletonEnumerator(g.start) });
 	}
 	NodeIn(Graph g, HCodeElement source) { super(g, source); }
 	public String toString() { return super.toString()+"_i"; }
     }
     static class NodeOut extends Node { // represents a_o
-	public Node[] adj() {
-	    // link to end node, if necessary.
-	    boolean downlink = g.end_code.contains(source);
-	    // otherwise compute edges based on underlying HCodeElement.
-	    HCodeEdge[] succ = ((Edges)source).succ();
-	    Node[] r = new Node[succ.length+1+(downlink?1:0)];
-	    r[0] = g.code2node(source); // a' first.
-	    for (int i=0; i<succ.length; i++) // then x_i where x in succ(a)
-		r[i+1] = ((NodePrime)g.code2node(succ[i].to())).ni;
-	    if (downlink) r[r.length-1] = g.end;
-	    return r;
+	public Enumeration adj() {
+	    Enumeration e = new ArrayEnumerator(((Edges)source).succ());
+	    FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
+		public Object map(Object o) {
+		    HCodeEdge hce = (HCodeEdge) o;
+		    return ((NodePrime)g.code2node(hce.to())).ni;
+		}
+	    };
+	    e = new CombineEnumerator(new Enumeration[] {
+		new SingletonEnumerator(g.code2node(source)), // a' first.
+	        new FilterEnumerator(e, f) }); // then x_i where x in succ(a)
+	    if (!g.end_code.contains(source)) return e;
+	    else // link to end node, if necessary.
+		return new CombineEnumerator(new Enumeration[] {
+		    e, new SingletonEnumerator(g.end) });
 	}
+
 	NodeOut(Graph g, HCodeElement source) { super(g, source); }
 	public String toString() { return super.toString()+"_o"; }
     }
