@@ -68,7 +68,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.36 2001-06-03 05:28:10 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.37 2001-06-04 07:23:18 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -422,26 +422,35 @@ import java.util.Iterator;
                                    + "," + l));
        }
     }
-    private void emitDAspecifier(HCodeElement root) {
+    private String getDAOpcodeSuffix(HCodeElement root) {
+       if(enable_daregs) {
+          harpoon.Backend.MIPS.Frame mframe = (harpoon.Backend.MIPS.Frame) frame;
+          Object danum = mframe.daNum(root);
+          if(danum != null) {
+             if(DominatingMemoryAccess.isDef(danum)) {
+                return "lda";
+             } else {
+                return "da";
+             }
+          }
+       } else {
+          harpoon.Backend.MIPS.Frame mframe = (harpoon.Backend.MIPS.Frame) frame;
+          if(mframe.memAccessNoTagCheck(root)) {
+             return ".u";
+          }
+       }
+       return "";
+    }
+    private String getDANum(HCodeElement root) {
        if(enable_daregs) {
           harpoon.Backend.MIPS.Frame mframe = (harpoon.Backend.MIPS.Frame) frame;
           Object danum = mframe.daNum(root);
           if(danum != null) {
              int dan = DominatingMemoryAccess.num(danum);
-             int daop = DominatingMemoryAccess.isDef(danum) ? 1 : 0;
-             emitDIRECTIVE( root, ".set noreorder" );
-             emit(root, "ph " + daop + ", " + dan);
+             return ", " + (new Integer(dan).toString());
           }
        }
-    }
-    private void emitEndDAspecifier(HCodeElement root) {
-       if(enable_daregs) {
-          harpoon.Backend.MIPS.Frame mframe = (harpoon.Backend.MIPS.Frame) frame;
-          Object danum = mframe.daNum(root);
-          if(danum != null) {
-             emitDIRECTIVE( root, ".set reorder" );
-          }
-       }
+       return "";
     }
 
     private boolean is16BitOffset(long val) {
@@ -900,18 +909,16 @@ import java.util.Iterator;
        int nregs = stack.calleeSaveTotal();
 
        //  Signifies a tag unchecked load or store if we have them.
-       String ntag = yellow_pekoe ? ".u" : "";
+       String ntag = enable_daregs ? "da" : (yellow_pekoe ? ".u" : "");
+       String tag = enable_daregs ? "lda" : "";
+       String danum = enable_daregs ? ", 0" : "";
        // find method entry/exit stubs
        Instr last=instr;
 
        for (Instr il = instr; il!=null; il=il.getNext()) {
           if (il instanceof InstrENTRY) { // entry stub.
              Instr[] entry_instr;
-             if(enable_daregs) {
-                entry_instr = new Instr[12];
-             } else {
-                entry_instr = new Instr[10];
-             }
+             entry_instr = new Instr[10];
              int en = 0;
              entry_instr[en++] = new InstrDIRECTIVE(inf, il, ".align 2");
              entry_instr[en++] = 
@@ -931,28 +938,20 @@ import java.util.Iterator;
                 new Instr(inf, il,"subu $sp, "+ stack.frameSize() 
                           + "\t##RR_DO_NOT_ANNOTATE",
                           new Temp[] {SP}, new Temp[] {SP});
-             if(enable_daregs)
-                entry_instr[en++] = 
-                   new Instr(inf, il,"ph 1, 0", null, null);
-             Util.assert(entry_instr[en-1] != null);
              entry_instr[en++] = 
-                new Instr(inf, il,"sw $31, " + stack.getRAOffset() +"($sp)" , 
+                new Instr(inf, il,"sw" + tag + " $31, " + stack.getRAOffset() 
+                          +"($sp)" + danum , 
                           null, new Temp[] { LR, SP });
-             if(enable_daregs)
-                entry_instr[en++] = new Instr(inf, il,"ph 0, 0", null, null);
-             Util.assert(entry_instr[en-1] != null);
              entry_instr[en++] = 
-                new Instr(inf, il, "sw" + ntag + " $30, " + stack.getFPOffset() +"($sp)" ,  
+                new Instr(inf, il, "sw" + ntag + " $30, " + stack.getFPOffset() 
+                          +"($sp)" + danum ,  
                           null, new Temp[] { FP, SP });
              entry_instr[en++] = 
                 new Instr(inf, il, "addu $30, $sp, "+ stack.frameSize() + "\t##RR_DO_NOT_ANNOTATE",
                           new Temp[]{FP}, new Temp[]{SP});
-             if(enable_daregs)
-                Util.assert(en == 12);
-             else
-                Util.assert(en == 10);
+             Util.assert(en == 10);
              ////// Now create instrs to save non-trivial callee saved regs
-             Instr[] callee_save = new Instr [(enable_daregs ? 2 : 1) * nregs];
+             Instr[] callee_save = new Instr [nregs];
              if(nregs > 0) {
                 // make list of instructions saving callee-save registers we
                 // gotta save.
@@ -960,30 +959,20 @@ import java.util.Iterator;
                 for (int i=0; i < stack.calleeSaveTotal(); i++) {
                    String usuffix = ntag;
                    if(i!= 0 && (i % 6 == 0)) {
-                      usuffix = "";
-                      if(enable_daregs) {
-                         callee_save[j++] = new Instr(inf, il, "ph 1, 0", 
-                                                      null, null);
-                      }
-                   } else {
-                      if(enable_daregs) {
-                         callee_save[j++] = new Instr(inf, il, "ph 0, 0", 
-                                                      null, null);
-                      }
+                      usuffix = tag;
                    }
                    callee_save[j++] = 
                       new Instr(inf, il, "sw" + usuffix + " "
                                 + stack.calleeReg(i) + ", "
                                 + stack.calleeSaveOffset(i)
-                                + "($sp)        # callee save", 
+                                + "($sp)" + danum + "        # callee save", 
                                 null, new Temp[]{stack.calleeReg(i),SP});
                 }
              }
              /// Layout function entry
              LayoutInstr(il, entry_instr);
              if(nregs > 0) {
-                Util.assert((enable_daregs ? 2 : 1) * nregs 
-                            == callee_save.length);
+                Util.assert(nregs == callee_save.length);
                 // This puts all of the callee saving before the
                 // creation of the frame pointer which is the last
                 // instruction in entry_isntr.
@@ -996,29 +985,20 @@ import java.util.Iterator;
 
           }
           if (il instanceof InstrEXIT) { // exit stub
-             Instr[] callee_restore = new Instr [(enable_daregs ? 2 : 1) * nregs];
+             Instr[] callee_restore = new Instr [nregs];
              if(stack.calleeSaveTotal() > 0) {
                 // restore the regs we saved on entry
                 int j = 0;
                 for (int i = nregs - 1; i >= 0; --i) {
                    String usuffix = ntag;
-                   if(j % 16 == 0) {
-                      usuffix = "";
-                      if(enable_daregs) {
-                         callee_restore[j++] = new Instr(inf, il, "ph 1, 0", 
-                                                      null, null);
-                      }
-                   } else {
-                      if(enable_daregs) {
-                         callee_restore[j++] = new Instr(inf, il, "ph 0, 0", 
-                                                         null, null);
-                      }
+                   if(j % 8 == 0) {
+                      usuffix = tag;
                    }
                    callee_restore[j++] = 
                       new Instr(inf, il, "lw" + usuffix + " "
                                 + stack.calleeReg(i) + ", "
                                 + stack.calleeSaveOffset(i) 
-                                + "($sp)        # callee restore", 
+                                + "($sp)" + danum + "        # callee restore", 
                                 new Temp[]{stack.calleeReg(i)}, 
                                 new Temp[]{SP});
                 }
@@ -1026,55 +1006,37 @@ import java.util.Iterator;
              String ralw = "";
              Instr[] exit_instr;
              int en = 0;
-             if(enable_daregs) {
-                exit_instr = new Instr[6];
-             } else {
-                exit_instr = new Instr[4];
-             }
+             exit_instr = new Instr[4];
              switch(nregs % 8) {
              case 0:
-                if(enable_daregs) {
-                   exit_instr[en++] = new Instr(inf, il, "ph 1, 0", null, null);
-                }
                 exit_instr[en++] = new Instr(inf, il, 
-                                             "lw $30, " 
-                                             + stack.getFPOffset() + "($sp)",
+                                             "lw" + tag + " $30, " 
+                                             + stack.getFPOffset() 
+                                             + "($sp)" + danum,
                                              new Temp[] {FP}, new Temp[] {SP});
-                if(enable_daregs) {
-                   exit_instr[en++] = new Instr(inf, il, "ph 0, 0", null, null);
-                }
                 ralw = "lw" + ntag;
                 break;
              case 7:
-                if(enable_daregs) {
-                   exit_instr[en++] = new Instr(inf, il, "ph 0, 0", null, null);
-                }
                 exit_instr[en++] = new Instr(inf, il, 
-                                             "lw $30, " 
-                                             + stack.getFPOffset() + "($sp)",
+                                             "lw" + ntag + " $30, " 
+                                             + stack.getFPOffset() 
+                                             + "($sp)" + danum,
                                              new Temp[] {FP}, new Temp[] {SP});
-                if(enable_daregs) {
-                   exit_instr[en++] = new Instr(inf, il, "ph 1, 0", null, null);
-                }
-                ralw = "lw";
+                ralw = "lw" + tag;
                 break;
              default:
-                if(enable_daregs) {
-                   exit_instr[en++] = new Instr(inf, il, "ph 0, 0", null, null);
-                }
                 exit_instr[en++] = new Instr(inf, il, 
-                                             "lw $30, " 
-                                             + stack.getFPOffset() + "($sp)",
+                                             "lw" + ntag + " $30, " 
+                                             + stack.getFPOffset() 
+                                             + "($sp)" + danum ,
                                              new Temp[] {FP}, new Temp[] {SP});
-                if(enable_daregs) {
-                   exit_instr[en++] = new Instr(inf, il, "ph 0, 0", null, null);
-                }
                 ralw = "lw" + ntag;
                 break;
              }
              exit_instr[en++] = new Instr(inf, il, 
                                           ralw + " $31, " 
-                                          + stack.getRAOffset() + "($sp)",
+                                          + stack.getRAOffset() + "($sp)" 
+                                          + danum,
                                           new Temp[] {LR}, new Temp[] {SP});
              
              exit_instr[en++] = new Instr(inf, il, "addu $sp, " 
@@ -1083,11 +1045,7 @@ import java.util.Iterator;
                                           new Temp[] {SP}, new Temp[] {SP});
              exit_instr[en++] = new Instr(inf, il, "j  $31  # return",
                                           null, new Temp[]{LR});
-             if(enable_daregs) {
-                Util.assert(en == 6);
-             } else {
-                Util.assert(en == 4);
-             }
+             Util.assert(en == 4);
              if(nregs > 0) {
                 LayoutInstr(il, callee_restore);
              }
@@ -1650,144 +1608,114 @@ CONST<p>(c) = i %{
 
 MEM<s:8,u:8,s:16,u:16,i,p,f>(e) = i %{ 
    String suffix = GetLdSuffix(ROOT);
-   String usuffix = "";
+   String usuffix = getDAOpcodeSuffix(ROOT);
    emitLineDebugInfo(ROOT);
-   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT)) {
-      usuffix = ".u";
-   }
 
-   emitDAspecifier(ROOT);
    emit(new InstrMEM(instrFactory, ROOT,
-                     "l"+suffix+usuffix+" `d0, 0(`s0)",
+                     "l"+suffix+usuffix+" `d0, 0(`s0)" + getDANum(ROOT),
                      new Temp[]{ i }, new Temp[]{ e }));   
-   emitEndDAspecifier(ROOT);
 }%
 
 MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))) = i
 %{
    String suffix = GetLdSuffix(ROOT);
-   String usuffix = "";
+   String usuffix = getDAOpcodeSuffix(ROOT);
    emitLineDebugInfo(ROOT);
-   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT)) {
-      usuffix = ".u";
-   }
-   emitDAspecifier(ROOT);
+
    emit(new InstrMEM(instrFactory, ROOT,
-                     "l"+suffix+usuffix+" `d0, " + c + "(`s0)",
+                     "l"+suffix+usuffix+" `d0, " + c + "(`s0)" + getDANum(ROOT),
                      new Temp[]{ i }, new Temp[]{ j }));
-   emitEndDAspecifier(ROOT);
 }%
 MEM<l,d>(e) = i %{
-   String usuffix = "";
+   String usuffix = getDAOpcodeSuffix(ROOT);
    emitLineDebugInfo(ROOT);
    emitRegAllocDef(ROOT, i);
-   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT)) {
-      usuffix = ".u";
-   }
-   emitDAspecifier(ROOT);
+
    emit(new InstrMEM(instrFactory, ROOT,
-                     "lw" + usuffix+ " `d0l, 4(`s0)\n"
-                     + "lw" + usuffix + " `d0h, 0(`s0)",
+                     "lw" + usuffix+ " `d0l, 4(`s0)" + getDANum(ROOT) + "\n"
+                     + "lw" + usuffix + " `d0h, 0(`s0)" + getDANum(ROOT),
                      new Temp[]{ i }, new Temp[]{ e }));
-   emitEndDAspecifier(ROOT);
    emitRegAllocUse(ROOT, e);
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), src)
 %{
    String suffix = GetStSuffix(ROOT);
-   String usuffix = "";
+   String usuffix = getDAOpcodeSuffix(ROOT.getDst());
    emitLineDebugInfo(ROOT);
-   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT.getDst())) {
-      usuffix = ".u";
-   }
-   emitDAspecifier(ROOT.getDst());
-   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix + usuffix+" `s0, 0(`s1)",
+
+   emit(new InstrMEM(instrFactory, ROOT, 
+                     "s" + suffix + usuffix+" `s0, 0(`s1)" + getDANum(ROOT.getDst()),
                      null, new Temp[] {src, dst}));
-   emitEndDAspecifier(ROOT.getDst());
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))), src)
 %{ 
    String suffix = GetStSuffix(ROOT);
-   String usuffix = "";
+   String usuffix = getDAOpcodeSuffix(ROOT.getDst());
    emitLineDebugInfo(ROOT);
-   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT.getDst())) {
-      usuffix = ".u";
-   }
-   emitDAspecifier(ROOT.getDst());
+
    emit(new InstrMEM(instrFactory, ROOT,
-		      "s"+suffix+usuffix+" `s0, "+c+"(`s1)",
+		      "s"+suffix+usuffix+" `s0, "+c+"(`s1)" + getDANum(ROOT.getDst()),
 		      null, new Temp[]{ src, j }));   
-   emitEndDAspecifier(ROOT.getDst());
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))), NAME(src))
    %extra<p>{ extra } /*void*/
 %{ 
    String suffix = GetStSuffix(ROOT);
-   String usuffix = "";
+   String usuffix = getDAOpcodeSuffix(ROOT.getDst());
    emitLineDebugInfo(ROOT);
-   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT.getDst())) {
-      usuffix = ".u";
-   }
    declare( extra, HClass.Void );
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + src,
                    new Temp[]{ extra }, null ));
-   emitDAspecifier(ROOT.getDst());
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +usuffix+" `s0, "
-                     + c + "(`s1)        # tmp + c <= NAME(src) ",
+                     + c + "(`s1)"+ getDANum(ROOT.getDst()) +"     # tmp + c <= NAME(src) ",
                      null, new Temp[]{ extra, j }));
-   emitEndDAspecifier(ROOT.getDst());
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), NAME(src)) %extra<p>{ extra }/*void*/
 %{ 
    String suffix = GetStSuffix(ROOT);
-   String usuffix = "";
+   String usuffix = getDAOpcodeSuffix(ROOT.getDst());
    emitLineDebugInfo(ROOT);
-   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT.getDst())) {
-      usuffix = ".u";
-   }
    declare( extra, HClass.Void );
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + src,
                    new Temp[]{ extra }, null ));
-   emitDAspecifier(ROOT.getDst());
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix + usuffix
-                     +" `s0, (`s1)        # dst <= NAME(src)",
+                     +" `s0, (`s1)" + getDANum(ROOT.getDst()) + "        # dst <= NAME(src)",
                      null, new Temp[] {extra, dst}));
-   emitEndDAspecifier(ROOT.getDst());
 }%
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), src) %extra<p>{ extra }/*void*/
 %{ 
    String suffix = GetStSuffix(ROOT);
+   String usuffix = getDAOpcodeSuffix(ROOT.getDst());
    declare( extra, HClass.Void );
    emitLineDebugInfo(ROOT);
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + dst,
                    new Temp[]{ extra }, null ));
-   emitDAspecifier(ROOT.getDst());
-   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix 
-                     +" `s0, (`s1)        # NAME(dst) <= src ",
+   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix + usuffix
+                     +" `s0, (`s1)" + getDANum(ROOT.getDst()) 
+                     + "        # NAME(dst) <= src ",
                      null, new Temp[] {src, extra}));
-   emitEndDAspecifier(ROOT.getDst());
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), NAME(src))
 %extra<p>{ extra0, extra1 }/*void*/
 %{ 
    String suffix = GetStSuffix(ROOT);
+   String usuffix = getDAOpcodeSuffix(ROOT.getDst());
    emitLineDebugInfo(ROOT);
    declare( extra0, HClass.Void );
    declare( extra1, HClass.Void );
    emit(ROOT, "la `d0, " + src, extra0);
    emit(ROOT, "la `d0, " + dst, extra1);
-   emitDAspecifier(ROOT.getDst());
-   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, (`s1)",
+   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix + usuffix 
+                     + " `s0, (`s1)" + getDANum(ROOT.getDst()), 
                      null, new Temp[] {extra0, extra1}));
-   emitEndDAspecifier(ROOT.getDst());
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), CONST<i,p>(c)) 
@@ -1795,16 +1723,17 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), CONST<i,p>(c))
 %{ 
    emitLineDebugInfo(ROOT);
    String suffix = GetStSuffix(ROOT);
+   String usuffix = getDAOpcodeSuffix(ROOT.getDst());
    if(c==null) {
       emit(ROOT, "li `d0, 0", extra0);
    } else {
       emit(ROOT, "li `d0, " + c, extra0);
    }
    emit(ROOT, "la `d0, " + dst, extra1);
-   emitDAspecifier(ROOT.getDst());
-   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, (`s1)  # NAME(dst) <= CONST",
+   emit(new InstrMEM(instrFactory, ROOT, 
+                     "s" + suffix + usuffix + " `s0, (`s1)"
+                     + getDANum(ROOT.getDst()) + "      # NAME(dst) <= CONST",
                      null, new Temp[] { extra0, extra1 }));
-   emitEndDAspecifier(ROOT.getDst());
 }%
 
 
@@ -1812,16 +1741,14 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), CONST<i,p>(c))
 MOVE(MEM<l,d>(dst), src) %{
    emitLineDebugInfo(ROOT);
    String suffix = "";
-   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT.getDst())) {
-      suffix = ".u";
-   }
-   emitDAspecifier(ROOT.getDst());
-   emit(new InstrMEM(instrFactory, ROOT, "sw" + suffix + " `s0l, 4(`s1)",
+   String usuffix = getDAOpcodeSuffix(ROOT.getDst());
+
+   emit(new InstrMEM(instrFactory, ROOT, "sw" + suffix + usuffix 
+                     + " `s0l, 4(`s1)" + getDANum(ROOT.getDst()),
                      null, new Temp[]{ src, dst }));
-   emitDAspecifier(ROOT.getDst());
-   emit(new InstrMEM(instrFactory, ROOT, "sw" + suffix + " `s0h, 0(`s1)",
+   emit(new InstrMEM(instrFactory, ROOT, "sw" + suffix + usuffix
+                     + " `s0h, 0(`s1)" + getDANum(ROOT.getDst()),
                      null, new Temp[]{ src, dst }));
-   emitEndDAspecifier(ROOT.getDst());
 }%
 
 MOVE<p,i,f>(dst, src) %{
@@ -1858,20 +1785,19 @@ NAME(id) = i %{
 
 MEM<f,i,p>(NAME(id)) = i %{
    emitLineDebugInfo(ROOT);
-   emitDAspecifier(ROOT);
+   String usuffix = getDAOpcodeSuffix(ROOT);
    emit(new Instr( instrFactory, ROOT,
-                   "lw `d0, " + id, 
+                   "lw" + usuffix + " `d0, " + id + getDANum(ROOT), 
                    new Temp[]{ i }, null ));
-   emitEndDAspecifier(ROOT);
 }%
 MEM<d,l>(NAME(id)) = i %{
    emitLineDebugInfo(ROOT);
-   emitDAspecifier(ROOT);
+   String usuffix = getDAOpcodeSuffix(ROOT);
    emit(new InstrMEM( instrFactory, ROOT,
-                      "lw `d0l, " + id + " +4\n"
-                      + "lw `d0h, " + id,
+                      "lw" + usuffix + " `d0l, " + id + " +4" 
+                      + getDANum(ROOT) + "\n"
+                      + "lw `d0h, " + id + getDANum(ROOT),
                       new Temp[]{i}, new Temp[]{}));
-   emitEndDAspecifier(ROOT);
 }%
 
 
