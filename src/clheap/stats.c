@@ -1,5 +1,7 @@
 /* Statistics stubs */
-#include "stats.h"
+#include "misc.h"	/* for MAKE_STATS */
+#include "flexthread.h"	/* for flex_mutex_t */
+#include "stats.h"	/* DECLARE_STATS_LOCAL */
 
 /* allocate and initialize the statistics counters */
 DECLARE_STATS_LOCAL(stk)

@@ -8,6 +8,6 @@
 #define ALIGN(x) (((x)+(ALIGNMENT-1)) & ~(ALIGNMENT-1))
 
 /* undefine to disable statistics logging */
-#define WITH_STATS
+#define MAKE_STATS
 
 #endif /* INCLUDED_NIFTY_MISC_H */
