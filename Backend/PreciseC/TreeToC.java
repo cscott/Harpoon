@@ -52,7 +52,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.6 2000-06-27 22:52:23 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.7 2000-06-27 23:14:25 cananian Exp $
  */
 public class TreeToC {
     
@@ -325,10 +325,11 @@ public class TreeToC {
 	    else {
 		switchto(DATA);
 		pwa[DD].println("struct "+label(e.label)+" {");
-		pwa[DI].print("} "+label(e.label));
+		pwa[DI].print("} ");
 		// XXX: GCC ignores the following attribute, though
 		// we'd like to have it!
-		//pwa[DI].print(" __attribute__ ((packed))");
+		pwa[DI].print("__attribute__ ((packed)) ");
+		pwa[DI].print(label(e.label));
 		if (this.align!=null)
 		    pwa[DI].print(" __attribute__ ((aligned (" +
 				  this.align.alignment + ")))");
@@ -353,14 +354,15 @@ public class TreeToC {
 	    this.align = null;
 	    // switch!
 	    switchto(CODE);
-	    // emit declaration.
-	    pw = pwa[MD];
+	    // create common contents of declaration and definition
+	    StringWriter declw = new StringWriter();
+	    pw = new PrintWriter(declw);
 	    if (e.getReturnType() < 0) {
 		isVoidMethod = true;
-		pw.print("DECLAREFUNCV(");
+		pw.print("FUNCV(");
 	    } else {
 		isVoidMethod = false;
-		pw.print("DECLAREFUNC("+ctype(e.getReturnType())+", ");
+		pw.print("FUNC("+ctype(e.getReturnType())+", ");
 	    }
 	    pw.print(label(e.getMethod())+", (");
 	    for (int i=0; i<e.getParamsLength(); i++) {
@@ -371,7 +373,12 @@ public class TreeToC {
 		if (i==0) pw.print(") ");
 		else if (i+1 < e.getParamsLength()) pw.print(", ");
 	    }
-	    pw.println("), \""+sectionname(this.segment)+"\")");
+	    pw.print("), \""+sectionname(this.segment)+"\")");
+	    pw.close();
+	    sym2decl.put(e.getMethod(), "DECLARE"+declw.getBuffer()+";");
+	    // emit declaration.
+	    pw = pwa[MD];
+	    pw.println("DEFINE"+declw.getBuffer());
 	    pw.println("{");
 	    pw = pwa[MB];
 	}
@@ -383,8 +390,9 @@ public class TreeToC {
 	public void visit(NAME e) { visit(e, true); }
 	public void visit(NAME e, boolean take_address) {
 	    /* add entry in symbol declaration table */
-	    sym2decl.put(e.label, "extern struct "+label(e.label)+" "+
-			 label(e.label)+";");
+	    if (!sym2decl.containsKey(e.label))
+		sym2decl.put(e.label, "extern struct "+label(e.label)+" "+
+			     label(e.label)+";");
 	    if (take_address) pw.print("(&");
 	    pw.print(label(e.label));
 	    if (take_address) pw.print(")");
