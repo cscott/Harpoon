@@ -72,7 +72,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.58 2000-06-12 16:25:54 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.59 2000-06-12 20:38:31 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -520,7 +520,7 @@ public abstract class PAMain {
 	    new LongOpt("noit",      LongOpt.NO_ARGUMENT,       null, 15),
 	    new LongOpt("inline",    LongOpt.NO_ARGUMENT,       null, 16),
 	    new LongOpt("sat",       LongOpt.REQUIRED_ARGUMENT, null, 17),
-	    new LongOpt("santg",     LongOpt.NO_ARGUMENT,       null, 18)};
+	    new LongOpt("notg",      LongOpt.NO_ARGUMENT,       null, 18)};
 
 	Getopt g = new Getopt("PAMain", argv, "l:mscoa:i", longopts);
 
@@ -595,7 +595,7 @@ public abstract class PAMain {
 		SAT_FILE = new String(g.getOptarg());
 		break;
 	    case 18:
-		MAInfo.DO_SANTG = true;
+		MAInfo.NO_TG = true;
 		break;
 	    }
 
@@ -680,8 +680,8 @@ public abstract class PAMain {
 	if(DO_SAT)
 	    System.out.print(" DO_SAT (" + SAT_FILE + ")");
 
-	if(MAInfo.DO_SANTG)
-	    System.out.println(" DO_SANTG");
+	if(MAInfo.NO_TG)
+	    System.out.println(" NO_TG");
 
 	System.out.println();
     }
