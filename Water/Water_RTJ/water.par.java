@@ -1144,14 +1144,17 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
 // POTENG
 // ----------------------------------------------------------------------
 
-  void potengInnerLoop(int idx){
-    int i;
-    vec tmp = new vec();
-
-    for(i = idx+1; i < numMol; i++){
-      interPoteng2Aux(pad[idx],pad[i],tmp);
-      POT.add(tmp);
-    }
+  void potengInnerLoop(final int idx){
+    water.run(new Runnable() {
+	public void run() {
+	  vec tmp = new vec();
+	  int i;
+	  for(i = idx+1; i < numMol; i++){
+	    interPoteng2Aux(pad[idx],pad[i],tmp);
+	    POT.add(tmp);
+	  }
+	}
+      }, 3);
   }
 
   void potengOuterLoop(final int first, final int num){
@@ -1163,7 +1166,7 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
 	      en.potengInnerLoop(i);
 	    }
 	  }
-	});
+	}, 2);
   }
 
   void potengOuterSplit(final int first, final int num) {
@@ -1183,7 +1186,7 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
 	    }
 	  }
 	}
-      });
+      }, 2);
   }
 
   void potengOuterDispatch() {
@@ -1368,24 +1371,23 @@ void CORREC(){
 // MDMAIN --- MOLECULAR DYNAMICS LOOP 
 // ----------------------------------------------------------------------------
 void MDMAIN(){
-
-  System.out.print("RESTART ");
-  System.out.print(water.parms.getIRST());
-  System.out.print(" AFTER ");
-  System.out.print(water.parms.getELPST());
-  System.out.print(" SECONDS\n");
-  clearTVIR();
-  clearTKIN();
-
-  if(water.parms.getNSAVE() > 0){
-    System.out.print("COLLECTING X AND V DATA AT EVERY %4d TIME STEPS\n");
-    System.out.print(water.parms.getNSAVE());
-  }
-  System.out.print("INTERMEDIATE RESULTS (ENERGY EXPRESSED IN UNITS OF KT ATOM) \n");
-  System.out.print("  TIME       KINETIC   INTRA POT   INTER POT   REACT POT       ");
-  System.out.print("TOTAL  \n<TEMPERATURE>   <VIR>\n");
-
-  stepsystem();
+    System.out.print("RESTART ");
+    System.out.print(water.parms.getIRST());
+    System.out.print(" AFTER ");
+    System.out.print(water.parms.getELPST());
+    System.out.print(" SECONDS\n");
+    clearTVIR();
+    clearTKIN();
+    
+    if(water.parms.getNSAVE() > 0){
+	System.out.print("COLLECTING X AND V DATA AT EVERY %4d TIME STEPS\n");
+	System.out.print(water.parms.getNSAVE());
+    }
+    System.out.print("INTERMEDIATE RESULTS (ENERGY EXPRESSED IN UNITS OF KT ATOM) \n");
+    System.out.print("  TIME       KINETIC   INTRA POT   INTER POT   REACT POT       ");
+    System.out.print("TOTAL  \n<TEMPERATURE>   <VIR>\n");
+    
+    stepsystem();
 }
 
 // --- MAIN LOOP -------------------------------------------------------
@@ -1676,17 +1678,21 @@ void storeData(int dest){
   }
 }
 
-  void interfInnerLoop(int idx){
-    int i;
-    skratch_pad p1, p2;
-
-    for(i = idx+1; i < numMol; i++){
-      p1 = getPad(idx);
-      p2 = getPad(i);
-      interf2(p1,p2);
-    }
+  void interfInnerLoop(final int idx){
+    water.run(new Runnable() {
+	public void run() {
+	  int i;
+	  skratch_pad p1, p2;
+	  
+	  for(i = idx+1; i < numMol; i++){
+	    p1 = getPad(idx);
+	    p2 = getPad(i);
+	    interf2(p1,p2);
+	  }
+	}
+      }, 0);
   }
-
+  
   void interfOuterLoop(final int first, final int num){
     final ensemble en=this;
     water.run(new Runnable() { 
@@ -1696,7 +1702,7 @@ void storeData(int dest){
 	    en.interfInnerLoop(i);
 	  }
 	}
-      });
+      }, 1);
   }
 
   void interfOuterSplit(final int first, final int num) {
@@ -1716,7 +1722,7 @@ void storeData(int dest){
 	    }
 	  }
 	}
-      });
+      }, 1);
   }
 
   void interfOuterDispatch() {
@@ -1823,15 +1829,20 @@ class water {
   public static final int VT_MEMORY = 2;
   public static long ctsize;
   public static int RTJ_alloc_method;
+  private static javax.realtime.CTMemory[] ct;
   
-  public static void run(Runnable r) {
+  public static void run(Runnable r, int i) {
     switch (RTJ_alloc_method) {
     case NO_RTJ: {
       r.run();
       break;
     } 
     case CT_MEMORY: {
-      (new javax.realtime.CTMemory(ctsize)).enter(r);
+      if (ct == null) {
+	(new javax.realtime.CTMemory(ctsize)).enter(r);
+      } else {
+	ct[i].enter(r);
+      }
       break;
     }
     case VT_MEMORY: {
@@ -1847,6 +1858,7 @@ class water {
 
   public static void main(String args[]) throws java.io.IOException, java.io.FileNotFoundException { 
 
+  int i;
   int n; 
   long start_time, stop_time;
   double dticks;
@@ -1856,14 +1868,22 @@ class water {
 
   parms = new simparm();
   if (args.length < 2) { 
-    System.out.print("usage: java water <input filename> <noRTJ | CT | VT> [stats | nostats] [ctsize]\n");
+    System.out.print("usage: java water <input filename> <noRTJ | CT | VT> [stats | nostats] [ctsize] [reuse]\n");
     return;
   }
+  
+  ct = null;
   if (args[1].equalsIgnoreCase("noRTJ")) {
     RTJ_alloc_method = NO_RTJ;
   } else if (args[1].equalsIgnoreCase("CT")) {
     RTJ_alloc_method = CT_MEMORY;
     ctsize = Long.parseLong(args[3]);
+    if ((args.length>4)&&(args[4].equalsIgnoreCase("reuse"))) {
+      ct = new javax.realtime.CTMemory[4];
+      for (i = 0; i < 4; i++) {
+	ct[i] = new javax.realtime.CTMemory(ctsize, true);
+      }
+    }
   } else if (args[1].equalsIgnoreCase("VT")) {
     RTJ_alloc_method = VT_MEMORY;
   } else {
@@ -1904,6 +1924,12 @@ class water {
   System.out.print("\nTotal Time = ");
   System.out.print(((stop_time-start_time)/dticks));
   System.out.print("\n");
+  
+  if (ct != null) {
+    for (i = 0; i < 4; i++) {
+      ct[i].done();
+    }
+  }
 
   if ((RTJ_alloc_method != NO_RTJ) &&
       (args[2].equalsIgnoreCase("stats"))) {
