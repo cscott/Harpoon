@@ -14,6 +14,7 @@
 #endif /* DEBUG && WITH_DMALLOC */
 .endm
 
+#ifdef AOUT_SEGMENTS
 	GC_SEGMENT
 	.align 4
 .global csymbol(gc_start)
@@ -51,3 +52,5 @@ csymbol(text_start):
 	.align 4
 	REFLECTION_OBJECTS_SEGMENT
 	.align 4
+
+#endif

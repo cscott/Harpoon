@@ -3,6 +3,7 @@
 #include <sym.h>
 #include "segments.h"
 
+#ifdef AOUT_SEGMENTS
 	GC_SEGMENT
 .global csymbol(gc_end)
 csymbol(gc_end):
@@ -30,3 +31,5 @@ csymbol(code_end):
 	TEXT_SEGMENT
 .global csymbol(text_end)
 csymbol(text_end):
+
+#endif
