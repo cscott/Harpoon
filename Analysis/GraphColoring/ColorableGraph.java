@@ -9,7 +9,7 @@ import java.util.*;
  * graph colorers defined in this package.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableGraph.java,v 1.1.2.2 1999-01-14 23:16:29 pnkfelix Exp $ */
+ * @version $Id: ColorableGraph.java,v 1.1.2.3 1999-01-14 23:53:35 pnkfelix Exp $ */
 
 public abstract class ColorableGraph extends Graph {
 
@@ -82,7 +82,13 @@ public abstract class ColorableGraph extends Graph {
 	throws NodeNotPresentInGraphException;
     
     /** Replaces a hidden <code>node</code> in graph.
-	<BR> effects: If <code>node</code> was previously removed from
+	<BR> NOTE: This method may be replaced by a "unhide last node" or
+	           equivalent method, like popping a stack, because
+		   the current implementation does not support
+		   unhiding nodes out-of-reverse-order.  (I will look
+		   into the difficulty of implementing this
+		   correctly).
+	<B> effects: If <code>node</code> was previously removed from
 	              <code>this</code>, and has not been replaced
 		      since its last removal, then moves
 		      <code>node</code> back into the graph.  It also

@@ -10,7 +10,7 @@ import java.util.Enumeration;
  * use with the SparseGraph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseNode.java,v 1.1.2.2 1999-01-14 23:16:29 pnkfelix Exp $ 
+ * @version $Id: SparseNode.java,v 1.1.2.3 1999-01-14 23:53:36 pnkfelix Exp $ 
  */
 
 public class SparseNode extends ColorableNode {
@@ -33,12 +33,14 @@ public class SparseNode extends ColorableNode {
     /** Adds an edge from <code>this</code> to <code>to</code>    
      	<BR> modifies: <code>this.toNodes</code>,                      
 	               <code>this.unifiedNodes</code>
-        <BR> effects: if <code>this</code> is modifiable, adds
-	              <code>to</code> to the <code>toNodes</code> list
-		      and the <code>unifiedNodes</code> list. 
-		      Else does nothing.
+        <BR> effects: If <code>this</code> is not allowed to be
+	              modified, throws ObjectNotModifiableException. 
+		      Else adds <code>to</code> to the
+		      <code>toNodes</code> list and the
+		      <code>unifiedNodes</code> list.  
      */
-    void addEdgeTo( SparseNode to ) throws IllegalEdgeException { 
+    void addEdgeTo( SparseNode to ) 
+	throws IllegalEdgeException, ObjectNotModifiableException { 
 	if (toNodes.contains( to )) {
 	    throw new IllegalEdgeException
 		("SparseNode does not allow duplicate edges");
@@ -47,17 +49,23 @@ public class SparseNode extends ColorableNode {
 	if (this.isModifiable()) {
 	    toNodes.addElement( to );
 	    unifiedNodes.addElement( to );
+	} else {
+	    throw new ObjectNotModifiableException
+		(this + " is not allowed to be modified.");
 	}
     }
 
     /** Adds an edge from <code>from</code> to <code>this</code>.
         <BR> modifies: <code>this.fromNodes</code>,
                        <code>this.unifiedNodes</code>.
-        <BR> effects: if <code>this</code> is modifiable, adds
-	              <code>from</code> to the <code>fromNodes</code>
-		      list and the <code>unifiedNodes</code> list.  		    
+        <BR> effects: If <code>this</code> is not allowed to be
+	              modified, throws ObjectNotModifiableException. 
+		      Else adds <code>from</code> to the
+		      <code>fromNodes</code> list and the
+		      <code>unifiedNodes</code> list.
      */ 
-    void addEdgeFrom( SparseNode from ) throws IllegalEdgeException {
+    void addEdgeFrom( SparseNode from ) 
+	throws IllegalEdgeException, ObjectNotModifiableException {
 	if (fromNodes.contains( from )) {
 	    throw new IllegalEdgeException
 		("SparseNode does not allow duplicate edges");
@@ -66,13 +74,18 @@ public class SparseNode extends ColorableNode {
 	if (this.isModifiable()) {
 	    fromNodes.addElement( from );
 	    unifiedNodes.addElement( from );
+	} else {
+	    throw new ObjectNotModifiableException
+		(this + " is not allowed to be modified.");
 	}
     }
 
     /** Removes an edge from <code>from</code> to <code>this</code>.
 	<BR> modifies: <code>this.fromNodes</code>,
 	               <code>this.unifiedNodes</code>.
-	<BR> effects: If <code>from</code> has an edge from it to
+	<BR> effects: If <code>this</code> is not allowed to be
+	              modified, throws ObjectNotModifiableException. 
+		      Else If <code>from</code> has an edge from it to
 	              <code>this</code>, and <code>this</code> is
 		      modifiable, removes <code>from</code>
 		      from the <code>fromNodes</code> list, and if
@@ -82,7 +95,7 @@ public class SparseNode extends ColorableNode {
 		      Else throws EdgeNotPresentException.
     */
     void removeEdgeFrom( SparseNode from ) 
-	throws EdgeNotPresentException {
+	throws EdgeNotPresentException, ObjectNotModifiableException {
 	if (this.isModifiable()) {
 	    if (! fromNodes.removeElement( from )) {
 		throw new EdgeNotPresentException
@@ -92,13 +105,18 @@ public class SparseNode extends ColorableNode {
 		    unifiedNodes.removeElement( from );
 		}
 	    }
+	} else {
+	    throw new ObjectNotModifiableException
+		(this + " is not allowed to be modified.");
 	}
     }
 
     /** Removes an edge from <code>this</code> to <code>to</code>.
 	<BR> modifies: <code>this.toNodes</code>,
 	               <code>this.unifiedNodes</code>.
-	<BR> effects: If <code>this</code> has an edge from it to
+	<BR> effects: If <code>this</code> is not allowed to be
+	              modified, throws ObjectNotModifiableException. 
+	              Else If <code>this</code> has an edge from it to 
 	              <code>to</code>, removes <code>to</code>
 		      from the <code>toNodes</code> list, and if
 		      there is no edge from <code>to</code> to
@@ -106,7 +124,7 @@ public class SparseNode extends ColorableNode {
 		      from the <code>unifiedNodes</code> list. 
 		      Else throws EdgeNotPresentException.    */
     void removeEdgeTo( SparseNode to ) 
-	throws EdgeNotPresentException {
+	throws EdgeNotPresentException, ObjectNotModifiableException {
 	if (this.isModifiable()) {
 	    if (! toNodes.removeElement( to )) {
 		throw new EdgeNotPresentException
@@ -116,6 +134,9 @@ public class SparseNode extends ColorableNode {
 		    unifiedNodes.removeElement( to );
 		}
 	    }
+	} else {
+	    throw new ObjectNotModifiableException
+		(this + " is not allowed to be modified.");
 	}
     }
     

@@ -2,7 +2,7 @@
 package harpoon.Analysis.GraphColoring;
 
 import harpoon.ClassFile.*;
-import harpoon.Util.UniqueVector;
+import harpoon.Util.UniqueStack;
 import java.util.Enumeration;
 
 /**
@@ -12,19 +12,19 @@ import java.util.Enumeration;
  * references <code>SparseNode</code>s store internally.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseGraph.java,v 1.1.2.2 1999-01-14 23:16:29 pnkfelix Exp $ 
+ * @version $Id: SparseGraph.java,v 1.1.2.3 1999-01-14 23:53:35 pnkfelix Exp $ 
  */
 
 public class SparseGraph extends ColorableGraph {
 
     // List of hidden nodes, so that we may properly check when nodes
     // are unhid.
-    UniqueVector hiddenNodes;
+    UniqueStack hiddenNodes;
     
     /** Creates a <code>SparseGraph</code>. */
     public SparseGraph() {
         super();
-	hiddenNodes = new UniqueVector();
+	hiddenNodes = new UniqueStack();
     }
             
     /** Ensures that only <code>SparseNode</code>s are added to <code>this</code>.
@@ -61,7 +61,8 @@ public class SparseGraph extends ColorableGraph {
     public void makeEdge( Node from, Node to ) 
 	throws NodeNotPresentInGraphException, IllegalEdgeException {
 	if (from == to) {
-	    throw new IllegalEdgeException("SparseGraph does not allow circular edges");
+	    throw new IllegalEdgeException
+		("SparseGraph does not allow circular edges");
 	}
 	
 	isNodePresent( from );
@@ -70,8 +71,19 @@ public class SparseGraph extends ColorableGraph {
 	// (guaranteed by representation given above)  
 	SparseNode sTo = (SparseNode) to;
 	SparseNode sFrom = (SparseNode) from;
-	sTo.addEdgeFrom( sFrom );
-	sFrom.addEdgeTo( sTo );
+	
+	try {
+	    sTo.addEdgeFrom( sFrom );
+	} catch (ObjectNotModifiableException e) {
+	    throw new IllegalEdgeException
+		(sFrom + " is not allowed to be modified.");
+	}
+	try {
+	    sFrom.addEdgeTo( sTo );
+	} catch (ObjectNotModifiableException e) {
+	    throw new IllegalEdgeException 
+		(sTo + " is not allowed to be modified.");
+	}
     }
     
     /** Returns the degree of <code>node</code>.
@@ -160,7 +172,7 @@ public class SparseGraph extends ColorableGraph {
 	// (guaranteed by representation given above)  
 	SparseNode sNode = (SparseNode) node;
 
-	hiddenNodes.addElement( sNode );
+	hiddenNodes.push( sNode );
 	sNode.setHidden( true );
 	
 	Enumeration fromNodes = sNode.getFromNodes(); 
@@ -170,7 +182,12 @@ public class SparseGraph extends ColorableGraph {
 		from.removeEdgeTo( sNode );
 	    } catch (EdgeNotPresentException e) {
 		// should never be thrown for this rep...
-		throw new RuntimeException("" + e.getMessage());
+		e.printStackTrace();
+		throw new RuntimeException(e.getMessage());
+	    } catch (ObjectNotModifiableException e) {
+		e.printStackTrace();
+		throw new RuntimeException
+		    (sNode + " is not allowed to be modified");
 	    }
 	}
 	Enumeration toNodes = sNode.getToNodes(); 
@@ -180,7 +197,11 @@ public class SparseGraph extends ColorableGraph {
 		to.removeEdgeFrom( sNode );
 	    } catch (EdgeNotPresentException e) {
 		// should never be thrown for this rep...
-		throw new RuntimeException("" + e.getMessage());
+		e.printStackTrace();
+		throw new RuntimeException(e.getMessage());
+	    } catch (ObjectNotModifiableException e) {
+		e.printStackTrace();
+		throw new RuntimeException(e.getMessage());
 	    }
 	}
     }
@@ -224,8 +245,10 @@ public class SparseGraph extends ColorableGraph {
 	    // should not happen...
 	    e.printStackTrace();
 	    throw new RuntimeException(e.getMessage());
+	} catch (ObjectNotModifiableException e) {
+	    e.printStackTrace();
+	    throw new RuntimeException(sNode + " could not be unhid");
 	}
-	
     }
 
     /** Replaces all hidden nodes in graph.
@@ -239,8 +262,9 @@ public class SparseGraph extends ColorableGraph {
     */
     void unhideAllNodes() {
 	try {
-	    for (int i=0; i<hiddenNodes.size(); i++) {
-		unhideNode( (ColorableNode) hiddenNodes.elementAt(i) );
+	    // need to unhide nodes in reverse order.
+	    while(! hiddenNodes.empty()) {
+		unhideNode( (ColorableNode) hiddenNodes.peek() );
 	    }
 	} catch ( NodeNotRemovedException e ) {
 	    // should never be thrown, as the internal representation
