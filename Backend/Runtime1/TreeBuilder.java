@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.39 2001-07-03 21:35:21 wbeebee Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.40 2001-07-05 05:03:41 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -655,21 +655,33 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 			  DerivationGenerator dg, HClass classData) {
 	Exp clsref = new NAME(tf, source,
 			      runtime.nameMap.label(classData, "classobj"));
-	DECLARE(dg, linker.forName("java.lang.Class"), clsref);
+	//let this NAME be HClass.Void, since it points at a static object
+	//which the gc doesn't need to know about.  If we give it a type,
+	//then the derivation generator will get confused by derived pointers
+	//to it, since it doesn't live in a canonical temp.
+	/*DECLARE(dg, linker.forName("java.lang.Class"), clsref);*/
 	return new Translation.Ex(clsref);
     }
     public Translation.Exp fieldConst(TreeFactory tf, HCodeElement source,
 			  DerivationGenerator dg, HField fieldData) {
 	Exp fldref = new NAME(tf, source,
 			      runtime.nameMap.label(fieldData, "obj"));
-	DECLARE(dg, linker.forName("java.lang.reflect.Field"), fldref);
+	//let this NAME be HClass.Void, since it points at a static object
+	//which the gc doesn't need to know about.  If we give it a type,
+	//then the derivation generator will get confused by derived pointers
+	//to it, since it doesn't live in a canonical temp.
+	/*DECLARE(dg, linker.forName("java.lang.reflect.Field"), fldref);*/
 	return new Translation.Ex(fldref);
     }
     public Translation.Exp methodConst(TreeFactory tf, HCodeElement source,
 			   DerivationGenerator dg, HMethod methodData) {
 	Exp mthref = new NAME(tf, source,
 			      runtime.nameMap.label(methodData, "obj"));
-	DECLARE(dg, linker.forName("java.lang.reflect.Method"), mthref);
+	//let this NAME be HClass.Void, since it points at a static object
+	//which the gc doesn't need to know about.  If we give it a type,
+	//then the derivation generator will get confused by derived pointers
+	//to it, since it doesn't live in a canonical temp.
+	/*DECLARE(dg, linker.forName("java.lang.reflect.Method"), mthref);*/
 	return new Translation.Ex(mthref);
     }
 
@@ -678,7 +690,11 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 				       String stringData) {
 	stringSet.add(stringData);
 	Exp strref = new NAME(tf, source, runtime.nameMap.label(stringData));
-	DECLARE(dg, linker.forName("java.lang.String"), strref);
+	//let this NAME be HClass.Void, since it points at a static object
+	//which the gc doesn't need to know about.  If we give it a type,
+	//then the derivation generator will get confused by derived pointers
+	//to it, since it doesn't live in a canonical temp.
+	/*DECLARE(dg, linker.forName("java.lang.String"), strref);*/
 	return new Translation.Ex(strref);
     }
 
