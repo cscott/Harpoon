@@ -25,8 +25,7 @@ public final class SizeEstimator {
      *  when estimating the size of the <code>MemoryArea</code>.
      */
     public void reserve(Class c, int n) {
-	// objSize(Class) is not implemented yet.
-	//	estimate += n * objSize(c);
+	estimate += n * objSize(c);
     }
 
     /** Take into account an additional instance of <code>SizeEstimator s</code>
@@ -43,6 +42,5 @@ public final class SizeEstimator {
 	estimate += n * s.estimate;
     }
 
-    // Not implemented yet
-    //    public native static long objSize(Class c);
+    public native static long objSize(Class c);
 }
