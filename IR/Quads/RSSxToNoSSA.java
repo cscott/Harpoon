@@ -25,7 +25,7 @@ import java.util.Map;
  * <code>RSSxToNoSSA</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: RSSxToNoSSA.java,v 1.1.2.3 2001-06-17 22:33:36 cananian Exp $
+ * @version $Id: RSSxToNoSSA.java,v 1.1.2.4 2001-09-26 15:35:31 cananian Exp $
  */
 public class RSSxToNoSSA {
     QuadFactory newQF;
@@ -133,10 +133,7 @@ public class RSSxToNoSSA {
 			      q.retval(),
 			      q.retex(), q.isVirtual(), q.isTailCall(),
 			      new Temp[0]);
-	    for (int i=0;i<q.arity();i++)
-		Quad.addEdge(nc,i,q.next(i),q.nextEdge(i).which_pred());
-	    Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),
-			 nc,0);
+	    Quad.replace(q, nc);
 	    done.add(nc);
 	}
 
@@ -146,10 +143,7 @@ public class RSSxToNoSSA {
 				q.params(),
 				q.retval(), q.retex(), new Temp[0],
 				q.isVirtual(), q.isTailCall());
-	    for (int i=0;i<q.arity();i++)
-		Quad.addEdge(nc,i,q.next(i),q.nextEdge(i).which_pred());
-	    Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),
-			 nc,0);
+	    Quad.replace(q, nc);
 	    done.add(nc);
 	}
 
@@ -157,10 +151,7 @@ public class RSSxToNoSSA {
 	    fixsigma(q);
 	    CJMP nc= new CJMP(q.getFactory(), q,q.test(),
 			      new Temp[0]);
-	    for (int i=0;i<q.arity();i++)
-		Quad.addEdge(nc,i,q.next(i),q.nextEdge(i).which_pred());
-	    Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),
-			 nc,0);
+	    Quad.replace(q, nc);
 	    done.add(nc);
 	}
 
@@ -168,10 +159,7 @@ public class RSSxToNoSSA {
 	    fixsigma(q);
 	    SWITCH ns= new SWITCH(q.getFactory(), q, q.index(), q.keys(),
 				  new Temp[0]);
-	    for (int i=0;i<q.arity();i++)
-		Quad.addEdge(ns,i,q.next(i),q.nextEdge(i).which_pred());
-	    Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),
-			 ns,0);
+	    Quad.replace(q, ns);
 	    done.add(ns);
 	}
 
@@ -188,17 +176,13 @@ public class RSSxToNoSSA {
 	    fixphi(q);
 	    LABEL np=new LABEL(q.getFactory(),q,q.label(),
 			       new Temp[0], q.arity());
-	    for (int i=0;i<q.arity();i++)
-		Quad.addEdge(q.prev(i),q.prevEdge(i).which_succ(),np,i);
-	    Quad.addEdge(np,0,q.next(0),q.nextEdge(0).which_pred());
+	    Quad.replace(q, np);
 	    done.add(np);
 	}
 	public void visit(PHI q) {
 	    fixphi(q);
 	    PHI np=new PHI(q.getFactory(),q,new Temp[0], q.arity());
-	    for (int i=0;i<q.arity();i++)
-		Quad.addEdge(q.prev(i),q.prevEdge(i).which_succ(),np,i);
-	    Quad.addEdge(np,0,q.next(0),q.nextEdge(0).which_pred());
+	    Quad.replace(q, np);
 	    done.add(np);
 	}
     }
