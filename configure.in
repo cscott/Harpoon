@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.100 $)dnl
+AC_REVISION($Revision: 1.101 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -349,7 +349,7 @@ fi
 dnl process option to select garbage collector
 AC_MSG_CHECKING([garbage collector])
 AC_ARG_WITH(gc,
-[  --with-gc={[none],conservative,semi,copying,marksweep} select garbage collector to use],
+[  --with-gc={[none],conservative,semi,copying,marksweep,generational} select garbage collector to use],
 gc_type="$withval", gc_type="none")
 case "$gc_type" in
 semi)
@@ -367,6 +367,11 @@ marksweep)
 	AC_DEFINE(WITH_MARKSWEEP_GC, 1,
 		[Define if you are using the mark-and-sweep garbage collector])
 	;;
+generational)
+	AC_MSG_RESULT([precise generational gc])
+	AC_DEFINE(WITH_GENERATIONAL_GC, 1,
+		[Define if you are using the generational garbage collector])
+	;;
 conservative)
 	AC_MSG_RESULT([B-D-W conservative gc])
 	;;
@@ -382,7 +387,7 @@ if test $gc_type = semi -o $gc_type = conservative; then
 	dnl require you to link in the library (libdl) containing dlopen().
 	GC_LIB="Contrib/gc/gc.a -ldl"
 fi	
-if test $gc_type = copying -o $gc_type = marksweep; then
+if test $gc_type = copying -o $gc_type = marksweep -o $gc_type = generational; then
 	AC_DEFINE(WITH_PRECISE_GC, 1,
 		  [Define if you want support for precise garbage collection])
 fi
@@ -392,10 +397,11 @@ AC_LINK_FILES(Contrib/gc/include/private/gcconfig.h, include/gcconfig.h)
 AM_CONDITIONAL(CONSERVATIVE_GC,
 	test $gc_type = conservative -o $gc_type = semi)
 AM_CONDITIONAL(PRECISE_GC,
-	test $gc_type = copying -o $gc_type = marksweep -o $gc_type = semi)
+	test $gc_type = copying -o $gc_type = marksweep -o $gc_type = semi -o $gc_type = generational)
 AM_CONDITIONAL(COPYING_GC, test $gc_type = copying)
 AM_CONDITIONAL(MARKSWEEP_GC, test $gc_type = marksweep)
 AM_CONDITIONAL(SEMI_PRECISE_GC, test $gc_type = semi)
+AM_CONDITIONAL(GENERATIONAL_GC, test $gc_type = generational)
 
 dnl process option for using pointer-reversal in mark-and-sweep garbage 
 dnl collection.
