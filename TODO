@@ -1,3 +1,6 @@
+---- Aug-3-98
+Finish InCti class.
+
 ---- Aug-2-98
 X Interface should have:
 X   convert method, to go from one form to another.
@@ -8,14 +11,14 @@ X  name method (of course) -- (change putCode)
 
 X Add new interface type for primitive types (simplify isPrimitive)
 O   only one method in interface: getDescriptor();
-each type has value/add/sub/etc methods that are *not in interface*
-  because return value is of the same primitive type (ie, not object)
-  see java.lang.reflect rules for encapsulating return values.
-  want to be able to specify that type is Z, not java.lang.Boolean obj.
-  think this one over.
-Easy.  Superclass basic java language type objects with our special
- 'primary type' object.  Then we can easily tell which is which.
- (we can also add cool add/sub/etc functions while we're at it.)
+O each type has value/add/sub/etc methods that are *not in interface*
+O   because return value is of the same primitive type (ie, not object)
+O   see java.lang.reflect rules for encapsulating return values.
+O   want to be able to specify that type is Z, not java.lang.Boolean obj.
+O   think this one over.
+O Easy.  Superclass basic java language type objects with our special
+O  'primary type' object.  Then we can easily tell which is which.
+O  (we can also add cool add/sub/etc functions while we're at it.)
 
 ---- Aug-1-98
 X Make --CUTHERE-- file joiner/separator (perl?)
