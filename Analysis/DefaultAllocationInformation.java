@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * that nothing can be stack or thread-locally allocated.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultAllocationInformation.java,v 1.1.2.1 2000-04-03 23:09:17 cananian Exp $
+ * @version $Id: DefaultAllocationInformation.java,v 1.1.2.2 2000-04-03 23:46:46 cananian Exp $
  */
 public class DefaultAllocationInformation implements AllocationInformation {
     
@@ -30,23 +30,23 @@ public class DefaultAllocationInformation implements AllocationInformation {
      *  <code>harpoon.IR.Quads.ANEW</code>. */
     public AllocationProperties query(HCodeElement allocationSite) {
 	if (allocationSite instanceof harpoon.IR.Quads.NEW)
-	    return hasInteriorPointers
+	    return _hasInteriorPointers
 		(((harpoon.IR.Quads.NEW)allocationSite).hclass());
 	if (allocationSite instanceof harpoon.IR.Quads.ANEW)
-	    return hasInteriorPointers
+	    return _hasInteriorPointers
 		(((harpoon.IR.Quads.ANEW)allocationSite).hclass());
 	Util.assert(false, "not a NEW or ANEW quad.");
 	return null;
     }
     /** Return an AllocationProperties object matching the allocated object
      *  type specified by the parameter. */
-    private AllocationProperties hasInteriorPointers(HClass cls) {
-	return _hasInteriorPointers(cls) ?
+    private static AllocationProperties _hasInteriorPointers(HClass cls) {
+	return hasInteriorPointers(cls) ?
 	    HAS_INTERIOR_POINTERS : NO_INTERIOR_POINTERS;
     }
     /** Return true iff the specified object type has no interior pointers;
      *  that is, iff all its fields are primitive. */
-    private boolean _hasInteriorPointers(HClass cls) {
+    public static boolean hasInteriorPointers(HClass cls) {
 	Util.assert(!cls.isInterface() && !cls.isPrimitive());
 	if (cls.isArray()) return !cls.getComponentType().isPrimitive();
 	// okay, it's an object.  see if it has any non-primitive fields.
