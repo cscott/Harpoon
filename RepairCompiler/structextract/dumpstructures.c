@@ -183,6 +183,8 @@ void initializeTypeArray()
 	      printf("   %s %s%s;\n",typestr,name,poststr);
 	    }
 	  }
+	  if (offset<collection_ptr->byte_size)
+	    printf("   reserved byte[%ld];\n",collection_ptr->byte_size-offset);
 	  printf("}\n\n");
         }
     }
