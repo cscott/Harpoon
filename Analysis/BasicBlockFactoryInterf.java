@@ -12,31 +12,32 @@ import harpoon.ClassFile.HCodeElement;
  * <code>BasicBlockFactoryInterf</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: BasicBlockFactoryInterf.java,v 1.2 2002-02-25 20:56:09 cananian Exp $
+ * @version $Id: BasicBlockFactoryInterf.java,v 1.2.2.1 2002-03-14 10:20:18 cananian Exp $
  */
-public interface BasicBlockFactoryInterf {
+public interface BasicBlockFactoryInterf
+    <HCE extends HCodeElement,BB extends BasicBlockInterf<HCE,BB>> {
     
     /** Returns the <code>HCode</code> that <code>this</code> factory
 	produces basic blocks of. */
-    public HCode getHCode();
+    public HCode<HCE> getHCode();
 
     /** Returns the root <code>BasicBlockInterfs</code>.
 	<BR> <B>effects:</B> returns the <code>BasicBlock</code>
 	that is at the start of the set of
 	<code>HCodeElement</code>s being analyzed.
     */
-    public BasicBlockInterf getRootBBInterf();
+    public BB getRootBBInterf();
 
     /** Returns the leaf <code>BasicBlockInterf</code>s.
 	<BR> <B>effects:</B> returns a <code>Set</code> of
 	<code>BasicBlock</code>s that are at the ends of the
 	<code>HCodeElement</code>s being analyzed.
     */
-    public Set getLeavesBBInterf();
+    public Set<BB> getLeavesBBInterf();
 
     /** Returns the <code>BasicBlock</code>s constructed by
 	the factory. */
-    public Set blockSet();
+    public Set<BB> blockSet();
  
     /** Returns the <code>BasicBlockInterf</code> containing
 	<code>hce</code>. 
@@ -46,6 +47,6 @@ public interface BasicBlockFactoryInterf {
 	<code>hce</code>, or <code>null</code> if
 	<code>hce</code> is unreachable.
     */
-    public BasicBlockInterf getBBInterf(HCodeElement hce);
+    public BB getBBInterf(HCE hce);
    
 }

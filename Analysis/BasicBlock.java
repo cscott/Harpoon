@@ -63,23 +63,24 @@ import java.util.Collection;
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BasicBlock.java,v 1.3.2.1 2002-02-27 08:30:23 cananian Exp $ */
-public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
+ * @version $Id: BasicBlock.java,v 1.3.2.2 2002-03-14 10:20:18 cananian Exp $ */
+public class BasicBlock<HCE extends HCodeElement>
+    implements BasicBlockInterf<HCE,BasicBlock<HCE>>, java.io.Serializable {
     
     static final boolean DEBUG = false;
     static final boolean TIME = false;
     
     static boolean CHECK_INSTRS = false;
 
-    private HCodeElement first;
-    private HCodeElement last;
+    private HCE first;
+    private HCE last;
 
     // BasicBlocks preceding and succeeding this block (we store the
     // CFG implicityly in the basic block objects; if necessary this
     // information can be migrated to BasicBlock.Factory and
     // maintained there)
-    private Set pred_bb;
-    private Set succ_bb;
+    private Set<BasicBlock<HCE>> pred_bb;
+    private Set<BasicBlock<HCE>> succ_bb;
 
     // unique id number for this basic block; used only for BasicBlock.toString()
     private int num;
@@ -88,33 +89,33 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
     private int size;
     
     // factory that generated this block
-    private Factory factory; 
+    private Factory<HCE> factory; 
 
     /** Returns the first <code>HCodeElement</code> in the sequence. 
 	@deprecated Use the standard List view provided by statements() instead
 	@see BasicBlock#statements
      */
-    public HCodeElement getFirst() { return first; }
+    public HCE getFirst() { return first; }
 
     /** Returns the last <code>HCodeElement</code> in the sequence. 
 	@deprecated Use the standard List view provided by statements() instead
 	@see BasicBlock#statements
      */
-    public HCodeElement getLast() { return last; }
+    public HCE getLast() { return last; }
     
     /** Adds <code>bb</code> to the set of predecessor basic blocks
 	for <code>this</code>.  Meant to be used during construction.
 	FSK: probably should take this out; it adds little to the
 	class 
     */
-    private void addPredecessor(BasicBlock bb) { pred_bb.add(bb); }
+    private void addPredecessor(BasicBlock<HCE> bb) { pred_bb.add(bb); }
 
     /** Adds <code>bb</code> to the set of successor basic blocks for
 	<code>this</code>.  Meant to be used during construction.
 	FSK: probably should take this out; it adds little to the
 	class 
     */
-    private void addSuccessor(BasicBlock bb) { succ_bb.add(bb); }
+    private void addSuccessor(BasicBlock<HCE> bb) { succ_bb.add(bb); }
     
     /** Returns the number of basic blocks in the predecessor set for
 	<code>this</code>. 
@@ -135,30 +136,30 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	@deprecated Use prevSet() instead
 	@see BasicBlock#prevSet
     */
-    public Enumeration prev() { return new IteratorEnumerator(pred_bb.iterator()); }
+    public Enumeration<BasicBlock<HCE>> prev() { return new IteratorEnumerator<BasicBlock<HCE>>(pred_bb.iterator()); }
 
     /** Returns an Enumeration that iterates over the successors for
 	<code>this</code>. 
 	@deprecated Use nextSet() instead
 	@see BasicBlock#prevSet
     */
-    public Enumeration next() { return new IteratorEnumerator(succ_bb.iterator()); }
+    public Enumeration<BasicBlock<HCE>> next() { return new IteratorEnumerator<BasicBlock<HCE>>(succ_bb.iterator()); }
 
     /** Returns all the predecessors of <code>this</code> basic
 	block. 
 	@deprecated Use prevSet() instead
 	@see BasicBlock#prevSet
     */
-    public BasicBlock[] getPrev() {
-	return (BasicBlock[]) pred_bb.toArray(new BasicBlock[pred_bb.size()]);
+    public BasicBlock<HCE>[] getPrev() {
+	return pred_bb.toArray(new BasicBlock<HCE>[pred_bb.size()]);
     }
 
     /** Returns all the successors of <code>this</code> basic block. 
 	@deprecated Use nextSet() instead
 	@see BasicBlock#nextSet
     */
-    public BasicBlock[] getNext() {
-	return (BasicBlock[]) succ_bb.toArray(new BasicBlock[succ_bb.size()]);
+    public BasicBlock<HCE>[] getNext() {
+	return succ_bb.toArray(new BasicBlock<HCE>[succ_bb.size()]);
     }
 
     /** Returns all the predecessors of <code>this</code>. 
@@ -166,7 +167,7 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	     <code>BasicBlock</code>s which precede
 	     <code>this</code>. 
      */
-    public Set prevSet() { 
+    public Set<BasicBlock<HCE>> prevSet() { 
 	return Collections.unmodifiableSet(pred_bb); 
     }
     
@@ -175,7 +176,7 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	     <code>BasicBlock</code>s which succeed
 	     <code>this</code>. 
      */
-    public Set nextSet() {
+    public Set<BasicBlock<HCE>> nextSet() {
 	return Collections.unmodifiableSet(succ_bb);
     }
 
@@ -188,16 +189,16 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	<code>computeBasicBlocks</code> that generated
 	<code>this</code>. 
     */
-    public List statements() {
+    public List<HCE> statements() {
 
 	// FSK: this is dumb; why not just return an empty list in
 	// this case?  I suspect this is an attempt to fail-fast, but
 	// still... 
 	assert size > 0 : "BasicBlock class breaks on empty BBs";
 
-	return new java.util.AbstractSequentialList() {
+	return new java.util.AbstractSequentialList<HCE>() {
 	    public int size() { return size; }
-	    public ListIterator listIterator(int index) {
+	    public ListIterator<HCE> listIterator(int index) {
 		// note that index *can* equal the size of the list,
 		// in which case we start the iterator past the last
 		// element of the list. 
@@ -210,7 +211,7 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 		}
 		
 		// iterate to correct starting point
-		HCodeElement curr;
+		HCE curr;
 
 		// FSK: put better code in here for choosing starting pt
 		if (index < size) {
@@ -224,7 +225,7 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 		}
 
 		// new final vars to be passed to ListIterator
-		final HCodeElement fcurr = curr;
+		final HCE fcurr = curr;
 		final int fi = index;
 
 		if (false) System.out.println
@@ -232,9 +233,9 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 				" next: "+fcurr+
 				" ind: "+fi);
 
-		return new harpoon.Util.UnmodifiableListIterator() {
+		return new harpoon.Util.UnmodifiableListIterator<HCE>() {
 		    //elem for next() to return
-		    HCodeElement next = fcurr; 
+		    HCE next = fcurr; 
 		    
 		    // where currently pointing?  
 		    // Invariant: 0 <= ind /\ ind <= size 
@@ -260,19 +261,19 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 			if (DEBUG) repOK();
 			return ind != size;
 		    }
-		    public Object next() {
+		    public HCE next() {
 			if (DEBUG) repOK("beginning");			
 			if (ind == size) {
 			    throw new NoSuchElementException();
 			}
 			ind++;
-			Object ret = next;
+			HCE ret = next;
 			if (ind != size) {
-			    Collection succs = factory.grapher.succC(next);
+			    Collection<HCodeEdge<HCE>> succs = factory.grapher.succC(next);
 			    assert succs.size() == 1 : (true)?" wrong succs:":
 					next+" has wrong succs:" + succs
 					+" (ind:"+ind+", size:"+size+")";
-			    next = ((HCodeEdge)succs.iterator().next()).to(); 
+			    next = succs.iterator().next().to(); 
 
 			} else { 
 			    // keep 'next' the same, since previous()
@@ -289,7 +290,7 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 			return ind > 0;
 
 		    }
-		    public Object previous() {
+		    public HCE previous() {
 			if (DEBUG) repOK();
 
 			if (ind <= 0) {
@@ -325,11 +326,12 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
     /** Constructs a new BasicBlock with <code>h</code> as its first
 	element.  Meant to be used only during construction.
     */
-    protected BasicBlock(HCodeElement h, Factory f) {
+    protected BasicBlock(HCE h, Factory f) {
 	assert h!=null;
 	first = h; 
 	last = null; // note that this MUST be updated by 'f'
-	pred_bb = new HashSet(); succ_bb = new HashSet();
+	pred_bb = new HashSet<BasicBlock<HCE>>();
+	succ_bb = new HashSet<BasicBlock<HCE>>();
 	size = 1;
 	this.factory = f;
 	num = factory.BBnum++;
@@ -338,7 +340,7 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
     /** Constructs an edge from <code>from</code> to
 	</code>to</code>. 
     */
-    private static void addEdge(BasicBlock from, BasicBlock to) {
+    private static <HCE extends HCodeElement> void addEdge(BasicBlock<HCE> from, BasicBlock<HCE> to) {
 	from.addSuccessor(to);
 	to.addPredecessor(from);
     }
@@ -363,18 +365,19 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
     /** Factory structure for generating BasicBlock views of
 	an <code>HCode</code>.  	
     */
-    public static class Factory 
-	implements BasicBlockFactoryInterf, java.io.Serializable { 
+    public static class Factory<HCE extends HCodeElement> 
+	implements BasicBlockFactoryInterf<HCE,BasicBlock<HCE>>,
+		   java.io.Serializable { 
 
 	// the underlying HCode
-	private final HCode hcode;
+	private final HCode<HCE> hcode;
 
-	private final Map hceToBB;
+	private final Map<HCE,BasicBlock<HCE>> hceToBB;
 
-	private final CFGrapher grapher;
-	private final BasicBlock root;
-	private final Set leaves;
-	private final Set blocks;
+	private final CFGrapher<HCE> grapher;
+	private final BasicBlock<HCE> root;
+	private final Set<BasicBlock<HCE>> leaves;
+	private final Set<BasicBlock<HCE>> blocks;
 
 
 	// tracks the current id number to assign to the next
@@ -386,13 +389,13 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	         that is at the start of the set of
 		 <code>HCodeElement</code>s being analyzed.
 	*/
-	public BasicBlock getRoot() {
+	public BasicBlock<HCE> getRoot() {
 	    return root;
 	}
 
 	/** Does the same thing as <code>getRoot</code>.
 	    Work around Java's weak typing system. */
-	public BasicBlockInterf getRootBBInterf() {
+	public BasicBlock<HCE> getRootBBInterf() {
 	    return getRoot();
 	}
 
@@ -401,33 +404,33 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	         <code>BasicBlock</code>s that are at the ends of the
 		 <code>HCodeElement</code>s being analyzed.
 	*/
-	public Set getLeaves() {
+	public Set<BasicBlock<HCE>> getLeaves() {
 	    return leaves;
 	}
 
 	/** Does the same thing as <code>getLeaves</code>.
 	    Work around Java's weak typing system. */
-	public Set getLeavesBBInterf() {
+	public Set<BasicBlock<HCE>> getLeavesBBInterf() {
 	    return getLeaves();
 	}
 
 	/** Returns the <code>HCode</code> that <code>this</code> factory
 	    produces basic blocks of. */
-	public HCode getHCode(){
+	public HCode<HCE> getHCode(){
 	    return hcode;
 	}
 
 	/** Returns the <code>BasicBlock</code>s constructed by
 	    <code>this</code>.
 	*/
-	public Set blockSet() {
+	public Set<BasicBlock<HCE>> blockSet() {
 	    return blocks;
 	}
 	
 	/** Generates an <code>Iterator</code> that traverses over all
 	    of the blocks generated by this <code>BasicBlock.Factory</code>.
 	*/
-	public Iterator blocksIterator() {
+	public Iterator<BasicBlock<HCE>> blocksIterator() {
 	    return postorderBlocksIter();
 	}
 
@@ -436,20 +439,21 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	    <code>BasicBlock.Factory</code> in Preorder (root first,
 	    then subtrees).
 	*/
-	public Iterator preorderBlocksIter() {
-	    LinkedList iters = new LinkedList();
-	    LinkedList bbs = new LinkedList();
-	    LinkedList order = new LinkedList();
-	    HashSet done = new HashSet();
-	    BasicBlock start = getRoot();
+	public Iterator<BasicBlock<HCE>> preorderBlocksIter() {
+	    LinkedList<Iterator<BasicBlock<HCE>>> iters =
+		new LinkedList<Iterator<BasicBlock<HCE>>>();
+	    LinkedList<BasicBlock<HCE>> bbs=new LinkedList<BasicBlock<HCE>>();
+	    LinkedList<BasicBlock<HCE>> order=new LinkedList<BasicBlock<HCE>>();
+	    Set<BasicBlock<HCE>> done = new HashSet<BasicBlock<HCE>>();
+	    BasicBlock<HCE> start = getRoot();
 	    done.add(start);
 	    bbs.addLast(start);
 	    iters.addLast(start.nextSet().iterator());
 	    while(!bbs.isEmpty()) {
 		assert bbs.size() == iters.size();
-		for (Iterator i=(Iterator)iters.removeLast();
+		for (Iterator<BasicBlock<HCE>> i = iters.removeLast();
 		     i.hasNext(); ) {
-		    BasicBlock bb2 = (BasicBlock)i.next();
+		    BasicBlock<HCE> bb2 = i.next();
 		    if (!done.contains(bb2)) {
 			done.add(bb2);
 			bbs.addFirst(bb2);
@@ -470,20 +474,21 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	    <code>BasicBlock.Factory</code> in Postorder (subtrees
 	    first, then root).
 	*/
-	public Iterator postorderBlocksIter() {
-	    LinkedList iters = new LinkedList();
-	    LinkedList bbs = new LinkedList();
-	    LinkedList order = new LinkedList();
-	    HashSet done = new HashSet();
-	    BasicBlock start = getRoot();
+	public Iterator<BasicBlock<HCE>> postorderBlocksIter() {
+	    LinkedList<Iterator<BasicBlock<HCE>>> iters =
+		new LinkedList<Iterator<BasicBlock<HCE>>>();
+	    LinkedList<BasicBlock<HCE>> bbs=new LinkedList<BasicBlock<HCE>>();
+	    LinkedList<BasicBlock<HCE>> order=new LinkedList<BasicBlock<HCE>>();
+	    Set<BasicBlock<HCE>> done = new HashSet<BasicBlock<HCE>>();
+	    BasicBlock<HCE> start = getRoot();
 	    done.add(start);
 	    bbs.addLast(start);
 	    iters.addLast(start.nextSet().iterator());
 	    while(!bbs.isEmpty()) {
 		assert bbs.size() == iters.size();
-		for (Iterator i=(Iterator)iters.removeLast();
+		for (Iterator<BasicBlock<HCE>> i = iters.removeLast();
 		     i.hasNext(); ) {
-		    BasicBlock bb2 = (BasicBlock)i.next();
+		    BasicBlock<HCE> bb2 = i.next();
 		    if (!done.contains(bb2)) {
 			done.add(bb2);
 			bbs.addLast(bb2);
@@ -507,13 +512,13 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	         <code>hce</code>, or <code>null</code> if
 		 <code>hce</code> is unreachable.
 	*/
-	public BasicBlock getBlock(HCodeElement hce) {
-	    return (BasicBlock) hceToBB.get(hce);
+	public BasicBlock<HCE> getBlock(HCE hce) {
+	    return hceToBB.get(hce);
 	}
 
 	/** Does the same thing as <code>getBlock</code>.
 	    Work around Java's weak typing system. */
-	public BasicBlockInterf getBBInterf(HCodeElement hce) {
+	public BasicBlock<HCE> getBBInterf(HCE hce) {
 	    return getBlock(hce);
 	}
 	
@@ -525,8 +530,9 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	         <code>BasicBlock.Factory</code> using
 		 <code>this(code, CFGrapher.DEFAULT);</code> 
 	*/
-	public Factory(HCode code) {
-	    this(code, CFGrapher.DEFAULT);
+	public Factory(HCode<HCE> code) {
+	    // XXX BUG IN JAVAC cast to CFGrapher shouldn't be necessary.
+	    this(code, (CFGrapher) CFGrapher.DEFAULT);
 	}
 
 	/** Constructs a <code>BasicBlock.Factory</code> and generates
@@ -547,23 +553,24 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 		 is considered to be the root (entry-point) of the set
 		 of <code>BasicBlock</code>s created.   
 	*/
-	public Factory(HCode hcode, final CFGrapher grapher) {
+	public Factory(HCode<HCE> hcode, final CFGrapher<HCE> grapher) {
 	    if (TIME) System.out.print("bldBB");
 
 	    // maps HCodeElement 'e' -> BasicBlock 'b' starting with 'e'
-	    HashMap h = new HashMap(); 
+	    Map<HCE,BasicBlock<HCE>> h = new HashMap<HCE,BasicBlock<HCE>>(); 
 	    // stores BasicBlocks to be processed
-	    Worklist w = new WorkSet();
+	    Worklist<BasicBlock<HCE>> w = new WorkSet<BasicBlock<HCE>>();
 
-	    HCodeElement head = grapher.getFirstElement(hcode);
+	    HCE head = grapher.getFirstElement(hcode);
 	    this.grapher = grapher;
 	    this.hcode   = hcode;
 
 	    // modifable util classes for construction use only
-	    HashSet myLeaves = new HashSet();
-	    HashMap myHceToBB = new HashMap();
+	    Set<BasicBlock<HCE>> myLeaves = new HashSet<BasicBlock<HCE>>();
+	    Map<HCE,BasicBlock<HCE>> myHceToBB =
+		new HashMap<HCE,BasicBlock<HCE>>();
 
-	    BasicBlock first = new BasicBlock(head, this);
+	    BasicBlock<HCE> first = new BasicBlock<HCE>(head, this);
 	    h.put(head, first);
 	    myHceToBB.put(head, first);
 	    w.push(first);
@@ -571,11 +578,11 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	    root = first;
 
 	    while(!w.isEmpty()) {
-		BasicBlock current = (BasicBlock) w.pull();
+		BasicBlock<HCE> current = w.pull();
 		
 		// 'last' is our guess on which elem will be the last;
 		// thus we start with the most conservative guess
-		HCodeElement last = current.getFirst();
+		HCE last = current.getFirst();
 		boolean foundEnd = false;
 		while(!foundEnd) {
 		    int n = grapher.succC(last).size();
@@ -589,10 +596,10 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 			if(DEBUG) System.out.println("found split: "+last);
 			
 			for (int i=0; i<n; i++) {
-			    HCodeElement e_n = grapher.succ(last)[i].to();
-			    BasicBlock bb = (BasicBlock) h.get(e_n);
+			    HCE e_n = grapher.succ(last)[i].to();
+			    BasicBlock<HCE> bb = h.get(e_n);
 			    if (bb == null) {
-				h.put(e_n, bb=new BasicBlock(e_n, this));
+				h.put(e_n, bb=new BasicBlock<HCE>(e_n, this));
 				myHceToBB.put(e_n, bb);
 				w.push(bb);
 			    }
@@ -602,14 +609,14 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 			
 		    } else { // one successor
 			assert n == 1 : "must have one successor";
-			HCodeElement next = grapher.succ(last)[0].to();
+			HCE next = grapher.succ(last)[0].to();
 			int m = grapher.predC(next).size();
 			if (m > 1) { // control flow join
 			    if(DEBUG) System.out.println("found join:  "+next);
 			    
-			    BasicBlock bb = (BasicBlock) h.get(next);
+			    BasicBlock<HCE> bb = h.get(next);
 			    if (bb == null) {
-				bb = new BasicBlock(next, this);
+				bb = new BasicBlock<HCE>(next, this);
 				h.put(next, bb);
 				myHceToBB.put(next, bb);
 				w.push(bb);
@@ -630,8 +637,8 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 
 		current.last = last;
 
-		final HCodeElement flast = last;
-		final BasicBlock fcurr = current;
+		final HCE flast = last;
+		final BasicBlock<HCE> fcurr = current;
 		assert grapher.succC(last).size() != 1 ||
 			     grapher.predC(grapher.succ(last)[0].
 				      to()).size() > 1 : "succC invariant broken";
@@ -641,24 +648,24 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	    // efficiency hacks: make various immutable Collections
 	    // array-backed sets, and make them unmodifiable at
 	    // construction time rather than at accessor time.
-	    leaves = Collections.unmodifiableSet(new LinearSet(myLeaves));
+	    leaves = Collections.unmodifiableSet(new LinearSet<BasicBlock<HCE>>(myLeaves));
 	    hceToBB = Collections.unmodifiableMap(myHceToBB);
-	    blocks = Collections.unmodifiableSet(new LinearSet
-						 (new HashSet(hceToBB.values())));
-	    Iterator bbIter = blocks.iterator();
+	    blocks = Collections.unmodifiableSet(new LinearSet<BasicBlock<HCE>>
+						 (new HashSet<BasicBlock<HCE>>(hceToBB.values())));
+	    Iterator<BasicBlock<HCE>> bbIter = blocks.iterator();
 	    while (bbIter.hasNext()) {
-		BasicBlock bb = (BasicBlock) bbIter.next();
-		bb.pred_bb = new LinearSet(bb.pred_bb);
-		bb.succ_bb = new LinearSet(bb.succ_bb);
+		BasicBlock<HCE> bb = bbIter.next();
+		bb.pred_bb = new LinearSet<BasicBlock<HCE>>(bb.pred_bb);
+		bb.succ_bb = new LinearSet<BasicBlock<HCE>>(bb.succ_bb);
 
 		// FSK: debug checkBlock(bb);
 	    }
 
 	    if (CHECK_INSTRS) {
 		// check that all instrs map to SOME block
-		Iterator hceIter = hcode.getElementsI();
+		Iterator<HCE> hceIter = hcode.getElementsI();
 		while(hceIter.hasNext()) {
-		    HCodeElement hce = (HCodeElement) hceIter.next();
+		    HCE hce = hceIter.next();
 		    System.out.println("BB Check: "+hce);
 		    if (!(hce instanceof harpoon.IR.Assem.InstrLABEL) &&
 			!(hce instanceof harpoon.IR.Assem.InstrDIRECTIVE)&&
@@ -666,11 +673,11 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 			
 		        (getBlock(hce) == null)) {
 			
-			HashSet s = new HashSet();
-			ArrayList t = new ArrayList();
+			Set<HCE> s = new HashSet<HCE>();
+			List<HCodeEdge<HCE>> t = new ArrayList<HCodeEdge<HCE>>();
 			t.addAll(grapher.predC(hce));
 			for(int i=0; i<t.size(); i++) {
-			    HCodeElement p=((HCodeEdge)t.get(i)).from();
+			    HCE p = t.get(i).from();
 			    if(!s.contains(p)) {
 				// System.out.println("visiting "+p);
 				s.add(p);
@@ -694,13 +701,13 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	    if (TIME) System.out.print("#");	    
 	}
 
-	private void checkBlock(BasicBlock block) {
-	    List blockL = block.statements();
+	private void checkBlock(BasicBlock<HCE> block) {
+	    List<HCE> blockL = block.statements();
 	    int sz = blockL.size();
-	    Iterator iter = blockL.iterator();
-	    HCodeElement curr = null;
+	    Iterator<HCE> iter = blockL.iterator();
+	    HCE curr = null;
 	    while(iter.hasNext()) {
-		HCodeElement h = (HCodeElement) iter.next();
+		HCE h = iter.next();
 		if (curr == null) {
 		    assert h == block.first;
 
