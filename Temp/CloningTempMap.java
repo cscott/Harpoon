@@ -5,6 +5,7 @@ package harpoon.Temp;
 
 import harpoon.Util.Util;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 /**
@@ -13,7 +14,7 @@ import java.util.Map;
  * creating new <code>Temp</code>s as necessary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloningTempMap.java,v 1.1.2.4 1999-07-07 22:12:00 cananian Exp $
+ * @version $Id: CloningTempMap.java,v 1.1.2.5 2000-10-06 21:11:46 cananian Exp $
  */
 public class CloningTempMap implements TempMap {
     private final Map h = new HashMap();
@@ -51,4 +52,7 @@ public class CloningTempMap implements TempMap {
 	    public Temp tempMap(Temp t) { return (Temp) h.get(t); }
 	};
     }
+    /** Provide access to an unmodifiable version of this
+     *  <code>Temp</code> mapping, as a <code>java.util.Map</code>. */
+    public Map asMap() { return Collections.unmodifiableMap(h); }
 }
