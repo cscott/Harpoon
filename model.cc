@@ -62,9 +62,9 @@ model::model(char *abstractfile, char *modelfile, char *spacefile, char *structf
   // committing out because of memory problems
 
   br=new bitreader(this,env); 
-  guidance=new DefGuidance2(this);  // for the file system benchmark   
+  guidance=new DefGuidance(this);  // for the file system benchmark   
 
-#ifndef TOOL
+#ifdef REPAIR
   repair=new Repair(this);
   if (!repair->analyzetermination()) {
 #ifdef DEBUGMESSAGES
@@ -72,11 +72,10 @@ model::model(char *abstractfile, char *modelfile, char *spacefile, char *structf
 #endif
     exit(-1);
   }
-#endif
-
   fc=new FieldCheck(this);
   fc->buildmaps();
   fc->analyze();
+#endif
   typmap=new typemap(this);
 }
 

@@ -150,8 +150,8 @@ class Setexpr {
 
 class Valueexpr {
  public:
-  Valueexpr(Label *l,Relation *r);
-  Valueexpr(Valueexpr *ve,Relation *r);
+  Valueexpr(Label *l,Relation *r, bool inv);
+  Valueexpr(Valueexpr *ve,Relation *r, bool inv);
   void print();
   void fprint(FILE *f);
   void print_value(Hashtable *stateenv, model *m);
@@ -160,9 +160,11 @@ class Valueexpr {
   Label * getlabel();
   Valueexpr * getvalueexpr();
   Relation * getrelation();
+  bool getinverted();
   
  private:
   int type;
+  bool inverted;
   Label *label;
   Valueexpr *valueexpr;
   Relation *relation;

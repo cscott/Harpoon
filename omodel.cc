@@ -453,14 +453,18 @@ Relation * Valueexpr::getrelation() {
   return relation;
 }
 
-Valueexpr::Valueexpr(Label *l,Relation *r) {
+Valueexpr::Valueexpr(Label *l,Relation *r, bool inv) {
   label=l;relation=r;
-  type=0;
+  type=0;inverted=inv;
 }
 
-Valueexpr::Valueexpr(Valueexpr *ve,Relation *r) {
+Valueexpr::Valueexpr(Valueexpr *ve,Relation *r,bool inv) {
   valueexpr=ve;relation=r;
-  type=1;
+  type=1;inverted=inv;
+}
+
+bool Valueexpr::getinverted() {
+  return inverted;
 }
 
 void Valueexpr::print() {
@@ -468,11 +472,15 @@ void Valueexpr::print() {
   case 0:
     label->print();
     printf(".");
+    if (inverted)
+      printf("~");
     relation->print();
     break;
   case 1:
     valueexpr->print();
     printf(".");
+    if (inverted)
+      printf("~");
     relation->print();
     break;
   }
@@ -483,11 +491,15 @@ void Valueexpr::fprint(FILE *f) {
   case 0:
     label->fprint(f);
     fprintf(f,".");
+    if (inverted)
+      fprintf(f,"~");
     relation->fprint(f);
     break;
   case 1:
     valueexpr->fprint(f);
     fprintf(f,".");
+    if (inverted)
+      fprintf(f,"~");
     relation->fprint(f);
     break;
   }
@@ -505,8 +517,11 @@ Element * Valueexpr::get_value(Hashtable *stateenv, model *m) {
   DRelation *rel = dr->getrelation(relation->getname());
   WorkRelation *wr = rel->getrelation();
 
-  Element *elem = (Element *) wr->getobj(key);
-  return elem;
+  if (inverted)
+    return (Element *) wr->invgetobj(key);
+  else
+    return (Element *) wr->getobj(key);
+
 }
 
 void Valueexpr::print_value(Hashtable *stateenv, model *m) {

@@ -269,20 +269,25 @@ Predicate * Parser::parsepredicate() {
   }
 
   Token nexttoken=reader->readnext();
+  bool inverted=false;
   switch(nexttoken.token_type) {
+  case TOKEN_DOTINV:
+    inverted=true;
   case TOKEN_DOT:
     {
       Token relation=reader->readnext();
       Token compareop=reader->readnext();
-      Elementexpr * ee=parseelementexpr();
       Valueexpr *ve=new Valueexpr(new Label(copystr(label.str)),
-				 new Relation(copystr(relation.str)));
-      while(compareop.token_type==TOKEN_DOT) {
+				 new Relation(copystr(relation.str)),inverted);
+      while(compareop.token_type==TOKEN_DOT||compareop.token_type==TOKEN_DOTINV) {
 	Token nrelation=reader->readnext();
+	bool invert=(compareop.token_type==TOKEN_DOTINV);
 	compareop=reader->readnext();
 	ve=new Valueexpr(ve,
-			 new Relation(copystr(nrelation.str)));
+			 new Relation(copystr(nrelation.str)),invert);
       }
+      Elementexpr * ee=parseelementexpr();
+
       
       switch(compareop.token_type) {
       case TOKEN_LT:
