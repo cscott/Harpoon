@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.24 1999-05-19 06:45:06 andyb Exp $
+# $Id: GNUmakefile,v 1.61.2.25 1999-05-22 09:57:03 marinov Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -20,6 +20,9 @@ INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
 SUPPORT := Support/Lex.jar Support/CUP.jar
+ifndef CURDIR   # make this file work with make version less than 3.77
+	CURDIR := $(shell pwd)
+endif
 CLASSPATH:=$(subst $(space),:,$(addprefix $(CURDIR)/,$(SUPPORT))):$(CLASSPATH)
 CLASSPATH:=.:$(CLASSPATH)
 export CLASSPATH
