@@ -66,7 +66,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.22 2001-07-19 17:29:37 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.23 2001-07-19 22:19:51 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -306,10 +306,17 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			raiseV(V, Wv, q.dst(i,0), v.rename(q, 0));
 		    // we know q.dst[i][1] is INSTANCEOF def.hclass
 		    // secret inside info: INSTANCEOF src is always non-null.
-		    // XXX: use more specific of original class, instanceof?
+		    HClass hcI = io.def().hclass();
+		    HClass hcV = ((xClass)v).type();
+		    // use more specific type
+		    if (!hcI.isInterface() && !hcV.isInterface() &&
+			hcI.isSuperclassOf(hcV))
+			hcI = hcV;
+		    LatticeVal nv = new xClassNonNull(hcI);
+		    // use more specific of original class, instanceof.
+		    if (v.isLowerThan(nv)) nv = v;
 		    if (trueTaken)
-			raiseV(V, Wv, q.dst(i,1), 
-			       new xClassNonNull(io.def().hclass()));
+			raiseV(V, Wv, q.dst(i,1), nv);
 		} else {
 		    // fall back.
 		    if (falseTaken) raiseV(V, Wv, q.dst(i,0), v.rename(q, 0));
@@ -381,7 +388,11 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			    (sr.type(),
 			     Math.min(sr.minusWidth(),bw.minusWidth()),
 			     sr.plusWidth() );
-			//XXX: use more specific of original class, xBitWidth?
+			// use more specific of original class, xBitWidth.
+			if (left.isLowerThan(lessThan))
+			    lessThan = (xBitWidth) left;
+			if (left.isLowerThan(greaterThan))
+			    greaterThan = (xBitWidth) left;
 			// false branch:
 			if (falseTaken)
 			    raiseV(V, Wv, q.dst(i,0),
@@ -517,8 +528,6 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    // we're guaranteed that q.arrayref is non-null here.
 	    LatticeVal vA = get( q.arrayref() );
 	    LatticeVal vO = get( q.objectref() );
-	    // XXX: we can probably optimize more of these out if we take
-	    // *exact* types into consideration.
 	    if (vA instanceof xClass && vO instanceof xClass) {
 		HClass hcA = ((xClass) vA).type().getComponentType() ;
 		HClass hcO = ((xClass) vO).type();
@@ -531,6 +540,12 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		// special case when q.objectref is null
 		if (hcO == HClass.Void) // always true.
 		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),1));
+		else if (vA instanceof xClassExact &&
+			 hcO.isInstanceOf(hcA)) // always true
+		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),1));
+		else if (vO instanceof xClassExact &&
+			 !hcO.isInstanceOf(hcA)) // always false
+		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),0));
 		else if (hcO.isInstanceOf(hcA) ||
 			 hcA.isInstanceOf(hcO)) // unknowable.
 		    raiseV(V, Wv, q.dst(), new xBitWidth(toInternal(HClass.Boolean),0,1));
@@ -744,16 +759,24 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			raiseV(V, Wv, q.dst(j,i), v2.rename(q,i));
 		}
 	    }
-	    // XXX maybe stuff we can learn about v from bitwidth?
 	    else if (v != null) {
-		// mark all edges executable & propagate to all sigmas.
-		for (int i=0; i < q.nextEdge().length; i++)
-		    raiseE(Ee, Eq, Wq, q.nextEdge(i) );
-		for (int i=0; i < q.numSigmas(); i++) {
-		    LatticeVal v2 = get( q.src(i) );
-		    if (v2 != null)
-			for (int j=0; j < q.arity(); j++)
+		xBitWidth bw = extractWidth(v);
+		// mark some edges executable & propagate to all sigmas.
+		for (int j=0; j < q.nextEdge().length; j++) {
+		    if (j<q.keysLength()) { // default edge always executable
+			// learn stuff about cases from bitwidth of v.
+			int k = q.keys(j);
+			if (k>0 && Util.fls(k) > bw.plusWidth())
+			    continue; // key too large to be selected.
+			if (k<0 && Util.fls(-k) > bw.minusWidth())
+			    continue; // key too small to be selected.
+		    }
+		    raiseE(Ee, Eq, Wq, q.nextEdge(j) );
+		    for (int i=0; i < q.numSigmas(); i++) {
+			LatticeVal v2 = get( q.src(i) );
+			if (v2 != null)
 			    raiseV(V, Wv, q.dst(i,j), v2.rename(q,j));
+		    }
 		}
 	    }
 	}
@@ -1085,6 +1108,8 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public boolean equals(Object o) { return o instanceof LatticeVal; }
 	// merge.
 	public abstract LatticeVal merge(LatticeVal v);
+	// narrow.
+	public abstract boolean isLowerThan(LatticeVal v);
 	// by default, the renaming does nothing.
 	public LatticeVal rename(PHI p, int i) { return this; }
 	public LatticeVal rename(SIGMA s, int i) { return this; }
@@ -1112,6 +1137,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public LatticeVal merge(LatticeVal v) {
 	    xClass vv = (xClass) v;
 	    return new xClass(mergeTypes(this.type, vv.type));
+	}
+	public boolean isLowerThan(LatticeVal v) {
+	    return !(v instanceof xClass);
 	}
 	// Class merge function.
 	static HClass mergeTypes(HClass a, HClass b) {
@@ -1147,6 +1175,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    xClassNonNull vv = (xClassNonNull) v;
 	    return new xClassNonNull(mergeTypes(this.type, vv.type));
 	}
+	public boolean isLowerThan(LatticeVal v) {
+	    return !(v instanceof xClassNonNull);
+	}
     }
     /** An object of the specified *exact* type (not a subtype). */
     static class xClassExact extends xClassNonNull {
@@ -1163,6 +1194,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public LatticeVal merge(LatticeVal v) {
 	    if (this._equals(v)) return new xClassExact(type);
 	    return super.merge(v);
+	}
+	public boolean isLowerThan(LatticeVal v) {
+	    return !(v instanceof xClassExact);
 	}
     }
     /** An array with constant length.  The array is not null, of course. */
@@ -1187,6 +1221,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public LatticeVal merge(LatticeVal v) {
 	    if (this._equals(v)) return new xClassArray(type,length);
 	    return super.merge(v);
+	}
+	public boolean isLowerThan(LatticeVal v) {
+	    return !(v instanceof xClassArray);
 	}
     }
     /** An integer value of the specified bitwidth. */
@@ -1245,6 +1282,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		 Math.max(this.minusWidth, vv.minusWidth),
 		 Math.max(this.plusWidth, vv.plusWidth));
 	}
+	public boolean isLowerThan(LatticeVal v) {
+	    return !(v instanceof xBitWidth);
+	}
     }
     /** An integer value which is the result of an INSTANCEOF. */
     static class xInstanceofResultUnknown extends xBitWidth
@@ -1275,6 +1315,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		return makeUnknown();
 	    // all others.
 	    return super.merge(v);
+	}
+	public boolean isLowerThan(LatticeVal v) {
+	    return !(v instanceof xBitWidth);
 	}
 	public xInstanceofResultKnown makeKnown(boolean nvalue) {
 	    return new xInstanceofResultKnown(q,tested,nvalue?1:0);
@@ -1331,6 +1374,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		return makeUnknown();
 	    // all others.
 	    return super.merge(v);
+	}
+	public boolean isLowerThan(LatticeVal v) {
+	    return !(v instanceof xBitWidth);
 	}
 	public xOperBooleanResultKnown makeKnown(boolean nvalue) {
 	    return new xOperBooleanResultKnown(q,operands,nvalue?1:0);
@@ -1389,6 +1435,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    if (this._equals(v)) return new xIntConstant(type,value);
 	    return super.merge(v);
 	}
+	public boolean isLowerThan(LatticeVal v) {
+	    return !(v instanceof xIntConstant);
+	}
     }
     /** An integer value which is the result of an INSTANCEOF. */
     static class xInstanceofResultKnown extends xIntConstant
@@ -1423,6 +1472,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    makeKnown(value!=0) : makeUnknown();
 	    // all others.
 	    return super.merge(v);
+	}
+	public boolean isLowerThan(LatticeVal v) {
+	    return !(v instanceof xIntConstant);
 	}
 	public xInstanceofResultKnown makeKnown(boolean nvalue) {
 	    return new xInstanceofResultKnown(q,tested,nvalue?1:0);
@@ -1485,6 +1537,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    // all others.
 	    return super.merge(v);
 	}
+	public boolean isLowerThan(LatticeVal v) {
+	    return !(v instanceof xIntConstant);
+	}
 	public xOperBooleanResultKnown makeKnown(boolean nvalue) {
 	    return new xOperBooleanResultKnown(q,operands,nvalue?1:0);
 	}
@@ -1534,6 +1589,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    if (this._equals(v)) return new xNullConstant();
 	    return super.merge(v);
 	}
+	public boolean isLowerThan(LatticeVal v) {
+	    return !(v instanceof xNullConstant);
+	}
     }
     static class xFloatConstant extends xClassExact
 	implements xConstant {
@@ -1553,6 +1611,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public LatticeVal merge(LatticeVal v) {
 	    if (this._equals(v)) return new xFloatConstant(type, value);
 	    return super.merge(v);
+	}
+	public boolean isLowerThan(LatticeVal v) {
+	    return !(v instanceof xFloatConstant);
 	}
     }
     static class xStringConstant extends xClassExact
@@ -1578,6 +1639,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public LatticeVal merge(LatticeVal v) {
 	    if (this._equals(v)) return new xStringConstant(type, value);
 	    return super.merge(v);
+	}
+	public boolean isLowerThan(LatticeVal v) {
+	    return !(v instanceof xStringConstant);
 	}
     }
     static interface xConstant {
