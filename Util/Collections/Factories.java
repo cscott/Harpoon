@@ -16,7 +16,7 @@ import java.util.Set;
     operate on or return <code>CollectionFactory</code>s. 
  
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: Factories.java,v 1.1.2.5 2000-07-13 14:29:57 cananian Exp $
+    @version $Id: Factories.java,v 1.1.2.6 2000-07-15 15:07:19 pnkfelix Exp $
  */
 public final class Factories {
     
@@ -46,8 +46,23 @@ public final class Factories {
 	    }
     };
     
-    /** Returns a <code>ListFactory</code> that generates
-	<code>LinkedList</code>s. */
+    /** A <code>SetFactory</code> that generates <code>LinearSet</code>s. */
+    public static final SetFactory linearSetFactory = new SetFactory() {
+	public java.util.Set makeSet(java.util.Collection c) {
+	    Set ls = new LinearSet();
+	    ls.addAll(c);
+	    return ls;
+	}
+    };
+
+    /** A <code>SetFactory</code> that generates <code>TreeSet</code>s. */
+    public static final SetFactory treeSetFactory = new SetFactory() {
+	public java.util.Set makeSet(java.util.Collection c) {
+	    return new java.util.TreeSet(c);
+	}
+    };
+    
+    /** A <code>ListFactory</code> that generates <code>LinkedList</code>s. */
     public static final ListFactory linkedListFactory = new ListFactory() {
 	    public java.util.List makeList(java.util.Collection c) {
 		return new java.util.LinkedList(c);
@@ -61,7 +76,7 @@ public final class Factories {
 		return new java.util.ArrayList(c);
 	    }
     };
-    
+
     /** Returns a <code>CollectionFactory</code> that generates
 	synchronized (thread-safe) <code>Collection</code>s.  
 	The <code>Collection</code>s generated are backed by the 

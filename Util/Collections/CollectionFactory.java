@@ -17,7 +17,7 @@ import java.util.Collection;
     <code>Collection</code> interface.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CollectionFactory.java,v 1.1.2.3 2000-07-13 14:43:55 cananian Exp $
+ * @version $Id: CollectionFactory.java,v 1.1.2.4 2000-07-15 15:07:19 pnkfelix Exp $
  */
 public abstract class CollectionFactory {
     
@@ -29,6 +29,13 @@ public abstract class CollectionFactory {
     /** Generates a new, mutable, empty <code>Collection</code>. */
     public final Collection makeCollection() {
 	return makeCollection(java.util.Collections.EMPTY_SET);
+    }
+
+    /** Generates a new, mutable, empty <code>Collection</code>, using
+	<code>initialCapacity</code> as a hint to use for the capacity
+	for the produced <code>Collection</code>. */
+    public final Collection makeCollection(int initialCapacity) {
+	return makeCollection();
     }
 
     /** Generates a new, mutable <code>Collection</code>, using the
