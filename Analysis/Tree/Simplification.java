@@ -39,7 +39,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Simplification.java,v 1.1.2.4 2000-02-16 06:10:30 cananian Exp $
+ * @version $Id: Simplification.java,v 1.1.2.5 2000-02-17 01:27:11 cananian Exp $
  */
 public abstract class Simplification { 
     private static final boolean debug = false;
@@ -66,6 +66,7 @@ public abstract class Simplification {
 		    } catch (ClassCastException ex) { /* i guess not */ }
 		    // ...and modify cloned code in-place.
 		    simplify((Stm)code.getRootElement(), dg, rules);
+		    hc = code;
 		}
 		return hc;
 	    }
