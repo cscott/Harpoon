@@ -5,6 +5,7 @@ package harpoon.Util.Collections;
 
 import harpoon.Util.Util; // for log2c in self-test function.
 import java.util.Comparator;
+import java.util.Iterator;
 /**
  * <code>PersistentTreeNode</code>s are nodes of a persistent randomized
  * search tree.  This is the representation from: <cite>
@@ -21,12 +22,11 @@ import java.util.Comparator;
  * equality tests for treaps.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentTreeNode.java,v 1.8 2003-06-08 16:40:46 cananian Exp $
+ * @version $Id: PersistentTreeNode.java,v 1.9 2003-06-08 16:44:03 cananian Exp $
  */
 // XXX implement the javadoc
 // parameterize the allocation function. (pass it in as an argument?)
 // maybe parameterize tree node such that 'value' is not necessarily present?
-// define an iterator here?
 // XXX do we want fast hashCode()?
 class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V> 
     implements java.io.Serializable {
@@ -50,9 +50,17 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
     public String toString() {
 	return "["+key+"->"+value+", left="+left+", right="+right+"]";
     }
+    /** Returns the length of the longest path from the root to a leaf. */
     static <K,V> int depth(PersistentTreeNode<K,V> n) {
 	if (n==null) return 0;
 	return 1+Math.max(depth(n.left), depth(n.right));
+    }
+    /** Returns the number of nodes in the tree rooted at <code>n</code>.
+     * @return 0 if <code>n==null</code>, else
+     *         <code>1+size(n.left)+size(n.right)</code>.
+     */
+    static <K,V> int size(PersistentTreeNode<K,V> n) {
+	return (n==null) ? 0 : (1 + size(n.left) + size(n.right));
     }
 
     /** equals() merely checks that key and value are equivalent;
@@ -132,12 +140,6 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
 	    return newNode(n, key, value, left, right);
 	}
     }
-    /** Returns the number of nodes in the tree rooted at <code>n</code>.
-     * @return 0 if <code>n==null</code>, else 1+size(n.left)+size(n.right)
-     */
-    static <K,V> int size(PersistentTreeNode<K,V> n) {
-	return (n==null) ? 0 : (1 + size(n.left) + size(n.right));
-    }
     /** Returns the <code>PersistentTreeNode</code> matching <code>key</code>
      *  if any, else <code>null</code>. */
     static <K,V> PersistentTreeNode<K,V> get(PersistentTreeNode<K,V> n,
@@ -203,6 +205,39 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
 	else
 	    return newNode(null, left.key, left.value,
 			   left.left, merge(left.right, right));
+    }
+
+    /** Define an iterator over a tree (in tree order). */
+    public static <K,V>
+	Iterator<PersistentTreeNode<K,V>> iterator(PersistentTreeNode<K,V>
+						   root) {
+	return new NodeIterator<K,V>(root);
+    }
+    /** An iterator class over a tree of <code>PersistentTreeNode</code>s. */
+    private static class NodeIterator<K,V>
+	extends UnmodifiableIterator<PersistentTreeNode<K,V>> {
+	NodeList<K,V> stack = null;
+	NodeIterator(PersistentTreeNode<K,V> root) {
+	    for (PersistentTreeNode<K,V> n=root; n!=null; n=n.left)
+		stack = new NodeList<K,V>(n, stack);
+	}
+	public boolean hasNext() { return stack==null; }
+	public PersistentTreeNode<K,V> next() {
+	    PersistentTreeNode<K,V> n = stack.head;
+	    stack = stack.tail;
+	    // now recurse down the left side of the right-hand node
+	    for (PersistentTreeNode<K,V> nn=n.right; nn!=null; nn=nn.left)
+		stack = new NodeList<K,V>(nn, stack);
+	    // done.
+	    return n;
+	}
+	private static class NodeList<K,V> {
+	    PersistentTreeNode<K,V> head;
+	    NodeList<K,V> tail;
+	    NodeList(PersistentTreeNode<K,V> head, NodeList<K,V> tail) {
+		this.head = head; this.tail = tail;
+	    }
+	}
     }
 
     /** This is a "randomized" hash function, based on the object's own
