@@ -31,7 +31,7 @@ JDK 1.2 Features added:
 /* THIS COPY MODIFIED EXTENSIVELY FOR ANNOTATION BY CSA [9-12-99]. */
 action code {:
   Environment env = new HashEnvironment();
-  { env.put("#qualified",""); }
+  { env.put("#qualified",null); }
   Stack s = new Stack();
   private void pushenv() { s.push(env.getMark()); }
   private void popenv()  { env.undoToMark((Environment.Mark)s.pop()); }
@@ -42,6 +42,10 @@ action code {:
     System.out.println(lp.line+" "+lp.pos+"\t"+rp.line+" "+rp.pos);
     System.out.println("<A HREF=\""+link+"\">");
     System.out.println("</A>");
+  }
+  public void annotateURL(int left, int right, QualName qn, String what) {
+    if (qn==null) System.err.println("COULD NOT RESOLVE: "+what);
+    else annotateURL(left, right, qn.toURL());
   }
   public void annotateANCHOR(int left, int right, String name) {
     LinePos lp = parser.lexer.linepos(left), rp = parser.lexer.linepos(right);
@@ -60,10 +64,8 @@ action code {:
     }
     public String toString() {
       StringBuffer sb = new StringBuffer();
-      if (packageN!=null) sb.append(packageN);
-      if (classN==null) return sb.toString();
-      if (packageN!=null) sb.append('.');
-      sb.append(classN);
+      if (classN==null) return (packageN==null)?"":packageN;
+      sb.append(combineWithDot(packageN, classN));
       if (innerN==null) return sb.toString();
       sb.append('.'); sb.append(innerN);
       return sb.toString();
@@ -75,8 +77,8 @@ action code {:
       sb.append(classN); sb.append(".html");
       if (innerN==null) return sb.toString();
       sb.append("#class-");
-      if (packageN!=null) { sb.append(packageN); sb.append('.'); }
-      sb.append(classN); sb.append('.'); sb.append(innerN);
+      sb.append(combineWithDot(packageN, classN));
+      sb.append('.'); sb.append(innerN);
       return sb.toString();
     }
     private String pkg_offset(String pkg) {
@@ -105,22 +107,50 @@ action code {:
       do {
 	  try {
 	      HClass.forName(cls);
-	      // we've succeeded!
-	      break;
+	      // OK, check that cls/inner split is correct.
+	      if (inner!=null) HClass.forName(cls+"$"+inner);
+	      // cool! it all works!
+	      if (cls.indexOf('.')<0) return new QualName(null,cls,inner);
+	      else return new QualName(cls.substring(0,cls.lastIndexOf('.')),
+				       cls.substring(1+cls.lastIndexOf('.')),
+				       inner);
 	  } catch (NoClassDefFoundError e) { /* no class found */ }
 	  // move an element to the inner class portion.
-	  if (cls.indexOf('.')<0) /* give up! assume whole thing is package */
-	    if (inner==null) return new QualName(cls, null, null);
-	    else return new QualName(cls+"."+inner, null, null);
-	  inner = cls.substring(1+cls.lastIndexOf('.')) +
-	      ((inner==null)? "" : ("."+inner));
+	  if (cls.indexOf('.')<0) return null; // give up.
+	  inner = combineWithDot(inner,cls.substring(1+cls.lastIndexOf('.')));
 	  cls = cls.substring(0, cls.lastIndexOf('.'));
       } while (true);
-      // okay, assume that cls/inner split is correct.
-      if (cls.indexOf('.')<0) return new QualName(null,cls,inner);
-      else return new QualName(cls.substring(0,cls.lastIndexOf('.')),
-			       cls.substring(1+cls.lastIndexOf('.')),
-			       inner);
+  }
+  QualName typeName(String ty) {
+      String lhs = (ty.indexOf('.')<0)?ty:ty.substring(0,ty.indexOf('.'));
+      String rhs = (ty.indexOf('.')<0)?null:ty.substring(ty.indexOf('.')+1);
+      QualName qn;
+      // try single-type import statement.
+      if (env.containsKey("#import-"+lhs)) {
+	  qn = className(combineWithDot((String)env.get("#import-"+lhs),rhs));
+	  if (qn!=null) return qn;
+      }
+      // try name 'in current compilation units', then in current package.
+      for (String s=(String)env.get("#qualified");
+	   this_package==null || s.startsWith(this_package);
+	   s = s.substring(0, s.lastIndexOf('.')) ) {
+	  qn = className(combineWithDot(s, ty));
+	  if (qn!=null) return qn;
+	  if (s.indexOf('.')<0) break; // deal with this_package==null.
+      }
+      // try type-import-on-demand.
+      if (env.containsKey("#demand-"+lhs)) {
+	  qn = className(combineWithDot((String)env.get("#demand-"+lhs),rhs));
+	  if (qn!=null) return qn;
+      }
+      // implicit import-on-demand of java.lang
+      qn = className("java.lang."+ty);
+      if (qn!=null) return qn;
+      // ok, give up.  Assume it's fully qualified.
+      return className(ty);
+  }
+  private static String combineWithDot(String a, String b) {
+      return (a==null)?b:(b==null)?a:(a+"."+b);
   }
 :};
 
@@ -350,13 +380,15 @@ reference_type ::=
 		class_or_interface_type
 	|	array_type
 	;
-class_or_interface_type ::= name;
+class_or_interface_type ::= name:n
+		{: annotateURL(nleft,nright, typeName(n), n); :}  ;
 
 class_type ::=	class_or_interface_type;
 interface_type ::= class_or_interface_type;		
 
 array_type ::=	primitive_type dims
-	|	name dims
+	|	name:n dims
+		{: annotateURL(nleft,nright, typeName(n), n); :}
 	;
 
 // 19.5) Names
@@ -370,7 +402,7 @@ simple_name ::=	IDENTIFIER:id
 	;
 qualified_name ::=
 		name:n DOT IDENTIFIER:id
-		{: RESULT=n+"."+id; :}
+		{: RESULT=combineWithDot(n,id); :}
 	;
 
 // 19.6) Packages
@@ -394,7 +426,7 @@ type_declarations ::=
 package_declaration ::= 
 		PACKAGE name:n SEMICOLON
 		{: this_package=n; env.put("#qualified",n);
-		   annotateURL(nleft, nright, packageName(n).toURL());
+		   annotateURL(nleft, nright, packageName(n), n);
 		:}
 	;
 import_declaration ::= 
@@ -404,26 +436,27 @@ import_declaration ::=
 single_type_import_declaration ::= 
 		IMPORT name:n SEMICOLON {:
 		  env.put("#import-"+n.substring(1+n.lastIndexOf('.')), n);
-		  annotateURL(nleft, nright, className(n).toURL());
+		  QualName qn = className(n);
+		  if (qn==null) qn = packageName(n);
+		  annotateURL(nleft, nright, qn, n);
 		:}
 	;
 type_import_on_demand_declaration ::=
 		IMPORT name:n DOT MULT SEMICOLON {:
 		  /* try as class name to handle inner classes. */
 		  QualName qn = className(n);
+		  if (qn==null) qn = packageName(n);
 		  String pkg = (qn.packageN==null)?"":qn.packageN;
 		  for (Iterator it=Loader.listClasses(pkg); it.hasNext(); ) {
 		    /** note evilness here w/regard to classes named with $ */
 		    String cls = ((String) it.next()).replace('$','.');
 		    if (qn.classN!=null &&
-		      	(qn.packageN==null
-			 ? !cls.startsWith(qn.classN)
-			 : !cls.startsWith(qn.packageN+"."+qn.classN)))
+			!cls.startsWith(combineWithDot(qn.packageN,qn.classN)))
 		      continue;
-		    env.put("#import-"+cls.substring(1+cls.lastIndexOf('.')),
+		    env.put("#demand-"+cls.substring(1+cls.lastIndexOf('.')),
 			    cls);
 		  }
-		  annotateURL(nleft, nright, qn.toURL());
+		  annotateURL(nleft, nright, qn, n);
 		:}
 	;
 type_declaration ::=
@@ -453,7 +486,7 @@ class_declaration ::=
 	modifiers_opt CLASS IDENTIFIER:id super_opt interfaces_opt
 	{: pushenv();
 	   String qual = (String) env.get("#qualified");
-	   env.put("#qualified", (qual.length()>0) ? (qual+"."+id) : id);
+	   env.put("#qualified", combineWithDot(qual, id));
            annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
 	:} class_body {: popenv(); :}
 	;
@@ -492,7 +525,7 @@ class_member_declaration ::=
 	|	modifiers_opt CLASS IDENTIFIER:id super_opt interfaces_opt
 	{: pushenv();
 	   String qual = (String) env.get("#qualified");
-	   env.put("#qualified", (qual.length()>0) ? (qual+"."+id) : id);
+	   env.put("#qualified", combineWithDot(qual, id));
            annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
 	:} class_body {: popenv(); :}
 	|	interface_declaration
@@ -590,7 +623,7 @@ interface_declaration ::=
 		modifiers_opt INTERFACE IDENTIFIER:id extends_interfaces_opt {:
 		 pushenv();
 	         String qual = (String) env.get("#qualified");
-	         env.put("#qualified", (qual.length()>0) ? (qual+"."+id) : id);
+		 env.put("#qualified", combineWithDot(qual, id));
                  annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
 		:} interface_body {: popenv(); :}
 	;
