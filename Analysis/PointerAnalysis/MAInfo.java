@@ -74,7 +74,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.7 2003-03-11 00:58:31 cananian Exp $
+ * @version $Id: MAInfo.java,v 1.8 2003-04-22 00:09:54 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -89,24 +89,19 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    <code>STACK_ALLOCATE_*</code> constants. Default is
 	    <code>STACK_ALLOCATE_NOT_IN_LOOPS</code>. */
 	public int STACK_ALLOCATION_POLICY = STACK_ALLOCATE_NOT_IN_LOOPS;
-
-	/** Stack allocate everything that's captured. */
-	public static int STACK_ALLOCATE_ALWAYS       = 2;
-	/** Returns true if the stack allocation policy is
-	    <code>STACK_ALLOCATE_ALWAYS</code>. */
-	public final boolean stack_allocate_always() {
-	    return STACK_ALLOCATION_POLICY == STACK_ALLOCATE_ALWAYS; 
-	}
-
+	
+	/** Don't stack allocate anything. */
+	public static final int STACK_ALLOCATE_NOTHING      = 0;
 	/** Don't stack allocate in loops. */
-	public static int STACK_ALLOCATE_NOT_IN_LOOPS = 1;
+	public static final int STACK_ALLOCATE_NOT_IN_LOOPS = 1;
+	/** Stack allocate everything that's captured. */
+	public static final int STACK_ALLOCATE_ALWAYS       = 2;
 
-	/** Returns true if the stack allocation policy is
-	    <code>STACK_ALLOCATE_NOT_IN_LOOPS</code>. */
-	public final boolean stack_allocate_not_in_loops() {
-	    return STACK_ALLOCATION_POLICY == STACK_ALLOCATE_NOT_IN_LOOPS; 
+	/** Return true if policy is STACK_ALLOCATE_NOT_IN_LOOPS. */
+	public boolean stack_allocate_not_in_loops() {
+	    return STACK_ALLOCATION_POLICY == STACK_ALLOCATE_NOT_IN_LOOPS;
 	}
-
+	
 	/** Controls the generation of thread local heap allocation hints.
 	    Default <code>false</code>. */
 	public boolean DO_THREAD_ALLOCATION = false;
@@ -173,15 +168,16 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    print_opt(prefix, "DO_STACK_ALLOCATION", DO_STACK_ALLOCATION);
 	    if(DO_STACK_ALLOCATION) {
 		System.out.print(prefix + "\tSTACK_ALLOCATION_POLICY = ");
-		if(stack_allocate_always())
+		switch(STACK_ALLOCATION_POLICY) {
+		case STACK_ALLOCATE_ALWAYS:
 		    System.out.println("STACK_ALLOCATE_ALWAYS");
-		else {
-		    if(stack_allocate_not_in_loops())
-			System.out.println("STACK_ALLOCATE_NOT_IN_LOOPS");
-		    else {
-			System.out.println("unknown -> fatal!");
-			System.exit(1);
-		    }
+		    break;
+		case STACK_ALLOCATE_NOT_IN_LOOPS:
+		    System.out.println("STACK_ALLOCATE_NOT_IN_LOOPS");
+		    break;
+		default:
+		    System.out.println("unknown -> fatal!");
+		    System.exit(1);
 		}
 	    }
 	    print_opt(prefix, "DO_THREAD_ALLOCATION", DO_THREAD_ALLOCATION);
@@ -1057,7 +1053,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     /** Pretty printer for debug. */
     public void print() {
-	System.out.println("ALLOCATION POLLICIES:");
+	System.out.println("\nALLOCATION POLLICIES:");
 	for(Iterator it = aps.keySet().iterator(); it.hasNext(); ){
 	    Quad newq = (Quad) it.next();
 	    MyAP ap   = (MyAP) aps.get(newq);

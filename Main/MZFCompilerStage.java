@@ -17,7 +17,7 @@ import java.util.Arrays;
  * <code>MZFCompilerStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: MZFCompilerStage.java,v 1.1 2003-04-17 00:19:29 salcianu Exp $
+ * @version $Id: MZFCompilerStage.java,v 1.2 2003-04-22 00:09:57 salcianu Exp $
  */
 public class MZFCompilerStage extends CompilerStageEZ {
     
@@ -30,7 +30,7 @@ public class MZFCompilerStage extends CompilerStageEZ {
     }
 
     // a bit bogus: real_action will do the real tests
-    protected boolean enabled() { return true; }
+    public boolean enabled() { return true; }
 
     protected void real_action() {
 	/* counter factory must be set up before field reducer,

@@ -41,7 +41,7 @@ import java.util.LinkedList;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.13 2003-04-17 00:37:51 salcianu Exp $
+ * @version $Id: Realtime.java,v 1.14 2003-04-22 00:09:55 salcianu Exp $
  */
 
 public class Realtime {
@@ -395,7 +395,7 @@ public class Realtime {
 	    return opts;
 	}
 
-	protected boolean enabled() { return REALTIME_JAVA; }
+	public boolean enabled() { return REALTIME_JAVA; }
 
 	protected void real_action() {
 	    hcf = Realtime.setupCode(linker, classHierarchy, hcf);
@@ -406,7 +406,7 @@ public class Realtime {
 
     public static class TreePass extends CompilerStageEZ {
 	public TreePass() { super("realtime-tree-pass"); }
-	protected boolean enabled() { return REALTIME_JAVA; }
+	public boolean enabled() { return REALTIME_JAVA; }
 
 	protected void real_action() {
 	    hcf = Realtime.addNoHeapChecks(hcf);

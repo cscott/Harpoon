@@ -19,7 +19,7 @@ import java.util.List;
  * <code>CompilerStageEZ</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompilerStageEZ.java,v 1.3 2003-04-19 01:12:32 salcianu Exp $
+ * @version $Id: CompilerStageEZ.java,v 1.4 2003-04-22 00:09:57 salcianu Exp $
  */
 public abstract class CompilerStageEZ extends CompilerStage {
 
@@ -30,17 +30,12 @@ public abstract class CompilerStageEZ extends CompilerStage {
 	return Collections.EMPTY_LIST; // no options by default
     }
 
-
     protected abstract void real_action();
-    protected abstract boolean enabled();
 
     public final CompilerState action(CompilerState cs) {
-	if(enabled()) {
-	    _UNPACK_CS(cs);
-	    real_action();
-	    return _PACK_CS();
-	}
-	else return cs;
+	_UNPACK_CS(cs);
+	real_action();
+	return _PACK_CS();
     }
 
     protected CompilerState old_cs;

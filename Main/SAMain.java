@@ -37,6 +37,7 @@ import harpoon.Instrumentation.AllocationStatistics.AllocationInstrCompStage;
 import harpoon.Analysis.Realtime.Realtime;
 import harpoon.Analysis.MemOpt.PreallocOpt;
 import harpoon.Analysis.PointerAnalysis.PointerAnalysisCompStage;
+import harpoon.Analysis.PointerAnalysis.PAAllocSyncCompStage;
 
 import harpoon.Util.Options.Option;
 
@@ -66,17 +67,10 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.52 2003-04-19 01:16:14 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.53 2003-04-22 00:09:57 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
-    // regular compiler stages are always enabled
-    private static abstract class RegularCompilerStageEZ
-	extends CompilerStageEZ {
-	public RegularCompilerStageEZ(String name) { super(name); }
-	protected final boolean enabled() { return true; }
-    }
-
     static boolean OPTIMIZE = false;
     static boolean LOOPOPTIMIZE = false;
     static boolean USE_OLD_CLINIT_STRATEGY = false;
@@ -97,25 +91,27 @@ public class SAMain extends harpoon.IR.Registration {
     private static List/*<CompilerStage*/ stages;
 
     public static void main(String[] args) {
-
 	buildCompilerPipeline();
-
+	
 	List/*<Option>*/ allOptions = getAllOptions();
 	parseOpts(args, allOptions);
-
+	
 	if(className == null) {
 	    System.err.println("must pass a class to be compiled");
-	    printHelp();
+	    System.err.println("Use option \"-h\" to find all options");
 	    System.exit(1);
 	}
-
+	
 	checkOptionConsistency();
-
+	
 	CompilerState cs = CompilerState.EMPTY_STATE;
 
-	for(Iterator/*<CompilerStage*/ it = stages.iterator(); it.hasNext();) {
+	for(Iterator/*<CompilerStage>*/ it=stages.iterator(); it.hasNext(); ) {
 	    CompilerStage stage = (CompilerStage) it.next();
-	    cs = stage.action(cs);
+	    if(stage.enabled()) {
+		System.out.println("Execute stage " + stage.name());
+		cs = stage.action(cs);
+	    }
 	}
     }
 
@@ -146,7 +142,7 @@ public class SAMain extends harpoon.IR.Registration {
 
 
     private static void buildQuadFormPipeline() {
-	addStage(new PointerAnalysisCompStage());
+	addStage(new PAAllocSyncCompStage());
 
 	AllocationInstrCompStage aics = new AllocationInstrCompStage();
 	addStage(aics);
@@ -218,8 +214,8 @@ public class SAMain extends harpoon.IR.Registration {
 				       "malloc").equalsIgnoreCase("precise");
 	args = Option.parseOptions(allOptions, args);
 	if(args.length != 0) {
-	    System.out.println("Don't know what to do with " + args[0]);
-	    printHelp();
+	    System.err.println("Don't know what to do with " + args[0]);
+	    System.err.println("Use option \"-h\" to find all options");
 	    System.exit(1);
 	}
     }
@@ -339,11 +335,9 @@ public class SAMain extends harpoon.IR.Registration {
 
 
 
-    private static class BuildInitialCompState extends CompilerStageEZ {
+    private static class BuildInitialCompState extends RegularCompilerStageEZ {
 	public BuildInitialCompState() { super("compiler-initialization"); }
 	public List/*<Option>*/ getOptions() { return getTopLevelOptions(); }
-	
-	protected boolean enabled() { return true; }
 	
 	protected void real_action() { 
 	    // create an initial compiler state
@@ -518,6 +512,7 @@ public class SAMain extends harpoon.IR.Registration {
 
     private static class BuildQuadForm extends RegularCompilerStageEZ {
 	public BuildQuadForm() { super("build-quad-form"); }
+
 	protected void real_action() {
 	    // default code factory.
 	    hcf = new CachingCodeFactory
@@ -633,7 +628,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    super("general-quad-optimizations");
 	}
 
-	protected boolean enabled() { return OPTIMIZE; }
+	public boolean enabled() { return OPTIMIZE; }
 
 	public void real_action() {
 	    // COMMENTED UNTIL BUG DISCOVERED

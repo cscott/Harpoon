@@ -14,7 +14,7 @@ import java.util.LinkedList;
  * <code>RoleInference</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: RoleInference.java,v 1.1 2003-04-17 00:19:29 salcianu Exp $
+ * @version $Id: RoleInference.java,v 1.2 2003-04-22 00:09:57 salcianu Exp $
  */
 public class RoleInference extends CompilerStageEZ {
     
@@ -28,7 +28,7 @@ public class RoleInference extends CompilerStageEZ {
 	return opts;
     }
     
-    protected boolean enabled() { return ROLE_INFER; }
+    public boolean enabled() { return ROLE_INFER; }
     private static boolean ROLE_INFER = false;
     
     protected void real_action() {

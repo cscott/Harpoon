@@ -25,7 +25,7 @@ import java.io.FileOutputStream;
  * <code>AllocationInstrCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationInstrCompStage.java,v 1.1 2003-04-17 00:20:34 salcianu Exp $
+ * @version $Id: AllocationInstrCompStage.java,v 1.2 2003-04-22 00:09:56 salcianu Exp $
  */
 public class AllocationInstrCompStage extends CompilerStage {
 
@@ -88,7 +88,9 @@ public class AllocationInstrCompStage extends CompilerStage {
 
 	return opts;
     }
-    
+
+    // bogus, the real selection will be done inside action
+    public boolean enabled() { return true; }
 
     public CompilerState action(CompilerState cs) {
 	assert !PRINT_ALLOC_STATS || READ_ALLOC_STATS :

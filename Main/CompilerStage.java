@@ -10,7 +10,7 @@ import harpoon.Util.Options.Option;
  * <code>CompilerStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompilerStage.java,v 1.1 2003-04-17 00:10:10 salcianu Exp $
+ * @version $Id: CompilerStage.java,v 1.2 2003-04-22 00:09:57 salcianu Exp $
  */
 public abstract class CompilerStage {
     public CompilerStage(String name) { this.name = name; }
@@ -18,5 +18,8 @@ public abstract class CompilerStage {
     private final String name;
 
     public abstract List/*<Option>*/ getOptions();
+
+    public abstract boolean enabled();
+
     public abstract CompilerState action(CompilerState cs);
 }

@@ -27,7 +27,7 @@ import java.util.Collection;
  * <code>EventDrivenTransformation</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: EventDrivenTransformation.java,v 1.1 2003-04-17 00:19:29 salcianu Exp $
+ * @version $Id: EventDrivenTransformation.java,v 1.2 2003-04-22 00:09:57 salcianu Exp $
  */
 public abstract class EventDrivenTransformation {
     
@@ -56,7 +56,7 @@ public abstract class EventDrivenTransformation {
 
     public static class QuadPass1 extends CompilerStageEZ {
 	public QuadPass1() { super("event-driven-quad-pass-1"); }
-	protected boolean enabled() { return _enabled(); }
+	public boolean enabled() { return _enabled(); }
 
 	// Pass 1 returns the options for the entire transformation
 	public List/*<Option>*/ getOptions() {
@@ -89,7 +89,7 @@ public abstract class EventDrivenTransformation {
     
     public static class QuadPass2 extends CompilerStageEZ {
 	public QuadPass2() { super("event-driven-quad-pass-2"); }
-	protected boolean enabled() { return _enabled(); }
+	public boolean enabled() { return _enabled(); }
 
 	protected void real_action() {
 	    if (!SAMain.OPTIMIZE) {

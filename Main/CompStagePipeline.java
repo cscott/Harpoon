@@ -13,12 +13,13 @@ import java.util.Iterator;
 import java.util.Arrays;
 
 /**
- * <code>CompStagePipeline</code>
+ * <code>CompStagePipeline</code> is a special
+ * <code>CompilerStage</code> that is the sequential composition of a
+ * list of <code>CompilerStage</code>s.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompStagePipeline.java,v 1.1 2003-04-19 01:05:39 salcianu Exp $
- */
-public class CompStagePipeline extends CompilerStage {
+ * @version $Id: CompStagePipeline.java,v 1.2 2003-04-22 00:09:57 salcianu Exp $ */
+public abstract class CompStagePipeline extends CompilerStage {
     
     /** Creates a <code>CompStagePipeline</code>. */
     public CompStagePipeline(List/*<CompilerStage*/ stages, String name) {
@@ -54,7 +55,11 @@ public class CompStagePipeline extends CompilerStage {
 
 
     private final List/*<CompilerStage*/ stages;
-    
+
+    /** @return <code>count</code>th CompilerStage from this pipeline. */
+    protected CompilerStage getStage(int count) { 
+	return (CompilerStage) stages.get(count);
+    }
 
     public List/*<Option>*/ getOptions() {
 	List opts = new LinkedList();
@@ -65,11 +70,11 @@ public class CompStagePipeline extends CompilerStage {
 	return opts;
     }
 
-
-    public CompilerState action(CompilerState cs) {
+    public final CompilerState action(CompilerState cs) {
 	for(Iterator/*<CompilerStage>*/ it=stages.iterator(); it.hasNext(); ) {
 	    CompilerStage stage = (CompilerStage) it.next();
-	    cs = stage.action(cs);
+	    if(stage.enabled())
+		cs = stage.action(cs);
 	}
 	return cs;
     }

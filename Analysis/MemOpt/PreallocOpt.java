@@ -65,7 +65,7 @@ import harpoon.Util.Options.Option;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.22 2003-04-18 18:20:23 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.23 2003-04-22 00:09:53 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -539,7 +539,7 @@ public abstract class PreallocOpt {
 	    return opts;
 	}
 
-	protected boolean enabled() {  return _enabled(); }
+	public boolean enabled() {  return _enabled(); }
 
 	protected void real_action() {
 	    hcf = PreallocOpt.preallocAnalysis
@@ -552,7 +552,8 @@ public abstract class PreallocOpt {
     public static class TreePass extends CompilerStageEZ {
 
 	public TreePass() { super("prealloc-opt-tree-pass"); }
-	protected boolean enabled() { return _enabled(); }
+
+	public boolean enabled() { return _enabled(); }
 
 	protected void real_action() {
 	}

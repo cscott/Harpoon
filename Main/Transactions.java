@@ -16,7 +16,7 @@ import java.util.LinkedList;
  * <code>Transactions</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Transactions.java,v 1.1 2003-04-17 00:19:29 salcianu Exp $
+ * @version $Id: Transactions.java,v 1.2 2003-04-22 00:09:58 salcianu Exp $
  */
 public abstract class Transactions {
     
@@ -35,7 +35,8 @@ public abstract class Transactions {
 	    });
 	    return opts;
 	}
-	protected boolean enabled() { return Transactions.enabled(); }
+
+	public boolean enabled() { return Transactions.enabled(); }
 	
 	public void real_action() {
 	    if(!DO_TRANSACTIONS) return;
@@ -69,7 +70,7 @@ public abstract class Transactions {
 
     public static class TreePass extends CompilerStageEZ {
 	public TreePass() { super("transactions.tree-pass"); }
-	protected boolean enabled() { return Transactions.enabled(); }
+	public boolean enabled() { return Transactions.enabled(); }
 	
 	public void real_action() {
 	    // just to be safe, we'll do the algebraic simplication before
