@@ -28,7 +28,7 @@ import java.util.List;
  * to do pattern-driven tree canonicalization.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Canonicalize.java,v 1.1.2.3 2000-02-15 20:17:08 cananian Exp $
+ * @version $Id: Canonicalize.java,v 1.1.2.4 2000-02-17 03:05:01 cananian Exp $
  */
 public abstract class Canonicalize extends Simplification {
     // hide constructor
@@ -77,7 +77,8 @@ public abstract class Canonicalize extends Simplification {
 	    public boolean match(Exp e) {
 		if (contains(_KIND(e), _ESEQ)) return false;
 		if (e.getParent()!=null && // avoid MOVE(ESEQ(MEM(..)), ..)
-		    contains(_KIND(e.getParent()), _MOVE)) return false;
+		    contains(_KIND(e.getParent()), _MOVE) &&
+		    ((MOVE)e.getParent()).getDst() == e) return false;
 		ExpList el = e.kids();
 		if (el==null) return false;
 		return contains(_KIND(el.head), _ESEQ);
@@ -193,7 +194,7 @@ public abstract class Canonicalize extends Simplification {
     }
     private static boolean isNop(Stm a) {
 	return contains(_KIND(a), _EXP) &&
-	    contains(_KIND(((EXP)a).getExp()), _CONST);
+	    contains(_KIND(((EXP)a).getExp()), _CONST|_TEMP);
     }
     /** Testing function, for use in assertions that a given tree is
      *  canonical. */
