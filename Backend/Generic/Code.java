@@ -17,9 +17,13 @@ import java.util.List;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.51 2000-11-02 11:37:34 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.52 2001-05-15 05:42:08 pnkfelix Exp $
  */
 public abstract class Code extends harpoon.IR.Assem.Code {
+
+    public void printPreallocatedCode() {
+	myPrint(new java.io.PrintWriter(System.out),false,true,new PrintCallback());
+    }
 
     public static boolean PEEPHOLE_OPTIMIZATIONS = true;
 
