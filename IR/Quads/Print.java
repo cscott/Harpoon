@@ -18,7 +18,7 @@ import java.util.Map;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.1.2.9 2000-01-30 23:27:13 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.10 2000-10-10 21:32:22 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
@@ -33,7 +33,7 @@ abstract class Print  {
 	    // if has more than one edge, then other edges branch to labels.
 	    for (int j=0; j<ql[i].next().length; j++) {
 		if (j!=0 || i==ql.length-1 || ql[i].next(j)!=ql[i+1] ||
-		    ql[i] instanceof SWITCH)
+		    ql[i] instanceof SWITCH || ql[i] instanceof TYPESWITCH)
 		    if (!labels.containsKey(ql[i].next(j)))
 			labels.put(ql[i].next(j), new Label());
 		if (ql[i].next(j) instanceof PHI)
@@ -68,7 +68,7 @@ abstract class Print  {
 	    // Add footer tag to HEADER quads.
 	    if (ql[i] instanceof HEADER)
 		s += " [footer at "+labels.get(ql[i].next(0))+"]";
-	    // Print CALL, CJMP, SWITCH & PHI specially.
+	    // Print CALL, CJMP, SWITCH, TYPESWITCH & PHI specially.
 	    if (ql[i] instanceof CJMP) {
 		CJMP Q = (CJMP) ql[i];
 		indent(pw, ql[i], l, 
@@ -77,6 +77,16 @@ abstract class Print  {
 	    } else if (ql[i] instanceof SWITCH) {
 		SWITCH Q = (SWITCH) ql[i];
 		indent(pw, ql[i], l, "SWITCH "+Q.index());
+		for (int j=0; j<Q.keysLength(); j++)
+		    indent(pw, null, "  "+
+			   "case "+Q.keys(j)+": " +
+			   "goto "+labels.get(Q.next(j)));
+		indent(pw, null, "  "+
+		       "default: goto "+labels.get(Q.next(Q.keysLength())));
+		indent(pw, Q);
+	    } else if (ql[i] instanceof TYPESWITCH) {
+		TYPESWITCH Q = (TYPESWITCH) ql[i];
+		indent(pw, ql[i], l, "TYPESWITCH "+Q.index());
 		for (int j=0; j<Q.keysLength(); j++)
 		    indent(pw, null, "  "+
 			   "case "+Q.keys(j)+": " +
