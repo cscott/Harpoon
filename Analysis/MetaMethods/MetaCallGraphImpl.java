@@ -67,7 +67,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.25 2001-02-15 19:50:08 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.26 2001-03-10 18:30:48 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -132,6 +132,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    System.out.println("}");
 	}
 
+	if(COUNTER)
+	    System.out.println();
+	
 	// analyze all the roots
 	for(Iterator it = hmroots.iterator(); it.hasNext(); )
 	    analyze((HMethod) it.next());
@@ -225,7 +228,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
     private void analyze(MetaMethod root_mm){
 	if(COUNTER)
-	    System.out.println("\n" + root_mm);
+	    System.out.print(root_mm + "  ");
 
 	analyzed_mm = new HashSet();
 	WMM = new PAWorkList();
@@ -235,8 +238,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	    if(COUNTER){
 		mm_count++;
-		if(mm_count % 100 == 0)
-		    System.out.println(mm_count + " analyzed meta-method(s)");
+		if(mm_count % 10 == 0)
+		    System.out.print(".");
 	    }
 
 	    analyzed_mm.add(mm_work);
@@ -245,7 +248,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	all_meta_methods.addAll(analyzed_mm);
 
 	if(COUNTER)
-	    System.out.println(mm_count + " analyzed meta-method(s)");
+	    System.out.println(" " + mm_count + " analyzed meta-method(s)");
     }
 
     private Set calls = null;
@@ -462,7 +465,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	run_mms.add(mm);
 
 	// if(DEBUG)
-	    System.out.println("THREAD START SITE:" + 
+	    System.out.println("\nTHREAD START SITE:" + 
 			       cs.getSourceFile() + ":" + 
 			       cs.getLineNumber() + " " + 
 			       cs + " => " + mm);

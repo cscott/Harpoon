@@ -93,7 +93,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.94 2001-03-08 21:39:53 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.95 2001-03-10 18:31:12 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -102,7 +102,7 @@ public abstract class PAMain {
     // use FakeMetaCallGraph(SmartCallGraph)
     private static boolean SMART_CALL_GRAPH = false;
     // debug the class hierarchy
-    private static boolean SHOW_CH = true;
+    private static boolean SHOW_CH = false;
 
     // show the call graph
     private static boolean SHOW_CG = false;
@@ -239,17 +239,10 @@ public abstract class PAMain {
 	if(mainfo_opts.USE_INTER_THREAD)
 	    PointerAnalysis.RECORD_ACTIONS = true;
 
-	if(RTJ_SUPPORT) {
+	if(RTJ_SUPPORT)
 	    Realtime.setupObject(linker);
-	}
 
 	get_root_method(params[optind]);
-	if(hroot == null) {
-	    System.out.println("Sorry, the root method was not found\n");
-	    System.exit(1);
-	}
-	System.out.println("Root method: " + root_method.declClass + "." +
-			   root_method.name);
 
 	if(LOAD_ANALYSIS) load_analysis();
 	else {
@@ -310,8 +303,8 @@ public abstract class PAMain {
 	if(DO_INTERACTIVE_ANALYSIS)
 	    do_interactive_analysis();
     
-	//	if(MA_MAPS)
-	//    ma_maps();
+	if(MA_MAPS)
+	    ma_maps();
 
 	/*
 	if(DO_SAT)
@@ -421,36 +414,14 @@ public abstract class PAMain {
 		    System.out.println("Use new style class initializers!");
 		    hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
 		    construct_class_hierarchy();
-
-		    //DEBUG
-		    Set hms1 = new HashSet(ch.callableMethods());
 		    
 		    String resource =
 			"harpoon/Backend/Runtime1/init-safe.properties";
 		    hcf = new harpoon.Analysis.Quads.InitializerTransform
 			(hcf, ch, linker, resource).codeFactory();
-		    
-		    construct_class_hierarchy();
-		    Set hms2a = new HashSet(ch.callableMethods());
 
 		    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 		    construct_class_hierarchy();
-
-		    // DEBUG
-		    Set hms2 = new HashSet(ch.callableMethods());
-		    Util.print_collection(Util.set_diff(hms1, hms2),
-					  "hms1 - hms2");
-		    Util.print_collection(Util.set_diff(hms2, hms1),
-					  "hms2 - hms1");
-		    if(!hms2a.equals(hms2)) {
-			System.out.println("hms2a != hms2");
-			Util.print_collection(Util.set_diff(hms2a, hms2),
-					      "hms2a - hms2");
-			Util.print_collection(Util.set_diff(hms2a, hms2),
-					      "hmsa - hms2a");
-		    }
-		    else
-			System.out.println("hms2a == hms");
 		}
 	    }
 	    else
@@ -458,9 +429,11 @@ public abstract class PAMain {
 	}
 
 	hcf = new CachingCodeFactory(hcf, true);
+	ir_generation();
+
 	bbconv = new CachingBBConverter(hcf);
 	lbbconv = new CachingLBBConverter(bbconv);
-
+	lbb_generation();
 
 	construct_mroots();
 	construct_meta_call_graph();
@@ -470,6 +443,32 @@ public abstract class PAMain {
 			   (time() - g_tstart) + "ms");
     }
 
+
+    // Generates the intermediate representation for the entire program.
+    // As hcf is a CachingCodeFactory, by generating all the IR here, we're
+    // able to time it accurately.
+    private static void ir_generation() {
+	long istart = time();
+	System.out.print("IR generation (" + hcf.getCodeName() + ") ... ");
+	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); )
+	    hcf.convert((HMethod) it.next());
+	System.out.println((time() - istart) + " ms");
+    }
+
+    // Generates the light basic block representation for the entire program.
+    // As lbbconv caches its data, by doing all the conversion here, we're
+    // able to time it accurately.
+    private static void lbb_generation() {
+	long istart = time();
+	System.out.print("Light Basic Blocks generation ... ");
+	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
+	    HMethod hm  = (HMethod) it.next();
+	    HCode hcode = hcf.convert(hm);
+	    if(hcode != null)
+		lbbconv.convert2lbb(hm);
+	}
+	System.out.println((time() - istart) + " ms");
+    }
 
     private static final int MAX_CALLEES = 100;
     private static void check_no_callees() {
@@ -611,16 +610,17 @@ public abstract class PAMain {
 	try {
 	    ObjectInputStream ois = new ObjectInputStream
 		(new FileInputStream(ANALYSIS_IN_FILE));
-	    linker    = (Linker) ois.readObject();
-	    hcf       = (CachingCodeFactory) ois.readObject();
-	    bbconv    = (CachingBBConverter) ois.readObject();
-	    lbbconv   = (LBBConverter) ois.readObject();
-	    ch        = (ClassHierarchy) ois.readObject();
-	    mroots    = (Set) ois.readObject();
-	    mcg       = (MetaCallGraph) ois.readObject();
-	    mac       = (MetaAllCallers) ois.readObject();
-	    split_rel = (Relation) ois.readObject();
-	    pa        = (PointerAnalysis) ois.readObject();
+	    root_method = (Method) ois.readObject();
+	    linker      = (Linker) ois.readObject();
+	    hcf         = (CachingCodeFactory) ois.readObject();
+	    bbconv      = (CachingBBConverter) ois.readObject();
+	    lbbconv     = (LBBConverter) ois.readObject();
+	    ch          = (ClassHierarchy) ois.readObject();
+	    mroots      = (Set) ois.readObject();
+	    mcg         = (MetaCallGraph) ois.readObject();
+	    mac         = (MetaAllCallers) ois.readObject();
+	    split_rel   = (Relation) ois.readObject();
+	    pa          = (PointerAnalysis) ois.readObject();
 	    ois.close();
 	} catch(Exception e) {
 	    System.err.println("\nError while loading the PA objects!");
@@ -632,7 +632,7 @@ public abstract class PAMain {
     }
 
 
-    static private boolean LOAD_CALLABLES = true;
+    static private boolean LOAD_CALLABLES = false;
     static private boolean SAVE_CALLABLES = false;
     static private String CALLABLE_OUT_FILE = "callables";
     static private String CALLABLE_IN_FILE  = "callables";
@@ -677,7 +677,7 @@ public abstract class PAMain {
 	try {
 	    ObjectOutputStream oos = new ObjectOutputStream
 		(new FileOutputStream(ANALYSIS_OUT_FILE));
-	    // oos.writeObject(root_method);
+	    oos.writeObject(root_method);
 	    oos.writeObject(linker);
 	    oos.writeObject(hcf);
 	    oos.writeObject(bbconv);
@@ -699,19 +699,28 @@ public abstract class PAMain {
 	System.out.println((time() - start) + "ms");
     }
 
-    // Finds the root method: the "main" method of "class".
+
+    // Finds the root method: the "main" method of "root_class".
     private static void get_root_method(String root_class) {
 	root_method.name = "main";
 	root_method.declClass = root_class;
 
 	HClass hclass = linker.forName(root_method.declClass);
-	HMethod[] hm  = hclass.getDeclaredMethods();
+	Util.assert(hclass != null, "Class " + root_class + " not found!");
 
+	HMethod[] hm  = hclass.getDeclaredMethods();
 	// search for the main method
 	hroot = null;
-	for(int i = 0;i<hm.length;i++)
-	    if(hm[i].getName().equals(root_method.name))
+	for(int i = 0; i < hm.length; i++)
+	    if(hm[i].getName().equals(root_method.name)) {
+		Util.assert(hroot == null, "Ambiguous root method!");
 		hroot = hm[i];
+	    }
+	
+	Util.assert(hroot != null, "Root method \"" + root_class + "." +
+		    root_method.name + "\" not found!");
+	System.out.println("Root method: " + root_method.declClass + "." +
+			   root_method.name);
     }
 
 
@@ -1222,21 +1231,16 @@ public abstract class PAMain {
                            (time() - g_tstart) + "ms");
 	System.out.println("===================================\n");
 
-
-	if(false) {  // make sure you remove this "if" at some point
-
-	    if (mainfo_opts.USE_INTER_THREAD) {
-		g_tstart = System.currentTimeMillis();
-		for(Iterator it = allmms.iterator(); it.hasNext(); ) {
-		    MetaMethod mm = (MetaMethod) it.next();
-		    if(!analyzable(mm)) continue;
-		    pa.getIntThreadInteraction(mm);
-		}
-		System.out.println("Interthread Analysis time: " +
-				   (time() - g_tstart) + "ms");
-		System.out.println("===================================\n");
+	if (mainfo_opts.USE_INTER_THREAD) {
+	    g_tstart = System.currentTimeMillis();
+	    for(Iterator it = allmms.iterator(); it.hasNext(); ) {
+		MetaMethod mm = (MetaMethod) it.next();
+		if(!analyzable(mm)) continue;
+		pa.getIntThreadInteraction(mm);
 	    }
-	    
+	    System.out.println("Interthread Analysis time: " +
+			       (time() - g_tstart) + "ms");
+	    System.out.println("===================================\n");
 	}
 
 	g_tstart = time();
