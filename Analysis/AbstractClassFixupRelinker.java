@@ -14,7 +14,9 @@ import harpoon.Util.Collections.UniqueVector;
 import harpoon.Util.Collections.WorkSet;
 
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 /**
  * <code>AbstractClassFixupRelinker</code> is an extension of <code>Relinker</code>
  * which fixes up abstract classes so that they implement all the methods
@@ -25,7 +27,7 @@ import java.util.*;
  * The <code>AbstractClassFixupRelinker</code> remedies the situation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractClassFixupRelinker.java,v 1.8 2002-09-19 20:23:52 wbeebee Exp $
+ * @version $Id: AbstractClassFixupRelinker.java,v 1.9 2004-01-30 10:43:53 cananian Exp $
  */
 public class AbstractClassFixupRelinker extends Relinker {
     

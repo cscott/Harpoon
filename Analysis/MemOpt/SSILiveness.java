@@ -5,12 +5,20 @@ package harpoon.Analysis.MemOpt;
    FIXME: make non-recursive postfix sort.
 */
 
-import harpoon.IR.Quads.*;
-import java.util.*;
-import harpoon.Temp.*;
-import harpoon.Util.Collections.*;
-import harpoon.ClassFile.*;
-
+import harpoon.ClassFile.HCode;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Quad;
+import harpoon.Util.Collections.AggregateSetFactory;
+import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.LinearSet;
+import harpoon.Util.Collections.MultiMap;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 public class SSILiveness {
 

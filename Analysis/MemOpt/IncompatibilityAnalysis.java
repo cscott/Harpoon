@@ -11,18 +11,46 @@ import harpoon.ClassFile.Linker;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Runtime;
 
-// no I'm not gonna enumerate those :)
-import harpoon.IR.Quads.*;
+import harpoon.IR.Quads.ASET;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadKind;
+import harpoon.IR.Quads.QuadSSI;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SIGMA;
+import harpoon.IR.Quads.THROW;
+import harpoon.IR.Quads.TYPESWITCH;
 
 import harpoon.Analysis.Quads.CallGraph;
 
 import harpoon.Temp.Temp;
 
-import harpoon.Util.Collections.*;
+import harpoon.Util.Collections.AggregateSetFactory;
+import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.LinearSet;
+import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Timer;
 import harpoon.Util.Util;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Describe class <code>IncompatibilityAnalysis</code> here.

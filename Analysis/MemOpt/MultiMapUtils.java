@@ -4,9 +4,27 @@
 
 package harpoon.Analysis.MemOpt;
 
-import harpoon.Util.Collections.*;
-import java.util.*;
-import harpoon.Analysis.GraphColoring.*;
+import harpoon.Analysis.GraphColoring.Color;
+import harpoon.Analysis.GraphColoring.ColorFactory;
+import harpoon.Analysis.GraphColoring.DefaultSparseNode;
+import harpoon.Analysis.GraphColoring.SimpleGraphColorer;
+import harpoon.Analysis.GraphColoring.SparseGraph;
+import harpoon.Analysis.GraphColoring.SparseNode;
+import harpoon.Analysis.GraphColoring.UnboundedGraphColorer;
+import harpoon.Util.Collections.AggregateSetFactory;
+import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Collections.WorkSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public final class MultiMapUtils { 
     /*
