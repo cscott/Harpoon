@@ -48,7 +48,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.8 2000-02-16 22:38:03 cananian Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.9 2000-02-18 20:20:53 pnkfelix Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -200,14 +200,6 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 	    public void clear(HMethod hm) {
 		parent.clear(hm);
 		m.remove(hm); // remove from map
-	    }
-	    /** This method should go away soon. The correct way to get 
-		Derivation information is not from the 
-		IntermediateCodeFactory, but from the <code>HCode</code> 
-		object.
-	     */
-	    public harpoon.Analysis.Maps.Derivation getDerivation() {
-		return ((IntermediateCodeFactory)parent).getDerivation();
 	    }
 	    public harpoon.Backend.Generic.RegFileInfo.TempLocator
 		getTempLocator() { 
