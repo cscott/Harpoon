@@ -367,6 +367,8 @@ class RoleI {
 		    return invokedmethods();
 		case '6':
 		    return dominators();
+		case '7':
+		    return univclasspage();
 		}
 	    case 'E':
 		type3=filename.charAt(dash+3);
@@ -406,6 +408,7 @@ class RoleI {
 		    if (constructuniverse.alloweddominators==null)
 			constructuniverse.alloweddominators=new HashSet();
 		    return dominators();
+		    
 		}
 	    case 'F':
 		type3=filename.charAt(dash+3);
@@ -456,6 +459,9 @@ class RoleI {
 		case '6':
 		    constructuniverse.alloweddominators.remove(revdommap.get(Integer.valueOf(filename.substring(dash+4))));
 		    return dominators();
+		case '7':
+		    constructuniverse.singleroleclass.remove(classinfo.revclasses.get(Integer.valueOf(filename.substring(dash+4))));
+		    return univclasspage();
 		}
 	    case 'I':
 		type3=filename.charAt(dash+3);
@@ -481,6 +487,9 @@ class RoleI {
 		case '6':
 		    constructuniverse.alloweddominators.add(revdommap.get(Integer.valueOf(filename.substring(dash+4))));
 		    return dominators();
+		case '7':
+		    constructuniverse.singleroleclass.add(classinfo.revclasses.get(Integer.valueOf(filename.substring(dash+4))));
+		    return univclasspage();
 		}
 	    case 'S':
 		universes.add(constructuniverse);
@@ -709,6 +718,32 @@ class RoleI {
 	}
 	return "/"+filename;
     }
+
+    synchronized String univclasspage() {
+	String filename="classpage.html";
+	try {
+	    FileOutputStream fos=new FileOutputStream(filename);
+	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    HashMap classmap=classinfo.classes;
+	    Iterator classit=classmap.keySet().iterator();
+	    while(classit.hasNext()) {
+		String classstr=(String)classit.next();
+		if (constructuniverse.singleroleclass.contains(classstr)) {
+		    ps.println("Single Role Class: "+classstr+" <a href=\"rm-QR7"+
+			       classmap.get(classstr)+"\">Allow multiple roles</a><p>");
+		} else {
+		    ps.println("Multiple Role Class: "+classstr+" <a href=\"rm-QI7"+
+			       classmap.get(classstr)+"\">Force single role</a><p>");
+		}
+	    }
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+	return "/"+filename;
+    }
     
     synchronized String builduniversepage() {
 	String filename="universe.html";
@@ -733,6 +768,7 @@ class RoleI {
 	    ps.println("<a href=\"rm-QD5\">Invoked Methods</a><p>");
 
 	    ps.println("<a href=\"rm-QD6\">Dominators</a><p>");
+	    ps.println("<a href=\"rm-QD7\">Classes</a><p>");
 
 	    ps.println("<a href=\"rm-QS\">Save Universe as "+universes.size()+"</a><p>");
  

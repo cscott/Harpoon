@@ -161,6 +161,12 @@ class Role {
 	    return this; /*Garbage role*/
 
 	String newclassname=univ.classmatters?classname:null;
+
+	if ((newclassname!=null)&&univ.singleroleclass.contains(newclassname)) {
+	    Role r=new Role(rolei, -1, newclassname, contained, new Dominator[0],
+			    new Reference[0], new Reference[0],
+			    new IdentityRelation[0], new Reference[0], new Reference[0], new String[0]);
+	    return (Role) rolei.roletable.get(new Integer(r.rolenumber));	    	}
 	
 	ArrayList al=new ArrayList();	
 	for(int i=0;i<dominators.length;i++)

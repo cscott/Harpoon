@@ -2,6 +2,7 @@ import java.util.*;
 
 class RoleUniverse {
     boolean classmatters;
+    HashSet singleroleclass;
 
     boolean restrictarrayreferenceto;
     HashSet allowedarrayto;
@@ -26,6 +27,7 @@ class RoleUniverse {
 
     public RoleUniverse() {
 	classmatters=true;
+	singleroleclass=new HashSet();
 	restrictarrayreferenceto=false;
 	restrictfieldreferenceto=false;
 	restrictarrayreferencefrom=false;
@@ -45,6 +47,7 @@ class RoleUniverse {
 			Dominator[] alloweddominators
 			) {
 	this.classmatters=classmatters;
+	this.singleroleclass=new HashSet();
 
 	this.restrictarrayreferenceto=restrictarrayreferenceto;
 	if (restrictarrayreferenceto) {
