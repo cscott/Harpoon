@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.30 2002-04-29 21:00:49 cananian Exp $
+% $Id: oopsla02.tex,v 1.31 2002-05-11 11:20:53 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -33,7 +33,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.30 $ $}{$ $Revision: 1.30 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.31 $ $}{$ $Revision: 1.31 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -1039,7 +1039,7 @@ cost of hash/lock externalization.
 
 Many researchers have focused on the problem of reducing the amount of
 header space required to represent Java
-locks~\cite{BKMS98,OK99,ADGKRW99}. The basic issue is that the vast
+locks~\cite{bacon98,OK99,ADGKRW99}. The basic issue is that the vast
 majority of programs do not use the lock associated with every object
 in its full generality, so it is possible to develop improved
 algorithms optimized for the common case rather than the most general
@@ -1053,7 +1053,7 @@ reducing space; however, many of the algorithms also eliminate the
 need to store the complicated locking objects required to support the
 most general lock usage pattern possible in a Java program. These
 techniques typically reduce the lock space overhead to 24 header bits
-\cite{BKMS98}.
+\cite{bacon98}.
 
 Research in escape analysis and related analyses can enable the
 compiler to find objects whose locks are never 

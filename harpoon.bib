@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.70 2001-11-28 19:35:31 cananian Exp $
+% $Id: harpoon.bib,v 1.71 2002-05-11 11:20:53 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -9,6 +9,12 @@
                   Computer Aided Design ({ICCAD})"}
 @string{ICS98  = "ICS '98.  Conference proceedings of the 1998
                   international conference on Supercomputing"}
+@string {OOPSLA96 = "Proceedings of the 11th Annual Conference on
+                     Object-Oriented Programming Systems, Languages and
+                     Applications"}
+@string {OOPSLA99 = "Proceedings of the 14th Annual Conference on
+                     Object-Oriented Programming Systems, Languages and
+                     Applications"}
 @string{PLDI90 = "Proceedings of the {ACM} {SIGPLAN} '90 Conference on
                   Programming Language Design and Implementation ({PLDI})"}
 @string{PLDI91 = "Proceedings of the {ACM} {SIGPLAN} '91 Conference on
@@ -1492,9 +1498,14 @@
 }
 
 @InProceedings{RR00:PLDI00,
-        Author    = {R. Rugina and M. Rinard},
-        Title     = {Symbolic Analysis of Divide and Conquer Programs},
-        Booktitle = {{Submitted to PLDI '00}},
+  author    =    {Radu Rugina and Martin Rinard},
+  title     =    {Symbolic bounds analysis of pointers, array
+                  indices, and accessed memory regions},
+  booktitle =    PLDI00,
+  pages =        {182-195},
+  year =         2000,
+  address =	 {Vancouver, Canada},
+  month =	 jun
 }
 
 @InProceedings{bacon98,
@@ -1517,6 +1528,15 @@
   year =	 1999,
   address =	 {Denver, Colorado},
   month =	 nov
+}
+
+@InProceedings{bacon96,
+  author = 	 {David F. Bacon and Peter F. Sweeney},
+  title = 	 {Fast Static Analysis of {C++} Virtual Function Calls},
+  booktitle =	 OOPSLA96,
+  pages =	 {324-341},
+  year =	 1996,
+  address =	 {California}
 }
 
 @InProceedings{vivien01,
@@ -1560,7 +1580,7 @@
 
 @InProceedings{heintze01,
   author = 	 {Nevin Heintze and Olivier Tardieu},
-  title = 	 {Ultra-fast Aliasing Analysis using CLA: A Million
+  title = 	 {Ultra-fast Aliasing Analysis using {CLA}: A Million
                   Lines of {C} code in a Second},
   booktitle =	 PLDI01,
   pages =	 {254-263},
@@ -1587,3 +1607,128 @@
   month =	 jun
 }
 
+@inproceedings{sreedhar00,
+ author = {Vugranam C. Sreedhar and Michael Burke and Jong-Deok Choi},
+ title= {A framework for interprocedural optimization in the presence of dynamic class loading},
+ booktitle = {Proceedings of the ACM SIGPLAN '00 conference on Programming language design and implementation},
+ year = 2000,
+ isbn = {1-58113-199-2},
+ pages = {196--207},
+ location = {Vancouver, British Columbia, Canada},
+ doi = {http://doi.acm.org/10.1145/349299.349326},
+ publisher = {ACM Press},
+ }
+
+%%%%%%%%%%%%% From Martin's p.bib
+
+@string {ECOOP99 = "Proceedings of the 13th European Conference on Object-Oriented Programming"} 
+@string {EUROPAR2000 = "Proceedings of the EuroPar 2000 European Conference on Parallel Computing"} 
+@string {PPOPP01 = "Proceedings of the 8th {ACM} {SIGPLAN} 
+		Symposium on Principles and Practice of Parallel Programming"}
+@string {SAS99 = "Proceedings of the 6th International Static Analysis Symposium"}
+@string {SIGPLAN00 = "Proceedings of the 
+			{SIGPLAN} '00 Conference on Program Language 
+			Design and Implementation"}
+
+@string {Denver = "Denver, CO"}
+@string {Munich = "Munich, Germany"}
+@string {Snowbird = "Snowbird, UT"}
+@string {Vancouver = "Vancouver, Canada"}
+
+@InProceedings{OK99, 
+        Author = {T. Onodera and K. Kawachiya}, 
+        Title = {A Study of Locking Objects With Bimodal Fields}, 
+        Booktitle = OOPSLA99,
+        Address= Denver,
+        Month = Nov,
+        Year = 1999}
+
+@InProceedings{ADGKRW99, 
+        Author = {O. Agesen and D. Detlefs and A. Garthwaite and R. Knippel
+                  and Y. Ramakrishna and D. White}, 
+        Title = {An Efficient Meta-Lock for Implementing Ubiquitous Synchronization},
+        Booktitle = OOPSLA99,
+        Address= Denver,
+        Month = Nov,
+        Year = 1999}
+
+@InProceedings{ACSE99,
+        Author = {J. Aldrich and C. Chambers and E. Sirer and S. Eggers}, 
+        Title = {Static Analyses for Eliminating Unnecessary Synchronization
+                 from {J}ava Programs}, 
+        Booktitle = SAS99,
+        Location = Venice,
+        Month = Sep,
+        Year = 1999}
+
+@InProceedings{BH99,
+        Author = {J. Bogda and U. Hoelzle},
+        Title = {Removing Unnecessary Synchronization in {J}ava}, 
+        Booktitle = OOPSLA99,
+        Address= Denver,
+        Month = Nov,
+        Year = 1999}
+
+@InProceedings{WR99:OOPSLA99,
+        Author    = {J. Whaley and M. Rinard},
+        Title     = {Compositional Pointer and Escape Analysis for
+                     {J}ava Programs},
+        Booktitle = OOPSLA99,
+        Address   = Denver,
+        Month     = Nov,
+        Year      = 1999,
+}
+
+@InProceedings{CGSSM99,
+        Author = {J. Choi and M. Gupta and M. Serrano and V. Sreedhar and
+                  S. Midkiff}, 
+        Title = {Escape Analysis for {J}ava},
+        Booktitle = OOPSLA99,
+        Address= Denver,
+        Month = Nov,
+        Year = 1999}
+
+@InProceedings{Ruf00:PLDI00, 
+        Author    = {E. Ruf}, 
+        Title     = {Effective Synchronization Removal for {J}ava},
+        Booktitle = SIGPLAN00,
+        Address   = Vancouver,
+        Month     = Jun,
+        Year      = 2000,
+}
+
+@InProceedings{SR01:PPOPP01, 
+        Author    = {A. Salcianu and M. Rinard}, 
+        Title     = {Pointer and Escape Analysis for Multithreaded Programs}, 
+        Booktitle = PPOPP01,
+        Address   = Snowbird,
+        Month     = Jun,
+        Year      = 2001,
+}
+
+@InProceedings{SBA00:PLDI00, 
+        Author    = {M. Stephenson and J. Babb and S. Amarasinghe}, 
+        Title     = {Bitwidth Analysis with Application to Silicon Compilation}, 
+        Booktitle = SIGPLAN00,
+        Address   = Vancouver,
+        Month     = Jun,
+        Year      = 2000,
+}
+
+@InCollection{BGSW00, 
+	Author = {M. Budiu and S. Goldstein and M. Sakr and K. Walker}, 
+	Title = {{BitValue} Inference: Detecting and Exploiting Narrow 
+                 Bitwidth Computations}, 
+	Booktitle = EUROPAR2000, 
+	Address = Munich,
+	Month = Aug,
+	Year = 2000}
+
+@InProceedings{DH99, 
+  Title = {A study of the allocation behavior of the {SPECjvm98} {J}ava Benchmarks},
+  Author={ Sylvia Dieckmann and Urs H\"olzle},
+  Booktitle= ECOOP99, 
+  Location=Lisbon,
+  Month= Aug,
+  Year= 1999
+}
