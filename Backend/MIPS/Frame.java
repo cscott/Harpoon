@@ -7,6 +7,7 @@ import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Backend.Generic.GCInfo;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.Util.Util;
@@ -17,7 +18,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.1 2000-06-26 18:37:13 witchel Exp $
+ * @version $Id: Frame.java,v 1.1.2.2 2000-06-29 02:17:17 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
    private final harpoon.Backend.Generic.Runtime   runtime;
@@ -102,5 +103,8 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     }
     public harpoon.Backend.Generic.GCInfo getGCInfo() {
 	return gcInfo;
+    }
+    public HCodeFactory getCodeFactory(HCodeFactory hcf) {
+	return Code.codeFactory(hcf, this);
     }
 }

@@ -11,6 +11,7 @@ import harpoon.Backend.Generic.LocationFactory;
 import harpoon.Backend.Generic.RegFileInfo;
 import harpoon.Backend.Generic.Runtime;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.IR.Assem.Instr;
@@ -46,7 +47,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.4.14 2000-03-09 03:45:43 cananian Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.4.15 2000-06-29 02:17:26 cananian Exp $
  */
 public class DefaultFrame extends harpoon.Backend.Generic.Frame
     implements AllocationInfo {
@@ -225,6 +226,7 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
     public GCInfo getGCInfo() {
 	return null;
     }
+    public HCodeFactory getCodeFactory(HCodeFactory hcf) { return null; }
 }
 
 

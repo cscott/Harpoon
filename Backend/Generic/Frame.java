@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Generic;
 
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.Linker;
 
 /**
@@ -16,7 +17,7 @@ import harpoon.ClassFile.Linker;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.41 2000-01-28 03:06:26 kkz Exp $
+ * @version $Id: Frame.java,v 1.1.2.42 2000-06-29 02:16:51 cananian Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -51,6 +52,13 @@ public abstract class Frame {
 	associated with <code>this</code>.
      */
     public abstract CodeGen getCodeGen();
+
+    /** Returns a code factory for machine-specific <code>IR.Assem</code>s,
+     * given a code factory for <code>CanonicalTreeCode</code>.  Uses
+     * the code generator defined by this frame.  Returns <code>null</code>
+     * if this frame does not have a code factory that generates
+     * <code>IR.Assem.Instr</code>s. */
+    public abstract HCodeFactory getCodeFactory(HCodeFactory hcf);
 
     /** Returns the <code>Generic.TempBuilder</code> for the backend
 	associated with <code>this</code>.
