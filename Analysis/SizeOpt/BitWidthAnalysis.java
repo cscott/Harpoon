@@ -84,7 +84,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.17 2001-11-06 00:21:59 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.18 2001-11-06 18:18:16 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -815,7 +815,16 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		if (!methodMap.containsKey(hmm)) scan_one(hmm);
 		METHOD method = (METHOD) methodMap.get(hmm);
 		if (method==null) continue; // abstract or native method.
-		for (int i=0; i<myparams.length; i++)
+		int i=0;
+		if (!hmm.isStatic()) {
+		    // 'this' parameter gets narrowed by the call.
+		    mergeV(V, Wv, nc, method.params(i),
+			   narrowThis(hmm.getDeclaringClass(),
+				      get(myparams[i])) );
+		    i++;
+		}
+		// handle all the non-'this' parameters.
+		for ( ; i<myparams.length; i++)
 		    mergeV(V, Wv, nc, method.params(i), get( myparams[i] ));
 		// also mark "method" executable.
 		raiseE(Ee, Eq, Wq, nc, method.prevEdge(0));
@@ -879,6 +888,21 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		if (execMap(q.nextEdge(1)))
 		    raiseV(V, Wv, q.dst(i, 1), v2.rename(q, 1));
 	    }
+	}
+	/** private helper method to narrow the type of a 'this' pointer
+	 *  down to the given class (which defines the class method we're
+	 *  going to invoke). */
+	private LatticeVal narrowThis(HClass hc, LatticeVal v) {
+	    Util.assert(v instanceof xClassNonNull,
+			"'this' pointer should always be known non-null.");
+	    xClassNonNull vv = (xClassNonNull) v;
+	    Util.assert(!hc.isInterface()); // hc comes from method decl.
+	    // vv can be interface, in which case we *do* want to narrow.
+	    // but an interface can never be an instanceof a non-interface.
+	    if (vv.type().isInstanceOf(hc)) return vv;
+	    Util.assert(!(v instanceof xClassExact),
+			"how can 'this' be exact when it needs narrowing?");
+	    return new xClassNonNull(hc);
 	}
 	public void visit(CJMP q) {
 	    // is test constant?
