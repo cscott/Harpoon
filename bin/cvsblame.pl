@@ -1,4 +1,4 @@
-#!/usr/bonsaitools/bin/perl --
+#!/usr/bin/perl --
 # -*- Mode: perl; indent-tabs-mode: nil -*-
 #
 # The contents of this file are subject to the Netscape Public License
@@ -21,15 +21,15 @@
 #
 # cvsblame.pl - Shamelessly adapted from Scott Furman's cvsblame script
 #                 by Steve Lamm (slamm@netscape.com)
+#               Restored to its original glory by C. Scott Ananian
 #             - Annotate each line of a CVS file with its author,
 #               revision #, date, etc.
 # 
-# Report problems to Steve Lamm (slamm@netscape.com)
-#
 ##############################################################################
 
 use Time::Local qw(timegm);         # timestamps
 use POSIX qw(strftime);             # human-readable dates
+use Getopt::Std;		    # standard command-line processing
 
 $debug = 0;
 $opt_m = 0 unless (defined($opt_m));
@@ -489,7 +489,7 @@ sub extract_revision {
 sub parse_cvs_file {
     my ($rcs_pathname) = @_;
 
-    # Args in:  $opt_rev - requested revision
+    # Args in:  $opt_r - requested revision
     #           $opt_m - time since modified
     # Args out: @revision_map
     #           $revision
@@ -497,7 +497,7 @@ sub parse_cvs_file {
     #           (%revision_deltatext)
 
     @revision_map = ();
-    CheckHidden($rcs_pathname);
+    #CheckHidden($rcs_pathname); # CSA: mozilla used this to hide stuff.
 
     die "$progname: error: This file appeared to be under CVS control, " . 
         "but the RCS file is inaccessible.\n(Couldn't open '$rcs_pathname')\n"
@@ -505,13 +505,13 @@ sub parse_cvs_file {
     &parse_rcs_file();
     close(RCSFILE);
 
-    if (!defined($opt_rev) || $opt_rev eq '' || $opt_rev eq 'HEAD') {
+    if (!defined($opt_r) || $opt_r eq '' || $opt_r eq 'HEAD') {
         # Explicitly specified topmost revision in tree
         $revision = $head_revision;
     } else {
         # Symbolic tag or specific revision number specified.
-        $revision = &map_tag_to_revision($opt_rev);
-        die "$progname: error: -r: No such revision: $opt_rev\n"
+        $revision = &map_tag_to_revision($opt_r);
+        die "$progname: error: -r: No such revision: $opt_r\n"
             if ($revision eq '');
     }
 
@@ -644,12 +644,6 @@ sub parse_cvs_file {
     $revision;
 }
 
-__END__
-#
-# The following are parts of the original cvsblame script that are not
-#   used for cvsblame.pl
-#
-
 # Read CVS/Entries and CVS/Repository files.
 #
 # Creates these associative arrays, keyed by the CVS file pathname
@@ -667,7 +661,7 @@ sub read_cvs_entries
 
     $cvsdir = $directory . '/CVS';
 
-    CheckHidden($cvsdir);
+    #CheckHidden($cvsdir); # CSA: mozilla used this to hide stuff
 
     return if (! -d $cvsdir);
 
@@ -772,12 +766,12 @@ sub show_annotated_cvs_file {
         # Suppress annotation of whitespace lines, if requested;
         $annotation = $blank_annotation if $opt_w && ($text =~ /^\s*$/);
 
-#       printf "%4d ", $line if $opt_l;
-#       print "$annotation - $text";
-        push(@output, sprintf("%4d ", $line)) if $opt_l;
-        push(@output, "$annotation - $text");
+       printf "%4d ", $line if $opt_l;
+       print "$annotation - $text";
+#        push(@output, sprintf("%4d ", $line)) if $opt_l;
+#        push(@output, "$annotation - $text");
     }
-    @output;
+#    @output;
 }
 
 sub usage {
@@ -801,7 +795,7 @@ sub usage {
 ;
 }
 
-&usage if (!&Getopts('r:m:Aadhlvw'));
+&usage if (!&getopts('r:m:Aadhlvw'));
 &usage if ($opt_h);             # help option
 
 $multiple_files_on_command_line = 1 if ($#ARGV != 0);
