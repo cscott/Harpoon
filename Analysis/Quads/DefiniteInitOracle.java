@@ -45,7 +45,7 @@ import java.util.Set;
  * before its definite initialization point.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefiniteInitOracle.java,v 1.1.2.7 2001-11-07 22:24:15 cananian Exp $
+ * @version $Id: DefiniteInitOracle.java,v 1.1.2.8 2001-11-10 00:43:40 cananian Exp $
  */
 public class DefiniteInitOracle {
     private static final boolean DEBUG=true;
@@ -113,7 +113,8 @@ public class DefiniteInitOracle {
 	    DomTree dt = new DomTree(hc, false);
 	    // compute MayReadOracle
 	    MayReadOracle mro = new MayReadOracle(hc, fso, cg,
-						  hm.getDeclaringClass());
+						  hm.getDeclaringClass(),
+						  true/*special handling!*/);
 	    // compute MustParamOracle (to find variables which must contain
 	    // 'this')
 	    MustParamOracle mpo = new MustParamOracle(hc);
