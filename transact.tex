@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.4 2000-09-26 21:19:39 cananian Exp $
+% $Id: transact.tex,v 1.5 2000-09-26 21:51:06 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.4 $ $}
+\date{\today \\ $ $Revision: 1.5 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -179,10 +179,27 @@ $\text{Read}(\code{struct oobj *} o, \code{int } n)$ =
   \RETURN x
 \ENDIF
 \STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
-\STATE \COMMENT{XXX: cache/optimize the transaction list}
-\WHILE{$\neg \text{CommitP}(v \ptr \code{transid})$}
+\STATE $u \gets 0$ \COMMENT{count uncommitted transactions}
+\ASSERT $v \neq \code{null}$
+\LOOP
+  \IF{$v \ptr \code{transid} = \code{null}$}
+    \ASSERT $v \ptr \code{next} = \code{null}$
+    \BREAK \COMMENT{last record}
+  \ELSIF{$\text{CommitP}(v \ptr \code{transid})$}
+    \ASSERT $\forall n,\: o \ptr \code{field}[n]=\code{FLAG\_VALUE}
+             \Rightarrow  v \ptr \code{field}[n] \text{ is valid }$
+    \STATE \COMMENT{these two stores should be atomic}
+    \STATE $v\ptr\code{next} \gets \code{null}$
+           \COMMENT{no other transactions are relevant}
+    \STATE $v\ptr\code{transid} \gets \code{null}$
+           \COMMENT{allow gc of transaction commit record}
+    \BREAK
+%  \ELSIF{$text{AbortP}(v \ptr
+  \ENDIF
+%\WHILE{$\neg \text{CommitP}(v \ptr \code{transid})$}
   \STATE $v \gets v \ptr \code{next}$
-\ENDWHILE
+%\ENDWHILE
+\ENDLOOP
 \RETURN $v \ptr \code{field}[n]$
 \end{myalgorithmic}
 \caption{Algorithm for non-transactional read of a field.}
