@@ -8,11 +8,17 @@ package harpoon.Runtime.PreciseGC;
  * a dummy write-barrier for generational garbage collection.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrier.java,v 1.1.2.1 2001-08-21 17:40:11 kkz Exp $
+ * @version $Id: WriteBarrier.java,v 1.1.2.2 2001-08-30 23:13:31 kkz Exp $
  */
 public abstract class WriteBarrier {
     
-    /** dummy write barrier */
+    /** dummy write barrier for PSETs */
     public static native void storeCheck(Object o);
     
+    /** dummy write barrier for SETs*/
+    public static native void fsc(Object o, java.lang.reflect.Field f, 
+				  Object val, int id);
+
+    /** dummy write barrier for ASETs */
+    public static native void asc(Object o, int index, Object val, int id);
 }
