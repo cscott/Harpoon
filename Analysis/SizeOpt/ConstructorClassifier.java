@@ -36,7 +36,7 @@ import java.util.Set;
  * of several 'mostly-zero field' transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstructorClassifier.java,v 1.1.2.5 2001-11-13 05:31:12 cananian Exp $
+ * @version $Id: ConstructorClassifier.java,v 1.1.2.6 2001-11-13 21:30:56 cananian Exp $
  */
 public class ConstructorClassifier {
     private static final boolean DEBUG=false;
@@ -221,6 +221,11 @@ public class ConstructorClassifier {
 	    this.constant = mapping[p].constant;
 	    return; // done.
 	}
+	public Object clone() {
+	    if (this.param>=0) return new Classification(this.param);
+	    if (this.isConstant) return new Classification(this.constant);
+	    return new Classification();
+	}
 	public String toString() {
 	    Util.assert(!(param>0 && constant!=null));
 	    if (param>0) return "PARAM#"+param;
@@ -296,7 +301,10 @@ public class ConstructorClassifier {
 			HField hf = (HField) me.getKey();
 			Classification oc = (Classification) map.get(hf);
 			Classification nc = (Classification) me.getValue();
-			nc.map(pc); // map method's params to this' params.
+			// clone nc so we don't modify value in 'm'!
+			nc = (Classification) nc.clone();
+			// map method's params to this' params.
+			nc.map(pc);
 			if (oc!=null)
 			    nc.merge(oc); // merge if necessary.
 			map.put(hf, nc);
