@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.52 1998-09-04 09:57:19 cananian Exp $
+ * @version $Id: Translate.java,v 1.53 1998-09-04 10:03:44 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -1117,12 +1117,17 @@ class Translate  { // not public.
 	    OpField opd = (OpField) in.getOperand(0);
 	    if (isLongDouble(opd.value().getType())) { // 64-bit value.
 		ns = s.pop(3);
-		q = new SET(in, opd.value(), s.stack[2], s.stack[0]);
+		last = new SET(in, opd.value(), s.stack[2], s.stack[0]);
 	    }
 	    else {
 		ns = s.pop(2);
-		q = new SET(in, opd.value(), s.stack[1], s.stack[0]);
+		last = new SET(in, opd.value(), s.stack[1], s.stack[0]);
 	    }
+	    // null check.
+	    r = transNullCheck(((SET)last).objectref, Tnull, last, 
+			       handlers, ts);
+	    // setup next state.
+	    q = ts.header.next()[ts.which_succ];
 	    break;
 	    }
 	case Op.PUTSTATIC:
