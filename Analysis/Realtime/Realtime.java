@@ -27,10 +27,11 @@ import harpoon.Backend.Generic.Frame;
  * extensions described in the 
  * <a href=
  *  "http://java.sun.com/aboutJava/communityprocess/first/jsr001/rtj.pdf">
- * Realtime Java Specification</a>.
+ * Realtime Java Specification</a> and there's also a
+ * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.1.2.25 2001-06-22 18:51:43 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.1.2.26 2001-07-02 17:59:20 wbeebee Exp $
  */
 
 public class Realtime {
@@ -63,6 +64,16 @@ public class Realtime {
     /** Add code to the executable to enable gathering of runtime statistics. 
      */
     public static boolean COLLECT_RUNTIME_STATS = false;
+
+    /** Add checks to determine if a <code>NoHeapRealtimeThread</code> is
+     *  touching the heap.
+     */
+    public static boolean NOHEAP_CHECKS = false;
+
+    /** Add additional information on calls to RTJ_malloc to store information
+     *  about the def. points of all objects which are allocated.
+     */
+    public static boolean DEBUG_REF = true;
 
     /** Configure Realtime Java based on the following command-line options. 
      */
@@ -188,6 +199,10 @@ public class Realtime {
 				      new HClass[] { memoryArea }));
 	    roots.add(stats.getMethod("addNewArrayObject",
 				      new HClass[] { memoryArea }));
+	    if (NOHEAP_CHECKS) {
+		roots.add(stats.getDeclaredField("heapRefs"));
+		roots.add(stats.getDeclaredField("heapCheck"));
+	    }
 	}
 
 	if (REAL_SCOPES) {
@@ -333,9 +348,20 @@ public class Realtime {
 	Stats.realtimeEnd();
 	return hcf;
     }
-    
-    /** Add code to check to see if a realtime thread quanta has passed to determine
-     *  whether to do a user-thread-level context switch. 
+
+    /** Add checks to see if a <code>NoHeapRealtimeThread</code>
+     *  illegally touches the heap.
+     */
+    public static HCodeFactory addNoHeapChecks(HCodeFactory hcf) {
+	if (NOHEAP_CHECKS) {
+	    return (new HeapCheckAdder()).codeFactory(hcf);
+	}
+	return hcf;
+    }
+
+    /** Add code to check to see if a realtime thread quanta 
+     *  has passed to determine whether to do a user-thread-level 
+     *  context switch. 
      */
 
     public static HCodeFactory addQuantaChecker(HCodeFactory hcf) {

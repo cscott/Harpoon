@@ -34,10 +34,11 @@ import java.util.List;
 /**
  * <code>RealtimeRuntime</code> is a trivial extension of 
  * <code>harpoon.Backend.Runtime2.Runtime</code> that allows constants
- * to be tagged with an ImmortalMemory.
+ * to be tagged with an ImmortalMemory and emits extra const char* data
+ * for debugging purposes when Realtime.DEBUG_REF is turned on.
  * 
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: RealtimeRuntime.java,v 1.1.2.4 2001-06-17 23:07:32 cananian Exp $
+ * @version $Id: RealtimeRuntime.java,v 1.1.2.5 2001-07-02 17:59:20 wbeebee Exp $
  */
 
 public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
@@ -80,6 +81,9 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
     /** Tag all classes with <code>javax.realtime.ImmortalMemory</code> 
      *  <code>java.lang.Object.memoryArea</code> that has a field 
      *  <code>javax.realtime.ImmortalMemory.constant = true;</code>
+     *
+     *  Also emit data to deal with const char*'s that can be created
+     *  when <code>Realtime.DEBUG_REF</code>.
      */
 
     public List classData(final HClass hc) {
@@ -127,10 +131,22 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
 	    }    
 	}
 	
+	class DataConstCharArray extends Data {
+	    DataConstCharArray() {
+		super("constChar-data", hc, RealtimeRuntime.this.frame);
+
+		this.root = (HDataElement)
+		    RealtimeAllocationStrategy.emitStrings(tf, null);
+	    }
+	}
+	
 	List r = super.classData(hc);
-	ArrayList stmlist = new ArrayList(r.size() + 1);
+	ArrayList stmlist = new ArrayList(r.size() + (Realtime.DEBUG_REF?2:1));
 	stmlist.addAll(r);
 	stmlist.add(new DataConstMemoryArea());
+	if (Realtime.DEBUG_REF) {
+	    stmlist.add(new DataConstCharArray());
+	}
 	return stmlist;
     }
 }
