@@ -12,15 +12,15 @@ import harpoon.ClassFile.HMethod;
  * <code>java.lang.String</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INString.java,v 1.1.2.2 1999-08-04 05:52:35 cananian Exp $
+ * @version $Id: INString.java,v 1.1.2.2.6.1 2000-01-12 00:44:31 cananian Exp $
  */
-public class INString extends HCLibrary {
+public class INString {
     static final void register(StaticState ss) {
-	ss.register(intern());
+	ss.register(intern(ss));
     }
-    private static final NativeMethod intern() {
+    private static final NativeMethod intern(StaticState ss0) {
 	final HMethod hm = 
-	    HCstring.getMethod("intern", new HClass[0]);
+	    ss0.HCstring.getMethod("intern", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {

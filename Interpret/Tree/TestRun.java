@@ -15,6 +15,8 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
 import harpoon.Interpret.Quads.Method;
 import harpoon.IR.Quads.QuadWithTry;
 import harpoon.IR.Tree.Data;
@@ -22,18 +24,20 @@ import harpoon.IR.Tree.Data;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.zip.GZIPOutputStream;
 
 /**
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestRun.java,v 1.1.2.16 1999-10-15 18:25:39 cananian Exp $
+ * @version $Id: TestRun.java,v 1.1.2.16.2.1 2000-01-12 00:44:32 cananian Exp $
  */
-public abstract class TestRun extends HCLibrary {
+public abstract class TestRun extends Debug {
     public static void main(String args[]) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.err, true);
 	
+	Linker linker = Loader.systemLinker;
 	HCodeFactory hcf = // default code factory.
 	    new harpoon.ClassFile.CachingCodeFactory(
 	    harpoon.IR.Quads.QuadWithTry.codeFactory()
@@ -43,10 +47,10 @@ public abstract class TestRun extends HCLibrary {
 	// Cache all conversions we make in the ClassHierarchy
 	hcf = new CachingCodeFactory(hcf); 
 	
-	HClass cls = HClass.forName(args[0]);
+	HClass cls = linker.forName(args[0]);
 	System.err.println("Collecting class hierarchy information...");
-	HMethod main = cls.getMethod("main", new HClass[] { HCstringA });
-	ClassHierarchy ch = new QuadClassHierarchy(main, hcf);
+	HMethod main = cls.getMethod("main", new HClass[] { linker.forDescriptor("[Ljava/lang/String;") });
+	ClassHierarchy ch = new QuadClassHierarchy(linker, Collections.singleton(main), hcf);
 	System.err.println("done!");
 	
 	//	Frame frame = new DefaultFrame(new InterpreterOffsetMap(ch),

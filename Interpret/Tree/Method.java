@@ -13,6 +13,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.Bop;
@@ -63,9 +64,9 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.15 2000-01-10 05:08:43 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.15.2.1 2000-01-12 00:44:32 cananian Exp $
  */
-public final class Method extends HCLibrary {
+public final class Method extends Debug {
     static PrintWriter out = new java.io.PrintWriter(System.out);
     static final Integer TREE_NULL = new Integer(0);
 
@@ -78,7 +79,8 @@ public final class Method extends HCLibrary {
 	OffsetMap   map;      // The offset map used by the tree interpreter
 	StaticState ss;       // The interpreter's static state
 
-	method=cls.getMethod("main", new HClass[]{ HCstringA });
+	Linker linker = cls.getLinker();
+	method=cls.getMethod("main", new HClass[] { linker.forDescriptor("[Ljava/lang/String;") });
 	
 	Util.assert(method.isStatic());
 	Util.assert(hcf.getCodeName().equals("canonical-tree") ||
@@ -87,14 +89,14 @@ public final class Method extends HCLibrary {
 	
 	tc = (Code)hcf.convert(method);
 	map=((Tree)tc.getRootElement()).getFactory().getFrame().getOffsetMap();
-	ss = new StaticState(hcf, prof, (InterpreterOffsetMap)map);
+	ss = new StaticState(linker, hcf, prof, (InterpreterOffsetMap)map);
 	try {
-	    HMethod HMinit = HCsystem.getMethod("initializeSystemClass","()V");
+	    HMethod HMinit = ss.HCsystem.getMethod("initializeSystemClass","()V");
 	    // set up static state.
-	    ss.load(HCsystem);
+	    ss.load(ss.HCsystem);
 	    invoke(ss, HMinit, new Object[0]);
 	    // encapsulate params properly.
-	    ArrayRef params=new ArrayRef(ss,HCstringA,new int[]{args.length});
+	    ArrayRef params=new ArrayRef(ss,ss.HCstringA,new int[]{args.length});
 	    for (int i=0; i<args.length; i++)
 		params.update(i, ss.makeString(args[i]));
 	    // run main() method.
@@ -243,7 +245,7 @@ public final class Method extends HCLibrary {
 	    // failed to translate method into tree code
 	    if (c==null) {
 		ss.pushStack(new NativeStackFrame(method)); // gonna pop it
-		ObjectRef obj = ss.makeThrowable(HCunsatisfiedlinkErr,
+		ObjectRef obj = ss.makeThrowable(ss.HCunsatisfiedlinkErr,
 						 "No definition for "+method);
 		throw new InterpretedThrowable(obj, ss);
 	    }
