@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.18 2000-02-08 23:31:02 cananian Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.19 2000-02-15 15:49:53 cananian Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = CanonicalTreeCode.codename;
@@ -59,13 +59,9 @@ public class OptimizedTreeCode extends Code {
 
     private OptimizedTreeCode(HMethod newMethod, Tree tree, Frame frame) {
 	super(newMethod, tree, frame);
-	final CloningTempMap ctm = 
-	    new CloningTempMap
-	    (tree.getFactory().tempFactory(), this.tf.tempFactory());
 	final CanonicalTreeCode code = 
 	    (CanonicalTreeCode)((Code.TreeFactory)tree.getFactory()).getParent();
-	this.tree = (Tree)Tree.clone(this.tf, ctm, tree);
-	
+	this.tree = (Tree)Tree.clone(this.tf, tree, null);
 	this.treeDerivation = null; // FIXME
     }
 

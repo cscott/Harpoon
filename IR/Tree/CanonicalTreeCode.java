@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.21 2000-02-08 23:31:02 cananian Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.22 2000-02-15 15:49:53 cananian Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
@@ -47,13 +47,9 @@ public class CanonicalTreeCode extends Code {
     /* Copy constructor, should only be called by the clone() method. */
     private CanonicalTreeCode(HMethod newMethod, Tree tree, Frame frame) {
 	super(newMethod, tree, frame);
-	final CloningTempMap ctm = 
-	    new CloningTempMap
-	    (tree.getFactory().tempFactory(), this.tf.tempFactory());
 	final CanonicalTreeCode code = 
 	    (CanonicalTreeCode)((Code.TreeFactory)tree.getFactory()).getParent();
-	this.tree = (Tree)Tree.clone(this.tf, ctm, tree);
-
+	this.tree = (Tree)Tree.clone(this.tf, tree, null);
 	this.treeDerivation = null; // FIXME
     }
 

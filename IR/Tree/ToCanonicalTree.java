@@ -24,7 +24,7 @@ import java.util.HashSet;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.26 2000-02-14 21:51:27 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.27 2000-02-15 15:49:53 cananian Exp $
  */
 public class ToCanonicalTree {
     private Tree m_tree;
@@ -282,7 +282,9 @@ public class ToCanonicalTree {
 	}
     
 	private TEMP _MAP(TEMP t) { 
-	    return (TEMP)Tree.clone(tf, ctm, t); 
+	    return (TEMP)t.rename(tf, ctm, new Tree.CloneCallback() {
+		public Tree callback(Tree o, Tree n) { return n; }
+	    });
 	}
     }
     
