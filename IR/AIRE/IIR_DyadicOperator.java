@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_DyadicOperator</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_DyadicOperator.java,v 1.3 1998-10-11 00:32:19 cananian Exp $
+ * @version $Id: IIR_DyadicOperator.java,v 1.4 1998-10-11 01:24:56 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -12,6 +12,7 @@ public abstract class IIR_DyadicOperator extends IIR_Expression
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
     
     

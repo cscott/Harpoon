@@ -8,7 +8,7 @@ import java.util.Hashtable;
  * zero or more literals having either character literal value '0' or '1'.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_BitStringLiteral.java,v 1.3 1998-10-11 00:58:55 cananian Exp $
+ * @version $Id: IIR_BitStringLiteral.java,v 1.4 1998-10-11 01:24:53 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -16,7 +16,12 @@ public class IIR_BitStringLiteral extends IIR_TextLiteral
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_BIT_STRING_LITERAL).
+     * @return <code>IR_Kind.IR_BIT_STRING_LITERAL</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_BIT_STRING_LITERAL; }
     

@@ -6,7 +6,7 @@ package harpoon.IR.AIRE;
  * methods, subprograms, and public data elements describing scalar natures.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ScalarNatureDefinition.java,v 1.3 1998-10-11 00:32:25 cananian Exp $
+ * @version $Id: IIR_ScalarNatureDefinition.java,v 1.4 1998-10-11 01:25:01 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -14,7 +14,12 @@ public abstract class IIR_ScalarNatureDefinition extends IIR_NatureDefinition
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_SCALAR_NATURE_DEFINITION).
+     * @return <code>IR_Kind.IR_SCALAR_NATURE_DEFINITION</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_SCALAR_NATURE_DEFINITION; }
     //CONSTRUCTOR:

@@ -8,7 +8,7 @@ import java.util.Vector;
  * or common parent class.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_List.java,v 1.2 1998-10-11 00:32:22 cananian Exp $
+ * @version $Id: IIR_List.java,v 1.3 1998-10-11 01:24:59 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -16,6 +16,7 @@ public abstract class IIR_List extends IIR
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
     
     

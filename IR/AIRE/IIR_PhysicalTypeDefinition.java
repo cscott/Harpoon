@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_PhysicalTypeDefinition</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_PhysicalTypeDefinition.java,v 1.2 1998-10-11 00:32:23 cananian Exp $
+ * @version $Id: IIR_PhysicalTypeDefinition.java,v 1.3 1998-10-11 01:25:00 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -12,7 +12,12 @@ public class IIR_PhysicalTypeDefinition extends IIR_ScalarTypeDefinition
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_PHYSICAL_TYPE_DEFINITION).
+     * @return <code>IR_Kind.IR_PHYSICAL_TYPE_DEFINITION</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_PHYSICAL_TYPE_DEFINITION; }
     //CONSTRUCTOR:

@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_SimultaneousIfStatement</code>
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_SimultaneousIfStatement.java,v 1.3 1998-10-11 00:32:26 cananian Exp $
+ * @version $Id: IIR_SimultaneousIfStatement.java,v 1.4 1998-10-11 01:25:03 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -12,7 +12,12 @@ public class IIR_SimultaneousIfStatement extends IIR_SimultaneousStatement
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_SIMULTANEOUS_IF_STATEMENT).
+     * @return <code>IR_Kind.IR_SIMULTANEOUS_IF_STATEMENT</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_SIMULTANEOUS_IF_STATEMENT; }
     //CONSTRUCTOR:

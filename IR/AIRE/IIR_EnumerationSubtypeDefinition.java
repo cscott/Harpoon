@@ -9,7 +9,7 @@ import java.util.Hashtable;
  * <code>IIR_EnumerationTypeDefinition</code> base type.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_EnumerationSubtypeDefinition.java,v 1.5 1998-10-11 00:58:56 cananian Exp $
+ * @version $Id: IIR_EnumerationSubtypeDefinition.java,v 1.6 1998-10-11 01:24:56 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -17,7 +17,12 @@ public class IIR_EnumerationSubtypeDefinition extends IIR_EnumerationTypeDefinit
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_ENUMERATION_SUBTYPE_DEFINITION).
+     * @return <code>IR_Kind.IR_ENUMERATION_SUBTYPE_DEFINITION</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_ENUMERATION_SUBTYPE_DEFINITION; }
     

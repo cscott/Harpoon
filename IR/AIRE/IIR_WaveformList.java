@@ -8,7 +8,7 @@ package harpoon.IR.AIRE;
  * and concurrent signal assignment statements.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_WaveformList.java,v 1.2 1998-10-11 00:32:28 cananian Exp $
+ * @version $Id: IIR_WaveformList.java,v 1.3 1998-10-11 01:25:05 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -16,7 +16,12 @@ public class IIR_WaveformList extends IIR_List
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_WAVEFORM_LIST).
+     * @return <code>IR_Kind.IR_WAVEFORM_LIST</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_WAVEFORM_LIST; }
     //CONSTRUCTOR:

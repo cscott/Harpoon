@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_Statement</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_Statement.java,v 1.3 1998-10-11 00:32:27 cananian Exp $
+ * @version $Id: IIR_Statement.java,v 1.4 1998-10-11 01:25:03 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -12,6 +12,7 @@ public abstract class IIR_Statement extends IIR
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
     
     

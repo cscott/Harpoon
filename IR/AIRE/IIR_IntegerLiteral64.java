@@ -9,7 +9,7 @@ import java.util.Hashtable;
  * range covered by a 64-bit signed, two's complement representation.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_IntegerLiteral64.java,v 1.2 1998-10-11 00:32:21 cananian Exp $
+ * @version $Id: IIR_IntegerLiteral64.java,v 1.3 1998-10-11 01:24:58 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -17,7 +17,12 @@ public class IIR_IntegerLiteral64 extends IIR_Literal
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_INTEGER_LITERAL64).
+     * @return <code>IR_Kind.IR_INTEGER_LITERAL64</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_INTEGER_LITERAL64; }
     

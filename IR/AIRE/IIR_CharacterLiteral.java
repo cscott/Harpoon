@@ -8,7 +8,7 @@ import java.util.Hashtable;
  * character literals defined by ISO Std. 8859-1.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_CharacterLiteral.java,v 1.2 1998-10-11 00:32:17 cananian Exp $
+ * @version $Id: IIR_CharacterLiteral.java,v 1.3 1998-10-11 01:24:54 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -16,7 +16,12 @@ public class IIR_CharacterLiteral extends IIR_TextLiteral
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_CHARACTER_LITERAL).
+     * @return <code>IR_Kind.IR_CHARACTER_LITERAL</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_CHARACTER_LITERAL; }
     

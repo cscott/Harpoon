@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_CaseStatementAlternative</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_CaseStatementAlternative.java,v 1.4 1998-10-11 00:32:17 cananian Exp $
+ * @version $Id: IIR_CaseStatementAlternative.java,v 1.5 1998-10-11 01:24:54 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -12,6 +12,7 @@ public abstract class IIR_CaseStatementAlternative extends IIR_Tuple
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
     
     

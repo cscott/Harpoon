@@ -8,7 +8,7 @@ package harpoon.IR.AIRE;
  * appear as public data elements within record type definitions.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_NatureElementDeclarationList.java,v 1.2 1998-10-11 00:32:23 cananian Exp $
+ * @version $Id: IIR_NatureElementDeclarationList.java,v 1.3 1998-10-11 01:24:59 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -16,7 +16,12 @@ public class IIR_NatureElementDeclarationList extends IIR_List
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_NATURE_ELEMENT_DECLARATION_LIST).
+     * @return <code>IR_Kind.IR_NATURE_ELEMENT_DECLARATION_LIST</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_NATURE_ELEMENT_DECLARATION_LIST; }
     //CONSTRUCTOR:

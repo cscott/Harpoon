@@ -8,7 +8,7 @@ package harpoon.IR.AIRE;
  * directly or indirectly within <code>IIR_ProcessStatement</code>s.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_SequentialStatementList.java,v 1.2 1998-10-11 00:32:25 cananian Exp $
+ * @version $Id: IIR_SequentialStatementList.java,v 1.3 1998-10-11 01:25:01 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -16,7 +16,12 @@ public class IIR_SequentialStatementList extends IIR_List
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_SEQUENTIAL_STATEMENT_LIST).
+     * @return <code>IR_Kind.IR_SEQUENTIAL_STATEMENT_LIST</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_SEQUENTIAL_STATEMENT_LIST; }
     //CONSTRUCTOR:

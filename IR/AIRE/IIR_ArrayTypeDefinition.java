@@ -11,7 +11,7 @@ package harpoon.IR.AIRE;
  * steps in an array definition.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ArrayTypeDefinition.java,v 1.2 1998-10-11 00:32:16 cananian Exp $
+ * @version $Id: IIR_ArrayTypeDefinition.java,v 1.3 1998-10-11 01:24:53 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -19,7 +19,12 @@ public class IIR_ArrayTypeDefinition extends IIR_TypeDefinition
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_ARRAY_TYPE_DEFINITION).
+     * @return <code>IR_Kind.IR_ARRAY_TYPE_DEFINITION</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_ARRAY_TYPE_DEFINITION; }
     //CONSTRUCTOR:

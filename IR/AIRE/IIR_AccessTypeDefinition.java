@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_AccessTypeDefinition</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_AccessTypeDefinition.java,v 1.3 1998-10-11 00:32:15 cananian Exp $
+ * @version $Id: IIR_AccessTypeDefinition.java,v 1.4 1998-10-11 01:24:52 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -12,7 +12,12 @@ public class IIR_AccessTypeDefinition extends IIR_TypeDefinition
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_ACCESS_TYPE_DEFINITION).
+     * @return <code>IR_Kind.IR_ACCESS_TYPE_DEFINITION</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_ACCESS_TYPE_DEFINITION; }
     

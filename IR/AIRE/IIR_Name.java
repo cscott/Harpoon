@@ -6,7 +6,7 @@ package harpoon.IR.AIRE;
  * of referents to explicitly or implicitly declared named entities.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_Name.java,v 1.2 1998-10-11 00:32:22 cananian Exp $
+ * @version $Id: IIR_Name.java,v 1.3 1998-10-11 01:24:59 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -14,6 +14,7 @@ public abstract class IIR_Name extends IIR
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
     
     //METHODS:  

@@ -8,7 +8,7 @@ import java.util.Hashtable;
  * contiguous comment within the original source code.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_Comment.java,v 1.3 1998-10-11 00:58:56 cananian Exp $
+ * @version $Id: IIR_Comment.java,v 1.4 1998-10-11 01:24:54 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -16,7 +16,12 @@ public class IIR_Comment extends IIR
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_COMMENT).
+     * @return <code>IR_Kind.IR_COMMENT</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_COMMENT; }
     

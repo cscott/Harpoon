@@ -8,7 +8,7 @@ package harpoon.IR.AIRE;
  * and their values within an aggregate.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_AssociationElementByExpression.java,v 1.2 1998-10-11 00:32:16 cananian Exp $
+ * @version $Id: IIR_AssociationElementByExpression.java,v 1.3 1998-10-11 01:24:53 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -16,7 +16,12 @@ public class IIR_AssociationElementByExpression extends IIR_AssociationElement
 {
 
 // PUBLIC:
+    /** Accept a visitor class. */
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    /**
+     * Returns the <code>IR_Kind</code> of this class (IR_ASSOCIATION_ELEMENT_BY_EXPRESSION).
+     * @return <code>IR_Kind.IR_ASSOCIATION_ELEMENT_BY_EXPRESSION</code>
+     */
     public IR_Kind get_kind()
     { return IR_Kind.IR_ASSOCIATION_ELEMENT_BY_EXPRESSION; }
 
