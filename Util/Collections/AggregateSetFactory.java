@@ -23,7 +23,7 @@ import java.util.Set;
  * but the iterator is as fast as <code>ArrayList</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AggregateSetFactory.java,v 1.1.2.3 2001-01-05 21:36:18 pnkfelix Exp $
+ * @version $Id: AggregateSetFactory.java,v 1.1.2.4 2001-01-11 02:46:23 pnkfelix Exp $
  */
 public class AggregateSetFactory extends SetFactory
     implements java.io.Serializable {
@@ -74,6 +74,7 @@ public class AggregateSetFactory extends SetFactory
 			if (!removeValid) throw new IllegalStateException();
 			Object o = elements.remove(--i);
 			s.remove(Default.pair(IDENTITY, o));
+			removeValid = false;
 		    }
 		    private boolean removeValid = false;
 		};
