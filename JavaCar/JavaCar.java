@@ -7,12 +7,12 @@ public class JavaCar extends JFrame{
     public static int WIDTH=500;
     public static int HEIGHT=300;
     public static boolean p;
-    public JavaCar (String a) {
+    public JavaCar (String a, String ip) {
 	super(a);
         getContentPane().setLayout(new GridLayout(5 ,3));
 	JButton con = new JButton("Connect");
 	final JTextField u = new JTextField();
-        final IPaqServoController foo = new IPaqServoController("18.24.6.250"); 
+        final IPaqServoController foo = new IPaqServoController(ip); 
         	con.addActionListener(new ActionListener(){
 		public void actionPerformed(ActionEvent e) {
 		    foo.move(1,126);
@@ -50,7 +50,7 @@ public class JavaCar extends JFrame{
     }
     
     public static void main(String s[]){
-	JavaCar frame = new JavaCar("Connection info");
+	JavaCar frame = new JavaCar("Connection info", s[0]);
 	frame.addWindowListener(new WindowAdapter(){
 		public void windowClosing(WindowEvent e) {
 		    System.exit(0);}
