@@ -28,7 +28,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  * <code>Util</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Util.java,v 1.4 2002-05-11 03:50:27 salcianu Exp $
+ * @version $Id: Util.java,v 1.5 2002-05-11 14:43:56 salcianu Exp $
  */
 public abstract class Util {
 
@@ -90,12 +90,16 @@ public abstract class Util {
 	for(SCComponent scc = method_sccs.getLast(); scc != null;
 	    scc = scc.prevTopSort()) {
 	    if(scc.isLoop() || (scc.nodeSet().size() > 1)) {
-		// if the method corresponds to a set of mutually
-		// recursive methods, add all the methods transitively called
-		// from it to reached_from_rec
+		// if the SCC corresponds to a set of mutually
+		// recursive methods, add all the methods transitively
+		// called from it to reached_from_rec
+
+		// exploring the tree rooted in one of the methods
+		// from scc is enough as it includes all the other
+		// methods from scc
 		HMethod hm = (HMethod) scc.nodes()[0];
 		if(!reached_from_rec.contains(hm))
-		    grab_callees(hm, reached_from_rec);
+		    grab_callees(hm, reached_from_rec, cg);
 	    }
 	}
 
@@ -103,16 +107,23 @@ public abstract class Util {
     }
 
 
+    // put into reached_from_rec all methods that may be transitively
+    // called from hm
     private static void grab_callees(final HMethod hm,
-				     final Set reached_from_rec) {
+				     final Set reached_from_rec,
+				     final CallGraph cg) {
 	PAWorkList W = new PAWorkList();
 	W.add(hm);
 	reached_from_rec.add(hm);
 
 	while(!W.isEmpty()) {
-	    HMethod callee = (HMethod) W.remove();
-	    if(reached_from_rec.add(callee))
-		W.add(callee);
+	    HMethod caller = (HMethod) W.remove();
+	    HMethod callees[] = cg.calls(caller);
+	    for(int i = 0; i < callees.length; i++)
+		// if newly seen methods, put it into the worklist
+		// to process later
+		if(reached_from_rec.add(callees[i]))
+		    W.add(callees[i]);
 	}
     }
 
