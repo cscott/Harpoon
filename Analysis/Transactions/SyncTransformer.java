@@ -62,9 +62,11 @@ import java.util.Set;
 /**
  * <code>SyncTransformer</code> transforms synchronized code to
  * atomic transactions.  Works on <code>QuadSSA</code> form.
+ * Use the <code>SyncTransformer.treeCodeFactory()</code> to clean 
+ * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.2 2001-01-11 23:14:12 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.3 2001-01-11 23:59:22 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
