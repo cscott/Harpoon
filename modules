@@ -40,6 +40,7 @@ Code	Code
 Design	Design
 Docs	Docs
 Runtime Runtime
+Tests	Tests
 FLEX    -a Code Runtime
 EventDriven EventDriven
 

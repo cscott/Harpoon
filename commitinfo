@@ -21,4 +21,5 @@
 #---------------------------------------------------------------------
 Code	$CVSROOT/CVSROOT/commit_prep -u -r
 Runtime	$CVSROOT/CVSROOT/commit_prep -u -r
+Tests	$CVSROOT/CVSROOT/commit_prep -u -r
 EventDriven $CVSROOT/CVSROOT/commit_prep -u -r
