@@ -38,7 +38,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.18 2000-06-09 17:13:00 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.19 2000-06-26 15:43:55 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -221,12 +221,8 @@ public class RegFileInfo
 			vr2twt.put(vregs[i+1], t2);
 			return t2;
 		    } else {
-			// suggest spill
-			if ( ! vregPreassigned(regfile, vregs[i]) &&
-			     ! vregPreassigned(regfile, vregs[i+1])) {
-			    
-			    
-			}
+			// TODO: suggest spill
+
 			return null;
 
 		    }
@@ -244,14 +240,7 @@ public class RegFileInfo
 		     !rf.containsKey(vr2twt.get(vreg)):
 		     true));
 	}
-	
-	private boolean vregPreassigned(Map rf, Temp vreg) {
-	    return (rf.get(vreg) instanceof PreassignTemp) ||
-		(vr2twt.containsKey(vreg)?
-		 (rf.get(vr2twt.get(vreg)) 
-		  instanceof PreassignTemp):
-		 false);
-	}
+
     }
 
     public VRegAllocator allocator() {
@@ -275,18 +264,10 @@ public class RegFileInfo
 		    (regFile.get(assign[1]) == null)) {
 		    suggests.add(Arrays.asList(assign));
 		} else {
-		    // don't add precolored registers to potential
-		    // spills. 
-		    if ( !(regFile.get(assign[0]) 
-			   instanceof RegFileInfo.PreassignTemp) &&
-			 !(regFile.get(assign[1]) 
-			   instanceof RegFileInfo.PreassignTemp)) {
-
-			Set s = new LinearSet(2);
-			s.add(assign[0]);
-			s.add(assign[1]);
-			spills.add(s);
-		    }
+		    Set s = new LinearSet(2);
+		    s.add(assign[0]);
+		    s.add(assign[1]);
+		    spills.add(s);
 		}
 	    }
 
@@ -297,14 +278,8 @@ public class RegFileInfo
 		    suggests.add(ListFactory.singleton(regGeneral[i]));
 		} else {
 		    Set s = new LinearSet(1);
-		    
-		    // don't add precolored registers to potential
-		    // spills. 
-		    if (!( regFile.get(regGeneral[i]) 
-			   instanceof RegFileInfo.PreassignTemp )) {
-			s.add(regGeneral[i]);
-			spills.add(s);
-		    }
+		    s.add(regGeneral[i]);
+		    spills.add(s);
 		}
 	    }
 	}

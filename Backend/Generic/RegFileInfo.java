@@ -46,27 +46,8 @@ import java.util.Iterator;
     Allocator can merge Virtual Registers in different Basic Blocks
     together before mapping them to Physical Register Temps.
 
-    <p> FSK: Preassign Temps are unnecessary and don't even do the
-    job in certain pathological cases.  They will be removed after I
-    finish my own work and have a chance to revise my system to make
-    preassignment information totally local to the register
-    allocator. 
-
-    <p> Lastly, a <i>Preassign Temp</i> is an Temp representing some
-    value that has no representation as a Flex Temp.  It is used for
-    portions of the code where the Code Generator has inserted
-    hardcoded references to Physical Register Temps (such as when it
-    is setting up the arguments for a function call); we do not want
-    those Registers to be used to store any other values, and we do
-    not want to allow them to be suggested for spilling when the
-    register file is full.  So when the Allocator is requesting a
-    Register to store some Flex Temp, it should set up mappings from
-    any preassigned Physical Register Temps to newly generated
-    <code>PreassignTemp</code>s to represent the values that are being
-    maintained by the hardcoded references.
-  
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.27 2000-06-08 06:25:08 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.28 2000-06-26 15:43:47 pnkfelix Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -252,9 +233,7 @@ public abstract class RegFileInfo {
 		       Register <code>Temp</code>s should simply not
 		       have an entry in <code>regfile</code> (as
 		       opposed to the alternative of mapping to some
-		       NoValue object).  Registers that are
-		       pre-assigned and cannot be spilled should map
-		       to an instance of a RegFileInfo.PreassignTemp
+		       NoValue object).  
 	@return A <code>List</code> <code>Iterator</code> of Register
 	        <code>Temp</code>s.  The <code>Iterator</code> is
 	        guaranteed to have at least one element.  Each
@@ -293,11 +272,6 @@ public abstract class RegFileInfo {
 	to save the values within said registers to their appropriate
 	memory locations, and to generate the code to put those values
 	back in the register file when they are needed next.
-	Note to implementors: make <b>sure</b> that you do not return
-	Registers that map to <code>RegFileInfo.PreassignTemp</code>s
-	in your 'potential spill' set; it could lead to preassigned 
-	registers being assigned for other variables, which defeats
-	the whole purpose of pre-assignment.
     */
     public static abstract class SpillException extends Exception {
 	public SpillException() { super(); }

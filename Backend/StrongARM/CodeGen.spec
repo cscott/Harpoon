@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.157 2000-06-07 05:11:12 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.158 2000-06-26 15:43:55 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1849,17 +1849,30 @@ MOVE<p,i,f>(TEMP(dst), src) %{
 }%
 
 MOVE<d,l>(TEMP(dst), src) %{
-    Util.assert( dst instanceof TwoWordTemp, "why is dst: "+dst + 
-		 " a normal Temp? " + harpoon.IR.Tree.Print.print(ROOT));
+    Util.assert( dst instanceof TwoWordTemp, 
+		 "why is dst: "+dst + 
+		 " a normal Temp? "
+		 // + harpoon.IR.Tree.Print.print(ROOT)
+		 );
 
-    Util.assert(src instanceof TwoWordTemp, "why is src: "+src + 
-		 " a normal Temp? " + harpoon.IR.Tree.Print.print(ROOT));
+    Util.assert(src instanceof TwoWordTemp, 
+		"why is src: "+src + 
+		 " a normal Temp? " 
+		// + harpoon.IR.Tree.Print.print(ROOT)
+		);
 
     declare( dst, code.getTreeDerivation(),  ROOT.getSrc() );
 
-        // not certain an emitMOVE is legal with the l/h modifiers
+    if (true) {
+    // old way
     emit( ROOT, "mov `d0l, `s0l", dst, src );
     emit( ROOT, "mov `d0h, `s0h", dst, src );
+    } else {
+    // new way
+    emitMOVE( ROOT, "mov `d0l, `s0l\n"+
+	            "mov `d0h, `s0h", dst, src );
+    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{src});
+    }
 }%
 
 /* ACK! Our assembler doesn't support this, even though our processor does. =(
