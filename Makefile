@@ -1,16 +1,21 @@
 JCC=javac
 JAR=jar
 JAVADOC=javadoc
+SSH=ssh
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 RELEASE=*.java README BUILDING Makefile
+
+# eventually we'd like to use something like Code/bin/find-flex-dir
+# to set this variable.  The below is an interim hack.
+FLEX_DIR=../Code
 
 all:    clean doc realtime.jar # realtime.tgz
 
 clean:
 	@echo Cleaning up docs and realtime.jar.
 	@rm -rf doc
-	@rm -rf ../Code/Support/realtime.jar
+	@rm -rf $(FLEX_DIR)/Support/realtime.jar
 	@rm -rf realtime.tgz
 
 doc:
@@ -27,7 +32,7 @@ realtime.jar:
 	@mkdir javax/realtime
 	@rm -f Object.class
 	@mv *.class javax/realtime/
-	@jar -c javax/realtime/*.class > ../Code/Support/realtime.jar
+	@jar -c javax/realtime/*.class > $(FLEX_DIR)/Support/realtime.jar
 	@rm -rf javax
 
 realtime.tgz:
@@ -36,7 +41,7 @@ realtime.tgz:
 
 jar-install: realtime.jar
 	@echo Installing realtime.jar.
-	tar c ../Code/Support/realtime.jar | \
+	tar -C $(FLEX_DIR)/Support -c realtime.jar | \
 		$(SSH) $(INSTALLMACHINE) "tar -C $(INSTALLDIR) -x"
 
 tar-install: realtime.tgz
@@ -47,6 +52,7 @@ tar-install: realtime.tgz
 doc-install: doc
 	@echo Installing documentation.
 	tar c doc | \
-		$(SSH) $(INSTALLMACHINE) "tar -C $(INSTALLDIR)/Realtime -x"
+		$(SSH) $(INSTALLMACHINE) \
+	"mkdir -p $(INSTALLDIR)/Realtime ; tar -C $(INSTALLDIR)/Realtime -x"
 
 install: jar-install tar-install doc-install
