@@ -1,254 +1,332 @@
-// ConstantPropagation.java, created Sun Dec  5  1:26:37 1999 by duncan
-// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// ConstantPropagation.java, created Fri Aug 24 22:57:03 2001 by kkz
+// Copyright (C) 2000 Karen Zee <kkz@tmi.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Tree;
 
-import harpoon.Analysis.BasicBlock; 
-import harpoon.Analysis.DataFlow.ReachingDefs; 
-import harpoon.Analysis.DataFlow.ReachingHCodeElements; 
-import harpoon.Analysis.DataFlow.Solver; 
+import harpoon.Analysis.ReachingDefs;
+import harpoon.Analysis.ReachingDefsAltImpl;
+import harpoon.Analysis.ReachingDefsImpl;
+import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDefer;
-import harpoon.IR.Tree.Code;
+import harpoon.IR.Tree.ALIGN;
+import harpoon.IR.Tree.BINOP;
+import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
-import harpoon.IR.Tree.ESEQ; 
-import harpoon.IR.Tree.Exp; 
-import harpoon.IR.Tree.ExpList; 
-import harpoon.IR.Tree.INVOCATION; 
-import harpoon.IR.Tree.METHOD; 
-import harpoon.IR.Tree.MOVE; 
-import harpoon.IR.Tree.NAME; 
-import harpoon.IR.Tree.SEQ; 
+import harpoon.IR.Tree.CanonicalTreeCode;
+import harpoon.IR.Tree.Code;
+import harpoon.IR.Tree.DATUM;
+import harpoon.IR.Tree.EXPR;
+import harpoon.IR.Tree.Exp;
+import harpoon.IR.Tree.ExpList;
+import harpoon.IR.Tree.INVOCATION;
+import harpoon.IR.Tree.JUMP;
+import harpoon.IR.Tree.LABEL;
+import harpoon.IR.Tree.MEM;
+import harpoon.IR.Tree.METHOD;
+import harpoon.IR.Tree.MOVE;
+import harpoon.IR.Tree.NAME;
+import harpoon.IR.Tree.Print;
+import harpoon.IR.Tree.RETURN;
+import harpoon.IR.Tree.SEGMENT;
 import harpoon.IR.Tree.Stm;
-import harpoon.IR.Tree.TEMP; 
+import harpoon.IR.Tree.TEMP;
+import harpoon.IR.Tree.THROW;
 import harpoon.IR.Tree.Tree;
 import harpoon.IR.Tree.TreeKind;
-import harpoon.IR.Tree.TreeVisitor; 
-import harpoon.Temp.Temp; 
-import harpoon.Util.CloneableIterator; 
+import harpoon.IR.Tree.TreeVisitor;
+import harpoon.IR.Tree.UNOP;
+import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
-import java.util.HashMap; 
-import java.util.HashSet;
-import java.util.Iterator; 
-import java.util.Map;
-import java.util.Set; 
-import java.util.Stack; 
+import java.util.Iterator;
+import java.util.Set;
 
 /**
- * <code>ConstantPropagation</code> performs constant propagation on 
- * canonical trees.  
+ * <code>ConstantPropagation</code> performs constant
+ * propagation on canonical tree form.
  * 
- * <p><b>CAUTION</b>: it modifies code in-place.
- * 
- * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ConstantPropagation.java,v 1.1.2.17 2001-06-17 22:31:58 cananian Exp $
+ * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
+ * @version $Id: ConstantPropagation.java,v 1.1.2.18 2001-08-28 20:05:20 kkz Exp $
  */
-public final class ConstantPropagation { 
-
-    // Prevent instantiation. 
-    private ConstantPropagation() { } 
-
-    /** 
-     * Performs the constant propagation transformation on <code>code</code>. 
-     * 
-     * <br><b>Requires:</b>
-     *   <code>code</code> is in canonical form.
-     * <br><b>Modifies:</b>
-     *   <code>code</code>
-     * <br><b>Effects:</b>
-     *   Performs constant propagation on <code>code</code> in-place. 
-     */ 
-    public static void optimize(Code code) { 
-	ConstPropVisitor cpv = new ConstPropVisitor(code); 
+public class ConstantPropagation extends 
+    harpoon.Analysis.Transformation.MethodMutator {
+    
+    /** Creates a <code>ConstantPropagation</code>. */
+    public ConstantPropagation(HCodeFactory parent) { 
+	super(parent);
+	Util.assert(parent.getCodeName().equals(CanonicalTreeCode.codename));
     }
 
-    /** Class to do constant propagation. */
-    private static class ConstPropVisitor extends TreeVisitor { 
-	// Maps temps to the Stms that define them. 
-	private Map                   tempsToDefs = new HashMap(); 
-	// Worklist containing the next Trees to process. 
-	private Stack                 worklist    = new Stack(); 
-	// Class to perform reaching definitions analysis. 
-	private ReachingHCodeElements rch; 
-	// The tree code we are modifying
-	private Code                  code;
+    protected HCode mutateHCode(HCodeAndMaps input) {
+	Code hc = (Code) input.hcode();
+	String old = Print.print((Tree)hc.getRootElement());
+	CFGrapher cfger = hc.getGrapher();
+	TreeVisitor tv = new ConstPropVisitor(hc);
+	// we put all elements in array to avoid screwing up the
+	// iterator as we mutate the tree in-place.
+	Object[] elements = cfger.getElements(hc).toArray();
+	for (int i=0; i < elements.length; i++) {
+	    ((Stm) elements[i]).accept(tv);
+	}
+	return hc;
+    }
 
-	/** Class constructor. */ 
-	public ConstPropVisitor(Code code) { 
-	    this.code = code; 
+    private static class ConstPropVisitor extends TreeVisitor {
+	private ReachingDefs rd;
+	boolean changed = false;
 
-	    // Initialize mapping of temps to the Stms that define them. 
-	    mapTempsToDefs(code); 
+	ConstPropVisitor(Code hc) {
+	    this.rd = new ReachingDefsAltImpl(hc, 
+					      hc.getGrapher(), 
+					      hc.getUseDefer());
+	}
 
-	    // Perform reaching definitions analysis on the tree code. 
-	    BasicBlock.Factory bbf = new BasicBlock.Factory
-		(code, code.getGrapher());
+	// should never get here
+	public void visit (Tree t) { Util.assert(false); }
 
-	    this.rch = new ReachingHCodeElements(bbf);
-	    Solver.forwardRPOSolve(bbf.getRoot(), this.rch); 
+	// ALIGNs are okay
+	public void visit(ALIGN a) { }
 
-
-	    // Traverse the tree. 
-	    this.worklist.push(code.getRootElement()); 
-	    while (!worklist.isEmpty()) { 
-		Tree t = (Tree)worklist.pop(); 
-		t.accept(this); 
+	// for BINOPs, tricky
+	public void visit(BINOP b) {
+	    // go up until we find a Stm so we can use a UseDefer
+	    Tree parent = parentStm(b);
+	    Util.assert(parent != null);
+	    Exp left = b.getLeft();
+	    if (left.kind() == TreeKind.TEMP) {
+		Exp val = constant((TEMP)left, (Stm)parent, rd);
+		if (val != null) b.setLeft(val);
+	    } else {
+		left.accept(this);
+	    }
+	    Exp right = b.getRight();
+	    if (right.kind() == TreeKind.TEMP) {
+		Exp val = constant((TEMP)right, (Stm)parent, rd);
+		if (val != null) b.setRight(val);
+	    } else {
+		right.accept(this);
 	    }
 	}
 
-	/** Throws an error: ESEQ is not part of canonical trees */ 
-	public void visit(ESEQ e) { 
-	    throw new Error
-		("Constant propagation only works on canonical tree form!"); 
+	// for CJUMPs, check test condition
+	public void visit(CJUMP c) {
+	    Exp test = c.getTest();
+	    if (test.kind() == TreeKind.TEMP) {
+		Exp val = constant((TEMP)test, c, rd);
+		if (val != null) c.setTest(val);
+	    } else {
+		test.accept(this);
+	    }
 	}
 	
-	public void visit(Exp e) { 
-	    for (ExpList el = e.kids(); el != null; el = el.tail) { 
-		this.worklist.push(el.head); 
+	// CONSTs are already okay
+	public void visit(CONST c) { }
+
+	// for DATUM, check data
+	public void visit(DATUM d) {
+	    Exp data = d.getData();
+	    if (data.kind() == TreeKind.TEMP) {
+		Exp val = constant((TEMP)data, d, rd);
+		if (val != null) d.setData(val);
+	    } else {
+		data.accept(this);
 	    }
 	}
 
-	public void visit(INVOCATION i) { 
-	    // Only the function pointer and the arguments could conceivably
-	    // be replaced by this transformation. 
-	    this.worklist.push(i.getFunc()); 
-	    for (ExpList el = i.getArgs(); el != null; el = el.tail) { 
-		this.worklist.push(el.head); 
+	// for EXPRs, check exp
+	public void visit(EXPR e) {
+	    Exp exp = e.getExp();
+	    if (exp.kind() == TreeKind.TEMP) {
+		Exp val = constant((TEMP)exp, e, rd);
+		if (val != null) e.setExp(val);
+	    } else {
+		exp.accept(this);
 	    }
 	}
 
-	public void visit(METHOD m) { /* Don't need to replace parameters. */ }
-
-	public void visit(MOVE m) { 
-	    // If dst is a TEMP, can't replace it because we're writing to it. 
-	    if (m.getDst().kind() != TreeKind.TEMP) { this.worklist.push(m.getSrc()); }
-	    this.worklist.push(m.getSrc()); 
-	}
-
-	public void visit(SEQ s) { 
-	    this.worklist.push(s.getLeft()); 
-	    this.worklist.push(s.getRight()); 
-	}
-	
-	public void visit(Stm s) { 
-	    for (ExpList e = s.kids(); e != null; e = e.tail) { 
-		this.worklist.push(e.head); 
+	// for INVOCATIONs, check func and args
+	public void visit (INVOCATION i) {
+	    Exp func = i.getFunc();
+	    if (func.kind() == TreeKind.TEMP) {
+		Exp val = constant((TEMP)func, i, rd);
+		if (val != null) i.setFunc(val);
+	    } else {
+		func.accept(this);
 	    }
-	}
-
-	/** 
-	 * Determines whether "t" is constant.  If so, replaces "t"
-	 * with the appropriate constant. 
-	 */ 
-	public void visit(TEMP t) { 
-	    // The statement in which this TEMP is used.
-	    Stm parent       = STM(t); 
-	    // The reaching definition information on entry to "parent". 
-	    Set reachingDefs = this.rch.getReachingBefore(parent); 
-	    // The set of Stms which define this t.temp. 
-	    Set tDefs = (Set)this.tempsToDefs.get(t.temp); 
-	    // The set of Stms which define this temp that reach "parent". 
-	    // This set MUST be non-empty (or we'd have a USE with no DEF). 
-	    tDefs.retainAll(reachingDefs); 
-	    Util.assert(!tDefs.isEmpty()); 
-
-	    // Initially assume that we can replace "t" with a constant. 
-	    boolean replaceT = true; 
-	    // We don't yet know the value of "t".  
-	    Exp     valueT   = null; 
-	    // Examine all definitions of "t" which reach this statement.  
-	    // If they are all constant, and define "t" to the same value,
-	    // we can replace "t". 
-	    for (Iterator i=tDefs.iterator(); i.hasNext() && replaceT; ) { 
-		Stm sNext = (Stm)i.next(); // The next definition of "t". 
-		Exp src   = getSrc(sNext); // The value assigned to "t".    
-		if (src != null) { 
-		    // Don't yet know the value of "t". 
-		    if (valueT == null) { valueT = src; } 
-		    // Check the "src" is consistent with other definitions
-		    // of "t", and that it represents a constant value. 
-		    replaceT = isEqualConst(valueT, src); 
+	    ExpList args = i.getArgs();
+	    while(args != null) {
+		Exp arg = args.head;
+		if (arg.kind() == TreeKind.TEMP) {
+		    Exp val = constant((TEMP)arg, i, rd);
+		    if (val != null)
+			i.setArgs(ExpList.replace(i.getArgs(), arg, val));
+		} else {
+		    arg.accept(this);
 		}
-		// Could not determine the value assigned to "t". 
-		// Can't perform constant propagation. 
-		else { replaceT = false; } 
-	    }
-	    // Our analysis says that it's OK to replace "t" with a constant
-	    // value.  Use the tree structure to accomplish this. 
-	    if (replaceT) { 
-		t.replace((Tree)valueT.clone());
+		args = args.tail;
 	    }
 	}
 
-	public void visit(Tree t) { throw new Error("No defaults here."); }
+	// for JUMPs, check exp
+	public void visit(JUMP j) {
+	    Exp exp = j.getExp();
+	    if (exp.kind() == TreeKind.TEMP) {
+		Exp val = constant((TEMP)exp, j, rd);
+		if (val != null) j.setExp(val);
+	    } else {
+		exp.accept(this);
+	    }
+	}
+
+	// LABELs are okay
+	public void visit(LABEL l) { }
+
+	// for MEMs, tricky
+	public void visit(MEM m) {
+	    // go up until we find a Stm so we can use a UseDefer
+	    Tree parent = parentStm(m);
+	    Util.assert(parent != null);
+	    Exp exp = m.getExp();
+	    if (exp.kind() == TreeKind.TEMP) {
+		Exp val = constant((TEMP)exp, (Stm)parent, rd);
+		if (val != null) m.setExp(val);
+	    } else {
+		exp.accept(this);
+	    }
+	}
+
+	// METHODs are okay
+	public void visit(METHOD m) { }
+
+	// for MOVEs, check the src
+	public void visit(MOVE m) {
+	    Exp src = m.getSrc();
+	    if (src.kind() == TreeKind.TEMP) {
+		Exp val = constant((TEMP)src, m, rd);
+		if (val != null) m.setSrc(val);
+	    } else {
+		src.accept(this);
+	    }
+	}
+
+	// NAMEs are okay
+	public void visit(NAME n) { }
 	
-	//************************************************************//
-	//                                                            //
-	//                      Utility Methods                       //
-	//                                                            //
-	//************************************************************// 
-	
-	private Exp getSrc(Stm def) { 
-	    if (def.kind() == TreeKind.MOVE) { 
-		return ((MOVE)def).getSrc(); 
-	    }
-	    else { return null; }
-	}
-
-	// Returns true if "e1" and "e2" are constant, 
-	// and evaluate to the same value. 
-	private boolean isEqualConst(Exp e1, Exp e2) { 
-	    if (e1.kind() != e2.kind()) { 
-		return false; 
-	    }
-	    else if (e1.kind() == TreeKind.CONST) { 
-		CONST c1 = (CONST)e1; 
-		CONST c2 = (CONST)e2; 
-		return 
-		    c1.type == c2.type &&
-		    c1.value == c2.value; 
-	    }
-	    else if (e1.kind() == TreeKind.NAME) { 
-		NAME n1 = (NAME)e1;
-		NAME n2 = (NAME)e2;
-		return n1.label.equals(n2.label); 
-	    }
-	    else { 
-		return false; 
+	// for RETURNs, check retval
+	public void visit(RETURN r) {
+	    Exp retval = r.getRetval();
+	    if (retval.kind() == TreeKind.TEMP) {
+		Exp val = constant((TEMP)retval, r, rd);
+		if (val != null) r.setRetval(val);
+	    } else {
+		retval.accept(this);
 	    }
 	}
 
-	// Maps each temp to the Stms that define it. 
-	private void mapTempsToDefs(Code code) { 
-	    UseDefer ud = code.getUseDefer();
-	    for (Iterator i = code.getElementsI(); i.hasNext(); ) { 
-		Tree tNext = (Tree)i.next(); 
-		if (tNext instanceof Stm && !(tNext instanceof SEQ)) { 
-		    Stm sNext = (Stm)tNext; 
-		    Temp[] defs = ud.def(sNext); 
-		    for (int n=0; n<defs.length; n++) { 
-			if (!this.tempsToDefs.containsKey(defs[n]))
-			    this.tempsToDefs.put(defs[n], new HashSet()); 
-			Set hceDefs = (Set)this.tempsToDefs.get(defs[n]); 
-			hceDefs.add(sNext); 
+	// SEGMENTs are okay
+	public void visit(SEGMENT s) { }
+
+	// TEMPs are okay
+	public void visit(TEMP t) { }
+
+	// for THROWs, check retex and handler
+	public void visit(THROW t) {
+	    Exp retex = t.getRetex();
+	    if (retex.kind() == TreeKind.TEMP) {
+		Exp val = constant((TEMP)retex, t, rd);
+		if (val != null) t.setRetex(val);
+	    } else {
+		retex.accept(this);
+	    }
+	    Exp handler = t.getHandler();
+	    if (handler.kind() == TreeKind.TEMP) {
+		Exp val = constant((TEMP)handler, t, rd);
+		if (val != null) t.setHandler(val);
+	    } else {
+		handler.accept(this);
+	    }
+	}
+
+	// for UNOPs, tricky
+	public void visit(UNOP u) {
+	    // go up until we find a Stm so we can use a UseDefer
+	    Tree parent = parentStm(u);
+	    Util.assert(parent != null);
+	    Exp operand = u.getOperand();
+	    if (operand.kind() == TreeKind.TEMP) {
+		Exp val = constant((TEMP)operand, (Stm)parent, rd);
+		if (val != null) u.setOperand(val);
+	    } else {
+		operand.accept(this);
+	    }
+	}
+
+	// returns the parent Stm to whom this Exp belongs
+	private static Stm parentStm(Exp exp) {
+	    Tree parent = exp.getParent();
+	    while (!(parent instanceof Stm))
+		parent = parent.getParent();
+	    return (Stm)parent;
+	}
+
+	// returns a CONST or NAME if the given TEMP can be
+	// replaced by such. else returns null.
+	private static Exp constant(TEMP T, Stm parent, ReachingDefs rd) {
+	    Set s = rd.reachingDefs(parent, T.temp);
+	    // if no definitions reach, then this
+	    // is dead code, and we're done
+	    if (s.size() == 0)
+		return null;
+	    // all the definitions must be MOVEs with
+	    // equivalent CONSTs or NAMEs as sources
+	    Iterator it = s.iterator();
+	    // all definitions are Stms
+	    Stm first = (Stm) it.next();
+	    if (first.kind() != TreeKind.MOVE) return null;
+	    Exp firstSrc = ((MOVE) first).getSrc();
+	    // if the first MOVE we see fits
+	    // our criterion, continue
+	    // all subsequent MOVEs must have
+	    // equivalent sources
+	    if (firstSrc.kind() == TreeKind.CONST) {
+		CONST c = (CONST) firstSrc;
+		while(it.hasNext()) {
+		    // check for match
+		    Stm stm = (Stm) it.next();
+		    Number n = c.value();
+		    if (stm.kind() != TreeKind.MOVE) return null;
+		    Exp src = ((MOVE) stm).getSrc();
+		    if (src.kind() != TreeKind.CONST ||
+			src.type() != c.type())
+			return null;
+		    if (n == null) {
+			if (((CONST) src).value() != null) return null;
+		    } else {
+			if (!((CONST) src).value().equals(n)) return null;
 		    }
 		}
+		// done!
+		return (Exp)c.clone();
+	    } else if (firstSrc.kind() == TreeKind.NAME) {
+		NAME n = (NAME) firstSrc;
+		while(it.hasNext()) {
+		    // check for match
+		    Stm stm = (Stm) it.next();
+		    if (stm.kind() != TreeKind.MOVE) return null;
+		    Exp src = ((MOVE) stm).getSrc();
+		    if (src.kind() != TreeKind.NAME ||
+			!((NAME) src).label.equals(n.label))
+			return null;
+		    // all NAMEs have type Type.POINTER
+		    Util.assert(src.type() == n.type());
+		}
+		// done!
+		return (Exp)n.clone();
 	    }
-	}
-
-	private static Stm RS(Stm seq) { 
-	    while (seq.kind()==TreeKind.SEQ) seq = ((SEQ)seq).getLeft();  
-	    return seq;
-	}
-
-	private static Stm STM(Exp e) { 
-	    Tree t = e; 
-	    while (t instanceof Exp) { t = t.getParent(); }
-	    return (Stm)t;
+	    return null;
 	}
     }
 }
-
-
-
