@@ -171,7 +171,7 @@ class FileOutputStream extends OutputStream
      * @since      JDK1.0
      */
     public void write(byte b[]) throws IOException {
-	writeBytes(b, 0, b.length);
+	write(b, 0, b.length);
     }
 
     public VoidContinuation writeAsync(byte b[]) throws IOException
@@ -189,7 +189,10 @@ class FileOutputStream extends OutputStream
      * @since      JDK1.0
      */
     public void write(byte b[], int off, int len) throws IOException {
-	writeBytes(b, off, len);
+	//	writeBytes(b, off, len);
+	for (int i = 0 ; i < len ; i++) {
+	    write(b[off + i]);
+	}
     }
 
     public VoidContinuation writeAsync(byte b[], int off, int len) {
@@ -204,7 +207,16 @@ class FileOutputStream extends OutputStream
      * @since      JDK1.0
      */
     public native void close() throws IOException;
-    
+
+    public VoidContinuation closeAsync() {
+	try {
+	    close();
+	} catch (IOException e) {
+	    return new VoidDoneContinuation(e);
+	}
+	return new VoidDoneContinuation();
+    }
+
     /**
      * Returns the file descriptor associated with this stream.
      *

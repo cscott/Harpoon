@@ -149,7 +149,7 @@ class FileInputStream extends InputStream
      * @since      JDK1.0
      */
     public int read(byte b[]) throws IOException {
-	return readBytes(b, 0, b.length);
+	return read(b, 0, b.length);
     }
 
 
@@ -172,7 +172,31 @@ class FileInputStream extends InputStream
      * @since      JDK1.0
      */
     public int read(byte b[], int off, int len) throws IOException {
-	return readBytes(b, off, len);
+	if (len <= 0) {
+	    return 0;
+	}
+
+	int c = read();
+	if (c == -1) {
+	    return -1;
+	}
+	b[off] = (byte)c;
+
+	int i = 1;
+	try {
+	    for (; i < len ; i++) {
+		c = read();
+		if (c == -1) {
+		    break;
+		}
+		if (b != null) {
+		    b[off + i] = (byte)c;
+		}
+	    }
+	} catch (IOException ee) {
+	}
+	return i;
+	//	return readBytes(b, off, len);
     }
 
     public IntContinuation readAsync(byte b[], int off, int len) {

@@ -24,6 +24,7 @@ public final class Scheduler
     
     // these two map fds (indices) to Threads that are blocked on them
     private static Thread[] rTable= new Thread[MAX_FD], wTable= new Thread[MAX_FD];
+    private static int[] fdarray= new int[MAX_FD];
 
     private static int nBlockedIO= 0;
 
@@ -103,36 +104,56 @@ public final class Scheduler
 	while(nThreads > 0) 
 	    if (currentThread != null)
 		if (currentThread.cc != null) {
+		    // System.out.println("2");
+		    //System.out.println(currentThread);
 		    VoidResultContinuation tmp= currentThread.cc;
+		    //System.out.println(tmp);
+		    //System.out.println("3");
 		    currentThread.cc= null;
+		    //System.out.println("4");
 		    tmp.resume();
+		    //System.out.println("5");
 		}
 		else {
+		    //System.out.println("6");
 		    Thread tt= currentThread;
+		    //System.out.println("7");
 		    currentThread= null;
+		    //System.out.println("8");
 		    nThreads--;
+		    //System.out.println("9");
 		    tt.die();
+		    //System.out.println("10");
 		}
 	    else if (readyThreads != null) {
+		//System.out.println("11");
 		currentThread= readyThreads;
+		//System.out.println("12");
 		readyThreads= currentThread.link;
+		//System.out.println("13");
 		currentThread.link= null;
+		//System.out.println("14");
 	    }
-	    else getFDs();
+	    else {
+		//System.out.println("15");
+		getFDs();
+		//System.out.println("0");
+	    }
+	//System.out.println("1");
     }	
 	
 
     private static void getFDs() {
-	int fds[]= NativeIO.getFDs();
+	int fdsize= NativeIO.getFDs(fdarray);
 
 
         Thread[] table= rTable;
 
-	for (int i= 0; i < fds.length; i++)
-	    if (fds[i] != -1) { 
-	        Thread t= table[fds[i]];
+	for (int i= 0; i < fdsize; i++)
+	    if (fdarray[i] != -1) { 
+	        Thread t= table[fdarray[i]];
 		addReadyThread(t);
-		table[fds[i]]= null;
+		table[fdarray[i]]= null;
 		nBlockedIO --;
 	    }
 	    else table= wTable;
