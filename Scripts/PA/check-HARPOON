@@ -1,0 +1,7 @@
+# make sure HARPOON is initialized
+if [ ! -n "$HARPOON" -a -d $HARPOON ]
+then
+    echo "Please set HARPOON to the Harpoon root directory";
+    echo "e.g. export HARPOON=/home/salcianu/Harpoon";
+    exit 1;
+fi

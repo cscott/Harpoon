@@ -1,0 +1,61 @@
+#!/bin/bash
+
+SCR_DIR=`dirname $0`
+CALL_DIR=`pwd`
+
+source ${SCR_DIR}/check-HARPOON
+source ${SCR_DIR}/applications
+
+APPLICATIONS="water"
+
+if [ ! -d ${CALL_DIR}/execs ]
+then
+    mkdir ${CALL_DIR}/execs
+fi
+
+
+
+echo "Building the with-clustered-heaps runtime";
+
+cd ${HARPOON}/Runtime
+
+configure \
+    --with-precise-c --with-gc=conservative \
+    --with-thread-model=heavy --disable-shared \
+    --with-clustered-heaps --with-statistics
+
+make
+
+cd ${CALL_DIR};
+
+
+
+for opt in inter intra none; do
+ if [$opt = none]; then
+    echo "Building the normal runtime (no clustered heaps)"
+
+    cd ${HARPOON}/Runtime
+
+    ./configure \
+	--with-precise-c --with-gc=conservative \
+        --with-thread-model=heavy --disable-shared \
+	--with-statistics
+
+    ./make
+
+    cd ${CALL_DIR};
+ fi
+ for name in $APPLICATIONS; do
+    echo "Producing executable for ${name}.${opt}"
+    ${SCR_DIR}/compile-precisec-one \
+	${name}.${opt} \
+	${CALL_DIR}/${opt}/${name}.${opt};
+    echo "WOW:" ${CALL_DIR}/${opt}/${name}.${opt}/run${name}.${opt};
+    ls -l ${CALL_DIR}/${opt}/${name}.${opt}/run${name}.${opt};
+    mv \
+	${CALL_DIR}/${opt}/${name}.${opt}/run${name}.${opt} \
+	${CALL_DIR}/execs/run${name}.${opt};	
+    ls -l execs
+ done;
+done
+
