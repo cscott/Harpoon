@@ -4,6 +4,7 @@
 package harpoon.Interpret.Tree;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Backend.Generic.GCInfo;
 import harpoon.Backend.Generic.InstrBuilder;
 import harpoon.Backend.Generic.TempBuilder;
 import harpoon.Backend.Generic.LocationFactory;
@@ -45,7 +46,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.4.11 2000-01-17 12:53:39 cananian Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.4.12 2000-01-28 03:02:31 kkz Exp $
  */
 public class DefaultFrame extends harpoon.Backend.Generic.Frame
     implements AllocationInfo {
@@ -60,6 +61,7 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
     private static Temp[]       registers;
     private static TempFactory  regTempFactory;
     private final Linker	linker;
+    private GCInfo              gcInfo; // should really be final
 
     static {
         regTempFactory = new TempFactory() {
@@ -94,6 +96,12 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
 	if (map==null) throw new Error("Must specify OffsetMap");
 	else m_offsetMap = map;
 	m_runtime = new harpoon.Backend.Runtime1.Runtime(this, null, main, ch, null);
+    }
+
+    public DefaultFrame(HMethod main, ClassHierarchy ch, OffsetMap map,
+			AllocationStrategy st, GCInfo gcInfo) {
+	this(main, ch, map, st);
+	this.gcInfo = gcInfo;
     }
 	
     public Linker getLinker() { return linker; }
@@ -217,6 +225,9 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
 	    return getRegister(2);
 	}
     };
+    public GCInfo getGCInfo() {
+	return gcInfo;
+    }
 }
 
 
