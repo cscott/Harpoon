@@ -137,9 +137,8 @@ void NTHR_free(jobject obj) {
   if (GC_base(oobj)!=oobj)
     clheap_detach(CLHEAP_FROM_OOBJ(oobj));
 #elif 1
-  /* risky assumptions! */ /* FIXME: I don't think this even works. CSA */
-  if (CLHEAP_FROM_OOBJ(oobj)==(((char*)oobj)-sizeof(clheap_t)))
-    clheap_detach(CLHEAP_FROM_OOBJ(oobj));
+  /* risky assumption: assume every thread has an attached heap. */
+  clheap_detach(CLHEAP_FROM_OOBJ(oobj));
 #else
 # error Um, I dunno how you can tell whether this thread has an attached heap.
 #endif
