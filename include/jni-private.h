@@ -134,38 +134,12 @@ struct FNI_class2info {
 extern struct FNI_class2info class2info_start[], class2info_end[];
 
 /* --------------- wrapping and unwrapping objects. ------------ */
-/* an unwrapped jobject is a struct oobj *...*/
-typedef struct oobj * jobject_unwrapped;
-/* a wrapped object is a struct _jobject *...*/
-struct _jobject {
-  struct oobj * obj;
-  struct _jobject * next;
-};
-/* define handy (un)wrapper macros */
-#define FNI_WRAP(x) (FNI_NewLocalRef(env, x))
-#define FNI_UNWRAP(_x) ({jobject x=_x; (x==NULL)?NULL:x->obj; })
+/* MOVED: to fni-wrap.h, for better precise-c backend integration */
+#include "fni-wrap.h"
 
 /* ---------------------- thread state ---------------------------------*/
-// any changes to this structure should be reflected in
-// Code/Backend/Runtime1/StubCode.<foo>_OFFSET (see constructor)
-// and Code/Backend/Runtime1/TreeBuilder._call_FNI_Monitor()
-struct FNI_Thread_State {
-  JNIEnv vtable;
-  jthrowable exception; /* outstanding exception, or NULL if no exception. */
-  struct _jobject localrefs; /* header node in a local refs list. */
-  jobject thread; /* thread object corresponding to this thread state. */
-  void *stack_top; /* top of stack */
-  jboolean is_alive; /* true while the thread is running */
-#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
-  pthread_t pthread; /* the pthread corresponding to this thread state. */
-  pthread_cond_t sleep_cond; /* condition variable for sleep/suspend. */
-  pthread_mutex_t sleep_mutex; /* mutex for sleep/suspend. */
-#endif
-};
-extern struct _jobject FNI_globalrefs; /* header node in global refs list. */
-
-#define FNI_NO_EXCEPTIONS(env) \
-	(((struct FNI_Thread_State *)(env))->exception==NULL)
+/* MOVED: to fni-threadstate.h, for better precise-c backend integration */
+#include "fni-threadstate.h"
 
 /* -------------- internal function prototypes. ------------- */
 
