@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.68 1999-09-15 05:15:52 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.69 1999-09-16 05:52:55 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -21,6 +21,7 @@ INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 #JDKDOCLINK = http://java.sun.com/products/jdk/1.2/docs/api
 JDKDOCLINK = http://palmpilot.lcs.mit.edu/~pnkfelix/jdk-javadoc/java.sun.com/products/jdk/1.2/docs/api
+CVSWEBLINK = http://flexc.lcs.mit.edu/Harpoon/cvsweb.cgi
 
 # make this file work with make version less than 3.77
 ifndef CURDIR
@@ -262,19 +263,28 @@ tar-install: tar
 	$(SCP) harpoon.tgz harpoon.tgz.TIMESTAMP \
 		$(INSTALLMACHINE):$(INSTALLDIR)
 
-srcdoc: $(ALLSOURCE)
-	make srcdoc-clean
-	for f in $(filter-out Test%,$(ALLSOURCE)); do \
-		echo $$f ; \
-		mkdir -p srcdoc/harpoon/`dirname $$f`; \
-		bin/source-markup.perl $$f \
-		> srcdoc/harpoon/`dirname $$f`/`basename $$f .java`.html; \
-	done
-	mv srcdoc/harpoon/Contrib srcdoc/gnu
-	mkdir srcdoc/silicon; mv srcdoc/harpoon/JavaChip srcdoc/silicon
-
+srcdoc/harpoon/%.html: %.java
+	mkdir -p $(dir $@); bin/source-markup.perl -u $(CVSWEBLINK) $< > $@
+srcdoc/gnu/%.html: Contrib/%.java
+	mkdir -p $(dir $@); bin/source-markup.perl -u $(CVSWEBLINK) $< > $@
+srcdoc/silicon/%.html: %.java
+	mkdir -p $(dir $@); bin/source-markup.perl -u $(CVSWEBLINK) $< > $@
+srcdoc/Code/%.html: %
+	mkdir -p $(dir $@); bin/source-markup.perl -u $(CVSWEBLINK) $< > $@
+srcdoc: $(patsubst srcdoc/harpoon/Contrib/%,srcdoc/gnu/%,\
+	$(patsubst srcdoc/harpoon/JavaChip/%,srcdoc/silicon/JavaChip/%,\
+	$(addprefix srcdoc/harpoon/,\
+	$(patsubst %.java,%.html,$(filter-out Test/%,$(ALLSOURCE)))))) \
+	$(addprefix srcdoc/Code/,$(addsuffix .html,\
+	$(MACHINE_SRC) $(SCRIPTS) GNUmakefile))
+srcdoc/java srcdoc/sun srcdoc/sunw: Support/stdlibdoc.tgz
+	if [ -r $< ]; then mkdir srcdoc; tar -C srcdoc -xzf $<; fi
 srcdoc-clean:
 	-${RM} -r srcdoc
+srcdoc-install: srcdoc srcdoc/java
+	$(SSH) $(INSTALLMACHINE) \
+		/bin/rm -rf $(INSTALLDIR)/srcdoc
+	$(SCP) -r srcdoc $(INSTALLMACHINE):$(INSTALLDIR)
 
 doc:	doc/TIMESTAMP
 
