@@ -4,6 +4,7 @@ package harpoon.IR.QuadSSA;
 import harpoon.ClassFile.*;
 import java.util.Enumeration;
 import harpoon.Util.UniqueVector;
+import harpoon.Util.Util;
 /**
  * <code>QuadSSA.Code</code> is a code view that exposes the details of
  * the java classfile bytecodes in a quadruple format.  Implementation
@@ -13,7 +14,7 @@ import harpoon.Util.UniqueVector;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.6 1998-09-03 01:10:58 cananian Exp $
+ * @version $Id: Code.java,v 1.7 1998-09-03 18:47:47 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -86,8 +87,8 @@ public class Code extends HCode {
     private void traverse(Quad q, UniqueVector v) {
 	// If this is a 'real' node, add it to the list.
 	if (v.contains(q)) return;
-	if (!(q instanceof HEADER))
-	    v.addElement(q);
+	v.addElement(q);
+
 	// include 'inner blocks' of try/monitor.
 	if (q instanceof MONITOR)
 	    traverse(((MONITOR)q).block, v);
@@ -99,6 +100,7 @@ public class Code extends HCode {
 	// move on to successors.
 	Quad[] next = q.next();
 	for (int i=0; i<next.length; i++)
-	    traverse(next[i], v);
+	    if (next[i]!=null) // found at end of try/monitor blocks
+		traverse(next[i], v);
     }
 }
