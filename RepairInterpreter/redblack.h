@@ -1,5 +1,5 @@
 /*
- * RCS $Id: redblack.h,v 1.4 2003-06-18 06:08:18 bdemsky Exp $
+ * RCS $Id: redblack.h,v 1.1 2004-05-06 21:16:22 bdemsky Exp $
  */
 
 /*
@@ -76,7 +76,10 @@ void rbcloselist(RBLIST *);
 /*
  *
  * $Log: redblack.h,v $
- * Revision 1.4  2003-06-18 06:08:18  bdemsky
+ * Revision 1.1  2004-05-06 21:16:22  bdemsky
+ * Moved the interpreter
+ *
+ * Revision 1.4  2003/06/18 06:08:18  bdemsky
  *
  *
  * Adding support for:
