@@ -6,6 +6,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
+import harpoon.Analysis.UseDef;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,7 +17,7 @@ import java.util.Stack;
  * <code>Pattern</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.7 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: Pattern.java,v 1.1.2.8 1999-09-13 05:45:46 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -32,8 +33,8 @@ public class Pattern {
 	return null;
     }
 
-    public static Object[] boundCheck(Quad q, Temp array, Temp index) {
-	LowBoundVisitor lbv=new LowBoundVisitor(index);
+    public static Object[] boundCheck(Quad q, Temp array, Temp index, QuadWithTry code, UseDef ud) {
+	LowBoundVisitor lbv=new LowBoundVisitor(index,code, ud);
 	Quad lq=q;
 	while (lbv.status()) {
 	    lq.accept(lbv);
@@ -46,7 +47,7 @@ public class Pattern {
 	if (lbv.success())
 	    hq=lq.prev(0);
 
-	HighBoundVisitor hbv=new HighBoundVisitor(index, array);
+	HighBoundVisitor hbv=new HighBoundVisitor(index, array,code,ud);
 	while (hbv.status()) {
 	    hq.accept(hbv);
 	    if (hbv.success())
@@ -64,8 +65,8 @@ public class Pattern {
 	    return null;
     }
 
-    public static Object[] minusCheck(Quad q, Temp checked) {
-	MinusVisitor mv=new MinusVisitor(checked);
+    public static Object[] minusCheck(Quad q, Temp checked,QuadWithTry code, UseDef ud) {
+	MinusVisitor mv=new MinusVisitor(checked,code,ud);
 	while (mv.status()) {
 	    q.accept(mv);
 	    if (mv.success())
@@ -75,8 +76,8 @@ public class Pattern {
 	return null;
     }
 
-    public static Object[] nullCheck(Quad q, Temp checked) {
-	NullVisitor nv=new NullVisitor(checked);
+    public static Object[] nullCheck(Quad q, Temp checked,QuadWithTry code, UseDef ud) {
+	NullVisitor nv=new NullVisitor(checked,code,ud);
 	while (nv.status()) {
 	    q.accept(nv);
 	    if (nv.success())
@@ -86,8 +87,8 @@ public class Pattern {
 	return null;
     }
 
-    public static Object[] componentCheck(Quad q, Temp oref, Temp aref) {
-	CompVisitor cv=new CompVisitor(oref, aref);
+    public static Object[] componentCheck(Quad q, Temp oref, Temp aref,QuadWithTry code, UseDef ud) {
+	CompVisitor cv=new CompVisitor(oref, aref,code,ud);
 	while (cv.status()) {
 	    q.accept(cv);
 	    if (cv.success())
@@ -97,8 +98,8 @@ public class Pattern {
 	return null;
     }
     
-    public static Object[] zeroCheck(Quad q, Temp checked, boolean isint) {
-	ZeroVisitor zv=new ZeroVisitor(checked, isint);
+    public static Object[] zeroCheck(Quad q, Temp checked, boolean isint,QuadWithTry code, UseDef ud) {
+	ZeroVisitor zv=new ZeroVisitor(checked, isint,code,ud);
 	while (zv.status()) {
 	    q.accept(zv);
 	    if (zv.success())
@@ -110,7 +111,7 @@ public class Pattern {
 
     public static void patternMatch(QuadWithTry code) {
 	Iterator iterate=code.getElementsI();
-	PatternVisitor pv=new PatternVisitor();
+	PatternVisitor pv=new PatternVisitor(code);
 	while(iterate.hasNext()) {
 	    ((Quad)iterate.next()).accept(pv);
 	}
@@ -152,8 +153,12 @@ public class Pattern {
 
 class PatternVisitor extends QuadVisitor {
     private Map map;
-    public PatternVisitor() {
+    QuadWithTry code;
+    UseDef ud;
+    public PatternVisitor(QuadWithTry code) {
 	map=new HashMap();
+	this.code=code;
+	this.ud=new UseDef();
     }
     
     public Map map() {
@@ -184,7 +189,7 @@ class PatternVisitor extends QuadVisitor {
 
     public void visit(AGET q) {
 	Quad qd=q;
-	Object[] n2=Pattern.boundCheck(qd.prev(0), q.objectref(), q.index());
+	Object[] n2=Pattern.boundCheck(qd.prev(0), q.objectref(), q.index(),code , ud);
 	if (n2!=null) {
 	    qd=(Quad)n2[0];
 	    HClass hclass2=Pattern.exceptionCheck((Quad)((Object[])n2[1])[0]);
@@ -197,7 +202,7 @@ class PatternVisitor extends QuadVisitor {
 	    }
 	}
 
-	Object[] nq=Pattern.nullCheck(qd.prev(0),q.objectref());
+	Object[] nq=Pattern.nullCheck(qd.prev(0),q.objectref(), code, ud);
 	if (nq!=null) {
 	    qd=(Quad)nq[0];
 	    HClass hclass=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
@@ -212,7 +217,7 @@ class PatternVisitor extends QuadVisitor {
     }
 
     public void visit(ALENGTH q) {
-	Object[] nq=Pattern.nullCheck(q.prev(0), q.objectref());
+	Object[] nq=Pattern.nullCheck(q.prev(0), q.objectref(), code, ud);
 	if (nq!=null) {
 	    HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
 	    if (hc==HClass.forName("java.lang.NullPointerException"))
@@ -229,7 +234,7 @@ class PatternVisitor extends QuadVisitor {
 	Quad handler=null;
 	Integer handleredge=null;
 	for (int i=q.dimsLength()-1; i>=0; i--) {
-	    Object[] nq=Pattern.minusCheck(qd.prev(0), q.dims(i));
+	    Object[] nq=Pattern.minusCheck(qd.prev(0), q.dims(i),code, ud);
 	    if (nq!=null) {
 		//nq[1] is the exception thrown quad...
 		if (i==(q.dimsLength()-1)) {
@@ -261,7 +266,7 @@ class PatternVisitor extends QuadVisitor {
 
     public void visit(ASET q) {
 	Quad qd=q;
-	Object[] n1=Pattern.componentCheck(qd.prev(0), q.src(), q.objectref());
+	Object[] n1=Pattern.componentCheck(qd.prev(0), q.src(), q.objectref(),code, ud);
 	if (n1!=null) {
 	    qd=(Quad)n1[0];
 	    HClass hclass=Pattern.exceptionCheck((Quad)((Object[])n1[1])[0]);
@@ -273,7 +278,7 @@ class PatternVisitor extends QuadVisitor {
 		       HClass.forName("java.lang.ArrayStoreException"));
 	    }
 	}
-	Object[] n2=Pattern.boundCheck(qd.prev(0), q.objectref(), q.index());
+	Object[] n2=Pattern.boundCheck(qd.prev(0), q.objectref(), q.index(),code,ud);
 	if (n2!=null) {
 	    qd=(Quad)n2[0];
 	    HClass hclass2=Pattern.exceptionCheck((Quad)((Object[])n2[1])[0]);
@@ -286,7 +291,7 @@ class PatternVisitor extends QuadVisitor {
 	    }
 	}
 
-	Object[] nq=Pattern.nullCheck(qd.prev(0),q.objectref());
+	Object[] nq=Pattern.nullCheck(qd.prev(0),q.objectref(),code,ud);
 	if (nq!=null) {
 	    qd=(Quad)nq[0];
 	    HClass hclass=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
@@ -302,7 +307,7 @@ class PatternVisitor extends QuadVisitor {
 
     public void visit(CALL q) {
 	if (!q.isStatic()) {
-	    Object[] nq=Pattern.nullCheck(q.prev(0), q.params(0));
+	    Object[] nq=Pattern.nullCheck(q.prev(0), q.params(0),code,ud);
 	    if (nq!=null) {
 		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
 		if (hc==HClass.forName("java.lang.NullPointerException"))
@@ -315,7 +320,7 @@ class PatternVisitor extends QuadVisitor {
 
     public void visit(GET q) {
 	if (!q.isStatic()) {
-	    Object[] nq=Pattern.nullCheck(q.prev(0), q.objectref());
+	    Object[] nq=Pattern.nullCheck(q.prev(0), q.objectref(),code,ud);
 	    if (nq!=null) {
 		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
 		if (hc==HClass.forName("java.lang.NullPointerException"))
@@ -327,7 +332,7 @@ class PatternVisitor extends QuadVisitor {
     }
 
     public void visit(MONITORENTER q) {
-	Object[] nq=Pattern.nullCheck(q.prev(0), q.lock());
+	Object[] nq=Pattern.nullCheck(q.prev(0), q.lock(),code,ud);
 	if (nq!=null) {
 	    HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
 	    if (hc==HClass.forName("java.lang.NullPointerException"))
@@ -338,7 +343,7 @@ class PatternVisitor extends QuadVisitor {
     }
     
     public void visit(MONITOREXIT q) {
-	Object[] nq=Pattern.nullCheck(q.prev(0), q.lock());
+	Object[] nq=Pattern.nullCheck(q.prev(0), q.lock(),code,ud);
 	if (nq!=null) {
 	    HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
 	    if (hc==HClass.forName("java.lang.NullPointerException"))
@@ -352,7 +357,7 @@ class PatternVisitor extends QuadVisitor {
 	switch (q.opcode()) {
 	case Qop.IDIV:
 	case Qop.IREM:
-	    Object[] nq=Pattern.zeroCheck(q.prev(0), q.operands(1),true);
+	    Object[] nq=Pattern.zeroCheck(q.prev(0), q.operands(1),true,code,ud);
 	    if (nq!=null) {
 		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
 		if (hc==HClass.forName("java.lang.ArithmeticException"))
@@ -363,7 +368,7 @@ class PatternVisitor extends QuadVisitor {
 	    break;
 	case Qop.LDIV:
 	case Qop.LREM:
-	    nq=Pattern.zeroCheck(q.prev(0), q.operands(1),false);
+	    nq=Pattern.zeroCheck(q.prev(0), q.operands(1),false,code,ud);
 	    if (nq!=null) {
 		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
 		if (hc==HClass.forName("java.lang.ArithmeticException"))
@@ -378,7 +383,7 @@ class PatternVisitor extends QuadVisitor {
 
     public void visit(SET q) {
 	if (!q.isStatic()) {
-	    Object[] nq=Pattern.nullCheck(q.prev(0), q.objectref());
+	    Object[] nq=Pattern.nullCheck(q.prev(0), q.objectref(),code,ud);
 	    if (nq!=null) {
 		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
 		if (hc==HClass.forName("java.lang.NullPointerException"))
@@ -390,7 +395,7 @@ class PatternVisitor extends QuadVisitor {
     }
 
     public void visit(THROW q) {
-	Object[] nq=Pattern.nullCheck(q.prev(0), q.throwable());
+	Object[] nq=Pattern.nullCheck(q.prev(0), q.throwable(),code,ud);
 	if (nq!=null) {
 	    HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
 	    if (hc==HClass.forName("java.lang.NullPointerException"))
@@ -522,11 +527,15 @@ class HighBoundVisitor extends QuadVisitor {
     int excedge;
     Temp tested;
     Temp array;
+    QuadWithTry code;
+    UseDef ud;
 
-    HighBoundVisitor(Temp tested, Temp array) {
+    HighBoundVisitor(Temp tested, Temp array,QuadWithTry code, UseDef ud) {
 	this.status=0;
 	this.tested=tested;
 	this.array=array;
+	this.code=code;
+	this.ud=ud;
     }
 
     Object[] exchandler() {
@@ -574,6 +583,8 @@ class HighBoundVisitor extends QuadVisitor {
 		status=-1;
 	} else
 	    status=-1;
+	if (ud.useMap(code,q.dst()).length!=1)
+	    status=-1;
     }
 
     public void visit(OPER q) {
@@ -584,6 +595,8 @@ class HighBoundVisitor extends QuadVisitor {
 	    status=2;
 	}
 	else
+	    status=-1;
+	if (ud.useMap(code,q.dst()).length!=1)
 	    status=-1;
     }
 
@@ -602,8 +615,8 @@ class HighBoundVisitor extends QuadVisitor {
 }
 
 class LowBoundVisitor extends MinusVisitor {
-    LowBoundVisitor(Temp tested) {
-	super(tested);
+    LowBoundVisitor(Temp tested,QuadWithTry code, UseDef ud) {
+	super(tested,code,ud);
     }
 }
 
@@ -614,10 +627,14 @@ class MinusVisitor extends QuadVisitor {
     Quad exchandler;
     int excedge;
     Temp tested;
+    QuadWithTry code;
+    UseDef ud;
 
-    MinusVisitor(Temp tested) {
+    MinusVisitor(Temp tested,QuadWithTry code, UseDef ud) {
 	this.status=0;
 	this.tested=tested;
+	this.code=code;
+	this.ud=ud;
     }
 
     public boolean status() {
@@ -650,6 +667,8 @@ class MinusVisitor extends QuadVisitor {
 		status=-1;
 	} else
 	    status=-1;
+	if (ud.useMap(code,q.dst()).length!=1)
+	    status=-1;
     }
 
     public void visit(OPER q) {
@@ -660,6 +679,8 @@ class MinusVisitor extends QuadVisitor {
 	    status=2;
 	}
 	else
+	    status=-1;
+	if (ud.useMap(code,q.dst()).length!=1)
 	    status=-1;
     }
 
@@ -682,10 +703,14 @@ class NullVisitor extends QuadVisitor {
     Quad exchandler;
     int excedge;
     Temp tested;
+    QuadWithTry code;
+    UseDef ud;
 
-    NullVisitor(Temp tested) {
+    NullVisitor(Temp tested,QuadWithTry code, UseDef ud) {
 	this.status=0;
 	this.tested=tested;
+	this.code=code;
+	this.ud=ud;
     }
 
     public boolean status() {
@@ -719,6 +744,8 @@ class NullVisitor extends QuadVisitor {
 		status=-1;
 	} else
 	    status=-1;
+	if (ud.useMap(code,q.dst()).length!=1)
+	    status=-1;
     }
 
     public void visit(OPER q) {
@@ -729,6 +756,8 @@ class NullVisitor extends QuadVisitor {
 	    status=2;
 	}
 	else
+	    status=-1;
+	if (ud.useMap(code,q.dst()).length!=1)
 	    status=-1;
     }
 
@@ -751,11 +780,15 @@ class CompVisitor extends QuadVisitor {
     int excedge;
     Temp oref;
     Temp aref;
+    QuadWithTry code;
+    UseDef ud;
 
-    CompVisitor(Temp objectref, Temp arrayref) {
+    CompVisitor(Temp objectref, Temp arrayref,QuadWithTry code, UseDef ud) {
 	this.oref=objectref;
 	this.aref=arrayref;
 	this.status=0;
+	this.code=code;
+	this.ud=ud;
     }
     public boolean status() {
 	return (status!=-1);
@@ -783,6 +816,8 @@ class CompVisitor extends QuadVisitor {
 	    status=2;
 	else
 	    status=-1;
+	if (ud.useMap(code,q.dst()).length!=1)
+	    status=-1;
     }
 
     public void visit(CJMP q) {
@@ -805,11 +840,15 @@ class ZeroVisitor extends QuadVisitor {
     int excedge;
     Temp tested;
     boolean isint;
+    QuadWithTry code;
+    UseDef ud;
 
-    ZeroVisitor(Temp tested, boolean isint) {
+    ZeroVisitor(Temp tested, boolean isint,QuadWithTry code, UseDef ud) {
 	this.status=0;
 	this.tested=tested;
 	this.isint=isint;
+	this.code=code;
+	this.ud=ud;
     }
 
     public boolean status() {
@@ -851,6 +890,8 @@ class ZeroVisitor extends QuadVisitor {
 		    status=-1;
 	} else
 	    status=-1;
+	if (ud.useMap(code,q.dst()).length!=1)
+	    status=-1;
     }
 
     public void visit(OPER q) {
@@ -861,6 +902,8 @@ class ZeroVisitor extends QuadVisitor {
 	    status=2;
 	}
 	else
+	    status=-1;
+	if (ud.useMap(code,q.dst()).length!=1)
 	    status=-1;
     }
 
@@ -875,3 +918,9 @@ class ZeroVisitor extends QuadVisitor {
 	    status=-1;
     }
 }
+
+
+
+
+
+
