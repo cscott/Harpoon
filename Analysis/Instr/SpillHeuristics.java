@@ -30,9 +30,9 @@ import java.util.Iterator;
 */
 public class SpillHeuristics {
 
-    public static boolean USE_ANANIAN_HEURISTIC = false;
+    public static boolean USE_ANANIAN_HEURISTIC = true;
     public static boolean USE_CHAITIN_HEURISTIC = true;
-    public static boolean USE_PINTER_HEURISTICS = false;
+    public static boolean USE_PINTER_HEURISTICS = true;
 
     // Node n -> Set of Instr i, s.t. n is alive at i
     private GenericMultiMap nodeToLiveAt = new GenericMultiMap();

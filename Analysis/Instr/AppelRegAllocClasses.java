@@ -24,7 +24,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.12 2001-07-24 09:29:35 pnkfelix Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.13 2001-07-24 15:13:41 pnkfelix Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;
@@ -473,7 +473,9 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	    };
     }
     /** Factory method to allow easier implementation switching later. */
-    NodePairSet makeNodePairSetOld() { return new NodePairSet__HashBased(); }
+    NodePairSet makeNodePairSetOld() { 
+	return new NodePairSet__Switching(nextId > 1500); 
+    }
     NodePairSet makeNodePairSet() { 
 	return nextId > 2250 ? new NodePairSet__HashBased() 
 	    : (NodePairSet)   new NodePairSet__BitStrBased(); 
@@ -488,13 +490,36 @@ abstract class AppelRegAllocClasses extends RegAlloc {
     class NodePairSet__Switching extends NodePairSet {
 	boolean hash;
 	NodePairSet back;
-	private NodePairSet__Switching() {
-	    hash = nextId > 750;
-	    back = hash       ? new NodePairSet__HashBased() 
-		: (NodePairSet) new NodePairSet__BitStrBased(); 
+	// for use by copy only
+	private NodePairSet__Switching() { }
+	private NodePairSet__Switching(boolean startHash) {
+	    hash = startHash;
+	    if (hash)
+		back = new NodePairSet__HashBased();
+	    else
+		back = new NodePairSet__BitStrBased();
 	}
 	public boolean contains(Node a, Node b) { return back.contains(a,b); }
-	public void add(Node a, Node b) { back.add(a,b); }
+	public void add(Node a, Node b) { 
+	    if (hash) 
+		checkForSwitch();
+	    back.add(a,b); 
+	}
+	private void checkForSwitch() {
+	    NodePairSet__HashBased h = (NodePairSet__HashBased) back;
+	    if ((((double)h.pairs.size()) / 
+		 ((double)(nextId*nextId)))   >   0.008) {
+		hash = false;
+		System.out.println();
+		System.out.print("Switching on "+h.pairs.size()+" edge");
+		back = new NodePairSet__BitStrBased();
+		for(Iterator prs = h.pairs.iterator(); prs.hasNext();){
+		    List l = (List) prs.next();
+		    back.add( (Node)l.get(0), (Node)l.get(1) );
+		}
+		System.out.println("!!!");
+	    }
+	}
 	public HashSet pairs() { return back.pairs(); }
 	public NodePairSet copy() { 
 	    NodePairSet__Switching r = new NodePairSet__Switching();
