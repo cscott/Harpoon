@@ -137,6 +137,7 @@ Analysis/Transactions/AnalysisCheckOracle.java
 Analysis/Transactions/BitFieldNumbering.java
 Analysis/Transactions/DominatingCheckOracle.java
 Analysis/Transactions/CheckOracle.java
+Analysis/Transactions/CloneImplementer.java
 Analysis/Transactions/MethodGenerator.java
 Analysis/Transactions/SimpleCheckOracle.java
 Analysis/Transactions/SyncTransformer.java
