@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.35 1999-06-13 04:43:41 cananian Exp $
+% $Id: thesis.tex,v 1.36 1999-06-13 05:00:06 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.35 $ $}
+\date{\today \\ $ $Revision: 1.36 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.35 $ $}{$ $Revision: 1.35 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.36 $ $}{$ $Revision: 1.36 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -265,17 +265,17 @@ Figure~\ref{fig:tossi} compares the SSA and SSI forms for our example program.
 \subsection{Minimal and pruned SSI forms}
 \emph{Minimal} and \emph{pruned} SSI forms can be defined which
 parallel their SSA counterparts.  \emph{Minimal} SSI form would have the
-smallest number of $\phi$- and \sigfunction{s} such that:
+smallest number of \phisigfunction{s} such that:
 \begin{enumerate}
 \item If two nonnull paths $X \pathplus Z$ and $Y \pathplus Z$
 exist having only the node $Z$ where they converge in common,
 and nodes $X$ and $Y$ contain either assignments to a variable $V$ in the
-original program or a $\phi$- or \sigfunction{} for $V$ in the new program,
+original program or a \phisigfunction[or] for $V$ in the new program,
 then a \phifunction{} for $V$ has been inserted at $Z$ in the new program.
 \item If two nonnull paths $Z \pathplus X$ and $Z \pathplus Y$
 exist having only the node $Z$ where they diverge in common,
 and nodes $X$ and $Y$ contain either uses of a variable $V$ in the
-original program or a $\phi$- or \sigfunction{} for $V$ in the new program,
+original program or a \phisigfunction[or] for $V$ in the new program,
 then a \sigfunction{} for $V$ has been inserted at $Z$ in the new program.
 \item There is exactly one reaching definition of $V$ at every
 non-$\phi$ use of $V$ in the new program.
@@ -284,9 +284,9 @@ non-$\phi$ use of $V$ in the new program.
 \end{enumerate}
 
 A \emph{pruned} SSI form would be the minimal form without any unused
-definitions, that is, $\phi$ or \sigfunction{s} after which there are no
+definitions, that is, \phisigfunction[or]s after which there are no
 subsequent uses of any of the variables defined on the left-hand side,
-except in other $\phi$ or \sigfunction{s}.\footnote{An even more
+except in other \phisigfunction[or]s.\footnote{An even more
 compact SSI form may be produced by removing \sigfunction{s} for which
 there are uses for \emph{exactly one} of the variables on the
 left-hand side, but it does not seem profitable to split this
@@ -486,7 +486,7 @@ composition is also $O(E)$.
 \label{fig:SESEex}
 \end{myfigure}
 
-\subsubsection{Placing $\phi$- and \sigfunction{s}}
+\subsubsection{Placing \phisigfunction{s}}
 \textbf{Compute variable
 liveness.  Traverse the tree from bottom up, adding phi/sigmas if:
 the variable is used or defined inside the PST block, and the variable
@@ -509,8 +509,8 @@ unused code elimination%
 be executed, from \emph{unused code elimination}, which deletes
 sections of code whose results are never used.  Both are often called
 ``dead code elimination'' in the literature.}  is performed to remove
-the extra $\phi$- and \sigfunction{s}.  Figures \ref{fig:deaddata} and
-\ref{fig:deadalg} presents an algorithm to identify unused code in
+the extra \phisigfunction{s}.  Figures \ref{fig:deaddata} and
+\ref{fig:deadalg} present an algorithm to identify unused code in
 $O(NV)$ time, after which a simple $O(N)$ pass suffices to remove it.
 The complexity analysis is simple: nodes and variables are visited at
 most once, raising their value in the analysis lattive from
@@ -523,8 +523,8 @@ to \texttt{MarkVarUseful} examines at most one node (the single
 definition node for the variable, if it exists) and in constant time
 pushes at most one node on to the worklist for a total of $O(V)$ time.
 So the total run time of \texttt{FindUseful} is $O(NV+V)=O(NV)$, and
-in fact it is usually much less.\footnote{If the number of instruction
-operands and $\phi$- and \sigfunction{} arities is limited by a
+in fact it is typically much less.\footnote{If the number of instruction
+operands and \phisigfunction{} arities are limited by a
 constant, we get a time bound of $O(N)$.}  The total runtime for SSI
 placement and subsequent pruning, including the time to construct the
 PST, remains $O(EV)$.
@@ -542,24 +542,25 @@ PST, remains $O(EV)$.
 \end{myfigure}
 
 \subsubsection{Discussion}
-Note that our algorithm for placing $\phi$- and \sigfunction{s} in
+Note that our algorithm for placing \phisigfunction{s} in
 SSI form is
 \emph{optimistic}; that is, we at first assume every node in the
 control-flow graph with input arity larger than one requires a
 \phifunction{} for every variable and every node with out-arity larger
 than one requires a \sigfunction{} for every variable, and then use
 the PST and liveness information to determine safe places to
-\emph{omit} $\phi$- or \sigfunction{s}.  Most SSA construction
+\emph{omit} \phisigfunction[or]s.  Most SSA construction
 algorithms, by contrast, are \emph{pessimistic}; they assume no
-$\phi$- or \sigfunction{s} are needed and attempt to determine where
+\phisigfunction[or]s are needed and attempt to determine where
 they are necessary.  In my experience, pessimistic algorithms tend to
 have poor time bounds because of the possibility of input graphs like
-figure~\ref{fig:evil}.  Proving that all but two nodes require $\phi$-
-and/or \sigfunction{s} for $a$ in this example seems to inherently
+figure~\ref{fig:evil}.  Proving that all but two nodes require
+\phisigfunction[and/or]s for the variable $a$ in this example seems to
+inherently
 require $O(N)$ passes over the graph; the \phifunction{s} ``spread''
 one node left from the circled node on each pass.  On the other hand,
 an optimistic algorithm assumes the correct answer at the start, fails
-to show that any $\phi$- or \sigfunction{s} can be removed, and
+to show that any \phisigfunction[or]s can be removed, and
 terminates in one pass.\fixme{Are we \emph{sure} similar worst cases
 don't exist for the optimistic algorithm?}
 
