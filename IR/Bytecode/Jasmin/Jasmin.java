@@ -21,7 +21,7 @@ import java.util.Enumeration;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.4 1999-08-04 19:40:42 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.5 1999-08-05 15:13:20 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -172,7 +172,17 @@ public class Jasmin {
 	    } 
 	    else {
 		if (q.isInterfaceMethod()) {
-		    System.out.println("Error in call"+q.toString());
+		    out.println(iflabel(q));
+		    for(int i=0;i<q.params().length;i++) {
+			load(q.params(i)); 
+		    }
+		    out.println("    invokeinterface "+
+				q.method().getDeclaringClass().getName().replace('.','/')
+				+"/"+q.method().getName().replace('.','/')
+				+q.method().getDescriptor().replace('.','/')
+				+" "+q.params().length);
+		    if (q.retval()!=null)
+			store(q.retval());
 		}
 		else
 		    if(q.isStatic()) {
@@ -295,13 +305,15 @@ public class Jasmin {
 	public void visit(OPER q) {
 	    switch (q.opcode()) {
 	    case Qop.ACMPEQ:
+	    case Qop.ICMPEQ:
+	    case Qop.ICMPGT:
+		String base=Qop.toString(q.opcode());
 		String l1=label(), l2=label();
 		for (int i=0;i<q.operandsLength();i++) {
-		    TempInfo tempinfo=(TempInfo)tempmap.get(q.operands(i));
-		    aload(tempinfo);
+		    load(q.operands(i));
 		}
 		out.println(iflabel(q));
-		out.println("    if_acmpeq "+l1);
+		out.println("    if_"+base+" "+l1);
 		out.println("    bipush 0");
 		out.println("    goto "+l2);
 		out.println(l1+":");
@@ -311,6 +323,57 @@ public class Jasmin {
 		//To store 0/1
 		store(q.dst());
 		break;
+	    case Qop.D2F:
+	    case Qop.D2I:
+	    case Qop.D2L:
+	    case Qop.DADD:
+	    case Qop.DDIV:
+	    case Qop.DMUL:
+	    case Qop.DNEG:
+	    case Qop.DREM:
+	    case Qop.F2D:
+	    case Qop.F2I:
+	    case Qop.F2L:
+	    case Qop.FADD:
+	    case Qop.FDIV:
+	    case Qop.FMUL:
+	    case Qop.FNEG:
+	    case Qop.FREM:
+	    case Qop.I2B:
+	    case Qop.I2C:
+	    case Qop.I2D:
+	    case Qop.I2L:
+	    case Qop.I2S:
+	    case Qop.IADD:
+	    case Qop.IAND:
+	    case Qop.IDIV:
+	    case Qop.IMUL:
+	    case Qop.INEG:
+	    case Qop.IOR:
+	    case Qop.IREM:
+	    case Qop.ISHL:
+	    case Qop.ISHR:
+	    case Qop.IUSHR:
+	    case Qop.IXOR:
+	    case Qop.L2D:
+	    case Qop.L2F:
+	    case Qop.LADD:
+	    case Qop.LAND:
+	    case Qop.LDIV:
+	    case Qop.LMUL:
+	    case Qop.LNEG:
+	    case Qop.LOR:
+	    case Qop.LREM:
+	    case Qop.LSHL:
+	    case Qop.LSHR:
+	    case Qop.LUSHR:
+	    case Qop.LXOR:
+		String cbase=Qop.toString(q.opcode());
+		for (int i=0;i<q.operandsLength();i++) {
+		    load(q.operands(i));
+		}
+		out.println("    "+cbase);
+		store(q.dst());
 	    default:
 		out.println(q.toString()+" unimplemented");
 	    }
