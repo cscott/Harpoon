@@ -45,7 +45,7 @@ if [ -z "$(echo "${PRECISEC_CFLAGS}" | grep '[-]O9' )" ]; then
   echo " "
 fi
 
-. `dirname $0`/run-java ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir && \
+. `dirname $0`/run-java ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -b precisec -c $cls -o $dir && \
 if [ -d ${RUNTIME_DIR}/include -a -f ${RUNTIME_DIR}/config.status ] && \
     grep -q "[-]-with-precise-c" ${RUNTIME_DIR}/config.status ; then
     make $MAKEOPT -C $dir CC="${HOST_PREFIX:=}gcc -I${RUNTIME_DIR}/include ${PRECISEC_CFLAGS}" HOST_PREFIX=${HOST_PREFIX:=}\
