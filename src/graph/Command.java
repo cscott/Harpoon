@@ -55,6 +55,13 @@ public class Command extends Node {
      * @see Switch
      */
     public static final int GO_RIGHT = 121;
+
+    
+    /**
+     * This command created for use with Switch.java
+     * @see Switch
+     */
+    public static final int GO_BOTH = 122;
     
     /**
      * Move car to the left
@@ -115,6 +122,28 @@ public class Command extends Node {
      * @see Servo
      */
     public static final int SERVO_STOP_MOVING = 210;
+
+    public static final int CONTRAST_UP = 300;
+    public static final int CONTRAST_DOWN = 301;
+    public static final int GAIN_DOWN = 302;
+    public static final int GAIN_UP = 303;
+    public static final int BRIGHTNESS_UP = 304;
+    public static final int BRIGHTNESS_DOWN = 305;
+    public static final int FRAME_RATE_UP = 306;
+    public static final int FRAME_RATE_DOWN = 307;
+
+    public static final int TIME_UP = 330;
+    public static final int TIME_DOWN = 331;
+
+    public static final int BACKWARD_SPEED_UP = 340;
+    public static final int BACKWARD_SPEED_DOWN = 341;
+    public static final int FORWARD_SPEED_UP = 342;
+    public static final int FORWARD_SPEED_DOWN = 343;
+    public static final int INTERRUPT_TIME_UP = 350;
+    public static final int INTERRUPT_TIME_DOWN = 351;
+ 
+    public static final int IS_TANK = 400;
+    public static final int IS_NOT_TANK = 401;
 
     private int tag;
 
