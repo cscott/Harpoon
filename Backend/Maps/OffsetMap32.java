@@ -15,18 +15,64 @@ import harpoon.Util.Util;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
- * The OffsetMap32 class implements the abstract methods of OffsetMap,
- * specializing them for 32-bit architectures.
+ * The <code>OffsetMap32</code> class implements the abstract methods of 
+ * <code>OffsetMap</code>, specializing them for 32-bit architectures.  
+ * For reference, <code>OffsetMap32</code> specifies the following 
+ * layouts:
+ * 
+ * <br><b>Object instance layout:</b>
+ * <pre>
+ *     -8       hashcode
+ *     -4       clazz ptr
+ *      0       non-static field 0
+ *      4       non-static field 1
+ *        ...
+ *      4*(n-1) non-static field n-1
+ * </pre> 
+ * 
+ * <br><b>Array instance layout:</b>
+ * <pre>
+ *    -12       length
+ *     -8       hashcode
+ *     -4       clazz ptr
+ *      0       array element 0
+ *      4       array element 1
+ *        ...
+ *      4*(n-1) array element n-1
+ * </pre>
+ * 
+ * <br><b>Static class layout:</b>
+ * <pre>
+ *     -4*(n+1)           interface method n-1
+ *        ...
+ *    -16                 interface method 1
+ *    -12                 interface method 0
+ *     -8                 component type (NULL if not array)
+ *     -4                 interface list ptr
+ *      0                 display 0
+ *      4                 display 1
+ *        ...
+ *      4*MAXcd           display max class depth
+ *      4*MAXcd+4         class method 0
+ *      4*MAXcd+8         class method 1
+ *        ...
+ *      4*MAXcd+4*(n-1)   class method n-1
+ * </pre>
+ * 
+ * <br><i>However</i>, this layout is most definitely subject to change, 
+ * so no implementation should rely on it. 
+ * 
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.18 1999-08-11 10:41:14 duncan Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.19 1999-08-16 03:44:17 duncan Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
-    private static int WORDSIZE = 4;
+    public static final int     WORDSIZE = 4;
 
     private ClassDepthMap       cdm;   
     private FieldMap            fm;     
@@ -43,6 +89,8 @@ public class OffsetMap32 extends OffsetMap
     public OffsetMap32(ClassHierarchy ch, NameMap nm) {
 	Util.assert(ch!=null, "Class hierarchy must be non-null");
 	
+	this.hci = new HClassInfo();
+
 	int _maxDepth = 0;
 	for (Iterator it=ch.classes().iterator();it.hasNext();){
 	    HClass hc    = (HClass)it.next();
@@ -58,7 +106,6 @@ public class OffsetMap32 extends OffsetMap
 	this.fm = new FieldMap() {
 	    public int fieldOrder(HField hf) {return hci.getFieldOffset(hf);}
 	};
-	this.hci = new HClassInfo();
 	this.imm = new InterfaceMethodMap
 	    (new harpoon.Util.IteratorEnumerator(ch.classes().iterator()));
 	this.cmm = new MethodMap() {
@@ -114,7 +161,7 @@ public class OffsetMap32 extends OffsetMap
 	return (Label)strings.get(stringConstant);
     }
 
-    public Iterator stringConstants() {	return strings.keySet().iterator(); }
+    public Set stringConstants() { return strings.keySet(); }
     
     /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
      *                                                           *
@@ -122,10 +169,9 @@ public class OffsetMap32 extends OffsetMap
      *                                                           *
      *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-
     /** Returns the offset of the class pointer */
     public int clazzPtrOffset(HClass hc)   { 
-	Util.assert(!hc.isPrimitive());
+	Util.assert((!hc.isPrimitive()) && (!hc.isInterface())); 
 	return -1 * WORDSIZE;
     }
 
@@ -151,13 +197,15 @@ public class OffsetMap32 extends OffsetMap
     /** Returns the offset of the first field in an object of the
      *  specified type */
     public int fieldsOffset(HClass hc) { 
-	Util.assert((!hc.isPrimitive()) && (!hc.isArray()));
+	Util.assert((!hc.isPrimitive()) && 
+		    (!hc.isArray()) && 
+		    (!hc.isInterface()));
 	return 0;
     }
 
     /** Returns the offset of the hashcode of the specified object */
     public int hashCodeOffset(HClass hc) { 
-	Util.assert(!hc.isPrimitive());
+	Util.assert((!hc.isPrimitive()) && (!hc.isInterface()));
 	return -2 * WORDSIZE; 
     }
 
@@ -165,7 +213,7 @@ public class OffsetMap32 extends OffsetMap
      *  the class pointer of the pointer to implemented interfaces */
     public int interfaceListOffset(HClass hc) { 
 	Util.assert(!hc.isPrimitive() && !hc.isArray());
-	return -4 * WORDSIZE;
+	return -2 * WORDSIZE;
     }
 
     /** If hc is an array type, returns the offset of its length field */
@@ -188,27 +236,24 @@ public class OffsetMap32 extends OffsetMap
 
 	HClass    hc;
 	HField[]  hfields, orderedFields;
-	int       fieldOrder, offset;
+	int       fieldOrder, offset = 0;
     
-	hc = hf.getDeclaringClass();
-	if (!this.fields.containsKey(hc)) {
-	    hfields        = hc.getDeclaredFields();
-	    orderedFields  = new HField[hfields.length];
+	if (!this.fields.containsKey(hf)) { 
+	    hc            = hf.getDeclaringClass();
+	    hfields       = hc.getDeclaredFields();
+	    orderedFields = new HField[hfields.length];
 	    for (int i=0; i<hfields.length; i++) 
-		orderedFields[fm.fieldOrder(hfields[i])] = hfields[i];
-	    // Cache field ordering
-	    this.fields.put(hc, orderedFields);
+		if (!hfields[i].isStatic())
+		    orderedFields[fm.fieldOrder(hfields[i])] = hfields[i];
+	    for (int i=0; i<hfields.length; i++) { 
+		HClass type = orderedFields[i].getType();
+		this.fields.put(hfields[i], new Integer(offset));
+		// No inlining
+		offset += ((type==HClass.Long)||(type==HClass.Double)) ? 8 : 4;
+	    }
 	}
-	else 
-	    orderedFields  = (HField[])this.fields.get(hc);
 
-	fieldOrder = fm.fieldOrder(hf);
-	offset     = fieldsOffset(hc);
-    
-	for (int i=0; i<fieldOrder; i++)
-	    offset += size(orderedFields[i].getType(), false); // no inlining
-
-	return offset;
+	return ((Integer)this.fields.get(hf)).intValue();
     }
 
 
@@ -217,39 +262,35 @@ public class OffsetMap32 extends OffsetMap
     public int offset(HMethod hm) { 
 	Util.assert(!hm.isStatic());
 	HClass hc = hm.getDeclaringClass(); 
-	if (hc.isInterface()) return (-imm.methodOrder(hm) - 4) * WORDSIZE;
-	else return (cmm.methodOrder(hm)*WORDSIZE) + displaySize();
+	if (hc.isInterface()) 
+	    return -WORDSIZE * (imm.methodOrder(hm)*WORDSIZE) - (2*WORDSIZE);
+	else 
+	    return (cmm.methodOrder(hm)*WORDSIZE) + displaySize();
     }
 
     /** Returns the size of the specified class */
-    public int size(HClass hc) {
-	return size(hc, true);
-    }
-  
-    /** Returns the size of the specified class */
-    private int size(HClass hc, boolean inline) { 
-	int size;
+    public int size(HClass hc) { 
+	Util.assert(!hc.isInterface());
 
 	if (hc.isPrimitive()) { 
-	    if ((hc==HClass.Long)||(hc==HClass.Double)) size = 2 * WORDSIZE;
-	    else size = WORDSIZE;
+	    return hc==HClass.Long || hc==HClass.Double ? 8 : 4; 
 	}
 	else if (hc.isArray()) { 
+	    // The size of an array instance is determined by the number of
+	    // elements it has, and therefore cannot be determined by this
+	    // method. 
 	    Util.assert(false, "Size of array does not depend on its class!");
 	    return -1;
 	} 
 	else { 
-	    if (inline) {
-		size = 2 * WORDSIZE;  // Includes hashcode & classptr
-	    
-		HField[] hf = hc.getDeclaredFields();
-		for (int i=0; i<hf.length; i++) {
-		    size += hf[i].isStatic()?0:size(hf[i].getType(), false);
-		}
+	    int size = 2 * WORDSIZE;  // Includes hashcode & classptr
+	    HField[] hf = hc.getDeclaredFields();
+	    for (int i=0; i<hf.length; i++) {
+		HClass type = hf[i].getType();
+		size += hf[i].isStatic() ? 0 :
+		        (type==HClass.Long || type==HClass.Double) ? 8 : 4;
 	    }
-	    else { size = WORDSIZE; }
+	    return size; 
 	}
-	
-	return size; 
-    }
+    }    
 }
