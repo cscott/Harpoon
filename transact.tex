@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.15 2000-09-29 17:06:19 cananian Exp $
+% $Id: transact.tex,v 1.16 2000-09-29 18:04:26 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.15 $ $}
+\date{\today \\ $ $Revision: 1.16 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -234,9 +234,10 @@ $\text{Write}(\code{struct oobj *} o, \code{int } n,
   \STATE $v\ptr\code{next} \gets \code{null}$ \COMMENT{atomic}
 \ELSIF{$x = \code{FLAG\_VALUE}$}
   \STATE \COMMENT{XXX: define CreateNewVersion (watch those races)}
-  \STATE $v = \text{CreateNewVersion}(o, o, o\ptr\code{claz}\ptr\code{size})$
+% when we define CreateNewVersion, we'll need: o\ptr\code{claz}\ptr\code{size}
+  \STATE $v \gets \text{CreateNewVersion}(o, o)$
 \ELSE
-  \STATE $v = o$
+  \STATE $v \gets o$
 \ENDIF
 \STATE $v\ptr\code{field}[n] \gets x$
 \end{myalgorithmic}
@@ -246,7 +247,7 @@ $\text{Write}(\code{struct oobj *} o, \code{int } n,
 
 \begin{figure}
 $\text{ReadTrans}(\code{struct commitrec *}c, 
-                  \code{struct oobj *} o, \code{int } n)=$
+                  \code{struct oobj *} o, \code{int } n)$~=
 \begin{myalgorithmic}
 \STATE $v \gets \text{appropriate version, creating it if necessary}$
   \COMMENT{doesn't abort non-appropriate versions}
@@ -259,7 +260,7 @@ $\text{ReadTrans}(\code{struct commitrec *}c,
 \begin{figure}
 $\text{WriteTrans}(\code{struct commitrec *}c, 
                    \code{struct oobj *} o, \code{int } n,
-                   \code{<ty> } x)=$
+                   \code{<ty> } x)$~=
 \begin{myalgorithmic}
 \STATE $v \gets \text{appropriate version, creating it if necessary}$
   \COMMENT{aborts all non-appropriate versions found}
@@ -318,6 +319,51 @@ $\text{StateP}'(\code{struct commitrec **} c_p)$ =
 \end{figure}
 
 \begin{figure}
+$\text{FindVersion}(\code{struct oobj *}o, \code{struct commitrec *}c_w,
+                    \code{boolean }wr)$~=
+\begin{myalgorithmic}
+\STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
+\STATE \label{line:L1}
+       $c_c \gets v\ptr\code{transid}$
+\IF{$c_c \neq c_w$}
+  \IF{$c_c \neq \code{null} \wedge c_c\ptr\code{state} = \code{COMMITTED}$}
+    \REPEAT
+      \STATE $c_c \gets c_c\ptr\code{parent}$
+    \UNTIL{$c_c = \code{null} \vee c_c\ptr\code{state} \neq \code{COMMITTED}$}
+    \STATE $v\ptr\code{transid} \gets c_c$ \COMMENT{atomic}
+  \ENDIF
+  \IF[committed all the way down]{$c_c = \code{null}$}
+    \STATE $v\ptr\code{next} \gets \code{null}$ \COMMENT{prune}
+    \STATE $v \gets \text{CreateNewVersion}(o, v)$
+  \ELSIF{$c_c\ptr\code{state} = \code{ABORTED}$}
+    \STATE \COMMENT{XXX: potential race here? WAITING could become COMMITTED}
+    \STATE \COMMENT{XXX: potential race here --- v could be already removed}
+    \STATE remove $v$ from version list atomically
+    \STATE $v \gets v\text{'s replacement}$
+    \GOTO line \ref{line:L1}
+  \ELSE
+    \STATE $c_w' \gets c_w$
+    \WHILE{$c_w' \neq c_c$}
+      \STATE $c_w' \gets c_w'\ptr\code{parent}$
+      \IF{$c_w' = \code{null}$}
+        \IF{$wr$}
+          \STATE commit suicide
+        \ELSE
+          \STATE $v \gets v\ptr\code{next}$
+          \GOTO line \ref{line:L1}
+        \ENDIF
+      \ENDIF
+    \ENDWHILE
+    \STATE $v \gets \text{CreateNewVersion}(o, v)$
+  \ENDIF
+\ENDIF
+\RETURN $v$
+\end{myalgorithmic}
+\caption{Algorithm for matching \code{vinfo}'s with \code{commitrec}'s.}
+\label{fig:findversion}
+\end{figure}
+
+\begin{figure}
 $\text{AbortTransaction}(\code{struct commitrec *} c)$ =
 \begin{myalgorithmic}
 \IF{$c = \code{null}$}
@@ -334,7 +380,7 @@ $\text{AbortTransaction}(\code{struct commitrec *} c)$ =
 \end{myalgorithmic}
 \caption{Algorithm for (possibly) aborting a transaction.
          Change the constant \code{ABORTED} in line \ref{line:abort}
-         to \code{COMMITTED} to obtain the commit algorithm.}
+         to \code{COMMITTED} to obtain the \code{CommitTransaction} algorithm.}
 \label{fig:aborttrans}
 \end{figure}
 
