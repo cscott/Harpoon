@@ -11,7 +11,7 @@ import harpoon.ClassFile.HCodeElement;
  * two <code>Instr</code>s. 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrEdge.java,v 1.1.2.3 1999-09-11 05:43:19 pnkfelix Exp $
+ * @version $Id: InstrEdge.java,v 1.1.2.4 1999-11-29 16:19:18 pnkfelix Exp $
  */
 public class InstrEdge implements HCodeEdge {
     
@@ -42,7 +42,7 @@ public class InstrEdge implements HCodeEdge {
 	return to.hashCode() ^ from.hashCode();
     }
     public String toString() {
-	return "InstrEdge:<"+from+", "+to+">"+
+	return "InstrEdge:<\""+from+"\", \""+to+"\">"+
 	    " (<"+from.hashCode()+", "+to.hashCode()+">)";
     }
 }

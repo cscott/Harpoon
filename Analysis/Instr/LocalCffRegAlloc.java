@@ -52,7 +52,7 @@ import java.util.AbstractSet;
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.49 1999-11-18 16:43:14 pnkfelix Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.50 1999-11-29 16:19:17 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -268,8 +268,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 	
 	System.out.println("live on exit from " + b + " :\n" + liveOnExit);
 	
-	Iterator vals = (new ArrayList(regfile.values())).iterator();
-
+	// use a HashSet here because we don't want to repeat values
+	// (regfile.values() returns a Collection-view)
+	Iterator vals = (new HashSet(regfile.values())).iterator();
+	
 	while(vals.hasNext()) {
 	    Temp val = (Temp) vals.next();
 
@@ -297,24 +299,30 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    loc = new InstrEdge(instr, instr.getNext());
 
 		    System.out.println("end spill: " + val + " " + loc);
+		    
+		    // This sequence of code is a little tricky; since
+		    // we need to add spills for the same variable at
+		    // multiple locations, we need to delay updating
+		    // the regfile until after all of the spills have
+		    // been added.  So we need to use
+		    // addSpillInstr/removeMapping instead of just
+		    // spillValue 
 
-		    spillValue(val, loc, regfile);
+		    addSpillInstr(val, loc, regfile);
 		}
 
 		Util.assert(instr.getTargets().isEmpty() ||
 			    instr.hasModifiableTargets(),
 			    "We MUST be able to modify the targets "+
 			    " if we're going to insert a spill here");
-
 		for(Iterator targets = instr.getTargets().iterator();
 		    targets.hasNext();) {
 		    Label l = (Label) targets.next();
 		    loc = new InstrEdge(instr, instr.getInstrFor(l));
-
 		    System.out.println("end spill: " + val + " " + loc);
-
-		    spillValue(val, loc, regfile);
+		    addSpillInstr(val, loc, regfile);
 		}
+		removeMapping(val, regfile);
 	    }
 	}
 	
@@ -325,19 +333,32 @@ public class LocalCffRegAlloc extends RegAlloc {
 	the 'regfile' so that it no longer has a mapping for 'val' or
 	its associated registers.
     */
-    private void spillValue(Temp val, 
-			    InstrEdge loc, 
-			    TwoWayMap regfile) {
+    private void spillValue(Temp val, InstrEdge loc, TwoWayMap regfile) {
+	addSpillInstr(val, loc, regfile);
+	removeMapping(val, regfile);
+    }
+
+    /** adds a store for 'val' at 'loc', but does *NOT* update the
+	regfile. 
+    */
+    private void addSpillInstr(Temp val, InstrEdge loc, TwoWayMap regfile) {
 	Collection regs = regfile.inverseMap().getValues(val);
 	
+	Util.assert(!regs.isEmpty(), 
+		    val + " must map to SOME registers" +
+		    "\n regfile:" + regfile);
+
 	if (regs.size() > 1) { 
 	    System.out.println("\n Val: " + val + 
 			       " is held in " + regs);
 	}
 	InstrMEM spillInstr = new FskStore(loc.to, "FSK-STORE", val, regs);
 	spillInstr.insertAt(loc);
-	    
-	// Now remove spilled regs from regfile
+    }
+
+    /** Removes spilled regs from regfile. */
+    private void removeMapping(Temp val, TwoWayMap regfile) {
+	Collection regs = regfile.inverseMap().getValues(val);
 	ArrayList v = new ArrayList(regs);
 	Iterator regsIter = v.iterator();
 	while(regsIter.hasNext()) {
@@ -349,6 +370,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	    regfile.remove(reg);
 	}
+
     }
 
     private Map buildNextRef(BasicBlock b) {
