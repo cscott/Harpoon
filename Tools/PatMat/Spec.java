@@ -21,7 +21,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.30 1999-09-14 23:46:29 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.31 1999-10-12 01:56:05 cananian Exp $
  */
 public class Spec  {
 
@@ -1087,6 +1087,8 @@ public class Spec  {
 	 */
 	public void addAll(TypeSet ts) {
 	    bs.or(ts.bs);
+	    signedPrecises.or(ts.signedPrecises);
+	    unsignedPrecises.or(ts.unsignedPrecises);
 	}
 	
 	/** Records that <code>this</code> contains all five basic
