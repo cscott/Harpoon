@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.7 2000-02-14 15:40:04 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.8 2000-02-14 15:51:28 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -225,7 +225,7 @@ public class CloningVisitor extends QuadVisitor {
     }
     
     public void visit(CALL q) {
-	checkdoneothers(q.method());
+	checkdoneothers(q);
 	if ((methodstatus==false)&&
 	    (!q.method().getName().equals("<init>"))&&
 	    isBlocking(q)) {
@@ -625,6 +625,9 @@ public class CloningVisitor extends QuadVisitor {
 	quadmap.put(q, newq);
     }
     
+    /** isBlocking tells whether a given <code>CALL</code>
+     *  is blocking or not.  Currently based on a class hierarchy
+     *  analysis.*/
 
     private boolean isBlocking(CALL q) {
 	HMethod hm=q.method();
@@ -646,7 +649,12 @@ public class CloningVisitor extends QuadVisitor {
 	return false;
     }
 
-    private void checkdoneothers(HMethod ohm) {
+    /** checkdoneothers sees that for a given call statement, that we've
+     *  rewritten normal versions of any methods it might directly call.
+     *  [meaning that we applied the swapTo and swapAdd substitutions.]*/
+
+    private void checkdoneothers(CALL q) {
+	HMethod ohm=q.method();
 	//make sure we actually rewrite all methods that we can reach...
 	if (!done_other.contains(ohm)) {
 	    HMethod hm=ohm;
@@ -677,7 +685,14 @@ public class CloningVisitor extends QuadVisitor {
 	    }
 	}
     }
-	
+
+
+    /** scheduleMethods takes a given method that is being called,
+     * either directly or by a start->run type connection, etc,
+     * and schedules Asynchronous versions to be made.  This is currently
+     * base on a class hierarchy scheme.
+     */
+
     private void scheduleMethods(HMethod hm) {
 	if (!old2new.containsKey(hm)) {
 	    HClass hcl=hm.getDeclaringClass();
