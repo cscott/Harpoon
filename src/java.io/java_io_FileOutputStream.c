@@ -162,7 +162,30 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
     return;
 }
 
+/*
+ * Class:     java_io_FileOutputStream
+ * Method:    close
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_java_io_FileOutputStream_close
+(JNIEnv * env, jobject obj) { 
+    int      fd, result;
+    jobject  fdObj;
+
+    /* If static data has not been loaded, load it now */
+    if (!inited && !initializeFOS(env)) return; /* exception occurred; bail */
+
+    fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
+    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
+    result = close(fd);
+    Java_java_io_FileDescriptor_setfd(env, fdObj, -1);
+
+    if (result==-1)
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
+}
+
 #ifdef WITH_TRANSACTIONS
+#include "../transact/transact.h" /* for FNI_StrTrans2Str */
 #include "../transact/java_lang_Object.h" /* version fetch methods */
 #include "../java.lang/java_lang_Class.h" /* Class.getComponentType() */
 /* transactional version of writeBytes -- problematic!  how do we
@@ -186,26 +209,14 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes_00024_00024witht
   /* XXX: if GetByteArrayRegion is fixed, this won't work so well. */
   Java_java_io_FileOutputStream_writeBytes(env, obj, _ba, start, len);
 }
-#endif /* WITH_TRANSACTIONS */
-
-/*
- * Class:     java_io_FileOutputStream
- * Method:    close
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_java_io_FileOutputStream_close
-(JNIEnv * env, jobject obj) { 
-    int      fd, result;
-    jobject  fdObj;
-
-    /* If static data has not been loaded, load it now */
-    if (!inited && !initializeFOS(env)) return; /* exception occurred; bail */
-
-    fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
-    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
-    result = close(fd);
-    Java_java_io_FileDescriptor_setfd(env, fdObj, -1);
-
-    if (result==-1)
-	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
+JNIEXPORT void JNICALL Java_java_io_FileOutputStream_open_00024_00024withtrans
+  (JNIEnv * env, jobject obj, jobject commitrec, jstring jstr) {
+    /* XXX: fd is write once only within JNI so should be okay. */
+    Java_java_io_FileOutputStream_open(env, obj,
+				       FNI_StrTrans2Str(env, commitrec, jstr));
 }
+JNIEXPORT void JNICALL Java_java_io_FileOutputStream_close_00024_00024withtrans
+(JNIEnv * env, jobject obj) { 
+  Java_java_io_FileOutputStream_close(env, obj);
+}
+#endif /* WITH_TRANSACTIONS */
