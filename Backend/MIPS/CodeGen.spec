@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.40 2001-06-08 00:47:09 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.41 2001-06-14 19:48:45 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -461,6 +461,11 @@ private String makeDAFlushBitmask() {
       bitmask |= 1 << i;
       Util.assert(i < 31); // Don't overflow int
    }
+   // XXX Always set DA reg 0 because we use it on function
+   // entry/return.  Even for leaf procedures currently.  If we get to
+   // optimizing leaves, then this would not be necessary for an
+   // optimized leaf 
+   bitmask |= 1;
    Integer bitm = new Integer(bitmask);
    return bitm.toString();
 }
@@ -1818,7 +1823,7 @@ MEM<d,l>(NAME(id)) = i %{
    emit(new InstrMEM( instrFactory, ROOT,
                       "lw" + usuffix + " `d0l, " + id + " +4" 
                       + getDANum(ROOT) + "\n"
-                      + "lw `d0h, " + id + getDANum(ROOT),
+                      + "lw" + usuffix + " `d0h, " + id + getDANum(ROOT),
                       new Temp[]{i}, new Temp[]{}));
 }%
 
@@ -1862,6 +1867,18 @@ UNOP(_2L, arg) = i %pred %( ROOT.operandType() == Type.INT )%
          + "sra `d0h, `s0, 31", i, arg );
    emitRegAllocUse(ROOT, arg);
 }%
+
+UNOP(_2L, arg) = i %pred %( ROOT.operandType() == Type.FLOAT )%
+   %extra<i>{ extra }/*void*/
+%{
+   emitLineDebugInfo(ROOT);
+   DoFCall(ROOT, extra, arg, "__f2i");
+   emitRegAllocDef(ROOT, i);
+   emit( ROOT, "move `d0l, `s0\n"
+         + "sra `d0h, `s0, 31", i, extra );
+   emitRegAllocUse(ROOT, arg);
+}%
+
 /* Trivial pointer to integer */
 UNOP<p>(_2I, arg) = i %pred %( ROOT.operandType() == Type.POINTER )%
 %{
@@ -1874,6 +1891,14 @@ UNOP(_2I, arg) = i %pred %( ROOT.operandType() == Type.LONG )%
 %{
    emitLineDebugInfo(ROOT);
    emit( ROOT, "move `d0, `s0l", i, arg );
+}%
+
+UNOP(_2F, arg) = i %pred %( ROOT.operandType() == Type.LONG )%
+%extra<i>{extra}
+%{
+   emitLineDebugInfo(ROOT);
+   emit( ROOT, "move `d0, `s0l", extra, arg );
+   DoFCall(ROOT, i, extra, "__i2f");
 }%
 
 UNOP(_2D, arg) = i %pred %( ROOT.operandType() == Type.LONG )%
