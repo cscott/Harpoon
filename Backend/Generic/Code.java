@@ -16,7 +16,7 @@ import java.util.List;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.49 2000-08-09 04:14:55 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.50 2000-10-03 21:11:26 pnkfelix Exp $
  */
 public abstract class Code extends harpoon.IR.Assem.Code {
 
@@ -59,7 +59,8 @@ public abstract class Code extends harpoon.IR.Assem.Code {
 	      <LI> <code>val</code> must be a <code>Temp</code> that
 	           is an element of <code>i.defC()</code> or
 		   <code>i.useC()</code>
-	      <LI> <code>registerAssigned(i, val)</code> must be true
+	      <LI> (val is not Register for this architecture) => 
+	           <code>registerAssigned(i, val)</code> is true
 	<BR> <B>effects:</B> Returns a <code>Collection</code> of the
 	     Register <code>Temp</code>s that are assigned to
 	     <code>val</code> in <code>i</code>.  Every member of the
