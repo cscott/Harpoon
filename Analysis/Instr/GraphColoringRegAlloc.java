@@ -50,7 +50,7 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.16 2000-08-02 20:43:48 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.17 2000-08-02 22:48:12 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -252,7 +252,34 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		List colors = new ArrayList(regToColor.values());
 		// System.out.println("colors:"+colors);
 		colorer.color(graph, colors);
-		
+
+		for(int j=0; j<adjLsts.length; j++) {
+		    WebRecord wr = adjLsts[j];
+		    Iterator wrs;
+		    for(wrs=wr.adjnds.iterator(); wrs.hasNext();){
+			WebRecord nb = (WebRecord) wrs.next();
+			ArrayList nbl = new ArrayList(graph.regs(nb));
+
+			Util.assert(!nbl.isEmpty(), "no regs for "+nb);
+			Util.assert(!graph.regs(wr).isEmpty(),
+				    "no regs for "+wr);
+
+			nbl.retainAll(graph.regs(wr));
+			Util.assert(nbl.isEmpty(), 
+				    "conflict detected: "+
+				    wr+"("+graph.regs(wr)+")"+
+				    " and "+
+				    nb+"("+graph.regs(nb)+")"+
+				    "");
+			
+			Util.assert(rfi.getRegAssignments(wr.temp()).
+				    contains(graph.regs(wr)),
+				    rfi.getRegAssignments(wr.temp())+
+				    " does not contain "+graph.regs(wr));
+							  
+		    }
+		}
+
 		MultiMap c2n = new GenericMultiMap();
 		for(Iterator nds=graph.nodeSet().iterator();nds.hasNext();){
 		    Object nd = nds.next();
@@ -369,6 +396,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	}
 	public String toString() { 
 	    return "c:"+reg;
+	}
+	public boolean equals(Object o) {
+	    return ((RegColor)o).reg.equals(this.reg);
 	}
     }
     
@@ -691,6 +721,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    if (wr instanceof RegWebRecord) {
 		Node n = new Node(wr, 0);
 		n.color = regToColor(wr.temp());
+		nodes.add(n);
+		wr2node.add(wr, n);
 	    } else {
 		Map r2a = (Map) implicitAssigns.get(wr.temp());
 		Util.assert(r2a != null, "no implicit assigns for "+wr.temp());
@@ -707,6 +739,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    requires: this has been colored.
 	*/
 	List regs(WebRecord wr) {
+	    if (wr instanceof RegWebRecord) {
+		return Collections.nCopies(1, wr.temp());
+	    }
+
 	    Collection c = wr2node.getValues(wr);
 	    List a = new ArrayList(c);
 	    for(Iterator nodes=c.iterator(); nodes.hasNext(); ) {
@@ -801,10 +837,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	}
 	public Color getColor(Object n) { 
-	    if (nodes.contains(n)) {
+	    try {
 		return ((Node)n).color;
-	    } else {
-		throw new IllegalArgumentException(n+" not in nodeset");
+	    } catch (ClassCastException e) {
+		throw new IllegalArgumentException();
 	    }
 	}
 
@@ -831,7 +867,26 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		if (!r2a.keySet().contains(rc.reg)) 
 		    throw new ColorableGraph.IllegalColor(o, col);
 		List assign = (List) r2a.get(rc.reg);
+
+		// verify all color choices
 		for(Iterator ns=nds.iterator(); ns.hasNext(); ) {
+		    Node n = (Node) ns.next();
+		    Temp t = (Temp) assign.get(n.index);
+		    rc = regToColor(t);
+		    Iterator nbs;
+		    for(nbs=neighborsOf(n).iterator();nbs.hasNext();){
+			Node nb = (Node) nbs.next();
+			if (nb.color.equals(rc)) {
+			    throw new ColorableGraph.IllegalColor(n,rc);
+			}
+		    }
+		    if (false) System.out.println
+				   (n+" passed verify for "+rc+
+				    ", neighbors:"+neighborsOf(n));
+		}
+
+		// got here, colors passed verification
+		for(Iterator ns=nds.iterator(); ns.hasNext();){
 		    Node n = (Node) ns.next();
 		    Temp t = (Temp) assign.get(n.index);
 		    rc = regToColor(t);

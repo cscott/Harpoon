@@ -14,6 +14,7 @@ import java.util.Stack;
 import java.util.Enumeration;
 
 import harpoon.Util.Util;
+import harpoon.Util.Collections.LinearSet;
 
 /**
  * <code>OptimisticGraphColorer</code> uses a strategy similar to that
@@ -25,7 +26,7 @@ import harpoon.Util.Util;
  * second stage, but this is parameterizable.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: OptimisticGraphColorer.java,v 1.1.2.4 2000-08-02 20:43:42 pnkfelix Exp $
+ * @version $Id: OptimisticGraphColorer.java,v 1.1.2.5 2000-08-02 22:48:17 pnkfelix Exp $
  */
 public class OptimisticGraphColorer extends GraphColorer {
 
@@ -68,6 +69,15 @@ public class OptimisticGraphColorer extends GraphColorer {
 	this.selector = selector;
     }
 
+    private boolean uncoloredNodesRemain(ColorableGraph g) {
+	Iterator nodes = g.nodeSet().iterator();
+	while(nodes.hasNext()) {
+	    if (g.getColor(nodes.next()) == null) 
+		return true;
+	}
+	return false;
+    }
+
     public final void color(ColorableGraph graph, List colors)
 	throws UnableToColorGraph {
 	boolean moreNodesToHide;
@@ -77,21 +87,23 @@ public class OptimisticGraphColorer extends GraphColorer {
 	for(;;) {
 	    do {
 		moreNodesToHide = false;
-		HashSet nodeSet = new HashSet(graph.nodeSet());
+		LinearSet nodeSet = new LinearSet(graph.nodeSet());
 		for(Iterator ns = nodeSet.iterator(); ns.hasNext();){ 
 		    Object n = ns.next();
-		    if (graph.getDegree(n) < colors.size()) {
+		    if (graph.getDegree(n) < colors.size() &&
+			graph.getColor(n) == null) {
 			graph.hide(n);
 			moreNodesToHide = true;
 		    } 
 		}
 	    } while (moreNodesToHide);
+
+	    // Either the graph is finished (no uncolored nodes
+	    // remain) or all nodes present have degree >= K, in which
+	    // case we optimistically remove the node chosen by
+	    // this.selector. 
 	    
-	    // Either the graph is finished (no nodes remain) or all nodes
-	    // present have degree >= K, in which case we optimistically
-	    // remove the node chosen by this.selector.
-	    
-	    if (graph.nodeSet().isEmpty()) {
+	    if (!uncoloredNodesRemain(graph)) {
 		break;
 	    } else {
 		Object choice = this.selector.chooseNode(graph);
@@ -100,13 +112,14 @@ public class OptimisticGraphColorer extends GraphColorer {
 		continue;
 	    }
 	}
+
 	nextNode:
 	for(Object n=graph.replace(); n!=null; n=graph.replace()){
 	    // find color that none of n's neighbors is set to
 	    
 	    if (graph.getColor(n) != null) {
-		// precolored, skip
-		continue nextNode;
+		// precolored, die
+		Util.assert(false);
 	    }
 	    
 	    Collection nborsC = graph.neighborsOf(n);
