@@ -51,7 +51,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.24 1999-08-10 17:52:55 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.25 1999-08-10 18:13:53 pnkfelix Exp $
  */
 %%
 
@@ -1199,37 +1199,37 @@ NATIVECALL(retval, func, arglist) %{
 }%
 
 DATA(exp) %{
-
+    emitDIRECTIVE( ROOT, ".data "+exp);
 }%
  
 SEGMENT(CLASS) %{
-
+    emitDIRECTIVE( ROOT, ".section class");
 }%
 
 SEGMENT(CODE) %{
-
+    emitDIRECTIVE( ROOT, ".section code");
 }%
 
 SEGMENT(GC) %{
-
+    emitDIRECTIVE( ROOT, ".section gc");
 }%
 
 SEGMENT(INIT_DATA) %{
-
+    emitDIRECTIVE( ROOT, ".section init_data");
 }%
 
 SEGMENT(STATIC_OBJECTS) %{
-
+    emitDIRECTIVE( ROOT, ".section static_objects");
 }%
 
 SEGMENT(STATIC_PRIMITIVES) %{
-
+    emitDIRECTIVE( ROOT, ".section static_primitives");
 }%
 
 SEGMENT(TEXT) %{
-
+    emitDIRECTIVE( ROOT, ".section text");
 }%
 
 SEGMENT(ZERO_DATA) %{
-
+    emitDIRECTIVE( ROOT, ".section zero");
 }%
