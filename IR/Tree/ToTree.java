@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.98 2001-09-13 21:38:31 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.99 2001-09-13 21:55:37 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -145,18 +145,32 @@ class ToTree {
 	    (tf, rd, code.getDerivation(), ai, eo, fn, m_dg, ctm);
 						       
 	// traverse, starting with the METHOD quad.
-	dfsTraverse(((harpoon.IR.Quads.METHOD)root.next(1)).prevEdge(0),
-		    tv, new HashSet());
+	dfsTraverse(((harpoon.IR.Quads.METHOD)root.next(1)).prevEdge(0), tv);
 
 	// Assign member variables
 	m_tree       = ((TranslationVisitor)tv).getTree();
     }
     
     // Translates the Quad graph in a depth-first order.
-    private void dfsTraverse(Edge in_edge,
-			     TranslationVisitor tv, Set visited) {
+    private void dfsTraverse(Edge in_edge, TranslationVisitor tv) {
+	Stack stack = new Stack(); stack.add(in_edge);
+	HashSet visited = new HashSet();
+	while (!stack.isEmpty())
+	    _dfsTraverse_(stack, tv, visited);
+    }
+    private void _dfsTraverse_(Stack stack,
+			       TranslationVisitor tv, Set visited) {
+	Edge in_edge = (Edge) stack.pop();
 	Quad q = (Quad) in_edge.to();
 	int which_pred = in_edge.which_pred();
+	// label sigmas
+	if (in_edge.from() instanceof harpoon.IR.Quads.SIGMA) {
+	    harpoon.IR.Quads.SIGMA sigma =
+		(harpoon.IR.Quads.SIGMA) in_edge.from();
+	    // label sigma outputs, and emit proper fixup code
+	    tv.emitLabel(tv.label(in_edge),/*for line # info:*/sigma);
+	    tv.emitSigmaFixup(sigma, in_edge.which_succ());
+	}
 	// if this is a phi function, translate by emitting appropriate MOVEs
 	if (q instanceof harpoon.IR.Quads.PHI)
 	    tv.emitPhiFixup((harpoon.IR.Quads.PHI)q, which_pred);
@@ -173,20 +187,15 @@ class ToTree {
 	// translate successors.
 	int n = q.nextLength();
 	int def = tv.edgeOracle.defaultEdge(q);
-	for (int i=0; i<n; i++) {
+	// work backwards: remember first pushed is last popped.
+	for (int i=n-1; i>=0; i--) {
 	    // permute edges such that default always comes first.
 	    //  think:  0 1[2]3 4  (if 2 is the default)
 	    //         [2]0 1 3 4
 	    Edge edge = q.nextEdge((i==0)?def:(i<=def)?i-1:i);
-	    if (q instanceof harpoon.IR.Quads.SIGMA) {
-		// label sigma outputs, and emit proper fixup code
-		tv.emitLabel(tv.label(edge), /*for line # info:*/q);
-		tv.emitSigmaFixup((harpoon.IR.Quads.SIGMA)q,
-				  edge.which_succ());
-	    }
 	    // recurse.
 	    if (!(edge.to() instanceof harpoon.IR.Quads.FOOTER))
-		dfsTraverse(edge, tv, visited);
+		stack.push(edge);
 	}
 	// done, yay.
     }
