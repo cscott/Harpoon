@@ -74,7 +74,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.83 2000-02-25 03:39:52 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.84 2000-02-25 03:53:32 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -442,6 +442,9 @@ public abstract class RegAlloc  {
 			    new SpillLoad(m, m.getAssem(), 
 					  m.defC(), stkOff);
 			Instr.replace(m, newi);
+			List dxi = Default.pair(use, newi);
+			tempXinstrToCommonLoc.add(dxi, stkOff);
+
 		    }
 		}
 	    } 
@@ -465,8 +468,8 @@ public abstract class RegAlloc  {
 			SpillStore newi = 
 			    new SpillStore(m, m.getAssem(), 
 					   stkOff, m.useC());
-			List dxi = Default.pair(def, newi);
 			Instr.replace(m, newi);
+			List dxi = Default.pair(def, newi);
 			tempXinstrToCommonLoc.add(dxi, stkOff);
 		    }
 		}
@@ -477,9 +480,13 @@ public abstract class RegAlloc  {
 		Iterator defs = i.defC().iterator();
 		while(defs.hasNext()) {
 		    Temp def = (Temp) defs.next();
-		    Collection regs = code.getRegisters(i, def);
 		    List dxi = Default.pair(def, i);
-		    tempXinstrToCommonLoc.addAll(dxi, regs);
+		    if (isTempRegister(def)) {
+			tempXinstrToCommonLoc.add(dxi, def);
+		    } else {
+			Collection regs = code.getRegisters(i, def);
+			tempXinstrToCommonLoc.addAll(dxi, regs);
+		    }
 		}
 	    }
 
