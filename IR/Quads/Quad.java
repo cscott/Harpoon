@@ -24,21 +24,22 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.34 2000-07-13 11:43:30 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.35 2000-07-15 18:51:41 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
                harpoon.IR.Properties.UseDef, harpoon.IR.Properties.CFGraphable,
                Cloneable, Comparable, java.io.Serializable
 {
-    /*final*/ QuadFactory qf;
-    /*final*/ String source_file;
-    /*final*/ int    source_line;
-    /*final*/ int    id;
+    final QuadFactory qf;
+    final String source_file;
+    final int    source_line;
+    final int    id;
     // cached.
-    /*final*/ private int hashCode;
+    final private int hashCode;
 
-    /** Constructor. */
+    /** Initializes a quad with <code>prev_arity</code> input edges and
+     *  <code>next_arity</code> output edges. */
     protected Quad(QuadFactory qf, HCodeElement source,
 		   int prev_arity, int next_arity) {
 	Util.assert(qf!=null); // QuadFactory must be valid.
@@ -53,6 +54,8 @@ public abstract class Quad
 	this.hashCode = (id<<5) ^ kind() ^
 	    qf.getParent().getName().hashCode() ^ qf.getMethod().hashCode();
     }
+    /** Initializes a quad with exactly one input edge and exactly one
+     *  output edge. */
     protected Quad(QuadFactory qf, HCodeElement source) {
     	this(qf, source, 1, 1);
     }
@@ -87,15 +90,15 @@ public abstract class Quad
      *  <code>QuadFactory</code>.
      */
     public abstract Quad rename(QuadFactory qf, TempMap defMap,TempMap useMap);
-    public Quad rename(TempMap defMap,TempMap useMap) {
+    /** Create a new <code>Quad</code> identical to the receiver, but 
+     *  with all <code>Temp</code>s renamed according to a mapping.
+     *  The new <code>Quad</code> will have no edges. <p>
+     *  The new <code>Quad</code> will come from the same
+     *  <code>QuadFactory</code> as the receiver.
+     */
+    public final Quad rename(TempMap defMap,TempMap useMap) {
 	return rename(this.qf, defMap, useMap);
     }
-
-    // I want to get rid of these functions eventually.
-    /** @deprecated does not preserve immutability. */
-    void renameUses(TempMap tm) { }
-    /** @deprecated does not preserve immutability. */
-    void renameDefs(TempMap tm) { }
 
     /*----------------------------------------------------------*/
     /** Return all the Temps used by this Quad. */
@@ -153,8 +156,7 @@ public abstract class Quad
     /** Returns the <code>i</code>th incoming edge of this quad. */
     public Edge prevEdge(int i) { return prev[i]; }
 
-    /** Returns an array with all the edges to and from this 
-     *  <code>Quad</code>. */
+    // from CFGraphable:
     public CFGEdge[] edges() {
 	Edge[] e = new Edge[next.length+prev.length];
 	System.arraycopy(next,0,e,0,next.length);
@@ -266,6 +268,10 @@ public abstract class Quad
     // support cloning.  The pred/succ quads are not cloned, but the
     // array holding them is.
     public final Object clone() { return rename(this.qf, null, null); }
+    /** Clone a quad into a new quad factory, renaming all of the temps
+     *  according to <code>tm</code> (which ought to ensure that all
+     *  the new temps belong to the <code>TempFactory</code> of the
+     *  new <code>QuadFactory</code>). */
     public final Object clone(QuadFactory qf, CloningTempMap tm) {
 	Quad qc = rename(qf, tm, tm);
 	// verify that cloning is legit.
@@ -336,15 +342,24 @@ public abstract class Quad
     }
     // ----------------------------------------------------
     // Useful for temp renaming.  Exported only to subclasses.
+    /** Apply <code>TempMap</code> <code>tm</code> to <code>Temp</code>
+     *  <code>t</code>.
+     *  @return <code>tm.tempMap(t)</code> if <code>t</code> is
+     *  non-<code>null</code>, or <code>null</code> if <code>t</code> is
+     *  <code>null</code>. */
     protected final static Temp map(TempMap tm, Temp t) {
 	return (t==null)?null:(tm==null)?t:tm.tempMap(t);
     }
+    /** Apply <code>TempMap</code> to array of <code>Temp</code>s.
+     *  Null <code>Temp</code>s get mapped to <code>null</code>. */
     protected final static Temp[] map(TempMap tm, Temp[] ta) {
 	Temp[] r = new Temp[ta.length];
 	for (int i=0; i<r.length; i++)
 	    r[i] = map(tm, ta[i]);
 	return r;
     }
+    /** Apply <code>TempMap</code> to 2-d array of <code>Temp</code>s.
+     *  Null <code>Temp</code>s get mapped to <code>null</code>. */
     protected final static Temp[][] map(TempMap tm, Temp[][] taa) {
 	Temp[][] r = new Temp[taa.length][];
 	for (int i=0; i<r.length; i++)
