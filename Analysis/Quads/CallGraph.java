@@ -12,7 +12,7 @@ import harpoon.IR.Quads.CALL;
  implemented by a call graph.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: CallGraph.java,v 1.1.2.8 2001-06-17 22:31:26 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.1.2.9 2001-11-07 16:09:52 cananian Exp $
  */
 public interface CallGraph extends harpoon.Analysis.CallGraph {
     // XXX: to talk about a CALL quad, you really need to have the HCode
@@ -23,9 +23,9 @@ public interface CallGraph extends harpoon.Analysis.CallGraph {
 
     /** Returns an array containing  all possible methods called by 
 	method <code>m</code> at the call site <code>cs</code>.
-	If there is no known callee for the call site <code>cs>/code>, or if 
+	If there is no known callee for the call site <code>cs</code>, or if 
 	<code>cs</code> doesn't belong to the code of <code>hm</code>,
-	return an array pof length <code>0</code>. */
+	return an array of length <code>0</code>. */
     public HMethod[] calls(final HMethod hm, final CALL cs);
 
     /** Returns a list of all the <code>CALL</code>s quads in the code 
