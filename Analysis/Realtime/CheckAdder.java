@@ -50,7 +50,7 @@ class CheckAdder extends MethodMutator {
     private static NoHeapCheckRemoval noHeapCheckRemoval;
     private static final boolean fastNew = true;
     private static final boolean smartMemAreaLoads = false;
-    
+
     private static METHOD currentMethod;  // For smartMemAreaLoads
     private static Temp currentMemArea;
 
@@ -166,8 +166,25 @@ class CheckAdder extends MethodMutator {
 			  dst, memArea);
 	Edge splitEdge = next.prevEdge(0);
 	Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), q0, 0);
-	Quad.addEdge(q0, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
+	if (Realtime.COLLECT_RUNTIME_STATS) {
+	    Quad q1 = 
+		new CALL(qf, inst, 
+			 linker.forName("javax.realtime.Stats")
+			 .getMethod("addNewObject",
+				    new HClass[] {
+					linker
+					.forName("javax.realtime.MemoryArea")
+				    }),
+			 new Temp[] { memArea },
+			 null, null, true, false, new Temp[0]);
+	    Quad.addEdge(q0, 0, q1, 0);
+	    Quad.addEdge(q1, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
+	    q1.addHandlers(inst.handlers());
+	} else {
+	    Quad.addEdge(q0, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
+	}
 	q0.addHandlers(inst.handlers());
+	
     }
 
 
@@ -225,7 +242,23 @@ class CheckAdder extends MethodMutator {
 			  dst, memArea);
 	Edge splitEdge = next.prevEdge(0);
 	Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), q0, 0);
-	Quad.addEdge(q0, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
+	if (Realtime.COLLECT_RUNTIME_STATS) {
+	    Quad q1 = 
+		new CALL(qf, inst,
+			 linker.forName("javax.realtime.Stats")
+			 .getMethod("addNewArrayObject",
+				    new HClass[] {
+					linker
+					.forName("javax.realtime.MemoryArea")
+				    }),
+			 new Temp[] { memArea },
+			 null, null, true, false, new Temp[0]);
+	    Quad.addEdge(q0, 0, q1, 0);
+	    Quad.addEdge(q1, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
+	    q1.addHandlers(inst.handlers());
+	} else {
+	    Quad.addEdge(q0, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
+	}
 	q0.addHandlers(inst.handlers());
     }
 
@@ -320,8 +353,33 @@ class CheckAdder extends MethodMutator {
 	    Edge splitEdge = inst.prevEdge(0);
 	    Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), 
 			 q0, 0);
-	    Quad.addEdges(new Quad[] {q0, q1});
-	    Quad.addEdge(q1, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
+	    if (Realtime.COLLECT_RUNTIME_STATS) {
+		Temp srcArea = new Temp(tf, "srcMemArea");
+		Quad q2 = new CALL(qf, inst, memoryArea
+				   .getMethod("getMemoryArea", new HClass[] {
+				       linker.forName("java.lang.Object")}),
+				   new Temp[] { src }, srcArea, null,
+				   false, false, new Temp[0]);
+		Quad q3 = 
+		    new CALL(qf, inst, 
+			     linker.forName("javax.realtime.Stats")
+			     .getMethod("addCheck",
+					new HClass[] {
+					    memoryArea, 
+					    memoryArea
+					}),
+			     new Temp[] { objArea, srcArea },
+			     null, null, true, false, new Temp[0]);
+		Quad.addEdges(new Quad[] {q0, q1, q2, q3});
+		Quad.addEdge(q3, 0, (Quad)splitEdge.to(),
+			     splitEdge.which_pred());
+		q2.addHandlers(inst.handlers());
+		q3.addHandlers(inst.handlers());
+	    } else {
+		Quad.addEdges(new Quad[] {q0, q1});
+		Quad.addEdge(q1, 0, (Quad)splitEdge.to(), 
+			     splitEdge.which_pred());
+	    }	    
 	    q0.addHandlers(inst.handlers());
 	    q1.addHandlers(inst.handlers());
 	}

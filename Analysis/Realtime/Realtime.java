@@ -45,9 +45,11 @@ public class Realtime {
      *  remove. 
      */
     public static final int REAL_POINTER_ANALYSIS = 2;
-    /** Overly aggressive (and wrong!) check removal that removes all checks. */
+    /** Overly aggressive (and wrong!) check removal that removes all checks. 
+     */
     public static final int ALL = 3;
 
+    public static final boolean COLLECT_RUNTIME_STATS = false;
 
     /** Creates a field memoryArea on <code>java.lang.Object</code>.
      *  Since primitive arrays inherit from <code>java.lang.Object</code>, 
@@ -98,6 +100,8 @@ public class Realtime {
 	HClass object = linker.forName("java.lang.Object");
 	roots.add(memoryArea
 		  .getMethod("checkAccess", new HClass[] { object }));
+	roots.add(linker.forName("javax.realtime.ScopedMemory")
+		  .getMethod("checkAccess", new HClass[] { object }));
 	roots.add(memoryArea
 		  .getMethod("bless", new HClass[] { object }));
 	roots.add(memoryArea
@@ -109,6 +113,17 @@ public class Realtime {
 	roots.add(memoryArea
 		  .getMethod("getMemoryArea", new HClass[] { object }));
 	roots.add(HClassUtil.arrayClass(linker, HClass.Int, 1));
+	if (COLLECT_RUNTIME_STATS) {
+	    HClass stats = linker.forName("javax.realtime.Stats");
+	    roots.add(stats.getMethod("addCheck", 
+				      new HClass[] { memoryArea,
+						     memoryArea }));
+	    roots.add(stats.getMethod("addNewObject",
+				      new HClass[] { memoryArea }));
+	    roots.add(stats.getMethod("addNewArrayObject",
+				      new HClass[] { memoryArea }));
+	}
+
 //  	roots.add(linker.forName("java.lang.Class")
 //  		  .getMethod("getConstructor", 
 //  			     new HClass[] { 
