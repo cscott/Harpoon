@@ -20,7 +20,8 @@ VTMemory.c block.c block.h GCstats.c GCstats.h RawMemory.h RawMemory.c \
 RTJfinalize.h RTJfinalize.c RealtimeSystem.h RefCountArea.h RefCountArea.c \
 RealtimeSystem.c NoHeapRealtimeThread.h NoHeapRealtimeThread.c \
 linkedListAllocator.h linkedListAllocator.c refCountAllocator.h \
-refCountAllocator.c threads.c POSIXSignalHandler.h POSIXSignalHandler.c
+refCountAllocator.c threads.c POSIXSignalHandler.h POSIXSignalHandler.c \
+SizeEstimator.h SizeEstimator.c
 else
 librealtime_la_SOURCES = MemBlock.h MemBlock.c MemoryArea.c MemoryArea.h \
 RTJmalloc.h RTJmalloc.c RTJconfig.h CTMemory.h CTMemory.c HeapMemory.h \
@@ -31,7 +32,8 @@ VTMemory.c block.c block.h GCstats.c GCstats.h RawMemory.h RawMemory.c \
 RTJfinalize.h RTJfinalize.c RealtimeSystem.h RealtimeSystem.c \
 NoHeapRealtimeThread.h NoHeapRealtimeThread.c linkedListAllocator.h \
 linkedListAllocator.c RefCountArea.h RefCountArea.c refCountAllocator.h \
-refCountAllocator.c POSIXSignalHandler.h POSIXSignalHandler.c
+refCountAllocator.c POSIXSignalHandler.h POSIXSignalHandler.c \
+SizeEstimator.h SizeEstimator.c
 endif
 endif
 
