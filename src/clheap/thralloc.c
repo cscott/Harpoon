@@ -29,9 +29,9 @@ struct oobj_with_clheap {
 
 #elif !defined(WITH_THREADS) && defined(WITH_EVENT_DRIVEN)
 /* Event-driven code.  No heavy-weight threading allowed. */
-extern struct oobj *Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread;
+extern struct oobj *_Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread;
 # define FETCH_THIS_THREAD_UNWRAPPED() \
-	Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread
+	_Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread
 # define FETCH_THIS_THREAD() FNI_WRAP(FETCH_THIS_THREAD_UNWRAPPED())
 
 #else /* some other case */
