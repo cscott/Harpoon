@@ -1,0 +1,71 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>ipaq package</title>
+<!--
+
+   @(#)package.html
+   package.html, created by wbeebee
+   Copyright (C) 2003 Wes Beebee <wbeebee@mit.edu>
+   Licensed under the terms of the GNU GPL; see COPYING for details.
+-->
+</head>
+<body bgcolor="white">
+
+This package contains support for the iPaq-based robot.
+
+<p>The MIT robot and tracked vehicle consist of:
+
+<ul>
+<li>Compaq Pocket PC (I use the iPaq 3600, with a 200 MHz StrongARM processor, 64 MB RAM,
+32 MB Flash RAM.)</li>
+<li>Compaq Pocket PC serial interface cable</li>
+<li>Orinoco wireless card (IBM High Rate does not work.)</li>
+<li>IBM 1 GB Microdrive w/PCMCIA sleeve</li>
+<li>Cambridge Research Labs Camera Backpaq w/two PCMCIA slots, a battery, and a Philips camera</li>
+<li><a href="http://www.jameco.com/">Jameco</a> Servo Controller</li>
+<li><a href="http://www.duratrax.com/cars/dtxd20.html">Duratrax</a> Evader ST w/ESC with 
+steering assembly prebuilt (from <a href="http://www.towerhobbies.com">Tower Hobbies</a>)</li>
+<li><a href="http://www.plantraco.com/product_dtr.html">Plantraco</a> Desktop Rover</li>
+<li>RadioShack 9-pin gender changer</li>
+<li>RadioShack 9-pin null modem</li>
+<li>5 RadioShack hi-capacity (green) AA rechargable batteries</li>
+<li>RadioShack 4 AA battery holder</li>
+<li>RadioShack 1 AA battery holder</li>
+<li>RadioShack 7.2V RC Car Battery Pack and Charger Combo</li>
+<li>CVS Roll of velcro</li>
+<li>CVS 9V battery</li>
+<li>2 CVS CR123A batteries</li>
+</ul>
+
+<p>Wire the 5 AA batteries in series (red to black) and attach to the
+orange power cable of the Servo controller (red to +, black to -).
+Attach the gender changer and null modem to the Jameco servo
+controller.  Plug the steering assembly servo cable into the socket
+closest to the null modem on the Jameco servo controller (with the
+white cable facing the power plug).  Plug the ESC cable into the
+second closest slot.  Attach the battery holders and servo controller
+to the body with velcro.
+
+<p>Slip the Compaq Research Labs sleeve on the iPaq.  Insert the
+wireless card into the top PCMCIA slot.  Insert the IBM Microdrive in
+its PCMCIA sleeve.  Insert the sleeve into the bottom PCMCIA slot.
+Flash the software image onto the iPaq using the microdrive while the
+iPaq is charging.  Plug the serial iPaq cable into the null modem on
+the car and the iPaq.  Secure the iPaq on the car with velcro and
+unplug the power cable on the iPaq.  Turn the camera on the sleeve to
+face the tracked vehicle.
+
+<p>Run the ground ATR software image on a laptop with wireless support.
+
+<p>The tracked vehicle is a Plantraco Desktop Rover and requires a 9V
+battery and 2 CR123A lithium batteries.  Load the CR123A batteries
+into the rover and the 9V battery into the remote control.  Turn on
+the remote using the black switch.  Turn on the rover using the small
+black switch on the side.  Plug the servo controller into the 5 AA
+batteries.  Turn on the car using the small black switch on the ESC.
+
+<p>Congratulations, you're ready for robotic pursuit and evasion!
+
+</body>
+</html>
