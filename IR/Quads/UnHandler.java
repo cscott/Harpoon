@@ -6,15 +6,17 @@ import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 /**
  * <code>UnHandler</code> make exception handling explicit and removes
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.10 1999-03-02 21:31:37 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.11 1999-03-03 02:35:12 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -28,8 +30,8 @@ final class UnHandler {
 	final StaticState ss = new StaticState(qf, qm, hm, ctm);
 	visitAll(new Visitor(new TempInfo(), ss), old_header);
 	// now qm contains mappings from old to new, we just have to link them.
-	for (Enumeration e = code.getElementsE(); e.hasMoreElements(); ) {
-	    Quad old = (Quad) e.nextElement();
+	for (Iterator e = code.getElementsI(); e.hasNext(); ) {
+	    Quad old = (Quad) e.next();
 	    // link next.
 	    Edge[] el = old.nextEdge();
 	    for (int i=0; i<el.length; i++)
@@ -99,9 +101,9 @@ final class UnHandler {
     /** Mapping of temps to information known about their values at a
      *  given program point. */
     private static class TempInfo implements Cloneable {
-	final private Hashtable h;
-	private TempInfo(Hashtable h) { this.h = h; }
-	public TempInfo() { this.h = new Hashtable(); }
+	final private HashMap h;
+	private TempInfo(HashMap h) { this.h = h; }
+	public TempInfo() { this.h = new HashMap(); }
 
 	/** Get the type of a given temp. */
 	public Type get(Temp t) { 
@@ -116,13 +118,13 @@ final class UnHandler {
 	public void clear() { h.clear(); }
 	/** Clone the temp info (ie at program splits) */
 	public Object clone() {
-	    return new TempInfo((Hashtable)h.clone());
+	    return new TempInfo((HashMap)h.clone());
 	}
     }
 
     /** mapping from old quads to new quads. */
     private static class QuadMap {
-	final private Hashtable h = new Hashtable();
+	final private Map h = new HashMap();
 	void put(Quad old, Quad new_header, Quad new_footer) {
 	    h.put(old, new Quad[] { new_header, new_footer });
 	}
@@ -150,22 +152,22 @@ final class UnHandler {
 	    for (int i=1; i<ql.length; i++)
 		get(Hhandler, (HANDLER)ql[i]);
 	}
-	
+
 	/** mapping HandlerSet -> test tree */
 	void register(NOP from, HandlerSet to) {
-	    get(Hhs, to).addElement(from);
+	    get(Hhs, to).add(from);
 	}
-	private final Hashtable Hhs = new Hashtable();
+	private final Map Hhs = new HashMap();
 
 	/** lonely throws with null handlersets. */
-	void register(THROW q) { Vthrows.addElement(q); }
-	private final Vector Vthrows = new Vector();
+	void register(THROW q) { Vthrows.add(q); }
+	private final List Vthrows = new ArrayList();
 
 	/** HANDLER->Vector.  Later, link all NOPs in Vector to PHI. */
-	void register(NOP from, HANDLER to) {
-	    get(Hhandler, to).addElement(from);
+	private void register(NOP from, HANDLER to) {
+	    get(Hhandler, to).add(from);
 	}
-	private final Hashtable Hhandler = new Hashtable();
+	private final Map Hhandler = new HashMap();
 
 	final HandlerSet handlers(Quad q) {
 	    Quad[] ql = oldQm.next();
@@ -183,27 +185,27 @@ final class UnHandler {
 	    // first attach throws to footer.
 	    FOOTER oldQf = (FOOTER) newQh.next(0); int j=oldQf.arity();
 	    FOOTER newQf = oldQf.resize(j + Vthrows.size());
-	    for (Enumeration e=Vthrows.elements(); e.hasMoreElements(); )
-		Quad.addEdge((THROW)e.nextElement(), 0, newQf, j++);
+	    for (Iterator e=Vthrows.iterator(); e.hasNext(); )
+		Quad.addEdge((THROW)e.next(), 0, newQf, j++);
 	    
 	    // next do HandlerSets
-	    for (Enumeration e=Hhs.keys(); e.hasMoreElements(); ) {
-		HandlerSet hs = (HandlerSet)e.nextElement();
-		Vector v = get(Hhs, hs);
+	    for (Iterator e=Hhs.keySet().iterator(); e.hasNext(); ) {
+		HandlerSet hs = (HandlerSet)e.next();
+		List v = get(Hhs, hs);
 		Util.assert(hs!=null && v.size()>0); // should be!
-		PHI phi = new PHI(qf, (Quad)v.elementAt(0),
+		PHI phi = new PHI(qf, (Quad)v.get(0),
 				  new Temp[0], v.size() /*arity*/);
 		// link all to in of phi
 		for (int i=0; i<v.size(); i++) {
-		    Edge ed = ((NOP)v.elementAt(i)).prevEdge(0);
+		    Edge ed = ((NOP)v.get(i)).prevEdge(0);
 		    Quad.addEdge((Quad)ed.from(), ed.which_succ(), phi, i);
 		}
 		// now build instanceof tree. exception in Tex.
 		Quad head = phi; int which_succ = 0;
-		for (Enumeration ee=hs.elements(); ee.hasMoreElements(); ) {
-		    HANDLER h = (HANDLER)ee.nextElement();
+		for (Iterator ee=hs.iterator(); ee.hasNext(); ) {
+		    HANDLER h = (HANDLER)ee.next();
 		    HClass HCex = h.caughtException();
-		    if (HCex==null || !ee.hasMoreElements()) {
+		    if (HCex==null || !ee.hasNext()) {
 			// catch 'any' or last catch
 			NOP q0 = new NOP(qf, h);
 			Quad.addEdge(head, which_succ, q0, 0);
@@ -223,16 +225,16 @@ final class UnHandler {
 	    } // end 'for each handler set'
 
 	    // FINALLY link to handlers
-	    for (Enumeration e=Hhandler.keys(); e.hasMoreElements(); ) {
-		HANDLER h = (HANDLER) e.nextElement();
-		Vector v = get(Hhandler, h); // note that v can be size 0.
+	    for (Iterator e=Hhandler.keySet().iterator(); e.hasNext(); ) {
+		HANDLER h = (HANDLER) e.next();
+		List v = get(Hhandler, h); // note that v can be size 0.
 		Edge ed; Quad tail;
 		// note that v.size() may be equal to zero.
 		// if this is the case, then the unreachable code elimination
 		// below will take care of it.
 		PHI  q0 = new PHI(qf, h, new Temp[0], v.size() /*arity*/);
 		for (int i=0; i<v.size(); i++) {
-		    ed = ((NOP)v.elementAt(i)).prevEdge(0);
+		    ed = ((NOP)v.get(i)).prevEdge(0);
 		    Quad.addEdge((Quad)ed.from(), ed.which_succ(), q0, i);
 		}
 		MOVE q1 = new MOVE(qf, h, Quad.map(ctm, h.exceptionTemp()),
@@ -249,9 +251,9 @@ final class UnHandler {
 	}
 
 	// make hashtables appear to map directly to vectors.
-	private static Vector get(Hashtable h, Object o) {
-	    Vector v = (Vector) h.get(o);
-	    if (v==null) { v = new Vector(); h.put(o, v); }
+	private static List get(Map h, Object o) {
+	    List v = (List) h.get(o);
+	    if (v==null) { v = new ArrayList(); h.put(o, v); }
 	    return v;
 	}
     }
@@ -262,16 +264,16 @@ final class UnHandler {
 	final QuadMap qm;
 	final HandlerMap hm;
 	final CloningTempMap ctm;
-	final Vector extra = new Vector(4);
+	final List extra = new ArrayList(4);
 	StaticState(QuadFactory qf, QuadMap qm, HandlerMap hm,
 		    CloningTempMap ctm) {
 	    this.qf = qf; this.qm = qm; this.hm = hm; this.ctm = ctm;
 	}
 	Temp extra(int i) {
 	    while (extra.size() <= i)
-		extra.addElement(new Temp(qf.tempFactory(),
-					  "un"+extra.size()+"_"));
-	    return (Temp) extra.elementAt(i);
+		extra.add(new Temp(qf.tempFactory(),
+				   "un"+extra.size()+"_"));
+	    return (Temp) extra.get(i);
 	}
     }
 
