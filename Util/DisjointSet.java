@@ -3,7 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.MultiMap;
+
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 /**
  * <code>DisjointSet</code> is an implementation of disjoint-set forests
@@ -14,7 +19,7 @@ import java.util.Map;
  * function.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DisjointSet.java,v 1.1.2.4 2000-11-16 05:25:09 cananian Exp $
+ * @version $Id: DisjointSet.java,v 1.1.2.5 2000-11-25 15:29:32 cananian Exp $
  */
 public class DisjointSet  {
     private final Map elmap = new HashMap();
@@ -72,6 +77,15 @@ public class DisjointSet  {
 	    if (x.rank == y.rank)
 		y.rank++;
 	}
+    }
+    public String toString() {
+	MultiMap mm = new GenericMultiMap();
+	for (Iterator it=elmap.values().iterator(); it.hasNext(); ) {
+	    Node n = (Node) it.next();
+	    Node r = _find_set(n);
+	    if (n!=r) mm.add(r.element, n.element);
+	}
+	return mm.toString();
     }
     // node representation.
     private static class Node {
