@@ -49,7 +49,8 @@ void context_switch() {
   if (_setjmp(gtl->mthread.machdep_state)) {
     return;
   }
-  doFDs();
+  if (ioptr!=NULL)
+    doFDs();
   
   gtl=gtl->next;
   
