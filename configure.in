@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.49 $)dnl
+AC_REVISION($Revision: 1.50 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -189,9 +189,11 @@ semi)
 	;;
 precise)
 	AC_MSG_RESULT([precise gc])
+	AC_DEFINE(BDW_CONSERVATIVE_GC, 1,
+    	[Define if you are using the B-D-W conservative garbage collector])
 	AC_DEFINE(WITH_PRECISE_GC, 1,
-		  [Define if you want precise garbage collection])
-	GC_LIB="src/gc/libgc.la"
+		[Define if you want precise garbage collection])
+	GC_LIB="Contrib/gc/gc.a src/gc/libgc.la"
 	;;
 conservative)
 	AC_MSG_RESULT([B-D-W conservative gc])
@@ -205,8 +207,10 @@ none)	AC_MSG_RESULT([no garbage collection])
 *)	AC_MSG_ERROR([unknown garbage collector: $gc_type])	
 	;;
 esac
-AM_CONDITIONAL(CONSERVATIVE_GC,test $gc_type = conservative -o $gc_type = semi)
+AM_CONDITIONAL(CONSERVATIVE_GC,
+	test $gc_type = conservative -o $gc_type = semi -o $gc_type = precise)
 AM_CONDITIONAL(PRECISE_GC, test $gc_type = precise -o $gc_type = semi)
+AM_CONDITIONAL(SEMI_PRECISE_GC, test $gc_type = semi)
 
 dnl experimental support for clustered heaps.
 AC_MSG_CHECKING([for experimental clustered heap support])
