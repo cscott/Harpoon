@@ -31,15 +31,15 @@ import java.util.HashMap;
     cause <code>IllegalArgumentException</code> to be thrown.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.3.2.1 2002-02-27 08:37:54 cananian Exp $
+    @version $Id: BitSetFactory.java,v 1.3.2.2 2002-03-14 10:18:51 cananian Exp $
  */
-public class BitSetFactory extends SetFactory {
+public class BitSetFactory<V> extends SetFactory<V> {
     
     /** Maps each object in the universe for <code>this</code> to an
 	index in the <code>BitString</code> for the <code>Set</code>s
 	produced.
     */
-    private Indexer indexer;
+    private Indexer<V> indexer;
 
     /** Size that each bit string needs to be.  Does not necessarily 
 	equal the size of the universe itself, because the indices of
@@ -48,18 +48,18 @@ public class BitSetFactory extends SetFactory {
     private int bitStringSize;
 
     /** Universe of values for this. */
-    private Set universe; 
+    private Set<V> universe; 
 
     /** Universe of values for this, represented as a BitSet.  (Used
 	for makeFullSet). */
-    private BitStringSet bitUniverse = null;
+    private BitStringSet<V> bitUniverse = null;
     
     /** Creates a <code>BitSetFactory</code>, given a
 	<code>universe</code> of values and an <code>Indexer</code>
 	for the elements of <code>universe</code>. 
     */
-    public BitSetFactory(final Set universe, final Indexer indexer) {
-        final Iterator vals = universe.iterator();
+    public BitSetFactory(final Set<V> universe, final Indexer<V> indexer) {
+        final Iterator<V> vals = universe.iterator();
 	this.indexer = indexer;
 	this.universe = universe;
 	int max = 0;
@@ -77,23 +77,23 @@ public class BitSetFactory extends SetFactory {
 	<code>Indexer.getByID()</code> method to allow
 	efficient iteration over sets.
     */
-    public BitSetFactory(final Set universe) {
-	final HashMap obj2int = new HashMap();
-	final ArrayList int2obj = new ArrayList();
-	final Iterator iter = universe.iterator();
+    public BitSetFactory(final Set<V> universe) {
+	final HashMap<V,Integer> obj2int = new HashMap<V,Integer>();
+	final ArrayList<V> int2obj = new ArrayList<V>();
+	final Iterator<V> iter = universe.iterator();
 	this.universe = universe;
 	int i;
 	for(i=0; iter.hasNext(); i++) {
-	    Object o = iter.next();
+	    V o = iter.next();
 	    obj2int.put(o, new Integer(i));
 	    int2obj.add(i, o); 
 	}
 	this.bitStringSize = i+1;
-	this.indexer = new Indexer() {
-	    public int getID(Object o) {
-		return ((Integer)obj2int.get(o)).intValue();
+	this.indexer = new Indexer<V>() {
+	    public int getID(V o) {
+		return obj2int.get(o).intValue();
 	    }
-	    public Object getByID(int id) {
+	    public V getByID(int id) {
 		return int2obj.get(id);
 	    }
 	    public boolean implementsReverseMapping() { return true; }
@@ -109,8 +109,8 @@ public class BitSetFactory extends SetFactory {
 	<BR> <B>effects:</B> Constructs a lightweight
 	     <code>Set</code> with the elements from <code>c</code>.
     */ 
-    public Set makeSet(Collection c) {
-	BitStringSet bss = new BitStringSet(bitStringSize, this);
+    public BitStringSet<V> makeSet(Collection<V> c) {
+	BitStringSet<V> bss = new BitStringSet<V>(bitStringSize, this);
 	bss.addAll(c);
 	return bss;
     }
@@ -118,28 +118,28 @@ public class BitSetFactory extends SetFactory {
     /** Generates a new mutable <code>Set</code>, using the elements
 	of the universe for <code>this</code> as its initial contents.
     */
-    public Set makeFullSet() {
+    public Set<V> makeFullSet() {
 	if (bitUniverse == null) 
-	    bitUniverse = (BitStringSet) makeSet(universe);
+	    bitUniverse = makeSet(universe);
 
-	return (Set) bitUniverse.clone();
+	return (Set<V>) bitUniverse.clone();
     }
 
-    private static class BitStringSet extends AbstractSet 
+    private static class BitStringSet<V> extends AbstractSet<V>
 	implements Cloneable {
 	// internal rep for set
 	BitString bs;
 
 	// ensure that sets come from same factory
 	// when doing optimized operations. 
-	BitSetFactory fact; 
+	BitSetFactory<V> fact; 
 
-	BitStringSet(int size, BitSetFactory fact) {
+	BitStringSet(int size, BitSetFactory<V> fact) {
 	    this.bs = new BitString(size);
 	    this.fact = fact;
 	}
 
-	public boolean add(Object o) {
+	public boolean add(V o) {
 	    if (!fact.universe.contains(o)) 
 		throw new IllegalArgumentException
 		    ("Attempted to add an object: "+o+
@@ -156,7 +156,7 @@ public class BitSetFactory extends SetFactory {
 	    }
 	}
 
-	public boolean addAll(Collection c) {
+	public boolean addAll(Collection<V> c) {
 	    if (c instanceof BitStringSet &&
 		((BitStringSet)c).fact == this.fact) {
 		BitStringSet bss = (BitStringSet) c;
@@ -170,7 +170,7 @@ public class BitSetFactory extends SetFactory {
 	
 	public boolean contains(Object o) {
 	    if (fact.universe.contains(o)) {
-		int i = fact.indexer.getID(o);
+		int i = fact.indexer.getID((V)o);
 		return this.bs.get(i);
 	    } else {
 		// not part of original universe, therefore cannot be
@@ -179,7 +179,7 @@ public class BitSetFactory extends SetFactory {
 	    }
 	}
 
-	public boolean containsAll(Collection c) {
+	public <T> boolean containsAll(Collection<T> c) {
 	    // check that ('c' - this) is nullset
 	    // (which is the same as C /\ NOT(this) )
 	    if (c instanceof BitStringSet &&
@@ -194,10 +194,10 @@ public class BitSetFactory extends SetFactory {
 	    } else return super.containsAll(c);
 	}
 	
-	public Object clone() {
+	public BitStringSet<V> clone() {
 	    try {
-		BitStringSet bss = (BitStringSet) super.clone();
-		bss.bs = (BitString) this.bs.clone();
+		BitStringSet<V> bss = (BitStringSet) super.clone();
+		bss.bs = this.bs.clone();
 		return bss;
 	    } catch (CloneNotSupportedException e) {
 		assert false;
@@ -224,14 +224,14 @@ public class BitSetFactory extends SetFactory {
 	    return this.bs.isZero();
 	}
 	
-	public Iterator iterator() {
+	public Iterator<V> iterator() {
 	    return fact.indexer.implementsReverseMapping() ?
-	      (Iterator) new Iterator() { // fast bit-set iterator
+	      (Iterator<V>) new Iterator<V>() { // fast bit-set iterator
 		int lastindex=-1;
 		public boolean hasNext() {
 		    return BitStringSet.this.bs.firstSet(lastindex)!=-1;
 		}
-		public Object next() {
+		public V next() {
 		    lastindex = BitStringSet.this.bs.firstSet(lastindex);
 		    if (lastindex<0) throw new NoSuchElementException();
 		    return fact.indexer.getByID(lastindex);
@@ -241,18 +241,18 @@ public class BitSetFactory extends SetFactory {
 			throw new IllegalStateException();
 		    BitStringSet.this.bs.clear(lastindex);
 		}
-	    } : new Iterator() { // slower fall-back
+	    } : new Iterator<V>() { // slower fall-back
 		    // need to wrap a *modifiable* iterator 
 		    // around an internal filter iterator...
-		    Iterator internIter = new FilterIterator
+		    Iterator<V> internIter = new FilterIterator<V,V>
 			(fact.universe.iterator(), 
-			 new FilterIterator.Filter() {
-				 public boolean isElement(Object o) {
+			 new FilterIterator.Filter<V,V>() {
+				 public boolean isElement(V o) {
 				     return BitStringSet.this.bs.get
 					 (fact.indexer.getID(o));
 				 }});
-		    Object last = null;
-		    public Object next() {
+		    V last = null;
+		    public V next() {
 			last = internIter.next();
 			return last;
 		    }
@@ -269,7 +269,7 @@ public class BitSetFactory extends SetFactory {
 		// o is not member of universe, therefore cannot be in set.
 		return false;
 	    } else {
-		int i = fact.indexer.getID(o);
+		int i = fact.indexer.getID((V)o);
 		boolean alreadySet = bs.get(i);
 		if (alreadySet) {
 		    this.bs.clear(i);
@@ -280,7 +280,7 @@ public class BitSetFactory extends SetFactory {
 	    }
 	}
 
-	public boolean removeAll(Collection c) {
+	public <T> boolean removeAll(Collection<T> c) {
 	    if (c instanceof BitStringSet &&
 		((BitStringSet)c).fact == this.fact) {
 		BitStringSet bss = (BitStringSet) c;
@@ -301,7 +301,7 @@ public class BitSetFactory extends SetFactory {
 	    }
 	}
 
-	public boolean retainAll(Collection c) {
+	public <T> boolean retainAll(Collection<T> c) {
 	    if (c instanceof BitStringSet &&
 		((BitStringSet)c).fact == this.fact) {
 		BitStringSet bss = (BitStringSet) c;

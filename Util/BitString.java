@@ -29,7 +29,7 @@ package harpoon.Util;
  * and is defined independently of implementation.
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: BitString.java,v 1.3.2.1 2002-02-27 08:37:44 cananian Exp $
+ * @version $Id: BitString.java,v 1.3.2.2 2002-03-14 10:18:28 cananian Exp $
  */
 
 public final class BitString implements Cloneable, java.io.Serializable {
@@ -378,7 +378,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
   /**
    * Clones the BitString.
    */
-  public Object clone() {
+  public BitString clone() {
     BitString result = null;
     try {
       result = (BitString) super.clone();
