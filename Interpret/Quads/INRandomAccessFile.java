@@ -14,7 +14,7 @@ import java.io.IOException;
  * methods in <code>java.io.RandomAccessFile</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INRandomAccessFile.java,v 1.1.2.5 2000-01-13 23:48:10 cananian Exp $
+ * @version $Id: INRandomAccessFile.java,v 1.1.2.6 2000-01-28 05:27:26 cananian Exp $
  */
 final class INRandomAccessFile {
     static final void register(StaticState ss) {
@@ -27,6 +27,14 @@ final class INRandomAccessFile {
 	ss.register(seek(ss));
 	ss.register(length(ss));
 	ss.register(close(ss));
+	// JDK 1.2 only
+	try { ss.register(initIDs(ss)); } catch (NoSuchMethodError e) { }
+    }
+    // "initialize JNI offsets" for JDK 1.2. Currently a NOP.
+    private static final NativeMethod initIDs(StaticState ss0) {
+	final HMethod hm =
+	    ss0.HCrafile.getMethod("initIDs", new HClass[0]);
+	return new NullNativeMethod(hm);
     }
     private static final NativeMethod open(StaticState ss0) {
 	final HMethod hm =

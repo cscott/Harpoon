@@ -12,13 +12,17 @@ import harpoon.ClassFile.HMethod;
  * <code>java.lang.Runtime</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INRuntime.java,v 1.1.2.4 2000-01-13 23:48:10 cananian Exp $
+ * @version $Id: INRuntime.java,v 1.1.2.5 2000-01-28 05:27:26 cananian Exp $
  */
 public class INRuntime {
     static final void register(StaticState ss) {
-	ss.register(privateConstructor(ss));
+	ss.registerOverride(privateConstructor(ss));
 	ss.register(gc(ss));
-	ss.register(runFinalization(ss));
+	try { // JDK 1.2 only
+	    ss.register(runFinalization0(ss));
+	} catch (NoSuchMethodError e) { // JDK 1.1 fallback.
+	    ss.register(runFinalization(ss));
+	}
 	ss.register(freeMemory(ss));
 	ss.register(totalMemory(ss));
     }
@@ -55,6 +59,16 @@ public class INRuntime {
 		Runtime r = (Runtime) obj.getClosure();
 		r.runFinalization();
 		return null;
+	    }
+	};
+    }
+    // JDK 1.2 stub
+    private static final NativeMethod runFinalization0(StaticState ss0) {
+	final HMethod hm=ss0.HCruntime.getMethod("runFinalization0","()V");
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params) {
+		return runFinalization(ss).invoke(ss, params);
 	    }
 	};
     }

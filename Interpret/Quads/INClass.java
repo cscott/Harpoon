@@ -7,6 +7,8 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.NoSuchClassException;
 
+import harpoon.Util.Util;
+
 import java.lang.reflect.Modifier;
 import java.util.Hashtable;
 /**
@@ -14,11 +16,15 @@ import java.util.Hashtable;
  * <code>java.lang.Class</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INClass.java,v 1.1.2.6 2000-01-27 11:26:26 cananian Exp $
+ * @version $Id: INClass.java,v 1.1.2.7 2000-01-28 05:27:25 cananian Exp $
  */
 public class INClass {
     static final void register(StaticState ss) {
-	ss.register(forName(ss));
+	try { // JDK 1.2 only
+	    ss.register(forName0(ss));
+	} catch (NoSuchMethodError e) { // JDK 1.1 fallback.
+	    ss.register(forName(ss));
+	}
 	ss.register(getComponentType(ss));
 	ss.register(getInterfaces(ss));
 	ss.register(getModifiers(ss));
@@ -28,7 +34,11 @@ public class INClass {
 	ss.register(isArray(ss));
 	ss.register(isInterface(ss));
 	ss.register(isPrimitive(ss));
-	ss.register(newInstance(ss));
+	try { // JDK 1.2 only
+	    ss.register(newInstance0(ss));
+	} catch (NoSuchMethodError e) { // JDK 1.1 fallback.
+	    ss.register(newInstance(ss));
+	}
 	// registry for name->class mapping
 	ss.putNativeClosure(ss.HCclass, new Hashtable());
 	// JDK 1.2 only
@@ -58,6 +68,32 @@ public class INClass {
 		String clsname = ss.ref2str((ObjectRef)params[0]);
 		try {
 		    return forClass(ss, ss.linker.forName(clsname));
+		} catch (NoSuchClassException e) {
+		    ObjectRef obj = ss.makeThrowable(ss.HCclassnotfoundE);
+		    throw new InterpretedThrowable(obj, ss);
+		}
+	    }
+	};
+    }
+    // JDK 1.2 version of forName()
+    private static final NativeMethod forName0(StaticState ss0) {
+	final HMethod hm = ss0.HCclass.getMethod
+	    ("forName0", 
+	     "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;");
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    // throws ClassNotFoundException
+	    Object invoke(StaticState ss, Object[] params)
+		throws InterpretedThrowable {
+		String name = ss.ref2str((ObjectRef) params[0]);
+		boolean initialize = ((Boolean) params[1]).booleanValue();
+		ObjectRef loader = (ObjectRef) params[2];
+		Util.assert(loader==null, "Haven't implemented class loading "+
+			    "from a ClassLoader object.");
+		Util.assert(initialize, "Haven't implemented uninitialized "+
+			    "class loading.");
+		try {
+		    return forClass(ss, ss.linker.forName(name));
 		} catch (NoSuchClassException e) {
 		    ObjectRef obj = ss.makeThrowable(ss.HCclassnotfoundE);
 		    throw new InterpretedThrowable(obj, ss);
@@ -179,6 +215,16 @@ public class INClass {
 		} catch (InterpretedThrowable e) {
 		    throw inst(ss);
 		}
+	    }
+	};
+    }
+    // JDK 1.2 stub.
+    private static final NativeMethod newInstance0(StaticState ss0) {
+	final HMethod hm = ss0.HCclass.getMethod("newInstance0",new HClass[0]);
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params) {
+		return newInstance(ss).invoke(ss, params);
 	    }
 	};
     }

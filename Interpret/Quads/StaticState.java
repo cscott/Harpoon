@@ -11,6 +11,7 @@ import harpoon.ClassFile.Linker;
 import harpoon.IR.Quads.Quad;
 import harpoon.Util.Util;
 
+import java.lang.reflect.Modifier;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +20,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.13 2000-01-27 11:26:26 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.14 2000-01-28 05:27:26 cananian Exp $
  */
 final class StaticState extends HCLibrary implements java.io.Serializable {
     /** which linker to use. */
@@ -184,7 +185,21 @@ final class StaticState extends HCLibrary implements java.io.Serializable {
     // NATIVE METHOD SUPPORT:
     private transient Map nativeRegistry = new HashMap();
     private Map nativeClosure = new HashMap();
+    /** provide an implementation for a native method. */
     final void register(NativeMethod nm) {
+	Util.assert(Modifier.isNative(nm.getMethod().getModifiers()),
+		    "NativeMethod implementation for non-native "+
+		    nm.getMethod());
+	register0(nm);
+    }
+    /** override an implementation for a non-native method. */
+    final void registerOverride(NativeMethod nm) {
+	Util.assert(!Modifier.isNative(nm.getMethod().getModifiers()),
+		    "NativeMethod override for genuinely native "+
+		    nm.getMethod());
+	register0(nm);
+    }
+    private final void register0(NativeMethod nm) {
 	nativeRegistry.put(nm.getMethod(), nm);
     }
     final NativeMethod findNative(HMethod hm) {

@@ -15,11 +15,11 @@ import java.io.IOException;
  * methods in <code>java.io.FileOutputStream</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFileOutputStream.java,v 1.1.2.7 2000-01-13 23:48:10 cananian Exp $
+ * @version $Id: INFileOutputStream.java,v 1.1.2.8 2000-01-28 05:27:26 cananian Exp $
  */
 final class INFileOutputStream {
     static final void register(StaticState ss) {
-	ss.register(fdConstructor(ss));
+	ss.registerOverride(fdConstructor(ss));
 	ss.register(open(ss));
 	ss.register(openAppend(ss));
 	ss.register(close(ss));
