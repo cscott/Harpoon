@@ -13,10 +13,10 @@ import java.util.Stack;
 import java.util.Vector;
 /**
  * <code>CycleEq</code> computes cycle equivalence classes for nodes in
- * control flow graph, in O(E) time.
+ * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <>
- * @version $Id: CycleEq.java,v 1.2 1998-10-16 12:00:49 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.3 1998-10-16 12:01:21 cananian Exp $
  */
 
 public class CycleEq  {
