@@ -78,13 +78,13 @@ else
     DIFFS_TODAY_DIR=$DIFFS_DIR/today
     CORRECT_RESULTS_DIR=correct-results
     ARCHIVE_DIR=archive
-    ARCHIVE_SOURCES_FILE=$ARCHIVE_DIR/sources.tar.gz   # sources archive
-    ARCHIVE_EXECUTABLES_FILE=$ARCHIVE_DIR/executables.tar.gz   # executables archive
-    ARCHIVE_ERRORS_FILE=$ARCHIVE_DIR/errors.tar.gz   # errors archive
-    ARCHIVE_ERRORS_SHORT_FILE=$ARCHIVE_DIR/errors_short.tar.gz   # short errors archive
-    ARCHIVE_DIFFS_SOURCES_FILE=$ARCHIVE_DIR/diffs.tar.gz   # sources diffs archive
-    ARCHIVE_COMPILE_RESULTS_FILE=$ARCHIVE_DIR/compile_results.tar.gz   # compiling time results
-    ARCHIVE_RUN_RESULTS_FILE=$ARCHIVE_DIR/run_results.tar.gz   # runtime results archive
+    ARCHIVE_SOURCES_FILE=$ARCHIVE_DIR/sources.tgz   # sources archive
+    ARCHIVE_EXECUTABLES_FILE=$ARCHIVE_DIR/executables.tgz   # executables archive
+    ARCHIVE_ERRORS_FILE=$ARCHIVE_DIR/errors.tgz   # errors archive
+    ARCHIVE_ERRORS_SHORT_FILE=$ARCHIVE_DIR/errors_short.tgz   # short errors archive
+    ARCHIVE_DIFFS_SOURCES_FILE=$ARCHIVE_DIR/diffs.tgz   # sources diffs archive
+    ARCHIVE_COMPILE_RESULTS_FILE=$ARCHIVE_DIR/compile_results.tgz   # compiling time results
+    ARCHIVE_RUN_RESULTS_FILE=$ARCHIVE_DIR/run_results.tgz   # runtime results archive
     JOURNAL_FILE=$ARCHIVE_DIR/journal   # for each benchmark, keeps information about its last execution
 
   # Default values for script options that can be changed from command-line
@@ -378,7 +378,7 @@ else
 	    if [ "$task" == "$REST_TASKS" ]; then   # is it the last task?
 		REST_TASKS=""
 	    else   # more tasks in the list
-		REST_TASKS=`echo $REST_TASKS | sed s/$task://`
+		REST_TASKS=`echo $REST_TASKS | sed s/"$task:"//`
 	    fi
 	    
 	    if [ "$DEBUG" == "yes" ]; then   # print some debugging information
@@ -844,7 +844,7 @@ else
 	    if [ "$task" == "$REST_TASKS" ]; then   # is it the last task?
 		REST_TASKS=""
 	    else   # more tasks in the list
-		REST_TASKS=`echo $REST_TASKS | sed s/$task://`
+		REST_TASKS=`echo $REST_TASKS | sed s/"$task:"//`
 	    fi
 	    task=`echo $task | sed s/\ .*$// | sed s/,.*$//`   # getting rid of possible command-line parameters and bin/build-precisec options
 	    
@@ -863,7 +863,13 @@ else
 	# Generating the sources diffs, merging them into one big file, and adding this file to the $ARCHIVE_DIFFS_SOURCES_FILE
 
 	if [ "$DIFFS" == "yes" ]; then   # we want to generate diffs
-	    diff $DIFFS_TODAY_DIR $DIFFS_YESTERDAY_DIR >> $DIFFS_SOURCES_FILE
+	    for file in `\ls -Ad $DIFFS_TODAY_DIR/* 2>/dev/null`; do   # looping through all files in $DIFFS_TODAY_DIR
+		BENCHMARK=`echo $file | sed "s|^.*/||g"`   # removing everything up to the last "/" character in $file
+		echo $BENCHMARK >> $DIFFS_SOURCES_FILE
+		echo ---------------------------------------------- >> $DIFFS_SOURCES_FILE
+		diff $DIFFS_TODAY_DIR/$BENCHMARK $DIFFS_YESTERDAY_DIR/$BENCHMARK >> $DIFFS_SOURCES_FILE   # diffing the sources
+		echo >> $DIFFS_SOURCES_FILE
+	    done
 	    echo >> $DIFFS_SOURCES_FILE
 	    echo "End of diffs file." >> $DIFFS_SOURCES_FILE
 	    echo >> $DIFFS_SOURCES_FILE
