@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.69 2002-04-11 04:29:32 cananian Exp $
+# $Id: GNUmakefile,v 1.70 2002-04-12 05:32:06 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -13,7 +13,7 @@ JCC5:=$(JSR14DISTR)/scripts/javac -source 1.4 -gj #-warnunchecked
 JCC:=javac -J-mx64m -source 1.4
 JDOC:=javadoc
 JAR=jar
-JDOCFLAGS:=-J-mx128m -version -author \
+JDOCFLAGS:=-J-mx128m -version -author -breakiterator \
   -overview harpoon/overview.html -doctitle "FLEX API documentation"
 JDOCGROUPS:=\
   -group "Basic Class/Method/Field handling" "harpoon.ClassFile*" \
@@ -25,7 +25,7 @@ JDOCGROUPS:=\
   -group "Contributed packages" "gnu.*"
 JDOCIMAGES=/usr/local/jdk/docs/api/images
 SSH=ssh
-SCP=scp -q
+#SCP=scp -q # not needed anymore, and deprecated.
 MUNGE=bin/munge
 UNMUNGE=bin/unmunge
 FORTUNE=/usr/games/fortune
@@ -222,28 +222,6 @@ first:
 	  $(filter-out Contrib%,$(filter-out JavaChip%,$(ALLPKGS)))); do \
 		mkdir -p harpoon/$$pkg; \
 	done
-oldfirst:
-	@echo Please wait...
-	-${JCC} ${JFLAGS} Util/Util.java Util/ArrayFactory.java \
-		Util/UniqueVector.java Util/ArrayEnumerator.java \
-		Util/Set.java Util/Worklist.java \
-		Util/FilterIterator.java Util/WorkSet.java \
-		Util/EnumerationIterator.java \
-		Util/IteratorEnumerator.java \
-		Temp/Temp*.java
-	-${JCC} ${JFLAGS} IR/RawClass/*.java
-	-${JCC} ${JFLAGS} IR/Bytecode/*.java ClassFile/*.java \
-		IR/Properties/CFGraphable.java
-	-${JCC} ${JFLAGS} IR/Quads/*.java IR/Properties/*.java \
-		2> /dev/null # not perfect, but it does the base quads well.
-	-${JCC} ${JFLAGS} \
-		Analysis/Quads/*.java Analysis/Quads/SCC/*.java \
-		2> /dev/null # not perfect, but gotta make those dirs somehow.
-olderfirst:
-	@echo Please wait...
-	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
-	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
-	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 
 # the package-by-package hack below is made necessary by brain-dead shells
 # that don't accept arbitrarily-large argument lists.
@@ -261,11 +239,16 @@ Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
 	@echo " done."
 	date '+%-d-%b-%Y at %r %Z.' > Harpoon.jar.TIMESTAMP
 
-jar:	Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORTP)
-jar-install: jar
-	chmod a+r Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORTP)
-	$(SCP) Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORTP) \
-		$(INSTALLMACHINE):$(INSTALLDIR)
+JARFILES=Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORTP)
+jar:	$(JARFILES)
+jar-install: $(JARFILES)
+	$(RM) -rf jar-install
+	mkdir jar-install
+	cp $^ jar-install
+	chmod a+r jar-install/*
+	cd jar-install ; tar c . | \
+		$(SSH) $(INSTALLMACHINE) tar -C $(INSTALLDIR) -xv
+	$(RM) -rf jar-install
 
 VERSIONS: $(TARSOURCE) # collect all the RCS version ID tags.
 	@echo -n Compiling VERSIONS... ""
@@ -358,8 +341,8 @@ harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORTP) $(
 tar:	harpoon.tgz harpoon.tgz.TIMESTAMP
 tar-install: tar
 	chmod a+r harpoon.tgz harpoon.tgz.TIMESTAMP
-	$(SCP) harpoon.tgz harpoon.tgz.TIMESTAMP \
-		$(INSTALLMACHINE):$(INSTALLDIR)
+	tar c harpoon.tgz harpoon.tgz.TIMESTAMP | \
+		$(SSH) $(INSTALLMACHINE) tar -C $(INSTALLDIR) -xv
 
 srcdoc/harpoon/%.html: %.java
 	mkdir -p $(dir $@); bin/source-markup.perl \
@@ -390,9 +373,8 @@ srcdoc-clean:
 	-${RM} -r srcdoc
 srcdoc-install: srcdoc srcdoc/java
 	chmod -R a+rX srcdoc
-	$(SSH) $(INSTALLMACHINE) \
-		/bin/rm -rf $(INSTALLDIR)/srcdoc
-	$(SCP) -r srcdoc $(INSTALLMACHINE):$(INSTALLDIR)
+	tar c srcdoc | $(SSH) $(INSTALLMACHINE) \
+		"/bin/rm -rf $(INSTALLDIR)/srcdoc ; tar -C $(INSTALLDIR) -xv"
 
 doc:	doc/TIMESTAMP
 
@@ -409,7 +391,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	$(RM) -rf doc doc-link
 	mkdir doc doc-link
 	cd doc-link; ln -s .. harpoon ; ln -s .. silicon ; ln -s ../Contrib gnu
-	-cd doc-link; ${JDOC} ${JDOCFLAGS} -d ../doc \
+	-${JDOC} ${JDOCFLAGS} -d doc -sourcepath doc-link \
 		$(subst harpoon.Contrib,gnu, \
 		$(foreach dir, $(filter-out Test, \
 			  $(filter-out JavaChip,$(PKGSWITHJAVASRC))), \
@@ -434,9 +416,8 @@ doc-install: doc/TIMESTAMP mark-executable
 	  cp ChangeLog doc/ChangeLog.txt; \
 	  chmod a+r doc/ChangeLog.txt; \
 	fi
-	$(SSH) $(INSTALLMACHINE) \
-		/bin/rm -rf $(INSTALLDIR)/doc
-	tar -c doc | $(SSH) $(INSTALLMACHINE) tar -C $(INSTALLDIR) -x
+	tar -c doc | $(SSH) $(INSTALLMACHINE) \
+		"/bin/rm -rf $(INSTALLDIR)/doc ; tar -C $(INSTALLDIR) -x"
 
 doc-clean:
 	-${RM} -r doc
@@ -465,13 +446,11 @@ polish: clean
 
 wipe:	clean doc-clean
 
-backup: only-me # DOESN'T WORK ON NON-LOCAL MACHINES
-	if [ ! `hostname` = "lesser-magoo.lcs.mit.edu" ]; then exit 1; fi
-	$(RM) ../harpoon-backup.tar.gz
-	(cd ..; tar czf harpoon-backup.tar.gz CVSROOT)
-	$(SCP) ../harpoon-backup.tar.gz \
-		miris.lcs.mit.edu:public_html/Projects/Harpoon
-	$(RM) ../harpoon-backup.tar.gz
+NONLOCAL=$(shell if [ ! `hostname` = "lesser-magoo.lcs.mit.edu" ]; then echo $(SSH) cananian@lesser-magoo.lcs.mit.edu ; fi)
+backup: only-me # SLOW ON NON-LOCAL MACHINES
+	$(NONLOCAL) tar -C ~/Harpoon -c CVSROOT | \
+	   $(SSH) catfish.lcs.mit.edu \
+	      "gzip -9 -c > public_html/Projects/Harpoon/flex-backup.tar.gz"
 
 # some rules only make sense if you're me.
 only-me:
