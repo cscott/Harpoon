@@ -22,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.41 2000-02-13 04:00:02 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.42 2000-02-17 22:46:55 cananian Exp $
  */
 public class Spec  {
 
@@ -268,6 +268,12 @@ public class Spec  {
 	*/
 	public abstract void accept(ExpVisitor v);
 	
+	/** Creates a new <code>Spec.Exp</code> similar to this one,
+	 *  using the provided <code>Spec.ExpList</code> of children. */
+	public abstract Exp build(ExpList kids);
+	/** Creates an <code>Spec.ExpList</code> of children of this
+	 *  <code>Spec.Exp</code>. */
+	public abstract ExpList kids();
     }
     
     /** Extension of <code>Spec.Exp</code> that represents an
@@ -285,6 +291,11 @@ public class Spec  {
 	*/
 	public ExpId(String id) { this.id = id; }
 	public void accept(ExpVisitor v) { v.visit(this); }
+	public Exp build(ExpList kids) {
+	    Util.assert(kids==null);
+	    return new ExpId(this.id);
+	}
+	public ExpList kids() { return null; }
 	public String toString() { return id; }
     }
 
@@ -327,8 +338,17 @@ public class Spec  {
 			"BINOP cannot be precisely typed: "+this);
 	}
 	public void accept(ExpVisitor v) { v.visit(this); }
+	public Exp build(ExpList kids) {
+	    Util.assert(kids!=null && kids.tail!=null && kids.tail.tail==null);
+	    return new ExpBinop((TypeSet)this.types.clone(),
+				opcode/*immutable*/,
+				kids.head, kids.tail.head);
+	}
+	public ExpList kids() {
+	    return new ExpList(left, new ExpList(right, null));
+	}
 	public String toString() {
-	    return "BINOP"+types+"("+opcode.toBop().toUpperCase()+","
+	    return "BINOP"+types+"("+opcode.toBop()+","
 		+left+","+right+")";
 	}
     }
@@ -353,6 +373,11 @@ public class Spec  {
 	    this.types = types; this.value = value;
 	}
 	public void accept(ExpVisitor v) { v.visit(this); }
+	public Exp build(ExpList kids) {
+	    Util.assert(kids==null);
+	    return new ExpConst((TypeSet)types.clone(),value/*immutable*/);
+	}
+	public ExpList kids() { return null; }
 	public String toString() { return "CONST"+types+"("+value+")"; }
     }
 
@@ -379,6 +404,11 @@ public class Spec  {
 	    this.types = types; this.addr = addr;
 	}
 	public void accept(ExpVisitor v) { v.visit(this); }
+	public Exp build(ExpList kids) {
+	    Util.assert(kids!=null && kids.tail==null);
+	    return new ExpMem((TypeSet)types.clone(), kids.head);
+	}
+	public ExpList kids() { return new ExpList(addr, null); }
 	public String toString() { return "MEM"+types+"("+addr+")"; }
     }
 
@@ -398,6 +428,11 @@ public class Spec  {
 	    <code>name</code>. */
 	public ExpName(String name) { this.name = name; }
 	public void accept(ExpVisitor v) { v.visit(this); }
+	public Exp build(ExpList kids) {
+	    Util.assert(kids==null);
+	    return new ExpName(name);
+	}
+	public ExpList kids() { return null; }
 	public String toString() { return "NAME("+name+")"; }
     }
 
@@ -425,6 +460,11 @@ public class Spec  {
 			"TEMP cannot be precisely typed: "+this);
 	}
 	public void accept(ExpVisitor v) { v.visit(this); }
+	public Exp build(ExpList kids) {
+	    Util.assert(kids==null);
+	    return new ExpTemp((TypeSet)types.clone(), name);
+	}
+	public ExpList kids() { return null; }
 	public String toString() { return "TEMP"+types+"("+name+")"; }
     }
 
@@ -450,8 +490,14 @@ public class Spec  {
 			"UNOP cannot be precisely typed: "+this);
 	}
 	public void accept(ExpVisitor v) { v.visit(this); }
+	public Exp build(ExpList kids) {
+	    Util.assert(kids!=null && kids.tail==null);
+	    return new ExpUnop((TypeSet)types.clone(), opcode/*immutable*/,
+			       kids.head);
+	}
+	public ExpList kids() { return new ExpList(exp, null); }
 	public String toString() {
-	    return "UNOP"+types+"("+opcode.toUop().toUpperCase()+","+exp+")";
+	    return "UNOP"+types+"("+opcode.toUop()+","+exp+")";
 	}
     }
 
@@ -496,6 +542,12 @@ public class Spec  {
 	*/
 	public abstract void accept(StmVisitor v);
 
+	/** Creates a new <code>Spec.Stm</code> similar to this one,
+	 *  using the provided <code>Spec.ExpList</code> of children. */
+	public abstract Stm build(ExpList kids);
+	/** Creates an <code>Spec.ExpList</code> of children of this
+	 *  <code>Spec.Stm</code>. */
+	public abstract ExpList kids();
 
 	/** Checks if this <code>Stm</code> object is valid for Data
 	    patterns. 
@@ -526,6 +578,11 @@ public class Spec  {
 	    this.alignment = alignment;
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    Util.assert(kids==null);
+	    return new StmAlign(alignment/*immutable*/);
+	}
+	public ExpList kids() { return null; }
 	public String toString() { return "ALIGN("+alignment+")"; }
 	public boolean canBeRootOfData() { return true; }
     }
@@ -568,6 +625,11 @@ public class Spec  {
 	    this.arglist = arglist; this.handler = handler;
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    Util.assert(kids!=null && kids.tail==null);
+	    return new StmCall(retval, retex, kids.head, arglist, handler);
+	}
+	public ExpList kids() { return new ExpList(func, null); }
 	public String toString() {
 	    return "CALL("+retval+","+retex+","+func+","+arglist+","+
 		           handler+")";
@@ -599,6 +661,11 @@ public class Spec  {
 	    this.test = test; this.t_label = t_label; this.f_label = f_label;
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    Util.assert(kids!=null && kids.tail==null);
+	    return new StmCjump(kids.head, t_label, f_label);
+	}
+	public ExpList kids() { return new ExpList(test, null); }
 	public String toString() {
 	    return "CJUMP("+test+","+t_label+","+f_label+")";
 	}
@@ -620,6 +687,11 @@ public class Spec  {
 	    this.data = data;
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    Util.assert(kids!=null && kids.tail==null);
+	    return new StmData(kids.head);
+	}
+	public ExpList kids() { return new ExpList(data, null); }
 	public String toString() {
 	    return "DATUM("+data+")";
 	}
@@ -639,6 +711,11 @@ public class Spec  {
 	*/
 	public StmExp(Exp exp) { this.exp = exp; }
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    Util.assert(kids!=null && kids.tail==null);
+	    return new StmExp(kids.head);
+	}
+	public ExpList kids() { return new ExpList(exp, null); }
 	public String toString() { return "EXP("+exp+")"; }
     }
     
@@ -654,6 +731,11 @@ public class Spec  {
 	*/
 	public StmJump(Exp exp) { this.exp = exp; }
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    Util.assert(kids!=null && kids.tail==null);
+	    return new StmJump(kids.head);
+	}
+	public ExpList kids() { return new ExpList(exp, null); }
 	public String toString() { return "JUMP("+exp+")"; }
     }
     /** Extension of <code>Spec.Stm</code> representing a label which
@@ -670,6 +752,11 @@ public class Spec  {
 	*/
 	public StmLabel(String name) { this.name = name; }
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    Util.assert(kids==null);
+	    return new StmLabel(name);
+	}
+	public ExpList kids() { return null; }
 	public String toString() { return "LABEL("+name+")"; }
 	public boolean canBeRootOfData() { return true; }
     }
@@ -685,6 +772,11 @@ public class Spec  {
 	 */
 	public StmMethod(String params) { this.params = params; }
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    Util.assert(kids==null);
+	    return new StmMethod(params);
+	}
+	public ExpList kids() { return null; }
 	public String toString() { return "METHOD("+params+")"; }
     }
     /** Extension of <code>Spec.Stm</code> representing an expression
@@ -709,6 +801,14 @@ public class Spec  {
 			"MOVE cannot be precisely typed: "+this);
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    Util.assert(kids!=null && kids.tail!=null && kids.tail.tail==null);
+	    return new StmMove((TypeSet)types.clone(),
+			       kids.head, kids.tail.head);
+	}
+	public ExpList kids() {
+	    return new ExpList(dst, new ExpList(src, null));
+	}
 	public String toString() { return "MOVE"+types+"("+dst+","+src+")"; }
     }
     /** Extension of <code>Spec.Stm</code> representing an expression
@@ -739,6 +839,11 @@ public class Spec  {
 	    this.arglist = arglist;
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    Util.assert(kids!=null && kids.tail==null);
+	    return new StmNativeCall(retval, kids.head, arglist);
+	}
+	public ExpList kids() { return new ExpList(func, null); }
 	public String toString() {
 	    return "NATIVECALL("+retval+","+func+","+arglist+")";
 	}
@@ -763,6 +868,11 @@ public class Spec  {
 			"RETURN cannot be precisely typed: "+this);
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    Util.assert(kids!=null && kids.tail==null);
+	    return new StmReturn((TypeSet)types.clone(), kids.head);
+	}
+	public ExpList kids() { return new ExpList(retval, null); }
 	public String toString() { return "RETURN"+types+"("+retval+")"; }
     }
 
@@ -778,6 +888,11 @@ public class Spec  {
 	 */
 	public StmSegment(Leaf segtype) { this.segtype = segtype; }
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    Util.assert(kids==null);
+	    return new StmSegment(segtype/*immutable*/);
+	}
+	public ExpList kids() { return null; }
 	public String toString() { return "SEGMENT("+segtype+")"; }
 	public boolean canBeRootOfData() { return true; }
     }
@@ -797,6 +912,12 @@ public class Spec  {
 	*/
 	public StmSeq(Stm s1, Stm s2) { this.s1 = s1; this.s2 = s2; }
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    throw new Error("build not valid for Seq");
+	}
+	public ExpList kids() {
+	    throw new Error("build not valid for Seq");
+	}
 	public String toString() { return "SEQ("+s1+","+s2+")"; }
     }
 
@@ -818,6 +939,13 @@ public class Spec  {
 	/** Provisional: REMOVE this. */
 	public StmThrow(Exp exp) { this.retex = exp; this.handler=null;}
 	public void accept(StmVisitor v) { v.visit(this); }
+	public Stm build(ExpList kids) {
+	    Util.assert(kids!=null && kids.tail!=null && kids.tail.tail==null);
+	    return new StmThrow(kids.head, kids.tail.head);
+	}
+	public ExpList kids() {
+	    return new ExpList(retex, new ExpList(handler, null));
+	}
 	public String toString() { return "THROW("+retex+","+handler+")"; }
     }
 
@@ -894,8 +1022,8 @@ public class Spec  {
 	    this.op = op;
 	}
 	public String toString() { return Integer.toString(op); }
-	public String toBop() { return harpoon.IR.Tree.Bop.toString(op); }
-	public String toUop() { return harpoon.IR.Tree.Uop.toString(op); }
+	public String toBop() { return harpoon.IR.Tree.Bop.toString(op).toUpperCase(); }
+	public String toUop() { return harpoon.IR.Tree.Uop.toString(op).toUpperCase(); }
 	/** Applies <code>v</code>'s <code>visit</code> method to
 	    <code>this</code>.
 	    This is effectively a gludge to emulate <B>multiple
@@ -1087,12 +1215,18 @@ public class Spec  {
 	}
 
 	/** Constructs a new <code>Spec.TypeSet</code> with type <code>t</code>. */
-	public TypeSet(int t) {
-	    bs = new BitString(5);//ACK: too tightly coupled to Tree.Type
-	    unsignedPrecises = new BitString(32);
-	    signedPrecises = new BitString(32);
-	    set(t);
+	public TypeSet(int t) { this(); set(t); }
+
+	/** Constructs a new <code>Spec.TypeSet</code> with the same
+	 *  contents as the supplied <code>Spec.TypeSet</code>. */
+	public TypeSet(TypeSet ts) {
+	    this.bs = (BitString) ts.bs.clone();
+	    this.unsignedPrecises = (BitString) ts.unsignedPrecises.clone();
+	    this.signedPrecises = (BitString) ts.signedPrecises.clone();
 	}
+
+	/** Clones a <code>Spec.TypeSet</code>. */
+	public Object clone() { return new TypeSet(this); }
 	
 	/** Checks if <code>this</code> contains <code>type</code>.
 	    <BR> <B>effects:</B> Returns true if <code>type</code> has
@@ -1202,6 +1336,21 @@ public class Spec  {
 	public void accept(RuleVisitor v) { v.visit(this); }
     }
 
+    /** Linked list representation for representing the series of
+     *  <code>Spec.Exp</code>s in a given <code>Spec.Exp</code> or
+     *  <code>Spec.Stm</code>.
+     */
+    public static class ExpList {
+	public final Exp head;
+	public final ExpList tail;
+	public ExpList(Exp head, ExpList tail) {
+	    this.head = head; this.tail = tail;
+	}
+	public String toString() {
+	    if (tail==null) return head.toString();
+	    else return head.toString() + " " + tail.toString();
+	}
+    }
     /** Linked list representation for representing the series of
 	<code>Spec.Detail</code>s in this <code>Spec</code>.  
     */
