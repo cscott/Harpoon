@@ -59,6 +59,7 @@ import java.io.ObjectOutputStream;
 import java.io.OptionalDataException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
@@ -78,7 +79,7 @@ import harpoon.Util.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDMain.java,v 1.1.2.3 2000-03-29 20:10:30 cananian Exp $
+ * @version $Id: EDMain.java,v 1.1.2.4 2000-03-29 23:45:58 cananian Exp $
  */
 public class EDMain extends harpoon.IR.Registration {
  
@@ -114,7 +115,110 @@ public class EDMain extends harpoon.IR.Registration {
     private static boolean recycle=false, optimistic=false;
 
 
-    public static void main(String[] args) {
+    static class Stage1 implements Serializable {
+	Linker linker;
+	HCodeFactory hco;
+	ClassHierarchy chx;
+	Stage1(HMethod mo) {
+	    linker = EDMain.linker;
+	    hco = 
+		new harpoon.ClassFile.CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory(), true);
+	    
+	    Collection cc = new WorkSet();
+	    cc.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
+		      (linker));
+	    cc.add(mo);
+	    System.out.println("Getting ClassHierarchy");
+	    chx = new QuadClassHierarchy(linker, cc, hco);
+	}
+    }
+    static class Stage2 implements Serializable {
+	Linker linker;
+	HCodeFactory hco;
+	MetaCallGraph mcg;
+	Stage2(HMethod mo, Stage1 stage1) {
+	    linker = stage1.linker;
+	    hco = stage1.hco;
+	    CachingBBConverter bbconv=new CachingBBConverter(stage1.hco);
+
+	    // costruct the set of all the methods that might be called by 
+	    // the JVM (the "main" method plus the methods which are called by
+	    // the JVM before main) and next pass it to the MetaCallGraph
+	    // constructor. [AS]
+	    Set mroots = extract_method_roots(
+	    harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	    mroots.add(mo);
+
+	    mcg = new MetaCallGraphImpl(bbconv, stage1.chx, mroots);
+	    //using hcf for now!
+	}
+    }
+    static class Stage3 implements Serializable {
+	Linker linker;
+	HCodeFactory hcf;
+	HMethod mconverted;
+	Stage3(HMethod mo, Stage2 stage2) {
+	    linker = stage2.linker;
+	    HCodeFactory ccf=harpoon.IR.Quads.QuadSSI.codeFactory(stage2.hco);
+	    System.out.println("Doing CachingCodeFactory");
+	    CachingCodeFactory hcfe = new CachingCodeFactory(ccf, true);
+
+	    Collection c = new WorkSet();
+	    c.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
+		     (linker));
+	    c.add(mo);
+	    System.out.println("Getting ClassHierarchy");
+
+
+	    ClassHierarchy ch = new QuadClassHierarchy(linker, c, hcfe);
+
+	    //	System.out.println("CALLABLE METHODS");
+	    //	Iterator iterator=ch.callableMethods().iterator();
+	    //	while (iterator.hasNext())
+	    //	    System.out.println(iterator.next());
+	    //System.out.println("Classes");
+	    //iterator=ch.classes().iterator();
+	    //while (iterator.hasNext())
+	    //    System.out.println(iterator.next());
+	    //System.out.println("Instantiated Classes");
+	    //iterator=ch.instantiatedClasses().iterator();
+	    //while (iterator.hasNext())
+	    //    System.out.println(iterator.next());
+	    //System.out.println("------------------------------------------");
+
+	    HCode hc = hcfe.convert(mo);
+	    System.out.println("Starting ED");
+
+	    harpoon.Analysis.EventDriven.EventDriven ed = 
+		new harpoon.Analysis.EventDriven.EventDriven(hcfe, hc, ch, linker,optimistic,recycle);
+	    this.mconverted=ed.convert(stage2.mcg);
+
+	    this.hcf=hcfe;
+
+	    System.out.println("Finished ED");
+	}
+    }
+
+    static Object load(File f) throws IOException, ClassNotFoundException {
+	Object o = null;
+	System.out.println("Loading "+f+".");
+	ObjectInputStream ois =
+	    new ObjectInputStream(new FileInputStream(f));
+	try {
+	    o = ois.readObject();
+	} catch (java.io.WriteAbortedException discard) { /* fail */ }
+	ois.close();
+	return o;
+    }
+    static void save(File f, Object o) throws IOException {
+	System.out.println("Saving "+f+".");
+	ObjectOutputStream oos =
+	    new ObjectOutputStream(new FileOutputStream(f));
+	oos.writeObject(o);
+	oos.close();
+    }
+
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
 	parseOpts(args);
 	Util.assert(className!= null, "must pass a class to be compiled");
 
@@ -129,89 +233,38 @@ public class EDMain extends harpoon.IR.Registration {
 	    }
 	}
 
-	HCodeFactory hco = 
-	    new harpoon.ClassFile.CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
-
-
-	Collection cc = new WorkSet();
-	cc.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
-		 (linker));
-	cc.add(mo);
-	System.out.println("Getting ClassHierarchy");
-        ClassHierarchy chx = new QuadClassHierarchy(linker, cc, hco);
-
-	CachingBBConverter bbconv=new CachingBBConverter(hco);
-
-	// costruct the set of all the methods that might be called by 
-	// the JVM (the "main" method plus the methods which are called by
-	// the JVM before main) and next pass it to the MetaCallGraph
-	// constructor. [AS]
-	Set mroots = extract_method_roots(
-	    harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
-	mroots.add(mo);
-
-	MetaCallGraph mcg = new MetaCallGraphImpl(bbconv, chx, mroots);
-
-
-	//using hcf for now!
-
-
-
-
-        HCodeFactory ccf = harpoon.IR.Quads.QuadSSI.codeFactory(hco);
-	System.out.println("Doing CachingCodeFactory");
-	CachingCodeFactory hcfe = new CachingCodeFactory(ccf);
-	final HClass hcc = HClass.Char;
-	final HClass hi = HClass.Int;
-
-	Collection c = new WorkSet();
-	c.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
-		 (linker));
-	c.add(mo);
-	System.out.println("Getting ClassHierarchy");
-
-
-        ClassHierarchy ch = new QuadClassHierarchy(linker, c, hcfe);
-
-
-
-	//	System.out.println("CALLABLE METHODS");
-	//	Iterator iterator=ch.callableMethods().iterator();
-	//	while (iterator.hasNext())
-	//	    System.out.println(iterator.next());
-	//System.out.println("Classes");
-	//iterator=ch.classes().iterator();
-	//while (iterator.hasNext())
-	//    System.out.println(iterator.next());
-	//System.out.println("Instantiated Classes");
-	//iterator=ch.instantiatedClasses().iterator();
-	//while (iterator.hasNext())
-	//    System.out.println(iterator.next());
-	//System.out.println("------------------------------------------");
-
-
-
-
-
-	HCode hc = hcfe.convert(mo);
-	System.out.println("Starting ED");
-
-	harpoon.Analysis.EventDriven.EventDriven ed = 
-	    new harpoon.Analysis.EventDriven.EventDriven(hcfe, hc, ch, linker,optimistic,recycle);
-      	HMethod mconverted=ed.convert(mcg);
-
-	HCodeFactory hcf=hcfe;
-
-	System.out.println("Finished ED");
+	File stage3file = new File("stage-3");
+	Stage3 stage3 = null;
+	if (stage3file.exists()) stage3=(Stage3)load(stage3file);
+	if (stage3==null) {
+	    File stage2file = new File("stage-2");
+	    Stage2 stage2 = null;
+	    if (stage2file.exists()) stage2=(Stage2)load(stage2file);
+	    if (stage2==null) {
+		File stage1file = new File("stage-1");
+		Stage1 stage1 = null;
+		if (stage1file.exists()) stage1=(Stage1)load(stage1file);
+		if (stage1==null) {
+		    stage1=new Stage1(mo); save(stage1file, stage1);
+		}
+		// done with stage 1.
+		stage2 = new Stage2(mo, stage1); save(stage2file, stage2);
+	    }
+	    // done with stage 2.
+	    stage3 = new Stage3(mo, stage2); save(stage3file, stage3);
+	}
+	// done with stage 3.
+	linker = stage3.linker;
+	HCodeFactory hcf = stage3.hcf;
 
 	if (OPTIMIZE) {
 	    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	}
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf, true);
 
 	HClass hcl = linker.forName(className);
 	hm = hcl.getDeclaredMethods();
-	HMethod mainM = mconverted;
+	HMethod mainM = stage3.mconverted;
 
 	Util.assert(mainM != null, "Class " + className + 
 		    " has no main method");
