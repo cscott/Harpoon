@@ -21,9 +21,11 @@
 
 /* Make sure the BDW collector has a chance to redefine 
  * pthread_create/sigmask/join for its own nefarious purposes. */
+#ifndef FLEXTHREAD_TYPEDEFS_ONLY/*sometimes we don't want to pull all this in*/
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
 #endif
+#endif /* FLEXTHREAD_TYPEDEFS_ONLY */
 
 #endif /* WITH_HEAVY_THREADS */
 

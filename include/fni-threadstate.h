@@ -10,8 +10,10 @@
 #if WITH_PRECISE_C_BACKEND
 #include <setjmp.h>
 #endif
-#include "flexthread.h" /* for pthread_* typedefs */
 #include "fni-wrap.h" /* for struct _jobject */
+#define FLEXTHREAD_TYPEDEFS_ONLY
+#include "flexthread.h" /* for pthread_* typedefs */
+#undef FLEXTHREAD_TYPEDEFS_ONLY
 
 /* ---------------------- thread state ---------------------------------*/
 // any changes to this structure should be reflected in
