@@ -22,7 +22,7 @@ import java.util.Iterator;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.8 1999-08-23 06:23:12 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.9 1999-08-23 16:13:28 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -64,7 +64,9 @@ public class Jasmin {
     public void outputMethod(PrintStream out, int i) {
 	out.println(".method "+Modifier.toString(hm[i].getModifiers())+" "+hm[i].getName().replace('.','/')
 		    +hm[i].getDescriptor().replace('.','/'));
-	outputQuads(out, hm[i], hc[i]);
+	int modifiers=hm[i].getModifiers();
+	if (!Modifier.isAbstract(modifiers))
+	    outputQuads(out, hm[i], hc[i]);
 	out.println(".end method");
     }
 
