@@ -369,7 +369,8 @@ void printPointerInfo(void* obj, int getClassInfo) {
   if (ptrInfo == NULL) {
     printf("not found in MemBlocks\n");
     if (getClassInfo) {
-      printf("pointing to a %s of size %d\n", className(obj), FNI_ObjectSize(obj));
+      printf("pointing to a %s of size %d\n", className(obj), 
+	     FNI_ObjectSize(FNI_UNWRAP_MASKED(obj)));
     } 
   } else {
     printf("found in MemBlock = 0x%08x, ", memBlock);

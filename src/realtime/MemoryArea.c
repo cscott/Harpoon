@@ -5,6 +5,26 @@
 #include "MemoryArea.h"
 
 /*
+ * Class:     javax_realtime_MemoryArea
+ * Method:    setupMemBlock
+ * Signature: (Ljavax/realtime/RealtimeThread;)V
+ */
+JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_setupMemBlock
+(JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
+  // This is called on newInstance and newArray -> please do ref. counting
+  // appropriately, this cannot be called on a ScopedMemory, but you
+  // should never need to do that anyway... because that would mean a violation
+  // of the access restrictions.  
+#ifdef RTJ_DEBUG
+  checkException();
+  printf("MemoryArea.setupMemBlock(0x%08x, 0x%08x, 0x%08x)\n",
+	 env, memoryArea, realtimeThread);
+#endif
+  MemBlock_DECREF(getInflatedObject(env, realtimeThread)->temp = 
+		  MemBlock_new(env, memoryArea, realtimeThread, NULL));
+}
+
+/*
  * Class:     MemoryArea
  * Method:    enterMemBlock
  * Signature: (Ljavax/realtime/RealtimeThread;)V

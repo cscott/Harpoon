@@ -86,15 +86,18 @@ static void remove_running_thread(void *cl) {
   struct thread_list *nlist = (struct thread_list *) cl;
 #ifdef WITH_PRECISE_GC
   // may need to stop for GC
-  while (pthread_mutex_trylock(&gc_thread_mutex))
-    if (halt_for_GC_flag) halt_for_GC();
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (!nlist->thrstate->noheap)
+#endif
+    while (pthread_mutex_trylock(&gc_thread_mutex))
+      if (halt_for_GC_flag) halt_for_GC();
 #endif
   pthread_mutex_lock(&running_threads_mutex);
   if (nlist->prev) nlist->prev->next = nlist->next;
   if (nlist->next) nlist->next->prev = nlist->prev;
 #ifdef WITH_PRECISE_GC
 #if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
-  if (!((struct FNI_Thread_State*)FNI_GetJNIEnv())->noheap) {
+  if (!nlist->thrstate->noheap) {
 #endif
     num_running_threads--;
     pthread_mutex_unlock(&gc_thread_mutex);
