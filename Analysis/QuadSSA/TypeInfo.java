@@ -19,7 +19,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.9 1999-09-08 16:35:19 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.10 1999-09-09 02:53:54 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
@@ -230,22 +230,8 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	} else if (newType == HClass.Void)
 	    return false;
 	
-	// handle object types (possible arrays)
-	int olddims = HClassUtil.dims(oldType);
-	int newdims = HClassUtil.dims(newType);
-	HClass merged;
-	if (olddims == newdims) { // if the dimensions are equal...
-	    // find the first common super class of the types.
-	    merged = HClassUtil.commonSuper(HClassUtil.baseClass(oldType),
-					    HClassUtil.baseClass(newType));
-	    // match the array dimensions.
-	    merged = HClassUtil.arrayClass(merged, olddims);
-	} else { // dimensions not equal.
-	    int dims = (olddims<newdims)?olddims:newdims;
-	    // make an object array of the smaller dimension.
-	    merged = HClassUtil.arrayClass(HClass.forClass(Object.class), 
-					   dims);
-	}
+	// handle object types (possibly arrays)
+	HClass merged = HClassUtil.commonParent(oldType, newType);
 	// if the merged value is different from the old value, update...
 	if (merged==oldType) return false;
 	map.put(t, merged);

@@ -23,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.19 1999-09-08 16:35:25 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.20 1999-09-09 02:54:15 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -892,19 +892,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 
 	// by this point better be array ref or object, not primitive type.
 	Util.assert((!a.isPrimitive()) && (!b.isPrimitive()));
-	int Adims = HClassUtil.dims(a);
-	int Bdims = HClassUtil.dims(b);
-	if (Adims==Bdims) {
-	    a = HClassUtil.baseClass(a);
-	    b = HClassUtil.baseClass(b);
-	    // merge base component classes, then reform array.
-	    return HClassUtil.arrayClass(HClassUtil.commonSuper(a, b), Adims);
-	} else { // dimensions not equal.
-	    int mindims = (Adims<Bdims)?Adims:Bdims;
-	    // make an Object array of the smaller dimension.
-	    return HClassUtil.arrayClass(HClass.forName("java.lang.Object"), 
-					 mindims);
-	}
+	return HClassUtil.commonParent(a,b);
     }
 
     /*-------------------------------------------------------------*/

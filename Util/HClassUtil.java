@@ -10,7 +10,7 @@ import harpoon.ClassFile.HClass;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.6.2.6 1999-09-09 00:32:56 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.6.2.7 1999-09-09 02:54:21 cananian Exp $
  */
 public abstract class HClassUtil  {
     // Only static methods.
@@ -57,6 +57,8 @@ public abstract class HClassUtil  {
     }
     /** Find and return the first common superclass of a pair of classes. */
     public static final HClass commonSuper(HClass a, HClass b) {
+	Util.assert(!a.isInterface() && !b.isInterface());
+	Util.assert(!a.isArray() && !b.isArray());
 	if (a.isPrimitive() || b.isPrimitive()) {
 	    Util.assert(a==b, "Can't merge differing primitive types. "+
 			"("+a+" and "+b+")");
@@ -72,5 +74,37 @@ public abstract class HClassUtil  {
 	    if (A[i] != B[i]) break;
 	// A[i] and B[i] now point to the first *different* parent.
 	return A[i-1];
+    }
+    /** Find and return the first common superinterface of a pair of interfaces. */
+    public static final HClass commonInterface(HClass a, HClass b) {
+	Util.assert(a.isInterface() && b.isInterface());
+	Util.assert(!a.isArray() && !b.isArray());
+	// this is a quick hack.
+	if (a.isSuperinterfaceOf(b)) return a;
+	if (b.isSuperinterfaceOf(a)) return b;
+	return HClass.forName("java.lang.Object");
+    }
+    /** Find a class which is a common parent of both suppied classes. */
+    public static final HClass commonParent(HClass a, HClass b) {
+	if (a.isArray() && b.isArray()) {
+	    int ad = dims(a), bd = dims(b), d = (ad<bd)?ad:bd;
+	    for (int i=0; i<d; i++)
+		{ a=a.getComponentType(); b=b.getComponentType(); }
+	    return arrayClass(commonParent(a, b), d);
+	}
+	if (a.isInterface() && b.isInterface())
+	    return commonInterface(a, b);
+	if (b.isArray()) return commonParent(b,a);
+	if (a.isArray()) // b is interface or object, not array.
+	    if (b==HClass.forName("java.lang.Cloneable") ||
+		b==HClass.forName("java.io.Serializable"))
+		return b;
+	    else return HClass.forName("java.lang.Object");
+	if (b.isInterface()) return commonParent(b,a);
+	if (a.isInterface()) // b is object
+	    if (a.isSuperinterfaceOf(b)) return a;
+	    else return HClass.forName("java.lang.Object");
+	// both a and b are object.
+	return commonSuper(a,b);
     }
 }
