@@ -1,8 +1,9 @@
 // TypeInfo.java, created Thu Sep 10 14:58:21 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis;
+package harpoon.Analysis.QuadSSA;
 
+import harpoon.Analysis.UseDef;
 import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.ClassFile.*;
 import harpoon.IR.QuadSSA.*;
@@ -18,7 +19,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.1 1998-11-22 02:46:39 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.2 1998-11-22 02:50:14 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {

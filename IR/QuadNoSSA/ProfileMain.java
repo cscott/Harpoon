@@ -9,7 +9,7 @@ import harpoon.Analysis.QuadSSA.SCC.*;
 import harpoon.Analysis.*;
 import harpoon.ClassFile.*;
 import harpoon.IR.QuadSSA.*;
-import harpoon.Analysis.TypeInfo;
+import harpoon.Analysis.QuadSSA.TypeInfo;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.QuadSSA.Profile;
 
