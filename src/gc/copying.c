@@ -51,6 +51,8 @@ void setup_for_threaded_GC();
 void cleanup_after_threaded_GC();
 #endif /* WITH_THREADED_GC */
 
+size_t copying_get_size_of_obj(jobject_unwrapped ptr_to_obj);
+
 void relocate(jobject_unwrapped *obj);
 
 void copying_handle_nonroot(jobject_unwrapped *nonroot) {
@@ -76,26 +78,11 @@ void copying_handle_nonroot(jobject_unwrapped *nonroot) {
 
 void relocate(jobject_unwrapped *obj) {
   void *forwarding_address;
-  size_t obj_size;
-  assert((*obj) >= (jobject_unwrapped)from_space && 
-	 (*obj) <  (jobject_unwrapped)top_of_space);
-  if ((*obj)->claz->component_claz == NULL) {
-    /* non-array */
-    obj_size = align((*obj)->claz->size);
-  } else {
-    struct aarray *arr = (struct aarray *)(*obj);
-    ptroff_t containsPointers = arr->obj.claz->gc_info.bitmap; 
-    assert(containsPointers == 0 || containsPointers == 1);
-    if (!containsPointers) {
-      /* array of non-pointers */
-      obj_size = aligned_size_of_np_array(arr);
-    } else {
-      obj_size = aligned_size_of_p_array(arr);
-    }
-  }
-  /* copy over to to_space */
+  /* figure out how big the object is */
+  size_t obj_size = copying_get_size_of_obj(*obj);
+  /* relocated objects should not exceed size of heap */
   assert(free + obj_size <= top_of_to_space);
-
+  /* copy over to to_space */
   forwarding_address = memcpy(free, (*obj), obj_size);
   /* write forwarding address to previous location;
      the order of the following two operations are critical */
@@ -288,4 +275,38 @@ void *copying_malloc (size_t size_in_bytes, void *saved_registers[])
   FLEX_MUTEX_UNLOCK(&copying_gc_mutex);
 #endif
   return result;
+}
+
+/* copying_get_size_of_obj returns the size (in bytes) of
+   the object to which the argument points. requires that
+   the given object be in the currently occupied heap. */
+size_t copying_get_size_of_obj(jobject_unwrapped ptr_to_obj)
+{
+  /* assert that the object is in the currently occupied heap */
+  assert(ptr_to_obj >= (jobject_unwrapped)from_space && 
+	 ptr_to_obj <  (jobject_unwrapped)top_of_space);
+  if (ptr_to_obj->claz->component_claz == NULL) {
+    /* non-array, simply returned aligned size */
+    return align(ptr_to_obj->claz->size);
+  } else {
+    struct aarray *ptr_to_arr = (struct aarray *)(ptr_to_obj);
+    ptroff_t containsPointers = ptr_to_arr->obj.claz->gc_info.bitmap;
+    /* only two valid values: 0 or 1 */
+    assert(containsPointers == 0 || containsPointers == 1);
+    if (!containsPointers) {
+      /* array of non-pointers */
+      return aligned_size_of_np_array(ptr_to_arr);
+    } else {
+      /* array of pointers */
+      return aligned_size_of_p_array(ptr_to_arr);
+    }
+  }
+}
+
+/* copying_free allows explicit freeing of memory allocated by the
+   copying collector. note that you can only free memory to which
+   there are no more pointers! */
+void copying_free(void *ptr_to_memory_to_be_freed)
+{
+  /* to be written! */
 }
