@@ -1,7 +1,7 @@
 // IPaqServoController.java, created by wbeebee
 // Copyright (C) 2003 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package servo;
+package ipaq;
 
 import imagerec.util.Servo;
 

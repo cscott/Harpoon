@@ -14,7 +14,7 @@ INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 ISOURCES=$(wildcard src/graph/*.idl src/corba/*.idl)
 BISOURCES=$(wildcard src/corba/UAV/*.idl)
-JSOURCES=$(wildcard src/*.java src/graph/*.java src/util/*.java src/corba/*.java src/servo/*.java)
+JSOURCES=$(wildcard src/*.java src/graph/*.java src/util/*.java src/corba/*.java src/ipaq/*.java)
 GJSOURCES1=imagerec/graph/*.java imagerec/corba/*.java FrameManip/*.java
 GJSOURCES=$(GJSOURCES1) omg/org/CosPropertyService/*.java ATRManip/*.java quo/*.java rss/*.java
 RTJSOURCES=$(wildcard src/rtj/*.java)
@@ -29,7 +29,7 @@ SCRIPTS=$(wildcard script/*)
 CONTRIB=$(shell find contrib -type f | grep -v 'CVS' | grep -v '.cvsignore')
 RELEASE=$(SOURCES) README BUILDING COPYING CREDITS Makefile $(IMAGES) $(DSOURCES) 
 RELEASE += $(BISOURCES) $(MANIFEST) $(SCRIPTS)
-JDIRS=imagerec FrameManip omg ATRManip quo rss HTTPClient demo java_cup org
+JDIRS=imagerec FrameManip omg ATRManip quo rss HTTPClient demo java_cup org ipaq
 
 # figure out what the current CVS branch is, by looking at the Makefile
 CVS_TAG=$(firstword $(shell cvs status Makefile | grep -v "(none)" | \

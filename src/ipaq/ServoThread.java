@@ -1,7 +1,7 @@
 // ServoThread.java, created by wbeebee
 // Copyright (C) 2003 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package servo;
+package ipaq;
 
 import imagerec.util.Servo;
 /**
@@ -32,15 +32,10 @@ public class ServoThread extends Thread {
      */
     public synchronized void run() {
 	while (true) {
-	    try {
-		wait();
-		car.moveLocal(servo, start);
-		sleep(time);
-		car.moveLocal(servo, stop);
-	    } catch (InterruptedException e) {
-		System.out.println(e.toString());
-		// Continue
-	    }
+	    wait();
+	    car.moveLocal(servo, start);
+	    sleep(time);
+	    car.moveLocal(servo, stop);
 	}
     }
     
