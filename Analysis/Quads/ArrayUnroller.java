@@ -31,10 +31,10 @@ import java.util.Stack;
  * <code>CacheEquivalence</code> can make larger equivalence sets.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayUnroller.java,v 1.5 2002-08-30 22:38:26 cananian Exp $
+ * @version $Id: ArrayUnroller.java,v 1.6 2003-03-11 00:58:47 cananian Exp $
  */
 public final class ArrayUnroller
-    extends harpoon.Analysis.Transformation.MethodMutator {
+    extends harpoon.Analysis.Transformation.MethodMutator<Quad> {
     private static final int CACHE_LINE_SIZE = 32; /* bytes */
     
     /** Creates a <code>ArrayUnroller</code>. */
@@ -42,13 +42,14 @@ public final class ArrayUnroller
 	// we take in NoSSx, and output NoSSx.
 	super(harpoon.IR.Quads.QuadNoSSA.codeFactory(parent));
     }
-    protected HCode mutateHCode(HCodeAndMaps input) {
-	HCode ahc = input.ancestorHCode();
-	HCode hc = input.hcode();
+    protected HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
+	HCode<Quad> ahc = input.ancestorHCode();
+	HCode<Quad> hc = input.hcode();
 	// find loops;
         // only interested in leaf loops (with no nested loops)
-	for (Iterator it=loopIterator(new LoopFinder(ahc)); it.hasNext(); ) {
-	    Loops loop = (Loops) it.next();
+	for (Iterator<Loops> it=loopIterator(new LoopFinder(ahc));
+	     it.hasNext(); ) {
+	    Loops loop = it.next();
 	    if (loop.parentLoop()==null) continue; // skip top-level pseudoloop
 	    if (loop.nestedLoops().size()>0) continue; // skip
 	    // this is a leaf loop.  look for array refs.
@@ -65,7 +66,7 @@ public final class ArrayUnroller
 	    if (!seen) continue; // no array references in this loop.
 	    unrollOne(input, loop, CACHE_LINE_SIZE/width);
 	}
-	harpoon.Analysis.Quads.Unreachable.prune(hc);
+	harpoon.Analysis.Quads.Unreachable.prune((harpoon.IR.Quads.Code)hc);
 	return hc;
     }
     /** find the minimum array component width */
@@ -80,13 +81,13 @@ public final class ArrayUnroller
 	return (width==0) ? nwidth : Math.min(width, nwidth);
     }
     /** iterate over loop and all children of loop recursively. */
-    static Iterator loopIterator(Loops root) {
-	final Stack s = new Stack(); s.push(root);
-	return new UnmodifiableIterator() {
+    static Iterator<Loops> loopIterator(Loops root) {
+	final Stack<Loops> s = new Stack<Loops>(); s.push(root);
+	return new UnmodifiableIterator<Loops>() {
 	    public boolean hasNext() { return !s.isEmpty(); }
-	    public Object next() {
+	    public Loops next() {
 		if (s.empty()) throw new NoSuchElementException();
-		Loops loop = (Loops) s.pop();
+		Loops loop = s.pop();
 		// push children on stack before returning.
 		s.addAll(loop.nestedLoops());
 		return loop;
@@ -94,10 +95,10 @@ public final class ArrayUnroller
 	};
     }
     // the real mccoy:
-    private void unrollOne(HCodeAndMaps input, Loops loop, int ntimes) {
+    private void unrollOne(HCodeAndMaps<Quad> input, Loops loop, int ntimes) {
 	// step 1: copy the nodes to make a loop L' with header h'
 	//         and back edges si'->h'
-	Map copies[] = new Map[ntimes];
+	Map<Quad,Quad> copies[] = new Map<Quad,Quad>[ntimes];
 	copies[0] = input.elementMap();
 	for (int i=1; i<ntimes; i++)
 	    copies[i] = copy(input, loop);
@@ -106,30 +107,30 @@ public final class ArrayUnroller
 	for (int i=0; i<ntimes; i++) {
 	    for (Iterator it=loop.loopBackEdges().iterator(); it.hasNext(); ) {
 		Edge e = (Edge) it.next();
-		Quad.addEdge((Quad)copies[i].get(e.from()),
+		Quad.addEdge(copies[i].get(e.from()),
 			     e.which_succ(),
-			     (Quad)copies[(i+1)%ntimes].get(e.to()),
+			     copies[(i+1)%ntimes].get(e.to()),
 			     e.which_pred());
 	    }
 	}
 	// make PHIs for the exit edges.
 	for (Iterator it=loop.loopExitEdges().iterator(); it.hasNext(); ) {
 	    Edge e = (Edge) it.next();
-	    QuadFactory qf = ((Quad)copies[0].get(e.from())).getFactory();
+	    QuadFactory qf = copies[0].get(e.from()).getFactory();
 	    PHI phi = new PHI(qf, e.from(), new Temp[0], ntimes);
-	    Quad.addEdge(phi, 0, (Quad) copies[0].get(e.to()), e.which_pred());
+	    Quad.addEdge(phi, 0, copies[0].get(e.to()), e.which_pred());
 	    for (int i=0; i<ntimes; i++)
-		Quad.addEdge((Quad)copies[i].get(e.from()), e.which_succ(),
+		Quad.addEdge(copies[i].get(e.from()), e.which_succ(),
 			     phi, i);
 	}
 	// make stub PHIs for unused entrance edges
 	for (Iterator it=loop.loopEntranceEdges().iterator(); it.hasNext(); ) {
 	    Edge e = (Edge) it.next();
-	    QuadFactory qf = ((Quad)copies[0].get(e.to())).getFactory();
+	    QuadFactory qf = copies[0].get(e.to()).getFactory();
 	    for (int i=1; i<ntimes; i++) {
 		PHI phi = new PHI(qf, e.to(), new Temp[0], 0);
 		Quad.addEdge(phi, 0,
-			     (Quad)copies[i].get(e.to()),
+			     copies[i].get(e.to()),
 			     e.which_pred());
 	    }
 	}
@@ -137,13 +138,13 @@ public final class ArrayUnroller
 	assert loop.loopEntrances().size()==1;
 	// done.
     }
-    Map copy(HCodeAndMaps input, Loops l) {
-	Map m = new HashMap();
+    Map<Quad,Quad> copy(HCodeAndMaps<Quad> input, Loops l) {
+	Map<Quad,Quad> m = new HashMap<Quad,Quad>();
 	// clone all elements.
 	for (Iterator it=l.loopIncElements().iterator(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
-	    Quad qq = (Quad) input.elementMap().get(q);
-	    Quad nq = (Quad) qq.clone();
+	    Quad qq = input.elementMap().get(q);
+	    Quad nq = qq.clone();
 	    m.put(q, nq); // ancestor quad to newly cloned quad.
 	}
 	// clone all interior edges.
@@ -153,8 +154,8 @@ public final class ArrayUnroller
 		Edge e = q.nextEdge(i);
 		assert m.containsKey(e.from());
 		if (m.containsKey(e.to()))
-		    Quad.addEdge((Quad)m.get(e.from()), e.which_succ(),
-				 (Quad)m.get(e.to()), e.which_pred());
+		    Quad.addEdge(m.get(e.from()), e.which_succ(),
+				 m.get(e.to()), e.which_pred());
 	    }
 	}
 	return m;

@@ -74,7 +74,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.6 2003-02-12 19:03:34 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.7 2003-03-11 00:58:31 cananian Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -1359,7 +1359,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    scc = scc.prevTopSort();
 	}
 	for(Iterator pit = toPrune.iterator(); pit.hasNext(); )
-	    Unreachable.prune((HCode) pit.next());
+	    Unreachable.prune((harpoon.IR.Quads.Code) pit.next());
     }
 
 
@@ -2266,7 +2266,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	// remove the newly introduced unreachable code
 	for(Iterator pit = toPrune.iterator(); pit.hasNext(); ) {
-	    HCode hcode = (HCode) pit.next();
+	    harpoon.IR.Quads.Code hcode = (harpoon.IR.Quads.Code) pit.next();
 	    if(DEBUG_IC)
 		System.out.print("Pruning " + hcode.getMethod());
 	    Unreachable.prune(hcode);

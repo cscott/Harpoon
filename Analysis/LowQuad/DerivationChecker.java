@@ -18,7 +18,7 @@ import java.util.Iterator;
  * derivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationChecker.java,v 1.3 2002-02-26 22:40:33 cananian Exp $
+ * @version $Id: DerivationChecker.java,v 1.4 2003-03-11 00:58:14 cananian Exp $
  */
 public class DerivationChecker {
     
@@ -43,10 +43,10 @@ public class DerivationChecker {
     public static void check(HCode hcode) {
 	harpoon.IR.Quads.Code c = (harpoon.IR.Quads.Code) hcode;
 	// look at the derivation for every lowquad.
-	Derivation d = c.getDerivation();
+	Derivation<Quad> d = c.getDerivation();
 	ASSERT(d!=null, "Checker found no derivation!");
-	for (Iterator it=c.getElementsI(); it.hasNext(); ) {
-	    Quad q = (Quad) it.next();
+	for (Iterator<Quad> it=c.getElementsI(); it.hasNext(); ) {
+	    Quad q = it.next();
 	    Temp[] defs = q.def();
 	    for (int i=0; i<defs.length; i++) {
 		try {

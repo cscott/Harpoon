@@ -33,50 +33,50 @@ import java.util.Stack;
  * <b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Unreachable.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: Unreachable.java,v 1.5 2003-03-11 00:58:47 cananian Exp $
  */
 public abstract class Unreachable  {
 
     /** Prunes unreachable code from a quad graph in-place.  Also updates
      *  the derivation for the <code>HCode</code>, if present. */
-    public static final void prune(HCode hc) {
+    public static final void prune(harpoon.IR.Quads.Code hc) {
 	// fetch or invalidate mutable derivation information.
-	DerivationMap dm = null;
-	if (((harpoon.IR.Quads.Code)hc).getDerivation()!=null) {
+	DerivationMap<Quad> dm = null;
+	if (hc.getDerivation()!=null) {
 	    harpoon.IR.LowQuad.Code c = (harpoon.IR.LowQuad.Code) hc;
 	    if (c.getDerivation() instanceof DerivationMap)
-		dm = (DerivationMap) c.getDerivation();
+		dm = (DerivationMap<Quad>) c.getDerivation();
 	    else {
 		//c.setDerivation(null); // clear derivation information.
 		assert false; // can't invalidate, can't update, abort!
 	    }
 	}
-	prune((HEADER)hc.getRootElement(), dm);
+	prune(hc.getRootElement(), dm);
     }
     /** Prunes unreachable code *without updating the derivation*. */
     public static final void prune(HEADER header) {
 	prune(header, null);
     }
     /** private pruning method. */
-    private static final void prune(HEADER header, DerivationMap dm) {
+    private static final void prune(HEADER header, DerivationMap<Quad> dm) {
 	// okay, now find the unreachable code and prune it.
-	Set reachable = (new ReachabilityVisitor(header)).reachableSet();
+	Set<Quad> reachable = (new ReachabilityVisitor(header)).reachableSet();
 	(new PruningVisitor(reachable, dm)).prune();
     }
 
     /** Class to do reachability analysis. */
     static private class ReachabilityVisitor extends LowQuadVisitor {
-	final Set reachable = new HashSet();
-	WorkSet todo = new WorkSet();
+	final Set<Quad> reachable = new HashSet<Quad>();
+	WorkSet<Quad> todo = new WorkSet<Quad>();
 	ReachabilityVisitor(HEADER h) {
 	    super(false); /* not strict low quad */
 	    todo.add(h);
 	    while (!todo.isEmpty())
-		((Quad)todo.pop()).accept(this);
+		todo.pop().accept(this);
 
 	    todo = null; // free space.
 	}
-	public Set reachableSet() { return reachable; }
+	public Set<Quad> reachableSet() { return reachable; }
 
 	public void visit(Quad q) {
 	    reachable.add(q);
@@ -89,18 +89,18 @@ public abstract class Unreachable  {
 
     /** Class to do the pruning of unreachable edges. */
     static private class PruningVisitor extends LowQuadVisitor {
-	final Set reachable;
-	final DerivationMap dm;
-	PruningVisitor(Set reachable, DerivationMap dm) {
+	final Set<Quad> reachable;
+	final DerivationMap<Quad> dm;
+	PruningVisitor(Set<Quad> reachable, DerivationMap<Quad> dm) {
 	    super(false); /* not strict low quad */
 	    this.reachable = reachable;
 	    this.dm = dm;
 	}
 	void prune() {
 	    // dump the original live elements into a list.
-	    List l = new ArrayList(reachable);
-	    for (Iterator it=l.iterator(); it.hasNext(); )
-		((Quad)it.next()).accept(this);
+	    List<Quad> l = new ArrayList<Quad>(reachable);
+	    for (Iterator<Quad> it=l.iterator(); it.hasNext(); )
+		it.next().accept(this);
 	}
 	public void visit(Quad q) { /* do nothing. */ }
 	public void visit(PHI q) {
@@ -117,7 +117,7 @@ public abstract class Unreachable  {
 	    // if it shrinks too small, then remove it.
 	    if (q.arity()==1) { // make arity-1 PHI into MOVEs.
 		Edge in = q.prevEdge(0), out = q.nextEdge(0);
-		Quad header = (Quad) in.from();
+		Quad header = in.from();
 		int which_succ = in.which_succ();
 		for (int i=0; i<q.numPhis(); i++) {
 		    MOVE m=new MOVE(q.getFactory(), q, q.dst(i), q.src(i, 0));

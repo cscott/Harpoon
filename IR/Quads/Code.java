@@ -34,7 +34,7 @@ import java.util.ArrayList;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.11 2002-11-30 18:10:11 salcianu Exp $
+ * @version $Id: Code.java,v 1.12 2003-03-11 00:59:03 cananian Exp $
  */
 public abstract class Code extends HCode<Quad>
     implements java.io.Serializable {
@@ -133,7 +133,7 @@ public abstract class Code extends HCode<Quad>
      * Return a <code>Derivation</code> for this codeview.
      * @return <code>null</code>, always.
      */
-    public Derivation getDerivation() { return null; }
+    public Derivation<Quad> getDerivation() { return null; }
 
     /** Returns the root of the control flow graph. */
     public HEADER getRootElement() { return (HEADER) quads; }

@@ -32,24 +32,24 @@ import java.util.List;
  * into chains of <code>INSTANCEOF</code> and <code>CJMP</code> quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeSwitchRemover.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: TypeSwitchRemover.java,v 1.5 2003-03-11 00:58:47 cananian Exp $
  */
 public final class TypeSwitchRemover
-    extends harpoon.Analysis.Transformation.MethodMutator {
+    extends harpoon.Analysis.Transformation.MethodMutator<Quad> {
     
     /** Creates a <code>TypeSwitchRemover</code>. */
     public TypeSwitchRemover(HCodeFactory parent) { super(parent); }
 
-    protected HCode mutateHCode(HCodeAndMaps input) {
+    protected HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
 	Code hc = (Code) input.hcode();
 	// get mutable derivation map.
 	// (no changes necessary to allocation information map)
-	DerivationMap dm = (DerivationMap) hc.getDerivation();
+	DerivationMap<Quad> dm = (DerivationMap<Quad>) hc.getDerivation();
 	// dm (if non-null) will be updated as TYPESWITCHes are replaced.
 
 	// we put all elements in array to avoid screwing up the
 	// iterator as we mutate the quad graph in-place.
-	Quad[] allquads = (Quad[]) hc.getElements();
+	Quad[] allquads = hc.getElements();
 	for (int i=0; i<allquads.length; i++)
 	    if (allquads[i] instanceof TYPESWITCH)
 		replace((TYPESWITCH) allquads[i], dm);
@@ -59,11 +59,11 @@ public final class TypeSwitchRemover
 	return hc;
     }
 
-    private static void replace(TYPESWITCH ts, DerivationMap dm) {
+    private static void replace(TYPESWITCH ts, DerivationMap<Quad> dm) {
 	/* construct instanceof chain */
 	Edge e = ts.prevEdge(0);
 	TypeTree tt =
-	    makeTest(constructCT(ts), ts, (Quad) e.from(), e.which_succ(),
+	    makeTest(constructCT(ts), ts, e.from(), e.which_succ(),
 		     ts.src(), dm);
 	// fixup derivations if present.
 	if (dm!=null) tt.fixupSigmaDerivations(ts, dm);
@@ -71,13 +71,13 @@ public final class TypeSwitchRemover
     /** Construct INSTANCEOF chain from a proper & pruned ClassTree */
     private static TypeTree makeTest(ClassTree ct, TYPESWITCH ts,
 				     Quad head, int which_succ, Temp[] src,
-				     DerivationMap dm) {
+				     DerivationMap<Quad> dm) {
 	QuadFactory qf = ts.getFactory();
 	TempFactory tf = qf.tempFactory();
 	TypeNode ftn = new TypeNode(null), ptn = ftn; // keep track of TypeTree
-	for (Iterator it=ct.children(); it.hasNext(); ) {
+	for (Iterator<ClassTree> it=ct.children(); it.hasNext(); ) {
 	    // for each child c of ct...
-	    ClassTree c = (ClassTree) it.next();
+	    ClassTree c = it.next();
 	    // tweak sigma functions.
 	    Temp[][] dst = mkdst(src);
 	    if (!c.children().hasNext())
@@ -100,7 +100,7 @@ public final class TypeSwitchRemover
 	}
 	// link remaining else... to TYPESWITCH edge ct.edgenum
 	Edge e = ts.nextEdge(ct.edgenum);
-	Quad.addEdge(head, which_succ, (Quad) e.to(), e.which_pred());
+	Quad.addEdge(head, which_succ, e.to(), e.which_pred());
 	ptn.child[0] = new TypeLeaf(ct.edgenum);
 	// check that all sigma functions have been handled
 	if (ct.key==null && !ct.children().hasNext())
@@ -139,21 +139,22 @@ public final class TypeSwitchRemover
 	    addNode(root, new ClassTree(ts.keys(i), i));
 	// if the TYPESWITCH has no default case, fixup the ClassTree.
 	if (!ts.hasDefault()) {
-	    Iterator it = root.children();
+	    Iterator<ClassTree> it = root.children();
 	    // must have at least one key if it has no default.
 	    // make key with highest edgenum the new default.
-	    ClassTree newdefault = (ClassTree) it.next();
+	    ClassTree newdefault = it.next();
 	    while (it.hasNext()) {
-		ClassTree ct = (ClassTree) it.next();
+		ClassTree ct = it.next();
 		if (ct.edgenum > newdefault.edgenum)
 		    newdefault = ct;
 	    }
 	    // now make new root node and reparent children of newdefault
 	    // and other children of root.
 	    ClassTree newroot = new ClassTree(null, newdefault.edgenum);
-	    it = new CombineIterator(root.children(), newdefault.children());
+	    it = new CombineIterator<ClassTree>
+		(root.children(), newdefault.children());
 	    while (it.hasNext()) {
-		ClassTree ct = (ClassTree) it.next();
+		ClassTree ct = it.next();
 		it.remove();
 		if (ct!=newdefault) newroot.addChild(ct);
 	    }
@@ -170,8 +171,8 @@ public final class TypeSwitchRemover
 	// traverse child list. either node is a subclass of a child,
 	// or one-or-more children are subclasses of node, or neither.
 	boolean linkme=true;
-	for (Iterator it=root.children(); it.hasNext(); ) {
-	    ClassTree ctp = (ClassTree) it.next();
+	for (Iterator<ClassTree> it=root.children(); it.hasNext(); ) {
+	    ClassTree ctp = it.next();
 	    if (node.key.isInstanceOf(ctp.key)) {
 		addNode(ctp, node);
 		linkme=false;
@@ -198,12 +199,12 @@ public final class TypeSwitchRemover
     private static class ClassTree {
 	final HClass key;
 	final int edgenum;
-	private List children;
+	private List<ClassTree> children;
 	ClassTree(HClass key, int edgenum) {
 	    this.key = key; this.edgenum = edgenum;
 	    this.children = new LinkedList();
 	}
-	Iterator children() { return children.iterator(); }
+	Iterator<ClassTree> children() { return children.iterator(); }
 	void addChild(ClassTree nchild) {
 	    assert this.edgenum > nchild.edgenum;
 	    children.add(nchild);
@@ -214,8 +215,8 @@ public final class TypeSwitchRemover
 	private void dump(java.io.PrintWriter pw, int indent) {
 	    for (int i=0; i<indent; i++) pw.print("  ");
 	    pw.println(toString());
-	    for (Iterator it=children(); it.hasNext(); )
-		((ClassTree)it.next()).dump(pw, indent+1);
+	    for (Iterator<ClassTree> it=children(); it.hasNext(); )
+		it.next().dump(pw, indent+1);
 	}
 	public void dump(java.io.Writer w) {
 	    dump(new java.io.PrintWriter(w));
@@ -233,7 +234,7 @@ public final class TypeSwitchRemover
     private static abstract class TypeTree {
 	/** add proper derivation information to the CJMPs described by this.*/
 	abstract TypeAndDerivation[] fixupSigmaDerivations(TYPESWITCH ts,
-							   DerivationMap dm);
+							   DerivationMap<Quad> dm);
     }
     /** A TypeNode represents a CJMP, with sigmas that need derivations. */
     private static class TypeNode extends TypeTree {
@@ -241,7 +242,7 @@ public final class TypeSwitchRemover
 	final TypeTree[] child = new TypeTree[2];
 	TypeNode(CJMP cjmp) { this.cjmp = cjmp; }
 	TypeAndDerivation[] fixupSigmaDerivations(TYPESWITCH ts,
-						  DerivationMap dm) {
+						  DerivationMap<Quad> dm) {
 	    TypeAndDerivation[] result=new TypeAndDerivation[ts.numSigmas()];
 	    for (int i=0; i<2; i++) {
 		TypeAndDerivation[] tad=child[i].fixupSigmaDerivations(ts,dm);
@@ -261,7 +262,7 @@ public final class TypeSwitchRemover
 	final int edgenum;
 	TypeLeaf(int edgenum) { this.edgenum = edgenum; }
 	TypeAndDerivation[] fixupSigmaDerivations(TYPESWITCH ts,
-						  DerivationMap dm) {
+						  DerivationMap<Quad> dm) {
 	    // fetch types from appropriate slice of TYPESWITCH
 	    TypeAndDerivation[] r = new TypeAndDerivation[ts.numSigmas()];
 	    for (int i=0; i<r.length; i++) {
@@ -281,7 +282,8 @@ public final class TypeSwitchRemover
 	TypeAndDerivation(HClass type) { this(type, null); }
 	TypeAndDerivation(Derivation.DList deriv) { this(null, deriv); }
 	// helpful.
-	TypeAndDerivation(Derivation d, HCodeElement hce, Temp t) {
+	<HCE extends HCodeElement> TypeAndDerivation(Derivation<HCE> d,
+						     HCE hce, Temp t) {
 	    this(d.typeMap(hce, t), d.derivation(hce, t));
 	}
 	/** private constructor */
@@ -292,7 +294,8 @@ public final class TypeSwitchRemover
 	}
 	/** store this TypeAndDerivation information in the given
 	 *  DerivationMap for the given HCodeElement/Temp pair. */
-	void apply(DerivationMap dm, HCodeElement hce, Temp t) {
+	<HCE extends HCodeElement> void apply(DerivationMap<HCE> dm,
+					      HCE hce, Temp t) {
 	    if (type!=null) dm.putType(hce, t, type);
 	    else dm.putDerivation(hce, t, derivation);
 	}
