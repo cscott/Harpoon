@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.46 1998-09-04 07:38:08 cananian Exp $
+ * @version $Id: Translate.java,v 1.47 1998-09-04 07:50:12 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -595,7 +595,6 @@ class Translate  { // not public.
 	case Op.DSUB:
 	case Op.LADD:
 	case Op.LAND:
-	case Op.LDIV:
 	case Op.LMUL:
 	case Op.LOR:
 	case Op.LREM:
@@ -713,7 +712,6 @@ class Translate  { // not public.
 	case Op.FSUB:
 	case Op.IADD:
 	case Op.IAND:
-	case Op.IDIV:
 	case Op.IMUL:
 	case Op.IOR:
 	case Op.IREM:
@@ -726,6 +724,39 @@ class Translate  { // not public.
 	    q = new OPER(in, Op.toString(in.getOpcode()), // fadd, fdiv, ...
 			 ns.stack[0], new Temp[] {s.stack[1], s.stack[0]});
 	    break;
+	case Op.IDIV:
+	case Op.LDIV:
+	    {
+	    // settle 32/64 bit issues.
+	    Temp val1, val2, res;
+	    if (in.getOpcode()==Op.IDIV) {
+		ns = s.pop(2).push(new Temp());
+		val1 = s.stack[1]; val2 = s.stack[0]; res = ns.stack[0];
+	    } else {
+		ns = s.pop(4).push(null).push(new Temp());
+		val1 = s.stack[2]; val2 = s.stack[0]; res = ns.stack[0];
+	    }
+
+	    // if (divisor==0) throw new ArithmeticException();
+	    HClass HCex = HClass.forClass(ArithmeticException.class);
+	    Temp Tex = new Temp();
+
+	    Quad q0 = new OPER(in, "icmpeq", new Temp(),
+			       new Temp[] { val2, Tzero } );
+	    Quad q1 = new CJMP(in, q0.def()[0]);
+	    Quad q2 = transNewException(HCex, Tex, Tnull, in, q1, 1);
+	    r = transThrow(new TransState(s.push(Tex), in, q2, 0),
+			   handlers, Tnull, false);
+	    // actual division operation:
+	    Quad q3 = new OPER(in, Op.toString(in.getOpcode()), // idiv/ldiv
+			       res, new Temp[] {val1, val2});
+	    // link quads.
+	    Quad.addEdge(q0, 0, q1, 0);
+	    Quad.addEdge(q1, 0, q3, 0);
+	    // setup next state.
+	    q = q0; last = q3;
+	    break;
+	    }
 	case Op.FCMPG:
 	case Op.FCMPL:
 	    ns = s.pop(2).push(new Temp());
