@@ -18,8 +18,6 @@
 
 import java.io.*;
 import java.lang.Math.*;
-import javax.realtime.CTMemory;
-import javax.realtime.RealtimeThread;
 class C { 
   static final double ONE 	= (double) 1.00;
   static final double TWO	= (double) 2.00;
@@ -228,7 +226,7 @@ class vec {
 // --- To be used as a scalar accumulator
 class acc_double {
   double val;
-  acc_double()			{ val = 0.0; }
+  acc_double()		{ val = 0.0; }
   double readval()		{ return val; }
   void writeval(double d)	{ val = d; }
   synchronized void addval(double d)         { val += d; }
@@ -1157,38 +1155,36 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
   }
 
   void potengOuterLoop(final int first, final int num){
-    CTMemory m = new CTMemory(10);
     final ensemble en = this;
-    m.enter(new Runnable() { 
-      public void run() { 
-        int i;
-        for(i = 0; i < num; i++) {
-          en.potengInnerLoop(i);
-        }
-      }
-    });
+    (new Runnable() { 
+	    public void run() { 
+		int i;
+		for(i = 0; i < num; i++) {
+		    en.potengInnerLoop(i);
+		}
+	    }
+	}).run();
   }
 
   void potengOuterSplit(final int first, final int num) {
-    CTMemory m = new CTMemory(10);
     final ensemble en = this;
-    m.enter(new Runnable() { 
-      public void run() { 
-        potengThread t[] = new potengThread[num];
-        for (int i = 0; i < num; i++) { 
-          // Wes Beebee: this thread goes in its own region
-          t[i] = new potengThread(en, first+i);
-          t[i].start();
-        }
-        for (int i = 0; i < num; i++) { 
-          try { 
-            t[i].join(); 
-          } catch (java.lang.InterruptedException e) {
-            System.err.print("InterruptedException in potengOuterSplit\n");
-          }
-        }
-      }
-    });
+    (new Runnable() { 
+	    public void run() { 
+		potengThread t[] = new potengThread[num];
+		for (int i = 0; i < num; i++) { 
+		    // Wes Beebee: this thread goes in its own region
+		    t[i] = new potengThread(en, first+i);
+		    t[i].start();
+		}
+		for (int i = 0; i < num; i++) { 
+		    try { 
+			t[i].join(); 
+		    } catch (java.lang.InterruptedException e) {
+			System.err.print("InterruptedException in potengOuterSplit\n");
+		    }
+		}
+	    }
+	}).run();
   }
 
   void potengOuterDispatch() {
@@ -1693,38 +1689,36 @@ void storeData(int dest){
   }
 
   void interfOuterLoop(final int first, final int num){
-    CTMemory m = new CTMemory(10);
     final ensemble en=this;
-    m.enter(new Runnable() { 
-      public void run() { 
-        int i;
-        for(i = 0; i < num; i++) {
-          en.interfInnerLoop(i);
-        }
-      }
-    });
+    (new Runnable() { 
+	    public void run() { 
+		int i;
+		for(i = 0; i < num; i++) {
+		    en.interfInnerLoop(i);
+		}
+	    }
+	}).run();
   }
 
   void interfOuterSplit(final int first, final int num) {
-    CTMemory m = new CTMemory(10);
     final ensemble en=this;
-    m.enter(new Runnable() { 
-      public void run() { 
-        interfThread t[] = new interfThread[num];
-        for (int i = 0; i < num; i++) {
-          // Wes Beebee: this thread goes in its own region
-          t[i] = new interfThread(en, first+i);
-          t[i].start();
-        }
-        for (int i = 0; i < num; i++) {
-          try {
-            t[i].join();
-          } catch (java.lang.InterruptedException e) {
-            System.err.print("InterruptedException in interfOuterSplit\n");
-          }
-        }
-      }
-    });
+    (new Runnable() { 
+	    public void run() { 
+		interfThread t[] = new interfThread[num];
+		for (int i = 0; i < num; i++) {
+		    // Wes Beebee: this thread goes in its own region
+		    t[i] = new interfThread(en, first+i);
+		    t[i].start();
+		}
+		for (int i = 0; i < num; i++) {
+		    try {
+			t[i].join();
+		    } catch (java.lang.InterruptedException e) {
+			System.err.print("InterruptedException in interfOuterSplit\n");
+		    }
+		}
+	    }
+	}).run();
   }
 
   void interfOuterDispatch() {
