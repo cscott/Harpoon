@@ -27,6 +27,13 @@ jsize FNI_GetArrayLength(JNIEnv *env, jarray array) {
   return a->length;
 }
 
+#if defined(WITH_TRANSACTIONS)
+# define EXTRA_SPACE(length) \
+	       (((length+(SIZEOF_VOID_P*8)-1)/(SIZEOF_VOID_P*8))*SIZEOF_VOID_P)
+#else
+# define EXTRA_SPACE(length) 0
+#endif
+
 /* Constructs a new array holding objects in class elementClass. 
  * All elements are initially set to initialElement.
  *
@@ -57,7 +64,8 @@ jarray FNI_NewObjectArray(JNIEnv *env, jsize length,
     info = FNI_GetClassInfo(arrayclazz);
   }
   result = FNI_Alloc(env, info, info->claz, NULL/* default alloc func */,
-		     sizeof(struct aarray) + sizeof(ptroff_t)*length);
+		     sizeof(struct aarray) + sizeof(ptroff_t)*length +
+		     EXTRA_SPACE(length));
   if (result==NULL) return NULL; /* bail on error */
   ((struct aarray *)FNI_UNWRAP_MASKED(result))->length = length;
   if (initialElement != NULL) {
@@ -90,7 +98,8 @@ type##Array FNI_New##name##Array(JNIEnv *env, jsize length) {\
   if (arrayclazz==NULL) return NULL; /* bail on error */\
   info = FNI_GetClassInfo(arrayclazz);\
   result = FNI_Alloc(env, info, info->claz, NULL/*default alloc func*/,\
-		     sizeof(struct aarray) + sizeof(type)*length);\
+		     sizeof(struct aarray) + sizeof(type)*length +\
+		     EXTRA_SPACE(length));\
   if (result==NULL) return NULL; /* bail on error */\
   ((struct aarray *)FNI_UNWRAP_MASKED(result))->length = length;\
   ASSIGN_UID;\

@@ -29,7 +29,7 @@ static JNIEnv * FNI_CreateThreadState(void) {
   struct FNI_Thread_State * env = 
 #ifdef WITH_REALTIME_JAVA
     (struct FNI_Thread_State*)RTJ_CALLOC_UNCOLLECTABLE(1,sizeof(*env));
-#elif WITH_TRANSACTIONS
+#elif defined(WITH_TRANSACTIONS) && defined(BDW_CONSERVATIVE_GC)
     /* we store transaction object pointers in here */
     GC_malloc(sizeof(*env));
 #else
