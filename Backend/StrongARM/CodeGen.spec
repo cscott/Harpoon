@@ -48,13 +48,15 @@ import harpoon.IR.Tree.SEQ;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.Iterator;
 
 /**
  * <code>CodeGen</code> is a code-generator for the ARM architecture.
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.33 1999-08-31 00:06:24 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.34 1999-09-02 15:35:46 pnkfelix Exp $
  */
 %%
 
@@ -89,7 +91,7 @@ import java.util.List;
     /** Emits <code>i</code> as the next instruction in the
         instruction stream.
     */	
-    private void emit(Instr i) {
+    private Instr emit(Instr i) {
 	debug( "Emitting "+i.toString() );
 	if (first == null) {
 	    first = i;
@@ -97,49 +99,51 @@ import java.util.List;
 	// its correct that last==null the first time this is called
 	i.layout(last, null);
 	last = i;
+	return i;
     }
 
     /** The main Instr layer; nothing below this line should call
-	emit(Instr) directly.  
+	emit(Instr) directly, unless they are constructing extensions
+	of Instr.
     */
-    private void emit(HCodeElement root, String assem,
+    private Instr emit(HCodeElement root, String assem,
 		      Temp[] dst, Temp[] src,
 		      boolean canFallThrough, List targets) {
-	emit(new Instr( instrFactory, root, assem,
+	return emit(new Instr( instrFactory, root, assem,
 			dst, src, canFallThrough, targets));
     }		      
 
     /** Secondary emit layer; for primary usage by the other emit
 	methods. 
     */
-    private void emit2(HCodeElement root, String assem,
+    private Instr emit2(HCodeElement root, String assem,
 		      Temp[] dst, Temp[] src) {
-	emit(root, assem, dst, src, true, null);
+	return emit(root, assem, dst, src, true, null);
     }
 
     /** Single dest Single source Emit Helper. */
-    private void emit( HCodeElement root, String assem, 
+    private Instr emit( HCodeElement root, String assem, 
 		       Temp dst, Temp src) {
-	emit2(root, assem, new Temp[]{ dst }, new Temp[]{ src });
+	return emit2(root, assem, new Temp[]{ dst }, new Temp[]{ src });
     }
     
 
     /** Single dest Two source Emit Helper. */
-    private void emit( HCodeElement root, String assem, 
+    private Instr emit( HCodeElement root, String assem, 
 		       Temp dst, Temp src1, Temp src2) {
-	emit2(root, assem, new Temp[]{ dst },
+	return emit2(root, assem, new Temp[]{ dst },
 			new Temp[]{ src1, src2 });
     }
 
     /** Null dest Null source Emit Helper. */
-    private void emit( HCodeElement root, String assem ) {
-	emit2(root, assem, null, null);
+    private Instr emit( HCodeElement root, String assem ) {
+	return emit2(root, assem, null, null);
     }
 
     /** Single dest Single source emit InstrMOVE helper */
-    private void emitMOVE( HCodeElement root, String assem,
+    private Instr emitMOVE( HCodeElement root, String assem,
 			   Temp dst, Temp src) {
-	emit(new InstrMOVE( instrFactory, root, assem,
+	return emit(new InstrMOVE( instrFactory, root, assem,
 			    new Temp[]{ dst },
 			    new Temp[]{ src }));
     }			         
@@ -147,34 +151,37 @@ import java.util.List;
     /* Branching instruction emit helper. 
        Instructions emitted using this *can* fall through.
     */
-    private void emit( HCodeElement root, String assem,
+    private Instr emit( HCodeElement root, String assem,
 		       Temp[] dst, Temp[] src, Label[] targets ) {
-        emit(new Instr( instrFactory, root, assem,
+        return emit(new Instr( instrFactory, root, assem,
 			dst, src, true, Arrays.asList(targets)));
     }
     
     /* Branching instruction emit helper. 
        Instructions emitted using this *cannot* fall through.
     */
-    private void emitNoFall( HCodeElement root, String assem,
+    private Instr emitNoFall( HCodeElement root, String assem,
 		       Temp[] dst, Temp[] src, Label[] targets ) {
-        emit(new Instr( instrFactory, root, assem,
+        return emit(new Instr( instrFactory, root, assem,
 			dst, src, false, Arrays.asList(targets)));
     }
 
-    /* InstrJUMP emit helper. */
-    private void emitJUMP( HCodeElement root, String assem, Label l ) {
-	emit( new InstrJUMP( instrFactory, root, assem, l ));
+    /* InstrJUMP emit helper; automatically adds entry to
+       label->branches map. */
+    private Instr emitJUMP( HCodeElement root, String assem, Label l ) {
+	Instr j = emit( new InstrJUMP( instrFactory, root, assem, l ));
+	((Set)instrFactory.labelToBranchingInstrSetMap.get(l)).add(j);
+	return j;
     }
 
     /* InstrLABEL emit helper. */
-    private void emitLABEL( HCodeElement root, String assem, Label l ) {
-	emit( new InstrLABEL( instrFactory, root, assem, l ));
+    private Instr emitLABEL( HCodeElement root, String assem, Label l ) {
+	return emit( new InstrLABEL( instrFactory, root, assem, l ));
     }	
 
     /* InstrDIRECTIVE emit helper. */
-    private void emitDIRECTIVE( HCodeElement root, String assem ) {
-	emit( new InstrDIRECTIVE( instrFactory, root, assem ));
+    private Instr emitDIRECTIVE( HCodeElement root, String assem ) {
+	return emit( new InstrDIRECTIVE( instrFactory, root, assem ));
     }
 
     private Temp makeTemp() {
@@ -779,7 +786,8 @@ TEMP<p,i,f>(id) = i %{
     if (((TEMP)ROOT) != param0) {
 	emitMOVE( ROOT, "mov `d0, `s0", i, ((TEMP)ROOT).temp);
     } else {
-	emit( ROOT, "bl _lookup\n"+
+	emit( ROOT, ".global _lookup\n"+
+		    "bl _lookup\n"+
 		    "mov `d0, `s0", i, r2 );
     }
 
@@ -977,11 +985,12 @@ METHOD(params) %{
 }%
 
 CJUMP(test, iftrue, iffalse) %{
-    emit( ROOT, "cmp `s0, #0 \n" +
-		"beq `L0", 
-		null, new Temp[]{ test },
-		new Label[]{ iffalse });
-    emitJUMP( ROOT, "b `L0", iftrue );
+    Instr j1 = emit( ROOT, "cmp `s0, #0 \n" +
+			   "beq `L0", 
+			   null, new Temp[]{ test },
+			   new Label[]{ iffalse });
+    ((Set)instrFactory.labelToBranchingInstrSetMap.get(iffalse)).add(j1);
+    Instr j2 = emitJUMP( ROOT, "b `L0", iftrue );
 }%
 
 EXP(e) %{
@@ -991,22 +1000,32 @@ EXP(e) %{
 }%
 
 JUMP(e) %{
-    emit( new Instr
-	  ( instrFactory, ROOT, 
-	    "mov `d0, `s0",
-	    new Temp[]{ SAFrame.PC },
-	    new Temp[]{ e },
-	    false, LabelList.toList( ((JUMP)ROOT).targets )) {
-		public boolean hasModifiableTargets(){ 
-		       return false; 
-		}
-	    });
+    List labelList = LabelList.toList( ((JUMP)ROOT).targets );
+    Instr j = 
+       emit(new Instr( instrFactory, ROOT, 
+		       "mov `d0, `s0",
+		       new Temp[]{ SAFrame.PC },
+		       new Temp[]{ e },
+		       false, labelList ) {
+			      public boolean hasModifiableTargets(){ 
+				     return false; 
+			      }
+    });
+    Iterator liter = labelList.iterator();
+    while(liter.hasNext()) {
+	 Label label = (Label) liter.next();
+	 ((Set)instrFactory.labelToBranchingInstrSetMap.get(label)).add(j);
+    }
 }%
 
 LABEL(id) %{
     LABEL l = (LABEL) ROOT;
-    Instr i = new InstrLABEL(instrFactory, l, l.label + ":", l.label);
-    emit(i);
+    if (l.exported) {
+      emitLABEL( l, ".global "+l.label+"\n"+
+		    l.label + ":", l.label);
+    } else {
+      emitLABEL( l, l.label + ":", l.label);
+    }
 }%
 
 MOVE<p,i,f>(dst, src) %{
@@ -1071,7 +1090,8 @@ RETURN(val) %{
 
 THROW(val, handler) %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
-    emit( ROOT, "bl _lookup @ only r0, lr (& ip?) "+
+    emit( ROOT, ".global _lookup\n"+
+		"bl _lookup @ only r0, lr (& ip?) "+
 		"need to be preserved during lookup" ); 
     emit( ROOT, "b stdexit");
     
