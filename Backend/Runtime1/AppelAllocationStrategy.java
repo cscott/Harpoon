@@ -5,6 +5,7 @@ package harpoon.Backend.Runtime1;
 
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.LocationFactory;
+import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.Bop;
@@ -32,13 +33,15 @@ import java.util.List;
  * A simple-minded version of Appel's fast-allocation strategy
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: AppelAllocationStrategy.java,v 1.1.2.3 2000-02-16 06:18:09 cananian Exp $
+ * @version  $Id: AppelAllocationStrategy.java,v 1.1.2.4 2000-03-09 03:56:17 cananian Exp $
  */
 public class AppelAllocationStrategy extends AllocationStrategy {
+    final Frame frame;
     final LocationFactory.Location memLimit;
     final LocationFactory.Location nextPtr;
 
     public AppelAllocationStrategy(Frame frame) {
+	this.frame = frame;
 	LocationFactory lf = frame.getLocationFactory();
 	memLimit = lf.allocateLocation(Type.POINTER);
 	nextPtr = lf.allocateLocation(Type.POINTER);
@@ -51,6 +54,7 @@ public class AppelAllocationStrategy extends AllocationStrategy {
     public Exp memAlloc(TreeFactory tf, HCodeElement src,
 			DerivationGenerator dg, Exp size)
     {
+	NameMap	     m_nm = frame.getRuntime().nameMap;
 	LABEL        l0, l1, l2, l3, l4;
 	NAME         gc, exit_oom;
 	TEMP         triedGC; // INT type
@@ -67,8 +71,8 @@ public class AppelAllocationStrategy extends AllocationStrategy {
 	l2        = new LABEL(tf, src, new Label(), false);
 	l3        = new LABEL(tf, src, new Label(), false);
 	l4        = new LABEL(tf, src, new Label(), false);
-	gc        = new NAME(tf, src, new Label("_gc"));
-	exit_oom  = new NAME(tf, src, new Label("_exit_oom"));
+	gc        = new NAME(tf, src, new Label(m_nm.c_function_name("_gc")));
+	exit_oom  = new NAME(tf, src, new Label(m_nm.c_function_name("_exit_oom")));
       
 	stms = new Stm[] { 
 	    // triedGC <-- 0; 

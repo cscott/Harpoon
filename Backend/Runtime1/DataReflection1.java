@@ -30,13 +30,13 @@ import java.util.List;
  * will use.  This includes:<OL>
  * <LI>a table to map class names to <code>java.lang.Class</code> objects,
  *     sorted in order of the UTF-8 encodings of the class names.
- *     (begins at <code>_name2class_start</code>, ends at
- *      <code>_name2class_end</code>)
+ *     (begins at <code>name2class_start</code>, ends at
+ *      <code>name2class_end</code>)
  * <LI>a table to map <code>java.lang.Class</code> objects to class
  *     information structures, sorted in order of the (non-relocatable)
  *     <code>Class</code> object address.
- *     (begins at <code>_class2info_start</code>, ends at
- *      <code>_class2info_end</code>)
+ *     (begins at <code>class2info_start</code>, ends at
+ *      <code>class2info_end</code>)
  * <LI>UTF-8 encoded class name strings, used by the first table as
  *     well as by the class information structures.
  * <LI>Static <Code>java.lang.Class</code> objects.  As the JDK dictates,
@@ -46,7 +46,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection1.java,v 1.1.2.5 2000-01-13 23:47:40 cananian Exp $
+ * @version $Id: DataReflection1.java,v 1.1.2.6 2000-03-09 03:56:17 cananian Exp $
  */
 public class DataReflection1 extends Data {
     final NameMap m_nm;
@@ -104,14 +104,16 @@ public class DataReflection1 extends Data {
 	// make a sorted table mapping name strings to class objects.
 	stmlist.add(new ALIGN(tf, null, 4)); // align table to word boundary
 	stmlist.add(new LABEL(tf, null,
-			      new Label("_name2class_start"), true));
+			      new Label(m_nm.c_function_name
+					("name2class_start")), true));
 	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
 	    stmlist.add(_DATUM(m_nm.label(hc, "namestr")));
 	    stmlist.add(_DATUM(m_nm.label(hc, "classobj")));
 	}
 	stmlist.add(new LABEL(tf, null,
-			      new Label("_name2class_end"), true));
+			      new Label(m_nm.c_function_name
+					("name2class_end")), true));
 	return Stm.toStm(stmlist);
     }
     private Stm buildClass2Info(List sorted) {
@@ -119,14 +121,16 @@ public class DataReflection1 extends Data {
 	// make a sorted table mapping class objects to class info structures.
 	stmlist.add(new ALIGN(tf, null, 4)); // align table to word boundary
 	stmlist.add(new LABEL(tf, null,
-			      new Label("_class2info_start"), true));
+			      new Label(m_nm.c_function_name
+					("class2info_start")), true));
 	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
 	    stmlist.add(_DATUM(m_nm.label(hc, "classobj")));
 	    stmlist.add(_DATUM(m_nm.label(hc, "classinfo")));
 	}
 	stmlist.add(new LABEL(tf, null,
-			      new Label("_class2info_end"), true));
+			      new Label(m_nm.c_function_name
+					("class2info_end")), true));
 	return Stm.toStm(stmlist);
     }
     private Stm buildStrings(List sorted) {

@@ -39,7 +39,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.1.2.7 2000-01-10 05:08:35 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.1.2.8 2000-03-09 03:56:17 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -96,10 +96,10 @@ public class DataReflection2 extends Data {
 	    // only make string data for the members we declare
 	    if (hm.getDeclaringClass() != hc) continue;
 	    // first name string.
-	    stmlist.add(new LABEL(tf, null, memberLabel(hm,"namestr"), false));
+	    stmlist.add(new LABEL(tf, null, memberLabel(hm,"namestr"), true));
 	    stmlist.add(emitUtf8String(hm.getName()));
 	    // then descriptor string.
-	    stmlist.add(new LABEL(tf, null, memberLabel(hm,"descstr"), false));
+	    stmlist.add(new LABEL(tf, null, memberLabel(hm,"descstr"), true));
 	    stmlist.add(emitUtf8String(hm.getDescriptor()));
 	}
 	// pad out to full word after last string bit.

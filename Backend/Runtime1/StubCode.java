@@ -50,7 +50,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.9 2000-02-09 06:01:07 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.10 2000-03-09 03:56:17 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
@@ -106,7 +106,8 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 			     _TEMP(tf, null, HClass.Void, envT),
 			     _MEM(tf, null, HClass.Void,
 				     _NAME(tf, null, HClass.Void,
-					      new Label("_FNI_JNIEnv")))));
+					      new Label(m_nm.c_function_name
+							("FNI_JNIEnv"))))));
 	// reset the exception field in the thread state.
 	stmlist.add(new MOVE(tf, null,
 			     _MEM(tf, null, HClass.Void,
@@ -135,7 +136,8 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 			     (tf, null, HClass.Void, paramTemps[i+1]),
 			     _NAME
 			     (tf, null, HClass.Void,
-			      new Label("_FNI_NewLocalRef")),
+			      new Label(m_nm.c_function_name
+					("FNI_NewLocalRef"))),
 			     new ExpList
 			      (_TEMP(tf, null, HClass.Void, envT),
 			       new ExpList
@@ -150,7 +152,8 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 			 _TEMP
 			 (tf,null,HClass.Void, classT),
 			 _NAME
-			 (tf,null,HClass.Void, new Label("_FNI_NewLocalRef")),
+			 (tf,null,HClass.Void, new Label(m_nm.c_function_name
+							 ("FNI_NewLocalRef"))),
 			 new ExpList
 			 (_TEMP(tf, null, HClass.Void, envT),
 			  new ExpList
@@ -182,7 +185,8 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 				   _TEMP(tf, null, method.getReturnType(),
 					    retT),
 				   _NAME(tf, null, HClass.Void,
-					    new Label(jniMangle(method))),
+					 new Label(m_nm.c_function_name
+						   (jniMangle(method)))),
 				   jniParams));
 	// now clean up afterward: check for exceptions, etc.
 	Temp excT = new Temp(tf.tempFactory(), "excval");
@@ -212,7 +216,8 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 		stmlist.add(new NATIVECALL(tf, null,
 					   _TEMP(tf, null, rettype, retT),
 					   _NAME(tf, null, HClass.Void,
-						    new Label("_FNI_Unwrap")),
+						 new Label(m_nm.c_function_name
+							   ("FNI_Unwrap"))),
 					   new ExpList
 					   (_TEMP(tf, null, HClass.Void, retT),
 					    null)
@@ -227,7 +232,8 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	stmlist.add(new LABEL(tf, null, yes_exceptions, false));
 	stmlist.add(new NATIVECALL(tf, null, null,
 				   _NAME(tf, null, HClass.Void,
-					    new Label("_FNI_ExceptionClear")),
+					    new Label(m_nm.c_function_name
+						      ("FNI_ExceptionClear"))),
 				   new ExpList
 				   (_TEMP(tf, null, HClass.Void, envT),
 				    null)
@@ -235,7 +241,8 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	stmlist.add(new NATIVECALL(tf, null,
 				   _TEMP(tf, null, HCthw, excT),
 				   _NAME(tf, null, HClass.Void,
-					    new Label("_FNI_Unwrap")),
+					    new Label(m_nm.c_function_name
+						      ("FNI_Unwrap"))),
 				   new ExpList
 				   (_TEMP(tf, null, HClass.Void, excT),
 				    null)
@@ -251,7 +258,8 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
     	stmlist.add(new NATIVECALL
 		    (tf, null, null, // free local references
 		     _NAME(tf, null, HClass.Void,
-			      new Label("_FNI_DeleteLocalRefsUpTo")),
+			      new Label(m_nm.c_function_name
+					("FNI_DeleteLocalRefsUpTo"))),
 		     new ExpList(_TEMP(tf, null, HClass.Void, envT),
 		     new ExpList(_TEMP(tf, null, HClass.Void, refT),
 				 null))));
@@ -297,7 +305,7 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 		allm[i].getName().equals(m.getName()) &&
 		!allm[i].equals(m))
 		useShort = false;
-	String mangled = "_Java_" +
+	String mangled = "Java_" +
 	    encode(m.getDeclaringClass().getName()) +
 	    "_" +
 	    encode(m.getName());

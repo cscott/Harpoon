@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Runtime1;
 
+import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Tree.DerivationGenerator;
@@ -21,19 +22,24 @@ import harpoon.Temp.Temp;
  * same prototype as <code>malloc()</code> to do the allocation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MallocAllocationStrategy.java,v 1.1.2.2 2000-02-16 06:18:09 cananian Exp $
+ * @version $Id: MallocAllocationStrategy.java,v 1.1.2.3 2000-03-09 03:56:17 cananian Exp $
  */
 public class MallocAllocationStrategy extends AllocationStrategy {
-    final Label func;
+    final Frame frame;
+    final String funcname;
+
     /** Creates a <code>MallocAllocationStrategy</code>.
-     * @param funcname The name of the function to call to do the allocation.
+     * @param funcname The name of the C function to call to do the allocation.
      */
-    public MallocAllocationStrategy(String funcname) {
-        this.func = new Label(funcname);
+    public MallocAllocationStrategy(Frame f, String funcname) {
+	this.frame = f;
+	this.funcname = funcname;
     }
     public Exp memAlloc(TreeFactory tf, HCodeElement source,
 			DerivationGenerator dg,
 			Exp length) {
+	Label func = new Label(frame.getRuntime().nameMap
+			       .c_function_name(funcname));
 	Temp Tret = new Temp(tf.tempFactory(), "ma");
 	return new ESEQ
 	    (tf, source,
