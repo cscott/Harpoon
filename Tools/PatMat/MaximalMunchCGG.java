@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.58 2000-02-19 05:54:46 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.59 2000-02-19 09:06:45 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -65,6 +65,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
     private static final String TEMP_Label = "harpoon.Temp.Label";
     private static final String TEMP_Temp = "harpoon.Temp.Temp";
+    private static final String TEMP_TempList = "harpoon.Temp.TempList";
 
     /** Creates a <code>MaximalMunchCGG</code>. 
 	<BR> <B>requires:</B> <OL>
@@ -131,6 +132,12 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	/** Type of root. */
 	String rootType;
 
+	/** Helper function to merge a TypeExpRecurse into this one. */
+	public void mergeStms(TypeExpRecurse r) {
+	    initStms.append(r.initStms);
+	    munchStms.append(r.munchStms);
+	}
+	/** helper function to prettify output */
 	public void append(StringBuffer buf, String s) {
 	    buf.append(indentPrefix + s + "\n");
 	}
@@ -179,8 +186,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.func.accept(r);
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() +indentPrefix+")");
-	    initStms.append(r.initStms.toString());
-	    munchStms.append(r.munchStms.toString());
+	    mergeStms(r);
 
 	    // initialize retval
 	    append(initStms, TEMP_Temp+" "+s.retval+" = "+
@@ -197,13 +203,13 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	    // initialize arg list
 	    append(munchStms, "/* munch argument ExpList into a TempList */");
-	    append(munchStms, "harpoon.Temp.TempList "+ s.arglist +
-		   " = new harpoon.Temp.TempList(null, null);");
-	    append(munchStms, "{ harpoon.Temp.TempList tl="+s.arglist+";");
+	    append(munchStms, TEMP_TempList+" "+ s.arglist +
+		   " = new "+TEMP_TempList+"(null, null);");
+	    append(munchStms, "{ "+TEMP_TempList+" tl="+s.arglist+";");
 	    append(munchStms, "  for ("+TREE_ExpList+" el"+
 		   " = (("+TREE_CALL+")"+stmPrefix+").getArgs();" +
 		   " el!=null; el=el.tail, tl=tl.tail) ");
-	    append(munchStms, "    tl.tail = new harpoon.Temp.TempList("+
+	    append(munchStms, "    tl.tail = new "+TEMP_TempList+"("+
 		   "munchExp(el.head), null);");
 	    append(munchStms, "}");
 	    append(munchStms, s.arglist+" = "+s.arglist+".tail;");
@@ -223,8 +229,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.test.accept(r);
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
-	    initStms.append(r.initStms.toString());
-	    munchStms.append(r.munchStms.toString());
+	    mergeStms(r);
 
 	    // code to initialize the target label identifiers so
 	    // that they can be referred to.
@@ -251,8 +256,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.data.accept(r);
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
-	    initStms.append(r.initStms.toString());
-	    munchStms.append(r.munchStms.toString());
+	    mergeStms(r);
 	}
 
 	public void visit(Spec.StmAlign s) {
@@ -314,8 +318,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.exp.accept(r);
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
-	    initStms.append(r.initStms.toString());
-	    munchStms.append(r.munchStms.toString());
+	    mergeStms(r);
 	}
 
 	public void visit(Spec.StmJump s) {
@@ -332,9 +335,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.exp.accept(r);
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
-	    initStms.append(r.initStms.toString());
-	    munchStms.append(r.munchStms.toString());
-
+	    mergeStms(r);
 	}
 
 	public void visit(Spec.StmLabel s) {
@@ -368,8 +369,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.src.accept(r);
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() + indentPrefix  +")");
-	    initStms.append(r.initStms.toString());
-	    munchStms.append(r.munchStms.toString());
+	    mergeStms(r);
 
 	    // look at dst
 	    r = new TypeExpRecurse("(("+TREE_MOVE+") " + stmPrefix + ").getDst()",
@@ -377,8 +377,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.dst.accept(r);
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
-	    initStms.append(r.initStms.toString());
-	    munchStms.append(r.munchStms.toString());
+	    mergeStms(r);
 	}
 
 	public void visit(Spec.StmNativeCall s) {
@@ -395,8 +394,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.func.accept(r);
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+")");
-	    initStms.append(r.initStms.toString());
-	    munchStms.append(r.munchStms.toString());
+	    mergeStms(r);
 
 	    // initialize retval
 	    append(initStms, TEMP_Temp+" "+s.retval+" = "+
@@ -405,13 +403,13 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    
 	    // initialize arg list
 	    append(munchStms, "/* munch argument ExpList into a TempList */");
-	    append(munchStms, "harpoon.Temp.TempList "+ s.arglist +
-		   " = new harpoon.Temp.TempList(null, null);");
-	    append(munchStms, "{ harpoon.Temp.TempList tl="+s.arglist+";");
+	    append(munchStms, TEMP_TempList+" "+ s.arglist +
+		   " = new "+TEMP_TempList+"(null, null);");
+	    append(munchStms, "{ "+TEMP_TempList+" tl="+s.arglist+";");
 	    append(munchStms, "  for ("+TREE_ExpList+" el"+
 		   " = (("+TREE_NATIVECALL+")"+stmPrefix+").getArgs();" +
 		   " el!=null; el=el.tail, tl=tl.tail) ");
-	    append(munchStms, "    tl.tail = new harpoon.Temp.TempList("+
+	    append(munchStms, "    tl.tail = new "+TEMP_TempList+"("+
 		   "munchExp(el.head), null);");
 	    append(munchStms, "}");
 	    append(munchStms, s.arglist+" = "+s.arglist+".tail;");
@@ -434,8 +432,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.retval.accept(r);
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+")");
-	    initStms.append(r.initStms.toString());
-	    munchStms.append(r.munchStms.toString());
+	    mergeStms(r);
 	}
 
 
@@ -453,8 +450,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.retex.accept(r); 
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+ ")");
-	    initStms.append(r.initStms.toString());
-	    munchStms.append(r.munchStms.toString());
+	    mergeStms(r);
 
 	    // look at handler
 	    r = new 
@@ -463,8 +459,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.handler.accept(r); 
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+ ")");
-	    initStms.append(r.initStms.toString());
-	    munchStms.append(r.munchStms.toString());
+	    mergeStms(r);
 	}
     }
 
@@ -481,7 +476,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	StringBuffer exp;
 	
 	/** constantly updated set of statements to initialize the
-            identifiers that the action statements will reference. */
+            identifiers that the predicate expression will reference. */
 	StringBuffer initStms;
 	/** constantly updated set of statements to munch the rules'
 	 *  children if this rule matches. */
@@ -500,6 +495,11 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	/** Type of root. */
 	String rootType;
 
+	/** Helper function to merge a TypeExpRecurse into this one. */
+	public void mergeStms(TypeExpRecurse r) {
+	    initStms.append(r.initStms);
+	    munchStms.append(r.munchStms);
+	}
 	/** Helper function to prettify resulting code. */
 	public void append(StringBuffer buf, String s) {
 	    buf.append(indentPrefix + s +"\n");
@@ -510,7 +510,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    exp = new StringBuffer("true\n"); 	    
 	    initStms = new StringBuffer();
 	    munchStms = new StringBuffer();
-
+	    
 	    degree = 0;
 	    this.expPrefix = expPrefix;
 	    this.indentPrefix = indentPrefix;
@@ -831,16 +831,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 					   
 					   // insert a type declare
 					   // for r.result.id 
-					   (isData?"":
-					    "harpoon.ClassFile.HClass hclz"+
-					   " = code.getTreeDerivation().typeMap(ROOT);\n"+
-					   "if (hclz != null) { "+
-					   "\n\t declare("+r.result_id+", hclz);"+
-					   "} else { "+
-					   "\n\t declare("+r.result_id+", "+
-					   "\n\t                    "+
-					   "code.getTreeDerivation().derivation(ROOT));\n"+
-					   "}") +
+					   (isData?"":"clearDecl();\n"+
+					    "declare("+r.result_id+", "+
+					   "code.getTreeDerivation(), ROOT);"+
+					    "\n")+
 					   
 					   r.action_str + 
 					   indent + "return " + r.result_id + ";\n" +
@@ -966,7 +960,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	//out.println("\t}");
 	out.println("\tt.accept(visitor);");
 	
-	
+	out.println("\t\t\tclearDecl(); // reset temp type mappings");
     }
 
     static class RuleTuple {
