@@ -45,7 +45,7 @@ import harpoon.Util.Util;
  * is so.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.15 1999-11-17 20:12:25 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.16 1999-11-17 23:18:52 cananian Exp $ 
  */
 public class CALL extends SIGMA {
     /** The method to invoke. */
@@ -63,7 +63,7 @@ public class CALL extends SIGMA {
     /** Special flag for non-virtual methods.
      *  (INVOKESPECIAL has different invoke semantics) */
     final protected boolean isVirtual;
-    /** Special flag fot tail calls. */
+    /** Special flag for tail calls. */
     final protected boolean isTailCall;
 
     /** Creates a <code>CALL</code> quad representing a method invocation
