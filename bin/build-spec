@@ -41,7 +41,7 @@ esac
 
 for s in `ls $SPECPATH/spec/benchmarks | sort | sed -ne ${start},${end}p`; do
     rm -f $tmprootset
-    if [ -z "$USE_GNU_CLASSPATH" ]; then
+    if [ -n "$USE_SUN_JDK" ]; then
         # SUNJDK only:
 	echo "include Support/locale-root-set" > $tmprootset
     fi
