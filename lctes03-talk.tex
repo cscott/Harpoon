@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.22 2003-06-09 00:30:17 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.23 2003-06-11 03:13:27 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TO DO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -34,7 +34,7 @@ oqe
 \usepackage{verbatim}
 %\hypersetup{pdfpagemode=FullScreen}
 
-\slideCaption{Ananian/LCTES'03}
+\slideCaption{Ananian/Rinard, LCTES'03}
 \title{Size Optimizations for Java Programs}
 \author{\large\href{http://cscott.net}{C.~Scott~Ananian} and \href{http://www.cag.lcs.mit.edu/~rinard}{Martin~Rinard}}
 \email{\{\href{mailto:cananian@lcs.mit.edu}{cananian},\href{mailto:rinard@lcs.mit.edu}{rinard}\}@lcs.mit.edu}
@@ -105,26 +105,21 @@ opportunities and applying transformations to effect the reduction.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{8}{
+\overlays{3}{
 \begin{slide}{Why space optimizations?}
 \begin{itemize}
  \FromSlide{2}
  \item Embedded applications:
- \FromSlide{3}
  \begin{itemize}
   \item Better use of {\yellow existing fixed memory resources}.
-  \FromSlide{4}
   \item \bp{\yellow Reduce memory costs} of new devices.
  \end{itemize}
- \FromSlide{5}
+ \FromSlide{3}
  \item Performance:
- \FromSlide{6}
  \begin{itemize}
   \item ``{\yellow Memory wall}'' getting higher.
-  \FromSlide{7}
   \item Space optimizations increase the {\yellow effective cache size},
   improving performance.
-  \FromSlide{8}
   \item Added {\yellow ALU ops} getting comparatively {\yellow cheaper}.
  \end{itemize}
 \end{itemize}
@@ -133,16 +128,16 @@ opportunities and applying transformations to effect the reduction.
 
 \begin{talknotes}
 Why are we trying to optimize the space consumption of programs?
-@ Let's consider embedded systems first. @ Existing devices have a
+@ Let's consider embedded systems first. Existing devices have a
 fixed amount of memory.  We'd like to push more aggressive
-applications into these devices. @ We'd also like to reduce the memory
+applications into these devices. We'd also like to reduce the memory
 sizes, thus costs, for devices embodying new applications.
 
 @ But, perhaps surprisingly, space optimizations are also likely to be
-crucial for performance as well.  @ The disparity between processor
-speed and memory speed is getting larger, and @ space optimizations
+crucial for performance as well.  The disparity between processor
+speed and memory speed is getting larger, and space optimizations
 increase the effective cache size of a system, by packing more of the
-data you are interested in into the cache.  @  Furthermore, the extra
+data you are interested in into the cache.  Furthermore, the extra
 ALU operations for packing and unpacking data into space-efficient
 forms are getting cheaper and cheaper.
 
@@ -367,6 +362,7 @@ And here is how we formalize this: @
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
+\overlays{2}{
 \begin{slide}{Bitwidth analysis domains}
 {\yellow Domains:}
 \begin{itemize}
@@ -381,16 +377,19 @@ And here is how we formalize this: @
 \end{itemize}
 \item $\mathcal{L}:\left(\mathcal{C}\cup\mathcal{T}\right)_\bot$, abstract value lattice
 \end{itemize}
+\FromSlide{2}%
 {\yellow Concretization: $\mathcal{L}\to 2^\mathcal{Z}$}
 \begin{eqnarray*}
 \mathbb{C}\left[\bot\right] &=& \emptyset \\
 \mathbb{C}\left[\thinspace c\thinspace\right] &=& \left\{ c \right\} \\
 \mathbb{C}\left[\tuple{m,p}\right] &=&
-   \left\{ -n | n\in\mathbb{N} \;\wedge\; \ln n < m\right\} \cup
-   \left\{0\right\} \cup\\
-&& \mspace{14mu}\left\{  n | n\in\mathbb{N} \;\wedge\; \ln n < p\right\}\\
+%   \left\{ n \thinspace | {-2}^m < n < 0 \thinspace\right\} \cup
+%   \left\{0\right\} \cup\\
+%&& \left\{ n \thinspace | \thinspace\mspace{15mu}0\mspace{5mu} < n < 2^p \right\}\\
+    \left\{ n \thinspace | {-2}^m < n < 2^p \right\}\\
 \end{eqnarray*}
 \end{slide}
+}
 
 \begin{talknotes}
 These are the domains we need for the analysis.
@@ -405,12 +404,11 @@ will represent the bitwidth of positive values.
 Our lattice of abstract values for the bitwidth analysis will range
 over the raised sum of $\mathcal{C}$ and $\mathcal{T}$.
 
-The concretization function gives the full set of concrete values
+@ The concretization function gives the full set of concrete values
 which can be represented by a lattice value.  Constants represent a
-singleton set containing themselves, of course.  Notice that all
-bitwidth tuples represent a range including zero, and, as we've
-mentioned, the $m$ component summarizes the negative portions of the
-range, and the $p$ component the positive.
+singleton set containing themselves, of course.  Notice that a
+tuple $\tuple{m,p}$ represents all integer values greater than
+$-2^m$ and less than $2^p$, always including zero.
 ~%
 \end{talknotes}
 
@@ -454,10 +452,14 @@ The
 $\bot$ value will represent ``no information'' and is less than all
 members of $\mathcal{C}$ and $\mathcal{T}$ in the lattice.  Members of
 $\mathcal{T}$ are compared component-wise; a bitwidth is lesser only
-if both its components are lesser.  Finally, a constant $c$ is lesser
-only if the function $\func{bw}$ of $c$ is less-than-or-equal,
+if both its components are lesser.  Finally, a constant $c$ is
+less-than-or-equal-to a bitwidth specification
+only if the function $\func{bw}$ of $c$ is less-than-or-equal-to
+the bitwidth specification,
 @ where $\func{bw}(c)$ computes the number of bits needed to
-represent the signed constant $c$.  @ To give more intuition,
+represent the signed constant $c$.  
+Constants are incomparable in the lattice.
+@ To give more intuition,
 for values in twos complement binary
 notation @ the $p$ component of the result represents the location of
 the first one in the number, and the @ $m$ component constrains the
@@ -465,36 +467,36 @@ location of the first zero.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{6}{
+\overlays{1}{
 \begin{slide}{Some abstract evaluation rules}
-\begin{eqnarray*}
+\begin{align*}
 \onlySlide*{2}{\yellow}%
 \text{\tt -}\tuple{m,p}
- &\onlySlide*{2}{\yellow}=&\onlySlide*{2}{\yellow}%
+ &\onlySlide*{2}{\yellow}=%&\onlySlide*{2}{\yellow}%
  \tuple{p,m}
  \\
 \onlySlide*{3}{\yellow}%
 \tuple{m_l,p_l} \text{\tt+} \tuple{m_r,p_r}
- &\onlySlide*{3}{\yellow}=&\onlySlide*{3}{\yellow}%
+ &\onlySlide*{3}{\yellow}=%&\onlySlide*{3}{\yellow}%
  \tuple{1+\max(m_l,m_r),1+\max(p_l,p_r)}
  \\
 \onlySlide*{4}{\yellow}%
 \tuple{m_l,p_l} \text{\tt *} \tuple{m_r,p_r}
- &\onlySlide*{4}{\yellow}=&\onlySlide*{4}{\yellow}%
+ &\onlySlide*{4}{\yellow}=%&\onlySlide*{4}{\yellow}%
 \tuple{\begin{array}{l}\max(m_l+p_r,p_l+m_r),\\
                        \max(m_l+m_r,p_l+p_r)\end{array}}
  \\
 \onlySlide*{5}{\yellow}%
 \tuple{0,p_l} \text{\tt\&} \tuple{0,p_r}
- &\onlySlide*{5}{\yellow}=&\onlySlide*{5}{\yellow}%
+ &\onlySlide*{5}{\yellow}=%&\onlySlide*{5}{\yellow}%
  \tuple{0,\min(p_l,p_r)}
  \\
 \onlySlide*{6}{\yellow}
 \tuple{m_l,p_l}\text{\tt\&} \tuple{m_r,p_r}
- &\onlySlide*{6}{\yellow}=&\onlySlide*{6}{\yellow}%
+ &\onlySlide*{6}{\yellow}=%&\onlySlide*{6}{\yellow}%
  \tuple{\max(m_l,m_r),\max(p_l,p_r)}
  \\
-\end{eqnarray*}
+\end{align*}
 \end{slide}
 }
 
@@ -525,8 +527,7 @@ leading zeros in the result.
 
 @ If either value can be negative, the result must be more
 pessimistic, because every negative range includes the ``all-ones''
-value $-1$.  We don't have time to justify this rule in detail, but it
-is in the paper and you can check it at your leisure.
+value $-1$.
 
 ~%force rejust.
 \end{talknotes}
@@ -552,6 +553,9 @@ is in the paper and you can check it at your leisure.
 Formally, the result of our intraprocedural bitwidth analysis is a set $e$ of
 executable edges and a mapping from all variables to a lattice
 element constraining their values in all possible program executions.
+
+It's worth noting here that our analysis is performed on the program
+in Static Single Information form\ldots
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -577,9 +581,8 @@ $\func{val}(\text{\tt i}_2)\latleq\langle 0,\underbrace{6}_{1+\lfloor\ln 50\rflo
 }
 
 \begin{talknotes}
-It's worth noting here that our analysis is performed on the program
-in SSI form.
-SSI is a variant of SSA form which @ allows us to distinguish
+\ldots SSI is a variant of Static Single Assignment form which @ allows us to
+split the definitions and uses of {\tt i} in order to distinguish
 the values produced in the two different assignments to {\tt i} at the
 start of this example, as well as distinguish the possible values of
 {\tt i} at point {\it A} ($\tuple{0,6}$) and at point {\it B}.
@@ -593,7 +596,7 @@ start of this example, as well as distinguish the possible values of
   interprocedural analysis.
 \FromSlide{2}
 \begin{itemize}
-\item Ignore the left-hand side of expression {\tt o.f}
+\item Ignore the left component of expression {\tt o.f}
 \item Single analysis value for each declared field
 \end{itemize}
 \FromSlide{3}
@@ -602,7 +605,7 @@ start of this example, as well as distinguish the possible values of
 \item Discriminate between variables (but not fields) in distinct calling contexts.
 \end{itemize}
 \FromSlide{4}
-\item All results in this work use zero-length context
+\item All results in this talk use zero-length context
   ({\yellow context-insensitive}).
 \end{itemize}
 \end{slide}
@@ -1037,7 +1040,7 @@ Case 1: field is constant in constructor.
 In the first case,  the field is constant in the constructor.  Every
 instantiation which uses this constructor will set {\tt offset} to zero.
 (And as we mentioned before, it is never reset after construction.)
-So  we juse @ remove the assignment to {\tt offset} and
+So  we just @ remove the assignment to {\tt offset} and
 replace the instantiation of {\tt String} with that
 of {\tt SmallString}.
 \end{talknotes}
@@ -1130,7 +1133,8 @@ fairly neutral (no cost, no gain) fallback in the worst case.
 \item Done at compile time, on fields which can be shown to be
   compile-time constants, thus ``static.''
 \begin{itemize}
-\item Fields can not be mutated after the constructor completes.
+\item Fields cannot be mutated after the constructor completes
+\yellow except by subclasses.
 \end{itemize}
 \end{itemize}
 \end{slide}
@@ -1145,6 +1149,9 @@ determine the best splitting order in that case.
 We have two constraints: @ the fields must be
 ``mostly-constant'', and then cannot be modified after the completion
 of the constructor.
+Our implementation actually allows subclasses to modify the fields;
+because they extend the ``big'' version of the class, such mutation is
+safe.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1356,7 +1363,7 @@ First, we use value profiling to identify where externalization will
 be worthwhile.  Remember, we need at least 2/3 of the values to be
 some constant.  @ When we did the profiling, we looked at integer
 constants from $-5$ to $5$ and at {\tt null} for pointer types.
-@ We could that $0$ and $1$ were by far the most common
+@ We found that $0$ and $1$ were by far the most common
 ``mostly-constant'' values;  in a production implementation you
 could look only at these two and get most of our savings.
 \end{talknotes}
@@ -1458,9 +1465,10 @@ a small \emph{table index} instead.
 \overlays{3}{
 \begin{slide}{Header optimizations:\\\small claz compression}
 \begin{itemstep}%
-\item replace {\tt claz} pointer with a (smaller) table index.%
+\item Replace {\tt claz} pointer with a (smaller) table index.
+      Only instantiated types need be indexed.
 \item With co-operation of GC, works in dynamic environments.%
-\item Many applications use less than 256 object types.%
+\item Many applications instantiate less than 256 object types.%
 \end{itemstep}
 \end{slide}
 }
@@ -1544,8 +1552,9 @@ being used.  In practice, you can see it doesn't have much effect.
 {\tt mpegaudio} is an MP3 decoder, and {\tt jack} is a parser
 generator.
 
-But if you're paying attention, you'll realize that these aren't
-actually the \emph{really} interesting numbers.  A reduction in total
+%But if you're paying attention, you'll realize that these aren't
+%actually the \emph{really} interesting numbers.  
+A reduction in total
 allocated bytes is great, it reduces the amount of allocation and
 collection work the
 garbage collector has to do, but what you'd really like to see is a
@@ -1596,7 +1605,8 @@ should make sense now.  The thing to notice here is that we do a
 fantastic job with the portion of the program allocation that we're
 targetting.
 
-Indeed, if you want us to look good, you might consider how we do
+%Indeed, if you want us to look good, 
+You might want to consider how we do
 solely on the \emph{object} allocations in the program; discounting
 all array allocations.
 \end{talknotes}
@@ -1631,7 +1641,7 @@ Each bar, as we go left to right, represents the addition of one
 transformation to the previous program.
 You'll notice that the first three transformations, which are
 claz/field compression and byte-packing, offer a moderate speed
-\emph{improvement} over the original code.  This is wholly due to
+\emph{improvement} over the original code.  This is due to
 better performance in the garbage collector and cache as we shrink the
 objects.  The potential performance penalty for the claz indirection
 and the unaligned memory accesses are overwhelmed by the GC and caching
@@ -1640,7 +1650,7 @@ improvements.
 Static specialization, the white bar, gives back some of that
 performance gain.  This is due to the fact that we've virtualized
 field accesses, so where you previously had a simple memory access,
-you know have a method call and the overhead that goes with that.
+you now have a method call and the overhead that goes with that.
 There are various techniques we could use to mitigate this.
 
 Field externalization costs a little more, because it's a more
