@@ -28,7 +28,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.40 2000-10-17 19:32:53 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.41 2000-10-17 20:59:46 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -355,21 +355,15 @@ public abstract class Quad
 	    Quad.addEdge(from, q.prev[i].from_index, r, q.prev[i].to_index);
 	}
 	// for HANDLER quads, fixup the protectedSet.
-	if (q instanceof HANDLER) {
-	    HANDLER.ProtectedSet ps = ((HANDLER)q).protectedSet;
+	if (r instanceof HANDLER) {
+	    HANDLER h = (HANDLER) r;
+	    HANDLER.ProtectedSet ps = h.protectedSet;
 	    // map all protected quads.
-	    List oldqs = new ArrayList(), newqs = new ArrayList();
-	    for (Iterator it = new EnumerationIterator(ps.elements());
-		 it.hasNext(); ) {
-		Quad qq = (Quad) it.next();
-		oldqs.add(qq);
-		newqs.add(copyone(qf, qq, old2new, ctm));
+	    Quad[] oldqs=(Quad[])h.protectedSet().toArray(new Quad[ps.size()]);
+	    for (int i=0; i < oldqs.length; i++) {
+		ps.remove(oldqs[i]);
+		ps.insert(copyone(qf, oldqs[i], old2new, ctm));
 	    }
-	    // update the set
-	    for (Iterator it=oldqs.iterator(); it.hasNext(); )
-		ps.remove((Quad)it.next());
-	    for (Iterator it=newqs.iterator(); it.hasNext(); )
-		ps.insert((Quad)it.next());
 	}
 	return r;
     }

@@ -11,6 +11,7 @@ import harpoon.Util.WorkSet;
 import harpoon.Analysis.UseDef;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
@@ -21,7 +22,7 @@ import java.util.Set;
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.18 2000-03-25 09:01:14 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.19 2000-10-17 20:59:46 cananian Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -148,7 +149,7 @@ public class Pattern {
 		while (hi.needHandler()) {
 		    Object[] handler=hi.pophandler();
 		    Temp Tex=new Temp(q.getFactory().tempFactory());
-		    HANDLER h=new HANDLER(q.getFactory(), q, Tex, (HClass) handler[2] , new ReProtection(q));
+		    HANDLER h=new HANDLER(q.getFactory(), q, Tex, (HClass) handler[2] , new HANDLER.HashProtectSet(Collections.singleton(q)));
 		    typemap.put(new Tuple(new Object[]{h, Tex}), handler[2]);
 		    handlers.add(h);
 		    Quad.addEdge(h,0,(Quad)handler[0],((Integer)handler[1]).intValue());

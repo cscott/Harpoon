@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.26 2000-01-13 23:48:04 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.27 2000-10-17 20:59:46 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -417,7 +417,7 @@ final class Translate { // not public.
 	HANDLER newHandler(State s, List hpair,
 			   HCodeElement src, HClass caughtException) {
 	    HANDLER h = new HANDLER(ss.qf, src, s.stack(0), caughtException,
-				    new TransProtection());
+				    new HANDLER.HashProtectSet());
 	    // null hpair is special: it means we're synthesizing an outer
 	    // handler context for a synchronized method.
 	    if (hpair==null)
@@ -442,11 +442,11 @@ final class Translate { // not public.
 	}
 	void recordHandler(HANDLER h, Quad start, Quad end) {
 		recordHandler(new HashSet(), start, end, 
-			      (TransProtection) h.protectedSet);
+			      h.protectedSet);
 	}
 	private void recordHandler(Set done, Quad start, Quad end,
-				   TransProtection s) {
-	    s.add(start); done.add(start);
+				   ProtectedSet s) {
+	    s.insert(start); done.add(start);
 	    if (start!=end) {
 		Quad next[] = start.next();
 		for (int i=0; i<next.length; i++)
@@ -501,18 +501,6 @@ final class Translate { // not public.
 	    this.in = in;
 	    this.header = header;
 	    this.which_succ = which_succ;
-	}
-    }
-
-    /** Our ProtectedSet. */
-    static final private class TransProtection extends HashSet
-	implements ProtectedSet {
-	TransProtection() { super(); }
-	public boolean isProtected(Quad q) { return contains(q); }
-	public void remove(Quad q) { super.remove(q); }
-	public void insert(Quad q) { super.add(q); }
-	public java.util.Enumeration elements() {
-	    return new harpoon.Util.IteratorEnumerator( iterator() );
 	}
     }
 

@@ -19,7 +19,6 @@ import harpoon.Analysis.Quads.TypeInfo;
 import harpoon.Util.Tuple;
 import harpoon.Util.WorkSet;
 import harpoon.Analysis.Maps.TypeMap;
-import harpoon.IR.Quads.ReProtection;
 
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -36,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.46 2000-10-06 21:20:33 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.47 2000-10-17 20:59:46 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -114,7 +113,7 @@ final class ReHandler {
 		//iterate through the handlers again
 		iterate=handlermap.get(call).iterator();
 		while(iterate.hasNext()) {
-		    ReProtection protlist=new ReProtection();
+		    ProtectedSet protlist=new HANDLER.HashProtectSet();
 		    protlist.insert(qm.getHead(call));
 		    List handlers=handlermap.get(call);
 		    HandInfo nexth=(HandInfo)iterate.next();
@@ -305,7 +304,7 @@ final class ReHandler {
 
 
     //makes an exit for the anyhandler
-    private static void makeanyhandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, ReProtection protlist, Set phiset, Map ntypemap, TypeMap otypemap, Set callset) {
+    private static void makeanyhandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, ProtectedSet protlist, Set phiset, Map ntypemap, TypeMap otypemap, Set callset) {
 	Quad newhandler = new HANDLER(qf, qm.getHead(call),
 				      Quad.map(ss.ctm, call.retex()),
 				      null, protlist);
@@ -350,7 +349,7 @@ final class ReHandler {
 
 
     //makes a specific handler    
-    private static void makespechandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, Set throwset, HandInfo nexth, ReProtection protlist, Set phiset, Set phiold, boolean any, Map ntypemap, TypeMap otypemap) {
+    private static void makespechandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, Set throwset, HandInfo nexth, ProtectedSet protlist, Set phiset, Set phiold, boolean any, Map ntypemap, TypeMap otypemap) {
 	boolean needhand=true;
      
 	if (any)
