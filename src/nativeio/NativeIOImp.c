@@ -42,6 +42,7 @@ static jfieldID IA_addrID  = 0; /* The field ID of InetAddress.address */
 static jfieldID IA_familyID= 0; /* The field ID of InetAddress.family */
 static jclass IOExcCls  = 0; /* The java/io/IOException class object */
 static int inited = 0; /* whether the above variables have been initialized */
+FLEX_MUTEX_DECLARE_STATIC(init_mutex);
 
 static int initializePSI(JNIEnv *env) {
     jclass PSICls, IACls;
