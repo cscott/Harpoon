@@ -1,11 +1,11 @@
-# $Id: GNUmakefile,v 1.61.2.18 1999-02-19 02:05:41 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.19 1999-02-23 22:53:51 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes +$$
 JCC=javac -J-mx64m
 JDOC=javadoc
 JAR=jar
-JDOCFLAGS=-version -author # -package
+JDOCFLAGS=-J-mx64m -version -author # -package
 JDOCIMAGES=/usr/local/jdk/docs/api/images
 SSH=ssh
 SCP=scp -A
