@@ -431,9 +431,9 @@
                                    \parbox{2.8in}{\small #1}}%
      \else \copyrightspace \fi}
 
-\def\marginpar{\ClassError{acmconf}%
-   {The \protect\marginpar command is not allowed in the `acmconf' document class}%
-   {Remove the \protect\marginpar\space command from the file}}
+%\def\marginpar{\ClassError{acmconf}%
+%   {The \protect\marginpar command is not allowed in the `acmconf' document class}%
+%   {Remove the \protect\marginpar\space command from the file}}
 
 \mark{{}{}}   % Initializes TeX's marks
 
