@@ -45,16 +45,16 @@ struct claz {
   u_int32_t size;		/* object size, including header */
   union {
     ptroff_t bitmap;		/* garbage collection field bitmap, or */
-    struct aux_bitmap *ptr;	/* pointer to larger gc bitmap. */
+    struct aux_gcbitmap *ptr;	/* pointer to larger gc bitmap. */
   } gc_info;
   u_int32_t scaled_class_depth; /* sizeof(struct claz *) * class_depth */
   struct claz *display[0];	/* sized by FLEX */
   /* class method dispatch table after display */
 };
 
-/* the aux_bitmap structure stores large gc bitmaps */
-struct aux_bitmap {
-  void *bitmap[0];          /* variable size bitmap */
+/* the aux_gcbitmap structure stores large gc bitmaps */
+struct aux_gcbitmap {
+  ptroff_t bitmap[0];          /* variable size bitmap */
 };
 
 /* the oobj structure tells you what's inside the object layout. */
