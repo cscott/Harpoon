@@ -6,10 +6,12 @@ package harpoon.Analysis.Companions;
 import java.util.Collection;
 
 /**
- * <code>MutableGraph</code>
+ * A <code>MutableGraph</code> is a a <code>Graph</code> which can
+ * be modified.  The methods allow the removal and addition of edges and
+ * nodes to the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MutableGraph.java,v 1.1 2003-05-09 16:53:17 cananian Exp $
+ * @version $Id: MutableGraph.java,v 1.2 2003-05-09 20:20:10 cananian Exp $
  */
 public interface MutableGraph<N extends Graph.Node<N,E>,
                               E extends Graph.Edge<N,E>> extends Graph<N,E> {
