@@ -29,7 +29,6 @@ import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Backend.Maps.NameMap;
-import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.Default;
 import harpoon.Util.Util;
@@ -66,7 +65,7 @@ import java.io.PrintWriter;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparcMain.java,v 1.1.2.6 2000-01-17 11:52:10 cananian Exp $
+ * @version $Id: SparcMain.java,v 1.1.2.7 2000-01-17 12:29:52 cananian Exp $
  */
 public class SparcMain extends harpoon.IR.Registration {
  
@@ -93,7 +92,6 @@ public class SparcMain extends harpoon.IR.Registration {
     private static ClassHierarchy classHierarchy;
     private static CallGraph callGraph;
     private static Frame frame;
-    private static OffsetMap offmap;
 
     private static File ASSEM_DIR = null;
 
@@ -146,7 +144,6 @@ public class SparcMain extends harpoon.IR.Registration {
 	}
 	callGraph = new CallGraph(classHierarchy, hcf);
 	frame = new Frame(startM, classHierarchy, callGraph);
-	offmap = frame.getOffsetMap();
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
 	hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
