@@ -23,10 +23,13 @@ jint FNI_ThrowNew(JNIEnv *env, jclass clazz, const char *message) {
   jmethodID consID;
   jstring strobj;
 
-  /** No error-checking is being done here. */
+  /** On error, throw *that* exception instead of the one we're building. */
   strobj = (*env)->NewStringUTF(env, message); 
+  if ((*env)->ExceptionOccurred(env)) return -1;
   consID = (*env)->GetMethodID(env, clazz, "<init>", "(Ljava/lang/String;)V");
+  if ((*env)->ExceptionOccurred(env)) return -1;
   excobj = (*env)->NewObject(env, clazz, consID, strobj);
+  if ((*env)->ExceptionOccurred(env)) return -1;
   return (*env)->Throw(env, excobj);
 }
 
