@@ -207,6 +207,7 @@ int main(int argc, char *argv[]) {
   (*env)->CallNonvirtualVoidMethod(env, mainthread, thrCls, exitID);
   CHECK_EXCEPTIONS(env);
   (*env)->DeleteLocalRef(env, thrCls);
+
   /* main thread is dead now. */
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_FALSE;
   FNI_SetJNIData(env, mainthread, NULL, NULL); /* clear the env from the obj */
@@ -216,6 +217,9 @@ int main(int argc, char *argv[]) {
   FNI_MonitorExit(env, mainthread);
   // wait for all threads to finish up.
   FNI_java_lang_Thread_finishMain(env);
+#ifdef WITH_REALTIME_THREADS
+  destroyEnv();
+#endif
 
 #ifdef WITH_STATISTICS
   /* print out collected statistics */

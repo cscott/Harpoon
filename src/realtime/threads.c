@@ -364,12 +364,6 @@ void cleanupThreadQueue(JNIEnv* env)
     RTJ_FREE(thread_queue);
     thread_queue = nextPiece;
   }
-  // by cata: This dies horribly, and I'm too lazy to debug it...
-/*   while(empty_queue != NULL) { */
-/*     nextPiece = empty_queue->next; */
-/*     RTJ_FREE(empty_queue); */
-/*     empty_queue = nextPiece; */
-/*   } */
 }
 
 struct thread_queue_struct* lookupThread(jlong threadID)
@@ -646,6 +640,18 @@ void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args,
   /* And we're back - the main Java thread has exited */
   StopSwitching(); //stop Thread switching
   cleanupThreadQueue(env); //get rid of the threadQueue
+  if (currentThread == NULL) //make sure main still has access to the env for exit
+    setupEnv(env); 
+}
+
+void setupEnv(JNIEnv *env) {
+  currentThread = RTJ_CALLOC_UNCOLLECTABLE(sizeof(struct thread_queue_struct), 1);
+  currentThread->jnienv = env; 
+}
+
+void destroyEnv() {
+  if (currentThread != NULL) RTJ_FREE(currentThread);
+  currentThread = NULL;
 }
 
 /* start the main Java thread */

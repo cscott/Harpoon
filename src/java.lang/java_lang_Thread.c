@@ -636,11 +636,10 @@ static void * thread_startup_routine(void *closure) {
 #if defined(WITH_REALTIME_THREADS)
   realtime_unschedule_thread(env, thread);
 #endif
+  (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
+  assert(!((*env)->ExceptionOccurred(env)));
 #ifdef WITH_REALTIME_JAVA
   (*env)->CallVoidMethod(env, thread, cleanupID);
-#endif
-#if !defined(WITH_REALTIME_THREADS) /* cata doesn't like Thread.exit() */
-  (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
   assert(!((*env)->ExceptionOccurred(env)));
 #endif
   /* This thread is dead now. */

@@ -65,6 +65,9 @@ void* startMain(void* mclosure);
 
 void setScheduler(JNIEnv *env, jobject thread);
 
+void setupEnv(JNIEnv *env);
+void destroyEnv();
+
 #endif
 
 
