@@ -26,7 +26,7 @@ import java.util.Map;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.1.2.11 2000-10-06 21:20:33 cananian Exp $
+ * @version $Id: QuadSSI.java,v 1.1.2.12 2000-10-17 03:29:00 cananian Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -73,6 +73,7 @@ public class QuadSSI extends Code /* which extends HCode */ {
      *  through <code>QuadNoSSA.codeFactory()</code>.
      */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
+	if (hcf.getCodeName().equals(codename)) return hcf;
 	if (hcf.getCodeName().equals(QuadNoSSA.codename)) {
 	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {

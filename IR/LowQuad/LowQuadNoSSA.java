@@ -21,7 +21,7 @@ import harpoon.IR.Quads.ToNoSSA;
  * always be empty.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.29 2000-10-17 01:10:35 cananian Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.30 2000-10-17 03:28:45 cananian Exp $
  */
 public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
     /** The name of this code view. */
@@ -74,6 +74,7 @@ public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
      * @see LowQuadSSI#codeFactory(HCodeFactory)
      */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
+	if (hcf.getCodeName().equals(codename)) return hcf;
 	if (hcf.getCodeName().equals(LowQuadSSI.codename)) {
 	    return new harpoon.ClassFile.SerializableCodeFactory() { 
 		public HCode convert(HMethod m) { 

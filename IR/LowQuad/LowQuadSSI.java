@@ -31,7 +31,7 @@ import java.util.Map;
  * representation in SSI form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSI.java,v 1.1.2.10 2000-10-06 21:20:26 cananian Exp $
+ * @version $Id: LowQuadSSI.java,v 1.1.2.11 2000-10-17 03:28:45 cananian Exp $
  */
 public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     /** The name of this code view. */
@@ -115,6 +115,7 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
      * @see QuadSSI#codeFactory(HCodeFactory)
      */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
+	if (hcf.getCodeName().equals(codename)) return hcf;
 	if (hcf.getCodeName().equals(QuadSSI.codename)) {
 	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
