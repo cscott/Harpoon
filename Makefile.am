@@ -1,11 +1,28 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in configure aclocal.m4 \
-		       include/config.h.in include/stamp-h.in
+		       include/config.h.in include/stamp-h.in include/asm
 EXTRA_DIST =
 SUBDIRS = src
 
+CVS_TAG=$(firstword $(shell cvs status Makefile.am | grep -v "(none)" | \
+		@AWK@ '/Sticky Tag/{print $$3}'))
+CVS_REVISION=$(patsubst %,-r %,$(CVS_TAG))
+
 list:
 	@find . -path './Contrib' -prune -o -name "*.[ch]" -print
+
+update: needs-cvs
+	cvs -q update -Pd $(CVS_REVISION)
+	@-if [ -x @FORTUNE@ ]; then echo ""; @FORTUNE@; fi
+
+# the 'cvs' rules only make sense if you've got a copy checked out from CVS
+needs-cvs:
+	@if [ ! -d CVS ]; then \
+	  echo This rule needs CVS access to the source tree. ; \
+	  exit 1; \
+	fi
+
+.PHONY: list update needs-cvs
 
 ## automake version 1.4 is required.
 AUTOMAKE_OPTIONS = 1.4
