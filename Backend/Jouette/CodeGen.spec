@@ -36,7 +36,7 @@ class JouetteCode extends Code {
     public String getName() { return "jouette"; }
 }
 class JouetteFrame extends DefaultFrame {
-    public Temp regZero() { return getAllRegisters()[0]; }
+    public Temp regZero() { return getRegister(0); }
 }
 // end of stub classes.
 
@@ -45,7 +45,7 @@ class JouetteFrame extends DefaultFrame {
  * 
  * @see Appel, <U>Modern Compiler Implementation in Java</U>, pg. 196, 213-214 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.3 1999-06-30 06:32:17 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.4 1999-09-11 17:19:45 cananian Exp $
  */
 %%
 

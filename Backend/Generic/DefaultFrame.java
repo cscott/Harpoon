@@ -42,7 +42,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.27 1999-09-11 05:43:18 pnkfelix Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.28 1999-09-11 17:19:42 cananian Exp $
  */
 public class DefaultFrame extends Frame implements AllocationInfo {
 
@@ -119,24 +119,8 @@ public class DefaultFrame extends Frame implements AllocationInfo {
         return false;
     }
 
-    public Temp FP() {
-        return getAllRegisters()[2];
-    }
-
-    public Temp[] getAllRegisters() {
-        return (Temp[]) Util.safeCopy(Temp.arrayFactory, registers);
-    }
-
-    public Temp[] getGeneralRegisters() {
-        return (Temp[]) Util.safeCopy(Temp.arrayFactory, registers);
-    }
-
     public TempFactory tempFactory() { 
         return m_tempFactory;
-    }
-
-    public TempFactory regTempFactory() {
-        return regTempFactory;
     }
 
     public Stm procPrologue(TreeFactory tf, HCodeElement src, 
@@ -206,8 +190,25 @@ public class DefaultFrame extends Frame implements AllocationInfo {
     }
     /** Stub added by FSK. */
     public RegFileInfo getRegFileInfo() {
-	return null;
+	return m_regfileinfo;
     }
+    private final RegFileInfo m_regfileinfo = new RegFileInfo() {
+	public Set liveOnExit() { return java.util.Collections.EMPTY_SET; }
+	public TempFactory regTempFactory() { return regTempFactory; }
+	public Iterator suggestRegAssignment(Temp t, Map regfile) {
+	    /* stub */
+	    return null;
+	}
+	public Temp[] getAllRegisters() {
+	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, registers);
+	}
+	public Temp[] getGeneralRegisters() {
+	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, registers);
+	}
+	public Temp FP() {
+	    return getRegister(2);
+	}
+    };
 }
 
 
