@@ -88,7 +88,7 @@ void SimpleHash::addParent(SimpleHash* parent) {
     parents[numparents++] = parent;    
 }
 
-void SimpleHash::add(int key, int data) {
+int SimpleHash::add(int key, int data) {
     unsigned int hashkey = (unsigned int)key % size;
     
     LinkedHashNode *ptr = &bucket[hashkey];
@@ -98,7 +98,7 @@ void SimpleHash::add(int key, int data) {
     while (ptr->next) {
         ptr = ptr->next;
         if (ptr->key == key && ptr->data == data) {
-            return;
+            return 0;
         }
     }
     
@@ -110,7 +110,7 @@ void SimpleHash::add(int key, int data) {
         parents[i]->add(key, data);
     }
 
-    return;        
+    return key;
 }
 
 bool SimpleHash::contains(int key) {

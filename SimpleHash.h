@@ -91,7 +91,7 @@ public:
 
     ~SimpleHash();
 
-    void add(int key, int data);
+    int add(int key, int data);
 
     bool contains(int key);
 
