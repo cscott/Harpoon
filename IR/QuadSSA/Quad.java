@@ -9,21 +9,19 @@ import harpoon.Temp.TempMap;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.20 1998-09-18 02:51:13 cananian Exp $
+ * @version $Id: Quad.java,v 1.21 1998-09-18 21:37:15 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
                harpoon.IR.Properties.UseDef, harpoon.IR.Properties.Edges,
                harpoon.IR.Properties.Renameable
 {
-    String sourcefile;
-    int linenumber;
+    HCodeElement source;
     int id;
     /** Constructor. */
     protected Quad(HCodeElement source,
 		   int prev_arity, int next_arity) {
-	this.sourcefile = source.getSourceFile();
-	this.linenumber = source.getLineNumber();
+	this.source = source;
 	synchronized(lock) {
 	    this.id = next_id++;
 	}
@@ -39,10 +37,10 @@ public abstract class Quad
 
     /** Returns the original source file name that this <code>Quad</code>
      *  is derived from. */
-    public String getSourceFile() { return sourcefile; }
+    public String getSourceFile() { return source.getSourceFile(); }
     /** Returns the line in the original source file that this 
      *  <code>Quad</code> is derived from. */
-    public int getLineNumber() { return linenumber; }
+    public int getLineNumber() { return source.getLineNumber(); }
     /** Returns a unique numeric identifier for this <code>Quad</code>. */
     public int getID() { return id; }
     /** Force everyone to reimplement toString() */

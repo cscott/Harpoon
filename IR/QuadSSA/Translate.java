@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.73 1998-09-16 02:33:00 cananian Exp $
+ * @version $Id: Translate.java,v 1.74 1998-09-18 21:37:15 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -274,26 +274,32 @@ class Translate  { // not public.
 	Quad.addEdge(quads, 0, q1, 0);
 	Quad.addEdge(q1, 0, q2, 0);
 
-	// if method is synchronized, place inside MONITOR
+	// if method is synchronized, place MONITORENTER at top.
 	Quad q = q2;
-	/* XXX FIXME
 	if (isSynchronized) {
-	    MONITOR Qm = new MONITOR(firstInstr, s.lv[0],
-				     new HEADER(firstInstr, s.footer));
-	    Quad.addEdge(q2, 0, Qm, 0);
-
-	    quads.footer = new FOOTER(firstInstr);
-	    quads.footer.attach(Qm, 0);
-
-	    q = Qm.block;
+	    Util.assert(!isStatic);
+	    q = new MONITORENTER(firstInstr, s.lv[0] /* this */ );
+	    Quad.addEdge(q2, 0, q, 0);
 	}
 	// FIXME: move all RETURN/THROW inside MONITOR body to
 	// outside (for synchronized methods only).
 
-	*/
-
 	// translate using state.
 	trans(SS, new TransState(s, firstInstr, q, 0));
+
+	// if method is synchronized, place MONITOREXIT at bottom(s).
+	if (isSynchronized) {
+	    // for all predecessors of FOOTER
+	    for (int i=0; i < footer.prev.length; i++) {
+		// put a MONITOREXIT before the return/throw/whatever.
+		Quad Qexit = footer.prev(i);
+		Util.assert(Qexit.prev.length==1); // only one predecessor.
+		Quad Qm = new MONITOREXIT(Qexit.source, s.lv[0] /* this */);
+		Edge e = Qexit.prevEdge(0);
+		Quad.addEdge((Quad)e.from(), e.which_succ(), Qm, 0);
+		Quad.addEdge(Qm, 0, (Quad)e.to(), e.which_pred());
+	    }
+	}
 
 	// return result.
 	return quads;
@@ -1005,8 +1011,13 @@ class Translate  { // not public.
 			 ns.stack(0), new Temp[] { s.stack(1), s.stack(0) });
 	    break;
 	case Op.MONITORENTER:
+	    ns = s.pop();
+	    q = new MONITORENTER(in, s.stack(0));
+	    break;
 	case Op.MONITOREXIT:
-	    Util.assert(false); // should be caught at higher level.
+	    ns = s.pop();
+	    q = new MONITOREXIT(in, s.stack(0));
+	    break;
 	case Op.MULTIANEWARRAY:
 	    {
 		OpClass opd0 = (OpClass) in.getOperand(0);
@@ -1427,10 +1438,10 @@ class Translate  { // not public.
 
 		if (SS.allTries[i].caughtException()==null) { // catch any.
 		    for (int j=0; j < phiState.stackSize ; j++) {
-			if (phiState.stack(i) == null ||
-			    phiState.stack(i) == ns.stack(i)) continue;
+			if (phiState.stack(j) == null ||
+			    phiState.stack(j) == ns.stack(j)) continue;
 			Quad q1 = new MOVE(ts.in, 
-					   phiState.stack(i), ns.stack(i));
+					   phiState.stack(j), ns.stack(j));
 			Quad.addEdge(header, which_succ, q1, 0);
 			header = q1; which_succ = 0;
 		    }

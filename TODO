@@ -1,5 +1,5 @@
 ---- Sep-18-98
-Fix MONITOR handling.
+X Fix MONITOR handling.
 ---- Sep-16-98
 [cananian@lesser-magoo Code]$ time java -mx128m harpoon.Main.Main harpoon.IR.QuadSSA.Translate
 java.lang.OutOfMemoryError: 
@@ -124,13 +124,13 @@ Runtime exception check on MONITOREXIT.
 X Figure out if we really need JMP/NOP/LET quads.
 
 ---- Aug-24-98
-Test:
- method() {
-   synchronized(new Object()) {
-     synchronized(new Object()) {
-     }
-   }
- }
+X Test:
+X  method() {
+X    synchronized(new Object()) {
+X      synchronized(new Object()) {
+X      }
+X    }
+X  }
 Test:
  method() {
   try {
