@@ -6,6 +6,8 @@ package harpoon.Analysis.EventDriven;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Loader;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.FOOTER;
@@ -19,17 +21,18 @@ import harpoon.Temp.TempFactory;
 
 /**
  * <code>EventDrivenCode</code>
- * 
+ *
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDrivenCode.java,v 1.1.2.5 1999-11-22 20:59:27 bdemsky Exp $
+ * @version $Id: EventDrivenCode.java,v 1.1.2.6 2000-01-13 23:51:10 bdemsky Exp $
  */
 public class EventDrivenCode extends harpoon.IR.Quads.QuadNoSSA {
     public static final String codename = "quad-no-ssa";
-
+    
     /** Creates a <code>EventDrivenCode</code>. */
-    public EventDrivenCode(HMethod parent, HMethod newmain, Temp[] params) {
+    public EventDrivenCode(HMethod parent, HMethod newmain, Temp[] params,
+			   Linker linker) {
         super(parent, null);
-	this.quads = buildCode(newmain, params);
+	this.quads = buildCode(newmain, params, linker);
     }
 
     private EventDrivenCode(HMethod parent) {
@@ -53,7 +56,7 @@ public class EventDrivenCode extends harpoon.IR.Quads.QuadNoSSA {
 	return harpoon.IR.Quads.QuadNoSSA.codename;
     }
 
-    private Quad buildCode(HMethod newmain, Temp[] params) {
+    private Quad buildCode(HMethod newmain, Temp[] params, Linker linker) {
 	System.out.println("Entering EventDrivenCode.buildCode()");
 	HEADER h = new HEADER(this.qf, null);
 	FOOTER f = new FOOTER(this.qf, null, 4);
@@ -86,7 +89,7 @@ public class EventDrivenCode extends harpoon.IR.Quads.QuadNoSSA {
 	HMethod schloop = null;
 	try {
 	    final HClass sch = 
-		HClass.forName("harpoon.Analysis.ContBuilder.Scheduler");
+		linker.forName("harpoon.Analysis.ContBuilder.Scheduler");
 		//		HClass.forName("java.continuation.Scheduler");
 	    schloop = sch.getDeclaredMethod("loop", new HClass[0]);
 	} catch (Exception e) {
@@ -115,5 +118,6 @@ public class EventDrivenCode extends harpoon.IR.Quads.QuadNoSSA {
 	return h;
     }    
 }
+
 
 

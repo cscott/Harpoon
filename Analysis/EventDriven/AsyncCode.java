@@ -9,12 +9,20 @@ import harpoon.Analysis.EnvBuilder.EnvBuilder;
 import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.Quads.Unreachable;
 import harpoon.ClassFile.HClass;
-import harpoon.ClassFile.HClassSyn;
+import harpoon.ClassFile.HClassMutator;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HMethodMutator;
+//import harpoon.ClassFile.HClassSyn;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
-import harpoon.ClassFile.HMethod;
-import harpoon.ClassFile.HMethodSyn;
+import harpoon.ClassFile.Loader;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Relinker;
+import harpoon.ClassFile.UniqueName;
+
+
+//import harpoon.ClassFile.HMethodSyn;
 import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CJMP;
@@ -52,7 +60,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.24 2000-01-11 05:51:14 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.25 2000-01-13 23:51:10 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -74,9 +82,6 @@ public class AsyncCode {
      *  @param ucf
      *         <code>UpdateCodeFactory</code> with which to register new
      *         <code>HCode</code>
-     *  @param classMap
-     *         <code>Map</code> mapping original classes to the 
-     *         <code>HClassSyn</code> copies of.
      *  @param bm
      *         <code>ToAsync.BlockingMethods</code> object which tells
      *         the analysis information about lowest level blocking calls
@@ -85,7 +90,7 @@ public class AsyncCode {
     public static void buildCode(HCode hc, Map old2new, Set async_todo, 
 			   QuadLiveness liveness,
 			   Set blockingcalls, 
-			   UpdateCodeFactory ucf, Map classMap, ToAsync.BlockingMethods bm, HMethod mroot) 
+			   UpdateCodeFactory ucf, ToAsync.BlockingMethods bm, HMethod mroot, Linker linker) 
 	throws NoClassDefFoundError
     {
 	System.out.println("Entering AsyncCode.buildCode()");
@@ -110,7 +115,7 @@ public class AsyncCode {
 					   old2new, cont_map, 
 					   env_map, liveness,
 					   blockingcalls, hc.getMethod(), 
-					   classMap,hc, ucf,bm,mroot);
+					   hc, ucf,bm,mroot, linker);
 	    quadc.accept(cv);
 	}
     }
@@ -121,17 +126,17 @@ public class AsyncCode {
 	Set blockingcalls, async_todo;
 	HMethod hmethod;
 	boolean header;
-	Map classMap;
 	CloningVisitor clonevisit;
 	QuadLiveness liveness;
 	UpdateCodeFactory ucf;
+	Linker linker;
 
 	public ContVisitor(WorkSet cont_todo, Set async_todo, 
 			   Map old2new, Map cont_map, 
 			   Map env_map, QuadLiveness liveness,
 			   Set blockingcalls, HMethod hmethod, 
-			   Map classMap, HCode hc, UpdateCodeFactory ucf,
-			   ToAsync.BlockingMethods bm, HMethod mroot) {
+			   HCode hc, UpdateCodeFactory ucf,
+			   ToAsync.BlockingMethods bm, HMethod mroot, Linker linker) {
 	    this.liveness=liveness;
 	    this.env_map=env_map;
 	    this.cont_todo=cont_todo;
@@ -140,13 +145,13 @@ public class AsyncCode {
 	    this.cont_map=cont_map;
 	    this.blockingcalls=blockingcalls;
 	    this.hmethod=hmethod;
-	    this.classMap=classMap;
 	    this.header=false;
 	    this.ucf=ucf;
+	    this.linker=linker;
 	    this.clonevisit=new CloningVisitor(blockingcalls, cont_todo,
 					       cont_map, env_map, liveness,
 					       async_todo, old2new,
-					       classMap,hc,ucf,bm,mroot);
+					       hc,ucf,bm,mroot, linker);
 	}
 
 	public void visit(Quad q) {
@@ -174,7 +179,7 @@ public class AsyncCode {
 	    //nmh is the HMethod we wish to attach this HCode to
 	    System.out.println("ContVisiting"+ q);
 	    HClass hclass=(HClass) cont_map.get(q);
-	    HClass throwable=HClass.forName("java.lang.Throwable");
+	    HClass throwable=linker.forName("java.lang.Throwable");
 	    HMethod resume=(q.method().getReturnType()==HClass.Void)?
 		hclass.getDeclaredMethod("resume",new HClass[0])
 		:hclass.getDeclaredMethod("resume",
@@ -243,7 +248,6 @@ public class AsyncCode {
 	Map cont_map;
 	Set async_todo;
 	Map old2new;
-	Map classMap;
 	ContCode hcode;
 	CloningTempMap ctmap;
 	HashMap quadmap;
@@ -257,25 +261,27 @@ public class AsyncCode {
 	ToAsync.BlockingMethods bm;
 	Set phiset;
 	HMethod mroot;
-	
+	Linker linker;
+
 	public CloningVisitor(Set blockingcalls, Set cont_todo,
 			      Map cont_map, Map env_map, 
 			      QuadLiveness liveness, Set async_todo,
-			      Map old2new, Map classMap, 
+			      Map old2new, 
 			      HCode hc, UpdateCodeFactory ucf,
-			      ToAsync.BlockingMethods bm, HMethod mroot) {
+			      ToAsync.BlockingMethods bm, HMethod mroot, 
+			      Linker linker) {
 	    this.liveness=liveness;
 	    this.blockingcalls=blockingcalls;
 	    this.cont_todo=cont_todo;
 	    this.cont_map=cont_map;
 	    this.async_todo=async_todo;
 	    this.old2new=old2new;
-	    this.classMap=classMap;
 	    this.env_map=env_map;
 	    this.ucf=ucf;
 	    this.hc=hc;
 	    this.bm=bm;
 	    this.mroot=mroot;
+	    this.linker=linker;
 	}
 
 	public void reset(HMethod nhm, TempFactory otf, boolean isCont) {
@@ -304,7 +310,7 @@ public class AsyncCode {
 	    if (env_map.containsKey(q))
 		return (HClass) env_map.get(q);
 	    HClass nhclass=(new EnvBuilder(ucf, hc, 
-					  q, liveness.getLiveOutArray(q))).makeEnv();
+					  q, liveness.getLiveInandOutArray(q),linker)).makeEnv();
 	    env_map.put(q, nhclass);
 	    return nhclass;
 	}
@@ -368,7 +374,7 @@ public class AsyncCode {
 		Temp suppress =
 		    (resumeexception == 0) ?
 		    ((CALL)q).retval() : ((CALL)q).retex();
-      		Temp[] liveout=liveness.getLiveOutArray(q);
+      		Temp[] liveout=liveness.getLiveInandOutArray(q);
 
 		Quad prev = get;
 		HField[] envfields=getEnv(q).getDeclaredFields();
@@ -439,7 +445,7 @@ public class AsyncCode {
 	    HMethod m=hc.getMethod();
 	    HClass hcl=m.getDeclaringClass();
 
-	    if (HClass.forName("java.lang.Runnable").
+	    if (linker.forName("java.lang.Runnable").
 		isSuperinterfaceOf(hcl)&&
 		hcl.getMethod("run",new HClass[0]).equals(m))
 		return true;
@@ -515,9 +521,9 @@ public class AsyncCode {
 		HClass rettype=hc.getMethod().getReturnType();
 		String pref = 
 		    ContBuilder.getPrefix(rettype);
-		HClass continuation = HClass.forName
+		HClass continuation = linker.forName
 		    ("harpoon.Analysis.ContBuilder." + pref + "DoneContinuation");
-		HClass ret=rettype.isPrimitive()?rettype:HClass.forName("java.lang.Object");
+		HClass ret=rettype.isPrimitive()?rettype:linker.forName("java.lang.Object");
 		HConstructor constructor=(ret!=HClass.Void)?continuation.getConstructor(new HClass[]{ret}):
 		    continuation.getConstructor(new HClass[0]);
 		Temp newt=new Temp(tf);
@@ -555,7 +561,7 @@ public class AsyncCode {
 	    if (isCont) {
 		HClass hclass=hcode.getMethod().getDeclaringClass();
 		HField hfield=hclass.getField("next");
-		HClass throwable=HClass.forName("java.lang.Throwable");
+		HClass throwable=linker.forName("java.lang.Throwable");
 		HMethod resume=
 		    hfield.getType().getMethod("exception",
 						       new HClass[] {throwable});
@@ -589,7 +595,7 @@ public class AsyncCode {
 		call=new CALL(hcode.getFactory(), q, resume,
 			      new Temp[] {tnext,nretval},null,retex,
 			      true,false,new Temp[0]);
-		Quad.addEdge(get,0,call,0);
+		Quad.addEdge(nq,0,call,0);
 		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
 
 		if (needsCheck()) {
@@ -609,9 +615,9 @@ public class AsyncCode {
 		HClass rettype=hc.getMethod().getReturnType();
 		String pref = 
 		    ContBuilder.getPrefix(rettype);
-		HClass continuation = HClass.forName
+		HClass continuation = linker.forName
 		    ("harpoon.Analysis.ContBuilder." + pref + "DoneContinuation");
-		HClass ret=HClass.forName("java.lang.Throwable");
+		HClass ret= linker.forName("java.lang.Throwable");
 		HConstructor constructor=continuation.getConstructor(new HClass[]{ret});
 		Temp newt=new Temp(tf);
 		NEW newq=new NEW(hcode.getFactory(),q,newt, continuation);
@@ -652,7 +658,7 @@ public class AsyncCode {
 		if (!cont_map.containsKey(q)) {
 		    cont_todo.add(q);
 		    HClass hclass=createContinuation(hc.getMethod(),  q,
-						     ucf); 
+						     ucf, linker); 
 		    cont_map.put(q,hclass);
 		    HMethod hm=q.method();
 		    if (!old2new.containsKey(hm)) {
@@ -662,7 +668,7 @@ public class AsyncCode {
 			} else {
 			    async_todo.add(ucf.convert(hm));
 			    HMethod temp=makeAsync(old2new, q.method(),
-						   ucf, classMap);
+						   ucf,linker);
 			}
 		    }
 		}
@@ -681,15 +687,15 @@ public class AsyncCode {
 		Quad.addEdge(call,1,phi,0);
 		//build environment
 		HClass env=getEnv(q);
-		Temp[] liveout = liveness.getLiveOutArray(q);
+		Temp[] liveout = liveness.getLiveInandOutArray(q);
 		Temp tenv=new Temp(tf);
 		NEW envq=new NEW(hcode.getFactory(), q, tenv, env);
 		Quad.addEdge(call,0,envq,0);
 
 		Temp [] params = new Temp[liveout.length+1];
 		params[0]=tenv;
-		for (int j=0;j<liveout.length;j++) {
-		    params[j+1]=ctmap.tempMap(liveout[j]); 
+		for (int j=0,i=1;j<liveout.length;j++) {
+		    params[i++]=ctmap.tempMap(liveout[j]); 
 		}
 		CALL callenv=new CALL(hcode.getFactory(), q, env.getConstructors()[0],
 				      params, null, retex, false, false, new Temp[0]);
@@ -700,11 +706,17 @@ public class AsyncCode {
 		HClass contclass=(HClass)cont_map.get(q);
 		NEW newc=new NEW(hcode.getFactory(), q, tcont, contclass);
 		Quad.addEdge(callenv,0,newc,0);
-
+		//XXXXXXXXXXXXX
+		HClass environment=linker.forName("harpoon.Analysis.EnvBuilder.Environment");
 		//constructor call=not virtual
+		System.out.println(environment);
+		System.out.println(environment.getLinker());
+		HConstructor call2const=contclass.getConstructor(new HClass[]{
+		    environment});
+		//HConstructor call2const=contclass.getConstructors()[0];
+		//XXXXXXXXXX
 		CALL call2=new CALL(hcode.getFactory(),q,
-				    contclass.getConstructor(new HClass[]{
-				    HClass.forName("harpoon.Analysis.EnvBuilder.Environment")}),
+				    call2const,
 				    new Temp[] {tcont, tenv}, null, retex, 
 				    false, false, new Temp[0]);
 		Quad.addEdge(newc,0,call2,0);
@@ -713,7 +725,7 @@ public class AsyncCode {
 		    ContBuilder.getPrefix(q.method().getReturnType());
 		HMethod setnextmethod=
 		    calleemethod.getReturnType().getMethod("setNext",
-							  new HClass[] {HClass.forName("harpoon.Analysis.ContBuilder."+pref+"ResultContinuation")});
+							  new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref+"ResultContinuation")});
 		Util.assert(setnextmethod!=null,"no setNext method found");
 		CALL call3=new CALL(hcode.getFactory(), q,
 				    setnextmethod, new Temp[] {retcont, tcont},
@@ -731,9 +743,16 @@ public class AsyncCode {
 		    String pref2 =
 			ContBuilder.getPrefix(hc.getMethod().getReturnType());
 		    //Debug
+		    System.out.println("-------------");
+		    System.out.println(contclass);
+		    System.out.println(contclass.getSuperclass());
+		    System.out.println(pref2);
+		    HMethod [] hmethods=contclass.getMethods();
+		    for (int i=0;i<hmethods.length;i++)
+			System.out.println(hmethods[i]);
 		    HMethod setnextmethod2=
 			contclass.getMethod("setNext",
-					    new HClass[] {HClass.forName("harpoon.Analysis.ContBuilder."+pref2+"ResultContinuation")});
+					    new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref2+"ResultContinuation")});
 		    Util.assert(setnextmethod2!=null,"no setNext method found");
 		    CALL call4=new CALL(hcode.getFactory(), q,
 					setnextmethod2, new Temp[] {tcont, tnext},
@@ -769,59 +788,70 @@ public class AsyncCode {
 		    quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
 	    }
 	}
+
+	public HMethod swapTo(HMethod old) {
+	    HMethod gis=linker.forName("java.net.Socket").getDeclaredMethod("getInputStream", new HClass[0]);
+	    if (gis.equals(old))
+		return linker.forName("java.net.Socket").getDeclaredMethod
+		    ("getAsyncInputStream", new HClass[0]);
+
+	    HClass HCthrd=linker.forName("java.lang.Thread");
+	    if (HCthrd.equals(old.getDeclaringClass())&&
+		(old.equals(old.getDeclaringClass().getMethod("start",
+							      new HClass[0]))))
+		return old.getDeclaringClass().getMethod("start_Async",
+							 new HClass[0]);
+
+	    return null;
+	}
     }
 
 
-    public static HMethod swapTo(HMethod old) {
-	final HMethod gis=HClass.forName("java.net.Socket").getDeclaredMethod("getInputStream", new HClass[0]);
-	if (gis.compareTo(old)==0)
-	    return HClass.forName("java.net.Socket").getDeclaredMethod
-		("getAsyncInputStream", new HClass[0]);
-	return null;
-    }
+
 
     // create asynchronous version of HMethod to replace blocking version
     // does not create HCode that goes w/ it...
     public static HMethod makeAsync(Map old2new, HMethod original,
-			      UpdateCodeFactory ucf, Map classmap)
+			      UpdateCodeFactory ucf, Linker linker)
     {
 	//	final HMethod original = blocking.method();
-	final HClass originalClass = original.getDeclaringClass();
-	HClassSyn replacementClass;
+	HClass originalClass = original.getDeclaringClass();
+	HClassMutator originalMutator=originalClass.getMutator();
+	Util.assert(originalMutator!=null);
 
-	// create a new HClassSyn that replaces the original HClass
-	if (classmap.containsKey(originalClass))
-	    replacementClass=(HClassSyn) classmap.get(originalClass);
-	else {
-	    replacementClass=new HClassSyn(originalClass, true);
-	    // clone HMethods from original class
-	    HMethod[] toClone = originalClass.getDeclaredMethods();
-	    for (int i = 0; i < toClone.length; i++) {
-		HMethod clone = replacementClass.getDeclaredMethod
-		    (toClone[i].getName(), toClone[i].getParameterTypes());
-		ucf.update(clone, 
-			   ((QuadNoSSA)ucf.convert(toClone[i])).clone(clone));
-	    }
-	    classmap.put(originalClass, replacementClass);
-	}
+//  	// create a new HClassSyn that replaces the original HClass
+//  	if (classmap.containsKey(originalClass))
+//  	    replacementClass=(HClassSyn) classmap.get(originalClass);
+//  	else {
+//  	    replacementClass=new HClassSyn(originalClass, true);
+//  	    // clone HMethods from original class
+//  	    HMethod[] toClone = originalClass.getDeclaredMethods();
+//  	    for (int i = 0; i < toClone.length; i++) {
+//  		HMethod clone = replacementClass.getDeclaredMethod
+//  		    (toClone[i].getName(), toClone[i].getParameterTypes());
+//  		ucf.update(clone, 
+//  			   ((QuadNoSSA)ucf.convert(toClone[i])).clone(clone));
+//  	    }
+//  	    classmap.put(originalClass, replacementClass);
+//  	}
 	    
 	// use the return type of the original HMethod to get the String 
 	// prefix for the type of Continuation we want as the new return type
 	final String pref = ContBuilder.getPrefix(original.getReturnType());
 
 	// get the return type for the replacement HMethod
-	final HClass newReturnType = HClass.forName
+	final HClass newReturnType = linker.forName
 	    ("harpoon.Analysis.ContBuilder." + pref + "Continuation");
 
 	// find a unique name for the replacement HMethod
 	String methodNamePrefix = original.getName() + "_Async";
 	String newMethodName = methodNamePrefix;
-	if (HClass.forName("java.lang.Runnable").
+	if (linker.forName("java.lang.Runnable").
 	    isSuperinterfaceOf(originalClass)&&
 	    originalClass.getMethod("run",new HClass[0]).equals(original)) {
 	    try {
 		newMethodName = methodNamePrefix;
-		replacementClass.getMethod(newMethodName, 
+		originalClass.getMethod(newMethodName, 
 					   original.getParameterTypes());
 		throw new RuntimeException("Name collision with run_Async method");
 	    } catch (NoSuchMethodError e) {
@@ -831,7 +861,7 @@ public class AsyncCode {
 	    while(true) {
 		try {
 		    newMethodName = methodNamePrefix + i++; 
-		    replacementClass.getMethod(newMethodName, 
+		    originalClass.getMethod(newMethodName, 
 					       original.getParameterTypes());
 		} catch (NoSuchMethodError e) {
 		    break;
@@ -839,27 +869,34 @@ public class AsyncCode {
 	    }
 	}
 	// create replacement method
-	HMethodSyn replacement = 
-	    new HMethodSyn(replacementClass, newMethodName, 
-			   original.getParameterTypes(), newReturnType);
+	HMethod replacement=originalMutator.addDeclaredMethod(newMethodName, 
+					  original.getParameterTypes(),
+					  newReturnType);
+	HMethodMutator rmutator=replacement.getMutator();
 
-	replacement.setExceptionTypes(original.getExceptionTypes());
-	replacement.setModifiers(original.getModifiers());
-	replacement.setParameterNames(original.getParameterNames());
-	replacement.setSynthetic(original.isSynthetic());
+	rmutator.setExceptionTypes(original.getExceptionTypes());
+	rmutator.setModifiers(original.getModifiers());
+	rmutator.setParameterNames(original.getParameterNames());
+	rmutator.setSynthetic(original.isSynthetic());
 	old2new.put(original, replacement);
 	return replacement;
     }
 
     // creates the HClass and constructor for the continuation
     private static HClass createContinuation(HMethod blocking, CALL callsite,
-				      UpdateCodeFactory ucf) 
+				      UpdateCodeFactory ucf, Linker linker) 
 	throws NoClassDefFoundError
     {
 	final HClass template = 
-	    HClass.forName("harpoon.Analysis.ContBuilder.ContTemplate");
+	    linker.forName("harpoon.Analysis.ContBuilder.ContTemplate");
 
-	final HClassSyn continuationClass = new HClassSyn(template);
+	String cname=UniqueName.uniqueClassName("harpoon.Analysis.ContBuilder.ContTemplate"
+						,linker);
+	HClass continuationClass = linker.createMutableClass(cname,template);
+	Util.assert(template.getLinker()==linker &&
+		    continuationClass.getLinker()==linker);
+	HClassMutator contMutator=continuationClass.getMutator();
+	    //new HClassSyn(template);
 	final int numConstructors = continuationClass.getConstructors().length;
 	Util.assert(numConstructors == 1,
 		    "Found " + numConstructors + " constructors in " +
@@ -871,10 +908,10 @@ public class AsyncCode {
 	    ContBuilder.getPrefix(blocking.getReturnType());
 
 	// get the superclass for the continuation
-	final HClass superclass = HClass.forName
+	final HClass superclass = linker.forName
 	    ("harpoon.Analysis.ContBuilder." + superPref + "Continuation");
 
-	continuationClass.setSuperclass(superclass);
+	contMutator.setSuperclass(superclass);
 
 	// we want the return type of the blocking call
 	// this gives us the interface that our continuation should implement
@@ -882,34 +919,40 @@ public class AsyncCode {
 	    ContBuilder.getPrefix(callsite.method().getReturnType());
 
 	// get the interface that the continuation needs to implement
-	final HClass inter = HClass.forName("harpoon.Analysis.ContBuilder." + 
+	final HClass inter = linker.forName("harpoon.Analysis.ContBuilder." + 
 					    interPref + "ResultContinuation");
 	
-	final HClass environment = HClass.forName
+	final HClass environment = linker.forName
 	    ("harpoon.Analysis.EnvBuilder.Environment");
-
+	System.out.println(continuationClass+"    "+
+			   continuationClass.getLinker()
+			   +"   "+environment.getLinker());
 	// clone template's constructor HCode
-	HConstructor hc = null;
-	HConstructor nhc = null;
-	try {
-	    hc = template.getConstructor(new HClass[] {environment});
-	    nhc = continuationClass.getConstructor(new HClass[] {environment});
-	    HCode hchc = ((Code)ucf.convert(hc)).clone(nhc);
-	    ucf.update(nhc, hchc);
-	} catch (NoSuchMethodError e) {
-	    System.err.println("Missing constructor for environment template");
+//  	HConstructor hc = null;
+//  	HConstructor nhc = null;
+//  	try {
+//  	    hc = template.getConstructor(new HClass[] {environment});
+//  	    nhc = continuationClass.getConstructor(new HClass[] {environment});
+//  	    HCode hchc = ((Code)ucf.convert(hc)).clone(nhc);
+//  	    ucf.update(nhc, hchc);
+//  	} catch (NoSuchMethodError e) {
+//  	    System.err.println("Missing constructor for environment template");
+//  	}
+
+	HMethod hmethods[]=template.getDeclaredMethods();
+	for(int i=0;i<hmethods.length;i++) {
+	    try {
+		HMethod nhm=continuationClass.getDeclaredMethod(hmethods[i].getName(),
+								hmethods[i].getDescriptor());
+		HCode hchc = ((Code)ucf.convert(hmethods[i])).clone(nhm);
+		ucf.update(nhm, hchc);
+	    } catch (NoSuchMethodError e) {
+		System.err.println(e);
+	    }
 	}
 
-	// create resume method but HCode not yet created
-	HMethod hm = null;
-	HMethodSyn nhm = null;
-	try {
-	    hm = continuationClass.getDeclaredMethod("resume", new HClass[0]);
-	    nhm = new HMethodSyn(continuationClass, hm, true);
-	    continuationClass.removeDeclaredMethod(hm);
-	} catch (NoSuchMethodError e) {
-	    System.err.println("Missing resume() from constructor template");
-	}
+	HMethod hm = continuationClass.getDeclaredMethod("resume", new HClass[0]);
+	HMethodMutator hmMutator=hm.getMutator();
 
 	// get the return value of the blocking call
 	// this is the parameter of the resume method, if any
@@ -924,11 +967,13 @@ public class AsyncCode {
 	    if (rettype.isPrimitive())
 		parameterTypes[0] = rettype;
 	    else {
-		parameterTypes[0] = HClass.forName("java.lang.Object");
+		parameterTypes[0] = linker.forName("java.lang.Object");
 	    }
-	    nhm.setParameterNames(parameterNames);
-	    nhm.setParameterTypes(parameterTypes);
+	    hmMutator.setParameterNames(parameterNames);
+	    hmMutator.setParameterTypes(parameterTypes);
 	}
 	return continuationClass;
     }
 }
+
+

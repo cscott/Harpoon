@@ -7,8 +7,7 @@ import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
-import harpoon.ClassFile.HMethodSyn;
-import harpoon.ClassFile.HClassSyn;
+import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.HEADER;
@@ -24,13 +23,14 @@ import java.util.Map;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.4 2000-01-02 22:15:19 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.5 2000-01-13 23:51:10 bdemsky Exp $
  */
 public class EventDriven {
     protected final UpdateCodeFactory ucf;
     protected final HCode hc;
     protected final ClassHierarchy ch;
     protected Map classmap;
+    protected final Linker linker;
 
     /** Creates a <code>EventDriven</code>. The <code>UpdateCodeFactory</code>
      *  needs to have been created from a <code>QuadNoSSA</code> that contains
@@ -38,42 +38,22 @@ public class EventDriven {
      *
      *  <code>HCode</code> needs to be the <code>HCode</code> for main.
      */
-    public EventDriven(UpdateCodeFactory ucf, HCode hc, ClassHierarchy ch) {
+    public EventDriven(UpdateCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker) {
         this.ucf = ucf;
 	this.hc = hc;
 	this.ch = ch;
-	this.classmap=new HashMap();
+	this.linker=linker;
     }
 
     /** Returns the converted main
      */
     public HMethod convert() {
 	// Clone the class that main was in, and replace it
-    
-	HClass origClass = this.hc.getMethod().getDeclaringClass();
-	HClassSyn hcs = 
-	    new HClassSyn(origClass, true);
+	HMethod oldmain=this.hc.getMethod();
+	HClass origClass = oldmain.getDeclaringClass();
 
-	classmap.put(origClass, hcs);
 
-	// clone methods
-	HMethod[] toClone = 
-	    this.hc.getMethod().getDeclaringClass().getDeclaredMethods();
-
-	HMethod copyOfMain = null;
-	for (int i=0; i<toClone.length; i++) {
-	    HMethod curr = 
-		hcs.getDeclaredMethod(toClone[i].getName(),
-				      toClone[i].getParameterTypes());
-	    this.ucf.update(curr, 
-			    ((QuadNoSSA)ucf.convert(toClone[i])).clone(curr));
-	    if (toClone[i].compareTo(this.hc.getMethod()) == 0)
-		copyOfMain = curr;
-	}
-
-	// Clone main and replace it
-	HMethodSyn hms = new HMethodSyn(hcs, copyOfMain, true);
-	ToAsync as = new ToAsync(this.ucf, this.hc, this.ch, this.classmap);
+	ToAsync as = new ToAsync(this.ucf, this.hc, this.ch, linker);
 	// transform main to mainAsync
 	HMethod newmain = as.transform();
 
@@ -85,7 +65,9 @@ public class EventDriven {
 	METHOD method=(METHOD) (header.next(1));
 	params=method.params();
 
-	this.ucf.update(hms, new EventDrivenCode(hms, newmain, params));
-	return hms;
+	this.ucf.update(oldmain, new EventDrivenCode(oldmain, newmain, params, linker));
+	return oldmain;
     }
 }
+
+

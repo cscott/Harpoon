@@ -9,10 +9,12 @@ import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.ContBuilder.ContBuilder;
 import harpoon.Analysis.EnvBuilder.EnvBuilder;
 import harpoon.ClassFile.HClass;
-import harpoon.ClassFile.HClassSyn;
+//import harpoon.ClassFile.HClassSyn;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HMethod;
-import harpoon.ClassFile.HMethodSyn;
+import harpoon.ClassFile.Loader;
+import harpoon.ClassFile.Linker;
+//import harpoon.ClassFile.HMethodSyn;
 import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Code;
@@ -33,31 +35,31 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.6 2000-01-11 05:51:14 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.7 2000-01-13 23:51:10 bdemsky Exp $
  */
 public class ToAsync {
     protected final UpdateCodeFactory ucf;
     protected final HCode hc;
     protected final ClassHierarchy ch;
-    protected final Map classMap;
+    protected final Linker linker;
 
     /** Creates a <code>ToAsync</code>. */
-    public ToAsync(UpdateCodeFactory ucf, HCode hc, ClassHierarchy ch, Map classMap) {
+    public ToAsync(UpdateCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker) {
+	this.linker=linker;
         this.ucf = ucf;
 	this.hc = hc;
 	this.ch = ch;
-	this.classMap = classMap;
     }
     
     public HMethod transform() {
 	System.out.println("Entering ToAsync.transform()");
 	AllCallers ac = new AllCallers(this.ch, this.ucf);
-	BlockingMethods bm = new BlockingMethods();
+	BlockingMethods bm = new BlockingMethods(linker);
 	Set blockingcalls = ac.getCallers(bm);
 	
 	HashMap old2new=new HashMap();
 	HMethod nhm=AsyncCode.makeAsync(old2new, hc.getMethod(),
-					ucf, classMap);
+					ucf,linker);
 
 	WorkSet async_todo=new WorkSet();
 	async_todo.push(hc);
@@ -67,12 +69,16 @@ public class ToAsync {
 	    final QuadLiveness ql = new QuadLiveness(selone);
 	    System.out.println("ToAsync is running AsyncCode on "+selone);
 	    AsyncCode.buildCode(selone, old2new, async_todo,
-				ql,blockingcalls,ucf, classMap, bm, hc.getMethod());
+				ql,blockingcalls,ucf,  bm, hc.getMethod(), linker);
 	}
 	return nhm;
     }
 
     static class BlockingMethods implements AllCallers.MethodSet {
+	final Linker linker;
+	public BlockingMethods(Linker linker) {
+	    this.linker=linker;
+	}
 
 	/** Returns true if the <code>HMethod</code> blocks, false
 	 *  otherwise. Checks against a list of known blocking methods.
@@ -90,8 +96,8 @@ public class ToAsync {
 	 */
 	final private Map cache = new HashMap();
 	public HMethod swop (final HMethod m) {
-	    final HClass is = HClass.forName("java.io.InputStream");
-	    final HClass ss = HClass.forName("java.net.ServerSocket");
+	    final HClass is = linker.forName("java.io.InputStream");
+	    final HClass ss = linker.forName("java.net.ServerSocket");
 	    final HClass b = HClass.Byte;
 
 	    HMethod retval = (HMethod)cache.get(m);
