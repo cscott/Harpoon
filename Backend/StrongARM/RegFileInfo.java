@@ -35,7 +35,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.9 1999-11-16 21:13:37 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.10 1999-12-03 23:52:08 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -150,7 +150,8 @@ public class RegFileInfo
 	final ArrayList spills = new ArrayList();
 	
 	// macro renaming for clean code
-	final Temp PRECOLORED = harpoon.Backend.Generic.RegFileInfo.PREASSIGNED;
+	final Temp PRECOLORED = 
+	    harpoon.Backend.Generic.RegFileInfo.PREASSIGNED;
 
 	if (t instanceof TwoWordTemp) {
 	    // double word, find two registers ( the strongARM

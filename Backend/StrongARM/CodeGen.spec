@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.109 1999-12-03 01:45:54 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.110 1999-12-03 23:52:07 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1683,7 +1683,7 @@ CALL(retval, retex, func, arglist, handler)
     // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
     // realloc doesn't clobber these between the time they are set and
     // the time the call happens.
-    emitNoFall( ROOT, "mov `d0, `s0", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
+    emitNoFall( ROOT, "mov `d0, `s0 @clobbers r0-r3, LR, IP", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
                 // fake use of PC so that it remains live above this point.
                 new Temp[]{ func, PC }, new Label[] { rlabel, elabel } );
     // make handler stub.
@@ -1708,7 +1708,7 @@ CALL(retval, retex, NAME(funcLabel), arglist, handler)
     // realloc doesn't clobber these between the time they are set and
     // the time the call happens.
     emit2( ROOT, "adr `d0, "+rlabel, new Temp[] { LR }, null );
-    emitNoFall( ROOT, "b "+funcLabel, new Temp[] { r0,r1,r2,r3,IP,LR },
+    emitNoFall( ROOT, "b "+funcLabel+" @clobbers r0-r3, LR, IP", new Temp[] { r0,r1,r2,r3,IP,LR },
                 new Temp[0], new Label[] { rlabel, elabel } );
     // make handler stub.
     emitLABEL( ROOT, elabel+":", elabel);
@@ -1728,7 +1728,7 @@ NATIVECALL(retval, func, arglist) %{
     // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
     // realloc doesn't clobber these between the time they are set and
     // the time the call happens.
-    emit2( ROOT, "mov `d0, `s0", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
+    emit2( ROOT, "mov `d0, `s0 @clobbers r0-r3, LR, IP", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
                 // fake use of PC so that it remains live above this point.
                 new Temp[]{ func, PC });
     // clean up.
@@ -1742,7 +1742,7 @@ NATIVECALL(retval, NAME(funcLabel), arglist) %{
     // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
     // realloc doesn't clobber these between the time they are set and
     // the time the call happens.
-    emit( ROOT, "bl "+funcLabel, new Temp[] { r0,r1,r2,r3,IP,LR }, new Temp[0],
+    emit( ROOT, "bl "+funcLabel + " @clobbers r0-r3, LR, IP", new Temp[] { r0,r1,r2,r3,IP,LR }, new Temp[0],
           true, null );
     // clean up.
     emitCallEpilogue(ROOT, retval, stackOffset);

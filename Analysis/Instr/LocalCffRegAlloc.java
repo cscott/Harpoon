@@ -20,6 +20,7 @@ import harpoon.Temp.Label;
 import harpoon.Util.LinearMap;
 import harpoon.Util.LinearSet;
 import harpoon.Util.CloneableIterator;
+import harpoon.Util.Default;
 import harpoon.Util.Util;
 
 import harpoon.Util.Collections.SetFactory;
@@ -52,7 +53,7 @@ import java.util.AbstractSet;
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.51 1999-12-01 17:12:36 pnkfelix Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.52 1999-12-03 23:51:47 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -100,10 +101,21 @@ public class LocalCffRegAlloc extends RegAlloc {
 	TwoWayMap regfile = new TwoWayMap();
 
 	CloneableIterator instrs = new CloneableIterator(b.listIterator());
+	
+	class ArchiveTWM extends TwoWayMap {
+	    ArchiveTWM(Map map) {super(map);}
+	    public Object put(Object key, Object value) {
+		Util.assert(value != RegFileInfo.PREASSIGNED,
+			    "should never put PREASSIGNED in old");
+		return super.put(key, value);
+	    }
+	}
 
+	Map archivedEntries = Default.EMPTY_MAP;
 	Instr instr = null;
 	while(instrs.hasNext()) {
 	    instr = (Instr) instrs.next();
+
 
 	    // skip any Spill Instructions
 	    if (instr instanceof FskLoad ||
@@ -113,13 +125,33 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	    Iterator refs = getRefs(instr);
 	    // Iterator uses = instr.useC().iterator();
+
 	    while(refs.hasNext()) {
 		Temp ref = (Temp) refs.next();
 
-		if (isTempRegister(ref)) continue;
-
+		if (isTempRegister(ref)) {
+		    // hard coded ref to register; skip
+		    continue;
+		}
+		
+		regfile.putAll(archivedEntries);
+		Map precolor = 
+		    getPrecolorMappings
+		    (ref, (Iterator) instrs.clone(),
+		     liveOnExit.contains(ref));
+		archivedEntries = putAllArchive(precolor, regfile);
+		
 		if (code.registerAssigned(instr, ref)) {
-		    // ref already has register assigned to it
+		    // ref already has register assigned to it; skip
+		    Util.assert
+			( !regfile.inverseMap().getValues(ref).isEmpty(),
+			  "If a ref: "+ref+" is assigned a register, it "+
+			  "should have a mapping in the regfile"+
+			  "\nLiveOnExit: "+ liveOnExit +
+			  "\nREGFILE: "+ regfile + 
+			  "\nINSTR: " +instr+" / "+code.toAssem(instr)+
+			  "\nBLOCK: \n" + b.dumpElems());
+		    
 		    continue;
 		}
 
@@ -128,13 +160,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    try {
 			// (Step 2)
 			
-			Map precolor = 
-			    getPrecolorMappings
-			    (ref, (Iterator) instrs.clone(),
-			     liveOnExit.contains(ref));
-			regfile.putAll(precolor);
-			
-			Collection prevAssignment = regfile.inverseMap().getValues(ref);
+			Collection prevAssignment = 
+			    regfile.inverseMap().getValues(ref);
+
 			if (!prevAssignment.isEmpty()) {
 			    // FSK: this is inelegant.  I shouldn't
 			    // have to manually remove these
@@ -143,7 +171,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    removeMapping(ref, regfile);
 			}
 
-			CloneableIterator suggestions = 
+			CloneableIterator suggs = 
 			    new CloneableIterator
 			    (frame.getRegFileInfo().suggestRegAssignment
 			     (ref, Collections.unmodifiableMap(regfile)));
@@ -154,18 +182,19 @@ public class LocalCffRegAlloc extends RegAlloc {
 				    instr + " " + workOnRef + " times. " +
 				    "Regfile: " +  regfile + 
 				    "Suggestions: [" + 
-				    printIter((Iterator)suggestions.clone()) + 
+				    printIter((Iterator)suggs.clone()) + 
 				    "]");
 			
-			// TODO (to improve alloc): add code here
-			// eventually to scan forward and choose a
-			// suggestion based on future MOVEs to/from
-			// preassigned registers.  
-			
-			// FSK: dumb chooser (just takes first suggestion)
-			List regs = (List) suggestions.next(); 
-			code.assignRegister(instr, ref, regs);
-			
+			List regs = chooseSuggestion(suggs);
+
+			try {
+			    code.assignRegister(instr, ref, regs);
+			} catch (RuntimeException e) {
+			    System.out.println("\nREGFILE:"+regfile+
+					       "\nINSTR:"+instr+
+					       "\nREF:"+ref);
+			    throw e;
+			}
 			if (instr.useC().contains(ref)) {
 			    InstrMEM loadInstr = 
 				new FskLoad(instr, "FSK-LOAD", regs, ref);
@@ -173,31 +202,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 				(new InstrEdge(instr.getPrev(), instr));
 			}
 			
-			Iterator regIter = regs.iterator();
-			while(regIter.hasNext()) {
-			    Temp reg = (Temp) regIter.next();
-			    
-			    Util.assert(regfile.get(reg) == null,
-					"reg " + reg + " must be empty");
-			    
-			    regfile.put(reg, ref);
-			}
+			putMappings(regs.iterator(), ref, regfile);
 			
-		    
-			Iterator futureInstrs = 
-			    (Iterator) instrs.clone();
-			while(futureInstrs.hasNext()) {
-			    Instr finstr =
-				(Instr) futureInstrs.next();
-			    if (finstr.useC().contains(ref)) {
-				code.assignRegister(finstr,ref,regs);
-			    } else if (finstr.defC().contains(ref)) {
-				// redefined 'ref' (without a use)
-				// --> break and allow for a different
-				// register to be assigned to it.
-				break;
-			    }
-			}
+			assignFutureInstrs
+			    ((Iterator)instrs.clone(), ref, regs);
 
 			workOnRef = 0; // stop working on this ref
 
@@ -253,14 +261,22 @@ public class LocalCffRegAlloc extends RegAlloc {
 				// no value associated with 'reg', so
 				// we don't need to spill it; can go
 				// straight to storing stuff in it
-
+				
 			    } else {
 				
 				spillValue(value, 
 					   new InstrEdge(instr.getPrev(),
 							 instr),
 					   regfile);
-			    
+				
+				code.removeAssignment(instr, value);
+				Iterator fInstrs =
+				    (Iterator) instrs.clone();
+				while(fInstrs.hasNext()) {
+				    Instr i = (Instr) fInstrs.next();
+				    if (code.registerAssigned(i, value))
+					code.removeAssignment(i, value);
+				}
 			    }
 			}
 
@@ -338,6 +354,59 @@ public class LocalCffRegAlloc extends RegAlloc {
 	}
 	
 	//System.out.println("completed local alloc for " + b);
+    }
+
+    private List chooseSuggestion(Iterator suggs) {
+	// TODO (to improve alloc): add code here eventually to scan
+	// forward and choose a suggestion based on future MOVEs
+	// to/from preassigned registers.  Obviously the signature of
+	// the function may need to change...
+			
+	// FSK: dumb chooser (just takes first suggestion)
+	return (List) suggs.next(); 
+
+    }
+
+    /** Returns a Set[Map.Entry] of the mappings that
+	have been replaced in 'target' by the mappings in 'source'.
+    */
+    private Map putAllArchive(Map source, Map target) {
+	Iterator entries = source.entrySet().iterator();
+	Map old = new LinearMap();
+	while(entries.hasNext()) {
+	    Map.Entry entry = (Map.Entry) entries.next();
+	    old.put(entry.getKey(), 
+		    target.put(entry.getKey(), 
+			       entry.getValue()));
+	    
+	}
+	return old;
+    }
+
+    private void putMappings(Iterator regIter, Temp ref, 
+			     Map regfile) {
+	while(regIter.hasNext()) {
+	    Temp reg = (Temp) regIter.next();
+	    
+	    Util.assert(regfile.get(reg) == null,
+			"reg " + reg + " must be empty");
+	    
+	    regfile.put(reg, ref);
+	}
+    }
+
+    private void assignFutureInstrs(Iterator futureInstrs,
+				    Temp ref, List regs) {
+	while(futureInstrs.hasNext()) {
+	    Instr finstr = (Instr) futureInstrs.next();
+	    if (finstr.useC().contains(ref)) {
+		code.assignRegister(finstr,ref,regs);
+	    } else if (finstr.defC().contains(ref)) {
+		// redefined 'ref' (without a use) --> break and allow
+		// for a different register to be assigned to it.
+		break;
+	    }
+	}
     }
 
     /** spills 'val', adding the necessary store at 'loc' and updates
@@ -463,6 +532,11 @@ public class LocalCffRegAlloc extends RegAlloc {
 		}
 	    }
 	    if (i.useC().contains(ref)) {
+		if (false && !potentials.entrySet().isEmpty()) {
+		    System.out.println
+			("\n"+i+" hasRef2 " +ref+ 
+			 " --> mappings.putAll: " + potentials);
+		}
 		mappings.putAll(potentials);
 		potentials.clear();
 	    }
@@ -521,7 +595,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	the harpoon.Util.Collections package. 
     */
     private class TwoWayMap extends LinearMap {
-	MultiMap rMap;
+	DefaultMultiMap rMap;
 
 	TwoWayMap() {
 	    rMap = new DefaultMultiMap
@@ -529,6 +603,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 		 Factories.hashMapFactory());
 	}
 	
+	TwoWayMap(Map map) {
+	    rMap = new DefaultMultiMap
+		(Factories.hashSetFactory(), 
+		 Factories.hashMapFactory());
+	    putAll(map);
+	}
+
 	public void clear() { super.entrySet().clear(); rMap.clear(); }
 
 	public Set entrySet() { 
@@ -537,11 +618,14 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	/** Removes all entries that have 'val' as a value in rMap. */
 	private void removeMappingsTo(Object val) {
-
+	    Util.assert(rMap != null, "rMap should not be null");
+	    Util.assert(rMap.entrySet() != null, "rMap.entrySet should not be null");
 	    Iterator entries = new ArrayList(rMap.entrySet()).iterator();
 	    while(entries.hasNext()) {
 		Map.Entry entry = (Map.Entry) entries.next();
-		if (entry.getValue().equals(val)) {
+		Util.assert(entry != null, "map entries should never be null");
+		if ( (entry.getValue()==null && val == null) ||
+		     entry.getValue().equals(val)) {
 		    // should be able to just directly remove 'entry'
 		    // from 'entries' and have rMap updated
 		    // accordingly, but the MultiMap class does not

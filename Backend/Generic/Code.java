@@ -33,7 +33,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.28 1999-11-16 22:08:49 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.29 1999-12-03 23:52:03 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -304,5 +304,12 @@ public abstract class Code extends HCode {
 					List regs);
 
     public abstract boolean registerAssigned(Instr i, Temp pseudoReg);
+
+    public void removeAssignment(Instr i, Temp pseudoReg) {
+	Util.assert(false, "override and implement Code.removeAssignment"+
+		    " (which should be abstract but since its an "+
+		    "experimental method I don't want have add it "+
+		    "to all the other code yet)");
+    }
 
 }

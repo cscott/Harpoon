@@ -5,6 +5,7 @@ package harpoon.Util;
 
 import java.util.AbstractMap;
 import java.util.Set;
+import java.util.Map;
 import java.util.Iterator;
 /**
  * <code>LinearMap</code> is a simplistic light-weight
@@ -12,7 +13,7 @@ import java.util.Iterator;
  * small.  It is backed by a <code>LinearSet</code>.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearMap.java,v 1.1.2.3 1999-08-18 17:32:54 pnkfelix Exp $
+ * @version $Id: LinearMap.java,v 1.1.2.4 1999-12-03 23:52:12 pnkfelix Exp $
  */
 public class LinearMap extends AbstractMap {
     private LinearSet set;
@@ -20,6 +21,11 @@ public class LinearMap extends AbstractMap {
     /** Creates a <code>LinearMap</code>. */
     public LinearMap() {
         set = new LinearSet();
+    }
+
+    public LinearMap(Map map) {
+	set = new LinearSet();
+	putAll(map);
     }
 
     /** Creates a <code>LinearMap</code> with specified capacity. */

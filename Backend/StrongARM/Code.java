@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.11 1999-12-03 01:45:54 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.12 1999-12-03 23:52:07 pnkfelix Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -94,7 +94,8 @@ public class Code extends harpoon.Backend.Generic.Code {
     */
     
     private Temp get(Instr instr, Temp val) {
-	return (Temp) tempInstrPairToRegisterMap.get(new TempInstrPair(instr, val)); 
+	return (Temp) 
+	    tempInstrPairToRegisterMap.get(new TempInstrPair(instr, val)); 
     }
 
     
@@ -184,15 +185,27 @@ public class Code extends harpoon.Backend.Generic.Code {
 	// Register Constraint check
 	if ((instr.assem.indexOf("mul ") != -1) ||
 	    (instr.assem.indexOf("mla ") != -1)) {
-	    Object rm = tempInstrPairToRegisterMap.get
-		(new TempInstrPair(instr, instr.use()[0]));
-	    Object rd = tempInstrPairToRegisterMap.get
-		(new TempInstrPair(instr, instr.def()[0]));
+	    Object rm = get(instr, instr.use()[0]);
+	    Object rd = get(instr, instr.def()[0]);
 	    Util.assert(rm == null ||
 			!rm.equals(rd),
-			"rd and rm must be different in mul");
+			"rd:"+rd+" and rm:"+rm+" must be different in mul");
 	}			
     }
+
+    public void removeAssignment(Instr instr, Temp preg) {
+	if (preg instanceof TwoWordTemp) {
+	    TwoWordTemp t = (TwoWordTemp) preg;
+	    tempInstrPairToRegisterMap.remove
+		(new TempInstrPair(instr, t.getLow()));
+	    tempInstrPairToRegisterMap.remove
+		(new TempInstrPair(instr, t.getHigh()));
+	} else {
+	    tempInstrPairToRegisterMap.remove
+		(new TempInstrPair(instr, preg));
+	}
+    }
+
 
     public boolean registerAssigned(Instr instr, Temp pr) {
 	if (pr instanceof TwoWordTemp) {

@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.14 1999-11-07 20:34:26 bdemsky Exp $
+ * @version $Id: Util.java,v 1.12.2.15 1999-12-03 23:52:12 pnkfelix Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -152,13 +152,13 @@ public abstract class Util {
   static boolean jasminIsSafelyPrintable(char c) {
     // always escape backslash
     if (c=='\\') return false;
-    if (c=='"') return false;
+    if (c=='\"') return false;
     // define 'safe' characters.
     if (' ' <= c && c <= '~') return true;
     // all others are 'unsafe'
     return false;
   }
-
+ 
   /** Assertion facility.  Throws a <code>RuntimeException</code> if
    *  the boolean parameter is <code>false</code>. */
   public static final void assert(boolean val) {
