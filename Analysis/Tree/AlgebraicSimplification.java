@@ -30,7 +30,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.5 2000-01-10 05:08:25 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.6 2000-01-16 01:19:19 duncan Exp $
  */
 public abstract class AlgebraicSimplification { 
     // Define new operator constants that can be masked together. 
@@ -109,9 +109,6 @@ public abstract class AlgebraicSimplification {
     public static void simplify(Stm root, List rules) { 
 	// Shouldn't pass a null ptr. 
 	Util.assert(root != null); 
-	// The tree must be in canonical form. 
-	Code code = ((Code.TreeFactory)root.getFactory()).getParent(); 
-	Util.assert(code.getName().equals("canonical-tree")); 
 
 	// Perform the simpliciation. 
 	SimplificationVisitor sv = new SimplificationVisitor(root, rules); 
@@ -123,14 +120,16 @@ public abstract class AlgebraicSimplification {
      */ 
     private static class SimplificationVisitor extends TreeVisitor { 
 	/*final*/ private Stack worklist = new Stack(); 
-	/*final*/ private TreeStructure ts; 
-	/*final*/ private List rules; 
+	/*final*/ private Code  code;
+	/*final*/ private List  rules; 
 
 	public SimplificationVisitor(Stm root, List rules) { 
-	    this.ts = new TreeStructure(root); 
 	    this.rules = rules; 
+	    this.code  = ((Code.TreeFactory)root.getFactory()).getParent(); 
+	    // The tree must be in canonical form. 
+	    Util.assert(code.getName().equals("canonical-tree")); 
+
 	    this.worklist.push(root); 
-	    
 	    while (!worklist.isEmpty()) { 
 		((Tree)this.worklist.pop()).accept(this); 
 	    }
@@ -154,7 +153,8 @@ public abstract class AlgebraicSimplification {
 		Rule rule = (Rule)i.next();
 		if (rule.match(e)) {
 		    Exp simpleE = rule.apply(e); 
-		    this.ts.replace(e, simpleE); 
+		    System.out.println("Replacing: " + e + " with " + simpleE); 
+		    this.code.replace(e, simpleE); 
 		    this.worklist.push(simpleE); 
 		    return; 
 		}

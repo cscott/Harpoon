@@ -40,7 +40,7 @@ import java.util.Stack;
  * <p><b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: ConstantPropagation.java,v 1.1.2.5 2000-01-09 09:12:19 pnkfelix Exp $
+ * @version $Id: ConstantPropagation.java,v 1.1.2.6 2000-01-16 01:19:19 duncan Exp $
  */
 public final class ConstantPropagation { 
 
@@ -69,11 +69,13 @@ public final class ConstantPropagation {
 	private Stack                 worklist    = new Stack(); 
 	// Class to perform reaching definitions analysis. 
 	private ReachingHCodeElements rch; 
-	// Wrapper around Tree form that allows easy direct modification
-	private TreeStructure         ts;
+	// The tree code we are modifying
+	private Code                  code;
 
 	/** Class constructor. */ 
 	public ConstPropVisitor(Code code) { 
+	    this.code = code; 
+
 	    // Initialize mapping of temps to the Stms that define them. 
 	    mapTempsToDefs(code); 
 
@@ -84,10 +86,7 @@ public final class ConstantPropagation {
 		(BasicBlock.basicBlockIterator(root)); 
 	    this.rch = new ReachingHCodeElements((Iterator)bbi.clone()); 
 	    Solver.forwardRPOSolve(root, this.rch); 
-	    
-	    // Create a TreeStructure wrapper to allow for modification of
-	    // the tree form. 
-	    this.ts = new TreeStructure(code); 
+
 
 	    // Traverse the tree. 
 	    this.worklist.push(code.getRootElement()); 
@@ -143,7 +142,7 @@ public final class ConstantPropagation {
 	 */ 
 	public void visit(TEMP t) { 
 	    // The statement in which this TEMP is used.
-	    Stm parent       = this.ts.getStm(t); 
+	    Stm parent       = STM(t); 
 	    // The reaching definition information on entry to "parent". 
 	    Set reachingDefs = this.rch.getReachingBefore(parent); 
 	    // The set of Stms which define this t.temp. 
@@ -177,7 +176,8 @@ public final class ConstantPropagation {
 	    // Our analysis says that it's OK to replace "t" with a constant
 	    // value.  Use the tree structure to accomplish this. 
 	    if (replaceT) { 
-		this.ts.replace(t, Tree.clone(valueT.getFactory(), null, valueT)); 
+		this.code.replace
+		    (t, Tree.clone(valueT.getFactory(), null, valueT)); 
 	    }
 	    
 	}
@@ -241,5 +241,14 @@ public final class ConstantPropagation {
 	    while (seq.kind()==TreeKind.SEQ) seq = ((SEQ)seq).getLeft();  
 	    return seq;
 	}
+
+	private static Stm STM(Exp e) { 
+	    Tree t = e; 
+	    while (t instanceof Exp) { t = t.getParent(); }
+	    return (Stm)t;
+	}
     }
 }
+
+
+
