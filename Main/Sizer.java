@@ -5,15 +5,24 @@ package harpoon.Main;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
-import harpoon.ClassFile.*;
-import java.util.*;
+import harpoon.ClassFile.CachingCodeFactory;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 /**
  * <code>Sizer</code> computes the sizes of all the methods used in
  * a given program.  It is used for generating paper statistics on
  * our benchmarks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Sizer.java,v 1.1.2.1 2000-07-17 01:53:25 cananian Exp $
+ * @version $Id: Sizer.java,v 1.1.2.2 2000-07-21 21:29:10 cananian Exp $
  */
 public class Sizer extends harpoon.IR.Registration {
     public static void main(String[] args) {
