@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.4 1999-06-28 09:16:54 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.5 1999-06-29 06:10:45 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
     
     /** Creates a <code>MaximalMunchCGG</code>. 
@@ -57,15 +57,261 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
         super(s, className);
     }
 
+
+    /** Sets up a series of checks to ensure all of the values in the
+	visited statement are of the appropriate type.
+    */
+    static class TypeStmRecurse extends Spec.StmVisitor {
+	/** constantly updated boolean expression to match a tree's
+	    types. */
+	StringBuffer exp;
+	
+	/** constantly updated (and reset) with current statement
+	    prefix throughout recursive calls. */
+	String stmPrefix;
+
+	/** number of nodes "munched" by this so far. */
+	int degree;
+	
+	/** Indentation. */
+	String indentPrefix;
+	
+	private void append(String s) {
+	    exp.append(indentPrefix + s + "\n");
+	}
+
+	TypeStmRecurse(String stmPrefix, String indentPrefix) {
+	    // hack to make everything else additive
+	    exp = new StringBuffer("true\n"); 
+	    degree = 0;
+	    this.stmPrefix = stmPrefix;
+	    this.indentPrefix = indentPrefix;
+	}
+	
+	public void visit(Spec.Stm s) {
+	    Util.assert(false, "StmRecurse should never visit Stm");
+	}
+	
+	public void visit(Spec.StmCall s) {
+	    degree++;
+	    
+	    append("// check statement type");
+	    append("&& " + stmPrefix + " instanceof CALL");
+
+	    // look at func
+	    TypeExpRecurse r = new 
+		TypeExpRecurse("((CALL) " +stmPrefix +").func", 
+			       indentPrefix + "\t");
+	    s.func.accept(r);
+	    degree += r.degree;
+	    exp.append("&& (" + r.exp.toString() +")");
+
+	    // look at retex
+	    // NOTE: THIS WILL BREAK WHEN WE UPDATE EXCEPTION HANDLING 
+	    r = new TypeExpRecurse("((CALL)"+stmPrefix + ").retex", 
+				   indentPrefix + "\t");
+	    s.retex.accept(r);
+	    degree += r.degree;
+	    exp.append("&& (" + r.exp.toString() + ")");
+
+	    // look at retval
+	    r = new TypeExpRecurse("((CALL)"+stmPrefix + ").retval",
+				   indentPrefix + "\t");
+	    s.retval.accept(r);
+	    degree += r.degree;
+	    exp.append("&& (" + r.exp.toString() + ")");
+	}
+
+	public void visit(Spec.StmCjump s) {
+	    degree++;
+	    
+	    append("// check statement type");
+	    append("&& " + stmPrefix + " instanceof CJUMP)");
+	    
+	    // look at test
+	    TypeExpRecurse r = new
+		TypeExpRecurse("((CJUMP) " + stmPrefix + ").test",
+			       indentPrefix + "\t");
+	    s.test.accept(r);
+	    degree += r.degree;
+	    exp.append("&& (" + r.exp.toString() + ")");
+	}
+
+	public void visit(Spec.StmExp s) {
+	    degree++;
+	    
+	    append("// check statement type");
+	    append("&& " + stmPrefix + " instanceof EXP");
+	    
+	    // look at exp
+	    TypeExpRecurse r = new 
+		TypeExpRecurse("((EXP)"+ stmPrefix + ").exp",
+			       indentPrefix + "\t");
+	    s.exp.accept(r);
+	    degree += r.degree;
+	    exp.append("&& (" + r.exp.toString() + ")");
+	}
+
+	public void visit(Spec.StmJump s) {
+	    degree++;
+
+	    append("// check statement type");
+	    append("&& " + stmPrefix + " instanceof JUMP");
+	    
+	    // look at exp
+	    TypeExpRecurse r = new 
+		TypeExpRecurse("((JUMP)" + stmPrefix + ").exp",
+			       indentPrefix + "\t");
+	    s.exp.accept(r);
+	    degree += r.degree;
+	    exp.append("&& (" + r.exp.toString() + ")");
+	}
+
+	public void visit(Spec.StmLabel s) {
+	    degree++;
+	    
+	    append("// check statement type");
+	    append("&& " + stmPrefix + " instanceof LABEL");
+	}
+
+	public void visit(Spec.StmMove s) {
+	    degree++;
+
+	    append("// check statement type");
+	    append("&& " + stmPrefix + " instanceof MOVE");
+	    
+	    // look at src
+	    TypeExpRecurse r = new 
+		TypeExpRecurse("((MOVE) " + stmPrefix + ").src",
+			       indentPrefix + "\t");
+	    s.src.accept(r);
+	    degree += r.degree;
+	    exp.append("&& (" + r.exp.toString() + ")");
+
+	    // look at dst
+	    r = new TypeExpRecurse("((MOVE) " + stmPrefix + ").dst",
+				   indentPrefix + "\t");
+	    s.dst.accept(r);
+	    degree += r.degree;
+	    exp.append("&& (" + r.exp.toString() + ")");
+	}
+
+	public void visit(Spec.StmNativeCall s) {
+	    degree++;
+
+	    append("// check statement type");
+	    append("&& " + stmPrefix + " instanceof NATIVECALL");
+
+	    // look at func
+	    TypeExpRecurse r = new 
+		TypeExpRecurse("((NATIVECALL) " +stmPrefix +").func", 
+			       indentPrefix + "\t");
+	    s.func.accept(r);
+	    degree += r.degree;
+	    exp.append("&& (" + r.exp.toString() +")");
+
+	    // look at retex
+	    // NOTE: THIS WILL BREAK WHEN WE UPDATE EXCEPTION HANDLING 
+	    r = new TypeExpRecurse("((NATIVECALL)"+stmPrefix + ").retex", 
+				   indentPrefix + "\t");
+	    s.retex.accept(r);
+	    degree += r.degree;
+	    exp.append("&& (" + r.exp.toString() + ")");
+
+	    // look at retval
+	    r = new TypeExpRecurse("((NATIVECALL)"+stmPrefix + ").retval",
+				   indentPrefix + "\t");
+	    s.retval.accept(r);
+	    degree += r.degree;
+	    exp.append("&& (" + r.exp.toString() + ")");
+	}
+
+	public void visit(Spec.StmReturn s) {
+	    degree++;
+
+	    append("// check expression type");
+	    append("&& " + stmPrefix + " instanceof RETURN");
+
+	    append("// check operand types");
+	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer;
+	    allowDouble = s.types.contains(Type.DOUBLE);
+	    allowFloat = s.types.contains(Type.FLOAT);
+	    allowInt = s.types.contains(Type.INT);
+	    allowLong = s.types.contains(Type.LONG);
+	    allowPointer = s.types.contains(Type.POINTER);
+
+	    String checkPrefix = "\t(((RETURN)" + stmPrefix + ").type()) ==";
+	    append("&& ( ");
+	    if(allowDouble) append(checkPrefix + " Type.DOUBLE ||");
+	    if(allowFloat) append(checkPrefix + " Type.FLOAT ||");
+	    if(allowInt) append(checkPrefix + " Type.INT ||");
+	    if(allowLong) append(checkPrefix + " Type.LONG ||");
+	    if(allowPointer) append(checkPrefix + " Type.POINTER ||");
+	    append("\tfalse )"); 
+	    append("// end check operand types");
+	    
+	    // look at exp
+	    TypeExpRecurse r = new
+		TypeExpRecurse("((RETURN) " + stmPrefix + ").retval",
+			       indentPrefix + "\t");
+	    s.retval.accept(r);
+	    degree += r.degree;
+	    exp.append("&& (" + r.exp.toString() + ")");
+	}
+
+	public void visit(Spec.StmSeq s) {
+	    degree++;
+
+	    append("// check statement type");
+	    append("&& " + stmPrefix + " instanceof SEQ");
+	    
+	    // save state before outputting children-checking code
+	    String oldPrefix = stmPrefix;
+	    String oldIndent = indentPrefix;
+
+	    indentPrefix = oldIndent + "\t";
+
+	    append("// check left child"); 
+	    stmPrefix = "((SEQ) " + oldPrefix + ").left";
+	    s.s1.accept(this);
+	    append("// check right child");
+	    stmPrefix = "((SEQ) " + oldPrefix + ").right";
+	    s.s2.accept(this);
+
+	    // restore original state
+	    indentPrefix = oldIndent;
+	    stmPrefix = oldPrefix;
+	}
+
+	public void visit(Spec.StmThrow s) {
+	    degree++;
+	    
+	    append("// check expression type");
+	    append("&& " + stmPrefix + " instanceof THROW");
+
+	    // look at exp
+	    TypeExpRecurse r = new 
+		TypeExpRecurse("((THROW) " + stmPrefix + ").retex",
+			       indentPrefix + "\t");
+	    s.exp.accept(r); 
+	    degree += r.degree;
+	    exp.append("&& (" + r.exp.toString() + ")");
+	}
+    }
+
+
+
     /** Sets up a series of checks to ensure all of the values
 	in the visited expression are of the appropriate
 	type. 
     */
     static class TypeExpRecurse extends Spec.ExpVisitor {
-	/** constantly updated boolean expression to match a tree's types. */
+	/** constantly updated boolean expression to match a tree's
+	    types. */ 
 	StringBuffer exp;
 	
-	/** constantly updated (and reset) with current expression prefix throughout recursive calls. */
+	/** constantly updated (and reset) with current expression
+	    prefix throughout recursive calls. */ 
 	String expPrefix;
 		
 	/** number of nodes "munched" by this so far. */
@@ -79,7 +325,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	TypeExpRecurse(String expPrefix, String indentPrefix) {
-	    exp = new StringBuffer("true\n"); // hack to make everything else additive
+	    // hack to make everything else additive
+	    exp = new StringBuffer("true\n"); 	    
 	    degree = 0;
 	    this.expPrefix = expPrefix;
 	    this.indentPrefix = indentPrefix;

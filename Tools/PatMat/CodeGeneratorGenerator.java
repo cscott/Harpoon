@@ -16,7 +16,7 @@ import java.io.PrintWriter;
  * <code>TreeCode</code>.  In short, a CGG generates a Code Generator.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.4 1999-06-25 12:13:57 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.5 1999-06-29 06:10:45 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     /** The machine specification that the CodeGenerators outputted by
@@ -60,6 +60,19 @@ public abstract class CodeGeneratorGenerator {
 	     Then writes the Java source code out to <code>out</code>,
 	     and flushes <code>out</code> after it finishes outputting
 	     the source code.
+	     All of the output file is parameterized by
+	     <code>this.spec</code>, with the exception of  
+	     <OL> 
+	     <LI>class name 
+	         (defined by <code>this.className</code>)
+	     <LI>class signature 
+	         ( hardcoded as 
+		 <code>public class <i>this.className</i></code> )
+	     <LI>codegen method signature 
+	         ( hardcoded as 
+		 <code>public final void codegen(TreeCode tree)</code>
+		 )
+	     </OL>
 	@param out Target output device for the Java source code.
     */
     public void outputJavaFile(PrintWriter out) {

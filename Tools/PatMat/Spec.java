@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.9 1999-06-28 09:16:54 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.10 1999-06-29 06:10:45 pnkfelix Exp $
  */
 public class Spec  {
 
@@ -455,13 +455,21 @@ public class Spec  {
 	@see IR.Tree.CALL
     */
     public static class StmCall extends Stm {
-	/** Return value destination expression. */
+	/** Return value destination expression. 
+	    @see IR.Tree.EXP
+	 */
 	public final Exp retval;
-	/** Exception value destination expression. */
+	/** Exception value destination expression. 
+	    @see IR.Tree.EXP
+	 */
 	public final Exp retex;
-	/** Function location expression. */
+	/** Function location expression. 
+	    @see IR.Tree.EXP
+	 */
 	public final Exp func;
-	/** Arguments being passed to procedure. */
+	/** Arguments being passed to procedure. 
+	    @see IR.Tree.ExpList
+	 */
 	public final String arglist;
 	/** Constructs a new <code>Spec.StmCall</code>.
 	    @param retval Return value destination expression.
