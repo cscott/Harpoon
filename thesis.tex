@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.101 1999-09-01 15:42:25 cananian Exp $
+% $Id: thesis.tex,v 1.102 1999-09-01 17:48:24 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -17,7 +17,7 @@
 \newcommand*{\figscale}{1.0}
 
 %setup varioref package
-\vrefwarning\renewcommand{\reftextbefore}{on the preceding page}
+\renewcommand{\reftextbefore}{on the preceding page}\vrefwarning
 
 % Meet symbol
 \newcommand{\meet}{\ensuremath{\sqcap}}
@@ -41,14 +41,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.101 $ $}
+\date{\today \\ $ $Revision: 1.102 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.101 $ $}{$ $Revision: 1.101 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.102 $ $}{$ $Revision: 1.102 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -1192,7 +1192,7 @@ correctly to satisfy conditions~\ref{crit_phiplace},
 \ref{crit_sigplace} and \ref{crit_boundary} of the SSI form
 definition, and theorem~\ref{thm:renameproof} proves that variables
 are renamed correctly to satisfy conditions~\ref{crit_phiname}
-and~\ref{crit_signame}.
+and~\ref{crit_signame}.\dontfixme{Ideally we'd prove condition 6 here, too.}
 \end{proof}
 
 \subsubsection{Pruning SSI form}\label{sec:unusedcode}
@@ -1357,12 +1357,121 @@ every node) is certainly not greater than $U_{SSI}$, and thus
 figure~\ref{fig:ussidata} shows linear practical space use.
 
 \section{Uses and applications of SSI}
-\textbf{Discuss predicated analysis, anticipatibility, PRE, etc.
-	Also bitwidth analysis.}%
-\fixme{Write this.
-Use the techniques of \cite{kennedy98:strength} to do loop-invariant
-code motion, strength reduction, and partial-redundancy-elimination
-using SSI form?}
+The principle benefits of using SSI form are the ability to do
+predicated and backward dataflow analyses efficiently.
+\newterm{Predicated analysis} means that we can use information
+extracted from branch conditions and control flow.  The
+\sigfunction{s} in SSI form provide an variable naming that
+allows us to sparsely associate the predication information with
+variable names at control flow splits.  The \sigfunction{s} also
+provide a reverse symmetry to SSI form that allow efficient backward
+dataflow analyses like \newterm{liveness} and
+\newterm{anticipatability}.
+
+In this section, we will briefly sketch how SSI form can be applied to
+backwards dataflow analyses, including anticipatability, an important
+component of partial redundancy elimination.  We will then describe in
+detail our Sparse Predicated Typed Constant propagation algorithm,
+which shows how the predication information of SSI form may be used to
+advantage in practical applications, including the removal of array
+bounds and null-pointer checks.  Lastly, we will describe an extension
+to SPTC that allows \newterm{bitwidth analysis}, and the possible uses
+of this information.
+
+\subsection{Backward Dataflow Analysis}
+\newterm{Backward dataflow analyses} are those in which information is
+propagated in the direction opposite that of program execution
+\cite{offner94}.  There is general agreement
+\cite{johnson93:dfg,ferrante91:pruned,weise94:vdg}
+that SSA form is unable to directly handle backwards dataflow
+analyses; \newterm{liveness} is often cited as a canonical example.
+
+However, SSI form allows the sparse computation of such backwards
+properties.  Liveness, for example, comes ``for free'' from pruned SSI
+form: every variable is live in the region between its use and
+sole definition.  Property~\ref{pty:ssi_dom} states that every
+non-\phifunction{} use of a variable is dominated by the definition;
+Cytron \cite{cytron91} has shown that \phifunction{s} will always be
+found on the dominance frontier.  Thus the live region between
+definition and use can be enumerated with a simple depth-first search,
+taking advantage of the topological sorting by dominance that DFS
+provides \cite{offner94}.  Because of \phifunction{} uses, the DFS
+will have to look one node past its spanning-tree leaves to see the
+\phifunction{s} on the dominance frontier; this does not change the
+algorithmic complexity.
+
+Computation of other dataflow properties will use this same
+enumeration routine to propagate values computed on the sparse SSI
+graph to the intermediate nodes on the control-flow graph.  Formally,
+we can say that the dataflow property for variable $v$ at node $N$ is
+dependent only on the properties at nodes $D$ and $U$, defining and
+using $v$, for which there is a path $D\pathplus U$ containing $N$.
+There is a ``default'' property which holds for nodes on no such path
+from a definition to use; for liveness the default property is ``not
+live.''  The remainder of this section will concentrate on the
+dataflow properties at use and definition points.
+
+A slightly more complicated backward dataflow property is
+\newterm{very busy expressions}; this analysis is somewhat obsolete as
+it serves to save code space, not time.  This in turn is related to
+partial and total \newterm{anticipatability}.
+
+\begin{definition}
+An expression $e$ is \newterm{very busy} at a point $P$ of the program iff it
+is always subsequently used before it is killed \cite{offner94}.
+\end{definition}
+\begin{definition}
+An expression $e$ is \newterm{totally (partially) anticipatable} at a
+point $P$ if, on every (some) path in the CFG from $P$ to \code{END},
+there is a computation of $e$ before an assignment to any of the
+variables in $e$ \cite{johnson93:dfg}.
+\end{definition}
+
+Johnson and Pingali \cite{johnson93:dfg} show how to reduce these
+properties of expressions to properties on variables.  We will
+therefore consider properties $\text{BSY}(v,N)$, $\text{ANT}(v,N)$,
+and $\text{PAN}(v,N)$ denoting very busy, totally anticipatable, and
+partially anticipatable variables $v$ at some program point $N$.
+
+To compute BSY, we start with pruned SSI form.  Any variable defined
+in a \phisigfunction[or]{} is used at some point, by definition.
+So for statements at a point $P$ we have the rules:
+\begin{displaymath}
+\begin{array}{ll}
+v = \ldots & \text{BSY}_{\text{in}}(v,P)=\code{false} \\
+\ldots = v & \text{BSY}_{\text{in}}(v,P)=\code{true} \\
+x=\phi(y_0,\ldots,y_n) &
+       \text{BSY}_{\text{in}}(y_i,P)=\text{BSY}_{\text{out}}(x,P) \\
+\tuple{x_0,\ldots,x_n}=\sigma(y) &
+       \text{BSY}_{\text{in}}(y,P)=\bigwedge_{i=0}^n \text{BSY}_{\text{out}}(x_i,P) \\
+\end{array}
+\end{displaymath}
+
+Total anticipatability, in the single variable case, is identical to
+BSY.  Partial anticipatability for a variable $v$ at point $P$ follows
+the rules:
+\begin{displaymath}
+\begin{array}{ll}
+v = \ldots & \text{PAN}_{\text{in}}(v,P)=\code{false} \\
+\ldots = v & \text{PAN}_{\text{in}}(v,P)=\code{true} \\
+x=\phi(y_0,\ldots,y_n) &
+       \text{PAN}_{\text{in}}(y_i,P)=\text{PAN}_{\text{out}}(x,P) \\
+\tuple{x_0,\ldots,x_n}=\sigma(y) &
+       \text{PAN}_{\text{in}}(y,P)=\bigvee_{i=0}^n \text{PAN}_{\text{out}}(x_i,P) \\
+\end{array}
+\end{displaymath}
+
+The present section is concerned more with feasibility than the
+mechanics of implementation; we refer the interested reader to
+\cite{offner94} and \cite{johnson93:dfg} for details on how to turn
+the efficient computation of BSY, PAN and ANT into practical
+code-hoisting and partial-redundancy elimination routines, respectively.
+
+We note in passing that the sophisticated strength-reduction and code-motion
+techniques of SSAPRE \cite{kennedy98:strength} are applicable to an SSI-based
+representation, as well, and may benefit from the predication
+information available in SSI.  The remainder of this section will
+focus on practical implementations of predicated analyses using SSI form.
 
 \subsection{Sparse Predicated Typed Constant Propagation}
 Sparse Predicated Typed Constant (SPTC) Propagation is a powerful
