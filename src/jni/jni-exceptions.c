@@ -41,11 +41,17 @@ void FNI_ExceptionDescribe(JNIEnv *env) {
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
   jclass exclz;
   struct FNI_classinfo *info;
+  jthrowable saved_exception;
 
   assert(fts->exception != NULL);
-  exclz = (*env)->GetObjectClass(env, fts->exception);
+  /* temporarily clear exception, or the following JNI methods will barf. */
+  saved_exception = fts->exception; fts->exception = NULL;
+  /* okay, get info about this here exception. */
+  exclz = FNI_GetObjectClass(env, saved_exception);
   info = FNI_GetClassInfo(exclz);
   fprintf(stderr, "JNI ExceptionDescribe: %s\n", info->name);
+  /* okay, reset exception. */
+  fts->exception = saved_exception;
 }
 /* Clears any exception that is currently being thrown. */
 void FNI_ExceptionClear(JNIEnv *env) {

@@ -6,7 +6,7 @@
 	.align 4
 
 	/* jvalue FNI_dispatch(void (*method_pointer)(), int narg_words,
-	 *		       void *argptr, jthrowable *exception)
+	 *		       void *argptr, jobject_unwrapped *exception)
 	 * calls the java method pointed to by method_pointer, with nargs
 	 * words of arguments pointed to by argptr. [Note that the words
 	 * are already packed as per native calling convention; int, for

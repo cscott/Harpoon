@@ -4,15 +4,15 @@
 #include "jni-private.h"
   
 extern void FNI_Dispatch_Void(ptroff_t method_pointer, int narg_words,
-			      void * argptr, jthrowable * exception)
+			      void * argptr, jobject_unwrapped * exception)
      __attribute__ ((/*weak,*/ alias ("FNI_Dispatch")));
 extern jobject_unwrapped FNI_Dispatch_Object(ptroff_t method_pointer,
 					     int narg_words, void * argptr,
-					     jthrowable * exception)
+					     jobject_unwrapped * exception)
      __attribute__ ((/*weak,*/ alias ("FNI_Dispatch")));
 #define FNI_DISPATCH_PROTO(name, type) \
    extern type FNI_Dispatch_##name(ptroff_t method_pointer, int narg_words, \
-				   void * argptr, jthrowable * exception) \
+				   void *argptr, jobject_unwrapped *exception)\
    __attribute__ ((/*weak,*/ alias ("FNI_Dispatch")));
 FORPRIMITIVETYPES(FNI_DISPATCH_PROTO);
 
@@ -112,35 +112,35 @@ void FNI_CallStaticVoidMethodA(JNIEnv *env,
 			       jclass clazz, jmethodID methodID,
 			       jvalue * args) {
   ptroff_t argtable[methodID->nargs];
-  jthrowable exception = NULL;
+  jobject_unwrapped exception = NULL;
   assert(FNI_NO_EXCEPTIONS(env));
   move_and_unwrapA(methodID, argtable, args);
   FNI_Dispatch_Void(methodID->offset, methodID->nargs, argtable,
 		    &exception);
-  assert(exception==NULL); /* can't handle exceptions yet. */
+  if (exception!=NULL) FNI_Throw(env, FNI_WRAP(exception));
 }
 void FNI_CallStaticVoidMethodV(JNIEnv *env,
 			       jclass clazz, jmethodID methodID,
 			       va_list args) {
   ptroff_t argtable[methodID->nargs];
-  jthrowable exception = NULL;
+  jobject_unwrapped exception = NULL;
   assert(FNI_NO_EXCEPTIONS(env));
   move_and_unwrapV(methodID, argtable, args);
   FNI_Dispatch_Void(methodID->offset, methodID->nargs, argtable,
 		    &exception);
-  assert(exception==NULL); /* can't handle exceptions yet. */
+  if (exception!=NULL) FNI_Throw(env, FNI_WRAP(exception));
 }
 jobject FNI_CallStaticObjectMethodA(JNIEnv *env,
 				   jclass clazz, jmethodID methodID,
 				   jvalue * args) {
   ptroff_t argtable[methodID->nargs];
   jobject_unwrapped result;
-  jthrowable exception = NULL;
+  jobject_unwrapped exception = NULL;
   assert(FNI_NO_EXCEPTIONS(env));
   move_and_unwrapA(methodID, argtable, args);
   result = FNI_Dispatch_Object(methodID->offset, methodID->nargs,
 			       argtable, &exception);
-  assert(exception==NULL);
+  if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return NULL; }
   return FNI_WRAP(result);
 }
 jobject FNI_CallStaticObjectMethodV(JNIEnv *env,
@@ -148,12 +148,12 @@ jobject FNI_CallStaticObjectMethodV(JNIEnv *env,
 				   va_list args) {
   ptroff_t argtable[methodID->nargs];
   jobject_unwrapped result;
-  jthrowable exception = NULL;
+  jobject_unwrapped exception = NULL;
   assert(FNI_NO_EXCEPTIONS(env));
   move_and_unwrapV(methodID, argtable, args);
   result = FNI_Dispatch_Object(methodID->offset, methodID->nargs,
 			       argtable, &exception);
-  assert(exception==NULL);
+  if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return NULL; }
   return FNI_WRAP(result);
 }
 #define FNI_CALL_STATIC(name, type) \
@@ -162,12 +162,12 @@ type FNI_CallStatic##name##MethodA(JNIEnv *env, \
 				   jvalue * args) { \
   ptroff_t argtable[methodID->nargs]; \
   type result; \
-  jthrowable exception = NULL; \
+  jobject_unwrapped exception = NULL; \
   assert(FNI_NO_EXCEPTIONS(env)); \
   move_and_unwrapA(methodID, argtable, args); \
   result = FNI_Dispatch_##name(methodID->offset, methodID->nargs, \
 			       argtable, &exception); \
-  assert(exception==NULL); \
+  if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return 0; }\
   return result; \
 } \
 type FNI_CallStatic##name##MethodV(JNIEnv *env, \
@@ -175,12 +175,12 @@ type FNI_CallStatic##name##MethodV(JNIEnv *env, \
 				   va_list args) { \
   ptroff_t argtable[methodID->nargs]; \
   type result; \
-  jthrowable exception = NULL; \
+  jobject_unwrapped exception = NULL; \
   assert(FNI_NO_EXCEPTIONS(env)); \
   move_and_unwrapV(methodID, argtable, args); \
   result = FNI_Dispatch_##name(methodID->offset, methodID->nargs, \
 			       argtable, &exception); \
-  assert(exception==NULL); \
+  if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return 0; }\
   return result; \
 }
 FORPRIMITIVETYPES(FNI_CALL_STATIC)
