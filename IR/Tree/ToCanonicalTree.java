@@ -25,7 +25,7 @@ import java.util.HashSet;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.3.2.1 2002-02-27 08:36:48 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.3.2.2 2002-03-15 22:30:00 cananian Exp $
  */
 public class ToCanonicalTree {
     private Tree m_tree;
@@ -37,7 +37,7 @@ public class ToCanonicalTree {
      *              elements of the new <code>CanonicalTreeCode</code>.
      * @param code  The <code>TreeCode</code> which we wish to translate
      */
-    public ToCanonicalTree(final TreeFactory tf, TreeCode code) { 
+    public ToCanonicalTree(final TreeFactory tf, Code code) { 
 	assert tf instanceof Code.TreeFactory;
 	assert ((Code.TreeFactory)tf).getParent().getName().equals("canonical-tree");
 
@@ -58,7 +58,7 @@ public class ToCanonicalTree {
     }
 
     // translate to canonical form
-    private Tree translate(TreeFactory tf, TreeCode code) {
+    private Tree translate(TreeFactory tf, Code code) {
 	CanonicalizingVisitor cv;    // Translates the TreeCode
 	Stm                   root;  // The root of "code"
 	TreeMap               tm;    // maps old trees to translated trees
@@ -77,14 +77,14 @@ public class ToCanonicalTree {
     // Visitor class to translate to canonical form
     class CanonicalizingVisitor extends TreeVisitor {
 	private CloningTempMap ctm; 
-	private TreeCode    code;
+	private Code    code;
 	private TreeFactory tf; 
 	private TreeMap     treeMap;
 	private TreeDerivation oldDeriv;
 	private java.util.Set visited = new java.util.HashSet();
 
 	public CanonicalizingVisitor(TreeFactory tf, TreeMap tm, 
-				     TreeCode code) {
+				     Code code) {
 	    this.code       = code;
 	    this.treeMap    = tm;
 	    this.tf         = tf;
