@@ -9,7 +9,9 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadKind;
 import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.Code;
 import harpoon.Util.Util;
 import harpoon.Util.Collections.WorkSet;
 
@@ -19,17 +21,16 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 
 /**
  * <code>CallGraphImpl</code> constructs a simple directed call graph.
  This is the most conservative implementation of <code>CallGraph</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl.java,v 1.5 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: CallGraphImpl.java,v 1.6 2002-04-11 04:28:49 salcianu Exp $
  */
-public class CallGraphImpl implements CallGraph  {
-    final HCodeFactory hcf;
+public class CallGraphImpl extends AbstrCallGraph  {
+    //final HCodeFactory hcf;
     final ClassHierarchy ch;
     /** Creates a <code>CallGraph</code> using the specified 
      *  <code>ClassHierarchy</code>. <code>hcf</code> must be a code
@@ -68,28 +69,6 @@ public class CallGraphImpl implements CallGraph  {
 	return retval;
     }
     final private Map cache = new HashMap();
-
-    /** Returns a list of all the <code>CALL</code>s quads in the code 
-	of <code>hm</code>. */
-    public CALL[] getCallSites(final HMethod hm){
-	CALL[] retval = (CALL[]) cache_cs.get(hm);
-	if(retval != null)
-	    return retval;
-	final Vector v = new Vector();
-
-	final HCode hc = hcf.convert(hm);
-	if (hc==null)
-	    retval = new CALL[0];
-	else{
-	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
-		Quad q = (Quad) it.next();
-		if (q instanceof CALL) v.add(q);
-	    }	    
-	    retval = (CALL[]) v.toArray(new CALL[v.size()]);
-	}
-	return retval;
-    }
-    final private Map cache_cs = new HashMap();
 
     /** Return an array containing all possible methods called by this
      *  method at a particular call site. */

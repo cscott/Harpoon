@@ -6,6 +6,7 @@ package harpoon.Analysis.Quads;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CALL;
@@ -17,7 +18,7 @@ import harpoon.IR.Quads.CALL;
     some way that might invalidate the old call graph.
 
     @author  Alexandru SALCIANU <salcianu@MIT.EDU>
-    @version $Id: CachingCallGraph.java,v 1.1 2002-04-03 17:02:23 salcianu Exp $ */
+    @version $Id: CachingCallGraph.java,v 1.2 2002-04-11 04:28:49 salcianu Exp $ */
 public class CachingCallGraph implements CallGraph {
     
     /** Creates a <code>CachingCallGraph</code> that caches the results
@@ -93,6 +94,23 @@ public class CachingCallGraph implements CallGraph {
 
     public Set callableMethods() {
 	return cg.callableMethods();
+    }
+
+    public void load_caches() {
+	for(Iterator it = callableMethods().iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    
+	    System.out.print("load_caches " + hm);
+
+	    if(m_cache) calls(hm);
+	    if(cs_cache) {
+		CALL[] calls = getCallSites(hm);
+		for(int i = 0; i < calls.length; i++)
+		    calls(hm, calls[i]);
+	    }
+
+	    System.out.println();
+	}
     }
 
 }

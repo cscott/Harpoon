@@ -8,6 +8,7 @@ import java.util.Vector;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeFactory;
@@ -35,9 +36,9 @@ import harpoon.Analysis.PointerAnalysis.Debug;
  * <code>SSICallGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SSICallGraph.java,v 1.2 2002-04-11 00:41:41 cananian Exp $
+ * @version $Id: SSICallGraph.java,v 1.3 2002-04-11 04:28:49 salcianu Exp $
  */
-public class SSICallGraph implements CallGraph {
+public class SSICallGraph extends AbstrCallGraph {
 
     private CallGraphImpl2 cg;
     private ClassHierarchy ch;
@@ -75,24 +76,15 @@ public class SSICallGraph implements CallGraph {
 	ReachingDefs rd  = new SSxReachingDefsImpl(hcode);
 	ExactTypeMap etm = new TypeInfo(hcode); 
 
-	CALL[] calls = Util.selectCALLs(hcode);
-	for(int i = 0; i < calls.length; i++)
-	    cs2callees.put(calls[i], cg.calls(calls[i], rd, etm));
+	List<Quad> calls = hcode.selectCALLs(); 
+	for(Iterator<Quad> it = calls.iterator(); it.hasNext(); ) {
+	    CALL call = (CALL) it.next();
+	    cs2callees.put(call, cg.calls(call, rd, etm));
+	}
 
 	return (HMethod[]) cs2callees.get(cs);
     }
     private Map cs2callees = new HashMap();
-
-
-    public CALL[] getCallSites(final HMethod hm) {
-	CALL[] retval = (CALL[]) cache_cs.get(hm);
-	if(retval == null) {
-	    retval = Util.selectCALLs((Code)hcf.convert(hm));
-	    cache_cs.put(hm, retval);
-	}
-	return retval;
-    }
-    final private Map cache_cs = new HashMap();
 
 
     public Set callableMethods() {

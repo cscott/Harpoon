@@ -11,8 +11,8 @@ import harpoon.IR.Quads.CALL;
  * <code>CallGraph</code> is a general interface that should be
  implemented by a call graph.
  * 
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: CallGraph.java,v 1.2 2002-02-25 20:59:22 cananian Exp $
+ * @author  Alexandru SALCIANU <salcianu@mit.edu>
+ * @version $Id: CallGraph.java,v 1.3 2002-04-11 04:28:49 salcianu Exp $
  */
 public interface CallGraph extends harpoon.Analysis.CallGraph {
     // XXX: to talk about a CALL quad, you really need to have the HCode
