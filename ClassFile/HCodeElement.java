@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeElement.java,v 1.3 1998-08-03 01:37:15 cananian Exp $
+ * @version $Id: HCodeElement.java,v 1.4 1998-08-03 06:42:13 cananian Exp $
  * @see HCode
  * @see harpoon.ClassFile.Bytecode.Instr
  */
@@ -18,4 +18,8 @@ public interface HCodeElement {
   /** Get the line in the original source file that this element is 
    *  traceable to. */
   public int getLineNumber();
+  /**
+   * Returns a unique numeric identifier for this element.
+   */
+  public int getID();
 }
