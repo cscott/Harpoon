@@ -1,14 +1,12 @@
 // LinearMap.java, created Wed Aug  4 11:59:14 1999 by pnkfelix
 // Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
 
 import java.util.AbstractMap;
 import java.util.Set;
 import java.util.Map;
 import java.util.Iterator;
-
-import harpoon.Util.Collections.LinearSet;
 
 /**
  * <code>LinearMap</code> is a simplistic light-weight
@@ -16,7 +14,7 @@ import harpoon.Util.Collections.LinearSet;
  * small.  It is backed by a <code>LinearSet</code>.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearMap.java,v 1.1.2.5 2000-05-23 17:25:51 pnkfelix Exp $
+ * @version $Id: LinearMap.java,v 1.1.2.1 2001-11-08 00:09:37 cananian Exp $
  */
 public class LinearMap extends AbstractMap {
     private LinearSet set;

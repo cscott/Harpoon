@@ -1,9 +1,10 @@
 // HashEnvironment.java, created Sat Aug 28 23:02:21 1999 by cananian
 // Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
 
-import harpoon.Util.Collections.MapSet;
+import harpoon.Util.FilterIterator;
+import harpoon.Util.Util;
 
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -18,7 +19,7 @@ import java.util.Set;
  * a <code>HashMap</code> as the backing store.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HashEnvironment.java,v 1.1.2.4 2001-11-04 02:34:05 cananian Exp $
+ * @version $Id: HashEnvironment.java,v 1.1.2.1 2001-11-08 00:09:37 cananian Exp $
  */
 public class HashEnvironment extends AbstractMap
     implements Environment {

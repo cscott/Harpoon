@@ -1,7 +1,9 @@
 // UniqueVector.java, created Sat Aug  1  1:09:02 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
+
+import harpoon.Util.IteratorEnumerator;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -18,7 +20,7 @@ import java.util.Set;
  * <p>Conforms to the JDK 1.2 Collections API.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueVector.java,v 1.6.2.2 1999-08-04 06:31:03 cananian Exp $
+ * @version $Id: UniqueVector.java,v 1.1.2.1 2001-11-08 00:09:37 cananian Exp $
  * @see java.util.Vector
  * @see java.util.Hashtable
  */

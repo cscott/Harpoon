@@ -1,7 +1,7 @@
 // PersistentTreeNode.java, created Wed Mar 31 18:41:03 1999 by cananian
 // Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
 
 import java.util.Comparator;
 /**
@@ -9,7 +9,7 @@ import java.util.Comparator;
  * search tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentTreeNode.java,v 1.1.2.1 1999-04-08 06:56:40 cananian Exp $
+ * @version $Id: PersistentTreeNode.java,v 1.1.2.1 2001-11-08 00:09:37 cananian Exp $
  */
 class PersistentTreeNode extends AbstractMapEntry {
     public final Object key;

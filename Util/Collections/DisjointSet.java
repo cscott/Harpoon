@@ -1,10 +1,10 @@
 // DisjointSet.java, created Wed Feb 23 13:06:57 2000 by cananian
 // Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
 
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Util;
 
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -22,7 +22,7 @@ import java.util.Set;
  * function.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DisjointSet.java,v 1.1.2.6 2000-11-25 16:27:42 cananian Exp $
+ * @version $Id: DisjointSet.java,v 1.1.2.1 2001-11-08 00:09:37 cananian Exp $
  */
 public class DisjointSet  {
     private final Map elmap = new HashMap();

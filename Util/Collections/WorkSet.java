@@ -1,7 +1,10 @@
 // WorkSet.java, created Tue Feb 23 01:18:37 1999 by cananian
 // Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
+
+import harpoon.Util.Util;
+import harpoon.Util.Worklist;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -12,7 +15,7 @@ import java.util.Iterator;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.1.2.11 2000-02-08 22:37:53 cananian Exp $
+ * @version $Id: WorkSet.java,v 1.1.2.1 2001-11-08 00:09:37 cananian Exp $
  */
 public class WorkSet extends java.util.AbstractSet implements Worklist{
     private /*final*/ HashMap hm;

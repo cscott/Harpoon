@@ -1,7 +1,10 @@
 // PersistentTree.java, created Wed Mar 31 18:41:03 1999 by cananian
 // Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
+
+import harpoon.Util.Default;
+import harpoon.Util.UnmodifiableIterator;
 
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -17,7 +20,7 @@ import java.util.Stack;
  * binary search tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentMap.java,v 1.1.2.2 1999-06-16 02:35:02 cananian Exp $
+ * @version $Id: PersistentMap.java,v 1.1.2.1 2001-11-08 00:09:37 cananian Exp $
  */
 public class PersistentMap  {
     final PersistentTreeNode root;

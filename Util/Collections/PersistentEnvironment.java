@@ -1,7 +1,7 @@
 // PersistentEnvironment.java, created Sat Aug 28 22:23:47 1999 by cananian
 // Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
 
 import java.util.AbstractMap;
 import java.util.Collections;
@@ -12,7 +12,7 @@ import java.util.Set;
  * built on a <code>PersistentMap</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentEnvironment.java,v 1.1.2.1 1999-08-29 04:23:07 cananian Exp $
+ * @version $Id: PersistentEnvironment.java,v 1.1.2.1 2001-11-08 00:09:37 cananian Exp $
  */
 public class PersistentEnvironment extends AbstractMap
     implements Environment {

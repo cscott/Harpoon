@@ -1,7 +1,9 @@
 // UniqueStack.java, created Thu Sep 10 19:08:22 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
+
+import harpoon.Util.Worklist;
 
 import java.util.Collection;
 import java.util.EmptyStackException;
@@ -11,7 +13,7 @@ import java.util.EmptyStackException;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueStack.java,v 1.3.2.2 1999-06-17 20:58:57 cananian Exp $
+ * @version $Id: UniqueStack.java,v 1.1.2.1 2001-11-08 00:09:37 cananian Exp $
  */
 
 public class UniqueStack extends UniqueVector implements Worklist {

@@ -1,7 +1,7 @@
 // AbstractMapEntry.java, created Tue Feb 23 16:34:46 1999 by cananian
 // Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
 
 import java.util.Map;
 /**
@@ -13,7 +13,7 @@ import java.util.Map;
  * an <code>UnsupportedOperationException</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractMapEntry.java,v 1.1.2.5 1999-06-18 01:48:10 cananian Exp $ */
+ * @version $Id: AbstractMapEntry.java,v 1.1.2.1 2001-11-08 00:09:37 cananian Exp $ */
 public abstract class AbstractMapEntry implements Map.Entry {
     /** Returns the key corresponding to this entry. */
     public abstract Object getKey();

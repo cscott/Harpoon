@@ -1,7 +1,7 @@
 // PairMapEntry.java, created Wed Aug  4 12:16:20 1999 by pnkfelix
 // Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
 
 /**
  * <code>PairMapEntry</code> is the easiest implementation of a
@@ -18,7 +18,7 @@ package harpoon.Util;
  * <code>null</code>s in their internal structures.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: PairMapEntry.java,v 1.1.2.2 2000-02-12 20:56:04 cananian Exp $
+ * @version $Id: PairMapEntry.java,v 1.1.2.1 2001-11-08 00:09:37 cananian Exp $
  */
 public class PairMapEntry extends AbstractMapEntry {
     private Object key, value;
