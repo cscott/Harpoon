@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.68 2002-04-10 02:58:18 cananian Exp $
+# $Id: GNUmakefile,v 1.69 2002-04-11 04:29:32 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -160,11 +160,10 @@ Support/gjlib.jar: $(shell grep -v ^\# gj-files ) gj-files
 
 java:	PASS = 1
 java:	$(ALLSOURCE) $(PROPERTIES) gj-files
-	if [ ! -d harpoon ]; then \
-	  $(MAKE) first; \
-	fi
 # some folk might not have the GJ compiler; use the pre-built gjlib for them.
-	@if [ -x $(firstword ${JCC5}) ]; then \
+# also use gjlib when building the first time from scratch, to work around
+# two-compiler dependency problems.
+	@if [ -d harpoon -a -x $(firstword ${JCC5}) ]; then \
 	  echo Building with $(firstword ${JCC5}). ;\
 	  ${JCC5} ${JFLAGS} $(shell grep -v "^#" gj-files) ; \
 	else \
@@ -172,6 +171,9 @@ java:	$(ALLSOURCE) $(PROPERTIES) gj-files
 	  echo "See http://www.flex-compiler.lcs.mit.edu/Harpoon/jsr14.txt"  ;\
 	  echo " for information on how to install/use the GJ compiler." ; \
 	  ${JAR} xf Support/gjlib.jar harpoon ; \
+	fi
+	if [ ! -d harpoon ]; then \
+	  $(MAKE) first; \
 	fi
 	@echo Compiling...
 	@${JCC} ${JFLAGS} $(filter-out $(shell grep -v "^#" gj-files), $(ALLSOURCE))
@@ -215,7 +217,7 @@ properties:
 	@echo done.
 
 first:
-	mkdir harpoon silicon gnu
+	mkdir -p harpoon silicon gnu
 	for pkg in $(sort \
 	  $(filter-out Contrib%,$(filter-out JavaChip%,$(ALLPKGS)))); do \
 		mkdir -p harpoon/$$pkg; \
