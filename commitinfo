@@ -20,7 +20,7 @@
 # -c    - check for things like "$Id" near head of file, no "$Log", etc.
 #---------------------------------------------------------------------
 Benchmarks $CVSROOT/CVSROOT/commit_prep -u -r
-Code	$CVSROOT/CVSROOT/commit_prep -u -r
+XCode	$CVSROOT/CVSROOT/commit_prep -u -r
 EventDriven $CVSROOT/CVSROOT/commit_prep -u -r
 Realtime	$CVSROOT/CVSROOT/commit_prep -u -r
 RoleInference	$CVSROOT/CVSROOT/commit_prep -u -r
