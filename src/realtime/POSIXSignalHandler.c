@@ -1,7 +1,8 @@
-#include "jni.h"
+#include "POSIXSignalHandler.h"
 #include <signal.h>
 
-void Java_POSIXSignalHandler_setSignals(JNIEnv *env) {
+JNIEXPORT void JNICALL Java_javax_realtime_POSIXSignalHandler_setSignals
+(JNIEnv *env, jobject obj) {
   jclass POSIXClass = (*env)->FindClass(env, "POSIXSignalHandler");
   jfieldID SIG_ID;
   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGABRT","I");
@@ -74,18 +75,18 @@ void Java_POSIXSignalHandler_setSignals(JNIEnv *env) {
   // This signals are not defined on my machine (RedHat Linux 7.3)
   // If they are defined on yours (in /usr/include/asm/signal.h),
   // uncomment these lines
-/*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGCANCEL","I"); */
-/*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGCANCEL); */
-/*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGGEMT","I"); */
-/*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGGEMT); */
-/*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGFREEZE","I"); */
-/*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGFREEZE); */
-/*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGLOST","I"); */
-/*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGLOST); */
-/*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGLWP","I"); */
-/*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGLWP); */
-/*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGTHAW","I"); */
-/*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGTHAW); */
-/*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGWAITING","I"); */
-/*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGWAITING); */
+  /*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGCANCEL","I"); */
+  /*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGCANCEL); */
+  /*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGEMT","I"); */
+  /*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGEMT); */
+  /*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGFREEZE","I"); */
+  /*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGFREEZE); */
+  /*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGLOST","I"); */
+  /*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGLOST); */
+  /*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGLWP","I"); */
+  /*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGLWP); */
+  /*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGTHAW","I"); */
+  /*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGTHAW); */
+  /*   SIG_ID = (*env)->GetStaticFieldID(env, POSIXClass, "SIGWAITING","I"); */
+  /*   (*env)->SetStaticIntField(env, POSIXClass, SIG_ID, (int)SIGWAITING); */
 }
