@@ -21,7 +21,6 @@ import java.awt.event.KeyListener;
 public class HumanRecognition extends Node {
 
     private Pair head;
-    private int size;
 
     private static final int confirmEvery = 10;
 
@@ -29,7 +28,7 @@ public class HumanRecognition extends Node {
 
     public HumanRecognition() {
 	this.head = null;
-	this.size = 0;
+	addTarget(-2);
     }
 
 
@@ -137,10 +136,13 @@ public class HumanRecognition extends Node {
 
 
     private Pair addTarget(ImageData id) {
-	Pair newPair = new Pair(id.trackedObjectUniqueID, head);
+	return this.addTarget(id.trackedObjectUniqueID);
+    }
+
+    private Pair addTarget(int trackedObjectUniqueID) {
+	Pair newPair = new Pair(trackedObjectUniqueID, head);
 	head = newPair;
-	size++;
-	return newPair;
+	return newPair;	
     }
 
     void removeMe(MyDisplay d) {
