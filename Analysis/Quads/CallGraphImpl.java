@@ -26,7 +26,7 @@ import java.util.Vector;
  This is the most conservative implementation of <code>CallGraph</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl.java,v 1.3 2002-02-26 22:41:41 cananian Exp $
+ * @version $Id: CallGraphImpl.java,v 1.4 2002-04-02 23:59:00 salcianu Exp $
  */
 public class CallGraphImpl implements CallGraph  {
     final HCodeFactory hcf;
@@ -91,8 +91,8 @@ public class CallGraphImpl implements CallGraph  {
     }
     final private Map cache_cs = new HashMap();
 
-    /** Return a list of all possible methods called by this method at
-     *  a particular call site. */
+    /** Return an array containing all possible methods called by this
+     *  method at a particular call site. */
     public HMethod[] calls(final HMethod m, final CALL cs) {
 	HMethod cm = cs.method();
 	// for 'special' invocations, we know the method exactly.

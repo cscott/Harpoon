@@ -15,12 +15,13 @@ import java.lang.reflect.Array;
 import harpoon.ClassFile.HCode;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.FOOTER;
 
 
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.14 2002-02-26 22:47:24 cananian Exp $
+ * @version $Id: Util.java,v 1.15 2002-04-02 23:59:17 salcianu Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -452,9 +453,16 @@ public abstract class Util {
     return diff;
   }
 
+  /** Returns the unique <code>METHOD</code> quad from <code>hcode</code>. */
   public static final METHOD getMETHOD(HCode hcode) {
     HEADER header = (HEADER) hcode.getRootElement();
     return (METHOD) header.next(1); // 0 is the FOOTER node
+  }
+
+  /** Returns the unique <code>FOOTER</code> quad from <code>hcode</code>. */
+  public static final FOOTER getFOOTER(HCode hcode) {
+    HEADER header = (HEADER) hcode.getRootElement();
+    return (FOOTER) header.next(0);
   }
 
   /** Returns a string that is identical to <code>str</code>, except

@@ -94,7 +94,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.3 2002-02-26 22:46:40 cananian Exp $
+ * @version $Id: PAMain.java,v 1.4 2002-04-02 23:59:05 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -1841,7 +1841,7 @@ public abstract class PAMain {
     */
 
     private static String[] examples = {
-	"java -mx200M harpoon.Main.PAMain -a multiplyAdd --ccs=2 --wts" + 
+	"java -mx200M harpoon.Main.PAMain -a multiplyAdd --ccs=2 --wts " + 
 	"harpoon.Test.PA.Test1.complex",
 	"java -mx200M harpoon.Main.PAMain -s -a run " + 
 	"harpoon.Test.PA.Test2.Server",

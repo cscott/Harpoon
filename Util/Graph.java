@@ -41,7 +41,7 @@ import java.io.PrintWriter;
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.3 2002-02-25 21:08:45 cananian Exp $
+ * @version $Id: Graph.java,v 1.4 2002-04-02 23:59:17 salcianu Exp $
  */
 
 public abstract class Graph  {
@@ -315,7 +315,7 @@ public abstract class Graph  {
 			    "sourcename : \"" + sourcename + "\" " +
 			    "targetname : \"" + targetname + "\" " +
 			    ((j >= lbb.getHandlerStartIndex()) ? 
-			     "linestyle : dashed " : "" ) +
+			     "linestyle : dotted " : "" ) +
 			    "}");
 	    }
 	}
