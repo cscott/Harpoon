@@ -6,26 +6,39 @@ package harpoon.Analysis.Companions;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.Quad;
 import harpoon.Temp.Temp;
+import harpoon.Util.Default;
+import harpoon.Util.Collections.AggregateMapFactory;
+import harpoon.Util.Collections.AggregateSetFactory;
 import harpoon.Util.Collections.Graph;
+import harpoon.Util.Collections.MapFactory;
 import harpoon.Util.Collections.SetFactory;
 import harpoon.Util.Collections.WorkSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 /**
  * <code>SingularFinder</code> is an implementation of
  * <code>SingularOracle</code> for quad IRs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SingularFinder.java,v 1.2 2003-05-09 21:16:28 cananian Exp $
+ * @version $Id: SingularFinder.java,v 1.3 2003-05-16 00:36:32 cananian Exp $
  */
 public class SingularFinder implements SingularOracle<Quad> {
     private final HCodeFactory hcf;
@@ -34,72 +47,55 @@ public class SingularFinder implements SingularOracle<Quad> {
         this.hcf = hcf;
     }
     
-    private HCode<Quad> convert(HMethod m) {
-	return (harpoon.IR.Quads.Code) hcf.convert(m);
-    }
-
-    public Set<Quad> genSites(HMethod m, StaticValue<Quad> sv) {
-	if (!methodCache.containsKey(m)) computeSingularity(m);
-	return methodCache.get(m).genSiteMap.get(sv);
-    }
-
     public Set<Temp> conditionallySingular(HMethod m, StaticValue<Quad> sv) {
-	if (!methodCache.containsKey(m)) computeSingularity(m);
-	return methodCache.get(m).condSingMap.get(sv);
-    }
-
-    // xxx should cache this result.
-    public Set<Temp> pairwiseSingular(HMethod m, StaticValue<Quad> sv1,
-				      StaticValue<Quad> sv2) {
-	Set<Temp> P1 = conditionallySingular(m, sv1);
-	Set<Temp> P2 = conditionallySingular(m, sv2);
-	// easy cases.
-	if (P1==null || P2==null) return null; // sv1/sv2 not singular!
-	Set<Temp> P = methodCache.get(m).tempSetFactory.makeSet();
-	P.addAll(P1); P.addAll(P2);
-	Set<Quad> gs1 = genSites(m, sv1);
-	Set<Quad> gs2 = genSites(m, sv2);
-	Set<Quad> intersection = methodCache.get(m).quadSetFactory.makeSet();
-	intersection.addAll(gs1); intersection.retainAll(gs2);
-	if (intersection.isEmpty()) return P;
-	// hard case: use method summary, look for paths from sv1 to sv2
-	// that don't pass through *all* the quads listed in 'intersection'
-	// easy sub case: when there is no path from sv1 to sv2 or sv2 to sv1.
-	assert false: "unimplemented";
-	return P;
+	return mutuallySingular(m, Collections.singleton(sv));
     }
 
     // xxx cache this result?
     public Set<Temp> mutuallySingular(HMethod m,
 				      Collection<StaticValue<Quad>> svs) {
-	assert svs.size()>0;
-	List<StaticValue<Quad>> worklist = new ArrayList<StaticValue<Quad>>
-	    (new HashSet<StaticValue<Quad>>(svs)); // make unique.
-	// easy cases first.
-	if (worklist.size()==1)
-	    return conditionallySingular(m, worklist.get(0));
-	if (worklist.size()==2)
-	    return pairwiseSingular(m, worklist.get(0), worklist.get(1));
-	// hard cases: quadratic in size of set =(
-	Set<Temp> P = methodCache.get(m).tempSetFactory.makeSet(); // empty.
-	for (int i=0; i<worklist.size(); i++) {
-	    for (int j=i+1; j<worklist.size(); j++) {
-		Set<Temp> Px = pairwiseSingular
-		    (m, worklist.get(i), worklist.get(j));
-		if (Px==null) return null; // not mutually singular!!
-		P.addAll(Px);
+	if (!methodCache.containsKey(m))
+	    computeSingularity(m);
+	assert methodCache.containsKey(m);
+	PerMethodInfo pmi = methodCache.get(m);
+	Set<StaticValue<Quad>> svsset = new HashSet<StaticValue<Quad>>(svs);
+	Set<Temp> result = new TreeSet<Temp>();// compactness?
+	// mutually singular iff
+	//  \forall <v,s> \in svs : RDin[s](v)!=\bot &&
+	//              {} = (svs \intersect RUin[s][RDin[s](v)])
+	for (Iterator<StaticValue<Quad>> it=svs.iterator(); it.hasNext(); ) {
+	    StaticValue<Quad> sv = it.next();
+	    assert pmi.rdResult.containsKey(sv.right());
+	    // first condition.
+	    Set<DefPoint> dps = pmi.rdResult.get(sv.right()).get(sv.left());
+	    if (dps==null)
+		return null; // this static value is not singular!
+	    // second condition.  first, compute RUin[s] of all dp in dps.
+	    for (Iterator<DefPoint> it2=dps.iterator(); it2.hasNext(); ) {
+		DefPoint dp = it2.next();
+		Set<StaticValue<Quad>> ru=pmi.ruResult.get(sv.right()).get(dp);
+		// check that none are in svs
+		for (Iterator<StaticValue<Quad>> it3=ru.iterator();
+		     it3.hasNext(); )
+		    if (svsset.contains(it3.next()))
+			return null;//not mutually singular with some sv in svs
+		// also keep track of P union {dps}
+		if (dp.right() instanceof METHOD)
+		    result.add(dp.left());
 	    }
 	}
-	return P;
+	// well, these are mutually singular.  Boo-yah!
+	return Collections.unmodifiableSet(result);
     }
 
     private void computeSingularity(HMethod m) {
 	assert !methodCache.containsKey(m);
-	HCode<Quad> hc = convert(m);
-
-	assert false : "unimplemented"; // xxx do this analysis.
-
-	//methodCache.put(m, ...);
+	QuadFlowGraph qfg = new QuadFlowGraph
+	    ((harpoon.IR.Quads.Code) hcf.convert(m));
+	Map<QNode,RDInfo> rdResult = new RDSolver().compute(qfg);
+	Map<QNode,RUInfo> ruResult = new RUSolver(rdResult).compute(qfg);
+	// xxx trim these.
+	methodCache.put(m, new PerMethodInfo(qfg, rdResult, ruResult));
 	assert methodCache.containsKey(m);
     }
 
@@ -107,58 +103,235 @@ public class SingularFinder implements SingularOracle<Quad> {
 	new HashMap<HMethod,PerMethodInfo>();
 
     static class PerMethodInfo {
-	Map<StaticValue<Quad>,Set<Temp>> condSingMap;
-	Map<StaticValue<Quad>,Set<Quad>> genSiteMap;
-	// trimmed to include only temps mentioned in condSingMap
-	SetFactory<Temp> tempSetFactory;
-	// trimmed to include only quads named in genSiteMap or condSingMap
-	SetFactory<Quad> quadSetFactory;
-	Graph trimmedCFG; // CFG trimmed to universe of quadSetFactory.
+	final QuadFlowGraph qfg;
+	final Map<QNode,RDInfo> rdResult;
+	final Map<QNode,RUInfo> ruResult;
+	PerMethodInfo(QuadFlowGraph qfg,
+		      Map<QNode,RDInfo> rdResult, Map<QNode,RUInfo> ruResult) {
+	    this.qfg = qfg; this.rdResult = rdResult; this.ruResult = ruResult;
+	}
     }
 
-
-    // re-use in/gen/kill.  use aggregatemap for nout.
-    // implement setfactory that reuses set objects where possible.
-    private Map<Quad,Set<StaticValue<Quad>>> computeRU(HCode<Quad> hc) {
-	Map<Quad,Set<StaticValue<Quad>>> inRU =
-	    new HashMap<Quad,Set<StaticValue<Quad>>>();//xxx small (array) map?
-	Map<Quad,Set<StaticValue<Quad>>> outRU =
-	    new HashMap<Quad,Set<StaticValue<Quad>>>();//xxx small (array) map?
-
-	WorkSet<Quad> worklist = new WorkSet<Quad>(hc.getElementsL());
-	while (!worklist.isEmpty()) {
-	    Quad n = worklist.removeFirst();
-	    Set<StaticValue<Quad>> in =
-		new HashSet<StaticValue<Quad>>(); // xxx small
-	    Set<StaticValue<Quad>> gen =
-		new HashSet<StaticValue<Quad>>(); // xxx small
-	    Set<StaticValue<Quad>> kill =
-		new HashSet<StaticValue<Quad>>(); // xxx small
-	    Set<StaticValue<Quad>> out = outRU.get(n);
-	    // compute in from union of predecessors out
-	    for (Iterator<Quad> it=Arrays.asList(n.prev()).iterator();
-		 it.hasNext(); )
-		in.addAll(outRU.get(it.next()));
-	    inRU.put(n, in);
-	    // compute gen/kill
-	    for (Iterator<Temp> it=n.useC().iterator(); it.hasNext(); )
-		gen.add(new StaticValue<Quad>(it.next(), n));
-	    for (Iterator<StaticValue<Quad>> it=in.iterator(); it.hasNext();) {
-		StaticValue<Quad> sv = it.next();
-		if (n.defC().contains(sv.left()))
-		    kill.add(sv);
-	    }
-	    // recompute out.
-	    Set<StaticValue<Quad>> nout =
-		new HashSet<StaticValue<Quad>>(); // xxx small.
-	    nout.addAll(in); nout.removeAll(kill); nout.addAll(gen);
-	    if (!nout.equals(out)) {
-		outRU.put(n, nout);
-		// add all successors to worklist.
-		worklist.addAll(Arrays.asList(n.next()));
-	    }
+    static class DefPoint extends Default.PairList<Temp,Quad> {
+	DefPoint(Temp v, Quad def) { super(v, def); }
+    }
+    static abstract class Info<I extends Info<I,K,V>,K,V> {
+	final MapFactory<K,Set<V>> mf;
+	final Map<K,Set<V>> map;
+	Info(MapFactory<K,Set<V>> mf, Map<K,Set<V>> map) {
+	    this.mf = mf;
+	    this.map = map;
 	}
-	// result is inRU map.
-	return inRU;
+	protected abstract I thisInfo();
+	protected abstract I newInfo(MapFactory<K,Set<V>> mf, Map<K,Set<V>> map);
+	Set<V> get(K k) {
+	    if (map.containsKey(k)) return map.get(k);
+	    return Collections.EMPTY_SET;
+	}
+	I put(K k, Set<V> s) {
+	    if (s==null || s.size()>0) {
+		if (map.containsKey(k) &&
+		    (s==null ? null==map.get(k) : s.equals(map.get(k))))
+		    return thisInfo(); // no change necessary.
+		I result = newInfo(this.mf, mf.makeMap(this.map));
+		result.map.put(k, s);
+		return result;
+	    } else return removeKey(k);
+	}
+	I removeKey(K k) {
+	    if (!map.containsKey(k)) return thisInfo();
+	    I result = newInfo(this.mf, mf.makeMap(this.map));
+	    result.map.remove(k);
+	    return result;
+	}
+	I add(SetFactory<V> sf, K k, V v) {
+	    Set<V> s = get(k);
+	    if (s.contains(v)) return thisInfo();
+	    s = sf.makeSet(s);
+	    s.add(v);
+	    return put(k, s);
+	}
+	public int hashCode() { return map.hashCode(); }
+	public boolean equals(Object o) {
+	    if (this==o) return true;
+	    if (!(o instanceof Info)) return false;
+	    return this.map.equals(((Info)o).map);
+	}
+    }
+    static class RDInfo extends Info<RDInfo,Temp,DefPoint> {
+	RDInfo(MapFactory<Temp,Set<DefPoint>> mf) {
+	    this(mf, mf.makeMap());
+	}
+	private RDInfo(MapFactory<Temp,Set<DefPoint>> mf, 
+		       Map<Temp,Set<DefPoint>> map) {
+	    super(mf, map);
+	}
+	protected RDInfo thisInfo() { return this; }
+	protected RDInfo newInfo(MapFactory<Temp,Set<DefPoint>> mf,
+				 Map<Temp,Set<DefPoint>> map) {
+	    return new RDInfo(mf, map);
+	}
+	static RDInfo join(MapFactory<Temp,Set<DefPoint>> mf,
+			   SetFactory<DefPoint> sf,
+			   RDInfo rd1, RDInfo rd2) {
+	    RDInfo result = new RDInfo
+		(mf, multiMapJoin(mf, sf, rd1.map, rd2.map));
+	    if (result.equals(rd1)) return rd1; // reuse if possible
+	    if (result.equals(rd2)) return rd2; // reuse if possible
+	    return result;
+	}
+    }
+    static class RDSolver extends DataFlowSolver.Forward<QNode,QEdge,RDInfo> {
+	MapFactory<Temp,Set<DefPoint>> mf =
+	    new AggregateMapFactory<Temp,Set<DefPoint>>();
+	SetFactory<DefPoint> sf =
+	    new AggregateSetFactory<DefPoint>();
+	RDInfo EMPTY = new RDInfo(mf);
+
+	// initialize to \q. \v. {} (except for method quad)
+	protected RDInfo init(QNode qn) {
+	    Quad q = qn.baseQuad();
+	    if (!(q instanceof METHOD)) return EMPTY;
+	    METHOD m = (METHOD) q;
+	    RDInfo result = new RDInfo(mf);
+	    for (int i=0; i<m.paramsLength(); i++)
+		result.put(m.params(i),
+			   Collections.singleton(new DefPoint(m.params(i),m)));
+	    return result;
+	}
+	// join rule for RDInfo.
+	protected RDInfo join(RDInfo rd1, RDInfo rd2) {
+	    return RDInfo.join(mf, sf, rd1, rd2);
+	}
+	protected RDInfo out(QNode qn, RDInfo in) {
+	    Quad q = qn.baseQuad();
+	    RDInfo out = in;
+	    if (qn.isPhiEntrance() || qn.isSigmaExit()) {
+		Iterator<Temp> useI = qn.useC().iterator();
+		Iterator<Temp> defI = qn.defC().iterator();
+		while (useI.hasNext() && defI.hasNext())
+		    out = doMove(out, defI.next(), useI.next());
+		assert !useI.hasNext();
+		assert !defI.hasNext();
+	    } else if (q instanceof MOVE) {
+		MOVE move = (MOVE) q;
+		out = doMove(out, move.dst(), move.src());
+	    } else if (q instanceof NEW) {
+		NEW n = (NEW) q;
+		out = out.put(n.dst(), Collections.singleton
+			      (new DefPoint(n.dst(), n)));
+	    } else if (q instanceof ANEW) {
+		ANEW n = (ANEW) q;
+		out = out.put(n.dst(), Collections.singleton
+			      (new DefPoint(n.dst(), n)));
+	    } else {
+		for (Iterator<Temp> it=qn.defC().iterator(); it.hasNext(); )
+		    out = out.put(it.next(), null);
+	    }
+	    return out;
+	}
+	RDInfo doMove(RDInfo in, Temp dst, Temp src) {
+	    return in.put(dst, in.get(src));
+	}
+    }
+    static class RUInfo extends Info<RUInfo,DefPoint,StaticValue<Quad>> {
+	RUInfo(MapFactory<DefPoint,Set<StaticValue<Quad>>> mf) {
+	    this(mf, mf.makeMap());
+	}
+	private RUInfo(MapFactory<DefPoint,Set<StaticValue<Quad>>> mf, 
+		       Map<DefPoint,Set<StaticValue<Quad>>> map) {
+	    super(mf, map);
+	}
+	protected RUInfo thisInfo() { return this; }
+	protected RUInfo newInfo(MapFactory<DefPoint,Set<StaticValue<Quad>>> mf,
+				 Map<DefPoint,Set<StaticValue<Quad>>> map) {
+	    return new RUInfo(mf, map);
+	}
+	static RUInfo join(MapFactory<DefPoint,Set<StaticValue<Quad>>> mf,
+			   SetFactory<StaticValue<Quad>> sf,
+			   RUInfo ru1, RUInfo ru2) {
+	    RUInfo result = new RUInfo
+		(mf, multiMapJoin(mf, sf, ru1.map, ru2.map));
+	    if (result.equals(ru1)) return ru1; // reuse if possible
+	    if (result.equals(ru2)) return ru2; // reuse if possible
+	    return result;
+	}
+    }
+    static class RUSolver extends DataFlowSolver.Forward<QNode,QEdge,RUInfo> {
+	Map<QNode,RDInfo> rdResult;
+	MapFactory<DefPoint,Set<StaticValue<Quad>>> mf =
+	    new AggregateMapFactory<DefPoint,Set<StaticValue<Quad>>>();
+	SetFactory<StaticValue<Quad>> sf =
+	    new AggregateSetFactory<StaticValue<Quad>>();
+	RUInfo EMPTY = new RUInfo(mf);
+
+	RUSolver(Map<QNode,RDInfo> rdResult) { this.rdResult=rdResult; }
+
+	// initialize to \q. \sv. {}
+	protected RUInfo init(QNode qn) { return EMPTY; }
+	// join rule for RUInfo.
+	protected RUInfo join(RUInfo ru1, RUInfo ru2) {
+	    return RUInfo.join(mf, sf, ru1, ru2);
+	}
+	RDInfo getRD(QNode qn) { assert false:"unimplemented";return null; }
+	protected RUInfo out(QNode qn, RUInfo in) {
+	    Quad q = qn.baseQuad();
+	    RUInfo out = in;
+	    if (qn.isPhiEntrance() || qn.isSigmaExit() ||
+		q instanceof MOVE) {
+		// out = in.
+	    } else {
+		// use QNode's useC/defC for CALL/TYPESWITCH/SWITCH/CJMP
+		RDInfo rd = rdResult.get(qn);
+		// first, gen for uses.
+		for (Iterator<Temp> it=qn.useC().iterator(); it.hasNext(); ) {
+		    Temp u = it.next();
+		    Set<DefPoint> s = rd.get(u);
+		    if (s!=null)
+			for (Iterator<DefPoint> it2=s.iterator();
+			     it2.hasNext(); ) {
+			    DefPoint dp = it2.next();
+			    out = out.add(sf, dp, new StaticValue<Quad>(u, q));
+			}
+		}
+		// last, kill for defs.
+		for (Iterator<Temp> it=qn.defC().iterator(); it.hasNext(); )
+		    out = out.removeKey(new DefPoint(it.next(), q));
+	    }
+	    return out;
+	}
+    }
+
+    private static <V> Set<V> union(SetFactory<V> sf, Set<V> s1, Set<V> s2) {
+	// try to reuse sets.
+	if (s1.size()==0) return s2;
+	if (s2.size()==0) return s1;
+	// XXX these tests are slow =(
+	if (s1.containsAll(s2)) return s1;
+	if (s2.containsAll(s1)) return s2;
+	// okay, have to create new set.
+	Set<V> result = sf.makeSet(s1); result.addAll(s2);
+	return result;
+    }
+    private static <K,V> Map<K,Set<V>> multiMapJoin(MapFactory<K,Set<V>> mf,
+						    SetFactory<V> sf,
+						    Map<K,Set<V>> m1,
+						    Map<K,Set<V>> m2) {
+	Map<K,Set<V>> result = mf.makeMap(m1);
+	for (Iterator<K> it= m2.keySet().iterator(); it.hasNext(); ) {
+	    K key = it.next();
+	    Set<V> s1 = result.get(key);
+	    Set<V> s2 = m2.get(key);
+	    assert m2.containsKey(key);
+	    if (!result.containsKey(key))
+		result.put(key, s2);
+	    else if (s1==null || s2==null)
+		result.put(key, null); // bottom.
+	    else
+		result.put(key, union(sf, s1, s2));
+	}
+	if (result.equals(m1)) return m1; // reuse maps if possible
+	if (result.equals(m2)) return m2; // reuse maps if possible.
+	return result;
     }
 }
