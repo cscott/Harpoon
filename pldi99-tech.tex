@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi99-tech.tex,v 1.10 1999-11-13 05:56:53 rinard Exp $
+% $Id: pldi99-tech.tex,v 1.11 1999-11-13 06:51:20 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{The Static Single Information form}
 In this section we will provide a formal specification of SSI form and
@@ -77,27 +77,29 @@ post-dominance frontier.
 
 Once the compiler has determined where to place the 
 \phifunction{s} and \sigfunction{s}, it renames variables to
-satisfy the following two conditions:
-\begin{enumerate}
-\item For every node $x$ containing a definition of a variable $a$ in
+satisfy the following two properties:
+\begin{property}[Naming after \phifunction{s}.]\label{crit_phiname}
+For every node $x$ containing a definition of a variable $a$ in
 the renamed program and node $y$ containing a use of that variable, there
 exists at least one non-empty path $P_{xy}$ of edges from $x$ to $y$
 and no such path contains a definition of $a$ other than at $x$.
-\item For every pair of nodes $x$ and $y$ containing uses of a
+\end{property}
+\begin{property}[Naming after \sigfunction{s}.]\label{crit_signame}
+For every pair of nodes $x$ and $y$ containing uses of a
 variable $a$ defined at a node $z$ in the renamed program, either
 every nonempty path $P_{zx}$ of edges from $z$ to $x$ must contain
 node $y$, or every nonempty path $P_{zy}$ of edges from $z$ to $y$
 must contain $x$.
-\end{enumerate}
+\end{property}
 
-In addition, correctness requres that:
-\begin{enumerate}
-\item Along any possible control-flow path in a program being executed
+In addition, correctness requires that the following hold:
+\begin{property}[Correctness.]\label{crit_correct}
+Along any possible control-flow path in a program being executed
 consider any use of a variable $a$ in the original program and the
 corresponding use of $a_i$ in the renamed program.  Then, at every
 occurrence of the use on the path, $a$ and $a_i$ have the same value.
 The path need not be cycle-free.
-\end{enumerate}
+\end{property}
 
 \subsection{Minimal and pruned SSI forms}
 
@@ -111,7 +113,7 @@ non-\phisigfunction[or]{} uses of any of the variables defined on the
 left-hand side.\footnote{An even more compact SSI form may be produced
 by removing \sigfunction{s} for which there are uses for \emph{exactly
 one} of the variables on the left-hand side, but by doing so one loses
-the ability to perform renaming at control-flow splits which generate
+the ability to perform renaming at some control-flow splits which may generate
 additional value information.}  Figure~\vref{fig:prunedssi} compares 
 minimal and pruned SSI form for an example program.
 \begin{myfigure*}
@@ -125,19 +127,20 @@ minimal and pruned SSI form for an example program.
 
 Note that, as in SSA form, pruned SSI
 does not strictly satisfy the SSI constraints because it omits dead
-\phisigfunction{s} otherwise required by conditions \ref{crit_phiplace} and
-\ref{crit_sigplace} of the definition.  In practice, a subtractive
-definition of pruned form --- generate minimal form and then removed
+\phisigfunction{s} otherwise required by the path-convergence criteria.
+In practice, a subtractive
+definition of pruned form --- generate minimal form and then remove
 the unused \phisigfunction{s} --- is most useful, but a constructive
 definition can be generated from the standard SSI form definition as
 follows:
 \begin{enumerate}
-\item The convergence/divergence node $Z$ of conditions
-\ref{crit_phiplace} and \ref{crit_sigplace} must also satisfy: ``and
-there exists a path from $Z\pathplus U$ to a $U$, a use of $V$ in the
-original program, which does not contain another definition of $V$.''
+\item The convergence/divergence node $z$ of the path-convergence
+criteria for inserting \phisigfunction{s}  must also satisfy: ``and
+there exists a nonempty path $P_{zu}$ from $z$ to a $u$, a use of $a$ in the
+original program, which does not contain another definition of $a$.''
   \label{amend_place}
-\item The boundary condition \ref{crit_boundary} at \code{END} can be
+\item The boundary condition specified by the path-convergence
+criterion for the node \code{END} can be
 loosened as follows (emphasis indicates modifications):
 ``For the purposes of this definition, the \code{START} node is
 assumed to contain a definition for every variable in the original
@@ -150,8 +153,8 @@ Pruned form is defined as having the minimal set of \phisigfunction{s}
 that satisfy the amended conditions.  It can easily be verified that
 the modifications suffice to eliminate unused \phisigfunction{s}: if
 the variable defined in a \phisigfunction[or]{} is used, there must
-exist a path $Z\pathplus U$ as mandated by amendment~\ref{amend_place},
-where amendment~\ref{amend_boundary} lets $U = \code{END}$ for
+exist a nonempty path $P_{zu}$ as mandated by amendment~\ref{amend_place},
+where amendment~\ref{amend_boundary} lets $u = \code{END}$ for
 variables live exiting the procedure and thus usefully defined.
 
 \begin{property}\label{pty:pruned_live}
@@ -188,8 +191,11 @@ vice versa.  Thus, the (linear time) placement algorithms can be run
 iteratively to find a fixed point.  Since the maximum number of
 $\phi$- or \sigfunction{s} is proportional to the size of the program,
 it is obvious that no more than $N$ iterations will be required,
-resulting in a worst-case running time of $O(N^2)$.  In practice, and
-for structured control flow, running time is linear.
+resulting in a worst-case running time of $O(N^2)$.  In practice
+one would expect relatively few iterations\footnote{The number of required
+iterations is related to the maximum loop nesting depth, which Knuth
+\cite{knuth74:fortran} showed remains small for ``human-generated'' programs.}
+yielding a near-linear runtime.
 % rewrite last sentence to reference studies on control-flow depth in
 % actual programs.
 
@@ -362,8 +368,8 @@ tight superset of the \phisigfunction{s} that pruned form requires.
 
 \begin{theorem}\label{thm:placeproof}
 Algorithm~\ref{alg:SSIplace} places all the
-\phisigfunction{s} required by conditions \ref{crit_phiplace} and
-\ref{crit_sigplace} of the SSI form definition.
+\phisigfunction{s} required by the path-convergence criteria for
+\phisigfunction{s}.
 \end{theorem}
 \begin{proof}
 Lemma \ref{lem:sese_child} states that the child region exclusion of
@@ -416,10 +422,11 @@ approximation.
 }
 
 We have shown that Algorithm~\ref{alg:SSIplace} places all the
-required \phisigfunction{s} in the control-flow graph according to SSI
-form conditions \ref{crit_phiplace}, \ref{crit_sigplace}, and
-\ref{crit_boundary}. The next step is to rename variables to
-be consistent with conditions \ref{crit_phiname} and
+required \phisigfunction{s} in the control-flow graph according to 
+the path-convergence criteria for SSI form and the stated 
+boundary conditions at \code{START} and \code{END}.
+The next step is to rename variables to
+be consistent with properties \ref{crit_phiname} and
 \ref{crit_signame}. Algorithm~\ref{alg:SSIrename1} 
 in Appendix~\ref{app:algorithms} performs
 this variable renaming. 
@@ -677,7 +684,7 @@ some variable $V$) follows.
 
 \begin{theorem}\label{thm:renameproof}
 Algorithm~\ref{alg:SSIrename1} renames variables such that SSI form
-conditions \ref{crit_phiname}, \ref{crit_signame}, and
+properties \ref{crit_phiname}, \ref{crit_signame}, and
 \ref{crit_correct} hold.
 \end{theorem}
 \begin{proof}
@@ -691,10 +698,9 @@ transform a program into SSI form.
 \end{theorem}
 \begin{proof}
 Theorem~\ref{thm:placeproof} proves that \phisigfunction{s} are placed
-correctly to satisfy conditions~\ref{crit_phiplace},
-\ref{crit_sigplace} and \ref{crit_boundary} of the SSI form
+correctly to satisfy the path-convergence criteria of the SSI form
 definition, and theorem~\ref{thm:renameproof} proves that variables
-are renamed correctly to satisfy conditions~\ref{crit_phiname},
+are renamed correctly to satisfy properties~\ref{crit_phiname},
 \ref{crit_signame} and~\ref{crit_correct}.
 \end{proof}
 
