@@ -1,7 +1,7 @@
 # Grace project file
 #
 @version 50107
-@page size 791, 611
+@page size 790, 610
 @page scroll 5%
 @page inout 5%
 @link page off
@@ -54,7 +54,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri May 10 14:46:35 2002"
+@timestamp def "Sat May 11 15:56:52 2002"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -250,7 +250,7 @@
 @    altyaxis  off
 @    legend on
 @    legend loctype view
-@    legend 0.82, 0.45
+@    legend 0.75, 0.45
 @    legend box color 1
 @    legend box pattern 1
 @    legend box linewidth 1.0
@@ -613,7 +613,7 @@
 @    s6 errorbar riser clip off
 @    s6 errorbar riser clip length 0.100000
 @    s6 comment "claz compression"
-@    s6 legend  "Claz compression"
+@    s6 legend  "Class pointer compress"
 @target G0.S0
 @type bar
                1             62.8

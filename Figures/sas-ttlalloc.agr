@@ -1,7 +1,7 @@
 # Grace project file
 #
 @version 50107
-@page size 787, 607
+@page size 785, 605
 @page scroll 5%
 @page inout 5%
 @link page off
@@ -54,7 +54,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Sat Mar 23 00:13:09 2002"
+@timestamp def "Sat May 11 15:58:35 2002"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -564,7 +564,7 @@
 @    s5 errorbar riser clip off
 @    s5 errorbar riser clip length 0.100000
 @    s5 comment "Claz compression"
-@    s5 legend  "Claz compression"
+@    s5 legend  "Class Pointer Compression"
 @target G0.S0
 @type bar
                1               78
