@@ -17,7 +17,7 @@ public class SumExpr extends Expr {
     }
 
     public String name() {
-	return "sum("+sd.getSafeSymbol()+"."+rd.getSafeSymbol()+")";
+	return "sum("+sd.toString()+"."+rd.toString()+")";
     }
 
     public boolean equals(Map remap, Expr e) {
@@ -39,7 +39,7 @@ public class SumExpr extends Expr {
     }
 
     public Descriptor getDescriptor() {
-        throw new Error();
+        throw new Error("Sum shouldn't appear on left hand side!");
     }
 
     public boolean inverted() {
@@ -59,9 +59,9 @@ public class SumExpr extends Expr {
 
     public void prettyPrint(PrettyPrinter pp) {
         pp.output("sum(");
-        pp.output(sd.getSafeSymbol());
+        pp.output(sd.toString());
         pp.output(".");
-        pp.output(rd.getSafeSymbol());
+        pp.output(rd.toString());
         pp.output(")");
     }
 

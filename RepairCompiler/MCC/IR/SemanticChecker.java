@@ -1412,7 +1412,7 @@ public class SemanticChecker {
         if (!precheck(pn, "sumexpr")) {
             return null;
         }
-        String setname = pn.getChild("set").getTerminal();
+        String setname = pn.getChild("dot").getChild("set").getTerminal();
         assert setname != null;
         SetDescriptor sd = lookupSet(setname);
 

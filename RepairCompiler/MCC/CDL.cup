@@ -482,9 +482,10 @@ expr ::=
 	SUM OPENPAREN ID:set DOT ID:relation CLOSEPAREN
 	{:
 	debugMessage(PRODSTRING);
-	ParseNode expr = new ParseNode("sumexpr", parser.curLine(3));
-	expr.addChild("dot").addChild("set", parser.curLine(3)).addChild(set);
-	expr.getChild("dot").addChild("relation", parser.curLine(1)).addChild(relation);
+     	ParseNode expr = new ParseNode("expr", parser.curLine(1));	
+	expr.addChild("sumexpr", parser.curLine(3));
+	expr.getChild("sumexpr").addChild("dot").addChild("set", parser.curLine(3)).addChild(set);
+	expr.getChild("sumexpr").getChild("dot").addChild("relation", parser.curLine(1)).addChild(relation);
 	RESULT = expr;
 	:}
 
