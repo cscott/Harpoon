@@ -24,6 +24,7 @@ import java.util.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.StreamTokenizer;
 
 
 /**
@@ -31,7 +32,7 @@ import java.io.StringReader;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.14 1999-08-06 16:39:36 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.15 1999-08-06 19:11:12 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -167,39 +168,72 @@ public abstract class Code extends HCode {
     public String toAssem(Instr instr) {
         StringBuffer s = new StringBuffer();
 	String assem = instr.getAssem();
-        int len = assem.length();
-        for (int i = 0; i < len; i++) 
-            if (assem.charAt(i) == '`')
-                switch (assem.charAt(++i)) {
-		case 'd': { 
-		    int n = Character.digit(assem.charAt(++i), 10);
-		    if(n < instr.def().length)
-			s.append(instr.def()[n]);
-		    else
+	
+	int len = assem.length();
+	for(int i=0; i<len; i++) {
+	    char c = assem.charAt(i);
+	    switch(c) {
+	    case '`':
+		Temp temp = null;
+		boolean getReg = false;
+		i++; c = assem.charAt(i);
+		switch(c) {
+		case 'd': {
+		    i++;
+		    int n = Character.digit(assem.charAt(i), 10);
+		    if (n < instr.def().length) {
+			temp = instr.def()[n];
+			getReg = true;
+		    } else {
+			Util.assert(false, "index mismatch in "+assem + " " + Arrays.asList(instr.def()));
 			s.append("d?");
-		}
-		break;
-		case 's': {
-		    int n = Character.digit(assem.charAt(++i), 10);
-		    if(n < instr.use().length)
-			s.append(instr.use()[n]);
-		    else 
-			s.append("s?");
-		}
-		break;
-		case 'j': {
-		    int n = Character.digit(assem.charAt(++i), 10);
-		    if(n < instr.use().length)
-			s.append(instr.use()[n]);
-		    else
-			s.append("j?");
-		}
-		break;
-		case '`': 
-		    s.append('`');
+		    }
 		    break;
-                }
-            else s.append(assem.charAt(i));
+		}
+		case 's':
+		case 'j': {
+		    i++;
+		    int n = Character.digit(assem.charAt(i), 10);
+		    if (n < instr.use().length) {
+			temp = instr.use()[n];
+			getReg = true;
+		    } else {
+			Util.assert(false, "index mismatch in "+assem + " " + Arrays.asList(instr.use()));
+			s.append(c + "?");
+		    }
+		    break;
+		}
+		case '`':
+		    s.append("`");
+		    break;
+		default:
+		    Util.assert(false, "error parsing "+assem);
+		}
+		
+		if (getReg) {
+		    char lastChar = ' ';
+		    StringBuffer var = new StringBuffer();
+		    boolean more = true;
+		    while(more && i<(assem.length()-1)) {
+			i++; c = assem.charAt(i);
+			switch(c) {
+			case ',':
+			case ' ':
+			    lastChar = c;
+			    more = false;
+			    break;
+			default:
+			    var.append(c);
+			}
+		    }
+		    s.append(getRegisterName(instr, temp, var.toString()));
+		    s.append(lastChar);
+		}
+		break;
+	    default: 
+		s.append(c);
+	    }
+	}
 
         return s.toString();
     }

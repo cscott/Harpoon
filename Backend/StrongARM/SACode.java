@@ -22,7 +22,7 @@ import java.util.Map;
  * <code>SACode</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SACode.java,v 1.1.2.14 1999-08-04 21:46:11 pnkfelix Exp $
+ * @version $Id: SACode.java,v 1.1.2.15 1999-08-06 19:11:13 pnkfelix Exp $
  */
 public class SACode extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -86,39 +86,40 @@ public class SACode extends harpoon.Backend.Generic.Code {
 	return (Temp) tempInstrPairToRegisterMap.get(new TempInstrPair(instr, val)); 
     }
 
+    
     protected String getRegisterName(final Instr instr,
 				     final Temp val, 
 				     final String suffix) {
-	class RegFinder extends SATempVisitor {
-	    String s;
-	    public void visit(Temp t) {
-		// single word...nothing special
-		Temp reg = get(instr, t);
-		Util.assert(reg != null, "Should be a mapping for " + instr +
-			    " x " + val + " but no register was found." );
-		s = reg.name() + suffix;
+	String s=null;
+	if (val instanceof TwoWordTemp) {
+	    // parse suffix
+	    TwoWordTemp t = (TwoWordTemp) val;
+	    Temp reg = null;
+	    if (suffix.startsWith("l")) {
+		// low
+		reg = get(instr, t.getLow());
+	    } else if (suffix.startsWith("h")) {
+		// high
+		reg = get(instr, t.getHigh());
+	    } else {
+		Util.assert(false, "BREAK!  This parsing needs to be "+
+			    "fixed, strongarm has a lot more cases than this.");
 	    }
-	    public void visit(TwoWordTemp t) {
-		// parse suffix
-		Temp reg = null;
-		if (suffix.startsWith("l")) {
-		    // low
-		    reg = get(instr, t.getLow());
-		} else if (suffix.startsWith("h")) {
-		    // high
-		    reg = get(instr, t.getHigh());
-		} else {
-		    Util.assert(false, "BREAK!  This parsing needs to be "+
-				"fixed, strongarm has a lot more cases than this.");
-		}
-		Util.assert(reg != null, "Should be a mapping for " + instr +
-			    " x " + val + " but no register was found." );
+	    if(reg != null) {
 		s = reg.name() + suffix.substring(1);
+	    } else {
+		s = val.name() + suffix;
+	    }
+	} else { // single word; nothing special
+	    Temp reg = get(instr, val);
+	    if(reg != null) {
+		s = reg.name() + suffix;
+	    } else {
+		s = val.name() + suffix;
 	    }
 	}
-	RegFinder finder = new RegFinder();
-	// fix Visitor mess
-	return finder.s;
+	
+	return s;
     }
 
     /** Assigns register(s) to the <code>Temp</code> pseudoReg. 
@@ -136,23 +137,15 @@ public class SACode extends harpoon.Backend.Generic.Code {
     public void assignRegister(final Instr instr, 
 			       final Temp pseudoReg,
 			       final List regs) {
-	
-	SATempVisitor visitor = new SATempVisitor(){
-	    public void visit(Temp t) {
-		if (t.equals(pseudoReg)) {
-		    tempInstrPairToRegisterMap.put
-		       (new TempInstrPair(instr, t), regs.get(0));
-		}
-	    }
-	    public void visit(TwoWordTemp t) {
-		if (t.equals(pseudoReg)) {
-		    tempInstrPairToRegisterMap.put
-		       (new TempInstrPair(instr, t.getLow()), regs.get(0));
-		    tempInstrPairToRegisterMap.put
-		       (new TempInstrPair(instr, t.getHigh()), regs.get(1));
-		}
-	    }
-	};
-	// fix Visitor mess
+	if (pseudoReg instanceof TwoWordTemp) {
+	    TwoWordTemp t = (TwoWordTemp) pseudoReg;
+	    tempInstrPairToRegisterMap.put
+		(new TempInstrPair(instr, t.getLow()), regs.get(0));
+	    tempInstrPairToRegisterMap.put
+		(new TempInstrPair(instr, t.getHigh()), regs.get(1));
+	} else {
+	    tempInstrPairToRegisterMap.put
+		(new TempInstrPair(instr, pseudoReg), regs.get(0));
+	}
     }
 }

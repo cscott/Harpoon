@@ -48,7 +48,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.19 1999-08-03 23:53:19 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.20 1999-08-06 19:11:13 pnkfelix Exp $
  */
 %%
 
@@ -1074,7 +1074,7 @@ CALL(retval, NAME(retex), func, arglist) %{
     // this will break if stackOffset > 255 (ie >63 args)
     Util.assert( stackOffset < 256, 
 		 "Update the spec file to handle large SP offsets");
-    emit( ROOT, "add `d0, `s0, #" + stackOffset );
+    emit( ROOT, "add `d0, `s0, #" + stackOffset, SAFrame.SP , SAFrame.SP );
     if (((INVOCATION) ROOT).retval.isDoubleWord()) {
         // not certain an emitMOVE is legal with the l/h modifiers
         emitMOVE( ROOT, "mov `d0l, `s0", retval, r0 );

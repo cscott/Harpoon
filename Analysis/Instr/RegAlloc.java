@@ -43,7 +43,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.21 1999-08-04 23:54:15 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.22 1999-08-06 19:11:12 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -247,24 +247,20 @@ public abstract class RegAlloc  {
 	    // of it, at least when assigning offsets.  Check over
 	    // this. 
 	    public void visitStore(FskStore m) {
-		System.out.println("FskStore: Here I am");
 		// replace all non-Register Temps with appropriate
 		// stack offset locations
-		List instrs = frame.makeStore
-			   (Arrays.asList(m.use()), 
-			    ((Integer)tempsToOffsets.get(m.def()[0])).intValue(),
-			    m);
+		Integer i = (Integer) tempsToOffsets.get(m.def()[0]);
+		Util.assert(i != null, "tempsToOffsets should have a value for "+m.def()[0]);
+		List instrs = frame.makeStore(Arrays.asList(m.use()), i.intValue(), m);
 		Instr.replaceInstrList(m, instrs);
 	    }
 	    
 	    public void visitLoad(FskLoad m) {
-		System.out.println("FskLoad: Here I am");
 		// replace all non-Register Temps with appropriate
 		// stack offset locations
-		List instrs = frame.makeLoad
-		    (Arrays.asList(m.def()), 
-		     ((Integer)tempsToOffsets.get(m.use()[0])).intValue(),
-		     m);
+		Integer i = (Integer) tempsToOffsets.get(m.use()[0]);
+		Util.assert(i != null, "tempsToOffsets should have a value for "+m.use()[0]);
+		List instrs = frame.makeLoad(Arrays.asList(m.def()), i.intValue(), m);
 		Instr.replaceInstrList(m, instrs);
 	    }
 	    
@@ -273,6 +269,7 @@ public abstract class RegAlloc  {
 	    }
 
 	    public void visit(InstrMEM i) {
+		Util.assert(i != null, "InstrMEM should not be null");
 		try { visitStore((FskStore) i); return; 
 		} catch(ClassCastException e) { }
 		try { visitLoad((FskLoad) i); return;
@@ -390,36 +387,40 @@ public abstract class RegAlloc  {
 		    // load srcs
 		    for(int i=0; i<instr.use().length; i++) {
 			Temp preg = instr.use()[i];
-			Iterator iter =
-			    frame.suggestRegAssignment(preg, regFile); 
-			List regList = (List) iter.next();
-			String dests = ""; 
-			for(int j=0; j<regList.size(); j++) {
-			    regFile.put(regList.get(j), preg);
-			    dests += ("`d"+j+", ");
+			if (!isTempRegister(preg)) {
+			    Iterator iter =
+				frame.suggestRegAssignment(preg, regFile); 
+			    List regList = (List) iter.next();
+			    String dests = ""; 
+			    for(int j=0; j<regList.size(); j++) {
+				regFile.put(regList.get(j), preg);
+				dests += ("`d"+j+", ");
+			    }
+			    InstrMEM loadSrcs = 
+				new FskLoad(inf, null, "FSK-LOAD " + dests
+					    + "`s0", regList, preg); 
+			    Instr.insertInstrBefore(instr, loadSrcs);
+			    code.assignRegister(instr, preg, regList);
 			}
-			InstrMEM loadSrcs = 
-			    new FskLoad(inf, null, "FSK-LOAD " + dests
-					+ "`s0", regList, preg); 
-			Instr.insertInstrBefore(instr, loadSrcs);
-			code.assignRegister(instr, preg, regList);
 		    }
 		    // store dsts
 		    for(int i=0; i<instr.def().length; i++) {
 			Temp preg = instr.def()[i];
-			Iterator iter =
-			    frame.suggestRegAssignment(preg, regFile); 
-			List regList = (List) iter.next();
-			String srcs = "";
-			for (int j=0; j<regList.size(); j++) {
-			    regFile.put(regList.get(j), preg);
-			    srcs += (", `s"+j);
+			if(!isTempRegister(preg)) {
+			    Iterator iter =
+				frame.suggestRegAssignment(preg, regFile); 
+			    List regList = (List) iter.next();
+			    String srcs = "";
+			    for (int j=0; j<regList.size(); j++) {
+				regFile.put(regList.get(j), preg);
+				srcs += (", `s"+j);
+			    }
+			    InstrMEM storeDsts = 
+				new FskStore(inf, null, "FSK-STORE `d0"+srcs,
+					     preg, regList);
+			    Instr.insertInstrAfter(instr, storeDsts);
+			    code.assignRegister(instr, preg, regList);
 			}
-			InstrMEM storeDsts = 
-			    new FskStore(inf, null, "FSK-STORE `d0"+srcs,
-					 preg, regList);
-			Instr.insertInstrAfter(instr, storeDsts);
-			code.assignRegister(instr, preg, regList);
 		    }
 		} catch (Frame.SpillException e) {
 		    // actually...this doesn't necessarily imply that

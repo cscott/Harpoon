@@ -45,7 +45,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.26 1999-08-04 22:08:05 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.27 1999-08-06 19:11:13 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -231,34 +231,30 @@ public class SAFrame extends Frame implements AllocationInfo {
     /** Stub added by FSK */
     public Iterator suggestRegAssignment(Temp t, final Map regFile) {
 	final ArrayList suggests = new ArrayList();
-	SATempVisitor visitor = new SATempVisitor(){
-	    public void visit(Temp temp) {
-		// single word, find one register
-		for (int i=0; i<regGeneral.length; i++) {
-		    if ((regFile.get(regGeneral[i]) == null)) {
-			suggests.add(ListFactory.singleton(regGeneral[i]));
-		    }
+	if (t instanceof TwoWordTemp) {
+	    // double word, find two registers (the strongARM
+	    // doesn't require them to be in a row, but its faster
+	    // to search for adjacent registers for now.  Later we
+	    // can change the system to make the iterator do a
+	    // lazy-evaluation and dynamically create all pairs as
+	    // requested.  
+	    for (int i=0; i<regGeneral.length; i++) {
+		if ((regFile.get(regGeneral[i]) == null) &&
+		    (regFile.get(regGeneral[i+1]) == null)) {
+		    suggests.add(Arrays.asList
+				 (new Temp[]{ regGeneral[i], 
+						  regGeneral[i+1]}));
 		}
 	    }
-	    public void visit(TwoWordTemp temp) {
-		// double word, find two registers (the strongARM
-		// doesn't require them to be in a row, but its faster
-		// to search for adjacent registers for now.  Later we
-		// can change the system to make the iterator do a
-		// lazy-evaluation and dynamically create all pairs
-		for (int i=0; i<regGeneral.length; i++) {
-		    if ((regFile.get(regGeneral[i]) == null) &&
-			(regFile.get(regGeneral[i+1]) == null)) {
-			    suggests.add(Arrays.asList
-					 (new Temp[]{ regGeneral[i], 
-						      regGeneral[i+1]}));
-			}
+
+	} else {
+	    // single word, find one register
+	    for (int i=0; i<regGeneral.length; i++) {
+		if ((regFile.get(regGeneral[i]) == null)) {
+		    suggests.add(ListFactory.singleton(regGeneral[i]));
 		}
-		
 	    }
-	    
-	};
-	// fix Visitors mess
+	}
 	return suggests.iterator();
     }
 
