@@ -21,7 +21,7 @@ import java.util.*;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.23 1999-08-10 17:52:56 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.24 1999-08-18 17:32:53 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -43,6 +43,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     private String source_file;
     private int source_line;
     private int id;
+    private HCodeElement source; 
+    public HCodeElement getSource() { return source; }
 
     // for implementing HasEdges
     // ADB: the use of vector is intended to be temporary, to be
@@ -73,6 +75,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	if (dst == null) dst = new Temp[0];
 	
         this.source_file = (source != null)?source.getSourceFile():"unknown";
+	this.source = source;
         this.id = inf.getUniqueID();
         this.inf = inf;
         this.assem = assem; this.dst = dst; this.src = src;

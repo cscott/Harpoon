@@ -43,7 +43,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.24 1999-08-17 19:15:38 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.25 1999-08-18 17:32:53 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -244,6 +244,8 @@ public abstract class RegAlloc  {
     protected HCode resolveOutstandingTemps(HCode in) {
 	// This implementation is REALLY braindead.  Fix to do a
 	// smarter Graph-Coloring stack offset allocator
+
+	Util.assert(in != null, "Don't try to resolve Temps for null HCodes");
 
 	class TempFinder extends InstrVisitor {
 	    HashMap tempsToOffsets = new HashMap();

@@ -15,6 +15,7 @@ import harpoon.IR.Assem.InstrMEM;
 import harpoon.Temp.Temp;
 import harpoon.Util.LinearMap;
 import harpoon.Util.LinearSet;
+import harpoon.Util.CloneableIterator;
 import harpoon.Util.Util;
 
 import java.util.Iterator;
@@ -32,7 +33,7 @@ import java.util.AbstractSet;
  * <code>LocalCffRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.35 1999-08-17 22:31:10 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.36 1999-08-18 17:32:53 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -47,7 +48,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    BasicBlock b = (BasicBlock) iter.next();
 	    localAlloc(b);
 	}
-	return null;
+	return code;
     }
 
     /** Performs Conservative Furthest First for 'b'. 
@@ -163,8 +164,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    while(refs.hasNext()) {
 		Temp ref = (Temp) refs.next();
 		if (isTempRegister(ref)) continue;
-		boolean workOnRef = true;
-		while(workOnRef) {
+		int workOnRef = 1;
+		while(workOnRef != 0) {
 		    try {
 			// (Step 2)
 			
@@ -173,9 +174,19 @@ public class LocalCffRegAlloc extends RegAlloc {
 			// are PRECOLORED (already referenced in
 			// future instructions while 'ref' is still
 			// live) 
-			Iterator suggestions = 
-			    frame.suggestRegAssignment
-			    (ref, regfile);
+			CloneableIterator suggestions = 
+			    new CloneableIterator
+			    (frame.suggestRegAssignment
+			     (ref, regfile));
+
+			Util.assert(workOnRef < 3, 
+				    "Should not need to work "+
+				    "on ref " + ref + " in Instr " + 
+				    i + " " + workOnRef + " times. " +
+				    "Regfile: " +  regfile + 
+				    "Suggestions: [" + 
+				    printIter((Iterator)suggestions.clone()) + 
+				    "]");
 
 			// TODO (to improve alloc): add code here
 			// eventually to scan forward and choose a
@@ -185,7 +196,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			code.assignRegister(i, ref, regs);
 			
 			InstrMEM loadInstr = 
-			    new FskLoad(i.getFactory(), null,
+			    new FskLoad(i.getFactory(), i.getSource(),
 					"FSK-LOAD", regs, ref);
 			Instr.insertInstrBefore(i, loadInstr);
 
@@ -194,7 +205,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    Temp reg = (Temp) regIter.next();
 			    regfile.put(reg, ref);
 			}
-			workOnRef = false; // stop working on this ref
+			workOnRef = 0; // stop working on this ref
 
 		    } catch (SpillException s) {
 			// (Step 3)
@@ -231,35 +242,75 @@ public class LocalCffRegAlloc extends RegAlloc {
 			// FurthestRef to spill (FF -> CFF)
 			Set spill = (Set) weightedSpills.last();
 			
-			while(!spill.isEmpty()) {
+			// System.out.println("Spilling " + printSet(spill));
+			Iterator spillIter = spill.iterator();
+			while(spillIter.hasNext()) {
 			    // the set we end up spilling may be disjoint from
 			    // the set we were prompted to spill,
 			    // because the SpillException only
 			    // accounts for making room for Load, not
 			    // in properly maintaining the state of
 			    // the register file
-			    Temp reg = (Temp) spill.iterator().next(); 
+			    Temp reg = (Temp) spillIter.next();
 			    Temp value = (Temp) regfile.get(reg);
-			    Set regs = (Set)
-				regfile.inverseMap().get(value); 
-			    Iterator regsIter = regs.iterator();
+			    Set regs = (Set) regfile.inverseMap().get(value); 
+			    
+			    Util.assert(i != null, "i should not be null");
+			    Util.assert(regs != null, 
+					"regs should not be null"+
+					" regfile: "+regfile+
+					" reg: "+reg+
+					" val: "+value);
 
 			    InstrMEM spillInstr =
-				new FskStore(i.getFactory(), null, 
+				new FskStore(i.getFactory(), i.getSource(), 
 					     "FSK-STORE", value, regs);
 			    Instr.insertInstrBefore(i, spillInstr);
+			    
+			    // Now remove spilled regs from regfile
+			    Iterator regsIter = regs.iterator();
+			    // the iterator returned relies on the
+			    // internal structure of regfile, which we
+			    // are modifying.  Therefore, store the
+			    // elements of regsIter in a temporary
+			    // vector. 
+			    ArrayList v = new ArrayList(regs.size());
+			    while(regsIter.hasNext()) {
+				v.add(regsIter.next());
+			    }
+			    regsIter = v.iterator();
+			    while(regsIter.hasNext()) {
+				regfile.remove(regsIter.next());
+			    }
 			}
-			 
+			
 			// done spilling (now we'll loop and retry reg
 			// assignment)
+			workOnRef++;
+			// System.out.println("Finished Spill, retrying");
 		    }
 		}
 	    }
 	}
+	
+	System.out.println("completed local alloc for " + b);
     }
 
-	
+    private String printSet(Set set) {
+	String s = "{ ";
+	s += printIter(set.iterator()) + "}";
+	return s;
+    }
     
+    private String printIter(Iterator iter) {
+	String s = "";
+	while(iter.hasNext()) {
+	    s += ""+iter.next()+" ";
+	}
+	return s;
+    }
+
+
     /** includes both pseudo-regs and machine-regs for now. */
     private Iterator getRefs(final Instr i) {
 	// silly to hard code?  Are >5 refs possible?
@@ -299,9 +350,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    Set s = (Set) rMap.get(value);
 	    if (s == null) {
 		s = new LinearSet();
-		s.add(key);
 		rMap.put(value, s);
 	    }
+	    s.add(key);
 	    return super.put(key, value);
 	}
 	public Object remove(Object key) {
@@ -318,6 +369,18 @@ public class LocalCffRegAlloc extends RegAlloc {
 	public Map inverseMap() {
 	    return Collections.unmodifiableMap(rMap);
 	}
+	public String toString() {
+	    String s = "[ ";
+	    Iterator entries = entrySet().iterator();
+	    while(entries.hasNext()){
+		Map.Entry entry = (Map.Entry) entries.next();
+		s += "(" + entry.getKey() + ", " + 
+		    entry.getValue() + ") ";
+	    }
+	    s += "]";
+	    return s;
+	}
+
     }
 
     /** wrapper around set with an associated weight. */

@@ -13,7 +13,7 @@ import java.util.Iterator;
  * small.  It is backed by an <code>ArrayList</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearSet.java,v 1.1.2.2 1999-08-12 20:42:38 pnkfelix Exp $
+ * @version $Id: LinearSet.java,v 1.1.2.3 1999-08-18 17:32:54 pnkfelix Exp $
  */
 public class LinearSet extends AbstractSet {
     private ArrayList list;
@@ -37,11 +37,21 @@ public class LinearSet extends AbstractSet {
     }
 
     public boolean add(Object o) {
-	if (!list.contains(o)) {
+	if (list.contains(o)) {
+	    return false;
+	} else {
 	    list.add(o);
 	    return true;
-	} else {
+	}
+    }
+
+    public boolean remove(Object o) {
+	int index = list.indexOf(o);
+	if (index == -1) {
 	    return false;
+	} else {
+	    list.remove(index);
+	    return true;
 	}
     }
 }

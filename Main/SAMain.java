@@ -42,14 +42,14 @@ import java.io.FileInputStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.5 1999-08-17 22:31:12 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.6 1999-08-18 17:32:54 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
-    private static boolean PRINT_ORIG = true;
-    private static boolean PRE_REG_ALLOC = true;
+    private static boolean PRINT_ORIG = false;
+    private static boolean PRE_REG_ALLOC = false;
     private static boolean REG_ALLOC = true;
-    private static boolean LIVENESS_TEST = true;
+    private static boolean LIVENESS_TEST = false;
 
     private static java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);;
         
@@ -64,7 +64,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    (harpoon.IR.Quads.QuadSSA.codeFactory()
 	     );
 	
-	Getopt g = new Getopt("SAMain", args, "m:c:");
+	Getopt g = new Getopt("SAMain", args, "m:c:OPRLA");
 	
 	int c;
 	String arg;
@@ -80,12 +80,29 @@ public class SAMain extends harpoon.IR.Registration {
 		} catch (OptionalDataException e) {
 		} catch (ClassNotFoundException e) {
 		} catch (IOException e) {
- 		    // something went wrong; rebuild the map and write
-		    // it later.
+ 		    // something went wrong; rebuild the class
+		    // hierarchy and write it later.
 		    classHierarchy = null;
-		    System.out.println("Error reading map from "
-				       + classHierarchyFilename);
+		    System.out.println("Error reading class "+
+				       "hierarchy from " + 
+				       classHierarchyFilename);
 		}
+		break;
+	    case 'O': 
+		PRINT_ORIG = true;
+		break; 
+	    case 'P':
+		PRE_REG_ALLOC = true;
+		break;
+	    case 'R':
+		REG_ALLOC = true;
+		break;
+	    case 'L':
+		LIVENESS_TEST = true;
+		break;
+	    case 'A':
+		PRE_REG_ALLOC = PRINT_ORIG = 
+		    REG_ALLOC = LIVENESS_TEST = true;
 		break;
 	    case 'c':
 		arg = g.getOptarg();
@@ -96,7 +113,7 @@ public class SAMain extends harpoon.IR.Registration {
 		break; // getopt() already printed an error
 	    default: 
 		System.out.println("getopt() returned " + c);
-		System.out.println("usage is: [-m <mapfile>] -c <class>");
+		System.out.println("usage is: [-m <mapfile>] -c <class> [-OPRLA]");
 	    }
 	}
 
@@ -205,19 +222,20 @@ public class SAMain extends harpoon.IR.Registration {
     
     private static HCodeFactory saFactory(HMethod m, HCodeFactory qhcf) {
 	HCodeFactory sahcf;
-	out.println("\t\tBeginning creation of a StrongARM Code Factory ");
+	//out.println("\t\tBeginning creation of a StrongARM Code Factory ");
 	long time = -System.currentTimeMillis();
 	HCode hc = qhcf.convert(m); 
 	if (classHierarchy == null) {
 	    classHierarchy = new ClassHierarchy(m, qhcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
-	HCodeFactory tcf = CanonicalTreeCode.codeFactory
-		( qhcf, new SAFrame(new OffsetMap32(classHierarchy)) );
+	HCodeFactory tcf = new CachingCodeFactory
+	    (CanonicalTreeCode.codeFactory
+	     ( qhcf, new SAFrame(new OffsetMap32(classHierarchy)) ));
 	sahcf = SACode.codeFactory(tcf);
 	time += System.currentTimeMillis();
-	out.println("\t\tFinished creation of a StrongARM Code "+
-		    "Factory.  Time (ms): " + time);
+	//out.println("\t\tFinished creation of a StrongARM Code "+
+	//    "Factory.  Time (ms): " + time);
 	return sahcf;
     }
 }

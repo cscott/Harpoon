@@ -12,7 +12,7 @@ import java.util.Iterator;
  * small.  It is backed by a <code>LinearSet</code>.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearMap.java,v 1.1.2.2 1999-08-12 20:42:38 pnkfelix Exp $
+ * @version $Id: LinearMap.java,v 1.1.2.3 1999-08-18 17:32:54 pnkfelix Exp $
  */
 public class LinearMap extends AbstractMap {
     private LinearSet set;
@@ -36,9 +36,7 @@ public class LinearMap extends AbstractMap {
 	Object oldValue = null;
 	while(entries.hasNext()) {
 	    PairMapEntry entry = (PairMapEntry) entries.next();
-	    if ((key == null && entry.getKey() == null) ||
-		(key != null && entry.getKey() != null && 
-		 key.equals(entry.getKey()))) {
+	    if (keysMatch(key, entry.getKey())) {
 		oldValue = entry.getValue();
 		entry.setValue(value);
 		break;
@@ -46,6 +44,26 @@ public class LinearMap extends AbstractMap {
 	}
 	if (oldValue == null) {
 	    set.add(new PairMapEntry(key, value));
+	}
+	return oldValue;
+    }
+
+    private boolean keysMatch(Object k1, Object k2) {
+	return ((k1 == null && k2 == null) ||
+		(k1 != null && k2 != null && 
+		 k1.equals(k2)));
+    }
+
+    public Object remove(Object key) {
+	Iterator entries = set.iterator();
+	Object oldValue = null;
+	while(entries.hasNext()) {
+	    PairMapEntry entry = (PairMapEntry) entries.next();
+	    if (keysMatch(key, entry.getKey())) {
+		oldValue = entry.getValue();
+		set.remove(entry);
+		break;
+	    }
 	}
 	return oldValue;
     }
