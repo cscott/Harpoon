@@ -27,7 +27,7 @@ make
 cd ${CALL_DIR};
 
 #for opt in inter intra none; do
-for opt in intra none; do
+for opt in intra; do
 
  if [ $opt = none ]; then
     echo "Building the normal runtime (no clustered heaps)"

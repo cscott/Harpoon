@@ -15,5 +15,5 @@ levels=$4
 echo "2. elimIntra($2)"
 $SCR_DIR/elimIntra $1 $2 $3 $4 | tee intra/$2.Intra.out
 
-echo "3. elimNone($2)"
-$SCR_DIR/elimNone  $1 $2 $3 $4 | tee none/$2.None.out
+#echo "3. elimNone($2)"
+#$SCR_DIR/elimNone  $1 $2 $3 $4 | tee none/$2.None.out
