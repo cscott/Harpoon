@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
-import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.CallGraph;
 import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HClass;
@@ -23,7 +23,7 @@ import java.util.Collections;
  * of the call graph for methods that fulfill a certain condition.
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: AllCallers.java,v 1.3 2003-04-30 22:52:49 salcianu Exp $
+ * @version $Id: AllCallers.java,v 1.4 2003-05-06 15:36:28 salcianu Exp $
  */
 
 public class AllCallers {
