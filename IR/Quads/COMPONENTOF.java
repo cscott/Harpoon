@@ -12,11 +12,24 @@ import harpoon.Util.Util;
  * <code>COMPONENTOF</code> objects implement the test needed to determine
  * if an <code>ASET</code> needs to throw an exception.  Specifically,
  * <code>COMPONENTOF</code> evaluates to boolean <code>true</code> if
- * a certain temporary is <code>null</code> or an instance of the component
- * type of a certain array, or boolean <code>false</code> otherwise.<p>
+ * a certain temporary is an instance of the component
+ * type of a certain array, or boolean <code>false</code> otherwise.
+ * The given array should <strong>never</strong> have components of primitive
+ * type, as <code>COMPONENTOF</code> would always return <code>true</code> in
+ * this case, given a type-safe program.<p>
+ *
+ * <strong>In quad-with-try form ONLY:</strong>
+ * The component object to test (<code>componentref</code>) may have
+ * the value null, in which case <code>COMPONENTOF</code> returns
+ * <code>true</code> (it is always safe to store <code>null</code>
+ * in an object array).
+ * <strong>In all other forms the component object must be provably
+ * non-null.</strong>  An explicit null-check may be needed prior to the
+ * <code>COMPONENTOF</code> if the component object cannot be
+ * proven non-null.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.1.2.9 1999-09-27 06:28:51 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.1.2.10 1999-10-13 14:38:35 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */
@@ -33,11 +46,16 @@ public class COMPONENTOF extends Quad {
      *        the <code>Temp</code> in which to store the result of the test.
      *        The <code>Temp</code> specified by <code>dst</code> gets a
      *        boolean <code>true</code> value if <code>objectref</code>
-     *        contains either <code>null</code> or a reference to an instance
+     *        contains a reference to an instance
      *        of the component type of the array in <code>arrayref</code>
      *        or any subtype; or a boolean <code>false</code> value otherwise.
+     *        In quad-with-try form <strong>only</strong>, the result is also
+     *        <code>true</code> if <code>objectref</code> is
+     *        <code>null</code>; in all other forms this possibility
+     *        is a semantic error.
      * @param arrayref
-     *        the array object to test.  
+     *        the array object to test.  <strong>Should never be an
+     *        array of primitive component type.</strong>
      *        The <code>Temp</code> specified by <code>arrayref</code> 
      *        <strong>should never</strong> contain the value 
      *        <code>null</code> at run-time.
@@ -45,7 +63,8 @@ public class COMPONENTOF extends Quad {
      *        the component object to test.
      *        The <code>Temp</code> specified by <code>objectref</code> 
      *        <strong>may</strong> contain the value <code>null</code> 
-     *        at run-time.
+     *        at run-time <strong>if and only if</strong> we are in
+     *        quad-with-try form.
      */
     public COMPONENTOF(QuadFactory qf, HCodeElement source, 
 		       Temp dst, Temp arrayref, Temp objectref) {

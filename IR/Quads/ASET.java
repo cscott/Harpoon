@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>ASET</code> represents an array element assignment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ASET.java,v 1.1.2.7 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: ASET.java,v 1.1.2.8 1999-10-13 14:38:35 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ALENGTH
@@ -24,6 +24,8 @@ public class ASET extends Quad {
     protected Temp index;
     /** The new value for the array element. */
     protected Temp src;
+    /** Identify primitive arrays. */
+    protected boolean isSrcPrimitive;
 
     /** Creates an <code>ASET</code> object representing an array element
      *  assignment.
@@ -36,11 +38,12 @@ public class ASET extends Quad {
      *        element.
      */
     public ASET(QuadFactory qf, HCodeElement source,
-		Temp objectref, Temp index, Temp src) {
+		Temp objectref, Temp index, Temp src, boolean isSrcPrimitive) {
 	super(qf, source);
 	this.objectref = objectref;
 	this.index = index;
 	this.src = src;
+	this.isSrcPrimitive = isSrcPrimitive;
 	// VERIFY legality of this ASET
 	Util.assert(objectref!=null && index!=null && src!=null);
     }
@@ -52,6 +55,9 @@ public class ASET extends Quad {
     /** Returns the <code>Temp</code> holding the new value for the array
      *  element. */
     public Temp src() { return src; }
+    /** Returns <code>true</code> if the <code>src</code> temp holds
+     *  a primitive type. */
+    public boolean isSrcPrimitive() { return isSrcPrimitive; }
 
     /** Returns all the Temps used by this quad. 
      * @return the <code>objectref</code>, <code>index</code>, and 
@@ -63,7 +69,7 @@ public class ASET extends Quad {
 
     public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
 	return new ASET(qqf, this, map(useMap,objectref),
-			map(useMap,index), map(useMap,src));
+			map(useMap,index), map(useMap,src), isSrcPrimitive);
     }
     /** Rename all used variables in this Quad according to a mapping.
      * @deprecated does not preserve immutability. */

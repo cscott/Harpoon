@@ -57,7 +57,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.16 1999-09-19 16:17:41 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.17 1999-10-13 14:38:36 cananian Exp $
  */
 public final class Method extends HCLibrary {
 
@@ -387,24 +387,21 @@ public final class Method extends HCLibrary {
 	    }
 	}
 	public void visit(CJMP q) {
-	    Boolean b = (Boolean) sf.get(q.test());
-	    if (b.booleanValue()) // true branch.
+	    Integer b = (Integer) sf.get(q.test());
+	    if (b.intValue()!=0) // true branch.
 		visit((SIGMA)q, 1);
 	    else
 		visit((SIGMA)q, 0);
 	}
 	public void visit(COMPONENTOF q) {
 	    ArrayRef arr = (ArrayRef) sf.get(q.arrayref());
-	    if (arr.type.getComponentType().isPrimitive()) // must be true.
-		sf.update(q.dst(), new Boolean(true));
-	    else { // not a primitive array.  perform the test for real.
-		Ref obj = (Ref) sf.get(q.objectref());
-		if (obj==null ||
-		    obj.type.isInstanceOf(arr.type.getComponentType()))
-		    sf.update(q.dst(), new Boolean(true));
-		else
-		    sf.update(q.dst(), new Boolean(false));
-	    }
+	    Util.assert(!arr.type.getComponentType().isPrimitive());
+	    Ref obj = (Ref) sf.get(q.objectref());
+	    Util.assert(obj!=null);
+	    if (obj.type.isInstanceOf(arr.type.getComponentType()))
+		sf.update(q.dst(), new Integer(1));
+	    else
+		sf.update(q.dst(), new Integer(0));
 	    advance(0);
 	}
 	public void visit(CONST q) {
@@ -440,10 +437,11 @@ public final class Method extends HCLibrary {
 	}
 	public void visit(INSTANCEOF q) {
 	    Ref obj = (Ref) sf.get(q.src());
-	    if (obj!=null && obj.type.isInstanceOf(q.hclass())) // true.
-		sf.update(q.dst(), new Boolean(true));
-	    else // (null instanceof foo)==false
-		sf.update(q.dst(), new Boolean(false));
+	    Util.assert(obj!=null);// (null instanceof ...) not allowed
+	    if (obj.type.isInstanceOf(q.hclass())) // true.
+		sf.update(q.dst(), new Integer(1));
+	    else
+		sf.update(q.dst(), new Integer(0));
 	    advance(0);
 	}
 	public void visit(LABEL q) {
@@ -483,7 +481,7 @@ public final class Method extends HCLibrary {
 	    Object op[] = new Object[q.operandsLength()];
 	    for (int i=0; i<op.length; i++)
 		op[i] = sf.get(q.operands(i));
-	    sf.update(q.dst(), q.evalValue(op));
+	    sf.update(q.dst(), toInternal(q.evalValue(op)));
 	    advance(0);
 	}
 	public void visit(PHI q) {
@@ -624,6 +622,22 @@ public final class Method extends HCLibrary {
 	public void visit(CALL q) {
 	    if (!q.isStatic()) nullCheck(q.params(0));
 	    super.visit(q);
+	}
+	public void visit(COMPONENTOF q) {
+	    // object may be null in implicit case.
+	    Ref obj = (Ref) sf.get(q.objectref());
+	    if (obj==null) {
+		sf.update(q.dst(), new Integer(1));
+		advance(0);
+	    } else super.visit(q);
+	}
+	public void visit(INSTANCEOF q) {
+	    // object may be null in implicit case.
+	    Ref obj = (Ref) sf.get(q.src());
+	    if (obj==null) {
+		sf.update(q.dst(), new Integer(0));
+		advance(0);
+	    } else super.visit(q);
 	}
 	public void visit(GET q) {
 	    if (!q.isStatic()) nullCheck(q.objectref());

@@ -19,7 +19,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.19 1999-09-19 16:17:35 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.20 1999-10-13 14:38:35 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -392,8 +392,9 @@ final class UnHandler {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm), head = nq;
 	    Type Tobj = ti.get(q.objectref());
 	    Type Tind = ti.get(q.index());
-	    // do COMPONENTOF test.
-	    head = componentCheck(q, head, q.objectref(), q.src());
+	    // do COMPONENTOF test for non-primitive arrays.
+	    if (!q.isSrcPrimitive())
+		head = componentCheck(q, head, q.objectref(), q.src());
 	    if (! (Tobj.isFixedArray() &&
 		   Tind.isIntConst() &&
 		   Tind.getConstValue() < Tobj.getArrayLength() &&
@@ -460,7 +461,26 @@ final class UnHandler {
 	    ti.put(q.dst(), Type.top);
 	}
 	/*public void visit(HEADER q);*/
-	/*public void visit(INSTANCEOF q);*/
+	public void visit(INSTANCEOF q) {
+	    Quad nq = (Quad) q.clone(qf, ss.ctm), head=nq;
+	    Type Tobj = ti.get(q.src());
+	    if (!Tobj.isNonNull()) {
+		// insert explicit test against null.
+		Temp Tr = ss.extra(0);
+		Quad q0 = new CONST(qf, head, Tr, null, HClass.Void);
+		Quad q1 = new OPER(qf, head, Qop.ACMPEQ, Tr,
+				   new Temp[]{Quad.map(ss.ctm, q.src()), Tr});
+		Quad q2 = new CJMP(qf, head, Tr, new Temp[0]);
+		Quad q3 = new CONST(qf, head, Quad.map(ss.ctm, q.dst()),
+				    new Integer(0), HClass.Int);
+		Quad q4 = new PHI(qf, head, new Temp[0], 2);
+		Quad.addEdges(new Quad[] { q0, q1, q2, head, q4 });
+		Quad.addEdge(q2, 1, q3, 0);
+		Quad.addEdge(q3, 0, q4, 1);
+		head = q0; nq = q4;
+	    }
+	    ss.qm.put(q, head, nq);
+	}
 	/*public void visit(LABEL q);*/
 	/*public void visit(HANDLER q);*/
 	public void visit(METHOD q) {
@@ -663,14 +683,28 @@ final class UnHandler {
 	Quad componentCheck(Quad old, Quad head, Temp Tobj, Temp Tsrc) {
 	    QuadFactory qf = head.qf;
 	    Temp Tr = ss.extra(0);
+	    // test Tobj against null & branch around COMPONENTOF.
 	    Quad q0 = new COMPONENTOF(qf, head, Tr,
 				      Quad.map(ss.ctm, Tobj),
 				      Quad.map(ss.ctm, Tsrc));
 	    Quad q1 = new CJMP(qf, head, Tr, new Temp[0]);
 	    Quad q2 = _throwException_(qf, old, HCarraystoreE);
-	    Quad.addEdges(new Quad[] { q0, q1, q2 });
-	    Quad.addEdge(q1, 1, head, 0);
-	    return q0;
+	    if (ti.get(Tsrc).isNonNull()) {
+		Quad.addEdges(new Quad[] { q0, q1, q2 });
+		Quad.addEdge(q1, 1, head, 0);
+		return q0;
+	    } else { // insert null check if src is not known non-null
+		Quad qa = new CONST(qf, head, Tr, null, HClass.Void);
+		Quad qb = new OPER(qf, head, Qop.ACMPEQ, Tr,
+				   new Temp[] { Quad.map(ss.ctm, Tsrc), Tr });
+		Quad qc = new CJMP(qf, head, Tr, new Temp[0]);
+		Quad qd = new PHI(qf, head, new Temp[0], 2);
+		Quad.addEdges(new Quad[] { qa, qb, qc, q0, q1, q2 });
+		Quad.addEdge(qc, 1, qd, 0);
+		Quad.addEdge(q1, 1, qd, 1);
+		Quad.addEdge(qd, 0, head, 0);
+		return qa;
+	    }
 	}
 	Quad nullCheck(Quad old, Quad head, Temp Tobj) {
 	    QuadFactory qf = head.qf;

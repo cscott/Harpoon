@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.22 1999-10-10 06:21:28 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.23 1999-10-13 14:38:35 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -732,9 +732,10 @@ final class Translate { // not public.
 		Tindex = s.stack(1);
 		Tsrc   = s.stack(0);
 	    }
+	    boolean primitive = (opcode!=Op.AASTORE);
 	    
 	    // the actual operation.
-	    q = new ASET(qf, in, Tobj, Tindex, Tsrc);
+	    q = new ASET(qf, in, Tobj, Tindex, Tsrc, primitive);
 	    break;
 	    }
 	case Op.ACONST_NULL:
@@ -1289,14 +1290,7 @@ final class Translate { // not public.
 	    ns = s.pop().push();
 	    Quad q0 = new INSTANCEOF(qf, in,
 				     ns.stack(0), s.stack(0), opd.value());
-	    Quad q1 = new CJMP(qf, in, ns.stack(0), new Temp[0]);
-	    Quad q2 = new CONST(qf, in, ns.stack(0),new Integer(0),HClass.Int);
-	    Quad q3 = new CONST(qf, in, ns.stack(0),new Integer(1),HClass.Int);
-	    Quad q4 = new PHI(qf, in, new Temp[0], 2);
-	    Quad.addEdges(new Quad[] { q0, q1, q2, q4 });
-	    Quad.addEdge(q1, 1, q3, 0);
-	    Quad.addEdge(q3, 0, q4, 1);
-	    q = q0; last = q4;
+	    q = q0; last = q0;
 	    break;
 	    }
 	case Op.INVOKEINTERFACE:
@@ -1691,6 +1685,17 @@ final class Translate { // not public.
 	    }
 	case Op.IFEQ:
 	case Op.IFNE:
+	    {
+		// optimize this case.
+		State ns = s.pop();
+		boolean invert = (opcode==Op.IFEQ);
+		q = last = new CJMP(qf, in, s.stack(0), new Temp[0]);
+		r = new TransState[] {
+		    new TransState(ns, in.next(0), last, invert?1:0),
+		    new TransState(ns, in.next(1), last, invert?0:1)
+		};
+		break;
+	    }
 	case Op.IFLT:
 	case Op.IFGE:
 	case Op.IFGT:

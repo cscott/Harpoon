@@ -55,7 +55,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.3 1999-10-12 20:04:50 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.4 1999-10-13 14:38:17 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // integer constant sizes:
@@ -247,7 +247,6 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     public Translation.Exp componentOf(TreeFactory tf, HCodeElement source,
 				       Translation.Exp arrayref,
 				       Translation.Exp componentref) {
-	// FIXME: doesn't handle null componentref (which should return true)
 	// component clazz pointer of arrayref
 	Exp e0 = new MEM(tf, source, Type.POINTER,
 			 new BINOP // offset to get component type pointer
@@ -300,7 +299,6 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 				      final Translation.Exp objref,
 				      final HClass classType)
     {
-	// FIXME: doesn't handle null objref (which should return false)
 	final Label Lclaz = runtime.nameMap.label(classType);
 	// two cases: class or interface type.
 	if (classType.isInterface()) {

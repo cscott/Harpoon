@@ -14,12 +14,17 @@ import harpoon.Util.Util;
  * <code>INSTANCEOF</code> assigns a boolean value to a temporary after
  * evaluating whether a certain temporary is an instance of a given
  * class type.<p>
+ * <strong>In quad-with-try form ONLY:</strong>
  * The <code>src</code> <code>Temp</code> may have the value
  * <code>null</code>, in which case <code>INSTANCEOF</code> evaluates to
  * <code>false</code>.
+ * <strong>In all other forms the <code>src</code> <code>Temp</code>
+ * should always contain a provably non-null value at runtime.</strong>
+ * (An explicit null-check may need to be added prior to the 
+ * <code>INSTANCEOF</code> if the value cannot be proven non-null.)
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSTANCEOF.java,v 1.1.2.8 1999-09-09 21:43:02 cananian Exp $ 
+ * @version $Id: INSTANCEOF.java,v 1.1.2.9 1999-10-13 14:38:35 cananian Exp $ 
  */
 public class INSTANCEOF extends Quad {
     /** The <code>Temp</code> in which to store the result of the test. */
