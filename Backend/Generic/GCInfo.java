@@ -27,7 +27,7 @@ import java.util.Set;
  * the instruction stream.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: GCInfo.java,v 1.1.2.2 2000-01-31 23:41:42 kkz Exp $
+ * @version $Id: GCInfo.java,v 1.1.2.3 2000-02-07 19:46:48 pnkfelix Exp $
  */
 public abstract class GCInfo {
     // Maps methods to gc points
@@ -91,10 +91,10 @@ public abstract class GCInfo {
 	private void filter(Set locations) {
 	    for(Iterator it = locations.iterator(); it.hasNext(); ) {
 		CommonLoc loc = (CommonLoc)it.next(); // Temp
-		if (loc.kind() == StackOffsetLoc.KIND)
+		if (loc.isKind(StackOffsetLoc.KIND)) {
 		    liveStackOffsetLocs.add(loc);
-		else {
-		    Util.assert(loc.kind() == MachineRegLoc.KIND);
+		}
+		if (loc.isKind(MachineRegLoc.KIND)) {
 		    liveMachineRegLocs.add(loc);
 		}
 	    }

@@ -70,7 +70,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.75 2000-02-02 04:17:11 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.76 2000-02-07 19:46:45 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -373,7 +373,9 @@ public abstract class RegAlloc  {
 	    offset = stackOffset;
 	}
 
-	public int kind() { return RegFileInfo.StackOffsetLoc.KIND; }
+	public boolean isKind(int k) { 
+	    return ((k & RegFileInfo.StackOffsetLoc.KIND) != 0);
+	}
 	public int stackOffset() { return offset; }
     }
 

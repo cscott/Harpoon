@@ -40,7 +40,7 @@ import java.util.TreeSet;
  * <code>DataGC</code> outputs the tables needed by the garbage collector.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: DataGC.java,v 1.1.2.3 2000-02-04 03:42:30 kkz Exp $
+ * @version $Id: DataGC.java,v 1.1.2.4 2000-02-07 19:46:49 pnkfelix Exp $
  */
 public class DataGC extends Data {
     final GCInfo m_gc;
@@ -212,21 +212,35 @@ public class DataGC extends Data {
 	sizeD = 1;
 	for(Iterator it=derivs.keySet().iterator(); it.hasNext(); ) {
 	    CommonLoc cl = (CommonLoc)it.next();
-	    int deriv;
-	    if (cl.kind() == StackOffsetLoc.KIND)
+	    int deriv = 0;
+	    // FSK: Karen fix this to handle the Union case
+	    Util.assert(! (cl.isKind(StackOffsetLoc.KIND) &&
+			   cl.isKind(MachineRegLoc.KIND)),
+			"Don't handle union case yet");
+	    if (cl.isKind(StackOffsetLoc.KIND)) {
 		deriv = ((StackOffsetLoc)cl).stackOffset();
-	    else
+	    } else if (cl.isKind(MachineRegLoc.KIND)) {
 		deriv = ((MachineRegLoc)cl).regIndex();
+	    } else {
+		Util.assert(false, "neither Loc case came up");
+	    }
 	    stmlist.add(_DATUM(new CONST(tf, null, deriv)));
 	    sizeD += 4; // 32-bits for the above Temp
 	    List rEntries = new ArrayList();
 	    List sEntries = new ArrayList();
 	    Derivation.DList dl = (Derivation.DList)derivs.get(cl);
 	    while(dl != null) {
-		if (((CommonLoc)dl.base).kind() == StackOffsetLoc.KIND) {
+		// FSK: Karen fix this to handle the Union case
+		Util.assert(! (cl.isKind(StackOffsetLoc.KIND) &&
+			       cl.isKind(MachineRegLoc.KIND)),
+			    "Don't handle union case yet");
+		if (((CommonLoc)dl.base).isKind(StackOffsetLoc.KIND)) {
 		    sEntries.add(dl);
-		} else
+		} else if (((CommonLoc)dl.base).isKind(MachineRegLoc.KIND)) {
 		    rEntries.add(dl);
+		} else {
+		    Util.assert(false, "neither Loc case came up");
+		}
 		dl = dl.next;
 	    }
 	    stmlist.add(_DATUM(new CONST(tf, null, (byte)rEntries.size())));

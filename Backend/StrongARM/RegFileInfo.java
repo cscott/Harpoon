@@ -5,6 +5,8 @@ package harpoon.Backend.StrongARM;
 
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.LocationFactory.Location;
+import harpoon.Backend.Generic.RegFileInfo.VRegAllocator;
+import harpoon.Backend.Generic.RegFileInfo.SpillException;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HData;
@@ -35,7 +37,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.13 2000-01-26 21:05:14 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.14 2000-02-07 19:46:50 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -86,7 +88,7 @@ public class RegFileInfo
             public String getScope() { return scope; }
             protected synchronized String getUniqueID(String suggestion) {
                 Util.assert(i < names.length, "Don't use the "+
-			    "TempFactory of Register bound Temps");
+			    "TempFactory of Register Temps");
 		i++;
                 return names[i-1];
             }
@@ -144,8 +146,65 @@ public class RegFileInfo
 	}
     }
 
+    static class MyVRegAllocator extends VRegAllocator {
+	// not necessarily right approach... retry coding with
+	// TwoWordTemps etc for Vregs... (because we don't need to
+	// expose the need for multiple registers/temp until the last
+	// part, right?)
+
+	static final int numVregs = 11; // number of vregs in each set
+	static int vregCtr = 0; // tracks where to start next vreg set at.
+	static String[] vregNames() { 
+	    String[] names = new String[numVregs];
+	    for(int i=0 ; i<numVregs; i++) {
+		names[i] = ("vr"+vregCtr);
+		vregCtr++;
+	    }
+	    return names;
+	}
+	static Temp[] makeVregGeneral() {
+	    TempFactory vregtf = new TempFactory() {
+		private int i=0;
+		private final String scope = "strongarm-virtual-registers";
+		private final String[] names = vregNames();
+		public String getScope() { return scope; }
+		protected synchronized String getUniqueID(String suggestion) {
+		    Util.assert(i < names.length, "Don't use the "+
+				"TempFactory of VRegister Temps");
+		    i++;
+		    return names[i - 1];
+		}
+	    };
+	    
+	    Temp[] vregs = new Temp[11];
+	    for(int i=0; i<numVregs; i++) {
+		vregs[i] = new Temp(vregtf);
+	    }
+	    return vregs;
+	}
+	
+	Temp[] myRegs;
+	MyVRegAllocator() {
+	    myRegs = makeVregGeneral();
+	}
+	
+	/** Returns a virtual register from the pool of virtual
+	    registers maintained by this.
+	    Note that regfile can contain keys that are machine
+	    registers or that are virtual registers drawn from the
+	    pool maintained by this.
+	*/
+	public Temp vreg(Temp t, Map regfile) throws SpillException { 
+	    return null;
+	}
+    }
+
+    public VRegAllocator allocator() {
+	return new MyVRegAllocator();
+    }
+
     public Iterator suggestRegAssignment(Temp t, final Map regFile) 
-	throws harpoon.Backend.Generic.RegFileInfo.SpillException {
+	throws SpillException {
 	final ArrayList suggests = new ArrayList();
 	final ArrayList spills = new ArrayList();
 	
@@ -195,7 +254,7 @@ public class RegFileInfo
 	    }
 	}
 	if (suggests.isEmpty()) {
-	    throw new harpoon.Backend.Generic.RegFileInfo.SpillException() {
+	    throw new SpillException() {
 		public Iterator getPotentialSpills() {
 		    // System.out.println("RFI: Spills.size() "+spills.size());
 		    return spills.iterator();
