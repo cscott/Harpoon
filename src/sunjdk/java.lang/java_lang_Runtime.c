@@ -6,7 +6,7 @@
 #endif
 
 #include <assert.h>
-#include <unistd.h>
+#include "../../java.lang/runtime.h" /* useful library-indep implementations */
 /*
  * Class:     java_lang_Runtime
  * Method:    exitInternal
@@ -14,11 +14,7 @@
  */
 JNIEXPORT void JNICALL Java_java_lang_Runtime_exitInternal
   (JNIEnv *env, jobject objRuntime, jint status) {
-#ifdef WITH_STATISTICS
-  /* print out collected statistics */
-  { void print_statistics(void); print_statistics(); }
-#endif
-    exit(status);
+    fni_runtime_exitInternal(status);
 }
 
 /*
@@ -49,13 +45,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_Runtime_execInternal
 /* returns the amount of free memory in the system */
 JNIEXPORT jlong JNICALL Java_java_lang_Runtime_freeMemory
   (JNIEnv *env, jobject objRuntime) {
-#ifdef BDW_CONSERVATIVE_GC
-  return (jlong) GC_get_free_bytes();
-#elif defined(WITH_PRECISE_GC)
-  return precise_free_memory();
-#else
-  assert(0/*unimplemented*/);
-#endif
+    return fni_runtime_freeMemory(env);
 }
 
 /*
@@ -65,13 +55,7 @@ JNIEXPORT jlong JNICALL Java_java_lang_Runtime_freeMemory
  */
 JNIEXPORT jlong JNICALL Java_java_lang_Runtime_totalMemory
   (JNIEnv *env, jobject objRuntime) {
-#ifdef BDW_CONSERVATIVE_GC
-  return (jlong) GC_get_heap_size();
-#elif defined(WITH_PRECISE_GC)
-  return precise_get_heap_size();
-#else
-  assert(0/*unimplemented*/);
-#endif
+    return fni_runtime_totalMemory(env);
 }
 
 /*
@@ -81,13 +65,7 @@ JNIEXPORT jlong JNICALL Java_java_lang_Runtime_totalMemory
  */
 JNIEXPORT void JNICALL Java_java_lang_Runtime_gc
   (JNIEnv *env, jobject objRuntime) {
-#ifdef BDW_CONSERVATIVE_GC
-  GC_gcollect();
-#elif defined(WITH_PRECISE_GC)
-  precise_collect();
-#else
-  assert(0/*unimplemented*/);
-#endif
+    fni_runtime_gc(env);
 }
 
 /*
@@ -97,14 +75,7 @@ JNIEXPORT void JNICALL Java_java_lang_Runtime_gc
  */
 JNIEXPORT void JNICALL Java_java_lang_Runtime_runFinalization
   (JNIEnv *env, jobject objRuntime) {
-#ifdef BDW_CONSERVATIVE_GC
-  GC_invoke_finalizers();
-#elif defined(WITH_PRECISE_GC)
-  /* unimplemented */
-  printf("WARNING: Finalization not implemented for precise GC.\n");
-#else
-  assert(0/*unimplemented*/);
-#endif
+    fni_runtime_runFinalization(env);
 }
 
 /*
