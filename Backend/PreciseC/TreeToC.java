@@ -64,7 +64,7 @@ import java.util.TreeSet;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.16 2003-07-12 03:10:27 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.17 2003-10-06 16:42:46 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     // Support losing platforms (like, say, AIX) where multiple segments
@@ -560,8 +560,12 @@ public class TreeToC extends java.io.PrintWriter {
 	    // very odd gcc oddity, where too-large structs are aligned
 	    // to a 32-byte boundary).  Also if we haven't entered the
 	    // data mode via a label yet, we should make up a label and do so.
+	    // NOTE that we actually make our maximum struct size 24 bytes,
+	    // so that we always generate 8-byte aligned structs when
+	    // possible.  This is because IRIX will eight-byte align
+	    // every struct, whether we ask it to or not. =( CSA 2003-10-06
 	    if (current_mode != CODETABLE /* no restrictions here */ &&
-		(current_mode==NONE || struct_size >= 32 || this.align!=null)){
+		(current_mode==NONE || struct_size > 24 || this.align!=null)){
 		startData(current_mode==NONE ? DATA : current_mode,
 			  new Label(), false);
 		struct_size += sizeof(e.getData());
