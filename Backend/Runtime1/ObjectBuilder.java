@@ -45,7 +45,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.4.16 2001-09-17 18:33:20 bdemsky Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.4.17 2001-09-17 21:46:33 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -79,7 +79,7 @@ public class ObjectBuilder
 	this.runtime = runtime;
 	this.pointersAreLong = runtime.frame.pointersAreLong();
 	this.ro = ro;
-	this.rnd = new Random(runtime.frame.hashCode());//quasi-repeatable?
+	this.rnd = new Random(1234/*runtime.frame.hashCode()*/);//repeatable?
 	this.HCobject = runtime.frame.getLinker().forName("java.lang.Object");
     }
 
