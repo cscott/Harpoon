@@ -31,7 +31,7 @@ import java.util.Stack;
  * is hairy because of the big "efficiency-vs-immutable quads" fight.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.4 1999-09-19 16:17:34 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.5 1999-10-23 05:59:33 cananian Exp $
  */
 class SSIRename {
     private static final boolean sort_phisig = false;
@@ -244,7 +244,9 @@ class SSIRename {
 			CALL Q = (CALL) q;
 			Temp[] defs = (Temp[]) sdf.get(q);
 			nq = new CALL(nqf, Q, Q.method(), (Temp[]) arg.get(q),
-				      defs[0], defs[1], Q.isVirtual(), l, r);
+				      defs[0], defs[1],
+				      Q.isVirtual(), Q.isTailCall(),
+				      l, r);
 		    } else throw new Error("Ack!");
 		    old2new.put(q, nq);
 		}

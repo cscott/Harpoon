@@ -44,7 +44,7 @@ import harpoon.Util.Util;
  * is so.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.13 1999-09-19 16:17:31 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.14 1999-10-23 05:59:33 cananian Exp $ 
  */
 public class CALL extends SIGMA {
     /** The method to invoke. */
@@ -62,6 +62,8 @@ public class CALL extends SIGMA {
     /** Special flag for non-virtual methods.
      *  (INVOKESPECIAL has different invoke semantics) */
     final protected boolean isVirtual;
+    /** Special flag fot tail calls. */
+    final protected boolean isTailCall;
 
     /** Creates a <code>CALL</code> quad representing a method invocation
      *  with explicit exception handling.
@@ -95,6 +97,12 @@ public class CALL extends SIGMA {
      *        Value is unspecified for static methods, although the
      *        <code>isVirtual()</code> method will always return 
      *        <code>false</code> in this case.
+     * @param isTailCall
+     *        <code>true</code> if this method should return the same
+     *        value the callee returns or throw whatever exception the
+     *        callee throws (in which case we can get rid of our stack
+     *        and let the callee return directly to our caller.
+     *        Usually <code>false</code>.
      * @param dst
      *        the elements of the pairs on the left-hand side of
      *        the sigma function assignment block associated with
@@ -105,7 +113,8 @@ public class CALL extends SIGMA {
      */
     public CALL(QuadFactory qf, HCodeElement source,
 		HMethod method, Temp[] params, Temp retval, Temp retex,
-		boolean isVirtual, Temp[][] dst, Temp[] src) {
+		boolean isVirtual, boolean isTailCall,
+		Temp[][] dst, Temp[] src) {
 	super(qf, source, dst, src, retex==null?1:2);
 	this.method = method;
 	this.params = params;
@@ -113,6 +122,7 @@ public class CALL extends SIGMA {
 	this.retex  = retex;
 	// static methods are not virtual.
 	this.isVirtual = isStatic()?false:isVirtual;
+	this.isTailCall = isTailCall;
 
 	// VERIFY legality of this CALL.
 	Util.assert(method!=null && params!=null);
@@ -149,8 +159,8 @@ public class CALL extends SIGMA {
      *  of the proper size.  Other arguments as above. */
     public CALL(QuadFactory qf, HCodeElement source,
 		HMethod method, Temp[] params, Temp retval, Temp retex,
-		boolean isVirtual, Temp[] src) {
-	this(qf, source, method, params, retval, retex, isVirtual,
+		boolean isVirtual, boolean isTailCall, Temp[] src) {
+	this(qf, source, method, params, retval, retex, isVirtual, isTailCall,
 	     new Temp[src.length][retex==null?1:2], src);
     }
     
@@ -184,6 +194,12 @@ public class CALL extends SIGMA {
      *  <code>false</code>, and all other method types return 
      *  <code>true</code>. */
     public boolean isVirtual() { return isVirtual; }
+    /** Returns <code>true</code> if this method should return the
+     *  same value the callee returns or throw whatever
+     *  exception the callee throws (in which case we can get
+     *  rid of our stack and let the callee return directly to
+     *  our caller.  Usually <code>false</code>. */
+    public boolean isTailCall() { return isTailCall; }
 
     /** Returns all the Temps used by this Quad. 
      * @return the <code>params</code> array.
@@ -214,7 +230,8 @@ public class CALL extends SIGMA {
 
     public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
 	return new CALL(qqf, this, method, map(useMap, params),
-			map(defMap,retval),map(defMap, retex), isVirtual,
+			map(defMap,retval),map(defMap, retex),
+			isVirtual, isTailCall,
 			map(defMap, dst), map(useMap, src));
     }
     /** Rename all used variables in this Quad according to a mapping.
@@ -244,6 +261,8 @@ public class CALL extends SIGMA {
 	sb.append("CALL ");
 	if (!isVirtual)
 	    sb.append("(non-virtual) ");
+	if (isTailCall)
+	    sb.append("[tail call] ");
 	if (isStatic())
 	    sb.append("static ");
 	sb.append(method.getDeclaringClass().getName()+"."+method.getName());

@@ -19,7 +19,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.12 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: NATIVECALL.java,v 1.1.2.13 1999-10-23 05:59:34 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
@@ -27,7 +27,7 @@ import java.util.Set;
 public class NATIVECALL extends INVOCATION {
     /** Constructor. */
     public NATIVECALL(TreeFactory tf, HCodeElement source,
-		Exp retval, Exp func, ExpList args) {
+		      TEMP retval, Exp func, ExpList args) {
 	super(tf, source, retval, func, args);
     }
 
@@ -47,7 +47,7 @@ public class NATIVECALL extends INVOCATION {
 	for (ExpList e = kids.tail.tail; e!=null; e=e.tail)
 	    Util.assert(tf == e.head.tf);
 	return new NATIVECALL(tf, this,
-			      kids.head,       // retval
+			      (TEMP)kids.head, // retval
 			      kids.tail.head,  // func
 			      kids.tail.tail); // args
     }
@@ -57,7 +57,7 @@ public class NATIVECALL extends INVOCATION {
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new NATIVECALL(tf, this, 
-			      (Exp)retval.rename(tf, ctm),
+			      (TEMP)retval.rename(tf, ctm),
 			      (Exp)func.rename(tf, ctm),
 			      ExpList.rename(args, tf, ctm));
     }

@@ -63,7 +63,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.12 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.13 1999-10-23 05:59:35 cananian Exp $
  */
 public final class Method extends HCLibrary {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -439,7 +439,8 @@ public final class Method extends HCLibrary {
 
 	    // FIXME: may want to allow other expressions than TEMPs
 	    Util.assert(s.retval.kind()==TreeKind.TEMP);
-	    Util.assert(s.retex.kind()==TreeKind.NAME);
+	    Util.assert(s.retex.kind()==TreeKind.TEMP);
+	    Util.assert(s.handler.kind()==TreeKind.NAME);
 
 	    s.func.accept(this);
 
@@ -478,9 +479,9 @@ public final class Method extends HCLibrary {
 		advance(0);  // Advance PC to normal branch
 	    }
 	    catch (InterpretedThrowable it) {
-		// ignore retex param
-		sf.update(s.retval, new FieldPointer(it.ex, 0));
-		sf.update(((TEMP)s.retval).temp, sf.get(s.retval));
+		// ignore handler param
+		sf.update(s.retex, new FieldPointer(it.ex, 0));
+		sf.update(((TEMP)s.retex).temp, sf.get(s.retex));
 		advance(1);  // Advance PC to exceptional branch
 	    }
 	}

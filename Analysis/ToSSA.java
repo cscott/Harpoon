@@ -15,7 +15,7 @@ import harpoon.IR.LowQuad.*;
  * Converts SSI to SSA.  Should work on LowQuads and Quads. 
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ToSSA.java,v 1.1.2.5 1999-09-24 06:30:08 bdemsky Exp $
+ * @version $Id: ToSSA.java,v 1.1.2.6 1999-10-23 05:59:19 cananian Exp $
  */
 
 public final class ToSSA {
@@ -119,7 +119,7 @@ public final class ToSSA {
 	    CALL newcall=new CALL(q.getFactory(), q, q.method(),
 				  nparams, ssitossamap.tempMap(q.retval()),
 				  ssitossamap.tempMap(q.retex()),
-				  q.isVirtual(), new Temp[0]);
+				  q.isVirtual(), q.isTailCall(), new Temp[0]);
 	    Quad []prev=q.prev();
 	    Quad []next=q.next();
 	    for(int i=0;i<prev.length;i++) {
@@ -138,7 +138,7 @@ public final class ToSSA {
 	    PCALL newcall=new PCALL((LowQuadFactory)q.getFactory(), q, q.ptr(),
 				  nparams, ssitossamap.tempMap(q.retval()),
 				  ssitossamap.tempMap(q.retex()),
-				  new Temp[0]);
+				  new Temp[0], q.isVirtual(), q.isTailCall());
 	    Quad []prev=q.prev();
 	    Quad []next=q.next();
 	    for(int i=0;i<prev.length;i++) {

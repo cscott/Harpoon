@@ -33,7 +33,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.33 1999-10-19 19:53:09 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.34 1999-10-23 05:59:34 cananian Exp $
  */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {
@@ -293,25 +293,25 @@ public abstract class Code extends HCode
 	    case COMPUTE_EDGE_SETS:
 		nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
 
-		Util.assert(labels.containsKey(s.retex.label),
+		Util.assert(labels.containsKey(s.handler.label),
 			    "labels should contain Label:" + 
-			    s.retex.label);
+			    s.handler.label);
 		Util.assert(nextNode!=null, 
 			    "nextNode shouldn't be null");
-		Util.assert(RS(nextNode)!=(Stm)labels.get(s.retex.label),
+		Util.assert(RS(nextNode)!=(Stm)labels.get(s.handler.label),
 			    "both normal and exceptional return should"+
 			    " not target same location for "+
 			    Print.print(s));
 
 		addEdge(s, RS(nextNode)); 
-		addEdge(s, (Stm)labels.get(s.retex.label));
+		addEdge(s, (Stm)labels.get(s.handler.label));
 		break;
 	    case ALLOC_EDGE_ARRAYS:
 		visit((Stm)s); return;
 	    case ASSIGN_EDGE_DATA:
 		nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
 		if (successors.containsKey(s)) { 
-		    Stm ex   = (Stm)labels.get(s.retex.label);
+		    Stm ex   = (Stm)labels.get(s.handler.label);
 		    Set succ = (Set)successors.get(s);
 		    Util.assert(succ.size()==2, 
 				"number of successors ("+succ.size()+

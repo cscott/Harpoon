@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.32 1999-09-19 16:17:34 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.33 1999-10-23 05:59:33 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -622,7 +622,8 @@ final class ReHandler {
 		//same old type of call intended...
 		head = new CALL(qf, q, q.method, Quad.map(ss.ctm, q.params()),
 				Quad.map(ss.ctm, q.retval()), 
-				null, q.isVirtual(), new Temp[0]);
+				null, q.isVirtual(), q.isTailCall(),
+				new Temp[0]);
        		Quad q0 = new CONST(qf, q, Quad.map(ss.ctm, q.retex()),
 				    null, HClass.Void);
 		updatemap(q,head);

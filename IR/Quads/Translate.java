@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.23 1999-10-13 14:38:35 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.24 1999-10-23 05:59:33 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -594,6 +594,7 @@ final class Translate { // not public.
 				     strC);
 		Quad qq1 = new CALL(qf, q, cfnM, qq0.def() /*params*/,
 				    lock, null, true /* virtual */,
+				    false /* tail call */,
 				    new Temp[0]);
 		Quad qq2 = new MONITORENTER(qf, q, lock);
 		// okay, link 'em up.
@@ -1325,7 +1326,7 @@ final class Translate { // not public.
 	    }
 	    // Create CALL quad.
 	    q = new CALL(qf, in, opd.value(), param, Tret, null, isVirtual,
-			 new Temp[0]);
+			 false /* tail call */, new Temp[0]);
 	    break;
 	    }
 	case Op.LCMP: // break this up into lcmpeq, lcmpgt, etc.

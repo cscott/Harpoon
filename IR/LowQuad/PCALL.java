@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * invocation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PCALL.java,v 1.1.2.3 1999-09-19 16:17:30 cananian Exp $
+ * @version $Id: PCALL.java,v 1.1.2.4 1999-10-23 05:59:31 cananian Exp $
  */
 public class PCALL extends harpoon.IR.Quads.SIGMA {
     /** The method pointer to dereference. */
@@ -26,6 +26,10 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
     /** Destination for any exception thrown by the method.
      *  May not be <code>null</code>. */
     protected Temp retex;
+    /** Whether this is a virtual or non-virtual method invocation. */
+    protected boolean isVirtual;
+    /** Whether this should be treated as a tail call. */
+    protected boolean isTailCall;
 
     /** Creates a <code>PCALL</code> representing a method pointer dereference
      *  and method invocation. Interpretation is similar to that of
@@ -66,15 +70,30 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
      * @param src
      *        the arguments to the sigma functions associated with
      *        this <code>PCALL</code>.
+     * @param isVirtual
+     *        <code>true</code> if this is a virtual method invocation,
+     *        in which case <code>ptr</code> <i>points to</i> the address of
+     *        the method to invoke, or <code>false</code> if this is a
+     *        non-virtual invocation, in which case <code>ptr</code> is
+     *        the <i>actual address</i> of the method to invoke.
+     * @param isTailCall
+     *        <code>true</code> if this method should return the same
+     *        value the callee returns or throw whatever exception the
+     *        callee throws (in which case we can get rid of our
+     *        stack and let the callee return directly to our caller).
+     *        Usually <code>false</code>.
      */
     public PCALL(LowQuadFactory qf, HCodeElement source,
 		 Temp ptr, Temp[] params, Temp retval, Temp retex,
-		 Temp[][] dst, Temp[] src) {
+		 Temp[][] dst, Temp[] src,
+		 boolean isVirtual, boolean isTailCall) {
 	super(qf, source, dst, src, 2/* always arity two */);
 	this.ptr = ptr;
 	this.params = params;
 	this.retval = retval;
 	this.retex = retex;
+	this.isVirtual = isVirtual;
+	this.isTailCall = isTailCall;
 	Util.assert(ptr!=null && params!=null && retex !=null);
 	// hm.  can't check much else without knowing the method identity.
     }
@@ -82,9 +101,10 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
     /** Creates a <code>PCALL</code> with an empty <code>dst</code> array
      *  of the proper size and arity.  Other arguments as above. */
     public PCALL(LowQuadFactory qf, HCodeElement source,
-		 Temp ptr, Temp[] params, Temp retval, Temp retex, Temp[] src){
+		 Temp ptr, Temp[] params, Temp retval, Temp retex,
+		 Temp[] src, boolean isVirtual, boolean isTailCall){
 	this(qf, source, ptr, params, retval, retex,
-	     new Temp[src.length][2], src);
+	     new Temp[src.length][2], src, isVirtual, isTailCall);
     }
 
     // ACCESSOR METHODS:
@@ -106,6 +126,17 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
      *  by the called method, or <code>null</code> if exceptions are
      *  not caught. */
     public Temp retex() { return retex; }
+    /** Returns <code>true</code> if <code>ptr</code> <i>points to</i>
+     *  the address of the method to invoke; or <code>false</code> if
+     *  <code>ptr</code> contains the direct address of the method to
+     *  invoke. */
+    public boolean isVirtual() { return isVirtual; }
+    /** Return <code>true</code> if this method should return the same
+     *  value the callee returns or throw whatever exception the
+     *  callee throws (in which case we can get rid of our
+     *  stack and let the callee return directly to our caller).
+     *  Usually <code>false</code>. */
+    public boolean isTailCall() { return isTailCall; }
 
     public int kind() { return LowQuadKind.PCALL; }
 
@@ -131,7 +162,8 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
 	return new PCALL((LowQuadFactory)qf, this,
 			 map(useMap, ptr), map(useMap, params),
 			 map(defMap, retval), map(defMap, retex),
-			 map(defMap, dst), map(useMap, src));
+			 map(defMap, dst), map(useMap, src),
+			 isVirtual, isTailCall);
     }
 
     public void accept(harpoon.IR.Quads.QuadVisitor v) {
@@ -142,7 +174,9 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
 	StringBuffer sb = new StringBuffer();
 	if (retval != null)
 	    sb.append(retval.toString() + " = ");
-	sb.append("PCALL *"+ptr.toString());
+	sb.append("PCALL ");
+	if (isVirtual) sb.append("*");
+	sb.append(ptr.toString());
 
 	sb.append('(');
 	for (int i=0; i<params.length; i++) {
@@ -152,6 +186,7 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
 	}
 	sb.append(')');
 
+	if (isTailCall) sb.append(" [tail call]");
 	sb.append(" exceptions in "+retex.toString());
 	sb.append(" / "); sb.append(super.toString());
 	return sb.toString();

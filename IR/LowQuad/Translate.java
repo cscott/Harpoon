@@ -26,7 +26,7 @@ import java.util.Map;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.13 1999-09-19 16:17:30 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.14 1999-10-23 05:59:32 cananian Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
@@ -159,15 +159,18 @@ final class Translate { // not public
 	}
 
 	public final void visit(harpoon.IR.Quads.CALL q) {
+	    boolean isVirtual;
 	    Quad q0, qN;
 	    if (!q.isVirtual() || fm.isFinal(q.method())) {
 		// non-virtual or final.  Method address is constant.
+		isVirtual = false;
 		q0 = qN = new PMCONST(qf, q, extra(), q.method());
 		// Map q0.def()[0] to a generic pointer type.
 		dT.put(q0.def()[0], new DList(q0.def()[0], true, null));
 		tT.put(q0.def()[0], 
 		       new Error("Cant type derived pointer: " + q0.def()[0]));
 	    } else { // virtual; perform table lookup.
+		isVirtual = true;
 		q0 = new PMETHOD(qf, q, extra(q.params(0)), map(q.params(0)));
 		Quad q1 = new PMOFFSET(qf, q, extra(q.params(0)), q.method());
 		Quad q2 = new POPER(qf, q, LQop.PADD, extra(q.params(0)),
@@ -199,7 +202,8 @@ final class Translate { // not public
 	    // CALL->PCALL.
 	    Quad q3 = new PCALL(qf, q, qN.def()[0], map(q.params()),
 				map(q.retval()), map(q.retex()),
-				map(ndst), map(nsrc));
+				map(ndst), map(nsrc),
+				isVirtual, q.isTailCall());
 	    Quad.addEdge(qN, 0, q3, 0);
 	    lqm.put(q, q0, q3);
 	}

@@ -22,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.36 1999-10-19 19:57:47 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.37 1999-10-23 05:59:36 cananian Exp $
  */
 public class Spec  {
 
@@ -523,13 +523,13 @@ public class Spec  {
     */
     public static class StmCall extends Stm {
 	/** Return value destination expression. 
-	    @see harpoon.IR.Tree.Exp
+	    @see harpoon.IR.Tree.TEMP
 	 */
-	public final Exp retval;
+	public final String retval;
 	/** Exception value destination expression. 
-	    @see harpoon.IR.Tree.Exp
+	    @see harpoon.IR.Tree.TEMP
 	 */
-	public final Exp retex;
+	public final String retex;
 	/** Function location expression. 
 	    @see harpoon.IR.Tree.Exp
 	 */
@@ -538,19 +538,26 @@ public class Spec  {
 	    @see harpoon.IR.Tree.TempList
 	 */
 	public final String arglist;
+	/** Exception handler label.
+	 *  @see harpoon.IR.Tree.NAME
+	 */
+	public final String handler;
 	/** Constructs a new <code>Spec.StmCall</code>.
 	    @param retval Return value destination expression.
 	    @param retex Exception value destination expression. 
 	    @param func Function location expression.
 	    @param arglist Arguments.
+	    @param handler Exception handler location.
 	*/
-	public StmCall(Exp retval, Exp retex, Exp func, String arglist) {
+	public StmCall(String retval, String retex, Exp func, String arglist,
+		       String handler) {
 	    this.retval = retval; this.retex = retex; this.func = func;
-	    this.arglist = arglist;
+	    this.arglist = arglist; this.handler = handler;
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() {
-	    return "CALL("+retval+","+retex+","+func+","+arglist+")";
+	    return "CALL("+retval+","+retex+","+func+","+arglist+","+
+		           handler+")";
 	}
     }
 
@@ -698,7 +705,7 @@ public class Spec  {
 	/** Return value destination expression. 
 	    @see harpoon.IR.Tree.Exp
 	 */
-	public final Exp retval;
+	public final String retval;
 	/** Function location expression. 
 	    @see harpoon.IR.Tree.Exp
 	 */
@@ -712,7 +719,7 @@ public class Spec  {
 	    @param func Function location expression.
 	    @param arglist Arguments.
 	*/
-	public StmNativeCall(Exp retval, Exp func, String arglist) {
+	public StmNativeCall(String retval, Exp func, String arglist) {
 	    this.retval = retval; this.func = func;
 	    this.arglist = arglist;
 	}

@@ -65,7 +65,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.50 1999-10-12 20:04:56 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.51 1999-10-23 05:59:34 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -575,15 +575,14 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
     // runtime-independent
     public void visit(PCALL q) { 
 	ExpList params; Temp[] qParams; TEMP retval, retex, func; 
+	Exp ptr;
 	Stm s0, s1;
 
 	Util.assert(q.retex()!=null && q.ptr()!=null);
 
-	// If q.retval() is null, create a dummy TEMP for the retval
-	//
+	// If q.retval() is null, the 'retval' in Tree.CALL is also null.
 	if (q.retval()==null) {
-	    retval = extra(q, Type.POINTER);//hmmm...
-	    addDT(retval.temp, retval, null, HClass.Void);
+	    retval = null;
 	}
 	else {
 	    retval = _TEMP(q.retval(), q);
@@ -595,6 +594,9 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	//
 	retex = _TEMP(q.retex(), q);
 	func  = _TEMP(q.ptr(), q);
+	
+	ptr = q.isVirtual() ? // extra dereference for virtual functions.
+	    (Exp) new MEM(m_tf, q, Type.POINTER, func) : (Exp) func;
 	    
 	qParams = q.params(); params = null; 
 	for (int i=qParams.length-1; i >= 0; i--) {
@@ -608,9 +610,10 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 
 	s0 = new CALL
 	    (m_tf, q, 
-	     retval, 
+	     retval, retex,
+	     ptr, params,
 	     new NAME(m_tf, q, _LABEL(Lex).label),
-	     func, params);
+	     q.isTailCall());
 	s1 = new JUMP
 	    (m_tf, q, _LABEL(Lrv).label);
 

@@ -27,7 +27,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.21 1999-09-21 01:55:22 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.22 1999-10-23 05:59:33 cananian Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -200,7 +200,8 @@ static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
 	    nparams[i] = map(q.params(i));
 	q0         = new CALL(m_qf, q, q.method(), nparams,
 			      (q.retval()!=null)?map(q.retval()):null,
-			      map(q.retex()), q.isVirtual(), new Temp[0]);
+			      map(q.retex()), q.isVirtual(), q.isTailCall(),
+			      new Temp[0]);
 	numSigmas  = q.numSigmas();
 	arity      = q.arity();
 
@@ -222,7 +223,8 @@ static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
 	    nparams[i] = map(q.params(i));
 	q0         = new PCALL((LowQuadFactory)m_qf, q, map(q.ptr()), nparams,
 			      (q.retval()!=null)?map(q.retval()):null,
-			      map(q.retex()), new Temp[0]);
+			      map(q.retex()), new Temp[0],
+			      q.isVirtual(), q.isTailCall());
 	numSigmas  = q.numSigmas();
 	arity      = q.arity();
 

@@ -19,7 +19,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.20 1999-10-13 14:38:35 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.21 1999-10-23 05:59:33 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -417,7 +417,8 @@ final class UnHandler {
 		Temp Tex = ss.extra(0);
 		head = new CALL(qf, q, q.method(), Quad.map(ss.ctm,q.params()),
 				Quad.map(ss.ctm, q.retval()),
-				Tex, q.isVirtual(), new Temp[0]);
+				Tex, q.isVirtual(), q.isTailCall(),
+				new Temp[0]);
 		Quad q4 = _throwException_(qf, q, Tex);
 		Quad.addEdge(head, 1, q4, 0);
 		nq = head;
@@ -781,7 +782,7 @@ final class UnHandler {
 	    Temp Tex = ss.hm.Tex, Tex2 = ss.extra(0), Tnull = ss.extra(1);
 	    Quad q0 = new NEW(qf, old, Tex, HCex);
 	    Quad q1 = new CALL(qf, old, HCex.getConstructor(new HClass[0]),
-			       new Temp[] { Tex }, null, Tex, false,
+			       new Temp[] { Tex }, null, Tex, false, false,
 			       new Temp[0]);
 	    Quad q6 = new PHI(qf, old, new Temp[0], 2);
 	    Quad q7 = _throwException_(qf, old, Tex);

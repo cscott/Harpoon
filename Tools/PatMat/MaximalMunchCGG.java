@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.45 1999-10-20 20:29:24 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.46 1999-10-23 05:59:36 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -173,21 +173,18 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "&& (" + r.exp.toString() +indentPrefix+")");
 	    initStms.append(r.initStms.toString());
 
-	    // look at retex
-	    r = new TypeExpRecurse("(("+TREE_CALL+")"+stmPrefix + ").retex", 
-				   indentPrefix + "\t");
-	    s.retex.accept(r);
-	    degree += r.degree;
-	    append(exp, indentPrefix + "&& (" + r.exp.toString() + indentPrefix+")");
-	    initStms.append(r.initStms.toString());
+	    // initialize retval
+	    append(initStms, TEMP_Temp+" "+s.retval+" = "+
+		   "((("+TREE_CALL+")"+stmPrefix + ").retval==null)?null:"+
+		   "(("+TREE_CALL+")"+stmPrefix + ").retval.temp;");
 
-	    // look at retval
-	    r = new TypeExpRecurse("(("+TREE_CALL+")"+stmPrefix + ").retval",
-				   indentPrefix + "\t");
-	    s.retval.accept(r);
-	    degree += r.degree;
-	    append(exp, "&& (" + r.exp.toString() + ")");
-	    initStms.append(r.initStms.toString());
+	    // initialize retex
+	    append(initStms, TEMP_Temp+" "+s.retex+" = "+
+		   "(("+TREE_CALL+")"+stmPrefix + ").retex.temp;");
+
+	    // initialize handler
+	    append(initStms, TEMP_Label+" "+s.handler+" = "+
+		   "(("+TREE_CALL+")"+stmPrefix + ").handler.label;");
 
 	    // initialize arg list
 	    append(initStms, "/* munch argument ExpList into a TempList */");
@@ -385,22 +382,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+")");
 	    initStms.append(r.initStms.toString());
 
-//  	    // look at retex
-//  	    // NOTE: THIS WILL BREAK WHEN WE UPDATE EXCEPTION HANDLING 
-//  	    r = new TypeExpRecurse("(("+TREE_NATIVECALL+")"+stmPrefix + ").retex", 
-//  				   indentPrefix + "\t");
-//  	    s.retex.accept(r);
-//  	    degree += r.degree;
-//  	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+ ")");
-//  	    initStms.append(r.initStms.toString());
-
-	    // look at retval
-	    r = new TypeExpRecurse("(("+TREE_NATIVECALL+")"+stmPrefix + ").retval",
-				   indentPrefix + "\t");
-	    s.retval.accept(r);
-	    degree += r.degree;
-	    append(exp, "&& (" + r.exp.toString() +indentPrefix+ ")");
-	    initStms.append(r.initStms.toString());
+	    // initialize retval
+	    append(initStms, TEMP_Temp+" "+s.retval+" = "+
+		   "((("+TREE_NATIVECALL+")"+stmPrefix+").retval==null)?null:"+
+		   "(("+TREE_NATIVECALL+")"+stmPrefix+").retval.temp;");
 	    
 	    // initialize arg list
 	    append(initStms, "/* munch argument ExpList into a TempList */");

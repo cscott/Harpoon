@@ -14,7 +14,7 @@ import java.io.StringWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.28 1999-10-19 19:57:46 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.29 1999-10-23 05:59:34 cananian Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -101,12 +101,14 @@ public class Print {
         public void visit(CALL s) {
             ExpList list = s.args;
             indent(indlevel++);
-            pw.print("CALL" + "(");
+            pw.print("CALL" + (s.isTailCall?" [tail call] (" : "("));
             indent(indlevel++);
-            pw.print("return value:");
-            s.retval.accept(this);
-            pw.print(",");
-            indent(--indlevel); indlevel++;
+	    if (s.retval!=null) {
+		pw.print("return value:");
+		s.retval.accept(this);
+		pw.print(",");
+		indent(--indlevel); indlevel++;
+	    }
             pw.print("exceptional value:");
             s.retex.accept(this);
             pw.print(",");
@@ -123,6 +125,10 @@ public class Print {
                 }
                 list = list.tail;
             }
+            pw.print(",");
+            indent(--indlevel); indlevel++;
+            pw.print("handler:");
+            s.handler.accept(this);
             pw.print(")");
             indlevel -= 2;
         }

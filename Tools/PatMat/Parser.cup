@@ -49,7 +49,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.29 1999-10-19 19:57:47 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.30 1999-10-23 05:59:36 cananian Exp $
  */
 
 action code {:
@@ -206,8 +206,9 @@ exp	::=	ID:id
 
 stm	::=	ALIGN LPAREN sym_number:n RPAREN
 		{: RESULT = new StmAlign(n); :}
-	|	CALL LPAREN exp:e1 COMMA exp:e2 COMMA exp:e3 COMMA ID:id RPAREN
-		{: RESULT = new StmCall(e1, e2, e3, id); :}
+	|	CALL LPAREN ID:rv COMMA ID:re COMMA exp:fu COMMA 
+		            ID:al COMMA ID:ha RPAREN
+		{: RESULT = new StmCall(rv, re, fu, al, ha); :}
 	|	CJUMP LPAREN exp:e COMMA ID:t COMMA ID:f RPAREN
 		{: RESULT = new StmCjump(e, t, f); :}
 	|	DATA LPAREN exp:e RPAREN
@@ -222,7 +223,7 @@ stm	::=	ALIGN LPAREN sym_number:n RPAREN
 		{: RESULT = new StmMethod(id); :}
 	|	MOVE opt_types:t LPAREN exp:dst COMMA exp:src RPAREN
 		{: RESULT = new StmMove(t, dst, src); :}
-	|	NATIVECALL LPAREN exp:e1 COMMA exp:e2 COMMA ID:id RPAREN
+	|	NATIVECALL LPAREN ID:e1 COMMA exp:e2 COMMA ID:id RPAREN
 		{: RESULT = new StmNativeCall(e1, e2, id); :}
 	|	RETURN opt_types:t LPAREN exp:e RPAREN
 		{: RESULT = new StmReturn(t, e); :}

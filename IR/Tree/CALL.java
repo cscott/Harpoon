@@ -27,30 +27,40 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.19 1999-10-19 19:53:09 cananian Exp $
+ * @version $Id: CALL.java,v 1.1.2.20 1999-10-23 05:59:34 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
  */
 public class CALL extends INVOCATION {
+    /** Destination for any exception which the callee might throw.
+     *  Must be non-null. */
+    public TEMP retex;
     /** Expression indicating the destination to which we should return
      *  if our caller throws an exception. */
-    public NAME retex;
+    public NAME handler;
+    /** Whether this invocation should be performed as a tail call. */
+    public boolean isTailCall;
 
     /** Create a <code>CALL</code> object. */
     public CALL(TreeFactory tf, HCodeElement source,
-		Exp retval, NAME retex, Exp func, ExpList args) {
+		TEMP retval, TEMP retex, Exp func, ExpList args,
+		NAME handler, boolean isTailCall) {
 	super(tf, source, retval, func, args, 2); // this.next_arity()==2
-	Util.assert(retex != null);
+	Util.assert(retex != null && handler != null);
 	Util.assert(retex.tf == tf);
 	this.retex = retex;
+	this.handler = handler;
+	this.isTailCall = isTailCall;
     }
   
     public boolean isNative() { return false; }
 
     public ExpList kids() {
-        return new ExpList
-	    (retval, new ExpList(retex, new ExpList(func, args))); 
+	ExpList result = new ExpList(retex, new ExpList
+				     (handler, new ExpList(func, args))); 
+	if (retval==null) return result;
+	else return new ExpList(retval, result);
     }
 
     public int kind() { return TreeKind.CALL; }
@@ -58,16 +68,19 @@ public class CALL extends INVOCATION {
     public Stm build(ExpList kids) { return build(tf, kids); }
 
     public Stm build(TreeFactory tf, ExpList kids) {
-	Util.assert(tf == kids.head.tf && 
-		    tf == kids.tail.head.tf &&
-		    tf == kids.tail.tail.head.tf);
-	for (ExpList e = kids.tail.tail.tail; e!=null; e=e.tail)
+	TEMP kids_retval = null;
+	for (ExpList e = kids; e!=null; e=e.tail)
 	    Util.assert(tf == e.head.tf);
-	return new CALL(tf, this,
-			kids.head,            // retval
-			(NAME)kids.tail.head, // retex
+	if (kids.tail.head.kind()==TreeKind.TEMP) { // non-null retval!
+	    kids_retval = (TEMP) kids.head;
+	    kids = kids.tail;
+	}
+	return new CALL(tf, this, kids_retval,
+			(TEMP)kids.head, // retex
 			kids.tail.tail.head,  // func
-			kids.tail.tail.tail); // args
+			kids.tail.tail.tail,  // args
+			(NAME)kids.tail.head, // handler
+			isTailCall); 
     }
 
     /** Accept a visitor */
@@ -75,10 +88,12 @@ public class CALL extends INVOCATION {
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new CALL(tf, this, 
-			(Exp)retval.rename(tf, ctm),
-			(NAME)retex.rename(tf, ctm), 
+			(TEMP)retval.rename(tf, ctm),
+			(TEMP)retex.rename(tf, ctm), 
 			(Exp)func.rename(tf, ctm),
-			ExpList.rename(args, tf, ctm));
+			ExpList.rename(args, tf, ctm),
+			(NAME)handler.rename(tf, ctm),
+			isTailCall);
   }
 
     protected Set defSet() { 
@@ -96,7 +111,9 @@ public class CALL extends INVOCATION {
     public String toString() {
         ExpList list;
         StringBuffer s = new StringBuffer();
-        s.append("CALL(#"+retval.getID()+", #"+retex.getID()+
+        s.append("CALL(");
+	if (retval==null) s.append("null"); else s.append("#"+retval.getID());
+	s.append(", #"+retex.getID()+
                  ", #" + func.getID() + ", {");
         list = args;
         while (list != null) {
@@ -106,7 +123,10 @@ public class CALL extends INVOCATION {
             }
             list = list.tail;
         }
-        s.append(" })");
+        s.append(" }");
+	s.append(", #"+handler.getID());
+	s.append(")");
+	if (isTailCall) s.append(" [tail call]");
         return new String(s);
     }
 }

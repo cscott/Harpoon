@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.85 1999-10-21 13:32:52 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.86 1999-10-23 05:59:30 cananian Exp $
  */
 %%
 
@@ -374,7 +374,9 @@ import java.util.Iterator;
 		   "Update the spec file to handle large SP offsets");
       if (stackOffset!=0) // optimize for common case.
 	  emit( ROOT, "add `d0, `s0, #" + stackOffset, SP , SP );
-      if (ROOT.retval.isDoubleWord()) {
+      if (ROOT.retval==null) {
+	  // this is a void method.  don't bother to emit move.
+      } else if (ROOT.retval.isDoubleWord()) {
 	retval = makeTwoWordTemp(retval);
 	// not certain an emitMOVE is legal with the l/h modifiers
 	emit( ROOT, "mov `d0l, `s0", retval, r0 );
@@ -1563,7 +1565,9 @@ THROW(val, handler) %{
 }%
 
   // slow version when we don't know exactly which method we're calling.
-CALL(TEMP(retval), NAME(retex), func, arglist) %{
+CALL(retval, retex, func, arglist, handler)
+%pred %( !ROOT.isTailCall )%
+%{
     int stackOffset = emitCallPrologue(ROOT, arglist);
     // next two instructions are *not* InstrMOVEs, as they have side-effects
     emit( ROOT, "mov `d0, `s0", LR, PC );
@@ -1572,13 +1576,15 @@ CALL(TEMP(retval), NAME(retex), func, arglist) %{
     // realloc doesn't clobber these between the time they are set and
     // the time the call happens.
     emit( ROOT, "mov `d0, `s0", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
-                new Temp[]{ func }, new Label[] { retex } );
+                new Temp[]{ func }, new Label[] { handler } );
     // okay, clean up from call.
-    emitCallFixup(ROOT, retex);
+    emitCallFixup(ROOT, handler);
     emitCallEpilogue(ROOT, retval, stackOffset);
 }%
   // optimized version when we know exactly which method we're calling.
-CALL(TEMP(retval), NAME(retex), NAME(funcLabel), arglist) %{
+CALL(retval, retex, NAME(funcLabel), arglist, handler)
+%pred %( !ROOT.isTailCall )%
+%{
     int stackOffset = emitCallPrologue(ROOT, arglist);
     // do the call.  bl has a 24-bit offset field, which should be plenty.
     // note that r0-r3, LR and IP are clobbered by the call.
@@ -1586,13 +1592,13 @@ CALL(TEMP(retval), NAME(retex), NAME(funcLabel), arglist) %{
     // realloc doesn't clobber these between the time they are set and
     // the time the call happens.
     emit( ROOT, "bl "+funcLabel, new Temp[] { r0,r1,r2,r3,IP,LR }, new Temp[0],
-                new Label[] { retex } );
+                new Label[] { handler } );
     // okay, clean up from call.
-    emitCallFixup(ROOT, retex);
+    emitCallFixup(ROOT, handler);
     emitCallEpilogue(ROOT, retval, stackOffset);
 }%
   // slow version when we don't know exactly which method we're calling.
-NATIVECALL(TEMP(retval), func, arglist) %{
+NATIVECALL(retval, func, arglist) %{
     int stackOffset = emitCallPrologue(ROOT, arglist);
     // next two instructions are *not* InstrMOVEs, as they have side-effects
     emit( ROOT, "mov `d0, `s0", LR, PC );
@@ -1606,7 +1612,7 @@ NATIVECALL(TEMP(retval), func, arglist) %{
     emitCallEpilogue(ROOT, retval, stackOffset);
 }%
   // optimized version when we know exactly which method we're calling.
-NATIVECALL(TEMP(retval), NAME(funcLabel), arglist) %{
+NATIVECALL(retval, NAME(funcLabel), arglist) %{
     int stackOffset = emitCallPrologue(ROOT, arglist);
     // do the call.  bl has a 24-bit offset field, which should be plenty.
     // note that r0-r3, LR and IP are clobbered by the call.

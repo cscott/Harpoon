@@ -19,7 +19,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.11 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.12 1999-10-23 05:59:34 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL
@@ -30,23 +30,25 @@ public abstract class INVOCATION extends Stm {
     /** Subexpressions for the arguments to the function. */
     public ExpList args;
     /** Expression indicating the destination of the return value.
-     *  Always non-null, even for <code>void</code> functions. */
-    public Exp retval;
+     *  The <code>retval</code> is <code>null</code> for <code>void</code>
+     *  functions. */
+    public TEMP retval;
 
 
     /** Constructor. */
     protected INVOCATION(TreeFactory tf, HCodeElement source,
-			 Exp retval, Exp func, ExpList args) {
+			 TEMP retval, Exp func, ExpList args) {
 	this(tf, source, retval, func, args, 1);
     }
 
     protected INVOCATION(TreeFactory tf, HCodeElement source,
-			 Exp retval, Exp func, ExpList args, int next_arity) {
+			 TEMP retval, Exp func, ExpList args, int next_arity) {
 	super(tf, source, next_arity);
 	this.retval=retval; this.func=func; this.args=args;
-	Util.assert(retval!=null && func!=null);
-	Util.assert(func.tf == retval.tf, "Func and Retval must have same tree factory");
-	Util.assert(tf == retval.tf, "This and Retval must have same tree factory");
+	Util.assert(func!=null);
+	Util.assert(tf==func.tf, "This and Func must have same tree factory");
+	Util.assert(retval==null || tf == retval.tf,
+		    "This and Retval must have same tree factory");
     }
 
     protected Set defSet() { 
