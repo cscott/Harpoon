@@ -10,7 +10,7 @@ import harpoon.Util.ArrayFactory;
  * constructor for a class.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructor.java,v 1.9.2.3.6.1 2000-01-11 08:19:38 cananian Exp $
+ * @version $Id: HConstructor.java,v 1.9.2.3.6.2 2000-01-11 17:23:20 cananian Exp $
  * @see HMethod
  * @see HMember
  * @see HClass
@@ -43,11 +43,9 @@ public interface HConstructor extends HMethod {
    */
   public String toString();
 
-  static abstract class DEFAULT {
   /** Array factory: returns new <code>HConstructor[]</code>. */
   public static final ArrayFactory arrayFactory =
     new ArrayFactory() {
       public Object[] newArray(int len) { return new HConstructor[len]; }
     };
-  }
 }

@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  * initializer method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HInitializer.java,v 1.1.2.1.6.1 2000-01-11 08:19:38 cananian Exp $
+ * @version $Id: HInitializer.java,v 1.1.2.1.6.2 2000-01-11 17:23:20 cananian Exp $
  * @see HMethod
  * @see HConstructor
  */
@@ -31,11 +31,9 @@ public interface HInitializer extends HMethod {
      */
     public int hashCode();
 
-    static abstract class DEFAULT {
     /** Array factory: returns new <code>HInitializer[]</code>. */
     public static final ArrayFactory arrayFactory =
 	new ArrayFactory() {
 	    public Object[] newArray(int len) { return new HInitializer[len]; }
 	};
-    }
 }

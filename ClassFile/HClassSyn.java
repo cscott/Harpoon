@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.9.2.4 2000-01-11 12:35:04 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.9.2.5 2000-01-11 17:23:20 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -74,7 +74,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
       if (declaredFields[i].equals(f))
 	throw new DuplicateMemberException("Field "+f+" in "+this);
     declaredFields = 
-      (HField[]) Util.grow(HField.DEFAULT.arrayFactory,
+      (HField[]) Util.grow(HField.arrayFactory,
 			   declaredFields, f, declaredFields.length);
     fields=null; // invalidate cache.
     hasBeenModified=true; // flag the modification
@@ -83,7 +83,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
   public void removeDeclaredField(HField f) throws NoSuchFieldError {
     for (int i=0; i<declaredFields.length; i++) {
       if (declaredFields[i].equals(f)) {
-	declaredFields = (HField[]) Util.shrink(HField.DEFAULT.arrayFactory,
+	declaredFields = (HField[]) Util.shrink(HField.arrayFactory,
 						declaredFields, i);
 	fields=null; // invalidate cache.
 	hasBeenModified=true; // flag the modification
@@ -135,7 +135,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
       if (declaredMethods[i].equals(m))
 	throw new DuplicateMemberException("Method "+m+" in "+this);
     declaredMethods = 
-      (HMethod[]) Util.grow(HMethod.DEFAULT.arrayFactory,
+      (HMethod[]) Util.grow(HMethod.arrayFactory,
 			    declaredMethods, m, declaredMethods.length);
     methods=null; // invalidate cache.
     constructors=null;
@@ -145,7 +145,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
   public void removeDeclaredMethod(HMethod m) throws NoSuchMethodError {
     for (int i=0; i<declaredMethods.length; i++) {
       if (declaredMethods[i].equals(m)) {
-	declaredMethods = (HMethod[]) Util.shrink(HMethod.DEFAULT.arrayFactory,
+	declaredMethods = (HMethod[]) Util.shrink(HMethod.arrayFactory,
 						  declaredMethods, i);
 	methods=null; // invalidate cache.
 	constructors=null;

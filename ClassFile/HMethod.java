@@ -12,7 +12,7 @@ import harpoon.Util.ArrayFactory;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30.2.11.6.1 2000-01-11 08:19:38 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30.2.11.6.2 2000-01-11 17:23:20 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -132,13 +132,11 @@ public interface HMethod extends HMember {
    */
   public String toString();
 
-  static abstract class DEFAULT {
   /** Array factory: returns new <code>HMethod[]</code>. */
   public static final ArrayFactory arrayFactory =
     new ArrayFactory() {
       public Object[] newArray(int len) { return new HMethod[len]; }
     };
-  }
 }
 
 // set emacs indentation style.

@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassCls.java,v 1.1.2.6.6.2 2000-01-11 08:26:53 cananian Exp $
+ * @version $Id: HClassCls.java,v 1.1.2.6.6.3 2000-01-11 17:23:20 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 abstract class HClassCls extends HClassImpl {
@@ -88,7 +88,7 @@ abstract class HClassCls extends HClassImpl {
    * @see HField
    */
   public HField[] getDeclaredFields() {
-    return (HField[]) Util.safeCopy(HField.DEFAULT.arrayFactory, declaredFields);
+    return (HField[]) Util.safeCopy(HField.arrayFactory, declaredFields);
   }
 
   /**
@@ -155,7 +155,7 @@ abstract class HClassCls extends HClassImpl {
    * @see HMethod
    */
   public HMethod[] getDeclaredMethods() {
-    return (HMethod[]) Util.safeCopy(HMethod.DEFAULT.arrayFactory, declaredMethods);
+    return (HMethod[]) Util.safeCopy(HMethod.arrayFactory, declaredMethods);
   }
 
   /**
@@ -249,18 +249,18 @@ abstract class HClassCls extends HClassImpl {
   public HConstructor[] getConstructors() {
     if (constructors==null)
       constructors = super.getConstructors();
-    return (HConstructor[]) Util.safeCopy(HConstructor.DEFAULT.arrayFactory, 
+    return (HConstructor[]) Util.safeCopy(HConstructor.arrayFactory, 
 					  constructors);
   }
   public HField[] getFields() {
     if (fields==null)
       fields = super.getFields();
-    return  (HField[]) Util.safeCopy(HField.DEFAULT.arrayFactory, fields);
+    return  (HField[]) Util.safeCopy(HField.arrayFactory, fields);
   }
   public HMethod[] getMethods() {
     if (methods==null)
       methods = super.getMethods();
-    return (HMethod[]) Util.safeCopy(HMethod.DEFAULT.arrayFactory, methods);
+    return (HMethod[]) Util.safeCopy(HMethod.arrayFactory, methods);
   }
 }
 // set emacs indentation style.
