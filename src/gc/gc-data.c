@@ -12,6 +12,9 @@ enum offsets { REGS_ZERO = 31,
 
 extern JNIEnv *FNI_JNIEnv;
 
+/* GC data entries are kept as a doubly-linked list */
+struct _gc_data *gc_data_head = NULL; /* head of list */
+
 /* index entry */
 struct _gc_index_entry {
     ptroff_t gc_pt;            /* address of GC point in instruction stream */
@@ -61,6 +64,19 @@ struct _gc_derived {
 extern gc_index_ptr gc_index_start, gc_index_end;
 
 void report(char *);
+
+/* effects: finds root set and adds each element using find_root_set */
+void find_root_set() {
+  jobject_unwrapped *obj;
+  printf("Entering find_root_set.\n");
+  printf("STATIC OBJECTS START: %p\n", static_objects_start);
+  printf("STATIC OBJECTS END: %p\n", static_objects_end);
+  for(obj = static_objects_start; obj < static_objects_end; obj++) {
+    printf("Adding object to root set: %p\n", *obj);
+    add_to_root_set(*obj);
+  }
+  printf("Leaving find_root_set.\n");
+}
 
 /* given the address of an instruction that is a GC point,
    returns a gc_data_ptr to the corresponding GC data */

@@ -7,6 +7,16 @@
 #include "jni-types.h"
 #include "jni-private.h"
 
+/* --------- new garbage collection stuff ---------- */
+
+typedef union { 
+  jobject_unwrapped unwrapped_obj; 
+} pointer;
+
+void add_to_root_set(pointer);
+
+void find_root_set();
+
 /* --------- garbage collection data types --------- */
 
 /* kludge for boolean in C */
@@ -29,6 +39,10 @@ typedef struct _gc_derived *gc_derived_ptr;  /* derived pointers */
 typedef struct _gc_loc *gc_loc_ptr;
 
 /* --------- garbage collection functions ---------- */
+
+/* given the address (PC) of the GC point, returns a gc_index_ptr
+   which can be used to obtain information about live pointers
+   at the particular GC point */
 gc_index_ptr find_gc_data(ptroff_t);
 
 /* given a gc_data_ptr and the number of registers in the
@@ -91,6 +105,15 @@ jint get_loc(gc_loc_ptr);
    location is a base pointer, or NONE if the location is the
    derived pointer */
 enum sign get_sign(gc_loc_ptr);
+
+/* use free when done with all the data associated with this
+   gc_index_ptr */
+void free(gc_index_ptr);
+
+/* cleanup should be invoked at the end of a garbage collection
+   to make sure that all the memory that was allocated to
+   store information about various GC points have been freed */
+void cleanup();
 
 #endif /* INCLUDED_JNI_GC_H */
 
