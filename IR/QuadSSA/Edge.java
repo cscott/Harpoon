@@ -10,7 +10,7 @@ import harpoon.ClassFile.*;
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.2 1998-09-13 23:57:24 cananian Exp $
+ * @version $Id: Edge.java,v 1.3 1998-09-24 21:10:50 cananian Exp $
  */
 
 public class Edge implements HCodeEdge {
@@ -49,5 +49,12 @@ public class Edge implements HCodeEdge {
     /** Returns a hash code value for this object. */
     public int hashCode() {
 	return (from.hashCode() ^ to.hashCode()) + from_index + to_index;
+    }
+
+    /** Returns a human-readable representation of the Edge. */
+    public String toString() {
+	return "Edge " +
+	    "from (#"+from().getID()+","+which_succ()+") " +
+	    "to (#"+to().getID()+","+which_pred()+")";
     }
 }
