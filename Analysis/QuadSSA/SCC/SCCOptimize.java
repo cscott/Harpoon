@@ -5,6 +5,7 @@ import harpoon.Analysis.Maps.ConstMap;
 import harpoon.Analysis.Maps.ExecMap;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.Maps.UseDefMap;
+import harpoon.Analysis.QuadSSA.DeadCode;
 import harpoon.ClassFile.*;
 import harpoon.IR.QuadSSA.*;
 import harpoon.Temp.Temp;
@@ -12,11 +13,13 @@ import harpoon.Util.Set;
 import harpoon.Util.Util;
 /**
  * <code>SCCOptimize</code> optimizes the code after SCCAnalysis.
+ * The optimization invalidates the ExecMap used.  All edges in the
+ * graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.1 1998-09-21 04:42:43 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.2 1998-09-23 19:45:21 cananian Exp $
  */
-public class SCCOptimize implements ExecMap {
+public class SCCOptimize {
     TypeMap  ti;
     ConstMap cm;
     ExecMap  em;
@@ -29,11 +32,11 @@ public class SCCOptimize implements ExecMap {
     }
 
     Set Ee = new Set();
-    public boolean execMap(HCode hc, HCodeEdge e) {
+    boolean execMap(HCode hc, HCodeEdge e) {
 	if (Ee.contains(e)) return true;
 	else return em.execMap(hc, e);
     }
-    public boolean execMap(HCode hc, HCodeElement node) {
+    boolean execMap(HCode hc, HCodeElement node) {
 	HCodeEdge[] pred = ((harpoon.IR.Properties.Edges)node).pred();
 	for (int i=0; i<pred.length; i++)
 	    if (execMap(hc, pred[i]))
@@ -138,24 +141,6 @@ public class SCCOptimize implements ExecMap {
 			q.src = (Temp[][]) Util.shrink(q.src, i);
 		    } else i++;
 		}
-		// remove any arity-1 phi functions (replace with MOVEs)
-		if (q.next().length == 1) {
-		    Quad header = q.prev(0);
-		    int which_succ = q.prevEdge(0).which_succ();
-		    Quad successor = q.next(0);
-		    int which_pred = q.nextEdge(0).which_pred();
-		    // insert MOVEs to implement PHIs.
-		    for (int i=0; i < q.dst.length; i++) {
-			Quad qq = new MOVE(q.getSourceElement(),
-					   q.dst[i], q.src[i][0]);
-			Quad.addEdge(header, which_succ, qq, 0);
-			Ee.union(header.nextEdge(which_succ));
-			header = qq; which_succ = 0;
-		    }
-		    // link to successor
-		    Quad.addEdge(header, which_succ, successor, which_pred);
-		    Ee.union(header.nextEdge(which_succ));
-		}
 	    } // end VISIT PHI.
 	};
 	
@@ -164,5 +149,8 @@ public class SCCOptimize implements ExecMap {
 	for (int i=0; i<ql.length; i++)
 	    if (execMap(hc, ql[i]))
 		ql[i].visit(visitor);
+
+	// clean up the mess
+	DeadCode.optimize(hc);
     }
 }
