@@ -8,7 +8,7 @@ import harpoon.Backend.Generic.Code;
 import harpoon.Analysis.DataFlow.BasicBlock;
 import harpoon.Analysis.DataFlow.DataFlowBasicBlockVisitor;
 import harpoon.Analysis.DataFlow.InstrSolver;
-import harpoon.Analysis.DataFlow.ReachingDefs;
+import harpoon.Analysis.DataFlow.LiveVars;
 import harpoon.Temp.Temp;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrMEM;
@@ -32,7 +32,7 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.12 1999-05-28 01:51:51 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.13 1999-05-28 01:57:17 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -59,8 +59,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 	BasicBlock block = BasicBlock.computeBasicBlocks(root);
 	
 	// first calculate Live Variables for code
-	Iterator iter = new CloneableIterator(BasicBlock.basicBlockIterator(block));
-	LiveVars livevars =  new LiveVars(iter.clone());
+	CloneableIterator iter = 
+	    new CloneableIterator(BasicBlock.basicBlockIterator(block));
+	LiveVars livevars=null;
+	livevars =  new LiveVars((Iterator)iter.clone());
 	InstrSolver.worklistSolver(block, livevars);
 	
 	// Now perform local reg alloc on each basic block
@@ -80,7 +82,7 @@ public class LocalCffRegAlloc extends RegAlloc {
     private void localRegAlloc(BasicBlock bb, LiveVars lv) {
 	CloneableIterator iter = new CloneableIterator(bb.listIterator());
 	Temp[] registers = frame.getGeneralRegisters();
-	
+	int index=0;
 	// if reg(i) is holding a value, values[ i ] will have that
 	// value.  Else, values[ i ] will have null. 
 	Temp[] values = new Temp[ registers.length ]; 
@@ -106,7 +108,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		// value based on furthest first (this is where the
 		// CFF comes in) 
 		
-		int index = findFurthest((Iterator)iter.clone(), values);
+		// index = findFurthest((Iterator)iter.clone(), values);
 				
 		InstrMEM minstr = 
 		    new InstrMEM(null, null, null, 
@@ -126,8 +128,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			instr.src[u] = registers[i];
 		    } else {
 			// Evict a value (storing it to memory).
-			int index = findFurthest
-			    ((Iterator)iter.clone(), values, lv); 
+			//index = findFurthest((Iterator)iter.clone(), values, lv); 
 			
 			InstrMEM store = new InstrMEM (null, null, null, 
 				new Temp[] { values[index] },
