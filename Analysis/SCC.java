@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * with extension to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCC.java,v 1.10 1998-09-21 00:24:27 cananian Exp $
+ * @version $Id: SCC.java,v 1.11 1998-09-21 00:31:49 cananian Exp $
  */
 
 public class SCC implements TypeMap, ConstMap, ExecMap {
@@ -282,7 +282,7 @@ public class SCC implements TypeMap, ConstMap, ExecMap {
 	    else if (q.type==HClass.Int || q.type == HClass.Long)
 		raiseV(V, Wv, q.dst, 
 		       new xIntConstant(q.type,((Number)q.value).longValue()));
-	    else throw new Error("Unknown CONST type");
+	    else throw new Error("Unknown CONST type: "+q.type);
 	}
 	public void visit(FOOTER q) { /* do nothing. */ }
 	public void visit(GET q) {
@@ -296,7 +296,7 @@ public class SCC implements TypeMap, ConstMap, ExecMap {
 		else if (type == HClass.Int || type == HClass.Long)
 		    raiseV(V, Wv, q.dst, 
 			   new xIntConstant(type,((Number)val).longValue() ) );
-		else throw new Error("Unknown constant field type.");
+		else throw new Error("Unknown constant field type: "+type);
 	    } else raiseV(V, Wv, q.dst, new xClass( type ) );
 	}
 	public void visit(INSTANCEOF q) {
@@ -365,12 +365,16 @@ public class SCC implements TypeMap, ConstMap, ExecMap {
 		// RULE 3:
 		HClass ty = q.evalType();
 		Object o = q.evalValue(op);
-		if (ty == HClass.Int || ty == HClass.Long)
+		if (ty == HClass.Boolean)
+		    raiseV(V, Wv, q.dst,
+			   new xIntConstant(ty, 
+					    ((Boolean)o).booleanValue()?1:0));
+		else if (ty == HClass.Int || ty == HClass.Long)
 		    raiseV(V, Wv, q.dst, 
 			   new xIntConstant(ty, ((Number)o).longValue() ) );
 		else if (ty == HClass.Float || ty == HClass.Double)
 		    raiseV(V, Wv, q.dst, new xFloatConstant(ty, o) );
-		else throw new Error("Unknown OPER result type.");
+		else throw new Error("Unknown OPER result type: "+ty);
 	    } /* else if (allWidth) ... XXX XXX XXX */
 	    else {
 		// RULE 4:
