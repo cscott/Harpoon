@@ -33,13 +33,13 @@ import harpoon.Analysis.MetaMethods.MetaAllCallers;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
 import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
 import harpoon.Analysis.MetaMethods.MetaMethod;
-import harpoon.Tools.BasicBlocks.BBConverter;
+import harpoon.Tools.BasicBlocks.CachingBBConverter;
 
 /**
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.12 2000-03-22 19:28:00 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.13 2000-03-23 02:47:36 salcianu Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -68,7 +68,8 @@ public abstract class EventDriven extends harpoon.IR.Registration {
         }
 
 	System.out.println("Doing QuadSSI");
-	HCodeFactory hco = harpoon.IR.Quads.QuadNoSSA.codeFactory();
+	HCodeFactory hco = 
+	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
 
 
 
@@ -80,7 +81,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	System.out.println("Getting ClassHierarchy");
         ClassHierarchy chx = new QuadClassHierarchy(linker, cc, hco);
 
-	BBConverter bbconv=new BBConverter(hco);
+	CachingBBConverter bbconv=new CachingBBConverter(hco);
 	MetaCallGraph mcg=new MetaCallGraphImpl(bbconv, chx, m);
 	//MetaAllCallers mac=new MetaAllCallers(mcg);
 
