@@ -17,10 +17,10 @@
 /* return address is in [fp, #-4] */
 #define get_retaddr() \
 ({ void *__pc; \
-   asm("ldr %0, [fp, #-4]" : "=r" (__pc)); \
+   asm("ldr %0, [fp, #-4]" : "=r" (__pc) :: "memory"); \
    __pc; })
 #define set_retaddr(__pc) \
-   asm("str %0, [fp, #-4]" : : "r" (__pc))
+   asm("str %0, [fp, #-4]" : : "r" (__pc) : "memory")
 
 /* Do lookup & update of this function's return address, in order to
  * throw an exception. */
