@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.53 1999-07-08 22:11:44 cananian Exp $
+% $Id: thesis.tex,v 1.54 1999-07-10 04:08:46 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage]{article}
 % fonts
@@ -14,7 +14,8 @@
 \usepackage{comdef}
 
 % number figures according to section
-\newcommand{\mysection}[1]{\section{#1}\setcounter{figure}{0}}
+\let\oldsection\section
+\renewcommand{\section}{\setcounter{figure}{0}\oldsection}
 \renewcommand{\thefigure}{\thesection.\arabic{figure}}
 
 % double-space
@@ -23,19 +24,19 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.53 $ $}
+\date{\today \\ $ $Revision: 1.54 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.53 $ $}{$ $Revision: 1.53 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.54 $ $}{$ $Revision: 1.54 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
 
-\mysection{Introduction}
+\section{Introduction}
 The selection of a compiler internal respresentation from the many
 littering the academic literature may at times seem a black art.  Each
 IR is accompanied by papers trumpeting its superiority for one purpose
@@ -77,7 +78,7 @@ represents a clean and simple unification of many extant ideas, and
 our hope is that it will allow the FLEX compiler to achieve a similar
 integration of practical implementation and mathematical elegance.
 
-\mysection{Context and goals}
+\section{Context and goals}
 %The first paper directly addressing an IR as a separate feature of a
 %compiler was Foo and Bar in \cite{foobar}.\fixme{Find real references.}
 The Static Single Assignment (SSA) form was introduced by 
@@ -231,7 +232,7 @@ where dataflow in both forward and reverse directions occurs.  SSI
 form is able to handle both of these cases, as we demonstrate in
 section \ref{sec:bidirectional}.
 
-\mysection{Static Single Assignment form}\label{sec:ssa}
+\section{Static Single Assignment form}\label{sec:ssa}
 Static Single Information (SSI) form derives many features from Static
 Single Assignment (SSA) form, as described by Cytron in
 \cite{cytron89:ssa}.  We will review SSA form to provide context for
@@ -293,7 +294,7 @@ contains definition and algorithm for pruned SSA.}
 \label{fig:prunedssa}
 \end{myfigure}
 
-\mysection{Static Single Information form}\label{sec:ssi}
+\section{Static Single Information form}\label{sec:ssi}
 
 SSI form extends SSA form to achieve symmetry for both forward and
 reverse dataflow.   SSI form recognizes that information about
@@ -731,7 +732,7 @@ Use the techniques of \cite{kennedy98:strength} to do loop-invariant
 code motion, strength reduction, and partial-redundancy-elimination
 using SSI form?}
 
-\mysection{An executable representation}\label{sec:ssiplus}
+\section{An executable representation}\label{sec:ssiplus}
 The Static Single Information (SSI) form, as presented in the first
 half of this thesis,
 requires control-flow graph information in order to be executable. We
@@ -1054,23 +1055,23 @@ using \ssiplus.
 \textbf{Er, at this point I will do what I just said I would do.  I'm
 working on generating the figures to illustrate this section.}
 
-\mysection{Results}
+\section{Results}
 \textbf{Numbers, numbers, and more numbers.}
 
-\mysection{Future work}
+\section{Future work}
 \textbf{Get a PhD.}\footnote{This involves finishing section
 \ref{sec:hardware} by describing how memory is handled in hardware
 compilation.  Answer: using lots and lots of sophisticated analysis,
 that's how.}
 
-\mysection{Conclusions}
+\section{Conclusions}
 \textbf{Scott is done.}
 
 \newpage
 \bibliography{harpoon}
 \newpage
 \appendix
-\mysection{Common errors of IR research papers}
+\section{Common errors of IR research papers}
 For some reason, the field of compiler IRs seems to attract more than
 its share of village idiots.
 \begin{enumerate}
@@ -1127,7 +1128,7 @@ $O(N)$---again, because that's the way it looks ``in practice.''  So,
 everything is ``linear.''}
 \end{enumerate}
 
-\mysection{Canonical and derived definitions of the empty set}
+\section{Canonical and derived definitions of the empty set}
 \begin{enumerate}
 \item \textbf{``Who cares about Maria?''} (Canonical) \cite{marinov99}
 \item \textbf{``Who cares about Martin and Maria?''} (Radu Revised)
