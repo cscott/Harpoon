@@ -91,8 +91,20 @@ JNIEXPORT void JNICALL Java_java_lang_VMRuntime_runFinalizationForExit
   /* this is *UNLIKE* runFinalization in that *all* objects should be
    * finalized (not just dead ones).  We don't support this yet. */
   Java_java_lang_VMRuntime_runFinalization(env, runtimeCls);
-  assert(0); /* unimplemented. */
+  //assert(0); /* unimplemented. */
 }
+/* the callgraph for some programs apparently reveals a possible program
+ * execution that could call runFinalizationForExit inside a static initializr.
+ * Let's hope that never actually happens in practice, because it's wildly
+ * unsafe.  Or would be if we were actually to run finalizers. */
+#ifdef WITH_INIT_CHECK
+JNIEXPORT void JNICALL Java_java_lang_VMRuntime_runFinalizationForExit_00024_00024initcheck
+  (JNIEnv *env, jclass runtimeCls) {
+  fprintf(stderr,
+	  "RUNNING FINALIZATION INSIDE A STATIC INITIALIZER IS NOT SAFE!\n");
+  assert(0); /* die */
+}
+#endif /* WITH_INIT_CHECK */
 
 
 /*
