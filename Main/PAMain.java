@@ -62,7 +62,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.36 2000-04-03 20:22:53 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.37 2000-04-03 22:57:17 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -143,6 +143,9 @@ public abstract class PAMain {
     private static MetaCallGraph  mcg = null;
     private static MetaAllCallers mac = null;
     private static Relation split_rel = null;
+
+
+    private static Set roots = null;
 
     public static final void main(String[] params){
 
@@ -554,22 +557,28 @@ public abstract class PAMain {
     private static void ma_statistics(PointerAnalysis pa, HMethod hroot){
 	int nb_captured = 0;
 
+	MetaCallGraph mcg = pa.getMetaCallGraph();
 	MetaMethod mroot = new MetaMethod(hroot, true);
-	System.out.println("ROOT META-METHOD: " + mroot);
+
+	// analyze just the method tree rooted in the main method, i.e.
+	// just the user program, not the other methods called by the
+	// JVM before "main".
+	Set mms = new HashSet();
+	Set roots = new HashSet(mcg.getRunMetaMethods());
+	roots.add(mroot);
+
+	for(Iterator it = roots.iterator(); it.hasNext(); ){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    mms.add(mm);
+	    mms.addAll(mcg.getTransCallees(mm));
+	}
 
 	// this should analyze everything
 	pa.getIntParIntGraph(mroot);
 	pa.getExtParIntGraph(mroot);
 	pa.threadInteraction(mroot);  
 
-	MetaCallGraph mcg = pa.getMetaCallGraph();
-	// analyze just the method tree rooted in the main method, i.e.
-	// just the user program, not the other methods called by the
-	// JVM before "main".
-	Set set = mcg.getTransCallees(mroot);
-	set.add(mroot);
-
-	for(Iterator it = set.iterator(); it.hasNext();){
+	for(Iterator it = mms.iterator(); it.hasNext();){
 	    MetaMethod mm = (MetaMethod) it.next();
 	    if(!pa.analyzable(mm.getHMethod())) continue;
 	    ParIntGraph pig = pa.getIntParIntGraph(mm);
@@ -577,12 +586,21 @@ public abstract class PAMain {
 	    System.out.println(pig);
 	}
 
+	System.out.println("ROOT META-METHOD: " + mroot);
+	System.out.println("RELEVANT META-METHODs:{");
+	for(Iterator it = mms.iterator(); it.hasNext(); ){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    if(pa.analyzable(mm.getHMethod()))
+		System.out.println("  " + mm);
+	}
+	System.out.println("}");
+
 	System.out.println("MEMORY ALLOCATION STATISTICS ======");
 	harpoon.Analysis.PointerAnalysis.InterThreadPA.TIMING = false;
 
 	System.out.println("CAPTURED NODES:");
 
-	for(Iterator it = set.iterator(); it.hasNext();){
+	for(Iterator it = mms.iterator(); it.hasNext();){
 	    MetaMethod mm = (MetaMethod) it.next();
 	    if(!pa.analyzable(mm.getHMethod())) continue;
 	    ParIntGraph pig = pa.getIntParIntGraph(mm);
@@ -611,7 +629,7 @@ public abstract class PAMain {
 
 	int nb_pcaptured = 0;
 
-	for(Iterator it = set.iterator(); it.hasNext();){
+	for(Iterator it = mms.iterator(); it.hasNext();){
 	    MetaMethod mm = (MetaMethod) it.next();
 	    if(!pa.analyzable(mm.getHMethod())) continue;
 	    ParIntGraph pig = pa.getIntParIntGraph(mm);
