@@ -56,16 +56,19 @@ import java.util.StringTokenizer;
  * <br> "# <em>comment</em>" is a comment line (not strictly an
  * option, since this line is ignored by this, but too useful to omit) 
  * <p>
- * The method names given in the file should be disjoint.
- * A set of methods with a common prefix can be passed as an argument
- * to an option by appending the wildcard character '*' to the prefix.
+ * The method names given in the file should be disjoint; the behavior
+ * of allocation is undefined when a <em>method</em> is listed under
+ * multiple options.
+ * <p> 
+ * A set of methods with a common prefix can be passed as the <em>method name</em> argument
+ * to a single option by appending the wildcard character '*' to the prefix.
  * <p>
  * After these options have been loaded, this class can be used to
  * produce wrapper <code>RegAlloc.Factory</code>s around other
  * <code>RegAlloc.Factory</code>s
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAllocOpts.java,v 1.1.2.6 2001-06-17 22:29:53 cananian Exp $ */
+ * @version $Id: RegAllocOpts.java,v 1.1.2.7 2001-06-20 17:44:02 pnkfelix Exp $ */
 public class RegAllocOpts {
     public static final boolean INFO = false;
     Filter disableReachingDefs;
