@@ -1,11 +1,11 @@
 cd ..
-xterm -title "Name Service" -e java -jar ns.jar .jacorb &
+xterm -title "Name Service" -e java -server -jar ns.jar .jacorb &
 sleep 5
 
-xterm -title "ALERT Server" -e java -jar trackerStub.jar "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb &
+xterm -title "ALERT Server" -e java -server -jar trackerStub.jar "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb &
 sleep 5
 
-xterm -title "ATR" -e java -jar ATR.jar timer 3 "LMCO ATR" "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb &
+xterm -title "ATR" -e java -server -jar ATR.jar timer 3 "LMCO ATR" "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb &
 sleep 5
 
-xterm -title "Sending to ATR" -e java -jar receiverStub.jar GUI.jar tank.gz 533 1 "LMCO ATR" -ORBInitRef NameService=file:/`pwd`/.jacorb &
+xterm -title "Sending to ATR" -e java -server -jar receiverStub.jar GUI.jar tank.gz 533 1 "LMCO ATR" -ORBInitRef NameService=file:/`pwd`/.jacorb &
