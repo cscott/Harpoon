@@ -28,4 +28,4 @@
 CVSROOT	CVSROOT
 Code	Code
 Design	Design
-pldi99.sigma Design harpoon.bib pldi.tex
+pldi99.sigma Design harpoon.bib pldi.tex acmconf.sty acmconfbig.sty
