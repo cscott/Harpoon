@@ -50,7 +50,7 @@ import java.util.Stack;
  * the codeview directly, so should be used with caution.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeStructure.java,v 1.1.2.8 1999-12-18 22:42:19 duncan Exp $
+ * @version $Id: TreeStructure.java,v 1.1.2.9 1999-12-20 09:28:53 duncan Exp $
  */
 public class TreeStructure { 
     private Map structure = new HashMap();
@@ -221,7 +221,6 @@ public class TreeStructure {
 		parent.accept(this); 
 		// Update the structure map to reflect this change. 
 		new StructureDeleter(tOld, TreeStructure.this.structure); 
-		TreeStructure.this.structure.remove(tOld); 
 		new StructureBuilder(tNew, TreeStructure.this.structure); 
 		TreeStructure.this.structure.put(tNew, parent); 
 	    }
@@ -345,7 +344,6 @@ public class TreeStructure {
      */ 
     private class StructureBuilder extends TreeVisitor { 
 	private Map   structure; 
-	private Set   visited  = new HashSet();
 	private Stack worklist = new Stack(); 
 
 	/** 
@@ -356,14 +354,14 @@ public class TreeStructure {
 	public StructureBuilder (Tree root, Map structure) { 
 	    this.structure = structure; 
 	    this.worklist.add(root); 
-
 	    while (!worklist.isEmpty())
 		((Tree)worklist.pop()).accept(this); 
 	}
 
 	/** kids() not applicable to SEQ.  Need a special case. */ 
 	public void visit(SEQ s) { 
-	    Util.assert(this.visited.add(s)); 
+	    Util.assert(!this.structure.containsKey(s.left)); 
+	    Util.assert(!this.structure.containsKey(s.right)); 
 
 	    this.worklist.push(s.left); 
 	    this.worklist.push(s.right);
@@ -372,9 +370,8 @@ public class TreeStructure {
 	}
 
 	public void visit(Tree t) { 
-	    Util.assert(this.visited.add(t)); 
-
 	    for (ExpList e = t.kids(); e != null; e = e.tail) { 
+		Util.assert(!this.structure.containsKey(e.head)); 
 		this.worklist.push(e.head); 
 		this.structure.put(e.head, t); 
 	    }
@@ -383,7 +380,6 @@ public class TreeStructure {
 
     private class StructureDeleter extends TreeVisitor { 
 	private Map   structure; 
-	private Set   visited  = new HashSet();
 	private Stack worklist = new Stack(); 
 
 	/** 
@@ -393,25 +389,20 @@ public class TreeStructure {
 	 */ 
 	public StructureDeleter(Tree root, Map structure) { 
 	    this.structure = structure; 
-
 	    this.worklist.add(root); 
 	    while (!worklist.isEmpty())
 		((Tree)worklist.pop()).accept(this); 
 	}
 
-
 	/** kids() not applicable to SEQ.  Need a special case. */ 
 	public void visit(SEQ s) { 
-	    Util.assert(this.visited.add(s)); 
-
+	    this.structure.remove(s); 
 	    this.worklist.push(s.left); 
 	    this.worklist.push(s.right);
-	    this.structure.put(s.left, s);
-	    this.structure.put(s.right, s); 
 	}
 
 	public void visit(Tree t) { 
-	    Util.assert(this.visited.add(t)); 
+	    this.structure.remove(t); 
 	    for (ExpList e = t.kids(); e != null; e = e.tail) { 
 		this.worklist.push(e.head); 
 		this.structure.remove(e.head); 

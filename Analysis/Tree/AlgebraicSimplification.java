@@ -30,7 +30,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.2 1999-12-20 03:04:17 duncan Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.3 1999-12-20 09:28:53 duncan Exp $
  */
 public abstract class AlgebraicSimplification { 
     // Define new operator constants that can be masked together. 
@@ -198,9 +198,9 @@ public abstract class AlgebraicSimplification {
 		    BINOP b = (BINOP)e; 
 		    return 
 		        ((_OP(b.op) & _ADD|_MUL|_SHL|_SHR|_USHR|_AND|_OR|_XOR) != 0) &&
-		        ((_KIND(b.left) & _CONST) != 0) &&
+		        ((_KIND(b.left) & (_CONST|_CONST0)) != 0) &&
 		    
-		        ((_KIND(b.right) & _CONST) != 0) &&
+		        ((_KIND(b.right) & (_CONST|_CONST0)) != 0) &&
 		        (!b.isFloatingPoint());
 		}
 	    }

@@ -40,7 +40,7 @@ import java.util.Stack;
  * <p><b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: ConstantPropagation.java,v 1.1.2.2 1999-12-18 22:42:19 duncan Exp $
+ * @version $Id: ConstantPropagation.java,v 1.1.2.3 1999-12-20 09:28:53 duncan Exp $
  */
 public final class ConstantPropagation { 
 
@@ -76,15 +76,15 @@ public final class ConstantPropagation {
 	public ConstPropVisitor(Code code) { 
 	    // Initialize mapping of temps to the Stms that define them. 
 	    mapTempsToDefs(code); 
-	    
+
 	    // Perform reaching definitions analysis on the tree code. 
 	    BasicBlock root = BasicBlock.computeBasicBlocks
 		((CFGraphable)RS((Stm)code.getRootElement())); 
 	    CloneableIterator bbi = new CloneableIterator
 		(BasicBlock.basicBlockIterator(root)); 
 	    this.rch = new ReachingHCodeElements((Iterator)bbi.clone()); 
-	    Solver.worklistSolve(bbi, this.rch); 
-
+	    Solver.forwardRPOSolve(root, this.rch); 
+	    
 	    // Create a TreeStructure wrapper to allow for modification of
 	    // the tree form. 
 	    this.ts = new TreeStructure(code); 
@@ -176,7 +176,10 @@ public final class ConstantPropagation {
 	    }
 	    // Our analysis says that it's OK to replace "t" with a constant
 	    // value.  Use the tree structure to accomplish this. 
-	    if (replaceT) { this.ts.replace(t, valueT.build(valueT.kids())); }
+	    if (replaceT) { 
+		this.ts.replace(t, Tree.clone(valueT.getFactory(), null, valueT)); 
+	    }
+	    
 	}
 
 	public void visit(Tree t) { throw new Error("No defaults here."); }
