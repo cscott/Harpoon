@@ -14,8 +14,12 @@ if [ -z $RUNTIME_DIR ]; then
 fi
 
 # grab flex options from the command line.
+javaopts=""
 while [ -n "$3" ]; do
-    opts="$opts $1"
+    case "$1" in
+    -D*) javaopts="$javaopts $1" ;;
+    *)   opts="$opts $1" ;;
+    esac
     shift
 done
 
@@ -59,7 +63,7 @@ if type -t cygpath > /dev/null ; then
     harpoonpath=`cygpath -wp "$harpoonpath"`
 fi
 
-${JAVA:=java} -${optprefix}mx${FLEXMEM:=768m} -oss2m -Dharpoon.class.path=$harpoonpath ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain -R $opts -c $cls -o $dir && \
+${JAVA:=java} -${optprefix}mx${FLEXMEM:=768m} -oss2m $javaopts -Dharpoon.class.path=$harpoonpath ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain -R $opts -c $cls -o $dir && \
 if [ -x "`which arm-unknown-linuxelf-as`" ]; then
     make -C $dir HOST_PREFIX=arm-unknown-linuxelf- && \
     if grep -q arm-unknown-linuxelf ${RUNTIME_DIR}/Makefile ; then

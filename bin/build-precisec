@@ -15,8 +15,12 @@ if [ -z $RUNTIME_DIR ]; then
 fi
 
 # grab flex options from the command line.
+javaopts=""
 while [ -n "$3" ]; do
-    opts="$opts $1"
+    case "$1" in
+    -D*) javaopts="$javaopts $1" ;;
+    *)   opts="$opts $1" ;;
+    esac
     shift
 done
 
@@ -60,7 +64,7 @@ if type -t cygpath > /dev/null ; then
     harpoonpath=`cygpath -wp "$harpoonpath"`
 fi
 
-${JAVA:=java} -${optprefix}mx${FLEXMEM:=768m} -Dharpoon.class.path=$harpoonpath ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir && \
+${JAVA:=java} -${optprefix}mx${FLEXMEM:=768m} $javaopts -Dharpoon.class.path=$harpoonpath ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir && \
 if [ -d ${RUNTIME_DIR}/include -a -f ${RUNTIME_DIR}/config.status ] && \
     grep -q "[-]-with-precise-c" ${RUNTIME_DIR}/config.status ; then
     make -C $dir CC="gcc -I${RUNTIME_DIR}/include -g -O9" && \
