@@ -7,18 +7,18 @@ import java.util.HashMap;
 import java.util.Iterator;
 /**
  * A <code>WorkSet</code> is a <code>Set</code> offering constant-time
- * access to the last element inserted, and an iterator whose speed
+ * access to the first/last element inserted, and an iterator whose speed
  * is not dependent on the total capacity of the underlying hashtable.
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.1.2.6 2000-01-17 09:42:47 cananian Exp $
+ * @version $Id: WorkSet.java,v 1.1.2.7 2000-01-17 10:05:18 cananian Exp $
  */
 public class WorkSet extends java.util.AbstractSet implements Worklist{
     private /*final*/ HashMap hm;
     private EntryList listhead = EntryList.init(); // header and footer nodes.
     private EntryList listfoot = listhead.next;
-    private final boolean debug=false; // turn on consistency checks.
+    private final static boolean debug=false; // turn on consistency checks.
     
     /** Creates a new, empty <code>WorkSet</code> with a default capacity
      *  and load factor. */
@@ -38,16 +38,68 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
     /** Constructs a new <code>WorkSet</code> with the contents of the
      *  specified <code>Collection</code>. */
     public WorkSet(java.util.Collection c) {
-	hm = new HashMap();
+	hm = new HashMap(c.size());
 	for (Iterator i = c.iterator(); i.hasNext(); )
 	    add(i.next());
     }
 
-    /** Returns the last element added to the WorkSet, in constant-time. */
-    public Object peek() {
+    /** Adds an element to the front of the (ordered) set and returns true,
+     *  if the element is not already present in the set.  Makes no change
+     *  to the set and returns false if the element is already in the set.
+     */
+    public boolean addFirst(Object o) {
+	if (o==null) throw new NullPointerException();
+	if (hm.containsKey(o)) return false;
+	EntryList nel = new EntryList(o);
+	listhead.add(nel);
+	hm.put(o, nel);
+	// verify list/set correspondence.
+	if (debug) Util.assert(EntryList.equals(listhead, hm.keySet()));
+	return true;
+    }
+    /** Adds an element to the end of the (ordered) set and returns true,
+     *  if the element is not already present in the set.  Makes no change
+     *  to the set and returns false if the element is already in the set.
+     */
+    public boolean addLast(Object o) {
+	if (o==null) throw new NullPointerException();
+	if (hm.containsKey(o)) return false;
+	EntryList nel = new EntryList(o);
+	listfoot.prev.add(nel);
+	hm.put(o, nel);
+	// verify list/set correspondence.
+	if (debug) Util.assert(EntryList.equals(listhead, hm.keySet()));
+	return true;
+    }
+    /** Returns the first element in the ordered set. */
+    public Object getFirst() {
 	if (isEmpty()) throw new java.util.NoSuchElementException();
 	return listhead.next.o;
     }
+    /** Returns the last element in the ordered set. */
+    public Object getLast() {
+	if (isEmpty()) throw new java.util.NoSuchElementException();
+	return listfoot.prev.o;
+    }
+    /** Removes the first element in the ordered set and returns it. */
+    public Object removeFirst() {
+	if (isEmpty()) throw new java.util.NoSuchElementException();
+	Object o = listhead.next.o;
+	hm.remove(o);
+	listhead.next.remove();
+	return o;
+    }
+    /** Removes the last element in the ordered set and returns it. */
+    public Object removeLast() {
+	if (isEmpty()) throw new java.util.NoSuchElementException();
+	Object o = listfoot.prev.o;
+	hm.remove(o);
+	listfoot.prev.remove();
+	return o;
+    }
+
+    /** Returns the last element in the WorkSet, in constant-time. */
+    public Object peek() { return getLast(); }
 
     /** Removes some item from this and return it (Worklist adaptor
 	method). 
@@ -59,18 +111,11 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 			     and returns <code>item</code>. Else does
 			     nothing.
     */
-    public Object pull() {
-	return this.pop();
-    }
+    public Object pull() { return removeLast(); }
 
-    /** Return and remove the last element added to the WorkSet. */
-    public Object pop() {
-	if (isEmpty()) throw new java.util.NoSuchElementException();
-	Object o = listhead.next.o;
-	hm.remove(o);
-	listhead.next.remove();
-	return o;
-    }
+    /** Return and remove the last element in the WorkSet.
+     * @deprecated Use pull(), removeFirst(), or removeLast(). */
+    public Object pop() { return removeLast(); }
 
     /** Pushes item onto this if it is not already there (Worklist
 	adapter method). 
@@ -84,16 +129,12 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 	this.add(item);
     }
 
-    public boolean add(Object o) {
-	if (o==null) throw new NullPointerException();
-	if (hm.containsKey(o)) return false;
-	EntryList nel = new EntryList(o);
-	listhead.add(nel);
-	hm.put(o, nel);
-	// verify list/set correspondence.
-	if (debug) Util.assert(EntryList.equals(listhead, hm.keySet()));
-	return true;
-    }
+    /** Adds the object to the set and returns true if the element
+     *  is not already present.  Otherwise makes no change to the
+     *  set and returns false. */
+    public boolean add(Object o) { return addLast(o); }
+
+    /** Removes all elements from the set. */
     public void clear() {
 	hm.clear(); listhead.next = listfoot;
     }
@@ -137,9 +178,8 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
     }
     public boolean remove(Object o) {
 	if (!hm.containsKey(o)) return false;
-	EntryList elp = (EntryList) hm.get(o);
 	// remove from hashmap
-	hm.remove(o);
+	EntryList elp = (EntryList) hm.remove(o);
 	// remove from linked list.
 	elp.remove();
 	// verify list/set correspondence.
