@@ -49,7 +49,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.2 1999-10-26 16:07:12 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.3 1999-10-26 16:34:29 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
@@ -262,7 +262,7 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 		allm[i].getName().equals(m.getName()) &&
 		!allm[i].equals(m))
 		useShort = false;
-	String mangled = "Java_" +
+	String mangled = "_Java_" +
 	    encode(m.getDeclaringClass().getName()) +
 	    "_" +
 	    encode(m.getName());
