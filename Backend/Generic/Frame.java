@@ -4,20 +4,16 @@
 package harpoon.Backend.Generic;
 
 import harpoon.Temp.Temp;
-import harpoon.Backend.Allocation.DefaultAllocationInfo;
 import harpoon.IR.Tree.Exp;
-import harpoon.IR.Tree.Stm;
-import harpoon.IR.Tree.MEM;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Temp.TempFactory;
-import harpoon.ClassFile.HCodeElement;
 
 /**
  * A <code>Frame</code> encapsulates the machine-dependent information
  * needed for compilation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.5 1999-02-16 21:31:33 duncan Exp $
+ * @version $Id: Frame.java,v 1.1.2.6 1999-02-17 03:25:11 andyb Exp $
  */
 public abstract class Frame {
 
