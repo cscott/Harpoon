@@ -5,6 +5,7 @@
 #include <sys/utsname.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 /* utility method */
@@ -104,8 +105,26 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
     }
     /* for primitive array, we're all set: */
     if (isPrimitive) {
-      /* XXX: figure out how to determine size of array elements. */
-      assert(0);
+      struct aarray *_src, *_dst;
+      int size=0;
+      assert(FNI_GetClassInfo(FNI_GetObjectClass(env, src))->name[0]=='[');
+      switch(FNI_GetClassInfo(FNI_GetObjectClass(env, src))->name[1]) {
+      case 'Z': size = sizeof(jboolean); break;
+      case 'B': size = sizeof(jbyte); break;
+      case 'C': size = sizeof(jchar); break;
+      case 'S': size = sizeof(jshort); break;
+      case 'I': size = sizeof(jint); break;
+      case 'J': size = sizeof(jlong); break;
+      case 'F': size = sizeof(jfloat); break;
+      case 'D': size = sizeof(jdouble); break;
+      default: assert(0); /* what kind of primitive array is this? */
+      }
+      _src=(struct aarray*) FNI_UNWRAP(src);
+      _dst=(struct aarray*) FNI_UNWRAP(dst);
+      memcpy(((char *)&(_dst->element_start))+(dstpos*size),
+	     ((char *)&(_src->element_start))+(srcpos*size),
+	     size*length);
+      return;
     } else {
       int i;
       for (i=0; i<length; i++) {
@@ -113,8 +132,8 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
 	(*env)->SetObjectArrayElement(env, dst, dstpos+i, o);
 	if ((*env)->ExceptionOccurred(env)!=NULL) return;
       }
+      return;
     }
-    return;
 }
 
 /*

@@ -58,6 +58,7 @@ struct oobj {
 struct aarray {
   struct oobj obj;
   jsize length; /* first field in an array is the length */
+  char element_start[0]; /* place holder for start of elements */
 };
 /* use this version of the oobj structure if you need to get at the
  * hashcode value, which is stored *above* the pointed-at location.
