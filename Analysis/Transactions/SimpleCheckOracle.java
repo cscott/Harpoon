@@ -5,6 +5,7 @@ package harpoon.Analysis.Transactions;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ARRAYINIT;
 import harpoon.IR.Quads.ASET;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.SET;
@@ -16,7 +17,7 @@ import java.util.Set;
  * simple-minded implementation of <code>CheckOracle</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SimpleCheckOracle.java,v 1.1.2.1 2001-01-11 20:26:40 cananian Exp $
+ * @version $Id: SimpleCheckOracle.java,v 1.1.2.2 2001-01-23 22:03:31 cananian Exp $
  */
 class SimpleCheckOracle extends CheckOracle {
     public Set createReadVersions(HCodeElement hce) {
@@ -27,6 +28,8 @@ class SimpleCheckOracle extends CheckOracle {
 	return Collections.EMPTY_SET;
     }
     public Set createWriteVersions(HCodeElement hce) {
+	if (hce instanceof ARRAYINIT)
+	    return Collections.singleton(((ARRAYINIT)hce).objectref());
 	if (hce instanceof ASET)
 	    return Collections.singleton(((ASET)hce).objectref());
 	if (hce instanceof SET && !((SET)hce).isStatic())
