@@ -188,7 +188,7 @@ jfieldID FNI_GetFieldID (JNIEnv *env, jclass clazz,
 # define GETFIELDPROTO(name, type) \
 type FNI_Get##name##Field (JNIEnv *env, jobject obj, jfieldID fieldID);
 # define SETFIELDPROTO(name, type) \
-  type FNI_Set##name##Field (JNIEnv *env, jobject obj, jfieldID fieldID, \
+  void FNI_Set##name##Field (JNIEnv *env, jobject obj, jfieldID fieldID, \
 			     type value);
 FORNONVOIDTYPES(GETFIELDPROTO);
 FORNONVOIDTYPES(SETFIELDPROTO);

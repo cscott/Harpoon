@@ -102,7 +102,7 @@ struct JNINativeInterface {
 # define GETFIELDPROTO(name, type) \
   type (*Get##name##Field) (JNIEnv *env, jobject obj, jfieldID fieldID);
 # define SETFIELDPROTO(name, type) \
-  type (*Set##name##Field) (JNIEnv *env, jobject obj, jfieldID fieldID, \
+  void (*Set##name##Field) (JNIEnv *env, jobject obj, jfieldID fieldID, \
 			    type value);
   FORNONVOIDTYPES(GETFIELDPROTO);
   FORNONVOIDTYPES(SETFIELDPROTO);
