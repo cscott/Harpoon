@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.38 2001-06-12 22:36:08 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.39 2001-07-03 21:35:21 wbeebee Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -373,7 +373,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	      new BINOP
 	      (tf, source, Type.POINTER, Bop.ADD,
 	       new BINOP
-	       (tf, source, Type.POINTER, Bop.ADD,
+	       (tf, source, Type.INT, Bop.ADD,
 		new CONST(tf, source, CLAZ_DISPLAY_OFF),
 		e2),
 	       e1))),

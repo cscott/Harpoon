@@ -57,17 +57,29 @@ public class RealtimeAllocationStrategy extends MallocAllocationStrategy {
 			AllocationProperties ap,
 			Exp length) {
 	if (Realtime.DEBUG_REF) {
-	    Label file = (Label)string2label.get(src.getSourceFile());
-	    if (file == null) {
-		string2label.put(src.getSourceFile(), (file=new Label()));
-	    }
 	    return buildAllocCall(tf, src, dg, ap, "RTJ_malloc_ref", length, 
 				  new ExpList(new CONST(tf, src, src.getLineNumber()),
-					      new ExpList(new NAME(tf, src, file),
+					      new ExpList(new NAME(tf, src, 
+								   fileLabel(src)),
 							  null)));
 	} 
 	return buildAllocCall(tf, src, dg, ap, "RTJ_malloc", length, null);
     }
+
+    /** Return a label corresponding to the string which represents the file that 
+     *  src came from.  Available only if DEBUG_REF is turned on.
+     */
+    public static Label fileLabel(HCodeElement src) {
+	Label file = null; 
+	if (Realtime.DEBUG_REF) {
+	    file = (Label)string2label.get(src.getSourceFile());
+	    if (file == null) {
+		string2label.put(src.getSourceFile(), (file=new Label()));
+	    }
+	}
+	return file;
+    }
+
 
     /** Emit all of the const char*'s used so far in the file and flush the list. 
      */

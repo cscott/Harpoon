@@ -71,11 +71,7 @@ public class GCTraceStore extends Simplification {
 		    stmList.add(new MOVE(tf, e, val(tf, dg, e, t2), ((MOVE)e).getSrc()));
 		    HClass type;
 		    MEM newMem = new MEM(tf, e, mem.type(), ref(tf, dg, e, t1));
-		    if ((type = dg.typeMap(mem)) != null) {
-			DECLARE(dg, type, newMem);
-		    } else {
-			DECLARE(dg, dg.derivation(mem), newMem);
-		    }
+		    dg.update(mem, newMem);
 		    MOVE generated = new MOVE(tf, e, newMem, val(tf, dg, e, t2));
 		    stmList.add(generated);
 		    generatedMoves.add(generated);
@@ -92,21 +88,15 @@ public class GCTraceStore extends Simplification {
     }
 
     protected static TEMP ref(TreeFactory tf, DerivationGenerator dg, Stm e, Temp t1) {
-	Exp exp = ((MEM)(((MOVE)e).getDst())).getExp();
-	HClass type;
-	if ((type = dg.typeMap(exp)) != null) {
-	    return (TEMP)DECLARE(dg, type, t1, new TEMP(tf, e, Type.POINTER, t1));
-	}
-	return (TEMP)DECLARE(dg, dg.derivation(exp), new TEMP(tf, e, Type.POINTER, t1));
+	TEMP t = new TEMP(tf, e, Type.POINTER, t1);
+	dg.update(((MEM)(((MOVE)e).getDst())).getExp(), t);
+	return t;
     }
     
     protected static TEMP val(TreeFactory tf, DerivationGenerator dg, Stm e, Temp t2) {
-	Exp exp = ((MOVE)e).getSrc();
-	HClass type;
-	if ((type = dg.typeMap(exp)) != null) {
-	    return (TEMP)DECLARE(dg, type, t2, new TEMP(tf, e, Type.POINTER, t2));
-	}
-	return (TEMP)DECLARE(dg, dg.derivation(exp), new TEMP(tf, e, Type.POINTER, t2));
+	TEMP t = new TEMP(tf, e, Type.POINTER, t2); 
+	dg.update(((MOVE)e).getSrc(), t);
+	return t;
     }
 
     public HCodeFactory codeFactory(final HCodeFactory parent) {

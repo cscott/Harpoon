@@ -5,6 +5,7 @@ package harpoon.Analysis.Realtime;
 
 import harpoon.Analysis.Maps.Derivation.DList;
 
+import harpoon.Analysis.Tree.Canonicalize;
 import harpoon.Analysis.Tree.Simplification;
 import harpoon.Analysis.Tree.Simplification.Rule;
 
@@ -112,7 +113,10 @@ public class HeapCheckAdder extends Simplification {
 		public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) {
 		    Temp t = new Temp(tf.tempFactory(), "heapRef");
 		    MEM mem = (MEM)e;
-		    return new ESEQ(tf, e, addCheck(tf, mem, dg, t), memRef(tf, mem, dg, t));
+		    ESEQ es = new ESEQ(tf, e, addCheck(tf, mem, dg, t), 
+				      memRef(tf, mem, dg, t));
+		    dg.update(e, es);
+		    return es;
 		}
 	    });
 
@@ -197,12 +201,13 @@ public class HeapCheckAdder extends Simplification {
 			      DECLARE(dg, new DList(t, true, null), 
 				      new BINOP(tf, e, Type.POINTER, Bop.AND, 
 						tempRef(dg, tf, e, t), 
-						new CONST(tf, e, 1))), ord, ex));
+						new CONST(tf, e, 1))), ex, ord));
 	stmList.add(new LABEL(tf, e, ex, false));
 	if (Realtime.COLLECT_RUNTIME_STATS) {
 	    stmList.add(incLongField(tf, e, dg, "javax.realtime.Stats", "heapRefs"));
 	}
-	stmList.add(nativeCall(tf, e, dg, t, "heapCheck"));
+	stmList.add(nativeCall(tf, e, dg, t,
+			       Realtime.DEBUG_REF?"heapCheckRef":"heapCheckJava"));
 	stmList.add(new LABEL(tf, e, ord, false));
 	return Stm.toStm(stmList);
     }
@@ -246,9 +251,17 @@ public class HeapCheckAdder extends Simplification {
 					 String func_name) {
 	Label func = new Label(tf.getFrame().getRuntime().nameMap
 			       .c_function_name(func_name));
+	ExpList extraArgs = null;
+	if (Realtime.DEBUG_REF) {
+	    extraArgs = new ExpList(new CONST(tf, e, e.getLineNumber()),
+				    new ExpList(new NAME(tf, e, 
+							 RealtimeAllocationStrategy
+							 .fileLabel(e)),
+						null));
+	}
 	return new NATIVECALL(tf, e, null,
 			      (NAME)DECLARE(dg, HClass.Void, new NAME(tf, e, func)),
-			      new ExpList(tempRef(dg, tf, e, t), null));
+			      new ExpList(tempRef(dg, tf, e, t), extraArgs));
     }
 
     /** *(t&(~3)) */
@@ -261,18 +274,8 @@ public class HeapCheckAdder extends Simplification {
 					  tempRef(dg, tf, (MEM)e, t),
 					  new UNOP(tf, e, Type.INT, Uop.NOT, 
 						   new CONST(tf, e, 3)))));
-	try {
-	    if (dg.derivation(e) != null) {
-		return (MEM)DECLARE(dg, dg.derivation(e), m);
-	    } else {
-		return (MEM)DECLARE(dg, dg.typeMap(e), m);
-	    }
-	} catch (Exception ex) {
-	    // Naughty, naughty - someone forgot to declare their MEM's.
-	    Util.assert(false, "Undeclared MEM #"+e.getID()+": "+e.toString()+" at "+
-			e.getSourceFile()+":"+e.getLineNumber()+"\n");
-	    return m;
-	}
+	dg.update(e, m);
+	return m;
     }
     
     /** t */
@@ -286,9 +289,9 @@ public class HeapCheckAdder extends Simplification {
      */
 
     public HCodeFactory codeFactory(final HCodeFactory parent) {
-	return new PrintFactory(super.codeFactory(new PrintFactory(parent, "BEFORE"), 
-						  RULES), "AFTER");
-//  	return super.codeFactory(parent, RULES);
+//  	return new PrintFactory(Canonicalize.codeFactory(codeFactory(new PrintFactory(parent, "BEFORE"), 
+//  								     RULES)), "AFTER");
+	return Canonicalize.codeFactory(codeFactory(parent, RULES));
     }
 
     /** Declare the type of an expression. 

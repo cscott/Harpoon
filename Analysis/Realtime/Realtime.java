@@ -31,7 +31,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.1.2.27 2001-07-02 20:27:16 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.1.2.28 2001-07-03 21:35:07 wbeebee Exp $
  */
 
 public class Realtime {
@@ -68,12 +68,12 @@ public class Realtime {
     /** Add checks to determine if a <code>NoHeapRealtimeThread</code> is
      *  touching the heap.
      */
-    public static boolean NOHEAP_CHECKS = false;
+    public static boolean NOHEAP_CHECKS = true;
 
     /** Add additional information on calls to RTJ_malloc to store information
      *  about the def. points of all objects which are allocated.
      */
-    public static boolean DEBUG_REF = false;
+    public static boolean DEBUG_REF = true;
 
     /** Configure Realtime Java based on the following command-line options. 
      */
