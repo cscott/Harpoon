@@ -1,4 +1,4 @@
-// Set.java, created Tue Sep 15 19:28:05 1998 by cananian
+// HashSet.java, created Tue Sep 15 19:28:05 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
@@ -10,7 +10,7 @@ import java.util.Enumeration;
  * membership test, union element, and remove element operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HashSet.java,v 1.1.2.1 1999-02-03 23:13:08 pnkfelix Exp $
+ * @version $Id: HashSet.java,v 1.1.2.2 1999-02-05 23:09:04 pnkfelix Exp $
  */
 
 public class HashSet extends Set {
@@ -31,35 +31,17 @@ public class HashSet extends Set {
     public void union(Object o) {
 	h.put(o, o);
     }
-    /** Worklist interface: an alias for <code>union</code>. */
-    public void push(Object o) {
-	h.put(o, o);
-    }
+
     /** Determines if an object is a member of the <code>Set</code>. */
     public boolean contains(Object o) {
 	return h.containsKey(o);
     }
-    /** Determines if there are any elements in the <code>Set</code>. */
-    public boolean isEmpty() {
-	return h.isEmpty();
-    }
+
     /** Returns the number of elements in the <code>Set</code>. */
     public int size() { 
 	return h.size(); 
     }
-    /** Worklist interface: removes an arbitrary element from the
-     *  <code>Set</code> and returns the removed element. */
-    public Object pull() {
-	Object o = h.keys().nextElement();
-	h.remove(o);
-	return o;
-    }
-    /** Copies the elements of the <code>Set</code> into an array. */
-    public void copyInto(Object[] oa) {
-	int i=0;
-	for(Enumeration e = h.keys(); e.hasMoreElements(); )
-	    oa[i++] = e.nextElement();
-    }
+
     /** Returns an <code>Enumeration</code> of the elements of the
      *  <code>Set</code>. */
     public Enumeration elements() {
@@ -77,4 +59,14 @@ public class HashSet extends Set {
 	sb.append("}");
 	return sb.toString();
     }
+
+    /** Returns a arbitrary element from <code>this</code>.
+	<BR> <B>effects:</B> Returns an element of <code>this</code>.
+    */
+    public Object getArbitrary() {
+	return h.keys().nextElement();
+    }
+
 }
+
+
