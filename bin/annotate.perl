@@ -42,7 +42,7 @@ sub jdk12classes {
     }
     my %cls2url;
     foreach my $line (@raw) {
-	if ($line =~ m|^.*A HREF.*\"([A-Za-z_0-9/]*/[A-Za-z0-9_.]*)\.html.*$|){
+	if ($line =~ m|^.*A HREF.*\"([A-Za-z_0-9/]*/[A-Za-z0-9_.]*)\.html.*$|i){
 	    my $url=$1;
 	    my $cls=$1; $cls =~ s|/|.|g;
 	    $cls2url{$cls} = $baseurl . $url . ".html";
@@ -93,11 +93,11 @@ while ($ARGV[0] =~ /^-/) {
 # grok the code, replacing the right stuff.
 sub annotate {
     my $phrase = shift(@_);
-    my $coded = "<CODE>" . $phrase . "</CODE>";
+    my $coded = "<code>" . $phrase . "</code>";
     if (exists $cls2url{$phrase}) {
 	my $url = $cls2url{$phrase};
 	$url =~ s|^./|$currentbase|;
-	return "<A HREF=\"" . $url . "\">" . $coded . "</A>";
+	return "<a href=\"" . $url . "\">" . $coded . "</a>";
     } else {
 	return $coded;
     }
@@ -107,7 +107,7 @@ sub srcdoc {
     return $phrase unless exists $cls2url{$phrase};
     my $url = $cls2url{$phrase};
     $url =~ s|^./|$currentbase."../srcdoc/"|e;
-    return "<A HREF=\"" . $url . "\">" . $phrase . ".java</A>";
+    return "<a href=\"" . $url . "\">" . $phrase . ".java</a>";
 }
 sub cvslog {
     my $file = shift(@_);
@@ -116,7 +116,7 @@ sub cvslog {
     my $url = $cls2url{$file};
     return $version unless $url =~ m|^./harpoon/(.*)\.html$|;
     $url = "$cvsweb/Code/$1.java#rev$version";
-    return "<A HREF=\"" . $url . "\">" . $version . "</A>";
+    return "<a href=\"" . $url . "\">" . $version . "</a>";
 }
 
 $currentbase="./";
