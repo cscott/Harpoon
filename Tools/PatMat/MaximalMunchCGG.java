@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.43 1999-10-19 20:09:11 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.44 1999-10-20 06:12:46 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -244,7 +244,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	public void visit(Spec.StmAlign s) {
-	    if (rootType==null) rootType=TREE_SEGMENT;
+	    if (rootType==null) rootType=TREE_ALIGN;
 	    degree++;
 
 	    append(exp, "// check statement type");
