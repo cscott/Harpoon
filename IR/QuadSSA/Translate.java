@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.26 1998-09-02 23:48:51 cananian Exp $
+ * @version $Id: Translate.java,v 1.27 1998-09-03 00:02:17 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -1042,23 +1042,31 @@ class Translate  { // not public.
     /** Translate a single <code>InCti</code>. */
     static final TransState[] transInCti(TransState ts) {
 	InCti in = (InCti) ts.in;
-	/*
+	State s = ts.initialState;
+	Quad q;
+	TransState[] r;
 	switch(in.getOpcode()) {
 	case Op.ARETURN:
 	case Op.DRETURN:
 	case Op.FRETURN:
 	case Op.IRETURN:
 	case Op.LRETURN:
+	    q = new RETURN(in, s.stack[0]);
+	    r = new TransState[0];
+	    break;
 	case Op.RETURN:
-	    throw new Error("Unimplemented");
+	    q = new RETURN(in);
+	    r = new TransState[0];
+	    break;
 	case Op.ATHROW:
-	    ns = s.pop();
 	    q = new THROW(in, s.stack[0]);
+	    r = new TransState[0];
 	    break;
 	case Op.GOTO:
 	case Op.GOTO_W:
-	    ns = s;
-	    q = new JMP(in);
+	    q = null;
+	    r = new TransState[] { new TransState(s, in.next()[0], 
+						  ts.header, ts.which_succ) };
 	    break;
 	default:
 	case Op.JSR:
@@ -1066,8 +1074,9 @@ class Translate  { // not public.
 	case Op.RET:
 	    throw new Error("Unmitigated evilness.");
 	}
-	*/
-	return null;
+	if (q!=null)
+	    Quad.addEdge(ts.header, ts.which_succ, q, 0);
+	return r;
     }
 
     // Miscellaneous utility functions. ///////////////////////////
