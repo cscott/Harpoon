@@ -81,7 +81,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.127 2001-06-20 17:39:19 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.128 2001-07-07 19:14:41 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -872,27 +872,6 @@ public abstract class RegAlloc  {
     */
     public List expand(Temp t) {
 	return frame.getRegFileInfo().expand(t);
-    }
-
-    /** Constructs a new List containing the expanded temps for
-	all of the elements of <code>c</code> (Helper method).
-	<BR> <B>requires:</B> <code>c</code> is a
-	     <code>Collection</code> of <code>Temp</code>s.
-	<BR> <B>effects:</B> 
-	<pre>let e be a new empty List
-	     in foreach t in c
-	           e.addAll( RegFileInfo.expand(t) )
-	        return e
-	</pre>
-    */
-    protected List expand(Collection c) {
-	List l = new ArrayList();
-	Iterator i = c.iterator();
-	while(i.hasNext()) {
-	    Temp t = (Temp) i.next();
-	    l.addAll( expand(t) );
-	}
-	return l;
     }
 
     /** Checks if any element of <code>c</code> is a register (Helper
