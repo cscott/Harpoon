@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.5 2002-04-10 03:06:09 cananian Exp $
+ * @version $Id: SAMain.java,v 1.6 2002-04-24 01:21:49 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -230,7 +230,8 @@ public class SAMain extends harpoon.IR.Registration {
 		break;
 	    }
 	}
-	assert mainM.getDescriptor().equals("([Ljava/lang/String;)V") : "main does not have the proper signature";
+	assert mainM.getDescriptor().equals("([Ljava/lang/String;)V") : 
+	    "main does not have the proper signature";
 	assert Modifier.isStatic(mainM.getModifiers()) : "main is not static";
 	assert mainM != null : "Class " + className + 
 		    " has no main method";
@@ -323,40 +324,47 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (EVENTDRIVEN && !alexhack) {
 		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 		
-		// costruct the set of all the methods that might be called by 
-		// the JVM (the "main" method plus the methods which are called by
-		// the JVM before main) and next pass it to the MetaCallGraph
+		// costruct the set of all the methods that might be
+		// called by the JVM (the "main" method plus the
+		// methods which are called by the JVM before main)
+		// and next pass it to the MetaCallGraph
 		// constructor. [AS]
-		Set mroots = extract_method_roots(frame.getRuntime().runtimeCallableMethods());
+		Set mroots =
+		    extract_method_roots(frame.getRuntime().
+					 runtimeCallableMethods());
 		mroots.add(mainM);
 		mcg = new MetaCallGraphImpl
 		    (new CachingCodeFactory(hcf), classHierarchy, mroots);
 	    }
 
 	    if (ROLE_INFER && !alexhack) {
-		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-		hcf=(new harpoon.Analysis.RoleInference.RoleInference(hcf,linker)).codeFactory();
+		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+		hcf = (new harpoon.Analysis.RoleInference.RoleInference
+		       (hcf,linker)).codeFactory();
 	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
 	
 
 	    if (INSTRUMENT_ALLOCS && !alexhack) {
-		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 		AllocationNumbering an =
 		    new AllocationNumbering(hcf, classHierarchy, true);
 		try {
-		ObjectOutputStream ois =
-		    new ObjectOutputStream(new FileOutputStream(IFILE));
-		ois.writeObject(an);
-		ois.writeObject(linker);
-		ois.close();
+		    ObjectOutputStream ois =
+			new ObjectOutputStream(new FileOutputStream(IFILE));
+		    ois.writeObject(an);
+		    ois.writeObject(linker);
+		    ois.writeObject(roots);
+		    ois.writeObject(mainM);
+		    ois.close();
 		} catch (java.io.IOException e) {
 		    System.out.println(e + " was thrown:");
 		    e.printStackTrace(System.out);
 		}
-		hcf=an.codeFactory();
-		insta=new InstrumentAllocs(hcf, mainM, linker, an, true,true);
- 		hcf=insta.codeFactory();
+		hcf = an.codeFactory();
+		insta = 
+		    new InstrumentAllocs(hcf, mainM, linker, an, true, true);
+ 		hcf = insta.codeFactory();
 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
@@ -944,9 +952,9 @@ public class SAMain extends harpoon.IR.Registration {
     }
     
     protected static void parseOpts(String[] args) {
-
-	Getopt g = new Getopt("SAMain", args, 
-			      "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Tmw::x::y::");
+	Getopt g = 
+	    new Getopt("SAMain", args, 
+		       "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Tmw::x::y::");
 	
 	int c;
 	String arg;

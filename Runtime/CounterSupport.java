@@ -10,7 +10,7 @@ import java.io.PrintStream;
  * using counters identified by integers.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: CounterSupport.java,v 1.2 2002-02-25 21:06:26 cananian Exp $
+ * @version $Id: CounterSupport.java,v 1.3 2002-04-24 01:21:55 salcianu Exp $
  */
 public class CounterSupport {
     static int size,sizesync;
@@ -226,18 +226,19 @@ public class CounterSupport {
 	System.out.println("# overflowed="+overflow);
 	System.out.println("Call stack depth overflow="+depthoverflow);
 	System.out.println("Call stack thread overflow="+threadoverflow);
-	System.out.println("Allocation array");
 
-
+	System.out.println("Allocation array BEGIN");
 	for(int i=0;i<size;i++)
 	    if (array[i]!=0)
 		System.out.println(i+"  "+array[i]);
+	System.out.println("Allocation array END");
 
-	System.out.println("Sync array");
+
+	System.out.println("Sync array BEGIN");
 	for(int i=0;i<sizesync;i++)
 	    if (arraysync[i]!=0)
 		System.out.println(i+"  "+arraysync[i]);
-
+	System.out.println("Sync array END");
 
 	int tripletcount=0;
 	System.out.println("Call Chain Allocation array");
@@ -254,13 +255,17 @@ public class CounterSupport {
 	}
 
 	try {
-	    PrintStream fos=new java.io.PrintStream(new FileOutputStream("profile"));
+	    PrintStream fos
+		= new java.io.PrintStream(new FileOutputStream("profile"));
+
 	    fos.println(size);
 	    for(int i=0;i<size;i++)
 		fos.println(array[i]);
+
 	    fos.println(sizesync);
 	    for(int i=0;i<sizesync;i++)
 		fos.println(arraysync[i]);
+
 	    fos.println(tripletcount);
 	    for(int i=0;i<size1;i++)
 		for(int j=0;j<size2;j++)

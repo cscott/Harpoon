@@ -84,7 +84,8 @@ public class IncompatibilityAnalysis {
         }
 
         if (entry == null) {
-            System.out.println("Give me a method called " + methodName +" please");
+            System.out.println("Give me a method called " + methodName +
+			       " please");
             return;
         }
         
@@ -134,7 +135,8 @@ public class IncompatibilityAnalysis {
         // for thorough example see SAMain.java
         Set roots = new HashSet();
         // ask the runtime which roots it requires.
-        harpoon.Backend.Generic.Frame frame = new harpoon.Backend.StrongARM.Frame(entry);
+        harpoon.Backend.Generic.Frame frame = 
+	    new harpoon.Backend.StrongARM.Frame(entry);
 
         roots.addAll(frame.getRuntime().runtimeCallableMethods());
 
@@ -184,7 +186,8 @@ public class IncompatibilityAnalysis {
 
     // interface to the outside world
 
-    public IncompatibilityAnalysis(HMethod entry, HCodeFactory codeFactory, CallGraph callGraph) {
+    public IncompatibilityAnalysis(HMethod entry, HCodeFactory codeFactory,
+				   CallGraph callGraph) {
 
         // init
 
@@ -373,7 +376,8 @@ public class IncompatibilityAnalysis {
         MultiMap liveness = new GenericMultiMap(new AggregateSetFactory());
 
         // helpers for liveness
-        Set interestingEdges = new HashSet(); // edges for which we are interested in liveness & reachability
+	// edges for which we are interested in liveness & reachability
+        Set interestingEdges = new HashSet(); 
 
         // direct assignments: which temps get assigned to this temp
         MultiMap assignMap = new GenericMultiMap(new AggregateSetFactory());
@@ -395,17 +399,18 @@ public class IncompatibilityAnalysis {
                 allocationSites.add(qNew);
                 globalAllocMap.put(temp, qNew);
                 
-                assert qNew.nextLength() == 1 : "NEW should only have one incoming edge";
+                assert qNew.nextLength() == 1 : 
+		    "NEW should only have one incoming edge";
+
                 interestingEdges.add(qNew.prevEdge(0));
                 interestingEdges.add(qNew.nextEdge(0));
-                
-            }
+	    }
             // call site?
             else if (q.kind() == QuadKind.CALL) {
                 CALL qCall = (CALL) q;
 
-                 CALL qCallNoSSA = (CALL) quadSSI2NoSSA.get(qCall);
-                 assert quadSSI2NoSSA != null;
+		CALL qCallNoSSA = (CALL) quadSSI2NoSSA.get(qCall);
+		assert quadSSI2NoSSA != null;
 
                 HMethod[] calledMethods = callGraph.calls(method, qCallNoSSA);
 
@@ -1234,7 +1239,7 @@ public class IncompatibilityAnalysis {
         // Collection classesAlt = MultiMapUtils.computeCompatibleClassesAlt(Itmp);
      }
         
-    private void printSomething() {
+    public void printSomething() {
         // show off some end-results
         MethodData md = (MethodData) mdCache.get(entry);
 

@@ -21,7 +21,7 @@ import java.util.Set;
  * <code>AllocationNumbering</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.2 2002-02-25 20:58:38 cananian Exp $
+ * @version $Id: AllocationNumbering.java,v 1.3 2002-04-24 01:21:39 salcianu Exp $
  */
 public class AllocationNumbering implements java.io.Serializable {
     private final CachingCodeFactory hcf;
@@ -31,7 +31,8 @@ public class AllocationNumbering implements java.io.Serializable {
     int n=0,c=0;
     
     /** Creates a <code>AllocationNumbering</code>. */
-    public AllocationNumbering(HCodeFactory hcf, ClassHierarchy ch, boolean callSites) {
+    public AllocationNumbering(HCodeFactory hcf, ClassHierarchy ch,
+			       boolean callSites) {
 	if (callSites)
 	    call2int=new HashMap();
 	else call2int=null;
@@ -42,20 +43,35 @@ public class AllocationNumbering implements java.io.Serializable {
 	    number(this.hcf.convert(hm), callSites);
 	}
     }
+
+
     /** Return the (caching) code factory this numbering was created on. */
     public HCodeFactory codeFactory() { return hcf; }
     
-    /** Return an integer identifying this allocation site. */
+
+    /** Return an integer identifying the allocation site <code>q</code>. */
     public int allocID(Quad q) {
 	if (!alloc2int.containsKey(q)) throw new Error("Quad unknown: "+q);
 	return ((Integer) alloc2int.get(q)).intValue();
     }
 
-    /** Return an integer identifying this allocation site. */
+    /** Return the set of instrumented allocation sites. */
+    public Set getAllocs() {
+	return alloc2int.keySet();
+    }
+
+
+    /** Return an integer identifying the CALL quad <code>q</code>. */
     public int callID(Quad q) {
 	if (!call2int.containsKey(q)) throw new Error("Quad unknown: "+q);
 	return ((Integer) call2int.get(q)).intValue();
     }
+
+    /** Return the set of instrumented CALLs. */
+    public Set getCalls() {
+	return call2int.keySet();
+    }
+
 
     /* hard part: the numbering */
     private void number(HCode hc, boolean callSites) {
