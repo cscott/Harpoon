@@ -20,7 +20,7 @@ import java.util.LinkedList;
  * <code>Transactions</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Transactions.java,v 1.3.4.1 2004-06-28 04:17:27 cananian Exp $
+ * @version $Id: Transactions.java,v 1.3.4.2 2004-06-28 17:12:28 cananian Exp $
  */
 public abstract class Transactions {
     
@@ -37,10 +37,8 @@ public abstract class Transactions {
 		new Option("T", "Transactions support (CSA)") {
 		    public void action() {
 			DO_TRANSACTIONS = true;
-			/*
 			System.setProperty("harpoon.runtime1.arraybloat",
 					   "true");
-			*/
 		    }
 		}
 	    });
