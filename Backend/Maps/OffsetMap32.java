@@ -17,7 +17,7 @@ import java.util.StringTokenizer;
  * specializing them for 32-bit architectures.
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.9 1999-05-17 19:58:37 andyb Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.10 1999-05-27 23:01:48 pnkfelix Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -263,7 +263,8 @@ public class OffsetMap32 extends OffsetMap
 	    else size = WORDSIZE;
 	}
 	else if (hc.isArray()) { 
-	    throw new Error("Size of array does not depend on its class!");
+	    Util.assert(false, "Size of array does not depend on its class!");
+	    return -1;
 	} 
 	else { 
 	    if (inline) {
