@@ -28,7 +28,7 @@ import java.util.List;
  * to do pattern-driven tree canonicalization.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Canonicalize.java,v 1.1.2.5 2000-03-26 06:28:47 jwhaley Exp $
+ * @version $Id: Canonicalize.java,v 1.1.2.6 2001-06-30 17:55:47 cananian Exp $
  */
 public abstract class Canonicalize extends Simplification {
     // hide constructor
@@ -101,7 +101,7 @@ public abstract class Canonicalize extends Simplification {
 		ExpList el = s.kids();
 		ESEQ eseq = (ESEQ) el.head;
 		el = new ExpList(eseq.getExp(), el.tail);
-		return new SEQ(tf, s, eseq.getStm(), s.build(el));
+		return new SEQ(tf, s, eseq.getStm(), sbuild(s,dg, el));
 	    }
 	};
 
@@ -141,7 +141,7 @@ public abstract class Canonicalize extends Simplification {
 		return newE;
 	    }
 	    public Stm apply(TreeFactory tf, Stm s, DerivationGenerator dg) {
-		return s.build(shiftOne(tf, dg, s.kids()));
+		return sbuild(s,dg, shiftOne(tf, dg, s.kids()));
 	    }
 	    ExpList shiftOne(TreeFactory tf, DerivationGenerator dg,
 			     ExpList el) {
@@ -195,6 +195,16 @@ public abstract class Canonicalize extends Simplification {
     private static boolean isNop(Stm a) {
 	return contains(_KIND(a), _EXPR) &&
 	    contains(_KIND(((EXPR)a).getExp()), _CONST|_TEMP);
+    }
+    /* MOVE.build() doesn't correctly propagate derivation information to
+     * MOVE(MEM(...), ...); this utility function fixes this case up. */
+    private static Stm sbuild(Stm s, DerivationGenerator dg, ExpList kids) {
+	Stm ns = s.build(kids);
+	if (dg!=null &&
+	    contains(_KIND(s), _MOVE) &&
+	    contains(_KIND(s.getFirstChild()), _MEM))
+	    dg.update((Exp)s.getFirstChild(), (Exp)ns.getFirstChild());
+	return ns;
     }
     /** Testing function, for use in assertions that a given tree is
      *  canonical. */
