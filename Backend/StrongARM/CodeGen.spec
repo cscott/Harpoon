@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.97 1999-11-02 20:27:08 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.98 1999-11-05 07:03:17 cananian Exp $
  */
 %%
 
@@ -548,6 +548,8 @@ BINOP<l>(ADD, j, k) = i %{
 
     emit( ROOT, "adds `d0l, `s0l, `s1l\n"+
 		"adc  `d0h, `s0h, `s1h", i, j, k );
+    // make sure d0l isn't assigned same reg as `s0h or `s1h
+    emit2( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
 }%
 
 BINOP<f>(ADD, j, k) = i %{
@@ -1437,6 +1439,8 @@ UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
     emit( ROOT, "rsbs `d0l, `s0l\n" + // uses condition codes, so keep together
     	        "rsc  `d0h, `s0h", i, arg );
+    // make sure d0l isn't assigned same reg as `s0h
+    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
 }% 
 UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
@@ -1555,8 +1559,8 @@ MOVE<d,l>(TEMP(dst), src) %{
     Util.assert(src instanceof TwoWordTemp, "why is src: "+src + 
 		 " a normal Temp? " + harpoon.IR.Tree.Print.print(ROOT));
         // not certain an emitMOVE is legal with the l/h modifiers
-    emit( ROOT, "mov `d0l, `s0l\n"+
-		    "mov `d0h, `s0h", dst, src );
+    emit( ROOT, "mov `d0l, `s0l", dst, src );
+    emit( ROOT, "mov `d0h, `s0h", dst, src );
 }%
 
 /* ACK! Our assembler doesn't support this, even though our processor does. =(
@@ -1740,7 +1744,8 @@ DATA(CONST<p>(exp)) %{
 }%
 
 DATA(CONST<s:8,u:8>(exp)) %{
-    String chardesc = (exp.intValue()>=32 && exp.intValue()<127) ?
+    String chardesc = (exp.intValue()>=32 && exp.intValue()<127 
+		       && exp.intValue()!=96 /* backquotes cause problems */) ?
 	("\t@ char "+((char)exp.intValue())) : "";
     emitDIRECTIVE( ROOT, "\t.byte "+exp+chardesc);
 }%
