@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Companions;
 
+import harpoon.ClassFile.HCode;
 import harpoon.IR.Properties.CFGEdge;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.Util.Collections.WorkSet;
@@ -16,7 +17,7 @@ import java.util.Map;
  * for building simple data flow analyses for various IRs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataFlowSolver.java,v 1.1 2003-05-09 00:41:02 cananian Exp $
+ * @version $Id: DataFlowSolver.java,v 1.2 2003-05-09 00:44:05 cananian Exp $
  */
 public abstract class DataFlowSolver
     <HCE extends CFGraphable<HCE,E>, E extends CFGEdge<HCE,E>, FACT> {
