@@ -15,6 +15,8 @@
 #include "../realtime/qcheck.h"
 #include "../realtime/Scheduler.h"
 #include <setjmp.h>
+#include <string.h>
+#include <unistd.h>
 /* jump point for the final jump back to main - defined in startup.c */
 extern jmp_buf main_return_jump;
 #else
@@ -27,6 +29,44 @@ struct thread_list *gtl,*ioptr;
 struct thread_queue_struct *currentThread; //pointer to the current thread
 #endif
 void *oldstack;
+
+#ifdef GLIBC_COMPAT2
+#ifdef errno
+#undef errno
+#endif
+extern int errno;
+int* __errno_location() { 
+  return &errno; 
+}
+#endif
+
+#ifdef GLIBC_COMPAT3
+typedef void* pthread_descr; 
+
+pthread_descr __pthread_find_self() { 
+  return NULL; 
+}
+
+/* pthread_descr __pthread_find_self() { */
+
+/* } */
+
+#endif
+
+#ifdef GLIBC_COMPAT4
+void* calloc(size_t nmemb, size_t size) {
+  void* foo = malloc(nmemb*size);
+  memset(foo, 0, nmemb*size);
+  return foo;
+}
+
+void* malloc(size_t size) {
+  return (void*)(((ptroff_t)(sbrk((size+7)&(~7))+7))&(~7));
+}
+
+void free(void* ptr) {
+}
+#endif
 
 void startnext();
 int * getFDsintSEL(int);
@@ -65,6 +105,7 @@ void transfer(struct thread_queue_struct * mthread)
   /* if the transfer thread is the current thread, just return */
 #ifdef RTJ_DEBUG_THREADS
   printf("\nTransfer from %p to %p", currentThread, mthread);
+  fflush(NULL);
 #endif
   if(mthread == currentThread) {
     settimer();
@@ -77,6 +118,7 @@ void transfer(struct thread_queue_struct * mthread)
     if (machdep_save_state(currentThread->mthread)) {
 #ifdef RTJ_DEBUG_THREADS
       printf(" returning directly!");
+      fflush(NULL);
 #endif
       return;
     }
@@ -286,6 +328,7 @@ void exitthread() {
   else {
 #ifdef RTJ_DEBUG_THREADS
     printf("\nPrevious thread is dead, switching to %p", currentThread);
+    fflush(NULL);
 #endif
     restorethread(); //otherwise, restore the new thread
   }
@@ -333,8 +376,11 @@ int user_mutex_init(user_mutex_t *x, void * v) {
 #ifdef WITH_REALTIME_THREADS
   if (handlerMask&javax_realtime_Scheduler_HANDLE_MUTEX_INIT) {
     JNIEnv* env = FNI_GetJNIEnv();
-    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_init);
+    (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_init);
+#ifdef WITH_REALTIME_THREADS_DEBUG
+    fflush(NULL);
     assert(!((*env)->ExceptionOccurred(env)));
+#endif
   }
 #endif
   x->mutex=SEMAPHORE_CLEAR;
@@ -355,15 +401,22 @@ void addwaitthread(user_mutex_t *x) {
 #else
   if(currentThread->threadID != 0) {
     struct thread_queue_struct* q = RTJ_CALLOC_UNCOLLECTABLE(sizeof(struct thread_queue_struct),1);
+#ifdef WITH_REALTIME_THREADS_DEBUG
     print_queue(thread_queue, "addwaitthread queue");
+    fflush(NULL);
     print_queue(x->queue, "BEG mutex");
+    fflush(NULL);
+#endif
 
     q->threadID = currentThread->threadID;
     q->jthread = currentThread->jthread;
     q->next = x->queue;
     x->queue = q;
 
+#ifdef WITH_REALTIME_THREADS_DEBUG
     print_queue(x->queue, "END mutex");    
+    fflush(NULL);
+#endif
     DisableThread(currentThread);
   }
 #endif
@@ -393,13 +446,20 @@ void wakewaitthread(user_mutex_t *x) {
 #else
   if(x->queue != NULL) {
     struct thread_queue_struct* q = x->queue;
+#ifdef WITH_REALTIME_THREADS_DEBUG
     print_queue(thread_queue, "wakewaitthread queue");
+    fflush(NULL);
     print_queue(x->queue, "BEG mutex");
+    fflush(NULL);
+#endif
 
     EnableThread(q);
     x->queue = x->queue->next;
     RTJ_FREE(q);
+#ifdef WITH_REALTIME_THREADS_DEBUG
     print_queue(x->queue, "END mutex");
+    fflush(NULL);
+#endif
     
   }
 #endif  
@@ -409,8 +469,11 @@ int user_mutex_lock(user_mutex_t *x) {
 #ifdef WITH_REALTIME_THREADS
   if (handlerMask&javax_realtime_Scheduler_HANDLE_MUTEX_LOCK) {
     JNIEnv* env = FNI_GetJNIEnv();
-    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_lock);
+    (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_lock);
+#ifdef WITH_REALTIME_THREADS_DEBUG
+    fflush(NULL);
     assert(!((*env)->ExceptionOccurred(env)));
+#endif
   }
 #endif
   while(SEMAPHORE_TEST_AND_SET(&(x->mutex))==SEMAPHORE_SET) {
@@ -423,8 +486,11 @@ int user_mutex_trylock(user_mutex_t *x) {
 #ifdef WITH_REALTIME_THREADS
   if (handlerMask&javax_realtime_Scheduler_HANDLE_MUTEX_TRYLOCK) {
     JNIEnv* env = FNI_GetJNIEnv();
-    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_trylock);
+    (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_trylock);
+#ifdef WITH_REALTIME_THREADS_DEBUG
+    fflush(0);
     assert(!((*env)->ExceptionOccurred(env)));
+#endif
   }
 #endif
   if ((SEMAPHORE_TEST_AND_SET(&(x->mutex)))==SEMAPHORE_CLEAR) {
@@ -454,8 +520,11 @@ int user_mutex_unlock(user_mutex_t *x) {
 #ifdef WITH_REALTIME_THREADS
   if (handlerMask&javax_realtime_Scheduler_HANDLE_MUTEX_UNLOCK) {
     JNIEnv* env = FNI_GetJNIEnv();
-    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_unlock);
+    (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_unlock);
+#ifdef WITH_REALTIME_THREADS_DEBUG
+    fflush(NULL);
     assert(!((*env)->ExceptionOccurred(env)));
+#endif
   }
 #endif
   SEMAPHORE_RESET(&(x->mutex));
@@ -467,8 +536,11 @@ int user_mutex_destroy(user_mutex_t *x) {
 #ifdef WITH_REALTIME_THREADS
   if (handlerMask&javax_realtime_Scheduler_HANDLE_MUTEX_DESTROY) {
     JNIEnv* env = FNI_GetJNIEnv();
-    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_destroy);
+    (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_destroy);
+#ifdef WITH_REALTIME_THREADS_DEBUG
+    fflush(NULL);
     assert(!((*env)->ExceptionOccurred(env)));
+#endif
   }
 #endif
   return 0;
@@ -478,8 +550,11 @@ int user_cond_init(user_cond_t *x, void * v) {
 #ifdef WITH_REALTIME_THREADS
   if (handlerMask&javax_realtime_Scheduler_HANDLE_COND_INIT) {
     JNIEnv* env = FNI_GetJNIEnv();
-    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_init);
+    (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_init);
+#ifdef WITH_REALTIME_THREADS_DEBUG
+    fflush(NULL);
     assert(!((*env)->ExceptionOccurred(env)));
+#endif
   }
 #endif
   x->counter=0;
@@ -490,8 +565,11 @@ int user_cond_broadcast(user_cond_t *x) {
 #ifdef WITH_REALTIME_THREADS
   if (handlerMask&javax_realtime_Scheduler_HANDLE_COND_BROADCAST) {
     JNIEnv* env = FNI_GetJNIEnv();
-    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_broadcast);
+    (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_broadcast);
+#ifdef WITH_REALTIME_THREADS_DEBUG
+    fflush(NULL);
     assert(!((*env)->ExceptionOccurred(env)));
+#endif
   }
 #endif
   wakeallcondthread(x);
@@ -502,8 +580,11 @@ int user_cond_signal(user_cond_t *x) {
 #ifdef WITH_REALTIME_THREADS
   if (handlerMask&javax_realtime_Scheduler_HANDLE_COND_SIGNAL) {
     JNIEnv* env = FNI_GetJNIEnv();
-    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_signal);
+    (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_signal);
+#ifdef WITH_REALTIME_THREADS_DEBUG
+    fflush(NULL);
     assert(!((*env)->ExceptionOccurred(env)));
+#endif
   }
 #endif
   wakeacondthread(x);
@@ -519,15 +600,22 @@ void addcontthread(user_cond_t *x) {
 #else
   if(currentThread->threadID != 0) {
     struct thread_queue_struct* q = RTJ_CALLOC_UNCOLLECTABLE(sizeof(struct thread_queue_struct),1);
+#ifdef WITH_REALTIME_THREADS_DEBUG
     print_queue(thread_queue, "addcontthread queue");
+    fflush(NULL);
     print_queue(x->queue, "BEG cond");
+    fflush(NULL);
+#endif
 
     q->threadID = currentThread->threadID;
     q->jthread = currentThread->jthread;
     q->next = x->queue;
     x->queue = q;
     
+#ifdef WITH_REALTIME_THREADS_DEBUG
     print_queue(x->queue, "END cond");
+    fflush(NULL);
+#endif
     DisableThread(currentThread);
   }
 #endif
@@ -557,14 +645,21 @@ void wakeacondthread(user_cond_t *x) {
 #else
   if(x->queue != NULL) {
     struct thread_queue_struct* q = x->queue;
+#ifdef WITH_REALTIME_THREADS_DEBUG
     print_queue(thread_queue, "wakeacondthread queue");
+    fflush(NULL);
     print_queue(x->queue, "BEG cond");
+    fflush(NULL);
+#endif
 
     EnableThread(q);
     x->queue = x->queue->next;
     RTJ_FREE(q);
     
+#ifdef WITH_REALTIME_THREADS_DEBUG
     print_queue(x->queue, "END cond");
+    fflush(NULL);
+#endif
   }
 #endif
 }
@@ -594,16 +689,23 @@ void wakeallcondthread(user_cond_t *x) {
 #else
   if(x->queue != NULL) {
     struct thread_queue_struct* q;
+#ifdef WITH_REALTIME_THREADS_DEBUG
     print_queue(thread_queue, "wakeallcondthread queue");
+    fflush(NULL);
     print_queue(x->queue, "BEG cond");
-
+    fflush(NULL);
+#endif
+  
     EnableThreadList(x->queue);
     while ((q = x->queue) != NULL) {
       x->queue = x->queue->next;
       RTJ_FREE(q);
     }
-    
+
+#ifdef WITH_REALTIME_THREADS_DEBUG
     print_queue(x->queue, "END cond");
+    fflush(NULL);
+#endif
   }
 #endif
 }
@@ -612,8 +714,11 @@ int user_cond_wait(user_cond_t *cond, user_mutex_t *mutex) {
 #ifdef WITH_REALTIME_THREADS
   if (handlerMask&javax_realtime_Scheduler_HANDLE_COND_WAIT) {
     JNIEnv* env = FNI_GetJNIEnv();
-    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_wait);
+    (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_wait);
+#ifdef WITH_REALTIME_THREADS_DEBUG
+    fflush(NULL);
     assert(!((*env)->ExceptionOccurred(env)));
+#endif
   }
 #endif
   /*Only one thread so this will work...*/
@@ -629,8 +734,11 @@ int user_cond_timedwait(user_cond_t *cond, user_mutex_t *mutex, const struct tim
 #ifdef WITH_REALTIME_THREADS
   if (handlerMask&javax_realtime_Scheduler_HANDLE_COND_TIMEDWAIT) {
     JNIEnv* env = FNI_GetJNIEnv();
-    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_timedwait);
+    (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_timedwait);
+#ifdef WITH_REALTIME_THREADS_DEBUG
+    fflush(NULL);
     assert(!((*env)->ExceptionOccurred(env)));
+#endif
   }
 #endif
   return user_cond_wait(cond,mutex);
@@ -640,8 +748,11 @@ int user_cond_destroy(user_cond_t *cond) {
 #ifdef WITH_REALTIME_THREADS
   if (handlerMask&javax_realtime_Scheduler_HANDLE_COND_DESTROY) {
     JNIEnv* env = FNI_GetJNIEnv();
-    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_lock);
+    (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_lock);
+#ifdef WITH_REALTIME_THREADS_DEBUG
+    fflush(NULL);
     assert(!((*env)->ExceptionOccurred(env)));
+#endif
   }
 #endif
   return 0;

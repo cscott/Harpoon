@@ -10,7 +10,7 @@
 #include "config.h"
 #ifdef WITH_USER_THREADS
 #ifndef lint
-static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.12 2002-10-22 19:40:23 wbeebee Exp $";
+static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.13 2003-03-10 21:04:02 wbeebee Exp $";
 #endif
 
 #include "config.h"
@@ -108,10 +108,16 @@ void machdep_pthread_start(void)
 void __machdep_stack_free(void * stack)
 {  
   /*DECREMENT_MEM_STATS(STACKSIZE);*/
+#ifndef GLIBC_COMPAT
 #ifdef WITH_REALTIME_JAVA
      RTJ_FREE(stack);
 #else
      free(stack);
+#endif
+#else  
+  /*  See note in threads.h */
+
+  in_use[(((char*)stack)-stacks[0])/(stacks[1]-stacks[0])] = (char)0;
 #endif
 }
 
@@ -121,10 +127,21 @@ void __machdep_stack_free(void * stack)
 void * __machdep_stack_alloc(size_t size)
 {
     /*    INCREMENT_MEM_STATS(STACKSIZE);*/
+#ifndef GLIBC_COMPAT
 #ifdef WITH_REALTIME_JAVA
     return RTJ_MALLOC_UNCOLLECTABLE(size);
 #else
     return(malloc(size));
+#endif
+#else  
+  /*  See note in threads.h */
+  
+  int i;
+  for (i=0; (i<MAXSTACKS)&&(in_use[i]); i++) {}
+  assert(i<MAXSTACKS); /* Run out of thread stacks */
+
+  in_use[i] = (char)1;
+  return (void*)stacks[i];
 #endif
 }
 
