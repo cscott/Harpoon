@@ -35,7 +35,7 @@ sub saneauthors {
 	if $author =~ m/Frederic.*VIVIEN/i or $author =~ m/vivien@/;
     return 'John Whaley <jwhaley@alum.mit.edu>'
 	if $author =~ m/John.*Whaley/i or $author =~ m/jwhaley@/;
-    return 'Karen K. Zee <kkzee@alum.mit.edu>'
+    return 'Karen K. Zee <kkz@alum.mit.edu>'
 	if $author =~ m/Karen.*Zee/i or $author =~ m/kkz(ee)?@/;
     return 'Mark A. Foltz <mfoltz@ai.mit.edu>'
 	if $author =~ m/Mark.*Foltz/i or $author =~ m/mfoltz@/;
