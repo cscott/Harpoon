@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.55 1998-09-08 18:10:22 cananian Exp $
+ * @version $Id: Translate.java,v 1.56 1998-09-09 17:33:26 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -429,7 +429,7 @@ class Translate  { // not public.
 	    // done.
 	    break;
 	    }
-	case Op.AASTORE: // FIXME - AASTORE also throws ArrayStoreException.
+	case Op.AASTORE:
 	case Op.BASTORE:
 	case Op.CASTORE:
 	case Op.DASTORE:
@@ -438,6 +438,7 @@ class Translate  { // not public.
 	case Op.LASTORE:
 	case Op.SASTORE:
 	    {
+	    TransState ts1 = ts;
 	    Temp Tobj, Tindex, Tsrc;
 	    if (in.getOpcode()==Op.DASTORE ||
 		in.getOpcode()==Op.LASTORE) { // 64-bit val.
@@ -451,12 +452,34 @@ class Translate  { // not public.
 		Tindex = s.stack[1];
 		Tsrc   = s.stack[0];
 	    }
-
+	    
+	    // funky additional check for AASTORE
+	    if (in.getOpcode() == Op.AASTORE) {
+		// AASTORE also throws ArrayStoreException.
+		HClass HCase = HClass.forClass(ArrayStoreException.class);
+		Temp Tex = new Temp();
+		Quad qq0 = new COMPONENTOF(in, new Temp(), Tobj, Tsrc);
+		Quad qq1 = new CJMP(in, qq0.def()[0]);
+		Quad qq2 = transNewException(HCase, Tex, Tnull, in, qq1, 0);
+		r = transThrow(new TransState(ts.initialState.push(Tex), 
+					      ts.in, qq2, 0),
+			       handlers, Tnull, false);
+		// link
+		Quad.addEdge(ts.header, ts.which_succ, qq0, 0);
+		Quad.addEdge(qq0, 0, qq1, 0);
+		ts1 = new TransState(ts.initialState, ts.in, qq1, 1);
+	    }
 	    // the actual operation.
 	    Quad q0= new ASET(in, Tobj, Tindex, Tsrc);
 	    // bounds check
-	    r = transBoundsCheck(Tobj, Tindex, Tnull, Tzero,
-				 q0, handlers, ts);
+	    TransState r2[] = transBoundsCheck(Tobj, Tindex, Tnull, Tzero,
+					       q0, handlers, ts1);
+	    // merge TransState arrays.
+	    TransState r3[] = new TransState[r.length + r2.length];
+	    System.arraycopy(r, 0, r3, 0, r.length);
+	    System.arraycopy(r2,0, r3, r.length, r2.length);
+	    r = r3;
+	    // set up next state.
 	    q = ts.header.next()[ts.which_succ];
 	    last = q0;
 	    // done.
