@@ -1,5 +1,3 @@
-package harpoon.Test.PA.TestB;
-
 /******************************************************************************/
 /*                                                                            */
 /*  Copyright (c) 1996 University of California at Santa Barbara              */
@@ -584,14 +582,14 @@ class leaf extends node {
       bodyp[i] = null;
     }
     num_bodies = 0;
-    c = main.Nbody.getcells().makecell(parent);
+    c = barnes.Nbody.getcells().makecell(parent);
     c.setChildNum(child_num);
     parent.setSubp(idx,c);
     Lev = level;
   
     p = loctab[0];
     p.PosvecStore(tmpv);
-    main.Nbody.intcoord(xp,tmpv);
+    barnes.Nbody.intcoord(xp,tmpv);
     index = subindex(xp, Lev);
     c.setSubp(index,this);
     child_num = index;
@@ -602,11 +600,11 @@ class leaf extends node {
     for(i=1; i < num; i++) {
       p = loctab[i];
       p.PosvecStore(tmpv);
-      main.Nbody.intcoord(xp,tmpv);
+      barnes.Nbody.intcoord(xp,tmpv);
       index = subindex(xp, Lev);
       le = (leaf)(c.Subp(index));
       if(le == null) {
-        le = main.Nbody.getleaves().makeleaf(c);
+        le = barnes.Nbody.getleaves().makeleaf(c);
         le.setChildNum(index);
         c.setSubp(index,le);
       }
@@ -639,7 +637,7 @@ class cell extends node {
   synchronized boolean AddBodyToNewLeaf(int kidIndex, body p, int coords[]) { 
     node ptr = subp[kidIndex];
     if (ptr == null) { 
-      leaf le = main.Nbody.getleaves().makeleaf(this);
+      leaf le = barnes.Nbody.getleaves().makeleaf(this);
       le.setChildNum(kidIndex);
       le.LeafAddBody(p);
       subp[kidIndex] = le;
@@ -1563,11 +1561,11 @@ class NBodySystem {
   }
   
   void maketree() throws java.lang.InterruptedException {
-    if (main.simparms.getiparam("parallel") == 0) {
+    if (barnes.simparms.getiparam("parallel") == 0) {
       maketreeLoop(0, nbody);
-    } else if (main.simparms.getiparam("parallel") == 1) {
+    } else if (barnes.simparms.getiparam("parallel") == 1) {
       maketreeAux(0, nbody);
-    } else if (main.simparms.getiparam("parallel") == 2) { 
+    } else if (barnes.simparms.getiparam("parallel") == 2) { 
       maketreeThread t = new maketreeThread(this, 0, nbody); 
       t.inlineStart();
     } else { 
@@ -1597,11 +1595,11 @@ class NBodySystem {
   }
   
   void Advance(double hts, double ts) throws java.lang.InterruptedException {
-    if (main.simparms.getiparam("parallel") == 0) {
+    if (barnes.simparms.getiparam("parallel") == 0) {
       AdvanceLoop(hts, ts, 0, nbody);
-    } else if (main.simparms.getiparam("parallel") == 1) {
+    } else if (barnes.simparms.getiparam("parallel") == 1) {
       AdvanceAux(hts, ts, 0, nbody);
-    } else if (main.simparms.getiparam("parallel") == 2) { 
+    } else if (barnes.simparms.getiparam("parallel") == 2) { 
       AdvanceThread t = new AdvanceThread(this, hts, ts, 0, nbody); 
       t.inlineStart();
     } else { 
@@ -1631,11 +1629,11 @@ class NBodySystem {
   }
 
   void SwapAccs() throws java.lang.InterruptedException {
-    if (main.simparms.getiparam("parallel") == 0) {
+    if (barnes.simparms.getiparam("parallel") == 0) {
       SwapAccsLoop(0, nbody);
-    } else if (main.simparms.getiparam("parallel") == 1) {
+    } else if (barnes.simparms.getiparam("parallel") == 1) {
       SwapAccsAux(0, nbody);
-    } else if (main.simparms.getiparam("parallel") == 2) { 
+    } else if (barnes.simparms.getiparam("parallel") == 2) { 
       SwapAccsThread t = new SwapAccsThread(this, 0, nbody); 
       t.inlineStart();
     } else { 
@@ -1666,11 +1664,11 @@ class NBodySystem {
   }
 
   void ComputeAccels(double tol, double eps) throws java.lang.InterruptedException {
-    if (main.simparms.getiparam("parallel") == 0) {
+    if (barnes.simparms.getiparam("parallel") == 0) {
       ComputeAccelsLoop(tol, eps, 0, nbody);
-    } else if (main.simparms.getiparam("parallel") == 1) {
+    } else if (barnes.simparms.getiparam("parallel") == 1) {
       ComputeAccelsAux(tol, eps, 0, nbody);
-    } else if (main.simparms.getiparam("parallel") == 2) { 
+    } else if (barnes.simparms.getiparam("parallel") == 2) { 
       ComputeAccelsThread t = new ComputeAccelsThread(this, tol, eps, 0, nbody); 
       t.inlineStart();
     } else { 
@@ -1700,11 +1698,11 @@ class NBodySystem {
   }
   
   void StartVels(double hts) throws java.lang.InterruptedException {
-    if (main.simparms.getiparam("parallel") == 0) {
+    if (barnes.simparms.getiparam("parallel") == 0) {
       StartVelsLoop(hts, 0, nbody);
-    } else if (main.simparms.getiparam("parallel") == 1) {
+    } else if (barnes.simparms.getiparam("parallel") == 1) {
       StartVelsAux(hts, 0, nbody);
-    } else if (main.simparms.getiparam("parallel") == 2) { 
+    } else if (barnes.simparms.getiparam("parallel") == 2) { 
       StartVelsThread t = new StartVelsThread(this, hts, 0, nbody); 
       t.inlineStart();
     } else { 
