@@ -5,6 +5,7 @@ package harpoon.Main;
 
 import java.lang.reflect.Modifier;
 import java.util.Collections;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
 import java.util.HashSet;
@@ -37,6 +38,7 @@ import harpoon.ClassFile.Relinker;
 import harpoon.ClassFile.Loader;
 
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.QuadWithTry;
 
@@ -94,7 +96,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.5 2002-04-10 03:06:09 cananian Exp $
+ * @version $Id: PAMain.java,v 1.6 2002-04-12 21:49:45 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -130,14 +132,6 @@ public abstract class PAMain {
     private static boolean DO_SAT = false;
     private static String SAT_FILE = null;
 
-    private static boolean ELIM_SYNCOPS = false;
-    private static boolean INST_SYNCOPS = false;
-
-    private static boolean DUMP_JAVA = false;
-
-    //private static boolean ANALYZE_ALL_ROOTS = false;
-    //private static boolean SYNC_ELIM_ALL_ROOTS = false;
-    
     private static boolean COMPILE = false;
     
     // Load the preanalysis results from PRE_ANALYSIS_IN_FILE
@@ -320,26 +314,11 @@ public abstract class PAMain {
 	if(MA_MAPS)
 	    ma_maps();
 
-	/*
-	if(DO_SAT)
-	    do_sat();
-	*/
-
 	if(SHOW_DETAILS)
 	    pa.print_stats();
 
-	/*
-        if(ELIM_SYNCOPS)
-            do_elim_syncops();
-	*/
-
 	if(SAVE_ANALYSIS)
 	    save_analysis();
-
-	/*
-	if(DUMP_JAVA)
-	    dump_java(get_classes(pa.getMetaCallGraph().getAllMetaMethods()));
-	*/
 
 	if(COMPILE) {
 	    System.out.println("\n\n\tCOMPILE!\n");
@@ -461,8 +440,6 @@ public abstract class PAMain {
     }
 
 
-    
-
     private static final int MAX_CALLEES = 100;
     private static void check_no_callees() {
 	long nb_nvirtual_calls  = 0L;
@@ -474,8 +451,10 @@ public abstract class PAMain {
 
 	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); ) {
 	    MetaMethod mm = (MetaMethod) it.next();
-	    HMethod hm = mm.getHMethod();
-	    Set calls = get_calls(hm);
+	    HCode hcode = hcf.convert(mm.getHMethod());
+	    if(hcode == null) continue;
+	    Collection calls = ((Code) hcode).selectCALLs();
+
 	    for(Iterator it_calls = calls.iterator(); it_calls.hasNext(); ) {
 		CALL call = (CALL) it_calls.next();
 		MetaMethod[] callees = mcg.getCallees(mm, call);
@@ -511,17 +490,6 @@ public abstract class PAMain {
 	System.out.println("-----------------------------------------------");
     }
 
-    private static Set get_calls(HMethod hm) {
-	Set result = new HashSet();
-	HCode hcode = hcf.convert(hm);
-	if(hcode == null) return result;
-	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
-	    Quad quad = (Quad) it.next();
-	    if(quad instanceof CALL)
-		result.add(quad);
-	}
-	return result;
-    }
 
     // load the results of the preanalysis from the disk
     private static void load_pre_analysis() {
@@ -748,14 +716,6 @@ public abstract class PAMain {
 		}
 	    }
 
-	/*
-	if (INST_SYNCOPS)
-	    do_inst_syncops(hmethod);
-	
-	if (ELIM_SYNCOPS)
-	    do_elim_syncops(hmethod);
-	*/
-
 	if(hmethod == null){
 	    System.out.println("Oops!" + method.declClass + "." +
 			       method.name + " not found");
@@ -806,11 +766,7 @@ public abstract class PAMain {
 	    new LongOpt("notg",          LongOpt.NO_ARGUMENT,       null, 18),
 	    new LongOpt("loadpre",       LongOpt.REQUIRED_ARGUMENT, null, 19),
 	    new LongOpt("savepre",       LongOpt.REQUIRED_ARGUMENT, null, 20),
-	    new LongOpt("syncelim",      LongOpt.NO_ARGUMENT,       null, 21),
-	    new LongOpt("instsync",      LongOpt.NO_ARGUMENT,       null, 22),
 	    new LongOpt("dumpjava",      LongOpt.NO_ARGUMENT,       null, 23),
-	    new LongOpt("analyzeroots",  LongOpt.NO_ARGUMENT,       null, 24),
-	    new LongOpt("syncelimroots", LongOpt.NO_ARGUMENT,       null, 25),
 	    new LongOpt("backend",       LongOpt.REQUIRED_ARGUMENT, null,'b'),
 	    new LongOpt("output",        LongOpt.REQUIRED_ARGUMENT, null,'o'),
 	    new LongOpt("sa",            LongOpt.REQUIRED_ARGUMENT, null, 26),
@@ -980,29 +936,6 @@ public abstract class PAMain {
 	    case 31:
 		SAVE_ANALYSIS = true;
 		ANALYSIS_OUT_FILE = new String(g.getOptarg());
-		break;		
-	    case 21:
-		System.out.println("Old option syncelim -> fail");
-		System.exit(1);
-		//ELIM_SYNCOPS = true;
-		break;
-	    case 22:
-		System.out.println("Old option instsync -> fail");
-		System.exit(1);
-		//INST_SYNCOPS = true;
-		break;
-	    case 23:
-		DUMP_JAVA = true;
-		break;
-	    case 24:
-		System.out.println("Old option analyzeroots -> fail");
-		System.exit(1);
-		//ANALYZE_ALL_ROOTS = true;
-		break;
-	    case 25:
-		System.out.println("Old option syncelimroots -> fail");
-		System.exit(1);
-		//SYNC_ELIM_ALL_ROOTS = true;
 		break;
 	    case 29:
 		CHECK_NO_CALLEES = true;
@@ -1045,19 +978,6 @@ public abstract class PAMain {
 		    System.out.println("Unknown option " + option);
 		    System.exit(1);
 		}
-
-		/*
-		if(option.equals("simple"))
-		    Realtime.ANALYSIS_METHOD = Realtime.SIMPLE;
-		else {
-		    if(option.equals("all"))
-			Realtime.ANALYSIS_METHOD = Realtime.ALL;
-		    else {
-			System.out.println("Unknown option " + option);
-			System.exit(1);
-		    }
-		}
-		*/
 		break;
 	    case 35:
 		mainfo_opts.USE_OLD_INLINING = true;
@@ -1181,23 +1101,6 @@ public abstract class PAMain {
 	if(DO_SAT)
 	    System.out.println("\tDO_SAT (" + SAT_FILE + ")");
 
-	/*
-	if(ANALYZE_ALL_ROOTS)
-	    System.out.println("\tANALYZE_ALL_ROOTS");
-
-	if(SYNC_ELIM_ALL_ROOTS)
-	    System.out.println("\tSYNC_ELIM_ALL_ROOTS");
-	
-	if(INST_SYNCOPS)
-	    System.out.println("\tINST_SYNCOPS");
-
-	if(ELIM_SYNCOPS)
-	    System.out.println("\tELIM_SYNCOPS");
-	
-	if(INST_SYNCOPS)
-	    System.out.println("\tINST_SYNCOPS");
-	*/
-	
 	if(MAInfo.NO_TG)
 	    System.out.println("\tNO_TG");
 
@@ -1314,55 +1217,6 @@ public abstract class PAMain {
     }
 
 
-    /*
-    // One of my new ideas: while doing the intra-procedural analysis of
-    // method M, instead of keeping a graph in each basic block, let's
-    // keep one just for "join" points or for BB that contain a CALL.
-    // The goal of this statistic is to see how many BBs fall in this category
-    private static void join_stats(LBBConverter lbbconv, MetaCallGraph mcg) {
-
-	System.out.println("\nPOTENTIAL MEMORY REDUCTION STATISTICS:\n");
-
-	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext();){
-	    MetaMethod mm = (MetaMethod) it.next();
-	    HMethod hm = mm.getHMethod();
-	    if(Modifier.isNative(hm.getModifiers()))
-		continue;
-	    
-	    LightBasicBlock.Factory lbbf = lbbconv.convert2lbb(hm);
-	    LightBasicBlock lbbs[] = lbbf.getAllBBs();
-
-	    int nb_lbbs = lbbs.length;
-	    int nb_calls = 0; // nb. of blocks finished in CALLs
-	    int nb_joins = 0; // nb. of blocks that are join points
-	    int nb_total = 0; // nb. of blocks that are either CALLs or joins
-
-	    for(int i = 0; i < nb_lbbs; i++){
-		LightBasicBlock lbb = lbbs[i];
-		boolean is_join = (lbb.getPrevLBBs().length > 1);
-
-		HCodeElement elems[] = lbb.getElements();
-		boolean is_call = (elems[elems.length - 1] instanceof CALL);
-
-		if(is_call) nb_calls++;
-		if(is_join) nb_joins++;
-		if(is_call || is_join) nb_total++;
-	    }
-
-	    double pct = (float)(100 * nb_total)/(double)nb_lbbs;
-	    HClass hc = hm.getDeclaringClass();
-	    String method_name = hc.getName() + "." + hm.getName();
-
-	    System.out.println(method_name + " \t" +
-			       nb_lbbs  + " LBBs  " +
-			       nb_total + " Full (" +
-			       Debug.doubleRep(pct, 5, 2) + "%)  " +
-			       nb_joins + " Joins " +
-			       nb_calls + " Calls ");
-	}
-    }
-    */
-
     // Analyzes the methods given with the "-a" flag.
     private static void do_analysis() {
 	for(Iterator it = mm_to_analyze.iterator(); it.hasNext(); ) {
@@ -1373,106 +1227,6 @@ public abstract class PAMain {
 	}
     }
 
-    /*
-    private static void analyze_all_roots() {
-	MetaCallGraph mcg = pa.getMetaCallGraph();
-	Set allmms = mcg.getAllMetaMethods();
-
-	// The following loop has just the purpose of timing the analysis of
-	// the entire program. Doing it here, before any memory allocation
-	// optimization, allows us to time it accurately.
-       g_tstart = System.currentTimeMillis();
-       for(Iterator it = allmms.iterator(); it.hasNext(); ) {
-            MetaMethod mm = (MetaMethod) it.next();
-            if(!analyzable(mm)) continue;
-            pa.getIntParIntGraph(mm);
-        }
-        System.out.println("Intrathread Analysis time: " +
-                           (time() - g_tstart) + "ms");
-
-        if (USE_INTER_THREAD) {
-          g_tstart = System.currentTimeMillis();
-          for(Iterator it = allmms.iterator(); it.hasNext(); ) {
-            MetaMethod mm = (MetaMethod) it.next();
-            if(!analyzable(mm)) continue;
-            System.out.println("Thread Interaction for: " + mm);
-            pa.getIntThreadInteraction(mm);
-          }
-          System.out.println("Tnterthread Analysis time: " +
-                           (time() - g_tstart) + "ms");
-        }
-    }
-    */
-
-    /*
-    private static void sync_elim_all_roots() {
-	SyncElimination se = new SyncElimination(pa);
-	for(Iterator mit = mroots.iterator(); mit.hasNext(); ) {
-            HMethod hm = (HMethod) mit.next();
-	    System.out.println("\n sync elim root " + hm);
-    	    for(Iterator it = split_rel.getValues(hm).iterator();
-		it.hasNext(); ) {
-		MetaMethod mm = (MetaMethod) it.next();
-		if(!analyzable(mm)) continue;
-		if (USE_INTER_THREAD) { 
-		    se.addRoot_interthread(mm);
-		} else { 
-		    se.addRoot_intrathread(mm);
-		}
-	    }
-	}
-        if (!USE_INTER_THREAD) {
-          Set s = ch.callableMethods();
-	  for(Iterator mit = s.iterator(); mit.hasNext(); ) {
-            HMethod hm = (HMethod) mit.next();
-            // Should really check to see that hm is in a runnable class
-            // or one that inherits from Thread
-            if (hm.getName().equals("run") &&
-                (hm.getParameterTypes().length == 0)) { 
-    	      for(Iterator it = split_rel.getValues(hm).iterator();
-		  it.hasNext(); ) {
-		  MetaMethod mm = (MetaMethod) it.next();
-		  if(!analyzable(mm)) continue;
-		  se.addRoot_intrathread(mm);
-              }
-            } 
-          }
-	}
-
-	se.calculate();
-	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
-	HCodeFactory hcf_nosync = SyncElimination.codeFactory(hcf, se);
-        Set s = ch.callableMethods();
-	for(Iterator mit = s.iterator(); mit.hasNext(); ) {
-            HMethod hm = (HMethod) mit.next();
-	    System.out.println("sync elim converting " + hm);
-	    HCode hcode = hcf_nosync.convert(hm);
-	    if (hcode != null) hcode.print(out);
-            for(Iterator it = split_rel.getValues(hm).iterator();
-		it.hasNext(); ) {
-                MetaMethod mm = (MetaMethod) it.next();
-                if(!analyzable(mm)) continue;
-                ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
-                ParIntGraph int_pig = pa.getIntParIntGraph(mm);
-		ParIntGraph pig_inter_thread = pa.getIntThreadInteraction(mm);
-                PANode[] nodes = pa.getParamNodes(mm);
-                System.out.println("META-METHOD " + mm);
-                System.out.print("POINTER PARAMETERS: ");
-                System.out.print("[ ");
-                for(int j = 0; j < nodes.length; j++)
-                    System.out.print(nodes[j] + " ");
-                System.out.println("]");
-                System.out.print("INT. GRAPH AT THE END OF THE METHOD:");
-                System.out.println(int_pig);
-                System.out.print("EXT. GRAPH AT THE END OF THE METHOD:");
-                System.out.println(ext_pig);
-		System.out.print("INT. GRAPH AT THE END OF THE METHOD" +
-				     " + INTER-THREAD ANALYSIS:");
-		System.out.println(pig_inter_thread);
-            }
-	}
-    }
-    */
 
     // Analyzes the methods given interactively by the user.
     private static void do_interactive_analysis() {
@@ -1615,71 +1369,6 @@ public abstract class PAMain {
     private static HClass java_lang_Throwable = null;
 
 
-    /*
-    private static void do_sat() {
-	System.out.println(" Generating the \"start()\" and \"join()\" maps");
-	System.out.println(" DUMMY VERSION");
-	
-	sat_starts = new HashSet();
-	sat_joins  = new HashSet();
-	
-	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); )
-	    do_sat_analyze_mmethod((MetaMethod) it.next());
-
-	System.out.println("Dumping the results into " + SAT_FILE);
-
-	try{
-	    ObjectOutputStream oos = new ObjectOutputStream
-		(new FileOutputStream(SAT_FILE));
-
-	    // write the CachingCodeFactory on the disk
-	    System.out.print(" Dumping the code factory ... ");
-	    oos.writeObject(hcf);
-	    System.out.println("Done");
-
-	    // write the Linker on the disk
-	    System.out.print(" Dumping the linker ... ");
-	    oos.writeObject(linker);
-	    System.out.println("Done");
-
-	    // write the set of .start() sites that need to be inlined
-	    System.out.print(" Dumping the set of .start() ... ");
-	    oos.writeObject(sat_starts);
-	    System.out.println("Done");
-
-	    // write the set of .join() sites that need to be modified
-	    System.out.print(" Dumping the set of .join() ... ");
-	    oos.writeObject(sat_joins);
-	    System.out.println("Done");
-
-	    oos.close();
-	}
-	catch(IOException e){
-	    System.err.println(e);
-	}
-    }
-
-    private static Set sat_starts = null;
-    private static Set sat_joins  = null;
-
-    private static QuadVisitor sat_qv = new QuadVisitor() {
-	    public void visit(Quad q) { // do nothing
-	    }
-	    public void visit(CALL q) {
-		HMethod method = q.method();
-		if(isEqual(method, "java.lang.Thread", "start")) {
-		    System.out.println("START: " + Debug.code2str(q));
-		    sat_starts.add(q);
-		}
-		if(isEqual(method, "java.lang.Thread", "join") &&
-		   (q.paramsLength() == 1)) {
-		    System.out.println("JOIN: " + Debug.code2str(q));
-		    sat_joins.add(q);
-		}
-	    }
-	};
-    */
-    
     // tests whether the method hm is the same thing as
     // class_name.method_name
     private static boolean isEqual(HMethod hm, String class_name,
@@ -1688,156 +1377,6 @@ public abstract class PAMain {
 	return(hm.getName().equals(method_name) &&
 	       hclass.getName().equals(class_name));
     }
-
-    /*
-    private static void do_sat_analyze_mmethod(MetaMethod mm) {
-	HMethod hm = mm.getHMethod();
-	HCode hcode = hcf.convert(hm);
-	if(hcode == null) return;
-	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
-	    Quad q = (Quad) it.next();
-	    q.accept(sat_qv);
-	}
-    }
-    */
-
-    /* 
-    static void do_elim_syncops() {
-	MetaCallGraph mcg = pa.getMetaCallGraph();
-	MetaMethod mroot = new MetaMethod(hroot, true);
-	Set allmms = mcg.getAllMetaMethods();
-	SyncElimination se = new SyncElimination(pa);
-	if (USE_INTER_THREAD)
-	    se.addRoot_interthread(mroot);
-	else
-	    se.addRoot_intrathread(mroot);
-	se.calculate();
-	
-	HCodeFactory hcf_nosync = SyncElimination.codeFactory(hcf, se);
-	for(Iterator it = allmms.iterator(); it.hasNext(); ) {
-            MetaMethod mm = (MetaMethod) it.next();
-            HMethod m = mm.getHMethod();
-            System.out.println("Eliminating Sync Ops in Method "+m);
-	    HCode hcode = hcf_nosync.convert(m);
-        }
-    }
-
-    static void do_elim_syncops(HMethod hm) {
-	System.out.println("\nEliminating unnecessary synchronization operations.");
-	
-	SyncElimination se = new SyncElimination(pa);
-
-    	for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
-	    MetaMethod mm = (MetaMethod) it.next();
-            if (USE_INTER_THREAD) { 
-              se.addRoot_interthread(mm);
-            } else { 
-	      se.addRoot_intrathread(mm);
-            }
-	}
-	
-	se.calculate();
-	
-	HCodeFactory hcf_nosync = SyncElimination.codeFactory(hcf, se);
-	
-	//try {
-	    java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
-	    MetaCallGraph mcg = pa.getMetaCallGraph();
-	    Set allmm = mcg.getAllMetaMethods();
-	    Iterator it = allmm.iterator();
-	    while (it.hasNext()) {
-	        MetaMethod mm = (MetaMethod)it.next();
-	        HMethod m = mm.getHMethod();
-	        System.out.println("Transforming method "+m);
-	        HCode hcode = hcf_nosync.convert(m);
-	        if (hcode != null) hcode.print(out);
-	    }
-	//} catch (IOException x) {}
-
-    }
-
-    static void do_inst_syncops(HMethod hm) {
-	System.out.println("\nInstrumenting synchronization operations.");
-	
-	InstrumentSyncOps se = new InstrumentSyncOps(pa);
-
-    	for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
-	    MetaMethod mm = (MetaMethod) it.next();
-	    se.addRoot(mm);
-	}
-	
-	se.calculate();
-	
-	HCodeFactory hcf_instsync = InstrumentSyncOps.codeFactory(hcf, se);
-	
-	//try {
-	    java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
-	    MetaCallGraph mcg = pa.getMetaCallGraph();
-	    Set allmm = mcg.getAllMetaMethods();
-	    Iterator it = allmm.iterator();
-	    while (it.hasNext()) {
-	        MetaMethod mm = (MetaMethod)it.next();
-	        HMethod m = mm.getHMethod();
-	        System.out.println("Transforming method "+m);
-	        HCode hcode = hcf_instsync.convert(m);
-	        if (hcode != null) hcode.print(out);
-	    }
-	//} catch (IOException x) {}
-
-    }
-    */
-
-    /*
-    static HClass[] get_classes(Set allmm) {
-	HashSet ll = new HashSet();
-	Iterator it = allmm.iterator();
-	while (it.hasNext()) {
-	    MetaMethod mm = (MetaMethod)it.next();
-	    HMethod m = mm.getHMethod();
-	    HClass hc = m.getDeclaringClass();
-	    if (hc.isArray()) continue;
-	    ll.add(hc);
-	}
-	return (HClass[])ll.toArray(new HClass[ll.size()]);
-    }
-    
-    static void dump_java(HClass[] interfaceClasses) 
-    throws IOException {
-
-	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
-	for (int i=0; i<interfaceClasses.length; i++) {
-	    HMethod hm1[] = interfaceClasses[i].getDeclaredMethods();
-	    WorkSet hmo=new WorkSet();
-	    System.out.println(interfaceClasses[i]+":");
-	    for (int ind=0;ind<hm1.length;ind++) {
-		hmo.add(hm1[ind]);
-	    }
-	    HMethod hm[] = new HMethod[hmo.size()];
-	    Iterator hmiter=hmo.iterator();
-	    int hindex=0;
-	    while (hmiter.hasNext()) {
-		hm[hindex++]=(HMethod)hmiter.next();
-		System.out.println(hm[hindex-1]);
-	    }
-
-	    HCode hc[] = new HCode[hm.length];
-	    HCodeFactory hcf2 = QuadWithTry.codeFactory(hcf);
-	    for (int j=0; j<hm.length; j++) {
-		hc[j] = hcf2.convert(hm[j]);
-		if (hc[j]!=null) hc[j].print(out);
-	    }
-	    Jasmin jasmin=new Jasmin(hc, hm, interfaceClasses[i]);
-	    FileOutputStream file;
-	    if (interfaceClasses.length!=1)
-		file=new FileOutputStream("out"+i+".j");
-	    else
-		file=new FileOutputStream("out.j");
-	    PrintStream tempstream=new PrintStream(file);
-	    jasmin.outputClass(tempstream);
-	    file.close();
-	}
-    }
-    */
 
     private static String[] examples = {
 	"java -mx200M harpoon.Main.PAMain -a multiplyAdd --ccs=2 --wts " + 
@@ -1998,7 +1537,7 @@ public abstract class PAMain {
 	for(Iterator it = set.iterator(); it.hasNext(); ) {
 	    Object obj = it.next();
 	    if(obj instanceof HMethod)
-		retval.add(obj);
+		retval.add((HMethod) obj);
 	}
 	return retval;
     }
@@ -2027,7 +1566,7 @@ public abstract class PAMain {
 	if(SHOW_DETAILS) {
 	    System.out.println("Method roots: {");
 	    for(Iterator it = mroots.iterator(); it.hasNext(); )
-		System.out.println(" " + (HMethod) it.next());
+		System.out.println(" " + it.next());
 	    System.out.println("}");
 	}
     }
@@ -2360,40 +1899,6 @@ public abstract class PAMain {
 	return result;
     }
 
-    /*
-    private static HMethod get_enter_method() {
-	Set methods = get_methods("javax.realtime.CTMemory", "enter");
-	if(DEBUG_RT)
-	    Util.print_collection(methods, "enter methods");
-	for(Iterator it = methods.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
-	    if(hm.getParameterTypes().length != 1) {
-		if(DEBUG_RT)
-		    System.out.println("irrelevant method " + hm);
-		it.remove();
-	    }
-	}
-	if(DEBUG_RT)
-	    Util.print_collection(methods, "good enter methods");
-	assert methods.size() == 1 : "Too many enter methods!";
-	return (HMethod) methods.iterator().next();
-    }
-
-    // Returns all the methods called mthd_name from class cls_name.
-    private static Set get_methods(String cls_name, String mthd_name) {
-	Set result = new HashSet();
-	HClass hclass = linker.forName(cls_name);
-	assert hclass != null : cls_name + " was not found!";
-
-	HMethod[] hms = hclass.getMethods();
-	for(int i = 0; i < hms.length; i++)
-	    if(hms[i].getName().equals(mthd_name))
-		result.add(hms[i]);
-
-	return result;
-    }
-    */
-
     /////////////////// get_entered_runs END  ////////////////////////
 
 
@@ -2450,36 +1955,4 @@ public abstract class PAMain {
 	return true;
     }
 
-    /*
-    private static void print_set(Set set, String set_name) {
-	System.out.println(set_name + " {");
-	for(Iterator it = set.iterator(); it.hasNext(); )
-	    System.out.println("\t" + it.next());
-	System.out.println("}");
-    }
-    */
-
-    /* 
-    private static boolean nothing_escapes_intra_thread(HMethod hm) {
-	if(!PointerAnalysis.analyzable(hm))
-	    return true;
-
-	MetaMethod mm = hm2mm(hm);
-	// the set of nodes appearing in the external pig is the
-	// set of the escaping objects
-	ParIntGraph pig = pa.getExtParIntGraph(mm);
-	if(DEBUG_RT)
-	    System.out.println("ExtPIG(" + hm + ")\n" + pig);
-	Set nodes = pig.allNodes();
-
-	// if one of the elements of the set nodes is an INSIDE node,
-	// some objects are leaking out of the memory scope ...
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
-	    if(node.type == PANode.INSIDE) return false;
-	}
-	// nothing escapes!
-	return true;
-    }
-    */
 }
