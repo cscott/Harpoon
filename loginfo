@@ -37,17 +37,17 @@
 #	%s		- must follow other options at the end of the line
 #-------------------------------------------------------------------
 ALL	( chgrp -R -f java-dev $CVSROOT/. ; chgrp -R -f java-public $CVSROOT/Classpath $CVSROOT/Code $CVSROOT/Runtime $CVSROOT/CVSROOT $CVSROOT/Realtime $CVSROOT/BuildScripts ; chmod -R -f go+rX,o-w $CVSROOT/. )
-Benchmarks $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
-BuildScripts	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
-Classpath $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
-Code	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
-EventDriven $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
-ImageRec $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
-Realtime	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
-Repair	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
-RoleDiscovery	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
-RoleInference	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
-Runtime	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
-SupportNP	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
-Tests	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
-FOC     $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
+Benchmarks $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+BuildScripts	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+Classpath $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+Code	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+EventDriven $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+ImageRec $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+Realtime	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+Repair	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+RoleDiscovery	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+RoleInference	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+Runtime	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+SupportNP	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+Tests	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+FOC     $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
