@@ -38,10 +38,13 @@ THcqex.tex: THcqex.fig
 	awk "/^[[:blank:]]/{if (foo==1) next;} /^2 4 1/||/^4 0 0 100 0 3/{foo=1;next} {print; foo=0;}" < $< | \
 	fig2dev -L latex -m 0.5 > $@
 
+THpst.tex: THpst.fig Makefile
+	fig2dev -L latex -m 0.55 $< $@
+
 evil.tex: evil.fig
 	fig2dev -L latex -m 0.25 $< $@
 
 clean:
 	$(RM) THex1*.tex *.fig.bak evil.tex \
-		THcqex.tex THseseex.tex THundir.tex \
+		THcqex.tex THseseex.tex THundir.tex THpst.tex \
 		*~

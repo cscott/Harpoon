@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.28 1999-06-12 01:04:06 cananian Exp $
+% $Id: thesis.tex,v 1.29 1999-06-12 18:01:57 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.28 $ $}
+\date{\today \\ $ $Revision: 1.29 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.28 $ $}{$ $Revision: 1.28 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.29 $ $}{$ $Revision: 1.29 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -181,7 +181,7 @@ Static Single Assignment (SSA) form, introduced by Cytron in
 
 \textbf{Define SSA form here.}\fixme{Write this.}
 
-Figure \ref{fig:tossa} illustrates the conversion to SSA form.
+Figure~\ref{fig:tossa} illustrates the conversion to SSA form.
 \begin{myfigure}
 \begin{center}
 \input{Figures/THex1base} \vline\ \input{Figures/THex1ssa}
@@ -213,14 +213,14 @@ is the most important.
 %The other two can be summarized by noting that in proper SSA form,
 %there is exactly one reaching definition for a variable $V$ at every
 %non-$\phi$ use of $V$.
-The SSA form in figure \ref{fig:tossa} is minimal.
+The SSA form in figure~\ref{fig:tossa} is minimal.
 
 A variation
 on minimal SSA form, called \emph{pruned} form \cite{ferrante91:pruned},
 avoids placing \phifunction{s} which define variables which are never used.
 In most cases, the more regular properties of minimal SSA form
 outweigh the pruned form's slight increase in space efficiency.
-Figure \ref{fig:prunedssa} compares minimal and pruned SSA form for
+Figure~\ref{fig:prunedssa} compares minimal and pruned SSA form for
 our example program.\fixme{Mention \cite{ferrante91:pruned}, which
 contains definition and algorithm for pruned SSA.}
 \begin{myfigure}
@@ -252,7 +252,7 @@ contains a definition of $V$; and
 one of the disjoint paths from the split uses the value of $V$.
 \end{enumerate}
 
-Figure \ref{fig:tossi} compares the SSA and SSI forms for our example program.
+Figure~\ref{fig:tossi} compares the SSA and SSI forms for our example program.
 % add text here about how SSI is better.
 \begin{myfigure}
 \begin{center}
@@ -292,7 +292,7 @@ there are uses for \emph{exactly one} of the variables on the
 left-hand side, but it does not seem profitable to split this
 particular hair.}
 
-Figure \ref{fig:prunedssi} compares minimal and pruned SSI form for
+Figure~\ref{fig:prunedssi} compares minimal and pruned SSI form for
 our example program.
 \begin{myfigure}
 \begin{center}
@@ -348,7 +348,7 @@ the edge serves to make the control flow graph into a single strongly
 connected component, and for this reason the direction of the edge is
 from END to START.
 \item \textbf{Create an equivalent undirected graph.}  Johnson et al.\
-prove that the node expansion illustrated in figure \ref{fig:CQundir}
+prove that the node expansion illustrated in figure~\ref{fig:CQundir}
 results in an undirected graph with the same cycle equivalency
 properties as the original directed graph.  More precisely, nodes $a$
 and $b$ in directed graph $G$ are cycle-equivalent if and only if
@@ -379,7 +379,7 @@ DFS spanning tree.
 
 The above steps form an undirected graph $G'$ from the control-flow
 graph $G$.  The remainder of the cycle-equivalency algorithm is
-presented in figure \ref{fig:CQalg}, with the above procedure
+presented in figure~\ref{fig:CQalg}, with the above procedure
 corresponding to the statement \texttt{G':=Preprocess(G)}.  The
 algorithm has been corrected from the published version in
 \cite{johnson93:sese}; in addition it has been extended to compute
@@ -387,14 +387,14 @@ both node and edge equivalencies (in effect, merging the algorithm of
 \cite{johnson94:pst}).  Lines modified from the presentation in
 \cite{johnson93:sese} are indicated in the figure with a vertical bar
 in the left margin.  The datatype \texttt{BracketList} and the node
-and edge properties used in the algorithm are described in figure
-\ref{fig:CQdata}.  The interested reader is encouraged to consult
+and edge properties used in the algorithm are described in
+figure~\ref{fig:CQdata}.  The interested reader is encouraged to consult
 \cite{johnson93:sese} for additional detail on these data structures
 and representations.%
 \fixme{Um, change to compute \emph{edge}
 equivalency as well as \emph{node} equivalency.  Merge algorithms from
 \cite{johnson93:sese} and \cite{johnson94:pst}.}
-Figure \ref{fig:CQex} shows cycle-equivalent regions in a simple
+Figure~\ref{fig:CQex} shows cycle-equivalent regions in a simple
 control-flow graph.
 
 \begin{myfigure}
@@ -442,9 +442,12 @@ $\begin{array}[c]{cc}
 \end{myfigure}
 
 \begin{myfigure}
-\centering\input{Figures/THseseex}
-\caption{SESE regions for the control-flow graph of figure
-         \ref{fig:CQex} (from \cite{johnson94:pst}).}
+\centering
+\vertcenter{\input{Figures/THseseex}}
+\hspace{1cm}
+\vertcenter{\input{Figures/THpst}}
+\caption{SESE regions and PST for the CFG of
+         figure~\ref{fig:CQex} (from \cite{johnson94:pst}).}
 \label{fig:SESEex}
 \end{myfigure}
 
@@ -468,7 +471,7 @@ more flexibly reorder execution.
 
 In particular, we would like a representation that eliminates
 unnecessary control dependencies such as exist in the program of
-figure \ref{fig:ctrldep}.  A control-flow graph for this program, as
+figure~\ref{fig:ctrldep}.  A control-flow graph for this program, as
 it is written, will explicitly specify that no assignments to
 \texttt{B[]} will take place until all elements of \texttt{A[]} have
 been assigned; that is, the second loop will be
@@ -647,7 +650,7 @@ are mapped to $\bot_\domainsm{V}$.\fixme{START CONDITION.}
 \end{enumerate}
 \end{definition}
 
-Figure \ref{fig:cyclesemantics} shows the cycle-oriented transition
+Figure~\ref{fig:cyclesemantics} shows the cycle-oriented transition
 rules for \ssiplus\ form.  The left column consists of definitions and
 the right column shows a precondition on top of the line, and a
 transition below the line.  If the definition in the left column is
@@ -736,7 +739,7 @@ an empty mapping for the invariant store.%
 \end{enumerate}
 \end{definition}
 
-Figure \ref{fig:eventsemantics} shows the event-driven transition
+Figure~\ref{fig:eventsemantics} shows the event-driven transition
 rules for \ssiplus\ form.  As before, the left column consists of
 definitions and the right column shows an optional precondition above
 a line, and a transition.  If the definition in the left column is
