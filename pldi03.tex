@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi03.tex,v 1.2 2002-11-15 04:14:10 cananian Exp $
+% $Id: pldi03.tex,v 1.3 2002-11-15 05:42:05 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 %\usepackage[section,plain]{algorithm}
@@ -150,7 +150,7 @@ analyses and transformations that our compiler performs.
 %
 \subsection{Field Reduction and Constant Field Elimination}
 %
-Figure~\ref{fig:value}a presents the {\tt JValue} class, which is 
+Figure~\ref{fig:value} presents the {\tt JValue} class, which is 
 a wrapper around either an {\tt Integer} object or a {\tt Float}
 object. The {\tt type} field indicates which kind of object
 is stored in the {\tt value} field of the class, 
@@ -180,9 +180,8 @@ and d) the {\tt positive} field always has a value between
 {\tt 0} and {\tt 1} (also inclusive).
 
 \begin{figure}[tp]
-\renewcommand{\baselinestretch}{0.5}%
-\begin{tabular}{p{5.6cm}p{6.4cm}}%
-\small\tt\renewcommand{\>}{~}\begin{tabular}[t]{l}%
+\renewcommand{\baselinestretch}{0.6}%
+\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
 public class JValue \{ \\
 \>int integerType = 0;\\
 \>int floatType = 1;\\
@@ -190,18 +189,20 @@ public class JValue \{ \\
 \>Object value;\\
 \>void setInteger(Integer i) \{ \\
 \>\>type = integerType; value = i;\\
-\>\>positive =\\
-\>\>\>(i.intValue() > 0) ? 1 : 0;\\
+\>\>positive = (i.intValue() > 0) ? 1 : 0;\\
 \>\}\\
 \>void setFloat(Float f) \{ \\
 \>\>type = floatType; value = f;\\
-\>\>positive =\\
-\>\>\>(f.floatValue() > 0) ? 1 : 0;\\
+\>\>positive = (f.floatValue() > 0) ? 1 : 0;\\
 \>\}\\
 \}
 \end{tabular}%
-&\vline~%
-\small\tt\renewcommand{\>}{~}\begin{tabular}[t]{l}%
+\caption{The {\tt JValue} class.}
+\label{fig:value}
+\end{figure}
+\begin{figure}[tp]
+\renewcommand{\baselinestretch}{0.6}%
+\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
 public final class String \{\\
 \>private final char value[];\\
 \>private final int offset;\\
@@ -214,17 +215,12 @@ public final class String \{\\
 \>\{\\
 \>\>int noff = offset + start;\\
 \>\>int ncnt = count - start;\\
-\>\>return new String\\
-\>\>~~~~~~(noff, ncnt, value);\\
+\>\>return new String(noff, ncnt, value);\\
 \>\}\\
 \}\\
 \end{tabular}%
-\\%
-\centering (a)&\centering (b)
-\end{tabular}
-\caption{(a) The {\tt JValue} class.
-         (b) Portions of the {\tt java.lang.String} class.}
-\label{fig:value}\label{fig:string}
+\caption{Portions of the {\tt java.lang.String} class.}
+\label{fig:string}
 \end{figure}
 
 Our compiler uses this information to remove all occurrences
@@ -245,14 +241,14 @@ object size by  the full six bytes.
 
 \subsection{Static Specialization} 
 
-Figure~\ref{fig:string}b presents portions of the implementation
+Figure~\ref{fig:string} presents portions of the implementation
 of the {\tt java.lang.String} class from the Java standard class
 library. The {\tt value} field in this
 class refers to a character array that holds the characters
 in the string; the {\tt count} field holds the length of the
 string. In some cases, instances of the {\tt String} class
 are derived substrings of other instances 
-(see the {\tt substring} method in Figure~\ref{fig:string}b), in
+(see the {\tt substring} method in Figure~\ref{fig:string}), in
 which case the
 {\tt offset} field provides the offset of the starting 
 point of the string within a shared {\tt value} character array. 
@@ -261,9 +257,8 @@ fields are all initialized when the string is constructed
 and do not change during the lifetime of the string.
 
 \begin{figure}[tp]
-\renewcommand{\baselinestretch}{0.5}%
-\begin{tabular}{p{6cm}p{6cm}}%
-\small\tt\renewcommand{\>}{~}\begin{tabular}[t]{l}%
+\renewcommand{\baselinestretch}{0.6}%
+\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
 public final class SmallString \{\\
 \>private final char value[];\\
 \>private final int count;\\
@@ -273,34 +268,31 @@ public final class SmallString \{\\
 \>\>return value[getOffset()+i];\\
 \>\}\\
 \}\\
-public final class BigString\\
-\>\>extends SmallString \{\\
+public final class BigString extends SmallString \{\\
 \>private final int offset;\\
 \>int getOffset() \{ return offset; \}\\
 \}\\
 \end{tabular}%
-\vline&%
-\small\tt\renewcommand{\>}{~}\begin{tabular}[t]{l}%
+\caption{Static specialization of {\tt java.lang.String}.}
+\label{fig:split}
+\end{figure}
+\begin{figure}[tp]
+\renewcommand{\baselinestretch}{0.6}%
+\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
 public SmallString substring(int start)\\
 \{\\
 \>int noff = offset + start;\\
 \>int ncnt = count - start;\\
 \>if (noff==0)\\
-\>\>return new SmallString\\
-\>\>~~~~~~~~~~~~~~(value, noff, ncnt);\\
+\>\>return new SmallString(value, noff, ncnt);\\
 \>else\\
-\>\>return new BigString\\
-\>\>~~~~~~~~~~~~~~(value, noff, ncnt);\\
+\>\>return new BigString(value, noff, ncnt);\\
 \}\\
 \end{tabular}%
-\\%
-\centering (a) & \centering (b)
-\end{tabular}
-\caption{(a) Static specialization of {\tt java.lang.String}.
-         (b) Dynamic selection among specialized classes in a method
+\caption{Dynamic selection among specialized classes in a method
              from {\tt java.lang.String}.
 }
-\label{fig:split}
+\label{fig:dynsel}
 \end{figure}
 
 In practice, most strings are not created as explicit substrings of other
@@ -324,7 +316,7 @@ to replace the field: the {\tt getOffset()} method
 in the {\tt SmallString} class simply returns zero; but the {\tt
 getOffset()} method in the {\tt BigString} class returns the 
 value of the {\tt offset} field in {\tt BigString}.
-Figure~\ref{fig:split}a illustrates this transformation.
+Figure~\ref{fig:split} illustrates this transformation.
 
 At every allocation site except the one inside the {\tt substring}
 method, the transformed program allocates a {\tt SmallString} 
@@ -332,7 +324,7 @@ object. Inside the {\tt substring} method, the program generates
 code that dynamically tests if the offset in the substring
 will be zero. If so, it allocates a {\tt SmallString} object;
 if not, it allocates a {\tt BigString} object.
-(See Figure~\ref{fig:split}b.)
+(See Figure~\ref{fig:dynsel}.)
 This transformation
 therefore eliminates the {\tt offset} field in the majority
 of strings. 
