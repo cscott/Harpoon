@@ -45,7 +45,7 @@ class JouetteFrame extends DefaultFrame {
  * 
  * @see Appel, <U>Modern Compiler Implementation in Java</U>, pg. 196, 213-214 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.2 1999-06-30 06:11:16 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.3 1999-06-30 06:32:17 pnkfelix Exp $
  */
 %%
 
@@ -81,126 +81,127 @@ class JouetteFrame extends DefaultFrame {
     /* this comment will be eaten by the .spec processor (unlike comments above) */
 	
 BINOP(ADD, j, k) = i %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new Instr(inf, ROOT,
-		   "ADD `d0 <- `s0 + `s1\n", 
-		   new Temp[]{ i }, new Temp[]{ j, k }));
+			Temp i = new Temp(frame.tempFactory());
+			emit(new Instr(inf, ROOT,
+				 "ADD `d0 <- `s0 + `s1\n", 
+				 new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 	
 BINOP(MUL, j, k) = i %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new Instr(inf, ROOT,
-		   "MUL `d0 <- `s0 * `s1\n",
-		   new Temp[]{ i }, new Temp[]{ j, k }));
+			Temp i = new Temp(frame.tempFactory());
+			emit(new Instr(inf, ROOT,
+				 "MUL `d0 <- `s0 * `s1\n",
+				 new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP(SUB, j, k) = i %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new Instr(inf, ROOT,
-		   "SUB `d0 <- `s0 - `s1\n",
-		   new Temp[]{ i }, new Temp[]{ j, k }));
+			Temp i = new Temp(frame.tempFactory());
+			emit(new Instr(inf, ROOT,
+				 "SUB `d0 <- `s0 - `s1\n",
+				 new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP(DIV, j, k) = i %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new Instr(inf, ROOT,
-		   "SUB `d0 <- `s0 - `s1\n",
-		   new Temp[]{ i }, new Temp[]{ j, k }));
+			Temp i = new Temp(frame.tempFactory());
+			emit(new Instr(inf, ROOT,
+				 "SUB `d0 <- `s0 - `s1\n",
+				 new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP(ADD, j, CONST(c)) = i %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new Instr(inf, ROOT,
-		   "ADDI `d0 <- `s0 + " + c + "\n",
-		   new Temp[]{ i }, new Temp[]{ j }));
+			Temp i = new Temp(frame.tempFactory());
+			emit(new Instr(inf, ROOT,
+				 "ADDI `d0 <- `s0 + " + c + "\n",
+				 new Temp[]{ i }, new Temp[]{ j }));
 }%
 
     // need to manually represent symmetry by repeating patterns
 BINOP(ADD, CONST(c), j) = i %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new Instr(inf, ROOT,
-		   "ADDI `d0 <- `s0 + " + c + "\n",
-		   new Temp[]{ i }, new Temp[]{ j }));
+			Temp i = new Temp(frame.tempFactory());
+			emit(new Instr(inf, ROOT,
+				 "ADDI `d0 <- `s0 + " + c + "\n",
+				 new Temp[]{ i }, new Temp[]{ j }));
 }%
 
 CONST(c) = i %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new Instr(inf, ROOT,
-		   "ADDI `d0 <- `s0 + " + c + "\n",
-		   new Temp[]{ i }, new Temp[]{ frame.regZero() }));
+			Temp i = new Temp(frame.tempFactory());
+			emit(new Instr(inf, ROOT,
+				 "ADDI `d0 <- `s0 + " + c + "\n",
+				 new Temp[]{ i }, new Temp[]{ frame.regZero() }));
 }%
 
 BINOP(SUB, j, CONST(c)) = i %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new Instr(inf, ROOT,
-		   "SUBI `d0 <- `s0 - " + c + "\n",
-		   new Temp[]{ i }, new Temp[]{ j }));
+			Temp i = new Temp(frame.tempFactory());
+			emit(new Instr(inf, ROOT,
+				 "SUBI `d0 <- `s0 - " + c + "\n",
+				 new Temp[]{ i }, new Temp[]{ j }));
 }%
 
 MEM(BINOP(ADD, j, CONST(c))) = i %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new InstrMEM(inf, ROOT,
-		      "LOAD `d0 <- M[`s0 + " + c + "]\n",
-		      new Temp[] { i }, new Temp[]{ j }));
+			Temp i = new Temp(frame.tempFactory());
+			emit(new InstrMEM(inf, ROOT,
+				 "LOAD `d0 <- M[`s0 + " + c + "]\n",
+				 new Temp[] { i }, new Temp[]{ j }));
 }%
 
 MEM(BINOP(ADD, CONST(c), j)) = i %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new InstrMEM(inf, ROOT,
-		      "LOAD `d0 <- M[`s0 + " + c + "]\n",
-		      new Temp[] { i }, new Temp[]{ j }));
+			Temp i = new Temp(frame.tempFactory());
+			emit(new InstrMEM(inf, ROOT,
+				 "LOAD `d0 <- M[`s0 + " + c + "]\n",
+				 new Temp[] { i }, new Temp[]{ j }));
 }%
 
 MEM(CONST(c)) = i %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new InstrMEM(inf, ROOT,
-		      "LOAD `d0 <- M[`s0 + " + c + "]\n",
-		      new Temp[] { i }, new Temp[]{ frame.regZero() }));
+			Temp i = new Temp(frame.tempFactory());
+			emit(new InstrMEM(inf, ROOT,
+				 "LOAD `d0 <- M[`s0 + " + c + "]\n",
+				 new Temp[] { i }, new Temp[]{ frame.regZero() }));
 }%
 
 MEM(j) = i %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new InstrMEM(inf, ROOT,
-		      "LOAD `d0 <- M[`s0 + 0]\n",
-		      new Temp[] { i }, new Temp[]{ j }));
+			Temp i = new Temp(frame.tempFactory());
+			emit(new InstrMEM(inf, ROOT,
+				 "LOAD `d0 <- M[`s0 + 0]\n",
+				 new Temp[] { i }, new Temp[]{ j }));
 }%
 
 MOVE(MEM(BINOP(ADD, j, CONST(c))), src) %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new InstrMEM(inf, ROOT,
-		      "STORE M[`s0 + " + c + "] <- `s1\n",
-		      new Temp[] { }, new Temp[] { j, src }));
+		        Temp i = new Temp(frame.tempFactory());
+			emit(new InstrMEM(inf, ROOT,
+				 "STORE M[`s0 + " + c + "] <- `s1\n",
+				 new Temp[] { }, new Temp[] { j, src }));
 }%
 
 MOVE(MEM(BINOP(ADD, CONST(c), j)), src) %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new InstrMEM(inf, ROOT,
-		      "STORE M[`s0 + " + c + "] <- `s1\n",
-		      new Temp[] { }, new Temp[] { j, src }));
+			Temp i = new Temp(frame.tempFactory());
+			emit(new InstrMEM(inf, ROOT,
+				 "STORE M[`s0 + " + c + "] <- `s1\n",
+				 new Temp[] { }, new Temp[] { j, src }));
 }%
 
 MOVE(MEM(CONST(c)), src) %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new InstrMEM(inf, ROOT,
-		      "STORE M[`s0 + " + c + "] <- `s1\n",
-		      new Temp[] { }, new Temp[] { frame.regZero(), src }));
+			 Temp i = new Temp(frame.tempFactory());
+			 emit(new InstrMEM(inf, ROOT,
+				  "STORE M[`s0 + " + c + "] <- `s1\n",
+				  new Temp[] { }, new Temp[] { frame.regZero(), src }));
 }%
 
 MOVE(MEM(target), src) %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new InstrMEM(inf, ROOT,
-		      "STORE M[`s0 + 0] <- `s1\n",
-		      new Temp[] { }, new Temp[] { target, src }));
+			 Temp i = new Temp(frame.tempFactory());
+			 emit(new InstrMEM(inf, ROOT,
+				  "STORE M[`s0 + 0] <- `s1\n",
+				  new Temp[] { }, new Temp[] { target, src }));
 }%
 
 MOVE(MEM(target), MEM(src)) %{
-    Temp i = new Temp(frame.tempFactory());
-    emit(new Instr(inf, ROOT,
-		   "MOVE M[`s0] <- M[`s1]\n",
-		   new Temp[] {}, new Temp[] { target, src }));
+			 Temp i = new Temp(frame.tempFactory());
+			 emit(new Instr(inf, ROOT,
+				  "MOVE M[`s0] <- M[`s1]\n",
+				  new Temp[] {}, new Temp[] { target, src }));
 }%
 
 EXP(e1) %{
-    /* this is a statement that's just an expression; just throw away
-       calculated value */
+			/* this is a statement that's just an
+			   expression; just throw away 
+			   calculated value */
 }%

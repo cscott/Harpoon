@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.10 1999-06-30 06:11:17 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.11 1999-06-30 06:32:17 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -768,11 +768,21 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    out.println("\t\t\t}");
 	}
 
-	out.println("\t\t }"); // end munchStm
+	out.println("\t\t} // end munchStm");
 	
 	out.println("\t\tpublic void visit("+TREE_Tree+" tree){");
-	out.println("\t\t// umm, what was I doing again?");
-	out.println("\t\t}"); // end visit(Tree)
+	out.println("\t\t\tharpoon.Util.Util.assert(false, "+
+		    "\"Should never visit generic " + TREE_Tree + 
+		    "in CggVisitor\");");
+	out.println("\t\t} // end visit("+TREE_Tree+")");
+
+	out.println("\t\tpublic void visit("+TREE_Stm+" tree){");
+	out.println("\t\t\tmunchStm(tree);");
+	out.println("\t\t} // end visit("+TREE_Stm+")");
+	
+	// BAD DOG!  Don't implement visit(TREE_Exp)...we should never
+	// be munching those directly; only from calls to visit(TREE_Stm) 
+	
 	out.println("\t}"); // end CggVisitor
 	
 	
