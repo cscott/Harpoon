@@ -271,7 +271,7 @@ while [ x$IMAGEREC = xnone ]; do
                 wget -q -O ImageRec.tgz http://flex-cvs.csail.mit.edu/ImageRec/ImageRec-$imagerec_version.tgz;
                 tar zxpf ImageRec.tgz;
                 rm -f ImageRec.tgz;
-                cd ../BuildScripts;
+                cd -;
               fi;;
      n* | N*) export IMAGEREC=;;
      *) export IMAGEREC=none;;
