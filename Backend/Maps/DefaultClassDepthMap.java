@@ -18,10 +18,10 @@ import java.util.Map;
  * inheritance tree repeatedly.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultClassDepthMap.java,v 1.1.2.3 1999-10-12 20:04:49 cananian Exp $
+ * @version $Id: DefaultClassDepthMap.java,v 1.1.2.4 2000-01-17 11:58:16 cananian Exp $
  */
 public class DefaultClassDepthMap extends ClassDepthMap {
-    public final int maxDepth;
+    private final int maxDepth;
     /** Creates a <code>DefaultClassDepthMap</code> using the given
      *  <code>ClassHierarchy</code> to compute the maximum class depth. */
     public DefaultClassDepthMap(ClassHierarchy ch) {
