@@ -95,8 +95,8 @@ For normal CALLs:
 	same calling convention, except that on an exceptional
 	return, we want to return some place other than where
 	lr pointed.  We use the old value of lr (the return address,
-	accessible at [fp, #4] to index a sorted "fixup table",
+	accessible at [fp, #-4] to index a sorted "fixup table",
 	which maps return addresses to exceptional return addresses.
-	We write the value we find back into [fp, #4] and return
+	We write the value we find back into [fp, #-4] and return
 	as usual... which will take us to the caller's exception
 	handler. [CSA]
