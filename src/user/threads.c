@@ -5,15 +5,6 @@
 #include <errno.h>
 
 
-/* ==========================================================================
- * context_switch()
- *
- * This routine saves the current state of the running thread gets
- * the next thread to run and restores it's state. To allow different
- * processors to work with this routine, I allow the machdep_restore_state()
- * to either return or have it return from machdep_save_state with a value
- * other than 0, this is for implementations which use setjmp/longjmp. 
- */
 struct thread_list *gtl,*ioptr;
 
 
@@ -23,16 +14,6 @@ void restorethread() {
    */
   machdep_restore_float_state();
   machdep_restore_state();
-}
-
-void context_switch()
-{
-  machdep_save_float_state(&(gtl->mthread));
-  if (_setjmp(gtl->mthread.machdep_state)) {
-    return;
-  }
-  gtl = gtl->next;
-  startnext();
 }
 
 void transfer() {
@@ -66,12 +47,18 @@ void transfer() {
 void startnext() {
   /* Moved threads...*/
   /*  if (gtl==NULL) */
+  static int count=0;
+
   if ((gtl==NULL)&&(ioptr==NULL))
     exit(0);
+
+  count++;
   while(1) {
 #ifdef WITH_EVENT_DRIVEN
-    if (ioptr!=NULL)
+    if ((gtl==NULL)||(ioptr!=NULL&count==10)) {
+      count=0;
       doFDs();
+    }
 #endif
     if (gtl!=NULL)
       restorethread();
