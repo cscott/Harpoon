@@ -153,7 +153,9 @@ bool Repair::analyzetermination() {
     for(int i=1;i<=cycleset->size();i++) {
       if (breakcycles(removeedges, i, cycleset,wr)) {
 	removedsentences=removeedges;
+#ifdef DEBUGMESSAGES	
 	printf("Modified constraints for repairability!\n");
+#endif
 	return true;
       }
     }

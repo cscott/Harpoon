@@ -60,7 +60,9 @@ model::model(char *abstractfile, char *modelfile, char *spacefile, char *structf
   guidance=new DefGuidance2(this);  // for the file system benchmark
   repair=new Repair(this);
   if (!repair->analyzetermination()) {
+#ifdef DEBUGMESSAGES
     printf("Constraint set might not terminate and can't be repaired!\n");
+#endif
     exit(-1);
   }
   fc=new FieldCheck(this);
