@@ -7,10 +7,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#undef java_lang_reflect_Member_PUBLIC
-#define java_lang_reflect_Member_PUBLIC 0L
 #undef java_lang_reflect_Member_DECLARED
 #define java_lang_reflect_Member_DECLARED 1L
+#undef java_lang_reflect_Member_PUBLIC
+#define java_lang_reflect_Member_PUBLIC 0L
 #ifdef __cplusplus
 }
 #endif

@@ -29,6 +29,12 @@ extern "C" {
 #define java_lang_reflect_Modifier_INTERFACE 512L
 #undef java_lang_reflect_Modifier_ABSTRACT
 #define java_lang_reflect_Modifier_ABSTRACT 1024L
+#undef java_lang_reflect_Modifier_STRICT
+#define java_lang_reflect_Modifier_STRICT 2048L
+#undef java_lang_reflect_Modifier_SUPER
+#define java_lang_reflect_Modifier_SUPER 32L
+#undef java_lang_reflect_Modifier_ALL_FLAGS
+#define java_lang_reflect_Modifier_ALL_FLAGS 4095L
 #ifdef __cplusplus
 }
 #endif
