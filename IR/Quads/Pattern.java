@@ -1,5 +1,5 @@
-// Pattern.java, created Mon Aug 30 11:17:15 1999 by root
-// Copyright (C) 1999 Brian <bdemsky@mit.edu>
+// Pattern.java, created Mon Aug 30 11:17:15 1999 by bdemsky
+// Copyright (C) 1999 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 import harpoon.ClassFile.HClass;
@@ -7,6 +7,7 @@ import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
@@ -15,16 +16,19 @@ import java.util.Stack;
  * <code>Pattern</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.2 1999-09-07 21:28:12 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.3 1999-09-08 05:44:10 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
+	System.out.println("==="+q);
 	ExcVisitor ev=new ExcVisitor();
 	while (ev.status()) {
 	    q.visit(ev);
 	    if (ev.success())
 		return ev.hclass();
+	    q=q.next(0);
 	}
+	System.out.println("Failed on "+q);
 	return null;
     }
 
@@ -107,11 +111,12 @@ public class Pattern {
     public static void patternMatch(QuadWithTry code) {
 	Iterator iterate=code.getElementsI();
 	PatternVisitor pv=new PatternVisitor();
-	while(iterate.hasNext())
+	while(iterate.hasNext()) {
 	    ((Quad)iterate.next()).visit(pv);
+	}
 	Map map=pv.map();
 	iterate=map.keySet().iterator();
-	WorkSet handlers=new WorkSet();
+        ArrayList handlers=new ArrayList();
 	while(iterate.hasNext()) {
 	    Quad q=(Quad)iterate.next();
 	    HInfo hi=(HInfo)map.get(q);
@@ -119,12 +124,21 @@ public class Pattern {
 	    while (hi.needHandler()) {
 		Object[] handler=hi.pophandler();
 		HANDLER h=new HANDLER(q.getFactory(), q, new Temp(q.getFactory().tempFactory()), (HClass) handler[2] , new ReProtection(q));
-		handlers.push(h);
+		handlers.add(h);
 		Quad.addEdge(h,0,(Quad)handler[0],((Integer)handler[1]).intValue());
 	    }
 	}
 	//need to add handlers in now
-	//************
+	METHOD m=(METHOD)((Quad)code.getRootElement()).next(1);
+	METHOD newm=new METHOD(m.getFactory(), m, m.params(),m.arity()+handlers.size());
+	Quad.addEdge((Quad)code.getRootElement(),1,newm, 0);
+	for (int i=0;i<handlers.size();i++) {
+	    Quad.addEdge(newm, i+1, (Quad)handlers.get(i), 0);
+	}
+	for (int i=1;i<m.arity();i++) {
+	    Quad.addEdge(newm, i+handlers.size(), (Quad) m.next(i),0);
+	}
+	Quad.addEdge(newm, 0, m.next(0),m.nextEdge(0).which_pred());
     }
 }
 
@@ -234,7 +248,8 @@ class PatternVisitor extends QuadVisitor {
 	if (hclass==HClass.forName("java.lang.NegativeArraySizeException")) {
 	    addmap(q, qd);
 	} else {
-	    addmap(q, qd, handler, handleredge, HClass.forName("java.lang.NegativeArraySizeException"));
+	    if (handler!=null)
+		addmap(q, qd, handler, handleredge, HClass.forName("java.lang.NegativeArraySizeException"));
 	}
     }
 
@@ -294,6 +309,16 @@ class PatternVisitor extends QuadVisitor {
     }
 
     public void visit(GET q) {
+	if (!q.isStatic()) {
+	    Object[] nq=Pattern.nullCheck(q.prev(0), q.objectref());
+	    if (nq!=null) {
+		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
+		if (hc==HClass.forName("java.lang.NullPointerException"))
+		    addmap(q, (Quad)nq[0]);
+		else
+		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+	    }	
+	}
     }
 
     public void visit(MONITORENTER q) {
@@ -347,11 +372,28 @@ class PatternVisitor extends QuadVisitor {
     }
 
     public void visit(SET q) {
+	if (!q.isStatic()) {
+	    Object[] nq=Pattern.nullCheck(q.prev(0), q.objectref());
+	    if (nq!=null) {
+		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
+		if (hc==HClass.forName("java.lang.NullPointerException"))
+		    addmap(q, (Quad)nq[0]);
+		else
+		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+	    }	
+	}
     }
 
     public void visit(THROW q) {
+	Object[] nq=Pattern.nullCheck(q.prev(0), q.throwable());
+	if (nq!=null) {
+	    HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
+	    if (hc==HClass.forName("java.lang.NullPointerException"))
+		addmap(q, (Quad)nq[0]);
+	    else
+		addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+	}
     }
-
 }
 
 class HInfo {
