@@ -11,7 +11,7 @@ import java.util.StringTokenizer;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.6 2004-05-17 22:04:32 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.7 2004-05-18 16:46:47 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -99,7 +99,7 @@ public class CLI {
         opts = new boolean[optnames.length];
 
         for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-debug")) {
+            if (args[i].equals("-debugcompiler")) {
                 context = 0;
                 debug = true;
 	    } else if (args[i].equals("-checkonly")) {
