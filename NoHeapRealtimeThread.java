@@ -19,7 +19,8 @@ public class NoHeapRealtimeThread extends RealtimeThread {
     public NoHeapRealtimeThread(MemoryArea area) 
 	throws IllegalArgumentException 
     {
-	this(area, null);
+	super(area);
+	setup(area);
     }
 
     /** Construct a <code>NoHeapRealtimeThread</code> which will execute 
@@ -29,9 +30,13 @@ public class NoHeapRealtimeThread extends RealtimeThread {
 	throws IllegalArgumentException 
     {
 	super(area, logic);
+	setup(area);
+    }
+
+    /** Setup some state for the constructors */
+    private void setup(MemoryArea area) throws IllegalArgumentException {
 	if ((area == null) || area.heap) {
-	    throw new IllegalArgumentException("invalid MemoryArea in " +
-					       "NoHeapRealtimeThread constructor");
+	    throw new IllegalArgumentException("invalid MemoryArea");
 	} else {
 	    mem = area;
 	}

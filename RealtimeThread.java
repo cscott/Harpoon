@@ -50,7 +50,9 @@ public class RealtimeThread extends Thread {
     /** */
     
     public RealtimeThread(MemoryArea memory) {
-	this(memory, null);
+	super();
+	mem = memory;
+	setup();
     }
     
     /** */
@@ -196,7 +198,7 @@ public class RealtimeThread extends Thread {
     }
     
     public void start() {
-	if ((mem != null)&&(mem != HeapMemory.instance())) {
+	if ((mem != null)&&(!mem.heap)) {
 	    checkInit();
 	}
 	RealtimeThread previousThread = currentRealtimeThread();
