@@ -4,7 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 import java.util.Collections;
@@ -17,7 +17,7 @@ import java.util.Set;
  * specified n-byte boundary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ALIGN.java,v 1.1.4.7 2000-02-14 21:49:33 cananian Exp $
+ * @version $Id: ALIGN.java,v 1.1.4.8 2000-02-15 15:47:39 cananian Exp $
  */
 public class ALIGN extends Stm implements harpoon.ClassFile.HDataElement {
     /** The alignment to enforce, in bytes. Zero or one specify no
@@ -47,8 +47,8 @@ public class ALIGN extends Stm implements harpoon.ClassFile.HDataElement {
     /** Accept a visitor. */
     public void accept(TreeVisitor v) { v.visit(this); }
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-	return new ALIGN(tf, this, alignment);
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
+	return cb.callback(this, new ALIGN(tf, this, alignment));
     }
 
     public String toString() {

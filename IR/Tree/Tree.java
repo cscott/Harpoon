@@ -28,7 +28,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.27 2000-02-15 03:00:14 cananian Exp $
+ * @version $Id: Tree.java,v 1.1.2.28 2000-02-15 15:47:40 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
@@ -165,7 +165,13 @@ public abstract class Tree
   
     
     /** 
-     * Returns a clone of <code>root</code>.  
+     * Returns a clone of <code>root</code>.  The <code>callback()</code>
+     * method of the supplied <code>CloneCallback</code> will be invoked
+     * with every cloned subtree, from the bottom up to the root.  The
+     * cloned subtree will be generated using the supplied
+     * <code>TreeFactory</code>, <code>ntf</code>.
+     * @return the root of the cloned tree.
+     * <p>
      * NOTE:  tree objects may actually contain temps from two different
      *        temp factories.  The first temp factory with which a tree's 
      *        temps may be associated is the <code>TempFactory</code>
@@ -174,18 +180,59 @@ public abstract class Tree
      *        <code>Frame</code> to generate registers.  Since these 
      *        registers are assumed to be immutable, no temps from that
      *        temp factory will be cloned by this method.  All other temps
-     *        will be cloned using <code>ctm</code>.  
+     *        will be cloned using a new <code>CloningTempMap</code>.
      */
-    public static Tree clone(TreeFactory tf, CloningTempMap ctm, Tree root) { 
+    public static Tree clone(TreeFactory ntf, Tree root, CloneCallback cb) {
 	if (root==null) return null;
-	else return root.rename(tf, ctm);
+	if (cb==null) cb = nullCallback;
+	CloningTempMap ctm = (ntf==root.tf)?null:
+	    new CloningTempMap(root.tf.tempFactory(), ntf.tempFactory());
+	return root.rename(ntf, ctm, cb);
     }
-
-    public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);
-    public Tree rename(CloningTempMap ctm) {
-        return rename(this.tf, ctm);
+    /** Clone a subtree.  This is a *deep* copy -- ie, this node and
+     *  nodes rooted here are copied, all the way down to the leaves.
+     *  The cloned subtree will have the same tree factory as
+     *  <code>this</code>. */
+    public final Object clone() { return rename(null); }
+    /** Rename while cloning a subtree.  This node and all child nodes
+     *  are cloned; the 'temp' information of all <code>TEMP</code> nodes
+     *  are renamed according to the supplied <code>TempMap</code>.
+     *  Note that <code>Temp</code>s not belonging to
+     *  <code>this.getFactory().tempFactory()</code> are not affected. */
+    public final Tree rename(TempMap tm) {
+        return rename(this.tf, tm, nullCallback);
     }
+    /** Rename while cloning a subtree.  This node and all child nodes
+     *  are cloned; the 'temp' information of all <code>TEMP</code> nodes
+     *  are renamed according to the supplied <code>TempMap</code>.
+     *  Note that <code>Temp</code>s not belonging to
+     *  <code>this.getFactory().tempFactory()</code> are not affected.
+     *  The <code>callback()</code> method of the supplied
+     *  <code>CloneCallback</code> is invoked once on each subtree cloned,
+     *  starting from the leaves and working back to the root in a
+     *  post-order depth-first manner. */
+    // --- this is what each tree subclass must implement ---
+    public abstract Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb);
 
+    /** Callback interface to tree cloning code to allow you to update
+     *  type and other annotations as the tree is cloned. */
+    public interface CloneCallback {
+	/** This method will be called once for every cloned/renamed subtree.
+	 *  The original tree will be passed in as <code>oldTree</code> and
+	 *  the new, cloned/renamed tree will be passed in as
+	 *  <code>newTree</code>.  The return value of this function will
+	 *  be linked in to the cloned parent, so substitutions on the
+	 *  cloned-tree-in-progress can be made by returning something
+	 *  other than <code>newTree</code>.  In normal use, however,
+	 *  <code>newTree</code> should always be returned. */
+	public Tree callback(Tree oldTree, Tree newTree);
+    }
+    /** A do-nothing callback.  Comes in handy sometimes. */
+    private static final CloneCallback nullCallback = new CloneCallback() {
+	public Tree callback(Tree o, Tree n) { return n; }
+    };
+
+    /** Convenience function for tempmapping. */
     protected final static Temp map(TempMap tm, Temp t) {
 	return (t==null)?null:(tm==null)?t:tm.tempMap(t);
     }

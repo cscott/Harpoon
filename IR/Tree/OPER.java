@@ -4,7 +4,6 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
 /**
@@ -13,7 +12,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: OPER.java,v 1.1.2.11 2000-02-14 21:49:34 cananian Exp $
+ * @version $Id: OPER.java,v 1.1.2.12 2000-02-15 15:47:40 cananian Exp $
  */
 public abstract class OPER extends Exp {
     /** An enumerated type encoding the operator.

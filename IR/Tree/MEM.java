@@ -4,7 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 /**
@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MEM.java,v 1.1.2.23 2000-02-14 21:49:33 cananian Exp $
+ * @version $Id: MEM.java,v 1.1.2.24 2000-02-15 15:47:40 cananian Exp $
  */
 public class MEM extends Exp implements PreciselyTyped {
     /** The type of this memory reference expression. */
@@ -93,9 +93,10 @@ public class MEM extends Exp implements PreciselyTyped {
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new MEM(tf, this, type, (Exp)getExp().rename(tf, ctm), 
-		       isSmall, bitwidth, signed);
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
+        return cb.callback(this, new MEM(tf, this, type,
+					 (Exp)getExp().rename(tf, tm, cb), 
+					 isSmall, bitwidth, signed));
     }
 
     public String toString() {

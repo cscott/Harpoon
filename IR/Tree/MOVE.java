@@ -4,7 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 import java.util.HashSet;
@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.22 2000-02-15 02:55:35 cananian Exp $
+ * @version $Id: MOVE.java,v 1.1.2.23 2000-02-15 15:47:40 cananian Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** Constructor. 
@@ -97,10 +97,10 @@ public class MOVE extends Stm implements Typed {
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); } 
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new MOVE(tf, this,
-			(Exp)getDst().rename(tf, ctm),
-			(Exp)getSrc().rename(tf, ctm));
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
+        return cb.callback(this, new MOVE(tf, this,
+					  (Exp)getDst().rename(tf, tm, cb),
+					  (Exp)getSrc().rename(tf, tm, cb)));
     }
 
     /** @return the type of <code>dst</code> expression. */

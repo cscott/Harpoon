@@ -5,7 +5,7 @@ package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HDataElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 /**
@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.24 2000-02-14 21:49:33 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.25 2000-02-15 15:47:40 cananian Exp $
  */
 public class CONST extends Exp implements PreciselyTyped, HDataElement {
     /** The constant value of this <code>CONST</code> expression. */
@@ -112,8 +112,8 @@ public class CONST extends Exp implements PreciselyTyped, HDataElement {
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new CONST(tf, this, type, value, isSmall, bitwidth, signed);
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
+        return cb.callback(this, new CONST(tf, this, type, value, isSmall, bitwidth, signed));
     }
 
     public String toString() {

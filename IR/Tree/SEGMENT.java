@@ -4,7 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 import java.util.Collections;
@@ -16,7 +16,7 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.18 2000-02-14 21:49:34 cananian Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.19 2000-02-15 15:47:40 cananian Exp $
  */
 public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     /** R/O storage for static class data (display, vmtable, etc) */
@@ -94,8 +94,8 @@ public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new SEGMENT(tf, this, segtype);
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
+        return cb.callback(this, new SEGMENT(tf, this, segtype));
     }
 
     public String toString() {

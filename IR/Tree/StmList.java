@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 
 
 /**
@@ -11,7 +11,7 @@ import harpoon.Temp.CloningTempMap;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: StmList.java,v 1.1.2.4 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: StmList.java,v 1.1.2.5 2000-02-15 15:47:40 cananian Exp $
  */
 public final class StmList {
     /** The statement at this list entry. */
@@ -22,12 +22,12 @@ public final class StmList {
     public StmList(Stm head, StmList tail)
     { this.head=head; this.tail=tail; }
 
-    public static StmList rename(StmList s, TreeFactory tf, 
-				 CloningTempMap ctm) {
+    public static StmList rename(StmList s, TreeFactory tf, TempMap tm,
+				 Tree.CloneCallback cb) {
         if (s==null) return null;
 	else return new StmList
-	       ((Stm)((s.head==null)?null:s.head.rename(tf, ctm)),
-		rename(s.tail, tf, ctm));
+	       ((Stm)s.head.rename(tf, tm, cb),
+		rename(s.tail, tf, tm, cb));
     }
 }
 

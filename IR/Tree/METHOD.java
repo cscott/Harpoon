@@ -4,7 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ import java.util.Set;
  * links to the exception handlers for the method. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: METHOD.java,v 1.1.2.11 2000-02-14 21:49:33 cananian Exp $
+ * @version $Id: METHOD.java,v 1.1.2.12 2000-02-15 15:47:40 cananian Exp $
  */
 public class METHOD extends Stm {
     private final int paramsLength;
@@ -72,12 +72,12 @@ public class METHOD extends Stm {
 	return new METHOD(tf, this, getParams());
     }
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
 	TEMP[] params  = getParams();
 	TEMP[] newTmps = new TEMP[params.length];
 	for (int i=0; i<params.length; i++) 
-	    newTmps[i] = (TEMP)params[i].rename(tf, ctm);
-	return new METHOD(tf,this,newTmps);
+	    newTmps[i] = (TEMP)params[i].rename(tf, tm, cb);
+	return cb.callback(this, new METHOD(tf,this,newTmps));
     }
 
     /** Accept a visitor. */

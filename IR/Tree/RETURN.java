@@ -4,7 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 /**
@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: RETURN.java,v 1.1.2.13 2000-02-14 21:49:34 cananian Exp $
+ * @version  $Id: RETURN.java,v 1.1.2.14 2000-02-15 15:47:40 cananian Exp $
  */
 public class RETURN extends Stm implements Typed {
     /** Constructor.
@@ -43,8 +43,8 @@ public class RETURN extends Stm implements Typed {
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-	return new RETURN(tf, this, (Exp)getRetval().rename(tf, ctm));
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
+	return cb.callback(this, new RETURN(tf, this, (Exp)getRetval().rename(tf, tm, cb)));
     }
 
     /** @return the type of the return value expression */

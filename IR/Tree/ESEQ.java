@@ -4,7 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 import java.util.HashSet;
@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.19 2000-02-14 21:49:33 cananian Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.20 2000-02-15 15:47:40 cananian Exp $
  */
 public class ESEQ extends Exp implements PreciselyTyped {
     /** Constructor. */
@@ -67,10 +67,10 @@ public class ESEQ extends Exp implements PreciselyTyped {
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new ESEQ(tf, this, 
-			(Stm)getStm().rename(tf, ctm), 
-			(Exp)getExp().rename(tf, ctm));
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
+        return cb.callback(this, new ESEQ(tf, this, 
+					  (Stm)getStm().rename(tf, tm, cb), 
+					  (Exp)getExp().rename(tf, tm, cb)));
     }
 
     public int type() { return getExp().type(); }

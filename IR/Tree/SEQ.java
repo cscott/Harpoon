@@ -4,7 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 import java.util.Collections;
@@ -16,7 +16,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.17 2000-02-14 21:49:34 cananian Exp $
+ * @version $Id: SEQ.java,v 1.1.2.18 2000-02-15 15:47:40 cananian Exp $
  */
 public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     /** Constructor. */
@@ -54,10 +54,10 @@ public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new SEQ(tf, this, 
-		       (Stm)getLeft().rename(tf, ctm),
-		       (Stm)getRight().rename(tf, ctm));
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
+        return cb.callback(this, new SEQ(tf, this, 
+					 (Stm)getLeft().rename(tf, tm, cb),
+					 (Stm)getRight().rename(tf, tm, cb)));
     }
 
     public String toString() {

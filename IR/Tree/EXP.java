@@ -4,7 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 /**
@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: EXP.java,v 1.1.2.17 2000-02-14 21:49:33 cananian Exp $
+ * @version $Id: EXP.java,v 1.1.2.18 2000-02-15 15:47:40 cananian Exp $
  */
 public class EXP extends Stm {
     /** Constructor. */
@@ -44,8 +44,8 @@ public class EXP extends Stm {
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new EXP(tf, this, (Exp)getExp().rename(tf, ctm));
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
+        return cb.callback(this, new EXP(tf, this, (Exp)getExp().rename(tf, tm, cb)));
     }
 
     public String toString() {

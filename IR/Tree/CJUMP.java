@@ -4,7 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Temp.Label;
 import harpoon.Util.Util;
 
@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CJUMP.java,v 1.1.2.16 2000-02-14 21:49:33 cananian Exp $
+ * @version $Id: CJUMP.java,v 1.1.2.17 2000-02-15 15:47:40 cananian Exp $
  */
 public class CJUMP extends Stm {
     /** The label to jump to if <code>test</code> is <code>true</code>. */
@@ -49,9 +49,10 @@ public class CJUMP extends Stm {
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new CJUMP(tf, this, (Exp)getTest().rename(tf, ctm),
-			 iftrue, iffalse);
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
+        return cb.callback(this, new CJUMP(tf, this,
+					   (Exp)getTest().rename(tf, tm, cb),
+					   iftrue, iffalse));
     }
 
     public String toString() {

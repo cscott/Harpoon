@@ -4,7 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 import java.util.HashSet;
@@ -29,7 +29,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.31 2000-02-14 21:49:33 cananian Exp $
+ * @version $Id: CALL.java,v 1.1.2.32 2000-02-15 15:47:40 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
@@ -93,15 +93,16 @@ public class CALL extends INVOCATION {
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new CALL(tf, this, 
-			(TEMP)getRetval().rename(tf, ctm),
-			(TEMP)getRetex().rename(tf, ctm), 
-			(Exp)getFunc().rename(tf, ctm),
-			ExpList.rename(getArgs(), tf, ctm),
-			(NAME)getHandler().rename(tf, ctm),
-			isTailCall);
-  }
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
+        return cb.callback(this,
+			   new CALL(tf, this, 
+				    (TEMP)getRetval().rename(tf, tm, cb),
+				    (TEMP)getRetex().rename(tf, tm, cb), 
+				    (Exp)getFunc().rename(tf, tm, cb),
+				    ExpList.rename(getArgs(), tf, tm, cb),
+				    (NAME)getHandler().rename(tf, tm, cb),
+				    isTailCall));
+    }
 
     protected Set defSet() { 
 	Set def = super.defSet();

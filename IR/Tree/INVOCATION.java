@@ -4,7 +4,6 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
 import java.util.HashSet;
@@ -21,7 +20,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.17 2000-02-15 15:08:27 cananian Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.18 2000-02-15 15:47:40 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL

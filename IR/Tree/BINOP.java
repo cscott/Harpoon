@@ -4,7 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 /**
@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.1.2.24 2000-02-14 21:49:33 cananian Exp $
+ * @version $Id: BINOP.java,v 1.1.2.25 2000-02-15 15:47:40 cananian Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -64,10 +64,10 @@ public class BINOP extends OPER {
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
   
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new BINOP(tf, this, optype, op, 
-			 (Exp)getLeft().rename(tf, ctm), 
-			 (Exp)getRight().rename(tf, ctm));
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
+        return cb.callback(this, new BINOP(tf, this, optype, op, 
+					   (Exp)getLeft().rename(tf, tm, cb), 
+					   (Exp)getRight().rename(tf, tm, cb)));
     }
 
     /** Evaluates a constant value for the result of a <code>BINOP</code>, 

@@ -4,7 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 import java.util.HashSet;
@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.22 2000-02-14 21:49:34 cananian Exp $
+ * @version $Id: NATIVECALL.java,v 1.1.2.23 2000-02-15 15:47:40 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
@@ -48,12 +48,13 @@ public class NATIVECALL extends INVOCATION {
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new NATIVECALL(tf, this, 
-			      (this.getRetval()==null) ? null :
-			      (TEMP)this.getRetval().rename(tf, ctm),
-			      (Exp)this.getFunc().rename(tf, ctm),
-			      ExpList.rename(this.getArgs(), tf, ctm));
+    public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
+        return cb.callback(this, new NATIVECALL
+			   (tf, this, 
+			    (this.getRetval()==null) ? null :
+			    (TEMP)this.getRetval().rename(tf, tm, cb),
+			    (Exp)this.getFunc().rename(tf, tm, cb),
+			    ExpList.rename(this.getArgs(), tf, tm, cb)));
     }
 
     public String toString() {

@@ -4,7 +4,7 @@
 
 package harpoon.IR.Tree;
 
-import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.TempMap;
 
 import harpoon.Util.UnmodifiableIterator;
 
@@ -19,7 +19,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ExpList.java,v 1.1.2.16 2000-02-14 20:59:23 cananian Exp $
+ * @version $Id: ExpList.java,v 1.1.2.17 2000-02-15 15:47:40 cananian Exp $
  */
 public final class ExpList {
     /** The expression at this list entry. */
@@ -76,13 +76,13 @@ public final class ExpList {
 		(e.head == eOld ? eNew : e.head, replace(e.tail, eOld, eNew));
     }
 
-    public static ExpList rename(ExpList e, 
-				 TreeFactory tf, CloningTempMap ctm) {
+    public static ExpList rename(ExpList e, TreeFactory tf, TempMap tm,
+				 Tree.CloneCallback cb) {
         if (e==null) return null;
 	else
 	    return new ExpList
-	      ((Exp)((e.head==null)?null:e.head.rename(tf, ctm)),
-	       rename(e.tail, tf, ctm));
+	      ((Exp)e.head.rename(tf, tm, cb),
+	       rename(e.tail, tf, tm, cb));
     }
     
     public static Set useSet(ExpList expList) {
