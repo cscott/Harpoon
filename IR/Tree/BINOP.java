@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.1.2.8 1999-02-24 21:10:19 duncan Exp $
+ * @version $Id: BINOP.java,v 1.1.2.9 1999-03-12 20:38:46 duncan Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -63,7 +63,9 @@ public class BINOP extends OPER {
 	    case Type.FLOAT:    return _i((_f(left)<_f(right))?1:0);
 	    case Type.DOUBLE:   return _i((_d(left)<_d(right))?1:0);
 	    case Type.POINTER:  
-		throw new Error("Operation not supported");
+		return Type.isDoubleWord(tf, optype) ?
+		    _i(_l(left)<_l(right)?1:0) :
+			_i(_i(left)<_i(right)?1:0);
 	    }
 	case Bop.CMPLE:	
 	    switch(optype) {
@@ -72,7 +74,9 @@ public class BINOP extends OPER {
 	    case Type.FLOAT:    return _i((_f(left)<=_f(right))?1:0);
 	    case Type.DOUBLE:   return _i((_d(left)<=_d(right))?1:0);
 	    case Type.POINTER:  
-		throw new Error("Operation not supported");
+		return Type.isDoubleWord(tf, optype) ?
+		    _i(_l(left)<=_l(right)?1:0) :
+			_i(_i(left)<=_i(right)?1:0);
 	    }
 	case Bop.CMPEQ: 
 	    switch (optype) {
@@ -89,11 +93,13 @@ public class BINOP extends OPER {
 	    switch (optype) {
 	    case Type.INT:      return _i((_i(left)>=_i(right))?1:0);
 	    case Type.LONG:     return _i((_l(left)>=_l(right))?1:0);
-	    case Type.FLOAT:    return _i((_d(left)>=_d(right))?1:0);
-	    case Type.DOUBLE:   return _i((_f(left)>=_f(right))?1:0);
+	    case Type.FLOAT:    return _i((_f(left)>=_f(right))?1:0);
+	    case Type.DOUBLE:   return _i((_d(left)>=_d(right))?1:0);
 	    case Type.POINTER:  
-		throw new Error("Operation not supported");
-	    }	
+		return Type.isDoubleWord(tf, optype) ?
+		    _i(_l(left)>=_l(right)?1:0) :
+			_i(_i(left)>=_i(right)?1:0);
+	    }
 	case Bop.CMPGT:	
 	    switch (optype) {
 	    case Type.INT:      return _i((_i(left)>_i(right))?1:0);
@@ -101,7 +107,9 @@ public class BINOP extends OPER {
 	    case Type.FLOAT:    return _i((_f(left)>_f(right))?1:0);
 	    case Type.DOUBLE:   return _i((_d(left)>_d(right))?1:0);
 	    case Type.POINTER:  
-		throw new Error("Operation not supported");
+		return Type.isDoubleWord(tf, optype) ?
+		    _i(_l(left)>_l(right)?1:0) :
+			_i(_i(left)>_i(right)?1:0);
 	    }
 	case Bop.ADD:	
 	    switch (optype) {
@@ -110,7 +118,9 @@ public class BINOP extends OPER {
 	    case Type.FLOAT:    return _f(_f(left)+_f(right));
 	    case Type.DOUBLE:   return _d(_d(left)+_d(right));
 	    case Type.POINTER:  
-		throw new Error("Operation not supported");
+	      return Type.isDoubleWord(tf, optype) ?
+		    (Object)_l(_l(left)+_l(right)) :
+			(Object)_i(_i(left)+_i(right));
 	    }
 	case Bop.MUL:	
 	    switch (optype) {
@@ -119,7 +129,9 @@ public class BINOP extends OPER {
 	    case Type.FLOAT:    return _f(_f(left)*_f(right));
 	    case Type.DOUBLE:   return _d(_d(left)*_d(right));
 	    case Type.POINTER:  
-		throw new Error("Operation not supported");
+   	      return Type.isDoubleWord(tf, optype) ?
+		    (Object)_l(_l(left)*_l(right)) :
+			(Object)_i(_i(left)*_i(right));
 	    }
 	case Bop.DIV:
 	    switch (optype) {
