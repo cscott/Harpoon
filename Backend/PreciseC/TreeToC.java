@@ -52,7 +52,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.13 2000-07-01 06:27:11 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.14 2000-07-02 06:52:43 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -66,7 +66,7 @@ public class TreeToC extends java.io.PrintWriter {
     public void translate(HData hd) { translate((Tree)hd.getRootElement()); }
     private void translate(Tree t) {
 	tv.switchto(tv.NONE);
-	if (t!=null) tv.trans(t);
+	if (t!=null) { tv.lv=new LabelVisitor(t); tv.trans(t); }
     }
     public void close() {
 	tv.switchto(tv.NONE);
@@ -78,8 +78,33 @@ public class TreeToC extends java.io.PrintWriter {
 	// okay, now (really) flush and close.
 	super.close();
     }
-	
-    /** Tree Visitor does the real work. */
+    /** LabelVisitor identifies the method-local labels. */
+    private static class LabelVisitor extends TreeVisitor {
+	public final Set local_code_labels = new HashSet();
+	public final Set local_table_labels = new HashSet();
+	private boolean seenMethod = false;
+	Label last_label=null;
+	public LabelVisitor(Tree t) { t.accept(this); }
+	public void visit(Tree e) {
+	    if (last_label!=null) {
+		if (seenMethod) local_code_labels.add(last_label);
+		last_label=null;
+	    }
+	}
+	public void visit(SEQ e) {
+	    e.getLeft().accept(this);
+	    e.getRight().accept(this);
+	}
+	public void visit(METHOD e) { super.visit(e); seenMethod = true; }
+	public void visit(LABEL e) { super.visit(e); last_label=e.label; }
+	public void visit(DATUM e) {
+	    if (last_label!=null) {
+		if (seenMethod) local_table_labels.add(last_label);
+		last_label=null;
+	    }
+	}
+    }
+    /** TranslationVisitor does the real work. */
     private static class TranslationVisitor extends TreeVisitor {
 	// default case throws error: we should handle each tree specifically.
 	public void visit(Tree e) {
@@ -119,14 +144,22 @@ public class TreeToC extends java.io.PrintWriter {
 	static final int NONE = 0;
 	static final int DATA = 1;
 	static final int CODE = 2;
+	static final int CODETABLE = 3;
 	int current_mode = NONE;
 	void switchto(int mode) {
 	    switch(current_mode) {
 	    case CODE:
+		if (mode==CODETABLE) break; // postpone flush.
 		flushAndAppend(MD);
 		pwa[MB].println("}");
 		flushAndAppend(MB);
 		temps_seen.clear();
+		break;
+	    case CODETABLE: // flush to CODE.
+		Util.assert(mode==CODE);
+		pwa[DI].println("};");
+		flushAndAppendTo(DD, MD);
+		flushAndAppendTo(DI, MD);
 		break;
 	    case DATA:
 		pwa[DI].println("};");
@@ -138,8 +171,9 @@ public class TreeToC extends java.io.PrintWriter {
 	    current_mode = mode;
 	    switch(current_mode) {
 	    case CODE:
-		pw = pwa[MD];
+		pw = pwa[MB];
 		break;
+	    case CODETABLE:
 	    case DATA:
 		field_counter = 0;
 		pw = pwa[DI];
@@ -154,30 +188,36 @@ public class TreeToC extends java.io.PrintWriter {
 	    output.append(sb);
 	    sb.setLength(0);
 	}
+	void flushAndAppendTo(int from, int to) {
+	    pwa[from].flush();
+	    StringBuffer sb = swa[from].getBuffer();
+	    pwa[to].print(sb);
+	    sb.setLength(0);
+	}
 
 	/** these are the symbols referenced (and declarations for them) */
 	Map sym2decl = new HashMap();
 	{ /* gcc complains if we don't declare certain symbols "properly". */
 	    sym2decl.put(new Label("memset"),
 			 "extern void *memset(void *,int,size_t);");
+	  /* also, we need to use FNI_GetJNIEnv() at points. */
+	    sym2decl.put(new Label("FNI_GetJNIEnv"),
+			 "extern JNIEnv *FNI_GetJNIEnv(void);");
 	}
 	/** these are the *local* labels which are defined *inside functions*
 	 *  in this file. */
-	Set local_labels = new HashSet();
+	LabelVisitor lv=null;
 
 	void emitSymbols(PrintWriter pw) {
-	    for (Iterator it=sym2decl.keySet().iterator(); it.hasNext(); ) {
-		Label l = (Label) it.next();
-		if (!local_labels.contains(l))
-		    pw.println(sym2decl.get(l));
-	    }
+	    for (Iterator it=sym2decl.values().iterator(); it.hasNext(); )
+		pw.println(it.next());
 	}
 	void emitOutput(PrintWriter pw) {
 	    pw.print(output);
 	}
 
 	// useful line number update function.
-	private boolean EMIT_LINE_DIRECTIVES=true;
+	private boolean EMIT_LINE_DIRECTIVES=false;
 	private String last_file = null;
 	private int last_line = 0;
 	private void updateLine(Tree e) {
@@ -350,19 +390,20 @@ public class TreeToC extends java.io.PrintWriter {
 	    pw.print(val);
 	}
 	public void visit(DATUM e) {
+	    if (current_mode==CODE)
+		startData(CODETABLE, last_label, false);
 	    struct_size += sizeof(e.getData());
 	    // alignment constraints mean we ought to start a new struct.
 	    // so does exceeding a struct size of 32 bytes (this is a
 	    // very odd gcc oddity, where too-large structs are aligned
 	    // to a 32-byte boundary).  Also if we haven't entered the
 	    // data mode via a label yet, we should make up a label and do so.
-	    if (current_mode==NONE || struct_size >= 32 || this.align!=null) {
-		startData(new Label(), false);
+	    if (current_mode != CODETABLE /* no restrictions here */ &&
+		(current_mode==NONE || struct_size >= 32 || this.align!=null)){
+		startData(current_mode==NONE ? DATA : current_mode,
+			  new Label(), false);
 		struct_size += sizeof(e.getData());
 	    }
-	    // we ought to handle mode==CODE case, but I don't feel like
-	    // thinking hard today.
-	    Util.assert(current_mode==DATA);
 	    pwa[DD].print("\t"+ctype(e.getData())+" ");
 	    pwa[DD].print("f"+(field_counter++));
 	    pwa[DD].print(" __attribute__ ((packed))");
@@ -388,18 +429,24 @@ public class TreeToC extends java.io.PrintWriter {
 	    pw.print("; /* targets: "+LabelList.toList(e.targets)+" */");
 	    nl();
 	}
+	Label last_label;
 	public void visit(LABEL e) {
+	    // if we're outputting an inline table, switch back to regular
+	    // code mode.
+	    if (current_mode==CODETABLE) switchto(CODE);
 	    if (current_mode==CODE) {
-		pw.print(label(e.label)+":"); nl();
-		local_labels.add(e.label);
-	    }
-	    else startData(e.label, e.exported);
+		if (lv.local_code_labels.contains(e.label)) {
+		    pw.print(label(e.label)+":"); nl();
+		} else Util.assert(lv.local_table_labels.contains(e.label));
+	    } else startData(DATA, e.label, e.exported);
+	    last_label=e.label;
 	}
 	private int struct_size;
-	public void startData(Label l, boolean exported) {
-	    switchto(DATA);
-	    sym2decl.put(l, (exported?"extern ":"static ") +
-			 "struct "+label(l)+" "+label(l)+";");
+	public void startData(int mode, Label l, boolean exported) {
+	    switchto(mode);
+	    if (!lv.local_table_labels.contains(l))
+		sym2decl.put(l, (exported?"extern ":"static ") +
+			     "struct "+label(l)+" "+label(l)+";");
 	    struct_size = 0;
 	    if (!exported) pwa[DD].print("static ");
 	    pwa[DD].println("struct "+label(l)+" {");
@@ -466,10 +513,18 @@ public class TreeToC extends java.io.PrintWriter {
 	public void visit(NAME e) { visit(e, true); }
 	public void visit(NAME e, boolean take_address) {
 	    /* add entry in symbol declaration table */
-	    if (!sym2decl.containsKey(e.label))
+	    if (!lv.local_code_labels.contains(e.label) &&
+		!lv.local_table_labels.contains(e.label) &&
+		!sym2decl.containsKey(e.label))
 		sym2decl.put(e.label, "extern struct "+label(e.label)+" "+
 			     label(e.label)+";");
-	    if (take_address) pw.print("(&");
+	    if (take_address) {
+		pw.print("(");
+		if (lv.local_table_labels.contains(e.label))
+		    pw.print("(void*)");
+		pw.print("&");
+		if (lv.local_code_labels.contains(e.label)) pw.print("&");
+	    }
 	    pw.print(label(e.label));
 	    if (take_address) pw.print(")");
 	}
@@ -479,6 +534,11 @@ public class TreeToC extends java.io.PrintWriter {
 		trans(e.getRetval()); pw.print(" = ");
 	    }
 	    pw.print("(");
+	    // hack to allow inlining calls to memset.
+	    if (e.getFunc() instanceof NAME &&
+		((NAME)e.getFunc()).label.name.equals("memset"))
+		pw.print("memset");
+	    else {
 	    /* function type cast */
 	    pw.print("(");
 	    pw.print(e.getRetval()==null?"void":ctype(e.getRetval()));
@@ -490,6 +550,7 @@ public class TreeToC extends java.io.PrintWriter {
 	    pw.print("))");
 	    /* function expression */
 	    trans(e.getFunc());
+	    }
 	    pw.print(")(");
 	    for (ExpList el=e.getArgs(); el!=null; el=el.tail) {
 		trans(el.head);
