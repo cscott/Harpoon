@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.34 2001-05-24 08:43:06 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.35 2001-05-31 03:35:09 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -310,8 +310,8 @@ import java.util.Iterator;
     }
     // This is called before a compound instr that defines a long temp 
     // It is intended to fool the global register allocator into not
-// believing that the destination long and a source long can be
-// allocated to the same registers 
+   // believing that the destination long and a source long can be
+   // allocated to the same registers 
     private Instr emitRegAllocDef( HCodeElement root, Temp t) {
        return null;
        // Util.assert(t != null, t);
@@ -1239,6 +1239,11 @@ BINOP<l>(REM, j, k) = i %{
    DoLLCall(ROOT, i, j, k, "__moddi3");
    // This the the call to a C function
    // DoLLCall(ROOT, i, j, k, "__ll_rem");
+}%
+
+BINOP<f>(REM, j, k) = i %{
+   emitLineDebugInfo(ROOT);
+   DoFCall(ROOT, i, j, k, "__f_rem");
 }%
 
 BINOP<d>(REM, j, k) = i %{
