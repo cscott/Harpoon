@@ -85,7 +85,7 @@ public class GameClient extends Thread {
             pout = new PrintStream(out);
             din = new DataInputStream(in);
 
-	    for(int nr=0;nr<nom;) {
+	    for(int nr=0;nr<nom;nr++) {
 		String received=din.readLine();
 		pout.println("message: "+clientnumber+" "+nr);
 
@@ -93,8 +93,8 @@ public class GameClient extends Thread {
 		    System.out.println(received+":"+nr);
             }
 	    pout.flush();
-
         }
+
 
         catch (UnknownHostException e ) {System.out.println("can't find host"); }
         catch ( IOException e ) {System.out.println("Error connecting to host");}
