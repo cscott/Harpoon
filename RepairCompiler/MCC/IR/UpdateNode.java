@@ -419,11 +419,11 @@ class UpdateNode {
 		    intindex.generate(cr,indexvd);
 		FieldDescriptor fd=(FieldDescriptor)u.getDescriptor();
 		StructureTypeDescriptor std=(StructureTypeDescriptor)subexpr.getType();
+		Expr offsetbits = std.getOffsetExpr(fd);
 		if (fd instanceof ArrayDescriptor) {
 		    fd = ((ArrayDescriptor) fd).getField();
 		}
 
-		Expr offsetbits = std.getOffsetExpr(fd);
 		if (intindex != null) {
 		    Expr basesize = fd.getBaseSizeExpr();
 		    offsetbits = new OpExpr(Opcode.ADD, offsetbits, new OpExpr(Opcode.MULT, basesize, intindex));
@@ -444,7 +444,7 @@ class UpdateNode {
 		    } else if (rtd==ReservedTypeDescriptor.BIT) {
 			Expr tmp = new OpExpr(Opcode.SHL, offsetbytes, new IntegerLiteralExpr(3));
 			Expr offset=new OpExpr(Opcode.SUB, offsetbits, tmp);
-			Expr mask=new OpExpr(Opcode.SHR, new IntegerLiteralExpr(1), offset);
+			Expr mask=new OpExpr(Opcode.SHL, new IntegerLiteralExpr(1), offset);
 			VarDescriptor maskvar=VarDescriptor.makeNew("mask");
 			mask.generate(cr,maskvar);
 			cr.outputline("*((char *) "+addr.getSafeSymbol()+")|="+maskvar.getSafeSymbol()+";");

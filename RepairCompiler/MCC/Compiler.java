@@ -22,7 +22,7 @@ public class Compiler {
     public static boolean AGGRESSIVESEARCH=false;
     public static boolean PRUNEQUANTIFIERS=false;
     public static boolean GENERATEDEBUGHOOKS=true;
-    public static boolean GENERATEDEBUGPRINT=true;
+    public static boolean GENERATEDEBUGPRINT=false;
 
     public static void main(String[] args) {
         State state = null;
