@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.13 1999-02-07 10:51:21 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.14 1999-02-07 11:03:41 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -144,7 +144,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) ChangeLog mark-executable
 	$(RM) doc/harpoon doc/silicon
 	$(MUNGE) doc | \
 	  sed -e 's/<\([a-z]\+\)@\([a-z.]\+\).edu>/\&lt;\1@\2.edu\&gt;/g' \
-	      -e 's/<dd> "The,/<dd> /g' | \
+	      -e 's/<dd> "The,/<dd> /g' -e 's/<body>/<body bgcolor=white>/' | \
 		$(UNMUNGE)
 	cd doc; ln -s $(JDOCIMAGES) images
 	cd doc; ln -s packages.html index.html
