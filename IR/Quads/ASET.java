@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
@@ -12,7 +13,7 @@ import harpoon.Util.Util;
  * <code>ASET</code> represents an array element assignment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ASET.java,v 1.1.2.8 1999-10-13 14:38:35 cananian Exp $
+ * @version $Id: ASET.java,v 1.1.2.9 2000-11-14 18:34:41 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ALENGTH
@@ -24,8 +25,8 @@ public class ASET extends Quad {
     protected Temp index;
     /** The new value for the array element. */
     protected Temp src;
-    /** Identify primitive arrays. */
-    protected boolean isSrcPrimitive;
+    /** The component type of the referenced array. */
+    protected HClass type;
 
     /** Creates an <code>ASET</code> object representing an array element
      *  assignment.
@@ -36,14 +37,17 @@ public class ASET extends Quad {
      * @param src
      *        the <code>Temp</code> holding the new value for the array
      *        element.
+     * @param type
+     *        the component type of the referenced array.
      */
     public ASET(QuadFactory qf, HCodeElement source,
-		Temp objectref, Temp index, Temp src, boolean isSrcPrimitive) {
+		Temp objectref, Temp index, Temp src, HClass type) {
 	super(qf, source);
 	this.objectref = objectref;
 	this.index = index;
 	this.src = src;
-	this.isSrcPrimitive = isSrcPrimitive;
+	this.type = type.isPrimitive() ? type :
+	    type.getLinker().forDescriptor("Ljava/lang/Object;");
 	// VERIFY legality of this ASET
 	Util.assert(objectref!=null && index!=null && src!=null);
     }
@@ -55,9 +59,9 @@ public class ASET extends Quad {
     /** Returns the <code>Temp</code> holding the new value for the array
      *  element. */
     public Temp src() { return src; }
-    /** Returns <code>true</code> if the <code>src</code> temp holds
-     *  a primitive type. */
-    public boolean isSrcPrimitive() { return isSrcPrimitive; }
+    /** Returns the component type of the referenced array. All
+     *  non-primitive types become <code>Object</code>. */
+    public HClass type() { return type; }
 
     /** Returns all the Temps used by this quad. 
      * @return the <code>objectref</code>, <code>index</code>, and 
@@ -69,7 +73,7 @@ public class ASET extends Quad {
 
     public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
 	return new ASET(qqf, this, map(useMap,objectref),
-			map(useMap,index), map(useMap,src), isSrcPrimitive);
+			map(useMap,index), map(useMap,src), type);
     }
     /** Rename all used variables in this Quad according to a mapping.
      * @deprecated does not preserve immutability. */
@@ -86,6 +90,6 @@ public class ASET extends Quad {
 
     /** Returns a human-readable representation of this quad. */
     public String toString() {
-	return "ASET " + objectref + "["+index+"] = " + src;
+	return "ASET " + objectref + "["+index+"] = ("+type.getName()+") "+ src;
     }
 }

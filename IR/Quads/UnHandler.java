@@ -21,7 +21,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.26 2000-10-10 21:37:36 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.27 2000-11-14 18:34:42 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -419,7 +419,7 @@ final class UnHandler {
 	    Type Tobj = ti.get(q.objectref());
 	    Type Tind = ti.get(q.index());
 	    // do COMPONENTOF test for non-primitive arrays.
-	    if (!q.isSrcPrimitive())
+	    if (!q.type().isPrimitive())
 		head = componentCheck(q, head, q.objectref(), q.src());
 	    if (! (Tobj.isFixedArray() &&
 		   Tind.isIntConst() &&

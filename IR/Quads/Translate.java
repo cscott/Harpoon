@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.27 2000-10-17 20:59:46 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.28 2000-11-14 18:34:41 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -701,10 +701,22 @@ final class Translate { // not public.
 		ns = s.pop(2).pushLong(); // 64-bit val.
 	    else
 		ns = s.pop(2).push(); // 32-bit val
-
+	    HClass type;
+	    switch(opcode) {
+	    case Op.BALOAD: type = HClass.Byte; break;
+	    case Op.CALOAD: type = HClass.Char; break;
+	    case Op.DALOAD: type = HClass.Double; break;
+	    case Op.FALOAD: type = HClass.Float; break;
+	    case Op.IALOAD: type = HClass.Int; break;
+	    case Op.LALOAD: type = HClass.Long; break;
+	    case Op.SALOAD: type = HClass.Short; break;
+	    case Op.AALOAD: type = qf.getLinker().forName("java.lang.Object");
+	                    break;
+	    default: throw new Error("impossible");
+	    }
 	    Temp Tobj  = s.stack(1);
 	    Temp Tindex= s.stack(0);
-	    q = new AGET(qf, in, ns.stack(0), Tobj, Tindex);
+	    q = new AGET(qf, in, ns.stack(0), Tobj, Tindex, type);
 	    break;
 	    }
 	case Op.AASTORE:
@@ -716,6 +728,19 @@ final class Translate { // not public.
 	case Op.LASTORE:
 	case Op.SASTORE:
 	    {
+	    HClass type;
+	    switch(opcode) {
+	    case Op.BASTORE: type = HClass.Byte; break;
+	    case Op.CASTORE: type = HClass.Char; break;
+	    case Op.DASTORE: type = HClass.Double; break;
+	    case Op.FASTORE: type = HClass.Float; break;
+	    case Op.IASTORE: type = HClass.Int; break;
+	    case Op.LASTORE: type = HClass.Long; break;
+	    case Op.SASTORE: type = HClass.Short; break;
+	    case Op.AASTORE: type = qf.getLinker().forName("java.lang.Object");
+	                    break;
+	    default: throw new Error("impossible");
+	    }
 	    Temp Tobj, Tindex, Tsrc;
 	    if (opcode==Op.DASTORE ||
 		opcode==Op.LASTORE) { // 64-bit val.
@@ -729,10 +754,9 @@ final class Translate { // not public.
 		Tindex = s.stack(1);
 		Tsrc   = s.stack(0);
 	    }
-	    boolean primitive = (opcode!=Op.AASTORE);
 	    
 	    // the actual operation.
-	    q = new ASET(qf, in, Tobj, Tindex, Tsrc, primitive);
+	    q = new ASET(qf, in, Tobj, Tindex, Tsrc, type);
 	    break;
 	    }
 	case Op.ACONST_NULL:
