@@ -40,6 +40,7 @@ import harpoon.IR.Tree.Typed;
 import harpoon.IR.Tree.PreciselyTyped;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
+import harpoon.Temp.TempList;
 import harpoon.Temp.Label;
 import harpoon.Temp.LabelList;
 import harpoon.Util.Util;
@@ -56,7 +57,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.30 2000-02-28 17:40:33 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.31 2000-02-28 20:19:28 andyb Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -174,9 +175,88 @@ import java.util.Set;
         return newTemp;
     }
 
-    private void emitHandlerStub(INVOCATION ROOT, Temp retex, Label handler) {
-        emit (ROOT, "mov `s0, `d0", 
-		    new Temp[] { rego[0] }, new Temp[] { retex });
+    private void emitCallPrologue(HCodeElement ROOT, TempList arglist) {
+        /* AAA - currently only deals with up to 6 arguments */
+	TempList argrev = null;
+	int wordsused = 0;	
+        
+        // count number of words required by arguments and
+        // reverse the argument lists.
+        for (TempList tl = arglist; tl != null; tl = tl.tail) {
+	    argrev = new TempList(tl.head, argrev);
+	    wordsused += tb.isTwoWord(tl.head) ? 2 : 1;
+        }
+
+        // move arguments into place
+        for (TempList tl = argrev; tl != null; tl = tl.tail) {
+            Temp temp = tl.head;
+	    if (tb.isTwoWord(temp)) {
+		if (wordsused > 7) { /* two stack */
+		    Util.assert(false, "emitCallPrologue: too many arguments");
+		} else if (wordsused == 7) { /* one reg, one stack */
+		    Util.assert(false, "emitCallPrologue: too many arguments");
+		} else { /* two reg */
+		    emit (ROOT, "mov `s0h, `d0",
+				new Temp[] { rego[wordsused - 2] },
+				new Temp[] { temp });
+		    emit (ROOT, "mov `s0l, `d0",
+				new Temp[] { rego[wordsused - 1] },
+				new Temp[] { temp });
+		}
+		wordsused -= 2;
+	    } else {
+		if (wordsused > 6) { /* on stack */
+		    Util.assert(false, "emitCallPrologue: too many arguments");
+		} else { /* in reg */
+		    emit (ROOT, "mov `s0, `d0", 
+				new Temp[] { rego[wordsused - 1] },
+				new Temp[] { temp });
+		}
+		wordsused--;
+	    }
+        }
+
+	Util.assert(wordsused == 0, "emitCallPrologue: all args not in place");
+    }
+
+    private void emitCallEpilogue(INVOCATION ROOT, Temp retval) {
+	/* AAA - need to adjust SP if args were put on stack */
+
+        if (ROOT.getRetval() == null) {
+	    // don't bother emiting move for void methods
+        } else if (ROOT.getRetval().isDoubleWord()) {
+	    emit (ROOT, "mov `s0, `d0h",
+			new Temp[] { retval },
+			new Temp[] { rego[0] });
+	    emit (ROOT, "mov `s0, `d0l",
+			new Temp[] { retval },
+			new Temp[] { rego[1] });
+	} else {
+	    emit (ROOT, "mov `s0, `d0", 
+			new Temp[] { retval }, 
+			new Temp[] { rego[0] });
+	}
+    }
+
+    private void emitCallFixupTable(HCodeElement ROOT, Label norm, Label exc) {
+        emitDIRECTIVE (ROOT, ".text 10\t! .section fixup");
+	emitDIRECTIVE (ROOT, "\t.word "+norm+", "+exc);
+	emitDIRECTIVE (ROOT, ".text 0 \t! .section code");
+    }
+
+    private void emitHandlerStub(HCodeElement ROOT, Temp retex, Label handler) {
+	if (tb.isTwoWord(retex)) {
+	    emit (ROOT, "mov `s0h, `d0",
+			new Temp[] { rego[0] },
+			new Temp[] { retex });
+	    emit (ROOT, "mov `s0l, `d0",
+			new Temp[] { rego[1] },
+			new Temp[] { retex });
+	} else {
+	    emit (ROOT, "mov `s0, `d0",
+			new Temp[] { rego[0] },
+			new Temp[] { retex });
+	}
         emitNoFall (ROOT, "ba " + handler, null, null, new Label[] { handler });
     }
 
@@ -194,6 +274,8 @@ import java.util.Set;
 					       methodlabel.name +",#function");
 		Instr in4 = new InstrLABEL(inf, i, methodlabel.name+":",
 					   methodlabel);
+
+		/* AAA - the 92 assumes no more than 6 args I think */
 		int save_offset = 92 + 4 * stackspace;
 
 		// save clobbers just about everything
@@ -762,24 +844,62 @@ BINOP(CMPGT, e1, e2) = r
 CALL(retval, retex, NAME(func), arglist, handler) 
 %pred %( !ROOT.isTailCall )% 
 %{
-    /* AAA - Move paramaters into place, et al. */
+    Label rlabel = new Label();
+    Label elabel = new Label();
 
-    emit (ROOT, "mov "+handler+", `d0",
-                new Temp[] { rego[0] },
-                new Temp[] {  });
-    emitDIRECTIVE (ROOT, "\t! coming soon: CALL support");
+    // move the arguments into place
+    emitCallPrologue(ROOT, arglist);
+   
+    // do the call 
+    // AAA - need to fix normal return address
+    emitNoFall (ROOT, "call "+func, 
+                new Temp[] { }, /* AAA - need clobbers */
+		new Temp[] { }, /* need uses */
+		new Label[] { elabel, rlabel });
+    emitDELAYSLOT (ROOT);
+
+    // exceptional return handler
+    emitLABEL (ROOT, elabel+":", elabel);
+    emitHandlerStub(ROOT, retex, handler);
+
+    // normal return handler
+    emitLABEL (ROOT, rlabel+":", rlabel);
+    emitCallEpilogue(ROOT, retval);
+
+    // "fixup table"
+    emitCallFixupTable (ROOT, rlabel, elabel);
 }%
 
 CALL(retval, retex, func, arglist, handler)
 %pred %( !ROOT.isTailCall )%
 %{
-    /* AAA - move parameters into place, et al. */
+    Label rlabel = new Label();
+    Label elabel = new Label();
 
+    // move the arguments into place
+    emitCallPrologue(ROOT, arglist);
+  
+    // do the call
+    // AAA - need to fix normal return address
+    emit (ROOT, "mov `s0, `d0", 
+	        new Temp[] { rego[0] },
+		new Temp[] { func });
+    emitNoFall (ROOT, "call `s0",
+                new Temp[] { }, /* AAA - need clobbers */
+                new Temp[] { rego[0] }, /* AAA - need uses */
+                new Label[] { elabel, rlabel });
+    emitDELAYSLOT (ROOT);
 
-    emit (ROOT, "mov "+handler+", `d0",
-		new Temp[] { rego[0] },
-		new Temp[] {  });
-    emitDIRECTIVE (ROOT, "\t! coming soon: CALL support");
+    // exceptional return handler
+    emitLABEL (ROOT, elabel+":", elabel);
+    emitHandlerStub(ROOT, retex, handler);
+
+    // normal return handler
+    emitLABEL (ROOT, rlabel+":", rlabel);
+    emitCallEpilogue(ROOT, retval);
+
+    // "fixup table"
+    emitCallFixupTable (ROOT, rlabel, elabel);
 }%
 
 // true_label and false_label are harpoon.Temp.Labels, not Exps...
