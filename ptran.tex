@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.18 2002-07-24 17:11:22 cananian Exp $
+% $Id: ptran.tex,v 1.19 2002-07-24 18:06:59 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.18 $ $}
+\date{\today \\ $ $Revision: 1.19 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -16,7 +16,7 @@
 
 We say a program variable $v$ is \newterm{singular} at a statement $s$
 if $v$ will have a different value at every execution of $s$.  An
-allocation site \code{a = new A()} produces a value which is singular
+allocation site $a = \text{new }A(\ldots)$ produces a value which is singular
 at the site; other defintions of $a$ might reach other statements
 $s_x$ in the program, so $a$ is not guaranteed to be singular at $s_x$.
 
@@ -152,7 +152,7 @@ The appropriate Gen and Kill rules are:
 \\
 \text{Kill}_\text{Gs}(n) &=&
        \left\{ \tuple{v, s} | v \in \text{def}(n) \wedge
-                         \tuple{v,s} \in \text{In}_\text{Gs}(n) \right\} \\
+                         \tuple{v,s} \in \text{In}_\text{Gs}(n) \right\} %\\
 \end{eqnarray*}
 where
 \begin{eqnarray*}
@@ -198,22 +198,59 @@ having passed through a redef point?}
 We turn our intraprocedural analysis into a compositional
 interprocedural analysis by introducing ``conditional singularity''
 for formal parameters and others which depend on them.  A
-conditionally-singular variable is singular if some set $P$ of formal
-parameters is mutually singular at the call-site.  We extend
-our dataflow analysis by introducing a new relation $\text{Cp}(v)$
-representing the set of formal parameters which the singularity of $v$
-at $n$ is dependent upon.  A variable $v$ at $n$ is
-conditionally-singular if $\exists p:\tuple{v,p}\in\text{In}_\text{Cp}(n)$
-and $\neg\text{Ns}(v,n)$.
+conditionally-singular variable is only singular if some set of actual
+parameters is mutually singular when the method is called.%
+\footnote{Note that aliasing of parameters is one of the ways that
+a set of parameters may fail to be mutually singular.}
+We define
+$\text{CondParam}(v,n)$ to be the set of formal parameters which the
+singularity of $v$ at $n$ is dependent on.  We can extend our dataflow
+analysis of the previous section to compute this function.
 
-(Roughly) We introduce ``conditional singularity'' for formal
-parameters.  Other variables are ``conditionally singular'' if they
-depend on the singularity of formal parameters.  A compositional
-analysis is presented to compute interprocedural singularity.
-This might be in some ways similar to interprocedural reaching defs?
-Computing mutual singularity can rest on the fact that values
-generated at sites inside a method can never be the same as values generated
-at sites outside the method; we don't have to compare site-by-site.
+
+Previously, the function $\text{In}_\text{Gs}$ was typed
+$\mathcal{S\to V\times S}$
+where $\mathcal{S}$ is the domain of statements
+and $\mathcal{V}$ the domain of variables.
+We expand that type to
+$\mathcal{S\to V\times (S\cup P)}$ where $\mathcal{P}$ is a domain
+representing formal parameters.  The set $P_m$ of formal parameters for
+a method $m$ consists of unique tokens (possibly ordinal integers) for
+each formal parameter of the method.
+
+Instead of initializing $\forall n :
+\text{In}_\text{Gs}(n)=\emptyset$, we let
+\begin{displaymath}
+\text{In}_\text{Gs}(\text{\tt HEADER}) =
+   \left\{ \tuple{v,p} | p\in P_m \wedge v
+\text{ is the variable assigned to formal parameter } p \right\}
+\end{displaymath}
+We also extend the $\text{IsBad}$ predicate:
+\begin{displaymath}
+\text{IsBad}(n) = \neg\left(\text{IsMove}(n) \vee \text{IsNew}(n) \vee
+                            \text n = \text{\tt HEADER} \right)
+\end{displaymath}
+so that definitions of formal parameters are not marked as
+non-singular reaching definitions.  Now we can define
+\begin{displaymath}
+\text{CondParam}(v,n) =
+    \left\{ p\in P_m | \tuple{v,p}\in \text{In}_\text{Gs}(n) \right\}
+\end{displaymath}
+
+A variable $v$ is singular at $n$ iff
+$\text{CondParam}(v,n)=\emptyset \wedge \neg\text{Ns}(v,n)$ and
+conditionally-singular at $n$ iff
+$\text{CondParam}(v,n)\neq\emptyset \wedge \neg\text{Ns}(v,n)$.
+
+Now we can resolve conditional singularity at a callsite by
+examining actual parameters.
+
+%A compositional
+%analysis is presented to compute interprocedural singularity.
+%This might be in some ways similar to interprocedural reaching defs?
+%Computing mutual singularity can rest on the fact that values
+%generated at sites inside a method can never be the same as values generated
+%at sites outside the method; we don't have to compare site-by-site.
 
 
 % this isn't completely correct, but it's the right idea.
