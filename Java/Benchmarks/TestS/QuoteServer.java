@@ -31,7 +31,7 @@ public class QuoteServer {
      */ 
     public static void main(String[] args) { 
 	QuoteServer server = new QuoteServer(); 
-	int SERVER_PORT=Integer.parseInt(args[0]);
+	QuoteServer.SERVER_PORT=Integer.parseInt(args[0]);
 	server.serveQuotes(); 
     } 
     /** 
