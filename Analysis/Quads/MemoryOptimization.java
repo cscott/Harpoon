@@ -13,6 +13,8 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.AGET;
 import harpoon.IR.Quads.ASET;
 import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.Code;
+import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.MONITORENTER;
@@ -21,14 +23,18 @@ import harpoon.IR.Quads.MOVE;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
+import harpoon.IR.Quads.QuadRSSx;
 import harpoon.IR.Quads.QuadSSA;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.SET;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Default;
 import harpoon.Util.DisjointSet;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.MultiMap;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,7 +48,7 @@ import java.util.Set;
  * It should be safe with respect to the revised Java memory model.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemoryOptimization.java,v 1.1.2.2 2001-06-18 08:18:03 cananian Exp $
+ * @version $Id: MemoryOptimization.java,v 1.1.2.3 2001-06-18 14:31:59 cananian Exp $
  */
 public final class MemoryOptimization
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -69,17 +75,25 @@ public final class MemoryOptimization
 	Analysis a = new Analysis(hc);
 	// okay, rename quads and eliminate useless stuff.
 	Quad[] quads = (Quad[]) hc.getElements();
+	// add moves to edges.
+	for (Iterator it=a.moves.keySet().iterator(); it.hasNext(); ) {
+	    Edge e = (Edge) it.next(); Quad q = (Quad) e.to();
+	    for (Iterator it2=a.moves.getValues(e).iterator(); it2.hasNext();){
+		List pair = (List) it2.next();
+		e = addAt(e, new MOVE(q.getFactory(), q,
+				      (Temp)a.ds.find(pair.get(0)),
+				      (Temp)a.ds.find(pair.get(1))));
+	    }
+	}
 	for (int i=0; i<quads.length; i++) {
 	    // delete useless.
 	    if (a.useless.contains(quads[i]))
 		quads[i].remove();
-	    else if (false && quads[i] instanceof PHI) {
-		// new parts for some PHIs.
-	    } else if (!(quads[i] instanceof HEADER)) // rename
+	    else if (!(quads[i] instanceof HEADER)) // rename
 		Quad.replace(quads[i],
 			     quads[i].rename(a.tempMap, a.tempMap));
 	}
-	DeadCode.optimize((harpoon.IR.Quads.Code)hc, null);
+	//DeadCode.optimize((harpoon.IR.Quads.Code)hc, null);
 	/*
 	System.out.println("AFTER: ");
 	hc.print(new java.io.PrintWriter(System.out));
@@ -87,6 +101,33 @@ public final class MemoryOptimization
 	// done!
 	return hc;
     }
+    protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
+	// make SSA into RSSx.
+	Util.assert(hc.getName().equals(QuadSSA.codename));
+	return MyRSSx.cloneToRSSx((harpoon.IR.Quads.Code)hc, newmethod);
+    }
+    private static class MyRSSx extends QuadRSSx {
+	private MyRSSx(HMethod m) { super(m, null); }
+	public static HCodeAndMaps cloneToRSSx(harpoon.IR.Quads.Code c,
+					       HMethod m) {
+	    MyRSSx r = new MyRSSx(m);
+	    return r.cloneHelper(c, r);
+	}
+    }
+    protected String mutateCodeName(String codeName) {
+	Util.assert(codeName.equals(QuadSSA.codename));
+	return MyRSSx.codename;
+    }
+	/** helper routine to add a quad on an edge. */
+    private static Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
+    private static Edge addAt(Edge e, int which_pred, Quad q, int which_succ) {
+	Quad frm = (Quad) e.from(); int frm_succ = e.which_succ();
+	Quad to  = (Quad) e.to();   int to_pred = e.which_pred();
+	Quad.addEdge(frm, frm_succ, q, which_pred);
+	Quad.addEdge(q, which_succ, to, to_pred);
+	return to.prevEdge(to_pred);
+    }
+
 
     class Analysis {
 	/** <BasicBlock,temp,field> -> temp */
@@ -99,6 +140,17 @@ public final class MemoryOptimization
 	final TempMap tempMap = new TempMap() {
 	    public Temp tempMap(Temp t) { return (Temp) ds.find(t); }
 	};
+	/** <BasicBlock,Value>->Temp */
+	private final Map tempgen = new HashMap();
+	Temp tempgen(BasicBlock bb, Value v, Temp template) {
+	    List key = Default.pair(bb, v);
+	    if (!tempgen.containsKey(key)) {
+		tempgen.put(key, new Temp(template));
+	    }
+	    return (Temp) tempgen.get(key);
+	}
+	/** Edge -> set of moves */
+	final MultiMap moves = new GenericMultiMap();
 
 	Analysis(HCode hc) {
 	    BasicBlock.Factory bbF = new BasicBlock.Factory(hc);
@@ -126,8 +178,8 @@ public final class MemoryOptimization
 	    for (Iterator it=m.entrySet().iterator(); it.hasNext(); ) {
 		Map.Entry me = (Map.Entry) it.next();
 		Value v = ((Value)me.getKey()).map(ds, q, which_pred);
-		Temp  t = Value.map((Temp)me.getValue(),ds, q, which_pred);
-		result.put(v, t);
+		Temp t = (Temp) ds.find(me.getValue());
+		result.put(v, t); //note that t is *not* phi-maped.
 	    }
 	    return result;
 	}
@@ -152,20 +204,28 @@ public final class MemoryOptimization
 		if (prin[i]==null) { allknown=false; continue; }// no info yet.
 		if (merged==null) merged = prin[i].keySet();
 		else merged.retainAll(prin[i].keySet());
+		moves.remove(first.prevEdge(i));
 	    }
 	    // handle merged inputs.
 	    if (merged!=null && allknown)
 		for (Iterator it=merged.iterator(); it.hasNext(); ) {
 		    Value v = (Value) it.next();
-		    Temp t=null; boolean same=true;
+		    Temp t=null;
 		    for (int i=0; i<pred.length; i++) {
 			if (prin[i]==null) continue; // no info.
-			Temp tt = (Temp) prin[i].get(v);
-			if (t==null) t=tt;
-			else if (!t.equals(tt)) same=false;
+			t = (Temp) prin[i].get(v);
+			break;
 		    }
-		    if (t!=null && same)
-			in.put(v, t);
+		    if (t!=null) {
+			Temp nt = (Temp) ds.find(tempgen(bb, v, t));
+			for (int i=0; i<pred.length; i++) {
+			    if (prin[i]==null) continue;
+			    // note that we use the un-phi-mapped temp here.
+			    Temp tt = (Temp) prin[i].get(v);
+			    moves.add(first.prevEdge(i), Default.pair(nt, tt));
+			}
+			in.put(v, nt);
+		    }
 		}
 		    
 
