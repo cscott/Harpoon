@@ -3,8 +3,14 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HClassMutator;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.NoSuchClassException;
+
 import java.lang.reflect.Modifier;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * <code>INFileSystem</code> provides implementations for (some of) the native
@@ -16,7 +22,7 @@ import java.lang.reflect.Modifier;
  * synthetic class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFileSystem.java,v 1.1.2.1 2000-01-27 11:26:26 cananian Exp $
+ * @version $Id: INFileSystem.java,v 1.1.2.2 2000-01-27 11:44:31 cananian Exp $
  */
 public class INFileSystem {
     static final void register(StaticState ss) {
@@ -147,7 +153,17 @@ public class INFileSystem {
 		if (f.exists()) retval |= BA_EXISTS;
 		if (f.isFile()) retval |= BA_REGULAR;
 		if (f.isDirectory()) retval |= BA_DIRECTORY;
-		if (f.isHidden()) retval |= BA_HIDDEN;
+		// have to use reflection for the 'hidden' attribute,
+		// since File.isHidden isn't present before JDK 1.2
+		try {
+		    Boolean hidden = (Boolean) 
+			(f.getClass().getMethod("isHidden", new Class[0])
+			 .invoke(f, new Object[0]));
+		    if (hidden.booleanValue()) retval |= BA_HIDDEN;
+		} catch (NoSuchMethodException e) { // ignore
+		} catch (Exception e) { // this shouldn't happen.
+		    throw new RuntimeException(e.toString());
+		}
 		return new Integer(retval);
 	    }
 	};
