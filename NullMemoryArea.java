@@ -28,11 +28,6 @@ public class NullMemoryArea extends MemoryArea {
 
     protected native void initNative(long sizeInBytes);
 
-    /** Create a new MemBlock when entering a NullMemoryArea. 
-     */
-
-    protected native void newMemBlock(RealtimeThread rt);
-
     /** Return an instance of the one and only NullMemoryArea. 
      */
 

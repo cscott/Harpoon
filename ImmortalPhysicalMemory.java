@@ -22,10 +22,4 @@ public class ImmortalPhysicalMemory extends MemoryArea {
     /** */
 
     protected native void initNative(long sizeInBytes);
-
-    /** */
-
-    protected native void newMemBlock(RealtimeThread rt);
-
-
 }

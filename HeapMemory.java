@@ -24,9 +24,6 @@ public final class HeapMemory extends MemoryArea {
     /** Initialize the native component of the HeapMemory. */
     protected native void initNative(long sizeInBytes);
 
-    /** .enter the heap - create a new MemBlock */
-    protected native void newMemBlock(RealtimeThread rt);
-
     /** Return the instance of the one and only HeapMemory. */
     public static HeapMemory instance() {
 	if (theHeap == null) { // Bypass static initializer problem.

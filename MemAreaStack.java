@@ -20,25 +20,37 @@ class MemAreaStack {
      */
     public MemAreaStack next;
 
-    /** The number of HeapMemorys skipped over.
-     */
-    public int heapMemCount;
-
-    /** Create a new, null MemAreaStack.
-     */
-    public MemAreaStack() {
-	next = null;
-	entry = null;
-	heapMemCount = 0;
-    }
-
     /** Push the MemoryArea on the cactus stack. 
      */
-    public MemAreaStack(MemoryArea entry, MemAreaStack next, 
-			int heapMemCount) {
+    public MemAreaStack(MemoryArea entry, MemAreaStack next) {
 	this.entry = entry;
 	this.next = next;
-	this.heapMemCount = heapMemCount;
+    }
+
+    public static MemAreaStack PUSH(MemoryArea entry, MemAreaStack next) {
+	RealtimeThread.checkInit();
+	RefCountArea ref = RefCountArea.refInstance();
+	Object mas = null;
+	if ((next != null) && (next.memoryArea == ref)) ref.INCREF(next);
+	if ((entry != null) && (entry.memoryArea == ref)) ref.INCREF(entry);
+	try {
+	    mas = ref.newInstance(MemAreaStack.class, 
+				  new Class[] { MemoryArea.class, 
+						MemAreaStack.class },
+				  new Object[] { entry, next});
+	} catch (Exception e) {
+	    NoHeapRealtimeThread.print(e.toString());
+	    System.exit(-1);
+	}
+	mas.memoryArea = ref;
+	return (MemAreaStack)mas;
+    }
+
+    public static MemAreaStack POP(MemAreaStack top) {
+	MemAreaStack next = top.next;
+	RefCountArea ref = RefCountArea.refInstance();
+	if (top.memoryArea == ref) ref.DECREF(top);
+	return next;
     }
 
     /** Get the MemAreaStack of the first occurance of the 
@@ -61,7 +73,7 @@ class MemAreaStack {
      */
     public String toString() {
 	if (next != null) {
-	    return entry.toString()+", "+heapMemCount+"\n"+next.toString();
+	    return entry.toString()+"\n"+next.toString();
 	} else {
 	    return "";
 	}

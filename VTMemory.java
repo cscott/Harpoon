@@ -25,12 +25,6 @@ public class VTMemory extends ScopedMemory {
      */
     protected native void initNative(long sizeInBytes);
 
-    /** Create a newMemBlock on entry of this VTMemory for a 
-     *  particular RealtimeThread. 
-     */
-
-    protected native void newMemBlock(RealtimeThread rt);
-
     /** Return a helpful string describing this VTMemory.
      */
     public String toString() {

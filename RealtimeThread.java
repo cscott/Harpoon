@@ -15,10 +15,10 @@ public class RealtimeThread extends Thread {
 
     MemAreaStack memAreaStack;
 
-    /** Counts the number of times a HeapMemory was seen at the top of the stack. 
+    /** The top of the stack for this RealtimeThread 
      */
 
-    int heapMemCount;
+    MemAreaStack topStack;
 
     /** Contains the memoryArea associated with this mem. 
      */
@@ -34,6 +34,10 @@ public class RealtimeThread extends Thread {
      */
     
     static boolean RTJ_init_in_progress;
+
+    /** The target to run. */
+    
+    private Runnable target;
 
     static void checkInit() {
         if (RTJ_init_in_progress) {
@@ -51,7 +55,8 @@ public class RealtimeThread extends Thread {
     
     public RealtimeThread(MemoryArea memory) {
 	super();
-	mem = memory;
+	target = null;
+	mem = (memory==null)?null:(memory.shadow);
 	setup();
     }
     
@@ -88,7 +93,8 @@ public class RealtimeThread extends Thread {
     /** */
 
     public RealtimeThread(Runnable target, String name) {
-	super(target, name);
+	super(name);
+	this.target = target;
 	mem = null;
 	setup();
     }
@@ -96,15 +102,17 @@ public class RealtimeThread extends Thread {
     /** */
 
     public RealtimeThread(MemoryArea memory, Runnable target) {
-	super(target);
-	mem = memory;
+	super();
+	this.target = target;
+	mem = (memory==null)?null:(memory.shadow);
 	setup();
     }
 
     /** */
 
     public RealtimeThread(ThreadGroup group, Runnable target) {
-	super(group, target);
+	super(group, (Runnable)null);
+	this.target = target;
 	mem = null;
 	setup();
     }
@@ -113,17 +121,17 @@ public class RealtimeThread extends Thread {
 
     public RealtimeThread(ThreadGroup group, Runnable target, String name,
 			  MemoryArea mem) {
-	super(group, target, name);
-	this.mem = mem;
+	super(group, name);
+	this.target = target;
+	this.mem = (mem==null)?null:(mem.shadow);
 	setup();
     }
 
     /** This sets up the unspecified local variables for the constructor. */
 
     private void setup() {
-	memAreaStack = new MemAreaStack();
+	topStack = memAreaStack = null;
 	noHeap = false;
-	heapMemCount = 0;
     }
 
     /** */
@@ -202,23 +210,30 @@ public class RealtimeThread extends Thread {
 	    checkInit();
 	}
 	RealtimeThread previousThread = currentRealtimeThread();
-	memAreaStack = previousThread.memAreaStack;
+	topStack = memAreaStack = previousThread.memAreaStack;
 	
-	MemoryArea newMem = previousThread.getMemoryArea();
+	MemoryArea newMem = previousThread.memoryArea();
 	if (mem == null) {
 	    enter(newMem);
 	} else {
 	    enter(mem);
 	}
-	mem = getMemoryArea();
+	mem = memoryArea();
 	super.start();// When the run method is called, 
 	// RealtimeThread points to the current scope.
 	// Note that there is no exit()... this is actually legal.
     }
 
-    /** */
+    /** Override the Thread.run() method, because Thread.run() doesn't work. */
+    public void run() {
+	if (target != null) {
+	    target.run();
+	}
+    }
 
-    public MemoryArea getMemoryArea() {
+    /** For internal use only. */
+
+    public MemoryArea memoryArea() {
 	if (mem == null) { // Bypass static initializer problem.
 	    mem = HeapMemory.instance();
 	}
@@ -227,19 +242,35 @@ public class RealtimeThread extends Thread {
 
     /** */
 
+    public MemoryArea getMemoryArea() {
+	if (mem == null) {
+	    mem = HeapMemory.instance();
+	}
+	return mem.original;
+    }
+
     void enter(MemoryArea mem) {
-	memAreaStack = new MemAreaStack(this.mem, memAreaStack, 0);
+	memAreaStack = MemAreaStack.PUSH(this.mem, memAreaStack);
 	(this.mem = mem).enterMemBlock(this, memAreaStack);
     }
 
     /** */
 
     void exitMem() {
-	mem.exitMemBlock(this);
+	mem.exitMemBlock(this, memAreaStack);
 	mem = memAreaStack.entry;
-	memAreaStack = memAreaStack.next;
+	memAreaStack = MemAreaStack.POP(memAreaStack);
     }
     
+    /** */
+
+    void cleanup() {
+	while (memAreaStack != topStack) {	
+	    mem.exitMemBlock(this, memAreaStack);
+	    memAreaStack = MemAreaStack.POP(memAreaStack);
+	}
+    }
+
     /** Get the outerScope of a given MemoryArea for the current 
      *  RealtimeThread. 
      */
@@ -262,7 +293,7 @@ public class RealtimeThread extends Thread {
     /** */
 
     boolean checkAccess(MemoryArea source, MemoryArea target) {
-	MemAreaStack sourceStack = (source == getMemoryArea()) ? 
+	MemAreaStack sourceStack = (source == memoryArea()) ? 
 	    memAreaStack : memAreaStack.first(source);
 	return (sourceStack != null) && (sourceStack.first(target) != null);
     }

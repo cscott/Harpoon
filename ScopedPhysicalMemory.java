@@ -25,10 +25,6 @@ public class ScopedPhysicalMemory extends ScopedMemory {
 
     /** */
 
-    protected native void newMemBlock(RealtimeThread rt);
-
-    /** */
-
     public void checkAccess(Object obj) {
 	if (obj instanceof ScopedPhysicalMemory) {
 	    ScopedPhysicalMemory spm = (ScopedPhysicalMemory)obj;

@@ -3,15 +3,17 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>ImmortalMemory</code>
- *
+/** <code>ImmortalMemory</code> is a <code>MemoryArea</code> which allows
+ *  access from anywhere, access to the heap, and all objects allocated
+ *  in this live for the life of the program.
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
 public class ImmortalMemory extends MemoryArea {
     private static ImmortalMemory immortalMemory;
-
-    private ImmortalMemory() {
+   
+    /* Don't use this! */
+    public ImmortalMemory() {
 	super(1000000000); // Totally bogus
     }
 
@@ -19,25 +21,13 @@ public class ImmortalMemory extends MemoryArea {
 
     protected native void initNative(long sizeInBytes);
     
-    /** */
-
-    protected native void newMemBlock(RealtimeThread rt);
-
-    /** Returns the only ImmortalMemory instance (which was itself allocated out of
-     *  ImmortalMemory - the native component is actually smart enough to not be 
-     *  confused by this and RTJmalloc will allocate it out of itself).
+    /** Returns the only ImmortalMemory instance (which was itself allocated
+     *  out of ImmortalMemory) 
      */ 
     public static ImmortalMemory instance() {
 	if (immortalMemory == null) {
-	    if (RealtimeThread.RTJ_init_in_progress) {
-		return (ImmortalMemory)("Constant ImmortalMemory".memoryArea);
-	    }
-	    (immortalMemory = new ImmortalMemory()).enter(new Runnable() {
-		    public void run() {
-			(immortalMemory = new ImmortalMemory()).memoryArea = 
-			    immortalMemory;
-		    }
-		});
+	    immortalMemory = (ImmortalMemory)((new ImmortalMemory()).shadow);
+	    immortalMemory.original = immortalMemory.memoryArea = immortalMemory;
 	}
 	return immortalMemory;
     }

@@ -56,21 +56,19 @@ public abstract class MemoryArea {
      */
 
     boolean constant;
+
+    MemoryArea shadow, original;
   
-    protected native void setupMemBlock(RealtimeThread rt)
-	throws IllegalAccessException;
     protected native void enterMemBlock(RealtimeThread rt, MemAreaStack mas);
-    protected native void exitMemBlock(RealtimeThread rt);
+    protected native void exitMemBlock(RealtimeThread rt, MemAreaStack mas);
     protected native Object newArray(RealtimeThread rt, 
 				     Class type, 
-				     int number, Object memBlock);
+				     int number);
     protected native Object newArray(RealtimeThread rt, 
-				     Class type, int[] dimensions, 
-				     Object memBlock);
+				     Class type, int[] dimensions);
     protected native Object newInstance(RealtimeThread rt, 
 			      Constructor constructor, 
-			      Object[] parameters, 
-			      Object memBlock)
+			      Object[] parameters)
 	throws InvocationTargetException;
     protected native void throwIllegalAssignmentError(Object obj, 
 						      MemoryArea ma)
@@ -78,29 +76,50 @@ public abstract class MemoryArea {
 
     protected MemoryArea(long sizeInBytes) {
 	size = sizeInBytes;
+	preSetup();
+	initNative(sizeInBytes);
+	postSetup();
+    }
+
+    protected MemoryArea(long minimum, long maximum) {
+	size = maximum;
+	preSetup();
+	/* Sub-class will do postSetup */
+    }
+
+    protected void preSetup() {
 	scoped = false; // To avoid the dreaded instanceof
 	heap = false;
 	id = num++;
 	constant = false;
 	nullMem = false;
-	initNative(sizeInBytes);
+	original = shadow = this;
     }
     
+    protected void postSetup() {
+        (shadow = shadow()).shadow = shadow;
+	registerFinal();
+    }
+
+    /** */
+
+    protected native MemoryArea shadow();
+
+    /** */
+  
+    protected native void registerFinal();
+  
     /** */
 
     protected abstract void initNative(long sizeInBytes);
 
     /** */
 
-    protected abstract void newMemBlock(RealtimeThread rt);
-    
-    /** */
-
     public void enter(Runnable logic) {
 	RealtimeThread.checkInit();
 	RealtimeThread current = RealtimeThread.currentRealtimeThread();
-	MemoryArea oldMem = current.getMemoryArea();
-	current.enter(this);
+	MemoryArea oldMem = current.memoryArea();
+	current.enter(shadow);
 	try {
 	    logic.run();
 	} catch (Exception e) {
@@ -141,7 +160,7 @@ public abstract class MemoryArea {
 	// I'm completely punting this for now...
   	if (mem == null) { // Native methods return objects 
   	    // allocated out of the current scope.
-	    return RealtimeThread.currentRealtimeThread().getMemoryArea();
+	    return RealtimeThread.currentRealtimeThread().memoryArea();
 //    	    return NullMemoryArea.instance();
 	} 
 	if (mem.constant) { 
@@ -176,21 +195,9 @@ public abstract class MemoryArea {
     /** */
 
     public void bless(java.lang.Object obj) { 
-	obj.memoryArea = this;
+	obj.memoryArea = shadow;
     }
     
-    private void addToRootSet() { 
-	// Make sure to add the following to the rootset!
-	(new Boolean(false)).booleanValue();
-	(new Byte((byte)0)).byteValue();
-	(new Character('0')).charValue();
-	(new Double(0.0)).doubleValue();
-	(new Float(0.0)).floatValue();
-	(new Integer(0)).intValue();
-	(new Long(0)).longValue();
-	(new Short((short)0)).shortValue();
-    }
-
     /** Create a new array, allocated out of this MemoryArea. 
      */
 
@@ -199,30 +206,13 @@ public abstract class MemoryArea {
     {
 	RealtimeThread.checkInit();
 	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
-	MemoryArea rtMem = rt.getMemoryArea();
-	Object o; 
 	if (number<0) {
 	    throw new NegativeArraySizeException();
 	}
-	/* Something our compiler isn't smart enough to figure out. */
-	if (number<-10000) { 
-	    addToRootSet();
-	}
-	if (rtMem == this) {
-	    o = Array.newInstance(type, number);
-	} else {
-	    o = new Object();
-	    o.memoryArea = this;
-	    rtMem.checkAccess(o);
-	    MemAreaStack mas = rt.memAreaStack.first(this);
-	    if (mas == null) {
-		setupMemBlock(rt);
-		o = newArray(rt, type, number, rt);
-	    } else {
-		o = newArray(rt, type, number, mas);
-	    }
-	}
-	o.memoryArea = this;
+	Object o = new Object();
+	o.memoryArea = shadow;
+	rt.memoryArea().checkAccess(o);
+	(o = newArray(rt, type, number)).memoryArea = shadow;
 	return o;
     }
 
@@ -235,32 +225,15 @@ public abstract class MemoryArea {
     {
 	RealtimeThread.checkInit();
 	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
-	MemoryArea rtMem = rt.getMemoryArea();
-	Object o;
 	for (int i = 0; i<dimensions.length; i++) {
 	    if (dimensions[i]<0) {
 		throw new NegativeArraySizeException();
 	    }
 	}
-	/* Something our compiler isn't smart enough to figure out. */
-	if (dimensions.length<-10000) { 
-	    addToRootSet();
-	}
-	if (rtMem == this) {
-	    o = Array.newInstance(type, dimensions);
-	} else {
-	    o = new Object();
-	    o.memoryArea = this;
-	    rtMem.checkAccess(o);
-	    MemAreaStack mas = rt.memAreaStack.first(this);
-	    if (mas == null) {
-		setupMemBlock(rt);
-		o = newArray(rt, type, dimensions, rt);
-	    } else {
-		o = newArray(rt, type, dimensions, mas);
-	    }
-	}
-	o.memoryArea = this;
+	Object o = new Object();
+	o.memoryArea = shadow;
+	rt.memoryArea().checkAccess(o);
+	(o = newArray(rt, type, dimensions)).memoryArea = shadow;
 	return o;
     }
 
@@ -284,32 +257,17 @@ public abstract class MemoryArea {
 	RealtimeThread.checkInit();
 	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
 	Object o = new Object();
-	/* Something our compiler isn't smart enough to figure out. */
-	if (parameters.length<-10000) { 
-	    addToRootSet();
-	}
-	MemoryArea rtMem = rt.getMemoryArea();
-	o.memoryArea = this;
-	rtMem.checkAccess(o);
+	o.memoryArea = shadow;
+	rt.memoryArea().checkAccess(o);
 	try {
 	    Constructor c = type.getConstructor(parameterTypes);
-	    if (rtMem == this) {
-		o = c.newInstance(parameters);
-	    } else {
-		MemAreaStack mas = rt.memAreaStack.first(this);
-		if (mas == null) {
-		    setupMemBlock(rt);
-		    o = newInstance(rt, c, parameters, rt);
-		} else {
-		    o = newInstance(rt, c, parameters, mas);
-		}
-	    }
+	    o = newInstance(rt, c, parameters);
 	} catch (NoSuchMethodException e) {
 	    throw new InstantiationException(e.getMessage());
 	} catch (InvocationTargetException e) {
 	    throw new InstantiationException(e.getMessage());
 	}
-	o.memoryArea = this;
+	o.memoryArea = shadow;
 	return o;
     }
     

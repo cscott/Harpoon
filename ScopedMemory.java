@@ -19,6 +19,12 @@ public abstract class ScopedMemory extends MemoryArea {
 	scoped = true;
     }
     
+    public ScopedMemory(long minimum, long maximum) {
+	super(minimum, maximum);
+	portal = null;
+	scoped = true;
+    }
+
     /** Return the maximum size of this ScopedMemory. 
      */
     public long getMaximumSize() { 

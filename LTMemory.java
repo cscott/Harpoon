@@ -10,27 +10,20 @@ package javax.realtime;
 
 public class LTMemory extends ScopedMemory {
 
-    /** Should the memory of this MemoryArea be reused on scope reentry? 
-     *  If so, you need to call done() when you're done with the scope. */
-    
-    private boolean reuse;
-
     /** This constructs a LTMemory of the appropriate size (the maximum allowed
-     *  to be allocated in the scope).  reuse defaults to false.  The performance
-     *  hit of allocating a large block of memory is taken when this constructor
-     *  is called.  */
+     *  to be allocated in the scope).  The performance hit of allocating a 
+     *  large block of memory is taken when this constructor
+     *  is called.  
+     */
 
     public LTMemory(long size) {
 	super(size);
-	initNative(size, reuse = false);
+	initNative(size, size);
     }
-    
-    /** An alternate constructor for LTMemory that allows you to specify whether
-	you want to reuse the memory associated with the scope on reentry. */
 
-    public LTMemory(long size, boolean reuse) {
-	super(size);
-	initNative(size, this.reuse = reuse);
+    public LTMemory(long minimum, long maximum) {
+	super(maximum);
+	initNative(minimum, maximum);
     }
     
     /** Returns a representation of this LTMemory object */
@@ -39,31 +32,20 @@ public class LTMemory extends ScopedMemory {
 	return "LTMemory: " + super.toString();
     }
 
-    /** Shadow the method called by MemoryArea, we want to specify
-     *  an additional argument... */
-
-    protected void initNative(long sizeInBytes) {}
-
     /** Initialize the native component of this MemoryArea 
      *  (set up the MemBlock) */
     
-    private native void initNative(long sizeInBytes, boolean reuse);
+    protected void initNative(long sizeInBytes) {}
 
-    /** Create a newMemBlock and store it in 
-     *  getInflatedObject(env, rt)->temp */
-    
-    protected native void newMemBlock(RealtimeThread rt);
+    private native void initNative(long minimum, long maximum);
 
     /** Invoke this method when you're finished with the MemoryArea 
      *	(could be a finalizer if we had finalizers...) */
 
     public void done() {
-	if (reuse) {
-	    doneNative();
-	}
+	doneNative();
     }
 
     /** This will actually free the memory (if refcount = 0). */
-
     private native void doneNative();
 }
