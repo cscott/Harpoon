@@ -14,8 +14,8 @@
 #ifdef WITH_GC_STATS
 #include "realtime/GCstats.h"
 #endif
-#ifdef WITH_REALTIME_THREADS
-# include "realtime/threads.h"
+#ifdef WITH_REALTIME_JAVA
+#include "realtime/RTJmalloc.h"
 #endif
 
 #define CHECK_EXCEPTIONS(env) \
