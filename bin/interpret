@@ -1,10 +1,4 @@
 #!/bin/sh
-# check java version
-if java -version 2>&1 | grep -q 'version "1.1'; then
-  echo "WARNING: YOU ARE USING JAVA 1.1. (JDK1.2 or above is preferred)" 1>&2
-fi
-# ok.
 echo "Executing $*." 1>&2
-# you can set FLEXPATH to assign additional components to the harpoon classpath
-java -mx96m -oss2m -Dharpoon.class.path=${FLEXPATH}${FLEXPATH:+:}.:../Benchmarks:Support/Lex.jar:SupportNP/sunthunk.jar:SupportNP/collections.jar:SupportNP/classes.zip ${flexc_options} harpoon.Main.Run $*
-exit $?
+javaopts="-oss2m $javaopts"
+. `dirname $0`/run-java harpoon.Main.Run $*
