@@ -39,7 +39,7 @@ import java.util.List;
  * for debugging purposes when Realtime.DEBUG_REF is turned on.
  * 
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: RealtimeRuntime.java,v 1.4 2002-07-15 18:31:12 wbeebee Exp $
+ * @version $Id: RealtimeRuntime.java,v 1.5 2002-08-12 12:02:22 wbeebee Exp $
  */
 
 public class RealtimeRuntime extends harpoon.Backend.Runtime1.Runtime {
@@ -174,7 +174,7 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime1.Runtime {
 	    Realtime.RTJ_PERF) {
 	    return "harpoon/Analysis/Realtime/"+basename;
 	} else {
-	    return "harpoon/Backend/Runtime1/"+basename;
+	    return super.resourcePath(basename);
 	}
     }
 }
