@@ -77,6 +77,7 @@ oqe.dvi oqe-notes.tex oqe-adobe.tex:		\
 	 Figures/oopsla-speed-color.eps		\
 	 Figures/spec-space-2.eps		\
 	 Figures/Kontour/classcomp-bbox.eps	\
+	 Figures/THlat6c.tex			\
 	 Figures/THlat6c2.tex			\
 	 Figures/Images/model-t-black.eps	\
 	 Figures/Images/model-t-redblue.eps	\
