@@ -18,11 +18,12 @@ import harpoon.Util.Util;
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultNameMap.java,v 1.1.2.2 1999-08-11 04:03:04 cananian Exp $
+ * @version $Id: DefaultNameMap.java,v 1.1.2.3 1999-10-13 18:24:41 cananian Exp $
  */
 public class DefaultNameMap extends NameMap {
     private static final String member_prefix = "_Java_";
     private static final String class_prefix = "_Class_";
+    private static final String primitive_prefix = "_Primitive_";
     private static final String string_prefix = "_String_";
     private static final String suffix_sep = "_9"; // "$" is another option.
 
@@ -52,8 +53,11 @@ public class DefaultNameMap extends NameMap {
     }
     /** Mangle a class name. */
     public String mangle(HClass hc, String suffix) {
-	return class_prefix + encode(hc.getName()) +
-	    (suffix==null?"":(suffix_sep+encode(suffix)));
+	String sufstr = (suffix==null?"":(suffix_sep+encode(suffix)));
+	if (hc.isPrimitive())
+	    return primitive_prefix + hc.getName() + sufstr;
+	else
+	    return class_prefix + encode(hc.getName()) + sufstr;
     }
 
     /** Mangle a string constant reference. */
