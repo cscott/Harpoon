@@ -175,6 +175,10 @@ extern struct FNI_method2info method2info_start[], method2info_end[];
 /* MOVED: to fni-threadstate.h, for better precise-c backend integration */
 #include "fni-threadstate.h"
 
+/* ---------------------- object size ---------------------------------*/
+/* broken out to fni-objsize.h to aid readability of this file somewhat */
+#include "fni-objsize.h"
+
 /* -------------- internal function prototypes. ------------- */
 
 /* Initialize JNIEnv management code at startup. */
