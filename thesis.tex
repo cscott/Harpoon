@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.98 1999-08-31 07:20:21 cananian Exp $
+% $Id: thesis.tex,v 1.99 1999-08-31 18:07:02 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -11,6 +11,7 @@
 \usepackage{amsthm} % proof environment
 \usepackage{amstext} % the \text command for math mode (replaces \mbox)
 \usepackage{varioref} % \vref command
+\usepackage{graphicx} % for SCC bargraph
 % common definitions
 \usepackage{comdef}
 \newcommand*{\figscale}{1.0}
@@ -37,14 +38,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.98 $ $}
+\date{\today \\ $ $Revision: 1.99 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.98 $ $}{$ $Revision: 1.98 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.99 $ $}{$ $Revision: 1.99 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -204,11 +205,10 @@ algorithm as $O(N^2 V)$.
 
 Our algorithms do not require the construction of a dominance
 frontier---building on recent work on efficient SSA construction in
-this regard---and run in so-called ``linear'' time: $O(EV)$.  A more
+this regard---and run in so-called ``linear'' time.  A more
 detailed analysis will be given in section \ref{sec:ssi_complexity},
-but suffice for now to say that
-close attention has been paid to the run-time of our construction and
-analysis algorithms.\footnote{Dhamdhere \cite{dhamdhere92:large} quite
+but suffice for now to say that our construction and analysis
+algorithms are efficient.\footnote{Dhamdhere \cite{dhamdhere92:large} quite
 correctly states that Cytron's original algorithm has a worst-case
 time bound of $O(N^3)$.  This is also true for our algorithms.
 However, these worst-case time bounds are not tight; we will present
@@ -1237,9 +1237,9 @@ for SSA form, ``the number of $\phi$-nodes needed remains linear.''
 Typically Cytron \cite{cytron91:ssa} is cited; however, that reference
 actually states:
 \begin{quote}
-For the programs we tested, the plot in Figure 21 shows that the
-number of \phifunction{s} is also linear in the size of the original
-program.
+For the programs we tested, the plot in [figure 21 of Cytron's paper]
+shows that the number of \phifunction{s} is also linear in the size of
+the original program.
 \end{quote}
 It is important to note that Cytron's claim is based not on
 algorithmic worst-bounds complexity, but on empirical evidence.  This
@@ -1257,11 +1257,45 @@ Our worst-case space complexity bounds for SSI form are identical to
 SSA form --- $O(EV)$ --- but in this section we will endeavour to show
 that typical complexities are likewise ``linear in the program size.''
 
-The total runtime for SSI
-placement and subsequent pruning, including the time to construct the
-PST, is $O(E + N V_0 + U_{SSI})$.
-See figure \vref{fig:phisigdata}.%
-\fixme{Import discussion from appendix here.}
+The total runtime for SSI placement and subsequent pruning, including
+the time to construct the PST, is $O(E + N V_0 + U_{SSI})$.  For most
+programs $E$ will be a small constant factor multiple of $N$; as
+Wegman and Zadeck \cite{wegman91:scc} note, most control flow graph
+nodes will have at most two successors.  For those graphs where $E$ is
+not $O(N)$, it can be argued that $E$ is the more relevant measure of
+program complexity.\footnote{We will not follow Cytron \cite{cytron91:ssa} in
+defining a new variable $R$ to denote $\max(N,E,\ldots)$ to avoid
+following him in declaring worst-case complexity $O(R^3)$ and leaving
+it to the reader to puzzle out whether $O(N^6)$ (!) is really being implied.}
+
+Thus the ``linearity'' of our SSI construction algorithm rests on the
+quantities $N V_0$ and $U_{SSI}$.  Figures~\ref{fig:ussidata} and
+\ref{fig:v0data} present empirical data for $V_0$ and $U_{SSI}$ on a
+sample of 1,048 Java methods.  The methods varied in length from 4
+to 6,642 statements and were taken from the dynamic call-graph of the
+FLEX compiler itself, which includes large portions of the standard
+Java class libraries.  Figure~\ref{fig:ussidata} shows convincingly
+that $U_{SSI}$ grows as $N$ for large procedures, and
+figure~\ref{fig:v0data} supports an argument that $V_0$ grows very
+slowly and that the quantity $N V_0$ would tend to grow as $N^{1.3}$.
+This would argue for a near-linear practical run-time.
+
+In contrast, Cytron's original algorithm for SSA form had theoretical
+complexity $O(E + V_{SSA} |\text{DF}| + N V_{SSA})$.  Cytron does not
+present empirical data for $V_{SSA}$, but one can infer from the data
+he presents for ``number of introduced \phifunction{s}'' that
+$V_{SSA}$ behaves similarly to $V_{SSI}$ --- that is, it grows as $N$,
+not as $V_0$.  It is frequently pointed out\footnote{See Dhamdhere
+\cite{dhamdhere92:large} for example.} that the $|\text{DF}|$
+term, the size of the dominance frontier, can be $O(N^2)$ for common
+programming constructs (\code{repeat-until} loops), which indicates that
+the $V_{SSA} |\text{DF}|$ term in Cytron's algorithm will be $O(N^2)$
+at best and at times as bad as $O(N^3)$.
+
+Note that the space complexity of SSI form, which may be $O(EV)$ in
+the worst case (\phisigfunction{s} for every variable inserted at
+every node) is certainly not greater than $U_{SSI}$, and thus
+figure~\ref{fig:ussidata} shows linear practical space use.
 
 \section{Uses and applications of SSI}
 \textbf{Discuss predicated analysis, anticipatibility, PRE, etc.
@@ -1660,8 +1694,15 @@ three levels are added to the lattice.\fixme{Write up binop rules for
 new integer levels and deal with upper bounds in an efficient manner.}
 
 \subsubsection{Experimental results}\label{sec:sptc_results}
+\begin{myfigure}
+\centering
+\includegraphics[scale=0.4,angle=-90,clip=true]{Figures/THscccomp.eps}
+\caption{SPTC optimization performance.}
+\label{fig:sptc_numbers}
+\end{myfigure}
 Some quantitative measure of the
-utility of SPTC is given as table \ref{tab:sptc_numbers}.
+utility of SPTC is given as table \vref{fig:sptc_numbers}.%
+\fixme{These numbers are pretty poor.}
 
 \subsection{Bit-width analysis}\label{sec:bitwidth}
 \begin{myfigure}[t]
@@ -2015,6 +2056,7 @@ that's how.}
 \bibliography{harpoon}
 \newpage
 \appendix
+\dontfixme{
 \section{Common errors of IR research papers}
 For some reason, the field of compiler intermediate representations
 seems to attract more than its share of village idiots.
@@ -2078,5 +2120,5 @@ everything is ``linear.''}
 \item \textbf{``Who cares about Martin and Maria?''} (Radu Revised)
 \item \textbf{``Who cares about \code{bash}?''} (Found on FLEX web page)
 \end{enumerate}
-
+} % end comment.
 \end{document}

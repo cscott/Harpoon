@@ -14,5 +14,5 @@ set key spacing 5
 # now line-fit
 c = 1.0
 f(x)=c*x
-fit [1:500] f(x) 'Data/ussi.data' using 2:3 via c
+fit [1:1000] f(x) 'Data/ussi.data' using 2:3 via c
 plot [2:] [2:] f(x) title "$y=cx$" with lines, "Data/ussi.data" using 2:3 notitle with dots

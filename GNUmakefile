@@ -39,7 +39,7 @@ thesis.dvi: $(patsubst %.fig,%.tex,$(THESIS_FIGURES)) \
 	Figures/THex1ssa.tex Figures/THex1ssaPr.tex \
 	Figures/THex1ssi.tex Figures/THex1ssiPr.tex \
 	Figures/THcqex2.tex Figures/phisig.tex \
-	Figures/THussi.tex Figures/THv0.tex
+	Figures/THussi.tex Figures/THv0.tex Figures/THscccomp.eps
 
 # thesis figure rules
 Figures/%: always
