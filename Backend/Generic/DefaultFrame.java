@@ -42,7 +42,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.28 1999-09-11 17:19:42 cananian Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.29 1999-09-11 17:57:49 cananian Exp $
  */
 public class DefaultFrame extends Frame implements AllocationInfo {
 
@@ -179,7 +179,7 @@ public class DefaultFrame extends Frame implements AllocationInfo {
 
 
     /** Not implemented. */
-    public GenericCodeGen codegen() { 
+    public harpoon.Backend.Generic.CodeGen codegen() { 
 	Util.assert(false, "DefaultFrame.codegen() Not implemented");
 	return null;
     }
