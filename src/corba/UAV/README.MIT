@@ -1,4 +1,10 @@
-In the BBN UAV software distribution, just make symbolic links
-in this directory.
+All files in this directory are (C) 2001 BBNT Solutions, LLC.
+
+This directory contains ATRManip.idl, quo.idl, and rss.idl 
+from the BBN distribution.
+
+We cannot distribute this directory.  To integrate
+with the BBN UAV software, simply change the UAVDIST variable in
+the Makefile to point to the above files.
 
 - Wes
