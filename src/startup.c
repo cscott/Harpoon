@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
     (*env)->CallStaticVoidMethod(env, cls, mid);
     CHECK_EXCEPTIONS(env);
     (*env)->DeleteLocalRef(env, cls);
-  skip:
+  skip:;
   }
 
   /* Wrap argv strings */
