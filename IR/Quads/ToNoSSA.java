@@ -29,7 +29,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.32 2000-04-04 04:13:46 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.33 2000-05-31 22:42:19 cananian Exp $
  */
 public class ToNoSSA
 {
@@ -203,6 +203,7 @@ static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
     public SIGMAVisitor(CloningTempMap ctm, NameMap nm, 
 			QuadFactory qf, QuadMap qm)
     {
+	super(false/*non-strict*/);
 	m_ctm         = ctm;
 	m_nm          = nm;
 	m_qf          = qf;
@@ -215,13 +216,6 @@ static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
 	m_qm.put(q, qm); 
     }
   
-    public void visit(AGET q)    { visit((Quad)q); }
-    public void visit(ASET q)    { visit((Quad)q); }
-    public void visit(GET q)     { visit((Quad)q); }
-    public void visit(HANDLER q) { visit((Quad)q); }
-    public void visit(OPER q)    { visit((Quad)q); }
-    public void visit(SET q)     { visit((Quad)q); }
-
     public void visit(CALL q)
     {
 	SIGMA  q0;
@@ -323,6 +317,7 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 
     public PHIVisitor(QuadFactory qf, Map dT, NameMap nm)
     {      
+	super(false/*non-strict*/);
 	m_dT          = dT;
 	m_qf          = qf;
 	m_nm          = nm;
@@ -330,19 +325,6 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 
     public void visit(Quad q) { }
 
-    // duplicate QuadVisitor to allow PHIVisitor to work for both
-    // quads and low-quads.
-    public void visit(AGET q)    { visit((Quad)q); }
-    public void visit(ASET q)    { visit((Quad)q); }
-    public void visit(CALL q)    { visit((SIGMA)q); }
-    public void visit(GET q)     { visit((Quad)q); }
-    public void visit(HANDLER q) { visit((Quad)q); }
-    public void visit(OPER q)    { visit((Quad)q); }
-    public void visit(SET q)     { visit((Quad)q); }
-    // need to redefine SIGMA or else the invocation in CALL above is
-    // ambiguous (by the JLS's tortured definition of ambiguous) [CSA]
-    public void visit(SIGMA q)   { visit((Quad)q); }
-  
     public void visit(LABEL q)
     {
 	LABEL label = new LABEL(m_qf, q, q.label(), new Temp[0], q.arity());

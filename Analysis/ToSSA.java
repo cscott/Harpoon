@@ -32,7 +32,7 @@ import harpoon.IR.LowQuad.PCALL;
  * Converts SSI to SSA.  Should work on LowQuads and Quads. 
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ToSSA.java,v 1.1.2.9 2000-01-14 12:32:37 cananian Exp $
+ * @version $Id: ToSSA.java,v 1.1.2.10 2000-05-31 22:41:04 cananian Exp $
  */
 
 public final class ToSSA {
@@ -74,6 +74,7 @@ public final class ToSSA {
 
     class SSAVisitor extends LowQuadVisitor {
 	SSAVisitor(TempMap ssitossamap) {
+	    super(false/*non-strict*/);
 	    this.ssitossamap=ssitossamap;
 	}
 	
@@ -97,22 +98,6 @@ public final class ToSSA {
 	public void visit(FOOTER q) {
 	    //Do nothing
 	}
-
-	// All of these redefined to avoid error messages!
-	public void visit(harpoon.IR.Quads.AGET q)    {visit((Quad)q);}
-	
-	public void visit(harpoon.IR.Quads.ASET q)    {visit((Quad)q);}
-	
-	public void visit(harpoon.IR.Quads.GET q)     {visit((Quad)q);}
-
-	public void visit(harpoon.IR.Quads.HANDLER q) {visit((Quad)q);}
-
-	public void visit(harpoon.IR.Quads.OPER q)    {visit((Quad)q);}
-
-	public void visit(harpoon.IR.Quads.SET q)     {visit((Quad)q);}
-
-
-
 
 	public void visit(CJMP q) {
 	    int arity=q.arity();

@@ -27,7 +27,7 @@ import java.util.Map;
  * <code>RSSIToNoSSA</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: RSSIToNoSSA.java,v 1.1.2.5 2000-04-14 18:10:45 bdemsky Exp $
+ * @version $Id: RSSIToNoSSA.java,v 1.1.2.6 2000-05-31 22:42:19 cananian Exp $
  */
 public class RSSIToNoSSA {
     QuadFactory newQF;
@@ -107,6 +107,7 @@ public class RSSIToNoSSA {
     static class Remover extends LowQuadVisitor {
 	Set done;
 	public Remover(Set done) {
+	    super(false/*non-strict*/);
 	    this.done=done;}
 	public void fixsigma(SIGMA q) {
 	    for (int i=0;i<q.numSigmas();i++)
@@ -127,18 +128,6 @@ public class RSSIToNoSSA {
 		}
 	}
 	public void visit(Quad q) {}
-	
-	public void visit(harpoon.IR.Quads.AGET q)    {}
-
-	public void visit(harpoon.IR.Quads.ASET q)    {}
-
-	public void visit(harpoon.IR.Quads.GET q)     {}
-
-	public void visit(harpoon.IR.Quads.HANDLER q) {}
-
-	public void visit(harpoon.IR.Quads.OPER q)    {}
-
-	public void visit(harpoon.IR.Quads.SET q)     {}      
 	
 	public void visit(CALL q) {
 	    fixsigma(q);

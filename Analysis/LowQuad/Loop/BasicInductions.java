@@ -37,7 +37,7 @@ import java.util.Iterator;
  * <code>BasicInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInductions.java,v 1.1.2.8 2000-01-14 12:32:50 cananian Exp $
+ * @version $Id: BasicInductions.java,v 1.1.2.9 2000-05-31 22:41:43 cananian Exp $
  */
 public class BasicInductions {
     HCode hc;
@@ -189,6 +189,7 @@ public class BasicInductions {
 	WorkSet phis;
 
 	BasicVisitor(WorkSet adds, WorkSet addp, WorkSet phis) {
+	    super(false/*non-strict*/);
 	    this.adds=adds;
 	    this.addp=addp;
 	    this.phis=phis;
@@ -197,19 +198,6 @@ public class BasicInductions {
 	public void visit(Quad q) {
 	    //Do nothing
 	}
-
-	/* All of these redefined to avoid error messagqes!*/
-	public void visit(harpoon.IR.Quads.AGET q)    {}
-
-	public void visit(harpoon.IR.Quads.ASET q)    {}
-
-	public void visit(harpoon.IR.Quads.CALL q)    {}
-
-	public void visit(harpoon.IR.Quads.GET q)     {}
-
-	public void visit(harpoon.IR.Quads.HANDLER q) {}
-
-	public void visit(harpoon.IR.Quads.SET q)     {}
 
 	public void visit(OPER q) {
 	    switch (q.opcode()) {

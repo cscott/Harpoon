@@ -63,7 +63,7 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.1.2.5 2000-04-14 06:29:45 bdemsky Exp $
+ * @version $Id: DeadCode.java,v 1.1.2.6 2000-05-31 22:42:11 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -129,6 +129,7 @@ public abstract class DeadCode  {
 	Set useful;
 	NameMap nm;
 	EraserVisitor(Worklist W, Set useful, NameMap nm) {
+	    super(false/*non-strict*/);
 	    this.W = W; this.useful = useful; this.nm = nm;
 	}
 	void unlink(Quad q) {
@@ -137,15 +138,6 @@ public abstract class DeadCode  {
 	    Quad.addEdge((Quad)before.from(), before.which_succ(),
 			 (Quad)after.to(), after.which_pred() );
 	}
-
-	// duplicate default visitors so that this will work with both
-	// quad and low-quad form.
-	public void visit(harpoon.IR.Quads.AGET q)    { visit((Quad)q); }
-	public void visit(harpoon.IR.Quads.ASET q)    { visit((Quad)q); }
-	public void visit(harpoon.IR.Quads.CALL q)    { visit((SIGMA)q); }
-	public void visit(harpoon.IR.Quads.GET q)     { visit((Quad)q); }
-	public void visit(harpoon.IR.Quads.OPER q)    { visit((Quad)q); }
-	public void visit(harpoon.IR.Quads.SET q)     { visit((Quad)q); }
 
 	public void visit(Quad q) {
 	    // generally, remove it if it's worthless.
@@ -302,6 +294,7 @@ public abstract class DeadCode  {
 	Map phiMap = new HashMap();
 
 	UsefulVisitor(Worklist W, Set useful, Map defMap, NameMap nm) {
+	    super(false/*non-strict*/);
 	    this.W = W;
 	    this.useful = useful;
 	    this.defMap = defMap;
@@ -336,12 +329,6 @@ public abstract class DeadCode  {
 		markUseful(q);
 	}
 
-	// duplicate default visitors so it works on both quad and low-quad
-	public void visit(harpoon.IR.Quads.AGET q)    { visit((Quad)q); }
-	public void visit(harpoon.IR.Quads.ASET q)    { visit((Quad)q); }
-	public void visit(harpoon.IR.Quads.GET q)     { visit((Quad)q); }
-	public void visit(harpoon.IR.Quads.OPER q)    { visit((Quad)q); }
-	
 	public void visit(ARRAYINIT q) { // always useful.
 	    markUseful(q);
 	}

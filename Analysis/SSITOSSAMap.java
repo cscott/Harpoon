@@ -25,7 +25,7 @@ import java.util.Set;
  * <code>SSITOSSAMap</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: SSITOSSAMap.java,v 1.1.2.9 2000-01-14 12:32:37 cananian Exp $
+ * @version $Id: SSITOSSAMap.java,v 1.1.2.10 2000-05-31 22:41:04 cananian Exp $
  */
 public class SSITOSSAMap implements TempMap {
     
@@ -326,31 +326,10 @@ public class SSITOSSAMap implements TempMap {
     }
 
     void findSigmaPhis() {
-	LowQuadVisitor visitor = new LowQuadVisitor() {
+	LowQuadVisitor visitor = new LowQuadVisitor(false/*non-strict*/) {
 	    public void visit(Quad q) {
 	    }
 	    
-
-	    /* All of these redefined to avoid error messages!*/
-	    public void visit(harpoon.IR.Quads.AGET q)    {}
-
-	    public void visit(harpoon.IR.Quads.ASET q)    {}
-
-	    public void visit(harpoon.IR.Quads.CALL q)    {
-		visit((SIGMA) q);
-	    }
-
-	    public void visit(harpoon.IR.Quads.GET q)     {}
-
-	    public void visit(harpoon.IR.Quads.HANDLER q) {}
-
-	    public void visit(harpoon.IR.Quads.OPER q)    {}
-
-	    public void visit(harpoon.IR.Quads.SET q)     {}
-
-
-
-
 	    public void visit(SIGMA q) {
 		sigmas.push(q);
 	    }

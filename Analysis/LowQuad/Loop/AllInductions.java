@@ -33,7 +33,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.1.2.11 2000-01-14 12:32:50 cananian Exp $
+ * @version $Id: AllInductions.java,v 1.1.2.12 2000-05-31 22:41:43 cananian Exp $
  */
 public class AllInductions {
     TempMap tm;
@@ -84,6 +84,7 @@ public class AllInductions {
 	UseDef ud;
 
 	CompleteVisitor(HashMap inductions,WorkSet invariants) {
+	    super(false/*non-strict*/);
 	    changed=false;
 	    this.inductions=inductions;
 	    this.invariants=invariants;
@@ -97,20 +98,6 @@ public class AllInductions {
 	public void visit(Quad q) {
 	    //Do nothing
 	}
-
-	/* All of these redefined to avoid error messages!*/
-	public void visit(harpoon.IR.Quads.AGET q)    {}
-	
-	public void visit(harpoon.IR.Quads.ASET q)    {}
-
-	public void visit(harpoon.IR.Quads.CALL q)    {}
-
-	public void visit(harpoon.IR.Quads.GET q)     {}
-
-	public void visit(harpoon.IR.Quads.HANDLER q) {}
-
-	public void visit(harpoon.IR.Quads.SET q)     {}
-
 
 	public void visit(OPER q) {
 	    switch (q.opcode()) {

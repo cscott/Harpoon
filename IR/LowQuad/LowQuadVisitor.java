@@ -8,33 +8,49 @@ package harpoon.IR.LowQuad;
  * make Martin happy.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LowQuadVisitor.java,v 1.1.2.5 1999-09-19 16:17:30 cananian Exp $
+ * @version $Id: LowQuadVisitor.java,v 1.1.2.6 2000-05-31 22:42:14 cananian Exp $
  */
 public abstract class LowQuadVisitor extends harpoon.IR.Quads.QuadVisitor {
-    protected LowQuadVisitor() { }
+    /** if true, then throw an error if given any quads disallowed in lowquad
+     *  form. */
+    private final boolean strictLowQuad;
+    /** Create a <code>LowQuadVisitor</code>. If <code>strictLowQuad</code>
+     *  is true (the default), then the visitor will throw an error if
+     *  any quads are visited which are disallowed in lowquad form. */
+    protected LowQuadVisitor(boolean strictLowQuad) {
+	this.strictLowQuad = strictLowQuad;
+    }
+    protected LowQuadVisitor() { this(true); }
 
     // DISALLOW certain Quads in LowQuad form.
     /** <code>AGET</code> is disallowed in <code>LowQuad</code> form.
-     *  This method throws an <code>Error</code>. */
-    public void visit(harpoon.IR.Quads.AGET q)    { error(q); }
+     *  This method throws an <code>Error</code> unless !strictLowQuad. */
+    public void visit(harpoon.IR.Quads.AGET q)
+    { if (strictLowQuad) error(q); else super.visit(q); }
     /** <code>ASET</code> is disallowed in <code>LowQuad</code> form.
-     *  This method throws an <code>Error</code>. */
-    public void visit(harpoon.IR.Quads.ASET q)    { error(q); }
+     *  This method throws an <code>Error</code> unless !strictLowQuad. */
+    public void visit(harpoon.IR.Quads.ASET q)
+    { if (strictLowQuad) error(q); else super.visit(q); }
     /** <code>CALL</code> is disallowed in <code>LowQuad</code> form.
-     *  This method throws an <code>Error</code>. */
-    public void visit(harpoon.IR.Quads.CALL q)    { error(q); }
+     *  This method throws an <code>Error</code> unless !strictLowQuad. */
+    public void visit(harpoon.IR.Quads.CALL q)
+    { if (strictLowQuad) error(q); else super.visit(q); }
     /** <code>GET</code> is disallowed in <code>LowQuad</code> form.
-     *  This method throws an <code>Error</code>. */
-    public void visit(harpoon.IR.Quads.GET q)     { error(q); }
+     *  This method throws an <code>Error</code> unless !strictLowQuad. */
+    public void visit(harpoon.IR.Quads.GET q)
+    { if (strictLowQuad) error(q); else super.visit(q); }
     /** <code>HANDLER</code> is disallowed in <code>LowQuad</code> form.
-     *  This method throws an <code>Error</code>. */
-    public void visit(harpoon.IR.Quads.HANDLER q) { error(q); }
+     *  This method throws an <code>Error</code> unless !strictLowQuad. */
+    public void visit(harpoon.IR.Quads.HANDLER q)
+    { if (strictLowQuad) error(q); else super.visit(q); }
     /** <code>OPER</code> is disallowed in <code>LowQuad</code> form.
-     *  This method throws an <code>Error</code>. */
-    public void visit(harpoon.IR.Quads.OPER q)    { error(q); }
+     *  This method throws an <code>Error</code> unless !strictLowQuad. */
+    public void visit(harpoon.IR.Quads.OPER q)
+    { if (strictLowQuad) error(q); else super.visit(q); }
     /** <code>SET</code> is disallowed in <code>LowQuad</code> form.
-     *  This method throws an <code>Error</code>. */
-    public void visit(harpoon.IR.Quads.SET q)     { error(q); }
+     *  This method throws an <code>Error</code> unless !strictLowQuad. */
+    public void visit(harpoon.IR.Quads.SET q)
+    { if (strictLowQuad) error(q); else super.visit(q); }
     // error function.
     private static final void error(harpoon.IR.Quads.Quad q) {
 	throw new Error("Illegal LowQuad: "+q);
