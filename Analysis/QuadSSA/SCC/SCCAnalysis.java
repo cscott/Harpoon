@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.9 1998-09-25 16:49:48 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.10 1998-09-25 17:04:50 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -318,9 +318,9 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	public void visit(CJMP q) {
 	    // is test constant?
 	    LatticeVal v = get( q.test );
-	    if (v instanceof xConstant) {
-		boolean test =
-		    ((Boolean) ((xConstant)v).constValue() ).booleanValue();
+	    if (v instanceof xIntConstant) {
+		boolean test = ((xIntConstant)v).value()!=0;
+
 		if (test)
 		    raiseE(Ee, Eq, Wq, q.nextEdge(1) ); // true edge.
 		else
@@ -563,7 +563,8 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 			     mergedType == HClass.Double)
 			v = new xFloatConstant(mergedType, constValue);
 		    else if (mergedType == HClass.Int ||
-			     mergedType == HClass.Double)
+			     mergedType == HClass.Long ||
+			     mergedType == HClass.Boolean)
 			v = new xIntConstant(mergedType,
 					     ((Number)constValue).longValue());
 		    else throw new Error("Unknown constant type.");
@@ -953,7 +954,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	public Object constValue() { 
 	    if (type==HClass.Int) return new Integer((int)value);
 	    if (type==HClass.Long) return new Long((long)value);
-	    if (type==HClass.Boolean) return new Boolean(value!=0);
+	    if (type==HClass.Boolean) return new Integer(value!=0?1:0);
 	    throw new Error("Unknown integer constant type.");
 	}
 	public String toString() {
