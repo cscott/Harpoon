@@ -4,6 +4,7 @@
 package harpoon.Analysis.Quads.SCC;
 
 import harpoon.Analysis.Maps.ConstMap;
+import harpoon.Analysis.Maps.ExactTypeMap;
 import harpoon.Analysis.Maps.ExecMap;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.Maps.UseDefMap;
@@ -62,10 +63,10 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.10 2000-10-11 01:52:59 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.11 2000-10-16 16:29:43 cananian Exp $
  */
 
-public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
+public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     final Linker linker;
     UseDefMap udm;
 
@@ -113,6 +114,13 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	LatticeVal v = (LatticeVal) V.get(t);
 	if (v instanceof xClass) return ((xClass)v).type();
 	return null;
+    }
+    /** Determine whether the static type of <code>Temp</code> <code>t</code>
+     *  defined at <code>hce</code> is exact (or whether the runtime type
+     *  could be a subclass of the static type). */
+    public boolean isExactType(HCodeElement hce, Temp t) {
+	// ignore hce
+	return V.get(t) instanceof xClassExact;
     }
     /** Determine whether <code>Temp</code> <code>t</code>
      *  has a constant value. */
@@ -384,7 +392,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		    return;
 		} else if (v == null) return; // bottom.
 	    }
-	    raiseV(V, Wv, q.dst(), new xClassNonNull(q.hclass()) );
+	    raiseV(V, Wv, q.dst(), new xClassExact(q.hclass()) );
 	}
 	public void visit(ASET q) { /* do nothing. */ }
 	public void visit(CALL q) {
@@ -568,7 +576,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		raiseV(V, Wv, q.dst(), v);
 	}
 	public void visit(NEW q) {
-	    raiseV(V, Wv, q.dst(), new xClassNonNull( q.hclass() ) );
+	    raiseV(V, Wv, q.dst(), new xClassExact( q.hclass() ) );
 	}
 	public void visit(NOP q) { /* do nothing. */ }
 	public void visit(OPER q) {
@@ -629,6 +637,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    for (int i=0; i<q.numPhis(); i++) { // for each phi-function.
 		boolean allConst = true;
 		boolean allWidth = true;
+		boolean allExact = true;
 		boolean allNonNull=true;
 		boolean someValidValue=false;
 
@@ -659,6 +668,9 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 			mergedWidthPlus =Math.max(mergedWidthPlus, plusWidth);
 			mergedWidthMinus=Math.max(mergedWidthMinus,minusWidth);
 		    } else allWidth = false;
+		    // exact status merge
+		    if (! (v instanceof xClassExact) )
+			allExact = false;
 		    // null status merge.
 		    if (! (v instanceof xClassNonNull) )
 			allNonNull = false;
@@ -667,7 +679,10 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 			HClass hc = ((xClass)v).type();
 			// rule 6
 			if (mergedType == null) mergedType = hc;
-			else mergedType = merge(mergedType, hc);
+			else if (!hc.equals(mergedType)) {
+			    mergedType = merge(mergedType, hc);
+			    allExact = false;
+			}
 		    } else throw new Error("non class merge.");
 		}
 		// assess results.
@@ -693,6 +708,8 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		    raiseV(V, Wv, q.dst(i), 
 			   new xBitWidth(mergedType, 
 					 mergedWidthMinus, mergedWidthPlus) );
+		} else if (allExact) {
+		    raiseV(V, Wv, q.dst(i), new xClassExact(mergedType) );
 		} else if (allNonNull) {
 		    raiseV(V, Wv, q.dst(i), new xClassNonNull(mergedType) );
 		} else {
@@ -1054,8 +1071,25 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    return true;
 	}
     }
+    /** An object of the specified *exact* type (not a subtype). */
+    static class xClassExact extends xClassNonNull {
+	public xClassExact(HClass type) {
+	    super(type);
+	}
+	public String toString() { 
+	    return "xClassExact: { " + type + " }";
+	}
+	public boolean equals(Object o) {
+	    return (o instanceof xClassExact && super.equals(o));
+	}
+	public boolean higherThan(LatticeVal v) {
+	    if (!(v instanceof xClassExact)) return false;
+	    if (v.equals(this)) return false;
+	    return true;
+	}
+    }
     /** An array with constant length.  The array is not null, of course. */
-    static class xClassArray extends xClassNonNull {
+    static class xClassArray extends xClassExact {
 	protected int length;
 	public xClassArray(HClass type, int length) {
 	    super(type);
@@ -1079,7 +1113,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	}
     }
     /** An integer value of the specified bitwidth. */
-    static class xBitWidth extends xClassNonNull {
+    static class xBitWidth extends xClassExact {
 	/** Highest significant bit for positive numbers. */
 	protected int plusWidth;
 	/** Highest significant bit for negative numbers. */
@@ -1173,7 +1207,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    return true;
 	}
     }
-    static class xFloatConstant extends xClassNonNull 
+    static class xFloatConstant extends xClassExact
 	implements xConstant {
 	protected Object value;
 	public xFloatConstant(HClass type, Object value) {
@@ -1193,7 +1227,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    return true;
 	}
     }
-    static class xStringConstant extends xClassNonNull
+    static class xStringConstant extends xClassExact
 	implements xConstant {
 	protected Object value;
 	public xStringConstant(HClass type, Object value) {
