@@ -13,7 +13,7 @@ import harpoon.Temp.Label;
  * and fields to unique string labels legal in assembly code.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NameMap.java,v 1.1.2.6 1999-10-12 20:04:49 cananian Exp $
+ * @version $Id: NameMap.java,v 1.1.2.7 1999-10-16 22:18:17 cananian Exp $
  */
 public abstract class NameMap {
     /** Mangle a method name. */
@@ -77,12 +77,20 @@ public abstract class NameMap {
     { return new Label(mangle(hc, suffix)); }
     /** Maps a static <code>HField</code> to a <code>Label</code>. */
     public Label label(HField hf) { return new Label(mangle(hf)); }
+    /** Maps an <code>HField</code> to a <code>Label</code> representing the
+     *  field information structure associated with the given suffix. */
+    public Label label(HField hf, String suffix)
+    { return new Label(mangle(hf, suffix)); }
     /** Maps an <code>HMethod</code> to a <code>Label</code>. Note that
      *  the method does not have to be static or final; in many cases we
      *  can determine the identity of a virtual function exactly using 
      *  type information, and <code>label()</code> should return a
      *  <code>Label</code> we can use to take advantage of this information. */
     public Label label(HMethod hm) { return new Label(mangle(hm)); }
+    /** Maps an <code>HMethod</code> to a <code>Label</code> representing the
+     *  method information structure associated with the given suffix. */
+    public Label label(HMethod hm, String suffix)
+    { return new Label(mangle(hm, suffix)); }
     /** Maps a <code>String</code> constant to a <code>Label</code>. */
     public Label label(String stringConstant) { return new Label(mangle(stringConstant)); }
     /** Maps a <code>String</code> constant to a <code>Label</code>
