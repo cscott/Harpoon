@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * with extension to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCC.java,v 1.9 1998-09-20 21:17:54 cananian Exp $
+ * @version $Id: SCC.java,v 1.10 1998-09-21 00:24:27 cananian Exp $
  */
 
 public class SCC implements TypeMap, ConstMap, ExecMap {
@@ -458,7 +458,34 @@ public class SCC implements TypeMap, ConstMap, ExecMap {
 	public void visit(RETURN q) { /* do nothing. */ }
 	public void visit(SET q) { /* do nothing. */ }
 	public void visit(SWITCH q) {
-	    // handle sigmas.
+	    LatticeVal v = get( q.index );
+	    if (v instanceof xIntConstant) {
+		int index = (int) ((xIntConstant)v).value();
+		int i;
+		for (i=0; i<q.keys.length; i++)
+		    if (q.keys[i] == index)
+			break;
+		// now i has the target index, even for the default case.
+		raiseE(Ee, Eq, Wq, q.nextEdge(i) ); // executable edge.
+		// handle sigmas.
+		for (int j=0; j < q.src.length; j++) {
+		    LatticeVal v2 = get( q.src[j] );
+		    if (v2 != null)
+			raiseV(V, Wv, q.dst[j][i], v2);
+		}
+	    }
+	    // XXX maybe stuff we can learn about v from bitwidth?
+	    else if (v != null) {
+		// mark all edges executable & propagate to all sigmas.
+		for (int i=0; i < q.nextEdge().length; i++)
+		    raiseE(Ee, Eq, Wq, q.nextEdge(i) );
+		for (int i=0; i < q.dst.length; i++) {
+		    LatticeVal v2 = get( q.src[i] );
+		    if (v2 != null)
+			for (int j=0; j < q.dst[i].length; i++)
+			    raiseV(V, Wv, q.dst[i][j], v2);
+		}
+	    }
 	}
 	public void visit(THROW q) { /* do nothing. */ }
     }
