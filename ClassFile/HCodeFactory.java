@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
-import harpoon.ClassFile.*;
 /**
  * An <code>HCodeFactory</code> makes an <code>HCode</code> from an
  * <code>HMethod</code>. For example, an 
@@ -15,7 +14,7 @@ import harpoon.ClassFile.*;
  * to cache the result.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeFactory.java,v 1.4.2.1 1998-12-01 12:36:37 cananian Exp $
+ * @version $Id: HCodeFactory.java,v 1.4.2.2 1999-01-22 23:05:26 cananian Exp $
  */
 
 public interface HCodeFactory  {
