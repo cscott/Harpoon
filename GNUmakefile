@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.46 1999-06-29 06:37:26 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.47 1999-06-30 17:48:29 pnkfelix Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -78,6 +78,9 @@ PKGDESC:=$(wildcard overview.html) $(wildcard README) \
 NONEMPTYPKGS := $(shell ls  $(filter-out GNUmakefile,$(TARSOURCE))  | \
 		sed -e 's|/*[A-Za-z0-9_]*\.[A-Za-z0-9_]*$$||' | sort -u)
 
+PKGSWITHJAVASRC := $(shell ls  $(filter-out GNUmakefile,$(TARSOURCE))  | grep ".java" |\
+		   sed -e 's|/*[A-Za-z0-9_]*\.[A-Za-z0-9_]*$$||' | sort -u)	
+
 all:	java
 
 list:
@@ -86,7 +89,8 @@ list-packages:
 	@echo $(filter-out Test,$(ALLPKGS))
 list-nonempty-packages:
 	@echo $(filter-out Test,$(NONEMPTYPKGS))
-
+list-packages-with-java-src:
+	@echo $(filter-out Test,$(PKGSWITHJAVASRC))
 
 java:	$(ALLSOURCE) $(PROPERTIES)
 	if [ ! -d harpoon ]; then \
@@ -216,7 +220,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	-cd doc-link; ${JDOC} ${JDOCFLAGS} -d ../doc \
 		$(subst harpoon.Contrib,gnu, \
 		$(foreach dir, $(filter-out Test, \
-			  $(filter-out JavaChip,$(NONEMPTYPKGS))), \
+			  $(filter-out JavaChip,$(PKGSWITHJAVASRC))), \
 			  harpoon.$(subst /,.,$(dir))) silicon.JavaChip) | \
 		grep -v "^@see warning:"
 	$(RM) -r doc-link
