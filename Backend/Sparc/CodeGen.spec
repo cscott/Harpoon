@@ -58,7 +58,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.32 2000-02-29 08:11:55 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.33 2000-03-13 18:42:33 andyb Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -176,7 +176,8 @@ import java.util.Set;
         return newTemp;
     }
 
-    private void emitCallPrologue(HCodeElement ROOT, TempList arglist) {
+    private void emitCallPrologue(HCodeElement ROOT, TempList arglist,
+				  Label handler, boolean passhandler) {
         /* AAA - currently only deals with up to 6 arguments */
 	TempList argrev = null;
 	int wordsused = 0;	
@@ -187,6 +188,11 @@ import java.util.Set;
 	    argrev = new TempList(tl.head, argrev);
 	    wordsused += tb.isTwoWord(tl.head) ? 2 : 1;
         }
+
+	// Add one more word used - to pass exceptional return address
+	if (passhandler) {
+	    wordsused++;
+	}
 
         // move arguments into place
         for (TempList tl = argrev; tl != null; tl = tl.tail) {
@@ -219,6 +225,15 @@ import java.util.Set;
 		wordsused--;
 	    }
         }
+
+	// Put the excceptional return address in %o0
+	if (passhandler) {
+	    declare(rego[0], HClass.Void);
+	    emit (ROOT, "set "+handler+", `d0",
+		        new Temp[] { rego[0] },
+		        new Temp[] { });
+	    wordsused--;
+	}
 
 	Util.assert(wordsused == 0, "emitCallPrologue: all args not in place");
     }
@@ -255,16 +270,16 @@ import java.util.Set;
 	    declare(rego[0], HClass.Void);
 	    declare(rego[1], HClass.Void);
 	    emit (ROOT, "mov `s0h, `d0",
-			new Temp[] { rego[0] },
-			new Temp[] { retex });
+			new Temp[] { retex },
+			new Temp[] { rego[0] });
 	    emit (ROOT, "mov `s0l, `d0",
-			new Temp[] { rego[1] },
-			new Temp[] { retex });
+			new Temp[] { retex },
+			new Temp[] { rego[1] });
 	} else {
 	    declare(rego[0], HClass.Void);
 	    emit (ROOT, "mov `s0, `d0",
-			new Temp[] { rego[0] },
-			new Temp[] { retex });
+			new Temp[] { retex },
+			new Temp[] { rego[0] });
 	}
         emitNoFall (ROOT, "ba " + handler, null, null, new Label[] { handler });
     }
@@ -330,8 +345,8 @@ import java.util.Set;
     /** Sub-class to represent delay-slots.
      * <code>optimize()</code> uses this class information to determine that
      * it should rearrange code to try to eliminate these instructions.
-     * !author C. Scott Ananian
-     * !see Sparc.CodeGen#optimize
+     * @author C. Scott Ananian
+     * @see Sparc.CodeGen#optimize
      */
     public class InstrDELAYSLOT extends Instr {
 	// a nop to fill the delay slot
@@ -881,9 +896,9 @@ BINOP(CMPGT, e1, e2) = r
 CALL(retval, retex, NAME(func), arglist, handler) 
 %pred %( !ROOT.isTailCall )% 
 %{
-    Label rlabel = new Label();
-    Label elabel = new Label();
     HClass type;
+    Label exlabel = new Label();
+    Label reglabel = new Label();
 
     if (ROOT.getRetval() == null)
 	type = null;
@@ -891,15 +906,26 @@ CALL(retval, retex, NAME(func), arglist, handler)
 	type = code.getTreeDerivation().typeMap(ROOT.getRetval());
 
     // move the arguments into place
-    emitCallPrologue(ROOT, arglist);
+    emitCallPrologue(ROOT, arglist, handler, true);
    
     // do the call 
-    // AAA - need to fix normal return address
-    emitNoFall (ROOT, "call "+func, 
-                new Temp[] { }, /* AAA - need clobbers */
-		new Temp[] { }, /* need uses */
-		new Label[] { elabel, rlabel });
+    emit (ROOT, "call "+func, 
+                new Temp[] { rego[0], rego[1] }, /* AAA - do better clobbers */
+		rego, /* AAA - do better uses */
+		new Label[] { exlabel });
     emitDELAYSLOT (ROOT);
+
+    emitCallEpilogue(ROOT, retval, type);
+    emitNoFall (ROOT, "ba "+reglabel, null, null, new Label[] { reglabel });
+
+    /* Need handler stub to make sure retex is in right place */
+    emitLABEL (ROOT, exlabel+":", exlabel);
+    emitHandlerStub (ROOT, retex, handler);
+
+    emitLABEL (ROOT, reglabel+":", reglabel);
+
+    /* Currently passing exceptional handler as first argument 
+       to get the backend up and running - andyb
 
     // exceptional return handler
     emitLABEL (ROOT, elabel+":", elabel);
@@ -911,14 +937,16 @@ CALL(retval, retex, NAME(func), arglist, handler)
 
     // "fixup table"
     emitCallFixupTable (ROOT, rlabel, elabel);
+    */
 }%
 
 CALL(retval, retex, func, arglist, handler)
 %pred %( !ROOT.isTailCall )%
 %{
-    Label rlabel = new Label();
-    Label elabel = new Label();
     HClass type;
+    Label exlabel = new Label();
+    Label reglabel = new Label();
+
 
     if (ROOT.getRetval() == null)
         type = null;
@@ -926,19 +954,26 @@ CALL(retval, retex, func, arglist, handler)
         type = code.getTreeDerivation().typeMap(ROOT.getRetval());
 
     // move the arguments into place
-    emitCallPrologue(ROOT, arglist);
+    emitCallPrologue(ROOT, arglist, handler, true);
   
     // do the call
-    // AAA - need to fix normal return address
-    declare(rego[0], HClass.Void);
-    emit (ROOT, "mov `s0, `d0", 
-	        new Temp[] { rego[0] },
-		new Temp[] { func });
-    emitNoFall (ROOT, "call `s0",
-                new Temp[] { }, /* AAA - need clobbers */
-                new Temp[] { rego[0] }, /* AAA - need uses */
-                new Label[] { elabel, rlabel });
+    emit (ROOT, "call `s0",
+                new Temp[] { rego[0], rego[1] }, /* AAA - do better clobbers */
+                new Temp[] { func, rego[0], rego[1], rego[2], 
+			     rego[3], rego[4], rego[5], rego[6], rego[7] }, 
+		 	     /* AAA - need uses */
+                new Label[] { exlabel });
     emitDELAYSLOT (ROOT);
+
+    emitCallEpilogue(ROOT, retval, type);
+    emitNoFall (ROOT, "ba "+reglabel, null, null, new Label[] { reglabel });
+
+    emitLABEL (ROOT, exlabel+":", exlabel);
+    emitHandlerStub (ROOT, retex, handler);
+
+    emitLABEL (ROOT, reglabel+":", reglabel);
+
+    /* Using first parameter hack for handling exceptions
 
     // exceptional return handler
     emitLABEL (ROOT, elabel+":", elabel);
@@ -950,6 +985,7 @@ CALL(retval, retex, func, arglist, handler)
 
     // "fixup table"
     emitCallFixupTable (ROOT, rlabel, elabel);
+    */
 }%
 
 // true_label and false_label are harpoon.Temp.Labels, not Exps...
@@ -1250,9 +1286,24 @@ NAME(s)=r %{
 }%
 
 NATIVECALL(retval, func, arglist) %{
-    /* AAA - to do */
+    /* AAA need to make uses better */
+    HClass type;
 
-    emitDIRECTIVE(ROOT, "\t! coming soon: NATIVECALL support");
+    if (ROOT.getRetval() == null) {
+	type = null;
+    } else {
+	type = code.getTreeDerivation().typeMap(ROOT.getRetval());
+    }
+
+    emitCallPrologue (ROOT, arglist, null, false);
+
+    emit (ROOT, "call `s0",
+		new Temp[] { rego[0] },
+		new Temp[] { func, rego[0], rego[1], rego[2], rego[3], rego[4],
+			     rego[5], rego[6], rego[7], rego[8] });
+    emitDELAYSLOT (ROOT);
+
+    emitCallEpilogue (ROOT, retval, type);
 }%    
 
 RETURN(val) %{
@@ -1336,7 +1387,8 @@ THROW(val, handler) %{
     // the right place so that the caller knows to use the exception handler.
 
     // again, assume non-leaf for now - might have to change registers
-    // in procFixup
+    // in procFixup if we determine that it is a leaf procedure and
+    // optimize for that
 
     // move exception value into correct registers
     if (tb.isTwoWord(val)) {
@@ -1354,11 +1406,19 @@ THROW(val, handler) %{
     }
 
     declare(regi[7], HClass.Void);
+    // replace %i7 with the handler passed in %i0
+    emit (ROOT, "mov `s0, `d0", new Temp[] { regi[7] }, new Temp[] { regi[0] });
+    // retr returns to %i7 + 8, so subtract 8 to get to the right place
+    emit (ROOT, "sub `s0, 8, `d0", 
+		new Temp[] { regi[7] }, 
+		new Temp[] { regi[7] });
+    /*
     // The point of lookup is to set %i7 to the correct value for the 
     // returning jump
     emit (ROOT, "call _lookup",
-                new Temp[] { regi[7] }, /* AAA - need clobbers list */
-                new Temp[] { }); /* AAA - need uses list */
+                new Temp[] { regi[7] }, 
+                new Temp[] { });
+    */
     emitEXIT (ROOT);
 }%
 
