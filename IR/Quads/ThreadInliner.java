@@ -4,6 +4,9 @@
 package harpoon.IR.Quads;
 
 
+import harpoon.Analysis.Maps.AllocationInformation;
+import harpoon.Analysis.AllocationInformationMap;
+
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HClass;
@@ -18,7 +21,7 @@ import java.util.Iterator;
  * <code>ThreadInliner</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: ThreadInliner.java,v 1.1.2.1 2000-06-12 21:00:09 bdemsky Exp $
+ * @version $Id: ThreadInliner.java,v 1.1.2.2 2000-06-13 19:20:22 bdemsky Exp $
  */
 public class ThreadInliner {
     /** Creates a <code>ThreadInliner</code>. */
@@ -44,6 +47,10 @@ public class ThreadInliner {
 	Map quadMap=(Map) maps[0];
 	TempMap tempMap=(TempMap) maps[1];
 	qns.quads=(Quad)quadMap.get(hc.getRootElement());
+	AllocationInformation old=((Code)hc).getAllocationInformation();
+	AllocationInformationMap newai=new AllocationInformationMap();
+	if (old!=null)
+	    qns.setAllocationInformation(newai);
 	Iterator it=hc.getElementsI();
 	while (it.hasNext()) {
 	    Quad qd=(Quad)it.next();
@@ -59,13 +66,15 @@ public class ThreadInliner {
 	    } else if (joinset.contains(qd)) {
 		CALL ctoswap=(CALL)quadMap.get(qd);
 		CALL newcall=new CALL(ctoswap.getFactory(),ctoswap,
-				      ctoswap.method().getDeclaringClass().getMethod("cleanupthread",new HClass[0]),
+				      ctoswap.method().getDeclaringClass().getMethod("joinreplace",new HClass[0]),
 				      ctoswap.params(), ctoswap.retval(),
 				      ctoswap.retex(), ctoswap.isVirtual(),
 				      ctoswap.isTailCall(),ctoswap.dst(),
 				      ctoswap.src());
 		Quad.replace(ctoswap, newcall);
-		
+	    } else if ((old!=null)&&((qd instanceof NEW)||(qd instanceof ANEW))&&old.query(qd)!=null) {
+		newai.transfer((Quad)quadMap.get(qd),qd,tempMap,
+			       old);
 	    }
 	}
 	return qns;
