@@ -47,7 +47,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.8 2003-02-11 21:49:14 salcianu Exp $
+ * @version $Id: Frame.java,v 1.9 2003-03-03 23:36:30 salcianu Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -84,35 +84,48 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 		 System.getProperty("harpoon.alloc.func", "malloc"));
 	}
 
-	harpoon.Backend.Generic.Runtime m_runtime =
-	    Realtime.REALTIME_JAVA ?
-	    new RealtimeRuntime(this, as, main, !is_elf) :
-	    new harpoon.Backend.Runtime1.Runtime(this, as, main, !is_elf);
-	if (!System.getProperty("harpoon.runtime","1").equals("1")) try {
+	runtime = getRuntime(as, main);
+    }
+
+
+    private harpoon.Backend.Generic.Runtime getRuntime
+	(AllocationStrategy as, HMethod main) {
+	if(Realtime.REALTIME_JAVA)
+	    return new RealtimeRuntime(this, as, main, !is_elf);
+	
+	if(System.getProperty("harpoon.runtime","1").equals("1"))
+	    return 
+		new harpoon.Backend.Runtime1.Runtime(this, as, main, !is_elf);
+	
+	try {
 	    Class c;
 	    try {
 		// try abbreviated name first
-		c = Class.forName
-		("harpoon.Backend.Runtime"+
-		 System.getProperty("harpoon.runtime","1")+
-		 ".Runtime");
+		c = Class.forName("harpoon.Backend.Runtime" + 
+				  System.getProperty("harpoon.runtime","1") + 
+				  ".Runtime");
+		System.out.println("Using runtime " +
+				   System.getProperty("harpoon.runtime","1"));
 	    } catch (ClassNotFoundException e) {
 		// try full name
 		c = Class.forName(System.getProperty("harpoon.runtime"));
+		System.out.println("Using runtime " +
+				   System.getProperty("harpoon.runtime"));
 	    }
 	    java.lang.reflect.Constructor cc = c.getConstructor(new Class[] {
 		Class.forName("harpoon.Backend.Generic.Frame"),
 		Class.forName("harpoon.Backend.Runtime1.AllocationStrategy"),
 		Class.forName("harpoon.ClassFile.HMethod"),
 		Boolean.TYPE });
-	    m_runtime = (harpoon.Backend.Generic.Runtime)
+	    return 
+		(harpoon.Backend.Generic.Runtime)
 		cc.newInstance(new Object[] { this, as, main,
-					      new Boolean(!is_elf) });
+						  new Boolean(!is_elf) });
 	} catch (Throwable t) {
-	    throw new RuntimeException("Can't use specified runtime: "+t);
+	    throw new RuntimeException("Can't use specified runtime: " + t);
 	}
-	runtime = m_runtime;
     }
+
     public Linker getLinker() { return linker; }
     public boolean pointersAreLong() { return pointersAreLong; }
     public harpoon.Backend.Generic.CodeGen getCodeGen() { return null; }
