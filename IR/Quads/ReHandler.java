@@ -32,7 +32,7 @@ import java.util.Set;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.13 1999-08-19 17:19:26 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.14 1999-08-23 22:46:57 bdemsky Exp $
  */
 final class ReHandler {
     // entry point.
@@ -43,6 +43,7 @@ final class ReHandler {
 	TypeInfo ti=new TypeInfo(ncode, nd);
 	analyzeTypes(ncode, ti);
 
+	
 	WorkSet callset=new WorkSet();
 	WorkSet throwset=new WorkSet();
 	WorkSet instanceset=new WorkSet();
@@ -861,7 +862,7 @@ class TypeVisitor extends QuadVisitor {
 	    //never seen yet...
 	    Set parentcast=(Set)typecast.get(q.prev(0));
 	    WorkSet ourcasts=new WorkSet(parentcast);
-	    if (q.objectref()!=null)
+	    if (!q.isStatic())
 		if (!q.field().getDeclaringClass().isAssignableFrom(ti.typeMap(null,q.objectref()))) {
 		    //Need typecast??
 		    Iterator iterate=ourcasts.iterator();
@@ -939,7 +940,7 @@ class TypeVisitor extends QuadVisitor {
 	    //never seen yet...
 	    Set parentcast=(Set)typecast.get(q.prev(0));
 	    WorkSet ourcasts=new WorkSet(parentcast);
-	    if (q.objectref()!=null)
+	    if (!q.isStatic())
 		if (!q.field().getDeclaringClass().isAssignableFrom(ti.typeMap(q,q.objectref()))) {
 		    //Need typecast??
 		    Iterator iterate=ourcasts.iterator();
