@@ -59,6 +59,7 @@ struct claz {
   struct claz *component_claz;	/* component type, or NULL if non-array. */
   struct claz **interfaces; /* NULL terminated list of implemented interfaces*/
   uint32_t size;		/* object size, including header */
+  uint32_t scaled_class_depth;  /* sizeof(struct claz *) * class_depth */
   union {
     void *_ignore;		/* just to set the size of the union.  */
 #ifdef WITH_SEMI_PRECISE_GC
@@ -76,8 +77,10 @@ struct claz {
   /* extra claz info goes here */
 #ifdef WITH_CLAZ_SHRINK
   uint32_t claz_index;          /* enumerated value of this claz */
+# if SIZEOF_VOID_P==8
+  uint32_t _padding;            /* word-align on 64-bit platforms */
+# endif
 #endif
-  uint32_t scaled_class_depth;  /* sizeof(struct claz *) * class_depth */
   struct claz *display[0];	/* sized by FLEX */
   /* class method dispatch table after display */
 };
@@ -133,6 +136,9 @@ struct FNI_classinfo {
   struct claz *claz;
   const char *name;
   jint modifiers;
+#if SIZEOF_VOID_P==8
+  jint padding; /* make sure pointers are word-aligned on 64-bit platforms */
+#endif
   union _jmemberID *memberend;
   union _jmemberID memberinfo[0];
 };
@@ -154,6 +160,9 @@ struct FNI_field2info {
   struct _jfieldID *fieldID; /* JNI information */
   struct oobj *declaring_class_object; /* reflection info: declaring class */
   jint modifiers; /* reflection info: access modifiers of field. */
+#if SIZEOF_VOID_P==8
+  jint padding; /*make sizeof(struct) even word multiple on 64-bit platforms*/
+#endif
 };
 extern struct FNI_field2info field2info_start[], field2info_end[];
 
@@ -162,6 +171,9 @@ struct FNI_method2info {
   struct _jmethodID *methodID; /* JNI information */
   struct oobj *declaring_class_object; /* reflection info: declaring class */
   jint modifiers; /* reflection info: access modifiers of method. */
+#if SIZEOF_VOID_P==8
+  jint padding; /*make sizeof(struct) even word multiple on 64-bit platforms*/
+#endif
 };
 extern struct FNI_method2info method2info_start[], method2info_end[];
 

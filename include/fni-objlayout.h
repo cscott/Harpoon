@@ -13,8 +13,8 @@ struct oobj {
   /* (claz_index should be aligned w/ start of oobj, but bitfields
    *  don't necessarily provide this guarantee) */
   unsigned int claz_index:(WITH_CLAZ_SHRINK*8);
-# if WITH_CLAZ_SHRINK < 4
-  int _padding_:(32-WITH_CLAZ_SHRINK*8);
+# if WITH_CLAZ_SHRINK < SIZEOF_VOID_P
+  int _padding_:((SIZEOF_VOID_P-WITH_CLAZ_SHRINK)*8);
 # endif
 #else
   struct claz *claz;
@@ -33,6 +33,9 @@ struct aarray {
   struct oobj obj;
   char _padding_[OBJECT_PADDING]; /* by default, OBJECT_PADDING is zero */
   jsize length; /* first field in an array is the length */
+#if SIZEOF_VOID_P == 8
+  jint _padding_64; /* word-align element start on 64-bit platforms. */
+#endif
   char element_start[0]; /* place holder for start of elements */
 };
 /* --------------------------------------------------------------*/
