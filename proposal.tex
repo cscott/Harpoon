@@ -1,36 +1,77 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: proposal.tex,v 1.5 1999-08-05 19:55:40 cananian Exp $
+% $Id: proposal.tex,v 1.6 1999-09-03 19:50:22 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
-\usepackage{pdffonts}
+\documentclass[12pt,twoside]{article}
+%\usepackage{pdffonts}
+\usepackage{beton}\usepackage{euler}
 \usepackage{comdef}
 
 % the name of the project
-\newcommand{\magic}{\textsc{Flex}}
 \linespread{1.1}
 
 \title{{\large Master's Thesis proposal for}\\
-\magic: An Optimizing Java Compiler using SSI Form}
+FLEX: An Optimizing Java Compiler using SSI Form}
 \author{C. Scott Ananian}
 \date{March 1999\\\vspace{5pt}}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.5 $ $}{$ $Revision: 1.5 $ $}
+\begin{titlepage}
+\newcommand{\nl}{\\[0.5\baselineskip]}
+\begin{centering}\large
+Massachusetts Institute Of Technology\\
+Department of Electrical Engineering and Computer Science\\
+\vspace{0.5cm}
+Proposal for Thesis Research in Partial Fulfillment\\
+of the Requirements for the Degree of\\
+Master of Engineering\\
+\end{centering}
+\vspace{0.25cm}
+\begin{tabbing}
+Title: \textbf{FLEX: An Optimizing Java Compiler using SSI Form}\nl
+Submitted By: \= C. Scott Ananian \hspace{3cm}\=\rule{6cm}{0.5pt}\\
+              \> Ashdown House, Room 510A     \>(signature)\\
+              \> Cambridge, MA 02139\nl
+Date of Submission: March 1999\nl
+Expected Date of Completion: September 1999\nl
+Laboratory where thesis will be done: Laboratory for Computer
+Science%\nl
+\end{tabbing}
+Brief Statement of the Problem:
 
-\maketitle
+An investigation into the use of novel intermediate representations is
+proposed in the context of a sophisticated compiler for the Java
+programming language.  The compiler will be constructed and both
+theoretical and practical methods will be used to evaluate the
+effectiveness of the intermediate representation.  Analysis and
+optimization techniques based on the representation will be
+implemented and presented.
 
-The \magic\ project is an ongoing effort to create intelligent
+~\\Supervision Agreement:
+
+The program outlined in the proposal is adequate for a Master's
+thesis.  The supplies and facilities are available, and I am willing
+to supervise the research and evaluate the thesis report.
+
+\begin{tabbing}
+\hspace{3.5in}\=\kill
+\>\rule{2.5in}{0.5pt}\\
+\>M. Rinard, Prof. of Comp. Sci.\\
+\end{tabbing}
+
+\end{titlepage}
+
+The FLEX project is an ongoing effort to create intelligent
 compiler technology to address embedded system and hardware design
 issues for safe high-level languages, in particular, Java.
 Current compilers cannot understand enough of the high-level structure
 of a program to do reasonable optimization of threading and memory
 management code, especially when pointers are present. Among the goals
-of the \magic\ project are automatic code partitioning for distributed
+of the FLEX project are automatic code partitioning for distributed
 systems, memory allocation strategy conversion for embedded systems,
 and the use of Java as a high-level hardware description language.
 
 This thesis concentrates on the code representation used in the
-\magic\ compiler; specifically, on Static Single Information (SSI)
+FLEX compiler; specifically, on Static Single Information (SSI)
 form, which is introduced as a more general replacement for the
 prevalent SSA form.  SSI form is symmetrical for both forward and
 reverse dataflow analysis, and represents information generated both
@@ -53,7 +94,7 @@ Numerical results will be given supporting the time complexity of the
 algorithms presented and showing the optimization improvements
 possible using SSI form.
 
-Finally, future work on the \magic\ project is briefly discussed, and
+Finally, future work on the FLEX project is briefly discussed, and
 SSI form is placed in the context of the project as a whole.
 
 \end{document}
