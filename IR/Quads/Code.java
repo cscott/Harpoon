@@ -14,19 +14,20 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.Collections.Graph;
 import harpoon.Util.Collections.UnmodifiableIterator;
 import harpoon.Util.Util;
 
+import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Stack;
-import java.util.List;
-import java.util.ArrayList;
-
 
 /**
  * <code>Quads.Code</code> is an abstract superclass of codeviews
@@ -34,10 +35,10 @@ import java.util.ArrayList;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.12 2003-03-11 00:59:03 cananian Exp $
+ * @version $Id: Code.java,v 1.13 2003-05-09 21:06:19 cananian Exp $
  */
 public abstract class Code extends HCode<Quad>
-    implements java.io.Serializable {
+    implements java.io.Serializable, Graph<Quad,Edge> {
     /** The method that this code view represents. */
     protected final HMethod parent;
     /** The quadruples composing this code view. */
@@ -198,6 +199,14 @@ public abstract class Code extends HCode<Quad>
     // implement elementArrayFactory which returns Quad[]s.
     public ArrayFactory<Quad> elementArrayFactory() {
 	return Quad.arrayFactory;
+    }
+    // Graph interface
+    public Set<Quad> nodes() {
+	final List<Quad> l = getElementsL();
+	return new AbstractSet<Quad>() {
+	    public Iterator<Quad> iterator() { return l.iterator(); }
+	    public int size() { return l.size(); }
+	};
     }
 
     // print this Code.

@@ -15,6 +15,7 @@ import harpoon.Temp.TempFactory;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.Util;
 import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.Graph;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Collections.UnmodifiableIterator;
 
@@ -22,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
@@ -34,9 +36,10 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.6 2002-08-31 00:24:32 cananian Exp $
+ * @version $Id: Code.java,v 1.7 2003-05-09 21:06:17 cananian Exp $
  */
-public abstract class Code extends HCode<Instr> {
+public abstract class Code extends HCode<Instr>
+    implements Graph<Instr,InstrEdge> {
     private static boolean DEBUG = true;
 
     /** The method that this code view represents. */
@@ -127,6 +130,15 @@ public abstract class Code extends HCode<Instr> {
      */
     public ArrayFactory<Instr> elementArrayFactory() { 
 	return Instr.arrayFactory; 
+    }
+
+    // Graph interface
+    public Set<Instr> nodes() {
+	final List<Instr> l = getElementsL();
+	return new AbstractSet<Instr>() {
+	    public Iterator<Instr> iterator() { return l.iterator(); }
+	    public int size() { return l.size(); }
+	};
     }
 
     /** Allows access to the InstrFactory used by this codeview.
