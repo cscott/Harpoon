@@ -183,6 +183,12 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 		    /* May save significant amounts of space for obj_map  */
 		    /* entries.						  */
 
+#if defined(USE_MARK_BYTES) && !defined(ALIGN_DOUBLE)
+#  define ALIGN_DOUBLE
+   /* We use one byte for every 2 words, which doesn't allow for	*/
+   /* odd numbered words to have mark bits.				*/
+#endif
+
 /* ALIGN_DOUBLE requires MERGE_SIZES at present. */
 # if defined(ALIGN_DOUBLE) && !defined(MERGE_SIZES)
 #   define MERGE_SIZES
@@ -237,9 +243,10 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 
 /* Fill in the pc and argument information for up to NFRAMES of my	*/
 /* callers.  Ignore my frame and my callers frame.			*/
-void GC_save_callers (/* struct callinfo info[NFRAMES] */);
-
-void GC_print_callers (/* struct callinfo info[NFRAMES] */);
+struct callinfo;
+void GC_save_callers GC_PROTO((struct callinfo info[NFRAMES]));
+  
+void GC_print_callers GC_PROTO((struct callinfo info[NFRAMES]));
 
 #else
 
@@ -286,13 +293,13 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #   define MS_TIME_DIFF(a,b) ((double) (a.tv_sec - b.tv_sec) * 1000.0 \
                                + (double) (a.tv_usec - b.tv_usec) / 1000.0)
 #else /* !BSD_TIME */
-# ifdef MSWIN32
+# if defined(MSWIN32) || defined(MSWINCE)
 #   include <windows.h>
 #   include <winbase.h>
 #   define CLOCK_TYPE DWORD
 #   define GET_TIME(x) x = GetTickCount()
 #   define MS_TIME_DIFF(a,b) ((long)((a)-(b)))
-# else /* !MSWIN32, !BSD_TIME */
+# else /* !MSWIN32, !MSWINCE, !BSD_TIME */
 #   include <time.h>
 #   if !defined(__STDC__) && defined(SPARC) && defined(SUNOS4)
       clock_t clock();	/* Not in time.h, where it belongs	*/
@@ -338,6 +345,9 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #   include <string.h>
 #   define BCOPY_EXISTS
 # endif
+# if defined(MACOSX)
+#   define BCOPY_EXISTS
+# endif
 
 # ifndef BCOPY_EXISTS
 #   include <string.h>
@@ -355,6 +365,7 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 /* GET_MEM is currently not assumed to retrieve 0 filled space, */
 /* though we should perhaps take advantage of the case in which */
 /* does.							*/
+struct hblk;	/* See below.	*/
 # ifdef PCR
     char * real_malloc();
 #   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)bytes + GC_page_size) \
@@ -387,8 +398,13 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 			NewPtrClear(bytes + GC_page_size) + GC_page_size-1)
 #	    endif
 #	  else
+#	    ifdef MSWINCE
+	      extern ptr_t GC_wince_get_mem();
+#	      define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
+#	    else
               extern ptr_t GC_unix_get_mem();
 #             define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
+#	    endif
 #	  endif
 #	endif
 #     endif
@@ -418,6 +434,7 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
      extern struct PCR_Th_MLRep GC_allocate_ml;
 #    define DCL_LOCK_STATE  PCR_sigset_t GC_old_sig_mask
 #    define LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml) 
+#    define UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
 #    define UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
 #    define FASTLOCK() PCR_ThCrSec_EnterSys()
      /* Here we cheat (a lot): */
@@ -455,18 +472,24 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #   if defined(I386)|| defined(POWERPC) || defined(ALPHA) || defined(IA64) \
     || defined(M68K) || defined(SPARC)
 #    include <pthread.h>
-#    ifdef PARALLEL_MARK
+#    if defined(PARALLEL_MARK) 
+      /* We need compare-and-swap to update mark bits, where it's	*/
+      /* performance critical.  If USE_MARK_BYTES is defined, it is	*/
+      /* no longer needed for this purpose.  However we use it in	*/
+      /* either case to implement atomic fetch-and-add, though that's	*/
+      /* less performance critical, and could perhaps be done with	*/
+      /* a lock.							*/
 #     if defined(GENERIC_COMPARE_AND_SWAP)
 	/* Probably not useful, except for debugging.	*/
 	extern pthread_mutex_t GC_compare_and_swap_lock;
 
 	static GC_bool GC_compare_and_exchange(volatile word *addr,
-						     word old, word new)
+						     word old, word new_val)
 	{
 	  GC_bool result;
 	  pthread_mutex_lock(&GC_compare_and_swap_lock);
 	  if (*addr == old) {
-	    *addr = new;
+	    *addr = new_val;
 	    result = TRUE;
 	  } else {
 	    result = FALSE;
@@ -479,12 +502,12 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #      if !defined(GENERIC_COMPARE_AND_SWAP)
          /* Returns TRUE if the comparison succeeded. */
          inline static GC_bool GC_compare_and_exchange(volatile word *addr,
-		  				       word old, word new) 
+		  				       word old, word new_val) 
          {
 	   char result;
 	   __asm__ __volatile__("lock; cmpxchgl %2, %0; setz %1"
 	    	: "=m"(*(addr)), "=r"(result)
-		: "r" (new), "0"(*(addr)), "a"(old));
+		: "r" (new_val), "0"(*(addr)), "a"(old));
 	   return (GC_bool) result;
          }
 #      endif /* !GENERIC_COMPARE_AND_SWAP */
@@ -499,12 +522,12 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #     if defined(IA64)
 #      if !defined(GENERIC_COMPARE_AND_SWAP)
          inline static GC_bool GC_compare_and_exchange(volatile word *addr,
-						       word old, word new) 
+						       word old, word new_val) 
 	 {
 	  unsigned long oldval;
 	  __asm__ __volatile__("mov ar.ccv=%4 ;; cmpxchg8.rel %0=%1,%2,ar.ccv"
 		: "=r"(oldval), "=m"(*addr)
-		: "r"(new), "1"(*addr), "r"(old));
+		: "r"(new_val), "1"(*addr), "r"(old));
 	  return (oldval == old);
          }
 #      endif /* !GENERIC_COMPARE_AND_SWAP */
@@ -541,10 +564,10 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #     endif
 #     if defined(IA64)
        inline static int GC_test_and_set(volatile unsigned int *addr) {
-	  int oldval;
+	  long oldval, n = 1;
 	  __asm__ __volatile__("xchg4 %0=%1,%2"
 		: "=r"(oldval), "=m"(*addr)
-		: "r"(1), "1"(*addr));
+		: "r"(n), "1"(*addr));
 	  return oldval;
        }
        inline static void GC_clear(volatile unsigned int *addr) {
@@ -552,7 +575,7 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
        }
 #      define GC_CLEAR_DEFINED
 #     endif
-#    ifdef SPARC
+#     ifdef SPARC
        inline static int GC_test_and_set(volatile unsigned int *addr) {
 	 int oldval;
 
@@ -561,7 +584,7 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 	 : "m"(*addr));
 	 return oldval;
        }
-#    endif
+#     endif
 #     ifdef M68K
        /* Contributed by Tony Mantler.  I'm not sure how well it was	*/
        /* tested.							*/
@@ -639,59 +662,64 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
       			     : "r"(1), "r"(addr));
           return oldval;
         }
-#      endif
-#      ifndef GC_CLEAR_DEFINED
+#     endif /* ARM32 */
+#     ifndef GC_CLEAR_DEFINED
          inline static void GC_clear(volatile unsigned int *addr) {
 	  /* Try to discourage gcc from moving anything past this. */
 	  __asm__ __volatile__(" ");
           *(addr) = 0;
          }
-#      endif
+#     endif /* !GC_CLEAR_DEFINED */
 
-       extern volatile unsigned int GC_allocate_lock;
-       extern pthread_t GC_lock_holder;
-       extern void GC_lock(void);
+      extern volatile unsigned int GC_allocate_lock;
+      extern void GC_lock(void);
 	/* Allocation lock holder.  Only set if acquired by client through */
 	/* GC_call_with_alloc_lock.					   */
-#      define SET_LOCK_HOLDER() GC_lock_holder = pthread_self()
-#      define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
-#      define I_HOLD_LOCK() (pthread_equal(GC_lock_holder, pthread_self()))
-#      ifdef GC_ASSERTIONS
+#     ifdef GC_ASSERTIONS
 #        define LOCK() \
 		{ if (GC_test_and_set(&GC_allocate_lock)) GC_lock(); \
 		  SET_LOCK_HOLDER(); }
 #        define UNLOCK() \
 		{ GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
 	          GC_clear(&GC_allocate_lock); }
-#      else
+#     else
 #        define LOCK() \
 		{ if (GC_test_and_set(&GC_allocate_lock)) GC_lock(); }
 #        define UNLOCK() \
 		GC_clear(&GC_allocate_lock)
-#      endif
+#     endif /* !GC_ASSERTIONS */
 #    else /* THREAD_LOCAL_ALLOC */
 #      define USE_PTHREAD_LOCKS
-#    endif
+#    endif /* THREAD_LOCAL_ALLOC */
 #   else /* LINUX_THREADS on hardware for which we don't know how	*/
 	 /* to do test and set.						*/
 #      define USE_PTHREAD_LOCKS
-#   endif
+#   endif /* ! known hardware */
 #   ifdef USE_PTHREAD_LOCKS
-     /* At least in the THREAD_LOCAL_ALLOC case, it probably makes 	*/
-     /* sense to spin on pthread_mutex_trylock() for a little bit.	*/
-     /* We don't do that yet.						*/
-#    include <pthread.h>
-     extern pthread_mutex_t GC_allocate_ml;
-/* #    define LOCK() pthread_mutex_lock(&GC_allocate_ml)  -- too slow	*/
-#    define LOCK() { if (0 != pthread_mutex_trylock(&GC_allocate_ml)) GC_lock(); }
-#    define UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
-#   endif
+#      include <pthread.h>
+       extern pthread_mutex_t GC_allocate_ml;
+#      ifdef GC_ASSERTIONS
+#        define LOCK() \
+		{ GC_lock(); \
+		  SET_LOCK_HOLDER(); }
+#        define UNLOCK() \
+		{ GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
+	          pthread_mutex_unlock(&GC_allocate_ml); }
+#      else /* !GC_ASSERTIONS */
+#        define LOCK() \
+	   { if (0 != pthread_mutex_trylock(&GC_allocate_ml)) GC_lock(); }
+#        define UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
+#      endif /* !GC_ASSERTIONS */
+#   endif /* USE_PTHREAD_LOCKS */
+#   define SET_LOCK_HOLDER() GC_lock_holder = pthread_self()
+#   define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
+#   define I_HOLD_LOCK() (pthread_equal(GC_lock_holder, pthread_self()))
     extern VOLATILE GC_bool GC_collecting;
 #   define ENTER_GC() GC_collecting = 1;
 #   define EXIT_GC() GC_collecting = 0;
     extern void GC_lock(void);
+    extern pthread_t GC_lock_holder;
 #   ifdef GC_ASSERTIONS
-      extern pthread_t GC_lock_holder;
       extern pthread_t GC_mark_lock_holder;
 #   endif
 #  endif /* LINUX_THREADS */
@@ -772,10 +800,10 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 		/* Used on platforms were locks can be reacquired,	*/
 		/* so it doesn't matter if we lie.			*/
 #  endif
-# else
+# else /* !THREADS */
 #    define LOCK()
 #    define UNLOCK()
-# endif
+# endif /* !THREADS */
 # ifndef SET_LOCK_HOLDER
 #   define SET_LOCK_HOLDER()
 #   define UNSET_LOCK_HOLDER()
@@ -810,8 +838,8 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 		PCR_Th_SetSigMask(&GC_old_sig_mask, NIL)
 # else
 #   if defined(SRC_M3) || defined(AMIGA) || defined(SOLARIS_THREADS) \
-	|| defined(MSWIN32) || defined(MACOS) || defined(DJGPP) \
-	|| defined(NO_SIGNALS) || defined(IRIX_THREADS) \
+	|| defined(MSWIN32) || defined(MSWINCE) || defined(MACOS) \
+	|| defined(DJGPP) || defined(NO_SIGNALS) || defined(IRIX_THREADS) \
 	|| defined(IRIX_JDK_THREADS) || defined(LINUX_THREADS) 
 			/* Also useful for debugging.		*/
 	/* Should probably use thr_sigsetmask for SOLARIS_THREADS. */
@@ -999,6 +1027,11 @@ extern GC_warn_proc GC_current_warn_proc;
 #   define SMALL_OBJ(bytes) ((bytes) <= MAXOBJBYTES)
 #   define ADD_SLOP(bytes) (bytes)
 # endif
+# ifdef USE_MARK_BYTES
+#   define MIN_WORDS 2   	/* Smallest allocated object.	*/
+# else
+#   define MIN_WORDS 1
+# endif
 
 
 /*
@@ -1038,20 +1071,23 @@ typedef word page_hash_table[PHT_SIZE];
 /*  heap block header */
 #define HBLKMASK   (HBLKSIZE-1)
 
-#define BITS_PER_HBLK (HBLKSIZE * 8)
+#define BITS_PER_HBLK (CPP_HBLKSIZE * 8)
 
 #define MARK_BITS_PER_HBLK (BITS_PER_HBLK/CPP_WORDSZ)
 	   /* upper bound                                    */
-	   /* We allocate 1 bit/word.  Only the first word   */
+	   /* We allocate 1 bit/word, unless USE_MARK_BYTES  */
+	   /* is defined.  Only the first word   	     */
 	   /* in each object is actually marked.             */
 
-# ifdef ALIGN_DOUBLE
-#   define MARK_BITS_SZ (((MARK_BITS_PER_HBLK + 2*CPP_WORDSZ - 1) \
-			  / (2*CPP_WORDSZ))*2)
+# ifdef USE_MARK_BYTES
+#   define MARK_BITS_SZ (MARK_BITS_PER_HBLK/2)
+	/* Unlike the other case, this is in units of bytes.		*/
+	/* We actually allocate only every second mark bit, since we	*/
+	/* force all objects to be doubleword aligned.			*/
+	/* However, each mark bit is allocated as a byte.		*/
 # else
-#   define MARK_BITS_SZ ((MARK_BITS_PER_HBLK + CPP_WORDSZ - 1)/CPP_WORDSZ)
+#   define MARK_BITS_SZ (MARK_BITS_PER_HBLK/CPP_WORDSZ)
 # endif
-	   /* Upper bound on number of mark words per heap block  */
 
 struct hblkhdr {
     word hb_sz;  /* If in use, size in words, of objects in the block. */
@@ -1084,11 +1120,20 @@ struct hblkhdr {
     				/* Value of GC_gc_no when block was	*/
     				/* last allocated or swept. May wrap.   */
 				/* For a free block, this is maintained */
-				/* unly for USE_MUNMAP, and indicates	*/
+				/* only for USE_MUNMAP, and indicates	*/
 				/* when the header was allocated, or	*/
 				/* when the size of the block last	*/
 				/* changed.				*/
-    word hb_marks[MARK_BITS_SZ];
+#   ifdef USE_MARK_BYTES
+      union {
+        char _hb_marks[MARK_BITS_SZ];
+			    /* The i'th byte is 1 if the object 	*/
+			    /* starting at word 2i is marked, 0 o.w.	*/
+	word dummy;	/* Force word alignment of mark bytes. */
+      } _mark_byte_union;
+#     define hb_marks _mark_byte_union._hb_marks
+#   else
+      word hb_marks[MARK_BITS_SZ];
 			    /* Bit i in the array refers to the             */
 			    /* object starting at the ith word (header      */
 			    /* INCLUDED) in the heap block.                 */
@@ -1096,6 +1141,7 @@ struct hblkhdr {
 			    /* Unused bits are invalid, and are 	    */
 			    /* occasionally set, e.g for uncollectable	    */
 			    /* objects.					    */
+#   endif /* !USE_MARK_BYTES */
 };
 
 /*  heap block body */
@@ -1130,10 +1176,11 @@ struct hblk {
 /* The type of mark procedures.  This really belongs in gc_mark.h.	*/
 /* But we put it here, so that we can avoid scanning the mark proc	*/
 /* table.								*/
-typedef struct ms_entry * (*mark_proc)(/* word * addr,
-					  struct ms_entry *mark_stack_ptr,
-					  struct ms_entry *mark_stack_limit,
-					  word env */);
+struct ms_entry;
+typedef struct ms_entry * (*mark_proc) GC_PROTO((
+		word * addr, struct ms_entry * mark_stack_ptr,
+		struct ms_entry * mark_stack_limit, word env));
+
 # define LOG_MAX_MARK_PROCS 6
 # define MAX_MARK_PROCS (1 << LOG_MAX_MARK_PROCS)
 
@@ -1147,7 +1194,7 @@ typedef struct ms_entry * (*mark_proc)(/* word * addr,
 #   ifdef PCR
 #     define MAX_ROOT_SETS 1024
 #   else
-#     ifdef MSWIN32
+#     if defined(MSWIN32) || defined(MSWINCE)
 #	define MAX_ROOT_SETS 512
 	    /* Under NT, we add only written pages, which can result 	*/
 	    /* in many small root sets.					*/
@@ -1175,14 +1222,14 @@ struct exclusion {
 struct roots {
 	ptr_t r_start;
 	ptr_t r_end;
-#	ifndef MSWIN32
+#	if !defined(MSWIN32) && !defined(MSWINCE)
 	  struct roots * r_next;
 #	endif
 	GC_bool r_tmp;
 	  	/* Delete before registering new dynamic libraries */
 };
 
-#ifndef MSWIN32
+#if !defined(MSWIN32) && !defined(MSWINCE)
     /* Size of hash table index to roots.	*/
 #   define LOG_RT_SIZE 6
 #   define RT_SIZE (1 << LOG_RT_SIZE) /* Power of 2, may be != MAX_ROOT_SETS */
@@ -1362,12 +1409,16 @@ struct _GC_arrays {
   struct HeapSect {
       ptr_t hs_start; word hs_bytes;
   } _heap_sects[MAX_HEAP_SECTS];
-# ifdef MSWIN32
+# if defined(MSWIN32) || defined(MSWINCE)
     ptr_t _heap_bases[MAX_HEAP_SECTS];
     		/* Start address of memory regions obtained from kernel. */
 # endif
+# ifdef MSWINCE
+    word _heap_lengths[MAX_HEAP_SECTS];
+    		/* Commited lengths of memory regions obtained from kernel. */
+# endif
   struct roots _static_roots[MAX_ROOT_SETS];
-# ifndef MSWIN32
+# if !defined(MSWIN32) && !defined(MSWINCE)
     struct roots * _root_index[RT_SIZE];
 # endif
   struct exclusion _excl_table[MAX_EXCLUSIONS];
@@ -1422,8 +1473,11 @@ GC_API GC_FAR struct _GC_arrays GC_arrays;
 # ifdef USE_MUNMAP
 #   define GC_unmapped_bytes GC_arrays._unmapped_bytes
 # endif
-# ifdef MSWIN32
+# if defined(MSWIN32) || defined(MSWINCE)
 #   define GC_heap_bases GC_arrays._heap_bases
+# endif
+# ifdef MSWINCE
+#   define GC_heap_lengths GC_arrays._heap_lengths
 # endif
 # define GC_static_roots GC_arrays._static_roots
 # define GC_root_index GC_arrays._root_index
@@ -1515,8 +1569,10 @@ extern word GC_n_heap_sects;	/* Number of separately added heap	*/
 
 extern word GC_page_size;
 
-# ifdef MSWIN32
-extern word GC_n_heap_bases;	/* See GC_heap_bases.	*/
+# if defined(MSWIN32) || defined(MSWINCE)
+  struct _SYSTEM_INFO;
+  extern struct _SYSTEM_INFO GC_sysinfo;
+  extern word GC_n_heap_bases;	/* See GC_heap_bases.	*/
 # endif
 
 extern word GC_total_stack_black_listed;
@@ -1583,14 +1639,14 @@ extern ptr_t GC_greatest_plausible_heap_addr;
 # define OR_WORD(addr, bits) \
 	{ word old; \
 	  do { \
-	    old = *(addr); \
+	    old = *((volatile word *)addr); \
 	  } while (!GC_compare_and_exchange((addr), old, old | (bits))); \
 	}
 # define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
 	{ word old; \
 	  word my_bits = (bits); \
 	  do { \
-	    old = *(addr); \
+	    old = *((volatile word *)addr); \
 	    if (old & my_bits) goto exit_label; \
 	  } while (!GC_compare_and_exchange((addr), old, old | my_bits)); \
 	}
@@ -1615,73 +1671,87 @@ extern ptr_t GC_greatest_plausible_heap_addr;
  * relative to the beginning of the block, including unused words)
  */
 
+#ifdef USE_MARK_BYTES
+# define mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[(n) >> 1])
+# define set_mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[(n)>>1]) = 1
+# define clear_mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[(n)>>1]) = 0
+#else /* !USE_MARK_BYTES */
 # define mark_bit_from_hdr(hhdr,n) (((hhdr)->hb_marks[divWORDSZ(n)] \
 			    >> (modWORDSZ(n))) & (word)1)
 # define set_mark_bit_from_hdr(hhdr,n) \
 			    OR_WORD((hhdr)->hb_marks+divWORDSZ(n), \
 				    (word)1 << modWORDSZ(n))
-
 # define clear_mark_bit_from_hdr(hhdr,n) (hhdr)->hb_marks[divWORDSZ(n)] \
 				&= ~((word)1 << modWORDSZ(n))
+#endif /* !USE_MARK_BYTES */
 
 /* Important internal collector routines */
 
-ptr_t GC_approx_sp();
-
-GC_bool GC_should_collect();
-
-void GC_apply_to_all_blocks(/*fn, client_data*/);
-			/* Invoke fn(hbp, client_data) for each 	*/
-			/* allocated heap block.			*/
-struct hblk * GC_next_used_block(/* struct hblk * h */);
-			/* Return first in-use block >= h	*/
-struct hblk * GC_prev_block(/* struct hblk * h */);
-			/* Return last block <= h.  Returned block	*/
-			/* is managed by GC, but may or may not be in	*/
+ptr_t GC_approx_sp GC_PROTO((void));
+  
+GC_bool GC_should_collect GC_PROTO((void));
+  
+void GC_apply_to_all_blocks GC_PROTO(( \
+    void (*fn) GC_PROTO((struct hblk *h, word client_data)), \
+    word client_data));
+  			/* Invoke fn(hbp, client_data) for each 	*/
+  			/* allocated heap block.			*/
+struct hblk * GC_next_used_block GC_PROTO((struct hblk * h));
+  			/* Return first in-use block >= h	*/
+struct hblk * GC_prev_block GC_PROTO((struct hblk * h));
+  			/* Return last block <= h.  Returned block	*/
+  			/* is managed by GC, but may or may not be in	*/
 			/* use.						*/
-void GC_mark_init();
-void GC_clear_marks();	/* Clear mark bits for all heap objects. */
-void GC_invalidate_mark_state();	/* Tell the marker that	marked 	   */
-					/* objects may point to	unmarked   */
-					/* ones, and roots may point to	   */
-					/* unmarked objects.		   */
-					/* Reset mark stack.		   */
-void GC_mark_from_mark_stack(); /* Mark from everything on the mark stack. */
-				/* Return after about one pages worth of   */
-				/* work.				   */
-GC_bool GC_mark_stack_empty();
-GC_bool GC_mark_some(/* cold_gc_frame */);
-			/* Perform about one pages worth of marking	*/
-			/* work of whatever kind is needed.  Returns	*/
-			/* quickly if no collection is in progress.	*/
-			/* Return TRUE if mark phase finished.		*/
-void GC_initiate_gc();		/* initiate collection.			*/
-				/* If the mark state is invalid, this	*/
-				/* becomes full colleection.  Otherwise */
-				/* it's partial.			*/
-void GC_push_all(/*b,t*/);	/* Push everything in a range 		*/
-				/* onto mark stack.			*/
-void GC_push_selected(/*b,t,select_fn,push_fn*/);
+void GC_mark_init GC_PROTO((void));
+void GC_clear_marks GC_PROTO((void));	/* Clear mark bits for all heap objects. */
+void GC_invalidate_mark_state GC_PROTO((void));
+					/* Tell the marker that	marked 	   */
+  					/* objects may point to	unmarked   */
+  					/* ones, and roots may point to	   */
+  					/* unmarked objects.		   */
+  					/* Reset mark stack.		   */
+GC_bool GC_mark_stack_empty GC_PROTO((void));
+GC_bool GC_mark_some GC_PROTO((ptr_t cold_gc_frame));
+  			/* Perform about one pages worth of marking	*/
+  			/* work of whatever kind is needed.  Returns	*/
+  			/* quickly if no collection is in progress.	*/
+  			/* Return TRUE if mark phase finished.		*/
+void GC_initiate_gc GC_PROTO((void));
+				/* initiate collection.			*/
+  				/* If the mark state is invalid, this	*/
+  				/* becomes full colleection.  Otherwise */
+  				/* it's partial.			*/
+void GC_push_all GC_PROTO((ptr_t bottom, ptr_t top));
+				/* Push everything in a range 		*/
+  				/* onto mark stack.			*/
+void GC_push_selected GC_PROTO(( \
+    ptr_t bottom, \
+    ptr_t top, \
+    int (*dirty_fn) GC_PROTO((struct hblk *h)), \
+    void (*push_fn) GC_PROTO((ptr_t bottom, ptr_t top)) ));
 				  /* Push all pages h in [b,t) s.t. 	*/
 				  /* select_fn(h) != 0 onto mark stack. */
 #ifndef SMALL_CONFIG
-  void GC_push_conditional(/* ptr_t b, ptr_t t, GC_bool all*/);
+  void GC_push_conditional GC_PROTO((ptr_t b, ptr_t t, GC_bool all));
 #else
 # define GC_push_conditional(b, t, all) GC_push_all(b, t)
 #endif
                                 /* Do either of the above, depending	*/
 				/* on the third arg.			*/
-void GC_push_all_stack(/*b,t*/);    /* As above, but consider		*/
+void GC_push_all_stack GC_PROTO((ptr_t b, ptr_t t));
+				    /* As above, but consider		*/
 				    /*  interior pointers as valid  	*/
-void GC_push_all_eager(/*b,t*/);    /* Same as GC_push_all_stack, but   */
+void GC_push_all_eager GC_PROTO((ptr_t b, ptr_t t));
+				    /* Same as GC_push_all_stack, but   */
 				    /* ensures that stack is scanned	*/
 				    /* immediately, not just scheduled  */
 				    /* for scanning.			*/
 #ifndef THREADS
-  void GC_push_all_stack_partially_eager(/* bottom, top, cold_gc_frame */);
+  void GC_push_all_stack_partially_eager GC_PROTO(( \
+      ptr_t bottom, ptr_t top, ptr_t cold_gc_frame ));
 			/* Similar to GC_push_all_eager, but only the	*/
 			/* part hotter than cold_gc_frame is scanned	*/
-			/* immediately.  Needed to endure that callee-	*/
+			/* immediately.  Needed to ensure that callee-	*/
 			/* save registers are not missed.		*/
 #else
   /* In the threads case, we push part of the current thread stack	*/
@@ -1690,84 +1760,105 @@ void GC_push_all_eager(/*b,t*/);    /* Same as GC_push_all_stack, but   */
   /* stacks are scheduled for scanning in *GC_push_other_roots, which	*/
   /* is thread-package-specific.					*/
 #endif
-void GC_push_current_stack(/* ptr_t cold_gc_frame */);
-			/* Push enough of the current stack eagerly to	*/
-			/* ensure that callee-save registers saved in	*/
-			/* GC frames are scanned.			*/
-			/* In the non-threads case, schedule entire	*/
-			/* stack for scanning.				*/
-void GC_push_roots(/* GC_bool all, ptr_t cold_gc_frame */);
-			/* Push all or dirty roots.	*/
-extern void (*GC_push_other_roots)();
-			/* Push system or application specific roots	*/
-			/* onto the mark stack.  In some environments	*/
-			/* (e.g. threads environments) this is		*/
-			/* predfined to be non-zero.  A client supplied */
-			/* replacement should also call the original	*/
-			/* function.					*/
-extern void (*GC_start_call_back)(/* void */);
-			/* Called at start of full collections.		*/
-			/* Not called if 0.  Called with allocation 	*/
-			/* lock held.					*/
-			/* 0 by default.				*/
-void GC_push_regs();	/* Push register contents onto mark stack.	*/
-			/* If NURSERY is defined, the default push	*/
-			/* action can be overridden with GC_push_proc	*/
-void GC_remark();	/* Mark from all marked objects.  Used	*/
-		 	/* only if we had to drop something.	*/
+void GC_push_current_stack GC_PROTO((ptr_t cold_gc_frame));
+  			/* Push enough of the current stack eagerly to	*/
+  			/* ensure that callee-save registers saved in	*/
+  			/* GC frames are scanned.			*/
+  			/* In the non-threads case, schedule entire	*/
+  			/* stack for scanning.				*/
+void GC_push_roots GC_PROTO((GC_bool all, ptr_t cold_gc_frame));
+  			/* Push all or dirty roots.	*/
+extern void (*GC_push_other_roots) GC_PROTO((void));
+  			/* Push system or application specific roots	*/
+  			/* onto the mark stack.  In some environments	*/
+  			/* (e.g. threads environments) this is		*/
+  			/* predfined to be non-zero.  A client supplied */
+  			/* replacement should also call the original	*/
+  			/* function.					*/
+extern void (*GC_start_call_back) GC_PROTO((void));
+  			/* Called at start of full collections.		*/
+  			/* Not called if 0.  Called with allocation 	*/
+  			/* lock held.					*/
+  			/* 0 by default.				*/
+# if defined(USE_GENERIC_PUSH_REGS)
+  void GC_generic_push_regs GC_PROTO((ptr_t cold_gc_frame));
+# else
+  void GC_push_regs GC_PROTO((void));
+# endif
+			/* Push register contents onto mark stack.	*/
+  			/* If NURSERY is defined, the default push	*/
+  			/* action can be overridden with GC_push_proc	*/
 
 # ifdef NURSERY
     extern void (*GC_push_proc)(ptr_t);
 # endif
-# if defined(MSWIN32)
-  void __cdecl GC_push_one();
+# if defined(MSWIN32) || defined(MSWINCE)
+  void __cdecl GC_push_one GC_PROTO((word p));
 # else
-  void GC_push_one(/*p*/);    /* If p points to an object, mark it    */
+  void GC_push_one GC_PROTO((word p));
+			      /* If p points to an object, mark it    */
                               /* and push contents on the mark stack  */
 # endif
-void GC_push_one_checked(/*p*/); /* Ditto, omits plausibility test	*/
-void GC_push_marked(/* struct hblk h, hdr * hhdr */);
+# ifdef PRINT_BLACK_LIST
+  void GC_push_one_checked GC_PROTO(( \
+      word p, GC_bool interior_ptrs, ptr_t source));
+				/* Ditto, omits plausibility test	*/
+# else
+  void GC_push_one_checked GC_PROTO(( \
+      word p, GC_bool interior_ptrs));
+# endif
+void GC_push_marked GC_PROTO((struct hblk * h, hdr * hhdr));
 		/* Push contents of all marked objects in h onto	*/
 		/* mark stack.						*/
 #ifdef SMALL_CONFIG
 # define GC_push_next_marked_dirty(h) GC_push_next_marked(h)
 #else
-  struct hblk * GC_push_next_marked_dirty(/* h */);
+  struct hblk * GC_push_next_marked_dirty GC_PROTO((struct hblk * h));
 		/* Invoke GC_push_marked on next dirty block above h.	*/
 		/* Return a pointer just past the end of this block.	*/
 #endif /* !SMALL_CONFIG */
-struct hblk * GC_push_next_marked(/* h */);
-		/* Ditto, but also mark from clean pages.	*/
-struct hblk * GC_push_next_marked_uncollectable(/* h */);
-		/* Ditto, but mark only from uncollectable pages.	*/
-GC_bool GC_stopped_mark(); /* Stop world and mark from all roots	*/
-			/* and rescuers.			*/
-void GC_clear_hdr_marks(/* hhdr */);  /* Clear the mark bits in a header */
-void GC_set_hdr_marks(/* hhdr */);  /* Set the mark bits in a header */
-void GC_add_roots_inner();
-GC_bool GC_is_static_root(/* ptr_t p */);
-		/* Is the address p in one of the registered static	*/
+struct hblk * GC_push_next_marked GC_PROTO((struct hblk * h));
+  		/* Ditto, but also mark from clean pages.	*/
+struct hblk * GC_push_next_marked_uncollectable GC_PROTO((struct hblk * h));
+  		/* Ditto, but mark only from uncollectable pages.	*/
+GC_bool GC_stopped_mark GC_PROTO((GC_stop_func stop_func));
+ 			/* Stop world and mark from all roots	*/
+  			/* and rescuers.			*/
+void GC_clear_hdr_marks GC_PROTO((hdr * hhdr));
+				    /* Clear the mark bits in a header */
+void GC_set_hdr_marks GC_PROTO((hdr * hhdr));
+ 				    /* Set the mark bits in a header */
+void GC_add_roots_inner GC_PROTO((char * b, char * e, GC_bool tmp));
+GC_bool GC_is_static_root GC_PROTO((ptr_t p));
+  		/* Is the address p in one of the registered static	*/
+  		/* root sections?					*/
+# if defined(MSWIN32) || defined(_WIN32_WCE_EMULATION)
+GC_bool GC_is_tmp_root GC_PROTO((ptr_t p));
+		/* Is the address p in one of the temporary static	*/
 		/* root sections?					*/
-void GC_register_dynamic_libraries();
-		/* Add dynamic library data sections to the root set. */
-
+# endif
+void GC_register_dynamic_libraries GC_PROTO((void));
+  		/* Add dynamic library data sections to the root set. */
+  
 /* Machine dependent startup routines */
-ptr_t GC_get_stack_base();
-void GC_register_data_segments();
-
+ptr_t GC_get_stack_base GC_PROTO((void));
+void GC_register_data_segments GC_PROTO((void));
+  
 /* Black listing: */
-void GC_bl_init(); 	
+void GC_bl_init GC_PROTO((void));
 # ifndef ALL_INTERIOR_POINTERS
-    void GC_add_to_black_list_normal(/* bits, maybe source */);
+#   ifdef PRINT_BLACK_LIST
+      void GC_add_to_black_list_normal GC_PROTO((word p, ptr_t source));
 			/* Register bits as a possible future false	*/
 			/* reference from the heap or static data	*/
-#   ifdef PRINT_BLACK_LIST
 #     define GC_ADD_TO_BLACK_LIST_NORMAL(bits, source) \
-			GC_add_to_black_list_normal(bits, source)
+  			GC_add_to_black_list_normal(bits, source)
 #   else
+      void GC_add_to_black_list_normal GC_PROTO((word p));
 #     define GC_ADD_TO_BLACK_LIST_NORMAL(bits, source) \
-			GC_add_to_black_list_normal(bits)
+  			GC_add_to_black_list_normal(bits)
 #   endif
+
 # else
 #   ifdef PRINT_BLACK_LIST
 #     define GC_ADD_TO_BLACK_LIST_NORMAL(bits, source) \
@@ -1778,49 +1869,56 @@ void GC_bl_init();
 #   endif
 # endif
 
-void GC_add_to_black_list_stack(/* bits, maybe source */);
-struct hblk * GC_is_black_listed(/* h, len */);
-			/* If there are likely to be false references	*/
-			/* to a block starting at h of the indicated    */
-			/* length, then return the next plausible	*/
-			/* starting location for h that might avoid	*/
-			/* these false references.			*/
-void GC_promote_black_lists();
-			/* Declare an end to a black listing phase.	*/
-void GC_unpromote_black_lists();
-			/* Approximately undo the effect of the above.	*/
-			/* This actually loses some information, but	*/
-			/* only in a reasonably safe way.		*/
-word GC_number_stack_black_listed(/*struct hblk *start, struct hblk *endp1 */);
-			/* Return the number of (stack) blacklisted	*/
-			/* blocks in the range for statistical		*/
-			/* purposes.					*/
-		 	
-ptr_t GC_scratch_alloc(/*bytes*/);
-				/* GC internal memory allocation for	*/
-				/* small objects.  Deallocation is not  */
-				/* possible.				*/
-	
+# ifdef PRINT_BLACK_LIST
+    void GC_add_to_black_list_stack GC_PROTO((word p, ptr_t source));
+# else
+    void GC_add_to_black_list_stack GC_PROTO((word p));
+# endif
+struct hblk * GC_is_black_listed GC_PROTO((struct hblk * h, word len));
+  			/* If there are likely to be false references	*/
+  			/* to a block starting at h of the indicated    */
+  			/* length, then return the next plausible	*/
+  			/* starting location for h that might avoid	*/
+  			/* these false references.			*/
+void GC_promote_black_lists GC_PROTO((void));
+  			/* Declare an end to a black listing phase.	*/
+void GC_unpromote_black_lists GC_PROTO((void));
+  			/* Approximately undo the effect of the above.	*/
+  			/* This actually loses some information, but	*/
+  			/* only in a reasonably safe way.		*/
+word GC_number_stack_black_listed GC_PROTO(( \
+	struct hblk *start, struct hblk *endp1));
+  			/* Return the number of (stack) blacklisted	*/
+  			/* blocks in the range for statistical		*/
+  			/* purposes.					*/
+  		 	
+ptr_t GC_scratch_alloc GC_PROTO((word bytes));
+  				/* GC internal memory allocation for	*/
+  				/* small objects.  Deallocation is not  */
+  				/* possible.				*/
+  	
 /* Heap block layout maps: */			
-void GC_invalidate_map(/* hdr */);
-				/* Remove the object map associated	*/
-				/* with the block.  This identifies	*/
-				/* the block as invalid to the mark	*/
-				/* routines.				*/
-GC_bool GC_add_map_entry(/*sz*/);
-				/* Add a heap block map for objects of	*/
-				/* size sz to obj_map.			*/
-				/* Return FALSE on failure.		*/
-void GC_register_displacement_inner(/*offset*/);
-				/* Version of GC_register_displacement	*/
-				/* that assumes lock is already held	*/
-				/* and signals are already disabled.	*/
-
+void GC_invalidate_map GC_PROTO((hdr * hhdr));
+  				/* Remove the object map associated	*/
+  				/* with the block.  This identifies	*/
+  				/* the block as invalid to the mark	*/
+  				/* routines.				*/
+GC_bool GC_add_map_entry GC_PROTO((word sz));
+  				/* Add a heap block map for objects of	*/
+  				/* size sz to obj_map.			*/
+  				/* Return FALSE on failure.		*/
+void GC_register_displacement_inner GC_PROTO((word offset));
+  				/* Version of GC_register_displacement	*/
+  				/* that assumes lock is already held	*/
+  				/* and signals are already disabled.	*/
+  
 /*  hblk allocation: */		
-void GC_new_hblk(/*size_in_words, kind*/);
-				/* Allocate a new heap block, and build */
-				/* a free list in it.			*/				
-ptr_t GC_build_fl(/*h, sz, clear, list*/);
+void GC_new_hblk GC_PROTO((word size_in_words, int kind));
+  				/* Allocate a new heap block, and build */
+  				/* a free list in it.			*/				
+
+ptr_t GC_build_fl GC_PROTO((struct hblk *h, word sz,
+			   GC_bool clear,  ptr_t list));
 				/* Build a free list for objects of 	*/
 				/* size sz in block h.  Append list to	*/
 				/* end of the free lists.  Possibly	*/
@@ -1828,12 +1926,13 @@ ptr_t GC_build_fl(/*h, sz, clear, list*/);
 				/* called by GC_new_hblk, but also	*/
 				/* called explicitly without GC lock.	*/
 
-struct hblk * GC_allochblk(/*size_in_words, kind*/);
+struct hblk * GC_allochblk GC_PROTO(( \
+	word size_in_words, int kind, unsigned char flags));
 				/* Allocate a heap block, inform	*/
 				/* the marker that block is valid	*/
 				/* for objects of indicated size.	*/
 
-ptr_t GC_alloc_large(/* lw, k, flags */);
+ptr_t GC_alloc_large GC_PROTO((word lw, int k, unsigned char flags));
 			/* Allocate a large block of size lw words.	*/
 			/* The block is not cleared.			*/
 			/* Flags is 0 or IGNORE_OFF_PAGE.		*/
@@ -1843,44 +1942,41 @@ ptr_t GC_alloc_large(/* lw, k, flags */);
 			/* Does not update GC_words_allocd, but does	*/
 			/* other accounting.				*/
 
-ptr_t GC_alloc_large_and_clear(/* lw, k, flags */);
+ptr_t GC_alloc_large_and_clear GC_PROTO((word lw, int k, unsigned char flags));
 			/* As above, but clear block if appropriate	*/
 			/* for kind k.					*/
 
-void GC_freehblk();		/* Deallocate a heap block and mark it  */
-				/* as invalid.				*/
-				
+void GC_freehblk GC_PROTO((struct hblk * p));
+				/* Deallocate a heap block and mark it  */
+  				/* as invalid.				*/
+  				
 /*  Misc GC: */
-void GC_init_inner();
-GC_bool GC_expand_hp_inner();
-void GC_start_reclaim(/*abort_if_found*/);
-				/* Restore unmarked objects to free	*/
-				/* lists, or (if abort_if_found is	*/
-				/* TRUE) report them.			*/
-				/* Sweeping of small object pages is	*/
-				/* largely deferred.			*/
-void GC_continue_reclaim(/*size, kind*/);
-				/* Sweep pages of the given size and	*/
-				/* kind, as long as possible, and	*/
-				/* as long as the corr. free list is    */
-				/* empty.				*/
-void GC_reclaim_or_delete_all();
-				/* Arrange for all reclaim lists to be	*/
-				/* empty.  Judiciously choose between	*/
-				/* sweeping and discarding each page.	*/
-GC_bool GC_reclaim_all(/* GC_stop_func f*/);
-				/* Reclaim all blocks.  Abort (in a	*/
-				/* consistent state) if f returns TRUE. */
-ptr_t GC_reclaim_generic(/*hbp, hhdr, sz, init, list [pointer to word cntr] */);
-				/* Sweep the indicated block, returning	*/
-				/* the new free list.  List is		*/
-				/* concatenated to the end of the 	*/
-				/* free list.  Sz and init specify	*/
-				/* the object size and whether they 	*/
-				/* are cleared.				*/
-GC_bool GC_block_empty(/* hhdr */); /* Block completely unmarked? 	*/
-GC_bool GC_never_stop_func();	/* Returns FALSE.		*/
-GC_bool GC_try_to_collect_inner(/* GC_stop_func f */);
+void GC_init_inner GC_PROTO((void));
+GC_bool GC_expand_hp_inner GC_PROTO((word n));
+void GC_start_reclaim GC_PROTO((int abort_if_found));
+  				/* Restore unmarked objects to free	*/
+  				/* lists, or (if abort_if_found is	*/
+  				/* TRUE) report them.			*/
+  				/* Sweeping of small object pages is	*/
+  				/* largely deferred.			*/
+void GC_continue_reclaim GC_PROTO((word sz, int kind));
+  				/* Sweep pages of the given size and	*/
+  				/* kind, as long as possible, and	*/
+  				/* as long as the corr. free list is    */
+  				/* empty.				*/
+void GC_reclaim_or_delete_all GC_PROTO((void));
+  				/* Arrange for all reclaim lists to be	*/
+  				/* empty.  Judiciously choose between	*/
+  				/* sweeping and discarding each page.	*/
+GC_bool GC_reclaim_all GC_PROTO((GC_stop_func stop_func, GC_bool ignore_old));
+  				/* Reclaim all blocks.  Abort (in a	*/
+  				/* consistent state) if f returns TRUE. */
+GC_bool GC_block_empty GC_PROTO((hdr * hhdr));
+ 				/* Block completely unmarked? 	*/
+GC_bool GC_never_stop_func GC_PROTO((void));
+				/* Returns FALSE.		*/
+GC_bool GC_try_to_collect_inner GC_PROTO((GC_stop_func f));
+
 				/* Collect; caller must have acquired	*/
 				/* lock and disabled signals.		*/
 				/* Collection is aborted if f returns	*/
@@ -1888,87 +1984,97 @@ GC_bool GC_try_to_collect_inner(/* GC_stop_func f */);
 				/* successfully.			*/
 # define GC_gcollect_inner() \
 	(void) GC_try_to_collect_inner(GC_never_stop_func)
-void GC_finish_collection();	/* Finish collection.  Mark bits are	*/
-				/* consistent and lock is still held.	*/
-GC_bool GC_collect_or_expand(/* needed_blocks */);
-				/* Collect or expand heap in an attempt */
-				/* make the indicated number of free	*/
-				/* blocks available.  Should be called	*/
-				/* until the blocks are available or	*/
-				/* until it fails by returning FALSE.	*/
-GC_API void GC_init();		/* Initialize collector.		*/
-void GC_collect_a_little_inner(/* int n */);
-				/* Do n units worth of garbage 		*/
-				/* collection work, if appropriate.	*/
-				/* A unit is an amount appropriate for  */
-				/* HBLKSIZE bytes of allocation.	*/
-ptr_t GC_generic_malloc(/* bytes, kind */);
-				/* Allocate an object of the given	*/
-				/* kind.  By default, there are only	*/
-				/* a few kinds: composite(pointerfree), */
+void GC_finish_collection GC_PROTO((void));
+ 				/* Finish collection.  Mark bits are	*/
+  				/* consistent and lock is still held.	*/
+GC_bool GC_collect_or_expand GC_PROTO(( \
+	word needed_blocks, GC_bool ignore_off_page));
+  				/* Collect or expand heap in an attempt */
+  				/* make the indicated number of free	*/
+  				/* blocks available.  Should be called	*/
+  				/* until the blocks are available or	*/
+  				/* until it fails by returning FALSE.	*/
+GC_API void GC_init GC_PROTO((void)); /* Initialize collector.		*/
+
+#if defined(MSWIN32) || defined(MSWINCE)
+  void GC_deinit GC_PROTO((void));
+                                /* Free any resources allocated by      */
+                                /* GC_init                              */
+#endif
+
+void GC_collect_a_little_inner GC_PROTO((int n));
+  				/* Do n units worth of garbage 		*/
+  				/* collection work, if appropriate.	*/
+  				/* A unit is an amount appropriate for  */
+  				/* HBLKSIZE bytes of allocation.	*/
+ptr_t GC_generic_malloc GC_PROTO((word lb, int k));
+  				/* Allocate an object of the given	*/
+  				/* kind.  By default, there are only	*/
+  				/* a few kinds: composite(pointerfree), */
 				/* atomic, uncollectable, etc.		*/
 				/* We claim it's possible for clever	*/
 				/* client code that understands GC	*/
 				/* internals to add more, e.g. to	*/
 				/* communicate object layout info	*/
 				/* to the collector.			*/
-ptr_t GC_generic_malloc_ignore_off_page(/* bytes, kind */);
-				/* As above, but pointers past the 	*/
-				/* first page of the resulting object	*/
-				/* are ignored.				*/
-ptr_t GC_generic_malloc_inner(/* bytes, kind */);
-				/* Ditto, but I already hold lock, etc.	*/
-ptr_t GC_generic_malloc_words_small GC_PROTO((size_t words, int kind));
-				/* As above, but size in units of words */
-				/* Bypasses MERGE_SIZES.  Assumes	*/
-				/* words <= MAXOBJSZ.			*/
-ptr_t GC_generic_malloc_inner_ignore_off_page(/* bytes, kind */);
-				/* Allocate an object, where		*/
-				/* the client guarantees that there	*/
-				/* will always be a pointer to the 	*/
-				/* beginning of the object while the	*/
-				/* object is live.			*/
-ptr_t GC_allocobj(/* sz_inn_words, kind */);
-				/* Make the indicated 			*/
-				/* free list nonempty, and return its	*/
-				/* head.				*/
-
-void GC_init_headers();
-struct hblkhdr * GC_install_header(/*h*/);
-				/* Install a header for block h.	*/
-				/* Return 0 on failure, or the header	*/
-				/* otherwise.				*/
-GC_bool GC_install_counts(/*h, sz*/);
-				/* Set up forwarding counts for block	*/
-				/* h of size sz.			*/
-				/* Return FALSE on failure.		*/
-void GC_remove_header(/*h*/);
-				/* Remove the header for block h.	*/
-void GC_remove_counts(/*h, sz*/);
-				/* Remove forwarding counts for h.	*/
-hdr * GC_find_header(/*p*/);	/* Debugging only.			*/
-
-void GC_finalize();	/* Perform all indicated finalization actions	*/
-			/* on unmarked objects.				*/
-			/* Unreachable finalizable objects are enqueued	*/
-			/* for processing by GC_invoke_finalizers.	*/
-			/* Invoked with lock.				*/
-			
-void GC_add_to_heap(/*p, bytes*/);
-			/* Add a HBLKSIZE aligned chunk to the heap.	*/
-
-void GC_print_obj(/* ptr_t p */);
-			/* P points to somewhere inside an object with	*/
-			/* debugging info.  Print a human readable	*/
-			/* description of the object to stderr.		*/
-extern void (*GC_check_heap)();
-			/* Check that all objects in the heap with 	*/
-			/* debugging info are intact.  Print 		*/
-			/* descriptions of any that are not.		*/
-extern void (*GC_print_heap_obj)(/* ptr_t p */);
-			/* If possible print s followed by a more	*/
-			/* detailed description of the object 		*/
-			/* referred to by p.				*/
+ptr_t GC_generic_malloc_ignore_off_page GC_PROTO((size_t b, int k));
+  				/* As above, but pointers past the 	*/
+  				/* first page of the resulting object	*/
+  				/* are ignored.				*/
+ptr_t GC_generic_malloc_inner GC_PROTO((word lb, int k));
+  				/* Ditto, but I already hold lock, etc.	*/
+ptr_t GC_generic_malloc_words_small GC_PROTO((size_t lw, int k));
+  				/* As above, but size in units of words */
+  				/* Bypasses MERGE_SIZES.  Assumes	*/
+  				/* words <= MAXOBJSZ.			*/
+ptr_t GC_generic_malloc_inner_ignore_off_page GC_PROTO((size_t lb, int k));
+  				/* Allocate an object, where		*/
+  				/* the client guarantees that there	*/
+  				/* will always be a pointer to the 	*/
+  				/* beginning of the object while the	*/
+  				/* object is live.			*/
+ptr_t GC_allocobj GC_PROTO((word sz, int kind));
+  				/* Make the indicated 			*/
+  				/* free list nonempty, and return its	*/
+  				/* head.				*/
+  
+void GC_init_headers GC_PROTO((void));
+struct hblkhdr * GC_install_header GC_PROTO((struct hblk *h));
+  				/* Install a header for block h.	*/
+  				/* Return 0 on failure, or the header	*/
+  				/* otherwise.				*/
+GC_bool GC_install_counts GC_PROTO((struct hblk * h, word sz));
+  				/* Set up forwarding counts for block	*/
+  				/* h of size sz.			*/
+  				/* Return FALSE on failure.		*/
+void GC_remove_header GC_PROTO((struct hblk * h));
+  				/* Remove the header for block h.	*/
+void GC_remove_counts GC_PROTO((struct hblk * h, word sz));
+  				/* Remove forwarding counts for h.	*/
+hdr * GC_find_header GC_PROTO((ptr_t h)); /* Debugging only.		*/
+  
+void GC_finalize GC_PROTO((void));
+ 			/* Perform all indicated finalization actions	*/
+  			/* on unmarked objects.				*/
+  			/* Unreachable finalizable objects are enqueued	*/
+  			/* for processing by GC_invoke_finalizers.	*/
+  			/* Invoked with lock.				*/
+  			
+void GC_add_to_heap GC_PROTO((struct hblk *p, word bytes));
+  			/* Add a HBLKSIZE aligned chunk to the heap.	*/
+  
+void GC_print_obj GC_PROTO((ptr_t p));
+  			/* P points to somewhere inside an object with	*/
+  			/* debugging info.  Print a human readable	*/
+  			/* description of the object to stderr.		*/
+extern void (*GC_check_heap) GC_PROTO((void));
+  			/* Check that all objects in the heap with 	*/
+  			/* debugging info are intact.  Print 		*/
+  			/* descriptions of any that are not.		*/
+extern void (*GC_print_heap_obj) GC_PROTO((ptr_t p));
+  			/* If possible print s followed by a more	*/
+  			/* detailed description of the object 		*/
+  			/* referred to by p.				*/
 
 
 /* Macros used for collector internal allocation.	*/
@@ -1997,35 +2103,38 @@ extern void (*GC_print_heap_obj)(/* ptr_t p */);
 
 /* Virtual dirty bit implementation:		*/
 /* Each implementation exports the following:	*/
-void GC_read_dirty();	/* Retrieve dirty bits.	*/
-GC_bool GC_page_was_dirty(/* struct hblk * h  */);
-			/* Read retrieved dirty bits.	*/
-GC_bool GC_page_was_ever_dirty(/* struct hblk * h  */);
-			/* Could the page contain valid heap pointers?	*/
-void GC_is_fresh(/* struct hblk * h, word number_of_blocks  */);
-			/* Assert the region currently contains no	*/
-			/* valid pointers.				*/
-void GC_write_hint(/* struct hblk * h  */);
-			/* h is about to be written.	*/
-void GC_dirty_init();
-
+void GC_read_dirty GC_PROTO((void));
+			/* Retrieve dirty bits.	*/
+GC_bool GC_page_was_dirty GC_PROTO((struct hblk *h));
+  			/* Read retrieved dirty bits.	*/
+GC_bool GC_page_was_ever_dirty GC_PROTO((struct hblk *h));
+  			/* Could the page contain valid heap pointers?	*/
+void GC_is_fresh GC_PROTO((struct hblk *h, word n));
+  			/* Assert the region currently contains no	*/
+  			/* valid pointers.				*/
+void GC_write_hint GC_PROTO((struct hblk *h));
+  			/* h is about to be written.	*/
+void GC_dirty_init GC_PROTO((void));
+  
 /* Slow/general mark bit manipulation: */
-GC_API GC_bool GC_is_marked();
-void GC_clear_mark_bit();
-void GC_set_mark_bit();
-
+GC_API GC_bool GC_is_marked GC_PROTO((ptr_t p));
+void GC_clear_mark_bit GC_PROTO((ptr_t p));
+void GC_set_mark_bit GC_PROTO((ptr_t p));
+  
 /* Stubborn objects: */
-void GC_read_changed();	/* Analogous to GC_read_dirty */
-GC_bool GC_page_was_changed(/* h */);	/* Analogous to GC_page_was_dirty */
-void GC_clean_changing_list();	/* Collect obsolete changing list entries */
-void GC_stubborn_init();
-
+void GC_read_changed GC_PROTO((void));	/* Analogous to GC_read_dirty */
+GC_bool GC_page_was_changed GC_PROTO((struct hblk * h));
+ 				/* Analogous to GC_page_was_dirty */
+void GC_clean_changing_list GC_PROTO((void));
+ 				/* Collect obsolete changing list entries */
+void GC_stubborn_init GC_PROTO((void));
+  
 /* Debugging print routines: */
-void GC_print_block_list();
-void GC_print_hblkfreelist();
-void GC_print_heap_sects();
-void GC_print_static_roots();
-void GC_dump();
+void GC_print_block_list GC_PROTO((void));
+void GC_print_hblkfreelist GC_PROTO((void));
+void GC_print_heap_sects GC_PROTO((void));
+void GC_print_static_roots GC_PROTO((void));
+void GC_dump GC_PROTO((void));
 
 #ifdef KEEP_BACK_PTRS
    void GC_store_back_pointer(ptr_t source, ptr_t dest);
@@ -2044,10 +2153,10 @@ void GC_dump();
   GC_API void GC_noop();
 # endif
 
-void GC_noop1(/* word arg */);
+void GC_noop1 GC_PROTO((word arg));
 
 /* Logging and diagnostic output: 	*/
-GC_API void GC_printf GC_PROTO((char * format, long, long, long, long, long, long));
+GC_API void GC_printf GC_PROTO((CONST char * format, long, long, long, long, long, long));
 			/* A version of printf that doesn't allocate,	*/
 			/* is restricted to long arguments, and		*/
 			/* (unfortunately) doesn't use varargs for	*/
@@ -2066,7 +2175,7 @@ GC_API void GC_printf GC_PROTO((char * format, long, long, long, long, long, lon
 # define GC_printf6(f,a,b,c,d,e,g) GC_printf(f, (long)a, (long)b, (long)c, \
 						(long)d, (long)e, (long)g)
 
-void GC_err_printf(/* format, a, b, c, d, e, f */);
+GC_API void GC_err_printf GC_PROTO((CONST char * format, long, long, long, long, long, long));
 # define GC_err_printf0(f) GC_err_puts(f)
 # define GC_err_printf1(f,a) GC_err_printf(f, (long)a, 0l, 0l, 0l, 0l, 0l)
 # define GC_err_printf2(f,a,b) GC_err_printf(f, (long)a, (long)b, 0l, 0l, 0l, 0l)
@@ -2082,7 +2191,7 @@ void GC_err_printf(/* format, a, b, c, d, e, f */);
 							(long)e, (long)g)
 			/* Ditto, writes to stderr.			*/
 			
-void GC_err_puts(/* char *s */);
+void GC_err_puts GC_PROTO((GC_CONST char *s));
 			/* Write s to stderr, don't buffer, don't add	*/
 			/* newlines, don't ...				*/
 

@@ -251,11 +251,23 @@
     /* DGUX defined */
 #   define mach_type_known
 # endif
-# if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \
-     || defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__)
-#   define I386
-#   define MSWIN32	/* or Win32s */
+# if defined(_WIN32_WCE)
+    /* SH3, SH4, MIPS already defined for corresponding architectures */
+#   if defined(x86)
+#     define I386
+#   endif
+#   if defined(ARM)
+#     define ARM32
+#   endif
+#   define MSWINCE
 #   define mach_type_known
+# else
+#   if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \
+        || defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__)
+#     define I386
+#     define MSWIN32	/* or Win32s */
+#     define mach_type_known
+#   endif
 # endif
 # if defined(__DJGPP__)
 #   define I386
@@ -580,6 +592,11 @@
 #     define DATASTART ((ptr_t) get_etext())
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
 #     define DATAEND	/* not needed */
+#     ifdef POWERPC
+#        define MPROTECT_VDB
+#     endif
+#  	include <unistd.h>
+#	   define GETPAGESIZE() getpagesize()
 #   endif
 # endif
 
@@ -852,6 +869,10 @@
 #	endif
 #       define DATAEND  /* not needed */
 #   endif
+#   ifdef MSWINCE
+#	define OS_TYPE "MSWINCE"
+#       define DATAEND  /* not needed */
+#   endif
 #   ifdef DJGPP
 #       define OS_TYPE "DJGPP"
 #       include "stubinfo.h"
@@ -978,6 +999,11 @@
 #	  define ALIGN_DOUBLE
 #	endif
 #	define DYNAMIC_LOADING
+#   endif
+#   ifdef MSWINCE
+#       define OS_TYPE "MSWINCE"
+#       define ALIGNMENT 4
+#       define DATAEND /* not needed */
 #   endif
 # endif
 
@@ -1198,7 +1224,25 @@
 #            define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
 #       endif
 #   endif
+#   ifdef MSWINCE
+#     define OS_TYPE "MSWINCE"
+#     define DATAEND /* not needed */
+#   endif
 #endif
+
+# ifdef SH3
+#   define MACH_TYPE "SH3"
+#   define OS_TYPE "MSWINCE"
+#   define ALIGNMENT 4
+#   define DATAEND /* not needed */
+# endif
+ 
+# ifdef SH4
+#   define MACH_TYPE "SH4"
+#   define OS_TYPE "MSWINCE"
+#   define ALIGNMENT 4
+#   define DATAEND /* not needed */
+# endif
 
 #ifdef LINUX_DATA_START
     /* Some Linux distributions arrange to define __data_start.  Some	*/
@@ -1213,6 +1257,14 @@
 #   define DATASTART ((ptr_t)(&__data_start != 0? &__data_start : &data_start))
 #endif
 
+#if defined(LINUX) && defined(REDIRECT_MALLOC) && !defined(LINUX_THREADS)
+    /* Rld appears to allocate some meory with its own allocator, and	*/
+    /* some through malloc, which might be redirected.  To make this	*/
+    /* work with collectable memory, we have to scan memory allocated	*/
+    /* by rld's internal malloc.					*/
+#   define USE_PROC_FOR_LIBRARIES
+#endif
+    
 # ifndef STACK_GROWS_UP
 #   define STACK_GROWS_DOWN
 # endif
@@ -1317,6 +1369,29 @@
 	((word*)x)[1] = 0;
 # endif /* CLEAR_DOUBLE */
 
+/* Internally to the collector we test only the XXX_THREADS macros	*/
+/* not the GC_XXX_THREADS versions.  Here we make sure the latter	*/
+/* are treated as equivalent.						*/
+#if defined(GC_SOLARIS_THREADS) && !defined(_SOLARIS_THREADS)
+#   define _SOLARIS_THREADS
+#endif
+#if defined(GC_SOLARIS_THREADS) && !defined(_SOLARIS_PTHREADS)
+#   define _SOLARIS_PTHREADS
+#endif
+#if defined(GC_IRIX_THREADS) && !defined(IRIX_THREADS)
+#   define IRIX_THREADS
+#endif
+#if defined(GC_LINUX_THREADS) && !defined(LINUX_THREADS)
+#   define LINUX_THREADS
+#endif
+#if defined(GC_WIN32_THREADS) && !defined(WIN32_THREADS)
+#   define WIN32_THREADS
+#endif
+#if defined(GC_HPUX_THREADS) && !defined(HPUX_THREADS)
+#   define HPUX_THREADS
+#endif
+
+/* Internally we use SOLARIS_THREADS to test for either old or pthreads. */
 # if defined(_SOLARIS_PTHREADS) && !defined(SOLARIS_THREADS)
 #   define SOLARIS_THREADS
 # endif
@@ -1342,8 +1417,9 @@
 #   define THREADS
 # endif
 
-# if defined(HP_PA) || defined(M88K) || defined(POWERPC) \
-     || (defined(I386) && defined(OS2)) || defined(UTS4) || defined(LINT)
+# if defined(HP_PA) || defined(M88K) || defined(POWERPC) && !defined(MACOSX) \
+     || (defined(I386) && defined(OS2)) || defined(UTS4) || defined(LINT) \
+     || defined(MSWINCE)
 	/* Use setjmp based hack to mark from callee-save registers. */
 #	define USE_GENERIC_PUSH_REGS
 # endif

@@ -1,4 +1,3 @@
-# Generated automatically from Makefile.in by configure.
 # Primary targets:
 # gc.a - builds basic library
 # libgc.a - builds library for use with g++ "-fgc-keyword" extension
@@ -18,8 +17,9 @@ AS=as $(ABI_FLAG)
 #  Under Irix 6, you will have to specify the ABI (-o32, -n32, or -64)
 #  if you use something other than the default ABI on your machine.
 
-CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSILENT 
-# -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK -DLINUX_THREADS
+CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSILENT \
+	-DGC_GCJ_SUPPORT -g 
+# -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK -DGC_LINUX_THREADS
 
 # For dynamic library builds, it may be necessary to add flags to generate
 # PIC code, e.g. -fPIC on Linux.
@@ -31,16 +31,17 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT -DNO_SIGNALS -DNO_EXECUTE_PER
 #   This causes the collector to assume that all inaccessible
 #   objects should have been explicitly deallocated, and reports exceptions.
 #   Finalization and the test program are not usable in this mode.
-# -DSOLARIS_THREADS enables support for Solaris (thr_) threads.
-#   (Clients should also define SOLARIS_THREADS and then include
+# -DGC_SOLARIS_THREADS enables support for Solaris (thr_) threads.
+#   (Clients should also define GC_SOLARIS_THREADS and then include
 #   gc.h before performing thr_ or dl* or GC_ operations.)
 #   Must also define -D_REENTRANT.
-# -D_SOLARIS_PTHREADS enables support for Solaris pthreads.
+# -DGC_SOLARIS_PTHREADS enables support for Solaris pthreads.
 #   Define SOLARIS_THREADS as well.
-# -DIRIX_THREADS enables support for Irix pthreads.  See README.irix.
-# -DHPUX_THREADS enables support for HP/UX 11 pthreads.  Not currently reliable.
+# -DGC_IRIX_THREADS enables support for Irix pthreads.  See README.irix.
+# -DGC_HPUX_THREADS enables support for HP/UX 11 pthreads.
+#   Not currently reliable.
 #   Also requires -D_REENTRANT. See README.hp.
-# -DLINUX_THREADS enables support for Xavier Leroy's Linux threads.
+# -DGC_LINUX_THREADS enables support for Xavier Leroy's Linux threads.
 #   see README.linux.  -D_REENTRANT may also be required.
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
 #   of objects to be recognized.  (See gc_priv.h for consequences.)
@@ -157,19 +158,19 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT -DNO_SIGNALS -DNO_EXECUTE_PER
 # -DUSE_3DNOW_PREFETCH causes the collector to issue AMD 3DNow style
 #   prefetch instructions.  Same restrictions as USE_I686_PREFETCH.
 #   UNTESTED!!
-# -DUSE_LD_WRAP in combination with the gld flags listed in README.linux
+# -DGC_USE_LD_WRAP in combination with the gld flags listed in README.linux
 #   causes the collector some system and pthread calls in a more transparent
 #   fashion than the usual macro-based approach.  Requires GNU ld, and
 #   currently probably works only with Linux.
 # -DTHREAD_LOCAL_ALLOC defines GC_local_malloc(), GC_local_malloc_atomic()
 #   and GC_local_gcj_malloc().  Needed for gc_gcj.h interface.  These allocate
 #   in a way that usually does not involve acquisition of a global lock.
-#   Currently requires -DLINUX_THREADS, but should be easy to port to
+#   Currently requires -DGC_LINUX_THREADS, but should be easy to port to
 #   other pthreads environments.  Recommended for multiprocessors.
 # -DPARALLEL_MARK allows the marker to run in multiple threads.  Recommended
 #   for multiprocessors.  Currently requires Linux on X86 or IA64, though
-#   support for other Posix platforms should be fairly easy to add, if the thread
-#   implementation is otherwise supported.
+#   support for other Posix platforms should be fairly easy to add,
+#   if the thread implementation is otherwise supported.
 #
 
 
@@ -187,10 +188,11 @@ RANLIB= ranlib
 # to be generated in different directories.  In this case, the destination directory
 # should contain a copy of the original include directory.
 srcdir = .
+VPATH = $(srcdir)
 
-OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o hpux_irix_threads.o linux_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o gcj_mlc.o
+OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o hpux_irix_threads.o linux_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o gcj_mlc.o specific.o
 
-CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c hpux_irix_threads.c linux_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c gcj_mlc.c
+CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c hpux_irix_threads.c linux_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c gcj_mlc.c specific.c
 
 CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c cord/cord.h cord/ec.h cord/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC cord/SCOPTIONS.amiga cord/SMakefile.amiga
 
@@ -203,7 +205,7 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h gc_alloc.h \
     include/new_gc_alloc.h include/javaxfc.h sparc_sunos4_mach_dep.s \
     solaris_threads.h gc_backptr.h hpux_test_and_clear.s include/gc_gcj.h \
-    include/gc_local_alloc.h dbg_mlc.h $(CORD_SRCS)
+    include/gc_local_alloc.h dbg_mlc.h specific.h $(CORD_SRCS)
 
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README test.c test_cpp.cc setjmp_t.c SMakefile.amiga \
@@ -255,6 +257,8 @@ $(OBJS) test.o dyn_load.o dyn_load_sunos53.o: $(srcdir)/gc_priv.h $(srcdir)/gc_h
 # invalidating all .o files that rely on gc_priv.h
 
 mark.o typd_mlc.o finalize.o: $(srcdir)/gc_mark.h
+
+specific.o linux_threads.o: specific.h
 
 base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
 	echo > base_lib

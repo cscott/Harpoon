@@ -18,24 +18,23 @@
  * thread package for Linux which is included in libc6.
  *
  * This code relies on implementation details of LinuxThreads,
- * (i.e. properties not guaranteed by the Pthread standard):
- *
- *	- the function GC_linux_thread_top_of_stack(void)
- *	  relies on the way LinuxThreads lays out thread stacks
- *	  in the address space.
+ * (i.e. properties not guaranteed by the Pthread standard),
+ * though this version now does less of that than the other Pthreads
+ * support code.
  *
  * Note that there is a lot of code duplication between linux_threads.c
- * and irix_threads.c; any changes made here may need to be reflected
- * there too.
+ * and thread support for some of the other Posix platforms; any changes
+ * made here may need to be reflected there too.
  */
 
 /* #define DEBUG_THREADS 1 */
 
 /* ANSI C requires that a compilation unit contains something */
+
+# if defined(GC_LINUX_THREADS) || defined(LINUX_THREADS)
+
 # include "gc_priv.h"
-
-# if defined(LINUX_THREADS)
-
+# include "specific.h"
 # include <stdlib.h>
 # include <pthread.h>
 # include <sched.h>
@@ -50,7 +49,7 @@
 # include <sys/stat.h>
 # include <fcntl.h>
 
-#ifdef USE_LD_WRAP
+#ifdef GC_USE_LD_WRAP
 #   define WRAP_FUNC(f) __wrap_##f
 #   define REAL_FUNC(f) __real_##f
 #else
@@ -152,14 +151,7 @@ typedef struct GC_Thread_Rep {
 
 # ifdef THREAD_LOCAL_ALLOC
 
-/* We use separate keys for pointerfree and normal free lists.		*/
-/* That probably saves us an addition for every allocation on IA64.	*/
-/* It's not clear whether this is worth it.				*/
-pthread_key_t GC_ptrfree_key;
-pthread_key_t GC_normal_key;
-#ifdef GC_GCJ_SUPPORT
-  pthread_key_t GC_gcj_key;
-#endif
+GC_key_t GC_thread_key;
 
 static GC_bool keys_initialized;
 
@@ -180,31 +172,20 @@ static void return_freelists(ptr_t *fl)
 
 /* Each thread structure must be initialized.	*/
 /* This call must be made from the new thread.	*/
+/* Caller holds allocation lock.		*/
 void GC_init_thread_local(GC_thread p)
 {
     int i;
 
     if (!keys_initialized) {
-	if (0 != pthread_key_create(&GC_ptrfree_key, 0)
-	    || 0 != pthread_key_create(&GC_normal_key, 0)) {
-	    ABORT("Failed to create pthread key for local allocator");
+	if (0 != GC_key_create(&GC_thread_key, 0)) {
+	    ABORT("Failed to create key for local allocator");
         }
-#	ifdef GC_GCJ_SUPPORT
-	  if (0 != pthread_key_create(&GC_gcj_key, 0)) {
-	    ABORT("Failed to create pthread key for local gcj allocator");
-          }
-#	endif
 	keys_initialized = TRUE;
     }
-    if (0 != pthread_setspecific(GC_ptrfree_key, p -> ptrfree_freelists)
-        || 0 != pthread_setspecific(GC_normal_key, p -> normal_freelists)) {
+    if (0 != GC_setspecific(GC_thread_key, p)) {
 	ABORT("Failed to set thread specific allocation pointers");
     }
-#   ifdef GC_GCJ_SUPPORT
-      if (0 != pthread_setspecific(GC_gcj_key, p -> gcj_freelists)) {
-	ABORT("Failed to set thread specific gcj allocation pointers");
-      }
-#   endif
     for (i = 0; i < NFREELISTS; ++i) {
 	p -> ptrfree_freelists[i] = (ptr_t)1;
 	p -> normal_freelists[i] = (ptr_t)1;
@@ -225,14 +206,19 @@ void GC_destroy_thread_local(GC_thread p)
 
 extern GC_PTR GC_generic_malloc_many();
 
+
 GC_PTR GC_local_malloc(size_t bytes)
 {
     if (!SMALL_ENOUGH(bytes)) {
         return(GC_malloc(bytes));
     } else {
 	int index = INDEX_FROM_BYTES(bytes);
-	ptr_t * my_fl = (ptr_t *)pthread_getspecific(GC_normal_key) + index;
-	ptr_t my_entry = *my_fl;
+	ptr_t * my_fl;
+	ptr_t my_entry;
+
+	my_fl = ((GC_thread)GC_getspecific(GC_thread_key))
+		-> normal_freelists + index;
+	my_entry = *my_fl;
 	if ((word)my_entry >= HBLKSIZE) {
 	    GC_PTR result = (GC_PTR)my_entry;
 	    *my_fl = obj_link(my_entry);
@@ -257,7 +243,8 @@ GC_PTR GC_local_malloc_atomic(size_t bytes)
         return(GC_malloc_atomic(bytes));
     } else {
 	int index = INDEX_FROM_BYTES(bytes);
-	ptr_t * my_fl = (ptr_t *)pthread_getspecific(GC_ptrfree_key) + index;
+	ptr_t * my_fl = ((GC_thread)GC_getspecific(GC_thread_key))
+		        -> ptrfree_freelists + index;
 	ptr_t my_entry = *my_fl;
 	if ((word)my_entry >= HBLKSIZE) {
 	    GC_PTR result = (GC_PTR)my_entry;
@@ -294,7 +281,8 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
         return GC_gcj_malloc(bytes, ptr_to_struct_containing_descr);
     } else {
 	int index = INDEX_FROM_BYTES(bytes);
-	ptr_t * my_fl = (ptr_t *)pthread_getspecific(GC_gcj_key) + index;
+	ptr_t * my_fl = ((GC_thread)GC_getspecific(GC_thread_key))
+	                -> gcj_freelists + index;
 	ptr_t my_entry = *my_fl;
 	if ((word)my_entry >= HBLKSIZE) {
 	    GC_PTR result = (GC_PTR)my_entry;
@@ -324,7 +312,6 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
 
 # else  /* !THREAD_LOCAL_ALLOC */
 
-#   define GC_init_thread_local(t)
 #   define GC_destroy_thread_local(t)
 
 # endif /* !THREAD_LOCAL_ALLOC */
@@ -354,9 +341,6 @@ GC_thread GC_lookup_thread(pthread_t id);
 sem_t GC_suspend_ack_sem;
 
 /*
-GC_linux_thread_top_of_stack() relies on implementation details of
-LinuxThreads, namely that thread stacks are allocated on 2M boundaries
-and grow to no more than 2M.
 To make sure that we're using LinuxThreads and not some other thread
 package, we generate a dummy reference to `pthread_kill_other_threads_np'
 (was `__pthread_initial_thread_bos' but that disappeared),
@@ -364,19 +348,6 @@ which is a symbol defined in LinuxThreads, but (hopefully) not in other
 thread packages.
 */
 void (*dummy_var_to_force_linux_threads)() = pthread_kill_other_threads_np;
-
-#define LINUX_THREADS_STACK_SIZE  (2 * 1024 * 1024)
-
-static inline ptr_t GC_linux_thread_top_of_stack(void)
-{
-  char *sp = GC_approx_sp();
-  ptr_t tos = (ptr_t) (((unsigned long)sp | (LINUX_THREADS_STACK_SIZE - 1)) + 1);
-#if DEBUG_THREADS
-  GC_printf1("SP = %lx\n", (unsigned long)sp);
-  GC_printf1("TOS = %lx\n", (unsigned long)tos);
-#endif
-  return tos;
-}
 
 #if defined(SPARC) || defined(IA64)
   extern word GC_save_regs_in_stack();
@@ -781,7 +752,7 @@ int GC_get_nprocs()
     /* appears to be buggy in many cases.				*/
     /* We look for lines "cpu<n>" in /proc/stat.			*/
 #   define STAT_BUF_SIZE 4096
-#   ifdef USE_LD_WRAP
+#   if defined(GC_USE_LD_WRAP) && defined(MPROTECT_VDB)
 #	define STAT_READ __real_read
 #   else
 #	define STAT_READ read
@@ -790,13 +761,17 @@ int GC_get_nprocs()
     int f;
     char c;
     word result = 1;
+	/* Some old kernels only have a single "cpu nnnn ..."	*/
+	/* entry in /proc/stat.  We identify those as 		*/
+	/* uniprocessors.					*/
     size_t i, len = 0;
 
     f = open("/proc/stat", O_RDONLY);
-    if (f < 0 || (len = STAT_READ(f, stat_buf, STAT_BUF_SIZE)) < 10) {
-	ABORT("Couldn't read /proc/self/stat");
+    if (f < 0 || (len = STAT_READ(f, stat_buf, STAT_BUF_SIZE)) < 100) {
+	WARN("Couldn't read /proc/stat", 0);
+	return -1;
     }
-    for (i = 0; i < len - 10; ++i) {
+    for (i = 0; i < len - 100; ++i) {
         if (stat_buf[i] == '\n' && stat_buf[i+1] == 'c'
 	    && stat_buf[i+2] == 'p' && stat_buf[i+3] == 'u') {
 	    int cpu_no = atoi(stat_buf + i + 4);
@@ -880,14 +855,21 @@ void GC_thr_init()
       }
 #   endif
 
-    /* Initialize thread local free lists if used.	*/
-      GC_init_thread_local(t);
-
     /* If we are using a parallel marker, start the helper threads.  */
 #     ifdef PARALLEL_MARK
         if (GC_parallel) start_mark_threads();
 #     endif
 }
+
+/* Initializations that might require allocation	*/
+void GC_thr_late_init()
+{
+    /* Initialize thread local free lists if used.	*/
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_init_thread_local(GC_lookup_thread(pthread_self()));
+#   endif
+}
+
 
 int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set, sigset_t *oset)
 {
@@ -922,6 +904,7 @@ void GC_thread_exit_proc(void *arg)
     } else {
 	me -> flags |= FINISHED;
     }
+    GC_remove_specific(GC_thread_key);
     if (GC_incremental && GC_collection_in_progress()) {
 	int old_gc_no = GC_gc_no;
 
@@ -1008,7 +991,11 @@ void * GC_start_routine(void * arg)
     start_arg = si -> arg;
     sem_post(&(si -> registered));
     pthread_cleanup_push(GC_thread_exit_proc, si);
-    GC_init_thread_local(me);
+#   ifdef THREAD_LOCAL_ALLOC
+ 	LOCK();
+        GC_init_thread_local(me);
+	UNLOCK();
+#   endif
     result = (*start)(start_arg);
 #if DEBUG_THREADS
         GC_printf1("Finishing thread 0x%x\n", pthread_self());

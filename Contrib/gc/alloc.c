@@ -19,7 +19,7 @@
 # include "gc_priv.h"
 
 # include <stdio.h>
-# ifndef MACOS
+# if !defined(MACOS) && !defined(MSWINCE)
 #   include <signal.h>
 #   include <sys/types.h>
 # endif
@@ -76,6 +76,7 @@ char * GC_copyright[] =
 {"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
 "Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved. ",
 "Copyright (c) 1996-1998 by Silicon Graphics.  All rights reserved. ",
+"Copyright (c) 1999-2000 by Hewlett-Packard Company.  All rights reserved. ",
 "THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY",
 " EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.",
 "See source code for details." };
@@ -220,7 +221,7 @@ GC_bool GC_should_collect()
 
 void GC_notify_full_gc()
 {
-    if (GC_start_call_back != (void (*)())0) {
+    if (GC_start_call_back != (void (*) GC_PROTO((void)))0) {
 	(*GC_start_call_back)();
     }
 }
@@ -423,12 +424,12 @@ GC_stop_func stop_func;
 {
     register int i;
     int dummy;
-#   if defined(PRINTSTATS) || defined(PRINTTIMES)
+#   ifdef PRINTTIMES
 	CLOCK_TYPE start_time, current_time;
 #   endif
 	
     STOP_WORLD();
-#   if defined(PRINTSTATS) || defined(PRINTTIMES)
+#   ifdef PRINTTIMES
 	GET_TIME(start_time);
 #   endif
 #   ifdef PRINTSTATS
