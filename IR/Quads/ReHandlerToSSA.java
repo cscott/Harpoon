@@ -27,14 +27,16 @@ import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.IR.LowQuad.LowQuadFactory;
 import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.LowQuad.PCALL;
+import harpoon.Util.Collections.SnapshotIterator;
 
+import java.util.Iterator;
 /**
  * <code>ReHandlerToSSA</code>
  * Converts SSI to SSA.  Should work on LowQuads and Quads. 
  * <b>NOT FOR USE OUTSIDE REHANDLER</b>.  Use SSIToSSA instead.
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandlerToSSA.java,v 1.2 2002-02-25 21:05:13 cananian Exp $
+ * @version $Id: ReHandlerToSSA.java,v 1.3 2002-09-03 15:18:22 cananian Exp $
  */
 
 final class ReHandlerToSSA {
@@ -69,9 +71,8 @@ final class ReHandlerToSSA {
     /** This method takes in a HCode and transforms it from SSI to SSA.*/
     public void optimize(final HCode hc) {
 	SSAVisitor visitor=new SSAVisitor(ssitossamap);
-	Quad[] ql = (Quad[]) hc.getElements();
-	for (int i=0; i<ql.length; i++)
-	    ql[i].accept(visitor);
+	for (Iterator it=new SnapshotIterator(hc.getElementsI());it.hasNext();)
+	    ((Quad)it.next()).accept(visitor);
     }
 
     class SSAVisitor extends LowQuadVisitor {

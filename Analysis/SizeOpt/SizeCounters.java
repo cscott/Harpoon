@@ -24,6 +24,7 @@ import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Temp.Temp;
 import harpoon.Util.ArrayIterator;
+import harpoon.Util.Collections.SnapshotIterator;
 
 import java.util.Iterator;
 
@@ -34,7 +35,7 @@ import java.util.Iterator;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SizeCounters.java,v 1.3 2002-09-03 14:43:06 cananian Exp $
+ * @version $Id: SizeCounters.java,v 1.4 2002-09-03 15:17:52 cananian Exp $
  */
 public class SizeCounters extends MethodMutator<Quad> {
     final Frame frame;
@@ -60,10 +61,10 @@ public class SizeCounters extends MethodMutator<Quad> {
 	    return hc; // skip this class.
 	// total allocation counter.
 	Visitor v = new Visitor(hc);
-	// copy quads into array before visiting so as not to confuse iterator
-	Quad[] quads = hc.getElements();
-	for (int i=0; i<quads.length; i++)
-	    quads[i].accept(v);
+	// use snapshot while visiting so as not to confuse iterator
+	for (Iterator<Quad> it=new SnapshotIterator<Quad>
+		 (hc.getElementsI()); it.hasNext(); )
+	    it.next().accept(v);
 	// done!
 	return hc;
     }

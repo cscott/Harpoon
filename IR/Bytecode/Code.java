@@ -32,7 +32,7 @@ import java.util.Set;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.11 2002-08-30 23:09:56 cananian Exp $
+ * @version $Id: Code.java,v 1.12 2002-09-03 15:18:15 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -227,7 +227,7 @@ public class Code extends HCode {
    *  during execution of this method. */
   public int getMaxStack() { return getCode().max_stack; }
   /** Get an array with the try-catch blocks/handlers for this bytecode. */
-  public ExceptionEntry[] getTryBlocks() { getElements(); return tryBlocks; }
+  public ExceptionEntry[] getTryBlocks() { getElementsL(); return tryBlocks; }
 
   /** Represents exception handlers in this code view. */
   public static class ExceptionEntry implements Comparable {

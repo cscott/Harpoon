@@ -47,7 +47,7 @@ import harpoon.Util.Util;
 import harpoon.Temp.Temp;
 import harpoon.Util.Worklist;
 import harpoon.Util.Collections.WorkSet;
-import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -57,7 +57,7 @@ import java.util.Set;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.4 2002-04-10 03:02:11 cananian Exp $
+ * @version $Id: IntraProc.java,v 1.5 2002-09-03 15:18:04 cananian Exp $
  */
 
 public class IntraProc {
@@ -107,8 +107,8 @@ public class IntraProc {
 	if (m.isStatic()) return new HMethod[]{ m };
 	if (p[0]==null) return new HMethod[0];
 	Set sm = new HashSet();
-	for (Enumeration e = p[0].elements(); e.hasMoreElements(); ) {
-	    HClass c = (HClass)e.nextElement();
+	for (Iterator e = p[0].iterator(); e.hasNext(); ) {
+	    HClass c = (HClass)e.next();
 	    boolean notDone = true;
 	    HMethod nm = null;
 	    do {
@@ -230,8 +230,8 @@ public class IntraProc {
     HMethod[] calls() {
 	if (map==null) { map = new HashMap(); analyze(); }
 	Set r = new HashSet();
-	for (Enumeration e = code.getElementsE(); e.hasMoreElements(); ) {
-	    Quad qq = (Quad) e.nextElement();
+	for (Iterator e = code.getElementsI(); e.hasNext(); ) {
+	    Quad qq = (Quad) e.next();
 	    if (!(qq instanceof CALL)) continue;
 	    CALL q = (CALL) qq;
 	    SetHClass[] paramTypes = new SetHClass[q.paramsLength()];

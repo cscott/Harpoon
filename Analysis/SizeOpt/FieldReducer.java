@@ -38,6 +38,7 @@ import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Collections.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.util.Arrays;
@@ -52,7 +53,7 @@ import java.util.Set;
  * unused and constant fields from objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldReducer.java,v 1.5 2002-09-03 14:43:04 cananian Exp $
+ * @version $Id: FieldReducer.java,v 1.6 2002-09-03 15:17:52 cananian Exp $
  */
 public class FieldReducer extends MethodMutator<Quad> {
     private static final boolean no_mutate =
@@ -148,10 +149,11 @@ public class FieldReducer extends MethodMutator<Quad> {
 	new SCCOptimize(w, w, w).optimize(hc);
 	if (no_mutate) return hc;
 
-	Quad[] quads = hc.getElements();
-	for (int i=0; i<quads.length; i++) {
-	    if (quads[i] instanceof GET) {
-		GET q = (GET) quads[i];
+	for (Iterator<Quad> it=new SnapshotIterator<Quad>
+		 (hc.getElementsI()); it.hasNext(); ) {
+	    Quad aquad = it.next();
+	    if (aquad instanceof GET) {
+		GET q = (GET) aquad;
 		// if this GET is not dead, then the field is read.
 		assert bwa.isRead(q.field());
 		if (bwa.isConst(q.field())) {
@@ -164,8 +166,8 @@ public class FieldReducer extends MethodMutator<Quad> {
 				  toInternal(q.field().getType())));
 		}
 	    }
-	    if (quads[i] instanceof SET) {
-		SET q = (SET) quads[i];
+	    if (aquad instanceof SET) {
+		SET q = (SET) aquad;
 		if (!bwa.isRead(q.field())) {
 		    // throw away writes to unread fields.
 		    q.remove();

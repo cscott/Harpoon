@@ -41,7 +41,7 @@ import java.io.PrintWriter;
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.4 2002-04-02 23:59:17 salcianu Exp $
+ * @version $Id: Graph.java,v 1.5 2002-09-03 15:18:44 cananian Exp $
  */
 
 public abstract class Graph  {
@@ -65,8 +65,8 @@ public abstract class Graph  {
     public static final void printCFG(HCode hc, java.io.PrintWriter pw, String title, String[] setup) {
 	commonHeader(hc, pw, title, setup, "CFG");
 	// control flow graph. The HCodeElements better implement CFGraphable
-	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
-	    HCodeElement hce = (HCodeElement) e.nextElement();
+	for (Iterator e = hc.getElementsI(); e.hasNext(); ) {
+	    HCodeElement hce = (HCodeElement) e.next();
 	    HCodeEdge[] next = ((CFGraphable)hce).succ();
 	    for (int j=0; j<next.length; j++) {
 		String label;
@@ -99,8 +99,8 @@ public abstract class Graph  {
 	commonHeader(hc, pw, title, setup, "DomTree");
 	DomTree dt = new DomTree(hc, isPost);
 	DomFrontier df = new DomFrontier(dt);
-	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
-	    HCodeElement hce = (HCodeElement) e.nextElement();
+	for (Iterator e = hc.getElementsI(); e.hasNext(); ) {
+	    HCodeElement hce = (HCodeElement) e.next();
 	    HCodeElement idom = dt.idom(hce);
 	    // make dominance frontier label.
 	    StringBuffer sb = new StringBuffer("DF[");
@@ -177,8 +177,8 @@ public abstract class Graph  {
 	for (int i=0; i<setup.length; i++)
 	    pw.println(setup[i]);
 	pw.println((type!="CFG") ? "layoutalgorithm: tree" : "priority_phase: yes");
-	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
-	    HCodeElement hce = (HCodeElement) e.nextElement();
+	for (Iterator e = hc.getElementsI(); e.hasNext(); ) {
+	    HCodeElement hce = (HCodeElement) e.next();
 	    String label = "#" + hce.getID() + ": " + escape(hce.toString());
 	    pw.print("node: { ");
 	    pw.print("title:\""+hce.getID()+"\" ");

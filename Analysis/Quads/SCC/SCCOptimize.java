@@ -28,10 +28,12 @@ import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
+import harpoon.Util.Collections.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 /**
@@ -43,7 +45,7 @@ import java.util.Set;
  *  <code>CALL</code> non-executable.)
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.4 2002-04-10 03:01:11 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.5 2002-09-03 15:17:45 cananian Exp $
  */
 public final class SCCOptimize implements ExecMap {
     TypeMap  ti;
@@ -309,10 +311,12 @@ public final class SCCOptimize implements ExecMap {
 	};
 	
 	// actual traversal code.
-	Quad[] ql = (Quad[]) hc.getElements();
-	for (int i=0; i<ql.length; i++)
-	    if (execMap(ql[i]))
-		ql[i].accept(visitor);
+	for (Iterator it=new SnapshotIterator(hc.getElementsI());
+	     it.hasNext(); ) {
+	    Quad q = (Quad) it.next();
+	    if (execMap(q))
+		q.accept(visitor);
+	}
 
 	// clean up the mess
 	DeadCode.optimize((harpoon.IR.Quads.Code)hc,

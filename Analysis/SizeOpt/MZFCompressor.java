@@ -23,6 +23,7 @@ import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.SET;
+import harpoon.Util.Collections.SnapshotIterator;
 import harpoon.Util.Default;
 import harpoon.Util.Default.PairList;
 import harpoon.Util.ParseUtil;
@@ -50,7 +51,7 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.5 2002-09-03 14:43:06 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.6 2002-09-03 15:17:52 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
@@ -307,10 +308,11 @@ public class MZFCompressor {
 	// xxx cheat: get old getter and replace GET with CONST.
 	// would be better to make this from scratch.
 	HCode<Quad> hc = hcf.convert(getter);
-	Quad[] qa = hc.getElements();
-	for (int i=0; i<qa.length; i++)
-	    if (qa[i] instanceof GET) {
-		GET q = (GET) qa[i];
+	for (Iterator<Quad> it=new SnapshotIterator<Quad>
+		 (hc.getElementsI()); it.hasNext(); ) {
+	    Quad aquad = it.next();
+	    if (aquad instanceof GET) {
+		GET q = (GET) aquad;
 		assert q.field().equals(hf);
 		// type of CONST depends on type of hf.
 		HClass type=widen(hf.getType());
@@ -325,6 +327,7 @@ public class MZFCompressor {
 				   wrap(type, val), type);
 		Quad.replace(q, nc);
 	    }
+	}
 	// done!
 	return hc;
     }
@@ -353,10 +356,12 @@ public class MZFCompressor {
 	// xxx cheat: get old setter and remove the SET operand.
 	// would be better to make this from scratch.
 	HCode<Quad> hc = hcf.convert(setter);
-	Quad[] qa = hc.getElements();
-	for (int i=0; i<qa.length; i++)
-	    if (qa[i] instanceof SET)
-		qa[i].remove();
+	for (Iterator<Quad> it=new SnapshotIterator<Quad>
+		 (hc.getElementsI()); it.hasNext(); ) {
+	    Quad q = it.next();
+	    if (q instanceof SET)
+		q.remove();
+	}
 	// done!
 	return hc;
     }

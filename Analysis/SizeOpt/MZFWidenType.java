@@ -20,12 +20,13 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Util.Default.PairList;
 import harpoon.Util.HClassUtil;
+import harpoon.Util.Collections.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 /**
@@ -36,7 +37,7 @@ import java.util.Set;
  * field and method signatures.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFWidenType.java,v 1.5 2002-09-03 14:43:06 cananian Exp $
+ * @version $Id: MZFWidenType.java,v 1.6 2002-09-03 15:17:52 cananian Exp $
  */
 class MZFWidenType extends MethodMutator<Quad> {
     /** the linker to use */
@@ -110,9 +111,9 @@ class MZFWidenType extends MethodMutator<Quad> {
 					   q.hasDefault()));
 		}
 	    };
-	Quad[] qa = hc.getElements();
-	for (int i=0; i<qa.length; i++)
-	    qa[i].accept(qv);
+	for (Iterator<Quad> it=new SnapshotIterator<Quad>
+		 (hc.getElementsI()); it.hasNext(); )
+	    it.next().accept(qv);
 	// done.
 	return hc;
     }

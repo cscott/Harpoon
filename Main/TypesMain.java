@@ -12,7 +12,6 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Quad;
-import java.util.Enumeration;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.TypeInference.InterProc;
@@ -21,12 +20,13 @@ import harpoon.Util.Collections.WorkSet;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 /**
  * <code>PrintTypes</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: TypesMain.java,v 1.2 2002-02-25 21:06:16 cananian Exp $
+ * @version $Id: TypesMain.java,v 1.3 2002-09-03 15:18:34 cananian Exp $
  */
 public class TypesMain extends harpoon.IR.Registration {
     public static void main(String args[]) {
@@ -83,18 +83,18 @@ public class TypesMain extends harpoon.IR.Registration {
 			    HCode hc = hcf.convert(m);
 			    if (hc!=null) {
 				Quad forLast = null;
-				Enumeration e = hc.getElementsE();
-				while (e.hasMoreElements()) {
-				    Quad q = (forLast==null) ? (Quad) e.nextElement() : forLast;
+				Iterator e = hc.getElementsI();
+				while (e.hasNext()) {
+				    Quad q = (forLast==null) ? (Quad) e.next() : forLast;
 				    if (!(q instanceof CALL)) continue;
-				    while (e.hasMoreElements()) {
-					forLast = (Quad) e.nextElement();
+				    while (e.hasNext()) {
+					forLast = (Quad) e.next();
 					if (forLast instanceof CALL) break;
 				    }
 				    CALL cs = (CALL)q;
 				    HMethod[] mm;
 				    if (ana==0) mm = cg.calls(m, cs);
-				    else mm = ty.calls(m, cs, !e.hasMoreElements());
+				    else mm = ty.calls(m, cs, !e.hasNext());
 				    System.out.print(mm.length + " ");
 				    for (int k=0; k<mm.length; k++)
 					if (!fi.contains(mm[k])) { fi.add(mm[k]); wl.push(mm[k]); }
