@@ -11,6 +11,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.Analysis.QuadSSA.ClassHierarchy;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
@@ -32,7 +33,7 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.13 1999-08-26 04:23:45 cananian Exp $
+ * @version $Id: Data.java,v 1.1.2.14 1999-09-02 20:11:30 pnkfelix Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
@@ -40,9 +41,12 @@ public class Data extends Code implements HData {
     private /*final*/ EdgeInitializer  edgeInitializer;
     private /*final*/ HClass           cls;
     
-    public Data(HClass cls, Frame frame) { 
+    private ClassHierarchy classHierarchy;
+
+    public Data(HClass cls, Frame frame, ClassHierarchy ch) { 
 	super(cls.getMethods()[0], null, frame);
 	this.cls = cls;
+	this.classHierarchy = ch;
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	//                                                           //
@@ -160,9 +164,10 @@ public class Data extends Code implements HData {
     }
     
     // Copy constructor, should only be used by the clone() method 
-    private Data(HClass cls, Tree tree, Frame frame) { 
+    private Data(HClass cls, Tree tree, Frame frame, ClassHierarchy ch) { 
 	super(cls.getMethods()[0], tree, frame);
 	this.cls = cls;
+	this.classHierarchy = ch;
 	final CloningTempMap ctm = 
 	    new CloningTempMap
 	    (tree.getFactory().tempFactory(), this.tf.tempFactory());
@@ -173,14 +178,14 @@ public class Data extends Code implements HData {
     /** Clone this data representation. The clone has its own copy
      *  of the Tree */
     public HData clone(HClass cls) { 
-	return new Data(cls, this.tree, this.frame);
+	return new Data(cls, this.tree, this.frame, this.classHierarchy);
     }
 
     /** Return the <code>HClass</code> that this data view belongs to */
     public HClass getHClass() { return this.cls; } 
 
     /** Return the name of this data view. */
-    public String getName() { return codename; } 
+    public String getName() { return codename; }  
     
     /** Returns <code>true</code>.  */
     public boolean isCanonical() { return true; } 

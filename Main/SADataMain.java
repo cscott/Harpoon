@@ -31,7 +31,7 @@ import java.util.HashSet;
  * <code>SADataMain</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SADataMain.java,v 1.1.2.5 1999-08-18 19:21:24 pnkfelix Exp $
+ * @version $Id: SADataMain.java,v 1.1.2.6 1999-09-02 20:11:30 pnkfelix Exp $
  */
 public class SADataMain extends harpoon.IR.Registration {
     
@@ -57,7 +57,7 @@ public class SADataMain extends harpoon.IR.Registration {
 	}
 	
 	for (int i=0; i<classes.size(); i++) {
-	    final Data data = new Data((HClass)classes.get(i), frame);
+	    // final Data data = new Data((HClass)classes.get(i), frame);
 
 	    
 	}

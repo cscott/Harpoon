@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.38 1999-09-02 19:11:14 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.39 1999-09-02 20:11:26 pnkfelix Exp $
  */
 %%
 
@@ -193,7 +193,7 @@ import java.util.Iterator;
 	    return new TwoWordTemp(frame.tempFactory());
     }
 
-    Map origTempToNewTemp = new HashMap();
+    Map origTempToNewTemp;
 
     private Temp makeTemp( Temp orig ) {
 	    Temp newT = (Temp) origTempToNewTemp.get(orig);
@@ -219,6 +219,7 @@ import java.util.Iterator;
 
        // initialize state variables each time gen() is called
        first = null; last = null;
+       origTempToNewTemp = new HashMap();
        this.instrFactory = inf;
 
 }%
@@ -811,7 +812,7 @@ TEMP<p,i,f>(id) = i %{
     if (((TEMP)ROOT) != param0) {
 	emitMOVE( ROOT, "mov `d0, `s0", i, ((TEMP)ROOT).temp);
     } else {
-	emit( ROOT, ".global _lookup\n"+
+	emit( ROOT, "\t.global _lookup\n"+
 		    "bl _lookup\n"+
 		    "mov `d0, `s0", i, r2 );
     }
@@ -1040,7 +1041,7 @@ JUMP(e) %{
 LABEL(id) %{
     LABEL l = (LABEL) ROOT;
     if (l.exported) {
-      emitLABEL( l, ".global "+l.label+"\n"+
+      emitLABEL( l, "\t.global "+l.label+"\n"+
 		    l.label + ":", l.label);
     } else {
       emitLABEL( l, l.label + ":", l.label);
@@ -1109,7 +1110,7 @@ RETURN(val) %{
 
 THROW(val, handler) %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
-    emit( ROOT, ".global _lookup\n"+
+    emit( ROOT, "\t.global _lookup\n"+
 		"bl _lookup @ only r0, lr (& ip?) "+
 		"need to be preserved during lookup" ); 
     emit( ROOT, "b stdexit");
@@ -1197,8 +1198,8 @@ CALL(retval, NAME(retex), func, arglist) %{
     // these may need to be included in the previous instr to preserve
     // ordering semantics, but for now this way they indent properly
     emitDIRECTIVE( ROOT, ".text 10\t@.section fixup");
-    emitDIRECTIVE( ROOT, "\t.word 1f, "+retex+"@ (retaddr, handler)");
-    emitDIRECTIVE( ROOT, ".text 0\t@.section code");
+    emitDIRECTIVE( ROOT, "\t.word 1f, "+retex+" @ (retaddr, handler)");
+    emitDIRECTIVE( ROOT, ".text 0 \t@.section code");
     emitLABEL( ROOT, "1:", new Label("1")); 
     
 
@@ -1305,7 +1306,7 @@ DATA(CONST(exp)) %{
 }%
 
 DATA(NAME(l)) %{
-    emitDIRECTIVE( ROOT, ".word "+l);
+    emitDIRECTIVE( ROOT, "\t.word "+l);
 }%
  
 SEGMENT(CLASS) %{

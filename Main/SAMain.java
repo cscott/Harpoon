@@ -60,7 +60,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.17 1999-09-02 19:11:20 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.18 1999-09-02 20:11:31 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -254,7 +254,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     public static void outputClassData(HClass hclass, PrintWriter out) 
 	throws IOException {
-	final Data data = new Data(hclass, frame);
+	final Data data = new Data(hclass, frame, classHierarchy);
 	
 	if (PRINT_ORIG) {
 	    info("\t--- TREE FORM (for DATA)---");
