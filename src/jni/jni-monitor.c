@@ -33,7 +33,7 @@ void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall) {
 
 jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
   pthread_t self = pthread_self();
-  struct inflated_oobj *li;
+  struct inflated_oobj *li; int st;
   assert(FNI_NO_EXCEPTIONS(env));
   INCREMENT_STATS(monitor_enter, 1);
   /* check object field, inflate lock if necessary. */
@@ -43,18 +43,20 @@ jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
     li->nesting_depth++;
   } else { /* someone else (or no one) has this lock */
 #ifdef WITH_STATISTICS
-    if (pthread_mutex_trylock(&(li->mutex))!=-EBUSY) goto gotlock;
+    if ((st = pthread_mutex_trylock(&(li->mutex)))!=-EBUSY) goto gotlock;
+    assert(st==0 /* no mutex errors */);
     INCREMENT_STATS(monitor_contention, 1);
 #endif /* WITH_STATISTICS */
-    pthread_mutex_lock(&(li->mutex));
+    st = pthread_mutex_lock(&(li->mutex));
   gotlock:
+    assert(st==0 /* no mutex errors */);
     li->tid = self;
     li->nesting_depth=1;
   }
   return 0;
 }
 jint FNI_MonitorExit(JNIEnv *env, jobject obj) {
-  struct inflated_oobj *li;
+  struct inflated_oobj *li; int st;
   assert(FNI_NO_EXCEPTIONS(env));
   assert(FNI_IS_INFLATED(obj));
   li = FNI_UNWRAP(obj)->hashunion.inflated;
@@ -62,12 +64,13 @@ jint FNI_MonitorExit(JNIEnv *env, jobject obj) {
   if (--li->nesting_depth == 0) {
     /* okay, unlock this puppy. */
     li->tid = 0;
-    pthread_mutex_unlock(&(li->mutex));
+    st = pthread_mutex_unlock(&(li->mutex));
+    assert(st==0 /* no mutex errors */);
   }
   return 0;
 }
 void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime){
-  struct inflated_oobj *li; jclass ex;
+  struct inflated_oobj *li; jclass ex; int st;
   assert(FNI_NO_EXCEPTIONS(env));
   if (!FNI_IS_INFLATED(obj)) goto error; // we don't have the lock.
   li = FNI_UNWRAP(obj)->hashunion.inflated;
@@ -77,9 +80,10 @@ void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime){
     jint nesting_depth = li->nesting_depth;
     li->tid = 0;/*let other folk grab the lock, just as soon as we give it up*/
     if (abstime==NULL)
-      pthread_cond_wait(&(li->cond), &(li->mutex));
+      st = pthread_cond_wait(&(li->cond), &(li->mutex));
     else
-      pthread_cond_timedwait(&(li->cond), &(li->mutex), abstime);
+      st = pthread_cond_timedwait(&(li->cond), &(li->mutex), abstime);
+    assert(st==0 || st==-ETIMEDOUT || st==-EINTR /*no cond variable errors*/);
     li->tid = tid;
     li->nesting_depth = nesting_depth;
     return;
@@ -92,16 +96,17 @@ void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime){
   return;
 }
 void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall) {
-  struct inflated_oobj *li; jclass ex;
+  struct inflated_oobj *li; jclass ex; int st;
   assert(FNI_NO_EXCEPTIONS(env));
   if (!FNI_IS_INFLATED(obj)) goto error; // we don't have the lock.
   li = FNI_UNWRAP(obj)->hashunion.inflated;
   if (li->tid != pthread_self()) goto error; // we don't have the lock.
 
   if (wakeall)
-    pthread_cond_broadcast(&(li->cond));
+    st = pthread_cond_broadcast(&(li->cond));
   else
-    pthread_cond_signal(&(li->cond));
+    st = pthread_cond_signal(&(li->cond));
+  assert(st == 0/* no condition variable errors */);
   return;
 
  error:
