@@ -24,7 +24,7 @@ import java.util.Map;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.17 1999-11-01 03:51:15 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.18 1999-11-01 04:41:44 cananian Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -211,8 +211,12 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 		return seq(x.stm, m.build(tf, new ExpList(tNew, x.exps)));
 	    }
 	    else {
-		StmExpList x = reorder(m.kids());
-		return seq(x.stm, m.build(tf, x.exps));
+		StmExpList d = reorder(new ExpList(m.kids().head, null));
+		StmExpList s = reorder(m.kids().tail);
+		Util.assert(d.exps.tail==null && s.exps.tail==null);
+		ExpList el = // combine src and dst exp lists.
+		    new ExpList(d.exps.head, new ExpList(s.exps.head, null));
+		return seq(s.stm, seq(d.stm, m.build(tf, el)));
 	    }
 	}
 
