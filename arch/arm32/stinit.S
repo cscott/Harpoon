@@ -15,6 +15,12 @@ _FNI_do_static_init:
 	ldr r4, 1b				@ r4=&static_inits
 2:	mov r0, #0
 	ldr r1, [r4], #4
+#ifdef DEBUG
+	stmfd sp!, {r0, r1}
+	adr r0, 4f
+	bl _printf
+	ldmfd sp!, {r0, r1}
+#endif
 	cmp r0, r1				@ if (*r4++ != NULL) ....
 	adrne lr, 2b				@    r4() /* call *r4 */
 	movne pc, r1
@@ -31,3 +37,7 @@ _FNI_do_static_init:
 	ldr r0, [sp]				@ reload JNIEnv * into r0
 	bl _FNI_Throw				@ throw ex into the JNI.
 	ldmea fp, {r4, fp, sp, pc}		@ restore registers & return
+
+#ifdef DEBUG
+4:	.asciz "INIT: %p\n"
+#endif
