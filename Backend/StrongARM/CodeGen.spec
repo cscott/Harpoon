@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.82 1999-10-21 00:15:39 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.83 1999-10-21 00:36:25 cananian Exp $
  */
 %%
 
@@ -927,33 +927,30 @@ MOVE(TEMP(dst), CONST<p>(c)) %{
 
 BINOP<p,i>(MUL, j, k) = i %{
     Temp i = makeTemp();		
-    // ACK: evilness.  d0 and s0 can't be same register.
-    // at this point there isn't a good way to tell the register
-    // allocator this, so we hard-wire the d0 and s0 registers.
-    emitMOVE( ROOT, "mov `d0, `s0", r3, j );
-    emit( ROOT, "mul `d0, `s0, `s1", r2, r3, k );
-    emitMOVE( ROOT, "mov `d0, `s0", i, r2 );
+    emit( ROOT, "mul `d0, `s0, `s1", i, j, k );
+    // `d0 and `s0 can't be same register on ARM, so we insert a
+    // dummy use of `s0 following the mul to keep it live.
+    emit(new Instr( instrFactory, ROOT, "@ dummy",
+		    null, new Temp[] { j }));
 }%
     // strong arm has funky multiply & accumulate instruction.
 BINOP<p,i>(ADD, BINOP<p,i>(MUL, j, k), l) = i %{
     Temp i = makeTemp();		
-    // ACK: evilness.  d0 and s0 can't be same register for mul
-    // at this point there isn't a good way to tell the register
-    // allocator this, so we hard-wire the d0 and s0 registers.
-    emitMOVE( ROOT, "mov `d0, `s0", r3, j );
     emit(new Instr( instrFactory, ROOT, "mla `d0, `s0, `s1, `s2",
-		    new Temp[] {r2}, new Temp[] { r3, k, l } ));
-    emitMOVE( ROOT, "mov `d0, `s0", i, r2 );
+		    new Temp[] { i }, new Temp[] { j, k, l } ));
+    // `d0 and `s0 can't be same register on ARM, so we insert a
+    // dummy use of `s0 following the mul to keep it live.
+    emit(new Instr( instrFactory, ROOT, "@ dummy",
+		    null, new Temp[] { j }));
 }%
 BINOP<p,i>(ADD, l, BINOP<p,i>(MUL, j, k)) = i %{
     Temp i = makeTemp();		
-    // ACK: evilness.  d0 and s0 can't be same register for mul
-    // at this point there isn't a good way to tell the register
-    // allocator this, so we hard-wire the d0 and s0 registers.
-    emitMOVE( ROOT, "mov `d0, `s0", r3, j );
     emit(new Instr( instrFactory, ROOT, "mla `d0, `s0, `s1, `s2",
-		    new Temp[] {r2}, new Temp[] { r3, k, l } ));
-    emitMOVE( ROOT, "mov `d0, `s0", i, r2 );
+		    new Temp[] { i }, new Temp[] { j, k, l } ));
+    // `d0 and `s0 can't be same register on ARM, so we insert a
+    // dummy use of `s0 following the mul to keep it live.
+    emit(new Instr( instrFactory, ROOT, "@ dummy",
+		    null, new Temp[] { j }));
 }%
 
 BINOP<l>(MUL, j, k) = i %{
