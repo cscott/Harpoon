@@ -37,7 +37,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.31 1999-09-11 18:24:12 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.32 1999-09-11 18:47:09 cananian Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -72,7 +72,7 @@ public abstract class Frame {
     */
     public abstract OffsetMap getOffsetMap();
 
-    /** Returns the appropriate <code>Runtime</code> for
+    /** Returns the appropriate <code>Generic.Runtime</code> for
      *  this <code>Frame</code>. */
     public abstract Runtime getRuntime();
 

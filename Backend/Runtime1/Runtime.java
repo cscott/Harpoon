@@ -11,15 +11,15 @@ import harpoon.ClassFile.HClass;
 import java.util.Arrays;
 import java.util.List;
 /**
- * <code>Runtime</code> is a no-frills implementation of the runtime
+ * <code>Runtime1.Runtime</code> is a no-frills implementation of the runtime
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.1 1999-09-09 05:12:17 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.2 1999-09-11 18:47:17 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     
-    /** Creates a <code>Runtime</code>. */
+    /** Creates a new <code>Runtime1.Runtime</code>. */
     public Runtime() { }
 
     public NameMap nameMap() { return _nm; }
