@@ -33,6 +33,7 @@ import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
 
 import java.io.PrintStream;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -47,19 +48,26 @@ import java.util.Set;
  * about the number of times the write-barrier is called.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierQuadPass.java,v 1.1.2.3 2001-10-13 19:24:43 kkz Exp $
+ * @version $Id: WriteBarrierQuadPass.java,v 1.1.2.4 2001-10-15 17:55:10 kkz Exp $
  */
 public class WriteBarrierQuadPass extends 
     harpoon.Analysis.Transformation.MethodMutator {
-    
-    final private HMethod arraySC;
-    final private HMethod fieldSC;
-    final private HClass JLT;
-    final private HClass JLRF;
+
+    private final boolean optimize;
+    private final MRAFactory mraf;
+    private final HMethod arraySC;
+    private final HMethod fieldSC;
+    private final HClass JLT;
+    private final HClass JLRF;
     private WriteBarrierStats wbs;
 
-    /** Creates a <code>WriteBarrierQuadPass</code>. */
-    public WriteBarrierQuadPass(HCodeFactory parent, Linker linker) {
+    /** Creates a <code>WriteBarrierQuadPass</code>. 
+     *  Write barrier removal performed if optimize is true.
+     */
+    public WriteBarrierQuadPass(ClassHierarchy ch, 
+				HCodeFactory parent, 
+				Linker linker,
+				boolean optimize) {
 	super(parent);
 	this.JLT = linker.forName("java.lang.Throwable");
 	HClass WB = linker.forName("harpoon.Runtime.PreciseGC.WriteBarrier");
@@ -69,26 +77,33 @@ public class WriteBarrierQuadPass extends
 				    { JLO, HClass.Int, JLO, HClass.Int });
 	this.fieldSC = WB.getMethod("fsc", new HClass[] 
 				    { JLO, JLRF, JLO, HClass.Int });
+	this.optimize = optimize;
+	this.mraf = new MRAFactory(ch, parent);
     }
     
     protected HCode mutateHCode(HCodeAndMaps input) {
 	Code hc = (Code)input.hcode();
 	// we should not have to update derivation information
 	Util.assert(hc.getDerivation() == null);
-	// first, run the MRA an the code
-	MRA mra = new MRA(hc);
 	// create a set of SETs and ASETs that can be ignored
 	Set ignore = new HashSet();
-	for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
-	    Quad q = (Quad)it.next();
-	    if (q.kind() == QuadKind.ASET) {
-		if (mra.mra_before(q).contains(((ASET)q).objectref()))
-		    ignore.add(q);
-	    } else if (q.kind() == QuadKind.SET) {
-		if (mra.mra_before(q).contains(((SET)q).objectref()))
-		    ignore.add(q);
+	if (optimize) {
+	    // first, run the MRA an the code
+	    MRA mra = mraf.mra(hc);
+	    // MRA mra = new MRA(hc, safeSet);
+	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
+		Quad q = (Quad)it.next();
+		if (q.kind() == QuadKind.ASET) {
+		    if (mra.mra_before(q).contains(((ASET)q).objectref()))
+			ignore.add(q);
+		} else if (q.kind() == QuadKind.SET) {
+		    if (mra.mra_before(q).contains(((SET)q).objectref()))
+			ignore.add(q);
+		}
 	    }
 	}
+	// freeze our results
+	ignore = Collections.unmodifiableSet(ignore);
 	//hc.print(new java.io.PrintWriter(System.out), null);
 	HEADER header = (HEADER) hc.getRootElement();
 	FOOTER footer = (FOOTER) header.footer();

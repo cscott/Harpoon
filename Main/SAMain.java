@@ -46,6 +46,7 @@ import harpoon.Util.Util;
 
 import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
 import harpoon.Analysis.PointerAnalysis.InstrumentAllocs;
+import harpoon.Analysis.PreciseGC.MRA;
 import harpoon.Analysis.PreciseGC.WriteBarrierPrePass;
 import harpoon.Analysis.PreciseGC.WriteBarrierQuadPass;
 import harpoon.Analysis.PreciseGC.WriteBarrierTreePass;
@@ -91,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.167 2001-10-01 20:36:40 kkz Exp $
+ * @version $Id: SAMain.java,v 1.1.2.168 2001-10-15 17:55:27 kkz Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -442,7 +443,8 @@ public class SAMain extends harpoon.IR.Registration {
 
 	if (WRITEBARRIERS) {
 	    Util.assert(BACKEND == PRECISEC_BACKEND && PRECISEGC);
-	    writeBarrier = new WriteBarrierQuadPass(hcf, linker);
+	    writeBarrier = 
+		new WriteBarrierQuadPass(classHierarchy, hcf, linker, false);
 	    hcf = writeBarrier.codeFactory();
 	    // re-generate class hierarchy to handle added calls
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
