@@ -8,7 +8,7 @@ public class Nets {
     public static void main(String argv[]) {
 
         kickOff kickoffObject = new kickOff();
-   }
+    }
 
 
 } // end of Nets class
@@ -21,15 +21,11 @@ class kickOff extends Thread {
     String name;
     
     kickOff() {
-	
-        start();
-}
+	run();
+    }
 
     public void run() {
-
-
         server serverObject = new server();
-
     }
 
     void pause (int time) {
@@ -51,26 +47,28 @@ class server extends Thread {
     static Vector v = new Vector();
 
     server() {
+        run();
+    }
 
-        start();
-
+    private static void startthread(server t) throws IOException {
+	read_from_connection readobj = new read_from_connection(t.listen.accept(), t);
+	readobj.start();
     }
 
     public void run() {
 
         System.out.println("Server thread started");
-
+	
         try {
 
-       listen = new ServerSocket(4321);
-     //     listen = new ServerSocket(8090);
+	    listen = new ServerSocket(4321);
+	    //     listen = new ServerSocket(8090);
 
-        while(true) {
-
-            readobj = new read_from_connection(listen.accept(), this);
-            System.out.println("connection accepted");
-          }
-
+	    while(true) {
+		startthread(this);
+		System.out.println("connection accepted");
+	    }
+	    
         }
 
         catch (UnknownHostException e ) {System.out.println("can't find host"); }
@@ -184,13 +182,8 @@ class read_from_connection extends Thread {
     read_from_connection readobj;
 
     read_from_connection(Socket sock, server serverobj) {
-
         this.sock = sock;
         this.serverobj = serverobj;
-
-        start();
-
-
     }
 
      public void run() {
@@ -211,8 +204,8 @@ class read_from_connection extends Thread {
             if (serverobj.duplicate_name(this)) {
                     pout.println("Name already in use - try another");
                     pout.println("disconecting...");
-                    stop();
                     sock.close();
+                    return;
             }
 
             serverobj.list_names(pout, name);
@@ -236,7 +229,7 @@ class read_from_connection extends Thread {
                  if (name.equals(" ") == false) {
                      serverobj.broadcast_message(name + " has left the chat room");
                  }
-                 stop();
+                 return;
        }
     }
 
