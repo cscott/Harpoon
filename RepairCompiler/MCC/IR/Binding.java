@@ -20,5 +20,10 @@ class Binding {
     VarDescriptor getVar() {
 	return var;
     }
-
+    public String toString() {
+	if (search)
+	    return "SEARCHFOR"+var.toString();
+	else
+	    return var.toString()+"="+String.valueOf(position);
+    }
 }

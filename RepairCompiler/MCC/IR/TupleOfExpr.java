@@ -8,6 +8,16 @@ public class TupleOfExpr extends Expr {
     Expr right = null;
     RelationDescriptor relation = null;
 
+    public Set freeVars() {
+	Set lset=left.freeVars();
+	Set rset=right.freeVars();
+	if (lset==null)
+	    return rset;
+	if (rset!=null)
+	    lset.addAll(rset);
+	return lset;
+    }
+
     public TupleOfExpr(Expr left, Expr right, RelationDescriptor relation) {
         if ((left == null) || (right == null) || (relation == null)) {
             throw new NullPointerException();

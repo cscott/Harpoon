@@ -14,6 +14,12 @@ public class ImageSetExpr extends SetExpr {
         this.inverse = false;
     }
 
+    public Set freeVars() {
+	HashSet hs=new HashSet();
+	hs.add(vd);
+	return hs;
+    }
+
     public String name() {
 	String name=vd.toString()+".";
 	if (inverse)

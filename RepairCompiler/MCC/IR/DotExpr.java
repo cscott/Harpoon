@@ -8,6 +8,18 @@ public class DotExpr extends Expr {
     String field;
     Expr index;
 
+    public Set freeVars() {
+	Set lset=left.freeVars();
+	Set iset=null;
+	if (index!=null)
+	    iset=index.freeVars();
+	if (lset==null)
+	    return iset;
+	if (iset!=null)
+	    lset.addAll(iset);
+	return lset;
+    }
+
     /*
     static int memoryindents = 0;
 

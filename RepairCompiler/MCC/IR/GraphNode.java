@@ -144,19 +144,20 @@ public class GraphNode {
     }
 
     public void discover(int time) {
-        discoverytime = time++;
+        discoverytime = time;
         status = PROCESSING;
     }
 
     public void finish(int time) {
         assert status == PROCESSING;
-        finishingtime = time++;
+        finishingtime = time;
         status = FINISHED;
     }
 
     public int getFinishingTime() {
         return finishingtime;
     }
+
 
     public static class DOTVisitor {
         
@@ -194,19 +195,22 @@ public class GraphNode {
 			  output.println("\tremincross=true;");*/
             output.println("\tnode [fontsize=10,height=\"0.1\", width=\"0.1\"];");
             output.println("\tedge [fontsize=6];");
-
             traverse();
-
             output.println("}\n");
         }
                 
         private void traverse() {            
+	    Set cycleset=GraphNode.findcycles(nodes);
+
             Iterator i = nodes.iterator();
             while (i.hasNext()) {
                 GraphNode gn = (GraphNode) i.next();
                 Iterator edges = gn.edges();
                 String label = gn.getTextLabel(); // + " [" + gn.discoverytime + "," + gn.finishingtime + "];";
-                output.println("\t" + gn.getLabel() + " [label=\"" + label + "\"" + gn.dotnodeparams + "];");
+		String option="";
+		if (cycleset.contains(gn))
+		    option=",style=bold";
+                output.println("\t" + gn.getLabel() + " [label=\"" + label + "\"" + gn.dotnodeparams + option+"];");
 
                 while (edges.hasNext()) {
                     Edge edge = (Edge) edges.next();
@@ -218,6 +222,49 @@ public class GraphNode {
                 }
             }
         }
+    }
+
+    /* XXXXXXXX  Should use SCC algorithm here - will change */
+    public static Set findcycles(Collection nodes) {
+	Stack st=new Stack();
+	HashSet acyclic=new HashSet();
+	HashSet cycles=new HashSet();
+	for(Iterator it=nodes.iterator();it.hasNext();) {
+	    GraphNode node=(GraphNode)it.next();
+	    if (acyclic.contains(node))
+		continue;
+	    if (cycles.contains(node))
+		continue;
+	    findcycles(cycles, acyclic, st,node,nodes);
+	}
+	return cycles;
+    }
+
+    private static boolean findcycles(Set cycles, Set acyclic, Stack visited, GraphNode gn, Collection nodes) {
+	if (visited.contains(gn)) {/* Found cycle */
+	    cycles.addAll(visited.subList(visited.indexOf(gn),visited.size()));  /* Add this cycle */
+	    return true;
+	}
+	boolean acyclicflag=true;
+	visited.push(gn);
+	for(Iterator it=gn.edges();it.hasNext();) {
+	    Edge e=(Edge) it.next();
+	    GraphNode node = e.getTarget();
+	    if (!nodes.contains(node))
+		continue; /* Don't visit stuff outside set */
+	    if (acyclic.contains(node))
+		continue;
+	    if (findcycles(cycles,acyclic,visited,node,nodes)) {
+		/* Found cycle */
+		acyclicflag=false;
+	    }
+	}
+	visited.pop();
+	if (acyclicflag) {
+	    acyclic.add(gn); /* no cycles through gn */
+	    return false;
+	} else
+	    return true; /* found cycle */
     }
     
     /**
@@ -232,19 +279,19 @@ public class GraphNode {
             this.nodes = nodes;
         }
 
-        public static void depthFirstSearch(Collection nodes) {
+        public static boolean depthFirstSearch(Collection nodes) {
             if (nodes == null) {
                 throw new NullPointerException();
             }
             
             DFS dfs = new DFS(nodes);
-            dfs.go();
+            return dfs.go();
         }
 
-        private void go() {           
+        private boolean go() {           
             Iterator i;
             time = 0;
-            
+            boolean acyclic=true;
             i = nodes.iterator();
             while (i.hasNext()) {
                 GraphNode gn = (GraphNode) i.next();
@@ -256,12 +303,15 @@ public class GraphNode {
                 GraphNode gn = (GraphNode) i.next();
                 assert gn.getStatus() != PROCESSING;                    
                 if (gn.getStatus() == UNVISITED) {
-                    dfs(gn);
+                    if (!dfs(gn))
+			acyclic=false;
                 } 
             }
+	    return acyclic;
         }
 
-        private void dfs(GraphNode gn) {
+        private boolean dfs(GraphNode gn) {
+	    boolean acyclic=true;
             gn.discover(time++);            
             Iterator edges = gn.edges();
 
@@ -269,12 +319,16 @@ public class GraphNode {
                 Edge edge = (Edge) edges.next();
                 GraphNode node = edge.getTarget();
                 if (node.getStatus() == UNVISITED) {
-                    dfs(node);
-                }
+                    if (!dfs(node))
+			acyclic=false;
+                } else if (node.getStatus()==PROCESSING) {
+		    acyclic=false;
+		}
             }
 
             gn.finish(time++);
-        }                        
+	    return acyclic;
+        }
 
     } /* end DFS */
 

@@ -7,6 +7,10 @@ public class ElementOfExpr extends Expr {
     Expr element;
     SetDescriptor set;
 
+    public Set freeVars() {
+	return element.freeVars();
+    }
+
     public ElementOfExpr(Expr element, SetDescriptor set) {
         if (element == null || set == null) {
             throw new NullPointerException();

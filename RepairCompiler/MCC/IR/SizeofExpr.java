@@ -6,6 +6,10 @@ public class SizeofExpr extends Expr {
 
     SetExpr setexpr;
 
+    public Set freeVars() {
+	return setexpr.freeVars();
+    }
+
     public SizeofExpr(SetExpr setexpr) {
         if (setexpr == null) {
             throw new NullPointerException();

@@ -18,6 +18,10 @@ public class IntegerLiteralExpr extends LiteralExpr {
 	return (new Integer(value)).toString();
     }
 
+    public boolean isNull() {
+	return value==0;
+    }
+
     public boolean equals(Map remap, Expr e) {
 	if (e==null)
 	    return false;

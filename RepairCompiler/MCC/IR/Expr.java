@@ -53,5 +53,13 @@ public abstract class Expr {
 	System.out.println(this.getClass().getName());
 	throw new Error("UNIMPLEMENTED");
     }
-
+    public boolean isNull() {
+	return false;
+    }
+    public boolean isNonNull() {
+	return false;
+    }
+    public Set freeVars() {
+	return null;
+    }
 }

@@ -47,16 +47,23 @@ public class Termination {
 
 	HashSet superset=new HashSet();
 	superset.addAll(conjunctions);
-	superset.addAll(abstractrepair);
+	//superset.addAll(abstractrepair);
 	//superset.addAll(updatenodes);
 	//superset.addAll(scopenodes);
 	//superset.addAll(consequencenodes);
-	//GraphNode.computeclosure(superset);
+	GraphNode.computeclosure(superset);
 	try {
 	    GraphNode.DOTVisitor.visit(new FileOutputStream("graph.dot"),superset);
 	} catch (Exception e) {
 	    e.printStackTrace();
 	    System.exit(-1);
+	}
+	for(Iterator it=updatenodes.iterator();it.hasNext();) {
+	    GraphNode gn=(GraphNode)it.next();
+	    TermNode tn=(TermNode)gn.getOwner();
+	    MultUpdateNode mun=tn.getUpdate();
+	    System.out.println(gn.getTextLabel());
+	    System.out.println(mun.toString());
 	}
     }
     
@@ -180,7 +187,7 @@ public class Termination {
 		for(int j=0;j<array.length;j++) {
 		    AbstractRepair ar=new AbstractRepair(dp,array[j],d);
 		    TermNode tn2=new TermNode(ar);
-		    GraphNode gn2=new GraphNode(gn.getLabel()+"A"+i+"B"+ar.type(),tn2);
+		    GraphNode gn2=new GraphNode(gn.getLabel()+"A"+i+"B"+ar.type(),gn.getTextLabel()+" #"+i+" "+ar.type(),tn2);
 		    GraphNode.Edge e=new GraphNode.Edge("abstract",gn2);
 		    gn.addEdge(e);
 		    abstractrepair.add(gn2);
@@ -294,7 +301,9 @@ public class Termination {
 			continue;
 		    }
 		}
-
+		if (!un.checkupdates()) /* Make sure we have a good update */
+		    continue;
+		
 		mun.addUpdate(un);
 
 		GraphNode.Edge e=new GraphNode.Edge("abstract"+compensationcount,gn2);
@@ -391,6 +400,10 @@ public class Termination {
 		    if (!processconjunction(un,r.getDNFNegGuardExpr().get(c))) {
 			goodflag=false;break;
 		    }
+		}
+		if (!un.checkupdates()) {
+		    goodflag=false;
+		    break;
 		}
 		mun.addUpdate(un);
 	    }
@@ -593,7 +606,8 @@ public class Termination {
 		    GraphNode gn2=new GraphNode("UpdateAdd"+addtocount,tn);
 
 		    if (processquantifers(gn2,un, r)&&debugdd()&&
-			processconjunction(un,ruleconj)) {
+			processconjunction(un,ruleconj)&&
+			un.checkupdates()) {
 			//System.out.println("Attempting to generate add to set #5");
 			mun.addUpdate(un);
 			GraphNode.Edge e=new GraphNode.Edge("abstract"+addtocount,gn2);

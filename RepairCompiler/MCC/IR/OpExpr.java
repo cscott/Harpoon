@@ -16,6 +16,26 @@ public class OpExpr extends Expr {
         assert (right == null && opcode == Opcode.NOT) || (right != null);
     }
 
+    public Expr getRightExpr() {
+	return right;
+    }
+
+    public Expr getLeftExpr() {
+	return left;
+    }
+
+    public Set freeVars() {
+	Set lset=left.freeVars();
+	Set rset=null;
+	if (right!=null)
+	    rset=right.freeVars();
+	if (lset==null)
+	    return rset;
+	if (rset!=null)
+	    lset.addAll(rset);
+	return lset;
+    }
+
     public String name() {
 	if (opcode==Opcode.NOT)
 	    return "!("+left.name()+")";

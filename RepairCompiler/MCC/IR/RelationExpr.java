@@ -14,6 +14,10 @@ public class RelationExpr extends Expr {
         this.inverse = inverse;
     }
 
+    public Set freeVars() {
+	return expr.freeVars();
+    }
+
     public String name() {
 	String name=expr.name()+".";
 	if (inverse)

@@ -16,6 +16,13 @@ class MultUpdateNode {
 	this.op=op;
     }
 
+    public String toString() {
+	String st="";
+	for(int i=0;i<updates.size();i++)
+	    st+=updates.get(i).toString()+"OR\n";
+	return st;
+    }
+
     public MultUpdateNode(ScopeNode sn) {
 	updates=new Vector();
 	scopenode=sn;

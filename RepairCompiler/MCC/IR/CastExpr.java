@@ -7,6 +7,10 @@ public class CastExpr extends Expr {
     TypeDescriptor type;
     Expr expr;
 
+    public Set freeVars() {
+	return expr.freeVars();
+    }
+
     public CastExpr(TypeDescriptor type, Expr expr) {
         this.type = type;
         this.expr = expr;

@@ -8,6 +8,12 @@ public class VarExpr extends Expr {
     VarDescriptor vd = null;
     boolean typechecked = false;
 
+    public Set freeVars() {
+	HashSet hs=new HashSet();
+	hs.add(vd);
+	return hs;
+    }
+
     public VarExpr(String varname) {
         this.varname = varname; 
     }
@@ -28,6 +34,10 @@ public class VarExpr extends Expr {
 	return false;
     }
 
+    public boolean isNonNull() {
+	return true;
+    }
+
     public boolean equals(Map remap, Expr e) {
 	if (e==null||!(e instanceof VarExpr))
 	    return false;
@@ -37,7 +47,7 @@ public class VarExpr extends Expr {
 	if (ve.vd==null)
 	    throw new Error("e has uninitialized VarDescriptor");
 	VarDescriptor nvd=vd;
-	if (remap.containsKey(nvd))
+	if (remap!=null&&remap.containsKey(nvd))
 	    nvd=(VarDescriptor)remap.get(nvd);
 	if (nvd!=ve.vd)
 	    return false;

@@ -12,15 +12,14 @@ class Updates {
     boolean negate=false;
 
     public String toString() {
-	String st="type="+type+"\n";
-	st+="rightposition="+rightposition+"\n";
-	if (rightexpr!=null)
-	    st+="rightexpr="+rightexpr.name()+"\n";
-	if (leftexpr!=null)
-	    st+="leftexpr="+leftexpr.name()+"\n";
-	st+="opcode="+opcode+"\n";
-	st+="negate="+negate+"\n";
-	return st;
+	if (type==EXPR)
+	    return leftexpr.name()+opcode.toString()+rightexpr.name();
+	else if (type==POSITION)
+	    return leftexpr.name()+opcode.toString()+"Position("+String.valueOf(rightposition)+")";
+	else if (type==ABSTRACT) {
+	    if (negate) return "!"+leftexpr.name();
+	    else return leftexpr.name();
+	} else throw new Error("Unrecognized type");
     }
 
     public Updates(Expr lexpr, Expr rexpr, Opcode op, boolean negate) {
@@ -41,23 +40,8 @@ class Updates {
 	    else if (op==Opcode.LE)
 		op=Opcode.GT;
 	}
-
-	opcode=Opcode.EQ;
-	/* Get rid of everything but NE */
-	if (op==Opcode.GT) {
-	    rightexpr=new OpExpr(Opcode.ADD,rexpr,new IntegerLiteralExpr(1));
-	} else if (op==Opcode.GE) {
-	    rightexpr=rexpr;
-	} else if (op==Opcode.LT) {
-	    rightexpr=new OpExpr(Opcode.SUB,rexpr,new IntegerLiteralExpr(1));
-	} else if (op==Opcode.LE) {
-	    rightexpr=rexpr;
-	} else if (op==Opcode.EQ) {
-	    rightexpr=rexpr;
-	} else if (op==Opcode.NE) {
-	    rightexpr=rexpr;
-	    opcode=Opcode.NE;
-	}
+	opcode=op;
+	rightexpr=rexpr;
     }
 
     boolean isGlobal() {
@@ -66,7 +50,18 @@ class Updates {
 	else return false;
     }
 
-
+    VarDescriptor getVar() {
+	if (isGlobal()) {
+	    return ((VarExpr)leftexpr).getVar();
+	} else if (isField()) {
+	    Expr e=leftexpr;
+	    for(;e instanceof DotExpr;e=((DotExpr)e).getExpr()) ;
+	    return ((VarExpr)e).getVar();
+	} else {
+	    System.out.println(toString());
+	    throw new Error("Unrecognized Update");
+	}
+    }
 
     Descriptor getDescriptor() {
 	if (isGlobal()) {
@@ -87,6 +82,10 @@ class Updates {
 	    return false;
     }
     
+    boolean isExpr() {
+	return type==Updates.EXPR;
+    }
+
     
     Opcode getOpcode() {
 	return opcode;
