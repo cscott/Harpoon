@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.58 1999-08-27 11:16:01 cananian Exp $
+% $Id: harpoon.bib,v 1.59 1999-08-30 16:17:24 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -1361,6 +1361,33 @@
   title = 	 {Notes on Graph Algorithms Used in Optimizing Compilers},
   year =	 1995,
   note = 	 {Available from \texttt{http://\hspace{0pt}www.cs.umb.edu/\hspace{0pt}\~{}offner/\hspace{0pt}files/\hspace{0pt}flow\_graph.ps}}
+}
+
+@Article{knuth74:fortran,
+  author = 	 {Donald Knuth},
+  title = 	 {An empirical study of {FORTRAN} programs},
+  journal = 	 {Software Practice and Experience},
+  year = 	 1974,
+  volume =	 1,
+  number =	 12,
+  pages =	 {105-134},
+  annote =	 {"Famous" empirical study showing that the loop
+                  connectedness number (and hence iteration limit for
+                  iterated distributive data flow problems) is $\leq
+                  3$ for all intents and purposes.
+                  Cited in \cite{offner95}.}
+}
+
+@Article{kam76:dataflow,
+  author = 	 {John B. Kam and Jeffrey D. Ullman},
+  title = 	 {Global data flow analysis and iterative algorithms},
+  journal = 	 {Journal of the {ACM}},
+  year = 	 1976,
+  volume =	 21,
+  number =	 3,
+  pages =	 {158-171},
+  month =	 jan,
+  annote =	 {Proved iteration bound on distributive data flow frameworks}
 }
 
 %%%% Misc.
