@@ -7,7 +7,7 @@ import java.util.Enumeration;
 /**
  * A unique vector refuses to addElement duplicates.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueVector.java,v 1.4 1998-08-01 22:55:18 cananian Exp $
+ * @version $Id: UniqueVector.java,v 1.5 1998-09-03 18:44:16 cananian Exp $
  * @see java.util.Vector
  * @see java.util.Hashtable
  */
@@ -59,7 +59,7 @@ public class UniqueVector implements Cloneable {
    *         this vector; <code>false</code> otherwise.
    */
   public boolean contains(Object elem) {
-    return uniq.contains(elem);
+    return uniq.containsKey(elem);
   }
   /**
    * Copies the components of this vector into the specified array.
