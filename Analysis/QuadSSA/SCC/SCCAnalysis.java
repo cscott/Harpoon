@@ -22,7 +22,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.4.1 1998-12-08 22:49:57 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.4.2 1998-12-11 23:40:03 mfoltz Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -790,7 +790,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		    }
 		}
 		if (right instanceof xIntConstant) {
-		    long val = ((xIntConstant)left).value();
+		    long val = ((xIntConstant)right).value();
 		    if (val==0) {
 			raiseV(V, Wv, q.dst, right); return;
 		    }
@@ -850,6 +850,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     // Class merge functino.
 
     HClass merge(HClass a, HClass b) {
+
 	Util.assert(a!=null && b!=null);
 	if (a==b) return a; // take care of primitive types.
 
@@ -859,8 +860,30 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	if (b==HClass.Void)
 	    return a;
 
+	// Special case for boolean, integer.
+	if (a==HClass.Int && b==HClass.Boolean) return a;
+	if (a==HClass.Boolean && b==HClass.Int) return b;
+
+	// Special case for short, integer.
+	if (a==HClass.Int && b==HClass.Short) return a;
+	if (a==HClass.Short && b==HClass.Int) return b;
+
+	// Special case for char, integer.
+	if (a==HClass.Int && b==HClass.Char) return a;
+	if (a==HClass.Char && b==HClass.Int) return b;
+
+	// Special case for byte, integer.
+	if (a==HClass.Int && b==HClass.Byte) return a;
+	if (a==HClass.Byte && b==HClass.Int) return b;
+
+	try {
 	// by this point better be array ref or object, not primitive type.
 	Util.assert((!a.isPrimitive()) && (!b.isPrimitive()));
+	} catch (Throwable e) {
+	  e.printStackTrace();
+	  System.err.println("Bought the farm: "+a+", hash "+System.identityHashCode(a)+" "+b+
+			     ", hash "+System.identityHashCode(b));
+	}
 	int Adims = HClassUtil.dims(a);
 	int Bdims = HClassUtil.dims(b);
 	if (Adims==Bdims) {
