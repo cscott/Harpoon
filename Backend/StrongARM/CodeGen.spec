@@ -44,7 +44,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.5 1999-07-22 22:38:20 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.6 1999-07-22 22:49:10 pnkfelix Exp $
  */
 %%
 
@@ -79,11 +79,11 @@ import java.util.HashMap;
 	}
     }
 
-    private Temp newTemp() {
+    private Temp makeTemp() {
 	    return new Temp(frame.tempFactory());
     }
 
-    private TwoWordTemp newTwoWordTemp() {
+    private TwoWordTemp makeTwoWordTemp() {
 	    return new TwoWordTemp(frame.tempFactory());
     }
 
@@ -92,14 +92,14 @@ import java.util.HashMap;
 	
 /* EXPRESSIONS */ 
 BINOP<p,i>(ADD, j, k) = i %{		
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "add `d0, `s0, `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP<l>(ADD, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 	           "adds `d0l, `s0l, `s1l\n"+
 		   "adc  `d0h, `s0h, `s1h",
@@ -108,7 +108,7 @@ BINOP<l>(ADD, j, k) = i %{
 
 BINOP<f>(ADD, j, k) = i %{
     /* call auxillary fp routines */
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -122,7 +122,7 @@ BINOP<f>(ADD, j, k) = i %{
 
 BINOP<d>(ADD, j, k) = i %{
     /* call auxillary fp routines */
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -142,14 +142,14 @@ BINOP<d>(ADD, j, k) = i %{
 }%
 
 BINOP<p,i>(AND, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "and `d0, `s0, `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP<l>(AND, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 	           "and `d0l, `s0l, `s1l\n"+
 		   "and `d0h, `s0h, `s1h",
@@ -157,7 +157,7 @@ BINOP<l>(AND, j, k) = i %{
 }%
 
 BINOP<p,i>(CMPEQ, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+
 		   "moveq `d0, #1\n"+
@@ -166,7 +166,7 @@ BINOP<p,i>(CMPEQ, j, k) = i %{
 }%
 
 BINOP<l>(CMPEQ, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0l, `s1l\n"+
 		   "cmpeq `s0h, `s1h\n"+
@@ -176,7 +176,7 @@ BINOP<l>(CMPEQ, j, k) = i %{
 }%
   
 BINOP<f>(CMPEQ, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -190,7 +190,7 @@ BINOP<f>(CMPEQ, j, k) = i %{
 }%
 
 BINOP<d>(CMPEQ, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -206,7 +206,7 @@ BINOP<d>(CMPEQ, j, k) = i %{
 }%
 
 BINOP<p,i>(CMPGT, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+	
 		   "movgt `d0, #1\n"+	
@@ -215,7 +215,7 @@ BINOP<p,i>(CMPGT, j, k) = i %{
 }%
 
 BINOP<l>(CMPGT, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "cmp `s0h, `s1h\n"+
 	           "cmpeq `s0l, `s1l\n"+
@@ -225,7 +225,7 @@ BINOP<l>(CMPGT, j, k) = i %{
 }%
 
 BINOP<f>(CMPGT, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -239,7 +239,7 @@ BINOP<f>(CMPGT, j, k) = i %{
 }%
 
 BINOP<d>(CMPGT, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -256,7 +256,7 @@ BINOP<d>(CMPGT, j, k) = i %{
 
 
 BINOP<p,i>(CMPGE, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+
 		   "movge `d0, #1\n"+
@@ -265,7 +265,7 @@ BINOP<p,i>(CMPGE, j, k) = i %{
 }%
 
 BINOP<l>(CMPGE, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0h, `s1h\n"+
 	           "cmpeq `s0l, `s1l\n"+
@@ -275,7 +275,7 @@ BINOP<l>(CMPGE, j, k) = i %{
 }%
 
 BINOP<f>(CMPGE, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -289,7 +289,7 @@ BINOP<f>(CMPGE, j, k) = i %{
 }%
 
 BINOP<d>(CMPGE, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -306,7 +306,7 @@ BINOP<d>(CMPGE, j, k) = i %{
 
 
 BINOP<p,i>(CMPLE, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+
 		   "movle `d0, #1\n"+
@@ -315,7 +315,7 @@ BINOP<p,i>(CMPLE, j, k) = i %{
 }%
 
 BINOP<l>(CMPLE, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0h, `s1h\n"+
 	           "cmpeq `s0l, `s1l\n"+
@@ -325,7 +325,7 @@ BINOP<l>(CMPLE, j, k) = i %{
 }%
 
 BINOP<f>(CMPLE, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -339,7 +339,7 @@ BINOP<f>(CMPLE, j, k) = i %{
 }%
 
 BINOP<d>(CMPLE, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -355,7 +355,7 @@ BINOP<d>(CMPLE, j, k) = i %{
 }%
 
 BINOP<p,i>(CMPLT, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+
 		   "movlt `d0, #1\n"+
@@ -364,7 +364,7 @@ BINOP<p,i>(CMPLT, j, k) = i %{
 }%
 
 BINOP<l>(CMPLT, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0h, `s1h\n"+
 	           "cmpeq `s0l, `s1l\n"+
@@ -374,7 +374,7 @@ BINOP<l>(CMPLT, j, k) = i %{
 }%
 
 BINOP<f>(CMPLT, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -388,7 +388,7 @@ BINOP<f>(CMPLT, j, k) = i %{
 }%
 
 BINOP<d>(CMPLT, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -404,56 +404,56 @@ BINOP<d>(CMPLT, j, k) = i %{
 }%
 
 BINOP(OR, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "orr `d0, `s0, `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP<p,i>(SHL, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "mov `d0, `s0 lsl `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP<p,i>(SHR, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "mov `d0, `s0 lsr `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP<p,i>(USHR, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "mov `d0, `s0 asr `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP<p,i>(XOR, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "eor `d0, `s0, `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 CONST<i>(c) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "mov `d0, #"+((CONST)ROOT).value.intValue(),
 		   new Temp[]{ i }, null));
 }%
 
 BINOP<p,i>(MUL, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 		   "mul `d0, `s0, `s1",
 		   new Temp[] { i }, new Temp[] { j , k }));	   
 }%
 
 BINOP<l>(MUL, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -472,7 +472,7 @@ BINOP<l>(MUL, j, k) = i %{
 }%
 
 BINOP<f>(MUL, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -484,7 +484,7 @@ BINOP<f>(MUL, j, k) = i %{
 }%
 
 BINOP<d>(MUL, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -503,7 +503,7 @@ BINOP<d>(MUL, j, k) = i %{
 }%
 
 BINOP<p,i>(DIV, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -515,7 +515,7 @@ BINOP<p,i>(DIV, j, k) = i %{
 }%
 
 BINOP<l>(DIV, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -534,7 +534,7 @@ BINOP<l>(DIV, j, k) = i %{
 }%
 
 BINOP<f>(DIV, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -546,7 +546,7 @@ BINOP<f>(DIV, j, k) = i %{
 }%
 
 BINOP<d>(DIV, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -565,7 +565,7 @@ BINOP<d>(DIV, j, k) = i %{
 }%
 
 BINOP<p,i>(REM, j, k) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -578,7 +578,7 @@ BINOP<p,i>(REM, j, k) = i %{
 }%
 
 BINOP<l>(REM, j, k) = i %{
-    Temp i = newTwoWordTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -597,59 +597,59 @@ BINOP<l>(REM, j, k) = i %{
 }%
 
 MEM<p,i,f>(e) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new InstrMEM(inf, ROOT,
 	             "ldr `d0, `s0",
 		     new Temp[]{ i }, new Temp[]{ e }));
 }%
 
 NAME(id) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
 
 }%
 
 TEMP(id) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
 
 }%
 
 UNOP(_2B, arg) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     
 }%
 
 UNOP(_2C, arg) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
 
 }%
 
 UNOP(_2D, arg) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
 
 }%
 
 UNOP(_2F, arg) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
 
 }%
 
 UNOP(_2I, arg) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
 
 }%
 
 UNOP(_2L, arg) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
 
 }%
 
 UNOP(_2S, arg) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
 
 }%
 
 UNOP<p,i>(NEG, arg) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "mov `d0, #0\n"+
 		   "sub `d0, `d0, `s0",
@@ -657,7 +657,7 @@ UNOP<p,i>(NEG, arg) = i %{
 }% 
 
 UNOP<p,i>(NOT, arg) = i %{
-    Temp i = newTemp();		
+    Temp i = makeTemp();		
     emit(new Instr(inf, ROOT, 
 	           "mvn `d0, `s0",
 		   new Temp[]{ i }, new Temp[]{ arg }));
