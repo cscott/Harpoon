@@ -2,7 +2,9 @@
 // Copyright (C) 2001 Catalin Francu <cata@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
+
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Iterator;
 
 public class PriorityScheduler extends Scheduler {
@@ -154,70 +156,107 @@ public class PriorityScheduler extends Scheduler {
 	return (PriorityScheduler)defaultScheduler;
     }
 
+    /** Determines the load on the system. If the load is less then 1, the
+     *  system is feasible. If the load is greater than or equal to 1, the
+     *  system is not feasible.
+     */
+    private float load(LinkedList releaseParams) {
+	float l = 0.0f;
+	for (Iterator it = releaseParams.iterator(); it.hasNext(); ) {
+	    ReleaseParameters rp = (ReleaseParameters)it.next();
+	    if (rp instanceof PeriodicParameters)
+		l += ((PeriodicParameters)rp).getCost().time() /
+		    ((PeriodicParameters)rp).getPeriod().time();
+	    else l+= ((AperiodicParameters)rp).getCost().time() /
+		     ((AperiodicParameters)rp).getDeadline().time();
+	}
+	
+	return l;
+    }
+
     /** Returns ture if and only if the system is able to satisfy the
      *  constraints expressed in the release parameteres of the existing
      *  schdulable objects.
      */
-    // This one's a bit twisted, but it's much more
-    // implementation-friendly. We decide feasibility by calling
-    // changeIfFeasible with no parameters.
     public boolean isFeasible() {
-	return changeIfFeasible(null, null, null);
+	return isFeasible(null, null);
+    }
+
+    protected boolean isFeasible(Schedulable s, ReleaseParameters rp) {
+	LinkedList params = new LinkedList();
+	int i = 0;
+	boolean found = false;
+	for (Iterator it = allThreads.iterator(); it.hasNext(); ) {
+	    Object obj = it.next();
+	    if (obj instanceof Schedulable) {
+		Schedulable sch = (Schedulable)obj;
+		if (sch == s) {
+		    params.add(new ReleaseParameters(rp));
+		    found = true;
+		}
+		else params.add(new ReleaseParameters(sch.getReleaseParameters()));
+	    }
+	}
+	if ((!found) && (s != null) && (rp != null)) params.add(new ReleaseParameters(rp));
+
+	return (load(params) < 1.0);
     }
     
-    // changeIfFeasible()
-    //   This is where the actual feasibility decision is made.
-    //   Algorithm: Plain EDF -- add up the fractions cost/period for
-    //   periodic threads, cost/minInterarrival for sporadic threads.
-    public boolean changeIfFeasible(Schedulable schedulable,
-				    ReleaseParameters release,
-				    MemoryParameters memory) {
-	if (schedulable != null &&
-	    !allThreads.contains(schedulable)) {
-	    return false; // We are not responsible for this thread.
-	}
-	int switchingState = stopSwitchingInC();
-	double load = 0.0;
-	HashSet groupsSeen = new HashSet();
-	for (Iterator i = allThreads.iterator(); i.hasNext(); ) {
-	    Schedulable s = (Schedulable) i.next();
-	    // Use the release parameters for each Schedulable, except for the one
-	    // we are trying to change, for which we'll use the newly proposed
-	    // parameters.
-	    ReleaseParameters rp = (s == schedulable) ?
-		release : s.getReleaseParameters();
+    // This is Cata's stuff, which is not needed any more.
+
+//     // changeIfFeasible()
+//     //   This is where the actual feasibility decision is made.
+//     //   Algorithm: Plain EDF -- add up the fractions cost/period for
+//     //   periodic threads, cost/minInterarrival for sporadic threads.
+//     public boolean changeIfFeasible(Schedulable schedulable,
+// 				    ReleaseParameters release,
+// 				    MemoryParameters memory) {
+// 	if (schedulable != null &&
+// 	    !allThreads.contains(schedulable)) {
+// 	    return false; // We are not responsible for this thread.
+// 	}
+// 	int switchingState = stopSwitchingInC();
+// 	double load = 0.0;
+// 	HashSet groupsSeen = new HashSet();
+// 	for (Iterator i = allThreads.iterator(); i.hasNext(); ) {
+// 	    Schedulable s = (Schedulable) i.next();
+// 	    // Use the release parameters for each Schedulable, except for the one
+// 	    // we are trying to change, for which we'll use the newly proposed
+// 	    // parameters.
+// 	    ReleaseParameters rp = (s == schedulable) ?
+// 		release : s.getReleaseParameters();
 	    
-	    if (rp != null) // Main thread (and possibly other threads) have null rp
-		// Periodic threads already have a cost and a period
-		if (rp instanceof PeriodicParameters) {
-		    load += (double)((PeriodicParameters)rp).getCost().getMilliseconds()/
-			((PeriodicParameters)rp).getPeriod().getMilliseconds();
-		}
-		else if (rp instanceof SporadicParameters) {
-		    load += (double)((SporadicParameters)rp).getCost().getMilliseconds()/
-			((SporadicParameters)rp).getMinimumInterarrival().getMilliseconds();
-		}
-	    // We must look up the period in the ProcessingGroupParameters
-	    // of the thread.
-		else {
-		    ProcessingGroupParameters pgp = s.getProcessingGroupParameters();
-		    if (!groupsSeen.contains(pgp)) { // Haven't seen this group before
-			groupsSeen.add(pgp);
-			load += (double)pgp.getCost().getMilliseconds() /
-			    pgp.getPeriod().getMilliseconds();
-		    }
-		}
-	}
+// 	    if (rp != null) // Main thread (and possibly other threads) have null rp
+// 		// Periodic threads already have a cost and a period
+// 		if (rp instanceof PeriodicParameters) {
+// 		    load += (double)((PeriodicParameters)rp).getCost().getMilliseconds()/
+// 			((PeriodicParameters)rp).getPeriod().getMilliseconds();
+// 		}
+// 		else if (rp instanceof SporadicParameters) {
+// 		    load += (double)((SporadicParameters)rp).getCost().getMilliseconds()/
+// 			((SporadicParameters)rp).getMinimumInterarrival().getMilliseconds();
+// 		}
+// 	    // We must look up the period in the ProcessingGroupParameters
+// 	    // of the thread.
+// 		else {
+// 		    ProcessingGroupParameters pgp = s.getProcessingGroupParameters();
+// 		    if (!groupsSeen.contains(pgp)) { // Haven't seen this group before
+// 			groupsSeen.add(pgp);
+// 			load += (double)pgp.getCost().getMilliseconds() /
+// 			    pgp.getPeriod().getMilliseconds();
+// 		    }
+// 		}
+// 	}
 	
-	System.out.println("Load = " + load);
-	if (load <= 1.0 && schedulable != null) {
-	    schedulable.setReleaseParameters(release);
-	    schedulable.setMemoryParameters(memory);
-	}
+// 	System.out.println("Load = " + load);
+// 	if (load <= 1.0 && schedulable != null) {
+// 	    schedulable.setReleaseParameters(release);
+// 	    schedulable.setMemoryParameters(memory);
+// 	}
 	
-	restoreSwitchingInC(switchingState);
-	return (load <= 1.0);
-    }
+// 	restoreSwitchingInC(switchingState);
+// 	return (load <= 1.0);
+//     }
 
     /** Inform the scheduler and cooperating facilities that the resource demands,
      *  as expressed in the associated instances of <code>SchedulableParameters,
@@ -256,7 +295,7 @@ public class PriorityScheduler extends Scheduler {
     }
 
     /** Returns true if, after considering the values of the parameters, the task set
-     *  would still ve feasible. In this case the values of the parameters are changed.
+     *  would still be feasible. In this case the values of the parameters are changed.
      *  Returns false if, after considering the values of the parameters, the task set
      *  would not be feasible. In this case the values of the parameters are not changed.
      */
@@ -264,8 +303,13 @@ public class PriorityScheduler extends Scheduler {
 				 ReleaseParameters release,
 				 MemoryParameters memory,
 				 ProcessingGroupParameters group) {
-	// TODO
-	return false;
+	if (isFeasible(schedulable, release)) {
+	    schedulable.setReleaseParameters(release);
+	    schedulable.setMemoryParameters(memory);
+	    schedulable.setProcessingGroupParameters(group);
+	    return true;
+	}
+	else return false;
     }
 
 

@@ -97,65 +97,53 @@ public class MemoryParameters {
      *  one or more realtime threads that have been passed admission
      *  control, this change in allocation rate will be submitted to
      *  admission control. The scheduler (in conjuction with the garbage
-     *  collector) willeither admit all the effected threads with the new
+     *  collector) will either admit all the affected threads with the new
      *  allocation rate, or leave the allocation rate unchanged and cause
      *  <code>setAllocationRateIfFeasible</code> to return <code>false</code>.
      */
     public boolean setAllocationRateIfFeasible(int allocationRate) {
-	boolean b = true;
-	Iterator it = schList.iterator();
-	long old_rate = this.allocationRate;
+	// How do memory parameters affect the feasibility of the task set?
 	setAllocationRate(allocationRate);
-	while (b && it.hasNext())
-	    b = ((Schedulable)it.next()).setMemoryParametersIfFeasible(this);
-	if (!b) {   // something is not feasible
-	    setMaxMemoryArea(old_rate);   // returning the value back
-	    for (it = schList.iterator(); it.hasNext(); )   // undoing all changes
-		((Schedulable)it.next()).setMemoryParameters(this);
-	}
-	return b;
-    }
+	for (Iterator it = schList.iterator(); it.hasNext(); )
+	    ((Schedulable)it.next()).setMemoryParameters(this);
 
+	return true;
+    }
+    
     /** A limit on the amount of memory the thread may allocate in the immortal area. */
     public boolean setMaxImmortalIfFeasible(long maximum) {
-	boolean b = true;
-	Iterator it = schList.iterator();
-	long old_maximum = this.maxImmortal;
+	// How do memory parameters affect the feasibility of the task set?
 	setMaxImmortal(maximum);
-	while (b && it.hasNext())
-	    b = ((Schedulable)it.next()).setMemoryParametersIfFeasible(this);
-	if (!b) {   // something is not feasible
-	    setMaxImmortal(old_maximum);   // returning the value back
-	    for (it = schList.iterator(); it.hasNext(); )   // undoing all changes
-		((Schedulable)it.next()).setMemoryParameters(this);
-	}
-	return b;
+	for (Iterator it = schList.iterator(); it.hasNext(); )
+	    ((Schedulable)it.next()).setMemoryParameters(this);
+
+	return true;
     }
 
     /** A limit on the amount of memory the thread may allocate in the memory area. */
     public boolean setMaxMemoryAreaIfFeasible(long maximum) {
-	boolean b = true;
-	Iterator it = schList.iterator();
-	long old_maximum = this.maxMemoryArea;
+	// How do memory parameters affect the feasibility of the task set?
 	setMaxMemoryArea(maximum);
-	while (b && it.hasNext())
-	    b = ((Schedulable)it.next()).setMemoryParametersIfFeasible(this);
-	if (!b) {   // something is not feasible
-	    setMaxMemoryArea(old_maximum);   // returning the value back
-	    for (it = schList.iterator(); it.hasNext(); )   // undoing all changes
-		((Schedulable)it.next()).setMemoryParameters(this);
-	}
-	return b;
+	for (Iterator it = schList.iterator(); it.hasNext(); )
+	    ((Schedulable)it.next()).setMemoryParameters(this);
+
+	return true;
     }
 
     public MemoryArea getMemoryArea() {
 	return memoryArea;
     }
 
+    /** Informs <code>this</code> that there is one more instance of <code>Schedulable</code>
+     *  that uses <code>this</code> as its <code>ReleaseParameters</code>.
+     */
     public boolean bindSchedulable(Schedulable sch) {
 	return schList.add(sch);
     }
 
+    /** Informs <code>this</code> that <code>Schedulable sch</code>
+     *  that uses <code>this</code> as its <code>ReleaseParameters</code>.
+     */
     public boolean unbindSchedulable(Schedulable sch) {
 	return schList.remove(sch);
     }    

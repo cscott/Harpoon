@@ -51,6 +51,7 @@ public abstract class Scheduler {
      *  schedulable objects.
      */
     public abstract boolean isFeasible();
+    protected abstract boolean isFeasible(Schedulable s, ReleaseParameters rp);
 
     /** Inform the scheduler and cooperating facilities that the resource
      *  demands (as expressed in the associated instances of

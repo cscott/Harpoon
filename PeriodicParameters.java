@@ -58,19 +58,20 @@ public class PeriodicParameters extends ReleaseParameters {
 				 RelativeTime cost,
 				 RelativeTime deadline) {
 	boolean b = true;
-	Iterator it = schList.iterator();
-	RelativeTime old_period = this.period;
-	RelativeTime old_cost = this.cost;
-	RelativeTime old_deadline = this.deadline;
-	setPeriod(period);
-	setCost(cost);
-	setDeadline(deadline);
-	while (b && it.hasNext())
-	    b = ((Schedulable)it.next()).setReleaseParametersIfFeasible(this);
-	if (!b) {
-	    setPeriod(old_period);
-	    setCost(old_cost);
-	    setDeadline(old_deadline);
+	for (Iterator it = schList.iterator(); it.hasNext(); ) {
+	    Schedulable sch = (Schedulable)it.next();
+	    Scheduler sched = sch.getScheduler();
+	    if (!sched.isFeasible(sch, new PeriodicParameters(getStart(), period, cost, deadline,
+							      overrunHandler, missHandler))) {
+		b = false;
+		break;
+	    }
+	}
+
+	if (b) {
+	    setPeriod(period);
+	    setCost(cost);
+	    setDeadline(deadline);
 	}
 	return b;
     }
@@ -85,10 +86,16 @@ public class PeriodicParameters extends ReleaseParameters {
 	this.start.set(start);
     }
 
+    /** Informs <code>this</code> that there is one more instance of <code>Schedulable</code>
+     *  that uses <code>this</code> as its <code>ReleaseParameters</code>.
+     */
     public boolean bindSchedulable(Schedulable sch) {
 	return schList.add(sch);
     }
 
+    /** Informs <code>this</code> that <code>Schedulable sch</code>
+     *  that uses <code>this</code> as its <code>ReleaseParameters</code>.
+     */
     public boolean unbindSchedulable(Schedulable sch) {
 	return schList.remove(sch);
     }

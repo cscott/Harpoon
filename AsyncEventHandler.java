@@ -143,13 +143,9 @@ public class AsyncEventHandler implements Schedulable {
      *  scheduler, false is returned.
      */
     public boolean addIfFeasible() {
-	if (currentScheduler == null) return false;
-	currentScheduler.addToFeasibility(this);
-	if (currentScheduler.isFeasible()) return true;
-	else {
-	    currentScheduler.removeFromFeasibility(this);
-	    return false;
-	}
+	if ((currentScheduler == null) ||
+	    (!currentScheduler.isFeasible(this, getReleaseParameters()))) return false;
+	else return addToFeasibility();
     }
 
     /** Inform the scheduler and cooperating facilities that the
@@ -308,20 +304,7 @@ public class AsyncEventHandler implements Schedulable {
 				 MemoryParameters memory,
 				 ProcessingGroupParameters group) {
 	if (currentScheduler == null) return false;
-	ReleaseParameters oldReleaseParameters = this.release;
-	MemoryParameters oldMemoryParameters = this.memParams;
-	ProcessingGroupParameters oldProcessingGroupParameters = this.group;
-	
-	setReleaseParameters(release);
-	setMemoryParameters(memory);
-	setProcessingGroupParameters(group);
-	if (currentScheduler.isFeasible()) return true;
-	else {
-	    setReleaseParameters(oldReleaseParameters);
-	    setMemoryParameters(oldMemoryParameters);
-	    setProcessingGroupParameters(oldProcessingGroupParameters);
-	    return false;
-	}
+	else return currentScheduler.setIfFeasible(this, release, memory, group);
     }
 
     /** Returns true if, after considering the values of the parameters, the
@@ -425,13 +408,16 @@ public class AsyncEventHandler implements Schedulable {
      *  only if the resulting task set is feasible.
      */
     public boolean setSchedulingParametersIfFeasible(SchedulingParameters scheduling) {
-	if (currentScheduler == null) return false;
-	SchedulingParameters old_scheduling = this.scheduling;
-	setSchedulingParameters(scheduling);
-	if (currentScheduler.isFeasible()) return true;
-	else {
-	    setSchedulingParameters(old_scheduling);
-	    return false;
-	}
+	// How do scheduling parameters affect the feasibility of the task set?
+	this.scheduling = scheduling;
+	return true;
+// 	if (currentScheduler == null) return false;
+// 	SchedulingParameters old_scheduling = this.scheduling;
+// 	setSchedulingParameters(scheduling);
+// 	if (currentScheduler.isFeasible()) return true;
+// 	else {
+// 	    setSchedulingParameters(old_scheduling);
+// 	    return false;
+// 	}
     }
 }

@@ -25,6 +25,11 @@ public class ReleaseParameters {
     LinkedList schList = new LinkedList();
     
     protected ReleaseParameters() {}
+
+    /** Makes a copy of the argument. */
+    protected ReleaseParameters(ReleaseParameters release) {
+	this(release.cost, release.deadline, release.overrunHandler, release.missHandler);
+    }
     
     protected ReleaseParameters(RelativeTime cost, RelativeTime deadline,
 				AsyncEventHandler overrunHandler,

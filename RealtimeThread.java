@@ -171,13 +171,9 @@ public class RealtimeThread extends Thread implements Schedulable {
      *  feasibility set is schedulable. If successful return true, if not
      *  return false. If there is not an assigned scheduler it will return false. */
     public boolean addIfFeasible() {
-	if (currentScheduler == null) return false;
-	currentScheduler.addToFeasibility(this);
-	if (currentScheduler.isFeasible()) return true;
-	else {
-	    currentScheduler.removeFromFeasibility(this);
-	    return false;
-	}
+	if ((currentScheduler == null) ||
+	    (!currentScheduler.isFeasible(this, getReleaseParameters()))) return false;
+	else return addToFeasibility();
     }
 
     /** Inform the scheduler and cooperating facilities that the resource
@@ -333,20 +329,7 @@ public class RealtimeThread extends Thread implements Schedulable {
     public boolean setIfFeasible(ReleaseParameters release, MemoryParameters memory,
 				 ProcessingGroupParameters group) {
 	if (currentScheduler == null) return false;
-	ReleaseParameters oldReleaseParameters = releaseParameters;
-	MemoryParameters oldMemoryParameters = memoryParameters;
-	ProcessingGroupParameters oldProcessingGroupParameters = processingGroupParameters;
-
-	setReleaseParameters(release);
-	setMemoryParameters(memory);
-	setProcessingGroupParameters(group);
-	if (currentScheduler.isFeasible()) return true;
-	else {
-	    setReleaseParameters(oldReleaseParameters);
-	    setMemoryParameters(oldMemoryParameters);
-	    setProcessingGroupParameters(oldProcessingGroupParameters);
-	    return false;
-	}
+	else return currentScheduler.setIfFeasible(this, release, memory, group);
     }
 
     /** Returns true if, after considering the values of the parameters, the task set
@@ -439,14 +422,17 @@ public class RealtimeThread extends Thread implements Schedulable {
      *  would not be feasible. In this case the values of the parameters are not changed.
      */
     public boolean setSchedulingParametersIfFeasible(SchedulingParameters scheduling) {
-	if (currentScheduler == null) return false;
-	SchedulingParameters oldSchedulingParameters = schedulingParameters;
-	schedulingParameters = scheduling;
-	if (currentScheduler.isFeasible()) return true;
-	else {
-	    schedulingParameters = oldSchedulingParameters;
-	    return false;
-	}
+	//How do scheduling parameters affect the feasibility of the task set?
+	this.schedulingParameters = scheduling;
+	return true;
+// 	if (currentScheduler == null) return false;
+// 	SchedulingParameters oldSchedulingParameters = schedulingParameters;
+// 	schedulingParameters = scheduling;
+// 	if (currentScheduler.isFeasible()) return true;
+// 	else {
+// 	    schedulingParameters = oldSchedulingParameters;
+// 	    return false;
+// 	}
     }
 
     /** An accurate timer with nanoseconds granularity. The actual resolution
@@ -527,13 +513,19 @@ public class RealtimeThread extends Thread implements Schedulable {
 	return false;
     }
 
-    // Not in specs, but needed for methods in specs
+    /** Informs <code>ReleaseParameters, ProcessingGroupParameters</code> and
+     *  <code>MemoryParameters</code> that <code>this</code> has them as its parameters.
+     */
     public void bindSchedulable() {
 	releaseParameters.bindSchedulable(this);
 	processingGroupParameters.bindSchedulable(this);
 	memoryParameters.bindSchedulable(this);
     }
 
+    /** Informs <code>ReleaseParameters, ProcessingGroupParameters</code> and
+     *  <code>MemoryParameters</code> that <code>this</code> does not have them
+     *  any longer as its parameters.
+     */
     public void unbindSchedulable() {
 	releaseParameters.unbindSchedulable(this);
 	processingGroupParameters.unbindSchedulable(this);
