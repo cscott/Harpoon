@@ -1,8 +1,8 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.113 1999-09-03 07:48:03 cananian Exp $
+% $Id: thesis.tex,v 1.114 1999-09-03 19:04:12 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
-\usepackage[light,first,bottomafter]{draftcopy}
+%\usepackage[light,first,bottomafter]{draftcopy}
 % fonts
 \usepackage{beton}\usepackage{euler}
 %\usepackage{pdffonts}\usepackage{euler}
@@ -14,7 +14,7 @@
 \usepackage{graphicx} % for SCC bargraph
 % common definitions
 \usepackage{comdef}
-\newcommand*{\figscale}{1.0}
+\newcommand{\figscale}{1.0}
 
 %setup varioref package
 \renewcommand{\reftextbefore}{on the preceding page}\vrefwarning
@@ -43,14 +43,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.113 $ $}
+\date{\today \\ \ignore{$ $Revision: 1.114 $ $}}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.113 $ $}{$ $Revision: 1.113 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.114 $ $}{$ $Revision: 1.114 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -730,7 +730,7 @@ properly attribute the cycle-equivalency properties of $n'$ to $n$
 later.
 \begin{myfigure}
 \begin{center}
-\renewcommand*{\figscale}{0.5}\input{Figures/THundir}
+\renewcommand{\figscale}{0.5}\input{Figures/THundir}
 \end{center}
 \caption{Transformation from directed to undirected graph
 	 (from \cite{johnson93:sese}).}
@@ -805,8 +805,8 @@ Figure~\ref{fig:CQdata} can be completed in constant time (and
 \caption{Computing nested SESE regions and the PST.}
 \label{alg:SESEalg}\end{myalgorithm}
 \begin{myfigure}\centering
-\vertcenter{\renewcommand*{\figscale}{0.5}\input{Figures/THcqex}}\hspace{1cm}
-\vertcenter{\renewcommand*{\figscale}{0.7}\input{Figures/THpst}}
+\vertcenter{\renewcommand{\figscale}{0.5}\input{Figures/THcqex}}\hspace{1cm}
+\vertcenter{\renewcommand{\figscale}{0.7}\input{Figures/THpst}}
 \caption{SESE regions and PST for the CFG of
          Figure~\ref{fig:CQex} (from \cite{johnson94:pst}).}
 \label{fig:SESEex}\end{myfigure}
@@ -963,7 +963,7 @@ Our algorithm also allows us to do pre-pruning of the SSI
 form during placement.  The result is not pruned SSI, but contains a
 tight superset of the \phisigfunction{s} that pruned form requires.
 \begin{myfigure}
-\centering\renewcommand*{\figscale}{0.30}\input{Figures/THmorephi}
+\centering\renewcommand{\figscale}{0.30}\input{Figures/THmorephi}
 \caption{An flowgraph where Algorithm~\ref{alg:SSIplace} places
 \phifunction{s} conservatively.}\label{fig:placeerror}
 \end{myfigure}
@@ -1393,7 +1393,7 @@ terminates in one pass.\dontfixme{Are we \emph{sure} similar worst cases
 don't exist for the pessimistic algorithm?}
 
 \begin{myfigure}[t]
-\centering\renewcommand*{\figscale}{0.25}\input{Figures/evil}
+\centering\renewcommand{\figscale}{0.25}\input{Figures/evil}
 \caption{A worst-case CFG for ``optimistic'' algorithms.}
 \label{fig:evil}
 \end{myfigure}
@@ -1623,7 +1623,7 @@ form, which we will describe in section \ref{sec:sccssi}. Section
 
 \subsubsection{Wegman and Zadeck's SCC/SSA algorithm}
 \begin{myfigure}
-\centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat1}
+\centering\renewcommand{\figscale}{0.5}\input{Figures/THlat1}
 \caption[Value and executability lattices for SCC.]
 {Three-level value lattice and two-level executability lattice for SCC.}
 \label{fig:scclat1}
@@ -1743,7 +1743,7 @@ SCC/SSA: $O(E+U_{SSA})$, by the same argument as before.
 
 \subsubsection{Extending the value domain}
 \begin{myfigure}
-\centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat2}
+\centering\renewcommand{\figscale}{0.5}\input{Figures/THlat2}
 \caption{SCC value lattice extended to Java primitive value domain.}
 \label{fig:scclat2}
 \end{myfigure}
@@ -1782,12 +1782,12 @@ identical to that of the previous algorithm.
 
 \subsubsection{Type analysis}
 \begin{myfigure}[p]
-\centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat3}
+\centering\renewcommand{\figscale}{0.5}\input{Figures/THlat3}
 \caption{SCC value lattice extended with type information.}
 \label{fig:scclat3}
 \end{myfigure}
 \begin{myfigure}[p]
-\centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat4}
+\centering\renewcommand{\figscale}{0.5}\input{Figures/THlat4}
 \caption{``Typed'' category of Figure~\ref{fig:scclat3} shown expanded.}
 \label{fig:scclat4}
 \end{myfigure}
@@ -1887,7 +1887,7 @@ satisfactory treatment.
 
 \subsubsection{Addressing array-bounds and null-pointer checks}
 \begin{myfigure}
-\centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat5}
+\centering\renewcommand{\figscale}{0.5}\input{Figures/THlat5}
 \caption{Value lattice extended with array and null information.}
 \label{fig:scclat5}
 \end{myfigure}
@@ -1991,7 +1991,7 @@ scope of this work.  Future work will use induction variable analysis
 and integrate an existing integer linear programming approach
 \cite{rugina99:divide} to fully address array-bounds checks.
 \begin{myfigure}[t]
-\centering\renewcommand*{\figscale}{0.6}\input{Figures/THlat6}
+\centering\renewcommand{\figscale}{0.6}\input{Figures/THlat6}
 \caption[An integer lattice for signed integers.]
 {An integer lattice for signed integers. A classification into
 negative (M), positive (P), or zero (Z) is grafted onto the standard
