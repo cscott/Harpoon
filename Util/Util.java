@@ -20,7 +20,7 @@ import harpoon.IR.Quads.HEADER;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.14.2.2 2002-03-04 19:10:56 cananian Exp $
+ * @version $Id: Util.java,v 1.14.2.3 2002-04-07 20:47:37 cananian Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -423,8 +423,8 @@ public abstract class Util {
   }
 
   /** Computes the difference of two sets: <code>a-b</code>. */
-  public static final Set set_diff(final Set a, final Set b) {
-    Set diff = new HashSet(a);
+  public static final <A,B> Set<A> set_diff(final Set<A> a, final Set<B> b) {
+    Set<A> diff = new HashSet<A>(a);
     diff.removeAll(b);
     return diff;
   }
