@@ -3,10 +3,11 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
+import harpoon.Util.Util;
+import harpoon.Util.ArrayFactory;
+
 import java.lang.reflect.Modifier;
 import java.util.Hashtable;
-import harpoon.Util.Util;
-
 /**
  * An <code>HMethod</code> provides information about, and access to, a 
  * single method on a class or interface.  The reflected method
@@ -14,7 +15,7 @@ import harpoon.Util.Util;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30 1998-11-10 00:44:38 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30.2.1 1998-11-30 21:21:01 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -161,7 +162,7 @@ public abstract class HMethod implements HMember {
    * of length 0 is the underlying method takes no parameters.
    */
   public HClass[] getParameterTypes() {
-    return HClass.copy(parameterTypes);
+    return (HClass[]) Util.safeCopy(HClass.arrayFactory, parameterTypes);
   }
 
   /**
@@ -173,7 +174,9 @@ public abstract class HMethod implements HMember {
    * <code>null</code>.
    */
   public String[] getParameterNames() {
-    return (String[]) Util.copy(parameterNames);
+    return (String[]) Util.safeCopy(new ArrayFactory() {
+      public Object[] newArray(int len) { return new String[len]; }
+    }, parameterNames);
   }
 
   /**
@@ -183,7 +186,7 @@ public abstract class HMethod implements HMember {
    * of length 0 if the method throws no checked exceptions.
    */
   public HClass[] getExceptionTypes() {
-    return HClass.copy(exceptionTypes);
+    return (HClass[]) Util.safeCopy(HClass.arrayFactory, exceptionTypes);
   }
 
   /**
@@ -289,12 +292,11 @@ public abstract class HMethod implements HMember {
     return HField.getTypeName(hc);
   }
 
-  static HMethod[] copy(HMethod[] src) {
-    if (src.length==0) return src;
-    HMethod[] dst = new HMethod[src.length];
-    System.arraycopy(src,0,dst,0,src.length);
-    return dst;
-  }
+  /** Array factory: returns new <code>HMethod[]</code>. */
+  public static final ArrayFactory arrayFactory =
+    new ArrayFactory() {
+      public Object[] newArray(int len) { return new HMethod[len]; }
+    };
 }
 
 // set emacs indentation style.

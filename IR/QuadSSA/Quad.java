@@ -4,9 +4,10 @@
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
-import harpoon.Util.Util;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
+import harpoon.Util.ArrayFactory;
 
 import java.util.Hashtable;
 /**
@@ -14,7 +15,7 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.29 1998-11-10 03:34:11 cananian Exp $
+ * @version $Id: Quad.java,v 1.29.2.1 1998-11-30 21:21:03 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -71,6 +72,13 @@ public abstract class Quad
     public Temp[] def() { return new Temp[0]; }
 
     /*----------------------------------------------------------*/
+    /** Array factory: returns <code>Quad[]</code>s */
+    public static final ArrayFactory arrayFactory =
+	new ArrayFactory() {
+	    public Object[] newArray(int len) { return new Quad[len]; }
+	};
+
+    /*----------------------------------------------------------*/
     // Graph structure.
     // Can modify links, but not *number of links*.
     Edge next[], prev[];
@@ -98,9 +106,11 @@ public abstract class Quad
     }
     
     /** Returns an array containing all the outgoing edges from this quad. */
-    public Edge[] nextEdge() { return (Edge[]) Util.copy(next); }
+    public Edge[] nextEdge() 
+    { return (Edge[]) Util.safeCopy(Edge.arrayFactory, next); }
     /** Returns an array containing all the incoming edges of this quad. */
-    public Edge[] prevEdge() { return (Edge[]) Util.copy(prev); }
+    public Edge[] prevEdge() 
+    { return (Edge[]) Util.safeCopy(Edge.arrayFactory, prev); }
     /** Returns the <code>i</code>th outgoing edge for this quad. */
     public Edge nextEdge(int i) { return next[i]; }
     /** Returns the <code>i</code>th incoming edge of this quad. */

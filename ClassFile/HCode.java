@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
+import harpoon.Util.ArrayFactory;
+
 import java.util.Enumeration;
 /**
  * <code>HCode</code> is an abstract class that all views of a particular
@@ -11,7 +13,7 @@ import java.util.Enumeration;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.12 1998-11-10 03:31:38 cananian Exp $
+ * @version $Id: HCode.java,v 1.12.2.1 1998-11-30 21:21:01 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
@@ -60,6 +62,12 @@ public abstract class HCode {
    *         is not applicable.
    */
   public HCodeElement[] getLeafElements() { return null; }
+
+  /**
+   * Return an <code>ArrayFactory</code> for the <code>HCodeElement</code>s
+   * composing this <code>HCode</code>.
+   */
+  public abstract ArrayFactory elementArrayFactory();
 
   /**
    * Clone this HCode, possibly moving it to a different method.

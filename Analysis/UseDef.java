@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.10 1998-10-11 02:36:59 cananian Exp $
+ * @version $Id: UseDef.java,v 1.10.2.1 1998-11-30 21:21:00 cananian Exp $
  */
 
 public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
@@ -107,7 +107,7 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	HCodeElement[] r = (HCodeElement[]) defMap.get(t);
 	return (r == null) ? 
 	    new HCodeElement[0] : 
-	    (HCodeElement[]) Util.copy(r);
+	    (HCodeElement[]) Util.safeCopy(hc.elementArrayFactory(), r);
     }
     /** Enumerate the HCodeElements which define a given Temp. */
     public Enumeration defMapE(HCode hc, Temp t) {
@@ -120,7 +120,7 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	HCodeElement[] r = (HCodeElement[]) useMap.get(t);
 	return (r == null) ? 
 	    new HCodeElement[0] : 
-	    (HCodeElement[]) Util.copy(r);
+	    (HCodeElement[]) Util.safeCopy(hc.elementArrayFactory(), r);
     }
     /** Enumerate the HCodeElements which use a given Temp. */
     public Enumeration useMapE(HCode hc, Temp t) {
@@ -131,7 +131,7 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
     public Temp[] allDefs(HCode hc) {
 	analyze(hc);
 	allTempList atl = (allTempList) analyzed.get(hc);
-	return (Temp[]) Util.copy(atl.defined);
+	return (Temp[]) Util.safeCopy(Temp.arrayFactory, atl.defined);
     }
     /** Return an Enumeration of all Temps defined in a given HCode. */
     public Enumeration allDefsE(HCode hc) {
@@ -143,7 +143,7 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
     public Temp[] allUses(HCode hc) {
 	analyze(hc);
 	allTempList atl = (allTempList) analyzed.get(hc);
-	return (Temp[]) Util.copy(atl.used);
+	return (Temp[]) Util.safeCopy(Temp.arrayFactory, atl.used);
     }
     /** Return an Enumeration of all Temps used in a given HCode. */
     public Enumeration allUsesE(HCode hc) {
@@ -155,7 +155,7 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
     public Temp[] allTemps(HCode hc) {
 	analyze(hc);
 	allTempList atl = (allTempList) analyzed.get(hc);
-	return (Temp[]) Util.copy(atl.all);
+	return (Temp[]) Util.safeCopy(Temp.arrayFactory, atl.all);
     }
     /** Return an Enumeration of all Temps used or defined in a given HCode. */
     public Enumeration allTempsE(HCode hc) {

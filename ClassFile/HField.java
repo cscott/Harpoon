@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
+import harpoon.Util.ArrayFactory;
+
 import java.lang.reflect.Modifier;
 
 /**
@@ -11,7 +13,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.15.2.1 1998-11-22 02:35:34 cananian Exp $
+ * @version $Id: HField.java,v 1.15.2.2 1998-11-30 21:21:01 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -179,12 +181,11 @@ public abstract class HField implements HMember {
     return hc.getName();
   }
   
-  static HField[] copy(HField[] src) {
-    if (src.length==0) return src;
-    HField[] dst = new HField[src.length];
-    System.arraycopy(src,0,dst,0,src.length);
-    return dst;
-  }
+  /** Array factory: returns new <code>HField[]</code>. */
+  public static final ArrayFactory arrayFactory =
+    new ArrayFactory() {
+      public Object[] newArray(int len) { return new HField[len]; }
+    };
 }
 // set emacs indentation style.
 // Local Variables:

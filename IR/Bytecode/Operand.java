@@ -4,13 +4,14 @@
 package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
+import harpoon.Util.ArrayFactory;
 
 /**
  * <code>Operand</code> represents the operands of a java bytecode
  * instruction.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Operand.java,v 1.2 1998-10-11 03:01:17 cananian Exp $
+ * @version $Id: Operand.java,v 1.2.2.1 1998-11-30 21:21:02 cananian Exp $
  * @see Instr
  * @see InGen
  * @see OpConstant
@@ -22,4 +23,10 @@ import harpoon.ClassFile.*;
 public abstract class Operand {
   /** Return a human-readable representation of this Operand. */
   public abstract String toString(); // force a reimplementation.
+
+  /** Array factory: returns new <code>Operand[]</code>. */
+  public static final ArrayFactory arrayFactory =
+    new ArrayFactory() {
+      public Object[] newArray(int len) { return new Operand[len]; }
+    };
 }

@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
+import harpoon.Util.Util;
+
 import java.lang.reflect.Modifier;
 
 /**
@@ -13,7 +15,7 @@ import java.lang.reflect.Modifier;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassCls.java,v 1.1.2.1 1998-11-22 02:35:34 cananian Exp $
+ * @version $Id: HClassCls.java,v 1.1.2.2 1998-11-30 21:21:01 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 abstract class HClassCls extends HClass {
@@ -82,7 +84,7 @@ abstract class HClassCls extends HClass {
    * @see HField
    */
   public HField[] getDeclaredFields() {
-    return HField.copy(declaredFields);
+    return (HField[]) Util.safeCopy(HField.arrayFactory, declaredFields);
   }
 
   /**
@@ -149,7 +151,7 @@ abstract class HClassCls extends HClass {
    * @see HMethod
    */
   public HMethod[] getDeclaredMethods() {
-    return HMethod.copy(declaredMethods);
+    return (HMethod[]) Util.safeCopy(HMethod.arrayFactory, declaredMethods);
   }
 
   /**

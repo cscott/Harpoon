@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.21 1998-11-10 03:34:10 cananian Exp $
+ * @version $Id: PHI.java,v 1.21.2.1 1998-11-30 21:21:03 cananian Exp $
  */
 
 public class PHI extends Quad {
@@ -35,9 +35,10 @@ public class PHI extends Quad {
 
     /** Remove a predecessor from this phi. */
     public void remove(int which_pred) {
-	prev = (Edge[]) Util.shrink(prev, which_pred);
+	prev = (Edge[]) Util.shrink(Edge.arrayFactory, prev, which_pred);
 	for (int i=0; i<dst.length; i++)
-	    src[i] = (Temp[]) Util.shrink(src[i], which_pred);
+	    src[i] = (Temp[]) Util.shrink(Temp.arrayFactory,
+					  src[i], which_pred);
 	// fixup edges.
 	for (int i=which_pred; i<prev.length; i++)
 	    prev[i].to_index--;

@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * opcode in the raw bytecode array.
  *
  * @author  C. Scott Ananian
- * @version $Id: InGen.java,v 1.3 1998-10-11 23:36:49 cananian Exp $
+ * @version $Id: InGen.java,v 1.3.2.1 1998-11-30 21:21:02 cananian Exp $
  */
 public class InGen extends Instr {
   byte opcode;
@@ -251,7 +251,9 @@ public class InGen extends Instr {
   /** Return a specific operand of this instruction. */
   public Operand getOperand(int i) { return operands[i]; }
   /** Get all the operands of this instruction. */
-  public Operand[] getOperands() { return (Operand[]) Util.copy(operands); }
+  public Operand[] getOperands() { 
+    return (Operand[]) Util.safeCopy(Operand.arrayFactory, operands);
+  }
 
   // provide run-time checks on arity.
   /** @see Instr#addPrev */

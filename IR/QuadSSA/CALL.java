@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * receiver reference is <code>null</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.27.2.1 1998-11-30 20:38:29 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.27.2.2 1998-11-30 21:21:02 cananian Exp $ 
  */
 
 public class CALL extends Quad {
@@ -77,7 +77,7 @@ public class CALL extends Quad {
      * @return the <code>params</code> array.
      */
     public Temp[] use() {
-	return (Temp[]) Util.copy(params);
+	return (Temp[]) Util.safeCopy(Temp.arrayFactory, params);
     }
     /** Returns all the Temps defined by this Quad. 
      * @return { retval, retex }, if retval!=null; else { retex }

@@ -20,7 +20,7 @@ import java.util.Hashtable;
  * unused and seeks to prove otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.11 1998-10-11 02:37:07 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.11.2.1 1998-11-30 21:21:00 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -108,8 +108,10 @@ public abstract class DeadCode  {
 		for (int i=0; i < q.dst.length; i++) {
 		    if (useful.contains(q.dst[i])) continue;
 		    // shrink the phi! (secret headhunter's ritual)
-		    q.dst = (Temp[])   Util.shrink(q.dst, i);
-		    q.src = (Temp[][]) Util.shrink(q.src, i);
+		    q.dst = (Temp[])   Util.shrink(Temp.arrayFactory,
+						   q.dst, i);
+		    q.src = (Temp[][]) Util.shrink(Temp.doubleArrayFactory,
+						   q.src, i);
 		    // decrement i so we're at the right place still;
 		    i--;
 		}
@@ -124,8 +126,10 @@ public abstract class DeadCode  {
 		    if (useful.contains(q.dst[i][j])) continue L1;
 		// safe to delete. ERASER MAN appears.
 		// shrink the sigma function in our secret laboratory.
-		q.dst = (Temp[][]) Util.shrink(q.dst, i);
-		q.src = (Temp[])   Util.shrink(q.src, i);
+		q.dst = (Temp[][]) Util.shrink(Temp.doubleArrayFactory,
+					       q.dst, i);
+		q.src = (Temp[])   Util.shrink(Temp.arrayFactory,
+					       q.src, i);
 		// decrement index to keep us steady.
 		i--;
 	    }

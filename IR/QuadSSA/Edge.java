@@ -4,6 +4,7 @@
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
+import harpoon.Util.ArrayFactory;
 /**
  * <code>Edge</code> objects connect <code>Quad</code> nodes in the
  * control-flow graph.  The <code>hashCode</code> and <code>equals</code>
@@ -12,7 +13,7 @@ import harpoon.ClassFile.*;
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.5 1998-10-11 02:37:56 cananian Exp $
+ * @version $Id: Edge.java,v 1.5.2.1 1998-11-30 21:21:02 cananian Exp $
  */
 
 public class Edge implements HCodeEdge {
@@ -38,6 +39,12 @@ public class Edge implements HCodeEdge {
      *  <code>this.from().nextEdge(this.which_succ()) == this</code>. */
     public int which_succ() { return from_index; }
 
+    /** Array factory: returns new <code>Edge[]</code>. */
+    public static final ArrayFactory arrayFactory =
+	new ArrayFactory() {
+	    public Object[] newArray(int len) { return new Edge[len]; }
+	};
+    
     /** Compares two Edges for equality. */
     public boolean equals(Object obj) {
 	if (obj instanceof Edge) {

@@ -4,6 +4,7 @@
 package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
+import harpoon.Util.ArrayFactory;
 
 import java.util.Vector;
 /**
@@ -16,7 +17,7 @@ import java.util.Vector;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.3 1998-10-11 03:01:16 cananian Exp $
+ * @version $Id: Instr.java,v 1.3.2.1 1998-11-30 21:21:02 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -49,6 +50,12 @@ public abstract class Instr
   public int getID() { return id; }
   /** Returns the java bytecode of this instruction. */
   public abstract byte getOpcode();
+
+  /** Array Factory: makes <code>Instr[]</code>s. */
+  public static final ArrayFactory arrayFactory =
+    new ArrayFactory() {
+      public Object[] newArray(int len) { return new Instr[len]; }
+    };
 
   /** Return a list of all the <code>Instr</code>s that can precede
    *  this one. */

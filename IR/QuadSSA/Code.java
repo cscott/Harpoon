@@ -7,6 +7,7 @@ import harpoon.Analysis.QuadSSA.DeadCode;
 import harpoon.ClassFile.*;
 import harpoon.Util.Set;
 import harpoon.Util.Util;
+import harpoon.Util.ArrayFactory;
 
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
@@ -21,7 +22,7 @@ import java.util.Vector;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.31 1998-11-10 03:35:09 cananian Exp $
+ * @version $Id: Code.java,v 1.31.2.1 1998-11-30 21:21:02 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -144,4 +145,6 @@ public class Code extends HCode {
 	    }
 	};
     }
+    // implement elementArrayFactory which returns Quad[]s.
+    public ArrayFactory elementArrayFactory() { return Quad.arrayFactory; }
 }

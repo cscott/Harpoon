@@ -5,6 +5,7 @@ package harpoon.ClassFile;
 
 import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
+import harpoon.Util.ArrayFactory;
 
 import java.lang.reflect.Modifier;
 import java.io.InputStream;
@@ -28,7 +29,7 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.1 1998-11-27 03:26:42 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.2 1998-11-30 21:21:01 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public abstract class HClass {
@@ -310,7 +311,7 @@ public abstract class HClass {
 	fields = getFields(this); 
       }
     }
-    return HField.copy(fields);
+    return (HField[]) Util.safeCopy(HField.arrayFactory, fields);
   }
   HField[] fields=null;
   /* does the actual work.  Because of permissions issues, it's important
@@ -504,7 +505,7 @@ public abstract class HClass {
 	methods = getMethods(this);
       }
     }
-    return HMethod.copy(methods);
+    return (HMethod[]) Util.safeCopy(HMethod.arrayFactory, methods);
   }
   HMethod[] methods=null;
   /* does the actual work.  Because of permissions issues, it's important
@@ -585,7 +586,8 @@ public abstract class HClass {
 	    constructors[--n] = (HConstructor) hm[i];
       }
     }
-    return HConstructor.copy(constructors);
+    return (HConstructor[]) Util.safeCopy(HConstructor.arrayFactory,
+					  constructors);
   }
   HConstructor[] constructors = null;
 
@@ -937,13 +939,11 @@ public abstract class HClass {
   /** The <code>HClass</code> object representing the primitive type void.*/
   public static final HClass Void=new HClassPrimitive("void", "V");
 
-  static HClass[] copy(HClass[] src) {
-    if (src.length==0) return src;
-    HClass[] dst = new HClass[src.length];
-    System.arraycopy(src,0,dst,0,src.length);
-    return dst;
-  }
-
+  /** Array factory: returns new <Code>HClass[]</code>. */
+  public static final ArrayFactory arrayFactory =
+    new ArrayFactory() {
+      public Object[] newArray(int len) { return new HClass[len]; }
+    };
 }
 
 class HClassPrimitive extends HClass {

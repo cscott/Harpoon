@@ -4,6 +4,7 @@
 package harpoon.Temp;
 
 import java.util.Hashtable;
+import harpoon.Util.ArrayFactory;
 
 /** 
  * The <code>Temp</code> class represents a temporary
@@ -11,7 +12,7 @@ import java.util.Hashtable;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.14 1998-11-10 00:47:41 cananian Exp $
+ * @version $Id: Temp.java,v 1.14.2.1 1998-11-30 21:21:03 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
@@ -65,6 +66,19 @@ public class Temp {
    *  The hashcode is the same as the hashcode of the hashcode's name.
    */
   public int hashCode() { return name().hashCode(); }
+
+  // Array Factory interface:
+
+  /** Returns an array of <code>Temp</code>s. */
+  public static final ArrayFactory arrayFactory =
+    new ArrayFactory() {
+      public Object[] newArray(int len) { return new Temp[len]; }
+    };
+  /** Returns an array of <code>Temp[]</code>s. */
+  public static final ArrayFactory doubleArrayFactory =
+    new ArrayFactory() {
+      public Object[] newArray(int len) { return new Temp[len][]; }
+    };
 
   /** For debugging purposes: reset all temp variable counters to zero. */
   //public static void clear() { table.clear(); }

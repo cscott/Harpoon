@@ -12,6 +12,7 @@ import harpoon.ClassFile.Raw.Constant.Constant;
 import harpoon.Util.ArrayEnumerator;
 import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
+import harpoon.Util.ArrayFactory;
 
 import java.util.Vector;
 import java.util.Enumeration;
@@ -20,7 +21,7 @@ import java.util.Enumeration;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9 1998-11-10 03:32:19 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.1 1998-11-30 21:21:02 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -163,7 +164,7 @@ public class Code extends HCode {
       elements = new Instr[v.size()];
       v.copyInto(elements);
     }
-    return (HCodeElement[]) Util.copy(elements);
+    return (HCodeElement[]) Util.safeCopy(elementArrayFactory(), elements);
   }
   /** Cached value of <code>getElements</code>. */
   private HCodeElement[] elements = null;
@@ -184,9 +185,12 @@ public class Code extends HCode {
       leaves = new Instr[v.size()];
       v.copyInto(leaves);
     }
-    return (HCodeElement[]) Util.copy(leaves);
+    return (HCodeElement[]) Util.safeCopy(elementArrayFactory(), leaves);
   }
   private HCodeElement[] leaves = null;
+
+  // implement elementArrayFactory which returns Instr[]s.
+  public ArrayFactory elementArrayFactory() { return Instr.arrayFactory; }
 
   // special non-HCode-mandated access functions.
   /** Get the number of local variables used in this method, including

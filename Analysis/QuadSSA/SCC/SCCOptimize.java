@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.5 1998-10-11 02:37:08 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.5.2.1 1998-11-30 21:21:00 cananian Exp $
  */
 public class SCCOptimize {
     TypeMap  ti;
@@ -146,8 +146,10 @@ public class SCCOptimize {
 			Ee.union(q.nextEdge(0));
 			Ee.union(qq.nextEdge(0));
 			// remove phi.
-			q.dst = (Temp[])   Util.shrink(q.dst, i);
-			q.src = (Temp[][]) Util.shrink(q.src, i);
+			q.dst = (Temp[])   Util.shrink(Temp.arrayFactory, 
+						       q.dst, i);
+			q.src = (Temp[][]) Util.shrink(Temp.doubleArrayFactory,
+						       q.src, i);
 		    } else i++;
 		}
 	    } // end VISIT PHI.

@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6 1998-10-21 21:50:24 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.1 1998-11-30 21:21:01 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {
@@ -62,13 +62,15 @@ public class HClassSyn extends HClassCls {
    */
   public void addDeclaredField(HField f) {
     declaredFields = 
-      (HField[]) Util.grow(declaredFields, f, declaredFields.length);
+      (HField[]) Util.grow(HField.arrayFactory,
+			   declaredFields, f, declaredFields.length);
     fields=null; // invalidate cache.
   }
   public void removeDeclaredField(HField f) throws NoSuchFieldError {
     for (int i=0; i<declaredFields.length; i++) {
       if (declaredFields[i].equals(f)) {
-	declaredFields = (HField[]) Util.shrink(declaredFields, i);
+	declaredFields = (HField[]) Util.shrink(HField.arrayFactory,
+						declaredFields, i);
 	fields=null; // invalidate cache.
 	return;
       }
@@ -78,14 +80,16 @@ public class HClassSyn extends HClassCls {
 
   public void addDeclaredMethod(HMethod m) {
     declaredMethods = 
-      (HMethod[]) Util.grow(declaredMethods, m, declaredMethods.length);
+      (HMethod[]) Util.grow(HMethod.arrayFactory,
+			    declaredMethods, m, declaredMethods.length);
     methods=null; // invalidate cache.
     constructors=null;
   }
   public void removeDeclaredMethod(HMethod m) throws NoSuchMethodError {
     for (int i=0; i<declaredMethods.length; i++) {
       if (declaredMethods[i].equals(m)) {
-	declaredMethods = (HMethod[]) Util.shrink(declaredMethods, i);
+	declaredMethods = (HMethod[]) Util.shrink(HMethod.arrayFactory,
+						  declaredMethods, i);
 	methods=null; // invalidate cache.
 	constructors=null;
 	return;
@@ -145,12 +149,14 @@ public class HClassSyn extends HClassCls {
 
   public void addInterface(HClass in) {
     if (!in.isInterface()) throw new Error("Not an interface.");
-    interfaces = (HClass[]) Util.grow(interfaces, in, interfaces.length);
+    interfaces = (HClass[]) Util.grow(HClass.arrayFactory,
+				      interfaces, in, interfaces.length);
   }
   public void removeInterface(HClass in) throws NoClassDefFoundError {
     for (int i=0; i<interfaces.length; i++) {
       if (interfaces[i].equals(in)) {
-	interfaces = (HClass[]) Util.shrink(interfaces, i);
+	interfaces = (HClass[]) Util.shrink(HClass.arrayFactory,
+					    interfaces, i);
 	return;
       }
     }

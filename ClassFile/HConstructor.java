@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
+import harpoon.Util.ArrayFactory;
+
 import java.lang.reflect.Modifier;
 
 /**
@@ -10,7 +12,7 @@ import java.lang.reflect.Modifier;
  * constructor for a class.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructor.java,v 1.9 1998-11-10 00:44:37 cananian Exp $
+ * @version $Id: HConstructor.java,v 1.9.2.1 1998-11-30 21:21:01 cananian Exp $
  * @see HMethod
  * @see HMember
  * @see HClass
@@ -72,10 +74,9 @@ public abstract class HConstructor extends HMethod {
     return r.toString();
   }
 
-  static HConstructor[] copy(HConstructor[] src) {
-    if (src.length==0) return src;
-    HConstructor[] dst = new HConstructor[src.length];
-    System.arraycopy(src,0,dst,0,src.length);
-    return dst;
-  }
+  /** Array factory: returns new <code>HConstructor[]</code>. */
+  public static final ArrayFactory arrayFactory =
+    new ArrayFactory() {
+      public Object[] newArray(int len) { return new HConstructor[len]; }
+    };
 }

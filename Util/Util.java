@@ -7,40 +7,58 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12 1998-11-10 03:34:37 cananian Exp $
+ * @version $Id: Util.java,v 1.12.2.1 1998-11-30 21:21:03 cananian Exp $
  */
 public abstract class Util {
-  // Only static methods.
+  // Util contains only static fields and methods.
+  private static final boolean debug = true;
+
+  public static final ArrayFactory genericFactory(final Object[] src) {
+    final Class type = src.getClass().getComponentType();
+    return new ArrayFactory() {
+      public Object[] newArray(int len) {
+	return (Object[])Array.newInstance(type, len);
+      }
+    };
+  }
 
   /**
    * Copy an array type to prevent modification.  Does not bother
    * to copy array types of length 0, because they're already immutable.
+   * After code has been debugged, this method can skip the copy for
+   * efficiency.
    */
-  public static final Object[] copy(Object[] src) {
+  public static final Object[] safeCopy(ArrayFactory factory, Object[] src) {
+    if (!debug) return src;
+    else return copy(factory, src);
+  }
+    
+  /**
+   * Copy an array type to prevent modification.  Does not bother
+   * to copy array types of length 0, because they're already immutable.
+   */
+  public static final Object[] copy(ArrayFactory factory, Object[] src) {
     if (src.length==0) return src;
-    Object[] dst=(Object[])Array.newInstance(src.getClass().getComponentType(),
-					     src.length);
+    Object[] dst = factory.newArray(src.length);
     System.arraycopy(src,0,dst,0,src.length);
     return dst;
   }
   /** Remove element 'n' from array 'src'. */
-  public static final Object[] shrink(Object[] src, int n) {
+  public static final Object[] shrink(ArrayFactory factory, 
+				      Object[] src, int n) {
     Util.assert(src.length>0);
     Util.assert(n<src.length);
-    Object[] dst = 
-      (Object[]) Array.newInstance(src.getClass().getComponentType(),
-				   src.length-1);
+    Object[] dst = factory.newArray(src.length-1);
     System.arraycopy(src,   0, dst, 0, n);
     System.arraycopy(src, n+1, dst, n, src.length-(n+1));
     return dst;
   }
   /** Insert element <code>o</code> before <code>src[n]</code>. <p>
    *  After return, <code>src[n]==o</code>.  */
-  public static final Object[] grow(Object[] src, Object o, int n) {
+  public static final Object[] grow(ArrayFactory factory,
+				    Object[] src, Object o, int n) {
     Util.assert(n>=0);
-    Object[] dst = 
-      (Object[]) Array.newInstance(src.getClass().getComponentType(),
-				   src.length+1);
+    Object[] dst = factory.newArray(src.length+1);
     System.arraycopy(src, 0, dst, 0, n);
     System.arraycopy(src, n, dst, n+1, src.length-n);
     dst[n] = o;
