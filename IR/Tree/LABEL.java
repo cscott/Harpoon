@@ -16,16 +16,22 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: LABEL.java,v 1.1.2.8 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: LABEL.java,v 1.1.2.9 1999-08-26 04:23:45 cananian Exp $
  */
 public class LABEL extends Stm { 
     /** The symbolic name to define. */
     public final Label label;
+    /** Flag indicating whether the label should be exported.
+     *  Only exported labels are visible from other classes and the
+     *  runtime.  Unexported labels *may* be visible from other methods
+     *  in the same class, but are not required to be. */
+    public final boolean exported;
     /** Constructor. */
     public LABEL(TreeFactory tf, HCodeElement source,
-		 Label label) {
+		 Label label, boolean exported) {
 	super(tf, source);
 	this.label=label;
+	this.exported=exported;
 	Util.assert(label!=null);
     }
     public ExpList kids() {return null;}
@@ -35,13 +41,13 @@ public class LABEL extends Stm {
     public Stm build(ExpList kids) { return build(tf, kids); } 
 
     public Stm build(TreeFactory tf, ExpList kids) {
-	return new LABEL(tf, this, label);
+	return new LABEL(tf, this, label, exported);
     }
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new LABEL(tf, this, this.label);
+        return new LABEL(tf, this, this.label, exported);
     }
 
     public String toString() {

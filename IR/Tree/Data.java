@@ -32,7 +32,7 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.12 1999-08-25 18:02:16 duncan Exp $
+ * @version $Id: Data.java,v 1.1.2.13 1999-08-26 04:23:45 cananian Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
@@ -97,7 +97,7 @@ public class Data extends Code implements HData {
 	    }
 	}
 	iList.add(_DATA(new CONST(tf, null, 0)));
-	iList.add(0, new LABEL(tf, null, iListPtr));
+	iList.add(0, new LABEL(tf, null, iListPtr, false));
 	
 
 	// Add display to list
@@ -115,7 +115,7 @@ public class Data extends Code implements HData {
 
 	// Reverse the upward list
 	Collections.reverse(up);
-	down.add(0, new LABEL(tf,null,offm.label(cls)));
+	down.add(0, new LABEL(tf,null,offm.label(cls),true));
 
 	for (HClass sCls = cls; sCls!=null; sCls=sCls.getSuperclass()) { 
 	    HField[] hfields  = sCls.getDeclaredFields();
@@ -123,11 +123,11 @@ public class Data extends Code implements HData {
 		HField hfield = hfields[i];
 		if (hfield.isStatic()) { 
 		    if (hfield.getType().isPrimitive()) {
-			spList.add(new LABEL(tf, null, offm.label(hfield)));
+			spList.add(new LABEL(tf, null, offm.label(hfield), true));
 			spList.add(_DATA(new CONST(tf, null, 0)));
 		    }
 		    else { 
-			soList.add(new LABEL(tf, null, offm.label(hfield)));
+			soList.add(new LABEL(tf, null, offm.label(hfield), true));
 			soList.add(_DATA(new CONST(tf, null, 0)));
 		    }
 		}

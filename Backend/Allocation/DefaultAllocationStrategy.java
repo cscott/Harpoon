@@ -29,7 +29,7 @@ import java.util.List;
  * A simple-minded version of Appel's fast-allocation strategy
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.8 1999-08-09 22:04:01 duncan Exp $
+ * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.9 1999-08-26 04:23:38 cananian Exp $
  */
 public class DefaultAllocationStrategy implements AllocationStrategy {
 
@@ -60,11 +60,11 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
 	resultPtr = new TEMP(tf,src,Type.POINTER, new Temp(tf.tempFactory()));
 	tmp       = new TEMP(tf,src,Type.POINTER, new Temp(tf.tempFactory()));
 
-	l0        = new LABEL(tf, src, new Label());
-	l1        = new LABEL(tf, src, new Label());
-	l2        = new LABEL(tf, src, new Label());
-	l3        = new LABEL(tf, src, new Label());
-	l4        = new LABEL(tf, src, new Label());
+	l0        = new LABEL(tf, src, new Label(), false);
+	l1        = new LABEL(tf, src, new Label(), false);
+	l2        = new LABEL(tf, src, new Label(), false);
+	l3        = new LABEL(tf, src, new Label(), false);
+	l4        = new LABEL(tf, src, new Label(), false);
 	gc        = new NAME(tf, src, info.GC());
 	exit_oom  = new NAME(tf, src, info.exitOutOfMemory());
       

@@ -63,7 +63,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.35 1999-08-16 23:48:04 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.36 1999-08-26 04:23:45 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -273,9 +273,9 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	TEMP[]  arrayRefs     = new TEMP[q.dimsLength()];
 	TEMP[]  inductionVars = new TEMP[q.dimsLength()];
 	for (int i=0; i<q.dimsLength(); i++) { 
-	    loopHeaders[i]   = new LABEL(m_tf, q, new Label());
-	    loopMid[i]       = new LABEL(m_tf, q, new Label());
-	    loopFooters[i]   = new LABEL(m_tf, q, new Label());
+	    loopHeaders[i]   = new LABEL(m_tf, q, new Label(), false);
+	    loopMid[i]       = new LABEL(m_tf, q, new Label(), false);
+	    loopFooters[i]   = new LABEL(m_tf, q, new Label(), false);
 	    arrayDims[i+1]   = _TEMP(q.dims(i), q);
 	    arrayRefs[i]     = extra(q, Type.POINTER);
 	    inductionVars[i] = extra(q, Type.INT);
@@ -581,7 +581,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    qNext  = q.next(i); 
 	    Util.assert(qNext instanceof harpoon.IR.Quads.LABEL);
 
-	    lNext  = new LABEL(m_tf, q, new Label());
+	    lNext  = new LABEL(m_tf, q, new Label(), false);
 	    branch = new CJUMP
 		(m_tf, q, new BINOP(m_tf, q, Type.LONG, Bop.CMPEQ, 
 				    discriminant, 
@@ -909,7 +909,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
     private LABEL _LABEL(String label, HCodeElement src) { 
 	if (!m_labels.containsKey(label))
 	    m_labels.put(label, new Label());
-	return new LABEL(m_tf, src, (Label)m_labels.get(label));
+	return new LABEL(m_tf, src, (Label)m_labels.get(label), false);
     }
 
     private LABEL _LABEL(harpoon.IR.Quads.LABEL label) { 
@@ -917,7 +917,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
     }
 
     private LABEL _LABEL(LABEL label) { 
-	return new LABEL(m_tf, label, label.label);
+	return new LABEL(m_tf, label, label.label, label.exported);
     }
 
     private TEMP _TEMP(TEMP t) { 
@@ -1070,7 +1070,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	     (m_tf,null,_LABEL(str+"CA",null).label)),u,d);
 	
 	Collections.reverse(u);
-	u.add(0, new LABEL(m_tf, null, m_offm.label(str)));
+	u.add(0, new LABEL(m_tf, null, m_offm.label(str), true));
 	u.add(0, new SEGMENT(m_tf, null, SEGMENT.STRING_CONSTANTS));
 	stms.addAll(u);
 	stms.addAll(d);
@@ -1159,9 +1159,9 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	}
 	else {
 	    Util.assert(TYPE(q,src)==Type.POINTER);
-	    LABEL isNonNull = new LABEL(m_tf, q, new Label());
-	    LABEL isNull    = new LABEL(m_tf, q, new Label());
-	    LABEL end       = new LABEL(m_tf, q, new Label());
+	    LABEL isNonNull = new LABEL(m_tf, q, new Label(), false);
+	    LABEL isNull    = new LABEL(m_tf, q, new Label(), false);
+	    LABEL end       = new LABEL(m_tf, q, new Label(), false);
 
 	    return new ESEQ
 		(m_tf, q, 
@@ -1249,11 +1249,11 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 
 	// FIXME: add deriv info 
 
-	LABEL endLabel      = new LABEL(m_tf, classPtr, new Label());
-	LABEL loop          = new LABEL(m_tf, classPtr, new Label());
-	LABEL next          = new LABEL(m_tf, classPtr, new Label());
-	LABEL successLabel  = new LABEL(m_tf, classPtr, new Label());
-	LABEL failureLabel  = new LABEL(m_tf, classPtr, new Label());
+	LABEL endLabel      = new LABEL(m_tf, classPtr, new Label(), false);
+	LABEL loop          = new LABEL(m_tf, classPtr, new Label(), false);
+	LABEL next          = new LABEL(m_tf, classPtr, new Label(), false);
+	LABEL successLabel  = new LABEL(m_tf, classPtr, new Label(), false);
+	LABEL failureLabel  = new LABEL(m_tf, classPtr, new Label(), false);
 	
 	return new ESEQ
 	    (m_tf, classPtr, 
