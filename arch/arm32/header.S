@@ -1,5 +1,17 @@
 /* mark segment beginnings */
+#include <config.h>
 #include "segments.h"
+
+/* quickie convenience macro for tracking down memory errors in
+ * FLEX-generated code. */
+.macro MEMORY_DEBUG
+#if defined(DEBUG) && defined(WITH_DMALLOC)
+	stmfd sp!, {r0, r1, r2, r3}
+	mov r0, #0
+	bl _dmalloc_verify
+	ldmfd sp!, {r0, r1, r2, r3}
+#endif /* DEBUG && WITH_DMALLOC */
+.endm
 
 	GC_SEGMENT
 	.align 4
