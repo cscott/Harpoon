@@ -19,7 +19,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.16 1999-08-04 05:52:29 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.17 1999-08-04 15:32:49 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -194,12 +194,8 @@ final class UnHandler {
 	final void fixup(QuadFactory qf, HEADER newQh,
 			 QuadMap qm, Temp Textra, CloningTempMap ctm) {
 	    METHOD newQm = (METHOD) newQh.next(1);
-	    // first attach throws to footer.
-	    FOOTER oldQf = (FOOTER) newQh.next(0); int j=oldQf.arity();
-	    FOOTER newQf = oldQf.resize(j + Vthrows.size());
-	    for (Iterator e=Vthrows.iterator(); e.hasNext(); )
-		Quad.addEdge((THROW)e.next(), 0, newQf, j++);
-	    // now share exception-generation code
+
+	    // share exception-generation code
 	    for (Iterator it=Hehs.values().iterator(); it.hasNext(); ) {
 		List l = (List) it.next();
 		if (l.size() < 2) continue; // no fixup necessary.
@@ -229,8 +225,8 @@ final class UnHandler {
 		for (Iterator ee=hs.iterator(); ee.hasNext(); ) {
 		    HANDLER h = (HANDLER)ee.next();
 		    HClass HCex = h.caughtException();
-		    if (HCex==null || !ee.hasNext()) {
-			// catch 'any' or last catch
+		    if (HCex==null) {
+			// catch 'any'
 			NOP q0 = new NOP(qf, h);
 			Quad.addEdge(head, which_succ, q0, 0);
 			register(q0, h);
@@ -245,8 +241,19 @@ final class UnHandler {
 			head = q1; which_succ = 0;
 			register(q2, h);
 		    }
+		    if (!ee.hasNext()) { // last handler; deal with uncaught
+			THROW q0 = new THROW(qf, h, Tex);
+			Quad.addEdge(head, which_succ, q0, 0);
+			register(q0);
+		    }
 		} // end 'for each handler in handler set'
 	    } // end 'for each handler set'
+
+	    // attach end-of-the-line throws to footer.
+	    FOOTER oldQf = (FOOTER) newQh.next(0); int j=oldQf.arity();
+	    FOOTER newQf = oldQf.resize(j + Vthrows.size());
+	    for (Iterator e=Vthrows.iterator(); e.hasNext(); )
+		Quad.addEdge((THROW)e.next(), 0, newQf, j++);
 
 	    // FINALLY link to handlers
 	    for (Iterator e=Hhandler.keySet().iterator(); e.hasNext(); ) {
