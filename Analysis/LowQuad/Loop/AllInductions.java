@@ -21,7 +21,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.1.2.3 1999-06-29 17:46:44 bdemsky Exp $
+ * @version $Id: AllInductions.java,v 1.1.2.4 1999-07-12 16:42:44 bdemsky Exp $
  */
 public class AllInductions {
     TempMap tm;
@@ -99,7 +99,7 @@ public class AllInductions {
 		Util.assert(tmp.pointerindex==false);
 
 		//*********
-		inductions.put(q.dst(), new Induction(tmp.variable,tmp.offset,tmp.intmultiplier,q.arrayType(),tmp.pointeroffset));
+		inductions.put(q.dst(), new Induction(tmp,q.arrayType()));
 
 	    } else
 		changed=false;
@@ -131,7 +131,7 @@ public class AllInductions {
 		    Induction tmp=new Induction((Induction)inductions.get(tm.tempMap(q.operands(index))));
 		    for (int i=0;i<q.operandsLength();i++) {
 			if (i!=index)
-			    tmp.pointeroffset.add(tm.tempMap(q.operands(i)));
+			    tmp.padd(tm.tempMap(q.operands(i)));
 		    }
 		    inductions.put(q.dst(),tmp);
 		} else
@@ -151,18 +151,23 @@ public class AllInductions {
 			index=i;
 			invar++;
 		    }
-		    else
-			((Quad)ud.defMap(hc,t)[0]).visit(visitor);
 		}
 		//Need one induction variable and constants
-		if ((invar==1)&&visitor.resetstatus()) {
+		if (invar==1) {
 		    changed=true;
 		    //*****************
 		    Induction tmp=new Induction((Induction)inductions.get(tm.tempMap(q.operands(index))));
 		    for (int i=0;i<q.operandsLength();i++)
-			if (i!=index)
-			    tmp.offset+=
-				((Integer)(((CONST)ud.defMap(hc,tm.tempMap(q.operands(i)))[0]).value())).intValue();
+			if (i!=index) {
+			    Temp t=tm.tempMap(q.operands(i));
+			    visitor.reset();
+			    ((Quad)ud.defMap(hc,t)[0]).visit(visitor);
+			    if (visitor.resetstatus())
+				tmp=tmp.add
+				    (((Integer)(((CONST)ud.defMap(hc,t)[0]).value())).intValue());
+			    else
+				tmp=tmp.add(tm.tempMap(q.operands(i)));
+			}
 		    inductions.put(q.dst(),tmp);
 		} else
 		    changed=false;
@@ -182,20 +187,22 @@ public class AllInductions {
 			index=i;
 			invar++;
 		    }
-		    else
-			((Quad)ud.defMap(hc,t)[0]).visit(visitor);
 		}
 		//Need one induction variable and constants
-		if ((invar==1)&&visitor.resetstatus()) {
+		if ((invar==1)) {
 		    changed=true;
 		    //*****************
 		    Induction tmp=new Induction((Induction)inductions.get(tm.tempMap(q.operands(index))));
 		    for (int i=0;i<q.operandsLength();i++)
 			if (i!=index) {
-			    int mult=
-				((Integer)((CONST)ud.defMap(hc,tm.tempMap(q.operands(i)))[0]).value()).intValue();
-			    tmp.offset*=mult;
-			    tmp.intmultiplier*=mult;
+			    Temp t=tm.tempMap(q.operands(i));
+			    visitor.reset();
+			    ((Quad)ud.defMap(hc,t)[0]).visit(visitor);
+			    if (visitor.resetstatus())
+				tmp=tmp.multiply(
+						 ((Integer)((CONST)ud.defMap(hc,t)[0]).value()).intValue());
+			    else
+				tmp=tmp.multiply(tm.tempMap(q.operands(i)));
 			}
 		    inductions.put(q.dst(),tmp);
 		} else
@@ -209,8 +216,7 @@ public class AllInductions {
 		if (inductions.containsKey(tm.tempMap(q.operands(0)))) {
 		    changed=true;
 		    //****************
-		    Induction tmp=new Induction((Induction)inductions.get(tm.tempMap(q.operands(0))));
-		    tmp.intmultiplier=-tmp.intmultiplier;
+		    Induction tmp=((Induction)inductions.get(tm.tempMap(q.operands(0)))).negate();
 		    inductions.put(q.dst(),tmp);
 		} else
 		    changed=false;
@@ -244,11 +250,4 @@ public class AllInductions {
 	public void visit(CONST q) {
 	}
     }
-
 }
-
-
-
-
-
-

@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>BasicInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInductions.java,v 1.1.2.1 1999-06-29 18:52:30 bdemsky Exp $
+ * @version $Id: BasicInductions.java,v 1.1.2.2 1999-07-12 16:42:45 bdemsky Exp $
  */
 public class BasicInductions {
     HCode hc;
@@ -159,7 +159,7 @@ public class BasicInductions {
 	    if (basicinduction&&(phi!=null)&&tous) {
 		Induction tmp;
 		if (addp.contains(q)) 
-		    tmp=new Induction(phi.dst(k),null,1);
+		    tmp=new Induction(phi.dst(k),null,true);
 		    else
 		    tmp=new Induction(phi.dst(k),0,1);
        		basicinductions.put(phi.dst(k),tmp);
