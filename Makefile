@@ -40,6 +40,7 @@ RELEASE=$(SOURCES) README BUILDING COPYING CREDITS Makefile $(IMAGES) $(DSOURCES
 RELEASE += $(BISOURCES) $(MANIFEST) $(SCRIPTS)
 EVENTDIRS=com TimeBase RtecBase RtecDefaultEventData RtecEventChannelAdmin RtecEventComm RtecScheduler
 JDIRS=imagerec FrameManip omg ATRManip quo rss HTTPClient demo java_cup org ipaq
+ZDIRS=edu
 
 # figure out what the current CVS branch is, by looking at the Makefile
 CVS_TAG=$(firstword $(shell cvs status Makefile | grep -v "(none)" | \
@@ -105,10 +106,8 @@ all:    clean doc imagerec.jar # imagerec.tgz
 
 clean:
 	@echo Cleaning up docs and jars.
-	@rm -rf doc $(JDIRS) $(EVENTDIRS) META-INF
-	@rm -f *.jar *.jar.TIMESTAMP
-	@rm -f imagerec.tgz imagerec.tgz.TIMESTAMP
-	@rm -f *.idl
+	@rm -rf doc $(JDIRS) $(EVENTDIRS) $(ZDIRS) META-INF
+	@rm -f *.jar *.jar.TIMESTAMP imagerec.tgz imagerec.tgz.TIMESTAMP *.idl
 #	@rm -f ChangeLog
 
 doc:	$(ISOURCES) $(JSOURCES) $(RTJSOURCES)
@@ -177,13 +176,15 @@ receiverStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 receiverStub-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC_ZEN) -o . $(ZEN_IDLS)
+	@$(JAR) xf contrib/jacorb.jar
+#	@$(IDLCC_ZEN) -o . $(ZEN_IDLS)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
 	@rm -rf META-INF
-	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
-	@rm -rf $(JDIRS)
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) $(ZDIRS)
+	@rm -rf $(JDIRS) $(ZDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
 
@@ -202,13 +203,14 @@ trackerStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 trackerStub-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
+	@$(JAR) xf contrib/jacorb.jar
 	@$(IDLCC_ZEN) -o . $(ZEN_IDLS)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
 	@rm -rf META-INF
-	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
-	@rm -rf $(JDIRS)
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) $(ZDIRS)
+	@rm -rf $(JDIRS) $(ZDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
 ATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
@@ -227,14 +229,16 @@ ATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 ATR-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
+	@$(JAR) xf contrib/jacorb.jar
 	@$(JAR) xf contrib/lm_eventChannel.jar
-	@$(IDLCC_ZEN) -o . $(ZEN_IDLS) $(ZEN_CHANNEL_IDLS)
+#	@$(IDLCC_ZEN) -o . $(ZEN_IDLS) $(ZEN_CHANNEL_IDLS)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(ICHANNEL_SOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES) $(JCHANNEL_SOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
 	@rm -rf META-INF
-	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) $(EVENTDIRS)
-	@rm -rf $(JDIRS) $(EVENTDIRS) *.idl
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) $(EVENTDIRS) $(ZDIRS)
+	@rm -rf $(JDIRS) $(EVENTDIRS) *.idl $(ZDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
 embeddedATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
@@ -384,13 +388,15 @@ ns.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 ns-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC_ZEN) -d . $(ZEN_IDLS)
+	@$(JAR) xf contrib/jacorb.jar
+#	@$(IDLCC_ZEN) -d . $(ZEN_IDLS)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
 	@rm -rf META-INF
-	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
-	@rm -rf $(JDIRS)
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) $(ZDIRS)
+	@rm -rf $(JDIRS) $(ZDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
 buffer.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
@@ -516,27 +522,30 @@ jars: clean doc movie/tank.jar
 
 	@echo Generating receiverStub-ZEN.jar file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC_ZEN) -o . $(ZEN_IDLS)
+	@$(JAR) xf contrib/jacorb.jar
+#	@$(IDLCC_ZEN) -o . $(ZEN_IDLS)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
 	@rm -rf META-INF
-	@$(JAR) cfm receiverStub-ZEN.jar src/manifest/receiverStub-ZEN.jar.MF $(JDIRS)
+	@$(JAR) cfm receiverStub-ZEN.jar src/manifest/receiverStub-ZEN.jar.MF $(JDIRS) $(ZDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > receiverStub-ZEN.jar.TIMESTAMP
 
 	@echo Generating trackerStub-ZEN.jar file...
-	@$(JAR) cfm trackerStub-ZEN.jar src/manifest/trackerStub-ZEN.jar.MF $(JDIRS)
+	@$(JAR) cfm trackerStub-ZEN.jar src/manifest/trackerStub-ZEN.jar.MF $(JDIRS) $(ZDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > trackerStub-ZEN.jar.TIMESTAMP
 
 	@echo Generating ns-ZEN.jar file...
-	@$(JAR) cfm ns-ZEN.jar src/manifest/ns-ZEN.jar.MF $(JDIRS)
+	@$(JAR) cfm ns-ZEN.jar src/manifest/ns-ZEN.jar.MF $(JDIRS) $(ZDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > ns-ZEN.jar.TIMESTAMP
 
 	@echo Generating ATR-ZEN.jar file...
 	@$(JAR) xf contrib/lm_eventChannel.jar
-	@$(IDLCC_ZEN) -o . $(ZEN_CHANNEL_IDLS)
+#	@$(IDLCC_ZEN) -o . $(ZEN_CHANNEL_IDLS)
+	@$(IDLCC) -d . $(ICHANNEL_SOURCES)
 	@$(JCC) -d . -g $(JCHANNEL_SOURCES)
-	@$(JAR) cfm ATR-ZEN.jar src/manifest/ATR-ZEN.jar.MF $(JDIRS)
+	@$(JAR) cfm ATR-ZEN.jar src/manifest/ATR-ZEN.jar.MF $(JDIRS) $(ZDIRS)
 	@rm -rf $(EVENTDIRS) *.idl
 	@date '+%-d-%b-%Y at %r %Z.' > ATR-ZEN.jar.TIMESTAMP
 
