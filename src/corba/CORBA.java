@@ -48,8 +48,12 @@ public class CORBA implements CommunicationsModel {
      */
     public CORBA(String[] args) {
 	this.args=args;
+	setupJacORB();
+    }
 
-	/* Use JacORB 1.3.30 */
+    /** Sets up the environment variables necessary to run JacORB 1.3.30.
+     */
+    public static void setupJacORB() {
 	System.setProperty("org.omg.CORBA.ORBClass", "org.jacorb.orb.ORB");
 	System.setProperty("org.omg.CORBA.ORBSingletonClass", 
 			   "org.jacorb.orb.ORBSingleton");

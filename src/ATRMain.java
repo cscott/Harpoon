@@ -20,13 +20,9 @@ public class ATRMain {
      *              the CORBA nameservice.
      */
     public static void main(String args[]) {
-	/* Note: this initial pipeline recognizes objects under restrictive 
-	 * conditions.  An attempt was made to acheive the greatest 
-	 * "bang for the buck" in terms of the best recognition for the 
-	 * processor usage.
-	 *
-	 * New development (under imagerec.jar) relaxes those conditions,
-	 * but uses more CPU time.  When pipelines are finished development,
+	/*
+	 * New development of pipelines can be found in {@link Main} 
+	 * (under imagerec.jar).  When pipelines are finished development,
 	 * they will be placed in this file.
 	 */
 
