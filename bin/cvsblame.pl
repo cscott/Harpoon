@@ -570,8 +570,37 @@ sub simple_rev_map {
     # forward deltas for branch revisions.
 
     my @ancestors = &ancestor_revisions($rcsobj, $want_rev, $have_rev);
+    # delete bits of revision tree to implement @REVERT@
+    for (my $i=0; $i <= $#ancestors; $i++) {
+        my $r = $ancestors[$i];
+        next if $opt_T; # ignore REVERT tags
+        next unless ($rcsobj->{REVISION_LOG}->{$r} =~
+                     m/[@]REVERT:\s*([^@]+)\s*[@]/);
+        my ($pat, $revertrev) = split(/\s+/, $1);
+        # ignore directive unless well formed.
+        next unless defined $pat && defined $revertrev;
+        # ignore directive unless the filename pattern matches
+        next unless ($rcsobj->{PATHNAME} =~ m/$pat/);
+        # now find the revision to revert to
+        my $j;
+        for ($j=$i+1; $j <= $#ancestors; $j++) {
+            last if $ancestors[$j] eq $revertrev;
+        }
+        next unless $j>=0; # oops, couldn't find the revertrev.
+        my $is_trunk_revision_i = ($r =~ /^[0-9]+\.[0-9]+$/);
+        my $is_trunk_revision_j = ($revertrev =~ /^[0-9]+\.[0-9]+$/);
+        if ($is_trunk_revision_i && $is_trunk_revision_j) {
+            # remove (i,j] chunk from ancestors list
+            splice(@ancestors,$i+1,$j-$i); next;
+            # XXX: note a @REVERT@ in $revertrev itself will be missed. =(
+        }
+        if ((!$is_trunk_revision_i) && (!$is_trunk_revision_j)) {
+            # remove [i,j) chunk from ancestors list
+            splice(@ancestors,$i,$j-$i); redo;
+            # a @REVERT@ in $revertrev is handled correctly in this case.
+        }
+    }
     my $last_rev = pop @ancestors;             # Remove $have_rev
-    die "ancestors is invalid" unless $have_rev eq $last_rev;
     foreach my $revision (reverse @ancestors) {
         my $is_trunk_revision = ($revision =~ /^[0-9]+\.[0-9]+$/);
 
@@ -1129,6 +1158,7 @@ sub usage {
 "      -n                 Don't show local modifications\n",
 "      -M                 Don't follow \@MERGE@ tags in logs\n",
 "      -R                 Don't follow \@RENAME@ tags in logs\n",
+"      -T                 Don't follow \@REVERT@ tags in logs\n",
 "      -u <base url>      Output a URL on each line for markup programs\n",
 "      -h                 Print help (this message)\n\n",
 "   (-a -v assumed, if none of -a, -v, -A, -d supplied)\n"
@@ -1137,8 +1167,8 @@ sub usage {
 
 # suppress -w warnings.
 undef $opt_M; undef $opt_h; undef $opt_l; undef $opt_n;
-undef $opt_q; undef $opt_w; undef $opt_R;
-&usage if (!&getopts('r:m:Aadhlvwqnu:MR'));
+undef $opt_q; undef $opt_w; undef $opt_R; undef $opt_T;
+&usage if (!&getopts('r:m:Aadhlvwqnu:MRT'));
 &usage if ($opt_h);             # help option
 
 $multiple_files_on_command_line = 1 if ($#ARGV != 0);
