@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * this sort of conditional context-sensitive expression resolution.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translation.java,v 1.1.4.3 2000-02-11 18:03:58 cananian Exp $
+ * @version $Id: Translation.java,v 1.1.4.4 2000-02-13 22:21:38 cananian Exp $
  */
 public abstract class Translation {
     /** The <code>Translation.Exp</code> class represents an expression
@@ -59,7 +59,8 @@ public abstract class Translation {
 	}
 	protected harpoon.IR.Tree.Stm unCxImpl(TreeFactory tf,
 					Label iftrue, Label iffalse) {
-	    // XXX: special case CONST 0 and CONST 1 ?
+	    // special cases for CONST 0 and CONST 1 are done in
+	    // a separate subclass of Ex (ExCONST, in ToTree)
 	    return new CJUMP(tf, exp, exp, iftrue, iffalse);
 	}
     }

@@ -68,7 +68,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.68 2000-02-13 18:27:15 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.69 2000-02-13 22:21:37 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -395,7 +395,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	addStmt(s0);
     
 	for (int i=0; i<q.value().length; i++) {
-	    Exp c = mapconst(q, q.value()[i], q.type());
+	    Exp c = mapconst(q, q.value()[i], q.type()).unEx(m_tf);
 	    MEM m = makeMEM(q, q.type(), _TEMP(q, dl, nextPtr));
 	    s0 = new MOVE(m_tf, q, m, c);
 	    s1 = new MOVE
@@ -920,25 +920,26 @@ static class TranslationVisitor extends LowQuadVisitor {
 	}
     }
 
-    private Exp mapconst(HCodeElement src, Object value, HClass type) {
+    private Translation.Exp mapconst(HCodeElement src,
+				     Object value, HClass type) {
 	Exp constant;
 
 	if (type==HClass.Void) // HClass.Void reserved for null constants
 	    constant = new CONST(m_tf, src);
 	/* CSA: Sub-int types only seen in ARRAYINIT */
 	else if (type==HClass.Boolean)
-	    constant = new CONST
+	    return new ExCONST
 		(m_tf, src, ((Boolean)value).booleanValue()?1:0);
 	else if (type==HClass.Byte)
-	    constant = new CONST(m_tf, src, ((Byte)value).intValue()); 
+	    return new ExCONST(m_tf, src, ((Byte)value).intValue()); 
 	else if (type==HClass.Char)
-	    constant = new CONST 
+	    return new ExCONST 
 		(m_tf, src, 
 		 (int)(((Character)value).charValue())); 
 	else if (type==HClass.Short)
-	    constant = new CONST(m_tf, src, ((Short)value).intValue()); 
+	    return new ExCONST(m_tf, src, ((Short)value).intValue()); 
 	else if(type==HClass.Int) 
-	    constant = new CONST(m_tf, src, ((Integer)value).intValue()); 
+	    return new ExCONST(m_tf, src, ((Integer)value).intValue()); 
 	else if (type==HClass.Long)
 	    constant = new CONST(m_tf, src, ((Long)value).longValue());
 	else if (type==HClass.Float)
@@ -946,10 +947,21 @@ static class TranslationVisitor extends LowQuadVisitor {
 	else if (type==HClass.Double)
 	    constant = new CONST(m_tf, src, ((Double)value).doubleValue());
 	else if (type==type.getLinker().forName("java.lang.String"))
-	    constant = m_rtb.stringConst(m_tf, src, (String)value).unEx(m_tf);
+	    return m_rtb.stringConst(m_tf, src, (String)value);
 	else 
 	    throw new Error("Bad type for CONST: " + type); 
-	return constant;
+	return new Translation.Ex(constant);
+    }
+    private static class ExCONST extends Translation.Ex {
+	final int val;
+	public ExCONST(TreeFactory tf, HCodeElement src, int val) {
+	    super(new CONST(tf, src, val));
+	    this.val = val;
+	}
+	protected Stm unCxImpl(TreeFactory tf, Label iftrue, Label iffalse) {
+	    if (val==0) return new JUMP(tf, exp, iffalse);
+	    else return new JUMP(tf, exp, iftrue);
+	}
     }
     private CONST constZero(HCodeElement src, HClass type) {
 	if (type==HClass.Boolean || type==HClass.Byte ||
