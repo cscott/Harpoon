@@ -3,6 +3,8 @@
 #include "jni-private.h"
 
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* Returns the number of elements in the array.
  */
@@ -48,6 +50,7 @@ void FNI_SetObjectArrayElement(JNIEnv *env, jobjectArray array,
 type##Array FNI_New##name##Array(JNIEnv *env, jsize length) {\
 }
 FORPRIMITIVETYPES(NEWPRIMITIVEARRAY);
+#endif
 
 /* A family of functions that returns the body of the primitive array.
  * The result is valid until the corresponding
@@ -67,8 +70,14 @@ FORPRIMITIVETYPES(NEWPRIMITIVEARRAY);
  * Returns a pointer to the array elements, or NULL if the operation fails.
  */
 #define GETPRIMITIVEARRAYELEMENTS(name,type)\
-type * FNI_Get##name##ArrayElements(JNIEnv *env,
-				    type##Array array, jboolean *isCopy) {
+type * FNI_Get##name##ArrayElements(JNIEnv *env,\
+				    type##Array array, jboolean *isCopy) {\
+  struct aarray *a = (struct aarray *) FNI_UNWRAP(array);\
+  jsize length = a->length;\
+  type * result = malloc(sizeof(type) * length);\
+  FNI_Get##name##ArrayRegion(env,array,0,length,result);\
+  if (isCopy!=NULL) *isCopy=JNI_TRUE;\
+  return result;\
 }
 FORPRIMITIVETYPES(GETPRIMITIVEARRAYELEMENTS);
 
@@ -94,8 +103,15 @@ FORPRIMITIVETYPES(GETPRIMITIVEARRAYELEMENTS);
  * with extreme care.
  */
 #define RELEASEPRIMITIVEARRAYELEMENTS(name,type)\
-void Release##name##ArrayElements(JNIEnv *env, type##Array array,
-				  type *elems, jint mode) {
+void FNI_Release##name##ArrayElements(JNIEnv *env, type##Array array,\
+				      type *elems, jint mode) {\
+  if (mode!=JNI_ABORT) {\
+    struct aarray *a = (struct aarray *) FNI_UNWRAP(array);\
+    FNI_Set##name##ArrayRegion(env,array,0,a->length,elems);\
+  }\
+  if (mode!=JNI_COMMIT) {\
+    free(elems);\
+  }\
 }
 FORPRIMITIVETYPES(RELEASEPRIMITIVEARRAYELEMENTS);
 
@@ -106,8 +122,16 @@ FORPRIMITIVETYPES(RELEASEPRIMITIVEARRAYELEMENTS);
  *   not valid. 
  */
 #define GETPRIMITIVEARRAYREGION(name,type)\
-void Get##name##ArrayRegion(JNIEnv *env, type##Array array,
-			    jsize start, jsize len, type *buf) {
+void FNI_Get##name##ArrayRegion(JNIEnv *env, type##Array array,\
+				jsize start, jsize len, type *buf) {\
+  struct aarray *a = (struct aarray *) FNI_UNWRAP(array);\
+  if (start+len > a->length) {\
+    jclass oob=FNI_FindClass(env,"java/lang/ArrayIndexOutOfBoundsException");\
+    if (oob!=NULL) FNI_ThrowNew(env, oob, "JNI: Get" #name "ArrayRegion");\
+    return;\
+  }\
+  memcpy(buf, (char *)(&(a->element_start))+(start*sizeof(type)),\
+	 len*sizeof(type));\
 }
 FORPRIMITIVETYPES(GETPRIMITIVEARRAYREGION);
 
@@ -118,9 +142,15 @@ FORPRIMITIVETYPES(GETPRIMITIVEARRAYREGION);
  *   not valid. 
  */
 #define SETPRIMITIVEARRAYREGION(name,type)\
-void Set##name##ArrayRegion(JNIEnv *env, type##Array array, 
-			    jsize start, jsize len, type *buf) {
+void FNI_Set##name##ArrayRegion(JNIEnv *env, type##Array array,\
+				jsize start, jsize len, const type *buf) {\
+  struct aarray *a = (struct aarray *) FNI_UNWRAP(array);\
+  if (start+len > a->length) {\
+    jclass oob=FNI_FindClass(env,"java/lang/ArrayIndexOutOfBoundsException");\
+    if (oob!=NULL) FNI_ThrowNew(env, oob, "JNI: Get" #name "ArrayRegion");\
+    return;\
+  }\
+  memcpy(((char *) &(a->element_start))+(start*sizeof(type)), buf,\
+	 len*sizeof(type));\
 }
 FORPRIMITIVETYPES(SETPRIMITIVEARRAYREGION);
-
-#endif
