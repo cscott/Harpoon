@@ -1,4 +1,4 @@
-% CVSId: $Id: oqe.tex,v 1.7 2002-05-03 02:38:18 cananian Exp $
+% CVSId: $Id: oqe.tex,v 1.8 2002-05-03 03:13:55 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -24,6 +24,7 @@ oqe
 \usepackage{amsmath}
 \usepackage{comdef}\newcommand{\figscale}{1.0}
 \usepackage{pst-node}
+\usepackage{verbatim}
 %\hypersetup{pdfpagemode=FullScreen}
 
 \title{Size Optimizations for Java Programs}
@@ -37,8 +38,22 @@ Massachusetts Institute of Technology}
 %\DefaultTransition{Wipe}
 \renewcommand{\yellow}{\colC}
 
+%%%%% define new 'talknotes' environment that only shows up in PS mode.
+\ifDVItoPS
+\newenvironment{talknotes}{\begin{slide}{Notes}\tiny}{\end{slide}}
+\else
+% this redefinition of talknote to be == comment is from an example in
+% the verbatim package (where the comment environment comes from).
+\let\talknotes=\comment
+\let\endtalknotes=\endcomment
+\fi
+
 \begin{document}
 \maketitle
+
+\begin{talknotes}
+Nothing should be said on the title slide.
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 % \begin{slide}{The quest for $\pi$}
@@ -73,6 +88,9 @@ Applying transformations to reduce the memory consumption of the program.
 \end{center}
 \end{slide}
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Structure of a Java Object}
 \begin{itemize}
@@ -83,6 +101,9 @@ Applying transformations to reduce the memory consumption of the program.
 \end{center}
 \end{slide}
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Strategy}
 \begin{center}
@@ -92,6 +113,9 @@ Push hard on all the bits.
 \includegraphics[scale=0.5]{Figures/Kontour/strategy-bbox.eps}
 \end{center}
 \end{slide}
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \newrgbcolor{fieldcomp}{0 1 0}
@@ -126,6 +150,9 @@ Three broad techniques:
 \end{slide}
 }
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{How to compress objects} % just the first one
 
@@ -147,6 +174,9 @@ Three broad techniques:
 }%
 \end{slide}
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \overlays{3}{
 \begin{slide}{Field Compression}
@@ -162,6 +192,9 @@ Reduce the space taken up by an object's fields.
 }
 \end{slide}
 }
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{3}{
@@ -217,6 +250,9 @@ void foo() \{\\
 \end{slide}
 }
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{A signed integer lattice}
 \begin{center}
@@ -230,6 +266,9 @@ An integer lattice for signed integers. A classification into
 negative (M), positive (P), or zero (Z) is grafted onto the standard
 flat integer constant domain.
 \end{slide}
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Extending the lattice}
@@ -249,6 +288,9 @@ Some combination rules for bit-width analysis.  The \code{Z}
 element indicating whether zero is a possible value has been omitted.
 \end{slide}
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Field compression using bitwidths}
 
@@ -257,6 +299,9 @@ element indicating whether zero is a possible value has been omitted.
 \includegraphics[scale=0.5]{Figures/Kontour/bwfieldcomp-bbox.eps}
 \end{center}
 \end{slide}
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 % \begin{slide}{Field packing}
@@ -297,6 +342,9 @@ element indicating whether zero is a possible value has been omitted.
 \end{center}
 \end{slide}
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{How to compress objects} % just the second one
 
@@ -317,6 +365,9 @@ Three broad techniques:
 \hspace*{0.106in}\includegraphics[scale=0.4]{Figures/Kontour/how-fieldelim-bbox.eps}%
 }%
 \end{slide}
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{6}{
@@ -347,6 +398,9 @@ Three broad techniques:
 \end{slide}
 }
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Static specialization}
 \begin{itemize}
@@ -359,6 +413,9 @@ Three broad techniques:
 \item Profiling guides splitting order if there are multiple candidate fields.
 \end{itemize}
 \end{slide}
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{2}{
@@ -387,6 +444,9 @@ public final class String \{\\
 \end{slide}
 }
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Specialization example:\\\small java.lang.String}
 \fontsize{9}{9}%
@@ -409,6 +469,9 @@ public final class {\yellow String extends SmallString} \{\\
 \end{samplecode}
 \end{slide}
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \newcommand{\myString}{\onlySlide*{1}{\makebox[0pt][l]{String}}\onlySlide{2}{{\yellow SmallString}}}%
 \overlays{2}{
@@ -430,6 +493,9 @@ String s = new \myString(new char[] \{'a', 'b', 'c'\});\\
 \onlySlide*{2}{\ncline[linecolor=red,linewidth=2pt]{offl2}{offr2}}%
 \end{slide}
 }
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{2}{
@@ -460,6 +526,9 @@ else\\
 \end{slide}
 }
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Creating external fields}
 \vspace{1cm}
@@ -475,6 +544,9 @@ else\\
 \end{itemize}
 \end{slide}
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \overlays{3}{
 \begin{slide}{Fields and Maps}
@@ -489,6 +561,9 @@ else\\
 \end{itemstep}
 \end{slide}
 }
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{4}{
@@ -511,6 +586,9 @@ else\\
 \end{minipage}
 \end{slide}
 }
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{4}{
@@ -535,6 +613,9 @@ else\\
 \end{slide}
 }
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \overlays{3}{
 \begin{slide}{Other details}
@@ -548,6 +629,9 @@ else\\
 \end{itemstep}
 \end{slide}
 }
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{How to compress objects} % just the third one
@@ -570,6 +654,9 @@ Three broad techniques:
 }%
 \end{slide}
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Header optimizations:\\\small Hashcode/Lock compression}
 \begin{center}
@@ -577,6 +664,9 @@ Three broad techniques:
 \includegraphics[scale=0.6]{Figures/Kontour/hashcomp-bbox.eps}
 \end{center}
 \end{slide}
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{2}{
@@ -587,6 +677,9 @@ Three broad techniques:
 \end{itemstep}
 \end{slide}
 }
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{3}{
@@ -599,12 +692,18 @@ Three broad techniques:
 \end{slide}
 }
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Header optimizations:\\\small claz compression}
 \begin{center}
 \includegraphics[scale=0.5]{Figures/Kontour/classcomp-bbox.eps}
 \end{center}
 \end{slide}
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Class statistics}
@@ -614,8 +713,14 @@ Class statistics for applications in SPECjvm98 benchmark suite:
 \end{center}
 \end{slide}
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \part{How well does it work?}
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Reduction in total live data}
@@ -624,12 +729,18 @@ Class statistics for applications in SPECjvm98 benchmark suite:
 \end{center}
 \end{slide}
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Reduction in total allocations}
 \begin{center}
 \includegraphics[scale=0.45]{Figures/oopsla-ttlalloc-color.eps}
 \end{center}
 \end{slide}
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Reduction in object allocations}
@@ -638,12 +749,18 @@ Class statistics for applications in SPECjvm98 benchmark suite:
 \end{center}
 \end{slide}
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Moderate performance impact}
 \begin{center}
 \includegraphics[scale=0.45]{Figures/oopsla-speed-color.eps}
 \end{center}
 \end{slide}
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{9}{
@@ -680,6 +797,9 @@ Class statistics for applications in SPECjvm98 benchmark suite:
 \end{slide}
 }
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Conclusions}
 \begin{itemize}
@@ -688,8 +808,14 @@ Class statistics for applications in SPECjvm98 benchmark suite:
 \end{itemize}
 \end{slide}
 
+\begin{talknotes}
+\end{talknotes}
+
 %---------------------------------------------------------------------- SLIDE -
 \part{The Graveyard Of Unused Slides follows this point.}
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Opportunities}
