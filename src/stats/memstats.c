@@ -21,9 +21,9 @@ long initialclock;
 
 void update_stacksize(long size) {
   long t;
-  struct timeval tv; struct timezone tz;
+  struct timeval tv;
 
-  gettimeofday(&tv, &tz);
+  gettimeofday(&tv, NULL);
   t = tv.tv_sec; /* seconds */
   t*=1000; /* milliseconds */
   t+= (tv.tv_usec/1000); /* adjust milliseconds & add them in */
@@ -35,7 +35,7 @@ void update_stats() {
   long heapsize=GC_get_heap_size();
   long freesize=GC_get_free_bytes();
   long t;
-  struct timeval tv; struct timezone tz;
+  struct timeval tv;
 
   if ((memstat+heapsize)>peakusage)
     peakusage=heapsize+memstat;
@@ -44,7 +44,7 @@ void update_stats() {
     peakusagea=heapsize+memstat-freesize;
   
 
-  gettimeofday(&tv, &tz);
+  gettimeofday(&tv, NULL);
   t = tv.tv_sec; /* seconds */
   t*=1000; /* milliseconds */
   t+= (tv.tv_usec/1000); /* adjust milliseconds & add them in */
