@@ -6,6 +6,7 @@ import java.util.*;
 public class NetsClient extends Thread {
 
     static boolean debug;
+    static int sendoption=0;
     public static void main(String argv[]) {
 
 	String host=null;
@@ -23,6 +24,7 @@ public class NetsClient extends Thread {
 	}
 	try {
 	    NetsClient.debug=(Integer.parseInt(argv[4])==1);
+	    NetsClient.sendoption=Integer.parseInt(argv[5]);
 	} catch (Exception e) {
 	}
 
@@ -51,7 +53,7 @@ public class NetsClient extends Thread {
 	System.out.println("port:"+port);
 	System.out.println("number of messages:"+numberofmessages);
 	System.out.println("Elapsed time:(mS)"+(endtime-starttime));
-	System.out.println("Throughput:"+(double) numberofclients*numberofmessages/((double) (endtime-starttime)));
+	System.out.println("Throughput:"+(double) numberofclients*((sendoption==4)?1:numberofclients)*numberofmessages/((double) (endtime-starttime)));
 
     }
 
@@ -96,10 +98,32 @@ public class NetsClient extends Thread {
 
 
         try {
-	    for(int nr=0;nr<noc*nom;) {
-		if (ns<nom) {
-		    ns++;
-		    pout.println("0|"+clientnumber+"|hello"+ns+"**");
+	    for(int nr=0;nr<((sendoption==4)?1:noc)*nom;) {
+		if (sendoption==0) {
+		    if (ns<nom) {
+			ns++;
+			pout.println("0|"+clientnumber+"|hello"+ns+"**");
+		    }
+		} else if (sendoption==1) {
+		    if ((ns<nom)&&((nr%noc)==0)) {
+			ns++;
+			pout.println("0|"+clientnumber+"|hello"+ns+"**");
+		    }
+		} else if (sendoption==2) {
+		    if ((ns<nom)&&((nr%noc)==clientnumber)) {
+			ns++;
+			pout.println("0|"+clientnumber+"|hello"+ns+"**");
+		    }
+		} else if (sendoption==3) {
+		    if ((ns<nom)&&((nr%noc)==(noc-1-clientnumber))) {
+			ns++;
+			pout.println("0|"+clientnumber+"|hello"+ns+"**");
+		    }
+		} else if (sendoption==4) {
+		    if ((ns<nom)&&(clientnumber==0)) {
+			ns++;
+			pout.println("0|"+clientnumber+"|hello"+ns+"**");
+		    }
 		}
 		String request = din.readLine();
 		if (request.indexOf('-')!=-1)
