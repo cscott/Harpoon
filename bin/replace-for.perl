@@ -39,7 +39,7 @@ while((!$isEOF) && defined($line = <ARG>)) {
     # this is the parameterized version
     $line =~ s/
 	(for \s* \( ) # $1 is the 'for' part
-	\s* Iterator \s* [<] (.*) [>] # $2 is the element type name
+	\s* Iterator \s* [<] \s* (?: [?] \s+ extends \s+ )? (.*) [>] # $2 is the element type name
 	\s* ([A-Za-z_][A-Za-z0-9_]*) \s* = # $3 is the iterator name
 	# allow for an optional 'Arrays.asList(' in $4
 	\s* (Arrays \s* [.] \s* asList \s* \( \s* )?
