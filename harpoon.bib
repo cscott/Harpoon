@@ -185,6 +185,84 @@
   annote =	 {Very theoretical==not terribly useful.}
 }
 
+@Article{beck91:ctrlflow,
+  author = 	 {Micah Beck and Richard Johnson and Keshav Pingali},
+  title = 	 {From Control Flow to Dataflow},
+  journal = 	 {Journal of Parallel and Distributed Computing},
+  year = 	 1991,
+  volume =	 12,
+  number =	 2,
+  month =	 jun,
+  pages =	 {118--129},
+  annote =	 {The paper that started it all.  Uses an
+                  over-restricting control model, though, and funky
+                  store stuff.}
+}
+
+@Article{rinard97:commute,
+  author = 	 {Martin C. Rinard and Pedro C. Diniz},
+  title = 	 {Commutivity Analysis: A New Analysis Technique for
+                  Parallelizing Compilers},
+  journal = 	 TOPLAS,
+  year = 	 1997,
+  volume =	 19,
+  number =	 6,
+  month =	 nov,
+  pages =	 {942--991},
+  url =		 {http://www.acm.org/pubs/citations/journals/toplas/1997-19-6/p942-rinard/},
+  annote =	 {Not terribly relevant to the current project, but
+                  interesting nonetheless.  Perhaps we can perform
+                  some commutivity analysis in Harpoon to free up parallelism?}
+}
+
+@Article{janssen97:cns,
+  author = 	 {Johan Janssen and Henk Corporaal},
+  title = 	 {Making Graphs Reducible with Controlled Node Splitting},
+  journal = 	 TOPLAS,
+  year = 	 1997,
+  volume =	 19,
+  number =	 6,
+  month =	 nov,
+  pages =	 {1031--1052},
+  url =		 {http://www.acm.org/pubs/citations/journals/toplas/1997-19-6/p1031-janssen/},
+  annote =	 {How to make any control flow graph reducible using a
+                  minimum number of splits/duplicates.  VERY USEFUL if
+                  we need reducible graphs.  (I suspect that the
+                  properties of Java give us this for free.)}
+}
+
+% Statecharts.
+
+@Article{harel92:overlap,
+  author = 	 {David Harel and {Chaim-arie} Kahana},
+  title = 	 {On Statecharts with Overlapping},
+  journal = 	 {{ACM} Transactions on Software Engineering and Methodology},
+  year = 	 1992,
+  volume =	 1,
+  number =	 4,
+  month =	 oct,
+  pages =	 {399--421},
+  url =		 {http://www.acm.org/pubs/citations/journals/tosem/1992-1-4/p399-harel/},
+  annote =	 {Here we basically learn that overlapping statecharts
+                  are a Bad Thing.  Do not attempt.}
+}
+
+@Article{drusinsky89:hwsynth,
+  author = 	 {Doron Drusinsky and David Harel},
+  title = 	 {Using Statecharts for Hardware Description and Synthesis},
+  journal = 	 {{IEEE} Transactions on Computer-Aided Design},
+  year = 	 1989,
+  volume =	 8,
+  number =	 7,
+  month =	 jul,
+  pages =	 {798--807},
+  annote =	 {A good description of what statecharts are, and a
+                  variety of implementation methodologies using
+                  various types of PLAs and FSMs.  The infamous
+                  traffic light example.  Basic idea: implement
+                  statecharts as multi-level Mealy/Moore machines.}
+}
+
 % HARDWARE SECTION
 
 @InProceedings{aggarwal97:netpart,
@@ -368,50 +446,6 @@
   month =	 may,
   url =		 {http://www.cs.rice.edu/~harv/ssa.ps},
   annote =	 {haven't read yet.}
-}
-
-@Article{beck91:ctrlflow,
-  author = 	 {Micah Beck and Richard Johnson and Keshav Pingali},
-  title = 	 {From Control Flow to Dataflow},
-  journal = 	 {Journal of Parallel and Distributed Computing},
-  year = 	 1991,
-  volume =	 12,
-  number =	 2,
-  month =	 jun,
-  pages =	 {118--129},
-  annote =	 {The paper that started it all.  Uses an
-                  over-restricting control model, though, and funky
-                  store stuff.}
-}
-
-@Article{harel92:overlap,
-  author = 	 {David Harel and {Chaim-arie} Kahana},
-  title = 	 {On Statecharts with Overlapping},
-  journal = 	 {{ACM} Transactions on Software Engineering and Methodology},
-  year = 	 1992,
-  volume =	 1,
-  number =	 4,
-  month =	 oct,
-  pages =	 {399--421},
-  url =		 {http://www.acm.org/pubs/citations/journals/tosem/1992-1-4/p399-harel/},
-  annote =	 {Here we basically learn that overlapping statecharts
-                  are a Bad Thing.  Do not attempt.}
-}
-
-@Article{drusinsky89:hwsynth,
-  author = 	 {Doron Drusinsky and David Harel},
-  title = 	 {Using Statecharts for Hardware Description and Synthesis},
-  journal = 	 {{IEEE} Transactions on Computer-Aided Design},
-  year = 	 1989,
-  volume =	 8,
-  number =	 7,
-  month =	 jul,
-  pages =	 {798--807},
-  annote =	 {A good description of what statecharts are, and a
-                  variety of implementation methodologies using
-                  various types of PLAs and FSMs.  The infamous
-                  traffic light example.  Basic idea: implement
-                  statecharts as multi-level Mealy/Moore machines.}
 }
 
 % Haven't fetched hardcopy yet.
