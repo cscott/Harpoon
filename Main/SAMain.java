@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.178 2001-11-13 23:36:17 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.179 2001-11-14 01:36:12 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -424,7 +424,8 @@ public class SAMain extends harpoon.IR.Registration {
 		    (hcf, frame, classHierarchy, roots, resource)
 		    .codeFactory();
 	    }
-	    if (System.getProperty("mzf.profile","").length()>0) {
+	    if (Boolean.getBoolean("mzf.compressor") &&
+		System.getProperty("mzf.profile","").length()>0) {
  		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
 		hcf = new harpoon.Analysis.SizeOpt.MZFCompressor
 		    (frame, hcf, classHierarchy,

@@ -47,10 +47,15 @@ for s in `ls $SPECPATH/spec/benchmarks | sort | sed -ne ${start},${end}p`; do
     if [ -f $rootset ]; then
       echo "include $rootset" >> $tmprootset
     fi
-    dir=`echo $s | tr "[:lower:]" "[:upper:]" | tr -d "[_]"`$suf$SPECSUFFIX
+    base=`echo $s | tr "[:lower:]" "[:upper:]" | tr -d "[_]"`
+    dir=$base$suf$SPECSUFFIX
+    otheropts="-r $tmprootset"
+    if [ -f profile.$base ]; then
+	otheropts="$otheropts -Dmzf.profile=profile.$base"
+    fi
     echo $dir $rootset
     rm -rf as$dir as$dir.err as$dir.out
-    $buildscript $SPECBUILDOPTS -r $tmprootset SpecApplication $dir \
+    $buildscript $SPECBUILDOPTS $otheropts SpecApplication $dir \
 	2> as$dir.err | tee as$dir.out
     if [ $? -ne 0 ]; then
 	errors="$errors$dir "
