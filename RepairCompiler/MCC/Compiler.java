@@ -17,6 +17,7 @@ import MCC.IR.*;
  */
 
 public class Compiler {
+    public static boolean REPAIR=true;
     
     public static void main(String[] args) {
         State state = null;
@@ -52,6 +53,10 @@ public class Compiler {
 	    success = scan(state) || error(state, "Scanning failed, not attempting to parse.");
 	    success = parse(state) || error(state, "Parsing failed, not attempting semantic analysis.");
 	    success = semantics(state) || error(state, "Semantic analysis failed, not attempting variable initialization.");
+
+	    if (REPAIR)
+		(new ImplicitSchema(state)).update();
+
             
             (new DependencyBuilder(state)).calculate();
             
@@ -78,7 +83,7 @@ public class Compiler {
                 FileOutputStream gcode = new FileOutputStream(cli.infile + ".cc");
 
                 // do model optimizations
-                (new Optimizer(state)).optimize();
+                //(new Optimizer(state)).optimize();
 
                 NaiveGenerator ng = new NaiveGenerator(state);
                 ng.generate(gcode);

@@ -299,6 +299,15 @@ quantifier ::=
 	q.addChild(set);
 	RESULT = q;
 	:}
+	| FORALL LT ID:r1 COMMA ID:r2 GT IN ID:relation
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode q = new ParseNode("quantifier", parser.curLine(7));
+	q.addChild("relation", parser.curLine(1)).addChild(relation);
+	q.addChild("left", parser.curLine(5)).addChild(r1);
+	q.addChild("right", parser.curLine(3)).addChild(r2);
+	RESULT = q;
+	:}
 	;
 
 set ::=
