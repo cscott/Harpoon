@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * <code>ANEW</code> represents an array creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ANEW.java,v 1.2 1998-09-03 02:09:18 cananian Exp $
+ * @version $Id: ANEW.java,v 1.3 1998-09-04 06:31:21 cananian Exp $
  * @see NEW
  * @see AGET
  * @see ASET
@@ -56,7 +56,7 @@ public class ANEW extends Quad {
 	int d,i;
 	for (d = 0; hc.isArray(); d++)
 	    hc = hc.getComponentType();
-	StringBuffer sb = new StringBuffer("ANEW " + dst + " ");
+	StringBuffer sb = new StringBuffer(dst.toString() + " = ANEW ");
 	sb.append(hc.getName());
 	for (i = 0; i<dims.length; i++)
 	    sb.append("["+dims[i]+"]");

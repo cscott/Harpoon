@@ -8,7 +8,7 @@ import harpoon.Temp.Temp;
  * <code>AGET</code> represents an element fetch from an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AGET.java,v 1.1 1998-08-26 23:18:37 cananian Exp $
+ * @version $Id: AGET.java,v 1.2 1998-09-04 06:31:21 cananian Exp $
  * @see ANEW
  * @see ASET
  * @see ALENGTH
@@ -42,6 +42,6 @@ public class AGET extends Quad {
 
     /** Returns a human-readable representation of this quad. */
     public String toString() {
-	return "AGET " + dst + ", " + objectref + "["+index+"]";
+	return dst.toString() + " = AGET " + objectref + "["+index+"]";
     }
 }
