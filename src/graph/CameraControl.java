@@ -3,38 +3,124 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec.graph;
 
+/**
+ * This class is intended to be in a pipeline that runs asynchronously
+ * with a pipeline containing a {@link Camera} node.<br><br>
+ *
+ * It allows for user control of camera properties when coupled 
+ * with an input node like {@link CameraControlKeyboard}.<br><br>
+ *
+ * The following properties of {@link Camera} may be modified:<br>
+ *     Brightness<br>
+ *     Contrast<br>
+ *     Gain<br>
+ *     Frame Rate<br>
+ *<br>
+ *
+ * To set a particular value:<br>
+ *   Tag an {@link ImageData} with one of the following {@link Command}
+ * tags and, if necessary, set the appropriate value to the {@link ImageData}'s
+ * <code>time</code> field.<br><br>
+ *
+ * Command.SET_BRIGHTNESS: Causes the {@link Camera}'s "Brightness" property
+ * to be set to the value given in the {@link ImageData}'s <code>time</code>
+ * field.<br>
+ * Command.BRIGHTNESS_UP: Causes the {@link Camera}'s "Brightness" property
+ * to be incremented by DELTA_BRIGHTNESS.<br>
+ * Command.BRIGHTNESS_DOWN: Causes the {@link Camera}'s "Brightness" property
+ * to be decremented by DELTA_BRIGHTNESS.<br>
+ * Command.SET_CONTRAST: Causes the {@link Camera}'s "Contrast" property
+ * to be set to the value given in the {@link ImageData}'s <code>time</code>
+ * field.<br>
+ * Command.CONTRAST_UP: Causes the {@link Camera}'s "Contrast" property
+ * to be incremented by DELTA_CONTRAST.<br>
+ * Command.CONTRAST_DOWN: Causes the {@link Camera}'s "Contrast" property
+ * to be decremented by DELTA_CONTRAST.<br>
+ * Command.SET_GAIN: Causes the {@link Camera}'s "Gain" property
+ * to be set to the value given in the {@link ImageData}'s <code>time</code>
+ * field.<br>
+ * Command.GAIN_UP: Causes the {@link Camera}'s "Gain" property
+ * to be incremented by DELTA_GAIN.<br>
+ * Command.GAIN_DOWN: Causes the {@link Camera}'s "Gain" property
+ * to be decremented by DELTA_GAIN.<br>
+ * Command.SET_FRAME_RATE: Causes the {@link Camera}'s "Frame Rate" property
+ * to be set to the value given in the {@link ImageData}'s <code>time</code>
+ * field.<br>
+ * Command.FRAME_RATE_UP: Causes the {@link Camera}'s "Frame Rate" property
+ * to be incremented by DELTA_FRAME_RATE.<br>
+ * Command.FRAME_RATE_DOWN: Causes the {@link Camera}'s "Frame Rate" property
+ * to be decremented by DELTA_FRAME_RATE.<br>
+ * <br>
+ *
+ * If the value specifed in the {@link ImageData}'s <code>time</code>
+ * field is not within the appropriate range specified by this class's
+ * constants, then the highest or lowest possible value
+ * is substituted.
+ 
+ *
+ * This class assumes that the {@link Camera}'s properties are not
+ * set by any other class.
+ *
+ * @see Camera
+ * @see CameraControlKeyboard
+ * @see Command
+ *
+ * @author Reuben Sterling <<a href="mailto:benster@mit.edu">benster@mit.edu</a>>
+ */
 public class CameraControl extends Node{
+    /**
+     * Reference to the {@link Camera} that this
+     * {@link CameraControl} node will mutate.
+     */
     private Camera myCamera;
+
     private int currentContrast;
-    private static final int MAX_CONTRAST = 255;
-    private static final int MIN_CONTRAST = 0;
-    private static final int DEFAULT_CONTRAST = 127;
-    private static final int DELTA_CONTRAST = 5;
+    public static final int MAX_CONTRAST = 255;
+    public static final int MIN_CONTRAST = 0;
+    public static final int DEFAULT_CONTRAST = 127;
+    public static final int DELTA_CONTRAST = 5;
 
     private int currentGain;
-    private static final int MAX_GAIN = 4;
-    private static final int MIN_GAIN = 0;
-    private static final int DEFAULT_GAIN = 2;
-    private static final int DELTA_GAIN = 1;
+    public static final int MAX_GAIN = 4;
+    public static final int MIN_GAIN = 0;
+    public static final int DEFAULT_GAIN = 2;
+    public static final int DELTA_GAIN = 1;
 
     private int currentBrightness;
-    private static final int MAX_BRIGHTNESS = 255;
-    private static final int MIN_BRIGHTNESS = 0;
-    private static final int DEFAULT_BRIGHTNESS = 255;
-    private static final int DELTA_BRIGHTNESS = 5;
+    public static final int MAX_BRIGHTNESS = 255;
+    public static final int MIN_BRIGHTNESS = 0;
+    public static final int DEFAULT_BRIGHTNESS = 255;
+    public static final int DELTA_BRIGHTNESS = 5;
 
     private int currentFrameRate;
-    private static final int MAX_FRAME_RATE = 45;
-    private static final int MIN_FRAME_RATE = 1;
-    private static final int DEFAULT_FRAME_RATE = 15;
-    private static final int DELTA_FRAME_RATE = 3;
+    public static final int MAX_FRAME_RATE = 45;
+    public static final int MIN_FRAME_RATE = 1;
+    public static final int DEFAULT_FRAME_RATE = 15;
+    public static final int DELTA_FRAME_RATE = 3;
    
-
+    /**
+     * Creates a new {@link CameraControl} node that will mutate
+     * the specified {@link Camera}.
+     *
+     * @param c The {@link Camera} node that this {@link CameraControl}
+     * node should mutate.
+     *
+     * @see Camera
+     */
     public CameraControl(Camera c) {
 	super(null);
 	init(c);
     }
 
+    /**
+     * All constructors should call this private method
+     * to properly initialize the object's fields.
+     *
+     * @param c The {@link Camera} node that this {@link CameraControl}
+     * node should mutate.
+     *
+     * @see Camera
+     */
     private void init(Camera c) {
 	this.myCamera = c;
 	this.currentContrast = DEFAULT_CONTRAST;
@@ -47,6 +133,17 @@ public class CameraControl extends Node{
 	myCamera.setFPS((byte)currentFrameRate);
     }
 
+    /**
+     * Reads the {@link Command} tag from the specified {@link ImageData}
+     * and takes the appropriate action on the {@link Camera} specified
+     * in the constructor.
+     *
+     * @param id The {@link ImageData} carrying the information
+     * to modify the {@link Camera} specified in the constructor.
+     *
+     * @see Camera
+     * @see Command
+     */
     public void process(ImageData id) {
 	switch (Command.read(id)) {
 	case Command.CONTRAST_UP: {
