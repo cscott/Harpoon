@@ -58,7 +58,7 @@ import harpoon.IR.Quads.NEW;
  * about the number of times the write-barrier is called.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierQuadPass.java,v 1.6 2002-04-10 03:00:53 cananian Exp $
+ * @version $Id: WriteBarrierQuadPass.java,v 1.7 2002-06-25 18:18:00 kkz Exp $
  */
 public class WriteBarrierQuadPass extends 
     harpoon.Analysis.Transformation.MethodMutator {
@@ -92,6 +92,9 @@ public class WriteBarrierQuadPass extends
 				    { JLO, JLRF, JLO, HClass.Int });
 	this.optimize = (optLevel != 0);
 	System.out.print("MRA analysis time = ");
+	// for timing reasons, first force passes to run
+	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); )
+	    parent.convert((HMethod)it.next());
 	long start_time = System.currentTimeMillis();
 	this.mraf = optimize ?
 	    new MRAFactory(ch, parent, linker, resourceName, optLevel): null;
@@ -157,30 +160,10 @@ public class WriteBarrierQuadPass extends
 	// yay, done!
 
 	// BIT EXPERIMENT BEGIN
-	MartinVisitor mv = new MartinVisitor(ignore);
-	mv.doAnalysis((Quad)hc.getRootElement());
+	// MartinVisitor mv = new MartinVisitor(ignore);
+	// mv.doAnalysis((Quad)hc.getRootElement());
 	// BIT EXPERIMENT END
 	return hc;
-    }
-
-    /** Return an <code>HCodeFactory</code> that will clean up the
-     *  tree form of the transformed code by performing some optimizations
-     *  which can't be represented in quad form. */
-    public HCodeFactory treeCodeFactory(Frame f, HCodeFactory hcf, 
-					ClassHierarchy ch) {
-	return WriteBarrierTreePass.codeFactory
-	    (hcf, f, ch, arraySC, fieldSC);
-    }
-
-    /** Return an <code>HCodeFactory</code> that will clean up the
-     *  tree form of the transformed code by performing some optimizations
-     *  which can't be represented in quad form; namely, removes
-     *  write barriers for MOVEs that are assigned from constants. 
-     *  This pass is needs to be run before the pass returned by
-     *  <code>treeCodeFactory</code> to have any effect. */
-    public HCodeFactory ceCodeFactory(Frame f, HCodeFactory hcf) {
-	return WriteBarrierConstElim.codeFactory
-	    (f, hcf, arraySC, fieldSC);
     }
 
     /** Code factory for post pass. Emits data needed for gathering
@@ -188,22 +171,25 @@ public class WriteBarrierQuadPass extends
      *  the pass returned by <code>treeCodeFactory</code> to have
      *  any effect.
      */
+    /*
     public HCodeFactory statsCodeFactory(Frame f, HCodeFactory hcf,
 					 ClassHierarchy ch,
 					 PrintStream out) {
 	this.wbs = new WriteBarrierStats(f, hcf, ch, arraySC, fieldSC, out);
 	return wbs.codeFactory();
     }
-
+    */
     /** <code>Data</code> for gathering statistics on write barriers.
      *  Needs the results of the pass returned by
      *  <code>statsCodeFactory</code>.
      */
+    /*
     public Data getData(HClass hc, Frame f) {
 	// must have run statsCodeFactory first
 	assert wbs != null;
 	return new WriteBarrierData(hc, f, wbs.getCount());
     }
+    */
 
     // BIT EXPERIMENT
     private class MartinVisitor {
