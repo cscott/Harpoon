@@ -1,4 +1,4 @@
-// ExpList.java, created Wed Jan 13 21:14:57 1999 by cananian
+
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 
@@ -19,7 +19,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ExpList.java,v 1.1.2.13 2000-01-11 18:34:15 pnkfelix Exp $
+ * @version $Id: ExpList.java,v 1.1.2.14 2000-01-16 01:17:36 duncan Exp $
  */
 public final class ExpList {
     /** The expression at this list entry. */
@@ -89,7 +89,8 @@ public final class ExpList {
     public String toString() { 
 	StringBuffer sb = new StringBuffer(); 
 	sb.append("EXPLIST<"); 
-	sb.append(this.head == null ? "null" : this.head.toString()); 
+	sb.append(this.head == null ? "null" : 
+		  this.head.toString() + ", "); 
 	sb.append(this.tail == null ? "null" : this.tail.toString()); 
 
 	return sb.toString(); 
