@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.8 2000-06-28 20:04:46 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.9 2000-07-02 01:58:57 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing cc
 // on MIPS IRIX64 lion 6.2 03131016 IP19.  
@@ -135,11 +135,11 @@ import java.util.Iterator;
     call_def_builtin = new Temp[] {v0, v1, a0, a1, a2, a3, t0, t1, t2,
                                    LR};
 
-	// allow sorting of registers so that stm and ldm work correctly.
-	final Map regToNum = new HashMap();
-	for (int i=0; i<regfile.reg.length; i++)
+    // allow sorting of registers so that stm and ldm work correctly.
+    final Map regToNum = new HashMap();
+    for (int i=0; i<regfile.reg.length; i++)
        regToNum.put(regfile.reg[i], new Integer(i));
-	regComp = new Comparator() {
+    regComp = new Comparator() {
           public int compare(Object o1, Object o2) {
              Util.assert(regToNum.keySet().contains(o1),
                          o1+" not in regToNum's keys");
@@ -151,24 +151,18 @@ import java.util.Iterator;
        };
     }
 
+
+
     /** Sub-class to represent delay-slots.
      * <code>optimize()</code> uses this class information to determine that
      * it should rearrange code to try to eliminate these instructions.
      * @author Emmett Witchel
      */
-    public class InstrDELAYSLOT extends Instr {
-	// a nop to fill the delay slot
-	public InstrDELAYSLOT(InstrFactory inf, HCodeElement source) {
-	    super(inf, source, "nop  # delay slot");
-	}
-    }
-    // I don't know why I need this, and would like to eliminate it
-    private Temp[] New_And_Copy(Temp[] t) {
-       Temp[] ret = new Temp[t.length];
-       for(int i = 0; i < t.length; ++i) {
-          ret[i] = t[i];
+    private class InstrDELAYSLOT extends Instr {
+       // a nop to fill the delay slot
+       public InstrDELAYSLOT(InstrFactory inf, HCodeElement source) {
+          super(inf, source, "nop  # delay slot");
        }
-       return ret;
     }
     private String GetLdSuffix(MEM root) {
        String suffix = "";
@@ -254,8 +248,8 @@ import java.util.Iterator;
     /** Single dest Single source emit InstrMOVE helper */
     private Instr emitMOVE( HCodeElement root, String assem,
 			   Temp dst, Temp src) {
-	return emit(new InstrMOVE( instrFactory, root, assem+" # move",
-			    new Temp[]{ dst },
+       return emit(new InstrMOVE( instrFactory, root, assem+" # move",
+                                  new Temp[]{ dst },
 			    new Temp[]{ src }));
     }			         
 
@@ -622,8 +616,12 @@ import java.util.Iterator;
        for (int i=0; i<call_use.length; ++i) {
           callUses.add(call_use[i]);
        }
+       // If we have any args, we need space for all arg regs
+       if(index > 0)
+          stackOffset = 16;
+       // Leave room for any args that can't be passed in regs.
        if(index > 4)
-          stackOffset = 16 + (index - 4) * 4;
+          stackOffset += (index - 4) * 4;
        index--; // so index points to 'register #' of last argument.
 
        elist=ereverse;
@@ -639,14 +637,14 @@ import java.util.Iterator;
                 declare(rfirst, HClass.Void);
                 Temp rsecnd = getArgReg(index--);
                 declare(rsecnd, HClass.Void);
-		Util.assert(temp instanceof TwoWordTemp);
+                Util.assert(temp instanceof TwoWordTemp);
                 emit( ROOT, "move `d0, `s0h", rfirst, temp );
                 emit( ROOT, "move `d0, `s0l", rsecnd, temp );
                 break;
              case 4: // spread between regs and stack
-                stackOffset -= 4; index--;
+                stackOffset += 4; index--;
                 declare( SP, HClass.Void );
-		Util.assert(temp instanceof TwoWordTemp);
+                Util.assert(temp instanceof TwoWordTemp);
                 emit(new InstrMEM( instrFactory, ROOT,
                                    "sw `s0h, -" + stackOffset + "(`s1)",
                                    new Temp[] { SP },
@@ -657,14 +655,14 @@ import java.util.Iterator;
                 emit( ROOT, "move `d0, `s0l", rthird, temp );
                 break;
              default: // start putting args in memory
-                stackOffset -= 4; index--;
+                stackOffset += 4; index--;
                 declare( SP, HClass.Void );
-		Util.assert(temp instanceof TwoWordTemp);
+                Util.assert(temp instanceof TwoWordTemp);
                 emit(new InstrMEM( instrFactory, ROOT,
                                    "sw `s0h, -" + stackOffset + "(`s1)",
                                    new Temp[]{ SP },
                                    new Temp[]{ temp, SP })); 
-                stackOffset -= 4; index--;
+                stackOffset += 4; index--;
                 declare( SP, HClass.Void );
                 emit(new InstrMEM( instrFactory, ROOT,
                                    "sw `s0l, -" + stackOffset + "(`s1)",
@@ -679,7 +677,7 @@ import java.util.Iterator;
                 declare( reg, td, elist.head );
                 emitMOVE( ROOT, "move `d0, `s0", reg, temp);
              } else {
-                stackOffset -= 4; index--;
+                stackOffset += 4; index--;
                 declare( SP, HClass.Void );
                 emit(new InstrMEM(
                    instrFactory, ROOT,
@@ -701,7 +699,7 @@ import java.util.Iterator;
        emit( ROOT, "bal "+handler+" # handler stub",
              call_def_builtin, // clobbers
              call_use, 
-                   new Label[] { handler} );
+             new Label[] { handler} );
        // Can't use emitJUMP bal has side effects
        // emitJUMP ( ROOT, "bal "+handler+" # handler stub", handler);
     }
@@ -712,9 +710,9 @@ import java.util.Iterator;
       // local labels
       // these may need to be included in the previous instr to preserve
       // ordering semantics, but for now this way they indent properly
-      emitDIRECTIVE( ROOT, !is_elf?".text 10":".data\n.section .flex.fixup, 1, 3, 4, 16");
+      emitDIRECTIVE( ROOT, !is_elf?".rdata ":".data\n.section .flex.fixup");
       emitDIRECTIVE( ROOT, "\t.word "+retaddr+", "+handler+" # (retaddr, handler)");
-      emitDIRECTIVE( ROOT, !is_elf?".text 0":".text\n.section .flex.code,  1, 7, 4, 16");
+      emitDIRECTIVE( ROOT, !is_elf?".text":".text\n.section .flex.code");
     }
     /** Finish up a CALL or NATIVECALL. */
     private void emitCallEpilogue(INVOCATION ROOT, boolean isNative,
@@ -926,7 +924,6 @@ import java.util.Iterator;
        }
     }
 
-
 %%
 %start with %{
 	// *** METHOD PROLOGUE ***
@@ -954,7 +951,7 @@ BINOP<p,i>(ADD, j, CONST<p,i>(c)) = i
 
 BINOP<l>(ADD, j, k) = i %extra<i>{ extra }
 %{
-    Util.assert(i instanceof TwoWordTemp);
+   Util.assert(i instanceof TwoWordTemp);
    emit( ROOT, "addu `d0l, `s0l, `s1l", i, j, k);
    emit( ROOT, "sltu `d0, `s0l, `s1l", extra, i, k);
    emit( ROOT, "addu `d0h, `s0, `s1h", i, extra, j);
@@ -998,7 +995,7 @@ BINOP<d>(ADD, j, UNOP<l>(NEG, k)) = i %{
 }%
 
 BINOP<p,i>(MUL, j, k) = i %{
-    emit( ROOT, "mult `d0, `s0, `s1", i, j, k );
+    emit( ROOT, "mul `d0, `s0, `s1", i, j, k );
 }%
 
 BINOP<p,i>(MUL, j, CONST<p,i>(c)) = i %{
@@ -1010,7 +1007,7 @@ BINOP<l>(MUL, j, k) = i %{
 }%
 
 BINOP<f>(MUL, j, k) = i %{
-   DoFCall(ROOT, i, j, k, "_mulsf3");
+   DoFCall(ROOT, i, j, k, "__mulsf3");
 }%
 
 BINOP<d>(MUL, j, k) = i %{
@@ -1178,7 +1175,7 @@ BINOP(CMPGT, j, k) = i
 BINOP(CMPGE, j, k) = i
 %pred %( ROOT.operandType()==Type.LONG )%
 %{
-    emit( ROOT, "sgt `d0, `s0h, `s1h \n"
+   emit( ROOT, "sgt `d0, `s0h, `s1h \n"
                 + "bne `s0h, `s1h, 1f \n"
                 + "sgeu `d0, `s0l, `s1l \n"
                 + "1:", i, j, k );
@@ -1187,13 +1184,13 @@ BINOP(CMPGE, j, k) = i
 BINOP(cmpop, j, k) = i
 %pred %( ROOT.operandType()==Type.FLOAT && isCmpOp(cmpop) )%
 %{
-   DoFCall(ROOT, i, j, k, "_f_" + cmpOp2AsStr(cmpop));
+   DoFCall(ROOT, i, j, k, "__f_" + cmpOp2AsStr(cmpop));
 }%
 
 BINOP(cmpop, j, k) = i
 %pred %( ROOT.operandType()==Type.DOUBLE && isCmpOp(cmpop) )%
 %{
-   DoDCall(ROOT, i, j, k, "_d_" + cmpOp2AsStr(cmpop));
+   DoDCall(ROOT, i, j, k, "__d_" + cmpOp2AsStr(cmpop));
 }%
 
 /***********************************************************/
@@ -1210,7 +1207,7 @@ BINOP<p,i>(shiftop, j, k) = i
 BINOP<p,i>(shiftop, j, CONST(c)) = i 
 %pred %( isShiftOp(shiftop) && is5BitShift(c) )%
 %{
-    emit( ROOT, shiftOp2Str(shiftop) + " `d0, `s0 "+c, i, j);
+    emit( ROOT, shiftOp2Str(shiftop) + " `d0, `s0, "+c, i, j);
 }%
 
 BINOP<l>(SHL, j, k) = i %{
@@ -1228,21 +1225,23 @@ BINOP<l>(USHR, j, k) = i %{
 /***********************************************************/
 /* Constants */
 
-CONST<l,d>(c) = i %{
+CONST<l,d>(c) = i 
+%{
     long val = (ROOT.type()==Type.LONG) ? ROOT.value.longValue()
 	: Double.doubleToLongBits(ROOT.value.doubleValue());
 
-    long loval = val & 0xFFFFFFFF;
+    int loval = (int)(val & 0xFFFFFFFF);
     emit(new Instr( instrFactory, ROOT,
-		    "li `d0l, " + loval, 
-		    new Temp[]{ i }, null ));
+                    "li `d0l, " + loval + " # lo long const",
+                    new Temp[]{ i }, null ));
     val>>>=32;
     emit(new Instr( instrFactory, ROOT,
-		    "li `d0h, " + val, 
-		    new Temp[]{ i }, null ));
+                    "li `d0h, " + val + " # hi long const", 
+                    new Temp[]{ i }, null ));
 }% 
 
-CONST<f,i>(c) = i %{
+CONST<f,i>(c) = i 
+%{
     int val = (ROOT.type()==Type.INT) ? ROOT.value.intValue()
 	: Float.floatToIntBits(ROOT.value.floatValue());
     emit(new Instr( instrFactory, ROOT,
@@ -1343,13 +1342,21 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), NAME(src))
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, (`s1)",
                      null, new Temp[] {extra0, extra1}));
 }%
+
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), CONST<i,p>(c)) 
    %extra<i>{ extra0, extra1 }/*void*/
 %{ 
    String suffix = GetStSuffix(ROOT);
-   emit(new Instr( instrFactory, ROOT,
-                   "li `d0, " + c,
-                   new Temp[]{ extra0 }, null ));
+   if(c==null) {
+      emit(new Instr( instrFactory, ROOT,
+                      "li `d0, 0",
+                      new Temp[]{ extra0 }, null ));
+
+   } else {
+      emit(new Instr( instrFactory, ROOT,
+                      "li `d0, " + c,
+                      new Temp[]{ extra0 }, null ));
+   }
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + dst,
                    new Temp[]{ extra1 }, null ));
@@ -1608,8 +1615,8 @@ METHOD(params) %{
        if (ROOT.getParams(i).isDoubleWord()) {
           if (loc<=2) { // both halves in registers
              // ack.  emitMOVE isn't working with long/double types.
-             emit( ROOT, "move `d0l, `s0", params[i],regfile.reg[loc++]);
-             emit( ROOT, "move `d0h, `s0", params[i],regfile.reg[loc++]);
+             emit( ROOT, "move `d0l, `s0", params[i], getArgReg(loc++));
+             emit( ROOT, "move `d0h, `s0", params[i], getArgReg(loc++));
           } else {
              // loc == 3 could mean on in register, one on stack, but
              // that is not what the C IRIX/MIPS compiler does.
@@ -1622,7 +1629,7 @@ METHOD(params) %{
           }
        } else { // single word.
           if (loc<4) { // in register
-             emitMOVE( ROOT, "move `d0, `s0", params[i], regfile.reg[loc++]);
+             emitMOVE( ROOT, "move `d0, `s0", params[i], getArgReg(loc++));
           } else { // on stack
              emit(new InstrMEM( instrFactory, ROOT,
                                 "lw `d0, "+(4*(loc++)+16)+"(`s0)",
@@ -1794,7 +1801,7 @@ ALIGN(n) %{
 }%
 
 SEGMENT(CLASS) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data 1":".data\n.section .flex.class, 1, 3, 4, 16");
+   emitDIRECTIVE( ROOT, !is_elf?".data":".data\n.section .flex.class");
 
 }%
 
@@ -1802,54 +1809,56 @@ SEGMENT(CODE) %{
    // gas 2.7 does not support naming the code section...not
    // sure what to do about this yet...
    // emitDIRECTIVE( ROOT, !is_elf?".code 32":".section code");
-   emitDIRECTIVE( ROOT, !is_elf?".text 0":".text\n.section .flex.code, 1, 7, 4, 16");
+// Add ,1, 7, 4, 16 for code section directives for the mips pro assembler
+   emitDIRECTIVE( ROOT, !is_elf?".text ":".text\n.section .flex.code");
 }%
 
+// Add ,1, 3, 4, 16 for data section directives for the mips pro assembler
 SEGMENT(GC) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data 2":".data\n.section .flex.gc, 1, 3, 4, 16");
+   emitDIRECTIVE( ROOT, !is_elf?".data ":".data\n.section .flex.gc");
 }%
 
 SEGMENT(INIT_DATA) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data 3":".section .flex.init_data, 1, 3, 4, 16");
+   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.init_data");
 }%
 
 SEGMENT(STATIC_OBJECTS) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data 4":".section .flex.static_objects, 1, 3, 4, 16");
+   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.static_objects");
 }%
 
 SEGMENT(STATIC_PRIMITIVES) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data 5":".section .flex.static_primitives, 1, 3, 4, 16");
+   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.static_primitive");
 }%
 
 SEGMENT(STRING_CONSTANTS) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data 6":".section .flex.string_constants, 1, 3, 4, 16");
+   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.string_constants");
 }%
 
 SEGMENT(STRING_DATA) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data 7":".section .flex.string_data, 1, 3, 4, 16");
+   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.string_data");
 }%
 
 SEGMENT(REFLECTION_OBJECTS) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data 8":".section .flex.reflection_objects, 1, 3, 4, 16");
+   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.reflection_objects");
 }%
 
 SEGMENT(REFLECTION_DATA) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data 9":".section .flex.reflection_data, 1, 3, 4, 16");
+   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.reflection_data");
 }%
 
 SEGMENT(GC_INDEX) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data 10":".section .flex.gc_index, 1, 3, 4, 16");
+   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.gc_index");
 }%
 
 SEGMENT(TEXT) %{
-   emitDIRECTIVE( ROOT, !is_elf?".text":".text\n.section .text, 1, 7, 4, 16");
+   emitDIRECTIVE( ROOT, !is_elf?".data":".section .flex.funcptrs");
 }%
 
 SEGMENT(ZERO_DATA) %{
    // gas 2.7 does not allow BSS subsections...use .comm and .lcomm
    // for the variables to be initialized to zero
    // emitDIRECTIVE( ROOT, ".bss   \t#.section zero");
-   emitDIRECTIVE(ROOT, !is_elf?".bss":".section .flex.zero, 1, 3, 4, 16");
+   emitDIRECTIVE(ROOT, !is_elf?".bss":".section .flex.zero");
 }%
 // Local Variables:
 // mode:java
