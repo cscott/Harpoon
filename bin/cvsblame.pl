@@ -523,15 +523,16 @@ sub open_cvs_file {
     # assume name is correct (file not in Attic)
     $rcs_truename{$pathname}=$pathname;
     # Try remote repository access methods, if applicable.
-    if ($pathname =~ m/^:([^:]*):([^:@]*)@([^:@]*):(.*)$/) {
+    if ($pathname =~ m/^:([^:]*):(?:([^:@]*)@)?([^:@]*):(.*)$/) {
         my ($method,$user,$host,$path) = ($1, $2, $3, $4);
         if ($method eq "ext") { # currently the only supported protocol.
             my $rsh = $ENV{'CVS_RSH'};
             $rsh = "rsh" unless defined $rsh;
+            $user = "-l $user" if defined $user;
             my $saveattic = $atticname;
             $atticname =~ s/^:[^:]*:[^:]*://;
             my $cmd="if [ -r $path ]; then echo foo; cat $path; else echo Attic; cat $atticname; fi";
-            $cmd = "$rsh $host -l $user \"sh -c '$cmd'\"";
+            $cmd = "$rsh $host $user \"sh -c '$cmd'\"";
             open(HANDLE, $cmd." |") or return undef;
             my $firstline = <HANDLE>;
             $rcs_truename{$pathname}=$saveattic if $firstline =~ m/Attic/;
