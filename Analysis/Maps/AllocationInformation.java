@@ -10,7 +10,7 @@ import harpoon.Temp.Temp;
  * to information about the allocation done at that site.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformation.java,v 1.1.2.3 2000-05-11 22:08:12 bdemsky Exp $
+ * @version $Id: AllocationInformation.java,v 1.1.2.4 2000-05-17 17:29:14 cananian Exp $
  */
 public interface AllocationInformation  {
     
@@ -36,13 +36,15 @@ public interface AllocationInformation  {
 	 *  not exceed the lifetime of the thread object specified
 	 *  by the <code>allocationHeap</code> method. */
 	public boolean canBeThreadAllocated();
-	/** @return <code>true</code> if the object should be allocated on
-	 *  *it's own* thread-local heap --- typically this means that
+	/** @return <code>true</code> if a thread-local heap should be
+	 *  associated with this object --- typically this means that
 	 *  the allocation site is a thread creation.  If this is
-	 *  <code>true</code>, the <code>canBeThreadAllocated()</code>
-	 *  should also be <code>true</code>.
+	 *  <code>true</code> and <code>canBeThreadAllocated()</code>
+	 *  is also <code>true</code>, then the new object will be
+	 *  itself allocated on the created heap; otherwise the
+	 *  new object will be globally allocated.
 	 */
-	public boolean useOwnHeap();
+	public boolean makeHeap();
 	/** @return a <code>Temp</code> which at the allocation site
 	 * contains a reference to either the thread object of a
 	 * thread-local allocation, or to another object whose lifetime
@@ -50,7 +52,7 @@ public interface AllocationInformation  {
 	 * Returns <code>null</code> if the allocation should use the
 	 * heap associated with the "current" thread. 
 	 * If this returns non-<code>null</code>, then
-	 * <code>useOwnHeap()</code> should return <code>false</code> and
+	 * <code>makeHeap()</code> should return <code>false</code> and
 	 * <code>canBeThreadAllocated()</code> should return <code>true</code>.
 	 */
 	public Temp    allocationHeap();

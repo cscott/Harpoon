@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  <code>AllocationProperties</code>. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MyAP.java,v 1.1.2.2 2000-04-04 05:42:35 salcianu Exp $
+ * @version $Id: MyAP.java,v 1.1.2.3 2000-05-17 17:29:18 cananian Exp $
  */
 public class MyAP implements AllocationInformation.AllocationProperties,
 			     java.io.Serializable {
@@ -24,7 +24,7 @@ public class MyAP implements AllocationInformation.AllocationProperties,
     public boolean sa  = false;
     // canBeThreadAllocated
     public boolean ta  = false;
-    // useOwnHeap
+    // makeHeap
     public boolean uoh = false;
     // the Temp pointing to the thread object on whose stack
     // the NEW iquad ius going to allocate the object; "null"
@@ -47,7 +47,7 @@ public class MyAP implements AllocationInformation.AllocationProperties,
 	return ta;
     }
 
-    public boolean useOwnHeap(){
+    public boolean makeHeap(){
 	return uoh;
     }
 

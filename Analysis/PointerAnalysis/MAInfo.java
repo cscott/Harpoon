@@ -39,7 +39,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.11 2000-05-16 17:50:23 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.12 2000-05-17 17:29:17 cananian Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -234,7 +234,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	if(true){
 	    MyAP ap = getAPObj(qnt);
 	    ap.ta  = true; // allocate on thread specific heap
-	    ap.uoh = true; // useOwnHeap
+	    ap.uoh = true; // makeHeap
 	    return;
 	}
 
@@ -268,7 +268,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    // just allocate the thread node nt on its own heap
 	    MyAP ap = getAPObj(qnt);
 	    ap.ta  = true; // allocate on thread specific heap
-	    ap.uoh = true; // useOwnHeap
+	    ap.uoh = true; // makeHeap
 	    return;
 	}
 	
@@ -295,7 +295,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	MyAP newq_ap = getAPObj(newq);
 
 	newq_ap.ta  = true;
-	newq_ap.uoh = true; // useOwnHeap for the thread object
+	newq_ap.uoh = true; // makeHeap for the thread object
 	HClass hclass = getAllocatedType(newq);
 	newq_ap.hip = 
 	    DefaultAllocationInformation.hasInteriorPointers(hclass);

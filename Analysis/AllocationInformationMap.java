@@ -18,7 +18,7 @@ import java.util.Map;
  * from a different <code>AllocationInformation</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformationMap.java,v 1.1.2.5 2000-04-04 01:52:09 cananian Exp $
+ * @version $Id: AllocationInformationMap.java,v 1.1.2.6 2000-05-17 17:28:58 cananian Exp $
  */
 public class AllocationInformationMap
     implements AllocationInformation, java.io.Serializable {
@@ -53,34 +53,33 @@ public class AllocationInformationMap
 	final boolean hasInteriorPointers;
 	final boolean canBeStackAllocated;
 	final boolean canBeThreadAllocated;
-	final boolean useOwnHeap;
+	final boolean makeHeap;
 	final Temp allocationHeap;
 	public AllocationPropertiesImpl(boolean hasInteriorPointers,
 					boolean canBeStackAllocated,
 					boolean canBeThreadAllocated,
-					boolean useOwnHeap,
+					boolean makeHeap,
 					Temp allocationHeap) {
-	    Util.assert(!(useOwnHeap && !canBeThreadAllocated));
 	    Util.assert(!(allocationHeap!=null && !canBeThreadAllocated));
-	    Util.assert(!(allocationHeap!=null && useOwnHeap));
+	    Util.assert(!(allocationHeap!=null && makeHeap));
 	    this.hasInteriorPointers = hasInteriorPointers;
 	    this.canBeStackAllocated = canBeStackAllocated;
 	    this.canBeThreadAllocated= canBeThreadAllocated;
-	    this.useOwnHeap          = useOwnHeap;
+	    this.makeHeap            = makeHeap;
 	    this.allocationHeap = allocationHeap;
 	}
 	public AllocationPropertiesImpl(AllocationProperties ap, TempMap tm) {
 	    this(ap.hasInteriorPointers(),
 		 ap.canBeStackAllocated(),
 		 ap.canBeThreadAllocated(),
-		 ap.useOwnHeap(),
+		 ap.makeHeap(),
 		 ap.allocationHeap() != null ?
 		 tm.tempMap(ap.allocationHeap()) : null);
 	}
 	public boolean hasInteriorPointers() { return hasInteriorPointers; }
 	public boolean canBeStackAllocated() { return canBeStackAllocated; }
 	public boolean canBeThreadAllocated(){ return canBeThreadAllocated;}
-	public boolean useOwnHeap()          { return useOwnHeap; }
+	public boolean makeHeap()            { return makeHeap; }
 	public Temp allocationHeap()         { return allocationHeap; }
     }
 }
