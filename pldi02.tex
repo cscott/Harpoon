@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.16 2001-11-17 05:00:10 cananian Exp $
+% $Id: pldi02.tex,v 1.17 2001-11-28 19:35:31 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.16 $ $}{$ $Revision: 1.16 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.17 $ $}{$ $Revision: 1.17 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -872,6 +872,15 @@ does easily.  Further, our results show that unread and constant field
 elimination is very dependent on the coding style of a particular
 application.  The collection of techniques we have presented here
 gives much more consistent savings over a wide range of benchmarks.
+
+Aggarwal and Randall \cite{aggarwal01} described a array bounds check
+removal method using {\it related fields}.  This work attempted to
+discover fields, such as {\tt Vector.size}, which are guaranteed to be
+less than or equal to the length of some array, for example, the
+backing array stored in {\tt Vector.data}.  Tests against the related
+field could then provide information about bounds checks on accesses
+to the array.  A similar technique could be used in this work to
+extend the utility of bitwidth information discovered on related fields.
 
 \section{Conclusion and future work}
 Our implementation of space optimizations for Java programs has shown
