@@ -3,9 +3,15 @@ use English;
 
 # Remove import *; statements from FLEX source files.
 
+# find jikes version number, and use to pick 'right' dependency flag syntax
+`sh -c "jikes --version 2>&1" | grep Version` =~ /^Version\s+(\S+)\s+/;
+die "Can't determine jikes version number.\n" unless defined $1;
+$jikesversion=$1;
+$jikesdepflag=($jikesversion >= 1.10) ? "+DR" : "+M";
+
 # use jikes to compute dependency lists.
 $tmpfile=`mktemp /tmp/remove-stars.XXXXXX`; chomp $tmpfile;
-`make JIKES_OPT=+M=$tmpfile jikes`;
+`make JIKES_OPT=$jikesdepflag=$tmpfile jikes`;
 @dependencies = `cat $tmpfile`;
 `rm $tmpfile`;
 
