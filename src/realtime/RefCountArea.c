@@ -25,6 +25,14 @@ JNIEXPORT void JNICALL Java_javax_realtime_RefCountArea_initNative
 #endif
 }
 
+JNIEXPORT void JNICALL Java_javax_realtime_RefCountArea_initNative_00024_00024initcheck
+(JNIEnv* env, jobject refCountArea, jlong ignored) {
+#ifdef RTJ_DEBUG
+  printf("\nRefCountArea.initNative_initcheck");
+#endif
+  Java_javax_realtime_RefCountArea_initNative(env, refCountArea, ignored);
+}
+
 void* RefCount_MemBlock_alloc(struct MemBlock* mem, size_t size) {
   void* result;
 #ifdef RTJ_DEBUG

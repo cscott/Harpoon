@@ -80,6 +80,14 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_enterMemBlock
   MemBlock_setCurrentMemBlock(env, realtimeThread, memBlock);
 }
 
+JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_enterMemBlock_00024_00024initcheck
+(JNIEnv* env, jobject memoryArea, jobject realtimeThread, jobject memAreaStack) {
+#ifdef RTJ_DEBUG
+  printf("\nMemoryArea.enterMemBlock_initcheck");
+#endif
+  Java_javax_realtime_MemoryArea_enterMemBlock(memoryArea, realtimeThread, memAreaStack);
+}
+
 /*
  * Class:     MemoryArea
  * Method:    exitMemBlock
@@ -134,6 +142,15 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realti
   return result;
 }
 
+JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2I_00024_00024initcheck
+(JNIEnv *env, jobject memoryArea, jobject realtimeThread,
+ jclass componentClass, jint length) {
+#ifdef RTJ_DEBUG
+  printf("\nMemoryArea.newArray_initcheck");
+#endif
+  return Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2I(env, memoryArea, realtimeThread, componentClass, length);
+}
+
 /*
  * Class:     javax_realtime_MemoryArea
  * Method:    newArray
@@ -160,6 +177,16 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realti
   return result;
 }
 
+JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2_3I
+(JNIEnv *env, jobject memoryArea, jobject realtimeThread,
+ jclass componentClass, jintArray dims) {
+#ifdef RTJ_DEBUG
+  printf("\nMemoryArea.newArray_initcheck");
+#endif
+  return Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2_3I(env, memoryArea, realtimeThread, componentClass, dims);
+}
+
+
 /*
  * Class:     javax_realtime_MemoryArea
  * Method:    newInstance
@@ -183,6 +210,14 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newInstance
   result = (*env)->NewGlobalRef(env, result);
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
   return result;
+}
+
+JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newInstance_00024_00024initcheck
+(JNIEnv *env, jobject memoryArea, jobject realtimeThread, jobject constructor, jobjectArray parameters) {
+#ifdef RTJ_DEBUG
+  printf("\nMemoryArea.newInstance_initcheck");
+#endif
+  return Java_javax_realtime_MemoryArea_newInstance(env, memoryArea, realtimeThread, constructor, parameters);
 }
 
 /*
@@ -236,6 +271,14 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_shadow
   }
 #endif
   return clone;
+}
+
+JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_shadow_00024_00024initcheck
+(JNIEnv* env, jobject memoryArea) {
+#ifdef RTJ_DEBUG
+  printf("\nMemoryArea.shadow_initcheck");
+#endif
+  return Java_javax_realtime_MemoryArea_shadow(env, memoryArea);
 }
 
 static void (*deflate_object)(void* obj, void* client_data) = NULL;
@@ -315,4 +358,12 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_registerFinal
   } 
 #endif
   RTJ_register_finalizer(memoryArea, MemoryArea_finalize); 
+}
+
+JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_registerFinal_00024_00024initcheck
+(JNIEnv* env, jobject memoryArea) {
+#ifdef RTJ_DEBUG
+  printf("\nMemoryArea.registerFinal_initcheck");
+#endif
+  Java_javax_realtime_MemoryArea_registerFinal(env, memoryArea);
 }

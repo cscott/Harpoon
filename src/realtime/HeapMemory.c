@@ -17,6 +17,15 @@ JNIEXPORT void JNICALL Java_javax_realtime_HeapMemory_initNative
 #endif  
 }
 
+JNIEXPORT void JNICALL Java_javax_realtime_HeapMemory_initNative_00024_00024initcheck
+(JNIEnv* env, jobject memoryArea, jlong size) {
+#ifdef RTJ_DEBUG
+  printf("\nHeapMemory.initNative_initcheck");
+#endif
+  Java_javax_realtime_HeapMemory_initNative(env, memoryArea, size);
+}
+
+
 inline struct MemBlock* Heap_MemBlock_new(JNIEnv* env, jobject heapMem) {
   /* This function is called to create the initial MemBlock. */
   struct MemBlock* mb = MemBlock_new(env, heapMem);

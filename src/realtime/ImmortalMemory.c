@@ -27,6 +27,14 @@ JNIEXPORT void JNICALL Java_javax_realtime_ImmortalMemory_initNative
 #endif
 }
 
+JNIEXPORT void JNICALL Java_javax_realtime_ImmortalMemory_initNative_00024_00024initcheck
+(JNIEnv* env, jobject memoryArea, jlong size) {
+#ifdef RTJ_DEBUG
+  printf("\nImmortalMemory.initNative_initcheck");
+#endif
+  Java_javax_realtime_ImmortalMemory_initNative(env, memoryArea, size);
+}
+
 void* Immortal_MemBlock_alloc(struct MemBlock* mem, size_t size) {
 #ifdef RTJ_DEBUG
   checkException();

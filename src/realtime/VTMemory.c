@@ -21,6 +21,14 @@ JNIEXPORT void JNICALL Java_javax_realtime_VTMemory_initNative
 #endif
 }
 
+JNIEXPORT void JNICALL Java_javax_realtime_VTMemory_initNative_00024_00024initcheck
+(JNIEnv* env, jobject memoryArea, jlong size) {
+#ifdef RTJ_DEBUG
+  printf("\nVTMemory.initNative_initcheck");
+#endif  
+  Java_javax_realtime_VTMemory_initNative(env, memoryArea, size);
+}
+
 void* VTScope_MemBlock_alloc(struct MemBlock* mem, size_t size) {
 #ifdef RTJ_DEBUG
   checkException();

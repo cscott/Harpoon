@@ -20,6 +20,14 @@ JNIEXPORT void JNICALL Java_javax_realtime_NoHeapRealtimeThread_print__Ljava_lan
 #endif
 }
 
+JNIEXPORT void JNICALL Java_javax_realtime_NoHeapRealtimeThread_print__Ljava_lang_String_2_00024_00024initcheck
+(JNIEnv* env, jclass noHeapRealtimeThread, jstring str) {
+#ifdef RTJ_DEBUG
+  printf("\nNoHeapRealtimeThread.print_initcheck");
+#endif
+  Java_javax_realtime_NoHeapRealtimeThread_print__Ljava_lang_String_2(env, noHeapRealtimeThread, str);
+}
+
 /*
  * Class:     javax_realtime_NoHeapRealtimeThread
  * Method:    print
