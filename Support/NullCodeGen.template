@@ -7,13 +7,13 @@ import harpoon.Temp.Temp;
  * <code>NullCodeGen</code> does nothing.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NullCodeGen.template,v 1.1.2.13 2000-03-24 19:42:27 cananian Exp $ */
+ * @version $Id: NullCodeGen.template,v 1.1.2.14 2000-06-26 18:37:22 witchel Exp $ */
 public class NullCodeGen extends harpoon.Backend.Generic.CodeGen {
     // a constructor here corresponding to every type of codegen
     //  constructor we have
     /*    public NullCodeGen() { super(null); } */
     public NullCodeGen(harpoon.Backend.Generic.Frame f) { super(f); }
-    public NullCodeGen(harpoon.Backend.StrongARM.Frame f,boolean b) {super(f);}
+    public NullCodeGen(harpoon.PACKAGE.Frame f,boolean b) {super(f);}
     public harpoon.Analysis.Maps.Derivation getDerivation() {
         return null;
     }   

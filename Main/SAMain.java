@@ -22,8 +22,8 @@ import harpoon.Temp.TempFactory;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.DataFlow.InstrSolver;
 import harpoon.Analysis.Instr.RegAlloc;
-import harpoon.Backend.StrongARM.Code;
-import harpoon.Backend.StrongARM.Frame;
+import harpoon.Backend.Generic.Code;
+import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
@@ -67,7 +67,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.80 2000-06-24 04:45:03 kkz Exp $
+ * @version $Id: SAMain.java,v 1.1.2.81 2000-06-26 18:37:21 witchel Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -85,6 +85,9 @@ public class SAMain extends harpoon.IR.Registration {
 
     private static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     private static HClass  singleClass = null; // for testing single classes
+    private static final int STRONGARM_BACKEND = 0;
+    private static final int MIPS_BACKEND = 1;
+    private static int     BACKEND = STRONGARM_BACKEND;
     
     private static Linker linker = Loader.systemLinker;
 
@@ -155,7 +158,11 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 	callGraph = new CallGraphImpl(classHierarchy, hcf);
 
-	frame =	new Frame(mainM, classHierarchy, callGraph);
+    if(BACKEND == MIPS_BACKEND) {
+       frame =	new harpoon.Backend.MIPS.Frame(mainM, classHierarchy, callGraph);
+    } else {
+       frame =	new harpoon.Backend.StrongARM.Frame(mainM, classHierarchy, callGraph);
+    }
  
 	if (LOOPOPTIMIZE) {
 	    hcf=harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
@@ -170,7 +177,13 @@ public class SAMain extends harpoon.IR.Registration {
 	hcf = harpoon.Analysis.Tree.JumpOptimization.codeFactory(hcf);
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     
-	HCodeFactory sahcf = Code.codeFactory(hcf, frame);
+	HCodeFactory sahcf;
+    if(BACKEND == MIPS_BACKEND) {
+       sahcf = harpoon.Backend.MIPS.Code.codeFactory(hcf, frame);
+    } else {
+       sahcf = harpoon.Backend.StrongARM.Code.codeFactory(hcf, frame);
+    }
+
 	sahcf = new harpoon.ClassFile.CachingCodeFactory(sahcf);
 
 	if (classHierarchyFilename != null) {
@@ -447,7 +460,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     private static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "m:i:s:c:o:DOPFHRLlABhq1::C:");
+	Getopt g = new Getopt("SAMain", args, "m:i:s:b:c:o:DOPFHRLlABhq1::C:");
 	
 	int c;
 	String arg;
@@ -537,6 +550,15 @@ public class SAMain extends harpoon.IR.Registration {
 		ASSEM_DIR = new File(g.getOptarg());
 		Util.assert(ASSEM_DIR.isDirectory(), ""+ASSEM_DIR+" must be a directory");
 		break;
+	    case 'b': {
+           String backendName = g.getOptarg();
+           if(backendName.equals("MIPS") || backendName.equals("mips")) {
+              BACKEND = MIPS_BACKEND;
+           } else {
+              BACKEND = STRONGARM_BACKEND;
+           }
+        }
+		break;
 	    case 'c':
 		className = g.getOptarg();
 		break;
@@ -613,6 +635,9 @@ public class SAMain extends harpoon.IR.Registration {
 
 	out.println("-i <filename>");
 	out.println("Read CodeFactory in from FileName");
+
+	out.println("-b <backend name>");
+	out.println("\t Supported backends are StrongARM (default) or MIPS");
 
 	out.println("-l");
 	out.println("Turn on Loop Optimizations");
