@@ -46,7 +46,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>MemTestMain</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: MemOptMain.java,v 1.7 2002-11-27 18:34:24 salcianu Exp $
+ * @version $Id: MemOptMain.java,v 1.8 2002-12-01 06:31:03 salcianu Exp $
  */
 public abstract class MemOptMain {
     
@@ -75,9 +75,9 @@ public abstract class MemOptMain {
     // if true, then only memory allocation stats will be printed
     private static boolean ALLOC_STAT_ONLY = false;
     // the name of the file that contains the map allocation site -> int id
-    private static String ALLOC_NUMBERING_FILE;
+    private static String  ALLOC_NUMBERING_FILE;
     // the name of the file that was dumped by the instrumentation
-    private static String INSTR_DUMPED_FILE;
+    private static String  INSTR_DUMPED_FILE;
 
     private static void parse_options(String[] args) {
 	Getopt g = new Getopt("MemOptMain", args, "a", null);
@@ -102,9 +102,9 @@ public abstract class MemOptMain {
 	    System.out.println
 		("Usage:\n\tMemTestMain [<options>] " + 
 		 "<alloc_numbering_file> <instr_result_file>\n" +
-		 "<alloc_numbering_file> should be the serialization of " +
+		 "<alloc_numbering_file>  serialization of " +
 		 "the AllocationNumbering used by the instrumentation\n" +
-		 "<instr_dumped_file> should be the file dumped out by " + 
+		 "<instr_dumped_file>     file dumped out by " + 
 		 "the instrumentation");
 	    System.exit(1);
 	}
@@ -169,34 +169,42 @@ public abstract class MemOptMain {
     // essentially a CachingCodeFactory that ignores all calls to clear()
     private static class SafeCachingCodeFactory
 	implements SerializableCodeFactory {
-	
 	private final HCodeFactory ccf;
-
 	public SafeCachingCodeFactory(CachingCodeFactory ccf) {
 	    this.ccf = ccf;
-	}
-	
-	public HCode convert(HMethod m) {
-	    return ccf.convert(m);
-	}
-	
-	public String getCodeName() {
-	    return ccf.getCodeName();
-	}
-
-	public void clear(HMethod m) {
-	    // ignore
-	}
+	}	
+	public HCode convert(HMethod m) { return ccf.convert(m); }
+	public String getCodeName() { return ccf.getCodeName(); }
+	public void clear(HMethod m) { /* ignore */}
     }
 
 
     private static void read_an(String filename) throws Exception {
+
+	System.out.println("Deserializing AllocationNumbering from " +
+			   filename);
+
 	ObjectInputStream ois = 
 	    new ObjectInputStream(new FileInputStream(filename));
+
+	System.out.println("step 1");
+
 	an     = (AllocationNumbering) ois.readObject();
+
+	System.out.println("step 2");
+
 	linker = (Linker)  ois.readObject();
+
+	System.out.println("step 3");
+
 	mroots = (Set)     ois.readObject();
+
+	System.out.println("step 4");
+
 	mainM  = (HMethod) ois.readObject();
+
+	System.out.println("step 5");
+
 	ois.close();
 
 	hcf_no_ssa = (CachingCodeFactory) an.codeFactory();

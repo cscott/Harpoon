@@ -27,7 +27,7 @@ import java.util.HashMap;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.7 2002-11-30 18:10:12 salcianu Exp $
+ * @version $Id: QuadSSI.java,v 1.8 2002-12-01 06:30:56 salcianu Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -51,8 +51,8 @@ public class QuadSSI extends Code /* which extends HCode */ {
 
 	@see QuadSSI#getQuadMapSSI2NoSSA */
     public Map getQuadMapNoSSA2SSI() {
-        assert KEEP_QUAD_MAP_HACK
-            : "You should set KEEP_QUAD_MAP_HACK if you need this";
+        assert mapNoSSA2SSI != null :
+	    "You should set KEEP_QUAD_MAP_HACK if you need this";
         return mapNoSSA2SSI;
     }
 
@@ -63,8 +63,8 @@ public class QuadSSI extends Code /* which extends HCode */ {
 
 	@see QuadSSI#getQuadMapNoSSA2SSI */
     public Map getQuadMapSSI2NoSSA() {
-        assert KEEP_QUAD_MAP_HACK
-            : "You should set KEEP_QUAD_MAP_HACK if you need this";
+        assert mapSSI2NoSSA != null :
+            "You should set KEEP_QUAD_MAP_HACK if you need this";
         return mapSSI2NoSSA;
     }
 

@@ -45,8 +45,12 @@ import harpoon.Util.Default;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 
+import harpoon.IR.Quads.Quad;
 import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
+import harpoon.Analysis.PointerAnalysis.AllocationNumberingStub;
 import harpoon.Analysis.PointerAnalysis.InstrumentAllocs;
+import harpoon.Analysis.PointerAnalysis.AllocationStatistics;
+import harpoon.Analysis.PointerAnalysis.Debug;
 import harpoon.Analysis.PreciseGC.MRA;
 import harpoon.Analysis.PreciseGC.WriteBarrierPrePass;
 import harpoon.Analysis.PreciseGC.WriteBarrierStats;
@@ -97,7 +101,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.22 2002-11-30 06:29:51 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.23 2002-12-01 06:31:03 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -134,8 +138,14 @@ public class SAMain extends harpoon.IR.Registration {
     static final int MIPSDA_BACKEND = 5;
     static private int BACKEND = PRECISEC_BACKEND;
     static String  BACKEND_NAME = "precisec";
+
+    static boolean READ_ALLOC_STATS = false;
+    static String allocNumberingFileName;
+    static String instrumentationResultsFileName;
+    static AllocationStatistics as;
+
     
-    static Linker linker = null; // can specify on the command-line.
+    public static Linker linker = null; // can specify on the command-line.
     static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);
         
@@ -310,12 +320,29 @@ public class SAMain extends harpoon.IR.Registration {
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	}
 	
-	
+
 	if (INSTRUMENT_ALLOCS) {
 	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 	    AllocationNumbering an =
 		new AllocationNumbering(hcf, classHierarchy, true);
 	    try {
+
+		System.out.println("Writing AllocationNumbering");
+		an.writeToFile(IFILE);
+
+		System.out.println("Reading AllocationNumberingStub");
+		AllocationNumberingStub ans = new AllocationNumberingStub
+		    (linker, IFILE);
+		
+		System.out.print("Verification ... ");
+		for(Iterator it = an.getAllocs().iterator(); it.hasNext(); ) {
+		    Quad quad = (Quad) it.next();
+		    assert an.allocID(quad) == ans.allocID(quad) :
+			"different allocID's for " + Debug.code2str(quad);
+		}
+		System.out.println("OK");
+
+		/*
 		ObjectOutputStream oos =
 		    new ObjectOutputStream(new FileOutputStream(IFILE));
 		oos.writeObject(an);
@@ -323,6 +350,7 @@ public class SAMain extends harpoon.IR.Registration {
 		oos.writeObject(roots);
 		oos.writeObject(mainM);
 		oos.close();
+		*/
 	    } catch (java.io.IOException e) {
 		System.out.println(e + " was thrown:");
 		e.printStackTrace(System.out);
@@ -334,6 +362,19 @@ public class SAMain extends harpoon.IR.Registration {
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	}
+	else if(READ_ALLOC_STATS) {
+	    System.out.print("hcf: " + hcf.getCodeName() + " -> ");
+	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+	    System.out.println(hcf.getCodeName());
+	    as = new AllocationStatistics(linker,
+					  allocNumberingFileName,
+					  instrumentationResultsFileName);
+	    as.printStatistics(hcf, classHierarchy.callableMethods());
+	}
+	
+	if(PreallocOpt.PREALLOC_OPT)
+	    hcf = PreallocOpt.preallocAnalysis
+		(linker, hcf, classHierarchy, mainM, roots, as);
 	
 	if (DO_TRANSACTIONS) {
 	    String resource = frame.getRuntime().resourcePath
@@ -367,10 +408,6 @@ public class SAMain extends harpoon.IR.Registration {
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    hcf = Realtime.addChecks(linker, classHierarchy, hcf, roots);
 	}
-	
-	if(PreallocOpt.PREALLOC_OPT)
-	    hcf = PreallocOpt.preallocAnalysis
-		(linker, hcf, classHierarchy, mainM, roots);
 	
 	/* counter factory must be set up before field reducer,
 	 * or it will be optimized into nothingness. */
@@ -1010,7 +1047,7 @@ public class SAMain extends harpoon.IR.Registration {
     protected static void parseOpts(String[] args) {
 	Getopt g = 
 	    new Getopt("SAMain", args, 
-		       "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Td::mw::x::y::Y");
+		       "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Td::mw::x::y::YZ:");
 	
 	int c;
 	String arg;
@@ -1195,6 +1232,18 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 'Y':
 		PreallocOpt.PREALLOC_OPT = true;
 		break;
+	    case 'Z':
+		READ_ALLOC_STATS = true;
+		{
+		    String names = g.getOptarg();
+		    allocNumberingFileName = firstHalf(names);
+		    instrumentationResultsFileName = secondHalf(names);
+		    System.out.println("allocNumberingFileName = " + 
+				       allocNumberingFileName);
+		    System.out.println("instrumentationResultsFileName = " +
+				       instrumentationResultsFileName);
+		}
+		break;
 	    case '?':
 	    case 'h':
 		System.out.println(usage);
@@ -1214,6 +1263,18 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (!USE_OLD_CLINIT_STRATEGY)
 		linker = new AbstractClassFixupRelinker(linker);
 	}
+    }
+
+    private static String firstHalf(String str) {
+	int commaPos = str.indexOf(',');
+	assert commaPos != -1;
+	return str.substring(0, commaPos);
+    }
+
+    private static String secondHalf(String str) {
+	int commaPos = str.indexOf(',');
+	assert commaPos != -1;
+	return str.substring(commaPos + 1);
     }
 
     static final String usage = 
