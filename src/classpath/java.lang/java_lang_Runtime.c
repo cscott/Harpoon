@@ -4,6 +4,7 @@
 #include "java_lang_Runtime.h"
 
 #include <assert.h>
+#include <stdio.h> /* for fprintf, stderr */
 #include "../../java.lang/runtime.h" /* useful library-indep implementations */
 #include "../../java.lang/properties.h" /* same, for setting up properties */
 #include "../../java.lang.reflect/reflect-util.h" /* for REFLECT_staticinit */
@@ -67,6 +68,19 @@ JNIEXPORT void JNICALL Java_java_lang_Runtime_runFinalization
   (JNIEnv *env, jobject runtime) {
     fni_runtime_runFinalization(env);
 }
+
+/* the callgraph for some programs apparently reveals a possible program
+ * execution that could call runFinalization inside a static initializer.
+ * Let's hope that never actually happens in practice, because it's wildly
+ * unsafe.  Or would be if we were actually to run finalizers. */
+#ifdef WITH_INIT_CHECK
+JNIEXPORT void JNICALL Java_java_lang_Runtime_runFinalization_00024_00024initcheck
+  (JNIEnv *env, jobject runtime) {
+  fprintf(stderr,
+	  "RUNNING FINALIZATION INSIDE A STATIC INITIALIZER IS NOT SAFE!\n");
+  assert(0); /* die */
+}
+#endif /* WITH_INIT_CHECK */
 
 /*
  * Class:     java_lang_Runtime
