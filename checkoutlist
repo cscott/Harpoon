@@ -17,3 +17,4 @@ passwd Can't check out passwd from CVSROOT (mail cananian).
 config Can't check out config from CVSROOT (mail cananian).
 readers Can't check out readers from CVSROOT (mail cananian).
 stop_magic Can't check out stop_magic script from CVSROOT (mail cananian).
+cvs_acls Can't check out cvs_acls script from CVSROOT (mail cananian).
