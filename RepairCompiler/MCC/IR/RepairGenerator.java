@@ -741,7 +741,9 @@ public class RepairGenerator {
 		/* Compute cost of each repair */
 		VarDescriptor mincost=VarDescriptor.makeNew("mincost");
 		VarDescriptor mincostindex=VarDescriptor.makeNew("mincostindex");
-		DNFConstraint dnfconst=constraint.dnfconstraint;
+		Vector dnfconst=new Vector();
+		dnfconst.addAll((Set)termination.conjunctionmap.get(constraint));
+
 		if (dnfconst.size()<=1) {
 		    cr.outputline("int "+mincostindex.getSafeSymbol()+"=0;");
 		}
@@ -749,8 +751,8 @@ public class RepairGenerator {
 		    cr.outputline("int "+mincostindex.getSafeSymbol()+";");
 		    boolean first=true;
 		    for(int j=0;j<dnfconst.size();j++) {
-			Conjunction conj=dnfconst.get(j);
-			GraphNode gn=(GraphNode)termination.conjtonodemap.get(conj);
+			GraphNode gn=(GraphNode)dnfconst.get(j);
+			Conjunction conj=((TermNode)gn.getOwner()).getConjunction();
 			if (removed.contains(gn))
 			    continue;
 			
@@ -788,8 +790,9 @@ public class RepairGenerator {
 		}
 		cr.outputline("switch("+mincostindex.getSafeSymbol()+") {");
 		for(int j=0;j<dnfconst.size();j++) {
-		    Conjunction conj=dnfconst.get(j);
-		    GraphNode gn=(GraphNode)termination.conjtonodemap.get(conj);
+		    GraphNode gn=(GraphNode)dnfconst.get(j);
+		    Conjunction conj=((TermNode)gn.getOwner()).getConjunction();
+
 		    if (removed.contains(gn))
 			continue;
 		    cr.outputline("case "+j+":");
@@ -1216,7 +1219,7 @@ public class RepairGenerator {
 		    Rule r=(Rule)state.vRules.get(i);
 		    if (r.getInclusion().getTargetDescriptors().contains(rd)) {
 			for(int j=0;j<mun.numUpdates();j++) {
-			    UpdateNode un=mun.getUpdate(i);
+			    UpdateNode un=mun.getUpdate(j);
 			    if (un.getRule()==r) {
 				/* Update for rule rule r */
 				String name=(String)updatenames.get(un);
@@ -1237,7 +1240,7 @@ public class RepairGenerator {
 		    Rule r=(Rule)state.vRules.get(i);
 		    if (r.getInclusion().getTargetDescriptors().contains(sd)) {
 			for(int j=0;j<mun.numUpdates();j++) {
-			    UpdateNode un=mun.getUpdate(i);
+			    UpdateNode un=mun.getUpdate(j);
 			    if (un.getRule()==r) {
 				/* Update for rule rule r */
 				String name=(String)updatenames.get(un);
@@ -1410,6 +1413,7 @@ public class RepairGenerator {
 			cr.outputline(methodcall+");");
 			cr.endblock();
 		    }
+		    cr.outputline("delete "+newmodel.getSafeSymbol()+";");
 		    cr.outputline("goto rebuild;");
 		}
 		cr.endblock();
@@ -1436,6 +1440,7 @@ public class RepairGenerator {
 		    }
 		    methodcall+=");";
 		    cr.outputline(methodcall);
+		    cr.outputline("delete "+newmodel.getSafeSymbol()+";");
 		    cr.outputline("goto rebuild;");
 		}
 	    }
@@ -1551,6 +1556,7 @@ public class RepairGenerator {
 		    }
 		    methodcall+=");";
 		    cr.outputline(methodcall);
+		    cr.outputline("delete "+newmodel.getSafeSymbol()+";");
 		    cr.outputline("goto rebuild;");
 		}
 		cr.endblock();
@@ -1578,6 +1584,7 @@ public class RepairGenerator {
 		    }
 		    methodcall+=");";
 		    cr.outputline(methodcall);
+		    cr.outputline("delete "+newmodel.getSafeSymbol()+";");
 		    cr.outputline("goto rebuild;");
 		}
 	    }

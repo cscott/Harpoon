@@ -39,7 +39,7 @@
 // C7
 // ??? for all files and directory blocks check that
 // only one inode references this block
-[forall b in FileDirectoryBlock],sizeof(b.~contents)=1;
+[forall b in FileDirectoryBlock],sizeof(b.~contents)=1; // should be <=
 
 // C10
 // verify that there is one inodetableblock
