@@ -12,7 +12,7 @@ import java.util.Map;
  * to code/data/object descriptions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Linker.java,v 1.1.2.1 2000-01-10 21:36:28 cananian Exp $
+ * @version $Id: Linker.java,v 1.1.2.2 2000-01-11 08:28:17 cananian Exp $
  */
 public abstract class Linker {
   protected Linker() { }
@@ -174,35 +174,6 @@ public abstract class Linker {
     // otherwise...
     return forName(cls.getName());
   }
-
-  //-----------------------------------------------------------
-  /** Make a unique class name from a given suggestion.
-   *  The suggestion string may be null or empty.
-   */
-  final String uniqueName(String suggestion) {
-    if (suggestion==null || suggestion.equals("")) suggestion="MAGICc";
-    // remove trailing dollar-signs.
-    while (suggestion.charAt(suggestion.length()-1)=='$')
-      suggestion = suggestion.substring(0, suggestion.length()-1);
-    // remove anything after a double dollar sign.
-    if (suggestion.indexOf("$$")!=-1)
-      suggestion = suggestion.substring(0, suggestion.lastIndexOf("$$"));
-    // try unadorned name & return it if unique.
-    try { forName(suggestion); }
-    catch (NoClassDefFoundError e) { return suggestion; }
-    // find lowest unique number for class.
-    // the goal here is determinism.  the suffixMap makes it efficient.
-    Integer lastsuffix = (Integer) suffixMap.get(suggestion);
-    for (int i=(lastsuffix==null)?0:(lastsuffix.intValue()+1); true; i++) {
-      String className = suggestion + "$$" + i;
-      try { forName(className); }
-      catch (NoClassDefFoundError e) {
-	suffixMap.put(suggestion, new Integer(i));
-	return className;
-      }
-    }
-  }
-  private final Map suffixMap = new HashMap(); // efficiency hack.
 }
 
 // set emacs indentation style.
