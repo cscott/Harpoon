@@ -71,7 +71,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.9 1999-11-30 05:24:55 cananian Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.10 2000-01-05 04:15:11 duncan Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -147,7 +147,6 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	Map IDsToTrees;
 	initIDsToTrees(IDsToTrees = new HashMap());
 	fold(this.rootbb, IDsToTrees, this.DUChains, this.UDChains);
-	this.code.recomputeEdges();
 	return this.code;
     }
 
