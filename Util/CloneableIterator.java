@@ -3,7 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
 /**
@@ -18,49 +20,67 @@ import java.util.NoSuchElementException;
    from the shared <code>Iterator</code>.
   
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: CloneableIterator.java,v 1.1.2.1 1999-04-20 19:47:12 pnkfelix Exp $ */
-public class CloneableIterator implements Iterator, Cloneable {
-    class LispCell { 
-	final Object car; 
-	LispCell cdr;
-	LispCell(Object o, LispCell l)  {
-	    car = o; 
-	    cdr = l; 
-	}
-    }
-    
-    // Invariant: if 'currentCell' == null then there are no more
-    //            elements to be iterated through.
-    LispCell currentCell;
+ * @version $Id: CloneableIterator.java,v 1.1.2.2 1999-04-20 20:19:06 pnkfelix Exp $ */
+public class CloneableIterator implements ListIterator, Cloneable {
+    int index;
+    Object next;
     final Iterator iter;	
+    final LinkedList list;
     
     /** Creates a <code>CloneableIterator</code> using
 	<code>iter</code> as its source. */ 
     public CloneableIterator(Iterator iter) {
 	this.iter = iter;
-	if (iter.hasNext()) currentCell = new LispCell(iter.next(), null);
-	else currentCell = null;
+	list = new LinkedList();
+	if (iter.hasNext()) {
+	    next = iter.next();
+	    list.add(next);
+	    index = 0;
+	}
     }
 
     public boolean hasNext() { 
-	return (currentCell != null); 
+	return (next != null);
     }
     
     public Object next() {
-	if (currentCell != null) {
-	    LispCell rtn = currentCell;
-	    if (currentCell.cdr == null &&
-		iter.hasNext()) { // maintain invariant
-		currentCell.cdr = new LispCell(iter.next(), null);
-	    } 
-	    currentCell = currentCell.cdr;
-	    return rtn.car;
+	if (next != null) {
+	    index++;
+	    Object rtn = next;
+	    if (index < list.size()) {
+		next = list.get(index);
+	    } else if (iter.hasNext()) {
+		next = iter.next();
+		list.add(next);
+	    } else {
+		next = null;
+	    }
+	    return rtn;
+	} else {
+	    throw new NoSuchElementException();
+	}
+    }
+
+    public int nextIndex() {
+	return index;
+    }
+    
+    public boolean hasPrevious() {
+	return index > 0;
+    }
+
+    public Object previous() {
+	if (index > 0) {
+	    index--;
+	    return list.get(index);
 	} else {
 	    throw new NoSuchElementException();
 	}
     }
     
-    public void remove() { throw new UnsupportedOperationException(); }
+    public int previousIndex() {
+	return index - 1;
+    }
     
     public Object clone() { 
 	try { 
@@ -70,5 +90,10 @@ public class CloneableIterator implements Iterator, Cloneable {
 	    return null;
 	}
     }
+
+    public void remove() { throw new UnsupportedOperationException(); }
+    public void add(Object o) { throw new UnsupportedOperationException(); }
+    public void set(Object o) { throw new UnsupportedOperationException(); }
+
 }
 
