@@ -52,14 +52,13 @@ void* ScopedPhysical_RThread_MemBlock_alloc(struct MemBlock* mem,
 #ifdef RTJ_DEBUG
   printf("ScopedPhysical_RThread_MemBlock_alloc(%d)\n", size);
 #endif
-  return Scope_RThread_MemBlock_alloc(mem, size);
+  return NULL;
 }
 
 void  ScopedPhysical_RThread_MemBlock_free(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   printf("ScopedPhysical_RThread_MemBlock_free()\n");
 #endif
-  Scope_RThread_MemBlock_free(mem);
 }
 
 inline Allocator ScopedPhysical_RThread_MemBlock_allocator(jobject memoryArea) {
@@ -83,14 +82,13 @@ void* ScopedPhysical_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem,
 #ifdef RTJ_DEBUG
   printf("ScopedPhysical_NoHeapRThread_MemBlock_alloc(%d)\n", size);
 #endif
-  return Scope_NoHeapRThread_MemBlock_alloc(mem, size);
+  return NULL;
 }
 
 void  ScopedPhysical_NoHeapRThread_MemBlock_free(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   printf("ScopedPhysical_NoHeapRThread_MemBlock_free()\n");
 #endif
-  Scope_NoHeapRThread_MemBlock_free(mem);
 }
 
 inline Allocator ScopedPhysical_NoHeapRThread_MemBlock_allocator(jobject memoryArea) {

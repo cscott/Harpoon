@@ -16,34 +16,27 @@
 /* Output debugging information about memory references 
  * allocated through RTJ_malloc (like dmalloc, except at RTJ_malloc point)
  */
-/* Need to implement further compiler support for this... */
 /*  #define RTJ_DEBUG_REF 1  */
 
-#ifdef RTJ_DEBUG_GC
-#ifndef WITH_PRECISE_GC
-#error RTJ_DEBUG_GC requires WITH_PRECISE_GC
-#endif
+#if (!defined(WITH_REALTIME_JAVA)) && (!defined(WITH_REALTIME_JAVA_STUBS))
+#error Must have either RTJ or RTJ stubs defined in order to include this file.
 #endif
 
 #if defined(RTJ_DEBUG) || defined(RTJ_DEBUG_GC)
 #ifdef RTJ_TIMER
-#error RTJ_DEBUG or RTJ_DEBUG_GC will upset the timings of RTJ_TIMER
+#error RTJ_DEBUG or RTJ_DEBUG_GC will upset the timings of RTJ_TIMER.
 #endif
 #ifdef WITH_GC_STATS
-#error RTJ_DEBUG or RTJ_DEBUG_GC will upset the timings of WITH_GC_STATS
+#error RTJ_DEBUG or RTJ_DEBUG_GC will upset the timings of WITH_GC_STATS.
 #endif
 #endif
 
-#ifdef WITH_NOHEAP_SUPPORT
-#ifdef BDW_CONSERVATIVE_GC
+#if defined(WITH_NOHEAP_SUPPORT) && defined(BDW_CONSERVATIVE_GC)
 #error NoHeapRealtimeThreads are not supported with the BDW conservative GC.
 #endif
-#endif
 
-#ifdef WITH_REALTIME_JAVA
-#ifndef WITH_THREADS
-#error Realtime Java is turned on, but threads are not turned on
-#endif
+#if defined(WITH_REALTIME_JAVA) && !defined(WITH_THREADS)
+#error Realtime Java requires thread support.
 #endif
 
 #ifdef WITH_GC_STATS
@@ -52,7 +45,7 @@
 
 #ifdef WITH_DMALLOC
 #ifdef WITH_GC_STATS
-#error DMALLOC with GC_stats not implemented
+#error DMALLOC with GC_stats not implemented.
 #else
 #include "dmalloc.h"
 /* To prevent MACRO conflicts */

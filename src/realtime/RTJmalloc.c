@@ -9,7 +9,7 @@ void* RTJ_jmalloc(jsize size) {
 }
 
 #ifdef RTJ_DEBUG_REF
-inline void* RTJ_malloc_leap(const char *file, const int line, size_t size) {
+inline void* RTJ_malloc_ref(size_t size, const int line, const char *file) {
 #else
 inline void* RTJ_malloc(size_t size) { 
 #endif
@@ -36,18 +36,20 @@ inline void* RTJ_malloc(size_t size) {
   printf("= 0x%08x\n", (int)newPtr);
 #endif
 #ifdef RTJ_DEBUG_REF
-  newInfo = (struct PTRinfo*)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct PTRinfo));
-  newInfo->file = (char*)file;
-  newInfo->line = (int)line;
-  newInfo->size = size;
-  newInfo->ptr = newPtr;
-
-  flex_mutex_lock(&memBlock->ptr_info_lock);
-  checkException();
-  newInfo->next = memBlock->ptr_info;
-  memBlock->ptr_info = newInfo;
-  flex_mutex_unlock(&memBlock->ptr_info_lock);
-  checkException();
+  if (memBlock) {
+    newInfo = (struct PTRinfo*)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct PTRinfo));
+    newInfo->file = (char*)file;
+    newInfo->line = (int)line;
+    newInfo->size = size;
+    newInfo->ptr = newPtr;
+    
+    flex_mutex_lock(&memBlock->ptr_info_lock);
+    newInfo->next = memBlock->ptr_info;
+    memBlock->ptr_info = newInfo;
+    flex_mutex_unlock(&memBlock->ptr_info_lock);
+  } else {
+    printf("No memBlock yet, PTR info is lost\n");
+  }
 #endif
   return newPtr;
 }
@@ -92,6 +94,9 @@ inline void RTJ_init() {
 #ifdef RTJ_DEBUG
   printf("RTJ_init()\n");
   checkException();
+#endif
+#ifdef RTJ_DEBUG_REF
+  flex_mutex_init(&ptr_info_lock);
 #endif
   BlockAllocator_init();
 #ifdef RTJ_DEBUG

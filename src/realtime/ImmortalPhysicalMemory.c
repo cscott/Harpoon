@@ -54,7 +54,7 @@ void* ImmortalPhysical_RThread_MemBlock_alloc(struct MemBlock* mem,
   checkException();
   printf("ImmortalPhysical_RThread_MemBlock_alloc(%d)\n", size);
 #endif
-  return Scope_RThread_MemBlock_alloc(mem, size);
+  return NULL;
 }
 
 void  ImmortalPhysical_RThread_MemBlock_free(struct MemBlock* mem) {
@@ -62,7 +62,6 @@ void  ImmortalPhysical_RThread_MemBlock_free(struct MemBlock* mem) {
   checkException();
   printf("ImmortalPhysical_RThread_MemBlock_free()\n");
 #endif
-  Scope_RThread_MemBlock_free(mem);
 }
 
 inline Allocator ImmortalPhysical_RThread_MemBlock_allocator(jobject memoryArea) {
@@ -89,7 +88,7 @@ void* ImmortalPhysical_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem,
   checkException();
   printf("ImmortalPhysical_NoHeapRThread_MemBlock_alloc(%d)\n", size);
 #endif
-  return Scope_NoHeapRThread_MemBlock_alloc(mem, size);
+  return NULL;
 }
 
 void  ImmortalPhysical_NoHeapRThread_MemBlock_free(struct MemBlock* mem) {
@@ -97,7 +96,6 @@ void  ImmortalPhysical_NoHeapRThread_MemBlock_free(struct MemBlock* mem) {
   checkException();
   printf("ImmortalPhysical_NoHeapRThread_MemBlock_free()\n");
 #endif
-  Scope_NoHeapRThread_MemBlock_free(mem);
 }
 
 inline Allocator ImmortalPhysical_NoHeapRThread_MemBlock_allocator(jobject memoryArea) {

@@ -28,7 +28,7 @@ typedef int Probe;
 
 #define Probe_init 0
 #define Object_null (Object)0
-#define HASH(obj) (int)obj
+#define HASH(obj) (int)(PTRMASK(obj))
 
 struct ObjectList {
   size_t size;

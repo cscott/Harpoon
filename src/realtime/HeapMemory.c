@@ -51,6 +51,9 @@ inline struct MemBlock* HeapMemory_RThread_MemBlock_new() {
     RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct MemBlock));
   struct BlockInfo* bi = (struct BlockInfo*)
     RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct BlockInfo));
+#ifdef RTJ_DEBUG_REF
+  struct PTRinfo* old_ptr_info;
+#endif
 #ifdef RTJ_DEBUG
   checkException();
   printf("HeapMemory_RThread_MemBlock_new()\n");
@@ -67,6 +70,13 @@ inline struct MemBlock* HeapMemory_RThread_MemBlock_new() {
   bi->allocator = NULL;
   memBlock->ref_info = RefInfo_new(0);
   MemBlock_INCREF(memBlock);
+#ifdef RTJ_DEBUG_REF
+  old_ptr_info = ptr_info;
+  ptr_info = (struct PTRinfo*)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct PTRinfo));
+  ptr_info->next = old_ptr_info;
+  ptr_info->memBlock = memBlock;
+  flex_mutex_init(&(memBlock->ptr_info_lock));
+#endif
   return memBlock;
 }
 

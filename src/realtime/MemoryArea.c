@@ -203,15 +203,12 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_throwIllegalAssignmentErro
   jclass excls;
 #ifdef RTJ_DEBUG
   printf("An Illegal assignment was detected.  Throwing an IllegalAssignmentError.\n");
-  printf("From a %s to a %s\n", 
-	 FNI_GetClassInfo((jclass)(FNI_UNWRAP(fromMA)->claz))->name,
-	 FNI_GetClassInfo((jclass)(FNI_UNWRAP(toMA)->claz))->name);
+  printf("From a %s to a %s\n", className(fromMA), className(toMA));
   printf("illegal access to ");
 #ifdef RTJ_DEBUG_REF
   printPointerInfo(toObj, 1);
 #else
-  printf("location 0x%08x of type %s\n", toObj, 
-	 FNI_GetClassInfo((jclass)(FNI_UNWRAP(toObj)->claz))->name);
+  printf("location 0x%08x of type %s\n", toObj, className(toObj));
 #endif
 #endif
   excls = (*env)->FindClass(env, "javax/realtime/IllegalAssignmentError");

@@ -414,7 +414,8 @@ void find_static_fields() {
 /* given the address of an instruction that is a GC point,
    returns a gc_data_ptr to the corresponding GC data */
 gc_index_ptr find_gc_data(ptroff_t addr) {
-    gc_index_ptr left=gc_index_start, right=gc_index_end;
+    gc_index_ptr left=(gc_index_ptr)gc_index_start;
+    gc_index_ptr right=(gc_index_ptr)gc_index_end;
     while(right >= left) {
 	gc_index_ptr x = left + ((right-left)/2);
 	if (addr < x->gc_pt) right = x-1; else left = x+1;
@@ -657,7 +658,7 @@ jint live_stack_offset_at(gc_stack_ptr ptr, int n) {
     if (n < ptr->num_stack)
 	return *(ptr->stack+n);
     report("ERROR: Index out of bounds");
-    return NULL;
+    return (jint)NULL;
 }
 
 /* given a gc_derivs_ptr, returns the number of live derived 

@@ -43,7 +43,7 @@ struct MemBlock* MemBlock_new(JNIEnv* env,
 #ifdef RTJ_DEBUG_REF
   flex_mutex_lock(&ptr_info_lock);
   old_ptr_info = ptr_info;
-  ptr_info = RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct PTRinfo));
+  ptr_info = (struct PTRinfo*)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct PTRinfo));
   ptr_info->next = old_ptr_info;
   ptr_info->memBlock = mb;
   flex_mutex_unlock(&ptr_info_lock);
@@ -101,7 +101,7 @@ struct MemBlock* MemBlock_new(JNIEnv* env,
 #endif
 #ifdef RTJ_DEBUG_REF
   mb->ptr_info = NULL;
-  flex_mutex_init(&mb->ptr_info_lock);
+  flex_mutex_init(&(mb->ptr_info_lock));
 #endif
   MemBlock_INCREF(mb);
   return mb;
@@ -122,38 +122,8 @@ inline struct inflated_oobj* getInflatedObject(JNIEnv* env,
     checkException();
 #endif
   }
-  return FNI_UNWRAP(obj)->hashunion.inflated;
+  return FNI_UNWRAP_MASKED(obj)->hashunion.inflated;
 }
-
-#ifdef WITH_NOHEAP_SUPPORT
-inline void _heapCheck_leap(const char* file, const int line, struct oobj* ptr) {
-#ifdef WITH_PRECISE_GC
-  JNIEnv* env;
-  if ((!(((int)ptr)&8))&&(((struct FNI_Thread_State*)(env = FNI_GetJNIEnv()))->noheap)) {
-    char desc[200];
-    jclass excls = (*env)->FindClass(env, "java/lang/IllegalAccessException");
-    snprintf(desc, 200, "attempted heap reference in native code at %s:%d\n", file, line); 
-    (*env)->ThrowNew(env, excls, desc);
-#ifdef RTJ_DEBUG
-    checkException();
-#endif
-  }  
-#endif
-}
-
-inline int IsNoHeapRealtimeThread(JNIEnv *env, 
-				  jobject realtimeThread) {
-#ifdef RTJ_DEBUG  
-  printf("IsNoHeapRealtimeThread(0x%08x, 0x%08x)\n", env, realtimeThread);
-  checkException();
-#endif
-  return (*env)->IsInstanceOf(env, realtimeThread, 
-			      (*env)->
-			      FindClass(env, 
-					"javax/realtime/NoHeapRealtimeThread")) 
-    == JNI_TRUE;
-}
-#endif
 
 void checkException() {
 #ifdef RTJ_DEBUG
@@ -164,6 +134,10 @@ void checkException() {
     exit(0);
   }
 #endif
+}
+
+const char* className(jobject obj) {
+  return FNI_GetClassInfo((jclass)(FNI_UNWRAP_MASKED(obj)->claz))->name;
 }
 
 inline long MemBlock_INCREF(struct MemBlock* memBlock) {
@@ -377,56 +351,6 @@ inline void remove_MemBlock_from_roots(struct MemBlock* mem) {
 }
 #endif
 
-
-void* Scope_RThread_MemBlock_alloc(struct MemBlock* mem, size_t size) {
-#ifdef RTJ_DEBUG
-  printf("Scope_RThread_MemBlock_alloc(0x%08x, %d)\n", mem, size);
-  checkException();
-#endif
-  return Heap_RThread_MemBlock_alloc(mem, size);
-}
-
-void  Scope_RThread_MemBlock_free(struct MemBlock* mem) {
-#ifdef RTJ_DEBUG
-  printf("Scope_RThread_MemBlock_free(0x%08x)\n", mem);
-  checkException();
-#endif
-}
-
-inline Allocator Scope_RThread_MemBlock_allocator(jobject memoryArea) {
-#ifdef RTJ_DEBUG
-  printf("Scope_RThread_MemBlock_allocator(0x%08x)\n", memoryArea);
-  checkException();
-#endif
-  return NULL;
-}
-
-#ifdef WITH_NOHEAP_SUPPORT
-void* Scope_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem, 
-						size_t size) {
-#ifdef RTJ_DEBUG
-  printf("Scope_NoHeapRThread_MemBlock_alloc(0x%08x, %d)\n", mem, size);
-  checkException();
-#endif
-  return Heap_RThread_MemBlock_alloc(mem, size);
-}
-
-void  Scope_NoHeapRThread_MemBlock_free(struct MemBlock* mem) {
-#ifdef RTJ_DEBUG
-  printf("Scope_NoHeapRThread_MemBlock_free(0x%08x)\n", mem);
-  checkException();
-#endif
-}
-
-inline Allocator Scope_NoHeapRThread_MemBlock_allocator(jobject memoryArea) {
-#ifdef RTJ_DEBUG
-  printf("Scope_NoHeapRThread_MemBlock_allocator(0x%08x)\n", memoryArea);
-  checkException();
-#endif
-  return NULL;
-}
-#endif
-
 #ifdef RTJ_DEBUG_REF
 void printPointerInfo(void* obj, int getClassInfo) {
   struct MemBlock* memBlock;
@@ -438,27 +362,23 @@ void printPointerInfo(void* obj, int getClassInfo) {
   printf("pointer at 0x%08x ", obj);
   while ((topPtrInfo != NULL)&&(ptrInfo == NULL)) {
     for (ptrInfo = (memBlock = topPtrInfo->memBlock)->ptr_info;
-	 (ptrInfo != NULL)&&(ptrInfo != obj); 
+	 (ptrInfo != NULL)&&(ptrInfo->ptr != obj); 
 	 ptrInfo = ptrInfo->next) {}
     topPtrInfo = topPtrInfo->next;
   }
   if (ptrInfo == NULL) {
     printf("not found in MemBlocks\n");
     if (getClassInfo) {
-      printf("pointing to a %s of size %d\n", 
-	     FNI_GetClassInfo((*env)->GetObjectClass(env, obj))->name,
-	     FNI_ObjectSize(obj));
+      printf("pointing to a %s of size %d\n", className(obj), FNI_ObjectSize(obj));
     } 
   } else {
     printf("found in MemBlock = 0x%08x, ", memBlock);
     if (getClassInfo) {
       printf("belonging to %s = 0x%08x\n",
-	     FNI_GetClassInfo((*env)->GetObjectClass(env, 
-				      memBlock->block_info->memoryArea))->name, 
+	     className(memBlock->block_info->memoryArea), 
 	     memBlock->block_info->memoryArea);
       printf("allocated during execution of %s = 0x%08x\n", 
-	     FNI_GetClassInfo((*env)->GetObjectClass(env, 
-				      memBlock->block_info->realtimeThread))->name, 
+	     className(memBlock->block_info->realtimeThread), 
 	     memBlock->block_info->realtimeThread);
     } else {
       printf("belonging to MemoryArea = 0x%08x\n", 
@@ -468,13 +388,96 @@ void printPointerInfo(void* obj, int getClassInfo) {
     }
     printf("at location %s:%d", ptrInfo->file, ptrInfo->line);
     if (getClassInfo) {
-      printf(" pointing to an %s of size %d\n", 
-	     FNI_GetClassInfo((*env)->GetObjectClass(env, obj))->name,
-	     ptrInfo->size);
+      printf(" pointing to an %s of size %d\n", className(obj), ptrInfo->size);
     } else {
       printf(" pointing to a location of size %d\n", ptrInfo->size);
     }
   }
   flex_mutex_unlock(&ptr_info_lock);
+}
+
+void dumpMemoryInfo(int classInfo) {
+  struct PTRinfo *topPtrInfo, *ptrInfo;
+  struct MemBlock* memBlock;
+  flex_mutex_lock(&ptr_info_lock);
+  topPtrInfo = ptr_info;
+  while (topPtrInfo != NULL) {
+    if (classInfo) {
+      printf("%s (0x%08x) x %s (0x%08x):\n", 
+	     className(topPtrInfo->memBlock->block_info->memoryArea), 
+	     topPtrInfo->memBlock->block_info->memoryArea,
+	     className(topPtrInfo->memBlock->block_info->realtimeThread),
+	     topPtrInfo->memBlock->block_info->realtimeThread);
+    } else {
+      printf("MemoryArea (0x%08x) x Thread (0x%08x)\n",
+	     topPtrInfo->memBlock->block_info->memoryArea,
+	     topPtrInfo->memBlock->block_info->realtimeThread);
+    }
+    printf("  ");
+    for (ptrInfo = (memBlock = topPtrInfo->memBlock)->ptr_info;
+	 (ptrInfo != NULL); ptrInfo = ptrInfo->next) {
+      printf("0x%08x (%s:%d of %d bytes), ", ptrInfo->ptr, ptrInfo->file, ptrInfo->line, ptrInfo->size);
+    }
+    printf("\n");
+    topPtrInfo = topPtrInfo->next;
+  }
+
+  flex_mutex_unlock(&ptr_info_lock);
+}
+
+#endif
+
+#ifdef WITH_NOHEAP_SUPPORT
+inline void _heapCheck_leap(struct oobj* ptr, const int line, const char* file) {
+#ifdef WITH_PRECISE_GC
+  JNIEnv* env;
+  if ((((int)ptr)&1)&&(((struct FNI_Thread_State*)(env = FNI_GetJNIEnv()))->noheap)) {
+    char desc[200];
+    jclass excls = (*env)->FindClass(env, "java/lang/IllegalAccessException");
+    snprintf(desc, 200, "attempted heap reference 0x%08x in native code at %s:%d\n", 
+	     ptr, file, line); 
+    (*env)->ThrowNew(env, excls, desc);
+#ifdef RTJ_DEBUG
+    checkException();
+#endif
+  }  
+#endif
+}
+
+#ifdef RTJ_DEBUG_REF
+inline void heapCheckRef(struct oobj* ptr, const int line, const char* file) {
+#else
+inline void heapCheckJava(struct oobj* ptr) {
+#endif 
+  JNIEnv* env = FNI_GetJNIEnv();
+  if (((struct FNI_Thread_State*)env)->noheap) {
+    char desc[400];
+    jclass excls = (*env)->FindClass(env, "java/lang/IllegalAccessException");
+#ifdef RTJ_DEBUG_REF
+    snprintf(desc, 400, "attempted heap reference 0x%08x in java code at %s:%d\n",
+	     ptr, line, file);
+    printf(desc);
+    printPointerInfo(ptr, 0);
+#else
+    snprintf(desc, 400, "attempted heap reference 0x%08x in java code\n");
+#endif
+    (*env)->ThrowNew(env, excls, desc);
+#ifdef RTJ_DEBUG
+    checkException();
+#endif
+  }
+}
+
+inline int IsNoHeapRealtimeThread(JNIEnv *env, 
+				  jobject realtimeThread) {
+#ifdef RTJ_DEBUG  
+  printf("IsNoHeapRealtimeThread(0x%08x, 0x%08x)\n", env, realtimeThread);
+  checkException();
+#endif
+  return (*env)->IsInstanceOf(env, realtimeThread, 
+			      (*env)->
+			      FindClass(env, 
+					"javax/realtime/NoHeapRealtimeThread")) 
+    == JNI_TRUE;
 }
 #endif

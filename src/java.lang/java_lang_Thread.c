@@ -94,7 +94,7 @@ static void remove_running_thread(void *cl) {
   if (nlist->next) nlist->next->prev = nlist->prev;
 #ifdef WITH_PRECISE_GC
 #if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
-  if (!FNI_GetJNIEnv()->noheap) {
+  if (!((struct FNI_Thread_State*)FNI_GetJNIEnv())->noheap) {
 #endif
     num_running_threads--;
     pthread_mutex_unlock(&gc_thread_mutex);
@@ -116,7 +116,7 @@ static void wait_on_running_thread() {
   pthread_mutex_lock(&running_threads_mutex);
 #ifdef WITH_PRECISE_GC
 #if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
-  if (!FNI_GetJNIEnv()->noheap) {
+  if (!((struct FNI_Thread_State*)FNI_GetJNIEnv())->noheap) {
 #endif
     // one less thread to wait for
     num_running_threads--;

@@ -96,17 +96,24 @@ inline long MemBlock_INCREF(struct MemBlock* memBlock);
 inline long MemBlock_DECREF(struct MemBlock* memBlock);
 inline struct inflated_oobj* getInflatedObject(JNIEnv* env, 
 					        jobject obj);
+const char* className(jobject obj);
 #ifdef WITH_NOHEAP_SUPPORT
 inline int IsNoHeapRealtimeThread(JNIEnv *env, 
 				  jobject realtimeThread);
-inline void _heapCheck_leap(const char* file, const int line, struct oobj* ptr);
-#define heapCheck(ptr) _heapCheck_leap(__FILE__, __LINE__, ptr)
+inline void _heapCheck_leap(struct oobj* ptr, const int line, const char* file);
+#define heapCheck(ptr) _heapCheck_leap(ptr, __LINE__, __FILE__)
+#ifdef RTJ_DEBUG_REF
+inline void heapCheckRef(struct oobj* ptr, const int line, const char* file);
+#else
+inline void heapCheckJava(struct oobj* ptr);
+#endif
 #endif
 void checkException();
 
 /* Identify pointers locations, def points, MemBlocks, MemoryArea, etc. */
 #ifdef RTJ_DEBUG_REF
 void printPointerInfo(void* obj, int printClassInfo);
+void dumpMemoryInfo(int printClassInfo);
 #endif
 
 #ifdef WITH_PRECISE_GC
@@ -142,7 +149,6 @@ MemBlockDECLThread(type, RThread);
 #endif
 
 MemBlockDECL(ScopedPhysical);
-MemBlockDECL(Scope);
 MemBlockDECL(CTScope);
 MemBlockDECL(VTScope);
 MemBlockDECL(LTScope);

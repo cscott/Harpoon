@@ -15,12 +15,12 @@ inline void RTJ_register_finalizer(jobject wrapped_obj,
 /* defined for speed of scanning. */
 
 #define RTJ_should_finalize(obj) \
-((((obj->hashunion.hashcode) & 1) == 0) && \
-(obj->hashunion.inflated->RTJ_finalizer))
+((((((struct oobj*)(PTRMASK(obj)))->hashunion.hashcode) & 1) == 0) && \
+(((struct oobj*)(PTRMASK(obj)))->hashunion.inflated->RTJ_finalizer))
 
 #define RTJ_finalize(obj) \
 if (RTJ_should_finalize(obj)) { \
-  obj->hashunion.inflated->RTJ_finalizer(obj, (void*)0); \
+  ((struct oobj*)(PTRMASK(obj)))->hashunion.inflated->RTJ_finalizer(PTRMASK(obj), (void*)0); \
 }
 
 #endif

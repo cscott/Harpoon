@@ -156,8 +156,8 @@ inline void ObjectList_freeRefs(struct ObjectList* ol) {
       printf("0x%08x ", ol->objects[i]);
 #endif
       RTJ_finalize(obj);
-      RTJ_FREE(obj);
-      obj = Object_null;
+      RTJ_FREE(PTRMASK(obj));
+      ol->objects[i] = Object_null;
     }
   }
 #ifdef RTJ_DEBUG

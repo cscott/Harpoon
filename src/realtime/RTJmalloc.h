@@ -13,9 +13,8 @@ inline void RTJ_preinit();
 inline void RTJ_init();
 
 #ifdef RTJ_DEBUG_REF
-#define RTJ_malloc(size) RTJ_malloc_leap(__FILE__, __LINE__, size);
-inline void* RTJ_malloc_leap(const char *file, const int line, 
-			     size_t size);
+#define RTJ_malloc(size) RTJ_malloc_ref(size, __LINE__, __FILE__);
+inline void* RTJ_malloc_ref(size_t size, const int line, const char *file);
 #else
 inline void* RTJ_malloc(size_t size);
 #endif
