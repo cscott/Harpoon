@@ -46,7 +46,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.9 1999-10-15 00:44:54 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.10 1999-10-15 01:21:23 pnkfelix Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -74,7 +74,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
         for (i = 0; i < paramdsts.length && i < 4; i++) {
             move = new MOVE(tf, src,
                             new TEMP(tf, src, paramtypes[i], paramdsts[i]),
-                            new TEMP(tf, src, paramtypes[i], RegFileInfo.reg[i]));
+                            new TEMP(tf, src, paramtypes[i], regFileInfo.reg[i]));
             if (prologue == null) {
                 prologue = move;
             } else {

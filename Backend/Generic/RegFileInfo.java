@@ -15,7 +15,7 @@ import java.util.Iterator;
     about the target machine's register file. 
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.5 1999-10-12 22:39:30 pnkfelix Exp $
+    @version $Id: RegFileInfo.java,v 1.1.2.6 1999-10-15 01:21:17 pnkfelix Exp $
  */
 public abstract class RegFileInfo {
     
@@ -24,23 +24,35 @@ public abstract class RegFileInfo {
         
     }
     
-    /** Returns the Set of registers that should be considered live at
-	the end of a method. 
+    /** Returns the <code>Set</code> of registers live at a method's
+	exit. 
+	
+	<BR> <B>effects:</B> Returns an unmodifiable <code>Set</code>
+	     of register <code>Temp</code>s of the registers that
+	     should be considered live at the end of a method. 
     */
     public abstract Set liveOnExit();
 
     /** Returns the Set of registers that are caller-saved.
-	Any register in this Set can be used arbitrarily in a method
-	call, and therefore it is the responsibility of the caller of
-	a method to save them if it wants them preserved.
+	
+	<BR> <B>effects:</B> Returns an unmodifiable <code>Set</code>
+	     of all of the <I>caller-saved</I> register
+	     <code>Temp</code>s.  Any register in this Set can be used
+	     arbitrarily in a method call, and therefore it is the
+	     responsibility of the caller of a method to save them if
+	     it wants them preserved. 
     */
     public abstract Set callerSave();
 
     /** Returns the Set of registers that are callee-saved.
-	All registers in this Set are assumed to be preserved during a
-	method call, and therefore it the responsibility of the method
-	being called it save them and restore them before returning if
-	it wants to use them for temporary storage.
+
+	<BR> <B>effects:</B> Returns an unmodifiable <code>Set</code>
+	     of all of the <I>callee-saved</I> register
+	     <code>Temp</code>s.  All registers in this Set are
+	     assumed to be preserved during a method call, and
+	     therefore it the responsibility of the method being
+	     called it save them and restore them before returning if
+	     it wants to use them for temporary storage. 
     */
     public abstract Set calleeSave();
 
@@ -50,7 +62,13 @@ public abstract class RegFileInfo {
     public abstract TempFactory regTempFactory();
 
     /** Checks if <code>t</code> is a element of the register file for
-	this backend. 
+	this architecture.
+	<BR> <B>effects:</B> 
+	     If <code>t</code> is an element of the register file, 
+	     Then returns true,
+	     Else returns false.
+	@param t <code>Temp</code> that may be part of the register
+	         file. 
     */
     public boolean isRegister(Temp t) {
 	return t.tempFactory() == regTempFactory();
@@ -150,7 +168,5 @@ public abstract class RegFileInfo {
     /** Returns an array of <code>Temp</code>s for all the registers
      *  that the register allocator can feel free to play with */
     public abstract Temp[] getGeneralRegisters();
-    /** Returns a specially-named Temp to use as the frame pointer. */
-    public abstract Temp FP();
 
 }

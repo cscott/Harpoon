@@ -22,6 +22,7 @@ import harpoon.Util.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
 import java.util.Iterator;
 import java.util.Map;
@@ -34,7 +35,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.3 1999-10-13 16:04:43 cananian Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.4 1999-10-15 01:21:23 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -44,24 +45,26 @@ public class RegFileInfo
     // file, since it was just cut-and-pasted out of the
     // hack-once-known-as-SAFrame
 
-    static Temp[] reg = new Temp[16];
-    private static Temp[] regLiveOnExit = new Temp[5];
-    private static Temp[] regGeneral = new Temp[11];
-    private static TempFactory regtf;
+    final Temp[] reg = new Temp[16];
+    final Set callerSaveRegs = new LinearSet(4);
+    final Set calleeSaveRegs = new LinearSet(9);
+    final Set liveOnExitRegs = new LinearSet(5);
+    final Temp[] regGeneral = new Temp[11];
+    final TempFactory regtf;
+    
+    final Temp FP;  // Frame pointer
+    final Temp IP;  // Scratch register 
+    final Temp SP;  // Stack pointer
+    final Temp LR;  // Link register
+    final Temp PC;  // Program counter
 
-    static final Temp TP;  // Top of memory pointer
-    static final Temp HP;  // Heap pointer
-    static final Temp FP;  // Frame pointer
-    static final Temp IP;  // Scratch register 
-    static final Temp SP;  // Stack pointer
-    static final Temp LR;  // Link register
-    static final Temp PC;  // Program counter
-
-    static {
+    /** Creates a <code>RegFileInfo</code>. 
+     */
+    public RegFileInfo() {
         regtf = new TempFactory() {
             private int i = 0;
             private final String scope = "strongarm-registers";
-
+	    
             /* StrongARM has 16 general purpose registers.
              * Special notes on ones we set aside:
              *  r11 = fp
@@ -74,7 +77,7 @@ public class RegFileInfo
             private final String[] names = {"r0", "r1", "r2", "r3", "r4", "r5",
                                             "r6", "r7", "r8", "r9", "r10", 
                                             "fp", "ip", "sp", "lr", "pc"};
-
+	    
             public String getScope() { return scope; }
             protected synchronized String getUniqueID(String suggestion) {
                 Util.assert(i < names.length, "Don't use the "+
@@ -87,33 +90,35 @@ public class RegFileInfo
             reg[i] = new Temp(regtf);
             if (i < 11) regGeneral[i] = reg[i];
         }
-
-	TP = reg[9];
-	HP = reg[10];
+	
 	FP = reg[11];
 	IP = reg[12];
 	SP = reg[13];
 	LR = reg[14];
 	PC = reg[15];
+	
+        liveOnExitRegs.add(reg[0]);  // return value
+        liveOnExitRegs.add(reg[1]); // return exceptional value
+        liveOnExitRegs.add(FP);
+        liveOnExitRegs.add(SP);
+        liveOnExitRegs.add(PC);
 
-        regLiveOnExit[0] = reg[0];  // return value
-        regLiveOnExit[1] = reg[1]; // return exceptional value
-        regLiveOnExit[2] = FP;
-        regLiveOnExit[3] = SP;
-        regLiveOnExit[4] = PC;
-        // offmap = new OffsetMap32(null);
+	for(int i=0; i<4; i++) {
+	    callerSaveRegs.add(reg[i]);
+	}
+	
+	for(int i=4; i<=12; i++) {
+	    calleeSaveRegs.add(reg[i]);
+	}
+	calleeSaveRegs.add(reg[14]);
     }
     
-    /** Creates a <code>RegFileInfo</code>. */
-    public RegFileInfo() {
-        
-    }
-
-    public Temp FP() { return reg[11]; }
+    //    public Temp FP() { return reg[11]; }
 
     public Temp[] getAllRegisters() { 
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, reg); 
     }
+
     public Temp getRegister(int index) {
 	return reg[index];
     }
@@ -132,7 +137,8 @@ public class RegFileInfo
 	}
     }
 
-    public Iterator suggestRegAssignment(Temp t, final Map regFile) throws harpoon.Backend.Generic.RegFileInfo.SpillException {
+    public Iterator suggestRegAssignment(Temp t, final Map regFile) 
+	throws harpoon.Backend.Generic.RegFileInfo.SpillException {
 	final ArrayList suggests = new ArrayList();
 	final ArrayList spills = new ArrayList();
 	if (t instanceof TwoWordTemp) {
@@ -178,21 +184,21 @@ public class RegFileInfo
 	return suggests.iterator();
     }
 
-    /** Returns the live registers on exit from a method for the
-	strong-arm. 
-    */ 
     public Set liveOnExit() {
-	HashSet hs = new HashSet();
-	hs.addAll(Arrays.asList(new Temp[]{ reg[0], TP, HP, FP,
-						IP, SP, LR, PC }));
-	return hs;
+	return Collections.unmodifiableSet(liveOnExitRegs);
     }
-
-    public Set callerSave() { Util.assert(false, "not implemented yet"); return null; }
-    public Set calleeSave() { Util.assert(false, "not implemented yet"); return null; }
+    
+    public Set callerSave() { 
+	return Collections.unmodifiableSet(callerSaveRegs);
+    }
+    
+    public Set calleeSave() { 
+	return Collections.unmodifiableSet(calleeSaveRegs);
+    }
     
 
     // LocationFactory interface.
+
     /** Allocate a global register of the specified type and return a
      *  handle to it.
      *  @param type a <code>IR.Tree.Type</code> specifying the type
@@ -207,19 +213,32 @@ public class RegFileInfo
 		    "doubleword locations not implemented by this "+
 		    "LocationFactory");
 	// all other types of locations need a single register.
+
+	// FSK: in theory, we could support arbitrary numbers of 
+	// allocations by switching to mem locations.  But I don't
+	// want to try to implement that yet.  
+	Util.assert(regtop > 4, "allocated WAY too many locations, something's wrong");
+
 	final Temp allocreg = reg[regtop--];
+
 	// take this out of callersave, calleesave, etc.
+	calleeSaveRegs.remove(allocreg);
+	callerSaveRegs.remove(allocreg);
+	liveOnExitRegs.remove(allocreg);
+
 	return new Location() {
 	    public Exp makeAccessor(TreeFactory tf, HCodeElement source) {
 		return new TEMP(tf, source, type, allocreg);
 	    }
 	};
     }
+
     /** The index of the next register to be allocated. */
     private int regtop=10;
 
     // since we're just making global registers, we don't need to
     // allocate the storage anywhere.
+
     /** Create an <code>HData</code> which allocates static space for
      *  any <code>LocationFactory.Location</code>s that have been created.
      *  As this implementation only allocates global registers, the
