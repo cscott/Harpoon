@@ -35,14 +35,14 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.30 1999-09-16 20:10:47 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.31 1999-09-16 20:17:22 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
      * <code>QuadSSI</code> and returns the first <code>Quad</code> of
      * a <code>QuadWithTry</code> IR. */
 
-    public static Object[] rehandler(final QuadFactory qf, final QuadSSI code) {
+    public static QuadMapPair rehandler(final QuadFactory qf, final QuadSSI code) {
 	//clone the original
 	QuadSSI ncode=(QuadSSI)code.clone(code.getMethod());
 	//make it SSA
@@ -199,7 +199,12 @@ final class ReHandler {
 	    if (reachable.contains(q))
 		q.accept(v);
 	}
-	return new Object[] {qH, typemap};
+	return new QuadMapPair(qH, typemap);
+    }
+    static class QuadMapPair {
+	public final Quad quad;
+	public final Map  map;
+	QuadMapPair(Quad q, Map m) { this.quad=q; this.map = m; }
     }
 
     public static void clean(QuadWithTry code) {
