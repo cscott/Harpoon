@@ -31,7 +31,7 @@ import java.util.Stack;
  * is hairy because of the big "efficiency-vs-immutable quads" fight.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.3.2.2 1999-09-16 22:50:28 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.3.2.3 1999-09-17 00:50:27 cananian Exp $
  */
 class SSIRename {
     private static final boolean sort_phisig = false;
@@ -172,10 +172,11 @@ class SSIRename {
 		CALL Q = (CALL) from;
 		Temp[] defs = (Temp[]) sdf.get(from);
 		if (defs==null) { defs=new Temp[2]; sdf.put(from, defs); }
+		// use of inc() below serves to kill any aliases on this path
 		if (e.which_succ()==0 && Q.retval()!=null)
-		    defs[0]=varmap.get(Q.retval());
+		    defs[0]=varmap.inc(Q.retval());
 		if (e.which_succ()==1)
-		    defs[1]=varmap.get(Q.retex());
+		    defs[1]=varmap.inc(Q.retex());
 	    }
 	    // now go on renaming inside basic block until we get to a phi
 	    // or sigma.
