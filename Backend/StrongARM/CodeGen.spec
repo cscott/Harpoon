@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.98 1999-11-05 07:03:17 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.99 1999-11-05 21:06:42 cananian Exp $
  */
 %%
 
@@ -339,7 +339,7 @@ import java.util.Iterator;
 	    emit(new InstrMEM( instrFactory, ROOT,
 			       "str `s0l, [`s1, #-4]!", 
 			       new Temp[] { SP }, // SP *implicitly* modified 
-			       new Temp[]{ SP, temp }));
+			       new Temp[]{ temp, SP }));
 	    stackOffset += 4; index--;
 	    break;
 	  }
