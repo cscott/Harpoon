@@ -54,8 +54,8 @@ public class ObjectInfo {
     public static final int defaultMaxDataPoints = 10;
 
     /**
-       Construct an {@link ObjectInfo} object that
-       will store the default number of data points.
+     * Construct an {@link ObjectInfo} object that
+     * will store the default number of data points.
      */
     public ObjectInfo() {
 	init(defaultMaxDataPoints);
