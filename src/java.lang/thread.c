@@ -258,7 +258,11 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   /* done! */
 }
 
-#if defined(WITH_HEAVY_THREADS) && defined(GLIBC_COMPAT2)
+/* CSA: don't know why this block is necessary; it looks plain wrong to
+   me, as threads are forced to share a single errno and will race over it.
+   Further, modern glibc emits a complaint on standard err when this
+   stuff is included.   CSA: 14-nov-2003 */
+#if defined(WITH_HEAVY_THREADS) && defined(GLIBC_COMPAT2) && defined(WBEEBEE)
 #undef errno
 extern int errno;
 int* __errno_location() {
