@@ -174,4 +174,48 @@ public class DebugScheduler extends Scheduler {
 	disabledThreads.printNoAlloc();
 	NoHeapRealtimeThread.print("]");
     }
+
+    public void handle_mutex_init() {
+	NoHeapRealtimeThread.print("\nhandle_mutex_init()");
+    }
+    
+    public void handle_mutex_destroy() {
+	NoHeapRealtimeThread.print("\nhandle_mutex_destroy()");
+    }
+
+    public void handle_mutex_trylock() {
+	NoHeapRealtimeThread.print("\nhandle_mutex_trylock()");
+    }
+
+    public void handle_mutex_lock() {
+	NoHeapRealtimeThread.print("\nhandle_mutex_lock()");
+    }
+
+    public void handle_mutex_unlock() {
+	NoHeapRealtimeThread.print("\nhandle_mutex_unlock()");
+    }
+
+    public void handle_cond_init() {
+	NoHeapRealtimeThread.print("\nhandle_cond_init()");
+    }
+
+    public void handle_cond_destroy() {
+	NoHeapRealtimeThread.print("\nhandle_cond_destroy()");
+    }
+
+    public void handle_cond_broadcast() {
+	NoHeapRealtimeThread.print("\nhandle_cond_broadcast()");
+    }
+
+    public void handle_cond_signal() {
+	NoHeapRealtimeThread.print("\nhandle_cond_signal()");
+    }
+
+    public void handle_cond_timedwait() {
+	NoHeapRealtimeThread.print("\nhandle_cond_timedwait()");
+    }
+
+    public void handle_cond_wait() {
+	NoHeapRealtimeThread.print("\nhandle_cond_wait()");
+    }
 }
