@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.1.2.10 1999-07-23 06:59:22 cananian Exp $
+ * @version $Id: QuadNoSSA.java,v 1.1.2.11 1999-08-04 02:13:33 cananian Exp $
  * @see QuadWithTry
  * @see QuadSSA
  */
@@ -49,8 +49,10 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
      */
     public String getName() { return codename; }
 
-    /** Return a code factory for QuadNoSSA, given a code factory for
-     *  QuadWithTry. */
+    /** Return a code factory for <code>QuadNoSSA</code>, given a code
+     *  factory for <code>QuadWithTry</code> or <code>QuadSSA</code>.
+     *  Given a code factory for <code>Bytecode</code>, chain through
+     *  <code>QuadWithTry.codeFactory()</code>.  */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
 	if (hcf.getCodeName().equals(QuadWithTry.codename)) {
 	    return new HCodeFactory() {
@@ -72,6 +74,9 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
 	    };
+	} else if (hcf.getCodeName().equals(harpoon.IR.Bytecode.Code.codename)){
+	    // implicit chaining
+	    return codeFactory(QuadWithTry.codeFactory(hcf));
 	} else throw new Error("don't know how to make " + codename +
 			       " from " + hcf.getCodeName());
     }

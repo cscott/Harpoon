@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.6 1999-07-30 22:05:08 bdemsky Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.7 1999-08-04 02:13:33 cananian Exp $
  * @see QuadNoSSA
  * @see QuadSSA
  */
@@ -53,8 +53,10 @@ public class QuadWithTry extends Code /* which extends HCode */ {
      */
     public String getName() { return codename; }
 
-    /** Return a code factory for QuadWithTry, given a code factory
-     *  for Bytecode. */
+    /** Return a code factory for <code>QuadWithTry</code>, given a
+     *  code factory for <code>Bytecode</code> or <code>QuadNoSSA</code>.
+     *  Given a code factory for <code>QuadSSA</code>, chain through 
+     *  <code>QuadNoSSA.codeFactory()</code>. */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
 	if (hcf.getCodeName().equals(harpoon.IR.Bytecode.Code.codename)) {
 	    return new HCodeFactory() {
@@ -76,8 +78,9 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
 	    };
-	} 
-	else throw new Error("don't know how to make " + codename +
+	} else if (hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSA.codename)) {
+	    return codeFactory(harpoon.IR.Quads.QuadSSA.codeFactory(hcf));
+	} else throw new Error("don't know how to make " + codename +
 			       " from " + hcf.getCodeName());
     }
     /** Return a code factory for QuadWithTry, using the default

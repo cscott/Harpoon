@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSA.java,v 1.1.2.6 1999-02-01 00:40:36 cananian Exp $
+ * @version $Id: QuadSSA.java,v 1.1.2.7 1999-08-04 02:13:33 cananian Exp $
  */
 public class QuadSSA extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -54,7 +54,10 @@ public class QuadSSA extends Code /* which extends HCode */ {
      */
     public String getName() { return codename; }
     
-    /** Return a code factory for QuadSSA, given a code factory for QuadNoSSA.
+    /** Return a code factory for <code>QuadSSA</code>, given a code
+     *  factory for <code>QuadNoSSA</code>.  Given a code factory for
+     *  <code>Bytecode</code> or <code>QuadWithTry</code>, chain
+     *  through <code>QuadNoSSA.codeFactory()</code>.
      */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
 	if (hcf.getCodeName().equals(QuadNoSSA.codename)) {
@@ -66,6 +69,10 @@ public class QuadSSA extends Code /* which extends HCode */ {
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
 	    };
+	} else if (hcf.getCodeName().equals(harpoon.IR.Bytecode.Code.codename)
+		   || hcf.getCodeName().equals(QuadWithTry.codename)) {
+	    // do some implicit chaining.
+	    return codeFactory(QuadNoSSA.codeFactory(hcf));
 	} else throw new Error("don't know how to make " + codename + 
 			       " from " + hcf.getCodeName());
     }
