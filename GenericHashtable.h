@@ -1,11 +1,13 @@
 #ifndef GENHASHTABLE
 #define GENHASHTABLE
-#define gennumbins 10000
+#define geninitialnumbins 100
 
 struct genhashtable {
   int (*hash_function)(void *);
   int (*comp_function)(void *,void *);
-  struct genpointerlist * bins[gennumbins];
+  struct genpointerlist ** bins;
+  long counter;
+  int currentsize;
 };
 
 

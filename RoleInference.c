@@ -17,7 +17,7 @@
 
 static int programfd;
 #define bufsize 1000
-#define DEBUG
+//#define DEBUG
 long long pointerage=0;
 
 
@@ -97,6 +97,7 @@ void doanalysis() {
 	struct arraylist *tmpal=tmp->next;
 	doarrayassignment(&heap, dsto, tmp->index-srcpos+dstpos, tmp->object);
 #ifdef EFFECTS
+	addarraypath(&heap, ht, srcuid ,tmp->object->uid);
 	addeffect(&heap, dstuid, "[]", tmp->object->uid);
 #endif
 	free(tmp);

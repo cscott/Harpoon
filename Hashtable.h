@@ -1,9 +1,11 @@
 #ifndef HASHTABLE
 #define HASHTABLE
-#define numbins 10000
+#define initialnumbins 100
 
 struct hashtable {
-  struct pointerlist * bins[numbins];
+  struct pointerlist ** bins;
+  long counter;
+  int currentsize;
 };
 
 #include "RoleInference.h"
@@ -17,7 +19,7 @@ struct pointerlist {
 
 int puttable(struct hashtable *, long long key, void * object);
 void * gettable(struct hashtable *, long long key);
-int hashfunction(long long key);
+int hashfunction(struct hashtable *,long long key);
 struct hashtable * allocatehashtable();
 void freehashtable(struct hashtable * ht);
 int contains(struct hashtable *ht, long long key);

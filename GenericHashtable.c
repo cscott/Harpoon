@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <values.h>
 #include "GenericHashtable.h"
 #ifdef MDEBUG
 #include <dmalloc.h>
@@ -15,6 +16,28 @@ int genputtable(struct genhashtable *ht, void * key, void * object) {
   newptrlist->object=object;
   newptrlist->next=ht->bins[bin];
   ht->bins[bin]=newptrlist;
+  ht->counter++;
+  if(ht->counter>ht->currentsize&&ht->currentsize!=MAXINT) {
+    /* Expand hashtable */
+    long newcurrentsize=(ht->currentsize<(MAXINT/2))?ht->currentsize*2:MAXINT;
+    long oldcurrentsize=ht->currentsize;
+    struct genpointerlist **newbins=(struct genpointerlist **)calloc(newcurrentsize, sizeof(struct genpointerlist *));
+    struct genpointerlist **oldbins=ht->bins;
+    long i;
+    ht->currentsize=newcurrentsize;
+    for(i=0;i<oldcurrentsize;i++) {
+      struct genpointerlist * tmpptr=oldbins[i];
+      while(tmpptr!=NULL) {
+        int hashcode=genhashfunction(ht, tmpptr->src);
+        struct genpointerlist *nextptr=tmpptr->next;
+        tmpptr->next=newbins[hashcode];
+        newbins[hashcode]=tmpptr;
+        tmpptr=nextptr;
+      }
+    }
+    ht->bins=newbins;
+    free(oldbins);
+  }
   return 1;
 }
 
@@ -46,6 +69,7 @@ void genfreekey(struct genhashtable *ht, void * key) {
   if (((ht->comp_function==NULL)&&(ptr->src==key))||((ht->comp_function!=NULL)&&(*ht->comp_function)(ptr->src,key))) {
     ht->bins[genhashfunction(ht,key)]=ptr->next;
     free(ptr);
+    ht->counter--;
     return;
   }
   while(ptr->next!=NULL) {
@@ -53,6 +77,7 @@ void genfreekey(struct genhashtable *ht, void * key) {
       struct genpointerlist *tmpptr=ptr->next;
       ptr->next=tmpptr->next;
       free(tmpptr);
+      ht->counter--;
       return;
     }
     ptr=ptr->next;
@@ -62,21 +87,24 @@ void genfreekey(struct genhashtable *ht, void * key) {
 
 int genhashfunction(struct genhashtable *ht, void * key) {
   if (ht->hash_function==NULL)
-    return ((long int)key) % gennumbins;
+    return ((long int)key) % ht->currentsize;
   else
-    return ((*ht->hash_function)(key)) % gennumbins;
+    return ((*ht->hash_function)(key)) % ht->currentsize;
 }
 
 struct genhashtable * genallocatehashtable(int (*hash_function)(void *),int (*comp_function)(void *, void *)) {
   struct genhashtable *ght=(struct genhashtable *) calloc(1,sizeof(struct genhashtable));
+  struct genpointerlist **gpl=(struct genpointerlist **) calloc(geninitialnumbins, sizeof(struct genpointerlist *));
   ght->hash_function=hash_function;
   ght->comp_function=comp_function;
+  ght->currentsize=geninitialnumbins;
+  ght->bins=gpl;
   return ght;
 }
 
 void genfreehashtable(struct genhashtable * ht) {
   int i;
-  for (i=0;i<gennumbins;i++) {
+  for (i=0;i<ht->currentsize;i++) {
     if (ht->bins[i]!=NULL) {
       struct genpointerlist *genptr=ht->bins[i];
       while(genptr!=NULL) {
@@ -86,12 +114,13 @@ void genfreehashtable(struct genhashtable * ht) {
       }
     }
   }
+  free(ht->bins);
   free(ht);
 }
 
 void genfreekeyhashtable(struct genhashtable * ht) {
   int i;
-  for (i=0;i<gennumbins;i++) {
+  for (i=0;i<ht->currentsize;i++) {
     if (ht->bins[i]!=NULL) {
       struct genpointerlist *genptr=ht->bins[i];
       while(genptr!=NULL) {
@@ -102,6 +131,7 @@ void genfreekeyhashtable(struct genhashtable * ht) {
       }
     }
   }
+  free(ht->bins);
   free(ht);
 }
 
@@ -120,7 +150,7 @@ void * gennext(struct geniterator *it) {
     it->ptr=tmp->next;
     return tmp->src;
   }
-  for(;i<gennumbins;i++) {
+  for(;i<it->ht->currentsize;i++) {
     if (it->ht->bins[i]!=NULL) {
       it->ptr=it->ht->bins[i]->next;
       it->binnumber=i+1;

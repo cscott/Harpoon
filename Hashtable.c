@@ -3,23 +3,46 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <values.h>
 #include "Hashtable.h"
 #ifdef MDEBUG
 #include <dmalloc.h>
 #endif
 
 int puttable(struct hashtable *ht, long long key, void * object) {
-  int bin=hashfunction(key);
+  int bin=hashfunction(ht,key);
   struct pointerlist * newptrlist=(struct pointerlist *) calloc(1,sizeof(struct pointerlist));
   newptrlist->uid=key;
   newptrlist->object=object;
   newptrlist->next=ht->bins[bin];
   ht->bins[bin]=newptrlist;
+  ht->counter++;
+  if (ht->counter>ht->currentsize&&ht->currentsize!=MAXINT) {
+    /* Expand hashtable */
+    long newcurrentsize=(ht->currentsize<(MAXINT/2))?ht->currentsize*2:MAXINT;
+    long oldcurrentsize=ht->currentsize;
+    struct pointerlist **newbins=(struct pointerlist **)calloc(newcurrentsize, sizeof(struct pointerlist *));
+    struct pointerlist **oldbins=ht->bins;
+    long i;
+    ht->currentsize=newcurrentsize;
+    for(i=0;i<oldcurrentsize;i++) {
+      struct pointerlist * tmpptr=oldbins[i];
+      while(tmpptr!=NULL) {
+	int hashcode=hashfunction(ht, tmpptr->uid);
+	struct pointerlist *nextptr=tmpptr->next;
+	tmpptr->next=newbins[hashcode];
+	newbins[hashcode]=tmpptr;
+	tmpptr=nextptr;
+      }
+    }
+    ht->bins=newbins;
+    free(oldbins);
+  }
   return 1;
 }
 
 void * gettable(struct hashtable *ht, long long key) {
-  struct pointerlist * ptr=ht->bins[hashfunction(key)];
+  struct pointerlist * ptr=ht->bins[hashfunction(ht,key)];
   while(ptr!=NULL) {
     if (ptr->uid==key)
       return ptr->object;
@@ -30,7 +53,7 @@ void * gettable(struct hashtable *ht, long long key) {
 }
 
 int contains(struct hashtable *ht, long long key) {
-  struct pointerlist * ptr=ht->bins[hashfunction(key)];
+  struct pointerlist * ptr=ht->bins[hashfunction(ht,key)];
   while(ptr!=NULL) {
     if (ptr->uid==key)
       return 1;
@@ -40,11 +63,12 @@ int contains(struct hashtable *ht, long long key) {
 }
 
 void freekey(struct hashtable *ht, long long key) {
-  struct pointerlist * ptr=ht->bins[hashfunction(key)];
+  struct pointerlist * ptr=ht->bins[hashfunction(ht,key)];
 
   if (ptr->uid==key) {
-    ht->bins[hashfunction(key)]=ptr->next;
+    ht->bins[hashfunction(ht,key)]=ptr->next;
     free(ptr);
+    ht->counter--;
     return;
   }
   while(ptr->next!=NULL) {
@@ -52,6 +76,7 @@ void freekey(struct hashtable *ht, long long key) {
       struct pointerlist *tmpptr=ptr->next;
       ptr->next=tmpptr->next;
       free(tmpptr);
+      ht->counter--;
       return;
     }
     ptr=ptr->next;
@@ -59,17 +84,20 @@ void freekey(struct hashtable *ht, long long key) {
   printf("XXXXXXXXX: COULDN'T FIND ENTRY FOR KEY %lld\n",key);
 }
 
-int hashfunction(long long key) {
-  return key % numbins;
+int hashfunction(struct hashtable *ht, long long key) {
+  return key % ht->currentsize;
 }
 
 struct hashtable * allocatehashtable() {
-  return (struct hashtable *) calloc(1,sizeof(struct hashtable));
+  struct hashtable * ht=(struct hashtable *) calloc(1,sizeof(struct hashtable));
+  ht->bins=(struct pointerlist **)calloc(initialnumbins, sizeof(struct pointerlist *));
+  ht->currentsize=initialnumbins;
+  return ht;
 }
 
 void freehashtable(struct hashtable * ht) {
   int i;
-  for (i=0;i<numbins;i++) {
+  for (i=0;i<ht->currentsize;i++) {
     if (ht->bins[i]!=NULL) {
       struct pointerlist *genptr=ht->bins[i];
       while(genptr!=NULL) {
@@ -79,12 +107,13 @@ void freehashtable(struct hashtable * ht) {
       }
     }
   }
+  free(ht->bins);
   free(ht);
 }
 
 void freedatahashtable(struct hashtable * ht, void (*freefunction)(void *)) {
   int i;
-  for (i=0;i<numbins;i++) {
+  for (i=0;i<ht->currentsize;i++) {
     if (ht->bins[i]!=NULL) {
       struct pointerlist *genptr=ht->bins[i];
       while(genptr!=NULL) {
@@ -95,5 +124,6 @@ void freedatahashtable(struct hashtable * ht, void (*freefunction)(void *)) {
       }
     }
   }
+  free(ht->bins);
   free(ht);
 }
