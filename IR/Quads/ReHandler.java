@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.40 1999-11-11 18:09:06 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.41 1999-11-11 18:28:41 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -1302,7 +1302,7 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    }
 	}
 	else {
-	    if (q.retval()!=null) {
+	    if ((q.retval()!=null)&&(ti.typeMap(q,q.retval())!=HClass.Void)) {
 		HClass rettype=hc.getMethod().getReturnType();
 		Set parentcast=(Set)typecast.get(q.prev(0));
 		WorkSet ourcasts=new WorkSet(parentcast);
