@@ -17,7 +17,12 @@ public class Buffer extends Node implements Runnable {
 	while (true) {
 	    synchronized (this) {
 		if (dequeue == enqueue) {
-		    wait();
+		    try {
+			wait();
+		    } catch (InterruptedException e) {
+			System.out.println(e.toString());
+			System.exit(-1);
+		    }
 		}
 		super.process(buf[dequeue]);
 		dequeue=(dequeue+1)%buf.length;
