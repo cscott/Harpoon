@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.20 2000-07-14 16:16:14 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.21 2000-07-17 00:48:40 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -279,11 +279,12 @@ public class TreeToC extends java.io.PrintWriter {
 	}
 
 	// useful line number update function.
+	private int suppress_directives=0;
 	private boolean EMIT_LINE_DIRECTIVES=false;
 	private String last_file = null;
 	private int last_line = 0;
 	private void updateLine(Tree e) {
-	    if (!EMIT_LINE_DIRECTIVES) return;
+	    if (!EMIT_LINE_DIRECTIVES || suppress_directives>0) return;
 	    if (e instanceof SEQ) return;
 	    if (pw==null) return;
 	    String curr_file = e.getSourceFile();
@@ -298,7 +299,7 @@ public class TreeToC extends java.io.PrintWriter {
 	    if (line_needed) emitLineDirective(!files_match);
 	}
 	private void emitLineDirective(boolean emitFile) {
-	    if (!EMIT_LINE_DIRECTIVES) return;
+	    if (!EMIT_LINE_DIRECTIVES || suppress_directives>0) return;
 	    if (last_file==null && last_line==0) return;
 	    pw.println();
 	    pw.print("#line "+last_line);
@@ -364,6 +365,7 @@ public class TreeToC extends java.io.PrintWriter {
 		pw.print("L"); // macro prefix for long ops.
 	    if (e.op==Bop.SHR) pw.print("SHR("); // use macro
 	    if (e.op==Bop.USHR) pw.print("USHR("); // use macro
+	    if (e.op==Bop.SHR||e.op==Bop.USHR) suppress_directives++;
 	    //if (e.type()==e.POINTER) pw.print("(void*)");
 	    trans(e.getLeft());
 	    switch(e.op) {
@@ -387,11 +389,13 @@ public class TreeToC extends java.io.PrintWriter {
 	    //if (e.type()==e.POINTER) pw.print("(void*)");
 	    trans(e.getRight());
 	    if (e.op==Bop.SHR||e.op==Bop.USHR) pw.print(")"); // close macro
+	    if (e.op==Bop.SHR||e.op==Bop.USHR) suppress_directives--;
 	    pw.print(")");
 	}
 	public void visit(CALL e) {
 	    Set liveo = liveObjects(e);
 	    pw.print("\t"); emitPush(liveo); pw.print(";"); nl();
+	    suppress_directives++;
 	    String nh = inh.requiresHandler(e) ? "" : "_NH";
 	    boolean callv = (e.getRetval()==null);
 	    if (callv) {
@@ -420,6 +424,7 @@ public class TreeToC extends java.io.PrintWriter {
 	    trans(e.getRetex());
 	    pw.print(", "+label(e.getHandler().label));
 	    pw.print(", "); emitPop(liveo); pw.print(");");
+	    suppress_directives--;
 	    nl();
 	}
 	public void visit(CJUMP e) {
@@ -662,9 +667,11 @@ public class TreeToC extends java.io.PrintWriter {
 	    if (isVoidMethod)
 		pw.print("\tRETURNV();");
 	    else {
+		suppress_directives++;
 		pw.print("\tRETURN("+ctype(this.method.getReturnType())+",");
 		trans(e.getRetval());
 		pw.print(");");
+		suppress_directives--;
 	    }
 	    nl();
 	}
@@ -685,6 +692,7 @@ public class TreeToC extends java.io.PrintWriter {
 	    pw.print(e.temp);
 	}
 	public void visit(THROW e) {
+	    suppress_directives++;
 	    if (isVoidMethod) {
 		pw.print("\tTHROWV("); trans(e.getRetex()); pw.print(");");
 	    } else {
@@ -692,6 +700,7 @@ public class TreeToC extends java.io.PrintWriter {
 		trans(e.getRetex());
 		pw.print(");");
 	    }
+	    suppress_directives--;
 	    nl();
 	}
 	public void visit(UNOP e) {
