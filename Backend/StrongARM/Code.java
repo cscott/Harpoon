@@ -27,9 +27,9 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.22 2000-06-08 06:25:13 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.23 2000-06-29 02:19:30 cananian Exp $
  */
-public class Code extends harpoon.Backend.Generic.Code {
+class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
 
     private static final boolean DEBUG = false;

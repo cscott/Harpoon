@@ -26,9 +26,9 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for MIPS assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.3 2000-06-27 20:30:42 witchel Exp $
+ * @version $Id: Code.java,v 1.1.2.4 2000-06-29 02:19:24 cananian Exp $
  */
-public class Code extends harpoon.Backend.Generic.Code {
+class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "mips";
 
     private static final boolean DEBUG = false;

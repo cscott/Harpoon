@@ -27,9 +27,9 @@ import java.util.Set;
  * <code>Code</code> is a code-view for SPARC assembly.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.10 2000-02-14 20:05:12 andyb Exp $
+ * @version $Id: Code.java,v 1.1.2.11 2000-06-29 02:19:32 cananian Exp $
  */
-public class Code extends harpoon.Backend.Generic.Code {
+class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "sparc";
 
     private Map tempInstrPairToRegisterMap;
