@@ -1,3 +1,4 @@
+
 // SAMain.java, created Mon Aug  2 19:41:06 1999 by pnkfelix
 // Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
@@ -66,7 +67,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.72 2000-04-04 05:39:48 bdemsky Exp $
+ * @version $Id: SAMain.java,v 1.1.2.73 2000-04-07 19:23:13 bdemsky Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -79,6 +80,7 @@ public class SAMain extends harpoon.IR.Registration {
     private static boolean OUTPUT_INFO = false;
     private static boolean QUIET = false;
     private static boolean OPTIMIZE = false;
+    private static boolean LOOPOPTIMIZE = false;
 
     private static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     private static HClass  singleClass = null; // for testing single classes
@@ -99,6 +101,7 @@ public class SAMain extends harpoon.IR.Registration {
 
     private static File ASSEM_DIR = null;
     private static HCodeFactory hcf;
+
 
     public static void main(String[] args) {
 	hcf = // default code factory.
@@ -145,6 +148,10 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 	callGraph = new CallGraphImpl(classHierarchy, hcf);
 	frame = new Frame(mainM, classHierarchy, callGraph);
+	if (LOOPOPTIMIZE) {
+	    hcf=harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
+	    hcf=harpoon.Analysis.LowQuad.Loop.LoopOptimize.codeFactory(hcf);
+	}
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
 	hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
@@ -413,7 +420,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     private static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "m:i:c:o:DOPFHRLAhq1::C:");
+	Getopt g = new Getopt("SAMain", args, "m:i:c:o:DOPFHRLlAhq1::C:");
 	
 	int c;
 	String arg;
@@ -441,6 +448,7 @@ public class SAMain extends harpoon.IR.Registration {
 		break;
 	    case 'i':
 		arg=g.getOptarg();
+		System.out.println("loading "+arg);
 		try {
 		ObjectInputStream ois=new ObjectInputStream(
 							    new FileInputStream(arg));
@@ -451,6 +459,9 @@ public class SAMain extends harpoon.IR.Registration {
 		    System.out.println(e + " was thrown");
 		    System.exit(-1);
 		}
+		break;
+	    case 'l':
+		LOOPOPTIMIZE=true;
 		break;
 	    case 'D':
 		OUTPUT_INFO = PRINT_DATA = true;
@@ -551,6 +562,12 @@ public class SAMain extends harpoon.IR.Registration {
 
 	out.println("-A");
 	out.println("\tSame as -OPLR");
+
+	out.println("-i <filename>");
+	out.println("Read CodeFactory in from FileName");
+
+	out.println("-l");
+	out.println("Turn on Loop Optimizations");
 
 	out.println("-q");
 	out.println("\tTurns on quiet mode (status messages are not output)");
