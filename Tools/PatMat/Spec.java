@@ -22,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.40 2000-02-13 02:41:13 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.41 2000-02-13 04:00:02 pnkfelix Exp $
  */
 public class Spec  {
 
@@ -1084,6 +1084,14 @@ public class Spec  {
 	    bs = new BitString(5);//ACK: too tightly coupled to Tree.Type
 	    unsignedPrecises = new BitString(32);
 	    signedPrecises = new BitString(32);
+	}
+
+	/** Constructs a new <code>Spec.TypeSet</code> with type <code>t</code>. */
+	public TypeSet(int t) {
+	    bs = new BitString(5);//ACK: too tightly coupled to Tree.Type
+	    unsignedPrecises = new BitString(32);
+	    signedPrecises = new BitString(32);
+	    set(t);
 	}
 	
 	/** Checks if <code>this</code> contains <code>type</code>.

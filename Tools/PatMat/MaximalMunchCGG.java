@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.51 2000-02-13 02:41:13 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.52 2000-02-13 04:00:01 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -739,6 +739,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	final String stmArg = "stmArg";
 	final String indent = "\t\t\t";
 
+
 	Spec.RuleVisitor srv = new Spec.RuleVisitor() {
 	    public void visit(Spec.Rule r) {
 		Util.assert(false, "SpecRuleVisitor should never visit Rule");
@@ -774,6 +775,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 					   recurse.degree ) );
 	    }
 	    public void visit(Spec.RuleExp r) { 
+		if (isData) return;
+
 		TypeExpRecurse recurse = 
 		    new TypeExpRecurse(expArg, indent + "\t");
 		r.exp.accept(recurse);
@@ -805,13 +808,13 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 					   // for r.result.id 
 					   (isData?"":
 					    "harpoon.ClassFile.HClass hclz"+
-					   " = code.getTreeDerivation().typeMap(ROOT);"+
+					   " = code.getTreeDerivation().typeMap(ROOT);\n"+
 					   "if (hclz != null) { "+
 					   "\n\t TYPE_STATE.declare("+r.result_id+", hclz);"+
 					   "} else { "+
 					   "\n\t TYPE_STATE.declare("+r.result_id+", "+
 					   "\n\t                    "+
-					   "code.getTreeDerivation().derivation(ROOT));"+
+					   "code.getTreeDerivation().derivation(ROOT));\n"+
 					   "}") +
 					   
 					   r.action_str + 
@@ -828,7 +831,22 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    list.head.accept(srv);
 	    list = list.tail;
 	}
+
 	
+	Spec.TypeSet nonPtr = new Spec.TypeSet();
+	nonPtr.set(Type.INT); nonPtr.set(Type.LONG);
+	nonPtr.set(Type.FLOAT); nonPtr.set(Type.DOUBLE);
+	Spec.TypeSet ptr = new Spec.TypeSet(Type.POINTER);
+	Spec.RuleExp tempRuleNP = new Spec.RuleExp
+	    (new Spec.ExpTemp(nonPtr, "t_orig"), "t_new",
+	     null, "Temp tt = frame.getTempBuilder().makeTemp( ROOT, inf.tempFactory());\n");
+	Spec.RuleExp tempRuleP = new Spec.RuleExp
+	    (new Spec.ExpTemp(ptr,    "p_orig"),"p_new",
+	     null, "Temp pp = frame.getTempBuilder().makeTemp( ROOT, inf.tempFactory());\n");	
+
+	tempRuleNP.accept(srv);
+	tempRuleP.accept(srv);
+
 	Comparator compare = new RuleTupleComparator();
 	Collections.sort(expMatchActionPairs, compare);
 	Collections.sort(stmMatchActionPairs, compare);
