@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.39 1999-06-24 00:56:07 pnkfelix Exp $
+# $Id: GNUmakefile,v 1.61.2.40 1999-06-24 02:14:10 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -20,10 +20,11 @@ INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 #JDKDOCLINK = http://java.sun.com/products/jdk/1.2/docs/api
 JDKDOCLINK = http://palmpilot.lcs.mit.edu/~pnkfelix/jdk-javadoc/java.sun.com/products/jdk/1.2/docs/api
-ifndef CURDIR   # make this file work with make version less than 3.77
+
+# make this file work with make version less than 3.77
+ifndef CURDIR
 	CURDIR := $(shell pwd)
 endif
-
 # Add "-link" to jdk's javadoc if we are using a javadoc that supports it
 JDOCFLAGS += \
 	$(shell if javadoc -help 2>&1 | grep -q -- -link; \
@@ -56,9 +57,6 @@ ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
 		egrep -v "^[.]/java_cup" | \
 		sed -e "s|^[.]/*||")
-
-
-
 ALLSOURCE :=  $(MACHINE_GEN) $(filter-out $(MACHINE_GEN), \
 		$(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java))))
@@ -67,7 +65,10 @@ TARSOURCE := $(filter-out $(MACHINE_GEN), $(filter-out JavaChip%, \
 JARPKGS := $(subst harpoon/Contrib,gnu, \
 		$(foreach pkg, $(filter-out JavaChip%, \
 			$(filter-out Test%,$(ALLPKGS))), harpoon/$(pkg)))
-PROPERTIES:=Contrib/getopt/MessagesBundle.properties
+PROPERTIES:=Contrib/getopt/MessagesBundle.properties \
+	    RunTime/Monitor.properties
+HTMLDESC:=$(foreach dir, $(ALLPKGS),\
+	    $(wildcard $(dir)/package.html) $(wildcard $(dir)/overview.html))
 
 NONEMPTYPKGS := $(shell ls  $(filter-out GNUmakefile,$(TARSOURCE))  | \
 		sed -e 's|/*[A-Za-z0-9_]*\.[A-Za-z0-9_]*$$||' | sort -u)
@@ -102,8 +103,9 @@ jikes: 	$(MACHINE_GEN)
 
 properties:
 	@echo -n Updating properties... ""
-	@mkdir -p gnu/getopt
+	@-mkdir -p gnu/getopt harpoon/RunTime
 	@cp Contrib/getopt/MessagesBundle.properties gnu/getopt
+	@cp RunTime/Monitor.properties harpoon/RunTime
 	@echo done.
 
 first:
@@ -136,8 +138,9 @@ olderfirst:
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 
 Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
-	${JAR} c0f Harpoon.jar COPYING VERSIONS gnu/getopt/*.properties \
-		$(foreach pkg,$(JARPKGS),$(pkg)/*.class)
+	${JAR} c0f Harpoon.jar COPYING VERSIONS \
+		$(foreach pkg,$(JARPKGS),\
+		 $(wildcard $(pkg)/*.class) $(wildcard $(pkg)/*.properties))
 	date '+%-d-%b-%Y at %r %Z.' > Harpoon.jar.TIMESTAMP
 
 jar:	Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORT)
@@ -187,8 +190,8 @@ Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
 	xvcg -psoutput $@ -paper 8x11 -color $(VCG_OPT) $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
-harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT) $(PROPERTIES) bin/test-collections $(MUNGE) $(UNMUNGE) mark-executable
-	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT) $(PROPERTIES) bin/test-collections $(MUNGE) $(UNMUNGE)
+harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT) $(PROPERTIES) $(HTMLDESC) bin/test-collections $(MUNGE) $(UNMUNGE) mark-executable
+	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT) $(PROPERTIES) $(HTMLDESC) bin/test-collections $(MUNGE) $(UNMUNGE)
 	date '+%-d-%b-%Y at %r %Z.' > harpoon.tgz.TIMESTAMP
 
 tar:	harpoon.tgz harpoon.tgz.TIMESTAMP
@@ -225,12 +228,12 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	  cp ChangeLog doc/ChangeLog.txt; \
 	fi
 	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
-	chmod -R a+rX doc ; chmod a+r doc/*
+	chmod -R a+rX doc
 
 doc-install: doc/TIMESTAMP mark-executable
 	if [ ! -f doc/annotated ]; then \
 		bin/annotate.sh ; touch doc/annotated; \
-		chmod a+rx doc ; chmod a+r doc/* ;\
+		chmod -R a+rX doc ;\
 	fi
 	$(SSH) $(INSTALLMACHINE) \
 		/bin/rm -rf $(INSTALLDIR)/doc
