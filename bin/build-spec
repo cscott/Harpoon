@@ -28,7 +28,7 @@ done
 start=${2:-"1"}
 end=${3:-"10"}
 errors=
-tmprootset=tmp-root-set
+tmprootset=tmp-root-set.$$
 
 case $backend in
     precisec) suf=sa ; buildscript=bin/build-precisec ;;
@@ -64,6 +64,7 @@ for s in `ls $SPECPATH/spec/benchmarks | sort | sed -ne ${start},${end}p`; do
 	errors="$errors$dir "
     fi
 done
+rm -f $tmprootset
 if [ "$errors" != "" ]; then
     echo FAILED: $errors
     exit 1
