@@ -62,7 +62,7 @@ FILE: foreach $f (split(/\s+/,`make list`)) {
     close FH;
 
     # normalize author string.
-    s/([@]author\s+)(.*)(?=(, based on)|[\r\n])/$1.&saneauthors($2)/eg;
+    s/([@]author\s+)(.*?)(, based on)?$/$1.&saneauthors($2).$3/meg;
 
     # check for header string (with timestamp) on first line.
     if (! m|^// .*, created\s+|
@@ -101,6 +101,12 @@ FILE: foreach $f (split(/\s+/,`make list`)) {
 
     # normalize author in copyright string.
     s|^(// Copyright \(C\) [0-9]+ )(.*)$|$1.&saneauthors($2)|me;
+
+    # add version string, if missing.
+    unless (m/[@]version/) {
+	s|^(.*)([@]author\s{1,2})(\s*)(.*)$|
+	    "$1$2$3$4\n$1".q/@version /.$3.q/$I/.q/d$/ |me;
+    }
 
     # write back to file.
     open(FH, "> $f") or die "Can't open $f for writing.\n";
