@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.1.2.8 2000-02-11 06:12:07 salcianu Exp $
+ * @version $Id: PAThreadMap.java,v 1.1.2.9 2000-02-12 01:40:26 salcianu Exp $
  */
 public class PAThreadMap{
 
@@ -122,11 +122,19 @@ public class PAThreadMap{
 	Enumeration e = tau2.activeThreads();
 	while(e.hasMoreElements()){
 	    PANode n = (PANode) e.nextElement();
-	    int count = tau2.getValue(n);
-	    if(count == 2)
-		hash.put(n,TWO);
-	    else
-		inc(n);
+	    int count1 = getValue(n);
+	    int count2 = tau2.getValue(n);
+	    if(count2 > count1)
+		switch(count2){
+		case 1: 
+		    hash.put(n,ONE);
+		    break;
+		case 2:
+		    hash.put(n,TWO);
+		    break;
+		default:
+		    System.err.println("PAThreadMap.join: Strange value!");
+		}
 	}
     }
 
