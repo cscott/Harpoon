@@ -25,7 +25,7 @@ import java.util.*;
  * The <code>AbstractClassFixupRelinker</code> remedies the situation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractClassFixupRelinker.java,v 1.7 2002-09-10 21:28:52 wbeebee Exp $
+ * @version $Id: AbstractClassFixupRelinker.java,v 1.8 2002-09-19 20:23:52 wbeebee Exp $
  */
 public class AbstractClassFixupRelinker extends Relinker {
     
@@ -124,8 +124,6 @@ public class AbstractClassFixupRelinker extends Relinker {
 		nm.getMutator().setModifiers
 		    (Modifier.PUBLIC | Modifier.ABSTRACT);
 		nm.getMutator().setExceptionTypes(hm.getExceptionTypes());
-		// okay, done with this one.
-		System.err.println("INFO: needed to add "+nm);
 	    }
 	}
     }
