@@ -1,16 +1,13 @@
 #include "config.h"
-#include "clheap.h"
+#include "clheap.h"	/* prototypes */
 #ifdef BDW_CONSERVATIVE_GC
-#include "gc.h"
+#include "gc.h"		/* GC_malloc_uncollectable, GC_free */
 #endif
-#include "flexthread.h"
-#include <stdlib.h> /* for malloc */
+#include "flexthread.h"	/* flex_mutex_lock */
+#include "misc.h"	/* for ALIGN */
+#include <stdlib.h>	/* for malloc, size_t */
 
-#define HEAPSIZE 65536
-#define ALIGNMENT 4
-#define ALIGN(x) (((x)+(ALIGNMENT-1)) & ~(ALIGNMENT-1))
-
-void *clheap_alloc(clheap_t clh, int size) {
+void *clheap_alloc(clheap_t clh, size_t size) {
   char *result;
 #ifdef WITH_THREADS
   flex_mutex_lock(&(clh->heap_lock));
