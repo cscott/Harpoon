@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.1.2.7 1999-02-24 01:18:53 andyb Exp $
+ * @version $Id: BINOP.java,v 1.1.2.8 1999-02-24 21:10:19 duncan Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -49,6 +49,166 @@ public class BINOP extends OPER {
 			 (Exp)left.rename(tf, ctm), 
 			 (Exp)right.rename(tf, ctm));
     }
+
+    /** Evaluates a constant value for the result of a <code>BINOP</code>, 
+     *  given constant values for the operands. */
+    public static Object evalValue(TreeFactory tf, 
+				   int op, int optype, 
+				   Object left, Object right) {
+        switch(op) {
+	case Bop.CMPLT:	
+	    switch(optype) {
+	    case Type.INT:      return _i((_i(left)<_i(right))?1:0);
+	    case Type.LONG:     return _i((_l(left)<_l(right))?1:0);
+	    case Type.FLOAT:    return _i((_f(left)<_f(right))?1:0);
+	    case Type.DOUBLE:   return _i((_d(left)<_d(right))?1:0);
+	    case Type.POINTER:  
+		throw new Error("Operation not supported");
+	    }
+	case Bop.CMPLE:	
+	    switch(optype) {
+	    case Type.INT:      return _i((_i(left)<=_i(right))?1:0);
+	    case Type.LONG:     return _i((_l(left)<=_l(right))?1:0);
+	    case Type.FLOAT:    return _i((_f(left)<=_f(right))?1:0);
+	    case Type.DOUBLE:   return _i((_d(left)<=_d(right))?1:0);
+	    case Type.POINTER:  
+		throw new Error("Operation not supported");
+	    }
+	case Bop.CMPEQ: 
+	    switch (optype) {
+	    case Type.INT:      return _i((_i(left)==_i(right))?1:0);
+	    case Type.LONG:     return _i((_l(left)==_l(right))?1:0);
+	    case Type.FLOAT:    return _i((_f(left)==_f(right))?1:0);
+	    case Type.DOUBLE:   return _i((_d(left)==_d(right))?1:0);
+	    case Type.POINTER:  
+		return Type.isDoubleWord(tf, optype) ?
+		    _i(_l(left)==_l(right)?1:0) :
+			_i(_i(left)==_i(right)?1:0);
+	    }
+	case Bop.CMPGE:
+	    switch (optype) {
+	    case Type.INT:      return _i((_i(left)>=_i(right))?1:0);
+	    case Type.LONG:     return _i((_l(left)>=_l(right))?1:0);
+	    case Type.FLOAT:    return _i((_d(left)>=_d(right))?1:0);
+	    case Type.DOUBLE:   return _i((_f(left)>=_f(right))?1:0);
+	    case Type.POINTER:  
+		throw new Error("Operation not supported");
+	    }	
+	case Bop.CMPGT:	
+	    switch (optype) {
+	    case Type.INT:      return _i((_i(left)>_i(right))?1:0);
+	    case Type.LONG:     return _i((_l(left)>_l(right))?1:0);
+	    case Type.FLOAT:    return _i((_f(left)>_f(right))?1:0);
+	    case Type.DOUBLE:   return _i((_d(left)>_d(right))?1:0);
+	    case Type.POINTER:  
+		throw new Error("Operation not supported");
+	    }
+	case Bop.ADD:	
+	    switch (optype) {
+	    case Type.INT:      return _i(_i(left)+_i(right));
+	    case Type.LONG:     return _l(_l(left)+_l(right));
+	    case Type.FLOAT:    return _f(_f(left)+_f(right));
+	    case Type.DOUBLE:   return _d(_d(left)+_d(right));
+	    case Type.POINTER:  
+		throw new Error("Operation not supported");
+	    }
+	case Bop.MUL:	
+	    switch (optype) {
+	    case Type.INT:      return _i(_i(left)*_i(right));
+	    case Type.LONG:     return _l(_l(left)*_l(right));
+	    case Type.FLOAT:    return _f(_f(left)*_f(right));
+	    case Type.DOUBLE:   return _d(_d(left)*_d(right));
+	    case Type.POINTER:  
+		throw new Error("Operation not supported");
+	    }
+	case Bop.DIV:
+	    switch (optype) {
+	    case Type.INT:      return _i(_i(left)/_i(right));
+	    case Type.LONG:     return _l(_l(left)/_l(right));
+	    case Type.FLOAT:    return _f(_f(left)/_f(right));
+	    case Type.DOUBLE:   return _d(_d(left)/_d(right));
+	    case Type.POINTER:  
+		throw new Error("Operation not supported");
+	    }
+	case Bop.REM: 
+	    switch (optype) {
+	    case Type.INT:      return _i(_i(left)%_i(right));
+	    case Type.LONG:     return _l(_l(left)%_l(right));
+	    case Type.FLOAT:    return _f(_f(left)%_f(right));
+	    case Type.DOUBLE:   return _d(_d(left)%_d(right));
+	    case Type.POINTER:  
+		throw new Error("Operation not supported");
+	    }
+	case Bop.SHL:
+	    switch (optype) {
+	    case Type.INT:      return _i(_i(left)<<_i(right));
+	    case Type.LONG:     return _l(_l(left)<<_l(right));
+	    case Type.FLOAT:
+	    case Type.DOUBLE:
+	    case Type.POINTER:
+		throw new Error("Operation not supported");
+	    }
+	case Bop.SHR:
+	    switch (optype) {
+	    case Type.INT:      return _i(_i(left)>>_i(right));
+	    case Type.LONG:     return _l(_l(left)>>_l(right));
+	    case Type.FLOAT:
+	    case Type.DOUBLE:
+	    case Type.POINTER:
+		throw new Error("Operation not supported");
+	    }
+	case Bop.USHR:
+	    switch (optype) {
+	    case Type.INT:      return _i(_i(left)>>>_i(right));
+	    case Type.LONG:     return _l(_l(left)>>>_l(right));
+	    case Type.FLOAT:
+	    case Type.DOUBLE:
+	    case Type.POINTER:
+		throw new Error("Operation not supported");
+	    }
+	case Bop.AND:
+	    switch (optype) {
+	    case Type.INT:      return _i(_i(left)&_i(right));
+	    case Type.LONG:     return _l(_l(left)&_l(right));
+	    case Type.FLOAT:
+	    case Type.DOUBLE:
+	    case Type.POINTER:
+		throw new Error("Operation not supported");
+	    }
+	case Bop.OR:
+	    switch (optype) {
+	    case Type.INT:      return _i(_i(left)|_i(right));
+	    case Type.LONG:     return _l(_l(left)|_l(right));
+	    case Type.FLOAT:
+	    case Type.DOUBLE:
+	    case Type.POINTER:
+		throw new Error("Operation not supported");
+	    }
+	case Bop.XOR:
+	    switch (optype) {
+	    case Type.INT:      return _i(_i(left)^_i(right));
+	    case Type.LONG:     return _l(_l(left)^_l(right));
+	    case Type.FLOAT:
+	    case Type.DOUBLE:
+	    case Type.POINTER:
+		throw new Error("Operation not supported");
+	    }
+	default:	
+	    throw new RuntimeException("Unknown Bop type: "+op);
+	}
+    }
+
+    // wrapper functions.
+    private static Integer _i(int i)     { return new Integer(i); }
+    private static Long    _l(long l)    { return new Long(l);    }
+    private static Float   _f(float f)   { return new Float(f);   }
+    private static Double  _d(double d)  { return new Double(d);  }
+    private static Boolean _b(boolean b) { return new Boolean(b); }
+    // unwrapper functions.
+    private static int    _i(Object o) { return ((Integer)o).intValue(); }
+    private static long   _l(Object o) { return ((Long)o)   .longValue(); }
+    private static float  _f(Object o) { return ((Float)o)  .floatValue(); }
+    private static double _d(Object o) { return ((Double)o) .doubleValue(); }
 
     public String toString() {
         return "BINOP<"+Type.toString(optype)+">("+Bop.toString(op)+
