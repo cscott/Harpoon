@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.11 1999-06-29 05:43:53 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.12 1999-07-08 06:11:16 duncan Exp $
  */
 public class CONST extends Exp {
     /** The constant value of this <code>CONST</code> expression. */
@@ -35,12 +35,20 @@ public class CONST extends Exp {
 	super(tf, source);
 	this.type = DOUBLE; this.value = new Double(dval);
     }
+    /** Creates the constant <code>null</code>.  This constant has a value
+     *  of <code>0</code>, but it's type is <code>POINTER</code>.     */
+    public CONST(TreeFactory tf, HCodeElement source, 
+		 boolean pointersAreLong) { 
+	super(tf, source);
+	this.type  = POINTER; 
+	this.value = pointersAreLong ? 
+	    (Number)new Long(0) : (Number)new Integer(0);
+    }
     private CONST(TreeFactory tf, HCodeElement source, 
 		  int type, Number value) {
         super(tf, source);
 	this.type = type; this.value = value;
     }
-    
     
     /** Return the constant value of this <code>CONST</code> expression. */
     public Number value() { return value; }

@@ -49,7 +49,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.14 1999-07-07 09:47:24 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.15 1999-07-08 06:11:16 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -264,8 +264,8 @@ class TranslationVisitor extends LowQuadVisitor {
 	Stm s0 = new MOVE
 	    (m_tf, q, 
 	     MAP(q.dst(), q),
-	     new MEM
-	     (m_tf, q, Type.POINTER, 
+	     new MEM  
+	     (m_tf, q, Type.INT, // The "length" field is of type INT
 	      new BINOP
 	      (m_tf, q, Type.POINTER, Bop.ADD,
 	       MAP(q.objectref(), q),
@@ -372,7 +372,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	for (int i=0; i<q.value().length; i++) {
 	    s0 = new MOVE
 		(m_tf, q, 
-		 new MEM(m_tf, q, Type.POINTER, nextPtr), 
+		 new MEM(m_tf, q, maptype(q.type()), nextPtr), 
 		 mapconst(q, q.value()[i], q.type()));
 	    s1 = new MOVE
 		(m_tf, q, 
@@ -548,20 +548,18 @@ class TranslationVisitor extends LowQuadVisitor {
      *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 		  
   public void visit(PAOFFSET q) {
-	TEMP dst = MAP(q.dst(), q), index = MAP(q.index(), q);
-
 	Stm s0 = 
 	    new MOVE
 	    (m_tf, q, 
-	     dst, 
-	     new BINOP
-	     (m_tf, q, Type.POINTER, Bop.MUL,
+	     MAP(q.dst(), q), 
+	     new BINOP // Array offset are always INT types
+	     (m_tf, q, Type.INT, Bop.MUL, 
 	      new CONST
 	      (m_tf, q, m_offm.size(q.arrayType().getComponentType())),
-	      index));
+	      MAP(q.index(), q)));
 
-	updateDT(q.dst(), q, dst);
-	updateDT(q.index(), q, index);
+	updateDT(q.dst(), q, MAP(q.dst(), q));
+	updateDT(q.index(), q, MAP(q.index(), q));
 	addStmt(q, s0);
     }
 
@@ -709,7 +707,7 @@ class TranslationVisitor extends LowQuadVisitor {
     }
 
     public void visit(POPER q) {
-	Exp oper = null; int optype;
+	Exp oper = null; int optype; 
 	Stm s0;
 	Temp[] operands = q.operands();
   
@@ -787,7 +785,9 @@ class TranslationVisitor extends LowQuadVisitor {
 	}
 	else if (operands.length==2) {
 	    oper = new BINOP
-		(m_tf, q, TYPE(q, operands[0]), optype,
+		(m_tf, q, 
+		 MERGE_TYPE(TYPE(q, operands[0]), TYPE(q, operands[1])),
+		 optype,
 		 MAP(operands[0], q), 
 		 MAP(operands[1], q)); 
 
@@ -925,10 +925,41 @@ class TranslationVisitor extends LowQuadVisitor {
 	else                         return Type.POINTER;
     }
 
+    // Implmentation of binary numeric promotion found in the Java
+    // language spec. 
+    private int MERGE_TYPE(int type1, int type2) { 
+	boolean longptrs = m_frame.pointersAreLong();
+	if (type1==type2) return type1;
+	else { 
+	    if (type1==Type.DOUBLE || type2==Type.DOUBLE) { 
+		Util.assert(type1!=Type.POINTER && type2!=Type.POINTER);
+		return Type.DOUBLE;
+	    }
+	    else if (type1==Type.FLOAT || type2==Type.FLOAT) { 
+		Util.assert(type1!=Type.POINTER && type2!=Type.POINTER);
+		return Type.FLOAT;
+	    }
+	    else if (type1==Type.LONG || type2==Type.LONG) { 
+		if (type1==Type.POINTER || type2==Type.POINTER) { 
+		    Util.assert(longptrs); return Type.POINTER;
+		}
+		return Type.LONG;
+	    }
+	    else if (type1==Type.POINTER || type2==Type.POINTER) { 
+		return Type.POINTER;
+	    }
+	    else {
+		return Type.INT;  // Should not get this far
+	    }
+	}
+    }
+
     private Exp mapconst(HCodeElement src, Object value, HClass type) {
 	Exp constant;
 
-	if (type==HClass.Boolean)
+	if (type==HClass.Void) // HClass.Void reserved for null constants
+	    constant = new CONST(m_tf, src, m_frame.pointersAreLong());
+	else if (type==HClass.Boolean)
 	    constant = new CONST
 		(m_tf, src, ((Boolean)value).booleanValue()?1:0);
 	else if (type==HClass.Byte)
@@ -947,8 +978,6 @@ class TranslationVisitor extends LowQuadVisitor {
 	    constant = new CONST(m_tf, src, ((Float)value).floatValue()); 
 	else if (type==HClass.Double)
 	    constant = new CONST(m_tf, src, ((Double)value).doubleValue());
-	else if (type==HClass.Void)
-	    constant = new CONST(m_tf, src, 0); 
 	else if (type==HClass.forName("java.lang.String")) 
 	    constant = new MEM
 		(m_tf, src, Type.POINTER, 
@@ -1118,7 +1147,7 @@ class TranslationVisitor extends LowQuadVisitor {
 
 	NAME typeLabel  = new NAME(m_tf, classPtr, m_offm.label(type));
 	TEMP classLabel = extra(classPtr, Type.POINTER);
-	TEMP result     = extra(classPtr, Type.POINTER);
+	TEMP result     = extra(classPtr, Type.INT);
 
 	s0 = new MOVE
 	    (m_tf, classPtr, 
