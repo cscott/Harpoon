@@ -29,7 +29,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.13 1999-11-04 00:48:15 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.14 1999-11-15 19:14:05 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -348,6 +348,9 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 				Map ckc, Map cmu, Map cmp) {
 	if (done.contains(m) || W.contains(m)) return;
 	discoverClass(m.getDeclaringClass(), W, done, ckc, cmu, cmp);
+	// Thread.start() implicitly causes a call to Thread.run()
+	if (m.equals(HMthrStart))
+	    discoverMethod(HMthrRun, W, done, ckc, cmu, cmp);
 	// mark as pending in its own class.
 	Set s = (Set) cmp.get(m.getDeclaringClass());
 	s.add(m);
@@ -374,6 +377,11 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	}
 	// done.
     }
+    private static final HMethod HMthrStart =
+	HClass.forName("java.lang.Thread").getMethod("start", new HClass[0]);
+    private static final HMethod HMthrRun =
+	HClass.forName("java.lang.Thread").getMethod("run", new HClass[0]);
+
     /* methods invoked with INVOKESPECIAL or INVOKESTATIC... */
     private void discoverSpecial(HMethod m, 
 				 WorkSet W, Set done,
