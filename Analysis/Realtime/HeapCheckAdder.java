@@ -129,7 +129,7 @@ public class HeapCheckAdder extends Simplification {
 		}
 		public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) {
 		    MEM mem = (MEM)e;
-		    Exp result = UPDATE(dg, e, new MEM(tf, e, mem.type(), mem.getExp()));
+		    Exp result = UPDATE(dg, e, mem.build(tf, mem.kids()));
 		    Exp memExp = mem.getExp();
 		    seenList.add(result);
 		    seenList.add(mem);
@@ -234,11 +234,11 @@ public class HeapCheckAdder extends Simplification {
     protected static MEM fieldRef(TreeFactory tf, HCodeElement e,
 				DerivationGenerator dg, HClass type, int iType,
 				String className, String fieldName) {
+	// Not for small (Boolean) fields!
 	MEM m = new MEM(tf, e, iType, 
-				    (NAME)DECLARE(dg, type, 
-						  new NAME(tf, e, 
-							   forField(tf, className, 
-								    fieldName))));
+			(NAME)DECLARE(dg, type, 
+				      new NAME(tf, e, 
+					       forField(tf, className, fieldName))));
 	seenList.add(m);
 	return (MEM)DECLARE(dg, type, m);
 			    
@@ -273,16 +273,10 @@ public class HeapCheckAdder extends Simplification {
 
     /** *(t&(~3)), now *t */
     protected static MEM memRef(TreeFactory tf, MEM e, DerivationGenerator dg,
-			      Temp t) {
-//  Old, masking version: 
-//  	MEM m = new MEM(tf, e, e.type(),
-//  			DECLARE(dg, 
-//  				new DList(t, true, null),
-//  				new BINOP(tf, e, Type.POINTER, Bop.AND, 
-//  					  tempRef(dg, tf, e.getExp(), t),
-//  					  new UNOP(tf, e, Type.INT, Uop.NOT, 
-//  						   new CONST(tf, e, 3)))));
-	MEM m = new MEM(tf, e, e.type(), tempRef(dg, tf, e.getExp(), t));
+				Temp t) {
+	Exp exp = tempRef(dg, tf, e.getExp(), t);
+	MEM m = (e.isSmall())?(new MEM(tf, e, e.bitwidth(), e.signed(), exp)):
+	    (new MEM(tf, e, e.type(), exp));
 	seenList.add(UPDATE(dg, e, m));
 	return m;
     }
@@ -314,6 +308,7 @@ public class HeapCheckAdder extends Simplification {
 //  	return new PrintFactory(Canonicalize.codeFactory(codeFactory(new PrintFactory(hcf, "BEFORE"), 
 //  								     RULES)), "AFTER");
 	return Canonicalize.codeFactory(codeFactory(hcf, RULES));
+//  	return parent;
     }
 
     /** Declare the type of an expression. 

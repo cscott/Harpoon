@@ -63,7 +63,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.5 2001-07-09 23:54:19 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.6 2001-07-10 00:28:28 wbeebee Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
     protected TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
@@ -81,7 +81,7 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 	Temp Tobj = new Temp(tf.tempFactory(), "BRIANTEMP");
 	// If the noSync flag is on, then the second bit of the hashcode will
 	// be set, allowing locks on this object to fall through.
-	if (false||ap.noSync())
+	if (ap.noSync())
 	    return new ESEQ(tf,source, 
 		 new SEQ(tf,source,
 		   new MOVE(tf,source,
