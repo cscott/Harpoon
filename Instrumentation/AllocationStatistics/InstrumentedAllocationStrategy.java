@@ -38,7 +38,7 @@ import java.util.ArrayList;
  * <code>InstrumentedAllocationStrategy</code>
  * 
  * @author   <salcianu@MIT.EDU>
- * @version $Id: InstrumentedAllocationStrategy.java,v 1.1 2003-02-08 23:22:39 salcianu Exp $
+ * @version $Id: InstrumentedAllocationStrategy.java,v 1.2 2003-02-09 00:22:56 salcianu Exp $
  */
 public class InstrumentedAllocationStrategy extends MallocAllocationStrategy {
     
@@ -89,9 +89,11 @@ public class InstrumentedAllocationStrategy extends MallocAllocationStrategy {
 	Exp allocCall = super.memAlloc(tf, source, dg, ap, tlength);
 
 	/*
-	  tlength = length;
-	  call to instrumentation method(index, tlength);
-	  label: allocCall(..., tlength);
+	   tlength = length;
+	   call to instrumentation method(index, tlength);
+	     (both normal and exceptional exits go to label)
+	  label:
+           allocCall(..., tlength);
 	 */
 	return
 	    new ESEQ(new SEQ(move, new SEQ(call, label)), allocCall);
