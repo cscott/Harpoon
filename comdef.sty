@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.31 2000-09-29 18:01:54 cananian Exp $
+% $Id: comdef.sty,v 1.32 2000-09-29 23:10:20 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -136,7 +136,7 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
  % additional statement commands.
  \newcommand{\ASSERT}{\STATE \textbf{Assert:}\xspace}%
  \newcommand{\FOREACH}[1]{\FOR{\textbf{each} ##1}}%
- \newcommand{\IFNOT}[1]{\IF{\textbf{not} ##1}}%
+ \newcommand{\IFNOT}[2][default]{\IF[##1]{\textbf{not} ##2}}%
  \newcommand{\LET}{\STATE \textbf{let}\xspace}%
  %\newcommand{\EMPTYLINE}{\vspace{0.6\baselineskip}}
  \newcommand{\EMPTYLINE}{\STATE}%
