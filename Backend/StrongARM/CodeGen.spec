@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.107 1999-11-12 23:05:42 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.108 1999-11-13 08:35:11 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -477,7 +477,7 @@ import java.util.Iterator;
 	    last=in1;
 	}
 	// stabs debugging information:
-	if (stabsDebugging) {
+	if (stabsDebugging && !hm.getDeclaringClass().isArray()) {
 	    int lineno=-1;
 	    for (Instr il = instr; il!=null; il=il.getNext())
 		if (il.getLineNumber()!=lineno) {
