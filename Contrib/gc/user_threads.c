@@ -117,7 +117,7 @@ void GC_push_all_stacks()
   /*Handle active threads*/
   tptr=tptr->next;
   while(tptr!=gtl) {
-    lo=tptr->mthread.machdep_state->__jmpbuf[JB_SP];
+    lo=(ptr_t)tptr->mthread.machdep_state->__jmpbuf[JB_SP];
     hi=tptr->mthread.hiptr;
     GC_push_all_stack(lo,hi);
     tptr=tptr->next;
@@ -125,13 +125,13 @@ void GC_push_all_stacks()
 
   /*Handle io waiting threads*/
   if (ioptr!=NULL) {
-    lo=ioptr->mthread.machdep_state->__jmpbuf[JB_SP];
+    lo=(ptr_t)ioptr->mthread.machdep_state->__jmpbuf[JB_SP];
     hi=ioptr->mthread.hiptr;
     GC_push_all_stack(lo,hi);
     
     tptr=ioptr->next;
     while(tptr!=ioptr) {
-      lo=tptr->mthread.machdep_state->__jmpbuf[JB_SP];
+      lo=(ptr_t)tptr->mthread.machdep_state->__jmpbuf[JB_SP];
       hi=tptr->mthread.hiptr;
       GC_push_all_stack(lo,hi);
       tptr=tptr->next;
