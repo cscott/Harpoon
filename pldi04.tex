@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.15 2003-11-11 04:56:01 cananian Exp $
+% $Id: pldi04.tex,v 1.16 2003-11-11 06:24:42 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -35,7 +35,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-\date{\today \\ $ $Revision: 1.15 $ $}
+\date{\today \\ $ $Revision: 1.16 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -298,6 +298,47 @@ inputs.
 \note{Shows transaction-as-exception-handling, fault-tolerance, and
 back-tracking.}
 \cite{SchorrWa67}
+
+ \par {\footnotesize\samepage
+\begin{verbatim}
+void traverse(List l) {
+  List last = null, t;
+  
+  /* zip through the list, reversing links */
+  do {
+    preVisit(l); // visit the node
+    t = l.next;
+    l.next = last;
+    last = l;
+    l = t;
+  } while (l!=null);
+
+  /* now zip backwards, fixing up the links. */
+  l = last;
+  do {
+    t = l.next; // "previous"
+    l.next = last; // "next"
+    postVisit(l); // visit the node.
+    last = l;
+    l = t;
+  } while (l!=null);
+}
+\end{verbatim}
+}
+
+ \par {\footnotesize\samepage
+\begin{verbatim}
+try {
+  try {
+    traverse(list);
+  } catch (Throwable t) {
+    fail; // explicit xaction abort
+  }
+} else { // try-else construct
+  throw new Error();
+}
+\end{verbatim}
+}
 
 \subsecput{backtrack}{Backtracking}
 Prolog-esque example?
