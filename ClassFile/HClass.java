@@ -3,15 +3,13 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
+import harpoon.Util.UniqueVector;
+import harpoon.Util.Util;
+
 import java.lang.reflect.Modifier;
 import java.io.InputStream;
 import java.io.BufferedInputStream;
 import java.util.Hashtable;
-import java.util.Vector;
-
-import harpoon.ClassFile.Raw.Attribute.AttributeSourceFile;
-import harpoon.Util.UniqueVector;
-import harpoon.Util.Util;
 
 /**
  * Instances of the class <code>HClass</code> represent classes and 
@@ -30,12 +28,11 @@ import harpoon.Util.Util;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.33 1998-10-14 20:03:25 cananian Exp $
+ * @version $Id: HClass.java,v 1.34 1998-10-16 06:21:02 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
-public class HClass {
+public abstract class HClass {
   static Hashtable dsc2cls = new Hashtable();
-  static Hashtable raw2cls = new Hashtable();
   /** 
    * Returns the <code>HClass</code> object associated with the class with
    * the given string name.  Given the fully-qualified name for a class or
@@ -91,7 +88,7 @@ public class HClass {
 	// recurse to fetch base type.
 	HClass basetype = forDescriptor(descriptor.substring(d));
 	// make it.
-	return new HClass(basetype.classfile, d);
+	return new HClassArray(basetype, d);
       }
     case 'B':
       return HClass.Byte;
@@ -118,11 +115,13 @@ public class HClass {
 	InputStream is = 
 	  Loader.getResourceAsStream(Loader.classToResource(className));
 	if (is == null) throw new NoClassDefFoundError(className);
+	System.err.println("Loading "+className);
 	// OK, go ahead and load this.
-	harpoon.ClassFile.Raw.ClassFile raw =
-	  new harpoon.ClassFile.Raw.ClassFile(new BufferedInputStream(is));
-	// Make a HClass with the raw classfile.
-	return new HClass(raw);
+	try {
+	  return /*ImplGNU*/ImplMagic.forStream(new BufferedInputStream(is));
+	} catch (java.io.IOException e) {
+	  throw new NoClassDefFoundError(className);
+	}
       }
     default:
       break;
@@ -159,28 +158,7 @@ public class HClass {
     return forName(cls.getName());
   }
 
-  /** The underlying raw class file for this <code>HClass</code> object. */
-  harpoon.ClassFile.Raw.ClassFile classfile;
-  /** The number of array dimensions, or 0 if this is not an array. */
-  int dims=0;
-
-  /** Create an <code>HClass</code> from a raw classfile. */
-  protected HClass(harpoon.ClassFile.Raw.ClassFile classfile) {
-    this.classfile = classfile;
-    this.dims = 0;
-    // Add to hashtables.
-    dsc2cls.put(getDescriptor(), this);
-    raw2cls.put(classfile, this);
-  }
-  /** Create an <code>HClass</code> representing an array from a 
-   *  raw classfile representing its component type. */
-  protected HClass(harpoon.ClassFile.Raw.ClassFile classfile, int dims) {
-    this.classfile = classfile;
-    this.dims = dims;
-    // Add to hashtables.
-    dsc2cls.put(getDescriptor(), this);
-  }
-  protected HClass() { } // hack
+  protected void register() { dsc2cls.put(getDescriptor(), this); }
 
   /**
    * If this class represents an array type, returns the <code>HClass</code>
@@ -188,10 +166,7 @@ public class HClass {
    * null.
    * @see java.lang.reflect.Array
    */
-  public HClass getComponentType() {
-    if (!isArray()) return null;
-    return forDescriptor(getDescriptor().substring(1));
-  }
+  public HClass getComponentType() { return null; }
 
   /** 
    * Returns the fully-qualified name of the type (class, interface,
@@ -200,22 +175,8 @@ public class HClass {
    * @return the fully qualified name of the class or interface
    *         represented by this object.
    */
-  public String getName() {
-    // handle arrays.
-    if (dims > 0) return getDescriptor(); // this is how sun's implem. works.
-    // handle primitive types.
-    if (this==this.Boolean) return "boolean";
-    if (this==this.Byte) return "byte";
-    if (this==this.Short) return "short";
-    if (this==this.Int) return "int";
-    if (this==this.Long) return "long";
-    if (this==this.Float) return "float";
-    if (this==this.Double) return "double";
-    if (this==this.Char) return "char";
-    if (this==this.Void) return "void";
-    // all others.
-    return classfile.this_class().name().replace('/','.');
-  }
+  public abstract String getName();
+
   /**
    * Returns the package name of this <code>HClass</code>.  If this
    * <code>HClass</code> represents a primitive or array type,
@@ -233,36 +194,8 @@ public class HClass {
    * Returns a ComponentType descriptor for the type represented by this
    * <code>HClass</code> object.
    */
-  public String getDescriptor() {
-    StringBuffer result = new StringBuffer();
-    for (int i=0; i<dims; i++)
-      result.append('[');
-    if ((HClass)raw2cls.get(this.classfile) == this.Boolean)
-      result.append('Z');
-    else if ((HClass)raw2cls.get(this.classfile) == this.Byte)
-      result.append('B');
-    else if ((HClass)raw2cls.get(this.classfile) == this.Short)
-      result.append('S');
-    else if ((HClass)raw2cls.get(this.classfile) == this.Int)
-      result.append('I');
-    else if ((HClass)raw2cls.get(this.classfile) == this.Long)
-      result.append('J');
-    else if ((HClass)raw2cls.get(this.classfile) == this.Float)
-      result.append('F');
-    else if ((HClass)raw2cls.get(this.classfile) == this.Double)
-      result.append('D');
-    else if ((HClass)raw2cls.get(this.classfile) == this.Char)
-      result.append('C');
-    else if ((HClass)raw2cls.get(this.classfile) == this.Void)
-      result.append('V');
-    else { // it's an object, not a primitive type
-      result.append('L');
-      result.append(getName().replace('.','/'));
-      result.append(';');
-    }
-    return result.toString();
-  }
-  
+  public abstract String getDescriptor();
+
   /**
    * Returns a <code>HField</code> object that reflects the specified
    * declared field of the class or interface represented by this
@@ -276,7 +209,7 @@ public class HClass {
   public HField getDeclaredField(String name)
     throws NoSuchFieldError {
     // construct master declaredField list, if we haven't already.
-    if (declaredFields==null) getDeclaredFields();
+    HField[] declaredFields=getDeclaredFields();
     // look for field name in master list.
     for (int i=0; i<declaredFields.length; i++)
       if (declaredFields[i].getName().equals(name))
@@ -296,24 +229,8 @@ public class HClass {
    * @see "The Java Language Specification,, sections 8.2 and 8.3"
    * @see HField
    */
-  public HField[] getDeclaredFields() {
-    if (declaredFields==null) {
-      if (isPrimitive()) {
-	declaredFields = new HField[0];
-      } else if (isArray()) {
-	declaredFields = new HField[] {
-	  new HArrayField(this, "length", HClass.Int,
-			  Modifier.PUBLIC | Modifier.FINAL)
-	};
-      } else {
-	declaredFields = new HField[classfile.fields.length];
-	for (int i=0; i<declaredFields.length; i++)
-	  declaredFields[i] = new HField(this, classfile.fields[i]);
-      }
-    }
-    return HField.copy(declaredFields);
-  }
-  private HField[] declaredFields = null;
+  public abstract HField[] getDeclaredFields();
+
   /**
    * Returns a <code>HField</code> object that reflects the specified
    * accessible member field of the class or interface represented by this
@@ -369,7 +286,7 @@ public class HClass {
     }
     return HField.copy(fields);
   }
-  private HField[] fields=null;
+  protected HField[] fields=null;
   /* does the actual work.  Because of permissions issues, it's important
    * to know which class is asking for the fields listing.
    */
@@ -424,7 +341,7 @@ public class HClass {
   public HMethod getDeclaredMethod(String name, HClass parameterTypes[])
     throws NoSuchMethodError {
     // construct master declaredMethod list, if we haven't already.
-    if (declaredMethods==null) getDeclaredMethods();
+    HMethod[] declaredMethods=getDeclaredMethods();
     // look for method name/type in master list.
     for (int i=0; i<declaredMethods.length; i++)
       if (declaredMethods[i].getName().equals(name)) {
@@ -454,7 +371,7 @@ public class HClass {
   public HMethod getDeclaredMethod(String name, String descriptor)
     throws NoSuchMethodError {
     // construct master declaredMethod list, if we haven't already.
-    if (declaredMethods==null) getDeclaredMethods();
+    HMethod[] declaredMethods=getDeclaredMethods();
     // look for method name/type in master list.
     for (int i=0; i<declaredMethods.length; i++)
       if (declaredMethods[i].getName().equals(name) &&
@@ -476,42 +393,8 @@ public class HClass {
    * @see "The Java Language Specification, section 8.2"
    * @see HMethod
    */
-  public HMethod[] getDeclaredMethods() {
-    if (declaredMethods==null) {
-      if (isPrimitive()) {
-	// primitives have no methods.
-	declaredMethods = new HMethod[0];
-      } else if (isArray()) {
-	// Make appropriate phantom methods for an array.
-	declaredMethods = new HMethod[3+dims];
-	// Make 'dims' constructors.
-	String desc = "I"; // array dimension is an integer.
-	int i;
-	for (i=0; i<dims; i++, desc+="I")
-	  declaredMethods[i] = 
-	    new HArrayConstructor(this,"("+desc+")V");
-	// Add special get/set access methods.
-	declaredMethods[i++] =
-	  new HArrayMethod(this,"get","(I)"+getDescriptor().substring(1));
-	declaredMethods[i++] =
-	  new HArrayMethod(this,"set","(I"+getDescriptor().substring(1)+")V");
-	// override 'clone' so it doesn't throw an exception.
-	declaredMethods[i++] =
-	  new HArrayMethod(this,"clone","()Ljava/lang/Object;");
-      } else {
-	// Read methods from classfile.methods.
-	declaredMethods = new HMethod[classfile.methods.length];
-	for (int i=0; i<declaredMethods.length; i++) {
-	  if (classfile.methods[i].name().equals("<init>")) // constructor
-	    declaredMethods[i] = new HConstructor(this, classfile.methods[i]);
-	  else // plain ol' method.
-	    declaredMethods[i] = new HMethod(this, classfile.methods[i]);
-	}
-      }
-    }
-    return HMethod.copy(declaredMethods);
-  }
-  private HMethod[] declaredMethods = null;
+  public abstract HMethod[] getDeclaredMethods();
+
   /**
    * Returns an <code>HMethod</code> object that reflects the specified
    * accessible method of the class or interface represented by this
@@ -530,7 +413,7 @@ public class HClass {
   public HMethod getMethod(String name, HClass parameterTypes[])
     throws NoSuchMethodError {
     // construct master method list, if we haven't already.
-    if (methods==null) getMethods();
+    HMethod[] methods=getMethods();
     // look for method name in master method list.
     // look backwards to be sure we find local methods first (scoping).
     for (int i=methods.length-1; i>=0; i--)
@@ -564,7 +447,7 @@ public class HClass {
   public HMethod getMethod(String name, String descriptor)
     throws NoSuchMethodError {
     // construct master method list, if we haven't already.
-    if (methods==null) getMethods();
+    HMethod[] methods=getMethods();
     // look for method name in master method list.
     // look backwards to be sure we find local methods first (scoping)
     for (int i=methods.length-1; i>=0; i--)
@@ -597,7 +480,7 @@ public class HClass {
     }
     return HMethod.copy(methods);
   }
-  private HMethod[] methods=null;
+  protected HMethod[] methods=null;
   /* does the actual work.  Because of permissions issues, it's important
    * to know which class is asking for the methods listing.
    */
@@ -636,6 +519,7 @@ public class HClass {
     v.copyInto(result);
     return result;
   }
+
   /**
    * Returns an <code>HConstructor</code> object that reflects the 
    * specified declared constructor of the class or interface represented 
@@ -648,6 +532,7 @@ public class HClass {
     throws NoSuchMethodError {
     return (HConstructor) getDeclaredMethod("<init>", parameterTypes);
   }
+
   /**
    * Returns an array of <code>HConstructor</code> objects reflecting
    * all the constructors declared by the class represented by the
@@ -676,7 +561,7 @@ public class HClass {
     }
     return HConstructor.copy(constructors);
   }
-  private HConstructor[] constructors = null;
+  protected HConstructor[] constructors = null;
 
   /**
    * Returns the class initializer method, if there is one; otherwise
@@ -698,9 +583,7 @@ public class HClass {
    * @see "The Java Virtual Machine Specification, table 4.1"
    * @see java.lang.reflect.Modifier
    */
-  public int getModifiers() {
-    return classfile.access_flags.access_flags;
-  }
+  public abstract int getModifiers();
 
   /**
    * If this object represents any class other than the class 
@@ -711,13 +594,7 @@ public class HClass {
    * <code>null</code> is returned.
    * @return the superclass of the class represented by this object.
    */
-  public HClass getSuperclass() {
-    if (isPrimitive() || isInterface() || classfile.super_class == 0) 
-      return null;
-    if (isArray()) 
-      return forName("java.lang.Object");
-    return forName(classfile.super_class().name().replace('/','.'));
-  }
+  public abstract HClass getSuperclass();
 
   /**
    * Determines the interfaces implemented by the class or interface 
@@ -736,33 +613,14 @@ public class HClass {
    * returns an array of length 0.
    * @return an array of interfaces implemented by this class.
    */
-  public HClass[] getInterfaces() {
-    if (isPrimitive()) return new HClass[0];
-    if (isArray()) return new HClass[] { forName("java.lang.Cloneable") };
-    HClass in[] = new HClass[classfile.interfaces_count()];
-    for (int i=0; i< in.length; i++)
-      in[i] = forName(classfile.interfaces(i).name().replace('/','.'));
-    return in;
-  }
+  public abstract HClass[] getInterfaces();
 
   /**
    * Return the name of the source file for this class, or a
    * zero-length string if the information is not available.
    * @see harpoon.ClassFile.Raw.Attribute.AttributeSourceFile
    */
-  public String getSourceFile() {
-    if (sourcefile==null) {
-      for (int i=0; i<classfile.attributes.length; i++)
-	if (classfile.attributes[i] instanceof AttributeSourceFile) {
-	  sourcefile = 
-	    ((AttributeSourceFile)classfile.attributes[i]).sourcefile();
-	  break;
-	}
-      if (sourcefile==null) sourcefile="";
-    }
-    return sourcefile;
-  }
-  private String sourcefile=null;
+  public String getSourceFile() { return ""; }
 
   /**
    * If this <code>HClass</code> is a primitive type, return the
@@ -789,7 +647,22 @@ public class HClass {
    * If this <code>HClass</code> object represents an array type, 
    * returns <code>true</code>, otherwise returns <code>false</code>.
    */
-  public boolean isArray() { return (dims > 0); }
+  public boolean isArray() { return false; }
+  /**
+   * Determines if the specified <code>HClass</code> object represents an
+   * interface type.
+   * @return <code>true</code> is this object represents an interface;
+   *         <code>false</code> otherwise.
+   */
+  public boolean isInterface() { return false; }
+
+  /**
+   * Determines if the specified <code>HClass</code> object represents a
+   * primitive Java type. <p>
+   * There are nine predefined <code>HClass</code> objects to represent
+   * the eight primitive Java types and void.
+   */
+  public boolean isPrimitive() { return false; }
 
   /**
    * Determines if the class or interface represented by this 
@@ -883,36 +756,6 @@ public class HClass {
   }
 
   /**
-   * Determines if the specified <code>HClass</code> object represents an
-   * interface type.
-   * @return <code>true</code> is this object represents an interface;
-   *         <code>false</code> otherwise.
-   */
-  public boolean isInterface() {
-    return !isPrimitive() && Modifier.isInterface(getModifiers());
-  }
-
-  /**
-   * Determines if the specified <code>HClass</code> object represents a
-   * primitive Java type. <p>
-   * There are nine predefined <code>HClass</code> objects to represent
-   * the eight primitive Java types and void.
-   */
-  public boolean isPrimitive() {
-    if (isArray()) return false;
-    if (this==HClass.Boolean) return true;
-    if (this==HClass.Byte) return true;
-    if (this==HClass.Short) return true;
-    if (this==HClass.Int) return true;
-    if (this==HClass.Long) return true;
-    if (this==HClass.Float) return true;
-    if (this==HClass.Double) return true;
-    if (this==HClass.Char) return true;
-    if (this==HClass.Void) return true;
-    return false;
-  }
-
-  /**
    * Determines if this <code>HClass</code> is a superclass of a given
    * <code>HClass hc</code>.
    * @return <code>true</code> if <code>this</code> is a superclass of
@@ -932,18 +775,8 @@ public class HClass {
    * returns the name of the primitive type.
    * @return a string representation of this class object.
    */
-  public String toString() {
-    if (isPrimitive()) return getName();
-    if (isInterface()) return "interface "+getName();
-    return "class "+getName();
-  }
+  public abstract String toString();
 
-  /**
-   * Pretty-prints that raw classfile information.
-   */
-  public void printRaw(java.io.PrintWriter pw) {
-    classfile.print(pw);
-  }
   /**
    * Prints a formatted representation of this class.
    * Output is pseudo-Java source.
@@ -1051,32 +884,31 @@ public class HClass {
 
   /*****************************************************************/
   // Special classes for primitive types.
-  // ABUSE the java 1.1 extension and create
-  // NEW anonymous classes specially for each of these,
-  // which shouldn't be accessible any other way.  Hee-hee! I love it!
 
   /** The <code>HClass</code> object representing the primitive type boolean.*/
-  public static final HClass Boolean=forClass((new Primitive() {}).getClass());
+  public static final HClass Boolean=new HClassPrimitive();
   /** The <code>HClass</code> object representing the primitive type byte.*/
-  public static final HClass Byte=forClass((new Primitive() { }).getClass());
+  public static final HClass Byte=new HClassPrimitive();
   /** The <code>HClass</code> object representing the primitive type short.*/
-  public static final HClass Short=forClass((new Primitive() { }).getClass());
+  public static final HClass Short=new HClassPrimitive();
   /** The <code>HClass</code> object representing the primitive type int.*/
-  public static final HClass Int=forClass((new Primitive() { }).getClass());
+  public static final HClass Int=new HClassPrimitive();
   /** The <code>HClass</code> object representing the primitive type long.*/
-  public static final HClass Long=forClass((new Primitive() { }).getClass());
+  public static final HClass Long=new HClassPrimitive();
   /** The <code>HClass</code> object representing the primitive type float.*/
-  public static final HClass Float=forClass((new Primitive() { }).getClass());
+  public static final HClass Float=new HClassPrimitive();
   /** The <code>HClass</code> object representing the primitive type double.*/
-  public static final HClass Double=forClass((new Primitive() { }).getClass());
+  public static final HClass Double=new HClassPrimitive();
   /** The <code>HClass</code> object representing the primitive type char.*/
-  public static final HClass Char=forClass((new Primitive() { }).getClass());
+  public static final HClass Char=new HClassPrimitive();
   /** The <code>HClass</code> object representing the primitive type void.*/
-  public static final HClass Void=forClass((new Primitive() { }).getClass());
-  /** Gratuitous inner interface */
-  static interface Primitive { }
-  // Dig *that*, Ken Arnold!
-
+  public static final HClass Void=new HClassPrimitive();
+  static { 
+    Boolean.register(); Byte.register(); Short.register(); Int.register();
+    Long.register(); Float.register(); Double.register(); Char.register();
+    Void.register();
+  }
+  
 
   static HClass[] copy(HClass[] src) {
     if (src.length==0) return src;
@@ -1084,7 +916,77 @@ public class HClass {
     System.arraycopy(src,0,dst,0,src.length);
     return dst;
   }
+
 }
+
+class HClassPrimitive extends HClass {
+  HClassPrimitive() { }
+  public String getName() {
+    // handle primitive types.
+    if (this==this.Boolean) return "boolean";
+    if (this==this.Byte) return "byte";
+    if (this==this.Short) return "short";
+    if (this==this.Int) return "int";
+    if (this==this.Long) return "long";
+    if (this==this.Float) return "float";
+    if (this==this.Double) return "double";
+    if (this==this.Char) return "char";
+    if (this==this.Void) return "void";
+    throw new Error("Unknown primitive type.");
+  }
+  public String getDescriptor() {
+    if (this==this.Boolean) return "Z";
+    if (this==this.Byte) return "B";
+    if (this==this.Short) return "S";
+    if (this==this.Int) return "I";
+    if (this==this.Long) return "J";
+    if (this==this.Float) return "F";
+    if (this==this.Double) return "D";
+    if (this==this.Char) return "C";
+    if (this==this.Void) return "V";
+    throw new Error("Unknown primitive type.");
+  }
+  public HField[]  getDeclaredFields () { return new HField [0]; }
+  public HMethod[] getDeclaredMethods() { return new HMethod[0]; }
+  public int getModifiers() { 
+    throw new Error("No modifiers for primitive types.");
+  }
+  public HClass getSuperclass() { return null; }
+  public HClass[] getInterfaces() { return new HClass[0]; }
+  public boolean isPrimitive() { return true; }
+  public String toString() { return getName(); }
+}
+class HClassArray extends HClass {
+  HClass baseType;
+  int dims;
+  HClassArray(HClass baseType, int dims) {
+    this.baseType = baseType; this.dims = dims;
+    register();
+  }
+  public HClass getComponentType() {
+    return forDescriptor(getDescriptor().substring(1));
+  }
+  public String getName() {
+    // handle arrays.
+    return getDescriptor(); // this is how sun's implementation works.
+  }
+  public String getDescriptor() {
+    return Util.repeatString("[", dims) + baseType.getDescriptor();
+  }
+  public HField [] getDeclaredFields () { 
+    return new HField[] { new HArrayField(this, "length", HClass.Int,
+					  Modifier.PUBLIC | Modifier.FINAL)};
+  }
+  public HMethod[] getDeclaredMethods() { return new HMethod[0]; }
+  public int getModifiers() {throw new Error("No modifiers for an array.");}
+  public HClass getSuperclass() { return forName("java.lang.Object"); }
+  public HClass[] getInterfaces() {
+    return new HClass[] { forName("java.lang.Cloneable") };
+  }
+  public boolean isArray() { return true; }
+  public String toString() { return "class "+getName(); }
+}
+
 // set emacs indentation style.
 // Local Variables:
 // c-basic-offset:2

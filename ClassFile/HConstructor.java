@@ -10,20 +10,12 @@ import java.lang.reflect.Modifier;
  * constructor for a class.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructor.java,v 1.6 1998-10-11 03:01:01 cananian Exp $
+ * @version $Id: HConstructor.java,v 1.7 1998-10-16 06:21:03 cananian Exp $
  * @see HMethod
  * @see HMember
  * @see HClass
  */
-public class HConstructor extends HMethod {
-
-  /** Create an <code>HConstructor</code> from a raw method_info structure. */
-  protected HConstructor(HClass parent,
-			 harpoon.ClassFile.Raw.MethodInfo methodinfo) {
-    super(parent, methodinfo);
-  }
-  /** Allow HArrayConstructor to subclass and override. */
-  HConstructor(HClass parent) { super(parent); }
+public abstract class HConstructor extends HMethod {
 
   /**
    * Returns the name of this constructor, as a string.  This is always
@@ -35,7 +27,7 @@ public class HConstructor extends HMethod {
    * Returns a hashcode for this Constructor.  The hashcode is the same as
    * the hashcode for the underlying constructor's declaring class name.
    */
-  public int hashCode() { return hclass.getName().hashCode(); }
+  public int hashCode() { return parent.getName().hashCode(); }
 
   /**
    * Return a string describing this Constructor.  The string is formatted
@@ -56,7 +48,7 @@ public class HConstructor extends HMethod {
       r.append(Modifier.toString(m));
       r.append(' ');
     }
-    r.append(getTypeName(hclass));
+    r.append(getTypeName(parent));
     r.append('(');
     HClass hcp[] = getParameterTypes();
     for (int i=0; i<hcp.length; i++) {

@@ -3,10 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
+import gnu.bytecode.*;
 import java.lang.reflect.Modifier;
-import harpoon.ClassFile.Raw.Attribute.AttributeSynthetic;
-import harpoon.ClassFile.Raw.Attribute.AttributeConstantValue;
-import harpoon.ClassFile.Raw.Constant.ConstantValue;
 
 /**
  * A <code>HField</code> provides information about a single field of a class
@@ -14,26 +12,20 @@ import harpoon.ClassFile.Raw.Constant.ConstantValue;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.11 1998-10-11 03:01:01 cananian Exp $
+ * @version $Id: HField.java,v 1.12 1998-10-16 06:21:03 cananian Exp $
  * @see HMember
  * @see HClass
  */
-public class HField implements HMember {
-  HClass hclass;
+public abstract class HField implements HMember {
+  HClass parent;
   HClass type;
-  harpoon.ClassFile.Raw.FieldInfo fieldinfo;
+  String name;
+  int modifiers;
+  Object constValue;
+  boolean isSynthetic;
 
-  /** Create an <code>HField</code> from a raw field_info structure. */
-  protected HField(HClass parent,
-		   harpoon.ClassFile.Raw.FieldInfo fieldinfo) {
-    this.hclass = parent;
-    this.fieldinfo = fieldinfo;
-    this.type = HClass.forDescriptor(fieldinfo.descriptor());
-  }
-  /** Allow HArrayField to subclass and override. */
-  HField(HClass parent, HClass type) { 
-    this.hclass=parent; this.type=type; this.fieldinfo=null;
-  }
+  /** Subclass must provide implementation. */
+  protected HField() { /* no implementation */ }
 
   /** 
    * Returns the <code>HClass</code> object representing the class or
@@ -41,14 +33,14 @@ public class HField implements HMember {
    * <code>HField</code> object. 
    */
   public HClass getDeclaringClass() {
-    return hclass;
+    return parent;
   }
   /**
    * Returns the name of the field represented by this 
    * <code>HField</code> object.
    */
   public String getName() {
-    return fieldinfo.name();
+    return name;
   }
   /**
    * Returns the Java language modifiers for the field represented by this
@@ -57,7 +49,7 @@ public class HField implements HMember {
    * @see java.lang.reflect.Modifier
    */
   public int getModifiers() {
-    return fieldinfo.access_flags.access_flags;
+    return modifiers;
   }
   /**
    * Returns an <code>HClass</code> object that identifies the declared
@@ -70,7 +62,7 @@ public class HField implements HMember {
    * Return the type descriptor for this <code>HField</code> object.
    */
   public String getDescriptor() {
-    return fieldinfo.descriptor();
+    return type.getDescriptor();
   }
   /**
    * Returns the constant value of this <code>HField</code>, if
@@ -78,34 +70,18 @@ public class HField implements HMember {
    * @return the wrapped value, or <code>null</code> if 
    *         <code>!isConstant()</code>.
    */
-  public Object getConstant() {
-    if (!isConstant()) return null;
-    ConstantValue c = (ConstantValue) attrconst.constantvalue_index();
-    return c.value();
-  }
+  public Object getConstant() { return constValue; }
 
   /**
    * Determines whether this <code>HField</code> represents a constant
    * field.
    */
-  public boolean isConstant() {
-    for (int i=0; i<fieldinfo.attributes.length; i++)
-      if (fieldinfo.attributes[i] instanceof AttributeConstantValue) {
-	attrconst=(AttributeConstantValue)fieldinfo.attributes[i];
-	return true;
-      }
-    return false;
-  }
-  AttributeConstantValue attrconst=null;
+  public boolean isConstant() { return (constValue!=null); }
+
   /**
    * Determines whether this <code>HField</code> is synthetic.
    */
-  public boolean isSynthetic() {
-    for (int i=0; i<fieldinfo.attributes.length; i++)
-      if (fieldinfo.attributes[i] instanceof AttributeSynthetic)
-	return true;
-    return false;
-  }
+  public boolean isSynthetic() { return isSynthetic; }
 
   /** Determines whether this is a static field. */
   public boolean isStatic() {
@@ -121,7 +97,7 @@ public class HField implements HMember {
   public boolean equals(Object object) {
     if (object != null && object instanceof HField) {
       HField field = (HField) object;
-      if (hclass == field.hclass &&
+      if (parent == field.parent &&
 	  getName().equals(field.getName()) &&
 	  type == field.type)
 	return true;
@@ -134,7 +110,7 @@ public class HField implements HMember {
    * underlying field's declaring class name and its name.
    */
   public int hashCode() {
-    return hclass.getDescriptor().hashCode() ^ getName().hashCode();
+    return parent.getDescriptor().hashCode() ^ getName().hashCode();
   }
 
   /**
@@ -163,7 +139,7 @@ public class HField implements HMember {
     }
     r.append(getTypeName(type));
     r.append(' ');
-    r.append(getTypeName(hclass));
+    r.append(getTypeName(parent));
     r.append('.');
     r.append(getName());
     return r.toString();

@@ -10,47 +10,19 @@ import java.lang.reflect.Modifier;
  * should appear identical to 'real' <code>HField</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HArrayField.java,v 1.2 1998-10-11 02:37:08 cananian Exp $
+ * @version $Id: HArrayField.java,v 1.3 1998-10-16 06:21:02 cananian Exp $
  * @see HArrayMethod
  * @see HArrayConstructor
  */
 class HArrayField extends HField {
-    String name;
-    int access_flags;
     /** Creates a <code>HArrayField</code>. */
     HArrayField(HClass parent, 
-		String name, HClass type, int access_flags) {
-	super(parent, type);
+		String name, HClass type, int modifiers) {
+	this.parent = parent;
+	this.type = type;
 	this.name = name;
-	this.access_flags = access_flags;
+	this.modifiers = modifiers;
+	this.constValue = null;
+	this.isSynthetic = false;
     }
-    /**
-     * Returns the name of the field represented by this 
-     * <code>HArrayField</code> object.
-     */
-    public String getName() { return name; }
-    /**
-     * Returns the Java language modifiers for the field represented by this
-     * <code>HArrayField</code> object, as an integer.  The 
-     * <code>Modifier</code> class should be used to decode the modifiers.
-     * @see java.lang.reflect.Modifier
-     */
-    public int getModifiers() { return access_flags; }
-    /**
-     * Return the type descriptor for this <code>HArrayField</code> object.
-     */
-    public String getDescriptor() {
-	return type.getDescriptor();
-    }
-    /**
-     * Determines whether this <code>HArrayField</code> represents a constant
-     * field.
-     * @return <code>false</code>
-     */
-    public boolean isConstant() { return false; }
-    /**
-     * Determines whether this <code>HField</code> is synthetic.
-     * @return <code>false</code>
-     */
-    public boolean isSynthetic() { return false; }
 }

@@ -12,6 +12,7 @@ import harpoon.ClassFile.Raw.Constant.ConstantClass;
 import java.lang.reflect.Modifier;
 import java.util.Hashtable;
 import java.util.Vector;
+import harpoon.Util.Util;
 
 /**
  * An <code>HMethod</code> provides information about, and access to, a 
@@ -20,40 +21,22 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.24 1998-10-11 23:43:42 cananian Exp $
+ * @version $Id: HMethod.java,v 1.25 1998-10-16 06:21:03 cananian Exp $
  * @see HMember
  * @see HClass
  */
-public class HMethod implements HMember {
-  HClass hclass;
+public abstract class HMethod implements HMember {
+  HClass parent;
+  String name;
+  int modifiers;
+  HClass returnType;
+  HClass[] parameterTypes;
+  String[] parameterNames;
+  HClass[] exceptionTypes;
+  boolean isSynthetic;
 
-  // raw data.
-  harpoon.ClassFile.Raw.MethodInfo methodinfo = null;
-  AttributeCode code = null;
-  AttributeExceptions exceptions = null;
-  AttributeSynthetic synthetic = null;
-
-  /** Create an <code>HMethod</code> from a raw method_info structure. */
-  protected HMethod(HClass parent, 
-		    harpoon.ClassFile.Raw.MethodInfo methodinfo) {
-    this.hclass = parent;
-    this.methodinfo = methodinfo;
-    // Crunch the attribute information.
-    for (int i=0; i<methodinfo.attributes.length; i++) {
-      if (methodinfo.attributes[i] instanceof AttributeCode)
-	this.code = (AttributeCode) methodinfo.attributes[i];
-      else if (methodinfo.attributes[i] instanceof AttributeExceptions)
-	this.exceptions = (AttributeExceptions) methodinfo.attributes[i];
-      else if (methodinfo.attributes[i] instanceof AttributeSynthetic)
-	this.synthetic = (AttributeSynthetic) methodinfo.attributes[i];
-    }
-    // Add the default code representation, if method is not native.
-    if (!Modifier.isNative(getModifiers()) &&
-	!Modifier.isAbstract(getModifiers()))
-      putCode(new harpoon.IR.Bytecode.Code(this, this.methodinfo));
-  }
-  /** provide means for <code>HArrayMethod</code> to subclass. */
-  HMethod(HClass parent) { this.hclass = parent; }
+  /** Subclass must provide implementation. */
+  protected HMethod() { /* no implementation */ }
   
   /** Register an <code>HCodeFactory</code> to be used by the
    *  <code>getCode</code> method. */
@@ -113,7 +96,7 @@ public class HMethod implements HMember {
    * <code>HMethod</code> object. 
    */
   public HClass getDeclaringClass() {
-    return hclass;
+    return parent;
   }
 
   /**
@@ -121,7 +104,7 @@ public class HMethod implements HMember {
    * object, as a <code>String</code>.
    */
   public String getName() {
-    return methodinfo.name();
+    return name;
   }
 
   /**
@@ -132,7 +115,7 @@ public class HMethod implements HMember {
    * @see java.lang.reflect.Modifier
    */
   public int getModifiers() {
-    return methodinfo.access_flags.access_flags;
+    return modifiers;
   }
 
   /**
@@ -140,22 +123,19 @@ public class HMethod implements HMember {
    * return type of the method represented by this <code>HMethod</code>
    * object.
    */
-  public HClass getReturnType() {
-    if (returnType==null) {
-      String desc = methodinfo.descriptor();
-      desc = desc.substring(desc.lastIndexOf(')')+1); // just ret val desc.
-      returnType = HClass.forDescriptor(desc);
-    }
-    return returnType;
-  }
-  /** Cached value of <code>getReturnType</code>. */
-  private HClass returnType=null;
+  public HClass getReturnType() { return returnType; }
 
   /**
    * Returns the descriptor for this method.
    */
   public String getDescriptor() {
-    return methodinfo.descriptor();
+    StringBuffer sb = new StringBuffer("(");
+    HClass[] pt = getParameterTypes();
+    for (int i=0; i<pt.length; i++)
+      sb.append(pt[i].getDescriptor());
+    sb.append(')');
+    sb.append(getReturnType().getDescriptor());
+    return sb.toString();
   }
 
   /**
@@ -165,25 +145,8 @@ public class HMethod implements HMember {
    * of length 0 is the underlying method takes no parameters.
    */
   public HClass[] getParameterTypes() {
-    if (parameterTypes==null) {
-      // parse method descriptor.
-      String desc = methodinfo.descriptor();
-      desc = desc.substring(1, desc.lastIndexOf(')')); // just parameters now.
-      Vector v = new Vector();
-      for (int i=0; i<desc.length(); i++) {
-	// make HClass for first param in list.
-	v.addElement(HClass.forDescriptor(desc.substring(i)));
-	// skip over the one we just added.
-	while (desc.charAt(i)=='[') i++;
-	if (desc.charAt(i)=='L') i=desc.indexOf(';', i);
-      }
-      parameterTypes = new HClass[v.size()];
-      v.copyInto(parameterTypes);
-    }
     return HClass.copy(parameterTypes);
   }
-  /** Cached value of <code>getParameterTypes</code>. */
-  private HClass[] parameterTypes = null;
 
   /**
    * Returns an array of <code>String</code> objects giving the declared
@@ -194,29 +157,8 @@ public class HMethod implements HMember {
    * <code>null</code>.
    */
   public String[] getParameterNames() {
-    HClass[] pt = getParameterTypes();
-    if (parameterNames==null) {
-      parameterNames = new String[pt.length];
-      // for non-static methods, 0th local variable is 'this'.
-      int offset = isStatic()?0:1;
-      // assign names.
-      for (int i=0; i<parameterNames.length; i++) {
-	parameterNames[i]=
-	  ((code==null)?null:
-	   code.localName(0/*pc*/, offset));
-	// longs and doubles take up two local variable slots.
-	offset += (pt[i]==HClass.Double || pt[i]==HClass.Long)?2:1;
-      }
-      // done.
-    }
-    // Copy parameterNames array, if necessary.
-    if (parameterNames.length==0) return parameterNames;
-    String[] retval = new String[parameterNames.length];
-    System.arraycopy(parameterNames,0,retval,0,parameterNames.length);
-    return retval;
+    return (String[]) Util.copy(parameterNames);
   }
-  /** Cached value of <code>getParameterNames</code>. */
-  private String[] parameterNames=null;
 
   /**
    * Returns an array of <code>HClass</code> objects that represent the
@@ -225,36 +167,17 @@ public class HMethod implements HMember {
    * of length 0 if the method throws no checked exceptions.
    */
   public HClass[] getExceptionTypes() {
-    if (exceptionTypes==null) {
-      // compute exception types from AttributeExceptions.
-      if (exceptions == null)
-	exceptionTypes = new HClass[0];
-      else {
-	Vector v = new Vector();
-	for (int i=0; i<exceptions.number_of_exceptions(); i++) {
-	  ConstantClass cc = exceptions.exception_index_table(i);
-	  if (cc != null)
-	    v.addElement(HClass.forName(cc.name().replace('/','.')));
-	}
-	exceptionTypes = new HClass[v.size()];
-	v.copyInto(exceptionTypes);
-      }
-    }
     return HClass.copy(exceptionTypes);
   }
-  /** Cached value of <code>getExceptionTypes</code>. */
-  private HClass[] exceptionTypes = null;
 
   /**
    * Determines whether this <code>HMethod</code> is synthetic.
    */
-  public boolean isSynthetic() {
-    return (synthetic!=null); /*it's synthetic if we found a Synthetic attrib*/
-  }
+  public boolean isSynthetic() { return isSynthetic; }
 
   /** Determines whether this <code>HMethod</code> is an interface method. */
   public boolean isInterfaceMethod() {
-    return hclass.isInterface();
+    return parent.isInterface();
   }
   /** Determines whether this is a static method. */
   public boolean isStatic() {
@@ -272,7 +195,7 @@ public class HMethod implements HMember {
     if (this==obj) return true; // common case.
     if (!(obj instanceof HMethod)) return false;
     HMethod method = (HMethod) obj;
-    if (hclass != method.hclass) return false;
+    if (parent != method.parent) return false;
     if (!getName().equals(method.getName())) return false;
     HClass hc1[] = getParameterTypes();
     HClass hc2[] = method.getParameterTypes();
@@ -289,7 +212,7 @@ public class HMethod implements HMember {
    * underlying method's declaring class name and the method's name.
    */
   public int hashCode() {
-    return hclass.getName().hashCode() ^ getName().hashCode();
+    return parent.getName().hashCode() ^ getName().hashCode();
   }
 
   /**
@@ -321,7 +244,7 @@ public class HMethod implements HMember {
     }
     r.append(getTypeName(getReturnType()));
     r.append(' ');
-    r.append(getTypeName(hclass));
+    r.append(getTypeName(parent));
     r.append('.');
     r.append(getName());
     r.append('(');
