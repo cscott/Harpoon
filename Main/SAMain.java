@@ -61,7 +61,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.21 1999-09-08 19:30:20 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.22 1999-09-08 21:26:31 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -255,7 +255,8 @@ public class SAMain extends harpoon.IR.Registration {
     
     public static void outputClassData(HClass hclass, PrintWriter out) 
 	throws IOException {
-	final Data data = new Data(hclass, frame, classHierarchy);
+	if (true) return;
+	final Data data = null; //new Data(hclass, frame, classHierarchy); // FIXME!
 	
 	messageln("created a Data (yay!)");
 
@@ -265,14 +266,14 @@ public class SAMain extends harpoon.IR.Registration {
 	    info("\t--- end TREE FORM (for DATA)---");
 	}		
 	
-	final String scope = data.getName();
+	final String scope = null;//data.getName(); // FIXME!
 	final Instr instr = 
-	    frame.codegen().gen(data, new InstrFactory() {
+	    frame.codegen().gen(null/*data*/, new InstrFactory() {//FIXME!
 		private final TempFactory tf = Temp.tempFactory(scope);
 		{ Util.assert(tf != null, "TempFactory cannot be null"); }
 		private int id = 0;
 		public TempFactory tempFactory() { return tf; }
-		public HCode getParent() { return data; }
+		public HCode getParent() { return null/*data*/; }// FIXME!
 		public Frame getFrame() { return frame; }
 		public synchronized int getUniqueID() { return id++; }
 		public HMethod getMethod() { return null; }
