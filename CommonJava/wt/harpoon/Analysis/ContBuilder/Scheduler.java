@@ -10,7 +10,7 @@ import java.util.Vector;
  * <code>Scheduler</code>
  *
  * @author unknown and P.Govereau govereau@mit.edu
- * @version $Id: Scheduler.java,v 1.3 2000-04-02 04:32:31 bdemsky Exp $
+ * @version $Id: Scheduler.java,v 1.4 2000-04-03 04:43:18 bdemsky Exp $
  */
 public final class Scheduler
 {
@@ -32,11 +32,16 @@ public final class Scheduler
 	nThreads = 1;
 	
 	// The number of workers should be tuned for the application
-	(new AcceptWorker()).start();
+	//(new AcceptWorker()).start();
+	(new ReadWorker()).start();
+	(new ReadWorker()).start();
+	(new ReadWorker()).start();
+	(new ReadWorker()).start();
 	(new ReadWorker()).start();
 	(new ReadWorker()).start();
 	(new WriteWorker()).start();
 	(new WriteWorker()).start();
+
 	currentThread.yield();
     }
 
@@ -45,6 +50,8 @@ public final class Scheduler
     
     // these two map fds (indices) to Threads that are blocked on them
     private static Thread[] rTable= new Thread[MAX_FD], wTable= new Thread[MAX_FD];
+
+    private static int[] fdarray=new int[MAX_FD];
     
     /**
      * current thread has blocked with given continuation
@@ -204,15 +211,15 @@ public final class Scheduler
     }
 
     private static boolean getFDs() {
-	int fds[]= NativeIO.getFDsSmart(false);
+	int fdsize= NativeIO.getFDsSmart(false,fdarray);
 	boolean xx=false;
         Thread[] table= rTable;
 	
-	for (int i= 0; i < fds.length; i++)
-	    if (fds[i] != -1) { 
-	        Thread t= table[fds[i]];
+	for (int i= 0; i < fdsize; i++)
+	    if (fdarray[i] != -1) { 
+	        Thread t= table[fdarray[i]];
 		addReadyThread(t);
-		table[fds[i]]= null;
+		table[fdarray[i]]= null;
 		nBlockedIO --;
 		xx=true;
 	    }
