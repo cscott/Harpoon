@@ -9,7 +9,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.Code;
-import harpoon.IR.LowQuad.LowQuadSSA;
+import harpoon.IR.LowQuad.LowQuadSSI;
 import harpoon.IR.Quads.Quad;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
@@ -23,10 +23,10 @@ import java.util.Iterator;
  * <code>MyLowQuadSSI</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadSSI.java,v 1.1.2.7 2000-01-31 22:16:06 cananian Exp $
+ * @version $Id: MyLowQuadSSI.java,v 1.1.2.8 2000-02-25 00:53:41 cananian Exp $
  */
 
-public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSA {
+public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI {
     //harpoon.IR.LowQuad.Code  {
     HashMap dT;
     HashMap tT;
@@ -36,7 +36,7 @@ public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSA {
     TempMap tempMap;
     Map quadmapchanges;
     
-    MyLowQuadSSI(final LowQuadSSA code) {
+    MyLowQuadSSI(final LowQuadSSI code) {
 	super(code.getMethod(),null);
 	parent=code;
 	Object[] Maps=Quad.cloneMaps(qf, (Quad)code.getRootElement());

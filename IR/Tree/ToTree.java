@@ -19,7 +19,7 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.LowQuadFactory;
 import harpoon.IR.LowQuad.LowQuadNoSSA;
-import harpoon.IR.LowQuad.LowQuadSSA;
+import harpoon.IR.LowQuad.LowQuadSSI;
 import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.LowQuad.LQop;
 import harpoon.IR.LowQuad.PAOFFSET;
@@ -69,7 +69,7 @@ import java.util.Stack;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.72 2000-02-16 06:19:21 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.73 2000-02-25 00:54:09 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -83,7 +83,7 @@ class ToTree {
 	     new ToTreeHelpers.DefaultFoldNanny(),
 	     new ReachingDefsImpl(code));
     }
-    public ToTree(final TreeFactory tf, final LowQuadSSA code) {
+    public ToTree(final TreeFactory tf, final LowQuadSSI code) {
 	this(tf, code,
 	     new ToTreeHelpers.MinMaxEdgeOracle(code),
 	     new ToTreeHelpers.SSISimpleFoldNanny(code),

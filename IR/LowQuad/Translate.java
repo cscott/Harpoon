@@ -23,10 +23,10 @@ import java.util.Map;
 /**
  * <code>Translate</code> is a utility class which implements the 
  * <code>QuadSSI</code>/<code>QuadNoSSA</code> to 
- * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
+ * <code>LowQuadSSI</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.20 2000-02-09 04:23:37 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.21 2000-02-25 00:53:59 cananian Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,

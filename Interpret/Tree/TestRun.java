@@ -30,7 +30,7 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestRun.java,v 1.1.2.18 2000-01-17 12:53:39 cananian Exp $
+ * @version $Id: TestRun.java,v 1.1.2.19 2000-02-25 00:54:14 cananian Exp $
  */
 public abstract class TestRun extends Debug {
     public static void main(String args[]) {
@@ -57,7 +57,7 @@ public abstract class TestRun extends Debug {
 	
 	Frame frame = new  DefaultFrame(main, ch, new OffsetMap32(ch),
 					new InterpreterAllocationStrategy());
-	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
+	hcf = harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
 	hcf = harpoon.IR.LowQuad.LowQuadNoSSA.codeFactory(hcf);
        	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);

@@ -10,7 +10,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.LQop;
 import harpoon.IR.LowQuad.LowQuadFactory;
-import harpoon.IR.LowQuad.LowQuadSSA;
+import harpoon.IR.LowQuad.LowQuadSSI;
 import harpoon.IR.LowQuad.PAOFFSET;
 import harpoon.IR.LowQuad.POPER;
 import harpoon.IR.Quads.CONST;
@@ -45,7 +45,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.26 2000-01-31 22:16:06 cananian Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.27 2000-02-25 00:53:41 cananian Exp $
  */
 public final class LoopOptimize {
     
@@ -102,7 +102,7 @@ public final class LoopOptimize {
 
 	Temp []dummy=ud.allTemps(hc);	
 
-	MyLowQuadSSI hcnew=new MyLowQuadSSI((LowQuadSSA)hc);
+	MyLowQuadSSI hcnew=new MyLowQuadSSI((LowQuadSSI)hc);
 
 	// We start at the root loop, and recurse down each of its subloops.
 

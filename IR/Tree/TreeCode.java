@@ -13,7 +13,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.LowQuadNoSSA;
-import harpoon.IR.LowQuad.LowQuadSSA;
+import harpoon.IR.LowQuad.LowQuadSSI;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.Temp.CloningTempMap;
@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * The tree form is based around Andrew Appel's tree form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: TreeCode.java,v 1.1.2.30 2000-02-16 23:04:32 cananian Exp $
+ * @version $Id: TreeCode.java,v 1.1.2.31 2000-02-25 00:54:09 cananian Exp $
  * 
  */
 public class TreeCode extends Code {
@@ -50,9 +50,9 @@ public class TreeCode extends Code {
 	treeDerivation = translator.getTreeDerivation();
     }
     /** Create a new <code>TreeCode</code> from a
-     *  <code>LowQuadSSA</code> object, and a <code>Frame</code>.
+     *  <code>LowQuadSSI</code> object, and a <code>Frame</code>.
      */
-    TreeCode(LowQuadSSA code, Frame topframe) {
+    TreeCode(LowQuadSSI code, Frame topframe) {
 	super(code.getMethod(), null, topframe);
 
 	ToTree translator;
@@ -107,26 +107,26 @@ public class TreeCode extends Code {
 
     /**
      * Returns a code factory for <code>TreeCode</code>, given a 
-     * code factory for <code>LowQuadNoSSA</code> or <code>LowQuadSSA</code>.
+     * code factory for <code>LowQuadNoSSA</code> or <code>LowQuadSSI</code>.
      * <BR> <B>effects:</B> if <code>hcf</code> is a code factory for
-     *      <code>LowQuadNoSSA</code> or <code>LowQuadSSA</code>, then
+     *      <code>LowQuadNoSSA</code> or <code>LowQuadSSI</code>, then
      *      creates and returns a code
      *      factory for <code>TreeCode</code>.  Else passes
      *      <code>hcf</code> to
-     *      <code>LowQuadSSA.codeFactory()</code>, and reattempts to
+     *      <code>LowQuadSSI.codeFactory()</code>, and reattempts to
      *      create a code factory for <code>TreeCode</code> from the
-     *      code factory returned by <code>LowQuadSSA</code>.
-     * @see LowQuadSSA#codeFactory(HCodeFactory)
+     *      code factory returned by <code>LowQuadSSI</code>.
+     * @see LowQuadSSI#codeFactory(HCodeFactory)
      */
     public static HCodeFactory codeFactory(final HCodeFactory hcf, 
 					   final Frame frame) {
-	if (hcf.getCodeName().equals(LowQuadSSA.codename)) {
+	if (hcf.getCodeName().equals(LowQuadSSI.codename)) {
 	    // note that result will not be serializable unless frame is.
 	    return new harpoon.ClassFile.SerializableCodeFactory() { 
 		public HCode convert(HMethod m) { 
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
-			new TreeCode((LowQuadSSA)c, frame);
+			new TreeCode((LowQuadSSI)c, frame);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
@@ -145,16 +145,16 @@ public class TreeCode extends Code {
 	} else {
 	    //   throw new Error("don't know how to make " + codename +
 	    //	    " from " + hcf.getCodeName());
-	    HCodeFactory lqnossaHCF = LowQuadSSA.codeFactory(hcf);
+	    HCodeFactory lqnossaHCF = LowQuadSSI.codeFactory(hcf);
 	    return codeFactory(lqnossaHCF, frame);
 	}
     }
   
     /**
      * Return a code factory for <code>TreeCode</code>, using the default
-     * code factory for <code>LowQuadSSA</code>
+     * code factory for <code>LowQuadSSI</code>
      */
     public static HCodeFactory codeFactory(final Frame frame) {  
-	return codeFactory(LowQuadSSA.codeFactory(), frame);
+	return codeFactory(LowQuadSSI.codeFactory(), frame);
     }
 }
