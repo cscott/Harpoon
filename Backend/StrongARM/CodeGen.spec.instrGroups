@@ -65,7 +65,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec.instrGroups,v 1.1.2.2 2001-06-05 04:04:22 pnkfelix Exp $
+ * @version $Id: CodeGen.spec.instrGroups,v 1.1.2.3 2001-06-22 16:19:22 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -624,7 +624,7 @@ import java.util.Iterator;
     private void emitHandlerStub(INVOCATION ROOT, Temp retex, Label handler) {
 	declare( retex, frame.getLinker().forName("java.lang.Throwable"));
 	emitMOVE ( ROOT, "mov `d0, `s0", retex, r0 );
-	emitJUMP ( ROOT, "b "+handler, handler);
+	emitJUMP ( ROOT, "b "+handler, handler); // TODO: should be `L0
     }
     /** Emit a fixup table entry */
     private void emitCallFixup(INVOCATION ROOT, Label retaddr, Label handler) {
@@ -804,13 +804,21 @@ import java.util.Iterator;
 	return instr;
     }
 
+    private Temp[] regPlusSP_FP_PC( Temp[] regParams ) {
+	// defines SP, FP, and PC providing reaching defs for
+	// InstrEXIT uses.
+	Temp[] r = new Temp[ regParams.length + 3];
+	System.arraycopy(regParams, 0, r, 0, regParams.length);
+	r[ regParams.length + 0 ] = SP;
+	r[ regParams.length + 1 ] = FP;
+	r[ regParams.length + 2 ] = PC;
+	return r;
+    }
     // now define our little InstrENTRY and InstrEXIT sub-types.
     private class InstrENTRY extends Instr {
-	public InstrENTRY(InstrFactory inf, HCodeElement src) {
-	    // defines SP, FP, and PC providing reaching defs for
-	    // InstrEXIT uses.
+	public InstrENTRY(InstrFactory inf, HCodeElement src, Temp[] regParams) {
 	    super(inf, src, "@ --method entry point--",
-		  new Temp[] { SP, FP, PC }, null);
+		  regPlusSP_FP_PC(regParams), null);
 	}
     }
     private class InstrEXIT extends Instr {
@@ -1095,6 +1103,7 @@ BINOP(cmpop, j, k) = i
     if (cmpop==Bop.CMPLE) cmpopNE=Bop.CMPLT;
     { InstrGroup nsg = startGroup(InstrGroup.NO_SPILL);
     { InstrGroup nrg = startGroup(InstrGroup.NO_REORDER);
+    { InstrGroup agg = startGroup(InstrGroup.AGGREGATE);
     emitDef( ROOT, "mov `d0, #0", i );
     emitUses( ROOT, "cmp `s0h, `s1h", j, k);
     emitDef( ROOT, "mov"+cmpOp2Str(cmpopNE)+" `d0, #1", i );
@@ -1102,6 +1111,7 @@ BINOP(cmpop, j, k) = i
     emitUses( ROOT, "cmp `s0l, `s1l", j, k );
     emitDef( ROOT, "mov"+cmpOp2StrUNSIGNED(cmpop)+" `d0, #1", i );
     emit( ROOT, "1:" );
+    endGroup(agg); }
     endGroup(nrg); }
     // dummy use of `s0 and `s1 following the comparison to keep them live
     // (otherwise the regalloc could allocate d0 over part of s0 or s1)
@@ -2156,7 +2166,32 @@ METHOD(params) %{
     declare(PC, HClass.Void);
     declare(SP, HClass.Void);
     declare(FP, HClass.Void);
-    emit(new InstrENTRY( instrFactory, ROOT ));
+
+    // FSK: find out which registers are defined at method entry by
+    // examining parameter types.
+    // Declare their types and pass them into InstrENTY ctor.
+    Temp[] regParams = null;
+    { int j = 0; // numWordsPassed
+      for (int i=1; i < params.length; i++) { // skip param[0]; see below
+	  Util.assert(j < 4);
+	  if (ROOT.getParams(i).isDoubleWord()){
+	      declare(regfile.reg[j++], code.getTreeDerivation(), ROOT.getParams(i));
+	      if (j == 4) break;
+	      declare(regfile.reg[j++], code.getTreeDerivation(), ROOT.getParams(i));
+	  } else {
+	      declare(regfile.reg[j++], code.getTreeDerivation(), ROOT.getParams(i));
+	  }
+	  if (j == 4) // other words will be on the stack
+	      break;
+	  Util.assert(j < 4);
+      }
+      regParams = new Temp[ j ];
+      for (int i=0; i<j; i++) {
+	  regParams[i] = regfile.reg[i];
+      }
+    }
+    emit(new InstrENTRY( instrFactory, ROOT, regParams ));
+
     // move arguments to temporaries.
     int loc=0;
     // skip param[0], which is the explicit 'exceptional return address'
