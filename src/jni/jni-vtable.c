@@ -28,10 +28,10 @@ const struct JNINativeInterface FLEX_JNI_vtable = {
   0,
   0,
             
-  (typeof(&FNI_NewGlobalRef)) FNI_Unimplemented,
-  (typeof(&FNI_DeleteGlobalRef)) FNI_Unimplemented,
-  (typeof(&FNI_DeleteLocalRef)) FNI_Unimplemented,
-  (typeof(&FNI_IsSameObject)) FNI_Unimplemented,
+  FNI_NewGlobalRef,
+  FNI_DeleteGlobalRef,
+  FNI_DeleteLocalRef,
+  FNI_IsSameObject,
   0,
   0,
             
