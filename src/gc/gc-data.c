@@ -9,6 +9,10 @@
 #include "jni-private.h"
 #include "jni-gc.h"
 #include "fni-threadstate.h"
+#include "gc-data.h"
+#ifdef WITH_THREADED_GC
+#include "jni-gcthreads.h"
+#endif
 
 #define kDEBUG  0
 #define DESCSZ  8  /* number of bits needed for descriptor */
@@ -86,7 +90,7 @@ struct _basetable {
 
 /* -------------- externally-defined --------------- */
 
-extern JNIEnv *FNI_JNIEnv;
+// extern JNIEnv *FNI_JNIEnv;
 
 /* --------- garbage collection functions ---------- */
 
@@ -331,10 +335,33 @@ void find_global_refs() {
   }
 }
 
+#ifdef WITH_THREADED_GC
+/* struct FNI_Thread_State ptr for main thread */
+static struct FNI_Thread_State *main_thrstate;
+void gc_data_init() {
+  main_thrstate = (struct FNI_Thread_State *)FNI_GetJNIEnv();
+  error_gc("FNI_Thread_State for main thread: %p\n", main_thrstate);
+}
+#endif
+
 /* effects: adds thread-local references to root set using add_to_root_set */
 void find_thread_local_refs() {
-  struct FNI_Thread_State *thread_state_ptr =
+  struct FNI_Thread_State *curr_thrstate =
     (struct FNI_Thread_State *)FNI_GetJNIEnv();
+  error_gc("Current thread (%p)\n", curr_thrstate);
+  handle_local_refs_for_thread(curr_thrstate);
+#ifdef WITH_THREADED_GC
+  // if the current thread is the main thread, don't repeat
+  if (main_thrstate != curr_thrstate) {
+    error_gc("Main thread (%p)\n", main_thrstate);
+    handle_local_refs_for_thread(main_thrstate);
+  }
+  // deal with other threads
+  find_other_thread_local_refs(curr_thrstate);
+#endif
+}
+
+void handle_local_refs_for_thread(struct FNI_Thread_State *thread_state_ptr) {
   struct _jobject *top = thread_state_ptr->localrefs_next;
   struct _jobject *jobj = thread_state_ptr->localrefs_stack;
   while(jobj < top) {

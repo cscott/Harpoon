@@ -51,7 +51,9 @@ void FNI_DestroyThreadState(void *cl) {
   struct FNI_Thread_State * env = (struct FNI_Thread_State *) cl;
   if (cl==NULL) return; // death of uninitialized thread.
   // ignore wrapped exception; free localrefs.
-#ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_PRECISE_GC
+  free(env->localrefs_stack);
+#elif defined(BDW_CONSERVATIVE_GC)
   GC_free(env->localrefs_stack);
 #else
   free(env->localrefs_stack);

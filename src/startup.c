@@ -3,6 +3,9 @@
 #include <jni-private.h>
 #include "java.lang/java_lang_Thread.h"
 #include "flexthread.h"
+#ifdef WITH_PRECISE_GC
+#include "jni-gc.h"
+#endif
 
 /* these functions are defined in src/java.lang/java_lang_Thread.c but only
  * used here. */
@@ -49,6 +52,10 @@ int main(int argc, char *argv[]) {
   env = FNI_CreateJNIEnv();
   ((struct FNI_Thread_State *)(env))->stack_top = &top_of_stack;
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_TRUE;
+  /* setup GC */
+#ifdef WITH_PRECISE_GC
+  precise_gc_init();
+#endif
   /* setup main thread info. */
   FNI_java_lang_Thread_setupMain(env);
   thrCls  = (*env)->FindClass(env, "java/lang/Thread");

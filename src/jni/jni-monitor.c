@@ -7,6 +7,9 @@
 #include "config.h"
 #include "flexthread.h"
 #include "fni-stats.h"
+#ifdef WITH_PRECISE_GC
+#include "jni-gcthreads.h"
+#endif
 
 DECLARE_STATS_EXTERN(monitor_enter)
 DECLARE_STATS_EXTERN(monitor_contention)
@@ -46,7 +49,13 @@ jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
     if ((st = pthread_mutex_trylock(&(li->mutex)))!=EBUSY) goto gotlock;
     INCREMENT_STATS(monitor_contention, 1);
 #endif /* WITH_STATISTICS */
+#ifdef WITH_PRECISE_GC
+    decrement_running_thread_count();
+#endif /* WITH_PRECISE_GC */
     st = pthread_mutex_lock(&(li->mutex));
+#ifdef WITH_PRECISE_GC
+    increment_running_thread_count();
+#endif /* WITH_PRECISE_GC */
   gotlock:
     assert(st==0 /* no mutex errors */);
     li->tid = self;
@@ -78,9 +87,15 @@ void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime){
     pthread_t tid = li->tid;
     jint nesting_depth = li->nesting_depth;
     li->tid = 0;/*let other folk grab the lock, just as soon as we give it up*/
-    if (abstime==NULL)
+    if (abstime==NULL) {
+#ifdef WITH_PRECISE_GC
+      decrement_running_thread_count();
+#endif /* WITH_PRECISE_GC */
       st = pthread_cond_wait(&(li->cond), &(li->mutex));
-    else
+#ifdef WITH_PRECISE_GC
+      increment_running_thread_count();
+#endif /* WITH_PRECISE_GC */
+    } else
       st = pthread_cond_timedwait(&(li->cond), &(li->mutex), abstime);
     assert(st==0 || st==ETIMEDOUT || st==EINTR /*no cond variable errors*/);
     li->tid = tid;

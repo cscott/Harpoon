@@ -27,9 +27,9 @@ void *precise_malloc (size_t size_in_bytes)
 void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[])
 #endif
 {
-  void *result;
   /*Frame fp; */
   struct gc_index *found;
+
 #ifdef GC_EVERY_TIME /* Explicitly trigger a full, world-stop collection. */
 # ifdef WITH_PRECISE_C_BACKEND
   collect(/* heap not expanded */0);
