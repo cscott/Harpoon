@@ -399,8 +399,8 @@ static void * thread_startup_routine(void *closure) {
    * (note that we're careful to make sure we're on the 'running threads'
    *  list before letting the parent --- who may decide to exit -- continue.)
    */
-  pthread_mutex_unlock(&(cls->parampass_mutex));
   pthread_cond_signal(&(cls->parampass_cond));
+  pthread_mutex_unlock(&(cls->parampass_mutex));
   /* okay, now start run() method */
   (*env)->CallVoidMethod(env, thread, runID);
   if ( (threadexc = (*env)->ExceptionOccurred(env)) != NULL) {
