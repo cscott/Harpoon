@@ -23,7 +23,7 @@ import java.util.Hashtable;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.5 1999-02-16 21:23:03 duncan Exp $
+ * @version $Id: Translate.java,v 1.1.2.6 1999-02-17 00:44:22 duncan Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
@@ -123,9 +123,11 @@ final class Translate { // not public
 	    dT.put(q2.def()[0], dl);
 	    updateTypeInfo(q);
 	    // update type info
-	    tT.put(q0.def()[0], type(q.objectref()));
+	    tT.put(q0.def()[0], 
+		   new Error("Cant type derived pointer: " + q0.def()[0]));
 	    tT.put(q1.def()[0], HClass.Int);
-	    tT.put(q2.def()[0], type(q.objectref()).getComponentType());
+	    tT.put(q2.def()[0], 
+		   new Error("Cant type derived pointer: " + q2.def()[0]));
 	}
 
 	public final void visit(harpoon.IR.Quads.ASET q) {
@@ -144,9 +146,11 @@ final class Translate { // not public
 	    dT.put(q2.def()[0], dl);
 	    // Update type information
 	    updateTypeInfo(q);
-	    tT.put(q0.def()[0], type(q.objectref()));
+	    tT.put(q0.def()[0], 
+		   new Error("Cant type derived pointer: " + q0.def()[0]));
 	    tT.put(q1.def()[0], HClass.Int);
-	    tT.put(q2.def()[0], type(q.objectref()).getComponentType());
+	    tT.put(q2.def()[0], 
+		   new Error("Cant type derived pointer: " + q2.def()[0]));
 	}
 
 	public final void visit(harpoon.IR.Quads.CALL q) {
@@ -164,13 +168,13 @@ final class Translate { // not public
 		Quad.addEdges(new Quad[] { q0, q1, q2 });
 		// update derivation table.
 		DList dl = new DList(map(q.params(0)), true, null);
-		System.out.println("Qp[0], type[0]: " + q.params(0) + ", " + 
-				   type(q.params(0)) + ", "+ q0.def()[0]);
 		dT.put(q0.def()[0], dl);
 		dT.put(q2.def()[0], dl);
-		tT.put(q0.def()[0], type(q.params(0)));
+		tT.put(q0.def()[0], 
+		       new Error("Cant type derived pointer: " + q0.def()[0]));
 		tT.put(q1.def()[0], HClass.Int);
-		tT.put(q2.def()[0], HClass.Int);
+		tT.put(q2.def()[0], 
+		       new Error("Cant type derived pointer: " + q2.def()[0]));
 	    }
 	    updateTypeInfo(q);
 	    Quad q3 = new PCALL(qf, q, qN.def()[0], map(q.params()),
@@ -196,9 +200,11 @@ final class Translate { // not public
 		DList dl = new DList(map(q.objectref()), true, null);
 		dT.put(q0.def()[0], dl);
 		dT.put(q2.def()[0], dl);
-		tT.put(q0.def()[0], HClass.Int);
+		tT.put(q0.def()[0], 
+		       new Error("Cant type derived pointer: " + q0.def()[0]));
 		tT.put(q1.def()[0], HClass.Int);
-		tT.put(q2.def()[0], type(q.dst()));
+		tT.put(q2.def()[0], 
+		       new Error("Cant type derived pointer: " + q2.def()[0]));
 	    }
 	    updateTypeInfo(q);
 	    Quad q3 = new PGET(qf, q, map(q.dst()), qN.def()[0]);
@@ -231,16 +237,18 @@ final class Translate { // not public
 		DList dl = new DList(map(q.objectref()), true, null);
 		dT.put(q0.def()[0], dl);
 		dT.put(q2.def()[0], dl);
-		tT.put(q0.def()[0], HClass.Int);
+		tT.put(q0.def()[0], 
+		       new Error("Cant type derived pointer: " + q0.def()[0]));
 		tT.put(q1.def()[0], HClass.Int);
-		tT.put(q2.def()[0], type(q.src()));
+		tT.put(q2.def()[0], 
+		       new Error("Cant type derived pointer: " + q0.def()[0]));
 	    }
 	    updateTypeInfo(q);
 	    Quad q3 = new PSET(qf, q, qN.def()[0], map(q.src()));
 	    Quad.addEdge(qN, 0, q3, 0);
 	    lqm.put(q, q0, q3);
 	}
-
+      
 	//---------------------------------------------------------
  	// UTILITY FUNCTIONS:
 	private Temp extra() { return new Temp(qf.tempFactory(), "lq_"); }
