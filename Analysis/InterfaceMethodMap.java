@@ -21,10 +21,12 @@ import harpoon.Analysis.GraphColoring.SparseGraph;
 import harpoon.Analysis.GraphColoring.SparseNode;
 import harpoon.Analysis.GraphColoring.IllegalEdgeException;
 /**
- * <code>InterfaceMethodMap</code>
+ * <code>InterfaceMethodMap</code> provides a mapping from interface
+ * methods to the offset that the method-pointers should have on the
+ * object layout.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.2.5 1999-02-01 17:24:01 pnkfelix Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.2.6 1999-02-01 18:00:59 pnkfelix Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -176,7 +178,8 @@ public class InterfaceMethodMap extends MethodMap {
 	return m.getDeclaringClass() != objHClass;
     }
 
-    /** Generates a HmNode for methods in<code>interfce</code>. 
+    /** Generates a <code>Vector</code> of <code>HmNode</code>s for
+	methods in an interface.  
 	<BR> <B>requires:</B> <code>interfce</code> is an HClass
 	                      representing an interface, and there are
 			      no circular interface extensions 
