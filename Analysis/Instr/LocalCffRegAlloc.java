@@ -53,7 +53,7 @@ import java.util.AbstractSet;
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.52 1999-12-03 23:51:47 pnkfelix Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.53 1999-12-04 18:36:44 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -149,7 +149,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 			  "should have a mapping in the regfile"+
 			  "\nLiveOnExit: "+ liveOnExit +
 			  "\nREGFILE: "+ regfile + 
-			  "\nINSTR: " +instr+" / "+code.toAssem(instr)+
+			  "\nINSTR: " +instr+" / "+
+			  code.toAssemRegsNotNeeded(instr)+
 			  "\nBLOCK: \n" + b.dumpElems());
 		    
 		    continue;
@@ -285,6 +286,21 @@ public class LocalCffRegAlloc extends RegAlloc {
 			workOnRef++;
 			// System.out.println("Finished Spill, retrying");
 		    }
+		}
+	    }
+
+	    
+	    if (RegAlloc.DEBUG) { 
+		// finished local alloc for 'instr'
+		// lets verify
+	    
+		Iterator refIter = getRefs(instr);
+		while(refIter.hasNext()) {
+		    Temp ref = (Temp) refIter.next();
+		    Util.assert(isTempRegister(ref) ||
+				code.registerAssigned(instr, ref),
+				"Instr: "+instr+" needs register "+
+				"assignment for Ref: "+ref);
 		}
 	    }
 	}

@@ -33,7 +33,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.29 1999-12-03 23:52:03 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.30 1999-12-04 18:36:46 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -180,10 +180,34 @@ public abstract class Code extends HCode {
         }
     }
 
-    /** Produces an assembly code string for <code>i</code>.
+    /** Produces an assembly code string for <code>i</code>, with
+	register mappings.  Note that if <code>instr</code> is missing
+	any register mappings then this method should not be called,
+	since it is designed for final code output, not intermediary
+	debugging output.
 	
      */
     public String toAssem(Instr instr) {
+	return toAssem(instr, true);
+    }
+
+    /** Produces an assembly code string for <code>i</code>, with
+	register mappings where they exist.  Use this function for
+	intermediary debugging output.
+	
+     */
+    public String toAssemRegsNotNeeded(Instr instr) {
+	return toAssem(instr, false);
+    }
+
+    /** Produces an assembly code string for <code>instr</code>.
+	If <code>mustGetRegs</code> is true, Then will die on
+	any missing register mappings in <code>instr</code>.  
+	Else will just return the name for the <code>Temp</code>
+	referenced by <code>instr</code> that has no associated
+	register. 
+     */
+    protected String toAssem(Instr instr, boolean mustGetRegs) {
         StringBuffer s = new StringBuffer();
 	String assem = instr.getAssem();
 	
@@ -253,7 +277,13 @@ public abstract class Code extends HCode {
 			    var.append(c);
 			}
 		    }
-		    s.append(getRegisterName(instr, temp, var.toString()));
+		    Util.assert( ( ! mustGetRegs ) ||
+				 registerAssigned(instr, temp),
+				 "final assembly output for "+
+				 "Instr: "+instr+" must have "+
+				 "reg assigned to Temp: "+temp);
+		    s.append(getRegisterName(instr, temp,
+					     var.toString()));
 		    s.append(lastChar);
 		}
 

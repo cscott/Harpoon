@@ -23,23 +23,29 @@ import java.util.Map;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.12 1999-12-03 23:52:07 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.13 1999-12-04 18:36:47 pnkfelix Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
 
-    Map tempInstrPairToRegisterMap;
+    Map tempInstrToRegisterMap;
+    RegFileInfo regFileInfo;
 
     /** Creates a <code>Code</code>. */
     public Code(harpoon.IR.Tree.Code treeCode) {
         super(treeCode.getMethod(), 
 	      null,
 	      treeCode.getFrame());
+
+	// need to cast the return type to a StrongARM.RegFileInfo
+	regFileInfo = (RegFileInfo) treeCode.getFrame().getRegFileInfo();
+	Util.assert(regFileInfo != null, "Need non-null regfileinfo");
+
 	// treeCode.print(new java.io.PrintWriter(System.out));
 	instrs = treeCode.getFrame().getCodeGen()
 	    .gen(treeCode, newINF(treeCode.getMethod()));
 	Util.assert(instrs != null);
-	tempInstrPairToRegisterMap = new HashMap();
+	tempInstrToRegisterMap = new HashMap();
     }
 
     public String getName() { return codename; }
@@ -92,10 +98,17 @@ public class Code extends harpoon.Backend.Generic.Code {
 			   codeFactory( new SAFrame(offmap) ), offmap);
     }
     */
-    
+
+    /** This returns null or a register temp. */
     private Temp get(Instr instr, Temp val) {
-	return (Temp) 
-	    tempInstrPairToRegisterMap.get(new TempInstrPair(instr, val)); 
+	Temp reg = 
+	    (Temp) tempInstrToRegisterMap.get
+	    (new TempInstrPair(instr, val)); 
+	if(reg == null) return null;
+	Util.assert( regFileInfo.isRegister(reg), 
+		     "Temp: "+reg+" should be a reg in "+
+		     "Instr: "+instr+", Val: "+val);
+	return reg;
     }
 
     
@@ -173,12 +186,12 @@ public class Code extends harpoon.Backend.Generic.Code {
 			       final List regs) {
 	if (pseudoReg instanceof TwoWordTemp) {
 	    TwoWordTemp t = (TwoWordTemp) pseudoReg;
-	    tempInstrPairToRegisterMap.put
+	    tempInstrToRegisterMap.put
 		(new TempInstrPair(instr, t.getLow()), regs.get(0));
-	    tempInstrPairToRegisterMap.put
+	    tempInstrToRegisterMap.put
 		(new TempInstrPair(instr, t.getHigh()), regs.get(1));
 	} else {
-	    tempInstrPairToRegisterMap.put
+	    tempInstrToRegisterMap.put
 		(new TempInstrPair(instr, pseudoReg), regs.get(0));
 	}
  
@@ -196,12 +209,12 @@ public class Code extends harpoon.Backend.Generic.Code {
     public void removeAssignment(Instr instr, Temp preg) {
 	if (preg instanceof TwoWordTemp) {
 	    TwoWordTemp t = (TwoWordTemp) preg;
-	    tempInstrPairToRegisterMap.remove
+	    tempInstrToRegisterMap.remove
 		(new TempInstrPair(instr, t.getLow()));
-	    tempInstrPairToRegisterMap.remove
+	    tempInstrToRegisterMap.remove
 		(new TempInstrPair(instr, t.getHigh()));
 	} else {
-	    tempInstrPairToRegisterMap.remove
+	    tempInstrToRegisterMap.remove
 		(new TempInstrPair(instr, preg));
 	}
     }
@@ -211,16 +224,16 @@ public class Code extends harpoon.Backend.Generic.Code {
 	if (pr instanceof TwoWordTemp) {
 	    TwoWordTemp t = (TwoWordTemp) pr;
 	    return 
-		(tempInstrPairToRegisterMap.
+		(tempInstrToRegisterMap.
 		 keySet().contains
 		 (new TempInstrPair(instr, t.getLow()))
 		 &&
-		 tempInstrPairToRegisterMap.
+		 tempInstrToRegisterMap.
 		 keySet().contains
 		 (new TempInstrPair(instr, t.getHigh())));
 	} else {
 	    return 
-		(tempInstrPairToRegisterMap.
+		(tempInstrToRegisterMap.
 		 keySet().contains
 		 (new TempInstrPair(instr, pr)));
 	}
