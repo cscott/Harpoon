@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.17 1999-08-11 20:38:09 duncan Exp $
+ * @version $Id: CONST.java,v 1.1.2.18 1999-08-12 03:37:27 cananian Exp $
  */
 public class CONST extends Exp implements PreciselyTyped {
     /** The constant value of this <code>CONST</code> expression. */
@@ -27,7 +27,7 @@ public class CONST extends Exp implements PreciselyTyped {
     // Force access through the PreciselyTyped interface, so we can assert
     // that type==SMALL.  
     private int bitwidth   = -1;
-    private boolean signed = false;
+    private boolean signed = true;
 
     public CONST(TreeFactory tf, HCodeElement source, int ival) {
 	super(tf, source);
@@ -54,6 +54,10 @@ public class CONST extends Exp implements PreciselyTyped {
     }
 
     /** Creates a CONST with a precisely defined type.  
+     *  For example, <code>CONST(tf, src, 8, true, 0xFF)</code> corresponds
+     *  to the value <code>-1</code>, as a byte.  
+     *  <code>CONST(tf, src, 8, true, -1)</code> also corresponds
+     *  to the value <code>-1</code> as a byte.
      *  @param bitwidth    the width in bits of this <code>CONST</code>'s type.
      *                     Fails unless <code>0 <= bitwidth < 32</code>.
      *  @param signed      whether this <code>CONST</code> is signed
@@ -76,6 +80,7 @@ public class CONST extends Exp implements PreciselyTyped {
         super(tf, source);
 	this.type = type; this.value = value;
 	this.bitwidth = bitwidth; this.signed = signed;
+	Util.assert(PreciseType.isValid(type));
     }
     
     /** Return the constant value of this <code>CONST</code> expression. */
@@ -92,10 +97,14 @@ public class CONST extends Exp implements PreciselyTyped {
     }
 
     // Typed interface.
-    public int type() { return type; }
+    public int type() { Util.assert(PreciseType.isValid(type)); return type; }
 
     // PreciselyTyped interface.
+    /** Returns the size of the expression, in bits.
+     *  Only valid if the type of the expression is <code>SMALL</code>. */
     public int bitwidth() { Util.assert(type==SMALL); return bitwidth; } 
+    /** Returns true if this is a signed expression, false otherwise.
+     *  Only valid if the type of the expression is <code>SMALL</code>. */
     public boolean signed() { Util.assert(type==SMALL); return signed; } 
     
     /** Accept a visitor */
@@ -106,7 +115,7 @@ public class CONST extends Exp implements PreciselyTyped {
     }
 
     public String toString() {
-        return "CONST<"+Type.toString(type)+ 
+        return "CONST<"+PreciseType.toString(type)+ 
 	    ((type==SMALL) ? (":" +  bitwidth + (signed ? "sext" : "")) : "") +
 	    ">("+value+")";
     }

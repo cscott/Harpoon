@@ -9,7 +9,7 @@ package harpoon.IR.Tree;
  * <code>OPER</code>, and <code>UNOP</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Typed.java,v 1.1.2.5 1999-08-11 20:03:50 duncan Exp $
+ * @version $Id: Typed.java,v 1.1.2.6 1999-08-12 03:37:27 cananian Exp $
  */
 public interface Typed  {
     // enumerated constants.
@@ -18,7 +18,6 @@ public interface Typed  {
     public int FLOAT=Type.FLOAT;
     public int DOUBLE=Type.DOUBLE;
     public int POINTER=Type.POINTER;
-    public int SMALL=Type.SMALL;
 
     /** Returns enumerated constant (INT, LONG, FLOAT, DOUBLE, or POINTER)
      *  corresponding to the type of the expression. */

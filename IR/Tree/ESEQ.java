@@ -18,7 +18,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.12 1999-08-04 05:52:29 cananian Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.13 1999-08-12 03:37:27 cananian Exp $
  */
 public class ESEQ extends Exp {
     /** The statement to evaluate for side-effects. */
@@ -62,7 +62,12 @@ public class ESEQ extends Exp {
 			(Exp)exp.rename(tf, ctm));
     }
 
-    public int type() { return exp.type(); }
+    public int type() {
+	// this is an unfortunate hack because Exps can possibily implement
+	// the 'PreciseTyped' interface.
+	int ty = exp.type();
+	return (ty==PreciseType.SMALL)?Type.INT:ty;
+    }
 
     public String toString() {
         return "ESEQ(#" + stm.getID() + ", #" + exp.getID() + ")";

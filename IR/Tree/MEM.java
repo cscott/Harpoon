@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MEM.java,v 1.1.2.15 1999-08-11 20:40:09 duncan Exp $
+ * @version $Id: MEM.java,v 1.1.2.16 1999-08-12 03:37:27 cananian Exp $
  */
 public class MEM extends Exp implements PreciselyTyped {
     /** A subexpression evaluating to a memory reference. */
@@ -27,7 +27,7 @@ public class MEM extends Exp implements PreciselyTyped {
     // Force access through the PreciselyTyped interface, so we can assert
     // that type==SMALL.  
     private int bitwidth   = -1;
-    private boolean signed = false;
+    private boolean signed = true;
 
     /** Constructor. */
     public MEM(TreeFactory tf, HCodeElement source,
@@ -61,6 +61,7 @@ public class MEM extends Exp implements PreciselyTyped {
 	this.bitwidth=bitwidth; this.signed=signed;
 	Util.assert(exp!=null);
 	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
+	Util.assert(PreciseType.isValid(type));
     }
 
     public ExpList kids() {return new ExpList(exp,null);}
@@ -75,10 +76,14 @@ public class MEM extends Exp implements PreciselyTyped {
     }
 
     // Typed interface:
-    public int type() { return type; }
+    public int type() { Util.assert(PreciseType.isValid(type)); return type; }
     
     // PreciselyTyped interface:
+    /** Returns the size of the expression, in bits.
+     *  Only valid if the type of the expression is <code>SMALL</code>. */
     public int bitwidth() { Util.assert(type==SMALL); return bitwidth; } 
+    /** Returns true if this is a signed expression, false otherwise.
+     *  Only valid if the type of the expression is <code>SMALL</code>. */
     public boolean signed() { Util.assert(type==SMALL); return signed; } 
 
     /** Accept a visitor */
@@ -90,7 +95,7 @@ public class MEM extends Exp implements PreciselyTyped {
     }
 
     public String toString() {
-        return "MEM<" + Type.toString(type) + 
+        return "MEM<" + PreciseType.toString(type) + 
 	    ((type==SMALL) ? (":" +  bitwidth + (signed ? "sext" : "")) : "") +
 	    ">(#" + exp.getID() + ")";
     }
