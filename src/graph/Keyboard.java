@@ -43,8 +43,10 @@ public class Keyboard extends Node {
 		    frame.setVisible(false);
 		}
 	    });
+
 	frame.addKeyListener(new KeyAdapter() {
 		public void keyPressed(KeyEvent e) {
+		    //System.out.println("Keyboard: key pressed");
 		    switch (e.getKeyCode()) {
 		    case LEFT: {
 			out.process(ImageDataManip.create(Command.SERVO_LEFT_CONTINUE, 0));
