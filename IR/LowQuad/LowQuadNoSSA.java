@@ -11,7 +11,7 @@ import java.util.Hashtable;
 /**
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.2 1999-02-03 21:19:44 duncan Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.3 1999-02-04 07:19:57 duncan Exp $
  */
 public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 {
@@ -83,5 +83,11 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
   public static HCodeFactory codeFactory()
     {  
       return codeFactory(LowQuadSSA.codeFactory());
+    }
+
+  // obsolete
+  public static void register() 
+    {
+      HMethod.register(codeFactory());
     }
 }

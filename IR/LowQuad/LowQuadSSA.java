@@ -1,5 +1,7 @@
 package harpoon.IR.LowQuad;
 
+import harpoon.Backend.Maps.FinalMap;
+import harpoon.Analysis.Maps.TypeMap;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
@@ -13,7 +15,7 @@ import java.util.Hashtable;
  *
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.1 1999-02-03 21:19:45 duncan Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.2 1999-02-04 07:20:12 duncan Exp $
  */
 public class LowQuadSSA extends Code
 {
@@ -23,7 +25,10 @@ public class LowQuadSSA extends Code
   /** Creates a <code>LowQuadNoSSA</code> object from a LowQuad object */
   LowQuadSSA(QuadSSA code)
     {
-      super(code);
+      super(code.getMethod(), null);
+      TypeMap tym = new harpoon.Analysis.QuadSSA.TypeInfo();
+      FinalMap fm = new harpoon.Backend.Maps.DefaultFinalMap();
+      quads = Translate.translate((LowQuadFactory)this.qf, code, tym, fm, hD);
     }
 
   /**
@@ -82,5 +87,11 @@ public class LowQuadSSA extends Code
   public static HCodeFactory codeFactory()
     {  
       return codeFactory(QuadSSA.codeFactory());
+    }
+
+  // obsolete
+  public static void register() 
+    {
+      HMethod.register(codeFactory());
     }
 }
