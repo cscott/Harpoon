@@ -49,7 +49,7 @@ import java.util.*;
  * selection of <code>Instr</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.17 1999-06-16 01:54:33 pnkfelix Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.18 1999-06-18 19:46:15 pnkfelix Exp $
  */
 final class CodeGen {
 
@@ -195,16 +195,15 @@ final class CodeGen {
             s.test.visit(this);
             Util.assert(visitRet!=null, "visitRet was null after visiting " + s.test);
 	    ExpValue test = visitRet;
-            emit(new Instr(inf, s, "cmp `s0, #0  \t\t; " + s, 
-                           null,
-			   new Temp[] { test.temp() }));
+            Instr i = new Instr(inf, s, 
+				"cmp `s0, #0  \t\t; " + s + "\n" +
+				"beq " + s.iffalse + "\n" +
+				"b " + s.iftrue, 
+				null,
+				new Temp[] { test.temp() });
 
-	    Instr i = new Instr(inf, s, "beq " + s.iffalse, null, null);
 	    emit(i);
 	    blMap.put(i, s.iffalse);
-
-	    i = new Instr(inf, s, "b " + s.iftrue, null, null);
-            emit(i);
             blMap.put(i, s.iftrue);
 
             visitRet = null;
