@@ -24,6 +24,12 @@ DECLARE_STATS_LOCAL(thread_heaps_created)
 DECLARE_STATS_LOCAL(threads_created)
 #endif /* WITH_CLUSTERED_HEAPS */
 
+#undef EXTRA_STATS
+#ifdef EXTRA_STATS
+#include <jni.h>
+#include <jni-private.h>
+#endif
+
 /* counter for total garbage collection time. */
 #ifdef BDW_CONSERVATIVE_GC
 extern double ttl_gc_time;
@@ -35,6 +41,17 @@ static void stat_signal_handler(int sig) { print_statistics(); }
 #define FS(x) (unsigned long long) FETCH_STATS(x) /* convenience macro */
 void print_statistics(void) {
   /* lead off with a new-line in case we're using SIGALRM */
+#ifdef EXTRA_STATS
+  JNIEnv *env;
+  jclass cls;
+  jmethodID mid;
+  env=FNI_GetJNIEnv();
+  cls=(*env)->FindClass(env,"harpoon/Analysis/ContBuilder/Scheduler");
+  mid=(*env)->GetStaticMethodID(env,cls,"printresults","()V");
+  (*env)->CallStaticVoidMethod(env, cls, mid);
+  CHECK_EXCEPTIONS(env);
+  (*env)->DeleteLocalRef(env, cls);
+#endif
   printf("\n");
 #ifdef BDW_CONSERVATIVE_GC
   printf("Total gc time at this point: %f ms\n", (float) ttl_gc_time);
@@ -68,6 +85,9 @@ void print_statistics(void) {
 	 FS(thr_bytes_overflow));
 #endif /* WITH_CLUSTERED_HEAPS */
   fflush(stdout);
+  
+
   /* print out statistics on demand */
   signal(SIGALRM, stat_signal_handler);
 }
+
