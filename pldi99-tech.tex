@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi99-tech.tex,v 1.11 1999-11-13 06:51:20 cananian Exp $
+% $Id: pldi99-tech.tex,v 1.12 1999-11-13 07:07:30 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{The Static Single Information form}
 In this section we will provide a formal specification of SSI form and
@@ -167,8 +167,8 @@ This is a trivial restatement of amendment~\ref{amend_place}.  A
 variable $v$ is said to be live at some node $N$ if there exists
 a node $U$ using $v$ and a path $N\pathplus U$ on which no definitions
 of $v$ are to be found.  If $V$ is not live at $Z$ then no path
-$Z\pathplus U$ satisfying the amended conditions~\ref{crit_phiplace}
-and \ref{crit_sigplace} can be found and neither a
+$Z\pathplus U$ satisfying the amended path-convergence criteria
+can be found and neither a
 \phisigfunction[or]{} can be placed.  Amendment~\ref{amend_boundary}
 ensures this holds true at boundaries.
 \end{proof}
@@ -914,7 +914,7 @@ analyses; \newterm{liveness} is often cited as a canonical example.
 However, SSI form allows the sparse computation of such backwards
 properties.  Liveness, for example, comes ``for free'' from pruned SSI
 form: every variable is live in the region between its use and
-sole definition.  Property~\ref{pty:ssi_dom} states that every
+sole definition.  Every
 non-\phifunction{} use of a variable is dominated by the definition;
 Cytron \cite{cytron91:ssa} has shown that \phifunction{s} will always be
 found on the dominance frontier.  Thus the live region between
@@ -1402,7 +1402,7 @@ negligible performance cost.  However, handling upper bounds
 completely requires a symbolic analysis that is out of the current
 scope of this work.  Future work will use induction variable analysis
 and integrate an existing linear programming approach
-\cite{rugina99:dividePutSubmissionRefHere} to fully address array-bounds checks.
+\cite{RR00:PLDI00} to fully address array-bounds checks.
 \begin{myfigure}[t]
 \centering\renewcommand{\figscale}{0.6}\input{Figures/THlat6}
 \caption[An integer lattice for signed integers.]
