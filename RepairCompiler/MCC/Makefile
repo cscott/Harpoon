@@ -95,10 +95,10 @@ parser: $(PARSERS) $(SCANNER).java
 
 %Parser.java: %.cup
 	java -classpath ../ java_cup.Main -nosummary -symbols $(SYMBOLS) -parser $*Parser < $*.cup
-	jikes -nowarn -bootclasspath $(CLASSPATH) $(SYMBOLS).java
+	javac $(SYMBOLS).java
 
 %.class: %.java
-	jikes -nowarn -bootclasspath $(CLASSPATH) -classpath ../ -source 1.4 $<
+	javac -classpath ../ -source 1.4 $<
 #	jikes -classpath $(CLASSPATH):../ $<
 
 %.lex.java: %.lex
