@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.77 1999-10-16 19:21:17 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.78 1999-10-16 20:11:42 cananian Exp $
  */
 %%
 
@@ -1472,12 +1472,14 @@ DATA(CONST<p>(exp)) %{
 }%
 
 DATA(CONST<s:8,u:8>(exp)) %{
-    emitDIRECTIVE( ROOT, "\t.byte "+exp);
+    String chardesc = (exp.intValue()>=32 && exp.intValue()<127) ?
+	("\t@ char "+((char)exp.intValue())) : "";
+    emitDIRECTIVE( ROOT, "\t.byte "+exp+chardesc);
 }%
 
 DATA(CONST<s:16,u:16>(exp)) %{
     String chardesc = (exp.intValue()>=32 && exp.intValue()<127) ?
-	(" @ character "+((char)exp.intValue())) : "";
+	("\t@ char "+((char)exp.intValue())) : "";
     emitDIRECTIVE( ROOT, "\t.short "+exp+chardesc);
 }%
 
