@@ -1,8 +1,6 @@
 package imagerec;
 
 public class Save extends Node {
-    private int count = 0;
-    
     private String filePrefix;
 
     public Save(String filePrefix) {
@@ -11,7 +9,7 @@ public class Save extends Node {
     }
 
     public synchronized void process(ImageData id) {
-	System.out.println("Saving image "+filePrefix+"."+count);
-	ImageDataManip.writePPM(id, filePrefix+"."+(count++));
+	System.out.println("Saving image "+filePrefix+"."+id.id);
+	ImageDataManip.writePPM(id, filePrefix+"."+id.id);
     }
 }

@@ -22,17 +22,17 @@ module imagerec
     sequence<long> bvals;
     long width;
     long height;
+    long time;
+    long id;
   };
 
   /**
-   * @interface ClientServerInt
+   * @interface ClientServer
    * @brief  Control client/server.
    */ 
 
-  interface ClientServerInt
+  interface ClientServer
     {
-	void newServer(in string name);
-	void newClient(in string name);
 	void process(in ImageData id);
     };
 };

@@ -13,7 +13,9 @@ public class Load extends Node {
     public synchronized void process(ImageData id) {
 	for (int i=0; i<num; i++) {
 	    System.out.println("Loading image "+filePrefix+"."+i);
-	    super.process(ImageDataManip.readPPM(filePrefix+"."+i));
+	    ImageData id = ImageDataManip.readPPM(filePrefix+"."+i);
+	    id.id = i;
+	    super.process(id);
 	}
     }
 }
