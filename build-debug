@@ -6,9 +6,9 @@ rm Runtime
 ln -s Runtime-debug Runtime
 cd $HERE
 source ./sourceme
-cd ../Code
+cd $HERE/../Code
 rm -rf as*
 JAVA="java -server" PRECISEC_CFLAGS="-g" bin/build-precisec $@
-cd ../Runtime
+cd $HERE/../Runtime
 mv run* $HERE
 
