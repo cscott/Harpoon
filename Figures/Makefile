@@ -84,6 +84,12 @@ ptrsize.tex: ptrsize.data
 	  grep -v "^%%BoundingBox:" | \
 	  grep -v "^%%HiResBoundingBox:" ) > $@
 
+# default .fig->.pstex rules
+%.pstex: %.fig Makefile
+	fig2dev -L pstex $($(patsubst %.fig,FIG_MAG_%,$<)) $< $@
+%.pstex_t: %.fig Makefile
+	fig2dev -L pstex_t -p $(patsubst %.fig,%.pstex,$<) $($(patsubst %.fig,FIG_MAG_%,$<)) $< $@
+
 # graphing helpers
 %.stats: %
 	../scripts/make.stats $< > $@
