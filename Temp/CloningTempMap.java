@@ -1,11 +1,8 @@
 // CloningTempMap.java, created Sat Jan 23 02:05:02 1999 by cananian
 // Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.IR.Quads;
+package harpoon.Temp;
 
-import harpoon.Temp.Temp;
-import harpoon.Temp.TempFactory;
-import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 import java.util.Hashtable;
@@ -14,7 +11,7 @@ import java.util.Hashtable;
  * <code>TempFactory</code> to equivalent <code>Temp</code>s in another.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloningTempMap.java,v 1.1.2.1 1999-01-23 07:59:04 cananian Exp $
+ * @version $Id: CloningTempMap.java,v 1.1.2.1 1999-02-04 23:10:09 cananian Exp $
  */
 public class CloningTempMap implements TempMap {
     private Hashtable h = new Hashtable();

@@ -4,6 +4,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.LowQuadVisitor;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -17,10 +18,19 @@ import java.util.Vector;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.1 1999-02-03 21:18:57 duncan Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.2 1999-02-04 23:10:06 cananian Exp $
  */
 public class ToNoSSA 
 {
+  /**
+   * Translates the code in the supplied codeview from SSA to No-SSA form, 
+   * returning the new root <code>Quad</code>.
+   */ // this method makes it clearer to the user that derivation information
+      // is optional.
+  public static Quad translate(final QuadFactory qf, final Code code)
+    {
+      return translate(qf, null, code);
+    }
   /**
    * Translates the code in the supplied codeview from SSA to No-SSA form, 
    * returning the new root <code>Quad</code>.  The <code>Hashtable</code>

@@ -5,6 +5,7 @@ package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -16,7 +17,7 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.13 1999-01-23 07:58:20 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.14 1999-02-04 23:10:05 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 

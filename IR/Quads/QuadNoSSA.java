@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.1.2.5 1999-02-04 22:56:36 cananian Exp $
+ * @version $Id: QuadNoSSA.java,v 1.1.2.6 1999-02-04 23:10:06 cananian Exp $
  * @see QuadWithTry
  * @see QuadSSA
  */
@@ -28,7 +28,7 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
     }
     QuadNoSSA(QuadSSA qsa) {
 	super(qsa.getMethod(), null);
-	this.quads = ToNoSSA.translate(this.qf, null, qsa);
+	this.quads = ToNoSSA.translate(this.qf, qsa);
     }
     private QuadNoSSA(HMethod parent, Quad quads) {
 	super(parent, quads);

@@ -7,10 +7,10 @@ import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Maps.FinalMap;
 import harpoon.ClassFile.HClass;
 import harpoon.IR.Properties.Derivation.DList;
-import harpoon.IR.Quads.CloningTempMap;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 
@@ -22,7 +22,7 @@ import java.util.Hashtable;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.3 1999-02-04 22:56:15 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.4 1999-02-04 23:09:54 cananian Exp $
  */
 final class Translate  { // not public
     public static final Quad translate(final LowQuadFactory qf,

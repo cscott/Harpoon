@@ -2,6 +2,7 @@
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HClass;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
@@ -13,7 +14,7 @@ import java.util.Vector;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.6 1999-01-23 07:58:21 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.7 1999-02-04 23:10:06 cananian Exp $
  */
 final class UnHandler {
     // entry point.
