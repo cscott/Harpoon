@@ -90,7 +90,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.13 2004-02-08 03:20:25 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.14 2004-07-02 00:08:52 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -153,8 +153,6 @@ public class SyncTransformer
 
     // FieldOracle to use.
     final FieldOracle fieldOracle;
-    // BitFieldNumbering to use
-    final BitFieldNumbering bfn;
 
     /** Cache the <code>java.lang.Class</code> <code>HClass</code>. */
     private final HClass HCclass;
@@ -189,26 +187,28 @@ public class SyncTransformer
     private final HCodeFactory hcf;
 
     private final Linker linker;
+    private final boolean pointersAreLong;
     private final MethodGenerator gen;
     private final Set<HField> transFields = new HashSet<HField>();
 
     /** Creates a <code>SyncTransformer</code> with no transaction root
      *  methods. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
-			   HMethod mainM, Set roots) {
-	this(hcf, ch, l, mainM, roots, Default.<HMethod>EMPTY_SET());
+			   boolean pointersAreLong, HMethod mainM, Set roots) {
+	this(hcf, ch, l, pointersAreLong, mainM, roots, Default.<HMethod>EMPTY_SET());
     }
     /** Creates a <code>SyncTransformer</code> with a transaction root method
      *  set loaded from the specified resource name. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
-			   HMethod mainM, Set roots,
+			   boolean pointersAreLong, HMethod mainM, Set roots,
 			   String resourceName) {
-	this(hcf, ch, l, mainM, roots, parseResource(l, resourceName));
+	this(hcf, ch, l, pointersAreLong, mainM, roots,
+	     parseResource(l, resourceName));
     }
     /** Creates a <code>SyncTransformer</code> with the specified transaction
      *  root method set. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
-			   HMethod mainM, Set roots,
+			   boolean pointersAreLong, HMethod mainM, Set roots,
 			   Set<HMethod> transRoots) {
 	// our input is SSI.  We'll convert it to SSA in the 'clone' method.
         super(hcf, ch, false);
@@ -218,6 +218,7 @@ public class SyncTransformer
 	assert super.codeFactory().getCodeName()
 		    .equals(harpoon.IR.Quads.QuadRSSx.codename);
 	this.linker = l;
+	this.pointersAreLong = pointersAreLong;
 	this.HCclass = l.forName("java.lang.Class");
 	this.HCfield = l.forName("java.lang.reflect.Field");
 	String pkg = "harpoon.Runtime.Transactions.";
@@ -257,6 +258,10 @@ public class SyncTransformer
 	HMsetTrans = HCimplHelper.getMethod
 	    ("setJNITransaction", new HClass[] { HCcommitrec });
 
+	// add fields for versions list and readers list.
+	HField vlistF = objM.addDeclaredField("versionsList", HCvinfo);
+	HField rlistF = objM.addDeclaredField("readerList", HCobj);
+
 	// set up our field oracle.
 	if (!useSmartFieldOracle) {
 	    this.fieldOracle = new SimpleFieldOracle();
@@ -270,13 +275,14 @@ public class SyncTransformer
 	}
 	// set up our BitFieldNumbering (and create array-check fields in
 	// all array classes)
+	/*
 	if (noFieldModification) this.bfn = null;
 	else {
-	  this.bfn = new BitFieldNumbering(l);
-	  for (HClass hc : ch.classes()) {
-	    if (hc.isArray()) bfn.arrayBitField(hc);
-	  }
+	  this.bfn = new BitFieldNumbering(l, pointersAreLong);
+	  this.bfn.ignoredFields.add(vlistF);
+	  this.bfn.ignoredFields.add(rlistF);
 	}
+	*/
 
 	// fixup code factory for 'known safe' methods.
 	final HCodeFactory superfactory = super.codeFactory();
@@ -427,6 +433,7 @@ public class SyncTransformer
 	final TempSplitter ts=new TempSplitter();
 	final ExactTypeMap<Quad> etm;
 	final AllocationInformationMap aim;
+	final int PTRBITS = pointersAreLong ? 64 : 32;
 	// mutable.
 	FOOTER footer; // we attach new stuff to the footer.
 	ListList<THROW> handlers = null; // points to current abort handler
@@ -747,26 +754,12 @@ public class SyncTransformer
 	    Temp t1 = new Temp(tf, "retex");
 	    Quad q1;
 	    if (handlers==null) { // non-transactional read
-		// VALUETYPE TA(EXACT_readNT)(struct oobj *obj, int offset,
-		//                            int flag_offset, int flag_bit)
-		Temp t2 = new Temp(tf, "flag_field");
-		Temp t3 = new Temp(tf, "flag_bit");
-		Temp t4 = new Temp(tf, "index_mod32");
-		HField arrayCheckField = bfn.arrayBitField(arrType);
-		in = addAt(in, new CONST(qf, q, t2, arrayCheckField, HCfield));
-		in = addAt(in, new CONST(qf, q, t4, new Integer(31),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.IAND, t4,
-					new Temp[] { q.index(), t4 }));
-		in = addAt(in, new CONST(qf, q, t3, new Integer(1),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.ISHL, t3,
-					new Temp[] { t3, t4 }));
+		// VALUETYPE TA(EXACT_readNT)(struct oobj *obj, int offset)
 		q1 = new CALL(qf, q, gen.lookupMethod
 			      ("readNT_Array", new HClass[]
-				  { arrType, HClass.Int, HCfield, HClass.Int },
+				  { arrType, HClass.Int },
 			       compType),
-			      new Temp[] { q.objectref(), q.index(), t2, t3 },
+			      new Temp[] { q.objectref(), q.index() },
 			      q.dst(), t1, false, false, new Temp[0]);
 	    } else { // transactional read
 		// VALUETYPE TA(EXACT_readT)(struct oobj *obj, int offset,
@@ -844,19 +837,11 @@ public class SyncTransformer
 	    Quad q1;
 	    in = addAt(in, q0);
 	    if (handlers==null) { // non-transactional read
-		// VALUETYPE TA(EXACT_readNT)(struct oobj *obj, int offset,
-		//                            int flag_offset, int flag_bit)
-		Temp t2 = new Temp(tf, "flag_field");
-		Temp t3 = new Temp(tf, "flag_bit");
-		BitFieldTuple bft = bfn.bfLoc(q.field());
-		in = addAt(in, new CONST(qf, q, t2, bft.field, HCfield));
-		in = addAt(in, new CONST(qf, q, t3, new Integer(1<<bft.bit),
-				     HClass.Int));
+		// VALUETYPE TA(EXACT_readNT)(struct oobj *obj, int offset)
 		q1 = new CALL(qf, q, gen.lookupMethod
-			      ("readNT", new HClass[] { HCobj, HCfield,
-							HCfield, HClass.Int },
+			      ("readNT", new HClass[] { HCobj, HCfield },
 			       q.field().getType()),
-			      new Temp[] { q.objectref(), t0, t2, t3 },
+			      new Temp[] { q.objectref(), t0 },
 			      q.dst(), t1, false, false, new Temp[0]);
 	    } else { // transactional read
 		// VALUETYPE TA(EXACT_readT)(struct oobj *obj, int offset,
@@ -920,28 +905,12 @@ public class SyncTransformer
 	    Quad q1;
 	    if (handlers==null) { // non-transactional write
 		// void TA(EXACT_writeNT)(struct oobj *obj, int offset,
-		//                        VALUETYPE value,
-		//	                  int flag_offset, int flag_bit);
-		Temp t2 = new Temp(tf, "flag_field");
-		Temp t3 = new Temp(tf, "flag_bit");
-		Temp t4 = new Temp(tf, "index_mod32");
-		HField arrayCheckField = bfn.arrayBitField(arrType);
-		in = addAt(in, new CONST(qf, q, t2, arrayCheckField, HCfield));
-		in = addAt(in, new CONST(qf, q, t4, new Integer(31),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.IAND, t4,
-					new Temp[] { q.index(), t4 }));
-		in = addAt(in, new CONST(qf, q, t3, new Integer(1),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.ISHL, t3,
-					new Temp[] { t3, t4 }));
+		//                        VALUETYPE value);
 		q1 = new CALL(qf, q, gen.lookupMethod
 			      ("writeNT_Array", new HClass[]
-				  { arrType, HClass.Int, compType,
-				    HCfield, HClass.Int },
+				  { arrType, HClass.Int, compType},
 			       HClass.Void),
-			      new Temp[]{ q.objectref(), q.index(), q.src(),
-					  t2, t3 },
+			      new Temp[]{ q.objectref(), q.index(), q.src() },
 			      null, t1, false, false, new Temp[0]);
 	    } else { // transactional write
 		// void TA(EXACT_writeT)(struct oobj *obj, int offset,
@@ -1019,20 +988,12 @@ public class SyncTransformer
 	    in = addAt(in, q0);
 	    if (handlers==null) { // non-transactional read
 		// void TA(EXACT_writeNT)(struct oobj *obj, int offset,
-		//                        VALUETYPE value,
-		//	                  int flag_offset, int flag_bit);
-		Temp t2 = new Temp(tf, "flag_field");
-		Temp t3 = new Temp(tf, "flag_bit");
-		BitFieldTuple bft = bfn.bfLoc(q.field());
-		in = addAt(in, new CONST(qf, q, t2, bft.field, HCfield));
-		in = addAt(in, new CONST(qf, q, t3, new Integer(1<<bft.bit),
-				     HClass.Int));
+		//                        VALUETYPE value)
 		q1 = new CALL(qf, q, gen.lookupMethod
 			      ("writeNT", new HClass[] { HCobj, HCfield,
-							 q.field().getType(),
-							 HCfield, HClass.Int },
+							 q.field().getType() },
 			       HClass.Void),
-			      new Temp[]{ q.objectref(), t0, q.src(), t2, t3 },
+			      new Temp[]{ q.objectref(), t0, q.src() },
 			      null, t1, false, false, new Temp[0]);
 	    } else { // transactional read
 		// void TA(EXACT_writeT)(struct oobj *obj, int offset,
@@ -1087,23 +1048,25 @@ public class SyncTransformer
 	    Set wS = co.createWriteVersions(q);
 	    // note that reading is different from writing: if you want to
 	    // read *and* write, you must call ensureReader *and* ensureWriter
+	    // XXX CSA 30-jun-2004 is this still true?
+	    //                     i don't think so.  should test with SPIN.
 	    for (int i=0; i<2; i++) {
 		// iteration 0 for read; iteration 1 for write versions.
 		Iterator<Temp> it = (i==0) ? rS.iterator() : wS.iterator();
-		// void EXACT_ensureReader(struct oobj *obj,
-		//                         struct commitrec *cr);
+		// struct vinfo *EXACT_ensureReader(struct oobj *obj,
+		//                                  struct commitrec *cr);
 		// struct vinfo *EXACT_ensureWriter(struct oobj *obj,
 		//				    struct commitrec *cr);
 		HMethod hm = 
 		    gen.lookupMethod((i==0) ? "ensureReader" : "ensureWriter",
 				     new HClass[] { HCobj, HCcommitrec },
-				     (i==0) ? HClass.Void : HCvinfo);
+				     HCvinfo);
 		while (it.hasNext()) {
 		    // for each temp, a call to 'ensureReader' or
 		    // 'ensureWriter'.
 		    Temp t = it.next();
 		    CALL q0= new CALL(qf, q, hm, new Temp[] { t, currtrans },
-		                      (i==0) ? null : ts.versioned(t), retex,
+		                      ts.versioned(t), retex,
 				      false/*final, not virtual*/, false,
 				      new Temp[0]);
 		    THROW q1= new THROW(qf, q, retex);
@@ -1111,22 +1074,6 @@ public class SyncTransformer
 		    Quad.addEdge(q0, 1, q1, 0);
 		    footer = footer.attach(q1, 0);
 		    checkForAbort(q0.nextEdge(1), q, retex);
-		    if (i==0) { // start reader version at NULL.
-			in = addAt(in, new CONST(qf, q, ts.versioned(t),
-					       null, HClass.Void));
-		    } else { // check return value from writer
-			// NULL version indicates suicide request.
-			Quad q2;
-			Temp tnull = new Temp(tf, "null");
-			Temp tcmp = new Temp(tf, "nullchk");
-			in = addAt(in, new CONST(qf, q, tnull,
-						 null, HClass.Void));
-			in = addAt(in, new OPER(qf, q, Qop.ACMPEQ, tcmp,
-						new Temp[] { ts.versioned(t),
-							     tnull }));
-			in = addAt(in, q2=new CJMP(qf, q, tcmp, new Temp[0]));
-			throwAbort(q2, 1, q);
-		    }
 		    in = CounterFactory.spliceIncrement
 			(qf, in,
 			 "synctrans."+((i==0)?"read":"write")+"_versions");
@@ -1143,35 +1090,20 @@ public class SyncTransformer
 		}
 		in = CounterFactory.spliceIncrement
 		    (qf, in, "synctrans.field_read_checks");
-		// create read check code (set read-bit to one).
-		// (check that read-bit is set, else call fixup code,
-		//  which will do atomic-set of this bit.)
+		// create read check code (currently does nothing)
 		transFields.add(raf.field);
-		BitFieldTuple bft = bfn.bfLoc(raf.field);
 
-		// struct vinfo *TA(EXACT_setReadFlags)
-		//      (struct oobj *obj, int offset,
-		//       int flag_offset, int flag_bit,
-		//       struct vinfo *version,
-		//       struct commitrec*cr/*this trans*/);
+		// void TA(EXACT_checkReadField)(struct oobj *obj, int offset);
 		HMethod hm = gen.lookupMethod
-		    ("setReadFlags", new HClass[]
-			{ raf.field.getDeclaringClass(), HCfield,
-			  HCfield, HClass.Int, HCvinfo, HCcommitrec },
-		     HCvinfo);
+		    ("checkReadField", new HClass[]
+			{ raf.field.getDeclaringClass(), HCfield },
+		     HClass.Void);
 
 		Temp t0 = new Temp(tf, "readcheck_field");
-		Temp t1 = new Temp(tf, "readcheck_flag_field");
-		Temp t2 = new Temp(tf, "readcheck_flag_bit");
 		in = addAt(in, new CONST(qf, q, t0, raf.field, HCfield));
-		in = addAt(in, new CONST(qf, q, t1, bft.field, HCfield));
-		in = addAt(in, new CONST(qf, q, t2, new Integer(1<<bft.bit),
-				    HClass.Int));
 		CALL q0= new CALL(qf, q, hm,
-				  new Temp[] { raf.objref, t0, t1, t2,
-					       ts.versioned(raf.objref),
-					       currtrans },
-				  ts.versioned(raf.objref), retex,
+				  new Temp[] { raf.objref, t0 },
+				  null, retex,
 				  false, false, new Temp[0]);
 		// never throws exception.
 		Quad q1 = new THROW(qf, q, retex);
@@ -1197,24 +1129,17 @@ public class SyncTransformer
 		// create write check code (set field to FLAG).
 		// (check that field==FLAG is set, else call fixup code)
 		transFields.add(raf.field);
-		BitFieldTuple bft = bfn.bfLoc(raf.field);
 
-		// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset,
-		//                              int flag_offset, int flag_bit)
+		// void TA(EXACT_checkWriteField)(struct oobj *obj, int offset)
 		HMethod hm = gen.lookupMethod
-		    ("setWriteFlags", new HClass[]
-			{ raf.field.getDeclaringClass(), HCfield,
-			  HCfield, HClass.Int }, HClass.Void);
+		    ("checkWriteField", new HClass[]
+			{ raf.field.getDeclaringClass(), HCfield },
+		     HClass.Void);
 
 		Temp t0 = new Temp(tf, "writecheck_field");
-		Temp t1 = new Temp(tf, "writecheck_flag_field");
-		Temp t2 = new Temp(tf, "writecheck_flag_bit");
 		in = addAt(in, new CONST(qf, q, t0, raf.field, HCfield));
-		in = addAt(in, new CONST(qf, q, t1, bft.field, HCfield));
-		in = addAt(in, new CONST(qf, q, t2, new Integer(1<<bft.bit),
-					 HClass.Int));
 		CALL q0= new CALL(qf, q, hm,
-				  new Temp[] { raf.objref, t0, t1, t2 },
+				  new Temp[] { raf.objref, t0 },
 				  null, retex, false, false, new Temp[0]);
 		// never throws exception.
 		Quad q1 = new THROW(qf, q, retex);
@@ -1240,34 +1165,14 @@ public class SyncTransformer
 		CheckOracle.RefAndIndexAndType rit = it.next();
 		HClass arrayClass =
 		    HClassUtil.arrayClass(qf.getLinker(), rit.type, 1);
-		HField arrayCheckField = bfn.arrayBitField(arrayClass);
-		// struct vinfo *TA(EXACT_setReadFlags)
-		//      (struct oobj *obj, int offset,
-		//       int flag_offset, int flag_bit,
-		//       struct vinfo *version,
-		//       struct commitrec*cr/*this trans*/);
+		// void TA(EXACT_checkReadField)(struct oobj *obj, int offset);
 		HMethod hm = gen.lookupMethod
-		    ("setReadFlags_Array", new HClass[]
-			{ arrayClass, HClass.Int, HCfield, HClass.Int,
-			  HCvinfo, HCcommitrec }, HCvinfo);
+		    ("checkReadField_Array", new HClass[]
+			{ arrayClass, HClass.Int }, HClass.Void);
 
-		Temp t0 = new Temp(tf, "arrayreadcheck");
-		Temp t1 = new Temp(tf, "arrayreadcheck_flag_field");
-		Temp t2 = new Temp(tf, "arrayreadcheck_flag_bit");
-		in = addAt(in, new CONST(qf, q, t0, new Integer(31),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.IAND, t0,
-				   new Temp[]{ rit.index, t0 }));
-		in = addAt(in, new CONST(qf, q, t2, new Integer(1),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.ISHL, t2,
-					new Temp[]{t2, t0}));
-		in = addAt(in, new CONST(qf, q, t1, arrayCheckField, HCfield));
 		CALL q0= new CALL(qf, q, hm,
-				  new Temp[] { rit.objref, rit.index, t1, t2,
-					       ts.versioned(rit.objref),
-					       currtrans },
-				  ts.versioned(rit.objref), retex,
+				  new Temp[] { rit.objref, rit.index },
+				  null, retex,
 				  false, false, new Temp[0]);
 		// never throws exception.
 		Quad q1 = new THROW(qf, q, retex);
@@ -1288,28 +1193,13 @@ public class SyncTransformer
 		CheckOracle.RefAndIndexAndType rit = it.next();
 		HClass arrayClass =
 		    HClassUtil.arrayClass(qf.getLinker(), rit.type, 1);
-		HField arrayCheckField = bfn.arrayBitField(arrayClass);
-		// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset,
-		//                              int flag_offset, int flag_bit)
+		// void TA(EXACT_checkWriteField)(struct oobj *obj, int offset)
 		HMethod hm = gen.lookupMethod
-		    ("setWriteFlags_Array", new HClass[]
-			{ arrayClass, HClass.Int, HCfield, HClass.Int },
-		     HClass.Void);
+		    ("checkWriteField_Array", new HClass[]
+			{ arrayClass, HClass.Int }, HClass.Void);
 
-		Temp t0 = new Temp(tf, "arraywritecheck");
-		Temp t1 = new Temp(tf, "arraywritecheck_flag_field");
-		Temp t2 = new Temp(tf, "arraywritecheck_flag_bit");
-		in = addAt(in, new CONST(qf, q, t0, new Integer(31),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.IAND, t0,
-				   new Temp[]{ rit.index, t0 }));
-		in = addAt(in, new CONST(qf, q, t2, new Integer(1),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.ISHL, t2,
-					new Temp[]{t2, t0}));
-		in = addAt(in, new CONST(qf, q, t1, arrayCheckField, HCfield));
 		CALL q0= new CALL(qf, q, hm,
-				  new Temp[] { rit.objref, rit.index, t1, t2 },
+				  new Temp[] { rit.objref, rit.index },
 				  null, retex, false, false, new Temp[0]);
 		// never throws exception.
 		Quad q1 = new THROW(qf, q, retex);
@@ -1430,16 +1320,19 @@ public class SyncTransformer
      *  which can't be represented in quad form. */
     public HCodeFactory treeCodeFactory(Frame f, HCodeFactory hcf) {
 	Set<HField> allFields = new HashSet<HField>(transFields);
-	if (bfn!=null) allFields.addAll(bfn.bitfields);
+	//if (bfn!=null) allFields.addAll(bfn.bitfields);
 	return new TreePostPass(f, FLAG_VALUE, HFflagvalue, gen, allFields)
 	    .codeFactory(hcf);
     }
 
     /** Munge <code>HData</code>s to insert bit-field numbering information. */
     public Iterator<HData> filterData(Frame f, Iterator<HData> it) {
+	/*
 	if (bfn==null) return it;
 	if (tdf==null) tdf = new TreeDataFilter(f, bfn, transFields);
 	return new FilterIterator<HData,HData>(it, tdf);
+	*/
+	return it;
     }
     TreeDataFilter tdf=null;
 

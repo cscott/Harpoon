@@ -24,11 +24,12 @@ import java.util.Set;
  * <code>DataStrings</code> lays out string constant objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataStrings.java,v 1.4 2002-08-06 20:01:32 cananian Exp $
+ * @version $Id: DataStrings.java,v 1.5 2004-07-02 00:08:56 cananian Exp $
  */
 public class DataStrings extends Data {
     final NameMap m_nm;
     final ObjectBuilder m_ob;
+    final boolean pointersAreLong;
     
     /** Creates a <code>DataStrings</code> containing tables corresponding
      *  to the given set of strings. */
@@ -36,6 +37,7 @@ public class DataStrings extends Data {
 	super("string-data", hc, f);
 	this.m_nm = f.getRuntime().getNameMap();
 	this.m_ob = ((Runtime) f.getRuntime()).ob;
+	this.pointersAreLong = f.pointersAreLong();
         this.root = build(strings);
     }
     private HDataElement build(Set<String> strings) {
@@ -68,6 +70,10 @@ public class DataStrings extends Data {
 		if (hf.getName().equals("cachedHashCode") &&
 		    hf.getDeclaringClass().equals(HCstr))
 		    return new Integer(str.hashCode());
+		// transactions adds this field.
+		if (hf.getName().equals("$$bitfield0") &&
+		    hf.getDeclaringClass().equals(HCstr))
+		    return pointersAreLong?(Number)new Long(0):new Integer(0);
 		throw new Error("Unknown field "+hf+" of string object.");
 	    }
 	    final HClass HCstr = linker.forName("java.lang.String");

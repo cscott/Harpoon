@@ -48,7 +48,7 @@ import java.util.Set;
  * This pass is invoked by <code>SyncTransformer.treeCodeFactory()</code>.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreePostPass.java,v 1.7 2004-02-08 03:20:25 cananian Exp $
+ * @version $Id: TreePostPass.java,v 1.8 2004-07-02 00:08:52 cananian Exp $
  */
 class TreePostPass extends harpoon.Analysis.Tree.Simplification {
     private final List<Rule> RULES = new ArrayList<Rule>(); 
@@ -185,42 +185,7 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 		return javaArgs;
 	    }
 	};
-    final Transformer fieldTransformer = new Transformer() {
-	    HClass functionSuffix(HMethod hm, ExpList javaArgs) {
-		return findField(extract(javaArgs, 1)).getType();
-	    }
-	    ExpList transformArgs(TreeFactory tf, HCodeElement source,
-				  DerivationGenerator dg,
-				  HMethod hm, ExpList javaArgs) {
-		// args are <obj, field, flag field, ...>
-		// we need to calculate offset from fields
-		HField objF = findField(extract(javaArgs, 1));
-		HField flagF = findField(extract(javaArgs, 2)); 
-		Exp offsetE= tb.fieldOffset(tf, source, dg, objF).unEx(tf);
-		Exp flagE = tb.fieldOffset(tf, source, dg, flagF).unEx(tf);
-		return subst(subst(javaArgs, offsetE, 1), flagE, 2);
-	    }
-	};
-    final Transformer arrayTransformer = new Transformer() {
-	    HClass functionSuffix(HMethod hm, ExpList javaArgs) {
-		return hm.getParameterTypes()[0].getComponentType();
-	    }
-	    ExpList transformArgs(TreeFactory tf, HCodeElement source,
-				  DerivationGenerator dg,
-				  HMethod hm, ExpList javaArgs) {
-		HClass objType = hm.getParameterTypes()[0];
-		// args are <obj, index, flag field, ...>
-		// we need to calculate offset from index.
-		Exp indexE = extract(javaArgs, 1);
-		HField flagF = findField(extract(javaArgs, 2)); 
-		Exp offsetE = tb.arrayOffset
-		    (tf, source, dg, objType, new Translation.Ex(indexE))
-		    .unEx(tf);
-		Exp flagE = tb.fieldOffset(tf, source, dg, flagF).unEx(tf);
-		return subst(subst(javaArgs, offsetE, 1), flagE, 2);
-	    }
-	};
-    final Transformer limitedFieldTransformer = new Transformer() {
+    class FieldTransformer extends Transformer {
 	    HClass functionSuffix(HMethod hm, ExpList javaArgs) {
 		return findField(extract(javaArgs, 1)).getType();
 	    }
@@ -233,8 +198,10 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 		Exp offsetE= tb.fieldOffset(tf, source, dg, objF).unEx(tf);
 		return subst(javaArgs, offsetE, 1);
 	    }
-	};
-    final Transformer limitedArrayTransformer = new Transformer() {
+    }
+    final Transformer fieldTransformer = new FieldTransformer();
+
+    class ArrayTransformer extends Transformer {
 	    HClass functionSuffix(HMethod hm, ExpList javaArgs) {
 		return hm.getParameterTypes()[0].getComponentType();
 	    }
@@ -250,7 +217,8 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 		    .unEx(tf);
 		return subst(javaArgs, offsetE, 1);
 	    }
-	};
+    }
+    final Transformer arrayTransformer = new ArrayTransformer();
 
     final Map<String,Transformer> methodTransformer =
 	new HashMap<String,Transformer>();
@@ -258,141 +226,65 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 	// VALUETYPE TA(EXACT_readT)(struct oobj *obj, int offset,
 	//			     struct vinfo *version,
 	//                           struct commitrec *cr);
-	methodTransformer.put("readT", new Transformer() {
+	methodTransformer.put("readT", new FieldTransformer() {
 		HClass functionSuffix(HMethod hm, ExpList javaArgs) {
 		    return hm.getReturnType();
 		}
-		ExpList transformArgs(TreeFactory tf, HCodeElement source,
-				      DerivationGenerator dg,
-				      HMethod hm, ExpList javaArgs) {
-		    // args are <obj, field, version, transaction>
-		    // we need to calculate offset from field.
-		    HField hf = findField(extract(javaArgs, 1));
-		    Exp offsetE = tb.fieldOffset(tf, source, dg, hf)
-			.unEx(tf);
-		    return subst(javaArgs, offsetE, 1);
-		}
 	    });
-	methodTransformer.put("readT_Array", new Transformer() {
+	methodTransformer.put("readT_Array", new ArrayTransformer() {
 		HClass functionSuffix(HMethod hm, ExpList javaArgs) {
 		    return hm.getReturnType();
 		}
-		ExpList transformArgs(TreeFactory tf, HCodeElement source,
-				      DerivationGenerator dg,
-				      HMethod hm, ExpList javaArgs) {
-		    HClass objType = hm.getParameterTypes()[0];
-		    // args are <obj, index, version, transaction>
-		    // we need to calculate offset from index.
-		    Exp indexE = extract(javaArgs, 1);
-		    Exp offsetE = tb.arrayOffset(tf, source, dg, objType,
-						 new Translation.Ex(indexE))
-			.unEx(tf);
-		    return subst(javaArgs, offsetE, 1);
-		}
 	    });
-	// VALUETYPE TA(EXACT_readNT)(struct oobj *obj, int offset,
-	//			      int flag_offset, int flag_bit);
+	// VALUETYPE TA(EXACT_readNT)(struct oobj *obj, int offset);
 	methodTransformer.put("readNT", fieldTransformer);
 	methodTransformer.put("readNT_Array", arrayTransformer);
 	// void TA(EXACT_writeT)(struct oobj *obj, int offset,
 	//		         VALUETYPE value, struct vinfo *version);
-	methodTransformer.put("writeT", new Transformer() {
+	methodTransformer.put("writeT", new FieldTransformer() {
 		HClass functionSuffix(HMethod hm, ExpList javaArgs) {
 		    return hm.getParameterTypes()[2];
-		}
-		ExpList transformArgs(TreeFactory tf, HCodeElement source,
-				      DerivationGenerator dg,
-				      HMethod hm, ExpList javaArgs) {
-		    // args are <obj, field, value, version>
-		    // we need to calculate offset from field.
-		    HField hf = findField(extract(javaArgs, 1));
-		    Exp offsetE = tb.fieldOffset(tf, source, dg, hf)
-			.unEx(tf);
-		    return subst(javaArgs, offsetE, 1);
 		}
 	    });
-	methodTransformer.put("writeT_Array", new Transformer() {
+	methodTransformer.put("writeT_Array", new ArrayTransformer() {
 		HClass functionSuffix(HMethod hm, ExpList javaArgs) {
 		    return hm.getParameterTypes()[2];
-		}
-		ExpList transformArgs(TreeFactory tf, HCodeElement source,
-				      DerivationGenerator dg,
-				      HMethod hm, ExpList javaArgs) {
-		    HClass objType = hm.getParameterTypes()[0];
-		    // args are <obj, index, value, version>
-		    // we need to calculate offset from index.
-		    Exp indexE = extract(javaArgs, 1);
-		    Exp offsetE = tb.arrayOffset(tf, source, dg, objType,
-						 new Translation.Ex(indexE))
-			.unEx(tf);
-		    return subst(javaArgs, offsetE, 1);
 		}
 	    });
 	// void TA(EXACT_writeNT)(struct oobj *obj, int offset,
-	//			  VALUETYPE value,
-	//			  int flag_offset, int flag_bit);
-	methodTransformer.put("writeNT", new Transformer() {
+	//			  VALUETYPE value)
+	methodTransformer.put("writeNT", new FieldTransformer() {
 		HClass functionSuffix(HMethod hm, ExpList javaArgs) {
 		    return hm.getParameterTypes()[2];
 		}
-		ExpList transformArgs(TreeFactory tf, HCodeElement source,
-				      DerivationGenerator dg,
-				      HMethod hm, ExpList javaArgs) {
-		    // args are <obj, field, value, flag field, flag bit>
-		    // we need to calculate offset from fields
-		    HField objF = findField(extract(javaArgs, 1));
-		    HField flagF = findField(extract(javaArgs, 3)); 
-		    Exp offsetE= tb.fieldOffset(tf, source, dg, objF).unEx(tf);
-		    Exp flagE = tb.fieldOffset(tf, source, dg, flagF).unEx(tf);
-		    return subst(subst(javaArgs, offsetE, 1), flagE, 3);
-		}
 	    });
-	methodTransformer.put("writeNT_Array", new Transformer() {
+	methodTransformer.put("writeNT_Array", new ArrayTransformer() {
 		HClass functionSuffix(HMethod hm, ExpList javaArgs) {
 		    return hm.getParameterTypes()[2];
 		}
-		ExpList transformArgs(TreeFactory tf, HCodeElement source,
-				      DerivationGenerator dg,
-				      HMethod hm, ExpList javaArgs) {
-		    HClass objType = hm.getParameterTypes()[0];
-		    // args are <obj, index, value, flag field, flag bit>
-		    // we need to calculate offset from index.
-		    Exp indexE = extract(javaArgs, 1);
-		    HField flagF = findField(extract(javaArgs, 3)); 
-		    Exp offsetE = tb.arrayOffset
-			(tf, source, dg, objType, new Translation.Ex(indexE))
-			.unEx(tf);
-		    Exp flagE = tb.fieldOffset(tf, source, dg, flagF).unEx(tf);
-		    return subst(subst(javaArgs, offsetE, 1), flagE, 3);
-		}
 	    });
-	// void EXACT_ensureReader(struct oobj *obj,
-	//                         struct commitrec *cr);
+	// struct vinfo *EXACT_ensureReader(struct oobj *obj,
+	//                                  struct commitrec *cr);
 	// struct vinfo *EXACT_ensureWriter(struct oobj *obj,
 	//				    struct commitrec *cr);
 	methodTransformer.put("ensureReader", nullTransformer);
 	methodTransformer.put("ensureWriter", nullTransformer);
-	// struct vinfo *TA(EXACT_setReadFlags)(struct oobj *obj, int offset,
-	//				        int flag_offset, int flag_bit,
-	//				        struct vinfo *version,
-	//				        struct commitrec *cr);
-	methodTransformer.put("setReadFlags", fieldTransformer);
-	methodTransformer.put("setReadFlags_Array", arrayTransformer);
-	// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset,
-	//                              int flag_offset, int flag_bit,
-	//                              struct vinfo *version);
-	methodTransformer.put("setWriteFlags", fieldTransformer);
-	methodTransformer.put("setWriteFlags_Array", arrayTransformer);
+	// void TA(EXACT_checkReadField)(struct oobj *obj, int offset);
+	methodTransformer.put("checkReadField", fieldTransformer);
+	methodTransformer.put("checkReadField_Array", arrayTransformer);
+	// void TA(EXACT_checkWriteField)(struct oobj *obj, int offset);
+	methodTransformer.put("checkWriteField", fieldTransformer);
+	methodTransformer.put("checkWriteField_Array", arrayTransformer);
 
 	// methods related to hardware transaction mechanism.
 	methodTransformer.put("XACTION_BEGIN", nullTransformer);
 	methodTransformer.put("XACTION_END", nullTransformer);
 	// void TA(EXACT_traceRead)(struct oobj *obj, int offset, int istran);
 	// void TA(EXACT_traceWrite)(struct oobj *obj, int offset, int istran);
-	methodTransformer.put("traceRead", limitedFieldTransformer);
-	methodTransformer.put("traceRead_Array", limitedArrayTransformer);
-	methodTransformer.put("traceWrite", limitedFieldTransformer);
-	methodTransformer.put("traceWrite_Array", limitedArrayTransformer);
+	methodTransformer.put("traceRead", fieldTransformer);
+	methodTransformer.put("traceRead_Array", arrayTransformer);
+	methodTransformer.put("traceWrite", fieldTransformer);
+	methodTransformer.put("traceWrite_Array", arrayTransformer);
     }
 
     /** Code factory for applying the post pass to the given tree

@@ -19,12 +19,12 @@ import java.util.Set;
  * embed boolean flags describing object fields.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitFieldNumbering.java,v 1.5 2003-07-21 21:21:49 cananian Exp $
+ * @version $Id: BitFieldNumbering.java,v 1.6 2004-07-02 00:08:52 cananian Exp $
  */
 public class BitFieldNumbering {
-    // note: for 64-bit archs, might be worthwhile to make fields 64 bits.
-    public static final HClass FIELD_TYPE = HClass.Int;
-    public static final int BITS_IN_FIELD = 32;
+    // field is 'pointer size': i.e. Int of 32-bit arch, Long on 64-bit arch.
+    public final HClass FIELD_TYPE;
+    public final int BITS_IN_FIELD;
 
     // unique suffix for the fields created by this BitFieldNumbering.
     private final String suffix;
@@ -36,10 +36,16 @@ public class BitFieldNumbering {
      *  by <code>bfLoc</code> or <code>arrayBitField</code>. */
     public final Set<HField> bitfields =
 	Collections.unmodifiableSet(_bitfields);
+    /** Mutable set of fields you want to ignore. */
+    public final Set<HField> ignoredFields = new HashSet<HField>();
 
     /** Creates a <code>BitFieldNumbering</code>. */
-    public BitFieldNumbering(Linker l) { this(l, ""); }
-    public BitFieldNumbering(Linker l, String suffix) {
+    public BitFieldNumbering(Linker l, boolean pointersAreLong) {
+	this(l, pointersAreLong, "");
+    }
+    public BitFieldNumbering(Linker l, boolean pointersAreLong, String suffix){
+	this.FIELD_TYPE = pointersAreLong ? HClass.Long : HClass.Int;
+	this.BITS_IN_FIELD = pointersAreLong ? 64 : 32;
 	this.suffix=suffix;
 	this.HCobject = l.forName("java.lang.Object");
     }
@@ -56,23 +62,12 @@ public class BitFieldNumbering {
 	// answer: same class as contains the definition of field #(marker)
 	int marker = BITS_IN_FIELD * (n/BITS_IN_FIELD);
 	HClass hc = hf.getDeclaringClass();
-	if (marker!=0) {
-	    while (classNumber(hc.getSuperclass()) > marker)
-		hc = hc.getSuperclass();
-	} else {
-	    /* special case: zero'th field goes in java.lang.Object.
-	     * this is to make the array case more regular. */
-	    hc = HCobject;
-	}
+	while (classNumber(hc.getSuperclass()) > marker)
+	    hc = hc.getSuperclass();
 	// okay, fetch this field, creating if necessary.
 	HField bff = getOrMake(hc, n/BITS_IN_FIELD);
 	// done.
 	return new BitFieldTuple(bff, n % BITS_IN_FIELD);
-    }
-    public HField arrayBitField(HClass hc) {
-	assert hc.isArray();
-	/* okay, first 'field info' field is used for arrays. */
-	return getOrMake(HCobject, 0);
     }
 
     // fetch a bitfield, creating if necessary.
@@ -97,6 +92,7 @@ public class BitFieldNumbering {
     private int fieldNumber(HField hf) {
 	assert !hf.isStatic();
 	assert !hf.getDeclaringClass().isInterface();
+	assert !ignoredFields.contains(hf);
 	if (!fieldNumbers.containsKey(hf))
 	    classNumber(hf.getDeclaringClass());
 	assert fieldNumbers.containsKey(hf) : hf + " / "+fieldNumbers;
@@ -111,7 +107,7 @@ public class BitFieldNumbering {
 	    int start = (sc==null) ? 0 : classNumber(sc);
 	    HField[] hfa = hc.getDeclaredFields();
 	    for (int i=0; i<hfa.length; i++)
-		if (!hfa[i].isStatic())
+		if (! (hfa[i].isStatic() || ignoredFields.contains(hfa[i])))
 		    fieldNumbers.put(hfa[i], new Integer(start++));
 	    classNumbers.put(hc, new Integer(start));
 	}
