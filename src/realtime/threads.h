@@ -47,7 +47,7 @@ jlong removeThreadInC(JNIEnv* env, jobject thread);
 struct thread_queue_struct {
   JNIEnv* jnienv;
   jlong threadID;
-  jobject jthread;
+  jobject jthread;  
   struct machdep_pthread* mthread;
   struct thread_queue_struct* prev;
   struct thread_queue_struct* next;

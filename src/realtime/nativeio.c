@@ -19,6 +19,9 @@ struct native_io_struct* fds = NULL;
 
 struct native_io_struct* addFD(int blockingFD, char read) {
   struct native_io_struct* newFD = fds;
+#ifdef RTJ_DEBUG_THREADS
+  printf("\naddFD(%d, %d)", blockingFD, (int)read);
+#endif
   while (newFD!=NULL) {
     if ((newFD->blockingFD==blockingFD)&&(newFD->read==read)) {
       return newFD;
@@ -37,6 +40,9 @@ struct native_io_struct* addFD(int blockingFD, char read) {
 void removeFD(int blockingFD, char read) {
   struct native_io_struct* newFD = fds;
   struct native_io_struct* oldFD = fds;
+#ifdef RTJ_DEBUG_THREADS
+  printf("\nremoveFD(%d, %d)", blockingFD, (int)read);
+#endif
   while (newFD!=NULL) {
     if ((newFD->blockingFD==blockingFD)&&(newFD->read==read)) {
       if (oldFD==newFD) {
@@ -48,13 +54,17 @@ void removeFD(int blockingFD, char read) {
 	free(newFD);
 	newFD=oldFD->next;
       }
+    } else {
+      newFD = (oldFD=newFD)->next;
     }
-    newFD = (oldFD=newFD)->next;
   }
 }
 
 void stop_io() {
   sigset_t sigmask;
+#ifdef RTJ_DEBUG_THREADS
+  printf("\nstop_io()");
+#endif
   sigemptyset(&sigmask);
   sigaddset(&sigmask, SIGIO);
   sigprocmask(SIG_BLOCK, &sigmask, NULL);
@@ -62,6 +72,9 @@ void stop_io() {
 
 void start_io() {
   sigset_t sigmask;
+#ifdef RTJ_DEBUG_THREADS
+  printf("\nstart_io()");
+#endif
   sigemptyset(&sigmask);
   sigaddset(&sigmask, SIGIO);
   sigprocmask(SIG_UNBLOCK, &sigmask, NULL);
@@ -69,6 +82,9 @@ void start_io() {
 
 void register_io_handler() {
   struct sigaction io;
+#ifdef RTJ_DEBUG_THREADS
+  printf("\nregister_handler()");
+#endif
   io.sa_handler=&handle_io;
   sigemptyset(&io.sa_mask);
   io.sa_flags=SA_ONESHOT;
@@ -107,14 +123,14 @@ void handle_io(int signal) {
   register_io_handler();
 
   while(lookFDs != NULL) {
-    if (is_ready(lookFDs->blockingFD, lookFDs->read)) {
-#ifdef RTJ_DEBUG_THREADS
-      printf("\nwaking up #%d", lookFDs->blockingFD);
+/*     if (is_ready(lookFDs->blockingFD, lookFDs->read)) { */
+#ifdef RTJ_DEBUG_THREADS    
+      printf("waking up #%d\n", lookFDs->blockingFD);
 #endif
       pthread_mutex_lock(&(lookFDs->waitMutex));
       pthread_cond_signal(&(lookFDs->waitCond));
       pthread_mutex_unlock(&(lookFDs->waitMutex));
-    }
+/*     } */
     lookFDs = lookFDs->next;
   }
 }
@@ -123,19 +139,25 @@ void blocking_io(int fd, char read) {
   /* Check to see if it's immediately available */
   struct native_io_struct* newFD = addFD(fd, read);
 #ifdef RTJ_DEBUG_THREADS
-  printf("\ndo_blocking_io(%d, %d)", fd, read);
+  printf("do_blocking_io(%d, %d)\n", fd, read);
 #endif
-  while (!is_ready(fd, read)) {
+/*   while (!is_ready(fd, read)) { */
 #ifdef RTJ_DEBUG_THREADS
-    printf("\n...not ready...");
-#endif    
+    printf("...not ready...\n");
+#endif
     pthread_mutex_lock(&(newFD->waitMutex));
     register_io_handler();
     fcntl(fd, F_SETOWN, getpid());
     fcntl(fd, F_SETFL, fcntl(fd, F_GETFL)|O_ASYNC|O_NONBLOCK);
     pthread_cond_wait(&(newFD->waitCond), &(newFD->waitMutex));
     pthread_mutex_unlock(&(newFD->waitMutex));
-  }
+#ifdef RTJ_DEBUG_THREADS
+    printf("trying again!\n");
+#endif
+/*   } */
+#ifdef RTJ_DEBUG_THREADS
+  printf("done!\n");
+#endif
   removeFD(fd, read);
 }
 
