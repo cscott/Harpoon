@@ -23,7 +23,7 @@ import java.util.Set;
  * thesis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.10.2.8 2000-01-31 21:53:49 cananian Exp $
+ * @version $Id: Place.java,v 1.10.2.9 2000-06-30 23:11:19 cananian Exp $
  */
 public class Place {
     private final MultiMap phis;
@@ -58,9 +58,10 @@ public class Place {
 		flag = true;
 	for (Iterator it=r.nodes().iterator(); !flag && it.hasNext(); ) {
 	    UseDef n = (UseDef) it.next();
-	    if (ps==false && n.defC().contains(v))
-		flag = true;
-	    if (ps==true  && n.useC().contains(v))
+	    // we need phis for 'use-only' vars because the sigma is
+	    // going to create a definition for them.  Likewise we
+	    // need sigmas for 'def-only' vars. [CSA]
+	    if (n.defC().contains(v) || n.useC().contains(v))
 		flag = true;
 	}
 
