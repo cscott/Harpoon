@@ -13,17 +13,16 @@ import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CALL;
-import harpoon.IR.Quads.GET;
-import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.MOVE;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.SIGMA;
-import harpoon.IR.Quads.THROW;
 import harpoon.Util.Util;
 import harpoon.Util.Collections.AggregateSetFactory;
 import harpoon.Util.Collections.GenericMultiMap;
@@ -41,18 +40,15 @@ import java.util.Set;
 /**
  * A <code>DefiniteInitOracle</code> tells you whether a given
  * field is "definitely initialized" before control flow leaves
- * every constructor of its declaring class.  This implementation
- * considers any method call in a constructor as a control-flow
- * exit (before which an initialization must happen if it is to
- * be a definite initialization), however alternative implementations
- * are possible where 'safe' methods are skipped (methods may be
- * safe, for instance, if they never access, directly or indirectly, any
- * field in the class in question).
+ * every constructor of its declaring class.  A field is not
+ * considered to be "definitely initialized" if it "may" be read
+ * before its definite initialization point.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefiniteInitOracle.java,v 1.1.2.4 2001-11-06 22:38:56 cananian Exp $
+ * @version $Id: DefiniteInitOracle.java,v 1.1.2.5 2001-11-07 19:08:09 cananian Exp $
  */
 public class DefiniteInitOracle {
+    private static final boolean DEBUG=true;
     final HCodeFactory hcf;
     final ClassHierarchy ch;
     final Set notDefinitelyInitialized = new HashSet();
@@ -73,7 +69,8 @@ public class DefiniteInitOracle {
     public DefiniteInitOracle(HCodeFactory hcf, ClassHierarchy ch) {
 	this.hcf = hcf;
 	this.ch = ch;
-	this.fso = new FieldSyncOracle(hcf, ch, new CallGraphImpl(ch, hcf));
+	this.cg = new CallGraphImpl(ch, hcf);
+	this.fso = new FieldSyncOracle(hcf, ch, cg);
 	// for each constructor:
 	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
@@ -83,12 +80,28 @@ public class DefiniteInitOracle {
 	}
 	// free memory.
 	fso=null;
+	cg=null;
 	ndiCache=null;
 	// done!
+	if (DEBUG) { // debugging:
+	    System.out.println("DEFINITELY INITIALIZED FIELDS:");
+	    for (Iterator it=ch.classes().iterator(); it.hasNext(); ) {
+		HClass hc = (HClass) it.next();
+		for (Iterator it2=Arrays.asList(hc.getDeclaredFields())
+			 .iterator();
+		     it2.hasNext(); ) {
+		    HField hf = (HField) it2.next();
+		    if (isDefinitelyInitialized(hf))
+			System.out.println(" "+hf);
+		}
+	    }
+	    System.out.println("------------------------------");
+	}
     }
 
     // only used during analysis; clear afterwards
     FieldSyncOracle fso;
+    CallGraph cg;
     Map ndiCache = new HashMap();
 
     Set getNotDefInit(HMethod hm) {
@@ -101,14 +114,17 @@ public class DefiniteInitOracle {
 	    Set thisvars = findThisVars(hc);
 	    // compute dominator tree.
 	    DomTree dt = new DomTree(hc, false);
+	    // compute MayReadOracle
+	    MayReadOracle mro = new MayReadOracle(hc, fso, cg,
+						  hm.getDeclaringClass());
 	    // make analysis results cache.
 	    MultiMap cache = new GenericMultiMap(new AggregateSetFactory());
 	    // for each exit point:
-	    for (Iterator it2=findExitPoints(dt).iterator(); it2.hasNext(); ) {
+	    for (Iterator it2=findExitPoints(hc).iterator(); it2.hasNext(); ) {
 		// recursively determine set of 'definitely initialized'
 		// fields.
 		Set definit = findDefInit((HCodeElement)it2.next(),
-					  dt, thisvars, cache);
+					  dt, thisvars, mro, cache);
 		// add any fields which are *not* definitely initialized to
 		// our set.
 		Iterator it3=Arrays.asList
@@ -121,9 +137,6 @@ public class DefiniteInitOracle {
 		    notDefinitelyInitialized.add(hf);
 		}
 	    }
-	    // for safety: disable any fields which are read!
-	    // XXX: use more precise analysis here.
-	    notDefinitelyInitialized.addAll(findReadFields(hc));
 	    // okay, cache this!
 	    ndiCache.put
 		(hm, Collections.unmodifiableSet(notDefinitelyInitialized));
@@ -159,6 +172,10 @@ public class DefiniteInitOracle {
 	     .getSuperclass());
     }
 
+    // XXX: factor out into 'find vars which *must* equal a method param'
+    // export sets, or query one, your choice.  this is used both to
+    // find 'this' vars here as well as elsewhere to determine fields
+    // which *must* be set to the same value as a method parameter.
     Set findThisVars(HCode hc) {
 	final Set thisvars = new HashSet();
 	final Set notthisvars = new HashSet();
@@ -228,47 +245,15 @@ public class DefiniteInitOracle {
 	thisvars.removeAll(notthisvars);
 	return Collections.unmodifiableSet(thisvars);
     }
-    Set findExitPoints(DomTree dt) {
-	// go down the tree, find first exit points.
-	Set exitPoints = new HashSet();
-	HCodeElement[] roots = dt.roots();
-	for (int i=0; i<roots.length; i++)
-	    // recursively descend dominator tree, looking for exit points.
-	    findNextExitPoint(dt, roots[i], exitPoints);
-	// done.
-	return exitPoints;
-    }
-    private void findNextExitPoint(DomTree dt, HCodeElement hce, Set s) {
-	// is this an exit point?
-	boolean isExit=false;
-	if (hce instanceof RETURN)
-	    isExit=true;
-	else if (hce instanceof CALL) {
-	    // maybe.  is this a call to a superclass constructor?
-	    // (not just any superclass method, since we could set
-	    //  some superclass field to 'this' and then access ourselves)
-	    // 'this' constructors aren't exit points, either.
-	    HMethod callee = ((CALL)hce).method();
-	    if ((!isSuperConstructor(callee, hce)) &&
-		(!isThisConstructor(callee, hce))) {
-		// is this call 'safe'? (no reads to classes in this occur)
-		// if so than this is not an exit point.
-		if (!isSafe(callee, hce))
-		    isExit=true;
-	    }
+    Set findExitPoints(HCode hc) {
+	// exit points are returns.
+	Set exits = new HashSet();
+	for (Iterator it=hc.getElementsI(); it.hasNext(); ) {
+	    Quad q = (Quad) it.next();
+	    if (q instanceof RETURN)
+		exits.add(q);
 	}
-	// note: throws are not exit points.  also, exception constructors
-	// *should* be 'safe' by the defintion below (and thus not exit pnts)
-
-	if (isExit) {
-	    // this is an exit point.  add it to 's'.
-	    s.add(hce);
-	} else {
-	    // no exit point found.  keep going down the tree.
-	    HCodeElement children[] = dt.children(hce);
-	    for (int i=0; i<children.length; i++)
-		findNextExitPoint(dt, children[i], s);
-	}
+	return Collections.unmodifiableSet(exits);
     }
     /** Returns true iff the given method hm contains no reads of fields
      *  in hc. */
@@ -288,33 +273,43 @@ public class DefiniteInitOracle {
 	    (hm, ((Quad)hce).getFactory().getMethod().getDeclaringClass());
     }
     Set findDefInit(HCodeElement exit,
-		    DomTree dt, Set thisvars, MultiMap cache) {
+		    DomTree dt, Set thisvars, MayReadOracle mro,
+		    MultiMap cache) {
 	return Collections.unmodifiableSet
-	    (getDefBefore(exit, dt, thisvars, cache));
+	    (getDefBefore(exit, dt, thisvars, mro, cache));
     }
     private Set getDefBefore(HCodeElement hce,
-			     DomTree dt, Set thisvars, MultiMap cache) {
+			     DomTree dt, Set thisvars, MayReadOracle mro,
+			     MultiMap cache) {
 	if (!cache.containsKey(hce)) {
 	    // get immediate dominator.
 	    HCodeElement idom = dt.idom(hce);
 	    if (idom!=null) { // if this *has* an immediate dominator...
 		// get *its* definite initializations.
-		Set definit = getDefBefore(idom, dt, thisvars, cache);
+		Set definit = getDefBefore(idom, dt, thisvars, mro, cache);
 		// all of these are also definitely initialized at this point.
 		cache.addAll(hce, definit);
+		// collect set of reads before this quad.
+		Set readBefore = new HashSet();
+		Edge[] prevEdges = ((Quad)hce).prevEdge();
+		for (int i=0; i < prevEdges.length; i++)
+		    readBefore.addAll(mro.mayReadAt(prevEdges[i]));
 		// is the idom itself an initialization?
 		if (idom instanceof SET) {
 		    SET q = (SET) idom;
 		    if (q.objectref()!=null &&
 			thisvars.contains(q.objectref())) {
-			// baby! add this to the definitely-initialized set!
-			cache.add(hce, q.field());
+			// not a definite init if this field can be read before
+			if (!readBefore.contains(q.field()))
+			    // baby! add this to the definitely-init'd set!
+			    cache.add(hce, q.field());
 		    }
 		} else if (idom instanceof CALL) {
 		    CALL q = (CALL) idom;
 		    // could this be a 'this' constructor?
 		    if (isThisConstructor(q.method(), q)) {
-			// add all the definitely-initialized vars.
+			// add all the definitely-initialized vars which
+			// have not been read-before.
 			Set ndi = getNotDefInit(q.method());
 			HClass hc = q.method().getDeclaringClass(); // 'this'
 			Iterator it=Arrays.asList
@@ -323,7 +318,8 @@ public class DefiniteInitOracle {
 			    HField hf = (HField) it.next();
 			    if (hf.isStatic()) continue;
 			    if (ndi.contains(hf)) continue; // not def init'd
-			    cache.add(hce, hf); // def init'd!
+			    if (!readBefore.contains(hf))
+				cache.add(hce, hf); // def init'd!
 			}
 		    }
 		}
@@ -331,21 +327,5 @@ public class DefiniteInitOracle {
 	    // done.
 	}
 	return (Set) cache.getValues(hce);
-    }
-    /** overly conservative: we're going to eliminate all fields which
-     *  are ever read from the definitely-initialized set. */
-    Set findReadFields(HCode hc) {
-	Set readFields = new HashSet();
-	for (Iterator it=hc.getElementsI(); it.hasNext(); ) {
-	    HCodeElement hce = (HCodeElement) it.next();
-	    if (hce instanceof GET) {
-		GET q = (GET) hce;
-		if (q.isStatic()) continue;
-		if (q.field().getDeclaringClass().equals
-		    (hc.getMethod().getDeclaringClass()))
-		    readFields.add(q.field());
-	    }
-	}
-	return Collections.unmodifiableSet(readFields);
     }
 }
