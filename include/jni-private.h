@@ -59,6 +59,7 @@ struct oobj {
   struct claz *claz;
   u_int32_t hashcode;
   /* fields below this point */
+  char field_start[0];
 };
 /** use this version of the oobj structure if you're looking at an array. */
 struct aarray {
