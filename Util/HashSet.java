@@ -5,12 +5,13 @@ package harpoon.Util;
 
 import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.Iterator;
 /**
  * <code>HashSet</code> is a set representation with constant-time
  * membership test, union element, and remove element operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HashSet.java,v 1.1.2.2 1999-02-05 23:09:04 pnkfelix Exp $
+ * @version $Id: HashSet.java,v 1.1.2.3 1999-05-27 01:55:56 pnkfelix Exp $
  */
 
 public class HashSet extends Set {
@@ -47,6 +48,14 @@ public class HashSet extends Set {
     public Enumeration elements() {
 	return h.keys();
     }
+
+    /** Returns an <code>Iterator</code> of the elements of the
+	<code>Set</code>   
+     */
+    public Iterator iterator() {
+	return new EnumerationIterator(elements());
+    }
+
     /** Returns a rather long string representation of the <code>Set</code>.
      *  @return a string representation of this <code>Set</code>. */
     public String toString() {
