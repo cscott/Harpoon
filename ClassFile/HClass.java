@@ -3,9 +3,10 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
+import harpoon.Util.ArrayFactory;
+import harpoon.Util.ReferenceUnique;
 import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
-import harpoon.Util.ArrayFactory;
 
 import java.lang.reflect.Modifier;
 import java.io.InputStream;
@@ -30,12 +31,12 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.24 1999-09-09 03:52:00 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.25 1999-09-13 00:34:23 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
 public abstract class HClass extends HPointer
-  implements java.io.Serializable, java.lang.Comparable {
+  implements java.io.Serializable, java.lang.Comparable, ReferenceUnique {
   static Hashtable dsc2cls = new Hashtable();
 
   /** Protected constructor, not for external use. */

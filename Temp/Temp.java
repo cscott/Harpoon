@@ -5,6 +5,7 @@ package harpoon.Temp;
 
 import java.util.Hashtable;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.ReferenceUnique;
 import harpoon.Util.Util;
 
 /** 
@@ -13,12 +14,12 @@ import harpoon.Util.Util;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.14.2.13 1999-08-10 18:41:31 pnkfelix Exp $
+ * @version $Id: Temp.java,v 1.14.2.14 1999-09-13 00:34:32 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
  */
-public class Temp implements Cloneable, Comparable {
+public class Temp implements Cloneable, Comparable, ReferenceUnique {
   /*final*/ TempFactory tf;
   /*final*/ String name;
   /*final*/ int hashcode;
