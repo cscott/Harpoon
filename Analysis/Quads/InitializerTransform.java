@@ -60,7 +60,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.17 2001-01-12 00:00:59 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.18 2001-07-03 06:58:36 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -126,7 +126,16 @@ public class InitializerTransform
 		    return redirectCode(m);
 		else return superfactory.convert(m);
 	    }
-	});
+	}) {    // make sure method is in safety cache before we clear
+		// it from top-level cache (since isSafe needs to refer
+		// to copy stored in top-level cache)
+		public void clear(HMethod hm) {
+		    if (select(hm, ORIGINAL).equals(hm) &&
+			!(hm instanceof HInitializer))
+			isSafe(hm);
+		    super.clear(hm);
+		}
+	};
     }
     // override parent's codefactory with ours! (which uses theirs)
     public HCodeFactory codeFactory() { return hcf; }
@@ -186,6 +195,7 @@ public class InitializerTransform
 	return isSafe;
     }
     private boolean _isSafe_(HMethod hm) {
+	Util.assert(!(hm instanceof HInitializer), hm);
 	final HClass hc = hm.getDeclaringClass();
 	if (hc.isArray()) return true; // all array methods (clone()) are safe.
 	// native methods are safe if they don't depend on anything.
@@ -399,6 +409,9 @@ public class InitializerTransform
 			public void parseString(String ss)
 			    throws ParseUtil.BadLineException {
 			    HClass hc = ParseUtil.parseClass(linker, ss);
+		// FIXME: SHOULD ADD ALL SUPERCLASS/INTERFACE INITIALIZERS
+		// of hc to map, too, and 'dep' should be a *ordered list*
+		// not just a set.
 			    HInitializer hi = hc.getClassInitializer();
 			    if (hi!=null) dep.add(hi);
 			}
