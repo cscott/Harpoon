@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.20 1999-08-03 21:06:39 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.21 1999-08-03 22:02:41 cananian Exp $
  */
 public class Spec  {
 
@@ -650,10 +650,6 @@ public class Spec  {
 	    @see IR.Tree.Exp
 	 */
 	public final Exp retval;
-	/** Exception destination expression. 
-	    @see IR.Tree.Exp
-	 */
-	public final Exp retex; // REMOVE ME!
 	/** Function location expression. 
 	    @see IR.Tree.Exp
 	 */
@@ -669,17 +665,12 @@ public class Spec  {
 	    @param arglist Arguments.
 	*/
 	public StmNativeCall(Exp retval, Exp func, String arglist) {
-	    this.retval = retval; this.retex = null; this.func = func;
-	    this.arglist = arglist;
-	}
-	/** For transition only. */
-	public StmNativeCall(Exp retval, Exp retex, Exp func, String arglist) {
-	    this.retval = retval; this.retex = retex; this.func = func;
+	    this.retval = retval; this.func = func;
 	    this.arglist = arglist;
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() {
-	    return "NATIVECALL("+retval+","+retex+","+func+","+arglist+")";
+	    return "NATIVECALL("+retval+","+func+","+arglist+")";
 	}
     }
     /** Extension of <code>Spec.Stm</code> representing an expression
