@@ -67,15 +67,17 @@ public class InstrumentSyncOps {
 	this.newmap = new QuadMap();
 	this.monitorentermap = new QuadMap();
 	this.monitorexitmap = new QuadMap();
-	this.ocs = new HashMap[1];
+	this.ocs = new HashMap[2];
 	this.ocs[0] = new HashMap();
-	this.locks = new HashMap[1];
+	this.ocs[1] = new HashMap();
+	this.locks = new HashMap[2];
 	this.locks[0] = new HashMap();
+	this.locks[1] = new HashMap();
     }
     
     public void addRoot(MetaMethod mm) {
 
-	System.out.println("Adding root method "+mm);
+	System.out.println("Adding analysis info from root method "+mm);
 
 	final ParIntGraph pig = pa.threadInteraction(mm);
 	final NodeRepository nr = pa.getNodeRepository();
@@ -105,6 +107,19 @@ public class InstrumentSyncOps {
 	    node_visitor.visit(n);
 	}
 
+	ActionVisitor act_visitor = new ActionVisitor() {
+		public void visit_ld(PALoad load){
+		}
+		public void visit_sync(PASync sync){
+		    // this sync exists in the action repository, so it operates
+		    // on an escaped node, therefore it is necessary.
+		    HCodeElement hce = sync.hce;
+		    if (hce != null)
+			locks[1].put(hce, sync);
+		}
+	    };
+	ar.forAllActions(act_visitor);
+	
 	// add to the set of necessary sync ops.
 	// a sync op is necessary if it is executed in parallel with another
 	// thread that has a sync op on the same node.
@@ -119,14 +134,14 @@ public class InstrumentSyncOps {
 		    Iterator i = ar.syncsOn(n, nt2);
 		    if (!i.hasNext()) return;
 		    HCodeElement hce = sync.hce;
-		    if (hce == null) return;
-		    locks[0].put(hce, sync);
+		    if (hce != null)
+			locks[0].put(hce, sync);
 		    // Also add all syncs by nt2 on node n as necessary.
 		    do {
 			PASync sync2 = (PASync)i.next();
 			HCodeElement hce2 = sync.hce;
-			if (hce2 == null) return;
-			locks[0].put(hce2, sync2);
+			if (hce2 != null)
+			    locks[0].put(hce2, sync2);
 		    } while (i.hasNext());
 		}
 	    };
@@ -141,9 +156,9 @@ public class InstrumentSyncOps {
 	System.out.println("OBJECT CREATION SITES:");
 	newmap.dump(ocs[0]);
 	System.out.println("MONITORENTER:");
-	monitorentermap.dump(locks[0]);
+	monitorentermap.dump(locks[1]);
 	System.out.println("MONITOREXIT:");
-	monitorexitmap.dump(locks[0]);
+	monitorexitmap.dump(locks[1]);
     }
     
     public HCode instrument(HCode hc) {
@@ -174,6 +189,7 @@ public class InstrumentSyncOps {
 		// add instrumentation after instruction
 		int val = 0;
 		if (locks[0].get(q) != null) val += 1;
+		if (locks[1].get(q) != null) val += 2;
 		addInstrumentation(q, dest, monitorenter_method, id,
 		    new Integer(val));
 		// update list position
@@ -186,6 +202,7 @@ public class InstrumentSyncOps {
 		// add instrumentation before instruction
 		int val = 0;
 		if (locks[0].get(q) != null) val += 1;
+		if (locks[1].get(q) != null) val += 2;
 		addInstrumentation(q, dest, monitorexit_method, id,
 		    new Integer(val));
 		// update list position
