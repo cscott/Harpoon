@@ -1,2 +1,5 @@
 The harpoon.Backend.StrongARM package contains machine-dependent classes
 for the StrongARM backend. (Frame/CodeGen)
+
+Currently contains basic infrastructure for StrongARM code elements,
+more coming once the classes compile, as well as code generation itself.
