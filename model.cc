@@ -145,6 +145,7 @@ void model::doabstraction() {
       }
     }
   } while(clean);
+  pa->printstats();
 }
 
 
@@ -163,6 +164,7 @@ void model::doconcrete() {
   for(int i=0;i<numconcrete;i++) {
     pr->processrule(concretearray[i]);
   }
+  pr->printstats();
   delete(pr);
 }
 
@@ -248,6 +250,7 @@ bool model::docheck()
 	}
     }
   } while(t);
+  po->printstats();
   delete(po);
   //printf("return from docheck()");
   return found;

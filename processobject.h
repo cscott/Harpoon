@@ -19,7 +19,8 @@ class processobject {
   void modifyconstraint(Constraint *c);  // modifies the given constraint
   void setclean();
   ~processobject();
-  
+  void printstats();
+
  private:
   Repair * repair;
   int processstatement(Statement *s, Hashtable *env);

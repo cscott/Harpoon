@@ -14,6 +14,7 @@ class processabstract {
   processabstract(model *m);
   void processrule(Rule *r);
   void setclean();
+  void printstats();
   bool dirtyflagstatus();
   ~processabstract();
   void processrule(Rule *r, Element *ele, char *set);

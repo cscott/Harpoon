@@ -14,7 +14,8 @@
 #include "model.h"
 #include "set.h"
 #include "Relation.h"
-
+static int concretecheck=0;
+static int concretetrigger=0;
 
 processconcrete::processconcrete(model *m) {
   globalmodel=m;
@@ -22,12 +23,20 @@ processconcrete::processconcrete(model *m) {
   br=new bitreader(globalmodel,m->gethashtable());
 }
 
+void processconcrete::printstats() {
+  printf("Concretization Rules Checked: %d Triggered: %d\n",concretecheck,concretetrigger);
+}
+
+
 void processconcrete::processrule(Rule *r) {
   State *st=new State(r,globalmodel->gethashtable());
   if (st->initializestate(this, globalmodel)) {
     while(true) {
-      if (evaluatestatementa(r->getstatementa(),st->env))
+      concretecheck++;
+      if (evaluatestatementa(r->getstatementa(),st->env)) {
+	concretetrigger++;
 	satisfystatementb((CStatementb *)r->getstatementb(),st->env);
+      }
 
       if (!st->increment(this, globalmodel))
 	break; /* done */

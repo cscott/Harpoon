@@ -14,11 +14,17 @@
 #include "normalizer.h"
 #include "Action.h"
 
+static int modelcheck=0;
+static int modeltrigger=0;
+
 processobject::processobject(model *m) {
   globalmodel=m;
   repair=m->getrepair();
 }
 
+void processobject::printstats() {
+  printf("Models Rules Checked: %d Triggered: %d\n",modelcheck,modeltrigger);
+}
 
 // evaluates the truth value of the given predicate
 int processobject::processpredicate(Predicate *p, Hashtable *env) {
@@ -192,7 +198,9 @@ bool processobject::processconstraint(Constraint *c) {
   if (st->initializestate(globalmodel)) {
     while(true) {
       if (c->getstatement()!=NULL) {
+	modelcheck++;
 	if (processstatement(c->getstatement(),st->env)!=PTRUE) {
+	  modeltrigger++;
 #ifdef TOOL
 	  printf("Constraint violation\n");
 	  printf("   Violated constraint: "); c->print();
@@ -200,27 +208,18 @@ bool processobject::processconstraint(Constraint *c) {
 	  printf("  Current value(s):");
 	  c->getstatement()->print_sets(st->env, globalmodel);
 	  printf("\n\n");
+	  return false;
 #endif
 
 #ifdef REPAIR
 	  printf("Repairing...\n");
-#endif
-
 	  if (c->getcrash()) {
 	    printf("Fatal program error violating special constraint.\n");
 	    exit(-1);
 	  }
-
-#ifdef REPAIR
 	  repair->repairconstraint(c,this,st->env);
 	  clean=false;
 #endif
-	
-
-#ifdef TOOL
-      return false;
-#endif
-
 	}
       }
 

@@ -5,7 +5,7 @@
 #define TEST_H
 void initializeanalysis();
 unsigned long benchmark();  // do analysis
-bool doanalysis();  // do analysis
+void doanalysis();  // do analysis
 void doanalysis2(); // break the specs and do analysis
 void doanalysis3(); // insert errors and do analysis
 void resetanalysis();

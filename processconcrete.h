@@ -8,6 +8,7 @@ class processconcrete {
   void processrule(Rule *r);
   ~processconcrete();
   Element * evaluateexpr(CAElementexpr *ee, Hashtable *env);
+  void printstats();
  private:
   Element * evaluateexpr(Expr *e, Hashtable *env);
   bool evaluatestatementa(Statementa *sa, Hashtable *env);

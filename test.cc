@@ -25,8 +25,8 @@ void initializeanalysis()
 
 
 
-// returns true if a violated constraint was found
-bool doanalysis() 
+
+void doanalysis() 
 {
   struct timeval begin,end;
   unsigned long t;
@@ -38,12 +38,10 @@ bool doanalysis()
   gettimeofday(&end,NULL);
   t=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
 
-#ifdef DEBUGMESSAGES
+#ifdef DEBUGMANYMESSAGES
   exportmodel->getdomainrelation()->print();
-  printf("Time used for analysis(us): %ld\n",t);
 #endif
-
-  return found;
+  printf("Time used for analysis(us): %ld\n",t);
 }
 
 // returns true if a violated constraint was found

@@ -18,8 +18,8 @@
 #include "Relation.h"
 #include "tmap.h"
 
-
-
+static int abstractcheck=0;
+static int abstracttrigger=0;
 // class processabstract
 
 processabstract::processabstract(model *m) {
@@ -192,14 +192,19 @@ void processabstract::satisfystatementb(Statementb *sb, Hashtable *env) {
   }
 }
 
+void processabstract::printstats() {
+  printf("Abstraction Rules Checked: %d Triggered: %d\n",abstractcheck,abstracttrigger);
+}
 
 void processabstract::processrule(Rule *r) {
   State *st=new State(r, globalmodel->gethashtable());
   if (st->initializestate(br, globalmodel)) {
     while(true) {
-      if (evaluatestatementa(r->getstatementa(),st->env))
+      abstractcheck++;
+      if (evaluatestatementa(r->getstatementa(),st->env)) {
+	abstracttrigger++;
 	satisfystatementb(r->getstatementb(),st->env);
-
+      }
       if (!st->increment(br, globalmodel))
 	break; /* done */
     }

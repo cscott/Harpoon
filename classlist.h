@@ -3,7 +3,7 @@
 //#include "dmalloc.h"
 #define REPAIR
 #define DEBUGMESSAGES
-#define DEBUGMANYMESSAGES
+//#define DEBUGMANYMESSAGES
 //#define TOOL
 
 class TypeEle;
