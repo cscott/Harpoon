@@ -15,7 +15,7 @@ import harpoon.IR.LowQuad.*;
  * Converts SSI to SSA.  Should work on LowQuads and Quads. 
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ToSSA.java,v 1.1.2.3 1999-09-09 21:42:46 cananian Exp $
+ * @version $Id: ToSSA.java,v 1.1.2.4 1999-09-19 16:17:14 cananian Exp $
  */
 
 public final class ToSSA {
@@ -86,8 +86,6 @@ public final class ToSSA {
 	
 	public void visit(harpoon.IR.Quads.ASET q)    {visit((Quad)q);}
 	
-	public void visit(harpoon.IR.Quads.CALL q)    {visit((Quad)q);}
-	
 	public void visit(harpoon.IR.Quads.GET q)     {visit((Quad)q);}
 
 	public void visit(harpoon.IR.Quads.HANDLER q) {visit((Quad)q);}
@@ -110,6 +108,25 @@ public final class ToSSA {
 	    }
       	    for(int j=0;j<next.length;j++) {
 		Quad.addEdge(newsigma,j,next[j],q.nextEdge(j).which_pred());
+	    }
+	}
+
+	public void visit(CALL q) {
+	    int arity=q.arity();
+	    Temp[] nparams=new Temp[q.paramsLength()];
+	    for (int i=0; i<nparams.length; i++)
+		nparams[i] = ssitossamap.tempMap(q.params(i));
+	    CALL newcall=new CALL(q.getFactory(), q, q.method(),
+				  nparams, ssitossamap.tempMap(q.retval()),
+				  ssitossamap.tempMap(q.retex()),
+				  q.isVirtual(), new Temp[0]);
+	    Quad []prev=q.prev();
+	    Quad []next=q.next();
+	    for(int i=0;i<prev.length;i++) {
+		Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),newcall,i);
+	    }
+      	    for(int j=0;j<next.length;j++) {
+		Quad.addEdge(newcall,j,next[j],q.nextEdge(j).which_pred());
 	    }
 	}
 

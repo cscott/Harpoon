@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.31 1999-09-16 20:17:22 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.32 1999-09-19 16:17:34 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -84,7 +84,8 @@ final class ReHandler {
 	    Quad old = (Quad) e.next();
 	    // link next.
 	    Edge[] el = old.nextEdge();
-	    for (int i=0; i<el.length; i++) {
+	    
+	    for (int i=0; i<(callset.contains(old)?1:el.length); i++) {
 		    Quad.addEdge(qm.getFoot((Quad)el[i].from()),el[i].which_succ(),
 				 qm.getHead((Quad)el[i].to()), el[i].which_pred());
 	    }
@@ -118,12 +119,9 @@ final class ReHandler {
 		    protlist.insert(qm.getHead(call));
 		    List handlers=handlermap.get(call);
 		    HandInfo nexth=(HandInfo)iterate.next();
-		    //cover default exit case
-		    if (nexth.defaultexit())
-			makedefaultexit(qf, ss, qm, call, nexth, phiset,typemap, ti);
 		    //cover any handler if it is needed
 		    if (nexth.anyhandler()&&!any)
-			makeanyhandler(qf, ss, qm, call, nexth, protlist, phiset,typemap, ti);
+			makeanyhandler(qf, ss, qm, call, nexth, protlist, phiset,typemap, ti, callset);
 		    //cover other handlers
    		    if (nexth.specificex()) 
 			makespechandler(qf, ss, qm, call, throwset, nexth, protlist, phiset, phiold, any,typemap, ti);
@@ -279,39 +277,9 @@ final class ReHandler {
 	return any;
     }
 
-    //make an exceptionless exit for the call statement
-    private static void makedefaultexit(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, Set phiset, Map ntypemap, TypeMap otypemap) {
-	Map phimap=nexth.map();
-	Temp[] dst=new Temp[phimap.size()];
-	Temp[][] src=new Temp[phimap.size()][2];
-	Iterator ksit=phimap.keySet().iterator();
-	int count=0;
-	while (ksit.hasNext()) {
-	    Temp t=(Temp)ksit.next();
-	    dst[count]=Quad.map(ss.ctm, t);
-	    src[count][0]=Quad.map(ss.ctm, (Temp)phimap.get(t));
-	    src[count][1]=Quad.map(ss.ctm, t);
-	    count++;
-	}
-	Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
-	ksit=phimap.keySet().iterator();
-	while (ksit.hasNext()) {
-	    Temp t=(Temp)ksit.next();
-	    Temp t2=(Temp)phimap.get(t);
-	    HClass type=otypemap.typeMap(null, t),
-		type2=otypemap.typeMap(null, t2);
-	    ntypemap.put(new Tuple(new Object[] {phi, Quad.map(ss.ctm,t)}), type);
-	    ntypemap.put(new Tuple(new Object[] {phi, Quad.map(ss.ctm,t2)}), type2);
-	}
-	phiset.add(phi);
-	Quad.addEdge(qm.getFoot(call),0, phi, 0);
-	Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
-		     qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
-	Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
-    }
 
     //makes an exit for the anyhandler
-    private static void makeanyhandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, ReProtection protlist, Set phiset, Map ntypemap, TypeMap otypemap) {
+    private static void makeanyhandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, ReProtection protlist, Set phiset, Map ntypemap, TypeMap otypemap, Set callset) {
 	Quad newhandler = new HANDLER(qf, qm.getHead(call),
 				      Quad.map(ss.ctm, call.retex()),
 				      null, protlist);
@@ -342,8 +310,14 @@ final class ReHandler {
 	}
 	phiset.add(phi);
 	Quad.addEdge(newhandler,0, phi, 0);
-	Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
-		     qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
+	if (callset.contains((nexth.handler()).prev(nexth.handleredge()))) {
+	    //This is the case that the previous node we is
+	    //a call statement...we don't want to link to this edge, because it
+	    //is no longer here.
+	}
+	else
+	    Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
+			 qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
 	Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
     }
 
@@ -501,11 +475,13 @@ final class ReHandler {
 	    Quad ptr=(Quad) iterate.next();
 	    v.reset();
 	    ptr.accept(v);
+	    int edge=1;
 	    while (v.more()&&(!qm.contains(ptr))) {
 		//System.out.println("**"+v.more());
 		//System.out.println("Visiting:" +ptr.toString());
 		qm.add(ptr);
-		ptr = ptr.next(0);
+		ptr = ptr.next(edge);
+		edge=0;
 		ptr.accept(v);
 		//System.out.println(v.more());
 	    }
@@ -640,12 +616,13 @@ final class ReHandler {
 
 	public void visit(CALL q) {
 	    Quad nq, head;
-	    // if retex==null, add the proper checks.
+	    // if retex!=null, add the proper checks.
 	    if (q.retex()==null) nq=head=(Quad)q.clone(qf, ss.ctm);
 	    else {
+		//same old type of call intended...
 		head = new CALL(qf, q, q.method, Quad.map(ss.ctm, q.params()),
 				Quad.map(ss.ctm, q.retval()), 
-				null, q.isVirtual());
+				null, q.isVirtual(), new Temp[0]);
        		Quad q0 = new CONST(qf, q, Quad.map(ss.ctm, q.retex()),
 				    null, HClass.Void);
 		updatemap(q,head);
@@ -662,7 +639,6 @@ final class ReHandler {
 
     private static final class AnalysingVisitor extends QuadVisitor {
 	HashMapList handlermap;
-	Set nullset;
 	CALL callquad;
 	HashMap callmap;
 	Quad anyhandler;
@@ -677,7 +653,6 @@ final class ReHandler {
 
 	AnalysingVisitor(HashMapList handlermap, Code code) {
 	    this.handlermap=handlermap;
-	    this.nullset=new WorkSet();
 	    this.callquad=null;
 	    this.anyhandler=null;
 	    this.anyedge=0;
@@ -735,10 +710,11 @@ final class ReHandler {
 	    if (reset) {
 		reset=false;
 		if (q.retex()!=null) {
+		    anyhandler=q.next(1);
+		    anyedge=q.nextEdge(1).which_pred();
 		    callquad=q;
+		    oldphimap=new HashMap(phimap);
 		    callmap=new HashMap();
-		    anyhandler=null;
-		    anyedge=0;
 		    flag=true;
 		} else {
 		    flag=false;
@@ -759,38 +735,6 @@ final class ReHandler {
 	    standard(q);
 	}
 
-	public void visit(OPER q) {
-	    if ((q.opcode()==Qop.ACMPEQ)&&(callquad!=null)) {
-		Temp dest=q.dst();
-		if (ud.useMap(code,dest).length==1) {
-		    //make sure it is only used once
-		    int nulls=0, exceptions=0;
-		    for (int i=0;i<q.operands().length;i++) {
-			if (nullset.contains(q.operands(i)))
-			    nulls++;
-			if (remap(q.operands(i))==callquad.retex())
-			    exceptions++;
-		    }
-		    //want exactly 1 null and 1 exception
-		    if ((nulls==1)&&(exceptions==1)) {
-			callmap.put(q.dst(),null);
-			standard(q);
-		    } else weird(q);
-		} else weird(q);
-	    } else weird(q);
-	}
-
-	public void visit(CONST q) {
-	    if (q.value()==null) {
-		//System.out.println("C:1");
-		if (ud.useMap(code,q.dst()).length==1) {
-		    //System.out.println("C:2");
-		    nullset.add(q.dst());
-		    standard(q);
-		} else weird(q);
-	    } else weird(q);
-	}
-
 	public void visit(INSTANCEOF q) {
 	    Temp dest=q.dst();
 	    if ((ud.useMap(code,dest).length==1)&&(callquad!=null)) {
@@ -807,28 +751,18 @@ final class ReHandler {
 	public void visit(CJMP q) {
 	    if (callquad!=null)
 		if (callmap.containsKey(q.test())) {
-		    if (callmap.get(q.test())==null) {
-			//we have a acmpeq
-			//next[1] is the no exception case
-			//fix********
-			handlermap.add(callquad,new HandInfo(false, q.next(1), q.nextEdge(1).which_pred(), new HashMap(phimap)));
-			oldphimap=new HashMap(phimap);	
-			anyhandler=q.next(0);
-			anyedge=q.nextEdge(0).which_pred();
-		    } else {
-			//we have an exception
-			//next[1] is the case of this exception
-			handlermap.add(callquad, 
-				       new HandInfo((HClass)callmap.get(q.test()), q.next(1), q.nextEdge(1).which_pred(),new HashMap(phimap)));
-			oldphimap=new HashMap(phimap);
-			anyhandler=q.next(0);
-			anyedge=q.nextEdge(0).which_pred();
-		    }
+		    //we have an exception
+		    //next[1] is the case of this exception
+		    handlermap.add(callquad, 
+				   new HandInfo((HClass)callmap.get(q.test()), q.next(1), q.nextEdge(1).which_pred(),new HashMap(phimap)));
+		    oldphimap=new HashMap(phimap);
+		    anyhandler=q.next(0);
+		    anyedge=q.nextEdge(0).which_pred();
 		    standard(q);
 		} else weird(q);
 	}
     }
-}
+
 
 /**
  * Performs the second phase of the transformation to NoSSA form:
@@ -836,7 +770,7 @@ final class ReHandler {
  * the CFG directly, so it is advisable to use this visitor only
  * on a clone of the actual CFG you wish to translate.  
  */
-class PHVisitor extends QuadVisitor
+static class PHVisitor extends QuadVisitor // this is an inner class
 {
     private QuadFactory     m_qf;
     private Set             reachable;
@@ -994,7 +928,7 @@ class PHVisitor extends QuadVisitor
 /** <code>TypeVisitor</code> determines what implicit <code>TYPECAST</code>
  *  exist. */
 
-class TypeVisitor extends QuadVisitor {
+static class TypeVisitor extends QuadVisitor { // this is an inner class
     TypeMap ti;
     HashMap typecast;
     Set visited;
@@ -1402,7 +1336,7 @@ class TypeVisitor extends QuadVisitor {
 
 }
 
-class CleanVisitor extends QuadVisitor {
+static class CleanVisitor extends QuadVisitor { // this is an inner class
     Stack todo;
     Map map;
     Set usefulquads;
@@ -1630,3 +1564,6 @@ class CleanVisitor extends QuadVisitor {
 	maybeuseful(q);
     }
 }
+
+} // close the ReHandler class (yes, the indentation's screwed up,
+  // but I don't feel like re-indenting all this code) [CSA]

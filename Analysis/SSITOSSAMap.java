@@ -16,7 +16,7 @@ import java.util.Set;
  * <code>SSITOSSAMap</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: SSITOSSAMap.java,v 1.1.2.7 1999-09-10 05:06:41 bdemsky Exp $
+ * @version $Id: SSITOSSAMap.java,v 1.1.2.8 1999-09-19 16:17:14 cananian Exp $
  */
 public class SSITOSSAMap implements TempMap {
     
@@ -327,7 +327,9 @@ public class SSITOSSAMap implements TempMap {
 
 	    public void visit(harpoon.IR.Quads.ASET q)    {}
 
-	    public void visit(harpoon.IR.Quads.CALL q)    {}
+	    public void visit(harpoon.IR.Quads.CALL q)    {
+		visit((SIGMA) q);
+	    }
 
 	    public void visit(harpoon.IR.Quads.GET q)     {}
 

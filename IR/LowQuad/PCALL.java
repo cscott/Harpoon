@@ -13,9 +13,9 @@ import harpoon.Util.Util;
  * invocation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PCALL.java,v 1.1.2.2 1999-09-09 21:42:59 cananian Exp $
+ * @version $Id: PCALL.java,v 1.1.2.3 1999-09-19 16:17:30 cananian Exp $
  */
-public class PCALL extends LowQuad {
+public class PCALL extends harpoon.IR.Quads.SIGMA {
     /** The method pointer to dereference. */
     protected final Temp ptr;
     /** Parameters to pass to the method. */
@@ -29,15 +29,17 @@ public class PCALL extends LowQuad {
 
     /** Creates a <code>PCALL</code> representing a method pointer dereference
      *  and method invocation. Interpretation is similar to that of
-     *  <code>harpoon.IR.Quads.CALL.<br>
+     *  <code>harpoon.IR.Quads.CALL.<p>
      *  If an exception is thrown by the called method, the <code>Temp</code>
      *  specified by <code>retex</code> will be assigned the non-null 
-     *  reference to the thrown exception, and the <code>Temp</code>
-     *  specified by the <code>retval</code> field (if any) will have
-     *  an indeterminate value.  If no exception is thrown, the 
-     *  <code>Temp</code> specified by <code>retex</code> will be assigned
-     *  <code>null</code>, and the return value will be assigned to the
-     *  <code>Temp</code> specified by <code>retval</code> (if any).
+     *  reference to the thrown exception without affecting the <code>
+     *  <code>Temp</code> specified by the <code>retval</code> field.
+     *  Execution will proceed along the second outgoing edge,
+     *  <code>nextEdge(1)</code>.  If no exception is thrown, the 
+     *  return value will be assigned to the <code>Temp</code> specified
+     *  by <code>retval</code> (if any), and <code>retex</code> will
+     *  be unaffected.  Execution will proceed along the first outgoing
+     *  edge, <code>nextEdge(0)</code>.
      * @param ptr
      *        the method pointer to dereference and invoke.
      * @param params
@@ -57,10 +59,18 @@ public class PCALL extends LowQuad {
      * @param retex
      *        the destination <code>Temp</code> for any exception thrown
      *        by the called method.  May not be <code>null</code>.
+     * @param dst
+     *        the elements of the pairs on the left-hand side of
+     *        the sigma function assignment block associated with
+     *        this <code>PCALL</code>.
+     * @param src
+     *        the arguments to the sigma functions associated with
+     *        this <code>PCALL</code>.
      */
     public PCALL(LowQuadFactory qf, HCodeElement source,
-		 Temp ptr, Temp[] params, Temp retval, Temp retex) {
-	super(qf, source);
+		 Temp ptr, Temp[] params, Temp retval, Temp retex,
+		 Temp[][] dst, Temp[] src) {
+	super(qf, source, dst, src, 2/* always arity two */);
 	this.ptr = ptr;
 	this.params = params;
 	this.retval = retval;
@@ -68,6 +78,15 @@ public class PCALL extends LowQuad {
 	Util.assert(ptr!=null && params!=null && retex !=null);
 	// hm.  can't check much else without knowing the method identity.
     }
+    // convenience constructor.
+    /** Creates a <code>PCALL</code> with an empty <code>dst</code> array
+     *  of the proper size and arity.  Other arguments as above. */
+    public PCALL(LowQuadFactory qf, HCodeElement source,
+		 Temp ptr, Temp[] params, Temp retval, Temp retex, Temp[] src){
+	this(qf, source, ptr, params, retval, retex,
+	     new Temp[src.length][2], src);
+    }
+
     // ACCESSOR METHODS:
     /** Returns the <code>POINTER</code> which is to be dereferenced by this
      *  <code>PCALL</code>. */
@@ -91,21 +110,33 @@ public class PCALL extends LowQuad {
     public int kind() { return LowQuadKind.PCALL; }
 
     public Temp[] use() {
-	return (Temp[]) Util.grow(Temp.arrayFactory, params, ptr, 0);
+	Temp[] u = super.use();
+	Temp[] r = new Temp[u.length+params.length+1];
+	System.arraycopy(u,      0, r, 0,        u.length);
+	System.arraycopy(params, 0, r, u.length, params.length);
+	r[u.length+params.length] = ptr;
+	return r;
     }
     public Temp[] def() {
-	if (retval==null) return new Temp[] { retex };
-	else return new Temp[] { retval, retex };
+	Temp[] d = super.def();
+	Temp[] r = new Temp[d.length+(retval==null?1:2)];
+	System.arraycopy(d, 0, r, 0, d.length);
+	if (retval!=null) r[r.length-2] = retval;
+	r[r.length-1] = retex;
+	return r;
     }
 
     public harpoon.IR.Quads.Quad rename(harpoon.IR.Quads.QuadFactory qf,
 					TempMap defMap, TempMap useMap) {
 	return new PCALL((LowQuadFactory)qf, this,
 			 map(useMap, ptr), map(useMap, params),
-			 map(defMap, retval), map(defMap, retex));
+			 map(defMap, retval), map(defMap, retex),
+			 map(defMap, dst), map(useMap, src));
     }
 
-    void accept(LowQuadVisitor v) { v.visit(this); }
+    public void accept(harpoon.IR.Quads.QuadVisitor v) {
+	((LowQuadVisitor)v).visit(this);
+    }
 
     public String toString() {
 	StringBuffer sb = new StringBuffer();
@@ -122,6 +153,7 @@ public class PCALL extends LowQuad {
 	sb.append(')');
 
 	sb.append(" exceptions in "+retex.toString());
+	sb.append(" / "); sb.append(super.toString());
 	return sb.toString();
     }
 }

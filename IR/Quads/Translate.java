@@ -4,6 +4,7 @@
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Bytecode.Op;
 import harpoon.IR.Bytecode.Operand;
@@ -51,7 +52,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.19 1999-09-09 13:30:48 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.20 1999-09-19 16:17:35 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -394,14 +395,20 @@ final class Translate { // not public.
 		return (HANDLER) ss.transHandler.get(pair);
 	    // ok, hafta make it from scratch.
 	    State hS = this.enterCatch(); // preserve callstack.
-	    HANDLER h = new HANDLER(ss.qf, tryBlock.handler(), hS.stack(0),
-				    tryBlock.caughtException(),
-				    new TransProtection());
+	    HANDLER h = newHandler(hS, pair, tryBlock.handler(),
+				   tryBlock.caughtException());
 	    TransState ts = new TransState(hS, tryBlock.handler(), h, 0);
 	    // add handler to 'todo' list.
 	    ss.todoHandler.add(ts);
+	    // return new handler.
+	    return h;
+	}
+	HANDLER newHandler(State s, List hpair,
+			   HCodeElement src, HClass caughtException) {
+	    HANDLER h = new HANDLER(ss.qf, src, s.stack(0), caughtException,
+				    new TransProtection());
 	    // add <tryBlock, callStack> mapping.
-	    ss.transHandler.put(pair, h);
+	    ss.transHandler.put(hpair, h);
 	    // return new handler.
 	    return h;
 	}
@@ -416,8 +423,11 @@ final class Translate { // not public.
 	}
 	void recordHandler(Instr orig, Quad start, Quad end) {
 	    for (HandlerSet hs=handlers(orig); hs!=null; hs=hs.next)
+		recordHandler(hs.h, start, end);
+	}
+	void recordHandler(HANDLER h, Quad start, Quad end) {
 		recordHandler(new HashSet(), start, end, 
-			      (TransProtection) hs.h.protectedSet);
+			      (TransProtection) h.protectedSet);
 	}
 	private void recordHandler(Set done, Quad start, Quad end,
 				   TransProtection s) {
@@ -562,62 +572,48 @@ final class Translate { // not public.
 		HMethod cfnM = HClass.forClass(Class.class)
 				    .getMethod("forName", 
 					       new HClass[] { strC } );
+		// any exception in this block is immediately thrown
+		// (no specified handler)
 		Quad qq0 = new CONST(qf, q, s.extra(1), 
 				     method.getDeclaringClass().getName(),
 				     strC);
 		Quad qq1 = new CALL(qf, q, cfnM, qq0.def() /*params*/,
-				    lock, Tex, true /* virtual */);
-		Quad qq2 = new CONST(qf, q, s.extra(2), null, HClass.Void);
-		Quad qq3 = new OPER(qf, q, Qop.ACMPEQ, s.extra(1),
-				    new Temp[] { Tex, s.extra(2) });
-		Quad qq4 = new CJMP(qf, q, s.extra(1), new Temp[0]);
-		Quad qq5 = new OPER(qf, q, Qop.ACMPEQ, s.extra(1),
-				    new Temp[] { lock, s.extra(2) });
-		Quad qq6 = new CJMP(qf, q, s.extra(1), new Temp[0]);
-		Quad qq7 = new MONITORENTER(qf, q, lock);
-		// handle exceptions of various kinds.
-		Quad qq8 = new PHI(qf, q, new Temp[0], 2);
-		Quad qq9 = new NEW(qf, q, Tex, exC);
-		Quad qq10 = new CALL(qf, q, exC.getConstructor(new HClass[0]),
-				     new Temp[] { Tex }, null/*retval*/,
-				     s.extra(1) /* ex */, false /*virtual*/);
-		Quad qq11 = new OPER(qf, q, Qop.ACMPEQ, s.extra(2),
-				     new Temp[] { s.extra(1), s.extra(2) });
-		Quad qq12 = new CJMP(qf, q, s.extra(2), new Temp[0]);
-		Quad qq13 = new MOVE(qf, q, Tex, s.extra(1));
-		Quad qq14 = new PHI(qf, q, new Temp[0], 2);
-		Quad qq15 = new THROW(qf, q, Tex);
+				    lock, null, true /* virtual */,
+				    new Temp[0]);
+		Quad qq2 = new MONITORENTER(qf, q, lock);
 		// okay, link 'em up.
-		Quad.addEdges(new Quad[] {  qM, qq0, qq1, qq2, qq3, qq4 } );
-		Quad.addEdge(qq4, 0, qq8, 0);
-		Quad.addEdge(qq4, 1, qq5, 0);
-		Quad.addEdges(new Quad[] { qq5, qq6, qq7 } );
-		Quad.addEdge(qq6, 1, qq8, 1);
-		Quad.addEdges(new Quad[] {  qq8,  qq9, qq10, qq11,
-					   qq12, qq13, qq14, qq15 } );
-		Quad.addEdge(qq12, 1, qq14, 1);
-		s.footer().attach(qq15, 0);
-		q = qq7;
+		Quad.addEdges(new Quad[] {  qM, qq0, qq1, qq2 });
+		q = qq2;
 	    }
 	}
 
 	// translate using state.
 	trans(new TransState(s, firstInstr, q, 0));
+	// make new handler for MONITOREXIT if synchronized
+	HANDLER exithand = isSynchronized ?
+	    s.newHandler(s.enterCatch(), null, q, null) : null;
 	// fixup initial METHOD block to link to the proper # of HANDLERs.
 	qM = s.fixupHandlers();
 
-	// if method is synchronized, place MONITOREXIT at bottom(s).
+	// if method is synchronized, make inclusive HANDLER w/ MONITOREXIT
 	if (isSynchronized) {
 	    Util.assert(lock!=null);
-	    // for all predecessors of FOOTER
+	    // make HANDLER for all throw exits
+	    Quad Qm = new MONITOREXIT(qf, exithand, lock);
+	    Quad Qt = new THROW(qf, Qm, exithand.exceptionTemp());
+	    Quad.addEdges(new Quad[] { exithand, Qm, Qt });
+	    s.footer().attach(Qt, 0);
+	    // add just about everything to the handler set
+	    s.recordHandler(exithand, q.next(0), s.footer());
+	    for (int i=1; i < qM.nextLength(); i++)
+		s.recordHandler(exithand, qM.next(i), s.footer());
+	    // now insert MONITOREXIT for all RETURN predecessors of FOOTER
 	    for (int i=1; i < s.footer().arity(); i++) { // skip HEADER edge
-		// static synchronized methods have a single exception
-		// exit *before* the monitor is entered.
-		if (isStatic&&i==0) continue;
-		// put a MONITOREXIT before the return/throw/whatever.
+		if (!(s.footer().prev(i) instanceof RETURN)) continue;
+		// put a MONITOREXIT before the return.
 		Quad Qexit = s.footer().prev(i);
 		Util.assert(Qexit.prev.length==1); // only one predecessor.
-		Quad Qm = new MONITOREXIT(qf, Qexit, lock);
+		Qm = new MONITOREXIT(qf, Qexit, lock);
 		Edge e = Qexit.prevEdge(0);
 		Quad.addEdge((Quad)e.from(), e.which_succ(), Qm, 0);
 		Quad.addEdge(Qm, 0, (Quad)e.to(), e.which_pred());
@@ -1318,7 +1314,8 @@ final class Translate { // not public.
 		Tret = ns.stack(0);
 	    }
 	    // Create CALL quad.
-	    q = new CALL(qf, in, opd.value(), param, Tret, null, isVirtual);
+	    q = new CALL(qf, in, opd.value(), param, Tret, null, isVirtual,
+			 new Temp[0]);
 	    break;
 	    }
 	case Op.LCMP: // break this up into lcmpeq, lcmpgt, etc.

@@ -24,7 +24,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.11 1999-08-28 00:30:23 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.12 1999-09-19 16:17:32 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -97,19 +97,22 @@ public abstract class Code extends HCode {
 		if (s.empty()) throw new NoSuchElementException();
 		Quad q = (Quad) s.pop();
 		// push successors on stack before returning.
-		Quad[] next = q.next();
-		for (int i=next.length-1; i>=0; i--)
-		    if (!visited.contains(next[i])) {
-			s.push(next[i]);
-			visited.add(next[i]);
+		for (int i=q.nextLength()-1; i>=0; i--)
+		    if (!visited.contains(q.next(i))) {
+			s.push(q.next(i));
+			visited.add(q.next(i));
 		    }
 		// check that temps belong to q. // XX really belongs separate
+		/* CSA: commented it out (who added this code?) because it
+		 * was *really* slowing down iterators when quads had
+		 * lots of phi/sig variables.
 		for (int j=0; j<2; j++) {
 		    Temp[] ta = (j==0)?q.use():q.def();
 		    for (int i=0; i<ta.length; i++)
 			Util.assert(ta[i].tempFactory()==qf.tempFactory(),
 				    "Temps don't belong to q: "+q);
 		}
+		*/
 		// okay.
 		return q;
 	    }

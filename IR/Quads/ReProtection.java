@@ -5,10 +5,10 @@ package harpoon.IR.Quads;
 import harpoon.IR.Quads.HANDLER;
 import java.util.HashSet;
 /**
- * <code>ReProtection</code>
+ * <code>ReProtection</code> <blink>please document me if I am public!</blink>
  * 
  * @author  root <root@kikashi.lcs.mit.edu>
- * @version $Id: ReProtection.java,v 1.1.2.1 1999-08-30 22:09:49 bdemsky Exp $
+ * @version $Id: ReProtection.java,v 1.1.2.2 1999-09-19 16:17:34 cananian Exp $
  */
 
 public class ReProtection extends HashSet

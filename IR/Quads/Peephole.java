@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.9 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: Peephole.java,v 1.1.2.10 1999-09-19 16:17:33 cananian Exp $
  */
 
 final class Peephole  {
@@ -124,7 +124,9 @@ final class Peephole  {
 		//  (we can move it ahead until someone redefines our src/def)
 		Quad Qp; boolean pastNonMove=false;
 		boolean moveit=false, deleteit=false;
-		for (Qp=Qnext; allowFarMoves || !pquads.contains(Qnext) ; Qp=Qp.next(0)) {
+		for (Qp=Qnext; true; Qp=Qp.next(0)) {
+		    // unless allowFarMoves==true, we stop as soon as
+		    // we come to a 'protected' quad.
 		    if (!allowFarMoves)
 			if (pquads.contains(Qp)) {
 			    if (pastNonMove) moveit=true;
@@ -157,8 +159,18 @@ final class Peephole  {
 		    }
 		    if (!(Qp instanceof MOVE)) pastNonMove=true; 
 		}
-		if ((allowFarMoves||!pquads.contains(Qnext)) &&
-		    (Qp instanceof SIGMA || moveit || deleteit)) {
+		// we're going to unlink and move this quad if:
+		//   -- moveit is true, or
+		//   -- deleteit is true, or
+		//   -- Qp is a 'safe' sigma function where safe means:
+		//      - not a CALL
+		//      - not a protected quad.
+		// note that we'll move quads even if Qp is unsafe, if
+		// moveit is true.  deleteit can't be true if Qp is a
+		// SIGMA.
+		if (moveit || deleteit ||
+		    (Qp instanceof SIGMA &&
+		     !(Qp instanceof CALL || pquads.contains(Qp)))) {
 		    TempMap tm = new OneToOneMap(q.dst(), q.src());
 		    Edge lstE;
 		    for (lstE=q.nextEdge(0); lstE.to() != Qp; ) {
@@ -167,10 +179,27 @@ final class Peephole  {
 			lstE=((Quad)lstE.from()).next(0).nextEdge(0);
 		    }
 		    todo.push(unlink(q));
-		    if (Qp instanceof SIGMA) { // relink after SIGMA
+		    // usually we relink the MOVE quad before Qp, but
+		    // we'll relink *after* a sigma if we can -- this
+		    // helps keep the MOVEs propagating.  Relink *after*
+		    // if sigma doesn't redefine the source of the MOVE
+		    // and if sigma isn't protected.
+		    if (Qp instanceof SIGMA && !pquads.contains(Qp) &&
+			!(Qp instanceof CALL &&
+			  (q.src()==((CALL)Qp).retval() ||
+			   q.src()==((CALL)Qp).retex()))) {
 			SIGMA Qs = (SIGMA) Qp.rename(Qp.qf, null, tm);
 			todo.removeElement(Qp); // remove old SIGMA from todo
 			Quad.replace(Qp, Qs);
+			// we can just delete the MOVE if the CALL
+			// overwrites the destination.
+			if (Qp instanceof CALL &&
+			    (q.dst() == ((CALL)Qp).retval() ||
+			     q.dst() == ((CALL)Qp).retex())) {
+			    // the move is gone & we don't need it any mo'
+			    changed=true;
+			    return;
+			}
 			HandlerSet hs=q.handlers();
 			Edge[] el = Qs.nextEdge();
 			for (int i=0; i<el.length; i++) {
@@ -187,7 +216,7 @@ final class Peephole  {
 		    } else if (moveit) { // relink before Qend
 			Quad.addEdge((Quad)lstE.from(),lstE.which_succ(), q,0);
 			Quad.addEdge(q,0, (Quad)lstE.to(), lstE.which_pred());
-		    }
+		    } else Util.assert(deleteit);
 		    changed=true;
 		} else {
 		    // do nothing.

@@ -31,7 +31,7 @@ import java.util.Stack;
  * is hairy because of the big "efficiency-vs-immutable quads" fight.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.3 1999-08-30 22:37:47 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.4 1999-09-19 16:17:34 cananian Exp $
  */
 class SSIRename {
     private static final boolean sort_phisig = false;
@@ -112,9 +112,10 @@ class SSIRename {
 	    }
 	}
 
-	final Map lhs = new HashMap();
-	final Map rhs = new HashMap();
-	final Map arg = new HashMap();
+	final Map lhs = new HashMap();//lhs of phi/sigma
+	final Map rhs = new HashMap();//rhs of phi/sigma
+	final Map arg = new HashMap();//uses in a sigma
+	final Map sdf = new HashMap();//defs in a sigma
 	void setup(HCode c) {
 	    for (Iterator it=c.getElementsI(); it.hasNext(); ) {
 		Quad q = (Quad) it.next();
@@ -166,6 +167,17 @@ class SSIRename {
 		for (int i=0; i<l.length; i++)
 		    l[i][j] = varmap.inc(l[i][j]);
 	    }
+	    // fixup defs in CALL sigma appropriately
+	    if (from instanceof CALL) {
+		CALL Q = (CALL) from;
+		Temp[] defs = (Temp[]) sdf.get(from);
+		if (defs==null) { defs=new Temp[2]; sdf.put(from, defs); }
+		// use of inc() below serves to kill any aliases on this path
+		if (e.which_succ()==0 && Q.retval()!=null)
+		    defs[0]=varmap.inc(Q.retval());
+		if (e.which_succ()==1)
+		    defs[1]=varmap.inc(Q.retex());
+	    }
 	    // now go on renaming inside basic block until we get to a phi
 	    // or sigma.
 	    for (Quad q; ; e=q.nextEdge(0)) {
@@ -178,6 +190,7 @@ class SSIRename {
 		    break;
 		}
 		if (q instanceof SIGMA) { /* update src */
+		    // rhs of sigma comes before any defs in the sigma.
 		    Temp[] r = (Temp[]) rhs.get(q);
 		    for (int i=0; i < r.length; i++)
 			r[i] = varmap.get(r[i]);
@@ -185,7 +198,13 @@ class SSIRename {
 			arg.put(q, varmap.get(((CJMP)q).test()));
 		    else if (q instanceof SWITCH)
 			arg.put(q, varmap.get(((SWITCH)q).index()));
-		    else throw new Error("Ack!");
+		    else if (q instanceof CALL) {
+			CALL Q = (CALL) q;
+			Temp[] args = new Temp[Q.paramsLength()];
+			for (int i=0; i<Q.paramsLength(); i++)
+			    args[i] = varmap.get(Q.params(i));
+			arg.put(q, args);
+		    } else throw new Error("Ack!");
 		    break;
 		}
 		/* else, rename src, then rename dst */
@@ -215,14 +234,18 @@ class SSIRename {
 		} else if (q instanceof SIGMA) {
 		    Temp[][] l = (Temp[][]) lhs.get(q);
 		    Temp[] r = (Temp[]) rhs.get(q);
-		    Temp a = (Temp) arg.get(q);
-		    if (a==null) System.out.println("WHOA: "+q);
 		    Quad nq;
 		    if (q instanceof CJMP)
-			nq = new CJMP(nqf, q, a, l, r);
+			nq = new CJMP(nqf, q, (Temp) arg.get(q), l, r);
 		    else if (q instanceof SWITCH)
-			nq = new SWITCH(nqf, q, a, ((SWITCH)q).keys(), l, r);
-		    else throw new Error("Ack!");
+			nq = new SWITCH(nqf, q, (Temp) arg.get(q),
+					((SWITCH)q).keys(), l, r);
+		    else if (q instanceof CALL) {
+			CALL Q = (CALL) q;
+			Temp[] defs = (Temp[]) sdf.get(q);
+			nq = new CALL(nqf, Q, Q.method(), (Temp[]) arg.get(q),
+				      defs[0], defs[1], Q.isVirtual(), l, r);
+		    } else throw new Error("Ack!");
 		    old2new.put(q, nq);
 		}
 	    }

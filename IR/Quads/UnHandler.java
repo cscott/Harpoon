@@ -19,7 +19,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.18 1999-09-09 21:43:03 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.19 1999-09-19 16:17:35 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -409,22 +409,17 @@ final class UnHandler {
 	}
 	public void visit(CALL q) {
 	    Quad nq, head;
+	    Util.assert(q.retex()==null, "don't allow checked ex in qwt");
 	    // if retex==null, add the proper checks.
 	    if (q.retex()!=null) nq=head=(Quad)q.clone(qf, ss.ctm);
 	    else {
-		Temp Tex = ss.extra(0), Tnull = ss.extra(1), Tr = Tnull;
+		Temp Tex = ss.extra(0);
 		head = new CALL(qf, q, q.method(), Quad.map(ss.ctm,q.params()),
 				Quad.map(ss.ctm, q.retval()),
-				Tex, q.isVirtual());
-		Quad q0 = new CONST(qf, q, Tnull, null, HClass.Void);
-		Quad q1 = new OPER(qf, q, Qop.ACMPEQ, Tr,
-				   new Temp[] { Tex, Tnull });
-		Quad q2 = new CJMP(qf, q, Tr, new Temp[0]);
-		Quad q3 = new NOP(qf, q); // argh.
+				Tex, q.isVirtual(), new Temp[0]);
 		Quad q4 = _throwException_(qf, q, Tex);
-		Quad.addEdges(new Quad[] { head, q0, q1, q2, q4 });
-		Quad.addEdge(q2, 1, q3, 0);
-		nq = q3;
+		Quad.addEdge(head, 1, q4, 0);
+		nq = head;
 	    }
 	    // if non-static, check that receiver is not null.
 	    if (!q.isStatic() && !ti.get(q.params(0)).isNonNull())
@@ -752,16 +747,12 @@ final class UnHandler {
 	    Temp Tex = ss.hm.Tex, Tex2 = ss.extra(0), Tnull = ss.extra(1);
 	    Quad q0 = new NEW(qf, old, Tex, HCex);
 	    Quad q1 = new CALL(qf, old, HCex.getConstructor(new HClass[0]),
-			       new Temp[] { Tex }, null, Tex2, false);
-	    Quad q2 = new CONST(qf, old, Tnull, null, HClass.Void);
-	    Quad q3 = new OPER(qf, old, Qop.ACMPEQ, Tnull,
-			       new Temp[] { Tex2, Tnull });
-	    Quad q4 = new CJMP(qf, old, Tnull, new Temp[0]);
-	    Quad q5 = new MOVE(qf, old, Tex, Tex2);
+			       new Temp[] { Tex }, null, Tex, false,
+			       new Temp[0]);
 	    Quad q6 = new PHI(qf, old, new Temp[0], 2);
 	    Quad q7 = _throwException_(qf, old, Tex);
-	    Quad.addEdges(new Quad[] { q0, q1, q2, q3, q4, q5, q6, q7 });
-	    Quad.addEdge(q4, 1, q6, 1);
+	    Quad.addEdges(new Quad[] { q0, q1, q6, q7 });
+	    Quad.addEdge(q1, 1, q6, 1);
 	    // save the header so we can reuse this exception-generation code.
 	    if (ss.coalesce) l.add(q0);
 	    return q0;

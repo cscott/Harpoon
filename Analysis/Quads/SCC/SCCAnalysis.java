@@ -23,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.2 1999-09-09 21:42:56 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.3 1999-09-19 16:17:25 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -369,6 +369,20 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    }
 	    raiseV(V, Wv, q.retex(), 
 		   new xClass( HClass.forName("java.lang.Throwable") ) );
+	    // both outgoing edges are potentially executable.
+	    raiseE(Ee, Eq, Wq, q.nextEdge(1) );
+	    raiseE(Ee, Eq, Wq, q.nextEdge(0) );
+	    // handle SIGMAs
+	    for (int i=0; i < q.numSigmas(); i++) {
+		// no q.src(x) should equal retval or retex...
+		// not that it would particularly break anything if it
+		// did.
+		LatticeVal v2 = get ( q.src(i) );
+		if (v2 != null) {
+		    raiseV(V, Wv, q.dst(i, 0), v2);
+		    raiseV(V, Wv, q.dst(i, 1), v2);
+		}
+	    }
 	}
 	public void visit(CJMP q) {
 	    // is test constant?

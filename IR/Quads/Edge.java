@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.1.2.6 1999-06-18 01:48:05 cananian Exp $
+ * @version $Id: Edge.java,v 1.1.2.7 1999-09-19 16:17:32 cananian Exp $
  */
 
 public class Edge implements HCodeEdge {
@@ -24,9 +24,12 @@ public class Edge implements HCodeEdge {
     
     /** Creates a <code>Edge</code>. */
     Edge(Quad from, int from_index, Quad to, int to_index) {
-	Util.assert(from!=null && to!=null);
-	Util.assert(0 <= from_index && from_index < from.next.length);
-	Util.assert(0 <= to_index   && to_index   <   to.prev.length);
+	Util.assert(from!=null, "'from' is null");
+	Util.assert(to!=null, "'to' is null");
+	Util.assert(0 <= from_index && from_index < from.next.length,
+		    "'from' index out of range");
+	Util.assert(0 <= to_index   && to_index   <   to.prev.length,
+		    "'to' index out of range");
 	this.from = from;
 	this.from_index = from_index;
 	this.to = to;

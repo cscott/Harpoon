@@ -57,7 +57,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.15 1999-09-09 21:43:05 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.16 1999-09-19 16:17:41 cananian Exp $
  */
 public final class Method extends HCLibrary {
 
@@ -379,13 +379,12 @@ public final class Method extends HCLibrary {
 	    try {
 		Object retval = toInternal(invoke(ss, hm, params));
 		if (q.retval()!=null) sf.update(q.retval(), retval);
-		if (q.retex()!=null)  sf.update(q.retex(), null);
+		visit((SIGMA)q, 0); // normal execution along 0 branch
 	    } catch (InterpretedThrowable it) {
-		if (q.retval()!=null) sf.update(q.retval(), null);
 		if (q.retex()!=null)  sf.update(q.retex(), it.ex);
 		else throw it; // concession to expediency.
+		visit((SIGMA)q, 1); // exeception; proceed along 1 branch
 	    }
-	    advance(0);
 	}
 	public void visit(CJMP q) {
 	    Boolean b = (Boolean) sf.get(q.test());
