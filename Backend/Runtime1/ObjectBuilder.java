@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Runtime1;
 
-import harpoon.Analysis.Realtime.Realtime;
 import harpoon.Backend.Generic.Runtime.ObjectBuilder.Info;
 import harpoon.Backend.Generic.Runtime.ObjectBuilder.ArrayInfo;
 import harpoon.Backend.Generic.Runtime.ObjectBuilder.ObjectInfo;
@@ -33,7 +32,7 @@ import java.util.Random;
  * <code>Runtime1</code> runtime.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.4.8 2001-01-21 04:39:26 wbeebee Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.4.9 2001-01-21 06:10:04 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -71,10 +70,6 @@ public class ObjectBuilder
 	List stmlist = new ArrayList(info.length()+2);
 	// header
 	stmlist.add(makeHeader(tf, info, exported));
-	// RTJ arrays have a field - (memoryArea) should be initialized to null
-	if (Realtime.REALTIME_JAVA) {
-	    stmlist.add(_DATUM(tf, new CONST(tf, null)));
-	}
 	// length
 	stmlist.add(_DATUM(tf, new CONST(tf, null, info.length())));
 	// data
