@@ -58,7 +58,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.22 2000-03-26 06:28:59 jwhaley Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.23 2000-03-27 01:10:06 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -197,9 +197,12 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		  DECLARE(dg, HClass.Void/*not an obj yet*/, Tobj,
 		  new TEMP(tf, source, Type.POINTER, Tobj)),
 		  new CONST(tf, source, OBJ_HASH_OFF))),
-		new UNOP(tf, source, Type.POINTER, Uop._2I,
-			 DECLARE(dg, HClass.Void/*not an obj yet*/, Tobj,
-			 new TEMP(tf, source, Type.POINTER, Tobj)))),
+		new BINOP // set the low bit to indicate an uninflated object.
+		(tf, source, Type.INT, Bop.OR,
+		 new UNOP(tf, source, Type.POINTER, Uop._2I,
+			  DECLARE(dg, HClass.Void/*not an obj yet*/, Tobj,
+			  new TEMP(tf, source, Type.POINTER, Tobj))),
+		 new CONST(tf, source, 1))),
 	       new MOVE // assign the new object a class pointer.
 	       (tf, source,
 		DECLARE
@@ -473,17 +476,97 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	}
     }
 
-    // MONITORENTER NOT IMPLEMENTED
+    // XXX in single-threaded mode, this can be a NOP.
     public Translation.Exp monitorEnter(TreeFactory tf, HCodeElement source,
 					DerivationGenerator dg,
 					Translation.Exp objectref) {
-	return objectref; // nop
+	// call FNI_MonitorEnter()
+	return new Translation.Nx(_call_FNI_Monitor(tf, source, dg, objectref,
+						    true));
     }
-    // MONITOREXIT NOT IMPLEMENTED
+    // XXX in single-threaded mode, this can be a NOP.
     public Translation.Exp monitorExit(TreeFactory tf, HCodeElement source,
 				       DerivationGenerator dg,
 				       Translation.Exp objectref) {
-	return objectref; // nop
+	// call FNI_MonitorExit()
+	return new Translation.Nx(_call_FNI_Monitor(tf, source, dg, objectref,
+						    false));
+    }
+    /** wrap objectref and then call FNI_Monitor{Enter|Exit}() */
+    private Stm _call_FNI_Monitor(TreeFactory tf, HCodeElement source,
+				  DerivationGenerator dg,
+				  Translation.Exp objectref,
+				  boolean isEnter/*else exit*/) {
+	// keep this synchronized with StubCode.java
+	// and Runtime/include/jni-private.h
+	final int REF_OFFSET = 3 * POINTER_SIZE;
+
+	// first get JNIEnv *
+	Temp envT = new Temp(tf.tempFactory(), "env");
+	Stm result0 = new NATIVECALL
+	    (tf, source, (TEMP)
+	     DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
+	     new TEMP(tf, source, Type.POINTER, envT)) /*retval*/,
+	     DECLARE(dg, HClass.Void/* c function ptr */,
+	     new NAME(tf, source, new Label
+		      (runtime.nameMap.c_function_name("FNI_GetJNIEnv")))),
+	     null/* no args*/);
+
+	// wrap objectref.
+	Temp objT = new Temp(tf.tempFactory(), "obj");
+	result0 = new SEQ
+	    (tf, source, result0,
+	     new NATIVECALL
+	     (tf, source, (TEMP)
+	      DECLARE(dg, HClass.Void/* jobject */, objT,
+	      new TEMP(tf, source, Type.POINTER, objT)) /*retval*/,
+	      DECLARE(dg, HClass.Void/* c function ptr */,
+	      new NAME(tf, source, new Label
+		       (runtime.nameMap.c_function_name("FNI_NewLocalRef")))),
+	      new ExpList
+	      (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
+	       new TEMP(tf, source, Type.POINTER, envT)),
+	       new ExpList
+	       (objectref.unEx(tf), null))));
+
+	// call FNI_MonitorEnter or FNI_MonitorExit
+	// proto is 'jint FNI_Monitor<foo>(JNIEnv *env, jobject obj);
+	// i'm going to be anal and make a temp for the return value,
+	// because some architectures might conceivably do weird things if
+	// i just pretend the function is void.  but we don't need the retval.
+	Temp disT = new Temp(tf.tempFactory(), "discard");
+	Stm result1 = new NATIVECALL
+	    (tf, source,
+	     new TEMP(tf, source, Type.INT, disT) /*retval*/,
+	     DECLARE(dg, HClass.Void/* c function ptr */,
+	     new NAME(tf, source, new Label
+		      (runtime.nameMap.c_function_name
+		       (isEnter?"FNI_MonitorEnter":"FNI_MonitorExit")))),
+	     new ExpList
+	     (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
+	      new TEMP(tf, source, Type.POINTER, envT)),
+	      new ExpList
+	      (DECLARE(dg, HClass.Void/* jobject */, objT,
+	       new TEMP(tf, source, Type.POINTER, objT)),
+	       null)));
+
+	// okay, now free the localref and we're set.
+	result1 = new SEQ
+	    (tf, source, result1,
+	     new NATIVECALL
+	     (tf, source, null/*void retval*/,
+	      DECLARE(dg, HClass.Void/* c function ptr */,
+	      new NAME(tf, source, new Label(runtime.nameMap.c_function_name
+					     ("FNI_DeleteLocalRef")))),
+	      new ExpList
+	      (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
+	       new TEMP(tf, source, Type.POINTER, envT)),
+	       new ExpList
+	       (DECLARE(dg, HClass.Void/* jobject */, objT,
+		new TEMP(tf, source, Type.POINTER, objT)),
+		null))));
+	
+	return new SEQ(tf, source, result0, result1);
     }
 
     public Translation.Exp objectNew(TreeFactory tf, HCodeElement source,
