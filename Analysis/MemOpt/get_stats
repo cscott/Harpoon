@@ -1,0 +1,217 @@
+#!/bin/sh
+
+
+# all SPECjvm98 applications
+SPEC_APPS="_200_check _201_compress _202_jess _205_raytrace _209_db _222_mpegaudio _228_jack _213_javac"
+
+#SPEC_APPS="_200_check"
+#SPEC_APPS="_205_raytrace"
+#SPEC_APPS="_202_jess" # "_213_javac"
+#SPEC_APPS="_222_mpegaudio"
+#SPEC_APPS="_201_compress"
+#SPEC_APPS="_999_checkit _209_db"
+
+
+# all Java OLDEN applications
+JOLDEN_APPS="BH BiSort Em3d Health MST Perimeter Power TreeAdd TSP Voronoi"
+
+
+function sum() {
+    numbers=$1
+    term="0"
+    for i in $numbers; do
+	term=$i+$term;
+    done;
+    echo $term | bc
+}
+
+function variation() {
+    a=$1;
+    b=$2;
+    echo "scale=2; (100 * ($a - $b)) / $a" | bc
+}
+
+
+function proportion() {
+    a=$1;
+    b=$2;
+    prop=`echo "scale=2; 100* $a / $b" | bc`
+    echo -e $a\\tout of \\t$b\\t$prop\%
+}
+
+
+function sum_statistics() {
+    prefix=$1
+    kind=$2;
+
+    total_numbers=`grep "$prefix PREALLOCATED $kind" results/*/*/*.ia.stat | cut -f4`;
+    total_total_numbers=`sum "${total_numbers}"`;
+    prealloc_numbers=`grep "$prefix PREALLOCATED $kind" results/*/*/*.ia.stat | cut -f2`;
+    total_prealloc_numbers=`sum "${prealloc_numbers}"`
+
+    echo -e TOTAL PREALLOCATED $kind\\t`proportion ${total_prealloc_numbers} ${total_total_numbers}`
+}
+
+
+function preallocated_stuff_aux() {
+    name=$1
+    file=$2
+    tag=$3
+    echo -e $name:\\t`grep "^$tag" $file | cut -d":" -f2`
+}
+
+function preallocated_stuff() {
+    category=$1;
+    measure=$2;
+    tag="$category PREALLOCATED $measure";
+    echo
+    echo $tag
+    echo
+    for app in ${SPEC_APPS}; do
+	preallocated_stuff_aux $app results/spec/$app/$app.ia.stat "$tag";
+    done
+    for app in ${JOLDEN_APPS}; do
+	preallocated_stuff_aux $app results/jolden/$app/$app.ia.stat "$tag";
+    done
+    echo
+    sum_statistics $category $measure;
+    echo -------------------------------------------------------
+    echo 
+}
+
+
+function preallocated_memory_size_aux() {
+    name=$1
+    file=$2
+
+    echo -e $name:\\t`grep "Preallocated memory size" $file | cut -d":" -f2`
+}
+
+function preallocated_memory_size() {
+    echo
+    echo Preallocated Memory Size:
+    echo
+    for app in ${SPEC_APPS}; do
+	preallocated_memory_size_aux $app results/spec/$app/$app.ia.stat;
+    done
+    for app in ${JOLDEN_APPS}; do
+	preallocated_memory_size_aux $app results/jolden/$app/$app.ia.stat;
+    done
+    echo
+
+    normal_numbers=`grep "Preallocated memory size" results/*/*/*.ia.stat | cut -d" " -f 5`;
+    sharing_numbers=`grep "Preallocated memory size" results/*/*/*.ia.stat | cut -d" " -f 8`;
+
+
+    total_normal=`sum "${normal_numbers}"`
+    total_sharing=`sum "${sharing_numbers}"`
+    echo -e "TOTAL PREALLOCATED MEMORY (bytes):"\\t${total_normal} "(normal)"\\t${total_sharing} "(sharing) reduction="`variation ${total_normal} ${total_sharing}`\%
+
+    echo -------------------------------------------------------
+    echo 
+}
+
+
+
+function preallocated_objects_aux() {
+    name=$1
+    file=$2
+
+    echo -e $name:\\t`grep "OVERALL PREALLOCATED OBJECTS" $file | cut -d":" -f2`
+}
+
+function preallocated_objects() {
+    echo
+    echo Preallocated Objects:
+    echo
+    for app in ${SPEC_APPS}; do
+	preallocated_objects_aux $app results/spec/$app/$app.ia.stat;
+    done
+    for app in ${JOLDEN_APPS}; do
+	preallocated_objects_aux $app results/jolden/$app/$app.ia.stat;
+    done
+    echo
+    sum_statistics OVERALL OBJECTS;
+    echo -------------------------------------------------------
+    echo
+}
+
+
+function analyzed_code_size() {
+    echo -e $1:\\t`grep "methods analyzed" $2 | grep SSI`;
+}
+
+
+function analysis_time() {
+    app=$1
+    file=$2
+    echo -e $app:\\t`grep "SSI conversion time: Timer stopped:" $file | cut -d":" -f 3 | cut -d" " -f 2`\\t`grep "IA total: Timer stopped:" $file | cut -d ":" -f 3 | cut -d" " -f 2 `
+}
+
+function driver() {
+    title=$1
+    app_script=$2
+    echo
+    echo $title
+    echo
+    for app in ${SPEC_APPS}; do
+	${app_script} $app results/spec/$app/$app.ia.stat;
+    done
+    for app in ${JOLDEN_APPS}; do
+	${app_script} $app results/jolden/$app/$app.ia.stat;
+    done
+    echo -------------------------------------------------------
+    echo
+}
+
+
+function speedup_aux() {
+    app=$1;
+    dir=$2;
+    normal_time=`grep real $dir/$app.normal.time | cut -d" " -f 2`;
+    pre_alloc_time=`grep real $dir/$app.pre_alloc.time | cut -d" " -f 2`;
+    
+    speedup=`echo "scale=2; (100 * (${normal_time} - ${pre_alloc_time})) / ${normal_time}" | bc`
+
+    echo -e $app:\\t${normal_time}\\t${pre_alloc_time}\\t`variation ${normal_time} ${pre_alloc_time}`\%
+}
+
+function speedup() {
+    echo
+    echo SPEEDUPS
+    echo
+    for app in ${SPEC_APPS}; do
+	speedup_aux $app results/spec/$app;
+    done
+    for app in ${JOLDEN_APPS}; do
+	speedup_aux $app results/jolden/$app;
+    done
+    echo -------------------------------------------------------
+    echo
+}
+
+
+
+cd
+cd Harpoon/Code
+
+driver "ANALYZED CODE SIZE" analyzed_code_size;
+driver "SSI CONSTRUCTION | ANALYSIS TIME" analysis_time;
+
+preallocated_stuff OVERALL SITES;
+preallocated_stuff OVERALL OBJECTS;
+preallocated_stuff THROWABLES SITES;
+preallocated_stuff NON_THROWABLES SITES;
+preallocated_stuff STRINGBUFFERS SITES;
+
+echo
+sum_statistics OVERALL SPACE;
+echo
+echo -----------------------------------------------------------
+echo 
+
+preallocated_memory_size;
+preallocated_objects;
+
+speedup
+
