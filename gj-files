@@ -69,6 +69,10 @@ Analysis/BasicBlockInterf.java
 Analysis/ClassHierarchy.java
 Analysis/Companions/AbstractGraph.java
 Analysis/Companions/Graph.java
+Analysis/Companions/SingularFinder.java
+Analysis/Companions/SingularOracle.java
+Analysis/Companions/StaticValue.java
+Analysis/Context.java
 Analysis/Counters/EpilogMutator.java
 Analysis/Counters/RuntimeMethodCloner.java
 Analysis/DefaultAllocationInformation.java
@@ -76,6 +80,7 @@ Analysis/DefaultAllocationInformationMap.java
 Analysis/DomTree.java
 Analysis/EnvBuilder/EnvCode.java
 Analysis/EventDriven/EventDrivenCode.java
+Analysis/GenericContextFactory.java
 Analysis/Instr/RegAlloc.java
 Analysis/InterferenceGraph.java
 Analysis/Liveness.java
