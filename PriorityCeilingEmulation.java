@@ -14,14 +14,18 @@ public class PriorityCeilingEmulation extends MonitorControl {
 
     /** Create a <code>PriorityCeilingEmulation</code> object
      *  with a given ceiling.
+     *
+     *  @param ceiling Priority ceiling value.
      */
     public PriorityCeilingEmulation(int ceiling) {
 	super();
 	this.ceiling = ceiling;
     }
 
-    /** Get the priority ceiling for this
+    /** Get the priority ceiling for this 
      *  <code>PriorityCeilingEmulation</code> object.
+     *
+     *  @return The priority ceiling.
      */
     public int getDeafaultCeiling() {
 	return ceiling;

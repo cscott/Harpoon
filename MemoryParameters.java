@@ -41,6 +41,18 @@ public class MemoryParameters {
 
     LinkedList schList = new LinkedList();
 
+    /** Create a <code>MemoryParameters</code> object with the given values.
+     *
+     *  @param maxMemoryArea A limit on the amount of memory the thread may allocate
+     *                       in the memory area. Units are in bytes. If zere, no
+     *                       allocation allowed in the memory area. To specify no
+     *                       limit, use NO_MAX or a value less than zero.
+     *  @param maxImmortal A limit on the amount of memory the thread may allocate
+     *                     in the immortal area. Units are in bytes. If zero, no
+     *                     allocation allowed in immortal memory. To specify no
+     *                     limit, use NO_MAX or a value less than zero
+     *  @throws java.langIllegalArgumentException
+     */
     public MemoryParameters(long maxMemoryArea, long maxImmortal) 
 	throws IllegalArgumentException {
 	this.maxMemoryArea = Math.max(maxMemoryArea, NO_MAX);
@@ -48,6 +60,22 @@ public class MemoryParameters {
 	this.allocationRate = NO_MAX;
     }
 
+    /** Create a <code>MemoryParameters</code> object with the given values.
+     *
+     *  @param maxMemoryArea A limit on the amount of memory the thread may allocate
+     *                       in the memory area. Units are in bytes. If zere, no
+     *                       allocation allowed in the memory area. To specify no
+     *                       limit, use NO_MAX or a value less than zero.
+     *  @param maxImmortal A limit on the amount of memory the thread may allocate
+     *                     in the immortal area. Units are in bytes. If zero, no
+     *                     allocation allowed in immortal memory. To specify no
+     *                     limit, use NO_MAX or a value less than zero
+     *  @param allocationRate A limit on the rate of allocation in the heap. Units are
+     *                        in bytes per second. If zero, no allocation is allowed
+     *                        in the heap. To specify no limit, use NO_MAX or a value
+     *                        less than zero.
+     *  @throws java.langIllegalArgumentException
+     */
     public MemoryParameters(long maxMemoryArea, long maxImmortal, 
 			    long allocationRate) 
 	throws IllegalArgumentException {
@@ -60,39 +88,43 @@ public class MemoryParameters {
 	this.memoryArea = memoryArea;
     }
 
-    /** Get the allocation rate. Units are in bytes per second. */
+    /** Gets the allocation rate. Units are in bytes per second.
+     *
+     *  @return The allocation in bytes per second.
+     */
     public long getAllocationRate() {
 	return allocationRate;
     }
 
-    /** Get the limit on the amount of memory the thread may allocate
+    /** Gets the limit on the amount of memory the thread may allocate
      *  in the immortal area. Units are in bytes.
+     *
+     *  @return The limit of immortal memory.
      */
     public long getMaxImmortal() {
 	return maxImmortal;
     }
 
-    /** Get the limit on the amount of memory the thread may allocate
+    /** Gets the limit on the amount of memory the thread may allocate
      *  in the memory area. Units are in bytes.
+     *
+     *  @return The allocation limit in this area.
      */
     public long getMaxMemoryArea() {
 	return maxMemoryArea;
     }
 
-    /** A limit on the rate of allocation in the heap. */
+    /** Sets the limit on the rate of allocation in the heap.
+     *
+     *  @param allocationRate Units are in bytes per second. If zero, no
+     *                        allocation is allowed in the heap. To specify
+     *                        no limit, use NO_MAX or a values less than zero.
+     */
     public void setAllocationRate(long rate) {
 	allocationRate = Math.max(rate, NO_MAX);
     }
 
-    public /* private ? */ void setMaxImmortal(long maximum) {
-	maxImmortal = maximum;
-    }
-
-    public /* private ? */ void setMaxMemoryArea(long maximum) {
-	maxMemoryArea = maximum;
-    }
-
-    /** Change the limit on the rate of allocation in the heap. If this
+    /** Sets the limit on the rate of allocation in the heap. If this
      *  <code>MemoryParameters</code> object is currently associated with
      *  one or more realtime threads that have been passed admission
      *  control, this change in allocation rate will be submitted to
@@ -100,6 +132,11 @@ public class MemoryParameters {
      *  collector) will either admit all the affected threads with the new
      *  allocation rate, or leave the allocation rate unchanged and cause
      *  <code>setAllocationRateIfFeasible</code> to return <code>false</code>.
+     *
+     *  @param allocationRate Units are in bytes per second. If zero, no
+     *                        allocation is allowed in the heap. To specify
+     *                        no limit, use NO_MAX or a value less than zero.
+     *  @return True, if the request was fulfilled.
      */
     public boolean setAllocationRateIfFeasible(int allocationRate) {
 	// How do memory parameters affect the feasibility of the task set?
@@ -110,7 +147,15 @@ public class MemoryParameters {
 	return true;
     }
     
-    /** A limit on the amount of memory the thread may allocate in the immortal area. */
+    /** Sets the limit on the amount of memory the thread may allocate in the immortal area.
+     *
+     *  @param maximum Units are in bytes. If zero, no allocation allowed in
+     *                 immortal. To specify no limit, use NO_MAX or a value
+     *                 less than zero.
+     *  @return True if the value is set. False if any of the threads have
+     *          already allocated more than the given value. in this case
+     *          the call has no effect.
+     */
     public boolean setMaxImmortalIfFeasible(long maximum) {
 	// How do memory parameters affect the feasibility of the task set?
 	setMaxImmortal(maximum);
@@ -120,7 +165,14 @@ public class MemoryParameters {
 	return true;
     }
 
-    /** A limit on the amount of memory the thread may allocate in the memory area. */
+    /** Sets the limit on the amount of memory the thread may allocate in the memory area.
+     *
+     *  @param maximum Units are in bytes. If zero, no allocation allowed in
+     *                 the memory area. To specify no limit, use NO_MAX or a
+     *                 value less than zero.
+     *  @return True if the value is set. False if any of the threads have already
+     *          allocated more than the given value. In this case the call has no effect.
+     */
     public boolean setMaxMemoryAreaIfFeasible(long maximum) {
 	// How do memory parameters affect the feasibility of the task set?
 	setMaxMemoryArea(maximum);
@@ -128,6 +180,14 @@ public class MemoryParameters {
 	    ((Schedulable)it.next()).setMemoryParameters(this);
 
 	return true;
+    }
+
+    public /* private ? */ void setMaxImmortal(long maximum) {
+	maxImmortal = maximum;
+    }
+
+    public /* private ? */ void setMaxMemoryArea(long maximum) {
+	maxMemoryArea = maximum;
     }
 
     public MemoryArea getMemoryArea() {

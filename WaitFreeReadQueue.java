@@ -25,18 +25,20 @@ public class WaitFreeReadQueue {
 
     protected Thread writerThread = null, readerThread = null;
     protected MemoryArea memArea;
-    
+
     /** A queue with an unsynchronizes and nonblocking <code>read()</code>
      *  method and a synchronized and blocking <code>write()</code> method.
-     *  The memory areas of the given threads are found. If these memory
-     *  areas are the same the queue is created in that memory area. If
-     *  these memory areas are different the queue is created in the area
-     *  accessible by the most restricted thread type.
+     *
+     *  @param writer An instance of <code>java.lang.Thread</code>.
+     *  @param reader An instance of <code>java.lang.Thread</code>.
+     *  @param maximum The maximum number of elements in the queue.
+     *  @param memory The <code>MemoryArea</code> in which this object and
+     *                internal elements are alocated.
+     *  @throws java.lang.IllegalArgumentException
      */
     public WaitFreeReadQueue(Thread writer, Thread reader,
 			     int maximum, MemoryArea memory)
-	throws IllegalArgumentException, InstantiationException,
-	       ClassNotFoundException, IllegalAccessException {
+	throws IllegalArgumentException {
 	writerThread = writer;
 	readerThread = reader;
 	queueSize = maximum;
@@ -45,14 +47,21 @@ public class WaitFreeReadQueue {
 	// TODO (?)
     }
 
-    /** A queue with an unsynchronized and nonblocking <code>read()</code>
+    /** A queue with an unsynchronizes and nonblocking <code>read()</code>
      *  method and a synchronized and blocking <code>write()</code> method.
+     *
+     *  @param writer An instance of <code>java.lang.Thread</code>.
+     *  @param reader An instance of <code>java.lang.Thread</code>.
+     *  @param maximum The maximum number of elements in the queue.
+     *  @param memory The <code>MemoryArea</code> in which this object and
+     *                internal elements are alocated.
+     *  @param notify Whether or not the reader is notified when data is added.
+     *  @throws java.lang.IllegalArgumentException
      */
     public WaitFreeReadQueue(Thread writer, Thread reader,
 			     int maximum, MemoryArea memory,
 			     boolean notify)
-	throws IllegalArgumentException, InstantiationException,
-	       ClassNotFoundException, IllegalAccessException {
+	throws IllegalArgumentException {
 	this(writer, reader, maximum, memory);
 	this.notify = notify;
     }
@@ -62,18 +71,29 @@ public class WaitFreeReadQueue {
 	currentIndex = 0;
     }
 
-    /** Used to determine if <code>this</code> is empty. */
+    /** Queries the system to determine if <code>this</code> is empty.
+     *
+     *  @return True, if <code>this</code> is empty. False, if
+     *          <code>this</code> is not empty.
+     */
     public boolean isEmpty() {
 	return (currentIndex == 0);
     }
 
-    /** Used to determine if <code>this</code> is full. */
+    /** Queries the system to determine if <code>this</code> is full.
+     *
+     *  @return True, if <code>this</code> is full. False, if
+     *          <code>this</code> is not full.
+     */
     public boolean isFull() {
 	return (currentIndex == queueSize - 1);
     }
 
-    /** Returns the next element in the queue unless the queue is empty.
+    /** Reads the next element in the queue unless the queue is empty.
      *  If the queue is empty null is returned.
+     *
+     *  @return The instance of <code>java.lang.Object</code> read.
+     *          Null, if <code>this</code> was empty.
      */
     public Object read() {
 	if (isEmpty()) return null;
@@ -86,7 +106,12 @@ public class WaitFreeReadQueue {
 	}
     }
 
-    /** Used to determine the number of elements in <code>this</code>. */
+    /** Queries the system to determine the number of elements in
+     *  <code>this</code>.
+     *
+     *  @return An integer which is the number of non-empty positions in
+     *          <code>this</code>.
+     */
     public int size() {
 	return currentIndex;
     }
@@ -103,6 +128,11 @@ public class WaitFreeReadQueue {
 
     /** The synchronized and blocking write. This call blocks on queue full
      *  and will wait until there is space in the queue.
+     *
+     *  @param object The <code>java.lang.Object</code> that is placed in
+     *                <code>this</code>.
+     *  @return True, if the write occured. False, if it did not.
+     *  @throws MemoryScopeException
      */
     public synchronized boolean write(Object object) throws MemoryScopeException {
 	while (isFull())

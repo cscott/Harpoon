@@ -27,11 +27,25 @@ public class WaitFreeWriteQueue {
 
     /** A queue with an unsynchronized and nonblocking <code>write()</code>
      *  method and a synchronized and blocking <code>read()</code> method.
+     *
+     *  @param writer An instance of <code>java.lang.Thread</code>.
+     *  @param reader An instance of <code>java.lang.Thread</code>.
+     *  @param maximum The maximum number of elements in the queue.
+     *  @param memory The <code>MemoryArea</code> in which this object and
+     *                internal elements are allocated.
+     *  @throws java.lang.IllegalArgumentException If an argument holds an
+     *                                             invalid value. The current
+     *                                             memory areas of
+     *                                             <code>writer</code>,
+     *                                             <code>reader</code>, and
+     *                                             <code>memory</code> must be
+     *                                             compatible with respect to
+     *                                             the assignment and access
+     *                                             rules for memory areas.
      */
     public WaitFreeWriteQueue(Thread writer, Thread reader,
 			      int maximum, MemoryArea memory)
-	throws IllegalArgumentException, InstantiationException,
-	       ClassNotFoundException, IllegalAccessException {
+	throws IllegalArgumentException {
 	writerThread = writer;
 	readerThread = reader;
 	queueSize = maximum;
@@ -52,6 +66,10 @@ public class WaitFreeWriteQueue {
      *  Either way, the best thing to do is to just write again -- which
      *  will succeed, and check on the readers side for consecutive
      *  identical read values.
+     *
+     *  @return True, if an element was overwritten. False, if there is an
+     *          empty element into which the write occured.
+     *  @throws MemoryScopeException
      */
     public boolean force(Object object) throws MemoryScopeException {
 	if (!isFull()) return write(object);
@@ -61,17 +79,29 @@ public class WaitFreeWriteQueue {
 	}
     }
 
-    /** Used to determine if <code>this</code> is empty. */
+    /** Queries the system to determine if <code>this</code> is empty.
+     *
+     *  @return True, if <code>this</code> is empty. False, if
+     *          <code>this</code> is not empty.
+     */
     public boolean isEmpty() {
 	return (currentIndex == 0);
     }
 
-    /** Used to determine if <code>this</code> is full. */
+    /** Queries the system to determine if <code>this</code> is full.
+     *
+     *  @return True, if <code>this</code> is full. False, if
+     *          <code>this</code> is not full.
+     */
     public boolean isFull() {
 	return (currentIndex == queueSize - 1);
     }
 
-    /** A synchronized read on the queue. */
+    /** A synchronized read on the queue.
+     *
+     *  @return The <code>java.lang.Object</code> read or null if
+     *          <code>this</code> is empty.
+     */
     public synchronized Object read() {
 	while (isEmpty())
 	    try {
@@ -85,12 +115,22 @@ public class WaitFreeWriteQueue {
 	return temp;
     }
 
-    /** Used to determine the number of elements in <code>this</code>. */
+    /** Queries the system to determine the number of elements in
+     *  <code>this</code>.
+     *
+     *  @return An integer which is the number of non-empty positions in
+     *          <code>this</code>.
+     */
     public int size() {
 	return currentIndex;
     }
 
-    /** Try to insert an element into the queue. */
+    /** Attempt to insert an element into the queue.
+     *
+     *  @param object The <code>java.lang.Object</code> to insert.
+     *  @return True, if the write succeeded. False, if not.
+     *  @throws MemoryScopeException
+     */
     public boolean write(Object object) throws MemoryScopeException {
 	if (isFull()) return false;
 	else {

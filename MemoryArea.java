@@ -52,6 +52,10 @@ public abstract class MemoryArea {
   
     abstract protected void initNative(long sizeInBytes);
 
+    /** Create an instance of <code>MemoryArea</code>.
+     *
+     *  @param sizeInBytes The size of <code>MemoryArea</code> to allocate, in bytes.
+     */
     protected MemoryArea(long sizeInBytes) {
 	size = sizeInBytes;
 	preSetup();
@@ -72,20 +76,36 @@ public abstract class MemoryArea {
 	registerFinal();
     }
 
-    /** */
-
     // Do we really need this abstract method?
     // protected abstract void initNative(long sizeInBytes);
 
+    /** Create an instance of <code>MemoryArea</code>.
+     *
+     *  @param sizeInBytes The size of <code>MemoryArea</code> to allocate, in bytes.
+     *  @param logic The <code>run()</code> method of this object will be called
+     *               whenever <code>enter()</code> is called.
+     */
     protected MemoryArea(long sizeInBytes, Runnable logic) {
 	this(sizeInBytes);
 	this.logic = logic;
     }
 
+    /** Create an instance of <code>MemoryArea</code>.
+     *
+     *  @param size A <code>SizeEstimator</code> object which indicates the amount
+     *              of memory required by this <code>MemoryArea</code>.
+     */
     protected MemoryArea(SizeEstimator size) {
 	this(size.getEstimate());
     }
 
+    /** Create an instance of <code>MemoryArea</code>.
+     *
+     *  @param size A <code>SizeEstimator</code> object which indicates the amount
+     *              of memory required by this <code>MemoryArea</code>.
+     *  @param logic The <code>run()</code> method of this object will be called
+     *               whenever <code>enter()</code> is called.
+     */
     protected MemoryArea(SizeEstimator size,
 			 Runnable logic) {
 	this(size);
@@ -100,6 +120,9 @@ public abstract class MemoryArea {
      *  method is exited. A runtime exception is thrown if this method is
      *  called from thread other than a <code>RealtimeThread</code> or
      *  <code>NoHeapRealtimeThrea</code>.
+     *
+     *  @throws java.lang.IllegalArgumentException Thrown if no <code>Runnable</code>
+     *                                             was passed in the constructor.
      */
     public void enter() {
 	enter(this.logic);
@@ -113,6 +136,9 @@ public abstract class MemoryArea {
      *  method is exited. A runtime exception is thrown if this method is
      *  called from thread other than a <code>RealtimeThread</code> or
      *  <code>NoHeapRealtimeThrea</code>.
+     *
+     *  @param logic The <code>Runnable</code> object whose <code>run()</code>
+     *               method should be invoked.
      */
     public void enter(Runnable logic) {
 	RealtimeThread.checkInit();
@@ -156,13 +182,23 @@ public abstract class MemoryArea {
      *  If the memory area is heap or immortal memory, this method behaves as if
      *  the <code>run()</code> method were running in that memory type with an
      *  empty scope stack.
+     *
+     *  @param logic The runnable object whose <code>run()</code> method should be
+     *               executed.
+     *  @throws IllegalStateException A non-realtime thread attempted to enter the
+     *                                memory area.
+     *  @throws InaccessibleAreaException The memory area is not in the thread's
+     *                                    scope stack.
      */
     public void executeInArea(Runnable logic)
 	throws InaccessibleAreaException {
 	// TODO
     }
 
-    /** Returns the <code>MemoryArea</code> in which the given object is located. */
+    /** Gets the <code>MemoryArea</code> in which the given object is located.
+     *
+     *  @return The current instance of <code>MemoryArea</code> of the object.
+     */
     public static MemoryArea getMemoryArea(Object object) {
 	if (object == null) {
 	    return ImmortalMemory.instance();
@@ -182,15 +218,19 @@ public abstract class MemoryArea {
 	return mem;
     }
     
-    /** An exact count, in bytes, of the all of the memory currently
-     *  used by the system for the allocated objects.
+    /** An exact count, in bytes, of the all of the memory currently used by the
+     *  system for the allocated objects.
+     *
+     *  @return The amount of memory consumed.
      */
     public long memoryConsumed() {
 	return memoryConsumed;
     }
     
-    /** An approximation to the total amount of memory currently
-     *  available for future allocated objects, measured in bytes.
+    /** An approximation to the total amount of memory currently available for
+     *  future allocated objects, measured in bytes.
+     *
+     *  @return The amount of remaining memory in bytes.
      */
     public long memoryRemaining() {
 	return size() - memoryConsumed();
@@ -202,7 +242,15 @@ public abstract class MemoryArea {
     protected native Object newArray(RealtimeThread rt, 
 				     Class type, int[] dimensions);
 
-    /** Allocate an array of <code>type</code> in this memory area. */
+    /** Allocate an array of the given type in this memory area.
+     *
+     *  @param type The class of the elements of the new array.
+     *  @param number The number of elements in the new array.
+     *  @throws java.lang.IllegalAccessException The class or initializer is
+     *                                           inaccessible.
+     *  @throws java.lang.InstantiationException The array cannot be instantiated.
+     *  @throws OutOfMemoryError Space in the memory area is exhaused.
+     */
     public Object newArray(final Class type, final int number) 
 	throws IllegalAccessException, InstantiationException,
 	       OutOfMemoryError {
@@ -223,7 +271,19 @@ public abstract class MemoryArea {
 			      Object[] parameters)
 	throws InvocationTargetException;
     
-    /** Allocate an object in this memory area. */
+    /** Allocate an object in this memory area.
+     *
+     *  @param type The class of which to create a new instance.
+     *  @throws java.lang.IllegalAccessException The class or initializer is
+     *                                           inaccessible.
+     *  @throws java.lang.InstantiationException The specified class object
+     *                                           could not be instantiated.
+     *                                           Possible causes are: it is an
+     *                                           interface; it is abstract; it
+     *                                           is an array, or an exception
+     *                                           was thrown by the constructor.
+     *  @throws OutOfMemoryError Space in the memory area is exhaused.
+     */
     public Object newInstance(Class type)
 	throws IllegalAccessException, InstantiationException,
 	       OutOfMemoryError {
@@ -253,7 +313,18 @@ public abstract class MemoryArea {
 	return o;
     }
     
-    /** Allocate an object in this memory area. */
+    /** Allocate an object in this memory area.
+     *
+     *  @throws java.lang.IllegalAccessException The class or initializer is
+     *                                           inaccessible.
+     *  @throws java.lang.InstantiationException The specified class object
+     *                                           could not be instantianted.
+     *                                           Possible causes are: it is an
+     *                                           interface, it is abstract, it
+     *                                           is an array, or an exception
+     *                                           was thrown by the constructor.
+     *  @throws OutOfMemoryError Space in the memory area is exhaused.
+     */
     public Object newInstance(Constructor c, Object[] args)
 	throws IllegalAccessException, InstantiationException,
 	       OutOfMemoryError {

@@ -27,7 +27,11 @@ public abstract class GarbageCollector {
      *  are allowed to preempt the garbage collector (instances of
      *  <code>NoHeapRealtimeThread</code> preempt immediately but instances
      *  of <code>RealtimeThread</code> must wait until the collector reaches
-     *  a preemption-safe point.
+     *  a preemption-safe point).
+     *
+     *  @return The preempting latency of the garbage collection algorithm
+     *          represented by <code>this</code> if applicable. May return
+     *          zero, if there is no collector available.
      */
     public abstract RelativeTime getPreemptionLatency();
 }

@@ -24,7 +24,10 @@ public /* specs says it's final */ class ImmortalMemory extends MemoryArea {
 	super(1000000000); // Totally bogus
     }
 
-    /** Returns a pointer to the singleton <code>ImmortalMemory</code> space. */
+    /** Returns a pointer to the singleton <code>ImmortalMemory</code> space.
+     *
+     *  @return The singleton <code>ImmortalMemory</code> object.
+     */
     public static ImmortalMemory instance() {
 	if (immortalMemory == null) {
 	    immortalMemory = (ImmortalMemory)((new ImmortalMemory()).shadow);

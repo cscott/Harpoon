@@ -46,17 +46,30 @@ public class LTMemory extends ScopedMemory {
      *  large block of memory is taken when this constructor
      *  is called.  
      */
-
     protected void initNative(long sizeInBytes) {}
 
-    /** Create an <code>LTMemory</code> of the given size. */
+    /** Create an <code>LTMemory</code> of the given size.
+     *
+     *  @param initialSizeInBytes The size in bytes of the memory to allocate for
+     *                            this area. This memory must be committed before
+     *                            the completion of the constructor.
+     *  @param maxSizeInBytes The size in bytes of the memory to allocate for this area.
+     */
     public LTMemory(long initialSizeInBytes,
 		    long maxSizeInBytes) {
 	super(maxSizeInBytes);
 	initNative(initialSizeInBytes, maxSizeInBytes);
     }
 
-    /** Create an <code>LTMemory</code> of the given size and logic. */
+    /** Create an <code>LTMemory</code> of the given size and logic.
+     *
+     *  @param initialSizeInBytes The size in bytes of the memory to allocate for
+     *                            this area. This memory must be committed before
+     *                            the completion of the constructor.
+     *  @param maxSizeInBytes The size in bytes of the memory to allocate for this area.
+     *  @param logic The <code>run()</code> method of the given <code>Runnable</code>
+     *               will be executed using <code>this</code> as its initial memory area.
+     */
     public LTMemory(long initialSizeInBytes,
 		    long maxSizeInBytes,
 		    Runnable logic) {
@@ -64,16 +77,31 @@ public class LTMemory extends ScopedMemory {
 	this.logic = logic;
     }
 
-    /** Creates a <code>LTMemory</code> of the given size estimated by
-     *  two instances of <code>SizeEstimator</code>.
+    /** Creates a <code>LTMemory</code> of the given size estimated by two instances of
+     *  <code>SizeEstimator</code>.
+     *
+     *  @param initial An instance of <code>SizeEstimator</code> used to give an estimate
+     *                 of the initial size. This memory must be committed before the
+     *                 completion of the constructor.
+     *
+     *  @param maximum An instance of <code>SizeEstimator</code> used to give an estimate
+     *                 for the maximum bytes to allocate for this area.
      */
     public LTMemory(SizeEstimator initial,
 		    SizeEstimator maximum) {
 	this(initial.getEstimate(), maximum.getEstimate());
     }
 
-    /** Creates a <code>LTMemory</code> of the given size estimated by
-     *  two instances of <code>SizeEstimator</code> and logic.
+    /** Creates a <code>LTMemory</code> of the given size estimated by two instances of
+     *  <code>SizeEstimator</code> and logic.
+     *
+     *  @param initial An instance of <code>SizeEstimator</code> used to give an estimate
+     *                 of the initial size. This memory must be committed before the
+     *                 completion of the constructor.
+     *  @param maximum An instance of <code>SizeEstimator</code> used to give an estimate
+     *                 for the maximum bytes to allocate for this area.
+     *  @param logic The <code>run()</code> of the given <code>Runnable</code> will be
+     *               executed using <code>this</code> as its initial memory area.
      */
     public LTMemory(SizeEstimator initial,
 		    SizeEstimator maximum,
@@ -88,14 +116,20 @@ public class LTMemory extends ScopedMemory {
 	initNative(size, size);
     }
 
-    /** Return the value which defines the maximum size to which this can grow. */
+    /** Gets the maximum allowable size for <code>this</code>.
+     *
+     *  @return The maximum size for <code>this</code..
+     */
     public long getMaximumSize() {
 	return size;
     }
 
-    /** Returns a representation of this LTMemory object */
+    /** Prints the string "LTMemory".
+     *
+     *  @return The string "LTMemory".
+     */
     public String toString() {
-	return "LTMemory: " + super.toString();
+	return "LTMemory";
     }
 
 

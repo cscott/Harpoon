@@ -20,7 +20,7 @@ package javax.realtime;
  *  A <code>ScopedMemory</code> area is a connection to a particular region of
  *  memory and reflects the current status of it.
  *  <p>
- *  Whe a <code>ScopedMemory</code> area is instantiated, the object itself is allocated
+ *  When a <code>ScopedMemory</code> area is instantiated, the object itself is allocated
  *  from the current memory allocation scheme in use, but the memory space that object
  *  represents is not.  Memory is allocated, as always, using an <code>RTJ_malloc</code> call.
  *  <p>
@@ -59,31 +59,44 @@ public abstract class ScopedMemory extends MemoryArea {
     /** <code>logic.run()</code> is executed when <code>enter()</code> is called. */
     protected Runnable logic;
 
-    /** Create a new <code>ScopedMemory</code> of size <code>size</code>. */
+    /** Create a new <code>ScopedMemory</code> with the given parameters.
+     *
+     *  @param size The size of the new <code>ScopedMemory</code> area in bytes.
+     *              If size is less than or equal to zero nothing happens.
+     */
     public ScopedMemory(long size) {
 	super(size);
 	portal = null;
 	scoped = true;
     }
 
-    /** Create a new <code>ScopedMemory</code> of size <code>size</code> and
-     *  that executes <code>r.run()</code> when <code>enter()</code> is called.
+    /** Create a new <code>ScopedMemory</code> with the given parameters.
+     *
+     *  @param size The size of the new <code>ScopedMemory</code> area in bytes.
+     *              If size is less than or equal to zero nothing happens.
+     *  @param r The logic which will use the memory represented by <code>this</code>
+     *           as its initial memory area.
      */
     public ScopedMemory(long size, Runnable r) {
 	this(size);
 	logic = r;
     }
 
-    /** Create a new <code>ScopedMemory</code> with size equal to
-     *  <code>size.getEstimate()</code>.
+    /** Create a new <code>ScopedMemory</code> with the given parameters.
+     *
+     *  @param size The size of the new <code>ScopedMemory</code> area estimated
+     *              by an instance of <code>SizeEstimator</code>.
      */
     public ScopedMemory(SizeEstimator size) {
 	this(size.getEstimate());
     }
 
-    /** Create a new <code>ScopedMemory</code> with size equal to
-     *  <code>size.getEstimate()</code> and that executes <code>r.run()</code>
-     *  when <code>enter()</code> is called.
+    /** Create a new <code>ScopedMemory</code> with the given parameters.
+     *
+     *  @param size The size of the new <code>ScopedMemory</code> area estimated
+     *              by an instance of <code>SizeEstimator</code>.
+     *  @param r The logic which will use the memory represented by <code>this</code>
+     *           as its initial memory area.
      */
     public ScopedMemory(SizeEstimator size, Runnable r) {
 	this(size);
@@ -98,11 +111,13 @@ public abstract class ScopedMemory extends MemoryArea {
 
     /** Associate this <code>ScopedMemory</code> area to the current realtime
      *  thread for the duration of the execution of the <code>run()</code> method
-     *  of the given <code>java.lang.Runnable</code>. During this bound period of
-     *  execution, all objects are allocated from the <code>ScopedMemory</code>
-     *  area until another one takes effect, or the <code>enter()</code> method
-     *  is exited. A runtime exception is thrown if this method is called from a
-     *  thread other than a <code>RealtimeThread</code> or <code>NoHeapRealtimeThrea</code>.
+     *  of the current instance of <code>Schedulable</code> or the <code>run()</code>
+     *  method of the instance of <code>Schedulable</code> fiven in the constructor.
+     *  During this bound period of execution, all objects are allocated from the
+     *  <code>ScopedMemory</code> area until another one takes effect, or the
+     *  <code>enter()</code> method is exited. A runtime exception is thrown if this
+     *  method is called from a thread other than a <code>RealtimeThread</code> or
+     *  <code>NoHeapRealtimeThread</code>.
      */
     public void enter() {
 	// Will NEVER implement single parent rule.
@@ -111,11 +126,15 @@ public abstract class ScopedMemory extends MemoryArea {
 
     /** Associate this <code>ScopedMemory</code> area to the current realtime
      *  thread for the duration of the execution of the <code>run()</code> method
-     *  of the given <code>java.lang.Runnable</code>. During this bound period of
-     *  execution, all objects are allocated from the <code>ScopedMemory</code>
-     *  area until another one takes effect, or the <code>enter()</code> method
-     *  is exited. A runtime exception is thrown if this method is called from a
-     *  thread other than a <code>RealtimeThread</code> or <code>NoHeapRealtimeThrea</code>.
+     *  of the current instance of <code>Schedulable</code> or the <code>run()</code>
+     *  method of the instance of <code>Schedulable</code> fiven in the constructor.
+     *  During this bound period of execution, all objects are allocated from the
+     *  <code>ScopedMemory</code> area until another one takes effect, or the
+     *  <code>enter()</code> method is exited. A runtime exception is thrown if this
+     *  method is called from a thread other than a <code>RealtimeThread</code> or
+     *  <code>NoHeapRealtimeThread</code>.
+     *
+     *  @param logic The runnable object which contains the code to execute.
      */
     public void enter(Runnable logic) {
 	// Will NEVER implement single parent rule.
@@ -124,30 +143,50 @@ public abstract class ScopedMemory extends MemoryArea {
 
     /** Get the maximum size this memory area can attain. If this is a fixed size
      *  memory area, the returned value will be equal to the initial size.
+     *
+     *  @return The maximum size attainable.
      */
     public long getMaximumSize() { 
 	return size;
     }
     
-    /** Return a reference to the portal object in this instance of <code>ScopedMemory</code>. */
+    /** Return a reference to the portal object in this instance of <code>ScopedMemory</code>.
+     *
+     *  @return A reference to the portal object or null if there is no portal object.
+     */
     public Object getPortal() {
 	return portal;
     }
 
     /** Returns the reference count of this <code>ScopedMemory</code>. The reference
      *  count is an indication of the number of threads that may have access to this scope.
+     *
+     *  @return The reference count of this <code>ScopedMemory</code>.
      */
     public int getReferenceCount() {
 	return count;
     }
 
-    /** Wait until the reference count of this <code>ScopedMemory</code> goes down to zero. */
+    /** Wait until the reference count of this <code>ScopedMemory</code> goes down to zero.
+     *
+     *  @throws java.lang.InterruptedException If another thread interrupts this thread
+     *                                         while it is waiting.
+     */
     public void join() throws InterruptedException {
 	// TODO
     }
 
-    /** Wait at most until the time designated by the <code>time</code> for the reference
-     *  count of this <code>ScopedMemory</code> to go down to zero.
+    /** Wait at most until the time designated by the <code>time</code> parameter for the
+     *  reference count of this <code>ScopedMemory</code> to go down to zero.
+     *
+     *  @param time If this time is an absolute time, the wait is bounded by that point
+     *              in time. If the time is a relative time (or a member of the
+     *              <code>RationalTime</code> subclass of <code>RelativeTime</code>) the
+     *              wait is bounded by the specified interval from some time between the
+     *              time <code>join<code> is called and the time it starts waiting for
+     *              the reference count to reach zero.
+     *  @throws java.lang.InterruptedException If another thread interrupts this thread
+     *                                         while it is waiting.
      */
     public void join(HighResolutionTime time)
 	throws InterruptedException {
@@ -160,6 +199,9 @@ public abstract class ScopedMemory extends MemoryArea {
      *  zero, then enter the <code>ScopedMemory</code> and execute the <code>run()</code>
      *  method from <code>logic</code> passed in the constructor. if no <code>Runnable</code>
      *  was passed, the maethod returns immediately.
+     *
+     *  @throws java.lang.InterruptedException If another thread interrupts this thread while
+     *                                         it is waiting.
      */
     public void joinAndEnter() throws InterruptedException {
 	joinAndEnter(this.logic);
@@ -171,6 +213,10 @@ public abstract class ScopedMemory extends MemoryArea {
      *  zero, then enter the <code>ScopedMemory</code> and execute the <code>run()</code>
      *  method from <code>logic</code> passed in the constructor. if no <code>Runnable</code>
      *  was passed, the maethod returns immediately.
+     *
+     *  @param time The time that bounds the wait.
+     *  @throws java.lang.InterruptedException If another thread interrupts this thread while
+     *                                         it is waiting.
      */
     public void joinAndEnter(HighResolutionTime time)
 	throws InterruptedException {
@@ -183,6 +229,10 @@ public abstract class ScopedMemory extends MemoryArea {
      *  zero, then enter the <code>ScopedMemory</code> and execute the <code>run()</code>
      *  method from <code>logic</code> passed in the constructor. if no <code>Runnable</code>
      *  was passed, the maethod returns immediately.
+     *
+     *  @param logic The <code>java.lang.Runnable</code> object which contains the code to execute.
+     *  @throws java.lang.InterruptedException If another thread interrupts this thread while
+     *                                         it is waiting.
      */
     public void joinAndEnter(Runnable logic) throws InterruptedException {
 	// TODO
@@ -193,7 +243,12 @@ public abstract class ScopedMemory extends MemoryArea {
      *  method will wait for the reference count on this <code>ScopedMemory</code> to reach
      *  zero, then enter the <code>ScopedMemory</code> and execute the <code>run()</code>
      *  method from <code>logic</code> passed in the constructor. if no <code>Runnable</code>
-     *  was passed, the maethod returns immediately.
+     *  was passed, the method returns immediately.
+     *
+     *  @param logic The <code>java.lang.Runnable</code> object which contains the code to execute.
+     *  @param time The time that bounds the wait.
+     *  @throws java.lang.InterruptedException If another thread interrupts this thread while
+     *                                         it is waiting.
      */
     public void joinAndEnter(Runnable logic, HighResolutionTime time)
 	throws InterruptedException {
@@ -202,18 +257,20 @@ public abstract class ScopedMemory extends MemoryArea {
 
     /** Set the argument to the portal object in the memory area represented by this instance
      *  of <code>ScopedMemory</code>.
-     *  <p>
-     *  A portal can serve as a means of interthread communication and they are used primarily
-     *  when threads need to share an object that is allocated in a <code>ScopedMemory</code>.
-     *  The portal object for a <code>ScopedMemory</code> must be allocated in the same
-     *  <code>ScopedMemory</code>. Thus the following condition has to evaluate to <code>true</code>
-     *  for the portal to be set: <code>this.equals(MemoryArea.getMemoryArea(object))</code>.
+     *
+     *  @param object The object which will become the portal for <code>this</code>. If null
+     *                the previous portal object remains the portal object for <code>this</code>
+     *                or if there was no previous portal object then there is still no
+     *                portal object for <code>this</code>.
      */
     public void setPortal(Object object) {
-	if  (this.equals(MemoryArea.getMemoryArea(object))) portal = object;
+	if (this.equals(MemoryArea.getMemoryArea(object))) portal = object;
     }
 
-    /** Returns a user-friendly representation of this <code>ScopedMemory</code>. */
+    /** Returns a user-friendly representation of this <code>ScopedMemory</code>.
+     *
+     *  @return The string representation.
+     */
     public String toString() {
 	return "ScopedMemory: " + super.toString();
     }

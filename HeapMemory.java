@@ -24,7 +24,11 @@ public final class HeapMemory extends MemoryArea {
 	heap = true;
     }
 
-    /** Return a pointer to the singleton <code>HeapMemory</code> space. */
+    /** Return a pointer to the singleton instace of <code>HeapMemory</code>
+     *  representing the Java heap.
+     *
+     *  @return The singleton <code>HeapMemory</code> object.
+     */
     public static HeapMemory instance() {
 	if (theHeap == null) { // Bypass static initializer problem.
 	    theHeap = new HeapMemory();
@@ -32,12 +36,18 @@ public final class HeapMemory extends MemoryArea {
 	return theHeap;
     }
     
-    /** Overrides memoryConsumed() from <code>MemoryArea</code> */
+    /** Indicates the amount of memory currently allocated in the Java heap.
+     *
+     *  @return The amount of allocated memory in the Java heap in bytes.
+     */
     public long memoryConsumed() {
 	return memoryConsumed;
     }
 
-    /** Overrides memoryRemaining() from <code>MemoryArea</code> */
+    /** Indicates the free memory remaining in the Java heap.
+     *
+     *  @return The amount of free memory remaining in the Java heap in bytes.
+     */
     public long memoryRemaining() {
 	return (size - memoryConsumed);
     }

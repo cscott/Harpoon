@@ -14,8 +14,10 @@ public final class SizeEstimator {
 
     public SizeEstimator() {}
 
-    /** Returns an estimate of the number of bytes needed to store
+    /** Gets an estimate of the number of bytes needed to store
      *  all the objects reserved.
+     *
+     *  @return The estimate size in bytes.
      */
     public long getEstimate() {
 	return estimate;
@@ -23,6 +25,9 @@ public final class SizeEstimator {
 
     /** Take into account additional <code>n</code> instances of <code>Class c</code>
      *  when estimating the size of the <code>MemoryArea</code>.
+     *
+     *  @param c The class to take into account.
+     *  @param n The number of instances of <code>c</code> to estimate.
      */
     public void reserve(Class c, int n) {
 	estimate += n * objSize(c);
@@ -30,13 +35,18 @@ public final class SizeEstimator {
 
     /** Take into account an additional instance of <code>SizeEstimator s</code>
      *  when estimating the size of the <code>MemoryArea</code>.
+     *
+     *  @param size The given instance of <code>SizeEstimator</code>.
      */
-    public void reserve(SizeEstimator s) {
-	estimate += s.estimate;
+    public void reserve(SizeEstimator size) {
+	estimate += size.estimate;
     }
 
-    /** Take into account additional <code>n</code> instances of <code>SizeEstimator s</code>
+    /** Take into account additional <code>n</code> instances of <code>SizeEstimator size</code>
      *  when estimating the size of the <code>MemoryArea</code>.
+     *
+     *  @param size The given instance of <code>SizeEstimator</code>.
+     *  @param n The number of instances of <code>size</code> to estimate.
      */
     public void reserve(SizeEstimator s, int n) {
 	estimate += n * s.estimate;

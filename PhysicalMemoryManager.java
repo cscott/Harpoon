@@ -39,8 +39,11 @@ public final class PhysicalMemoryManager {
 
     public PhysicalMemoryManager() {}
 
-    /** Query the system about the removability of the specified range
+    /** Queries the system about the removability of the specified range
      *  of memory.
+     *
+     *  @param base The starting address in physical memory.
+     *  @param size The size of the memory area.
      */
     public static boolean isRemovable(long address, long size) {
 	// TODO
@@ -48,10 +51,14 @@ public final class PhysicalMemoryManager {
 	return false;
     }
 
-    /** Query the system about the removed state of the specified range
+    /** Queries the system about the removed state of the specified range
      *  of memory. This method is used for devices that lien in the
      *  memory address space and can be removed while the system is
      *  running (such as PC cards).
+     *
+     *  @param base The starting address in physical memory.
+     *  @param size The size of the memory area.
+     *  @return True, if any part of the specified range is currently not usable.
      */
     public static boolean isRemoved(long address, long size) {
 	// TODO
@@ -59,16 +66,32 @@ public final class PhysicalMemoryManager {
 	return false;
     }
 
-    /** Register the specified <code>AsyncEventHandler</code> to run
-     *  when any memory in the range is added to the system.
+    /** Register the specified <code>AsyncEventHandler</code> to run when any
+     *  memory in the range is added to the system. If the specified range of
+     *  physical memory contains multiple different types of removable memory,
+     *  the <code>AsyncEventHandler</code> will be registered with any one of
+     *  them. If the size or the base is less than zero, unregister all "remove"
+     *  references to the handler.
+     *
+     *  @param base The starting address in physical memory.
+     *  @param size The size of the memory area.
+     *  @param aeh The handler to register.
      */
     public static void onInsertion(long base, long size,
 				   AsyncEventHandler aeh) {
 	// TODO
     }
 
-    /** Register the specified <code>AsyncEventHandler</code> to run
-     *  when any memory in the range is removed from the system.
+    /** Register the specified <code>AsyncEventHandler</code> to run when any
+     *  memory in the range is removed from the system. If the specified range
+     *  of physical memory contains multiple different types of removable memory,
+     *  the <code>aeh</code> will be registered with any one of them. If the size
+     *  or the base is less than zero, remove all "remove" references to the
+     *  handler parameter.
+     *
+     *  @param base The starting address in physical memory.
+     *  @param size The size of the memory area.
+     *  @param aeh The handler to register.
      */
     public static void onRemoval(long base, long size,
 				 AsyncEventHandler aeh)
@@ -76,7 +99,18 @@ public final class PhysicalMemoryManager {
 	// TODO
     }
 
-    /** Register a memory type filter with the physical memory manager. */
+    /** Register a memory type filter with the physical memory manager.
+     *
+     *  @param name The type of memory handled by this filter.
+     *  @param filter The filter object
+     *  @throws DuplicateFilterException A filter for this type of memory already exists.
+     *  @throws java.lang.RuntimeException The system is configured for a bounded number
+     *                                     of filters. This filter exceeds the bound.
+     *  @throws java.lang.IllegalArgumentException The name parameter must not be an
+     *                                             array of objects.
+     *  @throws java.lang.IllegalArgumentException The name and filter must both be in
+     *                                             immortal memory.
+     */
     public static final void registerFilter(Object name,
 					    PhysicalMemoryTypeFilter filter)
 	throws DuplicateFilterException, IllegalArgumentException {
