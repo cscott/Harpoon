@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.176 2001-11-12 02:55:13 kkz Exp $
+ * @version $Id: SAMain.java,v 1.1.2.177 2001-11-13 23:21:29 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -635,10 +635,24 @@ public class SAMain extends harpoon.IR.Registration {
 		
 		try {
 		    String filename = frame.getRuntime().getNameMap().mangle(hclass);
-		    out = new PrintWriter
-			(new BufferedWriter
-			 (new FileWriter
-			  (new File(ASSEM_DIR, filename + filesuffix))));
+		    java.io.Writer w;
+		    try {
+			w = new FileWriter
+			    (new File(ASSEM_DIR, filename+filesuffix));
+		    } catch (java.io.FileNotFoundException ffe) {
+			// filename too long?  try shorter, unique, name.
+			// XXX: sun's doc for File.createTempFile() states
+			// "If the prefix is too long then it will be
+			// truncated" but it is actually not.  We must
+			// truncate it ourselves, for now.  200-chars?
+			if (filename.length()>200)
+			    filename=filename.substring(0, 200);
+			w = new FileWriter
+			    (File.createTempFile(filename, filesuffix,
+						 ASSEM_DIR));
+		    }
+		    out = new PrintWriter(new BufferedWriter(w));
+
 		    if (BACKEND==PRECISEC_BACKEND)
 			out = new harpoon.Backend.PreciseC.TreeToC(out);
 		    
@@ -665,7 +679,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    out.close();
 		} catch (IOException e) {
 		    System.err.println("Error outputting class "+
-				       hclass.getName());
+				       hclass.getName()+": "+e);
 		    System.exit(1);
 		}
 	    }
