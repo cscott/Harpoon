@@ -88,7 +88,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.9 2003-10-31 03:52:20 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.10 2003-11-02 16:52:13 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -399,7 +399,9 @@ public class SyncTransformer
 	q.accept(tw);
 	// done, recurse.
 	ListList handlers = tw.handlers; // save this value.
-	for (int i=0; i<nxt.length; i++, tw.handlers=handlers/*restore*/)
+	int skipped_nested = tw.skipped_nested;
+	for (int i=0; i<nxt.length; // restore
+	     i++, tw.handlers=handlers, tw.skipped_nested=skipped_nested)
 	    tweak(dt, (Quad) nxt[i], tw);
     }
     static class ListList<T> {
