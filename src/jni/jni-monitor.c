@@ -75,7 +75,7 @@ void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime){
 
  error:
   ex = (*env)->FindClass(env, "java/lang/IllegalMonitorStateException");
-  if ((*env)->ExceptionOccurred) return;
+  if ((*env)->ExceptionOccurred(env)) return;
   (*env)->ThrowNew(env, ex, "wait() called but we don't have the lock");
   return;
 }
@@ -94,7 +94,7 @@ void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall) {
 
  error:
   ex = (*env)->FindClass(env, "java/lang/IllegalMonitorStateException");
-  if ((*env)->ExceptionOccurred) return;
+  if ((*env)->ExceptionOccurred(env)) return;
   (*env)->ThrowNew(env, ex, "notify() called but we don't have the lock");
   return;
 }
