@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.13 2003-06-02 03:30:58 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.14 2003-06-02 03:55:11 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TO DO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -109,6 +109,37 @@ This talk is about size optimizations for Java programs.  Our goal is
 to reduce the amount of memory used by object-oriented programs (in
 this case, Java) by using static whole-program analyses to identify
 opportunities and applying transformations to effect the reduction.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{8}{
+\begin{slide}{Why space optimizations?}
+\begin{itemize}
+ \FromSlide{2}
+ \item Embedded applications:
+ \FromSlide{3}
+ \begin{itemize}
+  \item Better use of {\yellow existing fixed memory resources}.
+  \FromSlide{4}
+  \item \bp{\yellow Reduce memory costs} of new devices.
+ \end{itemize}
+ \FromSlide{5}
+ \item Performace:
+ \FromSlide{6}
+ \begin{itemize}
+  \item ``{\yellow Memory wall}'' getting higher.
+  \FromSlide{7}
+  \item Space optimizations increase the {\yellow effective cache size},
+  improving performance.
+  \FromSlide{8}
+  \item Added {\yellow ALU ops} getting comparatively {\yellow cheaper}.
+ \end{itemize}
+\end{itemize}
+\end{slide}
+}
+
+\begin{talknotes}
+XXX: write me.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -292,7 +323,6 @@ powerful bitwidth analysis.
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Bitwidth analysis domains}
-
 \begin{itemize}
 \item $\mathcal{C}:\mathbb{Z}$, incomparable integers
 \begin{itemize}\yellow
@@ -403,14 +433,51 @@ shows through in our rules for logical-AND; let's look at this more closely.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\begin{slide}{Analysis}
+\begin{slide}{Intraprocedural bitwidth analysis}
+\begin{itemize}
+\item $\mathcal{E}$, CFG edges
+\item $\mathcal{V}$, (SSI form) variables
+\item Analysis discovers:
+\begin{itemize}
+\item $e:\mathcal{E}\to\text{bool}$
+\item $\func{val}:\mathcal{V}\to\mathcal{L}$
+\end{itemize}
+\end{itemize}
 \end{slide}
 
 \begin{talknotes}
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\begin{slide}{SSI?}
+\begin{slide}{SSI form}
+Allows us to discover facts about \texttt{i} at points \textit{A} and
+\textit{B}:
+\begin{mysamplecode}
+if (i<50) \{\\
+\>\ldots \it// A\\
+\} else \{\\
+\>\ldots \it// B\\
+\}\\
+\end{mysamplecode}
+\end{slide}
+
+\begin{talknotes}
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Interprocedural analysis}
+We use a field-based interprocedural analysis.
+\begin{itemize}
+\item $\mathcal{E}$, CFG edges
+\item $\mathcal{V}$, (SSI form) variables
+\item $\mathcal{F}$, fields in the program
+\item Analysis discovers:
+\begin{itemize}
+\item $e:\mathcal{E}\to\text{bool}$
+\item $\func{val}:(\mathcal{V}+\mathcal{F})\to\mathcal{L}$
+\item $\func{Read}:2^\mathcal{F}$
+\end{itemize}
+\end{itemize}
 \end{slide}
 
 \begin{talknotes}
@@ -779,22 +846,6 @@ the all-ones value $-1$ is included in all negative ranges, the
 largest positive value input could emerge unchanged.  We cannot create
 a larger positive value because the AND operation cannot create ones
 anywhere there is a zero in the input.
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\begin{slide}{An alternative: interval analysis}
-
-\begin{mysamplecode}
-i=0;\\
-while (i<50) \{\\
-\>\ldots\\
-\>i=i+1;\\
-\}\\
-\end{mysamplecode}
-
-\end{slide}
-
-\begin{talknotes}
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -2061,37 +2112,6 @@ This talk:
 \part{The Graveyard Of Unused Slides follows this point.}
 
 \begin{talknotes}
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\overlays{8}{
-\begin{slide}{Why space optimizations?}
-\begin{itemize}
- \FromSlide{2}
- \item Embedded applications:
- \FromSlide{3}
- \begin{itemize}
-  \item Better use of {\yellow existing fixed memory resources}.
-  \FromSlide{4}
-  \item \bp{\yellow Reduce memory costs} of new devices.
- \end{itemize}
- \FromSlide{5}
- \item Performace:
- \FromSlide{6}
- \begin{itemize}
-  \item ``{\yellow Memory wall}'' getting higher.
-  \FromSlide{7}
-  \item Space optimizations increase the {\yellow effective cache size},
-  improving performance.
-  \FromSlide{8}
-  \item Added {\yellow ALU ops} getting comparatively {\yellow cheaper}.
- \end{itemize}
-\end{itemize}
-\end{slide}
-}
-
-\begin{talknotes}
-XXX: write me.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
