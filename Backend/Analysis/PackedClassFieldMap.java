@@ -26,7 +26,7 @@ import java.util.Map;
  * space required by objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PackedClassFieldMap.java,v 1.3.2.1 2002-02-27 08:34:01 cananian Exp $
+ * @version $Id: PackedClassFieldMap.java,v 1.3.2.2 2002-03-11 14:26:20 cananian Exp $
  */
 public abstract class PackedClassFieldMap extends FieldMap {
     /** Creates a <code>PackedClassFieldMap</code>. */
@@ -37,31 +37,30 @@ public abstract class PackedClassFieldMap extends FieldMap {
 	assert !hf.isStatic();
 	if (!fieldcache.containsKey(hf)) do_one(hf.getDeclaringClass());
 	assert fieldcache.containsKey(hf);
-	return ((Integer) fieldcache.get(hf)).intValue();
+	return fieldcache.get(hf).intValue();
     }
     /** Return an unmodifiable List over all appropriate fields in the given
      *  class, in order from smallest to largest offset. */
-    public List fieldList(HClass hc) {
+    public List<HField> fieldList(HClass hc) {
 	// get list of all fields in this class and its parents.
-	List l = new ArrayList();
+	List<HField> l = new ArrayList<HField>();
 	for (HClass p = hc; p!=null; p=p.getSuperclass())
 	    l.addAll(Arrays.asList(p.getDeclaredFields()));
 	// weed out static fields
-	for (Iterator it=l.iterator(); it.hasNext(); )
-	    if (((HField)it.next()).isStatic())
+	for (Iterator<HField> it=l.iterator(); it.hasNext(); )
+	    if (it.next().isStatic())
 		it.remove();
 	// now sort by fieldOffset.
-	Collections.sort(l, new Comparator() {
-	    public int compare(Object o1, Object o2) {
-		HField hf1=(HField)o1, hf2=(HField)o2;
+	Collections.sort(l, new Comparator<HField>() {
+	    public int compare(HField hf1, HField hf2) {
 		return fieldOffset(hf1) - fieldOffset(hf2);
 	    }
 	});
 	// quick verification of well-formedness
 	// (offsets must be strictly increasing)
 	int last=-1;
-	for (Iterator it=l.iterator(); it.hasNext(); ) {
-	    int off=fieldOffset((HField)it.next());
+	for (Iterator<HField> it=l.iterator(); it.hasNext(); ) {
+	    int off=fieldOffset(it.next());
 	    assert last<off : "Ill-formed field list";
 	    last = off;
 	}
@@ -75,18 +74,19 @@ public abstract class PackedClassFieldMap extends FieldMap {
     private void do_one(HClass hc) {
 	assert hc!=null;
 	// get the 'free space' structure of the parent.
-	List free=new LinkedList(Arrays.asList(freespace(hc.getSuperclass())));
+	List<Interval> free = new LinkedList<Interval>
+	    (Arrays.asList(freespace(hc.getSuperclass())));
 	// get all the fields of this class that we have to allocate.
-	List l = new ArrayList(Arrays.asList(hc.getDeclaredFields()));
+	List<HField> l =
+	    new ArrayList<HField>(Arrays.asList(hc.getDeclaredFields()));
 	// weed out static fields
-	for (Iterator it=l.iterator(); it.hasNext(); )
-	    if (((HField)it.next()).isStatic())
+	for (Iterator<HField> it=l.iterator(); it.hasNext(); )
+	    if (it.next().isStatic())
 		it.remove();
 	// we're going to allocate fields from largest to smallest,
 	// so sort them first. (primarily sort by size, then by alignment)
-	Collections.sort(l, new Comparator() {
-	    public int compare(Object o1, Object o2) {
-		HField hf1=(HField)o1, hf2=(HField)o2;
+	Collections.sort(l, new Comparator<HField>() {
+	    public int compare(HField hf1, HField hf2) {
 		// note reversed comparison here so that largest end up first.
 		int r = fieldSize(hf2) - fieldSize(hf1);
 		if (r==0) r = fieldAlignment(hf2) - fieldAlignment(hf1);
@@ -96,19 +96,19 @@ public abstract class PackedClassFieldMap extends FieldMap {
 	// now allocate them one by one (largest to smallest, like we said)
 	// the alloc_one method has the side effect of adding an entry to
 	// the fieldcache.
-	for (Iterator it=l.iterator(); it.hasNext(); )
-	    alloc_one((HField)it.next(), free);
+	for (Iterator<HField> it=l.iterator(); it.hasNext(); )
+	    alloc_one(it.next(), free);
 	// cache away the free list for the next guy (subclasses of this)
-	freecache.put(hc, (Interval[])free.toArray(new Interval[free.size()]));
+	freecache.put(hc, free.toArray(new Interval[free.size()]));
 	// done!
     }
     /** this method tries to allocate the field hf as low in the object
      *  as possible, using the current list of free spaces in the class. */
-    private void alloc_one(HField hf, List free) {
+    private void alloc_one(HField hf, List<Interval> free) {
 	int size = fieldSize(hf), align = fieldAlignment(hf);
 	// go through free list, looking for a place to put this.
-	for (ListIterator li = free.listIterator(); li.hasNext(); ) {
-	    Interval i = (Interval) li.next();
+	for (ListIterator<Interval> li = free.listIterator(); li.hasNext(); ) {
+	    Interval i = li.next();
 	    assert i.low < i.high; // validity of interval.
 	    // l and h will be the boundaries of the field, if we put it
 	    // in this interval.
@@ -133,7 +133,8 @@ public abstract class PackedClassFieldMap extends FieldMap {
 	throw new Error("Should never get here!");
     }
     /** maps fields to already-computed offsets */
-    private final Map fieldcache = new HashMap();
+    private final Map<HField,Integer> fieldcache =
+	new HashMap<HField,Integer>();
 
     /** this method returns the cached 'free space' list for class hc.
      *  if the free space list for hc has not already been created and
@@ -146,10 +147,11 @@ public abstract class PackedClassFieldMap extends FieldMap {
 	    return new Interval[] { new Interval(0, Integer.MAX_VALUE) };
 	if (!freecache.containsKey(hc)) do_one(hc);
 	assert freecache.containsKey(hc);
-	return (Interval[]) freecache.get(hc);
+	return freecache.get(hc);
     }
     /** maps classes to 'free space' lists. */
-    private final Map freecache = new HashMap();
+    private final Map<HClass,Interval[]> freecache =
+	new HashMap<HClass,Interval[]>();
 
     /** This class represents an open interval in the class, which we
      *  may assign a field to (if it fits). */

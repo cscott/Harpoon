@@ -23,7 +23,7 @@ import java.util.NoSuchElementException;
  * Results are cached for efficiency.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFieldMap.java,v 1.3.2.1 2002-02-27 08:33:58 cananian Exp $
+ * @version $Id: ClassFieldMap.java,v 1.3.2.2 2002-03-11 14:26:20 cananian Exp $
  */
 public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
     /** Creates a <code>ClassFieldMap</code>. */
@@ -34,9 +34,10 @@ public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
 	assert hf!=null && !hf.isStatic();
 	if (!cache.containsKey(hf)) {
 	    int offset=0;
-	    for (Iterator it=fieldList(hf.getDeclaringClass()).iterator();
+	    for (Iterator<HField> it =
+		     fieldList(hf.getDeclaringClass()).iterator();
 		 it.hasNext(); ) {
-		HField nexthf = (HField) it.next();
+		HField nexthf = it.next();
 		int align = fieldAlignment(nexthf);
 		assert align>0;
 		if ((offset % align) != 0)
@@ -48,13 +49,13 @@ public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
 	    }
 	}
 	assert cache.containsKey(hf) : hf+" not in fieldList()";
-	return ((Integer)cache.get(hf)).intValue();
+	return cache.get(hf).intValue();
     }
-    private final Map cache = new HashMap();
+    private final Map<HField,Integer> cache = new HashMap<HField,Integer>();
 
     // the meat of this class: return non-static fields in order, from
     // top-most superclass down.
-    public List fieldList(final HClass hc) {
+    public List<HField> fieldList(final HClass hc) {
 	assert hc!=null;
 	// first calculate size of list.
 	int n=0;
@@ -65,10 +66,10 @@ public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
 	}
 	final int size = n;
 	// now make & return list object.
-	return new AbstractSequentialList() {
+	return new AbstractSequentialList<HField>() {
 	    public int size() { return size; }
-	    public ListIterator listIterator(final int index) {
-		return new UnmodifiableListIterator() {
+	    public ListIterator<HField> listIterator(final int index) {
+		return new UnmodifiableListIterator<HField>() {
 		    final HClass[] parents = HClassUtil.parents(hc);
 		    HField[] fields;
 		    int pindex, findex, xindex;
@@ -97,13 +98,13 @@ public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
 			if (forwards) changeDirection();
 			return !done;
 		    }
-		    public Object next() {
+		    public HField next() {
 			if (!forwards) changeDirection();
 			if (done) throw new NoSuchElementException();
 			xindex++;
 			HField hf = fields[findex]; advance(); return hf;
 		    }
-		    public Object previous() {
+		    public HField previous() {
 			if (forwards) changeDirection();
 			if (done) throw new NoSuchElementException();
 			xindex--;

@@ -9,6 +9,7 @@ Util/EnumerationIterator.java
 Util/Grapher.java
 Util/IteratorEnumerator.java
 Util/UnmodifiableIterator.java
+Util/UnmodifiableListIterator.java
 Util/Util.java
 Util/Worklist.java
 Util/Collections/AbstractMapEntry.java
@@ -43,7 +44,12 @@ Analysis/Quads/QuadClassHierarchy.java
 Analysis/Realtime/RealtimeRuntime.java
 Analysis/Transactions/AnalysisCheckOracle.java
 Analysis/Transactions/CheckOracle.java
+Backend/Analysis/ClassFieldMap.java
+Backend/Analysis/PackedClassFieldMap.java
+Backend/Analysis/SortedClassFieldMap.java
 Backend/Generic/Runtime.java
+Backend/Maps/FieldMap.java
+Backend/Runtime1/DataClaz.java
 Backend/Runtime1/DataStrings.java
 Backend/Runtime1/Runtime.java
 Backend/Runtime1/TreeBuilder.java
