@@ -66,7 +66,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.45 2000-05-14 23:10:13 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.46 2000-05-15 17:50:21 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -743,11 +743,6 @@ public abstract class PAMain {
 	    mms.addAll(mcg.getTransCallees(mm));
 	}
 
-	// this should analyze everything
-	pa.getIntParIntGraph(mroot);
-	pa.getExtParIntGraph(mroot);
-	pa.threadInteraction(mroot);  
-
 	System.out.println("ROOT META-METHOD: " + mroot);
 	System.out.println("RELEVANT META-METHODs:{");
 	for(Iterator it = mms.iterator(); it.hasNext(); ){
@@ -756,6 +751,15 @@ public abstract class PAMain {
 		System.out.println("  " + mm);
 	}
 	System.out.println("}");
+
+	System.out.println("Analysis of root " + mroot);
+	// this should analyze everything
+	pa.getIntParIntGraph(mroot);
+	System.out.println("getIntParIntGraph finished");
+	pa.getExtParIntGraph(mroot);
+	System.out.println("getExtParIntGraph finished");
+	pa.threadInteraction(mroot);  
+	System.out.println("threadInteraction finished");
 
 	MAInfo mainfo = new MAInfo(pa, hcf, mms, USE_INTER_THREAD);
 	// show the allocation policies

@@ -40,7 +40,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.8 2000-05-14 07:43:23 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.9 2000-05-15 17:50:17 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
     
@@ -123,6 +123,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     // and generate an allocation policy for each one.
     public final void analyze_mm(MetaMethod mm){
 	HMethod hm  = mm.getHMethod();
+
+	System.out.println("MAInfo: Analyzed Meta-Method: " + mm);
+
 	HCode hcode = hcf.convert(hm);
 	ParIntGraph pig = 
 	    USE_INTER_THREAD ? pa.threadInteraction(mm): 

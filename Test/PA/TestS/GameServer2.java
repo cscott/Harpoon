@@ -24,14 +24,16 @@ public class GameServer2 {
 	    GWorker w1= new GWorker(s.accept());
 	    GWorker w2= new GWorker(s.accept());
 
-	    w2.startWith(w1,null);
-	    w1.startWith(w2,"Player 1");
+	    w1.init(w2, "Player 1");
+	    w2.init(w1, null);
+
+	    w1.start();
+	    w2.start();
 	}
     }
 
     static class GWorker extends Thread 
     {
-
 	Socket s;
 	InputStream is;
 	OutputStream os;
@@ -53,12 +55,10 @@ public class GameServer2 {
 	    }
 	}
 
-	public void startWith(GWorker w, String toPrint)
-	{
+	public void init(GWorker w, String toPrint){
 	  if (toPrint!=null)
 	    ps.println(toPrint);
-	  partner= w;
-	  start();
+	  partner = w;
 	}
 
 	public void run()
