@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: sas02.tex,v 1.2 2002-05-10 17:26:20 cananian Exp $
+% $Id: sas02.tex,v 1.3 2002-05-10 22:14:56 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[oribibl]{llncs}
 %\usepackage[section,plain]{algorithm}
@@ -18,8 +18,6 @@
 \newcommand{\meet}{\ensuremath{\sqcap}}
 
 \renewcommand{\floatpagefraction}{0.8}
-\newcommand{\topfigrule}{\vspace*{9.6pt}%
-  \rule{0.88\columnwidth}{0.4pt}\vspace{-10pt} }
 
 \title{Data Size Optimizations for Java Programs}
 
@@ -54,9 +52,9 @@ optimizations.
 We have implemented these techniques in the MIT FLEX compiler
 system and applied them to the programs in the SPECjvm98 
 benchmark suite. Our experimental results show that 
-our combined techniques can significantly reduce the amount
-of memory required to store the objects in our benchmark
-suite.  Some of the optimizations reduce the overall execution time;
+our combined techniques can reduce the maximum live heap size required
+for the programs in our benchmark suite by as much as 40\%.
+Some of the optimizations reduce the overall execution time;
 others may impose modest performance penalties.
 \end{abstract}
 %
@@ -76,7 +74,7 @@ may assign to each field. The compiler then transforms the program
 to reduce the size of the field to the smallest type
 capable of storing that range of values. 
 \item {\bf Constant Field Elimination:} 
-If the bitwidth analysis finds that field always holds
+If the bitwidth analysis finds that a field always holds
 the same constant value, the compiler eliminates the field. 
 It removes each write to the field, and replaces each read
 with the constant value.
@@ -103,8 +101,10 @@ use a field, the compiler eliminates the field.
 \item {\bf Claz Compression:} Our class hierarchy analysis
 computes an upper bound on the number of classes that the
 program may instantiate. Objects in standard 
-Java implementations have a header that contains a pointer
-to the class data (such as the method dispatch table) for that object. 
+Java implementations have a header field, commonly called {\tt claz},
+which contains a pointer
+to the class data for that object,
+such as inheritance information and method dispatch tables.
 Our compiler uses the results of the class
 hierarchy analysis to replace the reference with a smaller
 offset into a table of pointers to the class data. 
@@ -117,10 +117,9 @@ storage.
 All of these transformations reduce the space required to store
 objects, but potentially increase the running time of the program.
 Our experimental results show that, for our set of benchmark
-programs, all of our combined techniques can reduce the peak amount of memory
-required to run the program by as much as 40\% and never reduce the
-running time by more than 60\%.  In many scenarios, a 10\% improvement
-in running time occurs.
+programs, all of our techniques combined can reduce the peak amount of memory
+required to run the program by as much as 40\% and never increase the
+running time by more than 60\%.  In many scenarios, a 10\% speedup occurs.
 
 \subsection{Contributions}
 
@@ -155,7 +154,7 @@ analyses and transformations that our compiler performs.
 %
 \subsection{Field Reduction and Constant Field Elimination}
 %
-Figure~\ref{fig:value} presents the {\tt Value} class, which is 
+Figure~\ref{fig:value} presents the {\tt NValue} class, which is 
 a wrapper around either an {\tt Integer} object or a {\tt Float}
 object. The {\tt type} field indicates which kind of object
 is stored in the {\tt value} field of the class, 
@@ -177,49 +176,37 @@ It also reasons about the semantics of arithmetic operators such
 as {\tt +} and {\tt *} to obtain bounds for the values computed
 by arithmetic expressions. 
 This analysis discovers the following facts about 
-how the program uses this class: 1) the {\tt integerType} 
-field always has the value {\tt 0}, 2) the {\tt floatType} 
-field always has the value {\tt 1}, 3) the {\tt type} 
+how the program uses this class: a) the {\tt integerType} 
+field always has the value {\tt 0}, b) the {\tt floatType} 
+field always has the value {\tt 1}, c) the {\tt type} 
 field always has a value between {\tt 0} and {\tt 1} (inclusive),
-and 4) the {\tt positive} field always has a value between 
+and d) the {\tt positive} field always has a value between 
 {\tt 0} and {\tt 1} (also inclusive).
 
-\begin{figure}
-\begin{samplecode}
-public class Value \{ \\
+\begin{figure}[tp]
+\small\renewcommand{\baselinestretch}{0.5}\begin{samplecode}
+public class NValue \{ \\
 \>int integerType = 0;\\
 \>int floatType = 1;\\
-\>int type;\\
-\>int positive;\\
+\>int type, positive;\\
 \>Object value;\\
 \>void setInteger(Integer i) \{ \\
-\>\>type = integerType;\\
-\>\>value = i;\\
+\>\>type = integerType; value = i;\\
 \>\>if (i.intValue() > 0) positive = 0;\\
 \>\>else positive = 1;\\
 \>\}\\
 \>void setFloat(Float f) \{ \\
-\>\>type = floatType;\\
-\>\>value = f;\\
+\>\>type = floatType; value = f;\\
 \>\>if (f.floatValue() > 0.0) positive = 0;\\
 \>\>else positive = 1;\\
 \>\}\\
 \>void setValue(int t, int p, Object v) \{ \\
-\>\>type = t;\\
+\>\>type = t; value = v;\\
 \>\>positive = p;\\
-\>\>value = v;\\
 \>\}\\
-\}\\
-\\
-public class main \{ \\
-\>public static void main() \{ \\
-\>\>Value v = new Value();\\
-\>\>Integer i = new Integer(5);\\
-\>\>v.setValue(v.integerType, 1, i);\\
-\>\}\\
-\}%\\
+\}
 \end{samplecode}%
-\caption{\label{fig:value} Value Class}
+\caption{\label{fig:value} Code for the {\tt NValue} class.}
 \end{figure}
 
 Our compiler uses this information to remove all occurrences
@@ -234,19 +221,19 @@ of values that can occur. Our byte packing algorithm then
 generates a dense packing of the values, attempting to preserve
 the alignment of the variables if possible. In this case, the
 algorithm can reduce the field sizes by six bytes and the overall
-size of the object by one four-byte word.  If your runtime can support
+size of the object by one four-byte word.  If the runtime can support
 unaligned objects without external fragmentation, we can reduce the
 object size by  the full six bytes.
 
 \subsection{Static Specialization} 
 
-Figure~\ref{fig:string-fields} presents portions of the implementation
+Figure~\ref{fig:string}a presents portions of the implementation
 of the Java {\tt java.lang.String} class. The {\tt value} field in this
 class refers to a character array that holds the characters
 in the string; the {\tt count} field holds the length of the
 string. In some cases, instances of the {\tt String} class
 are derived substrings of other instances 
-(see the {\tt substring} method in Figure~\ref{fig:string-fields}), in
+(see the {\tt substring} method in Figure~\ref{fig:string}a), in
 which case the
 {\tt offset} field provides the offset of the starting 
 point of the string within a shared {\tt value} character array. 
@@ -254,8 +241,10 @@ Note that the {\tt value}, {\tt offset}, and {\tt count}
 fields are all initialized when the string is constructed
 and do not change during the lifetime of the string.
 
-\begin{figure}%[tp]
-\begin{samplecode}
+\begin{figure}[tp]
+\renewcommand{\baselinestretch}{0.5}%
+\begin{tabular}{p{6cm}p{6cm}}%
+\small\tt\renewcommand{\>}{~}\begin{tabular}[t]{l}%
 public final class String \{\\
 \>private final char value[];\\
 \>private final int offset;\\
@@ -264,15 +253,39 @@ public final class String \{\\
 \>public char charAt(int i) \{\\
 \>\>return value[offset+i];\\
 \>\}\\
-\>public String substring(int start) \{\\
+\>public String substring(int start)\\
+\>\{\\
 \>\>int noff = offset + start;\\
 \>\>int ncnt = count - start;\\
-\>\>return new String(noff, ncnt, value);\\
+\>\>return new String\\
+\>\>~~~~~~(noff, ncnt, value);\\
 \>\}\\
 \}\\
-\end{samplecode}
-\caption{Portions of the {\tt java.lang.String} class.}
-\label{fig:string-fields}
+\end{tabular}%
+\vline&%
+\small\tt\renewcommand{\>}{~}\begin{tabular}[t]{l}%
+public final class SmallString \{\\
+\>private final char value[];\\
+\>private final int count;\\
+\>int getOffset() \{ return 0; \}\\
+\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[getOffset()+i];\\
+\>\}\\
+\}\\
+\\
+public final class BigString\\
+\>\>extends SmallString \{\\
+\>private final int offset;\\
+\>int getOffset() \{ return offset; \}\\
+\}\\
+\end{tabular}%
+\\%
+\centering (a) & \centering (b)
+\end{tabular}
+\caption{(a) Portions of the {\tt java.lang.String} class.
+         (b) Static specialization of {\tt java.lang.String}.}
+\label{fig:string}
 \end{figure}
 
 In practice, most strings are not substrings of other strings. 
@@ -295,7 +308,8 @@ Each of these two new classes implements a {\tt getOffset()} method
 that returns the value of the offset. The {\tt getOffset()} method
 in the {\tt SmallString} class simply returns zero; the {\tt
 getOffset()} method in the {\tt BigString} class returns the 
-value of the offset field. 
+value of the offset field.  Figure~\ref{fig:string}b illustrates
+this transformation.
 
 At every allocation site except the one inside the {\tt substring}
 method, the transformed program allocates a {\tt SmallString} 
@@ -305,30 +319,9 @@ will be zero. If so, it allocates a {\tt SmallString} object;
 if not, it allocates a {\tt BigString} object. This transformation
 therefore eliminates the {\tt offset} field in the majority
 of strings. 
-
-\begin{figure}%[tp]
-\begin{samplecode}
-public final class SmallString \{\\
-\>private final char value[];\\
-\>private final int count;\\
-\>int getOffset() \{ return 0; \}\\
-\>\ldots\\
-\>public char charAt(int i) \{\\
-\>\>return value[getOffset()+i];\\
-\>\}\\
-\}\\
-public final class BigString\\
-\>\>extends SmallString \{\\
-\>private final int offset;\\
-\>int getOffset() \{ return offset; \}\\
-\}\\
-\end{samplecode}
-\caption{Static specialization of {\tt java.lang.String}.}
-\label{fig:big-small}
-\end{figure}
-
-\begin{figure}%[tp]
-\begin{samplecode}
+%
+\begin{figure}[tp]
+\small\renewcommand{\baselinestretch}{0.5}\begin{samplecode}
 public SmallString substring(int start) \{\\
 \>int noff = offset + start;\\
 \>int ncnt = count - start;\\
@@ -411,9 +404,13 @@ externalization}. This variant allocates all objects
 without the hash code and lock information fields in the header,
 then lazily creates the fields when necessary. 
 Specifically, if the program ever uses the hash code or lock information, 
-the generated code generates the hash code or lock information
+the generated code creates the hash code or lock information
 for the object, then stores this information in a hash table
-that maps objects to their hash code or lock information. 
+that maps objects to their hash code or lock information.%
+\footnote{A pointer to the object is used as the hashtable key when
+  field externalization is done.  The garbage-collector is responsible
+  for updating the field entries if it moves objects, by rehashing on
+  the new key.}
 
 Note that, in general, this transformation (as well as field
 externalization) may actually increase space usage. But in
@@ -483,34 +480,43 @@ bitwidth of each individually.
 
 \subsubsection{Value Lattice}
 First consider extending the basic three level value lattice of Wegman and
-Zadeck (Figure~\ref{fig:wzlat}) to allow the classification of
+Zadeck (Figure~\ref{fig:wzlat}a) to allow the classification of
 negative, positive, or zero
-values, as illustrated in Figure~\ref{fig:scclat6}.
-A join on two negative numbers yields the entry \code{(M--)},
+values, as illustrated in Figure~\ref{fig:scclat6}b.
+A join on two negative numbers yields the entry \code{(M\_\_)},
 indicating the set of all negative non-zero numbers; a
-join on a negative and a positive number yields \code{(M-P)}, and so on.
-\begin{figure}
-\centering\renewcommand{\figscale}{0.6}\input{Figures/THlat1b}
-\caption{Wegman and Zadeck's SCC value lattice.}
-\label{fig:wzlat}
-\end{figure}
-\begin{figure}
-\centering\renewcommand{\figscale}{0.6}\input{Figures/THlat6b}
-\caption[An integer lattice for signed integers.]
-{An integer lattice for signed integers. A classification into
+join on a negative and a positive number yields \code{(M\_P)}, and so on.
+\begin{figure}[tp]%
+\begin{center}%
+\parbox[b]{6cm}{\centering%
+\renewcommand{\figscale}{0.4}\input{Figures/THlat1b}\\[.3cm]
+(a)}%
+\parbox[b]{6cm}{\centering%
+\renewcommand{\color}[2][rgb]{}%ignore color commands
+\renewcommand{\figscale}{0.4}\input{Figures/THlat6c}\\
+(b)}%
+\end{center}
+\caption{Dataflow analysis value lattices.
+(a) Wegman and Zadeck's SCC value lattice.
+(b) An integer lattice for signed integers.
+A classification into
 negative (M), positive (P), or zero (Z) is grafted onto the standard
 flat integer constant domain.}
-\label{fig:scclat6}
+\label{fig:wzlat}\label{fig:scclat6}
 \end{figure}
 
-Now substitute integers $m$ and $p$ into the tuples, to represent the
+Now replace the \code{M} and \code{P} in these entries with integers
+$m$ and $p$, representing the
 widths of the absolute value of the negative and positive portion of
-the number.  Merging the constants $\mathbf{2}$ and $\mathbf{4}$ would
+the number.  Eliminate the \code{Z} entry by representing zero as
+$m=p=0$.
+Merging the constants $\mathbf{2}$ and $\mathbf{4}$ would
 result in the lattice
-value \code{(--3)},\footnote{Read this as the tuple \tuple{-,-,3} if you think
-  ``double-negation'' when seeing two dashes in a row.}
-for example, and merging $\mathbf{-4}$ with $\mathbf{4}$ would result in
-\code{(3-3)}.  Some combination rules for arithmetic operations are
+value \tuple{0,3} ($m=0$ and $p=3$),
+for example, and merging $\mathbf{-4}$ with $\mathbf{4}$ would result
+in \tuple{3,3}, because three bits are required to represent
+$\left|\pm 4\right|$.
+Some combination rules for arithmetic operations are
 shown in Figure~\ref{fig:bitrules}.  The rules for simple arithmetic
 operators should be self-evident upon examination (adding two $N$ bit
 integers yields at most an $N+1$-bit integer, for example) although
@@ -518,8 +524,8 @@ care must be taken to ensure that combinations of negative and
 positive integers are handled correctly.  Our implementation contains
 additional rules giving it greater precision for common special cases,
 such as multiplication by
-a one-bit quantity, division by a constant, or bitfield operations on
-positive numbers.
+a one-bit quantity, division by a constant, or (as the figure shows)
+bitfield operations on positive numbers.
 \begin{figure}%[tp]
 \begin{eqnarray*}
 -\tuple{M,P} &=& \tuple{P,M}\\
@@ -534,7 +540,9 @@ positive numbers.
 \end{eqnarray*}%
 \caption{Some combination rules for bit-width analysis.  The \code{Z}
   element indicating whether zero is a possible value has been omitted
-  for clarity.}\label{fig:bitrules}
+  for clarity.  Note that the penultimate entry is a
+  ``special-case'' rule that only applies if the neither of the
+  arguments can be negative.}\label{fig:bitrules}
 \end{figure}
 
 \subsubsection{Treatment of Fields}
@@ -620,16 +628,14 @@ $\mathbf{0}$, which will make it impossible for the field to represent a
 non-zero constant value.  The results of the definite initialization
 analysis are also used to profile mostly-constant fields, as described
 in the next section.
-
-\begin{figure}
-\begin{samplecode}
+%
+\begin{figure}[tp]
+\small\renewcommand{\baselinestretch}{0.5}\begin{samplecode}
 public class A \{\\
 \>int f;\\
 \>A$_1$(\ldots) \{ f = 5; \}\\
-\>A$_2$(\ldots) \{\\
-\>\>// no assignment to f\\
-\>\}\\
-\}\\
+\>A$_2$(\ldots) \{ /* no assignment to f */ \}\\
+\}
 \end{samplecode}
 \caption{Simple example of the definite initialization analysis.
 The field {\tt f} is {\it definitely initialized} if only constructor
@@ -756,9 +762,11 @@ then we can statically specialize on the field at this constructor
 site.  Further, we rule out specialization on any otherwise-suitable
 fields for which there is not at least one callable constructor
 amenable to static specialization.
-
+%
 \begin{figure}
-\centering\renewcommand{\figscale}{0.6}\input{Figures/oopsla-lat}
+\begin{center}
+\renewcommand{\figscale}{0.6}\input{Figures/oopsla-lat}
+\end{center}
 \caption{Lattice for Constructor Classification.}
 \label{fig:cclat}
 \end{figure}
@@ -773,40 +781,15 @@ classification step could yield good results.
 In this section we will talk briefly about some of the practical
 issues arising in an implementation of our space-saving techniques.
 %
-\subsection{Byte-Packing}
-%
-\begin{figure*}
-\centering
-\begin{tabular}{|l|}
-\hline
-Standard packing word-aligns the object and aligns each field to the
-width of its type (4-byte data is 4-byte aligned):\\
-\includegraphics[scale=0.7]{Figures/standardAlignment.eps}\\
-``Byte'' alignment byte-aligns the object and all fields:
-\hfill\raisebox{-1ex}[0pt][0pt]{\parbox[t]{3in}{
-\begin{samplecode}
-class A \{\\
-\>int x;  /* actual width 24 bits */\\
-\>byte y; /* actual width 5 bits */\\
-\>boolean z; /* actual width 1 bit */\\
-\}\\
-\end{samplecode}
-}}\\
-\includegraphics[scale=0.7]{Figures/byteAlignment.eps}\\
-``Bit'' alignment requires no alignment of objects or fields:\\
-\includegraphics[scale=0.7]{Figures/bitAlignment.eps}\\
-\hline
-\end{tabular}
-\caption{An example of different field packing scenarios.  The object
-  header has been omitted for clarity.}
-\label{fig:packing}
-\end{figure*}
+\subsection{Byte Packing}
 %
 A typical Java implementation may waste large amounts of space by
-aligning fields for the most efficient memory access.
-Figure~\ref{fig:packing} illustrates how a class with an integer,
-byte, and boolean field is typically laid out.  Our implementation
-uses byte-packing to reduce the amount of wasted space in the object.
+aligning fields for the most efficient memory access.  Fields are
+often aligned to their widths (a 4-byte field will be placed at an address
+which is an even multiple of 4, for example), and the object as a
+whole is often placed on a double-word boundary. Our implementation
+places object fields at the nearest byte boundary, a strategy we
+call ``byte-packing.''
 It is worth noting that the information provided by our bitwidth
 analysis is sufficient to {\it bit}-pack the fields in the object,
 when space is truely at a premium.  However, our investigation
@@ -820,7 +803,8 @@ alignment while not allowing this to cause the object size to grow.
 Further, there are often {\it forced} alignment constraints on
 (for example) pointers.  Our Java runtime uses a conservative garbage
 collector; its efficiency decreases markedly if pointers are not
-word-aligned.
+word-aligned.\footnote{This means that objects have to be word-aligned
+  as well.}
 
 We have developed a simple byte-packing heuristic that achieves
 tight packing of fields while respecting forced alignments.  Packing
@@ -847,7 +831,8 @@ unaligned, we try again to allocate fields on their preferred
 boundaries.
 
 This heuristic strategy has been observed to work well in practice,
-and the penalties for occasionally placing an unaligned field have not
+and the penalties for occasionally placing an unaligned non-pointer
+field have not
 been observed to have a material adverse effect on performance (see
 Section~\ref{sec:byte-pack}). 
 
@@ -932,13 +917,36 @@ These versions enabled us to calculate the amount by which each
 technique reduced the size of the live heap data.
 
 \begin{figure}
-\includegraphics[scale=0.32,clip=true]{Figures/oopsla-ttllive.eps}
-\caption{Reduction in the maximum live heap achieved with our
-  transformations.}
-\label{fig:live-heap}
+\begin{center}
+\parbox[b]{6cm}{\centering%
+\includegraphics[width=5.8cm,clip=true]{Figures/sas-ttllive.eps}\\
+(a) Reduction in the maximum live heap achieved with our transformations.
+\\~}%
+\parbox[b]{6cm}{\centering%
+\includegraphics[width=5.8cm,clip=true]{Figures/sas-ttlalloc.eps}\\
+(b) Cumulative reduction in dynamic allocation achieved with
+    our transformations.
+}%
+\\[.3cm]
+\parbox[b]{6cm}{\centering%
+\includegraphics[width=5.8cm,clip=true]{Figures/sas-objalloc.eps}\\
+(c) Reduction in non-array dynamic allocation achieved with
+    our transformations.
+\\~}%
+\parbox[b]{6cm}{\centering%
+\includegraphics[width=5.8cm,clip=true]{Figures/sas-objarrptr.eps}\\
+(d) Pre-transformation allocation breakdown between arrays and objects,
+with allocations attributable to fields of pointer type split out.}%
+\\[.3cm]
+\parbox[b]{6cm}{\centering%
+\includegraphics[width=5.8cm,clip=true]{Figures/oopsla-speed.eps}\\
+(e) Runtime performance of space optimizations.}%
+\end{center}
+\caption{Experimental results of space optimization transformations.}
+\label{fig:results}
 \end{figure}
 %
-Figure~\ref{fig:live-heap} presents the total space savings numbers. This
+Figure~\ref{fig:results}a presents the total space savings numbers. This
 figure contains a bar for each application, with the bar broken
 down into categories that indicate the percentage of live data from 
 the original unoptimized execution that we were able to eliminate
@@ -961,27 +969,20 @@ We also used an instrumented executable to determine the total amount
 of memory allocated during the entire execution of the program, in
 both the optimized and unoptimized versions.  Reducing this total
 allocation reduces the load on the garbage collector.
-Figure~\ref{fig:total-alloc} presents the space savings according to this
+Figure~\ref{fig:results}b presents the space savings according to this
 metric.  By comparing to the previous figure, you will notice that
 long-lived objects apparently provide us with more opportunities to
 optimize.
-%
-\begin{figure}
-\includegraphics[scale=0.32,clip=true]{Figures/oopsla-ttlalloc.eps}
-\caption{Cumulative reduction in dynamic allocation achieved with
-  our transformations.}
-\label{fig:total-alloc}
-\end{figure}
 %
 \subsection{Objects Versus Arrays}
 %
 The majority of our optimizations are designed to optimize
 object fields rather than arrays. For context, we present numbers 
 that characterize the reductions in total allocation for objects only,
-rather than for both objects and arrays. Figure~\ref{fig:non-array}
+rather than for both objects and arrays. Figure~\ref{fig:results}c
 presents space savings numbers for objects alone, omitting
 any storage required for arrays.  The difference is explained by
-Figure~\ref{fig:object-array-pointer}, which shows how the total
+Figure~\ref{fig:results}d, which shows how the total
 program allocation for each benchmark is broken down into array and
 object allocations.  The space required for pointer fields, which our
 integer bitwidth analysis can not optimize, are further broken out of
@@ -992,24 +993,11 @@ allocates so much less memory than the other benchmarks that its bar
 is barely visible.  Arrays account for 79\% of {\tt mpegaudio}'s total
 allocations.
 %
-\begin{figure}
-\includegraphics[scale=0.32,clip=true]{Figures/oopsla-objalloc.eps}
-\caption{Reduction in non-array dynamic allocation achieved with
-  our transformations.}
-\label{fig:non-array}
-\end{figure}
-%
-\begin{figure}
-\includegraphics[scale=0.32,clip=true]{Figures/spec-space.eps}
-\caption{Total allocation in spec benchmarks.}
-\label{fig:object-array-pointer}
-\end{figure}
-%
 \subsection{Execution Times} 
 \label{sec:byte-pack}
 %
 We next evaluate the execution time impact of applying our space
-optimizations. Figure~\ref{fig:performance} presents the normalized execution 
+optimizations. Figure~\ref{fig:results}e presents the normalized execution 
 times of each application after the application of our sequence
 of optimizations. These numbers show that the first several
 optimizations (claz compression, field reduction, and byte packing)
@@ -1023,12 +1011,6 @@ would improve its performance.  Field externalization (including
 hash/lock externalization) causes the expected penalty for hashtable
 lookup; note that synchronization elimination would greatly reduce the
 cost of hash/lock externalization.
-%
-\begin{figure}
-\includegraphics[scale=0.32,clip=true]{Figures/oopsla-speed.eps}
-\caption{Runtime performance of space optimizations.}
-\label{fig:performance}
-\end{figure}
 %
 %%% distribution of mostly-N fields?
 %
@@ -1068,12 +1050,12 @@ languages~\cite{ananian:siliconc,RR00:PLDI00,SBA00:PLDI00,BGSW00}.
 Dieckmann and Hoelzle have performed an in-depth analysis of the
 memory allocation behavior of Java programs~\cite{DH99}. Although 
 space is not their primary focus, their study does quantify 
-the space overhead associated the use of a two-word header
+the space overhead associated with the use of a two-word header
 and of 8-byte alignment. In general, our measurements of the 
 memory system behavior of Java programs broadly agree with their
 measurements. 
 
-Sweeny and Tip \cite{SweeneyTip98DeadDataMembers} did a study of dead
+Sweeney and Tip \cite{SweeneyTip98DeadDataMembers} did a study of dead
 members of C++ programs, which is similar to the unread field
 elimination done by our bitwidth analysis.  However, they
 fail to identify {\it constant} members, which our SCC-based algorithm
