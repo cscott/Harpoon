@@ -58,12 +58,12 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.86 2000-06-23 08:17:46 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.87 2000-06-23 08:44:59 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
     private static boolean TIME = false;
-    private static boolean VERIFY = true;
+    private static boolean VERIFY = false;
 
     private static boolean SPILL_INFO = false;
     private static boolean COALESCE_MOVES = true;
