@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.45 1998-09-04 07:35:07 cananian Exp $
+ * @version $Id: Translate.java,v 1.46 1998-09-04 07:38:08 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -420,8 +420,7 @@ class Translate  { // not public.
 	    Quad q0= new AGET(in, ns.stack[0], Tobj, Tindex);
 	    // bounds check
 	    r = transBoundsCheck(Tobj, Tindex, Tnull, Tzero,
-				 q0, in, s, handlers, 
-				 ts.header, ts.which_succ);
+				 q0, handlers, ts);
 	    q = ts.header.next()[ts.which_succ];
 	    last = q0;
 	    // done.
@@ -454,8 +453,7 @@ class Translate  { // not public.
 	    Quad q0= new ASET(in, Tobj, Tindex, Tsrc);
 	    // bounds check
 	    r = transBoundsCheck(Tobj, Tindex, Tnull, Tzero,
-				 q0, in, s, handlers, 
-				 ts.header, ts.which_succ);
+				 q0, handlers, ts);
 	    q = ts.header.next()[ts.which_succ];
 	    last = q0;
 	    // done.
@@ -1330,9 +1328,8 @@ class Translate  { // not public.
     }
     static final TransState[] transBoundsCheck(Temp Tobj, Temp Tindex,
 					       Temp Tnull, Temp Tzero,
-					       Quad q, Instr in, State s,
-					       MergeMap handlers,
-					       Quad header, int which_succ) {
+					       Quad q, MergeMap handlers,
+					       TransState ts) {
 	// if (obj==null) throw new NullPointerException();
 	// if (0<=index && index<obj.length) do(q); /* actual operation */
 	// else throw new ArrayIndexOutOfBoundsException();
@@ -1341,31 +1338,32 @@ class Translate  { // not public.
 	HClass HCoob  = HClass.forClass(ArrayIndexOutOfBoundsException.class);
 	Temp Tex   = new Temp();
 
-	Quad q0= new OPER(in, "acmpeq", new Temp(),
+	Quad q0= new OPER(ts.in, "acmpeq", new Temp(),
 			  new Temp[] { Tobj, Tnull });
-	Quad q1= new CJMP(in, q0.def()[0]);
+	Quad q1= new CJMP(ts.in, q0.def()[0]);
 	Quad q2 = transNewException(HCnull, new Temp(), Tnull,
-				    in, q1, 1);
+				    ts.in, q1, 1);
 	// array bounds check.
-	Quad q3 = new OPER(in, "icmpge", new Temp(),
+	Quad q3 = new OPER(ts.in, "icmpge", new Temp(),
 			   new Temp[] { Tindex, Tzero });
-	Quad q4 = new CJMP(in, q3.def()[0]);
-	Quad q5 = new ALENGTH(in, new Temp("$len"), Tobj);
-	Quad q6 = new OPER(in, "icmpgt", new Temp(),
+	Quad q4 = new CJMP(ts.in, q3.def()[0]);
+	Quad q5 = new ALENGTH(ts.in, new Temp("$len"), Tobj);
+	Quad q6 = new OPER(ts.in, "icmpgt", new Temp(),
 			   new Temp[] { q5.def()[0], Tindex });
-	Quad q7 = new CJMP(in, q6.def()[0]);
-	Quad q8 = new PHI(in, new Temp[0], 2);
+	Quad q7 = new CJMP(ts.in, q6.def()[0]);
+	Quad q8 = new PHI(ts.in, new Temp[0], 2);
 	Quad q9 = transNewException(HCoob, new Temp(), Tnull,
-				    in, q8, 0);
+				    ts.in, q8, 0);
 	// throw exception if necessary.
-	Quad q10= new PHI(in,
+	Quad q10= new PHI(ts.in,
 			  new Temp[] { Tex },
 			  new Temp[][]{new Temp[]{ q2.def()[0],
 						   q9.def()[0] }}, 2);
-	TransState[] r = transThrow(new TransState(s.push(Tex), in, q10, 0),
+	TransState[] r = transThrow(new TransState(ts.initialState.push(Tex), 
+						   ts.in, q10, 0),
 				    handlers, Tnull, false);
 	// link.
-	Quad.addEdge(header, which_succ, q0, 0);
+	Quad.addEdge(ts.header, ts.which_succ, q0, 0);
 	Quad.addEdge(q0, 0, q1, 0);
 	Quad.addEdge(q1, 0, q3, 0);
 	Quad.addEdge(q2, 0, q10,0);
