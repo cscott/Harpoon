@@ -11,6 +11,7 @@
 
 #include <assert.h>
 #include <string.h> /* strlen, strcpy */
+#include <strings.h> /* rindex */
 #include "../java.lang.reflect/reflect-util.h" /* REFLECT_* */
 
 /* prototypes */
@@ -276,6 +277,19 @@ jboolean _fni_class_isAptMember
   /* filter out <clinit> if type!=FIELDS */
   if ((type!=FIELDS) && strcmp(mptr->m.name, "<clinit>")==0)
     return JNI_FALSE;
+#ifdef WITH_INIT_CHECK
+  if (type!=FIELDS) {
+    extern int initDone;
+    /* isInitCheck is true iff the name ends with "$$initcheck" */
+    char *substr = rindex(mptr->m.name, '$');
+    int isInitCheck = (substr!=NULL && substr > mptr->m.name &&
+		       strcmp(substr-1, "$$initcheck")==0);
+    /* filter out $$initcheck methods when we're done initializing;
+     * filter out non-$$initcheck methods when we're still initializing. */
+    if (initDone?isInitCheck:!isInitCheck)
+      return JNI_FALSE;
+  }
+#endif /* WITH_INIT_CHECK */
   /* congratulations! you've run the gauntlet! */
   return JNI_TRUE;
 }

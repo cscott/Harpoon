@@ -67,6 +67,9 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_newInstance_00024_0
   // XXX additionally, with_init_check version should lookup the
   //     $$initcheck version of the constructor, and invoke *that*.
   // otherwise we get a hole in the InitializerTransform. [CSA 15-Jul-2003]
+  // this is happening for gnu.java.security.provider.Gnu, called from
+  // java.security.SecurityManager.<clinit>/loadProviders() [CSA 29-May-2004]
+  // CHANGED isAptMember to suppress non-$$initcheck during init.
   return _newInstance(env, constructorobj, args, JNI_TRUE);
 }
 #endif /* WITH_INIT_CHECK */
