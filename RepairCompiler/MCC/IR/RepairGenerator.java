@@ -630,10 +630,13 @@ public class RepairGenerator {
     private void generate_checks() {
 
         /* do constraint checks */
-        Vector constraints = state.vConstraints;
+	//        Vector constraints = state.vConstraints;
 
-        for (int i = 0; i < constraints.size(); i++) {
-            Constraint constraint = (Constraint) constraints.elementAt(i); 
+
+	//        for (int i = 0; i < constraints.size(); i++) {
+	//            Constraint constraint = (Constraint) constraints.elementAt(i); 
+	for (Iterator i = termination.constraintdependence.computeOrdering().iterator(); i.hasNext();) {
+	    Constraint constraint = (Constraint) ((GraphNode)i.next()).getOwner();
 	    
             {
 		final SymbolTable st = constraint.getSymbolTable();

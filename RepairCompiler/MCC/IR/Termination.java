@@ -59,6 +59,8 @@ public class Termination {
 
 	abstractinterferes=new AbstractInterferes(this);
 	generateconjunctionnodes();
+	constraintdependence=new ConstraintDependence(state,this);
+
 	generatescopenodes();
 	generaterepairnodes();
 	generatedatastructureupdatenodes();
@@ -67,7 +69,7 @@ public class Termination {
 	generateabstractedges();
 	generatescopeedges();
 	generateupdateedges();
-	constraintdependence=new ConstraintDependence(state,this);
+
 
 	HashSet superset=new HashSet();
 	superset.addAll(conjunctions);
@@ -93,6 +95,8 @@ public class Termination {
 	    System.out.println("Can't generate terminating repair algorithm!");
 	    System.exit(-1);
 	}
+	constraintdependence.traversedependences(this);
+
 	System.out.println("Removing:");
 	for(Iterator it=removedset.iterator();it.hasNext();) {
 	    GraphNode gn=(GraphNode)it.next();
@@ -701,14 +705,15 @@ public class Termination {
 			   Binding binding=new Binding(vd);
 			   bindings.add(binding);*/
 			goodupdate=true;
-		    } else {
+		    } else if (q instanceof SetQuantifier) {
 			/* Create new element to bind to */
 			// search if the set 'set' has a size
-			Binding binding=new Binding(vd,set,exactsize.getsize(set)!=-1);
+			Binding binding=new Binding(vd,set,exactsize.getsize(set)==1);
 			bindings.add(binding);
 			goodupdate=true;
 
-		    }
+		    } else
+			goodupdate=false;
 	    } else if (q instanceof RelationQuantifier) {
 		RelationQuantifier rq=(RelationQuantifier)q;
 		for(int k=0;k<2;k++) {
@@ -831,7 +836,7 @@ public class Termination {
 		    TermNode tn=new TermNode(mun);
 		    GraphNode gn2=new GraphNode("UpdateAdd"+addtocount,tn);
 
-		    if (processquantifers(gn2,un, r)&&
+		    if (processquantifiers(gn2,un, r)&&
 			processconjunction(un,ruleconj)&&
 			un.checkupdates()) {
 			mun.addUpdate(un);
@@ -848,7 +853,7 @@ public class Termination {
     /** Adds updates that add an item to the appropriate set or
      * relation quantified over by the model definition rule.. */
     
-    boolean processquantifers(GraphNode gn,UpdateNode un, Rule r) {
+    boolean processquantifiers(GraphNode gn,UpdateNode un, Rule r) {
 	Inclusion inc=r.getInclusion();
 	for(Iterator iterator=r.quantifiers();iterator.hasNext();) {
 	    Quantifier q=(Quantifier)iterator.next();
@@ -860,7 +865,7 @@ public class Termination {
 		toe.td=ReservedTypeDescriptor.INT;
 		Updates u=new Updates(toe,false);
 		un.addUpdate(u);
-		if (abstractremove.containsKey(rq.relation)) {
+		if (abstractadd.containsKey(rq.relation)) {
 		    GraphNode agn=(GraphNode)abstractadd.get(rq.relation);
 		    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
 		    gn.addEdge(e);
@@ -870,14 +875,18 @@ public class Termination {
 		
 	    } else if (q instanceof SetQuantifier) {
 		SetQuantifier sq=(SetQuantifier)q;
-		if (un.getBinding(sq.var).getType()==Binding.SEARCH)
+		if (un.getBinding(sq.var).getType()==Binding.SEARCH) {
+		    Binding b=un.getBinding(sq.var);
+		    Constraint reqc=exactsize.getConstraint(b.getSet());
+		    constraintdependence.requiresConstraint(gn,reqc);
 		    continue; /* Don't need to ensure addition for search */
+		}
 
 		ElementOfExpr eoe=new ElementOfExpr(new VarExpr(sq.var),sq.set);
 		eoe.td=ReservedTypeDescriptor.INT;
 		Updates u=new Updates(eoe,false);
 		un.addUpdate(u);
-		if (abstractremove.containsKey(sq.set)) {
+		if (abstractadd.containsKey(sq.set)) {
 		    GraphNode agn=(GraphNode)abstractadd.get(sq.set);
 		    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
 		    gn.addEdge(e);

@@ -428,19 +428,25 @@ class UpdateNode {
     private void generate_bindings(CodeWriter cr, String slot0, String slot1) {
 	for(int i=0;i<bindings.size();i++) {
 	    Binding b=(Binding)bindings.get(i);
-	    if (b.getType()!=Binding.POSITION)
-		throw new Error("Only position bindings implemented!");
 
-	    VarDescriptor vd=b.getVar();
-	    switch(b.getPosition()) {
-	    case 0:
-		cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"="+slot0+";");
-		break;
-	    case 1:
-		cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"="+slot1+";");
-		break;
-	    default:
-		throw new Error("Slot >1 doesn't exist.");
+	    if (b.getType()==Binding.SEARCH) {
+		VarDescriptor vd=b.getVar();
+		cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"="+b.getSet().getSafeSymbol()+"->firstkey();");
+	    } else if (b.getType()==Binding.CREATE) {
+		throw new Error("Creation not supported");
+		//		source.generateSourceAlloc(cr,vd,b.getSet());
+	    } else {
+		VarDescriptor vd=b.getVar();
+		switch(b.getPosition()) {
+		case 0:
+		    cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"="+slot0+";");
+		    break;
+		case 1:
+		    cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"="+slot1+";");
+		    break;
+		default:
+		    throw new Error("Slot >1 doesn't exist.");
+		}
 	    }
 	}
     }

@@ -16,7 +16,7 @@ class ExactSize {
     }
     
     public int getsize(SetDescriptor sd) {
-	if (sizemap.contains(sd))
+	if (sizemap.containsKey(sd))
 	    return ((Integer)sizemap.get(sd)).intValue();
 	else
 	    return -1;
@@ -30,6 +30,8 @@ class ExactSize {
 	    SetDescriptor sd=(SetDescriptor)it.next();
 	    for(int i=0;i<state.vConstraints.size();i++) {
 		Constraint c=(Constraint)state.vConstraints.get(i);
+		if (c.numQuantifiers()!=0)
+		    continue;
 		DNFConstraint dconst=c.dnfconstraint;
 		int oldsize=-1;
 		boolean matches=true;
@@ -46,8 +48,10 @@ class ExactSize {
 				    ep.getOp()==Opcode.EQ&&
 				    ep.getDescriptor()==sd&&
 				    ep.isRightInt()) {
-				    if (k==0) {
+				    if (j==0) {
 					oldsize=ep.rightSize();
+					goodmatch=true;
+					break;
 				    } else {
 					if (oldsize==ep.rightSize()) {
 					    goodmatch=true;
@@ -64,6 +68,7 @@ class ExactSize {
 		    }
 		}
 		if (matches) {
+		    System.out.println("Set "+sd.toString()+" has size "+oldsize);
 		    sizemap.put(sd,new Integer(oldsize));
 		    constraintmap.put(sd,c);
 		}

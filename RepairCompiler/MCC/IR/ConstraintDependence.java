@@ -18,10 +18,29 @@ public class ConstraintDependence {
 	constonode=new Hashtable();
 	nodetonode=new Hashtable();
 	constructnodes();
-	constructconjunctionnodes();
-	constructconjunctionedges();
     }
     
+    public Set computeOrdering() {
+	HashSet allnodes=new HashSet();
+	allnodes.addAll(constnodes);
+	allnodes.addAll(nodes);
+	boolean acyclic=GraphNode.DFS.depthFirstSearch(allnodes);
+	if (!acyclic) {
+	    throw new Error("Cylic dependency between constraints.");
+	}
+	TreeSet topologicalsort = new TreeSet(new Comparator() {
+                public boolean equals(Object obj) { return false; }
+                public int compare(Object o1, Object o2) {
+                    GraphNode g1 = (GraphNode) o1;
+                    GraphNode g2 = (GraphNode) o2;
+                    return g1.getFinishingTime() - g2.getFinishingTime();
+                }
+            });
+	
+        topologicalsort.addAll(constnodes);
+	return topologicalsort;
+    }
+
     public void addNode(GraphNode gn) {
 	GraphNode gn2=new GraphNode(gn.getLabel(),gn.getTextLabel(),gn);
 	nodes.add(gn2);
@@ -29,6 +48,9 @@ public class ConstraintDependence {
     }
 
     public void associateWithConstraint(GraphNode gn, Constraint c) {
+	if (!nodetonode.containsKey(gn)) {
+	    addNode(gn);
+	}
 	GraphNode ggn=(GraphNode)nodetonode.get(gn);
 	GraphNode gc=(GraphNode)constonode.get(c);
 	GraphNode.Edge e=new GraphNode.Edge("associated",ggn);
@@ -36,10 +58,47 @@ public class ConstraintDependence {
     }
 
     public void requiresConstraint(GraphNode gn, Constraint c) {
+	if (!nodetonode.containsKey(gn)) {
+	    addNode(gn);
+	}
 	GraphNode ggn=(GraphNode)nodetonode.get(gn);
 	GraphNode gc=(GraphNode)constonode.get(c);
 	GraphNode.Edge e=new GraphNode.Edge("requires",gc);
 	ggn.addEdge(e);
+    }
+
+    public void traversedependences(Termination termination) {
+	constructconjunctionnodes(termination);
+	constructconjunctionedges(termination);
+	Set removedset=termination.removedset;
+
+	for(int i=0;i<state.vConstraints.size();i++) {
+	    Constraint c=(Constraint)state.vConstraints.get(i);
+	    Set conjset=(Set)termination.conjunctionmap.get(c);
+	    HashSet exploredset=new HashSet();
+
+	    for(Iterator it=conjset.iterator();it.hasNext();) {
+		GraphNode gn=(GraphNode)it.next();
+		recursedependence(c,termination,exploredset,gn);
+	    }
+	}
+    }
+
+    void recursedependence(Constraint c,Termination termination, HashSet exploredset, GraphNode gn) {
+	Set removedset=termination.removedset;
+	Set conjunctionset=termination.conjunctions;
+
+	if (removedset.contains(gn))
+	    return;
+	exploredset.add(gn);
+	associateWithConstraint(gn,c);
+	for(Iterator it=gn.edges();it.hasNext();) {
+	    GraphNode.Edge e=(GraphNode.Edge) it.next();
+	    GraphNode gn2=e.getTarget();
+	    if (!(exploredset.contains(gn2)||
+		  conjunctionset.contains(gn2)))
+		recursedependence(c,termination,exploredset,gn2);
+	}
     }
 
     /** Constructs a node for each Constraint */
@@ -52,26 +111,33 @@ public class ConstraintDependence {
   	}
     }
     
-    private void constructconjunctionnodes() {
-	for(Iterator it=termination.conjunctions.iterator();it.hasNext();) {
-	    GraphNode conjnode=(GraphNode)it.next();
-	    TermNode tn=(TermNode)conjnode.getOwner();
-	    Conjunction conj=tn.getConjunction();
-	    addNode(conjnode);
-	}
+    private void constructconjunctionnodes(Termination termination) {
+	/*for(Iterator it=termination.conjunctions.iterator();it.hasNext();) {
+	  GraphNode conjnode=(GraphNode)it.next();
+	  TermNode tn=(TermNode)conjnode.getOwner();
+	  Conjunction conj=tn.getConjunction();
+	  addNode(conjnode);
+	  }*/
+	Set removedset=termination.removedset;
+
 	for(int i=0;i<state.vConstraints.size();i++) {
 	    Constraint c=(Constraint)state.vConstraints.get(i);
 	    Set conjset=(Set)termination.conjunctionmap.get(c);
 	    for(Iterator it=conjset.iterator();it.hasNext();) {
 		GraphNode gn=(GraphNode)it.next();
-		associateWithConstraint(gn,c);
+		if (!removedset.contains(gn))
+		    associateWithConstraint(gn,c);
 	    }
 	}
     }
 
-    private void constructconjunctionedges() {
+    private void constructconjunctionedges(Termination termination) {
+	Set removedset=termination.removedset;
 	for(Iterator it=termination.conjunctions.iterator();it.hasNext();) {
 	    GraphNode conjnode=(GraphNode)it.next();
+	    if (removedset.contains(conjnode))
+		continue;
+	    
 	    TermNode tn=(TermNode)conjnode.getOwner();
 	    Conjunction conj=tn.getConjunction();
 	    for(int i=0;i<conj.size();i++) {
