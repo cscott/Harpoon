@@ -1,4 +1,4 @@
-// InstrumentateAllocs.java, created Tue Nov  7 14:29:16 2000 by root
+// InstrumentAllocs.java, created Tue Nov  7 14:29:16 2000 by root
 // Copyright (C) 2000 root <root@BDEMSKY.MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
@@ -27,12 +27,12 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * <code>InstrumentateAllocs</code>
+ * <code>InstrumentAllocs</code> adds counters to each allocation site.
  * 
  * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: InstrumentateAllocs.java,v 1.1.2.4 2000-11-08 16:38:13 bdemsky Exp $
+ * @version $Id: InstrumentAllocs.java,v 1.1.2.1 2000-11-09 00:50:55 cananian Exp $
  */
-public class InstrumentateAllocs extends MethodMutator implements java.io.Serializable {
+public class InstrumentAllocs extends MethodMutator implements java.io.Serializable {
     HashMap toint;
     HashMap toalloc;
     int count;
@@ -40,8 +40,8 @@ public class InstrumentateAllocs extends MethodMutator implements java.io.Serial
     Linker linker;
     HCodeFactory parenthcf;
     
-    /** Creates a <code>InstrumentateAllocs</code>. */
-    public InstrumentateAllocs(HCodeFactory parent, HMethod main, Linker linker) {
+    /** Creates a <code>InstrumentAllocs</code>. */
+    public InstrumentAllocs(HCodeFactory parent, HMethod main, Linker linker) {
         super(parent);
 	parenthcf=parent;
 	toint=new HashMap();
@@ -71,7 +71,7 @@ public class InstrumentateAllocs extends MethodMutator implements java.io.Serial
     protected HCode mutateHCode(HCodeAndMaps input) {
 	HCode hc=input.hcode();
 	Map ancestor=input.ancestorElementMap();
-	if (!hc.getMethod().getDeclaringClass().getName().equals("harpoon.Runtime.Instrumentate")) {
+	if (!hc.getMethod().getDeclaringClass().getName().equals("harpoon.Runtime.CounterSupport")) {
 	    WorkSet newset=new WorkSet();
 	    Iterator it=hc.getElementsI();
 	    while(it.hasNext()) {
@@ -85,7 +85,7 @@ public class InstrumentateAllocs extends MethodMutator implements java.io.Serial
 		}
 	    }
 	    Iterator setit=newset.iterator();
-	    HMethod method=linker.forName("harpoon.Runtime.Instrumentate").getMethod("count",new HClass[]{HClass.Int});
+	    HMethod method=linker.forName("harpoon.Runtime.CounterSupport").getMethod("count",new HClass[]{HClass.Int});
 
 	    while(setit.hasNext()) {
 		Quad q=(Quad)setit.next();
@@ -112,7 +112,7 @@ public class InstrumentateAllocs extends MethodMutator implements java.io.Serial
 		    exitset.add(q);
 	    }
 	    Iterator setit=exitset.iterator();
-	    HMethod method=linker.forName("harpoon.Runtime.Instrumentate").getMethod("exit",new HClass[0]);
+	    HMethod method=linker.forName("harpoon.Runtime.CounterSupport").getMethod("exit",new HClass[0]);
 
 	    while(setit.hasNext()) {
 		Quad q=(Quad)setit.next();
