@@ -30,7 +30,7 @@ fi
 
 # if PRECISEC_CFLAGS is unset, we'll use '-g -O9'.  Otherwise we'll use
 # whatever you've set PRECISEC_CFLAGS to.  But we'll complain if it's odd.
-export PRECISEC_CFLAGS="${PRECISEC_CFLAGS:='-g -O9'}"
+export PRECISEC_CFLAGS=${PRECISEC_CFLAGS:="-g -O9"}
 if [ -z "$(echo "${PRECISEC_CFLAGS}" | grep '[-]O9' )" ]; then
   echo " "
   echo "****************************************************************"
