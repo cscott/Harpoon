@@ -7,6 +7,7 @@ aclocal
 autoheader
 automake --add-missing
 autoconf
+test -f config.cache && rm -f config.cache
 set +x
 if test -f config.status; then
     sh config.status
