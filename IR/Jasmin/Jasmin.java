@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.23 1999-11-07 09:05:02 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.24 1999-11-09 02:19:18 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -474,9 +474,8 @@ public class Jasmin {
 	}
 
 	public void visit(CJMP q) {
+	    out.println(iflabel(q));
 	    if (!skip.contains(q)) {
-		String target=labeler(q);
-		out.println(iflabel(q));
 		load(q,q.test());
 		out.println("    ifne "+labeler(q.next(1)));
 	    }
@@ -615,10 +614,7 @@ public class Jasmin {
 	    load(q,q.objectref());
 	    out.println("    checkcast "+Util.jasminEscape(q.hclass().getName().replace('.','/')));
 	    TempInfo dest=(TempInfo)tempmap.get(q.objectref());
-	    if (!dest.stack)
-		store(q,q.objectref());
-	    else
-		out.println("    pop");
+	    store(q,q.objectref());
 	    out.println(iflabel2(q));
 	}
 
@@ -1182,6 +1178,657 @@ public class Jasmin {
 	    } 
 	}
     }
+
+
+
+
+
+
+
+
+
+
+
+    class DepthVisitor extends QuadVisitor {
+	Map tempmap;
+	HCode hc;
+	TypeMap tm;
+	UseDef ud;
+	WorkSet skip;
+	CJMPVisitor cjmp;
+	HashMap depth;
+	int max;
+
+	DepthVisitor(Map tempmap, HCode hc, TypeMap tm) {
+	    this.max=0;
+	    this.tempmap=tempmap;
+	    this.hc=hc;
+	    this.tm=tm;
+	    this.skip=new WorkSet();
+	    this.ud=new UseDef();
+	    this.cjmp=new CJMPVisitor();
+	    depth=new HashMap();
+	}
+
+	public void visit(Quad q) {
+	}
+
+	public void visit(AGET q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    depth1+=load(q,q.objectref());
+	    depth1+=load(q,q.index());
+	    maxcheck(depth1);
+	    depth1-=load2(q, q.objectref());
+	    depth1+=load2(q,q.dst());
+	    maxcheck(depth1);
+	    depth1+=store(q,q.dst());
+	    depth.put(q, new Integer(depth1));
+	}
+
+	void maxcheck(int t) {
+	    if (t>max) max=t;
+	}
+
+	public void visit(ALENGTH q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    depth1+=load(q,q.objectref());
+	    maxcheck(depth1);
+	    depth1-=load2(q,q.objectref());
+	    depth1+=1;
+	    maxcheck(depth1);
+	    depth1+=store(q,q.dst());
+	    depth.put(q, new Integer (depth1));
+	}
+
+	public void visit(ANEW q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    for (int i=0;i<q.dimsLength();i++)
+		depth1+=load(q,q.dims(i));
+	    maxcheck(depth1);
+	    depth1+=1;
+	    for (int i=0;i<q.dimsLength();i++)
+		depth1-=load2(q,q.dims(i));
+	    maxcheck(depth1);
+	    depth1+=store(q,q.dst());
+	    depth.put(q, new Integer (depth1));
+	}
+
+	public void visit(ARRAYINIT q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    if (q.value().length>0)
+		depth1+=load(q,q.objectref());
+	    if ((q.type()==HClass.Boolean)||
+		(q.type()==HClass.Int)||
+		(q.type()==HClass.Byte)||
+		(q.type()==HClass.Char)||
+		(q.type()==HClass.Short)||		
+		(q.type()==HClass.Float)||
+		(q.type()==HClass.Boolean)) {
+		    maxcheck(depth1+3);
+		}
+	    else if ((q.type()==HClass.Long)||
+		     (q.type()==HClass.Double)) {
+		maxcheck(depth1+1+1+2);
+	    }
+	    depth1-=load2(q,q.objectref());
+	    depth.put(q, new Integer(depth1));
+	}
+       
+	public void visit(ASET q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+   	    depth1+=load(q,q.objectref());
+	    depth1+=load(q,q.index());
+	    depth1+=load(q,q.src());
+	    maxcheck(depth1);
+	    depth1-=load2(q,q.objectref());
+	    depth1-=load2(q,q.index());
+	    depth1-=load2(q,q.src());
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(COMPONENTOF q) {
+	    //kludge
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    maxcheck(depth1);
+	    depth1+=load(q,q.objectref());
+	    depth1+=load(q,q.arrayref());
+	    depth1-=load2(q,q.objectref());
+	    depth1-=load2(q,q.arrayref());
+	    depth1+=1;
+	    depth1+=store(q,q.dst());
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(METHOD q) {
+	    depth.put(q, new Integer(0));
+	}
+
+	public void visit(HEADER q) {
+	    depth.put(q, new Integer(0));
+	}
+
+	public void visit(PHI q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    maxcheck(depth1);
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(FOOTER q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    maxcheck(depth1);
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(HANDLER q) {
+	    maxcheck(1);
+	    depth.put(q, new Integer(1));
+	}
+
+	public void visit(INSTANCEOF q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    depth1+=load(q,q.src());
+	    maxcheck(depth1);
+	    depth1-=load2(q, q.src());
+	    depth1+=1;
+	    maxcheck(depth1);
+	    depth1+=store(q,q.dst());
+	    depth.put(q, new Integer(depth1));
+	}
+	
+	public void visit(CALL q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+
+	    if (q.isVirtual()&&!q.isInterfaceMethod()) {
+		//virtual method
+		for(int i=0;i<q.params().length;i++) {
+		    depth1+=load(q,q.params(i)); 
+		}
+		maxcheck(depth1);
+		for(int i=0;i<q.params().length;i++) {
+		    depth1-=load2(q,q.params(i)); 
+		}
+		if (q.retval()!=null)
+		    depth1+=load2(q,q.retval());
+		maxcheck(depth1);
+		if (q.retval()!=null)
+		    depth1+=store(q,q.retval());
+		depth.put(q, new Integer(depth1));
+	    } 
+	    else {
+		if (q.isInterfaceMethod()) {
+		    for(int i=0;i<q.params().length;i++) {
+			depth1+=load(q,q.params(i)); 
+		    }
+		    maxcheck(depth1);
+		    for(int i=0;i<q.params().length;i++) {
+			depth1-=load2(q,q.params(i)); 
+		    }
+		    if (q.retval()!=null)
+			depth1+=load2(q,q.retval());
+		    maxcheck(depth1);
+		    if (q.retval()!=null)
+			depth1+=store(q,q.retval());
+		    depth.put(q, new Integer(depth1));
+		}
+		else
+		    if(q.isStatic()) {
+			//static method
+			for(int i=0;i<q.params().length;i++) {
+			    depth1+=load(q,q.params(i)); 
+			}
+			maxcheck(depth1);
+			for(int i=0;i<q.params().length;i++) {
+			    depth1-=load2(q,q.params(i)); 
+			}
+			if (q.retval()!=null)
+			    depth1+=load2(q,q.retval());
+			maxcheck(depth1);
+			if (q.retval()!=null)
+			    depth1+=store(q,q.retval());
+			depth.put(q, new Integer(depth1));
+		    }
+		    else {
+					//non-virtual method
+			for(int i=0;i<q.params().length;i++) {
+			    depth1+=load(q,q.params(i)); 
+			}
+			maxcheck(depth1);
+			for(int i=0;i<q.params().length;i++) {
+			    depth1-=load2(q,q.params(i)); 
+			}
+			if (q.retval()!=null)
+			    depth1+=load2(q,q.retval());
+			maxcheck(depth1);
+			if (q.retval()!=null)
+			    depth1+=store(q,q.retval());
+			depth.put(q, new Integer(depth1));
+		    }
+	    }
+	}
+
+	public void visit(GET q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    if (q.objectref()==null) {
+		//Static
+		maxcheck(depth1);
+	    }
+	    else {
+		depth1+=load(q,q.objectref());
+		maxcheck(depth1);
+		depth1-=load2(q,q.objectref());
+	    }
+	    depth1+=store(q,q.dst());
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(CJMP q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    if (!skip.contains(q)) {
+		depth1+=load(q,q.test());
+		maxcheck(depth1);
+		depth1-=load2(q,q.test());
+	    }
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(THROW q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    depth1+=load(q,q.throwable());
+	    maxcheck(depth1);
+	    depth1-=load2(q, q.throwable());
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(MONITORENTER q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    depth1+=load(q,q.lock());
+	    maxcheck(depth1);
+	    depth1-=load2(q,q.lock());
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(MONITOREXIT q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    depth1+=load(q,q.lock());
+	    maxcheck(depth1);
+	    depth1-=load2(q,q.lock());
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(MOVE q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    depth1+=load(q,q.src());
+	    maxcheck(depth1);
+	    depth1+=store(q,q.dst());
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(NEW q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    depth1+=load2(q,q.dst());
+	    maxcheck(depth1);
+	    depth1+=store(q,q.dst());
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(LABEL q) {
+	    int depth1=0;
+	    for (int i=0;i<q.prevLength();i++) {
+		if (depth.containsKey(q.prev(i))) {
+		    depth1=((Integer) (depth.get(q.prev(i)))).intValue();
+		    break;
+		}
+	    }
+	    maxcheck(depth1);
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(NOP q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    maxcheck(depth1);
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(CONST q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    depth1+=load2(q,q.dst());
+	    maxcheck(depth1);
+	    depth1+=store(q,q.dst());
+	    depth.put(q, new Integer(depth1));
+	}
+	
+	public void visit(RETURN q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    if (q.retval()!=null)
+		depth1+=load(q,q.retval());
+	    maxcheck(depth1);
+	    //doesn't matter...end of method
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(SET q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    if (q.objectref()==null) {
+		//Static
+		depth1+=load(q,q.src());
+		maxcheck(depth1);
+		depth1-=load2(q,q.src());
+	    }
+	    else {
+		load(q,q.objectref());
+		load(q,q.src());
+		depth1+=load(q,q.objectref());
+		depth1+=load(q,q.src());
+		maxcheck(depth1);
+		depth1-=load2(q,q.objectref());
+		depth1-=load2(q,q.src());
+	    }
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(SWITCH q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    depth1+=load(q,q.index());
+	    maxcheck(depth1);
+	    depth1-=load2(q,q.index());
+	    depth.put(q, new Integer(depth1));
+	}
+
+	public void visit(TYPECAST q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    depth1+=load(q,q.objectref());
+	    maxcheck(depth1);
+	    depth1+=store(q,q.objectref());
+	    depth.put(q, new Integer(depth1));
+	}
+
+	//This method handles operands
+	//really 3 cases:
+	//normal, compares that are done with compares,
+	//compares done with conditional branches
+
+	public void visit(OPER q) {
+	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+
+	    switch (q.opcode()) {
+	    case Qop.LCMPEQ:
+		
+		for (int i=0;i<q.operandsLength();i++)
+		    depth1+=load(q,q.operands(i));
+		maxcheck(depth1);
+		for (int i=0;i<q.operandsLength();i++)
+		    depth1-=load2(q,q.operands(i));
+		depth1+=1;
+		maxcheck(depth1);
+
+		q.next(0).accept(cjmp);
+		boolean testcjmp=cjmp.cjmp();
+		if (testcjmp) {
+		    CJMP qnext=(CJMP)q.next(0);
+		    if ((qnext.test()==q.dst())&&
+			(ud.useMap(hc, q.dst()).length==1)) {
+			skip.add(qnext);
+			depth1-=1;
+		    } else
+			testcjmp=false;
+		} 
+		if (!testcjmp) {
+		    depth1+=store(q,q.dst());
+		}
+		depth.put(q, new Integer(depth1));
+		break;
+
+	    case Qop.LCMPGT:
+		for (int i=0;i<q.operandsLength();i++)
+		    depth1+=load(q,q.operands(i));
+		maxcheck(depth1);
+		for (int i=0;i<q.operandsLength();i++)
+		    depth1-=load2(q,q.operands(i));
+		depth1+=1;
+		maxcheck(depth1);
+
+	        q.next(0).accept(cjmp);
+		testcjmp=cjmp.cjmp();
+		if (testcjmp) {
+		    CJMP qnext=(CJMP)q.next(0);
+		    if ((qnext.test()==q.dst())&&
+			(ud.useMap(hc, q.dst()).length==1)) {
+			skip.add(qnext);
+			depth1-=1;
+		    } else
+			testcjmp=false;
+		} 
+		if (!testcjmp) {
+		    depth1+=store(q,q.dst());
+		}
+		depth.put(q, new Integer(depth1));
+		break;
+	    case Qop.DCMPEQ:
+	    case Qop.DCMPGE:
+	    case Qop.DCMPGT:
+		for (int i=0;i<q.operandsLength();i++)
+		    depth1+=load(q,q.operands(i));
+		maxcheck(depth1);
+		for (int i=0;i<q.operandsLength();i++)
+		    depth1-=load2(q,q.operands(i));
+		depth1+=1;
+		maxcheck(depth1);
+
+
+		q.next(0).accept(cjmp);
+		testcjmp=cjmp.cjmp();
+		if (testcjmp) {
+		    CJMP qnext=(CJMP)q.next(0);
+		    if ((qnext.test()==q.dst())&&
+			(ud.useMap(hc, q.dst()).length==1)) {
+			skip.add(qnext);
+			depth1-=1;
+		    } else
+			testcjmp=false;
+		}
+		if (!testcjmp) {
+		    depth1+=store(q,q.dst());
+		}
+		depth.put(q, new Integer(depth1));
+		break;
+
+	    case Qop.FCMPEQ:
+	    case Qop.FCMPGE:
+	    case Qop.FCMPGT:
+		for (int i=0;i<q.operandsLength();i++)
+		    depth1+=load(q,q.operands(i));
+		maxcheck(depth1);
+		for (int i=0;i<q.operandsLength();i++)
+		    depth1-=load2(q,q.operands(i));
+		depth1+=1;
+		maxcheck(depth1);
+		
+		q.next(0).accept(cjmp);
+		testcjmp=cjmp.cjmp();
+		if (testcjmp) {
+		    CJMP qnext=(CJMP)q.next(0);
+		    if ((qnext.test()==q.dst())&&
+			(ud.useMap(hc, q.dst()).length==1)) {
+			skip.add(qnext);
+			depth1-=1;
+		    } else
+			testcjmp=false;
+		}
+		if (!testcjmp) {
+		    depth1+=store(q,q.dst());
+		}
+		depth.put(q, new Integer(depth1));
+		break;
+
+	    case Qop.ACMPEQ:
+	    case Qop.ICMPEQ:
+	    case Qop.ICMPGT:
+		for (int i=0;i<q.operandsLength();i++) {
+		    depth1+=load(q,q.operands(i));
+		}
+		maxcheck(depth1);
+		for (int i=0;i<q.operandsLength();i++) {
+		    depth1-=load2(q,q.operands(i));
+		}
+		q.next(0).accept(cjmp);
+		testcjmp=cjmp.cjmp();
+		if (testcjmp) {
+		    CJMP qnext=(CJMP)q.next(0);
+		    
+		    if ((qnext.test()==q.dst())&&
+			(ud.useMap(hc, q.dst()).length==1)) {
+			skip.add(qnext);
+		    } else
+			testcjmp=false;
+		}
+		if (!testcjmp) {
+		    depth1+=store(q,q.dst());
+		}
+		depth.put(q, new Integer(depth1));
+		break;
+	    case Qop.D2F:
+	    case Qop.D2I:
+	    case Qop.D2L:
+	    case Qop.DADD:
+	    case Qop.DDIV:
+	    case Qop.DMUL:
+	    case Qop.DNEG:
+	    case Qop.DREM:
+	    case Qop.F2D:
+	    case Qop.F2I:
+	    case Qop.F2L:
+	    case Qop.FADD:
+	    case Qop.FDIV:
+	    case Qop.FMUL:
+	    case Qop.FNEG:
+	    case Qop.FREM:
+	    case Qop.I2B:
+	    case Qop.I2C:
+	    case Qop.I2D:
+	    case Qop.I2F:
+	    case Qop.I2L:
+	    case Qop.I2S:
+	    case Qop.IADD:
+	    case Qop.IAND:
+	    case Qop.IDIV:
+	    case Qop.IMUL:
+	    case Qop.INEG:
+	    case Qop.IOR:
+	    case Qop.IREM:
+	    case Qop.ISHL:
+	    case Qop.ISHR:
+	    case Qop.IUSHR:
+	    case Qop.IXOR:
+	    case Qop.L2D:
+	    case Qop.L2I:
+	    case Qop.L2F:
+	    case Qop.LADD:
+	    case Qop.LAND:
+	    case Qop.LDIV:
+	    case Qop.LMUL:
+	    case Qop.LNEG:
+	    case Qop.LOR:
+	    case Qop.LREM:
+	    case Qop.LSHL:
+	    case Qop.LSHR:
+	    case Qop.LUSHR:
+	    case Qop.LXOR:
+		for (int i=0;i<q.operandsLength();i++) {
+		    depth1+=load(q,q.operands(i));
+		}
+		maxcheck(depth1);
+		for (int i=0;i<q.operandsLength();i++) {
+		    depth1-=load2(q,q.operands(i));
+		}
+		depth1+=load2(q,q.dst());
+		depth1+=store(q,q.dst());
+		depth.put(q, new Integer(depth1));
+		break;
+	    default:
+	    }
+	}
+
+	private int store(Quad q,Temp t) {
+	    // Should be ok to pass null for HCodeElement param
+	    HClass tp=tm.typeMap(q,t); 
+	    int size;
+	    if ((tp==HClass.Boolean)||
+		(tp==HClass.Byte)||
+		(tp==HClass.Char)||
+		(tp==HClass.Short)||
+		(tp==HClass.Int))
+		size=-1;
+	    else
+		if (tp==HClass.Double)
+		    size=-2;
+		else
+		    if (tp==HClass.Float)
+			size=-1;
+		    else
+			if (tp==HClass.Long)
+			    size=-2;
+			else
+			    size=-1;
+	    TempInfo dest=(TempInfo)tempmap.get(t);
+	    if (!dest.stack)
+		return size;
+	    else
+		return 0;
+	}
+
+	private int load2(Quad q,Temp t) {
+	    // Should be ok to pass null for HCodeElement param
+	    int size=0;
+	    HClass tp=tm.typeMap(q,t);
+	    if ((tp==HClass.Boolean)||
+		(tp==HClass.Byte)||
+		(tp==HClass.Char)||
+		(tp==HClass.Short)||
+		(tp==HClass.Int))
+		size=1;
+	    else
+		if (tp==HClass.Double)
+		    size=2;
+		else
+		    if (tp==HClass.Float)
+			size=1;
+		    else
+			if (tp==HClass.Long)
+			    size=2;
+			else
+			    size=1;
+	    TempInfo dest=(TempInfo)tempmap.get(t);
+	    return size;
+	}
+	private int load(Quad q,Temp t) {
+	    // Should be ok to pass null for HCodeElement param
+	    int size=0;
+	    HClass tp=tm.typeMap(q,t);
+	    if ((tp==HClass.Boolean)||
+		(tp==HClass.Byte)||
+		(tp==HClass.Char)||
+		(tp==HClass.Short)||
+		(tp==HClass.Int))
+		size=1;
+	    else
+		if (tp==HClass.Double)
+		    size=2;
+		else
+		    if (tp==HClass.Float)
+			size=1;
+		    else
+			if (tp==HClass.Long)
+			    size=2;
+			else
+			    size=1;
+	    TempInfo dest=(TempInfo)tempmap.get(t);
+	    if (!dest.stack)
+		return size;
+	    else
+		return 0;
+	}
+    }
+
 }
 
 
