@@ -8,6 +8,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
+import harpoon.Analysis.Maps.TypeMap.TypeNotKnownException;
 import harpoon.Backend.Maps.FinalMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -29,7 +30,7 @@ import java.util.Map;
  * representation in SSI form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSI.java,v 1.1.2.8 2000-05-31 23:04:26 cananian Exp $
+ * @version $Id: LowQuadSSI.java,v 1.1.2.9 2000-07-20 21:22:36 pnkfelix Exp $
  */
 public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     /** The name of this code view. */

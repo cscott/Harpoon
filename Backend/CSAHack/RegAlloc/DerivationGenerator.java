@@ -5,6 +5,7 @@ package harpoon.Backend.CSAHack.RegAlloc;
 
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.Derivation.DList;
+import harpoon.Analysis.Maps.TypeMap.TypeNotKnownException;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
@@ -22,7 +23,7 @@ import java.util.Map;
  * spills.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationGenerator.java,v 1.1.2.1 2000-02-29 06:30:48 cananian Exp $
+ * @version $Id: DerivationGenerator.java,v 1.1.2.2 2000-07-20 21:22:21 pnkfelix Exp $
  */
 public class DerivationGenerator implements Derivation {
     private Map dtM = new HashMap();

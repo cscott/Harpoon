@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.88 2000-07-16 21:05:46 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.89 2000-07-20 21:22:50 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -447,7 +447,7 @@ public class SAMain extends harpoon.IR.Registration {
 		public int hashCode() { return data.hashCode(); }
 	    });
 	
-	Util.assert(instr != null, "what the hell...");
+	Util.assert(instr != null, "no instrs generated; check that CodeGen.java was built from spec file");
 	// messageln("First data instruction " + instr);
 
 

@@ -4,6 +4,7 @@
 package harpoon.Analysis;
 
 import harpoon.Analysis.Maps.AllocationInformation;
+import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HField;
@@ -17,7 +18,7 @@ import harpoon.Util.Util;
  * that nothing can be stack or thread-locally allocated.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultAllocationInformation.java,v 1.1.2.5 2000-06-07 20:19:34 kkz Exp $
+ * @version $Id: DefaultAllocationInformation.java,v 1.1.2.6 2000-07-20 21:22:12 pnkfelix Exp $
  */
 public class DefaultAllocationInformation
     implements AllocationInformation, java.io.Serializable {

@@ -4,6 +4,7 @@
 package harpoon.Analysis;
 
 import harpoon.Analysis.Maps.AllocationInformation;
+import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
@@ -19,7 +20,7 @@ import java.util.Map;
  * from a different <code>AllocationInformation</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformationMap.java,v 1.1.2.7 2000-06-07 20:19:34 kkz Exp $
+ * @version $Id: AllocationInformationMap.java,v 1.1.2.8 2000-07-20 21:22:12 pnkfelix Exp $
  */
 public class AllocationInformationMap
     implements AllocationInformation, java.io.Serializable {

@@ -13,6 +13,7 @@ import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
+import harpoon.Analysis.Maps.TypeMap.TypeNotKnownException;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Runtime;
 import harpoon.Backend.Maps.NameMap;
@@ -77,7 +78,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.85 2000-07-06 03:26:12 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.86 2000-07-20 21:22:47 pnkfelix Exp $
  */
 class ToTree {
     private Tree        m_tree;

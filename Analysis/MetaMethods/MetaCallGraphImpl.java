@@ -64,7 +64,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.21 2000-07-02 08:37:40 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.22 2000-07-20 21:22:17 pnkfelix Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -1059,7 +1059,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     };
     private TIWrapper ti_wrapper = new TIWrapper();
 
-    private QuadVisitor type_inference_qvisitor = new QuadVisitor(){
+    private QuadVisitor type_inference_qvisitor = new TypeInferenceQVisitor();
+
+    private class TypeInferenceQVisitor extends QuadVisitor {
 	    
 	    public void visit(MOVE q){
 		Temp       t = ti_wrapper.t;
@@ -1116,9 +1118,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    // Aux. data for visit(CALL q).
 	    // Any method can throw an exception that is subclass of these
 	    // two classes (without explicitly declaring it).
-	    private static final HClass jl_RuntimeException =
+	    private final HClass jl_RuntimeException =
 		Loader.systemLinker.forName("java.lang.RuntimeException");
-	    private static final HClass jl_Error =
+	    private final HClass jl_Error =
 		Loader.systemLinker.forName("java.lang.Error");
 
 	    public void visit(CALL q){

@@ -8,6 +8,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
+import harpoon.Analysis.Maps.TypeMap.TypeNotKnownException;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
@@ -29,7 +30,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.33 2000-05-31 22:42:19 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.34 2000-07-20 21:22:39 pnkfelix Exp $
  */
 public class ToNoSSA
 {
