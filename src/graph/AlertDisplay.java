@@ -22,5 +22,6 @@ public class AlertDisplay extends Node {
      */   
     public void process(ImageData id) {
 	System.out.println("ALERT: ("+id.c1+","+id.c2+","+id.c3+")");
+	super.process(id);
     }
 }
