@@ -9,7 +9,7 @@ import harpoon.Temp.Temp;
  * Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.3 1998-10-11 02:37:57 cananian Exp $
+ * @version $Id: Peephole.java,v 1.4 1998-11-11 05:06:23 cananian Exp $
  */
 
 class Peephole extends QuadVisitor {
@@ -54,7 +54,15 @@ class Peephole extends QuadVisitor {
 	// after the PHI, a compare and a jump
 	if (! (q.next(0) instanceof OPER) ) return;
 	OPER op0 = (OPER) q.next(0);
-	if (op0.opcode.indexOf("cmp")==-1) return; // not a compare.
+	switch (op0.opcode) {
+	case Qop.ACMPEQ:
+	case Qop.DCMPEQ: case Qop.DCMPGE: case Qop.DCMPGT:
+	case Qop.FCMPEQ: case Qop.FCMPGE: case Qop.FCMPGT:
+	case Qop.ICMPEQ: case Qop.ICMPGE: case Qop.ICMPGT:
+	case Qop.LCMPEQ: case Qop.LCMPGE: case Qop.LCMPGT:
+	    break;
+	default: return; // not a compare.
+	}
 	if (t1 != op0.operands[0] &&
 	    t1 != op0.operands[1]) return; // not sourced from the PHI.
 	if (! (op0.next(0) instanceof CJMP) ) return; // not followed by a cjmp
@@ -91,7 +99,10 @@ class Peephole extends QuadVisitor {
 	// all sorts of conditions on this before we target it.
 	if (! (q.next(0) instanceof OPER) ) return;
 	OPER oper = (OPER) q.next(0);
-	if (! oper.opcode.startsWith("icmp") ) return;
+	switch (oper.opcode) {
+	case Qop.ICMPEQ: case Qop.ICMPGE: case Qop.ICMPGT: break;
+	default: return; // not an icmp
+	}
 	if (q.dst != oper.operands[0] &&
 	    q.dst != oper.operands[1] ) return;
 	if (! (oper.next(0) instanceof CJMP) ) return;

@@ -31,7 +31,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.88 1998-10-22 04:36:53 cananian Exp $
+ * @version $Id: Translate.java,v 1.89 1998-11-11 05:06:24 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -315,10 +315,10 @@ class Translate  { // not public.
 				    .getMethod("forName", 
 					       new HClass[] { strC } ),
 				    null, qq0.def(), lock, SS.Tex, false);
-		Quad qq2 = new OPER(quads, "acmpeq", s.extra(0),
+		Quad qq2 = new OPER(quads, Qop.ACMPEQ, s.extra(0),
 				    new Temp[] { SS.Tex, SS.Tnull });
 		Quad qq3 = new CJMP(quads, qq2.def()[0], new Temp[0]);
-		Quad qq4 = new OPER(quads, "acmpeq", s.extra(0),
+		Quad qq4 = new OPER(quads, Qop.ACMPEQ, s.extra(0),
 				    new Temp[] { lock, SS.Tnull });
 		Quad qq5 = new CJMP(quads, qq4.def()[0], new Temp[0]);
 		Quad qq6 = new MONITORENTER(quads, lock);
@@ -567,7 +567,7 @@ class Translate  { // not public.
 		HClass HCex=HClass.forClass(NegativeArraySizeException.class);
 
 		// check whether count>=0.
-		Quad q2 = new OPER(in, "icmpge", s.extra(0),
+		Quad q2 = new OPER(in, Qop.ICMPGE, s.extra(0),
 				   new Temp[] { s.stack(0), SS.Tzero });
 		Quad q3 = new CJMP(in, q2.def()[0], new Temp[0]);
 		Quad q4 = transNewException(SS, HCex, SS.Tex, 
@@ -632,7 +632,7 @@ class Translate  { // not public.
 		HClass HCex = HClass.forClass(ClassCastException.class);
 
 		// make quads
-		Quad q1 = new OPER(in, "acmpeq", s.extra(0), // equal is true
+		Quad q1 = new OPER(in, Qop.ACMPEQ, s.extra(0), // equal is true
 				   new Temp[] { Tobj, SS.Tnull } ); 
 		Quad q2 = new CJMP(in, q1.def()[0], new Temp[0]);
 		Quad q3 = new INSTANCEOF(in, s.extra(0), Tobj, opd.value());
@@ -657,13 +657,13 @@ class Translate  { // not public.
 	case Op.L2F:
 	case Op.L2I:
 	    ns = s.pop(2).push();
-	    q = new OPER(in, Op.toString(in.getOpcode()) /* "d2f" or "d2i" */,
+	    q = new OPER(in, Qop.forString(Op.toString(in.getOpcode())),
 			 ns.stack(0), new Temp[] { s.stack(0) });
 	    break;
 	case Op.D2L:
 	case Op.L2D:
 	    ns = s.pop(2).push(null).push();
-	    q = new OPER(in, Op.toString(in.getOpcode()) /* "d2l" or "l2d" */,
+	    q = new OPER(in, Qop.forString(Op.toString(in.getOpcode())),
 			 ns.stack(0), new Temp[] { s.stack(0) });
 	    break;
 	case Op.DADD:
@@ -678,7 +678,7 @@ class Translate  { // not public.
 	case Op.LSUB:
 	case Op.LXOR:
 	    ns = s.pop(4).push(null).push();
-	    q = new OPER(in, Op.toString(in.getOpcode()), // dadd, ddiv or dmul
+	    q = new OPER(in, Qop.forString(Op.toString(in.getOpcode())),
 			 ns.stack(0), new Temp[] { s.stack(2), s.stack(0) });
 	    break;
 	case Op.DCMPG:
@@ -686,12 +686,12 @@ class Translate  { // not public.
 	    {
 	    boolean isDCMPG = (in.getOpcode()==Op.DCMPG);
 	    ns = s.pop(4).push();
-	    Quad q0 = new OPER(in, "dcmpgt", s.extra(0),
+	    Quad q0 = new OPER(in, Qop.DCMPGT, s.extra(0),
 			       isDCMPG ?
 			       new Temp[] { s.stack(0), s.stack(2) } :
 			       new Temp[] { s.stack(2), s.stack(0) } );
 	    Quad q1 = new CJMP(in, q0.def()[0], new Temp[0]);
-	    Quad q2 = new OPER(in, "dcmpeq", s.extra(0),
+	    Quad q2 = new OPER(in, Qop.DCMPEQ, s.extra(0),
 			       new Temp[] { s.stack(2), s.stack(0) });
 	    Quad q3 = new CJMP(in, q2.def()[0], new Temp[0]);
 	    Quad q4 = new CONST(in, ns.stack(0), new Integer(-1), HClass.Int);
@@ -741,7 +741,7 @@ class Translate  { // not public.
 	case Op.DNEG:
 	case Op.LNEG:
 	    ns = s.pop(2).push(null).push();
-	    q = new OPER(in, Op.toString(in.getOpcode()) /*"dneg" or "lneg"*/, 
+	    q = new OPER(in, Qop.forString(Op.toString(in.getOpcode())),
 			 ns.stack(0), new Temp[] {s.stack(0)});
 	    break;
 	case Op.DSTORE:
@@ -793,7 +793,7 @@ class Translate  { // not public.
 	case Op.I2D:
 	case Op.I2L:
 	    ns = s.pop().push(null).push();
-	    q = new OPER(in, Op.toString(in.getOpcode()), // "f2d" or "f2l"
+	    q = new OPER(in, Qop.forString(Op.toString(in.getOpcode())),
 			 ns.stack(0), new Temp[] {s.stack(0)});
 	    break;
 	case Op.F2I:
@@ -802,7 +802,7 @@ class Translate  { // not public.
 	case Op.I2F:
 	case Op.I2S:
 	    ns = s.pop().push();
-	    q = new OPER(in, Op.toString(in.getOpcode()),
+	    q = new OPER(in, Qop.forString(Op.toString(in.getOpcode())),
 			 ns.stack(0), new Temp[] {s.stack(0)});
 	    break;
 	case Op.FADD:
@@ -820,7 +820,7 @@ class Translate  { // not public.
 	case Op.IUSHR:
 	case Op.IXOR:
 	    ns = s.pop(2).push();
-	    q = new OPER(in, Op.toString(in.getOpcode()), // fadd, fdiv, ...
+	    q = new OPER(in, Qop.forString(Op.toString(in.getOpcode())),
 			 ns.stack(0), new Temp[] {s.stack(1), s.stack(0)});
 	    break;
 	case Op.IDIV:
@@ -831,7 +831,7 @@ class Translate  { // not public.
 	    // if (divisor==0) throw new ArithmeticException();
 	    HClass HCex = HClass.forClass(ArithmeticException.class);
 
-	    Quad q0 = new OPER(in, "icmpeq", s.extra(0),
+	    Quad q0 = new OPER(in, Qop.ICMPEQ, s.extra(0),
 			       new Temp[] { s.stack(0), SS.Tzero } );
 	    Quad q1 = new CJMP(in, q0.def()[0], new Temp[0]);
 	    Quad q2 = transNewException(SS, HCex, SS.Tex, 
@@ -839,7 +839,7 @@ class Translate  { // not public.
 	    r = transThrow(SS, new TransState(s.push(SS.Tex), in, q2, 0),
 			   handlers, false);
 	    // actual division operation:
-	    Quad q3 = new OPER(in, Op.toString(in.getOpcode()), // idiv/ldiv
+	    Quad q3 = new OPER(in, Qop.forString(Op.toString(in.getOpcode())),
 			       ns.stack(0),
 			       new Temp[] {s.stack(1), s.stack(0)});
 	    // link quads.
@@ -858,7 +858,7 @@ class Translate  { // not public.
 
 	    Quad q0 = new CONST(in, s.extra(0),
 				new Long(0), HClass.Long);
-	    Quad q1 = new OPER(in, "lcmpeq", s.extra(0),
+	    Quad q1 = new OPER(in, Qop.LCMPEQ, s.extra(0),
 			       new Temp[] { s.stack(0), q0.def()[0] } );
 	    Quad q2 = new CJMP(in, q1.def()[0], new Temp[0]);
 	    Quad q3 = transNewException(SS, HCex, SS.Tex, 
@@ -866,7 +866,7 @@ class Translate  { // not public.
 	    r = transThrow(SS, new TransState(s.push(SS.Tex), in, q3, 0),
 			   handlers, false);
 	    // actual division operation:
-	    Quad q4 = new OPER(in, Op.toString(in.getOpcode()), // idiv/ldiv
+	    Quad q4 = new OPER(in, Qop.forString(Op.toString(in.getOpcode())),
 			       ns.stack(0), 
 			       new Temp[] {s.stack(2), s.stack(0)});
 	    // link quads.
@@ -880,12 +880,12 @@ class Translate  { // not public.
 	    {
 	    boolean isFCMPG = (in.getOpcode()==Op.FCMPG);
 	    ns = s.pop(2).push();
-	    Quad q0 = new OPER(in, "fcmpgt", s.extra(0),
+	    Quad q0 = new OPER(in, Qop.FCMPGT, s.extra(0),
 			       isFCMPG ?
 			       new Temp[] { s.stack(0), s.stack(1) } :
 			       new Temp[] { s.stack(1), s.stack(0) } );
 	    Quad q1 = new CJMP(in, q0.def()[0], new Temp[0]);
-	    Quad q2 = new OPER(in, "fcmpeq", s.extra(0),
+	    Quad q2 = new OPER(in, Qop.FCMPEQ, s.extra(0),
 			       new Temp[] { s.stack(1), s.stack(0) });
 	    Quad q3 = new CJMP(in, q2.def()[0], new Temp[0]);
 	    Quad q4 = new CONST(in, ns.stack(0), new Integer(-1), HClass.Int);
@@ -941,7 +941,7 @@ class Translate  { // not public.
 	case Op.FNEG:
 	case Op.INEG:
 	    ns = s.pop().push();
-	    q = new OPER(in, Op.toString(in.getOpcode()), 
+	    q = new OPER(in, Qop.forString(Op.toString(in.getOpcode())),
 			 ns.stack(0), new Temp[] {s.stack(0)});
 	    break;
 	case Op.FSTORE:
@@ -995,7 +995,7 @@ class Translate  { // not public.
 		ns = s;
 		q = new CONST(in, constant, opd1.getValue(), opd1.getType());
 		Quad.addEdge(q, 0,
-			     new OPER(in, "iadd", ns.lv[opd0.getIndex()],
+			     new OPER(in, Qop.IADD, ns.lv[opd0.getIndex()],
 				      new Temp[] { s.lv[opd0.getIndex()], 
 						       constant}), 0);
 		last = q.next(0);
@@ -1040,7 +1040,7 @@ class Translate  { // not public.
 			     ns.stack(0), Tex, isSpecial);
 	    }
 	    // check for thrown exception.
-	    Quad q1 = new OPER(in, "acmpeq", ns.extra(0),
+	    Quad q1 = new OPER(in, Qop.ACMPEQ, ns.extra(0),
 			       new Temp[] { Tex, SS.Tnull });
 	    Quad q2 = new CJMP(in, q1.def()[0], new Temp[0]);
 	    r = transThrow(SS, new TransState(s.push(Tex), in, q2, 0),
@@ -1052,7 +1052,7 @@ class Translate  { // not public.
 		HClass HCex = HClass.forClass(NullPointerException.class);
 
 		// test objectref against null.
-		Quad q3 = new OPER(in, "acmpeq", s.extra(0),
+		Quad q3 = new OPER(in, Qop.ACMPEQ, s.extra(0),
 				   new Temp[] { objectref, SS.Tnull } );
 		Quad q4 = new CJMP(in, q3.def()[0], new Temp[0]);
 		Quad q5 = transNewException(SS, HCex, Tex, 
@@ -1071,10 +1071,10 @@ class Translate  { // not public.
 	case Op.LCMP: // break this up into lcmpeq, lcmpgt, etc.
 	    { // optimization doesn't work well on this, unfortunately.
 	    ns = s.pop(4).push();
-	    Quad q0 = new OPER(in, "lcmpeq", s.extra(0),
+	    Quad q0 = new OPER(in, Qop.LCMPEQ, s.extra(0),
 			       new Temp[] { s.stack(2), s.stack(0) });
 	    Quad q1 = new CJMP(in, q0.def()[0], new Temp[0]);
-	    Quad q2 = new OPER(in, "lcmpgt", s.extra(0),
+	    Quad q2 = new OPER(in, Qop.LCMPGT, s.extra(0),
 			       new Temp[] { s.stack(2), s.stack(0) });
 	    Quad q3 = new CJMP(in, q2.def()[0], new Temp[0]);
 	    Quad q4 = new CONST(in, ns.stack(0), new Integer(-1), HClass.Int);
@@ -1107,7 +1107,7 @@ class Translate  { // not public.
 	case Op.LSHR:
 	case Op.LUSHR:
 	    ns = s.pop(3).push(null).push();
-	    q = new OPER(in, Op.toString(in.getOpcode()), // lshl
+	    q = new OPER(in, Qop.forString(Op.toString(in.getOpcode())),
 			 ns.stack(0), new Temp[] { s.stack(1), s.stack(0) });
 	    break;
 	case Op.MONITORENTER:
@@ -1143,7 +1143,7 @@ class Translate  { // not public.
 
 		last = ts.header; which_succ = ts.which_succ;
 		for (int i=0; i<dims; i++) {
-		    Quad q0 = new OPER(in, "icmpgt", s.extra(0),
+		    Quad q0 = new OPER(in, Qop.ICMPGT, s.extra(0),
 				       new Temp[] { SS.Tzero, Tdims[i] });
 		    Quad q1 = new CJMP(in, q0.def()[0], new Temp[0]);
 		    Quad.addEdge(last, which_succ, q0, 0);
@@ -1199,7 +1199,7 @@ class Translate  { // not public.
 		HClass HCex=HClass.forClass(NegativeArraySizeException.class);
 
 		// ensure that size>=0
-		Quad q0 = new OPER(in, "icmpge", s.extra(0),
+		Quad q0 = new OPER(in, Qop.ICMPGE, s.extra(0),
 				   new Temp[] { s.stack(0), SS.Tzero });
 		Quad q1 = new CJMP(in, q0.def()[0], new Temp[0]);
 		Quad q2 = transNewException(SS, HCex, SS.Tex, 
@@ -1380,7 +1380,7 @@ class Translate  { // not public.
 	case Op.IF_ACMPNE:
 	    {
 		State ns = s.pop(2);
-		q = new OPER(in, "acmpeq", s.extra(0), 
+		q = new OPER(in, Qop.ACMPEQ, s.extra(0), 
 			     new Temp[] { s.stack(1), s.stack(0) });
 		Quad q2 = new CJMP(in, q.def()[0], new Temp[0]);
 		Quad.addEdge(q, 0, q2, 0);
@@ -1398,7 +1398,7 @@ class Translate  { // not public.
 	case Op.IFNONNULL:
 	    {
 		State ns = s.pop();
-		Quad q0 = new OPER(in, "acmpeq", s.extra(0), 
+		Quad q0 = new OPER(in, Qop.ACMPEQ, s.extra(0), 
 				   new Temp[] { s.stack(0), SS.Tnull });
 		Quad q1 = new CJMP(in, q0.def()[0], new Temp[0]);
 		Quad.addEdge(q0, 0, q1, 0);
@@ -1430,28 +1430,28 @@ class Translate  { // not public.
 		State ns;
 
 		boolean invert = false;
-		String op = null;
+		int op=-1;
 		switch (opcode) {
 		case Op.IFNE:
 		case Op.IF_ICMPNE:
 		    invert = true;
 		case Op.IFEQ:
 		case Op.IF_ICMPEQ:
-		    op = "icmpeq";
+		    op = Qop.ICMPEQ;
 		    break;
 		case Op.IFLT:
 		case Op.IF_ICMPLT:
 		    invert = true;
 		case Op.IFGE:
 		case Op.IF_ICMPGE:
-		    op = "icmpge";
+		    op = Qop.ICMPGE;
 		    break;
 		case Op.IFLE:
 		case Op.IF_ICMPLE:
 		    invert = true;
 		case Op.IFGT:
 		case Op.IF_ICMPGT:
-		    op = "icmpgt";
+		    op = Qop.ICMPGT;
 		    break;
 		default: Util.assert(false);
 		}
@@ -1501,14 +1501,14 @@ class Translate  { // not public.
 	    //     try { Tex = new NullPointerException(); }
 	    //     catch (Throwable t) { Tex = t; }
 	    //   }
-	    Quad q2 = new OPER(ts.in, "acmpeq", ns.extra(0),
+	    Quad q2 = new OPER(ts.in, Qop.ACMPEQ, ns.extra(0),
 			       new Temp[] { Tex, SS.Tnull } );
 	    Quad q3 = new CJMP(ts.in, q2.def()[0], new Temp[0]);
 	    Quad q4 = new NEW(ts.in, Tex, hc);
 	    Quad q5 = new CALL(ts.in, hc.getConstructor(new HClass[0]),
 			       Tex, new Temp[0], null /*retval*/,
 			       ns.extra(0)/*exception*/, true /*special*/);
-	    Quad q6 = new OPER(ts.in, "acmpeq", ns.extra(1),
+	    Quad q6 = new OPER(ts.in, Qop.ACMPEQ, ns.extra(1),
 			       new Temp[] { q5.def()[0], SS.Tnull } );
 	    Quad q7 = new CJMP(ts.in, q6.def()[0], new Temp[0]);
 	    Quad q8 = new MOVE(ts.in, Tex, q5.def()[0]);
@@ -1600,7 +1600,7 @@ class Translate  { // not public.
 			   q0.def()[0], new Temp[0], null /*retval*/,
 			   s.extra(0) /*ex*/, true /*special*/);
 	// check whether the constructor threw an exception.
-	Quad q2 = new OPER(in, "acmpeq", s.extra(1),
+	Quad q2 = new OPER(in, Qop.ACMPEQ, s.extra(1),
 			   new Temp[] { q1.def()[0], SS.Tnull } );
 	Quad q3 = new CJMP(in, q2.def()[0], new Temp[0]);
 	Quad q4 = new MOVE(in, Tex, q1.def()[0]);
@@ -1617,7 +1617,7 @@ class Translate  { // not public.
 	HClass HCex = HClass.forClass(NullPointerException.class);
 	State s = ts.initialState;
 
-	Quad q0 = new OPER(ts.in, "acmpeq", s.extra(0),
+	Quad q0 = new OPER(ts.in, Qop.ACMPEQ, s.extra(0),
 			   new Temp[] { Tobj, SS.Tnull } );
 	Quad q1 = new CJMP(ts.in, q0.def()[0], new Temp[0]);
 	Quad q2 = transNewException(SS, HCex, SS.Tex, 
@@ -1646,17 +1646,17 @@ class Translate  { // not public.
 
 	State s = ts.initialState;
 
-	Quad q0 = new OPER(ts.in, "acmpeq", s.extra(0),
+	Quad q0 = new OPER(ts.in, Qop.ACMPEQ, s.extra(0),
 			  new Temp[] { Tobj, SS.Tnull });
 	Quad q1 = new CJMP(ts.in, q0.def()[0], new Temp[0]);
 	Quad q2 = transNewException(SS, HCnull, SS.Tex, 
 				    new TransState(s, ts.in, q1, 1));
 	// array bounds check.
-	Quad q3 = new OPER(ts.in, "icmpge", s.extra(0),
+	Quad q3 = new OPER(ts.in, Qop.ICMPGE, s.extra(0),
 			   new Temp[] { Tindex, SS.Tzero });
 	Quad q4 = new CJMP(ts.in, q3.def()[0], new Temp[0]);
 	Quad q5 = new ALENGTH(ts.in, s.extra(1), Tobj);
-	Quad q6 = new OPER(ts.in, "icmpgt", s.extra(0),
+	Quad q6 = new OPER(ts.in, Qop.ICMPGT, s.extra(0),
 			   new Temp[] { q5.def()[0], Tindex });
 	Quad q7 = new CJMP(ts.in, q6.def()[0], new Temp[0]);
 	Quad q8 = new PHI(ts.in, new Temp[0], 2);

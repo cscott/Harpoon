@@ -23,23 +23,28 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.20 1998-11-10 03:34:10 cananian Exp $
+ * @version $Id: OPER.java,v 1.21 1998-11-11 05:06:23 cananian Exp $
  */
 
 public class OPER extends Quad {
     /** The temp in which to store the result of the operation. */
     public Temp dst;
-    /** The operation to be performed, as a string. */
-    public String opcode;
+    /** The operation to be performed, from the <code>Qop</code> class. */
+    public int opcode;
     /** Operands of the operation, in left-to-right order. */
     public Temp[] operands;
     /** Creates a <code>OPER</code>. */
     public OPER(HCodeElement source,
-		String opcode, Temp dst, Temp[] operands) {
+		int opcode, Temp dst, Temp[] operands) {
 	super(source);
 	this.opcode = opcode;
 	this.dst = dst;
 	this.operands = operands;
+    }
+    /** Backwards-compatibility. */
+    public OPER(HCodeElement source,
+		String opcode, Temp dst, Temp[] operands) {
+	this(source, Qop.forString(opcode), dst, operands);
     }
 
     /** Returns the Temps used by this OPER. */
@@ -70,7 +75,7 @@ public class OPER extends Quad {
     /** Returns a human-readable representation of this Quad. */
     public String toString() {
 	StringBuffer sb = new StringBuffer(dst.toString());
-	sb.append(" = OPER " + opcode + "(");
+	sb.append(" = OPER " + Qop.toString(opcode) + "(");
 	for (int i=0; i<operands.length; i++) {
 	    sb.append(operands[i].toString());
 	    if (i<operands.length-1)
@@ -85,14 +90,14 @@ public class OPER extends Quad {
 
     /** Determines the result type of an <code>OPER</code>. */
     public HClass evalType() {
-	Method m = (Method) operMethods.get(opcode);
+	Method m = (Method) operMethods.get(Qop.toString(opcode));
 	Util.assert(m!=null);
 	return HClass.forClass(m.getReturnType());
     }
     /** Evaluates a constant value for the result of an <code>OPER</code>, 
      *  given constant values for the operands. */
     public Object evalValue(Object[] opValues) {
-	Method m = (Method) operMethods.get(opcode);
+	Method m = (Method) operMethods.get(Qop.toString(opcode));
 	Util.assert(m!=null);
 	try {
 	    return m.invoke(null, opValues);

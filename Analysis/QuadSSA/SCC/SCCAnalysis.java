@@ -22,7 +22,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.13 1998-10-11 02:37:07 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.14 1998-11-11 05:06:23 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -186,7 +186,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	LatticeVal get(Temp t) { return (LatticeVal) V.get(t); }
 
 	void handleSigmas(CJMP q, OPER def) {
-	    String opc = def.opcode.intern();
+	    int opc = def.opcode;
 	    LatticeVal left = def.operands.length<1?null: get(def.operands[0]);
 	    LatticeVal right= def.operands.length<2?null: get(def.operands[1]);
 
@@ -207,7 +207,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		// check to see if it comes from the OPER defining the boolean.
 		boolean handled = false;
 		if (q.src[i] == def.operands[0]) { // left is source.
-		    if (opc == "acmpeq" &&
+		    if (opc == Qop.ACMPEQ &&
 			left  instanceof xClass && // not already xClassNonNull
 			right instanceof xNullConstant) {
 			raiseV(V, Wv, q.dst[i][0], // false branch: non-null
@@ -215,16 +215,16 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 			raiseV(V, Wv, q.dst[i][1], // true branch: null
 			       new xNullConstant() );
 			handled = true;
-		    } else if ((opc == "icmpeq" || opc == "lcmpeq" ||
-				opc == "fcmpeq" || opc == "dcmpeq") &&
+		    } else if ((opc == Qop.ICMPEQ || opc == Qop.LCMPEQ ||
+				opc == Qop.FCMPEQ || opc == Qop.DCMPEQ) &&
 			       right instanceof xConstant) {
 			raiseV(V, Wv, q.dst[i][0], // false branch: no info
 			       v);
 			raiseV(V, Wv, q.dst[i][1], // true branch: constant!
 			       right);
 			handled = true;
-		    } else if ((opc == "icmpge" || opc == "lcmpge" ||
-				opc == "icmpgt" || opc == "lcmpgt" ) &&
+		    } else if ((opc == Qop.ICMPGE || opc == Qop.LCMPGE ||
+				opc == Qop.ICMPGT || opc == Qop.LCMPGT ) &&
 			       right instanceof xBitWidth) {
 			// XXX we can tighten bounds on gt, as opposed to ge.
 			xBitWidth bw = (xBitWidth) right;
@@ -240,7 +240,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 			handled = true;
 		    }
 		} else if (q.src[i] == def.operands[1]) { // right is source.
-		    if (opc == "acmpeq" &&
+		    if (opc == Qop.ACMPEQ &&
 			right instanceof xClass && // not already xClassNonNull
 			left  instanceof xNullConstant) {
 			raiseV(V, Wv, q.dst[i][0], // false branch: non-null
@@ -248,16 +248,16 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 			raiseV(V, Wv, q.dst[i][1], // true branch: null
 			       new xNullConstant() );
 			handled = true;
-		    } else if ((opc == "icmpeq" || opc == "lcmpeq" ||
-				opc == "fcmpeq" || opc == "dcmpeq") &&
+		    } else if ((opc == Qop.ICMPEQ || opc == Qop.LCMPEQ ||
+				opc == Qop.FCMPEQ || opc == Qop.DCMPEQ) &&
 			       left instanceof xConstant) {
 			raiseV(V, Wv, q.dst[i][0], // false branch: no info
 			       v);
 			raiseV(V, Wv, q.dst[i][1], // true branch: constant!
 			       left);
 			handled = true;
-		    } else if ((opc == "icmpge" || opc == "lcmpge" ||
-				opc == "icmpgt" || opc == "lcmpgt" ) &&
+		    } else if ((opc == Qop.ICMPGE || opc == Qop.LCMPGE ||
+				opc == Qop.ICMPGT || opc == Qop.LCMPGT ) &&
 			       left instanceof xBitWidth) {
 			// XXX we can tighten bounds on gt, as opposed to ge.
 			xBitWidth bw = (xBitWidth) right;
@@ -466,7 +466,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	}
 	public void visit(NOP q) { /* do nothing. */ }
 	public void visit(OPER q) {
-	    String opc = q.opcode.intern();
+	    int opc = q.opcode;
 	    boolean allConst = true;
 	    boolean allWidth = true;
 
@@ -496,13 +496,13 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		    raiseV(V, Wv, q.dst, new xFloatConstant(ty, o) );
 		else throw new Error("Unknown OPER result type: "+ty);
 	    } else if ((allWidth) || 
-		       opc == "i2b" || opc == "i2c" || opc == "i2l" || 
-		       opc == "i2s" || opc == "l2i") {
+		       opc == Qop.I2B || opc == Qop.I2C || opc == Qop.I2L || 
+		       opc == Qop.I2S || opc == Qop.L2I) {
 		// do something intelligent with the bitwidths.
 		q.visit(opVisitor);
 	    } else { // not all constant, not all known widths...
 		// special-case ACMPEQ x, null
-		if (q.opcode.equals("acmpeq") &&
+		if (opc == Qop.ACMPEQ &&
 		    ((get( q.operands[0] ) instanceof xNullConstant &&
 		      get( q.operands[1] ) instanceof xClassNonNull) ||
 		     (get( q.operands[0] ) instanceof xClassNonNull &&

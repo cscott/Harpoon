@@ -16,7 +16,7 @@ import harpoon.ClassFile.*;
  * methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OperVisitor.java,v 1.3 1998-10-11 02:37:57 cananian Exp $
+ * @version $Id: OperVisitor.java,v 1.4 1998-11-11 05:06:23 cananian Exp $
  */
 
 public abstract class OperVisitor  {
@@ -89,77 +89,76 @@ public abstract class OperVisitor  {
     public void visit_lushr(OPER q) { visit_default(q); }
     public void visit_lxor(OPER q) { visit_default(q); }
     public void visit_unknown(OPER q) 
-    { throw new Error("Unknown OPER opcode"); }
+    { throw new RuntimeException("Unknown OPER opcode: "+q.opcode); }
 
     // package-scoped dispatch function.
     final void dispatch(OPER q) {
-	String op = q.opcode.intern(); // allows use of == instead of equals()
-
-	if (false) ;
-	else if (op=="acmpeq") visit_acmpeq(q);
-	else if (op=="d2f") visit_d2f(q);
-	else if (op=="d2i") visit_d2i(q);
-	else if (op=="d2l") visit_d2l(q);
-	else if (op=="dadd") visit_dadd(q);
-	else if (op=="dcmpeq") visit_dcmpeq(q);
-	else if (op=="dcmpge") visit_dcmpge(q);
-	else if (op=="dcmpgt") visit_dcmpgt(q);
-	else if (op=="ddiv") visit_ddiv(q);
-	else if (op=="dmul") visit_dmul(q);
-	else if (op=="dneg") visit_dneg(q);
-	else if (op=="drem") visit_drem(q);
-	else if (op=="dsub") visit_dsub(q);
-	else if (op=="f2d") visit_f2d(q);
-	else if (op=="f2i") visit_f2i(q);
-	else if (op=="f2l") visit_f2l(q);
-	else if (op=="fadd") visit_fadd(q);
-	else if (op=="fcmpeq") visit_fcmpeq(q);
-	else if (op=="fcmpge") visit_fcmpge(q);
-	else if (op=="fcmpgt") visit_fcmpgt(q);
-	else if (op=="fdiv") visit_fdiv(q);
-	else if (op=="fmul") visit_fmul(q);
-	else if (op=="fneg") visit_fneg(q);
-	else if (op=="frem") visit_frem(q);
-	else if (op=="fsub") visit_fsub(q);
-	else if (op=="i2b") visit_i2b(q);
-	else if (op=="i2c") visit_i2c(q);
-	else if (op=="i2d") visit_i2d(q);
-	else if (op=="i2f") visit_i2f(q);
-	else if (op=="i2l") visit_i2l(q);
-	else if (op=="i2s") visit_i2s(q);
-	else if (op=="iadd") visit_iadd(q);
-	else if (op=="iand") visit_iand(q);
-	else if (op=="icmpeq") visit_icmpeq(q);
-	else if (op=="icmpge") visit_icmpge(q);
-	else if (op=="icmpgt") visit_icmpgt(q);
-	else if (op=="idiv") visit_idiv(q);
-	else if (op=="imul") visit_imul(q);
-	else if (op=="ineg") visit_ineg(q);
-	else if (op=="ior") visit_ior(q);
-	else if (op=="irem") visit_irem(q);
-	else if (op=="ishl") visit_ishl(q);
-	else if (op=="ishr") visit_ishr(q);
-	else if (op=="isub") visit_isub(q);
-	else if (op=="iushr") visit_iushr(q);
-	else if (op=="ixor") visit_ixor(q);
-	else if (op=="l2d") visit_l2d(q);
-	else if (op=="l2f") visit_l2f(q);
-	else if (op=="l2i") visit_l2i(q);
-	else if (op=="ladd") visit_ladd(q);
-	else if (op=="land") visit_land(q);
-	else if (op=="lcmpeq") visit_lcmpeq(q);
-	else if (op=="lcmpge") visit_lcmpge(q);
-	else if (op=="lcmpgt") visit_lcmpgt(q);
-	else if (op=="ldiv") visit_ldiv(q);
-	else if (op=="lmul") visit_lmul(q);
-	else if (op=="lneg") visit_lneg(q);
-	else if (op=="lor") visit_lor(q);
-	else if (op=="lrem") visit_lrem(q);
-	else if (op=="lshl") visit_lshl(q);
-	else if (op=="lshr") visit_lshr(q);
-	else if (op=="lsub") visit_lsub(q);
-	else if (op=="lushr") visit_lushr(q);
-	else if (op=="lxor") visit_lxor(q);
-	else visit_unknown(q);
+	switch (q.opcode) {
+	case Qop.ACMPEQ:	visit_acmpeq(q); break;
+	case Qop.D2F:	visit_d2f(q); break;
+	case Qop.D2I:	visit_d2i(q); break;
+	case Qop.D2L:	visit_d2l(q); break;
+	case Qop.DADD:	visit_dadd(q); break;
+	case Qop.DCMPEQ:	visit_dcmpeq(q); break;
+	case Qop.DCMPGE:	visit_dcmpge(q); break;
+	case Qop.DCMPGT:	visit_dcmpgt(q); break;
+	case Qop.DDIV:	visit_ddiv(q); break;
+	case Qop.DMUL:	visit_dmul(q); break;
+	case Qop.DNEG:	visit_dneg(q); break;
+	case Qop.DREM:	visit_drem(q); break;
+	case Qop.DSUB:	visit_dsub(q); break;
+	case Qop.F2D:	visit_f2d(q); break;
+	case Qop.F2I:	visit_f2i(q); break;
+	case Qop.F2L:	visit_f2l(q); break;
+	case Qop.FADD:	visit_fadd(q); break;
+	case Qop.FCMPEQ:	visit_fcmpeq(q); break;
+	case Qop.FCMPGE:	visit_fcmpge(q); break;
+	case Qop.FCMPGT:	visit_fcmpgt(q); break;
+	case Qop.FDIV:	visit_fdiv(q); break;
+	case Qop.FMUL:	visit_fmul(q); break;
+	case Qop.FNEG:	visit_fneg(q); break;
+	case Qop.FREM:	visit_frem(q); break;
+	case Qop.FSUB:	visit_fsub(q); break;
+	case Qop.I2B:	visit_i2b(q); break;
+	case Qop.I2C:	visit_i2c(q); break;
+	case Qop.I2D:	visit_i2d(q); break;
+	case Qop.I2F:	visit_i2f(q); break;
+	case Qop.I2L:	visit_i2l(q); break;
+	case Qop.I2S:	visit_i2s(q); break;
+	case Qop.IADD:	visit_iadd(q); break;
+	case Qop.IAND:	visit_iand(q); break;
+	case Qop.ICMPEQ:	visit_icmpeq(q); break;
+	case Qop.ICMPGE:	visit_icmpge(q); break;
+	case Qop.ICMPGT:	visit_icmpgt(q); break;
+	case Qop.IDIV:	visit_idiv(q); break;
+	case Qop.IMUL:	visit_imul(q); break;
+	case Qop.INEG:	visit_ineg(q); break;
+	case Qop.IOR:	visit_ior(q); break;
+	case Qop.IREM:	visit_irem(q); break;
+	case Qop.ISHL:	visit_ishl(q); break;
+	case Qop.ISHR:	visit_ishr(q); break;
+	case Qop.ISUB:	visit_isub(q); break;
+	case Qop.IUSHR:	visit_iushr(q); break;
+	case Qop.IXOR:	visit_ixor(q); break;
+	case Qop.L2D:	visit_l2d(q); break;
+	case Qop.L2F:	visit_l2f(q); break;
+	case Qop.L2I:	visit_l2i(q); break;
+	case Qop.LADD:	visit_ladd(q); break;
+	case Qop.LAND:	visit_land(q); break;
+	case Qop.LCMPEQ:	visit_lcmpeq(q); break;
+	case Qop.LCMPGE:	visit_lcmpge(q); break;
+	case Qop.LCMPGT:	visit_lcmpgt(q); break;
+	case Qop.LDIV:	visit_ldiv(q); break;
+	case Qop.LMUL:	visit_lmul(q); break;
+	case Qop.LNEG:	visit_lneg(q); break;
+	case Qop.LOR:	visit_lor(q); break;
+	case Qop.LREM:	visit_lrem(q); break;
+	case Qop.LSHL:	visit_lshl(q); break;
+	case Qop.LSHR:	visit_lshr(q); break;
+	case Qop.LSUB:	visit_lsub(q); break;
+	case Qop.LUSHR:	visit_lushr(q); break;
+	case Qop.LXOR:	visit_lxor(q); break;
+	default:	visit_unknown(q); break;
+	}
     }
 }

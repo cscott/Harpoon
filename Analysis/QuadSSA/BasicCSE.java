@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * common subexpression elemination, but only within basic blocks.
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: BasicCSE.java,v 1.1 1998-10-16 01:11:03 marinov Exp $
+ * @version $Id: BasicCSE.java,v 1.2 1998-11-11 05:06:12 cananian Exp $
  */
 
 public class BasicCSE  {
@@ -77,7 +77,7 @@ public class BasicCSE  {
  		if (in[j] instanceof OPER) {
 		    OPER ins=(OPER) in[j];
 		    Vector exp = new Vector(1);
-		    exp.addElement(ins.opcode);
+		    exp.addElement(Qop.toString(ins.opcode));
 		    // for all src 
 		    for (int k=0; k<ins.operands.length; k++) {
 			Integer v=(Integer)var2val.get(ins.operands[k]);
