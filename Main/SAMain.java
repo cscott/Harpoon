@@ -63,7 +63,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.29 1999-09-09 21:12:20 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.30 1999-09-10 05:30:48 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -250,6 +250,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    info("\t--- end INSTR FORM (register allocation)  ---");
 	    out.println();
 	}
+	// free memory associated with this method's IR:
+	hcf.clear(hmethod);
+	sahcf.clear(hmethod);
 	
 	out.flush();
 	
