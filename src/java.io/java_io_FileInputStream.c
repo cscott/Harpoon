@@ -217,9 +217,13 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_available
         retval = fdStat.st_size - orig;
     }
     else { 
+#ifdef HAVE_IOCTL_FIONREAD
         /* File is not regular, attempt to use FIONREAD ioctl() */
         /* NOTE: FIONREAD ioctl() reports 0 for some fd's */        
         if ((ioctl(fd, FIONREAD, &retval) >= 0) && retval) { /* we're done */ }
+#else /* we don't have this ioctl, so don't try it */
+	if (0) ;
+#endif
 	else { 
 	    /* The best we can do now is to use select to see if the fd is
 	       available.  Returns 1 if true, 0 otherwise. */

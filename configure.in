@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.63 $)dnl
+AC_REVISION($Revision: 1.64 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -31,6 +31,19 @@ AC_CHECK_LIB(bfd, bfd_init)
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(sys/types.h sys/time.h)
+ dnl check for FIONREAD in sys/ioctl.h
+AC_MSG_CHECKING([for FIONREAD ioctl])
+AC_EGREP_CPP(yes,
+[#include <sys/ioctl.h>
+#ifdef FIONREAD
+  yes
+#endif
+], flexrun_has_fionread=yes, flexrun_has_fionread=no)
+if test x$flexrun_has_fionread = xyes ; then
+    AC_DEFINE(HAVE_IOCTL_FIONREAD, 1,
+	      [Define if <sys/ioctl.h> defines a FIONREAD ioctl.])
+fi
+AC_MSG_RESULT($flexrun_has_fionread)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
