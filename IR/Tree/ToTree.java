@@ -60,7 +60,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.27 1999-08-09 22:11:13 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.28 1999-08-09 22:30:59 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -484,10 +484,11 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
     }
 
     public void visit(harpoon.IR.Quads.METHOD q) {
-	METHOD method;
+	METHOD method; SEGMENT segment;
 	Temp   params[]  = q.params(); 
 	TEMP   mParams[] = new TEMP[params.length+1];
 	
+	segment = new SEGMENT(m_tf, q, SEGMENT.CODE);
 	for (int i=0; i<params.length; i++) { 
 	    mParams[i+1] = _TEMP(params[i], q);
 	    updateDT(params[i], q, 
@@ -497,6 +498,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	m_handler = mParams[0] = extra(q, Type.POINTER);
 	method    = new METHOD(m_tf, q, mParams);
 	addDT(m_handler.temp,method,new DList(m_handler.temp,true,null),null);
+	addStmt(segment);
 	addStmt(method);
     }
 
