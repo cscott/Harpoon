@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.29 2000-12-01 19:43:10 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.30 2000-12-03 20:14:22 cananian Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -822,6 +822,13 @@ import java.util.Iterator;
           instrs[i].layout(instrs[i-1], anchor);
        }
     }
+    // make a string "safe". This is made necessary by obfuscators.
+    private static String safe(String s) {
+        char[] ca = s.toCharArray();
+	for (int i=0; i<ca.length; i++)
+	    if (Character.isISOControl(ca[i])) ca[i]='#';
+	return new String(ca);
+    }
 
     // Mandated by CodeGen generic class: perform entry/exit
     public Instr procFixup(HMethod hm, Instr instr,
@@ -994,7 +1001,8 @@ import java.util.Iterator;
                                          .replace('.','/')+"/"+
                                          "\",100,0,0,"+methodlabel.name);
           Instr in2 = new InstrDIRECTIVE(inf, instr, // source file name
-                                         "\t.stabs \""+instr.getSourceFile()+
+					 "\t.stabs \""+
+					 safe(instr.getSourceFile())+
                                          "\",100,0,0,"+methodlabel.name);
           Instr in3 = new InstrDIRECTIVE(inf, instr, // define void type
                                          "\t.stabs \"void:t19=19\",128,0,0,0"

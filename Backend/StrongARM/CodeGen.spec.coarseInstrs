@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec.coarseInstrs,v 1.1.2.2 2000-11-01 00:04:00 pnkfelix Exp $
+ * @version $Id: CodeGen.spec.coarseInstrs,v 1.1.2.3 2000-12-03 20:14:53 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -613,6 +613,13 @@ import java.util.Iterator;
 	emitMOVE( ROOT, "mov `d0, `s0", retval, r0 );
       }  
     }
+    // make a string "safe". This is made necessary by obfuscators.
+    private static String safe(String s) {
+        char[] ca = s.toCharArray();
+	for (int i=0; i<ca.length; i++)
+	    if (Character.isISOControl(ca[i])) ca[i]='#';
+	return new String(ca);
+    }
 
     // Mandated by CodeGen generic class: perform entry/exit
     public Instr procFixup(HMethod hm, Instr instr,
@@ -720,7 +727,8 @@ import java.util.Iterator;
 					   .replace('.','/')+"/"+
 					   "\",100,0,0,"+methodlabel.name);
 	    Instr in2 = new InstrDIRECTIVE(inf, instr, // source file name
-					   "\t.stabs \""+instr.getSourceFile()+
+					   "\t.stabs \""+
+					   safe(instr.getSourceFile())+
 					   "\",100,0,0,"+methodlabel.name);
 	    Instr in3 = new InstrDIRECTIVE(inf, instr, // define void type
 					   "\t.stabs \"void:t19=19\",128,0,0,0"

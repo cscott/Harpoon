@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.23 2000-10-17 00:59:08 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.24 2000-12-03 20:16:11 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -277,6 +277,13 @@ public class TreeToC extends java.io.PrintWriter {
 	void emitOutput(PrintWriter pw) {
 	    pw.print(output);
 	}
+	// make a string "safe". This is made necessary by obfuscators.
+	private static String safe(String s) {
+	    char[] ca = s.toCharArray();
+	    for (int i=0; i<ca.length; i++)
+		if (Character.isISOControl(ca[i])) ca[i]='#';
+	    return new String(ca);
+	}
 
 	// useful line number update function.
 	private int suppress_directives=0;
@@ -287,7 +294,7 @@ public class TreeToC extends java.io.PrintWriter {
 	    if (!EMIT_LINE_DIRECTIVES || suppress_directives>0) return;
 	    if (e instanceof SEQ) return;
 	    if (pw==null) return;
-	    String curr_file = e.getSourceFile();
+	    String curr_file = safe(e.getSourceFile());
 	    int curr_line = e.getLineNumber();
 	    boolean files_match =
 		last_file==null ? curr_file==null :last_file.equals(curr_file);
