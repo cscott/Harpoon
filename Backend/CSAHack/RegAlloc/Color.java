@@ -362,6 +362,10 @@ class Color implements TempMap {
 
     moveList.put(u, merge((NodeList)moveList.get(u),
 			  (NodeList)moveList.get(v)));
+    // quoting appel, pg 252: When v is coalesced into u, moves associated
+    // with v are added to the move work-list.  this will catch other moves
+    // from u to v. [CSA BUGFIX, 31-Mar-2000]
+    EnableMoves(new NodeList(v, null));//BUGFIX.
     for (NodeList nl = Adjacent(v); nl!=null; nl=nl.tail) {
       AddEdge(nl.head,u);
       /* We don't keep degree information for precolored nodes. */
@@ -465,7 +469,9 @@ if (sets.worklist.spill.contains(m)) {
   }
   // check that the 'degree' stored in the hashtable matches the adjacency.
   void check(Node n) {
-    if (len(Adjacent(n)) != Degree(n)) 
+    // CSA 31-mar-2000: we punt degree info for precolored nodes, so
+    // we can't do this check on them.  we can check all the rest, tho.
+    if ((!sets.precolored.contains(n)) && len(Adjacent(n)) != Degree(n)) 
       throw new Error("Inconsistent data for node "+ig.gtemp(n).toString()+
 		      ": Adj("+len(Adjacent(n))+") != Degree("+Degree(n)+")");
   }
