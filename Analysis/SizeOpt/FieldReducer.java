@@ -3,23 +3,48 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.SizeOpt;
 
-import harpoon.Analysis.*;
-import harpoon.Analysis.Maps.*;
-import harpoon.Analysis.Quads.SCC.*;
-import harpoon.Analysis.Transformation.*;
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
-import harpoon.Temp.*;
-import harpoon.Util.*;
+import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Maps.ConstMap;
+import harpoon.Analysis.Maps.ExactTypeMap;
+import harpoon.Analysis.Maps.ExecMap;
+import harpoon.Analysis.Quads.SCC.SCCOptimize;
+import harpoon.Analysis.Transformation.MethodMutator;
+import harpoon.ClassFile.CachingCodeFactory;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HClassMutator;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HFieldMutator;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadSSI;
+import harpoon.IR.Quads.SET;
+import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 /**
  * The <code>FieldReducer</code> code factory uses the results of a
  * <code>BitWidthAnalysis</code> to shrink field types and eliminate
  * unused and constant fields from objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldReducer.java,v 1.1.2.1 2001-07-20 01:26:10 cananian Exp $
+ * @version $Id: FieldReducer.java,v 1.1.2.2 2001-09-12 18:33:58 cananian Exp $
  */
 public class FieldReducer extends MethodMutator {
     final BitWidthAnalysis bwa;
