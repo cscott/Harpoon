@@ -13,7 +13,7 @@ static int inited = 0;
 static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-JNIEXPORT jlong java_io_File_length0(JNIEnv * env, jobject this)
+JNIEXPORT jlong Java_java_io_File_length0(JNIEnv * env, jobject this)
 {
   struct stat buf;
   int r;
