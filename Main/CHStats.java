@@ -15,7 +15,7 @@ import java.util.Enumeration;
  * compiler class hierarchy for inclusion in papers and theses.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CHStats.java,v 1.1.2.1 1999-08-02 15:15:22 cananian Exp $
+ * @version $Id: CHStats.java,v 1.1.2.2 1999-08-02 19:55:25 cananian Exp $
  */
 
 public abstract class CHStats extends harpoon.IR.Registration {
@@ -47,14 +47,39 @@ public abstract class CHStats extends harpoon.IR.Registration {
 	int totalclasses=0, depthsum=0, maxdepth=-1; HClass maxc=null;
 	for (Enumeration e=ch.classes(); e.hasMoreElements(); totalclasses++) {
 	    HClass c = (HClass) e.nextElement();
-	    int depth=0;
-	    for (HClass cp=c.getSuperclass(); cp!=null; cp=cp.getSuperclass())
-		depth++;
+	    int depth=depth(c);
 	    if (depth > maxdepth) { maxdepth = depth; maxc=c; }
 	    depthsum+=depth;
 	}
 	System.out.println("  Total classes: "+totalclasses);
 	System.out.println("  Maximum depth: "+maxdepth+" ("+maxc+")");
 	System.out.println("  Average depth: "+((float)depthsum/totalclasses));
+    }
+    private static java.util.Map dm = new java.util.HashMap();
+    private static int depth(HClass c) {
+	if (dm.containsKey(c)) { // use cached value.
+	    Integer dI = (Integer) dm.get(c);
+	    if (dI!=null) return dI.intValue();
+	    System.err.println("Circular reference to "+c);
+	    dm.put(c, new Integer(0));
+	    return 0;
+	}
+	dm.put(c, null);
+	if (c.isInterface()) {
+	    int depth=0;
+	    HClass in[] = c.getInterfaces();
+	    for (int i=0; i<in.length; i++) {
+		int d = 1 + depth(in[i]);
+		if (d>depth) depth=d;
+	    }
+	    dm.put(c, new Integer(depth));
+	    return depth;
+	} else {
+	    int depth = 0;
+	    HClass sc=c.getSuperclass();
+	    if (sc!=null) depth = 1 + depth(sc);
+	    dm.put(c, new Integer(depth));
+	    return depth;
+	}
     }
 }
