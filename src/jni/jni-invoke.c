@@ -4,16 +4,13 @@
 #include "jni-private.h"
   
 extern void FNI_Dispatch_Void(ptroff_t method_pointer, int narg_words,
-			      void * argptr, jobject_unwrapped * exception)
-     __attribute__ ((alias ("FNI_Dispatch")));
+			      void * argptr, jobject_unwrapped * exception);
 extern jobject_unwrapped FNI_Dispatch_Object(ptroff_t method_pointer,
 					     int narg_words, void * argptr,
-					     jobject_unwrapped * exception)
-     __attribute__ ((alias ("FNI_Dispatch")));
+					     jobject_unwrapped * exception);
 #define FNI_DISPATCH_PROTO(name, type) \
    extern type FNI_Dispatch_##name(ptroff_t method_pointer, int narg_words, \
-				   void *argptr, jobject_unwrapped *exception)\
-   __attribute__ ((alias ("FNI_Dispatch")));
+				   void *argptr, jobject_unwrapped *exception);
 FORPRIMITIVETYPES(FNI_DISPATCH_PROTO);
 
 /* OK, wrap & move arguments based on signature. */
