@@ -16,7 +16,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.4.8 2000-11-12 03:23:21 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.4.9 2000-11-12 03:33:00 cananian Exp $
  */
 public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;
@@ -41,15 +41,15 @@ public class Relinker extends Linker implements java.io.Serializable {
     public HClass createMutableClass(String name, HClass template) {
 	Util.assert(template.getLinker()==this);
 	HClass newClass = new HClassSyn(this, name, template);
+	HClass proxyClass = new HClassProxy(this, newClass);
 	newClass.hasBeenModified=true;
 	try {
 	    HClass oldClass = forName(name); // get existing proxy class
 	    if (oldClass.equals(template))
 		newClass.hasBeenModified=false; // exact copy of oldClass
-	    relink(oldClass, newClass);
+	    relink(oldClass, proxyClass);
 	    return oldClass;
 	} catch (NoSuchClassException e) { // brand spankin' new class
-	    HClass proxyClass = new HClassProxy(this, newClass);
 	    register(proxyClass);
 	    return proxyClass;
 	}
