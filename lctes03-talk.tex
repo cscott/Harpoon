@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.3 2003-05-22 00:19:53 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.4 2003-05-22 03:19:22 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -287,7 +287,7 @@ we really only need two bits to store colors, since our program
 only ever stores three different colors in a Car object.
 
 @ After we perform the analysis, we use the results to
-reduce the padding between fields.  We'll talk about this later.
+reduce the space used by the fields.  We'll talk about this later.
 
 ~%
 \end{talknotes}
@@ -396,7 +396,7 @@ stronger.  Here we have a lattice that allows us to classify
 values as positive or negative, even if we don't know what the
 actual value will be. @ Here if we join $1$ and $2$ we get the
 element {\tt (\_\_P)}, which indicates ``any positive number''.
-If we then join that with a negative number, say, $-1$, @ we'll
+If we then join that with a negative number, say, $-2$, @ we'll
 get {\tt (M\_P)}, or ``a non-zero number''.  If we later discover
 an assignment of zero, @ we finally get the $\top$ element.
 \end{talknotes}
@@ -1469,10 +1469,10 @@ a small \emph{table-index} instead.
 
 \begin{talknotes}
 Our static analysis can tell how many \emph{instantiated} types are in
-the program, and thus bound the index size.  But this can even work in
+the program, and thus bound the index size.  @ But this can even work in
 a dynamic environment, with a little co-operation from the GC.
-But how much space does this really save?  How many classes are in
-typical applications?
+@ We'd like to reduce the claz pointer to a single byte.  Is this
+possible in practice?  How many classes are in typical applications?
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1628,15 +1628,15 @@ Static techniques for lock-removal will mitigate this cost greatly.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{9}{
+\overlays{10}{
 \begin{slide}{How can we make this even better?}
 \fromSlide{2}{
 \begin{itemize}
  \item Currently no array analysis/can't distinguish between different uses of a class.
  \fromSlide{3}{
  \begin{itemize} \yellow\small
-  \item Use pointer analysis to discriminate among objects from a
-    certain allocation-site; optimize each alloc site.
+  \item Use pointer analysis to discriminate among objects
+    by allocation site; optimize each alloc site.
  \end{itemize}
  \fromSlide{4}{
  \item We don't compress pointers at all.
@@ -1649,10 +1649,13 @@ Static techniques for lock-removal will mitigate this cost greatly.
  \fromSlide{7}{
  \begin{itemize} \yellow\small
   \item Investigate heuristic methods.
+  \fromSlide{8}{
+  \item Leverage dynamic profiling; identify cold fields.
+  }
  \end{itemize}
- \fromSlide{8}{
- \item We know nothing about ``field-like'' maps.
  \fromSlide{9}{
+ \item We know nothing about ``field-like'' maps.
+ \fromSlide{10}{
  \begin{itemize} \yellow\small
   \item Enable \emph{internalization}.
  \end{itemize}
@@ -1663,28 +1666,65 @@ Static techniques for lock-removal will mitigate this cost greatly.
 }
 
 \begin{talknotes}
+So how can we go even further with this?
+@
+First off, we currently do nothing with allocated arrays.  Further, we
+make decisions for all instances of a class, so if a class is used in
+multiple very different ways, we are forced to pick one strategy for
+all uses.
+@
+The solution is to use pointer analysis to help discriminate among
+objects and arrays, which will allow us to apply the techniques we've
+been describing.
+@
+On a related note, we don't attempt to compress fields with pointer
+values at all.
+@
+We have a region-based approach to limiting pointer sizes which we
+feel is worth exploring in this regard.
+@
+Our ``mostly-constant'' transformations are dependent on profiling.
+@
+We could either find good heuristics to remove the profiling
+requirement, @
+or embrace run-time profiling, which would allow us to avoid transforming
+``hot'' fields.
+@ Finally, we've used maps to implement fields via externalization;
+@ it's worth exploring
+whether fields can more space-efficiently implement some \textit{maps} in
+the program.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{5}{
+\overlays{7}{
 \begin{slide}{Conclusions}
 \begin{itemize}
  \FromSlide{2}
+ \item We identified a variety of opportunities for space reductions in
+ object-oriented programs.
+ \FromSlide{3}
+ \item We described analyses and transformations to exploit these
+ opportunities. 
+ \FromSlide{4}
  \item We achieved substantial space savings on typical
    object-oriented applications.
- \FromSlide{3}
+ \FromSlide{5}
  \begin{itemize}
   \item In one case, over 40\% reduction in total live data.
  \end{itemize}
- \FromSlide{4}
+ \FromSlide{6}
  \item Even more space reduction is possible!
- \FromSlide{5}
- \item Performance impact was acceptable.
+ \FromSlide{7}
+ \item Performance impact was acceptable and tunable.
 \end{itemize}
 \end{slide}
 }
 
 \begin{talknotes}
+Read this slide.
+
+Mention ``memory wall'': memory compaction increases effective cache
+size, while ALU unpacking ops will become relatively cheaper.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1759,6 +1799,7 @@ void foo() \{\\
 }
 
 \begin{talknotes}
+Why specify widths manually when the compiler can do it?
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
