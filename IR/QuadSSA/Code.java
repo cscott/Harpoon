@@ -1,6 +1,7 @@
 // Code.java, created Fri Aug  7 13:45:29 1998 by cananian
 package harpoon.IR.QuadSSA;
 
+import harpoon.Analysis.QuadSSA.DeadCode;
 import harpoon.ClassFile.*;
 import harpoon.Util.Set;
 import harpoon.Util.UniqueVector;
@@ -17,7 +18,7 @@ import java.util.Stack;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.23 1998-09-21 02:31:26 cananian Exp $
+ * @version $Id: Code.java,v 1.24 1998-09-22 02:32:15 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -38,9 +39,9 @@ public class Code extends HCode {
         this.bytecode = bytecode;
 	//harpoon.Temp.Temp.clear(); /* debug */
 	this.quads = Translate.trans(bytecode);
-	CleanUp.cleanup1(this); // cleanup null predecessors of phis.
-	FixupFunc.fixup(this);
-	CleanUp.cleanup2(this); // cleanup unused phi/sigmas.
+	CleanUp.cleanup(this); // cleanup null predecessors of phis.
+	FixupFunc.fixup(this); // add phi/sigma functions.
+	DeadCode.optimize(this); // get rid of unused phi/sigmas.
     }
     /**
      * Return the <code>HMethod</code> this codeview
