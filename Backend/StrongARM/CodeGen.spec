@@ -51,7 +51,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.23 1999-08-07 00:43:53 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.24 1999-08-10 17:52:55 pnkfelix Exp $
  */
 %%
 
@@ -1198,3 +1198,38 @@ NATIVECALL(retval, func, arglist) %{
     }  
 }%
 
+DATA(exp) %{
+
+}%
+ 
+SEGMENT(CLASS) %{
+
+}%
+
+SEGMENT(CODE) %{
+
+}%
+
+SEGMENT(GC) %{
+
+}%
+
+SEGMENT(INIT_DATA) %{
+
+}%
+
+SEGMENT(STATIC_OBJECTS) %{
+
+}%
+
+SEGMENT(STATIC_PRIMITIVES) %{
+
+}%
+
+SEGMENT(TEXT) %{
+
+}%
+
+SEGMENT(ZERO_DATA) %{
+
+}%

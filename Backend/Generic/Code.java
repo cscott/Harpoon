@@ -32,7 +32,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.16 1999-08-06 21:00:57 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.17 1999-08-10 17:51:15 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -80,7 +80,8 @@ public abstract class Code extends HCode {
 
     public HCodeElement[] getLeafElements() { return null; }
    
-    /** Returns an array of the instructions in this codeview. 
+    /** Returns an <code>Iterator</code> over the instructions in this
+	codeview.  
      *
      *  @return         An iterator over the <code>Instr</code>s
      *                  making up this code view.  The root Instr is

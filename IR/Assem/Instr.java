@@ -21,7 +21,7 @@ import java.util.*;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.22 1999-08-04 21:46:12 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.23 1999-08-10 17:52:56 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -80,8 +80,10 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	this.pred = new Vector();
 	this.succ = new Vector();
 	
-	this.hashCode = (id<<5) + inf.getParent().getName().hashCode() ^
-            inf.getMethod().hashCode();
+	this.hashCode = (id<<5) + inf.getParent().getName().hashCode();
+	if (inf.getMethod() != null) {
+	    this.hashCode ^= inf.getMethod().hashCode(); 
+	}
     }
 
     /** Creates an <code>Instr</code> consisting of the String assem

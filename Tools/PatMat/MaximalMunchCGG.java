@@ -24,7 +24,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.25 1999-08-07 00:43:54 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.26 1999-08-10 17:52:57 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -32,6 +32,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
     private static final String TREE_CALL = "harpoon.IR.Tree.CALL";
     private static final String TREE_CJUMP = "harpoon.IR.Tree.CJUMP";
     private static final String TREE_CONST = "harpoon.IR.Tree.CONST";
+    private static final String TREE_DATA = "harpoon.IR.Tree.DATA";
     private static final String TREE_EXP = "harpoon.IR.Tree.EXP";
     private static final String TREE_JUMP = "harpoon.IR.Tree.JUMP";
     private static final String TREE_LABEL = "harpoon.IR.Tree.LABEL";
@@ -43,6 +44,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
     private static final String TREE_OPER = "harpoon.IR.Tree.OPER";
     private static final String TREE_RETURN = "harpoon.IR.Tree.RETURN";
     private static final String TREE_SEQ = "harpoon.IR.Tree.SEQ";
+    private static final String TREE_SEGMENT = "harpoon.IR.Tree.SEGMENT";
     private static final String TREE_TEMP = "harpoon.IR.Tree.TEMP";
     private static final String TREE_THROW = "harpoon.IR.Tree.THROW";
     private static final String TREE_UNOP = "harpoon.IR.Tree.UNOP";
@@ -193,6 +195,43 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 			    " = (("+TREE_CJUMP+")"+stmPrefix+
 			    ").iftrue;");
 
+	}
+
+	public void visit(Spec.StmData s) {
+	    degree++;
+
+	    append(exp, "// check statement type");
+	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_DATA+"");
+	    
+	    // look at exp
+	    TypeExpRecurse r = new 
+		TypeExpRecurse("(("+TREE_EXP+")"+ stmPrefix + ").exp",
+			       indentPrefix + "\t");
+	    s.data.accept(r);
+	    degree += r.degree;
+	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
+	    initStms.append(r.initStms.toString());
+	}
+
+	public void visit(Spec.StmSegment s) {
+	    degree++;
+
+	    append(exp, "// check statement type");
+	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_SEGMENT+"");
+	    
+	    s.segtype.accept(new Spec.LeafVisitor() {
+		public void visit(Spec.Leaf l) {
+		    Util.assert(false, "Should never visit generic Leaf in StmSegment");
+		}
+		public void visit(Spec.LeafSegType l) {
+		    append(exp, "&& ((" + TREE_SEGMENT + ")"+stmPrefix+
+			   ").segtype == "+l.segtype);
+		}
+		public void visit(Spec.LeafId l) {
+		    append(exp, "&& ((" + TREE_SEGMENT + ")"+stmPrefix+
+			   ").segtype == "+l.id);
+		}
+	    });
 	}
 
 	public void visit(Spec.StmExp s) {
