@@ -16,6 +16,7 @@ import java.util.Collections;
 import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Util.FilterIterator;
 
 import harpoon.Util.PredicateWrapper;
 import harpoon.Util.DataStructs.Relation;
@@ -41,7 +42,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.21 2000-07-02 08:37:43 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.22 2000-07-03 02:27:08 jwhaley Exp $
  */
 public class ActionRepository {
     
@@ -454,6 +455,17 @@ public class ActionRepository {
 	return true;
     }
 
+    // Returns the sync ops performed by the thread nt on the node n.
+    public final Iterator syncsOn(final PANode n, final PANode nt){
+	FilterIterator.Filter f =
+	    new FilterIterator.Filter() {
+		public boolean isElement(Object o) {
+		    return ((PASync)o).nt == nt;
+		}
+	    };
+	return new FilterIterator(alpha_sync.getValues(n).iterator(), f);
+    }
+    
     /** Checks whether any <code>sync</code> action is done on the node
 	<code>node</code>. */
     public boolean isSyncOn(PANode node){

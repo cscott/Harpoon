@@ -47,6 +47,7 @@ import harpoon.Analysis.PointerAnalysis.PANode;
 import harpoon.Analysis.PointerAnalysis.ParIntGraph;
 import harpoon.Util.DataStructs.Relation;
 import harpoon.Analysis.PointerAnalysis.MAInfo;
+import harpoon.Analysis.PointerAnalysis.SyncElimination;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
@@ -73,7 +74,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.67 2000-07-02 08:37:47 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.68 2000-07-03 02:27:28 jwhaley Exp $
  */
 public abstract class PAMain {
 
@@ -111,6 +112,8 @@ public abstract class PAMain {
     private static boolean DO_SAT = false;
     private static String SAT_FILE = null;
 
+    private static boolean ELIM_SYNCOPS = false;
+    
     // Load the preanalysis results from PRE_ANALYSIS_IN_FILE
     private static boolean LOAD_PRE_ANALYSIS = false;
     private static String PRE_ANALYSIS_IN_FILE = null;
@@ -220,9 +223,9 @@ public abstract class PAMain {
 
 	if(SHOW_DETAILS)
 	    pa.print_stats();
+	
     }
     
-
     // Constructs some data structures used by the analysis: the code factory
     // providing the code of the methods, the class hierarchy, call graph etc.
     private static void pre_analysis() {
@@ -366,9 +369,13 @@ public abstract class PAMain {
 		    System.out.print("INT. GRAPH AT THE END OF THE METHOD" +
 				     " + INTER-THREAD ANALYSIS:");
 		    System.out.println(pig_inter_thread);
+		    
 		}
 	    }
 
+	if (ELIM_SYNCOPS)
+	    do_elim_syncops(hmethod);
+    
 	if(hmethod == null){
 	    System.out.println("Oops!" + method.declClass + "." +
 			       method.name + " not found");
@@ -418,6 +425,7 @@ public abstract class PAMain {
 	    new LongOpt("notg",      LongOpt.NO_ARGUMENT,       null, 18),
 	    new LongOpt("loadpre",   LongOpt.REQUIRED_ARGUMENT, null, 19),
 	    new LongOpt("savepre",   LongOpt.REQUIRED_ARGUMENT, null, 20),
+	    new LongOpt("syncelim",  LongOpt.NO_ARGUMENT,       null, 21),
 	};
 
 	Getopt g = new Getopt("PAMain", argv, "mscoa:i", longopts);
@@ -492,6 +500,9 @@ public abstract class PAMain {
 		SAVE_PRE_ANALYSIS = true;
 		PRE_ANALYSIS_OUT_FILE = new String(g.getOptarg());
 		break;		
+	    case 21:
+		ELIM_SYNCOPS = true;
+		break;
 	    }
 
 	return g.getOptind();
@@ -805,6 +816,36 @@ public abstract class PAMain {
 	    Quad q = (Quad) it.next();
 	    q.accept(sat_qv);
 	}
+    }
+
+    static void do_elim_syncops(HMethod hm) {
+	System.out.println("\nEliminating unnecessary synchronization operations.");
+	
+	SyncElimination se = new SyncElimination(pa);
+
+    	for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    se.addRoot(mm);
+	}
+	
+	se.calculate();
+	
+	HCodeFactory hcf_nosync = SyncElimination.codeFactory(hcf, se);
+	
+	//try {
+	    java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
+	    MetaCallGraph mcg = pa.getMetaCallGraph();
+	    Set allmm = mcg.getAllMetaMethods();
+	    Iterator it = allmm.iterator();
+	    while (it.hasNext()) {
+	        MetaMethod mm = (MetaMethod)it.next();
+	        HMethod m = mm.getHMethod();
+	        System.out.println("Transforming method "+m);
+	        HCode hcode = hcf_nosync.convert(m);
+	        if (hcode != null) hcode.print(out);
+	    }
+	//} catch (IOException x) {}
+
     }
 
     private static String[] examples = {
