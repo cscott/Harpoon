@@ -4,6 +4,7 @@
 package harpoon.Backend.StrongARM;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
@@ -45,7 +46,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.8 1999-10-13 17:16:58 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.9 1999-10-15 00:44:54 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -53,13 +54,13 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private final InstrBuilder instrBuilder;
     private final CodeGen codegen;
     
-    public Frame(ClassHierarchy ch) { 
+    public Frame(ClassHierarchy ch, CallGraph cg) { 
 	super();
 	codegen = new CodeGen(this);
 	regFileInfo = new RegFileInfo();
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy("_malloc");
-	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, ch);
+	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, ch, cg);
 	instrBuilder = new InstrBuilder(regFileInfo);
     }
 

@@ -4,6 +4,7 @@
 package harpoon.Backend.Runtime1;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Maps.ClassDepthMap;
 import harpoon.Backend.Maps.NameMap;
@@ -18,19 +19,23 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.6 1999-10-13 17:16:50 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.7 1999-10-15 00:44:41 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
     final ClassHierarchy ch;
     final ObjectBuilder ob;
+    final List staticInitializers;
     
     /** Creates a new <code>Runtime1.Runtime</code>. */
-    public Runtime(Frame frame, AllocationStrategy as, ClassHierarchy ch) {
+    public Runtime(Frame frame, AllocationStrategy as,
+		   ClassHierarchy ch, CallGraph cg) {
 	super(new Object[] { frame, as, ch });
 	this.frame = frame;
 	this.ch = ch;
 	this.ob = new harpoon.Backend.Runtime1.ObjectBuilder(this);
+	this.staticInitializers =
+	    new harpoon.Backend.Analysis.InitializerOrdering(ch, cg).sorted;
     }
     // protected initialization methods.
     protected NameMap initNameMap(Object closure) {
@@ -59,6 +64,7 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    new DataInterfaceList(frame, hc, ch),
 	    new DataStaticFields(frame, hc),
 	    new DataStrings(frame, hc, newStrings),
+	    new DataInitializers(frame, hc, staticInitializers),
 	});
     }
     final Set stringsSeen = new HashSet();
