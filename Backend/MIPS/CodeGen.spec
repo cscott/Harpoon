@@ -69,7 +69,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.18 2000-09-25 19:36:38 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.19 2000-09-27 22:48:01 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -1579,6 +1579,12 @@ UNOP(_2I, arg) = i %pred %( ROOT.operandType() == Type.LONG )%
    emit( ROOT, "move `d0, `s0l", i, arg );
 }%
 
+UNOP(_2D, arg) = i %pred %( ROOT.operandType() == Type.LONG )%
+%{
+   emitLineDebugInfo(ROOT);
+   DoDCall(ROOT, i, arg, "__l2d");
+}%
+
 
 UNOP(_2I, arg) = i %pred %( ROOT.operandType() == Type.FLOAT )%
 %{
@@ -1596,6 +1602,11 @@ UNOP(_2I, arg) = i %pred %( ROOT.operandType() == Type.DOUBLE )%
 %{
    emitLineDebugInfo(ROOT);
    DoDCall(ROOT, i, arg, "__d2i");
+}%
+UNOP(_2L, arg) = i %pred %( ROOT.operandType() == Type.DOUBLE )%
+%{
+   emitLineDebugInfo(ROOT);
+   DoDCall(ROOT, i, arg, "__d2l");
 }%
 
 
