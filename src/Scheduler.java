@@ -286,11 +286,15 @@ public abstract class Scheduler {
     }
 
     public static Scheduler getScheduler() {
-	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
-	Scheduler sched;
+	return getScheduler(RealtimeThread.currentRealtimeThread());
+    }
+
+    public static Scheduler getScheduler(RealtimeThread rt) {
+	Scheduler sched = null;
 	if (rt == null) {
 	    sched = Scheduler.getDefaultScheduler();
-	} else {
+	} 
+	if (sched == null) {
 	    sched = rt.getScheduler();
 	}
 	if (sched == null) {
@@ -374,12 +378,7 @@ public abstract class Scheduler {
 				     final long threadID) {
 	disabledThreads++;
 //	MemoryArea.startMem(vt);
-	Scheduler sched;
-	if (rt != null) { 
-	    sched = rt.getScheduler();
-	} else {
-	    sched = getDefaultScheduler();
-	}
+	Scheduler sched = getScheduler(rt);
 	if (sched != null) {
 	    sched.disableThread(threadID);
 	} else {
@@ -393,12 +392,7 @@ public abstract class Scheduler {
 				    final long threadID) {
 	disabledThreads--;
 	// MemoryArea.startMem(vt);
-	Scheduler sched;
-	if (rt != null) { 
-	    sched = rt.getScheduler();
-	} else {
-	    sched = getDefaultScheduler();
-	}
+	Scheduler sched = getScheduler(rt);
 	if (sched != null) {
 	    sched.enableThread(threadID);
 	} else {
