@@ -27,7 +27,7 @@ import java.util.List;
  * <code>DataInterfaceList</code> lays out the expanded list of interfaces.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataInterfaceList.java,v 1.1.4.4 2000-10-17 03:26:03 cananian Exp $
+ * @version $Id: DataInterfaceList.java,v 1.1.4.5 2000-10-17 17:22:41 cananian Exp $
  */
 public class DataInterfaceList extends Data {
     final TreeBuilder m_tb;
@@ -52,11 +52,12 @@ public class DataInterfaceList extends Data {
 	// okay, now collect all the interfaces that this class implements.
 	List in = allInterfaces(hc);
 	// add all interfaces of the component class.
+	int dims = 0;
 	while (hc.isArray()) {
-	    hc = hc.getComponentType();
+	    hc = hc.getComponentType(); dims++;
 	    for (Iterator it = allInterfaces(hc).iterator(); it.hasNext(); ) {
 		HClass hcc = (HClass) it.next();
-		in.add(HClassUtil.arrayClass(linker, hcc, 1));
+		in.add(HClassUtil.arrayClass(linker, hcc, dims));
 	    }
 	}
 	// filter out those not in the class hierarchy.
