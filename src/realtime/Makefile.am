@@ -23,6 +23,6 @@ refCountAllocator.c threads.c threads.h Scheduler.c Scheduler.h SchedulerData.h 
 RealtimeThread.h RealtimeThreadData.h RealtimeThread.c \
 RealtimeClock.h RealtimeClock.c POSIXSignalHandler.h POSIXSignalHandler.c \
 SizeEstimator.h SizeEstimator.c ScopedMemory.h ScopedMemory.c timesys.c \
-timesys.h
+timesys.h nativeio.h nativeio.c
 endif
 
