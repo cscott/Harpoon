@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.30.2.1 2000-01-11 17:01:30 cananian Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.30.2.2 2000-01-12 06:52:14 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -50,8 +50,6 @@ public class Jasmin {
 	out.println(".class "+Modifier.toString(hclass.getModifiers())+" "+Util.jasminEscape(hclass.getName().replace('.','/')));
 	if (hclass.getSuperclass()!=null)
 	    out.println(".super "+Util.jasminEscape(hclass.getSuperclass().getName().replace('.','/')));
-	else
-	    out.println(".super java/lang/Object");
 
 	//List the interfaces
 	HClass[] interfaces=hclass.getInterfaces();
