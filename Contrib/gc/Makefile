@@ -1,3 +1,4 @@
+# Generated automatically from Makefile.in by configure.
 # Primary targets:
 # gc.a - builds basic library
 # libgc.a - builds library for use with g++ "-fgc-keyword" extension
@@ -150,7 +151,6 @@ RANLIB= ranlib
 # to be generated in different directories.  In this case, the destination directory
 # should contain a copy of the original include directory.
 srcdir = .
-VPATH = $(srcdir)
 
 OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o hpux_irix_threads.o linux_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o
 
