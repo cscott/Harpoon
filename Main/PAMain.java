@@ -72,7 +72,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.60 2000-06-13 19:18:14 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.61 2000-06-14 17:34:36 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -708,6 +708,19 @@ public abstract class PAMain {
 	    pa.getIntParIntGraph(mroot);
 	    pa.getExtParIntGraph(mroot);
 	    pa.threadInteraction(mroot);
+
+	    for(Iterator it = mcg.getAllMetaMethods().iterator();
+		it.hasNext(); ) {
+		MetaMethod mm = (MetaMethod) it.next();
+		HMethod hm = mm.getHMethod();
+
+		if(java.lang.reflect.Modifier.isNative(hm.getModifiers()))
+		    continue;
+
+		System.out.println("Inter-thread analysis for " + mm);
+
+		pa.threadInteraction(mm); 
+	    }
 	}
 	else {
 	    Set tops = new HashSet(mcg.getRunMetaMethods());

@@ -67,7 +67,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.78 2000-06-13 00:57:32 bdemsky Exp $
+ * @version $Id: SAMain.java,v 1.1.2.79 2000-06-14 17:34:36 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -475,12 +475,12 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 's':
 		arg=g.getOptarg();
 		try {
-		    ObjectInputStream ois=new ObjectInputStream(
-								new FileInputStream(arg));
-		    hcf=(HCodeFactory)ois.readObject();
-		    linker=(Linker)ois.readObject();
-		    startset=(Set)ois.readObject();
-		    joinset=(Set)ois.readObject();
+		    ObjectInputStream ois =
+			new ObjectInputStream(new FileInputStream(arg));
+		    hcf = (HCodeFactory) ois.readObject();
+		    linker = (Linker) ois.readObject();
+		    startset = (Set) ois.readObject();
+		    joinset = (Set) ois.readObject();
 		    ois.close();
 		} catch (Exception e) {
 		    System.out.println(e + " was thrown");
