@@ -1,5 +1,5 @@
-// Timer.java, created by Dumitru Daniliuc
-// Copyright (C) 2003 Dumitru Daniliuc
+// Timer.java, created by Harvey Jones, documented by Dumitru Daniliuc
+// Copyright (C) 2003 Harvey Jones, Dumitru Daniliuc
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
@@ -15,15 +15,15 @@ package javax.realtime;
  *  until <code>start()</code> is called.
  */
 public abstract class Timer extends AsyncEvent {
-
-    protected boolean enabled = true;
-    protected boolean started = false;
-    protected Clock defaultClock;
-    protected RelativeTime fireAfter;
+    
+    AbsoluteTime lastUpdate;
+    protected RelativeTime timeLeft;
+    protected Clock clock;
     protected AsyncEventHandler handler;
-    protected RelativeTime timePassed = new RelativeTime(0, 0);
-    protected AbsoluteTime lastUpdated = new AbsoluteTime();
-
+    protected boolean enabled = false;
+    protected boolean started = false;
+    
+    
     /** Create a timer that fires at the given time based on the given
      *  instance of <code>Clock</code> and is handled by the specified
      *  handler.
@@ -38,18 +38,17 @@ public abstract class Timer extends AsyncEvent {
      */
     protected Timer(HighResolutionTime t, Clock c,
 		    AsyncEventHandler handler) {
-	if (t instanceof AbsoluteTime)
-	    fireAfter = new RelativeTime(((RelativeTime)t).getMilliseconds() -
-					 c.getTime().getMilliseconds(),
-					 ((RelativeTime)t).getNanoseconds() -
-					 c.getTime().getNanoseconds());
-	else fireAfter = (RelativeTime)t;
-
-	defaultClock = c;
+	this.clock = (c != null)? c : Clock.getRealtimeClock();
 	this.handler = handler;
-	enabled = false;
-    }
 
+	if (t instanceof AbsoluteTime){
+	    this.timeLeft = t.relative(this.clock);
+	} else {
+	    this.timeLeft = (RelativeTime) t;
+	}
+	//	Scheduler.instance().addTimer(this);
+    }
+	
     /** Create a <code>ReleaseParameters</code> block appropriate to the
      *  timing characteristics of this event. The default is the most
      *  pessimistic: <code>AperiodicParameters</code>. This is typically
@@ -60,15 +59,15 @@ public abstract class Timer extends AsyncEvent {
      *  @return A new <code>ReleaseParameters</code> object.
      */
     public ReleaseParameters createReleaseParameters() {
-	return new AperiodicParameters(null, fireAfter, handler, null);
+	return new AperiodicParameters(null, timeLeft, null, null);
     }
 
     /** Destroy the timer and return all possible resources to the system. */
     public void destroy() {
-	defaultClock = null;
-	fireAfter = null;
-	handler = null;
-	enabled = false;
+	// TODO: Figure out what other things we can free up.
+	this.clock = null;
+	this.handler = null;
+	this.timeLeft = null;
     }
 
     /** Disable this timer, preventing it from firing. It may subsequently
@@ -79,12 +78,12 @@ public abstract class Timer extends AsyncEvent {
      *  occurs, it will fire.
      */
     public void disable() {
-	enabled = false;
+	this.enabled = false;
     }
 
     /** Re-enable this timer after it has been disabled. */
     public void enable() {
-	enabled = true;
+	this.enabled = true;
     }
 
     /** Gets the instance of <code>Clock</code> that this timer is based on.
@@ -92,7 +91,7 @@ public abstract class Timer extends AsyncEvent {
      *  @return The instance of <code>Clock</code>.
      */
     public Clock getClock() {
-	return defaultClock;
+	return clock;
     }
 
     /** Get the time at which this event will fire.
@@ -101,12 +100,7 @@ public abstract class Timer extends AsyncEvent {
      *          the absolute time at which this will fire.
      */
     public AbsoluteTime getFireTime() {
-	return new AbsoluteTime(fireAfter.getMilliseconds() -
-				defaultClock.getTime().getMilliseconds() +
-				Clock.getRealtimeClock().getTime().getMilliseconds(),
-				fireAfter.getNanoseconds() -
-				defaultClock.getTime().getNanoseconds() +
-				Clock.getRealtimeClock().getTime().getNanoseconds());
+	return timeLeft.absolute(clock);
     }
 
     /** Tests this to determine if this has been started and is in a
@@ -118,7 +112,7 @@ public abstract class Timer extends AsyncEvent {
      *          started and is in the disabled state, or started and stopped.
      */
     public boolean isRunning() {
-	return (started && enabled);
+	return enabled && started;
     }
 
     /** Change the schedule time for this event; can take either absolute
@@ -128,25 +122,24 @@ public abstract class Timer extends AsyncEvent {
      *              previous fire time is still the time at which this will fire.
      */
     public void reschedule(HighResolutionTime time) {
-	if (time instanceof AbsoluteTime)
-	    fireAfter.set(time.getMilliseconds() - defaultClock.getTime().getMilliseconds(),
-			  time.getNanoseconds() - defaultClock.getTime().getNanoseconds());
-	else fireAfter = (RelativeTime)time;
+	if(time != null){
+	    if(time instanceof RelativeTime){
+		this.timeLeft = (RelativeTime) time;
+	    } else if (time instanceof AbsoluteTime){
+		this.timeLeft = time.relative(clock);
+	    } else {
+		throw new Error("Invalid parameter to reschedule!");
+	    }
+	}
     }
 
     /** Starts this time. A <code>Timer</code> starts measuring time from
      *  when it is started.
      */
     public void start() {
-	started = true;
-	Clock.getRealtimeClock().getTime(lastUpdated);
-	while (started) {
-	    AbsoluteTime temp = new AbsoluteTime();
-	    Clock.getRealtimeClock().getTime(temp);
-	    RelativeTime difference = temp.subtract(lastUpdated);
-	    timePassed = timePassed.add(difference);
-	    lastUpdated = temp;
-	}
+	this.clock.getTime(this.lastUpdate);
+	this.started = true;
+	this.enabled = true;
     }
 
     /** Stops a timer that is running and changes its state to
@@ -156,8 +149,19 @@ public abstract class Timer extends AsyncEvent {
      *          False, if this was not <b>started or disabled</b>.
      */
     public boolean stop() {
-	boolean wasStarted = started && enabled;
-	started = false;
-	return wasStarted;
+	if(!this.started) return false;
+
+	AbsoluteTime oldLastUpdate = this.lastUpdate;
+	this.clock.getTime(this.lastUpdate); // Put the new time in lastUpdate. Only useful for the subtraction
+
+	/* Subtract the elapsed time from timeLeft. Normally this is updated by the scheduler, 
+	   but we can't count on it, because the clock can be stopped at any arbitrary time */
+	this.timeLeft.subtract(this.lastUpdate.subtract(oldLastUpdate));
+	this.enabled = false;
+	this.started = false;
+	return this.enabled;
+    }
+    RelativeTime getTimeTillFire(){
+	return timeLeft;
     }
 }
