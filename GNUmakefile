@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.50 1999-07-29 01:49:06 pnkfelix Exp $
+# $Id: GNUmakefile,v 1.61.2.51 1999-07-29 17:00:22 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -59,8 +59,9 @@ MACHINE_GEN := Tools/PatMat/Lexer.java Tools/PatMat/Parser.java \
 	     Tools/PatMat/Sym.java
 
 CGSPECS:=$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.spec))
+CGJAVA :=$(patsubst %.spec,%.java,$(CGSPECS))
 MACHINE_SRC+=$(CGSPECS)
-MACHINE_GEN+= Backend/StrongARM/CodeGen.java
+MACHINE_GEN+=$(filter-out Backend/Sparc/% Backend/Jouette/%,$(CGJAVA))
 
 ALLSOURCE :=  $(MACHINE_GEN) $(filter-out $(MACHINE_GEN), \
 		$(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
@@ -95,6 +96,7 @@ list-nonempty-packages:
 list-packages-with-java-src:
 	@echo $(filter-out Test,$(PKGSWITHJAVASRC))
 
+java:	PASS = 1
 java:	$(ALLSOURCE) $(PROPERTIES)
 	if [ ! -d harpoon ]; then \
 	  $(MAKE) first; \
@@ -102,14 +104,29 @@ java:	$(ALLSOURCE) $(PROPERTIES)
 #	javac goes nuts unless Tree.java is first. <grumble>
 	@${JCC} ${JFLAGS} ${JFLAGSVERB} IR/Tree/Tree.java $(filter-out IR/Tree/Tree.java, $(ALLSOURCE)) | \
 		egrep -v '^\[[lc]'
+	@if [ -f stubbed-out ]; then \
+	  $(RM) `cat stubbed-out`; \
+	  $(MAKE) --no-print-directory PASS=2 `cat stubbed-out`; \
+	  echo Rebuilding `cat stubbed-out`; \
+	  ${JCC} ${JFLAGS} `cat stubbed-out`; \
+	  $(RM) stubbed-out; \
+	fi 
 	@$(MAKE) --no-print-directory properties
 	touch java
 
+jikes:	PASS = 1
 jikes: 	$(MACHINE_GEN)
 	@if [ ! -d harpoon ]; then $(MAKE) first; fi
 	@echo -n Compiling... ""
 	@${JIKES} ${JFLAGS} ${ALLSOURCE}
 	@echo done.
+	@if [ -f stubbed-out ]; then \
+	  $(RM) `cat stubbed-out`; \
+	  $(MAKE) --no-print-directory PASS=2 `cat stubbed-out`; \
+	  echo Rebuilding `cat stubbed-out`; \
+	  ${JIKES} ${JFLAGS} `cat stubbed-out`; \
+	  $(RM) stubbed-out; \
+	fi 
 	@$(MAKE) --no-print-directory properties
 	@touch java
 
@@ -185,8 +202,17 @@ update: needs-cvs
 	@-if [ -x $(FORTUNE) ]; then echo ""; $(FORTUNE); fi
 
 # CodeGeneratorGenerator
-%.java : %.spec
-	java harpoon.Tools.PatMat.Main $< > $@
+%.java : %.spec $(filter Tools/PatMat/%,$(ALLSOURCE))
+	@if [ "PASS $(PASS)" = "PASS 1" ]; then \
+	  echo PASS $(PASS): stubbing out $@; \
+	  sed -e 's/PACKAGE/$(subst /,.,$(shell dirname $@))/g' \
+	      -e 's/NullCodeGen/$(basename $(notdir $@))/g' \
+	      < Support/NullCodeGen.template > $@; \
+	  touch stubbed-out; echo $@ >> stubbed-out; \
+	else \
+	  echo PASS $(PASS): generating $@ from $<; \
+	  java harpoon.Tools.PatMat.Main $< > $@; \
+	fi
 
 # JLex
 %.java : %.jlex
@@ -206,8 +232,8 @@ Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
 	xvcg -psoutput $@ -paper 8x11 -color $(VCG_OPT) $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
-harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) bin/test-collections bin/annotate.perl $(MUNGE) $(UNMUNGE) mark-executable
-	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) bin/test-collections bin/annotate.perl $(MUNGE) $(UNMUNGE)
+harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template bin/test-collections bin/annotate.perl $(MUNGE) $(UNMUNGE) mark-executable
+	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template bin/test-collections bin/annotate.perl $(MUNGE) $(UNMUNGE)
 	date '+%-d-%b-%Y at %r %Z.' > harpoon.tgz.TIMESTAMP
 
 tar:	harpoon.tgz harpoon.tgz.TIMESTAMP
