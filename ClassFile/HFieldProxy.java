@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * <code>HField</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldProxy.java,v 1.1.4.5 2001-11-12 17:55:27 cananian Exp $
+ * @version $Id: HFieldProxy.java,v 1.1.4.6 2001-11-14 23:14:41 cananian Exp $
  * @see HField
  */
 class HFieldProxy extends HMemberProxy
@@ -40,12 +40,20 @@ class HFieldProxy extends HMemberProxy
     public String toString() { return HFieldImpl.toString(this); }
     public boolean equals(Object obj) { return HFieldImpl.equals(this, obj); }
     // HFieldMutator interface
+    // BE CAREFUL TO KEEP TRACK OF PROXY'S HASHCODE CHANGES.
+    // flushMemberMap() and updateMemberMap() need to be called whenever the
+    // underlying proxy's hashcode changes.  Things that may cause a
+    // change: changing declaring class, name, or descriptor.
     public void addModifiers(int m) { proxyMutator.addModifiers(m); }
     public void setModifiers(int m) { proxyMutator.setModifiers(m); }
     public void removeModifiers(int m) { proxyMutator.removeModifiers(m); }
     public void setConstant(Object co) { proxyMutator.setConstant(co); }
     public void setSynthetic(boolean is) { proxyMutator.setSynthetic(is); }
-    public void setType(HClass type) { proxyMutator.setType(unwrap(type)); }
+    public void setType(HClass type) {
+	flushMemberMap();
+	try { proxyMutator.setType(unwrap(type)); }
+	finally { updateMemberMap(); }
+    }
     /** Serializable interface. */
     public Object writeReplace() { return new HFieldImpl.HFieldStub(this); }
 }

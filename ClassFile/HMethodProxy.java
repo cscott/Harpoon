@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodProxy.java,v 1.1.4.5 2001-11-12 17:55:27 cananian Exp $
+ * @version $Id: HMethodProxy.java,v 1.1.4.6 2001-11-14 23:14:41 cananian Exp $
  * @see HMethod
  */
 class HMethodProxy extends HMemberProxy
@@ -46,23 +46,27 @@ class HMethodProxy extends HMemberProxy
     public String toString() { return HMethodImpl.toString(this); }
     public boolean equals(Object obj) { return HMethodImpl.equals(this, obj); }
     // HMethodMutator interface
+    // BE CAREFUL TO KEEP TRACK OF PROXY'S HASHCODE CHANGES.
+    // flushMemberMap() and updateMemberMap() need to be called whenever the
+    // underlying proxy's hashcode changes.  Things that may cause a
+    // change: changing declaring class, name, or descriptor.
     public void addModifiers(int m) { proxyMutator.addModifiers(m); }
     public void setModifiers(int m) { proxyMutator.setModifiers(m); }
     public void removeModifiers(int m) { proxyMutator.removeModifiers(m); }
     public void setReturnType(HClass type) {
 	flushMemberMap();
-	proxyMutator.setReturnType(unwrap(type));
-	updateMemberMap();
+	try { proxyMutator.setReturnType(unwrap(type)); }
+	finally { updateMemberMap(); }
     }
     public void setParameterTypes(HClass[] parameterTypes) {
 	flushMemberMap();
-	proxyMutator.setParameterTypes(unwrap(parameterTypes));
-	updateMemberMap();
+	try { proxyMutator.setParameterTypes(unwrap(parameterTypes)); }
+	finally { updateMemberMap(); }
     }
     public void setParameterType(int which, HClass type) {
 	flushMemberMap();
-	proxyMutator.setParameterType(which, unwrap(type));
-	updateMemberMap();
+	try { proxyMutator.setParameterType(which, unwrap(type)); }
+	finally { updateMemberMap(); }
     }
     public void setParameterNames(String[] parameterNames) {
 	proxyMutator.setParameterNames(parameterNames);
