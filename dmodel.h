@@ -88,7 +88,7 @@ class DomainRelation {
   bool issupersetof(DomainSet *sub,DomainSet *super);
   int getnumrelation();
   DRelation * getrelation(int i);
-  void fixstuff();
+  bool fixstuff();
   void reset();
 
  private:

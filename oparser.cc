@@ -275,22 +275,26 @@ Predicate * Parser::parsepredicate() {
       Token relation=reader->readnext();
       Token compareop=reader->readnext();
       Elementexpr * ee=parseelementexpr();
+      Valueexpr *ve=new Valueexpr(new Label(copystr(label.str)),
+				 new Relation(copystr(relation.str)));
+      while(compareop.token_type==TOKEN_DOT) {
+	Token nrelation=reader->readnext();
+	compareop=reader->readnext();
+	ve=new Valueexpr(ve,
+			 new Relation(copystr(nrelation.str)));
+      }
+      
       switch(compareop.token_type) {
       case TOKEN_LT:
-	return new Predicate(new Valueexpr(new Label(copystr(label.str)),
-					   new Relation(copystr(relation.str))),PREDICATE_LT,ee);
+	return new Predicate(ve,PREDICATE_LT,ee);
       case TOKEN_LTE:
-	return new Predicate(new Valueexpr(new Label(copystr(label.str)),
-					   new Relation(copystr(relation.str))),PREDICATE_LTE,ee);
+	return new Predicate(ve,PREDICATE_LTE,ee);
       case TOKEN_EQUALS:
-	return new Predicate(new Valueexpr(new Label(copystr(label.str)),
-					   new Relation(copystr(relation.str))),PREDICATE_EQUALS,ee);
+	return new Predicate(ve,PREDICATE_EQUALS,ee);
       case TOKEN_GTE:
-	return new Predicate(new Valueexpr(new Label(copystr(label.str)),
-					   new Relation(copystr(relation.str))),PREDICATE_GTE,ee);
+	return new Predicate(ve,PREDICATE_GTE,ee);
       case TOKEN_GT:
-	return new Predicate(new Valueexpr(new Label(copystr(label.str)),
-					   new Relation(copystr(relation.str))),PREDICATE_GT,ee);
+	return new Predicate(ve,PREDICATE_GT,ee);
       default:
 	error();
       }
@@ -298,7 +302,7 @@ Predicate * Parser::parsepredicate() {
   case TOKEN_IN:
     {
       Setexpr * se=parsesetexpr();
-    return new Predicate(new Label(copystr(label.str)),se);
+      return new Predicate(new Label(copystr(label.str)),se);
     }
   default:
     error();

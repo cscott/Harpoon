@@ -442,19 +442,17 @@ void processobject::modifyconstraint(Constraint *c)
 }
 
 
-
-
 processobject::~processobject() {
 }
 
 
-
-
-
-
 // computes ve = V.R
 Element * evaluatevalueexpr(Valueexpr *ve, Hashtable *env, model *m) {
-  Element * e=(Element *) env->get(ve->getlabel()->label());
+  Element *e=NULL;
+  if (ve->gettype()==0) {
+    e=(Element *) env->get(ve->getlabel()->label());
+  } else
+    e=evaluatevalueexpr(ve->getvalueexpr(),env,m);
   return (Element *)m->getdomainrelation()->getrelation(ve->getrelation()->getname())->getrelation()->getobj(e);
 }
 
@@ -552,5 +550,3 @@ Element * evaluateexpr(Elementexpr *ee, Hashtable *env, model *m) {
     break;
   }
 }
-
-

@@ -151,15 +151,20 @@ class Setexpr {
 class Valueexpr {
  public:
   Valueexpr(Label *l,Relation *r);
+  Valueexpr(Valueexpr *ve,Relation *r);
   void print();
   void fprint(FILE *f);
   void print_value(Hashtable *stateenv, model *m);
-
+  Element * get_value(Hashtable *stateenv, model *m);
+  int gettype();
   Label * getlabel();
+  Valueexpr * getvalueexpr();
   Relation * getrelation();
   
  private:
+  int type;
   Label *label;
+  Valueexpr *valueexpr;
   Relation *relation;
 };
 

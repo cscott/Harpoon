@@ -20,6 +20,8 @@
 
 static int abstractcheck=0;
 static int abstracttrigger=0;
+static int paircount=0;
+
 // class processabstract
 
 processabstract::processabstract(model *m) {
@@ -175,6 +177,7 @@ void processabstract::satisfystatementb(Statementb *sb, Hashtable *env) {
       }*/
     if (!globalmodel->getdomainrelation()->getrelation(sb->getsetlabel()->getname())->getrelation()->contains(left,right)) {
       dirtyflag=true;
+      paircount++;
 #ifdef DEBUGMANYMESSAGES
       printf("element: <");
       left->print();
@@ -194,6 +197,7 @@ void processabstract::satisfystatementb(Statementb *sb, Hashtable *env) {
 
 void processabstract::printstats() {
   printf("Abstraction Rules Checked: %d Triggered: %d\n",abstractcheck,abstracttrigger);
+  printf("Pair count: %d\n",paircount);
 }
 
 void processabstract::processrule(Rule *r) {

@@ -63,6 +63,7 @@ void DomainSet::print() {
       printf("%s ",subsets[i]);
     else
       printf("| %s",subsets[i]);
+  printf("Size: %d",set->size());
 }
 
 char * DomainSet::getname() {
@@ -132,9 +133,6 @@ void DRelation::print() {
   else
     printf("1");
   printf(")");
-
-  WorkRelation *wr = getrelation();
-  wr->print();
 
 }
 
@@ -491,21 +489,30 @@ DRelation * DomainRelation::getrelation(int i) {
 }
 
 
-void DomainRelation::fixstuff() {
+bool DomainRelation::fixstuff() {
+  bool anychange=false;
   /* Guaranteed fixpoint because we keep removing items...finite # of items */
   while(true) {
     bool changed=false;
     for(int i=0;i<numsets;i++) {
-      if(checksubset(sets[i]))
+      if(checksubset(sets[i])) {
 	changed=true;
+	anychange=true;
+      }
     }
     for(int i=0;i<numrelations;i++) {
-      if(checkrelations(relations[i]))
+      if(checkrelations(relations[i])) {
 	changed=true;
+	anychange=true;
+      }
     }
+#ifdef REPAIR
+    /* Fix point only necessary if repairing */
     if(!changed)
+#endif
       break;
   }
+  return anychange;
 }
 
 
@@ -526,7 +533,9 @@ bool DomainRelation::checksubset(DomainSet *ds) {
       void *old=ele;
       ele=ws->getnextelement(ele);
       changed=true;
+#ifdef REPAIR
       ws->removeobject(old);
+#endif
     } else
       ele=ws->getnextelement(ele);
   }
@@ -549,14 +558,18 @@ bool DomainRelation::checksubset(DomainSet *ds) {
 	  else {
 	    /* Partition exclusion property */
 	    changed=true;
+#ifdef REPAIR
 	    subset->getset()->removeobject(ele);
+#endif
 	  }
 	}
       }
       if (inccount==0) {
 	/* Partition inclusion property */
 	changed=true;
+#ifdef REPAIR
 	ws->removeobject(ele);
+#endif
       }
       ele=ws->getnextelement(ele);
     }
@@ -584,7 +597,9 @@ bool DomainRelation::checkrelations(DRelation *dr) {
       void *r=ele.right;
       ele=rel->getnextelement(l,r);
       changed=true;
+#ifdef REPAIR
       rel->remove(l,r);
+#endif
     } else {
       ele=rel->getnextelement(ele.left,ele.right);
     }

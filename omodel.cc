@@ -445,34 +445,60 @@ Label * Valueexpr::getlabel() {
   return label;
 }
 
+int Valueexpr::gettype() {
+  return type;
+}
+
 Relation * Valueexpr::getrelation() {
   return relation;
 }
 
 Valueexpr::Valueexpr(Label *l,Relation *r) {
   label=l;relation=r;
+  type=0;
+}
+
+Valueexpr::Valueexpr(Valueexpr *ve,Relation *r) {
+  valueexpr=ve;relation=r;
+  type=1;
 }
 
 void Valueexpr::print() {
-  label->print();
-  printf(".");
-  relation->print();
+  switch(type) {
+  case 0:
+    label->print();
+    printf(".");
+    relation->print();
+    break;
+  case 1:
+    valueexpr->print();
+    printf(".");
+    relation->print();
+    break;
+  }
 }
 
 void Valueexpr::fprint(FILE *f) {
-  label->fprint(f);
-  fprintf(f,".");
-  relation->fprint(f);
+  switch(type) {
+  case 0:
+    label->fprint(f);
+    fprintf(f,".");
+    relation->fprint(f);
+    break;
+  case 1:
+    valueexpr->fprint(f);
+    fprintf(f,".");
+    relation->fprint(f);
+    break;
+  }
 }
 
-void Valueexpr::print_value(Hashtable *stateenv, model *m) {
-  printf("  ");
-  label->print();
-  printf(".");
-  relation->print();
-  printf("=");
-
-  Element *key = (Element *) stateenv->get(label->label());
+Element * Valueexpr::get_value(Hashtable *stateenv, model *m) {
+  Element *key=NULL;
+  if (type==0) {
+    key = (Element *) stateenv->get(label->label());
+  } else
+    key = valueexpr->get_value(stateenv,m);
 
   DomainRelation *dr = m->getdomainrelation();
   Hashtable *env = m->gethashtable();
@@ -480,7 +506,13 @@ void Valueexpr::print_value(Hashtable *stateenv, model *m) {
   WorkRelation *wr = rel->getrelation();
 
   Element *elem = (Element *) wr->getobj(key);
+  return elem;
+}
 
+void Valueexpr::print_value(Hashtable *stateenv, model *m) {
+  this->print();
+  printf("=");
+  Element *elem = this->get_value(stateenv,m);
   elem->print();
   //printf("\n");
 }
