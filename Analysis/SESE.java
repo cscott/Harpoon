@@ -9,6 +9,8 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Util;
 
 import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,7 +27,7 @@ import java.util.Stack;
  * from a cycle-equivalency set.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SESE.java,v 1.1.2.3 1999-03-02 09:56:20 cananian Exp $
+ * @version $Id: SESE.java,v 1.1.2.4 1999-03-02 19:39:10 cananian Exp $
  */
 public class SESE  {
     /** Root of <code>Region</code> tree. */
@@ -67,7 +69,9 @@ public class SESE  {
 	    Region cR= (Region) regionS.pop(); // currentRegion.
 	    // deal with region entry/exit.
 	    if (edgegraph==(o instanceof HCodeElement)) {
-		workSmallSESE.put(o, cR); // cR is smallest enclosing SESE.
+		// cR is smallest enclosing canonical SESE of o.
+		workSmallSESE.put(o, cR);
+		cR.nodes.add(o);
 	    } else { // update current region.
 		// if this is found in the cycle-equivalency stuff, push/pop.
 		Region r1 = (Region) entryRegion.get(o);
@@ -94,18 +98,27 @@ public class SESE  {
 	Util.assert(nodeS.isEmpty() && regionS.isEmpty());
 	// make smallestSESE map unmodifiable.
 	smallestSESE = Collections.unmodifiableMap(workSmallSESE);
+	// make region lists unmodifiable
+	for (Iterator it = topDown(); it.hasNext(); ) {
+	    Region r = (Region) it.next();
+	    r.nodes = Collections.unmodifiableCollection(r.nodes);
+	}
     }
 
     /** Iterate through SESE regions, top-down.  All top-level regions
      *  are visited first, then all children of top-level regions, then
      *  all grandchildren, then all great-grandchildren, etc. */
-    public Iterator iterator() {
+    public Iterator topDown() { return iterator(true); }
+    /** Iterate through SESE regions, depth-first. */
+    public Iterator depthFirst() { return iterator(false); }
+
+    private Iterator iterator(final boolean topdown) {
 	return new Iterator() {
 	    LinkedList ll = new LinkedList();
 	    { ll.add(topLevel); }
 	    public boolean hasNext() { return !ll.isEmpty(); }
 	    public Object next() {
-		Region r = (Region) ll.removeFirst();
+		Region r = (Region) (topdown?ll.removeFirst():ll.removeLast());
 		ll.addAll(r.children());
 		return r;
 	    }
@@ -116,37 +129,25 @@ public class SESE  {
     }
     
     public void print(java.io.PrintWriter pw) {
-	// iterator goes down level at a time.
-	// add every other level to done Set; use alternation to determine
-	// when we've reached the next level.
-	Set done = new HashSet(); boolean inSet=true; int level=0;
-	for (Iterator it=iterator(); it.hasNext(); ) {
+	for (Iterator it=depthFirst(); it.hasNext(); ) {
 	    Region r = (Region) it.next();
-	    if (done.contains(r.parent) == inSet) { level++; inSet = !inSet; }
-	    if (inSet) done.add(r);
-	    indent(pw, level); pw.println(r.toString());
-	    // now print members.
-	    indent(pw, level); pw.print('(');
-	    Map members = new HashMap(smallestSESE);
-	    members.values().retainAll(Collections.singleton(r));
-	    for (Iterator it2=members.keySet().iterator(); it2.hasNext(); ) {
-		pw.print(it2.next().toString());
-		if (it2.hasNext()) pw.print(' ');
-	    }
-	    pw.println(')');
+	    for (int i=0; i<r.level; i++)
+		pw.print(' ');
+	    pw.print(r.toString()); // print region.
+	    pw.print(" : ");
+	    pw.println(r.nodes.toString()); // print members
 	}
-    }
-    private void indent(java.io.PrintWriter pw, int howmuch) {
-	for (int i=0; i<howmuch; i++)
-	    pw.print(' ');
     }
 
     public static class Region {
-	// entry and exit nodes of the region.
+	// entry and exit edges of the region.
 	public final Object entry, exit;
 	// tree info.
+	int level=0;
 	Region parent=null;
 	RegionList children=null;
+	// list of nodes in this region
+	Collection nodes = new ArrayList();
 
 	Region() { // create top-level region.
 	    this.entry = this.exit = null;
@@ -159,6 +160,7 @@ public class SESE  {
 
 	public Region parent() { return this.parent; }
 	public Set children() { return RegionList.asSet(this.children); }
+	public Collection nodes() { return this.nodes; }
 
 	boolean isTopLevel() {
 	    return (this.entry==null) && (this.exit==null);
@@ -179,6 +181,7 @@ public class SESE  {
 	    else return "["+entry+"->"+exit+"]";
 	}
 	static void link(Region parent, Region child) {
+	    child.level = 1 + parent.level;
 	    child.parent = parent;
 	    parent.children = new RegionList(child, parent.children);
 	}
