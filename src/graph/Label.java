@@ -11,25 +11,98 @@ import imagerec.util.ObjectInfo;
 import imagerec.util.ObjectDataPoint;
 
 /**
+ *
  * {@link Label} labels objects in an image, given outlined edges.
  * It first recursively follows each edge, then determines the 
- * bounding box of each object.  If the bounding box is within the
- * specified range, the object is sent to the second out node.
+ * bounding box of each object. If the bounding box is within the
+ * specified range, the object is sent to the second out node.<br><br>
  *
- * An overview of all of the objects (labelled) is sent to the first out node.
+ * An overview of all of the objects (labeled) is sent
+ * to the first out node.<br><br>
+ *
+ * This class has two behaviors, depending on whether object tracking
+ * is enabled. Object tracking is enabled by calling
+ * <code>myLabelObject.setObjectTracker(String)</code> and providing
+ * a string by which an {@link ObjectTracker} may be accessed in
+ * {@link CommonMemory}.<br><br>
+ *
+ * If object tracking is not enabled: <br>
+ *    *  Each object that is found is cropped around and
+ *    sent, one at a time, along the right (2nd) out node.< br>
+ *    *  After all objects have been sent, the full labeled image,
+ *    featuring all the labeled pixels, is sent to the
+ *    left (1st) out node.<br>
+ *<br>
+ * If object tracking is enabled: <br>
+ *    *  When an object is discovered, it's location is compared
+ *    against the location of objects discovered in previous
+ *    frames. If the locations are close enough, the object
+ *    is assumed to be the same object as in the previous frame,
+ *    and the new object is tagged with the same unique tracking ID
+ *    as the previous object.<br>
+ *    *  A counter associated with that tracked object's ID is incremented.
+ *    If the counter reaches a certain threshold, and if
+ *    that object's counter is greater than all other counters
+ *    then the object is tagged with a <code>Command.GO_LEFT</code>
+ *    command, indicating that it should be further analyzed (usually
+ *    asynchronously).<br> The counter is reset.
+ *    {@link Label} then sets an internal flag and will not
+ *    tag any other objects with <code>Command.GO_LEFT</code> until the
+ *    results of this asychronous analysis are returned.<br>
+ *    *  The results returned should be reported by either calling
+ *    <code>myLabelObject.confirm(int)</code> or
+ *    <code>myLabelObject.deny(int)</code>. This response
+ *    indicates whether the object should be considered a tank
+ *    and should generate alerts. Currently, only one tracked
+ *    object may be considered a tank at a time.<br>
+ *    *  If an object is designated as a tank, then
+ *    the object is tagged with a <code>Command.GO_RIGHT</code>
+ *    command, indicating it should generate alerts.<br>
+ *    *  An object is only tagged with <code>Command.GO_RIGHT</code>
+ *    once every <code>timeBetweenSends</code> milliseconds,
+ *    limiting the number of alerts generated. (Note, this
+ *    class does not actually generate alerts, it only
+ *    indicates that objects should generate alerts further
+ *    down the pipeline.<br>
+ *    *  If an object should be tagged with both commands, then
+ *    it is tagged with <code>Command.GO_BOTH</code> instead.
+ *    *  If an object satisfies neither of these conditions,
+ *    then its tracking data is updated and the object is
+ *    not passed on.<br>
+ * <br>
+ *    
+ *
+ * THIS CLASS HAS IMAGE SIZE DEPENDENCIES!!.
  * 
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
 public class Label extends Node {
     private int minwidth, maxwidth, minheight, maxheight, minsum, maxsum;
-    //added by benji
+
     private double maxratio;
 
+    /**
+     * The maximum pixel distance which an object
+     * may move from image to image before it is
+     * assumed to be another object.<br><br>
+     * 
+     * THIS VALUE SHOULD BE DEPENDENT ON IMAGE SIZE,
+     * BUT IT CURRENTLY IS NOT!!
+     */
     private static final int trackingTolerance = 45;
 
+    /**
+     * The running tally of images received that
+     * did not contain any objects.
+     */
     private int numberOfImagesWithNoTank = 0;
 
+    /**
+     * The minimum time between when objects 
+     * are tagged to indicate that an alert should be
+     * generated.
+     */
     private long timeBetweenSends = 1000;
 
     /** Construct a new {@link Label} node which will trace the outlines
@@ -198,7 +271,10 @@ public class Label extends Node {
 
     /** <code>process</code> an image by tracing the outlines of objects,
      *  checking whether they're in the bounding box ranges, and sending them
-     *  on to the appropriate nodes.
+     *  on to the appropriate nodes.<br><br>
+     *
+     *  The behavior of this method depends greatly on whether
+     *  tracking is enabled.
      *
      *  @param id The image to label.
      */
@@ -357,6 +433,18 @@ public class Label extends Node {
 	}
     }
 
+    /**
+     * Handles all tracking processing. See the class description
+     * for an explaination.
+     *
+     * @param croppedImageData The {@link ImageData}, cropped
+     * around an object, that should be processed for tracking.
+     * 
+     * @return true If the specified {@link ImageData} should
+     * be passed on to further {@link Node}s.
+     * @return false If the specified {@link ImageData} should
+     * not be passed on to further {@link Node}s.
+     */
     private boolean handleTracking(ImageData croppedImageData) {
 	//System.out.println("Label: Handling tracking");
 	//System.out.println("       id.target# = "+croppedImageData.trackedObjectUniqueID);
@@ -472,27 +560,86 @@ public class Label extends Node {
 	}
     }
 
+    /**
+     * Informs this {@link Label} node that the
+     * tracked object with the specified ID
+     * is a tank.
+     *
+     * @param trackedObjectUniqueID The ID of the
+     * object that should be considered a tank.
+     */
     void confirm(int trackedObjectUniqueID) {
 	currentSelectedTrackingID = trackedObjectUniqueID;
 	waitingForResponse = false;
     }
 
+    
+    /**
+     * Informs this {@link Label} node that the
+     * tracked object with the specified ID
+     * is not a tank.
+     *
+     * @param trackedObjectUniqueID The ID of the
+     * object that should not be considered a tank.
+     */
     void deny(int trackedObjectUniqueID) {
 	if (currentSelectedTrackingID == trackedObjectUniqueID)
 	    currentSelectedTrackingID = -1;
 	waitingForResponse = false;
     }
 
-    Pair head = null;
-    int currentSelectedTrackingID = -1;
-    boolean waitingForResponse;
+    /**
+     * The head of the linked-list structure
+     * that contains this {@link Label} node's
+     * trackingID/counter {@link Label.Pair}s.
+     */
+    private Pair head = null;
+    /**
+     * The tracking ID of the object that
+     * is currently considered a tank, if any.<br>
+     * <br>
+     * A value of <code>-1</code> indicates that
+     * no object is currently considered a tank.
+     */
+    private int currentSelectedTrackingID = -1;
+    /**
+     * Indicates whether this {@link Label} node
+     * is currently waiting for a response as to
+     * whether a particuar tracked object is a tank
+     * or not.<br><br>
+     *
+     * While this is <code>true</code>, this {@link Label}
+     * node may not send out any other objects for
+     * further processing of this type.
+     */
+    private boolean waitingForResponse;
 
+    /**
+     * Creates a new objectID/counter {@link Label.Pair}
+     * and adds it to the linked-list maintained by this class.
+     *
+     * @param trackedObjectUniqueID The object ID that the
+     * new counter should be associated with.
+     */
     private Pair addTarget(int trackedObjectUniqueID) {
 	Pair newPair = new Pair(trackedObjectUniqueID, head);
 	head = newPair;
 	return newPair;
     }
 
+    /**
+     * Searches the linked-list maintained by this
+     * class and returns the {@link Label.Pair} whose
+     * object ID matches the one specified.
+     *
+     * @param targetID The object ID whose {@link Label.Pair}
+     * should be returned.
+     *
+     * @return The {@link Label.Pair} containing the specified
+     * object ID.
+     * @return null If no {@link Label.Pair} containing the
+     * specified ID exists.
+     */
     private Pair getTarget(int targetID) {
 	Pair currentPair = head;
 	while (currentPair != null) {
@@ -505,6 +652,11 @@ public class Label extends Node {
 	return currentPair;
     }
 
+    /**
+     * Returns the largest value among
+     * all the object counters stored
+     * in the linked-list maintained by this class.
+     */
     private int maxCount() {
 	int maxCount = 0;
 	Pair currentPair = head;
@@ -516,17 +668,64 @@ public class Label extends Node {
 	return maxCount;
     }
 
+    /**
+     * A linked-list element that associates
+     * a unique integer ID with a counter.<br>
+     * <br>
+     * The counters keep track of how many
+     * times the object with the associated ID
+     * has been seen in previous images, allowing
+     * for a simple priority scheduler to be implemented
+     * that governs when and how often tracked objects
+     * are sent on for further analysis.
+     */
     private class Pair {
+	/**
+	 * The ID of the object for which
+	 * this information is being kept.
+	 */
 	int targetID;
+	/**
+	 * The number of times this object has been
+	 * seen in previous images. This value
+	 * is usually reset from time to time.
+	 */
 	int count;
+	/**
+	 * The system time at which this object was
+	 * last sent out for further analysis.
+	 */
 	long lastSentTime;
+	/**
+	 * The next {@link Label.Pair} in the the
+	 * linked-list structure.
+	 */
 	Pair next;
-	Pair(int targetID){
-	    init(targetID, null);
-	}
+	/**
+	 * Creates a new pair that will keep track
+	 * of how often this object is seen.
+	 *
+	 * @param targetID The ID of the object
+	 * whose information will be kept.
+	 * @param next The {@link Label.Pair} that
+	 * this object should point to
+	 * in the linked-list structure maintained
+	 * by {@link Label}.
+	 */
 	Pair(int targetID, Pair next) {
 	    init(targetID, next);
 	}
+	/**
+	 * This method should be called by all constructurs
+	 * to properly initialize object fields.
+	 *
+	 * @param targetID The ID of the object
+	 * whose information will be kept.
+	 * @param next The {@link Label.Pair} that
+	 * this object should point to
+	 * in the linked-list structure maintained
+	 * by {@link Label}.
+	 */
 	private void init(int targetID, Pair next) {
 	    this.targetID = targetID;
 	    this.next = next;
@@ -534,31 +733,58 @@ public class Label extends Node {
 	    this.lastSentTime = 0;
 	}
 	
+	/**
+	 * Increment the counter for this {@link Label.Pair}.
+	 */
 	void inc() {
 	    count++;
 	}
 
+	/**
+	 * Reset the counter for this {@link Label.Pair}.
+	 */
 	void resetCount() {
 	    count = 0;
 	}
 	
+	/**
+	 * Get the value of the counter for this {@link Label.Pair}.
+	 */
 	int getCount() {
 	    return count;
 	}
 	
+	/**
+	 * Set the time value kept by this {@link Label.Pair}.
+	 *
+	 * @param t The new time value to be stored by this {@link Label.Pair}.
+	 */
 	void setTime(long t) {
 	    lastSentTime = t;
 	}
 
+	/**
+	 * Get the time value kept by this {@link Label.Pair}.
+	 */
 	long getTime() {
 	    return lastSentTime;
 	}
     }
 
+    /**
+     * Sets the minimum time between when objects 
+     * are tagged to indicate that an alert should be
+     * generated.
+     */
     public void setTimeBetweenSends(long t) {
 	timeBetweenSends = t;
     }
     
+    /**
+     * Returns the minimum time between when objects 
+     * are tagged to indicate that an alert should be
+     * generated.
+     */
     public long getTimeBetweenSends() {
 	return timeBetweenSends;
     }

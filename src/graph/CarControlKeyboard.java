@@ -16,6 +16,18 @@ import java.awt.event.WindowEvent;
 
 /**
  *
+ * Takes input from the keyboard
+ * and sends out commands to adjust the properties
+ * of a {@link CarController} and the
+ * {@link imagerec.util.Servo} class.<br>
+ *
+ * The commands produced by this node are expected to be directed
+ * in some way to a {@link  CarControllerControl} node.
+ *
+ * @see CarController
+ * @see imagerec.util.Servo
+ * @see CarControllerControl
+ *
  * @author Reuben Sterling <<a href="mailto:benster@mit.edu">benster@mit.edu</a>>
  */
 public class CarControlKeyboard extends Node {
@@ -104,6 +116,13 @@ public class CarControlKeyboard extends Node {
      *  @param id Ignored, use <code>run()</code> to start.
      */
     public void process(ImageData id) {
+    }
+
+    /**
+     * Returns the {@link Frame} that this class creates.
+     */
+    public Frame getFrame() {
+	return frame;
     }
 
 }
