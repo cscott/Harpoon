@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: sas02.tex,v 1.4 2002-05-10 22:55:18 cananian Exp $
+% $Id: sas02.tex,v 1.5 2002-05-11 07:38:24 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[oribibl]{llncs}
 %\usepackage[section,plain]{algorithm}
@@ -29,6 +29,7 @@ Cambridge, MA 02139 \\
 \email{\{cananian, rinard\}@lcs.mit.edu}
 }
 
+%\renewcommand{\baselinestretch}{0.88}
 \begin{document}
 \bibliographystyle{plain}
 %
@@ -663,9 +664,10 @@ as if there is a single default value $N$ which we are looking for.
 Our instrumentation pass starts by
 adding a counter per class
 to record the number of times each exact class type is instantiated.
-We also add per-field counters which are incremented the {\tt first}
+We also add per-field counters which are incremented the \emph{first}
 time a non-$N$ value is stored into a certain field.%
 \footnote{Note that this requires storing an additional bit per field
+  during profiling
   to record whether a non-$N$ value has been seen previously.}
 By comparing the
 number of times the class (thus field) is instantiated and the number
@@ -767,7 +769,7 @@ amenable to static specialization.
 
 We note briefly here that, although we use profiling to select desirable
 fields for static specialization, it is entirely possible that an
-``opportunity''-based heuristic based only on the constructor
+``opportunity''-based heuristic using only information from the constructor
 classification step could yield good results.
 %
 \section{Implementation Issues}
@@ -777,6 +779,8 @@ issues arising in an implementation of our space-saving techniques.
 %
 \subsection{Byte Packing}
 %
+\textbf{SIMPLIFY?}
+
 A typical Java implementation may waste large amounts of space by
 aligning fields for the most efficient memory access.  Fields are
 often aligned to their widths (a 4-byte field will be placed at an address
@@ -847,6 +851,8 @@ Section~\ref{sec:byte-pack}).
 
 \subsection{External Hashtable Implementation}
 \label{sec:extern-impl}
+\textbf{CLARIFY?}
+
 Close attention to the implementation of the hashtable used to
 implement field and hash/lock externalization is
 necessary to realize the gains possible in theory.  In order to
@@ -862,7 +868,7 @@ and values yield an average space consumption of three words per
 field.  This implementation breaks even when the mostly-zero fields
 identified are zero over 66\% of the time.  This break-even point is
 compared to the profiling data to allow our field externalization
-transformation to intelligently choose targetted fields.
+transformation to intelligently choose targeted fields.
 
 Key-size reduction is an important component of the implementation:
 a na{\"\i}ve approach
@@ -962,11 +968,11 @@ over 20\%.
 We also used an instrumented executable to determine the total amount
 of memory allocated during the entire execution of the program, in
 both the optimized and unoptimized versions.  Reducing this total
-allocation reduces the load on the garbage collector.
+allocation decreases the load on the garbage collector.
 Figure~\ref{fig:results}b presents the space savings according to this
-metric.  By comparing to the previous figure, you will notice that
-long-lived objects apparently provide us with more opportunities to
-optimize.
+metric.  Comparison to the previous figure reveals that
+long-lived objects provide proportionally more opportunities for
+optimization.
 %
 \subsection{Objects Versus Arrays}
 %
@@ -1012,21 +1018,21 @@ cost of hash/lock externalization.
 %
 Many researchers have focused on the problem of reducing the amount of
 header space required to represent Java
-locks~\cite{BKMS98,OK99,ADGKRW99}. The basic issue is that the vast
+locks~\cite{bacon98,OK99,ADGKRW99}. The basic issue is that the vast
 majority of programs do not use the lock associated with every object
 in its full generality, so it is possible to develop improved
-algorithms optimized for the common case rather than the most general
-case. The basic idea is to represent the lock with the minimum amount
+algorithms optimized for the common case.
+The basic idea is to represent the lock with the minimum amount
 of state (typically a bit) required to support the common usage
 pattern of a thread first acquiring, then releasing the lock in the
 object and to back off to a more elaborate scheme only when the thread
-exhibits a more complex pattern such as nested lock acquires. The
+exhibits a more complex pattern such as nested locking. The
 primary focus has been on improving performance rather than on
 reducing space; however, many of the algorithms also eliminate the
 need to store the complicated locking objects required to support the
 most general lock usage pattern possible in a Java program. These
 techniques typically reduce the lock space overhead to 24 header bits
-\cite{BKMS98}.
+\cite{bacon98}.
 
 Research in escape analysis and related analyses can enable the
 compiler to find objects whose locks are never 
@@ -1041,7 +1047,7 @@ of the generated circuits for compilers that generate hardware
 implementations of programs written in C or similar programming 
 languages~\cite{ananian:siliconc,RR00:PLDI00,SBA00:PLDI00,BGSW00}.
 
-Dieckmann and Hoelzle have performed an in-depth analysis of the
+Dieckmann and H\"olzle have performed an in-depth analysis of the
 memory allocation behavior of Java programs~\cite{DH99}. Although 
 space is not their primary focus, their study does quantify 
 the space overhead associated with the use of a two-word header
@@ -1074,7 +1080,7 @@ consumption of object-oriented programs.  Our techniques include
 program analyses to detect unused, constant, or overly-wide fields,
 and transformations to eliminate fields with common default values
 or usage patterns.  These techniques apply equally well to
-field implicit in the runtime's object header, and can reduce the
+fields implicit in the runtime's object header, and can reduce the
 maximum heap required for a program by as much as 40\%. 
 Our experimental results from our fully-implemented system validate the
 opportunity for space savings on typical object oriented programs.
