@@ -9,25 +9,48 @@ import harpoon.IR.Quads.QuadSSA;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.METHOD;
-import harpoon.Analysis.UseDef;
+import harpoon.Analysis.UseMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
+
+// This should be replaced by a MethodInliningCodeFactory (or
+// SOMETHING) that fits in the new framework for code generation for
+// methods.
 
 /**
  * <code>MethodInlining</code> inlines method bodys at particular call sites.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MethodInlining.java,v 1.1.2.1 1999-01-30 23:30:36 pnkfelix Exp $
+ * @version $Id: MethodInlining.java,v 1.1.2.2 1999-02-01 17:24:37 pnkfelix Exp $
  */
 public abstract class MethodInlining {
 
     /** Retrieves the code for method called at <code>site</code> and 
 	returns an <code>HCode</code> represented the code to be
 	inserted in place of the call.
+	<BR> requires: code called by <code>site</code> is in Quad-SSA
+	               form. 
     */
     public static QuadSSA getInlinedCode(CALL site) { 
-	
+	return getInlinedCode(site, false);
+    }
 
+    /** Retrieves the code for method called at <code>site</code> and 
+	returns an <code>HCode</code> represented the code to be
+	inserted in place of the call.
+	<BR> requires: code called by <code>site</code> is in Quad-SSA
+	               form. 
+	<BR> modifies: code contained by <code>HCode</code> called by
+	               <code>site</code> 
+	<BR> effects: if <code>modifyCode</code> is false, retrieves
+	              the code for <code>HMethod</code> called at
+		      <code>site</code> and iterates over its
+		      elements, copying them into a new <code>QuadSSA</code> and
+		      replacing uses of the <code
+    */    
+    private static QuadSSA getInlinedCode(CALL site, boolean modifyCode) {
+
+	// replace below getCode() call with HCodeFactory.convert() call
 	QuadSSA code = (QuadSSA) site.method().getCode("quad-ssa");
 	
 	Util.assert( code != null, 
@@ -38,6 +61,7 @@ public abstract class MethodInlining {
 
 	Temp[] bodyParams = null;
 	
+	// get Method Header for this site.
 	for (int i=0; i<codeElems.length; i++) {
 	    if (codeElems[i] instanceof METHOD) {
 		METHOD method = (METHOD) codeElems[i];
@@ -60,21 +84,23 @@ public abstract class MethodInlining {
 	
 
 	// use UseDef chains to find all uses of parameters, replace
-	// them with the passed paramters.
+	// them with the passed parameters.
 	for (int i=0; i<callParams.length; i++) {
 	    System.out.println(" Call Param: " + callParams[i] +
 			       " Body Param: " + bodyParams[i] );
 	    
-	    HCodeElement[] uses = 
-		(new UseDef()).useMap(code, bodyParams[i]);
+	    HCodeElement[] tmpuses = 
+		(new UseMap(code)).useMap(bodyParams[i]);
 	    
+		
+	    Util.assert(tmpuses instanceof Quad[],
+			"Uses array needs to be a Quad[] " + 
+			"for MethodInlining to work"); 
+
+	    Quad[] uses = (Quad[]) tmpuses;
+
 	    for (int j=0; j<uses.length; j++) {
 		System.out.println(uses[j]);
-		
-		Util.assert(uses[j] instanceof Quad,
-			    "" + uses[j] + " needs to be a Quad " + 
-			    "for MethodInlining to work"); 
-			    
 	    }
 	}	
 	
