@@ -16,7 +16,7 @@ import java.util.Set;
  * <code>SSITOSSAMap</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: SSITOSSAMap.java,v 1.1.2.5 1999-08-09 17:57:29 bdemsky Exp $
+ * @version $Id: SSITOSSAMap.java,v 1.1.2.6 1999-09-09 21:42:46 cananian Exp $
  */
 public class SSITOSSAMap implements TempMap {
     
@@ -352,7 +352,7 @@ public class SSITOSSAMap implements TempMap {
 	Iterator iterate=hc.getElementsI();
 	while (iterate.hasNext()) {
 	    Quad thisone=(Quad) iterate.next();
-	    thisone.visit(visitor);
+	    thisone.accept(visitor);
        	}
     }
 

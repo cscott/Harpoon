@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * ought to contain a <code>POINTER</code> value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PSET.java,v 1.1.2.1 1999-01-21 05:19:16 cananian Exp $
+ * @version $Id: PSET.java,v 1.1.2.2 1999-09-09 21:43:00 cananian Exp $
  */
 public class PSET extends LowQuad {
     /** <code>Temp</code> holding the <code>POINTER</code> value to
@@ -58,7 +58,7 @@ public class PSET extends LowQuad {
 			map(useMap, ptr), map(useMap, src));
     }
 
-    void visit(LowQuadVisitor v) { v.visit(this); }
+    void accept(LowQuadVisitor v) { v.visit(this); }
 
     public String toString() {
 	return "PSET *" + ptr.toString() + " to " + src.toString();

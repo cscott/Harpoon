@@ -13,7 +13,7 @@ import harpoon.Temp.TempMap;
  * <code>LowQuad</code> representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LowQuad.java,v 1.1.2.1 1999-01-21 03:44:29 cananian Exp $
+ * @version $Id: LowQuad.java,v 1.1.2.2 1999-09-09 21:42:59 cananian Exp $
  */
 public abstract class LowQuad extends harpoon.IR.Quads.Quad {
     public LowQuad(LowQuadFactory qf, HCodeElement source) {
@@ -21,9 +21,9 @@ public abstract class LowQuad extends harpoon.IR.Quads.Quad {
     }
 
     // force visitor classes to be of type LowQuadVisitor.
-    public void visit(harpoon.IR.Quads.QuadVisitor v) {
-	visit( (LowQuadVisitor)v );
+    public void accept(harpoon.IR.Quads.QuadVisitor v) {
+	accept( (LowQuadVisitor)v );
     }
     /** Accept a visitor. */
-    abstract void visit(LowQuadVisitor v);
+    abstract void accept(LowQuadVisitor v);
 }

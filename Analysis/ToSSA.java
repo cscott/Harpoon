@@ -15,7 +15,7 @@ import harpoon.IR.LowQuad.*;
  * Converts SSI to SSA.  Should work on LowQuads and Quads. 
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ToSSA.java,v 1.1.2.2 1999-07-09 17:58:31 bdemsky Exp $
+ * @version $Id: ToSSA.java,v 1.1.2.3 1999-09-09 21:42:46 cananian Exp $
  */
 
 public final class ToSSA {
@@ -52,7 +52,7 @@ public final class ToSSA {
 	SSAVisitor visitor=new SSAVisitor(ssitossamap);
 	Quad[] ql = (Quad[]) hc.getElements();
 	for (int i=0; i<ql.length; i++)
-	    ql[i].visit(visitor);
+	    ql[i].accept(visitor);
     }
 
     class SSAVisitor extends LowQuadVisitor {

@@ -16,7 +16,7 @@ import java.util.Iterator;
  * <code>LoopInvariance</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopInvariance.java,v 1.1.2.7 1999-07-14 21:19:49 bdemsky Exp $
+ * @version $Id: LoopInvariance.java,v 1.1.2.8 1999-09-09 21:42:54 cananian Exp $
  */
 public class LoopInvariance {
     
@@ -45,7 +45,7 @@ public class LoopInvariance {
 	    while (ourself.hasNext()) {
 		Quad nxt=(Quad)ourself.next();
 		//is this node invariant?
-		nxt.visit(visitor);
+		nxt.accept(visitor);
 		if (visitor.remove())
 		    ourself.remove();
 		//doesn't depend on this loop...so add it to invariants

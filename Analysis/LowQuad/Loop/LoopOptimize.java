@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.19 1999-09-09 21:12:14 cananian Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.20 1999-09-09 21:42:54 cananian Exp $
  */
 public final class LoopOptimize {
     
@@ -163,7 +163,7 @@ public final class LoopOptimize {
 	    //Isn't required [should be caught by the fact
 	    //that loop invariant nodes don't rely on induction variables.]
 	    if (!usedinvariants.contains(q))
-		q.visit(visitor);
+		q.accept(visitor);
 	}
     }
 

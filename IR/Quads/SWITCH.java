@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.1.2.8 1999-01-22 23:06:01 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.1.2.9 1999-09-09 21:43:03 cananian Exp $
  */
 public class SWITCH extends SIGMA {
     /** The discriminant, compared against each value in <code>keys</code>.*/
@@ -89,7 +89,7 @@ public class SWITCH extends SIGMA {
 	super.renameDefs(tm);
     }
 
-    public void visit(QuadVisitor v) { v.visit(this); }
+    public void accept(QuadVisitor v) { v.visit(this); }
 
     /** Returns human-readable representation of this quad. */
     public String toString() {

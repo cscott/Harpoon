@@ -21,7 +21,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.1.2.5 1999-07-14 07:00:30 bdemsky Exp $
+ * @version $Id: AllInductions.java,v 1.1.2.6 1999-09-09 21:42:54 cananian Exp $
  */
 public class AllInductions {
     TempMap tm;
@@ -51,7 +51,7 @@ public class AllInductions {
 	    Iterator iterate=elements.iterator();
 	    while (iterate.hasNext()) {
 		Quad element=(Quad)iterate.next();
-		element.visit(visitor);
+		element.accept(visitor);
 		if (visitor.change()) {
 		    change=true;
 		    iterate.remove();
@@ -166,7 +166,7 @@ public class AllInductions {
 			if (i!=index) {
 			    Temp t=tm.tempMap(q.operands(i));
 			    visitor.reset();
-			    ((Quad)ud.defMap(hc,t)[0]).visit(visitor);
+			    ((Quad)ud.defMap(hc,t)[0]).accept(visitor);
 			    if (visitor.resetstatus())
 				tmp=tmp.add
 				    (((Integer)(((CONST)ud.defMap(hc,t)[0]).value())).intValue());
@@ -207,7 +207,7 @@ public class AllInductions {
 			if (i!=index) {
 			    Temp t=tm.tempMap(q.operands(i));
 			    visitor.reset();
-			    ((Quad)ud.defMap(hc,t)[0]).visit(visitor);
+			    ((Quad)ud.defMap(hc,t)[0]).accept(visitor);
 			    if (visitor.resetstatus())
 				tmp=tmp.multiply(
 						 ((Integer)((CONST)ud.defMap(hc,t)[0]).value()).intValue());

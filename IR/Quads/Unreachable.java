@@ -17,7 +17,7 @@ import java.util.Stack;
  * <code>Unreachable</code> gets rid of unreachable code.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Unreachable.java,v 1.1.2.1 1999-02-25 03:42:19 cananian Exp $
+ * @version $Id: Unreachable.java,v 1.1.2.2 1999-09-09 21:43:03 cananian Exp $
  */
 abstract class Unreachable  {
 
@@ -34,7 +34,7 @@ abstract class Unreachable  {
 	ReachabilityVisitor(HEADER h) {
 	    todo.add(h);
 	    while (!todo.isEmpty())
-		((Quad)todo.pop()).visit(this);
+		((Quad)todo.pop()).accept(this);
 
 	    todo = null; // free space.
 	}
@@ -57,7 +57,7 @@ abstract class Unreachable  {
 	    // dump the original live elements into a list.
 	    List l = new ArrayList(reachable);
 	    for (Iterator it=l.iterator(); it.hasNext(); )
-		((Quad)it.next()).visit(this);
+		((Quad)it.next()).accept(this);
 	}
 	public void visit(Quad q) { /* do nothing. */ }
 	public void visit(PHI q) {

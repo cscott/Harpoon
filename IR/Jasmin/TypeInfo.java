@@ -19,7 +19,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.3 1999-09-08 16:35:30 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.4 1999-09-09 21:42:59 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
@@ -61,7 +61,7 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	while(!worklist.isEmpty()) {
 	    Quad q = (Quad) worklist.pull();
 	    tiv.modified = false;
-	    q.visit(tiv);
+	    q.accept(tiv);
 	    if (tiv.modified) {
 		Temp[] d = q.def();
 		for (int i=0; i<d.length; i++) {

@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>PHI</code> objects represent blocks of phi functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.1.2.9 1999-01-22 23:06:00 cananian Exp $
+ * @version $Id: PHI.java,v 1.1.2.10 1999-09-09 21:43:02 cananian Exp $
  */
 public class PHI extends Quad {
     /** dst[i] is the left-hand side of the i'th phi function in this block. */
@@ -173,7 +173,7 @@ public class PHI extends Quad {
 	}
     }
 
-    public void visit(QuadVisitor v) { v.visit(this); }
+    public void accept(QuadVisitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this Quad. */
     public String toString() {

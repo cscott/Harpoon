@@ -20,7 +20,7 @@ import harpoon.Util.Util;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.1.2.1 1999-09-09 21:12:17 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.1.2.2 1999-09-09 21:42:57 cananian Exp $
  */
 public final class SCCOptimize {
     TypeMap  ti;
@@ -177,7 +177,7 @@ public final class SCCOptimize {
 	Quad[] ql = (Quad[]) hc.getElements();
 	for (int i=0; i<ql.length; i++)
 	    if (execMap(ql[i]))
-		ql[i].visit(visitor);
+		ql[i].accept(visitor);
 
 	// clean up the mess
 	DeadCode.optimize(hc);

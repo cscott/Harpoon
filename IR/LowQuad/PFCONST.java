@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * <code>PFOFFSET</code> must be used together to access a non-static field.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PFCONST.java,v 1.1.2.1 1999-01-21 06:37:24 cananian Exp $
+ * @version $Id: PFCONST.java,v 1.1.2.2 1999-09-09 21:42:59 cananian Exp $
  */
 public class PFCONST extends PCONST {
     /** The <code>HField</code> to address. */
@@ -48,7 +48,7 @@ public class PFCONST extends PCONST {
 			    map(defMap, dst), field);
     }
 
-    void visit(LowQuadVisitor v) { v.visit(this); }
+    void accept(LowQuadVisitor v) { v.visit(this); }
 
     public String toString() {
 	return dst.toString() + " = PFCONST " +

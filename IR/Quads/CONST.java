@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.1.2.9 1999-08-05 02:12:55 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.10 1999-09-09 21:43:02 cananian Exp $
  */
 
 public class CONST extends Quad {
@@ -96,7 +96,7 @@ public class CONST extends Quad {
 	dst = tm.tempMap(dst);
     }
 
-    public void visit(QuadVisitor v) { v.visit(this); }
+    public void accept(QuadVisitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this Quad. */
     public String toString() {

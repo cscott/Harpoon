@@ -18,7 +18,7 @@ import java.lang.reflect.Modifier;
  * <code>PMCONST</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PMOFFSET.java,v 1.1.2.1 1999-01-21 06:37:25 cananian Exp $
+ * @version $Id: PMOFFSET.java,v 1.1.2.2 1999-09-09 21:43:00 cananian Exp $
  */
 public class PMOFFSET extends PCONST {
     /** The <code>HMethod</code> to address. */
@@ -51,7 +51,7 @@ public class PMOFFSET extends PCONST {
 			    map(defMap, dst), method);
     }
 
-    void visit(LowQuadVisitor v) { v.visit(this); }
+    void accept(LowQuadVisitor v) { v.visit(this); }
 
     public String toString() {
 	return dst.toString() + " = PMOFFSET " +

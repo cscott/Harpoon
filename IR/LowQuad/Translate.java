@@ -26,7 +26,7 @@ import java.util.Map;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.10 1999-09-08 16:35:31 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.11 1999-09-09 21:43:00 cananian Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
@@ -44,7 +44,7 @@ final class Translate { // not public
 
 	// visit all.
 	for (Iterator i = code.getElementsI(); i.hasNext(); ) 
-	    ((Quad)i.next()).visit(v);
+	    ((Quad)i.next()).accept(v);
 	// now qm contains mappings from old to new, we just have to link them
 	for (Iterator i = code.getElementsI(); i.hasNext(); ) {
 	    Quad old = (Quad)i.next();

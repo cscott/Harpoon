@@ -24,7 +24,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.23 1999-09-03 15:35:10 pnkfelix Exp $
+ * @version $Id: Quad.java,v 1.1.2.24 1999-09-09 21:43:02 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -73,7 +73,7 @@ public abstract class Quad
     public abstract String toString();
 
     /** Accept a visitor. */
-    public abstract void visit(QuadVisitor v);
+    public abstract void accept(QuadVisitor v);
 
     /** Return an integer enumeration of the kind of this 
      *  <code>Quad</code>.  The enumerated values are defined in

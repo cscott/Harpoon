@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * invocation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PCALL.java,v 1.1.2.1 1999-01-21 05:19:14 cananian Exp $
+ * @version $Id: PCALL.java,v 1.1.2.2 1999-09-09 21:42:59 cananian Exp $
  */
 public class PCALL extends LowQuad {
     /** The method pointer to dereference. */
@@ -105,7 +105,7 @@ public class PCALL extends LowQuad {
 			 map(defMap, retval), map(defMap, retex));
     }
 
-    void visit(LowQuadVisitor v) { v.visit(this); }
+    void accept(LowQuadVisitor v) { v.visit(this); }
 
     public String toString() {
 	StringBuffer sb = new StringBuffer();

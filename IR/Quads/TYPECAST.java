@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * instruction.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TYPECAST.java,v 1.1.2.3 1999-08-04 05:52:29 cananian Exp $
+ * @version $Id: TYPECAST.java,v 1.1.2.4 1999-09-09 21:43:03 cananian Exp $
  */
 public class TYPECAST extends NOP {
     /** The <code>Temp</code> to type cast. */
@@ -60,7 +60,7 @@ public class TYPECAST extends NOP {
 	objectref = tm.tempMap(objectref);
     }
 
-    public void visit(QuadVisitor v) { v.visit(this); }
+    public void accept(QuadVisitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this <code>Quad</code>. */
     public String toString() {

@@ -16,14 +16,14 @@ import java.util.Stack;
  * <code>Pattern</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.6 1999-09-08 21:43:04 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.7 1999-09-09 21:43:02 cananian Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
 	System.out.println("==="+q);
 	ExcVisitor ev=new ExcVisitor();
 	while (ev.status()) {
-	    q.visit(ev);
+	    q.accept(ev);
 	    if (ev.success())
 		return ev.hclass();
 	    q=q.next(0);
@@ -36,7 +36,7 @@ public class Pattern {
 	LowBoundVisitor lbv=new LowBoundVisitor(index);
 	Quad lq=q;
 	while (lbv.status()) {
-	    lq.visit(lbv);
+	    lq.accept(lbv);
 	    if (lbv.success())
 		break;
 	    lq=lq.prev(0);
@@ -48,7 +48,7 @@ public class Pattern {
 
 	HighBoundVisitor hbv=new HighBoundVisitor(index, array);
 	while (hbv.status()) {
-	    hq.visit(hbv);
+	    hq.accept(hbv);
 	    if (hbv.success())
 		break;
 	    hq=hq.prev(0);
@@ -67,7 +67,7 @@ public class Pattern {
     public static Object[] minusCheck(Quad q, Temp checked) {
 	MinusVisitor mv=new MinusVisitor(checked);
 	while (mv.status()) {
-	    q.visit(mv);
+	    q.accept(mv);
 	    if (mv.success())
 		return new Object[] {q, mv.exchandler()};
 	    q=q.prev(0);
@@ -78,7 +78,7 @@ public class Pattern {
     public static Object[] nullCheck(Quad q, Temp checked) {
 	NullVisitor nv=new NullVisitor(checked);
 	while (nv.status()) {
-	    q.visit(nv);
+	    q.accept(nv);
 	    if (nv.success())
 		return new Object[] {q, nv.exchandler()};
 	    q=q.prev(0);
@@ -89,7 +89,7 @@ public class Pattern {
     public static Object[] componentCheck(Quad q, Temp oref, Temp aref) {
 	CompVisitor cv=new CompVisitor(oref, aref);
 	while (cv.status()) {
-	    q.visit(cv);
+	    q.accept(cv);
 	    if (cv.success())
 		return new Object[] {q, cv.exchandler()};
 	    q=q.prev(0);
@@ -100,7 +100,7 @@ public class Pattern {
     public static Object[] zeroCheck(Quad q, Temp checked, boolean isint) {
 	ZeroVisitor zv=new ZeroVisitor(checked, isint);
 	while (zv.status()) {
-	    q.visit(zv);
+	    q.accept(zv);
 	    if (zv.success())
 		return new Object[] {q, zv.exchandler()};
 	    q=q.prev(0);
@@ -112,7 +112,7 @@ public class Pattern {
 	Iterator iterate=code.getElementsI();
 	PatternVisitor pv=new PatternVisitor();
 	while(iterate.hasNext()) {
-	    ((Quad)iterate.next()).visit(pv);
+	    ((Quad)iterate.next()).accept(pv);
 	}
 	Map map=pv.map();
 	iterate=map.keySet().iterator();

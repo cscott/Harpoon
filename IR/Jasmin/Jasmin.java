@@ -24,7 +24,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.13 1999-08-24 21:35:59 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.14 1999-09-09 21:42:58 cananian Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -121,7 +121,7 @@ public class Jasmin {
 		 
     private static final void visitAll(PrintStream out, Visitor visitor, Quad start, Set qm) {
 	//Visit the node passed to us
-	start.visit(visitor);
+	start.accept(visitor);
 	//If we have a node after us, but we've already printed it
 	//we need to do a goto
 	if (start.next().length!=0)

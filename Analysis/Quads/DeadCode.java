@@ -29,7 +29,7 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.1.2.1 1999-09-09 21:12:16 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.1.2.2 1999-09-09 21:42:54 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -59,7 +59,7 @@ public abstract class DeadCode  {
 	// look for useful stuff.
 	while (!W.isEmpty()) {
 	    Quad q = (Quad) W.pull();
-	    q.visit(v);
+	    q.accept(v);
 	}
 
 	// remove the useless stuff, including useless cjmps/phis
@@ -68,7 +68,7 @@ public abstract class DeadCode  {
 	v = new EraserVisitor(W, useful, nm);
 	while (!W.isEmpty()) {
 	    Quad q = (Quad) W.pull();
-	    q.visit(v);
+	    q.accept(v);
 	}
 
 	// Finally, do all the necessary renaming

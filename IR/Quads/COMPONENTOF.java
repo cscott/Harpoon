@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * type of a certain array, or boolean <code>false</code> otherwise.<p>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.1.2.7 1999-01-22 23:05:59 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.1.2.8 1999-09-09 21:43:02 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */
@@ -87,7 +87,7 @@ public class COMPONENTOF extends Quad {
 	dst = tm.tempMap(dst);
     }
 
-    public void visit(QuadVisitor v) { v.visit(this); }
+    public void accept(QuadVisitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this Quad. */
     public String toString() {

@@ -23,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.1 1999-09-09 21:12:17 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.2 1999-09-09 21:42:56 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -142,7 +142,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		    raiseE(Ee, Eq, Wq, q.nextEdge(0));
 		}
 		// check conditions 3-8 for q.
-		q.visit(visitor);
+		q.accept(visitor);
 	    } 
 
 	    if (!Wv.isEmpty()) { // grab temp from Wv is possible.
@@ -150,7 +150,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		// for every use of t...
 		for (Enumeration e=udm.useMapE(hc, t); e.hasMoreElements(); )
 		    // check conditions 3-8
-		    ((Quad) e.nextElement()).visit(visitor);
+		    ((Quad) e.nextElement()).accept(visitor);
 	    }
 	} // end while loop.
     } // end analysis.
@@ -554,7 +554,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		       opc == Qop.I2B || opc == Qop.I2C || opc == Qop.I2L || 
 		       opc == Qop.I2S || opc == Qop.L2I) {
 		// do something intelligent with the bitwidths.
-		q.visit(opVisitor);
+		q.accept(opVisitor);
 	    } else { // not all constant, not all known widths...
 		// special-case ACMPEQ x, null
 		if (opc == Qop.ACMPEQ &&

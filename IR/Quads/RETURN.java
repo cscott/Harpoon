@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * optional return value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RETURN.java,v 1.1.2.6 1999-01-22 23:06:01 cananian Exp $
+ * @version $Id: RETURN.java,v 1.1.2.7 1999-09-09 21:43:02 cananian Exp $
  */
 public class RETURN extends Quad {
     /** Return value. <code>null</code> if there is no return value. */
@@ -56,7 +56,7 @@ public class RETURN extends Quad {
     void renameDefs(TempMap tm) {
     }
 
-    public void visit(QuadVisitor v) { v.visit(this); }
+    public void accept(QuadVisitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this Quad. */
     public String toString() {

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.1.2.10 1999-03-02 21:31:37 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.1.2.11 1999-09-09 21:43:02 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW
@@ -63,7 +63,7 @@ public class FOOTER extends Quad {
 	return new FOOTER(qqf, this, prev.length);
     }
 
-    public void visit(QuadVisitor v) { v.visit(this); }
+    public void accept(QuadVisitor v) { v.visit(this); }
 
     /** Returns human-readable representation of this <code>Quad</code>. */
     public String toString() { return "FOOTER("+arity()+")"; }

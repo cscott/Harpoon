@@ -41,7 +41,7 @@ public abstract class QuadSolver {
       while (iter.hasMoreElements()) {
 	Quad q = (Quad)iter.next();
 	if (DEBUG) db("visiting: "+q);
-	q.visit(v);
+	q.accept(v);
 	for (int i=0, n=q.nextLength(); i<n; ++i) {
 	  Quad qn = q.next(i);
 	  if (DEBUG) db("doing edge "+q+" -> "+qn);
@@ -61,7 +61,7 @@ public abstract class QuadSolver {
       v.changed = false;
       Quad q = (Quad) W.pull();
       if (DEBUG) db("visiting: "+q);
-      q.visit(v);
+      q.accept(v);
       v.addSuccessors(W, q);
     }
 

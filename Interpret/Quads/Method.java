@@ -57,7 +57,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.14 1999-09-08 16:35:34 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.15 1999-09-09 21:43:05 cananian Exp $
  */
 public final class Method extends HCLibrary {
 
@@ -176,7 +176,7 @@ public final class Method extends HCLibrary {
 	exec_loop:
 	    while (!i.done)
 		try {
-		    sf.pc.visit(i);
+		    sf.pc.accept(i);
 		} catch (InterpretedThrowable it) {
 		    // check HANDLERs
 		    for (Enumeration e=HandlerSet.elements(sf.pc.handlers());

@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * <code>false</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSTANCEOF.java,v 1.1.2.7 1999-01-22 23:06:00 cananian Exp $ 
+ * @version $Id: INSTANCEOF.java,v 1.1.2.8 1999-09-09 21:43:02 cananian Exp $ 
  */
 public class INSTANCEOF extends Quad {
     /** The <code>Temp</code> in which to store the result of the test. */
@@ -78,7 +78,7 @@ public class INSTANCEOF extends Quad {
 	dst = tm.tempMap(dst);
     }
 
-    public void visit(QuadVisitor v) { v.visit(this); }
+    public void accept(QuadVisitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this Quad. */
     public String toString() {

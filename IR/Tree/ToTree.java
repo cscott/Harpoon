@@ -63,7 +63,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.40 1999-09-09 15:42:41 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.41 1999-09-09 21:43:04 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -113,7 +113,7 @@ public class ToTree implements Derivation, TypeMap {
 	lqm = new LowQuadMap();
 	dv = new CloningVisitor(code, code, lqm);
 	for (Iterator i = code.getElementsI(); i.hasNext();)
-	    ((Quad)i.next()).visit(dv);
+	    ((Quad)i.next()).accept(dv);
 	
 	for (Iterator i = code.getElementsI(); i.hasNext();) { 
 	    Quad qTmp = (Quad)i.next();
@@ -129,7 +129,7 @@ public class ToTree implements Derivation, TypeMap {
 	// destination of each branch.  
 	dv = new LabelingVisitor(dv, dv);
 	for (Iterator i = code.getElementsI(); i.hasNext();)
-	    lqm.get((Quad)i.next()).visit(dv);
+	    lqm.get((Quad)i.next()).accept(dv);
 
 	// *MODIFY* the cloned (and labeled) quad graph to 
 	// a) Not explicitly check exceptional values.   
@@ -137,13 +137,13 @@ public class ToTree implements Derivation, TypeMap {
 	NameMap nm = new NameMap();
 	dv = new CallConversionVisitor(dv, dv, nm);
 	for (Iterator i=quadGraph(lqm.get(root)); i.hasNext();)
-	    ((Quad)i.next()).visit(dv);
+	    ((Quad)i.next()).accept(dv);
 	
 	// Construct a list of harpoon.IR.Tree.Stm objects
 	handlers = ((CallConversionVisitor)dv).getHandlers();
 	dv = new TranslationVisitor(tf, dv, dv, nm, ctm);
 	for (Iterator i=quadGraph(lqm.get(root),handlers,true);i.hasNext();)
-	    ((Quad)i.next()).visit(dv);
+	    ((Quad)i.next()).accept(dv);
 
 	// Assign member variables
 	m_tree       = ((TranslationVisitor)dv).getTree();
@@ -1675,8 +1675,8 @@ class JMP extends harpoon.IR.Quads.Quad {
     public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
 	throw new Error("Should not use this method");
     }
-    public void visit(QuadVisitor v) { visit((ExtendedLowQuadVisitor)v); } 
-    public void visit(ExtendedLowQuadVisitor v) { v.visit(this); }
+    public void accept(QuadVisitor v) { accept((ExtendedLowQuadVisitor)v); } 
+    public void accept(ExtendedLowQuadVisitor v) { v.visit(this); }
     public String toString() {return "JMP: " + label.toString();}
 }
 

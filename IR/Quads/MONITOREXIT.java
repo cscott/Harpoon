@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * See the JVM spec for details.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MONITOREXIT.java,v 1.1.2.6 1999-01-22 23:06:00 cananian Exp $
+ * @version $Id: MONITOREXIT.java,v 1.1.2.7 1999-09-09 21:43:02 cananian Exp $
  */
 public class MONITOREXIT extends Quad {
     /** The object containing the monitor to be released. */
@@ -54,7 +54,7 @@ public class MONITOREXIT extends Quad {
 	lock = tm.tempMap(lock);
     }
 
-    public void visit(QuadVisitor v) { v.visit(this); }
+    public void accept(QuadVisitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this quad. */
     public String toString() {

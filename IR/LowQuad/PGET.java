@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * ought to contain a <code>POINTER</code> value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PGET.java,v 1.1.2.2 1999-01-21 05:19:14 cananian Exp $
+ * @version $Id: PGET.java,v 1.1.2.3 1999-09-09 21:43:00 cananian Exp $
  */
 public class PGET extends LowQuad {
     /** <code>Temp</code> in which to store the fetched field or array
@@ -58,7 +58,7 @@ public class PGET extends LowQuad {
 			map(defMap, dst), map(useMap, ptr));
     }
 
-    void visit(LowQuadVisitor v) { v.visit(this); }
+    void accept(LowQuadVisitor v) { v.visit(this); }
 
     public String toString() {
 	return dst.toString() + " = PGET *" + ptr.toString();

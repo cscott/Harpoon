@@ -19,7 +19,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.17 1999-08-04 15:32:49 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.18 1999-09-09 21:43:03 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -57,7 +57,7 @@ final class UnHandler {
     }
     /** Recursively visit all quads starting at <code>start</code>. */
     private static final void visitAll(Visitor v, Quad start) {
-	start.visit(v);
+	start.accept(v);
 	final StaticState ss = v.ss;
 	Util.assert(ss.qm.contains(start));
 	Quad[] ql = start.next();

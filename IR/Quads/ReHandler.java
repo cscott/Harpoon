@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.24 1999-09-09 21:12:19 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.25 1999-09-09 21:43:02 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -184,7 +184,7 @@ final class ReHandler {
 	// Need to make NoSSA for QuadWithTry
 	PHVisitor v = new PHVisitor(qf, reachable);
 	for (Iterator it = phiset.iterator(); it.hasNext();)
-	    ((Quad)it.next()).visit(v);
+	    ((Quad)it.next()).accept(v);
 
 	return qH;
     }
@@ -200,7 +200,7 @@ final class ReHandler {
 		count.put(q, new Integer(((Integer)count.get(q)).intValue()+1));
 	    } else
 		count.put(q, new Integer(1));
-	    q.visit(v);
+	    q.accept(v);
 	}
 	Iterator t=count.keySet().iterator();
 	while (t.hasNext()) {
@@ -416,7 +416,7 @@ final class ReHandler {
 	while(!todo.isEmpty()) {
 		Quad next=(Quad)todo.pop();
 		//System.out.println(next.toString());
-		next.visit(visitor);
+		next.accept(visitor);
 	}
     }
     
@@ -425,7 +425,7 @@ final class ReHandler {
     private static HashMapList analyze(final Code code, Set callset, Set throwset, Set instanceset, Set phiset) {
 	CALLVisitor cv=new CALLVisitor(callset, throwset, instanceset, phiset);
 	for (Iterator e =  code.getElementsI(); e.hasNext(); )
-	    ((Quad)e.next()).visit(cv);
+	    ((Quad)e.next()).accept(cv);
 	HashMapList callhand=new HashMapList();
 	AnalysingVisitor avisitor=new AnalysingVisitor(callhand,code);
     	analyzevisit(avisitor, callset);
@@ -434,7 +434,7 @@ final class ReHandler {
 
     /** Recursively visit all quads starting at <code>start</code>. */
     private static final void visitAll(Visitor v, Quad start) {
-	start.visit(v);
+	start.accept(v);
 	final StaticState ss = v.ss;
 	Util.assert(ss.qm.contains(start));
 	Quad[] ql = start.next();
@@ -451,13 +451,13 @@ final class ReHandler {
 	    WorkSet qm=new WorkSet();
 	    Quad ptr=(Quad) iterate.next();
 	    v.reset();
-	    ptr.visit(v);
+	    ptr.accept(v);
 	    while (v.more()&&(!qm.contains(ptr))) {
 		//System.out.println("**"+v.more());
 		//System.out.println("Visiting:" +ptr.toString());
 		qm.add(ptr);
 		ptr = ptr.next(0);
-		ptr.visit(v);
+		ptr.accept(v);
 		//System.out.println(v.more());
 	    }
 	}

@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>BasicInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInductions.java,v 1.1.2.2 1999-07-12 16:42:45 bdemsky Exp $
+ * @version $Id: BasicInductions.java,v 1.1.2.3 1999-09-09 21:42:54 cananian Exp $
  */
 public class BasicInductions {
     HCode hc;
@@ -64,7 +64,7 @@ public class BasicInductions {
 	iterate=excelements.iterator();
 	while (iterate.hasNext()) {
 	    Quad q=(Quad)iterate.next();
-	    q.visit(visitor);
+	    q.accept(visitor);
 	}
 
 

@@ -25,7 +25,7 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.1.2.10 1999-01-22 23:06:00 cananian Exp $
+ * @version $Id: OPER.java,v 1.1.2.11 1999-09-09 21:43:02 cananian Exp $
  */
 public class OPER extends Quad {
     /** The <code>Temp</code> in which to store the result of the operation. */
@@ -88,8 +88,8 @@ public class OPER extends Quad {
 	dst = tm.tempMap(dst);
     }
 
-    public void visit(QuadVisitor v) { v.visit(this); }
-    public void visit(OperVisitor v) { v.dispatch(this); }
+    public void accept(QuadVisitor v) { v.visit(this); }
+    public void accept(OperVisitor v) { v.dispatch(this); }
 
     /** Returns a human-readable representation of this Quad. */
     public String toString() {

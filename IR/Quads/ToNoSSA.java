@@ -25,7 +25,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.18 1999-09-08 16:35:33 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.19 1999-09-09 21:43:03 cananian Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -126,7 +126,7 @@ public class ToNoSSA implements Derivation, TypeMap
 	// Remove all SIGMAs from the code
 	v = new SIGMAVisitor(m_ctm, nm, qf, qm);
 	for (Iterator i = code.getElementsI(); i.hasNext();)
-	    ((Quad)i.next()).visit(v);
+	    ((Quad)i.next()).accept(v);
       
 	// Rename variables appropriately to account for the removed SIGMAs
 	qm.rename(qf, nm, nm);
@@ -145,7 +145,7 @@ public class ToNoSSA implements Derivation, TypeMap
 	// Modify this new CFG by emptying PHI nodes
 	v = new PHIVisitor(qf, dT, nm);
 	for (Iterator i = code.getElementsI(); i.hasNext();)
-	    qm.get((Quad)i.next()).visit(v);
+	    qm.get((Quad)i.next()).accept(v);
 
 	// Return the head of the new CFG
 	return qm.get(old_header);

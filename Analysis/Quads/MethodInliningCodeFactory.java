@@ -41,7 +41,7 @@ import harpoon.ClassFile.HCodeElement;
  * facilities for specifying number of recursive inlinings.
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.1 1999-09-09 21:12:16 cananian Exp $ */
+ * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.2 1999-09-09 21:42:55 cananian Exp $ */
 public class MethodInliningCodeFactory implements HCodeFactory {
 
     static PrintWriter pw = new PrintWriter(System.out);
@@ -162,7 +162,7 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 
 		qv = new InliningVisitor( map, call );
 		for(int j=0; j<newElems.length; j++) {
-		    newElems[j].visit(qv);
+		    newElems[j].accept(qv);
 		}
 	    }
 	}

@@ -15,7 +15,7 @@ import java.util.Enumeration;
  * A <code>HANDLER</code> quad marks an entry to an exception handler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HANDLER.java,v 1.1.2.8 1999-06-24 00:03:11 cananian Exp $
+ * @version $Id: HANDLER.java,v 1.1.2.9 1999-09-09 21:43:02 cananian Exp $
  * @see METHOD
  */
 public class HANDLER extends Quad {
@@ -88,7 +88,7 @@ public class HANDLER extends Quad {
 	exceptionTemp = tm.tempMap(exceptionTemp);
     }
 
-    public void visit(QuadVisitor v) { v.visit(this); }
+    public void accept(QuadVisitor v) { v.visit(this); }
 
     /** Returns human-readable representation of this <Code>Quad</code>. */
     public String toString() {

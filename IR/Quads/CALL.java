@@ -21,7 +21,7 @@ import harpoon.Util.Util;
  * is the first parameter in the <code>params</code> array.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.11 1999-08-05 02:12:55 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.12 1999-09-09 21:43:02 cananian Exp $ 
  */
 public class CALL extends Quad {
     /** The method to invoke. */
@@ -180,7 +180,7 @@ public class CALL extends Quad {
 	    retex  = tm.tempMap(retex);
     }
 
-    public void visit(QuadVisitor v) { v.visit(this); }
+    public void accept(QuadVisitor v) { v.visit(this); }
 
     /** Returns human-readable representation. */
     public String toString() {

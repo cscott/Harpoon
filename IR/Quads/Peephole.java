@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.8 1999-08-26 21:15:37 bdemsky Exp $
+ * @version $Id: Peephole.java,v 1.1.2.9 1999-09-09 21:43:02 cananian Exp $
  */
 
 final class Peephole  {
@@ -63,7 +63,7 @@ final class Peephole  {
 	    while (!todo.empty()) {
 		Quad q = (Quad) todo.pop();
 		if (!visited.contains(q)) {
-		    q.visit(this);
+		    q.accept(this);
 		}
 	    }
 	    return changed;

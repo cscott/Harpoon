@@ -54,7 +54,7 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.14 1999-09-08 16:51:46 cananian Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.15 1999-09-09 21:42:57 cananian Exp $
  */
 
 public class IntraProc {
@@ -183,7 +183,7 @@ public class IntraProc {
 	    while(!worklist.isEmpty()) {
 		Quad q = (Quad) worklist.pull();
 		tiv.modified = false;
-		q.visit(tiv);
+		q.accept(tiv);
 		if (tiv.modified) {
 		    Temp[] d = q.def();
 		    for (int i=0; i<d.length; i++) {
