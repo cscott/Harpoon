@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import java.util.Collection;
+import java.util.Comparator;
 
 import java.io.Serializable;
 
@@ -41,7 +42,7 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@lcs.mit.edu>
- * @version $Id: SCComponent.java,v 1.13 2004-03-05 15:38:14 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.14 2004-03-05 22:18:36 salcianu Exp $
  */
 public final class SCComponent/*<Vertex>*/
     implements Comparable<SCComponent/*<Vertex>*/>, Serializable {
@@ -300,7 +301,7 @@ public final class SCComponent/*<Vertex>*/
     private int id;
 
     // The nodes of this SCC (Strongly Connected Component).
-    Set nodes = new TreeSet();
+    Set nodes = new TreeSet(DEFAULT_COMPARATOR);
     Object[] nodes_array;
     // The successors.
     private SCComponent[] next;
@@ -396,5 +397,14 @@ public final class SCComponent/*<Vertex>*/
     // put some unit tests here
     public void test() {
 	// TODO
+    }
+
+    // make sure we have a default comparator for the TreeSet
+    private static Comparator DEFAULT_COMPARATOR = new DefaultComparator();
+    private static class DefaultComparator implements Comparator {
+	public int compare(Object o1, Object o2) {
+	    if(o1.equals(o2)) return 0;
+	    return (o1.hashCode() < o2.hashCode()) ? -1 : 1;
+	}
     }
 }

@@ -4,6 +4,7 @@
 package harpoon.Analysis.PointerAnalysis;
 
 import java.util.Set;
+import java.util.Map;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Collection;
@@ -18,19 +19,18 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
 
+import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.ClassFile.HCodeElement;
 
 import harpoon.Util.DataStructs.Relation;
 
-
-
 /**
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.8 2004-03-05 15:38:08 salcianu Exp $
+ * @version $Id: Debug.java,v 1.9 2004-03-05 22:18:14 salcianu Exp $
  */
 public abstract class Debug implements java.io.Serializable {
 
@@ -124,7 +124,10 @@ public abstract class Debug implements java.io.Serializable {
     }
 
     public static void show_lbb_scc
-	(TopSortedCompDiGraph<LightBasicBlock> ts_sccs) {
+	(MetaMethod mm, TopSortedCompDiGraph<LightBasicBlock> ts_sccs) {
+
+	System.out.println("THE CODE FOR :" + mm.getHMethod());
+
 	for(SCComponent scc : ts_sccs.decrOrder()) {
 	    System.out.println("SCC" + scc.getId() + "{");
 	    Object nodes[] = scc.nodes();
@@ -152,16 +155,18 @@ public abstract class Debug implements java.io.Serializable {
 
 	Object[] nodes_array = scc.nodes();
 	Set nodes = scc.nodeSet();
-
 	for(int i = 0; i < nodes_array.length; i++) {
 	    Object o = nodes_array[i];
-	    buffer.append(o);
-	    buffer.append("\n");
+	    buffer.append(" ").append(o).append("\n");
 	    Object[] next = mcg.getCallees((MetaMethod) o);
+	    int k = 0;
 	    for(int j = 0; j < next.length; j++)
-		if(nodes.contains(next[j]))
-		    buffer.append("  " + next[j] + "\n");
-	    buffer.append("\n");
+		if(nodes.contains(next[j])) {
+		    buffer.append("   ").append(next[j]).append("\n");
+		    k++;
+		}
+	    if(k > 0)
+		buffer.append("\n");
 	}
 	buffer.append("}\n");
 
@@ -213,4 +218,41 @@ public abstract class Debug implements java.io.Serializable {
 			       time + "ms processing time");
     }
 
+    // prints method name and size information
+    static void print_method_stats
+	(MetaMethod mm, CachingSCCLBBFactory scc_lbb_factory) {
+	HMethod hm = mm.getHMethod();
+
+	int nb_sccs = 0;
+	int nb_lbbs = 0;
+	int nb_instrs = 0;
+
+	for(SCComponent scc : scc_lbb_factory.computeSCCLBB(hm).decrOrder()) {
+	    nb_sccs++;
+	    Object[] lbbs = scc.nodes();
+	    nb_lbbs += lbbs.length;
+	    for(int i = 0; i < lbbs.length; i++)
+		nb_instrs += ((LightBasicBlock) lbbs[i]).getElements().length;
+	}
+
+	System.out.println("METHOD: " + hm);
+	System.out.println("size: " +
+			   nb_sccs + " SCCs; " + 
+			   nb_lbbs + " LBBs; " + 
+			   nb_instrs + " instrs");
+    }
+
+    static void print_lbb(LightBasicBlock lbb, Map lbb2passes) {
+	Integer ipass = (Integer) lbb2passes.get(lbb);
+	int pass = ((ipass == null) ? 0 : ipass.intValue()) + 1;
+	lbb2passes.put(lbb, new Integer(pass));
+	System.out.println
+	    ("\nBEGIN: Analyze_basic_block " + lbb + " pass: " + pass);
+	System.out.print("Prev BBs: ");
+	Object[] prev_lbbs = lbb.getPrevLBBs();
+	Arrays.sort(prev_lbbs, UComp.uc);
+	for(int i = 0 ; i < prev_lbbs.length ; i++)
+	    System.out.print((LightBasicBlock) prev_lbbs[i] + " ");
+	System.out.println();
+    }
 }

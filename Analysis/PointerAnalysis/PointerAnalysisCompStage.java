@@ -57,7 +57,7 @@ import java.io.InputStreamReader;
  * <code>PointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysisCompStage.java,v 1.9 2004-02-08 03:20:03 cananian Exp $
+ * @version $Id: PointerAnalysisCompStage.java,v 1.10 2004-03-05 22:18:14 salcianu Exp $
  */
 public class PointerAnalysisCompStage extends CompilerStageEZ {
 
@@ -75,7 +75,9 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     public static CompilerStage getPAAndAppsStage() {
 	List<CompilerStage> paStages = new LinkedList<CompilerStage>();
 
-	paStages.add(new PointerAnalysisCompStage(true));
+	final PointerAnalysisCompStage paStage = 
+	    new PointerAnalysisCompStage(true);
+	paStages.add(paStage);
 
 	final CompilerStage allocSyncOpt = new AllocSyncOptCompStage();
 	paStages.add(allocSyncOpt);
@@ -85,7 +87,10 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
 
 	return new CompStagePipeline(paStages, "pa-and-applications") {
 	    public boolean enabled() {
-		return allocSyncOpt.enabled() || rtjSupport.enabled();
+		return 
+		    paStage.selfEnabled() || 
+		    allocSyncOpt.enabled() || 
+		    rtjSupport.enabled();
 	    }
 	};
     }
@@ -164,7 +169,7 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
 	    public void action() {
 		DO_ANALYSIS = true;
 		if(methodsToAnalyze == null)
-		    methodsToAnalyze = new HashSet();
+		    methodsToAnalyze = new LinkedList();
 		methodsToAnalyze.add(getArg(0));
 		if(getOptionalArg(0) != null)
 		    INTERACTIVE_ANALYSIS_DETAILS = true;
@@ -198,18 +203,20 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     private boolean SHOW_CG = false;
     
     private boolean DO_ANALYSIS = false;
-    private Set methodsToAnalyze = null;
+    private List methodsToAnalyze = null;
     
     private boolean INTERACTIVE_ANALYSIS = false;
     private boolean INTERACTIVE_ANALYSIS_DETAILS = false;
     
     private boolean CALL_GRAPH_STATS = false;
 
-    public boolean enabled() {
-	return extEnabled || DO_ANALYSIS || INTERACTIVE_ANALYSIS;
-    }
+    public boolean enabled() { return extEnabled; }
     private boolean extEnabled = false;
     
+    public boolean selfEnabled() {
+	return DO_ANALYSIS || INTERACTIVE_ANALYSIS;
+    }
+
     protected void real_action() {
 	PreAnalysisRes pre_analysis =
 	    LOAD_PRE_ANALYSIS ? load_pre_analysis() : do_pre_analysis();
@@ -227,7 +234,7 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
 	
 	if(INTERACTIVE_ANALYSIS)
 	    interactive_analysis(pa);
-	
+
 	attribs = attribs.put("PointerAnalysis", pa);
     }
     
@@ -363,7 +370,7 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     }
     
     
-    private void do_analysis(PointerAnalysis pa, Set<String> methods) {
+    private void do_analysis(PointerAnalysis pa, List<String> methods) {
 	for(String m : methods) {
 	    display_pa4method(pa, m);
 	}
@@ -390,6 +397,8 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     
     
     private void display_pa4method(PointerAnalysis pa, String method) {
+	if(method.equals("QUIT")) System.exit(1);
+
 	int point_pos = method.lastIndexOf('.');
 	String declClassName = 
 	    (point_pos != -1) ?

@@ -83,7 +83,7 @@ import harpoon.Util.DataStructs.LightMap;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPointerAnalysis.java,v 1.9 2004-03-05 15:38:08 salcianu Exp $
+ * @version $Id: ODPointerAnalysis.java,v 1.10 2004-03-05 22:18:14 salcianu Exp $
  */
 public class ODPointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -733,8 +733,6 @@ public class ODPointerAnalysis {
 
 	ODPointerAnalysis.number_of_mm_analyzed++;
 
-	if(STATS) Stats.record_mmethod_pass(mm);
-
 	LBBConverter lbbconv = scc_lbb_factory.getLBBConverter();
 	LightBasicBlock.Factory lbbf = lbbconv.convert2lbb(mm.getHMethod());
 	HCode hcode = lbbf.getHCode();
@@ -746,12 +744,10 @@ public class ODPointerAnalysis {
 	TopSortedCompDiGraph<LightBasicBlock> ts_lbbs = 
 	    scc_lbb_factory.computeSCCLBB(mm.getHMethod());
 
-	if(DEBUG2){
-	    System.out.println("THE CODE FOR :" + mm.getHMethod());
-	    Debug.show_lbb_scc(ts_lbbs);
-	}
+	if(DEBUG2)
+	    Debug.show_lbb_scc(mm, ts_lbbs);
 
-	if(STATS) Stats.record_mmethod(mm, ts_lbbs);
+	if(STATS) Stats.record_mmethod_pass(mm, ts_lbbs);
 
 	// construct the ODParIntGraph at the beginning of the method 
 	LightBasicBlock first_bb = 
