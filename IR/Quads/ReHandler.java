@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.28.2.2 1999-09-16 20:36:34 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.28.2.3 1999-09-16 21:26:05 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -84,7 +84,8 @@ final class ReHandler {
 	    Quad old = (Quad) e.next();
 	    // link next.
 	    Edge[] el = old.nextEdge();
-	    for (int i=0; i<el.length; i++) {
+	    
+	    for (int i=0; i<(callset.contains(old)?1:el.length); i++) {
 		    Quad.addEdge(qm.getFoot((Quad)el[i].from()),el[i].which_succ(),
 				 qm.getHead((Quad)el[i].to()), el[i].which_pred());
 	    }
