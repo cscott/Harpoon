@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.33 1999-06-09 18:47:23 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.34 1999-06-13 17:28:28 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -136,7 +136,7 @@ VERSIONS: $(TARSOURCE) # collect all the RCS version ID tags.
 		$(filter-out %.jar, $(TARSOURCE)) > VERSIONS
 	@echo done.
 
-ChangeLog: $(TARSOURCE) # not strictly accurate anymore.
+ChangeLog: needs-cvs $(TARSOURCE) # not strictly accurate anymore.
 	-$(RM) ChangeLog
 	rcs2log > ChangeLog # used to include TARSOURCE on cmdline
 
@@ -183,7 +183,7 @@ tar-install: tar
 
 doc:	doc/TIMESTAMP
 
-doc/TIMESTAMP:	$(ALLSOURCE) ChangeLog mark-executable
+doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	make doc-clean
 	mkdir doc
 	cd doc; ln -s .. harpoon ; ln -s .. silicon ; ln -s ../Contrib gnu
@@ -201,7 +201,11 @@ doc/TIMESTAMP:	$(ALLSOURCE) ChangeLog mark-executable
 	cd doc; ln -s $(JDOCIMAGES) images
 	cd doc; ln -s packages.html index.html
 	cd doc; ln -s index.html API_users_guide.html
-	cp ChangeLog doc/ChangeLog.txt
+	# only include ChangeLog if we've got CVS access
+	if [ -d CVS ]; then \
+          make ChangeLog; \
+	  cp ChangeLog doc/ChangeLog.txt; \
+	fi
 	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	chmod a+rx doc ; chmod a+r doc/*
 
