@@ -54,7 +54,7 @@ import harpoon.Analysis.MetaMethods.SmartCallGraph;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.17 2000-03-23 07:10:26 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.18 2000-03-23 08:34:57 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -249,7 +249,7 @@ public abstract class PAMain {
 	}
 	
 
-	System.out.println("SplitRelation ... ");
+	System.out.print("SplitRelation ... ");
 	tstart = System.currentTimeMillis();
 	split_rel = mcg.getSplitRelation();
 	tstop  = System.currentTimeMillis();
