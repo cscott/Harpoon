@@ -53,7 +53,7 @@ action code {:
     System.out.println("</A>");
   }
   public void annotateURL(int left, int right, QualName qn, String what) {
-    if (qn==null) System.err.println("COULD NOT RESOLVE: "+what);
+    if (qn==null) System.err.println("COULD NOT RESOLVE: "+what+" in "+env.get("#qualified"));
     else annotateURL(left, right, qn.toURL());
   }
   public void annotateURL(int left, int right, HClass hc) {
@@ -159,7 +159,7 @@ action code {:
 	  try {
 	      HClass.forName(cls);
 	      // OK, check that cls/inner split is correct.
-	      if (inner!=null) HClass.forName(cls+"$"+inner);
+	      if (inner!=null) HClass.forName(cls+"$"+inner.replace('.','$'));
 	      // cool! it all works!
 	      if (cls.indexOf('.')<0) return new QualName(null,cls,inner);
 	      else return new QualName(cls.substring(0,cls.lastIndexOf('.')),
@@ -168,7 +168,7 @@ action code {:
 	  } catch (NoClassDefFoundError e) { /* no class found */ }
 	  // move an element to the inner class portion.
 	  if (cls.indexOf('.')<0) return null; // give up.
-	  inner = combineWithDot(inner,cls.substring(1+cls.lastIndexOf('.')));
+	  inner = combineWithDot(cls.substring(1+cls.lastIndexOf('.')), inner);
 	  cls = cls.substring(0, cls.lastIndexOf('.'));
       } while (true);
   }
@@ -334,6 +334,17 @@ action code {:
   }
   private static String combineWithDot(String a, String b) {
       return (a==null)?b:(b==null)?a:(a+"."+b);
+  }
+  private void newClassScope(String inner) {
+      env.put("#qualified",
+	      combineWithDot((String) env.get("#qualified"), inner));
+      env.remove("#inner");
+  }
+  private Integer newInner() {
+      Integer innerindex=(Integer)env.get("#inner");
+      innerindex=new Integer(1+(innerindex==null?0:innerindex.intValue()));
+      env.put("#inner", innerindex);
+      return innerindex;
   }
 :};
 
@@ -683,9 +694,11 @@ modifier ::=	PUBLIC | PROTECTED | PRIVATE
 // 19.8.1) Class Declaration:
 class_declaration ::= 
 	modifiers_opt CLASS IDENTIFIER:id super_opt interfaces_opt
-	{: pushenv();
-	   String qual = (String) env.get("#qualified");
-	   env.put("#qualified", combineWithDot(qual, id));
+	{: if (env.containsKey("#in_method")) { // ok, create anonymous context
+	     Integer num = newInner();
+	     newClassScope(num.toString());
+	   }
+	   pushenv(); newClassScope(id); env.remove("#in_method");
            annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
 	:} class_body {: popenv(); :}
 	;
@@ -722,9 +735,7 @@ class_member_declaration ::=
 	|	method_declaration
 	/* repeat the prod for 'class_declaration' here: */
 	|	modifiers_opt CLASS IDENTIFIER:id super_opt interfaces_opt
-	{: pushenv();
-	   String qual = (String) env.get("#qualified");
-	   env.put("#qualified", combineWithDot(qual, id));
+	{: pushenv(); newClassScope(id);
            annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
 	:} class_body {: popenv(); :}
 	|	interface_declaration
@@ -773,7 +784,8 @@ method_header ::=
 	;
 method_declarator ::=
 		IDENTIFIER:id LPAREN {:pushenv();:} formal_parameter_list_opt:f RPAREN
-		{: annotateANCHOR(idleft,idright,methodString(id, f)); :}
+		{: env.put("#in_method","yes");
+		   annotateANCHOR(idleft,idright,methodString(id, f)); :}
 	|	method_declarator LBRACK RBRACK // deprecated
 	// be careful; the above production also allows 'void foo() []'
 	;
@@ -793,13 +805,13 @@ formal_parameter ::=
 		{:
 		  HClass hc = (ty==null) ? null : HClassUtil.arrayClass(ty,
 						((Integer)v[1]).intValue());
-		  env.put(v[0],hc); RESULT=hc.getDescriptor();
+		  env.put(v[0],hc); RESULT=(hc==null)?"*":hc.getDescriptor();
 		:}
 	|	FINAL type:ty variable_declarator_id:v
 		{:
 		  HClass hc = (ty==null) ? null : HClassUtil.arrayClass(ty,
 						((Integer)v[1]).intValue());
-		  env.put(v[0],hc); RESULT=hc.getDescriptor();
+		  env.put(v[0],hc); RESULT=(hc==null)?"*":hc.getDescriptor();
 		:}
 	;
 throws_opt ::=	
@@ -827,7 +839,8 @@ constructor_declaration ::=
 	;
 constructor_declarator ::=
 		simple_name:id LPAREN {:pushenv();:} formal_parameter_list_opt:f RPAREN
-		{: annotateANCHOR(idleft,idright,methodString(id, f)); :}
+		{: env.put("#in_method","yes");
+		   annotateANCHOR(idleft,idright,methodString(id, f)); :}
 	;
 constructor_body ::=
 		LBRACE explicit_constructor_invocation
@@ -848,10 +861,12 @@ explicit_constructor_invocation ::=
 // 19.9.1) Interface Declarations
 interface_declaration ::=
 		modifiers_opt INTERFACE IDENTIFIER:id extends_interfaces_opt {:
-		 pushenv();
-	         String qual = (String) env.get("#qualified");
-		 env.put("#qualified", combineWithDot(qual, id));
-                 annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
+	if (env.containsKey("#in_method")) { // ok, create anonymous context
+	  Integer num = newInner();
+	  newClassScope(num.toString());
+	}
+	pushenv(); newClassScope(id); env.remove("#in_method");
+        annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
 		:} interface_body {: popenv(); :}
 	;
 extends_interfaces_opt ::=
@@ -1114,7 +1129,10 @@ primary_no_new_array ::=
 	;
 class_instance_creation_expression ::=
 		NEW class_type LPAREN argument_list_opt RPAREN
-	|	NEW class_type LPAREN argument_list_opt RPAREN class_body
+	|	NEW class_type LPAREN argument_list_opt RPAREN {:
+		  Integer innerindex=newInner(); pushenv();
+		  newClassScope(innerindex.toString());
+		:} class_body {: popenv(); :}
 	|	primary DOT NEW IDENTIFIER
 			LPAREN argument_list_opt RPAREN
 	|	primary DOT NEW IDENTIFIER
