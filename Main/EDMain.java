@@ -21,6 +21,7 @@ import harpoon.Temp.TempFactory;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.DataFlow.InstrSolver;
 import harpoon.Analysis.Instr.RegAlloc;
+import harpoon.Backend.Backend;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
@@ -78,7 +79,7 @@ import harpoon.Util.Collections.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDMain.java,v 1.6 2002-08-08 17:51:35 cananian Exp $
+ * @version $Id: EDMain.java,v 1.7 2003-03-28 20:20:19 salcianu Exp $
  */
 public class EDMain extends harpoon.IR.Registration {
  
@@ -139,7 +140,8 @@ public class EDMain extends harpoon.IR.Registration {
 		}
 	    }
 
-	    Frame frame = Options.frameFromString(backendName, mo);
+	    Frame frame = Backend.getFrame(backendName, mo);
+
 	    hco = 
 		new harpoon.ClassFile.CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory(), true);
 	    
@@ -165,7 +167,8 @@ public class EDMain extends harpoon.IR.Registration {
 	    mo = stage1.mo;
 	    CachingBBConverter bbconv=new CachingBBConverter(stage1.hco);
 
-	    Frame frame = Options.frameFromString(backendName, mo);
+	    Frame frame = Backend.getFrame(backendName, mo);
+
 	    // costruct the set of all the methods that might be called by 
 	    // the JVM (the "main" method plus the methods which are called by
 	    // the JVM before main) and next pass it to the MetaCallGraph
@@ -195,7 +198,7 @@ public class EDMain extends harpoon.IR.Registration {
 	    System.out.println("Doing CachingCodeFactory");
 	    hcfe = new CachingCodeFactory(ccf, true);
 
-	    Frame frame = Options.frameFromString(backendName, mo);
+	    Frame frame = Backend.getFrame(backendName, mo);
 
 	    Collection c = new WorkSet();
 	    c.addAll(frame.getRuntime().runtimeCallableMethods());
@@ -313,10 +316,6 @@ public class EDMain extends harpoon.IR.Registration {
 	assert mainM != null : "Class " + className + 
 		    " has no main method";
 
-	// create the target Frame way up here!
-	// the frame specifies the combination of target architecture,
-	// runtime, and allocation strategy we want to use.
-	frame = Options.frameFromString(BACKEND_NAME, mainM);
 	// set up BACKEND enumeration
 	if (BACKEND_NAME == "strongarm")
 	    BACKEND = STRONGARM_BACKEND;
@@ -327,6 +326,11 @@ public class EDMain extends harpoon.IR.Registration {
 	else if (BACKEND_NAME == "precisec")
 	    BACKEND = PRECISEC_BACKEND;
 	else throw new Error("Unknown Backend.");
+
+	// create the target Frame way up here!
+	// the frame specifies the combination of target architecture,
+	// runtime, and allocation strategy we want to use.
+	frame = Backend.getFrame(BACKEND_NAME, mainM);
 
 	if (classHierarchy == null) {
 	    // ask the runtime which roots it requires.

@@ -3,17 +3,19 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
-import harpoon.Backend.Runtime1.AllocationStrategyFactory;
-import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Backend;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * <code>Options</code> contains the values of the current runtime
  * environment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Options.java,v 1.5 2003-02-11 21:49:20 salcianu Exp $
+ * @version $Id: Options.java,v 1.6 2003-03-28 20:20:19 salcianu Exp $
  */
 public class Options {
     /** Stream for writing statistics. */
@@ -49,38 +51,13 @@ public class Options {
 	else throw new Error("Unknown code factory type: "+name);
     }
 
-    /** Create a frame object, given the name of a backend.
 
-	@param backendName string name of the backend
-
-	@param mainMethod  main method of the compiled program
-
-	@param asFact factory that produces the
-	<code>AllocationStrategy</code> for compiling allocation
-	sites.  Currently, relevant only for the <code>PreciseC</code>
-	backend.*/
-    public static Frame frameFromString(String backendName, HMethod mainMethod,
-					AllocationStrategyFactory asFact)
-    {
-	backendName = backendName.toLowerCase().intern();
-	if (backendName == "strongarm")
-	    return new harpoon.Backend.StrongARM.Frame(mainMethod);
-	if (backendName == "sparc")
-	    return new harpoon.Backend.Sparc.Frame(mainMethod);
-	if (backendName == "mips")
-	    return new harpoon.Backend.MIPS.Frame(mainMethod);
-	if (backendName == "mipsyp")
-	    return new harpoon.Backend.MIPS.Frame(mainMethod, "yp");
-	if (backendName == "mipsda")
-	    return new harpoon.Backend.MIPS.Frame(mainMethod, "da");
-	if (backendName == "precisec")
-	    return new harpoon.Backend.PreciseC.Frame(mainMethod, asFact);
-	throw new Error("Unknown Backend: "+backendName);
+    /** Returns the Backend ID (one of the constants defined in
+	harpoon.Backend.Backend) that corresponds to the string
+	representation <code>backendName</code>.  E.g., it returns
+	<code>Backend.SPARC</code> for &quot;sparc&quot; etc. */
+    static String getBackendID(String backendName) {
+	return backendName.toLowerCase().intern();
     }
 
-    /** Create a frame object, given the name of a backend. */
-    public static Frame frameFromString(String backendName, HMethod mainMethod)
-    {
-	return frameFromString(backendName, mainMethod, null);
-    }
 }

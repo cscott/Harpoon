@@ -6,6 +6,7 @@ package harpoon.Main;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Backend;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -23,7 +24,7 @@ import java.util.Set;
  * our benchmarks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Sizer.java,v 1.4 2002-11-27 18:34:24 salcianu Exp $
+ * @version $Id: Sizer.java,v 1.5 2003-03-28 20:20:28 salcianu Exp $
  */
 public class Sizer extends harpoon.IR.Registration {
 
@@ -46,7 +47,7 @@ public class Sizer extends harpoon.IR.Registration {
 	HClass root = linker.forName(args[0]);
 	HMethod mainMethod = root.getMethod("main", "([Ljava/lang/String;)V");
 	// any frame will do:
-	Frame frame = Options.frameFromString("precisec", mainMethod);
+	Frame frame = Backend.getFrame(Backend.PRECISEC, mainMethod);
 	Set roots = new HashSet
 	    (frame.getRuntime().runtimeCallableMethods());
 	roots.add(mainMethod);

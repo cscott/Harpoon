@@ -26,6 +26,7 @@ import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.DataFlow.InstrSolver;
 import harpoon.Analysis.Instr.RegAlloc;
 import harpoon.Analysis.Instr.RegAllocOpts;
+import harpoon.Backend.Backend;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
@@ -108,7 +109,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.37 2003-03-16 16:38:20 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.38 2003-03-28 20:20:19 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -141,16 +142,11 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     static String  singleClassStr = null; 
     static HClass  singleClass = null; // for testing single classes
-    static final int STRONGARM_BACKEND = 0;
-    static final int MIPS_BACKEND = 1;
-    static final int SPARC_BACKEND = 2;
-    static final int PRECISEC_BACKEND = 3;
-    // MIPS with support for last line accesses is tag unchecked
-    static final int MIPSYP_BACKEND = 4;
-    // MIPS with support for direct address registers
-    static final int MIPSDA_BACKEND = 5;
-    static private int BACKEND = PRECISEC_BACKEND;
-    static String  BACKEND_NAME = "precisec";
+
+    /** Backend kind.  Has to be one of the constants defined in
+	<code>harpoon.Backend.Backend</code>;
+	<code>Backend.PRECISEC</code> by default.  */
+    static String BACKEND = Backend.PRECISEC;
 
     static boolean READ_ALLOC_STATS = false;
     static String allocNumberingFileName;
@@ -216,7 +212,7 @@ public class SAMain extends harpoon.IR.Registration {
 	parseOpts(args);
 	assert className!= null : "must pass a class to be compiled";
 
-	// find main method, set up frame.
+	// find main method
 	HClass hcl = linker.forName(className);
 	HMethod mainM;
 	try {
@@ -231,8 +227,8 @@ public class SAMain extends harpoon.IR.Registration {
 	// create the target Frame way up here!
 	// the frame specifies the combination of target architecture,
 	// runtime, and allocation strategy we want to use.
-	frame = Options.frameFromString(BACKEND_NAME, mainM,
-					getAllocationStrategyFactory());
+	frame = Backend.getFrame(BACKEND, mainM,
+				 getAllocationStrategyFactory());
 
 	do_it(mainM);
     }
@@ -313,23 +309,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    Realtime.setupObject(linker); 
 	}
 
-	// set up BACKEND enumeration
-	if (BACKEND_NAME == "strongarm")
-	    BACKEND = STRONGARM_BACKEND;
-	if (BACKEND_NAME == "sparc")
-	    BACKEND = SPARC_BACKEND;
-	if (BACKEND_NAME == "mips")
-	    BACKEND = MIPS_BACKEND;
-	if (BACKEND_NAME == "mipsyp")
-	    BACKEND = MIPSYP_BACKEND;
-	if (BACKEND_NAME == "mipsda")
-	    BACKEND = MIPSDA_BACKEND;
-	if (BACKEND_NAME == "precisec")
-	    BACKEND = PRECISEC_BACKEND;
-
 	// Check for compatibility of precise gc options.
 	if (PRECISEGC)
-	    assert (BACKEND==PRECISEC_BACKEND) : 
+	    assert (BACKEND == Backend.PRECISEC) : 
 	        "Precise gc is only implemented for the precise C backend.";
 	if (MULTITHREADED) {
 	    assert PRECISEGC || Realtime.REALTIME_JAVA :
@@ -350,7 +332,7 @@ public class SAMain extends harpoon.IR.Registration {
 
 	// check the configuration of the runtime.
 	// (in particular, the --with-precise-c option)
-	if (BACKEND==PRECISEC_BACKEND)
+	if (BACKEND == Backend.PRECISEC)
 	    frame.getRuntime().configurationSet.add
 		("check_with_precise_c_needed");
 	else
@@ -522,7 +504,7 @@ public class SAMain extends harpoon.IR.Registration {
 		hcf.convert((HMethod)it.next());
 	}
 	
-	if (BACKEND == MIPSDA_BACKEND || BACKEND == MIPSYP_BACKEND) {
+	if (BACKEND == Backend.MIPSDA || BACKEND == Backend.MIPSYP) {
 	    hcf = new harpoon.Analysis.Quads.ArrayUnroller(hcf).codeFactory();
 	    /*
 	    hcf = new harpoon.Analysis.Quads.DispatchTreeTransformation
@@ -737,14 +719,13 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-    if(BACKEND == MIPSDA_BACKEND || BACKEND == MIPSYP_BACKEND) {
-       hcf = harpoon.Analysis.Tree.MemHoisting.codeFactory(hcf);
-       hcf = new harpoon.Analysis.Tree.DominatingMemoryAccess
-	   (hcf, frame, classHierarchy).codeFactory();
-       
-    }
-	hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);
-    
+
+	if(BACKEND == Backend.MIPSDA || BACKEND == Backend.MIPSYP) {
+	    hcf = harpoon.Analysis.Tree.MemHoisting.codeFactory(hcf);
+	    hcf = new harpoon.Analysis.Tree.DominatingMemoryAccess
+		(hcf, frame, classHierarchy).codeFactory();
+	}
+	hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);    
     
 	HCodeFactory sahcf = frame.getCodeFactory(hcf);
 	if (sahcf!=null)
@@ -760,7 +741,7 @@ public class SAMain extends harpoon.IR.Registration {
 	Set methods = classHierarchy.callableMethods();
 	Iterator classes = new TreeSet(classHierarchy.classes()).iterator();
 
-	String filesuffix = (BACKEND==PRECISEC_BACKEND) ? ".c" : ".s";
+	String filesuffix = (BACKEND == Backend.PRECISEC) ? ".c" : ".s";
 	if (ONLY_COMPILE_MAIN)
 	    classes = Default.singletonIterator(mainM.getDeclaringClass());
 	if (singleClassStr!=null) {
@@ -794,7 +775,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    }
 		    out = new PrintWriter(new BufferedWriter(w));
 
-		    if (BACKEND==PRECISEC_BACKEND)
+		    if (BACKEND == Backend.PRECISEC)
 			out = new harpoon.Backend.PreciseC.TreeToC(out);
 		    
 		    HMethod[] hmarray = hclass.getDeclaredMethods();
@@ -833,9 +814,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    File makefile = new File(ASSEM_DIR, "Makefile");
 	    InputStream templateStream;
 	    String resourceName="harpoon/Support/nativecode-makefile.template";
-	    if (BACKEND==PRECISEC_BACKEND)
+	    if (BACKEND == Backend.PRECISEC)
 		resourceName="harpoon/Support/precisec-makefile.template";
-	    if (BACKEND==MIPSDA_BACKEND)
+	    if (BACKEND == Backend.MIPSDA)
 		resourceName="harpoon/Support/mipsda-makefile.template";
 	    if (makefile.exists())
 		System.err.println("WARNING: not overwriting pre-existing "+
@@ -969,7 +950,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    regAllocCF = RegAlloc.codeFactory(sahcf,frame,regAllocFactory);
 
 	    HCode rhc = regAllocCF.convert(hmethod);
-        if(BACKEND == MIPSYP_BACKEND && rhc != null) {
+        if(BACKEND == Backend.MIPSYP && rhc != null) {
            harpoon.Backend.Generic.Code cd = (harpoon.Backend.Generic.Code)rhc;
            harpoon.Backend.MIPS.BypassLatchSchedule b = 
               new harpoon.Backend.MIPS.BypassLatchSchedule(cd, frame);
@@ -1005,7 +986,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    out.flush();
 	}
 
-	if (BACKEND==PRECISEC_BACKEND) {
+	if (BACKEND == Backend.PRECISEC) {
 	    HCode hc = hcf.convert(hmethod);
 	    if (hc!=null)
 		((harpoon.Backend.PreciseC.TreeToC)out).translate(hc);
@@ -1043,7 +1024,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    info("\t--- end TREE FORM (for DATA)---");
 	}		
 	
-	if (BACKEND==PRECISEC_BACKEND)
+	if (BACKEND == Backend.PRECISEC)
 	    ((harpoon.Backend.PreciseC.TreeToC)out).translate(data);
 
 	if (!PRE_REG_ALLOC && !REG_ALLOC && !HACKED_REG_ALLOC) continue;
@@ -1317,10 +1298,9 @@ public class SAMain extends harpoon.IR.Registration {
 		ASSEM_DIR = new File(g.getOptarg());
 		assert ASSEM_DIR.isDirectory() : ""+ASSEM_DIR+" must be a directory";
 		break;
-	    case 'b': {
-		BACKEND_NAME = g.getOptarg().toLowerCase().intern();
+	    case 'b':
+		BACKEND = Options.getBackendID(g.getOptarg());
 		break;
-	    }
 	    case 'c':
 		className = g.getOptarg();
 		break;

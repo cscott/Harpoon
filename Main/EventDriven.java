@@ -17,6 +17,8 @@ import harpoon.ClassFile.Relinker;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Collections.WorkSet;
 
+import harpoon.Backend.Backend;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -41,7 +43,7 @@ import harpoon.Util.BasicBlocks.CachingBBConverter;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.4 2002-08-08 17:51:36 cananian Exp $
+ * @version $Id: EventDriven.java,v 1.5 2003-03-28 20:20:19 salcianu Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -70,7 +72,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
         }
 
 	// any frame will do:
-	Frame frame = Options.frameFromString("precisec", m);
+	Frame frame = Backend.getFrame(Backend.PRECISEC, m);
 
 	System.out.println("Doing QuadSSI");
 	HCodeFactory hco = 

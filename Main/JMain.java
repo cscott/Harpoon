@@ -16,6 +16,8 @@ import harpoon.IR.Jasmin.Jasmin;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 
+import harpoon.Backend.Backend;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -30,7 +32,7 @@ import harpoon.Util.Collections.WorkSet;
  * <code>JMain</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JMain.java,v 1.3 2002-08-08 17:51:37 cananian Exp $
+ * @version $Id: JMain.java,v 1.4 2003-03-28 20:20:19 salcianu Exp $
  */
 public abstract class JMain extends harpoon.IR.Registration {
 
@@ -86,7 +88,7 @@ public abstract class JMain extends harpoon.IR.Registration {
 	// any frame / any method will do
 	HMethod mainM = linker.forName(args[n])
 	    .getDeclaredMethod("main","([Ljava/lang/String;)V");
-	Frame frame = Options.frameFromString("precisec", mainM);
+	Frame frame = Backend.getFrame(Backend.PRECISEC, mainM);
 
 	WorkSet todo=new WorkSet();
 	WorkSet todor=new WorkSet(frame.getRuntime().runtimeCallableMethods());

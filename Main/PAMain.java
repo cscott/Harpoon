@@ -65,6 +65,8 @@ import harpoon.Analysis.MetaMethods.FakeMetaCallGraph;
 import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
 import harpoon.Analysis.MetaMethods.MetaAllCallers;
 
+import harpoon.Backend.Backend;
+
 import harpoon.Util.BasicBlocks.BBConverter;
 import harpoon.Util.BasicBlocks.CachingBBConverter;
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
@@ -97,7 +99,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.17 2003-02-12 19:03:53 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.18 2003-03-28 20:20:19 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -258,7 +260,7 @@ public abstract class PAMain {
 
 	get_root_method(params[optind]);
 	// set up Frame.
-	SAMain.frame = Options.frameFromString(SAMain.BACKEND_NAME, hroot);
+	SAMain.frame = Backend.getFrame(SAMain.BACKEND, hroot);
 
 	if(RTJ_SUPPORT)
 	    Realtime.setupObject(linker);
@@ -968,8 +970,8 @@ public abstract class PAMain {
 		break;
 	    case 'b':
 		COMPILE = true;
-		SAMain.BACKEND_NAME = g.getOptarg().toLowerCase().intern();
-		if (SAMain.BACKEND_NAME=="strongarm")
+		SAMain.BACKEND = Options.getBackendID(g.getOptarg());
+		if (SAMain.BACKEND == Backend.STRONGARM)
 		    SAMain.HACKED_REG_ALLOC = true;
 		break;
 	    case 32:
@@ -1126,7 +1128,7 @@ public abstract class PAMain {
 	    System.out.println("\tNO_TG");
 
 	if(COMPILE)
-	    System.out.println("\tCOMPILE " + SAMain.BACKEND_NAME);
+	    System.out.println("\tCOMPILE " + SAMain.BACKEND);
 
 	if(RTJ_SUPPORT) {
 	    System.out.println("\tRTJ_SUPPORT ");

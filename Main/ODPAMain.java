@@ -71,6 +71,8 @@ import harpoon.Analysis.MetaMethods.FakeMetaCallGraph;
 import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
 import harpoon.Analysis.MetaMethods.MetaAllCallers;
 
+import harpoon.Backend.Backend;
+
 import harpoon.Util.BasicBlocks.BBConverter;
 import harpoon.Util.BasicBlocks.CachingBBConverter;
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
@@ -96,7 +98,7 @@ import harpoon.Util.DataStructs.LightMap;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPAMain.java,v 1.9 2003-02-12 19:03:52 salcianu Exp $
+ * @version $Id: ODPAMain.java,v 1.10 2003-03-28 20:20:19 salcianu Exp $
  */
 public abstract class ODPAMain {
 
@@ -260,7 +262,7 @@ public abstract class ODPAMain {
 	    System.out.println("Sorry, the root method was not found\n");
 	    System.exit(1);
 	}
-	SAMain.frame = Options.frameFromString(SAMain.BACKEND_NAME, hroot);
+	SAMain.frame = Backend.getFrame(SAMain.BACKEND, hroot);
 
 	runtime_callable = new HashSet
 	    (SAMain.frame.getRuntime().runtimeCallableMethods());
@@ -882,8 +884,8 @@ public abstract class ODPAMain {
 		break;
 	    case 'b':
 		COMPILE = true;
-		SAMain.BACKEND_NAME = g.getOptarg().toLowerCase().intern();
-		if (SAMain.BACKEND_NAME == "strongarm")
+		SAMain.BACKEND = Options.getBackendID(g.getOptarg());
+		if (SAMain.BACKEND == Backend.STRONGARM)
 		    SAMain.HACKED_REG_ALLOC = true;
 		break;
 	    }
