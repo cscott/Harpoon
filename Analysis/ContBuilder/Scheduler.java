@@ -62,7 +62,7 @@ public final class Scheduler
 	IOContinuation c= (IOContinuation)list; 
 		
 	for (i= 0; i<n; i++) {
-	    result[i]= c.getFD().fd;
+	    //    result[i]= c.getFD().fd;
 	    c= (IOContinuation)c.getLink();
 	}
 		
