@@ -21,7 +21,7 @@ import java.util.Hashtable;
  * unused and seeks to prove otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.11.2.8 1999-02-03 23:10:52 pnkfelix Exp $
+ * @version $Id: DeadCode.java,v 1.11.2.9 1999-02-25 17:31:45 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -132,7 +132,7 @@ public abstract class DeadCode  {
 	    }
 	}
 	public void visit(CJMP q) {
-	    if (q.next(0)==q.next(1) && matchPS(q, (PHI)q.next(0))) {
+	    if (q.next(0)==q.next(1) && !matchPS(q, (PHI)q.next(0))) {
 		// Mu-ha-ha-ha! KILL THE CJMP!
 		// make a pseudo-MOVE for every useful function in this useless sigma.
 		for (int i=0; i<q.numSigmas(); i++)
@@ -158,14 +158,16 @@ public abstract class DeadCode  {
 	    Hashtable h = new Hashtable();
 	    for (int i=0; i<cj.numSigmas(); i++)
 		for (int j=0; j<cj.arity(); j++)
-		    h.put(cj.dst(i,j), cj.src(i));
+		    h.put(nm.tempMap(cj.dst(i,j)),
+			  nm.tempMap(cj.src(i)));
 
 	    int which_pred0 = cj.nextEdge(0).which_pred();
 	    int which_pred1 = cj.nextEdge(1).which_pred();
 	    for (int i=0; i<ph.numPhis(); i++) {
-		if (!useful.contains(ph.dst(i))) continue; // not useful, skip.
-		if (h.get(ph.src(i,which_pred0)) !=
-		    h.get(ph.src(i,which_pred1)) )
+		if (!useful.contains(nm.tempMap(ph.dst(i))))
+		    continue; // not useful, skip.
+		if (h.get(nm.tempMap(ph.src(i,which_pred0))) !=
+		    h.get(nm.tempMap(ph.src(i,which_pred1))) )
 		    return true; // cjmp matters, either in sig or phi.
 	    }
 	    return false; // not useful!
