@@ -21,7 +21,7 @@ import java.util.Hashtable;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.4 1999-05-10 02:07:39 duncan Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.5 1999-06-28 18:51:24 duncan Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -154,7 +154,7 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	    Tree t = treeMap.get(s);
 	    s.src.visit(this);
 
-	    if (s.dst instanceof ESEQ) {
+	    if (s.dst.kind()==TreeKind.ESEQ) {
 		ESEQ eseq = (ESEQ)s.dst;
 		eseq.exp.visit(this);
 		eseq.stm.visit(this);
@@ -262,11 +262,14 @@ public class ToCanonicalTree implements Derivation, TypeMap {
     }
 
     static boolean commute(Stm a, Exp b) {
-	return isNop(a) || (b instanceof NAME) || (b instanceof CONST);
+	return isNop(a) || 
+	    (b.kind()==TreeKind.NAME) || 
+	    (b.kind()==TreeKind.CONST);
     }
 
     static boolean isNop(Stm s) {
-	return (s instanceof EXP) && (((EXP)s).exp instanceof CONST);
+	return (s.kind()==TreeKind.EXP) && 
+	    ((((EXP)s).exp).kind()==TreeKind.CONST);
     }
 }
 

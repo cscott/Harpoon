@@ -87,7 +87,7 @@ public abstract class Code extends HCode
 	nodes.push(getRootElement());
 	while (!nodes.isEmpty()) {
 	    Tree t = (Tree)nodes.pop();
-	    if (t instanceof SEQ) {
+	    if (t.kind()==TreeKind.SEQ) {
 		SEQ seq = (SEQ)t;
 		if (seq.left==null) {
 		    if (seq.right==null) { leaves.addElement(seq); }
@@ -98,7 +98,7 @@ public abstract class Code extends HCode
 		    if (seq.right!=null) nodes.push(seq.right);
 		}
 	    }
-	    else if (t instanceof ESEQ) {
+	    else if (t.kind()==TreeKind.ESEQ) {
 		ESEQ eseq = (ESEQ)t;
 		if (eseq.exp==null) {
 		    if (eseq.stm==null) { leaves.addElement(eseq); }
@@ -169,12 +169,12 @@ public abstract class Code extends HCode
 		else {
 		    t = (Tree)stack.pop();
 		    // Push successors on stack
-		    if (t instanceof SEQ) {
+		    if (t.kind()==TreeKind.SEQ) {
 			SEQ seq = (SEQ)t;
 			if (seq.left!=null)  visitElement(seq.left);
 			if (seq.right!=null) visitElement(seq.right);
 		    }
-		    else if (t instanceof ESEQ) {
+		    else if (t.kind()==TreeKind.ESEQ) {
 			ESEQ eseq = (ESEQ)t;
 			if (eseq.exp!=null) visitElement(eseq.exp);
 			if (eseq.stm!=null) visitElement(eseq.stm);
@@ -363,13 +363,14 @@ public abstract class Code extends HCode
 	private void mapLabels() {
 	    for (Enumeration e = getElementsE(); e.hasMoreElements();) {
 		Object next = e.nextElement();
-		if (next instanceof SEQ) { 
+		try {  
 		    SEQ seq = (SEQ)next;
-		    if (seq.left instanceof LABEL) 
+		    if (seq.left.kind()==TreeKind.LABEL) 
 			labels.put(((LABEL)seq.left).label, seq.left);
-		    if (seq.right instanceof LABEL) 
+		    if (seq.right.kind()==TreeKind.LABEL) 
 			labels.put(((LABEL)seq.right).label, seq.right);
 		}
+		catch (ClassCastException ex) { } 
 	    }
 	}
 	
@@ -392,7 +393,7 @@ public abstract class Code extends HCode
 	}	    
 
 	private Stm RS(Stm seq) { 
-	    while (seq instanceof SEQ) seq = ((SEQ)seq).left;
+	    while (seq.kind()==TreeKind.SEQ) seq = ((SEQ)seq).left;
 	    return seq;
 	}
     }

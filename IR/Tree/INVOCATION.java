@@ -16,7 +16,7 @@ import java.util.Enumeration;
  * 
  * @author  Duncan Bryce, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.3 1999-06-23 22:53:26 pnkfelix Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.4 1999-06-28 18:51:24 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL
@@ -43,10 +43,10 @@ public abstract class INVOCATION extends Stm {
 
     protected Set defSet() { 
 	HashSet def = new HashSet();
-	if (retval instanceof TEMP) { 
+	if (retval.kind()==TreeKind.TEMP) { 
 	    def.union(((TEMP)retval).temp);
 	}
-	if (retex instanceof TEMP) { 
+	if (retex.kind()==TreeKind.TEMP) { 
 	    def.union(((TEMP)retex).temp);
 	}
 	return def;
@@ -63,13 +63,13 @@ public abstract class INVOCATION extends Stm {
 	    use.union(e.nextElement());
 	}
 
-	if (!(retval instanceof TEMP)) { 
+	if (!(retval.kind()==TreeKind.TEMP)) { 
 	    Set retvalUse = retval.useSet();
 	    for (Enumeration e = retvalUse.elements(); e.hasMoreElements();) {
 		use.union(e.nextElement());
 	    }
 	}
-	if (!(retex instanceof TEMP)) { 
+	if (!(retex.kind()==TreeKind.TEMP)) { 
 	    Set retexUse = retex.useSet();
 	    for (Enumeration e = retexUse.elements(); e.hasMoreElements();) { 
 		use.union(e.nextElement());
