@@ -77,11 +77,10 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.99 2000-07-07 17:52:13 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.100 2000-07-10 12:52:51 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
-    private static final boolean BRAIN_DEAD = false;
     public static final boolean DEBUG = false;
 
     protected Frame frame;
@@ -203,10 +202,10 @@ public abstract class RegAlloc  {
     }
 
     protected void computeBasicBlocks() {
-	// requires: <this.code> has been set
-	// modifies: <this.bbFact>
-	// effects:  computes <this.bbFact> and a associated set of
-	//           basic blocks for the current state of <this.code>
+	// requires: `this.code' has been set
+	// modifies: `this.bbFact'
+	// effects:  computes `this.bbFact' and a associated set of
+	//           basic blocks for the current state of `this.code'
 	bbFact = new BasicBlock.Factory(code, CFGrapher.DEFAULT);
     }
     
