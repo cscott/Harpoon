@@ -14,3 +14,6 @@ cvs-tmp
 VERSIONS
 ChangeLog
 jdb
+.ignore
+*.class
+as*
