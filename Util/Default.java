@@ -14,7 +14,7 @@ import java.util.NoSuchElementException;
  * implementations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.1.2.2 1999-06-17 20:55:13 cananian Exp $
+ * @version $Id: Default.java,v 1.1.2.3 1999-06-19 18:48:25 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -39,4 +39,11 @@ public abstract class Default  {
     public static final Iterator singletonIterator(Object o) {
 	return Collections.singleton(o).iterator();
     } 
+    /** An unmodifiable version of the given iterator. */
+    public static final Iterator unmodifiableIterator(final Iterator i) {
+	return new UnmodifiableIterator() {
+	    public boolean hasNext() { return i.hasNext(); }
+	    public Object next() { return i.next(); }
+	};
+    }
 }
