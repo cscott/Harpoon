@@ -6,6 +6,9 @@ package harpoon.Analysis.Instr;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Analysis.DataFlow.BasicBlock;
+import harpoon.Analysis.DataFlow.DataFlowBasicBlockVisitor;
+import harpoon.Analysis.DataFlow.InstrSolver;
+import harpoon.Analysis.DataFlow.ReachingDefs;
 import harpoon.Temp.Temp;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrMEM;
@@ -27,7 +30,7 @@ import java.util.Iterator;
     it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.4 1999-04-20 22:12:12 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.5 1999-04-23 06:19:46 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -48,20 +51,12 @@ public class LocalCffRegAlloc extends RegAlloc {
 	     stored at the end of the basic block they're used in.
     */
     protected Code generateRegAssignment() {
-	// cloning to pervent mutation of original code passed in.
-	try {
-	    Code newCode = (Code) code.clone(code.getMethod());
-	} catch (CloneNotSupportedException e) {
-	    Util.assert (false, 
-			 "Wasn't able to clone method" + 
-			 " for register allocation");
-	}
 	Instr root = (Instr) code.getRootElement();
 	BasicBlock block = BasicBlock.computeBasicBlocks(root);
 	
-	// // first calculate Reaching Definitions for code
-	// BasicBlockVisitor reachingDefs =  new ReachingDefs(root);
-	// InstrSolver.worklistSolver(block, reachingDefs);
+	// first calculate Reaching Definitions for code
+	DataFlowBasicBlockVisitor reachingDefs =  new ReachingDefs(root);
+	InstrSolver.worklistSolver(block, reachingDefs);
 	
 	// Now perform local reg alloc on each basic block
 	WorkSet blocksToAnalyze = new WorkSet();
