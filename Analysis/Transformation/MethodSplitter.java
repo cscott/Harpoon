@@ -3,10 +3,19 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Transformation;
 
-import harpoon.ClassFile.*;
-import harpoon.Util.*;
+import harpoon.ClassFile.CachingCodeFactory;
+import harpoon.ClassFile.DuplicateMemberException;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HClassMutator;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
+import harpoon.Util.Default;
+import harpoon.Util.Util;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 /**
  * <code>MethodSplitter</code> makes it easier to implement
  * transformations which specialize methods for one purpose or
@@ -19,7 +28,7 @@ import java.util.*;
  * to effect the specialization.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.4 2000-10-06 23:49:40 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.5 2000-10-07 00:59:41 cananian Exp $
  */
 public class MethodSplitter {
     /** The <code>ORIGINAL</code> token represents the original pre-split
