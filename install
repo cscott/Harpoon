@@ -2,6 +2,27 @@ echo Welcome to the FLEX installer.
 echo 
 echo Please E-mail Wes Beebee \<wbeebee@mit.edu\> if you have
 echo any questions.
+
+echo Checking system requirements...
+echo
+
+if [ ! -d /usr/java/j2sdk* ]; then 
+   echo Please install the Sun JDK 1.4 before installing FLEX.; 
+   echo;
+   echo Visit http://java.sun.com/;
+   exit 1;
+fi;
+
+java -version >& foo
+export TEST=`fgrep -c '1.4' foo`
+rm -f foo
+if test $TEST == 0; then 
+   echo Please upgrade your version of the Sun JDK to Sun JDK 1.4 before installing FLEX.;
+   echo;
+   echo Visit http://java.sun.com/;
+   exit 1;
+fi
+
 echo
 echo 1\) Standard FLEX Java compiler install
 echo 2\) Custom FLEX install
@@ -200,6 +221,33 @@ while [ x$BENCHMARKS = xnone ]; do
   esac;
 done
 
+source ~/.bashrc
+
+export LINE1=`fgrep -c 'CVS_RSH' ~/.bashrc`
+export LINE2=`fgrep -c 'CVSEDITOR' ~/.bashrc`
+export LINE3=`which java`
+export LINE3=`fgrep -c -v 'no java' $LINE3`
+
+if test $LINE1 == 0 -o $LINE2 == 0 -o $LINE3 == 0; then
+  echo;
+  echo Do you want to add the following lines to your ~/.bashrc (Y/N)?;
+  if test $LINE1 == 0; then echo    export CVS_RSH=ssh; fi;
+  if test $LINE2 == 0; then echo    export CVSEDITOR=emacs; fi;
+  if test $LINE3 == 0; then echo    export PATH=`cd /usr/java/j2sdk*/bin; pwd`:\$PATH; fi;
+  export prmpt=
+  while [ x$prmpt = x ]; do
+    read -p "Add lines (Y/N)? " prmpt leftover;
+    case $prmpt in
+        y* | Y*)
+	   if test $LINE1 == 0; then echo export CVS_RSH=ssh >> ~/.bashrc; fi;
+	   if test $LINE2 == 0; then echo export CVSEDITOR=emacs >> ~/.bashrc; fi;
+	   if test $LINE3 == 0; then echo export PATH=`cd /usr/java/j2sdk*/bin; pwd`:\$PATH >> ~/.bashrc; fi;;
+	n* | N*) export prmpt=N;;
+	*) export prmpt=;;
+  esac;
+  source ~/.bashrc;
+done
+
 export prmpt=
 while [ x$prmpt = x ]; do
    read -p "Do you have read/write access to the FLEX repository (Y/N)? " prmpt leftover;
@@ -245,6 +293,7 @@ cd -
 echo Building Runtime...
 cd Runtime
 ./setup
+# This line should get its own script - that synchronizes configuration between Code and Runtime
 ./configure --disable-shared --with-gc=conservative --with-precise-c --with-thread-model=heavy --with-classpath=`pwd`/../install-noGUI/lib/classpath CC="gcc -O9 -DNDEBUG"
 make clean; make
 
