@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.14 2002-07-24 16:07:11 cananian Exp $
+% $Id: ptran.tex,v 1.15 2002-07-24 16:29:16 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.14 $ $}
+\date{\today \\ $ $Revision: 1.15 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -73,7 +73,7 @@ An infeasible path analysis \cite{267921} could be used to refine
 this predicate by excluding paths never traversed by any
 execution of the program.
 
-\begin{myfigure}
+\begin{myfigure}[p]
 \begin{samplecode}[2]%
 while (\ldots) \{         &while (\ldots) \{         \\
 \>v = new T(\ldots)       &\>v1 = new T(\ldots)      \\
@@ -89,7 +89,7 @@ while (\ldots) \{         &while (\ldots) \{         \\
   on the left; statements $s_3$ and $s_4$ are not singular because
   there exist paths $s_3\pathplus s_3$ and $s_4\pathplus s_4$ which do not
   redefine \texttt{v2}.}
-\label{fig:xxx}
+\label{fig:pairwise-singular}
 \end{myfigure}
 
 \subsection{Intraprocedural singular value analysis}
@@ -102,8 +102,8 @@ dataflow framework:
 \text{In}(n)&=&\bigcup_{p\in\text{pred}(n)} \text{Out}(p)\\
 \end{eqnarray*}
 
-We will perform the analysis simultaneously on two relations
-$\text{Ru}$ and $\text{Nd}$.
+We will perform the analysis simultaneously on three relations
+$\text{Ru}$, $\text{Nd}$, and $\text{Gs}$.
 The relations are represented as
 sets of pairs \tuple{v, X} where
 $\mathcal{R}(v)=X$ iff $\tuple{v,X} \in R$.
@@ -112,21 +112,19 @@ to the empty set for all $n$, and grow monotonically as the analysis
 progresses.
 We let
 $\text{Ru}(v)$ be the set of reaching \textbf{uses} of $v$ at $n$,
+$\text{Nd}(v)$ be the set of \textbf{non-}singular reaching definitions
+of $v$ at $n$,
  and
-$\text{Nd}$ be the set of \textbf{non-}singular reaching definitions
+$\text{Gs}(v)$ be $\text{GenSite}(v,n)$, the set of generation sites
 of $v$ at $n$.
-An auxilliary predicate $\text{Bad}(n)$ is true for all statements
-which are not allocation sites, move operations, or binary or unary
-operations.  In particular, it is true for fetches from the heap
-and definitions of formal parameters.
 The appropriate Gen and Kill rules are:
 \begin{eqnarray*}
 % this is the standard reaching-def rule:
 %\text{Gen}_\text{Rd}(n) &=&
-%       \{ \tuple{v, n} | v \in \text{def}(n) \} \\
+%       \left\{ \tuple{v, n} | v \in \text{def}(n) \right\} \\
 %\text{Kill}_\text{Rd}(n) &=&
-%       \{ \tuple{v, s} | \tuple{v,s} \in \text{In}_\text{Rd}(n) \wedge
-%                          v \in \text{def}(n) \} \\
+%       \left\{ \tuple{v, s} | v \in \text{def}(n) \wedge
+%                          \tuple{v,s} \in \text{In}_\text{Rd}(n) \right\} \\
 %%%%%%%%%%%%%%%%%%%%%%%%
 \text{Gen}_\text{Ru}(n) &=&
         \left\{ \tuple{v, n} | v \in \text{use}(n) \right\} \\
@@ -143,7 +141,18 @@ The appropriate Gen and Kill rules are:
 \\
 \text{Kill}_\text{Nd}(n) &=&
         \left\{ \tuple{v, s} | v \in \text{def}(n) \wedge
-                          \tuple{v,s} \in \text{In}_\text{Nd}(n) \right\} %\\
+                          \tuple{v,s} \in \text{In}_\text{Nd}(n) \right\} \\
+% gensites!
+\text{Gen}_\text{Gs}(n) &=&
+       \left\{ \tuple{v, n} | v \in \text{def}(n)\wedge\text{IsNew}(n)\right\}
+       \cup\\&&
+       \left\{ \tuple{v, s} | v \in \text{def}(n)\wedge\text{IsMove}(n) \wedge
+                              \exists u\in\text{use}(n) :
+                                 \tuple{u,s}\in \text{In}_\text{Gs}(n)\right\}
+\\
+\text{Kill}_\text{Gs}(n) &=&
+       \left\{ \tuple{v, s} | v \in \text{def}(n) \wedge
+                         \tuple{v,s} \in \text{In}_\text{Gs}(n) \right\} \\
 \end{eqnarray*}
 where
 \begin{eqnarray*}
@@ -157,7 +166,10 @@ where
 %\right)
 \end{eqnarray*}
 After the analysis is complete, $v$ is (conservatively) singular at
-use $n$ if $\neg\text{Ns}(v,n)$.
+use $n$ if $\neg\text{Ns}(v,n)$, and 
+$\text{GenSite}(s,v)=\left\{ d | \tuple{v,d}\in\text{In}_\text{Gs}(s) \right\}$.
+Note that $\text{IsBad}(n)$ is true for fetches from the heap and
+definitions of formal parameters.
 
 This analysis can be performed using a sparse representation, such as
 SSA or SSI, as well.
