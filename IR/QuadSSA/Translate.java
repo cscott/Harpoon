@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.24 1998-09-02 23:10:53 cananian Exp $
+ * @version $Id: Translate.java,v 1.25 1998-09-02 23:16:18 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -409,9 +409,10 @@ class Translate  { // not public.
      */
     static final TransState[] transInstr(MergeMap mm, TransState ts) {
 	// Dispatch to correct specific function.
-	if (ts.in instanceof InGen) return transInGen(ts);
-	if (ts.in instanceof InCti) return transInCti(ts);
-	if (ts.in instanceof InMerge) return transInMerge(mm, ts);
+	if (ts.in instanceof InGen)    return transInGen(ts);
+	if (ts.in instanceof InSwitch) return transInSwitch(ts);
+	if (ts.in instanceof InCti)    return transInCti(ts);
+	if (ts.in instanceof InMerge)  return transInMerge(mm, ts);
 	throw new Error("Unknown Instr type.");
     }
 
@@ -1017,36 +1018,42 @@ class Translate  { // not public.
 	// done
 	return result;
     }
+    /** Translate a single <code>InSwitch</code>. */
+    static final TransState[] transInSwitch(TransState ts) {
+	InSwitch in = (InSwitch) ts.in;
+	switch (ts.in.getOpcode()) {
+	case Op.LOOKUPSWITCH:
+	case Op.TABLESWITCH:
+	    break;
+	}
+	return null;
+    }
     /** Translate a single <code>InCti</code>. */
     static final TransState[] transInCti(TransState ts) {
+	InCti in = (InCti) ts.in;
 	/*
-	if (in instanceof InSwitch) {
-	// LOOKUPSWITCH
-	// TABLESWITCH
-	} else {
-	    switch(in.getOpcode()) {
-	    case Op.ARETURN:
-	    case Op.DRETURN:
-	    case Op.FRETURN:
-	    case Op.IRETURN:
-	    case Op.LRETURN:
-	    case Op.RETURN:
+	switch(in.getOpcode()) {
+	case Op.ARETURN:
+	case Op.DRETURN:
+	case Op.FRETURN:
+	case Op.IRETURN:
+	case Op.LRETURN:
+	case Op.RETURN:
 	    throw new Error("Unimplemented");
-	    case Op.ATHROW:
-		ns = s.pop();
-		q = new THROW(in, s.stack[0]);
-		break;
+	case Op.ATHROW:
+	    ns = s.pop();
+	    q = new THROW(in, s.stack[0]);
+	    break;
 	case Op.GOTO:
 	case Op.GOTO_W:
 	    ns = s;
 	    q = new JMP(in);
 	    break;
-	    default:
+	default:
 	case Op.JSR:
 	case Op.JSR_W:
 	case Op.RET:
 	    throw new Error("Unmitigated evilness.");
-	    }
 	}
 	*/
 	return null;
