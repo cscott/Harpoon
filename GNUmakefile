@@ -1,6 +1,6 @@
 # makefile.
 
-all: design.ps bibnote.ps
+all: design.ps bibnote.ps readnote.ps
 preview: design-xdvi
 
 # bibtex dependencies

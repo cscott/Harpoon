@@ -1,10 +1,10 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: design.tex,v 1.7 1998-07-15 10:57:15 cananian Exp $
+% $Id: design.tex,v 1.8 1998-07-15 23:36:39 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn]{article}
 \author{C.~Scott~Ananian}
 \title{Turning Java into Hardware: \\ Caffinated Compiler Construction}
-\date{\today \\ $ $Revision: 1.7 $ $}
+\date{\today \\ $ $Revision: 1.8 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -95,8 +95,10 @@
 \maketitle
 
 \section{Introduction}
-This paper explores the design of a silicon compiler for the Java
-programming language.  Java's simplicity, object-orientation, and
+This paper explores the design of a compiler for the Java
+programming language.  Unlike many compilers, the target is hardware,
+not bytecodes or machine instructions.
+Java's simplicity, object-orientation, and
 strong typing make it well suited to an class-based hardware
 translation.  It is also possible to leverage Java's thread interfaces
 to model coarse-grain parallelism in hardware.  The goal is the
@@ -137,7 +139,7 @@ replicated code blocks should be specially tagged as potential targets
 for later optimization, however.}  The exceptions are
 \texttt{synchronized} methods, where the synchronization primitives
 arbitrate method-logic sharing.  In cases where static analysis does
-not permit an exact determination of the class instance pointed to by
+not permit an exact determination of the object pointed to by
 a variable, multiplexers are inserted to perform method dispatches
 dynamically. 
 
@@ -151,7 +153,7 @@ phase and compiled as parallel hardware.  This is a natural extension
 of the object semantics, as \texttt{java.lang.Thread} is a proper 
 object in the Java environment.
 
-Exceptions are supported, but they have no special meaning other than
+Exceptions objects are supported, but they have no special meaning other than
 as a means of transferring control.  They are statically allocated
 like all other objects.
 
@@ -184,12 +186,12 @@ in \cite{gagne97:nonstandard} citing \cite{gagne96:nonstandard}.  The
 program should behave according to the standard sequential semantics,
 but externally-visible events will be synchronized to a clock.
 Conceptually, all statements take a finite but infinitesimal amount of
-time, excepting at points where we wait for a the next clock tick.
+time, excepting at points where we wait for the next clock tick.
 % multiple-emitter example, again.
 
 It is desirable to have a clear timing model for our hardware
 implementation so that a programmer can easily understand and specify
-the clock-cycle-level behaviour of a Java specification.  We use a
+the clock-cycle-level behavior of a Java specification.  We use a
 simple model which is a variant of a scheme first proposed in
 \cite{galloway95:transmogrifier}:  back edges in a control flow graph
 correspond to cycle boundaries.  That is, any loop back to prior code
@@ -322,13 +324,13 @@ This is highly desirable for an efficient hardware implementation.
 \subsection{Translating Dataflow/SSA into Hardware}
 \subsection{Interface Timing Issues}
 \subsection{Object-orientation and Inheritance}
-\section{Related Research}
-\subsection{Intermediate Representations}
-\subsection{Compiling Real-Time programs}
-\subsection{Array Analysis Techniques}
-\subsection{Loop Analysis Techniques}
-\subsection{Logic Synthesis}
-\section{Conclusion}
+%\section{Related Research}
+%\subsection{Intermediate Representations}
+%\subsection{Compiling Real-Time programs}
+%\subsection{Array Analysis Techniques}
+%\subsection{Loop Analysis Techniques}
+%\subsection{Logic Synthesis}
+%\section{Conclusion}
 
 \bibliography{harpoon}
 
