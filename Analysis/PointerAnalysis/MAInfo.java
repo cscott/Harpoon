@@ -67,7 +67,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.38 2000-11-05 00:39:48 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.39 2000-11-09 01:05:05 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -124,10 +124,17 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
     // use the inter-thread analysis
     private boolean USE_INTER_THREAD = false;
-    
+    private boolean DO_STACK_ALLOCATION  = false;
+    private boolean DO_THREAD_ALLOCATION = false;
+    private boolean GEN_SYNC_FLAG        = false;
+
+
     /** Creates a <code>MAInfo</code>. */
-    public MAInfo(PointerAnalysis pa, HCodeFactory hcf,
-		  Set mms, boolean USE_INTER_THREAD){
+    public MAInfo(PointerAnalysis pa, HCodeFactory hcf, Set mms,
+		  boolean USE_INTER_THREAD,
+		  boolean DO_STACK_ALLOCATION,
+		  boolean DO_THREAD_ALLOCATION,
+		  boolean GEN_SYNC_FLAG) {
         this.pa  = pa;
 	this.mcg = pa.getMetaCallGraph();
 	this.mac = pa.getMetaAllCallers();
@@ -136,9 +143,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	this.node_rep = pa.getNodeRepository();
 	this.USE_INTER_THREAD = USE_INTER_THREAD;
         this.DO_PREALLOCATION = USE_INTER_THREAD;
-
+	this.DO_STACK_ALLOCATION  = DO_STACK_ALLOCATION;
+	this.DO_THREAD_ALLOCATION = DO_THREAD_ALLOCATION;
+	this.GEN_SYNC_FLAG        = GEN_SYNC_FLAG;
 	analyze();
-
 	// the nullify part was moved to prepareForSerialization
     }
 
@@ -261,47 +269,77 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     // ACTION: goes over all the level 0 inside nodes from pig
     //       and try to stack allocate or thread allocate them.
     private void generate_aps(MetaMethod mm, ParIntGraph pig) {
-	HMethod hm = mm.getHMethod();
+	// we study only level 0 nodes (ie allocated in THIS method).
 	Set nodes = getLevel0InsideNodes(pig);
 
+	if(DO_STACK_ALLOCATION) {
+	    if(DEBUG) System.out.println("Stack allocation");
+	    generate_aps_sa(mm, pig, nodes);
+	}
+
+	if(DO_THREAD_ALLOCATION) {
+	    if(DEBUG) System.out.println("Thread allocation");
+	    generate_aps_ta(mm, pig, nodes);
+	}
+
+	if(GEN_SYNC_FLAG) {
+	    if(DEBUG) System.out.println("Generating sync flag");
+	    generate_aps_ns(mm, pig, nodes);
+	}
+    }
+
+    // aux method for generate_aps: generate stack allocation hints
+    private void generate_aps_sa(MetaMethod mm, ParIntGraph pig, Set nodes) {
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
-
-	    if(pig.G.captured(node)) {
-		// captured nodes of depth 0 (ie allocated in this method,
-		// not in a callee) are allocated on the stack.
-		Quad q  = (Quad) node_rep.node2Code(node);
-		Util.assert(q != null, "No quad for " + node);
-		
-		if(stack_alloc_extra_cond(node, q)) {
-		    MyAP ap = getAPObj(q);
-		    ap.sa = true;
-		    ap.ns = true; // SYNC
-		    if(DEBUG)
-			System.out.println("STACK: " + node + 
-					   " was stack allocated " +
-					   Debug.getLine(q));
-		}
+	    Quad q  = (Quad) node_rep.node2Code(node);
+	    Util.assert(q != null, "No quad for " + node);
+	    MyAP ap = getAPObj(q);
+	    
+	    if(pig.G.captured(node) && stack_alloc_extra_cond(node, q)) {
+		ap.sa = true;
+		if(DEBUG)
+		    System.out.println("STACK: " + node + 
+				       " was stack allocated " +
+				       Debug.getLine(q));
 	    }
-	    else { // maybe we can do some thread allocation
-		Quad q = (Quad) node_rep.node2Code(node);
-		Util.assert(q != null, "No quad for " + node);
-		
-		MyAP ap = getAPObj(q);
-		
+	}
+    }
+    // aux method for generate_aps: generate thread allocation hints
+    private void generate_aps_ta(MetaMethod mm, ParIntGraph pig, Set nodes) {
+	HMethod hm = mm.getHMethod();	
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    Quad q  = (Quad) node_rep.node2Code(node);
+	    Util.assert(q != null, "No quad for " + node);
+	    MyAP ap = getAPObj(q);
+	    
+	    if(!ap.sa) {
+		// the node is not stack allocated; maybe we can
+		// thread allocate it
 		if(remainInThread(node, hm, "")) {
 		    ap.ta = true; // thread allocation
-		    ap.ns = true; // SYNC
 		    ap.ah = null; // on the current heap
 		    if(DEBUG)
 			System.out.println("THREAD: " + node +
 					   " was thread allocated " +
 					   Debug.getLine(q));
 		}
-		// maybe we can remove the synchronizations on node even
-		// if it is accessed by multiple threads.
-		else 
-		    ap.ns = noConflictingSyncs(node, mm);
+	    }
+	}
+    }
+    // aux method for generate_aps: generate "no syncs" hints
+    private void generate_aps_ns(MetaMethod mm, ParIntGraph pig, Set nodes) {
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    Quad q  = (Quad) node_rep.node2Code(node);
+	    MyAP ap = getAPObj((Quad) node_rep.node2Code(node));
+	    if(ap.sa || ap.ta) 
+		ap.ns = true; // trivial setting of ns
+	    else { // the hard work ...
+		ap.ns = noConflictingSyncs(node, mm);
+		if(ap.ns)
+		    System.out.println("BRAVO: " + node + Debug.code2str(q));
 	    }
 	}
     }
@@ -579,6 +617,21 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     // be quite easy from the comments I've put into the code.
     private boolean noConflictingSyncs(PANode node, MetaMethod mm,
 				       int level, String ident) {
+	if(DEBUG)
+	    System.out.print("noConflictingSyncs \n" +
+			     "\tnode  = " + node +
+			     "\tcreated at " + 
+			     Debug.code2str
+			     (node_rep.node2Code
+			      (node != null ? node.getRoot() : null)) + "\n" +
+			     "\tmm    = " + mm + "\n" +
+			     "\tlevel = " + level + "\n");
+
+	// Catch some strange case when a node is reported as escaping in
+	// the graph of the callee but it's absent from the caller's graph
+	// (which means it's not really escaping)
+	if(node == null) return true;
+
 	if(level > MAInfo.MAX_LEVEL_NO_CONCURRENT_SYNCS)
 	    return false;
 
@@ -649,6 +702,12 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     // Checks whether the syncs on node that appear in pig are
     // nonconflicting (ie cannot occur at the same time) or not.
     private boolean noConcurrentSyncs(PANode node, ParIntGraph pig) {
+	System.out.print("noConcurrentSyncs \n" +
+			 "\tnode  = " + node +
+			 "\tcreated at " + 
+			 Debug.code2str
+			 (node_rep.node2Code
+			  (node != null ? node.getRoot() : null)) + "\n");
 	return pig.ar.independent(node);
     }
 

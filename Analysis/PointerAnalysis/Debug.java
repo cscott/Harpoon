@@ -25,7 +25,7 @@ import harpoon.Util.DataStructs.Relation;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.11 2000-07-02 08:37:43 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.12 2000-11-09 01:05:04 salcianu Exp $
  */
 public abstract class Debug {
 
@@ -174,6 +174,7 @@ public abstract class Debug {
     /** Returns the string representation of the code instruction q
 	in the formay: <code>source_file:line_number instruction</code>. */
     public static String code2str(HCodeElement q) {
+	if(q == null) return "(null)";
 	return
 	    getLine(q)  + " " + q;
     }

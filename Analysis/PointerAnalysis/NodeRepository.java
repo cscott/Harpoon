@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.27 2000-11-06 23:55:40 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.28 2000-11-09 01:05:05 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -257,10 +257,10 @@ public class NodeRepository {
 	return getNewNode(type, null);
     }
 	
-
-    public final HCodeElement node2Code(PANode n){
-	if(n==null) return null;
-	return (HCodeElement) node2code.get(n);
+    /** Returns the instruction that created <code>node</code>. */
+    public final HCodeElement node2Code(PANode node){
+	if(node == null) return null;
+	return (HCodeElement) node2code.get(node);
     }
 
     /** Modify the node2code mapping such that now node is associated

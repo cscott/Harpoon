@@ -82,7 +82,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.78 2000-11-08 20:45:44 bdemsky Exp $
+ * @version $Id: PAMain.java,v 1.1.2.79 2000-11-09 01:05:42 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -105,11 +105,19 @@ public abstract class PAMain {
     // turns on the interactive analysis
     private static boolean DO_INTERACTIVE_ANALYSIS = false;
 
-    // turns on the computation of the memory allocation policies
+    // force the creation of the memory allocation info.
     private static boolean MA_MAPS = false;
+    // gen the stack allocation hints
+    private static boolean DO_STACK_ALLOCATION  = false;
+    // gen the thread allocation hints
+    private static boolean DO_THREAD_ALLOCATION = false;
+    // gen the "no sync" hints
+    private static boolean GEN_SYNC_FLAG        = false;
     // the name of the file into which the memory allocation policies
     // will be serialized
     private static String MA_MAPS_OUTPUT_FILE = null;
+
+
     // use the inter-thread stage of the analysis while determining the
     // memory allocation policies
     private static boolean USE_INTER_THREAD = true;
@@ -462,36 +470,39 @@ public abstract class PAMain {
 	int c, c2;
 	String arg;
 	LongOpt[] longopts = new LongOpt[]{
-	    new LongOpt("meta",      LongOpt.NO_ARGUMENT,       null, 'm'),
-	    new LongOpt("smartcg",   LongOpt.NO_ARGUMENT,       null, 's'),
-	    new LongOpt("showch",    LongOpt.NO_ARGUMENT,       null, 'c'),
-	    new LongOpt("ccs",       LongOpt.REQUIRED_ARGUMENT, null, 5),
-	    new LongOpt("ts",        LongOpt.NO_ARGUMENT,       null, 6),
-	    new LongOpt("wts",       LongOpt.NO_ARGUMENT,       null, 7),
-	    new LongOpt("ls",        LongOpt.NO_ARGUMENT,       null, 8),
-	    new LongOpt("showcg",    LongOpt.NO_ARGUMENT,       null, 9),
-	    new LongOpt("showsplit", LongOpt.NO_ARGUMENT,       null, 10),
-	    new LongOpt("details",   LongOpt.NO_ARGUMENT,       null, 11),
-	    new LongOpt("mamaps",    LongOpt.REQUIRED_ARGUMENT, null, 14),
-	    new LongOpt("noit",      LongOpt.NO_ARGUMENT,       null, 15),
-	    new LongOpt("inline",    LongOpt.NO_ARGUMENT,       null, 16),
-	    new LongOpt("sat",       LongOpt.REQUIRED_ARGUMENT, null, 17),
-	    new LongOpt("notg",      LongOpt.NO_ARGUMENT,       null, 18),
-	    new LongOpt("loadpre",   LongOpt.REQUIRED_ARGUMENT, null, 19),
-	    new LongOpt("savepre",   LongOpt.REQUIRED_ARGUMENT, null, 20),
-	    new LongOpt("syncelim",  LongOpt.NO_ARGUMENT,       null, 21),
-	    new LongOpt("instsync",  LongOpt.NO_ARGUMENT,       null, 22),
-	    new LongOpt("dumpjava",  LongOpt.NO_ARGUMENT,       null, 23),
+	    new LongOpt("meta",          LongOpt.NO_ARGUMENT,       null, 'm'),
+	    new LongOpt("smartcg",       LongOpt.NO_ARGUMENT,       null, 's'),
+	    new LongOpt("showch",        LongOpt.NO_ARGUMENT,       null, 'c'),
+	    new LongOpt("ccs",           LongOpt.REQUIRED_ARGUMENT, null, 5),
+	    new LongOpt("ts",            LongOpt.NO_ARGUMENT,       null, 6),
+	    new LongOpt("wts",           LongOpt.NO_ARGUMENT,       null, 7),
+	    new LongOpt("ls",            LongOpt.NO_ARGUMENT,       null, 8),
+	    new LongOpt("showcg",        LongOpt.NO_ARGUMENT,       null, 9),
+	    new LongOpt("showsplit",     LongOpt.NO_ARGUMENT,       null, 10),
+	    new LongOpt("details",       LongOpt.NO_ARGUMENT,       null, 11),
+	    new LongOpt("mamaps",        LongOpt.REQUIRED_ARGUMENT, null, 14),
+	    new LongOpt("noit",          LongOpt.NO_ARGUMENT,       null, 15),
+	    new LongOpt("inline",        LongOpt.NO_ARGUMENT,       null, 16),
+	    new LongOpt("sat",           LongOpt.REQUIRED_ARGUMENT, null, 17),
+	    new LongOpt("notg",          LongOpt.NO_ARGUMENT,       null, 18),
+	    new LongOpt("loadpre",       LongOpt.REQUIRED_ARGUMENT, null, 19),
+	    new LongOpt("savepre",       LongOpt.REQUIRED_ARGUMENT, null, 20),
+	    new LongOpt("syncelim",      LongOpt.NO_ARGUMENT,       null, 21),
+	    new LongOpt("instsync",      LongOpt.NO_ARGUMENT,       null, 22),
+	    new LongOpt("dumpjava",      LongOpt.NO_ARGUMENT,       null, 23),
 	    new LongOpt("analyzeroots",  LongOpt.NO_ARGUMENT,       null, 24),
-	    new LongOpt("syncelimroots",  LongOpt.NO_ARGUMENT,       null, 25),
-	    new LongOpt("backend",   LongOpt.REQUIRED_ARGUMENT, null, 'b'),
-	    new LongOpt("output",    LongOpt.REQUIRED_ARGUMENT, null, 'o'),
+	    new LongOpt("syncelimroots", LongOpt.NO_ARGUMENT,       null, 25),
+	    new LongOpt("backend",       LongOpt.REQUIRED_ARGUMENT, null, 'b'),
+	    new LongOpt("output",        LongOpt.REQUIRED_ARGUMENT, null, 'o'),
+	    new LongOpt("sa",            LongOpt.REQUIRED_ARGUMENT, null, 26),
+	    new LongOpt("ta",            LongOpt.REQUIRED_ARGUMENT, null, 27),
+	    new LongOpt("ns",            LongOpt.REQUIRED_ARGUMENT, null, 28),
 	};
 
 	Getopt g = new Getopt("PAMain", argv, "mscoa:iN:P:", longopts);
 
 	while((c = g.getopt()) != -1)
-	    switch(c){
+	    switch(c) {
 	    case 'P':
 		System.out.println("loading Profile");
 		arg=g.getOptarg();
@@ -573,6 +584,17 @@ public abstract class PAMain {
 	    case 14:
 		MA_MAPS = true;
 		MA_MAPS_OUTPUT_FILE = new String(g.getOptarg());
+		DO_STACK_ALLOCATION  = true;
+		DO_THREAD_ALLOCATION = true;
+		break;
+	    case 26:
+		DO_STACK_ALLOCATION  = (Integer.parseInt(g.getOptarg()) == 1);
+		break;
+	    case 27:
+		DO_THREAD_ALLOCATION = (Integer.parseInt(g.getOptarg()) == 1);
+		break;
+	    case 28:
+		GEN_SYNC_FLAG = (Integer.parseInt(g.getOptarg()) == 1);
 		break;
 	    case 15:
 		USE_INTER_THREAD = false;
@@ -612,9 +634,10 @@ public abstract class PAMain {
 		break;
 	    case 'o':
 		SAMain.ASSEM_DIR = new java.io.File(g.getOptarg());
-		harpoon.Util.Util.assert(SAMain.ASSEM_DIR.isDirectory(), ""+SAMain.ASSEM_DIR+" must be a directory");
+		harpoon.Util.Util.assert(SAMain.ASSEM_DIR.isDirectory(),
+			    "" + SAMain.ASSEM_DIR + " must be a directory");
 		break;
-	    case 'b': {
+	    case 'b':
 		COMPILE = true;
 		String backendName = g.getOptarg().toLowerCase().intern();
 		if (backendName == "strongarm")
@@ -627,7 +650,6 @@ public abstract class PAMain {
 		    SAMain.BACKEND = SAMain.PRECISEC_BACKEND;
 		break;
 	    }
-	    }
 
 	return g.getOptind();
     }
@@ -637,92 +659,100 @@ public abstract class PAMain {
 	    System.out.println("Call Graph Type Ambiguity");
 	    System.exit(1);
 	}
-	System.out.print("Execution options:");
+	System.out.println("Execution options:");
 
 	if(LOAD_PRE_ANALYSIS)
-	    System.out.print("LOAD_PRE_ANALYSIS ("+PRE_ANALYSIS_IN_FILE+")");
+	    System.out.println("\tLOAD_PRE_ANALYSIS from \"" + 
+			       PRE_ANALYSIS_IN_FILE + "\"");
 	if(SAVE_PRE_ANALYSIS)
-	    System.out.print("SAVE_PRE_ANALYSIS ("+PRE_ANALYSIS_OUT_FILE+")");
+	    System.out.println("\tSAVE_PRE_ANALYSIS in \"" +
+			       PRE_ANALYSIS_OUT_FILE + "\"");
 	if(METAMETHODS)
-	    System.out.print(" METAMETHODS");
+	    System.out.println("\tMETAMETHODS");
+
 	if(SMART_CALL_GRAPH)
-	    System.out.print(" SMART_CALL_GRAPH");
+	    System.out.println("\tSMART_CALL_GRAPH");
+
 	if(!(METAMETHODS || SMART_CALL_GRAPH))
-	    System.out.print(" DumbCallGraph");
+	    System.out.println("\tDumbCallGraph");
 
 	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
-	    System.out.print(" CALL_CONTEXT_SENSITIVE=" +
-			     PointerAnalysis.MAX_SPEC_DEPTH);
+	    System.out.println("\tCALL_CONTEXT_SENSITIVE = " +
+			       PointerAnalysis.MAX_SPEC_DEPTH);
 	
 	if(PointerAnalysis.THREAD_SENSITIVE)
-	    System.out.print(" THREAD SENSITIVE");
+	    System.out.println("\tTHREAD SENSITIVE");
 	if(PointerAnalysis.WEAKLY_THREAD_SENSITIVE)
-	    System.out.print(" WEAKLY_THREAD_SENSITIVE");
+	    System.out.println("\tWEAKLY_THREAD_SENSITIVE");
 
 	if(PointerAnalysis.LOOP_SENSITIVE)
-	    System.out.println(" LOOP_SENSITIVE");
+	    System.out.println("\tLOOP_SENSITIVE not implemented yet!");
 
 	if(SHOW_CH)
-	    System.out.print(" SHOW_CH");
+	    System.out.println("\tSHOW_CH");
 
 	if(SHOW_CG)
-	    System.out.print(" SHOW_CG");
+	    System.out.println("\tSHOW_CG");
 
 	if(SHOW_DETAILS)
-	    System.out.print(" SHOW_DETAILS");
+	    System.out.println("\tSHOW_DETAILS");
 
 	if(DO_ANALYSIS){
 	    if(mm_to_analyze.size() == 1){
 		Method method = (Method) (mm_to_analyze.iterator().next());
-		System.out.println(" DO_ANALYSIS (" +
+		System.out.println("\tDO_ANALYSIS " +
 				   method.declClass + "." + method.name);
 	    }
 	    else{
-		System.out.println("\nDO_ANALYSIS");
-		for(Iterator it = mm_to_analyze.iterator(); it.hasNext();){
+		System.out.println("\tDO_ANALYSIS");
+		for(Iterator it = mm_to_analyze.iterator(); it.hasNext(); ) {
 		    Method method = (Method) it.next();
-		    System.out.println("  " + method.declClass + "." +
+		    System.out.println("\t\t" + method.declClass + "." +
 				       method.name);
 		}
-		System.out.println("}");
 	    }
 	}
 
 	if(DO_INTERACTIVE_ANALYSIS)
-	    System.out.print(" DO_INTERACTIVE_ANALYSIS");
+	    System.out.println("\tDO_INTERACTIVE_ANALYSIS");
 
 	if(MA_MAPS){
-	    System.out.print(" MA_MAPS (");
+	    System.out.println("\tMA_MAPS in \"" + MA_MAPS_OUTPUT_FILE + "\"");
 	    if(MAInfo.DO_METHOD_INLINING)
-		System.out.print("inline; ");
-	    System.out.print(MA_MAPS_OUTPUT_FILE + ")");
+		System.out.println("\t\tDO_METHOD_INLINING");
+	    System.out.println("\t\tDO_STACK_ALLOCATION " +
+			       (DO_STACK_ALLOCATION ? "on" : "off"));
+	    System.out.println("\t\tDO_THREAD_ALLOCATION " +
+			       (DO_THREAD_ALLOCATION ? "on" : "off"));
+	    System.out.println("\t\tGEN_SYNC_FLAG " +
+			       (GEN_SYNC_FLAG ? "on" : "off"));
+	    if(USE_INTER_THREAD)
+		System.out.println("\t\tUSE_INTER_THREAD");
+	    else
+		System.out.println("\t\t(just inter proc)");
 	}
 
-	if(USE_INTER_THREAD)
-	    System.out.print(" USE_INTER_THREAD");
-	else
-	    System.out.print(" (just inter proc)");
 
 	if(DO_SAT)
-	    System.out.print(" DO_SAT (" + SAT_FILE + ")");
+	    System.out.println("\tDO_SAT (" + SAT_FILE + ")");
 
 	if(ANALYZE_ALL_ROOTS)
-	    System.out.print(" ANALYZE_ALL_ROOTS");
+	    System.out.println("\tANALYZE_ALL_ROOTS");
 
 	if(SYNC_ELIM_ALL_ROOTS)
-	    System.out.print(" SYNC_ELIM_ALL_ROOTS");
+	    System.out.println("\tSYNC_ELIM_ALL_ROOTS");
 	
 	if(INST_SYNCOPS)
-	    System.out.print(" INST_SYNCOPS");
+	    System.out.println("\tINST_SYNCOPS");
 
 	if(ELIM_SYNCOPS)
-	    System.out.print(" ELIM_SYNCOPS");
+	    System.out.println("\tELIM_SYNCOPS");
 	
 	if(INST_SYNCOPS)
-	    System.out.print(" INST_SYNCOPS");
+	    System.out.println("\tINST_SYNCOPS");
 	
 	if(MAInfo.NO_TG)
-	    System.out.println(" NO_TG");
+	    System.out.println("\tNO_TG");
 
 	System.out.println();
     }
@@ -765,13 +795,17 @@ public abstract class PAMain {
             if(!analyzable(mm)) continue;
             pa.getIntThreadInteraction(mm);
           }
-          System.out.println("Tnterthread Analysis time: " +
+          System.out.println("Interthread Analysis time: " +
                            (time() - g_tstart) + "ms");
         }
 
 
 	g_tstart = time();
-	MAInfo mainfo = new MAInfo(pa, hcf, allmms, USE_INTER_THREAD);
+	MAInfo mainfo = 
+	    new MAInfo(pa, hcf, allmms, USE_INTER_THREAD,
+		       DO_STACK_ALLOCATION,
+		       DO_THREAD_ALLOCATION,
+		       GEN_SYNC_FLAG);
 	System.out.println("GENERATION OF MA INFO TIME  : " +
 			   (time() - g_tstart) + "ms");
 
@@ -885,59 +919,21 @@ public abstract class PAMain {
                            (time() - g_tstart) + "ms");
         }
     }
-/*
-        MetaCallGraph mcg = pa.getMetaCallGraph();
-	Set allmms = mcg.getAllMetaMethods();
-
-        g_tstart = System.currentTimeMillis();
-       for(Iterator it = allmms.iterator(); it.hasNext(); ) {
-            MetaMethod mm = (MetaMethod) it.next();
-            if(!analyzable(mm)) continue;
-	    nbmm++;
-        for(Iterator mit = mroots.iterator(); mit.hasNext(); ) {
-            HMethod hm = (HMethod) mit.next();
-            int nbmm = 0;
-            for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
-	     MetaMethod mm = (MetaMethod) it.next();
-             if(!analyzable(mm)) continue;
-	     nbmm++;
-	      System.out.println("HMETHOD " + hm
-				       + " ->\n META-METHOD " + mm);
-	      ParIntGraph int_pig = pa.getIntParIntGraph(mm);
-    	      ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
- 	      ParIntGraph pig_inter_thread = pa.getIntThreadInteraction(mm);
-              System.out.println("META-METHOD " + mm);
-              System.out.print("POINTER PARAMETERS: ");
-              PANode[] nodes = pa.getParamNodes(mm);
-              System.out.print("[ ");
-              for(int j = 0; j < nodes.length; j++)
-                 System.out.print(nodes[j] + " ");
-              System.out.println("]");
-              System.out.print("INT. GRAPH AT THE END OF THE METHOD:");
-              System.out.println(int_pig);
-              System.out.print("EXT. GRAPH AT THE END OF THE METHOD:");
-              System.out.println(ext_pig);
-              System.out.print("INT. GRAPH AT THE END OF THE METHOD" +
-              	     " + INTER-THREAD ANALYSIS:");
-              System.out.println(pig_inter_thread);
-	    }
-	}
-    }
-*/
 
     private static void sync_elim_all_roots() {
 	SyncElimination se = new SyncElimination(pa);
 	for(Iterator mit = mroots.iterator(); mit.hasNext(); ) {
             HMethod hm = (HMethod) mit.next();
 	    System.out.println("\n sync elim root " + hm);
-    	    for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
-	      MetaMethod mm = (MetaMethod) it.next();
-              if(!analyzable(mm)) continue;
-              if (USE_INTER_THREAD) { 
-                se.addRoot_interthread(mm);
-              } else { 
-	        se.addRoot_intrathread(mm);
-              }
+    	    for(Iterator it = split_rel.getValues(hm).iterator();
+		it.hasNext(); ) {
+		MetaMethod mm = (MetaMethod) it.next();
+		if(!analyzable(mm)) continue;
+		if (USE_INTER_THREAD) { 
+		    se.addRoot_interthread(mm);
+		} else { 
+		    se.addRoot_intrathread(mm);
+		}
 	    }
 	}
         if (!USE_INTER_THREAD) {
@@ -948,10 +944,11 @@ public abstract class PAMain {
             // or one that inherits from Thread
             if (hm.getName().equals("run") &&
                 (hm.getParameterTypes().length == 0)) { 
-    	      for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
-	        MetaMethod mm = (MetaMethod) it.next();
-                if(!analyzable(mm)) continue;
-                se.addRoot_intrathread(mm);
+    	      for(Iterator it = split_rel.getValues(hm).iterator();
+		  it.hasNext(); ) {
+		  MetaMethod mm = (MetaMethod) it.next();
+		  if(!analyzable(mm)) continue;
+		  se.addRoot_intrathread(mm);
               }
             } 
           }
@@ -966,7 +963,8 @@ public abstract class PAMain {
 	    System.out.println("sync elim converting " + hm);
 	    HCode hcode = hcf_nosync.convert(hm);
 	    if (hcode != null) hcode.print(out);
-            for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
+            for(Iterator it = split_rel.getValues(hm).iterator();
+		it.hasNext(); ) {
                 MetaMethod mm = (MetaMethod) it.next();
                 if(!analyzable(mm)) continue;
                 ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
@@ -1264,6 +1262,10 @@ public abstract class PAMain {
 	"--mamaps=file   Computes the allocation policy map and serializes",
 	"                 the CachingCodeFactory (and implicitly the",
 	"                 allocation map) and the linker to disk.",
+	"                 by default, it activates the stack and thread alloc",
+	"--sa 0|1        Turns on/off the stack allocation",
+	"--ta 0|1        Turns on/off the thread allocation",
+	"--ns 0|1        Turns on/off the generation of \"no sync\" hints",
 	"-a method       Analyzes he given method. If the method is in the",
 	"                 same class as the main method, the name of the",
 	"                 class can be ommited. More than one \"-a\" flags",

@@ -40,7 +40,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.32 2000-07-17 17:01:21 rinard Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.33 2000-11-09 01:05:04 salcianu Exp $
  */
 public abstract class InterThreadPA {
 
@@ -106,13 +106,13 @@ public abstract class InterThreadPA {
 	    ParIntGraph old_pig = pig;
 	    pig = interaction_nt(pa, pig, nt, ops);
 
-	    ParIntGraph.DEBUG2 = true;
+	    // ParIntGraph.DEBUG2 = true;
 	    if(!pig.equals(old_pig)){
 		if(DEBUG)
 		    System.out.println("The graph has changed");
 		analyzed_threads.clear();
 	    }
-	    ParIntGraph.DEBUG2 = false;
+	    // ParIntGraph.DEBUG2 = false;
 
 	    analyzed_threads.add(nt);
 	    processed_threads.add(nt);

@@ -42,7 +42,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.22 2000-07-03 02:27:08 jwhaley Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.23 2000-11-09 01:05:04 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -440,16 +440,20 @@ public class ActionRepository {
 	in this case, the synchonizations are really necessary and should
 	NOT be removed. */
     public final boolean independent(PANode n){
+	System.out.println("n   = " + n);
 	// Goes through all the threads nt2 that are synchronizing on n
 	Iterator it_sync = alpha_sync.getValues(n).iterator();
 	while(it_sync.hasNext()) {
 	    PANode nt2 = ((PASync) it_sync.next()).nt;
 	    // if(nt2 == THIS_THREAD) continue;
 	    // Find the set of all the threads nt1 that synchronize 
-	    // on n in || with nt2
-	    Set concurent_syncs = ((Relation)pi_sync.get(nt2)).getValues(n);
-	    // If there are such threads, we can have concurrent accesses.
-	    if(!concurent_syncs.isEmpty())
+	    // on n in || with nt2.
+	    // the relation nt -> Syncs done by nt on n in parallel with nt2
+	    Relation rel = (Relation) pi_sync.get(nt2);
+	    Set concurrent_syncs = 
+		rel == null ? Collections.EMPTY_SET : rel.getValues(n);
+	    // If there are such threads, we can have concurrent syncs.
+	    if(!concurrent_syncs.isEmpty())
 		return false;
 	}
 	return true;
