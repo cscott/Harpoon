@@ -505,7 +505,7 @@ public class AbsAssem  {
 	    if (ti2regList.containsKey(key)) {
 		List l = (List) ti2regList.get(key);
 		if (t instanceof DoubleTemp) {
-		    Util.assert(false, "unimplemented"); return null;
+		    return (l.get(0) +":"+ l.get(1));
 		} else {
 		    return l.get(0).toString();
 		}
@@ -516,8 +516,8 @@ public class AbsAssem  {
 	public boolean registerAssigned(Instr i, Temp t) {
 	    return ti2regList.containsKey(Default.pair(t,i));
 	}
-	public Collection getRegisters(Instr i, Temp t) {
-	    return (Collection) ti2regList.get(Default.pair(t,i)); 
+	public List getRegisters(Instr i, Temp t) {
+	    return (List) ti2regList.get(Default.pair(t,i)); 
 	}
 	public void print(java.io.PrintWriter pw) {
 	    myPrint(pw, true, true);

@@ -12,7 +12,7 @@ import java.io.*;
  * <code>TestGCRA</code>
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: TestGCRA.java,v 1.2 2000-07-28 21:52:42 pnkfelix Exp $
+ * @version $Id: TestGCRA.java,v 1.3 2000-08-09 21:17:32 pnkfelix Exp $
  */
 public class TestGCRA {
     
@@ -32,6 +32,10 @@ public class TestGCRA {
 	if (args.length > 1) {
 	    AbsAssem.NUM_REGISTERS = Integer.parseInt(args[1]);
 	}
+
+	System.out.println("Running global register allocation test "+
+			   "on "+infile+" "+
+			   "with "+AbsAssem.NUM_REGISTERS+" registers");
 
 	try {
 	    Reader r = new FileReader(args[0]);
