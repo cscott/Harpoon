@@ -8,9 +8,9 @@ package harpoon.ClassFile;
  * "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeElement.java,v 1.2 1998-08-03 00:27:37 cananian Exp $
+ * @version $Id: HCodeElement.java,v 1.3 1998-08-03 01:37:15 cananian Exp $
  * @see HCode
- * @see harpoon.ClassFile.Bytecode.Instruction
+ * @see harpoon.ClassFile.Bytecode.Instr
  */
 public interface HCodeElement {
   /** Get the original source file name that this element is derived from. */
