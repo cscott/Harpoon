@@ -4,6 +4,8 @@ package harpoon.IR.Tree;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
+import harpoon.Util.HashSet;
+import harpoon.Util.Set;
 import harpoon.Util.Util;
 
 /**
@@ -12,7 +14,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.11 1999-02-26 22:38:37 andyb Exp $
+ * @version $Id: TEMP.java,v 1.1.2.12 1999-04-05 21:49:08 duncan Exp $
  */
 public class TEMP extends Exp implements Typed {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -28,6 +30,13 @@ public class TEMP extends Exp implements Typed {
 		    (temp.tempFactory() == tf.tempFactory() ||
                     temp.tempFactory() == tf.getFrame().regTempFactory()));
     }
+    
+    public Set useSet() {
+	HashSet set = new HashSet();
+	set.union(temp);
+	return set;
+    }
+  
     public ExpList kids() {return null;}
     public Exp build(ExpList kids) {return this;}
 
