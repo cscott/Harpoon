@@ -71,7 +71,7 @@ libflexc0_la_LIBADD = \
 	../arch/@ARCHDIR@/libheader.la
 libflexc0_la_LDFLAGS = -version-info 0:0:0
 
-libflexc1_la_SOURCES =
+libflexc1_la_SOURCES = config_checker.c
 libflexc1_la_LIBADD = \
 	../arch/@ARCHDIR@/libfooter.la \
 	java.io/libjavaio.la java.lang/libjavalang.la \

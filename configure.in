@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.104 $)dnl
+AC_REVISION($Revision: 1.105 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -377,8 +377,12 @@ generational)
 	;;
 conservative)
 	AC_MSG_RESULT([B-D-W conservative gc])
+	AC_DEFINE(WITH_CONSERVATIVE_GC, 1,
+		[Define if you are using the plain (not semi) conservative gc])
 	;;
 none)	AC_MSG_RESULT([no garbage collection])
+	AC_DEFINE(WITH_NO_GC, 1,
+		[Define if you are not using any garbage collector])
 	;;
 *)	AC_MSG_ERROR([unknown garbage collector: $gc_type])	
 	;;
@@ -386,8 +390,6 @@ esac
 if test $gc_type = semi -o $gc_type = conservative; then
 	AC_DEFINE(BDW_CONSERVATIVE_GC, 1,
     	[Define if you are using the B-D-W conservative garbage collector])
-	dnl BDW collector at some point between 5.0a4 and 6.0a1 decided to
-	dnl require you to link in the library (libdl) containing dlopen().
 	GC_LIB="Contrib/gc/libgc.la"
 	AC_CONFIG_SUBDIRS(Contrib/gc)
 fi	
