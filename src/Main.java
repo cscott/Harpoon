@@ -49,7 +49,7 @@ public class Main {
 	    Node maxDisp = new Display("Max");
 	    Node histDisp = new Display("Hist");
 	    Node robDisp = new Display("Rob");
-	    Node pause = new Pause(-1, 1, null);
+	    Node pause = new Pause(-1, 0, null);
 	    Node rob = new RobertsCross(null);
 	    
 	    load.linkL(pause.linkL(orig.linkL(copy.link(normMax.linkL(maxDisp),
@@ -87,8 +87,8 @@ public class Main {
 	    //Node load = new Load("/share/multitank-3.jar", "multitank-3.gz", 245, null);
 	    //Node load = new Load("/share/multitank-4.jar", "multitank-4.gz", 130, null);
 	    //Node load = new Load(null, "/home/benster/test", 2, null);
-	    Node load = new Load(null, "/home/benster/ImageRec/images/uav_ppm_norm/uav_ppm", 100, null);
-	    //Node load = new Load(null, "/home/benster/ImageRec/images/uav_ppm_low_contrast/uav_ppm", 100, null);
+	    //Node load = new Load(null, "/home/benster/ImageRec/images/uav_ppm_norm/uav_ppm", 100, null);
+	    Node load = new Load(null, "/home/benster/ImageRec/images/uav_ppm_low_contrast/uav_ppm", 100, null);
 	    
 	    Node circle = new Circle(null, null);
 	    Node arrow = new DrawArrow(null, null);
@@ -176,7 +176,7 @@ public class Main {
 	    
 	    */
 
-	    Node pause = new Pause(-1.0, 1, null);
+	    Node pause = new Pause(-1.0, 0, null);
 	    Node pause2 = new Pause(-1.0, 0, null);
 
 	    LabelBlue labelBlue = new LabelBlue(null, null);
