@@ -37,6 +37,7 @@ class Keyword extends Token {
     key_table.put("do", new Integer(Sym.DO));
     key_table.put("double", new Integer(Sym.DOUBLE));
     key_table.put("else", new Integer(Sym.ELSE));
+    key_table.put("enum", new Integer(Sym.ENUM));
     key_table.put("extends", new Integer(Sym.EXTENDS));
     key_table.put("final", new Integer(Sym.FINAL));
     key_table.put("finally", new Integer(Sym.FINALLY));

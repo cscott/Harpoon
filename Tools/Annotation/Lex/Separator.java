@@ -18,6 +18,7 @@ class Separator extends Token {
     case ';': return new Symbol(Sym.SEMICOLON);
     case ',': return new Symbol(Sym.COMMA);
     case '.': return new Symbol(Sym.DOT);
+    case '\u2026':  return new Symbol(Sym.ELLIPSIS);
     default:
       throw new Error("Invalid separator.");
     }

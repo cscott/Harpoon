@@ -25,16 +25,86 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
 
-/* Java 1.4 + JSR-14 parser for CUP.  (despite the class name)
- * Copyright (C) 2002 C. Scott Ananian <cananian@alumni.princeton.edu>
+/* Java 1.5 (JSR-14 + JSR-201) parser for CUP. (despite the class name)
+ * (Well, Java 1.5 as of 28 Jul 2003; it may change before official release)
+ * Copyright (C) 2003 C. Scott Ananian <cananian@alumni.princeton.edu>
  * This program is released under the terms of the GPL; see the file
  * COPYING for more details.  There is NO WARRANTY on this code.
  */
 
 /*
-JDK 1.5 Features added:
-  parameterized types.  a "smart lexer" is necessary to fit this into
-  an LALR(1) grammar.
+JSR-14 Features added:
+* parameterized types, including corrections from the spec released
+  with the 2.2 prototype of the JSR-14 compiler.  Arrays of parameterized
+  types bounded by wildcards are slated to be added to Java 1.5 (although
+  they are not supported by the 2.2 prototype); this grammar supports them.
+  "Wildcard" types are supported as of the 28 jul 2003 release.
+
+JSR-201 Features added:
+* no changes for autoboxing
+* new-style for:
+  foreach_statement ::=
+		FOR LPAREN type variable_declarator_id COLON expression RPAREN
+			statement
+	// must check that first IDENTIFIER is 'each' and second IDENTIFIER
+	//  is 'in'  -- CSA extension; not (yet?) officially adopted
+	|	FOR IDENTIFIER LPAREN type variable_declarator_id IDENTIFIER
+			expression RPAREN statement
+	;
+  foreach_statement_no_short_if ::=
+		FOR LPAREN type variable_declarator_id COLON expression RPAREN
+			statement_no_short_if
+	// must check that first IDENTIFIER is 'each' and second IDENTIFIER
+	//  is 'in'  -- CSA extension; not (yet?) officially adopted
+	|	FOR IDENTIFIER LPAREN type variable_declarator_id IDENTIFIER
+			expression RPAREN statement_no_short_if
+	;
+  statement ::= ...
+     |		foreach_statement ;
+  statement_no_short_if ::= ...
+     |		foreach_statement_no_short_if ;
+
+* static import:
+  static_single_type_import_declaration ::= 
+		IMPORT STATIC name SEMICOLON
+	;
+  static_type_import_on_demand_declaration ::=
+		IMPORT STATIC name DOT MULT SEMICOLON
+	;
+  import_declaration ::= ...
+	|	static_single_type_import_declaration
+	|	static_type_import_on_demand_declaration
+	;
+* varargs:
+ formal_parameter ::= ...
+	|	type ELLIPSIS IDENTIFIER
+	|	FINAL type ELLIPSIS IDENTIFIER
+	;
+* enum:
+  enum_declaration ::=
+		modifiers_opt ENUM IDENTIFIER interfaces_opt enum_body
+	;
+  enum_body ::=
+		LBRACE enum_constants_opt enum_body_declarations_opt RBRACE
+	;
+  enum_constants_opt ::=
+	|	enum_constants
+	;
+  enum_constants ::=
+		enum_constant
+	|	enum_constants COMMA enum_constant
+	;
+  enum_constant ::=
+		IDENTIFIER enum_arguments_opt
+	|	IDENTIFIER enum_arguments_opt class_body
+	;
+  enum_arguments_opt ::=
+	|	LPAREN argument_list_opt RPAREN
+	;
+  enum_body_declarations_opt ::=
+	|	SEMICOLON class_body_declarations_opt
+	;
+
 JDK 1.4 Features added:
   assertion statement.
   statement_without_trailing_substatement ::= ...
@@ -43,6 +113,7 @@ JDK 1.4 Features added:
 		ASSERT expression SEMICOLON
 	|	ASSERT expression COLON expression SEMICOLON
 	;
+
 JDK 1.2 Features added:
   strictfp modifier.
   explicit_constructor_invocation ::= ...
@@ -53,7 +124,7 @@ JDK 1.2 Features added:
         |       name DOT SUPER DOT IDENTIFIER LPAREN argument_list_opt RPAREN ;
 */
 
-/* THIS COPY MODIFIED EXTENSIVELY FOR ANNOTATION BY CSA [9-12-99]. */
+/* THIS COPY MODIFIED EXTENSIVELY FOR ANNOTATION BY CSA [9-12-99]-[7-28-03]. */
 action code {:
   Environment env = new HashEnvironment();
   { env.put("#qualified",null); }
@@ -566,9 +637,10 @@ terminal CONST, GOTO;
 terminal STRICTFP;
 // assert keyword, new in Java 1.4
 terminal ASSERT; // assert_statement
-// 'start of a parameterized type' terminal, required for LALR(1) parsing
-// of casts to parameterized types. it's an "LT with lookahead".
-terminal PLT;
+// ellipsis token for varargs, new in Java 1.5 (JSR-201)
+terminal ELLIPSIS;
+// enum keyword, new in Java 1.5 (JSR-201)
+terminal ENUM;
 
 // 19.2) The Syntactic Grammar
 non terminal goal;
@@ -591,6 +663,8 @@ non terminal type_declarations_opt, type_declarations;
 non terminal import_declaration;
 non terminal single_type_import_declaration;
 non terminal type_import_on_demand_declaration;
+non terminal static_single_type_import_declaration;
+non terminal static_type_import_on_demand_declaration;
 non terminal type_declaration;
 // 19.7) Productions used only in the LALR(1) grammar
 non terminal modifiers_opt, modifiers, modifier;
@@ -600,6 +674,10 @@ non terminal interfaces, interfaces_opt, interface_type_list;
 non terminal class_body;
 non terminal class_body_declarations, class_body_declarations_opt;
 non terminal class_body_declaration, class_member_declaration;
+// JSR-201) Enum Declaration
+non terminal enum_declaration;
+non terminal enum_body, enum_constants_opt, enum_constants, enum_constant;
+non terminal enum_arguments_opt, enum_body_declarations_opt;
 // 19.8.2) Field Declarations
 non terminal field_declaration;
 non terminal List variable_declarators;
@@ -644,9 +722,11 @@ non terminal switch_block_statement_group;
 non terminal switch_labels, switch_label;
 non terminal while_statement, while_statement_no_short_if;
 non terminal do_statement;
+non terminal foreach_statement, foreach_statement_no_short_if;
 non terminal for_statement, for_statement_no_short_if;
 non terminal for_init_opt, for_init;
 non terminal for_update_opt, for_update;
+non terminal for_pushenv, for_popenv;
 non terminal statement_expression_list;
 non terminal identifier_opt;
 non terminal break_statement, continue_statement;
@@ -674,15 +754,16 @@ non terminal HClass conditional_and_expression, conditional_or_expression;
 non terminal HClass conditional_expression, assignment_expression;
 non terminal assignment;
 non terminal assignment_operator;
-non terminal HClass expression;
+non terminal HClass expression_opt, expression;
+non terminal HClass constant_expression;
 // JSR-14 2.1) Type Syntax 2.3) Handling Consecutive Type Brackets
-non terminal String class_or_interface_nn;
+non terminal String class_or_interface;
 non terminal String type_variable;
 non terminal type_arguments, type_arguments_opt;
-non terminal reference_type_list;
-non terminal reference_type_list_1, reference_type_1;
-non terminal reference_type_list_2, reference_type_2;
-non terminal reference_type_list_3, reference_type_3;
+non terminal type_argument_list;
+non terminal type_argument_list_1, reference_type_1;
+non terminal type_argument_list_2, reference_type_2;
+non terminal type_argument_list_3, reference_type_3;
 // JSR-14 2.2) Parameterized Type Declarations 2.3) Handling Consecutive...
 non terminal List type_parameters, type_parameters_opt;
 non terminal String type_parameter, type_parameter_1;
@@ -693,7 +774,10 @@ non terminal additional_bound_list, additional_bound_list_opt;
 non terminal additional_bound_list_1;
 non terminal additional_bound;
 non terminal additional_bound_1;
-// not mentioned in the JSR: need to reduce the precedence of instanceof
+non terminal wildcard, wildcard_1, wildcard_2, wildcard_3;
+non terminal type_argument, type_argument_1, type_argument_2, type_argument_3;
+// not mentioned in JSR-14: need to reduce the precedence of instanceof
+// Alternatively, you can tweak the relational_expression production a little.
 non terminal HClass instanceof_expression;
 //// expressions which are Not a Name
 non terminal HClass postfix_expression_nn;
@@ -712,28 +796,7 @@ non terminal HClass conditional_and_expression_nn;
 non terminal HClass conditional_or_expression_nn;
 non terminal HClass conditional_expression_nn;
 non terminal HClass assignment_expression_nn;
-non terminal expression_nn_opt;
-non terminal HClass expression_nn, constant_expression_nn;
-//// expressions where LT may be mistaken for PLT
-non terminal HClass unary_expression_l;
-non terminal preincrement_expression_l, predecrement_expression_l;
-non terminal HClass unary_expression_not_plus_minus_l;
-non terminal HClass cast_expression_l;
-non terminal HClass multiplicative_expression_l;
-non terminal HClass additive_expression_l;
-non terminal HClass shift_expression_l;
-non terminal HClass relational_expression_l;
-non terminal HClass instanceof_expression_l;
-non terminal HClass equality_expression_l;
-non terminal HClass and_expression_l;
-non terminal HClass exclusive_or_expression_l;
-non terminal HClass inclusive_or_expression_l;
-non terminal HClass conditional_and_expression_l;
-non terminal HClass conditional_or_expression_l;
-non terminal HClass conditional_expression_l;
-non terminal HClass assignment_expression_l, assignment_l;
-non terminal HClass expression_l;
-non terminal statement_expression_l;
+non terminal HClass expression_nn;
 
 start with goal;
 
@@ -791,18 +854,18 @@ type_variable ::=
 		IDENTIFIER:id
 		{: RESULT=id; :}
 	;
-class_or_interface_nn ::=
-		name:n1 type_arguments DOT name:n2
-		{: RESULT=combineWithDot(n1, n2); :}
-	|	class_or_interface_nn:n1 type_arguments DOT name:n2
+class_or_interface ::=
+		name:n
+		{: RESULT=n; :}
+	|	class_or_interface:n1 LT type_argument_list_1 DOT name:n2
 		{: RESULT=combineWithDot(n1, n2); :}
 	;
 class_or_interface_type ::=
-		name:n type_arguments_opt
+		class_or_interface:n
 		{: QualName qn=typeName(n);
 		   RESULT=(qn==null)?null:qn.toClass();
 		   annotateURL(nleft,nright, qn, n); :}
-	|	class_or_interface_nn:n type_arguments_opt
+	|	class_or_interface:n LT type_argument_list_1
 		{: QualName qn=typeName(n);
 		   RESULT=(qn==null)?null:qn.toClass();
 		   annotateURL(nleft,nright, qn, n); :}
@@ -813,25 +876,22 @@ interface_type ::= class_or_interface_type:ty {: RESULT=ty; :};
 
 array_type ::=	primitive_type:ty dims:d
 		{: RESULT=HClassUtil.arrayClass(parser.linker,ty,d.intValue()); :}
+	// we have class_or_interface_type here even though only unbounded
+	// wildcards are really allowed in the parameterization.
+	// we have to expand this to avoid lookahead problems.
 	|	name:n dims:d
 		{: QualName qn=typeName(n);
 		   RESULT = (qn==null)?null:qn.toClass();
 		   if (RESULT!=null)
 		     RESULT=HClassUtil.arrayClass(parser.linker,RESULT,d.intValue());
 		   annotateURL(nleft,nright, qn, n); :}
-	|	class_or_interface_nn:n dims:d
-		{: QualName qn=typeName(n);
+	|	class_or_interface:n1 LT type_argument_list_1 DOT name:n2 dims:d
+		{: QualName qn=typeName(combineWithDot(n1, n2));
 		   RESULT = (qn==null)?null:qn.toClass();
 		   if (RESULT!=null)
 		     RESULT=HClassUtil.arrayClass(parser.linker,RESULT,d.intValue());
-		   annotateURL(nleft,nright, qn, n); :}
-	|	name:n type_arguments dims:d
-		{: QualName qn=typeName(n);
-		   RESULT = (qn==null)?null:qn.toClass();
-		   if (RESULT!=null)
-		     RESULT=HClassUtil.arrayClass(parser.linker,RESULT,d.intValue());
-		   annotateURL(nleft,nright, qn, n); :}
-	|	class_or_interface_nn:n type_arguments dims:d
+		   annotateURL(n2left,n2right, qn, combineWithDot(n1,n2)); :}
+	|	class_or_interface:n LT type_argument_list_1 dims:d
 		{: QualName qn=typeName(n);
 		   RESULT = (qn==null)?null:qn.toClass();
 		   if (RESULT!=null)
@@ -840,43 +900,68 @@ array_type ::=	primitive_type:ty dims:d
 	;
 
 type_arguments_opt ::= type_arguments | ;
+
 type_arguments ::=
-		PLT reference_type_list_1
+		LT type_argument_list_1
 	;
-reference_type_list ::=
-		reference_type
-	|	reference_type_list COMMA reference_type
+wildcard ::=	QUESTION
+	|	QUESTION EXTENDS reference_type
+	|	QUESTION SUPER reference_type
 	;
-reference_type_list_1 ::=
-		reference_type_1
-	|	reference_type_list COMMA reference_type_1
+wildcard_1 ::=	QUESTION GT
+	|	QUESTION EXTENDS reference_type_1
+	|	QUESTION SUPER reference_type_1
 	;
-reference_type_list_2 ::=
-		reference_type_2
-	|	reference_type_list COMMA reference_type_2
+wildcard_2 ::=	QUESTION RSHIFT
+	|	QUESTION EXTENDS reference_type_2
+	|	QUESTION SUPER reference_type_2
 	;
-reference_type_list_3 ::=
-		reference_type_3
-	|	reference_type_list COMMA reference_type_3
+wildcard_3 ::=	QUESTION URSHIFT
+	|	QUESTION EXTENDS reference_type_3
+	|	QUESTION SUPER reference_type_3
 	;
-// note the LT in place of the PLT, since the following RSHIFT will
-// confuse the lexer lookahead.
 reference_type_1 ::=
 		reference_type GT
-	|	name LT reference_type_list_2
-	|	name PLT reference_type_list_2
-	|	class_or_interface_nn LT reference_type_list_2
-	|	class_or_interface_nn PLT reference_type_list_2
+	|	class_or_interface LT type_argument_list_2
 	;
 reference_type_2 ::=
 		reference_type RSHIFT
-	|	name LT reference_type_list_3
-	|	name PLT reference_type_list_3
-	|	class_or_interface_nn LT reference_type_list_3
-	|	class_or_interface_nn PLT reference_type_list_3
+	|	class_or_interface LT type_argument_list_3
 	;
 reference_type_3 ::=
 		reference_type URSHIFT
+	;
+type_argument_list ::=
+		type_argument
+	|	type_argument_list COMMA type_argument
+	;
+type_argument_list_1 ::=
+		type_argument_1
+	|	type_argument_list COMMA type_argument_1
+	;
+type_argument_list_2 ::=
+		type_argument_2
+	|	type_argument_list COMMA type_argument_2
+	;
+type_argument_list_3 ::=
+		type_argument_3
+	|	type_argument_list COMMA type_argument_3
+	;
+type_argument ::=
+		reference_type
+	|	wildcard
+	;
+type_argument_1 ::=
+		reference_type_1
+	|	wildcard_1
+	;
+type_argument_2 ::=
+		reference_type_2
+	|	wildcard_2
+	;
+type_argument_3 ::=
+		reference_type_3
+	|	wildcard_3
 	;
 
 // 19.5) Names
@@ -920,6 +1005,8 @@ package_declaration ::=
 import_declaration ::= 
 		single_type_import_declaration
 	|	type_import_on_demand_declaration
+	|	static_single_type_import_declaration
+	|	static_type_import_on_demand_declaration
 	;
 single_type_import_declaration ::= 
 		IMPORT name:n SEMICOLON {:
@@ -927,6 +1014,11 @@ single_type_import_declaration ::=
 		  QualName qn = className(n);
 		  if (qn==null) qn = packageName(n);
 		  annotateURL(nleft, nright, qn, n);
+		:}
+	;
+static_single_type_import_declaration ::= 
+		IMPORT STATIC name:n SEMICOLON {:
+			// XXX implement me.
 		:}
 	;
 type_import_on_demand_declaration ::=
@@ -947,8 +1039,14 @@ type_import_on_demand_declaration ::=
 		  annotateURL(nleft, nright, qn, n);
 		:}
 	;
+static_type_import_on_demand_declaration ::=
+		IMPORT STATIC name:n DOT MULT SEMICOLON {:
+			// XXX implement me.
+		:}
+	;
 type_declaration ::=
 		class_declaration
+	|	enum_declaration
 	|	interface_declaration
 	|	SEMICOLON
 	;
@@ -1014,8 +1112,35 @@ class_member_declaration ::=
 	  	super_opt interfaces_opt
                 {: doClassDeclaration(kw, idleft, idright, id); :}
                 class_body {: popenv(); :}
+	|	enum_declaration
 	|	interface_declaration
 	|	SEMICOLON /* the extra semicolon has become official JLS */
+	;
+
+// JSR-201) Enum Declaration
+// XXX should pushenv/popenv etc like we do with class_body productions
+enum_declaration ::=
+		modifiers_opt ENUM IDENTIFIER interfaces_opt enum_body
+	;
+enum_body ::=
+		LBRACE enum_constants_opt enum_body_declarations_opt RBRACE
+	;
+enum_constants_opt ::=
+	|	enum_constants
+	;
+enum_constants ::=
+		enum_constant
+	|	enum_constants COMMA enum_constant
+	;
+enum_constant ::=
+		IDENTIFIER enum_arguments_opt
+	|	IDENTIFIER enum_arguments_opt class_body
+	;
+enum_arguments_opt ::=
+	|	LPAREN argument_list_opt RPAREN
+	;
+enum_body_declarations_opt ::=
+	|	SEMICOLON class_body_declarations_opt
 	;
 
 // 19.8.2) Field Declarations
@@ -1047,7 +1172,7 @@ variable_declarator_id ::=
 		{: RESULT=new Object[] { v[0], new Integer(1+((Integer)v[1]).intValue()), v[2], v[3] }; :}
 	;
 variable_initializer ::=
-		expression_l
+		expression
 	|	array_initializer
 	;
 
@@ -1061,8 +1186,6 @@ method_header ::=
 	// or a method_declaration (the type_parameters_opt would have to
 	// be reduced when we see the 'type' if this was a method declaration,
 	// but it might still turn out to be a field declaration).
-	// also, we can't rely on the special PLT token here, as the LT
-	// doesn't follow a IDENTIFIER
 		modifiers_opt type method_declarator throws_opt
 	|	modifiers_opt LT type_parameter_list_1 type method_declarator throws_opt
 	|	modifiers_opt VOID method_declarator throws_opt
@@ -1100,6 +1223,17 @@ formal_parameter ::=
 					       (parser.linker, ty,
 						((Integer)v[1]).intValue());
 		  env.put(v[0],hc); RESULT=(hc==null)?"*":hc.getDescriptor();
+		:}
+	// careful, productions below allow varargs in non-final positions.
+	|	type:ty ELLIPSIS IDENTIFIER:id
+		{: HClass hc = (ty==null) ? null :
+			 HClassUtil.arrayClass(parser.linker, ty, 1);
+		   env.put(id,hc); RESULT=(hc==null)?"*":hc.getDescriptor();
+		:}
+	|	FINAL type:ty ELLIPSIS IDENTIFIER:id
+		{: HClass hc = (ty==null) ? null :
+			 HClassUtil.arrayClass(parser.linker, ty, 1);
+		   env.put(id,hc); RESULT=(hc==null)?"*":hc.getDescriptor();
 		:}
 	;
 throws_opt ::=	
@@ -1141,9 +1275,14 @@ constructor_body ::=
 	;
 explicit_constructor_invocation ::=
 		THIS LPAREN argument_list_opt RPAREN SEMICOLON
+	|	type_arguments THIS LPAREN argument_list_opt RPAREN SEMICOLON
 	|	SUPER LPAREN argument_list_opt RPAREN SEMICOLON
+	|	type_arguments SUPER LPAREN argument_list_opt RPAREN SEMICOLON
 	|	primary DOT SUPER LPAREN argument_list_opt RPAREN SEMICOLON
+	|	primary DOT type_arguments SUPER
+			LPAREN argument_list_opt RPAREN SEMICOLON
 	|	name DOT SUPER LPAREN argument_list_opt RPAREN SEMICOLON
+	|	name DOT type_arguments SUPER LPAREN argument_list_opt RPAREN SEMICOLON
 	;
 
 // 19.9) Interfaces
@@ -1178,6 +1317,7 @@ interface_member_declaration ::=
 		constant_declaration
 	|	abstract_method_declaration
 	|	class_declaration
+	|	enum_declaration
 	|	interface_declaration
 	|	SEMICOLON
 	;
@@ -1217,11 +1357,16 @@ block_statement ::=
 		local_variable_declaration_statement
 	|	statement
 	|	class_declaration
+	|	enum_declaration
 	|	interface_declaration
 	;
 local_variable_declaration_statement ::=
 		local_variable_declaration SEMICOLON
 	;
+/* jikes expands 'type' in production for local_variable_declaration to
+ * avoid reduce-reduce conflict:  given 'name [' the grammar can't decide
+ * whether this is going to be a type (starting the local_variable_declaration)
+ * or an array access expression. */
 local_variable_declaration ::=
 		type:ty variable_declarators:l {:
 		  for (Iterator it=l.iterator(); it.hasNext(); ) {
@@ -1231,6 +1376,8 @@ local_variable_declaration ::=
 		    env.put(v[0], hc);
 		  }
 		:}
+	// you may want to accept 'modifiers' here instead of just FINAL
+	// to produce better error messages.
 	|	FINAL type:ty variable_declarators:l {:
 		  for (Iterator it=l.iterator(); it.hasNext(); ) {
 		    Object[] v=(Object[]) it.next();
@@ -1246,6 +1393,7 @@ statement ::=	statement_without_trailing_substatement
 	|	if_then_else_statement
 	|	while_statement
 	|	for_statement
+	|	foreach_statement
 	;
 statement_no_short_if ::=
 		statement_without_trailing_substatement
@@ -1253,6 +1401,7 @@ statement_no_short_if ::=
 	|	if_then_else_statement_no_short_if
 	|	while_statement_no_short_if
 	|	for_statement_no_short_if
+	|	foreach_statement_no_short_if
 	;
 statement_without_trailing_substatement ::=
 		block
@@ -1290,24 +1439,18 @@ statement_expression ::=
 	|	class_instance_creation_expression
 	;
 if_then_statement ::=
-		IF LPAREN expression_nn RPAREN statement
-	|	IF LPAREN name RPAREN statement
+		IF LPAREN expression RPAREN statement
 	;
 if_then_else_statement ::=
-		IF LPAREN expression_nn RPAREN statement_no_short_if 
-			ELSE statement
-	|	IF LPAREN name RPAREN statement_no_short_if 
+		IF LPAREN expression RPAREN statement_no_short_if 
 			ELSE statement
 	;
 if_then_else_statement_no_short_if ::=
-		IF LPAREN expression_nn RPAREN statement_no_short_if
-			ELSE statement_no_short_if
-	|	IF LPAREN name RPAREN statement_no_short_if
+		IF LPAREN expression RPAREN statement_no_short_if
 			ELSE statement_no_short_if
 	;
 switch_statement ::=
-		SWITCH LPAREN expression_nn RPAREN {:pushenv();:} switch_block {:popenv();:}
-	|	SWITCH LPAREN name RPAREN {:pushenv();:} switch_block {:popenv();:}
+		SWITCH LPAREN expression RPAREN {:pushenv();:} switch_block {:popenv();:}
 	;
 switch_block ::=
 		LBRACE switch_block_statement_groups switch_labels RBRACE
@@ -1327,37 +1470,48 @@ switch_labels ::=
 	|	switch_labels switch_label
 	;
 switch_label ::=
-		CASE constant_expression_nn COLON
-	|	CASE name COLON
+		CASE constant_expression COLON
 	|	DEFAULT COLON
 	;
 
 while_statement ::=
-		WHILE LPAREN expression_nn RPAREN statement
-	|	WHILE LPAREN name RPAREN statement
+		WHILE LPAREN expression RPAREN statement
 	;
 while_statement_no_short_if ::=
-		WHILE LPAREN expression_nn RPAREN statement_no_short_if
-	|	WHILE LPAREN name RPAREN statement_no_short_if
+		WHILE LPAREN expression RPAREN statement_no_short_if
 	;
 do_statement ::=
-		DO statement WHILE LPAREN expression_nn RPAREN SEMICOLON
-	|	DO statement WHILE LPAREN name RPAREN SEMICOLON
+		DO statement WHILE LPAREN expression RPAREN SEMICOLON
+	;
+foreach_statement ::=
+		FOR LPAREN for_pushenv type variable_declarator_id COLON expression RPAREN
+			statement for_popenv
+	// must check that first IDENTIFIER is 'each' and second IDENTIFIER
+	//  is 'in'
+	|	FOR IDENTIFIER LPAREN for_pushenv type variable_declarator_id IDENTIFIER
+			expression RPAREN statement for_popenv
+	;
+
+foreach_statement_no_short_if ::=
+		FOR LPAREN for_pushenv type variable_declarator_id COLON expression RPAREN
+			statement_no_short_if for_popenv
+	// must check that first IDENTIFIER is 'each' and second IDENTIFIER
+	//  is 'in'
+	|	FOR IDENTIFIER LPAREN for_pushenv type variable_declarator_id IDENTIFIER
+			expression RPAREN statement_no_short_if for_popenv
 	;
 for_statement ::=
-		FOR LPAREN for_init_opt SEMICOLON expression_nn_opt SEMICOLON
-			for_update_opt RPAREN statement {:popenv();:}
-	|	FOR LPAREN for_init_opt SEMICOLON name SEMICOLON
-			for_update_opt RPAREN statement {:popenv();:}
+		FOR LPAREN for_pushenv for_init_opt SEMICOLON expression_opt SEMICOLON
+			for_update_opt RPAREN statement for_popenv
 	;
 for_statement_no_short_if ::=
-		FOR LPAREN for_init_opt SEMICOLON expression_nn_opt SEMICOLON
-			for_update_opt RPAREN statement_no_short_if {:popenv();:}
-	|	FOR LPAREN for_init_opt SEMICOLON name SEMICOLON
-			for_update_opt RPAREN statement_no_short_if {:popenv();:}
+		FOR LPAREN for_pushenv for_init_opt SEMICOLON expression_opt SEMICOLON
+			for_update_opt RPAREN statement_no_short_if for_popenv
 	;
-for_init_opt ::= {:pushenv();:}
-	|	{:pushenv();:} for_init
+for_pushenv ::= {:pushenv();:} ;
+for_popenv ::= {:popenv();:} ;
+for_init_opt ::=
+	|	for_init
 	;
 for_init ::=	statement_expression_list
 	|	local_variable_declaration
@@ -1368,8 +1522,8 @@ for_update_opt ::=
 for_update ::=	statement_expression_list
 	;
 statement_expression_list ::=
-		statement_expression_l
-	|	statement_expression_list COMMA statement_expression_l
+		statement_expression
+	|	statement_expression_list COMMA statement_expression
 	;
 
 identifier_opt ::= 
@@ -1384,16 +1538,13 @@ continue_statement ::=
 		CONTINUE identifier_opt SEMICOLON
 	;
 return_statement ::=
-		RETURN expression_nn_opt SEMICOLON
-	|	RETURN name SEMICOLON
+		RETURN expression_opt SEMICOLON
 	;
 throw_statement ::=
-		THROW expression_nn SEMICOLON
-	|	THROW name SEMICOLON
+		THROW expression SEMICOLON
 	;
 synchronized_statement ::=
-		SYNCHRONIZED LPAREN expression_nn RPAREN block
-	|	SYNCHRONIZED LPAREN name RPAREN block
+		SYNCHRONIZED LPAREN expression RPAREN block
 	;
 try_statement ::=
 		TRY block catches
@@ -1411,12 +1562,8 @@ catch_clause ::=
 finally ::=	FINALLY block
 	;
 assert_statement ::=
-		ASSERT expression_nn SEMICOLON
-	|	ASSERT expression_nn COLON expression_nn SEMICOLON
-	|	ASSERT name SEMICOLON
-	|	ASSERT name COLON expression_nn SEMICOLON
-	|	ASSERT expression_nn COLON name SEMICOLON
-	|	ASSERT name COLON name SEMICOLON
+		ASSERT expression SEMICOLON
+	|	ASSERT expression COLON expression SEMICOLON
 	;
 
 // 19.12) Expressions
@@ -1442,37 +1589,41 @@ primary_no_new_array ::=
 	// "Type DOT CLASS", but expanded
 	|	primitive_type DOT CLASS
 			{: RESULT=parser.linker.forName("java.lang.Class"); :}
-	|	name DOT CLASS // not 'class_or_interface'?
-			{: RESULT=parser.linker.forName("java.lang.Class"); :}
-// this production *might* be valid, but introduces conflicts.
-//	|	class_or_interface type_arguments DOT CLASS
-//			{: RESULT=parser.linker.forName("java.lang.Class"); :}
 	|	primitive_type dims DOT CLASS
 			{: RESULT=parser.linker.forName("java.lang.Class"); :}
-	|	name dims DOT CLASS // not 'class_or_interface'?
+	|	name DOT CLASS
 			{: RESULT=parser.linker.forName("java.lang.Class"); :}
-// this production *might* be valid, but introduces conflicts.
-//	|	class_or_interface type_arguments dims DOT CLASS
-//			{: RESULT=parser.linker.forName("java.lang.Class"); :}
+	|	name dims DOT CLASS
+			{: RESULT=parser.linker.forName("java.lang.Class"); :}
+//	the following two productions are part of the expansion of
+//	'type DOT CLASS' but are not actually allowed, as they involve params.
+//	[see msg from Neal Gafter <3F219367.3070903@sun.com> 25-jul-2003]
+//	|	class_or_interface type_arguments DOT name dims DOT CLASS
+//	|	class_or_interface LT type_argument_list_1 dims DOT CLASS
 	;
+// grammar distributed with prototype 2.2 is in error; the following is correct
+//  [ Neal Gafter, <3F2577E0.3090008@sun.com> ]
 class_instance_creation_expression ::=
-	// actually only class_type is valid in the next production, but
-	// that would lead to a grammar conflict.
 		NEW class_or_interface_type LPAREN argument_list_opt RPAREN
 	|	NEW class_or_interface_type LPAREN argument_list_opt RPAREN {:
 		  Integer innerindex=newInner(); pushenv();
 		  newClassScope(innerindex.toString());
 		:} class_body {: popenv(); :}
-	|	primary DOT NEW IDENTIFIER type_arguments_opt
+	|	NEW type_arguments class_or_interface_type LPAREN argument_list_opt RPAREN
+	|	NEW type_arguments class_or_interface_type LPAREN argument_list_opt RPAREN {:
+		  Integer innerindex=newInner(); pushenv();
+		  newClassScope(innerindex.toString());
+		:} class_body {: popenv(); :}
+	|	primary DOT NEW type_arguments_opt IDENTIFIER type_arguments_opt
 			LPAREN argument_list_opt RPAREN
-	|	primary DOT NEW IDENTIFIER type_arguments_opt
+	|	primary DOT NEW type_arguments_opt IDENTIFIER type_arguments_opt
 			LPAREN argument_list_opt RPAREN {:
 		  Integer innerindex=newInner(); pushenv();
 		  newClassScope(innerindex.toString());
 		:} class_body {: popenv(); :}
-	|	name DOT NEW IDENTIFIER type_arguments_opt
+	|	name DOT NEW type_arguments_opt IDENTIFIER type_arguments_opt
 			LPAREN argument_list_opt RPAREN
-	|	name DOT NEW IDENTIFIER type_arguments_opt
+	|	name DOT NEW type_arguments_opt IDENTIFIER type_arguments_opt
 			LPAREN argument_list_opt RPAREN {:
 		  Integer innerindex=newInner(); pushenv();
 		  newClassScope(innerindex.toString());
@@ -1484,7 +1635,7 @@ argument_list_opt ::=
 		{: RESULT=l; :}
 	;
 argument_list ::=
-		expression_l:e
+		expression:e
 		{: RESULT=new ArrayList(); RESULT.add(e); :}
 	|	argument_list:l COMMA expression:e
 		{: RESULT=l; RESULT.add(e); :}
@@ -1538,6 +1689,13 @@ method_invocation ::=
 		       RESULT=hm.getReturnType();
 		   }
 		:}
+// the following production appeared in the prototype 2.2 spec, but it
+// introduces ambiguities in the grammar (consider the expression
+//          A((B)<C,D>E());
+// which could be either an invocation on E or two boolean comparisons).
+// Neal Gafter has assured me that this production should be removed
+// from the grammar. <3F256C06.7000600@sun.com>
+//	|	type_arguments name LPAREN argument_list_opt RPAREN
 	|	primary:ty DOT IDENTIFIER:id LPAREN argument_list_opt:al RPAREN
 		{: if (ty!=null) {
 		     HClass[] params = (HClass[]) al.toArray(new HClass[al.size()]);
@@ -1553,8 +1711,33 @@ method_invocation ::=
 		     }
 		   }
 		:}
+	|	primary:ty DOT type_arguments IDENTIFIER:id LPAREN argument_list_opt:al RPAREN
+		{: if (ty!=null) {
+		     HClass[] params = (HClass[]) al.toArray(new HClass[al.size()]);
+		     List l = new ArrayList();
+		     HMethod[] hms = ty.getMethods();
+		     for (int i=0; i<hms.length; i++)
+		       if (hms[i].getName().equals(id))
+		         l.add(hms[i]);
+		     HMethod hm = methodMatch(l, params);
+		     if (hm!=null) {
+			 annotateURL(idleft,idright,hm);
+			 RESULT=hm.getReturnType();
+		     }
+		   }
+		:}
+	|	name:n DOT type_arguments IDENTIFIER:id LPAREN argument_list_opt:al RPAREN
+		{: HClass[] params = (HClass[]) al.toArray(new HClass[al.size()]);
+		   HMethod hm = methodName(combineWithDot(n,id), params);
+		   if (hm!=null) {
+		       annotateURL(idleft,idright,hm);
+		       RESULT=hm.getReturnType();
+		   }
+		:}
 	|	SUPER DOT IDENTIFIER LPAREN argument_list_opt RPAREN
+	|	SUPER DOT type_arguments IDENTIFIER LPAREN argument_list_opt RPAREN
 	|	name DOT SUPER DOT IDENTIFIER LPAREN argument_list_opt RPAREN
+	|	name DOT SUPER DOT type_arguments IDENTIFIER LPAREN argument_list_opt RPAREN
 	;
 array_access ::=
 		name:n LBRACK expression RBRACK
@@ -1603,33 +1786,52 @@ unary_expression_not_plus_minus ::=
 	|	NOT unary_expression
 	|	cast_expression:e	{: RESULT=e; :}
 	;
+// This parsing technique was discovered by Eric Blake <ebb9@email.byu.edu>
+// We solving grammar ambiguities with between parenthesized less-than
+// relational operations and type casts with a slightly-more-complicated
+// cast_expression production.
+// Illustrative example:  LPAREN name LT name ...
+//  is this going to be a cast_expression or a relational_expression?
+// canonically, this production is:
+//     cast_expression ::= LPAREN type RPAREN unary_expression_not_plus_minus
 cast_expression ::=
 		LPAREN primitive_type:ty dims_opt:d RPAREN unary_expression
 		{: RESULT=HClassUtil.arrayClass(parser.linker,ty,d.intValue()); :}
 	|	LPAREN name:n RPAREN unary_expression_not_plus_minus
 		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
 		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN name:n PLT reference_type_list_1 RPAREN unary_expression_not_plus_minus
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN name:n dims RPAREN unary_expression_not_plus_minus
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN name:n PLT reference_type_list_1 dims RPAREN unary_expression_not_plus_minus
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN class_or_interface_nn:n RPAREN unary_expression_not_plus_minus
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN class_or_interface_nn:n PLT reference_type_list_1 RPAREN unary_expression_not_plus_minus
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN class_or_interface_nn:n dims RPAREN unary_expression_not_plus_minus
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN class_or_interface_nn:n PLT reference_type_list_1 dims RPAREN unary_expression_not_plus_minus
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
+	|	LPAREN name:n dims:d RPAREN unary_expression_not_plus_minus
+		{: QualName qn=typeName(n);
+		   RESULT = (qn==null)?null:qn.toClass();
+		   if (RESULT!=null)
+		     RESULT=HClassUtil.arrayClass(parser.linker,RESULT,d.intValue());
+		   annotateURL(nleft,nright, qn, n); :}
+	|	LPAREN name:n LT type_argument_list_1 dims_opt:d RPAREN
+			unary_expression_not_plus_minus
+		{: QualName qn=typeName(n);
+		   RESULT = (qn==null)?null:qn.toClass();
+		   if (RESULT!=null)
+		     RESULT=HClassUtil.arrayClass(parser.linker,RESULT,d.intValue());
+		   annotateURL(nleft,nright, qn, n); :}
+	|	LPAREN name:n1 LT type_argument_list_1 DOT
+			class_or_interface:n2 dims_opt:d RPAREN
+			unary_expression_not_plus_minus
+		{: String n=combineWithDot(n1,n2);
+		   QualName qn=typeName(n);
+		   RESULT = (qn==null)?null:qn.toClass();
+		   if (RESULT!=null)
+		     RESULT=HClassUtil.arrayClass(parser.linker,RESULT,d.intValue());
+		   annotateURL(n2left,n2right, qn, n); :}
+	|	LPAREN name:n1 LT type_argument_list_1 DOT
+			class_or_interface:n2 LT type_argument_list_1
+			dims_opt:d RPAREN
+			unary_expression_not_plus_minus
+		{: String n=combineWithDot(n1,n2);
+		   QualName qn=typeName(n);
+		   RESULT = (qn==null)?null:qn.toClass();
+		   if (RESULT!=null)
+		     RESULT=HClassUtil.arrayClass(parser.linker,RESULT,d.intValue());
+		   annotateURL(n2left,n2right, qn, n); :}
 	;
 multiplicative_expression ::=
 		unary_expression:e {: RESULT=e; :}
@@ -1659,6 +1861,11 @@ relational_expression ::=
 	|	relational_expression GTEQ shift_expression
 		{: RESULT=HClass.Boolean; :}
 	;
+// we lower the precendence of instanceof to resolve a grammar ambiguity.
+// semantics are unchanged, since relational expressions do not operate
+// on boolean.  Eric Blake had a different solution here, where he
+// used the production 'shift_expression LT shift_expression' to solve
+// the same problem.
 instanceof_expression ::=
 		relational_expression:e {: RESULT=e; :}
 	|	instanceof_expression INSTANCEOF reference_type
@@ -1721,7 +1928,15 @@ assignment_operator ::=
 	|	XOREQ
 	|	OREQ
 	;
+expression_opt ::= {: RESULT=null; :}
+	|	expression:e {: RESULT=e; :}
+	;
 expression ::=	assignment_expression:e {: RESULT=e; :}
+	;
+// note that this constraint must be enforced during semantic checking
+// 'constant_expression' should include enumerated constants.
+constant_expression ::=
+		expression:e {: RESULT=e; :}
 	;
 
 // JLS-14 productions.
@@ -1731,7 +1946,7 @@ type_parameters_opt ::= type_parameters:tpl
 		{: RESULT=Collections.EMPTY_LIST; :}
 	;
 type_parameters ::=
-		PLT type_parameter_list_1:tpl
+		LT type_parameter_list_1:tpl
 	        {: RESULT=tpl; :}
 	;
 type_parameter_list ::=
@@ -1755,9 +1970,6 @@ type_parameter_1 ::=
 		{: RESULT=tv; :}
 	|	type_variable:tv type_bound_1
 		{: RESULT=tv; :}
-// I don't think this production is really meant to be used.
-//	|	type_variable:tv IMPLEMENTS reference_type_1
-//		{: RESULT=tv; :}
 	;
 type_bound_opt ::= type_bound | ;
 type_bound ::=
@@ -1785,6 +1997,9 @@ additional_bound_1 ::=
 //////////////////////////////////////////////
 // the following productions are copied from the standard ones, but
 // 'name' all alone is not allowed.  The '_nn' stands for 'not name'.
+// we also expand the productions so that they recursively depend on the
+// '_nn' forms of their left hand side, then adding a new production
+// with 'name' explicit on the left-hand side.
 // this allows us to postpone the decision whether '(x)' is an expression
 // or a type-cast until we can see enough right context to make the proper
 // choice.
@@ -1809,223 +2024,103 @@ unary_expression_not_plus_minus_nn ::=
 	;
 multiplicative_expression_nn ::=
 		unary_expression_nn:e {: RESULT=e; :}
-	|	multiplicative_expression MULT unary_expression
-	|	multiplicative_expression DIV unary_expression
-	|	multiplicative_expression MOD unary_expression
+	|	name                         MULT unary_expression
+	|	multiplicative_expression_nn MULT unary_expression
+	|	name                         DIV unary_expression
+	|	multiplicative_expression_nn DIV unary_expression
+	|	name                         MOD unary_expression
+	|	multiplicative_expression_nn MOD unary_expression
 	;
 additive_expression_nn ::=
 		multiplicative_expression_nn:e {: RESULT=e; :}
-	|	additive_expression PLUS multiplicative_expression
-	|	additive_expression MINUS multiplicative_expression
+	|	name                   PLUS multiplicative_expression
+	|	additive_expression_nn PLUS multiplicative_expression
+	|	name                   MINUS multiplicative_expression
+	|	additive_expression_nn MINUS multiplicative_expression
 	;
 shift_expression_nn ::=
 		additive_expression_nn:e {: RESULT=e; :}
-	|	shift_expression LSHIFT additive_expression
-	|	shift_expression RSHIFT additive_expression
-	|	shift_expression URSHIFT additive_expression
+	|	name                LSHIFT additive_expression
+	|	shift_expression_nn LSHIFT additive_expression
+	|	name                RSHIFT additive_expression
+	|	shift_expression_nn RSHIFT additive_expression
+	|	name                URSHIFT additive_expression
+	|	shift_expression_nn URSHIFT additive_expression
 	;
 relational_expression_nn ::=
 		shift_expression_nn:e {: RESULT=e; :}
-	|	relational_expression LT shift_expression
+	// note that we've tweaked the productions for LT/GT to disallow
+	//  a<b<c as a valid expression.  This avoids ambiguity with
+	//  parameterized types in casts.
+	|	name                LT shift_expression
 		{: RESULT=HClass.Boolean; :}
-	|	relational_expression GT shift_expression
+	|	shift_expression_nn LT shift_expression
 		{: RESULT=HClass.Boolean; :}
-	|	relational_expression LTEQ shift_expression
+	|	name                GT shift_expression
 		{: RESULT=HClass.Boolean; :}
-	|	relational_expression GTEQ shift_expression
+	|	shift_expression_nn GT shift_expression
+		{: RESULT=HClass.Boolean; :}
+	|	name                     LTEQ shift_expression
+		{: RESULT=HClass.Boolean; :}
+	|	relational_expression_nn LTEQ shift_expression
+		{: RESULT=HClass.Boolean; :}
+	|	name                     GTEQ shift_expression
+		{: RESULT=HClass.Boolean; :}
+	|	relational_expression_nn GTEQ shift_expression
 		{: RESULT=HClass.Boolean; :}
 	;
 instanceof_expression_nn ::=
 		relational_expression_nn:e {: RESULT=e; :}
-	|	instanceof_expression INSTANCEOF reference_type
+	|	name                     INSTANCEOF reference_type
+		{: RESULT=HClass.Boolean; :}
+	|	instanceof_expression_nn INSTANCEOF reference_type
 		{: RESULT=HClass.Boolean; :}
 	;
 equality_expression_nn ::=
 		instanceof_expression_nn:e {: RESULT=e; :}
-	|	equality_expression EQEQ instanceof_expression
+	|	name                   EQEQ instanceof_expression
 		{: RESULT=HClass.Boolean; :}
-	|	equality_expression NOTEQ instanceof_expression
+	|	equality_expression_nn EQEQ instanceof_expression
+		{: RESULT=HClass.Boolean; :}
+	|	name                   NOTEQ instanceof_expression
+		{: RESULT=HClass.Boolean; :}
+	|	equality_expression_nn NOTEQ instanceof_expression
 		{: RESULT=HClass.Boolean; :}
 	;
 and_expression_nn ::=
 		equality_expression_nn:e {: RESULT=e; :}
-	|	and_expression AND equality_expression
+	|	name              AND equality_expression
+	|	and_expression_nn AND equality_expression
 	;
 exclusive_or_expression_nn ::=
 		and_expression_nn:e {: RESULT=e; :}
-	|	exclusive_or_expression XOR and_expression
+	|	name                       XOR and_expression
+	|	exclusive_or_expression_nn XOR and_expression
 	;
 inclusive_or_expression_nn ::=
 		exclusive_or_expression_nn:e {: RESULT=e; :}
-	|	inclusive_or_expression OR exclusive_or_expression
+	|	name                       OR exclusive_or_expression
+	|	inclusive_or_expression_nn OR exclusive_or_expression
 	;
 conditional_and_expression_nn ::=
 		inclusive_or_expression_nn:e {: RESULT=e; :}
-	|	conditional_and_expression ANDAND inclusive_or_expression
+	|	name                          ANDAND inclusive_or_expression
+	|	conditional_and_expression_nn ANDAND inclusive_or_expression
 	;
 conditional_or_expression_nn ::=
 		conditional_and_expression_nn:e {: RESULT=e; :}
-	|	conditional_or_expression OROR conditional_and_expression
+	|	name                         OROR conditional_and_expression
+	|	conditional_or_expression_nn OROR conditional_and_expression
 	;
 conditional_expression_nn ::=
 		conditional_or_expression_nn:e {: RESULT=e; :}
-	|	conditional_or_expression QUESTION expression 
+	|	name QUESTION expression:e COLON conditional_expression
+	|	conditional_or_expression_nn QUESTION expression:e 
 			COLON conditional_expression
-		{: RESULT=HClass.Boolean; :}
 	;
 assignment_expression_nn ::=
 		conditional_expression_nn:e {: RESULT=e; :}
 	|	assignment
 	;
-expression_nn_opt ::=
-	|	expression_nn
-	;
 expression_nn ::=	assignment_expression_nn:e {: RESULT=e; :}
-	;
-constant_expression_nn ::=
-		expression_nn:e {: RESULT=e; :}
-	;
-//////////////////////////////////////////////
-// the following productions are copied from the standard ones, but
-// any right-hand non-terminal has _l appended, and the
-// relational_expression_l production reflects that fact that LT
-// can get confused with PLT in this (right hand) context.
-// The '_l' stands for 'list', since argument_list is the
-// only production with the confusing right-hand context.
-unary_expression_l ::=
-		preincrement_expression_l
-	|	predecrement_expression_l
-	|	PLUS unary_expression_l
-	|	MINUS unary_expression_l
-	|	unary_expression_not_plus_minus_l:e {: RESULT=e; :}
-	;
-preincrement_expression_l ::=
-		PLUSPLUS unary_expression_l
-	;
-predecrement_expression_l ::=
-		MINUSMINUS unary_expression_l
-	;
-unary_expression_not_plus_minus_l ::=
-		postfix_expression:e {: RESULT=e; :}
-	|	COMP unary_expression_l
-	|	NOT unary_expression_l
-	|	cast_expression_l:e {: RESULT=e; :}
-	;
-cast_expression_l ::=
-		LPAREN primitive_type:ty dims_opt:d RPAREN unary_expression_l
-		{: RESULT=HClassUtil.arrayClass(parser.linker,ty,d.intValue()); :}
-	|	LPAREN name:n RPAREN unary_expression_not_plus_minus_l
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN name:n PLT reference_type_list_1 RPAREN unary_expression_not_plus_minus_l
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN name:n dims RPAREN unary_expression_not_plus_minus_l
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN name:n PLT reference_type_list_1 dims RPAREN unary_expression_not_plus_minus_l
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN class_or_interface_nn:n RPAREN unary_expression_not_plus_minus_l
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN class_or_interface_nn:n PLT reference_type_list_1 RPAREN unary_expression_not_plus_minus_l
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN class_or_interface_nn:n dims RPAREN unary_expression_not_plus_minus_l
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	|	LPAREN class_or_interface_nn:n PLT reference_type_list_1 dims RPAREN unary_expression_not_plus_minus_l
-		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
-		   annotateURL(nleft,nright,qn,n); :}
-	;
-multiplicative_expression_l ::=
-		unary_expression_l:e {: RESULT=e; :}
-	|	multiplicative_expression MULT unary_expression_l
-	|	multiplicative_expression DIV unary_expression_l
-	|	multiplicative_expression MOD unary_expression_l
-	;
-additive_expression_l ::=
-		multiplicative_expression_l:e {: RESULT=e; :}
-	|	additive_expression PLUS multiplicative_expression_l
-	|	additive_expression MINUS multiplicative_expression_l
-	;
-shift_expression_l ::=
-		additive_expression_l:e {: RESULT=e; :}
-	|	shift_expression LSHIFT additive_expression_l
-	|	shift_expression RSHIFT additive_expression_l
-	|	shift_expression URSHIFT additive_expression_l
-	;
-relational_expression_l ::=
-		shift_expression_l:e {: RESULT=e; :}
-	|	relational_expression LT shift_expression_l
-		{: RESULT=HClass.Boolean; :}
-// this is where the _l forms differ: we can possibly confuse an LT
-// for a PLT in this context.
-	|	relational_expression PLT shift_expression_l
-		{: RESULT=HClass.Boolean; :}
-	|	relational_expression GT shift_expression_l
-		{: RESULT=HClass.Boolean; :}
-	|	relational_expression LTEQ shift_expression_l
-		{: RESULT=HClass.Boolean; :}
-	|	relational_expression GTEQ shift_expression_l
-		{: RESULT=HClass.Boolean; :}
-	;
-instanceof_expression_l ::=
-		relational_expression_l:e {: RESULT=e; :}
-	|	instanceof_expression INSTANCEOF reference_type
-		{: RESULT=HClass.Boolean; :}
-	;
-equality_expression_l ::=
-		instanceof_expression_l:e {: RESULT=e; :}
-	|	equality_expression EQEQ instanceof_expression_l
-		{: RESULT=HClass.Boolean; :}
-	|	equality_expression NOTEQ instanceof_expression_l
-		{: RESULT=HClass.Boolean; :}
-	;
-and_expression_l ::=
-		equality_expression_l:e {: RESULT=e; :}
-	|	and_expression AND equality_expression_l
-	;
-exclusive_or_expression_l ::=
-		and_expression_l:e {: RESULT=e; :}
-	|	exclusive_or_expression XOR and_expression_l
-	;
-inclusive_or_expression_l ::=
-		exclusive_or_expression_l:e {: RESULT=e; :}
-	|	inclusive_or_expression OR exclusive_or_expression_l
-	;
-conditional_and_expression_l ::=
-		inclusive_or_expression_l:e {: RESULT=e; :}
-	|	conditional_and_expression ANDAND inclusive_or_expression_l
-	;
-conditional_or_expression_l ::=
-		conditional_and_expression_l:e {: RESULT=e; :}
-	|	conditional_or_expression OROR conditional_and_expression_l
-	;
-conditional_expression_l ::=
-		conditional_or_expression_l:e {: RESULT=e; :}
-	|	conditional_or_expression QUESTION expression 
-			COLON conditional_expression_l
-		{: RESULT=HClass.Boolean; :}
-	;
-assignment_expression_l ::=
-		conditional_expression_l:e {: RESULT=e; :}
-	|	assignment_l
-	;
-// semantic check necessary here to ensure a valid left-hand side.
-// allowing a parenthesized variable here on the lhs was introduced in
-// JLS 2; thanks to Eric Blake for pointing this out.
-assignment_l ::= postfix_expression assignment_operator assignment_expression_l
-	;
-expression_l ::=	assignment_expression_l:e {: RESULT=e; :}
-	;
-statement_expression_l ::=
-		assignment_l
-	|	preincrement_expression_l
-	|	predecrement_expression_l
-	|	postincrement_expression
-	|	postdecrement_expression
-	|	method_invocation
-	|	class_instance_creation_expression
 	;

@@ -35,8 +35,12 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
   public java_cup.runtime.Symbol nextToken() throws java.io.IOException {
     java_cup.runtime.Symbol sym =
       lookahead==null ? _nextToken() : lookahead.get();
+    /* Old "smart lexer" hack to parse JSR-14 syntax.  New, better, grammar
+     * makes this unnecessary.  (Credit to Eric Blake for its discovery.)
+     *
     if (isJava15 && sym.sym==Sym.LT && shouldBePLT())
       sym.sym=Sym.PLT;
+     */
     last = sym;
     return sym;
   }
@@ -246,8 +250,12 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
     case '.':
       if (Character.digit(line.charAt(line_pos+1),10)!=-1)
 	return getNumericLiteral();
-      else return new Separator(consume());
-
+      else if (isJava15 &&
+	       line.charAt(line_pos+1)=='.' &&
+	       line.charAt(line_pos+2)=='.') {
+	consume(); consume(); consume();
+	return new Separator('\u2026'); // unicode ellipsis character.
+      } else return new Separator(consume());
     default: 
       break;
     }
@@ -260,7 +268,7 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
 
   static final String[] keywords = new String[] {
     "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
-    "class", "const", "continue", "default", "do", "double", "else", 
+    "class", "const", "continue", "default", "do", "double", "else", "enum",
     "extends", "final", "finally", "float", "for", "goto", "if", 
     "implements", "import", "instanceof", "int", "interface", "long", 
     "native", "new", "package", "private", "protected", "public", 
@@ -281,6 +289,8 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
     if (s.equals("true")) return new BooleanLiteral(true);
     if (s.equals("false")) return new BooleanLiteral(false);
     // Check against keywords.
+    //  pre-java 1.5 compatibility:
+    if (!isJava15 && s.equals("enum")) return new Identifier(s);
     //  pre-java 1.4 compatibility:
     if (!isJava14 && s.equals("assert")) return new Identifier(s);
     //  pre-java 1.2 compatibility:
