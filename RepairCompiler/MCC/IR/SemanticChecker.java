@@ -1265,6 +1265,8 @@ public class SemanticChecker {
             // we've got a variable reference... we'll have to scope check it later
             // when we are completely done... there are also some issues of cyclic definitions
             return new VarExpr(pn.getChild("var").getTerminal());
+        } else if (pn.getChild("sumexpr") != null) {
+            return parse_sum(pn.getChild("sumexpr"));
         } else if (pn.getChild("literal") != null) {
             return parse_literal(pn.getChild("literal"));
         } else if (pn.getChild("operator") != null) {
@@ -1404,6 +1406,25 @@ public class SemanticChecker {
         }
 
         return new SizeofExpr(setexpr);
+    }
+
+    private SumExpr parse_sum(ParseNode pn) {
+        if (!precheck(pn, "sumexpr")) {
+            return null;
+        }
+        String setname = pn.getChild("set").getTerminal();
+        assert setname != null;
+        SetDescriptor sd = lookupSet(setname);
+
+        if (sd == null) {
+            er.report(pn, "Unknown or undefined set '" + setname + "'");
+            return null;
+        }
+
+        RelationDescriptor rd = lookupRelation(pn.getChild("dot").getChild("relation").getTerminal());
+        rd.addUsage(RelationDescriptor.IMAGE);
+
+        return new SumExpr(sd,rd);
     }
 
     private CastExpr parse_cast(ParseNode pn) {

@@ -29,19 +29,20 @@ CHAR=(\\\"|\\\'|\\\\|\\t|\\n|[\x20-\x21\x23-\x26\x28-\x5B\x5D-\x7E])
 %%
 
 <YYINITIAL> {WHITESPACE}		{}
-<YYINITIAL> \n				{ LineCount.addLineBreak(yychar+1); } 
+<YYINITIAL> \n				{ LineCount.addLineBreak(yychar+1); }
 
-<YYINITIAL> "{"				{ return tok(Sym.OPENBRACE, yytext()); } 
-<YYINITIAL> "}"				{ return tok(Sym.CLOSEBRACE, yytext()); } 
-<YYINITIAL> "("				{ return tok(Sym.OPENPAREN, yytext()); } 
-<YYINITIAL> ")"				{ return tok(Sym.CLOSEPAREN, yytext()); } 
-<YYINITIAL> "["				{ return tok(Sym.OPENBRACKET, yytext()); } 
-<YYINITIAL> "]"				{ return tok(Sym.CLOSEBRACKET, yytext()); } 
+<YYINITIAL> "{"				{ return tok(Sym.OPENBRACE, yytext()); }
+<YYINITIAL> "}"				{ return tok(Sym.CLOSEBRACE, yytext()); }
+<YYINITIAL> "("				{ return tok(Sym.OPENPAREN, yytext()); }
+<YYINITIAL> ")"				{ return tok(Sym.CLOSEPAREN, yytext()); }
+<YYINITIAL> "["				{ return tok(Sym.OPENBRACKET, yytext()); }
+<YYINITIAL> "]"				{ return tok(Sym.CLOSEBRACKET, yytext()); }
 
 <YYINITIAL> "+"				{ return tok(Sym.ADD, yytext()); }
 <YYINITIAL> "-"				{ return tok(Sym.SUB, yytext()); }
 <YYINITIAL> "*"				{ return tok(Sym.MULT, yytext()); }
 <YYINITIAL> "/"				{ return tok(Sym.DIV, yytext()); }
+<YYINITIAL> sum			        { return tok(Sym.SUM, yytext()); }
 
 
 <YYINITIAL> "<"				{ return tok(Sym.LT, yytext()); }
@@ -56,11 +57,11 @@ CHAR=(\\\"|\\\'|\\\\|\\t|\\n|[\x20-\x21\x23-\x26\x28-\x5B\x5D-\x7E])
 <YYINITIAL> in\?                        { return tok(Sym.INTEST, yytext()); }
 <YYINITIAL> in                          { return tok(Sym.IN, yytext()); }
 
-<YYINITIAL> ","				{ return tok(Sym.COMMA, yytext()); } 
+<YYINITIAL> ","				{ return tok(Sym.COMMA, yytext()); }
 <YYINITIAL> sizeof                      { return tok(Sym.SIZEOF, yytext()); }
 
-<YYINITIAL> ".~"			{ return tok(Sym.DOTINV, yytext()); } 
-<YYINITIAL> "."				{ return tok(Sym.DOT, yytext()); } 
+<YYINITIAL> ".~"			{ return tok(Sym.DOTINV, yytext()); }
+<YYINITIAL> "."				{ return tok(Sym.DOT, yytext()); }
 
 <YYINITIAL> "and"			{ return tok(Sym.AND, yytext()); }
 <YYINITIAL> "or" 			{ return tok(Sym.OR, yytext()); }

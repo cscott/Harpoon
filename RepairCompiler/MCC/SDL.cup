@@ -122,6 +122,7 @@ parser code {:
     terminal SUB; 
     terminal MULT; 
     terminal DIV;
+    terminal SUM;
 
     terminal NOT;
     terminal LT;

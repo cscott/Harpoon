@@ -132,6 +132,7 @@ parser code {:
     terminal SUB; 
     terminal MULT; 
     terminal DIV;
+    terminal SUM;
 
     terminal NOT;
     terminal LT;
@@ -140,7 +141,6 @@ parser code {:
     terminal GE;
     terminal EQ;
     terminal NE;
-
 
     terminal FORALL;
     terminal IN;
@@ -478,8 +478,17 @@ setexpr ::=
 	;
 	
 expr ::=
-	
-	ID:var
+
+	SUM OPENPAREN ID:set DOT ID:relation CLOSEPAREN
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode expr = new ParseNode("sumexpr", parser.curLine(3));
+	expr.addChild("dot").addChild("set", parser.curLine(3)).addChild(set);
+	expr.getChild("dot").addChild("relation", parser.curLine(1)).addChild(relation);
+	RESULT = expr;
+	:}
+
+	| ID:var
 	{:
 	debugMessage(PRODSTRING);
      	ParseNode expr = new ParseNode("expr", parser.curLine(1));	
