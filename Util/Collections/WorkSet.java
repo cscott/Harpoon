@@ -15,34 +15,35 @@ import java.util.Iterator;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.3.2.1 2002-02-27 08:37:54 cananian Exp $
+ * @version $Id: WorkSet.java,v 1.3.2.2 2002-02-27 22:24:15 cananian Exp $
  */
-public class WorkSet extends java.util.AbstractSet implements Worklist{
-    private /*final*/ HashMap hm;
-    private EntryList listhead = EntryList.init(); // header and footer nodes.
-    private EntryList listfoot = listhead.next;
+public class WorkSet<E> extends java.util.AbstractSet<E> implements Worklist<E>
+{
+    private /*final*/ HashMap<E,EntryList<E>> hm;
+    private EntryList<E> listhead = EntryList.init(); // header and footer nodes.
+    private EntryList<E> listfoot = listhead.next;
     private final static boolean debug=false; // turn on consistency checks.
     
     /** Creates a new, empty <code>WorkSet</code> with a default capacity
      *  and load factor. */
     public WorkSet() {
-	hm = new HashMap();
+	hm = new HashMap<E,EntryList<E>>();
     }
     /** Constructs a new, empty <code>WorkSet</code> with the specified
      *  initial capacity and default load factor. */
     public WorkSet(int initialCapacity) {
-	hm = new HashMap(initialCapacity);
+	hm = new HashMap<E,EntryList<E>>(initialCapacity);
     }
     /** Constructs a new, empty <code>WorkSet</code> with the specified
      *  initial capacity and the specified load factor. */
     public WorkSet(int initialCapacity, float loadFactor) {
-	hm = new HashMap(initialCapacity, loadFactor);
+	hm = new HashMap<E,EntryList<E>>(initialCapacity, loadFactor);
     }
     /** Constructs a new <code>WorkSet</code> with the contents of the
      *  specified <code>Collection</code>. */
-    public WorkSet(java.util.Collection c) {
+    public WorkSet(java.util.Collection<E> c) {
 	// make hash map about twice as big as the collection.
-	hm = new HashMap(Math.max(2*c.size(),11));
+	hm = new HashMap<E,EntryList<E>>(Math.max(2*c.size(),11));
 	addAll(c);
     }
 
@@ -50,10 +51,10 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
      *  if the element is not already present in the set.  Makes no change
      *  to the set and returns false if the element is already in the set.
      */
-    public boolean addFirst(Object o) {
+    public boolean addFirst(E o) {
 	if (o==null) throw new NullPointerException();
 	if (hm.containsKey(o)) return false;
-	EntryList nel = new EntryList(o);
+	EntryList<E> nel = new EntryList<E>(o);
 	listhead.add(nel);
 	hm.put(o, nel);
 	// verify list/set correspondence.
@@ -64,10 +65,10 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
      *  if the element is not already present in the set.  Makes no change
      *  to the set and returns false if the element is already in the set.
      */
-    public boolean addLast(Object o) {
+    public boolean addLast(E o) {
 	if (o==null) throw new NullPointerException();
 	if (hm.containsKey(o)) return false;
-	EntryList nel = new EntryList(o);
+	EntryList<E> nel = new EntryList<E>(o);
 	listfoot.prev.add(nel);
 	hm.put(o, nel);
 	// verify list/set correspondence.
@@ -75,27 +76,27 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 	return true;
     }
     /** Returns the first element in the ordered set. */
-    public Object getFirst() {
+    public E getFirst() {
 	if (isEmpty()) throw new java.util.NoSuchElementException();
 	return listhead.next.o;
     }
     /** Returns the last element in the ordered set. */
-    public Object getLast() {
+    public E getLast() {
 	if (isEmpty()) throw new java.util.NoSuchElementException();
 	return listfoot.prev.o;
     }
     /** Removes the first element in the ordered set and returns it. */
-    public Object removeFirst() {
+    public E removeFirst() {
 	if (isEmpty()) throw new java.util.NoSuchElementException();
-	Object o = listhead.next.o;
+	E o = listhead.next.o;
 	hm.remove(o);
 	listhead.next.remove();
 	return o;
     }
     /** Removes the last element in the ordered set and returns it. */
-    public Object removeLast() {
+    public E removeLast() {
 	if (isEmpty()) throw new java.util.NoSuchElementException();
-	Object o = listfoot.prev.o;
+	E o = listfoot.prev.o;
 	hm.remove(o);
 	listfoot.prev.remove();
 	return o;
@@ -104,7 +105,7 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
     /** Looks at the object as the top of this <code>WorkSet</code>
      *  (treating it as a <code>Stack</code>) without removing it
      *  from the set/stack. */
-    public Object peek() { return getLast(); }
+    public E peek() { return getLast(); }
 
     /** Removes some item from this and return it (Worklist adaptor
 	method). 
@@ -116,12 +117,12 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 			     and returns <code>item</code>. Else does
 			     nothing.
     */
-    public Object pull() { return removeLast(); }
+    public E pull() { return removeLast(); }
 
     /** Removes the item at the top of this <code>WorkSet</code>
      *  (treating it as a <code>Stack</code>) and returns that object
      *  as the value of this function. */
-    public Object pop() { return removeLast(); }
+    public E pop() { return removeLast(); }
 
     /** Pushes item onto the top of this <code>WorkSet</code> (treating
      *  it as a <code>Stack</code>), if it is not already there.
@@ -133,14 +134,14 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 			     <code>item</code> to <code>this</code>.
 			     Else does nothing. 
     */
-    public void push(Object item) {
+    public void push(E item) {
 	this.add(item);
     }
 
     /** Adds the object to the set and returns true if the element
      *  is not already present.  Otherwise makes no change to the
      *  set and returns false. */
-    public boolean add(Object o) { return addLast(o); }
+    public boolean add(E o) { return addLast(o); }
 
     /** Removes all elements from the set. */
     public void clear() {
@@ -164,16 +165,16 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 	return (listhead.next == listfoot);
     }
     /** Efficient set iterator. */
-    public Iterator iterator() {
-	return new Iterator() {
-	    EntryList elp = listhead;
+    public Iterator<E> iterator() {
+	return new Iterator<E>() {
+	    EntryList<E> elp = listhead;
 	    public boolean hasNext() {
 		return elp.next.next!=null; /* remember to skip FOOTER node */
 	    }
-	    public Object next() {
+	    public E next() {
 		if (!hasNext())
 		    throw new java.util.NoSuchElementException();
-		Object o=elp.next.o; elp=elp.next; return o;
+		E o=elp.next.o; elp=elp.next; return o;
 	    }
 	    public void remove() {
 		if (elp==listhead) throw new IllegalStateException();
@@ -187,7 +188,7 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
     public boolean remove(Object o) {
 	if (!hm.containsKey(o)) return false;
 	// remove from hashmap
-	EntryList elp = (EntryList) hm.remove(o);
+	EntryList<E> elp = hm.remove(o);
 	// remove from linked list.
 	elp.remove();
 	// verify list/set correspondence.
@@ -197,14 +198,14 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
     public int size() { return hm.size(); }
 
     // INNER CLASS. -------------------------------------------
-    private static final class EntryList {
-	final Object o;
-	EntryList prev=null, next=null;
-	EntryList(Object o) { this.o = o; }
+    private static final class EntryList<E> {
+	final E o;
+	EntryList<E> prev=null, next=null;
+	EntryList(E o) { this.o = o; }
 
 	public String toString() {
 	    StringBuffer sb = new StringBuffer("[");
-	    for (EntryList elp = this; elp!=null; elp=elp.next) {
+	    for (EntryList<E> elp = this; elp!=null; elp=elp.next) {
 		sb.append(elp.o);
 		if (elp.next!=null)
 		    sb.append(", ");
@@ -212,10 +213,10 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 	    sb.append(']');
 	    return sb.toString();
 	}
-	static boolean equals(EntryList el, java.util.Collection c) {
+	static <T1,T2> boolean equals(EntryList<T1> el, java.util.Collection<T2> c) {
 	    int size=0;
 	    // remember that header and footer are skipped!
-	    for (EntryList elp=el.next; elp.next!=null; elp=elp.next, size++)
+	    for (EntryList<T1> elp=el.next; elp.next!=null; elp=elp.next, size++)
 		if (!c.contains(elp.o)) return false;
 	    if (size!=c.size()) return false;
 	    return true;
@@ -229,15 +230,15 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 	    this.next = this.prev = null; // safety.
 	}
 	/** Link in the supplied entry after this one. */
-	void add(EntryList nel) {
+	void add(EntryList<E> nel) {
 	    nel.next = this.next;
 	    nel.prev = this;
 	    this.next = nel.next.prev = nel;
 	}
 	// return a list with only a header and footer node.
-	static EntryList init() {
-	    EntryList header = new EntryList(null);
-	    EntryList footer = new EntryList(null);
+	static <T> EntryList<T> init() {
+	    EntryList<T> header = new EntryList<T>(null);
+	    EntryList<T> footer = new EntryList<T>(null);
 	    header.next = footer;
 	    footer.prev = header;
 	    return header;

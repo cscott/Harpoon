@@ -11,57 +11,58 @@ import java.util.Iterator;
     views of the mappings it maintains.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: GenericInvertibleMap.java,v 1.2 2002-02-25 21:09:04 cananian Exp $
+    @version $Id: GenericInvertibleMap.java,v 1.2.2.1 2002-02-27 22:24:13 cananian Exp $
 */
-public class GenericInvertibleMap extends MapWrapper implements InvertibleMap {
+public class GenericInvertibleMap<K,V>
+    extends MapWrapper<K,V> implements InvertibleMap<K,V> {
     // inverted map
-    private MultiMap imap;
+    private MultiMap<V,K> imap;
 
     /** Constructs an invertible map backed by a HashMap.
      */
     public GenericInvertibleMap() {
-	this(Factories.hashMapFactory, new MultiMap.Factory());
+	this(Factories.hashMapFactory(), new MultiMapFactory<V,K>());
     }
 
     /** Constructs an invertible map backed by a map constructed by
 	<code>mf</code> and an inverted map constructed by
 	<code>mmf</code>. 
      */
-    public GenericInvertibleMap(MapFactory mf, MultiMap.Factory mmf) {
+    public GenericInvertibleMap(MapFactory<K,V> mf, MultiMapFactory<V,K> mmf) {
 	super(mf.makeMap());
 	imap = mmf.makeMultiMap();
     }
 
-    public GenericInvertibleMap(Map m) {
+    public GenericInvertibleMap(Map<K,V> m) {
 	this();
 	putAll(m);
     }
 
     /** Returns an unmodifiable inverted view of <code>this</code>.
      */
-    public MultiMap invert() {
+    public MultiMap<V,K> invert() {
 	return UnmodifiableMultiMap.proxy(imap);
     }
 
-    public Object put(Object key, Object value) {
-	Object old = super.put(key, value);
+    public V put(K key, V value) {
+	V old = super.put(key, value);
 	imap.remove(old, key);
 	imap.add(value, key);
 	return old;
     }
 
-    public void putAll(Map m) {
+    public void putAll(Map<K,V> m) {
 	super.putAll(m);
-	Iterator entries = m.entrySet().iterator();
+	Iterator<Map.Entry<K,V>> entries = m.entrySet().iterator();
 	while(entries.hasNext()) {
-	    Map.Entry e = (Map.Entry) entries.next();
+	    Map.Entry<K,V> e = entries.next();
 	    imap.add(e.getValue(), e.getKey());
 	}
     }
     
-    public Object remove(Object key) {
-	Object r = super.remove(key);
-	imap.remove(r, key);
+    public V remove(Object key) {
+	V r = super.remove(key);
+	imap.remove(r, (K) key);
 	return r;
     }
 }

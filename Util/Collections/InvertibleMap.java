@@ -16,9 +16,9 @@ package harpoon.Util.Collections;
     the returned <code>MultiMap</code>).
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InvertibleMap.java,v 1.2 2002-02-25 21:09:04 cananian Exp $
+    @version $Id: InvertibleMap.java,v 1.2.2.1 2002-02-27 22:24:13 cananian Exp $
 */
-public interface InvertibleMap extends java.util.Map {
+public interface InvertibleMap<K,V> extends java.util.Map<K,V> {
     /** Returns a inverted view of <code>this</code>.
 	Thus, if <code>this</code> is a <code>Map</code> with domain A
 	and range B, the returned <code>MultiMap</code>,
@@ -28,5 +28,5 @@ public interface InvertibleMap extends java.util.Map {
 	each <em>a</em> in <em>c</em> maps to <em>b</em> in
 	<code>this</code>. 
      */
-    public MultiMap invert();
+    public MultiMap<V,K> invert();
 }

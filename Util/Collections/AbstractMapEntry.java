@@ -13,15 +13,15 @@ import java.util.Map;
  * an <code>UnsupportedOperationException</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractMapEntry.java,v 1.2 2002-02-25 21:09:03 cananian Exp $ */
-public abstract class AbstractMapEntry implements Map.Entry {
+ * @version $Id: AbstractMapEntry.java,v 1.2.2.1 2002-02-27 22:24:13 cananian Exp $ */
+public abstract class AbstractMapEntry<K,V> implements Map.Entry<K,V> {
     /** Returns the key corresponding to this entry. */
-    public abstract Object getKey();
+    public abstract K getKey();
     /** Returns the value corresponding to this entry.  If the mapping
      *  has been removed from the backing map (by the iterator's
      *  <code>remove()</code> operation), the results of this call are
      *  undefined. */
-    public abstract Object getValue();
+    public abstract V getValue();
     /** Replaces the value corresponding to this entry with the specified
      *  value (optional operation).  (Writes through to the map.)  The
      *  behavior of this call is undefined if the mapping has already been
@@ -29,7 +29,7 @@ public abstract class AbstractMapEntry implements Map.Entry {
      *  operation).
      *  @return old value corresponding to entry.
      */
-    public Object setValue(Object value) {
+    public V setValue(V value) {
 	throw new UnsupportedOperationException();
     }
     /** Returns a human-readable representation of this map entry. */

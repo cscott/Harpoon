@@ -13,42 +13,52 @@ import java.util.Arrays;
     Subclasses should implement constructions of specific types of  
     <code>List</code>s.  <code>ListFactory</code> also has a set of
     static helper methods for building <code>List</code> objects. 
-
+    <p>
+    Note also that the current limitations on parametric types in
+    Java mean that we can't easily type this class as
+    <code>ListFactory&lt;L extends List&lt;V&gt;,V&gt;</code>,
+    as <code>ListFactory&lt;LinkedList&lt;V&gt;,V&gt;</code> is not
+    a subtype of <code>ListFactory&lt;List&lt;V&gt;,V&gt;</code>,
+    even though <code>LinkedList</code> is a subtype of <code>List</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ListFactory.java,v 1.2 2002-02-25 21:09:05 cananian Exp $
+ * @version $Id: ListFactory.java,v 1.2.2.1 2002-02-27 22:24:13 cananian Exp $
  */
-public abstract class ListFactory extends CollectionFactory {
+public abstract class ListFactory<V> extends CollectionFactory<V> {
     
     /** Creates a <code>ListFactory</code>. */
     public ListFactory() {
-        
+        super();
     }
     
-    public final Collection makeCollection(int initCapacity) {
+    public final List<V> makeCollection() {
+	return makeList();
+    }
+
+    public final List<V> makeCollection(int initCapacity) {
 	return makeList(initCapacity);
     }
 
-    public final Collection makeCollection(Collection c) {
+    public final List<V> makeCollection(Collection<V> c) {
 	return makeList(c);
     }
 
     /** Generates a new, mutable, empty <code>List</code>. */
-    public final List makeList() {
+    public List<V> makeList() {
 	return makeList(Collections.EMPTY_LIST);
     }
 
     /** Generates a new, mutable, empty <code>List</code>, using 
 	<code>initialCapacity</code> as a hint to use for the capacity
 	for the produced <code>List</code>. */
-    public List makeList(int initialCapacity) {
+    public List<V> makeList(int initialCapacity) {
 	return makeList();
     }
 
     /** Generates a new mutable <code>List</code>, using the elements
 	of <code>c</code> as a template for its initial contents. 
     */
-    public abstract List makeList(Collection c); 
+    public abstract List<V> makeList(Collection<V> c); 
 
 
     /** Creates and returns an unmodifiable <code>List</code> view of
@@ -72,15 +82,15 @@ public abstract class ListFactory extends CollectionFactory {
 	<code>List</code>, but even changes to <code>lists</code>
 	itself (adding or removing lists) are also reflected.
     */
-    public static List concatenate(final List lists) {
-	return new AbstractList(){
-	    public Object get(int index) {
+    public static <E> List<E> concatenate(final List<List<E>> lists) {
+	return new AbstractList<E>(){
+	    public E get(int index) {
 		int origIndex = index;
 		int totalSize = 0;
 		if (index < 0) 
 		    throw new IndexOutOfBoundsException(""+origIndex+" < 0"); 
 		int lindex = 0;
-		List l = (List) lists.get(lindex);
+		List<E> l = lists.get(lindex);
 		totalSize += l.size();
 		
 		while(true) {
@@ -90,7 +100,7 @@ public abstract class ListFactory extends CollectionFactory {
 			index -= l.size();
 			lindex++; 
 			if(lindex < lists.size()) {
-			    l = (List) lists.get(lindex);
+			    l = lists.get(lindex);
 			    totalSize += l.size();
 			} else {
 			    throw new IndexOutOfBoundsException
@@ -102,7 +112,7 @@ public abstract class ListFactory extends CollectionFactory {
 	    public int size() {
 		int sz = 0; 
 		for(int i=0; i<lists.size(); i++) {
-		    sz += ((List)lists.get(i)).size();
+		    sz += lists.get(i).size();
 		}
 		return sz;
 	    }
@@ -128,16 +138,16 @@ public abstract class ListFactory extends CollectionFactory {
 	reflected in <code>this</code>. 
 
     */
-    public static List concatenate(final List[] lists) {
+    public static <E> List<E> concatenate(final List<E>[] lists) {
 	return concatenate(Arrays.asList(lists));
     }
 
     /** Creates and returns an immutable <code>List</code> of one element. 
 	<BR> <B>effects:</B> returns the list [ o ]
      */
-    public static List singleton(final Object o) {
-	return new AbstractList() {
-	    public Object get(int index) {
+    public static <E> List<E> singleton(final E o) {
+	return new AbstractList<E>() {
+	    public E get(int index) {
 		if(index==0) return o;
 		throw new IndexOutOfBoundsException
 			(""+index+" is out of bounds for list of size 1"); 

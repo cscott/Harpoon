@@ -34,6 +34,7 @@ import harpoon.Util.Util;
 import harpoon.Util.Default;
 import harpoon.Util.Collections.LinearMap;
 import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Collections.MultiMapFactory;
 import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.CombineIterator;
@@ -81,7 +82,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.3.2.1 2002-02-27 08:31:21 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.3.2.2 2002-02-27 22:23:56 cananian Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -965,7 +966,7 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	      subsequent uses in the block
     */
     class WebInfo {
-	MultiMap.Factory mmf = new MultiMap.Factory();
+	MultiMapFactory mmf = new MultiMapFactory();
 	
 	MultiMap in = new GenericMultiMap(); // Map[Temp, [Web] ]
 	MultiMap out = new GenericMultiMap(); // Map[Temp, [Web] ]

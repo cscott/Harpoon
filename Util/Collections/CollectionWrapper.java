@@ -15,23 +15,23 @@ import java.util.Collection;
  * AbstractCollection's interface
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CollectionWrapper.java,v 1.2 2002-02-25 21:09:04 cananian Exp $
+ * @version $Id: CollectionWrapper.java,v 1.2.2.1 2002-02-27 22:24:13 cananian Exp $
  */
-public class CollectionWrapper implements Collection {
+public class CollectionWrapper<E> implements Collection<E> {
     
     /** Collection backing <code>this</code>. */
-    protected final Collection b; 
+    protected final Collection<E> b; 
 
     /** Creates a <code>CollectionWrapper</code>. */
-    public CollectionWrapper(Collection c) {
+    public CollectionWrapper(Collection<E> c) {
         this.b = c;
     }
     
-    public boolean add(Object o) {
+    public boolean add(E o) {
 	return b.add(o);
     }
 
-    public boolean addAll(Collection c) {
+    public boolean addAll(Collection<E> c) {
 	return b.addAll(c);
     }
 
@@ -43,7 +43,7 @@ public class CollectionWrapper implements Collection {
 	return b.contains(o);
     }
     
-    public boolean containsAll(Collection c) {
+    public <T> boolean containsAll(Collection<T> c) {
 	return b.containsAll(c);
     }
 
@@ -51,7 +51,7 @@ public class CollectionWrapper implements Collection {
 	return b.isEmpty();
     }
 
-    public Iterator iterator() {
+    public Iterator<E> iterator() {
 	return b.iterator();
     }
 
@@ -59,11 +59,11 @@ public class CollectionWrapper implements Collection {
 	return b.remove(o);
     }
     
-    public boolean removeAll(Collection c) {
+    public <T> boolean removeAll(Collection<T> c) {
 	return b.removeAll(c);
     }
 
-    public boolean retainAll(Collection c) {
+    public <T> boolean retainAll(Collection<T> c) {
 	return b.retainAll(c);
     }
 
@@ -75,7 +75,7 @@ public class CollectionWrapper implements Collection {
 	return b.toArray();
     }
     
-    public Object[] toArray(Object[] a) {
+    public <T> T[] toArray(T[] a) {
 	return b.toArray(a);
     }
     

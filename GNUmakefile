@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.64.2.1 2002-02-27 08:29:59 cananian Exp $
+# $Id: GNUmakefile,v 1.64.2.2 2002-02-27 22:23:33 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -7,6 +7,7 @@ JAVA:=java
 JFLAGS=-d . -g
 JFLAGSVERB=#-verbose -J-Djavac.pipe.output=true
 JIKES:=jikes $(JIKES_OPT)
+JCC5=/home/cananian/jsr14_adding_generics-1_0-ea/scripts/javac -source 1.4 #-warnunchecked
 JCC=javac -J-mx64m -source 1.4
 JDOC=javadoc
 JAR=jar
@@ -143,6 +144,23 @@ java:	$(ALLSOURCE) $(PROPERTIES)
 #	@${JCC} ${JFLAGS} ${JFLAGSVERB} IR/Tree/Tree.java $(filter-out IR/Tree/Tree.java, $(ALLSOURCE)) | \
 #		egrep -v '^\[[lc]'
 	@${JCC} ${JFLAGS} $(ALLSOURCE)
+	@if [ -f stubbed-out ]; then \
+	  $(RM) `sort -u stubbed-out`; \
+	  $(MAKE) --no-print-directory PASS=2 `sort -u stubbed-out` || exit 1; \
+	  echo Rebuilding `sort -u stubbed-out`; \
+	  ${JCC} ${JFLAGS} `sort -u stubbed-out` || exit 1; \
+	  $(RM) stubbed-out; \
+	fi 
+	@$(MAKE) --no-print-directory properties
+	touch java
+
+java5:	PASS = 1
+java5:	$(ALLSOURCE) $(PROPERTIES) gj-files
+	if [ ! -d harpoon ]; then \
+	  $(MAKE) first; \
+	fi
+	@${JCC5} ${JFLAGS} $(shell grep -v "^#" gj-files)
+	@${JCC} ${JFLAGS} $(filter-out $(shell grep -v "^#" gj-files), $(ALLSOURCE))
 	@if [ -f stubbed-out ]; then \
 	  $(RM) `sort -u stubbed-out`; \
 	  $(MAKE) --no-print-directory PASS=2 `sort -u stubbed-out` || exit 1; \

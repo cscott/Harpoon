@@ -83,35 +83,9 @@ import java.util.Map;
 	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.2 2002-02-25 21:09:09 cananian Exp $
+    @version $Id: MultiMap.java,v 1.2.2.1 2002-02-27 22:24:13 cananian Exp $
  */
-public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
-
-    /** <code>MultiMap.Factory</code> is a <code>MultiMap</code>
-	generator. 
-     */
-    public static class Factory extends MapFactory {
-	public Map makeMap(Map map) {
-	    return makeMultiMap(map);
-	}
-
-	public MultiMap makeMultiMap() {
-	    return new GenericMultiMap();
-	}
-	
-	/** Creates a new <code>MultiMap</code> initialized with all 
-	    of the <code>Map.Entry</code>s in <code>map</code>
-	 */
-	public MultiMap makeMultiMap(Map map) {
-	    return new GenericMultiMap(map);
-	}
-
-	public MultiMap makeMultiMap(MapFactory mf, CollectionFactory cf) {
-	    return new GenericMultiMap(mf, cf);
-	}
-    } 
-
-
+public interface MultiMap<K,V> extends Map<K,V>, harpoon.Util.BinaryRelation<K,V> {
     /** Returns some arbitrary value from the collection of values to
 	which this map maps the specified key.  Returns
 	<code>null</code> if the map contains no mapping for the key;
@@ -123,14 +97,14 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 	modify <code>this</code>, then <code>get</code> will operate
 	just as it would in any other <code>Map</code>.  
     */
-    public Object get(Object key);
+    public V get(Object key);
 
     /** Associates the specified value with the specified key in this
 	map, after removing all old values associated with the key.
 	Returns some value that was previously associated with the
 	specified key, or <code>null</code> if no values were
 	associated previously.  */
-    public Object put(Object key, Object value);
+    public V put(K key, V value);
 
     /** Copies the mappings from the specified map to this
 	map, after removing all old values associated with the key.  Note
@@ -142,7 +116,7 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 	another <code>MultiMap</code>, use
 	<code>addAll(MultiMap)</code>.
     */
-    public void putAll(Map t);
+    public void putAll(Map<K,V> t);
 
     /** Removes mappings from key to all associated values from this map.
      *  This is consistent with the <code>Map</code> definition of
@@ -155,7 +129,7 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
      *  associated <code>null</code> with the given key (in addition
      *  to possibly other values).
      */
-    public Object remove(Object key);
+    public V remove(Object key);
 
     /** Removes a mapping from key to value from this map if present.
 
@@ -166,7 +140,7 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 	Returns true if <code>this</code> was modified as a result of
 	this operation, else returns false.
     */
-    boolean remove(Object key, Object value);
+    boolean remove(K key, V value);
     
     /** Ensures that <code>this</code> contains an association from
 	<code>key</code> to <code>value</code>.
@@ -176,7 +150,7 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 	@return <code>true</code> if this mapping changed as a result of
 	        the call
     */
-    boolean add(Object key, Object value);
+    boolean add(K key, V value);
 
     /** Adds to the current mappings: associations for
 	<code>key</code> to each value in <code>values</code>.  
@@ -186,10 +160,10 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 	@return <code>true</code> if this mapping changed as a result
 	        of the call
     */
-    boolean addAll(Object key, Collection values);
+    boolean addAll(K key, Collection<V> values);
 
     /** Adds all mappings in the given multimap to this multimap. */
-    boolean addAll(MultiMap mm);
+    boolean addAll(MultiMap<K,V> mm);
 
     /** Removes from the current mappings: associations for
 	<code>key</code> to any value not in <code>values</code>. 
@@ -199,7 +173,7 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 	@return <code>true</code> if this mapping changed as a result
 	        of the call
     */
-    boolean retainAll(Object key, Collection values);
+    boolean retainAll(K key, Collection<V> values);
 
     /** Removes from the current mappings: associations for
 	<code>key</code> to any value in <code>values</code>.
@@ -209,7 +183,7 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 	@return <code>true</code> if this mapping changed as a result
 	        of the call
     */
-    boolean removeAll(Object key, Collection values);
+    boolean removeAll(K key, Collection<V> values);
 
     /** Returns the collection of Values associated with
 	<code>key</code>.  Modifications to the returned
@@ -219,17 +193,21 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 	<code>Collection</code> and returns it.
 	(<code>MultiMap</code> specific operation). 
     */
-    Collection getValues(Object key);
+    Collection<V> getValues(K key);
 
     /** Returns true if <code>a</code> has a mapping to <code>b</code>
 	in <code>this</code>.
 	(<code>MultiMap</code> specific operation).
     */
-    public boolean contains(Object a, Object b);
+    public boolean contains(K a, V b);
 
     /** Returns the number of key-value mappings in this map (keys which
      *  map to multiple values count multiple times). */
     public int size();
+
+    /** Returns a <code>Set</code> view that allows you to recapture
+     *  the <code>MultiMap</code> view. */
+    //public MultiMapSet<K,V> entrySet();
 } 
 
 

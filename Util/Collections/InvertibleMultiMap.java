@@ -18,9 +18,11 @@ package harpoon.Util.Collections;
  * <code>this.invert().invert()==this</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InvertibleMultiMap.java,v 1.2 2002-02-25 21:09:04 cananian Exp $
+ * @version $Id: InvertibleMultiMap.java,v 1.2.2.1 2002-02-27 22:24:13 cananian Exp $
  */
-public interface InvertibleMultiMap extends MultiMap {
+public interface InvertibleMultiMap<K,V> extends MultiMap<K,V>
+						 // XXX BUG IN JAVAC
+						 /*, InvertibleMap<K,V>*/ {
     /** Returns a inverted view of <code>this</code>.
 	Thus, if <code>this</code> is a <code>MultiMap</code> with domain A
 	and range B, the returned <code>MultiMap</code>,
@@ -30,5 +32,5 @@ public interface InvertibleMultiMap extends MultiMap {
 	if and only if <em>a</em> in <code>this</code> maps to
 	a collection containing <em>b</em>.
      */
-    public InvertibleMultiMap invert();
+    public InvertibleMultiMap<V,K> invert();
 }
