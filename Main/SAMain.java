@@ -48,7 +48,7 @@ import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
 import harpoon.Analysis.PointerAnalysis.InstrumentAllocs;
 import harpoon.Analysis.PreciseGC.MRA;
 import harpoon.Analysis.PreciseGC.WriteBarrierPrePass;
-import harpoon.Analysis.PreciseGC.WriteBarrierQuadPass;
+import harpoon.Analysis.PreciseGC.WriteBarrierStats;
 import harpoon.Analysis.PreciseGC.WriteBarrierTreePass;
 import harpoon.Analysis.Realtime.Realtime;
 
@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.9 2002-06-25 15:35:44 wbeebee Exp $
+ * @version $Id: SAMain.java,v 1.10 2002-06-25 18:16:28 kkz Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -161,6 +161,7 @@ public class SAMain extends harpoon.IR.Registration {
     static SyncTransformer syncTransformer = null;
 
     // Support for precise garbage collection
+    static boolean DYNAMICWBS = false;
     static boolean PRECISEGC = false;
     static boolean MULTITHREADED = false;
     static boolean WRITEBARRIERS = false;
@@ -169,7 +170,8 @@ public class SAMain extends harpoon.IR.Registration {
     static int wbOptLevel = 0; // no removals by default
     static FileOutputStream wbos = null;
     static PrintStream wbps = null;
-    static WriteBarrierQuadPass writeBarrier = null;
+    static WriteBarrierStats writeBarrierStats = null;
+    // static WriteBarrierQuadPass writeBarrier = null;
 
     public static void main(String[] args) {
 	hcf = // default code factory.
@@ -210,8 +212,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    assert wbOptLevel == 0 : "Write barrier removal not supported "+
 			"for multi-threaded programs.";
 	}
-	if (WRITEBARRIERS)
-	    assert PRECISEGC : "Write barrier option is valid only "+
+	if (WRITEBARRIERS || DYNAMICWBS)
+	    assert PRECISEGC : "Write barrier options are valid only "+
 			"for precise gc.";
 
 	MetaCallGraph mcg=null;
@@ -543,14 +545,14 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 
 	if (WRITEBARRIERS) {
-	    System.out.println
-		("Inserting write barriers for generational gc.");
+	    System.out.println("Using write barriers for generational gc.");
 	    if (wbOptLevel != 0)
 		System.out.println
 		    ("Removing write barriers at optimization level "+
 		     wbOptLevel+".");
 	    String rName = frame.getRuntime().resourcePath
 		("writebarrier-safe.properties");
+	    System.out.println(rName);
 	    if (WB_TRANSFORMS == 2 || WB_TRANSFORMS == 3) {
 		// transform recursive constructors
 		hcf = new harpoon.Analysis.PreciseGC.RCTransformer
@@ -569,9 +571,29 @@ public class SAMain extends harpoon.IR.Registration {
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
 	    hcf = new CachingCodeFactory(hcf);
-	    writeBarrier = new WriteBarrierQuadPass
-		(classHierarchy, hcf, linker, rName, wbOptLevel);
-	    hcf = writeBarrier.codeFactory();
+	    hcf = (new harpoon.Analysis.PreciseGC.WriteBarrierQuadPass
+		   (classHierarchy, hcf, linker, rName, wbOptLevel)).
+		codeFactory();
+	    // re-generate class hierarchy to handle added calls
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	}
+
+	if (DYNAMICWBS) {
+	    System.out.println
+		("Using dynamic write barriers for generational gc.");
+	    if (wbOptLevel == 1)
+		System.out.println("Optimistically removing write barriers.");
+	    harpoon.Analysis.PreciseGC.DynamicWBQuadPass dynamicWB = null;
+	    if (wbOptLevel == 1 || WB_STATISTICS) {
+		dynamicWB = new harpoon.Analysis.PreciseGC.DynamicWBQuadPass
+		    (hcf, linker);
+		hcf = dynamicWB.codeFactory();
+	    }
+	    hcf = (wbOptLevel == 0) ?
+		(new harpoon.Analysis.PreciseGC.WriteBarrierInserter
+		 (hcf, linker)).codeFactory() :
+		(new harpoon.Analysis.PreciseGC.WriteBarrierInserter
+		 (hcf, linker, dynamicWB)).codeFactory();
 	    // re-generate class hierarchy to handle added calls
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	}
@@ -606,20 +628,24 @@ public class SAMain extends harpoon.IR.Registration {
 	hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);
 //  	hcf = (new harpoon.Backend.Analysis.GCTraceStore()).codeFactory(hcf);
 
-	if (WRITEBARRIERS) {
+	if (WRITEBARRIERS || DYNAMICWBS) {
 	    // run constant propagation
 	    hcf = new harpoon.Analysis.Tree.ConstantPropagation(hcf).
 		codeFactory();
 	    // remove write barriers for assignment to constants
-	    hcf = writeBarrier.ceCodeFactory(frame, hcf);
+	    hcf = harpoon.Analysis.PreciseGC.WriteBarrierConstElim.codeFactory
+		(frame, hcf, linker);
 	    if (WB_STATISTICS) {
 		System.out.println("Compiling for write barrier statistics.");
 		if (wbps != null)
 		    wbps.println("\nWRITE BARRIER LIST FOR "+className);
-		hcf = writeBarrier.statsCodeFactory
-		    (frame, hcf, classHierarchy, wbps);
+		writeBarrierStats = 
+		    new harpoon.Analysis.PreciseGC.WriteBarrierStats
+		    (frame, hcf, classHierarchy, wbps, linker);
+		hcf = writeBarrierStats.codeFactory();
 	    } else {
-		hcf = writeBarrier.treeCodeFactory(frame, hcf, classHierarchy);
+		hcf = harpoon.Analysis.PreciseGC.WriteBarrierTreePass.
+		    codeFactory(hcf, frame, classHierarchy, linker);
 	    }
 	}
 
@@ -897,7 +923,9 @@ public class SAMain extends harpoon.IR.Registration {
 	  it=new CombineIterator(new Iterator[]
 				 { it, Default.singletonIterator(data) });
 	  if (WB_STATISTICS) {
-	      HData wbData = writeBarrier.getData(hclass, frame);
+	      assert writeBarrierStats != null :
+		  "WriteBarrierStats need to be run before WriteBarrierData.";
+	      HData wbData = writeBarrierStats.getData(hclass, frame);
 	      it=new CombineIterator
 		  (new Iterator[] { it, Default.singletonIterator(wbData) });
 	  }
@@ -956,7 +984,7 @@ public class SAMain extends harpoon.IR.Registration {
     protected static void parseOpts(String[] args) {
 	Getopt g = 
 	    new Getopt("SAMain", args, 
-		       "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Tmw::x::y::");
+		       "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Td::mw::x::y::");
 	
 	int c;
 	String arg;
@@ -975,10 +1003,27 @@ public class SAMain extends harpoon.IR.Registration {
 		linker = new Relinker(Loader.systemLinker);
 		DO_TRANSACTIONS = true;
 		break;
+	    case 'd': // Dynamic write barriers (KKZ)
+		DYNAMICWBS = true;
+		assert WRITEBARRIERS == false :
+		    "Only one of options -d and -w may be selected.";
+		arg = g.getOptarg();
+		if (arg != null) {
+		    try {
+			wbOptLevel = Integer.parseInt(arg);
+			assert wbOptLevel == 0 || wbOptLevel == 1;
+		    } catch (Exception e) {
+			System.err.println(e);
+			System.exit(1);
+		    }
+		}
+		break;
 	    case 'm': // Multi-threaded (KKZ)
 		MULTITHREADED = true; break;
 	    case 'w': // Add write barriers (KKZ)
 		WRITEBARRIERS = true;
+		assert DYNAMICWBS == false :
+		    "Only one of options -d and -w may be selected.";
 		arg = g.getOptarg();
 		if (arg != null) {
 		    try {

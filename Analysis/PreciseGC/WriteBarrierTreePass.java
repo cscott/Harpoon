@@ -59,7 +59,7 @@ import java.util.Map;
  * 
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierTreePass.java,v 1.4 2002-04-10 03:00:53 cananian Exp $
+ * @version $Id: WriteBarrierTreePass.java,v 1.5 2002-06-25 18:16:22 kkz Exp $
  */
 public abstract class WriteBarrierTreePass extends 
     harpoon.Analysis.Tree.Simplification {
@@ -70,11 +70,17 @@ public abstract class WriteBarrierTreePass extends
     /** Code factory for applying <code>WriteBarrierTreePass</code>
      *  to a canonical tree.  Clones the tree before doing
      *  transformation in-place. */
-    static HCodeFactory codeFactory(final HCodeFactory parent,
-				    final Frame f,
-				    final ClassHierarchy ch,
-				    final HMethod arrayHM,
-				    final HMethod fieldHM) {
+    static public HCodeFactory codeFactory(final HCodeFactory parent,
+					   final Frame f,
+					   final ClassHierarchy ch,
+					   final Linker linker) {
+	HClass WBC = linker.forName("harpoon.Runtime.PreciseGC.WriteBarrier");
+	HClass JLO = linker.forName("java.lang.Object");
+	HClass JLRF = linker.forName("java.lang.reflect.Field");
+	final HMethod arrayHM = WBC.getMethod("asc", new HClass[]
+					      {JLO,HClass.Int,JLO,HClass.Int});
+	final HMethod fieldHM = WBC.getMethod("fsc", new HClass[]
+					      {JLO,JLRF,JLO,HClass.Int});
 	assert parent.getCodeName().equals(CanonicalTreeCode.codename);
 	return Canonicalize.codeFactory(new HCodeFactory() {
 	    public HCode convert(HMethod m) {

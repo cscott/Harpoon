@@ -7,10 +7,12 @@ import harpoon.Analysis.Tree.Canonicalize;
 import harpoon.Analysis.Tree.ConstantPropagation;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Maps.NameMap;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.CanonicalTreeCode;
@@ -33,16 +35,16 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * <code>WriteBarrierConstElim</code> eliminates write barriers
- * on MOVEs that are assigned from constants. Constant 
- * propagation should probably be run beforehand for this pass
- * to make a difference.
+ * <code>WriteBarrierConstElim</code> operates on <code>Tree</code> form. 
+ * It eliminates write barriers on MOVEs that are assigned from constants. 
+ * Constant propagation should probably be run beforehand for this pass to 
+ * make a difference.
  * <p>
- * This pass must be run before <code>WriteBarrierTreePass<code>
- * to have any effect.
+ * If <code>WriteBarrierTreePass</code> is being used, it should be not be run
+ * until after this pass.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierConstElim.java,v 1.4 2002-04-10 03:00:53 cananian Exp $
+ * @version $Id: WriteBarrierConstElim.java,v 1.5 2002-06-25 18:16:22 kkz Exp $
  */
 public abstract class WriteBarrierConstElim extends 
     harpoon.Analysis.Tree.Simplification {
@@ -53,10 +55,16 @@ public abstract class WriteBarrierConstElim extends
     /** Code factory for applying <code>WriteBarrierConstElim/code>
      *  to a canonical tree.  Clones the tree before doing
      *  transformation in-place. */
-    static HCodeFactory codeFactory(final Frame f,
-				    final HCodeFactory parent,
-				    final HMethod arrayHM,
-				    final HMethod fieldHM) {
+    public static HCodeFactory codeFactory(final Frame f, 
+					   final HCodeFactory parent,
+					   final Linker linker) {
+	HClass WBC = linker.forName("harpoon.Runtime.PreciseGC.WriteBarrier");
+	HClass JLO = linker.forName("java.lang.Object");
+	HClass JLRF = linker.forName("java.lang.reflect.Field");
+	final HMethod arrayHM = WBC.getMethod("asc", new HClass[]
+					      {JLO,HClass.Int,JLO,HClass.Int});
+	final HMethod fieldHM = WBC.getMethod("fsc", new HClass[]
+					      {JLO,JLRF,JLO,HClass.Int});
 	assert parent.getCodeName().equals(CanonicalTreeCode.codename);
 	return Canonicalize.codeFactory(new HCodeFactory() {
 	    public HCode convert(HMethod m) {

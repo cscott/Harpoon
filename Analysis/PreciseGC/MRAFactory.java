@@ -5,6 +5,7 @@ package harpoon.Analysis.PreciseGC;
 
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Quads.CachingCallGraph;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.ClassFile.CachingCodeFactory;
@@ -46,11 +47,12 @@ import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
+import harpoon.Util.Collections.WorkSet;
+import harpoon.Util.Default;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
-import harpoon.Util.Collections.WorkSet;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -64,12 +66,15 @@ import java.util.Set;
  * <code>MRAFactory</code> generates <code>MRA</code>s.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: MRAFactory.java,v 1.6 2002-04-10 03:00:53 cananian Exp $
+ * @version $Id: MRAFactory.java,v 1.7 2002-06-25 18:16:22 kkz Exp $
  */
 public class MRAFactory {
     
+    //private static int iterations = 0;
+    //private static long time = 0;
+    
     private final ClassHierarchy ch;
-    private final CallGraph cg;
+    private CallGraph cg;
     private final HCodeFactory hcf;
     private final Map method2types;
     private Set safeMethods;
@@ -77,30 +82,67 @@ public class MRAFactory {
     private final UseDefer ud;
     private final Map cache;
 
-    /** Creates an <code>MRAFactory</code>.  Requires that 
-     *  the <code>HCodeFactory</code> produce code in 
-     *  <code>Quad</code> form.  Note that some analysis
-     *  is done in the constructor.  If the code is
+    /** Creates an <code>MRAFactory</code>.  Requires a
+     *  quad-ssa or quad-ssi codefactory.  If the code is
      *  modified, a new <code>MRAFactory</code> is needed.
      *  For efficiency reasons, <code>hcf</code> should be
      *  a <code>CachingCodeFactory</code>.
      */
     public MRAFactory(ClassHierarchy ch, HCodeFactory hcf, Linker l, 
 		      String rName, int optLevel) {
+	// check that the codefactory produces the right type of code
+	/*
+	assert 
+	    hcf.getCodeName().equals("quad-ssi") ||
+	    hcf.getCodeName().equals("quad-ssa") :
+	    "MRAFactory requires quad-ssi or quad-ssa";
+	*/
 	this.ch = ch;
 	this.hcf = hcf;
-	this.cg = new CallGraphImpl(ch, hcf);
+	this.cg = new CachingCallGraph(new CallGraphImpl(ch, hcf));
 	this.cfger = CFGrapher.DEFAULT;
 	this.ud = UseDefer.DEFAULT;
 	this.cache = new HashMap();
+	/*
+	  System.out.print("\nMethod->Types timing: ");
+	  long start_time = System.currentTimeMillis();
+	*/
 	this.method2types = 
 	    (optLevel == 2 || optLevel == 3)? dynamicDispatchM2TMap(l, rName): 
 	    (optLevel == 4 || optLevel == 5)? createMethod2TypesMap(l, rName):
-	    new HashMap();
+	    Default.EMPTY_MAP;
+	/*
+	  System.out.println(System.currentTimeMillis() - start_time);
+	  System.out.print("Safe methods timing: ");
+	  start_time = System.currentTimeMillis();
+	*/
 	if (optLevel == 2 || optLevel == 4 || optLevel == 6)
 	    findSafeMethods();
 	else
 	    safeMethods = Collections.EMPTY_SET;
+	/*
+	  System.out.println(System.currentTimeMillis() - start_time + " ms");
+	  System.out.println(MRAFactory.iterations + " iterations");
+	  System.out.print("Analysis timing: ");
+	  int numMethods = 0;
+	  start_time = System.currentTimeMillis();
+	*/
+	// for timing reasons, force analysis to run
+	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); )
+	    {
+		Code c = (Code) hcf.convert((HMethod)it.next());
+		if (c != null) {
+		    mra(c);
+		    //numMethods++;
+		}
+	    }
+	/*
+	System.out.println(System.currentTimeMillis() - start_time + " ms");
+	System.out.println(MRAFactory.iterations + " iterations");
+	System.out.println(numMethods + " methods");
+	System.out.println("getPre outer loop: " + MRAFactory.time + " ms");
+	*/
+	this.cg = null; /* allow GC */
     }
 
     /** Returns an <code>MRA</code>. */
@@ -147,6 +189,26 @@ public class MRAFactory {
      */ 
     public Set getAllocatedTypes(HMethod hm) {
 	return (Set) method2types.get(hm);
+    }
+
+    private Map tryDDMethod2TypesMap(Linker linker, String resourceName) {
+	// start w/ an empty map
+	Map safe = new HashMap();
+	// add known native methods
+	for (Iterator it = parseResource(linker, resourceName).iterator();
+	     it.hasNext(); )
+	    safe.put((HMethod)it.next(), Collections.EMPTY_SET);
+	// add leaves of call graph
+	QuadVisitor qv = new QuadVisitor() {
+	    Set types = new HashSet();
+
+	    public void visit(ANEW q) { types.add(q.hclass()); }
+	    public void visit(NEW q)  { types.add(q.hclass()); }
+	    public void visit(MONITORENTER q) { assert false: 
+						"should not contain " + q; }
+	    public void visit(Quad q) { /* do nothing */ }
+	};
+	return safe;
     }
 
     /** Creates a <code>Map</code> of <code>HMethod</code>s
@@ -501,7 +563,7 @@ public class MRAFactory {
 		temps.addAll(ud.useC(q));
 		temps.addAll(ud.defC(q));
 	    }
-	    // save resultss
+	    // save results
 	    temps = Collections.unmodifiableSet(temps);
 	    // maps Temps to an array of 2 booleans
 	    // the first boolean is true iff
@@ -528,6 +590,7 @@ public class MRAFactory {
 	    toprocess.push((BasicBlock)bbf.getRoot());
 	    // keep going until we reached a fixed point
 	    while(!toprocess.isEmpty()) {
+		//MRAFactory.iterations++;
 		BasicBlock bb = (BasicBlock)toprocess.pull();
 		// construct the pre-Set
 		Tuple pre = getPre(bb);
@@ -627,18 +690,30 @@ public class MRAFactory {
 			    preceiver.add(phi.dst(j));
 			}
 		    }
+		    //long start_time = System.currentTimeMillis();
+
 		    // perform intersection
 		    if (i == 0) {
 			mra.putAll(pmra);
 			receiver.addAll(preceiver);
 		    } else {
+			//long start_time = System.currentTimeMillis();
+
 			intersect(mra, pmra);
+
+			/*
+			  MRAFactory.time += 
+			  (System.currentTimeMillis() - start_time);
+			*/
 			receiver.retainAll(preceiver);
 		    }
 		    // exceptions are just unioned
 		    except.addAll((Set) post.proj(1));
 		    // collect all allocations sites
 		    allocs.add((Quad) post.proj(2));
+
+		    //MRAFactory.time += 
+		    //	(System.currentTimeMillis() - start_time);
 		}
 	    } else {
 		// we may have joins that are not
@@ -888,7 +963,7 @@ public class MRAFactory {
 	    } else {
 		// m2 does not contain a mapping for t
 		// therefore, remove mapping from m1
-		m1.remove(m2);
+		m1.remove(t);
 	    }
 	}
     }

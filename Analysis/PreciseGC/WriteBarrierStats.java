@@ -11,6 +11,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.CONST;
@@ -43,12 +44,12 @@ import java.util.Set;
 
 
 /**
- * <code>WriteBarrierStats</code> emits data needed for gathering
- * write barrier statistics. Must be run before
- * <code>WriteBarrierTreePass</code> to have any effect.
+ * <code>WriteBarrierStats</code> emits data needed for gathering write 
+ * barrier statistics. This pass will have no effect if 
+ * <code>WriteBarrierTreePass</code> is also being used.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierStats.java,v 1.4 2002-04-10 03:00:53 cananian Exp $
+ * @version $Id: WriteBarrierStats.java,v 1.5 2002-06-25 18:16:22 kkz Exp $
  */
 public class WriteBarrierStats {
     
@@ -61,16 +62,23 @@ public class WriteBarrierStats {
     /** Creates a <code>WriteBarrierStats</code>, and
      *  performs conversion on all callable methods.
      */
-    protected WriteBarrierStats(Frame f, HCodeFactory parent,
-				ClassHierarchy ch, 
-				HMethod arraySC,
-				HMethod fieldSC,
-				PrintStream out) {
+    public WriteBarrierStats(Frame f, 
+			     HCodeFactory parent,
+			     ClassHierarchy ch,
+			     PrintStream out,
+			     Linker linker) {
 	this.ccf = new CachingCodeFactory(parent);
 	this.m = new HashMap();
 	this.cleared = new HashMap();
 	this.out = out;
 	NameMap nm = f.getRuntime().getNameMap();
+	HClass WBC = linker.forName("harpoon.Runtime.PreciseGC.WriteBarrier");
+	HClass JLO = linker.forName("java.lang.Object");
+	HClass JLRF = linker.forName("java.lang.reflect.Field");
+	final HMethod arraySC = WBC.getMethod("asc", new HClass[]
+					      {JLO,HClass.Int,JLO,HClass.Int});
+	final HMethod fieldSC = WBC.getMethod("fsc", new HClass[]
+					      {JLO,JLRF,JLO,HClass.Int});
 	this.tv = new CountBarrierVisitor(nm.label(arraySC), 
 					  nm.label(fieldSC), out);
 	// push all methods through
@@ -80,7 +88,7 @@ public class WriteBarrierStats {
 	}
     }
 
-    protected HCodeFactory codeFactory() {
+    public HCodeFactory codeFactory() {
 	return new HCodeFactory() {
 	    public HCode convert(HMethod hm) {
 		Code c = (Code) ccf.convert(hm);
@@ -103,8 +111,12 @@ public class WriteBarrierStats {
 	};
     }
 
-    protected int getCount() {
-	return tv.count;
+    /** returns <code>WriteBarrierData</code> object for inserting
+     *  static data needed to gather dynamic statistics about write
+     *  barriers.
+     */
+    public WriteBarrierData getData(HClass hc, Frame f) {
+	return new WriteBarrierData(hc, f, tv.count);
     }
 
     // performs a single conversion

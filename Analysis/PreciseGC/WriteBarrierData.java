@@ -24,9 +24,9 @@ import java.util.List;
  * be used in conjunction with <code>WriteBarrierStats</code>.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierData.java,v 1.4 2002-04-10 03:00:53 cananian Exp $
+ * @version $Id: WriteBarrierData.java,v 1.5 2002-06-25 18:16:22 kkz Exp $
  */
-public class WriteBarrierData extends harpoon.Backend.Runtime1.Data {
+class WriteBarrierData extends harpoon.Backend.Runtime1.Data {
 
     /** Creates a <code>WriteBarrierData</code> */
     WriteBarrierData(HClass hc, Frame f, int datum) {
