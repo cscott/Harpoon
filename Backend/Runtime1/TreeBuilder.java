@@ -47,6 +47,7 @@ import harpoon.IR.Tree.THROW;
 import harpoon.IR.Tree.UNOP;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
+import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
 import java.util.HashSet;
@@ -59,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.28 2000-07-14 17:23:50 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.29 2000-10-17 03:26:03 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -361,7 +362,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     {
 	final Label Lclaz = runtime.nameMap.label(classType);
 	// two cases: class or interface type.
-	if (classType.isInterface()) {
+	if (HClassUtil.baseClass(classType).isInterface()) {
 	    // interface type: linear search through interface list.
 	    // compile as:
 	    //    for (il=obj->claz->interfz; *il!=null; il++)

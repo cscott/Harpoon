@@ -15,6 +15,7 @@ import harpoon.IR.Tree.DATUM;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.SEGMENT;
+import harpoon.Util.HClassUtil;
 import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
 
@@ -26,7 +27,7 @@ import java.util.List;
  * <code>DataInterfaceList</code> lays out the expanded list of interfaces.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataInterfaceList.java,v 1.1.4.3 2000-01-10 05:08:35 cananian Exp $
+ * @version $Id: DataInterfaceList.java,v 1.1.4.4 2000-10-17 03:26:03 cananian Exp $
  */
 public class DataInterfaceList extends Data {
     final TreeBuilder m_tb;
@@ -50,6 +51,14 @@ public class DataInterfaceList extends Data {
 	stmlist.add(new LABEL(tf, null, m_nm.label(hc, "interfaces"), false));
 	// okay, now collect all the interfaces that this class implements.
 	List in = allInterfaces(hc);
+	// add all interfaces of the component class.
+	while (hc.isArray()) {
+	    hc = hc.getComponentType();
+	    for (Iterator it = allInterfaces(hc).iterator(); it.hasNext(); ) {
+		HClass hcc = (HClass) it.next();
+		in.add(HClassUtil.arrayClass(linker, hcc, 1));
+	    }
+	}
 	// filter out those not in the class hierarchy.
 	in.retainAll(ch.classes());
 	// and make a list of stms.
