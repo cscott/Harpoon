@@ -1,5 +1,5 @@
 // ParIntGraph.java, created Sun Jan  9 15:40:59 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.Collections;
 import java.util.LinkedList;
 
+import net.cscott.jutil.PersistentSet;
 
 import harpoon.Temp.Temp;
 import harpoon.IR.Quads.CALL;
@@ -30,9 +31,9 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.9 2004-02-08 03:20:03 cananian Exp $
+ * @version $Id: ParIntGraph.java,v 1.10 2004-03-06 21:52:24 salcianu Exp $
  */
-public class ParIntGraph implements java.io.Serializable {
+public class ParIntGraph implements java.io.Serializable, Cloneable {
 
     public static boolean DEBUG = false;
     public static boolean DEBUG2 = false;
@@ -69,6 +70,9 @@ public class ParIntGraph implements java.io.Serializable {
 	and the outside edges. <code>before(ei,eo)</code> is true if the
 	inside edge ei might be created before the ouside edge eo was read. */
     public EdgeOrdering eo;
+
+    /** Contains mutated fields. */
+    public PersistentSet<PAField> mutated;
 
     /** Creates a <code>ParIntGraph</code>. */
     public ParIntGraph() {
@@ -206,8 +210,7 @@ public class ParIntGraph implements java.io.Serializable {
 	return true;
     }
 
-    /** Private constructor for <code>clone</code> and 
-	<code>keepTheEssential</code>. */
+    /** Private constructor for <code>keepTheEssential</code>. */
     private ParIntGraph(PointsToGraph G, PAThreadMap tau, ActionRepository ar,
 			EdgeOrdering eo) {
 	this.G   = G;
@@ -219,27 +222,32 @@ public class ParIntGraph implements java.io.Serializable {
     /** <code>clone</code> produces a copy of the <code>this</code>
 	Parallel Interaction Graph. */
     public Object clone() {
-
 	long b_time = 
 	    PointerAnalysis.FINE_TIMING? System.currentTimeMillis() : 0;
 
-	ActionRepository _ar =
-	    PointerAnalysis.RECORD_ACTIONS ?
-	    (ActionRepository) ar.clone() : null;
+	ParIntGraph clone = null;
 
-	EdgeOrdering _eo = 
-	    PointerAnalysis.IGNORE_EO ? null : (EdgeOrdering) eo.clone();
-
-	ParIntGraph result = new ParIntGraph((PointsToGraph)G.clone(),
-					     (PAThreadMap)tau.clone(),
-					     _ar, _eo );
+	try {
+	    clone     = (ParIntGraph) super.clone();
+	    clone.G   = (PointsToGraph) G.clone();
+	    clone.tau = (PAThreadMap) tau.clone();
+	    clone.ar  = 
+		PointerAnalysis.RECORD_ACTIONS ?
+		(ActionRepository) ar.clone() : null;
+	    clone.eo  =
+		PointerAnalysis.IGNORE_EO ? null : 
+		(EdgeOrdering) eo.clone();	    
+	}
+	catch(CloneNotSupportedException e) {
+	    assert false; // should never happen
+	}
 
 	if(PointerAnalysis.FINE_TIMING) {
 	    long delta = System.currentTimeMillis() - b_time;
 	    total_cloning_time += delta;
 	}
 
-	return result;
+	return clone;
     }
 
     static long total_cloning_time = 0;
@@ -358,8 +366,8 @@ public class ParIntGraph implements java.io.Serializable {
     }
 
     
-    // return null if there is compresion is useless
-    // (i.e., no node is mapped to LOST except LOST itself).
+    // returns null if compresion is useless (i.e., no node is mapped
+    // to LOST except LOST itself).
     private Relation get_compression_map(final Set/*<PANode>*/ lost) {
 	// extend "lost" with newly discovered lost nodes
 	for(Object nodeO : allNodes()) {

@@ -30,7 +30,7 @@ import harpoon.Util.DataStructs.Relation;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.9 2004-03-05 22:18:14 salcianu Exp $
+ * @version $Id: Debug.java,v 1.10 2004-03-06 21:52:23 salcianu Exp $
  */
 public abstract class Debug implements java.io.Serializable {
 
@@ -130,7 +130,7 @@ public abstract class Debug implements java.io.Serializable {
 
 	for(SCComponent scc : ts_sccs.decrOrder()) {
 	    System.out.println("SCC" + scc.getId() + "{");
-	    Object nodes[] = scc.nodes();
+	    Object nodes[] = scc.nodes().toArray();
 	    Arrays.sort(nodes, harpoon.Util.UComp.uc);
 	    for(int i = 0; i < nodes.length; i++) 
 		show_lbb((LightBasicBlock) nodes[i]);
@@ -153,16 +153,12 @@ public abstract class Debug implements java.io.Serializable {
 
 	buffer.append("SCC" + scc.getId() + " (size " + scc.size() + ") {\n");
 
-	Object[] nodes_array = scc.nodes();
-	Set nodes = scc.nodeSet();
-	for(int i = 0; i < nodes_array.length; i++) {
-	    Object o = nodes_array[i];
+	for(Object o : scc.nodes()) {
 	    buffer.append(" ").append(o).append("\n");
-	    Object[] next = mcg.getCallees((MetaMethod) o);
 	    int k = 0;
-	    for(int j = 0; j < next.length; j++)
-		if(nodes.contains(next[j])) {
-		    buffer.append("   ").append(next[j]).append("\n");
+	    for(Object next : mcg.getCallees((MetaMethod) o))
+		if(scc.contains(next)) {
+		    buffer.append("   ").append(next).append("\n");
 		    k++;
 		}
 	    if(k > 0)
@@ -206,7 +202,7 @@ public abstract class Debug implements java.io.Serializable {
 	    if(PointerAnalysis.DEBUG_SCC)
 		System.out.print(Debug.sccToString(scc, mcg));
 	    counter++;
-	    mmethods += scc.nodeSet().size();
+	    mmethods += scc.nodes().size();
 	}
 	
 	if(PointerAnalysis.DEBUG_SCC)
@@ -229,10 +225,9 @@ public abstract class Debug implements java.io.Serializable {
 
 	for(SCComponent scc : scc_lbb_factory.computeSCCLBB(hm).decrOrder()) {
 	    nb_sccs++;
-	    Object[] lbbs = scc.nodes();
-	    nb_lbbs += lbbs.length;
-	    for(int i = 0; i < lbbs.length; i++)
-		nb_instrs += ((LightBasicBlock) lbbs[i]).getElements().length;
+	    nb_lbbs += scc.nodes().size();
+	    for(Object lbb0 : scc.nodes())
+		nb_instrs += ((LightBasicBlock) lbb0).getElements().length;
 	}
 
 	System.out.println("METHOD: " + hm);

@@ -82,7 +82,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.14 2004-03-05 15:38:05 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.15 2004-03-06 21:52:21 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -406,11 +406,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// they can be shared by many meta-methods derived from the same
 	// HMethod. Of course, I don't want the next analyzed meta-method
 	// to use the types computed for this one.
-	for(SCComponent scc : md.sccs) {
-	    Object[] ets = scc.nodes();
-	    for(int i = 0; i < ets.length; i++)
-		((ExactTemp) ets[i]).clearTypeSet();
-	}
+	for(SCComponent scc : md.sccs)
+	    for(Object ets0 : scc.nodes())
+		((ExactTemp) ets0).clearTypeSet();
     }
 
 
@@ -1005,7 +1003,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	System.out.println(md);
 	System.out.println("\nCOMPUTED TYPES:");
 	for(SCComponent scc : md.sccs) {
-	    for(Object etO : scc.nodeSet()) {
+	    for(Object etO : scc.nodes()) {
 		ExactTemp et = (ExactTemp) etO;
 		System.out.println("< " + et.t + ", " + 
 				   ((et.ud == ExactTemp.USE) ? "USE" : "DEF") +
@@ -1940,7 +1938,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	if(DEBUG)
 	    System.out.println("\n\nProcessing " + scc);
 	
-	W.addAll(scc.nodeSet());
+	W.addAll(scc.nodes());
 	while(!W.isEmpty()) {
 	    ExactTemp et = (ExactTemp) W.remove();
 
@@ -1962,7 +1960,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	}
 
 	if(DEBUG)
-	    for(Object etO : scc.nodeSet()){
+	    for(Object etO : scc.nodes()){
 		ExactTemp et = (ExactTemp) etO;
 		System.out.println("\n##:< " + et.shortDescription() + 
 				   " -> " + et.getTypeSet() + " >\n");

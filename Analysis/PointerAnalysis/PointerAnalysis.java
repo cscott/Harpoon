@@ -83,7 +83,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.20 2004-03-05 22:18:14 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.21 2004-03-06 21:52:24 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -215,6 +215,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	don't have any conflict with real fields. */
     public static final String ARRAY_CONTENT = "+ae+";
 
+    // Remove unreachable nodes
     public static final boolean DO_INTRA_PROC_TRIMMING = false;
 
     // meta call graph
@@ -260,7 +261,7 @@ public class PointerAnalysis implements java.io.Serializable {
     // Mapping MetaMethod -> ParIntGraph.
     private Map hash_proc_ext = new HashMap();
 
-    /** Creates a <code>PointerAnalysis</code>.
+    /** Creates a <code>PointerAnalysis</code> object.
      *
      *  @param mcg The (meta) Call Graph that models the caller-callee
      *  relation between methods.
@@ -379,7 +380,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	ParIntGraph new_pig = original_pig.csSpecialize(q);
 
 	if(!SAVE_MEMORY)
-	    map_mm.put(q,new_pig);
+	    map_mm.put(q, new_pig);
 
 	return new_pig;	
     }
@@ -442,12 +443,9 @@ public class PointerAnalysis implements java.io.Serializable {
 	System.out.println("threadExtInteraction for " + mm);
 
 	ParIntGraph pig = (ParIntGraph) getIntThreadInteraction(mm);
-	PANode[] nodes = getParamNodes(mm);
-	boolean is_main =
-	    mm.getHMethod().getName().equals("main");
-	
-	ParIntGraph shrinked_graph =
-	    pig.keepTheEssential(nodes, is_main);
+	boolean is_main = mm.getHMethod().getName().equals("main");
+	ParIntGraph shrinked_graph = 
+	    pig.keepTheEssential(getParamNodes(mm), is_main);
 	
 	// We try to correct some imprecisions in the analysis:
 	//  1. if the meta-method is not returning an Object, clear
@@ -582,7 +580,8 @@ public class PointerAnalysis implements java.io.Serializable {
 	long b_time = TIMING ? System.currentTimeMillis() : 0;
 
 	// if SCC composed of a native or abstract method, return immediately!
-	if(!analyzable(((MetaMethod) scc.nodes()[0]).getHMethod())) {
+	if(!analyzable(((MetaMethod) scc.nodes().iterator().next())
+		       .getHMethod())) {
 	    if(TIMING)
 		System.out.println((System.currentTimeMillis() - b_time) + 
 				   "ms + (unanalyzable)");
@@ -592,11 +591,12 @@ public class PointerAnalysis implements java.io.Serializable {
 	// add only the "exit" methods to the worklist (methods that
 	// call methods from outside their SCC); the other methods
 	// will be eventually added by the fixed point alg.
-	Object[] exits = scc.exits();
-	if(exits.length == 0) // leaf SCCs don't have an exit
-	    exits = scc.nodes();
-	for(int i = 0; i < exits.length; i++)
-	    W_inter_proc.add(exits[i]);
+	if(scc.exits().length != 0) {
+	    for(Object exit : scc.exits())
+		W_inter_proc.add(exit);
+	}
+	else // special case: leaf SCC -> add all
+	    W_inter_proc.addAll(scc.nodes());
 
 	while(!W_inter_proc.isEmpty()) {
 	    // grab a method from the worklist
@@ -651,9 +651,8 @@ public class PointerAnalysis implements java.io.Serializable {
 
 
     private void post_compress(SCComponent scc) {
-	Object[] methods = scc.nodes();
-	for(int i = 0; i < methods.length; i++) {
-	    MetaMethod mm = (MetaMethod) methods[i];
+	for(Object mm0 : scc.nodes()) {
+	    MetaMethod mm = (MetaMethod) mm0;
 
 	    PANode[] nodes = getParamNodes(mm);
 	    ParIntGraph pig = (ParIntGraph) hash_proc_ext.get(mm);
@@ -666,9 +665,8 @@ public class PointerAnalysis implements java.io.Serializable {
 
     // clean work data structs used by analyze_inter_proc_scc
     private void analyze_inter_proc_scc_clean(SCComponent scc) {
-	// 1. get rid of the cache from the scc_lbb factory; anyway, it is
-	// unuseful, since the methods from scc are never reanalyzed. 
-	// 1b. the info attached to the LBBs will be collected by the GCC too
+	// 1. get rid of the cache from the scc_lbb factory; anyway,
+	// it is useless, since scc's methods are never reanalyzed.
 	scc_lbb_factory.clear();
 	// 2. the meta methods of this SCC will never be revisited, so the
 	// specializations generated for the call sites inside them are not
@@ -687,13 +685,13 @@ public class PointerAnalysis implements java.io.Serializable {
     private ParIntGraph initial_pig = null;
 
     private void analyze_intra_proc(MetaMethod mm) {
-	analyze_intra_proc(mm, true);
+	_analyze_intra_proc(mm);
+	// clear the LightBasicBlock -> ParIntGraph mapping
+	lbb2pp.clear();
     }
 
     // Performs the intra-procedural pointer analysis of method mm.
-    // If clear_cache is true, the basic block -> dataflow info maps
-    // are erased at the end of the intra_proc_analysis.
-    private void analyze_intra_proc(MetaMethod mm, boolean clear_cache) {
+    private void _analyze_intra_proc(MetaMethod mm) {
 	long b_time = System.currentTimeMillis();
 	if(FINE_TIMING) reset_fine_timing();
 
@@ -714,13 +712,17 @@ public class PointerAnalysis implements java.io.Serializable {
 	for(SCComponent scc : ts_sccs.decrOrder())
 	    analyze_intra_proc_scc(scc);
 
-	// clear the LightBasicBlock -> ParIntGraph mapping
-	if(clear_cache)
-	    clear_lbb2pig(mm); // <- annotation style
-
 	if(FINE_TIMING) show_fine_timing(b_time);
     }
 
+
+    Map/*<LightBasicBlock,ParIntGraphPair>*/ lbb2pp = new HashMap();
+    private ParIntGraphPair getPIGPair(LightBasicBlock lbb) {
+	return (ParIntGraphPair) lbb2pp.get(lbb);
+    }
+    private void putPIGPair(LightBasicBlock lbb, ParIntGraphPair pp) {
+	lbb2pp.put(lbb, pp);
+    }
     
     private static void reset_fine_timing() {
 	InterProcPA.total_interproc_time = 0;
@@ -739,8 +741,8 @@ public class PointerAnalysis implements java.io.Serializable {
 	long delta = System.currentTimeMillis() - b_time;
 	System.out.println
 	    ("Analysis time: " + delta + " ms\n" + 
-	     "(intra: " + (delta - InterProcPA.total_interproc_time) +
-	     " inter: " + InterProcPA.total_interproc_time + 
+	     "(intra: "  + (delta - InterProcPA.total_interproc_time) +
+	     " inter: "  + InterProcPA.total_interproc_time + 
 	     " (map: "   + InterProcPA.total_mapping_time + 
 	     " mrg: "    + InterProcPA.total_merging_time + 
 	     " ppg: "    + InterProcPA.total_propagate_time + 
@@ -760,7 +762,6 @@ public class PointerAnalysis implements java.io.Serializable {
     private void analyze_intra_proc_scc(SCComponent scc){
 	if(MEGA_DEBUG) {
 	    lbb2passes = new HashMap();
-	    Object[] objs = scc.nodes();
 	    for(Object lbb : scc.nodes())
 		lbb2passes.put(lbb, new Integer(0));
 	}
@@ -769,19 +770,20 @@ public class PointerAnalysis implements java.io.Serializable {
 
 	// add only the entry nodes to the worklist; the other basic
 	// blocks will be eventually added too by the fixed point alg.
-	Object[] entries = scc.entries();
-	if(entries.length == 0) // first SCC does not have an entry
-	    entries = scc.nodes();
-	for(int i = 0; i < entries.length; i++)
-	    W_intra_proc.add(entries[i]);
+	if(scc.entries().length > 0) {
+	    for(Object entry : scc.entries())
+		W_intra_proc.add(entry);
+	}
+	else // special case: top SCC; no entries -> add all nodes
+	    W_intra_proc.addAll(scc.nodes());
 
 	while(!W_intra_proc.isEmpty()) {
 	    // grab a Basic Block from the worklist
 	    LightBasicBlock lbb_work = (LightBasicBlock) W_intra_proc.remove();
 
-	    ParIntGraphPair old_info = (ParIntGraphPair) lbb_work.user_info;
-	    analyze_basic_block(lbb_work); // ^ v  annotation style 
-	    ParIntGraphPair new_info = (ParIntGraphPair) lbb_work.user_info;
+	    ParIntGraphPair old_info = getPIGPair(lbb_work);
+	    analyze_basic_block(lbb_work);
+	    ParIntGraphPair new_info = getPIGPair(lbb_work);
 
 	    // Some "optimizations" break the monotonicity of the
 	    // transfer functions.  Make a "join" to restore it.
@@ -840,7 +842,6 @@ public class PointerAnalysis implements java.io.Serializable {
 	    for(int i = 0; i < defs.length; i++)
 		lbbpig.G.I.removeEdges(defs[i]);
 	}
-		
 
 	public void visit(HEADER q){
 	    // do nothing
@@ -1227,13 +1228,6 @@ public class PointerAnalysis implements java.io.Serializable {
 	    // that is accessible from the "root" nodes (i.e. the nodes
 	    // that can be accessed by the rest of the program - e.g.
 	    // the caller).
-	    // The set of root nodes consists of the param and return
-	    // nodes, and (for the non-"main" methods) the static nodes.
-	    // TODO: think about the static nodes vs. "main"
-	    PANode[] nodes = getParamNodes(current_intra_mmethod);
-	    boolean is_main = 
-		current_intra_mmethod.getHMethod().getName().equals("main");
-
 	    if(MEGA_DEBUG)
 		System.out.println("Unshrinked graph: " + lbbpig);
 
@@ -1242,7 +1236,8 @@ public class PointerAnalysis implements java.io.Serializable {
 		getLostNodes(current_intra_mmethod) : null;
 
 	    ParIntGraph shrinked_graph =
-		lbbpig.keepTheEssential(nodes, is_main, lost_nodes);
+		lbbpig.keepTheEssential
+		(getParamNodes(current_intra_mmethod), false, lost_nodes);
 
 	    if(MEGA_DEBUG)
 		System.out.println("Shrinked graph: " + shrinked_graph);
@@ -1285,24 +1280,27 @@ public class PointerAnalysis implements java.io.Serializable {
 	// if there was a pair, store the pair computed by the inter proc
 	// module, otherwise, only the first element of the pair is essential.
 	if(call_pp != null) {
-	    lbb.user_info = call_pp;
+	    putPIGPair(lbb, call_pp);
 	    call_pp = null;
 	}
 	else
-	    lbb.user_info = new ParIntGraphPair(lbbpig, null);
+	    putPIGPair(lbb, new ParIntGraphPair(lbbpig, null));
 
-	if(DO_INTRA_PROC_TRIMMING) {
-	    PANode[] params = nodes.getAllParams(current_intra_mmethod);
-	    ParIntGraphPair pp = (ParIntGraphPair) lbb.user_info;
-	    for(int i = 0; i < 2; i++) {
-		ParIntGraph pig = pp.pig[i];
-		if(pig != null)
-		    pig = pig.intra_proc_trimming(params);
-		pp.pig[i] = pig;
-	    }
+	if(DO_INTRA_PROC_TRIMMING) 
+	    do_intra_proc_trimming(lbb);
+    }
+
+    // remove unreachable nodes
+    private void do_intra_proc_trimming(LightBasicBlock lbb) {
+	PANode[] params = nodes.getAllParams(current_intra_mmethod);
+	ParIntGraphPair pp = getPIGPair(lbb);
+	for(int i = 0; i < 2; i++) {
+	    if(pp.pig[i] != null)
+		pp.pig[i] = pp.pig[i].intra_proc_trimming(params);
 	}
     }
     
+
     // For each method, maintains the set of inside nodes that are
     // merged into LOST during the analysis of that method.  These
     // nodes do not appear in the pig for the method, but they are
@@ -1331,7 +1329,8 @@ public class PointerAnalysis implements java.io.Serializable {
     private ParIntGraph get_after_bb_pig(LightBasicBlock lbb,
 					 LightBasicBlock lbb_son){
 
-	ParIntGraphPair pp = (ParIntGraphPair) lbb.user_info;
+	ParIntGraphPair pp = getPIGPair(lbb);
+
 	if(pp == null)
 	    return ParIntGraph.EMPTY_GRAPH;
 
@@ -1343,7 +1342,6 @@ public class PointerAnalysis implements java.io.Serializable {
 	    if(!call.next(0).equals(first_lbb_son)) k = 1;
 	}
 
-	//ParIntGraph pig = (ParIntGraph) lbb2pig.get(lbb);
 	ParIntGraph pig = pp.pig[k];
 	return (pig==null) ? ParIntGraph.EMPTY_GRAPH : pig;
     }
@@ -1386,8 +1384,8 @@ public class PointerAnalysis implements java.io.Serializable {
     private ParIntGraph get_mmethod_initial_pig
 	(MetaMethod mm, TopSortedCompDiGraph<LightBasicBlock> ts_sccs) {
 
-	LightBasicBlock first_bb = 
-	    (LightBasicBlock) ts_sccs.decrOrder().get(0).nodes()[0];
+	LightBasicBlock first_bb = (LightBasicBlock) 	    
+	    ts_sccs.decrOrder().get(0).nodes().iterator().next();
 	HEADER first_hce = (HEADER) first_bb.getElements()[0];
 	METHOD m  = (METHOD) first_hce.next(1);
 
@@ -1501,29 +1499,31 @@ public class PointerAnalysis implements java.io.Serializable {
     public final ParIntGraph getPigForQuad(MetaMethod mm, Quad q, int moment) {
 	assert mcg.getAllMetaMethods().contains(mm) : 
 	    "Uncalled/unknown meta-method!";
+
+	LightBasicBlock lbb = find_lbb4quad(mm, q);
+
+	// as all the ParIntGraph's for methods are computed, a simple
+	// intra-procedural analysis of mm is enough.
+	_analyze_intra_proc(mm); // don't delete the cache
+
+	// find the right basic block, and redo pointer analysis
+	// for that block, until we hit q.
+	ParIntGraph retval = analyze_lbb_for_q(lbb, q, moment);
+
+	// clear the LightBasicBlock -> ParIntGraph cache
+	lbb2pp.clear();
+
+	return retval;
+    }
+
+    // finds the LightBasicBlock of Quad q from (meta)method mm
+    private LightBasicBlock find_lbb4quad(MetaMethod mm, Quad q) {
 	LBBConverter lbbconv = scc_lbb_factory.getLBBConverter();
 	LightBasicBlock.Factory lbbf = lbbconv.convert2lbb(mm.getHMethod());
 	assert lbbf != null : "Unanalyzable method " + mm + "?!";
 	LightBasicBlock lbb = lbbf.getBlock(q);
 	assert lbb != null : "No (Light)BasicBlock found for " + q;
-
-	// as all the ParIntGraph's for methods are computed, a simple
-	// intra-procedural analysis of mm (with some caller-callee
-	// interactions) is enough.
-	analyze_intra_proc(mm, false); // don't delete the cache
-
-	// now, we found the right basic block, we also have the results
-	// for all the basic block of the concerned method; all we need
-	// is to redo the pointer analysis for that basic block, stopping
-	// when we meet q.
-	ParIntGraph retval = analyze_lbb_for_q(lbb, q, moment);
-
-	// clear the LightBasicBlock -> ParIntGraph cache generated by
-	// analyze_intra_proc
-	//lbb2pig.clear();
-	clear_lbb2pig(mm); // annotation;
-
-	return retval;
+	return lbb;
     }
 
     // constants for analyze_lbb_for_q
@@ -1553,6 +1553,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	return null; // this should never happen
     }
 
+    // TODO: remove as soon as lbb2pp works
     // activates some GC
     private final void clear_lbb2pig(MetaMethod mm) {
 	// cut the method into SCCs of basic blocks

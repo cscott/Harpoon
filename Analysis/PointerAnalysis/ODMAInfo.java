@@ -68,7 +68,7 @@ import harpoon.Util.DataStructs.LightMap;
  * <code>ODMAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODMAInfo.java,v 1.11 2004-03-05 15:38:08 salcianu Exp $
+ * @version $Id: ODMAInfo.java,v 1.12 2004-03-06 21:52:24 salcianu Exp $
  */
 public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -1618,14 +1618,12 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	for(SCComponent scc : reverse_top_sort_of_cs(ih).incrOrder()) {
 	    if(DEBUG) {
 		System.out.println("Processed SCC:{");
-		Object[] nodes = scc.nodes();
-		for(int i = 0; i < nodes.length; i++)
-		    System.out.println(" " + Util.code2str((CALL) nodes[i]));
+		for(Object node : scc.nodes())
+		    System.out.println(" " + Util.code2str((CALL) node));
 		System.out.println("}");
 	    }
-	    Object[] nodes = scc.nodes();
-	    for(int i = 0; i < nodes.length; i++) {
-		CALL cs = (CALL) nodes[i];
+	    for(Object node : scc.nodes()) {
+		CALL cs = (CALL) node;
 		inline_call_site(cs, hcf, ih);
 		toPrune.add(cs.getFactory().getParent());
 	    }

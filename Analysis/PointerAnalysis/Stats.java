@@ -29,7 +29,7 @@ import java.util.Comparator;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@mit.edu>
- * @version $Id: Stats.java,v 1.9 2004-03-05 22:18:14 salcianu Exp $
+ * @version $Id: Stats.java,v 1.10 2004-03-06 21:52:24 salcianu Exp $
  */
 abstract class Stats implements java.io.Serializable {
 
@@ -66,8 +66,8 @@ abstract class Stats implements java.io.Serializable {
 
 	for(SCComponent scc : ts_sccs.decrOrder()) {
 	    nb_sccs++;
-	    nb_bbs += scc.nodeSet().size();
-	    for(Object bbkO : scc.nodeSet()){
+	    nb_bbs += scc.size();
+	    for(Object bbkO : scc.nodes()){
 		LightBasicBlock bbk = (LightBasicBlock) bbkO;
 		nb_instrs += bbk.getElements().length;
 	    }

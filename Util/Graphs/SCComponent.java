@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.HashSet;
+import harpoon.Util.ArraySet;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,7 +42,7 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@lcs.mit.edu>
- * @version $Id: SCComponent.java,v 1.14 2004-03-05 22:18:36 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.15 2004-03-06 21:52:32 salcianu Exp $
  */
 public final class SCComponent/*<Vertex>*/
     implements Comparable<SCComponent/*<Vertex>*/>, Serializable {
@@ -213,8 +213,14 @@ public final class SCComponent/*<Vertex>*/
 	    for(Iterator it = scc_vector.iterator(); it.hasNext(); ) {
 		SCComponent scc = (SCComponent) it.next();
 
-		scc.nodes_array = 
-		    scc.nodes.toArray(new Object[scc.nodes.size()]);
+		// We make a compromise between speed of membership
+		// testing, and memory consumption (having too many
+		// HashSets is BAD ...)
+		scc.nodes = 
+		    (scc.nodes.size() > 10) ?
+		    ((Set) new HashSet(scc.nodes)) :
+		    ((Set) new ArraySet(scc.nodes.toArray()));
+
 		// add the edges
 		scc.next = toArraySCC(nextRel.getValues(scc));
 		scc.prev = toArraySCC(prevRel.getValues(scc));
@@ -301,7 +307,7 @@ public final class SCComponent/*<Vertex>*/
     private int id;
 
     // The nodes of this SCC (Strongly Connected Component).
-    Set nodes = new TreeSet(DEFAULT_COMPARATOR);
+    Collection nodes = new ArrayList();
     Object[] nodes_array;
     // The successors.
     private SCComponent[] next;
@@ -341,15 +347,21 @@ public final class SCComponent/*<Vertex>*/
 
     /** Returns the nodes of <code>this</code> strongly connected component
 	(set version). */
-    public final Set nodeSet() { return nodes; }
+    public final Set nodes() { return (Set) nodes; }
 
     /** Returns the nodes of <code>this</code> strongly connected component;
-	array version - good for iterating over the elements of the SCC. */
-    public final Object[] nodes() { return nodes_array; }
+	array version - good for iterating over the elements of the SCC. 
+	@deprecated use <code>nodes</code> instead */
+    public final Object[] nodesArray() { 
+	if(nodes_array == null) {
+	    nodes_array = nodes.toArray(new Object[nodes.size()]);
+	}
+	return nodes_array;
+    }
 
     /** Returns the number of nodes in <code>this</code> strongly connected
 	component. */
-    public final int size() { return nodes_array.length; }
+    public final int size() { return nodes.size(); }
 
     /** Checks whether <code>node</code> belongs to <code>this</code> \
 	strongly connected component. */
@@ -392,19 +404,5 @@ public final class SCComponent/*<Vertex>*/
 	    buffer.append("\n");
 	}
 	return buffer.toString();
-    }
-
-    // put some unit tests here
-    public void test() {
-	// TODO
-    }
-
-    // make sure we have a default comparator for the TreeSet
-    private static Comparator DEFAULT_COMPARATOR = new DefaultComparator();
-    private static class DefaultComparator implements Comparator {
-	public int compare(Object o1, Object o2) {
-	    if(o1.equals(o2)) return 0;
-	    return (o1.hashCode() < o2.hashCode()) ? -1 : 1;
-	}
     }
 }

@@ -15,7 +15,7 @@ import java.util.Collections;
  * <code>InstrSolver</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrSolver.java,v 1.4 2004-02-08 01:51:05 cananian Exp $
+ * @version $Id: InstrSolver.java,v 1.5 2004-03-06 21:51:53 salcianu Exp $
  */
 public final class InstrSolver  {
     
@@ -107,7 +107,7 @@ public final class InstrSolver  {
 	    b.accept(v);
 	    v.addSuccessors(w, b);
 	}
-    } 
+    }
 
 
     public static void sccSolver(Iterator it_scc,
@@ -118,9 +118,8 @@ public final class InstrSolver  {
 	    SCComponent scc = (SCComponent) it_scc.next();
 
 	    // put all the basic blocks of the current scc in the worklist
-	    Object bbs[] = scc.nodes();
-	    for(int i = 0; i < bbs.length; i++)
-		w.push(bbs[i]);
+	    for(Object bbs : scc.nodes())
+		w.push(bbs);
 
 	    // iterate over the current scc to reach the least fixed point
 	    while(!w.isEmpty()) {

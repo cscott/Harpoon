@@ -31,7 +31,7 @@ import harpoon.Util.Graphs.Navigator;
  * <code>Util</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Util.java,v 1.12 2004-03-05 15:37:40 salcianu Exp $
+ * @version $Id: Util.java,v 1.13 2004-03-06 21:52:18 salcianu Exp $
  */
 public abstract class Util {
 
@@ -94,7 +94,7 @@ public abstract class Util {
 	    for(SCComponent/*<HMethod>*/ scc : ts_hms.decrOrder()) {
 		count++;
 		harpoon.Util.Util.print_collection
-		    (scc.nodeSet(), "SCC " + count);
+		    (scc.nodes(), "SCC " + count);
 	    }
 	    System.out.println();
 	}
@@ -102,7 +102,7 @@ public abstract class Util {
 	Set reached_from_rec = new HashSet();
 
 	for(SCComponent/*<HMethod>*/ scc : ts_hms.decrOrder()) {
-	    if(scc.isLoop() || (scc.nodeSet().size() > 1)) {
+	    if(scc.isLoop() || (scc.nodes().size() > 1)) {
 		// if the SCC corresponds to a set of mutually
 		// recursive methods, add all the methods transitively
 		// called from it to reached_from_rec
@@ -110,7 +110,7 @@ public abstract class Util {
 		// exploring the tree rooted in one of the methods
 		// from scc is enough as it includes all the other
 		// methods from scc
-		HMethod hm = (HMethod) scc.nodes()[0];
+		HMethod hm = (HMethod) scc.nodes().iterator().next();
 		if(!reached_from_rec.contains(hm))
 		    grab_callees(hm, reached_from_rec, cg);
 	    }

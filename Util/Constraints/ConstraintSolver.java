@@ -28,7 +28,7 @@ import harpoon.Util.Util;
  * <code>ConstraintSolver</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ConstraintSolver.java,v 1.4 2004-03-05 15:38:10 salcianu Exp $
+ * @version $Id: ConstraintSolver.java,v 1.5 2004-03-06 21:52:29 salcianu Exp $
  */
 public class ConstraintSolver {
 
@@ -174,13 +174,12 @@ public class ConstraintSolver {
 	    forAllVertices
 	    (new DiGraph.VertexVisitor<SCComponent/*<Var>*/>() {
 		public void visit(SCComponent/*<Var>*/ scc) {
-		    Object nodes[] = scc.nodes();
 		    // 3. pick one "master" variable from each class
-		    Var master_v = (Var) nodes[0];
+		    Var master_v = (Var) scc.nodes().iterator().next();
 		    master_vars.add(master_v);
 		    // 4. map all vars from sccs to master_v
-		    for(int i = 0; i < nodes.length; i++)
-			v2master.put((Var) nodes[i], master_v);
+		    for(Object v0 : scc.nodes()) 
+			v2master.put((Var) v0, master_v);
 		}
 	    });
     }
@@ -285,13 +284,12 @@ public class ConstraintSolver {
     // iterate (fix point) to compute the solution for the variables from scc
     private void solve_scc(SCComponent scc) {
 
-	//System.out.println("solve_scc(" + scc.nodeSet() + ")");
+	//System.out.println("solve_scc(" + scc.nodes() + ")");
 
 	current_scc = scc;
 
-	Object nodes[] = scc.nodes();
-	for(int i = 0; i < nodes.length; i++)
-	    w_intra_scc.add(nodes[i]);
+	for(Object node : scc.nodes())
+	    w_intra_scc.add(node);
 	
 	while(!w_intra_scc.isEmpty()) {
 	    Var v = (Var) w_intra_scc.remove();
@@ -379,7 +377,7 @@ public class ConstraintSolver {
 		// if we really discovered new things about v, and
 		// v is from the current scc, add it to the worklist.
 		if(!d.isEmpty() && current_scc.contains(v))
-		    w_intra_scc.add(v);		    
+		    w_intra_scc.add(v);
 	    }
 
 	};
