@@ -22,7 +22,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.4 1998-12-12 03:56:39 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.5 1998-12-17 21:38:34 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -475,7 +475,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		    raiseV(V,Wv, q.dst(), new xIntConstant(HClass.Boolean,0) );
 	    }
 	}
-	public void visit(HEADER q) {
+	public void visit(METHOD q) {
 	    HMethod m = hc.getMethod();
 	    HClass[] pt = m.getParameterTypes();
 	    int j=0;

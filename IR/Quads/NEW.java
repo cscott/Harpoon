@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * <code>NEW</code> represents an object creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NEW.java,v 1.1.2.3 1998-12-11 22:21:05 cananian Exp $
+ * @version $Id: NEW.java,v 1.1.2.4 1998-12-17 21:38:37 cananian Exp $
  */
 public class NEW extends Quad {
     /** The <code>Temp</code> in which to store the new object. */
@@ -29,9 +29,9 @@ public class NEW extends Quad {
      * @param hclass
      *        the class to create.
      */
-    public NEW(HCodeElement source,
+    public NEW(QuadFactory qf, HCodeElement source,
 	       Temp dst, HClass hclass) {
-        super(source);
+        super(qf, source);
 	this.dst = dst;
 	this.hclass = hclass;
 	// VERIFY legality of NEW
@@ -52,8 +52,8 @@ public class NEW extends Quad {
 
     public int kind() { return QuadKind.NEW; }
 
-    public Quad rename(TempMap tm) {
-	return new NEW(this, map(tm,dst), hclass);
+    public Quad rename(QuadFactory qqf, TempMap tm) {
+	return new NEW(qqf, this, map(tm,dst), hclass);
     }
     /** Rename all used variables in this Quad according to a mapping. */
     void renameUses(TempMap tm) {

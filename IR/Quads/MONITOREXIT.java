@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * See the JVM spec for details.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MONITOREXIT.java,v 1.1.2.3 1998-12-11 22:21:05 cananian Exp $
+ * @version $Id: MONITOREXIT.java,v 1.1.2.4 1998-12-17 21:38:36 cananian Exp $
  */
 public class MONITOREXIT extends Quad {
     /** The object containing the monitor to be released. */
@@ -30,8 +30,8 @@ public class MONITOREXIT extends Quad {
      * @param lock
      *        the <code>Temp</code> referencing the object monitor to release.
      */
-    public MONITOREXIT(HCodeElement source, Temp lock) {
-        super(source);
+    public MONITOREXIT(QuadFactory qf, HCodeElement source, Temp lock) {
+        super(qf, source);
 	this.lock = lock;
 	Util.assert(lock!=null);
     }
@@ -45,8 +45,8 @@ public class MONITOREXIT extends Quad {
 
     public int kind() { return QuadKind.MONITOREXIT; }
 
-    public Quad rename(TempMap tm) {
-	return new MONITOREXIT(this, map(tm, lock));
+    public Quad rename(QuadFactory qqf, TempMap tm) {
+	return new MONITOREXIT(qqf, this, map(tm, lock));
     }
     /** Rename all used variables in this Quad according to a mapping. */
     void renameUses(TempMap tm) {

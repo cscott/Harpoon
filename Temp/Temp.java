@@ -12,60 +12,75 @@ import harpoon.Util.ArrayFactory;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.14.2.3 1998-12-09 21:46:21 cananian Exp $
+ * @version $Id: Temp.java,v 1.14.2.4 1998-12-17 21:38:38 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
  */
 public class Temp {
-  private static Hashtable table = new Hashtable();
+  /*final*/ TempFactory tf;
+  /*final*/ String name;
+  /*final*/ int hashcode;
 
-  private String name;
-  private int index;
-
-  private static final String prefix = "t";
+  /** Default temp name. */
+  private static final String default_name = "t";
 
   /** Creates a unique temporary variable, using default prefix ("t").
    */
-  public Temp() { 
-    this(prefix); /* use default prefix. */
-  }
-  /** Creates a unique temporary with a suggested name.
-   *  Trailing underscores will be stripped from the suggested name,
-   *  and a digit string will be appended to make the name unique.
-   *  @param m_prefix the name prefix.
-   *                  <code>m_prefix</code> may not be null.
-   */
-  public Temp(String m_prefix) {
-    // Strip trailing underscores.
-    while (m_prefix.charAt(m_prefix.length()-1)=='_')
-      m_prefix = m_prefix.substring(0, m_prefix.length()-1);
-    // Look up appropriate suffix from table.
-    Integer i = (Integer) table.get(m_prefix);
-    if (i==null) i = new Integer(0);
-
-    // Initialize the fields of this temp.
-    this.name = m_prefix;
-    this.index= i.intValue();
-
-    // update the table.
-    table.put(m_prefix, new Integer(i.intValue()+1));
+  public Temp(final TempFactory tf) { 
+    this(tf, null); /* use default prefix. */
   }
   /** Creates a new temp based on the name of an existing temp. */
-  public Temp(Temp t) {
-    this(t.name);
+  public Temp(final Temp t) {
+    this(t.tf, t.name);
+  }
+  /** Creates a unique temporary with a suggested name.
+   *  Trailing digits will be stripped from the suggested name,
+   *  and a digit string will be appended to make the name unique
+   *  within the scope of the <code>TempFactory</code>.
+   *  @param prefix the name prefix.
+   *                  <code>prefix</code> may not be null.
+   */
+  public Temp(final TempFactory tf, final String prefix) {
+    this.tf = tf;
+    this.name = tf.getUniqueID(prefix!=null?prefix:default_name);
+    this.hashcode = tf.getScope().hashCode() ^ name.hashCode();
   }
 
-  /** Returns the name of this temporary */
-  public String name() { return name + "_" + index; }
+  /** Returns the full name of this temporary, including scope information. */
+  public String fullname() { return tf.getScope()+":"+name; }
 
+  /** Returns the common name of this <code>Temp</code>; scope information
+   *  not included. */
+  public String name() { return name; }
   /** Returns a string representation of this temporary. */
-  public String toString() { return name(); }
+  public String toString() { return name; }
 
   /** Returns a hashcode for this temporary.
-   *  The hashcode is the same as the hashcode of the hashcode's name.
+   *  The hashcode is formed from the scope name and the temporary name.
    */
-  public int hashCode() { return name().hashCode(); }
+  public int hashCode() { return hashcode; }
+
+  /** Returns a new <code>TempFactory</code> with the given scope. */
+  public static TempFactory tempFactory(final String scope) {
+    return new TempFactory() {
+      private Hashtable table = new Hashtable();
+      public String getScope() { return scope; }
+      synchronized String getUniqueID(String suggestion) {
+	// strip digits from the end of the suggestion.
+	while (suggestion.charAt(suggestion.length()-1)>='0' &&
+	       suggestion.charAt(suggestion.length()-1)<='9')
+	  suggestion = suggestion.substring(0, suggestion.length()-1);
+	// look up appropriate suffix.
+	Integer i = (Integer) table.get(suggestion);
+	if (i==null) i = new Integer(0);
+	// update the table.
+	table.put(suggestion, new Integer(i.intValue()+1));
+	// return the unique identifier.
+	return suggestion+i;
+      }
+    };
+  }
 
   // Array Factory interface:
 
@@ -86,9 +101,6 @@ public class Temp {
   public Object clone() throws CloneNotSupportedException {
     throw new CloneNotSupportedException("Temps cannot be cloned.");
   }
-
-  /** For debugging purposes: reset all temp variable counters to zero. */
-  //public static void clear() { table.clear(); }
 }
 // set emacs indentation style.
 // Local Variables:

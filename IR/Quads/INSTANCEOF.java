@@ -7,6 +7,7 @@ import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
+
 /**
  * <code>INSTANCEOF</code> objects represent an 'instanceof' evaluation.
  * <code>INSTANCEOF</code> assigns a boolean value to a temporary after
@@ -21,7 +22,7 @@ import harpoon.Util.Util;
  * <code>null</code> source object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSTANCEOF.java,v 1.1.2.3 1998-12-11 22:21:05 cananian Exp $ 
+ * @version $Id: INSTANCEOF.java,v 1.1.2.4 1998-12-17 21:38:36 cananian Exp $ 
  */
 public class INSTANCEOF extends Quad {
     /** The <code>Temp</code> in which to store the result of the test. */
@@ -39,9 +40,9 @@ public class INSTANCEOF extends Quad {
      * @param hclass
      *        the class in which <code>src</code> is tested for membership.
      */
-    public INSTANCEOF(HCodeElement source,
+    public INSTANCEOF(QuadFactory qf, HCodeElement source,
 		      Temp dst, Temp src, HClass hclass) {
-	super(source);
+	super(qf, source);
 	this.dst = dst;
 	this.src = src;
 	this.hclass = hclass;
@@ -65,8 +66,8 @@ public class INSTANCEOF extends Quad {
 
     public int kind() { return QuadKind.INSTANCEOF; }
 
-    public Quad rename(TempMap tm) {
-	return new INSTANCEOF(this, map(tm,dst), map(tm,src), hclass);
+    public Quad rename(QuadFactory qqf, TempMap tm) {
+	return new INSTANCEOF(qqf, this, map(tm,dst), map(tm,src), hclass);
     }
     /** Rename all used variables in this Quad according to a mapping. */
     void renameUses(TempMap tm) {

@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * array, or boolean <code>false</code> otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.1.2.3 1998-12-11 22:21:04 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.1.2.4 1998-12-17 21:38:36 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */
@@ -47,9 +47,9 @@ public class COMPONENTOF extends Quad {
      *        <strong>may</strong> contain the value <code>null</code> 
      *        at run-time.
      */
-    public COMPONENTOF(HCodeElement source, 
+    public COMPONENTOF(QuadFactory qf, HCodeElement source, 
 		       Temp dst, Temp arrayref, Temp objectref) {
-	super(source);
+	super(qf, source);
 	this.dst = dst;
 	this.arrayref = arrayref;
 	this.objectref = objectref;
@@ -71,8 +71,8 @@ public class COMPONENTOF extends Quad {
 
     public int kind() { return QuadKind.COMPONENTOF; }
 
-    public Quad rename(TempMap tm) {
-	return new COMPONENTOF(this, map(tm,dst), 
+    public Quad rename(QuadFactory qqf, TempMap tm) {
+	return new COMPONENTOF(qqf, this, map(tm,dst), 
 			       map(tm,arrayref), map(tm,objectref));
     }
     /** Rename all used variables in this Quad according to a mapping. */

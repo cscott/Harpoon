@@ -19,7 +19,7 @@ import java.util.Vector;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.1 1998-12-09 02:16:05 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.2 1998-12-17 21:38:36 cananian Exp $
  */
 abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -29,8 +29,6 @@ abstract class Code extends HCode {
 
     Code(HMethod parent, Quad quads) {
 	this.parent = parent; this.quads = quads;
-	Util.assert(quads instanceof HEADER);
-	Util.assert(((HEADER)quads).footer instanceof FOOTER);
     }
     
     /** Clone this code representation. The clone has its own
@@ -52,7 +50,7 @@ abstract class Code extends HCode {
     /** Returns the leaves of the control flow graph. */
     public HCodeElement[] getLeafElements() {
 	HEADER h = (HEADER) getRootElement();
-	return new Quad[] { h.footer };
+	return new Quad[] { h.footer() };
     }
 
     /**

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * They have the form: <code>&lt;t1, t2, ..., tn&gt; = sigma(t0)</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SIGMA.java,v 1.1.2.4 1998-12-11 22:21:05 cananian Exp $
+ * @version $Id: SIGMA.java,v 1.1.2.5 1998-12-17 21:38:37 cananian Exp $
  */
 public abstract class SIGMA extends Quad {
     /** dst[i][j] is the j'th element of the tuple on the left-hand side
@@ -30,8 +30,9 @@ public abstract class SIGMA extends Quad {
      * @param src
      *        the arguments to the sigma functions in this block.
      */
-    public SIGMA(HCodeElement source, Temp dst[][], Temp src[], int arity) {
-        super(source, 1, arity);
+    public SIGMA(QuadFactory qf, HCodeElement source,
+		 Temp dst[][], Temp src[], int arity) {
+        super(qf, source, 1, arity);
 	this.dst = dst;
 	this.src = src;
 	Util.assert(dst!=null && src!=null);
@@ -49,8 +50,8 @@ public abstract class SIGMA extends Quad {
      * @param arity
      *        the number of successors to this quad.
      */
-    public SIGMA(HCodeElement source, Temp src[], int arity) {
-	this(source, new Temp[src.length][arity], src, arity);
+    public SIGMA(QuadFactory qf, HCodeElement source, Temp src[], int arity) {
+	this(qf, source, new Temp[src.length][arity], src, arity);
     }
     // ACCESSOR METHODS:
     /** Returns the argument to the <code>nSigma</code>'th sigma function in

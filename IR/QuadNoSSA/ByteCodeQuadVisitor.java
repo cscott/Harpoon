@@ -646,13 +646,22 @@ class ByteCodeQuadVisitor extends QuadVisitor{
     }
   }
 
-  //**METHODHEADER
+  //** HEADER
   public void visit (HEADER q) {
     if (writeTypes){
-      method.addInsn (new NLabel ("METHODHEADER" + labelCount++));
+      method.addInsn (new NLabel ("HEADER" + labelCount++));
     }
     if (printTypes){
-      System.out.println ("Visiting METHODHEADER");
+      System.out.println ("Visiting HEADER");
+    }
+  }
+  //**METHOD
+  public void visit (METHOD q) {
+    if (writeTypes){
+      method.addInsn (new NLabel ("METHOD" + labelCount++));
+    }
+    if (printTypes){
+      System.out.println ("Visiting METHOD");
     }
     for (int i = 0; i < q.paramsLength(); i++){
       putIndex (q.params(i), indexTable);

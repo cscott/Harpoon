@@ -22,7 +22,7 @@ import java.util.Vector;
  * in the Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FixupFunc.java,v 1.1.2.1 1998-12-01 12:36:42 cananian Exp $
+ * @version $Id: FixupFunc.java,v 1.1.2.2 1998-12-17 21:38:36 cananian Exp $
  * @see Translate
  */
 
@@ -51,7 +51,9 @@ class FixupFunc  {
 		    for (int k=0; k < q.src[j].length; k++)
 			q.src[j][k] = q.dst[j];
 	    }
-	    if (neededSig.length > 0) {
+	    if (neededSig.length > 0 && 
+		(!(Q instanceof HEADER)) &&
+		(!(Q instanceof METHOD))) {
 		// place sigma functions.
 		SIGMA q = (SIGMA) Q; // better be a sigma!
 		q.src = neededSig;

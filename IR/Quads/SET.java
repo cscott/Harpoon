@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * The <code>objectref</code> is null if the field is static.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SET.java,v 1.1.2.3 1998-12-11 22:21:05 cananian Exp $
+ * @version $Id: SET.java,v 1.1.2.4 1998-12-17 21:38:37 cananian Exp $
  */
 public class SET extends Quad {
     /** The field description. */
@@ -37,9 +37,9 @@ public class SET extends Quad {
      *        the <code>Temp</code> containing the value to put into
      *        the field.
      */
-    public SET(HCodeElement source,
+    public SET(QuadFactory qf, HCodeElement source,
 	       HField field, Temp objectref, Temp src) {
-	super(source);
+	super(qf, source);
 	this.field = field;
 	this.objectref = objectref;
 	this.src = src;
@@ -69,8 +69,8 @@ public class SET extends Quad {
 
     public int kind() { return QuadKind.SET; }
 
-    public Quad rename(TempMap tm) {
-	return new SET(this, field, map(tm,objectref), map(tm,src));
+    public Quad rename(QuadFactory qqf, TempMap tm) {
+	return new SET(qqf, this, field, map(tm,objectref), map(tm,src));
     }
     /** Rename all used variables in this Quad according to a mapping. */
     void renameUses(TempMap tm) {

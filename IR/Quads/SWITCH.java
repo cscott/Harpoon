@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.1.2.3 1998-12-11 22:21:05 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.1.2.4 1998-12-17 21:38:37 cananian Exp $
  */
 public class SWITCH extends SIGMA {
     /** The discriminant, compared against each value in <code>keys</code>.*/
@@ -36,10 +36,10 @@ public class SWITCH extends SIGMA {
      * @param src
      *        sigma function arguments.
      */
-    public SWITCH(HCodeElement source,
+    public SWITCH(QuadFactory qf, HCodeElement source,
 		  Temp index, int keys[],
 		  Temp dst[][], Temp src[]) {
-	super(source, dst, src, keys.length+1 /*multiple targets*/);
+	super(qf, source, dst, src, keys.length+1 /*multiple targets*/);
 	this.index = index;
 	this.keys = keys;
 	// VERIFY legality of SWITCH.
@@ -47,8 +47,9 @@ public class SWITCH extends SIGMA {
 	Util.assert(keys.length+1==arity());
     }
     /** Creates a switch with arity defined by the keys array. */
-    public SWITCH(HCodeElement source, Temp index, int keys[], Temp src[]) {
-	this(source, index, keys, new Temp[src.length][keys.length+1], src);
+    public SWITCH(QuadFactory qf, HCodeElement source,
+		  Temp index, int keys[], Temp src[]) {
+	this(qf,source, index, keys, new Temp[src.length][keys.length+1], src);
     }
     /** Returns the <code>Temp</code> holding the discriminant. */
     public Temp index() { return index; }
@@ -72,8 +73,8 @@ public class SWITCH extends SIGMA {
 
     public int kind() { return QuadKind.SWITCH; }
 
-    public Quad rename(TempMap tm) {
-	return new SWITCH(this, map(tm,index), (int[])keys.clone(),
+    public Quad rename(QuadFactory qqf, TempMap tm) {
+	return new SWITCH(qqf, this, map(tm,index), (int[])keys.clone(),
 			  map(tm,dst), map(tm,src));
     }
     /** Rename all used variables in this Quad according to a mapping. */

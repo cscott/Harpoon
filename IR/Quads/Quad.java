@@ -15,34 +15,45 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.3 1998-12-11 22:21:05 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.4 1998-12-17 21:38:37 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
                harpoon.IR.Properties.UseDef, harpoon.IR.Properties.Edges,
                /*harpoon.IR.Properties.Renameable,*/ Cloneable
 {
+    // These should all be final.
+    QuadFactory qf;
     String source_file;
     int    source_line;
-    int id;
+    int    id;
+    // cached.
+    private int hashCode;
+
     /** Constructor. */
-    protected Quad(HCodeElement source,
+    protected Quad(QuadFactory qf, HCodeElement source,
 		   int prev_arity, int next_arity) {
+	Util.assert(qf!=null); // QuadFactory must be valid.
 	this.source_file = (source!=null)?source.getSourceFile():"unknown";
 	this.source_line = (source!=null)?source.getLineNumber(): 0;
-	synchronized(lock) {
-	    this.id = next_id++;
-	}
+	this.id = qf.getUniqueID();
+	this.qf = qf;
+
 	this.prev = new Edge[prev_arity];
 	this.next = new Edge[next_arity];
-    }
-    protected Quad(HCodeElement source) {
-	this(source, 1, 1);
-    }
 
-    static int next_id = 0;
-    static final Object lock = new Object();
+	this.hashCode = id ^ kind() ^
+	    qf.getParent().getName().hashCode() ^
+	    qf.getParent().getMethod().hashCode();
+    }
+    protected Quad(QuadFactory qf, HCodeElement source) {
+	this(qf, source, 1, 1);
+    }
+    public int hashCode() { return hashCode; }
 
+    /** Returns the <code>QuadFactory</code> that generated this
+     *  <code>Quad</code>. */
+    public QuadFactory getFactory() { return qf; }
     /** Returns the original source file name that this <code>Quad</code>
      *  is derived from. */
     public String getSourceFile() { return source_file; }
@@ -64,8 +75,18 @@ public abstract class Quad
 
     /** Create a new <code>Quad</code> identical to the receiver, but 
      *  with all <code>Temp</code>s renamed according to a mapping.
-     *  The new <code>Quad</code> will have no edges. */
-    public abstract Quad rename(TempMap tm);
+     *  The new <code>Quad</code> will have no edges. <p>
+     *  The new <code>Quad</code> will come from the specified
+     *  <code>QuadFactory</code>.
+     */
+    public abstract Quad rename(QuadFactory qf, TempMap tm);
+    /** Create a new <code>Quad</code> identical to the receiver, but 
+     *  with all <code>Temp</code>s renamed according to a mapping.
+     *  The new <code>Quad</code> will have no edges.<p>
+     *  The new <code>Quad</code> will come from the same 
+     *  <code>QuadFactory</code> as the receiver.
+     */
+    public final Quad rename(TempMap tm) { return rename(qf, tm); }
 
     // I want to get rid of these functions eventually.
     void renameUses(TempMap tm) { }
@@ -139,6 +160,21 @@ public abstract class Quad
      *  @return the added <code>Edge</code>.*/
     public static Edge addEdge(Quad from, int from_index,
 			       Quad to, int to_index) {
+	// assert validity
+	Util.assert(from.qf == to.qf); // quadfactories should always be same.
+	//  [HEADERs connect only to FOOTER and METHOD]
+	if (from instanceof HEADER)
+	    Util.assert((to instanceof FOOTER && from_index==0) || 
+			(to instanceof METHOD && from_index==1) );
+	//  [METHOD connects to HANDLERs on all but first edge]
+	if (from instanceof METHOD && from_index > 0)
+	    Util.assert(to instanceof HANDLER);
+	//  [ONLY HEADER, THROW and RETURN connects to FOOTER]
+	if (to instanceof FOOTER)
+	    Util.assert((from instanceof HEADER && to_index==0) ||
+			(from instanceof THROW  && to_index >0) ||
+			(from instanceof RETURN && to_index >0) );
+	// OK, add the edge.
 	Edge e = new Edge(from, from_index, to, to_index);
 	from.next[from_index] = e;
 	to.prev[to_index] = e;
@@ -154,8 +190,8 @@ public abstract class Quad
     }
     /** Replace one quad with another. */
     public static void replace(Quad oldQ, Quad newQ) {
-	Util.assert(oldQ.next.length == newQ.next.length);
-	Util.assert(oldQ.prev.length == newQ.prev.length);
+	Util.assert(oldQ.next.length <= newQ.next.length);
+	Util.assert(oldQ.prev.length <= newQ.prev.length);
 	for (int i=0; i<oldQ.next.length; i++) {
 	    Edge e = oldQ.next[i];
 	    addEdge(newQ, i, (Quad) e.to(), e.which_pred());
@@ -201,10 +237,6 @@ public abstract class Quad
 	// clone the fields, add to hashtable.
 	r = (Quad) q.clone();
 	old2new.put(q, r);
-	// fixup the footer for HEADER quads.
-	if (q instanceof HEADER) {
-	    ((HEADER)r).footer = (FOOTER) copyone(((HEADER)q).footer, old2new);
-	}
 	// fixup the edges.
 	for (int i=0; i<q.next.length; i++) {
 	    Util.assert(q.next[i].from == q);

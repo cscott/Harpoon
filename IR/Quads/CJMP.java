@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.1.2.3 1998-12-11 22:21:04 cananian Exp $
+ * @version $Id: CJMP.java,v 1.1.2.4 1998-12-17 21:38:35 cananian Exp $
  */
 public class CJMP extends SIGMA {
     protected Temp test;
@@ -31,8 +31,9 @@ public class CJMP extends SIGMA {
      *        the destination <code>Temp</code>s for the underlying
      *        <code>SIGMA</code>.
      */
-    public CJMP(HCodeElement source, Temp test, Temp dst[][], Temp src[]) {
-        super(source, dst, src, 2 /* two branch targets */);
+    public CJMP(QuadFactory qf, HCodeElement source,
+		Temp test, Temp dst[][], Temp src[]) {
+        super(qf, source, dst, src, 2 /* two branch targets */);
 	this.test = test;
 	Util.assert(test!=null);
     }
@@ -40,8 +41,8 @@ public class CJMP extends SIGMA {
      *  Abbreviated form of the constructor uses an appropriately-sized
      *  array of <code>null</code> values for the <code>dst</code> field.
      */
-    public CJMP(HCodeElement source, Temp test, Temp src[]) {
-	this(source, test, new Temp[src.length][2], src);
+    public CJMP(QuadFactory qf, HCodeElement source, Temp test, Temp src[]) {
+	this(qf, source, test, new Temp[src.length][2], src);
     }
     // ACCESSOR FUNCTIONS:
     /** Returns the <code>Temp</code> tested by this <code>CJMP</code>. */
@@ -78,8 +79,8 @@ public class CJMP extends SIGMA {
 
     public int kind() { return QuadKind.CJMP; }
 
-    public Quad rename(TempMap tm) {
-	return new CJMP(this, map(tm, test), map(tm, dst), map(tm, src));
+    public Quad rename(QuadFactory qqf, TempMap tm) {
+	return new CJMP(qqf, this, map(tm, test), map(tm, dst), map(tm, src));
     }
     /** Rename all used variables in this Quad according to a mapping. */
     void renameUses(TempMap tm) {

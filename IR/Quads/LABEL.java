@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>LABEL</code> marks a basic-block entrance.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LABEL.java,v 1.1.2.2 1998-12-11 22:21:05 cananian Exp $
+ * @version $Id: LABEL.java,v 1.1.2.3 1998-12-17 21:38:36 cananian Exp $
  */
 public class LABEL extends PHI {
     /** the (optional) name of this label. <p>
@@ -23,21 +23,21 @@ public class LABEL extends PHI {
      *  block.
      * @param label the name of this label, or <code>null</code> for no name.
      */
-    public LABEL(HCodeElement source, String label,
+    public LABEL(QuadFactory qf, HCodeElement source, String label,
 		 Temp dst[], Temp src[][], int arity) {
-	super(source, dst, src, arity);
+	super(qf, source, dst, src, arity);
 	this.label = label;
     }
-    public LABEL(HCodeElement source, String label,
+    public LABEL(QuadFactory qf, HCodeElement source, String label,
 		 Temp dst[], int arity) {
-	super(source, dst, arity);
+	super(qf, source, dst, arity);
 	this.label = label;
     }
     /** Creates a LABEL to replace a PHI.
      * @param label the name of this label, or <code>null</code> for no name.
      */
-    public LABEL(PHI phi, String label) {
-	this(phi, label, phi.dst, phi.src, phi.arity());
+    public LABEL(QuadFactory qf, PHI phi, String label) {
+	this(qf, phi, label, phi.dst, phi.src, phi.arity());
 	// SHOULD I REWRITE EDGES in this constructor?
     }
     /** Returns the optional name of this label, or <code>null</code> if
@@ -46,8 +46,8 @@ public class LABEL extends PHI {
     
     public int kind() { return QuadKind.LABEL; }
     
-    public Quad rename(TempMap tm) {
-	return new LABEL(this, label, map(tm,dst), map(tm,src), arity());
+    public Quad rename(QuadFactory qqf, TempMap tm) {
+	return new LABEL(qqf, this, label, map(tm,dst), map(tm,src), arity());
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

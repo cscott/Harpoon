@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * The source of the assignment must be another temporary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MOVE.java,v 1.1.2.3 1998-12-11 22:21:05 cananian Exp $
+ * @version $Id: MOVE.java,v 1.1.2.4 1998-12-17 21:38:36 cananian Exp $
  */
 public class MOVE extends Quad {
     /** The destination <code>Temp</code>. */
@@ -26,9 +26,9 @@ public class MOVE extends Quad {
      * @param dst the destination <code>Temp</code>.
      * @param src the source <code>Temp</code>.
      */
-    public MOVE(HCodeElement source,
+    public MOVE(QuadFactory qf, HCodeElement source,
 	       Temp dst, Temp src) {
-	super(source);
+	super(qf, source);
 	this.dst = dst; this.src = src;
 	Util.assert(dst!=null && src!=null);
     }
@@ -45,8 +45,8 @@ public class MOVE extends Quad {
 
     public int kind() { return QuadKind.MOVE; }
 
-    public Quad rename(TempMap tm) {
-	return new MOVE(this, map(tm, dst), map(tm, src));
+    public Quad rename(QuadFactory qqf, TempMap tm) {
+	return new MOVE(qqf, this, map(tm, dst), map(tm, src));
     }
     /** Rename all defined variables in this <code>Quad</code> according 
      *  to a mapping. */

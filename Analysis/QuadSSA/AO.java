@@ -14,7 +14,7 @@ import harpoon.Analysis.Maps.UseDefMap;
  * <code>AO</code> deteremines which objects are accessed in the given method.
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: AO.java,v 1.1.2.2 1998-12-09 22:02:07 cananian Exp $
+ * @version $Id: AO.java,v 1.1.2.3 1998-12-17 21:38:33 cananian Exp $
  */
 
 public class AO  {
@@ -91,7 +91,7 @@ public class AO  {
 	    if (ptr(c, q.dst())) modified = get(c, q.dst(), q.field(), q.objectref());
 	    else modified = false;
 	}
-	public void visit(HEADER q) { 
+	public void visit(METHOD q) { 
 	    // this quad is visited only once, at the beginning, in intraprocedural analysis
 	    for (int i=0; i<q.paramsLength(); i++)
 		if (ptr(c, q.params(i)))

@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.1.2.4 1998-12-11 22:21:05 cananian Exp $
+ * @version $Id: PHI.java,v 1.1.2.5 1998-12-17 21:38:37 cananian Exp $
  */
 public class PHI extends Quad {
     /** dst[i] is the left-hand side of the i'th phi function in this block. */
@@ -28,9 +28,9 @@ public class PHI extends Quad {
      * @param src
      *        the phi function parameters in a phi function assignment block.
      */
-    public PHI(HCodeElement source,
+    public PHI(QuadFactory qf, HCodeElement source,
 	       Temp dst[], Temp src[][], int arity) {
-        super(source, arity, 1);
+        super(qf, source, arity, 1);
 	this.dst = dst;
 	this.src = src;
 	// VERIFY legality of PHI function.
@@ -48,9 +48,9 @@ public class PHI extends Quad {
      * @param arity
      *        the number of predecessors of this quad.
      */
-    public PHI(HCodeElement source,
+    public PHI(QuadFactory qf, HCodeElement source,
 	       Temp dst[], int arity) {
-	this(source, dst, new Temp[dst.length][arity], arity);
+	this(qf, source, dst, new Temp[dst.length][arity], arity);
     }
     // ACCESSOR METHODS:
     /** Returns the right hand side of the <code>nPhi</code>'th phi
@@ -124,8 +124,8 @@ public class PHI extends Quad {
     
     public int kind() { return QuadKind.PHI; }
 
-    public Quad rename(TempMap tm) {
-	return new PHI(this, map(tm,dst), map(tm,src), arity());
+    public Quad rename(QuadFactory qqf, TempMap tm) {
+	return new PHI(qqf, this, map(tm,dst), map(tm,src), arity());
     }
     /** Rename all used variables in this Quad according to a mapping. */
     void renameUses(TempMap tm) {

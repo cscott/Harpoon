@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSA.java,v 1.1.2.2 1998-12-09 02:16:05 cananian Exp $
+ * @version $Id: QuadSSA.java,v 1.1.2.3 1998-12-17 21:38:37 cananian Exp $
  */
 public class QuadSSA extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -25,9 +25,10 @@ public class QuadSSA extends Code /* which extends HCode */ {
     /** Creates a <code>Code</code> object from a bytecode object. */
     QuadSSA(harpoon.IR.Bytecode.Code bytecode) 
     {
-	super(bytecode.getMethod(), Translate.trans(bytecode));
+	super(bytecode.getMethod(), null);
+	quads = Translate.trans(bytecode, this);
 	CleanUp.cleanup(this); // cleanup null predecessors of phis.
-	Peephole.optimize(this); // peephole optimizations.
+	//Peephole.optimize(this); // peephole optimizations.
 	FixupFunc.fixup(this); // add phi/sigma functions.
 	DeadCode.optimize(this); // get rid of unused phi/sigmas.
     }

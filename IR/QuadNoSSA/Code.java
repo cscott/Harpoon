@@ -20,7 +20,7 @@ import java.util.*;
  * <code>QuadNoSSA.Code</code> is <blink><b>fill me in</b></blink>.
  * 
  * @author  Nate Kushman <nkushman@lcs.mit.edu>
- * @version $Id: Code.java,v 1.2.2.2 1998-12-09 22:02:18 cananian Exp $
+ * @version $Id: Code.java,v 1.2.2.3 1998-12-17 21:38:35 cananian Exp $
  */
 
 public class Code extends HCode{
@@ -57,7 +57,7 @@ public class Code extends HCode{
 	for (int i = 0; i < q.numPhis(); i++){
 	  for (int j = 0; j < q.arity(); j++){
 	    //add a move edge along each preceding edge.
-	    MOVE newMove = new MOVE (q,
+	    MOVE newMove = new MOVE (q.getFactory(), q,
 				     q.dst(i), q.src(i,j));
 	    Edge predE = q.prevEdge(j);
 	    
@@ -71,7 +71,7 @@ public class Code extends HCode{
 	for (int i = 0; i < q.numSigmas(); i++){
 	  for (int j = 0; j < q.arity(); j++){
 	      //System.out.println ("Moving " + q.src[i].name() + " to " + q.dst[i][j].name());
-	    MOVE newMove = new MOVE (q,
+	    MOVE newMove = new MOVE (q.getFactory(), q,
 				     q.dst(i,j), q.src(i));
 	    Edge nextEdge = q.nextEdge(j);
 	    //add a move edge along each following edge

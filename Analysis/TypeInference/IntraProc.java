@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.9 1998-12-09 22:02:15 cananian Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.10 1998-12-17 21:38:34 cananian Exp $
  */
 
 public class IntraProc {
@@ -302,7 +302,7 @@ public class IntraProc {
 	public void visit(INSTANCEOF q) {
 	    modified = merge(q.dst(), HClass.Boolean);
 	}
-	public void visit(HEADER q) {
+	public void visit(METHOD q) {
 	    boolean r = false;
 	    for (int i=0; i<q.paramsLength(); i++)
 		if (merge(q.params(i), parameterTypes[i])) 

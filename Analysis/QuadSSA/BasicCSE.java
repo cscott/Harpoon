@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * common subexpression elemination, but only within basic blocks.
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: BasicCSE.java,v 1.2.2.2 1998-12-09 22:02:08 cananian Exp $
+ * @version $Id: BasicCSE.java,v 1.2.2.3 1998-12-17 21:38:33 cananian Exp $
  */
 
 public class BasicCSE  {
@@ -92,11 +92,11 @@ public class BasicCSE  {
 		    Integer v=(Integer) exp2val.get(str);
 		    // if exp2val(op(var2val(src1)...var2val(srcn)))==no value
 		    if (v==null) {
-			Temp t = new Temp();
+			Temp t = new Temp(ins.dst());
 			// insert MOVE t,dst quad
 			Quad[] q=ins.next();
 			if ((q.length==1)&&(q[0].prev().length==1)) {
-			    MOVE m=new MOVE(ins,t,ins.dst());
+			    MOVE m=new MOVE(ins.getFactory(),ins,t,ins.dst());
 			    Quad.addEdge(m,0,q[0],0);
 			    Quad.addEdge(ins,0,m,0);
 			    exp2var.put(str,t);
@@ -108,7 +108,7 @@ public class BasicCSE  {
 			Temp t=(Temp) exp2var.get(str);
 			// change OPER quad to a MOVE one
 			if (ins.edges().length==2) { 
-			    MOVE m=new MOVE(ins,ins.dst(),t);
+			    MOVE m=new MOVE(ins.getFactory(),ins,ins.dst(),t);
 			    Quad next=ins.next(0); Quad prev=ins.prev(0);
 			    if ((prev.next(0)==ins)&&(next.prev(0)==ins)) {
 				Quad.addEdge(m,0,next,0);

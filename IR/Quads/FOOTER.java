@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.1.2.3 1998-12-12 03:57:42 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.1.2.4 1998-12-17 21:38:36 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW
@@ -22,45 +22,36 @@ import harpoon.Util.Util;
 public class FOOTER extends Quad {
     
     /** Creates a <code>FOOTER</code>. */
-    public FOOTER(HCodeElement source) {
-	this(source, 0/*no predecessors initially*/);
+    public FOOTER(QuadFactory qf, HCodeElement source, int arity) {
+        super(qf, source, arity/*num predecessors*/, 0/*no successors ever*/);
     }
-    private FOOTER(HCodeElement source, int arity) {
-        super(source, arity/*num predecessors*/, 0/*no successors ever*/);
-    }
+    /** Returns the number of predecessors of this <Code>FOOTER</code>. */
+    public int arity() { return prev.length; }
 
-    /** Grow the arity of a FOOTER by one. */
-    void grow() {
-	Edge[] nprev = new Edge[prev.length + 1];
-	System.arraycopy(prev, 0, nprev, 0, prev.length);
-	nprev[prev.length] = null;
-	prev = nprev;
-    }
-    /** Attach a new Quad to this FOOTER. */
+    /** Attach a new Quad to this FOOTER by replacing it. */
     public void attach(Quad q, int which_succ) {
-	grow(); 
-	addEdge(q, which_succ, this, prev.length-1);
+	FOOTER f = new FOOTER(qf, this, arity()+1);
+	Quad.replace(this, f);
+	addEdge(q, which_succ, f, arity());
     }
-    /** Remove an attachment from this FOOTER. */
+    /** Remove an attachment from this FOOTER by replacing the footer. */
     public void remove(int which_pred) {
-	prev = (Edge[]) Util.shrink(Edge.arrayFactory, prev, which_pred);
-	// CORRECT indices after shrink.  Fix by mfoltz.
-	for (int j=which_pred; j<prev.length; j++)
-	    prev[j].to_index--;
+	FOOTER f = new FOOTER(qf, this, arity()-1);
+	for (int i=0, j=0; i<prev.length; i++)
+	    if (i!=which_pred) {
+		Edge e = prevEdge(i);
+		Quad.addEdge((Quad)e.from(), e.which_succ(), f, j++);
+	    }
     }
 
     public int kind() { return QuadKind.FOOTER; }
 
-    public Quad rename(TempMap tm) {
-	return new FOOTER(this, prev.length);
+    public Quad rename(QuadFactory qqf, TempMap tm) {
+	return new FOOTER(qqf, this, prev.length);
     }
-    /** Rename all used variables in this Quad according to a mapping. */
-    void renameUses(TempMap tm) { }
-    /** Rename all defined variables in this Quad according to a mapping. */
-    void renameDefs(TempMap tm) { }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 
     /** Returns human-readable representation of this Quad. */
-    public String toString() { return "FOOTER("+prev.length+")"; }
+    public String toString() { return "FOOTER("+arity()+")"; }
 }

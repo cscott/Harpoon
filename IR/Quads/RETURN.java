@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * optional return value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RETURN.java,v 1.1.2.3 1998-12-11 22:21:05 cananian Exp $
+ * @version $Id: RETURN.java,v 1.1.2.4 1998-12-17 21:38:37 cananian Exp $
  */
 public class RETURN extends Quad {
     /** Return value. <code>null</code> if there is no return value. */
@@ -25,8 +25,8 @@ public class RETURN extends Quad {
      *        method.  The <code>retval</code> field should be 
      *        <code>null</code> if the method does not return a value.
      */
-    public RETURN(HCodeElement source, Temp retval) {
-	super(source, 1, 1 /* one successor, the footer node. */);
+    public RETURN(QuadFactory qf, HCodeElement source, Temp retval) {
+	super(qf, source, 1, 1 /* one successor, the footer node. */);
 	this.retval = retval;
 	// nothing to verify.
     }
@@ -42,8 +42,8 @@ public class RETURN extends Quad {
 
     public int kind() { return QuadKind.RETURN; }
 
-    public Quad rename(TempMap tm) {
-	return new RETURN(this, map(tm,retval));
+    public Quad rename(QuadFactory qqf, TempMap tm) {
+	return new RETURN(qqf, this, map(tm,retval));
     }
     /** Rename all used variables in this Quad according to a mapping. */
     void renameUses(TempMap tm) {

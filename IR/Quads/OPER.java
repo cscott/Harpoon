@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.1.2.4 1998-12-11 22:21:05 cananian Exp $
+ * @version $Id: OPER.java,v 1.1.2.5 1998-12-17 21:38:37 cananian Exp $
  */
 public class OPER extends Quad {
     /** The <code>Temp</code> in which to store the result of the operation. */
@@ -34,9 +34,9 @@ public class OPER extends Quad {
     /** Operands of the operation, in left-to-right order. */
     protected Temp[] operands;
     /** Creates a <code>OPER</code>. */
-    public OPER(HCodeElement source,
+    public OPER(QuadFactory qf, HCodeElement source,
 		int opcode, Temp dst, Temp[] operands) {
-	super(source);
+	super(qf, source);
 	this.opcode = opcode;
 	this.dst = dst;
 	this.operands = operands;
@@ -70,8 +70,8 @@ public class OPER extends Quad {
 
     public int kind() { return QuadKind.OPER; }
 
-    public Quad rename(TempMap tm) {
-	return new OPER(this, opcode, map(tm,dst), map(tm,operands));
+    public Quad rename(QuadFactory qqf, TempMap tm) {
+	return new OPER(qqf, this, opcode, map(tm,dst), map(tm,operands));
     }
     /** Rename all used variables in this Quad according to a mapping. */
     void renameUses(TempMap tm) {
