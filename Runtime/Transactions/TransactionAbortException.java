@@ -8,7 +8,7 @@ package harpoon.Runtime.Transactions;
  * the forced-suicide of a transaction.  It
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TransactionAbortException.java,v 1.2 2002-02-25 21:06:48 cananian Exp $
+ * @version $Id: TransactionAbortException.java,v 1.3 2004-07-02 00:03:20 cananian Exp $
  */
 public class TransactionAbortException extends Exception {
     public final CommitRecord abortUpTo;
@@ -21,6 +21,9 @@ public class TransactionAbortException extends Exception {
         this.abortUpTo = abortUpTo;
     }
     public String toString() {
-	return "TransactionAbortException: abort up to "+abortUpTo;
+	StringBuffer sb = new StringBuffer
+	    ("TransactionAbortException: abort up to ");
+	sb.append(abortUpTo);
+	return sb.toString();
     }
 }
