@@ -1,19 +1,84 @@
-Make sure that JacORB 1.3.30 is in your CLASSPATH, and
-some 1.4 compliant JDK and JVM.
+Make sure that some 1.4 compliant JDK and JVM is in your CLASSPATH.
 
 (Currently works with SunJDK 1.4 and HotSpot - 
 FLEX and GNU Classpath support should be added soon.)
 
-Type 'make' to build the program and documentation.
+Type 'make jars' to build the documentation and entry points.
 
 Point your browser to doc/index.html for the main program documentation.
 
-Type 'make run', 'java -jar imagerec.jar', or 'jar -x imagerec.jar' 
-to run the program.
+Type 'java -jar x.jar' to run an entry point.  It will display
+more detailed usage information.
 
-src/MANIFEST.MF points to the Main class to be run.
+ATR.jar          - The main ATR as a single component.
+embeddedATR.jar  - The embedded component of the two-stage version of the ATR
+                   (only greatest 'bang/buck' algorithms here - the goal is
+                    to reduce bandwidth requirements by sending only compressed 
+                    streams of tracked "interesting" objects across the network 
+                    and use the minimum number of cycles to do it).
 
-To run as part of the BBN UAV OEP code, use
-jaco imagerec.Main -ORBInitRef NameService=..., and
-make sure imagerec.jar is in your CLASSPATH.
+groundATR.jar    - The ground component of the two-stage version of the ATR.
+                   (the more sensitive, slower algorithms here - the goal is to
+                    make sure the "interesting" tracked objects are actually tanks,
+                    and then inform the embedded version of this identification
+                    so that it can stop using bandwidth to track non-tanks.)
 
+GUI.jar          - A version which pops open a display to demonstrate the image recognition
+                   pipeline circling the tank using pipelines from the single ATR.
+
+ns.jar           - An easy-to-use front-end for the JacORB CORBA NameService
+trackerStub.jar  - The ALERT server.
+receiverStub.jar - Sends images to the ATR.
+
+RTJ.jar          - The version of the single ATR which uses Real-Time Java 
+
+imagerec.jar     - The current development head for experimenting with new pipelines.
+
+ATR.jar, GUI.jar, ns.jar, trackerStub.jar, receiverStub.jar are the
+currently working jars as of this release.  The others are under development.
+
+See src/Main.java for many other MUCH more sophisticated pipelines
+involving line recognition, template matching based on outlines, 
+polygon generation, matching of orientation with tracked 
+direction of movement, etc.  Also, see the program documentation in
+doc/index.html under imagerec.graph for a description of the 
+algorithms currently under development.
+
+Current publically-available pipelines:
+1) Recognize the tank by size.
+2) Recognize the tank by color.
+3) Recognize the tank by both color and size.
+
+The current publically-available pipelines in the single ATR are scheduled for introduction
+in the embedded version of the two-stage ATR.
+
+Example #1 (no CORBA):
+~~~~~~~~~~~~~~~~~~~~~
+java -jar GUI.jar pause nocorba 1 
+
+Locally, you can run this as:
+java -jar GUI.jar nopause nocorba 1
+
+
+Example #2 (with CORBA):
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Edit the .jacorb_properties file in your home directory to point to
+your name service.
+
+Start the JacORB NameService:
+  java -jar ns.jar /users/wbeebee/.jacorb
+
+Start the ALERT server:
+  java -jar trackerStub.jar -ORBInitRef NameService=file://users/wbeebee/.jacorb
+
+Start the ATR:
+  java -jar ATR.jar timer 1 -ORBInitRef NameService=file://users/wbeebee/.jacorb
+ 
+Send images to the ATR:
+  java -jar receiverStub.jar GUI.jar tank.gz 533 -ORBInitRef NameService=file://users/wbeebee/.jacorb
+
+
+For main development, develop in src/Main.java and use 'make' and 'make run' 
+
+For further information, please contact Wes Beebee <wbeebee@mit.edu>.
