@@ -182,6 +182,7 @@ receiverStub-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
+	@$(JAR) xf contrib/aspectjrt.jar
 	@rm -rf META-INF
 	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) $(ZDIRS)
 	@rm -rf $(JDIRS) $(ZDIRS)
@@ -209,6 +210,7 @@ trackerStub-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
+	@$(JAR) xf contrib/aspectjrt.jar
 	@rm -rf META-INF
 	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) $(ZDIRS)
 	@rm -rf $(JDIRS) $(ZDIRS)
@@ -237,6 +239,7 @@ ATR-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES) $(JCHANNEL_SOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
+	@$(JAR) xf contrib/aspectjrt.jar
 	@rm -rf META-INF
 	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) $(EVENTDIRS) $(ZDIRS)
 	@rm -rf $(JDIRS) $(EVENTDIRS) *.idl $(ZDIRS)
@@ -395,6 +398,7 @@ ns-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
+	@$(JAR) xf contrib/aspectjrt.jar
 	@rm -rf META-INF
 	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) $(ZDIRS)
 	@rm -rf $(JDIRS) $(ZDIRS)
@@ -529,6 +533,7 @@ jars: clean doc movie/tank.jar
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
+	@$(JAR) xf contrib/aspectjrt.jar
 	@rm -rf META-INF
 	@$(JAR) cfm receiverStub-ZEN.jar src/manifest/receiverStub-ZEN.jar.MF $(JDIRS) $(ZDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > receiverStub-ZEN.jar.TIMESTAMP
