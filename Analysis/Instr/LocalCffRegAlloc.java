@@ -58,7 +58,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.82 2000-06-21 07:22:27 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.83 2000-06-21 20:43:28 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -571,6 +571,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    Temp def = (Temp) defs.next();
 		    if (!isRegister(def)) {
 			regfile.writeTo(def);
+			// System.out.println("Dirtifying "+def+" by "+i);
 		    } else /* def is a register */ {
 			Temp t = regfile.getTemp(def);
 			if (t != null) {
@@ -763,9 +764,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    coalesceChoice: {
 		    // FSK: overconservative
 		    // Util.assert(u == d || !regfile.hasAssignment(d));
-		    if (regfile.hasAssignment(d)) {
+		    if (regfile.hasAssignment(d) && u != d) {
 			// rare (due to SSI-form) but it happens.
-			System.out.println("not coalescing "+i+" (redefinition pt)");
+			// System.out.println("not coalescing "+i+" (redefinition pt)");
 			break coalesceChoice;
 		    }
 		    
@@ -978,47 +979,35 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    if (SPILL_INFO) System.out.print(" ; "+reg+" was empty");
 			    
 			} else { 
-			    if (SPILL_INFO) System.out.print(" ; spilling "+value);
+
 
 
 			    // only bother to store if value is live *and* dirty
 			    if (regfile.isDirty(value)) {
-
-			    if (false) {
 				if (liveTemps.getLiveAfter(iloc).contains(value)) {
-					System.out.println("live and dirty: " + value);
-					spillValue(value,iloc.getPrev(),regfile, 4);
-				    }
+				    spillValue(value,iloc.getPrev(),regfile, 3);
+				    if (SPILL_INFO) System.out.print(" ; spilling "+value);
+				} else {
+				    if (SPILL_INFO) System.out.print(" ; notLive "+value+" (liveAfter:"+liveTemps.getLiveAfter(iloc)+")");
+				}
 			    } else {
-				    // FSK: This was breaking
-
-				// FSK: live variable analysis was
-				// performed on non-move-coalesced
-				// Instructions, so we need to invert
-				// the temp-mapping when checking for
-				// liveness.
-				    Set liveAfter = new HashSet(liveTemps.getLiveAfter(iloc));
-				    Set aliases = new HashSet(remappedTemps.invert().getValues(value));
-				    aliases.add(value);
-				    liveAfter.retainAll(aliases);
-				    
-				    if (!liveAfter.isEmpty()) {
-					spillValue(value,iloc.getPrev(),regfile, 3);
-				    }
-			    }
+				if (SPILL_INFO) System.out.print(" ; notDirty "+value);
 			    }
 
 			    // FSK: move-coalesced temps need to be
 			    // stored on a spill regardless of
 			    // cleanness of `value'
-			    Iterator remapped = remappedTemps.invert().getValues(value).iterator();
+			    Collection temps = new java.util.ArrayList(remappedTemps.invert().getValues(value));
+			    Iterator remapped = temps.iterator();
 			    while(remapped.hasNext()) {
 				Temp tt = (Temp) remapped.next();
 				if (liveTemps.getLiveAfter(iloc).contains(tt)) {
+				    // System.out.println("spilling "+tt+" before "+iloc+", live after:"+liveTemps.getLiveAfter(iloc));
 				    spillValue(tt, iloc.getPrev(), regfile, 2);
 				}
+				remappedTemps.remove(tt);
 			    }
-
+			    
 			    regfile.remove(value);
 			    evictables.remove(value);
 			}

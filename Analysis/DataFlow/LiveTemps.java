@@ -25,7 +25,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.15 2000-02-02 04:28:04 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.16 2000-06-21 20:43:22 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -173,8 +173,8 @@ public class LiveTemps extends LiveVars.BBVisitor {
 		    (current, mySetFactory.makeSet(liveAfter));
 
 		// update set for before 'current'
-		liveAfter.addAll(ud.useC(current)); 
 		liveAfter.removeAll(ud.defC(current)); 
+		liveAfter.addAll(ud.useC(current)); 
 	    }
 	}
 
