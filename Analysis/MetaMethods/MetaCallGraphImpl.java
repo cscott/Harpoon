@@ -22,6 +22,8 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
 
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.Quad;
@@ -58,13 +60,13 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.17 2000-05-21 03:00:44 cananian Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.18 2000-05-25 22:33:03 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
     private static boolean DEBUG = false;
     private static boolean DEBUG_CH = false;
-    private static boolean COUNTER = false;
+    private static boolean COUNTER = true;
 
     // in "caution" mode, plenty of tests are done to protect ourselves
     // against errors in other components (ex: ReachingDefs)
@@ -327,7 +329,10 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	    Quad qdef = (Quad) it_rdef.next(); 
 
 	    if(CAUTION && getExactTemp(t,qdef).getTypeSet().isEmpty())
-		Util.assert(false,"No possible type detected for " + t);
+		Util.assert(false,"\nNo possible type detected for " + t +
+			    "\n in method " + cs.getFactory().getMethod() +
+			    "\n at instr  " + cs.getSourceFile() + ":" +
+			    cs.getLineNumber() + " " + cs);
 
 	    Iterator it_types = getExactTemp(t,qdef).getTypes();
 	    while(it_types.hasNext()){
@@ -1106,6 +1111,14 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 		}
 	    }
 	    
+	    // Aux. data for visit(CALL q).
+	    // Any method can throw an exception that is subclass of these
+	    // two classes (without explicitly declaring it).
+	    private static final HClass jl_RuntimeException =
+		Loader.systemLinker.forName("java.lang.RuntimeException");
+	    private static final HClass jl_Error =
+		Loader.systemLinker.forName("java.lang.Error");
+
 	    public void visit(CALL q){
 		Temp       t = ti_wrapper.t;
 		ExactTemp et = ti_wrapper.et;
@@ -1118,6 +1131,12 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 		    HClass[] excp = q.method().getExceptionTypes();
 		    for(int i=0; i<excp.length; i++)
 			et.addType(new GenType(excp[i],GenType.POLY));
+		    // According to the JLS, exceptions that are subclasses of
+		    // java.lang.RuntimeException and java.lang.Error need
+		    // not be explicitly declared; they can be thrown by any
+		    // method.
+		    et.addType(new GenType(jl_RuntimeException, GenType.POLY));
+		    et.addType(new GenType(jl_Error, GenType.POLY));
 		    return;
 		}
 		stop_no_def(q);
