@@ -4,7 +4,13 @@
 #include "config.h"
 #include "fni-stats.h"
 
+#ifndef WITH_STATISTICS /* consistency checking... */
+#error The src/stats module should only be compiled #ifdef WITH_STATISTICS
+#endif /* WITH_STATISTICS */
+
 /* allocate and initialize the statistics counters */
+DECLARE_STATS_LOCAL(monitor_enter)
+DECLARE_STATS_LOCAL(monitor_contention)
 #ifdef WITH_CLUSTERED_HEAPS
 #include "../clheap/misc.h" /* for POOLSIZE / HEAPSIZE */
 DECLARE_STATS_LOCAL(stk_bytes_alloc)
@@ -33,6 +39,8 @@ void print_statistics(void) {
 #ifdef BDW_CONSERVATIVE_GC
   printf("Total gc time at this point: %f ms\n", (float) ttl_gc_time);
 #endif
+  printf("MonitorEnter operations: %8ld (contention on %ld ops)\n",
+	 FS(monitor_enter), FS(monitor_contention));
 #ifdef WITH_CLUSTERED_HEAPS
   printf("HEAPSIZE: %ld  POOLSIZE: %ld  THRALLOC: %d  STKALLOC: %d\n"
 	 "Stack allocation:        %8ld bytes %8ld objects\n"

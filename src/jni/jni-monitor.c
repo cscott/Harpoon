@@ -3,12 +3,18 @@
 #include <jni-private.h>
 
 #include <assert.h>
+#include <errno.h> /* for EBUSY */
 #include "config.h"
 #include "flexthread.h"
+#include "fni-stats.h"
+
+DECLARE_STATS_EXTERN(monitor_enter)
+DECLARE_STATS_EXTERN(monitor_contention)
 
 #ifndef WITH_THREADS
 jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
   assert(FNI_NO_EXCEPTIONS(env));
+  INCREMENT_STATS(monitor_enter, 1);
   return 0;
 }
 jint FNI_MonitorExit(JNIEnv *env, jobject obj) {
@@ -29,13 +35,19 @@ jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
   pthread_t self = pthread_self();
   struct inflated_oobj *li;
   assert(FNI_NO_EXCEPTIONS(env));
+  INCREMENT_STATS(monitor_enter, 1);
   /* check object field, inflate lock if necessary. */
   if (!FNI_IS_INFLATED(obj)) FNI_InflateObject(env, obj);
   li = FNI_UNWRAP(obj)->hashunion.inflated;
   if (li->tid == self) { /* i already have the lock */
     li->nesting_depth++;
   } else { /* someone else (or no one) has this lock */
+#ifdef WITH_STATISTICS
+    if (pthread_mutex_trylock(&(li->mutex))!=-EBUSY) goto gotlock;
+    INCREMENT_STATS(monitor_contention, 1);
+#endif /* WITH_STATISTICS */
     pthread_mutex_lock(&(li->mutex));
+  gotlock:
     li->tid = self;
     li->nesting_depth=1;
   }
