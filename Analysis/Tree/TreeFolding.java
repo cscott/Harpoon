@@ -9,6 +9,7 @@ import harpoon.Analysis.DataFlow.ForwardDataFlowBasicBlockVisitor;
 import harpoon.Analysis.DataFlow.ReversePostOrderIterator;
 import harpoon.Analysis.EdgesIterator;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDef;
 import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Tree.Code;
@@ -71,7 +72,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.10 2000-01-05 04:15:11 duncan Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.11 2000-01-14 02:44:26 cananian Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -85,6 +86,8 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
     private /*final*/ Stm            root;
     private /*final*/ BasicBlock     rootbb;
     private /*final*/ TreeStructure  structure;
+
+    private CFGrapher grapher;
 
     /** Constructs a new <code>TreeFolding</code> object for the
      *  <code>code</code>.
@@ -110,13 +113,15 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 
 	this.code         = code;
 	this.root         = (Stm)this.code.getRootElement();
+	this.grapher      = code.getGrapher();
 	this.maxTreeID    = TreeSolver.getMaxID(RS(this.root));
 	this.bb2tfi       = new HashMap();
 	this.DUChains     = new HashMap();
 	this.UDChains     = new HashMap();
 	this.tempsToPrsvs = new HashMap();
 	this.structure    = new TreeStructure(this.code);
-	this.rootbb       = BasicBlock.computeBasicBlocks(RS(this.root));
+	this.rootbb       = BasicBlock.computeBasicBlocks(RS(this.root),
+							  grapher);
 	
 	initTempsToPrsvs(tempsToPrsvs);
 	initTempsToDefs (tempsToDefs);
@@ -219,7 +224,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 
     // Maps tree IDs to Tree objects
     private void initIDsToTrees(Map IDsToTrees) { 
-	for (Iterator i = new EdgesIterator(RS(root)); i.hasNext();) { 
+	for (Iterator i = new EdgesIterator(RS(root),grapher); i.hasNext();) { 
 	    Stm stm = (Stm)i.next();
 	    int ID  = stm.getID();
 	    IDsToTrees.put(new Integer(ID), stm);
@@ -246,7 +251,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 
     // Maps Temps to the Tree IDs of the statements where they are defined
     private void initTempsToDefs(Map tempsToDefs) { 
-	for (Iterator i = new EdgesIterator(RS(root)); i.hasNext();) { 
+	for (Iterator i = new EdgesIterator(RS(root),grapher); i.hasNext();) {
 	    Stm stm = (Stm)i.next();
 	    if (!((stm.kind()==TreeKind.CALL) || 
 		  (stm.kind()==TreeKind.NATIVECALL))) { 
@@ -342,7 +347,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 				    structure.remove(DStm);
 				    Stm foldedStm = 
 					stm.build
-					(replace(((MOVE)DStm).src, 
+					(replace(((MOVE)DStm).getSrc(), 
 						 GET_TREE(tm, stm).kids(), 
 						 uses[j]));
 				    structure.replace((Stm)GET_TREE(tm, stm), 
@@ -394,7 +399,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 
     
     private Stm RS(Stm s) { 
-	try { while (true) s = ((SEQ)s).left; }
+	try { while (true) s = ((SEQ)s).getLeft(); }
 	catch (ClassCastException e) { return s; }
     }
 
@@ -476,7 +481,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	    (s_kind==TreeKind.CALL) ||
 	    (s_kind==TreeKind.NATIVECALL) ||
 	    ((s_kind==TreeKind.MOVE) && 
-	     ((((MOVE)s).dst).kind()==TreeKind.MEM)); 
+	     ((((MOVE)s).getDst()).kind()==TreeKind.MEM)); 
     }
 }
 
