@@ -5,14 +5,15 @@
 	CODE_SEGMENT
 	.align 4
 1:	.word _static_inits
-	.global	_FNI_do_static_init
-	.type _FNI_do_static_init,#function
-_FNI_do_static_init:
+	.global	_FNI_do_java_main
+	.type _FNI_do_java_main,#function
+_FNI_do_java_main:
 	@ JNIEnv *env in r0.
 	mov ip, sp				@ save registers
 	stmfd sp!, {r0, r4, fp, ip, lr, pc}
 	sub fp, ip, #4
 	
+	/* do static initializers */
 	ldr r4, 1b				@ r4=&static_inits
 2:	mov r0, #0
 	ldr r1, [r4], #4
@@ -36,6 +37,23 @@ _FNI_do_static_init:
 	CODE_SEGMENT
 	/* done with all the static initializers */
 
+	/* do java.lang.System.initializeSystemClass */
+	bl _Flex_java_lang_System_initializeSystemClass__
+	FIXUP_SEGMENT
+	.word 2f, 3f				@ on exception goto 3f.
+	CODE_SEGMENT
+2:	/* done with initializeSystemClass */
+
+	/* hit the main method with a null strings array */
+	mov r0, #0
+	adr lr, 2f
+	ldr r1, 5f
+	ldr pc, [r1]
+	FIXUP_SEGMENT
+	.word 2f, 3f				@ on exception goto 3f.
+	CODE_SEGMENT
+2:	/* done with main. */
+		
 	ldmea fp, {r4, fp, sp, pc}		@ restore registers & return
 
 3:	/* exception handler */
@@ -48,3 +66,5 @@ _FNI_do_static_init:
 #ifdef DEBUG
 4:	.asciz "INIT: %p\n"
 #endif
+
+5:	.word _javamain
