@@ -21,6 +21,7 @@ long long pointerage=0;
 
 int main() {
   getfile();
+  initloopstructures();
   doanalysis();
   return 0;
 }
@@ -96,10 +97,10 @@ void doanalysis() {
       {
 	struct localvars * lv=(struct localvars *) calloc(1, sizeof(struct localvars));
 	long long uid, objuid;
-	char fieldname[100], classname[100];
+	char fieldname[100], classname[100], fielddesc[100];
 
 
-	sscanf(line,"LF: %s %ld %s %lld %s %s %lld",lv->name,&lv->linenumber, lv->sourcename, &objuid, classname, fieldname, &uid);
+	sscanf(line,"LF: %s %ld %s %lld %s %s %s %lld",lv->name,&lv->linenumber, lv->sourcename, &objuid, classname, fieldname, fielddesc, &uid);
 	lv->lvnumber=lvnumber(lv->name);
 	lv->age=pointerage++;
 	lv->m=heap.methodlist;
@@ -112,7 +113,7 @@ void doanalysis() {
 
 #ifdef EFFECTS
 	if ((uid!=-1)&&(objuid!=-1)) {
-	  addpath(&heap, uid, classname, fieldname ,objuid);
+	  addpath(&heap, uid, classname, fieldname, fielddesc, objuid);
 	}
 #endif
 	
