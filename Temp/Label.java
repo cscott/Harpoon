@@ -29,4 +29,9 @@ public class Label  {
    public Label() {
 	this("L" + count++);
    }
+
+   public boolean equals(Object o) {
+    Label l = (Label) o;
+    return name.equals(l.name);
+   }
 }
