@@ -26,9 +26,9 @@ import harpoon.Util.UComp;
 import harpoon.Util.Util;
 
 /**
- * <code>SCComponent</code> models a <i>Strongly connected component</i> \
- of a graph.
- * The only way to split a graph into <code>SCComponent</code>s is though
+ * <code>SCComponent</code> models a <i>Strongly connected component</i>
+ * of a graph.
+ * The only way to split a graph into <code>SCComponent</code>s is through
  * <code>buildSSC</code>.
  * That method is quite flexible: all it needs is a root node (or a set of
  * root nodes) and a <i>Navigator</i>: an object implementing the 
@@ -41,7 +41,7 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCComponent.java,v 1.7 2003-05-06 14:53:39 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.8 2003-05-08 01:10:59 cananian Exp $
  */
 public final class SCComponent implements Comparable, Serializable {
 

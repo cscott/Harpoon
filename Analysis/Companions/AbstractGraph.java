@@ -19,7 +19,7 @@ import java.util.Set;
  * of the <code>Graph</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractGraph.java,v 1.2 2003-05-08 00:51:17 cananian Exp $
+ * @version $Id: AbstractGraph.java,v 1.3 2003-05-08 01:10:57 cananian Exp $
  */
 public abstract class AbstractGraph<T,N extends Node<T,N,E>,E extends Graph.Edge<T,N,E>> implements Graph<T,N,E> {
     final SetFactory<E> edgeSetFactory = new AggregateSetFactory<E>();
@@ -94,8 +94,13 @@ public abstract class AbstractGraph<T,N extends Node<T,N,E>,E extends Graph.Edge
 
     protected AbstractGraph() { }
 
-    /** <code>AbstractGraph.Node</code> provides a basic implementation of
-     *  the <code>Graph.Node</code> interface. */
+    /** 
+     * <code>AbstractGraph.Node</code> provides a basic implementation of
+     * the <code>Graph.Node</code> interface.
+     *
+     * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+     * @version $Id: AbstractGraph.java,v 1.3 2003-05-08 01:10:57 cananian Exp $
+     */
     public static class Node<T,N extends Node<T,N,E>,E extends Graph.Edge<T,N,E>> implements Graph.Node<T,N,E> {
 	AbstractGraph<T,N,E> parent; // set to null when unlinked.
 	final T value;
@@ -122,11 +127,16 @@ public abstract class AbstractGraph<T,N extends Node<T,N,E>,E extends Graph.Edge
 	    return false;
 	}
     }
-    /** <code>AbstractGraph.Edge</code> provides a basic implementation of
-     *  the <code>Graph.Edge</code> interface.  This is a simple pair
-     *  of "from" and "to" nodes; you don't have to extend this
-     *  class when implementing <code>AbstractGraph</code> if you
-     *  prefer to use your own <code>Graph.Edge</code> implementation. */
+    /**
+     * <code>AbstractGraph.Edge</code> provides a basic implementation of
+     * the <code>Graph.Edge</code> interface.  This is a simple pair
+     * of "from" and "to" nodes; you don't have to extend this
+     * class when implementing <code>AbstractGraph</code> if you
+     * prefer to use your own <code>Graph.Edge</code> implementation.
+     *
+     * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+     * @version $Id: AbstractGraph.java,v 1.3 2003-05-08 01:10:57 cananian Exp $
+     */
     public static class Edge<T,N extends Node<T,N,E>,E extends Edge<T,N,E>> implements Graph.Edge<T,N,E> {
 	final N from;
 	final N to;

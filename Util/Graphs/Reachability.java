@@ -10,18 +10,20 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 /**
- * <code>Reachability</code>
+ * The <code>Reachability</code> class computes reachability in graphs
+ * given only by a navigator (a way of obtaining in/out edges).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Reachability.java,v 1.1 2002-04-02 23:48:44 salcianu Exp $
+ * @version $Id: Reachability.java,v 1.2 2003-05-08 01:10:59 cananian Exp $
  */
 public abstract class Reachability {
     
     /** Creates a <code>Reachability</code>. */
     private Reachability() { }
 
-    /** Interface for passing a method as parameter.
-	@see forAllReachable */
+    /** Interface for passing a method as parameter to a
+     *  <code>Reachability</code> object.
+     *  @see forAllReachable */
     public interface Action {
 	public void visit(Object obj);
     }

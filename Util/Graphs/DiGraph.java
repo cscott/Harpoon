@@ -6,13 +6,17 @@ package harpoon.Util.Graphs;
 import java.util.Set;
 
 /**
- * DiGraph.java
- *
- *
- * Created: Sun May  4 20:56:57 2003
+ * A <code>DiGraph</code> is something that has a set
+ * of roots and a navigator that gives us the succ/[pred] of each node.
+ * ("roots" means a set of nodes such that we can explore the entire
+ * digrah by navigating from there).
+ * <p>
+ * Given a digraph G, we can construct its component graph
+ * (<code>G.getComponentGraph()</code>), or even topologically sort the
+ * component graph: (<code>G.getTopDownComponentView()</code>).
  *
  * @author Alexandru Salcianu <salcianu@mit.edu>
- * @version
+ * @version $Id: DiGraph.java,v 1.2 2003-05-08 01:10:59 cananian Exp $
  */
 public abstract class DiGraph/*<Node extends Object>*/ {
     

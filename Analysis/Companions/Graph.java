@@ -12,7 +12,7 @@ import java.util.Set;
  * This is a generic <code>Graph</code> implementation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.1 2003-05-06 15:42:01 cananian Exp $
+ * @version $Id: Graph.java,v 1.2 2003-05-08 01:10:57 cananian Exp $
  */
 public interface Graph<T, N extends Node<T,N,E>, E extends Edge<T,N,E>> {
     /** Return the set of nodes comprising this Graph. */
@@ -38,7 +38,12 @@ public interface Graph<T, N extends Node<T,N,E>, E extends Edge<T,N,E>> {
      */
     N findNode(T key);
 
-    /** This class represents nodes in a <code>Graph</code>. */
+    /**
+     * This class represents nodes in a <code>Graph</code>.
+     *
+     * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+     * @version $Id: Graph.java,v 1.2 2003-05-08 01:10:57 cananian Exp $
+     */
     public static interface Node<T,N extends Node<T,N,E>,E extends Edge<T,N,E>>
     {
 	/** Return the value object associated with this node. */
@@ -55,8 +60,13 @@ public interface Graph<T, N extends Node<T,N,E>, E extends Edge<T,N,E>> {
 	boolean isPred(N n);
     }
 
-    /** This class represents edges between <code>Node</code>s in a
-     *  <code>Graph</code>. */
+    /**
+     * This class represents edges between <code>Node</code>s in a
+     * <code>Graph</code>.
+     *
+     * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+     * @version $Id: Graph.java,v 1.2 2003-05-08 01:10:57 cananian Exp $
+     */
     public static interface Edge<T,N extends Node<T,N,E>,E extends Edge<T,N,E>>
     {
 	/** Returns the node this edge comes from. */
