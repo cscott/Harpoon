@@ -6,11 +6,13 @@ import harpoon.Analysis.DomFrontier;
 import harpoon.IR.Properties.Edges;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
+
+import java.util.Enumeration;
 /**
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.4 1998-09-16 14:05:25 cananian Exp $
+ * @version $Id: Graph.java,v 1.5 1998-09-16 19:48:05 cananian Exp $
  */
 
 public final class Graph extends harpoon.IR.Registration {
@@ -71,12 +73,11 @@ public final class Graph extends harpoon.IR.Registration {
 		HCodeElement idom = dt.idom(hc, el[i]);
 
 		// make dominance frontier label.
-		HCodeElement frontier[] = df.DF(hc, el[i]);
 		StringBuffer sb = new StringBuffer("DF[");
 		sb.append(el[i].getID()); sb.append("]={");
-		for (int j=0; j<frontier.length; j++) {
-		    sb.append(frontier[j].getID());
-		    if (j < frontier.length-1)
+		for (Enumeration e = df.dfE(hc, el[i]); e.hasMoreElements(); ){
+		    sb.append(((HCodeElement)e.nextElement()).getID());
+		    if (e.hasMoreElements())
 			sb.append(",");
 		}
 		sb.append("}");
