@@ -184,9 +184,6 @@ public class OpExpr extends Expr {
 	return opcode;
     }
 
-
-
-
     public boolean equals(Map remap, Expr e) {
 	if (e==null||!(e instanceof OpExpr))
 	    return false;

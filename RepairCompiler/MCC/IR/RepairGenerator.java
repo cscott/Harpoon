@@ -86,7 +86,7 @@ public class RepairGenerator {
 	generate_call();
 	generate_start();
         generate_rules();
-	if (!Compiler.REPAIR) {
+	if (!Compiler.REPAIR||Compiler.GENERATEDEBUGPRINT) {
 	    generate_print();
 	}
         generate_checks();
@@ -95,6 +95,11 @@ public class RepairGenerator {
 	CodeWriter craux = new StandardCodeWriter(this.outputaux);
 	crhead.outputline("};");
 	craux.outputline("}");
+
+	if (Compiler.GENERATEDEBUGHOOKS) {
+	    crhead.outputline("void debughook();");
+	    craux.outputline("void debughook() {}");
+	}
 	generatetypechecks(false);
 	generate_computesizes();
 	generatetypechecks(true);
@@ -721,16 +726,18 @@ public class RepairGenerator {
 
                 cr.outputline("else if (!" + constraintboolean.getSafeSymbol() + ")");
                 cr.startblock();
-                if (!Compiler.REPAIR)
+                if (!Compiler.REPAIR||Compiler.GENERATEDEBUGHOOKS)
 		    cr.outputline("printf(\"fail " + escape(constraint.toString()) + ". \\n\");");
-		else {
+		
+		if (Compiler.REPAIR) {
 		/* Do repairs */
 		/* Build new repair table */
 	        cr.outputline("if ("+repairtable.getSafeSymbol()+")");
 		cr.outputline("delete "+repairtable.getSafeSymbol()+";");
                 cr.outputline(repairtable.getSafeSymbol()+"=new RepairHash();");
-
 		
+		if (Compiler.GENERATEDEBUGHOOKS)
+		    cr.outputline("debughook();");
 		/* Compute cost of each repair */
 		VarDescriptor mincost=VarDescriptor.makeNew("mincost");
 		VarDescriptor mincostindex=VarDescriptor.makeNew("mincostindex");
@@ -889,15 +896,15 @@ public class RepairGenerator {
 	VarDescriptor rightside=VarDescriptor.makeNew("rightside");
 	VarDescriptor newvalue=VarDescriptor.makeNew("newvalue");
 	if (!inverted) {
-	    expr.getLeftExpr().generate(cr,leftside);
+	    ((RelationExpr)expr.getLeftExpr()).getExpr().generate(cr,leftside);
 	    expr.getRightExpr().generate(cr,newvalue);
 	    cr.outputline(rd.getRange().getType().getGenerateType().getSafeSymbol()+" "+rightside.getSafeSymbol()+";");
 	    cr.outputline(rd.getSafeSymbol()+"_hash->get("+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
 	} else {
-	    expr.getLeftExpr().generate(cr,rightside);
+	    ((RelationExpr)expr.getLeftExpr()).getExpr().generate(cr,rightside);
 	    expr.getRightExpr().generate(cr,newvalue);
 	    cr.outputline(rd.getDomain().getType().getGenerateType().getSafeSymbol()+" "+leftside.getSafeSymbol()+";");
-	    cr.outputline(rd.getSafeSymbol()+"_hashinv->get("+leftside.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
+	    cr.outputline(rd.getSafeSymbol()+"_hashinv->get("+rightside.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
 	}
 	if (negated)
 	    if (opcode==Opcode.GT) {
@@ -1386,7 +1393,7 @@ public class RepairGenerator {
 		    }
 		    
 		    
-		
+		    
 		    cr.outputline("void *"+tmpptr.getSafeSymbol()+"=");
 		    cr.outputline("(void *) "+repairtable.getSafeSymbol()+"->getrelation("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
 		    cr.outputline("if ("+mdfyptr.getSafeSymbol()+")");
@@ -1436,16 +1443,35 @@ public class RepairGenerator {
 	}
 
         String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
-	cr.outputline("int " + addeditem + ";");
+	cr.outputline("int " + addeditem + "=0;");
+
+	String ifstring="if (!maybe&&";
+	boolean dogenerate=false;
+	if (rd.getDomain().getType() instanceof StructureTypeDescriptor)  {
+	    dogenerate=true;
+	    ifstring+=leftvar;
+	}
+
+	if (rd.getRange().getType() instanceof StructureTypeDescriptor)  {
+	    if (dogenerate)
+		ifstring+="&&"+rightvar;
+	    else
+		ifstring+=rightvar;
+	    dogenerate=true;
+	}
+
+	ifstring+=")";
+
 	if (rd.testUsage(RelationDescriptor.IMAGE)) {
+	    cr.outputline(ifstring);
 	    cr.outputline(addeditem + " = " + rd.getSafeSymbol() + "_hash->add((int)" + leftvar + ", (int)" + rightvar+ ");");
 	}
 	
 	if (rd.testUsage(RelationDescriptor.INVIMAGE)) {
+	    cr.outputline(ifstring);
 	    cr.outputline(addeditem + " = " + rd.getSafeSymbol() + "_hashinv->add((int)" + rightvar + ", (int)" + leftvar + ");");
 	}
 	
-
 
         Vector dispatchrules = getrulelist(rd);
         
@@ -1559,7 +1585,11 @@ public class RepairGenerator {
 	}
 
         String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
-	cr.outputline("int " + addeditem + " = 1;");
+	cr.outputline("int " + addeditem + " = 0;");
+	if (sd.getType() instanceof StructureTypeDescriptor)  {
+	    cr.outputline("if (!maybe&&"+setvar+")");
+	} else
+	    cr.outputline("if (!maybe)");
 	cr.outputline(addeditem + " = " + sd.getSafeSymbol() + "_hash->add((int)" + setvar +  ", (int)" + setvar + ");");
 	cr.startblock();
         Vector dispatchrules = getrulelist(sd);

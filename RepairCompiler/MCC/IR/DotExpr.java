@@ -13,6 +13,13 @@ public class DotExpr extends Expr {
     static boolean DOTYPECHECKS=false;
     static boolean DONULL=false;
 
+    
+    public DotExpr(Expr left, String field, Expr index) {
+        this.left = left;
+        this.field = field;
+        this.index = index;
+    }
+
     public boolean isSafe() {
 	if (!left.isSafe())
 	    return false;
@@ -28,15 +35,15 @@ public class DotExpr extends Expr {
 	if (d==fd)
 	    s.add(this);
 	left.findmatch(d,s);
-	if (index!=null)
-	    index.findmatch(d,s);
+	if (intindex!=null)
+	    intindex.findmatch(d,s);
     }
 
     public Set freeVars() {
 	Set lset=left.freeVars();
 	Set iset=null;
-	if (index!=null)
-	    iset=index.freeVars();
+	if (intindex!=null)
+	    iset=intindex.freeVars();
 	if (lset==null)
 	    return iset;
 	if (iset!=null)
@@ -99,18 +106,12 @@ public class DotExpr extends Expr {
 	return true;
     }
 
-    
-    public DotExpr(Expr left, String field, Expr index) {
-        this.left = left;
-        this.field = field;
-        this.index = index;
-    }
 
     public Set getRequiredDescriptors() {
         Set v = left.getRequiredDescriptors();
         
-        if (index != null) {
-            v.addAll(index.getRequiredDescriptors());
+        if (intindex != null) {
+            v.addAll(intindex.getRequiredDescriptors());
         }
         return v;
     }
@@ -141,7 +142,6 @@ public class DotExpr extends Expr {
         writer.outputline("");
       
         StructureTypeDescriptor struct = (StructureTypeDescriptor) left.getType();
-        Expr intindex = index;
         Expr offsetbits;
 
         // #ATTN#: getOffsetExpr needs to be called with the fielddescriptor object that is in the vector list
@@ -311,7 +311,7 @@ public class DotExpr extends Expr {
 	
 	{
 	    /* finished typechecking...so we can fill the fields in */
-	    StructureTypeDescriptor struct = (StructureTypeDescriptor) left.getType();        
+	    StructureTypeDescriptor struct = (StructureTypeDescriptor) left.getType();
 	    FieldDescriptor fd = struct.getField(field);
 	    LabelDescriptor ld = struct.getLabel(field);
 	    if (ld != null) { /* label */
