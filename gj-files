@@ -97,9 +97,17 @@ Analysis/PointsToAnalysis.java
 Analysis/PreciseGC/DynamicWBTreePass.java
 Analysis/PreciseGC/WriteBarrierConstElim.java
 Analysis/PreciseGC/WriteBarrierTreePass.java
+
+Analysis/CallGraph.java
+Analysis/AllCallers.java
+Analysis/Quads/CallGraph.java
 Analysis/Quads/AbstrCallGraph.java
-Analysis/Quads/ArrayUnroller.java
+Analysis/Quads/CachingCallGraph.java
+Analysis/Quads/SSICallGraph.java
 Analysis/Quads/CallGraphImpl.java
+Analysis/Quads/CallGraphImpl2.java
+
+Analysis/Quads/ArrayUnroller.java
 Analysis/Quads/ComponentOfReducer.java
 Analysis/Quads/MemoryOptimization.java
 Analysis/Quads/MethodTraceFactory.java
@@ -107,7 +115,6 @@ Analysis/Quads/Nonvirtualize.java
 Analysis/Quads/QuadClassHierarchy.java
 Analysis/Quads/QuadInterferenceGraph.java
 Analysis/Quads/QuadLiveness.java
-Analysis/Quads/SSICallGraph.java
 Analysis/Quads/TypeSwitchRemover.java
 Analysis/Quads/Unreachable.java
 Analysis/Quads/Virtualize.java
