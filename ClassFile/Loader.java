@@ -32,7 +32,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.14 2000-03-30 09:51:17 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.15 2000-04-04 08:28:21 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -237,9 +237,19 @@ public abstract class Loader {
     /* Serializable interface: system linker is unique. */
     public Object writeReplace() { return new Stub(); }
     private static final class Stub implements Serializable {
-      public Object readResolve() { return Loader.systemLinker; }
+      public Object readResolve() {
+	return Loader.replaceWithRelinker ?
+	  Loader.systemRelinker : Loader.systemLinker;
+      }
     }
   }
+  // allow the user to reserialize a systemLinker (and associated classes)
+  // as a *relinker*...  evil evil evil evil. [CSA 4-apr-2000]
+  final static boolean replaceWithRelinker =
+    System.getProperty("harpoon.relinker.hack", "no")
+    .equalsIgnoreCase("yes");
+  final static Linker systemRelinker = new Relinker(systemLinker);
+
   /** System code factory: this code factory will return bytecode
    *  representations for classes loaded via the system linker. */
   public static final HCodeFactory systemCodeFactory =
