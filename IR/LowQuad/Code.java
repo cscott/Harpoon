@@ -20,13 +20,13 @@ import java.util.Hashtable;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.5 1999-02-04 07:20:51 duncan Exp $
+ * @version $Id: Code.java,v 1.1.2.6 1999-02-04 22:56:14 cananian Exp $
  */
 public abstract class Code extends harpoon.IR.Quads.Code 
     implements harpoon.IR.Properties.Derivation
 {
     /** Hashtable to implement derivation map. */
-    protected Hashtable hD = new Hashtable();
+    protected final Hashtable hD = new Hashtable();
 
     /** Make the quad factory. */
     protected harpoon.IR.Quads.QuadFactory newQF(final HMethod parent) {

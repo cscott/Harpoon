@@ -10,7 +10,6 @@ import harpoon.IR.Properties.Derivation.DList;
 import harpoon.IR.Quads.CloningTempMap;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.Quad;
-import harpoon.IR.Quads.QuadSSA;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
@@ -19,14 +18,15 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 /**
  * <code>Translate</code> is a utility class which implements the 
- * <code>QuadSSA</code> to <code>LowQuad</code> translation.
+ * <code>QuadSSA</code>/<code>QuadNoSSA</code> to 
+ * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.2 1999-01-23 10:06:16 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.3 1999-02-04 22:56:15 cananian Exp $
  */
 final class Translate  { // not public
     public static final Quad translate(final LowQuadFactory qf,
-				       final QuadSSA code,
+				       final harpoon.IR.Quads.Code code,
 				       TypeMap tym, FinalMap fm,
 				       Hashtable derivationTable) {
 	final Quad old_header = (Quad) code.getRootElement();
@@ -73,13 +73,14 @@ final class Translate  { // not public
 	final LowQuadFactory qf;
 	final LowQuadMap lqm;
 	final CloningTempMap ctm;
-	final QuadSSA code;
+	final harpoon.IR.Quads.Code code;
 	final TypeMap tym;
 	final FinalMap fm;
 	final Hashtable dT;
 
 	Visitor(LowQuadFactory qf, LowQuadMap lqm, CloningTempMap ctm,
-		QuadSSA code, TypeMap tym, FinalMap fm, Hashtable dT) {
+		harpoon.IR.Quads.Code code, TypeMap tym, FinalMap fm,
+		Hashtable dT) {
 	    this.qf = qf; this.lqm = lqm; this.ctm = ctm;
 	    this.code = code; this.tym = tym; this.fm = fm; this.dT = dT;
 	}

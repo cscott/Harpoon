@@ -1,9 +1,12 @@
 package harpoon.IR.LowQuad;
 
+import harpoon.Backend.Maps.FinalMap;
+import harpoon.Analysis.Maps.TypeMap;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.ToNoSSA;
 
 import java.util.Hashtable;
@@ -11,7 +14,7 @@ import java.util.Hashtable;
 /**
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.3 1999-02-04 07:19:57 duncan Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.4 1999-02-04 22:56:14 cananian Exp $
  */
 public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 {
@@ -22,8 +25,14 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
   LowQuadNoSSA(LowQuadSSA code)
     {
       super(code.getMethod(), null);
-      hD       = (Hashtable)code.hD.clone();
+      /* FIXME: this doesn't work (temps have new names after Translate) */
+      //hD       = (Hashtable)code.hD.clone();
       quads    = ToNoSSA.translate(qf, hD, code); 
+    }
+  LowQuadNoSSA(QuadNoSSA code, TypeMap tym, FinalMap fm)
+    {
+      super(code.getMethod(), null);
+      quads = Translate.translate((LowQuadFactory)this.qf, code, tym, fm, hD);
     }
 
   /**
@@ -54,8 +63,9 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 
   /**
    * Return a code factory for <code>LowQuadNoSSA</code>, given a 
-   * code factory for either <code>harpoon.IR.LowQuad.Code</code>, or
-   * <code>QuadSSA</code>.
+   * code factory for either 
+   * <code>harpoon.IR.LowQuad.LowQuadSSA</code>, or
+   * <code>harpoon.IR.Quads.QuadNoSSA</code>.
    */
   public static HCodeFactory codeFactory(final HCodeFactory hcf)
     {
@@ -71,6 +81,11 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 	    public String getCodeName() { return codename; }
 	  };
 	}
+      else if (hcf.getCodeName().equals(QuadNoSSA.codename))
+	{
+	  throw new Error("we don't have a TypeMap analysis for QuadNoSSA "+
+			  "form yet, so we can't make this translation.");
+	}
       else 
 	throw new Error("don't know how to make " + codename +
 			" from " + hcf.getCodeName());
@@ -78,7 +93,7 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
   
   /**
    * Return a code factory for <code>LowQuadNoSSA</code>, using the default
-   * code factory for <code>harpoon.IR.LowQuad.Code</code>
+   * code factory for <code>harpoon.IR.LowQuad.LowQuadSSA</code>
    */
   public static HCodeFactory codeFactory()
     {  

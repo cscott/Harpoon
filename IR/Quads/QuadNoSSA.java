@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.1.2.4 1999-02-01 00:40:36 cananian Exp $
+ * @version $Id: QuadNoSSA.java,v 1.1.2.5 1999-02-04 22:56:36 cananian Exp $
  * @see QuadWithTry
  * @see QuadSSA
  */
@@ -25,6 +25,10 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
         super(qwt.getMethod(), null);
 	this.quads = UnHandler.unhandler(this.qf, qwt);
 	Peephole.optimize(this.quads, true);
+    }
+    QuadNoSSA(QuadSSA qsa) {
+	super(qsa.getMethod(), null);
+	this.quads = ToNoSSA.translate(this.qf, null, qsa);
     }
     private QuadNoSSA(HMethod parent, Quad quads) {
 	super(parent, quads);
@@ -51,6 +55,16 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
 			new QuadNoSSA((QuadWithTry)c);
+		}
+		public void clear(HMethod m) { hcf.clear(m); }
+		public String getCodeName() { return codename; }
+	    };
+	} else if (hcf.getCodeName().equals(QuadSSA.codename)) {
+	    return new HCodeFactory() {
+		public HCode convert(HMethod m) {
+		    HCode c = hcf.convert(m);
+		    return (c==null) ? null :
+			new QuadNoSSA((QuadSSA)c);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
