@@ -17,7 +17,7 @@ import java.util.StringTokenizer;
  * specializing them for 32-bit architectures.
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.4 1999-02-16 21:25:22 duncan Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.5 1999-02-16 21:47:22 duncan Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -141,7 +141,7 @@ public class OffsetMap32 extends OffsetMap
     
     HClass hc = hm.getDeclaringClass();
     if (hc.isInterface())
-      offset = -(m_imm.methodOrder(hm)*WORDSIZE);
+      offset = 0;  // -(m_imm.methodOrder(hm)*WORDSIZE);
     else 
       offset = (methodsOffset(hm.getDeclaringClass()) + 
 		(m_cmm.methodOrder(hm)*WORDSIZE));
