@@ -11,6 +11,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.SerializableCodeFactory;
 import harpoon.Util.Default;
 import harpoon.Util.Util;
 
@@ -26,9 +27,13 @@ import java.util.Map;
  * to include your new tokens, and override
  * <code>mutateDescriptor()</code> and/or <code>mutateHCode()</code>
  * to effect the specialization.
+ * <p>
+ * Note that if you mutate the <code>ORIGINAL</code> version of
+ * a method, all split versions will inherit the mutation.
+ * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.6 2000-10-07 01:18:34 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.7 2000-10-19 19:30:46 cananian Exp $
  */
 public abstract class MethodSplitter {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -41,8 +46,20 @@ public abstract class MethodSplitter {
     /** Creates a <code>MethodSplitter</code>, based on the method
      *  representations in the <code>parent</code> <code>HCodeFactory</code>.
      */
-    public MethodSplitter(HCodeFactory parent) {
-        this.hcf = new CachingCodeFactory(parent, true/* save cache */);
+    public MethodSplitter(final HCodeFactory parent) {
+        this.hcf = new CachingCodeFactory(new SerializableCodeFactory() {
+	    public String getCodeName() { return parent.getCodeName(); }
+	    public void clear(HMethod m) { parent.clear(m); }
+	    public HCode convert(HMethod m) {
+		HCode hc = parent.convert(m);
+		try {
+		    if (hc!=null) hc = mutateHCode(hc.clone(m), ORIGINAL);
+		} catch (CloneNotSupportedException ex) {
+		    Util.assert(false, "cloning HCode failed: "+ex);
+		}
+		return hc;
+	    };
+	}, true/* save cache */);
     }
     
     /** Maps split methods to the original method they were derived from. */
@@ -57,6 +74,7 @@ public abstract class MethodSplitter {
 	HMethod orig = split2orig.containsKey(source) ?
 	    (HMethod) split2orig.get(source) : source;
 	if (which == ORIGINAL) return orig;
+	Util.assert(which.suffix!=null,"Null token suffixes are not allowed!");
 	HMethod splitM = (HMethod) versions.get(Default.pair(source, which));
 	if (splitM == null) {
 	    HClassMutator hcm = orig.getDeclaringClass().getMutator();
