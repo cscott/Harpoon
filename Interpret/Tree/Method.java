@@ -23,7 +23,7 @@ import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.DATUM;
 //import harpoon.IR.Tree.Edge;
 import harpoon.IR.Tree.ESEQ;
-import harpoon.IR.Tree.EXP;
+import harpoon.IR.Tree.EXPR;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.ExpList;
 import harpoon.IR.Tree.INVOCATION;
@@ -63,7 +63,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.20 2000-02-14 21:56:45 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.21 2000-03-26 06:29:12 jwhaley Exp $
  */
 public final class Method extends Debug {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -418,7 +418,7 @@ public final class Method extends Debug {
 	    throw new Error("Should not have encountered a DATUM node");
 	}
 	
-	public void visit(EXP e)  { 
+	public void visit(EXPR e)  { 
 	    if (DEBUG) db("Visiting: " + e);
 	    // Execute e for side effects
 	    e.getExp().accept(this);

@@ -22,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.43 2000-02-19 10:35:17 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.44 2000-03-26 06:29:21 jwhaley Exp $
  */
 public class Spec  {
 
@@ -701,7 +701,7 @@ public class Spec  {
     /** Extension of <code>Spec.Stm</code> representing an expression
 	which is evaluated for its side effects (i.e. we throw away
 	the return value).
-	@see harpoon.IR.Tree.EXP
+	@see harpoon.IR.Tree.EXPR
     */
     public static class StmExp extends Stm {
 	/** Expression for <code>this</code>. */
@@ -716,7 +716,7 @@ public class Spec  {
 	    return new StmExp(kids.head);
 	}
 	public ExpList kids() { return new ExpList(exp, null); }
-	public String toString() { return "EXP("+exp+")"; }
+	public String toString() { return "EXPR("+exp+")"; }
     }
     
     /** Extension of <code>Spec.Stm</code> representing an

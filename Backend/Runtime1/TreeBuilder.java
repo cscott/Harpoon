@@ -28,7 +28,7 @@ import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.DATUM;
 import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.ESEQ;
-import harpoon.IR.Tree.EXP;
+import harpoon.IR.Tree.EXPR;
 import harpoon.IR.Tree.INVOCATION;
 import harpoon.IR.Tree.JUMP;
 import harpoon.IR.Tree.LABEL;
@@ -58,7 +58,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.21 2000-03-09 03:56:17 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.22 2000-03-26 06:28:59 jwhaley Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.

@@ -19,7 +19,7 @@ import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.DATUM;
 import harpoon.IR.Tree.ESEQ;
-import harpoon.IR.Tree.EXP;
+import harpoon.IR.Tree.EXPR;
 import harpoon.IR.Tree.INVOCATION;
 import harpoon.IR.Tree.JUMP;
 import harpoon.IR.Tree.LABEL;
@@ -58,7 +58,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.33 2000-03-13 18:42:33 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.34 2000-03-26 06:29:02 jwhaley Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -1083,7 +1083,7 @@ DATUM(NAME(l)) %{
     emitDIRECTIVE(ROOT, "\t.word " + l);
 }%
 
-EXP(e1) %{
+EXPR(e1) %{
     /* throw away temp e1 (not used) */
 }%
 

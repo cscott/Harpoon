@@ -44,7 +44,7 @@ class JouetteFrame extends harpoon.Backend.Generic.Frame {
  * 
  * @see Appel, <U>Modern Compiler Implementation in Java</U>, pg. 196, 213-214 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.6 1999-10-12 20:04:49 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.7 2000-03-26 06:28:56 jwhaley Exp $
  */
 %%
 
@@ -199,7 +199,7 @@ MOVE(MEM(target), MEM(src)) %{
 				  new Temp[] {}, new Temp[] { target, src }));
 }%
 
-EXP(e1) %{
+EXPR(e1) %{
 			/* this is a statement that's just an
 			   expression; just throw away 
 			   calculated value */

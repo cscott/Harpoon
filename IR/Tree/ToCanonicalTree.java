@@ -25,7 +25,7 @@ import java.util.HashSet;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.28 2000-02-15 17:19:05 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.29 2000-03-26 06:29:10 jwhaley Exp $
  */
 public class ToCanonicalTree {
     private Tree m_tree;
@@ -234,7 +234,7 @@ public class ToCanonicalTree {
         private StmExpList reorder(ExpList exps) {
 	    if (exps==null) 
 		return new StmExpList
-		    (new EXP
+		    (new EXPR
 		     (this.tf, code.getRootElement(), 
 		      new CONST(this.tf, code.getRootElement(), 0)),
 		     null);
@@ -296,8 +296,8 @@ public class ToCanonicalTree {
     }
 
     static boolean isNop(Stm s) {
-	return (s.kind()==TreeKind.EXP) && 
-	    ((((EXP)s).getExp()).kind()==TreeKind.CONST);
+	return (s.kind()==TreeKind.EXPR) && 
+	    ((((EXPR)s).getExp()).kind()==TreeKind.CONST);
     }
 }
 

@@ -39,7 +39,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Simplification.java,v 1.1.2.7 2000-02-23 19:51:39 cananian Exp $
+ * @version $Id: Simplification.java,v 1.1.2.8 2000-03-26 06:28:47 jwhaley Exp $
  */
 public abstract class Simplification { 
     private static final boolean debug = false;
@@ -103,7 +103,7 @@ public abstract class Simplification {
     protected final static int _CONST      = (1<<4);
     protected final static int _DATUM      = (1<<5);
     protected final static int _ESEQ       = (1<<6);
-    protected final static int _EXP        = (1<<7);
+    protected final static int _EXPR       = (1<<7);
     protected final static int _JUMP       = (1<<8);
     protected final static int _LABEL      = (1<<9);
     protected final static int _MEM        = (1<<10);
@@ -284,7 +284,7 @@ public abstract class Simplification {
 		     0);
 	    case TreeKind.DATUM:      return _DATUM;
 	    case TreeKind.ESEQ:       return _ESEQ;
-	    case TreeKind.EXP:        return _EXP;
+	    case TreeKind.EXPR:       return _EXPR;
 	    case TreeKind.JUMP:       return _JUMP;
 	    case TreeKind.LABEL:      return _LABEL;
 	    case TreeKind.MEM:        return _MEM;

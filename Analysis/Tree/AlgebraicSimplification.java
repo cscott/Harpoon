@@ -13,7 +13,7 @@ import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.CONST; 
 import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.ESEQ; 
-import harpoon.IR.Tree.EXP;
+import harpoon.IR.Tree.EXPR;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.ExpList;
 import harpoon.IR.Tree.MOVE;
@@ -43,7 +43,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.19 2000-02-23 19:51:39 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.20 2000-03-26 06:28:47 jwhaley Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
 public abstract class AlgebraicSimplification extends Simplification { 
@@ -197,7 +197,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 		else if (b.type()==Type.LONG)
 		    c = new CONST(tf, e, (long) 0);
 		else throw new Error("ack");
-		return new ESEQ(tf, b, new EXP(tf, b, b.getLeft()), c);
+		return new ESEQ(tf, b, new EXPR(tf, b, b.getLeft()), c);
 	    }
 	};
 
@@ -524,7 +524,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 	
 	// either chain the MOVE together w/ the product, or replace
 	// the only TEMP with n.
-	if (numuses==0) return new ESEQ(tf, n, new EXP(tf, n, n), product);
+	if (numuses==0) return new ESEQ(tf, n, new EXPR(tf, n, n), product);
 	if (numuses==1) {
 	    Tlast.replace(n); // replace TEMP(t) with n itself.
 	    return product; // no need to separate variable.

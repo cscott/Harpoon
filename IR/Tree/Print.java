@@ -17,7 +17,7 @@ import java.io.StringWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.36 2000-02-17 02:57:50 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.37 2000-03-26 06:29:09 jwhaley Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -192,9 +192,9 @@ public class Print {
             indlevel--;
         }
 
-        public void visit(EXP s) {
+        public void visit(EXPR s) {
             indent(indlevel++);
-            pw.print("EXP(");
+            pw.print("EXPR(");
             s.getExp().accept(this);
             pw.print(")");
             indlevel--;

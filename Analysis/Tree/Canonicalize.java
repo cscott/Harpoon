@@ -8,7 +8,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.ESEQ;
-import harpoon.IR.Tree.EXP;
+import harpoon.IR.Tree.EXPR;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.ExpList;
 import harpoon.IR.Tree.MOVE;
@@ -28,7 +28,7 @@ import java.util.List;
  * to do pattern-driven tree canonicalization.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Canonicalize.java,v 1.1.2.4 2000-02-17 03:05:01 cananian Exp $
+ * @version $Id: Canonicalize.java,v 1.1.2.5 2000-03-26 06:28:47 jwhaley Exp $
  */
 public abstract class Canonicalize extends Simplification {
     // hide constructor
@@ -193,8 +193,8 @@ public abstract class Canonicalize extends Simplification {
 	return isNop(a) || contains(_KIND(b), _NAME|_CONST);
     }
     private static boolean isNop(Stm a) {
-	return contains(_KIND(a), _EXP) &&
-	    contains(_KIND(((EXP)a).getExp()), _CONST|_TEMP);
+	return contains(_KIND(a), _EXPR) &&
+	    contains(_KIND(((EXPR)a).getExp()), _CONST|_TEMP);
     }
     /** Testing function, for use in assertions that a given tree is
      *  canonical. */

@@ -35,7 +35,7 @@ import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.INVOCATION;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
-import harpoon.IR.Tree.EXP;
+import harpoon.IR.Tree.EXPR;
 import harpoon.IR.Tree.JUMP;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.MEM;
@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.152 2000-03-24 23:42:12 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.153 2000-03-26 06:29:05 jwhaley Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1753,7 +1753,7 @@ CJUMP(BINOP(cmpop, j, CONST<i>(c)), iftrue, iffalse)
     emitJUMP( ROOT, "b `L0", iffalse );
 }%
 
-EXP(e) %{
+EXPR(e) %{
 			/* this is a statement that's just an
 			   expression; just throw away 
 			   calculated value */

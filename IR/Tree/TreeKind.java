@@ -9,7 +9,7 @@ package harpoon.IR.Tree;
  * class. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * $Id: TreeKind.java,v 1.1.2.9 2000-01-10 05:08:41 cananian Exp $
+ * $Id: TreeKind.java,v 1.1.2.10 2000-03-26 06:29:10 jwhaley Exp $
  */
 public abstract class TreeKind  {
     public final static int ALIGN      = 0;
@@ -19,7 +19,7 @@ public abstract class TreeKind  {
     public final static int CONST      = 4;
     public final static int DATUM      = 5;
     public final static int ESEQ       = 6;
-    public final static int EXP        = 7;
+    public final static int EXPR       = 7;
     public final static int JUMP       = 8;
     public final static int LABEL      = 9;
     public final static int MEM        = 10;

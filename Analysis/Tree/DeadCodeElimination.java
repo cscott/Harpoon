@@ -12,7 +12,7 @@ import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Tree.DerivationGenerator;
-import harpoon.IR.Tree.EXP;
+import harpoon.IR.Tree.EXPR;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.MOVE;
 import harpoon.IR.Tree.SEQ;
@@ -33,11 +33,11 @@ import java.util.Set;
 
 /**
  * <code>DeadCodeElimination</code> removes unused MOVEs, useless
- * EXPs, and whatever other cruft it can detect using a liveness
+ * EXPRs, and whatever other cruft it can detect using a liveness
  * analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCodeElimination.java,v 1.1.2.4 2000-02-17 03:05:41 cananian Exp $
+ * @version $Id: DeadCodeElimination.java,v 1.1.2.5 2000-03-26 06:28:47 jwhaley Exp $
  */
 public abstract class DeadCodeElimination extends Simplification {
     // hide constructor
@@ -91,12 +91,12 @@ public abstract class DeadCodeElimination extends Simplification {
 	System.err.print("["+deadMoves.size()+" DEAD MOVES]");
 
 	return Arrays.asList(new Rule[] {
-	    // remove expressions of the form EXP(CONST(c)) or EXP(TEMP(t))
+	    // remove expressions of the form EXPR(CONST(c)) or EXPR(TEMP(t))
 	    //
-	    // SEQ(EXP(CONST(c)), s1) --> s1
-	    // SEQ(s1, EXP(CONST(c)) --> s1
-	    // SEQ(EXP(TEMP(t)), s1) --> s1
-	    // SEQ(s1, EXP(TEMP(t))) --> s1
+	    // SEQ(EXPR(CONST(c)), s1) --> s1
+	    // SEQ(s1, EXPR(CONST(c)) --> s1
+	    // SEQ(EXPR(TEMP(t)), s1) --> s1
+	    // SEQ(s1, EXPR(TEMP(t))) --> s1
 	    new Rule("removeNop") {
 		public boolean match(Stm s) {
 		    if (s.kind() != TreeKind.SEQ) return false;
@@ -110,19 +110,19 @@ public abstract class DeadCodeElimination extends Simplification {
 		    throw new Error("Neither side is a Nop!");
 		}
 		private boolean isNop(Stm s) {
-		    if (s.kind() != TreeKind.EXP) return false;
-		    EXP exp = (EXP) s;
+		    if (s.kind() != TreeKind.EXPR) return false;
+		    EXPR exp = (EXPR) s;
 		    return contains(_KIND(exp.getExp()), _CONST|_TEMP);
 		}
 	    },
-	    // MOVE(t1, e) --> EXP(e) if t1 is dead after move
+	    // MOVE(t1, e) --> EXPR(e) if t1 is dead after move
 	    new Rule("deadMoves") {
 		public boolean match(Stm s) {
 		    return deadMoves.contains(s);
 		}
 		public Stm apply(TreeFactory tf,Stm s,DerivationGenerator dg) {
 		    MOVE move = (MOVE) s;
-		    return new EXP(tf, move, move.getSrc());
+		    return new EXPR(tf, move, move.getSrc());
 		}
 	    },
 	});

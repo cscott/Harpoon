@@ -20,7 +20,7 @@ import java.util.Stack;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Stm.java,v 1.1.2.17 2000-02-16 19:44:25 cananian Exp $
+ * @version $Id: Stm.java,v 1.1.2.18 2000-03-26 06:29:10 jwhaley Exp $
  */
 abstract public class Stm extends Tree {
     protected Stm(TreeFactory tf, HCodeElement source, int arity) {
@@ -87,8 +87,8 @@ abstract public class Stm extends Tree {
      * Returns true if <code>stm</code> has no effect. 
      */
     public static boolean isNop(Stm stm) { 
-	return (stm.kind()==TreeKind.EXP) && 
-	    ((((EXP)stm).getExp()).kind()==TreeKind.CONST);
+	return (stm.kind()==TreeKind.EXPR) && 
+	    ((((EXPR)stm).getExp()).kind()==TreeKind.CONST);
     }
 }
 

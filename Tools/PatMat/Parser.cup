@@ -50,7 +50,7 @@ import java_cup.runtime.lr_parser;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.34 2000-02-23 19:51:53 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.35 2000-03-26 06:29:21 jwhaley Exp $
  */
 
 action code {:
@@ -91,7 +91,7 @@ terminal KEY_EXTRA, KEY_WEIGHT, KEY_PRED;
 // start with, end with
 terminal START_WITH, END_WITH;
 // tree nodes
-terminal BINOP, CALL, CJUMP, CONST, EXP, JUMP, LABEL;
+terminal BINOP, CALL, CJUMP, CONST, EXPR, JUMP, LABEL;
 terminal MEM, MOVE, NAME, NATIVECALL, RETURN, SEQ, TEMP, THROW;
 terminal UNOP;
 terminal ALIGN, DATUM, METHOD, SEGMENT;
@@ -216,7 +216,7 @@ stm	::=	ALIGN LPAREN sym_number:n RPAREN
 		{: RESULT = new StmCjump(e, t, f); :}
 	|	DATUM LPAREN exp:e RPAREN
 		{: RESULT = new StmData(e); :}
-	|	EXP LPAREN exp:e RPAREN
+	|	EXPR LPAREN exp:e RPAREN
 		{: RESULT = new StmExp(e); :}
 	|	JUMP LPAREN exp:e RPAREN
 		{: RESULT = new StmJump(e); :}

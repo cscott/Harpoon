@@ -24,9 +24,9 @@ void munchStm(Stm stm) {
 	}
     }
     // [...] (more user-specified patterns here)
-    // patterns with EXP and SEQ at root handled by generator automatically
-    if (stm instanceof EXP) {
-	munchExp(((EXP)stm).exp); // throw away Temp result.
+    // patterns with EXPR and SEQ at root handled by generator automatically
+    if (stm instanceof EXPR) {
+	munchExp(((EXPR)stm).exp); // throw away Temp result.
 	return;
     }
     if (stm instanceof SEQ) {
