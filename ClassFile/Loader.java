@@ -25,7 +25,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.9 1999-08-18 20:22:17 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.10 1999-09-08 17:36:37 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -41,6 +41,9 @@ public abstract class Loader {
       try { // look for name in zipfile, return null if something goes wrong.
 	ZipEntry ze = zf.getEntry(name);
 	return (ze==null)?null:zf.getInputStream(ze);
+      } catch (UnsatisfiedLinkError e) {
+	System.err.println("UNSATISFIED LINK ERROR: "+name);
+	return null;
       } catch (IOException e) { return null; }
     }
     /** Close the zipfile when this object is garbage-collected. */
