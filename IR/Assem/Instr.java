@@ -15,9 +15,9 @@ import harpoon.Temp.Temp;
  * the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.3 1999-02-16 21:13:44 andyb Exp $
+ * @version $Id: Instr.java,v 1.1.2.4 1999-02-17 03:23:19 andyb Exp $
  */
-public abstract class Instr implements HCodeElement, UseDef {
+public class Instr implements HCodeElement, UseDef {
     protected String assem;
     protected Temp[] dst;
     protected Temp[] src;
@@ -59,7 +59,7 @@ public abstract class Instr implements HCodeElement, UseDef {
 
     public Temp[] def() { return dst; }
 
-    public String getSourcefile() { return source_file; }
+    public String getSourceFile() { return source_file; }
 
     public int getLineNumber() { return source_line; }
 
