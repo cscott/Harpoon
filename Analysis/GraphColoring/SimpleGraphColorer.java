@@ -7,33 +7,18 @@ import java.util.*;
  * <code>SimpleGraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.3 1999-01-14 23:55:21 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.4 1999-01-15 00:10:54 pnkfelix Exp $
  */
 
-public class SimpleGraphColorer  {
+public class SimpleGraphColorer extends GraphColorer {
 
     private static final boolean DEBUG = false;
     
-    public static final void findColoring( ColorableGraph graph,
-					   ColorFactory factory ) {
-	boolean notColored = true;
-	while(notColored) {
-	    try {
-		color( graph, factory.getColors() );
-		notColored = false;
-	    } catch (UncolorableGraphException e) {
-		// not enough colors; make a new one
-		factory.makeColor();
-	    }
-	}
-    }
-
-
     /** Simple Graph Colorer based on algorithm given in 6.035 lecture
 	( http://ceylon.lcs.mit.edu/6035/lecture18/sld064.htm ).
     */
-    public static final void color( ColorableGraph graph, 
-				    Vector colors ) 
+    public final void color( ColorableGraph graph, 
+			     Vector colors ) 
 	throws UncolorableGraphException {
 	try {
 	    Stack hidden = new Stack();
@@ -169,15 +154,6 @@ public class SimpleGraphColorer  {
 	    e.printStackTrace();
 	    throw new RuntimeException(e.getMessage());
 	} 
-    }
-
-
-    /** <code>SimpleGraphColorer</code> is a purely functional class.
-	(making the constructor private prevents it from being
-	instantiated) 
-    */
-    private SimpleGraphColorer() {
-        
     }
     
 }
