@@ -16,8 +16,10 @@ inline struct Block* Block_new(void* superBlockTag,
 #ifdef RTJ_DEBUG
   printf("Block_new(0x%08x, %d)\n", superBlockTag, size);
 #endif
-  (bl->free) = (bl->oldBegin) = (bl->begin) = 
-    (void*)RTJ_MALLOC_UNCOLLECTABLE(size);
+#ifdef WITH_NOHEAP_SUPPORT
+  (bl->oldBegin) = 
+#endif    
+    (bl->free) = (bl->begin) = (void*)RTJ_MALLOC_UNCOLLECTABLE(size);
 #ifdef RTJ_TIMER
   gettimeofday(&end, NULL);
   printf("Block_new: %ds %dus\n", 
