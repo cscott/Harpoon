@@ -47,7 +47,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.3.2.4 2002-03-11 03:00:30 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.3.2.5 2002-03-20 03:45:31 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -178,7 +178,9 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    } else { // only HMethods and HClasses in roots, so must be HClass
 		rootM = null;
 		rootC = (HClass) o;
-		instantiated = false;
+		// no methods of an array.  so mention of an array means
+		// it is instantiated.  otherwise, it's not.
+		instantiated = rootC.isArray();
 	    }
 	    if (instantiated)
 		discoverInstantiatedClass(S, rootC);

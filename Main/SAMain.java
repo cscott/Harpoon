@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.3.2.1 2002-02-27 08:37:10 cananian Exp $
+ * @version $Id: SAMain.java,v 1.3.2.2 2002-03-20 03:45:36 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -440,6 +440,11 @@ public class SAMain extends harpoon.IR.Registration {
 		hcf = new harpoon.Analysis.SizeOpt.MZFCompressor
 		    (frame, hcf, classHierarchy,
 		     System.getProperty("mzf.profile")).codeFactory();
+		// START HACK: main still creates a String[], even after the
+		// Compressor has split String.  So re-add String[] to the
+		// root-set.
+		roots.add(linker.forDescriptor("[Ljava/lang/String;"));
+		// END HACK!
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
 	    /* -- add counters to all allocations? -- */
