@@ -95,7 +95,7 @@ static void remove_running_thread() {
 
 static void wait_on_running_thread() {
   pthread_mutex_lock(&running_threads_mutex);
-  while((gtl!=gtl->next)&&(ioptr!=NULL)) {
+  while((gtl!=gtl->next)||(ioptr!=NULL)) {
     pthread_cond_wait(&running_threads_cond, &running_threads_mutex);
   }
   pthread_mutex_unlock(&running_threads_mutex);
@@ -239,7 +239,7 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
 
 /* wait for all non-main non-daemon threads to terminate */
 void FNI_java_lang_Thread_finishMain(JNIEnv *env) {
-#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
   wait_on_running_thread();
 #endif
 }
