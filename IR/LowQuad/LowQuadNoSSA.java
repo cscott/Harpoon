@@ -21,7 +21,7 @@ import harpoon.IR.Quads.ToNoSSA;
  * always be empty.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.28 2000-10-06 21:20:25 cananian Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.29 2000-10-17 01:10:35 cananian Exp $
  */
 public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
     /** The name of this code view. */
@@ -33,7 +33,7 @@ public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
       
 	ToNoSSA translator;
       
-	translator   = new ToNoSSA(qf, code, (Derivation) code);
+	translator   = new ToNoSSA(qf, code, (Derivation)code.getDerivation());
 	quads        = translator.getQuads();
 	setDerivation(translator.getDerivation());
 	setAllocationInformation(translator.getAllocationInformation());
