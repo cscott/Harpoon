@@ -72,13 +72,13 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.73 2000-12-07 00:43:57 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.74 2001-01-23 22:26:15 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
     public static final boolean DEBUG2    = false;
     public static final boolean DEBUG_SCC = true;
-    public static final boolean DEBUG_INTRA = true;
+    public static final boolean DEBUG_INTRA = false;
 
     /** crazy, isn't it? */
     public static boolean MEGA_DEBUG = false;
@@ -1257,7 +1257,7 @@ public class PointerAnalysis {
     }
 
     /** Prints some statistics. */
-    public final void  print_stats(){
+    public final void print_stats(){
 	if(!STATS){
 	    System.out.println("Statistics are deactivated.");
 	    System.out.println("Turn on the PointerAnalysis.STATS flag!");
@@ -1344,18 +1344,25 @@ public class PointerAnalysis {
 	}
     }
 
+
     /** Returns the set of the nodes pointed by the temporary <code>t</code>
 	at the point right before executing instruction <code>q</code>
 	from the body of meta-method <code>mm</code>. */
     public final Set pointedNodes(MetaMethod mm, Quad q, Temp l){
 	// 1. obtain the Parallel Interaction Graph attached to the point
 	// right before the execution of q (noted .q in the article). 
-	ParIntGraph pig = getPIGAtQuad(mm,q);
+	ParIntGraph pig = getPIGAtQuad(mm, q);
 	// 2. look at the nodes pointed by l; as from a temporary we can
 	// have only inside edges, it is enough to look in the I set.
 	return pig.G.I.pointedNodes(l);
     }
 
+
+    /** TODO */
+    public final Set pointedNodes(Quad q, Temp l) {
+	Util.assert(false, "Not yet implemented");
+	return null;
+    }
 
     /*
     ////////// SPECIAL HANDLING FOR SOME NATIVE METHODS ////////////////////

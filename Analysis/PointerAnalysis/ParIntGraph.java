@@ -29,7 +29,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.40 2001-01-23 01:08:37 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.41 2001-01-23 22:26:13 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -565,11 +565,13 @@ public class ParIntGraph {
 	string representation. */
     public String toString(){
 	return
-	    "\nParIntGraph{\n" + G + " " + tau + 
+	    "\nParIntGraph{\n" + G + " " + tau;
+	/* + 
 	    " Touched threads: " + touchedToString() + "\n" +
 	    ar + 
 	    (PointerAnalysis.IGNORE_EO ? "" : eo.toString()) + 
 	    "}";
+	*/
     }
 
     // Produces a string representation of the

@@ -83,7 +83,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.87 2000-12-07 00:44:01 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.88 2001-01-23 22:28:14 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -105,6 +105,8 @@ public abstract class PAMain {
     private static boolean DO_ANALYSIS = false;
     // turns on the interactive analysis
     private static boolean DO_INTERACTIVE_ANALYSIS = false;
+    // turn on elaborated details during the interactive analysis
+    private static boolean INTERACTIVE_ANALYSIS_DETAILS = false;
 
     // force the creation of the memory allocation info.
     private static boolean MA_MAPS = false;
@@ -418,7 +420,8 @@ public abstract class PAMain {
 				       + " ->\n META-METHOD " + mm);
 		    ParIntGraph int_pig = pa.getIntParIntGraph(mm);
 		    ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
-		    ParIntGraph pig_inter_thread = pa.getIntThreadInteraction(mm);
+		    ParIntGraph pig_inter_thread =
+			pa.getIntThreadInteraction(mm);
 		    PANode[] nodes = pa.getParamNodes(mm);
 		    System.out.println("META-METHOD " + mm);
 		    System.out.print("POINTER PARAMETERS: ");
@@ -430,9 +433,21 @@ public abstract class PAMain {
 		    System.out.println(int_pig);
 		    System.out.print("EXT. GRAPH AT THE END OF THE METHOD:");
 		    System.out.println(ext_pig);
-		    System.out.print("INT. GRAPH AT THE END OF THE METHOD" +
-				     " + INTER-THREAD ANALYSIS:");
-		    System.out.println(pig_inter_thread);
+		    //System.out.print("INT. GRAPH AT THE END OF THE METHOD" +
+		    //		     " + INTER-THREAD ANALYSIS:");
+		    //System.out.println(pig_inter_thread);
+
+		    if(INTERACTIVE_ANALYSIS_DETAILS) {
+			HCode hcode = hcf.convert(mm.getHMethod());
+			for(Iterator itq = hcode.getElementsI();
+			    itq.hasNext(); ) {
+
+			    Quad q = (Quad) itq.next();
+			    System.out.println("Graph just before <<" + 
+					       Debug.code2str(q) + ">>: " +
+					       pa.getPIGAtQuad(mm, q));
+			}
+		    }
 		    
 		}
 	    }
@@ -504,7 +519,7 @@ public abstract class PAMain {
 	    new LongOpt("ns",            LongOpt.REQUIRED_ARGUMENT, null, 28),
 	};
 
-	Getopt g = new Getopt("PAMain", argv, "mscoa:iN:P:", longopts);
+	Getopt g = new Getopt("PAMain", argv, "mscoa:iIN:P:", longopts);
 
 	while((c = g.getopt()) != -1)
 	    switch(c) {
@@ -564,6 +579,10 @@ public abstract class PAMain {
 		break;
 	    case 'i':
 		DO_INTERACTIVE_ANALYSIS = true;
+		break;
+	    case 'I':
+		DO_INTERACTIVE_ANALYSIS = true;
+		INTERACTIVE_ANALYSIS_DETAILS = true;
 		break;
 	    case 5:
 		arg = g.getOptarg();
@@ -735,7 +754,8 @@ public abstract class PAMain {
 	}
 
 	if(DO_INTERACTIVE_ANALYSIS)
-	    System.out.println("\tDO_INTERACTIVE_ANALYSIS");
+	    System.out.println("\tDO_INTERACTIVE_ANALYSIS" +
+			       (INTERACTIVE_ANALYSIS_DETAILS?"(details)":""));
 
 	if(MA_MAPS){
 	    System.out.println("\tMA_MAPS in \"" + MA_MAPS_OUTPUT_FILE + "\"");
@@ -1293,6 +1313,7 @@ public abstract class PAMain {
 	"                 class can be ommited. More than one \"-a\" flags",
 	"                 can be used on the same command line.",
 	"-i              Interactive analysis of methods.",
+	"-I              Interactive analysis of methods (more details).",
 	"--noit          Just interprocedural analysis, no interthread.",
 	"--inline        Use method inlining to enable more stack allocation",
 	"                 (makes sense only with --mamaps).",
