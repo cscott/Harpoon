@@ -29,7 +29,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.41 2001-10-29 16:34:20 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.42 2001-10-29 16:42:37 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -83,6 +83,9 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
     protected TreeBuilder initTreeBuilder() {
 	int align = Integer.parseInt
 	    (System.getProperty("harpoon.runtime1.pointer.alignment","0"));
+	// config-checking --- this property shouldn't change!
+	if (align!=0)
+	    configurationSet.add("check_with_masked_pointers_needed");
 	return new harpoon.Backend.Runtime1.TreeBuilder
 	    (this, frame.getLinker(), as, frame.pointersAreLong(), align);
     }
@@ -256,6 +259,7 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 
 	List r = Arrays.asList(new Data[] {
 	    new DataClaz(frame, hc, ch),
+	    new DataConfigChecker(frame, hc),
 	    new DataInterfaceList(frame, hc, ch),
 	    new DataStaticFields(frame, hc),
 	    new DataStrings(frame, hc, newStrings),

@@ -20,7 +20,9 @@ import harpoon.Temp.Label;
 import harpoon.Util.Util;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 /**
  * A <code>Generic.Runtime</code> provides runtime-specific
  * information to the backend.  It should be largely-to-totally
@@ -32,7 +34,7 @@ import java.util.List;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.15 2001-07-11 20:24:53 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.16 2001-10-29 16:42:20 cananian Exp $
  */
 public abstract class Runtime {
     protected Runtime() { }
@@ -97,6 +99,15 @@ public abstract class Runtime {
      *  callable by code in the runtime implementation (and should
      *  therefore be included in every class hierarchy). */
     public abstract Collection runtimeCallableMethods();
+
+    /** Return a <code>Set</code> of labels which specify configuration
+     *  dependencies.  A reference will be emitted by the FLEX component
+     *  of this <code>Generic.Runtime</code> for each string in
+     *  this set, which should match correspondingly-named labels in
+     *  a properly configured C runtime.  This allows us to check
+     *  at link time that the C runtime's configuration matches the
+     *  FLEX configuration. */
+    public final Set configurationSet = new HashSet();
 
     /** The <code>TreeBuilder</code> constructs bits of code in the
      *  <code>IR.Tree</code> form to handle various runtime-dependent

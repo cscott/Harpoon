@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.170 2001-10-19 20:45:35 kkz Exp $
+ * @version $Id: SAMain.java,v 1.1.2.171 2001-10-29 16:42:42 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -266,6 +266,15 @@ public class SAMain extends harpoon.IR.Registration {
 	default: throw new Error("Unknown Backend: "+BACKEND);
 	}
 
+	// check the configuration of the runtime.
+	// (in particular, the --with-precise-c option)
+	if (BACKEND==PRECISEC_BACKEND)
+	    frame.getRuntime().configurationSet.add
+		("check_with_precise_c_needed");
+	else
+	    frame.getRuntime().configurationSet.add
+		("check_with_precise_c_not_needed");
+
 	// needed for creating the class hierarchy
 	Set roots;
 	{
@@ -310,7 +319,12 @@ public class SAMain extends harpoon.IR.Registration {
 		// recompute the hierarchy after transformation.
 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    }
+		// config checking
+		frame.getRuntime().configurationSet.add
+		    ("check_with_init_check_needed");
+	    } else
+		frame.getRuntime().configurationSet.add
+		    ("check_with_init_check_not_needed");
 
 	    if (EVENTDRIVEN && !alexhack) {
 		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
@@ -377,6 +391,9 @@ public class SAMain extends harpoon.IR.Registration {
 		    .codeFactory(hcf, linker, mainM);
 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+		// config checking
+		frame.getRuntime().configurationSet.add
+		    ("check_with_transactions_needed");
 	    }
 
 	    if (Realtime.REALTIME_JAVA && !alexhack) {
