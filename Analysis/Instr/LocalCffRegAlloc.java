@@ -44,7 +44,7 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.22 1999-06-16 16:40:43 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.23 1999-06-16 17:01:02 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -206,11 +206,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 	// numbers.  
 	HashMap nextRef = new HashMap(); 
 
+	// liveOnExits: Set of Temps that are used after this
+	// basicblock has completed execution
+	Set liveOnExit = lv.getLiveOnExit(bb);
 
 	RegToValueMap regFile = new RegToValueMap();
 	if (DEBUG) System.out.println(regFile);
 	MaxPriorityQueue pregPriQueue = new BinHeapPriorityQueue();
-
 
 
 	// ***** BUILD NEXT-REF TABLE *****
@@ -295,7 +297,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 			boolean dirty = regFile.isDirty(preg);
 			reg = regFile.evict(preg);
 			
-			if (dirty) {
+			if (dirty &&
+			    (liveOnExit.contains(preg) ||
+			     !lastUse(preg, j, (Iterator)jnstrs.clone()))) {
 			    InstrMEM store = 
 				new InstrMEM(inf, null, 
 					     "FSK-STORE `d0, `s0",
@@ -488,14 +492,15 @@ public class LocalCffRegAlloc extends RegAlloc {
 	} //done with instrs
 	
 	// Now need to append a series of STOREs to the BasicBlock (so
-	// that Temp locations in memory are updated)  Fix this so
-	// that only LIVE variables are updated
+	// that Temp locations in memory are updated)  
 
 	Instr instr = (Instr) bb.getLast();
 
 	for (int i=0; i<regFile.genRegs.length; i++) {
 	    Temp val = regFile.get(regFile.genRegs[i]);
-	    if (val != null && regFile.isDirty(val)) {
+	    if (val != null && 
+		regFile.isDirty(val) && 
+		liveOnExit.contains(val)) { 
 		InstrMEM store = 
 		    new InstrMEM(inf, null, "FSK-STORE `d0, `s0",
 				 new Temp[] { val },

@@ -39,7 +39,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.9 1999-06-16 01:54:30 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.10 1999-06-16 17:01:02 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -270,7 +270,6 @@ public abstract class RegAlloc  {
 		     order that they will be executed.
 	     <BR> 3. <code>iter</code> is currently indexed at
 	             <code>i</code> 
-	     <BR> 4. <code>reg</code> is used by <code>i</code>
 	<BR> <B>modifies:</B> <code>iter</code>
 	<BR> <B>effects:</B> 
              <BR> 1. Returns true if no instruction after

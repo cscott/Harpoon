@@ -21,7 +21,7 @@ import java.util.Iterator;
  * rep instead of <code>Set</code>s of <code>Temp</code>s.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.3 1999-06-03 01:45:25 pnkfelix Exp $
+ * @version $Id: LiveVars.java,v 1.1.2.4 1999-06-16 17:00:57 pnkfelix Exp $
  */
 public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     
@@ -139,7 +139,9 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	    s.append("BasicBlock " + bb);
 	    LiveVarInfo lvi = (LiveVarInfo) bbToLvi.get(bb);
 	    s.append("\n" + lvi);
-	    s.append("\n" + bb.dumpElems());
+	    s.append("\n -- " + bb + " INSTRS --\n" + 
+		     bb.dumpElems() + 
+		     " -- END " + bb + " --\n");
 	}
 	return s.toString();
     }
