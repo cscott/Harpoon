@@ -1,8 +1,15 @@
 package harpoon.Tools.Annotation;
 
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.Loader;
 import harpoon.Tools.Annotation.Lex.LinePos;
+import harpoon.Util.HashEnvironment;
+import harpoon.Util.Environment;
 
-import java_cup.runtime.*;
+import java_cup.runtime.Symbol;
+
+import java.util.Iterator;
+import java.util.Stack;
 
 /* Java 1.2 parser for CUP.  
  * Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
@@ -23,6 +30,12 @@ JDK 1.2 Features added:
 
 /* THIS COPY MODIFIED EXTENSIVELY FOR ANNOTATION BY CSA [9-12-99]. */
 action code {:
+  Environment env = new HashEnvironment();
+  { env.put("#qualified",""); }
+  Stack s = new Stack();
+  private void pushenv() { s.push(env.getMark()); }
+  private void popenv()  { env.undoToMark((Environment.Mark)s.pop()); }
+
   // ANNOTATION FUNCTIONS:
   public void annotateURL(int left, int right, String link) {
     LinePos lp = parser.lexer.linepos(left), rp = parser.lexer.linepos(right);
@@ -30,45 +43,93 @@ action code {:
     System.out.println("<A HREF=\""+link+"\">");
     System.out.println("</A>");
   }
-  public String packageURL(String pkg) {
-    if (parser.jdk11) return "Package-"+pkg+".html";
-    else return pkg_offset(pkg)+"package-summary.html";
-  }
-  public String classURL(String cls) {
-    if (parser.jdk11) return cls+".html";
-    String pkg = (cls.indexOf('.')<0)?"":cls.substring(0,cls.lastIndexOf('.'));
-    String scl = (pkg.length()>0)?cls.substring(pkg.length()+1):cls;
-    return pkg_offset(pkg)+scl+".html";
-  }
-  private String pkg_offset(String pkg) {
-    StringBuffer path = new StringBuffer();
-    // chew up identical portions of pkg and this_package
-    String s = this_package;
-    do {
-     String f1 = (s  .indexOf('.')<0)?s  :s  .substring(0,s  .indexOf('.')+1);
-     String f2 = (pkg.indexOf('.')<0)?pkg:pkg.substring(0,pkg.indexOf('.')+1);
-     if (!f1.equals(f2)) break;
-     s  = s  .substring(f1.length());
-     pkg= pkg.substring(f2.length());
-    } while (s.length()>0 && pkg.length()>0);
-    if (s.length()>0)
-      for (s+="." ; s.indexOf('.')>=0; s=s.substring(s.indexOf('.')+1))
-        path.append("../");
-    path.append(pkg.replace('.','/'));
-    if (pkg.length()>0) path.append('/');
-    return path.toString();
+  public void annotateANCHOR(int left, int right, String name) {
+    LinePos lp = parser.lexer.linepos(left), rp = parser.lexer.linepos(right);
+    System.out.println(lp.line+" "+lp.pos+"\t"+rp.line+" "+rp.pos);
+    System.out.println("<A NAME=\""+name+"\">");
+    System.out.println("</A>");
   }
   public String this_package=null;
+
+  class QualName {
+    public final String packageN; // null for default package
+    public final String classN;   // non-null if this is a class name
+    public final String innerN;   // non-null if this is an inner class.
+    QualName(String p, String c, String i) {
+      this.packageN=p; this.classN=c; this.innerN=i;
+    }
+    public String toString() {
+      StringBuffer sb = new StringBuffer();
+      if (packageN!=null) sb.append(packageN);
+      if (classN==null) return sb.toString();
+      if (packageN!=null) sb.append('.');
+      sb.append(classN);
+      if (innerN==null) return sb.toString();
+      sb.append('.'); sb.append(innerN);
+      return sb.toString();
+    }
+    public String toURL() {
+      StringBuffer sb = new StringBuffer();
+      if (packageN!=null) sb.append(pkg_offset(packageN));
+      if (classN==null) return sb.toString()+"index.html"; // package page
+      sb.append(classN); sb.append(".html");
+      if (innerN==null) return sb.toString();
+      sb.append("#class-");
+      if (packageN!=null) { sb.append(packageN); sb.append('.'); }
+      sb.append(classN); sb.append('.'); sb.append(innerN);
+      return sb.toString();
+    }
+    private String pkg_offset(String pkg) {
+      StringBuffer path = new StringBuffer();
+      // chew up identical portions of pkg and this_package
+      String s = this_package;
+      do {
+	String f1=(s  .indexOf('.')<0)?s  :s  .substring(0,s  .indexOf('.')+1);
+	String f2=(pkg.indexOf('.')<0)?pkg:pkg.substring(0,pkg.indexOf('.')+1);
+	if (!f1.equals(f2)) break;
+	s  = s  .substring(f1.length());
+	pkg= pkg.substring(f2.length());
+      } while (s.length()>0 && pkg.length()>0);
+      if (s.length()>0)
+	for (s+="." ; s.indexOf('.')>=0; s=s.substring(s.indexOf('.')+1))
+	  path.append("../");
+      path.append(pkg.replace('.','/'));
+      if (pkg.length()>0) path.append('/');
+      return path.toString();
+    }
+  }
+
+  QualName packageName(String n) { return new QualName(n, null, null); }
+  QualName className(String cls) { /* split into package and class */
+      String inner=null;
+      do {
+	  try {
+	      HClass.forName(cls);
+	      // we've succeeded!
+	      break;
+	  } catch (NoClassDefFoundError e) { /* no class found */ }
+	  // move an element to the inner class portion.
+	  if (cls.indexOf('.')<0) /* give up! assume whole thing is package */
+	    if (inner==null) return new QualName(cls, null, null);
+	    else return new QualName(cls+"."+inner, null, null);
+	  inner = cls.substring(1+cls.lastIndexOf('.')) +
+	      ((inner==null)? "" : ("."+inner));
+	  cls = cls.substring(0, cls.lastIndexOf('.'));
+      } while (true);
+      // okay, assume that cls/inner split is correct.
+      if (cls.indexOf('.')<0) return new QualName(null,cls,inner);
+      else return new QualName(cls.substring(0,cls.lastIndexOf('.')),
+			       cls.substring(1+cls.lastIndexOf('.')),
+			       inner);
+  }
 :};
 
 parser code  {: 
   Lexer lexer;
-  boolean jdk11;
 
-  public Java12(Lexer l, boolean isJDK11) {
+  public Java12(Lexer l) {
     this();
     lexer=l;
-    jdk11=isJDK11;
   }
 
   public void syntax_error(java_cup.runtime.Symbol current) {
@@ -332,8 +393,8 @@ type_declarations ::=
 	;
 package_declaration ::= 
 		PACKAGE name:n SEMICOLON
-		{: this_package=n;
-		   annotateURL(nleft, nright, packageURL(n));
+		{: this_package=n; env.put("#qualified",n);
+		   annotateURL(nleft, nright, packageName(n).toURL());
 		:}
 	;
 import_declaration ::= 
@@ -341,12 +402,29 @@ import_declaration ::=
 	|	type_import_on_demand_declaration
 	;
 single_type_import_declaration ::= 
-		IMPORT name:n SEMICOLON
-		{: annotateURL(nleft, nright, classURL(n)); :}
+		IMPORT name:n SEMICOLON {:
+		  env.put("#import-"+n.substring(1+n.lastIndexOf('.')), n);
+		  annotateURL(nleft, nright, className(n).toURL());
+		:}
 	;
 type_import_on_demand_declaration ::=
-		IMPORT name:n DOT MULT SEMICOLON
-		{: annotateURL(nleft, nright, packageURL(n)); :}
+		IMPORT name:n DOT MULT SEMICOLON {:
+		  /* try as class name to handle inner classes. */
+		  QualName qn = className(n);
+		  String pkg = (qn.packageN==null)?"":qn.packageN;
+		  for (Iterator it=Loader.listClasses(pkg); it.hasNext(); ) {
+		    /** note evilness here w/regard to classes named with $ */
+		    String cls = ((String) it.next()).replace('$','.');
+		    if (qn.classN!=null &&
+		      	(qn.packageN==null
+			 ? !cls.startsWith(qn.classN)
+			 : !cls.startsWith(qn.packageN+"."+qn.classN)))
+		      continue;
+		    env.put("#import-"+cls.substring(1+cls.lastIndexOf('.')),
+			    cls);
+		  }
+		  annotateURL(nleft, nright, qn.toURL());
+		:}
 	;
 type_declaration ::=
 		class_declaration
@@ -372,7 +450,12 @@ modifier ::=	PUBLIC | PROTECTED | PRIVATE
 
 // 19.8.1) Class Declaration:
 class_declaration ::= 
-	modifiers_opt CLASS IDENTIFIER super_opt interfaces_opt class_body
+	modifiers_opt CLASS IDENTIFIER:id super_opt interfaces_opt
+	{: pushenv();
+	   String qual = (String) env.get("#qualified");
+	   env.put("#qualified", (qual.length()>0) ? (qual+"."+id) : id);
+           annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
+	:} class_body {: popenv(); :}
 	;
 super ::=	EXTENDS class_type
 	;
@@ -406,7 +489,12 @@ class_member_declaration ::=
 		field_declaration
 	|	method_declaration
 	/* repeat the prod for 'class_declaration' here: */
-	|	modifiers_opt CLASS IDENTIFIER super_opt interfaces_opt class_body
+	|	modifiers_opt CLASS IDENTIFIER:id super_opt interfaces_opt
+	{: pushenv();
+	   String qual = (String) env.get("#qualified");
+	   env.put("#qualified", (qual.length()>0) ? (qual+"."+id) : id);
+           annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
+	:} class_body {: popenv(); :}
 	|	interface_declaration
 	;
 
@@ -499,8 +587,12 @@ explicit_constructor_invocation ::=
 
 // 19.9.1) Interface Declarations
 interface_declaration ::=
-		modifiers_opt INTERFACE IDENTIFIER extends_interfaces_opt 
-			interface_body
+		modifiers_opt INTERFACE IDENTIFIER:id extends_interfaces_opt {:
+		 pushenv();
+	         String qual = (String) env.get("#qualified");
+	         env.put("#qualified", (qual.length()>0) ? (qual+"."+id) : id);
+                 annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
+		:} interface_body {: popenv(); :}
 	;
 extends_interfaces_opt ::=
 	|	extends_interfaces

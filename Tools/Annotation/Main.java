@@ -16,7 +16,7 @@ public class Main {
     // Change the boolean in the next line to 'false' for a
     // pre-java 1.2 lexer.
     Lexer l = new harpoon.Tools.Annotation.Lex.Lexer(fr, true);
-    Java12 g = new Java12(l, true);
+    Java12 g = new Java12(l);
     g./*debug_*/parse();
   }
 }
