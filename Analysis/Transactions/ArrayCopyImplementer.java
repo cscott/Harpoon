@@ -3,11 +3,17 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Transactions;
 
-import harpoon.ClassFile.*;
-import harpoon.Util.*;
+import harpoon.ClassFile.CachingCodeFactory;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HMethodMutator;
+import harpoon.ClassFile.Linker;
+import harpoon.Util.Util;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Modifier;
 /**
  * <code>ArrayCopyImplementer</code> adds a pure-java implementation of
  * the <code>System.arraycopy()</code> method.  Our implementation is
@@ -24,7 +30,7 @@ import java.util.*;
  * to inline this version and eliminate lots of checks in most cases.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayCopyImplementer.java,v 1.1.2.1 2001-01-23 22:01:00 cananian Exp $
+ * @version $Id: ArrayCopyImplementer.java,v 1.1.2.2 2001-01-23 22:27:33 cananian Exp $
  */
 public class ArrayCopyImplementer extends CachingCodeFactory {
     /** Parent code factory. */
