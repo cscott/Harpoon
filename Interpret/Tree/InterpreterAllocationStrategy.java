@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
-import harpoon.Backend.Allocation.AllocationStrategy;
 import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.ExpList;
@@ -20,7 +19,7 @@ import harpoon.Temp.Temp;
  * interpreter.  Probably shouldn't be used for anything else.  
  *
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterAllocationStrategy.java,v 1.1.2.6 1999-08-09 22:00:22 duncan Exp $
+ * @version $Id: InterpreterAllocationStrategy.java,v 1.1.2.7 1999-10-13 16:30:53 cananian Exp $
  */
 class InterpreterAllocationStrategy implements AllocationStrategy {
 
