@@ -7,12 +7,13 @@ import harpoon.IR.Properties.UseDef;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.ClassFile.HCodeElement;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * <code>IgnoreSpillUseDefer</code>
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: IgnoreSpillUseDefer.java,v 1.1.2.2 2000-06-30 23:37:20 pnkfelix Exp $
+ * @version $Id: IgnoreSpillUseDefer.java,v 1.1.2.3 2000-07-02 18:17:40 pnkfelix Exp $
  */
 public class IgnoreSpillUseDefer extends UseDefer {
     
@@ -23,15 +24,19 @@ public class IgnoreSpillUseDefer extends UseDefer {
     
     public Collection useC(HCodeElement hce) {
 	if (hce instanceof RegAlloc.SpillStore) 
-	    return defC(hce);
+	    return ((UseDef)hce).defC();
+	else if (hce instanceof RegAlloc.SpillLoad) 
+	    return Collections.EMPTY_SET;
 	else 
 	    return ((UseDef)hce).useC();
     }
 
     public Collection defC(HCodeElement hce) {
 	if (hce instanceof RegAlloc.SpillLoad) 
-	    return useC(hce);
-	else 
+	    return ((UseDef)hce).useC();
+	else if (hce instanceof RegAlloc.SpillStore) 
+	    return Collections.EMPTY_SET;
+	else
 	    return ((UseDef)hce).defC();
     }
 }
