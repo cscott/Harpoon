@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.59 1998-10-18 07:28:00 cananian Exp $
+# $Id: GNUmakefile,v 1.60 1998-10-18 08:21:29 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -126,7 +126,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) ChangeLog mark-executable
 	cd doc; ln -s $(JDOCIMAGES) images
 	cd doc; ln -s packages.html index.html
 	cd doc; ln -s index.html API_users_guide.html
-	cp ChangeLog doc/ChangeLog
+	cp ChangeLog doc/ChangeLog.txt
 	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	chmod a+rx doc ; chmod a+r doc/*
 
