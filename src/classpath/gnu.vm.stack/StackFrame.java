@@ -61,7 +61,7 @@ public final class StackFrame {
 	 * @param lineNum the line number or -1 if unknown.
 	 * @param filename the filename of the source of the method, null if unknown.
 	 */
-	private StackFrame(Object obj, Method method, int lineNum, String filename) {
+	private StackFrame(StackFrame caller, Object obj, Method method, int lineNum, String filename) {
 		this.caller = caller;
 		this.obj = obj;
 		this.method = method;
