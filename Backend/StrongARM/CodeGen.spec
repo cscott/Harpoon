@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.137 2000-02-18 07:33:49 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.138 2000-02-19 04:49:41 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -307,6 +307,36 @@ import java.util.Iterator;
 	case Bop.CMPGE: return "ge";
 	case Bop.CMPLE: return "le";
 	case Bop.CMPLT: return "lt";
+	default: throw new Error("Illegal compare operation");
+	}
+    }
+    private String cmpOp2InvStr(int op) {
+	switch (op) {
+	case Bop.CMPEQ: return "ne";
+	case Bop.CMPGT: return "le";
+	case Bop.CMPGE: return "lt";
+	case Bop.CMPLE: return "gt";
+	case Bop.CMPLT: return "ge";
+	default: throw new Error("Illegal compare operation");
+	}
+    }
+    private String cmpOp2Func(int op) {
+	switch (op) {
+	case Bop.CMPEQ: return "___ne";
+	case Bop.CMPGT: return "___gt";
+	case Bop.CMPGE: return "___lt";
+	case Bop.CMPLE: return "___gt";
+	case Bop.CMPLT: return "___lt";
+	default: throw new Error("Illegal compare operation");
+	}
+    }
+    private boolean cmpOpFuncInverted(int op) {
+	switch (op) {
+	case Bop.CMPEQ: return true;
+	case Bop.CMPGT: return false;
+	case Bop.CMPGE: return true;
+	case Bop.CMPLE: return true;
+	case Bop.CMPLT: return false;
 	default: throw new Error("Illegal compare operation");
 	}
     }
@@ -805,307 +835,68 @@ BINOP<l>(AND, j, k) = i %{
      * Fun, fun, fun. [CSA]
      */
 
-BINOP(CMPEQ, j, CONST<i,p>(c)) = i
+BINOP(cmpop, j, CONST<i,p>(c)) = i
 %pred %( (ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT)
-	 && (c==null || isOpd2Imm(c)) )%
+	 && isCmpOp(cmpop) && (c==null || isOpd2Imm(c)) )%
 %{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n"+
-		"moveq `d0, #1\n"+
-		"movne `d0, #0", i, j );
+		"mov"+cmpOp2Str(cmpop)+" `d0, #1\n"+
+		"mov"+cmpOp2InvStr(cmpop)+" `d0, #0", i, j );
 }%
 
-BINOP(CMPEQ, j, k) = i
-%pred %( ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT )%
+BINOP(cmpop, j, k) = i
+%pred %( (ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT)
+	 && isCmpOp(cmpop) )%
 %{
-
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, `s1\n"+
-		"moveq `d0, #1\n"+
-		"movne `d0, #0", i, j, k );
+		"mov"+cmpOp2Str(cmpop)+" `d0, #1\n"+
+		"mov"+cmpOp2InvStr(cmpop)+" `d0, #0", i, j, k );
 }%
 
-BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
-
+BINOP(cmpop, j, k) = i
+%pred %( ROOT.operandType()==Type.LONG && isCmpOp(cmpop) )%
+%{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit( ROOT, "cmp `s0l, `s1l\n"+
-		"cmpeq `s0h, `s1h\n"+
-		"moveq `d0, #1\n"+
-		"movne `d0, #0", i, j, k );
+    emit( ROOT, "cmp `s0h, `s1h\n"+
+		"cmpeq `s0l, `s1l\n"+
+		"mov"+cmpOp2Str(cmpop)+" `d0, #1\n"+
+		"mov"+cmpOp2InvStr(cmpop)+" `d0, #0", i, j, k );
 }%
   
-BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
-    declare( r1, HClass.Float );
-    declare( r0, HClass.Float );
-    /* NOTE: the ___eqsf2 routine seems to be broken, as it returns
-     * the exact same values as ___nesf2.  The return value makes sense
-     * for ___nesf2, but are reversed from what you'd expect for
-     * ___eqsf2.  So we use the ___nesf2 routine here. */
-    emitMOVE( ROOT, "mov `d0, `s0", r0, j);
-    emitMOVE( ROOT, "mov `d0, `s0", r1, k);
-    emit2( ROOT, "bl ___nesf2",
-	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1} );
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
-}%
-
-BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
-    declare( r3, HClass.Void );
-    declare( r2, HClass.Void );
-    declare( r1, HClass.Void );
-    declare( r0, HClass.Void );
-
-    /* NOTE: the ___eqdf2 routine seems to be broken, as it returns
-     * the exact same values as ___nedf2.  The return value makes sense
-     * for ___nedf2, but are reversed from what you'd expect for
-     * ___eqdf2.  So we use the ___nedf2 routine here. */
-    emit ( ROOT, "mov `d0, `s0l", r0, j);
-    emit ( ROOT, "mov `d0, `s0h", r1, j);
-    emit ( ROOT, "mov `d0, `s0l", r2, k);
-    emit ( ROOT, "mov `d0, `s0h", r3, k);
-    emit2( ROOT, "bl ___nedf2",
-	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
-}%
-
-BINOP<p,i>(CMPGT, j, k) = i
-%pred %( ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT )%
+BINOP(cmpop, j, k) = i
+%pred %( ROOT.operandType()==Type.FLOAT && isCmpOp(cmpop) )%
 %{
-
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit(ROOT, "cmp `s0, `s1\n"+	
-	       "movgt `d0, #1\n"+	
-	       "movle `d0, #0", i, j, k );
-}%
-
-BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
-
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0h, `s1h\n"+
-		"cmpeq `s0l, `s1l\n"+
-		"movgt `d0, #1\n"+
-		"movle `d0, #0", i, j, k );
-}%
-
-BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     declare( r1, HClass.Float );
     declare( r0, HClass.Float );
-
     emitMOVE( ROOT, "mov `d0, `s0", r0, j);
     emitMOVE( ROOT, "mov `d0, `s0", r1, k);
-    emit2( ROOT, "bl ___gtsf2",
+    // --- some of these comparison functions are broken! --
+    //     cmpOp2Func might return a non-broken but *inverted*
+    //     comparison function; we'll fixup the inverted value below.
+    emit2( ROOT, "bl "+cmpOp2Func(cmpop)+"sf2",
 	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
+    // --- in addition to converting to a one-bit boolean value,
+    //      we fixup the possibly inverted test here --
+    int t=cmpOpFuncInverted(cmpop) ? 0 : 1, f = (t==0) ? 1 : 0;
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #0\n"+
-		"movne `d0, #1", i, r0 );
+	        "moveq `d0, #"+f+"\n"+
+		"movne `d0, #"+t, i, r0 );
 }%
 
-BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
-    declare( r3, HClass.Void );
-    declare( r2, HClass.Void );
-    declare( r1, HClass.Void );
-    declare( r0, HClass.Void );
-
-    emit ( ROOT, "mov `d0, `s0l", r0, j);
-    emit ( ROOT, "mov `d0, `s0h", r1, j);
-    emit ( ROOT, "mov `d0, `s0l", r2, k);
-    emit ( ROOT, "mov `d0, `s0h", r3, k);
-    emit2( ROOT, "bl ___gtdf2",
-	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #0\n"+
-		"movne `d0, #1", i, r0 );
-}%
-
-
-BINOP(CMPGE, j, k) = i
-%pred %( ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT )%
+BINOP(cmpop, j, k) = i
+%pred %( ROOT.operandType()==Type.DOUBLE && isCmpOp(cmpop) )%
 %{
-
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0, `s1\n"+
-		"movge `d0, #1\n"+
-		"movlt `d0, #0", i, j, k );
-}%
-
-BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
-
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0h, `s1h\n"+
-		"cmpeq `s0l, `s1l\n"+
-		"movge `d0, #1\n"+
-		"movlt `d0, #0", i, j, k );
-}%
-
-BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
-    declare( r1, HClass.Float );
-    declare( r0, HClass.Float );
-
-    /* result from ___ge is inverted. */
-    emitMOVE( ROOT, "mov `d0, `s0", r0, j);
-    emitMOVE( ROOT, "mov `d0, `s0", r1, k);
-    emit2( ROOT, "bl ___gesf2",
-	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1} );
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
-}%
-
-BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
-    declare( r3, HClass.Void );
-    declare( r2, HClass.Void );
-    declare( r1, HClass.Void );
-    declare( r0, HClass.Void );
-
-    /* result from ___ge is inverted. */
-    emit ( ROOT, "mov `d0, `s0l", r0, j);
-    emit ( ROOT, "mov `d0, `s0h", r1, j);
-    emit ( ROOT, "mov `d0, `s0l", r2, k);
-    emit ( ROOT, "mov `d0, `s0h", r3, k);
-    emit2( ROOT, "bl ___gedf2",
-	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
-}%
-
-
-BINOP(CMPLE, j, k) = i
-%pred %( ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT )%
-%{
-
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0, `s1\n"+
-		"movle `d0, #1\n"+
-		"movgt `d0, #0", i, j, k );
-}%
-
-BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
-
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0h, `s1h\n"+
-		"cmpeq `s0l, `s1l\n"+
-		"movle `d0, #1\n"+
-		"movgt `d0, #0", i, j, k );
-}%
-
-BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
-    declare( r1, HClass.Float );
-    declare( r0, HClass.Float );
-    
-    /* result from ___le is inverted. */
-    emitMOVE( ROOT, "mov `d0, `s0", r0, j);
-    emitMOVE( ROOT, "mov `d0, `s0", r1, k);
-    emit2( ROOT, "bl ___lesf2",
-	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1} );
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
-}%
-
-BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
-    declare( r3, HClass.Void );
-    declare( r2, HClass.Void );
-    declare( r1, HClass.Void );
-    declare( r0, HClass.Void );
-
-    /* result from ___le is inverted. */
-    emit ( ROOT, "mov `d0, `s0l", r0, j);
-    emit ( ROOT, "mov `d0, `s0h", r1, j);
-    emit ( ROOT, "mov `d0, `s0l", r2, k);
-    emit ( ROOT, "mov `d0, `s0h", r3, k);
-    emit2( ROOT, "bl ___ledf2",
-	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
-}%
-
-BINOP(CMPLT, j, k) = i
-%pred %( ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT )%
-%{
-
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0, `s1\n"+
-		"movlt `d0, #1\n"+
-		"movge `d0, #0", i, j, k );
-}%
-
-BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
-
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0h, `s1h\n"+
-		"cmpeq `s0l, `s1l\n"+
-		"movlt `d0, #1\n"+
-		"movge `d0, #0", i, j, k );
-}%
-
-BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
-    declare( r1, HClass.Float );
-    declare( r0, HClass.Float );
-
-    emitMOVE( ROOT, "mov `d0, `s0", r0, j);
-    emitMOVE( ROOT, "mov `d0, `s0", r1, k);
-    emit2( ROOT, "bl ___ltsf2",
-	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1} );
-    // don't move these into seperate Instrs; there's an implicit
-    // dependency on the condition register so we don't want to risk
-    // reordering them
-    emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #0\n"+
-		"movne `d0, #1", i, r0 );
-}%
-
-BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     declare( r3, HClass.Void );
     declare( r2, HClass.Void );
     declare( r1, HClass.Void );
@@ -1115,14 +906,20 @@ BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     emit ( ROOT, "mov `d0, `s0h", r1, j);
     emit ( ROOT, "mov `d0, `s0l", r2, k);
     emit ( ROOT, "mov `d0, `s0h", r3, k);
-    emit2( ROOT, "bl ___ltdf2",
+    // --- some of these comparison functions are broken! --
+    //     cmpOp2Func might return a non-broken but *inverted*
+    //     comparison function; we'll fixup the inverted value below.
+    emit2( ROOT, "bl "+cmpOp2Func(cmpop)+"df2",
 	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
+    // --- in addition to converting to a one-bit boolean value,
+    //      we fixup the possibly inverted test here --
+    int t=cmpOpFuncInverted(cmpop) ? 0 : 1, f = (t==0) ? 1 : 0;
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #0\n"+
-		"movne `d0, #1", i, r0 );
+	        "moveq `d0, #"+f+"\n"+
+		"movne `d0, #"+t, i, r0 );
 }%
 
 BINOP<p,i>(OR, j, k) = i
