@@ -16,7 +16,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.4.9 2000-11-12 03:33:00 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.4.10 2001-11-12 22:54:17 cananian Exp $
  */
 public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;
@@ -29,6 +29,17 @@ public class Relinker extends Linker implements java.io.Serializable {
 	return new HClassProxy(this, linker.forDescriptor(descriptor));
     }
     protected HClass makeArray(HClass baseType, int dims) {
+	// two cases: 1) base type's proxy is a mutable class generated
+	// by this relinker, 2) base type's proxy is from linker.
+	// proxy base array type in case 2; create our own HClassArray
+	// for case 1.
+	if (!baseType.isPrimitive()) {
+	    HClass baseProxy = ((HClassProxy)baseType).proxy;
+	    if (baseProxy.getLinker()==this) // must be our mutable.
+		return new HClassProxy
+		    (this, new HClassArray(this, baseProxy, dims));
+	}
+	// otherwise, proxy the linker's array.
 	String desc = Util.repeatString("[",dims) + baseType.getDescriptor();
 	return new HClassProxy(this, linker.forDescriptor(desc));
     }
@@ -80,6 +91,80 @@ public class Relinker extends Linker implements java.io.Serializable {
 	((HClassProxy)oldClass).relink(((HClassProxy)newClass).proxy);
 	descCache.put(oldClass.getDescriptor(), oldClass);
     }
+
+    /** Move <code>HMember</code> <code>hm</code> from its declaring
+     *  class to some other class, <code>newDestination</code>.  This
+     *  usually only makes sense if you're moving a member from a
+     *  class to its superclass, or vice-versa --- but we're not
+     *  enforcing this (full foot-shooting power granted).  The
+     *  <code>newDestination</code> class must not already have a
+     *  field named the same/method with the same signature as
+     *  <code>hm</code>.  All references to the member in the old class
+     *  will be re-directed to point to the member in the new class,
+     *  and in fact, upon return the given <code>HMember</code>
+     *  <code>hm</code> will refer to the new member.
+     *  <b>WARNING</b>: make sure that any methods which refer to this
+     *  member have been converted to Bytecode form at least *before*
+     *  invoking <code>move()</code>; otherwise field resolution will fail
+     *  when we are parsing the bytecode file (we don't keep any record
+     *  of the 'old' or 'canonical' name of the moved member).
+     */
+    public void move(HMember hm, HClass newDestination)
+	throws DuplicateMemberException {
+	HClass oldDeclarer = hm.getDeclaringClass();
+	Util.assert(oldDeclarer.getLinker()==this);
+	Util.assert(newDestination.getLinker()==this);
+	Util.assert(hm instanceof HMemberProxy);
+	// make sure both old and new classes are mutable.
+	HClassMutator check;
+	check = oldDeclarer.getMutator();	Util.assert(check!=null);
+	check = newDestination.getMutator();	Util.assert(check!=null);
+	// access mutator of proxied class directly.
+	HClassMutator oldmut = ((HClassProxy)oldDeclarer).proxyMutator;
+	HClassMutator newmut = ((HClassProxy)newDestination).proxyMutator;
+	// add field/method to (proxied) new class
+	HMember newm = (hm instanceof HField) ? (HMember)
+	    newmut.addDeclaredField(hm.getName(), (HField)hm) :
+	    (hm instanceof HConstructor) ? (HMember)
+	    newmut.addConstructor((HConstructor) hm) :
+	    (hm instanceof HInitializer) ? (HMember)
+	    newmut.addClassInitializer() :
+	    (hm instanceof HMethod) ? (HMember)
+	    newmut.addDeclaredMethod(hm.getName(), (HMethod)hm) :
+	    null/*should never happen!*/;
+	Util.assert(newm!=null, "not a field, method, or constructor");
+	// store away original (old) field.
+	HMember oldm = (hm instanceof HField) ? 
+	    (HMember) ((HFieldProxy)hm).proxy :
+	    (HMember) ((HMethodProxy)hm).proxy;
+	// redirect old field proxy to this new field.
+	int hashcheck = hm.hashCode();
+	if (hm instanceof HField)
+	    ((HFieldProxy)hm).relink((HField)newm);
+	else if (hm instanceof HConstructor)
+	    ((HConstructorProxy)hm).relink((HConstructor)newm);
+	else if (hm instanceof HInitializer)
+	    ((HInitializerProxy)hm).relink((HInitializer)newm);
+	else if (hm instanceof HMethod)
+	    ((HMethodProxy)hm).relink((HMethod)newm);
+	else Util.assert(false, "not a field, method, or constructor");
+	Util.assert(hashcheck==hm.hashCode());// hashcode shouldn't change.
+	// now remove (non-proxied) old field.
+	if (hm instanceof HField)
+	    oldmut.removeDeclaredField((HField)oldm);
+	else if (hm instanceof HConstructor)
+	    oldmut.removeConstructor((HConstructor)oldm);
+	else if (hm instanceof HInitializer)
+	    oldmut.removeClassInitializer((HInitializer)oldm);
+	else if (hm instanceof HMethod)
+	    oldmut.removeDeclaredMethod((HMethod)oldm);
+	// update the memberMap
+	memberMap.remove(oldm);
+	memberMap.put(newm, hm);
+	// done!
+	Util.assert(hm.getDeclaringClass()==newDestination);
+    }
+
     // stub to help in reloading proxies.
     HClassProxy load(String descriptor, HClass proxy) {
 	if (descCache.containsKey(descriptor))
