@@ -17,7 +17,8 @@ import java.util.Iterator;
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.1.2.6 2000-07-16 23:26:42 cananian Exp $
+ * @version $Id: CFGrapher.java,v 1.1.2.7 2000-10-27 22:12:24 cananian Exp $
+ * @see harpoon.IR.Properties.CFGraphable
  */
 public abstract class CFGrapher {
     /** Returns the first <code>HCodeElement</code> to be executed; that is,

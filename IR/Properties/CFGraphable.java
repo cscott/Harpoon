@@ -12,7 +12,9 @@ import java.util.Collection;
  * control-flow graphs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGraphable.java,v 1.1.2.2 2000-01-05 04:08:27 duncan Exp $
+ * @version $Id: CFGraphable.java,v 1.1.2.3 2000-10-27 22:12:24 cananian Exp $
+ * @see harpoon.IR.Properties.CFGrapher
+ * @see harpoon.IR.Properties.CFGrapher#DEFAULT
  */
 public interface CFGraphable extends harpoon.ClassFile.HCodeElement {       
     /** Returns an array of all the edges to and from this 
