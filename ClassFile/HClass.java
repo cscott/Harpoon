@@ -27,7 +27,7 @@ import java.lang.reflect.Modifier;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.29.2.6 2000-01-11 23:06:57 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.29.2.7 2000-01-12 00:49:42 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -41,17 +41,6 @@ public abstract class HClass extends HPointer
   /** Protected constructor, not for external use. */
   HClass(Linker l) { _linker = l; }
 
-  // REMOVE ME
-  public static final HClass forDescriptor(String desc) {
-    return Loader.systemLinker.forDescriptor(desc);
-  }
-  public static final HClass forName(String name) {
-    return Loader.systemLinker.forName(name);
-  }
-  public static final HClass forClass(Class cls) {
-    return Loader.systemLinker.forClass(cls);
-  }
-  // REMOVE ME
   /**
    * Returns the linker responsible for the resolution of this
    * <code>HClass</code> object.
