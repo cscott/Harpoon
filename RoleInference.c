@@ -62,6 +62,62 @@ void doanalysis() {
     printf("[%s]\n",line);
 #endif
     switch(line[0]) {
+    case 'C': {
+      long long srcuid, dstuid;
+      int srcpos, dstpos,length;
+      struct arraylist *tmp=NULL, *al;
+      struct heap_object *ho, *dsto;
+      sscanf(line,"CA: %lld %d %lld %d %d", &srcuid, &srcpos, &dstuid, &dstpos, &length);
+      ho=(struct heap_object *)gettable(ht, srcuid);
+      dsto=(struct heap_object *)gettable(ht, dstuid);
+      al=ho->al;
+      while(al!=NULL) {
+	if((al->index>=srcpos)&&(al->index<(srcpos+length))) {
+	  struct arraylist *tmpal=(struct arraylist *)calloc(1,sizeof(struct arraylist));
+	  tmpal->index=al->index;
+	  tmpal->object=al->object;
+	  tmpal->next=tmp;
+	  tmp=tmpal;
+	}
+	al=al->next;
+      }
+      while(tmp!=NULL) {
+	struct arraylist *tmpal=tmp->next;
+	doarrayassignment(&heap, dsto, tmp->index-srcpos+dstpos, tmp->object);
+#ifdef EFFECTS
+	addeffect(&heap, dstuid, "[]", tmp->object->uid);
+#endif
+	free(tmp);
+	tmp=tmpal;
+      }
+    }
+    break;
+    case 'O': {
+      long long origuid, cloneuid;
+      struct fieldlist *fl;
+      struct arraylist *al;
+      struct heap_object *ho, *clone;
+      sscanf(line, "ON: %lld %lld", &origuid, &cloneuid);
+      ho=(struct heap_object *)gettable(ht, origuid);
+      clone=(struct heap_object *)gettable(ht, cloneuid);
+      fl=ho->fl;
+      al=ho->al;
+      while(fl!=NULL) {
+	dofieldassignment(&heap, clone, fl->fieldname, fl->object);
+#ifdef EFFECTS
+	addeffect(&heap, origuid, fl->fieldname, cloneuid);	
+#endif
+	fl=fl->next;
+      }
+      while(al!=NULL) {
+	doarrayassignment(&heap, clone, al->index, al->object);
+#ifdef EFFECTS
+	addeffect(&heap, origuid, "[]", cloneuid);	
+#endif
+	al=al->next;
+      }
+    }
+    break;
     case 'N':
       {
 	struct heap_object *ho=(struct heap_object *) calloc(1, sizeof(struct heap_object));
@@ -308,6 +364,9 @@ void doanalysis() {
 	if (duid!=-1)
 	  dst=gettable(ht,duid);
 	doarrayassignment(&heap,src,index,dst);
+#ifdef EFFECTS
+	addeffect(&heap, suid, "[]", duid);	
+#endif
       }
       break;
     }
