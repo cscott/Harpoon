@@ -9,7 +9,7 @@ import harpoon.Temp.TempMap;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.19 1998-09-16 06:32:50 cananian Exp $
+ * @version $Id: Quad.java,v 1.20 1998-09-18 02:51:13 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -54,9 +54,9 @@ public abstract class Quad
     /** Rename all variables in this Quad according to a mapping. */
     public void rename(TempMap tm) { renameUses(tm); renameDefs(tm); }
     /** Rename all used variables in this Quad according to a mapping. */
-    public abstract void renameUses(TempMap tm);
+    public void renameUses(TempMap tm) { }
     /** Rename all defined variables in this Quad according to a mapping. */
-    public abstract void renameDefs(TempMap tm);
+    public void renameDefs(TempMap tm) { }
 
     /*----------------------------------------------------------*/
     /** Return all the Temps used by this Quad. */
