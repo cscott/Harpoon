@@ -40,7 +40,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.13 2000-10-21 22:48:30 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.14 2000-11-02 11:26:16 pnkfelix Exp $
  */
 public abstract class MethodSplitter {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -167,7 +167,7 @@ public abstract class MethodSplitter {
      *  include your new <code>MethodSplitter.Token</code> subclasses. */
     protected static class Token {
 	final String suffix;
-	protected Token(String suggestedSuffix) {
+	public Token(String suggestedSuffix) {
 	    this.suffix = suggestedSuffix;
 	}
     }
