@@ -28,8 +28,8 @@
   (harpoon-basepath-name "/Code/"))
 ;;;; changed class-buffer template so that extra space is not generated
 (defun harpoon-gen-get-super-class ()
-  "Concatenates a space to the result of jde-gen-get-super-class if it is not empty."
-  (let ((super-class (jde-gen-get-super-class)))
+  "Concatenates a space to the result of jde-gen-get-extend-class if it is not empty."
+  (let ((super-class (jde-gen-get-extend-class)))
     (if (not (eq super-class ()))
       (concat " " super-class))))
 ;;;; template for generating visitor classes
