@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.List;
 import java.util.LinkedList;
+import java.lang.reflect.Modifier;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
@@ -29,7 +30,12 @@ import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadWithTry;
 import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.FOOTER;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadWithTry;
 import harpoon.IR.Quads.Code;
 
 import harpoon.Analysis.ClassHierarchy;
@@ -55,7 +61,7 @@ import harpoon.Util.Util;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.17 2003-03-07 20:57:20 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.18 2003-03-16 16:38:42 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -94,13 +100,12 @@ public abstract class PreallocOpt {
 	of the pre-allocated memory chunk that that label points to
 	(at runtime). */
     private static Map/*<Label,Integer>*/ label2size;
+    /** Label for the beginning of the static data that holds the
+        pointers to preallocated memory. */
     private static Label beginLabel = new Label("ptr2preallocmem_BEGIN");
+    /** Label for the end of the static data that holds the pointers
+        to preallocated memory. */
     private static Label endLabel   = new Label("ptr2preallocmem_END");
-
-    /** Name of the wrapper class for the static fields pointing to
-	pre-allocated memory chunks. */
-    public static final String PREALLOC_MEM_CLASS_NAME =
-	"harpoon.Runtime.PreallocOpt.PreallocatedMemory";
 
     /** Root for the names of the labels corresponding to locations
 	that point (at runtime) to the pre-allocated memory chunks. */
@@ -120,15 +125,65 @@ public abstract class PreallocOpt {
 
 	System.out.println("\n\nUPDATE ROOTS CALLED!\n");
 
-	roots.add(getInitMethod(linker));
-    }
+	initMethod = 
+	    linker.forName("java.lang.Object").getMutator().addDeclaredMethod
+	    (INIT_FIELDS_METHOD_NAME, "()V");
+	initMethod.getMutator().setModifiers
+	    (java.lang.reflect.Modifier.STATIC |
+	     java.lang.reflect.Modifier.PUBLIC |
+	     java.lang.reflect.Modifier.FINAL);
 
-    // returns the handle of the method that preallocates memory
-    private static HMethod getInitMethod(Linker linker) {
-	return
-	    linker.forName(PreallocOpt.PREALLOC_MEM_CLASS_NAME).
-	    getMethod(PreallocOpt.INIT_FIELDS_METHOD_NAME,
-		      new HClass[0]);
+	System.out.println("Added initMethod = \"" + initMethod + "\"");
+
+	roots.add(initMethod);
+    }
+    // method called at runtime to initialize the preallocated memory
+    private static HMethod initMethod = null;
+
+
+    private static class HCFWithEmptyInitMethod implements HCodeFactory {
+	public HCFWithEmptyInitMethod(HCodeFactory parent_hcf) {
+	    this.parent_hcf = parent_hcf;
+	}
+	private final HCodeFactory parent_hcf;
+	public void clear(HMethod hm) { parent_hcf.clear(hm); }
+	public String getCodeName() { return parent_hcf.getCodeName(); }
+	public HCode convert(HMethod hm) {
+	    if((initMethod == null) || (hm != initMethod))
+		return parent_hcf.convert(hm);
+
+	    /* based on the implementation from InitializerTransform */
+	    return new QuadWithTry(initMethod, null) {
+		/* constructor */ {
+		    Quad q0 = new HEADER(qf, null);
+		    Quad q1 = new METHOD(qf, null, new Temp[]{}, 1);
+		    Quad q3 = new RETURN(qf, null, null); // no retval
+		    Quad q4 = new FOOTER(qf, null, 2);
+		    Quad.addEdge(q0, 0, q4, 0);
+		    Quad.addEdge(q0, 1, q1, 0);
+		    Quad.addEdge(q1, 0, q3, 0);
+		    Quad.addEdge(q3, 0, q4, 1);
+		    this.quads = q0;
+		}
+	    };
+	}
+    };
+
+    /** Returns a code factory that provides an intermediate
+	representation for the empty body of the preallocated memory
+	initialization.
+
+	@param hcf Code factory providing the code for the rest of the code
+	(currently, it has to be quad-with-try).
+
+	@return Code factory identical to the <code>hcf</code>
+	parameter, except that it also provides a default, empty body
+	for the preallocated memory initilaization. */
+    public static HCodeFactory getHCFWithEmptyInitCode(HCodeFactory hcf) {
+	assert
+	    hcf.getCodeName().equals("quad-with-try") :
+	    "hcf has to be quad-with-try, not " + hcf.getCodeName() ;
+	return new HCFWithEmptyInitMethod(hcf);
     }
 
     /** Executes the <code>IncompatibilityAnalysis</code> and creates
@@ -185,6 +240,7 @@ public abstract class PreallocOpt {
 
 	boolean OLD_FLAG = QuadSSI.KEEP_QUAD_MAP_HACK;
         QuadSSI.KEEP_QUAD_MAP_HACK = true;
+
 	CachingCodeFactory hcf_ssi = 
 	    new CachingCodeFactory(QuadSSI.codeFactory(hcf_nossa), true);
 
@@ -287,7 +343,19 @@ public abstract class PreallocOpt {
 		QuadSSI codeSSI = (QuadSSI) site.getFactory().getParent();
 		NEW siteNoSSA = (NEW) codeSSI.getQuadMapSSI2NoSSA().get(site);
 
-		if(!extraCond(site)) continue;
+		if(hasFinalizer(site)) {
+		    System.out.println
+			("NO PREALLOC for\t" + Util.code2str(site) +
+			 "\tallocates object with finalizer");
+		    continue;
+		}
+
+		if(!extraCond(site)) {
+		    System.out.println
+			("\nNO PREALLOC for\t" + Util.code2str(site) +
+			 "\textraCond");
+		    continue;
+		}
 
 		if(RANGE_DEBUG) {
 		    int id = as.allocID(siteNoSSA);
@@ -319,18 +387,12 @@ public abstract class PreallocOpt {
 	String className = ((NEW) site).hclass().getName();
 	if(className.equals("java.io.BufferedWriter") ||
 	   className.equals("java.io.OutputStreamWriter")) {
-	    HClass hdeclc = site.getFactory().getMethod().getDeclaringClass();
-	    boolean result = ! hdeclc.getName().equals("java.io.PrintStream");
-	    if(!result)
-		System.out.println
-		    ("\nNO PREALLOC for\t" + Util.code2str(site) +
-		     "\tin\t" + site.getFactory().getMethod());
-	    return result;
+	    HMethod enclosing_method = site.getFactory().getMethod();
+	    HClass hdeclc = enclosing_method.getDeclaringClass();
+	    return ! hdeclc.getName().equals("java.io.PrintStream");
 	}
-	else
-	    return true;
+	return true;
     }
-
 
     // compute the size of the preallocated chunk of memory that will
     // be used by the allocation sites from the compatibility class cc
@@ -403,6 +465,7 @@ public abstract class PreallocOpt {
 			     beginLabel, endLabel);
     }
 
+
     /** Add the code that preallocates memory and initializes the
 	static fields that point to the preallocated memory chunks.
 	
@@ -418,11 +481,14 @@ public abstract class PreallocOpt {
 	memory preallocation code.  */
     public static HCodeFactory addMemoryPreallocation
 	(Linker linker, HCodeFactory hcf, Frame frame) {
+
+	assert initMethod != null : 
+	    "initMethod is null; forgot to call PreallocOpt.updateRoots?";
+ 
 	return
 	    Canonicalize.codeFactory
 	    (new AddMemoryPreallocation
-	     (hcf, getInitMethod(linker), label2size, frame,
-	      beginLabel, endLabel));
+	     (hcf, initMethod, label2size, frame, beginLabel, endLabel));
     }
 
     /** Returns a <code>CodeFactory</code> with the same structure as
@@ -434,5 +500,30 @@ public abstract class PreallocOpt {
 	(Linker linker, HCodeFactory hcf, Frame frame) {
 	return
 	    Canonicalize.codeFactory(hcf);
+    }
+
+
+    /** Checks whether the class allocated by <code>site</code> has a
+        finalizer. */
+    static boolean hasFinalizer(Quad site) {
+	HClass hc = ((NEW) site).hclass();
+	HMethod[] methods = hc.getMethods();
+	for(int i = 0; i < methods.length; i++) {
+	    if(isFinalizer(methods[i]))
+		return true;
+	}
+	return false;
+    }
+
+    /** Checks whether the method <code>hm</code> is a finalizer. */
+    private static boolean isFinalizer(HMethod hm) {
+	return
+	    !Modifier.isAbstract(hm.getModifiers()) &&
+	    !hm.isStatic() &&
+	    (hm.getParameterTypes().length == 0) &&
+	    (hm.getReturnType().equals(HClass.Void)) &&
+	    hm.getName().equals("finalize") &&
+	    // java.lang.Object.finalize() is not a real finalizer
+	    !hm.getDeclaringClass().getName().equals("java.lang.Object");
     }
 }

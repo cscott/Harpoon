@@ -108,7 +108,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.36 2003-03-03 23:34:09 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.37 2003-03-16 16:38:20 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -406,9 +406,10 @@ public class SAMain extends harpoon.IR.Registration {
 	
 	handleAllocationInstrumentation(roots, mainM);
 
-	if(PreallocOpt.PREALLOC_OPT || PreallocOpt.ONLY_SYNC_REMOVAL)
+	if(PreallocOpt.PREALLOC_OPT || PreallocOpt.ONLY_SYNC_REMOVAL) {
 	    hcf = PreallocOpt.preallocAnalysis
 		(linker, hcf, classHierarchy, mainM, roots, as, frame);
+	}
 	
 	if (DO_TRANSACTIONS) {
 	    String resource = frame.getRuntime().resourcePath
@@ -865,8 +866,10 @@ public class SAMain extends harpoon.IR.Registration {
 	Set roots = new java.util.HashSet
 	    (frame.getRuntime().runtimeCallableMethods());
 	
-	if(PreallocOpt.PREALLOC_OPT || PreallocOpt.ONLY_SYNC_REMOVAL)
+	if(PreallocOpt.PREALLOC_OPT) {
 	    PreallocOpt.updateRoots(roots, linker);
+	    hcf = PreallocOpt.getHCFWithEmptyInitCode(hcf);
+	}
 	
 	// and our main method is a root, too...
 	roots.add(mainM);
