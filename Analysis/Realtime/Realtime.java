@@ -34,7 +34,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.9 2002-07-05 22:26:38 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.10 2002-09-06 16:12:16 wbeebee Exp $
  */
 
 public class Realtime {
@@ -46,6 +46,9 @@ public class Realtime {
 
 	/** Add support for realtime threads */
 	public static boolean REALTIME_THREADS = false;
+
+    /** Add support for CheckQuanta */
+	public static boolean QUANTA_CHECKER = false;
 
 	/** Add support for RTJPerf */
 	public static boolean RTJ_PERF = false;
@@ -348,7 +351,7 @@ public class Realtime {
 	 */
 
 	public static HCodeFactory addQuantaChecker(HCodeFactory hcf) {
-		if (REALTIME_THREADS) {
+		if (REALTIME_THREADS&&QUANTA_CHECKER) {
 		    return Canonicalize.codeFactory((new QuantaChecker(hcf))
 						    .codeFactory());
 		}
