@@ -69,7 +69,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.21 2000-04-04 02:16:36 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.22 2000-04-04 02:37:15 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -265,7 +265,7 @@ public class CloningVisitor extends QuadVisitor {
 											 false,
 											 aiprop.canBeThreadAllocated()||aiprop.canBeStackAllocated(),
 											 aiprop.useOwnHeap(),
-											 ((aiprop.allocationHeap()!=null)&&(aiprop.canBeThreadAllocated()))?ctmap.tempMap(aiprop.allocationHeap()) : null));
+											 (aiprop.allocationHeap()!=null)?ctmap.tempMap(aiprop.allocationHeap()) : null);
 	    }
     }
     
