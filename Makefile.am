@@ -24,7 +24,7 @@ CVS_TAG=$(firstword $(shell cvs status Makefile.am | grep -v "(none)" | \
 CVS_REVISION=$(patsubst %,-r %,$(CVS_TAG))
 
 list:
-	@find . -path './Contrib' -prune -o -name "*.[ch]" -print
+	@find . -path './Contrib' -prune -o -name "*.[ch]" -o -name "*.java" -print
 
 update: needs-cvs
 	cvs -q update -Pd $(CVS_REVISION)
