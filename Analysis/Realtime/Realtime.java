@@ -31,7 +31,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.1.2.26 2001-07-02 17:59:20 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.1.2.27 2001-07-02 20:27:16 wbeebee Exp $
  */
 
 public class Realtime {
@@ -73,7 +73,7 @@ public class Realtime {
     /** Add additional information on calls to RTJ_malloc to store information
      *  about the def. points of all objects which are allocated.
      */
-    public static boolean DEBUG_REF = true;
+    public static boolean DEBUG_REF = false;
 
     /** Configure Realtime Java based on the following command-line options. 
      */

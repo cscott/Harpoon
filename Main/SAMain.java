@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.157 2001-06-30 18:04:00 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.158 2001-07-02 20:27:32 wbeebee Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -423,8 +423,10 @@ public class SAMain extends harpoon.IR.Registration {
 	hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
 	hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);
+//  	hcf = (new harpoon.Backend.Analysis.GCTraceStore()).codeFactory(hcf);
 	if(Realtime.REALTIME_JAVA && !alexhack)
 	{
+	    hcf = Realtime.addNoHeapChecks(hcf);
 	    hcf = Realtime.addQuantaChecker(hcf);
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	}

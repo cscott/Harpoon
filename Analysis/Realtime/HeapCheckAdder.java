@@ -112,8 +112,7 @@ public class HeapCheckAdder extends Simplification {
 		public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) {
 		    Temp t = new Temp(tf.tempFactory(), "heapRef");
 		    MEM mem = (MEM)e;
-		    return new ESEQ(tf, e, HeapCheckAdder.addCheck(tf, mem, dg, t), 
-				    HeapCheckAdder.memRef(tf, mem, dg, t));
+		    return new ESEQ(tf, e, addCheck(tf, mem, dg, t), memRef(tf, mem, dg, t));
 		}
 	    });
 
@@ -140,9 +139,8 @@ public class HeapCheckAdder extends Simplification {
 		    Temp t = new Temp(tf.tempFactory(), "heapRef");
 		    MEM mem = (MEM)(((MOVE)e).getDst());
 		    List stmList = new ArrayList();
-		    stmList.add(HeapCheckAdder.addCheck(tf, mem, dg, t));
-		    stmList.add(new MOVE(tf, mem, HeapCheckAdder.memRef(tf, mem, dg, t), 
-					 ((MOVE)e).getSrc()));
+		    stmList.add(addCheck(tf, mem, dg, t));
+		    stmList.add(new MOVE(tf, mem, memRef(tf, mem, dg, t), ((MOVE)e).getSrc()));
 		    return Stm.toStm(stmList);
 		}
 	    });
@@ -153,7 +151,7 @@ public class HeapCheckAdder extends Simplification {
      *  MATCH(*javax.realtime.Stats.heapRefs)
      */
 
-    private static boolean matchMask(MEM mem) {
+    protected static boolean matchMask(MEM mem) {
 	if (contains(_KIND(mem.getExp()), _BINOP)) {
 	    BINOP bop = (BINOP)(mem.getExp());
 	    if (contains(_OP(bop.op), _AND)&&
@@ -185,7 +183,7 @@ public class HeapCheckAdder extends Simplification {
      *   heapCheck(t);
      * NoHeap:  
      */
-    private static Stm addCheck(TreeFactory tf, MEM e, 
+    protected static Stm addCheck(TreeFactory tf, MEM e, 
 				DerivationGenerator dg, Temp t) {
 	Label ex = new Label("TouchedHeap"+(++count));
 	Label ord = new Label("NoHeap"+count);
@@ -210,7 +208,7 @@ public class HeapCheckAdder extends Simplification {
     }
     
     /** *foo.bar = *foo.bar + 1; */
-    private static Stm incLongField(TreeFactory tf, HCodeElement e,
+    protected static Stm incLongField(TreeFactory tf, HCodeElement e,
 				    DerivationGenerator dg, 
 				    String className, String fieldName) {
 	return new MOVE(tf, e, 
@@ -223,7 +221,7 @@ public class HeapCheckAdder extends Simplification {
     }
 
     /** *foo.bar */
-    private static MEM fieldRef(TreeFactory tf, HCodeElement e,
+    protected static MEM fieldRef(TreeFactory tf, HCodeElement e,
 				DerivationGenerator dg, HClass type, int iType,
 				String className, String fieldName) {
 	return (MEM)DECLARE(dg, type,
@@ -236,14 +234,14 @@ public class HeapCheckAdder extends Simplification {
     }
 
     /** foo.bar */
-    private static Label forField(TreeFactory tf, String className, String fieldName) {
+    protected static Label forField(TreeFactory tf, String className, String fieldName) {
 	Frame f = tf.getFrame();
 	HField field = f.getLinker().forName(className).getDeclaredField(fieldName);
 	return f.getRuntime().nameMap.label(field);
     }
   
     /** func_name(t) */
-    private static NATIVECALL nativeCall(TreeFactory tf, MEM e, 
+    protected static NATIVECALL nativeCall(TreeFactory tf, MEM e, 
 					 DerivationGenerator dg, Temp t,
 					 String func_name) {
 	Label func = new Label(tf.getFrame().getRuntime().nameMap
@@ -254,7 +252,7 @@ public class HeapCheckAdder extends Simplification {
     }
 
     /** *(t&(~3)) */
-    private static MEM memRef(TreeFactory tf, MEM e, DerivationGenerator dg,
+    protected static MEM memRef(TreeFactory tf, MEM e, DerivationGenerator dg,
 			      Temp t) {
 	MEM m = new MEM(tf, e, e.type(),
 			DECLARE(dg, 
@@ -278,7 +276,7 @@ public class HeapCheckAdder extends Simplification {
     }
     
     /** t */
-    private static TEMP tempRef(DerivationGenerator dg, TreeFactory tf, 
+    protected static TEMP tempRef(DerivationGenerator dg, TreeFactory tf, 
 				MEM e, Temp t) {
 	return (TEMP)DECLARE(dg, HClass.Void, t, new TEMP(tf, e, Type.POINTER, t));
     }
