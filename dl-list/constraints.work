@@ -1,3 +1,3 @@
-[], sizeof(HEAD)=1
-[], sizeof(TAIL)=1
-[forall e in ELEMS],!sizeof(e.NEXT)>1 or e.NEXT.PREV=e
+[], sizeof(HEAD)=literal(1);
+[], sizeof(TAIL)=literal(1);
+[forall e in ELEMS],sizeof(e.NEXT)=literal(0) or e.NEXT.PREV=e;

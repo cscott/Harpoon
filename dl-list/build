@@ -1,2 +1,22 @@
-gcc -c list.c -o list.o
-g++ list.o libchecker.a -o list
+echo ./gen-specs
+./gen-specs
+
+echo java -cp ~/New-Experiment/Repair/RepairCompiler MCC.Compiler -checkonly $1
+java -cp ~/New-Experiment/Repair/RepairCompiler MCC.Compiler -checkonly $1
+
+echo cp $1.cc $1_aux.* size.* Runtime
+cp $1.cc $1_aux.* size.* Runtime
+
+echo cd Runtime
+cd Runtime
+
+echo rm *.o
+rm *.o
+echo ./buildruntime
+./buildruntime
+
+echo g++ -g -c $1_aux.cc
+g++ -g -c $1_aux.cc
+
+echo g++ -g $1.c *.o -o $1
+g++ -g $1.c *.o -o $1

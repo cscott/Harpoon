@@ -1,6 +1,6 @@
-[], true => head in ELEMS
-[forall h in ELEMS], !h.next = NULL => h.next in ELEMS
-[forall h in ELEMS], h.prev = NULL => h in HEAD
-[forall h in ELEMS], h.next = NULL => h in TAIL
-[forall h in ELEMS], !h.next = NULL => <h, h.next> in NEXT
-[forall h in ELEMS], !h.prev = NULL => <h, h.prev> in PREV
+[], literal(true) => head in ELEMS;
+[forall h in ELEMS], !(h.next = literal(0) => h.next in ELEMS;
+[forall h in ELEMS], h.prev = literal(0) => h in HEAD;
+[forall h in ELEMS], h.next = literal(0) => h in TAIL;
+[forall h in ELEMS], !(h.next = literal(0)) => <h, h.next> in NEXT;
+[forall h in ELEMS], !(h.prev = literal(0)) => <h, h.prev> in PREV;
