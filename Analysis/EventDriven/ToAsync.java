@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.5 2000-01-05 18:13:46 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.6 2000-01-11 05:51:14 bdemsky Exp $
  */
 public class ToAsync {
     protected final UpdateCodeFactory ucf;
@@ -65,8 +65,9 @@ public class ToAsync {
 	while (!async_todo.isEmpty()) {
 	    HCode selone=(HCode) async_todo.pop();
 	    final QuadLiveness ql = new QuadLiveness(selone);
+	    System.out.println("ToAsync is running AsyncCode on "+selone);
 	    AsyncCode.buildCode(selone, old2new, async_todo,
-				ql,blockingcalls,ucf, classMap, bm);
+				ql,blockingcalls,ucf, classMap, bm, hc.getMethod());
 	}
 	return nhm;
     }

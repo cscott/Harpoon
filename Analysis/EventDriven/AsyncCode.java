@@ -17,6 +17,8 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HMethodSyn;
 import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.CONST;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.FOOTER;
@@ -24,6 +26,8 @@ import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
@@ -48,7 +52,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.23 2000-01-10 22:22:57 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.24 2000-01-11 05:51:14 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -81,7 +85,7 @@ public class AsyncCode {
     public static void buildCode(HCode hc, Map old2new, Set async_todo, 
 			   QuadLiveness liveness,
 			   Set blockingcalls, 
-			   UpdateCodeFactory ucf, Map classMap, ToAsync.BlockingMethods bm) 
+			   UpdateCodeFactory ucf, Map classMap, ToAsync.BlockingMethods bm, HMethod mroot) 
 	throws NoClassDefFoundError
     {
 	System.out.println("Entering AsyncCode.buildCode()");
@@ -106,7 +110,7 @@ public class AsyncCode {
 					   old2new, cont_map, 
 					   env_map, liveness,
 					   blockingcalls, hc.getMethod(), 
-					   classMap,hc, ucf,bm);
+					   classMap,hc, ucf,bm,mroot);
 	    quadc.accept(cv);
 	}
     }
@@ -127,7 +131,7 @@ public class AsyncCode {
 			   Map env_map, QuadLiveness liveness,
 			   Set blockingcalls, HMethod hmethod, 
 			   Map classMap, HCode hc, UpdateCodeFactory ucf,
-			   ToAsync.BlockingMethods bm) {
+			   ToAsync.BlockingMethods bm, HMethod mroot) {
 	    this.liveness=liveness;
 	    this.env_map=env_map;
 	    this.cont_todo=cont_todo;
@@ -142,7 +146,7 @@ public class AsyncCode {
 	    this.clonevisit=new CloningVisitor(blockingcalls, cont_todo,
 					       cont_map, env_map, liveness,
 					       async_todo, old2new,
-					       classMap,hc,ucf,bm);
+					       classMap,hc,ucf,bm,mroot);
 	}
 
 	public void visit(Quad q) {
@@ -252,13 +256,14 @@ public class AsyncCode {
 	Temp tthis;
 	ToAsync.BlockingMethods bm;
 	Set phiset;
-
+	HMethod mroot;
+	
 	public CloningVisitor(Set blockingcalls, Set cont_todo,
 			      Map cont_map, Map env_map, 
 			      QuadLiveness liveness, Set async_todo,
 			      Map old2new, Map classMap, 
 			      HCode hc, UpdateCodeFactory ucf,
-			      ToAsync.BlockingMethods bm) {
+			      ToAsync.BlockingMethods bm, HMethod mroot) {
 	    this.liveness=liveness;
 	    this.blockingcalls=blockingcalls;
 	    this.cont_todo=cont_todo;
@@ -270,6 +275,7 @@ public class AsyncCode {
 	    this.ucf=ucf;
 	    this.hc=hc;
 	    this.bm=bm;
+	    this.mroot=mroot;
 	}
 
 	public void reset(HMethod nhm, TempFactory otf, boolean isCont) {
@@ -429,6 +435,19 @@ public class AsyncCode {
 	    }
 	}
 
+	boolean needsCheck() {
+	    HMethod m=hc.getMethod();
+	    HClass hcl=m.getDeclaringClass();
+
+	    if (HClass.forName("java.lang.Runnable").
+		isSuperinterfaceOf(hcl)&&
+		hcl.getMethod("run",new HClass[0]).equals(m))
+		return true;
+	    if (m.equals(mroot))
+		return true;
+	    return false;
+	}
+
 	public void visit(RETURN q) {
 	    TempFactory tf=hcode.getFactory().tempFactory();
 	    if (isCont) {
@@ -445,6 +464,22 @@ public class AsyncCode {
 		Temp tnext=new Temp(tf);
 		GET get=new GET(hcode.getFactory(),q,
 				tnext, hfield, tthis);
+		Quad nq=get;
+		if (needsCheck()) {
+		    Temp tnull=new Temp(tf);
+		    CONST qconst=
+			new CONST(hcode.getFactory(), q, tnull, null, HClass.Void);
+		    Quad.addEdge(nq,0,qconst,0);
+		    Temp tcomp=new Temp(tf);
+		    OPER qoper=
+			new OPER(hcode.getFactory(),q,Qop.ACMPEQ,tcomp, 
+				 new Temp[] {tnext, tnull});
+		    Quad.addEdge(qconst, 0, qoper, 0);
+		    CJMP cjmp=
+			new CJMP(hcode.getFactory(), q, tcomp, new Temp[0]);
+		    Quad.addEdge(qoper, 0, cjmp, 0);
+		    nq=cjmp;
+		}
 		Temp nretval=null;
 		CALL call=null;
 		Temp retex=new Temp(tf);
@@ -461,11 +496,17 @@ public class AsyncCode {
 				  new Temp[] {tnext}, null, retex,
 				  true, false, new Temp[0]);
 		}
-		Quad.addEdge(get,0,call,0);
+		Quad.addEdge(nq,0,call,0);
 		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
 		Quad.addEdge(call,1,qthrow,0);
 		RETURN qreturn=new RETURN(hcode.getFactory(),q,null);
-		Quad.addEdge(call,0,qreturn,0);
+		if (needsCheck()) {
+		    PHI phi=new PHI(hcode.getFactory(), q, new Temp[0], 2);
+		    Quad.addEdge(nq, 1, phi, 0);
+		    Quad.addEdge(call,0,phi,1);
+		    Quad.addEdge(phi,0,qreturn,0);
+		} else
+		    Quad.addEdge(call,0,qreturn,0);
 		linkFooters.add(qthrow);
 		linkFooters.add(qreturn);
 		quadmap.put(q, get);
@@ -498,6 +539,7 @@ public class AsyncCode {
 		}
 		Quad.addEdge(newq,0,call,0);
 		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
+
 		Quad.addEdge(call,1,qthrow,0);
 		RETURN qreturn=new RETURN(hcode.getFactory(),q,null);
 		Quad.addEdge(call,0,qreturn,0);
@@ -520,9 +562,28 @@ public class AsyncCode {
 		Temp tnext=new Temp(tf);
 		GET get=new GET(hcode.getFactory(),q,
 				tnext, hfield, tthis);
+		Quad nq=get;
+		if (needsCheck()) {
+		    Temp tnull=new Temp(tf);
+		    CONST qconst=
+			new CONST(hcode.getFactory(), q, tnull, null, HClass.Void);
+		    Quad.addEdge(nq,0,qconst,0);
+		    Temp tcomp=new Temp(tf);
+		    OPER qoper=
+			new OPER(hcode.getFactory(),q,Qop.ACMPEQ,tcomp, 
+				 new Temp[] {tnext, tnull});
+		    Quad.addEdge(qconst, 0, qoper, 0);
+		    CJMP cjmp=
+			new CJMP(hcode.getFactory(), q, tcomp, new Temp[0]);
+		    Quad.addEdge(qoper, 0, cjmp, 0);
+		    nq=cjmp;
+		}
+
 		CALL call=null;
-		Temp retex=new Temp(tf);
 		Temp nretval=ctmap.tempMap(q.throwable());
+		Temp retex=nretval;
+		//reuse the Temp...so we only have to throw one...
+
 		//***** Tailcall eventually
 		//need to do get next first
 		call=new CALL(hcode.getFactory(), q, resume,
@@ -530,7 +591,15 @@ public class AsyncCode {
 			      true,false,new Temp[0]);
 		Quad.addEdge(get,0,call,0);
 		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
-		Quad.addEdge(call,1,qthrow,0);
+
+		if (needsCheck()) {
+		    PHI phi=new PHI(hcode.getFactory(), q, new Temp[0], 2);
+		    Quad.addEdge(nq, 1, phi, 0);
+		    Quad.addEdge(call,1,phi,1);
+		    Quad.addEdge(phi,0,qthrow,0);
+		} else
+		    Quad.addEdge(call,1,qthrow,0);
+		
 		RETURN qreturn=new RETURN(hcode.getFactory(),q,null);
 		Quad.addEdge(call,0,qreturn,0);
 		linkFooters.add(qthrow);
