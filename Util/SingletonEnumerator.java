@@ -9,11 +9,11 @@ import java.util.NoSuchElementException;
  * <code>SingletonEnumerator</code> enumerates a single value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SingletonEnumerator.java,v 1.2 1998-10-11 02:37:59 cananian Exp $
+ * @version $Id: SingletonEnumerator.java,v 1.2.2.1 1998-12-09 21:44:29 cananian Exp $
  */
 
 public class SingletonEnumerator implements Enumeration {
-    Object o;
+    final Object o;
     boolean done=false;
     /** Creates a <code>SingletonEnumerator</code> which enumerates the
      *  single value <code>o</code>. */
