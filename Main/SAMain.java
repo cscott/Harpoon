@@ -1,4 +1,3 @@
-
 // SAMain.java, created Mon Aug  2 19:41:06 1999 by pnkfelix
 // Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
@@ -27,6 +26,7 @@ import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.CallGraph;
 import harpoon.Analysis.Quads.CallGraphImpl;
+import harpoon.Analysis.Quads.CallGraphImpl2;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.Util.CombineIterator;
@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.92 2000-08-24 23:51:23 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.93 2000-08-25 00:12:12 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -164,7 +164,12 @@ public class SAMain extends harpoon.IR.Registration {
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
-	callGraph = new CallGraphImpl(classHierarchy, hcf);
+	if (!OPTIMIZE) { // needs to be in SSx form for callgraphimpl2
+	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	}
+	//callGraph = new CallGraphImpl(classHierarchy, hcf);//less precise
+	callGraph = new CallGraphImpl2(classHierarchy, hcf);
 
 	switch(BACKEND) {
 	case STRONGARM_BACKEND:
