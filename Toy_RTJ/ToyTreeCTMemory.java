@@ -5,16 +5,18 @@ class ToyTreeCTMemory extends RealtimeThread {
     public static void main(String [] arg) {
 	int asize=0;
 	int repeats=0;
+	long ctsize=0;
 	try {
 	    asize=Integer.parseInt(arg[0]);
 	    repeats=Integer.parseInt(arg[1]);
+	    ctsize=Long.parseLong(arg[2]);
 	} catch (Exception e) {
 	    System.out.println("Toy Tree <tree depth> <repeats>");
 	    System.exit(-1);
 	}
 	
-	ToyTreeCTMemory ta=new ToyTreeCTMemory(asize,repeats);
-	ToyTreeCTMemory tb=new ToyTreeCTMemory(asize,repeats);
+	ToyTreeCTMemory ta=new ToyTreeCTMemory(ctsize,asize,repeats);
+	ToyTreeCTMemory tb=new ToyTreeCTMemory(ctsize,asize,repeats);
 	long start=System.currentTimeMillis();
 	ta.start();
       	tb.start();
@@ -31,8 +33,8 @@ class ToyTreeCTMemory extends RealtimeThread {
 
     int size;
     int repeat;
-    public ToyTreeCTMemory(int size, int repeat) {
-	super(new CTMemory(1000000));
+    public ToyTreeCTMemory(long ctsize, int size, int repeat) {
+	super(new CTMemory(ctsize));
 	this.size=size;
 	this.repeat=repeat;
     }

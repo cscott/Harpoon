@@ -5,15 +5,17 @@ class ToyArrayCTMemory extends RealtimeThread {
     public static void main(String[] arg) {
 	int asize=0;
 	int repeats=0;
+	long ctsize=0;
 	try {
 	    asize=Integer.parseInt(arg[0]);
 	    repeats=Integer.parseInt(arg[1]);
+	    ctsize=Long.parseLong(arg[2]);
 	} catch (Exception e) {
-	    System.out.println("Toy Array <array size> <repeats>");
+	    System.out.println("Toy Array <array size> <repeats> <size>");
 	    System.exit(-1);
 	}
-	ToyArrayCTMemory ta=new ToyArrayCTMemory(asize,repeats);
-	ToyArrayCTMemory tb=new ToyArrayCTMemory(asize,repeats);
+	ToyArrayCTMemory ta=new ToyArrayCTMemory(ctsize, asize,repeats);
+	ToyArrayCTMemory tb=new ToyArrayCTMemory(ctsize, asize,repeats);
 	long start=System.currentTimeMillis();
 	ta.start();
 	tb.start();
@@ -26,8 +28,8 @@ class ToyArrayCTMemory extends RealtimeThread {
 	System.out.println("Elapsed time(mS): "+(end-start));
     }
 
-    public ToyArrayCTMemory(int size, int repeat) {
-	super(new CTMemory(10000000));
+    public ToyArrayCTMemory(long ctsize, int size, int repeat) {
+	super(new CTMemory(ctsize));
 	this.size=size;
 	this.repeat=repeat;
     }
