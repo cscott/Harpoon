@@ -1,10 +1,14 @@
 #include "java_io_FileOutputStream.h"
+#include "config.h"
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
-
-#ifndef O_BINARY
-#define O_BINARY 0
+#include <sys/types.h>
+#if HAVE_SYS_TIME_H
+# include <sys/time.h>
+#else
+# include <time.h>
 #endif
 
 int initialize_FIS_data(JNIEnv * env);

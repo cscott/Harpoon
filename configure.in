@@ -3,7 +3,7 @@ AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE(flexrun, 0.0)
-AM_CONFIG_HEADER(config.h)
+AM_CONFIG_HEADER(include/config.h)
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -12,22 +12,32 @@ AC_PROG_RANLIB
 dnl Checks for libraries.
 
 dnl Checks for header files.
-AC_STDC_HEADERS
-AC_HAVE_HEADERS(sys/types.h)
+AC_HEADER_STDC
+AC_CHECK_HEADERS(sys/types.h sys/time.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
-dnl AC_TYPE_OFF_T
-dnl AC_HEADER_TIME
+AC_TYPE_OFF_T
+AC_CACHE_CHECK([whether the system uses the O_BINARY flag],
+	flexrun_cv_sys_obinary, AC_EGREP_CPP(yes, [
+#include <fcntl.h>
+#ifdef O_BINARY
+ yes
+#endif
+], flexrun_cv_sys_obinary=yes, flexrun_cv_sys_obinary=no))
+if test $flexrun_cv_sys_obinary != yes; then
+  AC_DEFINE(O_BINARY, 0,
+    [Define if your system doesn't support (or need) the O_BINARY flag])
+fi
 
 dnl Checks for library functions.
-AC_PROG_GCC_TRADITIONAL
-AC_CHECK_FUNCS(select)
+AC_PROG_GCC_TRADITIONAL  dnl sometimes needed for ioctl to work properly.
+AC_CHECK_FUNCS(select, ,AC_MSG_ERROR([select() not found]))
 
 dnl Match the CPU to an arch/ directory.
 case "$target_cpu" in
 arm*) archdir=arm32 ;;
-*)    archdir=$target_cpu ;;
+*)    AC_MSG_ERROR([no port for $target_cpu]) ;;
 esac
 
 AC_LINK_FILES(arch/${archdir}, include/asm)
