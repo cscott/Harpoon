@@ -29,7 +29,7 @@ import java.util.SortedSet;
  * <code>Collection</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.5 2002-09-03 14:42:32 cananian Exp $
+ * @version $Id: Default.java,v 1.6 2003-05-04 02:41:07 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -263,6 +263,8 @@ public abstract class Default  {
 	public PairList(A left, B right) {
 	    this.left = left; this.right = right;
 	}
+	public A left() { return left; }
+	public B right() { return right; }
 	public int size() { return 2; }
 	public Object get(int index) {
 	    switch(index) {
