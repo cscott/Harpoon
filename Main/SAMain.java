@@ -74,7 +74,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.111 2000-11-12 01:29:07 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.112 2000-11-12 03:07:10 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -187,8 +187,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    // as possible.
 
 	    hcf=new harpoon.Analysis.Quads.Nonvirtualize
-	    	(hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy))
-		.codeFactory();
+	    	(hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy),
+		 classHierarchy).codeFactory();
 
 	    if (!USE_OLD_CLINIT_STRATEGY) {
 		// transform the class initializers using the class hierarchy.
