@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# This script remakes everything in Code, Runtime and Realtime
+
+# Beginning of script
+
+CWD=`pwd`   # we need to come back to this directory at the end
+HARPOON_ROOT_DIR=$FLEX_DIR/..   # the directory that contains Code, Runtime and Realtime
+
+cd $HARPOON_ROOT_DIR/Code   # entering Code
+echo -e "Making Code...\n"
+if [ "$1" == "-clean" ]; then   # should we do "make clean"?
+    make clean
+    for dir in `\ls -d as*`; do
+	if [ -d $dir ]; then
+	    rm -rf $dir   # removing all as<benchmark> directories
+	fi
+    done
+fi
+make   # remaking Code
+echo -e "Finished making Code.\n"
+
+cd $HARPOON_ROOT_DIR/Runtime   # entering Runtime
+echo -e "Making Runtime...\n"
+if [ "$1" == "-clean" ]; then   # should we run ./setup, ./configure and do "make clean"?
+    for exec in `\ls -d run*`; do
+	if [ -x $exec ]; then
+	    rm -f $exec   # removing all run<benchmark> executables
+	fi
+    done
+    
+    if [ -e config.status ]; then   # is there a file config.status in Runtime?
+	head -n 7 config.status | tail -n 1 > temp
+	CONFIG_LINE=`sed s/\#\ // temp`   # grabbing the command-line for ./configure from config.status
+	rm temp   # removing the temporary file
+	
+	./setup   # running ./setup
+	$CONFIG_LINE   # running ./configure
+	make clean
+    else   # if the file config.status is missing, then use some default options
+	./setup
+	./configure  --with-precise-c --with-gc=copying --with-thread-model=user --with-event-driven --disable-shared --with-all-static -with-realtime-java=threads --with-rtj-perf
+	make clean
+    fi
+fi
+make   # remaking Runtime
+echo -e "Finished making Runtime.\n"
+
+cd $HARPOON_ROOT_DIR/Realtime   # entering Realtime
+echo -e "Making Realtime...\n"
+make   # remaking Realtime; note: make includes "make clean", but this is not essential for Realtime (neither in terms of time, nor in terms of files/data;
+echo -e "Finished making Realtime.\n"
+
+echo -e "Finished making everything.\n"
+
+cd $CWD   # go back to the directory in which the script started
+
+# End of script

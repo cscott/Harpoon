@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Sets some variables needed for regression testing.
+
+export MAIN_TESTING_DIR=$FLEX_DIR/../../RegTest/Client
+export RESULTS_DIR=$MAIN_TESTING_DIR/results
+export COMPILING_RESULTS_FILE=$RESULTS_DIR/compile
+export RUNNING_RESULTS_FILE=$RESULTS_DIR/run
+export ERROR_FILE=$RESULTS_DIR/errors
+export TEMP_DIR=$MAIN_TESTING_DIR/temp
+export RUNNING_TASK_FILE=$TEMP_DIR/running
+export UPDATING_FLEX_FILE=$TEMP_DIR/updating
+export UPDATED_SUCCESSFULLY_FILE=$TEMP_DIR/updated-success
