@@ -1,15 +1,19 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.12 2003-05-31 22:23:59 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.13 2003-06-02 03:30:58 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TO DO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%  - a slide to explain loops/our choice opposed to interval analysis
-%  X Trim ``Intraprocedural analysis'': jump to bitwidth, focus on
+%  X a slide to explain loops/our choice opposed to interval analysis KILL
+%  - Trim ``Intraprocedural analysis'': jump to bitwidth, focus on
 %    information gained, not process by which it is obtained
+%    kill example, define latice algebraically
 %  - Explain (spend more time on) how the *inter* procedural analysis
 %    works/how fields are treated.  A graphic here?
 %  - Prettify the ``field packing'' slide.
 %  - Use solid colors on results slides.
-%  - Shuffle memory wall slide?
+%  - Try memory wall slide at start.
+%  - Helvetica font on title slide
+%  - Don't enumerate conclusions
+%  - ``We'd love to do embedded benchmarks''
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[%
 pdf,
@@ -79,19 +83,6 @@ LCTES'03, June 2003
 \begin{talknotes}
 Nothing should be said on the title slide.
 \end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-% \begin{slide}{The quest for $\pi$}
-% \begin{itemize}
-% \item The following formula computes $8$ correct digits per iteration 
-%   (Ramanujan):
-% \end{itemize}
-%   \begin{small}
-%   \begin{equation*}
-%     \frac{1}{\pi}=\sum_{n=0}^\infty \frac{(\frac{1}{4})_n(\frac{2}{4})_n(\frac{3}{4})_n}{n!^3}\bigl(2\sqrt{2}(1103+26390n)\bigr)\frac{1}{(99^2)^{2n+1}}
-%   \end{equation*}
-%   \end{small}
-% \end{slide}
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Our Goal}
@@ -297,6 +288,132 @@ see how, by a series of extensions, we can obtain a
 powerful bitwidth analysis.
 
 ~%
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Bitwidth analysis domains}
+
+\begin{itemize}
+\item $\mathcal{C}:\mathbb{Z}$, incomparable integers
+\begin{itemize}\yellow
+\item $c\in\mathcal{C}$
+\end{itemize}
+\item $\mathcal{T}:\mathbb{N}_0\times\mathbb{N}_0$, bitwidth specifications
+\begin{itemize}\yellow
+\item $\tuple{m,p}\in\mathcal{T}$
+\end{itemize}
+\item $\mathcal{L}:\left(\mathcal{C+T}\right)_\bot$, lattice values
+\end{itemize}
+\end{slide}
+
+\begin{talknotes}
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{5}{
+\begin{slide}{Ordering relationships in $\mathcal{L}$}%
+{\onlySlide*{1}{\yellow}%
+ For all $c\in\mathcal{C}$, $\tuple{m,p}\in\mathcal{T}$:}%
+\begin{eqnarray*}%
+\bot\latleq c &\text{ and }& \bot\latleq\tuple{m,p}\\
+\tuple{m_1,p_1}\latleq\tuple{m_2,p_2}&\text{ iff }&m_1\leq m_2 \wedge p_1\leq p_2\\
+c\latleq\tuple{m,p}&\text{ iff }&\func{bw}(c)\latleq\tuple{{\onlySlide{5}{\yellow}m},{\onlySlide{4}{\yellow}p}}
+\end{eqnarray*}%
+\FromSlide{2}%
+\begin{flushleft}\onlySlide*{2}{\yellow}where:\end{flushleft}
+\begin{displaymath}%
+\func{bw}(c):\mathcal{C}\to\mathcal{T}=\begin{cases}
+\tuple{0,0} & c=0 \\
+\tuple{0,{\onlySlide{4}{\yellow}1+\left\lfloor\ln\left|c\right|\right\rfloor}} & c>0 \\
+\tuple{{\onlySlide{5}{\yellow}1+\left\lfloor\ln\left|c\right|\right\rfloor},0} & c<0 \\
+\end{cases}%
+\end{displaymath}%
+\FromSlide{3}%
+\begin{displaymath}%
+\begin{array}{ccc}
+\text{\tt 0\ldots 0}\overbrace{\text{\tt 1X\ldots XXX}}^{1+\left\lfloor\ln\left|c\right|\right\rfloor\fromSlide*{4}{\onlySlide{4}{\yellow}=p}}
+&\quad&
+\text{\tt 1\ldots 1}\overbrace{\text{\tt 0X\ldots XXXX}}^{1+\left\lfloor\ln\left(\left|c\right|-1\right)\right\rfloor\fromSlide*{5}{\onlySlide{5}{\yellow}\leq m}}
+\\
+\text{\small Positive} && \text{\small Negative}
+\end{array}
+\end{displaymath}
+\end{slide}
+}
+
+\begin{talknotes}
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{6}{
+\begin{slide}{Some abstract evaluation rules}
+\begin{eqnarray*}
+\onlySlide*{2}{\yellow}%
+\text{\tt -}\tuple{m,p}
+ &\onlySlide*{2}{\yellow}=&\onlySlide*{2}{\yellow}%
+ \tuple{p,m}
+ \\
+\onlySlide*{3}{\yellow}%
+\tuple{m_l,p_l} \text{\tt+} \tuple{m_r,p_r}
+ &\onlySlide*{3}{\yellow}=&\onlySlide*{3}{\yellow}%
+ \tuple{1+\max(m_l,m_r),1+\max(p_l,p_r)}
+ \\
+\onlySlide*{4}{\yellow}%
+\tuple{m_l,p_l} \text{\tt *} \tuple{m_r,p_r}
+ &\onlySlide*{4}{\yellow}=&\onlySlide*{4}{\yellow}%
+\tuple{\begin{array}{l}\max(m_l+p_r,p_l+m_r),\\
+                       \max(m_l+m_r,p_l+p_r)\end{array}}
+ \\
+\onlySlide*{5}{\yellow}%
+\tuple{0,p_l} \text{\tt\&} \tuple{0,p_r}
+ &\onlySlide*{5}{\yellow}=&\onlySlide*{5}{\yellow}%
+ \tuple{0,\min(p_l,p_r)}
+ \\
+\onlySlide*{6}{\yellow}
+\tuple{m_l,p_l}\text{\tt\&} \tuple{m_r,p_r}
+ &\onlySlide*{6}{\yellow}=&\onlySlide*{6}{\yellow}%
+ \tuple{\max(m_l,m_r),\max(p_l,p_r)}
+ \\
+\end{eqnarray*}
+\end{slide}
+}
+
+\begin{talknotes}
+Here are some of the combination rules we use to
+perform abstract evaluation of unary and binary operations using
+our bitwidth value domain.
+
+@ The first entry simply says that negation
+exchanges the positive and negative bitwidths.
+Note that we're tracking the bitwidth of the
+\textit{absolute value} of the number, so the rule for negation is
+simply interchanging the positive and negative portions of the tuple.
+
+@ The second entry gives
+the rules for addition: we have to add one to the width to allow for
+carry out.
+
+@ The rule for multiplication should remind you that we're
+operating in the log-domain.  
+
+@ The underlying numeric representation
+shows through in our rules for logical-AND; let's look at this more closely.
+
+~%force rejust.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Analysis}
+\end{slide}
+
+\begin{talknotes}
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{SSI?}
+\end{slide}
+
+\begin{talknotes}
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1570,7 +1687,7 @@ So how well does all this work?
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{6}{
+\overlays{7}{
 \begin{slide}{Experimental setup}
 \begin{itemize}
 \FromSlide{2}
@@ -1579,14 +1696,16 @@ So how well does all this work?
 \FromSlide{3}
 \begin{itemize}\yellow
 \item Whole-program static compiler.
-\end{itemize}
 \FromSlide{4}
-\item SPECjvm98 benchmark suite with full input size.
+\item Generates C or native code for ARM/MIPS/Sparc.
+\end{itemize}
 \FromSlide{5}
+\item SPECjvm98 benchmark suite with full input size.
+\FromSlide{6}
 \begin{itemize}\yellow
 \item JDK 1.1.8 class libraries.
 \end{itemize}
-\FromSlide{6}
+\FromSlide{7}
 \item Benchmarks run on dual-processor 900 MHz
   Pentium III running Debian Linux.
 \end{itemize}
@@ -1905,7 +2024,7 @@ some of these transformations, caused simply by reducing memory costs
 (including GC) and improving caching.  This is despite adding extra
 instructions in the form of indirections, unaligned accesses, and
 virtualization.  One can
-expect that the memory wall will continue to get steeper and the
+expect that the memory wall will continue to get higher and the
 benefits of increasing the effective cache size will get greater, even
 as the ALU cost of unpacking operations becomes releatively cheaper.
 We believe this work has shown that space optimizations can be
@@ -1960,7 +2079,7 @@ This talk:
  \item Performace:
  \FromSlide{6}
  \begin{itemize}
-  \item ``{\yellow Memory wall}'' getting steeper.
+  \item ``{\yellow Memory wall}'' getting higher.
   \FromSlide{7}
   \item Space optimizations increase the {\yellow effective cache size},
   improving performance.
