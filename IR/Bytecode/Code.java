@@ -16,9 +16,11 @@ import harpoon.IR.RawClass.AttributeLineNumberTable;
 import harpoon.IR.RawClass.LineNumberTable;
 import harpoon.IR.RawClass.Constant;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Util;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.Collections.Graph;
+import harpoon.Util.Util;
 
+import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -32,10 +34,10 @@ import java.util.Set;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.13 2002-09-03 16:12:04 cananian Exp $
+ * @version $Id: Code.java,v 1.14 2003-05-09 21:08:01 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
-public class Code extends HCode {
+public class Code extends HCode implements Graph<Instr,InstrEdge> {
   /** The name of this code view. */
   public static final String codename = "bytecode";
 
@@ -73,7 +75,7 @@ public class Code extends HCode {
    * making up this code view.  The first instruction to be
    * executed is in element 0 of the array.
    */
-  public List getElementsL() {
+  public List<Instr> getElementsL() {
     if (elements==null) {
       if (getCode()==null) return Collections.EMPTY_LIST; // no elements.
       String sf = parent.getDeclaringClass().getSourceFile(); // source file.
@@ -106,7 +108,7 @@ public class Code extends HCode {
       // now all pc's for which merge>1 are merge nodes.
       Instr[] sparse = new Instr[code.length]; // index by pc still. 
       // crank through and add instrs without making links.
-      List v = new ArrayList(code.length);
+      List<Instr> v = new ArrayList<Instr>(code.length);
       for (int pc=0; pc<code.length; pc+=Op.instrSize(code, pc)) {
 	int line = getLine(pc);
 	// make merge node if appropriate.
@@ -164,7 +166,7 @@ public class Code extends HCode {
       tryBlocks = new ExceptionEntry[et.length];
       for (int i=0; i<tryBlocks.length; i++) { // for each table entry...
 	// Add all the PC's in the try block to a list.
-	Set uv = new HashSet(et[i].end_pc-et[i].start_pc);
+	Set<Instr> uv = new HashSet<Instr>(et[i].end_pc-et[i].start_pc);
 	for (int pc=et[i].start_pc;
 	     pc < et[i].end_pc;
 	     pc+=Op.instrSize(code,pc)) {
@@ -188,15 +190,15 @@ public class Code extends HCode {
     return elements;
   }
   /** Cached value of <code>getElements</code>. */
-  private List elements = null;
+  private List<Instr> elements = null;
   /** Cached value of <code>getTryBlocks</code> blocks. */
   private ExceptionEntry[] tryBlocks = null;
 
-  public List getLeafElementsL() {
+  public List<Instr> getLeafElementsL() {
     if (leaves == null) {
-      leaves = new ArrayList();
-      for (Iterator i = getElementsI(); i.hasNext(); ) {
-	Instr in = (Instr) i.next();
+      leaves = new ArrayList<Instr>();
+      for (Iterator<Instr> i = getElementsI(); i.hasNext(); ) {
+	Instr in = i.next();
 	if (in.next.size()==0)
 	  leaves.add(in);
       }
@@ -205,15 +207,26 @@ public class Code extends HCode {
     }
     return leaves;
   }
-  private List leaves = null;
+  private List<Instr> leaves = null;
 
-  public HCodeElement[] getLeafElements() {
-    List l = getLeafElementsL();
-    return (HCodeElement[]) l.toArray(new Instr[l.size()]);
+  public Instr[] getLeafElements() {
+    List<Instr> l = getLeafElementsL();
+    return l.toArray(new Instr[l.size()]);
   }
 
   // implement elementArrayFactory which returns Instr[]s.
-  public ArrayFactory elementArrayFactory() { return Instr.arrayFactory; }
+  public ArrayFactory<Instr> elementArrayFactory() {
+    return Instr.arrayFactory;
+  }
+
+  // Graph interface
+  public Set<Instr> nodes() {
+    final List<Instr> l = getElementsL();
+    return new AbstractSet<Instr>() {
+      public Iterator<Instr> iterator() { return l.iterator(); }
+      public int size() { return l.size(); }
+    };
+  }
 
   // special non-HCode-mandated access functions.
   /** Get the number of local variables used in this method, including
@@ -228,11 +241,11 @@ public class Code extends HCode {
   /** Represents exception handlers in this code view. */
   public static class ExceptionEntry implements Comparable {
     int order; // smaller numbers have precedence over higher numbers.
-    Set tryBlock;
+    Set<Instr> tryBlock;
     HClass caughtException;
     Instr handler;
     ExceptionEntry(int order,
-		   Set tryBlock, HClass caughtException, Instr handler) {
+		   Set<Instr> tryBlock, HClass caughtException, Instr handler){
       this.order = order;
       this.tryBlock = tryBlock;
       this.caughtException = caughtException;

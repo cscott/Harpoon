@@ -197,6 +197,7 @@ IR/Assem/InstrEdge.java
 IR/Assem/InstrFactory.java
 IR/Assem/InstrGroup.java
 IR/Assem/InstrLABEL.java
+IR/Bytecode/Code.java
 IR/Bytecode/Instr.java
 IR/Bytecode/InCti.java
 IR/Bytecode/InGen.java
