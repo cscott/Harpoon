@@ -44,7 +44,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.6 1999-07-22 22:49:10 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.7 1999-07-23 18:57:47 pnkfelix Exp $
  */
 %%
 
@@ -109,36 +109,41 @@ BINOP<l>(ADD, j, k) = i %{
 BINOP<f>(ADD, j, k) = i %{
     /* call auxillary fp routines */
     Temp i = makeTemp();		
-    emit(new Instr(inf, ROOT,
-		   "mov `d1, `s1\n"+
-		   "mov `d0, `s0\n"+
-		   "bl ___addsf\n"+
-		   "mov `d2, `s2",
-		   new Temp[]{ frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1], i },
-		   new Temp[]{ j, k, i })); 	       		       
+    emit(new Instr(inf, ROOT, "mov `d0, `s0", 
+		   new Temp[]{ frame.getAllRegisters()[1] },
+		   new Temp[]{ k }));
+    emit(new Instr(inf, ROOT, "mov `d0, `s0", 
+		   new Temp[]{ frame.getAllRegisters()[0] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT, "bl ___addsf", null, null));
+    emit(new Instr(inf, ROOT, "mov `d0, `s0",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[0] }));
 			       
 }%
 
 BINOP<d>(ADD, j, k) = i %{
     /* call auxillary fp routines */
     Temp i = makeTwoWordTemp();		
-    emit(new Instr(inf, ROOT,
-		   "mov `d2, `s1l\n"+
-		   "mov `d3, `s1h\n"+
-		   "mov `d0, `s0l\n"+
-		   "mov `d1, `s0h\n"+
-		   "bl ___adddf3\n"+
-		   "mov `d4l, `s2\n"+
-		   "mov `d4h, `s3",
-		   new Temp[]{ frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1],
-			       frame.getAllRegisters()[2],
-			       frame.getAllRegisters()[3], i },
-		   new Temp[]{ j, k, 
-			       frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1] }));
-			       
+    emit(new Instr(inf, ROOT, "mov `d0, `s0l",
+		   new Temp[] { frame.getAllRegisters()[2] },
+		   new Temp[] { k }));
+    emit(new Instr(inf, ROOT, "mov `d0, `s0h",
+		   new Temp[] { frame.getAllRegisters()[3] },
+		   new Temp[] { k }));
+    emit(new Instr(inf, ROOT, "mov `d0, `s0l",
+		   new Temp[] { frame.getAllRegisters()[0] },
+		   new Temp[] { j }));
+    emit(new Instr(inf, ROOT, "mov `d0, `s0h",
+		   new Temp[] { frame.getAllRegisters()[1] },
+		   new Temp[] { j }));
+    emit(new Instr(inf, ROOT, "bl ___adddf3", null, null));
+    emit(new Instr(inf, ROOT, "mov `d0l, `s0",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[0] }));
+    emit(new Instr(inf, ROOT, "mov `d0h, `s0",
+		   new Temp[] { i },
+		   new Temp[] { frame.getAllRegisters()[3] }));
 }%
 
 BINOP<p,i>(AND, j, k) = i %{
@@ -151,13 +156,19 @@ BINOP<p,i>(AND, j, k) = i %{
 BINOP<l>(AND, j, k) = i %{
     Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
-	           "and `d0l, `s0l, `s1l\n"+
+	           "and `d0l, `s0l, `s1l",
+		   new Temp[]{ i }, new Temp[]{ j, k }));
+    emit(new Instr(inf, ROOT,
 		   "and `d0h, `s0h, `s1h",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
+
 }%
 
 BINOP<p,i>(CMPEQ, j, k) = i %{
     Temp i = makeTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+
 		   "moveq `d0, #1\n"+
@@ -167,6 +178,9 @@ BINOP<p,i>(CMPEQ, j, k) = i %{
 
 BINOP<l>(CMPEQ, j, k) = i %{
     Temp i = makeTwoWordTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 	           "cmp `s0l, `s1l\n"+
 		   "cmpeq `s0h, `s1h\n"+
@@ -177,6 +191,9 @@ BINOP<l>(CMPEQ, j, k) = i %{
   
 BINOP<f>(CMPEQ, j, k) = i %{
     Temp i = makeTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -191,6 +208,9 @@ BINOP<f>(CMPEQ, j, k) = i %{
 
 BINOP<d>(CMPEQ, j, k) = i %{
     Temp i = makeTwoWordTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -207,6 +227,9 @@ BINOP<d>(CMPEQ, j, k) = i %{
 
 BINOP<p,i>(CMPGT, j, k) = i %{
     Temp i = makeTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+	
 		   "movgt `d0, #1\n"+	
@@ -216,6 +239,9 @@ BINOP<p,i>(CMPGT, j, k) = i %{
 
 BINOP<l>(CMPGT, j, k) = i %{
     Temp i = makeTwoWordTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 		   "cmp `s0h, `s1h\n"+
 	           "cmpeq `s0l, `s1l\n"+
@@ -226,6 +252,9 @@ BINOP<l>(CMPGT, j, k) = i %{
 
 BINOP<f>(CMPGT, j, k) = i %{
     Temp i = makeTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -240,6 +269,9 @@ BINOP<f>(CMPGT, j, k) = i %{
 
 BINOP<d>(CMPGT, j, k) = i %{
     Temp i = makeTwoWordTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -257,6 +289,9 @@ BINOP<d>(CMPGT, j, k) = i %{
 
 BINOP<p,i>(CMPGE, j, k) = i %{
     Temp i = makeTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+
 		   "movge `d0, #1\n"+
@@ -266,6 +301,9 @@ BINOP<p,i>(CMPGE, j, k) = i %{
 
 BINOP<l>(CMPGE, j, k) = i %{
     Temp i = makeTwoWordTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 	           "cmp `s0h, `s1h\n"+
 	           "cmpeq `s0l, `s1l\n"+
@@ -276,6 +314,9 @@ BINOP<l>(CMPGE, j, k) = i %{
 
 BINOP<f>(CMPGE, j, k) = i %{
     Temp i = makeTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -290,6 +331,9 @@ BINOP<f>(CMPGE, j, k) = i %{
 
 BINOP<d>(CMPGE, j, k) = i %{
     Temp i = makeTwoWordTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -307,6 +351,9 @@ BINOP<d>(CMPGE, j, k) = i %{
 
 BINOP<p,i>(CMPLE, j, k) = i %{
     Temp i = makeTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+
 		   "movle `d0, #1\n"+
@@ -316,6 +363,9 @@ BINOP<p,i>(CMPLE, j, k) = i %{
 
 BINOP<l>(CMPLE, j, k) = i %{
     Temp i = makeTwoWordTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 	           "cmp `s0h, `s1h\n"+
 	           "cmpeq `s0l, `s1l\n"+
@@ -326,6 +376,9 @@ BINOP<l>(CMPLE, j, k) = i %{
 
 BINOP<f>(CMPLE, j, k) = i %{
     Temp i = makeTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -340,6 +393,9 @@ BINOP<f>(CMPLE, j, k) = i %{
 
 BINOP<d>(CMPLE, j, k) = i %{
     Temp i = makeTwoWordTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -356,6 +412,9 @@ BINOP<d>(CMPLE, j, k) = i %{
 
 BINOP<p,i>(CMPLT, j, k) = i %{
     Temp i = makeTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+
 		   "movlt `d0, #1\n"+
@@ -365,6 +424,9 @@ BINOP<p,i>(CMPLT, j, k) = i %{
 
 BINOP<l>(CMPLT, j, k) = i %{
     Temp i = makeTwoWordTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 	           "cmp `s0h, `s1h\n"+
 	           "cmpeq `s0l, `s1l\n"+
@@ -375,6 +437,9 @@ BINOP<l>(CMPLT, j, k) = i %{
 
 BINOP<f>(CMPLT, j, k) = i %{
     Temp i = makeTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -389,6 +454,9 @@ BINOP<f>(CMPLT, j, k) = i %{
 
 BINOP<d>(CMPLT, j, k) = i %{
     Temp i = makeTwoWordTemp();		
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -403,10 +471,20 @@ BINOP<d>(CMPLT, j, k) = i %{
 		   new Temp[]{ j, k, frame.getAllRegisters()[0] }));
 }%
 
-BINOP(OR, j, k) = i %{
+BINOP<p,i>(OR, j, k) = i %{
     Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
 	           "orr `d0, `s0, `s1",
+		   new Temp[]{ i }, new Temp[]{ j, k }));
+}%
+
+BINOP<l>(OR, j, k) = i %{
+    Temp i = makeTwoWordTemp();		
+    emit(new Instr(inf, ROOT,
+	           "orr `d0l, `s0l, `s1l",
+		   new Temp[]{ i }, new Temp[]{ j, k }));
+    emit(new Instr(inf, ROOT,
+		   "orr `d0h, `s0h, `s1h",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
@@ -438,6 +516,17 @@ BINOP<p,i>(XOR, j, k) = i %{
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
+BINOP<l>(XOR, j, k) = i %{
+    Temp i = makeTwoWordTemp();		
+    emit(new Instr(inf, ROOT,
+	           "eor `d0l, `s0l, `s1l",
+		   new Temp[]{ i }, new Temp[]{ j, k }));
+    emit(new Instr(inf, ROOT,
+		   "eor `d0h, `s0h, `s1h",
+		   new Temp[]{ i }, new Temp[]{ j, k }));
+
+}%
+
 CONST<i>(c) = i %{
     Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
@@ -455,145 +544,222 @@ BINOP<p,i>(MUL, j, k) = i %{
 BINOP<l>(MUL, j, k) = i %{
     Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
-		   "mov `d2, `s1l\n"+
-		   "mov `d3, `s1h\n"+
-		   "mov `d1, `s0l\n"+
-		   "mov `d0, `s0h\n"+
-		   "bl ___muldi3\n"+
-		   "mov `d4l, `s2\n"+
-		   "mov `d4h, `s3",
-		   new Temp[]{ frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1],
-			       frame.getAllRegisters()[2],
-			       frame.getAllRegisters()[3], i },
-		   new Temp[]{ j, k, 
-			       frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1] }));
+		   "mov `d0, `s0l",
+		   new Temp[]{ frame.getAllRegisters()[2] },
+		   new Temp[]{ k }));
+    emit(new Instr(inf, ROOT,		   
+		   "mov `d0, `s0h",
+		   new Temp[]{ frame.getAllRegisters()[3] },
+		   new Temp[]{ k }));
+    emit(new Instr(inf, ROOT,		   
+		   "mov `d1, `s0l",
+		   new Temp[]{ frame.getAllRegisters()[1] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0h",
+		   new Temp[]{ frame.getAllRegisters()[0] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT, "bl ___muldi3", null, null));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0l, `s0",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[0] }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0h, `s0",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[1] }));
 }%
 
 BINOP<f>(MUL, j, k) = i %{
     Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
-		   "mov `d1, `s1\n"+
-		   "mov `d0, `s0\n"+
-		   "bl ___mulsf\n"+
-		   "mov `d2, `s2",
-		   new Temp[]{ frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1], i },
-		   new Temp[]{ j, k, i })); 	       		       
+		   "mov `d0, `s0",
+		   new Temp[]{ frame.getAllRegisters()[1] },
+		   new Temp[]{ k })); 	       		       
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0",
+		   new Temp[]{ frame.getAllRegisters()[0] },
+		   new Temp[]{ j })); 	       		       
+    emit(new Instr(inf, ROOT, "bl ___mulsf", null, null));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[0] })); 	       		       
 }%
 
 BINOP<d>(MUL, j, k) = i %{
     Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
-		   "mov `d2, `s1l\n"+
-		   "mov `d3, `s1h\n"+
-		   "mov `d0, `s0l\n"+
-		   "mov `d1, `s0h\n"+
-		   "bl ___muldf3\n"+
-		   "mov `d4l, `s2\n"+
-		   "mov `d4h, `s3",
-		   new Temp[]{ frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1],
-			       frame.getAllRegisters()[2],
-			       frame.getAllRegisters()[3], i },
-		   new Temp[]{ j, k, 
-			       frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1] }));
+		   "mov `d0, `s0l",
+		   new Temp[]{ frame.getAllRegisters()[2] },
+		   new Temp[]{ k }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0h",
+		   new Temp[]{ frame.getAllRegisters()[3] },
+		   new Temp[]{ k }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0l",
+		   new Temp[]{ frame.getAllRegisters()[0] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0h",
+		   new Temp[]{ frame.getAllRegisters()[1] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT,
+		   "bl ___muldf3", null, null));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0l, `s0",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[0] }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0h, `s0",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[1] }));
 }%
 
 BINOP<p,i>(DIV, j, k) = i %{
     Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
-		   "mov `d1, `s1\n"+
-		   "mov `d0, `s0\n"+
-		   "bl ___divsi3\n"+
-		   "mov `d2, `s2",
-		   new Temp[]{ frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1], i },
-		   new Temp[]{ j, k, frame.getAllRegisters()[0] }));
+		   "mov `d0, `s0",
+		   new Temp[]{ frame.getAllRegisters()[1] },
+		   new Temp[]{ k }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0",
+		   new Temp[]{ frame.getAllRegisters()[0] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT,
+		   "bl ___divsi3", null, null));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[0] }));
 }%
 
 BINOP<l>(DIV, j, k) = i %{
     Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
-		   "mov `d2, `s1l\n"+
-		   "mov `d3, `s1h\n"+
-		   "mov `d0, `s0l\n"+
-		   "mov `d1, `s0h\n"+
-		   "bl ___divdi3\n"+
-		   "mov `d4l, `s2\n"+
-		   "mov `d4h, `s3",
-		   new Temp[]{ frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1],
-			       frame.getAllRegisters()[2],
-			       frame.getAllRegisters()[3], i },
-		   new Temp[]{ j, k, 
-			       frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1] }));
+		   "mov `d0, `s0l",
+		   new Temp[]{ frame.getAllRegisters()[2] },
+		   new Temp[]{ k }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0h",
+		   new Temp[]{ frame.getAllRegisters()[3] },
+		   new Temp[]{ k }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0l",
+		   new Temp[]{ frame.getAllRegisters()[0] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0h",
+		   new Temp[]{ frame.getAllRegisters()[1] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT,
+		   "bl ___divdi3", null, null));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0l, `s0",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[0] }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0h, `s0",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[1] }));
 }%
 
 BINOP<f>(DIV, j, k) = i %{
     Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
-		   "mov `d1, `s1\n"+
-		   "mov `d0, `s0\n"+
-		   "bl ___divsf3\n"+
-		   "mov `d2, `s2",
-		   new Temp[]{ frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1], i },
-		   new Temp[]{ j, k, frame.getAllRegisters()[0] }));
+		   "mov `d0, `s0",
+		   new Temp[]{ frame.getAllRegisters()[1] },
+		   new Temp[]{ k }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0",
+		   new Temp[]{ frame.getAllRegisters()[0] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT,
+		   "bl ___divsf3", null, null));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[0] }));
 }%
 
 BINOP<d>(DIV, j, k) = i %{
     Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
-		   "mov `d2, `s1l\n"+
-		   "mov `d3, `s1h\n"+
-		   "mov `d0, `s0l\n"+
-		   "mov `d1, `s0h\n"+
-		   "bl ___divdf3\n"+
-		   "mov `d4l, `s2\n"+
-		   "mov `d4h, `s3",
-		   new Temp[]{ frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1],
-			       frame.getAllRegisters()[2],
-			       frame.getAllRegisters()[3], i },
-		   new Temp[]{ j, k, 
-			       frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1] }));
+		   "mov `d0, `s0l",
+		   new Temp[]{ frame.getAllRegisters()[2] },
+		   new Temp[]{ k })); 
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0h",
+		   new Temp[]{ frame.getAllRegisters()[3] },
+		   new Temp[]{ k }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0l",
+		   new Temp[]{ frame.getAllRegisters()[0] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0h",
+		   new Temp[]{ frame.getAllRegisters()[1] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT,
+		   "bl ___divdf3", null, null));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0l, `s0",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[0] }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0h, `s0",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[1] }));
 }%
 
 BINOP<p,i>(REM, j, k) = i %{
     Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
-		   "mov `d1, `s1\n"+
-		   "mov `d0, `s0\n"+
-		   "bl ___modsi3\n"+
+		   "mov `d1, `s1",
+		   new Temp[]{ frame.getAllRegisters()[1] },
+		   new Temp[]{ k }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0",
+		   new Temp[]{ frame.getAllRegisters()[0] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT,
+		   "bl ___modsi3", null, null));
+    emit(new Instr(inf, ROOT,
 		   "mov `d2, `s2",
-		   new Temp[]{ frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1], i },
-		   new Temp[]{ j, k, frame.getAllRegisters()[0] }));
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[0] }));
    
 }%
 
 BINOP<l>(REM, j, k) = i %{
     Temp i = makeTwoWordTemp();		
     emit(new Instr(inf, ROOT,
-		   "mov `d2, `s1l\n"+
-		   "mov `d3, `s1h\n"+
-		   "mov `d0, `s0l\n"+
-		   "mov `d1, `s0h\n"+
-		   "bl ___moddi3\n"+
-		   "mov `d4l, `s2\n"+
+		   "mov `d2, `s1l",
+		   new Temp[]{ frame.getAllRegisters()[2] },
+		   new Temp[]{ k }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d3, `s1h",
+		   new Temp[]{ frame.getAllRegisters()[3] },
+		   new Temp[]{ k }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d0, `s0l",
+		   new Temp[]{ frame.getAllRegisters()[0] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT,
+		   "mov `d1, `s0h",
+		   new Temp[]{ frame.getAllRegisters()[1] },
+		   new Temp[]{ j }));
+    emit(new Instr(inf, ROOT,
+		   "bl ___moddi3", null, null));
+    emit(new Instr(inf, ROOT,
+		   "mov `d4l, `s2",
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[0] }));
+    emit(new Instr(inf, ROOT,
 		   "mov `d4h, `s3",
-		   new Temp[]{ frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1],
-			       frame.getAllRegisters()[2],
-			       frame.getAllRegisters()[3], i },
-		   new Temp[]{ j, k, 
-			       frame.getAllRegisters()[0],
-			       frame.getAllRegisters()[1] }));
+		   new Temp[]{ i },
+		   new Temp[]{ frame.getAllRegisters()[1] }));
 }%
 
 MEM<p,i,f>(e) = i %{
@@ -651,7 +817,9 @@ UNOP(_2S, arg) = i %{
 UNOP<p,i>(NEG, arg) = i %{
     Temp i = makeTemp();		
     emit(new Instr(inf, ROOT,
-	           "mov `d0, #0\n"+
+	           "mov `d0, #0",
+		   new Temp[] { i }, new Temp[]{ arg }));
+    emit(new Instr(inf, ROOT,
 		   "sub `d0, `d0, `s0",
 		   new Temp[] { i }, new Temp[]{ arg }));
 }% 
@@ -738,14 +906,6 @@ MOVE<i>(MEM(d), src) %{
 		      null, new Temp[]{ src, d }));   
 }%
 
-MOVE<i>(MEM(d), CONST(s)) %extra { t } %{
-    emit(new InstrMEM(inf, ROOT,
-		      "mov `d0, #"+
-		      ((CONST)((MOVE)ROOT).src).value.intValue()+"\n"+
-		      "str `s0, [`s1]",
-		      new Temp[] { t }, new Temp[] { t, d }));
-}%
-
 RETURN(val) %{
     // FSK: leaving OUT exception handling by passing excep-val in r1
 
@@ -766,10 +926,11 @@ THROW(val) %{
 */
 
 CALL(retval, retex, func, arglist) %{
-
+	     // TODO: FILL IN!!!
 }%
 
 NATIVECALL(retval, retex, func, arglist) %{
+	     // TODO: FILL IN!!!
 
 }%
 
