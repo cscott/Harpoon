@@ -13,7 +13,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.4.2 2000-03-29 23:02:56 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.4.3 2000-03-30 09:58:27 cananian Exp $
  */
 public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;
@@ -73,8 +73,16 @@ public class Relinker extends Linker implements java.io.Serializable {
 	descCache.put(oldClass.getDescriptor(), oldClass);
     }
 
+    // Serializable
+    private void readObject(java.io.ObjectInputStream in)
+	throws java.io.IOException, ClassNotFoundException {
+	in.defaultReadObject();
+	// note that linker descCache is cleared magically on read, too.
+	memberMap = new HashMap();
+    }
+
     // WRAP/UNWRAP CODE
-    Map memberMap = new HashMap();
+    transient Map memberMap = new HashMap();
 
     HClass wrap(HClass hc) {
 	if (hc==null || hc.isPrimitive()) return hc;
@@ -87,6 +95,9 @@ public class Relinker extends Linker implements java.io.Serializable {
     }
     HField wrap(HField hf) {
 	if (hf==null) return null;
+	Util.assert(!(hf instanceof HFieldProxy &&
+		      ((HFieldProxy)hf).relinker==this),
+		    "should never try to proxy a proxy of this same relinker");
 	HField result = (HField) memberMap.get(hf);
 	if (result==null) {
 	    if (hf.getDeclaringClass().isArray())
@@ -100,6 +111,9 @@ public class Relinker extends Linker implements java.io.Serializable {
     }
     HMethod wrap(HMethod hm) {
 	if (hm==null) return null;
+	Util.assert(!(hm instanceof HMethodProxy &&
+		      ((HMethodProxy)hm).relinker==this),
+		    "should never try to proxy a proxy of this same relinker");
 	if (hm instanceof HInitializer) return wrap((HInitializer)hm);
 	if (hm instanceof HConstructor) return wrap((HConstructor)hm);
 	HMethod result = (HMethodProxy) memberMap.get(hm);

@@ -3,16 +3,17 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
+import harpoon.Util.Util;
 /**
  * <code>HMemberProxy</code> is a relinkable proxy for an
  * <code>HMember</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMemberProxy.java,v 1.1.4.4 2000-03-29 23:02:56 cananian Exp $
+ * @version $Id: HMemberProxy.java,v 1.1.4.5 2000-03-30 09:58:27 cananian Exp $
  * @see HFieldProxy
  * @see HMethodProxy
  */
-abstract class HMemberProxy implements HMember, java.io.Serializable {
+abstract class HMemberProxy implements HMember {
     Relinker relinker;
     boolean sameLinker;
     private HMember proxy;
@@ -22,6 +23,9 @@ abstract class HMemberProxy implements HMember, java.io.Serializable {
         this.relinker = relinker;
     }
     protected void relink(HMember proxy) {
+	Util.assert(!(proxy instanceof HMemberProxy &&
+		      ((HMemberProxy)proxy).relinker==relinker),
+		    "should never proxy to a proxy of this same relinker.");
 	this.proxy = proxy;
 	this.sameLinker = (proxy==null || // keep us safe if the proxy==null
 			   relinker == proxy.getDeclaringClass().getLinker());
@@ -37,7 +41,8 @@ abstract class HMemberProxy implements HMember, java.io.Serializable {
     public boolean equals(Object obj) {
 	if (obj instanceof HMemberProxy)
 	    return proxy.equals(((HMemberProxy)obj).proxy);
-	return proxy.equals(obj);
+	Util.assert(false);// this is usually a bug.
+	return false;
     }
     // Comparable interface
     /** Compares two <code>HMember</code>s lexicographically; first by

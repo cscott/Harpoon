@@ -9,8 +9,6 @@ import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
-import java.util.Hashtable;
-import java.util.Vector;
 
 /**
  * <code>HClassImpl</code> is a common parent for implementations of
@@ -23,7 +21,7 @@ import java.util.Vector;
  * <code>Linker</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassImpl.java,v 1.1.4.3 2000-01-15 00:49:06 cananian Exp $
+ * @version $Id: HClassImpl.java,v 1.1.4.4 2000-03-30 09:58:27 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -105,89 +103,6 @@ abstract class HClassImpl extends HClass
   public abstract HField[] getDeclaredFields();
 
   /**
-   * Returns a <code>HField</code> object that reflects the specified
-   * accessible member field of the class or interface represented by this
-   * <code>HClass</code> object.  The <code>name</code> parameter is
-   * a <code>String</code> specifying the simple name of the
-   * desired field. <p>
-   * The field to be reflected is located by searching all member fields
-   * of the class or interface represented by this <code>HClass</code>
-   * object (and its superclasses and interfaces) for an accessible 
-   * field with the specified name.
-   * @see "The Java Language Specification, sections 8.2 and 8.3"
-   * @exception NoSuchFieldError
-   *            if a field with the specified name is not found.
-   * @see HField
-   */
-  public HField getField(String name) throws NoSuchFieldError {
-    // construct master field list, if we haven't already.
-    HField[] fields=getFields();
-    // look for field name in master field list.
-    // look backwards to be sure we find local fields first (scoping)
-    for (int i=fields.length-1; i>=0; i--)
-      if (fields[i].getName().equals(name))
-	return fields[i];
-    // can't find it.
-    throw new NoSuchFieldError(getName()+"."+name);
-  }
-  /**
-   * Returns an array containing <code>HField</code> objects reflecting
-   * all the accessible fields of the class or interface represented by this
-   * <code>HClass</code> object.  Returns an array of length 0 if the
-   * class or interface has no accessible fields, or if it represents an 
-   * array type or a primitive type. <p>
-   * Specifically, if this <code>HClass</code> object represents a class,
-   * returns the accessible fields of this class and of all its superclasses.
-   * If this <code>HClass</code> object represents an interface, returns 
-   * the accessible fields
-   * of this interface and of all its superinterfaces.  If this 
-   * <code>HClass</code> object represents an array type or a primitive
-   * type, returns an array of length 0. <p>
-   * The implicit length field for array types is not reflected by this
-   * method.
-   * @see "The Java Language Specification, sections 8.2 and 8.3"
-   * @see HField
-   */
-  public HField[] getFields() { 
-    if (isPrimitive() || isArray())
-      return new HField[0];
-    // do the actual work.
-    UniqueVector v = new UniqueVector();
-    // add fields from interfaces.
-    HClass[] in = getInterfaces();
-    for (int i=0; i<in.length; i++) {
-      HField[] inf = in[i].getFields();
-      for (int j=0; j<inf.length; j++)
-	v.addElement(inf[j]);
-    }
-    // now fields from superclasses, subject to access mode constraints.
-    HClass sup = getSuperclass();
-    HField supf[] = (sup==null)?new HField[0]:sup.getFields();
-    for (int i=0; i<supf.length; i++) {
-      int m = supf[i].getModifiers();
-      // private fields of superclasses are invisible.
-      if (Modifier.isPrivate(m))
-	continue; // skip this field.
-      // default access is invisible if packages not identical.
-      /** DISABLED: see notes in getMethods() [CSA 6-22-99] */
-      /*
-      if (!Modifier.isPublic(m) && !Modifier.isProtected(m))
-	if (!supf[i].getDeclaringClass().getPackage().equals(frmPackage))
-	  continue;
-      */
-      // all's good. Add this one.
-      v.addElement(supf[i]);
-    }
-    // now fields from our local class.
-    HField locf[] = getDeclaredFields();
-    for (int i=0; i<locf.length; i++)
-      v.addElement(locf[i]);
-    
-    // Merge into one array.
-    return (HField[]) v.toArray(new HField[v.size()]);
-  }
-
-  /**
    * Returns a <code>HMethod</code> object that reflects the specified 
    * declared method of the class or interface represented by this 
    * <code>HClass</code> object.  The <code>name</code> parameter is a
@@ -255,149 +170,6 @@ abstract class HClassImpl extends HClass
    * @see HMethod
    */
   public abstract HMethod[] getDeclaredMethods();
-
-  /**
-   * Returns an <code>HMethod</code> object that reflects the specified
-   * accessible method of the class or interface represented by this
-   * <code>HClass</code> object.  The <code>name</code> parameter is
-   * a string specifying the simple name of the desired method, and
-   * the <code>parameterTypes</code> parameter is an array of
-   * <code>HClass</code> objects that identify the method's formal
-   * parameter types, in declared order. <p>
-   * The method to reflect is located by searching all the member methods
-   * of the class or interface represented by this <code>HClass</code>
-   * object for an accessible method with the specified name and exactly
-   * the same formal parameter types.
-   * @see "The Java Language Specification, sections 8.2 and 8.4"
-   * @exception NoSuchMethodError if a matching method is not found.
-   */
-  public HMethod getMethod(String name, HClass parameterTypes[])
-    throws NoSuchMethodError {
-    // construct master method list, if we haven't already.
-    HMethod[] methods=getMethods();
-    // look for method name in master method list.
-    // look backwards to be sure we find local methods first (scoping).
-    for (int i=methods.length-1; i>=0; i--)
-      if (methods[i].getName().equals(name)) {
-	HClass[] methodParamTypes = methods[i].getParameterTypes();
-	if (methodParamTypes.length == parameterTypes.length) {
-	  int j; for (j=0; j<parameterTypes.length; j++)
-	    if (methodParamTypes[j] != parameterTypes[j])
-	      break; // oops, this one doesn't match.
-	  if (j==parameterTypes.length) // hey, we made it to the end!
-	    return methods[i];
-	}
-      }
-    // didn't find a match. Oh, well.
-    throw new NoSuchMethodError(getName()+"."+name);
-  }
-  /**
-   * Returns an <code>HMethod</code> object that reflects the specified
-   * accessible method of the class or interface represented by this
-   * <code>HClass</code> object.  The <code>name</code> parameter is
-   * a string specifying the simple name of the desired method, and
-   * the <code>descriptor</code> is a string describing the
-   * parameter types and return value of the method. <p>
-   * The method is located by searching all the member methods of
-   * the class or interface represented by this <code>HClass</code>
-   * object for an accessible method with the specified name and
-   * exactly the same descriptor.
-   * @see HMethod#getDescriptor
-   * @exception NoSuchMethodError if a matching method is not found.
-   */
-  public HMethod getMethod(String name, String descriptor)
-    throws NoSuchMethodError {
-    // construct master method list, if we haven't already.
-    HMethod[] methods=getMethods();
-    // look for method name in master method list.
-    // look backwards to be sure we find local methods first (scoping)
-    for (int i=methods.length-1; i>=0; i--)
-      if (methods[i].getName().equals(name) &&
-	  methods[i].getDescriptor().equals(descriptor))
-	return methods[i];
-    // didn't find a match.
-    throw new NoSuchMethodError(getName()+"."+name+"/"+descriptor);
-  }
-	
-  /**
-   * Returns an array containing <code>HMethod</code> object reflecting
-   * all accessible member methods of the class or interface represented
-   * by this <code>HClass</code> object, including those declared by
-   * the class or interface and those inherited from superclasses and
-   * superinterfaces.  Returns an array of length 0 if the class or
-   * interface has no public member methods, or if the <code>HClass</code>
-   * corresponds to a primitive type or array type.<p>
-   * Constructors are included.
-   * @see "The Java Language Specification, sections 8.2 and 8.4"
-   */
-  public HMethod[] getMethods() {
-    if (isPrimitive())
-      return new HMethod[0];
-    // do the actual work.
-    Hashtable h = new Hashtable(); // keep track of overriding
-    Vector v = new Vector(); // accumulate results.
-
-    // first methods we declare locally.
-    HMethod[] locm = getDeclaredMethods();
-    for (int i=0; i<locm.length; i++) {
-      h.put(locm[i].getName()+locm[i].getDescriptor(), locm[i]);
-      v.addElement(locm[i]);
-    }
-    locm=null; // free memory
-
-    // grab fields from superclasses, subject to access mode constraints.
-    HClass sup = getSuperclass();
-    HMethod supm[] = (sup==null)?new HMethod[0]:sup.getMethods();
-    for (int i=0; i<supm.length; i++) {
-      int m = supm[i].getModifiers();
-      // private methods of superclasses are invisible.
-      if (Modifier.isPrivate(m))
-	continue; // skip this method.
-      // default access is invisible if packages not identical
-      /** SKIPPING this test, because the interpreter doesn't like it.
-       **  For example, harpoon.IR.Quads.OPER invokes
-       **  OperVisitor.dispatch() in method visit().  But dispatch() has
-       **  package visibility and thus doesn't show up in
-       **  SCCAnalysis...operVisitor, and a virtual dispatch to visit()
-       **  on an object of type SCCAnalysis...operVisitor fails.  Current
-       **  solution is to move this check into the interpreter; see
-       **  harpoon.Interpret.Quads.Method. [CSA, 6-22-99] */
-      /*
-      if (!Modifier.isPublic(m) && !Modifier.isProtected(m))
-	if (!supm[i].getDeclaringClass().getPackage().equals(frmPackage))
-	  continue; // skip this (inaccessible) method.
-      */
-      // skip superclass constructors.
-      if (supm[i] instanceof HConstructor)
-	  continue;
-      // don't add methods which are overriden by locally declared methods.
-      if (h.containsKey(supm[i].getName()+supm[i].getDescriptor()))
-	continue;
-      // all's good.  Add this one.
-      h.put(supm[i].getName()+supm[i].getDescriptor(), supm[i]);
-      v.addElement(supm[i]);
-    }
-    sup=null; supm=null; // free memory.
-
-    // Lastly, interface methods, if not already declared.
-    // [interface methods will typically be explicitly declared in classes,
-    //  even if not implemented (abstract), but superinterface methods aren't
-    //  declared explicitly in interfaces.]
-    HClass[] intc = getInterfaces();
-    for (int i=0; i<intc.length; i++) {
-      HMethod intm[] = intc[i].getMethods();
-      for (int j=0; j<intm.length; j++) {
-	// don't add methods which are overridden by locally declared methods
-	if (h.containsKey(intm[j].getName()+intm[j].getDescriptor()))
-	  continue;
-	v.addElement(intm[j]);
-      }
-    }
-    intc = null; // free memory.
-
-    // Merge into a single array.
-    return (HMethod[]) v.toArray(new HMethod[v.size()]);
-  }
 
   /**
    * Returns an <code>HConstructor</code> object that reflects the 

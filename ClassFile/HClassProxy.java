@@ -16,7 +16,7 @@ import java.io.Serializable;
  * "redefined" after creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassProxy.java,v 1.1.4.4 2000-03-29 23:02:55 cananian Exp $
+ * @version $Id: HClassProxy.java,v 1.1.4.5 2000-03-30 09:58:27 cananian Exp $
  */
 class HClassProxy extends HClass implements HClassMutator, Serializable {
   Relinker relinker;
@@ -34,6 +34,11 @@ class HClassProxy extends HClass implements HClassMutator, Serializable {
   }
   void relink(HClass newproxy) {
     Util.assert(newproxy!=null);
+    Util.assert(!(newproxy instanceof HClassArray),
+		"arrays should never be proxied");
+    Util.assert(!(newproxy instanceof HClassProxy &&
+		  ((HClassProxy)newproxy).relinker==relinker),
+		"should never proxy to a proxy of this same relinker.");
     // first update all the fields and methods hanging around.
     if (proxy!=null) {
       HField[] hf = proxy.getDeclaredFields();
@@ -95,12 +100,6 @@ class HClassProxy extends HClass implements HClassMutator, Serializable {
   public HField[] getDeclaredFields() {
     return wrap(proxy.getDeclaredFields());
   }
-  public HField getField(String name) throws NoSuchFieldError {
-    return wrap(proxy.getField(name));
-  }
-  public HField[] getFields() {
-    return wrap(proxy.getFields());
-  }
   public HMethod getDeclaredMethod(String name, HClass parameterTypes[])
     throws NoSuchMethodError {
     return wrap(proxy.getDeclaredMethod(name, unwrap(parameterTypes)));
@@ -111,17 +110,6 @@ class HClassProxy extends HClass implements HClassMutator, Serializable {
   }
   public HMethod[] getDeclaredMethods() {
     return wrap(proxy.getDeclaredMethods());
-  }
-  public HMethod getMethod(String name, HClass parameterTypes[])
-    throws NoSuchMethodError {
-    return wrap(proxy.getMethod(name, unwrap(parameterTypes)));
-  }
-  public HMethod getMethod(String name, String descriptor)
-    throws NoSuchMethodError {
-    return wrap(proxy.getMethod(name, descriptor));
-  }
-  public HMethod[] getMethods() {
-    return wrap(proxy.getMethods());
   }
   public HConstructor getConstructor(HClass parameterTypes[])
     throws NoSuchMethodError {
@@ -230,17 +218,22 @@ class HClassProxy extends HClass implements HClassMutator, Serializable {
       this.proxy = hcp.proxy;
     }
     public Object readResolve() {
-      // call 'real' constructor on reconstruct.
-      return new HClassProxy(relinker, proxy);
+      // leverage relinker during reconstruct.  this makes sure all our
+      // mappings are consistent with the descCache.
+      HClassProxy hcp = (HClassProxy)
+	relinker.forDescriptor(proxy.getDescriptor());
+      if (hcp.proxy!=proxy) hcp.relink(proxy);// common case are the same.
+      return hcp;
     }
   }
 
   // wrap/unwrap methods.
   private HClass wrap(HClass hc) {
-    if (sameLinker && hc != proxy) return hc; else return relinker.wrap(hc);
+    //if (sameLinker && hc != proxy) return hc; else return relinker.wrap(hc);
+    return relinker.wrap(hc); // it can never hurt to wrap the class.
   }
   private HClass unwrap(HClass hc) {
-    if (sameLinker /*&& hc != this*/) return hc; else return relinker.unwrap(hc);
+    if (sameLinker) return hc; else return relinker.unwrap(hc);
   }
   private HField wrap(HField hf) { return relinker.wrap(hf); }
   private HMethod wrap(HMethod hm) { return relinker.wrap(hm); }

@@ -8,10 +8,11 @@ package harpoon.ClassFile;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodProxy.java,v 1.1.4.2 2000-01-17 23:49:06 cananian Exp $
+ * @version $Id: HMethodProxy.java,v 1.1.4.3 2000-03-30 09:58:27 cananian Exp $
  * @see HMethod
  */
-class HMethodProxy extends HMemberProxy implements HMethod, HMethodMutator {
+class HMethodProxy extends HMemberProxy
+    implements HMethod, HMethodMutator, java.io.Serializable {
     HMethod proxy;
     HMethodMutator proxyMutator;
     
@@ -79,4 +80,6 @@ class HMethodProxy extends HMemberProxy implements HMethod, HMethodMutator {
     public void setSynthetic(boolean isSynthetic) {
 	proxyMutator.setSynthetic(isSynthetic);
     }
+    /** Serializable interface. */
+    public Object writeReplace() { return new HMethodImpl.HMethodStub(this); }
 }

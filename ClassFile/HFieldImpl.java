@@ -11,7 +11,7 @@ import java.lang.reflect.Modifier;
  * <code>HFieldImpl</code> is the basic implementation of <code>HField</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldImpl.java,v 1.1.4.2 2000-03-29 20:06:35 cananian Exp $
+ * @version $Id: HFieldImpl.java,v 1.1.4.3 2000-03-30 09:58:27 cananian Exp $
  * @see HField
  */
 abstract class HFieldImpl
@@ -155,7 +155,7 @@ abstract class HFieldImpl
 
   /** Serializable interface. */
   public Object writeReplace() { return new HFieldStub(this); }
-  private static final class HFieldStub implements java.io.Serializable {
+  static final class HFieldStub implements java.io.Serializable {
     private HClass parent;
     private String name;
     HFieldStub(HField f) {

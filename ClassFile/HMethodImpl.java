@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodImpl.java,v 1.1.4.3 2000-03-29 20:06:35 cananian Exp $
+ * @version $Id: HMethodImpl.java,v 1.1.4.4 2000-03-30 09:58:27 cananian Exp $
  * @see HMethod
  */
 abstract class HMethodImpl
@@ -240,7 +240,7 @@ abstract class HMethodImpl
   
   /** Serializable interface. */
   public Object writeReplace() { return new HMethodStub(this); }
-  private static final class HMethodStub implements java.io.Serializable {
+  static final class HMethodStub implements java.io.Serializable {
     private HClass parent;
     private String name, descriptor;
     HMethodStub(HMethod m) {

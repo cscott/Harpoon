@@ -8,10 +8,11 @@ package harpoon.ClassFile;
  * <code>HField</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldProxy.java,v 1.1.4.2 2000-01-17 23:49:06 cananian Exp $
+ * @version $Id: HFieldProxy.java,v 1.1.4.3 2000-03-30 09:58:27 cananian Exp $
  * @see HField
  */
-class HFieldProxy extends HMemberProxy implements HField, HFieldMutator {
+class HFieldProxy extends HMemberProxy
+    implements HField, HFieldMutator, java.io.Serializable {
     HField proxy;
     HFieldMutator proxyMutator;
     
@@ -43,4 +44,6 @@ class HFieldProxy extends HMemberProxy implements HField, HFieldMutator {
     public void setConstant(Object co) { proxyMutator.setConstant(co); }
     public void setSynthetic(boolean is) { proxyMutator.setSynthetic(is); }
     public void setType(HClass type) { proxyMutator.setType(unwrap(type)); }
+    /** Serializable interface. */
+    public Object writeReplace() { return new HFieldImpl.HFieldStub(this); }
 }
