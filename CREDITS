@@ -8,7 +8,8 @@ several new pipelines as well as provided CORBA support for integration
 into the BBN UAV OEP software.
 
 Reuben Sterling (MIT) wrote several new pipelines, added many new features, 
-and is writing his undergraduate thesis on the ATR.
+developed many new algorithms, and is writing his undergraduate thesis 
+on the ATR.
 
 Craig Rodrigues (BBN) helped integrate the MIT ATR into the 
 BBN UAV OEP software.

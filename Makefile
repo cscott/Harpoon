@@ -189,7 +189,41 @@ RTJ.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
-jars: clean doc RTJ.jar groundATR.jar embeddedATR.jar ATR.jar trackerStub.jar receiverStub.jar imagerec.jar GUI.jar
+jars: clean doc
+	@echo Generating imagerec.jar file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm imagerec.jar src/manifest/imagerec.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > imagerec.jar.TIMESTAMP
+	@echo Generating receiverStub.jar file...
+	@$(JAR) cfm receiverStub.jar src/manifest/receiverStub.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > receiverStub.jar.TIMESTAMP
+	@echo Generating trackerStub.jar file...
+	@$(JAR) cfm trackerStub.jar src/manifest/trackerStub.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > trackerStub.jar.TIMESTAMP
+	@echo Generating ATR.jar file...
+	@$(JAR) cfm ATR.jar src/manifest/ATR.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > ATR.jar.TIMESTAMP
+	@echo Generating embeddedATR.jar file...
+	@$(JAR) cfm embeddedATR.jar src/manifest/embeddedATR.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > embeddedATR.jar.TIMESTAMP
+	@echo Generating groundATR.jar file...
+	@$(JAR) cfm groundATR.jar src/manifest/groundATR.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > groundATR.jar.TIMESTAMP
+	@echo Generating RTJ.jar file...
+	@$(JAR) cfm RTJ.jar src/manifest/RTJ.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > RTJ.jar.TIMESTAMP
+	@echo Generating GUI.jar file...
+	@$(JAR) xf movie/tank.jar
+	@$(JAR) cfm GUI.jar src/manifest/GUI.jar.MF $(JDIRS) tank.gz.*
+	@date '+%-d-%b-%Y at %r %Z.' > GUI.jar.TIMESTAMP
+	@rm -rf tank.gz.*
+	@rm -rf $(JDIRS)
 
 imagerec.tgz: $(RELEASE)
 	@echo Generating $@ file.
