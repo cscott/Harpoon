@@ -8,8 +8,20 @@ import harpoon.Analysis.DataFlow.LiveVars;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
-import harpoon.IR.Properties.*;
-import harpoon.IR.Tree.*;
+import harpoon.IR.Properties.CFGrapher;
+import harpoon.IR.Properties.UseDefer;
+import harpoon.IR.Tree.CanonicalTreeCode;
+import harpoon.IR.Tree.Code;
+import harpoon.IR.Tree.DerivationGenerator;
+import harpoon.IR.Tree.EXP;
+import harpoon.IR.Tree.Exp;
+import harpoon.IR.Tree.MOVE;
+import harpoon.IR.Tree.SEQ;
+import harpoon.IR.Tree.Stm;
+import harpoon.IR.Tree.TEMP;
+import harpoon.IR.Tree.Tree;
+import harpoon.IR.Tree.TreeFactory;
+import harpoon.IR.Tree.TreeKind;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
@@ -26,7 +38,7 @@ import java.util.Set;
  * analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCodeElimination.java,v 1.1.2.1 2000-02-16 23:12:10 cananian Exp $
+ * @version $Id: DeadCodeElimination.java,v 1.1.2.2 2000-02-16 23:22:13 cananian Exp $
  */
 public abstract class DeadCodeElimination extends Simplification {
     // hide constructor
