@@ -40,9 +40,10 @@ import java.util.Stack;
  * XXX: DERIVATION INFORMATION FOR PHI/SIGMAS IS CURRENTLY LOST. [CSA]
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.12 2000-05-17 15:24:02 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.13 2000-07-15 20:33:21 cananian Exp $
  */
 public class SSIRename {
+    private static final boolean DEBUG = false;
     private static final boolean sort_phisig = false;
     // RETURN TUPLE FOR THE ALGORITHM
     /** New root element (of the SSI-form graph) */
@@ -152,6 +153,11 @@ public class SSIRename {
 		    Quad to = (Quad) old2new.get(e.to());
 		    Quad.addEdge(fr, e.which_succ(), to, e.which_pred());
 		}
+		// check for unreachable code.
+		for (int i = 0; i < q.prevLength(); i++)
+		    Util.assert(old2new.get(q.prev(i))!=null,
+				!DEBUG ? "unreachable predecessor" :
+				i+"th predecessor of "+q+" is unreachable");
 	    }
 	}
 
