@@ -163,4 +163,4 @@ JNIEXPORT void JNICALL Java_java_lang_Object_wait_00024_00024withtrans
    * really needs to return a CommitRec. */
   assert(0);
 }
-#endif WITH_TRANSACTIONS
+#endif /* WITH_TRANSACTIONS */
