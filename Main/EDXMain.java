@@ -1,4 +1,4 @@
-// SAMain.java, created Mon Aug  2 19:41:06 1999 by pnkfelix
+// EDMain.java, created Mon Aug  2 19:41:06 1999 by pnkfelix
 // Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
@@ -37,6 +37,7 @@ import gnu.getopt.Getopt;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -58,17 +59,29 @@ import java.io.ObjectOutputStream;
 import java.io.OptionalDataException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
+
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
+import harpoon.ClassFile.Relinker;
+import harpoon.Analysis.MetaMethods.MetaAllCallers;
+import harpoon.Analysis.MetaMethods.MetaCallGraph;
+import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
+import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.Util.BasicBlocks.CachingBBConverter;
+import harpoon.Util.WorkSet;
+
 
 
 /**
- * <code>SAMain</code> is a program to compile java classes to some
+ * <code>EDXMain</code> is a program to compile java classes to some
  * approximation of StrongARM assembly.  It is for development testing
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.72 2000-04-04 05:39:48 bdemsky Exp $
+ * @version $Id: EDXMain.java,v 1.1.2.1 2000-04-04 05:39:48 bdemsky Exp $
  */
-public class SAMain extends harpoon.IR.Registration {
+public class EDXMain extends harpoon.IR.Registration {
  
     private static boolean PRINT_ORIG = false;
     private static boolean PRINT_DATA = false;
@@ -81,10 +94,8 @@ public class SAMain extends harpoon.IR.Registration {
     private static boolean OPTIMIZE = false;
 
     private static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
-    private static HClass  singleClass = null; // for testing single classes
+    private static String  singleClass = null; // for testing single classes
     
-    private static Linker linker = Loader.systemLinker;
-
     private static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);
         
@@ -98,33 +109,180 @@ public class SAMain extends harpoon.IR.Registration {
     private static Frame frame;
 
     private static File ASSEM_DIR = null;
-    private static HCodeFactory hcf;
 
-    public static void main(String[] args) {
-	hcf = // default code factory.
-	    new harpoon.ClassFile.CachingCodeFactory(
-	    harpoon.IR.Quads.QuadNoSSA.codeFactory()
-	    );
+    private static boolean recycle=false, optimistic=false;
 
+
+    static class Stage1 implements Serializable {
+	HMethod mo;
+	Linker linker;
+	HCodeFactory hco;
+	ClassHierarchy chx;
+	Stage1(Linker linker) {
+	    this.linker = linker; this.mo = mo;
+
+	    Util.assert(className!= null, "must pass a class to be compiled");
+
+	    HClass cls = linker.forName(className);
+	    HMethod hm[] = cls.getDeclaredMethods();
+	    for (int i=0; i<hm.length; i++) {
+		if (hm[i].getName().equals("main")) {
+		    mo = hm[i];
+		    break;
+		}
+	    }
+	    if (EDXMain.hcf==null)
+	    hco = 
+		new harpoon.ClassFile.CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory(), true);
+	    else hco=EDXMain.hcf;
+	    
+	    Collection cc = new WorkSet();
+	    cc.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
+		      (linker));
+	    cc.add(mo);
+	    System.out.println("Getting ClassHierarchy");
+	    chx = new QuadClassHierarchy(linker, cc, hco);
+	}
+    }
+    static class Stage2 implements Serializable {
+	HMethod mo;
+	Linker linker;
+	HCodeFactory hco;
+	MetaCallGraph mcg;
+	ClassHierarchy chx;
+	Stage2(Stage1 stage1) {
+	    linker = stage1.linker;
+	    hco = stage1.hco;
+	    chx = stage1.chx;//carry forward
+	    mo = stage1.mo;
+	    CachingBBConverter bbconv=new CachingBBConverter(stage1.hco);
+
+	    // costruct the set of all the methods that might be called by 
+	    // the JVM (the "main" method plus the methods which are called by
+	    // the JVM before main) and next pass it to the MetaCallGraph
+	    // constructor. [AS]
+	    Set mroots = extract_method_roots(
+	    harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	    mroots.add(mo);
+
+	    mcg = new MetaCallGraphImpl(bbconv, stage1.chx, mroots);
+	    //using hcf for now!
+	}
+    }
+    static class Stage3 implements Serializable {
+	HMethod mo;
+	Linker linker;
+	HCodeFactory hcfe;
+	ClassHierarchy ch;
+	MetaCallGraph mcg;
+	Stage3(Stage2 stage2) {
+	    linker = stage2.linker;
+	    mcg = stage2.mcg;
+	    mo = stage2.mo;
+	    HCodeFactory ccf=harpoon.IR.Quads.QuadSSI.codeFactory(stage2.hco);
+	    System.out.println("Doing CachingCodeFactory");
+	    hcfe = new CachingCodeFactory(ccf, true);
+
+	    Collection c = new WorkSet();
+	    c.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
+		     (linker));
+	    c.add(mo);
+	    System.out.println("Getting ClassHierarchy");
+
+
+	    ch = new QuadClassHierarchy(linker, c, hcfe);
+	    ch = stage2.chx; // discard new ch, use old ch.
+
+	    //	System.out.println("CALLABLE METHODS");
+	    //	Iterator iterator=ch.callableMethods().iterator();
+	    //	while (iterator.hasNext())
+	    //	    System.out.println(iterator.next());
+	    //System.out.println("Classes");
+	    //iterator=ch.classes().iterator();
+	    //while (iterator.hasNext())
+	    //    System.out.println(iterator.next());
+	    //System.out.println("Instantiated Classes");
+	    //iterator=ch.instantiatedClasses().iterator();
+	    //while (iterator.hasNext())
+	    //    System.out.println(iterator.next());
+	    //System.out.println("------------------------------------------");
+	}
+    }
+    static class Stage4 implements Serializable {
+	HMethod mo;
+	Linker linker;
+	HCodeFactory hcf;
+	HMethod mconverted;
+	Stage4(Stage3 stage3) {
+	    linker = stage3.linker;
+	    mo = stage3.mo;
+	    CachingCodeFactory hcfe = (CachingCodeFactory) stage3.hcfe;
+	    HCode hc = hcfe.convert(mo);
+	    System.out.println("Starting ED");
+
+	    harpoon.Analysis.EventDriven.EventDriven ed = 
+		new harpoon.Analysis.EventDriven.EventDriven(hcfe, hc, stage3.ch, linker,optimistic,recycle);
+	    this.mconverted=ed.convert(stage3.mcg);
+
+	    this.hcf=hcfe;
+
+	    System.out.println("Finished ED");
+	}
+    }
+
+    static Object load(File f) throws IOException, ClassNotFoundException {
+	Object o = null;
+	System.out.println("Loading "+f+".");
+	ObjectInputStream ois =
+	    new ObjectInputStream(new FileInputStream(f));
+	try {
+	    o = ois.readObject();
+	} catch (java.io.WriteAbortedException discard) { /* fail */ }
+	ois.close();
+	return o;
+    }
+    static void save(File f, Object o) throws IOException {
+	System.out.println("Saving "+f+".");
+	ObjectOutputStream oos =
+	    new ObjectOutputStream(new FileOutputStream(f));
+	oos.writeObject(o);
+	oos.close();
+    }
+
+
+    static Linker linker;
+    static HCodeFactory hcf;
+
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
+	//Linker linker;
+	EDXMain.hcf=null;
 	parseOpts(args);
-	Util.assert(className!= null, "must pass a class to be compiled");
+
+	linker = new Relinker(Loader.systemLinker);
+	Stage1 stage1 = new Stage1(linker); 
+	
+	// done with stage 1.
+	Stage2 stage2 = new Stage2(stage1);
+	
+	// done with stage 2.
+	Stage3 stage3 = new Stage3(stage2); 
+	
+	// done with stage 3.
+	Stage4 stage4 = new Stage4(stage3); 
+
+	// done with stage 4.
+	linker = stage4.linker;
+	HCodeFactory hcf = stage4.hcf;
 
 	if (OPTIMIZE) {
-	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
 	    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	}
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf, true);
 
 	HClass hcl = linker.forName(className);
-	HMethod hm[] = hcl.getDeclaredMethods();
-	HMethod mainM = null;
-	for (int j=0; j<hm.length; j++) {
-	    if (hm[j].getName().equalsIgnoreCase("main")) {
-		mainM = hm[j];
-		break;
-	    }
-	}
-	
+	HMethod[] hm = hcl.getDeclaredMethods();
+	HMethod mainM = stage4.mconverted;
+
 	Util.assert(mainM != null, "Class " + className + 
 		    " has no main method");
 
@@ -177,7 +335,8 @@ public class SAMain extends harpoon.IR.Registration {
 	if (singleClass!=null || !ONLY_COMPILE_MAIN) {
 	    while(classes.hasNext()) {
 		HClass hclass = (HClass) classes.next();
-		if (singleClass!=null && singleClass!=hclass) continue;//skip
+		if (singleClass!=null && singleClass.equals(hclass.getName()))
+		    continue;
 		messageln("Compiling: " + hclass.getName());
 		
 		try {
@@ -203,7 +362,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    
 		    out.println();
 		    messageln("Writing data for " + hclass.getName());
-		    outputClassData(hclass, out);
+		    outputClassData(linker, hclass, out);
 		    
 		    out.close();
 		} catch (IOException e) {
@@ -354,7 +513,7 @@ public class SAMain extends harpoon.IR.Registration {
 	sahcf.clear(hmethod);
     }
     
-    public static void outputClassData(HClass hclass, PrintWriter out) 
+    public static void outputClassData(Linker linker, HClass hclass, PrintWriter out) 
 	throws IOException {
       Iterator it=frame.getRuntime().classData(hclass).iterator();
       // output global data with the java.lang.Object class.
@@ -413,7 +572,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     private static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "m:i:c:o:DOPFHRLAhq1::C:");
+	Getopt g = new Getopt("EDXMain", args, "m:i:c:o:DOPFHRLArphq1::C:");
 	
 	int c;
 	String arg;
@@ -439,18 +598,12 @@ public class SAMain extends harpoon.IR.Registration {
 				       classHierarchyFilename);
 		}
 		break;
-	    case 'i':
-		arg=g.getOptarg();
-		try {
-		ObjectInputStream ois=new ObjectInputStream(
-							    new FileInputStream(arg));
-		hcf=(HCodeFactory)ois.readObject();
-		linker=(Linker)ois.readObject();
-		ois.close();
-		} catch (Exception e) {
-		    System.out.println(e + " was thrown");
-		    System.exit(-1);
-		}
+		
+	    case 'r':
+		recycle=true;
+		break;
+	    case 'p':
+		optimistic=true;
 		break;
 	    case 'D':
 		OUTPUT_INFO = PRINT_DATA = true;
@@ -487,6 +640,19 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 'M':
 		methodName = g.getOptarg();
 		break;
+	    case 'i':
+		arg=g.getOptarg();
+		try {
+		ObjectInputStream ois=new ObjectInputStream(
+							    new FileInputStream(arg));
+		hcf=(HCodeFactory)ois.readObject();
+		linker=(Linker)ois.readObject();
+		ois.close();
+		} catch (Exception e) {
+		    System.out.println(e + " was thrown");
+		    System.exit(-1);
+		}
+		break;
 	    case 'q':
 		QUIET = true;
 		break;
@@ -494,7 +660,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    case '1':  
 		String optclassname = g.getOptarg();
 		if (optclassname!=null) {
-		    singleClass = linker.forName(optclassname);
+		    singleClass = optclassname;
 		} else {
 		    ONLY_COMPILE_MAIN = true;
 		}
@@ -536,6 +702,12 @@ public class SAMain extends harpoon.IR.Registration {
 	out.println("-D");
 	out.println("\tOutputs DATA information for <class>");
 
+	out.println("-r");
+	out.println("\tRecycle continuations");
+
+	out.println("-p");
+	out.println("\toPtimistic");
+
 	out.println("-O");
 	out.println("\tOutputs Original Tree IR for <class>");
 
@@ -562,7 +734,17 @@ public class SAMain extends harpoon.IR.Registration {
 	out.println("\tPrints out this help message");
 	
     }
-
+    // extract the method roots from the set of all the roots
+    // (methods and classes)
+    private static Set extract_method_roots(Collection roots){
+	Set mroots = new HashSet();
+	for(Iterator it = roots.iterator(); it.hasNext(); ){
+	    Object obj = it.next();
+	    if(obj instanceof HMethod)
+		mroots.add(obj);
+	}
+	return mroots;
+    }
     private static void info(String str) {
 	if(OUTPUT_INFO) out.println(str);
     }
