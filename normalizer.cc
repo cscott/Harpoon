@@ -201,7 +201,7 @@ CoerceSentence * NormalForm::getsentence(int i) {
 
 /* returns the sentence in this constraint that can be satisfied 
    with a minimum cost, and which is different from any sentence 
-   in the "badsentences" structure /*
+   in the "badsentences" structure */
 CoerceSentence * NormalForm::closestmatch(WorkSet *badsentences, processobject *po, Hashtable *env) {
   int totalcost=-1; int bestmatch=-1;
   for(int i=0;i<length;i++) {

@@ -9,9 +9,12 @@ class model {
   model(char * abstractfile, char * modelfile, char *spacefile,char *structfile,char * concretefile);
   DomainRelation * getdomainrelation(); 
   structure *getstructure(char * name);
-  void doabstraction();
-  void doconcrete();
-  void docheck();
+  void doabstraction();  // processes the model definition rules
+  void docheck();        // processes the internal constraints
+  void doconcrete();     // processes the external constraints
+
+  void breakspec();  // inserts faults that break the specs
+
   NormalForm * getnormalform(Constraint *c);
   Hashtable * gethashtable();
   bitreader * getbitreader();

@@ -149,6 +149,17 @@ void model::doconcrete() {
 }
 
 
+
+// inserts faults that break the specifications
+void model::breakspec() {
+  processobject *po = new processobject(this);
+  for (int i=0; i<=numconstraint; i++)
+    po->breakconstraint(constraintarray[i]);
+  delete(po);
+}
+
+
+
 // processes the internal constraints
 void model::docheck() {
   processobject *po=new processobject(this);
@@ -163,7 +174,6 @@ void model::docheck() {
   } while(t);
   delete(po);
 }
-
 
 
 DomainRelation * model::getdomainrelation() {

@@ -12,10 +12,12 @@
 class processobject {
  public:
   processobject(model *m);
-  bool processconstraint(Constraint *c);
+  int processpredicate(Predicate *p, Hashtable *env);
+  bool processconstraint(Constraint *c); // evaluates c and if it's not satisfied, calls the repair alg.
+  void breakconstraint(Constraint *c);   // breaks the given constraint by invalidating each of its sentences
   void setclean();
   ~processobject();
-  int processpredicate(Predicate *p, Hashtable *env);
+  
  private:
   Repair * repair;
   int processstatement(Statement *s, Hashtable *env);

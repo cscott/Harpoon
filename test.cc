@@ -27,6 +27,7 @@ void doanalysis() {
   gettimeofday(&begin,NULL);
   exportmodel->doabstraction();
   exportmodel->getdomainrelation()->fixstuff();
+  
   exportmodel->docheck();
   exportmodel->doconcrete();
   gettimeofday(&end,NULL);

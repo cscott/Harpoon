@@ -183,6 +183,14 @@ bool processobject::processconstraint(Constraint *c) {
 }
 
 
+
+// breaks the given constraint by invalidating each of its sentences
+void processobject::breakconstraint(Constraint *c) {
+  State *st = new State(c, globalmodel->gethashtable());
+  
+}
+
+
 processobject::~processobject() {
 }
 

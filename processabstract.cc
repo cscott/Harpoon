@@ -322,6 +322,9 @@ bool State::initializestate(bitreader *br, model * m) {
   return true;
 }
 
+
+/* initializes all quantifiers of this constraint and returns false
+   if there exists a quantifier that cannot be initialized */
 bool State::initializestate(model * m) {
   for(int i=0;i<numrelset;i++) {
     if (!relset[i]->incrementassignment(env,m))
@@ -893,6 +896,9 @@ bool RelationSet::incrementassignment(processconcrete *pc,Hashtable *env, model 
 }
 
 
+/* increments the value of "left" and returns "false" if this is not possible.
+   When this method is called for the first time, it simply initializes
+   the value of the quantifier ("left") */
 bool RelationSet::incrementassignment(Hashtable *env, model *m) {
   switch(type) {
   case TYPE_SET: {
@@ -902,7 +908,7 @@ bool RelationSet::incrementassignment(Hashtable *env, model *m) {
       Element *ele=NULL;
       if (!env->contains(left)) {
 	ele=(Element *)ds->getset()->firstelement();
-	if(ele==NULL)
+	if (ele==NULL)
 	  return false;
 	env->put(left,ele);
 	/*	if (tleft!=NULL) {
@@ -913,7 +919,8 @@ bool RelationSet::incrementassignment(Hashtable *env, model *m) {
 	  }*/
 	return true;
       }
-      ele=(Element *)env->get(left);
+
+      ele=(Element *) env->get(left);
       Element *nextele=(Element *)ds->getset()->getnextelement(ele);
       if (nextele==NULL)
 	return false;

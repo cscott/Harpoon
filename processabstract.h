@@ -27,6 +27,12 @@ class processabstract {
 
 
 
+
+/* A RelationSet keeps the current state of a quantifier. 
+   There are three types of RelationSet's:
+   TYPE_SET: "for left in set"
+   TYPE_RELATION: "for <left,right> in set"
+   TYPE_RANGE: "for left=lower..upper */
 #define TYPE_SET 1
 #define TYPE_RELATION 2
 #define TYPE_RANGE 3
@@ -59,13 +65,13 @@ class State {
   State(Rule *r, Hashtable *h);
   State(Constraint *c, Hashtable *h);
   ~State();
-  bool initializestate(bitreader *br,model *m);
+  bool initializestate(bitreader *br, model *m);
   bool increment(bitreader *br, model *m);
   bool initializestate(model *m);
   bool increment(model *m);
 
-  bool initializestate(processconcrete*,model *m);
-  bool increment(processconcrete*,model *m);
+  bool initializestate(processconcrete*, model *m);
+  bool increment(processconcrete*, model *m);
   
   Hashtable *env;
   RelationSet **relset;
