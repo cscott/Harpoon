@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassCls.java,v 1.1.2.8 2000-01-15 00:49:06 cananian Exp $
+ * @version $Id: HClassCls.java,v 1.1.2.9 2000-03-30 09:49:04 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 abstract class HClassCls extends HClassImpl {
@@ -118,7 +118,7 @@ abstract class HClassCls extends HClassImpl {
 	}
       }
     // didn't find a match.  Oh, well.
-    throw new NoSuchMethodError(name);
+    throw new NoSuchMethodError(name+" in "+this);
   }
   /**
    * Returns a <code>HMethod</code> object that reflects the specified 
