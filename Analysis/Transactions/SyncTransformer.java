@@ -74,7 +74,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.16 2001-02-25 23:13:21 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.17 2001-02-26 23:31:43 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -410,6 +410,13 @@ public class SyncTransformer
 	    addChecks(q);
 	    // if in a transaction, call the transaction version &
 	    // deal with possible abort.
+
+	    // hack around for object info loss if receiver came from transact.
+	    if (!q.isStatic())
+		addTypeCheck(q.prevEdge(0), q, q.params(0),
+			     q.method().getDeclaringClass());
+	    // end hack.
+
 	    if (handlers==null) return;
 	    if (safeMethods.contains(q.method()) && !q.isVirtual())
 		return; // it's safe. (this is an optimization)
@@ -427,10 +434,6 @@ public class SyncTransformer
 	    Quad.replace(q, ncall);
 	    // now check for abort case.
 	    checkForAbort(ncall.nextEdge(1), ncall, ncall.retex());
-	    // work around for object info loss if receiver came from transact.
-	    if (!ncall.isStatic())
-		addTypeCheck(ncall.prevEdge(0), ncall, ncall.params(0),
-			     ncall.method().getDeclaringClass());
 	    // done.
 	}
 	public void visit(MONITORENTER q) {
@@ -537,12 +540,13 @@ public class SyncTransformer
 	    if (handlers==null) { // non-transactional read
 		Edge e = readNonTrans(q.nextEdge(0), q,
 				      q.dst(), q.objectref(), q.type());
-		e = addTypeCheck(e, q, ts.versioned(q.objectref()), q.type());
+		e = addArrayTypeCheck(e, q, ts.versioned(q.objectref()),
+				      q.type());
 		addAt(e, new AGET(qf, q, q.dst(),
 				  ts.versioned(q.objectref()),
 				  q.index(), q.type()));
 		// workaround for multi-dim arrays. yucky.
-		addTypeCheck(q.prevEdge(0), q, q.objectref(), q.type());
+		addArrayTypeCheck(q.prevEdge(0), q, q.objectref(), q.type());
 	    } else { // transactional read
 		CounterFactory.spliceIncrement
 		    (qf, q.prevEdge(0), "synctrans.read_t");
@@ -550,7 +554,8 @@ public class SyncTransformer
 				   ts.versioned(q.objectref()),
 				   q.index(), q.type());
 		Quad.replace(q, q0);
-		addTypeCheck(q0.prevEdge(0), q0, q0.objectref(), q0.type());
+		addArrayTypeCheck(q0.prevEdge(0), q0, q0.objectref(),
+				  q0.type());
 	    }
 	}
 	public void visit(GET q) {
@@ -627,7 +632,7 @@ public class SyncTransformer
 	    if (handlers==null) { // non-transactional write
 		Temp t0 = new Temp(tf, "oldval");
 		Edge in = q.prevEdge(0);
-		in = addTypeCheck(in, q, q.objectref(), q.type());//workaround
+		in = addArrayTypeCheck(in, q, q.objectref(), q.type());//workaround
 		in = addAt(in, new AGET(qf, q, t0, q.objectref(),
 					q.index(), q.type()));
 		writeNonTrans(in, q, q.objectref(), t0, q.src(), q.type());
@@ -639,7 +644,7 @@ public class SyncTransformer
 	    ASET q0 = new ASET(qf, q, ts.versioned(q.objectref()),
 			       q.index(), q.src(), q.type());
 	    Quad.replace(q, q0);
-	    addTypeCheck(q0.prevEdge(0), q0, q0.objectref(), q0.type());
+	    addArrayTypeCheck(q0.prevEdge(0), q0, q0.objectref(), q0.type());
 	}
 	public void visit(SET q) {
 	    addChecks(q);
@@ -680,9 +685,13 @@ public class SyncTransformer
 	}
 	// add a type check to edge e so that TypeInfo later knows the
 	// component type of this array access.
-	Edge addTypeCheck(Edge e, HCodeElement src, Temp t, HClass type) {
+	Edge addArrayTypeCheck(Edge e, HCodeElement src, Temp t,
+				 HClass type) {
 	    HClass arraytype = HClassUtil.arrayClass(qf.getLinker(), type, 1);
-	    Quad q0 = new TYPESWITCH(qf, src, t, new HClass[] { arraytype },
+	    return addTypeCheck(e, src, t, arraytype);
+	}
+	Edge addTypeCheck(Edge e, HCodeElement src, Temp t, HClass type) {
+	    Quad q0 = new TYPESWITCH(qf, src, t, new HClass[] { type },
 				     new Temp[0], true);
 	    Quad q1 = new NOP(qf, src);
 	    Quad.addEdge(q0, 1, q1, 0);
