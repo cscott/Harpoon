@@ -65,7 +65,7 @@ import java.io.PrintWriter;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparcMain.java,v 1.1.2.13 2000-02-14 20:02:57 andyb Exp $
+ * @version $Id: SparcMain.java,v 1.1.2.14 2000-02-15 20:32:35 cananian Exp $
  */
 public class SparcMain extends harpoon.IR.Registration {
  
@@ -148,7 +148,7 @@ public class SparcMain extends harpoon.IR.Registration {
         hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
         hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
         hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
-        hcf = harpoon.Analysis.Tree.AlgebraicSimplification.codeFactory(hcf);
+        //hcf = harpoon.Analysis.Tree.AlgebraicSimplification.codeFactory(hcf);
         //hcf = harpoon.IR.Tree.OptimizedTreeCode.codeFactory(hcf, frame);
         hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     
