@@ -29,6 +29,10 @@ public abstract class MemoryArea {
     protected boolean heap;
 
     /** */
+    
+    protected boolean nullMem;
+
+    /** */
 
     protected int id;
 
@@ -48,6 +52,7 @@ public abstract class MemoryArea {
 	heap = false;
 	id = num++;
 	constant = false;
+	nullMem = false;
     }
     
     /** */
@@ -69,12 +74,13 @@ public abstract class MemoryArea {
     
     public static MemoryArea getMemoryArea(Object object) {
 	MemoryArea mem = object.memoryArea;
-	if (mem == null) { // Native methods return objects 
-	    // allocated out of the current scope.
+	// I'm completely punting this for now...
+  	if (mem == null) { // Native methods return objects 
+  	    // allocated out of the current scope.
 	    return RealtimeThread.currentRealtimeThread().getMemoryArea();
+//    	    return NullMemoryArea.instance();
 	} 
-	if (mem.constant) { 
-	    // Constants are allocated out of ImmortalMemory	    
+	if (mem.constant) { // Constants are allocated out of ImmortalMemory
 	    return ImmortalMemory.instance();
 	}
 	return mem;
@@ -256,7 +262,6 @@ public abstract class MemoryArea {
     /** */
 
     public void checkAccess(Object obj) {
-//  	Stats.addCheck();
 	if ((obj != null) && (obj.memoryArea != null) && 
 	    obj.memoryArea.scoped) {
 	  throw new IllegalAssignmentError();
