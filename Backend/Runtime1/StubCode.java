@@ -49,7 +49,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.4 1999-10-26 22:52:27 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.5 1999-11-02 01:21:32 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
@@ -83,6 +83,12 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	// (remember that first method parameter in tree form is the
 	//  'return exception address')
 	HClass[] paramTypes = method.getParameterTypes();
+	if (!method.isStatic()) {// add 'this' parameter for non-static methods
+	    HClass[] nparamTypes = new HClass[paramTypes.length+1];
+	    nparamTypes[0] = method.getDeclaringClass();
+	    System.arraycopy(paramTypes,0,nparamTypes,1,paramTypes.length);
+	    paramTypes = nparamTypes;
+	}
 	Temp[] paramTemps = new Temp[paramTypes.length+1];
 	TEMP[] paramTEMPs = new TEMP[paramTypes.length+1];
 	paramTemps[0] = new Temp(tf.tempFactory(), "rexaddr");
@@ -162,6 +168,7 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 			  class2type(paramTypes[i]), paramTemps[i+1]),
 		 jniParams);
 	// second parameter is either a jclass for a static method
+	// or an (already added) 'this' object
 	if (classT != null)
 	    jniParams = new ExpList(new TEMP(tf, null, Type.POINTER, classT),
 				    jniParams);
