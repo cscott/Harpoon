@@ -12,7 +12,7 @@ import java.util.Vector;
  * <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.1 1998-09-15 01:26:21 cananian Exp $
+ * @version $Id: DomTree.java,v 1.2 1998-09-15 02:17:23 cananian Exp $
  */
 
 public class DomTree /*implements Graph*/ {
@@ -23,9 +23,17 @@ public class DomTree /*implements Graph*/ {
     /** Reverse mapping: mapping of an HCodeElement to the elements which
      *  have this element as their immediate dominator. */
     SetHTable children = new SetHTable();
+    /** Is this a dominator or post-dominator tree? */
+    boolean isPost = false;
 
     /** Creates a new, empty <code>DomTree</code>. */
     public DomTree() {
+	this(false);
+    }
+    /** Creates a new, empty <code>DomTree</code>. If <code>isPost</code> is
+     *  true, creates a postdominator tree. */
+    public DomTree(boolean isPost) {
+	this.isPost = isPost;
     }
 
     /** Return the immediate dominator of an HCodeElement.
@@ -70,10 +78,17 @@ public class DomTree /*implements Graph*/ {
 		    dfnum.putInt(n, N);
 		    if (p!=null) parent.put(n, p);
 		    vertex.addElement(n);
-		    // for each successor of n...
-		    HCodeEdge[] el = ((Edges)n).succ();
-		    for (int i=0; i<el.length; i++)
-			DFS(n, el[i].to());
+		    if (!isPost) {
+			// for each successor of n...
+			HCodeEdge[] el = ((Edges)n).succ();
+			for (int i=0; i<el.length; i++)
+			    DFS(n, el[i].to());
+		    } else {
+			// for each predecessor of n...
+			HCodeEdge[] el = ((Edges)n).pred();
+			for (int i=0; i<el.length; i++)
+			    DFS(n, el[i].from());
+		    }
 		}
 	    }
 	    /** Add edge p->n to spanning forest. */
@@ -98,18 +113,27 @@ public class DomTree /*implements Graph*/ {
 	Utility u = new Utility();
 
 	// Dominators algorithm:
-	u.DFS(null, hc.getRootElement());
-	for (int i=vertex.size()-1; i>=1; i--) {
+	if (!isPost)
+	    u.DFS(null, hc.getRootElement());
+	else {
+	    HCodeElement[] leaves = hc.getLeafElements();
+	    for (int i=0; i<leaves.length; i++)
+		u.DFS(null, leaves[i]);
+	}
+	    
+	for (int i=vertex.size()-1; i>=0; i--) {
 	    // calculate the semidominator of vertex[i]
 	    HCodeElement n = (HCodeElement) vertex.elementAt(i);
 	    HCodeElement p = (HCodeElement) parent.get(n);
 	    HCodeElement s = p;
 	    HCodeElement sprime;
 
+	    if (p == null) continue; // skip root(s).
+
 	    //   (for each predecessor v of n)
-	    HCodeEdge el[] = ((Edges)n).pred();
+	    HCodeEdge el[] = (!isPost) ? ((Edges)n).pred() : ((Edges)n).succ();
 	    for (int j=0; j<el.length; j++) {
-		HCodeElement v = el[j].from();
+		HCodeElement v = (!isPost) ? el[j].from() : el[j].to();
 		// ignore unreachable nodes.
 		if (!dfnum.containsKey(v)) continue;
 		if (dfnum.getInt(v) < dfnum.getInt(n))
@@ -142,15 +166,17 @@ public class DomTree /*implements Graph*/ {
 	    bucket.clearSet(p);
 	}
 	// Now all the deferred dominator calculations are performed.
-	for (int i=1; i<vertex.size(); i++) {
+	for (int i=0; i<vertex.size(); i++) {
 	    HCodeElement n = (HCodeElement) vertex.elementAt(i);
+	    if (parent.get(n)==null) continue; // skip root(s).
 	    if (samedom.get(n)!=null)
 		idom.put(n, idom.get(samedom.get(n)));
 	}
 	// done.  Make inverse mapping.
-	for (int i=1; i<vertex.size(); i++) {
+	for (int i=0; i<vertex.size(); i++) {
 	    HCodeElement n  = (HCodeElement) vertex.elementAt(i);
 	    HCodeElement id = (HCodeElement) idom.get(n);
+	    if (parent.get(n)==null) continue; // skip root(s).
 	    children.unionSet(id, n);
 	}
     }
