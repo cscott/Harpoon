@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1 1998-09-21 01:47:25 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.2 1998-09-23 04:00:22 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -183,7 +183,30 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 			raiseV(V, Wv, q.dst[i][1], // true branch: null
 			       new xNullConstant() );
 			handled = true;
-		    } // else if (opc == "icmpeq") { }
+		    } else if ((opc == "icmpeq" || opc == "lcmpeq" ||
+				opc == "fcmpeq" || opc == "dcmpeq") &&
+			       right instanceof xConstant) {
+			raiseV(V, Wv, q.dst[i][0], // false branch: no info
+			       v);
+			raiseV(V, Wv, q.dst[i][1], // true branch: constant!
+			       right);
+			handled = true;
+		    } else if ((opc == "icmpge" || opc == "lcmpge" ||
+				opc == "icmpgt" || opc == "lcmpgt" ) &&
+			       right instanceof xBitWidth) {
+			// XXX we can tighten bounds on gt, as opposed to ge.
+			xBitWidth bw = (xBitWidth) right;
+			xBitWidth sr = extractWidth(v);
+			// false branch:
+			raiseV(V, Wv, q.dst[i][0], new xBitWidth(sr.type(),
+			       Math.max(sr.minusWidth(),bw.minusWidth()),
+			       Math.min(sr.plusWidth(), bw.plusWidth()) ));
+			// true branch.
+			raiseV(V, Wv, q.dst[i][1], new xBitWidth(sr.type(),
+			       Math.min(sr.minusWidth(),bw.minusWidth()),
+                               Math.max(sr.plusWidth(), bw.plusWidth()) ));
+			handled = true;
+		    }
 		} else if (q.src[i] == def.operands[1]) { // right is source.
 		    if (opc == "acmpeq" &&
 			right instanceof xClass && // not already xClassNonNull
@@ -192,6 +215,29 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 			       new xClassNonNull( ((xClass)right).type() ) );
 			raiseV(V, Wv, q.dst[i][1], // true branch: null
 			       new xNullConstant() );
+			handled = true;
+		    } else if ((opc == "icmpeq" || opc == "lcmpeq" ||
+				opc == "fcmpeq" || opc == "dcmpeq") &&
+			       left instanceof xConstant) {
+			raiseV(V, Wv, q.dst[i][0], // false branch: no info
+			       v);
+			raiseV(V, Wv, q.dst[i][1], // true branch: constant!
+			       left);
+			handled = true;
+		    } else if ((opc == "icmpge" || opc == "lcmpge" ||
+				opc == "icmpgt" || opc == "lcmpgt" ) &&
+			       left instanceof xBitWidth) {
+			// XXX we can tighten bounds on gt, as opposed to ge.
+			xBitWidth bw = (xBitWidth) right;
+			xBitWidth sr = extractWidth(v);
+			// false branch:
+			raiseV(V, Wv, q.dst[i][0], new xBitWidth(sr.type(),
+			       Math.min(sr.minusWidth(),bw.minusWidth()),
+			       Math.max(sr.plusWidth(), bw.plusWidth()) ));
+			// true branch.
+			raiseV(V, Wv, q.dst[i][1], new xBitWidth(sr.type(),
+			       Math.max(sr.minusWidth(),bw.minusWidth()),
+                               Math.min(sr.plusWidth(), bw.plusWidth()) ));
 			handled = true;
 		    }
 		}
@@ -525,6 +571,26 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	public void visit(THROW q) { /* do nothing. */ }
     }
     /*-------------------------------------------------------------*/
+    // Extract bitwidth information from unwilling victims.
+    xBitWidth extractWidth(LatticeVal v) {
+	if (v instanceof xBitWidth)
+	    return (xBitWidth) v;
+	if (! (v instanceof xClass) )
+	    throw new Error("Something's seriously screwed up.");
+	xClass xc = (xClass) v;
+	if (xc.type() == HClass.Long)
+	    return new xBitWidth(HClass.Long, 64, 63);
+	else if (xc.type() == HClass.Int)
+	    return new xBitWidth(HClass.Int, 32, 31);
+	else if (xc.type() == HClass.Short)
+	    return new xBitWidth(HClass.Short, 16, 15);
+	else if (xc.type() == HClass.Byte)
+	    return new xBitWidth(HClass.Byte, 8, 7);
+	else if (xc.type() == HClass.Char)
+	    return new xBitWidth(HClass.Char, 0, 16);
+	else throw new Error("Unknown integer type for bitwidth.");
+    }
+
     // Class merge functino.
 
     HClass merge(HClass a, HClass b) {
