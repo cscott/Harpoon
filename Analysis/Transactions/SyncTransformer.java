@@ -83,7 +83,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.5.2.2 2003-07-12 03:31:07 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.5.2.3 2003-07-15 03:31:14 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -101,6 +101,8 @@ import java.util.Set;
 //  5) handle 'recovery' transaction?
 //  6) separate pass to virtualize static fields?
 //  7) strictness optimizations?
+//  8) changes to caching read version over commit of subtransaction
+//     (possibly paralle commit?)
 
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -139,6 +141,8 @@ public class SyncTransformer
     private final HClass HCfield;
     /** Cache the <code>java.lang.Object</code> <code>HClass</code>. */
     private final HClass HCobj;
+    /** Cache the <code>struct vinfo *</code> <code>HClass</code>. */
+    private final HClass HCvinfo;
     /** Cache the <code>CommitRecord</code> <code>HClass</code>. */
     private final HClass  HCcommitrec;
     private final HMethod HMcommitrec_new;
@@ -148,8 +152,6 @@ public class SyncTransformer
     private final HClass  HCabortex;
     private final HField  HFabortex_upto;
     /** Our new methods of java.lang.Object */
-    private final HMethod HMrVersion;
-    private final HMethod HMrwVersion;
     private final HMethod HMrCommitted;
     private final HMethod HMwCommitted;
     private final HMethod HMmkVersion;
@@ -214,12 +216,6 @@ public class SyncTransformer
 	HCobj = l.forName("java.lang.Object");
 	HClassMutator objM = HCobj.getMutator();
 	int mod = Modifier.FINAL | Modifier.NATIVE;
-	this.HMrVersion = objM.addDeclaredMethod
-	    ("getReadableVersion", new HClass[] { HCcommitrec }, HCobj);
-	HMrVersion.getMutator().addModifiers(mod);
-	this.HMrwVersion = objM.addDeclaredMethod
-	    ("getReadWritableVersion", new HClass[] { HCcommitrec }, HCobj);
-	HMrwVersion.getMutator().addModifiers(mod);
 	this.HMrCommitted = objM.addDeclaredMethod
 	    ("getReadCommittedVersion", new HClass[0], HCobj);
 	HMrCommitted.getMutator().addModifiers(mod);
@@ -252,6 +248,8 @@ public class SyncTransformer
 	this.HFflagvalue = objM.addDeclaredField("flagValue", HCobj);
 	HFflagvalue.getMutator().addModifiers(Modifier.FINAL|Modifier.STATIC);
 
+	// lookup the type of a 'struct vinfo *'
+	HCvinfo = HCobj; // hack.  Also not strictly true. Maybe HClass.Int?
 	// create a method generator in the 'ImplHelper' class.
 	gen = new MethodGenerator(l.forName(pkg+"ImplHelper"));
 
@@ -506,13 +504,6 @@ public class SyncTransformer
 	    addChecks(q);
 	    // if in a transaction, call the transaction version &
 	    // deal with possible abort.
-
-	    // hack around for object info loss if receiver came from transact.
-	    if (!q.isStatic())
-		addTypeCheck(q.prevEdge(0), q, q.params(0),
-			     q.method().getDeclaringClass());
-	    // end hack.
-
 	    if (handlers==null) return;
 	    if (safeMethods.contains(q.method()) && !q.isVirtual())
 		return; // it's safe. (this is an optimization)
@@ -616,27 +607,46 @@ public class SyncTransformer
 
 	    HClass compType = etm.typeMap(q, q.dst());
 	    HClass arrType = HClassUtil.arrayClass(linker, compType, 1);
+	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
 	    Temp t1 = new Temp(tf, "retex");
 	    Quad q1;
 	    if (handlers==null) { // non-transactional read
+		// VALUETYPE TA(EXACT_readNT)(struct oobj *obj, int offset,
+		//                            int flag_offset, int flag_bit)
+		Temp t2 = new Temp(tf, "flag_field");
+		Temp t3 = new Temp(tf, "flag_bit");
+		Temp t4 = new Temp(tf, "index_mod32");
+		HField arrayCheckField = bfn.arrayBitField(arrType);
+		in = addAt(in, new CONST(qf, q, t2, arrayCheckField, HCfield));
+		in = addAt(in, new CONST(qf, q, t4, new Integer(31),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.IAND, t4,
+					new Temp[] { q.index(), t4 }));
+		in = addAt(in, new CONST(qf, q, t3, new Integer(1),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.ISHL, t3,
+					new Temp[] { t3, t4 }));
 		q1 = new CALL(qf, q, gen.lookupMethod
-			      ("arrayReadNT",
-			       new HClass[] { arrType, HClass.Int },
+			      ("readNT_Array", new HClass[]
+				  { arrType, HClass.Int, HCfield, HClass.Int },
 			       compType),
-			      new Temp[] { q.objectref(), q.index() },
+			      new Temp[] { q.objectref(), q.index(), t2, t3 },
 			      q.dst(), t1, false, false, new Temp[0]);
 	    } else { // transactional read
+		// VALUETYPE TA(EXACT_readT)(struct oobj *obj, int offset,
+		//		             struct vinfo *version,
+		//                           struct commitrec *cr)
 		q1 = new CALL(qf, q, gen.lookupMethod
-			      ("arrayReadT",
-			       new HClass[] { arrType, HClass.Int, HCobj },
+			      ("readT_Array", new HClass[]
+				  {arrType, HClass.Int, HCvinfo, HCcommitrec},
 			       compType),
 			      new Temp[] { q.objectref(), q.index(),
-					   ts.versioned(q.objectref()) },
+					   ts.versioned(q.objectref()),
+					   currtrans },
 			      q.dst(), t1, false, false, new Temp[0]);
 	    }
 	    Quad q2 = new THROW(qf, q, t1);
 
-	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
 	    Quad.addEdge(in.from(), in.which_succ(), q1, 0);
 	    Quad.addEdge(q1, 0, out.to(), out.which_pred());
 	    Quad.addEdge(q1, 1, q2, 0);
@@ -667,29 +677,43 @@ public class SyncTransformer
 		 "synctrans.read_nt_object" : "synctrans.read_t_object");
 
 	    transFields.add(q.field());
+	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
 	    Temp t0 = new Temp(tf, "read_field");
 	    Temp t1 = new Temp(tf, "retex");
 	    Quad q0 = new CONST(qf, q, t0, q.field(), HCfield);
 	    Quad q1;
+	    in = addAt(in, q0);
 	    if (handlers==null) { // non-transactional read
+		// VALUETYPE TA(EXACT_readNT)(struct oobj *obj, int offset,
+		//                            int flag_offset, int flag_bit)
+		Temp t2 = new Temp(tf, "flag_field");
+		Temp t3 = new Temp(tf, "flag_bit");
+		BitFieldTuple bft = bfn.bfLoc(q.field());
+		in = addAt(in, new CONST(qf, q, t2, bft.field, HCfield));
+		in = addAt(in, new CONST(qf, q, t3, new Integer(1<<bft.bit),
+				     HClass.Int));
 		q1 = new CALL(qf, q, gen.lookupMethod
-			      ("readNT", new HClass[] { HCobj, HCfield },
+			      ("readNT", new HClass[] { HCobj, HCfield,
+							HCfield, HClass.Int },
 			       q.field().getType()),
-			      new Temp[] { q.objectref(), t0 },
+			      new Temp[] { q.objectref(), t0, t2, t3 },
 			      q.dst(), t1, false, false, new Temp[0]);
 	    } else { // transactional read
+		// VALUETYPE TA(EXACT_readT)(struct oobj *obj, int offset,
+		//		             struct vinfo *version,
+		//                           struct commitrec *cr)
 		q1 = new CALL(qf, q, gen.lookupMethod
-			      ("readT", new HClass[] { HCobj, HCfield, HCobj },
+			      ("readT", new HClass[] { HCobj, HCfield,
+						       HCvinfo, HCcommitrec },
 			       q.field().getType()),
 			      new Temp[] { q.objectref(), t0,
-					   ts.versioned(q.objectref()) },
+					   ts.versioned(q.objectref()),
+					   currtrans },
 			      q.dst(), t1, false, false, new Temp[0]);
 	    }
 	    Quad q2 = new THROW(qf, q, t1);
 
-	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
-	    Quad.addEdge(in.from(), in.which_succ(), q0, 0);
-	    Quad.addEdge(q0, 0, q1, 0);
+	    Quad.addEdge(in.from(), in.which_succ(), q1, 0);
 	    Quad.addEdge(q1, 0, out.to(), out.which_pred());
 	    Quad.addEdge(q1, 1, q2, 0);
 	    footer = footer.attach(q2, 0); // add q2 to FOOTER
@@ -697,57 +721,7 @@ public class SyncTransformer
 		checkForAbort(q1.nextEdge(1), q, t1);
 	    // done.
 	}
-        // this routine does the necessary checks to see if any
-	// transactions need to be aborted as a result of a non-transactional
-	// write.  at entry, oldval contains the previous value of the
-	// field; if it is FLAG it means someone has written (or read?) this
-	// inside a transaction. if newval==FLAG, we need to create a
-	// (committed) version object to put this value in.
-	// readbit==1 implies that oldval==FLAG, apparently.
-	void writeNonTrans(Edge out, HCodeElement src, Temp objectref,
-			   Temp oldval, Temp newval, HClass type) {
-	    // we only have to abort things if the field has been
-	    // *read* by a transaction.  If it's been written, we
-	    // can write to our special 'committed' version without
-	    // aborting anything.
-	    // XXX think about this one: obviously better to be able
-	    // to check just one flag, right?  can we gain anything
-	    // by making the 'read=0, field=FLAG' case special?
-	    Temp t0 = new Temp(tf, "writent");
-	    out = addAt(out, makeFlagConst(qf, src, t0, type));
-	    out = addAt(out, new OPER(qf, src, cmpop(type), oldval,
-				      new Temp[]{ oldval, t0 }));
-	    Quad q0 = new CJMP(qf, src, oldval, new Temp[0]);
-	    out = addAt(out, q0);
-	    out = addAt(out, new OPER(qf, src, cmpop(type), oldval,
-				      new Temp[]{ newval, t0 }));
-	    Quad q1 = new CJMP(qf, src, oldval, new Temp[0]);
-	    out = addAt(out, q1);
-	    out = addAt(out, new MOVE(qf, src, ts.versioned(objectref),
-				      objectref));
-	    Quad q2 = new PHI(qf, src, new Temp[0], 3);
-	    out = addAt(out, q2);
-	    // now handle exceptional cases:
-	    Quad q3 = new CALL(qf, src, HMwCommitted,
-			       new Temp[] { objectref },
-			       ts.versioned(objectref), retex,
-			       false, false, new Temp[0]);
-	    Quad q4 = new THROW(qf, src, retex);
-	    Quad.addEdge(q0, 1, q3, 0);
-	    Quad.addEdge(q3, 0, q2, 1);
-	    Quad.addEdge(q3, 1, q4, 0);
-	    footer = footer.attach(q4, 0); // add q4 to FOOTER
-	    // no check for abort because we are non-trans!
-	    Quad q5 = new CALL(qf, src, HMmkVersion,
-			       new Temp[] { objectref },
-			       ts.versioned(objectref), retex,
-			       false, false, new Temp[0]);
-	    Quad q6 = new THROW(qf, src, retex);
-	    Quad.addEdge(q1, 1, q5, 0);
-	    Quad.addEdge(q5, 0, q2, 2);
-	    Quad.addEdge(q5, 1, q6, 0);
-	    footer = footer.attach(q6, 0); // add q6 to FOOTER.
-	}
+
 	public void visit(ASET q) {
 	    addChecks(q);
 	    if (noFieldModification || noArrayModification) return;
@@ -755,19 +729,58 @@ public class SyncTransformer
 	    CounterFactory.spliceIncrement
 		(qf, q.prevEdge(0),(handlers==null) ?
 		 "synctrans.write_nt_array" : "synctrans.write_t_array");
+
+	    HClass compType = q.type(); // don't need extra precision here.
+	    HClass arrType = HClassUtil.arrayClass(linker, compType, 1);
+	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
+	    Temp t1 = new Temp(tf, "retex");
+	    Quad q1;
 	    if (handlers==null) { // non-transactional write
-		Temp t0 = new Temp(tf, "oldval");
-		Edge in = q.prevEdge(0);
-		in = addArrayTypeCheck(in, q, q.objectref(), q.type());//workaround
-		in = addAt(in, new AGET(qf, q, t0, q.objectref(),
-					q.index(), q.type()));
-		writeNonTrans(in, q, q.objectref(), t0, q.src(), q.type());
+		// void TA(EXACT_writeNT)(struct oobj *obj, int offset,
+		//                        VALUETYPE value,
+		//	                  int flag_offset, int flag_bit);
+		Temp t2 = new Temp(tf, "flag_field");
+		Temp t3 = new Temp(tf, "flag_bit");
+		Temp t4 = new Temp(tf, "index_mod32");
+		HField arrayCheckField = bfn.arrayBitField(arrType);
+		in = addAt(in, new CONST(qf, q, t2, arrayCheckField, HCfield));
+		in = addAt(in, new CONST(qf, q, t4, new Integer(31),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.IAND, t4,
+					new Temp[] { q.index(), t4 }));
+		in = addAt(in, new CONST(qf, q, t3, new Integer(1),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.ISHL, t3,
+					new Temp[] { t3, t4 }));
+		q1 = new CALL(qf, q, gen.lookupMethod
+			      ("writeNT_Array", new HClass[]
+				  { arrType, HClass.Int, compType,
+				    HCfield, HClass.Int },
+			       HClass.Void),
+			      new Temp[]{ q.objectref(), q.index(), q.src(),
+					  t2, t3 },
+			      null, t1, false, false, new Temp[0]);
+	    } else { // transactional write
+		// void TA(EXACT_writeT)(struct oobj *obj, int offset,
+		//		         VALUETYPE value,
+		//                       struct vinfo *version);
+		q1 = new CALL(qf, q, gen.lookupMethod
+			      ("writeT_Array", new HClass[]
+				  { arrType, HClass.Int, compType, HCvinfo },
+			       HClass.Void),
+			      new Temp[] { q.objectref(), q.index(), q.src(),
+					   ts.versioned(q.objectref()) },
+			      null, t1, false, false, new Temp[0]);
 	    }
-	    // both transactional and non-transactional write.
-	    ASET q0 = new ASET(qf, q, ts.versioned(q.objectref()),
-			       q.index(), q.src(), q.type());
-	    Quad.replace(q, q0);
-	    addArrayTypeCheck(q0.prevEdge(0), q0, q0.objectref(), q0.type());
+	    Quad q2 = new THROW(qf, q, t1);
+
+	    Quad.addEdge(in.from(), in.which_succ(), q1, 0);
+	    Quad.addEdge(q1, 0, out.to(), out.which_pred());
+	    Quad.addEdge(q1, 1, q2, 0);
+	    footer = footer.attach(q2, 0); // add q2 to FOOTER
+	    if (handlers!=null) // only trans can abort
+		checkForAbort(q1.nextEdge(1), q, t1);
+	    // done.
 	}
 	public void visit(SET q) {
 	    addChecks(q);
@@ -790,43 +803,58 @@ public class SyncTransformer
 		(qf, q.prevEdge(0),(handlers==null) ?
 		 "synctrans.write_nt_object" : "synctrans.write_t_object");
 
-	    // always write to 'versioned' copy of object (which may well
-	    // be the object itself).  In non-transactional case, we
-	    // need to read the field first and do special checks to
-	    // determine whether aborting some transaction in progress is
-	    // necessary.
-	    if (handlers==null) { // non-transactional write
-		Temp t0 = new Temp(tf, "oldval");
-		Edge in = q.prevEdge(0);
-		in = addAt(in, new GET(qf, q, t0, q.field(), q.objectref()));
-		writeNonTrans(in, q, q.objectref(), t0, q.src(),
-			      q.field().getType());
+	    transFields.add(q.field());
+	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
+	    Temp t0 = new Temp(tf, "write_field");
+	    Temp t1 = new Temp(tf, "retex");
+	    Quad q0 = new CONST(qf, q, t0, q.field(), HCfield);
+	    Quad q1;
+	    in = addAt(in, q0);
+	    if (handlers==null) { // non-transactional read
+		// void TA(EXACT_writeNT)(struct oobj *obj, int offset,
+		//                        VALUETYPE value,
+		//	                  int flag_offset, int flag_bit);
+		Temp t2 = new Temp(tf, "flag_field");
+		Temp t3 = new Temp(tf, "flag_bit");
+		BitFieldTuple bft = bfn.bfLoc(q.field());
+		in = addAt(in, new CONST(qf, q, t2, bft.field, HCfield));
+		in = addAt(in, new CONST(qf, q, t3, new Integer(1<<bft.bit),
+				     HClass.Int));
+		q1 = new CALL(qf, q, gen.lookupMethod
+			      ("writeNT", new HClass[] { HCobj, HCfield,
+							 q.field().getType(),
+							 HCfield, HClass.Int },
+			       HClass.Void),
+			      new Temp[]{ q.objectref(), t0, q.src(), t2, t3 },
+			      null, t1, false, false, new Temp[0]);
+	    } else { // transactional read
+		// void TA(EXACT_writeT)(struct oobj *obj, int offset,
+		//		         VALUETYPE value,
+		//                       struct vinfo *version);
+		q1 = new CALL(qf, q, gen.lookupMethod
+			      ("writeT", new HClass[] { HCobj, HCfield,
+							q.field().getType(),
+							HCvinfo },
+			       HClass.Void),
+			      new Temp[] { q.objectref(), t0, q.src(),
+					   ts.versioned(q.objectref()) },
+			      null, t1, false, false, new Temp[0]);
 	    }
-	    // both transactional and non-transactional write.
-	    Quad.replace(q, new SET(qf, q, q.field(),
-				    ts.versioned(q.objectref()),
-				    q.src()));
+	    Quad q2 = new THROW(qf, q, t1);
+
+	    Quad.addEdge(in.from(), in.which_succ(), q1, 0);
+	    Quad.addEdge(q1, 0, out.to(), out.which_pred());
+	    Quad.addEdge(q1, 1, q2, 0);
+	    footer = footer.attach(q2, 0); // add q2 to FOOTER
+	    if (handlers!=null) // only trans can abort
+		checkForAbort(q1.nextEdge(1), q, t1);
+	    // done.
 	}
 	public void visit(ARRAYINIT q) {
 	    addChecks(q);
 	    if (noFieldModification || noArrayModification) return;
 	    // XXX: we don't handle ARRAYINIT yet.
 	    assert false : "ARRAYINIT transformation unimplemented.";
-	}
-	// add a type check to edge e so that TypeInfo later knows the
-	// component type of this array access.
-	Edge addArrayTypeCheck(Edge e, HCodeElement src, Temp t,
-				 HClass type) {
-	    HClass arraytype = HClassUtil.arrayClass(qf.getLinker(), type, 1);
-	    return addTypeCheck(e, src, t, arraytype);
-	}
-	Edge addTypeCheck(Edge e, HCodeElement src, Temp t, HClass type) {
-	    Quad q0 = new TYPESWITCH(qf, src, t, new HClass[] { type },
-				     new Temp[0], true);
-	    NOP q1 = new NOP(qf, src);
-	    Quad.addEdge(q0, 1, q1, 0);
-	    typecheckset.add(q1);
-	    return addAt(e, 0, q0, 0);
 	}
 
 	void addChecks(Quad q) {
@@ -848,19 +876,29 @@ public class SyncTransformer
 	    // create read/write versions for objects that need it.
 	    Set rS = co.createReadVersions(q);
 	    Set wS = co.createWriteVersions(q);
-	    rS.removeAll(wS); // write really is read-write.
+	    // note that reading is different from writing: if you want to
+	    // read *and* write, you must call ensureReader *and* ensureWriter
 	    for (int i=0; i<2; i++) {
 		// iteration 0 for read; iteration 1 for write versions.
 		Iterator<Temp> it = (i==0) ? rS.iterator() : wS.iterator();
-		HMethod hm = (i==0) ? HMrVersion : HMrwVersion ;
+		// void EXACT_ensureReader(struct oobj *obj,
+		//                         struct commitrec *cr);
+		// struct vinfo *EXACT_ensureWriter(struct oobj *obj,
+		//				    struct commitrec *cr);
+		HMethod hm = 
+		    gen.lookupMethod((i==0) ? "ensureReader" : "ensureWriter",
+				     new HClass[] { HCobj, HCcommitrec },
+				     (i==0) ? HClass.Void : HCvinfo);
 		while (it.hasNext()) {
-		    // for each temp, a call to 'getReadableVersion' or
-		    // 'getReadWritableVersion'.
+		    // for each temp, a call to 'ensureReader' or
+		    // 'ensureWriter'.
 		    Temp t = it.next();
 		    CALL q0= new CALL(qf, q, hm, new Temp[] { t, currtrans },
-		                      ts.versioned(t), retex,
+		                      (i==0) ? null : ts.versioned(t), retex,
 				      false/*final, not virtual*/, false,
 				      new Temp[0]);
+		    // XXX null return from ensureWriter indicates suicide
+		    //     request.
 		    THROW q1= new THROW(qf, q, retex);
 		    in = addAt(in, q0);
 		    Quad.addEdge(q0, 1, q1, 0);
@@ -1150,6 +1188,7 @@ public class SyncTransformer
      *  tree form of the transformed code by performing some optimizations
      *  which can't be represented in quad form. */
     public HCodeFactory treeCodeFactory(Frame f, HCodeFactory hcf) {
+	transFields.addAll(bfn.bitfields);
 	return new TreePostPass(f, FLAG_VALUE, HFflagvalue, gen, transFields)
 	    .codeFactory(hcf);
     }
