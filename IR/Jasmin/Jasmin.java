@@ -24,7 +24,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.14 1999-09-09 21:42:58 cananian Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.15 1999-09-13 05:42:33 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -137,6 +137,22 @@ public class Jasmin {
         }
     }
 
+    class CJMPVisitor extends QuadVisitor {
+	private boolean cjmp;
+	CJMPVisitor() {
+	    cjmp=false;
+	}
+	public void visit(Quad q) {
+	    cjmp=false;
+	}
+	public void visit(CJMP q) {
+	    cjmp=true;
+	}
+	public boolean cjmp() {
+	    return cjmp;
+	}
+    }
+
     /** This Visitor prints out opcodes for each quad visited.*/
 
     class Visitor extends QuadVisitor {
@@ -146,6 +162,9 @@ public class Jasmin {
 	HashMap labelmap;
 	HCode hc;
 	TypeMap tm;
+	UseDef ud;
+	WorkSet skip;
+	CJMPVisitor cjmp;
 
 	Visitor(PrintStream out, Map tempmap, HCode hc, TypeMap tm) {
 	    this.out=out;
@@ -154,6 +173,9 @@ public class Jasmin {
 	    this.hc=hc;
 	    labelmap=new HashMap();
 	    this.tm=tm;
+	    this.skip=new WorkSet();
+	    this.ud=new UseDef();
+	    this.cjmp=new CJMPVisitor();
 	}
 
 	public void visit(Quad q) {
@@ -161,7 +183,6 @@ public class Jasmin {
 	}
 
 	public void visit(AGET q) {
-	    System.out.println(q.toString());
 	    String operand="***AGET error";
 
 	    HClass ty = tm.typeMap(q, q.objectref());
@@ -435,10 +456,12 @@ public class Jasmin {
 	}
 
 	public void visit(CJMP q) {
-	    String target=labeler(q);
-	    out.println(iflabel(q));
-	    load(q.test());
-	    out.println("    ifne "+labeler(q.next(1)));
+	    if (!skip.contains(q)) {
+		String target=labeler(q);
+		out.println(iflabel(q));
+		load(q.test());
+		out.println("    ifne "+labeler(q.next(1)));
+	    }
 	}
 
 	public void visit(THROW q) {
@@ -578,30 +601,59 @@ public class Jasmin {
 	    out.println(iflabel(q));
 	    switch (q.opcode()) {
 	    case Qop.LCMPEQ:
+		
 		String l1=label(),l2=label();
 		for (int i=0;i<q.operandsLength();i++)
 		    load(q.operands(i));
 		out.println("    lcmp");
-		out.println("    ifeq "+l1);
-		out.println("    bipush 0");
-		out.println("    goto "+l2);
-		out.println(l1+":");
-		out.println("    bipush 1");
-		out.println(l2+":");
-		store(q.dst());
+		q.next(0).accept(cjmp);
+		boolean testcjmp=cjmp.cjmp();
+		if (testcjmp) {
+		    CJMP qnext=(CJMP)q.next(0);
+		    if ((qnext.test()==q.dst())&&
+			(ud.useMap(hc, q.dst()).length==1)) {
+			skip.add(qnext);
+			out.println("    ifeq "+labeler(qnext.next(1)));
+		    } else
+			testcjmp=false;
+		} 
+		if (!testcjmp) {
+		    out.println("    ifeq "+l1);
+		    out.println("    bipush 0");
+		    out.println("    goto "+l2);
+		    out.println(l1+":");
+		    out.println("    bipush 1");
+		    out.println(l2+":");
+		    store(q.dst());
+		}
 		break;
+
 	    case Qop.LCMPGT:
 		l1=label();l2=label();
 		for (int i=0;i<q.operandsLength();i++)
 		    load(q.operands(i));
 		out.println("    lcmp");
-		out.println("    ifgt "+l1);
-		out.println("    bipush 0");
-		out.println("    goto "+l2);
-		out.println(l1+":");
-		out.println("    bipush 1");
-		out.println(l2+":");
-		store(q.dst());
+
+	        q.next(0).accept(cjmp);
+		testcjmp=cjmp.cjmp();
+		if (testcjmp) {
+		    CJMP qnext=(CJMP)q.next(0);
+		    if ((qnext.test()==q.dst())&&
+			(ud.useMap(hc, q.dst()).length==1)) {
+			skip.add(qnext);
+			out.println("    ifgt "+labeler(qnext.next(1)));
+		    } else
+			testcjmp=false;
+		} 
+		if (!testcjmp) {
+		    out.println("    ifgt "+l1);
+		    out.println("    bipush 0");
+		    out.println("    goto "+l2);
+		    out.println(l1+":");
+		    out.println("    bipush 1");
+		    out.println(l2+":");
+		    store(q.dst());
+		}
 		break;
 	    case Qop.DCMPEQ:
 	    case Qop.DCMPGE:
@@ -610,18 +662,37 @@ public class Jasmin {
 		for (int i=0;i<q.operandsLength();i++)
 		    load(q.operands(i));
 		out.println("    dcmpl");
-		if (q.opcode()==Qop.DCMPEQ)
-		    out.println("    ifeq "+l1);
-		if (q.opcode()==Qop.DCMPGE)
-		    out.println("    ifge "+l1);
-		if (q.opcode()==Qop.DCMPGT)
-		    out.println("    ifgt "+l1);
-		out.println("    bipush 0");
-		out.println("    goto "+l2);
-		out.println(l1+":");
-		out.println("    bipush 1");
-		out.println(l2+":");
-		store(q.dst());
+
+		q.next(0).accept(cjmp);
+		testcjmp=cjmp.cjmp();
+		if (testcjmp) {
+		    CJMP qnext=(CJMP)q.next(0);
+		    if ((qnext.test()==q.dst())&&
+			(ud.useMap(hc, q.dst()).length==1)) {
+			skip.add(qnext);
+		    if (q.opcode()==Qop.DCMPEQ)
+			out.println("    ifeq "+labeler(qnext.next(1)));
+		    if (q.opcode()==Qop.DCMPGE)
+			out.println("    ifge "+labeler(qnext.next(1)));
+		    if (q.opcode()==Qop.DCMPGT)
+			out.println("    ifgt "+labeler(qnext.next(1)));
+		    } else
+			testcjmp=false;
+		}
+		if (!testcjmp) {
+		    if (q.opcode()==Qop.DCMPEQ)
+			out.println("    ifeq "+l1);
+		    if (q.opcode()==Qop.DCMPGE)
+			out.println("    ifge "+l1);
+		    if (q.opcode()==Qop.DCMPGT)
+			out.println("    ifgt "+l1);
+		    out.println("    bipush 0");
+		    out.println("    goto "+l2);
+		    out.println(l1+":");
+		    out.println("    bipush 1");
+		    out.println(l2+":");
+		    store(q.dst());
+		}
 		break;
 
 	    case Qop.FCMPEQ:
@@ -631,18 +702,38 @@ public class Jasmin {
 		for (int i=0;i<q.operandsLength();i++)
 		    load(q.operands(i));
 		out.println("    fcmpl");
-		if (q.opcode()==Qop.FCMPEQ)
-		    out.println("    ifeq "+l1);
-		if (q.opcode()==Qop.FCMPGE)
-		    out.println("    ifge "+l1);
-		if (q.opcode()==Qop.FCMPGT)
-		    out.println("    ifgt "+l1);
-		out.println("    bipush 0");
-		out.println("    goto "+l2);
-		out.println(l1+":");
-		out.println("    bipush 1");
-		out.println(l2+":");
-		store(q.dst());
+
+		q.next(0).accept(cjmp);
+		testcjmp=cjmp.cjmp();
+		if (testcjmp) {
+		    CJMP qnext=(CJMP)q.next(0);
+		    if ((qnext.test()==q.dst())&&
+			(ud.useMap(hc, q.dst()).length==1)) {
+			skip.add(qnext);
+		    if (q.opcode()==Qop.FCMPEQ)
+			out.println("    ifeq "+labeler(qnext.next(1)));
+		    if (q.opcode()==Qop.FCMPGE)
+			out.println("    ifge "+labeler(qnext.next(1)));
+		    if (q.opcode()==Qop.FCMPGT)
+			out.println("    ifgt "+labeler(qnext.next(1)));
+		    } else
+			testcjmp=false;
+		}
+
+		if (!testcjmp) {
+		    if (q.opcode()==Qop.FCMPEQ)
+			out.println("    ifeq "+l1);
+		    if (q.opcode()==Qop.FCMPGE)
+			out.println("    ifge "+l1);
+		    if (q.opcode()==Qop.FCMPGT)
+			out.println("    ifgt "+l1);
+		    out.println("    bipush 0");
+		    out.println("    goto "+l2);
+		    out.println(l1+":");
+		    out.println("    bipush 1");
+		    out.println(l2+":");
+		    store(q.dst());
+		}
 		break;
 
 	    case Qop.ACMPEQ:
@@ -654,15 +745,29 @@ public class Jasmin {
 		for (int i=0;i<q.operandsLength();i++) {
 		    load(q.operands(i));
 		}
-		out.println("    if_"+base+" "+l1);
-		out.println("    bipush 0");
-		out.println("    goto "+l2);
-		out.println(l1+":");
-		out.println("    bipush 1");
-		out.println(l2+":");
-		//Need code to do jump/etc...
-		//To store 0/1
-		store(q.dst());
+		q.next(0).accept(cjmp);
+		testcjmp=cjmp.cjmp();
+		if (testcjmp) {
+		    CJMP qnext=(CJMP)q.next(0);
+		    
+		    if ((qnext.test()==q.dst())&&
+			(ud.useMap(hc, q.dst()).length==1)) {
+			skip.add(qnext);
+			out.println("    if_"+base+" "+labeler(qnext.next(1)));
+		    } else
+			testcjmp=false;
+		}
+		if (!testcjmp) {
+		    out.println("    if_"+base+" "+l1);
+		    out.println("    bipush 0");
+		    out.println("    goto "+l2);
+		    out.println(l1+":");
+		    out.println("    bipush 1");
+		    out.println(l2+":");
+		    //Need code to do jump/etc...
+		    //To store 0/1
+		    store(q.dst());
+		}
 		break;
 	    case Qop.D2F:
 	    case Qop.D2I:
