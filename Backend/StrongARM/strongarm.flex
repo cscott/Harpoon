@@ -4,37 +4,33 @@
 // inside the class
 %%
 
-// Some notes:
-// Perhaps make all Tree's (or at least Exp's) Typed? Will deal with
-// calling subtress, etc.
-// 
-// Allow multiple definitions for each tree pattern based on type ->
-//  allows each definition to share common namespace
-
-MOVE(MEM(CONST(c)), e1) 
-%type <e1, INT> <e1, POINTER>
+MOVE(MEM<i,a>(CONST(c)), e1) %extra { t }
 {
-Temp t;
-emit(new Instr("mov `d0, #"+c, null, new Temp[] { t }));
-emit(new Instr("str `s0, [`s1, #0]", new Temp[] { e1, t }, null));
-}
-%type <e1, LONG>
-{
-Temp t;
-emit(new Instr("mov `d0, #"+c, null, new Temp[] { t }));
-emit(new Instr("str `s0, [`s1, #0]", new Temp[] { e1.high(), t }, null));
-emit(new Instr("str `s0, [`s1, #4]", new Temp[] { e1.low(), t }, null));
+emit(new Instr("mov `d0, #"+c, null, new Temp[] { t.temp() }));
+emit(new Instr("str `s0, [`s1, #0]", new Temp[] { e1.temp(), t.temp() }, null));
 }
 
-MOVE(e1, e2) 
-%type <e1, INT> <e1, POINTER>
+MOVE(MEM<l>(CONST(c)), e1) %extra { t }
 {
-emit(new Instr("mov `d0, `s0", new Temp[] { e2 }, new Temp[] { e1 }));
+emit(new Instr("mov `d0, #"+c, null, new Temp[] { t.temp() }));
+emit(new Instr("str `s0, [`s1, #0]", new Temp[] { e1.high(), t.temp() }, null));
+emit(new Instr("str `s0, [`s1, #4]", new Temp[] { e1.low(), t.temp() }, null));
 }
-%type <e1, LONG>
+
+MOVE(TEMP<i,a>(t), e2) 
 {
-emit(new Instr("mov `d0, `s0", new Temp[] { e2.low() }, new Temp[] { e1.low() }));
-emit(new Instr("mov `d0, `s0", new Temp[] { e2.hi() }, new Temp[] { e1.hi() }));
+emit(new Instr("mov `d0, `s0", new Temp[] { e2.temp() }, new Temp[] { t.temp() }));
+}
+
+MOVE(TEMP<l>(t), e2)
+{
+emit(new Instr("mov `d0, `s0", new Temp[] { e2.low() }, new Temp[] { t.low() }));
+emit(new Instr("mov `d0, `s0", new Temp[] { e2.high() }, new Temp[] { t.high() }));
+}
+
+BINOP<i,a>(ADD, t1, t2)=t3
+{
+emit(new Instr("add `d0, `s1, `s2", new Temp[] { t1.temp(), t2.temp() }, new Temp[] { t3.temp() }));
 }
 
 // further work:
@@ -42,15 +38,3 @@ emit(new Instr("mov `d0, `s0", new Temp[] { e2.hi() }, new Temp[] { e1.hi() }));
 2) is this compact enough?  do we need to write a lot of repeated code/elements
 3) is this clear?
 4) is this complete: are there Tree forms that don't work easily.
-think also about typing:
-  MEM
-  MEM32
-  MEM64
-  MEMI
-  MEMF
-  MEM32I
-  MEM32F
-  MEM64I
-  MEM64F
-
-MOVE(m1=MEM(CONST(c)), e) %pred %( m1 instanceof MEMA )% // nah.
