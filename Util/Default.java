@@ -21,7 +21,7 @@ import java.util.SortedMap;
  * <code>Enumeration</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.1.2.12 2001-09-17 21:49:01 cananian Exp $
+ * @version $Id: Default.java,v 1.1.2.13 2001-11-04 00:20:38 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -29,6 +29,9 @@ public abstract class Default  {
     public static final Comparator comparator = new SerializableComparator() {
 	public int compare(Object o1, Object o2) {
 	    if (o1==null && o2==null) return 0;
+	    // 'null' is less than everything.
+	    if (o1==null) return -1;
+	    if (o2==null) return 1;
 	    // hack: in JDK1.1 String is not Comparable
 	    if (o1 instanceof String && o2 instanceof String)
 	       return ((String)o1).compareTo((String)o2);
