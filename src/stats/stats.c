@@ -28,6 +28,8 @@ DECLARE_STATS_LOCAL(threads_created)
 #ifdef EXTRA_STATS
 #include <jni.h>
 #include <jni-private.h>
+#define CHECK_EXCEPTIONS(env) \
+if ((*env)->ExceptionOccurred(env)){ (*env)->ExceptionDescribe(env); exit(1); }
 #endif
 
 /* counter for total garbage collection time. */
