@@ -69,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.41 1999-10-15 18:25:40 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.42 1999-10-21 02:12:41 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -77,6 +77,7 @@ public class SAMain extends harpoon.IR.Registration {
     private static boolean PRINT_DATA = false;
     private static boolean PRE_REG_ALLOC = false;
     private static boolean REG_ALLOC = false;
+    private static boolean HACKED_REG_ALLOC = false;
     private static boolean LIVENESS_TEST = false;
     private static boolean OUTPUT_INFO = false;
     private static boolean QUIET = false;
@@ -264,6 +265,24 @@ public class SAMain extends harpoon.IR.Registration {
 	    out.println();
 	    out.flush();
 	}
+	if (HACKED_REG_ALLOC) {
+	    HCode hc = sahcf.convert(hmethod);
+	    info("\t--- INSTR FORM (hacked register allocation)  ---");
+	    HCode rhc = (hc==null) ? null :
+		new harpoon.Backend.CSAHack.RegAlloc.Code(hmethod, (Instr)
+					       hc.getRootElement(), frame);
+	    if (rhc != null) {
+		info("Codeview \""+rhc.getName()+"\" for "+
+		     rhc.getMethod()+":");
+		rhc.print(out);
+	    } else {
+		info("null returned for " + hmethod);
+	    }
+	    info("\t--- end INSTR FORM (register allocation)  ---");
+	    out.println();
+	    out.flush();
+	}
+
 	// free memory associated with this method's IR:
 	hcf.clear(hmethod);
 	sahcf.clear(hmethod);
@@ -287,7 +306,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    info("\t--- end TREE FORM (for DATA)---");
 	}		
 	
-	if (!PRE_REG_ALLOC && !LIVENESS_TEST && !REG_ALLOC) continue;
+	if (!PRE_REG_ALLOC && !LIVENESS_TEST && !REG_ALLOC && !HACKED_REG_ALLOC) continue;
 
 	if (data.getRootElement()==null) continue; // nothing to do here.
 
@@ -327,7 +346,7 @@ public class SAMain extends harpoon.IR.Registration {
     }
     
     private static void parseOpts(String[] args) {
-	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPRLAhq");
+	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPHRLAhq");
 	
 	int c;
 	String arg;
@@ -361,6 +380,9 @@ public class SAMain extends harpoon.IR.Registration {
 		break; 
 	    case 'P':
 		OUTPUT_INFO = PRE_REG_ALLOC = true;
+		break;
+	    case 'H':
+		HACKED_REG_ALLOC = true;
 		break;
 	    case 'R':
 		REG_ALLOC = true;
