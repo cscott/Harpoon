@@ -7,11 +7,18 @@ package imagerec;
 public class CarDemoIPAQMain {
     public static void main(String args[]) {
 
+	if (args.length == 0) {
+	    System.out.println("Usage: java -jar carDemoIPAQ.jar <CORBA name service>");
+	    System.exit(-1);
+	}
+
+
+	final String nameService = args[0];
 	System.out.println("**** Running the Tracker ***");
 	(new Thread() {
 		public void run() {
 		    String args[] = {"1", "ATR Alert",
-				     "-ORBInitRef"};
+				     "-ORBInitRef", nameService};
 		    CarDemoTrackerStubMain.main(args);
 		}
 	    }).start();
@@ -28,7 +35,7 @@ public class CarDemoIPAQMain {
 		public void run() {
 		    String args[] = {"camera", "1",
 				     "LMCO ATR", "ATR Feedback",
-				     "-ORBInitRef"};
+				     "-ORBInitRef", nameService};
 		    CarDemoReceiverStubMain.main(args);
 		}
 	    }).start();
@@ -45,7 +52,7 @@ public class CarDemoIPAQMain {
 		    String args[] = {"1", "nocompress",
 				     "LMCO ATR", "embedToGround",
 				     "groundToEmbed", "ATR Alert",
-				     "ATR Feedback", "-ORBInitRef"};
+				     "ATR Feedback", "-ORBInitRef", nameService};
 		    CarDemoEmbeddedMain.main(args);
 		}
 	    }).start();
