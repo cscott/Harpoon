@@ -70,7 +70,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.49 2000-04-03 10:07:43 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.50 2000-04-03 10:12:00 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -468,7 +468,7 @@ public class PointerAnalysis {
 
 	    ParIntGraph new_info = (ParIntGraph) hash_proc_ext.get(mm_work);
 
-	    ParIntGraph.DEBUG2 = true;
+	    //ParIntGraph.DEBUG2 = true;
 
 	    // new info?
 	    if(must_check && !new_info.equals(old_info)){
@@ -494,7 +494,7 @@ public class PointerAnalysis {
 		}
 	    }
 
-	    ParIntGraph.DEBUG2 = false;
+	    //ParIntGraph.DEBUG2 = false;
 	}
 
 	// enable some GC:
