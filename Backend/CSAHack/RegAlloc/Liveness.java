@@ -43,7 +43,7 @@ public class Liveness extends InterferenceGraph {
   public Liveness(FlowGraph flow) {
 
     WorkSet worklist = new WorkSet();
-    DFS(flow.nodes().head, worklist, false); // add some nodes to worklist.
+    DFS(flow.nodes().head, worklist); // add some nodes to worklist.
 
     // create table of TempSets to represent liveIn and liveOut
     Hashtable liveIn = new Hashtable();
@@ -117,19 +117,16 @@ public class Liveness extends InterferenceGraph {
   }
 
   // add all nodes in (reverse) DFS order.
-  private void DFS(Node n, WorkSet worklist, boolean reverse) {
-    Set mark = new Set();
-    DFS(n, worklist, mark, reverse);
-  }
-  private void DFS(Node n, WorkSet worklist, Set mark, boolean reverse) {
-    mark.add(n);
-    if (!reverse) worklist.add(n);
-    for (NodeList nl=n.succ(); nl!=null; nl=nl.tail) {
-      if (!mark.contains(nl.head)) {
-	DFS(nl.head, worklist, mark, reverse); // add all lower nodes.
-      }
+  private void DFS(Node n, WorkSet worklist) {
+    WorkSet stack = new WorkSet();
+    stack.add(n);
+    while (!stack.isEmpty()) {
+	Node nn = (Node) stack.pop();
+	worklist.add(nn);
+	for (NodeList nl=nn.succ(); nl!=null; nl=nl.tail)
+	    if (!worklist.contains(nl.head))
+		stack.add(nl.head);
     }
-    if (reverse) worklist.add(n);
   }
 
   // Create nodes and edges of interference graph from the liveness
