@@ -12,6 +12,8 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.WritableTempMap;
+import harpoon.Util.Environment;
+import harpoon.Util.HashEnvironment;
 import harpoon.Util.Util;
 
 import java.util.Arrays;
@@ -22,13 +24,14 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 /**
  * <code>SSIRename</code> is a new, improved, fast SSI-renaming
  * algorithm.  Detailed in the author's thesis.  This Java version
  * is hairy because of the big "efficiency-vs-immutable quads" fight.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.2 1999-08-28 19:15:21 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.3 1999-08-30 22:37:47 cananian Exp $
  */
 class SSIRename {
     private static final boolean sort_phisig = false;
@@ -41,7 +44,7 @@ class SSIRename {
 
     static class VarMap implements TempMap {
 	final TempFactory tf;
-	final Map vm = new HashMap();
+	final Environment vm = new HashEnvironment();
 	Temp get(Temp t) {
 	    if (!vm.containsKey(t)) { vm.put(t, t.clone(tf)); }
 	    return (Temp) vm.get(t);
@@ -51,6 +54,11 @@ class SSIRename {
 	    else { vm.put(t, get(t).clone()); }
 	    return get(t);
 	}
+	// environment interface.
+	Stack s = new Stack();
+	void beginScope() { s.push(vm.getMark()); }
+	void endScope() { vm.undoToMark((Environment.Mark)s.pop()); }
+
 	public Temp tempMap(Temp t) { return get(t); }
 	VarMap(TempFactory tf) { this.tf = tf; }
     }
@@ -66,8 +74,8 @@ class SSIRename {
 	// algorithm state
 	/** maps old variables to new variables */
 	final VarMap varmap;
-	/** edge worklist */
-	final LinkedList We = new LinkedList();
+	/** edge stack to unroll dfs recursion. */
+	final Stack We = new Stack();
 	/** mark edges as we visit them */
 	final Set marked = new HashSet();
 
@@ -80,14 +88,13 @@ class SSIRename {
 
 	    HCodeElement ROOT = c.getRootElement();
 	    for (Iterator it=((HasEdges)ROOT).edgeC().iterator();
-		 it.hasNext(); ) {
-		Edge e = (Edge) it.next();
-		We.addLast(e);
-		marked.add(e);
-	    }
+		 it.hasNext(); )
+		We.push(it.next());
 	    
 	    while (!We.isEmpty()) {
-		Edge e = (Edge) We.removeFirst();
+		Edge e = (Edge) We.pop();
+		if (e==null) { varmap.endScope(); continue; }
+		We.push(null); varmap.beginScope();
 		search(e);
 	    }
 
@@ -142,6 +149,9 @@ class SSIRename {
 	    Util.assert(e.from() instanceof PHI ||
 			e.from() instanceof SIGMA ||
 			e.from() instanceof HEADER);
+	    // handle dfs bookkeeping.
+	    Util.assert(!marked.contains(e));
+	    marked.add(e);
 	    // setup 'from' state.
 	    Quad from = (Quad) e.from();
 	    if (from instanceof HEADER) {
@@ -165,28 +175,18 @@ class SSIRename {
 		    int j = e.which_pred();
 		    for (int i=0; i < r.length; i++)
 			r[i][j] = varmap.get(r[i][j]);
-		    e = q.nextEdge(0);
-		    if (!marked.contains(e)) {
-			We.addLast(e); marked.add(e);
-		    }
-		    return;
+		    break;
 		}
 		if (q instanceof SIGMA) { /* update src */
 		    Temp[] r = (Temp[]) rhs.get(q);
 		    for (int i=0; i < r.length; i++)
 			r[i] = varmap.get(r[i]);
-		    for (Iterator it=q.succC().iterator(); it.hasNext(); ) {
-			e = (Edge) it.next();
-			if (!marked.contains(e)) {
-			    We.addLast(e); marked.add(e);
-			}
-		    }
 		    if (q instanceof CJMP)
 			arg.put(q, varmap.get(((CJMP)q).test()));
 		    else if (q instanceof SWITCH)
 			arg.put(q, varmap.get(((SWITCH)q).index()));
 		    else throw new Error("Ack!");
-		    return;
+		    break;
 		}
 		/* else, rename src, then rename dst */
 		Temp u[] = q.use(), d[] = q.def();
@@ -196,7 +196,12 @@ class SSIRename {
 		    varmap.inc(d[i]);
 		Quad nq = q.rename(nqf, varmap, wtm);
 		old2new.put(q, nq);
-		if (q instanceof FOOTER) return;
+		if (q instanceof FOOTER) break;
+	    }
+	    for (Iterator it=((Quad)e.to()).succC().iterator();it.hasNext();) {
+		e = (Edge) it.next();
+		if (!marked.contains(e))
+		    We.push(e);
 	    }
 	}
 	void makePhiSig(HCode c) {
