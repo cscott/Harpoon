@@ -23,7 +23,7 @@ import java.util.Vector;
  * <code>Linker</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassImpl.java,v 1.1.4.1 2000-01-13 23:47:46 cananian Exp $
+ * @version $Id: HClassImpl.java,v 1.1.4.2 2000-01-14 19:21:52 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -568,8 +568,10 @@ abstract class HClassImpl extends HClass
    */
   public boolean isAssignableFrom(HClass cls) {
     if (cls==null) throw new NullPointerException();
+    // proxies make it dangerous to test against 'this'.
+    HClass _this = getLinker().forDescriptor(getDescriptor());
     // test identity conversion.
-    if (cls==this) return true;
+    if (cls==_this) return true;
     // widening reference conversions...
     if (this.isPrimitive()) return false;
     // widening reference conversions from the null type:
@@ -577,10 +579,10 @@ abstract class HClassImpl extends HClass
     if (cls.isPrimitive()) return false;
     // widening reference conversions from an array:
     if (cls.isArray()) {
-      if (this == getLinker().forName("java.lang.Object")) return true;
-      if (this == getLinker().forName("java.lang.Cloneable")) return true;
+      if (_this == getLinker().forName("java.lang.Object")) return true;
+      if (_this == getLinker().forName("java.lang.Cloneable")) return true;
       // see http://java.sun.com/docs/books/jls/clarify.html
-      if (this == getLinker().forName("java.io.Serializable")) return true;
+      if (_this == getLinker().forName("java.io.Serializable")) return true;
       if (isArray() &&
 	  !getComponentType().isPrimitive() &&
 	  !cls.getComponentType().isPrimitive() &&
@@ -591,7 +593,7 @@ abstract class HClassImpl extends HClass
     // widening reference conversions from an interface type.
     if (cls.isInterface()) {
       if (this.isInterface() && this.isSuperinterfaceOf(cls)) return true;
-      if (this == getLinker().forName("java.lang.Object")) return true;
+      if (_this == getLinker().forName("java.lang.Object")) return true;
       return false;
     }
     // widening reference conversions from a class type:
@@ -608,9 +610,11 @@ abstract class HClassImpl extends HClass
    *         <code>hc</code>, <code>false</code> otherwise.
    */
   public boolean isSuperclassOf(HClass hc) {
+    // proxies make it dangerous to test against 'this'.
+    HClass _this = getLinker().forDescriptor(getDescriptor());
     Util.assert(!this.isInterface());
     for ( ; hc!=null; hc = hc.getSuperclass())
-      if (this == hc) return true;
+      if (_this == hc) return true;
     return false;
   }
 
@@ -622,13 +626,15 @@ abstract class HClassImpl extends HClass
    *         <code>hc</code>, <code>false</code> otherwise.
    */
   public boolean isSuperinterfaceOf(HClass hc) {
+    // proxies make it dangerous to test against 'this'.
+    HClass _this = getLinker().forDescriptor(getDescriptor());
     Util.assert(this.isInterface());
     UniqueVector uv = new UniqueVector();//unique in case of circularity 
     for ( ; hc!=null; hc = hc.getSuperclass())
       uv.addElement(hc);
 
     for (int i=0; i<uv.size(); i++)
-      if (uv.elementAt(i) == this) return true;
+      if (uv.elementAt(i) == _this) return true;
       else {
 	HClass in[] = ((HClass)uv.elementAt(i)).getInterfaces();
 	for (int j=0; j<in.length; j++)
@@ -643,6 +649,8 @@ abstract class HClassImpl extends HClass
    * <code>HClass</code> <code>hc</code>.
    */
   public boolean isInstanceOf(HClass hc) {
+    // proxies make it dangerous to test against 'this'.
+    HClass _this = getLinker().forDescriptor(getDescriptor());
     if (this.isArray()) {
       if (!hc.isArray()) 
 	// see http://java.sun.com/docs/books/jls/clarify.html
@@ -655,11 +663,11 @@ abstract class HClassImpl extends HClass
 	      (!SC.isPrimitive()&&!TC.isPrimitive() && SC.isInstanceOf(TC)));
     } else { // not array.
       if (hc.isInterface())
-	return hc.isSuperinterfaceOf(this);
+	return hc.isSuperinterfaceOf(_this);
       else // hc is class.
 	if (this.isInterface()) // in recursive eval of array instanceof.
 	  return (hc==getLinker().forName("java.lang.Object"));
-	else return hc.isSuperclassOf(this);
+	else return hc.isSuperclassOf(_this);
     }
   }
 
