@@ -51,7 +51,8 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 #ifdef BDW_CONSERVATIVE_GC
     /* register finalizer to deallocate inflated_oobj on gc */
     if (GC_base(obj)!=NULL) // skip if this is not a heap-allocated object
-	GC_register_finalizer(GC_base(obj), deflate_object, obj,
+        GC_register_finalizer(GC_base(obj), deflate_object,
+			      (GC_PTR) ((void*)obj-(void*)GC_base(obj)),
 			      &(infl->old_finalizer),
 			      &(infl->old_client_data));
 #endif
@@ -67,7 +68,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
  *  dead).  we're punting on the potential problem for now. */
 #ifdef BDW_CONSERVATIVE_GC
 static void deflate_object(GC_PTR obj, GC_PTR client_data) {
-    struct oobj *oobj = (struct oobj *) client_data;
+    struct oobj *oobj = (struct oobj *) ((void*)obj+(ptroff_t)client_data);
     struct inflated_oobj *infl = oobj->hashunion.inflated;
     /*printf("Deflating object %p (clazz %p)\n", oobj, oobj->claz);*/
     /* okay, first invoke java finalizer.  afterwards this object
