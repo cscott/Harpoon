@@ -87,19 +87,26 @@ import java.util.HashSet;
 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.6 1999-10-26 23:18:46 pnkfelix Exp $
+    @version $Id: MultiMap.java,v 1.1.2.7 1999-11-02 20:32:58 pnkfelix Exp $
  */
 public class MultiMap implements Map {
 
+    /** <code>MultiMap.Factory</code> is a <code>MultiMap</code>
+	generator. 
+     */
     public static class Factory extends MapFactory {
 	public Map makeMap(Map map) {
 	    return makeMultiMap(map);
 	}
 	
+	/** Creates a new <code>MultiMap</code> initialized with all 
+	    of the <code>Map.Entry</code>s in <code>map</code>
+	 */
 	public MultiMap makeMultiMap(Map map) {
 	    return new MultiMap(map);
 	}
-    }
+	
+    } 
     
     // internal Map[KeyType -> Collection[ ValueType ]]
     private Map internMap;
@@ -142,7 +149,10 @@ public class MultiMap implements Map {
 	this.cf = mm.cf;
 	this.internMap = this.mf.makeMap(mm.internMap);
     }
-    
+	
+    /** Makes a new <code>MultiMap</code> initialized with all of the
+	<code>Map.Entry</code>s in <code>m</code>.
+    */
     public MultiMap(Map m) {
 	this();
 	Iterator entries = m.entrySet().iterator();

@@ -9,13 +9,13 @@ import java.util.Map;
 import java.util.List;
 import java.util.Set;
 
-/** <code>Factories</code> exclusively of static methods that operate
-    on or return <code>CollectionFactory</code>s. 
+/** <code>Factories</code> consists exclusively of static methods that
+    operate on or return <code>CollectionFactory</code>s. 
  
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: Factories.java,v 1.1.2.1 1999-10-20 06:00:26 pnkfelix Exp $
+    @version $Id: Factories.java,v 1.1.2.2 1999-11-02 20:32:57 pnkfelix Exp $
  */
-public class Factories {
+public final class Factories {
     
     /** Private ctor so no one will instantiate this class. */
     private Factories() {

@@ -7,11 +7,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * <code>ListFactory</code>
+/** <code>ListFactory</code> is a <code>List</code> generator.
+    Subclasses should implement constructions of specific types of  
+    <code>List</code>s.  
+
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ListFactory.java,v 1.1.2.1 1999-10-20 06:00:26 pnkfelix Exp $
+ * @version $Id: ListFactory.java,v 1.1.2.2 1999-11-02 20:32:58 pnkfelix Exp $
  */
 public abstract class ListFactory extends CollectionFactory {
     

@@ -7,6 +7,10 @@ import harpoon.IR.Properties.UseDef;
 import harpoon.Temp.Temp;
 import harpoon.Analysis.BasicBlock;
 
+import harpoon.Util.CloneableIterator;
+import harpoon.Util.Collections.BitSetFactory;
+import harpoon.Util.Collections.SetFactory;
+
 import java.util.Set;
 import java.util.Map;
 import java.util.HashSet;
@@ -17,13 +21,8 @@ import java.util.Iterator;
  * <code>LiveVars</code> performs Liveness Analysis for the variables
  * in the BasicBlocks passed to it.
  *
- * <BR> <B>NOTE:</B> This implementation is <B>very</B> inefficient and
- * space-heavy.  Look into making a new type of <code>Set</code> that
- * uses <code>BitString</code> as an internal rep instead of
- * <code>HashSet</code>s of <code>Temp</code>s. 
- * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.9 1999-09-20 16:06:23 pnkfelix Exp $
+ * @version $Id: LiveVars.java,v 1.1.2.10 1999-11-02 20:32:53 pnkfelix Exp $
  */
 public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 
@@ -55,14 +54,33 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	 @param liveOnProcExit A set of Temps that are live on exit from the method (for example, r0 for assembly code).
     */	     
     public LiveVars(Iterator basicblocks, Set liveOnProcExit) {
+        CloneableIterator blocks = new CloneableIterator(basicblocks);
+	Set universe = findAllTemps((Iterator) blocks.clone());
+	SetFactory setFact = new BitSetFactory(universe);
+
 	bbToLvi = new HashMap();
-	while(basicblocks.hasNext()) {
-	    BasicBlock bb = (BasicBlock) basicblocks.next();
-	    LiveVarInfo lvi = makeUseDef(bb);
+	while(blocks.hasNext()) {
+	    BasicBlock bb = (BasicBlock) blocks.next();
+	    LiveVarInfo lvi = makeUseDef(bb, setFact);
 	    bbToLvi.put(bb, lvi);
 	}
 
     }
+
+    private Set findAllTemps(Iterator blocks) {
+	HashSet temps = new HashSet();
+	while(blocks.hasNext()) {
+	    BasicBlock bb = (BasicBlock) blocks.next();
+	    Iterator useDefs = bb.iterator();
+	    while(useDefs.hasNext()) {
+		UseDef useDef = (UseDef) useDefs.next();
+		temps.addAll(useDef.useC());
+		temps.addAll(useDef.defC());
+	    }
+	}
+	return temps;
+    }
+
 
     /** Merge (Confluence) operator.
 	<BR> LVout(bb) = Union over (j elem Succ(bb)) of ( LVin(j) ) 
@@ -107,8 +125,8 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     /** Initializes the USE/DEF information for bb and stores it in
 	the return LiveVarInfo.K
     */
-    private LiveVarInfo makeUseDef(BasicBlock bb) {
-	LiveVarInfo info = new LiveVarInfo();
+    private LiveVarInfo makeUseDef(BasicBlock bb, SetFactory sf) {
+	LiveVarInfo info = new LiveVarInfo(sf);
 	Iterator instrs = bb.listIterator();	
 	
 	while (instrs.hasNext()) {
@@ -188,11 +206,11 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	Set lvIN;
 	Set lvOUT;
 
-	LiveVarInfo() { 
-	    use = new HashSet();
-	    def = new HashSet();
-	    lvIN = new HashSet();
-	    lvOUT = new HashSet();
+	LiveVarInfo(SetFactory sf) { 
+	    use = sf.makeSet();
+	    def = sf.makeSet();
+	    lvIN = sf.makeSet();
+	    lvOUT = sf.makeSet();
 	}
 	
 	public String toString() {
