@@ -18,7 +18,11 @@ char *dstring="d\0";
 struct filedesc files[MAXFILES];
 struct InodeBitmap ib;
 struct BlockBitmap bb;
-int bbbptr,ibbptr,itbptr,rdiptr;
+
+int bbbptr;  // pointer to the BlockBitmap block
+int ibbptr;  // pointer to the InodeBlock block
+int itbptr;  // pointer to the InodeTable block
+int rdiptr;  // pointer to the RootDirectoryInode block
 
 
 int main(int argc, char **argv) 
@@ -43,42 +47,50 @@ int main(int argc, char **argv)
 
     for(int i=0; i<NUMFILES; i++) {
       char filename[10];
-      sprintf(filename,"fil%d",i);
+      sprintf(filename,"file_%d",i);
       openfile(ptr,filename);
     }
+
     for(int j=0; j<90; j++) {
       for(int i=0; i<NUMFILES; i++) {
 	char *buf="01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123";
 	writefile(ptr,i,buf,122);
       }
     }
+
     for(int i=0; i<NUMFILES; i++) {
       closefile(ptr,i);
     }
+
+    printdirectory(ptr);
+
     unmountdisk(ptr);
     break;
   }
 
 
   case '2': {
-    struct block * ptr=chmountdisk("disk");
+    struct block * ptr=mountdisk("disk");
     initializeanalysis();
     Hashtable *env=exportmodel->gethashtable();
     alloc(ptr,LENGTH);
     addmapping(dstring,ptr,"Disk");
     //    env->put(dstring,new Element(ptr,exportmodel->getstructure("Disk")));//should be of badstruct
 
-    // insert errors that break the specs
+    printdirectory(ptr);
+    printinodeblock(ptr);
+
+    // check the DSs
     doanalysis();
     dealloc(ptr);
-    chunmountdisk(ptr);
+    unmountdisk(ptr);
     break;
   }
 
 
   // insert errors that break the specs
   case '3': {
-    struct block * ptr=chmountdisk("disk");
+    struct block * ptr=mountdisk("disk");
     initializeanalysis();
     Hashtable *env=exportmodel->gethashtable();
     alloc(ptr,LENGTH);
@@ -87,14 +99,14 @@ int main(int argc, char **argv)
     // insert errors that break the specs
     doanalysis2();
     dealloc(ptr);
-    chunmountdisk(ptr);
+    unmountdisk(ptr);
     break;
   }
 
 
   // insert errors that do not break the specs
   case '4': {
-    struct block * ptr=chmountdisk("disk");
+    struct block * ptr=mountdisk("disk");
     initializeanalysis();
     Hashtable *env=exportmodel->gethashtable();
     alloc(ptr,LENGTH);
@@ -103,7 +115,7 @@ int main(int argc, char **argv)
     // insert errors that do not break the specs
     doanalysis3();
     dealloc(ptr);
-    chunmountdisk(ptr);
+    unmountdisk(ptr);
     break;
   }
 
@@ -114,7 +126,7 @@ int main(int argc, char **argv)
     printdirectory(ptr);
     for(int i=1; i<NUMFILES; i++) {
       char filename[10];
-      sprintf(filename,"fil%d",i);
+      sprintf(filename,"file_%d",i);
       printfile(filename,ptr);
     }
     unmountdisk(ptr);
@@ -126,7 +138,7 @@ int main(int argc, char **argv)
     struct block * ptr=mountdisk("disk");
     for(int i=NUMFILES; i>1; i--) {
       char filename[10];
-      sprintf(filename,"fil%d",i);
+      sprintf(filename,"file_%d",i);
       openfile(ptr,filename);
     }
     for(int j=0; j<90; j++) {
@@ -146,7 +158,7 @@ int main(int argc, char **argv)
     struct block * ptr=mountdisk("disk");
     for(int i=NUMFILES; i>=0; i--) {
       char filename[10];
-      sprintf(filename,"fil%d",i);
+      sprintf(filename,"file_%d",i);
       openfile(ptr,filename);
     }
 
@@ -162,7 +174,7 @@ int main(int argc, char **argv)
     }
     for(int i=NUMFILES; i>=0; i--) {
       char filename[10];
-      sprintf(filename,"fil%d",i);
+      sprintf(filename,"file_%d",i);
       openfile(ptr,filename);
     }
 
@@ -200,7 +212,7 @@ int main(int argc, char **argv)
     struct block * ptr=mountdisk("disk");
     for(int i=NUMFILES; i>=0; i--) {
       char filename[10];
-      sprintf(filename,"fil%d",i);
+      sprintf(filename,"file_%d",i);
       openfile(ptr,filename);
     }
     for(int j=0; j<6000; j++) {
@@ -215,7 +227,7 @@ int main(int argc, char **argv)
     }
     for(int i=NUMFILES; i>=0; i--) {
       char filename[10];
-      sprintf(filename,"fil%d",i);
+      sprintf(filename,"file_%d",i);
       openfile(ptr,filename);
     }
     for(int j=0;j<400;j++) {
@@ -297,41 +309,6 @@ void unmountdisk(struct block *vptr) {
 }
 
 
-void printdirectory(struct block *ptr) {
-  struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
-  for(int i=0;i<12;i++) {
-    struct DirectoryBlock *db=(struct DirectoryBlock *) &ptr[itb->entries[rdiptr].Blockptr[i]];
-    for(int j=0;j<BLOCKSIZE/128;j++) {
-      if (db->entries[j].name[0]!=0) {
-	/* lets finish */
-	printf("%s %d inode %d bytes\n",db->entries[j].name, db->entries[j].inodenumber,itb->entries[db->entries[j].inodenumber].filesize);
-      }
-    }
-  }
-}
-
-// prints the contents of the file with filename "filename"
-void printfile(char *filename, struct block *ptr) {
-  struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
-  for(int i=0;i<12;i++) {
-    struct DirectoryBlock *db=(struct DirectoryBlock *) &ptr[itb->entries[rdiptr].Blockptr[i]];
-    for(int j=0;j<BLOCKSIZE/128;j++) {
-      if (db->entries[j].name[0]!=0) {
-	if(strcmp(filename,db->entries[j].name)==0) {
-	  /* Found file */
-	  int inode=db->entries[j].inodenumber;
-
-	  struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
-	  for(int i=0;i<((itb->entries[inode].filesize+BLOCKSIZE-1)/BLOCKSIZE);i++) {
-	    struct block *b=&ptr[itb->entries[inode].Blockptr[i]];
-	    write(0,b,BLOCKSIZE);
-	  }
-	}
-      }
-    }
-  }
-}
-
 void removefile(char *filename, struct block *ptr) {
   struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
   for(int i=0;i<12;i++) {
@@ -359,6 +336,7 @@ void removefile(char *filename, struct block *ptr) {
   }
 }
 
+
 void createlink(struct block *ptr,char *filename, char *linkname) {
   struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
   for(int i=0;i<12;i++) {
@@ -377,6 +355,7 @@ void createlink(struct block *ptr,char *filename, char *linkname) {
   }
 }
 
+
 void closefile(struct block *ptr, int fd) {
   struct InodeBlock * itb=(struct InodeBlock *) &ptr[4];
   
@@ -385,9 +364,11 @@ void closefile(struct block *ptr, int fd) {
   files[fd].used=false;
 }
 
+
 bool writefile(struct block *ptr, int fd, char *s) {
   return (writefile(ptr,fd,s,1)==1);
 }
+
 
 int writefile(struct block *ptr, int fd, char *s, int len) {
   struct filedesc *tfd=&files[fd];
@@ -465,12 +446,13 @@ int readfile(struct block *ptr, int fd, char *buf, int len) {
 }
 
 
+
 int openfile(struct block *ptr, char *filename) {
   /* Locate fd */
   int fd=-1;
   for(int k=0;k<MAXFILES;k++) {
-    /* Found file */
     if(!files[k].used) {
+      /* Found file */
       fd=k;
       files[fd].used=true;
       break;
@@ -480,20 +462,23 @@ int openfile(struct block *ptr, char *filename) {
 
   /* Check to see if file exists*/
   struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
-  for(int i=0;i<12;i++) {
-    struct DirectoryBlock *db=(struct DirectoryBlock *) &ptr[itb->entries[rdiptr].Blockptr[i]];
-    for(int j=0;j<BLOCKSIZE/128;j++) {
-      if (db->entries[j].name[0]!=0) {
-	if(strcmp(filename,db->entries[j].name)==0) {
-	  files[fd].inode=db->entries[j].inodenumber;
-	  files[fd].offset=0;
-	  return fd;
+  for(int i=0;i<12;i++) 
+    {
+      struct DirectoryBlock *db=(struct DirectoryBlock *) &ptr[itb->entries[rdiptr].Blockptr[i]];
+      for(int j=0;j<BLOCKSIZE/DIRECTORYENTRYSIZE;j++) 
+	{
+	  if (db->entries[j].name[0]!=0) {
+	    if(strcmp(filename, db->entries[j].name)==0) 
+	      {
+		files[fd].inode=db->entries[j].inodenumber;
+		files[fd].offset=0;
+		return fd;
+	      }
+	  }
 	}
-      }
     }
-  }
-  /* Create file */
-
+  
+  /* If file doesn't exist, create it */
   int inode=getinode(ptr);
   if (inode==-1) {
     files[fd].used=false;
@@ -508,12 +493,12 @@ int openfile(struct block *ptr, char *filename) {
   return fd;
 }
 
+
 void createfile(struct block *ptr,char *filename, char *buf,int buflen) {
   int fd=openfile(ptr,filename);
   writefile(ptr,fd,buf,buflen);
   closefile(ptr,fd);
 }
-
 
 
 void addtode(struct block *ptr, int inode, char * filename) {
@@ -532,6 +517,7 @@ void addtode(struct block *ptr, int inode, char * filename) {
   }
 }
 
+
 int getinode(struct block *ptr) {
   for(int i=0;i<NUMINODES;i++) {
     if (!(ib.inode[i/8]&(1<<(i%8)))) {
@@ -541,6 +527,7 @@ int getinode(struct block *ptr) {
   }
   return -1;
 }
+
 
 int getblock(struct block * ptr) {
   for(int i=0;i<NUMBLOCK;i++) {
@@ -554,9 +541,11 @@ int getblock(struct block * ptr) {
 
 
 
-void createdisk() {
+void createdisk() 
+{
   int blocksize=BLOCKSIZE;
   int numblocks=NUMBLOCK;
+
   int fd=open("disk",O_CREAT|O_RDWR|O_TRUNC);
 
   // creates numblocks and initializes them with 0
@@ -597,10 +586,11 @@ void createdisk() {
   }
   {
     struct InodeBlock * itb=(struct InodeBlock *) &ptr[4];
+
     itb->entries[0].filesize=12*BLOCKSIZE;
     for(int i=0;i<12;i++)
-      itb->entries[0].Blockptr[i]=i+5;
-    itb->entries[0].referencecount=1;
+      itb->entries[0].Blockptr[i]=i+5;  // blocks 5 to 16 are RootDirectory entries
+    itb->entries[0].referencecount=0;  
   }
 
   int val=munmap(vptr,LENGTH);
@@ -609,4 +599,61 @@ void createdisk() {
 
   printf("Disk created successfully!\n");
 }
+
+
+void printdirectory(struct block *ptr) 
+{
+  struct InodeBlock *itb=(struct InodeBlock *) &ptr[itbptr];
+  
+  for(int i=0;i<12;i++) 
+    {
+      struct DirectoryBlock *db=(struct DirectoryBlock *) &ptr[itb->entries[rdiptr].Blockptr[i]];
+
+      for(int j=0;j<BLOCKSIZE/DIRECTORYENTRYSIZE;j++) {
+	if (db->entries[j].name[0]!=0) 
+	  {
+	    /* lets finish */
+	    //printf("%s %d\n",db->entries[j].name, db->entries[j].inodenumber);
+	    printf("%s (inode %d) (%d bytes)\n",db->entries[j].name, db->entries[j].inodenumber, itb->entries[db->entries[j].inodenumber].filesize);
+	  }
+      }
+    }
+
+  //printf("end of printdirectory\n");
+}
+
+// prints the contents of the file with filename "filename"
+void printfile(char *filename, struct block *ptr) {
+  struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
+  for(int i=0;i<12;i++) {
+    struct DirectoryBlock *db=(struct DirectoryBlock *) &ptr[itb->entries[rdiptr].Blockptr[i]];
+    for(int j=0;j<BLOCKSIZE/128;j++) {
+      if (db->entries[j].name[0]!=0) {
+	if(strcmp(filename,db->entries[j].name)==0) {
+	  /* Found file */
+	  int inode=db->entries[j].inodenumber;
+
+	  struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
+	  for(int i=0;i<((itb->entries[inode].filesize+BLOCKSIZE-1)/BLOCKSIZE);i++) {
+	    struct block *b=&ptr[itb->entries[inode].Blockptr[i]];
+	    write(0,b,BLOCKSIZE);
+	  }
+	}
+      }
+    }
+  }
+}
+
+
+void printinodeblock(struct block *ptr)
+{
+  struct InodeBlock *itb=(struct InodeBlock *) &ptr[itbptr];  
+
+  for (int i=0; i<NUMINODES; i++)
+    {
+      Inode inode = itb->entries[i];
+      printf("inode %d: (filesize %d), (referencecount %d)\n", i, inode.filesize, inode.referencecount);
+    }
+}
+
 

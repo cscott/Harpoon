@@ -246,9 +246,9 @@ void model::parsespacefile(char *spacefile) {
   Dparser *p=new Dparser(r);
   domainrelation=p->parsesetrelation(); 
 
-#ifdef DEBUGMANYMESSAGES  
+  //#ifdef DEBUGMANYMESSAGES  
   domainrelation->print();
-#endif
+  //#endif
 
   ifs->close();
   delete(ifs);

@@ -54,7 +54,7 @@ struct InodeBlock {
 };
 
 
-
+#define DIRECTORYENTRYSIZE 128
 struct DirectoryEntry {
   char name[124];
   int inodenumber;
@@ -75,8 +75,7 @@ void createfile(struct block *ptr,char *filename, char *buf,int buflen);
 void addtode(struct block *ptr, int inode, char * filename);
 int getinode(struct block *ptr);
 int getblock(struct block * ptr);
-void printdirectory(struct block *ptr);
-void printfile(char *filename, struct block *ptr);
+
 void removefile(char *filename, struct block *ptr);
 void createlink(struct block *ptr,char *filename, char *linkname);
 struct block * chmountdisk(char *filename);
@@ -89,6 +88,11 @@ int writefile(struct block *ptr, int fd, char *s, int len);
 char readfile(struct block *ptr, int fd);
 int readfile(struct block *ptr, int fd, char *buf, int len);
 int openfile(struct block *ptr, char *filename);
+
+void printdirectory(struct block *ptr);
+void printfile(char *filename, struct block *ptr);
+void printinodeblock(struct block* ptr);
+
 
 #define MAXFILES 300
 struct filedesc {

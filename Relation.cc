@@ -153,3 +153,8 @@ void WorkRelation::destroyer(struct genhashtable *d) {
   genfreehashtable(d);
 }
 
+
+void WorkRelation::print()
+{
+  
+}

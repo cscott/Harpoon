@@ -132,6 +132,9 @@ void DRelation::print() {
   else
     printf("1");
   printf(")");
+
+  WorkRelation *wr = getrelation();
+
 }
 
 char * DRelation::getname() {

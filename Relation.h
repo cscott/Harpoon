@@ -31,6 +31,7 @@ class WorkRelation {
   WorkSet* invgetset(void *key);
   void* invgetobj(void *key);
   ~WorkRelation();
+  void print();
 
  private:
   void destroyer(struct genhashtable *d);
