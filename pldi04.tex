@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.22 2003-11-12 06:53:42 cananian Exp $
+% $Id: pldi04.tex,v 1.23 2003-11-12 19:30:08 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -35,7 +35,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-\date{\today \\ $ $Revision: 1.22 $ $}
+\date{\today \\ $ $Revision: 1.23 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -148,8 +148,8 @@ fault-tolerance and back-tracking.  The first two examples, involving
 a network flow algorithm and the \texttt{java.lang.StringBuffer} class
 from the Java standard libraries, illustrate the problems involved in
 using Java's existing monitor synchronization methodology to
-synchronize concurrent modifications to multiple objects.  A solution
-using transactions to implement atomic regions is given, which greatly
+synchronize concurrent modifications to multiple objects.  We give a
+solution using transactions to implement atomic regions which greatly
 simplifies the locking discipline required.
 The last example reformulates the transaction mechanism as
 exception-handling, illustrating this view with a destructive traversal
@@ -230,7 +230,7 @@ void pushFlow(Vertex v1, Vertex v2, double flow) {
 
 This {\tt atomic} region can be implemented as a transaction.
 With an appropriately non-blocking implementation, the {\tt atomic}
-version of the code can scale better and be faster than the locking version
+version of the code can scale better and execute faster than the locking version
 \cite{AnanianAsKuLeLi04,HarrisFr03,GreenwaldCh96,MassalinPu91,HerlihyMo93,ShavitTo95}.
 Further, we can eliminate the convoluted locking protocol, which must
 be observed rigorously everywhere if deadlock is to be avoided.
@@ -243,7 +243,8 @@ object's lock before touching the object's shared fields prevents data
 races.  However, the lack of races is not sufficient to prevent unanticipated
 parallel behavior.
 
-Flanagan and Qadeer \cite{FlanaganQa03} demonstrated this with an
+Flanagan and Qadeer \cite{FlanaganQa03} demonstrated this
+insufficiency with an
 actual bug they discovered in the Sun JDK 1.4.2 Java standard
 libraries.  The {\tt java.lang.StringBuffer} class,
 which implements a mutable string abstraction, is implemented as follows:
@@ -257,7 +258,7 @@ public final class StringBuffer ... {
   public synchronized
   StringBuffer append(StringBuffer sb) {
     ...
-A:  int len = sb.length(); // len may be stale.
+A:  int len = sb.length();
     int newcount = count + len; 
     if (newcount > value.length)
       expandCapacity(newcount);
@@ -271,7 +272,7 @@ B:  sb.getChars(0, len, value, count);
 }
 \end{verbatim}
 }
-The documentation indicates that the methods of this class are meant
+The library documentation indicates that the methods of this class are meant
 to execute atomically, and the {\tt synchronized} modifiers on the
 methods are meant to accomplish this.
 
@@ -289,23 +290,28 @@ Replacing {\tt synchronized} with {\tt atomic} gives us the semantics
 we desire: nested {\tt atomic} blocks compose to ensure that the entire
 operation appears atomic.
 
-Both the network flow example and this one require synchronization of
-changes to more than one object.  Monitor synchronization is not
+Both the network flow example and this {\tt StringBuffer} example require
+changes to more than one object to be synchronized.
+Monitor synchronization is not
 well-suited to this task.  Atomic regions implemented with
 transactions can be used to simplify the locking discipline required
-and provides a more intuitive specification for the desired
+to synchronize multi-object mutation
+and provide a more intuitive specification for the desired
 concurrent properties.  Further, the {\tt StringBuffer} example shows
 that simply replacing {\tt synchronized} with {\tt atomic} provides a
 strict alternative semantics which may in fact correct existing
-synchronization errors.   For correctly-synchronized code, the
+synchronization errors.   For ``correctly-synchronized'' code, the
 semantics of {\tt atomic} and {\tt synchronized} are identical.
+\note{Is this true?}
 
 \subsecput{destruct}{Destructive list traversal}
 \note{Shows transaction-as-exception-handling, fault-tolerance, and
 back-tracking.}
-Schorr and Waite described a traversal mechanism...
-\cite{SchorrWa67}
-
+Many recursive data structures can be traversed without the use of an
+stack using pointer reversal.  This technique is widely used in
+garbage collectors, and was first demonstrated in this context by
+Schorr and Waite \cite{SchorrWa67}.  The following code implements a
+pointer-reversal traversal of a simple singly-linked list:
  \par {\footnotesize\samepage
 \begin{verbatim}
 // destructive list traversal.
@@ -322,22 +328,28 @@ void traverse(List l) {
       l = t;
     } while (l!=null);
     l = last;
-    // now do again, backwards.
+    // now do again, backwards. (restoring links)
   }
 }
 \end{verbatim}
 }
+This function traverses the list visiting nodes in order and then
+reversing the {\tt next} pointer.  When the end of the list is
+reached, the reversed links are traversed to restore the original
+state of the list.
 
-Now imagine that an exception occurs inside the {\tt visit()} method
-at some point during the traversal.  Control leaves the {\tt
-  traverse()}, but the data structure is left in shambles.
+Imagine that an exception or fault occurs inside the {\tt visit()} method
+at some point during the traversal: an assertion fires, an exception
+occurs, the hardware hiccups, or a thread is killed.  Control may
+leave the {\tt traverse()} method, but the data structure is left in
+shambles.  What is needed is some exception-handling procedure to
+restore the proper state of the list.  This can be manually coded with
+Java's existing {\tt try}/{\tt catch} construct, but the
+exception-handling code must be tightly-coupled to the traversal.
 
-The {\tt atomic} block is one way to expose underlying transactions to
-the programmer.  An alternative is to model transactions as an
-exception-handling mechanism.
-
-Non-deterministic choice operator:
- \par {\footnotesize\samepage
+Instead, we can provide a non-deterministic choice operator,
+{\tt try}/{\tt else}, and write the recovery code at a higher-level as:
+\par {\footnotesize\samepage
 \begin{verbatim}
 try {
   try {
@@ -349,12 +361,20 @@ try {
   throw new Error();
 }
 \end{verbatim}
-}
+}\note{We'd prefer 'fail t' here, but that raises the question of how
+  to export objects from transactional contexts.}
 
-This construct can also be implemented with transactions.  this view
-of transactions as exception handling...  in fact, the {\tt atomic}
-block we used in the previous two examples can be implemented using
-{\tt try \ldots else}:
+The {\tt try}/{\tt else} block appears to make a non-deterministic
+choice between executing the {\tt try} or the {\tt else} clause,
+depending on whether the {\tt try} would succeed or not.
+We implement this with transactions, making the {\tt fail} statement
+an explicit transaction abort.  When the transaction aborts, all the
+heap side-effects of the {\tt try} block disappear.
+
+The {\tt try}/{\tt else} construct exposes transactions to the
+programmer as an exception-handling mechanism.  And in fact,
+the {\tt atomic} block above can be implemented using
+{\tt try}/{\tt else}:
  \par {\footnotesize\samepage
 \begin{verbatim}
 while(true) {
@@ -368,21 +388,13 @@ while(true) {
 }
 \end{verbatim}
 }
+\note{How hard do we try to execute the {\tt try} block?}
+Transactions expressed an exception-handling mechanism can be used in this
+manner to provide fault-tolerance and backtracking to the language, as
+well as atomic regions for synchronization.\note{Weak conclusion}
+\note{nqueens example?}
 
-If instead of an explicit exception, we make provision for transaction
-failure due to transient system faults, we can see that the {\tt try
-  else} block provides fault-tolerance, by allowing us to safely
-re-execute portions of a program ...
-
-This can be used for backtracking as well.
-
-\subsecput{backtrack}{Backtracking}
-Prolog-esque example?
-nqueens?
-
-%\subsecput{optcon}{Optimistic Concurrency} % not in this paper.
-
-
+\vspace*{5mm}
 We have implemented a transaction mechanism for Java using both
 software and hardware approaches.  We will first discuss automatically
 ``transactifying'' Java applications by replacing synchronization with
