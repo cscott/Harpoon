@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.71 2002-05-11 11:20:53 cananian Exp $
+% $Id: harpoon.bib,v 1.72 2002-07-24 04:11:11 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -77,6 +77,72 @@
                 Intermediate Representations"}
 
 % papers read.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% companion object ptr analysis refs
+@inproceedings{267921,
+ author = {Rastislav Bod{\'\i}k and Rajiv Gupta and Mary Lou Soffa},
+ title= {Refining data flow information using infeasible paths},
+ booktitle = {Proceedings of the 6th European conference held jointly with the 5th ACM SIGSOFT symposium on Software engineering},
+ year = {1997},
+ isbn = {3-540-63531-9},
+ pages = {361--377},
+ location = {Zurich, Switzerland},
+ doi = {http://doi.acm.org/10.1145/267895.267921},
+ publisher = {Springer-Verlag New York, Inc.},
+ annote = { These techniques might help detect more mutually-singular
+            field assignments. }
+ }
+
+@inproceedings{199466,
+ author = {Rita Z. Altucher and William Landi},
+ title= {An extended form of must alias analysis for dynamic allocation},
+ booktitle = {Proceedings of the 22nd ACM SIGPLAN-SIGACT symposium on Principles of programming languages},
+ year = {1995},
+ isbn = {0-89791-692-1},
+ pages = {74--84},
+ location = {San Francisco, California, United States},
+ doi = {http://doi.acm.org/10.1145/199448.199466},
+ publisher = {ACM Press},
+ annote = { Related work: renames allocation sites to properly handle
+            factory methods.  Also generates must-alias info from
+            may-alias info. }
+ }
+
+@article{174635,
+ author = {Istv{\'a}n Forg{\'a}cs},
+ title= {Double iterative framework for flow-sensitive interprocedural data flow analysis},
+ journal = {ACM Transactions on Software Engineering and Methodology (TOSEM)},
+ volume = {3},
+ number = {1},
+ year = {1994},
+ issn = {1049-331X},
+ pages = {29--55},
+ doi = {http://doi.acm.org/10.1145/174634.174635},
+ publisher = {ACM Press},
+ annote = { ``We also introduce the double iterative framework, where one procedure is processed at a time. The results of the intraprocedural analysis of procedures then propagates along the edges of the call multi-graph. In this way the intra and interprocedural analyses are executed alternately until there is no change in any result set. This method can be applied to any known interprocedural data flow problem.'' }
+ }
+
+@inproceedings{268962,
+ author = {Christian Collberg and Clark Thomborson and Douglas Low},
+ title= {Manufacturing cheap, resilient, and stealthy opaque constructs},
+ booktitle = {Proceedings of the 25th ACM SIGPLAN-SIGACT symposium on Principles of programming languages},
+ year = {1998},
+ isbn = {0-89791-979-3},
+ pages = {184--196},
+ location = {San Diego, California, United States},
+ doi = {http://doi.acm.org/10.1145/268946.268962},
+ publisher = {ACM Press},
+ annote = { Uses ``intractability of alias analysis'' as one of its bases for ``hard'' predicates; our analysis should be able to crack these. }
+ }
+
+@Misc{humper02,
+  author =	 {Greg Humphreys},
+  title =	 {Personal communication},
+  year =	 2002
+}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -199,7 +265,7 @@
   address =	 {La Jolla, California},
   month =	 Jun,
   pages =	 {163-173},
-  url = 	 {http://www.acm.org/pubs/articles/proceedings/pldi/},
+  url = 	 {http://doi.acm.org/10.1145/207110.207134},
   annote =	 {Not terribly useful.  Intriguing use of the word
                   `arborescent' for `tree-structured'.}
 }
@@ -214,6 +280,7 @@
   number =	 11,
   pages =	 {41-49},
   month =	 nov,
+  url = 	 {http://doi.acm.org/10.1145/216636.216654},
   annote =	 {Presents a simple set of language-independent
                   extensions to specify real-time constraints.  Also
                   contains the interesting claim that the real-time 
@@ -248,7 +315,7 @@
   address =	 {Albuquerque, New Mexico},
   month =	 jun,
   pages =	 {166-176},
-  url = 	 {http://www.acm.org/pubs/articles/proceedings/pldi/},
+  url = 	 {http://doi.acm.org/10.1145/155090.155106},
   annote =	 {Code motion for timing optimization.  Are all
                   real-time schedulers iterative?}
 }
@@ -534,7 +601,7 @@
   number =	 1,
   month =	 jan,
   pages =	 {85-122},
-  url =		 {http://www.acm.org/pubs/citations/journals/toplas/1995-17-1/p85-gerlek/},
+  url =		 {http://doi.acm.org/10.1145/200994.201003},
   annote =	 {Very powerful technique for induction variable
                   analysis using a variant of the SSA form.  Requires
                   a symbolic math package for full power, but can
