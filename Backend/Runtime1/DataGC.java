@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Runtime1;
 
-import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.GCInfo;
@@ -27,7 +26,6 @@ import harpoon.IR.Tree.Stm;
 import harpoon.Temp.Label;
 import harpoon.Util.Util;
 
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -42,7 +40,7 @@ import java.util.TreeSet;
  * <code>DataGC</code> outputs the tables needed by the garbage collector.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: DataGC.java,v 1.1.2.12 2000-07-12 15:35:09 kkz Exp $
+ * @version $Id: DataGC.java,v 1.1.2.13 2000-07-18 18:55:43 kkz Exp $
  */
 public class DataGC extends Data {
     final GCInfo m_gc;
@@ -240,7 +238,7 @@ public class DataGC extends Data {
 	// number of bits needed to store the descriptor,
 	// the register bitmap and the stack bitmap
 	final int bits = DESCRIPTOR_SIZE + 
-	    (needRegs?numRegs:0) + (needStack?stack.size():0);
+	    (needRegs?numRegs:0) + (needStack?basetableMap.size():0);
 	// number of 32-bit integers needed to encode the data 
 	final int numInts = (bits + INT_BITS - 1) / INT_BITS;
 	int[] data = new int[numInts];
@@ -252,8 +250,10 @@ public class DataGC extends Data {
 	if (needRegs) {
 	    for(Iterator it=regs.iterator(); it.hasNext(); ) {
 		int regIndex = ((WrappedMachineRegLoc)it.next()).regIndex();
+		Util.assert(regIndex < numRegs);
 		int i = (regIndex+offset) / INT_BITS;
 		int j = (regIndex+offset) % INT_BITS;
+		Util.assert(i < numInts);
 		data[i] |= 1 << (INT_BITS - j - 1);
 	    }
 	    offset += numRegs;
@@ -263,6 +263,7 @@ public class DataGC extends Data {
 		int index = ((Integer)basetableMap.get(it.next())).intValue();
 		int i = (index+offset) / INT_BITS;
 		int j = (index+offset) % INT_BITS;
+		Util.assert(i < numInts);
 		data[i] |= 1 << (INT_BITS - j - 1);
 	    }
 	}

@@ -11,9 +11,8 @@ import harpoon.Analysis.Instr.RegAlloc.IntermediateCodeFactory;
 import harpoon.Analysis.Liveness;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.Derivation.DList;
-import harpoon.Analysis.Maps.TypeMap.TypeNotKnownException;
 import harpoon.Analysis.ReachingDefs;
-import harpoon.Analysis.ReachingDefsImpl;
+import harpoon.Analysis.ReachingDefsAltImpl;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.GCInfo.DLoc;
 import harpoon.Backend.Generic.GCInfo.GCPoint;
@@ -58,7 +57,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.18 2000-07-11 20:38:39 pnkfelix Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.19 2000-07-18 18:55:39 kkz Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -144,7 +143,8 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		UseDefer ud = new IgnoreSpillUseDefer();
 		// pass 1: liveness and reaching definitions analyses
 		LiveTemps ltAnalysis = analyzeLiveness(hc, ud);
-		ReachingDefs rdAnalysis = new ReachingDefsImpl(hc, cfger, ud);
+		ReachingDefs rdAnalysis = 
+		    new ReachingDefsAltImpl(hc, cfger, ud);
 		// pass 2: identify backward branches
 		Set backEdgeGCPts = identifyBackwardBranches(hc);
 		// pass 3: identify GC points
@@ -238,7 +238,6 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		protected final harpoon.Analysis.Maps.Derivation d;
 		protected final HMethod hm;
 		protected final HCode hc;
-		protected final Set specialRegisters;
 		protected final UseDefer ud;
 		protected int index = 0;
 		/** Creates a <code>GCPointFinder</code> object.
@@ -266,11 +265,6 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    this.d = d;
 		    this.tl = ((IntermediateCode)hc).getTempLocator();
 		    this.ud = ud;
-		    specialRegisters = new HashSet();
-		    specialRegisters.addAll
-			(f.getRegFileInfo().getAllRegistersC());
-		    specialRegisters.removeAll
-			(f.getRegFileInfo().getGeneralRegistersC());
 		}
 		public void visit(InstrCALL c) {
 		    // all InstrCALLs are GC points
@@ -336,7 +330,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    Map calleeSaved = new HashMap();
 		    while(!live.isEmpty()) {
 			Temp t = (Temp)live.pull();
-			System.out.println(t.toString()+" is live.");
+			//System.out.println(t.toString()+" is live.");
 			Util.assert(i != null, 
 				    "Cannot pass null instruction"+
 				    " to reaching definitions analysis");
@@ -352,34 +346,10 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 				    i.toString());
 			Instr defPt = (Instr)defPtsit.next();
 			// all of the above defPts should work
-			DList ddl;
-			try {
-			    ddl = d.derivation(defPt, t);
-			} catch (TypeNotKnownException e) {
-			    System.out.println
-				("kkz0: "+e.toString()+" thrown for "+
-				 t.toString()+" at def "+defPt.toString()+
-				 " (defC:"+
-				 new java.util.ArrayList(ud.defC(defPt))+")");
-			    if (specialRegisters.contains(t))
-				continue;
-			    else
-				throw e;
-			}			    
+			DList ddl = d.derivation(defPt, t);
 			if (ddl == null) {
 			    // try and find its type
-			    HClass hclass;
-			    try {
-				hclass = d.typeMap(defPt, t);
-			    } catch (TypeNotKnownException e) {
-				System.out.println
-				    ("kkz0: "+e.toString()+" thrown for "+
-				     t.toString()+" at def "+defPt.toString());
-				if (specialRegisters.contains(t))
-				    continue;
-				else
-				    throw e;
-			    }
+			    HClass hclass = d.typeMap(defPt, t);
 			    if (hclass == null) {
 				// no derivation, no type means
 				// this is a callee-saved register
@@ -414,9 +384,9 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    List stackSigns = new ArrayList();
 		    while(ddl != null) {
 			Temp base = ddl.base;
-			System.out.println("doing reachingDefs"+
-					   " instr:"+instr+
-					   " base:"+base);
+			//System.out.println("doing reachingDefs"+
+			//		   " instr:"+instr+
+			//		   " base:"+base);
 			Collection c1 = rd.reachingDefs(instr, base);
 			Util.assert(c1 != null && c1.size() >0);
 			Instr[] defPts = (Instr[]) 
