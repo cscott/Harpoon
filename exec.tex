@@ -1,17 +1,18 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: exec.tex,v 1.2 1999-04-28 21:54:30 cananian Exp $
+% $Id: exec.tex,v 1.3 1999-04-29 18:45:57 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage,twoside]{article}
 
 % A breaking non-space for URLs
 \newcommand{\bnsp}{\hspace{0pt}}
 % environment for code examples
-\newcommand{\ells}[1]{\ifcase#1\or l\or l|l\or l|l|l\or l|l|l|l\or l|l|l|l|l\fi}
 \newenvironment{samplecode}[1][1]
   {\setlength{\tabcolsep}{2\tabcolsep}%
 \renewcommand{\>}{~~~~}%
 \newcommand{\comment}[1]{\rm\it // ##1}%
 \newcommand{\com}[1]{\comment{##1}}%
+\newcommand{\ells}[1]{\ifcase#1\or l\or l|l\or l|l|l\or l|l|l|l\or
+l|l|l|l|l\or l|l|l|l|l|l\fi}%
 \begin{center}\tt\begin{tabular}{\ells{#1}}}
   {\end{tabular}\end{center}}
 
@@ -32,7 +33,7 @@
 
 \title{Executability in the Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.2 $ $}
+\date{\today \\ $ $Revision: 1.3 $ $}
 
 \begin{document}
 \bibliographystyle{plain}
@@ -172,12 +173,26 @@ dataflow model.  We will define both a cycle-oriented semantics and an
 event-driven semantics, which (incidentally) correspond to synchronous
 and asynchronous hardware models.
 
-{\Large\bf AT THIS POINT I WENT HOME TO GET MY 6.821 NOTES IN ORDER TO
-PROPERLY WRITE UP THE SEMANTICS.}
-
 \subsection{Cycle-oriented semantics}
 
+\begin{figure}[t]
+\begin{center}\begin{tabular}{lc}
+$t =\phi(t_1, t_2)$: & foo\\
+\end{tabular}\end{center}
+\caption{Cycle-oriented transition rules for \ssiplus}
+\label{fig:cyclesemantics}
+\end{figure}
+
 \subsection{Event-driven semantics}
+
+\begin{figure}[t]
+\begin{center}\begin{displaymath}\begin{array}{lc}
+t =\phi(t_1, t_2): &
+\frac{t_2\mbox{ defined }\Delta t,t_1\mbox{ undefined}}{bar}\\
+\end{array}\end{displaymath}\end{center}
+\caption{Event-driven transition rules for \ssiplus}
+\label{fig:eventsemantics}
+\end{figure}
 
 \section{Hardware correspondence}
 
