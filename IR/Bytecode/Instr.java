@@ -13,14 +13,15 @@ import java.util.Vector;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.1 1998-09-14 02:49:21 cananian Exp $
+ * @version $Id: Instr.java,v 1.2 1998-09-15 01:25:17 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
  * @see InSwitch
  * @see Code
  */
-public abstract class Instr implements HCodeElement {
+public abstract class Instr 
+  implements HCodeElement, harpoon.IR.Properties.Edges {
   String sourcefile;
   int linenumber;
   int id;
@@ -70,4 +71,38 @@ public abstract class Instr implements HCodeElement {
   Vector prev = new Vector(2);
   /** Internal successor list. */
   Vector next = new Vector(2);
+
+  // Edges interface:
+  public HCodeEdge newEdge(final Instr from, final Instr to) {
+    return new HCodeEdge() {
+      public HCodeElement from() { return from; }
+      public HCodeElement to() { return to; }
+      public boolean equals(Object o) { 
+	return (o instanceof HCodeEdge &&
+		((HCodeEdge)o).from() == from &&
+		((HCodeEdge)o).to() == to);
+      }
+      public int hashCode() { return from.hashCode() ^ to.hashCode(); }
+    };
+  }
+  public HCodeEdge[] succ() {
+    HCodeEdge[] r = new HCodeEdge[next.size()];
+    for (int i=0; i<r.length; i++)
+      r[i] = newEdge(this, (Instr) next.elementAt(i));
+    return r;
+  }
+  public HCodeEdge[] pred() {
+    HCodeEdge[] r = new HCodeEdge[prev.size()];
+    for (int i=0; i<r.length; i++)
+      r[i] = newEdge((Instr)prev.elementAt(i), this);
+    return r;
+  }
+  public HCodeEdge[] edges() {
+    HCodeEdge[] n = succ();
+    HCodeEdge[] p = pred();
+    HCodeEdge[] r = new HCodeEdge[n.length + p.length];
+    System.arraycopy(n, 0, r, 0, n.length);
+    System.arraycopy(p, 0, r, n.length, p.length);
+    return r;
+  }
 }
