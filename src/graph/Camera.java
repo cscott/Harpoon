@@ -29,7 +29,7 @@ public class Camera extends Node {
      *  @param out The node to send images to.
      */
     public Camera(Node out) {
-	this((byte)128, (byte)128, (byte)5, (byte)0, false, false, 640, 480, out);
+	this((byte)128, (byte)128, (byte)15, (byte)0, false, true, 160, 120, out);
     }
 
     /** Construct a new {@link Camera} with the specified properties.
