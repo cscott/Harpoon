@@ -23,7 +23,7 @@ import harpoon.Temp.Temp;
  * A simple-minded version of Appel's fast-allocation strategy
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.2 1999-02-15 08:38:00 duncan Exp $
+ * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.3 1999-02-26 22:46:46 andyb Exp $
  */
 public class DefaultAllocationStrategy implements AllocationStrategy {
 
@@ -37,7 +37,7 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
    *  Returns a <code>Stm</code> object which allocates a block of memory 
    *  of the specified size.   
    */
-  public Exp malloc(Exp size)
+  public Exp memAlloc(Exp size)
     {
       LABEL       l0, l1, l2, l3, l4;
       Stm         s0, s1, s2, s3, s4, s5;
@@ -63,7 +63,7 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
 		   new MOVE(tf, src, triedGC, new CONST(tf, src, (int)0)),
 		   new MOVE(tf, src, newMemPtr, 
 			    new BINOP(tf, src, Type.POINTER, Bop.ADD,
-				      m_info.next_ptr(tf, src),
+				      m_info.getNextPtr(tf, src),
 				      size)));
 
       // Is (limit > next + N) ?
@@ -72,7 +72,7 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
 	(tf, src, l0,
 	 new CJUMP(tf, src, 
 		   new BINOP(tf, src, Type.POINTER, Bop.CMPGT,
-			     m_info.mem_limit(tf, src),
+			     m_info.getMemLimit(tf, src),
 			     newMemPtr),
 		   l1.label,   // There's enough space
 		   l2.label)); // Not enough space!
@@ -90,7 +90,7 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
       // Throw OutOfMemoryError
       //
       s3 = new SEQ(tf, src, l3,
-		   m_info.out_of_memory(tf, src));
+		   m_info.exitOutOfMemory(tf, src));
 
       // triedGC <-- 1
       // call the garbage collector
@@ -100,7 +100,7 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
 		   new SEQ(tf, src, new MOVE(tf, src,
 					     triedGC,
 					     new CONST(tf, src, (int)1)),
-			   new SEQ(tf, src, m_info.GC(tf, src),
+			   new SEQ(tf, src, m_info.callGC(tf, src),
 				   new JUMP(tf, src, l0.label))));
 
       // There is enough memory to allocate.  
@@ -110,8 +110,8 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
       s5 = new SEQ(tf, src, 
 		   l1,
 		   new SEQ(tf, src, 
-			   new MOVE(tf, src, resultPtr, m_info.next_ptr(tf, src)),
-			   new MOVE(tf, src, m_info.next_ptr(tf, src), newMemPtr)));
+			   new MOVE(tf, src, resultPtr, m_info.getNextPtr(tf, src)),
+			   new MOVE(tf, src, m_info.getNextPtr(tf, src), newMemPtr)));
 
       // Combine the Stm objects into one ESEQ object, and return it.
       //
