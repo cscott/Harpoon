@@ -31,7 +31,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.1.2.31 2001-07-18 15:51:58 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.1.2.32 2001-07-20 15:19:00 wbeebee Exp $
  */
 
 public class Realtime {
@@ -70,6 +70,9 @@ public class Realtime {
      */
     public static boolean NOHEAP_CHECKS = false;
 
+    /** Add masking support, but no checks */
+    public static boolean NOHEAP_MASK = false;
+
     /** Add additional information on calls to RTJ_malloc to store information
      *  about the def. points of all objects which are allocated.
      */
@@ -85,12 +88,15 @@ public class Realtime {
 	    System.out.print("no");
 	    REAL_SCOPES = false;
 	} else {
-	    System.out.print("yes, NOHEAP_CHECKS: ");
+	    System.out.print("yes, NoHeap: ");
 	    if (opts.indexOf("noheap_checks")!=-1) {
 		NOHEAP_CHECKS = true;
-		System.out.print("yes");
+		System.out.print("checks");
+	    } else if (opts.indexOf("noheap")!=-1) {
+		NOHEAP_MASK = true;
+		System.out.print("no checks");
 	    } else {
-		System.out.print("no");
+		System.out.print("no support");
 	    }
 	    System.out.print(", DEBUG_REF: ");
 	    if (opts.indexOf("debug_ref")!=-1) {
