@@ -9,6 +9,7 @@ import harpoon.Temp.TempFactory;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
+import java.util.List;
 import java.util.Map;
 import java.util.Iterator;
 
@@ -47,7 +48,7 @@ import java.util.Iterator;
     together before mapping them to Physical Register Temps.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.28 2000-06-26 15:43:47 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.29 2000-06-26 17:48:55 pnkfelix Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -305,6 +306,20 @@ public abstract class RegFileInfo {
      *  the available registers on the machine. */
     public Collection getAllRegistersC() {
 	return Arrays.asList(getAllRegisters());
+    }
+
+    /** Returns a List of the Component Temps that compose
+	<code>t</code>.  If <code>t</code> is not a Composite Temp
+	(ie, it maps directly to a single register in the Register
+	File) then the singleton List <code>[ t ]</code> is returned.
+	
+	Note that the default implementation assumes that
+	<code>t</code> is not a Composite Temp; architectures with
+	Composite Temps should override and properly implement this
+	method. 
+    */
+    public List expand(Temp t) {
+	return harpoon.Util.Collections.ListFactory.singleton(t);
     }
 
     /** Returns a specific register on the machine.<BR>

@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
+import java.util.List;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
@@ -38,7 +39,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.19 2000-06-26 15:43:55 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.20 2000-06-26 17:49:12 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -156,11 +157,13 @@ public class RegFileInfo
 
     public TempFactory regTempFactory() { return regtf; }
 
-    public int getSize(Temp temp) {
+    public List expand(Temp temp) {
 	if (temp instanceof TwoWordTemp) {
-	    return 2;
+	    TwoWordTemp tt = (TwoWordTemp) temp;
+	    return Arrays.asList(new Temp[]
+				 { tt.getLow(), tt.getHigh() });
 	} else {
-	    return 1;
+	    return super.expand(temp);
 	}
     }
 
