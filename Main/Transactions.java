@@ -6,8 +6,12 @@ package harpoon.Main;
 
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.Transactions.SyncTransformer;
+import harpoon.Backend.Generic.Frame;
+import harpoon.ClassFile.HData;
 import harpoon.Util.Options.Option;
 
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.LinkedList;
 
@@ -16,11 +20,11 @@ import java.util.LinkedList;
  * <code>Transactions</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Transactions.java,v 1.2 2003-04-22 00:09:58 salcianu Exp $
+ * @version $Id: Transactions.java,v 1.2.2.1 2003-07-16 01:17:01 cananian Exp $
  */
 public abstract class Transactions {
     
-    private static boolean DO_TRANSACTIONS = false;
+    static boolean DO_TRANSACTIONS = false;
     private static SyncTransformer syncTransformer = null;
 
     private static boolean enabled() { return DO_TRANSACTIONS; }
@@ -28,12 +32,12 @@ public abstract class Transactions {
     public static class QuadPass extends CompilerStageEZ {
 	public QuadPass() { super("transactions.quad-pass"); }
 
-	public List/*<Option>*/ getOptions() {
-	    List/*<Option>*/ opts = new LinkedList/*<Option>*/();
-	    opts.add(new Option("T", "Transactions support (CSA)") {
-		public void action() { DO_TRANSACTIONS = true; }
+	public List<Option> getOptions() {
+	    return Arrays.asList(new Option[] {
+		new Option("T", "Transactions support (CSA)") {
+		    public void action() { DO_TRANSACTIONS = true; }
+		}
 	    });
-	    return opts;
 	}
 
 	public boolean enabled() { return Transactions.enabled(); }
@@ -80,5 +84,8 @@ public abstract class Transactions {
 	    hcf = syncTransformer.treeCodeFactory(frame, hcf);
 	}
     }
-    
+
+    public static Iterator<HData> filterData(Frame f, Iterator<HData> it) {
+	return syncTransformer.filterData(f, it);
+    }
 }

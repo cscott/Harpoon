@@ -18,6 +18,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HFieldMutator;
 import harpoon.ClassFile.HMethod;
@@ -63,6 +64,7 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
 import harpoon.Util.HClassUtil;
+import harpoon.Util.FilterIterator;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 
@@ -83,7 +85,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.5.2.8 2003-07-15 17:09:39 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.5.2.9 2003-07-16 01:17:05 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -149,9 +151,13 @@ public class SyncTransformer
     private final HMethod HMcommitrec_retry;
     private final HMethod HMcommitrec_commit;
     private final HField  HFcommitrec_parent;
+    /** Cache the <code>AbortException</code> <code>HClass</code>. */
     private final HClass  HCabortex;
     private final HField  HFabortex_upto;
     private final HMethod HMabortex_cons;
+    /** Cache the <code>ImplHelper</code> <code>HClass</code>. */
+    private final HClass HCimplHelper;
+    private final HMethod HMsetTrans; // setJNITransaction()
     /** flag value */
     private final HField HFflagvalue;
     /** last *reading* transaction */
@@ -226,7 +232,11 @@ public class SyncTransformer
 	// lookup the type of a 'struct vinfo *'
 	HCvinfo = HCobj; // hack.  Also not strictly true. Maybe HClass.Int?
 	// create a method generator in the 'ImplHelper' class.
-	gen = new MethodGenerator(l.forName(pkg+"ImplHelper"));
+	HCimplHelper = l.forName(pkg+"ImplHelper");
+	gen = new MethodGenerator(HCimplHelper);
+	// cache ImplHelper.setJNITransaction(CommitRecord cr)
+	HMsetTrans = HCimplHelper.getMethod
+	    ("setJNITransaction", new HClass[] { HCcommitrec });
 
 	// set up our field oracle.
 	if (!useSmartFieldOracle) {
@@ -255,10 +265,12 @@ public class SyncTransformer
 	    public void clear(HMethod m) { superfactory.clear(m); }
 	    public HCode convert(HMethod m) {
 		if (Modifier.isNative(m.getModifiers()) &&
+		    /*
 		    SyncTransformer.this.safeMethods
 		    	.contains(select(m, ORIGINAL)) &&
+		    */
 		    select(select(m, ORIGINAL), WITH_TRANSACTION).equals(m))
-		    // call the original, 'safe' method.
+		    // call the original, 'safe' method, with trans in context
 		    return redirectCode(m);
 		else if (gen.generatedMethodSet.contains(m))
 		    return emptyCode(m);
@@ -401,15 +413,6 @@ public class SyncTransformer
 		handlers = new ListList<THROW>(null, handlers);
 	    this.currtrans = new Temp(tf, "transid");
 	    this.retex = new Temp(tf, "trabex"); // transaction abort exception
-	}
-	/** helper routine to add a quad on an edge. */
-	private Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
-	private Edge addAt(Edge e, int which_pred, Quad q, int which_succ) {
-	    Quad frm = e.from(); int frm_succ = e.which_succ();
-	    Quad to  = e.to();   int to_pred = e.which_pred();
-	    Quad.addEdge(frm, frm_succ, q, which_pred);
-	    Quad.addEdge(q, which_succ, to, to_pred);
-	    return to.prevEdge(to_pred);
 	}
 	/** Insert abort exception check on the given edge. */
 	private Edge checkForAbort(Edge e, HCodeElement src, Temp tex) {
@@ -957,6 +960,7 @@ public class SyncTransformer
 		// create read check code (set read-bit to one).
 		// (check that read-bit is set, else call fixup code,
 		//  which will do atomic-set of this bit.)
+		transFields.add(raf.field);
 		BitFieldTuple bft = bfn.bfLoc(raf.field);
 
 		// struct vinfo *TA(EXACT_setReadFlags)
@@ -1008,6 +1012,7 @@ public class SyncTransformer
 		    (qf, in, "synctrans.field_write_checks");
 		// create write check code (set field to FLAG).
 		// (check that field==FLAG is set, else call fixup code)
+		transFields.add(raf.field);
 		BitFieldTuple bft = bfn.bfLoc(raf.field);
 
 		// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset,
@@ -1244,17 +1249,29 @@ public class SyncTransformer
      *  tree form of the transformed code by performing some optimizations
      *  which can't be represented in quad form. */
     public HCodeFactory treeCodeFactory(Frame f, HCodeFactory hcf) {
-	transFields.addAll(bfn.bitfields);
-	return new TreePostPass(f, FLAG_VALUE, HFflagvalue, gen, transFields)
+	Set<HField> allFields = new HashSet<HField>(transFields);
+	allFields.addAll(bfn.bitfields);
+	return new TreePostPass(f, FLAG_VALUE, HFflagvalue, gen, allFields)
 	    .codeFactory(hcf);
     }
-    /** Create a redirection method for native methods we "know" are safe. */
+
+    /** Munge <code>HData</code>s to insert bit-field numbering information. */
+    public Iterator<HData> filterData(Frame f, Iterator<HData> it) {
+	if (tdf==null) tdf = new TreeDataFilter(f, bfn, transFields);
+	return new FilterIterator<HData,HData>(it, tdf);
+    }
+    TreeDataFilter tdf=null;
+
+    /** Create a redirection method for native methods in a transactions
+     *  context which sets/restores the JNI transaction state appropriately.
+     */
     // parts borrowed from InitializerTransform.java
     private QuadRSSx redirectCode(final HMethod hm) {
 	final HMethod orig = select(hm, ORIGINAL);
 	// make the Code for this method (note how we work around the
 	// protected fields).
 	return new QuadRSSx(hm, null) { /* constructor */ {
+	    harpoon.IR.Quads.Edge e; // wants to use Graph.Edge instead =(
 	    // figure out how many temps we need, then make them.
 	    int nargs = hm.getParameterTypes().length + (hm.isStatic()? 0: 1);
 	    Temp[] params = new Temp[nargs];
@@ -1263,8 +1280,9 @@ public class SyncTransformer
 	    Temp[] nparams = new Temp[nargs-1];
 	    int i=0;
 	    if (!hm.isStatic())
-		nparams[i++] = params[0];
-	    for (i++ ; i<params.length; i++)
+		nparams[0] = params[i++];
+	    Temp currTrans = params[i++];
+	    for ( ; i<params.length; i++)
 		nparams[i-1] = params[i];
 	    Temp retex = new Temp(qf.tempFactory(), "retex");
 	    Temp retval = (hm.getReturnType()==HClass.Void) ? null :
@@ -1272,17 +1290,35 @@ public class SyncTransformer
 	    // okay, make the dispatch core.
 	    Quad q0 = new HEADER(qf, null);
 	    Quad q1 = new METHOD(qf, null, params, 1);
+	    // save the transaction state.
+	    Quad q1a= new CALL(qf, null, HMsetTrans, new Temp[] { currTrans },
+			       currTrans, retex, false, false, new Temp[0]);
+	    // do the dispatch to JNI
 	    Quad q2 = new CALL(qf, null, orig, nparams,
-	    		       retval, retex, false, true, new Temp[0]);
+	    		       retval, retex, false, false, new Temp[0]);
+	    // restore the transaction state (on both normal and exc. edges)
+	    Quad q2a= new CALL(qf, null, HMsetTrans, new Temp[] { currTrans },
+			       currTrans, retex, false, false, new Temp[0]);
+	    Quad q2b= new CALL(qf, null, HMsetTrans, new Temp[] { currTrans },
+			       currTrans, retex, false, false, new Temp[0]);
+	    // finish up.
 	    Quad q3 = new RETURN(qf, null, retval);
+	    Quad q3a= new PHI(qf, null, new Temp[0], 4);
 	    Quad q4 = new THROW(qf, null, retex);
 	    Quad q5 = new FOOTER(qf, null, 3);
 	    Quad.addEdge(q0, 0, q5, 0);
 	    Quad.addEdge(q0, 1, q1, 0);
-	    Quad.addEdge(q1, 0, q2, 0);
-	    Quad.addEdge(q2, 0, q3, 0);
-	    Quad.addEdge(q2, 1, q4, 0);
+	    e = Quad.addEdge(q1, 0, q3, 0);
 	    Quad.addEdge(q3, 0, q5, 1);
+	    e = addAt(e, q1a);
+	    e = addAt(e, q2);
+	    e = addAt(e, q2a);
+	    Quad.addEdge(q1a,1, q3a,0);
+	    Quad.addEdge(q2, 1, q2b,0);
+	    Quad.addEdge(q2b,0, q3a,1);
+	    Quad.addEdge(q2b,1, q3a,2);
+	    Quad.addEdge(q2a,1, q3a,3);
+	    Quad.addEdge(q3a,0, q4, 0);
 	    Quad.addEdge(q4, 0, q5, 2);
 	    this.quads = q0;
 	    // done!
@@ -1338,6 +1374,17 @@ public class SyncTransformer
 	} };
     }
     
+    /** helper routine to add a quad on an edge. */
+    private static Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
+    /** helper routine to add a quad on an edge. */
+    private static Edge addAt(Edge e, int which_pred, Quad q, int which_succ) {
+	Quad frm = e.from(); int frm_succ = e.which_succ();
+	Quad to  = e.to();   int to_pred = e.which_pred();
+	Quad.addEdge(frm, frm_succ, q, which_pred);
+	Quad.addEdge(q, which_succ, to, to_pred);
+	return to.prevEdge(to_pred);
+    }
+
     private class TempSplitter {
 	private final Map<Temp,Temp> m = new HashMap<Temp,Temp>();
 	public Temp versioned(Temp t) {

@@ -66,14 +66,14 @@ import java.io.PrintWriter;
  * <code>CodeGenerator</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CodeGenerator.java,v 1.9 2003-07-03 22:34:56 cananian Exp $
+ * @version $Id: CodeGenerator.java,v 1.9.2.1 2003-07-16 01:17:01 cananian Exp $
  */
 public class CodeGenerator extends CompilerStage {
     
     public CodeGenerator() { super("code-generator"); }
 
-    public List/*<Option>*/ getOptions() {
-	List/*<Option>*/ opts = new LinkedList/*<Option>*/();
+    public List<Option> getOptions() {
+	List<Option> opts = new LinkedList<Option>();
 
 	if(Boolean.getBoolean("debug.reg-alloc"))
 	    add_debug_options(opts);
@@ -247,6 +247,8 @@ public class CodeGenerator extends CompilerStage {
     // <code>hclass</code> that are in the set
     // <code>callableMethods</code>.
     // QUESTION: What's <code>sahcf</code>.
+    //    "StrongArm HCodeFactory" -- the hcode factory for the backend;
+    //    the name is left over from when StrongArm was our only backend. [CSA]
     private void generate_code_for_class
 	(HClass hclass, Set callableMethods, HCodeFactory sahcf)
 	throws IOException {
@@ -274,14 +276,14 @@ public class CodeGenerator extends CompilerStage {
 	    out = new harpoon.Backend.PreciseC.TreeToC(out);
 	
 	HMethod[] hmarray = hclass.getDeclaredMethods();
-	Set hmset = new TreeSet(Arrays.asList(hmarray));
+	Set<HMethod> hmset = new TreeSet<HMethod>(Arrays.asList(hmarray));
 	hmset.retainAll(callableMethods);
-	Iterator hms = hmset.iterator();
+	Iterator<HMethod> hms = hmset.iterator();
 	if (ONLY_COMPILE_MAIN)
 	    hms = Default.singletonIterator(mainM);
 	message("\t");
 	while(hms.hasNext()) {
-	    HMethod m = (HMethod) hms.next();
+	    HMethod m = hms.next();
 	    message(m.getName());
 	    if (!Modifier.isAbstract(m.getModifiers()))
 		outputMethod(m, hcf, sahcf, out);
@@ -447,22 +449,28 @@ public class CodeGenerator extends CompilerStage {
     
     public void outputClassData(HClass hclass, PrintWriter out) 
 	throws IOException {
-      Iterator it=frame.getRuntime().classData(hclass).iterator();
+      Iterator<HData> it=frame.getRuntime().classData(hclass).iterator();
       // output global data with the java.lang.Object class.
       if (hclass==linker.forName("java.lang.Object")) {
 	  HData data=frame.getLocationFactory().makeLocationData(frame);
-	  it=new CombineIterator(it, Default.singletonIterator(data));
+	  it=new CombineIterator<HData>(it, Default.singletonIterator(data));
 	  if (WriteBarriers.WB_STATISTICS) {
 	      assert WriteBarriers.writeBarrierStats != null :
 		  "WriteBarrierStats need to be run before WriteBarrierData.";
 	      HData wbData = 
 		  WriteBarriers.writeBarrierStats.getData(hclass, frame);
-	      it=new CombineIterator(it, Default.singletonIterator(wbData));
+	      it=new CombineIterator<HData>
+		  (it, Default.singletonIterator(wbData));
 	  }
 	  if(PreallocOpt.PREALLOC_OPT) {
 	      HData poData = PreallocOpt.getData(hclass, frame);
-	      it = new CombineIterator(it, Default.singletonIterator(poData));
+	      it = new CombineIterator<HData>
+		  (it, Default.singletonIterator(poData));
 	  }
+      }
+      // additional data required.
+      if (Transactions.DO_TRANSACTIONS) {
+	  it = Transactions.filterData(frame, it);
       }
       while (it.hasNext() ) {
 	final Data data = (Data) it.next();
