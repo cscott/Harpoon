@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * by the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayRef.java,v 1.1.2.5 1999-08-04 06:31:01 cananian Exp $
+ * @version $Id: ArrayRef.java,v 1.1.2.6 1999-08-11 10:50:37 duncan Exp $
  */
 final class ArrayRef extends Ref {
     /** Elements of the array (primitives or Refs) */
@@ -138,7 +138,7 @@ final class ArrayRef extends Ref {
 	    Util.assert(ref.hashCode!=null);
 	    return ref.hashCode;
 	}
-	else if (ref.ss.map.classOffset(ref.type)==offset) {
+	else if (ref.ss.map.clazzPtrOffset(ref.type)==offset) {
 	    Util.assert(ref.classPtr!=null);
 	    return ref.classPtr;
 	}
@@ -158,7 +158,7 @@ final class ArrayRef extends Ref {
 	else if (ref.ss.map.hashCodeOffset(ref.type)==offset) {
 	    throw new Error("The hashcode field of an array is final");
 	}
-	else if (ref.ss.map.classOffset(ref.type)==offset) {
+	else if (ref.ss.map.clazzPtrOffset(ref.type)==offset) {
 	    throw new Error("The clazpointer of an array is final");
 	}
 	else {

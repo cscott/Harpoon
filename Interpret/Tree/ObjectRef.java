@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>ObjectRef</code> is an object reference in the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectRef.java,v 1.1.2.5 1999-08-04 06:31:01 cananian Exp $
+ * @version $Id: ObjectRef.java,v 1.1.2.6 1999-08-11 10:50:38 duncan Exp $
  */
 class ObjectRef extends Ref {
 
@@ -116,7 +116,7 @@ class ObjectRef extends Ref {
 	    return ref.hashCode;
 	}
 	// case 2: points to classptr.  Return ClazPointer<label, 0>
-	else if (ref.ss.map.classOffset(ref.type)==offset) {
+	else if (ref.ss.map.clazzPtrOffset(ref.type)==offset) {
 	    Util.assert(ref.classPtr != null);
 	    return ref.classPtr;
 	}
@@ -136,7 +136,7 @@ class ObjectRef extends Ref {
 	if (ref.ss.map.hashCodeOffset(ref.type)==offset) {
 	    throw new Error("Hashcode field is final!");
 	}
-	else if (ref.ss.map.classOffset(ref.type)==offset) {
+	else if (ref.ss.map.clazzPtrOffset(ref.type)==offset) {
 	    throw new Error("The ClazPointer of an object is final!");
 	}
 	else {

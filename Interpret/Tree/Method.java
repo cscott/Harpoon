@@ -63,7 +63,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.10 1999-08-09 23:40:19 duncan Exp $
+ * @version $Id: Method.java,v 1.1.2.11 1999-08-11 10:50:38 duncan Exp $
  */
 public final class Method extends HCLibrary {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -558,7 +558,11 @@ public final class Method extends HCLibrary {
 
 	public void visit(NAME e) { 
 	    if (DEBUG) db("Visiting: " + e);
-	    if (e.label.toString().startsWith("STRING_CONST")) {
+
+	    // Still pretty ugly, but more reliable than before
+	    InterpreterOffsetMap map = 
+		(InterpreterOffsetMap)e.getFactory().getFrame().getOffsetMap();
+	    if (map.stringConstantMap().containsValue(e.label)) { 
 		sf.update(e, new StringPointer(ss, e.label));
 	    }
 	    else {

@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * <code>UndefinedRef</code> is a reference of an unknown type
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: UndefinedRef.java,v 1.1.2.3 1999-08-04 06:31:01 cananian Exp $
+ * @version $Id: UndefinedRef.java,v 1.1.2.4 1999-08-11 10:50:38 duncan Exp $
  */
 public class UndefinedRef extends Ref {
     private Integer       length;
@@ -68,7 +68,7 @@ public class UndefinedRef extends Ref {
 		      0));
 	    }
 	}
-	else if (ss.map.classOffset(dummy) == offset) {
+	else if (ss.map.clazzPtrOffset(dummy) == offset) {
 	    ref.classPtr = 
 	      new ClazPointer((Label)(((ConstPointer)value).getBase()), ss, 0);
 

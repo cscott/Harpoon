@@ -21,7 +21,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.7 1999-08-09 22:00:22 duncan Exp $
+ * @version $Id: StaticState.java,v 1.1.2.8 1999-08-11 10:50:38 duncan Exp $
  */
 final class StaticState extends HCLibrary {
     
@@ -81,22 +81,13 @@ final class StaticState extends HCLibrary {
 	loadNonStaticFields(clsLabel, cls);
 	loadMethods(clsLabel, cls);
 	if (!(cls.isInterface() || cls.isPrimitive())) 
-	    loadDisplay(clsLabel, cls, map.displaySize(cls));
+	    loadDisplay(clsLabel, cls, map.displaySize());
 	else  
 	    loadDisplay(clsLabel, cls);
 	
 	if (!(cls.isPrimitive() || cls.isArray())) 
 	    loadInterfaces(clsLabel, cls);
 	
-	int tag; // type tag
-	if (cls.isArray())          tag = map.arrayTag();
-	else if (cls.isInterface()) tag = map.interfaceTag();
-	else if (cls.isPrimitive()) tag = map.primitiveTag();
-	else                        tag = map.classTag();
-
-	map(new ClazPointer(clsLabel, this, map.tagOffset(cls)),
-	    new Integer(tag));
-
 	// execute <clinit>() 
 	HMethod hm = cls.getClassInitializer();
 	if (hm!=null) Method.invoke(this, hm, new Object[0]);
@@ -112,12 +103,11 @@ final class StaticState extends HCLibrary {
 
     private void loadDisplay(Label clsLabel, HClass current) {
 	HClass sc;
-	int    tag;
 
 	sc = current.getSuperclass();
 	if (sc!=null) loadDisplay(clsLabel, sc);
 
-	map(new ClazPointer(clsLabel, this, map.displayOffset(current)),
+	map(new ClazPointer(clsLabel, this, map.offset(current)),
 	    new ConstPointer(map.label(current), this));
 
     }
