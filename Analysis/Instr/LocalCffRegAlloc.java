@@ -66,7 +66,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.98 2000-07-13 01:51:48 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.99 2000-07-13 01:53:25 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -124,10 +124,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    private HCodeElement orig(HCodeElement h){
 		if (backedInstrs.containsKey(h)) {
 		    HCodeElement h2 = (HCodeElement) backedInstrs.get(h);
-		    System.out.println(h+" is backed by "+h2);
+		    // System.out.println(h+" is backed by "+h2);
 		    return h2;
 		} else {
-		    System.out.println(h+" has no backing instr");
+		    // System.out.println(h+" has no backing instr");
 		    return h;
 		}
 	    }
