@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Tue Oct  6 11:24:14 1998> 
-// Time-stamp: <1998-11-28 13:07:55 mfoltz> 
+// Time-stamp: <1998-12-02 22:10:02 mfoltz> 
 // Keywords: 
 
 package harpoon.RunTime;
@@ -15,6 +15,14 @@ import java.io.FileInputStream;
 import java.util.Properties;
 
 /**
+ * <code>Monitor</code> is the static class whose methods are called at run-time by
+ * applications profiled for object partitioning.<p>
+ * This class has a static initializer that 
+ * reads a property file <code>Monitor.properties</code> containing the property <code>dynamicfile</code>, 
+ * the filename for profile data.  It also invokes <code>System.runFinalizersOnExit(true)</code> 
+ * to ensure that its finalizer is run on JVM exit.<p>
+ * The finalizer flushes and closes <code>_logstream</code>, throwing <code>IOException</code> if 
+ * if an input or output exception occurs.
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
  * @version 
@@ -22,7 +30,9 @@ import java.util.Properties;
 
 public class Monitor {
 
+  /** Monitor's properties. */
   static Properties _properties = new Properties();
+  /** The output stream for profiling data. */
   static DataOutputStream _logstream;
 
   static {
@@ -35,8 +45,22 @@ public class Monitor {
     }
   }
 
+  /** Hide the constructor. */
   private Monitor() { }
 
+  /** Logs a method call.
+   * Writes a string of the form <code>CALL sender-id sender-method receiver-id receiver-method</code>
+   * to <code>_logstream</code>. <code>sender-id</code> and <code>receiver-id</code> are strings unique among 
+   * all objects in the JVM.<p
+   * If <code>sender</code> or <code>receiver</code> is <code>null</code>, the string "-1" is used as the id.  If 
+   * <code>sending_method</code> or <code>receiving_method</code> is null, then the string <code>UnknownMethod</code>
+   * is used as the method name.
+   * 
+   * @param <code>sender</code>            The object making the method call.
+   * @param <code>sending_method</code>    The name of the method with the call site.
+   * @param <code>receiver</code>          The object on which the method is invoked.
+   * @param <code>receiving_method</code>  The name of the method invoked.
+   */
   public static synchronized void logCALL(Object sender, String sending_method, 
 			     Object receiver, String receiving_method) {
     try {
@@ -59,6 +83,24 @@ public class Monitor {
     }
   }
 
+  /** Logs object creation.
+   * Writes a string of the form 
+   * <code>NEW creator-id creator-method creator-class created-id created-class site-id</code>
+   * to <code>_logstream</code>. <code>creator</code>-id and <code>created-id</code> are strings 
+   * unique among all objects in the JVM.<p>
+   * If <code>creator</code> or <code>created</code> is null, the string <code>-1</code> is used as 
+   * the <code>creator-id</code> or <code>created-id</code>, respectively.  If 
+   * <code>sending_method</code> or <code>receiving_method</code> is null, then the string <code>UnknownMethod</code>
+   * is used as the method name.  If <code>created</code> is null, then <code>Static</code> is used as the 
+   * <code>created-class</code>.<p>
+   * <code>site-id</code> is unique among all object creation sites within <code>creator-method</code>.
+   * 
+   * @param <code>creator</code>           The object creating the new object.
+   * @param <code>creator_class</code>     The name of the class with the object creation site.
+   * @param <code>creator_method</code>    The name of the method with the object creation site.
+   * @param <code>created</code>           The object being created.  Must be initialized.
+   * @param <code>id</code>                The identifier of the object creation site within <code>creator_method</code>.
+   */
   public static synchronized void logNEW(Object creator, String creator_class, 
 			    String creator_method, Object created, int id) {
     try {
@@ -93,7 +135,7 @@ public class Monitor {
       e.printStackTrace();
     }
   }
-
+  
   static void classFinalizer() throws Throwable {
     _logstream.flush();
     _logstream.close();
