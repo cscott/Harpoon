@@ -16,6 +16,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadSSI;
+import harpoon.IR.Quads.SSIRename;
 import harpoon.IR.Quads.ToNoSSA;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -28,7 +29,7 @@ import java.util.Map;
  * representation in SSI form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSI.java,v 1.1.2.3 2000-04-04 04:11:49 cananian Exp $
+ * @version $Id: LowQuadSSI.java,v 1.1.2.4 2000-04-13 22:21:52 cananian Exp $
  */
 public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     private Derivation  m_derivation;
@@ -66,6 +67,16 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
 	    }
 	};
 	setAllocationInformation(aim);
+    }
+
+    /** Creates a <code>LowQuadSSI</code> object from a 
+     *  <code>LowQuadNoSSA</code> object. */
+    LowQuadSSI(final LowQuadNoSSA code) {
+	super(code.getMethod(), null);
+	/** XXX: derivation information is discarded here. */
+	/** XXX: allocation site information is discarded here. */
+	quads = SSIRename.rename(code, qf).rootQuad;
+	m_derivation = null;
     }
 
     /**
@@ -110,6 +121,15 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null : new LowQuadSSI((QuadSSI)c);
+		}
+		public void clear(HMethod m) { hcf.clear(m); }
+		public String getCodeName() { return codename; }
+	    };
+	} else if (hcf.getCodeName().equals(LowQuadNoSSA.codename)) {
+	    return new harpoon.ClassFile.SerializableCodeFactory() {
+		public HCode convert(HMethod m) {
+		    HCode c = hcf.convert(m);
+		    return (c==null) ? null : new LowQuadSSI((LowQuadNoSSA)c);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }

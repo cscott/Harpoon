@@ -9,6 +9,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGraphable;
+import harpoon.IR.LowQuad.PCALL;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
@@ -32,21 +33,25 @@ import java.util.Stack;
  * is hairy because of the big "efficiency-vs-immutable quads" fight.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.8 2000-04-04 04:13:46 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.9 2000-04-13 22:22:08 cananian Exp $
  */
-class SSIRename {
+public class SSIRename {
     private static final boolean sort_phisig = false;
     /** Return a copy of the given quad graph properly converted to
      *  SSI form. */
-    static ReturnTuple rename(final Code c, final QuadFactory nqf) {
+    public static ReturnTuple rename(final Code c, final QuadFactory nqf) {
 	final SearchState S = new SearchState(c, nqf);
 	return new ReturnTuple((Quad) S.old2new.get(c.getRootElement()),
 			       S.varmap, S.old2new);
     }
-    static class ReturnTuple {
-	final Quad rootQuad; // new root element.
-	final TempMap tempMap; // map old temps to new temps.
-	final Map quadMap; // map old quads to new quads.
+    /** Return value tuple for the SSIRename algorithm. */
+    public static class ReturnTuple {
+	/** New root element (of the SSI-form graph) */
+	public final Quad rootQuad;
+	/** Map from old no-ssa temps to new ssi temps (incomplete). */
+	public final TempMap tempMap;
+	/** Map from old no-ssa quads to new ssi quads. */
+	public final Map quadMap;
 	ReturnTuple(Quad rootQuad, TempMap tempMap, Map quadMap) {
 	    this.rootQuad=rootQuad; this.tempMap=tempMap; this.quadMap=quadMap;
 	}
@@ -177,16 +182,23 @@ class SSIRename {
 		for (int i=0; i<l.length; i++)
 		    l[i][j] = varmap.inc(l[i][j]);
 	    }
-	    // fixup defs in CALL sigma appropriately
-	    if (from instanceof CALL) {
-		CALL Q = (CALL) from;
+	    // fixup defs in CALL/PCALL sigma appropriately
+	    if (from instanceof CALL || from instanceof PCALL) {
+		Temp retval, retex;
+		if (from instanceof CALL) {
+		    retval = ((CALL) from).retval();
+		    retex  = ((CALL) from).retex();
+		} else {
+		    retval = ((PCALL) from).retval();
+		    retex  = ((PCALL) from).retex();
+		}
 		Temp[] defs = (Temp[]) sdf.get(from);
 		if (defs==null) { defs=new Temp[2]; sdf.put(from, defs); }
 		// use of inc() below serves to kill any aliases on this path
-		if (e.which_succ()==0 && Q.retval()!=null)
-		    defs[0]=varmap.inc(Q.retval());
+		if (e.which_succ()==0 && retval!=null)
+		    defs[0]=varmap.inc(retval);
 		if (e.which_succ()==1)
-		    defs[1]=varmap.inc(Q.retex());
+		    defs[1]=varmap.inc(retex);
 	    }
 	    // now go on renaming inside basic block until we get to a phi
 	    // or sigma.
@@ -213,6 +225,13 @@ class SSIRename {
 			Temp[] args = new Temp[Q.paramsLength()];
 			for (int i=0; i<Q.paramsLength(); i++)
 			    args[i] = varmap.get(Q.params(i));
+			arg.put(q, args);
+		    } else if (q instanceof PCALL) {
+			PCALL Q = (PCALL) q;
+			Temp[] args = new Temp[1+Q.paramsLength()];
+			for (int i=0; i<Q.paramsLength(); i++)
+			    args[i] = varmap.get(Q.params(i));
+			args[Q.paramsLength()] = Q.ptr();
 			arg.put(q, args);
 		    } else throw new Error("Ack!");
 		    break;
@@ -257,6 +276,17 @@ class SSIRename {
 				      defs[0], defs[1],
 				      Q.isVirtual(), Q.isTailCall(),
 				      l, r);
+		    } else if (q instanceof PCALL) {
+			harpoon.IR.LowQuad.LowQuadFactory lqf =
+			    (harpoon.IR.LowQuad.LowQuadFactory) nqf;
+			PCALL Q = (PCALL) q;
+			Temp[] defs = (Temp[]) sdf.get(q);
+			Temp[] argsandptr = (Temp[]) arg.get(q);
+			Temp[] args = new Temp[argsandptr.length - 1];
+			System.arraycopy(argsandptr,0,args,0,args.length);
+			nq = new PCALL(lqf, Q, argsandptr[args.length],
+				       args, defs[0], defs[1], l, r,
+				       Q.isVirtual(), Q.isTailCall());
 		    } else throw new Error("Ack!");
 		    old2new.put(q, nq);
 		}
