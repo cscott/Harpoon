@@ -143,7 +143,7 @@ class Valueexpr {
  public:
   Valueexpr(Label *l,Relation *r);
   void print();
-  void print_value(model *m);
+  void print_value(Hashtable *stateenv, model *m);
 
   Label * getlabel();
   Relation * getrelation();
@@ -210,7 +210,7 @@ class Predicate {
   Predicate(Valueexpr *ve, int t, Elementexpr *ee);
   Predicate(bool greaterthan, Setexpr *se);
   void print();
-  void print_sets(model *m);
+  void print_sets(Hashtable *stateenv, model *m);
   int gettype();
   Valueexpr * getvalueexpr();
   Elementexpr * geteleexpr();
@@ -240,7 +240,7 @@ class Statement {
   Statement(Statement *l);
   Statement(Predicate *p);
   void print();
-  void print_sets(model *m); // prints the sets and the relations involved in the statement
+  void print_sets(Hashtable *env, model *m); // prints the sets and the relations involved in the statement
   int gettype();
   Statement *getleft();
   Statement *getright();

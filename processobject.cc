@@ -196,6 +196,9 @@ bool processobject::processconstraint(Constraint *c) {
 	  printf("Predicate violation\n");
 	  printf("   Statement: "); c->getstatement()->print(); printf("\n");
 	  printf("   Curr. state: "); st->print(globalmodel);
+	  c->getstatement()->print_sets(st->env, globalmodel);
+	  printf("\n");
+
 	  printf("Repairing...\n");
 #endif
 	  if (c->getcrash()) {

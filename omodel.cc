@@ -7,6 +7,7 @@
 #include "Hashtable.h"
 #include "dmodel.h"
 #include "element.h"
+#include "Relation.h"
 
 
 // class Literal
@@ -266,19 +267,24 @@ void Valueexpr::print() {
   relation->print();
 }
 
-void Valueexpr::print_value(model *m) {
+void Valueexpr::print_value(Hashtable *stateenv, model *m) {
+  printf("   ");
   label->print();
   printf(".");
   relation->print();
   printf(" = ");  
 
+  Element *key = (Element *) stateenv->get(label->label());
+
   DomainRelation *dr = m->getdomainrelation();
   Hashtable *env = m->gethashtable();
   DRelation *rel = dr->getrelation(relation->getname());
-  
-  Element *elem = (Element *) env->get(label->label());
+  WorkRelation *wr = rel->getrelation();
+
+  Element *elem = (Element *) wr->getobj(key);
 
   elem->print();
+  printf("\n");
 }
 
 
@@ -471,33 +477,34 @@ void Predicate::print() {
 }
 
 
-void Predicate::print_sets(model *m) {
+void Predicate::print_sets(Hashtable *stateenv, model *m) {
   switch(type) {
   case PREDICATE_LT:
-    valueexpr->print();
-    printf("<");
-    elementexpr->print();
+    valueexpr->print_value(stateenv, m);
+    //printf("<");
+    //elementexpr->print();
     break;
   case PREDICATE_LTE:
-    valueexpr->print();
-    printf("<=");
-    elementexpr->print();
+    valueexpr->print_value(stateenv, m);
+    //printf("<=");
+    //elementexpr->print();
     break;
   case PREDICATE_EQUALS:
-    valueexpr->print();
-    printf("=");
-    elementexpr->print();
+    valueexpr->print_value(stateenv, m);
+    //printf("=");
+    //elementexpr->print();
     break;
   case PREDICATE_GTE:
-    valueexpr->print();
-    printf(">=");
-    elementexpr->print();
+    valueexpr->print_value(stateenv, m);
+    //printf(">=");
+    //elementexpr->print();
     break;
   case PREDICATE_GT:
-    valueexpr->print();
-    printf(">");
-    elementexpr->print();
+    valueexpr->print_value(stateenv, m);
+    //printf(">");
+    //elementexpr->print();
     break;
+    /*
   case PREDICATE_SET:
     label->print();
     printf(" in ");
@@ -512,6 +519,7 @@ void Predicate::print_sets(model *m) {
     if (type==PREDICATE_GTE1)
       printf(")>=1");
     break;
+    */
   }
 }
 
@@ -560,18 +568,18 @@ void Statement::print() {
 }
 
 
-void Statement::print_sets(model *m) {
+void Statement::print_sets(Hashtable *stateenv, model *m) {
   switch(type) {
   case STATEMENT_OR:
   case STATEMENT_AND:
-    left->print_sets(m);    
-    right->print_sets(m);
+    left->print_sets(stateenv, m);
+    right->print_sets(stateenv, m);
     break;
   case STATEMENT_NOT:
-    left->print_sets(m);
+    left->print_sets(stateenv, m);
     break;
   case STATEMENT_PRED:
-    pred->print_sets(m);
+    pred->print_sets(stateenv, m);
     break;
   }
 }
