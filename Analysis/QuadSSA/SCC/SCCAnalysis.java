@@ -1,5 +1,5 @@
 // SCC.java, created Fri Sep 18 17:45:07 1998 by cananian
-package harpoon.Analysis;
+package harpoon.Analysis.QuadSSA.SCC;
 
 import harpoon.Analysis.Maps.ConstMap;
 import harpoon.Analysis.Maps.ExecMap;
@@ -16,18 +16,18 @@ import harpoon.Util.Worklist;
 import java.util.Hashtable;
 import java.util.Enumeration;
 /**
- * <code>SCC</code> implements Sparse Conditional Constant Propagation,
- * with extension to allow type and bitwidth analysis.  Fun, fun, fun.
+ * <code>SCCAnalysis</code> implements Sparse Conditional Constant Propagation,
+ * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCC.java,v 1.12 1998-09-21 01:27:26 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1 1998-09-21 01:47:25 cananian Exp $
  */
 
-public class SCC implements TypeMap, ConstMap, ExecMap {
+public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     UseDefMap udm;
 
     /** Creates a <code>SCC</code>. */
-    public SCC(UseDefMap usedef) {
+    public SCCAnalysis(UseDefMap usedef) {
 	this.udm = usedef;
     }
 
