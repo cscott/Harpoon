@@ -24,7 +24,7 @@ import java.util.Map;
  * <code>RSSIToNoSSA</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: RSSIToNoSSA.java,v 1.1.2.3 2000-04-04 04:17:16 cananian Exp $
+ * @version $Id: RSSIToNoSSA.java,v 1.1.2.4 2000-04-14 04:06:24 bdemsky Exp $
  */
 public class RSSIToNoSSA {
     QuadFactory newQF;
@@ -33,7 +33,8 @@ public class RSSIToNoSSA {
     private Quad header;
     AllocationInformationMap newai;
     AllocationInformation oldai;
-
+    HashMap quadmap;
+    
     /** Creates a <code>RSSIToNoSSA</code>. */
     public RSSIToNoSSA(QuadFactory newQF, Code code) {
         this.newQF=newQF;
@@ -50,8 +51,16 @@ public class RSSIToNoSSA {
 
     public AllocationInformation getAllocationInfo() {return newai;}
 
+    public TempMap tempMap() {
+	return ctm;
+    }
+
+    public Map quadMap() {
+	return quadmap;
+    }
+
     private Quad translate() {
-	HashMap quadmap=new HashMap();
+	quadmap=new HashMap();
 	for (Iterator qiter=code.getElementsI();
 	     qiter.hasNext();) {
 	    Quad q=(Quad)qiter.next();

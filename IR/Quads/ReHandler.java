@@ -36,7 +36,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.44 2000-01-13 23:48:03 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.45 2000-04-14 04:06:24 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -222,6 +222,10 @@ final class ReHandler {
 		else {
 		    HClass currType=(HClass)newType.get(t2);
 		    HClass thisType=titemp.typeMap(q,t);
+		    if (thisType==null)
+			System.out.println("XXXXX: ERROR typing "+q+" : "+t);
+		    if (currType==null)
+			System.out.println("XXXXX: ERROR curr typing "+t2);
 		    //Void policy
 		    if (thisType!=HClass.Void)
 			newType.put(t2, merge(ncode.qf.getLinker(),
@@ -467,7 +471,12 @@ final class ReHandler {
 	while(!todo.isEmpty()) {
 		Quad next=(Quad)todo.pop();
 		//System.out.println(next.toString());
+		//System.out.println(next+"IN="+visitor.typecast().get(next));
 		next.accept(visitor);
+		//System.out.println(next+"OUT="+visitor.typecast().get(next));
+		//if (!(next instanceof HEADER))
+		//    System.out.println(next+".PREV OUT="+visitor.typecast().get(next.prev(0)));
+		//System.out.println();
 	}
     }
     
@@ -1126,7 +1135,16 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 			ourcasts.add(new Tuple(new Object[]{q.objectref(),q.field().getDeclaringClass() }));
 		    }
 		}
-	    if (ti.typeMap(null, q.src())!=HClass.Void)
+	    if (ti.typeMap(null, q.src())!=HClass.Void) {
+		if (ti.typeMap(null,q.src())==null) {
+		    System.out.println("XXXXXXXXXXXXX");
+		    System.out.println(q);
+		    System.out.println(q.field().getType());
+		    System.out.println(q.src());
+		    System.out.println(hc.getMethod());
+		    java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
+		    hc.print(out);
+		}
 		if (!q.field().getType().isAssignableFrom(ti.typeMap(null, q.src()))) {
 		    //Need typecast??
 		    Iterator iterate=ourcasts.iterator();
@@ -1147,6 +1165,7 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 			ourcasts.add(new Tuple(new Object[]{q.src(),q.field().getType() }));
 		    }
 		}
+	    }
 	    typecast.put(q, ourcasts);
 	    visited.add(q);
 	    for (int i=0;i<q.nextLength();i++)
@@ -1397,7 +1416,7 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    //never seen yet...
 	    Set parentcast=(Set)typecast.get(q.prev(0));
 	    WorkSet ourcasts=new WorkSet(parentcast);
-	    if (!(ti.typeMap(null,q.objectref)).isArray()) {
+	    if (!(ti.typeMap(null,q.objectref())).isArray()) {
 		//Need typecast??
 		Iterator iterate=ourcasts.iterator();
 		boolean foundcast=false;
@@ -1511,7 +1530,8 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    //never seen yet...
 	    Set parentcast=(Set)typecast.get(q.prev(0));
 	    WorkSet ourcasts=new WorkSet(parentcast);
-	    
+	    //XXXXXXXX DEBUG
+	    //System.out.println(q);
 	    for (int i=0; i<q.paramsLength();i++) {
 		Temp param=q.params(i);
 		HClass type=typeOf(q, param);

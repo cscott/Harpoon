@@ -27,7 +27,7 @@ import harpoon.Temp.Temp;
  * always be empty.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.25 2000-04-04 04:11:48 cananian Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.26 2000-04-14 04:06:22 bdemsky Exp $
  */
 public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
     private Derivation m_derivation;
@@ -51,7 +51,7 @@ public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
      * Create a new code object given a quadruple representation of the
      * method instructions.
      */
-    private LowQuadNoSSA(HMethod method, Quad quads) {
+    protected LowQuadNoSSA(HMethod method, Quad quads) {
 	super(method, quads);
     }
 

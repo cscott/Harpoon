@@ -45,7 +45,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.29 2000-04-07 05:43:25 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.30 2000-04-14 04:06:15 bdemsky Exp $
  */
 public final class LoopOptimize {
 
@@ -104,7 +104,7 @@ public final class LoopOptimize {
 
 	Temp []dummy=ud.allTemps(hc);	
 
-	MyLowQuadSSI hcnew=new MyLowQuadSSI((LowQuadSSI)hc);
+	LowQuadSSI hcnew=new MyLowQuadSSI((LowQuadSSI)hc);
 
 	// We start at the root loop, and recurse down each of its subloops.
 
@@ -112,12 +112,13 @@ public final class LoopOptimize {
 	WorkSet kids=(WorkSet) lp.nestedLoops();
 	Iterator iterate=kids.iterator();
 	while (iterate.hasNext())
-	    recursetree(hc, hcnew, (Loops)iterate.next(), new WorkSet());
+	    recursetree(hc, (MyLowQuadSSI) hcnew, (Loops)iterate.next(), new WorkSet());
 
 	if (changed) {
 	    //We've likely broken SSI invariants...EVIL SSI!
 	    //Lets fix them...
 	    //As soon as someone gives me something to do that...
+	    hcnew=new LowQuadSSI(new MyLowQuadNoSSA(hcnew));
 	}
 	
 	//After doing optimizations we need to clean up any deadcode...
