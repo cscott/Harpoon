@@ -23,7 +23,7 @@ import java.util.Set;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.1.2.3 2000-01-17 23:49:03 cananian Exp $
+ * @version $Id: PAThreadMap.java,v 1.1.2.4 2000-01-18 04:49:40 salcianu Exp $
  */
 public class PAThreadMap{
 
@@ -73,9 +73,16 @@ public class PAThreadMap{
 	if(v==TWO) hash.put(n,TWO);
     }
 
-    // Returns all the thread nodes nT such that tau(nT) > 0 
+    /** Returns all the thread nodes <code>nT</code> that have assigned
+     * a non-zero count (i.e. tau(nT) > 0 in the algorithm) */ 
     public Enumeration activeThreads(){
 	return hash.keys();
+    }
+
+    /** Returns all the thread nodes <code>nT</code> that have assigned
+     * a non-zero count (i.e. tau(nT) > 0 in the algorithm) */ 
+    public Set activeThreadSet(){
+	return hash.keySet();
     }
 
     /** <code>join</code> combines two <code>PAThreadMap</code>s in
@@ -117,6 +124,33 @@ public class PAThreadMap{
 		_hash.put(node,entry.getValue());
 	}
 	return new PAThreadMap(_hash);
+    }
+
+    /** Checks the equality of two <code>PAThreadMap</code>s */
+    public boolean equals(Object o){
+	if(o==null) return false;
+	PAThreadMap tau2 = (PAThreadMap) o;
+	Set set1 = activeThreadSet();
+	Set set2 = tau2.activeThreadSet();
+	// two PAThreadMap's are equal if they contain the same keys
+	if(!set1.equals(set2)){
+	    //System.out.println("PAThreadMap: different keySet's");
+	    //System.out.println("set1: " + set1);
+	    //System.out.println("set2: " + set2);
+	    return false;
+	}
+	Iterator it = set1.iterator();
+	while(it.hasNext()){
+	    PANode node = (PANode) it.next();
+	    // and assign the same values to them
+	    if(getValue(node)!=tau2.getValue(node)){
+		System.out.println("different values assigned to " + node);
+		System.out.println("value 1:" + getValue(node) + 
+				   "value 2:" + getValue(node));
+		return false;
+	    }
+	}
+	return true;
     }
 
     /** Pretty print function for debug purposes. */

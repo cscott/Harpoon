@@ -12,7 +12,7 @@ import java.util.HashSet;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.1.2.4 2000-01-17 23:49:03 cananian Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.5 2000-01-18 04:49:40 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -56,7 +56,17 @@ public class ParIntGraph {
     public boolean equals(Object o){
 	if(o==null) return false;
 	ParIntGraph pig2 = (ParIntGraph)o;
-	return G.equals(pig2.G) && tau.equals(pig2.tau);
+	// return G.equals(pig2.G) && tau.equals(pig2.tau);
+	if(!G.equals(pig2.G)){
+	    //System.out.println("The graphs are different");
+	    return false;
+	}
+	if(!tau.equals(pig2.tau)){
+	    //System.out.println("The tau's are different");
+	    return false;
+	    
+	}
+	return true;
     }
 
     /** Private constructor for <code>clone</code> and 

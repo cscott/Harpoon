@@ -34,6 +34,7 @@ import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.MOVE;
 import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.FOOTER;
 
@@ -47,7 +48,7 @@ import harpoon.IR.Quads.FOOTER;
  * computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.1.2.4 2000-01-17 23:49:03 cananian Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.5 2000-01-18 04:49:40 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -141,11 +142,6 @@ public class PointerAnalysis {
 
 	    // new info?
 	    // TODO: this test is overkill! think about it!
-	    if(new_info == null){
-		System.out.println("NULL new_info");
-		System.exit(1);
-	    }
-
 	    if(!new_info.equals(old_info)){
 		// yes! The callers of hm_work should be added to
 		// the inter-procedural worklist
@@ -178,6 +174,10 @@ public class PointerAnalysis {
 	    // IDEA: the equality should be checked only for basic blocks
 	    // with backedges
 	    if(!new_info.equals(old_info)){
+
+		//System.out.println("OLD INFO:" + old_info);
+		//System.out.println("NEW INFO:" + new_info);
+
 		// yes! The succesors of the analyzed basic block
 		// are potentially "interesting", so they should be added
 		// to the intra-procedural worklist
@@ -188,6 +188,7 @@ public class PointerAnalysis {
 		}
 	    }
 	}
+	hash_bb.clear();
     }
 
 
@@ -218,8 +219,17 @@ public class PointerAnalysis {
 	public void visit(GET q){
 	    Temp l2 = q.objectref();
 	    HField hf = q.field();
-	    if(l2 == null)
+	    // do not analyze loads from non-pointer fields
+	    if(hf.getType().isPrimitive()) return;
+	    if(l2 == null){
+		// special treatement of the static fields
 		l2 = ArtificialTempFactory.getTempFor(hf);
+		// this part should really be put in some preliminary step
+		PANode static_node =
+		    nodes.getStaticNode(hf.getDeclaringClass().getName());
+		bbpig.G.I.addEdge(l2,static_node);
+		bbpig.G.e.addNodeHole(static_node,static_node);
+	    }
 	    process_load(q,q.dst(),l2,hf.getName());
 	}
 	
@@ -290,6 +300,14 @@ public class PointerAnalysis {
 	    // TAKE CARE: r is assumed to be empty before!
 	    bbpig.G.r.addAll(set);
 	}
+
+	/** Return statement: r' = I(l) */
+	public void visit(THROW q){
+	    Temp tmp = q.throwable();
+	    Set set = bbpig.G.I.pointedNodes(tmp);
+	    // TAKE CARE: r_excp is assumed to be empty before!
+	    bbpig.G.excp.addAll(set);
+	}
 	
 	
 	// STORE STATEMENTS
@@ -297,10 +315,18 @@ public class PointerAnalysis {
 	public void visit(SET q){
 	    Temp   l1 = q.objectref();
 	    HField hf = q.field();
+	    // do not analyze stores into non-pointer fields
+	    if(hf.getType().isPrimitive()) return;
 	    // static field -> get the corresponding artificial node
-	    if(l1 == null)
+	    if(l1 == null){
+		// special treatement of the static fields
 		l1 = ArtificialTempFactory.getTempFor(hf);
-	    
+		// this part should really be put in some preliminary step
+		PANode static_node =
+		    nodes.getStaticNode(hf.getDeclaringClass().getName());
+		bbpig.G.I.addEdge(l1,static_node);
+		bbpig.G.e.addNodeHole(static_node,static_node);
+	    }
 	    process_store(l1,hf.getName(),q.src());
 	}
 	
@@ -367,7 +393,7 @@ public class PointerAnalysis {
 	    
 	    Quad q = (Quad) instrs.next();
 
-	    System.out.println("Analyzing " + q);
+	    // System.out.println("Analyzing " + q);
 	    
 	    // update the Parallel Interaction Graph according
 	    // to the current instruction
@@ -396,16 +422,13 @@ public class PointerAnalysis {
      *  reanalyzed) */
     private ParIntGraph get_initial_bb_pig(BasicBlock bb){
 	if(bb.prevLength() == 0){
-
-	    System.out.println("Gone this way!");
-
 	    // This case is treated specially, it's about the
 	    // graph at the beginning of the current method.
 	    ParIntGraph pig = method_initial_pig(current_intra_method);
 
-	    System.out.println("The mapping at the beginning of " + //DEBUG
-			       current_intra_method + ":");         //DEBUG
-	    System.out.println(pig);                                //DEBUG
+	    //System.out.println("The mapping at the beginning of " + //DEBUG
+	    //	       current_intra_method + ":");         //DEBUG
+	    //System.out.println(pig);                                //DEBUG
 
 	    return pig;
 	}

@@ -8,7 +8,7 @@ package harpoon.Analysis.PointerAnalysis;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PANode.java,v 1.1.2.2 2000-01-17 23:49:03 cananian Exp $
+ * @version $Id: PANode.java,v 1.1.2.3 2000-01-18 04:49:40 salcianu Exp $
  */
 public class PANode {
     
@@ -24,8 +24,11 @@ public class PANode {
      *  STATIC now (just for confusion :-)) */
     public static final int STATIC          = 32;
 
+    /** The null pointers are modeled as pointing to the special node
+     * NULL_Node of the special type NULL */
+    public static final int NULL       = 64;
     /** A symbolic node for the null pointers */ 
-    public static final PANode NULL_Node = new PANode(STATIC);
+    public static final PANode NULL_Node = new PANode(NULL);
 
     /** The type of the node */
     public int type;
@@ -38,6 +41,7 @@ public class PANode {
 
     /** Creates a <code>PANode</code>. */
     public PANode(int _type) {
+	System.out.println("New node of type: " + _type);
         type   = _type;
 	number = count++;
     }

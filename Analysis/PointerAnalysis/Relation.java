@@ -19,7 +19,7 @@ import java.util.Map;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Relation.java,v 1.1.2.4 2000-01-17 23:49:03 cananian Exp $
+ * @version $Id: Relation.java,v 1.1.2.5 2000-01-18 04:49:41 salcianu Exp $
  */
 public class Relation{
     
@@ -43,6 +43,7 @@ public class Relation{
      *  <code>values</code>. Returns <code>true</code> if the new relation
      *  is bigger. */
     public boolean addAll(Object key, Set values){
+	if(values.isEmpty()) return false;
 	HashSet set = (HashSet)hash.get(key);
 	if(set==null) hash.put(key,set = new HashSet());
 	return set.addAll(values);

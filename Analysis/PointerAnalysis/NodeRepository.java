@@ -12,7 +12,7 @@ import harpoon.ClassFile.HCodeElement;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.3 2000-01-17 23:49:03 cananian Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.4 2000-01-18 04:49:40 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -27,64 +27,43 @@ public class NodeRepository {
 	code_nodes   = new Hashtable();
     }
 
-    /** Creates a static node; <code>name</code> MUST be its
-     *  full (and hence unique) name. */
-    public final void addStaticNode(String name){
-	if(PointerAnalysis.DEBUG){
-	    if(code_nodes.get(name)!=null){
-		System.out.println("duplicate code node addition");
-		System.exit(1);
-	    }
-	}
-	static_nodes.put(name,new PANode(PANode.STATIC));
+    /** Returns the static node associated with the class
+     * <code>class_name</code>. The node is automatically created if it
+     * doesn't exist yet. <code>class_name</code> MUST be the full
+     * (and hence unique) name of the class */
+    public final PANode getStaticNode(String class_name){
+	PANode node = (PANode) code_nodes.get(class_name);
+	if(node==null)
+	    code_nodes.put(class_name,node = new PANode(PANode.STATIC));
+	return node;
     }
 
     /** Creates all the parameter nodes associated with <code>method</code>.
      *  <code>param_number</code> must contain the number of formal
-     *  parameters of the method */
+     *  parameters of the method. */
     public final void addParamNodes(HMethod method, int param_number){
-	if(PointerAnalysis.DEBUG){
-	    if(code_nodes.get(method)!=null){
-		System.out.println("duplicate code node addition");
-		System.exit(1);
-	    }
-	}
+	// do not create the parameter nodes twice for the same procedure
+	if(param_nodes.get(method)!=null) return;
 	PANode nodes[] = new PANode[param_number];
 	for(int i=0;i<param_number;i++){
 	    nodes[i] = new PANode(PANode.PARAM);
 	}
 	param_nodes.put(method,nodes);
     }
-    
-    /** Creates a node associated with an HCodeElement: a load node 
-     *  (associated with a GET instruction), a return node (associated
-     *  with a CALL) and an inside node (thread or not) associated with
-     *  a NEW) */
-    public final void addCodeNode(HCodeElement elem,PANode node){
-	if(PointerAnalysis.DEBUG){
-	    if(code_nodes.get(elem)!=null){
-		System.out.println("duplicate code node addition");
-		System.exit(1);
-	    }
-	}
-	code_nodes.put(elem,node);
-    }
 
-    public final PANode getStaticNode(String name){
-	if(PointerAnalysis.DEBUG){
-	    if(!static_nodes.containsKey(name)){
-		System.out.println("getStaticNode: inexistent node");
-		System.exit(1);
-	    }
-	}
-	return (PANode)static_nodes.get(name);
-    }
-
+    /** Returns the parameter node associated with the <code>count</code>th
+     * formal parameter of <code>hm</code>. The parameter nodes should for
+     * <code>hm</code> should be created in advance, using
+     * <code>addParamNodes</code>. */
     public final PANode getParamNode(HMethod method, int count){
 	// The runtime system will take care of all the debug messages ...
 	return getAllParams(method)[count];
     }
 
+    /** Returns all the parameter nodes associated with the
+     * formal parameters of <code>hm</code>. The parameter nodes for
+     * <code>hm</code> should be
+     * created in advance, using <code>addParamNodes</code>. */
     public final PANode[] getAllParams(HMethod method){
 	if(PointerAnalysis.DEBUG){
 	    if(!param_nodes.containsKey(method)){
@@ -95,13 +74,17 @@ public class NodeRepository {
 	return (PANode[])param_nodes.get(method);
     }
 
+    /** Returns a <i>code</i>: a node associated with the
+     * instruction <code>hce</code>: a load node 
+     * (associated with a <code>GET</code> quad), a return node (associated
+     * with a <code>CALL</code>) or an inside node (thread or not) associated
+     * with a <code>NEW</code>). The node is automatically created if it
+     * doesn't exist yet. The type of the node should be passed in the
+     * <code>type</code> argument. */
     public final PANode getCodeNode(HCodeElement hce,int type){
 	PANode node = (PANode) code_nodes.get(hce);
-	
-	if(node == null){
-	    node = new PANode(type);
-	    code_nodes.put(hce,node);
-	}
+	if(node == null)
+	    code_nodes.put(hce,node = new PANode(type));
 	return node;
     }
 

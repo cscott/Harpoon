@@ -23,7 +23,7 @@ import harpoon.Temp.Temp;
  * than the straightforward solution of a <code>HashSet</code> of edges.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEdgeSet.java,v 1.1.2.4 2000-01-17 23:49:03 cananian Exp $
+ * @version $Id: PAEdgeSet.java,v 1.1.2.5 2000-01-18 04:49:40 salcianu Exp $
  */
 public class PAEdgeSet {
 
@@ -100,6 +100,7 @@ public class PAEdgeSet {
     /** Adds all the edges &lt;&lt;n,f&gt;,n1&gt; where <code>n1</code>
      *  ranges over the set <code>dests</code>. */
     public void addEdges(PANode n, String f, Set dests){
+	if(dests.isEmpty()) return;
 	Relation rel = (Relation)nodes.get(n);
 	if(rel==null) 
 	    nodes.put(n,rel=new Relation());
@@ -213,14 +214,23 @@ public class PAEdgeSet {
     public boolean equals(Object o){
 	if(o==null) return false;
 	PAEdgeSet es2 = (PAEdgeSet) o;
-	if(!vars.equals(es2.vars)) return false;
-	if(!nodes.keySet().equals(es2.nodes.keySet())) return false;
+	if(!vars.equals(es2.vars)){
+	    //System.out.println("different vars");
+	    return false;
+	}
+	if(!nodes.keySet().equals(es2.nodes.keySet())){
+	    //System.out.println("different keySet's");
+	    return false;
+	}
 	Enumeration enum = nodes.keys();
 	while(enum.hasMoreElements()){
 	    PANode node = (PANode)enum.nextElement();
 	    Relation rel1 = (Relation)nodes.get(node);
 	    Relation rel2 = (Relation)es2.nodes.get(node);
-	    if(!rel1.equals(rel2)) return false;
+	    if(!rel1.equals(rel2)){
+		//System.out.println("different relations");
+		return false;
+	    }
 	}
 	return true;
     }
