@@ -28,7 +28,7 @@ import java.util.Stack;
  * from a cycle-equivalency set.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SESE.java,v 1.1.2.10 1999-11-30 05:24:41 cananian Exp $
+ * @version $Id: SESE.java,v 1.1.2.11 2000-01-31 14:52:33 cananian Exp $
  */
 public class SESE  {
     /** Root of <code>Region</code> tree. */
@@ -137,9 +137,13 @@ public class SESE  {
 	}
     }
 
+    /** <code>SESE.Region</code> represents a single-entry single-exit 
+     *  (SESE) Region, as computed by the <code>SESE</code> object. */
     public static class Region {
-	// entry and exit edges of the region.
-	public final Object entry, exit;
+	/** entry edge of the region. */
+	public final Object entry;
+	/** exit edge of the region. */
+	public final Object exit;
 	// tree info.
 	int level=0;
 	Region parent=null;
@@ -156,13 +160,18 @@ public class SESE  {
 	    Util.assert(!isTopLevel());
 	}
 
+	/** Parent region of this one (<code>null</code> for top-level
+	 *  region). */
 	public Region parent() { return this.parent; }
+	/** Child regions of this one. */
 	public Set children() { return RegionList.asSet(this.children); }
+	/** Nodes in this region (and not contained in any child regions) */
 	public Collection nodes() { return this.nodes; }
 
 	boolean isTopLevel() {
 	    return (this.entry==null) && (this.exit==null);
 	}
+	/** Compare two regions for equality. */
 	public boolean equals(Object o) {
 	    Region r;
 	    if (this==o) return true;
