@@ -68,7 +68,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.11 2000-08-12 03:37:57 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.12 2000-08-15 19:45:17 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing cc
 // on MIPS IRIX64 lion 6.2 03131016 IP19.  
@@ -94,7 +94,7 @@ import java.util.Iterator;
 
     // whether to generate stabs debugging information in output (-g flag)
     // Currently broken on MIPS
-    private static final boolean stabsDebugging=false;
+    private static final boolean stabsDebugging = true;
 
     // NameMap for calling C functions.
     NameMap nameMap;
@@ -103,6 +103,7 @@ import java.util.Iterator;
     private final boolean is_elf;
     // mipspro assember requires section attributes in .section directive
     // GNU as requires that they be absent
+    // NB: Our output will not work with mipspro assemblers!
     private final boolean mipspro_assem = false;
     // whether to use soft-float or hard-float calling convention.
     private final boolean soft_float = false; // skiffs use hard-float
@@ -628,6 +629,10 @@ import java.util.Iterator;
        // we allocate space for all 4 argument registers all the time
        // These are 
        stackOffset = 3 * 4;
+       int argSaveOffset = 16;
+       if(index >= 5) {
+          argSaveOffset += 4 * (index - 4);
+       }
        
        index--; // so index points to 'register #' of last argument.
 
@@ -650,10 +655,11 @@ import java.util.Iterator;
                 break;
              case 4: // spread between regs and stack
                 stackOffset += 4; index--;
+                argSaveOffset -= 4;
                 declare( SP, HClass.Void );
                 Util.assert(temp instanceof TwoWordTemp);
                 emit(new InstrMEM( instrFactory, ROOT,
-                                   "sw `s0h, " + stackOffset + "(`s1)",
+                                   "sw `s0h, " + argSaveOffset + "(`s1)",
                                    new Temp[] { SP },
                                    new Temp[]{ temp, SP })); 
                 // not certain an emitMOVE is legal with the l/h modifiers
@@ -663,16 +669,18 @@ import java.util.Iterator;
                 break;
              default: // start putting args in memory
                 stackOffset += 4; index--;
+                argSaveOffset -= 4;
                 declare( SP, HClass.Void );
                 Util.assert(temp instanceof TwoWordTemp);
                 emit(new InstrMEM( instrFactory, ROOT,
-                                   "sw `s0h, " + stackOffset + "(`s1)",
+                                   "sw `s0h, " + argSaveOffset + "(`s1)",
                                    new Temp[]{ SP },
                                    new Temp[]{ temp, SP })); 
                 stackOffset += 4; index--;
+                argSaveOffset -=4;
                 declare( SP, HClass.Void );
                 emit(new InstrMEM( instrFactory, ROOT,
-                                   "sw `s0l, " + stackOffset + "(`s1)",
+                                   "sw `s0l, " + argSaveOffset + "(`s1)",
                                    new Temp[]{ SP },
                                    new Temp[]{ temp, SP }));
                 break;
@@ -685,15 +693,17 @@ import java.util.Iterator;
                 emitMOVE( ROOT, "move `d0, `s0", reg, temp);
              } else {
                 stackOffset += 4; index--;
+                argSaveOffset -= 4;
                 declare( SP, HClass.Void );
                 emit(new InstrMEM(
                    instrFactory, ROOT,
-                   "sw `s0, " + stackOffset + "(`s1)",
+                   "sw `s0, " + argSaveOffset + "(`s1)",
                    new Temp[]{ SP },
                    new Temp[]{ temp, SP }));
              }
           }
        }
+       Util.assert( argSaveOffset == 16 );
        // Add offset for ra and fp to frame, plus an extra four since
        // we need to point below the word stored at the current offset
        stackOffset += 3 * 4;
@@ -728,8 +738,8 @@ import java.util.Iterator;
     }
     /** Finish up a CALL or NATIVECALL. */
     private void emitCallEpilogue(INVOCATION ROOT, boolean isNative,
-				  Temp retval, HClass type, 
-				  CallState cs) {
+                                  Temp retval, HClass type, 
+                                  CallState cs) {
        // this will break if stackOffset > 255 (ie >63 args)
        Util.assert( cs.stackOffset < 256, 
                     "Update the spec file to handle large SP offsets");
@@ -793,6 +803,14 @@ import java.util.Iterator;
              return false; // always saved.
           return true;
     }
+    private void LayoutInstr(Instr anchor, Instr[] instrs) {
+       if(instrs.length == 0) return;
+       instrs[0].layout(anchor.getPrev(), anchor);
+       for(int i = 1; i < instrs.length; ++i) {
+          instrs[i].layout(instrs[i-1], anchor);
+       }
+    }
+
     // Mandated by CodeGen generic class: perform entry/exit
     public Instr procFixup(HMethod hm, Instr instr,
                            int stackspace, Set usedRegisters) {
@@ -829,50 +847,43 @@ import java.util.Iterator;
                 new InstrLABEL(inf, il, methodlabel.name+":", methodlabel),
                 new InstrDIRECTIVE(inf, il, ".frame $fp," +
                                    stackspace * 4 + ", $31"),
-                new Instr(inf, il, "move $30, $sp", null, null),
                 new Instr(inf, il, "subu $sp, "+(stackspace*4), null, null),
                 new Instr(inf, il, "sw $31, " + ra_off +"($sp)", null,null),
                 new Instr(inf, il, "sw $30, " + fp_off +"($sp)", null, null),
+                new Instr(inf, il, "addu $30, $sp, "+(stackspace*4),
+                          null, null),
              };
              ////// Now create instrs to save non-trivial callee saved regs
-             int save_off = fp_off - 4;
-             Instr last_instr = null;
-             Instr[] callee_save_regs = new Instr [nregs];
+             Instr[] callee_save = new Instr [nregs];
              if(nregs > 0) {
                 // make list of instructions saving callee-save registers we
                 // gotta save.
                 int j = 0;
+                int save_off = fp_off - 4;
                 for (int i=0; i <usedRegArray.length; i++) {
                    if(Needs_Callee_Stack_Space(usedRegArray[i])) {
-                      callee_save_regs[j++] = 
+                      callee_save[j++] = 
                          new Instr(inf, il, "sw " 
                                    + usedRegArray[i] + ", " + 
-                                   save_off + "($sp)", null, null);
+                                   save_off + "($sp)  # callee save", 
+                                   null, null);
                       save_off -= 4;
                    }
                 }
              }
              /// Layout function entry
-             entry_instr[entry_instr.length - 1].layout(il, il.getNext());
-             for(int i = entry_instr.length - 2; i >= 0; --i) {
-                entry_instr[i].layout(il, entry_instr[i+1]);
-             }
-             /// Layout register saves
+             LayoutInstr(il, entry_instr);
              if(nregs > 0) {
-                Util.assert(nregs == callee_save_regs.length);
-                callee_save_regs[callee_save_regs.length - 1].layout(
-                   il, entry_instr[0]);
-                for(int i = callee_save_regs.length - 2; i >= 0; --i) {
-                   callee_save_regs[i].layout(il, callee_save_regs[i+1]);
-                }
-                last_instr = callee_save_regs[0];
-             } else {
-                last_instr = entry_instr[0]; 
+                Util.assert(nregs == callee_save.length);
+                // This puts all of the callee saving before the
+                // creation of the frame pointer which is the last
+                // instruction in entry_isntr.
+                LayoutInstr(entry_instr[entry_instr.length-1], callee_save);
              }
              // fixup root if necessary
-             if (il==instr) instr = last_instr;
+             if (il==instr) instr = entry_instr[entry_instr.length - 1];
              // if (stackspace==0) in7.remove(); // optimize
-             il.remove(); il = last_instr;
+             il.remove(); il = entry_instr[entry_instr.length - 1];
 
           }
           if (il instanceof InstrEXIT) { // exit stub
@@ -882,11 +893,27 @@ import java.util.Iterator;
                 new Instr(inf, il, "addu $sp, " + (stackspace*4),null, null),
                 new Instr(inf, il, "j  $31  # return", null, null),
              };
-             /// Layout function entry
-             exit_instr[0].layout(il.getPrev(), il);
-             for(int i = 1; i < exit_instr.length ; ++i) {
-                exit_instr[i].layout(exit_instr[i-1], il);
+             Instr[] callee_restore = new Instr [nregs];
+             if(nregs > 0) {
+                // restore the regs we saved on entry
+                int save_off = fp_off - 4;
+                int j = 0;
+                for (int i=0; i <usedRegArray.length; i++) {
+                   if(Needs_Callee_Stack_Space(usedRegArray[i])) {
+                      callee_restore[j++] = 
+                         new Instr(inf, il, "lw " 
+                                   + usedRegArray[i] + ", " + 
+                                   save_off + "($sp)  # callee restore", 
+                                   null, null);
+                      save_off -= 4;
+                   }
+                }
              }
+
+             if(nregs > 0) {
+                LayoutInstr(il, callee_restore);
+             }
+             LayoutInstr(il, exit_instr);
              il.remove(); 
              il = exit_instr[exit_instr.length - 1];
           }
@@ -901,18 +928,20 @@ import java.util.Iterator;
           // I can't find a way to make the MIPSpro assembler
           // understand this.  It complains about the symbols not
           // having aboslute value
-          //Instr in2 = new InstrDIRECTIVE(inf, last, "\t.size " +
-          //methodlabel.name + ", . - " +
-          //methodlabel.name);
+          Instr in2 = new InstrDIRECTIVE(inf, last, "\t.size " +
+                                         methodlabel.name + ", . - " +
+                                         methodlabel.name);
           in1.layout(last, last.getNext());
-          //in2.layout(last, in1);
-          last=in1;
+          Util.assert(mipspro_assem == false);
+          in2.layout(last, in1);
+          last=in2;
        }
        // stabs debugging information:
        if (stabsDebugging && !hm.getDeclaringClass().isArray()) {
           int lineno=-1;
           for (Instr il = instr; il!=null; il=il.getNext())
-             if (il.getLineNumber()!=lineno) {
+             // XXXX vpekoe-as does not support .stabd
+             if (false && il.getLineNumber()!=lineno) {
                 lineno = il.getLineNumber();
                 Instr in1 = new InstrDIRECTIVE(inf, il, // line number
                                                "\t.stabd 68,0,"+lineno);
@@ -1442,16 +1471,16 @@ NAME(id) = i %{
 
 MEM<f,i,p>(NAME(id)) = i %{
    emit(new Instr( instrFactory, ROOT,
-                   "la `d0, " + id, 
+                   "lw `d0, " + id, 
                    new Temp[]{ i }, null ));
 }%
 MEM<d,l>(NAME(id)) = i %{
 
     emit(new Instr( instrFactory, ROOT,
-		    "la `d0l, " + id, 
+		    "lw `d0h, " + id, 
 		    new Temp[]{ i }, null ));
     emit(new Instr( instrFactory, ROOT,
-		    "la `d0h, " + id + "+4", 
+		    "lw `d0l, " + id + "+4", 
 		    new Temp[]{ i }, null ));
 }%
 
@@ -1692,7 +1721,7 @@ THROW(val, handler) %{
    declare(t4, HClass.Void);
    // $31 contains the instruction after the return point
    // of the function that might have excepted
-   emit( ROOT, "j "+nameMap.c_function_name("_lookup_handler")+
+   emit( ROOT, "jal "+nameMap.c_function_name("_lookup_handler")+
          " # hi mom ",
          new Temp[] {a0, a1, a2, a3, t4, LR}, //clobbers
 		 new Temp[] {FP}, true, null);  // v0 and FP are preserved
@@ -1710,6 +1739,7 @@ CALL(retval, retex, func, arglist, handler)
    emit2(ROOT, "la `d0, " + rlabel + " # funky call",
          new Temp[]{ LR }, null );
    // call uses 'func' as `s0
+   cs.callUses.add(0, func);
    emitCallNoFall( ROOT, cs.prependSPOffset("j `s0 "),
                    call_def_full,
                    (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
