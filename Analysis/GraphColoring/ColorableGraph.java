@@ -26,7 +26,7 @@ import java.util.NoSuchElementException;
  * <code>addNode(Object)</code>.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableGraph.java,v 1.1.2.15 2000-08-02 01:15:14 pnkfelix Exp $ */
+ * @version $Id: ColorableGraph.java,v 1.1.2.16 2000-08-27 09:33:55 pnkfelix Exp $ */
 
 public interface ColorableGraph extends Graph {
 
@@ -111,10 +111,10 @@ public interface ColorableGraph extends Graph {
     void resetColors();
 
     /** Sets the color of <code>n</code>.
+	<BR> <B>requires:</B> <code>c</code> != null
 	<BR> <B>modifies:</B> <code>this</code>
-	<BR> <B>effects:</B> If <code>c</code> is null, then
-	     removes <code>n</code> from the Node -> Color mapping.
-	     Else puts (n, c) in the Node -> Color mapping.
+	<BR> <B>effects:</B> If no exception is thrown, 
+	     puts (n, c) in the Node -> Color mapping
         @throws IllegalArgumentException <code>n</code> is not
 	     present in the node set for <code>this</code>.  No
 	     modification to <code>this</code>.
@@ -126,7 +126,17 @@ public interface ColorableGraph extends Graph {
 	     modification to <code>this</code>.
     */
     void setColor(Object n, Color c) throws IllegalColor;
-
+    
+    /** Removes <code>n</code> from the Node -> Color mapping. 
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects</B> If the pair (n, c) is present in 
+	     the Node -> Color mapping, removes the pair.  Else does
+	     nothing. 
+	@throws IllegalArgumentException <code>n</code> is not present
+	     in the node set for <code>this</code>.  No modification
+	     to <code>this</code>.
+     */
+    void unsetColor(Object n);
 
     /** Returns the color of <code>node</code>.
 	<BR> <B>effects:</B> Returns the color associated with

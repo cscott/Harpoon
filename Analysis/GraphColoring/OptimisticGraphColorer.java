@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
+import harpoon.Analysis.GraphColoring.ColorableGraph.IllegalColor;
+
 import java.util.List;
 import java.util.Iterator;
 import java.util.Collection;
@@ -26,7 +28,7 @@ import harpoon.Util.Collections.LinearSet;
  * second stage, but this is parameterizable.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: OptimisticGraphColorer.java,v 1.1.2.9 2000-08-25 06:57:30 pnkfelix Exp $
+ * @version $Id: OptimisticGraphColorer.java,v 1.1.2.10 2000-08-27 09:33:56 pnkfelix Exp $
  */
 public class OptimisticGraphColorer extends GraphColorer {
 
@@ -54,12 +56,24 @@ public class OptimisticGraphColorer extends GraphColorer {
 	*/
 	public abstract Object chooseNodeForHiding(ColorableGraph g);
 
+	/** Checks if node can be removed from graph to improve
+	    colorability.
+	    <BR> <B>requires:</B> n is in g
+	    <BR> <B>effects:</B> returns True if n could ever be
+	         returned from chooseNodeForRemoval(g), False
+		 otherwise. 
+	*/
+	public abstract boolean allowedToRemove(Object n,ColorableGraph g);
+
     }
 
     private static NodeSelector DEFAULT_SELECTOR = new SimpleSelector();
 
     public static class SimpleSelector extends NodeSelector {
 	protected SimpleSelector() { }
+	public boolean allowedToRemove(Object n, ColorableGraph g) {
+	    return true;
+	}
 	public Object chooseNodeForRemoval(ColorableGraph g) {
 	    Object o = chooseNode(g);
 	    Util.assert(o != null);
@@ -181,7 +195,7 @@ public class OptimisticGraphColorer extends GraphColorer {
 
 			// MONITOR("set color of "+n+ " to "+col+"\n");
 			continue nextNode;
-		    } catch (ColorableGraph.IllegalColor ic) {
+		    } catch (IllegalColor ic) {
 			// col was not legal for n
 			// try another color...  
 			if (false) MONITOR(col + " not legal for " + n + 
@@ -195,10 +209,22 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    // if we ever reach this point, we failed to color n
 	    MONITOR("failed to color "+n+"\n");
 	    // MONITOR("nbors(n): "+graph.neighborsOf(n));
-	    Object choice = this.selector.chooseNodeForRemoval(graph);
+	    
+	    Object choice = null; int max = -1;
+	    for(Iterator ns=graph.neighborsOf(n).iterator();ns.hasNext();){
+		Object nde = ns.next();
+		if (graph.getDegree(nde) > max &&
+		    selector.allowedToRemove(nde,graph)) {
+		    choice = nde;
+		    max = graph.getDegree(nde);
+		}
+	    }
+	    if (choice == null)
+	        choice = this.selector.chooseNodeForRemoval(graph);
 	    if (choice != null) {
 		spills.add(choice); 
 		allSpills.add(choice);
+		graph.unsetColor(choice);
 	    }
 	    unableToColor = true;
 	}

@@ -3,8 +3,10 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
+import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Assem.Instr;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,18 +14,23 @@ import java.util.List;
  * <code>InstrMOVEproxy</code>
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: InstrMOVEproxy.java,v 1.1.2.1 2000-08-23 06:33:25 pnkfelix Exp $
+ * @version $Id: InstrMOVEproxy.java,v 1.1.2.2 2000-08-27 09:34:11 pnkfelix Exp $
  */
 class InstrMOVEproxy extends Instr {
     
     /** Creates a <code>InstrMOVEproxy</code>. */
     public InstrMOVEproxy(Instr src) {
 	super(src.getFactory(), src, 
-	      "", 
+	      // "", 
 	      // " @proxy "+src.defC()+" <- "+src.useC(),
-	      //src.getAssem(),
+	      " @proxy "+src.getAssem(),
 	      (Temp[])src.def().clone(), 
 	      (Temp[])src.use().clone());
+    }
+    public Instr rename(InstrFactory inf, TempMap defMap, TempMap useMap) {
+	return new InstrMOVEproxy
+	    (new Instr(inf, this, getAssem(),
+		       map(defMap,def()), map(useMap,use())));
     }
     
 }

@@ -55,7 +55,7 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.29 2000-08-25 06:57:39 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.30 2000-08-27 09:34:11 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -89,6 +89,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     static class NodeSelector extends OptimisticGraphColorer.SimpleSelector {
 	GraphColoringRegAlloc gcra;
+	public boolean allowedToRemove(Object n, ColorableGraph g) {
+	    return (! gcra.overlapsWithSpilled( n ) );
+	}
 	public Object chooseNodeForHiding(ColorableGraph g) {
 	    HashSet l = new HashSet();
 	    Object n = super.chooseNodeForHiding(g);
@@ -1427,8 +1430,21 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	}
 
+	public void unsetColor(Object o) {
+	    try {
+		Node nd = (Node) o;
+		for(Iterator ns=nodes(nd.wr).iterator(); ns.hasNext();){
+		    Node n = (Node) ns.next();
+		    n.color = null;
+		}
+	    } catch (ClassCastException e) {
+		throw new IllegalArgumentException();
+	    }
+	}
+
 	public void setColor(Object o, Color col) 
 	    throws ColorableGraph.IllegalColor { 
+	    Util.assert(col != null);
 	    try {
 		Node node = (Node) o;
 		Util.assert(node.index == 0, "setColor on bad node "+node);
