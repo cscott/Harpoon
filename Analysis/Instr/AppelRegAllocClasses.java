@@ -25,7 +25,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.8 2004-02-08 03:19:37 cananian Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.9 2004-02-08 04:55:22 cananian Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;
@@ -915,7 +915,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	}
 	public String toString() { return "MoveSet< "+name+", "+asSortedSet()+" >"; }
     }
-    static final class MoveList {
+    static final class MoveList implements Iterable<Move> {
 	final static class Cons { Move elem; Cons next; }
 	Cons first;
 	int size = 0;
@@ -950,18 +950,19 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	    l.first = null;
 	    l.size = -1;
 	}
-	Iterator iterator() {
-	    return new UnmodifiableIterator() {
+	public Iterator<Move> iterator() {
+	    return new UnmodifiableIterator<Move>() {
 		    Cons c = first;
 		    public boolean hasNext() { return c != null; }
-		    public Object next() { Move m=c.elem; c=c.next; return m;}
+		    public Move next() { Move m=c.elem; c=c.next; return m;}
 		};
 	}
-	public List toList() {
-	    java.util.ArrayList l = new java.util.ArrayList();
-	    for(Iterator m=iterator(); m.hasNext(); ){
+	public List<Move> toList() {
+	    java.util.ArrayList<Move> l = new java.util.ArrayList<Move>();
+	    for(Iterator<Move> m=iterator(); m.hasNext(); ){
 		l.add(m.next());
 	    }
+	    l.trimToSize();
 	    return l;
 	}
 	public String toString() { return "MoveList< "+toList()+" >"; }

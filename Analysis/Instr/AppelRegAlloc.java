@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.LinkedHashSet;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -52,7 +53,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.6 2004-02-08 01:52:07 cananian Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.7 2004-02-08 04:55:22 cananian Exp $
  */
 public abstract class AppelRegAlloc extends AppelRegAllocClasses {
     public static final boolean PRINT_DEPTH_TO_SPILL_INFO = true;
@@ -108,7 +109,7 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 
     // Temp t -> Webs for t (rather than going through a Temp renaming
     // process on the whole method)
-    GenericMultiMap tempToWebs;
+    GenericMultiMap<Temp,Web> tempToWebs;
 
     
     static final int SPILL_STAT_DEPTH = 20;
@@ -143,13 +144,12 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 
     void buildTempToWebs() { 
 	// translated from code in GraphColoringRegAlloc
-	tempToWebs = new GenericMultiMap(Factories.arrayListFactory);
+	tempToWebs = new GenericMultiMap<Temp,Web>(Factories.<Web>arrayListFactory());
 
 	//for(Iterator instrs=code.getElementsI(); instrs.hasNext();){
 	for(Iterator instrs=reachableInstrs(); instrs.hasNext();){
 	    Instr inst = (Instr) instrs.next();
-	    for(Iterator uses = useCT(inst).iterator(); uses.hasNext();){
-		Temp t = (Temp) uses.next();
+	    for(Temp t : useCT(inst)){
 		if (isRegister(t)) continue;
 		Set defC = rdefs.reachingDefs(inst, t);
 		Set useC = Collections.singleton(inst);
@@ -160,9 +160,7 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 	    // should work w/o the following loop.  But if there
 	    // is a def w/o a corresponding use, the system breaks. 
 
-	    for(Iterator defs=defCT(inst).iterator();defs.hasNext();){
-		Temp t = (Temp) defs.next();
-		
+	    for(Temp t : defCT(inst)){
 		if( isRegister(t) ) continue;
 		
 		if( haveWebFor(t, inst) ) {
@@ -183,17 +181,16 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 	    changed = false;
 
 	    // look into using a faster structure than a hashset here? 
-	    HashSet tmp1 = new HashSet( tempToWebs.values() );
+	    Set<Web> tmp1 = new LinkedHashSet<Web>( tempToWebs.values() );
 	    
 	    while( ! tmp1.isEmpty() ){
-		Web web1 = (Web) tmp1.iterator().next();
+		Web web1 = tmp1.iterator().next();
 		tmp1.remove( web1 );
 
 		// put webs to be removed post-iteration here
-		HashSet removeFromTmp1 = new HashSet();
+		Set<Web> removeFromTmp1 = new LinkedHashSet<Web>();
 		
-		for(Iterator t2s=tmp1.iterator(); t2s.hasNext(); ){
-		    Web web2 = (Web) t2s.next();
+		for(Web web2 : tmp1){
 		    
 		    if( web1.temp.equals( web2.temp )){
 			boolean combineWebs;
@@ -228,13 +225,13 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 
     void buildWebToNodes() { 
 checkPrecolored();
-	for(Iterator regs=rfi().getAllRegistersC().iterator();regs.hasNext();){
-	    Temp reg = (Temp) regs.next();
+	for(Object regO : rfi().getAllRegistersC()){
+	    Temp reg = (Temp) regO;
 	    makePrecolored(reg);
 	}
 checkPrecolored();
-	for(Iterator temps=tempToWebs.keySet().iterator(); temps.hasNext();){
-	    Temp temp = (Temp) temps.next();
+	for(Object tempO : tempToWebs.keySet()){
+	    Temp temp = (Temp) tempO;
 	    if( ! isRegister(temp) ) {
 		makeInitial( temp );
 	    } else {
@@ -337,8 +334,7 @@ checkPrecolored();
 	    Node u = ni.next();
 	    assert u.degree < K : "simplify worklist inv. violated "+
 			"( should be u.degree < K )";
-	    for( Iterator mi = u.moves.iterator(); mi.hasNext(); ) {
-		Move m = (Move) mi.next();
+	    for(Move m : u.moves) {
 		assert !m.isActive() : "simplify worklist inv. violated"+
 			     "( should be !m.isActive() )";
 		assert !m.isWorklist() : "simplify worklist inv. violated"+
@@ -356,8 +352,7 @@ checkPrecolored();
 	    Node u = ni.next();
 	    assert u.degree < K : "freeze worklist inv. violated";
 	    
-	    for( Iterator mi = u.moves.iterator(); mi.hasNext(); ) {
-		Move m = (Move) mi.next();
+	    for(Move m : u.moves) {
 
 		if( m.isActive() || m.isWorklist() ) 
 		    return;
@@ -487,11 +482,11 @@ checkPrecolored();
 	    buildWebToNodes();
 	
 // Tracking down MIPS failure
-for(Iterator regs=rfi().getAllRegistersC().iterator();regs.hasNext();){
-    Temp reg = (Temp) regs.next();
-    assert nodesFor( (Web) tempToWebs.get( reg ) ).size() == 1;
+for(Object regO : rfi().getAllRegistersC()){
+    Temp reg = (Temp) regO;
+    assert nodesFor( tempToWebs.get( reg ) ).size() == 1;
     assert ((Node)nodesFor
-		  ( (Web) tempToWebs.get( reg ) ).get(0)).isPrecolored();
+		  ( tempToWebs.get( reg ) ).get(0)).isPrecolored();
 }
 checkPrecolored();
 	    
@@ -684,8 +679,8 @@ checkPrecolored();
 	return i_r;
     }
 
-    protected Collection useCT( Instr i ) { return usedefer.useC( i ); }
-    protected Collection defCT( Instr i ) { return usedefer.defC( i ); }
+    protected Collection<Temp> useCT( Instr i ) { return usedefer.useC( i ); }
+    protected Collection<Temp> defCT( Instr i ) { return usedefer.defC( i ); }
 
     protected NodeIter nodesIter(final Iterator i) {
 	return new NodeIter() {
@@ -745,13 +740,13 @@ checkPrecolored();
         for( Iterator moves = worklist_moves.iter(); moves.hasNext(); ){
 	    Move m = (Move) moves.next();
 	    assert m.isWorklist() : "m should be in worklist_moves";
-	    for(Iterator dI=m.dsts().iterator(); dI.hasNext(); ) {
-		Node n = (Node) dI.next();
+	    for(Object nO : m.dsts()) {
+		Node n = (Node) nO;
 		if (CHECK_INV)
 		assert moveRelated( n ) : "m.dst should be moveRelated, not "+n.s_rep.name;
 	    }
-	    for(Iterator uI=m.srcs().iterator(); uI.hasNext(); ) {
-		Node n = (Node) uI.next();
+	    for(Object nO : m.srcs()) {
+		Node n = (Node) nO;
 		if (CHECK_INV)
 		assert moveRelated( n ) : "m.src should be moveRelated, not "+n.s_rep.name;
 	    }
@@ -811,8 +806,7 @@ checkPrecolored();
 	    enableMoves( nodes.next() );
     }
     protected void enableMoves( Node node) {
-	for( Iterator moves=node.moves.iterator(); moves.hasNext(); ) {
-	    Move m = (Move) moves.next();
+	for(Move m : node.moves) {
 	    if( m.isActive() ) {
 		active_moves.remove(m);
 		worklist_moves.add(m);
@@ -988,8 +982,8 @@ checkPrecolored();
     }
 
     private boolean spillable( Web w ) {
-	for(Iterator di = w.defs.iterator(); di.hasNext(); ) {
-	    Instr d = (Instr) di.next();
+	for(Object dO : w.defs) {
+	    Instr d = (Instr) dO;
 	    if (d instanceof RestoreProxy ||
 		dontSpillTheseDefs.contains(d)) {
 		return false;
@@ -1100,8 +1094,8 @@ checkPrecolored();
     private Collection addDefs(Web w) {
 	HashSet groupDefs = new HashSet(w.defs.size());
 	int cleanedNum = 0;
-	for(Iterator ds=w.defs.iterator(); ds.hasNext();) {
-	    Instr d = (Instr) ds.next();
+	for(Object dO : w.defs) {
+	    Instr d = (Instr) dO;
 	    Instr exit = d.getExit(InstrGroup.NO_SPILL);
 	    
 	    BasicBlock bb = bbFact.getBlock(exit);
@@ -1123,13 +1117,13 @@ checkPrecolored();
 	if ( try_to_clean ){
 	    // clean out redundant targets
 	    LinearSet blocks = new LinearSet();
-	    for(Iterator ds = groupDefs.iterator(); ds.hasNext(); ){
-		Instr instr = (Instr)ds.next(); 
+	    for(Object instrO : groupDefs){
+		Instr instr = (Instr) instrO; 
 		BasicBlock bb = bbFact.getBlock( instr ); 
 		blocks.add( bb );
 	    }
-	    for(Iterator bs = blocks.iterator(); bs.hasNext(); ){
-		BasicBlock bb = (BasicBlock) bs.next();
+	    for(Object bbO : blocks){
+		BasicBlock bb = (BasicBlock) bbO;
 		boolean seenOne = false;
 		Iterator stms =bb.statements().iterator();
 		stms = new ReverseIterator( stms );
@@ -1154,8 +1148,8 @@ checkPrecolored();
     }
     private Collection addDefs( Web w, Collection groupDefs) {
 	ArrayList spills = new ArrayList();
-	for(Iterator ds=groupDefs.iterator(); ds.hasNext();) {
-	    Instr d = (Instr) ds.next();
+	for(Object dO : groupDefs) {
+	    Instr d = (Instr) dO;
 	    Instr n = d.getNext();
 	    assert d.canFallThrough &&
 			 d.getTargets().isEmpty();
@@ -1170,8 +1164,8 @@ checkPrecolored();
     }
     private Collection addUses(Web w) {
 	HashSet groupUses = new HashSet(w.uses.size());
-	for(Iterator us=w.uses.iterator(); us.hasNext();) {
-	    Instr u = (Instr) us.next();		    
+	for(Object uO : w.uses) {
+	    Instr u = (Instr) uO;		    
 	    Instr instrToAdd = u.getEntry(InstrGroup.NO_SPILL);
 	    assert ! instrToAdd.isDummy();
 	    groupUses.add( instrToAdd );
@@ -1184,13 +1178,11 @@ checkPrecolored();
 	    for(Iterator ds = groupUses.iterator(); ds.hasNext(); ){
 		blocks.add( bbFact.getBlock( (Instr)ds.next() ));
 	    }
-	    for(Iterator bs = blocks.iterator(); bs.hasNext(); ){
-		BasicBlock bb = (BasicBlock) bs.next();
+	    for(Object bbO : blocks){
+		BasicBlock bb = (BasicBlock) bbO;
 		boolean seenOne = false;
-		Iterator stms =bb.statements().iterator();
-
-		while( stms.hasNext() ){
-		    Instr i = (Instr) stms.next();
+		for (Object iO : bb.statements()){
+		    Instr i = (Instr) iO;
 		    if (groupUses.contains(i)){ 
 			if (!seenOne) {
 			    seenOne = true; continue;
@@ -1214,8 +1206,8 @@ checkPrecolored();
     } 
     private Collection addUses( Web w, Collection groupUses ){
 	ArrayList spills = new ArrayList();
-	for(Iterator us=groupUses.iterator(); us.hasNext();) {
-	    Instr u = (Instr) us.next();
+	for(Object uO : groupUses) {
+	    Instr u = (Instr) uO;
 	    Instr p = u.getPrev();
 	    assert p.canFallThrough &&
 			 p.getTargets().isEmpty() &&
@@ -1278,8 +1270,8 @@ checkPrecolored();
 
     protected Set/*Node*/ tempCtoNodes( Collection temps, Instr i ) {
 	HashSet set = new HashSet();
-	for(Iterator ts=temps.iterator(); ts.hasNext(); ) {
-	    Temp t = (Temp) ts.next();
+	for(Object tO : temps) {
+	    Temp t = (Temp) tO;
 	    Web web = webFor( t, i );
 	    set.addAll( nodesFor( web ));
 	}
@@ -1307,7 +1299,7 @@ checkPrecolored();
 	return false;
     }
     protected Web webFor(Temp t, Instr i) {
-	if ( isRegister(t) ) { return (Web) tempToWebs.get(t); }
+	if ( isRegister(t) ) { return tempToWebs.get(t); }
 
 	// TODO: Find reasoning justifying this line! (webFor works on
 	// concrete view of code?  Need to revise specs of many many
@@ -1334,9 +1326,9 @@ checkPrecolored();
 	assert defCT(i).contains(t) || useCT(i).contains(t) : "Method not guaranteed behave properly "+
 		    "on Instrs that don't refer to 't'";
 
-	Collection webs = tempToWebs.getValues(t);
-	for(Iterator wi=webs.iterator(); wi.hasNext(); ) {
-	    Web w = (Web) wi.next();
+	Collection<Web> webs = tempToWebs.getValues(t);
+	for(Object wO : webs) {
+	    Web w = (Web) wO;
 	    if (w.defs.contains(i) ||
 		w.uses.contains(i) ) {
 		return w;

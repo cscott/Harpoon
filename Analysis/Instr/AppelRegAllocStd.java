@@ -11,24 +11,27 @@ import harpoon.Analysis.BasicBlock;
 
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
+
+import java.util.AbstractCollection;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import net.cscott.jutil.FilterIterator;
 import net.cscott.jutil.CombineIterator;
 
-import java.util.Collection;
-import java.util.AbstractCollection;
-import java.util.Set;
-import java.util.List;
-import java.util.Iterator;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Arrays;
-
 public class AppelRegAllocStd extends AppelRegAlloc {
     // Instr i -> Move m such m.instr = i
-    private HashMap instrToMove = new HashMap();
+    private Map<Instr,Move> instrToMove = new HashMap<Instr,Move>();
 
     // Web w -> Listof Node
-    private HashMap webToNodes = new HashMap();
+    private Map<Web,List<Node>> webToNodes = new HashMap<Web,List<Node>>();
 
     public AppelRegAllocStd(Code code) { 
 	super(code); 
@@ -40,16 +43,16 @@ public class AppelRegAllocStd extends AppelRegAlloc {
 	instrToMove.clear();
     }
 
-    protected List/*Node*/ nodesFor( Web web ) {
+    protected List<Node> nodesFor( Web web ) {
 	if (CHECK_INV)
 	assert webToNodes.containsKey( web ) : "! should have nodes for "+web;
-	return (List) webToNodes.get( web );
+	return webToNodes.get( web );
     }
     
 
     protected Node makePrecolored(Temp t) {
 	Node n = super.makePrecolored(t);
-	webToNodes.put(n.web, Arrays.asList( new Node[]{ n } ));
+	webToNodes.put(n.web, Collections.singletonList(n));
 	return n;
     }
 
@@ -57,8 +60,8 @@ public class AppelRegAllocStd extends AppelRegAlloc {
 	Set assns = rfi().getRegAssignments(t);
 	List assn = (List) assns.iterator().next();
 
-	for(Iterator webs=tempToWebs.getValues(t).iterator(); webs.hasNext();){
-	    Web web = (Web) webs.next();
+	for(Object webO : tempToWebs.getValues(t)){
+	    Web web = (Web) webO;
 	    Node[] nodes = new Node[ assn.size() ];
 	    for(int i=0; i < nodes.length; i++) {
 		Node n = new Node(initial, web); 
@@ -124,8 +127,8 @@ public class AppelRegAllocStd extends AppelRegAlloc {
 		live.addAll( defCN(i) );
 		for( NodeIter di = def(i); di.hasNext(); ){
 		    Node d = di.next();
-		    for( Iterator li=live.iterator(); li.hasNext(); ){
-			Node n = (Node) li.next();
+		    for(Object nO : live){
+			Node n = (Node) nO;
 			addEdge( n, d );
 		    }
 		}
@@ -294,7 +297,7 @@ public class AppelRegAllocStd extends AppelRegAlloc {
 	assert i.isMove(); 
  
 	if( instrToMove.containsKey(i) ) { 
-	    return (Move) instrToMove.get(i); 
+	    return instrToMove.get(i); 
 	} else { 
 	    // TODO: Fix to assign collections, not first elems! 
 	    assert defCN(i).size() == 1;
@@ -333,15 +336,14 @@ public class AppelRegAllocStd extends AppelRegAlloc {
 			    { return new Integer(((Instr)o).getID()); }}); }};
     }
     private void printAllColors() {
-	for(Iterator wIter = webToNodes.keySet().iterator(); wIter.hasNext(); ){
-	    Web w = (Web) wIter.next();
+	for(Web w : webToNodes.keySet()){
 	    String accum = 
 		"Temp:"+w.temp+
 		" defs:"+instrIDs(w.defs)+
 		" uses:"+instrIDs(w.uses)+
 		" colors:[";
-	    for(Iterator nI=((List)webToNodes.get(w)).iterator();nI.hasNext();) { 
-		Node node = (Node) nI.next();
+	    for(Iterator<Node> nI=webToNodes.get(w).iterator(); nI.hasNext();){
+		Node node = nI.next();
 		for(int i=0; i<node.color.length; i++) {
 		    accum += node.color[i] + ":";
 		}

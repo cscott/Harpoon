@@ -71,7 +71,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.6 2004-02-08 01:52:07 cananian Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.7 2004-02-08 04:55:22 cananian Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -290,9 +290,8 @@ public class LocalCffRegAlloc extends RegAlloc {
     private void allocationAnalysis() { 
 	if (!TIME) { 
 	    // old way (more space efficient, but harder to profile)
-	    Iterator blocks = bbFact.blockSet().iterator();
-	    while(blocks.hasNext()) {
-		BasicBlock block = (BasicBlock) blocks.next();
+	    for (Object blockO : bbFact.blockSet()) {
+		BasicBlock block = (BasicBlock) blockO;
 		Set liveOnExit = liveTemps.getLiveOnExit(block);
 		BlockAlloc la = new BlockAlloc(block, liveOnExit);
 		la.emptyRegFile(la.alloc());
@@ -379,9 +378,8 @@ public class LocalCffRegAlloc extends RegAlloc {
     }
 
     private void coalesceMoves() {
-	Iterator remove = instrsToRemove.iterator();
-	while(remove.hasNext()) {
-	    Instr ir = (Instr) remove.next();
+	for (Object irO : instrsToRemove) {
+	    Instr ir = (Instr) irO;
 
 	    // FSK: can't handle directly remove this case: "t4 <- r0"
 	    // followed by a use of t4, because the system thinks that
@@ -512,9 +510,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	ScanForMove visit = new ScanForMove();
 	
 	List instrL = b.statements();
-	Iterator instrs = instrL.iterator();
-	while(instrs.hasNext()) {
-	    Instr i = (Instr) instrs.next();
+	for (Object iO : instrL) {
+	    Instr i = (Instr) iO;
 	    i.accept(visit);
 	}
     }
@@ -603,9 +600,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		}
 	    }
 
-	    Iterator entries = tempToLastRef.entrySet().iterator();
-	    while(entries.hasNext()) {
-		Map.Entry entry = (Map.Entry) entries.next();
+	    for (Object entryO : tempToLastRef.entrySet()) {
+		Map.Entry entry = (Map.Entry) entryO;
 		
 		// enforcing the storage of NULL in nextRef only 
 		// for dead Temps, so that they can be distinquished.
@@ -753,9 +749,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    if(false)System.out.println("\nadding "+liveRegs+" to conflicts for "+
 	                        liveTempC+" excluding "+excepts);
 
-	    Iterator titer = liveTempC.iterator();
-	    while(titer.hasNext()) {
-		Temp t = (Temp) titer.next();
+	    for (Object tO : liveTempC) {
+		Temp t = (Temp) tO;
 		if (isRegister(t)) continue;
 
 		if (excepts.containsKey(t)) {
@@ -837,9 +832,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    assign(t, i, putBackLater);
 		}
 		
-		Iterator defs = i.defC().iterator();
-		while(defs.hasNext()) {
-		    Temp def = (Temp) defs.next();
+		for (Object defO : i.defC()) {
+		    Temp def = (Temp) defO;
 		    if (!isRegister(def)) {
 			regfile.writeTo(def);
 			// System.out.println("Dirtifying "+def+" by "+i);
@@ -1360,9 +1354,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    // stored on a spill regardless of
 			    // cleanness of `value'
 			    Collection temps = new java.util.ArrayList(remappedTemps.invert().getValues(value));
-			    Iterator remapped = temps.iterator();
-			    while(remapped.hasNext()) {
-				Temp tt = (Temp) remapped.next();
+			    for (Object ttO : temps) {
+				Temp tt = (Temp) ttO;
 				if (liveTemps.getLiveAfter(iloc).contains(tt)) {
 				    // System.out.println("spilling "+tt+" before "+iloc+", live after:"+liveTemps.getLiveAfter(iloc));
 				    Instr src;
@@ -1669,9 +1662,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	// O(n^2), which could be bad...
 
 	List blockL = block.statements();
-	Iterator itr = blockL.iterator(); 
-	while(itr.hasNext()) {
-	    Instr i2=(Instr)itr.next();
+	for (Object i2O : blockL) {
+	    Instr i2 = (Instr) i2O;
 
 	    if (auxSpillCode) {
 		// insert loads...
