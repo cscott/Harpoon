@@ -1,8 +1,10 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.47 1999-06-28 04:06:40 cananian Exp $
+% $Id: thesis.tex,v 1.48 1999-06-28 07:40:08 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
+\usepackage{amsthm}
+\usepackage{amstext}
 \usepackage{comdef}
 
 % the name of the project
@@ -13,10 +15,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.47 $ $}
+\date{\today \\ $ $Revision: 1.48 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.47 $ $}{$ $Revision: 1.47 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.48 $ $}{$ $Revision: 1.48 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -451,7 +453,7 @@ node $d$.
 \begin{myfigure}\centering
 \vertcenter{\input{Figures/THcqex}}
 $\begin{array}[c]{cc}
-\tuple{\mbox{START},1}\cyceq\tuple{16,\mbox{END}}\\
+\tuple{\text{START},1}\cyceq\tuple{16,\text{END}}\\
 \tuple{1,2}\cyceq\tuple{8,16}\\
 \tuple{2,3}\cyceq\tuple{3,4}\cyceq\tuple{7,8}\\
 \tuple{4,5}\cyceq\tuple{5,7}\\
@@ -537,6 +539,13 @@ of figure~\ref{fig:SSIalg}.
 \caption{Algorithm for placing \phisigfunction{s}.}\label{fig:SSIalg}
 \end{myfigure}
 
+\begin{lemma}
+My algorithm is correct.
+\end{lemma}
+\begin{proof}
+Foo.
+\end{proof}
+
 My algorithm is correct.\fixme{Prove this.}
 Rough sketch:
 First theorem: a merge for v must be in the same SESE region as a
@@ -580,7 +589,7 @@ I have to prove that the results are correct, though, which may be harder.%
 \subsubsection{Pruning SSI form}\label{sec:unusedcode}
 The SSI algorithm can be run using any conservative approximation to
 the liveness information
-(including the function $\mbox{\bf Live}(v)=\mbox{\tt true}$) if
+(including the function $\text{\bf Live}(v)=\text{\tt true}$) if
 unused code elimination%
 \footnote{We follow \cite{wegman91:scc} in distinguishing
 \emph{unreachable code elimination}, which removes code that can never
@@ -784,7 +793,7 @@ t=\mathbf{op}(t_1,\ldots,t_n):
 t=\phi(t_1,\ldots,t_n):
 & \trule{\rho[t]=\bot \wedge
          \rho[t_j]\succ\bot \wedge
-         \mbox{all other}\,\rho[t_1],\ldots,\rho[t_n]=\bot}
+         \text{all other}\,\rho[t_1],\ldots,\rho[t_n]=\bot}
         {\rho \to \rho[t \mapsto \rho[t_j]] } \\
 
 \tuple{t_1,\ldots,t_n}=\sigma(P,t):
@@ -792,7 +801,7 @@ t=\phi(t_1,\ldots,t_n):
   \trule{\rho[P]=v\succ\bot \wedge
          \rho[t_{v-1}]=\bot \wedge
          \rho[t]\succ\bot
-         %\mbox{ where } (0\leq v\leq n-1)
+         %\text{ where } (0\leq v\leq n-1)
 	}
 	{\rho \to \rho[t_{v-1} \mapsto \rho[t]] }
   \quad \hfill \\ \footnotesize \mbox{where } (0\leq v\leq n-1) }
@@ -868,7 +877,7 @@ t=\phi(t_1,\ldots,t_n):
 & \myarray{r}{
   \tuple{E[t'_i=v],S} \to \hfill\\\quad\quad\quad\quad\quad
   \tuple{E[t_i=v],S[K\mapsto S[K]\cup\tuple{t_i,v}]}\\
-   \mbox{where }1\le i \le n\\
+   \text{where }1\le i \le n\\
 %  \mbox{where }K\mbox{ is a unique constant corresponding to}\\
 %  \mbox{this \ssiplus\ statement}\\
   }\\
