@@ -2,10 +2,9 @@
 MAINTAINERCLEANFILES = Makefile.in Runtime.a
 #INCLUDES = -I../include
 SUBDIRS = jni java.io java.lang
-LDADD = ../Java.a Runtime.a
+LDADD = libflexc.la ../Java.a Runtime.a
 
 bin_PROGRAMS = print-fixup test-lookup test-reflect test-hello
-test_hello_LDADD = libflexc.la $(LDADD)
 
 lib_LTLIBRARIES = libflexc.la
 libflexc_la_SOURCES = 
