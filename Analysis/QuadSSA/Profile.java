@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Tue Oct  6 12:41:25 1998> 
-// Time-stamp: <1998-11-16 23:24:27 mfoltz> 
+// Time-stamp: <1998-11-20 12:55:21 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.QuadSSA;
@@ -196,7 +196,7 @@ public class Profile {
 
       Temp t1 = new Temp();
       CONST c1 = new CONST(q.getSourceElement(), t1,
-			     new Integer(q.getSourceElement().getID()), 
+			     new Integer(q.getLineNumber()), 
 			   HClass.Int);
 
       Temp t2 = new Temp();
