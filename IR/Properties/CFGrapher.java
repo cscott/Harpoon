@@ -14,9 +14,9 @@ import java.util.Collection;
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.1.2.4 2000-06-27 19:28:14 salcianu Exp $
+ * @version $Id: CFGrapher.java,v 1.1.2.5 2000-06-29 21:28:18 cananian Exp $
  */
-public abstract class CFGrapher implements java.io.Serializable {
+public abstract class CFGrapher {
     /** Returns the first <code>HCodeElement</code> to be executed; that is,
      *  the root of the control-flow graph. */
     public abstract HCodeElement getFirstElement(HCode hcode);
@@ -73,7 +73,7 @@ public abstract class CFGrapher implements java.io.Serializable {
      * @see java.lang.Comparable
      * @see harpoon.Util.Default.comparator
      */
-    public static final CFGrapher DEFAULT = new CFGrapher() {
+    public static final CFGrapher DEFAULT = new SerializableGrapher() {
 	public HCodeElement getFirstElement(HCode hcode) {
 	    return hcode.getRootElement();
 	}
@@ -96,4 +96,6 @@ public abstract class CFGrapher implements java.io.Serializable {
 	    return ((CFGraphable)hc).succC();
 	}
     };
+    private static abstract class SerializableGrapher extends CFGrapher
+	implements java.io.Serializable { }
 }
