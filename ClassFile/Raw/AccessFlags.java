@@ -5,7 +5,7 @@ package harpoon.ClassFile.Raw;
  * permissions and properties of a field or method.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AccessFlags.java,v 1.6 1998-07-31 07:05:53 cananian Exp $
+ * @version $Id: AccessFlags.java,v 1.7 1998-08-01 02:02:20 cananian Exp $
  * @see "The Java Virtual Machine Specification"
  * @see ClassFile
  * @see FieldInfo
@@ -70,4 +70,23 @@ public class AccessFlags {
   //                  VOLATILE, TRANSIENT.
   // MethodInfo uses: PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL,
   //                  SYNCHRONIZED, NATIVE, ABSTRACT.
+
+  /**
+   * Returns a string with the access flags in canonical order.
+   * Omits ACC_SUPER and ACC_INTERFACE.
+   */
+  public String toString() {
+    StringBuffer r = new StringBuffer();
+    if (isPublic()) r.append("public ");
+    if (isProtected()) r.append("protected ");
+    if (isPrivate()) r.append("private ");
+    if (isAbstract()) r.append("abstract ");
+    if (isStatic()) r.append("static ");
+    if (isFinal()) r.append("final ");
+    if (isTransient()) r.append("transient ");
+    if (isVolatile()) r.append("volatile ");
+    if (isSynchronized()) r.append("synchronized ");
+    if (isNative()) r.append("native ");
+    return r.toString().trim();
+  }
 }

@@ -20,7 +20,7 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.3 1998-07-31 13:33:47 cananian Exp $
+ * @version $Id: HClass.java,v 1.4 1998-08-01 02:02:13 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -52,7 +52,17 @@ public class HClass {
    * <code>Error</code> if an invalid descriptor is given.
    */
   public static HClass forDescriptor(String descriptor) {
-    // First check the cache.
+    // Trim descriptor.
+    int i;
+    for (i=0; i<descriptor.length(); i++) {
+      char c = descriptor.charAt(i);
+      if (c=='(' || c==')') throw new Error("Bad Descriptor: "+descriptor);
+      if (c=='[') continue;
+      if (c=='L') i = descriptor.indexOf(';', i);
+      break;
+    }
+    descriptor = descriptor.substring(0, i+1);
+    // Check the cache.
     HClass cls = (HClass) dsc2cls.get(descriptor);
     if (cls!=null) return cls;
     // not in the cache.

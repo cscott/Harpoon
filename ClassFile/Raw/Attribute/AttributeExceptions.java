@@ -11,7 +11,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>method_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeExceptions.java,v 1.5 1998-07-31 07:05:59 cananian Exp $
+ * @version $Id: AttributeExceptions.java,v 1.6 1998-08-01 02:02:20 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.5"
  * @see Attribute
  * @see MethodInfo
@@ -55,6 +55,10 @@ public class AttributeExceptions extends Attribute {
 
   // convenience.
   public int number_of_exceptions() { return exception_index_table.length; }
+  /** Returns the CONSTANT_Class_info corresponding to an entry in
+   *  the exception_index_table.  Returns <code>null</code> if the
+   *  entry is zero.
+   */
   public ConstantClass exception_index_table(int i) {
     if (exception_index_table[i]==0) return null;
     else return (ConstantClass)

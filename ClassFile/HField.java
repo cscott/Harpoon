@@ -1,6 +1,7 @@
 package harpoon.ClassFile;
 
 import java.lang.reflect.Modifier;
+import harpoon.ClassFile.Raw.Attribute.AttributeConstantValue;
 
 /**
  * A <code>HField</code> provides information about a single field of a class
@@ -8,7 +9,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.2 1998-07-31 13:36:11 cananian Exp $
+ * @version $Id: HField.java,v 1.3 1998-08-01 02:02:14 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -62,7 +63,7 @@ public class HField implements HMember {
    */
   public boolean isConstant() {
     for (int i=0; i<fieldinfo.attributes.length; i++)
-      if (fieldinfo.attributes[i].attribute_name().equals("ConstantValue"))
+      if (fieldinfo.attributes[i] instanceof AttributeConstantValue)
 	return true;
     return false;
   }
@@ -97,11 +98,11 @@ public class HField implements HMember {
    * is the access modifiers for the field, if any, followed by the
    * field type, followed by a space, followed by the fully-qualified
    * name of the class declaring the field, followed by a period,
-   * followed by the name of the field.  For example:
+   * followed by the name of the field.  For example:<p>
    * <DL>
    * <DD><CODE>public static final int java.lang.Thread.MIN_PRIORITY</CODE>
    * <DD><CODE>private int java.io.FileDescriptor.fd</CODE>
-   * </DL>
+   * </DL><p>
    * The modifiers are placed in canonical order as specified by
    * "The Java Language Specification."  This is
    * <code>public</code>, <code>protected</code>, or <code>private</code>
@@ -112,13 +113,10 @@ public class HField implements HMember {
   public String toString() {
     StringBuffer r = new StringBuffer();
     int m = getModifiers();
-    if (Modifier.isPublic(m)) r.append("public ");
-    if (Modifier.isProtected(m)) r.append("protected ");
-    if (Modifier.isPrivate(m)) r.append("private ");
-    if (Modifier.isStatic(m)) r.append("static ");
-    if (Modifier.isFinal(m)) r.append("final ");
-    if (Modifier.isTransient(m)) r.append("transient ");
-    if (Modifier.isVolatile(m)) r.append("volatile ");
+    if (m!=0) {
+      r.append(Modifier.toString(m));
+      r.append(' ');
+    }
     r.append(getTypeName(type));
     r.append(' ');
     r.append(getTypeName(hclass));
