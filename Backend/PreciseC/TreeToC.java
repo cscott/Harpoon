@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.18 2000-07-13 14:33:43 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.19 2000-07-13 15:48:29 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -78,10 +78,12 @@ public class TreeToC extends java.io.PrintWriter {
 	tv.live = new harpoon.Analysis.DataFlow.LiveVars
 	    (c, c.getGrapher(), tv.ud, Collections.EMPTY_SET);
 	tv.tempv = new TempVisitor(root, c.getTreeDerivation());
+	tv.inh = new IdentifyNoHandler(c);
 	translate(root);
 	tv.ud = null;
 	tv.live = null;
 	tv.tempv = null;
+	tv.inh = null;
     }
     public void translate(HData hd) { translate((Tree)hd.getRootElement()); }
     private void translate(Tree t) {
@@ -184,6 +186,8 @@ public class TreeToC extends java.io.PrintWriter {
 	Liveness live = null;
 	UseDefer ud = null;
 	TempVisitor tempv = null;
+	// support no-handler optimization
+	IdentifyNoHandler inh = null;
 
 	// keep track of current alignment, section, method, etc.
 	ALIGN align = null;
@@ -388,12 +392,13 @@ public class TreeToC extends java.io.PrintWriter {
 	public void visit(CALL e) {
 	    Set liveo = liveObjects(e);
 	    pw.print("\t"); emitPush(liveo); pw.print(";"); nl();
+	    String nh = inh.requiresHandler(e) ? "" : "_NH";
 	    boolean callv = (e.getRetval()==null);
 	    if (callv) {
-		pw.print("\tCALLV(");
+		pw.print("\tCALLV"+nh+"(");
 		pw.print("((FUNCPROTOV(");
 	    } else {
-		pw.print("\tCALL("+ctype(e.getRetval())+", ");
+		pw.print("\tCALL"+nh+"("+ctype(e.getRetval())+", ");
 		trans(e.getRetval());
 		pw.print(", ((FUNCPROTO("+ctype(e.getRetval())+", ");
 	    }
@@ -521,7 +526,8 @@ public class TreeToC extends java.io.PrintWriter {
 		pwa[DI].print(" __attribute__ ((aligned (" +
 			      this.align.alignment + ")))");
 	    this.align=null; // clear alignment.
-	    if (segment!=null)
+	    // older versions of gcc won't allow segment attrs on local vars:
+	    if (segment!=null && mode!=CODETABLE)
 		pwa[DI].print(" __attribute__ ((section (\"" +
 			      sectionname(this.segment) +"\")))");
 	    pwa[DI].println(" = {");
