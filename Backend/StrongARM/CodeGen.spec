@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.67 1999-10-14 15:53:14 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.68 1999-10-14 15:57:44 cananian Exp $
  */
 %%
 
@@ -627,7 +627,7 @@ BINOP<l>(OR, j, k) = i %{
 
 BINOP<p,i>(SHL, j, k) = i %{
     Temp i = makeTemp();		
-    emit( ROOT, "mov `d0, `s0 lsl `s1", i, j, k );
+    emit( ROOT, "mov `d0, `s0, lsl `s1", i, j, k );
 }%
 
 BINOP<l>(SHL, j, k) = i %{
@@ -642,7 +642,7 @@ BINOP<l>(SHL, j, k) = i %{
 
 BINOP<p,i>(SHR, j, k) = i %{
     Temp i = makeTemp();		
-    emit( ROOT, "mov `d0, `s0 lsr `s1", i, j, k );
+    emit( ROOT, "mov `d0, `s0, lsr `s1", i, j, k );
 }%
 
 BINOP<l>(SHR, j, k) = i %{
@@ -657,7 +657,7 @@ BINOP<l>(SHR, j, k) = i %{
 
 BINOP<p,i>(USHR, j, k) = i %{
     Temp i = makeTemp();		
-    emit( ROOT, "mov `d0, `s0 asr `s1", i, j, k );
+    emit( ROOT, "mov `d0, `s0, asr `s1", i, j, k );
 }%
 
 BINOP<l>(USHR, j, k) = i %{
