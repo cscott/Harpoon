@@ -1,5 +1,5 @@
 /*
-** $Header: /home/cananian/git-conversion/cvs/Runtime/arch/mips/floatem.h,v 1.1 2000-06-26 20:19:16 witchel Exp $
+** $Header: /home/cananian/git-conversion/cvs/Runtime/arch/mips/floatem.h,v 1.2 2003-05-21 20:46:27 wbeebee Exp $
 */
 /*
 Each of the following typedef's defines the most convenient type that holds

@@ -1,5 +1,5 @@
 #ifndef NO_RCSID
-const char* floatem_rcsid = "$Header: /home/cananian/git-conversion/cvs/Runtime/arch/mips/floatem.c,v 1.2 2000-09-25 19:40:04 witchel Exp $";
+const char* floatem_rcsid = "$Header: /home/cananian/git-conversion/cvs/Runtime/arch/mips/floatem.c,v 1.3 2003-05-21 20:46:27 wbeebee Exp $";
 #endif
 /*
 
