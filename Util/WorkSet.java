@@ -12,11 +12,12 @@ import java.util.Iterator;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.1.2.1 1999-02-23 07:12:08 cananian Exp $
+ * @version $Id: WorkSet.java,v 1.1.2.2 1999-02-23 09:00:36 cananian Exp $
  */
 public class WorkSet extends java.util.AbstractSet {
     private /*final*/ HashMap hm;
-    private EntryList el = new EntryList(null, null, null);// header
+    private EntryList el = EntryList.init(); // header and footer nodes.
+    private final boolean debug=false; // turn on consistency checks.
     
     /** Creates a new, empty <code>WorkSet</code> with a default capacity
      *  and load factor. */
@@ -43,24 +44,28 @@ public class WorkSet extends java.util.AbstractSet {
 
     /** Returns the last element added to the WorkSet, in constant-time. */
     public Object get() {
+	if (isEmpty()) throw new java.util.NoSuchElementException();
 	return el.next.o;
     }
 
     public boolean add(Object o) {
+	if (o==null) throw new NullPointerException();
 	if (hm.containsKey(o)) return false;
 	EntryList nel = new EntryList(el, o, el.next);
-	el.next = nel.next.prev = nel;
+	el.next = nel.next.prev = nel; // always a predecessor and successor.
 	hm.put(o, nel);
+	// verify list/set correspondence.
+	if (debug) Util.assert(EntryList.equals(el, hm.keySet()));
 	return true;
     }
     public void clear() {
-	hm.clear(); el.next = null;
+	hm.clear(); el = EntryList.init();
     }
     public boolean contains(Object o) {
 	return hm.containsKey(o);
     }
     public boolean isEmpty() {
-	return (el.next == null);
+	return (el.next.next == null);
     }
     /** Efficient set iterator. */
     public Iterator iterator() {
@@ -77,28 +82,60 @@ public class WorkSet extends java.util.AbstractSet {
 	    public void remove() {
 		if (elp==el) throw new IllegalStateException();
 		hm.remove(elp.o);
+		// always a predecessor and successor.
 		elp.prev.next = elp.next;
 		elp.next.prev = elp.prev;
 		elp = elp.prev;
+		// verify list/set correspondence.
+		if (debug) Util.assert(EntryList.equals(el, hm.keySet()));
 	    }
 	};
     }
     public boolean remove(Object o) {
 	if (!hm.containsKey(o)) return false;
 	EntryList elp = (EntryList) hm.get(o);
-	hm.remove(o); // remove from hashmap
-	elp.prev.next = elp.next; // remove from linked list.
+	// remove from hashmap
+	hm.remove(o);
+	// remove from linked list.
+	elp.prev.next = elp.next; // always a predecessor and successor.
 	elp.next.prev = elp.prev;
+	// verify list/set correspondence.
+	if (debug) Util.assert(EntryList.equals(el, hm.keySet()));
 	return true;
     }
     public int size() { return hm.size(); }
 
     // INNER CLASS. -------------------------------------------
-    private final class EntryList {
+    private static final class EntryList {
 	final Object o;
 	EntryList prev, next;
 	EntryList(EntryList prev, Object o, EntryList next) {
 	    this.prev = prev; this.o = o; this.next = next;
+	}
+	public String toString() {
+	    StringBuffer sb = new StringBuffer("[");
+	    for (EntryList elp = this; elp!=null; elp=elp.next) {
+		sb.append(elp.o);
+		if (elp.next!=null)
+		    sb.append(", ");
+	    }
+	    return sb.toString();
+	}
+	static boolean equals(EntryList el, java.util.Collection c) {
+	    int size=0;
+	    for (EntryList elp=el.next; elp.next!=null; elp=elp.next, size++)
+		if (!c.contains(elp.o)) return false;
+	    if (size!=c.size()) return false;
+	    return true;
+	}
+	    
+	// return a list with only a header and footer node.
+	static EntryList init() {
+	    EntryList header = new EntryList(null, null, null);
+	    EntryList footer = new EntryList(null, null, null);
+	    header.next = footer;
+	    footer.prev = header;
+	    return header;
 	}
     }
 }
