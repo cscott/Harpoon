@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.7 2001-11-15 23:45:40 cananian Exp $
+% $Id: pldi02.tex,v 1.8 2001-11-16 00:14:34 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -16,7 +16,7 @@
 
 \newcommand{\mycomment}[1]{}
 
-\title{\bf Size Optimizations for Java Programs}
+\title{\bf Data Size Optimizations for Java Programs}
 
 \author{C. Scott Ananian \\
 	Laboratory for Computer Science\\
@@ -26,24 +26,45 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.7 $ $}{$ $Revision: 1.7 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.8 $ $}{$ $Revision: 1.8 $ $}
 \bibliographystyle{plain}
 
 \maketitle
 
 % abstract
-\input{pldi02-abstract}
+\begin{abstract}
+
+This paper presents a set of Java optimizations targetted at
+memory-constrained embedded devices.  Using the FLEX compiler system,
+we aggressively transform
+programs using both source-level transformations and
+specializations of the runtime environment to save as much
+as {\bf XX}\% of the storage requested by the allocator.
+
+Our techniques fall into three broad categories: header optimizations,
+bitwidth analyses, and mostly-zero field elimination.  Header
+optimizations reduce the size penalties associated with 
+Java's virtual dispatch, hashcode, and locking features.  Bitwidth
+analyses allow compile-time reduction of field sizes when the
+full range of a datatype is unused.  Mostly-zero field elimination
+attempts to factor out fields which are ``usually zero'' (as
+determined by profiling) to obtain savings.  Combined, these
+techniques allow the compiler to shoulder the burden of space accounting
+and allow the use of general-purpose software on extremely
+memory-constrained embedded devices.
+
+\end{abstract}
 
 % outline for paper.
 % introduction
 \section{Introduction}
 The devices around us are getting dramatically smarter, but the
 processing capabilities of your average toaster will always remain far
-removed from those of a desktop computer.  Nevertheless, the designers
+inferior to those of a desktop computer.  Nevertheless, the designers
 of embedded devices would like to use the high-level software
 languages and paradigms designed for the desktop environment when
 programming their much smaller systems.  The past few years have
-demonstrated a remarkable industry desire to run software written in
+demonstrated a remarkable industry push to run software written in
 languages such as Java on cellphones, PDAs, and similar platforms.
 At the moment, much of this desire is for downloaded applets and
 extension programs and upgrades; for firmware the slight
@@ -55,7 +76,8 @@ techniques to close this gap.  There is as much as a four-fold
 % maybe more! reference here?
 cost difference between ROM and RAM costs in embedded devices,
 so we will concentrate on reducing the dynamic heap usage of
-programs written in Java.  We will bypass the mire of Real-Time Java
+programs written in Java.  We will bypass the difficulties of
+real-time control
 for the moment, and assume that running-time of the optimized programs
 is not important (so long as it is reasonable); we will trade-off
 slight increases in execution time and ROM usage for dramatically
@@ -64,20 +86,26 @@ reduced RAM usage.
 We will first present header optimizations which tweak the runtime's
 representation of non-field information in Java objects in order to
 reduce memory consumption.  We will then turn our attention to
-compressing the information stored in the fields.  Using static
+compressing the values stored in object fields.  Using static
 analysis, we will determine the minimal number of bits required to
 represent a field's contents, and then present three alternate
 field-packing techniques to take advantage of the unused bits
 identified.  For systems with small memories, pointer compression is
-also possible.
+also discussed.
 
-Finally, we will attempt to identify 'mostly-constant' information in
+Finally, we will attempt to identify ``mostly-constant'' information in
 objects, specializing the object to reduce the space required for
-the common case.  For fields which are not mutated, statically
-specializing the class is possible; for mutable fields we utilize an
+the common case.  For fields which are not mutated, we statically
+specializing the class to remove predictable values;
+for mutable fields we utilize an
 external hashtable to store values which are rarely unpredictable.
 
-We present the results of applying these optimizations to the SPEC
+These optimizations were implemented using the FLEX compiler
+infrastructure and Java runtime.  FLEX is a whole-program compiler
+that generates native code, but many of these techniques are also
+applicable to open-world JVM environments.
+
+We present the results of applying our optimizations to the SPEC
 benchmark suite --- a set of general tasks, which, although they may bear
 little relation to actual programs one would want on an embedded
 device, span a gamut sufficient to adequately show the strengths and
@@ -105,7 +133,7 @@ it to facilitate hashtable implementations of various kinds.%
   object in this paper.}
 A typical implementation uses two words of header information in
 addition to the fields contained by the object.  The first, often
-designated {\tt claz}, is a pointer to a class descriptor for the
+designated {\tt claz}, is a pointer to a class descriptor structure for the
 object's type.  Dynamic dispatch is usually implemented as an
 indirection through a table contained in this descriptor.
 The second word is usually overloaded to contain both hashtable and
@@ -115,7 +143,7 @@ return a 32-bit {\tt int}, implementations usually return some
 more restricted range of values --- one implementation of IBM's JDK
 \cite{bacon98}
 returned as little as 8 bits of hashcode.  The remaining bits of the
-second word is used to represent the lock and any other information
+second word are used to represent the lock and any other information
 kept by the runtime.  In the FLEX compiler system used for the
 research in this paper \cite{flexweb}, 30 bits of hashcode are kept, and the
 remaining 2 bits indicate whether the value is actually a hashcode or
@@ -480,6 +508,9 @@ with $N$ an integer in the range $[-5,5]$.
 % results/discussion.
 %  present sum totals.
 %  compress doesn't do so hot: show why.
+
+% discuss: why are there unused/constant fields in programs?
+
 \section{Conclusion}
 % conclusion/future work.
 %  better pointer analysis/separate out classes of objects.
