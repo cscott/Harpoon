@@ -1,4 +1,4 @@
-static char rcsid[]="$Id: redblack.c,v 1.1 2003-02-21 16:11:56 bdemsky Exp $";
+static char rcsid[]="$Id: redblack.c,v 1.2 2003-03-19 22:18:44 bdemsky Exp $";
 
 /*
    Redblack balanced tree algorithm
@@ -141,7 +141,7 @@ const void * rbdelete(const void *key, struct rbtree *rbinfo) {
   
   x=rb_traverse(key, rbinfo);
   
-  if (x==RBNULL) {
+  if (x==NULL) {
     return(NULL);
   } else {
     y=x->key;
@@ -921,7 +921,12 @@ dumptree(struct rbnode *x, int n)
 
 /*
  * $Log: redblack.c,v $
- * Revision 1.1  2003-02-21 16:11:56  bdemsky
+ * Revision 1.2  2003-03-19 22:18:44  bdemsky
+ *
+ *
+ * Bug...
+ *
+ * Revision 1.1  2003/02/21 16:11:56  bdemsky
  * Modified red-black tree - it implements a balanced interval tree...
  *
  * Revision 1.5  2002/01/30 07:54:53  damo
