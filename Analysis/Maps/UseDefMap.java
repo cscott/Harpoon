@@ -5,17 +5,19 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 
+import java.util.Enumeration;
 /**
  * A <code>UseDefMap</code> is a mapping from temporaries to the
  * <code>HCodeElements</code> that define them.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDefMap.java,v 1.1 1998-09-14 05:21:46 cananian Exp $
+ * @version $Id: UseDefMap.java,v 1.2 1998-09-19 06:20:36 cananian Exp $
  */
 
 public interface UseDefMap  {
     /**
-     * Return the <code>HCodeElement</code>s that use <code>Temp t</code>.
+     * Return an array of <code>HCodeElement</code>s that use 
+     * <code>Temp t</code>.
      * @param hc The <code>HCode</code> containing <code>t</code>.
      *           The <code>HCodeElement</code>s in <code>hc</code> must
      *           implement <code>harpoon.IR.Properties.UseDef</code>.
@@ -25,7 +27,19 @@ public interface UseDefMap  {
      */
     HCodeElement[] useMap(HCode hc, Temp t);
     /**
-     * Return the <code>HCodeElement</code>s that define <code>Temp t</code>.
+     * Return an Enumeration of <code>HCodeElement</code>s that use 
+     * <code>Temp t</code>.
+     * @param hc The <code>HCode</code> containing <code>t</code>.
+     *           The <code>HCodeElement</code>s in <code>hc</code> must
+     *           implement <code>harpoon.IR.Properties.UseDef</code>.
+     * @param t  The temporary to examine.
+     * @return an Enumeration of <code>HCodeElement</code>s where
+     *         <code>HCodeElement.use()</code> includes <code>t</code>.
+     */
+    Enumeration useMapE(HCode hc, Temp t);
+    /**
+     * Return an array of <code>HCodeElement</code>s that define 
+     * <code>Temp t</code>.
      * @param hc The <code>HCode</code> containing <code>t</code>.
      *           The <code>HCodeElement</code>s in <code>hc</code> must
      *           implement <code>harpoon.IR.Properties.UseDef</code>.
@@ -34,4 +48,15 @@ public interface UseDefMap  {
      *         <code>HCodeElement.def()</code> includes <code>t</code>.
      */
     HCodeElement[] defMap(HCode hc, Temp t);
+    /**
+     * Return an Enumeration of <code>HCodeElement</code>s that define 
+     * <code>Temp t</code>.
+     * @param hc The <code>HCode</code> containing <code>t</code>.
+     *           The <code>HCodeElement</code>s in <code>hc</code> must
+     *           implement <code>harpoon.IR.Properties.UseDef</code>.
+     * @param t  The temporary to examine.
+     * @return an Enumeration of <code>HCodeElement</code>s where
+     *         <code>HCodeElement.def()</code> includes <code>t</code>.
+     */
+    Enumeration defMapE(HCode hc, Temp t);
 }
