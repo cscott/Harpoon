@@ -78,7 +78,7 @@ import harpoon.Util.Collections.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDXMain.java,v 1.1.2.8 2001-11-08 00:25:43 cananian Exp $
+ * @version $Id: EDXMain.java,v 1.1.2.9 2001-12-16 04:30:43 salcianu Exp $
  */
 public class EDXMain extends harpoon.IR.Registration {
  
@@ -165,7 +165,7 @@ public class EDXMain extends harpoon.IR.Registration {
 	    hco = stage1.hco;
 	    chx = stage1.chx;//carry forward
 	    mo = stage1.mo;
-	    CachingBBConverter bbconv=new CachingBBConverter(stage1.hco);
+	    // CachingBBConverter bbconv=new CachingBBConverter(stage1.hco);
 
 	    // costruct the set of all the methods that might be called by 
 	    // the JVM (the "main" method plus the methods which are called by
@@ -175,7 +175,8 @@ public class EDXMain extends harpoon.IR.Registration {
 	    harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 	    mroots.add(mo);
 
-	    mcg = new MetaCallGraphImpl(bbconv, stage1.chx, mroots);
+	    mcg = new MetaCallGraphImpl
+		(new CachingCodeFactory(hco), stage1.chx, mroots);
 	    //using hcf for now!
 	}
     }

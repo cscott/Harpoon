@@ -94,7 +94,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.105 2001-11-08 00:25:43 cananian Exp $
+ * @version $Id: PAMain.java,v 1.1.2.106 2001-12-16 04:30:44 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -220,7 +220,7 @@ public abstract class PAMain {
     private static MetaCallGraph  mcg = null;
     private static MetaAllCallers mac = null;
     private static Relation split_rel = null;
-    private static CachingBBConverter bbconv = null;
+    // private static CachingBBConverter bbconv = null;
     private static LBBConverter lbbconv = null;
     private static CachingSCCLBBFactory caching_scc_lbb_factory = null;
     // the class hierarchy of the analyzed program
@@ -400,8 +400,9 @@ public abstract class PAMain {
 	hcf = new CachingCodeFactory(hcf, true);
 	ir_generation();
 	
-	bbconv = new CachingBBConverter(hcf);
-	lbbconv = new CachingLBBConverter(bbconv);
+	// bbconv = new CachingBBConverter(hcf);
+	// lbbconv = new CachingLBBConverter(bbconv);
+	lbbconv = new CachingLBBConverter(new CachingBBConverter(hcf));
 	lbb_generation();
 
 	caching_scc_lbb_factory = new CachingSCCLBBFactory(lbbconv);
@@ -549,7 +550,7 @@ public abstract class PAMain {
 	}
 	linker    = (Linker) ois.readObject();
 	hcf       = (CachingCodeFactory) ois.readObject();
-	bbconv    = (CachingBBConverter) ois.readObject();
+	// bbconv    = (CachingBBConverter) ois.readObject();
 	caching_scc_lbb_factory = (CachingSCCLBBFactory) ois.readObject();
 	ch        = (ClassHierarchy) ois.readObject();
 	mroots    = (Set) ois.readObject();
@@ -582,7 +583,7 @@ public abstract class PAMain {
 	oos.writeObject(root_method);
 	oos.writeObject(linker);
 	oos.writeObject(hcf);
-	oos.writeObject(bbconv);
+	// oos.writeObject(bbconv);
 	oos.writeObject(caching_scc_lbb_factory);
 	oos.writeObject(ch);
 	oos.writeObject(mroots);
@@ -605,7 +606,7 @@ public abstract class PAMain {
 	    root_method = (Method) ois.readObject();
 	    linker      = (Linker) ois.readObject();
 	    hcf         = (CachingCodeFactory) ois.readObject();
-	    bbconv      = (CachingBBConverter) ois.readObject();
+	    // bbconv      = (CachingBBConverter) ois.readObject();
 	    // lbbconv     = (LBBConverter) ois.readObject();
 	    caching_scc_lbb_factory = (CachingSCCLBBFactory) ois.readObject();
 	    ch          = (ClassHierarchy) ois.readObject();
@@ -636,7 +637,7 @@ public abstract class PAMain {
 	    oos.writeObject(root_method);
 	    oos.writeObject(linker);
 	    oos.writeObject(hcf);
-	    oos.writeObject(bbconv);
+	    // oos.writeObject(bbconv);
 	    oos.writeObject(caching_scc_lbb_factory);
 	    // oos.writeObject(lbbconv);
 	    oos.writeObject(ch);
@@ -2041,7 +2042,7 @@ public abstract class PAMain {
 	if(METAMETHODS){ // real meta-methods
 	    System.out.print("MetaCallGraph ... ");
 	    tstart = time();
-	    mcg = new MetaCallGraphImpl(bbconv, ch, mroots);
+	    mcg = new MetaCallGraphImpl((CachingCodeFactory) hcf, ch, mroots);
 	    System.out.println((time() - tstart) + "ms");
 
 	    System.out.print("MetaAllCallers ... ");
@@ -2057,7 +2058,8 @@ public abstract class PAMain {
 	    if(SMART_CALL_GRAPH){ // smart call graph!
 		System.out.print("MetaCallGraph ... ");
 		tstart = time();
-		MetaCallGraph fmcg = new MetaCallGraphImpl(bbconv, ch, mroots);
+		MetaCallGraph fmcg = 
+		    new MetaCallGraphImpl((CachingCodeFactory) hcf, ch,mroots);
 		System.out.println((time() - tstart) + "ms");
 
 		run_mms = fmcg.getRunMetaMethods();

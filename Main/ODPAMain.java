@@ -96,7 +96,7 @@ import harpoon.Util.DataStructs.LightMap;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPAMain.java,v 1.1.2.4 2001-11-08 00:25:43 cananian Exp $
+ * @version $Id: ODPAMain.java,v 1.1.2.5 2001-12-16 04:30:44 salcianu Exp $
  */
 public abstract class ODPAMain {
 
@@ -3356,7 +3356,7 @@ public abstract class ODPAMain {
 	if(METAMETHODS){ // real meta-methods
 	    System.out.print("MetaCallGraph ... ");
 	    tstart = time();
-	    mcg = new MetaCallGraphImpl(bbconv, ch, mroots);
+	    mcg = new MetaCallGraphImpl((CachingCodeFactory) hcf, ch, mroots);
 	    System.out.println((time() - tstart) + "ms");
 
 	    System.out.print("MetaAllCallers ... ");
@@ -3372,7 +3372,8 @@ public abstract class ODPAMain {
 	    if(SMART_CALL_GRAPH){ // smart call graph!
 		System.out.print("MetaCallGraph ... ");
 		tstart = time();
-		MetaCallGraph fmcg = new MetaCallGraphImpl(bbconv, ch, mroots);
+		MetaCallGraph fmcg = 
+		    new MetaCallGraphImpl((CachingCodeFactory) hcf, ch,mroots);
 		System.out.println((time() - tstart) + "ms");
 
 		run_mms = fmcg.getRunMetaMethods();

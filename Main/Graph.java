@@ -19,12 +19,13 @@ import java.util.Collections;
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.12.2.14 2000-06-30 23:12:22 cananian Exp $
+ * @version $Id: Graph.java,v 1.12.2.15 2001-12-16 04:30:44 salcianu Exp $
  */
 
 public abstract class Graph extends harpoon.IR.Registration {
 
     public static final void main(String args[]) {
+	// USAGE: Graph -pass <codename> <classname> <methodname> <opt>
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
 	Linker linker = Loader.systemLinker;
 	HCodeFactory hcf = // default code factory.
@@ -59,6 +60,8 @@ public abstract class Graph extends harpoon.IR.Registration {
 	    harpoon.Util.Graph.printDomTree(true,hc,out,title);
 	else if (args[n].startsWith("hier"))
 	    harpoon.Util.Graph.printClassHierarchy(out, m, new QuadClassHierarchy(linker, Collections.singleton(m), new CachingCodeFactory(hcf)));
+	else if (args[n].startsWith("BBCFG"))
+	    harpoon.Util.Graph.printBBCFG(m, hcf, out);
     }
 
 }

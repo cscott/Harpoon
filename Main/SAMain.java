@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.182 2001-11-19 19:24:03 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.183 2001-12-16 04:30:45 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -327,7 +327,6 @@ public class SAMain extends harpoon.IR.Registration {
 
 	    if (EVENTDRIVEN && !alexhack) {
 		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-		CachingBBConverter bbconv=new CachingBBConverter(hcf);
 		
 		// costruct the set of all the methods that might be called by 
 		// the JVM (the "main" method plus the methods which are called by
@@ -335,9 +334,8 @@ public class SAMain extends harpoon.IR.Registration {
 		// constructor. [AS]
 		Set mroots = extract_method_roots(frame.getRuntime().runtimeCallableMethods());
 		mroots.add(mainM);
-		mcg = new MetaCallGraphImpl(bbconv, classHierarchy, mroots);
-		
-		
+		mcg = new MetaCallGraphImpl
+		    (new CachingCodeFactory(hcf), classHierarchy, mroots);
 	    }
 
 	    if (ROLE_INFER && !alexhack) {

@@ -40,7 +40,7 @@ import harpoon.Util.BasicBlocks.CachingBBConverter;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.19 2001-11-08 00:25:43 cananian Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.20 2001-12-16 04:30:44 salcianu Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -92,7 +92,8 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	    harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 	mroots.add(m);
 
-	MetaCallGraph mcg = new MetaCallGraphImpl(bbconv, chx, mroots);
+	MetaCallGraph mcg = 
+	    new MetaCallGraphImpl((CachingCodeFactory) hco, chx, mroots);
 	//MetaAllCallers mac=new MetaAllCallers(mcg);
 
 
