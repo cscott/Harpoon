@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.16 1999-09-20 20:57:55 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.17 1999-09-20 21:11:37 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -957,9 +957,15 @@ public class Jasmin {
 	//appropriate local variables
 	for(int i=0;i<m.params().length;i++) {
 	    stacktemps.put(m.params(i),new TempInfo(j++));
-	    HClass hclass=tp.typeMap(m,m.params(i));
-	    if ((hclass==HClass.Double)||(hclass==HClass.Long))
-		j++;
+	    HCodeElement[] defs=ud.defMap(code,m.params(i));
+	    //gross hack...cycle through all defs
+	    for (int k=0; k<defs.length;k++) {
+		HClass hclass=tp.typeMap(defs[k],m.params(i));
+		if ((hclass==HClass.Double)||(hclass==HClass.Long)) {
+		    j++;
+		    break;
+		}
+	    }
 	}
 
 
@@ -1039,10 +1045,16 @@ public class Jasmin {
 		if (broken) {
 		    // If this stack allocation failed,
 		    // allocate it to a local variable.
-		    HClass hclass=tp.typeMap(hdefs[0],next);
 		    stacktemps.put(next,new TempInfo(j++));
-		    if ((hclass==HClass.Double)||(hclass==HClass.Long))
-			j++;
+		    
+		    //gross hack...cycle through all defs
+		    for (int k=0; k<defs.length;k++) {
+			HClass hclass=tp.typeMap(hdefs[k],next);
+			if ((hclass==HClass.Double)||(hclass==HClass.Long)) {
+			    j++;
+			    break;
+			}
+		    }
 		}
 	    }
 	}
@@ -1052,11 +1064,18 @@ public class Jasmin {
 	for (int i=0;i<alltemp.length;i++) {
 	    if (!stacktemps.containsKey(alltemp[i])) {
 		// Should be ok to pass null as HCodeElement param
-		HCodeElement[] huses=ud.useMap(code,alltemp[i]);	     
- 		HClass hclass=tp.typeMap(huses[0],alltemp[i]);
+
 		stacktemps.put(alltemp[i],new TempInfo(j++));
-		if ((hclass==HClass.Double)||(hclass==HClass.Long))
-		    j++;
+
+		HCodeElement[] defs=ud.defMap(code,alltemp[i]);
+		//gross hack...cycle through all defs
+		for (int k=0; k<defs.length;k++) {
+		    HClass hclass=tp.typeMap(defs[k],alltemp[i]);
+		    if ((hclass==HClass.Double)||(hclass==HClass.Long)) {
+			j++;
+			break;
+		    }
+		}
 	    }
 	}
 	return new Object[] {stacktemps, new Integer(j)};
