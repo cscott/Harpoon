@@ -22,8 +22,10 @@ import harpoon.Backend.Generic.InstrBuilder;
 import harpoon.Analysis.UseMap;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.Maps.Derivation;
+import harpoon.Backend.Maps.BackendDerivation;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
@@ -75,7 +77,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.98 2000-07-06 21:08:20 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.99 2000-07-07 17:52:13 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -87,6 +89,12 @@ public abstract class RegAlloc  {
     protected BasicBlock.Factory bbFact;
 
     protected HashSet checked = new HashSet();
+
+    /** Map[ Instr:r -> Instr:i ], where `i' was replaced *by* `r' in
+	`code'.  Subclasses must update this mapping whenever it
+	modifies `code' with such a replacement.
+    */
+    protected Map replacedInstrs = new HashMap();
 
     /** Class for <code>RegAlloc</code> usage in loading registers. 
 	
@@ -317,6 +325,7 @@ public abstract class RegAlloc  {
 		final Code mycode = globalCode.code;
 		final int numLocals = ((Integer)triple.get(2)).intValue();
 		final Set usedRegs = globalCode.computeUsedRegs(instr);
+		final Map riMap = globalCode.replacedInstrs;
 		Util.assert(mycode != null);
 		
 		abstract class MyCode extends Code 
@@ -330,6 +339,32 @@ public abstract class RegAlloc  {
 	        return new MyCode(mycode, instr,
 				mycode.getDerivation(),
 				mycode.getName()) {
+		    public Derivation getDerivation() {
+			final Derivation oldD = super.getDerivation();
+			return new BackendDerivation() {
+			    private HCodeElement orig(HCodeElement h){
+				return (riMap.containsKey(h)) ?
+				    (HCodeElement) riMap.get(h) : h;
+			    }
+			    public HClass typeMap
+				(HCodeElement hce, Temp t) {
+				hce = orig(hce);
+				return oldD.typeMap(hce, t);
+			    }
+			    public Derivation.DList derivation
+				(HCodeElement hce, Temp t) {
+				hce = orig(hce);
+				return oldD.derivation(hce, t);
+			    }
+			    public BackendDerivation.Register
+				calleeSaveRegister(HCodeElement hce,
+						   Temp t) { 
+				hce = orig(hce);
+				return ((BackendDerivation)oldD).
+				    calleeSaveRegister(hce, t);
+			    }
+			};
+		    }
 		    public String getName() { return mycode.getName(); }
 		    public String getRegisterName(Instr i, Temp t,
 						  String s) {

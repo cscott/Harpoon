@@ -58,7 +58,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.92 2000-06-30 23:08:59 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.93 2000-07-07 17:52:12 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -189,6 +189,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    Instr pre = (Instr) replace.next();
 	    Instr post = (Instr) replace.next();
 	    Instr.replace(pre, post);
+	    replacedInstrs.put(post, pre);
 	}
    }
 
