@@ -67,7 +67,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.6 2001-01-14 10:21:35 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.7 2001-01-15 21:21:56 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -724,8 +724,9 @@ public class SyncTransformer
 	    else throw new Error("ACK: "+type);
 	}	    
     }
-    // flag values: the int value is 1976.0927 as a float; the double is close.
-    private static final long FLAG_VALUE = 0x409EE05E44F702F7L;
+    // flag values: repeating sequence of single bytes, must be valid double
+    // and float (ie, not 00 or FF)
+    private static final long FLAG_VALUE = 0xCACACACACACACACAL;
     private static final Integer booleanFlag=new Integer((byte)FLAG_VALUE);
     private static final Integer byteFlag = new Integer((byte)FLAG_VALUE);
     private static final Integer charFlag = new Integer((char)FLAG_VALUE);
