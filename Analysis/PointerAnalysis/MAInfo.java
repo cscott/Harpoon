@@ -67,7 +67,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.37 2000-10-17 00:27:56 cananian Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.38 2000-11-05 00:39:48 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -173,6 +173,21 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	return new MyAP(getAllocatedType(allocationSite));
     }
 
+    // returns the AllocationProperties object for the object creation site q
+    // if no such object exists, create a default one. 
+    private MyAP getAPObj(Quad q){
+	MyAP retval = (MyAP) aps.get(q);
+	if(retval == null)
+	    aps.put(q, retval = new MyAP(getAllocatedType(q)));
+	return retval;
+    }
+
+    // Set the allocation policy for q to be ap. Discard whatever allocation
+    // policy info was assigned to q before.
+    private void setAPObj(Quad q, MyAP ap) {
+	aps.put(q, ap);
+    }
+
     // map to store the inline hints:
     //  CALL to be inlined -> array of (A)NEWs that can be stack allocated
     private Map ih = null;
@@ -206,100 +221,117 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	return null; // should never happen
     }
 
+
+
+    //////////////////////////////////////////////////////////////////
+    ///////// analyze_mm START ///////////////////////////////////////
+
     /* Analyze a single method: take the object creation sites from it
        and generate an allocation policy for each one. */
     private final void analyze_mm(MetaMethod mm){
-	HMethod hm  = mm.getHMethod();
-
 	if(DEBUG)
 	    System.out.println("\n\nMAInfo: Analyzed Meta-Method: " + mm);
 
-	HCode hcode = hcf.convert(hm);
+	HCode hcode = hcf.convert(mm.getHMethod());
+	((harpoon.IR.Quads.Code) hcode).setAllocationInformation(this);
 
-	ParIntGraph initial_pig = pa.getIntParIntGraph(mm);
-	////	    USE_INTER_THREAD ? pa.threadInteraction(mm): 
-	////                       pa.getIntParIntGraph(mm);
-	
-	ParIntGraph pig = (ParIntGraph) initial_pig.clone();
-	if(pig == null) return;
+	// Obtain a clone of the internal pig (no interthread analysis yet)
+	// at the end of hm and "cosmetize" it a bit.
+	ParIntGraph pig = (ParIntGraph) pa.getIntParIntGraph(mm).clone();
+	if(pig == null) return; // strange things happen these days ...
 	pig.G.flushCaches();
 	pig.G.e.removeMethodHoles(good_holes);
 
 	if(DEBUG)
 	    System.out.println("Parallel Interaction Graph:" + pig);
 
-	((harpoon.IR.Quads.Code) hcode).setAllocationInformation(this);
+	generate_aps(mm, pig);
 
-	Set news = new HashSet();
+	if(DO_PREALLOCATION)
+	    try_prealloc(mm, hcode, pig);
 
-	for(Iterator it = hcode.getElementsI(); it.hasNext(); ){
-	    HCodeElement hce = (HCodeElement) it.next();
-	    if((hce instanceof NEW) || (hce instanceof ANEW)){
-		news.add(hce);
-		MyAP ap = getAPObj((Quad) hce);
-		HClass hclass = getAllocatedType(hce);
-		ap.hip = 
-		    DefaultAllocationInformation.hasInteriorPointers(hclass);
-	    }
-	}
+	handle_tg_stuff(pig);
 
-	Set nodes = pig.allNodes();
+	if(DO_METHOD_INLINING)
+	    generate_inlining_hints(mm, pig);
+    }
+
+    // Auxiliary method for analyze_mm.
+    // INPUT: a metamethod mm and the pig at its end.
+    // ACTION: goes over all the level 0 inside nodes from pig
+    //       and try to stack allocate or thread allocate them.
+    private void generate_aps(MetaMethod mm, ParIntGraph pig) {
+	HMethod hm = mm.getHMethod();
+	Set nodes = getLevel0InsideNodes(pig);
 
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
-	    if(node.type != PANode.INSIDE) continue;
 
-	    // we are interested in objects allocated in the current thread
-	    if(node.isTSpec()) continue;
-	    
-	    int depth = node.getCallChainDepth();
-
-	    if(pig.G.captured(node)){
-		if((depth == 0) 
-		   /* && news.contains(node_rep.node2Code(node)) */ ) {
-		    // captured nodes of depth 0 (ie allocated in this method,
-		    // not in a callee) are allocated on the stack.
-		    Quad q  = (Quad) node_rep.node2Code(node);
-		    Util.assert(q != null, "No quad for " + node);
-
-		    if(stack_alloc_extra_cond(node, q)) {
-			MyAP ap = getAPObj(q);
-			ap.sa = true;
-			if(DEBUG)
-			    System.out.println("STACK: " + node + 
-					       " was stack allocated " +
-					       Debug.getLine(q));
-		    }
+	    if(pig.G.captured(node)) {
+		// captured nodes of depth 0 (ie allocated in this method,
+		// not in a callee) are allocated on the stack.
+		Quad q  = (Quad) node_rep.node2Code(node);
+		Util.assert(q != null, "No quad for " + node);
+		
+		if(stack_alloc_extra_cond(node, q)) {
+		    MyAP ap = getAPObj(q);
+		    ap.sa = true;
+		    ap.ns = true; // SYNC
+		    if(DEBUG)
+			System.out.println("STACK: " + node + 
+					   " was stack allocated " +
+					   Debug.getLine(q));
 		}
 	    }
-	    else {
-		if((depth == 0)
-		   /* && news.contains(node_rep.node2Code(node)) */ ) {
-		    if(remainInThread(node, hm, "")) {
-			Quad q = (Quad) node_rep.node2Code(node);
-			Util.assert(q != null, "No quad for " + node);
-
-			MyAP ap = getAPObj(q);
-			ap.ta = true; // thread allocation
-			ap.ah = null; // on the current heap
-			if(DEBUG)
-			    System.out.println("THREAD: " + node +
-					       " was thread allocated " +
-					       Debug.getLine(q));
-		    }
+	    else { // maybe we can do some thread allocation
+		Quad q = (Quad) node_rep.node2Code(node);
+		Util.assert(q != null, "No quad for " + node);
+		
+		MyAP ap = getAPObj(q);
+		
+		if(remainInThread(node, hm, "")) {
+		    ap.ta = true; // thread allocation
+		    ap.ns = true; // SYNC
+		    ap.ah = null; // on the current heap
+		    if(DEBUG)
+			System.out.println("THREAD: " + node +
+					   " was thread allocated " +
+					   Debug.getLine(q));
 		}
+		// maybe we can remove the synchronizations on node even
+		// if it is accessed by multiple threads.
+		else 
+		    ap.ns = noConflictingSyncs(node, mm);
 	    }
 	}
-	
-	PAThreadMap tau = (PAThreadMap) (pa.getIntParIntGraph(mm).tau.clone());
+    }
 
-	if(DO_PREALLOCATION && (tau.activeThreadSet().size() == 1))
-	    analyze_prealloc(mm, hcode, pig, tau);
+    // Returns the INSIDE nodes of level 0 from pig (that is supposed to
+    // be attached to the end of some procedure): the set of all the
+    // inside nodes that appear in pig and are not the specialization of any
+    // other node (ie they are allocated in exactly that method and in the
+    // current thread).
+    private Set getLevel0InsideNodes(ParIntGraph pig) {
+	final Set retval = new HashSet();
+	pig.forAllNodes(new PANodeVisitor() {
+		public void visit(PANode node) {
+		    if((node.type == PANode.INSIDE) &&
+		       !(node.isTSpec()) &&
+		       (node.getCallChainDepth() == 0))
+			retval.add(node);
+		}
+	    });
+	retval.remove(ActionRepository.THIS_THREAD);
+	return retval;
+    }
 
+    // Auxiliary method for analyze_mm.
+    // Do some dummy things. Hopefully, this will be improved in the future.
+    private void handle_tg_stuff(ParIntGraph pig) {
 	/// DUMMY CODE: we don't have NSTK_malloc_with_heap yet
 	if(!NO_TG)
-	    set_make_heap(tau.activeThreadSet());
-
+	    set_make_heap(pig.tau.activeThreadSet());
+	
 	/// DUMMY CODE: Stack allocate ALL the threads
 	if(NO_TG) {
 	    Set set = getLevel0InsideNodes(pig);
@@ -317,29 +349,12 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		}
 	    }
 	}
-
-	if(DO_METHOD_INLINING)
-	    generate_inlining_hints(mm, pig);
     }
 
-    // Returns the INSIDE nodes of level 0 from pig.
-    private Set getLevel0InsideNodes(ParIntGraph pig) {
-	final Set retval = new HashSet();
-	pig.forAllNodes(new PANodeVisitor() {
-		public void visit(PANode node) {
-		    if((node.type == PANode.INSIDE) &&
-		       !(node.isTSpec()) &&
-		       (node.getCallChainDepth() == 0))
-			retval.add(node);
-		}
-	    });
-	retval.remove(ActionRepository.THIS_THREAD);
-	return retval;
-    }
-
-    /** Set the allocation policy info such that each of the threads allocated
-	and started into the currently analyzed method has a thread specific
-	heap associated with it. */
+    // Auxiliary method for analyze_mm.
+    // Set the allocation policy info such that each of the threads allocated
+    // and started into the currently analyzed method has a thread specific
+    // heap associated with it.
     private void set_make_heap(Set threads){
 	for(Iterator it = threads.iterator(); it.hasNext(); ) {
 	    PANode nt = (PANode) it.next();
@@ -353,209 +368,72 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	}
     }
 
+    ///////// analyze_mm END /////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////
 
-    // checks whether node escapes only in some method. We assume that
-    // no method hole starts a new thread and so, we can allocate
-    // the onject on the thread specific heap
-    private boolean escapes_only_in_methods(PANode node, ParIntGraph pig){
-	if(!pig.G.e.nodeHolesSet(node).isEmpty())
-	    return false;
-	if(pig.G.getReachableFromR().contains(node))
-	    return false;
-	if(pig.G.getReachableFromExcp().contains(node))
-	    return false;
-	
-	return true;
-    }
-
-    // hope that this evil string really doesn't exist anywhere else
-    private static String my_scope = "pa!";
-    private static final TempFactory 
-	temp_factory = Temp.tempFactory(my_scope);
-
-    // try to apply some aggressive preallocation into the thread specific
-    // heap.
-    private void analyze_prealloc(MetaMethod mm, HCode hcode, ParIntGraph pig,
-				  PAThreadMap tau){
-
-	Set active_threads = tau.activeThreadSet();
-	PANode nt = (PANode) (active_threads.iterator().next());
-
-	// protect against some patological cases
-	if((nt.type != PANode.INSIDE) || 
-	   (nt.getCallChainDepth() != 0) ||
-	   (nt.isTSpec()) ||
-	   (tau.getValue(nt) != 1))
-	    return;
-
-	// pray that no thread is allocated through an ANEW!
-	// (it seems quite a reasonable assumption)
-	NEW qnt = (NEW) node_rep.node2Code(nt);
-
-	// compute the nodes pointed to by the thread node at the moment of 
-	// the "start()" call. Since we analyze only "good" programs (we
-	// have to produce a paper, don't we?) we know that the start() is
-	// the last operation in the method so we just take the info from
-	// the graph at the end of the method.
-	Set pointed = pig.G.I.pointedNodes(nt);
-
-	////////
-	//if(DEBUG)
-	//System.out.println("Pointed = " + pointed);
-
-	// retain in "pointed" only the nodes allocated in this method, 
-	// and which escaped only through the thread nt.
-	for(Iterator it = pointed.iterator(); it.hasNext(); ){
-	    PANode node = (PANode) it.next();
-	    if( (node.type != PANode.INSIDE) ||
-		(node.getCallChainDepth() != 0) ||
-		!escapes_only_in_thread(node, nt, pig) ){
-		/// System.out.println(node + " escapes somewhere else too");
-		it.remove();
-	    }
- 	}
-
-	////////
-	///if(DEBUG)
-	//System.out.println("Good Pointed = " + pointed);
-
-	// grab into "news" the set of the NEW/ANEW quads allocating objects
-	// that should be put into the heap of "nt".
-	Set news = new HashSet();
-	for(Iterator it = pointed.iterator(); it.hasNext(); ){
-	    PANode node = (PANode) it.next();
-	    news.add(node_rep.node2Code(node));
-	}
-	
-	if(news.isEmpty()){
-	    // specially treat this simple case:
-	    // just allocate the thread node nt on its own heap
-	    MyAP ap = getAPObj(qnt);
-	    ap.ta  = true; // allocate on thread specific heap
-	    ap.mh = true;  // makeHeap
-	    // ap.ah = qnt.dst(); // use own heap
-	    return;
-	}
-	
-	// this NEW no longer exists
-	aps.remove(qnt);
-
-	Temp l2 = new Temp(temp_factory);
-	QuadFactory qf = qnt.getFactory();
-	MOVE moveq = new MOVE(qf, null, qnt.dst(), l2);
-	NEW  newq  = new  NEW(qf, null, l2, qnt.hclass());
-
-	// insert the MOVE instead of the original allocation
-	Quad.replace(qnt, moveq);
-	// insert the new NEW quad right after the METHOD quad
-	// (at the very top of the method)
-	insert_newq((METHOD) (((Quad)hcode.getRootElement()).next(1)), newq);
-
-	// since the object creation site for the thread node has been changed,
-	// we need to update the node2code relation.
-	node_rep.updateNode2Code(nt, newq);
-
-	// the thread object should be allocated in its own
-	// thread specific heap.
-	MyAP newq_ap = getAPObj(newq);
-
-	newq_ap.ta = true;       // thread allocation
-	newq_ap.mh = true;       // makeHeap for the thread object
-	// newq_ap.ah = newq.dst(); // use own heap
-	HClass hclass = getAllocatedType(newq);
-	newq_ap.hip = 
-	    DefaultAllocationInformation.hasInteriorPointers(hclass);
-	
-	// the objects pointed by the thread node and which don't escape
-	// anywhere else are allocated on the heap of the thread node
-	for(Iterator it = news.iterator(); it.hasNext(); ){
-	    Quad cnewq = (Quad) it.next();
-	    MyAP cnewq_ap = getAPObj(cnewq);
-	    cnewq_ap.ta = true;
-	    cnewq_ap.ah = l2;
-	}
-
-	/* //B/ */
-	/*
-	if(DEBUG){
-	    System.out.println("After the preallocation transformation:");
-	    hcode.print(new java.io.PrintWriter(System.out, true));
-	    System.out.println("Thread specific NEW:");
-	    for(Iterator it = news.iterator(); it.hasNext(); ){
-		Quad new_site = (Quad) it.next();
-		System.out.println(new_site.getSourceFile() + ":" + 
-				   new_site.getLineNumber() + " " + 
-				   new_site);
-	    }
-	}
-	*/
-    }
-
-    private void insert_newq(METHOD method, NEW newq){
-	Util.assert(method.nextLength() == 1,
-		    "A METHOD quad should have exactly one successor!");
-	Edge nextedge = method.nextEdge(0);
-	Quad nextquad = method.next(0);
-	Quad.addEdge(method, nextedge.which_succ(), newq, 0);
-	Quad.addEdge(newq, 0, nextquad, nextedge.which_pred());
-    }
-
-
-    // returns the AllocationProperties object for the object creation site q
-    // if no such object exists, create a default one. 
-    private MyAP getAPObj(Quad q){
-	MyAP retval = (MyAP) aps.get(q);
-	if(retval == null)
-	    aps.put(q, retval = new MyAP(getAllocatedType(q)));
-	return retval;
-    }
-
-    // Set the allocation policy for q to be ap. Discard whatever allocation
-    // policy info was assigned to q before.
-    private void setAPObj(Quad q, MyAP ap) {
-	aps.put(q, ap);
-    }
-
-    // checks whether "node" escapes only through the thread node "nt".
-    private boolean escapes_only_in_thread(PANode node, PANode nt,
-					   ParIntGraph pig){
-	if(pig.G.e.hasEscapedIntoAMethod(node)){
-	    if(DEBUG)
-		System.out.println(node + " escapes into a method");
-	    return false;
-	}
-	if(pig.G.getReachableFromR().contains(node)) {
-	    if(DEBUG)
-		System.out.println(node + " is reachable from R");
-	    return false;
-	}
-	if(pig.G.getReachableFromExcp().contains(node)) {
-	    if(DEBUG)
-		System.out.println(node + " is reachable from Excp");
-	    return false;
-	}
-	return true;
-    }
 
 
     /** Checks whether <code>node</code> escapes only in the caller:
 	it is reached through a parameter or it is returned from the
 	method but not lost due to some other reasons. */
     private boolean lostOnlyInCaller(PANode node, ParIntGraph pig){
-	// if node escapes into a method hole it's wrong ...
-	if(pig.G.e.hasEscapedIntoAMethod(node))
-	    return false;
-
-	for(Iterator it=pig.G.e.nodeHolesSet(node).iterator();it.hasNext();){
-	    PANode nhole = (PANode)it.next();
-	    // if the node escapes through some node that is not a parameter
-	    // it's wrong ...
-	    if(nhole.type != PANode.PARAM)
-		return false;
-	}
-
-	return true;
+	return
+	    ! ( lostInAStatic(node, pig) ||
+		lostInAMethodHole(node, pig) ||
+		lostInAThread(node, pig) );
     }
+
+    /** Checks whether <code>node</code> escapes through a static field. */
+    private boolean lostInAStatic(PANode node, ParIntGraph pig) {
+	for(Iterator it = pig.G.e.nodeHolesSet(node).iterator();it.hasNext();){
+	    PANode nhole = (PANode)it.next();
+	    if(nhole.type == PANode.STATIC)
+		return true;
+	}
+	return false;
+    }
+
+
+    /** Checks whether <code>node</code> escapes into a method hole. */
+    private boolean lostInAMethodHole(PANode node, ParIntGraph pig) {
+	return pig.G.e.hasEscapedIntoAMethod(node);
+    }
+
+
+    /** Checks whether <code>node</code> escapes in the caller: it is reachable
+	from a parameter or from one of the returned nodes (method result and
+	exceptions). */
+    private boolean lostInCaller(PANode node, ParIntGraph pig) {
+	// 1. maybe node escapes through a parameter
+	for(Iterator it = pig.G.e.nodeHolesSet(node).iterator();it.hasNext();){
+	    PANode nhole = (PANode)it.next();
+	    if(nhole.type == PANode.PARAM)
+		return true;
+	}
+	// 2. maybe node escapes through a returned node
+	return
+	    pig.G.getReachableFromR().contains(node) ||
+	    pig.G.getReachableFromExcp().contains(node);
+    }
+
+
+    /** Checks whether <code>node</code> escapes in a thread. */
+    private boolean lostInAThread(PANode node, ParIntGraph pig) {
+	// threads is the set of thread nodes from pig
+	Set threads = pig.tau.activeThreadSet();
+	// go over all the node holes node escapes into and
+	// check if any of them corresponds to a thread.
+	for(Iterator it = pig.G.e.nodeHolesSet(node).iterator();it.hasNext();){
+	    PANode nhole = (PANode) it.next();
+	    if(threads.contains(nhole))
+		return true;
+	}
+	return false;
+    }
+
+
+    ////////////////////////////////////////////////////////////////////
+    /////////////// remainInThread START ///////////////////////////////
     
     private static int MAX_LEVEL_BOTTOM_MODE = 10;
     private boolean remainInThreadBottom(PANode node, MetaMethod mm,
@@ -617,11 +495,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     }
 
 
-    // Checks whether node defined into hm, remain into the current
+    // Checks whether node defined into hm, remains into the current
     // thread even if it escapes from the method which defines it.
     private boolean remainInThread(PANode node, HMethod hm, String ident){
-
-	
 	if(DEBUG)
 	    System.out.println(ident + "remainInThread called for " +
 			       node + "  hm = " + hm);
@@ -642,7 +518,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    return true;
 	}
 	
-	if(!lostOnlyInCaller(node, pig)){
+	if(!lostOnlyInCaller(node, pig)) {
 	    if(DEBUG)
 		System.out.println(ident + node +
 					 " escapes somewhere else -> false");
@@ -682,6 +558,102 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 	return true;
     }
+
+    /////////////// remainInThread END /////////////////////////////////
+    ////////////////////////////////////////////////////////////////////
+
+    
+    ///////////////////////////////////////////////////////////////////////
+    /////////////// noConflictingSyncs  START /////////////////////////////
+    
+    // Checks whether the synchronizations done on node are useless or not.
+    private boolean noConflictingSyncs(PANode node, MetaMethod mm) {
+	return noConflictingSyncs(node, mm, 0, "");
+    }
+    
+    // Set up a limit for the length of the reverse call paths we explore
+    private static final int MAX_LEVEL_NO_CONCURRENT_SYNCS = 
+	PointerAnalysis.MAX_SPEC_DEPTH + 10;
+	
+    // Does the real job of noConflictingSyncs(node, mm); the algorithm should
+    // be quite easy from the comments I've put into the code.
+    private boolean noConflictingSyncs(PANode node, MetaMethod mm,
+				       int level, String ident) {
+	if(level > MAInfo.MAX_LEVEL_NO_CONCURRENT_SYNCS)
+	    return false;
+
+	ParIntGraph pig = pa.getIntParIntGraph(mm);
+
+	// Case 1: node is captured in mm -> true
+	if(pig.G.captured(node))
+	    return true;
+
+	// Case 2: node escapes into the entire program -> false
+	if(lostInAStatic(node, pig) || lostInAMethodHole(node, pig))
+	    return false;
+
+	// Case 3: node escapes into the caller(s) -> recursively call
+	// the function on each of the callers and compute a big AND.
+	if(lostInCaller(node, pig)) {
+	    MetaMethod[] callers = mac.getCallers(mm);
+	    // This is a very, very delicate case: if there is no caller,
+	    // it means the currently analyzed method is either "main" or
+	    // the run method of some thread; the node might be accessible
+	    // from outside the current thread => we conservatively return
+	    // "false".
+	    if(callers.length == 0)
+		return false;
+
+	    // Case 3.1: we are still far from the bottom ie we have precise
+	    // information about the specializations of node and their
+	    // corresponding CALL sites.
+	    if(node.getCallChainDepth() < PointerAnalysis.MAX_SPEC_DEPTH - 1) {
+		for(Iterator it = node.getAllCSSpecs().iterator();
+		    it.hasNext(); ) {
+		    Map.Entry entry = (Map.Entry) it.next();
+		    CALL   call = (CALL) entry.getKey();
+		    PANode spec = (PANode) entry.getValue();
+		    
+		    MetaMethod mm_caller = 
+			new MetaMethod(call.getFactory().getMethod(), true);
+		    
+		    if(!noConflictingSyncs(spec, mm_caller,
+					   level + 1, ident + " "))
+			return false;
+		}
+		return true;
+	    }
+
+	    // Case 3.2: the bottom was/is about to be reached; we have to
+	    // go and inspect all the callers of mm.
+	    for(int i = 0; i < callers.length; i++) {
+		if(!noConflictingSyncs(node.getBottom(), callers[i], level+1,
+				       ident + " "))
+		    return false;
+	    }
+	    return true;
+	}
+
+	// Case 4: node doesn't escape into a static, a method hole or the
+	// caller, so it must escape only into one/more thread(s).
+	ParIntGraph pig_t = pa.threadInteraction(mm);
+	// if node is not captured in pig_t, we give up (it means that the
+	// thread that accesses might put it in some static, method hole etc.
+	if(!pig_t.G.captured(node))
+	    return false;
+	// otherwise, we see if there are any conflicting syncs on node
+	return noConcurrentSyncs(node, pig_t);
+    }
+
+    // auxiliary method for noConflictingSyncs
+    // Checks whether the syncs on node that appear in pig are
+    // nonconflicting (ie cannot occur at the same time) or not.
+    private boolean noConcurrentSyncs(PANode node, ParIntGraph pig) {
+	return pig.ar.independent(node);
+    }
+
+    /////////////// noConflictingSyncs  END / /////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
 
     
     /** Checks some additional conditions for the stack allocation of the
@@ -750,6 +722,178 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	System.out.println("====================");
     }
 
+    
+    /////////////////////////////////////////////////////////////////////
+    //////////// try_prealloc START /////////////////////////////////////
+    // PERSONAL ADVICE: This is buggy, incomplete and dummy code.
+    //   Try to stay away from it. 
+
+    // hope that this evil string really doesn't exist anywhere else
+    private static String my_scope = "pa!";
+    private static final TempFactory 
+	temp_factory = Temp.tempFactory(my_scope);
+
+    // try to apply some aggressive preallocation into the thread specific
+    // heap.
+    private void try_prealloc(MetaMethod mm, HCode hcode, ParIntGraph pig) {
+	// not very clear if we really need to clone it but it's safer
+	PAThreadMap tau = (PAThreadMap) pig.tau.clone();
+
+	if(tau.activeThreadSet().size() != 1) return;
+
+	Set active_threads = tau.activeThreadSet();
+	PANode nt = (PANode) (active_threads.iterator().next());
+
+	// protect against some patological cases
+	if((nt.type != PANode.INSIDE) || 
+	   (nt.getCallChainDepth() != 0) ||
+	   (nt.isTSpec()) ||
+	   (tau.getValue(nt) != 1))
+	    return;
+
+	// pray that no thread is allocated through an ANEW!
+	// (it seems quite a reasonable assumption)
+	NEW qnt = (NEW) node_rep.node2Code(nt);
+
+	// compute the nodes pointed to by the thread node at the moment of 
+	// the "start()" call. Since we analyze only "good" programs (we
+	// have to produce a paper, don't we?) we know that the start() is
+	// the last operation in the method so we just take the info from
+	// the graph at the end of the method.
+	Set pointed = pig.G.I.pointedNodes(nt);
+
+	////////
+	//if(DEBUG)
+	//System.out.println("Pointed = " + pointed);
+
+	// retain in "pointed" only the nodes allocated in this method, 
+	// and which escaped only through the thread nt.
+	for(Iterator it = pointed.iterator(); it.hasNext(); ){
+	    PANode node = (PANode) it.next();
+	    if( (node.type != PANode.INSIDE) ||
+		(node.getCallChainDepth() != 0) ||
+		!escapes_only_in_thread(node, nt, pig) ){
+		/// System.out.println(node + " escapes somewhere else too");
+		it.remove();
+	    }
+ 	}
+
+	////////
+	///if(DEBUG)
+	//System.out.println("Good Pointed = " + pointed);
+
+	// grab into "news" the set of the NEW/ANEW quads allocating objects
+	// that should be put into the heap of "nt".
+	Set news = new HashSet();
+	for(Iterator it = pointed.iterator(); it.hasNext(); ){
+	    PANode node = (PANode) it.next();
+	    news.add(node_rep.node2Code(node));
+	}
+	
+	if(news.isEmpty()){
+	    // specially treat this simple case:
+	    // just allocate the thread node nt on its own heap
+	    MyAP ap = getAPObj(qnt);
+	    ap.ta  = true; // allocate on thread specific heap
+	    ap.ns  = true; // SYNC
+	    ap.mh  = true;  // makeHeap
+	    // ap.ah = qnt.dst(); // use own heap
+	    return;
+	}
+	
+	// this NEW no longer exists
+	aps.remove(qnt);
+
+	Temp l2 = new Temp(temp_factory);
+	QuadFactory qf = qnt.getFactory();
+	MOVE moveq = new MOVE(qf, null, qnt.dst(), l2);
+	NEW  newq  = new  NEW(qf, null, l2, qnt.hclass());
+
+	// insert the MOVE instead of the original allocation
+	Quad.replace(qnt, moveq);
+	// insert the new NEW quad right after the METHOD quad
+	// (at the very top of the method)
+	insert_newq((METHOD) (((Quad)hcode.getRootElement()).next(1)), newq);
+
+	// since the object creation site for the thread node has been changed,
+	// we need to update the node2code relation.
+	node_rep.updateNode2Code(nt, newq);
+
+	// the thread object should be allocated in its own
+	// thread specific heap.
+	MyAP newq_ap = getAPObj(newq);
+
+	newq_ap.ta = true;       // thread allocation
+	newq_ap.ns = true; // SYNC
+	newq_ap.mh = true;       // makeHeap for the thread object
+	// newq_ap.ah = newq.dst(); // use own heap
+	HClass hclass = getAllocatedType(newq);
+	newq_ap.hip = 
+	    DefaultAllocationInformation.hasInteriorPointers(hclass);
+	
+	// the objects pointed by the thread node and which don't escape
+	// anywhere else are allocated on the heap of the thread node
+	for(Iterator it = news.iterator(); it.hasNext(); ){
+	    Quad cnewq = (Quad) it.next();
+	    MyAP cnewq_ap = getAPObj(cnewq);
+	    cnewq_ap.ta = true;
+	    cnewq_ap.ns = true; // SYNC
+	    cnewq_ap.ah = l2;
+	}
+
+	/* //B/ */
+	/*
+	if(DEBUG){
+	    System.out.println("After the preallocation transformation:");
+	    hcode.print(new java.io.PrintWriter(System.out, true));
+	    System.out.println("Thread specific NEW:");
+	    for(Iterator it = news.iterator(); it.hasNext(); ){
+		Quad new_site = (Quad) it.next();
+		System.out.println(new_site.getSourceFile() + ":" + 
+				   new_site.getLineNumber() + " " + 
+				   new_site);
+	    }
+	}
+	*/
+    }
+
+    // checks whether "node" escapes only through the thread node "nt".
+    private boolean escapes_only_in_thread(PANode node, PANode nt,
+					   ParIntGraph pig){
+	if(pig.G.e.hasEscapedIntoAMethod(node)){
+	    if(DEBUG)
+		System.out.println(node + " escapes into a method");
+	    return false;
+	}
+	if(pig.G.getReachableFromR().contains(node)) {
+	    if(DEBUG)
+		System.out.println(node + " is reachable from R");
+	    return false;
+	}
+	if(pig.G.getReachableFromExcp().contains(node)) {
+	    if(DEBUG)
+		System.out.println(node + " is reachable from Excp");
+	    return false;
+	}
+	return true;
+    }
+
+    private void insert_newq(METHOD method, NEW newq){
+	Util.assert(method.nextLength() == 1,
+		    "A METHOD quad should have exactly one successor!");
+	Edge nextedge = method.nextEdge(0);
+	Quad nextquad = method.next(0);
+	Quad.addEdge(method, nextedge.which_succ(), newq, 0);
+	Quad.addEdge(newq, 0, nextquad, nextedge.which_pred());
+    }
+
+    //////////// try_prealloc END ///////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
+
+
+
+    /////////////////////////////////////////////////////////////////////
+    //////////// INLINING STUFF START ///////////////////////////////////
 
     private void generate_inlining_hints(MetaMethod mm, ParIntGraph pig){
 	HMethod hm  = mm.getHMethod();
@@ -925,6 +1069,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    Util.assert(q != null, "no new Quad for " + news[i]);
 	    MyAP ap = new MyAP(getAllocatedType(q));
 	    ap.sa = true;
+	    ap.ns = true; // SYNC
 	    setAPObj(q, ap);
 	}
     }
@@ -971,17 +1116,19 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 				      returnset.size());
 		int edge=0;
 		for(Iterator returnit=returnset.iterator();returnit.hasNext();)
-		    Quad.addEdge((Quad)returnit.next(),0,returnphi,edge++);
+		    Quad.addEdge((Quad)returnit.next(), 0, returnphi, edge++);
 		
-		Quad.addEdge(returnphi,0,cs.next(0),cs.nextEdge(0).which_pred());
+		Quad.addEdge(returnphi, 0, cs.next(0),
+			     cs.nextEdge(0).which_pred());
 
 		PHI throwphi=new PHI(cs.getFactory(),null, new Temp[0],
 				     throwset.size());
 		edge=0;
 		for(Iterator throwit=throwset.iterator();throwit.hasNext();)
-		    Quad.addEdge((Quad)throwit.next(),0,throwphi,edge++);
+		    Quad.addEdge((Quad)throwit.next(), 0, throwphi, edge++);
 		
-		Quad.addEdge(throwphi,0,cs.next(1),cs.nextEdge(1).which_pred());
+		Quad.addEdge(throwphi, 0, cs.next(1),
+			     cs.nextEdge(1).which_pred());
 	    }
 
 	    public void visit(Quad q) {
@@ -1105,5 +1252,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    fill_the_map(next1[i], next2[i], map, seen);
     }
 
+    //////////// INLINING STUFF END /////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
 }
 

@@ -11,7 +11,7 @@ import harpoon.Temp.Temp;
  * to information about the allocation done at that site.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformation.java,v 1.1.2.5 2000-06-07 20:19:38 kkz Exp $
+ * @version $Id: AllocationInformation.java,v 1.1.2.6 2000-11-05 00:39:46 salcianu Exp $
  */
 public interface AllocationInformation  {
     
@@ -63,6 +63,9 @@ public interface AllocationInformation  {
 	 * class).
 	 */
 	public HClass actualClass();
+
+	/* Each sync on this object consists of NOTHING. */
+	public boolean noSync();
     }
 
     /** Query the properties of the allocation at the specified site. */

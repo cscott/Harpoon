@@ -76,7 +76,7 @@ import harpoon.Util.Util;
  * based on the results of pointer analysis.
  * 
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: SyncElimination.java,v 1.1.2.4 2000-07-20 21:13:55 pnkfelix Exp $
+ * @version $Id: SyncElimination.java,v 1.1.2.5 2000-11-05 00:39:49 salcianu Exp $
  */
 public class SyncElimination {
 
@@ -103,7 +103,7 @@ public class SyncElimination {
 		public void visit_ld(PALoad load){
 		}
 		public void visit_sync(PASync sync){
-		    // this sync exists in the action repository, so it operates
+		    // this sync exists in the action repository,so it operates
 		    // on an escaped node, therefore it is necessary.
 		    necessarySyncs.add(sync);
 		}

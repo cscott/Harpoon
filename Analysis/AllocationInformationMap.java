@@ -20,7 +20,7 @@ import java.util.Map;
  * from a different <code>AllocationInformation</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformationMap.java,v 1.1.2.8 2000-07-20 21:22:12 pnkfelix Exp $
+ * @version $Id: AllocationInformationMap.java,v 1.1.2.9 2000-11-05 00:39:18 salcianu Exp $
  */
 public class AllocationInformationMap
     implements AllocationInformation, java.io.Serializable {
@@ -56,22 +56,25 @@ public class AllocationInformationMap
 	final boolean canBeStackAllocated;
 	final boolean canBeThreadAllocated;
 	final boolean makeHeap;
+	final boolean noSynchronization;
 	final Temp allocationHeap;
 	final HClass actualClass;
 	public AllocationPropertiesImpl(boolean hasInteriorPointers,
 					boolean canBeStackAllocated,
 					boolean canBeThreadAllocated,
 					boolean makeHeap,
+					boolean noSynchronization,
 					Temp allocationHeap,
 					HClass actualClass) {
 	    Util.assert(!(allocationHeap!=null && !canBeThreadAllocated));
 	    Util.assert(!(allocationHeap!=null && makeHeap));
-	    this.hasInteriorPointers = hasInteriorPointers;
-	    this.canBeStackAllocated = canBeStackAllocated;
-	    this.canBeThreadAllocated= canBeThreadAllocated;
-	    this.makeHeap            = makeHeap;
-	    this.allocationHeap = allocationHeap;
-	    this.actualClass = actualClass;
+	    this.hasInteriorPointers  = hasInteriorPointers;
+	    this.canBeStackAllocated  = canBeStackAllocated;
+	    this.canBeThreadAllocated = canBeThreadAllocated;
+	    this.makeHeap             = makeHeap;
+	    this.noSynchronization    = noSynchronization;
+	    this.allocationHeap       = allocationHeap;
+	    this.actualClass          = actualClass;
 	}
 	public AllocationPropertiesImpl(AllocationProperties ap, 
 					TempMap tm) {
@@ -79,14 +82,16 @@ public class AllocationInformationMap
 		 ap.canBeStackAllocated(),
 		 ap.canBeThreadAllocated(),
 		 ap.makeHeap(),
+		 ap.noSync(),
 		 ap.allocationHeap() != null ?
 		 tm.tempMap(ap.allocationHeap()) : null,
 		 ap.actualClass());
 	}
 	public boolean hasInteriorPointers() { return hasInteriorPointers; }
 	public boolean canBeStackAllocated() { return canBeStackAllocated; }
-	public boolean canBeThreadAllocated(){ return canBeThreadAllocated;}
+	public boolean canBeThreadAllocated(){ return canBeThreadAllocated; }
 	public boolean makeHeap()            { return makeHeap; }
+	public boolean noSync()              { return noSynchronization; } 
 	public Temp allocationHeap()         { return allocationHeap; }
 	public HClass actualClass()          { return actualClass; }
     }

@@ -4,6 +4,7 @@
 package harpoon.Analysis.PointerAnalysis;
 
 import harpoon.Analysis.Maps.AllocationInformation;
+import harpoon.Analysis.DefaultAllocationInformation;
 import harpoon.ClassFile.HClass;
 import harpoon.Temp.Temp;
 
@@ -14,7 +15,7 @@ import harpoon.Util.Util;
  <code>AllocationProperties</code>. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MyAP.java,v 1.1.2.9 2000-06-12 20:38:29 salcianu Exp $
+ * @version $Id: MyAP.java,v 1.1.2.10 2000-11-05 00:39:48 salcianu Exp $
  */
 public class MyAP implements AllocationInformation.AllocationProperties,
 			     java.io.Serializable,
@@ -30,6 +31,8 @@ public class MyAP implements AllocationInformation.AllocationProperties,
     public boolean uoh = false;
     // make heap (true at the thread object creation sites)
     public boolean mh  = false;
+    // sync's on this object are unnecessary
+    public boolean ns  = false;
 
     // the Temp pointing to the thread object on whose stack
     // the NEW quad is going to allocate the object; "null"
@@ -41,6 +44,8 @@ public class MyAP implements AllocationInformation.AllocationProperties,
     /** Creates a <code>MyAP</code>. */
     public MyAP(HClass actualClass) {
 	this.actualClass = actualClass;
+	this.hip =
+	    DefaultAllocationInformation.hasInteriorPointers(actualClass);
     }
 
 
@@ -58,6 +63,10 @@ public class MyAP implements AllocationInformation.AllocationProperties,
 
     public boolean makeHeap(){
 	return mh;
+    }
+
+    public boolean noSync() {
+	return ns;
     }
 
     public Temp allocationHeap(){

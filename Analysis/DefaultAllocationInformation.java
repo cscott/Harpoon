@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * that nothing can be stack or thread-locally allocated.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultAllocationInformation.java,v 1.1.2.6 2000-07-20 21:22:12 pnkfelix Exp $
+ * @version $Id: DefaultAllocationInformation.java,v 1.1.2.7 2000-11-05 00:39:18 salcianu Exp $
  */
 public class DefaultAllocationInformation
     implements AllocationInformation, java.io.Serializable {
@@ -84,6 +84,7 @@ public class DefaultAllocationInformation
 	public boolean canBeStackAllocated() { return false; }
 	public boolean canBeThreadAllocated() { return false; }
 	public boolean makeHeap() { return false; }
+	public boolean noSync()   { return false; }
 	public Temp allocationHeap() { return null; }
 	public HClass actualClass() { return actualClass; }
     }
