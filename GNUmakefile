@@ -20,7 +20,7 @@ java:	$(ALLSOURCE)
 
 cvs-add:
 	-for dir in $(filter-out Test,$(ALLPKGS)); do \
-		(cd $$dir; cvs add *.java); \
+		(cd $$dir; cvs add *.java 2>/dev/null); \
 	done
 cvs-commit: cvs-add
 	cvs commit
