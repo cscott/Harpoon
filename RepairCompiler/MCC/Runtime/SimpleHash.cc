@@ -174,6 +174,19 @@ SimpleHash::~SimpleHash() {
   }
 }
 
+int SimpleHash::firstkey() {
+  struct ArraySimple *ptr=listhead;
+  int index=0;
+  while((index==ARRAYSIZE)||!ptr->nodes[index].inuse) {
+    if (index==ARRAYSIZE) {
+      index=0;
+      ptr=ptr->nextarray;
+    } else
+      index++;
+  }
+  return ptr->nodes[index].key;
+}
+
 void SimpleHash::addParent(SimpleHash* parent) {
     parents[numparents++] = parent;
     parent->addChild(this);
