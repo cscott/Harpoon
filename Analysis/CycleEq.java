@@ -30,7 +30,7 @@ import java.util.Stack;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.13 1999-05-19 06:45:07 andyb Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.14 1999-06-11 11:05:36 cananian Exp $
  */
 
 public class CycleEq  {
@@ -226,7 +226,7 @@ public class CycleEq  {
 	    { this.n = n; this.p = p; this.i = i; }
 	}
 	/* OLD VERSION OF dfs_number() -- using real recursion.
-	   // kept around because it's *must* easier to understand.
+	   // kept around because it's *much* easier to understand.
 	private void dfs_number(Node n, Set visited, Node parent) {
 	    Util.assert(!visited.contains(n));
 	    visited.add(n); // kilroy was here.
