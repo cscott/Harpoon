@@ -20,7 +20,7 @@ import java.lang.reflect.Method;
 public abstract class Scheduler {
     protected static Scheduler defaultScheduler = null;
     private static VTMemory vt = null;
-    private static final boolean DISTRIBUTED = true; 
+    private static final boolean DISTRIBUTED = false; 
     private Object connectionManager = null;
 
     /** Create an instance of <code>Scheduler</code>. */
@@ -69,8 +69,8 @@ public abstract class Scheduler {
     public static Scheduler getDefaultScheduler() {
 	if (defaultScheduler == null) {
 //	    setDefaultScheduler(PreAllocRoundRobinScheduler.instance());
-	    setDefaultScheduler(DistributedRoundRobinScheduler.instance());
-//  	    setDefaultScheduler(NativeScheduler.instance());
+//	    setDefaultScheduler(DistributedRoundRobinScheduler.instance());
+  	    setDefaultScheduler(NativeScheduler.instance());
 	    return getDefaultScheduler();
 	}
 	return defaultScheduler;
