@@ -35,6 +35,8 @@ import harpoon.Util.Default;
 import harpoon.Util.LinearMap;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.CombineIterator;
 
 import harpoon.Analysis.DataFlow.ReachingDefs;
 import harpoon.Analysis.DataFlow.ForwardDataFlowBasicBlockVisitor;
@@ -79,7 +81,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.126 2001-06-17 22:29:52 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.127 2001-06-20 17:39:19 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -368,6 +370,36 @@ public abstract class RegAlloc  {
 	return new BasicBlock.Factory
 	    (code, code.getInstrFactory().getGrapherFor(InstrGroup.AGGREGATE));
     }
+
+    /** Iterates over a view of the code which skips over instrs that
+	are not in our basic block set.  This is a useful notion
+	because many of the datastructures used for register
+	allocation barf if given an instruction that wasn't in a basic
+	block (such as a element in a data-table).  Note that this
+	method uses the basic-block structure as the basis for its
+	data, so if computeBasicBlocks() is overriden, the behavior of
+	the iteration may change.
+
+	<p> Note also that if the compiler emits dead code, the instrs
+	in such code will not ever be yielded from this, but MAY
+	indeed be yielded from code.getElementsI().  Since FLEX seems
+	to be emitting unreachable code in certain cases, an allocator
+	may want still provide some bogus assignment so that we don't
+	die in an assertion failure in this module.  Or perhaps one
+	would prefer to fix the earlier part that is generating
+	unreachable code.  C:P
+
+    */
+    protected Iterator reachableInstrs() {
+	final Iterator blocks = bbFact.blockSet().iterator();
+	return new CombineIterator(new UnmodifiableIterator() {
+		public Object next() {
+		    return ((BasicBlock)blocks.next()).statements().iterator();}
+		public boolean hasNext() {
+		    return blocks.hasNext();}
+	    });
+    }
+
     
     /** Assigns registers in the code for <code>this</code>.
 	
