@@ -17,7 +17,7 @@ import java.util.Map;
  * information about an <code>HClass</code>. 
  *
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: HClassInfo.java,v 1.1.2.15 2000-01-13 23:47:36 cananian Exp $
+ * @version $Id: HClassInfo.java,v 1.1.2.16 2000-03-30 22:16:34 cananian Exp $
  * @see     harpoon.ClassFile.HClass
  */
 public class HClassInfo
@@ -73,14 +73,17 @@ public class HClassInfo
 		if (hc.isArray())  { // Treat arrays differently
 		    int    dims      = HClassUtil.dims(hc);
 		    HClass baseclass = HClassUtil.baseClass(hc);
+		    // hc is not primitive, so hc.getLinker() is safe.
 		    superclass = 
 			baseclass.isPrimitive() ? 
 			hc.getLinker().forName("java.lang.Object")
 			: (baseclass.getDescriptor()
 			   .equals("Ljava/lang/Object;") ?
-			   (HClassUtil.arrayClass(baseclass, dims-1))
-			   : HClassUtil.arrayClass
-			     (baseclass.getSuperclass(), dims));
+			   (HClassUtil.arrayClass(hc.getLinker(),
+						  baseclass, dims-1))
+			   : HClassUtil.arrayClass(hc.getLinker(),
+						   baseclass.getSuperclass(),
+						   dims));
 		} 
 		else { superclass = hc.getSuperclass(); } 
 		if (superclass != null) {

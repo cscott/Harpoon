@@ -8,6 +8,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.Util.Worklist;
 import harpoon.Util.WorkSet;
 import harpoon.Util.HClassUtil;
+import harpoon.Util.Util;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +18,7 @@ import java.util.Iterator;
  * <code>ClassCone</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: ClassCone.java,v 1.1.2.6 2000-01-17 11:10:16 cananian Exp $
+ * @version $Id: ClassCone.java,v 1.1.2.7 2000-03-30 22:16:29 cananian Exp $
  */
 
 public class ClassCone  {
@@ -38,7 +39,9 @@ public class ClassCone  {
 	    wl.push(HClassUtil.baseClass(c));
 	    while (!wl.isEmpty()) {
 		HClass cl = (HClass)wl.pull();
-		s.add(HClassUtil.arrayClass(cl, dims));
+		Util.assert(!c.isPrimitive(), "CSA: c.getLinker() hack below"+
+			    " is not going to work if c can be primitive.");
+		s.add(HClassUtil.arrayClass(c.getLinker(), cl, dims));
 		for (Iterator it=ch.children(cl).iterator(); it.hasNext(); )
 		    wl.push(it.next());
 	    }

@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.14 2000-03-27 13:27:37 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.15 2000-03-30 22:16:39 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -181,11 +181,11 @@ public class DataClaz extends Data {
 	    
 	    // first step down the base class inheritance hierarchy.
 	    for (HClass hcp = base; hcp!=null; hcp=hcp.getSuperclass())
-		clslist.add(HClassUtil.arrayClass(hcp, dims));
+		clslist.add(HClassUtil.arrayClass(linker, hcp, dims));
 	    // now down the Object array hierarchy.
 	    HClass hcO = linker.forName("java.lang.Object");
 	    for (dims--; dims>=0; dims--)
-		clslist.add(HClassUtil.arrayClass(hcO, dims));
+		clslist.add(HClassUtil.arrayClass(linker, hcO, dims));
 	    // done.
 	} else if (!hc.isInterface()) { // step down the inheritance hierarchy.
 	    for (HClass hcp = hc; hcp!=null; hcp=hcp.getSuperclass())

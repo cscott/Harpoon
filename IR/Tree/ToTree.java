@@ -69,7 +69,7 @@ import java.util.Stack;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.73 2000-02-25 00:54:09 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.74 2000-03-30 22:16:46 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -366,7 +366,8 @@ static class TranslationVisitor extends LowQuadVisitor {
     }
 
     public void visit(harpoon.IR.Quads.ARRAYINIT q) {
-	HClass arrayType = HClassUtil.arrayClass(q.type(), 1);
+	HClass arrayType = HClassUtil.arrayClass(q.getFactory().getLinker(),
+						 q.type(), 1);
 	Stm s0, s1, s2;
 
 	// Create a pointer which we'll use to initialize the array
@@ -947,7 +948,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    constant = new CONST(m_tf, src, ((Float)value).floatValue()); 
 	else if (type==HClass.Double)
 	    constant = new CONST(m_tf, src, ((Double)value).doubleValue());
-	else if (type==type.getLinker().forName("java.lang.String"))
+	else if (type.getName().equals("java.lang.String"))
 	    return m_rtb.stringConst(m_tf, src, treeDeriv, (String)value);
 	else 
 	    throw new Error("Bad type for CONST: " + type); 

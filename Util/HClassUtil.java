@@ -4,13 +4,14 @@
 package harpoon.Util;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.Linker;
 
 /**
  * <code>HClassUtil</code> contains various useful methods for dealing with
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.6.2.9 2000-02-05 19:34:29 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.6.2.10 2000-03-30 22:17:14 cananian Exp $
  */
 public abstract class HClassUtil  {
     // Only static methods.
@@ -37,9 +38,9 @@ public abstract class HClassUtil  {
     /** Make an n-dimensional array class from the given component class.
      *  The parameter <code>dims</code> is the number of array dimensions
      *  to add. */
-    public static final HClass arrayClass(HClass hc, int dims) {
+    public static final HClass arrayClass(Linker linker, HClass hc, int dims) {
 	StringBuffer sb = new StringBuffer();
-	return hc.getLinker().forDescriptor(Util.repeatString("[",dims)+
+	return linker.forDescriptor(Util.repeatString("[",dims)+
 					    hc.getDescriptor());
     }
     /** Create an array describing the inheritance of class hc.
@@ -86,6 +87,7 @@ public abstract class HClassUtil  {
 	// this is a quick hack.
 	if (a.isSuperinterfaceOf(b)) return a;
 	if (b.isSuperinterfaceOf(a)) return b;
+	Util.assert(!a.isPrimitive()); // getLinker() won't work in this case
 	return a.getLinker().forName("java.lang.Object");
     }
     /** Find a class which is a common parent of both suppied classes.
@@ -93,12 +95,14 @@ public abstract class HClassUtil  {
      */
     public static final HClass commonParent(HClass a, HClass b) {
 	if (a.isPrimitive() || b.isPrimitive()) return commonSuper(a, b);
+	// note that using getLinker() is safe because neither a nor b
+	// is primitive by this point.
 	Util.assert(a.getLinker()==b.getLinker());
 	if (a.isArray() && b.isArray()) {
 	    int ad = dims(a), bd = dims(b), d = (ad<bd)?ad:bd;
 	    for (int i=0; i<d; i++)
 		{ a=a.getComponentType(); b=b.getComponentType(); }
-	    return arrayClass(commonParent(a, b), d);
+	    return arrayClass(a.getLinker(), commonParent(a, b), d);
 	}
 	if (a.isInterface() && b.isInterface())
 	    return commonInterface(a, b);

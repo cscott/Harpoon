@@ -22,7 +22,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.11 2000-01-17 12:53:39 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.12 2000-03-30 22:16:53 cananian Exp $
  */
 final class StaticState extends HCLibrary {
     
@@ -125,9 +125,9 @@ final class StaticState extends HCLibrary {
 	    if (base.isPrimitive()) 
 		return obj;
 	    else if (base.getDescriptor().equals(obj.getDescriptor()))
-		return HClassUtil.arrayClass(obj, dims-1);
+		return HClassUtil.arrayClass(linker, obj, dims-1);
 	    else 
-		return HClassUtil.arrayClass(base.getSuperclass(), dims);
+		return HClassUtil.arrayClass(linker, base.getSuperclass(), dims);
 	}
 	else { 
 	    return cls.getSuperclass();

@@ -598,12 +598,12 @@ class_type ::=	class_or_interface_type:ty {: RESULT=ty; :};
 interface_type ::= class_or_interface_type:ty {: RESULT=ty; :};
 
 array_type ::=	primitive_type:ty dims:d
-		{: RESULT=HClassUtil.arrayClass(ty,d.intValue()); :}
+		{: RESULT=HClassUtil.arrayClass(parser.linker,ty,d.intValue()); :}
 	|	name:n dims:d
 		{: QualName qn=typeName(n);
 		   RESULT = (qn==null)?null:qn.toClass();
 		   if (RESULT!=null)
-		     RESULT=HClassUtil.arrayClass(RESULT,d.intValue());
+		     RESULT=HClassUtil.arrayClass(parser.linker,RESULT,d.intValue());
 		   annotateURL(nleft,nright, qn, n); :}
 	;
 
@@ -809,13 +809,15 @@ formal_parameter_list ::=
 formal_parameter ::=
 		type:ty variable_declarator_id:v
 		{:
-		  HClass hc = (ty==null) ? null : HClassUtil.arrayClass(ty,
+		  HClass hc = (ty==null) ? null : HClassUtil.arrayClass
+	                                       (parser.linker, ty,
 						((Integer)v[1]).intValue());
 		  env.put(v[0],hc); RESULT=(hc==null)?"*":hc.getDescriptor();
 		:}
 	|	FINAL type:ty variable_declarator_id:v
 		{:
-		  HClass hc = (ty==null) ? null : HClassUtil.arrayClass(ty,
+		  HClass hc = (ty==null) ? null : HClassUtil.arrayClass
+					       (parser.linker, ty,
 						((Integer)v[1]).intValue());
 		  env.put(v[0],hc); RESULT=(hc==null)?"*":hc.getDescriptor();
 		:}
@@ -944,7 +946,7 @@ local_variable_declaration ::=
 		  for (Iterator it=l.iterator(); it.hasNext(); ) {
 		    Object[] v=(Object[]) it.next();
 		    HClass hc = (ty==null) ? null :
-		         HClassUtil.arrayClass(ty,((Integer)v[1]).intValue());
+		         HClassUtil.arrayClass(parser.linker, ty,((Integer)v[1]).intValue());
 		    env.put(v[0], hc);
 		  }
 		:}
@@ -952,7 +954,7 @@ local_variable_declaration ::=
 		  for (Iterator it=l.iterator(); it.hasNext(); ) {
 		    Object[] v=(Object[]) it.next();
 		    HClass hc = (ty==null) ? null :
-		         HClassUtil.arrayClass(ty,((Integer)v[1]).intValue());
+		         HClassUtil.arrayClass(parser.linker, ty,((Integer)v[1]).intValue());
 		    env.put(v[0], hc);
 		  }
 		:}
@@ -1261,7 +1263,7 @@ unary_expression_not_plus_minus ::=
 	;
 cast_expression ::=
 		LPAREN primitive_type:ty dims_opt:d RPAREN unary_expression
-		{: RESULT=HClassUtil.arrayClass(ty,d.intValue()); :}
+		{: RESULT=HClassUtil.arrayClass(parser.linker,ty,d.intValue()); :}
 	|	LPAREN expression RPAREN unary_expression_not_plus_minus
 	|	LPAREN name:n dims RPAREN unary_expression_not_plus_minus
 		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();

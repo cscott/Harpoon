@@ -40,7 +40,7 @@ import harpoon.Util.BasicBlocks.CachingBBConverter;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.16 2000-03-28 23:51:53 salcianu Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.17 2000-03-30 22:17:01 cananian Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -127,7 +127,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	//        c.add(linker.forName("java.net.PlainSocketImpl").getMethod("getInputStream",new HClass[0]));
 
 	//c.add(linker.forName("java.io.InputStreamReader").getMethod("fill",
-	//	new HClass[] {HClassUtil.arrayClass(hcc,1), hi, hi}));
+	//	new HClass[] {HClassUtil.arrayClass(linker, hcc,1), hi, hi}));
 
 	//c.add(linker.forName("java.io.InputStreamReader").getMethod("read",
 	//	new HClass[0]));
@@ -281,9 +281,9 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	WorkSet w = new WorkSet();
 	w.add(is.getDeclaredMethod("read", new HClass[0]));
 	w.add(is.getDeclaredMethod("read", new HClass[] 
-				   {HClassUtil.arrayClass(b,1)}));
+				   {HClassUtil.arrayClass(linker, b, 1)}));
 	w.add(is.getDeclaredMethod("read", new HClass[] 
-				   {HClassUtil.arrayClass(b, 1),
+				   {HClassUtil.arrayClass(linker, b, 1),
 					HClass.Int, HClass.Int}));
 	w.add(ss.getDeclaredMethod("accept", new HClass[0]));
 	return w;

@@ -42,7 +42,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.18 2000-03-28 09:42:58 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.19 2000-03-30 22:16:24 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -297,9 +297,10 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    HClass base = HClassUtil.baseClass(c);
 	    int dims = HClassUtil.dims(c);
 	    if (base.getSuperclass()!=null)
-		su = HClassUtil.arrayClass(base.getSuperclass(), dims);
+		su = HClassUtil.arrayClass(c.getLinker(),//safe:c not primitive
+					   base.getSuperclass(), dims);
 	    else
-		su = HClassUtil.arrayClass(base, dims-1);
+		su = HClassUtil.arrayClass(c.getLinker(), base, dims-1);
 	}
 	if (su!=null) { // maybe discover super class?
 	    discoverClass(su, W, done, ckc, cmu, cmp);
