@@ -28,6 +28,8 @@ import harpoon.IR.Quads.FOOTER;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.MONITORENTER;
+import harpoon.IR.Quads.MONITOREXIT;
 import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
@@ -58,7 +60,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.16 2000-11-16 07:18:27 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.17 2001-01-12 00:00:59 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -73,6 +75,13 @@ public class InitializerTransform
     private final Map dependentMethods;
     /** Our version of the codefactory. */
     private final HCodeFactory hcf;
+    /** Runtime property determining whether we should unsynchronize
+     *  all initializer methods.  This works except when initializers
+     *  create threads, which we don't currently allow.  The default
+     *  is to unsynchronize initializer methods. */
+    private final static boolean unsyncInitializers =
+	System.getProperty("harpoon.inittrans.unsync", "yes")
+	.equalsIgnoreCase("yes");
 
     /** Creates a <code>InitializerTransform</code> with no information
      *  about which native methods are 'safe'. */
@@ -279,6 +288,13 @@ public class InitializerTransform
 	    public void visit(SET q) {
 		if (q.isStatic())
 		    addCheckBefore(q, q.field().getDeclaringClass(), seenSet);
+	    }
+	    // also (optionally) remove synchronization from initializers.
+	    public void visit(MONITORENTER q) {
+		if (unsyncInitializers) q.remove();
+	    }
+	    public void visit(MONITOREXIT q) {
+		if (unsyncInitializers) q.remove();
 	    }
 	};
 	return hc;
