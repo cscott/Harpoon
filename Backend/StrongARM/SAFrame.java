@@ -33,13 +33,16 @@ import harpoon.Util.Util;
 
 import java.util.List;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * <code>SAFrame</code> contains the machine-dependant
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.12 1999-06-16 01:54:33 pnkfelix Exp $
+ * @author  Felix Klock <pnkfelix@mit.edu>
+ * @version $Id: SAFrame.java,v 1.1.2.13 1999-07-02 21:15:34 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements DefaultAllocationInfo {
      static Temp[] reg = new Temp[16];
@@ -237,4 +240,9 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
 	return Arrays.asList(new Object[] { store });
     }
 
+    /** Stub added by FSK */
+    public Iterator suggestRegAssignment(Temp t, Map regfile) {
+	Util.assert(false, "SAFrame.suggestRegAssigment() Not implemented yet");
+	return null;
+    }
 }

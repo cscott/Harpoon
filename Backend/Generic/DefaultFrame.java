@@ -26,6 +26,8 @@ import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
 
 import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  *  The DefaultFrame class implements the abstract methods of the 
@@ -33,7 +35,7 @@ import java.util.List;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.12 1999-06-14 23:53:43 pnkfelix Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.13 1999-07-02 21:15:07 pnkfelix Exp $
  */
 public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
@@ -180,11 +182,19 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
     /** Stub added by FSK */
     public List makeLoad(Temp reg, int offset, Instr template) {
+	Util.assert(false, "DefaultFrame.makeLoad() Not implemented");
 	return null;
     }
 
     /** Stub added by FSK */
     public List makeStore(Temp reg, int offset, Instr template) {
+	Util.assert(false, "DefaultFrame.makeStore() Not implemented");
+	return null;
+    }
+
+    /** Stub added by FSK */
+    public Iterator suggestRegAssignment(Temp t, Map regfile) {
+	Util.assert(false, "DefaultFrame.suggestRegAssigment() Not implemented");
 	return null;
     }
 }

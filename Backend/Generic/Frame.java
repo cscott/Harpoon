@@ -15,6 +15,8 @@ import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Temp.TempFactory;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Iterator;
 
 /**
  * A <code>Frame</code> encapsulates the machine-dependent information
@@ -27,7 +29,7 @@ import java.util.List;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.15 1999-06-24 19:18:49 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.16 1999-07-02 21:15:07 pnkfelix Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -89,9 +91,48 @@ public abstract class Frame {
 	register file to RAM. 'offset' is an ordinal number, it is NOT
 	meant to be a multiple of some byte size.  This frame should
 	perform the necessary magic to turn the number into an
-	appropriate stack offset. */
+	appropriate stack offset. 'template' gives the Frame the
+	ability to incorporate information into the produced List of
+	Instrs. */
     public abstract List makeStore(Temp reg, int offset, Instr template);
 
     /** Create a new Frame one level below the current one. */
     public abstract Frame newFrame(String scope);
+
+    /** Analyzes <code>regfile</code> to find a free register that
+	<code>t</code> can be assigned to.  
+	<BR> <B>effects:</B> Either returns a set of possible
+	     assignments (though this is not guaranteed to be a
+	     complete list of all possible choices, merely the ones
+	     that this <code>Frame</code> chose to find), or throws a
+	     <code>Frame.SpillException</code> with a set of possible
+	     spills. 
+	@param t <code>Temp</code> that needs to be assigned to a set
+   	         of Registers. 
+	@param regfile A mapping from Register <code>Temp</code>s to
+	               NonRegister <code>Temp</code>s representing the
+		       current state of the register file. 
+	@return An <code>Iterator</code> of <code>SortedSet</code>s of 
+                Register <code>Temp</code>s.  Each
+		<code>SortedSet</code> represents a safe 
+     */
+    public abstract Iterator suggestRegAssignment(Temp t, Map regfile) throws Frame.SpillException;
+
+    /** SpillException tells a register allocator which
+	<code>Temp</code>s are appropriate for spilling in order to
+	allocate space for another <code>Temp</code>.  In the common
+	case, <code>this.getPotentialSpills()</code> will just return
+	an <code>Iterator</code> that iterates through all of the
+	registers. 
+     */
+    public abstract class SpillException extends Exception {
+	public SpillException() { super(); }
+	public SpillException(String s) { super(s); }
+
+	/** Returns a set of spill candidates.
+	 */
+	public abstract Iterator getPotentialSpills();
+    }
+
 }
+
