@@ -79,7 +79,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.11 2001-11-01 20:10:12 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.12 2001-11-02 05:33:43 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -418,6 +418,24 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	if (old != null) {
 	    a = a.merge(old);
 	    if (old.equals(a) && a.equals(old)) return; // no change.
+	}
+	// careful with small types: limit to what they are defined to hold.
+	if (toInternal(hf.getType())!=hf.getType()) {
+	    // trust xBitWidth to properly limit
+	    xBitWidth bw = new xBitWidth(hf.getType(), 1000, 1000);
+	    xBitWidth aa = extractWidth(a);
+	    if (aa.plusWidth() > bw.plusWidth() ||
+		aa.minusWidth() > bw.minusWidth()) {
+		// oops: we have to limit the size of a.
+		// xxx: should we ever get a *constant* larger than the
+		// field can hold?
+		Util.assert(!(a instanceof xIntConstant));
+		a = new xBitWidth(aa.type(),
+				  Math.min(aa.plusWidth(), bw.plusWidth()),
+				  Math.min(aa.minusWidth(), bw.minusWidth()));
+		// bail if no change from old value.
+		if (old!=null && old.equals(a) && a.equals(old)) return;
+	    }
 	}
 	Vf.put(hf, a);
 	Wf.push(hf);
