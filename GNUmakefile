@@ -95,7 +95,9 @@ lctes03-talk.dvi lctes03-talk-notes.tex lctes03-talk-adobe.tex:	\
 pldi04.dvi: \
 	Figures/nb-single-obj.eps Figures/nb-multi-obj.eps \
 	Figures/chuang.eps Figures/funarr.eps Figures/bloat.eps \
-	Figures/tr-multi-obj.pstex Figures/tr-multi-obj.pstex_t
+	Figures/tr-w-all.eps Figures/tr-w-ten.eps Figures/tr-sz-all.eps \
+	$(foreach f, tr-multi-obj tr-quad,\
+	  Figures/$(f).pstex Figures/$(f).pstex_t)
 
 # thesis figure dependencies
 export THESIS_FIGURES=\
