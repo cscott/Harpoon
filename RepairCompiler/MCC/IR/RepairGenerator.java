@@ -1392,8 +1392,7 @@ public class RepairGenerator {
 	    cr.outputline(addeditem + " = " + rd.getSafeSymbol() + "_hashinv->add((int)" + rightvar + ", (int)" + leftvar + ");");
 	}
 	
-	cr.outputline("if (" + addeditem + ")");
-	cr.startblock();
+
 
         Vector dispatchrules = getrulelist(rd);
         
@@ -1406,12 +1405,12 @@ public class RepairGenerator {
 	dispatchrules.removeAll(toremove);
         if (dispatchrules.size() == 0) {
             cr.outputline("// nothing to dispatch");
-	    cr.endblock();
             return;
         }
-       
-	cr.outputline("if ("+addeditem+")");
+
+	cr.outputline("if (" + addeditem + ")");
 	cr.startblock();
+       
         for(int i = 0; i < dispatchrules.size(); i++) {
             Rule rule = (Rule) dispatchrules.elementAt(i);
 	    if (rule.getGuardExpr().getRequiredDescriptors().contains(rd)) {
@@ -1427,7 +1426,7 @@ public class RepairGenerator {
 		}
 	    }
         }
-	cr.endblock();
+
 	cr.endblock();
     }
 

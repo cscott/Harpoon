@@ -64,13 +64,13 @@ public class SetInclusion extends Inclusion {
 
 
         if (dostore) {
-	    if (!Compiler.REPAIR) {
+	    /*	    if (!Compiler.REPAIR) {
 		writer.outputline("int " + addeditem + " = 1;");
 		writer.outputline(addeditem + " = " + set.getSafeSymbol() + "_hash->add((int)" + vd.getSafeSymbol() 
 				  +  ", (int)" + vd.getSafeSymbol() + ");");
-	    } else {
+				  } else {*/
 		Repair.generate_dispatch(writer, set, vd.getSafeSymbol());
-	    }
+		//	    }
 	    
             if (SetInclusion.worklist) {
                 writer.outputline("if (" + addeditem + ")");

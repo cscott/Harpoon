@@ -88,7 +88,7 @@ public class RelationInclusion extends Inclusion {
         }
 
         String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
-	if (!Compiler.REPAIR) {
+	/*	if (!Compiler.REPAIR) {
 	    writer.outputline("int " + addeditem + ";");
 	    if (relation.testUsage(RelationDescriptor.IMAGE)) {
 		writer.outputline(addeditem + " = " + relation.getSafeSymbol() + "_hash->add((int)" + ld.getSafeSymbol() + ", (int)" + rd.getSafeSymbol() + ");");
@@ -97,9 +97,9 @@ public class RelationInclusion extends Inclusion {
 	    if (relation.testUsage(RelationDescriptor.INVIMAGE)) {
 		writer.outputline(addeditem + " = " + relation.getSafeSymbol() + "_hashinv->add((int)" + rd.getSafeSymbol() + ", (int)" + ld.getSafeSymbol() + ");");
 	    }
-	} else {
+	    } else {*/
 	    Repair.generate_dispatch(writer, relation, ld.getSafeSymbol(), rd.getSafeSymbol());
-	}
+	    //	}
 	
         if (RelationInclusion.worklist) {
             writer.outputline("if (" + addeditem + ")");
