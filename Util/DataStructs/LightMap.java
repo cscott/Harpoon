@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  the <code>java.util.Map</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: LightMap.java,v 1.1.2.6 2001-06-17 22:36:58 cananian Exp $
+ * @version $Id: LightMap.java,v 1.1.2.7 2001-11-04 00:48:55 cananian Exp $
  */
 public class LightMap implements Map, Cloneable, java.io.Serializable {
     // the number of mappings in this map
@@ -28,6 +28,12 @@ public class LightMap implements Map, Cloneable, java.io.Serializable {
 
     /** Creates a <code>LightMap</code>. */
     public LightMap() {}
+    /** Creates a <code>LightMap</code> with the same mappings as the
+     *  given map. */
+    public LightMap(Map m) {
+	this();
+	putAll(m);
+    }
 
     public final int size(){
 	return size;
