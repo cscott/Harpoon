@@ -1,10 +1,11 @@
 #!/bin/sh
-make -C ~/Harpoon/Runtime/arch/arm32 CPPFLAGS=-P header.s footer.s lookup.s native.s dispatch.s
+make -C ~/Harpoon/Runtime/arch/arm32 CPPFLAGS=-P header.s footer.s lookup.s native.s dispatch.s stinit.s
 mv  ~/Harpoon/Runtime/arch/arm32/header.s \
     ~/Harpoon/Runtime/arch/arm32/footer.s \
     ~/Harpoon/Runtime/arch/arm32/lookup.s \
     ~/Harpoon/Runtime/arch/arm32/native.s \
     ~/Harpoon/Runtime/arch/arm32/dispatch.s \
+    ~/Harpoon/Runtime/arch/arm32/stinit.s \
     .
 #echo REMOVING TROUBLESOME BUGGERS
 #mv _Class_java_lang_FloatingDecimal.s _Class_java_lang_FloatingDecimal.sX
@@ -13,7 +14,7 @@ mv  ~/Harpoon/Runtime/arch/arm32/header.s \
 echo Concatenating files.
 rm -f all.s
 # I cut native.s
-cat header.s _Primitive_*.s _Class_*.s lookup.s dispatch.s footer.s \
+cat header.s _Primitive_*.s _Class_*.s lookup.s dispatch.s stinit.s footer.s \
     > all.s
 
 echo Building archive.
