@@ -34,7 +34,7 @@ import java.util.ArrayList;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.7 2002-08-31 00:24:48 cananian Exp $
+ * @version $Id: Code.java,v 1.8 2002-09-01 07:47:20 cananian Exp $
  */
 public abstract class Code extends HCode<Quad>
     implements java.io.Serializable {
@@ -72,16 +72,16 @@ public abstract class Code extends HCode<Quad>
     
     /** Clone this code representation. The clone has its own
      *  copy of the quad graph. */
-    public abstract HCodeAndMaps clone(HMethod newMethod);
+    public abstract HCodeAndMaps<Quad> clone(HMethod newMethod);
     /** Helper for clone */
-    protected final HCodeAndMaps cloneHelper(final Code qc) {
+    protected final HCodeAndMaps<Quad> cloneHelper(final Code qc) {
 	return cloneHelper(this, qc);
     }
     /** Helper for clone */
-    protected HCodeAndMaps cloneHelper(Code _this, Code qc) {
-	HCodeAndMaps hcam = Quad.cloneWithMaps(qc.qf, _this.quads);
+    protected HCodeAndMaps<Quad> cloneHelper(Code _this, Code qc) {
+	HCodeAndMaps<Quad> hcam = Quad.cloneWithMaps(qc.qf, _this.quads);
 	// fill in the missing info in the hcam.
-	hcam = new HCodeAndMaps(qc,
+	hcam = new HCodeAndMaps<Quad>(qc,
 				hcam.elementMap(), hcam.tempMap(),
 				_this,
 				hcam.ancestorElementMap(),

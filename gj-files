@@ -88,6 +88,7 @@ Analysis/Transactions/AnalysisCheckOracle.java
 Analysis/Transactions/DominatingCheckOracle.java
 Analysis/Transactions/CheckOracle.java
 Analysis/Transactions/SimpleCheckOracle.java
+Analysis/Transformation/MethodMutator.java
 Analysis/Tree/AlignmentAnalysis.java
 Analysis/Tree/CacheEquivalence.java
 Analysis/Tree/MemHoisting.java
@@ -117,6 +118,7 @@ ClassFile/Factories.java
 ClassFile/HClass.java
 ClassFile/HClassSyn.java
 ClassFile/HCode.java
+ClassFile/HCodeAndMaps.java
 ClassFile/HCodeEdge.java
 ClassFile/HConstructor.java
 ClassFile/HData.java
@@ -144,7 +146,11 @@ IR/Properties/CFGEdge.java
 IR/Quads/Code.java
 IR/Quads/Edge.java
 IR/Quads/Quad.java
+IR/Quads/QuadNoSSA.java
+IR/Quads/QuadRSSx.java
+IR/Quads/QuadSSA.java
 IR/Quads/QuadSSI.java
+IR/Quads/QuadWithTry.java
 IR/Quads/QuadValueVisitor.java
 IR/Quads/Print.java
 IR/Tree/Code.java
@@ -166,7 +172,6 @@ Backend/Runtime2/TreeBuilder.java
 ClassFile/HArrayField.java
 ClassFile/HArrayMethod.java
 ClassFile/HCodeFactory.java
-ClassFile/HCodeAndMaps.java
 ClassFile/HConstructorProxy.java
 ClassFile/HConstructorSyn.java
 ClassFile/HFieldProxy.java

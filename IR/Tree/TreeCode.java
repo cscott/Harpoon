@@ -32,7 +32,7 @@ import harpoon.Util.Util;
  * The tree form is based around Andrew Appel's tree form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeCode.java,v 1.3 2002-04-10 03:05:46 cananian Exp $
+ * @version $Id: TreeCode.java,v 1.4 2002-09-01 07:47:33 cananian Exp $
  * 
  */
 public class TreeCode extends Code {
@@ -91,7 +91,7 @@ public class TreeCode extends Code {
      * Clone this code representation. The clone has its own
      * copy of the tree structure. 
      */
-    public HCodeAndMaps clone(HMethod newMethod, Frame frame) {
+    public HCodeAndMaps<Tree> clone(HMethod newMethod, Frame frame) {
 	DerivationGenerator  dg  =
 	    (getTreeDerivation()==null) ? null : new DerivationGenerator();
 	TreeCode             tc  = new TreeCode(newMethod, null, frame, dg); 

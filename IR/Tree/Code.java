@@ -40,7 +40,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.6 2002-08-31 00:24:56 cananian Exp $
+ * @version $Id: Code.java,v 1.7 2002-09-01 07:47:33 cananian Exp $
  */
 public abstract class Code extends HCode<Tree> {
     /** The Tree Objects composing this code view. */
@@ -96,14 +96,18 @@ public abstract class Code extends HCode<Tree> {
   
     /** Clone this code representation. The clone has its own copy
      *  of the Tree */
-    public abstract HCodeAndMaps clone(HMethod newMethod, Frame frame);
+    public abstract HCodeAndMaps<Tree> clone(HMethod newMethod, Frame frame);
     /** Helps to create a proper <code>HCodeAndMaps</code> during cloning */
-    protected final HCodeAndMaps cloneHelper(final Code tc, 
+    protected final HCodeAndMaps<Tree> cloneHelper(final Code tc, 
 					     final DerivationGenerator dg) {
 	final Tree.CloneCallback ccb =
 	    (dg==null) ? null : dg.cloneCallback(getTreeDerivation());
-	final Map o2nTree = new HashMap(), n2oTree = new HashMap();
-	final Map o2nTemp = new HashMap(), n2oTemp = new HashMap();
+	final Map<Tree,Tree>
+	    o2nTree = new HashMap<Tree,Tree>(),
+	    n2oTree = new HashMap<Tree,Tree>();
+	final Map<Temp,Temp>
+	    o2nTemp = new HashMap<Temp,Temp>(),
+	    n2oTemp = new HashMap<Temp,Temp>();
 	tc.tree = Tree.clone(tc.tf, tree, new Tree.CloneCallback() {
 	    public Tree callback(Tree o, Tree n, TempMap tm) {
 		if (ccb!=null) n = ccb.callback(o, n, tm);
@@ -116,10 +120,11 @@ public abstract class Code extends HCode<Tree> {
 	    }
 	});
 	class MapTempMap implements TempMap {
-	    private final Map m; MapTempMap(Map m) { this.m = m; }
-	    public Temp tempMap(Temp t) { return (Temp) m.get(t); }
+	    private final Map<Temp,Temp> m;
+	    MapTempMap(Map<Temp,Temp> m) { this.m = m; }
+	    public Temp tempMap(Temp t) { return m.get(t); }
 	}
-	return new HCodeAndMaps(tc,
+	return new HCodeAndMaps<Tree>(tc,
 				Collections.unmodifiableMap(o2nTree),
 				new MapTempMap(o2nTemp),
 				this,
@@ -128,7 +133,7 @@ public abstract class Code extends HCode<Tree> {
     }
     /** Clone this code representation. The clone has its own copy
      *  of the Tree */
-    public final HCodeAndMaps clone(HMethod newMethod) {
+    public final HCodeAndMaps<Tree> clone(HMethod newMethod) {
 	return clone(newMethod, frame);
     }
 

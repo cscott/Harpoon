@@ -29,7 +29,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.7 2002-08-31 00:24:48 cananian Exp $
+ * @version $Id: Quad.java,v 1.8 2002-09-01 07:47:20 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -300,12 +300,12 @@ public abstract class Quad
     //-----------------------------------------------------
     // support cloning.  The pred/succ quads are not cloned, but the
     // array holding them is.
-    public final Object clone() { return rename(this.qf, null, null); }
+    public final Quad clone() { return rename(this.qf, null, null); }
     /** Clone a quad into a new quad factory, renaming all of the temps
      *  according to <code>tm</code> (which ought to ensure that all
      *  the new temps belong to the <code>TempFactory</code> of the
      *  new <code>QuadFactory</code>). */
-    public final Object clone(QuadFactory qf, CloningTempMap tm) {
+    public final Quad clone(QuadFactory qf, CloningTempMap tm) {
 	Quad qc = rename(qf, tm, tm);
 	// verify that cloning is legit.
 	for (int j=0; j<2; j++) {
@@ -322,7 +322,7 @@ public abstract class Quad
     public static Quad clone(QuadFactory qf, Quad header)
     {
 	assert header instanceof HEADER : "Argument to Quad.clone() should be a HEADER.";
-	return copyone(qf, header, new HashMap(),
+	return copyone(qf, header, new HashMap<Quad,Quad>(),
 		       new CloningTempMap(header.qf.tempFactory(),
 					  qf.tempFactory()));
     }
@@ -332,39 +332,41 @@ public abstract class Quad
      * of mappings.  The cloned quads will be rooted at
      *  <code>elementMap().get(header)</code>.
      */
-    static HCodeAndMaps cloneWithMaps(QuadFactory qf, Quad header)
+    static HCodeAndMaps<Quad> cloneWithMaps(QuadFactory qf, Quad header)
     {
 	assert header instanceof HEADER : "Argument to Quad.clone() should be a HEADER.";
-	Map qm = new HashMap();
+	Map<Quad,Quad> qm = new HashMap<Quad,Quad>();
 	CloningTempMap ctm = new CloningTempMap(header.qf.tempFactory(),
 						qf.tempFactory());
 	copyone(qf, header, qm, ctm);
 	// make new-to-old mappings from old-to-new mappings.
-	final Map n2oQuad = new HashMap(), n2oTemp = new HashMap();
-	for (Iterator it=qm.entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry me = (Map.Entry) it.next();
-	    Quad qO = (Quad) me.getKey(), qN = (Quad) me.getValue();
+	final Map<Quad,Quad> n2oQuad = new HashMap<Quad,Quad>();
+	final Map<Temp,Temp> n2oTemp = new HashMap<Temp,Temp>();
+	for (Iterator<Map.Entry<Quad,Quad>> it=qm.entrySet().iterator();
+	     it.hasNext(); ) {
+	    Map.Entry<Quad,Quad> me = it.next();
+	    Quad qO = me.getKey(), qN = me.getValue();
 	    n2oQuad.put(qN, qO);
 	}
-	for (Iterator it=ctm.asMap().entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry me = (Map.Entry) it.next();
-	    Temp tO = (Temp) me.getKey(), tN = (Temp) me.getValue();
+	for (Iterator<Map.Entry<Temp,Temp>> it=ctm.asMap().entrySet().iterator(); it.hasNext(); ) {
+	    Map.Entry<Temp,Temp> me = it.next();
+	    Temp tO = me.getKey(), tN = me.getValue();
 	    n2oTemp.put(tN, tO);
 	}
 	// make type-safe tuple of immutable maps to return.
 	// NOTE THE NULLS: THIS IS NOT A FULL RESULT: YOU SHOULD BE
 	// USING HCode.clone() or Code.cloneHelper() IF YOU WANT A
 	// VALID HCODEANDMAPS!
-	return new HCodeAndMaps(null,
+	return new HCodeAndMaps<Quad>(null,
 				Collections.unmodifiableMap(qm),
 				ctm.unmodifiable(),
 				null,
 				Collections.unmodifiableMap(n2oQuad),
 				new TempMap() {
-	    public Temp tempMap(Temp t) { return (Temp) n2oTemp.get(t); }
+	    public Temp tempMap(Temp t) { return n2oTemp.get(t); }
 	});
     }
-    private static Quad copyone(QuadFactory qf, Quad q, Map old2new,
+    private static Quad copyone(QuadFactory qf, Quad q, Map<Quad,Quad> old2new,
 				CloningTempMap ctm) {
 	// we split copyone in half and used an explicit worklist to
 	// avoid deep recursion which was crashing the JVM.
@@ -376,22 +378,24 @@ public abstract class Quad
 	return r;
     }
 
-    private static Quad copyoneStart(QuadFactory qf, Quad q, Map old2new,
+    private static Quad copyoneStart(QuadFactory qf, Quad q,
+				     Map<Quad,Quad> old2new,
 				     CloningTempMap ctm, WorkSet<Quad> ws) {
-	Quad r = (Quad) old2new.get(q);
+	Quad r = old2new.get(q);
 	// if we've already done this one, return previous clone.
 	if (r!=null) return r;
 	// clone the fields, add to map.
-	r = (Quad) q.clone(qf, ctm);
+	r = q.clone(qf, ctm);
 	old2new.put(q, r);
 	// we need to fix up this quad.
 	ws.add(q);
 	// okay, return for now.  We're not done yet, but done w/ first part.
 	return r;
     }
-    private static void copyoneFinish(QuadFactory qf, Quad q, Map old2new,
+    private static void copyoneFinish(QuadFactory qf, Quad q,
+				      Map<Quad,Quad> old2new,
 				      CloningTempMap ctm, WorkSet<Quad> ws) {
-	Quad r = (Quad) old2new.get(q);
+	Quad r = old2new.get(q);
 	assert r!=null;
 	// fixup the edges.
 	for (int i=0; i<q.next.length; i++) {

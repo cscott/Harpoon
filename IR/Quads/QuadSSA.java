@@ -26,7 +26,7 @@ import java.util.Map;
  * control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSA.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: QuadSSA.java,v 1.3 2002-09-01 07:47:20 cananian Exp $
  */
 public class QuadSSA extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -52,7 +52,7 @@ public class QuadSSA extends Code /* which extends HCode */ {
 
     /** Clone this code representation. The clone has its own
      *  copy of the quad graph. */
-    public HCodeAndMaps clone(HMethod newMethod) {
+    public HCodeAndMaps<Quad> clone(HMethod newMethod) {
 	return cloneHelper(new QuadSSA(newMethod, null));
     }
 

@@ -16,15 +16,18 @@ import java.util.Map;
  * straight-forward to write.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeAndMaps.java,v 1.2 2002-02-25 21:03:03 cananian Exp $
+ * @version $Id: HCodeAndMaps.java,v 1.3 2002-09-01 07:47:05 cananian Exp $
  */
-public final class HCodeAndMaps {
-    private final HCode hcode, ancestorHCode;
-    private final Map elementMap, ancestorElementMap;
+public final class HCodeAndMaps<HCE extends HCodeElement> {
+    private final HCode<HCE> hcode, ancestorHCode;
+    private final Map<HCE,HCE> elementMap, ancestorElementMap;
     private final TempMap tempMap, ancestorTempMap;
     /** constructor. */
-    public HCodeAndMaps(HCode hcode, Map elementMap, TempMap tempMap,
-			HCode ancestorHCode, Map ancestorElementMap,
+    public HCodeAndMaps(HCode<HCE> hcode,
+			Map<HCE,HCE> elementMap,
+			TempMap tempMap,
+			HCode<HCE> ancestorHCode,
+			Map<HCE,HCE> ancestorElementMap,
 			TempMap ancestorTempMap) {
 	this.hcode=hcode;
 	this.elementMap=elementMap;
@@ -35,20 +38,20 @@ public final class HCodeAndMaps {
     }
 
     /** Returns the newly-cloned <code>HCode</code>. */
-    public HCode hcode() { return hcode; }
+    public HCode<HCE> hcode() { return hcode; }
     /** An immutable mapping from ancestor <code>HCodeElement</code>s
      *  to newly-cloned <code>HCodeElement</code>s. */
-    public Map elementMap() { return elementMap; }
+    public Map<HCE,HCE> elementMap() { return elementMap; }
     /** An immutable mapping from ancestor <code>Temp</code>s to
      *  newly-cloned <code>Temp</code>s. */
     public TempMap tempMap() { return tempMap; }
 
     /** Returns the original <code>HCode</code> that the clone returned
      *  by the <code>hcode()</code> method was copied from. */
-    public HCode ancestorHCode() { return ancestorHCode; }
+    public HCode<HCE> ancestorHCode() { return ancestorHCode; }
     /** An immutable mapping from newly-cloned <code>HCodeElement</code>s
      *  to ancestor <code>HCodeElement</code>s. */
-    public Map ancestorElementMap() { return ancestorElementMap; }
+    public Map<HCE,HCE> ancestorElementMap() { return ancestorElementMap; }
     /** An immutable mapping from newly-cloned <code>Temp</code>s to
      *  ancestor <code>Temp</code>s. */
     public TempMap ancestorTempMap() { return ancestorTempMap; }

@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * leading to/coming from the <code>PHI</code>/<code>SIGMA</code> nodes.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: QuadRSSx.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: QuadRSSx.java,v 1.3 2002-09-01 07:47:20 cananian Exp $
  */
 public class QuadRSSx extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -42,7 +42,7 @@ public class QuadRSSx extends Code /* which extends HCode */ {
 
     /** Clone this code representation. The clone has its own
      *  copy of the quad graph. */
-    public HCodeAndMaps clone(HMethod newMethod) {
+    public HCodeAndMaps<Quad> clone(HMethod newMethod) {
 	return cloneHelper(new QuadRSSx(newMethod, null));
     }
 

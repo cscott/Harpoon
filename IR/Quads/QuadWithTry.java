@@ -22,7 +22,7 @@ import java.util.Map;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.2 2002-02-25 21:05:13 cananian Exp $
+ * @version $Id: QuadWithTry.java,v 1.3 2002-09-01 07:47:20 cananian Exp $
  * @see QuadNoSSA
  * @see QuadSSI
  */
@@ -71,7 +71,7 @@ public class QuadWithTry extends Code /* which extends HCode */ {
     }
     /** Clone this code representation.  The clone has its own copy of
      *  the quad graph. */
-    public HCodeAndMaps clone(HMethod newMethod) {
+    public HCodeAndMaps<Quad> clone(HMethod newMethod) {
 	return cloneHelper(new QuadWithTry(newMethod, null));
     }
     /**
