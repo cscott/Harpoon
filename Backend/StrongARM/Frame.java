@@ -5,6 +5,7 @@ package harpoon.Backend.StrongARM;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Backend.Generic.GCInfo;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
@@ -16,7 +17,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.16 2000-01-17 11:52:02 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.17 2000-01-28 02:47:30 kkz Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -25,6 +26,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private final CodeGen codegen;
     private final TempBuilder tempBuilder;
     private final Linker linker;
+    private GCInfo gcInfo; // should really be final
 
     public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) { 
 	super();
@@ -40,6 +42,12 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg);
 	instrBuilder = new InstrBuilder(regFileInfo);
 	tempBuilder = new TempBuilder();
+    }
+
+    public Frame(HMethod main, ClassHierarchy ch, CallGraph cg, GCInfo gcInfo)
+    {
+	this(main, ch, cg);
+	this.gcInfo = gcInfo;
     }
 
     public Linker getLinker() { return linker; }
@@ -73,5 +81,9 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     }
     public harpoon.Backend.Generic.TempBuilder getTempBuilder() {
 	return tempBuilder;
+    }
+    public harpoon.Backend.Generic.GCInfo getGCInfo() {
+	Util.assert(gcInfo != null, "use new constructor for Frame");
+	return gcInfo;
     }
 }
