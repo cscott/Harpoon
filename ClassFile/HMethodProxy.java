@@ -8,25 +8,22 @@ package harpoon.ClassFile;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodProxy.java,v 1.1.2.6 2000-01-13 00:20:42 cananian Exp $
+ * @version $Id: HMethodProxy.java,v 1.1.2.7 2000-01-13 00:47:58 cananian Exp $
  * @see HMethod
  */
-class HMethodProxy implements HMethod, HMethodMutator {
-    Relinker relinker;
+class HMethodProxy extends HMemberProxy implements HMethod, HMethodMutator {
     HMethod proxy;
     HMethodMutator proxyMutator;
-    boolean sameLinker;
     
     /** Creates a <code>HMethodProxy</code>. */
     HMethodProxy(Relinker relinker, HMethod proxy) {
-        this.relinker = relinker;
+	super(relinker, proxy);
 	relink(proxy);
     }
     void relink(HMethod proxy) {
+	super.relink(proxy);
 	this.proxy = proxy;
 	this.proxyMutator = (proxy==null) ? null : proxy.getMutator();
-	this.sameLinker = (proxy==null ||
-			   relinker == proxy.getDeclaringClass().getLinker());
     }
 
     public HMethodMutator getMutator() {
@@ -35,11 +32,7 @@ class HMethodProxy implements HMethod, HMethodMutator {
 	return (proxyMutator==null) ? null : this;
     }
     // HMethod interface
-    public HClass getDeclaringClass() {return wrap(proxy.getDeclaringClass());}
-    public String getName() { return proxy.getName(); }
-    public int getModifiers() { return proxy.getModifiers(); }
     public HClass getReturnType() { return wrap(proxy.getReturnType()); }
-    public String getDescriptor() { return proxy.getDescriptor(); }
     public HClass[] getParameterTypes() {
 	return wrap(proxy.getParameterTypes());
     }
@@ -47,16 +40,8 @@ class HMethodProxy implements HMethod, HMethodMutator {
     public HClass[] getExceptionTypes() {
 	return wrap(proxy.getExceptionTypes());
     }
-    public boolean isSynthetic() { return proxy.isSynthetic(); }
     public boolean isInterfaceMethod() { return proxy.isInterfaceMethod(); }
     public boolean isStatic() { return proxy.isStatic(); }
-    public boolean equals(Object obj) {
-	if (obj instanceof HMethodProxy)
-	    return proxy.equals(((HMethodProxy)obj).proxy);
-	return proxy.equals(obj);
-    }
-    public int hashCode() { return proxy.hashCode(); }
-    public String toString() { return proxy.toString(); }
     // HMethodMutator interface
     public void addModifiers(int m) { proxyMutator.addModifiers(m); }
     public void setModifiers(int m) { proxyMutator.setModifiers(m); }
@@ -93,31 +78,5 @@ class HMethodProxy implements HMethod, HMethodMutator {
     }
     public void setSynthetic(boolean isSynthetic) {
 	proxyMutator.setSynthetic(isSynthetic);
-    }
-    // keep member map up-to-date when hashcode changes.
-    void flushMemberMap() { relinker.memberMap.remove(proxy); }
-    void updateMemberMap() { relinker.memberMap.put(proxy, this); }
-
-    // wrap/unwrap
-    private HClass wrap(HClass hc) {
-	if (sameLinker && hc != proxy.getDeclaringClass()) return hc;
-	return relinker.wrap(hc);
-    }
-    private HClass unwrap(HClass hc){
-	if (sameLinker && hc != getDeclaringClass()) return hc;
-    }
-
-    // array wrap/unwrap.
-    private HClass[] wrap(HClass[] hc) {
-	HClass[] result = new HClass[hc.length];
-	for (int i=0; i<result.length; i++)
-	    result[i] = wrap(hc[i]);
-	return result;
-    }
-    private HClass[] unwrap(HClass[] hc) {
-	HClass[] result = new HClass[hc.length];
-	for (int i=0; i<result.length; i++)
-	    result[i] = unwrap(hc[i]);
-	return result;
     }
 }
