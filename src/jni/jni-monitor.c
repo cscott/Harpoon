@@ -19,6 +19,7 @@ jint FNI_MonitorExit(JNIEnv *env, jobject obj) {
 }
 void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime){
   assert(0/* can't wait in single-threaded mode! */);
+}
 void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall) {
   return; /* we'll just ignore the notify in single-threaded mode */
 }
