@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodImpl.java,v 1.1.4.4 2000-03-30 09:58:27 cananian Exp $
+ * @version $Id: HMethodImpl.java,v 1.1.4.5 2000-10-22 08:18:51 cananian Exp $
  * @see HMethod
  */
 abstract class HMethodImpl
@@ -176,12 +176,6 @@ abstract class HMethodImpl
     return true;
   }
 
-  /**
-   * Returns a hashcode for thie <code>HMethod</code>.  The hashcode
-   * is computed as the exclusive-or of the hashcodes for the
-   * underlying method's declaring class, the method's name,
-   * and the method's descriptor string.
-   */
   public int hashCode() {
     return parent.hashCode()^getName().hashCode()^getDescriptor().hashCode();
   }

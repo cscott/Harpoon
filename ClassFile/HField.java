@@ -13,7 +13,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.15.2.10 2000-01-13 23:47:46 cananian Exp $
+ * @version $Id: HField.java,v 1.15.2.11 2000-10-22 08:18:50 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -84,13 +84,6 @@ public interface HField extends HMember {
    * class and have the same name and type.
    */
   public boolean equals(Object object);
-
-  /**
-   * Returns a hashcode for this <code>HField</code>.  This is
-   * computed as the exclusive-or of the hashcodes for the
-   * underlying field's declaring class and the field name.
-   */
-  public int hashCode();
 
   /**
    * Return a string describing this <code>HField</code>.  The format

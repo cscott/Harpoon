@@ -9,7 +9,7 @@ import harpoon.Util.ArrayFactory;
  * about a single member (a field or a method) or a constructor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMember.java,v 1.5.2.4 2000-03-29 20:06:35 cananian Exp $
+ * @version $Id: HMember.java,v 1.5.2.5 2000-10-22 08:18:51 cananian Exp $
  * @see HClass
  * @see HField
  * @see HMethod
@@ -39,6 +39,14 @@ public interface HMember extends java.lang.Comparable {
    * @see java.lang.reflect.Modifier
    */
   public abstract int getModifiers();
+
+  /**
+   * Returns a hashcode for this <code>HMember</code>.  This is
+   * computed as the exclusive-or of the hashcodes for the
+   * underlying member's declaring class, name, and descriptor
+   * string.
+   */
+  public abstract int hashCode();
 
   /**
    * Indicates whether this field or method is 'real' or if it has

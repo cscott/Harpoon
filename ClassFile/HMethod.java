@@ -12,7 +12,7 @@ import harpoon.Util.ArrayFactory;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30.2.14 2000-06-23 23:07:31 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30.2.15 2000-10-22 08:18:51 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -106,14 +106,6 @@ public interface HMethod extends HMember {
    * class and have the same name and formal parameter types.
    */
   public boolean equals(Object obj);
-
-  /**
-   * Returns a hashcode for this <code>HMethod</code>.  The hashcode
-   * is computed as the exclusive-or of the hashcodes for the
-   * underlying method's declaring class, the method's name,
-   * and the method's descriptor string.
-   */
-  public int hashCode();
 
   /**
    * Returns a string describing this <code>HMethod</code>.  The string

@@ -11,7 +11,7 @@ import java.lang.reflect.Modifier;
  * <code>HFieldImpl</code> is the basic implementation of <code>HField</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldImpl.java,v 1.1.4.3 2000-03-30 09:58:27 cananian Exp $
+ * @version $Id: HFieldImpl.java,v 1.1.4.4 2000-10-22 08:18:51 cananian Exp $
  * @see HField
  */
 abstract class HFieldImpl
@@ -112,13 +112,9 @@ abstract class HFieldImpl
       return true;
     return false;
   }
-  /**
-   * Returns a hashcode for this <code>HField</code>.  This is
-   * computed as the exclusive-or of the hashcodes for the
-   * underlying field's declaring class and the field name.
-   */
+
   public int hashCode() {
-    return parent.hashCode() ^ getName().hashCode();
+    return parent.hashCode()^getName().hashCode()^getDescriptor().hashCode();
   }
 
   /**
