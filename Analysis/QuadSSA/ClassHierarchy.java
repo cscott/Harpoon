@@ -21,11 +21,17 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.4.2.7 1999-08-07 02:13:42 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.4.2.8 1999-08-17 22:00:55 cananian Exp $
  */
 
 public class ClassHierarchy implements java.io.Serializable {
     private Map children = new HashMap();
+    private Set methods = new HashSet();
+
+    /** Returns set of all callable methods. */
+    public Set callableMethods() {
+	return Collections.unmodifiableSet(methods);
+    }
 
     /** Returns all usable/reachable children of an HClass. */
     public HClass[] children(HClass c) {
@@ -135,13 +141,19 @@ public class ClassHierarchy implements java.io.Serializable {
 	    }
 	} // END worklist.
 	
-	// now generate children set from classKnownChildren.
+	// now generate children set and method list from classKnownChildren.
 	for (Iterator it = classKnownChildren.keySet().iterator();
 	     it.hasNext(); ) {
 	    HClass c = (HClass) it.next();
 	    Set s = (Set) classKnownChildren.get(c);
 	    HClass ch[] = (HClass[]) s.toArray(new HClass[s.size()]);
 	    children.put(c, ch);
+	    // now build method table.
+	    if (classMethodsUsed.containsKey(c))
+		methods.addAll((Set) classMethodsUsed.get(c));
+	    for (int i=0; i<ch.length; i++)
+		if (classMethodsUsed.containsKey(ch[i]))
+		    methods.addAll((Set)classMethodsUsed.get(ch[i]));
 	}
     }
 
