@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.51 1998-09-04 09:15:55 cananian Exp $
+ * @version $Id: Translate.java,v 1.52 1998-09-04 09:57:19 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -285,6 +285,11 @@ class Translate  { // not public.
 			  Tzero, Tnull);
 		    // Make and link MONITOR
 		    q = new MONITOR(ts.in, s.stack[0], monitorBlock);
+		    // Create null pointer test.
+		    TransState r[] = transNullCheck(s.stack[0], Tnull, q,
+						    handlers, ts);
+		    for (int i=r.length-1; i>=0; i--)
+			todo.push(r[i]);
 		} else { // JSR/RET
 		    q = null;
 		    ns = s.enterJSR();
@@ -300,8 +305,6 @@ class Translate  { // not public.
 		// Link new MONITOR/JSR quad, if necessary.
 		if (q==null)
 		    q = ns.nest[0].exitBlock;
-		else
-		    Quad.addEdge(ts.header, ts.which_succ, q, 0);
 		
 		// make post-block quads.
 		int i;
@@ -597,7 +600,6 @@ class Translate  { // not public.
 	case Op.LAND:
 	case Op.LMUL:
 	case Op.LOR:
-	case Op.LREM:
 	case Op.LSUB:
 	case Op.LXOR:
 	    ns = s.pop(4).push(null).push(new Temp());
@@ -713,7 +715,6 @@ class Translate  { // not public.
 	case Op.IAND:
 	case Op.IMUL:
 	case Op.IOR:
-	case Op.IREM:
 	case Op.ISHL:
 	case Op.ISHR:
 	case Op.ISUB:
@@ -724,6 +725,7 @@ class Translate  { // not public.
 			 ns.stack[0], new Temp[] {s.stack[1], s.stack[0]});
 	    break;
 	case Op.IDIV:
+	case Op.IREM:
 	    {
 	    ns = s.pop(2).push(new Temp());
 
@@ -749,6 +751,7 @@ class Translate  { // not public.
 	    break;
 	    }
 	case Op.LDIV:
+	case Op.LREM:
 	    {
 	    ns = s.pop(4).push(null).push(new Temp());
 
@@ -1010,7 +1013,30 @@ class Translate  { // not public.
 		Temp Tdims[] = new Temp[dims];
 		for (int i=0; i<dims; i++)
 		    Tdims[i] = s.stack[(dims-1)-i];
-		q = new ANEW(in, ns.stack[0], opd0.value(), Tdims);
+		// check dimensions.
+		HClass HCex=HClass.forClass(NegativeArraySizeException.class);
+		Temp Tex = new Temp();
+		Quad Qp = new PHI(in, new Temp[0], dims);
+		Quad Qn = transNewException(HCex, Tex, Tnull, in, Qp, 0);
+		r = transThrow(new TransState(s.push(Tex), in, Qn, 0),
+			       handlers, Tnull, false);
+
+		last = ts.header; which_succ = ts.which_succ;
+		for (int i=0; i<dims; i++) {
+		    Quad q0 = new OPER(in, "icmpgt", new Temp(),
+				       new Temp[] { Tzero, Tdims[i] });
+		    Quad q1 = new CJMP(in, q0.def()[0]);
+		    Quad.addEdge(last, which_succ, q0, 0);
+		    Quad.addEdge(q0, 0, q1, 0);
+		    Quad.addEdge(q1, 1, Qp, i);
+		    last=q1; which_succ=0;
+		}
+		// the actual operation:
+		Quad Qa = new ANEW(in, ns.stack[0], opd0.value(), Tdims);
+		Quad.addEdge(last, which_succ, Qa, 0);
+		// make next state
+		q = ts.header.next()[ts.which_succ];
+		last = Qa; which_succ=0;
 		break;
 	    }
 	case Op.NEWARRAY:
@@ -1049,8 +1075,25 @@ class Translate  { // not public.
 		}
 
 		ns = s.pop().push(new Temp());
-		q = new ANEW(in, ns.stack[0], arraytype, 
-			     new Temp[] { s.stack[0] });
+		
+		HClass HCex=HClass.forClass(NegativeArraySizeException.class);
+		Temp Tex = new Temp();
+
+		// ensure that size>=0
+		Quad q0 = new OPER(in, "icmpge", new Temp(),
+				   new Temp[] { s.stack[0], Tzero });
+		Quad q1 = new CJMP(in, q0.def()[0]);
+		Quad q2 = transNewException(HCex, Tex, Tnull, in, q1, 0);
+		r = transThrow(new TransState(s.push(Tex), in, q2, 0),
+			       handlers, Tnull, false);
+		// actual operation:
+		Quad q3 = new ANEW(in, ns.stack[0], arraytype, 
+				   new Temp[] { s.stack[0] });
+		// link
+		Quad.addEdge(q0, 0, q1, 0);
+		Quad.addEdge(q1, 1, q3, 0);
+		// make next state.
+		q = q0; last=q3;
 		break;
 	    }
 	case Op.NEW:
