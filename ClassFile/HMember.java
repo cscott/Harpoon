@@ -9,7 +9,7 @@ import harpoon.Util.ArrayFactory;
  * about a single member (a field or a method) or a constructor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMember.java,v 1.5.2.5 2000-10-22 08:18:51 cananian Exp $
+ * @version $Id: HMember.java,v 1.5.2.6 2001-02-22 20:59:42 cananian Exp $
  * @see HClass
  * @see HField
  * @see HMethod
@@ -61,6 +61,10 @@ public interface HMember extends java.lang.Comparable {
   // implementation of a member comparator, for consistency among 
   // implementations.
   static final java.util.Comparator memberComparator = new MemberComparator();
+  /** Implementation of <code>java.util.Comparator</code> for objects
+   *  implementing <code>HMember</code>, for consistency among
+   *  implementations.  Compares two <code>HMember</code>s lexicographically,
+   *  first by declaring class, then by name, and lastly by descriptor. */
   static class MemberComparator implements java.util.Comparator {
     public int compare(Object o1, Object o2) {
 	HMember hm1 = (HMember) o1, hm2 = (HMember) o2;
