@@ -21,7 +21,7 @@ import java.util.Set;
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.17 2000-02-14 16:22:17 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.18 2000-03-25 09:01:14 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -135,6 +135,14 @@ public class Pattern {
 		while (ql.prev(0).kind()==QuadKind.TYPECAST)
 		    ql=ql.prev(0);
 		Quad.addEdge(hi.to().prev(0), hi.to().prevEdge(0).which_succ(), ql, 0);
+		if (pv.fixupCast().containsKey(q)) {
+		    Quad tcast=(Quad)pv.fixupCast().get(q);
+		    //gotta handle case where tcast wasn't cut out...
+		    if (tcast!=ql.prev(0)) {
+			Quad.addEdge(ql.prev(0),ql.prevEdge(0).which_succ(),tcast,0);
+			Quad.addEdge(tcast,0,ql,0);
+		    }
+		}
 
 		   
 		while (hi.needHandler()) {
@@ -248,6 +256,7 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
     UseDef ud;
     WorkSet phiremovalset;
     Linker linker;
+    private Map typecastmap;
 
     public PatternVisitor(QuadWithTry code) {
 	map=new HashMap();
@@ -255,8 +264,13 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	this.ud=new UseDef();
 	this.phiremovalset=new WorkSet();
 	this.linker=code.qf.getLinker();
+	typecastmap=new HashMap();
     }
     
+    public Map fixupCast() {
+	return typecastmap;
+    }
+
     public Set removalSet() {
 	return phiremovalset;
     }
@@ -300,7 +314,11 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 		       (Integer)((Object[])n2[1])[1],
 		       linker.forName("java.lang.ArrayIndexOutOfBoundsException"));
 	    }
+	    if (qd.prev(0).kind()==QuadKind.TYPECAST)
+		typecastmap.put(q, qd.prev(0));
 	}
+
+
 
 	Object[] nq=Pattern.nullCheck(qd.prev(0),q.objectref(), code, ud);
 	if (nq!=null) {
@@ -416,7 +434,11 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 		       (Integer)((Object[])n2[1])[1],
 		       linker.forName("java.lang.ArrayIndexOutOfBoundsException"));
 	    }
+	    if (qd.prev(0).kind()==QuadKind.TYPECAST)
+		typecastmap.put(q, qd.prev(0));
 	}
+
+
 
 	Object[] nq=Pattern.nullCheck(qd.prev(0),q.objectref(),code,ud);
 	if (nq!=null) {
@@ -637,7 +659,7 @@ static class ExcVisitor extends QuadVisitor { // this is an inner class
     }
 
     public void visit(TYPECAST q) {
-	//safe to ignore
+	//safe to ignore.
     }
 
     public void visit(PHI q) {
