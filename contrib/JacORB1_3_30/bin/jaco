@@ -6,17 +6,19 @@
 # ... If there is no JDK, simply set the following ...
 # : ${JRE_HOME:="$JAVA_HOME/jre"}
 
-# ... but we have to refer to the JRE only!
-: ${JRE_HOME:="/usr/java/j2sdk1.4.1/jre"}
+export RT_JAR=`locate /jre/lib/rt.jar`
+@if test `echo $RT_JAR | grep -c 'rt.jar'` == 0; then \
+  echo No rt.jar found!; \
+fi
 
-: ${JACORB_HOME:="/home/wbeebee/projects/FLEX/JacORB1_3_30"}
-export JACORB_HOME
+export RT_JAR=`echo $RT_JAR | awk '{ sub(/ /, ":"); print }'`
+export JACORB_HOME=contrib/JacORB1_3_30
 
 #: ${JACORB_THREADS:="-native"}
 
 # call java interpreter
 exec ${JRE_HOME}/bin/java ${JACORB_THREADS} -server \
-    -Xbootclasspath:${JACORB_HOME}/lib/jacorb.jar:${JRE_HOME}/lib/rt.jar:${CLASSPATH} \
+    -Xbootclasspath:${JACORB_HOME}/lib/jacorb.jar:${RT_JAR}:${CLASSPATH} \
     -Dorg.omg.CORBA.ORBClass=org.jacorb.orb.ORB \
     -Dorg.omg.CORBA.ORBSingletonClass=org.jacorb.orb.ORBSingleton \
     "$@"
