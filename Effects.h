@@ -15,6 +15,11 @@ struct path {
   char * globalname;
 };
 
+struct epointerlist {
+  void * object;
+  struct epointerlist * next;
+};
+
 struct effectlist {
   struct effectregexpr *src;
   char *fieldname;
@@ -66,5 +71,6 @@ void printregexprlist(struct regexprlist *rel);
 void printeffectregexpr(struct effectregexpr *ere);
 void printeffectlist(struct effectlist *el);
 void addnewobjpath(struct heap_state *hs, long long obj);
-
+struct effectlist * mergemultipleeffectlist(struct effectlist *el1, struct effectlist *el2);
+void updateroleeffects(struct heap_state *heap);
 #endif

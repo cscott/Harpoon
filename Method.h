@@ -11,6 +11,9 @@ struct rolemethod {
   int numobjectargs;
   short isStatic;
   struct rolereturnstate * returnstates;
+#ifdef EFFECTS
+  struct effectlist *effects;
+#endif
 };
 
 struct rolereturnstate {

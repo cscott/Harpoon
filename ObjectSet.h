@@ -29,4 +29,5 @@ void addobject(struct objectset *os, struct heap_object *ho);
 long int oshashfunction(struct heap_object *ho);
 void freeobjectset(struct objectset *os);
 int hasNext(struct ositerator *it);
+int setisempty(struct objectset *os);
 #endif

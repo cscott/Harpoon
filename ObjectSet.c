@@ -33,6 +33,10 @@ int hasNext(struct ositerator *it) {
     return 0;
 }
 
+int setisempty(struct objectset *os) {
+  return (os->head==NULL);
+}
+
 struct heap_object * removeobject(struct objectset *os) {
   if (os->head!=NULL) {
     struct objectlist * olptr=os->head;

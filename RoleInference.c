@@ -425,7 +425,7 @@ void doreturnmethodinference(struct heap_state *heap, long long uid, struct hash
   }
 
   doincrementalreachability(heap,ht);
-    
+  updateroleeffects(heap); /*Merge in this invocation's effects*/
     //Lets show the roles!!!!
   {
     int i=0;

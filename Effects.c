@@ -6,6 +6,7 @@
 #include <string.h>
 #include "Effects.h"
 #include "Role.h"
+#include "Method.h"
 #define MAXREPSEQ 5
 
 void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, long long dstobj) {
@@ -92,6 +93,8 @@ void addeffect(struct heap_state *heap, long long suid, char * fieldname, long l
   while(method!=NULL) {
     struct hashtable *pathtable=method->pathtable;
     struct effectregexpr* srcexpr=buildregexpr(pathtable, suid);
+    printf("Initial effects for method:\n");
+    printeffectlist(method->effects);
     if (srcexpr!=NULL) {
       struct effectregexpr* dstexpr=buildregexpr(pathtable, duid);
       struct effectlist * efflist=(struct effectlist *) calloc(1,sizeof(struct effectlist));
@@ -100,22 +103,50 @@ void addeffect(struct heap_state *heap, long long suid, char * fieldname, long l
       efflist->dst=dstexpr;
       printf("Effect List Entry:\n");
       printeffectlist(efflist);
-      efflist->next=method->effects;
-      method->effects=efflist;
+      {
+	struct effectlist *effptr=method->effects;
+	struct effectlist *oldptr=NULL;
+	while(effptr!=NULL) {
+	  struct effectlist *merged=mergeeffectlist(efflist, effptr);
+	  if (merged!=NULL) {
+	    freeeffectlist(efflist);
+	    if(oldptr!=NULL) {
+	      /*splice in merged effect*/
+	      oldptr->next=merged;
+	      merged->next=effptr->next;
+	    } else {
+	      /*splice in merged effect at beginning of list*/
+	      method->effects=merged;
+	      merged->next=effptr->next;
+	    }
+	    effptr->next=NULL;
+	    freeeffectlist(effptr);
+	    break;
+	  }
+	  oldptr=effptr;
+	  effptr=effptr->next;
+	}
+	if (effptr==NULL) {
+	  efflist->next=method->effects;
+	  method->effects=efflist;
+	}
+      }
     }
     method=method->caller;
   }
 }
 
 struct effectlist * mergeeffectlist(struct effectlist * el1, struct effectlist *el2) {
-  struct effectregexpr * mergedsrc, * mergeddst;
+  struct effectregexpr * mergedsrc=NULL, * mergeddst=NULL;
   if (strcmp(el1->fieldname, el2->fieldname)!=0) return NULL;
   mergedsrc=mergeeffectregexpr(el1->src, el2->src);
   if (mergedsrc==NULL) return NULL;
-  mergeddst=mergeeffectregexpr(el1->dst, el2->dst);
-  if (mergeddst==NULL) {
-    freeeffectregexpr(mergedsrc);
-    return NULL;
+  if (el1->dst!=NULL&&el2->dst!=NULL) {
+    mergeddst=mergeeffectregexpr(el1->dst, el2->dst);
+    if (mergeddst==NULL) {
+      freeeffectregexpr(mergedsrc);
+      return NULL;
+    }
   }
   {
     struct effectlist * retel=(struct effectlist *)calloc(1, sizeof(struct effectlist));
@@ -126,17 +157,84 @@ struct effectlist * mergeeffectlist(struct effectlist * el1, struct effectlist *
   }
 }
 
+void updateroleeffects(struct heap_state *heap) {
+  struct effectlist *mergedlist=mergemultipleeffectlist(heap->methodlist->effects, heap->methodlist->rm->effects);
+  printf("Incoming method effectlist:\n");
+  printeffectlist(heap->methodlist->effects);
+  printf("Old rolemethod effectlist:\n");
+  printeffectlist(heap->methodlist->rm->effects);
+  printf("New rolemethod effectlist:\n");
+  printeffectlist(mergedlist);
+  freeeffectlist(heap->methodlist->rm->effects);
+  heap->methodlist->rm->effects=mergedlist;
+
+}
+
+struct effectlist * mergemultipleeffectlist(struct effectlist *el1, struct effectlist *el2) {
+  struct epointerlist * listofeffectlist=NULL;
+  struct effectlist *mergedeffects=NULL;
+  while(el1!=NULL || el2!=NULL) {
+    if (el1!=NULL) {
+      struct epointerlist *ptr=(struct epointerlist *)calloc(1,sizeof(struct epointerlist));
+      ptr->next=listofeffectlist;
+      ptr->object=el1;
+      listofeffectlist=ptr;
+      el1=el1->next;
+    }
+    if (el2!=NULL) {
+      struct epointerlist *ptr=(struct epointerlist *)calloc(1,sizeof(struct epointerlist));
+      ptr->next=listofeffectlist;
+      ptr->object=el2;
+      listofeffectlist=ptr;
+      el2=el2->next;
+    }
+  }
+  /* Build up effectlist set*/
+  while(listofeffectlist!=NULL) {
+    struct epointerlist *ptr2;
+    for(ptr2=listofeffectlist;ptr2->next!=NULL;ptr2=ptr2->next) {
+      struct effectlist * ptreff=mergeeffectlist((struct effectlist *)listofeffectlist->object,(struct effectlist *)ptr2->next->object);
+      if (ptreff!=NULL) {
+	ptreff->next=mergedeffects;
+	mergedeffects=ptreff;
+	break;
+      }
+    }
+    if(ptr2->next!=NULL) {
+      struct epointerlist *tmp=ptr2->next;
+      ptr2->next=ptr2->next->next;
+      free(tmp);
+    } else {
+      struct effectlist *copy=mergeeffectlist((struct effectlist *)listofeffectlist->object, (struct effectlist *)listofeffectlist->object);
+      copy->next=mergedeffects;
+      mergedeffects=copy;
+    }
+    {
+      struct epointerlist *tmp=listofeffectlist->next;
+      free(listofeffectlist);
+      listofeffectlist=tmp;
+    }
+  }
+  return mergedeffects;
+}
+
 struct effectregexpr * mergeeffectregexpr(struct effectregexpr * ere1, struct effectregexpr * ere2) {
-  if ((ere1->paramnum==ere2->paramnum)&&equivalentstrings(ere1->classname, ere2->classname)&&equivalentstrings(ere1->globalname, ere2->globalname)) {
+  if ((ere1->paramnum==ere2->paramnum)&&equivalentstrings(ere1->classname, ere2->classname)&&equivalentstrings(ere1->globalname, ere2->globalname)&&(ere1->flag==ere2->flag)) {
     /* Okay...now all the remains is to check compatibility of the regular expression list */
     struct regexprlist * rel1=ere1->expr;
     struct regexprlist * rel2=ere2->expr;
-    struct regexprlist *merged=mergeregexprlist(rel1,rel2);
-    if(merged==NULL)
+    struct regexprlist *merged=NULL;
+    if (rel1!=NULL&&rel2!=NULL) {
+      merged=mergeregexprlist(rel1,rel2);
+      if(merged==NULL)
+	return NULL;
+    } else if ((rel1!=NULL)||(rel2!=NULL)) {
       return NULL;
+    }
     {
       struct effectregexpr * ere=(struct effectregexpr *)calloc(1,sizeof(struct effectregexpr));
       ere->paramnum=ere1->paramnum;
+      ere->flag=ere1->flag;
       ere->classname=copystr(ere1->classname);
       ere->globalname=copystr(ere1->globalname);
       ere->expr=merged;
@@ -147,7 +245,7 @@ struct effectregexpr * mergeeffectregexpr(struct effectregexpr * ere1, struct ef
 
 struct regexprlist * mergeregexprlist(struct regexprlist * rel1, struct regexprlist *rel2) {
   struct regexprlist * rel=NULL;
-  while(1) {
+  while(rel1!=NULL&&rel2!=NULL) {
     struct regexprlist * copy=(struct regexprlist *)calloc(1, sizeof(struct regexprlist));
     copy->multiplicity=rel1->multiplicity|rel2->multiplicity;
     if (equivalentstrings(rel1->classname, rel2->classname)&&
@@ -242,7 +340,7 @@ struct regexprlist * mergeregexprlist(struct regexprlist * rel1, struct regexprl
 	  allregexpr=allregexpr->nextlist;
 	}
       }
-      rel->nextreg=copy;
+      copy->nextreg=rel;
       rel=copy;
     } else {
       free(copy);
@@ -252,6 +350,11 @@ struct regexprlist * mergeregexprlist(struct regexprlist * rel1, struct regexprl
     rel1=rel1->nextreg;
     rel2=rel2->nextreg;
   }
+  if((rel1!=NULL)||(rel2!=NULL)) {
+    freeregexprlist(rel);
+    return NULL;
+  } else
+    return rel;
 }
 
 void freeeffectlist(struct effectlist *el) {

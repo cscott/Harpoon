@@ -5,6 +5,7 @@
 #include <string.h>
 #include "Method.h"
 #include "Role.h"
+#include "Effects.h"
 /*#include <dmalloc.h>*/
 
 int methodhashcode(struct rolemethod * method) {
@@ -118,6 +119,8 @@ void printrolemethod(struct rolemethod *method) {
     printf("%s ",method->paramroles[i]);
   if (method->numobjectargs!=0)
     printf("\n");
+  printf(" Effects:\n");
+  printeffectlist(method->effects);
   while(rrs!=NULL) {
     printf("\n  Return Context:\n");
     if (method->numobjectargs!=0)
