@@ -102,10 +102,16 @@ jboolean FNI_IsInstanceOf (JNIEnv *env, jobject obj, jclass clazz) {
 
   objclz = FNI_UNWRAP_MASKED(obj)->claz;
   clsclz = FNI_GetClassInfo(clazz)->claz;
-  /* first check invariant on scaled_class_depth.. */
-  assert(objclz->display[objclz->scaled_class_depth/sizeof(struct claz *)]
-	 == objclz && clsclz ==
-	 clsclz->display[clsclz->scaled_class_depth/sizeof(struct claz *)]);
+  /* different tests depending on whether clazz is a class or interface type*/
+  if (0==clsclz->scaled_class_depth && clsclz!=clsclz->display[0]) {
+    /* this is an interface or array of interfaces.
+     * use the interface instanceof test. */
+    struct claz **ilist;
+    for (ilist=objclz->interfaces; *ilist!=NULL; ilist++)
+      if (*ilist == clsclz) return JNI_TRUE;
+    return JNI_FALSE;
+  }
+  /* this is a class; use the class instanceof test */
   return (objclz->display[clsclz->scaled_class_depth/sizeof(struct claz *)]
 	  == clsclz) ? JNI_TRUE : JNI_FALSE;
 }
