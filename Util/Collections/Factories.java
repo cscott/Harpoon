@@ -16,7 +16,7 @@ import java.util.Set;
     operate on or return <code>CollectionFactory</code>s. 
  
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: Factories.java,v 1.1.2.7 2000-07-15 15:19:51 pnkfelix Exp $
+    @version $Id: Factories.java,v 1.1.2.8 2000-07-15 20:04:58 cananian Exp $
  */
 public final class Factories {
     
@@ -26,14 +26,14 @@ public final class Factories {
     }
     
     /** A <code>MapFactory</code> that generates <code>HashMap</code>s. */ 
-    public static final MapFactory hashMapFactory = new MapFactory() {
+    public static final MapFactory hashMapFactory = new SerialMapFactory() {
 	    public java.util.Map makeMap(java.util.Map map) {
 		return new java.util.HashMap(map);
 	    }
     };
     
     /** A <code>SetFactory</code> that generates <code>HashSet</code>s. */
-    public static final SetFactory hashSetFactory = new SetFactory() {
+    public static final SetFactory hashSetFactory = new SerialSetFactory() {
 	    public java.util.Set makeSet(java.util.Collection c) {
 		return new java.util.HashSet(c);
 	    }
@@ -43,7 +43,7 @@ public final class Factories {
     };
     
     /** A <code>SetFactory</code> that generates <code>WorkSet</code>s. */
-    private static final SetFactory workSetFactory = new SetFactory() {
+    private static final SetFactory workSetFactory = new SerialSetFactory() {
 	    public java.util.Set makeSet(java.util.Collection c) {
 		return new harpoon.Util.WorkSet(c);
 	    }
@@ -54,7 +54,7 @@ public final class Factories {
     
     /** A <code>SetFactory</code> that generates
 	<code>LinearSet</code>s backed by <code>ArrayList</code>s. */
-    public static final SetFactory linearSetFactory = new SetFactory() {
+    public static final SetFactory linearSetFactory = new SerialSetFactory() {
 	public java.util.Set makeSet(java.util.Collection c) {
 	    Set ls = new LinearSet();
 	    ls.addAll(c);
@@ -66,14 +66,14 @@ public final class Factories {
     };
 
     /** A <code>SetFactory</code> that generates <code>TreeSet</code>s. */
-    public static final SetFactory treeSetFactory = new SetFactory() {
+    public static final SetFactory treeSetFactory = new SerialSetFactory() {
 	public java.util.Set makeSet(java.util.Collection c) {
 	    return new java.util.TreeSet(c);
 	}
     };
     
     /** A <code>ListFactory</code> that generates <code>LinkedList</code>s. */
-    public static final ListFactory linkedListFactory = new ListFactory() {
+    public static final ListFactory linkedListFactory=new SerialListFactory() {
 	    public java.util.List makeList(java.util.Collection c) {
 		return new java.util.LinkedList(c);
 	    }
@@ -81,7 +81,7 @@ public final class Factories {
 
     /** Returns a <code>ListFactory</code> that generates
 	<code>ArrayList</code>s. */
-    public static ListFactory arrayListFactory = new ListFactory() {
+    public static ListFactory arrayListFactory = new SerialListFactory() {
 	    public java.util.List makeList(java.util.Collection c) {
 		return new java.util.ArrayList(c);
 	    }
@@ -99,7 +99,7 @@ public final class Factories {
     */
     public static CollectionFactory
 	synchronizedCollectionFactory(final CollectionFactory cf) { 
-	return new CollectionFactory() {
+	return new SerialCollectionFactory() {
 	    public java.util.Collection makeCollection(Collection c) {
 		return Collections.synchronizedCollection
 		    (cf.makeCollection(c));
@@ -115,7 +115,7 @@ public final class Factories {
     */
     public static SetFactory 
 	synchronizedSetFactory(final SetFactory sf) {
-	return new SetFactory() {
+	return new SerialSetFactory() {
 	    public java.util.Set makeSet(Collection c) {
 		return Collections.synchronizedSet(sf.makeSet(c));
 	    }
@@ -130,7 +130,7 @@ public final class Factories {
     */
     public static ListFactory
 	synchronizedListFactory(final ListFactory lf) {
-	return new ListFactory() {
+	return new SerialListFactory() {
 	    public java.util.List makeList(Collection c) {
 		return Collections.synchronizedList(lf.makeList(c));
 	    }
@@ -145,7 +145,7 @@ public final class Factories {
     */
     public static MapFactory
 	synchronizedMapFactory(final MapFactory mf) {
-	return new MapFactory() {
+	return new SerialMapFactory() {
 	    public java.util.Map makeMap(java.util.Map map) {
 		return Collections.synchronizedMap(mf.makeMap(map));
 	    }
@@ -154,7 +154,7 @@ public final class Factories {
 
     public static CollectionFactory 
 	noNullCollectionFactory(final CollectionFactory cf) {
-	return new CollectionFactory() {
+	return new SerialCollectionFactory() {
 	    public java.util.Collection makeCollection(final Collection c) {
 		Util.assert(noNull(c));
 		final Collection back = cf.makeCollection(c);
@@ -180,8 +180,15 @@ public final class Factories {
 	return true;
     }
 
+    // private classes to add java.io.Serializable to *Factories.
+    // if we could make anonymous types w/ multiple inheritance, we wouldn't
+    // need these.
+    private static abstract class SerialMapFactory
+	extends MapFactory implements java.io.Serializable { }
+    private static abstract class SerialSetFactory
+	extends SetFactory implements java.io.Serializable { }
+    private static abstract class SerialListFactory
+	extends ListFactory implements java.io.Serializable { }
+    private static abstract class SerialCollectionFactory
+	extends CollectionFactory implements java.io.Serializable { }
 }
-
-
-
-
