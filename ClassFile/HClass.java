@@ -27,7 +27,7 @@ import java.lang.reflect.Modifier;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.31 2000-01-15 00:49:05 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.32 2000-01-15 17:54:47 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -392,7 +392,7 @@ public abstract class HClass extends HPointer
    *            if the specified <code>HClass</code> parameter is null.
    */
   public final boolean isAssignableFrom(HClass cls) {
-    Util.assert(_linker == cls._linker);
+    Util.assert(_linker == cls._linker || isPrimitive() || cls.isPrimitive());
     if (cls==null) throw new NullPointerException();
     // test identity conversion.
     if (cls==this) return true;
@@ -434,7 +434,7 @@ public abstract class HClass extends HPointer
    *         <code>hc</code>, <code>false</code> otherwise.
    */
   public final boolean isSuperclassOf(HClass hc) {
-    Util.assert(_linker == hc._linker);
+    Util.assert(_linker == hc._linker || isPrimitive() || hc.isPrimitive());
     Util.assert(!this.isInterface());
     for ( ; hc!=null; hc = hc.getSuperclass())
       if (this == hc) return true;
@@ -449,7 +449,7 @@ public abstract class HClass extends HPointer
    *         <code>hc</code>, <code>false</code> otherwise.
    */
   public final boolean isSuperinterfaceOf(HClass hc) {
-    Util.assert(_linker == hc._linker);
+    Util.assert(_linker == hc._linker || isPrimitive() || hc.isPrimitive());
     Util.assert(this.isInterface());
     UniqueVector uv = new UniqueVector();//unique in case of circularity 
     for ( ; hc!=null; hc = hc.getSuperclass())
@@ -471,7 +471,7 @@ public abstract class HClass extends HPointer
    * <code>HClass</code> <code>hc</code>.
    */
   public final boolean isInstanceOf(HClass hc) {
-    Util.assert(_linker == hc._linker);
+    Util.assert(_linker == hc._linker || isPrimitive() || hc.isPrimitive());
     if (this.isArray()) {
       if (!hc.isArray()) 
 	// see http://java.sun.com/docs/books/jls/clarify.html
