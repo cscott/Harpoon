@@ -21,7 +21,7 @@ import java.util.Map;
  * from a different <code>AllocationInformation</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformationMap.java,v 1.6 2002-11-29 20:34:21 salcianu Exp $
+ * @version $Id: AllocationInformationMap.java,v 1.7 2003-02-08 19:16:46 salcianu Exp $
  */
 public class AllocationInformationMap
     implements AllocationInformation, java.io.Serializable {
@@ -48,14 +48,6 @@ public class AllocationInformationMap
 			 TempMap tm, AllocationInformation ai) {
 
 	AllocationProperties ap = ai.query(oldallocsite);
-
-
-	if(ap == null) {
-	    System.out.println("ap IS null!");
-	    System.out.println("ai instanceof " + ai.getClass().getName());
-	    assert false : " ";
-	}
-
 	associate(newallocsite, ap.allocationHeap()==null ? ap :
 		  new AllocationPropertiesImpl(ap, tm));
     }
@@ -71,6 +63,7 @@ public class AllocationInformationMap
 	final HClass actualClass;
 	final boolean setDynamicWBFlag;
 	final HField memoryChunkField;
+	final int uniqueID;
 	
 	public AllocationPropertiesImpl(boolean hasInteriorPointers,
 					boolean canBeStackAllocated,
@@ -83,7 +76,7 @@ public class AllocationInformationMap
 	    this(hasInteriorPointers,
 		 canBeStackAllocated, canBeThreadAllocated, makeHeap,
 		 noSynchronization, allocationHeap,
-		 actualClass, setDynamicWBFlag, null);
+		 actualClass, setDynamicWBFlag, null, -1);
 	}
 
 	public AllocationPropertiesImpl(boolean hasInteriorPointers,
@@ -94,7 +87,8 @@ public class AllocationInformationMap
 					Temp allocationHeap,
 					HClass actualClass,
 					boolean setDynamicWBFlag,
-					HField memoryChunkField) {
+					HField memoryChunkField,
+					int uniqueID) {
 	    assert !(allocationHeap!=null && !canBeThreadAllocated);
 	    assert !(allocationHeap!=null && makeHeap);
 	    this.hasInteriorPointers  = hasInteriorPointers;
@@ -106,6 +100,7 @@ public class AllocationInformationMap
 	    this.actualClass          = actualClass;
 	    this.setDynamicWBFlag     = setDynamicWBFlag;
 	    this.memoryChunkField     = memoryChunkField;
+	    this.uniqueID             = uniqueID;
 	}
 	public AllocationPropertiesImpl(AllocationProperties ap, 
 					TempMap tm) {
@@ -118,7 +113,8 @@ public class AllocationInformationMap
 		 tm.tempMap(ap.allocationHeap()) : null,
 		 ap.actualClass(),
 		 ap.setDynamicWBFlag(),
-		 ap.getMemoryChunkField());
+		 ap.getMemoryChunkField(),
+		 ap.getUniqueID());
 	}
 	public boolean hasInteriorPointers() { return hasInteriorPointers; }
 	public boolean canBeStackAllocated() { return canBeStackAllocated; }
@@ -129,5 +125,6 @@ public class AllocationInformationMap
 	public HClass actualClass()          { return actualClass; }
 	public boolean setDynamicWBFlag()    { return setDynamicWBFlag; }
 	public HField getMemoryChunkField()  { return memoryChunkField; }
+	public int getUniqueID()             { return -1; }
     }
 }
