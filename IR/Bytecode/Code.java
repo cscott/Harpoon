@@ -1,4 +1,4 @@
-package harpoon.ClassFile.Bytecode;
+package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
 import harpoon.ClassFile.Raw.MethodInfo;
@@ -15,7 +15,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.16 1998-09-12 01:55:18 cananian Exp $
+ * @version $Id: Code.java,v 1.1 1998-09-14 02:49:20 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {

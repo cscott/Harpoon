@@ -1,4 +1,4 @@
-package harpoon.ClassFile.Bytecode;
+package harpoon.IR.Bytecode;
 
 import harpoon.Util.Util;
 
@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>key</code> method.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InSwitch.java,v 1.3 1998-09-02 23:33:34 cananian Exp $
+ * @version $Id: InSwitch.java,v 1.1 1998-09-14 02:49:21 cananian Exp $
  * @see Instr
  */
 public class InSwitch extends InCti {

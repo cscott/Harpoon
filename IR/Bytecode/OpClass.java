@@ -1,4 +1,4 @@
-package harpoon.ClassFile.Bytecode;
+package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
 import harpoon.ClassFile.Raw.Constant.*;
@@ -9,7 +9,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>CONSTANT_Class</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpClass.java,v 1.4 1998-09-12 01:55:18 cananian Exp $
+ * @version $Id: OpClass.java,v 1.1 1998-09-14 02:49:22 cananian Exp $
  * @see harpoon.ClassFile.Raw.Constant.ConstantClass
  */
 public class OpClass extends Operand {

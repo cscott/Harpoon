@@ -1,4 +1,4 @@
-package harpoon.ClassFile.Bytecode;
+package harpoon.IR.Bytecode;
 
 import harpoon.Util.Util;
 /**
@@ -8,7 +8,7 @@ import harpoon.Util.Util;
  * multiple predecessors.
  *
  * @author  C. Scott Ananian
- * @version $Id: InMerge.java,v 1.6 1998-08-05 00:52:24 cananian Exp $
+ * @version $Id: InMerge.java,v 1.1 1998-09-14 02:49:21 cananian Exp $
  * @see Instr
  */
 public class InMerge extends Instr {

@@ -1,4 +1,4 @@
-package harpoon.ClassFile.Bytecode;
+package harpoon.IR.Bytecode;
 
 /**
  * The <code>Op</code> class contains constants and tables that we are
@@ -15,10 +15,10 @@ package harpoon.ClassFile.Bytecode;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Op.java,v 1.9 1998-09-09 22:23:43 cananian Exp $
+ * @version $Id: Op.java,v 1.1 1998-09-14 02:49:21 cananian Exp $
  * @see     harpoon.ClassFile.Raw.Attribute.AttributeCode
- * @see     harpoon.ClassFile.Bytecode.Instr
- * @see     harpoon.ClassFile.Bytecode.Code
+ * @see     harpoon.IR.Bytecode.Instr
+ * @see     harpoon.IR.Bytecode.Code
  */
 
 public final class Op {

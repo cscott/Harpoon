@@ -3,19 +3,19 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.*;
-import harpoon.ClassFile.Bytecode.Op;
-import harpoon.ClassFile.Bytecode.Operand;
-import harpoon.ClassFile.Bytecode.OpClass;
-import harpoon.ClassFile.Bytecode.OpConstant;
-import harpoon.ClassFile.Bytecode.OpField;
-import harpoon.ClassFile.Bytecode.OpLocalVariable;
-import harpoon.ClassFile.Bytecode.OpMethod;
-import harpoon.ClassFile.Bytecode.Instr;
-import harpoon.ClassFile.Bytecode.InGen;
-import harpoon.ClassFile.Bytecode.InCti;
-import harpoon.ClassFile.Bytecode.InMerge;
-import harpoon.ClassFile.Bytecode.InSwitch;
-import harpoon.ClassFile.Bytecode.Code.ExceptionEntry;
+import harpoon.IR.Bytecode.Op;
+import harpoon.IR.Bytecode.Operand;
+import harpoon.IR.Bytecode.OpClass;
+import harpoon.IR.Bytecode.OpConstant;
+import harpoon.IR.Bytecode.OpField;
+import harpoon.IR.Bytecode.OpLocalVariable;
+import harpoon.IR.Bytecode.OpMethod;
+import harpoon.IR.Bytecode.Instr;
+import harpoon.IR.Bytecode.InGen;
+import harpoon.IR.Bytecode.InCti;
+import harpoon.IR.Bytecode.InMerge;
+import harpoon.IR.Bytecode.InSwitch;
+import harpoon.IR.Bytecode.Code.ExceptionEntry;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Array;
@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.65 1998-09-13 23:57:31 cananian Exp $
+ * @version $Id: Translate.java,v 1.66 1998-09-14 02:49:24 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -231,7 +231,7 @@ class Translate  { // not public.
 
     /** Return a <code>Quad</code> representation of the method code in
      *  <code>bytecode</code>. */
-    static final Quad trans(harpoon.ClassFile.Bytecode.Code bytecode) {
+    static final Quad trans(harpoon.IR.Bytecode.Code bytecode) {
 	boolean isStatic = bytecode.getMethod().isStatic();
 
 	// set up initial state.

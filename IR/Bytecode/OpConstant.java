@@ -1,4 +1,4 @@
-package harpoon.ClassFile.Bytecode;
+package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
 import harpoon.ClassFile.Raw.Constant.*;
@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.6 1998-08-07 09:52:41 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.1 1998-09-14 02:49:22 cananian Exp $
  * @see Operand
  * @see Instr
  * @see harpoon.ClassFile.Raw.Constant.ConstantDouble

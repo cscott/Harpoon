@@ -1,4 +1,4 @@
-package harpoon.ClassFile.Bytecode;
+package harpoon.IR.Bytecode;
 
 import harpoon.Util.Util;
 
@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * Instructions like <code>ireturn</code> have no successors.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InCti.java,v 1.9 1998-09-09 22:23:43 cananian Exp $
+ * @version $Id: InCti.java,v 1.1 1998-09-14 02:49:20 cananian Exp $
  * @see Instr
  */
 public class InCti extends Instr {

@@ -1,4 +1,4 @@
-package harpoon.ClassFile.Bytecode;
+package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
 import harpoon.ClassFile.Raw.Constant.*;
@@ -10,7 +10,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>CONSTANT_InterfaceMethodref</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpMethod.java,v 1.3 1998-08-05 00:52:25 cananian Exp $
+ * @version $Id: OpMethod.java,v 1.1 1998-09-14 02:49:23 cananian Exp $
  * @see harpoon.ClassFile.Raw.Constant.ConstantMethodref
  * @see harpoon.ClassFile.Raw.Constant.ConstantInterfaceMethodref
  */

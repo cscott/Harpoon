@@ -1,4 +1,4 @@
-package harpoon.ClassFile.Bytecode;
+package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
 
@@ -7,7 +7,7 @@ import harpoon.ClassFile.*;
  * instruction which indicates a local variable index.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpLocalVariable.java,v 1.4 1998-08-05 00:52:25 cananian Exp $
+ * @version $Id: OpLocalVariable.java,v 1.1 1998-09-14 02:49:23 cananian Exp $
  */
 public class OpLocalVariable extends Operand {
   int index;

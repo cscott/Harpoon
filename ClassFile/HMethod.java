@@ -17,7 +17,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.18 1998-09-13 23:57:15 cananian Exp $
+ * @version $Id: HMethod.java,v 1.19 1998-09-14 02:49:16 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -45,7 +45,7 @@ public class HMethod implements HMember {
 	this.synthetic = (AttributeSynthetic) methodinfo.attributes[i];
     }
     // Add the default code representation.
-    putCode(new harpoon.ClassFile.Bytecode.Code(this, this.methodinfo));
+    putCode(new harpoon.IR.Bytecode.Code(this, this.methodinfo));
   }
   /** provide means for <code>HArrayMethod</code> to subclass. */
   HMethod(HClass parent) { this.hclass = parent; }
@@ -60,7 +60,7 @@ public class HMethod implements HMember {
   /**
    * Returns an object representing the executable code of this method.
    * The only <code>codetype</code> defined by default is "bytecode",
-   * which returns an <code>harpoon.ClassFile.Bytecode.Code</code> object,
+   * which returns an <code>harpoon.IR.Bytecode.Code</code> object,
    * but other <code>codetype</code>s can be registered using the
    * <code>register()</code> method.
    * The <code>getCode()</code> method will use any registered

@@ -1,4 +1,4 @@
-package harpoon.ClassFile.Bytecode;
+package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
 
@@ -13,7 +13,7 @@ import java.util.Vector;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.10 1998-08-22 05:45:12 cananian Exp $
+ * @version $Id: Instr.java,v 1.1 1998-09-14 02:49:21 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge

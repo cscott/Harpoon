@@ -1,4 +1,4 @@
-package harpoon.ClassFile.Bytecode;
+package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
 import harpoon.Util.Util;
@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * opcode in the raw bytecode array.
  *
  * @author  C. Scott Ananian
- * @version $Id: InGen.java,v 1.9 1998-08-05 00:52:24 cananian Exp $
+ * @version $Id: InGen.java,v 1.1 1998-09-14 02:49:20 cananian Exp $
  */
 public class InGen extends Instr {
   byte opcode;

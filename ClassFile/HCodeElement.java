@@ -10,9 +10,9 @@ package harpoon.ClassFile;
  * a unique numeric identifier.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeElement.java,v 1.5 1998-08-05 00:52:20 cananian Exp $
+ * @version $Id: HCodeElement.java,v 1.6 1998-09-14 02:49:15 cananian Exp $
  * @see HCode
- * @see harpoon.ClassFile.Bytecode.Instr
+ * @see harpoon.IR.Bytecode.Instr
  */
 public interface HCodeElement {
   /** Get the original source file name that this element is derived from. */
