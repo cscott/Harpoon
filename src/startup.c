@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
   };
   JNIEnv *env;
   jclass cls;
-  jmethodID mid, exitID;
+  jmethodID mid;
   jobject args;
   jclass thrCls;
   jobject mainthread;
@@ -211,10 +211,38 @@ int main(int argc, char *argv[]) {
 #ifdef WITH_REALTIME_THREADS
   setupEnv(env); // make sure main still has access to env for exit
 #endif
-  exitID = (*env)->GetMethodID(env, thrCls, "exit", "()V");
+#ifdef CLASSPATH_VERSION
+  {/* remove main thread from thread group using ThreadGroup.removeThread() */
+    // call thread.getThreadGroup().removeThread(thread)
+    jclass thrGrpCls;
+    jobject threadgroup;
+    jmethodID gettgID, removeThreadID;
+    // Thread.currentThread().getThreadGroup()...
+    gettgID = (*env)->GetMethodID(env, thrCls, "getThreadGroup",
+				  "()Ljava/lang/ThreadGroup;");
+    CHECK_EXCEPTIONS(env);
+    threadgroup = (*env)->CallObjectMethod(env, mainthread, gettgID);
+    CHECK_EXCEPTIONS(env);
+    // ...removeThread(Thread.currentThread())
+    thrGrpCls  = (*env)->FindClass(env, "java/lang/ThreadGroup");
+    CHECK_EXCEPTIONS(env);
+    removeThreadID = (*env)->GetMethodID(env, thrGrpCls, "removeThread",
+					 "(Ljava/lang/Thread;)V");
+    CHECK_EXCEPTIONS(env);
+    if (threadgroup) { /* threadgroup can be NULL when we disable them */
+      (*env)->CallVoidMethod(env, threadgroup, removeThreadID, mainthread);
+      CHECK_EXCEPTIONS(env); // catch exception thrown?
+      (*env)->DeleteLocalRef(env, threadgroup);
+    }
+  }
+#else /* in the sunjdk, the Thread.exit() method does this for us. */
+ {
+  jmethodID exitID = (*env)->GetMethodID(env, thrCls, "exit", "()V");
   CHECK_EXCEPTIONS(env);
   (*env)->CallNonvirtualVoidMethod(env, mainthread, thrCls, exitID);
   CHECK_EXCEPTIONS(env);
+ }
+#endif /* !CLASSPATH_VERSION */
   (*env)->DeleteLocalRef(env, thrCls);
 
   /* main thread is dead now. */

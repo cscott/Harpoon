@@ -49,7 +49,11 @@ extern jfieldID priorityID; /* "priority" field in Thread object. */
 extern jfieldID daemonID; /* "daemon" field in Thread object. */
 extern jmethodID runID; /* Thread.run() method. */
 extern jmethodID gettgID; /* Thread.getThreadGroup() method. */
+#ifdef CLASSPATH_VERSION
+extern jmethodID removeThreadID; /* ThreadGroup.removeThread() method. */
+#else /* if !CLASSPATH_VERSION */
 extern jmethodID exitID; /* Thread.exit() method. */
+#endif /* !CLASSPATH_VERSION */
 extern jmethodID uncaughtID; /* ThreadGroup.uncaughtException() method. */
 #ifdef WITH_REALTIME_JAVA
 extern jmethodID cleanupID; /* RealtimeThread.cleanup() method. */
@@ -183,10 +187,18 @@ static void * thread_startup_routine(void *closure) {
     (*env)->CallVoidMethod(env, threadgroup, uncaughtID, thread, threadexc);
   }
   /* this thread is dead now.  give it a chance to clean up. */
+#ifdef CLASSPATH_VERSION
+  /* remove from thread group using ThreadGroup.removeThread(this) */
+  threadgroup = (*env)->CallObjectMethod(env, thread, gettgID);
+  if (threadgroup) /* something thread groups are disabled */
+    (*env)->CallVoidMethod(env, threadgroup, removeThreadID, mainthread);
+  assert(!((*env)->ExceptionOccurred(env)));
+#else
   /* (this also removes the thread from the ThreadGroup) */
   /* (see also Thread.EDexit() -- keep these in sync) */
   (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
   assert(!((*env)->ExceptionOccurred(env)));
+#endif /* !CLASSPATH_VERSION */
 #ifdef WITH_REALTIME_JAVA
 //  (*env)->CallVoidMethod(env, thread, cleanupID);
 //  assert(!((*env)->ExceptionOccurred(env)));
