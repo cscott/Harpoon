@@ -17,7 +17,9 @@ import harpoon.IR.LowQuad.LowQuadFactory;
 import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
+import harpoon.Util.DisjointSet;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
@@ -30,11 +32,11 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.36 2000-11-16 00:12:17 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.37 2001-09-20 18:18:04 cananian Exp $
  */
 public class ToNoSSA
 {
-    private CloningTempMap  m_ctm;
+    private NameMap         m_ctm;
     private Derivation      m_derivation;
     private Quad            m_quads;
     private AllocationInformationMap m_allocInfoMap;
@@ -106,7 +108,7 @@ public class ToNoSSA
 
 	m_allocInfoMap = (code.getAllocationInformation()==null) ? null :
 	    new AllocationInformationMap();
-	m_ctm   = new CloningTempMap
+	m_ctm   = new NameMap
 	    (((Quad)code.getRootElement()).getFactory().tempFactory(),
 	     newQF.tempFactory());
 	m_quads = translate(newQF, derivation, dT, code);
@@ -136,17 +138,20 @@ public class ToNoSSA
     private Quad translate(QuadFactory qf, Derivation derivation, 
 			   Map dT, Code code)
     {
-	NameMap         nm;
 	Quad            old_header, qTmp;
 	QuadMap         qm;
 	LowQuadVisitor  v;
 
 	old_header   = (Quad)code.getRootElement();
-	nm           = new NameMap(); 
 	qm           = new QuadMap(m_ctm, derivation, dT);
 
+	// Merge src/dst of all SIGMAS
+	v = new SIGMAMergeVisitor(m_ctm);
+	for (Iterator i = code.getElementsI(); i.hasNext();)
+	    ((Quad)i.next()).accept(v);
+
 	// Remove all SIGMAs from the code
-	v = new SIGMAVisitor(m_ctm, nm, qf, qm);
+	v = new SIGMAVisitor(m_ctm, qf, qm);
 	for (Iterator i = code.getElementsI(); i.hasNext();)
 	    ((Quad)i.next()).accept(v);
       
@@ -168,7 +173,7 @@ public class ToNoSSA
 	}
 
 	// Modify this new CFG by emptying PHI nodes
-	v = new PHIVisitor(qf, dT, nm);
+	v = new PHIVisitor(qf, dT);
 	for (Iterator i = code.getElementsI(); i.hasNext();)
 	    qm.get((Quad)i.next()).accept(v);
 
@@ -187,6 +192,21 @@ public class ToNoSSA
 	return qm.get(old_header);
     }
 
+    /** first touch all the SIGMAs to merge their definitions */
+static class SIGMAMergeVisitor extends LowQuadVisitor // this is an inner class
+{
+    private final NameMap        m_nm;
+    public SIGMAMergeVisitor(NameMap nm) {
+	super(false/*non-strict*/);
+	m_nm = nm;
+    }
+    public void visit(Quad q) { /* do nothing */ }
+    public void visit(SIGMA q) {
+	for (int i=0; i<q.numSigmas(); i++)
+	    for (int j=0; j<q.arity(); j++)
+		m_nm.map(q.dst(i, j), q.src(i));
+    }
+}
 /*
  * Performs the first phase of the transformation to NoSSA form:
  * removing the SIGMAs.  This visitor also serves the purpose of cloning
@@ -197,16 +217,14 @@ public class ToNoSSA
 static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
 {
     private CloningTempMap m_ctm;
-    private NameMap        m_nm;
     private QuadFactory    m_qf;
     private QuadMap        m_qm;
 
-    public SIGMAVisitor(CloningTempMap ctm, NameMap nm, 
+    public SIGMAVisitor(CloningTempMap ctm,
 			QuadFactory qf, QuadMap qm)
     {
 	super(false/*non-strict*/);
 	m_ctm         = ctm;
-	m_nm          = nm;
 	m_qf          = qf;
 	m_qm          = qm;
     }
@@ -230,13 +248,6 @@ static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
 			      (q.retval()!=null)?map(q.retval()):null,
 			      map(q.retex()), q.isVirtual(), q.isTailCall(),
 			      new Temp[0]);
-	numSigmas  = q.numSigmas();
-	arity      = q.arity();
-
-	for (int i=0; i<numSigmas; i++)
-	    for (int j=0; j<arity; j++)
-		renameSigma(q, j, i);
-
 	m_qm.put(q, q0);
     }
 
@@ -253,13 +264,6 @@ static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
 			      (q.retval()!=null)?map(q.retval()):null,
 			      map(q.retex()), new Temp[0],
 			      q.isVirtual(), q.isTailCall());
-	numSigmas  = q.numSigmas();
-	arity      = q.arity();
-
-	for (int i=0; i<numSigmas; i++)
-	    for (int j=0; j<arity; j++)
-		renameSigma(q, j, i);
-
 	m_qm.put(q, q0);
     }
 
@@ -269,13 +273,6 @@ static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
 	int    arity, numSigmas;
       
 	q0         = new CJMP(m_qf, q, map(q.test()), new Temp[] {});
-	numSigmas  = q.numSigmas();
-	arity      = q.arity();
-
-	for (int i=0; i<numSigmas; i++)
-	    for (int j=0; j<arity; j++)
-		renameSigma(q, j, i);
-
 	m_qm.put(q, q0);
     }
 
@@ -288,13 +285,6 @@ static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
 	keys       = new int[q.keysLength()];
 	System.arraycopy(q.keys(), 0, keys, 0, q.keysLength());
 	q0         = new SWITCH(m_qf, q, map(q.index()), keys, new Temp[] {});
-	numSigmas  = q.numSigmas();
-	arity      = q.arity();
-
-	for (int i=0; i<numSigmas; i++)
-	    for (int j=0; j<arity; j++)
-		renameSigma(q, j, i);
-
 	m_qm.put(q, q0);
     }
 
@@ -305,20 +295,10 @@ static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
       
 	q0         = new TYPESWITCH(m_qf, q, map(q.index()), q.keys(),
 				    new Temp[] {}, q.hasDefault());
-	numSigmas  = q.numSigmas();
-	arity      = q.arity();
-
-	for (int i=0; i<numSigmas; i++)
-	    for (int j=0; j<arity; j++)
-		renameSigma(q, j, i);
-
 	m_qm.put(q, q0);
     }
   
     private Temp map(Temp t) { return (t==null)?null:m_ctm.tempMap(t); }  
-
-    private void renameSigma(SIGMA q, int dstIndex, int srcIndex) 
-    { m_nm.map(map(q.dst(srcIndex, dstIndex)), map(q.src(srcIndex))); }
 }
 
 /**
@@ -331,14 +311,12 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 {
     private Map             m_dT;
     private QuadFactory     m_qf;
-    private NameMap         m_nm;
 
-    public PHIVisitor(QuadFactory qf, Map dT, NameMap nm)
+    public PHIVisitor(QuadFactory qf, Map dT)
     {      
 	super(false/*non-strict*/);
 	m_dT          = dT;
 	m_qf          = qf;
-	m_nm          = nm;
     }
 
     public void visit(Quad q) { }
@@ -445,13 +423,24 @@ static class QuadMap // this is an inner class
     }
 }
 
-static class NameMap implements TempMap { // this is an inner class
-    Map h = new HashMap();
-    public Temp tempMap(Temp t) {
-	while (h.containsKey(t)) { t = (Temp)h.get(t); }
-	return t;
+static class NameMap extends CloningTempMap {
+    private final TempFactory old_tf;
+    NameMap(TempFactory old_tf, TempFactory new_tf) {
+	super(old_tf, new_tf);
+	this.old_tf = old_tf;
     }
-    public void map(Temp Told, Temp Tnew) { h.put(Told, Tnew); }
+    private DisjointSet mergeMap = new DisjointSet();
+    private boolean merging=true;
+    public Temp tempMap(Temp t) {
+	if (merging) merging=false;
+	return super.tempMap((Temp)mergeMap.find(t));
+    }
+    public void map(Temp Told, Temp Tnew) {
+	Util.assert(merging); // no merging is valid after we start tempMapping
+	Util.assert(Told.tempFactory()==old_tf);
+	Util.assert(Tnew.tempFactory()==old_tf);
+	mergeMap.union(Told, Tnew);
+    }
 }
 
 } // close the ToNoSSA class (yes, the indentation's screwed up,
