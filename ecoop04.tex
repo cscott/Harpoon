@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: ecoop04.tex,v 1.6 2003-12-08 09:56:57 cananian Exp $
+% $Id: ecoop04.tex,v 1.7 2003-12-08 11:17:51 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[runningheads]{csallncs}
 %\usepackage{times}
@@ -37,7 +37,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.6 $ $}
+%\date{\today \\ $ $Revision: 1.7 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -169,6 +169,7 @@ The contributions of this paper include:
   race-protection to unsynchronized code.
 \item A mechanically-verified Promela model of the implementation.
 \item Empirical data to justify the design choices.
+\punt{
 \item Compiler optimizations to improve the speed of software
   transactions.
 \item An application of fast functional arrays to solve the ``large
@@ -179,6 +180,7 @@ The contributions of this paper include:
   support for small transactions.  This allows hardware small
   transactions to be bootstrapped to provide efficient large
   transactions.
+}
 \end{itemize}
 
 \secput{example}{Example and Motivation}
@@ -448,12 +450,14 @@ constructs.  We have evaluated it by automatically
 experimental results describing the
 transaction properties of programs so transformed.
 We then present our software transaction design, based on the
-properties we observed in our benchmarks.  We present modelling
-results affirming the correctness of the design, and compiler
+properties we observed in our benchmarks.
+\punt{
+We present modelling results affirming the correctness of the design, and compiler
 optimizations to enhance its performance.  We also describe a variant
 on the scheme which uses some hardware support.  Finally, we present
 performance data for our pure-software and partially-hardware
 transaction implementations.
+}
 
 \secput{auto}{Creating transactions}
 One of the difficulties of proposing a novel language feature is the
@@ -727,162 +731,447 @@ We now present an algorithm which has these desired properties.
 \subsecput{datastruct}{Object Structures}
 \figput{tr-multi-obj}{Implementing software transactions with version lists.}
 \figref{tr-multi-obj} illustrates the basic data structures of our
-software transaction implementation.  Objects are extended\ldots
+software transaction implementation.  Objects are extended with two
+additional fields.  The first field, {\tt versions}, points to a
+singly-linked list of object versions.  Each one contains field values
+corresponding to a committed, aborted, or in-progress transaction,
+identified by its {\tt owner} field.  There is a single unique
+transaction object for each transaction.
+
+The other added field, {\tt readers}, points to a singly-linked list
+of transactions which have read from this object.  Committed and
+aborted transactions are pruned from this list.  The {\tt readers}
+field is used to ensure that a transaction does not operate with
+out-of-date values if the object is later written
+non-transactionally.
+
+There is a special flag value, which we call {\tt FLAG}.  It should be
+an uncommon value, i.e. not a small positive or negative integer
+constant, nor zero.  In our implementation, we have chosen the byte
+\texttt{0xCA} to be our flag value, repeated as necessary to fill out
+the width of the appropriate type.
+The semantic value of an object field is the value in the original
+object structure, \emph{unless that value is \texttt{FLAG}}, in which
+case the field's value is the value of the field in the first
+committed transaction in the object's version list.  A ``false flag''
+occurs when the application wishes to ``really'' store the value FLAG
+in a field; this is handled by creating a fully-committed version
+attached to the object and storing FLAG in that version as well as in
+the object field.
 
 \subsecput{ops}{Operations}
 We support transactional read/write and non-transactional read/write
 as well as transaction begin, transaction abort, and transaction
-commit.
+commit.  Transaction begin simply involves the creation of a new
+transaction identifier object.  Transaction commit and abort are simply
+compare-and-swap operations which atomically set the transaction object's {\tt
+  status} field appropriately if and only if it was previously in the
+WAITING state.
+
+We will present the other operations one-by-one, giving models in
+Promela describing the algorithms involves.  The full Promela model is
+available from the URL given at the end of the paper.
 
 \subsubsection{Read}
 
-The ReadNT function does a non-transactional read of field $f$ from
-object $o$.  In the common-case, the only overhead is to check that
-the read value is not FLAG.  If it is, we copy back the field value
+The {\tt ReadNT} function does a non-transactional read of field $f$ from
+object $o$, putting the result in $v$.
+In the common case, the only overhead is to check that
+the read value is not FLAG.  However, if the value read \emph{is}
+FLAG, we copy back the field value 
 from the most-recently committed transaction (aborting all other
 transactions) and try again.  The copy-back procedure will notify
 us if this is a ``false flag'', in which case the value of this
-field really is FLAG.  Passing 'false' to the copy-back procedure
-indicates that only writers need be killed, not transactional readers.
-
-The only possible races are within the copy-back procedure.
+field really is FLAG.  We pass the {\tt kill\_writers} constant
+to the copy-back procedure to
+indicate that only transactional writers need be aborted, not
+transactional readers.
+All possible races are confined to the copy-back procedure.
 \par {\footnotesize\samepage
 \begin{verbatim}
-ReadNT(o, f) {
-  do {
-    v = load(o, f);
-    if (v!=FLAG) return v;
-  } while (FALSE_FLAG !=
-           copyBackField(o, f, KILL_WRITERS));
-  return FLAG;
+inline readNT(o, f, v) {
+  do
+  :: v = object[o].field[f];
+     if
+     :: (v!=FLAG) -> break /* done! */
+     :: else
+     fi;
+     copyBackField(o, f, kill_writers, _st);
+     if
+     :: (_st==false_flag) ->
+        v = FLAG;
+        break
+     :: else
+     fi
+  od
 }
 \end{verbatim}
 }
 
 \subsubsection{Write}
-The WriteNT function does a non-transactional write of new value $nv$
-to field $f$ of object $o$.  Passing 'true' to the copy-back procedure
-indicates that both transactions readers *and* writers should be killed.
+The {\tt WriteNT} function does a non-transactional write of new value $nval$
+to field $f$ of object $o$.  For correctness, we need to ensure that
+the reader list is empty before we do the write.  We implement this
+with a load-linked/store-conditional pair, which is modelled in
+Promela slightly differently, ensuring that our write only succeeds
+so long as the reader list remains empty.  If it is not empty, we
+call the copy-back procedure (as in {\tt readNT}), passing the
+constant {\tt kill\_all} to indicate that both transactional readers
+and writers should be aborted during the copy-back.  The copy-back
+procedure leaves the reader list empty.
+
+If the value to be written is actually the FLAG value, things get a
+little bit trickier.  This case does not occur often, and so the
+simplest correct implementation is to treat this non-transactional
+write as a short transactional write, creating a new transaction for
+this one write, and attempting to commit it immediately after the
+write.  This is slow, but adequate for this uncommon case.
 \par {\footnotesize\samepage
 \begin{verbatim}
-WriteNT(o, f, nval) {
-  if (nval != FLAG) {
-    do {
-      if (LL(readFlag(f))==FLAG_CLEAR)
-        if (SC(o, f, nval)==SUCCESS)
-          return; // done!
-      else copyBackField(o, f, KILL_ALL);
-      // copyBackField should leave read flag CLEAR on FALSE_FLAG
-    } while(true);
-  } else {
-    // create FALSE_FLAG.
-    do {
-      copyBackField(o, f, KILL_ALL);
-      ensure a committed version 'ver' is first in the chain.
-      // put FLAG in version:
-      if (LL(first_version)==ver)
-        if (readFlag(f)==FLAG_CLEAR)
-          if (SC(o, f, nval)==SUCCESS)
-            return; // done!
-    } while(true);
-  }
+inline writeNT(o, f, nval) {
+  if
+  :: (nval != FLAG) ->
+     do
+     :: atomic {
+          if /* this is a LL(readerList)/SC(field) */
+          :: (object[o].readerList == NIL) ->
+             object[o].fieldLock[f] = _thread_id;
+             object[o].field[f] = nval;
+             break /* success! */
+          :: else
+          fi
+        }
+        /* unsuccessful SC */
+        copyBackField(o, f, kill_all, _st)
+     od
+  :: else -> /* create false flag */
+     /* implement this as a short *transactional* write.  */
+     /* start a new transaction, write FLAG, commit the transaction,
+      * repeat until successful.  Implementation elided. */
+     ...
+  fi;
+}
+\end{verbatim}
+}
+\subsubsection{Field Copy-Back}
+\begin{figure}
+\tiny
+\begin{verbatim}
+inline copyBackField(o, f, mode, st) {
+  _nonceV=NIL; _ver = NIL; _r = NIL; st = success;
+  /* try to abort each version.  when abort fails, we've got a
+   * committed version. */
+  do
+  :: _ver = object[o].version;
+     if
+     :: (_ver==NIL) ->
+        st = saw_race; break /* someone's done the copyback for us */
+     :: else
+     fi;
+      /* move owner to local var to avoid races (owner set to NIL behind
+       * our back) */
+     _tmp_tid=version[_ver].owner;
+     tryToAbort(_tmp_tid);
+     if
+     :: (_tmp_tid==NIL || transid[_tmp_tid].status==committed) ->
+        break /* found a committed version */
+     :: else
+     fi;
+     /* link out an aborted version */
+     assert(transid[_tmp_tid].status==aborted);
+     CAS_Version(object[o].version, _ver, version[_ver].next, _);
+  od;
+  /* okay, link in our nonce.  this will prevent others from doing the
+   * copyback. */
+  if
+  :: (st==success) ->
+     assert (_ver!=NIL);
+     allocVersion(_retval, _nonceV, aborted_tid, _ver);
+     CAS_Version(object[o].version, _ver, _nonceV, _cas_stat);
+     if
+     :: (!_cas_stat) ->
+        st = saw_race_cleanup
+     :: else
+     fi
+  :: else
+  fi;
+  /* check that no one's beaten us to the copy back */
+  if
+  :: (st==success) ->
+     if
+     :: (object[o].field[f]==FLAG) ->
+        _val = version[_ver].field[f];
+        if
+        :: (_val==FLAG) -> /* false flag... */
+           st = false_flag /* ...no copy back needed */
+        :: else -> /* not a false flag */
+           d_step { /* LL/SC */
+             if
+             :: (object[o].version == _nonceV) ->
+                object[o].fieldLock[f] = _thread_id;
+                object[o].field[f] = _val;
+             :: else /* hmm, fail.  Must retry. */
+                st = saw_race_cleanup /* need to clean up nonce */
+             fi
+           }
+        fi
+     :: else /* may arrive here because of readT, which doesn't set _val=FLAG*/
+        st = saw_race_cleanup /* need to clean up nonce */
+     fi
+  :: else /* !success */
+  fi;
+  /* always kill readers, whether successful or not.  This ensures that we
+   * make progress if called from writeNT after a readNT sets readerList
+   * non-null without changing FLAG to _val (see immediately above; st will
+   * equal saw_race_cleanup in this scenario). */
+  if
+  :: (mode == kill_all) ->
+     do /* kill all readers */
+     :: moveReaderList(_r, object[o].readerList);
+        if
+        :: (_r==NIL) -> break
+        :: else
+        fi;
+        tryToAbort(readerlist[_r].transid);
+        /* link out this reader */
+        CAS_Reader(object[o].readerList, _r, readerlist[_r].next, _);
+     od;
+  :: else /* no more killing needed. */
+  fi;
+  /* done */
+}
+\end{verbatim}
+\caption{The field copy-back routine.}\label{fig:copyback}
+\end{figure}
+\figref{copyback} presents the field copy-back routine.  We create a
+new version owned by a pre-aborted transaction which serves as a
+reservation on the head of the version list.  We then write to the
+object field with a load-linked/store-conditional pair if and only if
+our version is still at the head of the versions list.  This addresses
+the major race possible in this routine.
+
+\subsubsection{Transactional Read}
+A transactional read is split into two parts.  Before the read, we
+must ensure that our transaction is on the reader list for the
+object.  This is straight-forward to do in a non-blocking manner as
+long as we always add ourselves to the head of the list.  We must also
+walk the versions list, and abort any uncommitted transaction other
+than our own.  These steps can be combined and hoisted so that they
+are done once before the first read from an object and not repeated.
+
+At read time, we initially read from the original object.  If the
+value read is not FLAG, we use it.  Otherwise, we look up the version
+object associated with our transaction (this will typically be at the
+head of the version list) and read the appropriate value from that
+version.  Note that the initial read-and-check can be omitted if we
+know that we have already written to this field inside this transaction.
+\par {\footnotesize\samepage
+\begin{verbatim}
+inline readT(tid, o, f, ver, result) {
+  do
+  ::
+     /* we should always either be on the readerlist or aborted here */
+     result = object[o].field[f];
+     if
+     :: (result==FLAG) ->
+        if
+        :: (ver!=NIL) ->
+           result = version[ver].field[f];
+           break /* done! */
+        :: else ->
+           findVersion(tid, o, ver);
+           if
+           :: (ver==NIL) -> /* use value from committed version */
+              assert (_r!=NIL);
+              result = version[_r].field[f]; /* false flag? */
+              moveVersion(_r, NIL);
+              break /* done */
+           :: else /* try, try, again */
+           fi
+        fi
+     :: else -> break /* done! */
+     fi
+  od
 }
 \end{verbatim}
 }
 
+\begin{figure}
+\tiny
+\begin{verbatim}
+/* per-object, before write. */
+inline ensureWriter(tid, o, ver) {
+  assert(tid!=NIL);
+  ver = NIL; _r = NIL; _rr = NIL;
+  do
+  :: assert (ver==NIL);
+     findVersion(tid, o, ver);
+     if
+     :: (ver!=NIL) -> break /* found a writable version for us */
+     :: (ver==NIL && _r==NIL) ->
+        /* create and link a fully-committed root version, then
+         * use this as our base. */
+        allocVersion(_retval, _r, NIL, NIL);
+        CAS_Version(object[o].version, NIL, _r, _cas_stat)
+     :: else ->
+        _cas_stat = true
+     fi;
+     if
+     :: (_cas_stat) ->
+        /* so far, so good. */
+        assert (_r!=NIL);
+        assert (version[_r].owner==NIL ||
+                transid[version[_r].owner].status==committed);
+        /* okay, make new version for this transaction. */
+        assert (ver==NIL);
+        allocVersion(_retval, ver, tid, _r);
+        /* want copy of committed version _r.  No race because
+         * we never write to a committed versions. */
+        version[ver].field[0] = version[_r].field[0];
+        version[ver].field[1] = version[_r].field[1];
+        assert(NUM_FIELDS==2); /* else ought to initialize more fields */
+        CAS_Version(object[o].version, _r, ver, _cas_stat);
+        moveVersion(_r, NIL); /* free _r */
+        if
+        :: (_cas_stat) ->
+           /* kill all readers (except ourself) */
+           /* note that all changes have to be made from the front of the
+            * list, so we unlink ourself and then re-add us. */
+           do
+           :: moveReaderList(_r, object[o].readerList);
+              if
+              :: (_r==NIL) -> break
+              :: (_r!=NIL && readerlist[_r].transid!=tid)->
+                 tryToAbort(readerlist[_r].transid)
+              :: else
+              fi;
+              /* link out this reader */
+              CAS_Reader(object[o].readerList, _r, readerlist[_r].next, _)
+           od;
+           /* okay, all pre-existing readers dead & gone. */
+           assert(_r==NIL);
+           /* link us back in. */
+           ensureReaderList(tid, o);
+           break
+        :: else
+        fi;
+        /* try again */
+     :: else
+     fi;
+     /* try again from the top */
+     moveVersion(ver, NIL)
+  od;
+  /* done! */
+  assert (_r==NIL);
+}
+\end{verbatim}
+\caption{The per-object version-setup routine for transactional writes.}
+\label{fig:ensurewriter}
+\end{figure}
+\begin{figure}
+\tiny
+\begin{verbatim}
+/* per-field, before write. */
+inline checkWriteField(o, f) {
+  _r = NIL; _rr = NIL;
+  do
+  ::
+     /* set write flag, if not already set */
+     _val = object[o].field[f];
+     if
+     :: (_val==FLAG) ->
+        break; /* done! */
+     :: else
+     fi;
+     /* okay, need to set write flag. */
+     moveVersion(_rr, object[o].version);
+     moveVersion(_r, _rr);
+     assert (_r!=NIL);
+     do
+     :: (_r==NIL) -> break /* done */
+     :: else ->
+        object[o].fieldLock[f] = _thread_id;
+        if
+        /* this next check ensures that concurrent copythroughs don't stomp
+         * on each other's versions, because the field will become FLAG
+         * before any other version will be written. */
+        :: (object[o].field[f]==_val) ->
+           if
+           :: (object[o].version==_rr) ->
+              atomic {
+                if
+                :: (object[o].fieldLock[f]==_thread_id) ->
+                   version[_r].field[f] = _val;
+                :: else -> break /* abort */
+                fi
+              }
+           :: else -> break /* abort */
+           fi
+        :: else -> break /* abort */
+        fi;
+        moveVersion(_r, version[_r].next) /* on to next */
+     od;
+     if
+     :: (_r==NIL) ->
+        /* field has been successfully copied to all versions */
+        atomic {
+          if
+          :: (object[o].version==_rr) ->
+             assert(object[o].field[f]==_val ||
+                    /* we can race with another copythrough and that's okay;
+                     * the locking strategy above ensures that we're all
+                     * writing the same values to all the versions and not
+                     * overwriting anything. */
+                    object[o].field[f]==FLAG);
+             object[o].fieldLock[f]=_thread_id;
+             object[o].field[f] = FLAG;
+             break; /* success!  done! */
+          :: else
+          fi
+        }
+     :: else
+     fi
+     /* retry */
+  od;
+  /* clean up */
+  moveVersion(_r, NIL);
+  moveVersion(_rr, NIL);
+}
+\end{verbatim}
+\caption{The per-field copy-through routine for transactional writes.}
+\label{fig:copythrough}
+\end{figure}
+\subsubsection{Transactional Write}
+Again, writes are split in two.  Once for each object we must traverse
+the version list, aborting other versions and locating or creating a
+version corresponding to our transaction.  We must also traverse the
+reader list, aborting all transactions on the list except ourself.
+This is shown in the {\tt ensureWriter} routine in \figref{ensurewriter}.
 
-What if another transaction does a copy-back, cancelling us?
-We'll see that $o.f$ is no longer FLAG, so we'll read this
-(later) value, which might be inconsistent.  We'll already
-be aborted, but we'd like to avoid computing with
-stale data.
-\subsubsection{ReadTrans}
+Once for each field we intend to write, we must perform a
+copy-through: copy the object's field value into all the versions and
+then write FLAG to the object's field.  We use
+load-linked/store-conditional to update versions only if the object's
+field has not already been set to FLAG behind our backs by another
+copy-through.  The {\tt checkWriteField} routine is shown in
+\figref{copythrough}.
+
+Then, for each write, we simply write to the identified version.
 \par {\footnotesize\samepage
 \begin{verbatim}
-ReadT(o, f, ver) {
-  val = load(o, f);
-  if (val!=FLAG)
-    // optionally validate current trans!=ABORTED
-    return val;
-  return load(ver, f);
+inline writeT(ver, f, nval) {
+  /* easy enough: */
+  version[ver].field[f] = nval;
 }
 \end{verbatim}
 }
-Pre-read, we need to ensure the read flags are set and that we're on
-the readers list.  This is a list because we don't need to abort
-anyone as long as we're all just reading this field.  But this is the
-list of transactions to abort if anyone tries to *write* this field.
 
-\subsubsection{WriteTrans}
-Writes are easy; we always write to our transactional version.
-Pre-write, we need to create the version and ensure the read
-flags for this field are set.  We also need to abort everyone on
-the readers list which is not us.
-\par {\footnotesize\samepage
-\begin{verbatim}
-WriteT(ver, f, nval) {
-  store(v, f, nval);
-}
-\end{verbatim}
-}
+\secput{verification}{Verification}
+The Promela model of this software transaction system was model
+checked with Spin version 4.1.0 and verified to operate correctly and
+without races.
 
-\subsubsection{CopyBackField}
-The copyBackField method should leave read flag CLEAR on FALSE\_FLAG.
-\par {\footnotesize\samepage
-\begin{verbatim}
-copyBackField(o, f, kill) {
-top:
- status = SUCCESS;
- if (kill==KILL_ALL) {
-   for each reader on list:
-     try to abort.
-     reader is now aborted or committed.
-     remove from list.
-   }
- }
- try to abort and remove each version, when abort fails...
- the head of the version list is now committed.
-  call this 'ver'.
- make a new aborted version and make it first on the
-  versions list. points to 'ver'.
-  call this 'nonce'.
- [once we have the nonce, no-one else can copyback]
- if (load(o, f)==FLAG) { // check that this hasn't been done already
-   val = load(ver, f);
-   if (val==FLAG)
-     status = FALSE_FLAG; // no copy needed.
-   else // not a false flag
-     if (LL(first_version)!=nonce ||
-         SC(o, f, val) != SUCCESS)
-       goto top;
- }
- if (kill==KILL_WRITERS) // done for readNT
-   return status;
- // reset read flags to zero:
- if (readers list not empty)
-   goto top; // race.
- if (LL(first_version)==nonce &&
-     SC(o, readFlag(f), 0)
-   return status; // done!
- goto retry; // try, try again.
-}
-\end{verbatim}
-}
-
-
-\subsecput{opt}{Optimizations}
-\subsection{Hoisting}
-\subsection{Check-combining}
-\subsection{Global field analysis}
-\subsection{Escape analysis}
-
-
-\subsecput{herlihy}{Herlihy's algorithm}
-Or reader-less version?
-
-\secput{integrate}{Integration}
-% JNI tricks, etc.
-
+\punt{
 \secput{eval}{Evaluation}
 
 \begin{figure*}
@@ -910,7 +1199,7 @@ Benchmark                 &  Base       & Locks         & Trans              & T
  spent handling overflows.}
 \label{fig:specperf}
 \end{figure*}
-
+}
 \punt{
 We found that using BTM transactions in the SPECjvm98 benchmarks
 results in very little overhead compared to using locks. We compiled
@@ -1045,9 +1334,10 @@ copying overhead is prohibitive unless the object is small enough to
 be copied efficiently (in, say, $O(1)$ time).  He also presented a
 ``large object protocol'' which requires the programmer to
 manually break the object into small blocks, after which the small
-object protocol can be employed.  This trouble with large objects is
+object protocol can be employed. 
+\punt{ This trouble with large objects is
 common to many non-blocking implementations; our solution is presented
-in \secref{proposal}.
+in \secref{proposal}.}
 
 Barnes provided the first universal non-blocking implementation
 method which avoids object copying \cite{Barnes93}.  He eliminates the
@@ -1256,6 +1546,15 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 
 
 \secput{concl}{Conclusions}
+We have outlined a mechanism to integrate transactions into an object
+oriented language to provide fault-tolerance, back-tracking, and
+non-blocking synchronization.  We have also shown the potential for
+automatically ``transactifying'' existing Java programs, and presented
+empirical data on the properties of these transactified applications.
+We have
+presented an efficient implementation of software transactions which
+has been verified with the Spin model checker to be correct and race
+free.
 
 \section*{Acknowledgments}
 Charles E. Leiserson suggested the ``network flow'' example in
