@@ -60,6 +60,7 @@ Util/Collections/UnmodifiableMultiMap.java
 Util/Collections/WorkSet.java
 
 # these have hairy dependencies.
+Analysis/AbstractClassFixupRelinker.java
 Analysis/BasicBlock.java
 Analysis/BasicBlockFactoryInterf.java
 Analysis/BasicBlockInterf.java

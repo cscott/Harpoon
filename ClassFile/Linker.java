@@ -13,7 +13,7 @@ import java.util.Map;
  * to code/data/object descriptions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Linker.java,v 1.4 2002-04-10 03:04:15 cananian Exp $
+ * @version $Id: Linker.java,v 1.5 2002-07-08 20:43:29 cananian Exp $
  */
 public abstract class Linker implements ReferenceUnique {
   protected Linker() { }
@@ -58,7 +58,7 @@ public abstract class Linker implements ReferenceUnique {
    * @exception NoSuchClassException
    *            if the class could not be found.
    */
-  public final HClass forDescriptor(String descriptor)
+  public HClass forDescriptor(String descriptor)
     throws NoSuchClassException {
     assert descriptor.indexOf('.')==-1; // should be desc, not name.
     // Trim descriptor.
