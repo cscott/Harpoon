@@ -6,11 +6,12 @@ package harpoon.IR.QuadSSA;
 import harpoon.Analysis.QuadSSA.DeadCode;
 import harpoon.ClassFile.*;
 import harpoon.Util.Set;
-import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
 
 import java.util.Enumeration;
+import java.util.NoSuchElementException;
 import java.util.Stack;
+import java.util.Vector;
 /**
  * <code>QuadSSA.Code</code> is a code view that exposes the details of
  * the java classfile bytecodes in a quadruple format.  Implementation
@@ -20,7 +21,7 @@ import java.util.Stack;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.29 1998-10-21 21:50:40 cananian Exp $
+ * @version $Id: Code.java,v 1.30 1998-11-10 01:09:00 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -108,31 +109,28 @@ public class Code extends HCode {
      * is in element 0 of the array.
      */
     public HCodeElement[] getElements() { 
-	UniqueVector v = new UniqueVector();
-	traverse(quads, v);
+	Vector v = new Vector();
+	for (Enumeration e = getElementsE(); e.hasMoreElements(); )
+	    v.addElement(e.nextElement());
 	HCodeElement[] elements = new Quad[v.size()];
 	v.copyInto(elements);
 	return (HCodeElement[]) elements;
     }
-    /** scan through quad graph and keep a list of the quads found. */
-    private void traverse(Quad q, UniqueVector v) {
-	// If this is a 'real' node, add it to the list.
-	if (v.contains(q)) return;
-	v.addElement(q);
 
-	// move on to successors.
-	Quad[] next = q.next();
-	for (int i=0; i<next.length; i++)
-	    traverse(next[i], v);
-    }
-
+    /** Returns an enumeration of the <code>Quad</code>s making up
+     *  this code view.  The root of the graph is the first element
+     *  enumerated. */
     public Enumeration getElementsE() {
 	return new Enumeration() {
 	    Set visited = new Set();
 	    Stack s = new Stack();
-	    { s.push(quads); visited.union(quads); } // initialize stack/set.
+	    { // initialize stack/set.
+		s.push(getLeafElements()[0]); visited.union(s.peek());
+		s.push(getRootElement());     visited.union(s.peek());
+	    } 
 	    public boolean hasMoreElements() { return !s.isEmpty(); }
 	    public Object nextElement() {
+		if (s.empty()) throw new NoSuchElementException();
 		Quad q = (Quad) s.pop();
 		// push successors on stack before returning.
 		Quad[] next = q.next();

@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * reference is <code>null</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.25 1998-10-12 00:53:55 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.26 1998-11-10 01:09:00 cananian Exp $ 
  */
 
 public class CALL extends Quad {
@@ -108,6 +108,13 @@ public class CALL extends Quad {
 	if (retval!=null)
 	    retval = tm.tempMap(retval);
 	retex  = tm.tempMap(retex);
+    }
+
+    /** Properly clone <code>params[]</code> array. */
+    public Object clone() throws CloneNotSupportedException {
+	CALL q = (CALL) super.clone();
+	q.params = (Temp[]) params.clone();
+	return q;
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

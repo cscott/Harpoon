@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * They have the form: <code>&lt;t1, t2, ..., tn&gt; = sigma(t0)</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SIGMA.java,v 1.2 1998-10-11 02:37:57 cananian Exp $
+ * @version $Id: SIGMA.java,v 1.3 1998-11-10 01:09:00 cananian Exp $
  */
 
 public abstract class SIGMA extends Quad {
@@ -59,7 +59,19 @@ public abstract class SIGMA extends Quad {
 		dst[i][j] = tm.tempMap(dst[i][j]);
 	}
     }
+
+    /** Properly clone <code>dst[][]</code> and <code>src[]</code> arrays. */
+    public Object clone() throws CloneNotSupportedException {
+	SIGMA q = (SIGMA) super.clone();
+	q.dst = (Temp[][]) dst.clone();
+	q.src = (Temp[]) src.clone();
+	for (int i=0; i<q.dst.length; i++)
+	    q.dst[i] = (Temp[]) dst[i].clone();
+	return q;
+    }
+
     public void visit(QuadVisitor v) { v.visit(this); }
+
     public String toString() {
 	StringBuffer sb = new StringBuffer("SIGMA("+next().length+"): ");
 	for (int i=0; i<src.length; i++) {

@@ -14,7 +14,7 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.27 1998-10-22 17:07:10 cananian Exp $
+ * @version $Id: Quad.java,v 1.28 1998-11-10 01:09:00 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -135,6 +135,16 @@ public abstract class Quad
     public static void addEdges(Quad[] quadlist) {
 	for (int i=0; i<quadlist.length-1; i++)
 	    addEdge(quadlist[i], 0, quadlist[i+1], 0);
+    }
+
+    //-----------------------------------------------------
+    // support cloning.  The pred/succ quads are not cloned, but the
+    // array holding them is.
+    public Object clone() throws CloneNotSupportedException {
+	Quad q = (Quad) super.clone();
+	q.next = (Edge[]) next.clone();
+	q.prev = (Edge[]) prev.clone();
+	return q;
     }
 
     //-----------------------------------------------------

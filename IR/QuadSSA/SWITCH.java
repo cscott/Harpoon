@@ -11,7 +11,7 @@ import harpoon.Temp.TempMap;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.12 1998-10-11 02:37:57 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.13 1998-11-10 01:09:00 cananian Exp $
  */
 
 public class SWITCH extends SIGMA {
@@ -57,6 +57,13 @@ public class SWITCH extends SIGMA {
     /** Rename all defined variables in this Quad according to a mapping. */
     public void renameDefs(TempMap tm) {
 	super.renameDefs(tm);
+    }
+
+    /** Properly clone <code>keys[]</code> array. */
+    public Object clone() throws CloneNotSupportedException {
+	SWITCH q = (SWITCH) super.clone();
+	q.keys = (int[]) keys.clone();
+	return q;
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }
