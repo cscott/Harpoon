@@ -6,7 +6,7 @@
 \usepackage{bbold}
 
 \title{}
-\author{Debugging experiment - Bug 1}
+\author{Debugging experiment - Bug 4}
 \date{July 30, 2003}
 
 \setlength{\topmargin}{0in}
@@ -25,33 +25,33 @@
 
 \thispagestyle{empty}
 
-This buggy program is composed of the files {\it file1.cc} and 
+This buggy program is composed of the files {\it file4.cc} and 
 {\it file.h}. If you are using the tool, you shouldn't worry about the 
 other files.
 
 \vspace{0.1in}
 To compile the program, simply type ``./build'' on the command line.\\
-To run the program, simply type ``./file1'' on the command line.
+To run the program, simply type ``./file4'' on the command line.
 
 
 \vspace{0.1in}
 Initially, the program prints:
 
 \begin{verbatim}
-=== BEGIN of link1 ===
-TWO
-=== END of link1 ===
+=== BEGIN of link2 ===
+
+=== END of link2 ===
 \end{verbatim}
 
 although it should have printed:
 \begin{verbatim}
-=== BEGIN of link1 ===
-ONE
-=== END of link1 ===
+=== BEGIN of link2 ===
+TWO
+=== END of link2 ===
 \end{verbatim}
 
 You are asked to localize and fix the bug that causes this abnormal behavior.
-
+ 
 
 \vspace{0.3in}
 Don't forget to fill out the following times:
