@@ -17,6 +17,7 @@ jclass FNI_FindClass(JNIEnv *env, const char *name) {
     bsearch(name, &name2class_start, &name2class_end-&name2class_start,
 	    sizeof(name2class_start), name2class_compare);
   if (result==NULL) {
+    assert(strcmp(name, "java/lang/NoClassDefFoundError")!=0);
     FNI_ThrowNew(env, FNI_FindClass(env, "java/lang/NoClassDefFoundError"),
 		 name);
     return NULL;
