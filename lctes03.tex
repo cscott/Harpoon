@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.21 2003-04-25 23:36:00 cananian Exp $
+% $Id: lctes03.tex,v 1.22 2003-04-26 00:04:34 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % lctes03.tex
 % Data Size Optimizations for Java Programs
@@ -88,14 +88,12 @@ for the programs in our benchmark suite by as much as 40\%.
 Some of the optimizations reduce the overall execution time;
 others may impose modest performance penalties.
 \end{abstract}
-\category{D.3.2}{Programming Languages}{Language
-  Classifications}[Object-oriented languages, Java]
-\category{D.3.3}{Programming Languages}{Language Constructs and
-  Features}[Classes and objects]
-\category{D.3.4}{Programming Languages}{Processors}[Compilers]
 \category{C.3}{Computer Systems Organization}{Special-Purpose and
   Application-Based Systems}[Real-time and embedded systems]
-\category{D.3.4}{Programming Languages}{Processors}[Optimization]
+\category{D.3.2}{Programming Languages}{Language
+  Classifications}[Object-oriented languages, Java]
+\category{D.3.4}{Program\-ming Languages}{Processors}[Compilers]
+\category{D.3.4}{Program\-ming Languages}{Processors}[Optimization]
 \category{E.2}{Data Storage Representations}{Object representation}
 \terms{Languages, Performance, Experimentation, Algorithms}
 \keywords{Embedded systems, size optimizations, static specialization,
@@ -111,8 +109,7 @@ within each object and the header information used by the
 run-time system:
 \begin{itemize}
 \item {\bf Field Reduction:} 
-Our flow-sensitive, interprocedural combined value-propagation and 
-bitwidth analysis
+Our flow-sensitive, interprocedural bitwidth analysis
 computes the range of values that the program
 may assign to each field. The compiler then transforms the program
 to reduce the size of the field to the smallest type
@@ -569,8 +566,8 @@ all of the values in the $f$ field of instances of $X$.
 The analysis therefore models an assignment to $f$ in any instance of 
 $X$ as an assignment to the corresponding analysis value $X.f$.%
 \footnote{An obvious extension is to use pointer
-analysis to discriminate between fields allocated at different sites
-in the program.}  The result of the analysis is a bitwidth
+analysis to discriminate between fields allocated at different
+program points.}  The result of the analysis is a bitwidth
 specification for each variable and field in the program.
 We also identify constant variables and
 fields; we replace reads of constant fields with their constant
@@ -830,7 +827,7 @@ initialize fields with simple functions of their input parameters.
 The first case enables us to unconditionally replace an instantiated
 class with a smaller split version; the second case allows us to wrap
 the constructor in an appropriate conditional to enable the creation
-of the small version when possible.
+of the small version when dynamically possible.
 
 This analysis builds upon our previous results.
 In a single pass over the constructor, we merge the values written
@@ -935,7 +932,7 @@ Section~\ref{sec:byte-pack}).
 The implementation of the hashtable used for field and hash/lock
 externalization can dramatically affect the space savings possible
 with these transformations.  The overhead of
-dynamically allocated buckets and the required {\it next} pointers
+dynamically-allocated buckets and the required {\it next} pointers
 makes separate chaining impractical as a hashtable implementation technique.
 Open-addressing
 implementations are preferable: in addition to the stored data,
@@ -964,7 +961,8 @@ hashtable, enabling the garbage collector to remove unneeded entries.
 We conducted this research using the MIT FLEX compiler infrastructure,%
 \footnote{Available from {\tt http://flexc.lcs.mit.edu/}.} which is a
 whole-program static compiler.  Although the analyses as described reflect
-this, it would be straightforward to use \emph{extant analysis}
+this compilation model, it would be straightforward to use
+\emph{extant analysis}
 \cite{sreedhar00} to apply transformations to only the closed-world
 portions of a program which used dynamic class loading.  The space
 allocated to the class index could be updated during garbage collection
@@ -1147,8 +1145,8 @@ measurements.
 Sweeney and Tip \cite{SweeneyTip98DeadDataMembers} did a study of dead
 members of C++ programs, which is similar to the unread field
 elimination done by our bitwidth analysis.  However, they
-fail to identify constant members, which our analysis algorithm
-does.  Further, our results show that unread and constant field
+fail to identify constant members, as our analysis algorithm
+can.  Further, our results show that unread and constant field
 elimination is very dependent on the coding style of a particular
 application.  The collection of techniques we have presented here
 gives much more consistent savings over a wide range of benchmarks.
