@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.58 1999-08-01 10:11:32 cananian Exp $
+% $Id: thesis.tex,v 1.59 1999-08-02 15:49:14 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -26,14 +26,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.58 $ $}
+\date{\today \\ $ $Revision: 1.59 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.58 $ $}{$ $Revision: 1.58 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.59 $ $}{$ $Revision: 1.59 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -122,7 +122,7 @@ on analysis rather than optimization.  We will address each design
 point in turn.
 
 \textbf{It names information units.}  SSA form (which we will describe
-further in \ref{sec:ssa}) assigns unique names to unique \emph{static
+further in section \ref{sec:ssa}) assigns unique names to unique \emph{static
 values} of a variable.  However, it ignores the value information
 which may be added to a variable at program branch points.  SSI form
 renames at branch points which allows us to associate unique names
@@ -471,13 +471,13 @@ DFS spanning tree.
 The above steps form an undirected graph $G'$ from the control-flow
 graph $G$.  The remainder of the cycle-equivalency algorithm is
 presented in figure~\vref{fig:CQalg}, with the above procedure
-corresponding to the statement \texttt{G':=Preprocess(G)}.  The
+corresponding to the statement \code{G':=Preprocess(G)}.  The
 algorithm has been corrected from the published version in
 \cite{johnson93:sese}; in addition it has been extended to compute
 both node and edge equivalencies (in effect, merging the algorithm of
 \cite{johnson94:pst}).  Lines modified from the presentation in
 \cite{johnson93:sese} are indicated in the figure with a vertical bar
-in the left margin.  The datatype \texttt{BracketList} and the node
+in the left margin.  The datatype \code{BracketList} and the node
 and edge properties used in the algorithm are described in
 figure~\vref{fig:CQdata}.  The interested reader is encouraged to consult
 \cite{johnson93:sese} for additional detail on these data structures
@@ -560,10 +560,10 @@ construction of SSI form into two parts: placing \phisigfunction{s}
 and renaming variables.  The placement algorithm runs in $O(N V_0)$
 time, and is presented in figure~\vref{fig:SSIalg}.  No new node
 properties or datatypes are required; however, it is parameterized on
-a function called \texttt{MaybeLive}.  The purpose of this function is
+a function called \code{MaybeLive}.  The purpose of this function is
 to generate pruned or minimal SSI form by suppressing unnecessary
 \phisigfunction{s}.  However, it need not be precise.  If
-\texttt{MaybeLive} returns a conservative value, the generated SSI
+\code{MaybeLive} returns a conservative value, the generated SSI
 form will have too many \phisigfunction{s}.  This can be
 post-processed to remove the excess; section \ref{sec:unusedcode} will
 discuss this further.\footnote{Note that equivalent results could be
@@ -670,14 +670,14 @@ $O(N V_{SSI})$ time, after which a simple $O(N)$ pass suffices to remove it.
 The complexity analysis is simple: nodes and variables are visited at
 most once, raising their value in the analysis lattive from
 \emph{unused} to \emph{used}.  Nodes marked \emph{used} are never
-visted.  So \texttt{MarkNodeUseful} is invoked at most $N$ times, and
-\texttt{MarkVarUseful} is invoked at most $V_{SSI}$ times.  Each call to
-\texttt{MarkNodeUseful} examines each variable used by the node; a
+visted.  So \code{MarkNodeUseful} is invoked at most $N$ times, and
+\code{MarkVarUseful} is invoked at most $V_{SSI}$ times.  Each call to
+\code{MarkNodeUseful} examines each variable used by the node; a
 node may use at most every variable, taking $O(N V_{SSI})$ time.  Each call
-to \texttt{MarkVarUseful} examines at most one node (the single
+to \code{MarkVarUseful} examines at most one node (the single
 definition node for the variable, if it exists) and in constant time
 pushes at most one node on to the worklist for a total of $O(V_{SSI})$ time.
-So the total run time of \texttt{FindUseful} is
+So the total run time of \code{FindUseful} is
 $O(N V_{SSI}+V_{SSI})=O(N V_{SSI})$, and
 in fact it is typically much less.\footnote{If the number of instruction
 operands and \phisigfunction{} arities are limited by a
@@ -763,11 +763,79 @@ standard SCC constant-propagation algorithm for review.  Section
 \subsubsection{Wegman and Zadeck's SCC algorithm}
 \begin{myfigure}
 \centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat1}
-\caption{Three-level lattice for SCC.}
-\label{fig:scclat}
+\caption{Three-level lattice and two-level executability lattice for SCC.}
+\label{fig:scclat1}
 \end{myfigure}
-The SCC algorithm works on a simple three-level lattice, shown in
-figure \vref{fig:scclat}.
+The SCC algorithm works on a simple three-level value lattice
+associated with variable definition points and a two-level
+executability lattice associated with flow-graph edges.  These
+lattices are shown in figure \vref{fig:scclat1}.  Associating a lattice
+value with a definition point is a conservative statement that, for
+all possible program paths, the value of that variable has a certain
+property.  The lattice value $\bot$ signifies that no information
+about the value is known, the lattice value $\top$ indicates that it
+is possible that the variable has more than one dynamic value, and the
+other lattice entries (corresponding to integer constants and occuping
+a flat space between $\top$ and $\bot$) indicate that the variable can
+be proven to have a single constant value in all runs of the program.
+Similarly, the executability lattice indicates whether it is possible
+that the control flow edge is traversed in some execution of the
+program (marked ``executable''), or if it can be proven that the edge
+is never traversed in any valid program path (marked ``not
+executable'').  The algorithm works with SSA form, and is presented
+as algorithm \ref{alg:scc}.  The time complexity of SCC is
+$O(E+U_{SSA})$, where $U_{SSA}$ is the number of variable
+\newterm{uses} in the SSA representation of the program.
+
+\subsubsection{Extending the value domain}
+\begin{myfigure}
+\centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat2}
+\caption{SCC value lattice extended to Java type domain.}
+\label{fig:scclat2}
+\end{myfigure}
+The first simple extension to the SCC optimization is to extend the
+domain of the value lattice to cover floating-point and other values.
+For this work, we extended the domain to cover the full type system of
+java bytecode; the extended lattice is presented in figure \ref{fig:scclat2}.
+The figure presents the abbreviated lattice notation we will use
+through the following sections; it is understood that the ``int''
+lattice entry stands for a finite-but-large set of
+incomparable lattice elements, consisting (in this case) of the
+members of the Java \code{int} integer type.
+%\footnote{As the Java \code{int}
+%type is a proper subset of the Java \code{long} integer type, we
+%simplify our lattice by representing all integers as elements of
+%\code{long}. Overflows are handled correctly after analysis.  Although
+%the mechanics are slightly different, the same principle holds for
+%the Java \code{double} and \code{float} types, and we similarly
+%combine them in our lattice.}
+Java \code{int}s are 32 bits long, so the ``int'' entry abbreviates
+$2^{32}$ lattice elements.  Similarly, the ``float'' entry encodes not
+the infinite domain of real numbers, but the domain spanned by the
+Java \code{float} type which has fewer than $2^{32}$ members.  The
+Java \code{String} type is also included, to allow simple constant
+string coalescing to be performed.  The propagation algorithm over
+this lattice is a trivial modification to \ref{alg:scc}, and will be
+omitted for brevity.  In the next sections, the ``int'' and ``long''
+entries in this lattice will be summarized as ``Integer Constant'',
+the ``float'' and ``double'' entries as ``Floating-point Constant'',
+and the ``String'' entry as ``String Constant''.  As the lattice is
+still only three levels, the asymptotic runtime complexity is
+identical to that of SCC.
+
+\subsection{Type analysis}
+In figure \ref{fig:scclat3} we extend the algorithm to compute Java
+type information.  The new lattice entry marked ``Typed'' is actually
+structured as in \ref{fig:scclat4}; it is as deep as the class
+hierarchy.  The asymptotic runtime complexity is now $O(E+U_{SSA}D)$,
+where $D$ is the maximum depth of the class hierarchy.  Table
+\ref{tab:chstats}\fixme{Get these stats from paper hidden somewhere on
+desk.}  compares class hierarchy statistics for several large
+object-oriented libraries in different source languages. Our FLEX
+compiler infrastructure, as an example of a large Java project, uses
+444 classes with an average depth of 1.84; the deepest class was 5
+levels removed from the root.\footnote{Measured August 2, 1999; the
+infrastructure is under continuing development.}
 
 \subsection{Bit-width analysis}\label{sec:bitwidth}
 
@@ -789,11 +857,11 @@ In particular, we would like a representation that eliminates
 unnecessary control dependencies such as exist in the program of
 figure~\vref{fig:ctrldep}.  A control-flow graph for this program, as
 it is written, will explicitly specify that no assignments to
-\texttt{B[]} will take place until all elements of \texttt{A[]} have
+\code{B[]} will take place until all elements of \code{A[]} have
 been assigned; that is, the second loop will be
 \emph{control-dependent} on the first.  We would like to remove this
 control dependence in order to provide greater parallelism---in this
-case, to allow the assignments to \texttt{A[]} and \texttt{B[]} to
+case, to allow the assignments to \code{A[]} and \code{B[]} to
 take place in parallel, if possible.\footnote{Note that Arvind's
 dataflow compiler \cite{traub86:ttda} looked for exactly the opposite type of
 parallelism.  By concentrating on intra-loop dependencies, as he did, you get
@@ -814,7 +882,7 @@ for (int j=0; j<10; j++)\\
 \caption[An example of unnecessary control dependence.]
 {An example of unnecessary control dependence: the second loop
 is \emph{control-dependent} on the first and so assignments to
-\texttt{A[]} and \texttt{B[]} cannot take place in parallel.}
+\code{A[]} and \code{B[]} cannot take place in parallel.}
 \label{fig:ctrldep}
 \end{myfigure}
 
@@ -1117,8 +1185,8 @@ that's how.}
 \newpage
 \appendix
 \section{Common errors of IR research papers}
-For some reason, the field of compiler IRs seems to attract more than
-its share of village idiots.
+For some reason, the field of compiler intermediate representations
+seems to attract more than its share of village idiots.
 \begin{enumerate}
 \item Quote: ``The number of $\phi$-nodes needed remains linear''
 \cite{sreedhar95:lintime}.  Often \cite{cytron91:ssa} is cited in
@@ -1128,7 +1196,7 @@ programs we tested, the plot in Figure~21 shows that the number of
 In other words, this is not a theoretical or hard bound, this is an
 \emph{experimental} result.  By the same experimental technique that
 showed the run-time of his algorithm to be linear ``in
-practice''---despite the fact that nested \texttt{repeat-until} loops
+practice''---despite the fact that nested \code{repeat-until} loops
 yielded quadratic performance.  Wegman and Zadeck get points in
 \cite{wegman91:scc} for stating ``in theory the size can be $O(EV)$,
 but empirical evidence indicates that the work required to compute the
@@ -1177,7 +1245,7 @@ everything is ``linear.''}
 \begin{enumerate}
 \item \textbf{``Who cares about Maria?''} (Canonical) \cite{marinov99}
 \item \textbf{``Who cares about Martin and Maria?''} (Radu Revised)
-\item \textbf{``Who cares about \texttt{bash}?''} (Found on FLEX web page)
+\item \textbf{``Who cares about \code{bash}?''} (Found on FLEX web page)
 \end{enumerate}
 
 \end{document}
