@@ -3,8 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
-import AppelRegAllocClasses.*;
-import AppelRegAllocClasses.Web;
+import harpoon.Analysis.Instr.AppelRegAllocClasses.Web;
 
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrEdge;
@@ -55,7 +54,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.1 2001-06-05 04:02:27 pnkfelix Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.2 2001-06-06 22:18:23 cananian Exp $
  */
 public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     // FSK: super class really SHOULD be RegAlloc, but am doing this

@@ -1,6 +1,7 @@
 package harpoon.Analysis.Instr;
 
-import AppelRegAlloc.*;
+import harpoon.Analysis.Instr.AppelRegAlloc.Move;
+import harpoon.Analysis.Instr.AppelRegAlloc.MoveList;
 
 import harpoon.IR.Assem.Instr;
 
