@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import harpoon.ClassFile.Raw.Attribute.AttributeSourceFile;
 import harpoon.Util.UniqueVector;
 
 /**
@@ -24,7 +25,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.13 1998-08-02 03:19:12 cananian Exp $
+ * @version $Id: HClass.java,v 1.14 1998-08-02 06:57:42 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -634,6 +635,25 @@ public class HClass {
       in[i] = forName(classfile.interfaces(i).name().replace('/','.'));
     return in;
   }
+
+  /**
+   * Return the name of the source file for this class, or a
+   * zero-length string if the information is not available.
+   * @see harpoon.ClassFile.Raw.Attribute.AttributeSourceFile
+   */
+  public String getSourceFile() {
+    if (sourcefile==null) {
+      for (int i=0; i<classfile.attributes.length; i++)
+	if (classfile.attributes[i] instanceof AttributeSourceFile) {
+	  sourcefile = 
+	    ((AttributeSourceFile)classfile.attributes[i]).sourcefile();
+	  break;
+	}
+      if (sourcefile==null) sourcefile="";
+    }
+    return sourcefile;
+  }
+  private String sourcefile=null;
 
   /** 
    * If this <code>HClass</code> object represents an array type, 
