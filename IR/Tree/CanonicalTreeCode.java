@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
+import harpoon.Analysis.Tree.Canonicalize;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -24,10 +25,11 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.23 2000-02-15 19:02:05 cananian Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.24 2000-02-15 20:30:19 cananian Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
+    private final static boolean useOldCanonicalize = true;
     public  static   final String           codename = "canonical-tree";
     private          final TreeDerivation   treeDerivation;
 
@@ -37,11 +39,20 @@ public class CanonicalTreeCode extends Code {
     CanonicalTreeCode(TreeCode code, Frame frame) {
 	super(code.getMethod(), null, frame);
 
-	ToCanonicalTree translator;
-
-	translator   = new ToCanonicalTree(this.tf, code);
-	tree         = translator.getTree();
-	treeDerivation = translator.getTreeDerivation();
+	if (useOldCanonicalize) {
+	    ToCanonicalTree translator;
+	    translator   = new ToCanonicalTree(this.tf, code);
+	    tree         = translator.getTree();
+	    treeDerivation = translator.getTreeDerivation();
+	} else {
+	    DerivationGenerator dg = (code.getTreeDerivation()==null) ? null :
+		new DerivationGenerator();
+	    tree = Tree.clone(this.tf, code.tree, (dg==null) ? null :
+			      dg.cloneCallback(code.getTreeDerivation()));
+	    Canonicalize.simplify((Stm)tree, dg, Canonicalize.RULES);
+	    treeDerivation = dg;
+	}
+	Util.assert(!harpoon.Analysis.Tree.Canonicalize.containsEseq(tree));
     }
 
     /* Copy constructor, should only be called by the clone() method. */
