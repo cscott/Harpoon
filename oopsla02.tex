@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.19 2002-03-23 06:23:09 cananian Exp $
+% $Id: oopsla02.tex,v 1.20 2002-03-23 07:37:32 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -31,7 +31,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.19 $ $}{$ $Revision: 1.19 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.20 $ $}{$ $Revision: 1.20 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -46,8 +46,8 @@ of values that can appear in each field, and use a variety of
 transformations to eliminate fields with common default values
 or usage patterns from the majority of objects that originally
 contained these fields. We can apply these optimizations both 
-to fields declared by the programmer and to fields in
-object headers. We use a variety of program analysis 
+to fields declared by the programmer and to implicit fields in
+the runtime object header. We use a variety of program analysis 
 algorithms to extract the information required to apply these
 optimizations. 
 
@@ -57,7 +57,7 @@ benchmark suite. Our experimental results show that
 our combined techniques can significantly reduce the amount
 of memory required to store the objects in our benchmark
 suite.  Some of the optimizations reduce the overall execution time;
-others impose modest performance penalties.
+others may impose modest performance penalties.
 
 \end{abstract}
 
@@ -71,10 +71,10 @@ within each object and the header information used by the
 run-time system:
 \begin{itemize}
 \item {\bf Field Reduction:} 
-Our a flow-sensitive, interprocedural bitwidth analysis
+Our flow-sensitive, interprocedural bitwidth analysis
 analysis computes the range of values that the program
 may assign to each field. The compiler then transforms the program
-to reduce the size of the field to the smallest size 
+to reduce the size of the field to the smallest type
 capable of storing that range of values. 
 \item {\bf Constant Field Elimination:} 
 If the bitwidth analysis finds that field always holds
@@ -83,7 +83,8 @@ It removes each write to the field, and replaces each read
 with the constant value.
 \item {\bf Static Specialization:} Our analysis finds 
 classes with fields whose values do not change after initialization,
-even though objects allocated at different allocation sites may
+even though objects allocated at different allocation sites
+or points in the execution may
 have different values for these fields. It then generates 
 a specialized version of each class for each allocation site;
 this version omits the fields and instead provides accessor
@@ -91,7 +92,7 @@ methods that return the corresponding values.
 \item {\bf Field Externalization:} Our analysis uses profiling
 to find fields that almost always have the same default value. 
 It then removes these fields from their enclosing class, 
-using a hash table to store values of the field that differ
+using a hash table to store only values of the field that differ
 from the default value. It replaces writes to the field with
 an insertion into the hash table (if the written value is not the
 default value) or a removal from the hash table (if the written value
@@ -118,8 +119,9 @@ All of these transformations reduce the space required to store
 objects, but potentially increase the running time of the program.
 Our experimental results show that, for our set of benchmark
 programs, all of our combined techniques can reduce the peak amount of memory
-required to run the program by as much as XXX\% and never reduce the
-running time by more than YYY\%.
+required to run the program by as much as 40\% and never reduce the
+running time by more than 60\%.  In many scenarios, a 10\% improvement
+in running time occurs.
 
 \subsection{Contributions}
 
@@ -138,12 +140,13 @@ transformations.
 implemented all of the analyses and techniques 
 presented in the paper. Our experience with this
 implementation enables us to discuss the pragmatic
-details of developing an effective implementation 
+details necessary for an effective implementation 
 of our techniques. 
 
-\item {\bf Experimental Results:} It presents a set
+\item {\bf Experimental Results:} This paper presents a set
 of experimental results that characterize the impact
-of our transformations. 
+of our transformations.
+% on running time and using various memory metrics?
 \end{itemize}
 
 \section{Example}
@@ -159,7 +162,9 @@ object. The {\tt type} field indicates which kind of object
 is stored in the {\tt value} field of the class, 
 which essentially implements a tagged 
 union.\footnote{This class is a simplfied version of similar
-classes that appear in some of our benchmarks.} 
+classes that appear in some of our benchmarks.
+See for example the {\tt jess.Value} class in SPECjvm98 benchmark
+{\tt \_202\_jess}.} 
 The class also maintains the {\tt positive} field, which is
 {\tt 1} if the wrapped number is positive and {\tt 0} otherwise. 
 
@@ -181,40 +186,40 @@ and 4) the {\tt positive} field always has a value between
 {\tt 0} and {\tt 1} (also inclusive).
 
 \begin{figure}
-\begin{verbatim}
-public class Value { 
-  int integerType = 0;
-  int floatType = 1;
-  int type;
-  int positive;
-  Object value;
-  void setInteger(Integer i) { 
-    type = integerType;
-    value = i;
-    if (i.intValue() > 0) positive = 0;
-    else positive = 1;
-  }
-  void setFloat(Float f) { 
-    type = floatType;
-    value = f;
-    if (f.floatValue() > 0.0) positive = 0;
-    else positive = 1;
-  }
-  void setValue(int t, int p, Object v) { 
-    type = t;
-    positive = p;
-    value = v;
-  }
-}
-
-public class main { 
-  public static void main() { 
-    Value v = new Value();
-    Integer i = new Integer(5);
-    v.setValue(v.integerType, 1, i);
-  }
-}
-\end{verbatim}
+\begin{samplecode}
+public class Value \{ \\
+\>int integerType = 0;\\
+\>int floatType = 1;\\
+\>int type;\\
+\>int positive;\\
+\>Object value;\\
+\>void setInteger(Integer i) \{ \\
+\>\>type = integerType;\\
+\>\>value = i;\\
+\>\>if (i.intValue() > 0) positive = 0;\\
+\>\>else positive = 1;\\
+\>\}\\
+\>void setFloat(Float f) \{ \\
+\>\>type = floatType;\\
+\>\>value = f;\\
+\>\>if (f.floatValue() > 0.0) positive = 0;\\
+\>\>else positive = 1;\\
+\>\}\\
+\>void setValue(int t, int p, Object v) \{ \\
+\>\>type = t;\\
+\>\>positive = p;\\
+\>\>value = v;\\
+\>\}\\
+\}\\
+\\
+public class main \{ \\
+\>public static void main() \{ \\
+\>\>Value v = new Value();\\
+\>\>Integer i = new Integer(5);\\
+\>\>v.setValue(v.integerType, 1, i);\\
+\>\}\\
+\}%\\
+\end{samplecode}%
 \caption{\label{fig:value} Value Class}
 \end{figure}
 
@@ -230,19 +235,22 @@ of values that can occur. Our byte packing algorithm then
 generates a dense packing of the values, attempting to preserve
 the alignment of the variables if possible. In this case, the
 algorithm can reduce the field sizes by six bytes and the overall
-size of the object by one four-byte word. 
+size of the object by one four-byte word.  If your runtime can support
+unaligned objects without external fragmentation, we can reduce the
+object size by  the full six bytes.
 
 \subsection{Static Specialization} 
 
-Figure~\ref{fig:string} presents portions of the implementation
-of the Java {\tt String} class. The {\tt value} field in this
+Figure~\ref{fig:string-fields} presents portions of the implementation
+of the Java {\tt java.lang.String} class. The {\tt value} field in this
 class refers to a character array that holds the characters
 in the string; the {\tt count} field holds the length of the
 string. In some cases, instances of the {\tt String} class
 are derived substrings of other instances 
-(see the {\tt substring} method in Figure~\ref{}), in which case the
+(see the {\tt substring} method in Figure~\ref{fig:string-fields}), in
+which case the
 {\tt offset} field provides the offset of the starting 
-point of the string within the {\tt value} character array. 
+point of the string within a shared {\tt value} character array. 
 Note that the {\tt value}, {\tt offset}, and {\tt count} 
 fields are all initialized when the string is constructed
 and do not change during the lifetime of the string.
@@ -260,7 +268,7 @@ public final class String \{\\
 \>public String substring(int start) \{\\
 \>\>int noff = offset + start;\\
 \>\>int ncnt = count - start;\\
-\>\>return new String(value, noff, ncnt);\\
+\>\>return new String(noff, ncnt, value);\\
 \>\}\\
 \}\\
 \end{samplecode}
@@ -284,10 +292,10 @@ Our analysis exploits this fact by splitting the
 {\tt String} class into two classes: a superclass {\tt SmallString}
 that omits the {\tt offset} field, and a subclass {\tt BigString} that
 extends {\tt SmallString} and includes the {\tt offset} field. 
-Each of these two new classes implements a {\tt getOffset} method
-that returns the value of the offset. The {\tt getOffset} method
+Each of these two new classes implements a {\tt getOffset()} method
+that returns the value of the offset. The {\tt getOffset()} method
 in the {\tt SmallString} class simply returns zero; the {\tt
-getOffset} method in the {\tt BigString} method returns the 
+getOffset()} method in the {\tt BigString} class returns the 
 value of the offset field. 
 
 At every allocation site except the one inside the {\tt substring}
@@ -339,7 +347,9 @@ public SmallString substring(int start) \{\\
 The analysis required to support this transformation takes place
 in two phases. The first phase scans the program
 to identify fields that
-are constant after initialization. In our example, the analysis
+are amenable to transformation.\footnote{See
+  Section~\ref{sec:subclass-final} for a more precise definition.}
+In our example, the analysis
 determines that the {\tt offset} field is never written after
 it is initialized. The next phase determines if the value
 of this field is determined either by the constructor that
@@ -370,7 +380,7 @@ In the string example discussed above, it was possible to determine
 which version of the specialized class to use at object allocation
 time. In some cases, however, a given field may almost always have
 a given value, even though it is not possible to statically determine
-what the value is or which objects will contain fields of that 
+when the value might be changed or which objects will contain fields of that 
 value. In such cases we apply another optimization, 
 {\em field externalization}. This optimization removes the field
 from the class, replacing fields whose values differ from the default 
@@ -388,7 +398,7 @@ object from the hash table.
 If not, the generated code removes any old mapping and inserts a new
 mapping to record the new value. 
 
-\subsection{Hashlock Externalization}
+\subsection{Hash/Lock Externalization}
 
 Our currently implemented system applies field externalization
 in a general way to any field in the object. We would, however,
@@ -397,10 +407,10 @@ technique. Java implementations typically store an object
 hash code and lock information in the object header. For many
 objects, however, the program never actually uses the hash code
 or lock information. Our implemented system therefore uses
-a variant of field externalization called {\em hashlock 
+a variant of field externalization called {\em hash/lock 
 externalization}. This variant allocates all objects 
 without the hash code and lock information fields in the header,
-then lazily reconstructs the values when necessary. 
+then lazily creates the fields when necessary. 
 Specifically, if the program ever uses the hash code or lock information, 
 the generated code generates the hash code or lock information
 for the object, then stores this information in a hash table
@@ -411,11 +421,9 @@ externalization) may actually increase space usage. But in
 practice, we have found that our set of benchmark programs
 rarely uses these fields. The overall result is a substantial
 space savings. Note that the combination of claz compression 
-and hashlock elimination produces a common-case object header
-size of one byte --- one byte for the claz offset and no
+and hash/lock elimination produces a common-case object header
+size of one byte --- one byte for a claz index and no
 space at all for hash code or lock information. 
-
-\subsection{Required Analysis Information}
 
 \section{Analysis Algorithms}
 
@@ -460,9 +468,9 @@ bitwidth of each individually.
 
 \subsubsection{Value lattice}
 First consider extending the basic three level value lattice of Wegman and
-Zadeck (figure~\ref{fig:wzlat} to allow the classification of
+Zadeck (Figure~\ref{fig:wzlat} to allow the classification of
 negative, positive, or zero
-values, as illustrated in figure~\ref{fig:scclat6}.
+values, as illustrated in Figure~\ref{fig:scclat6}.
 A join on two negative numbers yields the entry \code{(M--)},
 indicating the set of all negative non-zero numbers; a
 join on a negative and a positive number yields \code{(M-P)}, and so on.
@@ -487,7 +495,7 @@ value \code{(--3)},\footnote{Read this as \tuple{-,-,3} if you think
   ``double-negation'' when seeing two dashes in a row.}
 for example, and merging $-4$ with $4$ would result in
 \code{(3-3)}.  Some combination rules for arithmetic operations are
-shown in figure~\ref{fig:bitrules}.  The rules for simple arithmetic
+shown in Figure~\ref{fig:bitrules}.  The rules for simple arithmetic
 operators should be obvious upon examination (adding two $N$ bit
 integers yields at most an $N+1$-bit integer, for example) although
 care must be taken to ensure that combinations of negative and
@@ -557,7 +565,7 @@ be {\tt 0}.  This, however, prevents us from finding non-zero field
 constants in the program: a simple initialization statement like {\tt
   x=5} will assign {\tt x} the value $\mathbf{0}\meet\mathbf{5}$,
 which is not equal to $\mathbf{5}$!\footnote{On the lattice of
-  figure~\ref{fig:scclat6}, $\mathbf{0}\meet\mathbf{5}=\text{\tt
+  Figure~\ref{fig:scclat6}, $\mathbf{0}\meet\mathbf{5}=\text{\tt
     (-ZP)}$.}
 
 We perform a {\it definite initialization} analysis to remedy this
@@ -640,7 +648,7 @@ definite-initialization analysis in the previous section to increment the
 definitely initialized.
 
 \subsection{Finding Subclass-Final Fields}
-
+\label{sec:subclass-final}
 Our static specialization transformation can only be applied to what
 we call {\it subclass-final} fields.  Subclass-finality is a looser
 but similar constraint to Java's {\tt final} modifier.  We do a
@@ -769,7 +777,7 @@ times of each application after the application of our sequence
 of optimizations. These numbers show that the first several
 optimizations (Claz Compression, Field Reduction, and Byte Packing)
 typically reduce the execution times, while the
-remainder (Static Specialization, Field Externalization, and  Hashlock
+remainder (Static Specialization, Field Externalization, and  Hash/Lock
 externalization) generate modest increases in the execution times. 
 
 \begin{figure}
@@ -847,7 +855,7 @@ compiler to find objects whose locks are never
 acquired~\cite{ACSE99,BH99,WR99:OOPSLA99,CGSSM99,Ruf00:PLDI00,SR01:PPOPP01}.
 This information can enable the compiler to remove the space
 reserved for synchronization support in these objects. 
-Our hashlock removal algorithm uses a totally dynamic approach
+Our hash/lock removal algorithm uses a totally dynamic approach
 based on our field externalization mechanism. 
 
 Several researchers have used bitwidth analysis to reduce the size
@@ -883,6 +891,8 @@ gives much more consistent savings over a wide range of benchmarks.
 
 
 \section{Conclusions}
+
+{\bf\Large WRITE ME}
 
 \bibliography{harpoon}
 
