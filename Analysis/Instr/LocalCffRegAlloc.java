@@ -22,6 +22,7 @@ import harpoon.IR.Assem.InstrMOVE;
 import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Label;
 
@@ -69,7 +70,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.118 2000-11-14 22:45:19 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.119 2001-07-07 18:30:51 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -87,6 +88,30 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	};
 
+    private static TempFactory preassignTF = new TempFactory() {
+	public String getScope() { 
+	    return "private TF for RegFileInfo"; 
+	}
+	public String getUniqueID(String suggestion) { 
+	    return "rfi"+suggestion.hashCode(); 
+	}
+    };
+
+    /** <code>PreassignTemp</code> represents <code>Temp</code>s
+     *  which have been pre-assigned to machine registers. */
+    public static class PreassignTemp extends Temp {
+	private Temp reg;
+	public PreassignTemp(Temp reg) {
+	    super(preassignTF);
+	    this.reg = reg;
+	}
+	public String toString() {
+	    return reg+"<preassigned>";
+	}
+    }
+    
+
+
     private static final boolean VERIFY = false;
 
     private static final boolean PREASSIGN_INFO = false;
@@ -99,6 +124,8 @@ public class LocalCffRegAlloc extends RegAlloc {
     Collection genRegC;
     Collection allRegC;
     Collection allRegisters;
+
+    Collection preassignedTemps = new HashSet();
 
     private LiveTemps liveTemps;
 
@@ -992,7 +1019,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    final Temp reg = (Temp) preassignIter.next();
 		    
 		    if (regfile.isEmpty(reg)) { 
-			Temp preassign = new RegFileInfo.PreassignTemp(reg);
+			Temp preassign = new PreassignTemp(reg);
+			preassignedTemps.add(preassign);
 
 			// preassigntemps should never be spilled, so
 			// their sources should never be accessed, so
@@ -1199,7 +1227,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 		    Iterator assns = 
 			frame.getRegFileInfo().suggestRegAssignment
-			(t, regfile.getRegToTemp());
+			(t, regfile.getRegToTemp(), preassignedTemps);
 
 		    // Assignment Filter: remove *used* regs
 		    assns = new FilterIterator
@@ -1226,7 +1254,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 				try {
 				    sggs = frame.getRegFileInfo().
 					suggestRegAssignment
-					(t, regfile.getRegToTemp());
+					(t, regfile.getRegToTemp(), 
+					 preassignedTemps);
 				} catch (SpillException e) {
 				    Util.assert(false, "cant happen here");
 				    sggs = null;
@@ -1557,7 +1586,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	*/
 	private void spillValue(Temp val, Instr loc, RegFile regfile,
 				Instr src, int thread) {
-	    Util.assert(! (val instanceof RegFileInfo.PreassignTemp),
+	    Util.assert(! preassignedTemps.contains( val ),
 			"cannot spill Preassigned Temps");
 	    Util.assert(!isRegister(val), 
 			ASSERTDB ? val+" should not be reg"

@@ -5,7 +5,6 @@ package harpoon.Backend.MIPS;
 
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.LocationFactory.Location;
-import harpoon.Backend.Generic.RegFileInfo.VRegAllocator;
 import harpoon.Backend.Generic.RegFileInfo.SpillException;
 import harpoon.Backend.StrongARM.TwoWordTemp;
 import harpoon.ClassFile.HClass;
@@ -27,6 +26,7 @@ import harpoon.Util.Util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Collection;
 import java.util.Set;
 import java.util.Iterator;
 import java.util.Map;
@@ -40,7 +40,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Emmett Witchel <witchel@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.9 2001-06-17 22:32:23 cananian Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.10 2001-07-07 18:30:47 pnkfelix Exp $
  */
 public class RegFileInfo
 extends harpoon.Backend.Generic.RegFileInfo 
@@ -262,100 +262,6 @@ implements harpoon.Backend.Generic.LocationFactory
       }
    }
 
-   static class MyVRegAllocator extends VRegAllocator {
-      // not necessarily right approach... retry coding with
-      // TwoWordTemps etc for Vregs... (because we don't need to
-      // expose the need for multiple registers/temp until the last
-      // part, right?)
-      static final int numVregs = 23; // number of vregs in each set
-      static int vregCtr = 0;
-	
-	// vregs maintains the constant set of virtual registers
-	// two word temps draw two vregs from 'vregs', one word
-	// temps draw one vreg, etc...
-      Temp[] vregs;
-	
-      // vr2twt maintains a map from vregs to the two word temps
-      // currently holding that vreg
-      Map vr2twt;
-
-      TempFactory vregtf;
-	
-      MyVRegAllocator() {
-         vregtf = new TempFactory() {
-               private int i=0;
-               private final String scope = 
-               "mips-virtual-registers";
-               public String getScope() { return scope; }
-               protected synchronized
-               String getUniqueID(String suggestion) {
-                  return "vr"+vregCtr++;
-               }
-            };
-	    
-         vr2twt = new HashMap();
-         vregs = new Temp[numVregs];
-         for(int i=0; i<vregs.length; i++) {
-            vregs[i] = new Temp(vregtf);
-         }
-	    
-      }
-	
-      /** Returns a virtual register from the pool of virtual
-	    registers maintained by this.
-	    Note that regfile can contain keys that are machine
-	    registers or that are virtual registers drawn from the
-	    pool maintained by this.
-	*/
-      public Temp vreg(Temp t, Map regfile) throws SpillException { 
-         final ArrayList spills = new ArrayList();
-         if (t instanceof TwoWordTemp) {
-            for (int i=0; i<vregs.length-1; i++) {
-               if (vregFree(regfile, vregs[i]) &&
-                   vregFree(regfile, vregs[i+1])) {
-                  Temp t2 = new TwoWordTemp
-                     (vregtf, vregs[i], vregs[i+1]);
-                  vr2twt.put(vregs[i], t2);
-                  vr2twt.put(vregs[i+1], t2);
-                  return t2;
-               } else {
-                  // suggest spill
-                  if ( ! vregPreassigned(regfile, vregs[i]) &&
-                       ! vregPreassigned(regfile, vregs[i+1])) {
-			    
-			    
-                  }
-                  return null;
-
-               }
-            }
-         } else {
-
-         }
-	    
-         return null;
-      }
-
-      private boolean vregFree(Map rf, Temp vreg) {
-         return (!rf.containsKey(vreg) &&
-                 (vr2twt.containsKey(vreg)?
-                  !rf.containsKey(vr2twt.get(vreg)):
-                  true));
-      }
-	
-      private boolean vregPreassigned(Map rf, Temp vreg) {
-         return (rf.get(vreg) instanceof PreassignTemp) ||
-            (vr2twt.containsKey(vreg)?
-             (rf.get(vr2twt.get(vreg)) 
-              instanceof PreassignTemp):
-             false);
-      }
-   }
-
-   public VRegAllocator allocator() {
-      return new MyVRegAllocator();
-   }
-
     public Set getRegAssignments(Temp t) {
 	if (t instanceof TwoWordTemp) {
 	    return twoWordAssigns;
@@ -387,7 +293,7 @@ implements harpoon.Backend.Generic.LocationFactory
       return false;
    }
 
-   public Iterator suggestRegAssignment(Temp t, final Map regFile) 
+   public Iterator suggestRegAssignment(Temp t, final Map regFile, final Collection preassigned) 
       throws SpillException {
       final ArrayList suggests = new ArrayList();
       final ArrayList spills = new ArrayList();
@@ -407,10 +313,8 @@ implements harpoon.Backend.Generic.LocationFactory
                } else {
                   // don't add precolored registers to potential
                   // spills. 
-                  if ( !(regFile.get(assign[0]) 
-                         instanceof RegFileInfo.PreassignTemp) &&
-                       !(regFile.get(assign[1]) 
-                         instanceof RegFileInfo.PreassignTemp)) {
+		   if ( !(preassigned.contains(regFile.get(assign[0]))) &&
+			!(preassigned.contains(regFile.get(assign[1])))){
 
                      Set s = new LinearSet(2);
                      s.add(assign[1]);
@@ -431,8 +335,7 @@ implements harpoon.Backend.Generic.LocationFactory
                   Set s = new LinearSet(1);
                   // don't add precolored registers to potential
                   // spills. 
-                  if (!( regFile.get(regGeneral[i]) 
-                         instanceof RegFileInfo.PreassignTemp )) {
+                  if (!( preassigned.contains(regFile.get(regGeneral[i])))){
                      s.add(regGeneral[i]);
                      spills.add(s);
                   }
