@@ -24,7 +24,7 @@ import java.util.Set;
  * <code>QuadLiveness</code> if you have changed the <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: QuadLiveness.java,v 1.1.2.7 2000-02-11 00:55:02 bdemsky Exp $
+ * @version $Id: QuadLiveness.java,v 1.1.2.8 2000-02-11 02:12:28 kkz Exp $
  */
 public class QuadLiveness extends Liveness {
     final Hashtable livein;
@@ -170,51 +170,28 @@ public class QuadLiveness extends Liveness {
 		}
 	    }
 
-	    // Add our results to out
-
-	    WorkSet in_ = new WorkSet();
-	    
-	    // Create a WorkSet of Temps that read in the current HCodeElement
-	    WorkSet use = new WorkSet(hce.useC());
-
-	    for (Iterator i=use.iterator(); i.hasNext(); ) {
-		in_.add(i.next());
-	    }
-
-	    // Create a WorkSet of (out_ - def) for the current HCodeElement
-	    WorkSet tmp = new WorkSet();
-	    for (Iterator i = out_.iterator(); i.hasNext(); ) {
-		tmp.add(i.next());
-	    }
-	    WorkSet def = new WorkSet(hce.defC());
-	    for (Iterator i=def.iterator(); i.hasNext(); ) {
-		tmp.remove(i.next());
-	    }
-
-	    // Union (out_ - def) with in_
-	    for (Iterator i=tmp.iterator(); i.hasNext(); ) {
-		in_.add(i.next());
-	    }
+	    // Calculate "in" Set
+	    WorkSet in_ = new WorkSet(out_);
+	    in_.removeAll(hce.defC());
+	    in_.addAll(hce.useC());
 
 	    // If we have grown our live-in or live-out variables,
 	    // we need to update all of its predecessors.
+	    // TRICK: doing a put on a Hashtable returns the previous mapping
 	    WorkSet old_in = (WorkSet)in.put(hce, in_);
 	    WorkSet old_out = (WorkSet)out.put(hce, out_);
 	    if ((old_in == null)|| (old_in.size() < in_.size())) {
 		for (int i=0;i<hce.prevLength();i++)
-		    ws.add(hce.prev(i));
+		    ws.push(hce.prev(i));
 	    } else if ((old_out == null)|| ( old_out.size() < out_.size())) {
 		for (int i=0;i<hce.prevLength();i++)
-		    ws.add(hce.prev(i));
+		    ws.push(hce.prev(i));
 	    }
 
-	    if (ws.isEmpty()) {
-		Hashtable[] retval = {in, out};
-		//System.err.println("Leaving QuadLiveness.analyze()");
-		return retval;
-	    }
+	    if (ws.isEmpty()) break;
 	    hce = (Quad)ws.pull();
 	}
+	return new Hashtable[] {in, out};
     }
 }
 
