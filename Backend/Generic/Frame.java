@@ -17,7 +17,7 @@ import harpoon.ClassFile.HCodeElement;
  * needed for compilation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.4 1999-02-16 21:11:38 andyb Exp $
+ * @version $Id: Frame.java,v 1.1.2.5 1999-02-16 21:31:33 duncan Exp $
  */
 public abstract class Frame {
 
@@ -37,6 +37,10 @@ public abstract class Frame {
     /** Returns a <code>Temp</code> to represent where return values
      *  for procedures will be stored. */
     public abstract Temp RV();
+
+    /** Returns a <code>Temp</code> to represent where exceptional return 
+     *  values for procedures will be stored */
+    public abstract Temp RX();
 
     /** Returns a specially-named Temp to use for the frame pointer.
      */

@@ -19,6 +19,14 @@ import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 
+/**
+ *  The DefaultFrame class implements the abstract methods of the 
+ *  Frame class.  It is intended mostly for testing purposes, and 
+ *  will have to be fixed up a bit if needed for general use.
+ *
+ *  @author  Duncan Bryce <duncan@lcs.mit.edu>
+ *  @version $Id: DefaultFrame.java,v 1.1.2.2 1999-02-16 21:31:33 duncan Exp $
+ */
 public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
     private AllocationStrategy  m_allocator;
@@ -34,7 +42,7 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 	m_tempFactory = Temp.tempFactory("global");
 	m_registers = new Temp[16];
 	for (int i=0; i<16; i++) 
-	    m_registers[i] = new Temp(m_tempFactory);
+	    m_registers[i] = new Temp(m_tempFactory, "register_");
     }
 
     public Exp malloc(Exp size) {
@@ -53,8 +61,12 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
         return registers()[0];
     }
 
-    public Temp FP() {
+    public Temp RX() {
         return registers()[1];
+    }
+
+    public Temp FP() {
+        return registers()[2];
     }
 
     public Temp[] registers() {
