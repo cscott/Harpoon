@@ -63,10 +63,11 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.2 2002-02-25 21:02:31 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.2.2.1 2002-03-10 23:16:45 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
-    protected TreeBuilder(Runtime runtime, Linker linker,
+    protected TreeBuilder(harpoon.Backend.Runtime1.Runtime runtime,
+			  Linker linker,
 		AllocationStrategy as, boolean pointersAreLong,
 		int pointerAlignment) {
 	super(runtime, linker, as, pointersAreLong, pointerAlignment);

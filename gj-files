@@ -40,12 +40,19 @@ Analysis/ClassHierarchy.java
 Analysis/PointsToAnalysis.java
 Analysis/InterferenceGraph.java
 Analysis/Quads/QuadClassHierarchy.java
+Analysis/Realtime/RealtimeRuntime.java
 Analysis/Transactions/AnalysisCheckOracle.java
 Analysis/Transactions/CheckOracle.java
 Backend/Generic/Runtime.java
 Backend/Runtime1/DataStrings.java
 Backend/Runtime1/Runtime.java
 Backend/Runtime1/TreeBuilder.java
+Backend/Runtime2/Runtime.java
+Backend/RuntimeTiny/ClazNumbering.java
+Backend/RuntimeTiny/DataClazTable.java
+Backend/RuntimeTiny/PreOrderClazNumbering.java
+Backend/RuntimeTiny/Runtime.java
+Backend/RuntimeTiny/TreeBuilder.java
 ClassFile/Factories.java
 ClassFile/HClass.java
 ClassFile/HClassSyn.java
@@ -76,6 +83,10 @@ IR/Tree/TreeCode.java
 IR/Tree/Print.java
 IR/Tree/Stm.java
 Temp/Temp.java
+
+# not GJ-ized, but we need to co-compile these to satisfy dependencies.
+Backend/Runtime1/Data.java
+Backend/Runtime2/TreeBuilder.java
 
 # not GJ-ized, but we need to co-compile w/ these to workaround gjc bugs
 ClassFile/HArrayField.java

@@ -17,6 +17,7 @@ import harpoon.Backend.Runtime1.ObjectBuilder;
 import harpoon.Backend.Runtime1.ObjectBuilder.RootOracle;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HDataElement;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
@@ -38,10 +39,10 @@ import java.util.List;
  * for debugging purposes when Realtime.DEBUG_REF is turned on.
  * 
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: RealtimeRuntime.java,v 1.2 2002-02-25 20:59:47 cananian Exp $
+ * @version $Id: RealtimeRuntime.java,v 1.2.2.1 2002-03-10 23:16:29 cananian Exp $
  */
 
-public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
+public class RealtimeRuntime extends harpoon.Backend.Runtime1.Runtime {
 
     /** Create a RealtimeRuntime. */
 
@@ -86,7 +87,7 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
      *  when <code>Realtime.DEBUG_REF</code>.
      */
 
-    public List classData(final HClass hc) {
+    public List<HData> classData(final HClass hc) {
 	class DataConstMemoryArea extends Data {
 	    DataConstMemoryArea() {
 		super("memArea-data", hc, RealtimeRuntime.this.frame);
@@ -141,8 +142,8 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
 	    }
 	}
 	
-	List r = super.classData(hc);
-	ArrayList datalst = new ArrayList(r.size() + (Realtime.DEBUG_REF?2:1));
+	List<HData> r = super.classData(hc);
+	ArrayList<HData> datalst = new ArrayList<HData>(r.size() + (Realtime.DEBUG_REF?2:1));
 	datalst.addAll(r);
 	datalst.add(new DataConstMemoryArea());
 	if (Realtime.DEBUG_REF) {
@@ -153,7 +154,7 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
 
     /** Initialize the tree builder with masking turned on if needed. */
 
-    protected TreeBuilder initTreeBuilder() {
+    protected harpoon.Backend.Runtime1.TreeBuilder initTreeBuilder() {
 	if (System.getProperty("harpoon.runtime", "1").equals("2")) {
 	    return new harpoon.Backend.Runtime2
 		.TreeBuilder(this, frame.getLinker(), as,

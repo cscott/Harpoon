@@ -33,7 +33,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.3.2.2 2002-03-10 08:06:24 cananian Exp $
+ * @version $Id: Runtime.java,v 1.3.2.3 2002-03-10 23:16:34 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -44,7 +44,7 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
     final protected AllocationStrategy as;
     final protected ObjectBuilder ob;
     protected List staticInitializers;
-    private TreeBuilder treeBuilder;
+    private harpoon.Backend.Runtime1.TreeBuilder treeBuilder;
     private NameMap nameMap;
     
     /** Creates a new <code>Runtime1.Runtime</code>. */
@@ -67,7 +67,8 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    new harpoon.Backend.Runtime1.ObjectBuilder(this, rootOracle);
 	this.treeBuilder = initTreeBuilder();
     }
-    public TreeBuilder getTreeBuilder() { return treeBuilder; }
+    public harpoon.Backend.Runtime1.TreeBuilder
+	getTreeBuilder() { return treeBuilder; }
     public NameMap getNameMap() { return nameMap; }
     public String resourcePath(String basename) {
 	return "harpoon/Backend/Runtime1/"+basename;
@@ -81,10 +82,9 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	// class and field information may have changed; reset caches.
 	treeBuilder = initTreeBuilder();
 	// set the treebuilder's class hierarchy.
-	((harpoon.Backend.Runtime1.TreeBuilder) treeBuilder)
-	    .setClassHierarchy(ch);
+	treeBuilder.setClassHierarchy(ch);
     }
-    protected TreeBuilder initTreeBuilder() {
+    protected  harpoon.Backend.Runtime1.TreeBuilder initTreeBuilder() {
 	int align = Integer.parseInt
 	    (System.getProperty("harpoon.runtime1.pointer.alignment","0"));
 	// config-checking --- this property shouldn't change!
@@ -185,14 +185,13 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 
 	// i don't particularly like this solution to generating
 	// the needed string constants, but it works.
-	harpoon.Backend.Runtime1.TreeBuilder tb =
-	    (harpoon.Backend.Runtime1.TreeBuilder) treeBuilder;
-	tb.stringSet.removeAll(stringsSeen);
-	stringsSeen.addAll(tb.stringSet);
-	Set<String> newStrings = new HashSet<String>(tb.stringSet);
-	tb.stringSet.clear();
+	treeBuilder.stringSet.removeAll(stringsSeen);
+	stringsSeen.addAll(treeBuilder.stringSet);
+	Set<String> newStrings = new HashSet<String>(treeBuilder.stringSet);
+	treeBuilder.stringSet.clear();
 
-	List<HData> r = Arrays.asList(new HData[] {
+	List<HData> r = new java.util.ArrayList<HData>(20);
+	r.addAll(Arrays.asList(new HData[] {
 	    new DataClaz(frame, hc, ch),
 	    new DataConfigChecker(frame, hc),
 	    new DataInterfaceList(frame, hc, ch),
@@ -203,11 +202,9 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    new DataReflection1(frame, hc, ch),
 	    new DataReflection2(frame, hc, ch, frame.pointersAreLong()),
 	    new DataReflectionMemberList(frame, hc, ch),
-	});
-	if (frame.getGCInfo() != null) {
-	    r = new java.util.ArrayList<HData>(r);
+	}));
+	if (frame.getGCInfo() != null)
 	    r.add(new DataGC(frame, hc));
-	}
 	return r;
     }
     final Set<String> stringsSeen = new HashSet<String>();
