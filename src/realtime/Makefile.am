@@ -20,6 +20,6 @@ RTJfinalize.h RTJfinalize.c RealtimeSystem.h RefCountArea.h RefCountArea.c \
 RealtimeSystem.c NoHeapRealtimeThread.h NoHeapRealtimeThread.c \
 linkedListAllocator.h linkedListAllocator.c refCountAllocator.h \
 refCountAllocator.c threads.c POSIXSignalHandler.h POSIXSignalHandler.c \
-SizeEstimator.h SizeEstimator.c
+SizeEstimator.h SizeEstimator.c ScopedMemory.h ScopedMemory.c
 endif
 

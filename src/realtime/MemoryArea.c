@@ -308,4 +308,3 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_registerFinal
 #endif
   RTJ_register_finalizer(memoryArea, MemoryArea_finalize); 
 }
-
