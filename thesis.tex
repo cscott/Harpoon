@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.102 1999-09-01 17:48:24 cananian Exp $
+% $Id: thesis.tex,v 1.103 1999-09-01 18:29:10 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -41,14 +41,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.102 $ $}
+\date{\today \\ $ $Revision: 1.103 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.102 $ $}{$ $Revision: 1.102 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.103 $ $}{$ $Revision: 1.103 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -1381,7 +1381,7 @@ of this information.
 \subsection{Backward Dataflow Analysis}
 \newterm{Backward dataflow analyses} are those in which information is
 propagated in the direction opposite that of program execution
-\cite{offner94}.  There is general agreement
+\cite{offner95}.  There is general agreement
 \cite{johnson93:dfg,ferrante91:pruned,weise94:vdg}
 that SSA form is unable to directly handle backwards dataflow
 analyses; \newterm{liveness} is often cited as a canonical example.
@@ -1391,11 +1391,11 @@ properties.  Liveness, for example, comes ``for free'' from pruned SSI
 form: every variable is live in the region between its use and
 sole definition.  Property~\ref{pty:ssi_dom} states that every
 non-\phifunction{} use of a variable is dominated by the definition;
-Cytron \cite{cytron91} has shown that \phifunction{s} will always be
+Cytron \cite{cytron91:ssa} has shown that \phifunction{s} will always be
 found on the dominance frontier.  Thus the live region between
 definition and use can be enumerated with a simple depth-first search,
 taking advantage of the topological sorting by dominance that DFS
-provides \cite{offner94}.  Because of \phifunction{} uses, the DFS
+provides \cite{offner95}.  Because of \phifunction{} uses, the DFS
 will have to look one node past its spanning-tree leaves to see the
 \phifunction{s} on the dominance frontier; this does not change the
 algorithmic complexity.
@@ -1418,7 +1418,7 @@ partial and total \newterm{anticipatability}.
 
 \begin{definition}
 An expression $e$ is \newterm{very busy} at a point $P$ of the program iff it
-is always subsequently used before it is killed \cite{offner94}.
+is always subsequently used before it is killed \cite{offner95}.
 \end{definition}
 \begin{definition}
 An expression $e$ is \newterm{totally (partially) anticipatable} at a
@@ -1463,7 +1463,7 @@ x=\phi(y_0,\ldots,y_n) &
 
 The present section is concerned more with feasibility than the
 mechanics of implementation; we refer the interested reader to
-\cite{offner94} and \cite{johnson93:dfg} for details on how to turn
+\cite{offner95} and \cite{johnson93:dfg} for details on how to turn
 the efficient computation of BSY, PAN and ANT into practical
 code-hoisting and partial-redundancy elimination routines, respectively.
 
@@ -1845,23 +1845,40 @@ can remove bound-checks from an expression $A[k]$ when $k$ is a
 constant, but not when $k$ is an bounded induction variable.
 In the example of figure~\vref{fig:induction}, the first two implicit
 checks are optimized away by this version of the algorithm, but the
-loop-borne test is not.  The next section will address this
-shortcoming, using the power of a predicated analysis to identify
-bounded constants.
+loop-borne test is not. 
 
-\subsubsection{Better techniques for array-bounds checks}
-A typical array-bounds check (as shown in figure~\ref{fig:induction})
+A typical array-bounds check (as shown in the example \vpageref{fig:induction})
 verifies that the index $i$ of the array reference satisfies the
 condition $0\leq i < n$, where $n$ is the length of the
 array.\footnote{Languages in which array indices start at 1 can be
 handled by slight modifications to the same techniques.} By
 identifying integer constants as either positive, negative, or zero
-the first half of the bounds check may be eliminated.  The
-restructured integer lattice is shown in figure~\ref{nothereyet}; only
-three levels are added to the lattice.\fixme{Write up binop rules for
-new integer levels and deal with upper bounds in an efficient manner.}
+the first half of the bounds check may be eliminated.  This requires a
+simple extension of the integer constant portion of the lattice, with
+negligible performance cost.  However, handling upper bounds
+completely requires a symbolic analysis that is out of the current
+scope of this work.  Future work will use induction variable analysis
+and integrate an existing integer linear programming approach
+\cite{rugina99:divide} to fully address array-bounds checks.
 
 \subsubsection{Experimental results}\label{sec:sptc_results}
+The full SPTC analysis and optimization has been implemented on the
+FLEX java compiler platform. Some quantitative measure of the utility
+of SPTC is given as figure~\ref{fig:sptc_numbers}.  The ``run-times''
+given are intermediate representation dynamic statement counts
+generated by the FLEX compiler SSI IR interpreter.  The FLEX
+infrastructure is still under development, and its backends are not
+stable enough to allow directly executable code.  As such, the numbers
+bear a tenuous relation to reality; in particular branch delays on
+real architectures, which the elimination of null-pointer checks seeks
+to eliminate, are unrepresented.  Furthermore, the intermediate
+representation interpreter gives the same cycle-count to two-operand
+instructions as to loading constants, which tends to negate most of
+the benefit of constant propagation.  As is obvious from the figure,
+the standard Wegman-Zadeck SCC algorithm, which has proven utility in
+practice, shows no improvement over unoptimized code due to the metric
+used.  Even so, SPTC shows a 10\% speed-up.  It is expected that the
+improvement given in actual practice will be greater.
 \begin{myfigure}
 \centering
 \includegraphics[scale=0.4,angle=-90,clip=true,trim=1cm 0 0 0]%
@@ -1869,9 +1886,15 @@ new integer levels and deal with upper bounds in an efficient manner.}
 \caption{SPTC optimization performance.}
 \label{fig:sptc_numbers}
 \end{myfigure}
-Some quantitative measure of the
-utility of SPTC is given as table \vref{fig:sptc_numbers}.%
-\fixme{These numbers are pretty poor.}
+
+Note that the speed-up is constant despite widely differing test
+cases.  The ``Hello world'' example actually executes quite a bit of
+library code in the Java implementation; this includes numerous
+element-by-element array initializations (due to the semantics of
+java bytecode) which we expect SPTC to excel at optimizing.  But SPTC
+does just as well on the full FLEX compiler (68,032 lines of source
+at the time the benchmark was run), which shows that the speed-up is
+not limited to constant initialization code.
 
 \subsection{Bit-width analysis}\label{sec:bitwidth}
 \begin{myfigure}[t]
