@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.90 1999-10-26 22:54:46 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.91 1999-10-28 06:30:48 cananian Exp $
  */
 %%
 
@@ -291,65 +291,71 @@ import java.util.Iterator;
     // the call, in hopes of preventing sp-addressed spills from
     // being corrupted.
     private int emitCallPrologue(INVOCATION ROOT, TempList list) {
+	/** OUTPUT ARGUMENT ASSIGNMENTS IN REVERSE ORDER **/
       int stackOffset = 0;
-
-      for (int index=0; list != null; index++) { 
-	Temp temp = list.head;
+      // reverse list and count # of words required
+      TempList reverse=null;
+      int index=0;
+      for(TempList tl=list; tl!=null; tl=tl.tail) {
+	  reverse=new TempList(tl.head, reverse);
+	  index+=(tl.head instanceof TwoWordTemp) ? 2 : 1;
+      }
+      index--; // so index points to 'register #' of last argument.
+      for (TempList tl = reverse; tl != null; tl = tl.tail) { 
+	Temp temp = tl.head;
 	if (temp instanceof TwoWordTemp) {
 	  // arg takes up two words
 	  switch(index) {
-	  case 0: case 1: case 2: // put in registers 
+	  case 0: throw new Error("Not enough space!");
+	  case 1: case 2: case 3: // put in registers 
 	    // not certain an emitMOVE is legal with the l/h modifiers
-	    emit( ROOT, "mov `d0, `s0l",
-		  frame.getRegFileInfo().getRegister(index) ,
-		  temp );
-	    index++;			     
 	    emit( ROOT, "mov `d0, `s0h",
-		  frame.getRegFileInfo().getRegister(index),
+		  frame.getRegFileInfo().getRegister(index--) ,
+		  temp );
+	    emit( ROOT, "mov `d0, `s0l",
+		  frame.getRegFileInfo().getRegister(index--),
 		  temp );
 	    break;			     
-	  case 3: // spread between regs and stack
-	    // not certain an emitMOVE is legal with the l/h modifiers
-	    emit( ROOT, "mov `d0, `s0l",
-		  frame.getRegFileInfo().getRegister(index),
-		  temp );
-	    index++;
-	    stackOffset += 4;
+	  case 4: // spread between regs and stack
 	    emit(new InstrMEM( instrFactory, ROOT,
 			       "str `s0h, [`s1, #-4]!",
 			       new Temp[]{ SP }, // SP *implicitly* modified
 			       new Temp[]{ temp, SP })); 
+	    stackOffset += 4; index--;
+	    // not certain an emitMOVE is legal with the l/h modifiers
+	    emit( ROOT, "mov `d0, `s0l",
+		  frame.getRegFileInfo().getRegister(index--),
+		  temp );
 	    break;
 	  default: // start putting args in memory
+	    emit(new InstrMEM( instrFactory, ROOT,
+			       "str `s0h, [`s1, #-4]!",
+			       new Temp[]{ SP }, // SP *implicitly* modified
+			       new Temp[]{ temp, SP })); 
+	    stackOffset += 4; index--;
 	    emit(new InstrMEM( instrFactory, ROOT,
 			       "str `s0l, [`s1, #-4]!", 
 			       new Temp[] { SP }, // SP *implicitly* modified 
 			       new Temp[]{ SP, temp }));
-	    index++;
-	    stackOffset += 4;
-	    emit(new InstrMEM( instrFactory, ROOT,
-			       "str `s0h, [`s1, #-4]!",
-			       new Temp[]{ SP }, // SP *implicitly* modified
-			       new Temp[]{ temp, SP })); 
-	    stackOffset += 4;
+	    stackOffset += 4; index--;
 	    break;
 	  }
 	} else {
 	  // arg is one word
 	  if (index < 4) {
 	    emitMOVE( ROOT, "mov `d0, `s0", 
-		      frame.getRegFileInfo().getRegister(index), temp);
+		      frame.getRegFileInfo().getRegister(index--), temp);
 	  } else {
 	    emit(new InstrMEM(
 			      instrFactory, ROOT,
 			      "str `s0, [`s1, #-4]!",
 			      new Temp[]{ SP }, // SP *implicitly* modified
 			      new Temp[]{ temp, SP }));
-	    stackOffset += 4;
+	    stackOffset += 4; index--;
 	  }
 	}
-	list = list.tail;    	
       }
+      Util.assert(index==-1);
       return stackOffset;
     }
     /** Make a handler stub. */
@@ -1428,7 +1434,7 @@ METHOD(params) %{
 				   new Temp[] {params[i]}, new Temp[] {FP}));
 	    }
 	} else { // single word.
-	    if (i<4) { // in register
+	    if (loc<4) { // in register
 		emitMOVE( ROOT, "mov `d0, `s0", params[i], regfile.reg[loc++]);
 	    } else { // on stack
 		emit(new InstrMEM( instrFactory, ROOT,
