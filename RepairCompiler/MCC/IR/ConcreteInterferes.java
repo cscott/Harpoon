@@ -106,35 +106,36 @@ public class ConcreteInterferes {
     
     static private boolean updateonlytonewobject(MultUpdateNode mun, UpdateNode un, Updates updates) {
 	AbstractRepair ar=mun.getRepair();
-	for(int i=0;i<un.numUpdates();i++) {
-	    Updates u=un.getUpdate(i);
-	    if (u.getType()==Updates.POSITION&&
-		ar.isNewObject(u.getRightPos()==0)) {
-		Expr newleftexpr=u.getLeftExpr();
-		Expr leftexpr=updates.getLeftExpr();
-		boolean foundfield=false;
-		while(true) {
-		    if (leftexpr.equals(null,newleftexpr)) {
-			if (foundfield)
-			    return true;
-			else
+	if ((ar!=null)&&(ar.getType()==AbstractRepair.ADDTOSET||ar.getType()==AbstractRepair.ADDTORELATION))
+	    for(int i=0;i<un.numUpdates();i++) {
+		Updates u=un.getUpdate(i);
+		if (u.getType()==Updates.POSITION&&
+		    ar.isNewObject(u.getRightPos()==0)) {
+		    Expr newleftexpr=u.getLeftExpr();
+		    Expr leftexpr=updates.getLeftExpr();
+		    boolean foundfield=false;
+		    while(true) {
+			if (leftexpr.equals(null,newleftexpr)) {
+			    if (foundfield)
+				return true;
+			    else
+				break;
+			} else if (leftexpr instanceof DotExpr) {
+			    if (!foundfield) {
+				foundfield=true;
+			    } else {
+				if (((DotExpr)leftexpr).isPtr())
+				    break; //if its not a pointer, we're still in the structure
+			    }
+			    leftexpr=((DotExpr)leftexpr).getExpr();
+			} else if (leftexpr instanceof CastExpr) {
+			    leftexpr=((CastExpr)leftexpr).getExpr();
+			} else
 			    break;
-		    } else if (leftexpr instanceof DotExpr) {
-			if (!foundfield) {
-			    foundfield=true;
-			} else {
-			    if (((DotExpr)leftexpr).isPtr())
-				break; //if its not a pointer, we're still in the structure
-			}
-			leftexpr=((DotExpr)leftexpr).getExpr();
-		    } else if (leftexpr instanceof CastExpr) {
-			leftexpr=((CastExpr)leftexpr).getExpr();
-		    } else
-			break;
+		    }
 		}
 	    }
-	}
-
+	
 	return false;
     }
 

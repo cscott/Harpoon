@@ -35,7 +35,7 @@ class AbstractRepair {
 	} else if (getType()==ADDTORELATION) {
 	    RelationDescriptor rd=(RelationDescriptor)descriptor;
 	    return sources.relallocSource(rd,isdomain);
-	} else throw new Error("");
+	} else throw new Error(type());
     }
 
     public SetDescriptor getDomainSet() {

@@ -261,6 +261,16 @@ public class GraphAnalysis {
 		    }
 
 		    System.out.println("Cycle through conjunction "+gn.getTextLabel() +" which can't be removed.");
+		    System.out.println("CANTREMOVE");
+		    for(Iterator it2=cantremove.iterator();it2.hasNext();) {
+			GraphNode gn2=(GraphNode)it2.next();
+			System.out.println(gn2.getTextLabel());
+		    }
+		    System.out.println("MUSTREMOVE");
+		    for(Iterator it2=mustremove.iterator();it2.hasNext();) {
+			GraphNode gn2=(GraphNode)it2.next();
+			System.out.println(gn2.getTextLabel());
+		    }
 		    return null; // Out of luck
 		}
 	    }
