@@ -19,7 +19,7 @@ import java.util.Map;
  * to effect the change.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodMutator.java,v 1.1.2.3 2000-11-08 18:37:19 cananian Exp $
+ * @version $Id: MethodMutator.java,v 1.1.2.4 2000-11-12 18:50:02 cananian Exp $
  */
 public abstract class MethodMutator implements java.io.Serializable {
     /** This is the code factory which contains the representations of the
@@ -35,6 +35,11 @@ public abstract class MethodMutator implements java.io.Serializable {
     protected HCode mutateHCode(HCodeAndMaps input) {
 	return input.hcode();
     }
+    /** Override this method to change the codename which this
+     *  <code>MethodMutator</code>'s codefactory reports. */
+    protected String mutateCodeName(String codeName) {
+	return codeName;
+    }
     /** Returns a <code>HCodeFactory</code> containing representations for
      *  the methods split by the <code>MethodSplitter</code>. */
     public final HCodeFactory codeFactory() { return hcf; }
@@ -42,7 +47,9 @@ public abstract class MethodMutator implements java.io.Serializable {
      *  new split methods. */
     private final HCodeFactory hcf = new SerializableCodeFactory() {
         private final Map cache = new HashMap();
-        public String getCodeName() { return parent.getCodeName(); }
+        public String getCodeName() {
+	    return mutateCodeName(parent.getCodeName());
+	}
         public HCode convert(HMethod m) {
             if (cache.containsKey(m)) return (HCode) cache.get(m);
             HCode hc = parent.convert(m);

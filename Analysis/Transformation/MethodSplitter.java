@@ -40,7 +40,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.18 2000-11-10 02:45:18 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.19 2000-11-12 18:50:02 cananian Exp $
  */
 public abstract class MethodSplitter implements java.io.Serializable {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -74,7 +74,9 @@ public abstract class MethodSplitter implements java.io.Serializable {
 	final Map origcache = //this is cache for unmutated version
 	    mutateOriginalBeforeSplit ? null : new HashMap();
         this.hcf = new CachingCodeFactory(new SerializableCodeFactory() {
-	    public String getCodeName() { return parent.getCodeName(); }
+	    public String getCodeName() {
+		return mutateCodeName(parent.getCodeName());
+	    }
 	    public void clear(HMethod m) { parent.clear(m); }
 	    public HCode convert(HMethod m) {
 		List swpair = (List) split2orig.get(m);
@@ -173,6 +175,11 @@ public abstract class MethodSplitter implements java.io.Serializable {
      *  methods. */
     protected HCode mutateHCode(HCodeAndMaps input, Token which) {
 	return input.hcode();
+    }
+    /** Override this method to change the codename which this
+     *  <code>MethodMutator</code>'s codefactory reports. */
+    protected String mutateCodeName(String codeName) {
+	return codeName;
     }
 
     /** Check the validity of a given <code>MethodSplitter.Token</code>.
