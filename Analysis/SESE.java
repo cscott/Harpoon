@@ -25,10 +25,16 @@ import java.util.Stack;
 
 /**
  * <code>SESE</code> computes nested single-entry single-exit regions
- * from a cycle-equivalency set.
+ * from a cycle-equivalency set.<p>
+ * See Johnson, Pearson, and Pingali, <A
+ * HREF="http://cs-tr.cs.cornell.edu:80/Dienst/UI/1.0/Display/ncstrl.cornell/TR93-1365"
+ * >"Finding regions fast: Single entry single exit and control regions in
+ * linear time"</A> (Technical Report TR 93-1365, Cornell University,
+ * July 1993).  Their PLDI'94 paper "The program structure tree: Computing
+ * control regions in linear time" might also provide a useful reference.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SESE.java,v 1.1.2.11 2000-01-31 14:52:33 cananian Exp $
+ * @version $Id: SESE.java,v 1.1.2.12 2000-02-02 03:21:47 cananian Exp $
  */
 public class SESE  {
     /** Root of <code>Region</code> tree. */
