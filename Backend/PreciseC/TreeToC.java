@@ -3,16 +3,49 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.PreciseC;
 
-import harpoon.ClassFile.*;
-import harpoon.IR.Tree.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HData;
+import harpoon.IR.Tree.ALIGN;
+import harpoon.IR.Tree.BINOP;
+import harpoon.IR.Tree.Bop;
+import harpoon.IR.Tree.CALL;
+import harpoon.IR.Tree.CJUMP;
+import harpoon.IR.Tree.CONST;
+import harpoon.IR.Tree.DATUM;
+import harpoon.IR.Tree.ESEQ;
+import harpoon.IR.Tree.EXPR;
+import harpoon.IR.Tree.Exp;
+import harpoon.IR.Tree.ExpList;
+import harpoon.IR.Tree.JUMP;
+import harpoon.IR.Tree.LABEL;
+import harpoon.IR.Tree.MEM;
+import harpoon.IR.Tree.METHOD;
+import harpoon.IR.Tree.MOVE;
+import harpoon.IR.Tree.NAME;
+import harpoon.IR.Tree.NATIVECALL;
+import harpoon.IR.Tree.PreciselyTyped;
+import harpoon.IR.Tree.RETURN;
+import harpoon.IR.Tree.SEGMENT;
+import harpoon.IR.Tree.SEQ;
+import harpoon.IR.Tree.TEMP;
+import harpoon.IR.Tree.THROW;
+import harpoon.IR.Tree.Tree;
+import harpoon.IR.Tree.TreeVisitor;
+import harpoon.IR.Tree.Type;
+import harpoon.IR.Tree.Typed;
+import harpoon.IR.Tree.UNOP;
+import harpoon.IR.Tree.Uop;
+import harpoon.Temp.Label;
 import harpoon.Temp.LabelList;
-import java.io.*;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 /**
  * <code>TreeToC</code> converts Tree form to C code (used as a
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.1 2000-06-23 23:08:34 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.2 2000-06-24 21:19:21 cananian Exp $
  */
 public class TreeToC {
     
@@ -39,8 +72,9 @@ public class TreeToC {
 	}
 	// PrintWriter for the translation.
 	private PrintWriter pw;
-	TranslationVisitor(Writer w) { pw = new PrintWriter(w); }
-	TranslationVisitor(OutputStream w) { pw = new PrintWriter(w); }
+	TranslationVisitor(PrintWriter pw) { this.pw = pw; }
+	TranslationVisitor(Writer w) { this(new PrintWriter(w)); }
+	TranslationVisitor(OutputStream w) { this(new PrintWriter(w)); }
 	void translate(Tree t, boolean isCode) {
 	    trans(t);
 	    if (isCode) pw.println("}");
@@ -83,6 +117,10 @@ public class TreeToC {
 	    if (type==Type.POINTER) return "void *";
 	    throw new Error("unknown type: "+type);
 	}
+	private String label(Label l) {
+	    String r = l.toString();
+	    return r.startsWith(".")?r.substring(1):r;
+	}
 
 	// okay, shoot:
 	public void visit(ALIGN e) {
@@ -123,7 +161,9 @@ public class TreeToC {
 	}
 	public void visit(CJUMP e) {
 	    pw.print("\tif ("); trans(e.getTest()); pw.print(")");
-	    pw.println(" goto "+e.iftrue+"; else goto "+e.iffalse+";");
+	    pw.print(" goto "+label(e.iftrue)+";");
+	    pw.print(" else goto "+label(e.iffalse)+";");
+	    pw.println();
 	}
 	public void visit(CONST e) {
 	    pw.print(e.value==null?"NULL":e.value.toString());
@@ -141,12 +181,12 @@ public class TreeToC {
 	    pw.print("\tgoto ");
 	    Exp exp = e.getExp();
 	    if (exp instanceof NAME)
-		pw.print(((NAME)exp).label);
+		pw.print(label(((NAME)exp).label));
 	    else { pw.print("*("); trans(exp); pw.print(")"); }
 	    pw.println("; /* targets: "+LabelList.toList(e.targets)+" */");
 	}
 	public void visit(LABEL e) {
-	    pw.println(e.label+":");
+	    pw.println(label(e.label)+":");
 	}
 	public void visit(MEM e) {
 	    Exp exp = e.getExp();
@@ -155,10 +195,13 @@ public class TreeToC {
 	    trans(exp);
 	    pw.print("))");
 	}
+	private boolean isVoidMethod = false;
 	public void visit(METHOD e) {
 	    // emit declaration.
-	    pw.print(e.getReturnType()<0 ? "void" : ctype(e.getReturnType()));
-	    pw.print(" "+e.getMethod()+"(");
+	    if (e.getReturnType() < 0) {
+		isVoidMethod = true; pw.print("void");
+	    } else pw.print(ctype(e.getReturnType()));
+	    pw.print(" "+label(e.getMethod())+"(");
 	    for (int i=0; i<e.getParamsLength(); i++) {
 		pw.print(ctype(e.getParams(i))+" ");
 		trans(e.getParams(i));
@@ -172,7 +215,7 @@ public class TreeToC {
 	    pw.println(";");
 	}
 	public void visit(NAME e) {
-	    pw.print("(&"+e.label+")");
+	    pw.print("(&"+label(e.label)+")");
 	}
 	public void visit(NATIVECALL e) {
 	    pw.print("\t");
@@ -199,7 +242,9 @@ public class TreeToC {
 	    pw.println(");");
 	}
 	public void visit(RETURN e) {
-	    pw.print("\treturn "); trans(e.getRetval()); pw.println(";");
+	    pw.print("\treturn "); 
+	    if (!isVoidMethod) trans(e.getRetval());
+	    pw.println(";");
 	}
 	public void visit(SEGMENT e) {
 	    pw.println("\t/* segment: "+e+" */");
