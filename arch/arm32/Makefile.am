@@ -2,7 +2,9 @@
 MAINTAINERCLEANFILES = Makefile.in
 CFLAGS=-Darm32
 
+# changing libheader.la to libheader.lo fixes a lot of problems, but
+# automake complains.
 noinst_LTLIBRARIES = libheader.la libfooter.la
 
-libheader_la_SOURCES = header.s
-libfooter_la_SOURCES = lookup.s dispatch.s footer.s
+libheader_la_SOURCES = header.S
+libfooter_la_SOURCES = lookup.S dispatch.S footer.S
