@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultNameMap.java,v 1.1.2.1 1999-08-11 03:51:48 cananian Exp $
+ * @version $Id: DefaultNameMap.java,v 1.1.2.2 1999-08-11 04:03:04 cananian Exp $
  */
 public class DefaultNameMap extends NameMap {
     private static final String member_prefix = "_Java_";
@@ -89,6 +89,7 @@ public class DefaultNameMap extends NameMap {
 		break;
 	    case '[':
 		sb.append("_3");
+		break;
 	    default:
 		if ((s.charAt(i) >= 'a' &&
 		     s.charAt(i) <= 'z') ||
@@ -100,6 +101,7 @@ public class DefaultNameMap extends NameMap {
 		} else {
 		    sb.append("_0" + toHex(s.charAt(i), 4));
 		}
+		break;
 	    }
 	}
 	return sb.toString();
