@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.6 2003-04-17 19:44:58 cananian Exp $
+% $Id: lctes03.tex,v 1.7 2003-04-17 19:52:28 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % lctes03.tex
 % Data Size Optimizations for Java Programs
@@ -186,7 +186,7 @@ a wrapper around either an {\tt Integer} object or a {\tt Float}
 object. The {\tt type} field indicates which kind of object
 is stored in the {\tt value} field of the class, 
 essentially implementing a tagged 
-union.\footnote{This class is a simplfied version of similar
+union.\footnote{This class is a simplified version of similar
 classes that appear in some of our benchmarks.
 See for example the {\tt jess.Value} class in SPECjvm98 benchmark
 {\tt jess}.} 
@@ -479,7 +479,7 @@ to replace the class pointer in the object header, which
 identifies the type of the object, with a one-byte {\it index} into a
 small lookup table.  The {\tt jess}, {\tt javac}, and {\tt jack}
 benchmarks require more than one byte of index, but a two byte index
-amply suffices in these two cases.
+amply suffices in these three cases.
 %
 % Our implementation does claz numbering so that we can use the
 % claz index for a fast instanceof test, too!  But we don't
