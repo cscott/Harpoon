@@ -22,14 +22,19 @@ void name##_stats(void* object_addr) { \
 	 end.tv_sec-begin.tv_sec, end.tv_usec-begin.tv_usec); \
 }
 
+MALLOC_STATS(malloc, "malloc");
+FREE_STATS(free, "free");
+
+#ifdef BDW_CONSERVATIVE_GC
 MALLOC_STATS(GC_malloc, "GC_malloc");
 MALLOC_STATS(GC_malloc_atomic, "GC_malloc_atomic");
 MALLOC_STATS(GC_malloc_uncollectable, "GC_malloc_uncollectable");
-MALLOC_STATS(precise_malloc, "precise_malloc");
-MALLOC_STATS(malloc, "malloc");
-
 FREE_STATS(GC_free, "GC_free");
-FREE_STATS(free, "free");
+#endif
+
+#ifdef WITH_PRECISE_GC
+MALLOC_STATS(precise_malloc, "precise_malloc");
+#endif
 
 #undef MALLOC_STATS
 #undef FREE_STATS

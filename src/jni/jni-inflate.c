@@ -65,16 +65,27 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 #endif
     obj->hashunion.inflated = infl;
     assert(FNI_IS_INFLATED(wrapped_obj));
-#ifdef WITH_REALTIME_JAVA
-    /* Have to be careful about finalization with RTJ. */
-    RTJ_register_finalizer(wrapped_obj, deflate_object);
-#elif defined(BDW_CONSERVATIVE_GC) 
+#ifdef WITH_PRECISE_GC 
+    /* Karen - put an appropriate finalizer here, look at how BDW does it. */
+    /* Don't rely on masked pointers to determine whether something's in the heap
+     * here - unless masked pointers are turned on... */
+    if (0 /* precise_in_heap(obj) */) {
+      /* precise_register_finalizer(obj, deflate_object); */
+    }
+#elif defined(BDW_CONSERVATIVE_GC)
     /* register finalizer to deallocate inflated_oobj on gc */
-    if (GC_base(obj)!=NULL) // skip if this is not a heap-allocated object
+    if (GC_base(obj)!=NULL) {// skip if this is not a heap-allocated object
         GC_register_finalizer(GC_base(obj), deflate_object,
 			      (GC_PTR) ((void*)obj-(void*)GC_base(obj)),
 			      &(infl->old_finalizer),
 			      &(infl->old_client_data));
+    } 
+#endif
+#ifdef WITH_REALTIME_JAVA
+#if defined(WITH_PRECISE_GC) || defined(BDW_CONSERVATIVE_GC)
+    else 
+#endif
+      RTJ_register_finalizer(wrapped_obj, deflate_object);    
 #endif
   }
   FLEX_MUTEX_UNLOCK(&global_inflate_mutex);

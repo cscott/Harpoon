@@ -120,9 +120,6 @@ inline void RTJ_preinit() {
   printf("RTJ_preinit()\n");
   checkException();
 #endif
-#ifdef BDW_CONSERVATIVE_GC
-  GC_finalize_on_demand = 1;
-#endif
 #ifdef RTJ_DEBUG_REF
   flex_mutex_init(&ptr_info_lock);
 #endif
