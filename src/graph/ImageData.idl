@@ -59,6 +59,8 @@ module imagerec
        * from the designated ObjectTracker in CommonMemory.
        */
       long trackedObjectUniqueID;
+      long origWidth;
+      long origHeight;
     };
   };
 };

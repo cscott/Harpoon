@@ -512,13 +512,14 @@ public class ImageDataManip {
 				 id.c1, id.c2, id.c3, id.lastImage, id.labelID,
 				 id.conditional, id.angle, id.blueThreshold1,
 				 id.blueThreshold2, id.scaleFactor,
-				 id.trackedObjectUniqueID);
+				 id.trackedObjectUniqueID, id.origWidth,
+				 id.origHeight);
 	} else {
 	    return new ImageData(rvals, gvals, bvals,
 				 x, y, width, height,
 				 0, 0, 0, 0, (float)0.0, (float)0.0, (float)0.0,
 				 false, (byte)0, false, 0, 0, 0, (float)0.0,
-				 -1);
+				 -1, 0, 0);
 	}
     }
 
@@ -533,7 +534,7 @@ public class ImageDataManip {
 	return new ImageData(new byte[0], new byte[0], new byte[0],
 			     0, 0, 0, 0, time, 0, 0, 0,
 			     c1, c2, c3, false, (byte)0, false, 0, 0, 0, 0,
-			     -1);
+			     -1, 0, 0);
     }
 
     /** Factory to create an {@link ImageData} given partial information.
@@ -548,7 +549,7 @@ public class ImageDataManip {
 	return new ImageData(new byte[0], new byte[0], new byte[0],
 			     0, 0, 0, 0, time, 0, command, 0,
 			     (float)0.0, (float)0.0, (float)0.0, 
-			     false, (byte)0, false, 0, 0, 0, 0, -1);
+			     false, (byte)0, false, 0, 0, 0, 0, -1, 0, 0);
     }
 
     /**
