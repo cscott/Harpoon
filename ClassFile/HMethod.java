@@ -16,7 +16,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.6 1998-08-02 05:24:07 cananian Exp $
+ * @version $Id: HMethod.java,v 1.7 1998-08-02 05:29:52 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -46,7 +46,7 @@ public class HMethod implements HMember {
 	this.exceptions = (AttributeExceptions) methodinfo.attributes[i];
     }
     // Add the default code representation.
-    if (this.code != null)
+    if (this.code != null) // interface methods don't have code attributes.
       putCode("bytecode", this.code.code);
   }
 
