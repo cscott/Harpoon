@@ -44,7 +44,6 @@ jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
   } else { /* someone else (or no one) has this lock */
 #ifdef WITH_STATISTICS
     if ((st = pthread_mutex_trylock(&(li->mutex)))!=EBUSY) goto gotlock;
-    assert(st==0 /* no mutex errors */);
     INCREMENT_STATS(monitor_contention, 1);
 #endif /* WITH_STATISTICS */
     st = pthread_mutex_lock(&(li->mutex));
