@@ -8,6 +8,7 @@ import harpoon.Analysis.Maps.ConstMap;
 import harpoon.Analysis.Maps.ExactTypeMap;
 import harpoon.Analysis.Maps.ExecMap;
 import harpoon.Analysis.Maps.UseDefMap;
+import harpoon.Analysis.Quads.DefiniteInitOracle;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
@@ -83,7 +84,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.16 2001-11-05 20:58:54 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.17 2001-11-06 00:21:59 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -93,6 +94,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     final Linker linker;
     final HCodeFactory hcf;
     final ClassHierarchy ch;
+    final DefiniteInitOracle dio;
 
     public BitWidthAnalysis(Linker linker, HCodeFactory hcf,
 			    ClassHierarchy ch, Set roots, String resourceName){
@@ -105,6 +107,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	this.linker = linker;
 	this.hcf = hcf;
 	this.ch = ch;
+	this.dio = new DefiniteInitOracle(hcf, ch);
 	analyze(roots, fieldRoots);
 	/* accounting: */
 	long before=0, before8=0, after=0, after8=0;
@@ -501,6 +504,11 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	// final fields will be explicitly initialized.
 	if (Modifier.isFinal(hf.getModifiers()))
 	    return null; // bottom
+	// definitely initialized fields can be bottom until initialization.
+	if (dio.isDefinitelyInitialized(hf)) {
+	    System.err.println("DEFINITELY INITIALIZED: "+hf);//will go away
+	    return null; // bottom
+	}
 	// else assume that field is set to zero upon object creation.
 	if (!type.isPrimitive()) return new xNullConstant();
 	if (type==HClass.Float)
