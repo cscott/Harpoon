@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.LowQuad.Loop;
 
-
 import harpoon.ClassFile.*;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.LowQuad.Code;
@@ -21,7 +20,7 @@ import java.util.Iterator;
  * <code>MyLowQuadSSI</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadSSI.java,v 1.1.2.4 1999-08-09 22:19:57 duncan Exp $
+ * @version $Id: MyLowQuadSSI.java,v 1.1.2.5 1999-09-22 06:15:46 bdemsky Exp $
  */
 
 public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSA {
@@ -125,4 +124,3 @@ public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSA {
 	return codename;
     }
 }
-    

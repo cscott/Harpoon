@@ -21,7 +21,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.1.2.8 1999-09-22 06:10:20 bdemsky Exp $
+ * @version $Id: AllInductions.java,v 1.1.2.9 1999-09-22 06:15:46 bdemsky Exp $
  */
 public class AllInductions {
     TempMap tm;
@@ -105,9 +105,9 @@ public class AllInductions {
 	    case Qop.IADD:
 		//Binary operators		
 		InstanceofCONSTVisitor visitor=new InstanceofCONSTVisitor();
-		good=true;
-		invar=0;
-		index=0;
+		boolean good=true;
+		int invar=0;
+		int index=0;
 		for (int i=0;i<q.operandsLength();i++) {
 		    Temp t=tm.tempMap(q.operands(i));
 		    if (inductions.containsKey(t)) {

@@ -16,7 +16,7 @@ import java.util.Iterator;
  * <code>LoopInvariance</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopInvariance.java,v 1.1.2.8 1999-09-09 21:42:54 cananian Exp $
+ * @version $Id: LoopInvariance.java,v 1.1.2.9 1999-09-22 06:15:46 bdemsky Exp $
  */
 public class LoopInvariance {
     
@@ -107,6 +107,46 @@ public class LoopInvariance {
 	    System.out.println("Not expected in LoopInvariance:" + q.toString());
 	    removeflag=false;
 	}
+
+	    /* All of these redefined to avoid error messages!*/
+	public void visit(harpoon.IR.Quads.AGET q)    {
+	    removeflag=false;
+	}
+
+	public void visit(harpoon.IR.Quads.ASET q)    {
+	    removeflag=false;
+	}
+
+	public void visit(harpoon.IR.Quads.CALL q)    {
+	    removeflag=false;
+	}
+
+	public void visit(harpoon.IR.Quads.GET q)     {
+	    removeflag=false;
+	}
+
+	public void visit(harpoon.IR.Quads.HANDLER q) {
+	    //better not be in a loop!!!!!!!
+	    removeflag=false;
+	}
+
+	public void visit(harpoon.IR.Quads.OPER q)    {
+	    switch (q.opcode()) {
+	    case Qop.DDIV:
+	    case Qop.FDIV:
+	    case Qop.IDIV:
+	    case Qop.LDIV:
+		removeflag=false;
+		break;
+	    default:
+		visitdefault(q);
+	    }
+	}
+
+	public void visit(harpoon.IR.Quads.SET q)     {
+	    removeflag=false;
+	}
+
 
 	public void visit(ALENGTH q) {
 	    visitdefault(q);
