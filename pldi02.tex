@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.2 2001-11-15 01:26:01 cananian Exp $
+% $Id: pldi02.tex,v 1.3 2001-11-15 09:04:18 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -26,17 +26,215 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.2 $ $}{$ $Revision: 1.2 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.3 $ $}{$ $Revision: 1.3 $ $}
 \bibliographystyle{plain}
 
 \maketitle
 
+% abstract
 \input{pldi02-abstract}
-%\input{pldi02-intro}
-%\input{pldi02-tech}
-%\input{pldi02-results}
-%\input{pldi02-conclusion}
-\nocite{*}
+
+% outline for paper.
+% introduction
+\section{Introduction}
+The devices around us are getting dramatically smarter, but the
+processing capabilities of your average toaster will always remain far
+removed from those of a desktop computer.  Nevertheless, the designers
+of embedded devices would like to use the high-level software
+languages and paradigms designed for the desktop environment when
+programming their much smaller systems.  The past few years have
+demonstrated a remarkable industry desire to run software written in
+languages such as Java on cellphones, PDAs, and similar platforms.
+At the moment, much of this desire is for downloaded applets and
+extension programs and upgrades; for firmware the slight
+inefficiencies of the high-level languages, multiplied by the large
+quantities of devices deployed, warrant lower-level approaches.
+
+The aim of this paper is to present optimization and analysis
+techniques to close this gap.  There is as much as a four-fold
+% maybe more! reference here?
+cost difference between ROM and RAM costs in embedded devices,
+so we will concentrate on reducing the dynamic heap usage of
+programs written in Java.  We will bypass the mire of Real-Time Java
+for the moment, and assume that running-time of the optimized programs
+is not important (so long as it is reasonable); we will trade-off
+slight increases in execution time and ROM usage for dramatically
+reduced RAM usage.
+
+We will first present header optimizations which tweak the runtime's
+representation of non-field information in Java objects in order to
+reduce memory consumption.  We will then turn our attention to
+compressing the information stored in the fields.  Using static
+analysis, we will determine the minimal number of bits required to
+represent a field's contents, and then present three alternate
+field-packing techniques to take advantage of the unused bits
+identified.  For systems with small memories, pointer compression is
+also possible.
+
+Finally, we will attempt to identify 'mostly-constant' information in
+objects, specializing the object to reduce the space required for
+the common case.  For fields which are not mutated, statically
+specializing the class is possible; for mutable fields we utilize an
+external hashtable to store values which are rarely unpredictable.
+
+We present the results of applying these optimizations to the SPEC
+benchmark suite --- a set of general tasks, which, although they may bear
+little relation to actual programs one would want on an embedded
+device, span a gamut sufficient to adequately show the strengths and
+weaknesses of our techniques.
+
+\section{Header Optimizations}
+% header optimizations
+%  discussion of typical object layout.
+%  claz compression.
+%  hashcode/lock compression.
+%   analyses for doing so; static/dynamic hash counts.
+
+The Java language specification requires that several pieces of
+information about an object be stored in addition to the data in its
+fields.  Most obviously, information about the {\it class} or {\it
+  type} of the object must be available in order to implement dynamic
+dispatch and primitives such as {\tt instanceof}.  In addition, there
+must be some way to associate a synchronization lock with each object,
+and each object must have a {\it identity hash code} associated with
+it to facilitate hashtable implementations of various kinds.%
+\footnote{Arrays must, in addition, contain a specification of their
+  length; we treat the length as a standard {\tt int} field of the
+  object in this paper.}
+A typical implementation uses two words of header information in
+addition to the fields contained by the object.  The first, often
+designated {\tt claz}, is a pointer to a class descriptor for the
+object's type.  Dynamic dispatch is usually implemented as an
+indirection through a table contained in this descriptor.
+The second word is usually overloaded to contain both hashtable and
+lock information.  Although the declaration of the {\tt
+  Object.hashCode() } and {\tt System.identityHashCode()} methods
+return a 32-bit {\tt int}, implementations usually return some
+more restricted range of values --- one implementation of IBM's JDK
+\cite{bacon98}
+returned as little as 8 bits of hashcode.  The remaining bits of the
+second word is used to represent the lock and any other information
+kept by the runtime.  In the FLEX compiler system used for the
+research in this paper \cite{flexweb}, 30 bits of hashcode are kept, and the
+remaining 2 bits indicate whether the value is actually a hashcode or
+a pointer to an ``inflated'' object structure containing other
+information: a copy of the displaced hashcode, pthreads locks,
+and other runtime information.
+
+\subsection{{\tt claz} compression}
+The first and most obvious means of reducing the size of the header
+kept for each object is to replace the direct class descriptor
+pointer with an index into a table.  For the closed-world systems
+expected on embedded devices, the number of program classes is known
+and may be compiled into the program.  For extensible systems, one may
+instead define epochs of execution in which the number of classes
+in the system is bounded; between epochs a full-system garbage
+collection may be necessary to expand the size of the index in the
+header, but epoch transistions should be rare.%
+\footnote{Alternatively, a
+variable length encoding could be used so that ``young'' class types
+(hopefully the most common classes) may be given short indices without
+limiting the index size as the class universe grows.  The runtime cost
+of such a scheme is likely to be prohibitive, however.}
+
+Table {\bf XX} shows the number of classes required to build each of
+the spec benchmarks, as determined by a standard class hierarchy
+analysis at compile-time.  Also enumerated are the heap savings to be
+expected from reducing the size of the {\tt claz} information using
+table-lookup; the meanings of the various alignment alternatives will
+be discussed in section {\bf XX}.
+
+\subsection{Hashcode/lock compression}
+Many objects in a typical Java program are neither locked nor inserted
+into hashtables; thus the second word of the header is unused.
+If we can determine that synchronization on an object is unnecessary
+or never performed, that the hashcode is likewise never accessed,
+and that any other runtime features signalled in the second header
+word are unused, we can eliminate it from the object.
+
+Determining that the lock features are unnecessary is straight-forward.
+We use our previously published escape analysis \cite{whaley99,vivien01}
+% alex reference here
+to determine on which objects synchronization must be performed; we
+can discard the lock features of all the rest.  Hashcode utilization
+is a little more involved: it is not sufficient to identify the
+objects in which the system {\tt Object.hashCode()} method is
+overridden and not invoked, because there is also a {\tt
+  System.identityHashCode()} method in the library which provides the
+same value on any object.  Standard type analysis around the
+callsites in question will not help, because generic collection
+classes such as {\tt java.util.Hashtable} typically invoke
+the {\tt hashCode} method on the generic {\tt Object} type contained
+in the collection.  Either context-sensitivity or a type-cone analysis
+will suffice to obtain the needed information.
+
+{\bf XXX.  In the SPEC benchmark suite, it is possible to statically
+  determine that {\tt System.identityHashCode()} is never invoked.
+  Thus, we are able to simply identify those classes which override
+  Object.hashCode() and determine that the hashcode information in the
+  second header word is unnecessary for those objects.}
+
+{\bf XXX. In the results presented here, we will use a dynamic tally
+of the object types on which hashCode is {\it actually} invoked, which
+represents a best-case bound for the analysis.}
+
+In addition, only the SPEC benchmark {\tt 227\_mtrt} is multithreaded;
+it is trivial to determine that synchronization is unnecessary for all
+objects in the other benchmarks.
+
+Table {\bf XX} presents the number of objects on which both
+synchronization and hashcodes can be eliminated in each benchmark,
+along with the space savings for so doing.
+
+\section{Field compression}
+% field compression.
+%  description of bitwidth analysis.
+%   treatment of loops.
+%   constant/unread fields.
+%   scc.  crib from thesis.
+%   interprocedural.  no appreciable gain from context sensitivity.
+%   no pointer analysis to discriminate object classes (yea, type-safety)
+%  implementation: bit/byte/java-type packing.
+After the header has been reduced in size as much as possible, we turn
+our attention to the fields of the object.  The key idea here is to
+do a {\it bitwidth analysis} \cite{stephenson00,ananian99:tech}
+to determine a
+smaller number of bits sufficient to represent the values stored in
+the field.  We can then shrink the size of the field, subject to
+limitations on field and object alignment.  The largest savings can be
+realized by discarding alignment restrictions, a choice which requires
+substantial changes to the runtime environment to realize.  More
+modest reductions may be obtained with much less effort by
+more-strongly aligning objects and restricting field widths to
+those of standard java types.
+
+\subsection{Bitwidth analysis}
+Our bitwidth analysis is an inter-procedural extension of that
+described in {\bf reference here}.  It is based on Wegman and Zadeck's
+Sparse Conditional Constant (SCC) propagation algorithm
+\cite{wegman91:scc}\ldots
+
+% sub-topic: pointer compression.
+%  present numbers: how your memory stacks up.
+\section{Mostly-zero field analysis}
+% mostly-zero field analysis.
+%  as extension: mostly-'N'
+%  techniques:
+%   dynamic specialization
+%    analyses required.
+%   ``external fields''
+%    profiling/analyses required.
+%    implementation of external hashtable.
+\section{Results}
+% results/discussion.
+%  present sum totals.
+%  compress doesn't do so hot: show why.
+\section{Conclusion}
+% conclusion/future work.
+%  better pointer analysis/separate out classes of objects.
+%   (strings as motivating example: compress to byte[])
+%  other stuff?
+
 
 \bibliography{harpoon}
 
