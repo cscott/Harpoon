@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.55 1999-10-20 20:28:02 cananian Exp $
+ * @version $Id: Instr.java,v 1.1.2.56 1999-10-31 19:54:29 cananian Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -177,6 +177,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	if (dst == null) dst = new Temp[0];
 	
         this.source_file = (source != null)?source.getSourceFile():"unknown";
+	this.source_line = (source != null)?source.getLineNumber(): 0;
         this.id = inf.getUniqueID();
         this.inf = inf;
 
