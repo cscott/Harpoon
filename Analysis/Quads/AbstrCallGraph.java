@@ -4,10 +4,13 @@
 package harpoon.Analysis.Quads;
 
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Iterator;
 
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.IR.Quads.Code;
@@ -20,7 +23,7 @@ import harpoon.IR.Quads.CALL;
  * implementations of <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AbstrCallGraph.java,v 1.5 2003-05-06 15:00:39 salcianu Exp $
+ * @version $Id: AbstrCallGraph.java,v 1.6 2003-06-04 16:03:39 salcianu Exp $
  */
 abstract class AbstrCallGraph extends CallGraph {
 
@@ -47,7 +50,25 @@ abstract class AbstrCallGraph extends CallGraph {
     final private Map<HMethod,CALL[]> cache_cs = new HashMap<HMethod,CALL[]>();
     final private static CALL[] empty_array = new CALL[0];
 
-    public Set getRunMethods() {
-	throw new UnsupportedOperationException();
+    /** Safe implementation of <code>getRunMethods</code>: returns the
+        set of callable methods named &quot;run&quot;, with no
+        argument and declared by a subclass of
+        <code>java.lang.Thread</code>. */
+    public Set<HMethod> getRunMethods() {
+	Set<HMethod> runs = new HashSet<HMethod>();
+	for(Iterator<HMethod> it = callableMethods().iterator();
+	    it.hasNext(); ) {
+	    HMethod hm = it.next();
+	    if((hm.getParameterNames().length == 0) &&
+	       hm.getName().equals("run") && 
+	       isThread(hm.getDeclaringClass()))
+		runs.add(hm);
+	}
+	return runs;
+    }
+
+    private static boolean isThread(HClass hclass) {
+	HClass jlt = hclass.getLinker().forName("java.lang.Thread");
+	return hclass.isInstanceOf(jlt);
     }
 }
