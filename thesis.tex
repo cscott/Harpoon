@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.55 1999-07-10 08:03:02 cananian Exp $
+% $Id: thesis.tex,v 1.56 1999-07-10 08:20:02 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage]{article}
 % fonts
@@ -25,14 +25,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.55 $ $}
+\date{\today \\ $ $Revision: 1.56 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.55 $ $}{$ $Revision: 1.55 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.56 $ $}{$ $Revision: 1.56 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -491,7 +491,7 @@ $a$ to node $b$ is edge cycle-equivalent to the edge from node $c$ to
 node $d$.
 
 \begin{myfigure}\centering
-\vertcenter{\input{Figures/THcqex}}
+\vertcenter{\input{Figures/THcqex2}}
 $\begin{array}[c]{cc}
 \tuple{\text{START},1}\cyceq\tuple{16,\text{END}}\\
 \tuple{1,2}\cyceq\tuple{8,16}\\
@@ -535,7 +535,7 @@ the right for the example of figure~\vref{fig:CQex}.%
 \label{fig:SESEalg}\end{myfigure}
 
 \begin{myfigure}\centering
-\vertcenter{\renewcommand*{\figscale}{0.5}\input{Figures/THseseex}}\hspace{1cm}
+\vertcenter{\renewcommand*{\figscale}{0.5}\input{Figures/THcqex}}\hspace{1cm}
 \vertcenter{\renewcommand*{\figscale}{0.7}\input{Figures/THpst}}
 \caption{SESE regions and PST for the CFG of
          figure~\ref{fig:CQex} (from \cite{johnson94:pst}).}

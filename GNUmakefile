@@ -27,7 +27,7 @@ thesis.dvi: Figures/THex1base.tex \
 	Figures/THex1ssi.tex Figures/THex1ssiPr.tex \
 	Figures/THundir.tex \
 	Figures/THcqdata.tex Figures/THcqalg.tex Figures/THcqex.tex \
-	Figures/THsesedata.tex Figures/THsesealg.tex Figures/THseseex.tex \
+	Figures/THsesedata.tex Figures/THsesealg.tex Figures/THcqex2.tex \
 	Figures/THpst.tex Figures/evil.tex \
 	Figures/THdeaddata.tex Figures/THdeadalg.tex Figures/THlattice.tex
 # thesis figure rules

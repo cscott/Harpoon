@@ -33,16 +33,16 @@ THex1base.tex: $(EX1FIG)
 # default fig->tex rule -- insert a snippet from head.tex
 %.tex: %.fig
 	fig2dev -L latex -m 1.0 $< $@.tmp
-	(head -1 $@.tmp ; cat head.tex ; sed -e '1d' -e 's/SetFigFont/MySetFigFont/g' $@.tmp) > $@
+	(head -1 $@.tmp ; cat head.tex ; sed -e '1d' -e '8,$$s/SetFigFont/MySetFigFont/g' $@.tmp) > $@
 	$(RM) -f $@.tmp
 
 # sed out dashed arc-boxes and left-justified special text from the
 # cycle-equivalency figure.
-THcqex.tex: THcqex.fig
+THcqex2.tex: THcqex.fig
 	awk "/^[[:blank:]]/{if (foo==1) next;} /^2 4 1/||/^4 0 0 100 0 0 12 0.0000 2/{foo=1;next} {print; foo=0;}" < $< | \
 	fig2dev -L latex -m 0.5 > $@
 
 clean:
 	$(RM) THex1*.tex *.fig.bak evil.tex \
-		THcqex.tex THseseex.tex THundir.tex THpst.tex THlattice.tex\
+		THcqex.tex THcqex2.tex THundir.tex THpst.tex THlattice.tex\
 		*~
