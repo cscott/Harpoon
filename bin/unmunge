@@ -2,6 +2,7 @@
 # unmunge.  Expects to find munged files on standard input.
 # Pipeline safe.  Don't write output file until everything's read.
 use File::Basename;
+use IO::Handle;
 
 sub dumpstored {
     ($outfile, $contents)=@_;
@@ -13,6 +14,7 @@ sub dumpstored {
 }
 
 $longest=0;
+STDOUT->autoflush(1);
 
 undef $outfile;
 $contents="";
