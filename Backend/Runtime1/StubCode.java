@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Runtime1;
 
-import harpoon.Analysis.Maps.Derivation;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HClass;
@@ -15,6 +14,7 @@ import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.ExpList;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Tree;
+import harpoon.IR.Tree.TreeDerivation;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.CJUMP;
@@ -49,7 +49,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.7 2000-01-31 22:16:09 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.8 2000-02-08 23:32:18 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
@@ -67,11 +67,8 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	this.tree = buildStub(method);
     }
     // first, some generic cruft to complete the Code implementation.
-    public Derivation.DList derivation(HCodeElement hce, Temp t) {
-	throw new Error("derivation() is not implemented.");
-    }
-    public HClass typeMap(HCodeElement hce, Temp t) {
-	throw new Error("typeMap() is not implemented.");
+    public TreeDerivation getTreeDerivation() {
+	throw new Error("derivation information is not implemented.");
     }
 
     // down here is the real stub builder code.
