@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.52 2003-05-08 17:33:33 cananian Exp $
+% $Id: ptran.tex,v 1.53 2003-05-08 19:57:55 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.52 $ $}
+\date{\today \\ $ $Revision: 1.53 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -151,43 +151,13 @@ We say a variable $v$ is singular at a use $s$ iff:
 \item all reaching definitions of $v$ are either allocation statements 
 $v = \text{\tt new }T$ or moves $v = x$ where $x$ is singular at
 the move, and
-\item every non-trivial path from $s$ to $s$ redefines $v$ (where a
-  non-trivial path traverses at least one edge).
+\item every non-trivial path from $s$ to $s$ gives a fresh value to $v$
+  (where a non-trivial path traverses at least one edge).
 \end{itemize}
 
-Let $\func{RD}(\tuple{v,s})$ be the set of (intraprocedural) reaching
-definitions
-of $v$ at $s$.
-We define the set of \newterm{generation sites} for a variable $v$ singular at
-use $s$ as:
-\begin{displaymath}
-\func{GenSite}(\tuple{v,s}) %\text{ where } v\in\func{use}(s)
- =
-\bigcup_{d \in \func{RD}(\tuple{v,s})} \func{g}(d)
-\text{ where }
-\func{g}(d) = \begin{cases}
-                \func{GenSite}(\tuple{x,d}) &\text{when } d \text{ is } v=x \\
-                \{d\}&\text{when } d \text{ is } v=\text{\tt new } T
-       \end{cases}
-\end{displaymath}
-
-We can then approximate pairwise-singularity by saying $v_1$ at $s_1$
-is pairwise-singular with $v_2$ at $s_2$ if
-every path $s_1\to s_2$ or $s_2\to s_1$ must pass through all
-generation sites which $v_1$ at $s_1$ and $v_2$ at $s_2$ have in
-common.  Formally:
-\begin{displaymath}
-\neg\exists d \in \func{GenSite}(\tuple{v_1,s_1}) \cap \func{GenSite}(\tuple{v_2,s_2})
-     : \func{Path}_{\mathcal{G}-d}(s_1, s_2) \vee
-       \func{Path}_{\mathcal{G}-d}(s_2, s_1)
-\end{displaymath}
-where $\func{Path}_{\mathcal{G}-z}(x, y)$ is true iff there is a path
-from $x$ to $y$ in directed control-flow graph $\mathcal{G}$ which
-does not pass through $z$.  Note that
-$\func{Path}_\mathcal{G}(x,y)$ is true if $x=y$.
-An infeasible path analysis \cite{267921} could be used to refine
-this predicate by excluding paths never traversed by any
-execution of the program.
+\footnote{An infeasible path analysis \cite{267921} could be used to refine
+our dataflow analysis by excluding paths never traversed by any
+execution of the program.}
 % note that a statement ... = a + b *could* however have a=b and still
 % be singular.  does this need to be fixed?
 
@@ -211,109 +181,81 @@ while (\ldots) \{         &while (\ldots) \{         \\
 \end{myfigure}
 
 \subsection{Intraprocedural singular value analysis}
-
-An intraprocedural analysis to compute $\func{GenSite}(\tuple{v,s})$ and the
-singularity of individual variables can be built using the standard
-dataflow framework:
-\begin{eqnarray*}
-\func{Out}(n)&=&\left(\func{In}(n)-\func{Kill}(n)\right)\cup\func{Gen}(n) \\
-\func{In}(n)&=&\bigcup_{p\in\func{pred}(n)} \func{Out}(p)\\
-\end{eqnarray*}
-
-We will perform the analysis simultaneously on three relations
-$\func{Ru}$, $\func{Nd}$, and $\func{Gs}$.
-The relations are represented as
-sets of pairs \tuple{v, X} where
-$\mathcal{R}(v)=X$ iff $\tuple{v,X} \in R$.
-Both relations are initialized
-to the empty set for all $n$, and grow monotonically as the analysis
-progresses.
-We let
-$\func{Ru}(v)$ be the set of reaching \textbf{uses} of $v$ at $n$,
-$\func{Nd}(v)$ be the set of \textbf{non-}singular reaching definitions
-of $v$ at $n$,
- and
-$\func{Gs}(v)$ be $\func{GenSite}(\tuple{v,n})$, the set of generation sites
-of $v$ at $n$.
-The appropriate Gen and Kill rules are:
-\begin{eqnarray*}
-% this is the standard reaching-def rule:
-%\func{Gen}_\text{RD}(n) &=&
-%       \left\{ \tuple{v, n} | v \in \func{def}(n) \right\} \\
-%\func{Kill}_\text{RD}(n) &=&
-%       \left\{ \tuple{v, s} | v \in \func{def}(n) \wedge
-%                          \tuple{v,s} \in \func{In}_\text{RD}(n) \right\} \\
-%%%%%%%%%%%%%%%%%%%%%%%%
-\func{Gen}_\text{Ru}(n) &=&
-        \left\{ \tuple{v, n} | v \in \func{use}(n) \right\} \\
-\func{Kill}_\text{Ru}(n) &=&
-        \left\{ \tuple{v, s} | v \in \func{def}(n) \wedge
-                          \tuple{v,s} \in \func{In}_\text{Ru}(n) \right\} \\
-%
-% non-singular reaching defs of n.
-\func{Gen}_\text{Nd}(n) &=&
-        \left\{ \tuple{v, n} | v \in \func{def}(n) \wedge
-\left( \func{IsBad}(n) \vee
-\exists u\in\func{use}(n):\func{Ns}(u,n)
- \right) \right\}
-\\
-\func{Kill}_\text{Nd}(n) &=&
-        \left\{ \tuple{v, s} | v \in \func{def}(n) \wedge
-                          \tuple{v,s} \in \func{In}_\text{Nd}(n) \right\} \\
-% gensites!
-\func{Gen}_\text{Gs}(n) &=&
-       \left\{ \tuple{v, n} | v \in \func{def}(n)\wedge\func{IsNew}(n)\right\}
-       \cup\\&&\quad
-       \left\{ \tuple{v, s} | v \in \func{def}(n)\wedge\func{IsMove}(n) \wedge
-                              \exists u\in\func{use}(n) :
-                                 \tuple{u,s}\in \func{In}_\text{Gs}(n)\right\}
-\\
-\func{Kill}_\text{Gs}(n) &=&
-       \left\{ \tuple{v, s} | v \in \func{def}(n) \wedge
-                         \tuple{v,s} \in \func{In}_\text{Gs}(n) \right\} %\\
-\end{eqnarray*}
-where
-\begin{eqnarray*}
-\func{IsMove}(n) &=& \text{true iff }n\text{ is a move statement } v=x\\
-\func{IsNew}(n) &=& \text{true iff }n\text{ is a allocation statement } v=\text{\tt new }T\\
-\func{IsBad}(n) &=& \neg\left(\func{IsMove}(n) \vee \func{IsNew}(n)\right) \\
-\func{Ns}(v,n) &=&
-%v\in\func{use}(n) \wedge \left(
-\tuple{v,n} \in \func{In}_\text{Ru}(n) \vee
-\exists n': \tuple{v,n'}\in\func{In}_\text{Nd}(n)
-%\right)
-\end{eqnarray*}
-Note that $\func{IsBad}(n)$ is true for fetches from the heap and
-definitions of formal parameters.  Note also that we treat allocation
-and invocation of the constructor as two separate statements; the
-$\func{IsNew}$ predicate is true only for allocation.
-
-After the analysis is complete, $v$ is (conservatively) singular at
-use $n$ if $\neg\func{Ns}(v,n)$.   We can use $\func{In}_\text{Gs}$ to
-compute
-$\func{GenSite}(\tuple{v,s})=\left\{ d | \tuple{v,d}\in\func{In}_\text{Gs}(s) \right\}$.
-
-This analysis can be performed using a sparse representation, such as
-SSA or SSI, as well.
-
-Variable $v_1$ singular at $s_1$ is pairwise-singular to $v_2$
-singular at $s_2$ if
+Let $\func{RD}(\tuple{v,s})$ be the set of (intraprocedural) reaching
+definitions
+of $v$ at $s$.
+We define the set of \newterm{generation sites} for a variable $v$ singular at
+use $s$ as:
 \begin{displaymath}
-\neg\exists 
-     d : \tuple{v_1, d} \in \func{In}_\text{Gs}(s_1) \wedge
-         \tuple{v_2, d} \in \func{In}_\text{Gs}(s_2) \wedge
-\left(\func{Path}_{\mathcal{G}-d}(s_1, s_2) \vee
-      \func{Path}_{\mathcal{G}-d}(s_2, s_1) \right)
+\func{GenSite}(\tuple{v,s}) %\text{ where } v\in\func{use}(s)
+ =
+\bigcup_{d \in \func{RD}(\tuple{v,s})} \func{g}(d)
+\text{ where }
+\func{g}(d) = \begin{cases}
+                \func{GenSite}(\tuple{x,d}) &\text{when } d \text{ is } v=x \\
+                \{d\}&\text{when } d \text{ is } v=\text{\tt new } T
+       \end{cases}
 \end{displaymath}
 
-The mutual singularity of a group of static values can be computed
-from the pairwise-singularity using the definitions in the previous
-section.
+We perform a dataflow analysis to determine
+$\func{RD}^*_\text{in}[s]:\mathcal{V}\to(2^\mathcal{S})_\bot$, the set
+of reaching generation sites for a variable $v$ at statement $s$.
+Initially, let $\func{RD}^*_\text{in}$ map every variable to the empty set.
+The update rules are:
+\\
+\begin{tabular}{lll}
+&\textbf{Statement}&\textbf{Update Rule}\\\hline
+$s$: & $t_0=\text{\tt new }T$ & $\func{RD}^{*'}_\text{out}[s]=\func{RD}^*_\text{in}[s]\left[t_0:=\left\{s\right\}\right]$ \\
+$s$: & $t_0=t_1$ & $\func{RD}^{*'}_\text{out}[s]=\func{RD}^*_\text{in}[s]\left[t_0:=\func{RD}^*_\text{in}[s](t_1)\right]$ \\
+$s$: & $t_0=\text{\tt<other def>}$ & $\func{RD}^{*'}_\text{out}[s]=\func{RD}^*_\text{in}[s]\left[t_0:=\bot\right]$ \\
+$s$: & \texttt{<other stmt>} &  $\func{RD}^{*'}_\text{out}[s]=\func{RD}^*_\text{in}[s]$ \\
+\end{tabular}
+\\
+and the join rule is:
+\begin{displaymath}
+\func{RD}^*_\text{in}[s] = \lambda v. \bigsqcup_{p\in\func{pred}(s)} \func{RD}^*_\text{out}[p](v)
+\end{displaymath}
+where
+\begin{displaymath}
+A_1 \sqcup A_2 = \begin{cases}
+\bot & \text{if } A_1=\bot \text{ or } A_2=\bot \\
+A_1 \cup A_2 & \text{otherwise}
+\end{cases}
+\end{displaymath}
 
-\textbf{XXX: Perhaps present algorithm for determining mutual
-singularity using a single graph traversal, keeping track of which
-defs we've passed and halting when we hit another node without
-having passed through a redef point?}
+We also define a ``reaching uses'' analysis,
+$\func{RU}_\text{in}[s] : \mathcal{S}\to 2^\mathcal{V\times S}$ which
+maps definition sites to a set of static values using the values
+generated at those sites.  Initially, let $\func{RU}_\text{in}$ map
+every statement to the empty set.  The update rules are:
+\\
+\begin{tabular}{lll}
+&\textbf{Statement}&\textbf{Update Rule}\\\hline
+$s$: & $t_0=\text{\tt new }T$ & $\func{RU}'_\text{out}[s]=\func{RU}_\text{in}[s]\left[s:=\emptyset\right]$ \\
+$s$: & $t_0=t_1$ &  $\func{RU}'_\text{out}[s]=\func{RU}_\text{in}[s]$ \\
+$s$: & $t_0=\ldots t_1 \ldots t_n \ldots$ &
+ $\func{RU}'_\text{out}[s]=\lambda s' . \begin{cases}
+\emptyset &\text{if }s'=s\text{, else}\\
+\func{RU}_\text{in}[s](s')\cup\left\{s\right\}
+ & \text{if }s'\in\func{RD}^*_\text{in}[s]\left[\left\{t_1\ldots
+    t_n\right\}\right] \\
+\func{RU}_\text{in}[s](s') & \text{otherwise} \\
+\end{cases}$ \\
+$s$: & \texttt{<other stmt>} &  $\func{RU}'_\text{out}[s]=\func{RU}_\text{in}[s]$ \\
+\end{tabular}
+\\
+and the join rule is:
+\begin{displaymath}
+\func{RU}_\text{in}[s] = \lambda s'.\bigcup_{p\in\func{pred}(s)} \func{RU}_\text{out}[p](s')
+\end{displaymath}
+
+A set of static values $\bigvar{SV} \subseteq V \times S$ are mutually
+singular iff
+\begin{displaymath}
+  \forall \tuple{v,s}\in \bigvar{SV} : \func{RD}^*_\text{in}[s](v) \neq \bot
+  \wedge 
+  \left(\bigvar{SV}\cap\func{RU}_\text{in}[s]\left[\func{RD}^*_\text{in}[s](v)\right]\right) = \emptyset
+\end{displaymath}
 
 \subsection{Interprocedural singular value analysis}
 
@@ -325,16 +267,15 @@ parameters is mutually-singular when the method is invoked.%
 \footnote{Note that aliasing of parameters is one of the ways that
 a set of parameters may fail to be mutually-singular.}
 We let
-$\func{CondParam}(\tuple{v,n})$ be the set of formal parameters which the
-singularity of $v$ at $n$ is dependent on.  We can extend our dataflow
+$\func{CondParam}(\bigvar{SV}):2^\mathcal{V\times S}\to 2^\mathcal{P}$
+be the set of formal parameters which the mutual singularity of the
+set of static values $\bigvar{SV}$ is dependent on.  We can extend our dataflow
 analysis of the previous section to compute this function.
 
-Previously, the function $\func{In}_\text{Gs}$ was typed
-$\mathcal{S\to V\times S}$
-where $\mathcal{S}$ is the domain of statements
-and $\mathcal{V}$ the domain of variables.
-We expand that type to
-$\mathcal{S\to V\times (S\cup P)}$ where $\mathcal{P}$ is a domain
+Previously, the function $\func{RD}^*[s]$ was typed
+$\mathcal{V}\to(2^\mathcal{S})_\bot$.  We expand that type to
+$\mathcal{V}\to(2^{\mathcal{S}\cup\mathcal{P}})_\bot$, where
+$\mathcal{P}$ is a domain
 representing formal parameters.  The set $P_m$ of formal parameters for
 a method $m$ consists of unique tokens (possibly ordinal integers) for
 each formal parameter of the method.  Let
@@ -342,55 +283,38 @@ $\func{formal}(p):\mathcal{P\to V}$ map parameter tokens to the
 corresponding formal variables in a callee, and
 $\func{actual}(p):\mathcal{P\to V}$ map parameter tokens to the
 corresponding actual variables at a callsite.
-Now, instead of initializing $\forall n :
-\func{In}_\text{Gs}(n)=\emptyset$, we let
+Now, instead of initializing $\forall s :
+\func{RD}^*_\text{in}[s]=\lambda v.\emptyset$, we let
 \begin{displaymath}
-\func{In}_\text{Gs}(\text{\tt HEADER}) =
-   \left\{ \tuple{v,p} | p\in P_m \wedge v=\func{formal}(p) \right\}
+\func{RD}^*_\text{in}[s]=\lambda v.\begin{cases}
+p & \text{if }v=formal(p)\text{ and }s=s_0\\
+\emptyset & \text{otherwise} \\
+\end{cases}
 \end{displaymath}
-We also extend the $\func{IsBad}$ predicate:
+where $s_0$ is the unique header statement for the method.
+The remainder of the $\func{RD}$ analysis is identical.
+
+We also extend the type of the function $\func{RU}[s]$ from
+$\mathcal{S}\to 2^\mathcal{V\times S}$ to
+$(\mathcal{S}\cup\mathcal{P})\to 2^\mathcal{V\times S}$.
+This will accomodate the expanded type of the $\func{RD}^*$ function,
+and the remainder of the analysis is identical.
+
+Now we can define
 \begin{displaymath}
-\func{IsBad}(n) = \neg\left(\func{IsMove}(n) \vee \func{IsNew}(n) \vee
-                            n = \text{\tt HEADER} \right)
-\end{displaymath}
-so that definitions of formal parameters at the method entry header
-are not marked as non-singular reaching definitions.  Now we can define
-\begin{displaymath}
-\func{CondParam}(\tuple{v,n}) =
-    \left\{ p\in P_m | \tuple{v,p}\in \func{In}_\text{Gs}(n) \right\}
+\func{CondParam}(\bigvar{SV}) = \mathcal{P} \cap
+    \bigcup_{\tuple{v,s}\in\bigvar{SV}} \func{RD}^*_\text{in}[s](v)
 \end{displaymath}
 
-A variable $v$ is singular at $n$ conditional on $P$ if
-$P=\func{CondParam}(\tuple{v,n})$ and $\neg\func{Ns}(v,n)$.  This
-is identical to our former case of non-conditional singularity
-when $P=\emptyset$.  Variable $v_1$ singular at $s_1$ conditional on
-$P_1$ is pairwise-singular conditional on $P_1\cup P_2$ to variable
-$v_2$ singular at $s_2$ conditional on $P_2$ if
+A set of static values $\bigvar{SV}$ is
+mutually-singular conditional on $P$ iff
+$$P=\func{CondParam}(\bigvar{SV})$$ and
 \begin{displaymath}
-\neg\exists 
-     d : \tuple{v_1, d} \in \func{In}_\text{Gs}(s_1) \wedge
-         \tuple{v_2, d} \in \func{In}_\text{Gs}(s_2) \wedge
-\left(\func{Path}_{\mathcal{G}-d}(s_1, s_2) \vee
-      \func{Path}_{\mathcal{G}-d}(s_2, s_1) \right)
+  \forall \tuple{v,s}\in \bigvar{SV} : \func{RD}^*_\text{in}[s](v) \neq \bot
+  \wedge 
+  \left(\bigvar{SV}\cap\func{RU}_\text{in}[s]\left[\func{RD}^*_\text{in}[s](v)\right]\right) = \emptyset
 \end{displaymath}
-as before, where $\mathcal{G}-d=\mathcal{G}$ if $d\notin\mathcal{S}$.
-
-Similarly, a set of static values $\bigvar{SV}$ is
-mutually-singular conditional on $P$ if
-\begin{multline*}
-\forall \left\{ \tuple{v_1,s_1}, \tuple{v_2,s_2} \right\} \subseteq
-        \bigvar{SV} :
-\hfill
-v_1 \text{ singular at } s_1 \text{ conditional on } P_1
-\mspace{-2mu}\quad\\\shoveright{{}\wedge
-v_2 \text{ singular at } s_2 \text{ conditional on } P_2
-}\\\shoveright{{}\wedge
-v_1 \text{ at } s_1 \text{ on } P_1
-\text{ is pairwise-singular with }
-v_2 \text{ at } s_2 \text{ on } P_2
-}\\{}\wedge
-P_1 \cup P_2 \subseteq P
-\end{multline*}
+as before.
 
 Now we can resolve conditional singularity compositionally by
 examining actual parameters at a call-site $s_\text{call}\in S_\text{caller}$.
@@ -406,15 +330,7 @@ where $\bigvar{SV}_1\subseteq \bigvar{SV}_\text{caller}$ and
       $\bigvar{SV}_2\subseteq \bigvar{SV}_\text{callee}$,
 are mutually-singular conditional on $P$ if:
 \begin{itemize}
-\item $\bigvar{SV}_2$ are mutually-singular conditional on $P'$,
-\item for all $\tuple{v_1,s_1}\in\bigvar{SV}_1$
-there is no path from $s_1$ to $s_\text{call}$
-             from $s_\text{call}$ to $s_1$,%
-\footnote{Assuming METHOD\-ENTER in callee reaches all 
-          $s\in S_\text{callee}$ and
-          all $s\in S_\text{callee}$ reach METHOD\-EXIT in callee.}%
-$^,$%
-\footnote{\textbf{XXX: I DON'T THINK THIS CRITERION IS NECESSARY.}}
+\item $\bigvar{SV}_2$ are mutually-singular conditional on some $P'$,
 and
 \item all actual parameters corresponding to $P'$ at callsite $s_\text{call}$
   unioned with $\bigvar{SV}_1$ are mutually-singular conditional on $P$;
@@ -425,20 +341,7 @@ U =
     \cup
 \bigvar{SV}_1
 \end{displaymath}
-then
-\begin{multline*}
-\forall \left\{\tuple{v_1,s_1},\tuple{v_2,s_2}\right\} \subseteq U :
-\hfill
-v_1 \text{ singular at } s_1 \text{ conditional on } P_1
-\mspace{-2mu}\quad\\\shoveright{{}\wedge
-v_2 \text{ singular at } s_2 \text{ conditional on } P_2
-}\\\shoveright{{}\wedge
-v_1 \text{ at } s_1 \text{ on } P_1
-\text{ is pairwise-singular with }
-v_2 \text{ at } s_2 \text{ on } P_2
-}\\{}\wedge
-P_1 \cup P_2 \subseteq P
-\end{multline*}
+then the set of static values $U$ is mutually-singular conditional on $P$.
 \end{itemize}
 
 So we can throw away all information internal to the callee except
