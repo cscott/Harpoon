@@ -6,6 +6,7 @@ copy: $(PLOTS)
 
 update:
 	scp ygg:Transact/Binaries/MEMTRACE_SZ/"{freq,trsize}.*.*.txt" .
+	scp ygg:Transact/Binaries/MEMTRACE_SZ32/"{freq,trsize}.*.*.txt" .
 
 %.eps: %.plo
 	ploticus -tightcrop -eps $<
