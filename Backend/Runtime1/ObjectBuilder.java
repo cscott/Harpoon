@@ -45,7 +45,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.4.15 2001-07-10 22:49:50 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.4.16 2001-09-17 18:33:20 bdemsky Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -61,9 +61,15 @@ public class ObjectBuilder
      */
     public ObjectBuilder(Runtime runtime) {
 	this(runtime, new RootOracle() {
+	    public long counter=1;
 	    public Object get(HField hf, Info addlinfo) {
 	      if (hf.getDeclaringClass().getName().equals("java.lang.Object"))
-		  return defaultValue(hf);// fields of Object initialized to 0
+		  if (hf.getName().equals("UID")) {
+		      System.out.println("NI: "+addlinfo.type().getName().replace('.','/')+" "+(counter));
+		      return new Long(counter++);
+		  }
+		  else
+		      return defaultValue(hf);// fields of Object initialized to 0
 	      else return NOT_A_VALUE;
 	    }
 	});
