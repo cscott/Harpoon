@@ -25,7 +25,8 @@ doc/TIMESTAMP:	$(ALLSOURCE)
 	mkdir doc
 	cd doc; ln -s .. harpoon
 	cd doc; ${JDOC} ${JDOCFLAGS} -d . \
-		$(foreach dir, $(ALLPKGS), harpoon.$(subst /,.,$(dir)))
+		$(foreach dir, $(filter-out Test,$(ALLPKGS)), \
+			  harpoon.$(subst /,.,$(dir)))
 	$(RM) doc/harpoon
 	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	cd doc; ln -s $(JDOCIMAGES) images
