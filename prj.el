@@ -4,6 +4,7 @@
 
 
 
+
 (jde-set-project-name "harpoon")
 (jde-set-variables 
  '(jde-run-option-properties nil)
@@ -56,7 +57,7 @@
  '(jde-make-program "make")
  '(jde-use-font-lock t)
  '(jde-db-option-garbage-collection (quote (t t)))
- '(jde-gen-class-buffer-template (quote ("\"// \" (file-name-nondirectory buffer-file-name)" "\", created \" (current-time-string)" "\" by \" (user-login-name) 'n" "(funcall jde-gen-boilerplate-function)" "\"package harpoon.\" (cananian-package-name \"Harpoon/Code/\") \";\" 'n" "'n" "\"import harpoon.ClassFile.*;\" 'n" "\"/**\" 'n" "\" * <code>\"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"</code>\" 'n" "\" * \" 'n" "\" * @author  \" (user-full-name)" "\" <\" (user-mail-address) \">\" 'n" "\" * @version $I\" \"d$\" 'n" "\" */\" 'n>" "'n>" "\"public class \"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\" \" (jde-gen-get-super-class) \" {\" 'n> 'n>" "\"/** Creates a <code>\" " "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"</code>. */\" 'n" "\"public \"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"() {\" 'n>" "\"    \" 'p 'n>" "\"}\" 'n>" "'n>" "\"}\"")) t)
+ '(jde-gen-class-buffer-template (quote ("\"// \" (file-name-nondirectory buffer-file-name)" "\", created \" (current-time-string)" "\" by \" (user-login-name) 'n" "(funcall jde-gen-boilerplate-function)" "\"package harpoon.\" (cananian-package-name \"Harpoon/Code/\") \";\" 'n" "'n" "\"import harpoon.ClassFile.*;\" 'n" "\"/**\" 'n" "\" * <code>\"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"</code>\" 'n" "\" * \" 'n" "\" * @author  \" (user-full-name)" "\" <\" user-mail-address \">\" 'n" "\" * @version $I\" \"d$\" 'n" "\" */\" 'n>" "'n>" "\"public class \"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\" \" (jde-gen-get-super-class) \" {\" 'n> 'n>" "\"/** Creates a <code>\" " "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"</code>. */\" 'n" "\"public \"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"() {\" 'n>" "\"    \" 'p 'n>" "\"}\" 'n>" "'n>" "\"}\"")) t)
  '(jde-compiler "javac")
  '(jde-jdk-doc-url "http://www.javasoft.com/products/jdk/1.1/docs/api/index.html")
  '(jde-db-debugger (quote ("jdb" . "Executable")))
