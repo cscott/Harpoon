@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.17 2002-07-24 16:59:09 cananian Exp $
+% $Id: ptran.tex,v 1.18 2002-07-24 17:11:22 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.17 $ $}
+\date{\today \\ $ $Revision: 1.18 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -215,6 +215,25 @@ Computing mutual singularity can rest on the fact that values
 generated at sites inside a method can never be the same as values generated
 at sites outside the method; we don't have to compare site-by-site.
 
+
+% this isn't completely correct, but it's the right idea.
+A set $S_1 \cup S_2$ of statements, where
+ $S_1 \subseteq M_1$ the set of methods in the caller, and 
+ $S_2 \subseteq M_2$ the set of methods in the callee,
+is mutually singular iff
+ $S_2$ is mutually singular conditional on set of parameters $P$,
+ $S_1$ is mutually singular,
+ and no path from $s_1 \in S_1$ to callsite or
+             from callsite to $s_1\in S_1$,%
+\footnote{Assuming METHODENTER in $M_2$ reaches all $s_2\in S_2$ and
+          all $s_2\in S_2$ reach METHODEXIT in $M_2$.}
+gensites of $P$ are singular and unique and
+$\left( \bigcup_{s\in S_1} genSites(s) \right) \cap
+ \left( \bigcup_{p\in P} genSites(p) \right) = \emptyset$.
+
+So we can throw away all information internal to method $M_2$ except
+the set of dependent parameters $P$ and whether $S_2$ is mutually singular.
+
 \section{Compositional Pointer Analysis}
 
 (Roughly) We use the Whaley/Rinard compositional pointer analysis
@@ -236,6 +255,7 @@ monomorphically yet.  Just keep the companion edges accurate.
 
 present rules.  don't need to say how we choose to eval
 polymorphically yet.  Just keep the companion edges accurate,
+keep updating mutual-singularity of field gets,
 and rename internal nodes by call-site.
 
 \section{Allocating Polymorphism}
