@@ -54,6 +54,7 @@ import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import harpoon.Util.WorkSet;
 
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -65,10 +66,11 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.20 2001-01-26 03:17:22 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.21 2001-07-18 19:44:44 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
+    private final static boolean DEBUG=false;
     final Linker linker;
     UseDefMap udm;
 
@@ -78,6 +80,18 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	this.linker = hc.getMethod().getDeclaringClass().getLinker();
 	this.udm = usedef;
 	analyze(hc);
+	// DEBUG:
+	if (DEBUG) hc.print(new java.io.PrintWriter(System.out),
+			    new HCode.PrintCallback() {
+	    public void printAfter(java.io.PrintWriter pw, HCodeElement hce) {
+		Quad q = (Quad) hce;
+		HashMap hm = new HashMap(V);
+		HashSet temps = new HashSet(Arrays.asList(q.use()));
+		temps.addAll(Arrays.asList(q.def()));
+		hm.keySet().retainAll(temps);
+		pw.println(hm);
+	    }
+	});
     }
     /** Creates a <code>SCC</code>, and uses <code>UseDef</code> for the
      *  <code>UseDefMap</code>. */
@@ -223,8 +237,10 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	LatticeVal old = (LatticeVal) V.get(t);
 	if (corruptor!=null) a=corruptor.corrupt(a); // support incrementalism
 	// only allow raising value in lattice.
-	if (old != null && old.equals(a)) return;
-	if (old != null && !a.higherThan(old)) return;
+	if (old != null) {
+	    a = a.merge(old);
+	    if (old.equals(a) && a.equals(old)) return; // same old same old
+	}
 	V.put(t, a);
 	Wv.push(t);
     }
@@ -658,93 +674,22 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	public void visit(PHI q) {
 	    for (int i=0; i<q.numPhis(); i++) { // for each phi-function.
-		boolean allConst = true;
-		boolean allWidth = true;
-		boolean allExact = true;
-		boolean allNonNull=true;
-		boolean someValidValue=false;
-		int     oneValidValue=-1;
-
-		Object constValue = null;
-		HClass mergedType = null;
-		int mergedWidthPlus = 0;
-		int mergedWidthMinus= 0;
+		LatticeVal merged = null;
 		for (int j=0; j < q.arity(); j++) {
 		    if (!Ee.contains( q.prevEdge(j) ))
 			continue; // skip non-executable edges.
 		    LatticeVal v = get ( q.src(i,j) );
 		    if (v == null)
 			continue; // skip this arg function.
-		    else if (!someValidValue) { // first valid value.
-			someValidValue=true;
-			oneValidValue = j;
-		    } else oneValidValue=-1; // more than one valid value.
-		    // constant merge.
-		    if (v instanceof xConstant) {
-			Object o = ((xConstant)v).constValue();
-			// rule 5
-			if (constValue==null) constValue = o;
-			else if (!constValue.equals(o))
-			    allConst = false;
-		    } else  allConst = false;
-		    // bitwidth merge.
-		    if (v instanceof xBitWidth) {
-			int plusWidth = ((xBitWidth)v).plusWidth();
-			int minusWidth= ((xBitWidth)v).minusWidth();
-			mergedWidthPlus =Math.max(mergedWidthPlus, plusWidth);
-			mergedWidthMinus=Math.max(mergedWidthMinus,minusWidth);
-		    } else allWidth = false;
-		    // exact status merge
-		    if (! (v instanceof xClassExact) )
-			allExact = false;
-		    // null status merge.
-		    if (! (v instanceof xClassNonNull) )
-			allNonNull = false;
-		    // class/type merge.
-		    if (v instanceof xClass) {
-			HClass hc = ((xClass)v).type();
-			// rule 6
-			if (mergedType == null) mergedType = hc;
-			else if (!hc.equals(mergedType)) {
-			    mergedType = merge(mergedType, hc);
-			    allExact = false;
-			}
-		    } else throw new Error("non class merge.");
+		    v = v.rename(q, j);
+		    if (merged == null)
+			merged = v; // first valid value
+		    else merged = merged.merge(v);
 		}
 		// assess results.
-		if (!someValidValue)
+		if (merged == null)
 		    continue; // nothing to go on.
-		else if (oneValidValue>=0) // use the single valid value
-		    raiseV(V, Wv, q.dst(i),
-			   get(q.src(i, oneValidValue))
-			   .rename(q, oneValidValue) );
-		else if (allConst) {
-		    LatticeVal v;
-		    if (constValue == null)
-			v = new xNullConstant();
-		    else if (mergedType == linker.forName("java.lang.String"))
-			v = new xStringConstant(mergedType, constValue);
-		    else if (mergedType == HClass.Float || 
-			     mergedType == HClass.Double)
-			v = new xFloatConstant(mergedType, constValue);
-		    else if (mergedType == HClass.Int ||
-			     mergedType == HClass.Long ||
-			     mergedType == HClass.Boolean)
-			v = new xIntConstant(mergedType,
-					     ((Number)constValue).longValue());
-		    else throw new Error("Unknown constant type.");
-		    raiseV(V, Wv, q.dst(i), v);
-		} else if (allWidth) {
-		    raiseV(V, Wv, q.dst(i), 
-			   new xBitWidth(mergedType, 
-					 mergedWidthMinus, mergedWidthPlus) );
-		} else if (allExact) {
-		    raiseV(V, Wv, q.dst(i), new xClassExact(mergedType) );
-		} else if (allNonNull) {
-		    raiseV(V, Wv, q.dst(i), new xClassNonNull(mergedType) );
-		} else {
-		    raiseV(V, Wv, q.dst(i), new xClass(mergedType) );
-		}
+		else raiseV(V, Wv, q.dst(i), merged);
 	    } // for each phi function.
 	}
 	public void visit(RETURN q) { /* do nothing. */ }
@@ -1093,31 +1038,15 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	return c;
     }
 
-    // Class merge function.
-
-    static HClass merge(HClass a, HClass b) {
-	Util.assert(a!=null && b!=null);
-	if (a==b) return a; // take care of primitive types.
-
-	// Special case 'Void' Hclass, used for null constants.
-	if (a==HClass.Void)
-	    return b;
-	if (b==HClass.Void)
-	    return a;
-
-	// by this point better be array ref or object, not primitive type.
-	Util.assert((!a.isPrimitive()) && (!b.isPrimitive()));
-	return HClassUtil.commonParent(a,b);
-    }
-
     /*-------------------------------------------------------------*/
     // Lattice classes.
 
     /** No information obtainable about a temp. */
-    static class LatticeVal {
+    static abstract class LatticeVal {
 	public String toString() { return "Top"; }
 	public boolean equals(Object o) { return o instanceof LatticeVal; }
-	public boolean higherThan(LatticeVal v) { return false; }
+	// merge.
+	public abstract LatticeVal merge(LatticeVal v);
 	// by default, the renaming does nothing.
 	public LatticeVal rename(PHI p, int i) { return this; }
 	public LatticeVal rename(SIGMA s, int i) { return this; }
@@ -1135,33 +1064,50 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public String toString() { 
 	    return "xClass: " + type;
 	}
-	public boolean equals(Object o) {
+	public boolean equals(Object o) { return _equals(o); }
+	private boolean _equals(Object o) {
 	    xClass xc;
 	    try { xc=(xClass) o; }
 	    catch (ClassCastException e) { return false;}
 	    return xc!=null && xc.type.equals(type);
 	}
-	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xClass)) return false;
-	    if (v.equals(this)) return false;
-	    return true;
+	public LatticeVal merge(LatticeVal v) {
+	    xClass vv = (xClass) v;
+	    return new xClass(mergeTypes(this.type, vv.type));
+	}
+	// Class merge function.
+	static HClass mergeTypes(HClass a, HClass b) {
+	    Util.assert(a!=null && b!=null);
+	    if (a==b) return a; // take care of primitive types.
+	    
+	    // Special case 'Void' Hclass, used for null constants.
+	    if (a==HClass.Void)
+		return b;
+	    if (b==HClass.Void)
+		return a;
+	    
+	    // by this point better be array ref or object, not primitive type.
+	    Util.assert((!a.isPrimitive()) && (!b.isPrimitive()));
+	    return HClassUtil.commonParent(a,b);
 	}
     }
     /** A single class type; guaranteed the value is not null. */
     static class xClassNonNull extends xClass {
 	public xClassNonNull(HClass type) { 
 	    super( type );
+	    Util.assert(type!=HClass.Void);
 	}
 	public String toString() { 
 	    return "xClassNonNull: { " + type + " }";
 	}
-	public boolean equals(Object o) {
+	public boolean equals(Object o) { return _equals(o); }
+	private boolean _equals(Object o) {
 	    return (o instanceof xClassNonNull && super.equals(o));
 	}
-	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xClassNonNull)) return false;
-	    if (v.equals(this)) return false;
-	    return true;
+	public LatticeVal merge(LatticeVal v) {
+	    if (!(v instanceof xClassNonNull)) return super.merge(v);
+	    xClassNonNull vv = (xClassNonNull) v;
+	    return new xClassNonNull(mergeTypes(this.type, vv.type));
 	}
     }
     /** An object of the specified *exact* type (not a subtype). */
@@ -1172,13 +1118,13 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public String toString() { 
 	    return "xClassExact: { " + type + " }";
 	}
-	public boolean equals(Object o) {
+	public boolean equals(Object o) { return _equals(o); }
+	private boolean _equals(Object o) {
 	    return (o instanceof xClassExact && super.equals(o));
 	}
-	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xClassExact)) return false;
-	    if (v.equals(this)) return false;
-	    return true;
+	public LatticeVal merge(LatticeVal v) {
+	    if (this._equals(v)) return new xClassExact(type);
+	    return super.merge(v);
 	}
     }
     /** An array with constant length.  The array is not null, of course. */
@@ -1193,16 +1139,16 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    return "xClassArray: " + 
 		type.getComponentType() + "["+length+"]";
 	}
-	public boolean equals(Object o) {
+	public boolean equals(Object o) { return _equals(o); }
+	private boolean _equals(Object o) {
 	    xClassArray xca;
 	    try { xca = (xClassArray) o; }
 	    catch (ClassCastException e) { return false; }
 	    return xca!=null && super.equals(xca) && xca.length == length;
 	}
-	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xClassNonNull)) return false;
-	    if (v.equals(this)) return false;
-	    return true;
+	public LatticeVal merge(LatticeVal v) {
+	    if (this._equals(v)) return new xClassArray(type,length);
+	    return super.merge(v);
 	}
     }
     /** An integer value of the specified bitwidth. */
@@ -1242,7 +1188,8 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    return "xBitWidth: " + type + " " +
 		"-"+minusWidth+"+"+plusWidth+" bits";
 	}
-	public boolean equals(Object o) {
+	public boolean equals(Object o) { return _equals(o); }
+	private boolean _equals(Object o) {
 	    xBitWidth xbw;
 	    try { xbw = (xBitWidth) o; }
 	    catch (ClassCastException e) { return false; }
@@ -1250,10 +1197,15 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		xbw.minusWidth == minusWidth &&
 		xbw.plusWidth  == plusWidth;
 	}
-	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xClassNonNull)) return false;
-	    if (v.equals(this)) return false;
-	    return true;
+	public LatticeVal merge(LatticeVal v) {
+	    if (!(v instanceof xBitWidth)) return super.merge(v);
+	    // bitwidth merge
+	    xBitWidth vv = (xBitWidth) v;
+	    if (!this.type.equals(vv.type)) return super.merge(vv);
+	    return new xBitWidth
+		(this.type, 
+		 Math.max(this.minusWidth, vv.minusWidth),
+		 Math.max(this.plusWidth, vv.plusWidth));
 	}
     }
     /** An integer value which is the result of an INSTANCEOF. */
@@ -1271,15 +1223,15 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public String toString() {
 	    return "xInstanceofResult: " + type + " " +q;
 	}
-	public boolean equals(Object o) {
+	public boolean equals(Object o) { return _equals(o); }
+	private boolean _equals(Object o) {
 	    return (o instanceof xInstanceofResult && super.equals(o) &&
 		    ((xInstanceofResult)o).q == q &&
 		    ((xInstanceofResult)o).tested == tested);
 	}
-	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xBitWidth)) return false;
-	    if (v.equals(this)) return false;
-	    return true;
+	public LatticeVal merge(LatticeVal v) {
+	    if (this._equals(v)) return new xInstanceofResult(q,tested);
+	    return super.merge(v);
 	}
 	// override renaming functions.
 	public LatticeVal rename(PHI q, int j) {
@@ -1310,7 +1262,8 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public String toString() {
 	    return "xOperBooleanResult: " + type + " " +q;
 	}
-	public boolean equals(Object o) {
+	public boolean equals(Object o) { return _equals(o); }
+	private boolean _equals(Object o) {
 	    if (o==this) return true; // common case.
 	    if (!(o instanceof xOperBooleanResult)) return false;
 	    if (!super.equals(o)) return false;
@@ -1321,10 +1274,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		if (oo.operands[i] != operands[i]) return false;
 	    return true;
 	}
-	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xBitWidth)) return false;
-	    if (v.equals(this)) return false;
-	    return true;
+	public LatticeVal merge(LatticeVal v) {
+	    if (this._equals(v)) return new xOperBooleanResult(q,operands);
+	    return super.merge(v);
 	}
 	// override renaming functions.
 	public LatticeVal rename(PHI q, int j) {
@@ -1368,14 +1320,14 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public String toString() {
 	    return "xIntConstant: " + type + " " + value;
 	}
-	public boolean equals(Object o) {
+	public boolean equals(Object o) { return _equals(o); }
+	private boolean _equals(Object o) {
 	    return (o instanceof xIntConstant && super.equals(o) &&
 		    ((xIntConstant)o).value == value);
 	}
-	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xIntConstant)) return false;
-	    if (v.equals(this)) return false;
-	    return true;
+	public LatticeVal merge(LatticeVal v) {
+	    if (this._equals(v)) return new xIntConstant(type,value);
+	    return super.merge(v);
 	}
     }
     static class xNullConstant extends xClass implements xConstant {
@@ -1386,13 +1338,13 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public String toString() {
 	    return "xNullConstant: null";
 	}
-	public boolean equals(Object o) {
+	public boolean equals(Object o) { return _equals(o); }
+	private boolean _equals(Object o) {
 	    return (o instanceof xNullConstant);
 	}
-	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xClass) ) return false;
-	    if (v.equals(this) ) return false;
-	    return true;
+	public LatticeVal merge(LatticeVal v) {
+	    if (this._equals(v)) return new xNullConstant();
+	    return super.merge(v);
 	}
     }
     static class xFloatConstant extends xClassExact
@@ -1405,14 +1357,14 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public String toString() {
 	    return "xFloatConstant: " + type + " " + value.toString();
 	}
-	public boolean equals(Object o) {
+	public boolean equals(Object o) { return _equals(o); }
+	private boolean _equals(Object o) {
 	    return (o instanceof xFloatConstant && super.equals(o) &&
 		    ((xFloatConstant)o).value.equals(value));
 	}
-	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xClassNonNull)) return false;
-	    if (v.equals(this)) return false;
-	    return true;
+	public LatticeVal merge(LatticeVal v) {
+	    if (this._equals(v)) return new xFloatConstant(type, value);
+	    return super.merge(v);
 	}
     }
     static class xStringConstant extends xClassExact
@@ -1430,14 +1382,14 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    return "xStringConstant: " + 
 		"\"" + Util.escape(value.toString()) + "\"";
 	}
-	public boolean equals(Object o) {
+	public boolean equals(Object o) { return _equals(o); }
+	private boolean _equals(Object o) {
 	    return (o instanceof xStringConstant && super.equals(o) &&
 		    ((xStringConstant)o).value.equals(value));
 	}
-	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xClassNonNull)) return false;
-	    if (v.equals(this)) return false;
-	    return true;
+	public LatticeVal merge(LatticeVal v) {
+	    if (this._equals(v)) return new xStringConstant(type, value);
+	    return super.merge(v);
 	}
     }
     static interface xConstant {
