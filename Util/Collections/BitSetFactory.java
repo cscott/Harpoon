@@ -31,7 +31,7 @@ import java.util.HashMap;
     cause <code>IllegalArgumentException</code> to be thrown.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.18 2000-11-14 22:01:31 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.19 2001-11-08 02:48:34 cananian Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -206,6 +206,8 @@ public class BitSetFactory extends SetFactory {
 	}
 
 	public boolean equals(Object o) {
+	    if (o==null) return false;
+	    if (o==this) return true;
 	    try {
 		BitStringSet bss = (BitStringSet) o;
 		return this.bs.equals(bss.bs);
