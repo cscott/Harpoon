@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
+import harpoon.Analysis.AbstractClassFixupRelinker;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -92,7 +93,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.11 2002-06-27 20:30:16 wbeebee Exp $
+ * @version $Id: SAMain.java,v 1.12 2002-07-09 00:20:55 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -1001,7 +1002,7 @@ public class SAMain extends harpoon.IR.Registration {
 		recycle=true;
 		break;
 	    case 'T': // Transactions support (CSA)
-		linker = new Relinker(Loader.systemLinker);
+		linker = new AbstractClassFixupRelinker(Loader.systemLinker);
 		DO_TRANSACTIONS = true;
 		break;
 	    case 'd': // Dynamic write barriers (KKZ)
@@ -1063,7 +1064,7 @@ public class SAMain extends harpoon.IR.Registration {
 		}
 		break;
 	    case 't': // Realtime Java extensions (WSB)
-		linker = new Relinker(Loader.systemLinker);
+		linker = new AbstractClassFixupRelinker(Loader.systemLinker);
 		Realtime.configure(g.getOptarg());
 		break;
 	    case 's':
@@ -1198,7 +1199,7 @@ public class SAMain extends harpoon.IR.Registration {
 	if (linker==null) {
 	    linker = Loader.systemLinker;
 	    if (!USE_OLD_CLINIT_STRATEGY)
-		linker = new Relinker(linker);
+		linker = new AbstractClassFixupRelinker(linker);
 	}
     }
 
