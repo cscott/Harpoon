@@ -20,7 +20,7 @@ import java.util.Map;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.12 1999-09-21 01:55:21 cananian Exp $
+ * @version $Id: Peephole.java,v 1.1.2.13 1999-11-11 21:20:44 bdemsky Exp $
  */
 
 final class Peephole  {
@@ -153,7 +153,7 @@ final class Peephole  {
 		}
 		Temp[] uses=old.use();
 		for (int i=0;i<uses.length;i++) {
-		    if (tm.tempMap(uses[i])==uses[i])
+		    if (tm==null)
 			typemap.put(new Tuple(new Object[]{newq, uses[i]}),
 				    typemap.get(new Tuple(new Object[]{old, uses[i]})));
 		    else
@@ -266,6 +266,8 @@ final class Peephole  {
 			Edge[] el = Qs.nextEdge();
 			for (int i=0; i<el.length; i++) {
 			    MOVE Qm = (i==0) ? q : (MOVE)q.clone();
+			    if (i!=0)
+				fixmap(q, Qm, null);
 			    Quad.addEdge((Quad)el[i].from(),el[i].which_succ(),
 					 Qm, 0);
 			    Quad.addEdge(Qm, 0,
