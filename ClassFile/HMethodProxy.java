@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodProxy.java,v 1.1.2.5 2000-01-12 23:50:56 bdemsky Exp $
+ * @version $Id: HMethodProxy.java,v 1.1.2.6 2000-01-13 00:20:42 cananian Exp $
  * @see HMethod
  */
 class HMethodProxy implements HMethod, HMethodMutator {
@@ -99,8 +99,13 @@ class HMethodProxy implements HMethod, HMethodMutator {
     void updateMemberMap() { relinker.memberMap.put(proxy, this); }
 
     // wrap/unwrap
-    private HClass wrap(HClass hc) { return sameLinker?hc:relinker.wrap(hc); }
-    private HClass unwrap(HClass hc){return sameLinker?hc:relinker.unwrap(hc);}
+    private HClass wrap(HClass hc) {
+	if (sameLinker && hc != proxy.getDeclaringClass()) return hc;
+	return relinker.wrap(hc);
+    }
+    private HClass unwrap(HClass hc){
+	if (sameLinker && hc != getDeclaringClass()) return hc;
+    }
 
     // array wrap/unwrap.
     private HClass[] wrap(HClass[] hc) {
