@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.5 2003-05-09 00:23:01 cananian Exp $
+ * @version $Id: Edge.java,v 1.6 2003-05-09 16:35:32 cananian Exp $
  */
 
 public class Edge extends CFGEdge<Quad,Edge> implements java.io.Serializable {
@@ -37,9 +37,9 @@ public class Edge extends CFGEdge<Quad,Edge> implements java.io.Serializable {
     }
 
     /** Returns the source vertex of this Edge. */
-    public Quad fromCFG() { return from; }
+    public Quad from() { return from; }
     /** Returns the destination vertex of this Edge. */
-    public Quad toCFG() { return to; }
+    public Quad to() { return to; }
     /** Returns the predecessor index of this Edge in <code>to</code>.
      *  <code>this.to().prevEdge(this.which_pred()) == this</code>. */
     public int which_pred() { return to_index; }

@@ -10,7 +10,7 @@ import harpoon.ClassFile.HCodeElement;
  * in a graph structure.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: CFGEdge.java,v 1.4 2003-05-09 00:22:48 cananian Exp $
+ * @version $Id: CFGEdge.java,v 1.5 2003-05-09 16:35:30 cananian Exp $
  * @see CFGraphable
  */
 public abstract class CFGEdge<CFG extends CFGraphable<CFG,E>,
@@ -19,14 +19,10 @@ public abstract class CFGEdge<CFG extends CFGraphable<CFG,E>,
     /** Returns the source of this <code>CFGEdge</code>. 
      *  The return value is guaranteed to implement to 
      *  <code>CFGraphable</code> interface. */
-    public final CFG from() { return this.fromCFG(); }
-    /** Returns the source of this <code>CFGEdge</code>. */
-    public abstract CFG fromCFG(); 
+    public abstract CFG from();
 
     /** Returns the destination of this <code>HCodeEdge</code>.
      *  The return value is guaranteed to implement to  
      *  <code>CFGraphable</code> interface. */ 
-    public final CFG to() { return this.toCFG(); } 
-    /** Returns the destination of this <code>HCodeEdge</code>. */
-    public abstract CFG toCFG(); 
+    public abstract CFG to();
 }

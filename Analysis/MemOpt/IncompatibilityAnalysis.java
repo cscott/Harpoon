@@ -668,7 +668,7 @@ public class IncompatibilityAnalysis {
 
         for (Iterator it = interestingEdges.iterator(); it.hasNext(); ) {
             Edge edge = (Edge) it.next();
-            Quad q = (Quad) edge.toCFG();
+            Quad q = edge.to();
 
             if (reachNormal.contains(q)) md.reachNormal.add(q);
             if (reachEx.contains(q)) md.reachEx.add(q);
@@ -732,7 +732,7 @@ public class IncompatibilityAnalysis {
             Quad q = (Quad) workset.removeFirst();
 
             for (int i = 0; i<q.prevLength(); i++) {
-                Quad prev = (Quad)  q.prevEdge(i).fromCFG();
+                Quad prev = q.prevEdge(i).from();
 
                 if (canreach.add(prev)) {
                     workset.add(prev);

@@ -43,7 +43,7 @@ public class SSILiveness {
     }
     
     private Set liveOn_helper(Edge edge) {
-        Quad to = (Quad) edge.toCFG();
+        Quad to = edge.to();
         int branch = edge.which_pred();
 
         Collection lvOut_to = liveOut.getValues(to);

@@ -76,7 +76,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.12 2003-05-06 15:35:22 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.13 2003-05-09 16:35:24 cananian Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -1581,7 +1581,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	// the edge pointing to the first instruction of the method body
 	Edge edge = qm.nextEdge(0);
-	Quad.addEdge(previous, 0, (Quad) edge.toCFG(), edge.which_pred());
+	Quad.addEdge(previous, 0, edge.to(), edge.which_pred());
     }
 
     
@@ -1677,7 +1677,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	Edge[] edges = oldq.prevEdge();
 	for(int i = 0; i < edges.length; i++) {
 	    Edge e = edges[i];
-	    Quad.addEdge((Quad) e.fromCFG(), e.which_succ(),
+	    Quad.addEdge(e.from(), e.which_succ(),
 			 newq, e.which_pred());
 	}
     }

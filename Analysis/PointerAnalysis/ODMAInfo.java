@@ -70,7 +70,7 @@ import harpoon.Util.DataStructs.LightMap;
  * <code>ODMAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODMAInfo.java,v 1.6 2003-05-06 15:34:58 salcianu Exp $
+ * @version $Id: ODMAInfo.java,v 1.7 2003-05-09 16:35:24 cananian Exp $
  */
 public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -1759,7 +1759,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
 	// the edge pointing to the first instruction of the method body
 	Edge edge = qm.nextEdge(0);
-	Quad.addEdge(previous, 0, (Quad) edge.toCFG(), edge.which_pred());
+	Quad.addEdge(previous, 0, edge.to(), edge.which_pred());
     }
 
     
@@ -1856,7 +1856,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	Edge[] edges = oldq.prevEdge();
 	for(int i = 0; i < edges.length; i++) {
 	    Edge e = edges[i];
-	    Quad.addEdge((Quad) e.fromCFG(), e.which_succ(),
+	    Quad.addEdge(e.from(), e.which_succ(),
 			 newq, e.which_pred());
 	}
     }
