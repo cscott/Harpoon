@@ -27,7 +27,7 @@ void setline(int fd, int flags, int speed)
   tcsetattr(fd, TCSANOW, &t);
 }
 
-JNIEXPORT void JNICALL Java_IPaqServoController_setup(JNIEnv *env, jclass claz) {
+JNIEXPORT void JNICALL Java_ipaq_IPaqServoController_setup(JNIEnv *env, jclass claz) {
   if ((fd = open("/dev/ttySA0", O_RDWR | O_NOCTTY )) < 0) {
     perror("unable to open serial device");
     return;
@@ -35,11 +35,11 @@ JNIEXPORT void JNICALL Java_IPaqServoController_setup(JNIEnv *env, jclass claz) 
   setline(fd, CS8, B19200);
 }
 
-JNIEXPORT void JNICALL Java_IPaqServoController_sendSerial(JNIEnv *env, jclass claz, jbyte byte) {
+JNIEXPORT void JNICALL Java_ipaq_IPaqServoController_sendSerial(JNIEnv *env, jclass claz, jbyte byte) {
   write(fd,&byte,1);
 }
 
-JNIEXPORT jbyte JNICALL Java_IPaqServoController_readSerial(JNIEnv *env, jclass claz) {
+JNIEXPORT jbyte JNICALL Java_ipaq_IPaqServoController_readSerial(JNIEnv *env, jclass claz) {
   jbyte byte = 0;
   while (read(fd,&byte,1)==0) {}
   return byte;

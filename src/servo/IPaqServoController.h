@@ -7,16 +7,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#undef IPaqServoController_SERVER_PORT
-#define IPaqServoController_SERVER_PORT 17010L
-#undef IPaqServoController_MAX_CLIENTS
-#define IPaqServoController_MAX_CLIENTS 50L
+#undef ipaq_IPaqServoController_SERVER_PORT
+#define ipaq_IPaqServoController_SERVER_PORT 17010L
+#undef ipaq_IPaqServoController_MAX_CLIENTS
+#define ipaq_IPaqServoController_MAX_CLIENTS 50L
 /*
  * Class:     IPaqServoController
  * Method:    setup
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_IPaqServoController_setup
+JNIEXPORT void JNICALL Java_ipaq_IPaqServoController_setup
   (JNIEnv *, jclass);
 
 /*
@@ -24,7 +24,7 @@ JNIEXPORT void JNICALL Java_IPaqServoController_setup
  * Method:    sendSerial
  * Signature: (B)V
  */
-JNIEXPORT void JNICALL Java_IPaqServoController_sendSerial
+JNIEXPORT void JNICALL Java_ipaq_IPaqServoController_sendSerial
   (JNIEnv *, jclass, jbyte);
 
 /*
@@ -32,7 +32,7 @@ JNIEXPORT void JNICALL Java_IPaqServoController_sendSerial
  * Method:    readSerial
  * Signature: ()B
  */
-JNIEXPORT jbyte JNICALL Java_IPaqServoController_readSerial
+JNIEXPORT jbyte JNICALL Java_ipaq_IPaqServoController_readSerial
   (JNIEnv *, jclass);
 
 #ifdef __cplusplus

@@ -12,7 +12,7 @@ extern "C" {
  * Method:    setup
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_IPaqVideo_setup
+JNIEXPORT void JNICALL Java_ipaq_IPaqVideo_setup
   (JNIEnv *, jobject);
 
 /*
@@ -20,7 +20,7 @@ JNIEXPORT void JNICALL Java_IPaqVideo_setup
  * Method:    capture
  * Signature: ([B[B[B)V
  */
-JNIEXPORT void JNICALL Java_IPaqVideo_capture___3B_3B_3B
+JNIEXPORT void JNICALL Java_ipaq_IPaqVideo_capture___3B_3B_3B
   (JNIEnv *, jobject, jbyteArray, jbyteArray, jbyteArray);
 
 /*
@@ -28,7 +28,7 @@ JNIEXPORT void JNICALL Java_IPaqVideo_capture___3B_3B_3B
  * Method:    capture
  * Signature: ([B)V
  */
-JNIEXPORT void JNICALL Java_IPaqVideo_capture___3B
+JNIEXPORT void JNICALL Java_ipaq_IPaqVideo_capture___3B
   (JNIEnv *, jobject, jbyteArray);
 
 /*
@@ -36,7 +36,7 @@ JNIEXPORT void JNICALL Java_IPaqVideo_capture___3B
  * Method:    unsafeSetProperties
  * Signature: (BBBBZZII)V
  */
-JNIEXPORT void JNICALL Java_IPaqVideo_unsafeSetProperties
+JNIEXPORT void JNICALL Java_ipaq_IPaqVideo_unsafeSetProperties
   (JNIEnv *, jobject, jbyte, jbyte, jbyte, jbyte, jboolean, jboolean, jint, jint);
 
 #ifdef __cplusplus

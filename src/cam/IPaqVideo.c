@@ -230,7 +230,7 @@ int shutdown() {
  * Method:    setup
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_IPaqVideo_setup
+JNIEXPORT void JNICALL Java_ipaq_IPaqVideo_setup
 (JNIEnv *env, jobject ipaq) {
     setup();
 }
@@ -240,7 +240,7 @@ JNIEXPORT void JNICALL Java_IPaqVideo_setup
  * Method:    capture
  * Signature: ([B[B[B)V
  */
-JNIEXPORT void JNICALL Java_IPaqVideo_capture___3B_3B_3B
+JNIEXPORT void JNICALL Java_ipaq_IPaqVideo_capture___3B_3B_3B
 (JNIEnv *env, jobject ipaq, 
  jbyteArray rvals, jbyteArray gvals, jbyteArray bvals) {
     int i, j;
@@ -276,7 +276,7 @@ JNIEXPORT void JNICALL Java_IPaqVideo_capture___3B_3B_3B
  * Method:    capture
  * Signature: ([B)V
  */
-JNIEXPORT void JNICALL Java_IPaqVideo_capture___3B
+JNIEXPORT void JNICALL Java_ipaq_IPaqVideo_capture___3B
 (JNIEnv *env, jobject ipaq, jbyteArray vals) {
     jbyte *vbuf = (*env)->GetByteArrayElements(env, vals, NULL);
     jsize bf_length = (*env)->GetArrayLength(env, vals);
@@ -300,7 +300,7 @@ JNIEXPORT void JNICALL Java_IPaqVideo_capture___3B
  * Method:    unsafeSetProperties
  * Signature: (BBBBZZII)V
  */
-JNIEXPORT void JNICALL Java_IPaqVideo_unsafeSetProperties
+JNIEXPORT void JNICALL Java_ipaq_IPaqVideo_unsafeSetProperties
 (JNIEnv *env, jobject ipaq, jbyte brightness, jbyte contrast, jbyte fps, jbyte gain, 
  jboolean poll, jboolean flip, jint width, jint height) {
     camera_properties((int)brightness, (int)contrast, (int)fps, (int)gain,
