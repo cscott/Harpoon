@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.30 1999-11-13 05:21:05 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.30.2.1 2000-01-11 17:01:30 cananian Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -63,7 +63,7 @@ public class Jasmin {
 	for (int i=0;i<hfields.length;i++) {
 	    String value="";
 	    if (hfields[i].isConstant())
-		if (hfields[i].getType()==HClass.forName("java.lang.String"))
+		if (hfields[i].getType().getName().equals("java.lang.String"))
 		    value=" = "+'"'+Util.jasminEscape(hfields[i].getConstant().toString())+'"';
 		else if (hfields[i].getType()==HClass.Float)
 		    value=" = "+escapeFloat((Float)hfields[i].getConstant());
@@ -540,7 +540,7 @@ public class Jasmin {
 	    out.println(iflabel(q));
 	    if (q.value()!=null) {
 		HClass hclass=q.type();
-		if (hclass==HClass.forName("java.lang.String"))
+		if (hclass.getName().equals("java.lang.String"))
 		    out.println("    ldc "+'"'+Util.jasminEscape(q.value().toString())+'"');
 		else
 		    if (hclass==HClass.Double)
