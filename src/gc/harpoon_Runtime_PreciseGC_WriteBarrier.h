@@ -25,10 +25,26 @@ JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_fsc
 
 /*
  * Class:     harpoon_Runtime_PreciseGC_WriteBarrier
+ * Method:    rfsc
+ * Signature: (Ljava/lang/Object;Ljava/lang/reflect/Field;Ljava/lang/Object;I)V
+ */
+JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_rfsc
+  (JNIEnv *, jclass, jobject, jobject, jobject, jint);
+
+/*
+ * Class:     harpoon_Runtime_PreciseGC_WriteBarrier
  * Method:    asc
  * Signature: (Ljava/lang/Object;ILjava/lang/Object;I)V
  */
 JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_asc
+  (JNIEnv *, jclass, jobject, jint, jobject, jint);
+
+/*
+ * Class:     harpoon_Runtime_PreciseGC_WriteBarrier
+ * Method:    rasc
+ * Signature: (Ljava/lang/Object;ILjava/lang/Object;I)V
+ */
+JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_rasc
   (JNIEnv *, jclass, jobject, jint, jobject, jint);
 
 /*

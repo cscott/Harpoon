@@ -97,7 +97,8 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 #ifndef WITH_DYNAMIC_WB
     obj->hashunion.inflated = infl;
 #else /* WITH_DYNAMIC_WB */
-    obj->hashunion.inflated = (ptroff_t) infl | (obj->hashunion.hashcode & 2);
+    obj->hashunion.inflated = (struct inflated_oobj *) 
+	((ptroff_t) infl | (obj->hashunion.hashcode & 2));
 #endif /* WITH_DYNAMIC_WB */
 #else /* WITH_HASHLOCK_SHRINK */
     infl_table_set(INFL_LOCK, obj, infl, NULL);

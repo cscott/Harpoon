@@ -1,6 +1,7 @@
 /* Array-related JNI functions. [CSA] */
 #include <jni.h>
 #include "jni-private.h"
+#include "write_barrier.h"
 
 #include <assert.h>
 #include <stdlib.h>

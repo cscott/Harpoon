@@ -45,9 +45,7 @@ void precise_register_inflated_obj(jobject_unwrapped obj,
 void handle_local_refs_for_thread(struct FNI_Thread_State *thread_state_ptr);
 
 /* --------- new garbage collection stuff ---------- */
-#ifdef WITH_PRECISE_C_BACKEND
-inline void *precise_malloc (size_t size_in_bytes);
-#else /* !WITH_PRECISE_C_BACKEND */
+#ifndef WITH_PRECISE_C_BACKEND
 void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[]);
 #endif /* !WITH_PRECISE_C_BACKEND */
 

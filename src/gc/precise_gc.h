@@ -1,6 +1,8 @@
 #ifndef INCLUDED_PRECISE_GC_H
 #define INCLUDED_PRECISE_GC_H
 
+#include "config.h"
+
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
 # define WITH_THREADED_GC
 #endif
@@ -59,11 +61,7 @@ void print_write_barrier_stats(); // harpoon_Runtime_PreciseGC_WriteBarrier.c
 /* the number of bits in the in-line gc bitmap is platform-dependent */
 #define BITS_IN_GC_BITMAP (SIZEOF_VOID_P*8)
 
-#ifdef WITH_SINGLE_WORD_ALIGN
-# define ALIGN_TO  4 /* bytes */
-#else
-# define ALIGN_TO  8 /* bytes */
-#endif
+#include "precise_gc_consts.h"
 
 #define ALIGNMENT               (ALIGN_TO - 1)
 #define SIZE_MASK               (~ALIGNMENT)

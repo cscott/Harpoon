@@ -9,9 +9,10 @@ static double total_time = 0;
 double current_seconds()
 {
   struct timeval tv;
-  struct timezone tz;
+  //struct timezone tz;
   
-  gettimeofday(&tv,&tz);
+  gettimeofday(&tv,0);
+  //gettimeofday(&tv,&tz);
   // gets time
   return ((double) tv.tv_sec + ((double) tv.tv_usec)/1000000.);
 }

@@ -13,8 +13,9 @@
 #include "system_page_size.h"
 #include "write_barrier.h"
 
-#define ARRAY_WB
-//#define PTR_WB
+#ifdef WITH_STATS_GC
+extern int num_promoted;
+#endif
 
 //#define GC_EVERY_TIME
 #define WITH_WRITE_BARRIER_REMOVAL
@@ -26,8 +27,8 @@
 
 #ifndef JOLDEN_WRITE_BARRIER
 FLEX_MUTEX_DECLARE_STATIC(intergenerational_roots_mutex);
-FLEX_MUTEX_DECLARE_STATIC(generational_gc_mutex);
 #endif
+FLEX_MUTEX_DECLARE_STATIC(generational_gc_mutex);
 
 #ifndef WITH_THREADED_GC
 # define ENTER_GENERATIONAL_GC()
@@ -43,21 +44,22 @@ if (halt_for_GC_flag) halt_for_GC(); })
 
 #ifdef JOLDEN_WRITE_BARRIER
 // array of intergenerational references
-#define INTERGEN_LENGTH 3700000
-static jobject_unwrapped **intergen;
+//#define INTERGEN_LENGTH 3700000
+#define INTERGEN_LENGTH 20000000
+jobject_unwrapped **intergen;
 #ifdef ARRAY_WB 
-static int intergen_next = 0;
-#else // ARRAY_WB
-static jobject_unwrapped **intergen_next;
-#endif // ARRAY_WB
-#else // JOLDEN_WRITE_BARRIER
+int intergen_next = 0;
+#else // !ARRAY_WB
+jobject_unwrapped **intergen_next;
+#endif // !ARRAY_WB
+#else // !JOLDEN_WRITE_BARRIER
 // linked list of intergenerational references
 struct ref_list {
   jobject_unwrapped *ref;
   struct ref_list *next;
 };
 static struct ref_list *roots = NULL;
-#endif // JOLDEN_WRITE_BARRIER
+#endif // !JOLDEN_WRITE_BARRIER
 
 // intergenerational pointers by promotion
 static struct obj_list *objs_curr = NULL;
@@ -88,8 +90,6 @@ int major_collection_makes_sense(size_t bytes_since_last_GC);
 int minor_collection_makes_sense(size_t bytes_since_last_GC);
 
 void generational_print_heap();
-
-inline void generational_write_barrier(jobject_unwrapped *ref);
 
 void remove_from_list(struct obj_list *to_free);
 
@@ -135,8 +135,14 @@ void find_generational_refs()
 	for(intergen_curr = 0; intergen_curr < intergen_end; intergen_curr++) {
 	  jobject_unwrapped *ref = intergen[intergen_curr];
 
-	  if (IN_MARKSWEEP_HEAP(ref, old_gen) &&
-	      (IN_FROM_SPACE(*ref, young_gen) || IN_TO_SPACE(*ref, young_gen)))
+#ifndef WITH_GENERATION_CHECK
+	  if ((IN_MARKSWEEP_HEAP(ref, old_gen)) &&
+	      (IN_FROM_SPACE(*ref, young_gen) || 
+	       IN_TO_SPACE(*ref, young_gen)))
+#else
+	  if (IN_FROM_SPACE(*ref, young_gen) || 
+	      IN_TO_SPACE(*ref, young_gen))
+#endif
 	    {
 	      add_to_root_set(ref, 0);
 	      intergen[intergen_saved++] = ref;
@@ -164,9 +170,12 @@ void find_generational_refs()
 	    //jobject_unwrapped *ref = intergen_curr;
 	    jobject_unwrapped *ref = *intergen_curr;
 
-	    //if (IN_FROM_SPACE(*ref, young_gen)||IN_TO_SPACE(*ref, young_gen))
+#ifndef WITH_GENERATION_CHECK
 	    if (IN_MARKSWEEP_HEAP(ref, old_gen) &&
 		(IN_FROM_SPACE(*ref, young_gen)||IN_TO_SPACE(*ref, young_gen)))
+#else
+	    if (IN_FROM_SPACE(*ref, young_gen)||IN_TO_SPACE(*ref, young_gen))
+#endif
 	      {
 		add_to_root_set(ref, 0);
 
@@ -212,15 +221,26 @@ void find_generational_refs()
 {
   if (collection_type == MINOR)
     {
-      struct ref_list *ref = roots, *prev = NULL;
+      //struct ref_list *ref = roots, *prev = NULL;
+      struct ref_list *old_roots, *ref, *prev = NULL;
 
       FLEX_MUTEX_LOCK(&intergenerational_roots_mutex);
+      old_roots = roots;
+      roots = NULL;
+      FLEX_MUTEX_UNLOCK(&intergenerational_roots_mutex);
 
+      ref = old_roots;
+      
       while (ref != NULL)
 	{
+#ifndef WITH_GENERATION_CHECK
 	  if (IN_MARKSWEEP_HEAP(ref->ref, old_gen) &&
 	      (IN_FROM_SPACE(*(ref->ref), young_gen) ||
 	       IN_TO_SPACE(*(ref->ref), young_gen)))
+#else
+	  if (IN_FROM_SPACE(*(ref->ref), young_gen) ||
+	       IN_TO_SPACE(*(ref->ref), young_gen))
+#endif
 	    {
 	      add_to_root_set(ref->ref, 0);
 	      prev = ref;
@@ -237,14 +257,19 @@ void find_generational_refs()
 		}
 	      else
 		{
-		  roots = ref->next;
+		  old_roots = ref->next;
 		  free(ref);
-		  ref = roots;
+		  ref = old_roots;
 		}
 	    }
 	}
 
-      FLEX_MUTEX_UNLOCK(&intergenerational_roots_mutex);
+      if (prev != NULL) {
+	FLEX_MUTEX_LOCK(&intergenerational_roots_mutex);
+	prev->next = roots;
+	roots = old_roots;
+	FLEX_MUTEX_UNLOCK(&intergenerational_roots_mutex);
+      }
 
       find_roots_in_obj_list();
     }
@@ -464,6 +489,39 @@ void generational_gc_init()
 #endif // JOLDEN_WRITE_BARRIER
 }
 
+#ifndef JOLDEN_WRITE_BARRIER
+void generational_write_barrier(jobject_unwrapped *ref)
+{
+  struct ref_list *root;
+
+  root = (struct ref_list *)malloc(sizeof(struct ref_list));
+  root->ref = ref;
+  
+  FLEX_MUTEX_LOCK(&intergenerational_roots_mutex);
+  root->next = roots;
+  roots = root;
+  FLEX_MUTEX_UNLOCK(&intergenerational_roots_mutex);
+}
+#else
+static inline void no_lock_generational_write_barrier(jobject_unwrapped *ref)
+#ifdef ARRAY_WB
+{
+  intergen[intergen_next++] = ref;
+}
+#elif defined(PTR_WB)
+{
+  *intergen_next++ = ref;
+}
+#else
+{
+  jobject_unwrapped **t;
+  t = intergen_next;
+  *t = ref;
+  t++;
+  intergen_next = t;
+}
+#endif
+#endif
 
 /* requires: that wbtype be one of 0 (do not add this location to the
    remembered set), or 1 (add this location to the remembered set if it 
@@ -504,10 +562,12 @@ void generational_handle_reference(jobject_unwrapped *ref, int wbtype)
 		{
 		  jobject_unwrapped aligned = PTRMASK(*ref);
 
-		  //#if defined(WITH_DYNAMIC_WB) && !defined(WITH_STATS_GC)
 #ifdef WITH_DYNAMIC_WB
 		  if (DYNAMIC_WB_ON(aligned))
 		    {
+#ifdef WITH_STATS_GC
+		      num_promoted++;
+#endif
 		      add_to_next_obj_list(aligned);
 		      trace(aligned, 0);
 		    } 
@@ -792,42 +852,6 @@ void generational_register_inflated_obj(jobject_unwrapped obj)
 {
   register_inflated_obj(obj, &young_gen);
 }
-
-inline void generational_write_barrier(jobject_unwrapped *ref)
-#ifdef JOLDEN_WRITE_BARRIER
-#ifdef ARRAY_WB
-{
-  // if (IN_MARKSWEEP_HEAP(ref, old_gen))
-  intergen[intergen_next++] = ref;
-  //assert(intergen_next < INTERGEN_LENGTH);
-}
-#elif defined(PTR_WB)
-{
-  *intergen_next++ = ref;
-}
-#else
-{
-  jobject_unwrapped **t = intergen_next;
-  *t = ref;
-  t++;
-  intergen_next = t;
-}
-#endif
-#else // JOLDEN_WRITE_BARRIER
-{
-  struct ref_list *root;
-
-  //fprintf(stderr, "WRITE BARRIER %p\n", ref);
-
-  root = (struct ref_list *)malloc(sizeof(struct ref_list));
-  root->ref = ref;
-  
-  FLEX_MUTEX_LOCK(&intergenerational_roots_mutex);
-  root->next = roots;
-  roots = root;
-  FLEX_MUTEX_UNLOCK(&intergenerational_roots_mutex);
-}
-#endif
 
 int in_young_gen(jobject_unwrapped obj)
 {

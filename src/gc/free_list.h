@@ -9,18 +9,14 @@
 struct block
 {
 #ifdef WITH_STATS_GC
-  jint time;
+  jint time
 #endif
   size_t size;
   union { ptroff_t mark; struct block *next; } markunion;
   struct oobj object[0];
 };
 
-#define BLOCK_HEADER_SIZE     (sizeof(struct block))
-#define SMALL_BLOCK_SIZE      256
-#define SMALL_OBJ_SIZE        (SMALL_BLOCK_SIZE - BLOCK_HEADER_SIZE)
-#define MIN_BLOCK_SIZE        (BLOCK_HEADER_SIZE + sizeof(struct oobj))
-#define NUM_SMALL_BLOCK_SIZES (SMALL_BLOCK_SIZE/ALIGN_TO + 1)
+#include "free_list_consts.h"
 
 #define UNREACHABLE 1
 #define REACHABLE   2
