@@ -59,7 +59,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.27 2000-06-30 01:32:09 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.28 2000-07-14 17:23:50 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -562,7 +562,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	     (tf, source, null/*void retval*/,
 	      DECLARE(dg, HClass.Void/* c function ptr */,
 	      new NAME(tf, source, new Label(runtime.nameMap.c_function_name
-					     ("FNI_DeleteLocalRef")))),
+					     ("FNI_DeleteLocalRefsUpTo")))),
 	      new ExpList
 	      (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
 	       new TEMP(tf, source, Type.POINTER, envT)),
