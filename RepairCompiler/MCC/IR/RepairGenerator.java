@@ -796,6 +796,7 @@ public class RepairGenerator {
 		    if (removed.contains(gn))
 			continue;
 		    cr.outputline("case "+j+":");
+		    cr.startblock();
 		    for(int k=0;k<conj.size();k++) {
 			DNFPredicate dpred=conj.get(k);
 			Predicate p=dpred.getPredicate();
@@ -819,6 +820,7 @@ public class RepairGenerator {
 			cr.endblock();
 		    }
 		    /* Update model */
+		    cr.endblock();
 		    cr.outputline("break;");
 		}
 		cr.outputline("}");
