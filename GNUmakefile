@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.57 1999-08-04 19:58:58 pnkfelix Exp $
+# $Id: GNUmakefile,v 1.61.2.58 1999-08-05 15:56:48 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -151,7 +151,7 @@ first:
 	mkdir harpoon silicon gnu
 	for pkg in $(sort \
 	  $(filter-out Contrib%,$(filter-out JavaChip%,$(ALLPKGS)))); do \
-		mkdir harpoon/$$pkg; \
+		mkdir -p harpoon/$$pkg; \
 	done
 oldfirst:
 	@echo Please wait...
@@ -279,7 +279,6 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	cd doc; if [ -e $(JDOCIMAGES) ]; then ln -s $(JDOCIMAGES) images; fi
 	cd doc; if [ ! -f index.html ]; then ln -s packages.html index.html; fi
 	cd doc; if [ ! -f API_users_guide.html ]; then ln -s index.html API_users_guide.html; fi
-	#$(MUNGE) doc | bin/annotate.perl -link $(JDKDOCLINK) | $(UNMUNGE)
 	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	chmod -R a+rX doc
 
