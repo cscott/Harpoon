@@ -109,6 +109,14 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   /* put thread in env structure as 'current thread' */
   assert(((struct FNI_Thread_State *)env)->thread == NULL);
   ((struct FNI_Thread_State *)env)->thread = mainThr;
+#ifdef WITH_EVENT_DRIVEN
+  {
+    extern struct oobj *
+      _Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread;
+    _Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread =
+      FNI_UNWRAP(mainThr);
+  }
+#endif
 
   /* okay, now that we've got an object in env, setup this thread properly: */
 
