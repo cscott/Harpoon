@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import harpoon.Util.Collections.MultiMap;
+
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Comparator;
@@ -19,7 +21,7 @@ import java.util.Set;
  * permitted.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinomialMap.java,v 1.1.2.4 1999-09-13 08:35:42 cananian Exp $
+ * @version $Id: BinomialMap.java,v 1.1.2.5 1999-11-08 16:45:06 pnkfelix Exp $
  */
 public class BinomialMap extends AbstractMap implements Cloneable {
     private static final boolean debug=false;
