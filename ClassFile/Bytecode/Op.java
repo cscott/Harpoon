@@ -13,7 +13,7 @@ package harpoon.ClassFile.Bytecode;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Op.java,v 1.6 1998-08-04 01:56:56 cananian Exp $
+ * @version $Id: Op.java,v 1.7 1998-08-04 03:28:02 cananian Exp $
  * @see     harpoon.ClassFile.Raw.Attribute.AttributeCode
  * @see     harpoon.ClassFile.Bytecode.Instr
  * @see     harpoon.ClassFile.Bytecode.Code
@@ -658,6 +658,8 @@ public final class Op {
     case ARETURN:
     case RETURN:
     case ATHROW:
+    case LOOKUPSWITCH:
+    case TABLESWITCH:
       return true;
     default:
       return false;
