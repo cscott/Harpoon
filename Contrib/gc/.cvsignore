@@ -6,9 +6,11 @@ threadlibs
 base_lib
 gctest
 setjmp_test
+.deps
 .libs
 *.lo
 config.log
 config.status
 libgc.la
 libtool
+autom4te.cache
