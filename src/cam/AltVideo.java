@@ -9,7 +9,7 @@ public abstract class AltVideo {
     public static void writeppm(OutputStream out,
 				int width, int height, int[] buffer)
 				throws java.io.IOException {
-	String header="P6 "+width+" "+height+" 255 ";
+	String header="P6 "+width+" "+height+" 255\n";
 	for (int i=0; i<header.length(); i++) {
 	    /* hacked utf-8 encoding! */
 	    out.write(header.charAt(i));
