@@ -13,7 +13,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.4.3 2000-03-30 09:58:27 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.4.4 2000-04-02 02:15:34 cananian Exp $
  */
 public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;
@@ -62,6 +62,7 @@ public class Relinker extends Linker implements java.io.Serializable {
      *  <code>newClass</code> done by this <code>relink()</code>.</p>
      */
     public void relink(HClass oldClass, HClass newClass) {
+	// XXX this can cause some .equals() weirdness!
 	Util.assert(oldClass.getLinker()==this);
 	Util.assert(newClass.getLinker()==this);
 	// we're going to leave the old mapping in, so that classes
@@ -71,6 +72,14 @@ public class Relinker extends Linker implements java.io.Serializable {
 	//descCache.remove(oldClass.getDescriptor());
 	((HClassProxy)oldClass).relink(newClass);
 	descCache.put(oldClass.getDescriptor(), oldClass);
+    }
+    // stub to help in reloading proxies.
+    HClassProxy load(String descriptor, HClass proxy) {
+	if (descCache.containsKey(descriptor))
+	    ((HClassProxy) descCache.get(descriptor)).relink(proxy);
+	else
+	    descCache.put(descriptor, new HClassProxy(this, proxy));
+	return (HClassProxy) descCache.get(descriptor);
     }
 
     // Serializable
@@ -90,7 +99,8 @@ public class Relinker extends Linker implements java.io.Serializable {
     }
     HClass unwrap(HClass hc) {
 	if (hc==null || hc.isPrimitive()) return hc;
-	if (hc.isArray()) return linker.forDescriptor(hc.getDescriptor());
+	if (hc.isArray() || ((HClassProxy)hc).sameLinker)
+	    return linker.forDescriptor(hc.getDescriptor());
 	return ((HClassProxy)hc).proxy;
     }
     HField wrap(HField hf) {
