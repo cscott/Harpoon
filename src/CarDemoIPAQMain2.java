@@ -91,9 +91,9 @@ public class CarDemoIPAQMain2 {
 	Node imageSource;
 	Node atrClient = new Node();
 	//imageSource = new Load(null, "/home/benster/ImageRec/images/uav_ppm_norm/uav_ppm", 100, null);
-	imageSource = new Load("/home/benster/woodgrain.jar", "tank.gz", 533, null);
+	//imageSource = new Load("woodgrain.jar", "tank.gz", 533, null);
 
-	//imageSource = new Camera(null);
+	imageSource = new Camera(null);
 	imageSource.linkL(heartbeat.linkL(atrClient.linkL(atr)));
 
 	atr.link(pause.link(timer1,
