@@ -1,0 +1,24 @@
+# classes dynamically loaded by JacORB
+include Support/locale-root-set
+# (client:)
+org.jacorb.orb.ORBSingleton.<init>()V
+org.jacorb.orb.ORB.<init>()V
+HTTPClient.RetryModule.<init>()V
+HTTPClient.CookieModule.<init>()V
+HTTPClient.RedirectionModule.<init>()V
+HTTPClient.AuthorizationModule.<init>()V
+HTTPClient.DefaultModule.<init>()V
+HTTPClient.TransferEncodingModule.<init>()V
+HTTPClient.ContentMD5Module.<init>()V
+HTTPClient.ContentEncodingModule.<init>()V
+org.jacorb.orb.standardInterceptors.IORInterceptorInitializer.<init>()V
+sun.net.www.protocol.file.Handler.<init>()V
+# org/jacorb/orb/dns/DNSLookupDelegateImpl # requires org.xbill.DNS.*
+# sun/security/provider/Sun
+# com/sun/net/ssl/internal/ssl/Provider
+# com/sun/rsajca/Provider
+# com/sun/crypto/provider/SunJCE
+# sun/security/jgss/SunProvider
+
+# from ns root set:
+org.omg.PortableServer.ServantActivatorOperations
