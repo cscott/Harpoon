@@ -7,23 +7,34 @@
 # define WITH_THREADED_GC
 #endif
 
-#ifdef MARKSWEEP
+#if defined(WITH_MARKSWEEP_GC)
 #include "marksweep.h"
-#define add_to_root_set  pointerreversed_handle_reference
-//#define add_to_root_set  marksweep_handle_reference
-#define internal_gc_init marksweep_gc_init
-#define handle_reference pointerreversed_handle_reference
-//#define handle_reference marksweep_handle_reference
-#define internal_malloc  marksweep_malloc
-#else
+#define add_to_root_set        pointerreversed_handle_reference
+//#define add_to_root_set        marksweep_handle_reference
+#define internal_gc_init       marksweep_gc_init
+#define handle_reference       pointerreversed_handle_reference
+//#define handle_reference       marksweep_handle_reference
+#define internal_collect       marksweep_collect
+#define internal_free_memory   marksweep_free_memory
+#define internal_get_heap_size marksweep_get_heap_size
+#define internal_malloc        marksweep_malloc
+#elif defined(WITH_COPYING_GC)
 #include "copying.h"
-#define add_to_root_set  copying_handle_reference
-#define internal_gc_init copying_gc_init
-#define handle_reference copying_handle_reference
-#define internal_malloc  copying_malloc
+#define add_to_root_set        copying_handle_reference
+#define internal_gc_init       copying_gc_init
+#define handle_reference       copying_handle_reference
+#define internal_collect()     copying_collect((int)0)
+#define internal_free_memory   copying_free_memory
+#define internal_get_heap_size copying_get_heap_size
+#define internal_malloc        copying_malloc
 #endif
 
-#define ALIGN                  7
+#ifndef WITH_SINGLE_WORD_ALIGN
+# define ALIGN                  7
+#else
+# define ALIGN                  3
+#endif
+
 #define BITMASK               (~ALIGN)
 #define HEADERSZ               3 /* size of array header */
 
