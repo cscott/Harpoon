@@ -217,7 +217,8 @@ public class RangeFind extends Node {
 	//System.out.println("maxAngle: "+maxAngle+" ("+maxCount+")");
 
 	// Now, just the center of the image and 0.
-
+	
+	
 	id.c1 = id.x+(id.width/2); 
 	id.c2 = id.y+(id.height/2); 
 	id.c3 = 0;
