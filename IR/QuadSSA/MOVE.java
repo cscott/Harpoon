@@ -9,7 +9,7 @@ import harpoon.Temp.Temp;
  * The source of the assignment must be another temporary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MOVE.java,v 1.1 1998-08-26 22:07:32 cananian Exp $
+ * @version $Id: MOVE.java,v 1.2 1998-09-03 06:14:00 cananian Exp $
  */
 
 public class MOVE extends OPER {
@@ -23,6 +23,6 @@ public class MOVE extends OPER {
     }
     /** Returns a human-readable representation. */
     public String toString() { 
-	return "MOVE " + dst + " <= " + operands[0];
+	return dst.toString() + " = MOVE " + operands[0].toString();
     }
 }

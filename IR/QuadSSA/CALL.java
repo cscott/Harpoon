@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>CALL</code> objects represent method invocations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.9 1998-08-26 22:01:39 cananian Exp $
+ * @version $Id: CALL.java,v 1.10 1998-09-03 06:14:00 cananian Exp $
  */
 
 public class CALL extends Quad {
@@ -74,7 +74,10 @@ public class CALL extends Quad {
     }
     /** Returns human-readable representation. */
     public String toString() {
-	StringBuffer sb = new StringBuffer("CALL ");
+	StringBuffer sb = new StringBuffer();
+	if (retval!=null)
+	    sb.append(retval.toString() + " = ");
+	sb.append("CALL ");
 	sb.append(method.getDeclaringClass().getName());
 	sb.append('.');
 	sb.append(method.getName());
