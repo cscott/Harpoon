@@ -25,7 +25,7 @@ import java.util.Iterator;
  * <code>LiveWebs</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveWebs.java,v 1.1.2.3 1999-11-09 08:15:15 pnkfelix Exp $
+ * @version $Id: LiveWebs.java,v 1.1.2.4 1999-11-09 08:27:21 pnkfelix Exp $
  */
 public class LiveWebs extends LiveVars {
     
@@ -71,8 +71,8 @@ public class LiveWebs extends LiveVars {
 		Web web  = (Web)
 		    tXrefToWeb.get(new TempInstrPair(t, ref));
 
-		if ( !info.def.contains(webs) ) {
-		    info.use.add(webs);
+		if ( !info.def.contains(web) ) {
+		    info.use.add(web);
 		}
 	    }	    
 	    // DEF: set of vars defined in block before being used
@@ -81,8 +81,8 @@ public class LiveWebs extends LiveVars {
 		Web web = (Web)
 		    tXrefToWeb.get(new TempInstrPair(t, ref));
 
-		if ( !info.use.containsAll(webs) ) {
-		    info.def.add(webs);
+		if ( !info.use.contains(web) ) {
+		    info.def.add(web);
 		}
 	    }
 
