@@ -19,9 +19,9 @@ import java.util.Map;
  * to effect the change.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodMutator.java,v 1.1.2.2 2000-10-12 21:36:21 cananian Exp $
+ * @version $Id: MethodMutator.java,v 1.1.2.3 2000-11-08 18:37:19 cananian Exp $
  */
-public abstract class MethodMutator {
+public abstract class MethodMutator implements java.io.Serializable {
     /** This is the code factory which contains the representations of the
      *  original (unsplit) methods. */
     private final HCodeFactory parent;

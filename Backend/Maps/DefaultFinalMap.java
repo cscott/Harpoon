@@ -14,10 +14,10 @@ import java.lang.reflect.Modifier;
  * access modifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultFinalMap.java,v 1.1.2.3 1999-08-04 05:52:27 cananian Exp $
+ * @version $Id: DefaultFinalMap.java,v 1.1.2.4 2000-11-08 18:37:24 cananian Exp $
  */
 
-public class DefaultFinalMap extends FinalMap {
+public class DefaultFinalMap extends FinalMap implements java.io.Serializable {
     /** Creates a <code>DefaultFinalMap</code>. No arguments, because
      *  this implementation is very simple-minded. */
     public DefaultFinalMap() {
