@@ -587,8 +587,8 @@ void doreturnmethodinference(struct heap_state *heap, long long uid, struct hash
 }
 
 void checksafety(struct heap_object *src, struct heap_object *dst) {
-  while(src!=NULL&&((!(src->reachable&FIRSTREF))||
-		    (src->reachable&NOTCONTAINER))) {
+  while(src!=NULL&&(src->reachable&FIRSTREF)&&
+	(!(src->reachable&NOTCONTAINER))) {
     if (src->reversefield!=NULL)
       src=src->reversefield->src;
     else if (src->reversearray!=NULL)
