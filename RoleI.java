@@ -1,4 +1,3 @@
-
 import java.net.*;
 import java.io.*;
 import java.util.*;
@@ -12,6 +11,7 @@ class RoleI {
     boolean containers;
     Set diagram;
     HashMap containedmapping;
+    Fields fields;
 
     static final Integer P_NEVER=new Integer(0);
     static final Integer P_ONCEEVER=new Integer(1);
@@ -37,6 +37,11 @@ class RoleI {
 	readpolicy();
 	rebuildindex();
 	rebuildgraphs(true);
+	gendiagram();
+	genmergeddiagram();
+	fields=new Fields(this);
+	fields.readfieldfile();
+	fields.buildfieldspage();
     }
 
     void rebuildindex() {
@@ -48,7 +53,6 @@ class RoleI {
 	    menuline(ps);
 	    if (containers) {
 		ps.println("Using Containers <a href=\"/rm-O0\">Turn off containers/firstpass</a><p>");
-		
 	    } else {
 		ps.println("Not Using Containers <a href=\"/rm-O1\">Turn on containers</a><p>");
 	    }
@@ -151,6 +155,10 @@ class RoleI {
 	readroles();
 	rebuildgraphs(true);
 	rebuildindex();
+	gendiagram();
+	genmergeddiagram();
+	fields.readfieldfile();
+	fields.buildfieldspage();
     }
     
     synchronized void writeatomic() {
@@ -188,6 +196,7 @@ class RoleI {
 
 
     synchronized String handlepage(String filename, BufferedWriter out, HTTPResponse resp) {
+
 	int firstslash=filename.indexOf('/');
 	int dash=filename.indexOf('-',firstslash+1);
 	String file=filename.substring(dash+2);
@@ -202,6 +211,21 @@ class RoleI {
 		atomic.remove(methodname);
 		return buildmethodpage(file);
 	    }
+	case 'L': {
+	    try {
+		Integer rolenum=Integer.valueOf(file);
+		Role role=(Role)roletable.get(rolenum);
+		FileOutputStream fos=new FileOutputStream("R"+rolenum+".html");
+		PrintStream ps=new PrintStream(fos);
+		menuline(ps);
+		ps.println(role);
+		ps.close();
+		return "/R"+rolenum+".html";
+	    } catch (Exception e) {
+		e.printStackTrace();
+		System.exit(-1);
+	    }
+	}
 	case 'A':
 	    {
 		Integer methodnumber=Integer.valueOf(file);
@@ -217,6 +241,7 @@ class RoleI {
 	    {
 		writeatomic();
 		writepolicy();
+		fields.writefieldfile();
 		rerunanalysis();
 		return "/index.html";
 	    }
@@ -240,6 +265,22 @@ class RoleI {
 	    rebuildindex();
 	    return "/index.html";
 	}
+	case 'F': {
+	    /* Change Field inclusion */
+	    int comma=file.indexOf(',');
+	    Integer fieldnumber=Integer.valueOf(file.substring(0,comma));
+	    FastScan.FieldEntry field=(FastScan.FieldEntry)classinfo.revfields.get(fieldnumber);
+	    String inclusion=file.substring(comma+1);
+	    if (inclusion.equals("1")) {
+		fields.includefields.add(field);
+	    } else {
+		fields.includefields.remove(field);
+	    }
+	    fields.buildfieldspage();
+	    return "/fields.html";
+	    
+	}
+
 	case 'Z': {
 	    /* Change policy */
 	    int comma=file.indexOf(',');
@@ -279,6 +320,9 @@ class RoleI {
 	ps.println("<a href=\"rm-R\">Rerun Analysis</a>");
 	ps.println("<a href=\"rm-P\">Method Page</a>");
 	ps.println("<a href=\"rm-C\">Class Page</a>");
+	ps.println("<a href=\"rolerelation.html\">Role Relation Diagram</a>");
+	ps.println("<a href=\"rolerelationmerged.html\">Merged Role Relation Diagram</a>");
+	ps.println("<a href=\"/fields.html\">Fields Page</a>");
 	ps.println("<a href=\"/index.html\">Main Page</a><p>");
     }
 
@@ -322,7 +366,6 @@ class RoleI {
 		ps.println("NOT ATOMIC<p>");
 		ps.println("<a href=\"rm-A"+file+"\">Make Atomic</a><p>");
 	    }
-
 
 	    if (classinfo.callgraph.containsKey(methodname)) {
 		Iterator callers=((Set)classinfo.callgraph.get(methodname)).iterator();
@@ -462,7 +505,7 @@ class RoleI {
     synchronized void runanalysis() {
 	try {
 	    Runtime runtime=Runtime.getRuntime();
-	    Process p1=containers?runtime.exec("./RoleInference -u -w -n -r -ptemp"):runtime.exec("./RoleInference -cpolicy -w -n -r -ptemp");
+	    Process p1=containers?runtime.exec("./RoleInference -u -f -w -n -r -ptemp"):runtime.exec("./RoleInference -cpolicy -f -w -n -r -ptemp");
 	    p1.waitFor();
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -610,7 +653,7 @@ class RoleI {
 		    break;
 		String fclassname=nexttoken(fr);
 		String duplicates=nexttoken(fr);
-		Reference ref=new Reference(fclassname, ffieldname, Integer.parseInt(duplicates));
+		Reference ref=new Reference(this,fclassname, ffieldname, Integer.parseInt(duplicates));
 		al.add(ref);
 	    }
 	    Reference[] rolefieldlist=(Reference[]) al.toArray(new Reference[al.size()]);
@@ -620,7 +663,7 @@ class RoleI {
 		if (fclassname.equals("~~"))
 		    break;
 		String duplicates=nexttoken(fr);
-		Reference ref=new Reference(fclassname, Integer.parseInt(duplicates));
+		Reference ref=new Reference(this,fclassname, Integer.parseInt(duplicates));
 		al.add(ref);
 	    }
 	    Reference[] rolearraylist=(Reference[]) al.toArray(new Reference[al.size()]);
@@ -641,7 +684,7 @@ class RoleI {
 		if (ffieldname.equals("~~"))
 		    break;
 		String role=nexttoken(fr);
-		Reference ref=new Reference(Integer.parseInt(role),ffieldname);
+		Reference ref=new Reference(this,Integer.parseInt(role),ffieldname);
 		al.add(ref);
 	    }
 	    Reference[] nonnullfields=(Reference[]) al.toArray(new Reference[al.size()]);
@@ -652,7 +695,7 @@ class RoleI {
 		    break;
 		String role=nexttoken(fr);
 		String duplicates=nexttoken(fr);
-		Reference ref=new Reference(fclassname,Integer.parseInt(role), Integer.parseInt(duplicates));
+		Reference ref=new Reference(this,fclassname,Integer.parseInt(role), Integer.parseInt(duplicates));
 		al.add(ref);
 	    }
 	    Reference[] nonnullarrays=(Reference[]) al.toArray(new Reference[al.size()]); 
@@ -665,7 +708,7 @@ class RoleI {
 	    }
 	    String[] invokedmethods=(String[]) al.toArray(new String[al.size()]); 
 	    roletable.put(java.lang.Integer.valueOf(rolenumber),
-			  new Role(Integer.parseInt(rolenumber), classname,contained.equals("1"), dominators,
+			  new Role(this, Integer.parseInt(rolenumber), classname,contained.equals("1"), dominators,
 				   rolefieldlist, rolearraylist, identityrelations, nonnullfields, nonnullarrays, invokedmethods));
 	}
     }
@@ -681,9 +724,184 @@ class RoleI {
 	    this.contained=contained;
 	    this.fieldname=fieldname;
 	}
+	public boolean equals(java.lang.Object o) {
+	    try {
+		Roleedge re2=(Roleedge)o;
+		if ((srcrole==re2.srcrole)&&(dstrole==re2.dstrole)&&
+		    (contained==re2.contained)&&fieldname.equals(re2.fieldname))
+		    return true;
+		else
+		    return false;
+	    } catch (Exception e) {
+		return false;
+	    }
+	}
+	public int hashCode() {
+	    return srcrole^dstrole^fieldname.hashCode();
+	}
     }
 
-    synchronized void readdiagram() {
+    private void genmergeddiagram() {
+	writemergeddiagram();
+	try {
+	    Runtime runtime=Runtime.getRuntime();
+	    Process p1=runtime.exec("dot -Tgif rolerelationmerged -o rolerelationmerged.gif");	
+	    p1.waitFor();
+	    Process p2=runtime.exec("dot -Timap rolerelationmerged -o rolerelationmerged.imap");	
+	    p2.waitFor();
+	    FileOutputStream fos=new FileOutputStream("rolerelationmerged.html");
+	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    ps.println("<a href=\"ri-rolerelationmerged\"><img src=\"/rolerelationmerged.gif\" ismap> </a>");
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+
+    }
+
+    private void gendiagram() {
+	readdiagram();
+	writediagram();
+	try {
+	    Runtime runtime=Runtime.getRuntime();
+	    Process p1=runtime.exec("dot -Tgif rolerelation -o rolerelation.gif");	
+	    p1.waitFor();
+	    Process p2=runtime.exec("dot -Timap rolerelation -o rolerelation.imap");	
+	    p2.waitFor();
+	    FileOutputStream fos=new FileOutputStream("rolerelation.html");
+	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    ps.println("<a href=\"ri-rolerelation\"><img src=\"/rolerelation.gif\" ismap> </a>");
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+    }
+
+    private void writediagram() {
+	FileOutputStream fos=null;
+	try {
+	    fos=new FileOutputStream("rolerelation");
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+	PrintStream ps=new PrintStream(fos);
+	Iterator it=diagram.iterator();
+	ps.println("digraph \"Role Relationship Diagram\" {");
+	ps.println("ratio=auto");
+	Set observedroles=new HashSet();
+
+	while(it.hasNext()) {
+	    Roleedge re=(Roleedge) it.next();
+	    String color="black";
+	    if (re.contained)
+		color="blue";
+	    ps.println("R"+re.srcrole+" -> R"+re.dstrole+" [fontsize=10,color="+color+",label=\""+re.fieldname+"\"];");
+	    observedroles.add(new Integer(re.srcrole));
+	    observedroles.add(new Integer(re.dstrole));
+	}
+
+	Iterator iterator=observedroles.iterator();
+	while(iterator.hasNext()) {
+	    Integer role=(Integer) iterator.next();
+	    String color="black";
+	    Role rol=(Role)roletable.get(role);
+	    if (rol.contained)
+		color="blue";
+	    ps.println("R"+role+" [URL=\""+role+"\",color="+color+"];");
+	}
+	ps.println("}");
+	ps.close();
+    }
+
+    Set remap(int role) {
+	HashSet set=new HashSet();
+	Stack todo=new Stack();
+	HashSet done=new HashSet();
+	Integer rolei=new Integer(role);
+	todo.push(rolei);
+	done.add(rolei);
+	while(!todo.empty()) {
+	    Integer obj=(Integer)todo.pop();
+	    if (!mergeable(obj)||!containedmapping.containsKey(obj)) {
+		set.add(obj);
+	    } else {
+		Set toadd=(Set)containedmapping.get(obj);
+		Iterator it=toadd.iterator();
+		while(it.hasNext()) {
+		    Integer roledst=(Integer)it.next();
+		    if (!done.contains(roledst)) {
+			todo.push(roledst);
+			done.add(roledst);
+		    }
+		}
+	    }
+	}
+	return set;
+    }
+
+    private boolean mergeable(Integer rolenumber) {
+	return ((Role)roletable.get(rolenumber)).contained;
+    }
+
+    private void writemergeddiagram() {
+	FileOutputStream fos=null;
+	try {
+	    fos=new FileOutputStream("rolerelationmerged");
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+	PrintStream ps=new PrintStream(fos);
+	Iterator it=diagram.iterator();
+	ps.println("digraph \"Merged Role Relationship Diagram\" {");
+	ps.println("ratio=auto");
+	Set observedroles=new HashSet();
+	Set edges=new HashSet();
+	while(it.hasNext()) {
+	    Roleedge re=(Roleedge) it.next();
+	    String color="black";
+	    if (re.contained)
+		color="blue";
+	    Set srcroles=remap(re.srcrole);
+	    Set dstroles=remap(re.dstrole);
+	    Iterator srcit=srcroles.iterator();
+	    while (srcit.hasNext()) {
+		Integer srcrole=(Integer)srcit.next();
+		Iterator dstit=dstroles.iterator();
+		while (dstit.hasNext()) {
+		    Integer dstrole=(Integer)dstit.next();
+		    Roleedge renew=new Roleedge(srcrole.intValue(),dstrole.intValue(), re.contained, re.fieldname);
+		    if (!edges.contains(renew)) {
+			edges.add(renew);
+			if (re.dstrole==dstrole.intValue()) {
+			    ps.println("R"+srcrole+" -> R"+dstrole+" [fontsize=10,color="+color+",label=\""+re.fieldname+"\"];");
+			    observedroles.add(dstrole);
+			}
+			observedroles.add(srcrole);
+		    }
+		}
+	    }
+	}
+
+	Iterator iterator=observedroles.iterator();
+	while(iterator.hasNext()) {
+	    Integer role=(Integer) iterator.next();
+	    String color="black";
+	    Role rol=(Role)roletable.get(role);
+	    if (rol.contained)
+		color="blue";
+	    ps.println("R"+role+" [URL=\""+role+"\",color="+color+"];");
+	}
+	ps.println("}");
+	ps.close();
+    }
+
+    private void readdiagram() {
 	diagram=new HashSet();
 	containedmapping=new HashMap();
 
@@ -700,7 +918,7 @@ class RoleI {
 		String fieldname=nexttoken(fr);
 		diagram.add(new Roleedge(Integer.parseInt(srcrole),
 					 Integer.parseInt(dstrole), contained.equals("1"), fieldname));
-		if (contained.equals("0")) {
+		if (contained.equals("1")) {
 		    if (containedmapping.containsKey(Integer.valueOf(dstrole))) {
 			((Set)containedmapping.get(Integer.valueOf(dstrole))).add(Integer.valueOf(srcrole));
 		    } else {

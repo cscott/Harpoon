@@ -62,7 +62,8 @@ public class HTTPHeader{
       String header;
 
       header = "HTTP/1.0 " + returnCode + " " + returnString + "\n" +
-	  "Date: " + "1/1/00" + "\n" +                   // date
+	  "Date: " + "1/1/01" + "\n" +                   // date
+	  "Expires: 1/1/00\n"+
 	  "Allow: GET\n" +                               // allowed methods
 	  "MIME-Version: 1.0\n" +                        // mime version
 	  "Server : SpinWeb Custom HTTP Server\n" +      // server type

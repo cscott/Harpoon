@@ -1,15 +1,17 @@
 class Role {
     int rolenumber;
+    RoleI rolei;
     String classname;
     boolean contained;
     Dominator[] dominators;
     Reference[] rolefieldlist, rolearraylist,nonnullfields, nonnullarrays;
     IdentityRelation[] identityrelations;
     String [] invokedmethods;
-    public Role(int rolenumber, String classname, boolean contained, Dominator[] dominators,
+    public Role(RoleI rolei, int rolenumber, String classname, boolean contained, Dominator[] dominators,
 		Reference[] rolefieldlist, Reference[] rolearraylist,
 		IdentityRelation[] identityrelations, Reference[] nonnullfields,
 		Reference[] nonnullarrays, String[] invokedmethods) {
+	this.rolei=rolei;
 	this.rolenumber=rolenumber;
 	this.classname=classname;
 	this.contained=contained;
@@ -24,7 +26,7 @@ class Role {
     public String toString() {
 	String string="";
 	string+="Role: R"+rolenumber+"<p>";
-	string+=" Class: "+classname+"<p>";
+	string+=" Class: <a href=\""+rolei.classinfo.classes.get(classname)+".html\">"+classname+"</a><p>";
 	if (contained)
 	    string+=" State Merged<p>";
 	if (dominators.length!=0)
