@@ -61,10 +61,15 @@ pth_key_t flex_timedwait_key = PTH_KEY_INIT;
 #endif
 
 void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
+#ifndef WITH_REALTIME_JAVA
   jclass thrGrpCls;
+#endif
   jmethodID thrConsID;
   jstring mainStr;
-  jobject mainThr, mainThrGrp;
+  jobject mainThr;
+#ifndef WITH_REALTIME_JAVA
+  jobject mainThrGrp;
+#endif
   /* first make main thread object. */
   thrCls  = (*env)->FindClass(env,
 #if defined(WITH_REALTIME_JAVA) || defined(WITH_FAKE_SCOPES)
@@ -107,11 +112,14 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   /* make the name of the group and the thread. */
   mainStr = (*env)->NewStringUTF(env, "main");
   assert(!((*env)->ExceptionOccurred(env)));
+#ifndef WITH_REALTIME_JAVA
   /* make main thread group object. */
   thrGrpCls  = (*env)->FindClass(env, "java/lang/ThreadGroup");
   assert(!((*env)->ExceptionOccurred(env)));
+#endif
 #ifdef CLASSPATH_VERSION
   { /* main thread group comes from ThreadGroup.root */
+#ifndef WITH_REALTIME_JAVA
     jfieldID thrGrpRootID;
     jmethodID thrGrpClInitID = /* hopefully clinit is idempotent! */
       (*env)->GetStaticMethodID(env, thrGrpCls, "<clinit>","()V");
@@ -123,17 +131,20 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
     assert(!((*env)->ExceptionOccurred(env)));
     mainThrGrp = (*env)->GetStaticObjectField(env, thrGrpCls, thrGrpRootID);
     assert(!((*env)->ExceptionOccurred(env)));
+#endif
 #if !defined(WITH_INIT_CHECK)
 # error This code assumes that the static initializer is idempotent.
 #endif
   }
 #else
   { /* have to make main thread group object */
+#ifndef WITH_REALTIME_JAVA
   jmethodID thrGrpConsID =
     (*env)->GetMethodID(env, thrGrpCls, "<init>", "()V");
   assert(!((*env)->ExceptionOccurred(env)));
   mainThrGrp = (*env)->NewObject(env, thrGrpCls, thrGrpConsID);
   assert(!((*env)->ExceptionOccurred(env)));
+#endif
   }
 #endif /* !CLASSPATH_VERSION */
   /* get info about MIN_PRIORITY/NORM_PRIORITY/MAX_PRIORITY values */
@@ -181,8 +192,13 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   }
 #endif /* CLASSPATH_VERSION */
   /* finish constructing the thread object */
+#ifndef WITH_REALTIME_JAVA
   (*env)->CallNonvirtualVoidMethod(env, mainThr, thrCls, thrConsID,
 				   mainThrGrp, NULL, mainStr);
+#else
+  (*env)->CallNonvirtualVoidMethod(env, mainThr, thrCls, thrConsID,
+				   NULL, NULL, mainStr);
+#endif
   assert(!((*env)->ExceptionOccurred(env)));
   // FIXME: set other fields, etc?
   /* lookup run() method */
@@ -194,29 +210,36 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   daemonID = (*env)->GetFieldID(env, thrCls, "daemon", "Z");
   assert(!((*env)->ExceptionOccurred(env)));
   /* lookup Thread.getThreadGroup() and Thread.exit() methods */
+#ifndef WITH_REALTIME_JAVA
   gettgID = (*env)->GetMethodID(env, thrCls, "getThreadGroup",
 				"()Ljava/lang/ThreadGroup;");
   assert(!((*env)->ExceptionOccurred(env)));
+#endif
 #ifdef CLASSPATH_VERSION
+#ifndef WITH_REALTIME_JAVA
   removeThreadID = (*env)->GetMethodID(env, thrGrpCls, "removeThread",
 				       "(Ljava/lang/Thread;)V");
   assert(!((*env)->ExceptionOccurred(env)));
+#endif
 #else /* !CLASSPATH_VERSION */
   exitID = (*env)->GetMethodID(env, thrCls, "exit", "()V");
   assert(!((*env)->ExceptionOccurred(env)));
 #endif /* !CLASSPATH_VERSION */
   /* lookup ThreadGroup.uncaughtException() method */
+#ifndef WITH_REALTIME_JAVA
   uncaughtID = (*env)->GetMethodID(env, thrGrpCls, "uncaughtException",
 				"(Ljava/lang/Thread;Ljava/lang/Throwable;)V");
   assert(!((*env)->ExceptionOccurred(env)));
-#ifdef WITH_REALTIME_JAVA
+#else
   cleanupID = (*env)->GetMethodID(env, thrCls, "cleanup", "()V");
   assert(!((*env)->ExceptionOccurred(env)));
 #endif
   /* delete all local refs except for mainThr. */
   (*env)->DeleteLocalRef(env, mainStr);
+#ifndef WITH_REALTIME_JAVA
   (*env)->DeleteLocalRef(env, thrGrpCls);
   (*env)->DeleteLocalRef(env, mainThrGrp);
+#endif
   (*env)->DeleteLocalRef(env, thrCls);
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   /* make pthread_key_t before the fat lady sings */
