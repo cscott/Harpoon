@@ -1,5 +1,6 @@
 package harpoon.IR.Tree;
 
+import harpoon.Analysis.DataFlow.TreeFolding;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
@@ -9,6 +10,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
+import harpoon.IR.Tree.Stm;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -21,45 +23,85 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.2 1999-07-17 11:58:16 cananian Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.3 1999-07-27 18:48:58 duncan Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = "optimized-tree";
     private static final TreeOptimizer[] standard_opts = {
 	// Add all standard optimization passes here
+	new TreeOptimizer() { 
+	    public CanonicalTreeCode optimize(CanonicalTreeCode code) { 
+		code = (CanonicalTreeCode)code.clone
+		   (code.getMethod(), code.getFrame());
+		return (CanonicalTreeCode)new TreeFolding(code).fold();
+	    }
+	}
     };
 
-    private /*final*/ Derivation       derivation;
-    private /*final*/ EdgeInitializer  edgeInitializer;
-    private /*final*/ TypeMap          typeMap;
+    private final Derivation       derivation;
+    private final EdgeInitializer  edgeInitializer;
+    private final TypeMap          typeMap;
   
     /** Create a new <code>OptimizedTreeCode</code> from a
      *  <code>CanonicalTreeCode</code> object, a <code>Frame</code>,
      *  and a set of optimizations to perform. 
      */
-    OptimizedTreeCode(final CanonicalTreeCode code, final Frame frame, 
+    OptimizedTreeCode(/*final*/ CanonicalTreeCode code, final Frame frame, 
 		      final TreeOptimizer[] topts) {
 	super(code.getMethod(), null, frame);
 
+	/* Optimize "code" */
+	for (int i=0; i<topts.length; i++) { 
+	    code = topts[i].optimize(code);
+	}
+	final CanonicalTreeCode optimizedCode = code;
+
 	this.derivation = new Derivation() { 
 	    public DList derivation(HCodeElement hce, Temp t) { 
-		return code.derivation(hce, t);
+		return optimizedCode.derivation(hce, t);
 	    }
 	};
-	this.edgeInitializer = new EdgeInitializer();
 	this.typeMap = new TypeMap() { 
 	    public HClass typeMap(HCode hc, Temp t) { 
-		return code.typeMap(hc, t);
+		return optimizedCode.typeMap(hc, t);
 	    }
 	};
+	this.tree = (Stm)code.getRootElement();
+
+	this.edgeInitializer = new EdgeInitializer();
 	this.edgeInitializer.computeEdges();
-	for (int i=0; i<topts.length; i++) topts[i].optimize(code);
     }
 
     private OptimizedTreeCode(HMethod newMethod, Tree tree, Frame frame) {
 	super(newMethod, tree, frame);
-	// Compute edges for the Trees in this codeview
+	final CloningTempMap ctm = 
+	    new CloningTempMap
+	    (tree.getFactory().tempFactory(), this.tf.tempFactory());
+	final CanonicalTreeCode code = 
+	    (CanonicalTreeCode)tree.getFactory().getParent();
+	this.tree = (Tree)Tree.clone(this.tf, ctm, tree);
 	(this.edgeInitializer = new EdgeInitializer()).computeEdges();
+
+	// Must update the temps in your frame when you clone the tree form
+	// Failure to do this causes an inconsistency between the new temps
+	// created for the new frame, and the frame's registers mapped
+	// using ctm in Tree.clone(). 
+	Temp[] oldTemps = tree.getFactory().getFrame().getAllRegisters();
+	Temp[] newTemps = this.tf.getFrame().getAllRegisters();
+	for (int i=0; i<oldTemps.length; i++) 
+	    newTemps[i] = oldTemps[i]==null?null:ctm.tempMap(oldTemps[i]);
+	
+	this.derivation = new Derivation() { 
+	    public DList derivation(HCodeElement hce, Temp t) { 
+		return code.derivation(hce, t==null?null:ctm.tempMap(t));
+	    }
+	};
+
+	this.typeMap    = new TypeMap() { 
+	    public HClass typeMap(HCode hc, Temp t) { 
+		return code.typeMap(hc, t==null?null:ctm.tempMap(t));
+	    }
+	};
     }
 
     /** 
@@ -67,32 +109,7 @@ public class OptimizedTreeCode extends Code {
      * copy of the tree structure. 
      */
     public HCode clone(HMethod newMethod, Frame frame) {
-	OptimizedTreeCode tc = new OptimizedTreeCode(newMethod, null, frame); 
-	final CloningTempMap ctm = new CloningTempMap
-	    (this.tf.tempFactory(), tc.tf.tempFactory());
-	tc.tree = (Tree)(Tree.clone(tc.tf, ctm, tree));
-
-	// Must update the temps in your frame when you clone the tree form
-	// Failure to do this causes an inconsistency between the new temps
-	// created for the new frame, and the frame's registers mapped
-	// using ctm in Tree.clone(). 
-	Temp[] oldTemps = this.tf.getFrame().getAllRegisters();
-	Temp[] newTemps = tc.tf.getFrame().getAllRegisters();
-	for (int i=0; i<oldTemps.length; i++) 
-	    newTemps[i] = oldTemps[i]==null?null:ctm.tempMap(oldTemps[i]);
-
-	tc.derivation = new Derivation() { 
-	    public DList derivation(HCodeElement hce, Temp t) { 
-		return this.derivation(hce, t==null?null:ctm.tempMap(t));
-	    }
-	};
-
-	tc.typeMap    = new TypeMap() { 
-	    public HClass typeMap(HCode hc, Temp t) { 
-		return this.typeMap(hc, t==null?null:ctm.tempMap(t));
-	    }
-	};
-	return tc;
+	return new OptimizedTreeCode(newMethod, this.tree, frame); 
     }
 
     /**
@@ -176,7 +193,7 @@ public class OptimizedTreeCode extends Code {
     }
 
     public interface TreeOptimizer { 
-	public void optimize(CanonicalTreeCode code); 
+	public CanonicalTreeCode optimize(CanonicalTreeCode code); 
     }
 }
 

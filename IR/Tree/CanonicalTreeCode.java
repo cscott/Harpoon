@@ -24,14 +24,14 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.5 1999-07-07 09:05:22 duncan Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.6 1999-07-27 18:48:58 duncan Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
-    public  static   final   String           codename = "canonical-tree";
-    private        /*final*/ Derivation       derivation;
-    private          final   EdgeInitializer  edgeInitializer;
-    private        /*final*/ TypeMap          typeMap;
+    public  static   final String           codename = "canonical-tree";
+    private          final Derivation       derivation;
+    private          final EdgeInitializer  edgeInitializer;
+    private          final TypeMap          typeMap;
 
     /** Create a new <code>CanonicalTreeCode</code> from a
      *  <code>TreeCode</code> object, and a <code>Frame</code>.
@@ -49,11 +49,39 @@ public class CanonicalTreeCode extends Code {
 	// Compute edges for the Trees in this codeview
 	(edgeInitializer = new EdgeInitializer()).computeEdges();
     }
-    
+
+    /* Copy constructor, should only be called by the clone() method. */
     private CanonicalTreeCode(HMethod newMethod, Tree tree, Frame frame) {
 	super(newMethod, tree, frame);
-	// Compute edges for the Trees in this codeview
-	(edgeInitializer = new EdgeInitializer()).computeEdges();
+	final CloningTempMap ctm = 
+	    new CloningTempMap
+	    (tree.getFactory().tempFactory(), this.tf.tempFactory());
+	final CanonicalTreeCode code = 
+	    (CanonicalTreeCode)tree.getFactory().getParent();
+	this.tree = (Tree)Tree.clone(this.tf, ctm, tree);
+	(this.edgeInitializer = new EdgeInitializer()).computeEdges();
+
+	// Must update the temps in your frame when you clone the tree form
+	// Failure to do this causes an inconsistency between the new temps
+	// created for the new frame, and the frame's registers mapped
+	// using ctm in Tree.clone(). 
+	Temp[] oldTemps = tree.getFactory().getFrame().getAllRegisters();
+	Temp[] newTemps = this.tf.getFrame().getAllRegisters();
+	for (int i=0; i<oldTemps.length; i++) 
+	    newTemps[i] = oldTemps[i]==null?null:ctm.tempMap(oldTemps[i]);
+	
+	this.derivation = new Derivation() { 
+	    public DList derivation(HCodeElement hce, Temp t) { 
+		return code.derivation(hce, t==null?null:ctm.tempMap(t));
+	    }
+	};
+
+	this.typeMap    = new TypeMap() { 
+	    public HClass typeMap(HCode hc, Temp t) { 
+		return code.typeMap(hc, t==null?null:ctm.tempMap(t));
+	    }
+	};
+	
     }
 
     /** 
@@ -61,33 +89,7 @@ public class CanonicalTreeCode extends Code {
      * copy of the tree structure. 
      */
     public HCode clone(HMethod newMethod, Frame frame) {
-	CanonicalTreeCode tc  = new CanonicalTreeCode(newMethod, null, frame); 
-	final CloningTempMap ctm = new CloningTempMap
-	    (this.tf.tempFactory(), tc.tf.tempFactory());
-	tc.tree = (Tree)(Tree.clone(tc.tf, ctm, tree));
-
-	// Must update the temps in your frame when you clone the tree form
-	// Failure to do this causes an inconsistency between the new temps
-	// created for the new frame, and the frame's registers mapped
-	// using ctm in Tree.clone(). 
-	Temp[] oldTemps = this.tf.getFrame().getAllRegisters();
-	Temp[] newTemps = tc.tf.getFrame().getAllRegisters();
-	for (int i=0; i<oldTemps.length; i++) 
-	    newTemps[i] = oldTemps[i]==null?null:ctm.tempMap(oldTemps[i]);
-
-	tc.derivation = new Derivation() { 
-	    public DList derivation(HCodeElement hce, Temp t) { 
-		return this.derivation(hce, t==null?null:ctm.tempMap(t));
-	    }
-	};
-
-	tc.typeMap    = new TypeMap() { 
-	    public HClass typeMap(HCode hc, Temp t) { 
-		return this.typeMap(hc, t==null?null:ctm.tempMap(t));
-	    }
-	};
-
-	return tc;
+	return new CanonicalTreeCode(newMethod, this.tree, frame); 
     }
 
     /**
