@@ -7,15 +7,13 @@ CYGWIN=$(shell grep -c 'CYGWIN' /proc/version)
 UAVDIST=src/corba/UAV
 
 JACORB_HOME=contrib/JacORB1_3_30
-JAVAC=$(shell if test $(CYGWIN) -eq 0; then echo javac; \
-	      else echo /cygdrive/c/j2*/bin/javac; \
-	      fi)
-JAVAI=$(shell if test $(CYGWIN) -eq 0; then echo java; \
-	      else echo /cygdrive/c/j2*/bin/java; \
-	      fi)
-JAR=$(shell if test $(CYGWIN) -eq 0; then echo jar; \
-	    else echo /cygdrive/c/j2*/bin/jar; \
-	    fi)
+
+JAVA_HOME=$(shell if test $(CYGWIN) -eq 0; then echo `cd /usr/java/j2s*; pwd`; \
+		  else echo /cygdrive/c/j2*; \
+		  fi)
+JAVAC=$(JAVA_HOME)/bin/javac
+JAVAI=$(JAVA_HOME)/bin/java
+JAR=$(JAVA_HOME)/bin/jar
 JDOC=javadoc
 SSH=ssh
 FORTUNE=/usr/games/fortune
@@ -68,24 +66,36 @@ JACORB_JAR=$(shell echo $(CLASSPATH) | grep -c 'contrib/jacorb.jar')
 CP:=$(shell if test $(CYGWIN) -eq 0; \
 	     then if test $(JACORB_JAR) -eq 0; \
                   then if test $(CLASSPATH)z == z; \
-	               then echo `pwd`/contrib/jacorb.jar:`pwd`/contrib/lm_eventChannel.jar; \
-	               else echo `pwd`/contrib/jacorb.jar:`pwd`/contrib/lm_eventChannel.jar:$(CLASSPATH); \
+	               then echo `pwd`/contrib/jacorb.jar:$(JACORB_HOME)/lib/idl.jar:`pwd`/contrib/lm_eventChannel.jar:`pwd`/contrib/zen.jar; \
+	               else echo `pwd`/contrib/jacorb.jar:$(JACORB_HOME)/lib/idl.jar:`pwd`/contrib/lm_eventChannel.jar:`pwd`/contrib/zen.jar:$(CLASSPATH); \
 	               fi; \
 	          fi; \
-	     else echo \`cygpath -da contrib/jacorb.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\`\\\\\\\;\`cygpath -da $(JACORB_HOME)/lib/idl.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\`\\\\\\\;\`cygpath -da contrib/lm_eventChannel.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\` ; \
+	     else echo \`cygpath -da contrib/jacorb.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\`\\\\\\\;\`cygpath -da $(JACORB_HOME)/lib/idl.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\`\\\\\\\;\`cygpath -da contrib/lm_eventChannel.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\`\\\\\\\;\`cygpath -da contrib/zen.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\` ; \
 	     fi)
 
+CP_ZEN:=$(shell if test $(CYGWIN) -eq 0; \
+	     then if test $(JACORB_JAR) -eq 0; \
+                  then if test $(CLASSPATH)z == z; \
+	               then echo `pwd`/contrib/zen.jar:`pwd`/contrib/lm_eventChannel.jar:`pwd`/contrib/jacorb.jar:$(JAVA_HOME)/jre/lib/rt.jar:$(JAVA_HOME)/lib/tools.jar; \
+	               else echo `pwd`/contrib/zen.jar:`pwd`/contrib/lm_eventChannel.jar:`pwd`/contrib/jacorb.jar:$(JAVA_HOME)/jre/lib/rt.jar:$(JAVA_HOME)/lib/tools.jar$(CLASSPATH); \
+	               fi; \
+	          fi; \
+	     else echo \`cygpath -da contrib/zen.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\`\\\\\\\;\`cygpath -da contrib/lm_eventChannel.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\`\\\\\\\;\`cygpath -da contrib/jacorb.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\`;\`cygpath -da $(JAVA_HOME)/jre/lib/rt.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\`;\`cygpath -da $(JAVA_HOME)/lib/tools.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\` ; \
+	     fi)
 
 JAVA = $(JAVAI) -classpath $(CP)
 
 IDL_FLAGS=-I$(JACORB_HOME)/idl/omg
 
-IDLCC=$(shell if test $(CYGWIN) -eq 0; \
-	      then echo $(JACORB_HOME)/bin/idl $(IDL_FLAGS); \
-	      else echo $(JAVAI) -classpath $(CP) org.jacorb.idl.parser $(IDL_FLAGS); \
-	      fi)
+IDL_FLAGS_ZEN=-Dorg.omg.CORBA.ORBClass=edu.uci.ece.zen.orb.ORB -Dorg.omg.CORBA.ORBSingletonClass=edu.uci.ece.zen.orb.ORBSingleton
 
-IDLCC_ZEN=foo
+ZEN_IDLS=$(ISOURCES) $(BISOURCES)
+
+ZEN_CHANNEL_IDLS=$(ICHANNEL_SOURCES)
+
+IDLCC=$(JAVAI) -classpath $(CP) org.jacorb.idl.parser $(IDL_FLAGS)
+
+IDLCC_ZEN=$(JAVAI) -Xbootclasspath:$(CP_ZEN) $(IDL_FLAGS_ZEN) edu.uci.ece.zen.xidl.Idl
 
 JDOCFLAGS += -classpath $(CP)
 
@@ -167,7 +177,7 @@ receiverStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 receiverStub-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC_ZEN) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
+	@$(IDLCC_ZEN) -o . $(ZEN_IDLS)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
@@ -192,7 +202,7 @@ trackerStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 trackerStub-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC_ZEN) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
+	@$(IDLCC_ZEN) -o . $(ZEN_IDLS)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
@@ -218,7 +228,7 @@ ATR-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
 	@$(JAR) xf contrib/lm_eventChannel.jar
-	@$(IDLCC_ZEN) -d . -I$(UAVDIST) $(ISOURCES) $(ICHANNEL_SOURCES) $(BISOURCES)
+	@$(IDLCC_ZEN) -o . $(ZEN_IDLS) $(ZEN_CHANNEL_IDLS)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES) $(JCHANNEL_SOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
@@ -374,7 +384,7 @@ ns.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 ns-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC_ZEN) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
+	@$(IDLCC_ZEN) -d . $(ZEN_IDLS)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
@@ -506,7 +516,7 @@ jars: clean doc movie/tank.jar
 
 	@echo Generating receiverStub-ZEN.jar file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC_ZEN) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
+	@$(IDLCC_ZEN) -o . $(ZEN_IDLS)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
@@ -524,7 +534,7 @@ jars: clean doc movie/tank.jar
 
 	@echo Generating ATR-ZEN.jar file...
 	@$(JAR) xf contrib/lm_eventChannel.jar
-	@$(IDLCC) -d . $(ICHANNEL_SOURCES)
+	@$(IDLCC_ZEN) -o . $(ZEN_CHANNEL_IDLS)
 	@$(JCC) -d . -g $(JCHANNEL_SOURCES)
 	@$(JAR) cfm ATR-ZEN.jar src/manifest/ATR-ZEN.jar.MF $(JDIRS)
 	@rm -rf $(EVENTDIRS) *.idl
