@@ -12,7 +12,7 @@
 /** XXX THIS BREAKS IF THE STACK DOESN'T GROW DOWN */
 void *NSTK_malloc(size_t size) {
   register char *result;
-  UPDATE_STATS(stk, size);
+  UPDATE_NIFTY_STATS(stk, size);
 #ifdef REALLY_DO_STK_ALLOC
   result = get_stackptr()-ALIGN(size);
 #if 0

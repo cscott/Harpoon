@@ -8,8 +8,6 @@
 #define ALIGNMENT 4
 #define ALIGN(x) (((x)+(ALIGNMENT-1)) & ~(ALIGNMENT-1))
 
-/* undefine to disable statistics logging */
-#define MAKE_STATS
 /* undefine to replace the fancy allocation types with simple malloc */
 #define REALLY_DO_STK_ALLOC
 #define REALLY_DO_THR_ALLOC

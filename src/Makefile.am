@@ -2,7 +2,7 @@
 MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
 SUBDIRS = jni java.io java.lang java.net java.util java.util.zip \
-	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR)
+	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) $(STATSDIR)
 
 # for precise gc, add gc to SUBDIRS
 if PRECISE_GC
@@ -18,6 +18,11 @@ endif
 if EVENT_DRIVEN
 NATIVEIODIR=nativeio # rename to eventdriven?
 NATIVEIOLIB=nativeio/libnativeio.la
+endif
+# for statistics support, build stats library.
+if STATISTICS
+STATSDIR=stats
+STATSLIB=stats/libstats.la
 endif
 
 # see run% rule in top-level makefile to see how to generate a binary
@@ -37,14 +42,14 @@ libflexc1_la_LIBADD = \
 	java.net/libjavanet.la \
 	java.util/libjavautil.la \
 	java.util.zip/libjavautilzip.la \
-	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB)
+	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) $(STATSLIB)
 libflexc1_la_LDFLAGS = -version-info 0:0:0 -lbfd -liberty
 
 # backwards compatibility: a.out targets ####################
 if AOUT_BUILD
 LDADD = jni/libjni.la ../Java.a libflexc.la \
 	jni/jni-inflate.lo jni/jni-jnidata.lo \
-	$(foreach lib,@GC_LIB@,../$(lib)) $(PGCLIB)
+	$(foreach lib,@GC_LIB@,../$(lib)) $(PGCLIB) $(STATSLIB)
 bin_PROGRAMS = startup # dump-fixup test-lookup test-gc static
 AOUTLIBRARY = libflexc.la
 endif

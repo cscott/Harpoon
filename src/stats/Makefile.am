@@ -3,7 +3,6 @@ MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
 LIBS =
 
-noinst_LTLIBRARIES = libclheap.la
+noinst_LTLIBRARIES = libstats.la
 
-libclheap_la_SOURCES = clheap.c \
-	stkalloc.c gblalloc.c thralloc.c
+libstats_la_SOURCES = stats.c

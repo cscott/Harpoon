@@ -22,7 +22,7 @@ void *NGBL_malloc_noupdate(size_t size) {
 }
 /* allocate on the global heap. */
 void *NGBL_malloc(size_t size) {
-  UPDATE_STATS(gbl, size);
+  UPDATE_NIFTY_STATS(gbl, size);
 #ifdef BDW_CONSERVATIVE_GC
   return GC_malloc(size);
 #else
@@ -31,7 +31,7 @@ void *NGBL_malloc(size_t size) {
 }
 /* allocate an object with no internal pointers on the global heap. */
 void *NGBL_malloc_atomic(size_t size) {
-  UPDATE_STATS(gbl, size);
+  UPDATE_NIFTY_STATS(gbl, size);
 #ifdef BDW_CONSERVATIVE_GC
   return GC_malloc_atomic(size);
 #else

@@ -42,11 +42,7 @@ clheap_t clheap_create() {
   FLEX_MUTEX_UNLOCK(&heap_free_list_mutex);
   if (clh!=NULL) goto finish_init;
 #endif
-#ifdef MAKE_STATS
-  LOCK_STATS(thrcnt);
-  thread_heaps_created++;
-  UNLOCK_STATS(thrcnt);
-#endif
+  INCREMENT_STATS(thread_heaps_created, 1);
   clh = (clheap_t) malloc(sizeof(*clh));
   clh->heap_start =
 #ifdef BDW_CONSERVATIVE_GC

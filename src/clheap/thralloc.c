@@ -46,10 +46,8 @@ static clheap_t last_pool = NULL;
 FLEX_MUTEX_DECLARE_STATIC(pool_mutex);
 static clheap_t next_clheap() {
   clheap_t result;
+  INCREMENT_STATS(threads_created, 1);
   FLEX_MUTEX_LOCK(&pool_mutex);
-#ifdef MAKE_STATS
-  threads_created++;
-#endif /* MAKE_STATS */
   if (pool_pos==0 || last_pool==NULL) {
     /* we create heaps with one attachment, which we detach before moving
      * to the next pool.  This guarantees that the heap won't be freed
@@ -71,14 +69,14 @@ void *NTHR_malloc(size_t size) {
 #endif
   return NTHR_malloc_other(size, FETCH_THIS_THREAD_UNWRAPPED());
 #else
-  UPDATE_STATS(thr, size);
+  UPDATE_NIFTY_STATS(thr, size);
   return NGBL_malloc_noupdate(size);
 #endif
 }
 void *NTHR_malloc_with_heap(size_t size) {
   clheap_t clh;
   struct oobj_with_clheap *result;
-  UPDATE_STATS(thr, size);
+  UPDATE_NIFTY_STATS(thr, size);
 #ifdef REALLY_DO_THR_ALLOC
  tryagain:
   clh = next_clheap();
@@ -99,7 +97,7 @@ void *NTHR_malloc_with_heap(size_t size) {
 void *NGBL_malloc_with_heap(size_t size) {
   clheap_t clh;
   struct oobj_with_clheap *result;
-  UPDATE_STATS(gbl, size);
+  UPDATE_NIFTY_STATS(gbl, size);
 #ifdef REALLY_DO_THR_ALLOC
   clh = next_clheap();
   // the above line might be changed to pool clheaps.
@@ -112,14 +110,12 @@ void *NGBL_malloc_with_heap(size_t size) {
 }
 void *NTHR_malloc_other(size_t size, struct oobj *oobj) {
   clheap_t clh; void *result;
-  UPDATE_STATS(thr, size);
+  UPDATE_NIFTY_STATS(thr, size);
 #ifdef REALLY_DO_THR_ALLOC
   clh = CLHEAP_FROM_OOBJ(oobj);
   result = clheap_alloc(clh, size);
   if (result!=NULL) return result;
-#ifdef MAKE_STATS
-  thr_bytes_overflow+=size; /* record overflow from thread heap */
-#endif
+  INCREMENT_STATS(thr_bytes_overflow,size);/*record overflow from thread heap*/
   return NGBL_malloc_noupdate(size);
 #else
   return NGBL_malloc_noupdate(size);

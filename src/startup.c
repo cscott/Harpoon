@@ -103,8 +103,8 @@ int main(int argc, char *argv[]) {
   }
   (*env)->DeleteLocalRef(env, cls);
 
-#ifdef WITH_CLUSTERED_HEAPS
-  /* print out allocation statistics */
+#ifdef WITH_STATISTICS
+  /* print out collected statistics */
   { void print_statistics(void); print_statistics(); }
 #endif
 
@@ -159,8 +159,8 @@ int main(int argc, char *argv[]) {
   // wait for all threads to finish up.
   FNI_java_lang_Thread_finishMain(env);
 
-#ifdef WITH_CLUSTERED_HEAPS
-  /* print out allocation statistics */
+#ifdef WITH_STATISTICS
+  /* print out collected statistics */
   { void print_statistics(void); print_statistics(); }
 #endif
   return st;
