@@ -13,7 +13,7 @@ import harpoon.ClassFile.HMethod;
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.8.2.4 1999-02-06 21:56:47 duncan Exp $
+ * @version $Id: Main.java,v 1.8.2.5 1999-02-07 10:36:27 cananian Exp $
  */
 public abstract class Main extends harpoon.IR.Registration {
 
@@ -26,9 +26,7 @@ public abstract class Main extends harpoon.IR.Registration {
 	    (harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
 	    (harpoon.IR.Quads.QuadSSA.codeFactory()
 	     ));
-	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
-	hcf = harpoon.IR.LowQuad.LowQuadNoSSA.codeFactory(hcf);
-	
+
 	HClass interfaceClasses[] = new HClass[args.length];
 	for (int i=0; i<args.length; i++)
 	    interfaceClasses[i] = HClass.forName(args[i]);
@@ -36,8 +34,8 @@ public abstract class Main extends harpoon.IR.Registration {
 	for (int i=0; i<interfaceClasses.length; i++) {
 	    HMethod hm[] = interfaceClasses[i].getDeclaredMethods();
 	    for (int j=0; j<hm.length; j++) {
-	      HCode hc = hcf.convert(hm[j]);
-	      if (hc!=null) hc.print(out);
+		HCode hc = hcf.convert(hm[j]);
+		if (hc!=null) hc.print(out);
 	    }
 	}
     }
