@@ -27,6 +27,11 @@ void setline(int fd, int flags, int speed)
   tcsetattr(fd, TCSANOW, &t);
 }
 
+JNIEXPORT void JNICALL Java_ipaq_IPaqServoController_setup_00024_00024initcheck
+(JNIEnv *env, jclass claz) {
+  Java_ipaq_IPaqServoController_setup(env, claz);
+}
+
 JNIEXPORT void JNICALL Java_ipaq_IPaqServoController_setup(JNIEnv *env, jclass claz) {
   if ((fd = open("/dev/ttySA0", O_RDWR | O_NOCTTY )) < 0) {
     perror("unable to open serial device");
