@@ -51,6 +51,8 @@ import harpoon.Analysis.PreciseGC.WriteBarrierQuadPass;
 import harpoon.Analysis.PreciseGC.WriteBarrierTreePass;
 import harpoon.Analysis.Realtime.Realtime;
 
+import harpoon.Analysis.SizeOpt.BitWidthAnalysis;
+
 import harpoon.Analysis.Transactions.SyncTransformer;
 
 import gnu.getopt.Getopt;
@@ -89,7 +91,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.163 2001-08-30 23:09:26 kkz Exp $
+ * @version $Id: SAMain.java,v 1.1.2.164 2001-09-20 19:04:38 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -279,8 +281,6 @@ public class SAMain extends harpoon.IR.Registration {
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
 
-
-
 	    if (EVENTDRIVEN && !alexhack) {
 		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 		CachingBBConverter bbconv=new CachingBBConverter(hcf);
@@ -353,6 +353,39 @@ public class SAMain extends harpoon.IR.Registration {
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 		hcf = Realtime.addChecks(linker, classHierarchy, hcf, roots);
 	    }                                           
+	    /* counter factory must be set up before field reducer,
+	     * or it will be optimized into nothingness. */
+	    if (Boolean.getBoolean("size.counters")) {
+		hcf = new harpoon.Analysis.SizeOpt.SizeCounters(hcf, frame)
+		    .codeFactory();
+		hcf = harpoon.Analysis.Counters.CounterFactory
+		    .codeFactory(hcf, linker, mainM);
+		// recompute the hierarchy after transformation.
+		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    }
+	    /*--- size optimizations ---*/
+	    if (Boolean.getBoolean("bitwidth")) {
+ 		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+ 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+		// read field roots
+		String resource = frame.getRuntime().resourcePath
+		    ("field-root.properties");
+ 		System.out.println("STARTING BITWIDTH ANALYSIS");
+ 		hcf = new harpoon.Analysis.SizeOpt.FieldReducer
+		    (hcf, linker, classHierarchy, roots, resource)
+		    .codeFactory();
+	    }
+	    /* -- add counters to all allocations? -- */
+	    if (Boolean.getBoolean("size.counters")) {
+		hcf = new harpoon.Analysis.SizeOpt.SizeCounters(hcf, frame)
+		    .codeFactory();
+ 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+		// pull everything through the size counter factory
+		for (Iterator it=classHierarchy.callableMethods().iterator();
+		     it.hasNext(); )
+		    hcf.convert((HMethod)it.next());
+	    }
 	} // don't need the root set anymore.
 
 	if (BACKEND == MIPSDA_BACKEND || BACKEND == MIPSYP_BACKEND) {
