@@ -17,6 +17,7 @@ import harpoon.IR.Assem.InstrCALL;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrDIRECTIVE;
 import harpoon.IR.Assem.InstrFactory;
+import harpoon.Analysis.Tree.DominatingMemoryAccess;
 import harpoon.IR.Tree.TreeDerivation;
 import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.Uop;
@@ -67,7 +68,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.35 2001-05-31 03:35:09 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.36 2001-06-03 05:28:10 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -146,6 +147,8 @@ import java.util.Iterator;
     private final boolean soft_float = false; // skiffs use hard-float
     // Add yellow pekoe register usage suffixes to long instr patterns
     private boolean yellow_pekoe = false;
+    // Add phantom instructions that indicate DA register usage
+    private boolean enable_daregs = false;
 
     public CodeGen(Frame frame, boolean is_elf) {
        super(frame);
@@ -418,8 +421,28 @@ import java.util.Iterator;
                                    ".stabn 68,0," + root.getLineNumber()
                                    + "," + l));
        }
-    }		      
-
+    }
+    private void emitDAspecifier(HCodeElement root) {
+       if(enable_daregs) {
+          harpoon.Backend.MIPS.Frame mframe = (harpoon.Backend.MIPS.Frame) frame;
+          Object danum = mframe.daNum(root);
+          if(danum != null) {
+             int dan = DominatingMemoryAccess.num(danum);
+             int daop = DominatingMemoryAccess.isDef(danum) ? 1 : 0;
+             emitDIRECTIVE( root, ".set noreorder" );
+             emit(root, "ph " + daop + ", " + dan);
+          }
+       }
+    }
+    private void emitEndDAspecifier(HCodeElement root) {
+       if(enable_daregs) {
+          harpoon.Backend.MIPS.Frame mframe = (harpoon.Backend.MIPS.Frame) frame;
+          Object danum = mframe.daNum(root);
+          if(danum != null) {
+             emitDIRECTIVE( root, ".set reorder" );
+          }
+       }
+    }
 
     private boolean is16BitOffset(long val) {
 	// addressing mode two takes a 12 bit unsigned offset, with
@@ -828,6 +851,15 @@ import java.util.Iterator;
        }  
     }
 
+    /** remove nulls from array */
+    private Instr[] compactArray(Instr[] instrs) {
+       ArrayList inl = new ArrayList(instrs.length);
+       for(int i = 0; i < instrs.length; ++i) {
+          if(instrs[i] != null)
+             inl.add(instrs[i]);
+       }
+       return (Instr[])inl.toArray();
+    }
     private void LayoutInstr(Instr anchor, Instr[] instrs) {
        if(instrs.length == 0) return;
        instrs[0].layout(anchor.getPrev(), anchor);
@@ -874,27 +906,53 @@ import java.util.Iterator;
 
        for (Instr il = instr; il!=null; il=il.getNext()) {
           if (il instanceof InstrENTRY) { // entry stub.
-             Instr[] entry_instr = {
-                new InstrDIRECTIVE(inf, il, ".align 2"),
-                new InstrDIRECTIVE(inf, il, ".globl " + methodlabel.name),
+             Instr[] entry_instr;
+             if(enable_daregs) {
+                entry_instr = new Instr[12];
+             } else {
+                entry_instr = new Instr[10];
+             }
+             int en = 0;
+             entry_instr[en++] = new InstrDIRECTIVE(inf, il, ".align 2");
+             entry_instr[en++] = 
+                new InstrDIRECTIVE(inf, il, ".globl " + methodlabel.name);
+             entry_instr[en++] = 
                 new InstrDIRECTIVE(inf, il, ".type " + methodlabel.name
-                   + ",@function"),
+                                   + ",@function");
+             entry_instr[en++] = 
                 new InstrDIRECTIVE(inf, il, ".ent " +
-                                   methodlabel.name+",#function"),
-                new InstrLABEL(inf, il, methodlabel.name+":", methodlabel),
+                                   methodlabel.name+",#function");
+             entry_instr[en++] = 
+                new InstrLABEL(inf, il, methodlabel.name+":", methodlabel);
+             entry_instr[en++] = 
                 new InstrDIRECTIVE(inf, il, ".frame $sp," +
-                                   stack.frameSize() + ", $31"),
-                new Instr(inf, il,"subu $sp, "+ stack.frameSize() + "\t##RR_DO_NOT_ANNOTATE", 
-                          new Temp[] {SP}, new Temp[] {SP}),
+                                   stack.frameSize() + ", $31");
+             entry_instr[en++] = 
+                new Instr(inf, il,"subu $sp, "+ stack.frameSize() 
+                          + "\t##RR_DO_NOT_ANNOTATE",
+                          new Temp[] {SP}, new Temp[] {SP});
+             if(enable_daregs)
+                entry_instr[en++] = 
+                   new Instr(inf, il,"ph 1, 0", null, null);
+             Util.assert(entry_instr[en-1] != null);
+             entry_instr[en++] = 
                 new Instr(inf, il,"sw $31, " + stack.getRAOffset() +"($sp)" , 
-                          null, new Temp[] { LR, SP }),
+                          null, new Temp[] { LR, SP });
+             if(enable_daregs)
+                entry_instr[en++] = new Instr(inf, il,"ph 0, 0", null, null);
+             Util.assert(entry_instr[en-1] != null);
+             entry_instr[en++] = 
                 new Instr(inf, il, "sw" + ntag + " $30, " + stack.getFPOffset() +"($sp)" ,  
-                          null, new Temp[] { FP, SP }),
+                          null, new Temp[] { FP, SP });
+             entry_instr[en++] = 
                 new Instr(inf, il, "addu $30, $sp, "+ stack.frameSize() + "\t##RR_DO_NOT_ANNOTATE",
-                          new Temp[]{FP}, new Temp[]{SP})
-             };
+                          new Temp[]{FP}, new Temp[]{SP});
+             if(enable_daregs)
+                Util.assert(en == 12);
+             else
+                Util.assert(en == 10);
              ////// Now create instrs to save non-trivial callee saved regs
-             Instr[] callee_save = new Instr [stack.calleeSaveTotal()];
+             Instr[] callee_save = new Instr [(enable_daregs ? 2 : 1) * nregs];
              if(nregs > 0) {
                 // make list of instructions saving callee-save registers we
                 // gotta save.
@@ -903,6 +961,15 @@ import java.util.Iterator;
                    String usuffix = ntag;
                    if(i!= 0 && (i % 6 == 0)) {
                       usuffix = "";
+                      if(enable_daregs) {
+                         callee_save[j++] = new Instr(inf, il, "ph 1, 0", 
+                                                      null, null);
+                      }
+                   } else {
+                      if(enable_daregs) {
+                         callee_save[j++] = new Instr(inf, il, "ph 0, 0", 
+                                                      null, null);
+                      }
                    }
                    callee_save[j++] = 
                       new Instr(inf, il, "sw" + usuffix + " "
@@ -915,7 +982,8 @@ import java.util.Iterator;
              /// Layout function entry
              LayoutInstr(il, entry_instr);
              if(nregs > 0) {
-                Util.assert(nregs == callee_save.length);
+                Util.assert((enable_daregs ? 2 : 1) * nregs 
+                            == callee_save.length);
                 // This puts all of the callee saving before the
                 // creation of the frame pointer which is the last
                 // instruction in entry_isntr.
@@ -928,14 +996,23 @@ import java.util.Iterator;
 
           }
           if (il instanceof InstrEXIT) { // exit stub
-             Instr[] callee_restore = new Instr [nregs];
+             Instr[] callee_restore = new Instr [(enable_daregs ? 2 : 1) * nregs];
              if(stack.calleeSaveTotal() > 0) {
                 // restore the regs we saved on entry
                 int j = 0;
                 for (int i = nregs - 1; i >= 0; --i) {
                    String usuffix = ntag;
-                   if(j % 8 == 0) {
+                   if(j % 16 == 0) {
                       usuffix = "";
+                      if(enable_daregs) {
+                         callee_restore[j++] = new Instr(inf, il, "ph 1, 0", 
+                                                      null, null);
+                      }
+                   } else {
+                      if(enable_daregs) {
+                         callee_restore[j++] = new Instr(inf, il, "ph 0, 0", 
+                                                         null, null);
+                      }
                    }
                    callee_restore[j++] = 
                       new Instr(inf, il, "lw" + usuffix + " "
@@ -946,38 +1023,77 @@ import java.util.Iterator;
                                 new Temp[]{SP});
                 }
              }
-             String fplw = "";
              String ralw = "";
+             Instr[] exit_instr;
+             int en = 0;
+             if(enable_daregs) {
+                exit_instr = new Instr[6];
+             } else {
+                exit_instr = new Instr[4];
+             }
              switch(nregs % 8) {
              case 0:
-                fplw = "lw";
+                if(enable_daregs) {
+                   exit_instr[en++] = new Instr(inf, il, "ph 1, 0", null, null);
+                }
+                exit_instr[en++] = new Instr(inf, il, 
+                                             "lw $30, " 
+                                             + stack.getFPOffset() + "($sp)",
+                                             new Temp[] {FP}, new Temp[] {SP});
+                if(enable_daregs) {
+                   exit_instr[en++] = new Instr(inf, il, "ph 0, 0", null, null);
+                }
                 ralw = "lw" + ntag;
                 break;
              case 7:
-                fplw = "lw" + ntag;
+                if(enable_daregs) {
+                   exit_instr[en++] = new Instr(inf, il, "ph 0, 0", null, null);
+                }
+                exit_instr[en++] = new Instr(inf, il, 
+                                             "lw $30, " 
+                                             + stack.getFPOffset() + "($sp)",
+                                             new Temp[] {FP}, new Temp[] {SP});
+                if(enable_daregs) {
+                   exit_instr[en++] = new Instr(inf, il, "ph 1, 0", null, null);
+                }
                 ralw = "lw";
                 break;
              default:
-                fplw = "lw" + ntag;
+                if(enable_daregs) {
+                   exit_instr[en++] = new Instr(inf, il, "ph 0, 0", null, null);
+                }
+                exit_instr[en++] = new Instr(inf, il, 
+                                             "lw $30, " 
+                                             + stack.getFPOffset() + "($sp)",
+                                             new Temp[] {FP}, new Temp[] {SP});
+                if(enable_daregs) {
+                   exit_instr[en++] = new Instr(inf, il, "ph 0, 0", null, null);
+                }
                 ralw = "lw" + ntag;
                 break;
              }
-             Instr[] exit_instr = {
-                new Instr(inf, il, fplw + " $30, " + stack.getFPOffset() + "($sp)",
-                          new Temp[] {FP}, new Temp[] {SP}),
-                new Instr(inf, il, ralw + " $31, " + stack.getRAOffset() + "($sp)",
-                          new Temp[] {LR}, new Temp[] {SP}),
-                new Instr(inf, il, "addu $sp, " + stack.frameSize() + "\t##RR_DO_NOT_ANNOTATE",
-                          new Temp[] {SP}, new Temp[] {SP}),
-                new Instr(inf, il, "j  $31  # return",
-                          null, new Temp[]{LR}),
-             };
+             exit_instr[en++] = new Instr(inf, il, 
+                                          ralw + " $31, " 
+                                          + stack.getRAOffset() + "($sp)",
+                                          new Temp[] {LR}, new Temp[] {SP});
+             
+             exit_instr[en++] = new Instr(inf, il, "addu $sp, " 
+                                          + stack.frameSize() 
+                                          + "\t##RR_DO_NOT_ANNOTATE",
+                                          new Temp[] {SP}, new Temp[] {SP});
+             exit_instr[en++] = new Instr(inf, il, "j  $31  # return",
+                                          null, new Temp[]{LR});
+             if(enable_daregs) {
+                Util.assert(en == 6);
+             } else {
+                Util.assert(en == 4);
+             }
              if(nregs > 0) {
                 LayoutInstr(il, callee_restore);
              }
              LayoutInstr(il, exit_instr);
              il.remove(); 
-             il = exit_instr[exit_instr.length - 1];
+             il = (Instr)exit_instr[exit_instr.length-1];
           }
           last=il;
        }
@@ -1539,9 +1655,12 @@ MEM<s:8,u:8,s:16,u:16,i,p,f>(e) = i %{
    if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT)) {
       usuffix = ".u";
    }
+
+   emitDAspecifier(ROOT);
    emit(new InstrMEM(instrFactory, ROOT,
                      "l"+suffix+usuffix+" `d0, 0(`s0)",
                      new Temp[]{ i }, new Temp[]{ e }));   
+   emitEndDAspecifier(ROOT);
 }%
 
 MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))) = i
@@ -1552,9 +1671,11 @@ MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))) = i
    if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT)) {
       usuffix = ".u";
    }
+   emitDAspecifier(ROOT);
    emit(new InstrMEM(instrFactory, ROOT,
                      "l"+suffix+usuffix+" `d0, " + c + "(`s0)",
                      new Temp[]{ i }, new Temp[]{ j }));
+   emitEndDAspecifier(ROOT);
 }%
 MEM<l,d>(e) = i %{
    String usuffix = "";
@@ -1563,10 +1684,12 @@ MEM<l,d>(e) = i %{
    if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT)) {
       usuffix = ".u";
    }
+   emitDAspecifier(ROOT);
    emit(new InstrMEM(instrFactory, ROOT,
                      "lw" + usuffix+ " `d0l, 4(`s0)\n"
                      + "lw" + usuffix + " `d0h, 0(`s0)",
                      new Temp[]{ i }, new Temp[]{ e }));
+   emitEndDAspecifier(ROOT);
    emitRegAllocUse(ROOT, e);
 }%
 
@@ -1578,8 +1701,10 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), src)
    if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT.getDst())) {
       usuffix = ".u";
    }
+   emitDAspecifier(ROOT.getDst());
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix + usuffix+" `s0, 0(`s1)",
                      null, new Temp[] {src, dst}));
+   emitEndDAspecifier(ROOT.getDst());
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))), src)
@@ -1590,9 +1715,11 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))), src)
    if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT.getDst())) {
       usuffix = ".u";
    }
+   emitDAspecifier(ROOT.getDst());
    emit(new InstrMEM(instrFactory, ROOT,
 		      "s"+suffix+usuffix+" `s0, "+c+"(`s1)",
 		      null, new Temp[]{ src, j }));   
+   emitEndDAspecifier(ROOT.getDst());
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))), NAME(src))
@@ -1608,9 +1735,11 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))), NAME(src))
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + src,
                    new Temp[]{ extra }, null ));
+   emitDAspecifier(ROOT.getDst());
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +usuffix+" `s0, "
                      + c + "(`s1)        # tmp + c <= NAME(src) ",
                      null, new Temp[]{ extra, j }));
+   emitEndDAspecifier(ROOT.getDst());
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), NAME(src)) %extra<p>{ extra }/*void*/
@@ -1625,9 +1754,11 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), NAME(src)) %extra<p>{ extra }/*void*/
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + src,
                    new Temp[]{ extra }, null ));
+   emitDAspecifier(ROOT.getDst());
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix + usuffix
                      +" `s0, (`s1)        # dst <= NAME(src)",
                      null, new Temp[] {extra, dst}));
+   emitEndDAspecifier(ROOT.getDst());
 }%
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), src) %extra<p>{ extra }/*void*/
 %{ 
@@ -1637,9 +1768,11 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), src) %extra<p>{ extra }/*void*/
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + dst,
                    new Temp[]{ extra }, null ));
+   emitDAspecifier(ROOT.getDst());
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix 
                      +" `s0, (`s1)        # NAME(dst) <= src ",
                      null, new Temp[] {src, extra}));
+   emitEndDAspecifier(ROOT.getDst());
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), NAME(src))
@@ -1651,8 +1784,10 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), NAME(src))
    declare( extra1, HClass.Void );
    emit(ROOT, "la `d0, " + src, extra0);
    emit(ROOT, "la `d0, " + dst, extra1);
+   emitDAspecifier(ROOT.getDst());
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, (`s1)",
                      null, new Temp[] {extra0, extra1}));
+   emitEndDAspecifier(ROOT.getDst());
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), CONST<i,p>(c)) 
@@ -1666,8 +1801,10 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), CONST<i,p>(c))
       emit(ROOT, "li `d0, " + c, extra0);
    }
    emit(ROOT, "la `d0, " + dst, extra1);
+   emitDAspecifier(ROOT.getDst());
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, (`s1)  # NAME(dst) <= CONST",
                      null, new Temp[] { extra0, extra1 }));
+   emitEndDAspecifier(ROOT.getDst());
 }%
 
 
@@ -1678,10 +1815,13 @@ MOVE(MEM<l,d>(dst), src) %{
    if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT.getDst())) {
       suffix = ".u";
    }
+   emitDAspecifier(ROOT.getDst());
    emit(new InstrMEM(instrFactory, ROOT, "sw" + suffix + " `s0l, 4(`s1)",
-                     null, new Temp[]{ src, dst }));   
+                     null, new Temp[]{ src, dst }));
+   emitDAspecifier(ROOT.getDst());
    emit(new InstrMEM(instrFactory, ROOT, "sw" + suffix + " `s0h, 0(`s1)",
-                     null, new Temp[]{ src, dst }));   
+                     null, new Temp[]{ src, dst }));
+   emitEndDAspecifier(ROOT.getDst());
 }%
 
 MOVE<p,i,f>(dst, src) %{
@@ -1718,16 +1858,20 @@ NAME(id) = i %{
 
 MEM<f,i,p>(NAME(id)) = i %{
    emitLineDebugInfo(ROOT);
+   emitDAspecifier(ROOT);
    emit(new Instr( instrFactory, ROOT,
                    "lw `d0, " + id, 
                    new Temp[]{ i }, null ));
+   emitEndDAspecifier(ROOT);
 }%
 MEM<d,l>(NAME(id)) = i %{
    emitLineDebugInfo(ROOT);
+   emitDAspecifier(ROOT);
    emit(new InstrMEM( instrFactory, ROOT,
                       "lw `d0l, " + id + " +4\n"
                       + "lw `d0h, " + id,
                       new Temp[]{i}, new Temp[]{}));
+   emitEndDAspecifier(ROOT);
 }%
 
 

@@ -19,7 +19,7 @@ import java.util.HashMap;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.8 2000-11-21 23:35:42 witchel Exp $
+ * @version $Id: Frame.java,v 1.1.2.9 2001-06-03 05:28:11 witchel Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
    private final harpoon.Backend.Generic.Runtime   runtime;
@@ -38,6 +38,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private final static boolean is_elf =
 	System.getProperty("harpoon.target.elf", "yes")
 	.equalsIgnoreCase("yes");
+
 
    public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) {
 	super();
@@ -73,8 +74,33 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	this.gcInfo = gcInfo;
     }
    public Frame(HMethod main, ClassHierarchy ch, CallGraph cg, String type) {
-	this(main, ch, cg);
+	super();
 	this.type = type;
+
+	linker = main.getDeclaringClass().getLinker();
+	regFileInfo = new RegFileInfo();
+    noTagCheck = null;
+	
+	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
+	    alloc_strategy.equalsIgnoreCase("nifty") ?
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
+	    new harpoon.Backend.Runtime1.NiftyAllocationStrategy(this) :
+	    alloc_strategy.equalsIgnoreCase("bdw") ?
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
+	    new harpoon.Backend.Runtime1.BDWAllocationStrategy(this) :
+	    // default, "malloc" strategy.
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
+	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
+								  "malloc");
+	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg,
+						       !is_elf);
+	// FSK: CodeGen ctor needs regFileInfo set in 'this' Frame
+	// [and it also needs nameMap out of Runtime --CSA], so
+	// be careful about ordering of constructions.
+	codegen = new CodeGen(this, is_elf);
+
+	instrBuilder = new InstrBuilder(regFileInfo, this);
+	tempBuilder = new TempBuilder();
    }
 
     public String getType() { return type; }
@@ -87,8 +113,15 @@ public class Frame extends harpoon.Backend.Generic.Frame {
       noTagCheck = hm;
    }
    public boolean memAccessNoTagCheck(HCodeElement hce) {
-      if(noTagCheck == null) return false;
-      return noTagCheck.containsKey(hce);
+      // XXX This interface is superceeded by daNum, but I don't want
+      // to rip it out yet 
+      return false;
+      //if(noTagCheck == null) return false;
+      // return noTagCheck.get(hce) != null;
+   }
+   public Object daNum(HCodeElement hce) {
+      if(noTagCheck == null) return null;
+      return noTagCheck.get(hce);
    }
 
     /** Returns a <code>MIPS.CodeGen</code>. 
