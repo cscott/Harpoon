@@ -42,6 +42,8 @@ JNIEXPORT void JNICALL Java_javax_realtime_ImmortalMemory_initNative
 #endif  
 }
 
+
+
 /*
  * Class:     ImmortalMemory
  * Method:    newMemBlock

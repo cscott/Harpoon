@@ -5,7 +5,7 @@
 #include "config.h"
 
 /* Output debugging information for RTJ */
-/*  #define RTJ_DEBUG 1 */
+#define RTJ_DEBUG 1
 
 /* Look at the timing of calls to GC_malloc and GC_free */
 /*  #define WITH_GC_STATS 1 */
@@ -16,7 +16,7 @@
 /* Output debugging information about memory references 
  * allocated through RTJ_malloc (like dmalloc, except at RTJ_malloc point)
  */
-/*  #define RTJ_DEBUG_REF 1 */
+#define RTJ_DEBUG_REF 1
 
 #if (!defined(WITH_REALTIME_JAVA)) && (!defined(WITH_REALTIME_JAVA_STUBS))
 #error Must have either RTJ or RTJ stubs defined in order to include this file.

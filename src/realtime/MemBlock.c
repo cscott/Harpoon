@@ -373,19 +373,23 @@ void printPointerInfo(void* obj, int getClassInfo) {
 	     FNI_ObjectSize(FNI_UNWRAP_MASKED(obj)));
     } 
   } else {
-    printf("found in MemBlock = 0x%08x, ", memBlock);
-    if (getClassInfo) {
-      printf("belonging to %s = 0x%08x\n",
-	     className(memBlock->block_info->memoryArea), 
-	     memBlock->block_info->memoryArea);
-      printf("allocated during execution of %s = 0x%08x\n", 
-	     className(memBlock->block_info->realtimeThread), 
-	     memBlock->block_info->realtimeThread);
+    printf("found in MemBlock = 0x%08x, \n", memBlock);
+    if (memBlock->block_info->memoryArea == NULL) {
+      printf("allocated during the main thread in the initial HeapMemory\n");
     } else {
-      printf("belonging to MemoryArea = 0x%08x\n", 
-	     memBlock->block_info->memoryArea);
-      printf("allocated during execution of 0x%08x\n", 
-	     memBlock->block_info->realtimeThread);
+      if (getClassInfo) {
+	printf("belonging to %s = 0x%08x\n",
+	       className(memBlock->block_info->memoryArea), 
+	       memBlock->block_info->memoryArea);
+	printf("allocated during execution of %s = 0x%08x\n", 
+	       className(memBlock->block_info->realtimeThread), 
+	       memBlock->block_info->realtimeThread);
+      } else {
+	printf("belonging to MemoryArea = 0x%08x\n", 
+	       memBlock->block_info->memoryArea);
+	printf("allocated during execution of 0x%08x\n", 
+	       memBlock->block_info->realtimeThread);
+      }
     }
     printf("at location %s:%d", ptrInfo->file, ptrInfo->line);
     if (getClassInfo) {
@@ -455,14 +459,15 @@ inline void heapCheckJava(struct oobj* ptr) {
     char desc[400];
     jclass excls = (*env)->FindClass(env, "java/lang/IllegalAccessException");
 #ifdef RTJ_DEBUG_REF
-    snprintf(desc, 400, "attempted heap reference 0x%08x in java code at %s:%d\n",
-	     ptr, line, file);
-    printf(desc);
+    printf("attempted heap reference 0x%08x in java code at %s:%d\n", ptr, file, line);
     printPointerInfo(ptr, 0);
+    exit(1);
 #else
-    snprintf(desc, 400, "attempted heap reference 0x%08x in java code\n");
+    printf("attempted heap reference 0x%08x in java code\n", ptr);
+    exit(1);
 #endif
-    (*env)->ThrowNew(env, excls, desc);
+    (*env)->ThrowNew(env, excls, 
+		     "Illegal heap access.  Use RTJ_DEBUG_REF for more information.");
 #ifdef RTJ_DEBUG
     checkException();
 #endif
