@@ -1,9 +1,9 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.10 2003-05-31 02:44:31 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.11 2003-05-31 21:33:18 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TO DO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  - a slide to explain loops/our choice opposed to interval analysis
-%  - Trim ``Intraprocedural analysis'': jump to bitwidth, focus on
+%  X Trim ``Intraprocedural analysis'': jump to bitwidth, focus on
 %    information gained, not process by which it is obtained
 %  - Explain (spend more time on) how the *inter* procedural analysis
 %    works/how fields are treated.  A graphic here?
@@ -38,6 +38,7 @@ oqe
 \usepackage{pst-node}
 \usepackage{verbatim}
 %\hypersetup{pdfpagemode=FullScreen}
+\newcommand{\func}[1]{\ensuremath{\text{\sffamily #1}}}
 
 \slideCaption{Ananian/LCTES'03}
 \title{Size Optimizations for Java Programs}
@@ -299,17 +300,17 @@ powerful bitwidth analysis.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{10}{
+\overlays{7}{
 \begin{slide}{Intraprocedural Analysis}
 \begin{center}%
 \parbox[c]{2in}{%
 \begin{mysamplecode}%
 int foo() \{\\
 \>if (\ldots)\\
-\>\>\betweenSlide{4}{6}{\yellow}i=1;\\
+\>\>\betweenSlide{4}{5}{\yellow}i=1;\\
 \>else\\
-\>\>\betweenSlide{7}{9}{\yellow}i=2;\\
-\>\onlySlide{10}{\yellow}if (i>0)\\
+\>\>\betweenSlide{4}{5}{\yellow}i=2;\\
+\>\onlySlide{7}{\yellow}if (i>0)\\
 \>\>$\vdots$\\
 \}\\
 \end{mysamplecode}%
@@ -323,18 +324,12 @@ int foo() \{\\
 \end{center}
 }}
 
-\fromSlide{3}{\framebox{$\text{\tt\bfseries i} =
-    \untilSlide*{4}{\bot}%
-    \onlySlide*{5}{\bot\yellow\meet 1}%
-    \onlySlide*{6}{\yellow 1}%
-    \onlySlide*{7}{1}%
-    \onlySlide*{8}{1\yellow\meet 2}%
-    \fromSlide*{9}{1\meet 2\onlySlide{9}{\yellow}=\top}%
+\fromSlide*{3}{\framebox{$\text{\tt\bfseries i} =
+    \bot \fromSlide*{5}{\onlySlide{5}{\yellow}\meet 1\meet 2}\fromSlide*{6}{\onlySlide{6}{\yellow}=\top}%
     $}}
 
 \vspace{.5cm}
-\onlySlide*{6}{[Because $\bot \latleq 1$ and $1 \latleq 1$]}
-\fromSlide*{9}{[Because $1 \latleq \top$ and $2 \latleq \top$]}
+\fromSlide*{6}{[Because $1 \latleq \top$ and $2 \latleq \top$]}
 \end{center}
 \end{slide}
 }
@@ -346,14 +341,8 @@ assigns values to an integer variable {\tt i} and then tests the
 result.  @ When we perform the dataflow analysis, we will abstract the
 value domain of the program using this lattice of integer
 constants.  The $\bot$ value indicates that nothing is known about the
-value of a variable. @ At the start of the analysis, we know nothing
-about the value of {\tt i}. @ When the analysis finds that the first
-assignment to {\tt i} is executable, then @ it will perform a meet
-operation on the previous value ($\bot$) and the new value ($1$) to
-obtain @ $1$, because $1$ is the minimum element
-greater-than-or-equal-to both operands.  The analysis now knows that
-the variable {\tt i} can have the value $1$. @ Later, it finds that
-the second assignment to {\tt i} is executable, and @ it computes
+value of a variable. We start {\tt i} at $\bot$ and find @
+that the two assignments to {\tt i} are executable, @ so we compute
 $1 \meet 2$, @ which yields the $\top$ element in the lattice.
 The $\top$ element usually means, ``I give up, I can't constrain
 this value any more, it could be anything.''  This example illustrates
@@ -395,17 +384,17 @@ an assignment of zero, @ we finally get the $\top$ element.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{8}{
+\overlays{5}{
 \begin{slide}{Example, redux}
 \begin{center}%
 \parbox[c]{2in}{%
 \begin{mysamplecode}%
 int foo() \{\\
 \>if (\ldots)\\
-\>\>\betweenSlide{2}{4}{\yellow}i=1;\\
+\>\>\betweenSlide{2}{3}{\yellow}i=1;\\
 \>else\\
-\>\>\betweenSlide{5}{7}{\yellow}i=2;\\
-\>\onlySlide{8}{\yellow}if (i>0)\\
+\>\>\betweenSlide{2}{3}{\yellow}i=2;\\
+\>\onlySlide{5}{\yellow}if (i>0)\\
 \>\>$\vdots$\\
 \}\\
 \end{mysamplecode}%
@@ -420,11 +409,7 @@ int foo() \{\\
 
 \framebox{$\text{\tt\bfseries i} =
     \untilSlide*{2}{\bot}%
-    \onlySlide*{3}{\bot\yellow\meet 1}%
-    \onlySlide*{4}{\yellow 1}%
-    \onlySlide*{5}{1}%
-    \onlySlide*{6}{1\yellow\meet 2}%
-    \fromSlide*{7}{1\meet 2\onlySlide{7}{\yellow}=\text{\tt\bfseries (\_\_P)}}%
+    \fromSlide*{3}{\bot\onlySlide{3}{\yellow}\meet 1\meet 2\fromSlide*{4}{\onlySlide{4}{\yellow}=\text{\tt\bfseries (\_\_P)}}}%
     $}
 
 \end{center}
@@ -433,8 +418,8 @@ int foo() \{\\
 
 \begin{talknotes}
 With the new lattice, we start at $\bot$ as before. @ Looking at {\tt
-  i=1}, @ we do a meet with $1$ @ to get $1$.  But now, when we see
-{\tt i=2}, @ and meet with $2$, @ we get {\tt (\_\_P)}, or ``a positive
+  i=1} and {\tt i=2}, we @ do the meet and now we get @
+{\tt (\_\_P)}, or ``a positive
   integer.'' @ This time, when we get to the comparison, we can tell
 that {\tt i>0} will always be true.
 \end{talknotes}
@@ -523,17 +508,17 @@ numbers.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{8}{
+\overlays{5}{
 \begin{slide}{Example redux, redux}
 \begin{center}%
 \parbox[c]{2in}{%
 \begin{mysamplecode}%
 int foo() \{\\
 \>if (\ldots)\\
-\>\>\betweenSlide{2}{4}{\yellow}i=1;\\
+\>\>\betweenSlide{2}{3}{\yellow}i=1;\\
 \>else\\
-\>\>\betweenSlide{5}{7}{\yellow}i=2;\\
-\>\onlySlide{8}{\yellow}if (i>0)\\
+\>\>\betweenSlide{2}{3}{\yellow}i=2;\\
+\>\onlySlide{5}{\yellow}if (i>0)\\
 \>\>$\vdots$\\
 \}\\
 \end{mysamplecode}%
@@ -548,11 +533,8 @@ int foo() \{\\
 
 \framebox{$\text{\tt\bfseries i} =
     \untilSlide*{2}{\bot}%
-    \onlySlide*{3}{\bot\yellow\meet 1}%
-    \onlySlide*{4}{\yellow 1}%
-    \onlySlide*{5}{1}%
-    \onlySlide*{6}{1\yellow\meet 2}%
-    \fromSlide*{7}{1\meet 2\onlySlide{7}{\yellow}=\tuple{0,2}}%
+    \onlySlide*{3}{\bot\yellow\meet 1\meet 2}%
+    \fromSlide*{4}{\bot\meet 1\meet 2\onlySlide{4}{\yellow}=\tuple{0,2}}%
     $}
 
 \end{center}
@@ -561,8 +543,7 @@ int foo() \{\\
 
 \begin{talknotes}
 Revisiting our example: we still start with $\text{\tt i}=\bot$.
-@ Looking at {\tt i=1}, @ we do a meet with $1$ @ to get $1$.
-@ We look at {\tt i=2}, @ and meet with $2$, @
+@ Looking at {\tt i=1} and {\tt i=2}, we @ perform the meet, and @
 now we get the tuple \tuple{0,2}, indicating that {\tt i} can not be
 negative and that we only need two bits to store the positive portion.
 %Note that we \emph{don't} recenter the range; we \emph{could} use only
@@ -574,54 +555,129 @@ apply it to fields.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
+\overlays{5}{
 \begin{slide}{Bitwidth combination rules}
 \begin{eqnarray*}
--\tuple{m,p} &=& \tuple{p,m}\\
-\tuple{m_l,p_l} + \tuple{m_r,p_r} &=& \tuple{1+\max(m_l,m_r),1+\max(p_l,p_r)}\\
-%\tuple{m_l,p_l} \times \tuple{m_r,p_r} &=& \langle\max(m_l+p_r,p_l+m_r),\\
-%                                       &&  \max(m_l+m_r,p_l+p_r)\rangle\\
-\tuple{m_l,p_l} \times \tuple{m_r,p_r} &=&
+\onlySlide{2}{\yellow}\fromSlide{2}{
+\text{\tt -}\tuple{m,p}
+ }&\onlySlide{2}{\yellow}\fromSlide{2}{=}&\onlySlide{2}{\yellow}\fromSlide{2}{
+ \tuple{p,m}
+ }\\
+\onlySlide{3}{\yellow}\fromSlide{3}{
+\tuple{m_l,p_l} \text{\tt+} \tuple{m_r,p_r}
+ }&\onlySlide{3}{\yellow}\fromSlide{3}{=}&\onlySlide{3}{\yellow}\fromSlide{3}{
+ \tuple{1+\max(m_l,m_r),1+\max(p_l,p_r)}
+ }\\
+\onlySlide{4}{\yellow}\fromSlide{4}{
+\tuple{m_l,p_l} \text{\tt *} \tuple{m_r,p_r}
+ }&\onlySlide{4}{\yellow}\fromSlide{4}{=}&\onlySlide{4}{\yellow}\fromSlide{4}{
 \tuple{\begin{array}{l}\max(m_l+p_r,p_l+m_r),\\
-                       \max(m_l+m_r,p_l+p_r)\end{array}}\\
-\tuple{0,p_l} \wedge \tuple{0,p_r} &=& \tuple{0,\min(p_l,p_r)}\\
-\tuple{m_l,p_l}\wedge \tuple{m_r,p_r} &=& \tuple{\max(m_l,m_r),\max(p_l,p_r)}
+                       \max(m_l+m_r,p_l+p_r)\end{array}}
+ }\\
+\onlySlide{5}{\yellow}\fromSlide{5}{
+\tuple{0,p_l} \text{\tt\&} \tuple{0,p_r}
+ }&\onlySlide{5}{\yellow}\fromSlide{5}{=}&\onlySlide{5}{\yellow}\fromSlide{5}{
+ \tuple{0,\min(p_l,p_r)}
+ }\\
+\onlySlide{5}{\yellow}\fromSlide{5}{
+\tuple{m_l,p_l}\text{\tt\&} \tuple{m_r,p_r}
+ }&\onlySlide{5}{\yellow}\fromSlide{5}{=}&\onlySlide{5}{\yellow}\fromSlide{5}{
+ \tuple{\max(m_l,m_r),\max(p_l,p_r)}
+ }\\
 \end{eqnarray*}
-
-Some combination rules for bit-width analysis.
-% The \code{Z}
-% element indicating whether zero is a possible value has been omitted.
 \end{slide}
+}
 
 \begin{talknotes}
-For completeness: here are some of the combination rules we use to
+Here are some of the combination rules we use to
 perform abstract evaluation of unary and binary operations using
-our bitwidth value domain.  I'm afraid time doesn't permit us to go
-through these individually at this point, but these are in the paper.
-Note for the first rule that we're tracking the bitwidth of the
+our bitwidth value domain.
+
+@ The first entry simply says that negation
+exchanges the positive and negative bitwidths.
+Note that we're tracking the bitwidth of the
 \textit{absolute value} of the number, so the rule for negation is
 simply interchanging the positive and negative portions of the tuple.
 
-\textit{If questioned:}
-The first entry simply says that negation
-exchanges the positive and negative bitwidths.  The second entry gives
+@ The second entry gives
 the rules for addition: we have to add one to the width to allow for
-carry out.  The rule for multiplication should remind you that we're
-operating in the log-domain.  The underlying numeric representation
-shows through in our rules for logical-AND: when anding two positive
+carry out.
+
+@ The rule for multiplication should remind you that we're
+operating in the log-domain.  
+
+@ The underlying numeric representation
+shows through in our rules for logical-AND; let's look at this more closely.
+
+~%force rejust.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{5}{
+\begin{slide}{Bitwise-AND, continued}
+\begin{displaymath}
+\func{bw}(n)=\begin{cases}
+\tuple{0,0} & n=0 \\
+\tuple{0,{\onlySlide{3}{\yellow}1+\left\lfloor\ln\left|n\right|\right\rfloor}} & n>0 \\
+\tuple{{\onlySlide{4}{\yellow}1+\left\lfloor\ln\left|n\right|\right\rfloor},0} & n<0 \\
+\end{cases}
+\end{displaymath}
+\FromSlide{2}%
+\begin{displaymath}
+\begin{array}{ccc}
+\text{\tt 0\ldots 0}\overbrace{\text{\tt 1X\ldots XXX}}^{1+\left\lfloor\ln\left|n\right|\right\rfloor\fromSlide*{3}{\onlySlide{3}{\yellow}=p}}
+&\quad&
+\text{\tt 1\ldots 1}\overbrace{\text{\tt 0X\ldots XXXX}}^{1+\left\lfloor\ln\left(\left|n\right|-1\right)\right\rfloor\fromSlide*{4}{\onlySlide{4}{\yellow}\leq m}}
+\\
+\text{Positive} && \text{Negative} \\
+\end{array}
+\end{displaymath}
+\FromSlide{5}
+\begin{eqnarray*}
+\tuple{0,p_l} \text{\tt\&} \tuple{0,p_r} &=& \tuple{0,\min(p_l,p_r)} \\
+\tuple{m_l,p_l}\text{\tt\&} \tuple{m_r,p_r} &=& \tuple{\max(m_l,m_r),\max(p_l,p_r)}
+\end{eqnarray*}
+\end{slide}
+}
+
+\begin{talknotes}
+Let's review the precise definition of our bitwidth tuples.  Both the
+negative and positive portions of the tuple are equal to this
+expression.  @ The structure of two's complement numbers is as shown.
+Note that the location of the first one in a positive number is
+@ given by the $p$ portion of the tuple, and similarly, the
+location of the first zero in a negative number is @ given by $m$.
+
+@ Now let's look again at our bitwise-AND rules.
+When ANDing two positive
 integers, the resulting bitwidth will match the smaller of the two
 inputs, since leading zeros will force zeros on the output.  But
 if negative numbers are possible, we must use a far more conservative
 rule to account for the leading ones in the twos-complement
 representation of negative numbers.  The $m$-component of the tuple
-roughly identifies the leftmost \emph{zero}, so clearly the largest
+identifies the leftmost \emph{zero}, so clearly the largest
 $m$ will dictate where the leftmost zero can be in the result.
 The $p$ component identifies the leftmost \emph{one}, and since
 the all-ones value $-1$ is included in all negative ranges, the
 largest positive value input could emerge unchanged.  We cannot create
 a larger positive value because the AND operation cannot create ones
 anywhere there is a zero in the input.
+\end{talknotes}
 
-~%force rejust.
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{An alternative: interval analysis}
+
+\begin{mysamplecode}
+i=0;\\
+while (i<50) \{\\
+\>\ldots\\
+\>i=i+1;\\
+\}\\
+\end{mysamplecode}
+
+\end{slide}
+
+\begin{talknotes}
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -667,7 +723,10 @@ Our examples have all been intraprocedural.  We use a
 \emph{field-based} technique to perform the analysis
 interprocedurally, maintaining a single analysis value for
 each distinct object field.  @  Instead of maintaining a value
-for {\tt i}, we maintain a value for field {\tt f}, @ and this
+for {\tt i}, we maintain a value for field {\tt f}.
+Note that even though the object on the left changes, we're still
+going to treat these as the same abstract location.
+@ This
 works even when the various accesses take place in different methods.
 \end{talknotes}
 
