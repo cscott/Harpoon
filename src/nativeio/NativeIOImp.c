@@ -33,6 +33,53 @@
 
 int schedulerModel=0;
 
+
+static jfieldID SI_fdObjID = 0; /* The field ID of SocketImpl.fd */
+static jfieldID SI_addrID  = 0; /* The field ID of SocketImpl.address */
+static jfieldID SI_portID  = 0; /* The field ID of SocketImpl.port */
+static jfieldID SI_localportID = 0; /* The field ID of SocketImpl.localport */
+static jfieldID IA_addrID  = 0; /* The field ID of InetAddress.address */
+static jfieldID IA_familyID= 0; /* The field ID of InetAddress.family */
+static jclass IOExcCls  = 0; /* The java/io/IOException class object */
+static int inited = 0; /* whether the above variables have been initialized */
+
+static int initializePSI(JNIEnv *env) {
+    jclass PSICls, IACls;
+
+    FLEX_MUTEX_LOCK(&init_mutex);
+    // other thread may win race to lock and init before we do.
+    if (inited) goto done;
+
+    PSICls  = (*env)->FindClass(env, "java/net/PlainSocketImpl");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    SI_fdObjID = (*env)->GetFieldID(env, PSICls,
+				    "fd","Ljava/io/FileDescriptor;");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    SI_addrID  = (*env)->GetFieldID(env, PSICls,
+				    "address", "Ljava/net/InetAddress;");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    SI_portID  = (*env)->GetFieldID(env, PSICls, "port", "I");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    SI_localportID  = (*env)->GetFieldID(env, PSICls, "localport", "I");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    IACls   = (*env)->FindClass(env, "java/net/InetAddress");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    IA_addrID  = (*env)->GetFieldID(env, IACls, "address", "I");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    IA_familyID= (*env)->GetFieldID(env, IACls, "family", "I");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    IOExcCls = (*env)->FindClass(env, "java/io/IOException");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    /* make IOExcCls into a global reference for future use */
+    IOExcCls = (*env)->NewGlobalRef(env, IOExcCls);
+
+    /* done. */
+    inited = 1;
+ done:
+    FLEX_MUTEX_UNLOCK(&init_mutex);
+    return inited;
+}
+
 JNIEXPORT jint JNICALL Java_java_io_NativeIO_openJNI
   (JNIEnv *env, jobject obj, jstring path, jint oflag)
 { 
@@ -206,8 +253,7 @@ JNIEXPORT jint JNICALL Java_java_io_NativeIO_socketAccept
     struct sockaddr_in sa;
     jobject fdObj, address;
     int rc, sa_size = sizeof(sa);
-
-    assert(inited);
+    if (!inited && !initializePSI(env)) return;
 
     do {
       rc = accept(fd, (struct sockaddr *) &sa, &sa_size);
@@ -325,6 +371,13 @@ JNIEXPORT jintArray JNICALL Java_java_io_NativeIO_selectJNI
 
 /* Initializes all the internal data of the system */
 JNIEXPORT void JNICALL Java_java_io_NativeIO_initScheduler
+  (JNIEnv *env, jclass obj, jint model)
+{
+  schedulerModel=model;
+  (model==MOD_SELECT) ? initDataSEL() : initDataSIG();
+}
+
+JNIEXPORT void JNICALL Java_java_io_NativeIO_initScheduler_00024_00024initcheck
   (JNIEnv *env, jclass obj, jint model)
 {
   schedulerModel=model;
