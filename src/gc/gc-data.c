@@ -1,8 +1,8 @@
 #include "config.h"
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
-#include "../../Contrib/gc/gc_typed.h"
-#include "../../Contrib/gc/gcconfig.h"
+#include "gc_typed.h"
+#include "gcconfig.h"
 #endif
 #include <assert.h>
 #include <jni.h>
