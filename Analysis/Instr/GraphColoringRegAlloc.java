@@ -50,7 +50,7 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.13 2000-08-02 01:15:22 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.14 2000-08-02 02:10:08 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -615,7 +615,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
     }
 
     private Graph buildGraph(WebRecord[] adjLsts) {
-	return new Graph(adjLsts);
+	Graph g = new Graph();
+	for(int i=0; i<adjLsts.length; i++) {
+	    g.add(adjLsts[i]);
+	}
+	return g;
     }
 
     private void modifyCode() { 
@@ -652,58 +656,108 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     }
     
+
     /** Graph is a graph view of the adjacency lists in this. 
 	There is a many-to-one mapping from Nodes to WebRecords. 
     */
     class Graph extends AbstractGraph implements ColorableGraph {
-	LinkedList adjLsts;
-	LinkedList hidden;
-	Graph(WebRecord[] adjLsts) {
-	    this.adjLsts = new LinkedList(Arrays.asList(adjLsts));
+	private LinkedList nodes;
+	private LinkedList hidden;
+	private MultiMap wr2node; // WebRecord -> Node
+
+	/** Node is a simple record class representing the 
+	    Node -> WebRecord mapping.  It also holds the color for the
+	    node. 
+	*/
+	class Node {
+	    final WebRecord wr;
+	    final int index; 
+	    RegColor color;
+	    Node(WebRecord w, int i) { wr = w; index = i; }
+	}
+	
+	private Collection nodes(Object wr) { 
+	    return wr2node.getValues(wr); 
+	}
+	
+	Graph() {
+	    this.nodes = new LinkedList();
 	    hidden = new LinkedList();
+	    wr2node = new GenericMultiMap();
+	}
+	void add(WebRecord wr) {
+	    Map r2a = (Map) implicitAssigns.get(wr.temp());
+	    List rl = (List) r2a.values().iterator().next();
+	    for(int j=0; j<rl.size(); j++) {
+		Node n = new Node(wr, j);
+		nodes.add(n);
+		wr2node.add(wr, n);
+	    }
 	}
 	public Set nodeSet() { 
 	    return new AbstractSet() {
-		public int size() { return adjLsts.size(); }
+		public int size() { return nodes.size(); }
 		public Iterator iterator() {
-		    return adjLsts.iterator();
+		    return nodes.iterator();
 		}
 	    };
 	}
 	public Collection neighborsOf(Object n) { 
-	    if (!(n instanceof WebRecord))
+	    if (!(n instanceof Node))
 		throw new IllegalArgumentException();
-	    WebRecord lr = (WebRecord) n;
-	    return lr.adjnds;
+	    final WebRecord lr = ((Node) n).wr;
+	    return new AbstractCollection() {
+		private Iterator wrs() { return lr.adjnds.iterator(); }
+		public int size() {
+		    int s=0;
+		    for(Iterator wrs = wrs(); wrs.hasNext(); )
+			s += nodes(wrs.next()).size(); 
+		    return s; 
+		}
+
+		FilterIterator.Filter TO_NODE_ITER = 
+		    new FilterIterator.Filter() {
+			public Object map(Object o) { 
+			    return nodes(o).iterator();
+			}
+		    };
+		public Iterator iterator() {
+		    Iterator iters = 
+			new FilterIterator(wrs(), TO_NODE_ITER);
+		    return new CombineIterator(iters);
+		}
+	    };
 	}
+
 	public void resetGraph() { replaceAll(); resetColors(); }
 	public void hide(Object n) { 
-	    if (adjLsts.remove(n)) { // check if in nodeSet
-		WebRecord lr = (WebRecord) n;
+	    if (nodes.contains(n)) { // check if in nodeSet
+		WebRecord wr = ((Node) n).wr;
+		nodes.removeAll( nodes(wr) );
 		Iterator nbors;
-		for(nbors=lr.adjnds.iterator(); nbors.hasNext();){ 
+		for(nbors=wr.adjnds.iterator(); nbors.hasNext();){ 
 		    WebRecord nbor = (WebRecord) nbors.next();
-		    boolean changed = nbor.adjnds.remove(lr);
+		    boolean changed = nbor.adjnds.remove(wr);
 		    Util.assert(changed);
 		}
-		hidden.addLast(lr);
+		hidden.addLast(wr);
 	    } else {
 		throw new IllegalArgumentException();
 	    }
 	}
 	public Object replace() { 
-	    WebRecord lr;
+	    WebRecord wr;
 	    try {
-		lr = (WebRecord) hidden.removeLast();
-		adjLsts.add(lr);
-		for(Iterator nbors=lr.adjnds.iterator();nbors.hasNext();){ 
+		wr = (WebRecord) hidden.removeLast();
+		nodes.addAll( nodes(wr) );
+		for(Iterator nbors=wr.adjnds.iterator();nbors.hasNext();){ 
 		    WebRecord nbor = (WebRecord) nbors.next();
-		    nbor.adjnds.add(lr);
+		    nbor.adjnds.add(wr);
 		}
 	    } catch (java.util.NoSuchElementException e) {
-		lr = null;
+		wr = null;
 	    }
-	    return lr;
+	    return (wr==null)?null:nodes(wr).iterator().next();
 	}
 	public void replaceAll() {
 	    while(!hidden.isEmpty()) {
@@ -711,9 +765,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	}
 	public Color getColor(Object n) { 
-	    if (adjLsts.contains(n)) {
-		WebRecord lr = (WebRecord) n;
-		return lr.regColor();
+	    if (nodes.contains(n)) {
+		return ((Node)n).color;
 	    } else {
 		throw new IllegalArgumentException();
 	    }
@@ -721,7 +774,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	public void resetColors() { 
 	    Iterator ns;
-	    for(ns = adjLsts.iterator(); ns.hasNext();) {
+	    for(ns = nodes.iterator(); ns.hasNext();) {
 		((WebRecord) ns.next()).regColor(null);
 	    }
 	    for(ns = hidden.iterator(); ns.hasNext();) {
@@ -731,7 +784,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	public void setColor(Object n, Color c) { 
 	    try {
-		((WebRecord)n).regColor((RegColor) c);
+		((Node)n).color = (RegColor) c;
 	    } catch (ClassCastException e) {
 		throw new IllegalArgumentException();
 	    }
