@@ -12,11 +12,11 @@ import java.util.Collection;
  * given graph.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: UnableToColorGraph.java,v 1.1.2.2 2000-07-26 21:30:34 pnkfelix Exp $
+ * @version $Id: UnableToColorGraph.java,v 1.1.2.3 2000-08-23 06:33:21 pnkfelix Exp $
  */
 
 public class UnableToColorGraph extends Throwable {
-    
+    Collection rmvSuggsLarge;
     Collection rmvSuggs;
 
     /** returns a Collection of nodes that are suggested for
@@ -29,16 +29,25 @@ public class UnableToColorGraph extends Throwable {
 	return Collections.unmodifiableCollection(rmvSuggs);
     }
 
+    /** returns a Collection of nodes that are suggested for
+	removal to make some external graph colorable.
+	No guarantees are made about the colorability of the graph
+	after any nodes are removed; these are merely
+	heuristically-driven hints to the catcher on how to recover. 
+     */
+    public Collection getRemovalSuggestionsBackup() {
+	return Collections.unmodifiableCollection(rmvSuggsLarge);
+    }
     /** Creates a <code>UncolorableGraphException</code>. */
     public UnableToColorGraph() {
         super();
-	rmvSuggs = Collections.EMPTY_SET;
+	rmvSuggsLarge = rmvSuggs = Collections.EMPTY_SET;
     }
 
     /** Creates a <code>UncolorableGraphException</code>. */
     public UnableToColorGraph(String s) {
         super(s);
-	rmvSuggs = Collections.EMPTY_SET;
+	rmvSuggsLarge = rmvSuggs = Collections.EMPTY_SET;
     }
     
 }

@@ -57,7 +57,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.19 2000-07-18 18:55:39 kkz Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.20 2000-08-23 06:33:33 pnkfelix Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -384,11 +384,12 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    List stackSigns = new ArrayList();
 		    while(ddl != null) {
 			Temp base = ddl.base;
-			//System.out.println("doing reachingDefs"+
+			// System.out.println("doing reachingDefs"+
 			//		   " instr:"+instr+
 			//		   " base:"+base);
 			Collection c1 = rd.reachingDefs(instr, base);
-			Util.assert(c1 != null && c1.size() >0);
+			Util.assert(c1 != null);
+			Util.assert(c1.size() >0);
 			Instr[] defPts = (Instr[]) 
 			    c1.toArray(new Instr[c1.size()]);
 			// any of the definition points should work

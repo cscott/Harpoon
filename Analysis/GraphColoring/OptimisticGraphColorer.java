@@ -26,11 +26,11 @@ import harpoon.Util.Collections.LinearSet;
  * second stage, but this is parameterizable.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: OptimisticGraphColorer.java,v 1.1.2.7 2000-08-15 06:45:56 pnkfelix Exp $
+ * @version $Id: OptimisticGraphColorer.java,v 1.1.2.8 2000-08-23 06:33:21 pnkfelix Exp $
  */
 public class OptimisticGraphColorer extends GraphColorer {
 
-    private static final boolean MONITOR = true;
+    public static boolean MONITOR = false;
     private static void MONITOR(String s) {
 	if (MONITOR) System.out.print(s);
     }
@@ -43,27 +43,44 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    <BR> <B>requires:</B> g.nodeSet() is not empty.
 	    <BR> <B>effects:</B> returns some element of g.nodeSet().
 	*/
-	public abstract Object chooseNode(ColorableGraph g);
+	public abstract Object chooseNodeForRemoval(ColorableGraph g);
+
+	/** Returns a element of <code>g.nodeSet()</code>, in the
+	    intent that it be removed from <code>g</code>.
+	    <BR> <B>requires:</B> g.nodeSet() is not empty.
+	    <BR> <B>effects:</B> returns some element of g.nodeSet().
+	*/
+	public abstract Object chooseNodeForHiding(ColorableGraph g);
+
     }
 
-    private static NodeSelector DEFAULT_SELECTOR = 
-	new NodeSelector() {
-	    public Object chooseNode(ColorableGraph g) {
-		Object spillChoice = null; 
-		int maxDegree = -1;
-		Set nset = g.nodeSet();
-		for(Iterator ns = nset.iterator(); ns.hasNext();){
-		    Object n = ns.next();
-		    if (g.getDegree(n) > maxDegree && 
-			g.getColor(n) == null) {
-			spillChoice = n;
-		    }
-		}
-		Util.assert(spillChoice != null);
-		return spillChoice;
-	    }
-	};
+    private static NodeSelector DEFAULT_SELECTOR = new SimpleSelector();
 
+    public static class SimpleSelector extends NodeSelector {
+	protected SimpleSelector() { }
+	public Object chooseNodeForRemoval(ColorableGraph g) {
+	    return chooseNode(g);
+	}
+	public Object chooseNodeForHiding(ColorableGraph g) {
+	    return chooseNode(g);
+	}
+	private Object chooseNode(ColorableGraph g) {
+	    Object spillChoice = null; 
+	    Set nset = g.nodeSet();
+	    int maxDegree = -1;
+	    for(Iterator ns = nset.iterator(); ns.hasNext();){
+		Object n = ns.next();
+		if (g.getColor(n) == null && 
+		    g.getDegree(n) > maxDegree) {
+		    spillChoice = n;
+		    maxDegree = g.getDegree(n);
+		}
+	    }
+	    Util.assert(spillChoice != null);
+	    return spillChoice;
+	}
+    }	
+    
     /** Creates a <code>OptimisticGraphColorer</code> with the default
 	second stage selection strategy. */
     public OptimisticGraphColorer() { 
@@ -91,7 +108,6 @@ public class OptimisticGraphColorer extends GraphColorer {
 	boolean moreNodesToHide;
 	
 	HashSet spills = new HashSet();
-
 	for(;;) {
 	    do {
 		moreNodesToHide = false;
@@ -116,7 +132,7 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    if (!uncoloredNodesRemain(graph)) {
 		break;
 	    } else {
-		Object choice = this.selector.chooseNode(graph);
+		Object choice = this.selector.chooseNodeForHiding(graph);
 		graph.hide(choice);
 		spills.add(choice);
 
@@ -125,8 +141,9 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    }
 	}
 
+	HashSet allSpills = new HashSet(spills);
 	boolean unableToColor = false;
-
+	
 	nextNode:
 	for(Object n=graph.replace(); n!=null; n=graph.replace()){
 	    // find color that none of n's neighbors is set to
@@ -152,6 +169,7 @@ public class OptimisticGraphColorer extends GraphColorer {
 		Color col = (Color) cIter.next();
 		if (!nColors.contains(col)) {
 		    try {
+			// MONITOR("trying "+col+" with "+n+"\n");
 			graph.setColor(n, col);
 			spills.remove(n);
 
@@ -160,6 +178,9 @@ public class OptimisticGraphColorer extends GraphColorer {
 		    } catch (ColorableGraph.IllegalColor ic) {
 			// col was not legal for n
 			// try another color...  
+			MONITOR(col + " not legal for " + n + 
+				"b/c of conflict between "+
+				ic.color + " and " + ic.node+"\n");
 			continue nextColor;
 		    }
 		}
@@ -167,13 +188,15 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    
 	    // if we ever reach this point, we failed to color n
 	    MONITOR("failed to color "+n+"\n");
-	    spills.add(n);
+	    Object choice = this.selector.chooseNodeForRemoval(graph);
+	    spills.add(choice); allSpills.add(choice);
 	    unableToColor = true;
 	}
 	
 	if (unableToColor) {
 	    UnableToColorGraph u = new UnableToColorGraph();
 	    u.rmvSuggs = spills;
+	    u.rmvSuggsLarge = allSpills;
 	    throw u;
 	}
     }

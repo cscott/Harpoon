@@ -69,7 +69,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.114 2000-08-22 01:08:42 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.115 2000-08-23 06:33:25 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -1072,7 +1072,12 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    
 		    if (isRegister(u) || isRegister(d)) {
 			instrsToReplace.add(i);
-			Instr proxy = new InstrMOVEproxy(i);
+			Instr proxy;
+			if (isRegister(u)) {
+			    proxy = new InstrMOVEproxy(i);
+			} else {
+			    proxy = new InstrMOVEproxy(i);
+			}
 			instrsToReplace.add(proxy);
 			back(proxy, i);
 			checked.add(proxy);
@@ -1681,13 +1686,5 @@ public class LocalCffRegAlloc extends RegAlloc {
 	return Arrays.asList( new Temp[]{ t1, t2 });
     }
 
-    class InstrMOVEproxy extends Instr {
-	public InstrMOVEproxy(Instr src) {
-	    super(src.getFactory(), src, 
-		  "", //" @proxy "+def+" <- "+use,
-		  (Temp[])src.def().clone(), 
-		  (Temp[])src.use().clone());
-	}
-    }
 }
 

@@ -39,7 +39,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.25 2000-08-14 20:25:04 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.26 2000-08-23 06:33:38 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -152,7 +152,7 @@ public class RegFileInfo
 	}
 	oneWordAssigns = Collections.unmodifiableSet(oneWordAssigns);
 	twoWordAssigns = new HashSet();
-	for (int i=0; i<regGeneral.length-1; i+=2) {
+	for (int i=0; i<regGeneral.length-1; i++) {
 	    Temp[] assign = new Temp[] { regGeneral[i] ,
 					 regGeneral[i+1] };
 	    twoWordAssigns.add(Arrays.asList(assign));

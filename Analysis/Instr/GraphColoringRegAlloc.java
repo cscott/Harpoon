@@ -55,15 +55,19 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.27 2000-08-22 04:37:49 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.28 2000-08-23 06:33:25 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
-    private static final boolean TIME = false;
+    private static final boolean TIME = true;
 
     private static final boolean RESULTS = false;
 
+    private static final boolean SPILL_INFO = false;
+
     private static final boolean STATS = false;
+
+    private static final boolean COALESCE_STATS = false;
 
     public static RegAlloc.Factory FACTORY =
 	new RegAlloc.Factory() {
@@ -71,11 +75,43 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		GraphColorer gc;
 
 		// gc = new SimpleGraphColorer();
-		gc = new OptimisticGraphColorer();
 
-		return new GraphColoringRegAlloc(c, gc);
+		// TODO: Implement a Node Selector that will not
+		// select nodes that have already been spilled in the
+		// code, and pass it in here...
+		NodeSelector ns = new NodeSelector();
+		gc = new OptimisticGraphColorer(ns);
+		ns.gcra = new GraphColoringRegAlloc(c, gc);
+		
+		return ns.gcra;
 	    }
 	};
+
+    static class NodeSelector extends OptimisticGraphColorer.SimpleSelector {
+	GraphColoringRegAlloc gcra;
+	public Object chooseNodeForRemoval(ColorableGraph g) {
+	    Object spillChoice = null;
+	    Set nset = g.nodeSet();
+	    int maxDegree = -1;
+	    for(Iterator ns=nset.iterator(); ns.hasNext(); ) {
+		Object n = ns.next();
+		if (g.getColor(n) == null &&
+		    g.getDegree(n) > maxDegree) {
+		    if (! gcra.overlapsWithSpilled(n)) { // <= THIS IS KEY
+			spillChoice = n;
+			maxDegree = g.getDegree(n);
+		    } else {
+			System.out.println("SKIPPING "+n+" (already spilled)");
+		    }
+		}
+	    }
+	    if(spillChoice == null) {
+		printGraph(g, true);
+		Util.assert(false);
+	    }
+	    return spillChoice;
+	}
+    }
 
     private static final int INITIAL_DISPLACEMENT = 0;
 
@@ -148,19 +184,47 @@ public class GraphColoringRegAlloc extends RegAlloc {
         colorer = gc;
     }
 
+    private void replace(Instr orig, Instr repl) {
+	Instr.replace(orig, repl);
+	back(repl, orig);
+    }
+
     protected Derivation getDerivation() {
 	final Derivation oldD = code.getDerivation();
 	return new BackendDerivation() {
 	    private HCodeElement orig(HCodeElement h){
 		return getBack((Instr)h);
 	    }
+	    private Temp orig(HCodeElement h, Temp t) {
+		Temp t2 = null;
+		Instr inst = (Instr) orig(h);
+		Iterator rs = new
+		    CombineIterator(inst.defC().iterator(),
+				    inst.useC().iterator());
+		while(rs.hasNext()) {
+		    t2 = (Temp) rs.next();
+		    if (remap.tempMap(t2).equals(t)) 
+			break;
+		}
+		Util.assert(t2 != null);
+		return t2;
+	    }
 	    public HClass typeMap(HCodeElement hce, Temp t) {
 		HCodeElement hce2 = orig(hce); 
-		return oldD.typeMap(hce2, t);
+		Temp t2 = orig(hce, t);
+		return oldD.typeMap(hce2, t2);
 	    }
 	    public Derivation.DList derivation(HCodeElement hce, Temp t) {
 		HCodeElement hce2 = orig(hce); 
-		return oldD.derivation(hce2, t);
+		Temp t2 = orig(hce, t);
+		try {
+		    return Derivation.DList.rename
+			(oldD.derivation(hce2, t2), remap);
+		} catch (TypeNotKnownException e) {
+		    System.out.println("called derivation("+hce+","+t+")");
+		    System.out.println("die on derivation("+hce2+","+t2+")");
+		    throw e;
+		}
 	    }
 	    public BackendDerivation.Register
 		calleeSaveRegister(HCodeElement hce, Temp t) { 
@@ -175,8 +239,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	   there exists a unique c element of cr such that 
 	   c = [nodeToNum(e.get(0)), nodeToNum(e.get(1))]
     */
-    private Collection readableEdges(final Collection edges, 
-				     final Map nodeToNum) {
+    private static Collection readableEdges(final Collection edges, 
+					    final Map nodeToNum) {
 	return new AbstractCollection() {
 	    public int size() { return edges.size(); }
 	    public Iterator iterator() { 
@@ -191,8 +255,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	};
     }
-    private Collection readableNodes(final Collection nodes,
-				     final Map nodeToNum) {
+    private static Collection readableNodes(final Collection nodes,
+					    final Map nodeToNum) {
 	return new AbstractCollection() {
 	    public int size() { return nodes.size(); }
 	    public Iterator iterator() {
@@ -210,8 +274,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     protected void generateRegAssignment() {
 	boolean success, coalesced;
-	AdjMtx adjMtx;
-
+	AdjMtx adjMtx = null;
+	
+	Set coalescedInstrs = new HashSet();
+	boolean doCoalescing = true; // HACK
+	
 	if (TIME) System.out.println();
 
 
@@ -268,13 +335,18 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		if(TIME)System.out.println("Building Matrix");
 
 		adjMtx = buildAdjMatrix();
-
-
-		if(TIME)System.out.println(((CachingLiveTemps)liveTemps).cachePerformance());
-
+		if(TIME)
+		    System.out.println(((CachingLiveTemps)liveTemps).
+				       cachePerformance());
+		
 		// System.out.println("Adjacency Matrix");
 		// System.out.println(adjMtx);
-		coalesced = coalesceRegs(adjMtx);
+		if (doCoalescing) {
+		    Set coal = coalesceRegs(adjMtx);
+		    coalesced = coalescedInstrs.addAll(coal);
+		} else {
+		    coalesced = false;
+		}
 	    } while (coalesced);
 
 	    if(TIME)System.out.println("Building Lists");
@@ -307,20 +379,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    if(TIME)System.out.println("Building Graph");
 
 	    final Graph graph = buildGraph(adjLsts);
+
+	    Map nodeToNum = printGraph(graph, RESULTS);
 	    
-	    final Map nodeToNum = new HashMap(); 
-	    if(RESULTS)System.out.println("nodes of graph");
-	    int i=0;
-	    for(Iterator nodes=graph.nodeSet().iterator();nodes.hasNext();){
-		i++;
-		Object n=nodes.next();
-		nodeToNum.put(n, new Integer(i));
-		if(RESULTS)System.out.println(i+"\t"+n);
-	    }
-	    if (RESULTS){
-		Collection readEdges = readableEdges(graph.edges(),nodeToNum);
-		System.out.println("edges of graph "+readEdges);
-	    }
 	    if(STATS)System.out.println(" |g.V|:"+graph.nodeSet().size() + 
 		  " |g.E|:"+graph.edges().size());
 
@@ -344,11 +405,18 @@ public class GraphColoringRegAlloc extends RegAlloc {
 				    "no regs for "+wr);
 
 			nbl.retainAll(graph.regs(wr));
+
+
 			Util.assert(nbl.isEmpty(), 
 				    "conflict detected: "+
-				    wr+"("+graph.regs(wr)+")"+
+				    wr+"("+graph.regs(wr)+
+				    ",precol:"+webPrecolor.containsKey(wr)+
+				    ")"+
+				    
 				    " and "+
-				    nb+"("+graph.regs(nb)+")"+
+				    nb+"("+graph.regs(nb)+
+				    ",precol:"+webPrecolor.containsKey(wr)+
+				    ")"+
 				    "");
 			
 			Util.assert(rfi.getRegAssignments(wr.temp()).
@@ -372,19 +440,44 @@ public class GraphColoringRegAlloc extends RegAlloc {
 			    readableNodes(c2n.getValues(col),nodeToNum));
 		}
 		
-
 		modifyCode(graph);
-		
+
+		OptimisticGraphColorer.MONITOR = false;
 		success = true;
 	    } catch (UnableToColorGraph u) {
+		OptimisticGraphColorer.MONITOR = true;
 		success = false;
-		genSpillCode(u.getRemovalSuggestions(), graph);
+		if (doCoalescing) {
+		    doCoalescing = false;
+		    for (Iterator is=code.getElementsI();is.hasNext();){
+			Instr inst = (Instr) is.next();
+			if (getBack(inst) != inst) {
+			    Instr.replace(inst, getBack(inst));
+			}
+			willRemoveLater.clear();
+		    }
+		} else {
+		    genSpillCode(u, graph);
+		}
+		// necessary?
 		graph.replaceAll();
-		graph.resetColors();
+		graph.resetColors();		 
 	    }
 	} while (!success);
 
 	fixupSpillCode();
+	for(Iterator is=willRemoveLater.iterator(); is.hasNext();){
+	    Instr i = (Instr) is.next();
+	    Temp sym;
+	    if (isRegister(i.def()[0])) {
+		sym = i.use()[0];
+	    } else { 
+		sym = i.def()[0];
+	    }
+	    InstrMOVEproxy proxy = new InstrMOVEproxy(i);	    
+	    replace(i, proxy);
+	    code.assignRegister(proxy, sym, code.getRegisters(i, sym));
+	}
     }
 
     // sets regToColor, regToDefs, regToUses, implicitAssigns
@@ -655,13 +748,15 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	return adjMtx;
     }
-    
-    /** returns true if we succeeded in coalescing any registers. */
-    private boolean coalesceRegs(AdjMtx adjMtx) { 
-	HashSet willRemove = new HashSet();
-	
+
+    Set willRemoveLater;
+    EqTempSets remap = EqTempSets.make(this, false);
+    /** returns the set of removed Instrs. */
+    private Set coalesceRegs(AdjMtx adjMtx) { 
+	HashSet willRemoveNow = new HashSet(); // Set<Instr>
+	willRemoveLater = new HashSet(); // Set<Instr> 
+
 	// ANALYZE
-	EqTempSets remap = EqTempSets.make(this, false);
 	for(Iterator is=code.getElementsI(); is.hasNext();) {
 	    Instr i = (Instr) is.next();
 	    if (i instanceof harpoon.IR.Assem.InstrMOVE) {
@@ -669,44 +764,36 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		Temp def = i.def()[0];
 		WebRecord wUse = getWR(i, use);
 		WebRecord wDef = getWR(i, def);
-		if (!wUse.conflictsWith(wDef)) {
+		//if (!wUse.conflictsWith(wDef)) {
+		if (!adjMtx.get(wUse.sreg(), wDef.sreg())) {
 		    // System.out.println("Removed " + i);
 		    if (def.equals(use)) {
 			// (nothing special to update)
-			willRemove.add(i);
-
-			
-			// THESE are special; can't entirely remove
-			// the instr, b/c then the webPrecolor map
-			// won't be updated with the correct
-			// data... but if we replace with a MoveProxy
-			// (as we'll need to eventually anyway) then
-			// can update webPrecolor map just fine.
+			willRemoveNow.add(i);
 		    } else if (isRegister(def)) {
 			if (webPrecolor.containsKey(wUse)) 
 			    continue;
 			webPrecolor.put(wUse, def);
-			// INSERT PROXY HERE
+			willRemoveLater.add(i);
 		    } else if (isRegister(use)) {
 			if (webPrecolor.containsKey(wUse))
 			    continue;
 			webPrecolor.put(wDef, use);
-			// INSERT PROXY HERE
-
+			willRemoveLater.add(i);
 		    } else {
 			remap.union(def, use);
-			willRemove.add(i);
+			willRemoveNow.add(i);
 		    }
 		}
 	    }
 	}
 
 	// TRANSFORM
-	if (!willRemove.isEmpty()) {
+	if (!willRemoveNow.isEmpty()) {
 	    for(Iterator is=code.getElementsI(); is.hasNext();) {
 		Instr i= (Instr) is.next();
-		if (willRemove.contains(i)) {
-		    i.remove();
+		if (willRemoveNow.contains(i)) {
+		    replace(i, new InstrMOVEproxy(i));
 		} else {
 		    Iterator itr = new
 			CombineIterator(i.useC().iterator(),
@@ -714,15 +801,19 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		    while(itr.hasNext()) {
 			Temp t = (Temp) itr.next();
 			if (!remap.tempMap(t).equals(t)) {
-			    Instr.replace(i, i.rename(remap));
+			    replace(i, i.rename(remap));
 			    break;
 			}
 		    }
 		}
 	    }
-	    System.out.print("R:"+willRemove.size());
+	    if (COALESCE_STATS)
+		System.out.print("R:"+ willRemoveNow.size()   );
+	} else if (!willRemoveLater.isEmpty()) {
+	    if (COALESCE_STATS)
+		System.out.print("R:"+ willRemoveLater.size() );
 	}
-	return !willRemove.isEmpty();
+	return willRemoveNow;
     }
 
     private WebRecord[] buildAdjLists(AdjMtx adjMtx) { 
@@ -742,7 +833,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		WebRecord wr1, wr2;
 		wr1 = adjLsts[i];
 		wr2 = adjLsts[j];
+
+		// if (wr1.conflictsWith(wr2)) {		
 		if (adjMtx.get(wr1.sreg(),wr2.sreg())) {
+
 		    wr1.adjnds.add(wr2);
 		    wr2.adjnds.add(wr1);
 		    wr1.nints++;
@@ -806,19 +900,73 @@ public class GraphColoringRegAlloc extends RegAlloc {
     }
 
     HashSet spilled = new HashSet();
-    private void genSpillCode(Collection remove, Graph g) { 
+    
+    private boolean isPrecolored(Object n) { 
+	Graph.Node node = (Graph.Node) n;
+	if (node.wr instanceof RegWebRecord) 
+	    return true;
+	if (webPrecolor.containsKey(node.wr)) 
+	    return true;
+	return false;
+    }
+
+    private boolean overlapsWithSpilled(Object n) {
+	Graph.Node node = (Graph.Node) n;
+	for(Iterator sps=spilled.iterator(); sps.hasNext();){ 
+	    WebRecord spl = (WebRecord) sps.next();
+	    if (spl.overlaps(node.wr)) 
+		return true;
+	}
+	return false;
+    }
+	
+
+    private void genSpillCode(UnableToColorGraph u, Graph g) { 
+	Collection remove = u.getRemovalSuggestions();
 	HashSet spillThese = new HashSet(remove.size());
+
 	for(Iterator ri=remove.iterator(); ri.hasNext(); ) {
 	    Graph.Node node = (Graph.Node) ri.next();
+
+	    // this if-stm may be useless...
 	    if (isRegister(node.wr.temp()) ||
-		spilled.contains(node.wr)) continue;
+		spilled.contains(node.wr)) 
+	    
+	    if (overlapsWithSpilled(node)) {
+		System.out.println("SKIP ONE (1)");
+	    }
+	    
+	    System.out.println("HIT ONE (1)");
 	    spillThese.add(node);
 	}
-	    
+	
+	if (spillThese.isEmpty()) {
+	    System.out.println(" remove:" +remove+ " contains nothing new");
+	    Collection removeLrg = u.getRemovalSuggestionsBackup();
+	    removeLrg = new HashSet(removeLrg);
+	    removeLrg.removeAll(remove);
+	nextNode:
+	    for(Iterator ri=removeLrg.iterator(); ri.hasNext(); ) {
+		Graph.Node node = (Graph.Node) ri.next();
+
+		if (overlapsWithSpilled(node)) {
+		    System.out.println("SKIP ONE (2)");
+		    continue nextNode;
+		}
+
+		System.out.println("HIT ONE (2)");
+		spillThese.add(node);
+	    }
+
+	    if (spillThese.isEmpty())
+		System.out.println
+		    (" remove:" +removeLrg+ " contains nothing new");
+	}
+
+
 	if (spillThese.isEmpty()) {
 	    // choose a node independently of the suggested ones, since
 	    // those are all already spilled...
-	    System.out.println(" remove:" +remove+ " contains nothing new");
 	    HashSet nset = new HashSet(g.nodeSet());
 	    nset.removeAll(spilled);
 	    int md = -1; Object mn=null;
@@ -841,8 +989,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    TempWebRecord wr = (TempWebRecord) node.wr;
 	    Util.assert(!isRegister(wr.temp()));
 	    
-	    System.out.print("\nSpilling "+wr);
-	    
+	    if (SPILL_INFO)
+		System.out.print("\nSpilling "+wr);
 	    
 	    Temp t = wr.temp();
 	    for(Iterator ds=wr.defs.iterator(); ds.hasNext(); ) {
@@ -867,7 +1015,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	}
 
 	System.out.println("*** SPILLED ("+spilled.size()+")"+
-			   (true?"":(": " + spilled)));
+			   (false?"":(": " + spilled)));
     }
 
     private void fixupSpillCode() {
@@ -878,7 +1026,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		Instr spillInstr = 
 		    SpillStore.makeST(sp.instr, "FSK-ST", sp.tmp,
 				      code.getRegisters(sp,sp.tmp));
-		Instr.replace(sp, spillInstr);
+		replace(sp, spillInstr);
 		back(spillInstr, sp.instr);
 	    } else if (i instanceof RestoreProxy) {
 		RestoreProxy rp = (RestoreProxy) i;
@@ -886,11 +1034,28 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		    SpillLoad.makeLD(rp.instr, "FSK-LD",
 				     code.getRegisters(rp,rp.tmp),
 				     rp.tmp); 
-		Instr.replace(rp, loadInstr);
+		replace(rp, loadInstr);
 	    } 
 	}
     }
     
+    /** returns nodeToNum. */
+    public static Map printGraph(ColorableGraph graph, boolean PRINT) {
+	final Map nodeToNum = new HashMap(); 
+	if(PRINT)System.out.println("nodes of graph");
+	int i=0;
+	for(Iterator nodes=graph.nodeSet().iterator();nodes.hasNext();){
+	    i++;
+	    Object n=nodes.next();
+	    nodeToNum.put(n, new Integer(i));
+	    if(PRINT)System.out.println(i+"\t"+n);
+	}
+	if (PRINT){
+	    Collection readEdges = readableEdges(graph.edges(),nodeToNum);
+	    System.out.println("edges of graph "+readEdges);
+	}
+	return nodeToNum;
+    }
 
     /** Graph is a graph view of the adjacency lists in this. 
 	There is a many-to-one mapping from Nodes to WebRecords. 
@@ -988,13 +1153,38 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	public Collection neighborsOf(Object n) { 
 	    if (!(n instanceof Node))
 		throw new IllegalArgumentException();
-	    final WebRecord lr = ((Node) n).wr;
+	    final Node node = (Node) n;
 	    return new AbstractCollection() {
-		private Iterator wrs() { return lr.adjnds.iterator(); }
+		private Iterator wrs() { 
+		    Iterator prependIter;
+		    if (!(node.wr instanceof RegWebRecord)) {
+			Iterator regWebIter = regToWeb.values().iterator();
+			final Map r2a = 
+			    (Map)implicitAssigns.get(node.wr.temp());
+			FilterIterator.Filter fltr = 
+			    new FilterIterator.Filter() {
+				public boolean isElement(Object o) {
+				    System.out.println
+				    ("isElem called on "+o);
+				    RegWebRecord rwr = (RegWebRecord) o;
+				    return 
+				    !r2a.containsKey(rwr.temp()) && 
+				    !node.wr.adjnds.contains(rwr);
+				}
+			    };
+			prependIter = new FilterIterator(regWebIter, fltr);
+		    } else {
+			prependIter = Default.nullIterator;
+		    }
+		    prependIter = Default.nullIterator;
+		    return new CombineIterator
+			(prependIter, node.wr.adjnds.iterator());
+		}
 		public int size() {
 		    int s=0;
 		    for(Iterator wrs = wrs(); wrs.hasNext(); )
 			s += nodes(wrs.next()).size(); 
+		
 		    return s; 
 		}
 
@@ -1155,6 +1345,20 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    Util.assert(!sregYet);
 	    sreg = val;
 	    sregYet = true;
+	}
+	
+	/** Returns true if this shares a use/def with wr. */
+	boolean overlaps(WebRecord wr) {
+	    HashSet refs = 
+		new HashSet( defs().size() + uses().size() );
+	    refs.addAll(defs());
+	    refs.addAll(uses());
+	    HashSet rfs2 = new HashSet(refs);
+	    if (refs.retainAll(wr.defs()) ||
+		rfs2.retainAll(wr.uses())) {
+		return true;
+	    }
+	    return false;
 	}
 
 	// ( interference based on Muchnick, page 494.)

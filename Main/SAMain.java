@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.90 2000-08-15 15:32:03 bdemsky Exp $
+ * @version $Id: SAMain.java,v 1.1.2.91 2000-08-23 06:33:46 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -76,7 +76,7 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean REG_ALLOC = false;
     static boolean ABSTRACT_REG_ALLOC = false;
     static boolean HACKED_REG_ALLOC = false;
-    static boolean LIVENESS_TEST = false;
+    static boolean LOCAL_REG_ALLOC = false;
     static boolean OUTPUT_INFO = false;
     static boolean QUIET = false;
     static boolean OPTIMIZE = false;
@@ -328,26 +328,6 @@ public class SAMain extends harpoon.IR.Registration {
 	    out.flush();
 	}
 	
-	if (LIVENESS_TEST) {
-	    HCode hc = sahcf.convert(hmethod);
-	    
-	    info("\t--- INSTR FORM (liveness check)  ---");
-	    if (hc != null) {
-		BasicBlock.Factory bbFact = 
-		    new BasicBlock.Factory(hc, CFGrapher.DEFAULT);
-		// wrong but makes it compile for now
-		LiveTemps livevars = 
-		    new LiveTemps(bbFact, Collections.EMPTY_SET); 
-		InstrSolver.worklistSolver(bbFact.blockSet().iterator(),
-					   livevars);
-		out.println(livevars.dump());
-	    } else {
-		info("null returned for " + hmethod);
-	    }
-	    info("\t--- end INSTR FORM (liveness check)  ---");
-	    out.flush();
-	}
-	
 	if (ABSTRACT_REG_ALLOC) {
 	    HCode hc = sahcf.convert(hmethod);
 	    
@@ -369,7 +349,13 @@ public class SAMain extends harpoon.IR.Registration {
 	if (REG_ALLOC) {
 	    HCode hc = sahcf.convert(hmethod);
 	    info("\t--- INSTR FORM (register allocation)  ---");
-	    HCodeFactory regAllocCF = RegAlloc.codeFactory(sahcf, frame);
+	    HCodeFactory regAllocCF;
+	    if (LOCAL_REG_ALLOC) {
+		regAllocCF = 
+		    RegAlloc.codeFactory(sahcf,frame,RegAlloc.LOCAL);
+	    } else {
+		regAllocCF = RegAlloc.codeFactory(sahcf, frame);
+	    }
 	    HCode rhc = regAllocCF.convert(hmethod);
 	    if (rhc != null) {
 		info("Codeview \""+rhc.getName()+"\" for "+
@@ -434,7 +420,7 @@ public class SAMain extends harpoon.IR.Registration {
 	if (BACKEND==PRECISEC_BACKEND)
 	    ((harpoon.Backend.PreciseC.TreeToC)out).translate(data);
 
-	if (!PRE_REG_ALLOC && !LIVENESS_TEST && !REG_ALLOC && !HACKED_REG_ALLOC) continue;
+	if (!PRE_REG_ALLOC && !REG_ALLOC && !HACKED_REG_ALLOC) continue;
 
 	if (data.getRootElement()==null) continue; // nothing to do here.
 
@@ -552,14 +538,14 @@ public class SAMain extends harpoon.IR.Registration {
 		REG_ALLOC = true;
 		break;
 	    case 'L':
-		OUTPUT_INFO = LIVENESS_TEST = true;
+		REG_ALLOC = LOCAL_REG_ALLOC = true;
 		break;
 	    case 'F':
 		OPTIMIZE = true;
 		break;
 	    case 'A':
 		OUTPUT_INFO = PRE_REG_ALLOC = PRINT_ORIG = 
-		    REG_ALLOC = LIVENESS_TEST = true;
+		    REG_ALLOC = true;
 		break;
 	    case 'o':
 		ASSEM_DIR = new File(g.getOptarg());
@@ -642,14 +628,13 @@ public class SAMain extends harpoon.IR.Registration {
 	out.println("\tOutputs Abstract Register Allocated Instr IR for <class>");
 
 	out.println("-L");
-	out.println("\tOutputs Liveness info for BasicBlocks of Instr IR");
-	out.println("\tfor <class>");
+	out.println("\tOutputs Local Register Allocated Instr IR for <class>");
 
 	out.println("-R");
-	out.println("\tOutputs Register Allocated Instr IR for <class>");
+	out.println("\tOutputs Global Register Allocated Instr IR for <class>");
 
 	out.println("-A");
-	out.println("\tSame as -OPLR");
+	out.println("\tSame as -OPR");
 
 	out.println("-i <filename>");
 	out.println("Read CodeFactory in from FileName");
