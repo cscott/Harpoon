@@ -71,7 +71,7 @@ import java.util.Collection;
  used since it needs to invalidate them on a function return.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.1.2.11 2001-06-12 22:48:04 witchel Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.1.2.12 2001-06-14 19:45:57 witchel Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -333,9 +333,6 @@ public class DominatingMemoryAccess {
                         + "\n******* tree* " 
                         + harpoon.IR.Tree.Print.print(m));
             Util.assert(memToStm.containsKey(m) == false);
-            System.err.println("Adding stm " 
-                               + harpoon.IR.Tree.Print.print(root) + "\n**tree " 
-                               + harpoon.IR.Tree.Print.print(m));
             stmToMem.put(root, m);
             memToStm.put(m, root);
          }
@@ -1181,13 +1178,18 @@ public class DominatingMemoryAccess {
                }
                alloc = new DARegAlloc(cfgr, code, live, defUseMap, useDefMap);
                Map ref2dareg = alloc.getRef2Dareg();
-               ((harpoon.Backend.MIPS.Frame)frame).setNoTagCheckMap(ref2dareg);
-               ((harpoon.Backend.MIPS.Frame)frame).setUsedDANum(alloc.usedDANum());
-               if(trace)
+               ((harpoon.Backend.MIPS.Frame)frame).setNoTagCheckMap(new HashMap(ref2dareg));
+               ((harpoon.Backend.MIPS.Frame)frame).setUsedDANum(new HashSet(alloc.usedDANum()));
+               if(print_decorated_graph)
                   printDA(code, live, defUseMap, useDefMap, ref2dareg);
                if(static_stats)
                   report_stats(code, live, defUseMap, useDefMap, alloc);
 
+               live = null;
+               cacheEq = null;
+               cfgr = null;
+               alloc = null;
+               defUseMap = useDefMap = null;
                return hc;
             }
             public String getCodeName() { return parent.getCodeName(); }
@@ -1206,7 +1208,10 @@ public class DominatingMemoryAccess {
    private Frame frame;
    private DARegAlloc alloc;
    private boolean trace = false;
+   // This is more useful than trace.
+   private boolean print_decorated_graph = false;
+   // If true print some stats about how many uses per def
    private boolean static_stats = false;
    // If true, use Emmett's crappy memory analysis
-   private boolean emmett_crappy = true;
+   private boolean emmett_crappy = false;
 }
