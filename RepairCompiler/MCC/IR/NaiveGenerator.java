@@ -114,9 +114,15 @@ public class NaiveGenerator {
         /* first pass create all the hash tables */
         while (relations.hasNext()) {
             RelationDescriptor relation = (RelationDescriptor) relations.next();
-            cr.outputline("SimpleHash* " + relation.getSafeSymbol() + "_hash = new SimpleHash();");
-            cr.outputline("SimpleHash* " + relation.getSafeSymbol() + "_hashinv = new SimpleHash();");
-        } 
+            
+            if (relation.testUsage(RelationDescriptor.IMAGE)) {
+                cr.outputline("SimpleHash* " + relation.getSafeSymbol() + "_hash = new SimpleHash();");
+            }
+
+            if (relation.testUsage(RelationDescriptor.INVIMAGE)) {
+                cr.outputline("SimpleHash* " + relation.getSafeSymbol() + "_hashinv = new SimpleHash();");
+            } 
+        }
 
         cr.outputline("");
         cr.outputline("");
@@ -226,18 +232,8 @@ public class NaiveGenerator {
 
     private void generate_implicit_checks() {
 
-        // #STOPPED# : stop... modify relationdescriptor with flag to symbolize that
-        // static analysis has determined the relation to be type safe... for sets that 
-        // are not type safe do these tests in the 
-        // relation inclusion...
-
         /* do post checks */
-
-        // check to make sure all relations are well typed
-        // for all relations (need to check reverse as well i guess) 
-        // make sure that each element is in the corresponding set for the domain and range
-        // use iterators
-        
+         
         CodeWriter cr = new CodeWriter() {
                 boolean linestarted = false;
                 int indent = 0;
@@ -265,43 +261,8 @@ public class NaiveGenerator {
                 }
                 public SymbolTable getSymbolTable() { throw new IRException(); }
             };
-          
-        /* build relations */
-        Iterator relations = state.stRelations.descriptors();
-
-        /* first pass create all the hash tables */
-        while (relations.hasNext()) {
-            RelationDescriptor relation = (RelationDescriptor) relations.next();
-
-            if (relation.testUsage(RelationDescriptor.IMAGE)) {
-                VarDescriptor x = VarDescriptor.makeNew("x");
-                VarDescriptor y = VarDescriptor.makeNew("y");
-
-                /* start iteration */
-                cr.outputline("for (SimpleIterator* " + x.getSafeSymbol() + "_iterator = " + relation.getSafeSymbol() + "_hash->iterator(); " + x.getSafeSymbol() + "_iterator->hasNext(); ) {");
-                cr.indent();
-                cr.outputline("int " + y.getSafeSymbol() + " = (" + x.getSafeSymbol() + "_iterator->next();");        
-                cr.outputline("int " + x.getSafeSymbol() + " = (" + x.getSafeSymbol() + "_iterator->key();");
-
-                SetDescriptor domain = relation.getDomain();
-                SetDescriptor range = relation.getRange();
-
-                // #TBD#: decide if this is bad and go back and do checks in relationinclusion.. (have flag set by static analysis which determines whether or not these tests need to be made or 
-                // not
-
-                cr.outputline("if (!domain.get(x)) { remove x from hashtable, remove current iterator }");
-                
-            } else if (relation.testUsage(RelationDescriptor.INVIMAGE)) {
-                throw new IRException("unsupported");
-            }
-            
            
-        } 
-
-        cr.outputline("");
-        cr.outputline("");
-
-                           
+        // #TBD#: these should be implicit checks added to the set of constraints
         //output.println("check multiplicity");
 
     }

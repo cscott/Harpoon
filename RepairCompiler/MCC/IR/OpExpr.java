@@ -47,15 +47,16 @@ public class OpExpr extends Expr {
     }
 
     public void prettyPrint(PrettyPrinter pp) {
+        pp.output("(");
         if (opcode == Opcode.NOT) {
-            pp.output("!");
             left.prettyPrint(pp);
-        } else {            
+        } else {           
             left.prettyPrint(pp);
             pp.output(" " + opcode.toString() + " ");
             assert right != null;
             right.prettyPrint(pp);
         }
+        pp.output(")");
     }
 
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {

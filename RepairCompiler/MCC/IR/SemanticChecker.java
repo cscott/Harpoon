@@ -667,6 +667,8 @@ public class SemanticChecker {
                 er.report(pn, "Invalid operation '" + compareop + "': Must be one of '=', '>=', '<='");
                 return null;
             }
+            
+            rd.addUsage(RelationDescriptor.IMAGE);
 
             return new ComparisonPredicate(vd, rd, opcode, expr);
         } else {
@@ -1397,6 +1399,9 @@ public class SemanticChecker {
             return null;
         }                       
 
+        /* add usage so correct sets are created */
+        relation.addUsage(inverse ? RelationDescriptor.INVIMAGE : RelationDescriptor.IMAGE);
+            
         return new RelationExpr(expr, relation, inverse);
     }
 
@@ -1462,10 +1467,12 @@ public class SemanticChecker {
         } else if (pn.getChild("dot") != null) {
             VarDescriptor vd = parse_quantifiervar(pn.getChild("dot").getChild("quantifiervar"));
             RelationDescriptor relation = lookupRelation(pn.getChild("dot").getChild("relation").getTerminal());
+            relation.addUsage(RelationDescriptor.IMAGE);
             return new ImageSetExpr(vd, relation);
         } else if (pn.getChild("dotinv") != null) {
             VarDescriptor vd = parse_quantifiervar(pn.getChild("dotinv").getChild("quantifiervar"));
             RelationDescriptor relation = lookupRelation(pn.getChild("dotinv").getChild("relation").getTerminal());
+            relation.addUsage(RelationDescriptor.INVIMAGE);
             return new ImageSetExpr(ImageSetExpr.INVERSE, vd, relation);
         } else {
             throw new IRException();
