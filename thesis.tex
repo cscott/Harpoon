@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.66 1999-08-18 16:40:09 cananian Exp $
+% $Id: thesis.tex,v 1.67 1999-08-19 16:23:29 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -30,14 +30,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.66 $ $}
+\date{\today \\ $ $Revision: 1.67 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.66 $ $}{$ $Revision: 1.66 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.67 $ $}{$ $Revision: 1.67 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -826,17 +826,21 @@ is never traversed in any valid program path (marked ``not
 executable'').  The algorithm works with SSA form, and is presented
 as algorithm \ref{alg:scc}.  Binary operations on lattice values and
 combination at $\phi$-nodes follow the rules in
-table~\ref{tab:sccmeet1}. The time complexity of SCC is
-$O(N+U_{SSA})$, where $U_{SSA}$ is the number of variable
-\newterm{uses} in the SSA representation of the program.  This can be
-verified easily: the procedure \code{RaiseE} puts each node on the
-$W_n$ worklist at most once, and \code{RaiseV} puts a variable on the
-$W_v$ worklist at most $D$ times, where $D$ is the maximum lattice
-depth.  The \code{Visit} procedure can thus be invoked a maximum of
-$N$ times by line~\ref{line:visitWn} of algorithm~\ref{alg:scc}, and a
-maximum of $U_{SSA}D$ times by line~\ref{line:visitWv}.  The
-lattice depth $D$ is the constant 2 in this version of the algorithm,
-yielding the previously cited time complexity.
+table~\ref{tab:sccmeet1}; notice that the meet operation ($\meet$) is
+simply the least upper bound on the lattice.
+The time complexity of SCC/SSA can be found
+easily: the procedure \code{RaiseE} puts each node on the $W_n$
+worklist at most once, and \code{RaiseV} puts a variable on the $W_v$
+worklist at most $D-1$ times, where $D$ is the maximum lattice depth.
+The \code{Visit} procedure can thus be invoked a maximum of $N$ times
+by line~\ref{line:visitWn} of the \code{Analyze} procedure of
+algorithm~\ref{alg:scc}, and a maximum of $U_{SSA}(D-1)$ times by
+line~\ref{line:visitWv}, where $U_{SSA}$ is the number of variable
+\newterm{uses} in the SSA representation of the program.  The lattice
+depth $D$ is the constant 3 in this version of the algorithm, so it
+drops out of the expression.  The \code{RaiseE} procedure itself is
+called at most $E$ times.  The time complexity is thus
+$O(E+N+U_{SSA}(D-1))$ which simplifies to $O(E+U_{SSA})$.
 
 \subsubsection{SCC/SSI: predication using \sigfunction{s}.}\label{sec:sccssi}
 \begin{myfigure}%
@@ -880,7 +884,7 @@ analysis} will become more evident as the value lattice is extended to
 cover more constant types.
 
 The time complexity of the updated algorithm is identical to that of
-SCC/SSA: $O(N+U_{SSA})$, by the same argument as before.
+SCC/SSA: $O(E+U_{SSA})$, by the same argument as before.
 
 \subsubsection{Extending the value domain}
 \begin{myfigure}
@@ -919,7 +923,7 @@ entries in this lattice will be summarized as ``Integer Constant'',
 the ``float'' and ``double'' entries as ``Floating-point Constant'',
 and the ``String'' entry as ``String Constant''.  As the lattice is
 still only three levels deep, the asymptotic runtime complexity is
-identical to that of algorithm \ref{alg:sccssi}.
+identical to that of the previous algorithm.
 
 \subsubsection{Type analysis}
 \begin{myfigure}[p]
@@ -948,34 +952,43 @@ Objectworks 4.1$^\dag$&Smalltalk & 774 &   4.4     &    10      \\ \hline
 In figure \ref{fig:scclat3} we extend the lattice to compute Java type
 information.  The new lattice entry marked ``Typed'' is actually
 forest-structured as shown in figure \ref{fig:scclat4}; it is as deep
-as the class hierarchy, and the roots and leaves are fully linked to
-the lattice elements above and below it.  Because the lattice is
-deeper, the asymptotic runtime complexity is now $O(E+U_{SSA}D)$
-where $D$ is the maximum depth of the class hierarchy.  
-To form an estimate of the magnitude of $D$, table \ref{tab:chstats}
+as the class hierarchy, and the roots and leaves are all comparable to
+$\top$ and $\bot$.  Only the \code{Visit} procedure must be modified;
+the new procedure is given as algorithm~\ref{alg:scctyped}.
+Because the lattice $L$ is
+deeper, the asymptotic runtime complexity is now $O(E+U_{SSA}D_c)$
+where $D_c$ is the maximum depth of the class hierarchy.  
+To form an estimate of the magnitude of $D_c$, table \ref{tab:chstats}
 compares class hierarchy statistics for several large
 object-oriented projects in various source languages. Our FLEX
 compiler infrastructure, as a typical Java example, has an average
-class depth of 1.91;\footnote{Measured August 2, 1999; the
-infrastructure is under continuing development.} one can infer that
-the $U_{SSA}D$ term in the runtime complexity is not likely to make
-the algorithm non-linear.
+class depth of 1.91.\footnote{Measured August 2, 1999; the
+infrastructure is under continuing development.}
+In a forced example, of course, one can make the class depth $O(N)$;
+however, one can infer from the data given that in real code the $D_c$
+term is not likely to make the algorithm significantly non-linear.
 
 A brief word on the roots of the hierarchy forest in figure
 \ref{fig:scclat4} is called for: Java has both a class hierarchy,
 rooted at \code{java.lang.Object}, and several primitive types, which
-we will also use as roots.  The primitive types include what we will
-refer to as the \code{void} type, which is the type of the expression
-\code{null}, as well as \code{int}, \code{long}, \code{float}, and
+we will also use as roots.  The primitive types include
+\code{int}, \code{long}, \code{float}, and
 \code{double}.\footnote{In the type system our infrastructure uses
 (which is borrowed from Java bytecode) the \code{char},
 \code{boolean}, \code{short} and \code{byte} types are folded into
-\code{int}.}  The ability to represent the \code{void} type begins to
-allow us to address null-pointer checks, although because
-\code{meet(null, x)==x}\fixme{write up meet and join rules.} we can
-only reason about variables which can be proven to be null, not those
-which might be proven to be non-null (which is the more useful case).
-The next section will provide a more satisfactory treatment.
+\code{int}.}  Integer constants in the lattice are comparable to and
+less than the \code{int} or \code{long} type; floating-point constants
+are likewise comparable to and less than either \code{float} or
+\code{double}.  String constants are comparable to and less than the
+\code{java.lang.String} non-primitive class type.
+
+The \code{void} type, which is the type of the expression \code{null},
+is also a primitive type in Java; however we wish to keep $x \meet y$
+identical to $\bigsqcup_L\{x, y\}$ (the least upper bound of $x$ and
+$y$) while satisfying the Java typing rule that $\code{null} \meet x = x$
+when $x$ is a non-primitive type and not a constant.  This requires
+putting \code{void} comparable to but less than every non-primitive
+leaf in the class hierarchy lattice.\fixme{Not shown in the figure.}
 
 The Java class hierarchy also includes \newterm{interfaces}, which are
 the means by which Java implements multiple inheritance.  Base
@@ -987,6 +1000,14 @@ Since untypeable variables are generally forbidden, no operation
 should ever raise a lattice value above ``Typed'' to $\top$.  The
 otherwise-unnecessary $\top$ element is retained to indicate error
 conditions.
+
+Finally, note that the ability to represent \code{null} as the
+\code{void} type in the lattice begins to allow us to address
+null-pointer checks, although because $\code{null} \meet x =x$ for
+non-primitive types we can only reason about variables which can be
+proven to be null, not those which might be proven to be non-null
+(which is the more useful case).  The next section will provide a more
+satisfactory treatment.
 
 \subsubsection{Addressing array-bounds and null-pointer checks}
 \begin{myfigure}

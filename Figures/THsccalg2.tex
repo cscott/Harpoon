@@ -1,5 +1,6 @@
 RaiseE($e$:edge) =
 \begin{myalgorithmic}
+\STATE\COMMENT{When called, $e \notin E_e$}
 \STATE $E_e \gets E_e \cup \{ e \}$
 \LET $n$ be the destination of edge $e$
 \IF{$n \not\in E_n$}
@@ -39,10 +40,10 @@ Visit($n$:node) =
                \EMPTYLINE
 \FOREACH{branch ``if $v$ goto $e_1$ else $e_2$'' in $n$}
  \STATE $L \gets V[v]$
- \IF{$L=\top$ or $L=c$ where $c$ signifies ``true''}
+ \IF{$L=\top$ or $L=c$ where $c$ signifies ``true'' and $e_1 \notin E_e$}
   \STATE RaiseE($e_1$)
  \ENDIF
- \IF{$L=\top$ or $L=c$ where $c$ signifies ``false''}
+ \IF{$L=\top$ or $L=c$ where $c$ signifies ``false'' and $e_2 \notin E_e$}
   \STATE RaiseE($e_2$)
  \ENDIF
 \ENDFOR
