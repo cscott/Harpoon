@@ -1,5 +1,5 @@
-// InterpreterCachingCodeFactory.java, created Sun May  9 20:01:15 1999 by Duncan Bryce
-// Copyright (C) 1999 Duncan Bryce
+// InterpreterCachingCodeFactory.java, created Sun May  9 20:01:15 1999 by duncan 
+// Copyright (C) 1999 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
@@ -9,11 +9,19 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 
 
-/** <b>FILL ME IN</b>.
- * @author Duncan Bryce
- * @version $Id: InterpreterCachingCodeFactory.java,v 1.1.2.4 1999-08-04 06:31:01 cananian Exp $
+/** 
+ * A code factory designed specifically for use by the Tree 
+ * interpreter.  Probably shouldn't be used for anything else.  
+ * The main feature of the <code>InterpreterCachingCodeFactory</code> class
+ * is that its <code>convert()</code> chooses between 2 code factories
+ * based on which method it is converting.  For class initializers, 
+ * it uses a non-caching, non-optimizing codefactory to save memory.  
+ * For all other methods, it uses a caching, optimizing code factory. 
+ *
+ * @author Duncan Bryce  <duncan@lcs.mit.edu>
+ * @version $Id: InterpreterCachingCodeFactory.java,v 1.1.2.5 1999-08-05 05:03:10 duncan Exp $
  */
-public class InterpreterCachingCodeFactory implements HCodeFactory { 
+class InterpreterCachingCodeFactory implements HCodeFactory { 
     private HCodeFactory factory;
     private HCodeFactory optimizingFactory;
 
@@ -23,10 +31,11 @@ public class InterpreterCachingCodeFactory implements HCodeFactory {
 	this.optimizingFactory = new CachingCodeFactory(optimizingFactory);
     }
 
-    /** Convert a method to an <code>HCode</code>, caching the result.
-     *  Cached representations of <code>m</code> in <code>parent</code> are
-     *  cleared when this <code>CachingCodeFactory</code> adds the
-     *  converted representation of <code>m</code> to its cache. */
+    /** Convert a method to an <code>HCode</code>.  If the method is 
+     *  a class initializer, it is neither optimized, nor cached.  
+     *  However, all other methods are both optimized (by this class's
+     *  optimizing code factory) and cached. 
+     */
     public HCode convert(HMethod m) {
 	HCode hc;
 
@@ -40,7 +49,5 @@ public class InterpreterCachingCodeFactory implements HCodeFactory {
 
     public String getCodeName() { return optimizingFactory.getCodeName(); } 
 
-    public void clear(HMethod m) { 
-	this.optimizingFactory.clear(m);
-    }
+    public void clear(HMethod m) { this.optimizingFactory.clear(m); }
 }

@@ -15,11 +15,14 @@ import harpoon.IR.Tree.TreeFactory;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 
-/* <b>FILL ME IN</b>.
+/**
+ * An allocation strategy designed specifically for use by the Tree 
+ * interpreter.  Probably shouldn't be used for anything else.  
+ *
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterAllocationStrategy.java,v 1.1.2.4 1999-08-04 06:31:01 cananian Exp $
+ * @version $Id: InterpreterAllocationStrategy.java,v 1.1.2.5 1999-08-05 05:03:10 duncan Exp $
  */
-public class InterpreterAllocationStrategy implements AllocationStrategy {
+class InterpreterAllocationStrategy implements AllocationStrategy {
 
     public InterpreterAllocationStrategy() { }
 
