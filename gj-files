@@ -47,10 +47,6 @@ Util/Collections/MultiMapFactory.java
 Util/Collections/MultiMapSet.java
 Util/Collections/MutableGraph.java
 Util/Collections/PairMapEntry.java
-Util/Collections/PersistentEnvironment.java
-Util/Collections/PersistentMap.java
-Util/Collections/PersistentSet.java
-Util/Collections/PersistentTreeNode.java
 Util/Collections/ReverseIterator.java
 Util/Collections/ReverseListIterator.java
 Util/Collections/UnmodifiableIterator.java
@@ -84,7 +80,6 @@ Analysis/DomTree.java
 Analysis/EnvBuilder/EnvCode.java
 Analysis/EventDriven/EventDrivenCode.java
 Analysis/GenericContextFactory.java
-Analysis/Instr/RegAlloc.java
 Analysis/InterferenceGraph.java
 Analysis/Liveness.java
 Analysis/LowQuad/DerivationChecker.java
@@ -194,10 +189,12 @@ ClassFile/HType.java
 ClassFile/HTypeVariable.java
 IR/Assem/Code.java
 IR/Assem/Instr.java
+IR/Assem/InstrCALL.java
 IR/Assem/InstrEdge.java
 IR/Assem/InstrFactory.java
 IR/Assem/InstrGroup.java
 IR/Assem/InstrLABEL.java
+IR/Assem/InstrMEM.java
 IR/Bytecode/Code.java
 IR/Bytecode/Instr.java
 IR/Bytecode/InCti.java
