@@ -17,7 +17,7 @@ import java.util.*;
  * atomic transactions.  Works on <code>LowQuadNoSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.3 2000-11-07 21:02:38 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.4 2000-11-07 23:45:13 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -63,57 +63,122 @@ public class SyncTransformer
     }
     protected HCode mutateHCode(HCodeAndMaps input, Token which) {
 	HCode hc = input.hcode();
+	System.err.println("TWEAKING "+hc.getMethod()+" "+which);
 	HEADER qH = (HEADER) hc.getRootElement();
-	FOOTER qF = (FOOTER) qH.next(0);
-	METHOD qM = (METHOD) qH.next(1);
-	Temp currtrans = null;
-	if (which==WITH_TRANSACTION) // get the transaction context object
-	    currtrans = qM.params(qM.isStatic() ? 0 : 1);
+	FOOTER qF = qH.footer();
+	METHOD qM = qH.method();
 	// recursively decend the dominator tree, rewriting as we go.
 	if (! ("harpoon.Runtime.Transactions".equals
-	       (hc.getMethod().getDeclaringClass().getPackage())))
-	    tweak(new DomTree(), hc, qM,
-		  new Tweaker(qF, currtrans));
+	       (hc.getMethod().getDeclaringClass().getPackage()))) {
+	    Tweaker tw = new Tweaker(qF, (which==WITH_TRANSACTION));
+	    tweak(new DomTree(), hc, qM, tw);
+	    tw.fixup();
+	}
 	// done!
 	return hc;
     }
 
     /** MONITORENTER must dominate all associated MONITOREXITs */
     private void tweak(DomTree dt, HCode hc, Quad q, Tweaker tw) {
-	Quad[] nxt = (Quad[]) dt.children(hc, q);
+	HCodeElement[] nxt = dt.children(hc, q);
 	// tweak q here, update currtrans, etc.
+	System.err.println("VISITING "+q);
+	for (int i=0; i<nxt.length; i++)
+	    System.err.println("  child: "+nxt[i]);
 	q.accept(tw);
 	// done, recurse.
-	int depth = tw.depth; // save this value.
-	for (int i=0; i<nxt.length; i++, tw.depth=depth/*restore*/)
-	    tweak(dt, hc, nxt[i], tw);
+	ListList handlers = tw.handlers; // save this value.
+	for (int i=0; i<nxt.length; i++, tw.handlers=handlers/*restore*/)
+	    tweak(dt, hc, (Quad) nxt[i], tw);
+    }
+    static class ListList {
+	public final List head;
+	public final ListList tail;
+	public ListList(List head, ListList tail) {
+	    this.head = head; this.tail = tail;
+	}
     }
     class Tweaker extends QuadVisitor {
 	// immutable.
-	final FOOTER footer;
 	final QuadFactory qf;
 	final TempFactory tf;
 	final Temp retex;
 	final Temp currtrans; // current transaction.
 	private final Map fixupmap = new HashMap();
 	// mutable.
-	int depth; // depth of transaction nesting.
-	List linktohandler; //list of THROWs to link to the abortexcpt. handler
-	Tweaker(FOOTER qF, Temp currtrans) {
+	FOOTER footer; // we attach new stuff to the footer.
+	ListList handlers = null; // points to current abort handler
+	Tweaker(FOOTER qF, boolean with_transaction) {
 	    this.footer = qF;
 	    this.qf = qF.getFactory();;
 	    this.tf = this.qf.tempFactory();
-	    this.depth = (currtrans==null) ? 0 : 1;
-	    this.currtrans =
-		(currtrans!=null) ? currtrans : new Temp(tf, "transid");
+	    // indicate that we're inside transaction context, but
+	    // that we need to rethrow TransactionAbortExceptions
+	    if (with_transaction)
+		handlers = new ListList(null, handlers);
+	    this.currtrans = new Temp(tf, "transid");
 	    this.retex = new Temp(tf, "trabex"); // transaction abort exception
 	}
+	/** helper routine to add a quad on an edge. */
+	private Edge addAt(Edge e, Quad q) {
+	    Quad frm = (Quad) e.from(); int which_succ = e.which_succ();
+	    Quad to  = (Quad) e.to();   int which_pred = e.which_pred();
+	    Quad.addEdge(frm, which_succ, q, 0);
+	    Quad.addEdge(q, 0, to, which_pred);
+	    return to.prevEdge(which_pred);
+	}
+	/** Insert abort exception check on the given edge. */
+	private Edge checkForAbort(Edge e, HCodeElement src, Temp tex) {
+	    Temp tst = new Temp(tf);
+	    e = addAt(e, new INSTANCEOF(qf, src, tst, tex, HCabortex));
+	    e = addAt(e, new CJMP(qf, src, tst, new Temp[0]));
+	    Quad q0 = new THROW(qf, src, tex);
+	    Quad.addEdge((Quad)e.from(), 1, q0, 0);
+	    handlers.head.add(q0);
+	    return e;
+	}
+	/** Fix up PHIs leading to abort handler after we're all done. */
+	void fixup() {
+	    for(Iterator it=fixupmap.entrySet().iterator(); it.hasNext(); ) {
+		Map.Entry me = (Map.Entry) it.next();
+		PHI phi = (PHI) me.getKey();
+		List throwlist = (List) me.getValue();
+		PHI nphi = new PHI(qf, phi, new Temp[0], throwlist.size());
+		Edge out = phi.nextEdge(0);
+		Quad.addEdge(nphi, 0, (Quad)out.to(), out.which_pred());
+		int n=0;
+		for (Iterator it2 = throwlist.iterator(); it2.hasNext(); n++) {
+		    THROW thr = (THROW) it2.next();
+		    Temp tex = thr.throwable();
+		    Edge in = thr.prevEdge(0);
+		    if (tex!=retex)
+			in = addAt(in, new MOVE(qf, thr, retex, tex));
+		    Quad.addEdge((Quad)in.from(), in.which_succ(), nphi, n);
+		    // NOTE THAT WE ARE NOT DELINKING THE THROW FROM THE
+		    // FOOTER: this should be done before it is added to the
+		    // list.
+		}
+	    }
+	}
+
 	public void visit(Quad q) { /* do nothing */ }
+
+	public void visit(METHOD q) {
+	    if (handlers==null) return; // don't rewrite if not in trans
+	    Temp[] nparams = new Temp[q.paramsLength()+1];
+	    int i=0;
+	    if (!q.isStatic())
+		nparams[i++] = q.params(0);
+	    nparams[i++] = currtrans;
+	    for ( ; i<nparams.length; i++)
+		nparams[i] = q.params(i-1);
+	    Quad.replace(q, new METHOD(qf, q, nparams, q.arity()));
+	}
 
 	public void visit(CALL q) {
 	    // if in a transaction, call the transaction version &
 	    // deal with possible abort.
-	    if (depth==0) return;
+	    if (handlers==null) return;
 	    Temp[] nparams = new Temp[q.paramsLength()+1];
 	    int i=0;
 	    if (!q.isStatic())
@@ -126,20 +191,15 @@ public class SyncTransformer
 				  q.isVirtual(), q.isTailCall(),
 				  q.dst(), q.src());
 	    Quad.replace(q, ncall);
-	    // abort case is handled when exception is eventually THROWn.
-	}
-	private Edge addAt(Edge e, Quad q) {
-	    Quad frm = (Quad) e.from(); int which_succ = e.which_succ();
-	    Quad to  = (Quad) e.to();   int which_pred = e.which_pred();
-	    Quad.addEdge(frm, which_succ, q, 0);
-	    Quad.addEdge(q, 0, to, which_pred);
-	    return to.prevEdge(which_pred);
+	    // now check for abort case.
+	    if (handlers.head!=null) // unless we rethrow directly...
+		checkForAbort(ncall.nextEdge(1), ncall, ncall.retex());
+	    // done.
 	}
 	public void visit(MONITORENTER q) {
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
-	    if (depth==0)
+	    if (handlers==null)
 		in = addAt(in, new CONST(qf, q, currtrans, null, HClass.Void));
-	    depth++;
 	    // loop looks like:
 	    // c=newTransaction(c);
 	    // L1: try {
@@ -158,7 +218,7 @@ public class SyncTransformer
 	    Quad q2 = new CALL(qf, q, HMcommitrec_retry,
 			       new Temp[] { currtrans }, currtrans, retex,
 			       false, false, new Temp[0]);
-	    Quad q3 = new PHI(qf, q, new Temp[0], 4);
+	    Quad q3 = new PHI(qf, q, new Temp[0], 3);
 	    Quad q4 = new THROW(qf, q, retex);
 	    Quad.addEdge((Quad)in.from(), in.which_succ(), q0, 0);
 	    Quad.addEdge(q0, 0, q1, 0);
@@ -167,32 +227,24 @@ public class SyncTransformer
 	    Quad.addEdge(q2, 0, q1, 1);
 	    Quad.addEdge(q2, 1, q3, 1);
 	    Quad.addEdge(q3, 0, q4, 0);
-	    footer.attach(q4, 0); // attach throw to FOOTER.
+	    footer = footer.attach(q4, 0); // attach throw to FOOTER.
 	    // add test to TransactionAbortException;
 	    Quad q5 = new PHI(qf, q, new Temp[0], 0); // stub
-	    Temp tst = new Temp(tf);
-	    Quad q6 = new INSTANCEOF(qf, q, tst, retex, HCabortex);
-	    Quad q7 = new CJMP(qf, q, tst, new Temp[0]);
-	    Temp stop = new Temp(tf);
-	    Quad q8 = new GET(qf, q, stop, HFabortex_upto, retex);
-	    Quad q9 = new OPER(qf, q, Qop.ACMPEQ, tst,
+	    Temp tst = new Temp(tf), stop = new Temp(tf);
+	    Quad q6 = new GET(qf, q, stop, HFabortex_upto, retex);
+	    Quad q7 = new OPER(qf, q, Qop.ACMPEQ, tst,
 			       new Temp[] { stop, currtrans });
-	    Quad q10= new CJMP(qf, q, tst, new Temp[0]);
-	    Quad.addEdges(new Quad[] { q5, q6, q7 });
-	    Quad.addEdge(q7, 0, q3, 2); // not abort exception: rethrow
-	    Quad.addEdge(q7, 1, q8, 0); // is abort ex: check for upto.
-	    Quad.addEdges(new Quad[] { q8, q9, q10 });
-	    Quad.addEdge(q10, 0, q3, 3); // not equal: rethrow exception
-	    Quad.addEdge(q10, 1, q2, 0); // else, retry.
+	    Quad q8= new CJMP(qf, q, tst, new Temp[0]);
+	    Quad.addEdges(new Quad[] { q5, q6, q7, q8 });
+	    Quad.addEdge(q8, 0, q3, 2); // not equal: rethrow exception
+	    Quad.addEdge(q8, 1, q2, 0); // else, retry.
 	    // all transactionabortexceptions need to link to q5,
 	    // with the exception in retex.
-	    linktohandler = new ArrayList();
-	    fixupmap.put(q5, linktohandler);
+	    handlers = new ListList(new ArrayList(), handlers);
+	    fixupmap.put(q5, handlers.head);
 	}
 	public void visit(MONITOREXIT q) {
-	    Util.assert(depth>0);
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
-	    depth--;
 	    // call c.commitTransaction(), linking to abort code if fails.
 	    Quad q0 = new CALL(qf, q, HMcommitrec_commit,
 			       new Temp[] { currtrans }, null, retex,
@@ -203,9 +255,10 @@ public class SyncTransformer
 	    Quad.addEdge(q0, 0, q1, 0);
 	    Quad.addEdge(q0, 1, q2, 0);
 	    Quad.addEdge(q1, 0, (Quad)out.to(), out.which_pred());
-	    footer.attach(q2, 0); // add q2 to FOOTER.
-	    linktohandler.add(q2);
-	    if (depth==0) q1.remove(); // unneccessary.
+	    footer = footer.attach(q2, 0); // add q2 to FOOTER.
+	    checkForAbort(q0.nextEdge(1), q, retex);
+	    handlers = handlers.tail;
+	    if (handlers==null) q1.remove(); // unneccessary.
 	}
 
 	/*
