@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.10 2000-01-05 16:47:03 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.11 2000-01-05 18:13:46 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -67,7 +67,7 @@ public class AsyncCode {
     public static void buildCode(HCode hc, Map old2new, Set async_todo, 
 			   QuadLiveness liveness,
 			   Set blockingcalls, 
-			   UpdateCodeFactory ucf, Map classMap) 
+			   UpdateCodeFactory ucf, Map classMap, ToAsync.BlockingMethods bm) 
 	throws NoClassDefFoundError
     {
 	System.out.println("Entering AsyncCode.buildCode()");
@@ -87,7 +87,7 @@ public class AsyncCode {
 					   old2new, cont_map, 
 					   env_map, liveness,
 					   blockingcalls, hc.getMethod(), 
-					   classMap,hc, ucf);
+					   classMap,hc, ucf,bm);
 	    quadc.accept(cv);
 	}
     }
@@ -107,7 +107,8 @@ public class AsyncCode {
 			   Map old2new, Map cont_map, 
 			   Map env_map, QuadLiveness liveness,
 			   Set blockingcalls, HMethod hmethod, 
-			   Map classMap, HCode hc, UpdateCodeFactory ucf) {
+			   Map classMap, HCode hc, UpdateCodeFactory ucf,
+			   ToAsync.BlockingMethods bm) {
 	    this.liveness=liveness;
 	    this.env_map=env_map;
 	    this.cont_todo=cont_todo;
@@ -122,7 +123,7 @@ public class AsyncCode {
 	    this.clonevisit=new CloningVisitor(blockingcalls, cont_todo,
 					       cont_map, env_map, liveness,
 					       async_todo, old2new,
-					       classMap,hc,ucf);
+					       classMap,hc,ucf,bm);
 	}
 
 	public void visit(Quad q) {
@@ -212,12 +213,14 @@ public class AsyncCode {
 	HCode hc;
 	WorkSet linkFooters;
 	Temp tthis;
+	ToAsync.BlockingMethods bm;
 
 	public CloningVisitor(Set blockingcalls, Set cont_todo,
 			      Map cont_map, Map env_map, 
 			      QuadLiveness liveness, Set async_todo,
 			      Map old2new, Map classMap, 
-			      HCode hc, UpdateCodeFactory ucf) {
+			      HCode hc, UpdateCodeFactory ucf,
+			      ToAsync.BlockingMethods bm) {
 	    this.liveness=liveness;
 	    this.blockingcalls=blockingcalls;
 	    this.cont_todo=cont_todo;
@@ -228,6 +231,7 @@ public class AsyncCode {
 	    this.env_map=env_map;
 	    this.ucf=ucf;
 	    this.hc=hc;
+	    this.bm=bm;
 	}
 
 	public void reset(HMethod nhm, TempFactory otf, boolean isCont) {
@@ -514,14 +518,24 @@ public class AsyncCode {
 		    cont_map.put(q,hclass);
 		    HMethod hm=((CALL) q).method();
 		    if (!old2new.containsKey(hm)) {
-			async_todo.add(hm);
-			HMethod temp=makeAsync(old2new, q.method(),
-					       ucf, classMap);
+			if (bm.swop(hm)!=null) {
+			    //handle actual blocking call swapping
+			    old2new.put(hm, bm.swop(hm));
+			} else {
+			    async_todo.add(hm);
+			    HMethod temp=makeAsync(old2new, q.method(),
+						   ucf, classMap);
+			}
 		    }
 		}
+		//rewrite blocking call
+		
+
 		followchildren=false;
 	    } else {
 		followchildren=true;
+		//need to check if swop necessary
+
 		quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
 	    }
 	}
