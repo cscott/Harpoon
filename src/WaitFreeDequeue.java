@@ -91,14 +91,13 @@ public class WaitFreeDequeue {
      *  @return True, if an element was overwritten. False, if there
      *          is an empty element into which the write occured.
      */
-    // TODO: Figure out where to force.
     public boolean force(Object object) {
 	if (!isFull()) {
-	    boolean b = false;
-	    try {
-		b = nonBlockingWrite(object);
-	    } catch (Exception e) {}
-	    return b;
+	    if(nonBlockingWrite(object)){
+		return false;
+	    } else {
+		return force(object);
+	    }
 	}
 	else {
 	    writeQueue.force(object);
