@@ -45,7 +45,13 @@ package java.lang.reflect;
  * class during Serialization.  If you don't have a good reason
  * to mess with this, don't try. Fortunately, there are adequate
  * security checks before you can set a reflection object as accessible.
+ * <p>
+ * HACKED by C. Scott to basically make all classes accessible.
+ * this saves a field per reflection object and also preserves the
+ * read-only nature of these static objects.  Also our implementations
+ * of java.lang.reflect don't do accessibility checks anyhow.
  *
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author Tom Tromey <tromey@cygnus.com>
  * @author Eric Blake <ebb9@email.byu.edu>
  * @see Field
@@ -57,14 +63,6 @@ package java.lang.reflect;
  */
 public class AccessibleObject
 {
-  /**
-   * True if this object is marked accessible, which means the reflected
-   * object bypasses normal security checks. <em>NOTE</em>Don't try messing
-   * with this by reflection.  You'll mess yourself up.
-   */
-  // default visibility for use by inherited classes
-  boolean flag = false;
-
   /**
    * Only the three reflection classes that extend this can create an
    * accessible object.  This is not serializable for security reasons.
@@ -80,7 +78,7 @@ public class AccessibleObject
    */
   public boolean isAccessible()
   {
-    return flag;
+      return true;
   }
 
   /**
@@ -175,6 +173,8 @@ public class AccessibleObject
           && ((Constructor) this).getDeclaringClass() == Class.class)
          || ((Member) this).getDeclaringClass() == AccessibleObject.class))
       throw new SecurityException("Cannot make object accessible: " + this);
-    this.flag = flag;
+    if (!flag)
+	throw new SecurityException("Can't make object non-accessible: "+this);
+    //this.flag = flag;
   }
 }
