@@ -5,7 +5,7 @@ package harpoon.Analysis.GraphColoring;
  * <code>ColorableNode</code>
  *  
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableNode.java,v 1.1.2.5 1999-01-21 23:16:18 pnkfelix Exp $
+ * @version $Id: ColorableNode.java,v 1.1.2.6 1999-01-22 00:06:58 pnkfelix Exp $
  */
 
 public abstract class ColorableNode extends Node {
@@ -77,4 +77,6 @@ public abstract class ColorableNode extends Node {
     }   
 
     public abstract boolean equals(Object o);
+
+    public abstract int hashCode();
 }
