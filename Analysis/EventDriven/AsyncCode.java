@@ -8,6 +8,7 @@ import harpoon.Analysis.ContBuilder.ContBuilder;
 import harpoon.Analysis.EnvBuilder.EnvBuilder;
 import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.Quads.Unreachable;
+import harpoon.Analysis.Maps.TypeMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HClassMutator;
 import harpoon.ClassFile.HMethod;
@@ -61,7 +62,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.27 2000-01-14 08:59:55 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.28 2000-01-14 10:06:57 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -379,10 +380,14 @@ public class AsyncCode {
 
 		Quad prev = get;
 		HField[] envfields=getEnv(q).getDeclaredFields();
+		TypeMap map=((QuadNoSSA) this.hc).typeMap;
 		for(int i=0; i<liveout.length; i++) {
 		    if (suppress == null || !suppress.equals(liveout[i])) {
-			GET ng = new GET(qf, first, ctmap.tempMap(liveout[i]),
-					 envfields[i], tenv);
+			Quad ng =(map.typeMap(q, liveout[i])!=HClass.Void)? 
+			    ((Quad)new GET(qf, first, ctmap.tempMap(liveout[i]),
+				    envfields[i], tenv)):
+			    ((Quad)new CONST(qf, first, ctmap.tempMap(liveout[i]),
+				      null, HClass.Void));
 			Quad.addEdge(prev, 0, ng, 0);
 			prev = ng;
 		    }
@@ -688,15 +693,22 @@ public class AsyncCode {
 		Quad.addEdge(call,1,phi,0);
 		//build environment
 		HClass env=getEnv(q);
-		Temp[] liveout = liveness.getLiveInandOutArray(q);
+		Temp[] liveoutx = liveness.getLiveInandOutArray(q);
+		TypeMap map=((QuadNoSSA) hc).typeMap;
+		int count=0;
+		for (int ii=0;ii<liveoutx.length;ii++)
+		    if (map.typeMap(q,liveoutx[ii])!=HClass.Void)
+			count++;
+
 		Temp tenv=new Temp(tf);
 		NEW envq=new NEW(hcode.getFactory(), q, tenv, env);
 		Quad.addEdge(call,0,envq,0);
 
-		Temp [] params = new Temp[liveout.length+1];
+		Temp [] params = new Temp[count+1];
 		params[0]=tenv;
-		for (int j=0,i=1;j<liveout.length;j++) {
-		    params[i++]=ctmap.tempMap(liveout[j]); 
+		for (int j=0,i=1;j<liveoutx.length;j++) {
+		    if (map.typeMap(q,liveoutx[j])!=HClass.Void)
+			params[i++]=ctmap.tempMap(liveoutx[j]); 
 		}
 		CALL callenv=new CALL(hcode.getFactory(), q, env.getConstructors()[0],
 				      params, null, retex, false, false, new Temp[0]);
