@@ -121,7 +121,7 @@ public final class FileDescriptor {
     
     public VoidContinuation syncAsyncO() throws java.io.SyncFailedException
     {
-    		return null;
+    		return new VoidContinuationOpt();
     }
 
     public VoidContinuation syncAsync() throws java.io.SyncFailedException
