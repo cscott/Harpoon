@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.81 1999-08-22 05:24:06 cananian Exp $
+% $Id: thesis.tex,v 1.82 1999-08-22 13:48:51 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.81 $ $}
+\date{\today \\ $ $Revision: 1.82 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.81 $ $}{$ $Revision: 1.81 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.82 $ $}{$ $Revision: 1.82 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -1045,7 +1045,7 @@ FLEX infrastructure & Java  &   550   &    1.9     &     5      \\
 \code{javac} compiler & Java&   304   &    2.8     &     7      \\
 NeXTStep 3.2$^\dag$& Objective-C & 488 &   3.5     &     8      \\
 Objectworks 4.1$^\dag$&Smalltalk & 774 &   4.4     &    10      \\ \hline
-\end{tabular}
+\end{tabular}\\%
 {\small$\dag$ indicates data obtained from Muthukrishnan and M\"uller
  \cite{muthukrishnan96:ch}.}
 \caption{Class hierarchy statistics for several large O-O projects.}
