@@ -54,6 +54,7 @@ public class IPaqServoController {
 	    }
 	    out.write(13);
 	    out.write(10);
+	    out.flush();
         } catch (IOException e) {
 	    System.out.println("Can't write output! "+e);
 	    System.exit(-1);
