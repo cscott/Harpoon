@@ -12,6 +12,7 @@ struct typemap * allocatetypemap() {
   thisvar->alloctree=rbinit();
   thisvar->typetree=rbinit();
   thisvar->low=GC_linux_stack_base();
+  return thisvar;
 }
 
 void freefunction(void *ptr) {
