@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: sas02.tex,v 1.9 2002-05-11 10:11:54 cananian Exp $
+% $Id: sas02.tex,v 1.10 2002-05-11 10:59:50 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[oribibl]{llncs}
 %\usepackage[section,plain]{algorithm}
@@ -29,7 +29,7 @@ Cambridge, MA 02139 \\
 \email{\{cananian, rinard\}@lcs.mit.edu}
 }
 
-\renewcommand{\baselinestretch}{0.98}
+\renewcommand{\baselinestretch}{0.97}
 \begin{document}
 \bibliographystyle{plain}
 %
@@ -96,7 +96,7 @@ default value) or a removal from the hash table (if the written value
 is the default value). It replaces reads with hash table lookups; 
 if the object is not present in the hash table, the lookup simply
 returns the default value. 
-\item {\bf Claz Compression:} Our class hierarchy analysis
+\item {\bf Claz Compression:} Our rapid type analysis
 computes an upper bound on the number of classes that the
 program may instantiate. Objects in standard 
 Java implementations have a header field, commonly called {\tt claz},
@@ -428,8 +428,8 @@ space at all for hash code or lock.
 In this section we will present details of the analyses that enable
 our transformations.
 %
-\subsection{Class Hierarchy Analysis}
-We start with a static class hierarchy analysis to collect the set of
+\subsection{Rapid Type Analysis}
+We start with a rapid type analysis \cite{bacon96} to collect the set of
 instantiated classes and callable methods.  This allows us to generate
 a conservative call graph for the program, using the known receiver
 type at the call-site and the its set of instantiated subclasses in the
@@ -563,10 +563,17 @@ footnote \ref{ft:topbot}).}
 
 We perform a {\it definite initialization} analysis to remedy this
 problem and restore precision to our analysis.
-Figure~\ref{fig:definit-example} shows an example of a simple
-constant field.
-With only constructor {\tt A$_1$}, field {\tt f} will get the
-lattice value $\mathbf{5}$.  Without constructor {\tt A$_2$} in the class,
+For example, with only constructor {\tt A$_1$} in the following code,
+field {\tt f} will get the lattice value $\mathbf{5}$:
+{\small\renewcommand{\baselinestretch}{0.5}\begin{samplecode}
+public class A \{\\
+\>int f;\\
+\>A$_1$(\ldots) \{ f = 5; \}\\
+\>A$_2$(\ldots) \{ /* no assignment to f */ \}\\
+\}
+\end{samplecode}%
+}
+Without constructor {\tt A$_2$} in the class,
 we say that field {\tt f} is {\it definitely initialized} because
 every constructor of {\tt A} assigns a value to {\tt f} before
 returning or calling an unsafe method.
@@ -598,21 +605,6 @@ non-zero constant value.  The results of the definite initialization
 analysis are also used when profiling mostly-constant fields, as described
 in the next section.
 %
-\begin{figure}[tp]
-\small\renewcommand{\baselinestretch}{0.5}\begin{samplecode}
-public class A \{\\
-\>int f;\\
-\>A$_1$(\ldots) \{ f = 5; \}\\
-\>A$_2$(\ldots) \{ /* no assignment to f */ \}\\
-\}
-\end{samplecode}
-\caption{Simple example of the definite initialization analysis.
-The field {\tt f} is {\it definitely initialized} if only constructor
-{\tt A$_1$} is in the class; with constructor {\tt A$_2$} present it
-is not.}
-\label{fig:definit-example}
-\end{figure}
-
 \subsection{Profiling Mostly-Constant Fields}
 To inform the static specialization and field externalization
 transformations, we instrument a profiling build of the code
@@ -824,6 +816,17 @@ a single-word key.
 Our implementation leverages the garbage-collector to remove unneeded
 entries from the hashtable.
 %
+\subsection{Class Loading and Reflection}
+Although this research was conducted using FLEX, which is a static
+compiler, it would be straightforward to use \emph{extent analysis}
+\cite{sreedhar00} to apply transformations to the closed-world
+portions of a program which used dynamic class loading.  The space
+allocated to the claz index could be updated during garbage collection
+as new classes are discovered.  Concurrent profiling could actually
+expose more opportunities for space compression in a JIT environment.
+And our various transformations need not be user-visible if the
+reflection implementation is carefully written.
+%
 \section{Experimental Results}
 \label{sec:results}
 %
@@ -936,7 +939,9 @@ of optimizations. These numbers show that the first several
 optimizations (claz compression, field reduction, and byte packing)
 typically reduce the execution times, while the
 remainder (static specialization, field externalization, and  hash/lock
-externalization) generate modest increases in the execution times. 
+externalization) generate modest increases in the execution times.
+The speedup is due to reduced GC times, despite the indirection and
+misalignment costs.
 Static specialization's virtualization of fields is responsible for
 its slowdown; it is likely that an optimized speculatively-inlined
 implementation of the field accessors which it adds to the program
