@@ -13,7 +13,7 @@ import java.util.Map;
  * to implement this interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractHeap.java,v 1.1.2.2 2000-02-12 18:11:13 cananian Exp $
+ * @version $Id: AbstractHeap.java,v 1.1.2.3 2000-07-13 14:42:19 cananian Exp $
  */
 public abstract class AbstractHeap implements Heap {
     /** A comparator for <code>Map.Entry</code>s, based on the
@@ -21,6 +21,7 @@ public abstract class AbstractHeap implements Heap {
     private final EntryComparator entryComparator;
     /** Sole constructor, for invocation by subclass constructors. */
     protected AbstractHeap(Comparator c) {
+	if (c==null) c = harpoon.Util.Default.comparator; // JDK1.1 hack.
 	this.entryComparator = new EntryComparator(c);
     }
 

@@ -20,7 +20,7 @@ import java.util.Set;
  * <code>Enumeration</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.1.2.10 2000-03-29 06:50:27 cananian Exp $
+ * @version $Id: Default.java,v 1.1.2.11 2000-07-13 14:42:16 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -31,6 +31,9 @@ public abstract class Default  {
 	    // hack: in JDK1.1 String is not Comparable
 	    if (o1 instanceof String && o2 instanceof String)
 	       return ((String)o1).compareTo((String)o2);
+	    // hack: in JDK1.1 Integer is not Comparable
+	    if (o1 instanceof Integer && o2 instanceof Integer)
+	       return ((Integer)o1).intValue() - ((Integer)o2).intValue();
 	    return (o1==null) ? -((Comparable)o2).compareTo(o1):
 	                         ((Comparable)o1).compareTo(o2);
 	}
