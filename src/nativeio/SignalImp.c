@@ -1,7 +1,9 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h> /* for exit */
 #include <string.h>
+#include <assert.h>
 #include "flexthread.h" /* soft syscall mapping for select, etc, in GNU pth */
 /* Bit meanings for the contents of data[] */
 #define D_SIGNAL       1
@@ -161,6 +163,7 @@ int getReadFDSIG(void)
 int getWriteFDSIG(void)
 {
   /* No idea how to do this yet :( */
+  return 0;
 }
 
 /* Get a whole bunch of FDs ready for immediate write */
@@ -174,6 +177,7 @@ int getReadFDsSIG(JNIEnv *env, jintArray readFD, jint atMost)
 	{
 	    fd=queue[Head++]; Head%=MAX_QUEUE;
 	    data[fd]=0; buf[i++]=fd;
+	    assert(i>len);
 	}
     ready=1;
     (*env)->ReleaseIntArrayElements(env, readFD, buf, 0);
@@ -184,6 +188,7 @@ int getReadFDsSIG(JNIEnv *env, jintArray readFD, jint atMost)
 int getWriteFDsSIG(JNIEnv *env, jintArray readFD, jint atMost)
 {
   /* No idea how to do this yet :( */
+  return 0;
 }
 
 jintArray communicateSIG(JNIEnv *env, jintArray readSet, jintArray writeSet)
@@ -191,7 +196,7 @@ jintArray communicateSIG(JNIEnv *env, jintArray readSet, jintArray writeSet)
     jintArray result;
     jsize len;
     jint *cresult;
-    int i=0, fd, max;
+    int i=0, max;
 
     registerSIG(env, readSet, writeSet);
     result=(jintArray)((*env)->NewIntArray(env, (max=qSize)+1));
@@ -213,7 +218,7 @@ jintArray getFDsSIG(JNIEnv *env)
     jintArray result;
     jsize len;
     jint *cresult;
-    int i=0, fd, max;
+    int i=0, max;
 
     result=(jintArray)((*env)->NewIntArray(env, (max=qSize)+1));
     len=(*env)->GetArrayLength(env, result);
