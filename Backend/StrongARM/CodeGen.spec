@@ -57,7 +57,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.53 1999-10-12 20:04:53 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.54 1999-10-12 20:42:31 pnkfelix Exp $
  */
 %%
 
@@ -698,7 +698,7 @@ BINOP<l>(MUL, j, k) = i %{
     Temp i = makeTwoWordTemp();		
     emit( ROOT, "mov `d0, `s0l", r2, k );
     emit( ROOT, "mov `d0, `s0h", r3, k );
-    emit( ROOT, "mov `d1, `s0l", r1, j );
+    emit( ROOT, "mov `d0, `s0l", r1, j );
     emit( ROOT, "mov `d0, `s0h", r0, j );
     emit( ROOT, "bl ___muldi3");
     emit( ROOT, "mov `d0l, `s0", i, r0 );
@@ -764,21 +764,21 @@ BINOP<d>(DIV, j, k) = i %{
 
 BINOP<p,i>(REM, j, k) = i %{
     Temp i = makeTemp();		
-    emitMOVE( ROOT, "mov `d1, `s1", r1, k );
+    emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     emit( ROOT, "bl ___modsi3");
-    emitMOVE( ROOT, "mov `d2, `s2", i, r0 );
+    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
 BINOP<l>(REM, j, k) = i %{
     Temp i = makeTwoWordTemp();		
-    emit( ROOT, "mov `d2, `s1l", r2, k );
-    emit( ROOT, "mov `d3, `s1h", r3, k );
+    emit( ROOT, "mov `d0, `s0l", r2, k );
+    emit( ROOT, "mov `d0, `s0h", r3, k );
     emit( ROOT, "mov `d0, `s0l", r0, j );
-    emit( ROOT, "mov `d1, `s0h", r1, j );
+    emit( ROOT, "mov `d0, `s0h", r1, j );
     emit( ROOT, "bl ___moddi3");
-    emit( ROOT, "mov `d4l, `s2", i, r0 );
-    emit( ROOT, "mov `d4h, `s3", i, r1 );
+    emit( ROOT, "mov `d0l, `s0", i, r0 );
+    emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 
 MEM<p,i,f>(e) = i %{
