@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * <code>Quads.CALL</code>) to complete the instantiation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NEW.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
+ * @version $Id: NEW.java,v 1.5 2002-04-11 04:00:34 cananian Exp $
  */
 public class NEW extends Quad {
     /** The <code>Temp</code> in which to store the new object. */
@@ -70,6 +70,7 @@ public class NEW extends Quad {
     }
 
     public void accept(QuadVisitor v) { v.visit(this); }
+    public <T> T accept(QuadValueVisitor<T> v) { return v.visit(this); }
 
     /** Returns a human-readable representation of this quad. */
     public String toString() {

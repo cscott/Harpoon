@@ -128,6 +128,8 @@ IR/Assem/InstrEdge.java
 IR/Assem/InstrFactory.java
 IR/Assem/InstrGroup.java
 IR/Assem/InstrLABEL.java
+IR/LowQuad/LowQuad.java
+IR/LowQuad/LowQuadValueVisitor.java
 IR/Properties/UseDefable.java
 IR/Properties/UseDefer.java
 IR/Properties/CFGraphable.java
@@ -137,6 +139,7 @@ IR/Quads/Code.java
 IR/Quads/Edge.java
 IR/Quads/Quad.java
 IR/Quads/QuadSSI.java
+IR/Quads/QuadValueVisitor.java
 IR/Quads/Print.java
 IR/Tree/Code.java
 IR/Tree/Data.java

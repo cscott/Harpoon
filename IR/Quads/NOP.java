@@ -10,7 +10,7 @@ import harpoon.Temp.TempMap;
  * <code>NOP</code> nodes do nothing.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NOP.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: NOP.java,v 1.3 2002-04-11 04:00:34 cananian Exp $
  */
 public class NOP extends Quad {
     
@@ -32,6 +32,7 @@ public class NOP extends Quad {
     void renameDefs(TempMap tm) { }
 
     public void accept(QuadVisitor v) { v.visit(this); }
+    public <T> T accept(QuadValueVisitor<T> v) { return v.visit(this); }
 
     /** Returns human-readable representation. */
     public String toString() { return "NOP"; }

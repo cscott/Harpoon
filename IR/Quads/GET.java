@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * The <code>objectref</code> is null if the field is static.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
+ * @version $Id: GET.java,v 1.5 2002-04-11 04:00:34 cananian Exp $
  */
 public class GET extends Quad {
     /** <code>Temp</code> in which to store the fetched field contents. */
@@ -88,6 +88,7 @@ public class GET extends Quad {
     }
 
     public void accept(QuadVisitor v) { v.visit(this); }
+    public <T> T accept(QuadValueVisitor<T> v) { return v.visit(this); }
 
     /** Returns human-readable representation. */
     public String toString() {

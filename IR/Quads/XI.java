@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * function.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: XI.java,v 1.4 2002-04-10 03:05:25 cananian Exp $
+ * @version $Id: XI.java,v 1.5 2002-04-11 04:00:35 cananian Exp $
  */
 class XI extends PHI {
     protected Temp invariantDst[];
@@ -100,6 +100,7 @@ class XI extends PHI {
     void renameDefs(TempMap tm) { assert false; }
 
     public void accept(QuadVisitor v) { v.visit(this); }
+    public <T> T accept(QuadValueVisitor<T> v) { return v.visit(this); }
 
     public String toString() {
 	StringBuffer sb = new StringBuffer();

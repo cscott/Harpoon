@@ -12,7 +12,7 @@ import harpoon.Temp.TempMap;
  * <code>POINTER</code> value that can be used to access array elements.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PARRAY.java,v 1.2 2002-02-25 21:04:40 cananian Exp $
+ * @version $Id: PARRAY.java,v 1.3 2002-04-11 04:00:21 cananian Exp $
  */
 public class PARRAY extends PPTR {
     
@@ -40,6 +40,7 @@ public class PARRAY extends PPTR {
     }
 
     void accept(LowQuadVisitor v) { v.visit(this); }
+    <T> T accept(LowQuadValueVisitor<T> v) { return v.visit(this); }
 
     public String toString() {
 	return dst.toString() + " = PARRAY " + objectref.toString();

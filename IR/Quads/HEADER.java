@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * which to begin execution.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HEADER.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: HEADER.java,v 1.3 2002-04-11 04:00:34 cananian Exp $
  * @see METHOD
  * @see FOOTER
  */
@@ -47,6 +47,7 @@ public class HEADER extends Quad {
     void renameDefs(TempMap tm) { }
 
     public void accept(QuadVisitor v) { v.visit(this); }
+    public <T> T accept(QuadValueVisitor<T> v) { return v.visit(this); }
 
     /** Returns human-readable representation of this Quad. */
     public String toString() {

@@ -14,7 +14,7 @@ import harpoon.Temp.TempMap;
  * used to access static fields.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PFIELD.java,v 1.2 2002-02-25 21:04:40 cananian Exp $
+ * @version $Id: PFIELD.java,v 1.3 2002-04-11 04:00:21 cananian Exp $
  */
 public class PFIELD extends PPTR {
     
@@ -42,6 +42,7 @@ public class PFIELD extends PPTR {
     }
 
     void accept(LowQuadVisitor v) { v.visit(this); }
+    <T> T accept(LowQuadValueVisitor<T> v) { return v.visit(this); }
 
     public String toString() {
 	return dst.toString() + " = PFIELD " + objectref.toString();

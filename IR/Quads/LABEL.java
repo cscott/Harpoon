@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>LABEL</code> marks a basic-block entrance.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LABEL.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: LABEL.java,v 1.3 2002-04-11 04:00:34 cananian Exp $
  */
 public class LABEL extends PHI {
     /** the (optional) name of this label. <p>
@@ -52,6 +52,7 @@ public class LABEL extends PHI {
     }
 
     public void accept(QuadVisitor v) { v.visit(this); }
+    public <T> T accept(QuadValueVisitor<T> v) { return v.visit(this); }
 
     /** Returns a human-readable representation of this quad. */
     public String toString() {

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * They have the form: <code>&lt;t1, t2, ..., tn&gt; = sigma(t0)</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SIGMA.java,v 1.4 2002-04-10 03:05:15 cananian Exp $
+ * @version $Id: SIGMA.java,v 1.5 2002-04-11 04:00:35 cananian Exp $
  */
 public abstract class SIGMA extends Quad {
     /** dst[i][j] is the j'th element of the tuple on the left-hand side
@@ -123,6 +123,7 @@ public abstract class SIGMA extends Quad {
     }
 
     public void accept(QuadVisitor v) { v.visit(this); }
+    public <T> T accept(QuadValueVisitor<T> v) { return v.visit(this); }
 
     public String toString() {
 	StringBuffer sb = new StringBuffer("SIGMA("+next().length+"): ");

@@ -52,7 +52,7 @@ import harpoon.Util.Util;
  * behave this way.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.4 2002-04-10 03:05:14 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.5 2002-04-11 04:00:31 cananian Exp $ 
  */
 public class CALL extends SIGMA {
     /** The method to invoke. */
@@ -257,6 +257,7 @@ public class CALL extends SIGMA {
     }
 
     public void accept(QuadVisitor v) { v.visit(this); }
+    public <T> T accept(QuadValueVisitor<T> v) { return v.visit(this); }
 
     /** Returns human-readable representation. */
     public String toString() {

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>ARRAYINIT</code> represents an array initialization operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ARRAYINIT.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
+ * @version $Id: ARRAYINIT.java,v 1.5 2002-04-11 04:00:29 cananian Exp $
  */
 public class ARRAYINIT extends Quad {
     /** The array reference to initialize. */
@@ -79,6 +79,7 @@ public class ARRAYINIT extends Quad {
     }
 
     public void accept(QuadVisitor v) { v.visit(this); }
+    public <T> T accept(QuadValueVisitor<T> v) { return v.visit(this); }
 
     /** Returns human-readable representation of this quad. */
     public String toString() {

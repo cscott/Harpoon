@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * The <code>objectref</code> is null if the field is static.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SET.java,v 1.4 2002-04-10 03:05:15 cananian Exp $
+ * @version $Id: SET.java,v 1.5 2002-04-11 04:00:35 cananian Exp $
  */
 public class SET extends Quad {
     /** The field description. */
@@ -86,6 +86,7 @@ public class SET extends Quad {
     void renameDefs(TempMap tm) {
     }
     public void accept(QuadVisitor v) { v.visit(this); }
+    public <T> T accept(QuadValueVisitor<T> v) { return v.visit(this); }
 
     /** Returns a human-readable representation of this Quad. */
     public String toString() {

@@ -17,7 +17,7 @@ import harpoon.Temp.TempMap;
  * keyword are non-virtual.  See the <code>harpoon.IR.Quads.CALL</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PMETHOD.java,v 1.2 2002-02-25 21:04:40 cananian Exp $
+ * @version $Id: PMETHOD.java,v 1.3 2002-04-11 04:00:21 cananian Exp $
  */
 public class PMETHOD extends PPTR {
 
@@ -45,6 +45,7 @@ public class PMETHOD extends PPTR {
     }
 
     void accept(LowQuadVisitor v) { v.visit(this); }
+    <T> T accept(LowQuadValueVisitor<T> v) { return v.visit(this); }
 
     public String toString() {
 	return dst.toString() + " = PMETHOD " + objectref.toString();

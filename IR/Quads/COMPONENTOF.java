@@ -29,7 +29,7 @@ import harpoon.Util.Util;
  * proven non-null.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.5 2002-04-11 04:00:34 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */
@@ -107,6 +107,7 @@ public class COMPONENTOF extends Quad {
     }
 
     public void accept(QuadVisitor v) { v.visit(this); }
+    public <T> T accept(QuadValueVisitor<T> v) { return v.visit(this); }
 
     /** Returns a human-readable representation of this Quad. */
     public String toString() {

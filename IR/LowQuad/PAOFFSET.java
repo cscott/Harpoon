@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * needed to access a given array element.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PAOFFSET.java,v 1.4 2002-04-10 03:04:57 cananian Exp $
+ * @version $Id: PAOFFSET.java,v 1.5 2002-04-11 04:00:21 cananian Exp $
  */
 public class PAOFFSET extends PCONST {
     /** The array type. */
@@ -56,6 +56,7 @@ public class PAOFFSET extends PCONST {
     }
 
     void accept(LowQuadVisitor v) { v.visit(this); }
+    <T> T accept(LowQuadValueVisitor<T> v) { return v.visit(this); }
 
     public String toString() {
 	HClass hc = arrayType;

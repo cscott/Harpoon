@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>AGET</code> represents an element fetch from an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AGET.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
+ * @version $Id: AGET.java,v 1.5 2002-04-11 04:00:28 cananian Exp $
  * @see ANEW
  * @see ASET
  * @see ALENGTH
@@ -89,6 +89,7 @@ public class AGET extends Quad {
     }
     
     public void accept(QuadVisitor v) { v.visit(this); }
+    public <T> T accept(QuadValueVisitor<T> v) { return v.visit(this); }
 
     /** Returns a human-readable representation of this quad. */
     public String toString() {
