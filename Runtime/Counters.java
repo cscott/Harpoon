@@ -18,9 +18,11 @@ import java.lang.reflect.Field;
  * handled by <code>harpoon.Analysis.Counters.CounterFactory</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Counters.java,v 1.1.2.1 2001-02-23 06:17:00 cananian Exp $
+ * @version $Id: Counters.java,v 1.1.2.2 2001-02-23 07:23:21 cananian Exp $
  */
 public class Counters {
+    // hide constructor. all fields/methods are static.
+    private Counters() { }
     /** Initialize by using reflection to store new <code>Object</code>s in
      *  all (FLEX-generated) fields of this class with names starting
      *  with "LOCK_".

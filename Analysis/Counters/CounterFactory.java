@@ -48,7 +48,7 @@ import java.lang.reflect.Modifier;
  * the counters' actual name on output will be "foo_bar" and "foo_baz".
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CounterFactory.java,v 1.1.2.1 2001-02-23 06:17:45 cananian Exp $
+ * @version $Id: CounterFactory.java,v 1.1.2.2 2001-02-23 07:23:54 cananian Exp $
  */
 public final class CounterFactory {
     /** default status for all counters. */
@@ -89,7 +89,7 @@ public final class CounterFactory {
 			       counter_name, t);
     }
     /** Increment the named counter by the amount in the <code>Temp</code>
-     *  <code>value</code> (with type <code>long</code>) on the given edge. */
+     *  <code>Tvalue</code> (with type <code>long</code>) on the given edge. */
     public static Edge spliceIncrement(QuadFactory qf,
 				       Edge e, String counter_name,
 				       Temp Tvalue) {
