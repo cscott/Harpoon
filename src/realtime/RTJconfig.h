@@ -5,7 +5,7 @@
 #include "config.h"
 
 /* Output debugging information for RTJ */
-/*  #define RTJ_DEBUG 1 */
+#define RTJ_DEBUG 1
 
 /* Look at the timing of calls to GC_malloc and GC_free */
 /*  #define WITH_GC_STATS 1 */

@@ -9,6 +9,7 @@
 #include "RTJconfig.h"
 #include "flexthread.h"
 #include <jni.h>
+#include "RTJfinalize.h"
 
 #ifdef WITH_PRECISE_GC
 #include "fni-wrap.h"

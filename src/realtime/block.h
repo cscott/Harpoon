@@ -13,6 +13,7 @@
 #include "RTJconfig.h"
 #include "flexthread.h"
 #include "asm/atomicity.h"
+#include "RTJfinalize.h"
 
 #ifdef WITH_PRECISE_GC
 #include "fni-wrap.h"
@@ -40,5 +41,6 @@ inline void* Block_alloc(struct Block* block, size_t size);
 #endif
 inline void Block_free(struct Block* block);
 inline void Block_reset(struct Block* block);
+inline void Block_finalize(struct Block* block);
 
 #endif /* __BLOCK_H__ */

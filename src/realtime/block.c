@@ -83,6 +83,7 @@ inline void Block_free(struct Block* block) {
 #ifdef RTJ_DEBUG
   printf("Block_free(0x%08x)\n", block);
 #endif
+  Block_finalize(block);
   RTJ_FREE(block->begin);
   RTJ_FREE(block);
 #ifdef RTJ_TIMER
@@ -95,6 +96,7 @@ inline void Block_reset(struct Block* block) {
 #ifdef RTJ_DEBUG
   printf("Block_reset(0x%08x)\n", block);
 #endif
+  Block_finalize(block);
   block->free = block->begin;
 }
 
@@ -109,8 +111,7 @@ inline void Block_scan(struct Block* block) {
   gettimeofday(&begin, NULL);
 #endif
 #ifdef RTJ_DEBUG
-  printf("Block_scan(0x%08x)\n", block);
-  printf("  ");
+  printf("Block_scan(0x%08x)\n  ", block);
 #endif
   for(oobj_ptr = block->begin; ((void*)oobj_ptr) < block->free;
       ((void*)oobj_ptr) += 
@@ -149,3 +150,28 @@ inline void Block_scan(struct Block* block) {
 #endif
 }
 #endif
+
+inline void Block_finalize(struct Block* block) {
+  struct oobj* obj;
+#ifdef RTJ_DEBUG
+  printf("Block_finalize(0x%08x)\n  ", block);
+#endif
+  for (obj = block->begin; ((void*)obj) < block->free;
+       ((void*)obj) +=
+#ifdef WITH_NOHEAP_SUPPORT
+	 RTJ_ALIGN(FNI_ObjectSize(obj)+1)
+#else
+	 RTJ_ALIGN(FNI_ObjectSize(obj))
+#endif
+       ) {
+#ifdef RTJ_DEBUG
+    if (RTJ_should_finalize(obj)) {
+      printf("0x%08x ", obj);
+    }
+#endif
+    RTJ_finalize(obj);
+  }
+#ifdef RTJ_DEBUG
+  printf("\n");
+#endif
+}

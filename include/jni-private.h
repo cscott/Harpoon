@@ -93,6 +93,7 @@ struct inflated_oobj {
 #ifdef WITH_REALTIME_JAVA
   struct MemBlock* memBlock;
   struct MemBlock* temp;
+  void (*RTJ_finalizer)(void* obj, void* client_data);
 #endif
   /* locking information */
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS

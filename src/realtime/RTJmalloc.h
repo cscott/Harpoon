@@ -27,5 +27,4 @@ inline void MemBlock_setCurrentMemBlock(JNIEnv* env,
 					 jobject realtimeThread,
 					struct MemBlock* memBlock);
 
-
 #endif /* RTJmalloc_h__ */

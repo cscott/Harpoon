@@ -90,12 +90,15 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_newMemBlock
 
 void CTScope_freeAll(struct MemBlock* topmem) {
   struct MemBlock* current;
+  JNIEnv* env = FNI_GetJNIEnv();
 #ifdef WITH_PRECISE_GC
   remove_MemBlock_from_roots(topmem);
 #endif      
   current = topmem->next;
   while (current != NULL) {
     struct MemBlock* next = current->next;
+    (*env)->DeleteGlobalRef(env, current->block_info->memoryArea);
+    (*env)->DeleteGlobalRef(env, current->block_info->realtimeThread);
     RTJ_FREE(current->block_info);
     RTJ_FREE(current);
     current = next;
@@ -104,9 +107,6 @@ void CTScope_freeAll(struct MemBlock* topmem) {
   Block_free(topmem->block);
   RTJ_FREE(topmem->ref_info);
   RTJ_FREE(topmem);
-#ifdef BDW_CONSERVATIVE_GC
-  GC_invoke_finalizers();
-#endif
 }
 
 /*
@@ -119,13 +119,18 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_doneNative
   struct MemBlock* mb = getInflatedObject(env, memoryArea)->memBlock;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("CTMemory.doneNative()\n");
+  printf("CTMemory.doneNative(0x%08x, 0x%08x)\n", env, memoryArea);
 #endif
   if (mb->ref_info->reuse) {
     mb->ref_info->reuse = 0;
     if (!mb->ref_info->refCount) {
       CTScope_freeAll(mb);
+    } 
+#ifdef RTJ_DEBUG
+    else {
+      printf("  Not freeing memory now because refCount = %d\n", mb->ref_info->refCount);
     }
+#endif
   }
 }
 

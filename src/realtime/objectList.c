@@ -150,12 +150,14 @@ inline void ObjectList_freeRefs(struct ObjectList* ol) {
   printf("  ");
 #endif
   for (i = 0; i < ol->size; i++) {
-    if (ol->objects[i] != Object_null) {
+    struct oobj* obj = ol->objects[i];
+    if (obj != Object_null) {
 #ifdef RTJ_DEBUG
       printf("0x%08x ", ol->objects[i]);
 #endif
-      RTJ_FREE(ol->objects[i]);
-      ol->objects[i] = Object_null;
+      RTJ_finalize(obj);
+      RTJ_FREE(obj);
+      obj = Object_null;
     }
   }
 #ifdef RTJ_DEBUG

@@ -61,6 +61,7 @@ void* VTScope_RThread_MemBlock_alloc(struct MemBlock* mem,
 }
 
 void  VTScope_RThread_MemBlock_free(struct MemBlock* mem) {
+  JNIEnv* env = FNI_GetJNIEnv();
 #ifdef RTJ_DEBUG
   checkException();
   printf("VTScope_RThread_MemBlock_free(0x%08x)\n", mem);
@@ -72,6 +73,9 @@ void  VTScope_RThread_MemBlock_free(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   printf("  free(0x%08x)\n", mem);
 #endif
+  (*env)->DeleteGlobalRef(env, mem->block_info->memoryArea);
+  (*env)->DeleteGlobalRef(env, mem->block_info->realtimeThread);
+  RTJ_FREE(mem->block_info);
   RTJ_FREE(mem); 
 }
 

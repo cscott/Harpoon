@@ -11,6 +11,10 @@
 #include "../realtime/RTJconfig.h"
 #include "memstats.h"
 
+#ifdef WITH_REALTIME_JAVA
+#include "../realtime/RTJfinalize.h" /* for RTJ_register_finalizer */
+#endif
+
 /* lock for inflating locks */
 FLEX_MUTEX_DECLARE_STATIC(global_inflate_mutex);
 
@@ -57,7 +61,10 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 #endif
     obj->hashunion.inflated = infl;
     assert(FNI_IS_INFLATED(wrapped_obj));
-#ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_REALTIME_JAVA
+    /* Have to be careful about finalization with RTJ. */
+    RTJ_register_finalizer(wrapped_obj, deflate_object);
+#elif defined(BDW_CONSERVATIVE_GC) 
     /* register finalizer to deallocate inflated_oobj on gc */
     if (GC_base(obj)!=NULL) // skip if this is not a heap-allocated object
         GC_register_finalizer(GC_base(obj), deflate_object,

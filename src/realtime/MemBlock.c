@@ -48,13 +48,20 @@ struct MemBlock* MemBlock_new(JNIEnv* env,
   ptr_info->memBlock = mb;
   flex_mutex_unlock(&ptr_info_lock);
 #endif
-  memoryAreaClass = 
-    (*env)->GetObjectClass(env, (mb->block_info = bi)->memoryArea = memoryArea);
+  mb->block_info = bi;
+  memoryAreaClass = (*env)->GetObjectClass(env, memoryArea);
 #ifdef RTJ_DEBUG
   checkException();
 #endif
-  realtimeThreadClass = 
-    (*env)->GetObjectClass(env, bi->realtimeThread = realtimeThread);
+  realtimeThreadClass = (*env)->GetObjectClass(env, realtimeThread);
+#ifdef RTJ_DEBUG
+  checkException();
+#endif
+  bi->memoryArea = (*env)->NewGlobalRef(env, memoryArea);
+#ifdef RTJ_DEBUG
+  checkException();
+#endif
+  bi->realtimeThread = (*env)->NewGlobalRef(env, realtimeThread);
 #ifdef RTJ_DEBUG
   checkException();
 #endif
