@@ -14,7 +14,7 @@ import java.io.IOException;
 /* Main entry point for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.1.2.11 2000-02-15 23:35:32 pnkfelix Exp $
+ * @version $Id: Main.java,v 1.1.2.12 2000-02-17 23:53:50 cananian Exp $
  */
 public class Main {
     private static boolean DEBUG_parser = false;
@@ -36,6 +36,7 @@ public class Main {
 	Lexer l = new Lexer(r, e);
 	Parser p = new Parser(l, e);
 	Spec s = (Spec) p.parse().value;
+	s = CommutativityExpander.expand(s);
 
 	if (DEBUG_parser) {
 	    System.out.println(s);
