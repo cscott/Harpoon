@@ -31,7 +31,7 @@ public class TrackerStubMain {
 	boolean useTimer = args[0].equalsIgnoreCase("timer");
 
 	if(useTimer){
-	    timer = new Timer(false, true, "Tracker", null);
+	    timer = new Timer(false, true, "Tracking", null);
 	    alertServer = new AlertServer(new CORBA(args), args[1], null);
 	} else {
 	    timer = new Node();
