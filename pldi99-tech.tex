@@ -1,7 +1,11 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi99-tech.tex,v 1.6 1999-07-10 08:20:02 cananian Exp $
+% $Id: pldi99-tech.tex,v 1.7 1999-11-09 21:22:45 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Technical Content} % RENAME ME!
+\section{The Static Single Information form}
+In this section we will provide a formal specification of SSI form and
+its \emph{minimal} and \emph{pruned} variants.  We will also provide
+efficient algorithms for constructing these representations.
+
 % Technical Contents (definitions, algorithms, etc)
 %  Program Representation
 %   Sigmas, placement algorithms, theorems.
@@ -10,7 +14,7 @@
 %   Bitwidth
 %   Array bounds analysis, etc.
 
-\subsection{Definition of SSI Form}
+\subsection{Definition of SSI form}
 SSI form is an extension of the SSA form introduced in \cite{cytron89:ssa}.
 Building SSI form involves adding pseudo-assignments for a variable $V$:
 \begin{enumerate}
@@ -34,8 +38,9 @@ when:
 except $z$ (that is, $z$ is the point of divergence for these paths).
 \end{enumerate}
 We will call this the \textit{path-convergence criterion} for
-inserting \sigfunction{s}.  We consider the end node to contain an
-implicit definition of every variable.
+inserting \sigfunction{s}.  We consider the start node to contain an
+implicit definition of every variable, and the end node to contain an
+implicit use of every variable.
 
 Note that this criterion is very similar to the path-con\-ver\-gence
 criterion for inserting \phifunction{s} described in
@@ -58,11 +63,48 @@ Cytron et al.\ \cite{cytron91:ssa} has shown that the iterated
 path-con\-ver\-gence criterion for \phifunction{s} is equivalent to the
 \textit{iterated dominance frontier criterion}: whenever a node $x$
 contains a definition of a variable $a$, then any node $z$ in the
-dominance frontier of $x$ needs a \phifunction{} for a; nodes in the
+dominance frontier of $x$ needs a \phifunction{} for $a$; nodes in the
 dominance frontier of any added \phifunction{} similarly need
 \phifunction{s}.  The equivalent statement for \sigfunction{s}
 references \textit{uses} of the variable $a$ and nodes in its
 post-dominance frontier. 
+
+\subsection{Variable renaming after \phisigfunction insertion}
+
+Renaming variables after \phisigfunction insertion is done so as to
+satisfy the following two conditions:\fixme{The first is similar to
+the SSA form constraint on \phifunction{s}.  Skip it?}
+\begin{enumerate}
+\item For every node $x$ containing a definition of a variable $a$ in
+the renamed program and node $y$ containing a use of that variable, there
+exists at least one non-empty path $P_{xy}$ of edges from $x$ to $y$
+and no such path contains a definition of $a$ other than at $x$.
+\item For every pair of nodes $x$ and $y$ containing uses of a
+variable $a$ defined at a node $z$ in the renamed program, either
+every nonempty path $P_{zx}$ of edges from $z$ to $x$ must contain
+node $y$, or every nonempty path $P_{zy}$ of edges from $z$ to $y$
+must contain $x$.
+\end{enumerate}
+
+In addition, correctness requres that:
+\begin{enumerate}
+\item Along any possible control-flow path in a program being executed
+consider any use of a variable $a$ in the original program and the
+corresponding use of $a_i$ in the renamed program.  Then, at every
+occurrence of the use on the path, $a$ and $a_i$ have the same value.
+The path need not be cycle-free.
+\end{enumerate}
+
+\subsection{Minimal and pruned SSI forms}
+
+% write me!
+
+\section{SSI construction algorithms}
+
+Construction of SSI form takes place in two phases.  First, the required
+\phisigfunction{s} for each variable are inserted at control-flow
+merge and split points.  Then renaming is performed to create a valid
+SSI form program.
 
 \subsection{Placement algorithms}
 Sreedhar and Gao have shown \cite{sreedhar95:lintime} that it is
@@ -77,11 +119,12 @@ $\phi$- or \sigfunction{s} is proportional to the size of the program,
 it is obvious that no more than $N$ iterations will be required,
 resulting in a worst-case running time of $O(N^2)$.  In practice, and
 for structured control flow, running time is linear.
+% rewrite last sentence to reference studies on control-flow depth in
+% actual programs.
 
-\begin{figure}
-\begin{center}
-\newcommand*{\figscale}{0.25}
-\input{Figures/evil}
-\end{center}
-\caption{Pure Evil.}
-\end{figure}
+% refer to program structure tree and cycle-equivalency algorithms.
+% copy algorithm 5.3 from thesis here.
+\begin{myalgorithm}\small
+\input{Figures/THssialg}
+\caption{Placing \phisigfunction{s}.}\label{alg:SSIplace}
+\end{myalgorithm}

@@ -1,7 +1,11 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi99.tex,v 1.7 1999-05-08 00:18:33 cananian Exp $
+% $Id: pldi99.tex,v 1.8 1999-11-09 21:22:45 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentstyle[psfig,preprint,comdef]{acmconf}
+%\documentstyle[psfig,preprint,comdef]{acmconf}
+%\documentclass[preprint]{acmconf}
+\documentclass{esub2acm}
+\usepackage[section,plain]{algorithm}
+\usepackage{comdef}
 % don't forget to turn off 'preprint' before submission!
 
 \newcommand{\comment}[1]{}
@@ -16,14 +20,16 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.7 $ $}{$ $Revision: 1.7 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.8 $ $}{$ $Revision: 1.8 $ $}
 \bibliographystyle{plain}
 
 \maketitle
 
 \input{pldi99-abstract}
 \input{pldi99-intro}
+%\input{pldi99-example}
 \input{pldi99-tech}
+%\input{pldi99-results}
 
 \bibliography{harpoon}
 
