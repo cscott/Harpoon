@@ -21,7 +21,7 @@ import java.util.Enumeration;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.3 1998-12-21 20:58:40 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.4 1998-12-23 22:09:54 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -102,7 +102,7 @@ public class Code extends HCode {
 	// make merge node if appropriate.
 	InMerge m = null;
 	if (merge[pc] > 1)
-	  v.addElement(m = new InMerge(sf, getLine(pc), merge[pc] /*arity*/));
+	  v.addElement(m = new InMerge(sf, line, merge[pc] /*arity*/));
 	// make Instr object for this pc.
 	if (Op.isBranch(code[pc])) {
 	  if (code[pc]==Op.TABLESWITCH || code[pc]==Op.LOOKUPSWITCH)
@@ -126,7 +126,7 @@ public class Code extends HCode {
       for (int pc=0; pc<code.length; pc+=Op.instrSize(code, pc)) {
 	Instr curr = sparse[pc];
 	if (curr instanceof InMerge)
-	  curr = ((InMerge)curr).next()[0];
+	  curr = ((InMerge)curr).next(0);
 	if ((!Op.isUnconditionalBranch(code[pc])) ||
 	    Op.isJSR(code[pc])) { // jsrs return to next instruction eventually
 	  // link to next pc.
@@ -153,8 +153,11 @@ public class Code extends HCode {
 	UniqueVector uv = new UniqueVector(et[i].end_pc-et[i].start_pc);
 	for (int pc=et[i].start_pc;
 	     pc < et[i].end_pc;
-	     pc+=Op.instrSize(code,pc))
+	     pc+=Op.instrSize(code,pc)) {
 	  uv.addElement(sparse[pc]);
+	  if (sparse[pc] instanceof InMerge) // merges come in pairs.
+	    uv.addElement(sparse[pc].next(0));
+	}
 	// Make an HClass for the exception caught...
 	HClass ex = null;
 	if (et[i].catch_type != 0)
