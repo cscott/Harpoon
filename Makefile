@@ -113,3 +113,7 @@ needs-cvs:
 	  echo This rule needs CVS access to the source tree. ; \
 	   exit 1; \
 	fi
+
+run: doc imagerec.jar
+	@echo Running the program...
+	@java -cp imagerec.jar:$(CLASSPATH) imagerec.Main
