@@ -12,7 +12,7 @@ import java.util.Hashtable;
  * <code>Place</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.1 1998-09-15 04:51:16 cananian Exp $
+ * @version $Id: Place.java,v 1.2 1998-09-15 04:54:16 cananian Exp $
  */
 
 public class Place  {
@@ -21,8 +21,9 @@ public class Place  {
     DomFrontier df;
 
     /** Creates a <code>Place</code>. */
-    public Place() {
-	this(new UseDef(), new DomFrontier());
+    public Place() { this(false); }
+    public Place(boolean isPost) {
+	this(new UseDef(), new DomFrontier(isPost));
     }
     public Place(UseDef usedef, DomFrontier df) {
 	this.usedef = usedef;
