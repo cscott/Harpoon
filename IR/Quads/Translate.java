@@ -24,6 +24,7 @@ import harpoon.IR.Quads.HANDLER.ProtectedSet;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.AbstractMapEntry;
+import harpoon.Util.ListComparator;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
@@ -39,7 +40,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.Stack;
+import java.util.TreeMap;
 
 /**
  * <code>Translate</code> is a utility class which implements a
@@ -47,7 +50,7 @@ import java.util.Stack;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.14 1999-02-24 06:41:40 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.15 1999-02-24 22:53:23 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -70,8 +73,10 @@ final class Translate { // not public.
 	final MergeMap mergeMap;
 	/** Liveness information from bytecode. */
 	final Liveness liveness;
-	/** Set of translated exception handlers. */
-	final Map transHandler;
+	/** Mapping from <tryBlock,CallStack> to a HANDLER. */
+	final SortedMap transHandler;
+	/** To-do list for HANDLER construction. */
+	final Stack todoHandler;
 
 	/** Constructor. */
 	StaticState(QuadFactory qf, int max_stack, int max_locals,
@@ -90,7 +95,9 @@ final class Translate { // not public.
 	    this.header = header;
 	    this.mergeMap = new MergeMap();
 	    this.liveness = liveness;
-	    this.transHandler = new HashMap();
+	    this.transHandler =
+		new TreeMap(new ListComparator(true, new SafeComparator()));
+	    this.todoHandler = new Stack();
 	}	
 	/** Get an "extra" <code>Temp</code>. */
 	final Temp extra(int n) {
@@ -363,11 +370,48 @@ final class Translate { // not public.
 	}
 
 	State enterCatch() { return new State(ss, 1, null, null, jlv, calls); }
+
+	Stack todoHandler() { return ss.todoHandler; }
+
+	METHOD fixupHandlers() {
+	    // use the transHandler map to add proper edges from METHOD to
+	    // all known HANDLER nodes.
+	    METHOD qMold = method();
+	    METHOD qM = new METHOD(qf(), qMold, qMold.params(), 
+				   1 + ss.transHandler.size()/*arity*/);
+	    // link up.
+	    Edge e = qMold.nextEdge(0);
+	    Quad.addEdge(qM, 0, (Quad)e.to(), e.which_pred());
+	    Quad.addEdge(header(), 1, qM, 0);
+	    // iterate through handlers, linking them.
+	    int i=1;
+	    for (Iterator it=ss.transHandler.values().iterator();it.hasNext();)
+		Quad.addEdge(qM, i++, (HANDLER)it.next(), 0);
+	    return qM;
+	}
+	HANDLER getHandler(ExceptionEntry tryBlock) {
+	    List pair = Arrays.asList(new Object[] { tryBlock, this.calls });
+	    // look up <tryBlock, callStack> tuple.
+	    if (ss.transHandler.containsKey(pair))
+		return (HANDLER) ss.transHandler.get(pair);
+	    // ok, hafta make it from scratch.
+	    State hS = this.enterCatch(); // preserve callstack.
+	    HANDLER h = new HANDLER(ss.qf, tryBlock.handler(), hS.stack(0),
+				    tryBlock.caughtException(),
+				    new TransProtection());
+	    TransState ts = new TransState(hS, tryBlock.handler(), h, 0);
+	    // add handler to 'todo' list.
+	    ss.todoHandler.add(ts);
+	    // add <tryBlock, callStack> mapping.
+	    ss.transHandler.put(pair, h);
+	    // return new handler.
+	    return h;
+	}
 	HandlerSet handlers(Instr orig) {
 	    HandlerSet hs = null;
 	    for (int i=0; i<ss.tryBlocks.length; i++)
 		if (ss.tryBlocks[i].inTry(orig)) {
-		    HANDLER h = (HANDLER) (method().next(i+1));
+		    HANDLER h = getHandler(ss.tryBlocks[i]);
 		    hs = new HandlerSet(h, hs);
 		}
 	    return hs;
@@ -399,10 +443,6 @@ final class Translate { // not public.
 	    // corresponding to live targets.
 	    Map ncalls = new HashMap(calls);
 	    ncalls.keySet().retainAll(targets);
-	    // debugging
-	    if (!calls.equals(ncalls))
-		System.out.println("Purging at #"+phi.getID()+":"+phi+": "+
-				   calls+"->"+ncalls);
 	    // for efficiency, don't create a new state if maps are identical.
 	    return (calls.equals(ncalls)) ? this :
 		new State(ss, stackSize, ls, js, jlv,
@@ -415,9 +455,6 @@ final class Translate { // not public.
 	    Util.assert(!calls.containsKey(target)); // no recursiveness.
 	    Map ncalls = new HashMap(calls);
 	    ncalls.put(target, jsr);
-	    // debugging.
-	    System.out.println("Entering jsr from #"+jsr.getID()+":"+jsr+": "+
-			       calls+"->"+ncalls);
 	    return new State(ss, stackSize, ls, js, jlv,
 			     Collections.unmodifiableMap(ncalls))
 		.pushRetAddr(target);
@@ -490,25 +527,9 @@ final class Translate { // not public.
 	    params[i] = s.lv(i+j);
 	    if (i>=offset && isLongDouble(paramTypes[i-offset])) j++;
 	}
-	METHOD qM = new METHOD(qf, firstInstr, params, 
-			       1+tb.length /*arity*/);
+	/** Make METHOD with arity 1; we'll fill in the proper arity later. */
+	METHOD qM = new METHOD(qf, firstInstr, params, 1);
 	Quad.addEdge(header, 1, qM, 0);
-
-	// Vector of translation states to process
-	TransState workset[] = new TransState[tb.length+1];
-
-	// make HANDLER quads, and add to workset
-	for (int i=0; i<tb.length; i++) {
-	    State hS = s.enterCatch();
-	    HANDLER h = new HANDLER(qf, tb[i].handler(),
-				    hS.stack(0), tb[i].caughtException(),
-				    new TransProtection());
-	    Quad.addEdge(qM, i+1, h, 0);
-	    workset[i+1] = new TransState(hS, tb[i].handler(), h, 0);
-	}
-	// add HANDLER quads to appropriate handler sets.
-	for (int i=0; i<tb.length; i++)
-	    s.recordHandler(tb[i].handler(), qM.next(i+1), qM.next(i+1));
 
 	// deterimine if this is a synchronized method.
 	boolean isSynchronized=Modifier.isSynchronized(method.getModifiers());
@@ -583,8 +604,9 @@ final class Translate { // not public.
 	}
 
 	// translate using state.
-	workset[0] = new TransState(s, firstInstr, q, 0);
-	trans(workset);
+	trans(new TransState(s, firstInstr, q, 0));
+	// fixup initial METHOD block to link to the proper # of HANDLERs.
+	qM = s.fixupHandlers();
 
 	// if method is synchronized, place MONITOREXIT at bottom(s).
 	if (isSynchronized) {
@@ -609,23 +631,24 @@ final class Translate { // not public.
     }
 
     /** Translate blocks starting with the given <code>TransState</code>s.<p>
-     *  Start at <code>ts.in</code> using <code>ts.initialState</code>.<p>
-     * <b>MUST begin with ts0[0], and not move on to ts0[1] until all code
-     * reachable from ts0[0] has been translated.</b>. */
-    static final void trans(TransState ts0[]) {
-	Stack todo = new Stack();
-	for (int i=ts0.length-1; i>=0; i--)
-	    todo.push(ts0[i]);
+     *  Start at <code>ts0.in</code> using <code>ts0.initialState</code>. */
+    static final void trans(TransState ts0) {
+	State s = ts0.initialState; // abbreviation.
 
-	while (!todo.empty()) {
-	    TransState ts = (TransState) todo.pop();
+	Stack todo = new Stack();
+	todo.push(ts0);
+
+	// pull stuff to do from todo stack and handler todo stack.
+	while (! (todo.empty() && s.todoHandler().empty())) {
+	    TransState ts = (TransState)
+		( (!todo.empty()) ? todo.pop() : s.todoHandler().pop() );
 
 	    TransState nts[] = transInstr(ts);
 	    for (int i=nts.length-1; i>=0; i--)
 		todo.push(nts[i]);
 	}
 	// JSR/RETs leave null edges into PHIs
-	ts0[0].initialState.mergeMap().fixupPhis(ts0[0].initialState);
+	s.mergeMap().fixupPhis(s);
 	// done.
 	return;
     }
@@ -1846,5 +1869,19 @@ final class Translate { // not public.
 	if (hc == HClass.Long || hc == HClass.Double)
 	    return true;
 	return false;
+    }
+
+    /** Safe comparator uses natural ordering when it can, otherwise it
+     *  uses the hashCode() to impose an arbitrary ordering.
+     *  The ordering is consistent with equals().
+     *  (no class cast exceptions). */
+    private static final class SafeComparator implements java.util.Comparator {
+	public int compare(Object o1, Object o2) {
+	    if (o1 instanceof Comparable && o2 instanceof Comparable)
+		return ((Comparable)o1).compareTo(o2);
+	    else if (o1.equals(o2))
+		return 0;
+	    else return o1.hashCode() - o2.hashCode(); // arbitrary.
+	}
     }
 }
