@@ -22,10 +22,12 @@ import harpoon.Util.Collections.AggregateMapFactory;
 import harpoon.Util.Collections.MapFactory;
 import harpoon.Util.Util;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 /**
@@ -34,9 +36,10 @@ import java.util.Set;
  * of several 'mostly-zero field' transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstructorClassifier.java,v 1.1.2.3 2001-11-10 00:24:20 cananian Exp $
+ * @version $Id: ConstructorClassifier.java,v 1.1.2.4 2001-11-10 17:31:46 cananian Exp $
  */
 public class ConstructorClassifier {
+    private static final boolean DEBUG=false;
     /* Definitions:
      * - a 'this-final' field is only written in constructors of its type.
      *   it is not written in subclass constructors.  every write within
@@ -51,25 +54,52 @@ public class ConstructorClassifier {
      * class extend the 'large' version and so can write the extra field.
      */
     private final HCodeFactory hcf;
+    private final ClassHierarchy ch;
     private final MapFactory mf = new AggregateMapFactory();
     private final Set badFields;
     
     /** Creates a <code>ConstructorClassifier</code>. */
     public ConstructorClassifier(HCodeFactory hcf, ClassHierarchy ch) {
 	this.hcf = hcf;
+	this.ch = ch;
         // first, find all the 'subclass-final' fields in the program.
 	// actually, we find the dual of this set.
 	this.badFields = findBadFields(hcf, ch);
 	// we're done!  (the rest of the analysis is demand-driven)
-	// debug:
-	System.out.println("BAD FIELDS: "+badFields);
-	System.out.println("CONSTRUCTOR RESULTS:");
-	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
-	    if (!isConstructor(hm)) continue;
-	    System.out.println(" "+hm+": "+classifyMethod(hm));
+	if (DEBUG) {
+	    // debug:
+	    System.out.println("BAD FIELDS: "+badFields);
+	    System.out.println("CONSTRUCTOR RESULTS:");
+	    for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
+		HMethod hm = (HMethod) it.next();
+		if (!isConstructor(hm)) continue;
+		System.out.println(" "+hm+": "+classifyMethod(hm));
+	    }
 	}
     }
+    /** Returns <code>true</code> iff the given field is 'subclass-final'
+     *  and there is at least one callable constructor where the field's
+     *  content can be predicted.
+     */
+    public boolean isGood(HField hf) {
+	if (hf.isStatic()) return false;
+	if (badFields.contains(hf)) return false;
+	// get declared methods of class (should include all constructors)
+	List l = Arrays.asList(hf.getDeclaringClass().getDeclaredMethods());
+	// for each callable constructor...
+	for (Iterator it=l.iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    if (!ch.callableMethods().contains(hm)) continue;
+	    if (!isConstructor(hm)) continue;
+	    // okay, hm is a callable constructor.
+	    Map map = classifyMethod(hm);
+	    if (!map.containsKey(hf) ||
+		((Classification) map.get(hf)).isGood())
+		return true; // this is a good field.
+	}
+	return false; // nothing good about this.
+    }
+
     private Set findBadFields(HCodeFactory hcf, ClassHierarchy ch) {
 	Set badFields = new HashSet();
 	// for each callable method...
@@ -120,6 +150,7 @@ public class ConstructorClassifier {
 	Classification() { this.param=-1; this.constant=null; }
 	Classification(int param) { this.param=param; this.constant=null; }
 	Classification(Object constant){this.param=-1; this.constant=constant;}
+	boolean isGood() { return param>=0 || constant!=null; }
 	void merge(Classification c) {
 	    if (this.param != c.param ||
 		(this.constant==null) != (c.constant==null) ||

@@ -11,8 +11,8 @@ import harpoon.ClassFile.NoSuchClassException;
 import harpoon.Util.Collections.AggregateMapFactory;
 import harpoon.Util.Collections.Factories;
 import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.MapSet;
 import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.Factories;
 import harpoon.Util.Default;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.ParseUtil.BadLineException;
@@ -21,12 +21,13 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 /**
  * The <code>ProfileParser</code> class parses the output produced
  * by <code>SizeCounters</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ProfileParser.java,v 1.1.2.1 2001-11-10 04:09:29 cananian Exp $
+ * @version $Id: ProfileParser.java,v 1.1.2.2 2001-11-10 17:31:46 cananian Exp $
  */
 class ProfileParser {
     // lines are in the format: 'mzf_savedbytes_<classname>: <number>'
@@ -35,9 +36,18 @@ class ProfileParser {
 
     
     /** Creates a <code>ProfileParser</code>. */
-    public ProfileParser(Linker linker, String resourcePath)
-	throws IOException {
-        ParseUtil.readResource(resourcePath, new ResourceParser(linker));
+    public ProfileParser(Linker linker, String resourcePath) {
+	try {
+	    ParseUtil.readResource(resourcePath, new ResourceParser(linker));
+	} catch (IOException ioex) {
+	    throw new RuntimeException(ioex);
+	}
+    }
+    /** Returns a map from 'mostly values' (Integers) to how many
+     *  bytes can be saved (Longs). */
+    Map valueInfo(HField hf) {
+	return Collections.unmodifiableMap
+	    (((MapSet)results.getValues(hf)).asMap());
     }
     final MultiMap results = new GenericMultiMap
 	(Factories.mapSetFactory(new AggregateMapFactory()));
