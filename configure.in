@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.40 $)dnl
+AC_REVISION($Revision: 1.41 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -89,7 +89,7 @@ AC_CHECK_LIB(m, atan2) dnl link in math library.
 dnl process option to select full stack trace on exceptions.
 AC_MSG_CHECKING([stack trace verbosity])
 AC_ARG_WITH(full-stack-trace,
-[  --with-full-stack-trace                show all frames in exception trace],
+[  --with-full-stack-trace show all frames in exception trace],
 full_stack_trace="$withval", full_stack_trace="no")
 case "$full_stack_trace" in
 yes)	AC_MSG_RESULT([full])
@@ -103,7 +103,7 @@ esac
 dnl process option to select threading model.
 AC_MSG_CHECKING([threading model])
 AC_ARG_WITH(thread-model,
-[  --with-thread-model={none,pth,heavy}   select threading model to use],
+[  --with-thread-model={[none],pth,heavy}       select threading model to use],
 thread_model="$withval", thread_model="none")
 case "$thread_model" in
 heavy)  AC_MSG_RESULT([heavy-weight threads])
@@ -157,7 +157,7 @@ fi
 dnl process option to select garbage collector
 AC_MSG_CHECKING([garbage collector])
 AC_ARG_WITH(gc,
-[  --with-gc={none,conservative,semi,precise} select garbage collector to use],
+[  --with-gc={[none],conservative,semi,precise} select garbage collector to use],
 gc_type="$withval", gc_type="none")
 case "$gc_type" in
 semi)
