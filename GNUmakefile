@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.73 1999-11-02 07:29:47 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.74 1999-11-06 01:29:07 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -79,7 +79,7 @@ MACHINE_GEN := $(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
 		$(MACHINE_GEN))
 
 ALLSOURCE :=  $(MACHINE_GEN) $(filter-out $(MACHINE_GEN), \
-		$(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
+		$(filter-out .%.java \#% $(patsubst %,\%%,$(BUILD_IGNORE)),\
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java))))
 TARSOURCE := $(filter-out $(MACHINE_GEN), $(filter-out JavaChip%, \
 	        $(filter-out Test%,$(ALLSOURCE)))) GNUmakefile $(MACHINE_SRC)
@@ -298,6 +298,15 @@ srcdoc-install: srcdoc srcdoc/java
 doc:	doc/TIMESTAMP
 
 doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
+# check for .*.java and #*.java files that will give javadoc headaches
+	@export badfiles="$(strip $(foreach dir,\
+			$(filter-out Test JavaChip,$(PKGSWITHJAVASRC)),\
+			$(wildcard $(dir)/[.\#]*.java)))"; \
+	if [ ! "$$badfiles" = "" ]; then \
+	  echo "Please remove $$badfiles before running 'make doc'";\
+	  exit 1;\
+	fi
+# okay, safe to make doc.
 	make doc-clean
 	mkdir doc
 	$(RM) -rf doc-link
