@@ -1,0 +1,162 @@
+Inconsistencies with RTSJ:
+--------------------------
+
+        AsyncEventHandlerTest - no change necessary to this test because 
+                                it's written to match the code, however...
+	JITTERBUG - 356
+	- Has the specification for the setScheduler() method changed? It
+          now no longer matches the RTSJ.
+
+	AsyncEventTest - Some subtests are commented out
+        JITTERBUG - 357
+	CLASS METHOD (createReleaseParameters) NOT DONE 
+	- Once the createReleaseParameters() method is implemented, I need
+	  to uncomment subtest 5. 
+
+	PeriodicParametersTest - Some subtests are commented out
+	JITTERBUG - 359
+	CLASS METHODS (setPeriod and setStart) NOT DONE
+	- Once the implementation for PeriodicParameters is complete, I need
+	  to uncomment subtests 5 and 6 and try it.
+
+
+	WaitFreeDequeueTest - test renamed to WaitFreeDequeueTest.hold
+	JITTERBUG - 376
+	 - There is a  WaitFreeDequeue.java but no .class file.  It is 
+	   missing from build/share/defs_cdc.mk.  Why? Is it not ready or 
+	   mistakenly missing?
+
+	RealtimeSystemTest - test renamed to RealtimeSystemTest.hold
+	JITTERBUG 360 and 361
+	- Has the spec. for this changed?  There are methods missing
+	(getConcurrentLocksUsed(), setSecurityManager() and 
+	(setMaximumConcurrentLocks(int number, boolean hard)) and new ones
+	added (getScheduler() and setMonitorControl()).
+	- Various methods in this class are declared non-static in the RTSJ
+	  though it seems to me that it should be.  When this class is
+	  implemented, I need to see if they are indeed non-static and if so,
+	  change the tests to use them as such. These methods are:
+		getConcurrentLocksUsed()
+		getMaximumConcurrentLocks()
+		setMaximumConcurrentLocks(int number)
+		setMaximumConcurrentLocks(int number, boolean hard)
+
+
+	PrioritySchedulerTest
+	JITTERBUG - 362, 365, 367
+	- addToFeasibility() is specified in the RTSJ to be protected, it is
+          not implemented this way. 
+	- getMaxPriority(java.lang.Thread thread)
+	  getMinPriority(java.lang.Thread thread)
+	  getNormPriority(java.lang.Thread thread)
+	  All are specified in the RTSJ to be static.  They are not 
+	  implemented this way.
+	- removeFromFeasibility() is specified in the RTSJ to be protected, it
+          is not implemented this way.
+
+
+Failures:
+---------
+
+	RealtimeThreadTest
+	JITTERBUG - 371
+	- Subtest 14 (interrupt) fails because the interrupt does not
+          cause the RealtimeThread to catch an InterruptedException and
+          the isInterrupted() method returns false.
+	  IllegalThreadStateException.
+
+	RawMemoryAccessTest and RawMemoryFloatAccessTest
+	JITTERBUG - 368
+	- Subtest 1 fails because method create() and createFloatAccess(Object
+          type, long size) respectively are currently written to return null.
+
+	PriorityCeilingEmulationTest
+	JITTERBUG - 372
+	- Subtests  6 causes the process to suspend "Process
+	  received signal 11, suspending." I believe this is because
+          I pass in null for the monitor object and it gets passed on
+          to the native method setMonitorControl0(). 
+
+	OneShotTimerTest
+	JITTERBUG - 369
+	- Subtest 3 fails because method "createReleaseParameters"  in
+          the Timer class is not fully implemented (i.e. it just returns
+	  null).
+
+	PeriodicTimerTest
+	JITTERBUG - 370
+	- Subtest 3 fails because it's overriding method 
+	  "createReleaseParameters" is not fully implemented (i.e. it just
+          returns null).
+
+	PrioritySchedulerTest
+	JITTERBUG 363, 364, 366
+	- Subtest 2 and 3 fail because...  
+	  addToFeasibility() casts schedulable to RealtimeThread.  This
+	  does not work with AsyncEventHandler's and a ClassCastException
+          results but is caught and ignored.  However, it ends up resulting
+          in a NullPointerException because later the reference to the
+	  "RealtimeThread" object (t) is used.
+	- Subtest 4 fails because...
+	  fireSchedulable() casts the given Schedulable object to a
+	  java.lang.Thread.  This does not work with AsyncEventHandler because
+          it is not a subclass of Thread.
+	- Subtest 10 and 13 fail because...
+	  getMinPriority(java.lang.Thread thread) and 
+	  getNormPriority(java.lang.Thread thread) are written expecting
+          that the thread argument can be casted to Schedulable.  If it can't,
+          a ClassCastException is thrown.  getMaxPriority() is written to
+          first check if the thread is an instanceof Schedulable.
+
+	AperiodicParametersTest 
+	JITTERBUG - 358
+	- Subtests 3, 4 and 5 fail...
+	  AperiodicParameters declares fields that end up shadowing
+	  the fields in it's superclass, ReleaseParameters.  These shadowing
+          fields are what is set in the constructor.  However, if you call
+	  the superclass' methods (such as getCost()), it is going to return
+          to you the fields of the superclass (which will be null).  My
+	  suggestion (which should be double-checked) is to remove the
+	  declaration of the fields in AperiodicParameters and just call
+	  super() in the constructor. 
+
+	WaitFreeWriteQueueTest
+	JITTERBUG - 373 and 374
+	- Subtest 2 fails.  The bind() method is missing.  Did the spec. change?
+	  If this method gets written, this subtest needs to be modified
+	  to remove the comment delimiters around the actual test and remove
+          the automatic call to Tests.fail().  Otherwise, remove the subtest
+	  completely.
+	- Subtest 4 fails.  force() method calculates an array index of -1 
+	  when force() is called on an empty queue.  This results in an
+	  ArrayOutOfBoundsException.
+
+	AsynchronouslyInterruptedExceptionTest
+	JITTERBUG - 385
+	- Throws a Thread Failure in subtest 3.
+	  I am unclear as to why the interrupt is never received.  It is my
+          understanding from the spec. that "disable" will defer the
+          throwing of the exception until "enabled".  However, the test shows
+	  that the interrupt (produced by calling fire()) does not cause the
+          thread to throw an exception.  Kalpesh seems to understand why
+          but I don't understand his explanation.  This needs to be discussed
+	  with both Kalpesh and Manas.
+
+
+Notes:
+------
+
+	PhysicalMemoryFactoryTest (methods of PhysicalMemoryFactory are 
+	                           actually implemented within 
+				   DefaultMemoryFactory)
+	- The current Subtests only verify the fields.
+	- I can't test the methods because they are protected and I cannot
+          create a subclass of DefaultMemoryFactory because of it's 
+          constructor being private.
+
+	PeriodicTimerTest	
+	- PeriodicTimer's fire() method is not tested though it is a public
+          method.  I was told that it should not be called directly and that
+          I instead should call start().  It will throw a 
+          IllegalMonitorException from Object.wait().  It is uncertain as to
+	  why this is a "public" method.
