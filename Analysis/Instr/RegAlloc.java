@@ -55,7 +55,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.49 1999-11-15 07:49:01 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.50 1999-11-18 16:43:14 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
@@ -341,7 +341,7 @@ public abstract class RegAlloc  {
 	}
     
 	    
-	return null;
+	return in;
     }
 
 /*    protected HCode resolveOutstandingTemps(HCode in) {

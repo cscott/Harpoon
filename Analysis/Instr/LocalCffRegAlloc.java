@@ -52,7 +52,7 @@ import java.util.AbstractSet;
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.48 1999-11-16 22:08:48 pnkfelix Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.49 1999-11-18 16:43:14 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -66,6 +66,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 	
 	LiveTemps liveTemps = 
 	    new LiveTemps(iter, frame.getRegFileInfo().liveOnExit());
+
+	harpoon.Analysis.DataFlow.Solver.worklistSolve
+	    (BasicBlock.basicBlockIterator(rootBlock),
+	     liveTemps);
 
 	iter = BasicBlock.basicBlockIterator(rootBlock);
 	while(iter.hasNext()) {
@@ -257,41 +261,60 @@ public class LocalCffRegAlloc extends RegAlloc {
 		}
 	    }
 	}
+
 	// finished local alloc for 'b', so now we need to empty the
 	// register file.  Note that after the loop finishes, 'instr'
 	// is the last instruction in the series.
 	
+	System.out.println("live on exit from " + b + " :\n" + liveOnExit);
 	
-	Iterator vals = new ArrayList(regfile.values()).iterator();
+	Iterator vals = (new ArrayList(regfile.values())).iterator();
+
 	while(vals.hasNext()) {
 	    Temp val = (Temp) vals.next();
+
+	    System.out.println("dealing with " + val + " at end of " + b);
 	    
 	    // don't spill dead values.
 	    if (!liveOnExit.contains(val)) continue;
 	    
 	    // need to insert the spill in a place where we can be
 	    // sure it will be executed; the easy case is where
-	    // 'instr' does not redefine any temps (so we can just put 
+	    // 'instr' does not redefine the 'val' (so we can just put 
 	    // our spills BEFORE 'instr').  If 'instr' does define
-	    // temps, however, then we MUST wait to spill, and then we
-	    // need to see where control can flow...
+	    // 'val', however, then we MUST wait to spill, and
+	    // then we need to see where control can flow...
 	    // insert a new block solely devoted to spilling
 	    InstrEdge loc;
-	    if (instr.defC().isEmpty()) {
+	    if (!instr.defC().contains(val)) {
 		loc = new InstrEdge(instr.getPrev(), instr);
+
+		System.out.println("end spill: " + val + " " + loc);
+
 		spillValue(val, loc, regfile);
 	    } else {
 		if (instr.canFallThrough) {
 		    loc = new InstrEdge(instr, instr.getNext());
+
+		    System.out.println("end spill: " + val + " " + loc);
+
 		    spillValue(val, loc, regfile);
 		}
 
-		// this is a tricky case (though it seems simple at
-		// first glance)...so I'm going to punt it for now.
-		Util.assert(instr.getTargets().isEmpty(), 
-			    "Uh oh, we gotta handle the 'inserting-"+
-			    "spills-after-an-instruction-with-"+
-			    "multiple-targets' case");
+		Util.assert(instr.getTargets().isEmpty() ||
+			    instr.hasModifiableTargets(),
+			    "We MUST be able to modify the targets "+
+			    " if we're going to insert a spill here");
+
+		for(Iterator targets = instr.getTargets().iterator();
+		    targets.hasNext();) {
+		    Label l = (Label) targets.next();
+		    loc = new InstrEdge(instr, instr.getInstrFor(l));
+
+		    System.out.println("end spill: " + val + " " + loc);
+
+		    spillValue(val, loc, regfile);
+		}
 	    }
 	}
 	
