@@ -124,6 +124,35 @@ void doanalysis() {
       }
       break;
 
+    case 'G':
+      /* Do Load */
+      {
+	struct localvars * lv=(struct localvars *) calloc(1, sizeof(struct localvars));
+	long long uid, objuid;
+
+
+	sscanf(line,"GA: %s %ld %s %lld %lld",lv->name,&lv->linenumber, lv->sourcename, &objuid, &uid);
+	lv->lvnumber=lvnumber(lv->name);
+	lv->age=pointerage++;
+	lv->m=heap.methodlist;
+	
+	if (uid!=-1) {
+	  lv->object=gettable(ht, uid);
+	  doaddlocal(&heap, lv);
+	  doaddfield(&heap,lv->object);
+	}
+
+#ifdef EFFECTS
+	if ((uid!=-1)&&(objuid!=-1)) {
+	  addarraypath(&heap, ht, objuid, uid);
+	}
+#endif
+	
+	/* addtolvlist add's to K set */
+	addtolvlist(&heap, lv, heap.methodlist);
+      }
+      break;
+
 
     case 'M':
       /* Mark Local*/

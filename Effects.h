@@ -4,6 +4,7 @@
 #include "RoleInference.h"
 
 void addpath(struct heap_state *hs, long long obj, char * class, char * field, char * fielddesc, long long dstobj);
+void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, long long dstobj);
 
 struct path {
   int paramnum;

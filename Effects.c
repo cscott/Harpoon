@@ -8,6 +8,27 @@
 #include "Role.h"
 #define MAXREPSEQ 5
 
+void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, long long dstobj) {
+  struct method *method=hs->methodlist;
+  while(method!=NULL) {
+    struct hashtable * pathtable=method->pathtable;
+
+    if (!contains(pathtable, dstobj)) {
+      struct path * path=(struct path *) calloc(1,sizeof(struct path));
+      path->prev_obj=obj;
+      path->classname=copystr(((struct heap_object *)gettable(ht, obj))->class);
+      /*Array dereferences are uniquely classified by array class*/
+      path->fielddesc=NULL;
+      
+      path->fieldname=copystr("[ARRAY]");
+      path->paramnum=-1;
+      puttable(pathtable, dstobj, path);
+    }
+    
+    method=method->caller;
+  }
+}
+
 void addpath(struct heap_state *hs, long long obj, char * class, char * field, char * fielddesc, long long dstobj) {
   struct method *method=hs->methodlist;
   while(method!=NULL) {
@@ -316,7 +337,7 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
     }
     path=gettable(pathtable, uid);
     if (path->prev_obj!=-1) {
-      if ((rel==NULL)||((strcmp(rel->classname, path->classname)!=0)&&(strcmp(rel->fielddesc, path->fielddesc)!=0))) {
+      if ((rel==NULL)||(!equivalentstrings(rel->classname, path->classname)&&!equivalentstrings(rel->fielddesc, path->fielddesc))) {
 	struct regexprlist *ere=(struct regexprlist *) calloc(1, sizeof(struct regexprlist));
 	struct regfieldlist *rfl=(struct regfieldlist *) calloc(1, sizeof(struct regfieldlist));
 	ere->multiplicity=0;
