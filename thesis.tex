@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.33 1999-06-12 21:34:52 cananian Exp $
+% $Id: thesis.tex,v 1.34 1999-06-13 00:34:08 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.33 $ $}
+\date{\today \\ $ $Revision: 1.34 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.33 $ $}{$ $Revision: 1.33 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.34 $ $}{$ $Revision: 1.34 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -803,8 +803,9 @@ of an event set and an invariant store.  The initial
 configuration is
 $\tuple{\{\}_{\domainsm{Evt}},
         []_{\domainsm{Xif} \to \domainsm{Evt}^*}}$
-that is, it consists of an empty event set and
-an empty mapping for the invariant store.%
+that is, it consists of an empty event set%
+\footnote{Read, ``who cares about Maria'' \cite{marinov99}.}
+and an empty mapping for the invariant store.%
 \fixme{start condition.}
 \end{enumerate}
 \end{definition}
