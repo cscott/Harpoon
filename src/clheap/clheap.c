@@ -53,8 +53,8 @@ clheap_t clheap_create() {
 
   clh = (clheap_t) malloc(sizeof(*clh));
   clh->heap_start =
-#ifdef WITH_PRECISE_GC
-    malloc
+#ifdef WITH_PRECISE_GC /* precise_malloc_uncollectable ? */
+# error unimplemented
 #elif defined(BDW_CONSERVATIVE_GC)
     GC_malloc_uncollectable
 #else
