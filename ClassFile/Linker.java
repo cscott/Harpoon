@@ -12,7 +12,7 @@ import java.util.Map;
  * to code/data/object descriptions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Linker.java,v 1.1.2.2 2000-01-11 08:28:17 cananian Exp $
+ * @version $Id: Linker.java,v 1.1.2.3 2000-01-11 12:33:45 cananian Exp $
  */
 public abstract class Linker {
   protected Linker() { }
@@ -41,24 +41,24 @@ public abstract class Linker {
    * class types; never array or primitive type descriptors.
    * (Hence neither primitive types or array types can be
    *  re-linked, which might violate java language semantics.)
-   * @exception NoClassDefFoundError
+   * @exception NoSuchClassException
    *            if the class could not be found.
    */
   protected abstract HClass forDescriptor0(String descriptor)
-    throws NoClassDefFoundError;
+    throws NoSuchClassException;
 
   /**
    * Returns the <code>HClass</code> object associated with the
-   * ComponentType descriptor given.  Throws <code>NoClassDefFoundError</code>
+   * ComponentType descriptor given.  Throws <code>NoSuchClassException</code>
    * if the descriptor references a class that cannot be found.  Throws
    * <code>Error</code> if an invalid descriptor is given.
    * @exception Error
    *            if an invalid descriptor is given.
-   * @exception NoClassDefFoundError
+   * @exception NoSuchClassException
    *            if the class could not be found.
    */
   public final HClass forDescriptor(String descriptor)
-    throws NoClassDefFoundError {
+    throws NoSuchClassException {
     Util.assert(descriptor.indexOf('.')==-1); // should be desc, not name.
     // Trim descriptor.
     int i;
@@ -82,7 +82,8 @@ public abstract class Linker {
   }
   // helper function for the above; split apart to make the caching
   // behavior of the above clearer.
-  private HClass _forDescriptor_(String descriptor) {
+  private HClass _forDescriptor_(String descriptor)
+    throws NoSuchClassException {
     switch(descriptor.charAt(0)) {
     case '[': // arrays.
       {
@@ -127,14 +128,14 @@ public abstract class Linker {
    * the given string name.  Given the fully-qualified name for a class or
    * interface, this method attempts to locate and load the class.  If it
    * succeeds, returns the <code>HClass</code> object representing the class.
-   * If it fails, the method throws a <code>NoClassDefFoundError</code>.
+   * If it fails, the method throws a <code>NoSuchClassException</code>.
    * @param className the fully qualified name of the desired class.
    * @return the <code>HClass</code> descriptor for the class with the
    *         specified name.
-   * @exception NoClassDefFoundError
+   * @exception NoSuchClassException
    *            if the class could not be found.
    */
-  public final HClass forName(String className) throws NoClassDefFoundError {
+  public final HClass forName(String className) throws NoSuchClassException {
     if (className.charAt(0)=='[') {
       Util.assert(className.indexOf('.')==-1); // should be desc, not name.
       return forDescriptor(className);
@@ -147,13 +148,13 @@ public abstract class Linker {
   /** 
    * Returns the <code>HClass</code> object associated with the given java 
    * <code>Class</code> object.  If (for some reason) the class file
-   * cannot be found, the method throws a <code>NoClassDefFoundError</code>.
+   * cannot be found, the method throws a <code>NoSuchClassException</code>.
    * @return the <code>HClass</code> descriptor for this <code>Class</code>.
-   * @exception NoClassDefFoundError
+   * @exception NoSuchClassException
    *            if the classfile could not be found.
    * @deprecated Don't use java.lang.Class objects if you can help it.
    */
-  public final HClass forClass(Class cls) throws NoClassDefFoundError {
+  public final HClass forClass(Class cls) throws NoSuchClassException {
     // if cls is an array...
     if (cls.isArray())
       return forDescriptor("[" +
@@ -169,10 +170,29 @@ public abstract class Linker {
       if (cls == java.lang.Float.TYPE) return forDescriptor("F");
       if (cls == java.lang.Double.TYPE) return forDescriptor("D");
       if (cls == java.lang.Void.TYPE) return forDescriptor("V");
-      throw new Error("Unknown class primitive.");
+      throw new NoSuchClassException("Unknown class primitive: "+cls);
     }
     // otherwise...
     return forName(cls.getName());
+  }
+
+  /** Creates a new mutable class with the given name which is
+   *  based on the given template class.  <b>The <code>name</code>
+   *  must be unique.</b>
+   * @exception DuplicateClassException if the given name is not unique;
+   *    that is, it corresponds to a loadable class.
+   */
+  public HClass createMutableClass(String name, HClass template)
+    throws DuplicateClassException {
+    try {
+      forName(name);
+      throw new DuplicateClassException(name);
+    } catch (NoSuchClassException e) { /* named class not found, continue */ }
+    // okay, create a mutable class...
+    HClass hc = new HClassSyn(this, name, template);
+    hc.hasBeenModified = true;
+    register(hc);
+    return hc;
   }
 }
 
