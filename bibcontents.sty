@@ -1,0 +1,37 @@
+% This should include the bibliography in the table of contents.
+% In the `article' document style, it also changes the heading from
+% `References' to `Bibliography'.  (To change it back, redefine \refname.)
+
+% \makeatletter  % This is unnecessary if invoked from \documentstyle line.
+
+\def\refname{Bibliography}
+
+\@ifundefined{chapter}%
+  {\def\thebibliography#1{\section*{\refname\@mkboth
+     {\uppercase{\refname}}{\uppercase{\refname}}}
+   \addcontentsline{toc}{section}{\refname}\list
+   {\@biblabel{\arabic{enumiv}}}{\settowidth\labelwidth{\@biblabel{#1}}%
+      \leftmargin\labelwidth
+      \advance\leftmargin\labelsep
+      \usecounter{enumiv}%
+      \let\p@enumiv\@empty
+      \def\theenumiv{\arabic{enumiv}}}%
+      \def\newblock{\hskip .11em plus.33em minus.07em}%
+      \sloppy\clubpenalty4000\widowpenalty4000
+      \sfcode`\.=1000\relax}}%
+  {\def\thebibliography#1{\chapter*{\refname\@mkboth
+     {\uppercase{\refname}}{\uppercase{\refname}}}
+   \addcontentsline{toc}{chapter}{\refname}\list
+   {\@biblabel{\arabic{enumiv}}}{\settowidth\labelwidth{\@biblabel{#1}}%
+      \leftmargin\labelwidth
+      \advance\leftmargin\labelsep
+      \usecounter{enumiv}%
+      \let\p@enumiv\@empty
+      \def\theenumiv{\arabic{enumiv}}}%
+      \def\newblock{\hskip .11em plus.33em minus.07em}%
+      \sloppy\clubpenalty4000\widowpenalty4000
+      \sfcode`\.=1000\relax}}%
+
+%\makeatother  % Breaks subsequent .sty files that assume catcode of @ is 11!
+
+
