@@ -17,7 +17,9 @@ OBJS=$(patsubst %.c,%.o,$(SRCS))
 # a full executable.
 TARGET=Java.a
 
-all: $(TARGET)($(OBJS))
+all: $(TARGET)
+$(TARGET): $(OBJS)
+	$(AR) r $@ $?
 clean:
 	$(RM) $(OBJS)
 wipe: clean
