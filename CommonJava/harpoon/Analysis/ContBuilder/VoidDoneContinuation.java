@@ -25,6 +25,14 @@ public final class VoidDoneContinuation extends VoidContinuation implements Void
 	Scheduler.addReady(this);
     }
 
+    // input:  optimistic continuation (can be null)
+    // output: pesimistic continuation (can't be null)
+    // depressing, huh
+    static public VoidContinuation pesimistic(VoidContinuation c)
+    {
+	return (!c.done)? c : new VoidDoneContinuation();
+    }
+
     public void resume() {
 	if (next!=null) {
 	    if (isResume)
