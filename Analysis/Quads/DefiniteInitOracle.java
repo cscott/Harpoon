@@ -50,7 +50,7 @@ import java.util.Set;
  * field in the class in question).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefiniteInitOracle.java,v 1.1.2.3 2001-11-06 21:52:47 cananian Exp $
+ * @version $Id: DefiniteInitOracle.java,v 1.1.2.4 2001-11-06 22:38:56 cananian Exp $
  */
 public class DefiniteInitOracle {
     final HCodeFactory hcf;
@@ -73,6 +73,7 @@ public class DefiniteInitOracle {
     public DefiniteInitOracle(HCodeFactory hcf, ClassHierarchy ch) {
 	this.hcf = hcf;
 	this.ch = ch;
+	this.fso = new FieldSyncOracle(hcf, ch, new CallGraphImpl(ch, hcf));
 	// for each constructor:
 	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
@@ -80,10 +81,16 @@ public class DefiniteInitOracle {
 	    Set di = getNotDefInit(hm);
 	    notDefinitelyInitialized.addAll(di);
 	}
-	ndiCache.clear(); // free memory.
+	// free memory.
+	fso=null;
+	ndiCache=null;
 	// done!
     }
-    final Map ndiCache = new HashMap();
+
+    // only used during analysis; clear afterwards
+    FieldSyncOracle fso;
+    Map ndiCache = new HashMap();
+
     Set getNotDefInit(HMethod hm) {
 	if (!ndiCache.containsKey(hm)) {
 	    Set notDefinitelyInitialized = new HashSet();
@@ -233,11 +240,10 @@ public class DefiniteInitOracle {
     }
     private void findNextExitPoint(DomTree dt, HCodeElement hce, Set s) {
 	// is this an exit point?
-	if (hce instanceof RETURN) {
-	    // yes!  add it to 's'
-	    s.add(hce);
-	    return; // done.
-	} else if (hce instanceof CALL) {
+	boolean isExit=false;
+	if (hce instanceof RETURN)
+	    isExit=true;
+	else if (hce instanceof CALL) {
 	    // maybe.  is this a call to a superclass constructor?
 	    // (not just any superclass method, since we could set
 	    //  some superclass field to 'this' and then access ourselves)
@@ -245,18 +251,41 @@ public class DefiniteInitOracle {
 	    HMethod callee = ((CALL)hce).method();
 	    if ((!isSuperConstructor(callee, hce)) &&
 		(!isThisConstructor(callee, hce))) {
-		// an exit point.
-		s.add(hce);
-		return;
+		// is this call 'safe'? (no reads to classes in this occur)
+		// if so than this is not an exit point.
+		if (!isSafe(callee, hce))
+		    isExit=true;
 	    }
 	}
-	// note: throws are not exit points.  also, we'd like to make
-	// exception constructors not exit points as well.
+	// note: throws are not exit points.  also, exception constructors
+	// *should* be 'safe' by the defintion below (and thus not exit pnts)
 
-	// no exit point found.  keep going down the tree.
-	HCodeElement children[] = dt.children(hce);
-	for (int i=0; i<children.length; i++)
-	    findNextExitPoint(dt, children[i], s);
+	if (isExit) {
+	    // this is an exit point.  add it to 's'.
+	    s.add(hce);
+	} else {
+	    // no exit point found.  keep going down the tree.
+	    HCodeElement children[] = dt.children(hce);
+	    for (int i=0; i<children.length; i++)
+		findNextExitPoint(dt, children[i], s);
+	}
+    }
+    /** Returns true iff the given method hm contains no reads of fields
+     *  in hc. */
+    boolean isSafe(HMethod hm, HClass hc) {
+	for (Iterator it=Arrays.asList(hc.getDeclaredFields()).iterator();
+	     it.hasNext(); ) {
+	    HField hf = (HField) it.next();
+	    if (hf.isStatic()) continue;
+	    if (fso.isRead(hm, hf))
+		return false;
+	}
+	return true;
+    }
+    // convenience.
+    boolean isSafe(HMethod hm, HCodeElement hce) {
+	return isSafe
+	    (hm, ((Quad)hce).getFactory().getMethod().getDeclaringClass());
     }
     Set findDefInit(HCodeElement exit,
 		    DomTree dt, Set thisvars, MultiMap cache) {
