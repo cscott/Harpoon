@@ -2,12 +2,11 @@
 
 echo -n "Compiling everything in $1 ..."
 
-export  CLASSPATH=$CLASSPATH:`pwd`
+export CLASSPATH=$CLASSPATH:`pwd`
 
-cd $1
-
-rm -f *.class
-rm -f *~
-javac *.java 
+cd $1 && \
+rm -f *.class && \
+rm -f *~ && \
+javac -classpath $CLASSPATH *.java 
 
 echo done

@@ -6,6 +6,7 @@ echo "TODO: Write a more elegant version of me!"
 
 # Building the RealTime Java benchmarks
 OLD_CLASSPATH=$CLASSPATH
+
 export CLASSPATH=/home/salcianu/Harpoon/Code/Support/realtime.jar:$CLASSPATH
 
 ./buildone FibPaper
@@ -21,9 +22,6 @@ export CLASSPATH=/home/salcianu/Harpoon/Code/Support/realtime.jar:$CLASSPATH
 ./buildone Toy_RTJ
 
 export CLASSPATH=${OLD_CLASSPATH}
-
-
-exit 1;
 
 ./buildone ETruc
 
