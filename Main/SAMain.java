@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.131 2001-01-21 04:39:29 wbeebee Exp $
+ * @version $Id: SAMain.java,v 1.1.2.132 2001-01-22 22:17:54 wbeebee Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -205,13 +205,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    }
 	    roots.add(mainM);
 	    if (Realtime.REALTIME_JAVA) {
-		roots.add(linker.forName("realtime.RealtimeThread")
-			  .getConstructor(new HClass[] {
-			      linker.forName("java.lang.ThreadGroup"),
-			      linker.forName("java.lang.Runnable"),
-			      linker.forName("java.lang.String")}));
-		roots.add(linker.forName("java.lang.Thread").getMethod("setPriority", 
-								       new HClass[] { HClass.Int }));
+	      Realtime.setupRoots(linker, roots);
 	    }
 	    if (rootSetFilename!=null) try {
 		addToRootSet(roots, rootSetFilename);
@@ -295,8 +289,8 @@ public class SAMain extends harpoon.IR.Registration {
 
 	    if (Realtime.REALTIME_JAVA) {
 		hcf = Realtime.setupCode(linker, classHierarchy, hcf);
-		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+		hcf = Realtime.addChecks(linker, classHierarchy, hcf);
 	    }                                           
 	} // don't need the root set anymore.
 
@@ -834,8 +828,8 @@ public class SAMain extends harpoon.IR.Registration {
 	out.println("-D");
 	out.println("\tOutputs DATA information for <class>");
 
-   out.println("-t");
-   out.println("\tTurns on Realtime Java extensions.");
+	out.println("-t");
+	out.println("\tTurns on Realtime Java extensions.");
 
 	out.println("-O");
 	out.println("\tOutputs Original Tree IR for <class>");

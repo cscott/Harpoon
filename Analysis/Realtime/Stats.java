@@ -12,11 +12,9 @@ class Stats {
   private static long numQuads = 0;
   private static long numQuadsOut = 0;
   private static long startAnalysis = 0;
-  private static long startPointerAnalysis = 0;
   private static long startRealtime = 0;
   private static long totalTimeSpent = 0;
   private static long analysisTimeSpent = 0;
-  private static long pointerAnalysisTimeSpent = 0;
   private static long blessedObjects = 0;
   private static long blessedArrayObjects = 0;
 
@@ -58,16 +56,6 @@ class Stats {
     startAnalysis = 0;
   }
 
-  static void pointerAnalysisBegin() {
-    Util.assert(startPointerAnalysis == 0, "Two pointerAnalysisBegin() without a pointerAnalysisEnd()");
-    startPointerAnalysis = System.currentTimeMillis();
-  }
- 
-  static void pointerAnalysisEnd() {
-    pointerAnalysisTimeSpent += System.currentTimeMillis() - startPointerAnalysis;
-    startPointerAnalysis = 0;
-  }
-
   static void realtimeBegin() {
     Util.assert(startRealtime == 0, "Two realtimeBegin() without a realtimeEnd()");
     startRealtime = System.currentTimeMillis();
@@ -94,7 +82,6 @@ class Stats {
     System.out.println();
     System.out.println("Total time spent adding Realtime support: "+(totalTimeSpent/1000.0)+" s");
     System.out.println("  Time spent in analysis to remove checks: "+(analysisTimeSpent/1000.0)+" s");
-    System.out.println("  Time spent in PointerAnalysis: "+(pointerAnalysisTimeSpent/1000.0)+" s");
     System.out.println();
     System.out.print("Number of quads in: "+numQuads+" out: "+numQuadsOut);
     System.out.print(" out-in: "+(numQuadsOut-numQuads));

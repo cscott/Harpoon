@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
 
+import harpoon.Analysis.Quads.ArrayInitRemover;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.Linker;
@@ -63,6 +64,13 @@ public class Realtime {
 
   public static boolean REALTIME_JAVA = false;
 
+  public static final int NONE = 0;
+  public static final int POINTER_ANALYSIS = 1;
+
+  public static int ANALYSIS_METHOD = NONE;
+
+  private static CheckRemoval cr = new KeepChecks();
+
     /** Creates a field memoryArea on <code>java.lang.Object</code>.
      *  Since primitive arrays inherit from java.lang.Object, this catches them as well. 
      */
@@ -73,6 +81,43 @@ public class Realtime {
     linker.forName("java.lang.Object").getMutator().addDeclaredField("memoryArea",
                                                                      linker.forName("realtime.MemoryArea"));
     Stats.realtimeEnd();
+  }
+
+  public static void setupRoots(Linker linker, Set roots) {
+    roots.add(linker.forName("realtime.RealtimeThread")
+	      .getConstructor(new HClass[] {
+		linker.forName("java.lang.ThreadGroup"),
+		linker.forName("java.lang.Runnable"),
+		linker.forName("java.lang.String")}));
+    roots.add(linker.forName("java.lang.Thread").getMethod("setPriority", 
+							   new HClass[] { HClass.Int }));
+    HClass memoryArea = linker.forName("realtime.MemoryArea");
+    HClass object = linker.forName("java.lang.Object");
+    roots.add(memoryArea.getMethod("checkAccess", new HClass[] { object }));
+    roots.add(memoryArea.getMethod("bless", new HClass[] { object }));
+    roots.add(memoryArea.getMethod("bless", new HClass[] { object, linker.forName("[I") }));
+    HClass realtimeThread = linker.forName("realtime.RealtimeThread");
+    roots.add(realtimeThread.getMethod("getMemoryArea", new HClass[] {}));
+    roots.add(realtimeThread.getMethod("currentRealtimeThread", new HClass[] {}));
+  }
+
+    /** Runs Alex's <code>harpoon.Analysis.PointerAnalysis</code> to determine
+     *  which checks need to be removed.
+     */
+
+  private static void doAnalysis(Linker linker, ClassHierarchy ch, HCodeFactory parent) {
+    Stats.analysisBegin();
+    switch (ANALYSIS_METHOD) {
+    case NONE: { break; }
+    case POINTER_ANALYSIS: {
+      // cr = new PointerAnalysisCR(linker, ch, parent);
+      break;
+    }
+    default: {
+      Util.assert(false, "No RTJ analysis method specified.");
+    }
+    }     
+    Stats.analysisEnd();
   }
 
 
@@ -88,8 +133,8 @@ public class Realtime {
    */
 
   public static HCodeFactory setupCode(final Linker linker, 
-                                       final ClassHierarchy ch,
-                                       final HCodeFactory parent) {
+				       final ClassHierarchy ch,
+				       final HCodeFactory parent) {
     Stats.realtimeBegin();
     Iterator children = ch.children(linker.forName("java.lang.Thread")).iterator();
     while (children.hasNext()) {
@@ -98,16 +143,26 @@ public class Realtime {
 	child.getMutator().setSuperclass(linker.forName("realtime.RealtimeThread"));
       }      
     }
-
-    HCodeFactory result = addRealtimeSupport(linker, parent);
+    
+    HCodeFactory hcf = threadToRealtimeThread(linker, parent);
+    hcf = new ArrayInitRemover(hcf).codeFactory();
+    hcf = new CachingCodeFactory(hcf);
     Stats.realtimeEnd();
-    return result;
+    return hcf;
   }
 
+  public static HCodeFactory addChecks(Linker linker, ClassHierarchy ch, HCodeFactory parent) {
+    Stats.realtimeBegin();
+    doAnalysis(linker, ch, parent);
+    HCodeFactory hcf = addRealtimeChecksHCFact(linker, parent);
+    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+    Stats.realtimeEnd();
+    return hcf;
+  }
 
-  private static HCodeFactory addRealtimeSupport(final Linker linker, final HCodeFactory parent) {  
+  private static HCodeFactory threadToRealtimeThread(final Linker linker, final HCodeFactory parent) {  
     Util.assert(parent.getCodeName().equals("quad-with-try"), 
-                "addRealtimeSupport takes a QuadWithTry HCodeFactory not a "+
+                "threadToRealtimeThread takes a QuadWithTry HCodeFactory not a "+
                 parent.getCodeName()+" HCodeFactory.");
     return new HCodeFactory() {
         public HCode convert(HMethod m) {
@@ -123,7 +178,7 @@ public class Realtime {
             } catch (CloneNotSupportedException e) {
               Util.assert(false, "HCode.clone() not supported");
             }
-            Realtime.addRealtimeCode(linker, hc);
+            Realtime.threadToRealtimeThreadInHCode(linker, hc);
 //              System.out.println("After:");
 //              hc.print(new PrintWriter(System.out));
           }
@@ -135,18 +190,38 @@ public class Realtime {
       };     
   }
 
-  /** Adds Realtime support to an <code>harpoon.ClassFile.HCode</code>. */
-
-  private static void addRealtimeCode(final Linker linker, HCode hc) {
-    QuadVisitor visitor = new QuadVisitor() {
-	public void visit(ASET q) {
-	  Realtime.checkAccess(linker, q, q.objectref(), q.src());
-	}
-	
-        public void visit(ANEW q) {
-          Realtime.newArrayObject(linker, q, q.dst(), q.hclass(), q.dims());
+  private static HCodeFactory addRealtimeChecksHCFact(final Linker linker, final HCodeFactory parent) {  
+    Util.assert(parent.getCodeName().equals("quad-with-try"), 
+                "addRealtimeChecks takes a QuadWithTry HCodeFactory not a "+
+                parent.getCodeName()+" HCodeFactory.");
+    return new HCodeFactory() {
+        public HCode convert(HMethod m) {
+//            System.out.println("Converting Method: "+m.toString());
+          HCode hc = parent.convert(m);
+          Stats.realtimeBegin();
+          if ((hc != null)&&
+              (!m.getDeclaringClass().getName().startsWith("realtime."))) { // Prevent infinite recursion.
+//              System.out.println("Before:");
+//              hc.print(new PrintWriter(System.out));
+            try {
+              hc = (HCode)hc.clone();
+            } catch (CloneNotSupportedException e) {
+              Util.assert(false, "HCode.clone() not supported");
+            }
+            Realtime.addRealtimeChecksToHCode(linker, hc);
+//              System.out.println("After:");
+//              hc.print(new PrintWriter(System.out));
+          }
+          Stats.realtimeEnd();
+          return hc;
         }
+        public String getCodeName() { return parent.getCodeName(); }
+        public void clear(HMethod m) { parent.clear(m); }
+      };     
+  }
 
+  private static void threadToRealtimeThreadInHCode(final Linker linker, HCode hc) {
+    QuadVisitor visitor = new QuadVisitor() {
         public void visit(CALL q) {
           HMethod method = q.method();
           if (method.getDeclaringClass().getName().equals("java.lang.Thread")&&
@@ -161,29 +236,50 @@ public class Realtime {
           } 
         }
 
-	public void visit(SET q) {
-	  Realtime.checkAccess(linker, q, q.objectref(), q.src());
-	}
-
         public void visit(NEW q) {
           if (q.hclass().getName().equals("java.lang.Thread")) {
             NEW newQuad = new NEW(q.getFactory(), q, q.dst(), linker.forName("realtime.RealtimeThread"));
             Quad.replace(q, newQuad);
-            Realtime.newObject(linker, newQuad, newQuad.dst(), newQuad.hclass());
-          } else {
-            Realtime.newObject(linker, q, q.dst(), q.hclass());
           }
         }
 
-        public void visit(Quad q) { // Called for all others
-//            System.out.println(q.toString());
-        }
+	public void visit(Quad q) {}
       };
       
     Quad[] ql = (Quad[]) hc.getElements();
     Stats.addQuads(ql.length);
     for (int i=0; i<ql.length; i++) 
       ql[i].accept(visitor);
+  }
+
+  private static void addRealtimeChecksToHCode(final Linker linker, HCode hc) {
+    QuadVisitor visitor = new QuadVisitor() {
+	public void visit(ARRAYINIT q) {
+	  Util.assert(false, "There should be no ARRAYINITs after RemoveArrayInit has run.");
+	}
+
+	public void visit(ASET q) {
+	  Realtime.checkAccess(linker, q, q.objectref(), q.src());
+	}
+	
+        public void visit(ANEW q) {
+          Realtime.newArrayObject(linker, q, q.dst(), q.hclass(), q.dims());
+        }
+
+	public void visit(SET q) {
+	  Realtime.checkAccess(linker, q, q.objectref(), q.src());
+	}
+
+        public void visit(NEW q) {
+	  Realtime.newObject(linker, q, q.dst(), q.hclass());
+        }
+
+	public void visit(Quad q) {}
+      };
+      
+    Quad[] ql = (Quad[]) hc.getElements();
+    for (int i=0; i<ql.length; i++) 
+	ql[i].accept(visitor);
     Stats.addQuadsOut(hc.getElements().length);
   }
 
@@ -196,7 +292,7 @@ public class Realtime {
    * <p>
    */
 
-  public static void newObject(final Linker linker, Quad inst, Temp dst, HClass hclass) {
+  private static void newObject(final Linker linker, Quad inst, Temp dst, HClass hclass) {
     Stats.addBlessedObject();
     QuadFactory qf = inst.getFactory();
     HMethod hm = qf.getMethod();
@@ -226,7 +322,7 @@ public class Realtime {
    * <p>
    */
 
-  public static void newArrayObject(final Linker linker, Quad inst, Temp dst, 
+  private static void newArrayObject(final Linker linker, Quad inst, Temp dst, 
                                     HClass hclass, Temp[] dims) {
     Stats.addBlessedArrayObject();
     QuadFactory qf = inst.getFactory();
@@ -271,7 +367,7 @@ public class Realtime {
     /** Adds a check around: a.foo = b;  a must be able to access b */
 
 
-  public static void checkAccess(final Linker linker, Quad inst, Temp object, Temp src) {
+  private static void checkAccess(final Linker linker, Quad inst, Temp object, Temp src) {
     Util.assert(src != null);
     if (inst instanceof SET) {
       if (((SET)inst).field().getType().isPrimitive()) return;
@@ -279,7 +375,7 @@ public class Realtime {
     if (inst instanceof ASET) {
       if (((ASET)inst).type().isPrimitive()) return;
     }
-    if (needsCheck(inst, object, src)) {
+    if (needsCheck(inst)) {
       QuadFactory qf = inst.getFactory();
       TempFactory tf = qf.tempFactory();
       HMethod hm = qf.getMethod();
@@ -335,9 +431,16 @@ public class Realtime {
 
   /** Indicates if the given instruction needs an access check wrapped around it. */
 
-  private static boolean needsCheck(Quad inst, Temp object, Temp src) {
-    Stats.addActualMemCheck();
-    return true;
+  private static boolean needsCheck(Quad inst) {
+    Stats.analysisBegin();
+    boolean needsCheck = cr.shouldRemoveCheck(inst);
+    Stats.analysisEnd();
+    if (needsCheck) {
+      Stats.addActualMemCheck();
+    } else {
+      Stats.addPotentialMemCheck();
+    }
+    return needsCheck;
   }
 
   /** Print statistics about the static analysis and addition of Realtime support. */
