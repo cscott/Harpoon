@@ -39,7 +39,7 @@ import java.util.Set;
  * the transformation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemHoisting.java,v 1.1.2.2 2001-06-11 17:09:15 cananian Exp $
+ * @version $Id: MemHoisting.java,v 1.1.2.3 2001-06-11 17:48:54 cananian Exp $
  */
 public abstract class MemHoisting extends Simplification {
     // hide constructor
@@ -71,17 +71,17 @@ public abstract class MemHoisting extends Simplification {
 	});
     }
 
-    private static int count(Tree tr, Map m) {
-	int memcnt = (tr.kind()==TreeKind.MEM) ? 1 : 0;
-	for (Tree tp=tr.getFirstChild(); tp!=null; tp=tp.getSibling())
-	    memcnt+=count(tp, m);
+    private static int count(Tree tr, Map m, int memcnt) {
+	memcnt += (tr.kind()==TreeKind.MEM) ? 1 : 0;
 	m.put(tr, new Integer(memcnt));
+	for (Tree tp=tr.getFirstChild(); tp!=null; tp=tp.getSibling())
+	    memcnt=count(tp, m, memcnt);
 	return memcnt;
     }
     private static void recurse(Stm stm, CFGrapher cfgr, Set done, Map m) {
 	// do this one.
 	done.add(stm);
-	count(stm, m);
+	count(stm, m, 0);
 	// do successors.
 	for (Iterator it=cfgr.succElemC(stm).iterator(); it.hasNext(); ) {
 	    Stm next = (Stm) it.next();
@@ -113,6 +113,8 @@ public abstract class MemHoisting extends Simplification {
 		    //  MOVE(MEM(x), ...) trees)
 		    if (e.getParent()!=null &&
 			e.getParent().kind() == TreeKind.MOVE) return false;
+		    // optimization: leave the first mem in a stm alone.
+		    if (((Integer)memmap.get(e)).intValue() < 2) return false;
 		    return true;
 		}
 		public Exp apply(TreeFactory tf,Exp e,DerivationGenerator dg) {
@@ -134,6 +136,7 @@ public abstract class MemHoisting extends Simplification {
 			}
 			dg.remove(mem);
 		    }
+		    memmap.put(nmem, memmap.get(mem)); memmap.remove(mem);
 		    return new ESEQ(tf, e,
 				    new MOVE(tf, e, T1, nmem),
 				    T2);
