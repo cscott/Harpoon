@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.87 2000-11-08 23:42:31 pnkfelix Exp $
+# $Id: GNUmakefile,v 1.61.2.88 2000-11-09 01:05:05 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -155,11 +155,11 @@ jikes: 	$(MACHINE_GEN)
 
 properties:
 	@echo -n Updating properties... ""
-	@-mkdir -p gnu/getopt harpoon/Support
+	@-mkdir -p gnu/getopt harpoon/Support harpoon/Backend/Runtime1
 	@cp Contrib/getopt/MessagesBundle.properties gnu/getopt
 	@cp Support/nativecode-makefile.template harpoon/Support
 	@cp Support/precisec-makefile.template harpoon/Support
-	@cp Backend/Runtime1/init-safe-set harpoon/Backend/Runtime1/init-safe-set
+	@cp Backend/Runtime1/init-safe-set harpoon/Backend/Runtime1
 	@echo done.
 
 first:
