@@ -24,6 +24,9 @@ NATIVELIB=\
 	sunjdk/java.net/libjavanet.la \
 	sunjdk/java.util/libjavautil.la \
 	sunjdk/java.util.zip/libjavautilzip.la
+else
+NATIVEDIR=classpath
+NATIVELIB= # we'll know when we've written them.
 endif
 
 # for precise gc, add gc to SUBDIRS
