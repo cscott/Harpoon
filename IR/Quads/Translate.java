@@ -22,17 +22,19 @@ import harpoon.IR.Bytecode.Code.ExceptionEntry;
 import harpoon.IR.Quads.HANDLER.ProtectedSet;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
-import harpoon.Util.FilterEnumerator;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
+import harpoon.Util.FilterIterator;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
-import java.util.Vector;
 
 /**
  * <code>Translate</code> is a utility class which implements a
@@ -40,7 +42,7 @@ import java.util.Vector;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.10 1999-02-09 06:15:52 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.11 1999-02-23 11:35:05 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -53,7 +55,7 @@ final class Translate { // not public.
 	final Temp lv[];
 	/** Extra <code>Temp</code>s used for temporary values during
 	 *  translation. */
-	final Vector extra;
+	final List extra;
 	/** HEADER quad for method. */
 	final HEADER header;
 	/** Try block information from original bytecode. */
@@ -74,7 +76,7 @@ final class Translate { // not public.
 	    lv = new Temp[max_locals];
 	    for (int i=0; i<max_locals; i++)
 		lv[i] = new Temp(qf.tempFactory(), "lv"+i+"_");
-	    extra = new Vector();
+	    extra = new ArrayList();
 
 	    this.tryBlocks = tryBlocks;
 	    this.header = header;
@@ -84,14 +86,14 @@ final class Translate { // not public.
 	/** Get an "extra" <code>Temp</code>. */
 	final Temp extra(int n) {
 	    while (n >= extra.size())
-		extra.addElement(new Temp(qf.tempFactory(),
-					  "extra"+extra.size()+"_"));
-	    return (Temp)extra.elementAt(n);
+		extra.add(new Temp(qf.tempFactory(),
+				   "extra"+extra.size()+"_"));
+	    return (Temp)extra.get(n);
 	}
     }
     /** Auxillary class to implement mergeMap. */
     static final private class MergeMap {
-	private final Hashtable h = new Hashtable();
+	private final Map h = new HashMap();
 	private Object[] tuple(InMerge m)
 	{ return (Object[])h.get(m); }
 	PHI get(InMerge m)
@@ -101,8 +103,8 @@ final class Translate { // not public.
 	void put(InMerge m, PHI p, int arity)
 	{ h.put(m, new Object[] { p, new Integer(arity) });}
 	void fixupPhis(State s) { // eliminate null limbs
-	    for (Enumeration e=h.keys(); e.hasMoreElements(); ) {
-		InMerge in = (InMerge) e.nextElement();
+	    for (Iterator i=h.keySet().iterator(); i.hasNext(); ) {
+		InMerge in = (InMerge) i.next();
 		PHI phi = get(in); int arity = arity(in);
 		while (arity < phi.arity())
 		    phi = phi.shrink(phi.arity()-1); // null branch.
@@ -126,18 +128,18 @@ final class Translate { // not public.
         reach ret, translate from jsr.next for all current jsr to target.
 	*/
 
-	final private Vector t2j = new Vector(2);
+	final private List t2j = new ArrayList(2);
 	/** Record and number <JSR, target> pairs. */
 	final int recordJSR(Instr jsr, Instr target) {
-	    t2j.addElement(new Instr[] { jsr, target } );
+	    t2j.add(new Instr[] { jsr, target } );
 	    return t2j.size()-1;
 	}
-	final private Vector t2r = new Vector(2);
+	final private List t2r = new ArrayList(2);
 	/** Record RET, associated target, and temp. */
 	final void recordRET(TransState ret, Instr target, Temp t) {
-	    t2r.addElement(new Object[] { ret, target, t } );
+	    t2r.add(new Object[] { ret, target, t } );
 	}
-	final private Hashtable r2c = new Hashtable(2);
+	final private Map r2c = new HashMap(2);
 	/** Record RET target for a given jsr. */
 	final void recordNOP(TransState ret, Instr jsr, NOP continuation) {
 	    r2c.put(new Tuple(new Object[]{ret,jsr}), continuation);
@@ -147,16 +149,16 @@ final class Translate { // not public.
 	    return (NOP) r2c.get(new Tuple(new Object[]{ret,jsr}));
 	}
 	/** Return all RETs associated with a given target. */
-	Enumeration ret4target(final Instr target) {
-	    return new FilterEnumerator(t2r.elements(), filter(target));
+	Iterator ret4target(final Instr target) {
+	    return new FilterIterator(t2r.iterator(), filter(target));
 	}
 	/** Return all JSRs associated with a given target. */
-	Enumeration jsr4target(final Instr target) {
-	    return new FilterEnumerator(t2j.elements(), filter(target));
+	Iterator jsr4target(final Instr target) {
+	    return new FilterIterator(t2j.iterator(), filter(target));
 	}
 	/** Make an enumerator filter on target. */
-	private FilterEnumerator.Filter filter(final Instr target) {
-	    return new FilterEnumerator.Filter() {
+	private FilterIterator.Filter filter(final Instr target) {
+	    return new FilterIterator.Filter() {
 		public boolean isElement(Object o)
 		{ return (((Object[])o)[1]==target); }
 		public Object  map(Object o)
@@ -167,32 +169,32 @@ final class Translate { // not public.
 	/** fixup RET instructions after all JSRs have been discovered. */
 	void fixupRets() {
 	    for (int i=0; i<t2r.size(); i++) { // for all RETs
-		Object[] oa = (Object[]) t2r.elementAt(i);
+		Object[] oa = (Object[]) t2r.get(i);
 		TransState ret = (TransState) oa[0];
 		Instr target   = (Instr) oa[1];
 		Temp t         = (Temp) oa[2];
 
 		// for all jsrs to this target, record key val and continuation
-		Vector keys = new Vector(2);
-		Vector conts = new Vector(2);
+		List keys = new ArrayList(2);
+		List conts = new ArrayList(2);
 		for (int j=0; j<t2j.size(); j++) {
-		    Instr[] ia = (Instr[]) t2j.elementAt(j);
+		    Instr[] ia = (Instr[]) t2j.get(j);
 		    if (ia[1]!=target) continue;
 		    Instr jsr = ia[0];
 		    
-		    keys.addElement(new Integer(j));
-		    conts.addElement(cont(ret,jsr));
+		    keys.add(new Integer(j));
+		    conts.add(cont(ret,jsr));
 		}
 		// then make & link switch.
 		int k[] = new int[keys.size()-1]; // last key is default.
 		for (int j=0; j<k.length; j++)
-		    k[j] = ((Integer)keys.elementAt(j)).intValue();
+		    k[j] = ((Integer)keys.get(j)).intValue();
 		Quad q = new SWITCH(ret.initialState.qf(), ret.in, t, k,
 				    new Temp[0]);
 		Quad.addEdge(ret.header, ret.which_succ, q, 0);
 		for (int j=0; j<conts.size(); j++) {
 		    // link cont to SWITCH, skipping NOP placeholder.
-		    Edge e = ((NOP)conts.elementAt(j)).nextEdge(0);
+		    Edge e = ((NOP)conts.get(j)).nextEdge(0);
 		    Quad.addEdge(q, j, (Quad)e.to(), e.which_pred());
 		}
 		// add SWITCH to handler scope.
@@ -351,15 +353,15 @@ final class Translate { // not public.
 	MergeMap mergeMap() { return ss.mergeMap; }
 	ContInfo contInfo() { return ss.contInfo; }
 
-	Enumeration targets() {
+	Iterator targets() {
 	    final Set s = new HashSet();
 	    targets2set(js, s);
 	    targets2set(jlv,s);
-	    return s.elements();
+	    return s.iterator();
 	}
 	private void targets2set(final JSRStack jp, final Set s) {
 	    for (JSRStack p = jp; p!=null; p=p.next)
-		s.union(p.target);
+		s.add(p.target);
 	}
 
 	State enterCatch() { return new State(ss, 1, null, null, null); }
@@ -375,10 +377,10 @@ final class Translate { // not public.
 	void recordHandler(Instr orig, Quad start, Quad end) {
 	    for (HandlerSet hs=handlers(orig); hs!=null; hs=hs.next)
 		recordHandler(new HashSet(), start, end, 
-			      (Set) hs.h.protectedSet);
+			      (TransProtection) hs.h.protectedSet);
 	}
-	private void recordHandler(Set done, Quad start, Quad end, Set s) {
-	    s.union(start); done.union(start);
+	private void recordHandler(Set done, Quad start, Quad end, TransProtection s) {
+	    s.add(start); done.add(start);
 	    if (start!=end) {
 		Quad next[] = start.next();
 		for (int i=0; i<next.length; i++)
@@ -414,7 +416,10 @@ final class Translate { // not public.
 	TransProtection() { super(); }
 	public boolean isProtected(Quad q) { return contains(q); }
 	public void remove(Quad q) { super.remove(q); }
-	public void insert(Quad q) { super.union(q); }
+	public void insert(Quad q) { super.add(q); }
+	public java.util.Enumeration elements() {
+	    return new harpoon.Util.IteratorEnumerator( iterator() );
+	}
     }
 
     /** Return a <code>Quad</code> representation of the method code
@@ -1687,17 +1692,17 @@ final class Translate { // not public.
 	    int i = ci.recordJSR(in, target);
 	    q = new CONST(qf, in, ns.stack(0), new Integer(i), HClass.Int);
 	    // make transstates.
-	    Vector v = new Vector(2);
+	    List v = new ArrayList(2);
 	    // translate starting at jsr target.
-	    v.addElement(new TransState(ns, target, q, 0));
+	    v.add(new TransState(ns, target, q, 0));
 	    // translate starting at return address.
-	    for (Enumeration e=ci.ret4target(target); e.hasMoreElements(); ) {
-		TransState ts0 = (TransState) e.nextElement();
+	    for (Iterator it=ci.ret4target(target); it.hasNext(); ) {
+		TransState ts0 = (TransState) it.next();
 		NOP qq = new NOP(qf, in); // temporary header.
-		v.addElement(new TransState(ts0.initialState,in.next(0),qq,0));
+		v.add(new TransState(ts0.initialState,in.next(0),qq,0));
 		ci.recordNOP(ts0, in, qq);
 	    }
-	    r = new TransState[v.size()]; v.copyInto(r);
+	    r = (TransState[]) v.toArray(new TransState[v.size()]);
 	    break;
 	    }
 	case Op.RET:
@@ -1710,15 +1715,15 @@ final class Translate { // not public.
 	    ContInfo ci = s.contInfo();
 	    ci.recordRET(ts, target, s.lv(opd.getIndex()));
 	    // make transstates for previously unprocessed jsr returns.
-	    Vector v = new Vector(2);
-	    for (Enumeration e=ci.jsr4target(target); e.hasMoreElements(); ) {
-		Instr jsr = (Instr) e.nextElement();
+	    List v = new ArrayList(2);
+	    for (Iterator it=ci.jsr4target(target); it.hasNext(); ) {
+		Instr jsr = (Instr) it.next();
 		NOP qq = new NOP(qf, in); // temporary header.
-		v.addElement(new TransState(ts.initialState,jsr.next(0),qq,0));
+		v.add(new TransState(ts.initialState,jsr.next(0),qq,0));
 		ci.recordNOP(ts, jsr, qq);
 	    }
 	    q = null; // defer translation.
-	    r = new TransState[v.size()]; v.copyInto(r);
+	    r = (TransState[]) v.toArray(new TransState[v.size()]);
 	    break;
 	    }
 	default:
@@ -1738,7 +1743,7 @@ final class Translate { // not public.
 	Instr in = ts.in; // instruction after array creation.
 	State s = ts.initialState;
 	HandlerSet hs = s.handlers(in);
-	Vector v = new Vector(); // array initializers.
+	List v = new ArrayList(); // array initializers.
 	int offset = 0;
 	// BASTORE takes integer args, stores in byte/boolean array.
 	if (type==HClass.Byte || type==HClass.Boolean) type=HClass.Int;
@@ -1761,12 +1766,12 @@ final class Translate { // not public.
 	    if (v.size()==0) offset=index.intValue();
 	    else if (index.intValue()!=offset+v.size()) break;
 	    // okay, this is element N of array initializer.
-	    v.addElement(extractConst(in2).getValue());
+	    v.add(extractConst(in2).getValue());
 	    in = in3.next(0);
 	} while (true);
 	if (v.size()==0) return ts;
 	// else...
-	Object[] oa = new Object[v.size()]; v.copyInto(oa);
+	Object[] oa = v.toArray();
 	Quad q=new ARRAYINIT(ts.initialState.qf(), ts.in,
 			     ts.initialState.stack(0), offset, type, oa);
 	Quad.addEdge(ts.header, ts.which_succ, q, 0);
