@@ -39,7 +39,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.3 2000-07-25 03:08:01 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.4 2000-08-31 05:06:04 witchel Exp $
  */
 public class RegFileInfo
 extends harpoon.Backend.Generic.RegFileInfo 
@@ -343,8 +343,8 @@ implements harpoon.Backend.Generic.LocationFactory
          // simpler to search for adjacent registers )
          // FSK: forcing alignment to solve regalloc problem
          for (int i=2; i<regtop; i+=2) {
-            Temp[] assign = new Temp[] { regGeneral[i] ,
-                                         regGeneral[i+1] };
+            Temp[] assign = new Temp[] { regGeneral[i+1] ,
+                                         regGeneral[i] };
             if ((regFile.get(assign[0]) == null) &&
                 (regFile.get(assign[1]) == null)) {
                suggests.add(Arrays.asList(assign));
@@ -357,8 +357,8 @@ implements harpoon.Backend.Generic.LocationFactory
                       instanceof RegFileInfo.PreassignTemp)) {
 
                   Set s = new LinearSet(2);
-                  s.add(assign[0]);
                   s.add(assign[1]);
+                  s.add(assign[0]);
                   spills.add(s);
                }
             }
