@@ -1,7 +1,7 @@
-# $Revision: 1.37 $
-JFLAGS=-g
+# $Revision: 1.38 $
+JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
-JCC=javac -d .
+JCC=javac
 JDOC=javadoc
 JAR=jar
 JDOCFLAGS=-version -author # -package
