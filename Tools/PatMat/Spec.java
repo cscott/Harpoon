@@ -17,7 +17,7 @@ import java.util.List;
  * compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Spec.java,v 1.1.2.7 1999-06-25 16:39:53 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.8 1999-06-28 06:47:27 cananian Exp $
  */
 public class Spec  {
 
@@ -561,23 +561,34 @@ public class Spec  {
 	}
 	public String toString() { return id; }
     }
+    /** Extension of <code>Spec.Leaf</code> representing an opcode
+     *  for <code>Uop</code> and/or <code>Bop</code>.  */
+    public static class LeafOp extends Leaf {
+	/* Enumerated opcode. */
+	public final int op;
+	/** Constructs a new <code>Spec.LeafOp</code>.
+	    @param op Enumerated opcode.
+	*/
+	public LeafOp(int op) {
+	    this.op = op;
+	}
+	public String toString() { return Integer.toString(op); }
+	public String toBop() { return harpoon.IR.Tree.Bop.toString(op); }
+	public String toUop() { return harpoon.IR.Tree.Uop.toString(op); }
+    }
     /** Extension of <code>Spec.Leaf</code> which represents a
-	number. Note that these numbers sometimes do not represent
-	numerical constants in the code, but rather are naming opcodes
-	for <code>Uop</code> and <code>Bop</code>.
+	explicit number in the specification.
     */
     public static class LeafNumber extends Leaf {
 	/** Number. */
-	public final int number;
+	public final Number number;
 	/** Constructs a new <code>Spec.LeafNumber</code>.
 	    @param number Number.
 	*/
-	public LeafNumber(int number) {
+	public LeafNumber(Number number) {
 	    this.number = number;
 	}
-	public String toString() { return Integer.toString(number); }
-	public String toBop() { return harpoon.IR.Tree.Bop.toString(number); }
-	public String toUop() { return harpoon.IR.Tree.Uop.toString(number); }
+	public String toString() { return number.toString(); }
     }
 
     /** A detail is an abstract representation for a piece of data
@@ -633,12 +644,12 @@ public class Spec  {
 	/** Describes what metric <code>value</code> is measuring. */
 	public final String name;
 	/** The weight associated with <code>name</code>. */
-	public final float value;
+	public final double value;
 	/** Constructs a new <code>Spec.DetailWeight</code>.
 	    @param name Metric that <code>value</code> is measuring.
 	    @param value Weight associated with <code>name</code>.
 	*/
-	public DetailWeight(String name, float value) {
+	public DetailWeight(String name, double value) {
 	    this.name = name; this.value = value;
 	}
 	public String toString() { return "%weight<"+name+","+value+">"; }

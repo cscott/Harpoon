@@ -6,7 +6,7 @@ package harpoon.Tools.PatMat;
 /** Input file lexer for instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Lexer.jlex,v 1.1.2.6 1999-06-25 08:50:52 cananian Exp $
+ * @version $Id: Lexer.jlex,v 1.1.2.7 1999-06-28 06:47:27 cananian Exp $
  */
 %%
 
@@ -92,7 +92,10 @@ private boolean doneEOF=false;
 ALPHA=[A-Za-z]
 DIGIT=[0-9]
 INTEGER={DIGIT}+
-FLOAT=(({DIGIT}*"."{DIGIT}+)|({DIGIT}+"."{DIGIT}*))
+LONG={INTEGER}[Ll]
+FPNUM=(({DIGIT}*"."{DIGIT}+)|({DIGIT}+"."{DIGIT}*))
+FLOAT=(({INTEGER}[Ff])|({FPNUM}[Ff]))
+DOUBLE=(({INTEGER}[Dd])|({FPNUM}[Dd]?))
 ID=[A-Za-z_][A-Za-z0-9_\$]*
 HEXDIGIT=[0-9A-Fa-f]
 WS=[\ \t\012\b]
@@ -236,8 +239,12 @@ NL=([\r]|[\r]?[\n])
 <RULES>		NOT		{ return tok(Sym.NOT); }
 
 <RULES>		{ID}		{ return tok(Sym.ID, yytext()); }
-<RULES>		{INTEGER}	{ return tok(Sym.NUMBER,
+<RULES>		{LONG}		{ return tok(Sym.LONG,
+					     new Long(yytext())); }
+<RULES>		{INTEGER}	{ return tok(Sym.INTEGER,
 				             new Integer(yytext())); }
+<RULES>		{DOUBLE}	{ return tok(Sym.DOUBLE,
+				             new Double(yytext())); }
 <RULES>		{FLOAT}		{ return tok(Sym.FLOAT,
 				             new Float(yytext())); }
 

@@ -18,6 +18,7 @@ import harpoon.Tools.PatMat.Spec.ExpTemp;
 import harpoon.Tools.PatMat.Spec.ExpUnop;
 import harpoon.Tools.PatMat.Spec.Leaf;
 import harpoon.Tools.PatMat.Spec.LeafId;
+import harpoon.Tools.PatMat.Spec.LeafOp;
 import harpoon.Tools.PatMat.Spec.LeafNumber;
 import harpoon.Tools.PatMat.Spec.IdList;
 import harpoon.Tools.PatMat.Spec.Rule;
@@ -42,7 +43,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.9 1999-06-25 11:17:30 pnkfelix Exp $
+ * @version $Id: Parser.cup,v 1.1.2.10 1999-06-28 06:47:27 cananian Exp $
  */
 
 action code {:
@@ -74,8 +75,10 @@ parser code {:
 scan with {: return lexer.nextToken(); :};
 
 terminal String ID, GLOBAL_STATEMENTS, CLASS_STATEMENTS, BRACED, PARENED;
-terminal Integer NUMBER;
+terminal Integer INTEGER;
+terminal Long LONG;
 terminal Float FLOAT;
+terminal Double DOUBLE;
 // %keys
 terminal KEY_EXTRA, KEY_WEIGHT, KEY_PRED;
 // tree nodes
@@ -102,6 +105,7 @@ non terminal Stm	stm;
 non terminal TypeSet	types, opt_types;
 non terminal Integer	binops, unops;
 non terminal Leaf	sym_binops, sym_unops, sym_number;
+non terminal Number	number;
 
 start with program;
 
@@ -142,10 +146,8 @@ detail	::=	KEY_EXTRA LBRACE opt_idList:il RBRACE
 		{: RESULT=new DetailExtra(il); :}
 	|	KEY_PRED PARENED:ps
 		{: RESULT=new DetailPredicate(ps); :}
-	|	KEY_WEIGHT LANGLE ID:id COMMA NUMBER:num RANGLE
-		{: RESULT=new DetailWeight(id, num.intValue()); :}
-	|	KEY_WEIGHT LANGLE ID:id COMMA FLOAT:num RANGLE
-		{: RESULT=new DetailWeight(id, num.floatValue()); :}
+	|	KEY_WEIGHT LANGLE ID:id COMMA number:num RANGLE
+		{: RESULT=new DetailWeight(id, num.doubleValue()); :}
 	;
 
 opt_idList ::=	/* empty */
@@ -225,21 +227,27 @@ types	::=	LANGLE idList:il RANGLE
 		:}
 	;
 
+number ::=	INTEGER:i 	{: RESULT=i; :}
+	|	FLOAT:f		{: RESULT=f; :}
+	|	LONG:l		{: RESULT=l; :}
+	|	DOUBLE:d	{: RESULT=d; :}
+	;
+
 sym_number ::=	ID:id
 		{: RESULT=new LeafId(id); :}
-	|	NUMBER:num
-		{: RESULT=new LeafNumber(num.intValue()); :}
+	|	number:num
+		{: RESULT=new LeafNumber(num); :}
 	;
 sym_binops ::=	ID:id
 		{: RESULT=new LeafId(id); :}
 	|	binops:num
-		{: RESULT=new LeafNumber(num.intValue()); :}
+		{: RESULT=new LeafOp(num.intValue()); :}
 
 	;
 sym_unops ::=	ID:id
 		{: RESULT=new LeafId(id); :}
 	|	unops:num
-		{: RESULT=new LeafNumber(num.intValue()); :}
+		{: RESULT=new LeafOp(num.intValue()); :}
 	;
 
 binops	::=	ADD	{: RESULT=new Integer(harpoon.IR.Tree.Bop.ADD); :}
