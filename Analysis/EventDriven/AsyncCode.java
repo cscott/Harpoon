@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.15 2000-01-06 20:14:55 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.16 2000-01-06 21:10:30 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -302,6 +302,7 @@ public class AsyncCode {
 	    return nhclass;
 	}
 
+	//Adds edges between quads and environment loading code
 	public void addEdges(Quad q, int resumeexception, Set dontfollow) {
 	    QuadFactory qf=hcode.getFactory();
 	    TempFactory tf=qf.tempFactory();
@@ -311,6 +312,7 @@ public class AsyncCode {
 	    while(fiterator.hasNext())
 		Quad.addEdge((Quad)fiterator.next(), 0, footer, count++);
 	    if (resumeexception!=-1) {
+		//Doing addedges for CALL continuation
 		//Need to build headers here....[continuation]
 		//Need to load environment object and result codes
 		WorkSet done=new WorkSet();
@@ -388,6 +390,7 @@ public class AsyncCode {
 		fixphis();
 		hcode.quadSet(header);
 	    } else {
+		//Doing addEdges for HEADER
 		WorkSet done=new WorkSet();
 		WorkSet todo=new WorkSet();
 		todo.push(q.next(1));
@@ -605,19 +608,37 @@ public class AsyncCode {
 				   calleemethod, newt,
 				   retcont,retex, q.isVirtual(), q.isTailCall(),
 				   new Temp[0]);
-		PHI phi=new PHI(hcode.getFactory(), q, new Temp[0], isCont?4:3);
+		PHI phi=new PHI(hcode.getFactory(), q, new Temp[0], isCont?5:4);
 		Quad.addEdge(call,1,phi,0);
+		//build environment
+		HClass env=getEnv(q);
+		Temp[] liveout = liveness.getLiveOutArray(q);
+		Temp tenv=new Temp(tf);
+		NEW envq=new NEW(hcode.getFactory(), q, tenv, env);
+		Quad.addEdge(call,0,envq,0);
+
+		Temp [] params = new Temp[liveout.length+1];
+		params[0]=tenv;
+		for (int j=0;j<liveout.length;j++) {
+		    params[j+1]=ctmap.tempMap(liveout[j]); 
+		}
+		CALL callenv=new CALL(hcode.getFactory(), q, env.getConstructors()[0],
+				      params, null, retex, false, false, new Temp[0]);
+		Quad.addEdge(callenv,1,phi,1);
+		
 		Temp tcont=new Temp(tf);
 		HClass contclass=(HClass)cont_map.get(q);
 		NEW newc=new NEW(hcode.getFactory(), q, tcont, contclass);
-		Quad.addEdge(call,0,newc,0);
+		Quad.addEdge(callenv,0,newc,0);
+
 		//constructor call=not virtual
 		CALL call2=new CALL(hcode.getFactory(),q,
-				    contclass.getConstructor(new HClass[0]),
-				    new Temp[] {tcont}, null, retex, 
+				    contclass.getConstructor(new HClass[]{
+				    HClass.forName("harpoon.Analysis.EnvBuilder.Environment")}),
+				    new Temp[] {tcont, tenv}, null, retex, 
 				    false, false, new Temp[0]);
 		Quad.addEdge(newc,0,call2,0);
-		Quad.addEdge(call2,1,phi,1);
+		Quad.addEdge(call2,1,phi,2);
 		HClass rettype=hc.getMethod().getReturnType();
 		String pref = 
 		    ContBuilder.getPrefix(rettype);
@@ -629,7 +650,7 @@ public class AsyncCode {
 				    setnextmethod, new Temp[] {retcont, tcont},
 				    null, retex, true, false, new Temp[0]);
 		Quad.addEdge(call2, 0, call3, 0);
-		Quad.addEdge(call3, 1, phi, 2);
+		Quad.addEdge(call3, 1, phi, 3);
 		if (isCont) {
 		    Temp tnext=new Temp(tf);
 		    HClass hclass=hcode.getMethod().getDeclaringClass();
@@ -646,7 +667,7 @@ public class AsyncCode {
 					setnextmethod2, new Temp[] {tcont, tnext},
 					null, retex, true, false, new Temp[0]);
 		    Quad.addEdge(get,0,call4,0);
-		    Quad.addEdge(call4,1,phi,3);
+		    Quad.addEdge(call4,1,phi,4);
 		    RETURN returnq=new RETURN(hcode.getFactory(), q, null);
 		    Quad.addEdge(call4,0,returnq,0);
 		    linkFooters.add(returnq);
