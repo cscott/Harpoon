@@ -1,3 +1,3 @@
-aclocal; autoheader; autoconf; automake
+aclocal -I .; autoheader; autoconf; automake
 ./configure --enable-static --enable-portable-native-sync --enable-jni --with-jikes --disable-gtk-peer --prefix=`pwd`/install-noGUI-debug --exec-prefix=`pwd`/install-noGUI-debug CC="gcc -g"
 make clean; make; make install
