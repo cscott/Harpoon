@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.Analysis.AllocationInformationMap;
+import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
@@ -27,13 +29,14 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.31 2000-03-29 06:46:01 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.32 2000-04-04 04:13:46 cananian Exp $
  */
 public class ToNoSSA
 {
     private CloningTempMap  m_ctm;
     private Derivation      m_derivation;
     private Quad            m_quads;
+    private AllocationInformationMap m_allocInfoMap;
     
     private static interface SerializableDerivation
 	extends Derivation, java.io.Serializable { /* declare only */ }
@@ -100,6 +103,8 @@ public class ToNoSSA
     
 	final Map dT = validDerivation ? new HashMap() : null;
 
+	m_allocInfoMap = (code.getAllocationInformation()==null) ? null :
+	    new AllocationInformationMap();
 	m_ctm   = new CloningTempMap
 	    (((Quad)code.getRootElement()).getFactory().tempFactory(),
 	     newQF.tempFactory());
@@ -111,6 +116,9 @@ public class ToNoSSA
 
     public Quad getQuads()        { return m_quads; }
     public Derivation getDerivation() { return m_derivation; }
+    public AllocationInformation getAllocationInformation() {
+	return m_allocInfoMap;
+    }
 
     /**
      * Translates the code in the supplied codeview from SSA to No-SSA form, 
@@ -127,7 +135,6 @@ public class ToNoSSA
     private Quad translate(QuadFactory qf, Derivation derivation, 
 			   Map dT, Code code)
     {
-	CloningTempMap  ctm;
 	NameMap         nm;
 	Quad            old_header, qTmp;
 	QuadMap         qm;
@@ -163,6 +170,17 @@ public class ToNoSSA
 	v = new PHIVisitor(qf, dT, nm);
 	for (Iterator i = code.getElementsI(); i.hasNext();)
 	    qm.get((Quad)i.next()).accept(v);
+
+	// Update AllocationInformation
+	if (m_allocInfoMap!=null) {
+	    AllocationInformation oldai = code.getAllocationInformation();
+	    for (Iterator it = code.getElementsI(); it.hasNext(); ) {
+		Quad oldquad = (Quad) it.next();
+		Quad newquad = qm.get(oldquad);
+		if (oldquad instanceof ANEW || oldquad instanceof NEW)
+		    m_allocInfoMap.transfer(newquad, oldquad, m_ctm, oldai);
+	    }
+	}
 
 	// Return the head of the new CFG
 	return qm.get(old_header);

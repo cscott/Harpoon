@@ -3,12 +3,17 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.Analysis.AllocationInformationMap;
+import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Quads.DeadCode;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
+import java.util.Iterator;
+import java.util.Map;
 /**
  * <code>Quads.QuadSSI</code> is a code view in SSI form.
  * Quad form exposes the details of
@@ -20,7 +25,7 @@ import harpoon.Util.Util;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.1.2.8 2000-02-25 17:32:07 cananian Exp $
+ * @version $Id: QuadSSI.java,v 1.1.2.9 2000-04-04 04:13:45 cananian Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -30,8 +35,29 @@ public class QuadSSI extends Code /* which extends HCode */ {
     public QuadSSI(QuadNoSSA qns) 
     {
 	super(qns.getMethod(), null);
-	quads = SSIRename.rename(qns, qf);
-	DeadCode.optimize(this); // get rid of unused phi/sigmas.
+	SSIRename.ReturnTuple rt0 = SSIRename.rename(qns, qf);
+	updateAllocationInformation(qns, rt0.quadMap, rt0.tempMap);
+	quads = rt0.rootQuad;
+	// get rid of unused phi/sigmas.
+	AllocationInformationMap aim =
+	    (getAllocationInformation()==null) ? null :
+	    new AllocationInformationMap();
+	DeadCode.optimize(this, aim);
+	setAllocationInformation(aim);
+    }
+    void updateAllocationInformation(Code oldcode,
+				     Map quadMap, TempMap tempMap) {
+	AllocationInformation oldai = oldcode.getAllocationInformation();
+	if (oldai != null) {
+	    AllocationInformationMap aim = new AllocationInformationMap();
+	    for (Iterator it=oldcode.getElementsI(); it.hasNext(); ) {
+		Quad oldquad = (Quad) it.next();
+		Quad newquad = (Quad) quadMap.get(oldquad);
+		if (oldquad instanceof ANEW || oldquad instanceof NEW)
+		    aim.transfer(newquad, oldquad, tempMap, oldai);
+	    }
+	    setAllocationInformation(aim);
+	}
     }
 
     /** 

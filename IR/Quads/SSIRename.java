@@ -32,15 +32,24 @@ import java.util.Stack;
  * is hairy because of the big "efficiency-vs-immutable quads" fight.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.7 2000-01-31 15:03:26 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.8 2000-04-04 04:13:46 cananian Exp $
  */
 class SSIRename {
     private static final boolean sort_phisig = false;
     /** Return a copy of the given quad graph properly converted to
      *  SSI form. */
-    static Quad rename(final Code c, final QuadFactory nqf) {
+    static ReturnTuple rename(final Code c, final QuadFactory nqf) {
 	final SearchState S = new SearchState(c, nqf);
-	return (Quad) S.old2new.get(c.getRootElement());
+	return new ReturnTuple((Quad) S.old2new.get(c.getRootElement()),
+			       S.varmap, S.old2new);
+    }
+    static class ReturnTuple {
+	final Quad rootQuad; // new root element.
+	final TempMap tempMap; // map old temps to new temps.
+	final Map quadMap; // map old quads to new quads.
+	ReturnTuple(Quad rootQuad, TempMap tempMap, Map quadMap) {
+	    this.rootQuad=rootQuad; this.tempMap=tempMap; this.quadMap=quadMap;
+	}
     }
 
     static class VarMap implements TempMap {

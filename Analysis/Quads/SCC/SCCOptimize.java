@@ -34,7 +34,7 @@ import java.util.Set;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.1.2.5 2000-01-17 11:10:14 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.1.2.6 2000-04-04 04:10:49 cananian Exp $
  */
 public final class SCCOptimize {
     TypeMap  ti;
@@ -194,6 +194,7 @@ public final class SCCOptimize {
 		ql[i].accept(visitor);
 
 	// clean up the mess
-	DeadCode.optimize(hc);
+	DeadCode.optimize((harpoon.IR.Quads.Code)hc,
+			  null /* throw away AllocationInformation */);
     }
 }

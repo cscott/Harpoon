@@ -4,6 +4,8 @@
 
 package harpoon.Analysis.Quads;
 
+import harpoon.Analysis.AllocationInformationMap;
+import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.IR.Quads.Quad;
@@ -61,12 +63,14 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.1.2.3 1999-09-19 16:17:24 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.1.2.4 2000-04-04 04:09:51 cananian Exp $
  */
 
 public abstract class DeadCode  {
 
-    public static void optimize(HCode hc) {
+    public static void optimize(harpoon.IR.Quads.Code hc,
+				AllocationInformationMap aim) {
+	AllocationInformation oldaim = hc.getAllocationInformation();
 	// Assume everything's useless.
 	Set useful = new HashSet(); // empty set.
 	// make a renaming table
@@ -108,9 +112,17 @@ public abstract class DeadCode  {
 	// evil: can't replace the header node. [ack]
 	for (int i=0; i<ql.length; i++)
 	    if (!(ql[i] instanceof HEADER))
-		Quad.replace(ql[i], ql[i].rename(nm, nm));
+		replace(ql[i], ql[i].rename(nm, nm), oldaim, aim, nm);
 
     } // end OPTIMIZE METHOD.
+    static void replace(Quad oldquad, Quad newquad,
+			AllocationInformation oldaim,
+			AllocationInformationMap newaim, TempMap tm) {
+	Quad.replace(oldquad, newquad);
+	// update allocation properties, too.
+	if (newaim!=null && (oldquad instanceof ANEW||oldquad instanceof NEW))
+	    newaim.transfer(newquad, oldquad, tm, oldaim);
+    }
 
     static class EraserVisitor extends LowQuadVisitor {
 	Worklist W;

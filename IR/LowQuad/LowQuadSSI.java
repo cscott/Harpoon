@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.LowQuad;
 
+import harpoon.Analysis.AllocationInformationMap;
+import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
@@ -26,7 +28,7 @@ import java.util.Map;
  * representation in SSI form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSI.java,v 1.1.2.2 2000-02-25 17:32:02 cananian Exp $
+ * @version $Id: LowQuadSSI.java,v 1.1.2.3 2000-04-04 04:11:49 cananian Exp $
  */
 public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     private Derivation  m_derivation;
@@ -42,7 +44,10 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
 	final Map tT = new HashMap();
 	final TypeMap tym = new harpoon.Analysis.Quads.TypeInfo(code);
 	FinalMap fm = new harpoon.Backend.Maps.DefaultFinalMap();
-	quads = Translate.translate((LowQuadFactory)qf, code, tym, fm, dT, tT);
+	AllocationInformationMap aim = (code.getAllocationInformation()!=null)
+	    ? new AllocationInformationMap() : null;
+	quads = Translate.translate((LowQuadFactory)qf, code, tym, fm,
+				    dT, tT, aim);
       
 	final LowQuadFactory lqf =  // javac bug workaround to let qf be
 	    (LowQuadFactory) qf;    // visible in anonymous Derivation below.
@@ -60,6 +65,7 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
 		return (HClass)tT.get(t);
 	    }
 	};
+	setAllocationInformation(aim);
     }
 
     /**

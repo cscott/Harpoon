@@ -45,7 +45,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.27 2000-02-25 00:53:41 cananian Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.28 2000-04-04 04:09:10 cananian Exp $
  */
 public final class LoopOptimize {
     
@@ -113,7 +113,7 @@ public final class LoopOptimize {
 	    recursetree(hc, hcnew, (Loops)iterate.next(), new WorkSet());
 	
 	//After doing optimizations we need to clean up any deadcode...
-	DeadCode.optimize(hcnew);
+	DeadCode.optimize(hcnew, null/*throw away AllocationInformation*/);
 	return hcnew;
     }
 

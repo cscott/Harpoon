@@ -3,12 +3,16 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.LowQuad;
 
+import harpoon.Analysis.AllocationInformationMap;
+import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Maps.FinalMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Quads.ANEW;
 import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Temp.CloningTempMap;
@@ -26,21 +30,22 @@ import java.util.Map;
  * <code>LowQuadSSI</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.21 2000-02-25 00:53:59 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.22 2000-04-04 04:11:51 cananian Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
 				       final harpoon.IR.Quads.Code code,
 				       TypeMap tym, FinalMap fm,
 				       Map derivationTable,
-				       Map typeTable) {
+				       Map typeTable,
+				       AllocationInformationMap allocInfo) {
 	final Quad old_header = (Quad) code.getRootElement();
 	final CloningTempMap ctm =
 	    new CloningTempMap(old_header.getFactory().tempFactory(),
 			       qf.tempFactory());
 	final LowQuadMap lqm = new LowQuadMap();
 	final Visitor v = new Visitor(qf, lqm, ctm, code, tym, fm,
-				      derivationTable, typeTable);
+				      derivationTable, typeTable, allocInfo);
 
 	// visit all.
 	for (Iterator i = code.getElementsI(); i.hasNext(); ) 
@@ -83,13 +88,16 @@ final class Translate { // not public
 	final TypeMap tym;
 	final FinalMap fm;
 	final Map dT, tT;
+	final AllocationInformation oldai;
+	final AllocationInformationMap aim;
 
 	Visitor(LowQuadFactory qf, LowQuadMap lqm, CloningTempMap ctm,
 		harpoon.IR.Quads.Code code, TypeMap tym, FinalMap fm,
-		Map dT, Map tT) {
+		Map dT, Map tT, AllocationInformationMap aim) {
 	    this.qf = qf; this.lqm = lqm; this.ctm = ctm;
 	    this.code = code; this.tym = tym; this.fm = fm; this.dT = dT;
 	    this.tT = tT;
+	    this.oldai = code.getAllocationInformation(); this.aim = aim;
 	}
 
         private void updateTypeInfo(Quad q) {
@@ -103,6 +111,8 @@ final class Translate { // not public
 	    Quad nq = (Quad) q.clone(qf, ctm);
 	    lqm.put(q, nq, nq);
 	    updateTypeInfo(q);
+	    if (oldai!=null && (q instanceof ANEW || q instanceof NEW))
+		aim.transfer(nq, q, ctm, oldai);
 	}
 
 	// take apart array references.
