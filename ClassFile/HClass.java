@@ -3,6 +3,26 @@ package harpoon.ClassFile;
 import java.io.InputStream;
 import java.util.Hashtable;
 
+/**
+ * Instances of the class <code>HClass</code> represent classes and 
+ * interfaces of a java program.  Every array also belongs to a
+ * class that is reflected as a <code>HClass</code> object that is
+ * shared by all arrays with the same element type and number of
+ * dimensions.  Finally, the primitive Java types
+ * (<code>boolean</code>, <code>byte</code>, <code>char</code>,
+ * <code>short</code>, <code>int</code>, <code>long</code>,
+ * <code>float</code>, and <code>double</code>) and the keyword
+ * <code>void</code> are also represented as <code>HClass</code> objects.
+ * <p>
+ * There is no public constructor for the class <code>HClass</code>.
+ * <code>HClass</code> objects are created with the <code>forName</code>,
+ * <code>forDescriptor</code> and <code>forClass</code> methods of this
+ * class.
+ * 
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: HClass.java,v 1.3 1998-07-31 13:33:47 cananian Exp $
+ * @see harpoon.ClassFile.Raw.ClassFile
+ */
 public class HClass {
   static Hashtable dsc2cls = new Hashtable();
   static Hashtable raw2cls = new Hashtable();
@@ -126,7 +146,7 @@ public class HClass {
    */
   public HClass getComponentType() {
     if (!isArray()) return null;
-    return forDescriptor(getDescriptor().replace('[',' ').trim());
+    return forDescriptor(getDescriptor().substring(1));
   }
 
   /** 
@@ -186,6 +206,94 @@ public class HClass {
     return result.toString();
   }
   
+  /**
+   * Returns a <code>HField</code> object that reflects the specified
+   * declared field of the class or interface represented by this
+   * <code>HClass</code> object.  The <code>name</code> parameter is a 
+   * <code>String</code> that specifies the simple name of the
+   * desired field.
+   * @exception NoSuchFieldException
+   *            if a field with the specified name is not found.
+   * @see HField
+   */
+  public HField getDeclaredField(String name)
+    throws NoSuchFieldException {
+    for (int i=0; i<classfile.fields.length; i++)
+      if (classfile.fields[i].name().equals(name))
+	return new HField(this, classfile.fields[i]);
+    throw new NoSuchFieldException(name);
+  }
+  /**
+   * Returns an array of <code>HField</code> objects reflecting all the
+   * fields declared by the class or interface represented by this
+   * <code>HClass</code> object.  This includes <code>public</code>,
+   * <code>protected</code>, default (<code>package</code>) access,
+   * and <code>private</code> fields, but excludes inherited fields.
+   * Returns an array of length 0 if the class or interface declares
+   * no fields, or if this <code>HClass</code> object represents a
+   * primitive type.
+   * @see "The Java Language Specification,, sections 8.2 and 8.3"
+   * @see HField
+   */
+  public HField[] getDeclaredFields() {
+    if (isPrimitive() || isArray()) return new HField[0];
+    HField hf[] = new HField[classfile.fields.length];
+    for (int i=0; i<hf.length; i++)
+      hf[i] = new HField(this, classfile.fields[i]);
+    return hf;
+  }
+  /**
+   * Returns a <code>HField</code> object that reflects the specified
+   * member field of the class or interface represented by this
+   * <code>HClass</code> object.  The <code>name</code> parameter is
+   * a <code>String</code> specifying the simple name of the
+   * desired field. <p>
+   * The field to be reflected is located by searching all member fields
+   * of the class or interface represented by this <code>HClass</code>
+   * object for a public field with the specified name.
+   * @see "The Java Language Specification, sections 8.2 and 8.3"
+   * @exception NoSuchFieldException
+   *            if a field with the specified name is not found.
+   * @see HField
+   */ // XXX MAY NOT WORK RIGHT FOR INTERFACES.
+  public HField getField(String name) throws NoSuchFieldException {
+    try {
+      return getDeclaredField(name);
+    } catch (NoSuchFieldException e) { }
+    HClass sup = getSuperclass();
+    if (sup!=null)
+      return sup.getField(name);
+    else
+      throw new NoSuchFieldException(name);
+  }
+  /**
+   * Returns an array containing <code>HField</code> objects reflecting
+   * all the fields of the class or interface represented by this
+   * <code>HClass</code> object.  Returns an array of length 0 if the
+   * class or interface has no fields, or if it represents an array type
+   * or a primitive type. <p>
+   * Specifically, if this <code>HClass</code> object represents a class,
+   * returns the fields of this class and of all its superclasses.  If this
+   * <code>HClass</code> object represents an interface, returns the fields
+   * of this interface and of all its superinterfaces.  If this 
+   * <code>HClass</code> object represents an array type or a primitive
+   * type, returns an array of length 0. <p>
+   * The implicit length field for array types is not reflected by this
+   * method.
+   * @see "The Java Language Specification, sections 8.2 and 8.3"
+   * @see HField
+   */ // XXX NOT SURE THIS WORKS FOR INTERFACES
+  public HField[] getFields() {
+    if (isPrimitive() || isArray()) return new HField[0];
+    HClass sup = getSuperclass();
+    HField sf[] = (sup==null)?new HField[0]:sup.getFields();
+    HField lf[] = getDeclaredFields();
+    HField hf[] = new HField[lf.length + sf.length];
+    System.arraycopy(lf, 0, hf, 0, lf.length);
+    System.arraycopy(sf, 0, hf, lf.length, sf.length);
+    return hf;
+  }
+
   /**
    * Returns the Java language modifiers for this class or interface,
    * encoded in an integer.  The modifiers consist of the Java Virtual

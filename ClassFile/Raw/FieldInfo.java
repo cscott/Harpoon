@@ -7,11 +7,11 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>field_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldInfo.java,v 1.7 1998-07-31 07:05:54 cananian Exp $
+ * @version $Id: FieldInfo.java,v 1.8 1998-07-31 13:33:58 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.5"
  * @see ClassFile
  */
-class FieldInfo {
+public class FieldInfo {
   /** ClassFile in which this field information is found. */
   protected ClassFile parent;
 
@@ -22,7 +22,7 @@ class FieldInfo {
       index into the <code>constant_pool</code> table.  The
       <code>constant_pool</code> entry at that index must be a
       <code>CONSTANT_Utf8_info</code> structure which must represent a
-      valud Java field name stored as a simple (not fully qualified)
+      valid Java field name stored as a simple (not fully qualified)
       name, that is, as a Java identifier. */
   public int name_index;
   /** The value of the <code>descriptor_index</code> item must be a
