@@ -14,7 +14,7 @@ bibnote.dvi: harpoon_.bib
 readnote.dvi: unread_.bib
 
 # Tex rules. [have to add explicit dependencies on appropriate bibtex files.]
-%.dvi : %.tex
+%.dvi %.aux: %.tex
 	latex $(basename $<)
 	if grep -q bibliography $< ; then bibtex $(basename $<); fi
 	latex $(basename $<)
@@ -32,12 +32,12 @@ readnote.dvi: unread_.bib
 	@if ps | grep -v grep | grep -q "xdvi $*.dvi" ; then \
 		echo "Xdvi already running." ; \
 	else \
-		(xdvi $*.dvi &) ; \
+		(xdvi $< &) ; \
 	fi
 
 # latex2html
 
-html/% : %.dvi %.ps %.pdf
+html/% : %.dvi %.aux %.ps %.pdf
 	if [ ! -d html ]; then mkdir html; fi
 	-$(RM) -r $@
 	latex2html -local_icons -dir $@ $(basename $<)
@@ -85,5 +85,6 @@ only-me:
 .PHONY: preview all
 
 # Try to convince make to delete these sometimes.
-.INTERMEDIATE: %.aux %.log
+.INTERMEDIATE: $(ALLDOCS:=.log)
 .INTERMEDIATE: %_.bib
+.SECONDARY: $(ALLDOCS:=.dvi) $(ALLDOCS:=.aux)
