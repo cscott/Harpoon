@@ -31,7 +31,7 @@ import java.util.Collections;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.15 2000-03-18 23:39:23 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.16 2000-03-25 05:17:24 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -412,8 +412,11 @@ public class ActionRepository {
 	(i.e. via parameters,
 	class nodes, normally or exceptionally returned nodes or the
 	started thread nodes) */
-    private final ActionRepository keepTheEssential(final Set remaining_nodes){
+    final ActionRepository keepTheEssential(final Set remaining_nodes){
 	final ActionRepository ar2 = new ActionRepository();
+
+	// commonsense rule
+	remaining_nodes.add(THIS_THREAD);
 
 	// select only the actions referring only to remaining nodes
 	forAllActions(new ActionVisitor(){

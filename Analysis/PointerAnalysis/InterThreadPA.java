@@ -19,6 +19,7 @@ import harpoon.IR.Quads.NEW;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.GenType;
+import harpoon.Analysis.MetaMethods.MetaCallGraph;
 
 
 /**
@@ -28,7 +29,7 @@ import harpoon.Analysis.MetaMethods.GenType;
  * too big and some code segmentation is always good! 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.17 2000-03-20 00:45:23 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.18 2000-03-25 05:17:24 salcianu Exp $
  */
 abstract class InterThreadPA {
     
@@ -36,11 +37,18 @@ abstract class InterThreadPA {
     private static final boolean DEBUG2 = false;
     private static final boolean TIMING = true;
 
-
+    // Set of all the processed threads (thread nodes). PANodes keep
+    // accumulating here since the beginning of the inter-thread analysis,
+    // without any clear(), even if some thread nodes are reanalyzed when the
+    // graph has changed.
     private static final Set processed_threads = new HashSet();
 
     public static ParIntGraph resolve_threads(ParIntGraph pig,
 					      PointerAnalysis pa){
+	// This is the set of all the analyzed threads. When the graph has
+	// changed, this set is cleared, so that some of the threads are
+	// reanalyzed. 
+	final Set analyzed_threads = new HashSet();
 
 	long begin_time = 0;
 	if(TIMING) begin_time = System.currentTimeMillis();
@@ -48,8 +56,6 @@ abstract class InterThreadPA {
 	processed_threads.clear();
 
 	pig = (ParIntGraph) pig.clone();
-
-	HashSet analyzed_threads = new HashSet();
 
 	while(true){
 	    PANode nt = pick_an_unanalyzed_thread(pig,analyzed_threads);
@@ -66,10 +72,11 @@ abstract class InterThreadPA {
 	    ParIntGraph old_pig = pig;
 	    pig = interaction_nt(pig, nt, ops, pa);
 
-	    processed_threads.add(nt);
-
 	    if(!pig.equals(old_pig))
 		analyzed_threads.clear();
+
+	    analyzed_threads.add(nt);
+	    processed_threads.add(nt);
 	}
 	
 	if(TIMING){
@@ -132,6 +139,14 @@ abstract class InterThreadPA {
 
 	MetaMethod mm_run = 
 	    new MetaMethod(hm,new GenType[]{new GenType(hclass,GenType.MONO)});
+
+	// some hack to cope with the fake meta call graph when every
+	// method is polymorphic in its arguments.
+	// TODO: try to find something more intelligent!
+	MetaCallGraph mcg = pa.getMetaCallGraph();
+	if(!mcg.getAllMetaMethods().contains(mm_run)) 
+	    mm_run = new MetaMethod(hm,
+			   new GenType[]{new GenType(hclass, GenType.POLY)});
 
 	return new MetaMethod[]{mm_run};
     }

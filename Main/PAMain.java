@@ -56,7 +56,7 @@ import harpoon.Analysis.MetaMethods.SmartCallGraph;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.20 2000-03-24 22:33:00 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.21 2000-03-25 05:17:35 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -106,7 +106,6 @@ public abstract class PAMain {
     };
 
     private static Method root_method = new Method();
-    private static Method analyzed_method = new Method();
 
     private static MetaCallGraph  mcg = null;
     private static MetaAllCallers mac = null;
@@ -272,7 +271,7 @@ public abstract class PAMain {
 
 	if(optind < params.length){
 	    for(; optind < params.length; optind++ ){
-		getMethodName(params[optind],analyzed_method);
+		Method analyzed_method = getMethodName(params[optind]);
 		if(analyzed_method.declClass == null)
 		    analyzed_method.declClass = root_method.declClass;
 		display_method(analyzed_method);
@@ -291,7 +290,7 @@ public abstract class PAMain {
 		    System.out.println();
 		    break;
 		}
-		getMethodName(method_name, analyzed_method);
+		Method analyzed_method = getMethodName(method_name);
 		if(analyzed_method.declClass == null)
 		    analyzed_method.declClass = root_method.declClass;
 		display_method(analyzed_method);
@@ -307,12 +306,13 @@ public abstract class PAMain {
 	HMethod[] hm  = hclass.getDeclaredMethods();
 
 	HMethod hmethod = null;		
-	for(int i = 0;i<hm.length;i++)
+	for(int i = 0; i < hm.length; i++)
 	    if(hm[i].getName().equals(method.name))
 		hmethod = hm[i];
 
 	if(hmethod == null){
-	    System.out.println("Sorry, method not found\n");
+	    System.out.println("Sorry, method " + method.declClass +
+			       " . " + method.name + " not found\n");
 	    return;
 	}
 
@@ -352,11 +352,13 @@ public abstract class PAMain {
 
     // receives a "class.name" string and cut it into pieces, separating
     // the name of the class from the name of the method.
-    private static void getMethodName(String str, Method method){
+    private static Method getMethodName(String str){
+	Method method = new Method();
 	int point_pos = str.lastIndexOf('.');
 	method.name           = str.substring(point_pos+1);
-	if(point_pos == -1) return;
+	if(point_pos == -1) return method;
 	method.declClass      = str.substring(0,point_pos);
+	return method;
     }
 
     // process the command line options; returns the starting index of

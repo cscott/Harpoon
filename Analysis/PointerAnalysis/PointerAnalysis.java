@@ -65,7 +65,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.33 2000-03-24 22:32:43 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.34 2000-03-25 05:17:25 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -189,6 +189,15 @@ public class PointerAnalysis {
 	return getExtParIntGraph(mm,true);
     }
 
+    // internal method doing the job
+    ParIntGraph getExtParIntGraph(MetaMethod mm, boolean compute_it){
+	ParIntGraph pig = (ParIntGraph)hash_proc_ext.get(mm);
+	if((pig == null) && compute_it){
+	    analyze(mm);
+	    pig = (ParIntGraph)hash_proc_ext.get(mm);
+	}
+	return pig;
+    }
 
     // Returns a version of the external graph for meta-method hm that is
     // specialized for the call site q
@@ -246,15 +255,6 @@ public class PointerAnalysis {
     // cache for thread sensitivity: Map<MetaMethod, ParIntGraph>
     private Map t_specs = new HashMap();
 
-
-    ParIntGraph getExtParIntGraph(MetaMethod mm, boolean compute_it){
-	ParIntGraph pig = (ParIntGraph)hash_proc_ext.get(mm);
-	if((pig == null) && compute_it){
-	    analyze(mm);
-	    pig = (ParIntGraph)hash_proc_ext.get(mm);
-	}
-	return pig;
-    }
 
     /** Returns the parameter nodes of the method <code>hm</code>. This is
      * useful for the understanding of the <code>ParIntGraph</code> attached

@@ -14,7 +14,7 @@ import java.util.Enumeration;
  <code>Sum.sum</code> is the interesting method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Sum.java,v 1.1.2.1 2000-02-24 23:57:34 salcianu Exp $
+ * @version $Id: Sum.java,v 1.1.2.2 2000-03-25 05:17:38 salcianu Exp $
  */
 class Accumulator {
     int value = 0;
@@ -60,7 +60,7 @@ class Worker extends Thread{
 	int s = 0;
 	while(e.hasMoreElements()){
 	    Integer i = (Integer) e.nextElement();
-	    s=s+i.intValue();
+	    s = s + i.intValue();
 	}
 	dest.add(s);
     }

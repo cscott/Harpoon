@@ -20,7 +20,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.20 2000-03-20 00:45:23 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.21 2000-03-25 05:17:25 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -177,8 +177,7 @@ public class ParIntGraph {
 
 	PAThreadMap _tau = (PAThreadMap) tau.clone();
 
-	//TODO: find something more intelligent!
-	ActionRepository _ar = (ActionRepository) ar.clone();
+	ActionRepository _ar = ar.keepTheEssential(remaining_nodes);
 
 	EdgeOrdering _eo = eo.keepTheEssential(remaining_nodes);
 	// the "touched_threads" info is valid only for captured threads
