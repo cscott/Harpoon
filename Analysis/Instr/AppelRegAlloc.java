@@ -54,7 +54,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.11 2001-07-03 23:54:57 pnkfelix Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.12 2001-07-07 19:12:20 pnkfelix Exp $
  */
 public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     // FSK: super class really SHOULD be RegAlloc, but am doing this
@@ -65,11 +65,11 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     public static final boolean PRINT_CLEANING_INFO = false;
 
 
-    private static final int NUM_CLEANINGS_TO_TRY = 3;
-    private boolean try_to_clean = false; // trackdown _213_javac
+    private static final int NUM_CLEANINGS_TO_TRY = 2;
+    private boolean try_to_clean = true; 
     // activates an extension to cleaning that doesn't spill defs that
     // are dead at the BasicBlock's end.
-    private static final boolean CLEAN_BB_LOCAL_DEFS = true;
+    private static final boolean CLEAN_BB_LOCAL_DEFS = false; // trackdown _213_javac
 
     // activates a prepass removing "mov t0, t0" InstrMOVEs.
     private static final boolean TRIVIAL_MOVE_COALESCE = true;
@@ -78,6 +78,12 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		return new AppelRegAlloc(c);
 	    }
 	};
+
+
+    // FSK todo: shouldn't use instanceof here, because a prepass
+    // could have inserted spill code ahead of time and we want to
+    // preserve those spills.  Instead, maintain a set of inserted
+    // instructions locally.
 
     /** Removes all spill code, resets statistical info, and turns off cleaning. 
      */
@@ -98,7 +104,6 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	dontSpillTheseDefs.clear();
 	depthToNumSpills = new int[SPILL_STAT_DEPTH];
 	try_to_clean = false;
-	bbFact = computeBasicBlocks();
     }
 
     int K; // size of register set
@@ -1131,20 +1136,6 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    u = x; v = y;
 	}
 	
-	if (CHECK_INV) 
-        Util.assert( u.isFreezeWorkL() || 
-		     u.isSpillWorkL()  ||
-		     u.isPrecolored()  ,
-		     "u must be in Freeze or Spill or Precolored"+
-		     " not "+u.s_rep.name);
-
-	if (CHECK_INV) 
-	Util.assert( v.isFreezeWorkL() || 
-		     v.isSpillWorkL()  || 
-		     v.isPrecolored()  ,
-		     "v must be in Freeze or Spill or Precolored"+
-		     " not "+v.s_rep.name);
-
 	// FSK: see coalesce() above [ pop() implicitly removes m ]
 	// worklist_moves.remove(m); 
 
@@ -1170,32 +1161,10 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		    conservative(adjacent(u), adjacent(v))) ) {
 	    // System.out.println( "ugly case, u:"+u+" v:"+v );
 
-
-	    
 	    coalesced_moves.add(m);
-
-	    if (CHECK_INV) 
-	    Util.assert( v.isFreezeWorkL() || v.isSpillWorkL(),
-			 "v must be in Freeze or in Spill, "+
-			 "not "+v.s_rep.name );
-
-	    if (CHECK_INV) 
-	    Util.assert( u.isFreezeWorkL() || u.isSpillWorkL() || u.isPrecolored(),
-			 "u must be in Freeze, Spill, or Precolored, "+
-			 "not "+u.s_rep.name );
 
 	    combine(u, v);
 
-	    // FSK: this assertion should hold, but soon I'm just
-	    // going to hack around the problem in addWorkList so that
-	    // I can move on to other things
-	    if (CHECK_INV) 
-	    Util.assert( u.isFreezeWorkL() || u.isSpillWorkL() || u.isPrecolored(),
-			 "u must be in Freeze, Spill, or Precolored, "+
-			 "not "+u.s_rep.name+
-			 " temp:"+u.web.temp);
-	    
-	    
 	    addWorkList(u);
 
 	} else {
@@ -1235,9 +1204,20 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     // returns conservative( ni1 \/ ni2 )
     // conservative coalescing heuristic due to Preston Briggs
     private boolean conservative(NodeIter ni1, NodeIter ni2) {
-	// FSK TODO: this is not a strict union.  Find out if it
-	// double-counting is an issue.
-	return conservative( combine( new NodeIter[]{ ni1, ni2 } ));
+	NodeIter union; 
+	// [ FIXED, but am seeing signs that "conservation" is being broken.
+	//   could just be inherent heuristical effects though ]
+	// FSK combine(...) is not a strict union.
+	// union = combine( new NodeIter[]{ ni1, ni2 } );
+	union = union(ni1, ni2);
+	
+	return conservative( union );
+    }
+    private NodeIter union(NodeIter n1, NodeIter n2) {
+	HashSet s = new HashSet();
+	while(n1.hasNext()){ s.add(n1.next()); }
+	while(n2.hasNext()){ s.add(n2.next()); }
+	return nodesIter( s.iterator() );
     }
 
     private boolean conservative(NodeIter nodes) { 
@@ -1315,14 +1295,6 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    }
 
 	    checkMoveSets();
-	    if (CHECK_INV) 
-	    Util.assert(m.isActive(), 
-			"move:"+m+" should be in active if we're doing "+
-			"freezeMoves( "+u+" ),"+
-			" v:"+v+
-			" getAlias(x):"+getAlias(x)+
-			" getAlias(y):"+getAlias(y)
-			);
 	    active_moves.remove(m);
 	    frozen_moves.add(m);
 	    checkMoveSets();
@@ -1471,19 +1443,9 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    Node n = nI.next();
 	    
 	    Util.assert( ! isRegister(n.web.temp) );
-	    
-	    // these loops skip over prev. spilled nodes... 
-	    for(Iterator di = n.web.defs.iterator(); di.hasNext(); ) {
-		Instr d = (Instr) di.next();
-		if (d instanceof RestoreProxy ||
-		    dontSpillTheseDefs.contains(d)) {
-		    continue nextNode;
-		}
-	    }
-	    for(Iterator ui = n.web.uses.iterator(); ui.hasNext(); )
-		if (ui.next() instanceof SpillProxy) {
-		    continue nextNode;
-		}
+	   
+	    if (!n.web.isSpillable())
+		continue nextNode;
 
 	    double cost = sh.cost( n );
 	    if (cost > minCost) 
@@ -1534,6 +1496,13 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     public void rewriteProgram() {
 	rewriteCalledNumTimes++;
 
+	if (try_to_clean && 
+	    rewriteCalledNumTimes == NUM_CLEANINGS_TO_TRY) {
+	    stopTryingToClean();
+	    initializeSets();
+	    bbFact = computeBasicBlocks();
+	    return;
+	} 
 
 	// Allocate memory locations for each v : spilledNodes
 	// Create a new temporary v_i for each definition and each use
@@ -1570,18 +1539,10 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    System.out.println();
 	}
 
-	// FSK: this is dumb; it removes all of the work we just did
-	// in this method.  Move to earlier point in the control flow
-	if (try_to_clean && 
-	    rewriteCalledNumTimes == NUM_CLEANINGS_TO_TRY)
-	    stopTryingToClean();
-
 	initializeSets();
-
 	bbFact = computeBasicBlocks();
     }
 
-    private HashSet dontSpillTheseDefs = new HashSet();
     private Collection addDefs(Web w) {
 	HashSet groupDefs = new HashSet(w.defs.size());
 	int cleanedNum = 0;
