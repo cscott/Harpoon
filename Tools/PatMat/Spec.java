@@ -22,34 +22,34 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.3.2.1 2002-02-27 08:37:38 cananian Exp $
+ * @version $Id: Spec.java,v 1.3.2.2 2002-03-14 01:58:29 cananian Exp $
  */
 public class Spec  {
 
     /** Java code statements that are going to be placed outside class
 	body (package declaration, import statements).
     */
-    public /*final*/ String global_stms;
+    public final String global_stms;
 
     /** Java code statements that are going to be placed inside class
 	body (helper methods, fields, inner classes).
     */
-    public /*final*/ String class_stms;
+    public final String class_stms;
 
     /** Java code statements to be inserted in the prologue of the
      *  code generator method body.
      */
-    public /*final*/ String method_prologue_stms;
+    public final String method_prologue_stms;
 
     /** Java code statements to be inserted in the epilogue of the
      *  code generator method body.
      */
-    public /*final*/ String method_epilogue_stms;
+    public final String method_epilogue_stms;
 
     /** List of Instruction Patterns for this machine specification.
 	<code>null</code> is a legal value.
      */
-    public /*final*/ RuleList rules;
+    public final RuleList rules;
     
     /** Creates a <code>Spec</code>. */
     public Spec(String global_stms, String class_stms,

@@ -15,11 +15,11 @@ import java.util.Iterator;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.3.2.2 2002-02-27 22:24:15 cananian Exp $
+ * @version $Id: WorkSet.java,v 1.3.2.3 2002-03-14 01:58:47 cananian Exp $
  */
 public class WorkSet<E> extends java.util.AbstractSet<E> implements Worklist<E>
 {
-    private /*final*/ HashMap<E,EntryList<E>> hm;
+    private final HashMap<E,EntryList<E>> hm;
     private EntryList<E> listhead = EntryList.init(); // header and footer nodes.
     private EntryList<E> listfoot = listhead.next;
     private final static boolean debug=false; // turn on consistency checks.

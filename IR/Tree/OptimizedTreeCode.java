@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.2 2002-02-25 21:05:38 cananian Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.2.2.1 2002-03-14 01:57:48 cananian Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = CanonicalTreeCode.codename;
@@ -43,7 +43,7 @@ public class OptimizedTreeCode extends Code {
      *  <code>CanonicalTreeCode</code> object, a <code>Frame</code>,
      *  and a set of optimizations to perform. 
      */
-    OptimizedTreeCode(/*final*/ CanonicalTreeCode code, final Frame frame, 
+    OptimizedTreeCode(CanonicalTreeCode code, final Frame frame, 
 		      final TreeOptimizer[] topts) {
 	super(code.getMethod(), null, frame);
 

@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@mit.edu>
- * @version $Id: CodeGen.spec,v 1.3.2.1 2002-02-27 08:34:38 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.3.2.2 2002-03-14 01:57:19 cananian Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -118,11 +118,11 @@ import java.util.Iterator;
     private StackInfo stack;
     
 
-    /*final*/ RegFileInfo regfile;
+    final RegFileInfo regfile;
     private Temp  v0, v1, a0, a1, a2, a3, t0, t1, t2, 
        t3, t4, t5, t6, t7, t8, t9, GP, SP, FP, LR;
     Comparator regComp;
-    private /*final*/ Temp call_use[];
+    private final Temp call_use[];
     /* The maximum def set for a call */
     private Temp call_def_full[];
     /* The def set we use in our support functions */

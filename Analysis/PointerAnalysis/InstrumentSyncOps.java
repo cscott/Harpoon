@@ -40,14 +40,14 @@ import java.util.Map;
  * statistics-gathering purposes.
  * 
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: InstrumentSyncOps.java,v 1.3.2.1 2002-02-27 08:32:05 cananian Exp $
+ * @version $Id: InstrumentSyncOps.java,v 1.3.2.2 2002-03-14 01:57:00 cananian Exp $
  */
 
 public class InstrumentSyncOps implements java.io.Serializable {
 
-    static /*final*/ HMethod new_method;
-    static /*final*/ HMethod monitorenter_method;
-    static /*final*/ HMethod monitorexit_method;
+    static final HMethod new_method;
+    static final HMethod monitorenter_method;
+    static final HMethod monitorexit_method;
 
     static {
 	Linker linker = Loader.systemLinker;

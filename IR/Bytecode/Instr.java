@@ -22,7 +22,7 @@ import java.util.List;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.4 2002-02-25 21:04:17 cananian Exp $
+ * @version $Id: Instr.java,v 1.4.2.1 2002-03-14 01:57:39 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -31,9 +31,9 @@ import java.util.List;
  */
 public abstract class Instr 
   implements HCodeElement, harpoon.IR.Properties.CFGraphable, Comparable {
-  /*final*/ String sourcefile;
-  /*final*/ int linenumber;
-  /*final*/ int id;
+  final String sourcefile;
+  final int linenumber;
+  final int id;
   /** Constructor. */
   protected Instr(String sourcefile, int linenumber) {
     this.sourcefile = sourcefile;

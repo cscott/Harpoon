@@ -34,14 +34,14 @@ import java.util.Stack;
  * control regions in linear time" might also provide a useful reference.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SESE.java,v 1.3.2.1 2002-02-27 08:30:24 cananian Exp $
+ * @version $Id: SESE.java,v 1.3.2.2 2002-03-14 01:56:51 cananian Exp $
  */
 public class SESE  {
     /** Root of <code>Region</code> tree. */
     public final Region topLevel=new Region();
     /** Mapping from Nodes/Edges to smallest enclosing canonical SESE
      *  <code>Region</code>. */
-    public /*final*/ Map smallestSESE;
+    public final Map smallestSESE;
 
     /** Creates a <code>SESE</code> using a <code>CycleEq</code>. */
     public SESE(HCode hc) {

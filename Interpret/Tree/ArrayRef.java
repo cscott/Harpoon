@@ -16,11 +16,11 @@ import harpoon.Util.Util;
  * by the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayRef.java,v 1.3.2.1 2002-02-27 08:36:57 cananian Exp $
+ * @version $Id: ArrayRef.java,v 1.3.2.2 2002-03-14 01:58:07 cananian Exp $
  */
 final class ArrayRef extends Ref {
     /** Elements of the array (primitives or Refs) */
-    /*final*/   Object[]            elements;
+    final   Object[]            elements;
     private Integer             hashCode = null;
     private Integer             length   = null;
     private ClazPointer         classPtr = null;

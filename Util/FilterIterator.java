@@ -19,11 +19,11 @@ import java.util.NoSuchElementException;
  * Filters which remain consistent throughout the iteration be used. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FilterIterator.java,v 1.2.2.1 2002-03-14 01:05:39 cananian Exp $
+ * @version $Id: FilterIterator.java,v 1.2.2.2 2002-03-14 01:58:40 cananian Exp $
  */
 public class FilterIterator<A,B> extends UnmodifiableIterator<B> {
-    /*final*/ Iterator<A> i;
-    /*final*/ Filter<A,B> f;
+    final Iterator<A> i;
+    final Filter<A,B> f;
     /** Creates a <code>FilterIterator</code>. */
     public FilterIterator(Iterator<A> i, Filter<A,B> f) {
         this.i = i; this.f = f; advance();

@@ -22,7 +22,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.3.2.1 2002-02-27 08:37:05 cananian Exp $
+ * @version $Id: StaticState.java,v 1.3.2.2 2002-03-14 01:58:08 cananian Exp $
  */
 final class StaticState extends HCLibrary {
     
@@ -35,7 +35,7 @@ final class StaticState extends HCLibrary {
     /** which code representation to use. */
     HCodeFactory hcf;
     /** used to map fields & methods to labels */
-    /*final*/ InterpreterOffsetMap map; 
+    final InterpreterOffsetMap map; 
     
     // Class constructor 
     StaticState(Linker linker, HCodeFactory hcf, InterpreterOffsetMap map) { 
@@ -441,7 +441,7 @@ final class StaticState extends HCLibrary {
      *                                                          *
      ***********************************************************/
 
-    public /*final*/ PrintWriter prof;
+    public final PrintWriter prof;
     private long count; // instruction count.
     final synchronized void incrementInstructionCount() { 
         count++; 

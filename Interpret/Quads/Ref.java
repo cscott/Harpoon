@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>Ref</code> is an abstract superclass for object and array references.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Ref.java,v 1.2 2002-02-25 21:05:46 cananian Exp $
+ * @version $Id: Ref.java,v 1.2.2.1 2002-03-14 01:57:58 cananian Exp $
  */
 abstract class Ref implements Cloneable, java.io.Serializable {
     /** The type of the object. */
@@ -22,7 +22,7 @@ abstract class Ref implements Cloneable, java.io.Serializable {
     /** A monitor lock. */
     //boolean lock;
     /** Profiling information. */
-    /*final*/ long creation_time;
+    final long creation_time;
 
     /** create a new ref.
      * @exception InterpretedThrowable
