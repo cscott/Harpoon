@@ -131,7 +131,7 @@ struct heap_state {
   struct genhashtable *statechangemethodtable;
   struct hashtable *statechangereversetable;
   int statechangesize;
-  int options;
+  unsigned int options;
 
   FILE *container;
   struct hashtable *containedobjects;
@@ -140,6 +140,7 @@ struct heap_state {
 #define OPTION_FCONTAINERS 0x1
 #define OPTION_UCONTAINERS 0x2
 #define OPTION_NORCEXPR 0x4
+#define OPTION_NOEFFECTS 0x8
 
 struct identity_relation {
   struct fieldname * fieldname1;

@@ -45,11 +45,15 @@ void parseoptions(int argc, char **argv, struct heap_state *heap) {
 	printf("-h help\n");
 	printf("-c output containers\n");
 	printf("-u use containers\n");
+	printf("-n no effects\n");
 	printf("-r no rolechange regular expressions calculated\n");
 	exitstate=1;
 	break;
       case 'r':
 	heap->options|=OPTION_NORCEXPR;
+	break;
+      case 'n':
+	heap->options|=OPTION_NOEFFECTS;
 	break;
       case 'c':
 	heap->options|=OPTION_FCONTAINERS;
@@ -75,11 +79,14 @@ void doanalysis(int argc, char **argv) {
   struct heap_state heap;
   struct hashtable * ht=allocatehashtable();
   int currentparam=0;
+  heap.options=0;
+
   parseoptions(argc, argv,&heap);
 
   heap.K=createobjectpair();
   heap.N=createobjectset();
   
+
   heap.gl=NULL;
   heap.methodlist=0;
   heap.newreferences=NULL;
@@ -163,8 +170,10 @@ void doanalysis(int argc, char **argv) {
 	struct arraylist *tmpal=tmp->next;
 	doarrayassignment(&heap, dsto, tmp->index-srcpos+dstpos, tmp->object);
 #ifdef EFFECTS
-	addarraypath(&heap, ht, srcuid ,tmp->object->uid);
-	addeffect(&heap, dstuid, NULL, tmp->object->uid);
+	if (!(heap.options&OPTION_NOEFFECTS)) {
+	  addarraypath(&heap, ht, srcuid ,tmp->object->uid);
+	  addeffect(&heap, dstuid, NULL, tmp->object->uid);
+	}
 #endif
 	free(tmp);
 	tmp=tmpal;
@@ -186,14 +195,18 @@ void doanalysis(int argc, char **argv) {
       while(fl!=NULL) {
 	dofieldassignment(&heap, clone, fl->fieldname, fl->object);
 #ifdef EFFECTS
-	addeffect(&heap, origuid, fl->fieldname, cloneuid);	
+	if (!(heap.options&OPTION_NOEFFECTS)) {
+	  addeffect(&heap, origuid, fl->fieldname, cloneuid);	
+	}
 #endif
 	fl=fl->next;
       }
       while(al!=NULL) {
 	doarrayassignment(&heap, clone, al->index, al->object);
 #ifdef EFFECTS
-	addeffect(&heap, origuid, NULL, cloneuid);	
+	if (!(heap.options&OPTION_NOEFFECTS)) {
+	  addeffect(&heap, origuid, NULL, cloneuid);	
+	}
 #endif
 	al=al->next;
       }
@@ -210,7 +223,11 @@ void doanalysis(int argc, char **argv) {
 	ho->reachable=2;
 	puttable(ht, ho->uid, ho);
 	addobject(heap.changedset, ho);
+#ifdef EFFECTS
+      if (!(heap.options&OPTION_NOEFFECTS)) {
 	addnewobjpath(&heap, ho->uid);
+      }
+#endif
       }
       break;
     case 'U':
@@ -222,7 +239,10 @@ void doanalysis(int argc, char **argv) {
 	ho->class=getclass(heap.namer,buf);
 	puttable(ht, ho->uid, ho);
 	addobject(heap.changedset, ho);
-	addnewobjpath(&heap, ho->uid);
+#ifdef EFFECTS
+	if (!(heap.options&OPTION_NOEFFECTS))
+	  addnewobjpath(&heap, ho->uid);
+#endif
       }
       break;
     case 'K':
@@ -256,8 +276,10 @@ void doanalysis(int argc, char **argv) {
 	}
 
 #ifdef EFFECTS
-	if ((uid!=-1)&&(objuid!=-1)) {
-	  addpath(&heap, objuid, getfield(heap.namer,classname, fieldname,fielddesc), uid);
+	if (!(heap.options&OPTION_NOEFFECTS)) {
+	  if ((uid!=-1)&&(objuid!=-1)) {
+	    addpath(&heap, objuid, getfield(heap.namer,classname, fieldname,fielddesc), uid);
+	  }
 	}
 #endif
 	
@@ -285,8 +307,10 @@ void doanalysis(int argc, char **argv) {
 	}
 
 #ifdef EFFECTS
-	if ((uid!=-1)&&(objuid!=-1)) {
-	  addarraypath(&heap, ht, objuid, uid);
+	if (!(heap.options&OPTION_NOEFFECTS)) {
+	  if ((uid!=-1)&&(objuid!=-1)) {
+	    addarraypath(&heap, ht, objuid, uid);
+	  }
 	}
 #endif
 	
@@ -322,11 +346,13 @@ void doanalysis(int argc, char **argv) {
 	  if (uid!=-1) {
 	    heap.methodlist->params[currentparam]=lv->object;
 #ifdef EFFECTS
-	    if (!contains(heap.methodlist->pathtable, uid)) {
-	      struct path * pth=(struct path *) calloc(1, sizeof(struct path));
-	      pth->paramnum=currentparam;
-	      pth->prev_obj=-1;
-	      puttable(heap.methodlist->pathtable, uid ,pth);
+	    if (!(heap.options&OPTION_NOEFFECTS)) {
+	      if (!contains(heap.methodlist->pathtable, uid)) {
+		struct path * pth=(struct path *) calloc(1, sizeof(struct path));
+		pth->paramnum=currentparam;
+		pth->prev_obj=-1;
+		puttable(heap.methodlist->pathtable, uid ,pth);
+	      }
 	    }
 #endif
 	  }
@@ -369,7 +395,9 @@ void doanalysis(int argc, char **argv) {
 	heap.methodlist=newmethod;
 	atomiceval(&heap);
 #ifdef EFFECTS
-	initializepaths(&heap);
+	if (!(heap.options&OPTION_NOEFFECTS)) {
+	  initializepaths(&heap);
+	}
 #endif
 	heap.methodlist->rolechangetable=genallocatehashtable((int (*)(void *)) &rchashcode, (int (*)(void *,void *)) &equivalentrc);
 	currentparam=0;
@@ -416,14 +444,26 @@ void doanalysis(int argc, char **argv) {
 	  src=gettable(ht,suid);
 	if (duid!=-1) {
 	  dst=gettable(ht,duid);
+#ifdef EFFECTS
+	if (!(heap.options&OPTION_NOEFFECTS)) {
 	  checkpath(&heap, duid);
+	}
+#endif
 	}
 	if (src!=NULL) {
 	  dofieldassignment(&heap, src, getfield(heap.namer, classname, fieldname, descname), dst);
+#ifdef EFFECTS
+	if (!(heap.options&OPTION_NOEFFECTS)) {
 	  addeffect(&heap, suid, getfield(heap.namer, classname, fieldname, descname), duid);
+	}
+#endif
 	} else {
 	  doglobalassignment(&heap,getfield(heap.namer,classname,fieldname, descname),dst);
-	  addeffect(&heap, -1, getfield(heap.namer, classname, fieldname, descname),duid);
+#ifdef EFFECTS
+	  if (!(heap.options&OPTION_NOEFFECTS)) {
+	    addeffect(&heap, -1, getfield(heap.namer, classname, fieldname, descname),duid);
+	  }
+#endif
 	}
       }
       break;
@@ -441,7 +481,10 @@ void doanalysis(int argc, char **argv) {
 	  dst=gettable(ht,duid);
 	doarrayassignment(&heap,src,index,dst);
 #ifdef EFFECTS
-	addeffect(&heap, suid, NULL, duid);	
+	if (!(heap.options&OPTION_NOEFFECTS)) {
+	  fflush(NULL);
+	  addeffect(&heap, suid, NULL, duid);	
+	}
 #endif
       }
       break;
@@ -662,8 +705,10 @@ void freemethodlist(struct heap_state *hs) {
   while(hs->freemethodlist!=NULL) {
     struct method *tmp=hs->freemethodlist->caller;
 #ifdef EFFECTS
-    freedatahashtable(hs->freemethodlist->pathtable,(void (*) (void*)) &freeeffects);
-    freeeffectlist(hs->freemethodlist->effects);
+    if (!(hs->options&OPTION_NOEFFECTS)) {
+      freedatahashtable(hs->freemethodlist->pathtable,(void (*) (void*)) &freeeffects);
+      freeeffectlist(hs->freemethodlist->effects);
+    }
 #endif
     free(hs->freemethodlist->params);
     free(hs->freemethodlist);

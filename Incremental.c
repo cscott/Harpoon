@@ -185,7 +185,11 @@ struct objectset * dokills(struct heap_state *hs, struct hashtable *ht) {
     /*cycle through the lists*/
     /*adding only if R(t) intersect S!={}*/
     while(fl!=NULL) {
-      addpath(hs, ho->uid, fl->fieldname, fl->object->uid);
+#ifdef EFFECTS
+      if (!(hs->options&OPTION_NOEFFECTS)) {
+	addpath(hs, ho->uid, fl->fieldname, fl->object->uid);
+      }
+#endif
       if (matchlist(fl->object->rl, tuple->rl)||((fl->object->reachable==1)&&(tuple->reachable==1))) {
 	struct killtuplelist *ktpl=(struct killtuplelist *) calloc(1,sizeof(struct killtuplelist));
 	struct referencelist *rtmp=tuple->rl;
@@ -216,7 +220,11 @@ struct objectset * dokills(struct heap_state *hs, struct hashtable *ht) {
     /*cycle through the lists*/
     /*adding only if R(t) intersect S!={}*/
     while(al!=NULL) {
-      addarraypath(hs, ht, ho->uid, al->object->uid);
+#ifdef EFFECTS
+      if (!(hs->options&OPTION_NOEFFECTS)) {
+	addarraypath(hs, ht, ho->uid, al->object->uid);
+      }
+#endif
       if (matchlist(al->object->rl, tuple->rl)||((al->object->reachable==1)&&(tuple->reachable==1))) {
 	struct killtuplelist *ktpl=(struct killtuplelist *) calloc(1,sizeof(struct killtuplelist));
 	struct referencelist *rtmp=tuple->rl;
@@ -318,12 +326,20 @@ void donews(struct heap_state *hs, struct objectset * os, struct hashtable *ht) 
 
       /* Cycle through all fields/array indexes*/
       while(al!=NULL) {
-	addarraypath(hs, ht, object->uid, al->object->uid);
+#ifdef EFFECTS
+	if (!(hs->options&OPTION_NOEFFECTS)) {
+	  addarraypath(hs, ht, object->uid, al->object->uid);
+	}
+#endif
 	propagaterinfo(N, object, al->object);
 	al=al->next;
       }
       while(fl!=NULL) {
-	addpath(hs, object->uid, fl->fieldname, fl->object->uid);
+#ifdef EFFECTS
+	if (!(hs->options&OPTION_NOEFFECTS)) {
+	  addpath(hs, object->uid, fl->fieldname, fl->object->uid);
+	}
+#endif
 	propagaterinfo(N, object, fl->object);
 	fl=fl->next;
       }
