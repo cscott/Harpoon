@@ -64,4 +64,4 @@ clean:
 	$(RM) THex1*.tex *.fig.bak THcqex2.tex phisig.tex \
 		$(patsubst %.fig,%.tex,\
 		  $(patsubst Figures/%,%,$(filter %.fig,$(THESIS_FIGURES)))) \
-		*.stats *~
+		*.stats *~ texput.log
