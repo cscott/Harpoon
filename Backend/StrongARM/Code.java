@@ -27,7 +27,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.23 2000-06-29 02:19:30 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.24 2000-07-19 01:02:23 pnkfelix Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -94,18 +94,21 @@ class Code extends harpoon.Backend.Generic.Code {
 	    Temp low = get(i, t.getLow());
 	    Temp high = get(i, t.getHigh());
 	    Util.assert(low != null,
-			"low register for "+val+" in "+i+
-			" should not be null");
+			(true)?"low reg is null"
+			: "low register for "+val+" in "+i+ 
+			  " should not be null");
 	    Util.assert(high != null,
-			"high register for "+val+" in "+i+
-			" should not be null");
+			(true)?"high reg is null"
+			: "high register for "+val+" in "+i+
+			  " should not be null");
 	    return Arrays.asList(new Temp[]{ low, high });
 				 
 	} else {
 	    Temp t = get(i, val);
 	    Util.assert(t != null, 
-			"register for "+val+" in "+i+
-			" should not be null");
+			(true)?"reg is null"
+			: "register for "+val+" in "+i+
+			  " should not be null");
 	    return Collections.singleton(t);
 	}
     }
@@ -117,8 +120,9 @@ class Code extends harpoon.Backend.Generic.Code {
 	    (new TempInstrPair(instr, val)); 
 	if(reg == null) return null;
 	Util.assert( regFileInfo.isRegister(reg), 
-		     "Temp: "+reg+" should be a reg in "+
-		     "Instr: "+instr+", Val: "+val);
+		     (true)?"should be a reg"
+		     : "Temp: "+reg+" should be a reg in "+
+		       "Instr: "+instr+", Val: "+val);
 	return reg;
     }
 
@@ -161,12 +165,14 @@ class Code extends harpoon.Backend.Generic.Code {
 	    Temp reg = get(instr, val);
 	    
 	    Util.assert(!suffix.startsWith("l") &&
-			!suffix.startsWith("h"), "Shouldn't " +
-			"have 'l' or 'h' suffix with Temp: " + 
-			val + " Instrs: " + 
-			instr.getPrev() + ", " + 
-			instr + ", " + 
-			instr.getNext());
+			!suffix.startsWith("h"), 
+			(true) ? "suffix not allowed " 
+			: "Shouldn't " +
+			  "have 'l' or 'h' suffix with Temp: " + 
+			  val + " Instrs: " + 
+			  instr.getPrev() + ", " + 
+			  instr + ", " + 
+			  instr.getNext());
 
 	    if(reg != null) {
 		s = reg.name() + suffix;
@@ -215,8 +221,9 @@ class Code extends harpoon.Backend.Generic.Code {
 		}
 	    
 		Util.assert(isValidConst(v) || isValidConst(-v),
-			    "const form err of "+v+" in "+
-			    instr+"("+begin+","+end+")");
+			    true?"const form err"
+			    : "const form err of "+v+" in "+
+			      instr+"("+begin+","+end+")");
 	    }
 	} // end if(DEBUG)
 
@@ -253,7 +260,8 @@ class Code extends harpoon.Backend.Generic.Code {
 	Iterator iter = regs.iterator();
 	while(iter.hasNext()) {
 	    Util.assert( regFileInfo.isRegister((Temp)iter.next()),
-			 "every element of "+regs+" should be register");
+			true ? "every elem should be reg " 
+			 : "every element of "+regs+" should be register");
 	}
 
 	if (pseudoReg instanceof TwoWordTemp) {
@@ -273,8 +281,8 @@ class Code extends harpoon.Backend.Generic.Code {
 	    Object rm = get(instr, instr.use()[0]);
 	    Object rd = get(instr, instr.def()[0]);
 	    Util.assert(rm == null ||
-			!rm.equals(rd),
-			"rd:"+rd+" and rm:"+rm+" must be different in mul");
+			!rm.equals(rd), true ? "rd & rm must differ"
+			: "rd:"+rd+" and rm:"+rm+" must be different in mul");
 	}			
     }
 

@@ -78,7 +78,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.106 2000-07-18 22:32:08 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.107 2000-07-19 01:02:17 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -88,7 +88,7 @@ public abstract class RegAlloc  {
 
     /** Flags whether timing information should be printed to
 	System.out. */ 
-    public static final boolean TIME = true;
+    public static final boolean TIME = false;
 
     /** <code>Generic.Frame</code> for <code>this</code>. */
     protected Frame frame;
@@ -509,9 +509,9 @@ public abstract class RegAlloc  {
 			Util.assert(!(i instanceof SpillLoad), 
 				    "SpillLoad in i-list!");
 			Util.assert(!(i instanceof SpillStore), 
-				    "SpillStore in i-list! "+
-				    i.getPrev() + " " +
-				    i + " " + i.getNext());
+				    "SpillStore in i-list! "
+				    /* + i.getPrev() + " " +
+				       i + " " + i.getNext() */);
 		    }
 		}
 		
@@ -625,7 +625,7 @@ public abstract class RegAlloc  {
 		    if (isRegister(def)) {
 			tempXinstrToCommonLoc.add(dxi, def);
 		    } else {
-			Util.assert(checked.contains(i), i+" not checked");
+			Util.assert(checked.contains(i),/* i+ */" not checked");
 			Collection regs = code.getRegisters(i, def);
 			tempXinstrToCommonLoc.addAll(dxi, regs);
 		    }

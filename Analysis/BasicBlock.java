@@ -60,7 +60,7 @@ import java.util.Collection;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.37 2000-07-18 22:32:04 pnkfelix Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.38 2000-07-19 01:02:09 pnkfelix Exp $ */
 public class BasicBlock implements java.io.Serializable {
     
     static final boolean DEBUG = false;
@@ -269,8 +269,10 @@ public class BasicBlock implements java.io.Serializable {
 			if (ind != size) {
 			    Collection succs = factory.grapher.succC(next);
 			    Util.assert(succs.size() == 1,
-					next+" has wrong succs:" + 
-					succs+" (ind:"+ind+", size:"+size+")");
+					/* next+" has "+ */
+					" wrong succs:" 
+					/* + succs+" (ind:" */
+					/* + ind+", size:"+size+")" */);
 			    next = ((HCodeEdge)succs.iterator().next()).to(); 
 
 			} else { 
@@ -595,15 +597,7 @@ public class BasicBlock implements java.io.Serializable {
 		Util.assert( grapher.succC(last).size() != 1 ||
 			     grapher.predC(grapher.succ(last)[0].
 				      to()).size() > 1,
-			     new Object() { 
-				 public String toString() {
-				     return 
-				     "last elem: "+flast+" of "+ 
-				     fcurr+" breaks succC "+
-				     "invariant: "+grapher.succC(flast)+
-				     " BB: " + fcurr.dumpElems();
-				 }
-			     });
+			     "succC invariant broken");
 
 	    }
 
@@ -676,9 +670,7 @@ public class BasicBlock implements java.io.Serializable {
 		    curr = h;
 		} else {
 		    Util.assert(grapher.succC(curr).size() == 1);
-		    Util.assert(grapher.succ(curr)[0].to() == h,
-				"curr:"+curr+" succ:"+grapher.succ(curr)[0].to()+
-				" h:"+h);
+		    Util.assert(grapher.succ(curr)[0].to() == h);
 
 		    curr = h;
 		}

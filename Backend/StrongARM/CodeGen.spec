@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.160 2000-07-02 02:09:12 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.161 2000-07-19 01:02:23 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -122,9 +122,9 @@ import java.util.Iterator;
 	regComp = new Comparator() {
 	    public int compare(Object o1, Object o2) {
 		Util.assert(regToNum.keySet().contains(o1),
-			    o1+" not in regToNum's keys");
+			    /* o1+ */" not in regToNum's keys");
 		Util.assert(regToNum.keySet().contains(o2),
-			    o2+" not in regToNum's keys");
+			    /* o2+ */" not in regToNum's keys");
 		return ((Integer)regToNum.get(o1)).intValue() -
 		       ((Integer)regToNum.get(o2)).intValue();
 	    }
@@ -1457,7 +1457,7 @@ NAME(id) = i %{
     i2 = emitLABEL( ROOT, "2:", target);
     
     Util.assert(i2.predC().size() == 1, 
-		"> one predecessor "+ i2.predC());
+		"> one predecessor " /* + i2.predC() */);
 
 }%
 
@@ -1850,14 +1850,14 @@ MOVE<p,i,f>(TEMP(dst), src) %{
 
 MOVE<d,l>(TEMP(dst), src) %{
     Util.assert( dst instanceof TwoWordTemp, 
-		 "why is dst: "+dst + 
-		 " a normal Temp? "
+		 "normal Temp" /* +": "+dst */ 
+
 		 // + harpoon.IR.Tree.Print.print(ROOT)
 		 );
 
     Util.assert(src instanceof TwoWordTemp, 
-		"why is src: "+src + 
-		 " a normal Temp? " 
+		"normal Temp" /* +": "+src */ 
+
 		// + harpoon.IR.Tree.Print.print(ROOT)
 		);
 

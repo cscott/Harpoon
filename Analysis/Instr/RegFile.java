@@ -24,7 +24,7 @@ import java.util.Iterator;
  * most processor architectures for storing working sets of data.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFile.java,v 1.1.2.10 2000-07-11 22:50:02 pnkfelix Exp $
+ * @version $Id: RegFile.java,v 1.1.2.11 2000-07-19 01:02:17 pnkfelix Exp $
  */
 class RegFile {
 
@@ -59,7 +59,9 @@ class RegFile {
      */
     public void writeTo(Temp preg) {
 	Util.assert(hasAssignment(preg),
-		    "temp: "+preg+" should have an assignment in "+this);
+		    /* "temp: "+preg+ */
+		    " should have an assignment "
+		    /* +"in "+this */);
 
 	if (PRINT_USAGE) System.out.println(this+".writeTo: "+preg);
 
@@ -91,7 +93,9 @@ class RegFile {
     */
     public boolean isDirty(Temp preg) {
 	Util.assert(hasAssignment(preg),
-		    "temp: "+preg+" should have an assignment in "+this);
+		    /* "temp: "+preg+ */
+		    " should have an assignment "
+		    /* +"in "+this */ );
 	return dirtyTemps.contains(preg);
     }
 
@@ -166,7 +170,7 @@ class RegFile {
 
 	    
 	    Util.assert(!regToTmp.containsKey(reg), 
-	                 "non-empty reg: "+reg);  
+			"non-empty reg: " /* +reg */);  
 
 	    regToTmp.put(reg, pseudoReg);
 	    // regToTmp.add(reg, pseudoReg); // use if mult. assoc. 
@@ -176,6 +180,7 @@ class RegFile {
 	if (tmpToRegLst.containsKey(pseudoReg)) {
 	    Util.assert(((RegListAndInstr)tmpToRegLst.get
 			 (pseudoReg)).l.equals(regs),
+			(true)?"dont assign pregs > once":
 			"dont assign preg:"+pseudoReg+" more than once \n"+
 			"curr: "+tmpToRegLst.get(pseudoReg)+"\n"+
 			"next: "+rli);
@@ -228,7 +233,7 @@ class RegFile {
     public Instr getSource(final Temp pseudoReg) {
 	RegListAndInstr rli = (RegListAndInstr) 
 	    tmpToRegLst.get(pseudoReg);
-	Util.assert(rli != null, "Temp:"+pseudoReg+" has no assignment");
+	Util.assert(rli != null, /* "Temp:"+pseudoReg+ */" has no assignment");
 	return rli.i;
     }
     

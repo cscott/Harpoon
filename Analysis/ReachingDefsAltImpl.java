@@ -28,7 +28,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.2 2000-07-14 22:17:58 pnkfelix Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.3 2000-07-19 01:02:09 pnkfelix Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -105,11 +105,11 @@ public class ReachingDefsAltImpl extends ReachingDefs {
      *  of <code>Temp</code> <code>t</code> which reach 
      *  <code>HCodeElement</code> <code>hce</code>. */
     public Set reachingDefs(HCodeElement hce, Temp t) {
-	report("Processing HCodeElement: "+hce+" Temp: "+t);
+	// report("Processing HCodeElement: "+hce+" Temp: "+t);
 	// find out which BasicBlock this HCodeElement is from
 	BasicBlock b = bbf.getBlock(hce);
-	Util.assert(b != null, "no block for "+hce);
-	report("In BasicBlock: "+b.toString());
+	Util.assert(b != null, "no block" /* +" for "+hce */ );
+	// report("In BasicBlock: "+b.toString());
 	// get the map for the BasicBlock
 	Record r = (Record)cache.get(b);
 
@@ -125,7 +125,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 
 	// propagate in Set through the HCodeElements 
 	// of the BasicBlock in correct order
-	report("Propagating...");
+	// report("Propagating...");
 	for(Iterator it=b.statements().iterator(); it.hasNext(); ) {
 	    HCodeElement curr = (HCodeElement)it.next();
 	    if (curr == hce) return results;
@@ -147,14 +147,14 @@ public class ReachingDefsAltImpl extends ReachingDefs {
     // do analysis
     private void analyze(Map Temp_To_Pairs) {
 	// build Gen and Kill sets
-	report("Entering buildGenKillSets()");
+	// report("Entering buildGenKillSets()");
 	buildGenKillSets(Temp_To_Pairs);
-	report("Leaving buildGenKillSets()");
+	// report("Leaving buildGenKillSets()");
 
 	// solve for fixed point
-	report("Entering solve()");
+	// report("Entering solve()");
 	solve();
-	report("Leaving solve()");
+	// report("Leaving solve()");
 	// store only essential information
 	Iterator records = cache.values().iterator();
 	while(records.hasNext()) {
@@ -170,8 +170,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	    HCodeElement hce = (HCodeElement)it.next();
 	    StringBuffer strbuf = new StringBuffer();
 	    Temp[] tArray = null;
-	    report("Getting defs in: "+hce+" (defC:"+new java.util.ArrayList
-		   (ud.defC(hce))+")");
+	    //report("Getting defs in: "+hce+" (defC:"+new java.util.ArrayList(ud.defC(hce))+")");
 	    // special treatment of TYPECAST
 	    if(check_typecast && (hce instanceof TYPECAST)) {
 		strbuf.append("TYPECAST: ");
@@ -300,7 +299,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 
     }
     // debugging utility
-    private final boolean DEBUG = false;
+    private static final boolean DEBUG = false;
     private void report(String str) {
 	if (DEBUG) System.out.println(str);
     }
