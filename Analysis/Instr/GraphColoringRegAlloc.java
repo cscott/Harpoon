@@ -58,7 +58,7 @@ import java.util.Date;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.38 2000-11-02 11:30:46 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.39 2000-11-14 22:27:05 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
 
@@ -72,7 +72,27 @@ public class GraphColoringRegAlloc extends RegAlloc {
     private static final boolean UNIFY_INFO = false;
 
     // Code output control flags
-    private static final boolean COALESCE_MOVES = true;
+    private static final boolean DEF_COALESCE_MOVES = true;
+
+    private boolean COALESCE_MOVES = DEF_COALESCE_MOVES;
+
+    static RegAlloc.Factory BRAINDEAD_FACTORY = 
+	new RegAlloc.Factory() {
+	    public RegAlloc makeRegAlloc(Code c) {
+		GraphColorer gc;
+		
+		// gc = new SimpleGraphColorer();
+
+		// TODO: Implement a Node Selector that will not
+		// select nodes that have already been spilled in the
+		// code, and pass it in here...
+		NodeSelector ns = new NodeSelector();
+		gc = new OptimisticGraphColorer(ns);
+		ns.gcra = new GraphColoringRegAlloc(c, gc, true);
+		ns.gcra.COALESCE_MOVES = false;
+		return ns.gcra;
+	    }
+	    };
 
     static RegAlloc.Factory AGGRESSIVE_FACTORY = 
 	new RegAlloc.Factory() {
