@@ -26,7 +26,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for MIPS assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.1 2000-06-26 18:37:13 witchel Exp $
+ * @version $Id: Code.java,v 1.1.2.2 2000-06-27 18:24:16 witchel Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "mips";
@@ -260,14 +260,14 @@ public class Code extends harpoon.Backend.Generic.Code {
 	}
  
 	// Register Constraint check
-	if ((instr.getAssem().indexOf("mul ") != -1) ||
-	    (instr.getAssem().indexOf("mla ") != -1)) {
-	    Object rm = get(instr, instr.use()[0]);
-	    Object rd = get(instr, instr.def()[0]);
-	    Util.assert(rm == null ||
-			!rm.equals(rd),
-			"rd:"+rd+" and rm:"+rm+" must be different in mul");
-	}			
+	if ((instr.getAssem().indexOf("mult ") != -1) ||
+	    (instr.getAssem().indexOf("multu ") != -1)) {
+       Object rm = get(instr, instr.use()[0]);
+       Object rd = get(instr, instr.def()[0]);
+       Util.assert(rm == null ||
+                   !rm.equals(rd),
+                   "rd:"+rd+" and rm:"+rm+" must be different in mul");
+	}
     }
 
     public void removeAssignment(Instr instr, Temp preg) {

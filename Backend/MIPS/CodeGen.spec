@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.4 2000-06-27 17:52:51 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.5 2000-06-27 18:24:17 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing cc
 // on MIPS IRIX64 lion 6.2 03131016 IP19.  
@@ -695,7 +695,12 @@ import java.util.Iterator;
     private void emitHandlerStub(INVOCATION ROOT, Temp retex, Label handler) {
        declare( retex, frame.getLinker().forName("java.lang.Throwable"));
        emitMOVE ( ROOT, "move `d0, `s0", retex, v0 );
-       emitJUMP ( ROOT, "bal "+handler+" # handler stub", handler);
+       emit( ROOT, "bal "+handler+" # handler stub",
+             call_def_builtin, // clobbers
+             call_use, 
+                   new Label[] { handler} );
+       // Can't use emitJUMP bal has side effects
+       // emitJUMP ( ROOT, "bal "+handler+" # handler stub", handler);
     }
 /** Emit a fixup table entry */
     private void emitCallFixup(INVOCATION ROOT, Label retaddr, Label handler) {
@@ -990,11 +995,11 @@ BINOP<d>(ADD, j, UNOP<l>(NEG, k)) = i %{
 }%
 
 BINOP<p,i>(MUL, j, k) = i %{
-    emit( ROOT, "mul `d0, `s0, `s1", i, j, k );
+    emit( ROOT, "mult `d0, `s0, `s1", i, j, k );
 }%
 
 BINOP<p,i>(MUL, j, CONST<p,i>(c)) = i %{
-    emit( ROOT, "mul `d0, `s0, "+c, i, j );
+    emit( ROOT, "mult `d0, `s0, "+c, i, j );
 }%
 
 BINOP<l>(MUL, j, k) = i %{
