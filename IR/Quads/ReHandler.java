@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.39 1999-11-10 20:56:29 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.40 1999-11-11 18:09:06 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -411,7 +411,7 @@ final class ReHandler {
 	WorkSet todo=new WorkSet();
 	todo.add(start);
 	//set up visitor for analysis
-	TypeVisitor visitor=new TypeVisitor(ti, todo);
+	TypeVisitor visitor=new TypeVisitor(ti, todo,code);
 	//do the analysis
 	visitanalyze(todo, visitor);
 
@@ -965,8 +965,10 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
     HashMap typecast;
     Set visited;
     Set todo;
+    HCode hc;
     HClass otype;
-    TypeVisitor(TypeMap ti, Set todo) {
+    TypeVisitor(TypeMap ti, Set todo, HCode hc) {
+	this.hc=hc;
 	this.ti=ti;
 	this.todo=todo;
 	this.typecast=new HashMap();
@@ -1271,6 +1273,74 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	}
     }
 
+    //Method for RETURN
+    //out=in union gen
+    //where gen=any cast required by AGET [not already in in]
+    public void visit(RETURN q) {
+	//q.objectref() is the array to use
+	//need to make sure that:
+	//1) Object[] is assignable from q.objectref()
+	
+	boolean changed=false;
+	if (visited.contains(q)) {
+	    Quad pred=q.prev(0);
+	    Set casts=(Set)typecast.get(pred);
+	    Set ourcasts=(Set)typecast.get(q);
+	    Iterator iterate=casts.iterator();
+	    while (iterate.hasNext()) {
+		Tuple cast=(Tuple)iterate.next();
+		if (!ourcasts.contains(cast)) {
+		    changed=true;
+		    ourcasts.add(cast);
+		}
+	    }
+	    if (changed) {
+		//push our descendants
+		for (int i=0;i<q.nextLength();i++) {
+		    todo.add(q.next(i));
+		}
+	    }
+	}
+	else {
+	    if (q.retval()!=null) {
+		HClass rettype=hc.getMethod().getReturnType();
+		Set parentcast=(Set)typecast.get(q.prev(0));
+		WorkSet ourcasts=new WorkSet(parentcast);
+		if (!rettype.isAssignableFrom(ti.typeMap(q,q.retval()))) {
+		    //Need typecast??
+		    Iterator iterate=ourcasts.iterator();
+		    boolean foundcast=false;
+		    while (iterate.hasNext()) {
+			Tuple cast=(Tuple)iterate.next();
+			List list=cast.asList();
+			if (list.get(0)==q.retval()) {
+			    HClass hc=(HClass)list.get(1);
+			    if (rettype.isAssignableFrom(hc)) {
+				foundcast=true;
+				break;
+			    }
+			}
+		    }
+		    if (!foundcast) {
+			//Add typecast
+			ourcasts.add(new Tuple(new Object[]{q.retval(),rettype }));
+		    }
+		}
+		typecast.put(q, ourcasts);
+		visited.add(q);
+		for (int i=0;i<q.nextLength();i++)
+		    todo.add(q.next(i));
+   	    } else {
+		//never seen yet...
+		Set parentcast=(Set)typecast.get(q.prev(0));
+		WorkSet ourcasts=new WorkSet(parentcast);
+		typecast.put(q, ourcasts);
+		visited.add(q);
+		for (int i=0;i<q.nextLength();i++)
+		    todo.add(q.next(i));
+	    }
+	}
+    }
 
     //Method for AGET
     //out=in union gen
