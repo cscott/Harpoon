@@ -49,7 +49,7 @@ int main(int argc, char **argv)
       char filename[10];
       sprintf(filename,"file_%d",i);
       openfile(ptr,filename);
-    }
+    }    
 
     for(int j=0; j<90; j++) {
       for(int i=0; i<NUMFILES; i++) {
@@ -551,7 +551,7 @@ void createdisk()
   int blocksize=BLOCKSIZE;
   int numblocks=NUMBLOCK;
 
-  int fd=open("disk",O_CREAT|O_RDWR|O_TRUNC);
+  int fd=open("disk",O_CREAT|O_RDWR|O_TRUNC, S_IREAD|S_IWRITE);
 
   // creates numblocks and initializes them with 0
   char *buf=(char *)calloc(1,blocksize);
@@ -595,7 +595,7 @@ void createdisk()
     itb->entries[0].filesize=12*BLOCKSIZE;
     for(int i=0;i<12;i++)
       itb->entries[0].Blockptr[i]=i+5;  // blocks 5 to 16 are RootDirectory entries
-    itb->entries[0].referencecount=0;  
+    itb->entries[0].referencecount=0;
   }
 
   int val=munmap(vptr,LENGTH);

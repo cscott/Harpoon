@@ -1,0 +1,2 @@
+ #!/bin/bash
+g++ -Wno-deprecated -g -O0 -o file-debug1-notool file-debug1-notool.cc
