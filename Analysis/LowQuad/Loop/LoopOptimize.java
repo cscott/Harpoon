@@ -20,6 +20,7 @@ import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
+//import harpoon.Analysis.QuadSSA.DeadCode;
 
 import java.util.Iterator;
 import java.util.HashMap;
@@ -29,7 +30,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.9 1999-07-02 05:50:01 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.10 1999-07-02 19:26:52 bdemsky Exp $
  */
 public final class LoopOptimize {
     
@@ -72,19 +73,13 @@ public final class LoopOptimize {
 
     public void optimize(final HCode hc) {
     
-	LowQuadVisitor visitor = new LowQuadVisitor() {
-	    public void visit(Quad q) {
-	    } // END VISIT quad.
+	//Want defmap of temps in my invariants list, not new temps...
+	//Force generation of defmap
+	//Need to fix this!!!
 
-	    public void visit(CONST q) { /* do nothing. */ }
-	    public void visit(FOOTER q) {
-	    }
-	    public void visit(SIGMA q) {
-	    } // end VISIT SIGMA
-	    public void visit(PHI q) {
-	    } // end VISIT PHI.
-	};
-	
+	Temp []dummy=ud.allTemps(hc);	
+
+
 	// actual traversal code.
 	Loops lp=loopanal.rootloop(hc);
 	WorkSet kids=(WorkSet) lp.nestedLoops();
@@ -92,7 +87,7 @@ public final class LoopOptimize {
 	while (iterate.hasNext())
 	    recursetree(hc, (Loops)iterate.next(), new WorkSet());
 	//      Put this in soon
-	//	DeadCode.optimize(hc);
+	//       	DeadCode.optimize(hc);
     }
 
     void recursetree(HCode hc, Loops lp, WorkSet usedinvariants) {
@@ -100,7 +95,7 @@ public final class LoopOptimize {
 	    HCodeElement hce=(HCodeElement)(lp.loopEntrances()).toArray()[0];
 	    if (((HasEdges)hce).pred().length==2) {
 		doLoopinv(hc, lp,(Quad)hce, usedinvariants);
-		doLoopind(hc, lp,(Quad)hce);
+		doLoopind(hc, lp,(Quad)hce, usedinvariants);
 	    }
 	    else System.out.println("More than one entrance.");
 	} else
@@ -111,13 +106,15 @@ public final class LoopOptimize {
 	    recursetree(hc, (Loops)iterate.next(),usedinvariants);
     }
 
-    void doLoopind(HCode hc, Loops lp,Quad header) {
+    void doLoopind(HCode hc, Loops lp,Quad header,WorkSet usedinvariants) {
 	Map basmap=bimap.basicInductionsMap(hc,lp);
 	Map allmap=aimap.allInductionsMap(hc,lp);
 	WorkSet basic=new WorkSet(basmap.keySet());
 	WorkSet complete=new WorkSet(allmap.keySet());
+	LoopMap loopmap=new LoopMap(hc,lp,ssitossamap);
 
 	Iterator iterate=complete.iterator();
+
 	
 	int linkin;
 	Util.assert(((HasEdges)header).pred().length==2);
@@ -141,7 +138,7 @@ public final class LoopOptimize {
 		//Non pointer index...
 		//We have a derived induction variable...
 		Temp consttemp=null;
-		Temp initial=initialTemp(hc, induction.variable, lp.loopIncelements());
+		Temp initial=initialTemp(hc,(PHI)header, induction.variable, lp.loopIncelements());
 		if (induction.intmultiplier!=1) {
 		    //Add multiplication
 		    consttemp=new Temp(initial.tempFactory(),initial.name());
@@ -189,7 +186,7 @@ public final class LoopOptimize {
 		if (!induction.pointeroffset.isEmpty()) {
 		    Iterator pointers=induction.pointeroffset.iterator();
 		    while (pointers.hasNext()) {
-			Temp t=(Temp) pointers.next();
+			Temp t=loopmap.tempMap((Temp) pointers.next());
 			Temp newtemp=new Temp(indvariable.tempFactory(),indvariable.name());
 			Temp[] sources=new Temp[2];
 			sources[0]=t;
@@ -201,12 +198,10 @@ public final class LoopOptimize {
 			initial=newtemp;
 		    }
 		}
-		//Now we need to add phi's
-		//delete original definitions
-		//and add the add operands...
+
 		//and calculate the increment size.. [done]
 
-		Temp increment=findIncrement(hc, induction.variable, lp.loopIncelements());
+		Temp increment=loopmap.tempMap(findIncrement(hc, induction.variable, lp.loopIncelements(),header));
 		    //Need to do multiply...
 		if (induction.intmultiplier!=1) {
 		    //Add multiplication
@@ -231,18 +226,92 @@ public final class LoopOptimize {
 		    Quad.addEdge(loopcaller, which_succ, successor, which_pred);
 		    increment=newtemp;
 		}
+		
+		//delete the original definition
+		HCodeElement[] sources=ud.defMap(hc,indvariable);
+		Util.assert(sources.length==1);
+		Quad delquad=(Quad)sources[0];
 
+		//Mark it used....wouldn't want to try to hoist this into existance the future...
+		usedinvariants.push(delquad);
+
+		Quad.addEdge(delquad.prev(0),delquad.prevEdge(0).which_succ(), delquad.next(0), delquad.nextEdge(0).which_pred());
+		//Now we need to add phi's
+		Temp addresult=new Temp(initial.tempFactory(), initial.name());
+		header=handlePHI((PHI) header, indvariable,initial, addresult,hc,lp);
+		//and add the add operands...
+		makeADD(induction, addresult,indvariable,increment,hc,lp,header);
 	    }
 	}
+    }
+
+    Quad handlePHI(PHI phi, Temp indvariable, Temp initial, Temp addresult, HCode hc,Loops lp) {
+	//Add phi to PHI that looks like
+	//indvariable=phi(initial, addresult)
+	Temp[][] newsrc=new Temp[phi.numPhis()+1][phi.arity()];
+	Temp[] newdst=new Temp[phi.numPhis()+1];
+	int entrance=-1;
+	Util.assert(phi.arity()==2);
+
+	for (int i=0;i<phi.arity();i++) 
+	    if (!lp.loopIncelements().contains(phi.prev(i))) {
+		entrance=i;
+		break;
+	    }
+	Util.assert(entrance!=-1);
+	for (int philoop=0;philoop<phi.numPhis();philoop++) {
+	    newdst[philoop]=phi.dst(philoop);
+	    for (int arityloop=0;arityloop<phi.arity();arityloop++) {
+		newsrc[philoop][arityloop]=phi.src(philoop,arityloop);
+	    }
+	}
+	newdst[phi.numPhis()]=indvariable;
+	for (int j=0;j<phi.arity();j++) {
+	    if (j==entrance) 
+		newsrc[phi.numPhis()][j]=initial;
+	    else
+		newsrc[phi.numPhis()][j]=addresult;
+	}
+	PHI newphi=new PHI(phi.getFactory(), phi, newdst, newsrc,phi.arity());
+	//Link our successor in
+	Quad.addEdge(newphi,0,phi.next(0),phi.nextEdge(0).which_pred());
+	//Link our predecessors in
+	for (int k=0;k<phi.arity();k++) {
+	    Quad.addEdge(phi.prev(k),phi.prevEdge(k).which_succ(),newphi,k);
+	}
+	return newphi;
+    }
+
+    void makeADD(Induction induction, Temp addresult, Temp indvariable, Temp increment, HCode hc, Loops lp, Quad header) {
+	//Build addresult=POPER(add(indvariable, increment))
+	Temp basic=induction.variable;
+	Quad addposition=addQuad(hc,(PHI) header,basic,lp.loopIncelements());
+
+	Quad newquad=null;
+	Temp[] sources=new Temp[2];
+	sources[0]=indvariable;
+	sources[1]=increment;
+	if (induction.objectsize==null) {
+	    //need normal add
+	    newquad=new POPER(((LowQuadFactory)addposition.getFactory()),addposition,LQop.IADD,addresult, sources);
+	}
+	else {
+	    //need pointer add
+	    newquad=new POPER(((LowQuadFactory)addposition.getFactory()),addposition,LQop.IADD,addresult, sources);
+	}
+	Quad prev=addposition.prev(0);
+	int which_succ=addposition.prevEdge(0).which_succ();
+	Quad successor=addposition;
+	int which_pred=0;
+	Quad.addEdge(prev, which_succ,newquad,0);
+	which_succ=0;
+	Quad.addEdge(newquad, which_succ, successor, which_pred);
     }
     
     /** initialTemp takes in a <code>Temp</code> t that needs to be a basic
      *  induction variable, and returns a <code>Temp</code> with its initial value. */
     
-    Temp initialTemp(HCode hc, Temp t, Set loopelements) {
-	HCodeElement []sources=ud.defMap(hc,ssitossamap.tempMap(t));
-	Util.assert(sources.length==1);
-	PHI q=(PHI)sources[0];
+    Temp initialTemp(HCode hc, PHI q, Temp t, Set loopelements) {
 	int j=0;
 	for (;j<q.numPhis();j++) {
 	    if (q.dst(j)==t) break;
@@ -251,7 +320,7 @@ public final class LoopOptimize {
 	Util.assert(uses.length==2);
 	Temp initial=null;
 	for(int i=0;i<uses.length;i++) {
-	    sources=ud.defMap(hc,ssitossamap.tempMap(uses[i]));
+	    HCodeElement[] sources=ud.defMap(hc,ssitossamap.tempMap(uses[i]));
 	    Util.assert(sources.length==1);
 	    if (!loopelements.contains(sources[0])) {
 		initial=uses[i];
@@ -264,11 +333,8 @@ public final class LoopOptimize {
     /** <code>addQuad</code> takes in a <code>Temp</code> t that needs to be a basic
      *  induction variable, and returns the <code>Quad</code> that does the adding. */
     
-    Quad addQuad(HCode hc, Temp t, Set loopelements) {
-	HCodeElement []sources=ud.defMap(hc,ssitossamap.tempMap(t));
-	Util.assert(sources.length==1);
-	PHI q=(PHI)sources[0];
-	int j=0;
+    Quad addQuad(HCode hc, PHI q,Temp t, Set loopelements) {
+       	int j=0;
 	for (;j<q.numPhis();j++) {
 	    if (q.dst(j)==t) break;
 	}
@@ -276,22 +342,22 @@ public final class LoopOptimize {
 	Util.assert(uses.length==2);
 	Temp initial=null;
 	for(int i=0;i<uses.length;i++) {
-	    sources=ud.defMap(hc,ssitossamap.tempMap(uses[i]));
+	    HCodeElement[] sources=ud.defMap(hc,ssitossamap.tempMap(uses[i]));
 	    Util.assert(sources.length==1);
 	    if (loopelements.contains(sources[0])) {
 		initial=uses[i];
 		break;
 	    }
 	}
-	sources=ud.defMap(hc,ssitossamap.tempMap(initial));
+	HCodeElement[] sources=ud.defMap(hc,ssitossamap.tempMap(initial));
 	Util.assert(sources.length==1);
 	return (Quad)sources[0];
     }
 
     /** <code>findIncrement</code>*/
 
-    Temp findIncrement(HCode hc, Temp t, Set loopelements) {
-	Quad q=addQuad(hc,t,loopelements);
+    Temp findIncrement(HCode hc, Temp t, Set loopelements, Quad header) {
+	Quad q=addQuad(hc,(PHI) header, t,loopelements);
 	HCodeElement []source=ud.defMap(hc,ssitossamap.tempMap(t));
 	Util.assert(source.length==1);
 	PHI qq=(PHI)source[0];
