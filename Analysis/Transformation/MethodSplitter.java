@@ -40,7 +40,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.14 2000-11-02 11:26:16 pnkfelix Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.15 2000-11-07 23:41:03 cananian Exp $
  */
 public abstract class MethodSplitter {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -93,7 +93,7 @@ public abstract class MethodSplitter {
 	    (HMethod) ((List)split2orig.get(source)).get(0) : source;
 	if (which == ORIGINAL) return orig;
 	Util.assert(which.suffix!=null,"Null token suffixes are not allowed!");
-	List swpair = Default.pair(source, which);
+	List swpair = Default.pair(orig, which);
 	HMethod splitM = (HMethod) versions.get(swpair);
 	if (splitM == null) {
 	    HClassMutator hcm = orig.getDeclaringClass().getMutator();
