@@ -13,29 +13,29 @@ A. First compile the specification checker:
 cd MCC
 java -cp .. MCC.Compiler -aggressivesearch -prunequantifiernodes specs/filesystem/test3
 
-B. Next move files to the runtime directory:
+B. Next move files to the CRuntime directory:
 
-cp size.* Runtime
-cp specs/filesystem/test3_aux.* Runtime
-cp specs/filesystem/test3.cc Runtime
+cp size.* CRuntime
+cp specs/filesystem/test3_aux.* CRuntime
+cp specs/filesystem/test3.c CRuntime
 
 C. Next build the runtime:
 
-cd Runtime
+cd CRuntime
 mkdir specs
 cd specs
 ln -s .. filesystem
 cd ..
 ./buildruntime
-g++ -O9 -c test3_aux.cc
-g++ -O9 danfile.cc *.o -o danfile
+gcc -O9 -c test3_aux.c
+gcc -O9 file.c *.o -o file
 
 D. To run:
 
-./danfile 0 (create filesystem)
+./file 0 (create filesystem)
 
-./danfile 1 (write file to filesytem, interrupt with ctrl-C to
+./file 5 (write file to filesytem, interrupt with ctrl-C to
 introduce an error)
 
-./danfile x (check & repair filesystem)
+./file x (check & repair filesystem)
 
