@@ -20,7 +20,7 @@ import java.util.Stack;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Stm.java,v 1.1.2.18 2000-03-26 06:29:10 jwhaley Exp $
+ * @version $Id: Stm.java,v 1.1.2.19 2000-07-13 14:40:57 cananian Exp $
  */
 abstract public class Stm extends Tree {
     protected Stm(TreeFactory tf, HCodeElement source, int arity) {
@@ -47,16 +47,12 @@ abstract public class Stm extends Tree {
 	int size = list.size();
 	if      (size==0) { return null; }
 	else if (size==1) { return (Stm)list.get(0); } 
-	else { 
+	else { // divide and conquer
 	    Stm          hce = (Stm)list.get(0); 
 	    TreeFactory  tf  = hce.getFactory();
-	    SEQ s=new SEQ(tf,hce,(Stm)list.get(size-2),(Stm)list.get(size-1));
-	    for (ListIterator li=list.listIterator(size-2);li.hasPrevious();) {
-		Stm previous = (Stm)li.previous();
-		Util.assert(previous.getFactory()==tf);
-		s = new SEQ(tf, hce, previous, s);
-	    }
-	    return s;
+	    return new SEQ(tf,hce,
+			   toStm(list.subList(0,size/2)),
+			   toStm(list.subList(size/2,list.size())));
 	}		
     }
 
