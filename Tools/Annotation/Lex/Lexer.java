@@ -1,11 +1,13 @@
 package harpoon.Tools.Annotation.Lex;
 
+import harpoon.Tools.Annotation.Sym;
+
 import java.io.Reader;
 import java.io.LineNumberReader;
 
 import java.util.Arrays;
 /* Java lexer.
- * Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+ * Copyright (C) 2002 C. Scott Ananian <cananian@alumni.princeton.edu>
  * This program is released under the terms of the GPL; see the file
  * COPYING for more details.  There is NO WARRANTY on this code.
  */
@@ -14,6 +16,7 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
   LineNumberReader reader;
   boolean isJava12;
   boolean isJava14;
+  boolean isJava15;
   String line = null;
   int line_pos = 1;
   int line_num = 0;
@@ -26,9 +29,55 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
     this.reader = new LineNumberReader(new EscapedUnicodeReader(reader));
     this.isJava12 = java_minor_version >= 2;
     this.isJava14 = java_minor_version >= 4;
+    this.isJava15 = java_minor_version >= 5;
   }
   
   public java_cup.runtime.Symbol nextToken() throws java.io.IOException {
+    java_cup.runtime.Symbol sym =
+      lookahead==null ? _nextToken() : lookahead.get();
+    if (isJava15 && sym.sym==Sym.LT && shouldBePLT())
+      sym.sym=Sym.PLT;
+    last = sym;
+    return sym;
+  }
+  private boolean shouldBePLT() throws java.io.IOException {
+    // look ahead to see if this LT should be changed to a PLT
+    if (last==null || last.sym!=Sym.IDENTIFIER)
+      return false;
+    if (lookahead==null) lookahead = new FIFO(new FIFO.Getter() {
+	java_cup.runtime.Symbol next() throws java.io.IOException
+	{ return _nextToken(); }
+      });
+    int i=0;
+    // skip past IDENTIFIER (DOT IDENTIFIER)*
+    if (lookahead.peek(i++).sym != Sym.IDENTIFIER)
+      return false;
+    while (lookahead.peek(i).sym == Sym.DOT) {
+      i++;
+      if (lookahead.peek(i++).sym != Sym.IDENTIFIER)
+	return false;
+    }
+    // skip past (LBRACK RBRACK)*
+    while (lookahead.peek(i).sym == Sym.LBRACK) {
+      i++;
+      if (lookahead.peek(i++).sym != Sym.RBRACK)
+	return false;
+    }
+    // now the next sym has to be one of LT GT COMMA EXTENDS IMPLEMENTS
+    switch(lookahead.peek(i).sym) {
+    default:
+      return false;
+    case Sym.LT:
+    case Sym.GT:
+    case Sym.COMMA:
+    case Sym.EXTENDS:
+    case Sym.IMPLEMENTS:
+      return true;
+    }
+  }
+  private java_cup.runtime.Symbol last = null;
+  private FIFO lookahead = null;
+  public java_cup.runtime.Symbol _nextToken() throws java.io.IOException {
     /* tokens are:
      *  Identifiers/Keywords/true/false/null (start with java letter)
      *  numeric literal (start with number)
@@ -139,6 +188,7 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
 	if (star_pos<0) {
 	  text.append(line.substring(line_pos));
 	  c.appendLine(text.toString()); text.setLength(0);
+	  line_pos = line.length();
 	  nextLine();
 	  if (line==null) 
 	    throw new Error("Unterminated comment at end of file.");

@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Stack;
 
 /* Java 1.4 parser for CUP.  (despite the class name)
- * Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+ * Copyright (C) 2002 C. Scott Ananian <cananian@alumni.princeton.edu>
  * This program is released under the terms of the GPL; see the file
  * COPYING for more details.  There is NO WARRANTY on this code.
  */
@@ -34,7 +34,7 @@ JDK 1.4 Features added:
   assertion statement.
   statement_without_trailing_substatement ::= ...
      |		assert_statement ;
-assert_statement ::=
+  assert_statement ::=
 		ASSERT expression SEMICOLON
 	|	ASSERT expression COLON expression SEMICOLON
 	;
@@ -482,8 +482,10 @@ terminal NULL_LITERAL;
 terminal CONST, GOTO;
 // strictfp keyword, new in Java 1.2
 terminal STRICTFP;
-// lexer compatibility with Java 1.4
-terminal ASSERT;
+// assert keyword, new in Java 1.4
+terminal ASSERT; // assert_statement
+// lexer compatibility with Java 1.5
+terminal PLT;
 
 // 19.2) The Syntactic Grammar
 non terminal goal;
