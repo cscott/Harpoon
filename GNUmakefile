@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.61 1999-08-18 21:16:51 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.62 1999-09-08 16:22:46 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -31,7 +31,8 @@ JDOCFLAGS += \
 	$(shell if javadoc -help 2>&1 | grep -q -- -link; \
 	then echo -link $(JDKDOCLINK) ; fi)
 
-SUPPORT := Support/Lex.jar Support/CUP.jar Support/collections.jar
+SUPPORT := Support/Lex.jar Support/CUP.jar Support/jasmin.jar \
+	   Support/collections.jar
 # filter out collections.jar if we don't need it.
 ifeq (0, ${MAKELEVEL})
 SUPPORTC:= $(filter-out \
