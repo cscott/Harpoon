@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.7 1998-09-23 23:57:45 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.8 1998-09-24 21:24:10 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -161,7 +161,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     void raiseV(Hashtable V, Worklist Wv, Temp t, LatticeVal a) {
 	LatticeVal old = (LatticeVal) V.get(t);
 	// only allow raising value in lattice.
-	if (old != null && a.equals(old)) return;
+	if (old != null && old.equals(a)) return;
 	if (old != null && !a.higherThan(old)) return;
 	V.put(t, a);
 	Wv.push(t);
