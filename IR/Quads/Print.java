@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.1.2.7 1999-08-04 05:52:29 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.7.2.1 1999-09-16 16:37:04 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
@@ -65,7 +65,7 @@ abstract class Print  {
 	    // Add footer tag to HEADER quads.
 	    if (ql[i] instanceof HEADER)
 		s += " [footer at "+labels.get(ql[i].next(0))+"]";
-	    // Print CJMP, SWITCH & PHI specially.
+	    // Print CALL, CJMP, SWITCH & PHI specially.
 	    if (ql[i] instanceof CJMP) {
 		CJMP Q = (CJMP) ql[i];
 		indent(pw, ql[i], l, 
@@ -96,13 +96,15 @@ abstract class Print  {
 		indent(pw, ql[i], l, sb.toString());
 		indent(pw, Q);
 	    } else if (ql[i] instanceof CALL) {
-		// add a line break before 'exceptions'
-		int j = s.indexOf(" exceptions");
-		if (j<0) indent(pw, ql[i], l, s);
-		else {
-		    indent(pw, ql[i], l, s.substring(0, j));
-		    indent(pw, null, null, " " + s.substring(j));
-		}
+		CALL Q = (CALL) ql[i];
+		// reformat stuff after 'exceptions'
+		int j = s.indexOf(" exceptions ");
+		Util.assert(j>=0,"CALL.toString() changed, oops.");
+		indent(pw, Q, l, s.substring(0, j));
+		if (Q.retex()!=null) // suppress exc info if not applicable
+		    indent(pw, null, null, " exception in "+Q.retex()+"; "+
+			   "handler at "+labels.get(Q.next(1)));
+		indent(pw, Q); // print sigma functions.
 	    } else if (ql[i] instanceof METHOD) {
 		indent(pw, ql[i], l, s);
 		StringBuffer sb = new StringBuffer();
