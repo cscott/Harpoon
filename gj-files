@@ -67,6 +67,8 @@ Analysis/BasicBlock.java
 Analysis/BasicBlockFactoryInterf.java
 Analysis/BasicBlockInterf.java
 Analysis/ClassHierarchy.java
+Analysis/Companions/AbstractGraph.java
+Analysis/Companions/Graph.java
 Analysis/Counters/EpilogMutator.java
 Analysis/Counters/RuntimeMethodCloner.java
 Analysis/DefaultAllocationInformation.java
