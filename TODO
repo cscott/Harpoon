@@ -1,0 +1,38 @@
+---- Aug-2-98
+X Interface should have:
+X   convert method, to go from one form to another.
+X    (automagic chaining, if each form just knows one other source form&convers.)
+X  line number method.
+X  enumeration method.
+X  name method (of course) -- (change putCode)
+
+X Add new interface type for primitive types (simplify isPrimitive)
+O   only one method in interface: getDescriptor();
+each type has value/add/sub/etc methods that are *not in interface*
+  because return value is of the same primitive type (ie, not object)
+  see java.lang.reflect rules for encapsulating return values.
+  want to be able to specify that type is Z, not java.lang.Boolean obj.
+  think this one over.
+Easy.  Superclass basic java language type objects with our special
+ 'primary type' object.  Then we can easily tell which is which.
+ (we can also add cool add/sub/etc functions while we're at it.)
+
+---- Aug-1-98
+X Make --CUTHERE-- file joiner/separator (perl?)
+X use above to search/replace <cananian...> with (cananian...)
+X write "getCode(String format)" method to HMethod, preload with byte[].
+X  -- find out whether interface methods have code attributes.
+X     NOPE!
+X write "print( )" methods to pretty-print a class file.
+X  -- separate ones for raw and HClass?
+X     -- HClass should pretty-print in java source form.
+X     -- Raw.* should pretty-print the exact class file contents.
+Xfigure out whether we are reporting methods of interfaces properly
+X  (can we have an abstract interface method that doesn't show up in
+X   the declaredMethods?)
+X   WE ARE.  YOU CAN'T.
+X add Java1.1 attributes (Synthetic and InnerClasses)
+X add accessor function for SourceFile attribute
+X add accessor function for localvariable attribute.
+X create an interface type for all code representations.
+X modify getCode to use it.
