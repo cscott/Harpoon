@@ -1,3 +1,4 @@
+/* Field-related JNI functions.  [CSA] */
 #include <jni.h>
 #include "jni-private.h"
 
