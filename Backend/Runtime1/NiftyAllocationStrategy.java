@@ -18,12 +18,13 @@ import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Type;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 /**
  * <code>NiftyAllocationStrategy</code> implements stack- and
  * thread-clustered-allocation strategies.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NiftyAllocationStrategy.java,v 1.1.2.6 2000-07-16 14:27:51 cananian Exp $
+ * @version $Id: NiftyAllocationStrategy.java,v 1.1.2.7 2000-07-16 17:09:40 cananian Exp $
  */
 public class NiftyAllocationStrategy extends MallocAllocationStrategy {
 
