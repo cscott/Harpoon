@@ -8,6 +8,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.RawClass.MethodInfo;
 import harpoon.IR.RawClass.AttributeCode;
 import harpoon.IR.RawClass.AttributeLineNumberTable;
@@ -28,18 +29,20 @@ import java.util.Set;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.11.6.1 2000-01-11 02:09:02 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.11.6.2 2000-01-11 09:05:49 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
   /** The name of this code view. */
   public static final String codename = "bytecode";
 
-  HMethod parent;
-  MethodInfo methodinfo;
+  final Linker linker;
+  final HMethod parent;
+  final MethodInfo methodinfo;
 
   /** Constructor. */
   public Code(HMethod parent, MethodInfo methodinfo) {
+    this.linker = parent.getDeclaringClass().getLinker();
     this.parent = parent;
     this.methodinfo = methodinfo;
   }
@@ -176,7 +179,7 @@ public class Code extends HCode {
 	// Make an HClass for the exception caught...
 	HClass ex = null;
 	if (et[i].catch_type != 0)
-	  ex = HClass.forDescriptor("L"+et[i].catch_type().name()+";");
+	  ex = linker.forDescriptor("L"+et[i].catch_type().name()+";");
 	else
 	  ex = null; // to indicate 'catch any'.
 	// and make the official exception entry.

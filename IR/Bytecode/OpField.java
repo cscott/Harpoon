@@ -14,7 +14,7 @@ import harpoon.IR.RawClass.ConstantFieldref;
  * <code>CONSTANT_Fieldref</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpField.java,v 1.2.2.4 1999-08-04 06:30:57 cananian Exp $
+ * @version $Id: OpField.java,v 1.2.2.4.6.1 2000-01-11 09:05:49 cananian Exp $
  * @see harpoon.IR.RawClass.ConstantFieldref
  */
 public final class OpField extends Operand {
@@ -27,7 +27,7 @@ public final class OpField extends Operand {
       throw new Error("OpField not given CONSTANT_Fieldref");
     ConstantFieldref cf = (ConstantFieldref) c;
 
-    HClass cls = HClass.forName(cf.class_index().name().replace('/','.'));
+    HClass cls = parent.linker.forName(cf.class_index().name().replace('/','.'));
     hfield = cls.getField(cf.name_and_type_index().name());
     if (!hfield.getDescriptor().equals(cf.name_and_type_index().descriptor()))
       throw new Error("Field does not resolve to proper type.");
