@@ -15,15 +15,13 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.2 1998-09-14 07:02:25 cananian Exp $
+ * @version $Id: Code.java,v 1.3 1998-09-15 01:51:47 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
-  public static Code REGISTER = new Code();
-  private Code() { }
 
-  HMethod parent = null;
-  MethodInfo methodinfo = null;
+  HMethod parent;
+  MethodInfo methodinfo;
 
   /** Constructor. */
   public Code(HMethod parent, MethodInfo methodinfo) {
