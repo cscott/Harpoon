@@ -1,5 +1,9 @@
 #include <jni.h>
 #include "java_lang_Runtime.h"
+#include <config.h>
+#ifdef BDW_CONSERVATIVE_GC
+# include "gc.h"
+#endif
 
 #include <assert.h>
 #include <unistd.h>
@@ -38,9 +42,14 @@ JNIEXPORT jobject JNICALL Java_java_lang_Runtime_execInternal
  * Method:    freeMemory
  * Signature: ()J
  */
+/* returns the amount of free memory in the system */
 JNIEXPORT jlong JNICALL Java_java_lang_Runtime_freeMemory
   (JNIEnv *env, jobject objRuntime) {
-    assert(0);
+#ifdef BDW_CONSERVATIVE_GC
+  return (jlong) GC_get_free_bytes();
+#else
+  assert(0/*unimplemented*/);
+#endif
 }
 
 /*
@@ -50,7 +59,11 @@ JNIEXPORT jlong JNICALL Java_java_lang_Runtime_freeMemory
  */
 JNIEXPORT jlong JNICALL Java_java_lang_Runtime_totalMemory
   (JNIEnv *env, jobject objRuntime) {
-    assert(0);
+#ifdef BDW_CONSERVATIVE_GC
+  return (jlong) GC_get_heap_size();
+#else
+  assert(0/*unimplemented*/);
+#endif
 }
 
 /*
@@ -60,7 +73,11 @@ JNIEXPORT jlong JNICALL Java_java_lang_Runtime_totalMemory
  */
 JNIEXPORT void JNICALL Java_java_lang_Runtime_gc
   (JNIEnv *env, jobject objRuntime) {
-    assert(0);
+#ifdef BDW_CONSERVATIVE_GC
+  GC_gcollect();
+#else
+  assert(0/*unimplemented*/);
+#endif
 }
 
 /*
@@ -70,7 +87,11 @@ JNIEXPORT void JNICALL Java_java_lang_Runtime_gc
  */
 JNIEXPORT void JNICALL Java_java_lang_Runtime_runFinalization
   (JNIEnv *env, jobject objRuntime) {
-    assert(0);
+#ifdef BDW_CONSERVATIVE_GC
+  GC_invoke_finalizers();
+#else
+  assert(0/*unimplemented*/);
+#endif
 }
 
 /*
