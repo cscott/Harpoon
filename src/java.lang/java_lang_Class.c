@@ -170,9 +170,9 @@ JNIEXPORT jboolean JNICALL Java_java_lang_Class_isArray
 JNIEXPORT jboolean JNICALL Java_java_lang_Class_isPrimitive
   (JNIEnv *env, jobject cls) {
     struct claz *thisclz = FNI_GetClassInfo((jclass)cls)->claz;
-    /* weed out all non-primitives except for java/lang/Object */
-    if (thisclz->display[0]!=thisclz) return JNI_FALSE;
-    /* weed out java/lang/Object */
+    /* primitives have null in the first slot of the display. */
+    if (thisclz->display[0]!=NULL) return JNI_FALSE;
+    /* but so do interfaces.  weed them out using the interface list. */
     if (*(thisclz->interfaces)!=NULL) return JNI_FALSE;
     return JNI_TRUE;
 }
