@@ -12,19 +12,18 @@ import java.util.Collection;
  * control-flow graphs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGraphable.java,v 1.1.2.1 1999-11-30 05:00:48 cananian Exp $
+ * @version $Id: CFGraphable.java,v 1.1.2.2 2000-01-05 04:08:27 duncan Exp $
  */
-public interface CFGraphable extends harpoon.ClassFile.HCodeElement {
-        
+public interface CFGraphable extends harpoon.ClassFile.HCodeElement {       
     /** Returns an array of all the edges to and from this 
      *  <code>CFGraphable</code>. */
-    public HCodeEdge[] edges();
+    public CFGEdge[] edges();
     /** Returns an array of all the edges entering this
      *  <code>CFGraphable</code>. */
-    public HCodeEdge[] pred();
+    public CFGEdge[] pred();
     /** Returns an array of all the edges leaving this
      *  <code>CFGraphable</code>. */
-    public HCodeEdge[] succ();
+    public CFGEdge[] succ();
 
     // JDK 1.2 collections API: [CSA, 15-Jun-1999]
     /** Returns a <code>Collection</code> of all the edges to and from
@@ -32,7 +31,7 @@ public interface CFGraphable extends harpoon.ClassFile.HCodeElement {
     public Collection edgeC();
     /** Returns a <code>Collection</code> of all the edges to
 	this <code>HCodeElement</code>. 
-        Each <code>HCodeEdge</code> returned is guaranteed to return 
+        Each <code>CFGEdge</code> returned is guaranteed to return 
 	<code>this</code> in response to a call to <code>to()</code>;
 	the actual predecessor will be returned from
 	<code>from()</code>.  
@@ -40,7 +39,7 @@ public interface CFGraphable extends harpoon.ClassFile.HCodeElement {
     public Collection predC();
     /** Returns a <code>Collection</code> of all the edges from
 	this <code>HCodeElement</code>. 
-        Each <code>HCodeEdge</code> returned is guaranteed to return
+        Each <code>CFGEdge</code> returned is guaranteed to return
 	<code>this</code> in response to a call to
 	<code>from()</code>; the actual successor to <code>this</code>
 	will be returned from <code>to()</code>.
