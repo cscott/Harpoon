@@ -76,7 +76,7 @@ polish: clean
 
 wipe:	clean doc-clean
 
-backup:
+backup: # DOESN'T WORK ON NON-LOCAL MACHINES
 	$(RM) ../harpoon-backup.tar.gz
 	cd ..; tar czf harpoon-backup.tar.gz CVSROOT
 	$(SCP) ../harpoon-backup.tar.gz \
