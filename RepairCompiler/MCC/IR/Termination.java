@@ -547,7 +547,8 @@ public class Termination {
 		generateremovefromsetrelation(gn,ar);
 	    } else if (ar.getType()==AbstractRepair.MODIFYRELATION) {
 		/* Generate remove/add pairs */
-		generateremovefromsetrelation(gn,ar);
+		if (ar.needsRemoves(state))
+		    generateremovefromsetrelation(gn,ar);
 		generateaddtosetrelation(gn,ar);
 		/* Generate atomic modify */
 		generatemodifyrelation(gn,ar);

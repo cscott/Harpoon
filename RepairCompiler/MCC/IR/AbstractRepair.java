@@ -1,4 +1,5 @@
 package MCC.IR;
+import MCC.State;
 
 class AbstractRepair {
     public final static int ADDTOSET=1;
@@ -148,6 +149,17 @@ class AbstractRepair {
 
     public Descriptor getDescriptor() {
 	return descriptor;
+    }
+
+
+    /** Thie method tells whether the repair needs to remove objects *
+     *  from the relation, or whether the model definition rules make
+     *  the remove unnecessary.*/
+
+    public boolean needsRemoves(State state) {
+	assert type==MODIFYRELATION;
+	SetDescriptor sd=getPredicate().getPredicate().inverted()?getRangeSet():getDomainSet();
+	return !ConstraintDependence.rulesensurefunction(state,(RelationDescriptor)getDescriptor(), sd, getPredicate().getPredicate().inverted(), true);
     }
 
     public AbstractRepair(DNFPredicate dp,int typ, Descriptor d, Sources s) {

@@ -199,13 +199,15 @@ public class ConstraintDependence {
 		SetQuantifier sq=(SetQuantifier)q;
 		if (ve.getVar()!=sq.getVar())
 		    return false;
-		if (!sq.getSet().isSubset(f.getSet()))
-		    return false;
-		if (!(((r.getGuardExpr() instanceof BooleanLiteralExpr)&&
-		       ((BooleanLiteralExpr)r.getGuardExpr()).getValue()==true))||isPartial)
-		    return false;
+		if (!isPartial) {
+		    if (!sq.getSet().isSubset(f.getSet()))
+			return false;
+		    if (!((r.getGuardExpr() instanceof BooleanLiteralExpr)&&
+			   ((BooleanLiteralExpr)r.getGuardExpr()).getValue()==true))
+			return false;
+		}
 		Expr e2=f.isInverse()?ri.getLeftExpr():ri.getRightExpr();
-		if (e2.isSafe())
+		if (isPartial||e2.isSafe())
 		    foundrule=true;
 		else
 		    return false;

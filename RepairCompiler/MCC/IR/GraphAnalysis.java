@@ -359,7 +359,7 @@ public class GraphAnalysis {
 			if (!containsgn3)
 			    cantremove.remove(gn3);
 		    }
-		    if (ismodify&&((numadd==0)||(numremove==0))) {
+		    if (ismodify&&((numadd==0)||(numremove==0&&ar.needsRemoves(termination.state)))) {
 			for (Iterator edgeit2=gn2.edges();edgeit2.hasNext();) {
 			    GraphNode.Edge e2=(GraphNode.Edge)edgeit2.next();
 			    GraphNode gn3=e2.getTarget();
@@ -529,7 +529,7 @@ public class GraphAnalysis {
 			    numremove++;
 		    }
 		}
-		if ((numadd==0)||(numremove==0)) {
+		if ((numadd==0)||(numremove==0&&ar.needsRemoves(termination.state))) {
 		    for(Iterator it2=gn.edges();it2.hasNext();) {
 			GraphNode.Edge edge=(GraphNode.Edge)it2.next();
 			GraphNode gn2=edge.getTarget();
