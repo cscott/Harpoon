@@ -23,13 +23,14 @@
 # define DECLARE_LOCK_LOCAL(which)
 #endif
 
-/* all counters are size_t, and are initialized to 0 */
+/* all counters are stat_t, and are initialized to 0 */
 #ifdef WITH_STATISTICS
+typedef unsigned long long stat_t;
 # define DECLARE_STATS_EXTERN(which) \
-	extern size_t stat_counter_##which;\
+	extern stat_t stat_counter_##which;\
 	DECLARE_LOCK_EXTERN(which)
 # define DECLARE_STATS_LOCAL(which) \
-	size_t stat_counter_##which;\
+	stat_t stat_counter_##which;\
 	DECLARE_LOCK_LOCAL(which)
 # define INCREMENT_STATS(which, amount) \
 	do {\

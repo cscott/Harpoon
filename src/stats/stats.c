@@ -32,23 +32,23 @@ extern double ttl_gc_time;
 void print_statistics(void);
 static void stat_signal_handler(int sig) { print_statistics(); }
 
-#define FS(x) (long) FETCH_STATS(x) /* convenience macro */
+#define FS(x) (unsigned long long) FETCH_STATS(x) /* convenience macro */
 void print_statistics(void) {
   /* lead off with a new-line in case we're using SIGALRM */
   printf("\n");
 #ifdef BDW_CONSERVATIVE_GC
   printf("Total gc time at this point: %f ms\n", (float) ttl_gc_time);
 #endif
-  printf("MonitorEnter operations: %8ld (contention on %ld ops)\n",
+  printf("MonitorEnter operations: %8llu (contention on %llu ops)\n",
 	 FS(monitor_enter), FS(monitor_contention));
 #ifdef WITH_CLUSTERED_HEAPS
   printf("HEAPSIZE: %ld  POOLSIZE: %ld  THRALLOC: %d  STKALLOC: %d\n"
-	 "Stack allocation:        %8ld bytes %8ld objects\n"
-	 "Thread-local allocation: %8ld bytes %8ld objects\n"
-	 "Global allocation:       %8ld bytes %8ld objects\n"
-	 "Threads created:         %8ld (in %ld heaps)\n"
-	 "Average heap size/thread:%8ld bytes\n"
-	 "Thread heap overflow:    %8ld bytes\n",
+	 "Stack allocation:        %8llu bytes %8llu objects\n"
+	 "Thread-local allocation: %8llu bytes %8llu objects\n"
+	 "Global allocation:       %8llu bytes %8llu objects\n"
+	 "Threads created:         %8llu (in %llu heaps)\n"
+	 "Average heap size/thread:%8llu bytes\n"
+	 "Thread heap overflow:    %8llu bytes\n",
 	 (long) HEAPSIZE, (long) POOLSIZE,
 #ifdef REALLY_DO_THR_ALLOC
 	 1,
@@ -64,7 +64,7 @@ void print_statistics(void) {
 	 FS(thr_bytes_alloc), FS(thr_objs_alloc),
 	 FS(gbl_bytes_alloc), FS(gbl_objs_alloc),
 	 FS(threads_created), FS(thread_heaps_created),
-	 FS(threads_created) ? FS(thr_bytes_alloc)/FS(threads_created) : 0L,
+	 FS(threads_created) ? FS(thr_bytes_alloc)/FS(threads_created) : 0LL,
 	 FS(thr_bytes_overflow));
 #endif /* WITH_CLUSTERED_HEAPS */
   fflush(stdout);
