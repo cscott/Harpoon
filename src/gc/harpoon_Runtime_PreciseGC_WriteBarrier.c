@@ -156,7 +156,9 @@ void print_write_barrier_stats()
   int top_10_overall[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
   int top_10_elim[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
   int total = 0, needed = 0, not_needed = 0, nulls = 0;
-  int removable = 0, remaining = 0, top_10_removed = 0, top_10_total = 0;
+  int removable = 0, stransformable = 0;
+  int transformable = 0, remaining = 0;
+  int top_10_removed = 0, top_10_total = 0;
   
   printf("\n");
   printf("WRITE BARRIERS CALLED\n");
@@ -198,13 +200,20 @@ void print_write_barrier_stats()
 	    }
 	}
 
-      if (total_barriers[i] != dont_need[i]) {
-	remaining += total_barriers[i];
+      // some needed write barriers
+      if (need[i] != 0) {
+	if (dont_need[i] == 0) {
+	  // may be transformable
+	  transformable += total_barriers[i];
+	  stransformable ++;
+	} else {
+	  // not transformable
+	  remaining += total_barriers[i];
+	}
 	continue;
       }
 
-      // now we are looking at those where all calls
-      // were not needed
+      // no needed write barriers
       removable++;
 	  
       shift = i;
@@ -276,10 +285,18 @@ void print_write_barrier_stats()
 	 removable, num_write_barriers, 
 	 (float)removable/(float)num_write_barriers);
   printf("IF ALL REMOVED, CALLS ELIMINATED:\t%8d of %8d (%4f)\n",
-	 total - remaining, total, (float)(total-remaining)/(float)total);
+	 total - remaining - transformable, total, 
+	 (float)(total-remaining-transformable)/(float)total);
   printf("IF TOP 10 REMOVED, CALLS ELIMINATED:\t%8d of %8d (%4f)\n",
 	 top_10_removed, total, (float)top_10_removed/(float)total);
   printf("\n");
+  printf("DYNAMIC REMOVABLE     = %d\n", total - remaining - transformable);
+  printf("DYNAMIC TRANSFORMABLE = %d\n", transformable);
+  printf("DYNAMIC REMAINING     = %d\n", remaining);
+  printf("STATIC REMOVABLE     = %d\n", removable);
+  printf("STATIC TRANSFORMABLE = %d\n", stransformable);
+  printf("STATIC REMAINING     = %d\n", 
+	 num_write_barriers - removable - stransformable);
 #else
   printf("Write barrier called %d times.\n", times_called);
 #endif

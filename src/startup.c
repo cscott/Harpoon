@@ -4,8 +4,10 @@
 #include "java.lang/java_lang_Thread.h"
 #include "flexthread.h"
 #ifdef WITH_PRECISE_GC
-#include "jni-gc.h"
-#include "gc/omit_gc_timer.h"
+# include "jni-gc.h"
+# ifdef WITH_GENERATIONAL_GC
+#  include "gc/omit_gc_timer.h"
+# endif
 #endif
 #ifdef WITH_GC_STATS
 #include "realtime/GCstats.h"
@@ -38,7 +40,7 @@ int main(int argc, char *argv[]) {
   int st=0;
   int i;
   
-#ifdef WITH_PRECISE_GC
+#ifdef WITH_GENERATIONAL_GC
   init_timer();
 #endif
 

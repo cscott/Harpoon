@@ -41,7 +41,7 @@ if (halt_for_GC_flag) halt_for_GC(); })
 #ifdef JOLDEN_WRITE_BARRIER
 
 // array of intergenerational references
-#define INTERGEN_LENGTH 2300000
+#define INTERGEN_LENGTH 3700000
 jobject_unwrapped **intergen;
 int intergen_next;
 #else
@@ -95,8 +95,10 @@ void find_generational_refs()
       for(intergen_curr = 0; intergen_curr < intergen_next; intergen_curr++)
 	{
 	  jobject_unwrapped *ref = intergen[intergen_curr];
-	  
-	  if (IN_FROM_SPACE(*ref, young_gen) || IN_TO_SPACE(*ref, young_gen))
+
+	  //if (IN_FROM_SPACE(*ref, young_gen) || IN_TO_SPACE(*ref, young_gen))
+	  if (IN_MARKSWEEP_HEAP(ref, old_gen) &&
+	      (IN_FROM_SPACE(*ref, young_gen) || IN_TO_SPACE(*ref, young_gen)))
 	    {
 	      add_to_root_set(ref);
 	      intergen[intergen_saved++] = intergen[intergen_curr];
@@ -309,6 +311,11 @@ void generational_handle_reference(jobject_unwrapped *ref)
       if (CLAZ_OKAY(obj))
 	{
 	  debug_verify_object(obj);
+
+	  // BIT EXPERIMENT: pretend we are stealing bit from
+	  // claz pointer. in reality we would use hashcode bit.
+	  //if ((void *)obj < young_gen.survived && 
+	  //(((ptroff_t)(obj->claz) & 2) == 0))
 
 	  // if the object has survived a collection, promote it
 	  if ((void *)obj < young_gen.survived)
@@ -593,7 +600,7 @@ void generational_register_inflated_obj(jobject_unwrapped obj)
 #ifdef JOLDEN_WRITE_BARRIER
 inline void generational_write_barrier(jobject_unwrapped *ref)
 {
-  if (IN_MARKSWEEP_HEAP(ref, old_gen))
+  // if (IN_MARKSWEEP_HEAP(ref, old_gen))
     intergen[intergen_next++] = ref;
   //assert(intergen_next < INTERGEN_LENGTH);
 }

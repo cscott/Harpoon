@@ -12,7 +12,7 @@ extern int intergen_next;
 
 extern inline void generational_write_barrier(jobject_unwrapped *ref)
 {
-  if (IN_MARKSWEEP_HEAP(ref, old_gen))
+  // if (IN_MARKSWEEP_HEAP(ref, old_gen))
     intergen[intergen_next++] = ref;
   //assert(intergen_next < INTERGEN_LENGTH);
 }
