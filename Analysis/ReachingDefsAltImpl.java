@@ -32,7 +32,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.6 2000-07-28 03:08:54 pnkfelix Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.7 2000-08-09 05:44:45 pnkfelix Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -154,7 +154,9 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 
 	// find HCodeElements associated with `t' in the IN Set
 	Set results = bsf.makeSet(r.IN);
-	results.retainAll((Set) tempToAllDefs.get(t));
+	Set defs = (Set) tempToAllDefs.get(t);
+	Util.assert(defs != null, "no set for temp");
+	results.retainAll(defs);
 
 	Iterator pairs = results.iterator();
 	results = new HashSet();

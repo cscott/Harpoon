@@ -50,12 +50,12 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.18 2000-08-09 04:14:46 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.19 2000-08-09 05:44:49 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
     private static final boolean TIME = true;
-    private static final boolean RESULTS = true;
+    private static final boolean RESULTS = false;
     
     public static RegAlloc.Factory FACTORY =
 	new RegAlloc.Factory() {
@@ -254,6 +254,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	    Collection readEdges = readableEdges(graph.edges(), nodeToNum);
 	    if (RESULTS) System.out.println("edges of graph "+readEdges);
+
 
 	    try {
 		List colors = new ArrayList(regToColor.values());
@@ -697,6 +698,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     HashSet spilled = new HashSet();
     private void genSpillCode(Collection remove) { 
+	int oldSpilledSize = spilled.size();
 	for(Iterator ri=remove.iterator(); ri.hasNext(); ) {
 	    Graph.Node node = (Graph.Node) ri.next();
 	    if (node.wr instanceof RegWebRecord ||
@@ -726,7 +728,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	}
 
-	System.out.println("*** SPILLED: " + spilled);
+	Util.assert(spilled.size() > oldSpilledSize);
+
+	System.out.println("*** SPILLED ("+spilled.size()+"): " + spilled);
     }
 
     private void fixupSpillCode() {
@@ -1006,8 +1010,15 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    for(Iterator ins=this.defs().iterator();ins.hasNext();){
 		Instr d = (Instr) ins.next();
 		Set l= liveTemps.getLiveAfter(d);
-		if (l.contains(wr.temp()))
-		    return true;
+		if (l.contains(wr.temp())) {
+		    if (isRegister(wr.temp())) 
+			return true;
+		    HashSet wDefs = new HashSet
+			(rdefs.reachingDefs(d, wr.temp()));
+		    wDefs.retainAll(wr.defs());
+		    if (!wDefs.isEmpty())
+			return true;
+		}
 	    }
 	    return false;
 	}
