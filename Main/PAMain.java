@@ -94,7 +94,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.100 2001-04-24 15:03:06 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.101 2001-04-26 18:27:31 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -121,9 +121,6 @@ public abstract class PAMain {
 
     // force the creation of the memory allocation info.
     private static boolean MA_MAPS = false;
-    // the name of the file into which the memory allocation policies
-    // will be serialized
-    private static String MA_MAPS_OUTPUT_FILE = null;
 
     private static boolean CHECK_NO_CALLEES = false;
 
@@ -162,6 +159,7 @@ public abstract class PAMain {
 
     private static boolean RTJ_REMOVE_CHECKS = false;
     private static boolean RTJ_SUPPORT = false;
+    private static boolean RTJ_DEBUG = false;
 
     // the name of the file that contains additional roots
     private static String rootSetFilename = null;
@@ -257,6 +255,11 @@ public abstract class PAMain {
 	    }
 	    pa = new PointerAnalysis(mcg, mac,
 				     caching_scc_lbb_factory, linker);
+	}
+
+	if(RTJ_DEBUG) {
+	    do_rtj_debug();
+	    System.exit(0);
 	}
 
 	if(RTJ_REMOVE_CHECKS) {
@@ -639,6 +642,17 @@ public abstract class PAMain {
     }
 
 
+    // displays the parameter nodes for the method mm
+    private static void display_pointer_parameters(MetaMethod mm) {
+	PANode[] nodes = pa.getParamNodes(mm);
+	System.out.print("POINTER PARAMETERS: ");
+	System.out.print("[ ");
+	for(int j = 0; j < nodes.length; j++)
+	    System.out.print(nodes[j] + " ");
+	System.out.println("]");
+    }
+
+
     private static void display_method(Method method)
 	throws harpoon.ClassFile.NoSuchClassException {
 
@@ -661,13 +675,8 @@ public abstract class PAMain {
 				       + " ->\n META-METHOD " + mm);
 		    ParIntGraph int_pig = pa.getIntParIntGraph(mm);
 		    ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
-		    PANode[] nodes = pa.getParamNodes(mm);
 		    System.out.println("META-METHOD " + mm);
-		    System.out.print("POINTER PARAMETERS: ");
-		    System.out.print("[ ");
-		    for(int j = 0; j < nodes.length; j++)
-			System.out.print(nodes[j] + " ");
-		    System.out.println("]");
+		    display_pointer_parameters(mm);
 		    System.out.print("INT. GRAPH AT THE END OF THE METHOD:");
 		    System.out.println(int_pig);
 		    //System.out.print("EXT. GRAPH AT THE END OF THE METHOD:");
@@ -747,7 +756,6 @@ public abstract class PAMain {
 	    new LongOpt("showcg",        LongOpt.NO_ARGUMENT,       null, 9),
 	    new LongOpt("showsplit",     LongOpt.NO_ARGUMENT,       null, 10),
 	    new LongOpt("details",       LongOpt.NO_ARGUMENT,       null, 11),
-	    new LongOpt("mamaps",        LongOpt.REQUIRED_ARGUMENT, null, 14),
 	    new LongOpt("wit",           LongOpt.NO_ARGUMENT,       null, 15),
 	    new LongOpt("inline_depth",  LongOpt.REQUIRED_ARGUMENT, null, 16),
 	    new LongOpt("sat",           LongOpt.REQUIRED_ARGUMENT, null, 17),
@@ -772,7 +780,8 @@ public abstract class PAMain {
 	    new LongOpt("rtj",           LongOpt.REQUIRED_ARGUMENT, null, 34),
 	    new LongOpt("old_inlining",  LongOpt.NO_ARGUMENT,       null, 35),
 	    new LongOpt("inline_for_sa", LongOpt.REQUIRED_ARGUMENT, null, 36),
-	    new LongOpt("inline_for_ta", LongOpt.REQUIRED_ARGUMENT, null, 37)
+	    new LongOpt("inline_for_ta", LongOpt.REQUIRED_ARGUMENT, null, 37),
+	    new LongOpt("rtj_debug",     LongOpt.NO_ARGUMENT,       null, 38)
 	};
 
 	Getopt g = new Getopt("PAMain", argv, "mscor:a:iIN:P:", longopts);
@@ -868,12 +877,6 @@ public abstract class PAMain {
 	    case 11:
 		SHOW_DETAILS = true;
 		break;
-	    case 14:
-		MA_MAPS = true;
-		MA_MAPS_OUTPUT_FILE = new String(g.getOptarg());
-		mainfo_opts.DO_STACK_ALLOCATION  = true;
-		mainfo_opts.DO_THREAD_ALLOCATION = true;
-		break;
 	    case 26:
 		int sap = Integer.parseInt(g.getOptarg());
 		if(sap == 0)
@@ -885,6 +888,7 @@ public abstract class PAMain {
 			System.err.println("Unknown option for sa!");
 			System.exit(1);
 		    }
+		    MA_MAPS = true;
 		    mainfo_opts.DO_STACK_ALLOCATION     = true;
 		    mainfo_opts.STACK_ALLOCATION_POLICY = sap;
 		}
@@ -892,10 +896,14 @@ public abstract class PAMain {
 	    case 27:
 		mainfo_opts.DO_THREAD_ALLOCATION =
 		    (Integer.parseInt(g.getOptarg()) == 1);
+		if(mainfo_opts.DO_THREAD_ALLOCATION)
+		    MA_MAPS = true;
 		break;
 	    case 28:
 		mainfo_opts.GEN_SYNC_FLAG =
 		    (Integer.parseInt(g.getOptarg()) == 1);
+		if(mainfo_opts.GEN_SYNC_FLAG)
+		    MA_MAPS = true;
 		break;
 	    case 15:
 		mainfo_opts.USE_INTER_THREAD = true;
@@ -1006,6 +1014,12 @@ public abstract class PAMain {
 		mainfo_opts.DO_INLINING_FOR_TA =
 		    (Integer.parseInt(g.getOptarg()) == 1);
 		break;
+	    case 38:
+		RTJ_DEBUG = true;
+		RTJ_SUPPORT = true;
+		Realtime.REALTIME_JAVA = true;
+		Realtime.ANALYSIS_METHOD = Realtime.SIMPLE;
+		break;
 	    }
 
 	return g.getOptind();
@@ -1089,8 +1103,8 @@ public abstract class PAMain {
 	    System.out.println("\tDO_INTERACTIVE_ANALYSIS" +
 			       (INTERACTIVE_ANALYSIS_DETAILS?"(details)":""));
 
-	if(MA_MAPS){
-	    System.out.println("\tMA_MAPS in \"" + MA_MAPS_OUTPUT_FILE + "\"");
+	if(MA_MAPS) {
+	    System.out.println("\tMEMORY ALLOCATION OPTs / SYNCH REMOVAL:");
 	    mainfo_opts.print("\t\t");
 	}
 
@@ -1135,6 +1149,9 @@ public abstract class PAMain {
 		    System.exit(1);
 		}
 	}
+
+	if(RTJ_DEBUG)
+	    System.out.println("\tRTJ_DEBUG");
 
 	System.out.println();
     }
@@ -1196,24 +1213,6 @@ public abstract class PAMain {
 	    System.out.println();
 	    mainfo.print();
 	    System.out.println("===================================");
-	}
-
-	if(!COMPILE) {
-	    g_tstart = time();
-	    System.out.print("Dumping the code factory + maps into the file " +
-			     MA_MAPS_OUTPUT_FILE + " ... ");
-	    try{
-		ObjectOutputStream oos = new ObjectOutputStream
-		    (new FileOutputStream(MA_MAPS_OUTPUT_FILE));
-		mainfo.prepareForSerialization();
-		// write the CachingCodeFactory on the disk
-		oos.writeObject(hcf);
-		// write the Linker on the disk
-		oos.writeObject(linker);
-		oos.flush();
-		oos.close();
-	    } catch(IOException e){ System.err.println(e); }
-	    System.out.println((time() - g_tstart) + "ms");
 	}
     }
 
@@ -1404,6 +1403,120 @@ public abstract class PAMain {
 	    }
 	}
     }
+
+
+    private static void do_rtj_debug() {
+	BufferedReader d = 
+	    new BufferedReader(new InputStreamReader(System.in));
+	System.out.println("\nRTJ interactive method inspection\n");
+	while(true) {
+	    System.out.print("Method name:");
+	    String method_name = null;
+	    try{
+		method_name = d.readLine();
+	    }catch(IOException e){}
+	    if(method_name == null){
+		System.out.println();
+		break;
+	    }
+	    Method analyzed_method = getMethodName(method_name);
+	    if(analyzed_method.declClass == null)
+		analyzed_method.declClass = root_method.declClass;
+	    try {
+		rtj_inspect_method(analyzed_method);
+	    }
+	    catch(harpoon.ClassFile.NoSuchClassException e) {
+		System.out.println("Class not found: \"" +
+				   analyzed_method.declClass + "\"");
+	    }
+	}
+    }
+
+    private static void rtj_inspect_method(Method method)
+	throws harpoon.ClassFile.NoSuchClassException {
+
+	HClass hclass = linker.forName(method.declClass);
+	HMethod[] hm  = hclass.getDeclaredMethods();
+	int nbmm = 0;
+
+	HMethod hmethod = null;		
+	for(int i = 0; i < hm.length; i++)
+	    if(hm[i].getName().equals(method.name)) {
+		hmethod = hm[i];
+
+		// look for all the meta-methods originating into this method
+		// and do all the analysis stuff on them.
+		for(Iterator it = split_rel.getValues(hmethod).iterator();
+		    it.hasNext();) {
+		    nbmm++;
+		    MetaMethod mm = (MetaMethod) it.next();
+		    System.out.println("HMETHOD " + hmethod
+				       + " ->\n META-METHOD " + mm);
+		    ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
+		    PANode[] nodes = pa.getParamNodes(mm);
+		    System.out.println("META-METHOD " + mm);
+		    display_pointer_parameters(mm);
+		    System.out.print("EXT. GRAPH AT THE END OF THE METHOD:");
+		    System.out.println(ext_pig);
+
+		    Set esc_nodes = ext_pig.allNodes();
+		    Set esc_inside_nodes = new HashSet();
+
+		    // if one of the elements of the set nodes is an INSIDE
+		    // node, some objects are leaking out of the memory scope.
+		    for(Iterator itn = esc_nodes.iterator(); itn.hasNext(); ) {
+			PANode node = (PANode) itn.next();
+			if((node.type == PANode.INSIDE) && not_exception(node))
+			    esc_inside_nodes.add(node);
+		    }
+		    
+		    if(esc_inside_nodes.isEmpty())
+			System.out.println("\tnothing escapes!");
+		    else
+			display_escaping_nodes(esc_inside_nodes);
+		}
+	    }
+
+	if(hmethod == null){
+	    System.out.println("Oops!" + method.declClass + "." +
+			       method.name + " not found");
+	    return;
+	}
+
+	if(nbmm == 0)
+	    System.out.println("Oops!" + method.declClass + "." +
+			       method.name +
+			       " seems not to be called at all");
+	else if(nbmm != 1)
+	    System.out.println(nbmm + " ANALYZED META-METHOD(S)");
+
+    }
+
+    
+    private static void display_escaping_nodes(Set nodes) {
+	System.out.println("Escaping inside nodes:");
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    System.out.println(" " + node);
+	    System.out.println
+		("  CREATED IN: " + 
+		 Debug.code2str
+		 (pa.getNodeRepository().node2Code(node.getRoot())));
+	}
+    }
+
+
+    // Checks whether node is an exception node or not.
+    private static boolean not_exception(PANode node) {
+	System.out.println("not_excp: " + node);
+
+	HClass hclass = pa.getNodeRepository().getInsideNodeType(node);
+	if(java_lang_Throwable == null)
+	    java_lang_Throwable = linker.forName("java.lang.Throwable");
+	return ! ( java_lang_Throwable.isSuperclassOf(hclass) ); 
+    }
+    private static HClass java_lang_Throwable = null;
+
 
     /*
     private static void do_sat() {
@@ -1658,10 +1771,6 @@ public abstract class PAMain {
 	"--ts            Activates full thread sensitivity.",
 	"--wts           Activates weak thread sensitivity.",
 	"--ls            Activates loop sensitivity.",
-	"--mamaps=file   Computes the allocation policy map and serializes",
-	"                 the CachingCodeFactory (and implicitly the",
-	"                 allocation map) and the linker to disk.",
-	"                 It turns on the stack and thread alloc.",
 	"--sa 0|1|2      Sets the stack allocation policy:",
 	"                 0 - no stack allocation",
 	"                 1 - do stack allocation, but not in loops (default)",
@@ -1687,7 +1796,11 @@ public abstract class PAMain {
 	"                 future, this will be automatically detected by",
 	"                 the analysis.",
 	"-N filename     Read in Instrumentation code factory",
-	"-P filename     Read in profile information"
+	"-P filename     Read in profile information",
+	"--rtj_debug     RTJ debug (interactive method inspection)",
+	"--rtj <policy>  generates RTJ code, using the indicared policy for",
+	"                 memory check removal. policy should be one of",
+	"                 SIMPLE, CHEESY, ALL."
     };
 
 

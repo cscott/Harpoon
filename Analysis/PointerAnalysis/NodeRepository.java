@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.31 2001-03-04 17:00:43 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.32 2001-04-26 18:26:54 salcianu Exp $
  */
 public class NodeRepository implements java.io.Serializable {
     
@@ -280,6 +280,30 @@ public class NodeRepository implements java.io.Serializable {
 	if(node == null) return null;
 	return (HCodeElement) node2code.get(node);
     }
+
+
+    /** Gets the type of an inside node. */
+    public final HClass getInsideNodeType(PANode node) {
+	Util.assert(node.type == PANode.INSIDE, "Not an inside node!");
+	PANode root = node.getRoot();
+	System.out.println("getInsideNodeType: " + root);
+	HCodeElement hce = node2Code(root);
+	System.out.println("getInsideNodeType: " + Debug.code2str(hce));
+	return getAllocatedType(hce);
+    }
+
+
+    // get the type of the object allocated by the object creation site hce;
+    // hce should be NEW or ANEW.
+    public static HClass getAllocatedType(final HCodeElement hce){
+	if(hce instanceof NEW)
+	    return ((NEW) hce).hclass();
+	if(hce instanceof ANEW)
+	    return ((ANEW) hce).hclass();
+	Util.assert(false,"Not a NEW or ANEW: " + hce);
+	return null; // should never happen
+    }
+
 
     /** Modify the node2code mapping such that now node is associated
 	with hce. */

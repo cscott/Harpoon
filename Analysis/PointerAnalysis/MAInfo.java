@@ -74,7 +74,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.54 2001-04-24 15:02:37 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.55 2001-04-26 18:26:53 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -436,7 +436,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     // get the type of the object allocated by the object creation site hce;
     // hce should be NEW or ANEW.
-    public HClass getAllocatedType(final HCodeElement hce){
+    public static HClass getAllocatedType(final HCodeElement hce){
 	if(hce instanceof NEW)
 	    return ((NEW) hce).hclass();
 	if(hce instanceof ANEW)
