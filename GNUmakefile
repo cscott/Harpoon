@@ -1,13 +1,13 @@
-# $Id: GNUmakefile,v 1.61.2.97 2001-11-07 17:45:44 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.98 2001-11-07 23:41:03 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
 
 JAVA:=java
 JFLAGS=-d . -g
-JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
+JFLAGSVERB=#-verbose -J-Djavac.pipe.output=true
 JIKES:=jikes $(JIKES_OPT)
-JCC=javac -J-mx64m
+JCC=javac -J-mx64m -source 1.3
 JDOC=javadoc
 JAR=jar
 JDOCFLAGS=-J-mx128m -version -author # -package
