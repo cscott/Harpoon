@@ -1,10 +1,10 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: design.tex,v 1.4 1998-07-15 02:52:31 cananian Exp $
+% $Id: design.tex,v 1.5 1998-07-15 03:56:39 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[10pt,notitlepage,twocolumn]{article}
 \author{C.~Scott~Ananian}
 \title{Turning Java into Hardware: \\ Caffinated Compiler Construction}
-\date{\today \\ $ $Revision: 1.4 $ $}
+\date{\today \\ $ $Revision: 1.5 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -44,6 +44,9 @@
 %       3. Syntax/Grammar/Examples.
 % II. Useful analyses (compiler stages)
 %    A. Static/Extended type analysis: not just type but which objs of the type
+%       - reference 'fast interprocedural class analysis' paper.
+%       - probably want to combine with SSA-based Conditional Constant
+%         Propagation algorithm.
 %    B. Static allocation.
 %    C. Analyzing methods for side-effects.
 %    D. Optimizations:
@@ -88,10 +91,58 @@
 \maketitle
 
 \section{Introduction}
-blah blah blah blah
+This paper explores the design of a silicon compiler for the Java
+programming language.  Java's simplicity, object-orientation, and
+strong typing make it well suited to an class-based hardware
+translation.  It is also possible to leverage Java's thread interfaces
+to model coarse-grain parallelism in hardware.  The goal is the
+efficient generation of hardware from a well-known general-purpose
+programming language.  The use of one specification language for both
+the hardware and software components of a system could also aid
+hardware-software codesign; this may be explored in future work.
+
+Java, as a general-purpose portable programming language, also
+presents obstacles to its use as a hardware specification language.
+The lack of integer types with parameterized bit-widths is a
+limitation that compiler technology can overcome.  It is not certain
+that Java's inability to specify real-time constraints on code or
+describe hardware interfaces at the wire and timing level can be
+similarly smoothed over.
 
 \section{Java/Hardware Semantics}
-blah blah blah
+% describe object model.
+
+Up to this point we have left unspecified issues of timing.
+
+The efficient implementation of Java in hardware entails walking a
+tight-rope between the usual sequential statement-execution semantics
+and a radically synchronous reading similar to the languages Esterel
+\cite{berry:esterel_primer}, Lucid \cite{missing_reference}, and
+SIGNAL \cite{amagbegnon95:signal}.  One option is to create an
+entirely asynchronous design \cite{emerson97:async_design}
+from a dataflow graph of the Java program
+that respects the original program's sequential order exactly.  Such a
+design has favorable power consumption and execution time
+characteristics, but suffers from high circuit complexity
+\cite{cheng97:diclasp, nanda97:universal}.
+% example here of multiple-emitter program
+% also, async semantics are not quite clear.
+Most silicon compilers instead generate synchronous circuits from
+their input programs, allowing us great flexibility in the assignment
+of clocked states to an compiled object.  It seems most reasonable to
+use a synchrony model a bit looser than the \textit{perfect synchrony
+hypothesis} used in Esterel, which Berry in
+\cite{berry92:hardware_esterel} credits to \cite{benveniste91:synchrony}.
+Instead of ``instantaneous broadcast'' we prefer a ``time plus delta''
+approach similar to that used by VHDL 
+\cite{one_of_the_books_i_used_for_the_silicon_c_paper} and formalized
+in \cite{gagne97:nonstandard} citing \cite{gagne96:nonstandard}.  The
+program should behave according to the standard sequential semantics,
+but externally-visible events will be synchronized to a clock.
+Conceptually, all statements take a finite but infinitesimal amount of
+time, excepting at points where we wait for a the next clock tick.
+
+% multiple-emitter example, again.
 
 \subsection{The rules}
 
@@ -114,7 +165,6 @@ blah blah blah
 \subsection{Logic Synthesis}
 \section{Conclusion}
 
-\nocite{*}
 \bibliography{harpoon}
 
 \end{document}
