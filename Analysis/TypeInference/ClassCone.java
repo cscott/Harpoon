@@ -3,18 +3,20 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.TypeInference;
 
-import harpoon.Analysis.QuadSSA.ClassHierarchy;
-import java.util.Hashtable;
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.*;
 import harpoon.Util.Worklist;
 import harpoon.Util.Set;
 import harpoon.Util.HashSet;
 import harpoon.Util.HClassUtil;
+
+import java.util.Hashtable;
+import java.util.Iterator;
 /**
  * <code>ClassCone</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: ClassCone.java,v 1.1.2.3 1999-08-04 05:52:24 cananian Exp $
+ * @version $Id: ClassCone.java,v 1.1.2.4 1999-09-08 19:30:17 cananian Exp $
  */
 
 public class ClassCone  {
@@ -36,9 +38,8 @@ public class ClassCone  {
 	    while (!wl.isEmpty()) {
 		HClass cl = (HClass)wl.pull();
 		s.union(HClassUtil.arrayClass(cl, dims));
-		HClass[] k = ch.children(cl);
-		for (int i=0; i<k.length; i++)
-		    wl.push(k[i]);
+		for (Iterator it=ch.children(cl).iterator(); it.hasNext(); )
+		    wl.push(it.next());
 	    }
 	    map.put(c, s);
 	}

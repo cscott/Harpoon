@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
-import harpoon.Analysis.QuadSSA.ClassHierarchy;
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
@@ -18,7 +18,7 @@ import java.util.Iterator;
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.2.2.8 1999-09-08 16:35:37 cananian Exp $
+ * @version $Id: Graph.java,v 1.2.2.9 1999-09-08 19:30:21 cananian Exp $
  */
 
 public abstract class Graph  {

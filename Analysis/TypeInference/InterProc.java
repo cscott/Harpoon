@@ -10,12 +10,13 @@ import java.util.Enumeration;
 import harpoon.Util.UniqueFIFO;
 import harpoon.Util.Worklist;
 import harpoon.ClassFile.*;
-import harpoon.Analysis.QuadSSA.ClassHierarchy;
+import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.QuadSSA.QuadClassHierarchy;
 /**
  * <code>InterProc</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: InterProc.java,v 1.1.2.9 1999-08-07 02:14:11 cananian Exp $
+ * @version $Id: InterProc.java,v 1.1.2.10 1999-09-08 19:30:17 cananian Exp $
  */
 
 public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
@@ -67,7 +68,7 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 	HMethod m = main.getMethod();
 	/* build class hierarchy of classess reachable from main.
 	   used for coning, i.e. finding all children of a given class. */
-	if (ch==null) ch = new ClassHierarchy(m, hcf);
+	if (ch==null) ch = new QuadClassHierarchy(m, hcf);
 	cc = new ClassCone(ch);
 	/* worklist of methods that are to be processed. */
 	wl = new AuxUniqueFIFO(16);

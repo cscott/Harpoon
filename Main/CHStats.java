@@ -15,7 +15,7 @@ import java.util.Iterator;
  * compiler class hierarchy for inclusion in papers and theses.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CHStats.java,v 1.1.2.4 1999-08-07 02:14:18 cananian Exp $
+ * @version $Id: CHStats.java,v 1.1.2.5 1999-09-08 19:30:19 cananian Exp $
  */
 
 public abstract class CHStats extends harpoon.IR.Registration {
@@ -41,8 +41,8 @@ public abstract class CHStats extends harpoon.IR.Registration {
 
 	HCodeFactory hcf =
 	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
-	harpoon.Analysis.QuadSSA.ClassHierarchy ch = 
-	    new harpoon.Analysis.QuadSSA.ClassHierarchy(m, hcf);
+	harpoon.Analysis.ClassHierarchy ch = 
+	    new harpoon.Analysis.QuadSSA.QuadClassHierarchy(m, hcf);
 	System.out.println("For call graph rooted at "+m.getName()+":");
 	int totalclasses=0, depthsum=0, maxdepth=-1; HClass maxc=null;
 	for (Iterator it=ch.classes().iterator();it.hasNext(); totalclasses++){

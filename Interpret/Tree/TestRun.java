@@ -3,7 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
-import harpoon.Analysis.QuadSSA.ClassHierarchy;
+import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.QuadSSA.QuadClassHierarchy;
 import harpoon.Backend.Analysis.DisplayInfo.HClassInfo;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.DefaultFrame;
@@ -28,14 +29,16 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestRun.java,v 1.1.2.10 1999-09-08 16:35:35 cananian Exp $
+ * @version $Id: TestRun.java,v 1.1.2.11 1999-09-08 19:30:19 cananian Exp $
  */
 public abstract class TestRun extends HCLibrary {
     public static void main(String args[]) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.err, true);
 	
 	HCodeFactory hcf = // default code factory.
-	    harpoon.IR.Quads.QuadSSI.codeFactory();
+	    new harpoon.ClassFile.CachingCodeFactory(
+	    harpoon.IR.Quads.QuadWithTry.codeFactory()
+	    );
 	HCodeFactory hcfOpt;
 
 	// Cache all conversions we make in the ClassHierarchy
@@ -43,7 +46,7 @@ public abstract class TestRun extends HCLibrary {
 	
 	HClass cls = HClass.forName(args[0]);
 	System.err.println("Collecting class hierarchy information...");
-	ClassHierarchy ch = new ClassHierarchy
+	ClassHierarchy ch = new QuadClassHierarchy
 	    (cls.getMethod("main", new HClass[] { HCstringA }), hcf);
 	System.err.println("done!");
 	

@@ -3,20 +3,26 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.QuadSSA;
 
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
+import harpoon.Analysis.ClassHierarchy;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.CALL;
 import harpoon.Util.Set;
 import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Vector;
 /**
  * <code>CallGraph</code> constructs a simple directed call graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.4.2.7 1999-09-08 16:35:19 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.4.2.8 1999-09-08 19:30:16 cananian Exp $
  */
 
 public class CallGraph  {
@@ -63,9 +69,8 @@ public class CallGraph  {
 						    cm.getDescriptor()));
 		    } catch (NoSuchMethodError nsme) { }
 		    // recurse through all children of this method.
-		    HClass[] child = ch.children(c);
-		    for (int i=0; i<child.length; i++)
-			W.push(child[i]);
+		    for (Iterator it=ch.children(c).iterator(); it.hasNext();)
+			W.push(it.next());
 		}
 	    }
 	    // finally, copy result vector to retval array.
@@ -97,9 +102,8 @@ public class CallGraph  {
 					    cm.getDescriptor()));
 	    } catch (NoSuchMethodError nsme) { }
 	    // recurse through all children of this method.
-	    HClass[] child = ch.children(c);
-	    for (int i=0; i<child.length; i++)
-		W.push(child[i]);
+	    for (Iterator it=ch.children(c).iterator(); it.hasNext(); )
+		W.push(it.next());
 	}
 	// finally, copy result vector to retval array.
 	HMethod[] retval = new HMethod[s.size()];

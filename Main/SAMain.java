@@ -24,7 +24,8 @@ import harpoon.Analysis.Instr.RegAlloc;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.StrongARM.SAFrame;
 import harpoon.Backend.StrongARM.SACode;
-import harpoon.Analysis.QuadSSA.ClassHierarchy;
+import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.QuadSSA.QuadClassHierarchy;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.Util.UnmodifiableIterator;
@@ -60,7 +61,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.20 1999-09-08 16:35:36 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.21 1999-09-08 19:30:20 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -86,9 +87,9 @@ public class SAMain extends harpoon.IR.Registration {
 
     public static void main(String[] args) {
 	HCodeFactory hcf = // default code factory.
-	    // harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
-	    (harpoon.IR.Quads.QuadSSI.codeFactory()
-	     );
+	    new harpoon.ClassFile.CachingCodeFactory(
+	    harpoon.IR.Quads.QuadWithTry.codeFactory()
+	    );
 
 	parseOpts(args);
 	Util.assert(className!= null, "must pass a class to be compiled");
@@ -108,7 +109,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    " has no main method");
 
 	if (classHierarchy == null) {
-	    classHierarchy = new ClassHierarchy(mainM, hcf);
+	    classHierarchy = new QuadClassHierarchy(mainM, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
 	offmap = new OffsetMap32(classHierarchy);

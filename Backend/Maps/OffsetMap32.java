@@ -4,7 +4,7 @@
 package harpoon.Backend.Maps;
 
 import harpoon.Analysis.InterfaceMethodMap;
-import harpoon.Analysis.QuadSSA.ClassHierarchy;
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.Backend.Analysis.DisplayInfo.HClassInfo;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
@@ -72,7 +72,7 @@ import java.util.StringTokenizer;
  * 
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.24 1999-09-08 01:45:01 pnkfelix Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.25 1999-09-08 19:30:18 cananian Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
