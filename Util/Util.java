@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.3 1998-12-01 10:22:46 cananian Exp $
+ * @version $Id: Util.java,v 1.12.2.4 1998-12-01 11:08:24 cananian Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -82,7 +82,7 @@ public abstract class Util {
     StringBuffer sb = new StringBuffer();
     for (int i=0; i<str.length(); i++) {
       char c = str.charAt(i);
-      if (Character.isISOControl(c)) {
+      if (!isSafelyPrintable(c)) {
 	String hexval=Integer.toHexString((int)c);
 	while(hexval.length()<4) hexval="0"+hexval;
 	sb.append('\\'); sb.append('u');
@@ -92,6 +92,16 @@ public abstract class Util {
     }
     return sb.toString();
   }
+  /** Determine if we should escape this character or print it as-is. */
+  static boolean isSafelyPrintable(char c) {
+    // always escape backslash
+    if (c=='\\') return false;
+    // define 'safe' characters.
+    if (' ' <= c && c <= '~') return true;
+    // all others are 'unsafe'
+    return false;
+  }
+
   /** Assertion facility.  Throws a <code>RuntimeException</code> if
    *  the boolean parameter is <code>false</code>. */
   public static final void assert(boolean val) {
