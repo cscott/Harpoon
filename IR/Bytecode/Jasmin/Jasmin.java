@@ -21,7 +21,7 @@ import java.util.Enumeration;
  * <code>FinalRaw</code>
  * 
  * @author  root <root@kikashi.lcs.mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.2 1999-08-03 22:23:49 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.3 1999-08-04 07:02:51 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -68,8 +68,11 @@ public class Jasmin {
 	Object[] tuple=buildmap(hc);
 	Map map=(Map) tuple[0];
 	out.println("    .limit locals "+((Integer)tuple[1]).toString());
+	//Fix ME
+	//This is wrong....
+	out.println("    .limit stack "+((Integer)tuple[1]).toString());
 	WorkSet done=new WorkSet();
-	Visitor visitor=new Visitor(out, map,done,hc);
+	Visitor visitor=new Visitor(out, map,hc);
 	Quad start=(Quad)hc.getRootElement();
 	METHOD m=(METHOD)start.next(1);
 	for (int i=1;i<m.nextLength();i++) {
@@ -82,16 +85,20 @@ public class Jasmin {
 		tmp=visitor.labeler(q.next(0));
 	    }
 	}
-	visitAll(visitor,start, done);
+	visitAll(out,visitor,start.next(1), done);
+	visitAll(out,visitor,start.next(0), done);
     }
 		 
-    private static final void visitAll(Visitor visitor, Quad start, Set qm) {
+    private static final void visitAll(PrintStream out, Visitor visitor, Quad start, Set qm) {
 	start.visit(visitor);
+	if (start.next().length!=0)
+	    if (qm.contains(start.next(0)))
+		out.println("    goto "+visitor.labeler(start.next(0)));
 	qm.add(start);
         Quad[] ql = start.next();
         for (int i=0; i<ql.length; i++) {
             if (qm.contains(ql[i])) continue; // skip if already done.
-            visitAll(visitor, ql[i],qm);
+            visitAll(out, visitor, ql[i],qm);
         }
     }
 
@@ -100,17 +107,15 @@ public class Jasmin {
 	int label;
 	Map tempmap;
 	HashMap labelmap;
-	Set done;
 	HCode hc;
 	TypeInfo tm;
 
-	Visitor(PrintStream out, Map tempmap, Set done, HCode hc) {
+	Visitor(PrintStream out, Map tempmap, HCode hc) {
 	    this.out=out;
 	    this.label=0;
 	    this.tempmap=tempmap;
 	    this.hc=hc;
 	    labelmap=new HashMap();
-	    this.done=done;
 	    this.tm=new TypeInfo();
 	}
 
@@ -119,19 +124,18 @@ public class Jasmin {
 	}
 
 	public void visit(METHOD q) {
-	    for(int i=0;i<q.params().length;i++) {
-		store(q.params(i)); 
-	    }	    
 	}
 
 	public void visit(HEADER q) {
 	}
 
 	public void visit(PHI q) {
-	    out.println(iflabel(q));
+	    out.println(labeler(q)+":");
 	}
 
 	public void visit(FOOTER q) {
+	    out.println(labeler(q)+":");
+	    out.println("    return");
 	}
 
 	public void visit(HANDLER q) {
@@ -224,8 +228,6 @@ public class Jasmin {
 	    out.println(iflabel(q));
 	    iload(tempinfo);
 	    out.println("    ifne "+labeler(q.next(1)));
-	    if (done.contains(q.next(0)))
-		out.println("    goto"+labeler(q.next(0)));
 	}
 
 	public void visit(THROW q) {
@@ -420,18 +422,27 @@ public class Jasmin {
     }
 
     public final Object[] buildmap(final HCode code) {
+	Quad q=(Quad)code.getRootElement();
+	METHOD m=(METHOD) q.next(1);
 	UseDef ud=new UseDef();
 	Temp[] alltemp=ud.allTemps(code);
 	HashMap stacktemps=new HashMap();
+	int j=0;
+	for(int i=0;i<m.params().length;i++) {
+	    stacktemps.put(m.params(i),new TempInfo(j++));
+	}
 	for (int i=0;i<alltemp.length;i++) {
 	    Temp next=alltemp[i];
 	    HCodeElement[] defs=ud.defMap(code,next);
-	    if (defs.length!=1) break;
-	    HCodeElement[] uses=ud.useMap(code,next);
-	    if (uses.length!=1) break;
-	    checkPair(stacktemps, (Quad)  uses[0], (Quad) defs[0], next);
+	    if (!stacktemps.containsKey(next)) {
+		if (defs.length==1) {
+		    HCodeElement[] uses=ud.useMap(code,next);
+		    if (uses.length==1) {
+			checkPair(stacktemps, (Quad)  uses[0], (Quad) defs[0], next);
+		    }
+		}
+	    }
 	}
-	int j=0;
 	for (int i=0;i<alltemp.length;i++) {
 	    if (!stacktemps.containsKey(alltemp[i])) {
 		stacktemps.put(alltemp[i],new TempInfo(j++));
@@ -468,11 +479,12 @@ public class Jasmin {
 	    }
 	    if ((flag)&&(track.isEmpty())) {
 		stacktemps.put(t, new TempInfo(true));
-		//		System.out.println("Putting in"+t.toString());
-	    }
+	    } 
 	}
     }
 }
+
+
 
 
 
