@@ -29,10 +29,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
- * <code>AllocationStatistics</code>
+ * <code>AllocationStatistics</code> reads the output produced by the
+ * allocation instrumentation and offers support for gathering and
+ * displaying statistics about the number of times each allocation
+ * site from an instrumented program was executed.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationStatistics.java,v 1.6 2002-12-05 00:04:47 salcianu Exp $
+ * @version $Id: AllocationStatistics.java,v 1.7 2003-02-03 15:39:14 salcianu Exp $
+ * @see InstrumentAllocs
  */
 public class AllocationStatistics {
     
@@ -71,97 +75,6 @@ public class AllocationStatistics {
     }
 
 
-    public static class AllocationNumberingStub {
-	
-	/** Creates a <code>AllocationNumberingStub</code>. */
-	public AllocationNumberingStub(Linker linker, String filename)
-	    throws IOException {
-	    BufferedReader br = new BufferedReader(new FileReader(filename));
-	    int nb_methods = readInt(br);
-	    for(int i = 0; i < nb_methods; i++)
-		readMethodData(linker, br);	
-	}
-    
-	private final Map method2quadID2counter = new HashMap();
-	
-	private Map getMap4Method(HMethod hm) {
-	    Map map = (Map) method2quadID2counter.get(hm);
-	    if(map == null) {
-		map = new HashMap();
-		method2quadID2counter.put(hm, map);
-	    }
-	    return map;
-	}
-	
-	/** Return the integer ID for the allocation site <code>q</code>. */
-	public int allocID(Quad q) {
-	    HMethod hm = q.getFactory().getMethod();
-	    Integer allocID = 
-		(Integer) getMap4Method(hm).get(new Integer(q.getID()));
-	    assert allocID != null : "Quad unknown: " + q + " #" + q.getID();
-	    return allocID.intValue();
-	}
-
-
-
-	/////////////// PARSING METHODS ///////////////////////////////
-	private void readMethodData(Linker linker, BufferedReader br) 
-	    throws IOException {
-	    HMethod hm = readMethod(linker, br);
-	    int nb_allocs = readInt(br);
-	    for(int i = 0; i < nb_allocs; i++) {
-		int quadID = readInt(br);
-		int counter = readInt(br);
-		getMap4Method(hm).put
-		    (new Integer(quadID), new Integer(counter));
-	    }
-	}
-
-	private static HClass readClass(Linker linker, BufferedReader br)
-	    throws IOException {
-	    String class_name = readString(br);
-	    HClass hc = (HClass) primitives.get(class_name);
-	    return (hc != null) ? hc : linker.forName(class_name);
-	}
-	
-	private static Map primitives;
-	static {
-	    primitives = new HashMap();
-	    primitives.put("boolean", HClass.Boolean);
-	    primitives.put("byte",    HClass.Byte);
-	    primitives.put("char"   , HClass.Char);
-	    primitives.put("double",  HClass.Double);
-	    primitives.put("float",   HClass.Float);
-	    primitives.put("int",     HClass.Int);
-	    primitives.put("long",    HClass.Long);
-	    primitives.put("short",   HClass.Short);
-	    primitives.put("void",    HClass.Void);
-	}
-	
-	private static HMethod  readMethod(Linker linker, BufferedReader br)
-	    throws IOException {
-	    HClass hc = readClass(linker, br);
-	    String method_name = readString(br);
-	    int nb_params = readInt(br);
-	    HClass[] ptypes = new HClass[nb_params];
-	    for(int i = 0; i < nb_params; i++)
-		ptypes[i] = readClass(linker, br);
-	    try {
-		return hc.getMethod(method_name, ptypes);
-	    } catch (Error e) {
-		System.out.println("TROUBLE: cannot find \"" + method_name +
-				   " in class\"" + hc + 
-				   "\" it has the following methods:"); 
-		HMethod[] hms = hc.getDeclaredMethods();
-		for(int i = 0; i < hms.length; i++)
-		    System.out.println("\t" + hms[i]);
-		System.out.println("is \"?\" : " + method_name.equals("?"));
-		throw e;
-	    }
-	}
-    } // end of AllocationNumberingStub
-
-
     private static Map readInstrumentationResults
 	(String instrumentationResultsFileName) throws IOException {
 	BufferedReader br = 
@@ -180,20 +93,16 @@ public class AllocationStatistics {
 	return new Integer(br.readLine()).intValue();
     }
 
-    private static String readString(BufferedReader br) throws IOException {
-	br.readLine(); // eat the line added as comment
-	int size = readInt(br);
-	char[] chars = new char[size];
-	for(int i = 0; i < size; i++)
-	    chars[i] = (char) readInt(br);
-	String str = new String(chars);
-	return str;
-    }
 
-
+    /** Prints statitistics about the allocation sites from the
+	collection <code>allocs</code>.  If <code>visitor</code> is
+	non-null, it is called on each allocation site (this way, one
+	can customize the displayed statistics).  The allocation sites
+	are listed/visited in the decreasing order of the number of
+	objects allocated there.  Sites that allocate too few objects
+	(less than 1% of the total objects) are not considered.
+     */
     public void printStatistics(Collection allocs, QuadVisitor visitor) {
-
-	PrintWriter pw = new PrintWriter(System.out, true);
 
 	class SiteStat implements Comparable {
 	    public final Quad alloc_site;
@@ -231,13 +140,13 @@ public class AllocationStatistics {
 	Arrays.sort(ss);
 
 	long partial_count = 0;
-	pw.println("Allocation Statistics BEGIN");
+	System.out.println("Allocation Statistics BEGIN");
 	for(i = 0; i < ss.length; i++) {
 	    Quad site  = ss[i].alloc_site;
 	    int count  = ss[i].alloc_count;
 	    double frac = (count*100.0) / total_count;
 	    partial_count += count;
-	    pw.println
+	    System.out.println
 		(Debug.code2str(site) + "\n\t" + count +
 		 " object(s) \n\t" + Debug.doubleRep(frac, 5, 2) + "%\n\t" +
 		 site.getFactory().getMethod());
@@ -249,13 +158,13 @@ public class AllocationStatistics {
 		break;
 	    }
 	}
-	pw.println
+	System.out.println
 	    (i + ((i==1) ? " site allocates " : " sites allocate ") +
 	     Debug.doubleRep((partial_count*100.0) / total_count, 5, 2) +
 	     "% of all objects");
-	pw.println("Allocation Statistics END");
-	//pw.flush();
+	System.out.println("Allocation Statistics END");
     }
+
 
     public void printStatistics(Collection allocs) {
 	printStatistics(allocs, null);

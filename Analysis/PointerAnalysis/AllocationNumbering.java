@@ -33,7 +33,7 @@ import java.io.IOException;
  * (e.g. <code>InstrumentAllocs</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.9 2002-12-05 00:04:47 salcianu Exp $ */
+ * @version $Id: AllocationNumbering.java,v 1.10 2003-02-03 15:39:14 salcianu Exp $ */
 public class AllocationNumbering implements java.io.Serializable {
     private final CachingCodeFactory ccf;
     public  final Map alloc2int;
@@ -98,61 +98,4 @@ public class AllocationNumbering implements java.io.Serializable {
 
     private int alloc_count = 0;
     private int call_count  = 0;
-
-
-    ////////////////// MINI SERIALIZATON //////////////////////////////////
-
-    public void writeToFile(String filename) throws IOException {
-	PrintWriter pw =
-	    new PrintWriter(new BufferedWriter(new FileWriter(filename)));
-	Collection methods = get_methods();
-	writeInt(pw, methods.size());
-	for(Iterator it = methods.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
-	    writeMethodSignature(pw, hm);
-	    writeAllocs(pw, ((Code) ccf.convert(hm)).selectAllocations());
-	}
-	pw.close();
-    }
-
-    // returns a collection of all the methods with instrumented
-    // allocations in their code
-    private Collection get_methods() {
-	Set methods = new HashSet();
-	for(Iterator it = getAllocs().iterator(); it.hasNext(); ) {
-	    Quad quad = (Quad) it.next();
-	    methods.add(quad.getFactory().getMethod());
-	}
-	return methods;
-    }
-
-    private void writeMethodSignature(PrintWriter pw, HMethod hm) {
-	writeString(pw, hm.getDeclaringClass().getName());
-	writeString(pw, hm.getName());
-	HClass[] ptypes = hm.getParameterTypes();
-	writeInt(pw, ptypes.length);
-	for(int i = 0; i < ptypes.length; i++)
-	    writeString(pw, ptypes[i].getName());
-    }
-
-    private void writeAllocs(PrintWriter pw, Collection allocs) {
-	writeInt(pw, allocs.size());
-	for(Iterator it = allocs.iterator(); it.hasNext(); ) {
-	    Quad quad = (Quad) it.next();
-	    writeInt(pw, quad.getID());
-	    writeInt(pw, allocID(quad));
-	}
-    }
-
-    private static void writeString(PrintWriter pw, String str) {
-	pw.println("// " + str); // added as a comment for debugging
-	int length = str.length();
-	writeInt(pw, length);
-	for(int i = 0; i < length; i++)
-	    writeInt(pw, (int) str.charAt(i));
-    }
-
-    private static void writeInt(PrintWriter pw, int i) {
-	pw.println(i);
-    }
 }
