@@ -37,9 +37,9 @@ else
     FLEX_SUPPORT_FILES="${OPT_FLEX_SUPPORT_FILES} ${FLEX_DIR}/Support/reflect-thunk.jar /usr/share/classpath/glibj.zip"
 fi
 
-# special case for realtime.jar.
-if [ -f ${FLEX_DIR}/Support/realtime.jar ]; then
-    FLEX_SUPPORT_FILES="$FLEX_SUPPORT_FILES ${FLEX_DIR}/Support/realtime.jar"
+# special case for realtime.jar: grab this from the Realtime directory.
+if [ -n "$REALTIME_DIR" -a -f ${REALTIME_DIR}/realtime.jar ]; then
+    FLEX_SUPPORT_FILES="$FLEX_SUPPORT_FILES ${REALTIME_DIR}/realtime.jar"
 fi
 
 for supp_file in ${FLEX_SUPPORT_FILES}; do
