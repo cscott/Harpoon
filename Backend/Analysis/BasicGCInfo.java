@@ -5,6 +5,7 @@ package harpoon.Backend.Analysis;
 
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.DataFlow.LiveTemps;
+import harpoon.Analysis.Instr.RegAlloc.IntermediateCode;
 import harpoon.Analysis.Instr.RegAlloc.IntermediateCodeFactory;
 import harpoon.Analysis.Liveness;
 import harpoon.Analysis.Maps.Derivation;
@@ -54,7 +55,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.14 2000-06-24 04:44:53 kkz Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.15 2000-07-06 20:55:21 pnkfelix Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -235,12 +236,6 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		parent.clear(hm);
 		m.remove(hm); // remove from map
 	    }
-	    /** returns <code>TempLocator</code> */
-	    public harpoon.Backend.Generic.RegFileInfo.TempLocator
-		getTempLocator() { 
-		return ((IntermediateCodeFactory)
-			parent).getTempLocator(); 
-	    }
 
 	    class GCPointFinder extends InstrVisitor {
 		protected final List results;
@@ -274,7 +269,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    this.rd = rd;
 		    this.s = s;
 		    this.d = d;
-		    this.tl = getTempLocator();
+		    this.tl = ((IntermediateCode)hc).getTempLocator();
 		}
 		public void visit(InstrCALL c) {
 		    // all InstrCALLs are GC points

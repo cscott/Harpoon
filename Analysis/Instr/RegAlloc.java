@@ -75,7 +75,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.95 2000-07-06 14:30:44 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.96 2000-07-06 20:55:07 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -181,11 +181,6 @@ public abstract class RegAlloc  {
 	    return defs;
 	}
 
-	public String toString() {
-	    return super.toString() + 
-		" { "+new ArrayList(defC())+
-		", "+new ArrayList(useC())+" }"; 
-	}
     }
 
     /** Creates a <code>RegAlloc</code>.  <code>RegAlloc</code>s are
@@ -244,47 +239,70 @@ public abstract class RegAlloc  {
 	     (abstractSpillFactory(parentFactory, frame), frame), frame);
     }
 
-    /** <code>IntermediateCodeFactory</code> produces code which is
+    /** <code>IntermediateCode</code> is a code which has been
 	register allocated but the architecture-specific spill
-	instructions have not been inserted yet.  Stack Offsets have
-	been determined and are stored in the <code>Temp</code>s for
-	the spill code, but the output needs to be passed through
-	<code>RegAlloc.concreteSpillFactory()</code> before it will be
-	executable. 
+	instructions and method prologue/epilogue have not been
+	inserted yet.  Stack Offsets have been determined and are
+	stored in the spill code instructions, but the output needs to
+	be passed through <code>RegAlloc.concreteSpillFactory()</code>
+	before it will be executable. 
 	@see RegAlloc#abstractSpillFactory
 	@see RegAlloc#concreteSpillFactory
     */
-    public static interface IntermediateCodeFactory extends HCodeFactory {
-	harpoon.Backend.Generic.RegFileInfo.TempLocator getTempLocator();
+    public static interface IntermediateCode {
+	Set usedRegisterTemps();
+	int numberOfLocals();
+	TempLocator getTempLocator();
+    }
+
+    /** IntermediateCodeFactory is an HCodeFactory that is guaranteed
+	to produce <code>IntermediateCode</code>s.  If the Java
+	langaguage supported covariant return types, we would be able
+	to enforce this constraint in the lanuage, but for now we are
+	forced to rely on enforcing the constraint through
+	specification alone.  FSK is just keeping the interface around
+	because its make things confusing to go and remove all of the
+	references to IntermediateCodeFactory from Karen's code.
+    */
+    public static interface IntermediateCodeFactory 
+	extends HCodeFactory {
+	/** The <code>HCode</code>s returned by this method are
+	    guaranteed to implement the <code>IntermediateCode</code>
+	    interface. 
+	*/
+        HCode convert(HMethod m);
     }
     
-    /** Produces an <code>IntermediateCodeFactory</code> which can be
-	used to extract Derivation information about code it
-	generates.
+    /** Produces an <code>HCodeFactory</code> which can be used to
+	extract Derivation information about code it generates.
 	<BR> <B>requires:</B> <code>parentFactory</code> produces code
 	     in a derivative of "instr" form.
 	<BR> <B>effects:</B> Produces an
-	     <code>IntermediateCodeFactory</code> which allocates
+	     <code>HCodeFactory</code> which allocates
 	     registers in the code produced by
-	     <code>parentFactory</code> using the machine properties
-	     specified in <code>frame</code>.  Spilled temporarys are
-	     assigned a stack offset but the actual code does not have
-	     the concrete load and store instructions necessary for the
-	     spilling; the <code>IntermediateCodeFactory</code>
-	     returned should be passed to
+	     <code>parentFactory</code> using the machine properties  
+	     specified in <code>frame</code>.  The returned
+	     <code>HCodeFactory</code> is guaranteed to return
+	     instances of <code>IntermediateCode</code>.
+	     Spilled temporarys are assigned a stack offset but the
+	     actual code does not have the concrete load and store
+	     instructions necessary for the spilling.  In addition,
+	     the architecture specific method prologue and epilogue
+	     instructions have not been inserted either.  The
+	     <code>HCodeFactory</code> returned can be passed to 
 	     <code>concreteSpillFactory()</code> to produce a code
-	     factory suitable for generating runnable assembly code. 
+	     factory suitable for generating runnable assembly code.
     */
-    public static IntermediateCodeFactory 
+    public static IntermediateCodeFactory
 	abstractSpillFactory(final HCodeFactory parent,
 			     final Frame frame) {
 	return new IntermediateCodeFactory() {
-		HCodeFactory p = parent;
-
-		public HCode convert(HMethod m) { 
-		    Code preAllocCode = (Code) p.convert(m);
-		    if (preAllocCode == null) {
-			return null;
+	    HCodeFactory p = parent;
+	    
+	    public HCode convert(HMethod m) { 
+		Code preAllocCode = (Code) p.convert(m);
+		if (preAllocCode == null) {
+		    return null;
 		}
 		
 		RegAlloc localCode, globalCode;
@@ -292,15 +310,24 @@ public abstract class RegAlloc  {
 		localCode = new LocalCffRegAlloc(preAllocCode);
 		globalCode = localCode; // no global reg alloc yet
 		globalCode.generateRegAssignment();
-		List pair = globalCode.resolveOutstandingTemps();
-		final Instr instr = (Instr) pair.get(0);
+		List triple = globalCode.resolveOutstandingTemps();
+		final Instr instr = (Instr) triple.get(0);
 		final RegFileInfo.TempLocator tl = 
-		    (RegFileInfo.TempLocator) pair.get(1);
+		    (RegFileInfo.TempLocator) triple.get(1);
 		final Code mycode = globalCode.code;
-
+		final int numLocals = ((Integer)triple.get(2)).intValue();
+		final Set usedRegs = globalCode.computeUsedRegs(instr);
 		Util.assert(mycode != null);
+		
+		abstract class MyCode extends Code 
+		    implements IntermediateCode {
+		    MyCode(Code code, Instr i, 
+			   Derivation d, String codeName) {
+			super(code, i, d, codeName);
+		    }
+		}
 
-	        return new Code(mycode, instr,
+	        return new MyCode(mycode, instr,
 				mycode.getDerivation(),
 				mycode.getName()) {
 		    public String getName() { return mycode.getName(); }
@@ -318,14 +345,20 @@ public abstract class RegAlloc  {
 		    public void removeAssignment(Instr i, Temp t) {
 			mycode.removeAssignment(i, t);
 		    }
+		    public int numberOfLocals() {
+			return numLocals;
+		    }
+		    public TempLocator getTempLocator() {
+			return tl;
+		    }
+		    public Set usedRegisterTemps() {
+			return usedRegs;
+		    }
 		};
 	    }
 
 	    public String getCodeName() { return p.getCodeName(); }
 	    public void clear(HMethod m) { p.clear(m); }
-	    public RegFileInfo.TempLocator getTempLocator() { 
-		return null; 
-	    }
 	};
     }
 
@@ -410,6 +443,13 @@ public abstract class RegAlloc  {
 		if (absCode == null) {
 		    return null;
 		}
+
+		int locals = ((IntermediateCode)absCode).numberOfLocals();
+		Set usedRegs = ((IntermediateCode)absCode).usedRegisterTemps();
+		Instr root = (Instr) absCode.getRootElement();
+		
+		root = frame.getCodeGen().
+		    procFixup(absCode.getMethod(),root,locals,usedRegs);
 		
 		InstrReplacer replace = new InstrReplacer();
 		
@@ -469,8 +509,8 @@ public abstract class RegAlloc  {
         <BR> <B>modifies:</B> this
 	<BR> <B>effects:</B> Replaces the <code>SpillLoad</code> and
 	     <code>SpillStore</code>s with memory instructions for the
-	     appropriate <code>Frame</code>.  Returns a two-elem list
-	     pair (Instr, TempLocator)
+	     appropriate <code>Frame</code>.  Returns a three-elem list
+	     (instr, tempLocator, numLocals) :: Instr x TempLocator x Integer
     */
     protected final List resolveOutstandingTemps() {
 	// This implementation is REALLY braindead.  Fix to do a
@@ -563,20 +603,12 @@ public abstract class RegAlloc  {
 	    Instr i = (Instr) instrs.next();
 	    i.accept(tf);
 	}
+
 	// now 'instrs' has spill instructions which reference Temps
 	// that are associated with stack offsets 
 
 	Instr instr = (Instr) in.getRootElement();
 
-	final int locals = tf.nextOffset; 
-
-	instr = frame.getCodeGen().
-	    procFixup(in.getMethod(), instr, locals, 
-		      computeUsedRegs(instr));
-
-	// FSK: fix above code to maintain info for
-	// RegFileInfo.TempLocator 
-	
 	TempLocator tl = new TempLocator() {
 	    public Set locate(Temp t, Instr i) {
 		return (Set)
@@ -584,7 +616,8 @@ public abstract class RegAlloc  {
 	    }
 	};
 	
-	return Default.pair(instr, tl);
+	return Arrays.asList
+	    (new Object[] { instr, tl, new Integer(tf.nextOffset) });
     }
     
     private Set computeUsedRegs(Instr instrs) {

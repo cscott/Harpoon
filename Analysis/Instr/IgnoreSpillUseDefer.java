@@ -13,9 +13,12 @@ import java.util.Collections;
  * <code>IgnoreSpillUseDefer</code>
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: IgnoreSpillUseDefer.java,v 1.1.2.3 2000-07-02 18:17:40 pnkfelix Exp $
+ * @version $Id: IgnoreSpillUseDefer.java,v 1.1.2.4 2000-07-06 20:55:07 pnkfelix Exp $
  */
 public class IgnoreSpillUseDefer extends UseDefer {
+
+    public static IgnoreSpillUseDefer USEDEFER = 
+	new IgnoreSpillUseDefer();
     
     /** Creates a <code>IgnoreSpillUDr</code>. */
     public IgnoreSpillUseDefer() {
