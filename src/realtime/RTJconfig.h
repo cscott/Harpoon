@@ -29,6 +29,10 @@
 #error Realtime Java requires thread support.
 #endif
 
+#if defined(WITH_REALTIME_THREADS) && (!defined(WITH_USER_THREADS) || !defined(WITH_EVENT_DRIVEN))
+#error Realtime Threads requires user threads and event-driven support.
+#endif
+
 #ifdef WITH_PRECISE_GC
 #include "jni-gc.h"
 #endif
