@@ -13,15 +13,25 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.1 1999-07-27 16:43:42 duncan Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.2 1999-07-29 19:11:34 duncan Exp $
  */
 public class SEGMENT extends Stm {
-    /** Storage for global variables with an initial value */
-    public static final int DATA_I  = 0; 
-    /** Storage for read-only constant data (i.e. machine instructions) */
-    public static final int TEXT    = 1; 
-    /** Storage for global variables initialized to 0 */
-    public static final int DATA_U  = 2; 
+    /** Storage for static class data (display, vmtable, etc) */
+    public static final int CLASS             = 0; 
+    /** Read-only instruction memory */
+    public static final int CODE              = 1;
+    /** Storage for GC tables */
+    public static final int GC                = 2;
+    /** r/w memory that must be initialized before use */
+    public static final int INIT_DATA         = 3; 
+    /** storage for static aggregate data */
+    public static final int STATIC_OBJECTS    = 4;
+    /** storage for static primitive data */
+    public static final int STATIC_PRIMITIVES = 5;
+    /** read-only memory (other than machine instructions) */
+    public static final int TEXT              = 6; 
+    /** r/w memory initialized at load time to be 0 */
+    public static final int ZERO_DATA         = 7; 
 
     /** The type of segment this <code>SEGMENT</code> precedes. */
     public final int segtype; 
@@ -52,9 +62,14 @@ public class SEGMENT extends Stm {
 
     public String toString() {
         StringBuffer sb = new StringBuffer("SEGMENT<");
-	sb.append(segtype==0 ? "INITIALIZED_DATA"   : 
-		  segtype==1 ? "TEXT"               :
-		  segtype==2 ? "UNINITIALIZED_DATA" : 
+	sb.append(segtype==0 ? "CLASS"             :
+		  segtype==1 ? "CODE"              :
+		  segtype==2 ? "GC"                :
+		  segtype==3 ? "INIT_DATA"         :
+		  segtype==4 ? "STATIC_OBJECTS"    :
+		  segtype==5 ? "STATIC_PRIMITIVES" :
+		  segtype==6 ? "TEXT"              :
+		  segtype==7 ? "ZERODATA"          :
 		  "UNKNOWN SEGMENT TYPE"); 
 	sb.append(">");
 	return sb.toString();
