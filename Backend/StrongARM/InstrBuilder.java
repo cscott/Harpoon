@@ -19,7 +19,7 @@ import java.util.Arrays;
     StrongARM architecture.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.3 1999-12-02 22:26:31 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.4 1999-12-20 02:41:48 pnkfelix Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
@@ -139,6 +139,9 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	//             "offset " + offset + " is too large");
 
 	if (offset < OFFSET_LIMIT) { // common case
+	    // Util.assert(harpoon.Backend.StrongARM.
+	    //             Code.isValidConst( 4*offset ),
+	    //		   "invalid offset: "+(-4*offset));
 	    String[] strs = getStrAssemStrs(r, offset);
 	    Util.assert(strs.length == 1 || 
 			strs.length == 2);
@@ -187,7 +190,14 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	int numSPdec = 0;
 	while (offset >= OFFSET_LIMIT) {
 	    numSPdec++;
-	    assem += "sub `s0, `s0, #"+(OFFSET_LIMIT*4) +"\n";
+	    // can only do eight-bit chunks in 2nd Operand
+	    int op2 = OFFSET_LIMIT*4;
+	    while(op2 != 0) {
+		// FSK: trusting CSA's code from CodeGen here...
+		int eight = op2 & (0xFF << ((Util.ffs(op2)-1) & ~1));
+		assem += "sub `s0, `s0, #"+eight+"\n";		
+		op2 ^= eight;
+	    }
 	    offset -= OFFSET_LIMIT;
 	}
 	
@@ -198,8 +208,14 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	
 	while(numSPdec > 0) {
 	    numSPdec--;
-	    assem += "add `s0, `s0, #"+(OFFSET_LIMIT*4);
-	    if (numSPdec > 0) assem += "\n";
+	    int op2 = OFFSET_LIMIT*4;
+	    while(op2 != 0) {
+		// FSK: symmetric with above code (sort of)
+		int eight = op2 & (0xFF << ((Util.ffs(op2)-1) & ~1));
+		assem += "add `s0, `s0, #"+eight;
+		op2 ^= eight;
+		if (numSPdec > 0 || op2 != 0) assem += "\n";
+	    }
 	}
 	
 	return assem;

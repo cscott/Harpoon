@@ -14,19 +14,25 @@ import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 import harpoon.Temp.Temp;
 
-
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Collection;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.13 1999-12-04 18:36:47 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.14 1999-12-20 02:41:47 pnkfelix Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
+
+    private static final boolean DEBUG = false;
 
     Map tempInstrToRegisterMap;
     RegFileInfo regFileInfo;
@@ -46,6 +52,7 @@ public class Code extends harpoon.Backend.Generic.Code {
 	    .gen(treeCode, newINF(treeCode.getMethod()));
 	Util.assert(instrs != null);
 	tempInstrToRegisterMap = new HashMap();
+
     }
 
     public String getName() { return codename; }
@@ -99,6 +106,18 @@ public class Code extends harpoon.Backend.Generic.Code {
     }
     */
 
+    public Collection getRegisters(Instr i, Temp val) {
+	if (val instanceof TwoWordTemp) {
+	    TwoWordTemp t = (TwoWordTemp) val;
+	    Temp low = get(i, t.getLow());
+	    Temp high = get(i, t.getHigh());
+	    return Arrays.asList(new Temp[]{ low, high });
+				 
+	} else {
+	    return Collections.singleton(get(i, val));
+	}
+    }
+
     /** This returns null or a register temp. */
     private Temp get(Instr instr, Temp val) {
 	Temp reg = 
@@ -130,7 +149,7 @@ public class Code extends harpoon.Backend.Generic.Code {
 		Util.assert(false, "BREAK!  empty suffix " +
 			    "suffix: " + suffix + "\n" +
 			    "instr: " + instr + "\n" + 
-			    "instr str: " + instr.assem + "\n"+
+			    "instr str: " + instr.getAssem() + "\n"+
 			    "temp: " + val);
 	    } else {
 		Util.assert(false, "BREAK!  This parsing needs to be "+
@@ -169,6 +188,59 @@ public class Code extends harpoon.Backend.Generic.Code {
 	return s;
     }
 
+
+    // overriding superclass implementation to add
+    // architecture-dependant assertions (in an effort to fail-fast)
+    protected String toAssem(Instr instr, boolean mustGetRegs) {
+	if (DEBUG) {
+	    // these constraint checks may be flawed; I'm getting
+	    // assertion failures on good code, i think...
+
+	    // check that constants are all contained in eight-bit chunks
+	    String assem = instr.getAssem();
+	    int begin = assem.lastIndexOf('#');
+	    
+	    
+	    if (begin != -1) {
+		int end = assem.length();
+		final char[] endChars = new char[]{ '\n', '@', ']', ' '};
+		for(int i=0; i<endChars.length; i++) {
+		    int e = assem.lastIndexOf(endChars[i], end);
+		    if (e > begin) end = e;
+		    // System.out.println(assem.substring(begin+1, end));
+		}
+		
+		String constStr = assem.substring(begin+1, end);
+		int v = 0;
+		try { 
+		    v = Integer.parseInt(constStr);
+		} catch (NumberFormatException e) {
+		    System.out.println("bad const extraction");
+		    System.out.println("\'"+constStr+"\'");
+		    System.out.println(" from "+instr+"("+begin+","+end+")");
+		    Util.assert(false);
+		}
+	    
+		Util.assert(isValidConst(v) || isValidConst(-v),
+			    "const form err of "+v+" in "+
+			    instr+"("+begin+","+end+")");
+	    }
+	}
+	return super.toAssem(instr, mustGetRegs);
+    }
+
+    public static boolean isValidConst(final int val) {
+	// FSK: stealing code from CSA again...
+	int v;
+	int r;
+	
+	v = val;
+	r=0;
+	for ( ; v!=0; r++) 
+	    v &= ~(0xFF << ((Util.ffs(v)-1) & ~1));
+	return (r <= 1) ;
+    }
+
     /** Assigns register(s) to the <code>Temp</code> pseudoReg. 
 	<BR><B>requires:</B> <code>regs</code> is one of the
 	    <code>List</code>s returned by
@@ -196,8 +268,8 @@ public class Code extends harpoon.Backend.Generic.Code {
 	}
  
 	// Register Constraint check
-	if ((instr.assem.indexOf("mul ") != -1) ||
-	    (instr.assem.indexOf("mla ") != -1)) {
+	if ((instr.getAssem().indexOf("mul ") != -1) ||
+	    (instr.getAssem().indexOf("mla ") != -1)) {
 	    Object rm = get(instr, instr.use()[0]);
 	    Object rd = get(instr, instr.def()[0]);
 	    Util.assert(rm == null ||

@@ -52,7 +52,7 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc3.java,v 1.1.2.1 1999-12-11 23:31:10 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc3.java,v 1.1.2.2 1999-12-20 02:41:34 pnkfelix Exp $
  */
 public class LocalCffRegAlloc3 extends RegAlloc {
     
@@ -80,8 +80,9 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 
 	// System.out.print("Bnr");
 
-	// maps (Instr:i x Temp:t) -> index of next Instr referencing t
-	// (only defined for t's referenced by i)
+	// maps (Instr:i x Temp:t) -> 2 * index of next Instr
+	//                            referencing t 
+	// (only defined for t's referenced by i) 
 	Map nextRef = buildNextRef(b);
 
 	// System.out.print("Lra");
@@ -121,122 +122,41 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 		if (regfile.hasAssignment(t)) {
 		    code.assignRegister
 		    (i, t, regfile.getAssignment(t));
-		    // evictables.remove(t);
+		    evictables.remove(t);
 		} else {
-		    for(int x=0; true; x++) {
-			Util.assert(x < 5, 
-				    "shouldn't have to iterate >5");
-			try {
-			    Iterator suggs = 
-				frame.getRegFileInfo().suggestRegAssignment
-				(t, regfile.getRegToTemp());
-			    // this is where the exception would be
-			    // thrown
-			    
-			    List regList = chooseSuggestion(suggs);
-			    code.assignRegister(i, t, regList);
-			    regfile.assign(t, regList);
-
-			    // shouldn't need to do this here...(debug)
-			    Integer X2 = (Integer) nextRef.get(new TempInstrPair(i, t));
-			    // TODO: if t is dirty then X <- X+0.5 endif
-			    Util.assert(X2 != null,
-					"nextRef("+i+","+t+") should not be null");
-			    evictables.put(t, X2);
-
-			    if (i.useC().contains(t)) {
-				InstrMEM load = 
-				    new FskLoad
-				    (i, "FSK-LOAD", regList, t);
-				load.insertAt(new InstrEdge(i.getPrev(), i));
-			    }
-			    break;
-
-			} catch (SpillException s) {
-			    Iterator spills = s.getPotentialSpills();
-			    SortedSet weightedSpills = new TreeSet();
-			    while(spills.hasNext()) {
-				Set cand = (Set) spills.next();
-				Iterator regs = cand.iterator();
-				
-				int cost=Integer.MAX_VALUE;
-				while(regs.hasNext()) {
-				    Temp reg = (Temp) regs.next();
-				    Temp preg = regfile.getTemp(reg);
-				    if (preg != null) {
-					Integer dist = (Integer) evictables.get(preg);
-					Util.assert(dist != null, 
-						    "Alloc for "+i+", "+
-						    "Preg: "+preg+" should "+
-						    "be in evictables if it "+
-						    "is in regfile: "+regfile);
-					int c = dist.intValue();
-					if (c < cost) { 
-					    cost = c;
-					}
-				    }
-				}
-
-				weightedSpills.add
-				    (new WeightedSet(cand, cost));
-				// System.out.println("Adding "+cand+" at cost "+cost);
-			    }
-
-			    // TODO: add code here to decide which
-			    // FurthestRef to spill (FF -> CFF)
-			    
-			    // Unfortunately, TreeSet does NOT create
-			    // a collection of elements with the same
-			    // cost, it just doesn't add the object if
-			    // one with the same cost already exists.
-			    // (since TreeSet requires that the
-			    // Comparables stored be "consistent with
-			    // equals", this is not an error) Need to
-			    // come up with some sort of
-			    // OrderedMultiSet/OrderedBag abstraction,
-			    // so that I can do the FF -> CFF changes.
-
-			    WeightedSet spill = (WeightedSet) weightedSpills.first();
-			    
-			    // System.out.println("Choosing to spill "+spill+
-			    //	       " of " + weightedSpills);
-
-			    Iterator spRegs = spill.iterator();
-			    while(spRegs.hasNext()) {
-
-				// the set we end up spilling may be
-				// disjoint from the set we were
-				// prompted to spill, because the
-				// SpillException only accounts for
-				// making room for Load, not in
-				// properly maintaining the state of
-				// the register file
-
-				Temp reg = (Temp) spRegs.next();
-				Temp value = (Temp) regfile.getTemp(reg);
-				
-				if (value == null) {
-				    // no value associated with 'reg',
-				    // so we don't need to spill it;
-				    // can go straight to storing
-				    // stuff in it
-				} else {
-				    spillValue
-					(value, 
-					 new InstrEdge(i.getPrev(), i), 
-					 regfile);
-				    //evictables.remove(value);
-				}
-			    }
-			}
+		    Iterator suggs = getSuggestions(t, regfile, i, evictables);
+		    List regList = chooseSuggestion(suggs);
+		    code.assignRegister(i, t, regList);
+		    regfile.assign(t, regList);
+		    
+		    if (i.useC().contains(t)) {
+			InstrMEM load = 
+			    new FskLoad
+			    (i, "FSK-LOAD", regList, t);
+			load.insertAt(new InstrEdge(i.getPrev(), i));
 		    }
 		}
-
+		
 		Integer X = (Integer) nextRef.get(new TempInstrPair(i, t));
-		// TODO: if t is dirty then X <- X+0.5 endif
 		Util.assert(X != null,
 			    "nextRef("+i+","+t+") should not be null");
+		Util.assert(X.intValue() <= (Integer.MAX_VALUE - 1),
+			    "Excessive Weight was stored.");
+		
+		// TODO: if t is dirty then X <- X+0.5 endif
+		// (since weights are doubled, use X++;
+		if (regfile.isDirty(t)) {
+		    X = new Integer(X.intValue() + 1);
+		}
+		
 		evictables.put(t, X); 
+	    }
+
+	    Iterator defs = i.defC().iterator();
+	    while(defs.hasNext()) {
+		Temp def = (Temp) defs.next();
+		// Q: should we also mark writes to hardcoded registers?
+		if (!isTempRegister(def)) regfile.writeTo(def);
 	    }
 
 	    // finished local alloc for 'i'
@@ -259,6 +179,84 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 	emptyRegFile(regfile, i, liveOnExit);
     }
 
+    /** Gets an Iterator of suggested register assignments in
+	<code>regfile</code> for <code>t</code>.  May insert
+	load/spill code before <code>i</code>.  Uses
+	<code>evictables</code> as a <code>Map</code> from
+	<code>Temp</code>s to weighted distances to decide which
+	<code>Temp</code>s to spill.  
+    */
+    private Iterator getSuggestions(Temp t, RegFile regfile, 
+				    Instr i, Map evictables) {
+	for(int x=0; true; x++) {
+	    Util.assert(x < 5, "shouldn't have to iterate >5");
+
+	    try {
+		Iterator suggs = 
+		    frame.getRegFileInfo().suggestRegAssignment
+		    (t, regfile.getRegToTemp());
+		return suggs;
+	    } catch (SpillException s) {
+		Iterator spills = s.getPotentialSpills();
+		SortedSet weightedSpills = new TreeSet();
+		while(spills.hasNext()) {
+		    Set cand = (Set) spills.next();
+		    Iterator regs = cand.iterator();
+		    
+		    int cost=Integer.MAX_VALUE;
+		    while(regs.hasNext()) {
+			Temp reg = (Temp) regs.next();
+			Temp preg = regfile.getTemp(reg);
+			if (preg != null) {
+			    Integer dist = (Integer) evictables.get(preg); 
+			    Util.assert(dist != null, 
+					"Alloc for "+i+" "+
+					"Preg: "+preg+" should be in "+
+					"evictables if it is in regfile: "+
+					regfile);
+			    int c = dist.intValue();
+			    if (c < cost) { 
+				cost = c;
+			    }
+			}
+		    }
+		    
+		    weightedSpills.add(new WeightedSet(cand, cost));
+		    // System.out.println("Adding "+cand+" at cost "+cost);
+		}
+		
+		WeightedSet spill = (WeightedSet) weightedSpills.first();
+		// System.out.println("Choosing to spill "+spill+
+		//	       " of " + weightedSpills);
+		
+		Iterator spRegs = spill.iterator();
+		while(spRegs.hasNext()) {
+		    
+		    // the set we end up spilling may be disjoint from
+		    // the set we were prompted to spill, because the
+		    // SpillException only accounts for making room
+		    // for Load, not in properly maintaining the state
+		    // of the register file
+		    
+		    Temp reg = (Temp) spRegs.next();
+		    Temp value = (Temp) regfile.getTemp(reg);
+		    
+		    if (value == null) {
+			// no value associated with 'reg', so we don't
+			// need to spill it; can go straight to
+			// storing stuff in it
+			
+		    } else {
+			spillValue(value, 
+				   new InstrEdge(i.getPrev(), i), 
+				   regfile);
+			evictables.remove(value);
+		    }
+		}
+	    }
+	}
+    }
+    
     private void precolorRegfile(BasicBlock b, RegFile regfile) {
 	Iterator instrs = b.iterator();
 	Instr i=null;
@@ -295,7 +293,17 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 	    // System.out.println("dealing with " + val + " at end of " + b);
 	    
 	    // don't spill dead values.
-	    if (!liveOnExit.contains(val)) continue;
+	    if (!liveOnExit.contains(val)) {
+		regfile.remove(val);
+		continue;
+	    }
+	    
+	    
+	    // don't spill clean values.
+	    if (regfile.isClean(val)) {
+		regfile.remove(val);
+		continue;
+	    }
 	    
 	    // need to insert the spill in a place where we can be
 	    // sure it will be executed; the easy case is where
@@ -368,7 +376,10 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 		Temp ref = (Temp) refs.next();
 		Instr last = (Instr) tempToLastRef.get(ref);
 		if (last != null) {
-		    nextRef.put(new TempInstrPair(last, ref), new Integer(c));
+		    Util.assert((2*c) <= (Integer.MAX_VALUE - 1),
+				"IntOverflow;use another numeric rep in LRA");
+		    nextRef.put(new TempInstrPair(last, ref), 
+				new Integer(2*c));
 		}
 		tempToLastRef.put(ref, instr);
 	    }
@@ -376,7 +387,9 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 	}
 	
 	Iterator entries = tempToLastRef.entrySet().iterator();
-	Integer infinity = new Integer(Integer.MAX_VALUE);
+	
+	// can add 1 to weight later, so store MAX_VALUE - 1 at most. 
+	Integer infinity = new Integer( Integer.MAX_VALUE - 1 );
 	while(entries.hasNext()) {
 	    Map.Entry entry = (Map.Entry) entries.next();
 	    nextRef.put(new TempInstrPair((Temp)entry.getKey(),
@@ -422,12 +435,14 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 	return liveTemps;
     }
 
-    /** spills 'val', adding the necessary store at 'loc' and updates
+    /** spills 'val', adding a store if necessary at 'loc' and updates
 	the 'regfile' so that it no longer has a mapping for 'val' or
 	its associated registers.
     */
     private void spillValue(Temp val, InstrEdge loc, RegFile regfile) {
-	addSpillInstr(val, loc, regfile);
+	if (regfile.isDirty(val)) {
+	    addSpillInstr(val, loc, regfile);
+	}
 	regfile.remove(val);
     }
     

@@ -9,7 +9,9 @@ import harpoon.Util.Util;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Collections;
 import java.util.Iterator;
 
@@ -18,23 +20,66 @@ import java.util.Iterator;
  * most processor architectures for storing working sets of data.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFile.java,v 1.1.2.1 1999-12-11 23:31:11 pnkfelix Exp $
+ * @version $Id: RegFile.java,v 1.1.2.2 1999-12-20 02:41:35 pnkfelix Exp $
  */
 class RegFile {
     
     private Map regToTmp; // Map[ Reg -> Temp ]
     private Map tmpToRegLst; // Map[ Temp -> List<Reg> ]
 
+    private Set dirtyTemps; // Set of all Temps that have been written
+
+    /** Creates a <code>RegFile</code>. */
+    public RegFile() {
+        regToTmp = new HashMap();
+	tmpToRegLst = new HashMap();
+	dirtyTemps = new HashSet();
+    } 
+
+    /** Marks the pseudo register <code>preg</code> as dirty. 
+	<BR> <B>requires:</B> <code>preg</code> currently is assigned
+	                      in <code>this</code>.
+        <BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> marks <code>preg</code> as dirty.
+	     <code>preg</code> will remain dirty until it is removed
+	     from <code>this</code>.
+     */
+    public void writeTo(Temp preg) {
+	Util.assert(hasAssignment(preg),
+		    "temp: "+preg+" should have an assignment in "+this);
+	dirtyTemps.add(preg);
+    }
+
+    /** Returns whether the pseudo register is clean.
+	<BR> <B>requires:</B> <code>preg</code> currently is assigned
+	                      in <code>this</code>.
+	<BR> <B>effects:</B> if the pseudo register <code>preg</code>
+	     has been marked as dirty since last being assigned in
+	     <code>this</code>, returns False.  Else returns True.
+    */
+    public boolean isClean(Temp preg) {
+	Util.assert(hasAssignment(preg),
+		    "temp: "+preg+" should have an assignment in "+this);
+	return !dirtyTemps.contains(preg);
+    }
+
+    /** Returns whether the pseudo register is dirty.
+	<BR> <B>requires:</B> <code>preg</code> currently is assigned
+	                      in <code>this</code>.
+	<BR> <B>effects:</B> if pseudo register <code>preg</code> has
+	     been marked as dirty since last being assigned in
+	     <code>this</code>, returns True.  Else returns False.
+    */
+    public boolean isDirty(Temp preg) {
+	Util.assert(hasAssignment(preg),
+		    "temp: "+preg+" should have an assignment in "+this);
+	return dirtyTemps.contains(preg);
+    }
+
     public String toString() {
 	return regToTmp.toString();
     }
     
-    /** Creates a <code>RegFile</code>. */
-    public RegFile() {
-        regToTmp = new LinearMap();
-	tmpToRegLst = new LinearMap();
-    } 
-
     /** Returns a view of the current mapping from registers to pseudo
 	registers.
 	<BR> <B>effects:</B> Returns an immutable <code>Map</code> of
@@ -133,5 +178,6 @@ class RegFile {
 			"reg: "+reg+" should have mapped to "+
 			pseudoReg+" instead of "+prev);
 	}
+	dirtyTemps.remove(pseudoReg);
     }
 } 

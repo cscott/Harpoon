@@ -14,7 +14,7 @@ import harpoon.IR.Tree.Print;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.4 1999-12-11 23:31:12 pnkfelix Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.5 1999-12-20 02:41:43 pnkfelix Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -30,7 +30,9 @@ public abstract class CodeGen {
     
     /** Fixes up the procedure entry and exit code for a list of instrs, once
      *  it is known how many registers and how much stack space is used.
-     */ // FIXME: is there a more abstract way to specify these quantities?
+     */ // FIXME: is there a more abstract way to specify these 
+        // quantities?  Also, we may want to make it modify the instr
+        // passed in, instead of allowing it to be functional in nature
     public abstract Instr procFixup(HMethod hm, Instr instr, int stackspace,
 				    java.util.Set usedRegisters);
 

@@ -36,6 +36,7 @@ import harpoon.Analysis.DataFlow.InstrSolver;
 import java.util.Hashtable;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.Vector;
 import java.util.List;
@@ -55,7 +56,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.55 1999-12-11 23:31:10 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.56 1999-12-20 02:41:35 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
@@ -438,8 +439,11 @@ public abstract class RegAlloc  {
 		// replace all non-Register Temps with appropriate
 		// stack offset locations
 		Integer i = (Integer) tempsToOffsets.get(m.def()[0]);
-		Util.assert(i != null, "tempsToOffsets should have a value for "+m.def()[0]);
-		List instrs = frame.getInstrBuilder().makeStore(Arrays.asList(m.use()), i.intValue(), m);
+		Util.assert(i != null, "tempsToOffsets should have "+
+			    "a value for "+m.def()[0]);
+		List instrs = 
+		    frame.getInstrBuilder().
+		    makeStore(Arrays.asList(m.use()), i.intValue(), m);
 
 		// add a comment saying which temp is being stored
 		Instr first = (Instr) instrs.get(0);
@@ -456,8 +460,10 @@ public abstract class RegAlloc  {
 		// replace all non-Register Temps with appropriate
 		// stack offset locations
 		Integer i = (Integer) tempsToOffsets.get(m.use()[0]);
-		Util.assert(i != null, "tempsToOffsets should have a value for "+m.use()[0]);
-		List instrs = frame.getInstrBuilder().makeLoad(Arrays.asList(m.def()), i.intValue(), m);
+		Util.assert(i != null, "tempsToOffsets should have "+
+			    "a value for "+m.use()[0]);
+		List instrs = frame.getInstrBuilder().
+		    makeLoad(Arrays.asList(m.def()), i.intValue(), m);
 
 		// add a comment saying which temp is being loaded
 		Instr first = (Instr) instrs.get(0);
@@ -502,9 +508,36 @@ public abstract class RegAlloc  {
 	    i.accept(ir);
 	}
 
+	Instr instr = (Instr) in.getRootElement();
+
+	// might be off by one here (trying to be conservative)
+	final int locals = tf.nextOffset; 
+
+	// TODO: need to get this value into 'in' somehow...
+	instr = frame.getCodeGen().procFixup(in.getMethod(), instr,
+					      locals,
+					      computeUsedRegs(instr)); 
+
 	return in;
     }
     
+    private Set computeUsedRegs(Instr instrs) {
+	Set s = new HashSet();
+	for (Instr il = instrs; il!=null; il=il.getNext()) {
+	    if (il instanceof FskStore) continue;
+	    Temp[] d = il.def();
+	    for (int i=0; i<d.length; i++) {
+		if (isTempRegister(d[i])) {
+		    s.add(d[i]); 
+		} else {
+		    Collection c = code.getRegisters(il, d[i]);
+		    s.addAll(c);
+		}
+	    }
+	}
+	return Collections.unmodifiableSet(s);
+    }
+
 
     /** Checks if <code>t</code> is a register (Helper method).
 	<BR> <B>effects:</B> If <code>t</code> is a register for the

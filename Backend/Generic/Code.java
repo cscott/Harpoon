@@ -33,7 +33,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.32 1999-12-11 23:31:12 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.33 1999-12-20 02:41:43 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -308,6 +308,23 @@ public abstract class Code extends HCode {
      */
     protected abstract String getRegisterName(Instr i, Temp val, String suffix);
 
+    /** Returns all of the Register <code>Temp</code>s that
+	<code>val</code> maps to in <code>i</code>.
+	<BR> <B>requires:</B> <OL>
+	      <LI> <code>val</code> must be a <code>Temp</code> that
+	           is an element of <code>i.defC()</code> or
+		   <code>i.useC()</code>
+	      <LI> <code>registerAssigned(i, val)</code> must be true
+	<BR> <B>effects:</B> Returns a <code>Collection</code> of the
+	     Register <code>Temp</code>s that are assigned to
+	     <code>val</code> in <code>i</code>.  Every member of the
+	     <code>Collection</code> returned will be a valid Register
+	     for this architecture. 
+    */
+    public Collection getRegisters(Instr i, Temp val) {
+	Util.assert(false, "Make abstract and implement in backends");
+	return null;
+    }
     
     /** Assigns a register to a <code>Temp</code> in <code>i</code>.
 	<BR> <B>modifies:</B> <code>i</code> (FSK: potentially at least)
@@ -335,6 +352,19 @@ public abstract class Code extends HCode {
 					Temp pseudoReg, 
 					List regs);
 
+    /** Checks if <code>pseudoReg</code> has been assigned to some
+	registers in <code>i</code>.
+	<BR> <B>requires:</B> 
+	      <code>val</code> must be a <code>Temp</code> that
+	      is an element of <code>i.defC()</code> or
+	      <code>i.useC()</code>
+	<BR> <B>effects:</B> 
+	     If <code>pseudoReg</code> has been assigned
+	     to some <code>List</code> of registers in <code>i</code>
+	     and <code>removeAssignment(i, pseudoReg)</code> has not
+	     been called since, returns <code>true</code>.  
+	     Else returns <code>false</code>.
+     */
     public abstract boolean registerAssigned(Instr i, Temp pseudoReg);
 
     public void removeAssignment(Instr i, Temp pseudoReg) {

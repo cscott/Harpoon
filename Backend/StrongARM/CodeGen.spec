@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.111 1999-12-11 23:31:13 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.112 1999-12-20 02:41:47 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -111,6 +111,10 @@ import java.util.Iterator;
 	    regToNum.put(regfile.reg[i], new Integer(i));
 	regComp = new Comparator() {
 	    public int compare(Object o1, Object o2) {
+		Util.assert(regToNum.keySet().contains(o1),
+			    o1+" not in regToNum's keys");
+		Util.assert(regToNum.keySet().contains(o2),
+			    o2+" not in regToNum's keys");
 		return ((Integer)regToNum.get(o1)).intValue() -
 		       ((Integer)regToNum.get(o2)).intValue();
 	    }
@@ -413,6 +417,7 @@ import java.util.Iterator;
 	Label methodlabel = frame.getRuntime().nameMap.label(hm);
 	// make list of callee-save registers we gotta save.
 	StringBuffer reglist = new StringBuffer();
+
 	Temp[] usedRegArray =
 	    (Temp[]) usedRegisters.toArray(new Temp[usedRegisters.size()]);
 	Collections.sort(Arrays.asList(usedRegArray), regComp);
@@ -444,8 +449,23 @@ import java.util.Iterator;
 				      "stmfd sp!, {"+reglist+"fp,ip,lr,pc}",
 				      null, null);
 		Instr in6 = new Instr(inf, il, "sub fp, ip, #4", null, null);
-		Instr in7 = new Instr(inf, il, "sub sp, sp, #"+(stackspace*4),
-				      null, null);
+		
+		String assem;
+		if (harpoon.Backend.StrongARM.
+		    Code.isValidConst(stackspace*4)) {
+		    assem = "sub sp, sp, #"+(stackspace*4);
+		} else {
+		    assem="";
+		    int op2 = stackspace *4;
+		    while(op2 != 0) {
+			// FSK: trusting CSA's code from CodeGen here...
+			int eight = op2 & (0xFF << ((Util.ffs(op2)-1) & ~1));
+			assem += "sub sp, sp, #"+eight;
+			op2 ^= eight;
+			if (op2!=0) assem += "\n";		
+		    }
+		}
+		Instr in7 = new Instr(inf, il, assem, null, null);
 		in7.layout(il, il.getNext());
 		in6.layout(il, in7);
 		in5.layout(il, in6);
