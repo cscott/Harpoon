@@ -41,7 +41,7 @@ import harpoon.Util.Util;
  concerned call-sites to point to it.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaMethod.java,v 1.1.2.3 2000-03-29 23:43:56 cananian Exp $
+ * @version $Id: MetaMethod.java,v 1.1.2.4 2000-03-30 03:05:06 salcianu Exp $
  */
 public class MetaMethod implements java.io.Serializable {
     // Turns on some severe correctness tests.
@@ -142,6 +142,14 @@ public class MetaMethod implements java.io.Serializable {
 	for(int i = 0; i < types.length ; i++)
 	    if(!types[i].equals(mm2.types[i])) return false;
 	return true;
+    }
+
+    /** Checks whether two <code>MetaMethod</code>s are equal or not.
+	handle <code>null</code> arguments. */
+    public static boolean identical(MetaMethod mm1, MetaMethod mm2){
+	if((mm1 == null) || (mm2 == null))
+	    return mm1 == mm2;
+	return mm1.equals(mm2);
     }
 
     /** Pretty printer for debug purposes. */

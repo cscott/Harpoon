@@ -10,7 +10,12 @@ import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Collections;
+
+import harpoon.IR.Quads.CALL;
+import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.ClassFile.HCodeElement;
 
 /**
  * <code>ActionRepository</code> merges together the <code>alpha</code> and
@@ -31,7 +36,7 @@ import java.util.Collections;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.16 2000-03-25 05:17:24 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.17 2000-03-30 03:05:14 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -53,13 +58,13 @@ public class ActionRepository {
 
     // Set<PALoad>
     HashSet  alpha_ld;
-    // Relation<PANode,PALoad>
+    // Relation<PANode,PALoad>; nt -> loads performed in // with nt 
     Relation pi_ld;
 
-    // Relation<PANode,PANode>;   n -> nt (nt does a sync on n)
+    // Relation<PANode,PASync>;   n -> syncs performed on n
     Relation  alpha_sync;
     // Hashtable<PANode,Relation<PANode,PANode>>
-    // nt2 -> n -> nt1 (nt1 does a sync on n in // with the thread nt2)
+    // nt2 -> n -> syncs on n in // with nt2
     Hashtable pi_sync;
 
 
@@ -75,8 +80,8 @@ public class ActionRepository {
     }
 
     // Adds a "sync" action.
-    private final void alpha_add_sync(PANode n, PANode nt){
-	alpha_sync.add(n,nt);
+    private final void alpha_add_sync(PASync sync){
+	alpha_sync.add(sync.n, sync);
     }
 
     // A.2. Operations on pi, the relation of parallelism
@@ -88,13 +93,13 @@ public class ActionRepository {
     }
 
     // Adds a parallel relation between a "sync" action and a thread.
-    private final void pi_add_sync(PANode n, PANode nt, PANode nt2){
+    private final void pi_add_sync(PASync sync, PANode nt2){
 	Relation rel = (Relation) pi_sync.get(nt2);
 	if(rel == null){
 	    rel = new Relation();
 	    pi_sync.put(nt2,rel);
 	}
-	rel.add(n,nt);
+	rel.add(sync.n, sync);
     }
 
     // B. User level function: usually when a user introduces an action,
@@ -157,14 +162,14 @@ public class ActionRepository {
     /** Adds a <code>sync</code> action.
 	The thread <code>nt</code> synchronized on <code>n</code> in
 	parallel with all the threads from <code>active_threads</code>. */
-    public final void add_sync(PANode n, PANode nt, Set active_threads){
-	alpha_add_sync(n,nt);
+    public final void add_sync(PASync sync, Set active_threads){
+	alpha_add_sync(sync);
 	
 	if((active_threads == null) || active_threads.isEmpty()) return;
 
 	if(PointerAnalysis.DEBUG2){
-	    System.out.print("WONDERFUL: < sync , " + n + " , " + 
-			     nt + " > || [");
+	    System.out.print("WONDERFUL: < sync , " + sync.n + " , " + 
+			     sync.nt + " > || [");
 	    
 	    Iterator it2 = active_threads.iterator();
 	    while(it2.hasNext())
@@ -176,31 +181,18 @@ public class ActionRepository {
 	Iterator it = active_threads.iterator();
 	while(it.hasNext()){
 	    PANode nt2 = (PANode) it.next();
-	    pi_add_sync(n,nt,nt2);
+	    pi_add_sync(sync,nt2);
 	}
     }
 
-    /** Convenient function used in the inter-thread and the inter-procedural
-	analysis when a (thread) node can be mapped to a set of nodes.
-	It iterates over <code>set_n</code> and <code>set_nt</code>,
-	repeatedly calling <code>add_sync(n,nt,active_threads)</code> for each
-	<code>n</code> in <code>set_n</code> and each 
-	<code>nt</code> in <code>set_nt</code>. */ 
-    public final void add_sync(Set set_n, Set set_nt, Set active_threads){
-	if(set_n.isEmpty() || set_nt.isEmpty()) return;
-	Iterator it_n = set_n.iterator();
-	while(it_n.hasNext()){
-	    PANode n = (PANode) it_n.next();
-	    Iterator it_nt = set_nt.iterator();
-	    while(it_nt.hasNext()){
-		PANode nt = (PANode) it_nt.next();
-		add_sync(n,nt,active_threads);
-	    }
-	}
+    /** Convenient fiunction for recording a set of <code>sync</code>
+	actions in parallel with all the threads from the set
+	<code>active_threads</code>. */
+    public final void add_sync(Set syncs, Set active_threads){
+	for(Iterator it = syncs.iterator(); it.hasNext(); )
+	    add_sync((PASync) it.next(), active_threads);
     }
-
     // END of the "add" functions
-
 
     /** Checks the equality of two <code>ActionRepository</code>s. */
     public final boolean equals(Object o){
@@ -240,20 +232,14 @@ public class ActionRepository {
 	and <code>visitor.visit_sync</code> on the <code>sync</code>. */
     public final void forAllActions(ActionVisitor visitor){
 	// visit all the "ld" actions
-	Iterator it_ld = alpha_ld.iterator();
-	while(it_ld.hasNext()){
-	    PALoad load = (PALoad) it_ld.next();
-	    visitor.visit_ld(load);
+	for(Iterator it_ld = alpha_ld.iterator(); it_ld.hasNext(); ){
+	    visitor.visit_ld((PALoad) it_ld.next());
 	}
 	// visit all the "sync" actions
-	Enumeration enum_n = alpha_sync.keys();
-	while(enum_n.hasMoreElements()){
-	    PANode n = (PANode) enum_n.nextElement();
-	    Iterator it_nt = alpha_sync.getValues(n);
-	    while(it_nt.hasNext()){
-		PANode nt = (PANode) it_nt.next();
-		visitor.visit_sync(n,nt);
-	    }
+	for(Iterator it_n = alpha_sync.keySet().iterator(); it_n.hasNext(); ){
+	    PANode n = (PANode) it_n.next();
+	    for(Iterator it_sync = alpha_sync.getValues(n); it_sync.hasNext();)
+		visitor.visit_sync((PASync) it_sync.next());
 	}
     }
 
@@ -264,7 +250,7 @@ public class ActionRepository {
 	<code>visitor.visit_par_sync</code> according to the type of the
 	<code>action</code>. */
     public final void forAllParActions(ParActionVisitor visitor){
-	// visit all the "ld" || nt elements
+	// visit all the "ld" || nt entries
 	Enumeration enum_nt2 = pi_ld.keys();
 	while(enum_nt2.hasMoreElements()){
 	    PANode nt2 = (PANode) enum_nt2.nextElement();
@@ -274,19 +260,15 @@ public class ActionRepository {
 		visitor.visit_par_ld(load,nt2);
 	    }
 	}
-	// visit all the "sync" || nt elements
-	enum_nt2 = pi_sync.keys();
-	while(enum_nt2.hasMoreElements()){
-	    PANode nt2 = (PANode) enum_nt2.nextElement();
+
+	// visit all the "sync" || nt entries
+	for(Iterator it_nt2 = pi_sync.keySet().iterator(); it_nt2.hasNext();){
+	    PANode nt2 = (PANode) it_nt2.next();
 	    Relation rel = (Relation) pi_sync.get(nt2);
-	    Enumeration enum_n = rel.keys();
-	    while(enum_n.hasMoreElements()){
-		PANode n = (PANode) enum_n.nextElement();
-		Iterator it_nt1 = rel.getValues(n);
-		while(it_nt1.hasNext()){
-		    PANode nt1 = (PANode) it_nt1.next();
-		    visitor.visit_par_sync(n,nt1,nt2);
-		}
+	    for(Iterator it_n = rel.keySet().iterator(); it_n.hasNext(); ){
+		PANode n = (PANode) it_n.next();
+		for(Iterator it_sync = rel.getValues(n); it_sync.hasNext();)
+		    visitor.visit_par_sync((PASync)it_sync.next(), nt2);
 	    }
 	}
     }
@@ -302,42 +284,51 @@ public class ActionRepository {
     /** Removes all the information related to edges containing nodes from
 	<code>nodes</code>. */
     public final void removeNodes(final Set nodes){
-
-	// clean alpha_ld
-	Iterator it_paload = alpha_ld.iterator();
-	while(it_paload.hasNext()){
+	// CLEAN alpha_ld
+	for(Iterator it_paload = alpha_ld.iterator(); it_paload.hasNext(); ){
 	    PALoad load = (PALoad) it_paload.next();
 	    if(load.isBad(nodes)) it_paload.remove();
 	}
 
+	// CLEAN pi_ld
 	PredicateWrapper node_predicate = new PredicateWrapper(){
 		public boolean check(Object obj){
 		    return nodes.contains((PANode) obj);
 		}		
 	    };
-
-	// clean pi_ld
-	pi_ld.removeKeys(node_predicate);
-	pi_ld.removeValues(new PredicateWrapper(){
+	PredicateWrapper load_predicate = new PredicateWrapper(){
 		public boolean check(Object obj){
 		    return ((PALoad) obj).isBad(nodes);
 		}
-	    });
+	    };
+	pi_ld.removeKeys(node_predicate);
+	pi_ld.removeValues(load_predicate);
 
-	// clean alpha_sync
-	alpha_sync.removeObjects(node_predicate);
+	// CLEAN alpha_sync
+	PredicateWrapper sync_predicate = new PredicateWrapper(){
+		public boolean check(Object obj){
+		    PASync sync = (PASync) obj;
+		    return
+			nodes.contains(sync.n) ||
+			nodes.contains(sync.nt);
+		}
+	    };
+	alpha_sync.removeKeys(node_predicate);
+	alpha_sync.removeValues(sync_predicate);
 
-	// clean pi_sync
-	Iterator it_nodes = nodes.iterator();
-	while(it_nodes.hasNext())
+	// CLEAN pi_sync
+	//  1. remove the entries in the map for non-remaining nodes nt2
+	for(Iterator it_nodes = nodes.iterator(); it_nodes.hasNext(); )
 	    pi_sync.remove((PANode) it_nodes.next());
-
-	it_nodes = pi_sync.keySet().iterator();
-	while(it_nodes.hasNext()){
-	    PANode node  = (PANode) it_nodes.next();
-	    Relation rel = (Relation) pi_sync.get(node);
-	    rel.removeObjects(node_predicate);
-	    if(rel.isEmpty()) pi_sync.remove(node);
+	//  2. check the relation attached to each remaining nt2 and
+	// eliminate the bad syncs
+	for(Iterator it_nt2 = pi_sync.keySet().iterator(); it_nt2.hasNext();){
+	    PANode nt2  = (PANode) it_nt2.next();
+	    Relation rel = (Relation) pi_sync.get(nt2);
+	    rel.removeKeys(node_predicate);
+	    rel.removeValues(sync_predicate);
+	    // if the relation is empty, delete the entry for nt2.
+	    if(rel.isEmpty()) it_nt2.remove();
 	}
 	
     }
@@ -383,10 +374,9 @@ public class ActionRepository {
 	NOT be removed. */
     public final boolean independent(PANode n){
 	// Goes through all the threads nt2 that are synchronizing on n
-	Iterator it_threads = alpha_sync.getValues(n);
-	while(it_threads.hasNext()){
-	    PANode nt2 = (PANode) it_threads.next();
-	    if(nt2 == THIS_THREAD) continue;
+	for(Iterator it_sync = alpha_sync.getValues(n); it_sync.hasNext(); ){
+	    PANode nt2 = ((PASync) it_sync.next()).nt;
+	    // if(nt2 == THIS_THREAD) continue;
 	    // Find the set of all the threads nt1 that synchronize 
 	    // on n in || with nt2
 	    Set concurent_syncs = ((Relation)pi_sync.get(nt2)).getValuesSet(n);
@@ -424,10 +414,10 @@ public class ActionRepository {
 		    if(load.isGood(remaining_nodes))
 			ar2.alpha_add_ld(load);
 		}
-		public void visit_sync(PANode n, PANode nt){
-		    if(remaining_nodes.contains(n) &&
-		       remaining_nodes.contains(nt))
-			ar2.alpha_add_sync(n,nt);
+		public void visit_sync(PASync sync){
+		    if(remaining_nodes.contains(sync.n) &&
+		       remaining_nodes.contains(sync.nt))
+			ar2.alpha_add_sync(sync);
 		}
 	    });
 
@@ -437,78 +427,40 @@ public class ActionRepository {
 		public void visit_par_ld(PALoad load, PANode nt2){
 		    if(load.isGood(remaining_nodes) &&
 		       remaining_nodes.contains(nt2))
-			ar2.pi_add_ld(load,nt2);
+			ar2.pi_add_ld(load, nt2);
 		}
-		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
-		    if(remaining_nodes.contains(n) &&
-		       remaining_nodes.contains(nt1) &&
+		public void visit_par_sync(PASync sync, PANode nt2){
+		    if(remaining_nodes.contains(sync.n) &&
+		       remaining_nodes.contains(sync.nt) &&
 		       remaining_nodes.contains(nt2))
-			ar2.pi_add_sync(n,nt1,nt2);
+			ar2.pi_add_sync(sync, nt2);
 		}
 	    });
 
 	return ar2;
     }
 
-
-    public static void insertProjection(final ActionRepository ar_source,
-					final ActionRepository ar_dest,
-					final Relation mu){
-	mu.add(ActionRepository.THIS_THREAD,ActionRepository.THIS_THREAD);
-
-	ActionVisitor act_visitor_starter = new ActionVisitor(){
-		public void visit_ld(PALoad load){
-		    if(!mu.contains(load.n2,load.n2)) return;
-		    ar_dest.add_ld(mu.getValuesSet(load.n1),
-				   load.f,
-				   load.n2,
-				   mu.getValuesSet(load.nt),
-				   Collections.EMPTY_SET);
-		}
-		public void visit_sync(PANode n, PANode nt1){
-		    ar_dest.add_sync(mu.getValuesSet(n),
-				     mu.getValuesSet(nt1),
-				     Collections.EMPTY_SET);
-		}
-	    };
-
-	ar_source.forAllActions(act_visitor_starter);
-
-	ParActionVisitor par_act_visitor_starter = new ParActionVisitor(){
-
-		public void visit_par_ld(PALoad load, PANode nt2){
-		    if(!mu.contains(load.n2,load.n2)) return;
-		    ar_dest.add_ld(mu.getValuesSet(load.n1),
-				   load.f,
-				   load.n2,
-				   mu.getValuesSet(load.nt),
-				   mu.getValuesSet(nt2));
-		}
-
-		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
-		    ar_dest.add_sync(mu.getValuesSet(n),
-				     mu.getValuesSet(nt1),
-				     mu.getValuesSet(nt2));
-		}
-	    };
-
-	ar_source.forAllParActions(par_act_visitor_starter);
-    }
-
-    /* Specializes <code>this</code> <code>ActionRepository</code> according
+    /* Specializes <code>this</code> <code>ActionRepository</code> for the
+       call site <code>call</code>, according
        to <code>map</code>, a mapping from <code>PANode<code> to
        <code>PANode</code>. Each node which is not explicitly mapped is
        considered to be mapped to itself. */
-    public final ActionRepository specialize(final Map map){
+    public final ActionRepository csSpecialize(final Map map,
+					       final CALL call){
 	final ActionRepository ar2 = new ActionRepository();
+	
+	// some cache to avoid generating specializations for the same
+	// sync action twice
+	final Map sync2sync = new HashMap();
 
 	forAllActions(new ActionVisitor(){
 		public void visit_ld(PALoad load){
 		    ar2.alpha_add_ld(load.specialize(map));
 		}
-		public void visit_sync(PANode n, PANode nt1){
-		    ar2.alpha_add_sync(PANode.translate(n,  map),
-				       PANode.translate(nt1, map));
+		public void visit_sync(PASync sync){
+		    PASync sync2 = sync.csSpecialize(map, call);
+		    ar2.alpha_add_sync(sync2);
+		    sync2sync.put(sync, sync2);
 		}
 	    });
 
@@ -517,9 +469,8 @@ public class ActionRepository {
 		    ar2.pi_add_ld(load.specialize(map),
 				  PANode.translate(nt2, map));
 		}
-		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
-		    ar2.pi_add_sync(PANode.translate(n, map),
-				    PANode.translate(nt1, map),
+		public void visit_par_sync(PASync sync, PANode nt2){
+		    ar2.pi_add_sync((PASync) sync2sync.get(sync),
 				    PANode.translate(nt2, map));
 		}
 	    });
@@ -527,7 +478,46 @@ public class ActionRepository {
 	return ar2;
     }
 
-    /** Produce a copy of <code>this</code> object. 
+    /* Specializes <code>this</code> <code>ActionRepository</code> for the
+       thread whose run method is <code>run</code>, according
+       to <code>map</code>, a mapping from <code>PANode<code> to
+       <code>PANode</code>. Each node which is not explicitly mapped is
+       considered to be mapped to itself. */
+    public final ActionRepository tSpecialize(final Map map,
+					      final MetaMethod run){
+	final ActionRepository ar2 = new ActionRepository();
+	
+	// some cache to avoid generating specializations for the same
+	// sync action twice
+	final Map sync2sync = new HashMap();
+
+	forAllActions(new ActionVisitor(){
+		public void visit_ld(PALoad load){
+		    ar2.alpha_add_ld(load.specialize(map));
+		}
+		public void visit_sync(PASync sync){
+		    PASync sync2 = sync.tSpecialize(map, run);
+		    ar2.alpha_add_sync(sync2);
+		    sync2sync.put(sync, sync2);
+		}
+	    });
+
+	forAllParActions(new ParActionVisitor(){
+		public void visit_par_ld(PALoad load, PANode nt2){
+		    ar2.pi_add_ld(load.specialize(map),
+				  PANode.translate(nt2, map));
+		}
+		public void visit_par_sync(PASync sync, PANode nt2){
+		    ar2.pi_add_sync((PASync) sync2sync.get(sync),
+				    PANode.translate(nt2, map));
+		}
+	    });
+
+	return ar2;
+    }
+
+
+    /** Produces a copy of <code>this</code> object. 
 	The new object is totally independent from the old one: you can
 	add/remove actions to/from it without affecting the original. */ 
     public final Object clone(){
@@ -560,17 +550,15 @@ public class ActionRepository {
 		public void visit_ld(PALoad load){
 		    strings.add("  " + load + "\n");
 		}
-		public void visit_sync(PANode n, PANode nt){
-		    strings.add("  < sync , " + n + 
-				(nt!=THIS_THREAD?(" , " + nt):"") +
-				" >\n");
+		public void visit_sync(PASync sync){
+		    strings.add("  " + sync + "\n");
 		}
 	    };
 
-	buffer.append(" Alpha:\n");
 	forAllActions(act_visitor);
 
 	Object[] strs = Debug.sortedSet(strings);
+	buffer.append(" Alpha:\n");
 	for(int i = 0 ; i < strs.length ; i++)
 	    buffer.append(strs[i]);
 
@@ -580,17 +568,14 @@ public class ActionRepository {
 		public void visit_par_ld(PALoad load, PANode nt2){
 		    strings.add("  " + load + " || " + nt2 + "\n");
 		}
-		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
-		    strings.add("  < sync , " + n + 
-				(nt1!=THIS_THREAD?(" , " + nt1):"") +
-				" > || " + nt2 + "\n");		    
+		public void visit_par_sync(PASync sync, PANode nt2){
+		    strings.add("  " + sync + " || " + nt2 + "\n");
 		}
 	    };
-
-	buffer.append(" Pi:\n");
 	forAllParActions(par_act_visitor);
 
 	strs = Debug.sortedSet(strings);
+	buffer.append(" Pi:\n");
 	for(int i = 0 ; i < strs.length ; i++)
 	    buffer.append(strs[i]);
 

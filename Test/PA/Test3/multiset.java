@@ -12,7 +12,7 @@ package harpoon.Test.PA.Test3;
  <code>multisetElement.insert</code> is the interesting method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: multiset.java,v 1.1.2.2 2000-03-01 01:25:28 salcianu Exp $
+ * @version $Id: multiset.java,v 1.1.2.3 2000-03-30 03:05:17 salcianu Exp $
  */
 public class multiset {
 
@@ -23,9 +23,9 @@ public class multiset {
         elements = null;
     }
     
-    synchronized void addElement(Object e){
+    synchronized void addElement(Integer e){
 	if(elements == null)
-	    elements = new multisetElement(e,null);
+	    elements = new multisetElement(e, null);
 	else
 	    elements = elements.insert(e);
     }
@@ -40,17 +40,17 @@ public class multiset {
 }
 
 class multisetElement{
-    Object element;
+    Integer element;
     int count;
     multisetElement next;
     
-    multisetElement(Object e, multisetElement n){
+    multisetElement(Integer e, multisetElement n){
 	count = 1;
 	element = e;
 	next = n;
     }
     
-    synchronized boolean check(Object e){
+    synchronized boolean check(Integer e){
 	if(element.equals(e)){
 	    count++;
 	    return true;
@@ -58,7 +58,7 @@ class multisetElement{
 	else return false;
     }
 
-    synchronized multisetElement insert(Object e){
+    synchronized multisetElement insert(Integer e){
 	multisetElement m = this;
 	while(m!=null){
 	    if(m.check(e)) return this;
@@ -67,3 +67,4 @@ class multisetElement{
 	return new multisetElement(e,this);
     }
 }
+

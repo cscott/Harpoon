@@ -9,13 +9,12 @@ package harpoon.Analysis.PointerAnalysis;
  pass a function in Java (no pointers to methods ...)
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionVisitor.java,v 1.1.2.1 2000-02-10 00:42:34 salcianu Exp $
+ * @version $Id: ActionVisitor.java,v 1.1.2.2 2000-03-30 03:05:14 salcianu Exp $
  */
 interface ActionVisitor {
     /** Visits a <code>ld</code> action. */
     public void visit_ld(PALoad load);
-    /** Visits a <code>sync</code> action of the form \
-	<code>&lt;sync,n,nt&gt;</code>. */
-    public void visit_sync(PANode n, PANode nt);
+    /** Visits a <code>sync</code> action. */
+    public void visit_sync(PASync sync);
 }
 

@@ -29,7 +29,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good! 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.19 2000-03-27 16:32:21 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.20 2000-03-30 03:05:14 salcianu Exp $
  */
 public abstract class InterThreadPA {
     
@@ -511,9 +511,8 @@ public abstract class InterThreadPA {
 				      mu_starter.getValuesSet(load.nt),
 				      Collections.EMPTY_SET);
 		}
-		public void visit_sync(PANode n, PANode nt1){
-		    new_pig.ar.add_sync(mu_starter.getValuesSet(n),
-					mu_starter.getValuesSet(nt1),
+		public void visit_sync(PASync sync){
+		    new_pig.ar.add_sync(sync.project(mu_starter),
 					Collections.EMPTY_SET);
 		}
 	    };
@@ -536,14 +535,13 @@ public abstract class InterThreadPA {
 				      parallel_threads);
 		}
 
-		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
+		public void visit_par_sync(PASync sync, PANode nt2){
 
 		    Set parallel_threads = mu_starter.getValuesSet(nt2);
 		    if(nt2 == nt)
 			parallel_threads.addAll(startee_active_threads);
 
-		    new_pig.ar.add_sync(mu_starter.getValuesSet(n),
-					mu_starter.getValuesSet(nt1),
+		    new_pig.ar.add_sync(sync.project(mu_starter),
 					parallel_threads);
 		}
 	    };
@@ -570,9 +568,8 @@ public abstract class InterThreadPA {
 				      mu_startee.getValuesSet(load.nt),
 				      starter_active_threads);
 		}
-		public void visit_sync(PANode n, PANode nt1){
-		    new_pig.ar.add_sync(mu_startee.getValuesSet(n),
-					mu_startee.getValuesSet(nt1),
+		public void visit_sync(PASync sync){
+		    new_pig.ar.add_sync(sync.project(mu_startee),
 					starter_active_threads);
 		}
 	    };
@@ -588,9 +585,8 @@ public abstract class InterThreadPA {
 				      mu_startee.getValuesSet(load.nt),
 				      mu_startee.getValuesSet(nt2));
 		}
-		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
-		    new_pig.ar.add_sync(mu_startee.getValuesSet(n),
-					mu_startee.getValuesSet(nt1),
+		public void visit_par_sync(PASync sync, PANode nt2){
+		    new_pig.ar.add_sync(sync.project(mu_startee),
 					mu_startee.getValuesSet(nt2));
 		}
 	    };

@@ -62,7 +62,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.27 2000-03-29 03:32:33 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.28 2000-03-30 03:05:15 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -88,12 +88,16 @@ public abstract class PAMain {
     private static boolean DO_INTERACTIVE_ANALYSIS = false;
 
     private static String[] examples = {
-	"java harpoon.Main.PAMain harpoon.Test.PA.Test1.complex multiplyAdd",
-	"java -mx200M harpoon.Main.PAMain harpoon.Test.PA.Test2.Server run",
-	"java harpoon.Main.PAMain harpoon.Test.PA.Test3.multiset " +
-	"harpoon.Test.PA.Test3.multisetElement.insert",
-	"java harpoon.Main.PAMain harpoon.Test.PA.Test4.Sum sum",
-	"java harpoon.Main.PAMain harpoon.Test.PA.Test5.A foo"
+	"java -mx200M harpoon.Main.PAMain -a multiplyAdd --ccs=2 --wts" + 
+	"harpoon.Test.PA.Test1.complex",
+	"java -mx200M harpoon.Main.PAMain -s -a run " + 
+	"harpoon.Test.PA.Test2.Server",
+	"java -mx200M harpoon.Main.PAMain -s " + 
+	"-a harpoon.Test.PA.Test3.multisetElement.insert" + 
+	" harpoon.Test.PA.Test3.multiset ",
+	"java -mx200M harpoon.Main.PAMain -s -a sum " +
+	"harpoon.Test.PA.Test4.Sum",
+	"java harpoon.Main.PAMain -a foo harpoon.Test.PA.Test5.A"
     };
 
     private static String[] options = {
@@ -142,10 +146,7 @@ public abstract class PAMain {
 
 	if(nbargs < 1){
 	    System.out.println("Usage:\n" +
-	     "\tjava harpoon.Main.PAMain [options] <main_class> " +
-	     "([<class>].<analyzed_method>)*\n" +
-	     " If no class if given for the analyzed method, " +
-	     "<main_class> is taken by default.");
+	     "\tjava harpoon.Main.PAMain [options] <main_class>\n");
 
 	    System.out.println("Options:");
 	    for(int i = 0; i < options.length; i++)
@@ -492,7 +493,7 @@ public abstract class PAMain {
 	if(PointerAnalysis.THREAD_SENSITIVE)
 	    System.out.print(" THREAD SENSITIVE");
 	if(PointerAnalysis.WEAKLY_THREAD_SENSITIVE)
-	    System.out.print(" WEAKLY_THREAD SENSITIVE");
+	    System.out.print(" WEAKLY_THREAD_SENSITIVE");
 
 	if(PointerAnalysis.LOOP_SENSITIVE)
 	    System.out.println(" LOOP_SENSITIVE");

@@ -12,6 +12,8 @@ import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Temp.Temp;
 
+import harpoon.ClassFile.HMethod;
+
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
 
@@ -23,11 +25,17 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.18 2000-03-28 23:51:50 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.19 2000-03-30 03:05:14 salcianu Exp $
  */
 abstract class InterProcPA {
 
     public static final boolean DEBUG = false;
+
+    /** Displays some warnings for the call sites with 0 callees etc. 
+	This is not necessarily an error! For example, if an application
+	is never instatiating a SecurityManager, each call to a method
+	from this class has 0 callees! */
+    public static boolean WARNINGS = true;
 
     /** Analyzes the call site <code>q</code> inside 
 	<code>current_method</code>. If analyzing the call is not possible
@@ -56,15 +64,12 @@ abstract class InterProcPA {
 	MetaMethod[] mms = mcg.getCallees(current_mmethod,q);
 	int nb_callees = mms.length;
 
-	// This test seems to be a bit paranoic but it helped me to find
-	// an obscure bug in CallGraph. TRUST NO ONE!
 	if(nb_callees < 1){
-	    if(PointerAnalysis.DEBUG){
+	    if(WARNINGS){
 		System.out.print("Error: CALL site with no callee! ");
 		System.out.print(current_mmethod);
 		System.out.println(" " + q);
 	    }
-	    //System.exit(1);
 	    return skip_call(q,pig_before,node_rep);
 	}
 
@@ -75,13 +80,13 @@ abstract class InterProcPA {
 
 	ParIntGraph pigs[] = new ParIntGraph[nb_callees];
 	for(int i = 0; i < nb_callees; i++){
-	    pigs[i] = pa.getExtParIntGraph(mms[i], false);
+	    HMethod hm = mms[i].getHMethod();
 	    // TODO: the second part of the test is for debug only
-	    if((pigs[i] == null) ||
-	       mms[i].getHMethod().getName().equals("unanalyzed")){
-		// one of the callee doesn't have a // interaction graph
+	    if(!PointerAnalysis.analyzable(hm) ||
+	       hm.getName().equals("unanalyzed"))
 		return skip_call(q,pig_before,node_rep);
-	    }
+	    else
+		pigs[i] = pa.getExtParIntGraph(mms[i], false);
 	}
 
 	// specialize the graphs of the callees for the context sensitive PA
@@ -95,6 +100,34 @@ abstract class InterProcPA {
 		    System.out.println("Pig_callee after  specialization:" +
 				       pigs[i]);
 	    }
+
+	int counter = 0;
+	for(int i = 0; i < nb_callees; i++)
+	    if(pigs[i] != null) counter++;
+
+	// If none of the caller has been analyzed yet, do not do anything
+	// (this can happen only in the strongly connected components of 
+	// mutually recursive methods).
+	if(counter == 0)
+	    return new ParIntGraphPair(pig_before, pig_before);
+
+	if(counter != nb_callees){
+	    // some of the graphs are yet unknown (this situation appears
+	    // in strongly connected components); do not consider them.
+	    ParIntGraph pigs2[] = new ParIntGraph[counter];
+	    MetaMethod  mms2[]  = new MetaMethod[counter];
+	    int k = 0;
+	    for(int i = 0; i < pigs.length; i++)
+		if(pigs[i] != null){
+		    pigs2[k] = pigs[i];
+		    mms2[k]  = mms[i]; 
+		    k++;
+		}
+
+	    pigs = pigs2;
+	    mms  = mms2;
+	    nb_callees = counter;
+	}
 
 	// special case: only one callee; no ParIntGraph is cloned
 	if(nb_callees == 1){
@@ -426,9 +459,8 @@ abstract class InterProcPA {
 				     mu.getValuesSet(load.nt),
 				     active_threads_in_caller);
 		}
-		public void visit_sync(PANode n, PANode nt){
-		    ar_caller.add_sync(mu.getValuesSet(n),
-				       mu.getValuesSet(nt),
+		public void visit_sync(PASync sync){
+		    ar_caller.add_sync(sync.project(mu),
 				       active_threads_in_caller);
 		}
 	    };
@@ -448,9 +480,8 @@ abstract class InterProcPA {
 				     mu.getValuesSet(load.nt),
 				     mu.getValuesSet(nt2));
 		}
-		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
-		    ar_caller.add_sync(mu.getValuesSet(n),
-				       mu.getValuesSet(nt1),
+		public void visit_par_sync(PASync sync, PANode nt2){
+		    ar_caller.add_sync(sync.project(mu),
 				       mu.getValuesSet(nt2));
 		}
 	    };

@@ -65,7 +65,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.41 2000-03-29 16:35:17 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.42 2000-03-30 03:05:14 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -223,7 +223,7 @@ public class PointerAnalysis {
 	ParIntGraph original_pig = getExtParIntGraph(mm);
 	if(original_pig == null) return null;
 
-	ParIntGraph new_pig = original_pig.specialize(q);
+	ParIntGraph new_pig = original_pig.csSpecialize(q);
 	map_mm.put(q,new_pig);
 
 	return new_pig;	
@@ -250,7 +250,7 @@ public class PointerAnalysis {
 	    new_pig = original_pig.tSpecialize(mm);
 	else
 	    if(WEAKLY_THREAD_SENSITIVE)
-		new_pig = original_pig.wtSpecialize();
+		new_pig = original_pig.wtSpecialize(mm);
 	    else Util.assert(false,"The thread specialization is off!");
 
 	t_specs.put(mm,new_pig);
@@ -805,24 +805,24 @@ public class PointerAnalysis {
 
 	/** Process an acquire statement. */
 	public void visit(MONITORENTER q){
-	    process_acquire_release(q.lock());
+	    process_acquire_release(q, q.lock());
 	}
 
 
 	/** Process a release statement. */
 	public void visit(MONITOREXIT q){
-	    process_acquire_release(q.lock());
+	    process_acquire_release(q, q.lock());
 	}
 
 
 	// Does the real processing for acquire/release statements.
-	private void process_acquire_release(Temp l){
+	private void process_acquire_release(Quad q, Temp l){
 	    Set active_threads = lbbpig.tau.activeThreadSet();
 	    Iterator it_nodes = lbbpig.G.I.pointedNodes(l).iterator();
 	    while(it_nodes.hasNext()){
 		PANode node = (PANode) it_nodes.next();
-		lbbpig.ar.add_sync(node,ActionRepository.THIS_THREAD,
-				  active_threads);
+		PASync sync = new PASync(node,ActionRepository.THIS_THREAD, q);
+		lbbpig.ar.add_sync(sync, active_threads);
 	    }
 
 	    if(TOUCHED_THREAD_SUPPORT)
@@ -1035,7 +1035,7 @@ public class PointerAnalysis {
     }
 
     /** Check if <code>hm</code> can be analyzed by the pointer analysis. */
-    public final boolean analyzable(HMethod hm){
+    public static final boolean analyzable(HMethod hm){
 	int modifier = hm.getModifiers();
 	return ! (
 	    (java.lang.reflect.Modifier.isNative(modifier)) ||

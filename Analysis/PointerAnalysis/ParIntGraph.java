@@ -20,7 +20,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.22 2000-03-28 23:51:50 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.23 2000-03-30 03:05:14 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -207,9 +207,9 @@ public class ParIntGraph {
 		    visitor.visit(load.n2);
 		    visitor.visit(load.nt);
 		}
-		public void visit_sync(PANode n, PANode nt){
-		    visitor.visit(n);
-		    visitor.visit(nt);
+		public void visit_sync(PASync sync){
+		    visitor.visit(sync.n);
+		    visitor.visit(sync.nt);
 		}
 	    });
 
@@ -241,36 +241,46 @@ public class ParIntGraph {
 
     /* Specialize <code>this</code> <code>ParIntGraph</code> for the call
        site <code>q</code>. */
-    final ParIntGraph specialize(final CALL q){
+    final ParIntGraph csSpecialize(final CALL call){
+	/* contains mappings old node -> speciaized node; each unmapped
+	   node is supposed to be mapped to itself. */
 	final Map map = new HashMap();
 	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
 	    PANode node = (PANode) itn.next();
 	    if(node.type == PANode.INSIDE)
-		map.put(node, node.csSpecialize(q));
+		map.put(node, node.csSpecialize(call));
 	} 
-	
-	return specialize(map);
+
+	return
+	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
+			    ar.csSpecialize(map, call), eo.specialize(map),
+			    PANode.specialize_set(touched_threads, map));
     }
 
-    // full thread specialization
-    final ParIntGraph tSpecialize(final MetaMethod mm){
+    /* Specializes <code>this</code> <code>ActionRepository</code> for the
+       thread whose run method is <code>run</code>, according
+       to <code>map</code>, a mapping from <code>PANode<code> to
+       <code>PANode</code>. Each node which is not explicitly mapped is
+       considered to be mapped to itself. */
+    final ParIntGraph tSpecialize(final MetaMethod run){
 	final Map map = new HashMap();
-
 	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
 	    PANode node  = (PANode) itn.next();
 	    if(node.type != PANode.PARAM){
-		PANode node2 = node.tSpecialize(mm);
+		PANode node2 = node.tSpecialize(run);
 		map.put(node, node2);
 	    }
 	}
-
-	return specialize(map);
+	
+	return
+	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
+			    ar.tSpecialize(map, run), eo.specialize(map),
+			    PANode.specialize_set(touched_threads, map));
     }
 
     // weak thread specialization
-    final ParIntGraph wtSpecialize(){
-	Map map = new HashMap();
-
+    final ParIntGraph wtSpecialize(final MetaMethod run){
+	final Map map = new HashMap();
 	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
 	    PANode node  = (PANode) itn.next();
 	    if(node.type != PANode.PARAM){
@@ -278,20 +288,13 @@ public class ParIntGraph {
 		map.put(node, node2);
 	    }
 	}
-
-	return specialize(map);
-    }
-
-    /* Specializes <code>this</code> <code>ActionRepository</code> according
-       to <code>map</code>, a mapping from <code>PANode<code> to
-       <code>PANode</code>. Each node which is not explicitly mapped is
-       considered to be mapped to itself. */
-    final ParIntGraph specialize(final Map map){
+	
 	return
 	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
-			    ar.specialize(map), eo.specialize(map),
+			    ar.tSpecialize(map, run), eo.specialize(map),
 			    PANode.specialize_set(touched_threads, map));
     }
+
 
     /** Removes the nodes from <code>nodes</code> from <code>this</code>
 	graph. */
