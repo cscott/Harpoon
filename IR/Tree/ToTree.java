@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.97 2001-08-17 23:42:41 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.98 2001-09-13 21:38:31 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -145,7 +145,7 @@ class ToTree {
 	    (tf, rd, code.getDerivation(), ai, eo, fn, m_dg, ctm);
 						       
 	// traverse, starting with the METHOD quad.
-	dfsTraverse((harpoon.IR.Quads.METHOD)root.next(1), 0,
+	dfsTraverse(((harpoon.IR.Quads.METHOD)root.next(1)).prevEdge(0),
 		    tv, new HashSet());
 
 	// Assign member variables
@@ -153,8 +153,10 @@ class ToTree {
     }
     
     // Translates the Quad graph in a depth-first order.
-    private void dfsTraverse(Quad q, int which_pred,
+    private void dfsTraverse(Edge in_edge,
 			     TranslationVisitor tv, Set visited) {
+	Quad q = (Quad) in_edge.to();
+	int which_pred = in_edge.which_pred();
 	// if this is a phi function, translate by emitting appropriate MOVEs
 	if (q instanceof harpoon.IR.Quads.PHI)
 	    tv.emitPhiFixup((harpoon.IR.Quads.PHI)q, which_pred);
@@ -184,7 +186,7 @@ class ToTree {
 	    }
 	    // recurse.
 	    if (!(edge.to() instanceof harpoon.IR.Quads.FOOTER))
-		dfsTraverse((Quad)edge.to(), edge.which_pred(), tv, visited);
+		dfsTraverse(edge, tv, visited);
 	}
 	// done, yay.
     }
