@@ -10,7 +10,7 @@ extern struct marksweep_heap old_gen;
 extern jobject_unwrapped **intergen;
 extern int intergen_next;
 
-inline void generational_write_barrier(jobject_unwrapped *ref)
+extern inline void generational_write_barrier(jobject_unwrapped *ref)
 {
   if (IN_MARKSWEEP_HEAP(ref, old_gen))
     intergen[intergen_next++] = ref;

@@ -11,6 +11,7 @@
 #include "obj_list.h"
 #include "omit_gc_timer.h"
 #include "system_page_size.h"
+#include "write_barrier.h"
 
 //#define GC_EVERY_TIME
 #define WITH_WRITE_BARRIER_REMOVAL
