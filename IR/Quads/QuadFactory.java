@@ -12,7 +12,7 @@ import harpoon.Temp.TempFactory;
  * <code>HCode</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadFactory.java,v 1.1.2.1 1998-12-17 21:38:37 cananian Exp $
+ * @version $Id: QuadFactory.java,v 1.1.2.2 1998-12-20 12:49:27 cananian Exp $
  */
 public abstract class QuadFactory  {
     /** Returns the <code>TempFactory</code> to use for <code>Temp</code>
@@ -45,8 +45,9 @@ public abstract class QuadFactory  {
 	return new ANEW(this, source, dst, hclass, dims);
     }
     public ARRAYINIT newARRAYINIT(HCodeElement source,
-				  Temp objectref, HClass type, Object[] value){
-	return new ARRAYINIT(this, source, objectref, type, value);
+				  Temp objectref, int offset,
+				  HClass type, Object[] value){
+	return new ARRAYINIT(this, source, objectref, offset, type, value);
     }
     public ASET newASET(HCodeElement source,
 			Temp objectref, Temp index, Temp src) {

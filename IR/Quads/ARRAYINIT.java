@@ -12,13 +12,15 @@ import harpoon.Util.Util;
  * <code>ARRAYINIT</code> represents an array initialization operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ARRAYINIT.java,v 1.1.2.4 1998-12-20 11:44:49 cananian Exp $
+ * @version $Id: ARRAYINIT.java,v 1.1.2.5 1998-12-20 12:49:27 cananian Exp $
  */
 public class ARRAYINIT extends Quad {
     /** The array reference to initialize. */
     protected Temp objectref;
     /** The component type. */
     protected HClass type;
+    /** The starting index for the initializers. */
+    protected int offset;
     /** The array initializers. */
     protected Object[] value;
 
@@ -28,26 +30,32 @@ public class ARRAYINIT extends Quad {
      *  at element 0.
      * @param objectref
      *        the array to initialize.
+     * @param offset
+     *        the starting index for the initializers.
      * @param type
      *        the component type of the array.
      * @param value
      *        the values to store in the array.
      */
     public ARRAYINIT(QuadFactory qf, HCodeElement source,
-		     Temp objectref, HClass type, Object[] value) {
+		     Temp objectref, int offset, HClass type, Object[] value) {
         super(qf, source);
 	this.objectref = objectref;
 	this.type = type;
+	this.offset = offset;
 	this.value = value;
 	// VERIFY legality of ARRAYINIT.
 	Util.assert(objectref!=null && type!=null && value!=null);
 	Util.assert(type.isPrimitive() && type!=HClass.Void);
+	Util.assert(offset>=0);
     }
     /** Returns the <code>Temp</code> referencing the array to be
      *  initialized. */
     public Temp objectref() { return objectref; }
     /** Returns the component type of the array to be initialized. */
     public HClass type() { return type; }
+    /** Returns the starting offset of the initializers. */
+    public int offset() { return offset; }
     /** Returns the array initializers. */
     public Object[] value() { return (Object[]) value.clone(); }
 
@@ -59,7 +67,7 @@ public class ARRAYINIT extends Quad {
     public int kind() { return QuadKind.ARRAYINIT; }
 
     public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new ARRAYINIT(qqf, this, map(tm,objectref), type, 
+	return new ARRAYINIT(qqf, this, map(tm,objectref), offset, type, 
 			     (Object[]) value.clone());
     }
     /** Rename all defined variables in this Quad according to a mapping. */
@@ -73,7 +81,8 @@ public class ARRAYINIT extends Quad {
     public String toString() {
 	StringBuffer sb = new StringBuffer();
 	sb.append(objectref.toString());
-	sb.append("[] = ARRAYINIT (");
+	sb.append("["+offset+"-"+(offset+value.length-1)+"]");
+	sb.append(" = ARRAYINIT (");
 	sb.append(type.getName());
 	sb.append(") { ");
 	for (int i=0; i<value.length; i++) {
