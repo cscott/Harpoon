@@ -87,16 +87,16 @@ void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime){
     pthread_t tid = li->tid;
     jint nesting_depth = li->nesting_depth;
     li->tid = 0;/*let other folk grab the lock, just as soon as we give it up*/
-    if (abstime==NULL) {
 #ifdef WITH_PRECISE_GC
       decrement_running_thread_count();
 #endif /* WITH_PRECISE_GC */
+    if (abstime==NULL)
       st = pthread_cond_wait(&(li->cond), &(li->mutex));
+    else
+      st = pthread_cond_timedwait(&(li->cond), &(li->mutex), abstime);
 #ifdef WITH_PRECISE_GC
       increment_running_thread_count();
 #endif /* WITH_PRECISE_GC */
-    } else
-      st = pthread_cond_timedwait(&(li->cond), &(li->mutex), abstime);
     assert(st==0 || st==ETIMEDOUT || st==EINTR /*no cond variable errors*/);
     li->tid = tid;
     li->nesting_depth = nesting_depth;
