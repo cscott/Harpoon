@@ -1,7 +1,7 @@
 // HClassInfo.java, created Wed Jan 13 17:09:19 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce  <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Backend.Analysis.DisplayInfo;
+package harpoon.Interpret.Tree;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
@@ -17,10 +17,10 @@ import java.util.Map;
  * information about an <code>HClass</code>. 
  *
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: HClassInfo.java,v 1.1.2.16 2000-03-30 22:16:34 cananian Exp $
+ * @version $Id: HClassInfo.java,v 1.1.2.1 2000-06-22 19:04:16 cananian Exp $
  * @see     harpoon.ClassFile.HClass
  */
-public class HClassInfo
+class HClassInfo
 {
     private HCIMap m_hcim = new HCIMap();
 

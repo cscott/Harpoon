@@ -5,7 +5,6 @@ package harpoon.Interpret.Tree;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
-import harpoon.Backend.Analysis.DisplayInfo.HClassInfo;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
@@ -30,7 +29,7 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestRun.java,v 1.1.2.19 2000-02-25 00:54:14 cananian Exp $
+ * @version $Id: TestRun.java,v 1.1.2.20 2000-06-22 19:04:16 cananian Exp $
  */
 public abstract class TestRun extends Debug {
     public static void main(String args[]) {
