@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.161 2001-07-11 00:48:52 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.162 2001-08-22 12:13:52 wbeebee Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -433,8 +433,10 @@ public class SAMain extends harpoon.IR.Registration {
 	if (DO_TRANSACTIONS) {
 	    hcf = syncTransformer.treeCodeFactory(frame, hcf);
 	}
-	if (BACKEND == PRECISEC_BACKEND && MULTITHREADED && System.getProperty
-	    ("harpoon.alloc.strategy", "malloc").equalsIgnoreCase("precise")) {
+	if (BACKEND == PRECISEC_BACKEND && MULTITHREADED && 
+	    (System.getProperty
+	     ("harpoon.alloc.strategy", "malloc").equalsIgnoreCase("precise")||
+	     Realtime.REALTIME_JAVA)) {
 	    /* pass to insert GC polling calls */
 	    hcf = harpoon.Backend.Analysis.MakeGCThreadSafe.
 		codeFactory(hcf, frame);
