@@ -29,7 +29,7 @@ import java.util.Map;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.8 2000-02-21 04:47:59 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.9 2000-02-24 22:35:40 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -261,16 +261,70 @@ public class ActionRepository {
 	return pi_ld.getValues(nt);
     }
 
+
     /** Removes all the information related to edges containing nodes from
 	<code>nodes</code>. */
-    public void removeNodes(Set nodes){
-	// TODO: some decent implementation
+    public void removeNodes(final Set nodes){
+
+	// clean alpha_ld
+	Iterator it_paload = alpha_ld.iterator();
+	while(it_paload.hasNext()){
+	    PALoad load = (PALoad) it_paload.next();
+	    if(load.isBad(nodes)) alpha_ld.remove(load);
+	}
+
+	PredicateWrapper node_predicate = new PredicateWrapper(){
+		public boolean check(Object obj){
+		    return nodes.contains((PANode) obj);
+		}		
+	    };
+
+	// clean pi_ld
+	pi_ld.removeKeys(node_predicate);
+	pi_ld.removeValues(new PredicateWrapper(){
+		public boolean check(Object obj){
+		    return ((PALoad) obj).isBad(nodes);
+		}
+	    });
+
+	// clean alpha_sync
+	alpha_sync.removeObjects(node_predicate);
+
+	// clean pi_sync
+	Iterator it_nodes = nodes.iterator();
+	while(it_nodes.hasNext())
+	    pi_sync.remove((PANode) it_nodes.next());
+
+	it_nodes = pi_sync.keySet().iterator();
+	while(it_nodes.hasNext()){
+	    PANode node  = (PANode) it_nodes.next();
+	    Relation rel = (Relation) pi_sync.get(node);
+	    rel.removeObjects(node_predicate);
+	    if(rel.isEmpty()) pi_sync.remove(node);
+	}
+	
     }
 
     /** Removes all the information related to <code>ld</code> actions
-	using the edges from <code>edges</code>.*/
-    public void removeEdges(Set edges){
-	// TODO: some decent implementation
+	using the edges from <code>edges</code>.
+	<code>edges</code> is supposed to be a set of <code>PAEdge</code>s. */
+    public void removeEdges(final Set edges){
+
+	// clean alpha_ld
+	Iterator it_paload = alpha_ld.iterator();
+	while(it_paload.hasNext()){
+	    PALoad load = (PALoad) it_paload.next();
+	    if(edges.contains(new PAEdge(load.n1,load.f,load.n2)))
+		alpha_ld.remove(load);
+	}
+
+	// clean pi_ld
+	pi_ld.removeValues(new PredicateWrapper(){
+		public boolean check(Object obj){
+		    PALoad load = (PALoad) obj;
+		    return edges.contains(new PAEdge(load.n1,load.f,load.n2));
+		}
+	    });
     }
 
     /** Checks if all the <code>sync</code> operation on <code>n</code>

@@ -19,7 +19,7 @@ import harpoon.Temp.Temp;
  correctly; speed is only a second issue.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: EdgeOrdering.java,v 1.1.2.2 2000-02-21 04:47:59 salcianu Exp $
+ * @version $Id: EdgeOrdering.java,v 1.1.2.3 2000-02-24 22:35:40 salcianu Exp $
  */
 public class EdgeOrdering{
 
@@ -49,7 +49,12 @@ public class EdgeOrdering{
     // TODO: put the appropriate comments
 
     /** Records the fact that all the outside edges from the set 
-	outside_edges are created after all the inside edges from I. */
+	<code>outside_edges</code> are created after all the inside
+	edges from I.<br>
+	<b>Parameters:</b> <code>outside_edge</code> must be a set of
+	<code>PAEdge</code>s.<br>
+	<b>Result:</b> returns <code>true</code> if the edge ordering
+	relation was changed by this addition. */
     public boolean add(final Set outside_edges, PAEdgeSet I){
 	class Dummy{
 	    boolean modified = false;
@@ -101,13 +106,22 @@ public class EdgeOrdering{
 
     /** Removes all the information related to edges containing nodes from
 	<code>nodes</code>. */
-    public void removeNodes(Set nodes){
-	// TODO: some decent implementation
+    public void removeNodes(final Set nodes){
+	after.removeObjects(new PredicateWrapper(){
+		public boolean check(Object obj){
+		    return ((PAEdge) obj).badEdge(nodes);
+		}
+	    });
     }
 
-    /** Removes all the information related to edges from <code>edges</code>.*/
-    public void removeEdges(Set edges){
-	// TODO: some decent implementation
+    /** Removes all the information related to edges from <code>edges</code>.
+     <code>edges</code> must be a set of <code>PAEdge</code>s. */
+    public void removeEdges(final Set edges){
+	after.removeObjects(new PredicateWrapper(){
+		public boolean check(Object obj){
+		    return edges.contains((PAEdge) obj);
+		}
+	    });
     }
 
     // Private constructor for clone and keepTheEssential.
