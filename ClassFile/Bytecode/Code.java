@@ -15,7 +15,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.11 1998-08-20 22:47:24 cananian Exp $
+ * @version $Id: Code.java,v 1.12 1998-09-02 03:17:55 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -128,7 +128,9 @@ public class Code extends HCode {
       for (int i=0; i<tryBlocks.length; i++) { // for each table entry...
 	// Add all the PC's in the try block to a list.
 	UniqueVector uv = new UniqueVector(et[i].end_pc-et[i].start_pc);
-	for (int pc=et[i].start_pc; pc < et[i].end_pc; pc++)
+	for (int pc=et[i].start_pc;
+	     pc < et[i].end_pc;
+	     pc+=Op.instrSize(code,pc))
 	  uv.addElement(sparse[pc]);
 	// Make an HClass for the exception caught...
 	HClass ex = null;
