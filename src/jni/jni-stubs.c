@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 jint FNI_GetVersion(JNIEnv *env) {
   assert(FNI_NO_EXCEPTIONS(env));
