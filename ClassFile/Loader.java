@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.5 1999-01-03 03:01:41 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.6 1999-01-06 18:45:42 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -42,7 +42,8 @@ public abstract class Loader {
     }
     /** Close the zipfile when this object is garbage-collected. */
     protected void finalize() throws Throwable {
-        try { zf.close(); } finally { super.finalize(); }
+        // yes, it is possible to finalize an uninitialized object.
+        try { if (zf!=null) zf.close(); } finally { super.finalize(); }
     }
   }
   /** A regular path string in the CLASSPATH. */
