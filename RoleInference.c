@@ -347,8 +347,12 @@ void doanalysis() {
 	if (src!=NULL) {
 	  dofieldassignment(&heap, src, fieldname, dst);
 	  addeffect(&heap, suid, fieldname, duid);
-	} else
+	} else {
+	  char buffer[1000];
+	  sprintf(buffer,"%s.%s", classname,fieldname);
 	  doglobalassignment(&heap,classname,fieldname,dst);
+	  addeffect(&heap, -1, buffer,duid);
+	}
       }
       break;
     case 'A':

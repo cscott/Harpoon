@@ -11,6 +11,7 @@
 
 void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, long long dstobj) {
   struct method *method=hs->methodlist;
+  int newpath=0;
   while(method!=NULL) {
     struct hashtable * pathtable=method->pathtable;
 
@@ -24,14 +25,19 @@ void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, l
       path->fieldname=copystr("[ARRAY]");
       path->paramnum=-1;
       puttable(pathtable, dstobj, path);
+      newpath=1;
+
     }
     
     method=method->caller;
   }
+  if(newpath)
+    addeffect(hs, -1, NULL, dstobj);
 }
 
 void addpath(struct heap_state *hs, long long obj, char * class, char * field, char * fielddesc, long long dstobj) {
   struct method *method=hs->methodlist;
+  int newpath=0;
   while(method!=NULL) {
     struct hashtable * pathtable=method->pathtable;
 
@@ -43,14 +49,18 @@ void addpath(struct heap_state *hs, long long obj, char * class, char * field, c
       path->fielddesc=copystr(fielddesc);
       path->paramnum=-1;
       puttable(pathtable, dstobj, path);
+      newpath=1;
     }
     
     method=method->caller;
   }
+  if (newpath)
+    addeffect(hs, -1, NULL, dstobj);
 }
 
 void addnewobjpath(struct heap_state *hs, long long obj) {
   struct method *method=hs->methodlist;
+  int newpath=0;
   while(method!=NULL) {
     struct path * path=(struct path *) calloc(1,sizeof(struct path));
     struct hashtable * pathtable=method->pathtable;
@@ -58,7 +68,10 @@ void addnewobjpath(struct heap_state *hs, long long obj) {
     path->prev_obj=-1;
     puttable(pathtable, obj, path);
     method=method->caller;
+    newpath=1;
   }
+  if (newpath)
+    addeffect(hs, -1, NULL, obj);
 }
 
 void freeeffects(struct path * pth) {
@@ -92,10 +105,13 @@ void addeffect(struct heap_state *heap, long long suid, char * fieldname, long l
   struct method * method=heap->methodlist;
   while(method!=NULL) {
     struct hashtable *pathtable=method->pathtable;
-    struct effectregexpr* srcexpr=buildregexpr(pathtable, suid);
+    struct effectregexpr* srcexpr=NULL;
+    if (suid!=-1)
+      srcexpr=buildregexpr(pathtable, suid);
+    else printf("expr\n");
     printf("Initial effects for method:\n");
     printeffectlist(method->effects);
-    if (srcexpr!=NULL) {
+    {
       struct effectregexpr* dstexpr=buildregexpr(pathtable, duid);
       struct effectlist * efflist=(struct effectlist *) calloc(1,sizeof(struct effectlist));
       efflist->fieldname=copystr(fieldname);
@@ -138,17 +154,23 @@ void addeffect(struct heap_state *heap, long long suid, char * fieldname, long l
 
 struct effectlist * mergeeffectlist(struct effectlist * el1, struct effectlist *el2) {
   struct effectregexpr * mergedsrc=NULL, * mergeddst=NULL;
-  if (strcmp(el1->fieldname, el2->fieldname)!=0) return NULL;
-  mergedsrc=mergeeffectregexpr(el1->src, el2->src);
-  if (mergedsrc==NULL) return NULL;
+  if (!equivalentstrings(el1->fieldname, el2->fieldname)) return NULL;
+  if (el1->src!=NULL&&el2->src!=NULL) {
+    mergedsrc=mergeeffectregexpr(el1->src, el2->src);
+    if (mergedsrc==NULL) return NULL;
+  } else if (el1->src!=NULL||el2->src!=NULL)
+    return NULL;
+
   if (el1->dst!=NULL&&el2->dst!=NULL) {
     mergeddst=mergeeffectregexpr(el1->dst, el2->dst);
     if (mergeddst==NULL) {
       freeeffectregexpr(mergedsrc);
       return NULL;
     }
-  } else if (el1->dst!=NULL||el2->dst!=NULL)
+  } else if (el1->dst!=NULL||el2->dst!=NULL) {
+    freeeffectregexpr(mergedsrc);
     return NULL;
+  }
   {
     struct effectlist * retel=(struct effectlist *)calloc(1, sizeof(struct effectlist));
     retel->src=mergedsrc;
@@ -413,8 +435,8 @@ void initloopstructures() {
 }
 
 int compareregexprlist(struct regexprlist *rel1, struct regexprlist * rel2) {
-  if ((strcmp(rel1->classname, rel2->classname)==0)&&
-      (strcmp(rel1->fielddesc, rel2->fielddesc)==0)&&
+  if ((equivalentstrings(rel1->classname, rel2->classname))&&
+      (equivalentstrings(rel1->fielddesc, rel2->fielddesc))&&
       (rel1->multiplicity==rel2->multiplicity))
     return 1;
   else return 0;
@@ -524,21 +546,27 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
 	      loopcount[ringindex]=0;
 	      ringbuffers[ringindex][countmodulo]=ere;
 	    }
-	  } else
+	  } else {
 	    loopcount[ringindex]=0; /* Ring not full...zero counter */
+	    ringbuffers[ringindex][countmodulo]=ere;
+	  }
 	}
 	index++;
       } else {
 	/* Class exists, simply add field */
 	struct regfieldlist *rflptr=rel->fields;
 	rel->multiplicity=1;
-	while(rflptr!=NULL)
+	while(rflptr!=NULL) {
 	  if (strcmp(rflptr->fieldname, path->fieldname)==0)
 	    break;
+	  rflptr=rflptr->nextfld;
+	}
 	if (rflptr==NULL) {
 	  struct regfieldlist *newfield=(struct regfieldlist *)calloc(1, sizeof(struct regfieldlist));
 	  newfield->fieldname=copystr(path->fieldname);
+	  newfield->fielddesc=copystr(path->fielddesc);
 	  newfield->nextfld=rel->fields;
+	  newfield->classname=copystr(path->classname);
 	  rel->fields=newfield;
 	}
       }
@@ -564,8 +592,13 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
 
 void printeffectlist(struct effectlist *el) {
   while (el!=NULL) {
-    printeffectregexpr(el->src);
-    printf(".%s=", el->fieldname);
+    if (el->src!=NULL) {
+      printeffectregexpr(el->src);
+      printf(".%s=", el->fieldname);
+    } else if(el->fieldname==NULL)
+      printf("Read: ");
+    else
+      printf("%s=",el->fieldname);
     if (el->dst!=NULL)
       printeffectregexpr(el->dst);
     else printf("NULL");
