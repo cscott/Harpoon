@@ -3,8 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Properties.CFGEdge; 
+import harpoon.IR.Properties.CFGraphable;
 import harpoon.Util.ArrayFactory;
 
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ import java.util.List;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.3.2.11 1999-11-30 05:25:00 cananian Exp $
+ * @version $Id: Instr.java,v 1.3.2.12 2000-01-05 04:11:08 duncan Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -107,36 +108,36 @@ public abstract class Instr
   final List next = new ArrayList(2);
 
   // CFGraphable interface:
-  public HCodeEdge newEdge(final Instr from, final Instr to) {
-    return new HCodeEdge() {
-      public HCodeElement from() { return from; }
-      public HCodeElement to() { return to; }
+  public CFGEdge newEdge(final Instr from, final Instr to) {
+    return new CFGEdge() {
+      public CFGraphable fromCFG() { return from; }
+      public CFGraphable toCFG() { return to; }
       public boolean equals(Object o) {
-	HCodeEdge hce;
+	CFGEdge hce;
 	if (this==o) return true;
 	if (o==null) return false;
-	try { hce=(HCodeEdge)o; } catch (ClassCastException e) {return false; }
+	try { hce=(CFGEdge)o; } catch (ClassCastException e) {return false; }
 	return hce.from() == from && hce.to() == to;
       }
       public int hashCode() { return from.hashCode() ^ to.hashCode(); }
     };
   }
-  public HCodeEdge[] succ() {
-    HCodeEdge[] r = new HCodeEdge[next.size()];
+  public CFGEdge[] succ() {
+    CFGEdge[] r = new CFGEdge[next.size()];
     for (int i=0; i<r.length; i++)
       r[i] = newEdge(this, (Instr) next.get(i));
     return r;
   }
-  public HCodeEdge[] pred() {
-    HCodeEdge[] r = new HCodeEdge[prev.size()];
+  public CFGEdge[] pred() {
+    CFGEdge[] r = new CFGEdge[prev.size()];
     for (int i=0; i<r.length; i++)
       r[i] = newEdge((Instr)prev.get(i), this);
     return r;
   }
-  public HCodeEdge[] edges() {
-    HCodeEdge[] n = succ();
-    HCodeEdge[] p = pred();
-    HCodeEdge[] r = new HCodeEdge[n.length + p.length];
+  public CFGEdge[] edges() {
+    CFGEdge[] n = succ();
+    CFGEdge[] p = pred();
+    CFGEdge[] r = new CFGEdge[n.length + p.length];
     System.arraycopy(n, 0, r, 0, n.length);
     System.arraycopy(p, 0, r, n.length, p.length);
     return r;
