@@ -1,4 +1,5 @@
 #include "SizeEstimator.h"
+#include "jni-private.h"
 
 JNIEXPORT jlong JNICALL Java_javax_realtime_SizeEstimator_objSize
 (JNIEnv *env, jclass claz, jclass objClaz) {

@@ -4,13 +4,15 @@
  * size) so we can distinguish primitive array types from object
  * array types by looking at claz->component_claz->size. */
 
+#include <assert.h>
+
 #ifndef INCLUDED_FNI_OBJSIZE
 #define INCLUDED_FNI_OBJSIZE
 
 
 static inline jsize FNI_ClassSize(jclass clazz) {
   struct claz *claz = FNI_GetClassInfo(clazz)->claz;
-  assert (claz->component_claz==NULL); /* not valid for arrays! */
+  assert(claz->component_claz==NULL); /* not valid for arrays! */
   return claz->size;
 }
 
