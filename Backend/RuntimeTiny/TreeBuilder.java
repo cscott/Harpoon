@@ -62,7 +62,7 @@ import java.util.Set;
  * (but slower) object layout.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.5 2002-03-16 07:45:00 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.6 2002-03-16 13:23:24 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder { 
     final Runtime runtime;
@@ -80,12 +80,12 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 	final FieldMap sfm = super.initClassFieldMap();
 	final Runtime runtime = (Runtime) super.runtime;
 	if (!runtime.byteAlign) return sfm;
-	return new TinyClassFieldMap(-4+runtime.clazBytes) {
+	return new TinyPackedClassFieldMap(runtime/*-4+runtime.clazBytes*/) {
 		public int fieldOffset(HField hf) {
 		    // hack to allow allocating fields in the empty
 		    // space left by the small claz index.
 		    int off = super.fieldOffset(hf);
-		    if (off<0) off-=4;
+		    //if (off<0) off-=4;
 		    return off;
 		}
 		public int fieldSize(HField hf) { return sfm.fieldSize(hf); }
