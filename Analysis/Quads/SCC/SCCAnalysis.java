@@ -66,7 +66,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.21 2001-07-18 19:44:44 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.22 2001-07-19 17:29:37 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -261,15 +261,38 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	// utility functions.
 	LatticeVal get(Temp t) { return (LatticeVal) V.get(t); }
 
-	void handleSigmas(CJMP q, xInstanceofResult io) {
+	void handleSigmas(CJMP q, boolean falseTaken, boolean trueTaken) {
+	    // for every sigma source:
+	    for (int i=0; i < q.numSigmas(); i++) {
+		LatticeVal v = get( q.src(i) );
+		if (v == null) continue; // skip: insufficient info.
+		// check if this is the CJMP condition.
+		if (useSigmas && q.test() == q.src(i)) {
+		    // we know that the conditional is zero on the false leg
+		    if (falseTaken)
+			raiseV(V, Wv, q.dst(i,0),
+			       new xIntConstant(toInternal(HClass.Boolean),0));
+		    // CJMP test is possibly non-boolean, so we don't in fact
+		    // know the value of the true side (except that it is
+		    // non-zero)
+		    if (trueTaken) raiseV(V, Wv, q.dst(i,1), v.rename(q, 1));
+		} else {
+		    // fall back.
+		    if (falseTaken) raiseV(V, Wv, q.dst(i,0), v.rename(q, 0));
+		    if (trueTaken) raiseV(V, Wv, q.dst(i,1), v.rename(q, 1));
+		}
+	    }
+	}
+	void handleSigmas(CJMP q, xInstanceofResult io,
+			  boolean falseTaken, boolean trueTaken) {
 	    // for every sigma source:
 	    for (int i=0; i < q.numSigmas(); i++) {
 		// check if this is the CJMP condition.
 		if (q.test() == q.src(i)) { // known value after branch
-		    raiseV(V, Wv, q.dst(i,0), 
-			   new xIntConstant(HClass.Boolean, 0));
-		    raiseV(V, Wv, q.dst(i,1),
-			   new xIntConstant(HClass.Boolean, 1));
+		    if (falseTaken) raiseV(V, Wv, q.dst(i,0),
+					   io.makeKnown(false).rename(q,0));
+		    if (trueTaken) raiseV(V, Wv, q.dst(i,1),
+					  io.makeKnown(true).rename(q,1));
 		    continue; // go on.
 		}
 
@@ -279,20 +302,23 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		// check to see if this is the temp tested by INSTANCEOF
 		if (q.src(i) == io.tested()) {
 		    // no new info on false branch.
-		    raiseV(V, Wv, q.dst(i,0), v.rename(q, 0));
+		    if (falseTaken)
+			raiseV(V, Wv, q.dst(i,0), v.rename(q, 0));
 		    // we know q.dst[i][1] is INSTANCEOF def.hclass
 		    // secret inside info: INSTANCEOF src is always non-null.
-		    raiseV(V, Wv, q.dst(i,1), 
-			   new xClassNonNull(io.def().hclass()));
+		    // XXX: use more specific of original class, instanceof?
+		    if (trueTaken)
+			raiseV(V, Wv, q.dst(i,1), 
+			       new xClassNonNull(io.def().hclass()));
 		} else {
 		    // fall back.
-		    raiseV(V, Wv, q.dst(i,0), v.rename(q, 0));
-		    raiseV(V, Wv, q.dst(i,1), v.rename(q, 1));
+		    if (falseTaken) raiseV(V, Wv, q.dst(i,0), v.rename(q, 0));
+		    if (trueTaken) raiseV(V, Wv, q.dst(i,1), v.rename(q, 1));
 		}
 	    }
 	}
-	
-	void handleSigmas(CJMP q, xOperBooleanResult or) {
+	void handleSigmas(CJMP q, xOperBooleanResult or,
+			  boolean falseTaken, boolean trueTaken) {
 	    int opc = or.def().opcode();
 	    int opa = or.operands().length;
 	    LatticeVal left = opa<1?null:get(or.operands()[0]);
@@ -302,10 +328,10 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    for (int i=0; i < q.numSigmas(); i++) {
 		// check if this is the CJMP condition.
 		if (q.test() == q.src(i)) {
-		    raiseV(V, Wv, q.dst(i,0), 
-			   new xIntConstant(toInternal(HClass.Boolean), 0));
-		    raiseV(V, Wv, q.dst(i,1),
-			   new xIntConstant(toInternal(HClass.Boolean), 1));
+		    if (falseTaken) raiseV(V, Wv, q.dst(i,0),
+					   or.makeKnown(false).rename(q,0));
+		    if (trueTaken) raiseV(V, Wv, q.dst(i,1),
+					  or.makeKnown(true).rename(q,1));
 		    continue; // go on.
 		}
 
@@ -314,77 +340,63 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 
 		// check to see if it comes from the OPER defining the boolean.
 		boolean handled = false;
+		boolean leftIsSource = false, swapped = false;
 		if (q.src(i) == or.operands()[0]) { // left is source.
+		    leftIsSource = true;
+		} else if (q.src(i) == or.operands()[1]) { // right is source.
+		    LatticeVal t = left; left = right; right = t;
+		    leftIsSource = true; swapped = true;
+		}
+		if (leftIsSource) {
 		    if (opc == Qop.ACMPEQ &&
 			left  instanceof xClass && // not already xClassNonNull
+			(!(left instanceof xNullConstant)) &&
 			right instanceof xNullConstant) {
-			raiseV(V, Wv, q.dst(i,0), // false branch: non-null
-			       new xClassNonNull( ((xClass)left).type() ) );
-			raiseV(V, Wv, q.dst(i,1), // true branch: null
-			       new xNullConstant() );
+			if (falseTaken)
+			    raiseV(V, Wv, q.dst(i,0), // false branch: non-null
+				   new xClassNonNull( ((xClass)left).type() ));
+			if (trueTaken)
+			    raiseV(V, Wv, q.dst(i,1), // true branch: null
+				   new xNullConstant() );
 			handled = true;
 		    } else if ((opc == Qop.ICMPEQ || opc == Qop.LCMPEQ ||
 				opc == Qop.FCMPEQ || opc == Qop.DCMPEQ) &&
 			       right instanceof xConstant) {
-			raiseV(V, Wv, q.dst(i,0), // false branch: no info
-			       v.rename(q, 0));
-			raiseV(V, Wv, q.dst(i,1), // true branch: constant!
-			       right.rename(q, 1));
+			if (falseTaken)
+			    raiseV(V, Wv, q.dst(i,0), // false branch: no info
+				   left.rename(q, 0));
+			if (trueTaken)
+			    raiseV(V, Wv, q.dst(i,1), // true branch: constant!
+				   right.rename(q, 1));
 			handled = true;
-		    } else if ((/*opc == Qop.ICMPGE || opc == Qop.LCMPGE ||*/
-				opc == Qop.ICMPGT || opc == Qop.LCMPGT ) &&
+		    } else if ((opc == Qop.ICMPGT || opc == Qop.LCMPGT ) &&
 			       right instanceof xBitWidth) {
-			// XXX we can tighten bounds on gt, as opposed to ge.
 			xBitWidth bw = (xBitWidth) right;
-			xBitWidth sr = extractWidth(v);
+			xBitWidth sr = extractWidth(left);
+			xBitWidth lessThan = new xBitWidth
+			    (sr.type(),
+			     sr.minusWidth(),
+			     Math.min(sr.plusWidth(), bw.plusWidth()) );
+			xBitWidth greaterThan = new xBitWidth
+			    (sr.type(),
+			     Math.min(sr.minusWidth(),bw.minusWidth()),
+			     sr.plusWidth() );
+			//XXX: use more specific of original class, xBitWidth?
 			// false branch:
-			raiseV(V, Wv, q.dst(i,0), new xBitWidth(sr.type(),
-			       Math.max(sr.minusWidth(),bw.minusWidth()),
-			       Math.min(sr.plusWidth(), bw.plusWidth()) ));
+			if (falseTaken)
+			    raiseV(V, Wv, q.dst(i,0),
+				   swapped ? greaterThan : lessThan);
 			// true branch.
-			raiseV(V, Wv, q.dst(i,1), new xBitWidth(sr.type(),
-			       Math.min(sr.minusWidth(),bw.minusWidth()),
-                               Math.max(sr.plusWidth(), bw.plusWidth()) ));
-			handled = true;
-		    }
-		} else if (q.src(i) == or.operands()[1]) { // right is source.
-		    if (opc == Qop.ACMPEQ &&
-			right instanceof xClass && // not already xClassNonNull
-			left  instanceof xNullConstant) {
-			raiseV(V, Wv, q.dst(i,0), // false branch: non-null
-			       new xClassNonNull( ((xClass)right).type() ) );
-			raiseV(V, Wv, q.dst(i,1), // true branch: null
-			       new xNullConstant() );
-			handled = true;
-		    } else if ((opc == Qop.ICMPEQ || opc == Qop.LCMPEQ ||
-				opc == Qop.FCMPEQ || opc == Qop.DCMPEQ) &&
-			       left instanceof xConstant) {
-			raiseV(V, Wv, q.dst(i,0), // false branch: no info
-			       v.rename(q, 0));
-			raiseV(V, Wv, q.dst(i,1), // true branch: constant!
-			       left.rename(q, 1));
-			handled = true;
-		    } else if ((/*opc == Qop.ICMPGE || opc == Qop.LCMPGE ||*/
-				opc == Qop.ICMPGT || opc == Qop.LCMPGT ) &&
-			       left instanceof xBitWidth) {
-			// XXX we can tighten bounds on gt, as opposed to ge.
-			xBitWidth bw = (xBitWidth) left;
-			xBitWidth sr = extractWidth(v);
-			// false branch:
-			raiseV(V, Wv, q.dst(i,0), new xBitWidth(sr.type(),
-			       Math.min(sr.minusWidth(),bw.minusWidth()),
-			       Math.max(sr.plusWidth(), bw.plusWidth()) ));
-			// true branch.
-			raiseV(V, Wv, q.dst(i,1), new xBitWidth(sr.type(),
-			       Math.max(sr.minusWidth(),bw.minusWidth()),
-                               Math.min(sr.plusWidth(), bw.plusWidth()) ));
+			if (trueTaken)
+			    raiseV(V, Wv, q.dst(i,1),
+				   swapped ? lessThan : greaterThan);
 			handled = true;
 		    }
 		}
 		// fall back.
 		if (!handled) {
-		    raiseV(V, Wv, q.dst(i,0), v.rename(q, 0));
-		    raiseV(V, Wv, q.dst(i,1), v.rename(q, 1));
+		    if (falseTaken) raiseV(V, Wv, q.dst(i,0), v.rename(q, 0));
+		    if (trueTaken) raiseV(V, Wv, q.dst(i,1), v.rename(q, 1));
 		}
 	    }
 	}
@@ -393,12 +405,16 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public void visit(Quad q) { /* do nothing. */ }
 	public void visit(AGET q) {
 	    LatticeVal v = get( q.objectref() );
+	    if (corruptor==null)
+		Util.assert(v==null || v instanceof xClassNonNull);
 	    if (v instanceof xClass)
 		raiseV(V, Wv, q.dst(), 
 		       new xClass( toInternal( ((xClass)v).type().getComponentType() ) ) );
 	}
 	public void visit(ALENGTH q) {
 	    LatticeVal v = get( q.objectref() );
+	    if (corruptor==null)
+		Util.assert(v==null || v instanceof xClassNonNull);
 	    if (v instanceof xClassArray)
 		raiseV(V, Wv, q.dst(),
 		       new xIntConstant(HClass.Int, 
@@ -418,8 +434,18 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    }
 	    raiseV(V, Wv, q.dst(), new xClassExact(q.hclass()) );
 	}
-	public void visit(ASET q) { /* do nothing. */ }
+	public void visit(ASET q) {
+	    LatticeVal v = get( q.objectref() );
+	    if (corruptor==null)
+		Util.assert(v==null || v instanceof xClassNonNull);
+	    /* do nothing. */
+	}
 	public void visit(CALL q) {
+	    if (corruptor==null)
+		Util.assert(q.isVirtual() ?
+			    get( q.params(0) )==null ||
+			    get( q.params(0) ) instanceof xClassNonNull : true,
+			    q);
 	    if (q.retval() != null) {
 		// in the bytecode world, everything's an int.
 		HClass ty = q.method().getReturnType();
@@ -464,11 +490,14 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		else
 		    raiseE(Ee, Eq, Wq, q.nextEdge(0) ); // false edge.
 		// handle sigmas.
-		for (int i=0; i < q.numSigmas(); i++) {
-		    LatticeVal v2 = get( q.src(i) );
-		    if (v2 != null)
-			raiseV(V,Wv, q.dst(i,test?1:0), v2.rename(q,test?1:0));
-		}
+		if (useSigmas && v instanceof xOperBooleanResult)
+		    handleSigmas((CJMP) q, (xOperBooleanResult)v,
+				 !test, test);
+		else if (useSigmas && v instanceof xInstanceofResult)
+		    handleSigmas((CJMP) q, (xInstanceofResult) v,
+				 !test, test);
+		else // fallback.
+		    handleSigmas((CJMP) q, !test, test);
 		return; // done.
 	    } else if (v instanceof xClass) { // ie, not bottom.
 		// both edges are potentially executable.
@@ -477,27 +506,11 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 
 		// look at definition of boolean condition.
 		if (useSigmas && v instanceof xOperBooleanResult)
-		    handleSigmas((CJMP) q, (xOperBooleanResult)v);
+		    handleSigmas((CJMP) q, (xOperBooleanResult)v, true, true);
 		else if (useSigmas && v instanceof xInstanceofResult)
-		    handleSigmas((CJMP) q, (xInstanceofResult) v);
+		    handleSigmas((CJMP) q, (xInstanceofResult) v, true, true);
 		else // fallback.
-		    for (int i=0; i < q.numSigmas(); i++) {
-			// is this the CJMP condition?
-			if (useSigmas&& q.src(i) == q.test()) {
-			    raiseV(V, Wv, q.dst(i,0), 
-				   new xIntConstant(toInternal(HClass.Boolean), 0));
-			    // CJMP test is possibly non-boolean, so we don't
-			    // in fact know the value of the true side
-			    // (except that it is non-zero)
-			    raiseV(V, Wv, q.dst(i,1), v.rename(q, 1));
-			} else {
-			    LatticeVal v2 = get ( q.src(i) );
-			    if (v2 != null) {
-				raiseV(V, Wv, q.dst(i,0), v2.rename(q,0));
-				raiseV(V, Wv, q.dst(i,1), v2.rename(q,1));
-			    }
-			}
-		    }
+		    handleSigmas((CJMP) q, true, true);
 	    }
 	}
 	public void visit(COMPONENTOF q) {
@@ -544,6 +557,11 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	public void visit(FOOTER q) { /* do nothing. */ }
 	public void visit(GET q) {
+	    if (corruptor==null)
+		Util.assert(q.objectref()!=null ?
+			    get(q.objectref())==null ||
+			    get(q.objectref()) instanceof xClassNonNull : true,
+			    q);
 	    HClass type = toInternal(q.field().getType());
 	    if (q.field().isConstant()) {
 		Object val = q.field().getConstant();
@@ -566,23 +584,23 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    // no guarantee that src is not null.
 	    LatticeVal v = get( q.src() );
 	    if (v instanceof xNullConstant) // always false.
-		raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),0) );
+		raiseV(V, Wv, q.dst(), new xInstanceofResultKnown(q,false));
 	    else if (v instanceof xClassNonNull) { // analyzable
 		HClass hcO = ((xClassNonNull)v).type();
 		if (hcO.isInstanceOf(q.hclass())) // always true
-		    raiseV(V,Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),1) );
+		    raiseV(V,Wv, q.dst(), new xInstanceofResultKnown(q,true));
 		else if (q.hclass().isInstanceOf(hcO)) // unknowable.
-		    raiseV(V,Wv, q.dst(), new xInstanceofResult(q));
+		    raiseV(V,Wv, q.dst(), new xInstanceofResultUnknown(q));
 		else // always false.
-		    raiseV(V,Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),0) );
+		    raiseV(V,Wv, q.dst(), new xInstanceofResultKnown(q,false));
 	    }
 	    else if (v instanceof xClass) { // could be null.
 		HClass hcO = ((xClass)v).type();
 		if (q.hclass().isInstanceOf(hcO) || 
 		    hcO.isInstanceOf(q.hclass()) ) // unknowable.
-		    raiseV(V,Wv, q.dst(), new xInstanceofResult(q));
+		    raiseV(V,Wv, q.dst(), new xInstanceofResultUnknown(q));
 		else // always false (even if src==null)
-		    raiseV(V,Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),0) );
+		    raiseV(V,Wv, q.dst(), new xInstanceofResultKnown(q,false));
 	    }
 	}
 	public void visit(METHOD q) {
@@ -598,8 +616,16 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		else
 		    raiseV(V, Wv, q.params(j), new xClass( pt[k] ) );
 	}
-	public void visit(MONITORENTER q) { /* do nothing. */ }
-	public void visit(MONITOREXIT q) { /* do nothing. */ }
+	public void visit(MONITORENTER q) {
+	    LatticeVal v = get( q.lock() );
+	    Util.assert(v==null || v instanceof xClassNonNull);
+	    /* do nothing. */
+	}
+	public void visit(MONITOREXIT q) {
+	    LatticeVal v = get( q.lock() );
+	    Util.assert(v==null || v instanceof xClassNonNull);
+	    /* do nothing. */
+	}
 	public void visit(MOVE q) {
 	    LatticeVal v = get ( q.src() );
 	    if (v != null)
@@ -631,8 +657,8 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		Object o = q.evalValue(op);
 		if (ty == HClass.Boolean)
 		    raiseV(V, Wv, q.dst(),
-			   new xIntConstant(toInternal(ty), 
-					    ((Boolean)o).booleanValue()?1:0));
+			   new xOperBooleanResultKnown
+			   (q,((Boolean)o).booleanValue()));
 		else if (ty == HClass.Int || ty == HClass.Long)
 		    raiseV(V, Wv, q.dst(), 
 			   new xIntConstant(ty, ((Number)o).longValue() ) );
@@ -652,7 +678,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		     (get( q.operands(0) ) instanceof xClassNonNull &&
 		      get( q.operands(1) ) instanceof xNullConstant) ) )
 		    raiseV(V, Wv, q.dst(), // always false.
-			   new xIntConstant(toInternal(HClass.Boolean), 0));
+			   new xOperBooleanResultKnown(q, false));
 		// special case boolean operations.
 		else if (opc == Qop.ACMPEQ ||
 			 opc == Qop.DCMPEQ || opc == Qop.DCMPGE ||
@@ -661,7 +687,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			 opc == Qop.FCMPGT ||
 			 opc == Qop.ICMPEQ || opc == Qop.ICMPGT ||
 			 opc == Qop.LCMPEQ || opc == Qop.LCMPGT)
-		    raiseV(V, Wv, q.dst(), new xOperBooleanResult(q));
+		    raiseV(V, Wv, q.dst(), new xOperBooleanResultUnknown(q));
 		else {
 		    // RULE 4:
 		    HClass ty = q.evalType();
@@ -693,7 +719,14 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    } // for each phi function.
 	}
 	public void visit(RETURN q) { /* do nothing. */ }
-	public void visit(SET q) { /* do nothing. */ }
+	public void visit(SET q) {
+	    if (corruptor==null)
+		Util.assert(q.objectref()!=null ?
+			    get(q.objectref())==null ||
+			    get(q.objectref()) instanceof xClassNonNull : true,
+			    q);
+	     /* do nothing. */
+	}
 	public void visit(SWITCH q) {
 	    LatticeVal v = get( q.index() );
 	    if (v instanceof xIntConstant) {
@@ -724,7 +757,12 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		}
 	    }
 	}
-	public void visit(THROW q) { /* do nothing. */ }
+	public void visit(THROW q) {
+	    if (corruptor==null)
+		Util.assert(get(q.throwable())==null ||
+			    get(q.throwable()) instanceof xClassNonNull);
+	    /* do nothing. */
+	}
 	public void visit(TYPESWITCH q) {
 	    LatticeVal v = get( q.index() );
 	    if (v instanceof xClass) {
@@ -801,9 +839,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		       left.minusWidth() < right.minusWidth()))) )
 		    // okay, comparison can never be true.
 		    raiseV(V, Wv, q.dst(),
-			   new xIntConstant(HClass.Boolean, 0));
+			   new xOperBooleanResultKnown(q,false));
 		else // okay, nothing known.
-		    raiseV(V, Wv, q.dst(), new xOperBooleanResult(q));
+		    raiseV(V, Wv, q.dst(), new xOperBooleanResultUnknown(q));
 	    }
 	    public void visit_icmpeq(OPER q) { visit_cmpeq(q); }
 	    public void visit_lcmpeq(OPER q) { visit_cmpeq(q); }
@@ -818,7 +856,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		     ((xIntConstant)right).value()!=0 &&
 		     right.minusWidth() > left.minusWidth()))
 		    // comparison is always true
-		    raiseV(V,Wv, q.dst(), new xIntConstant(HClass.Boolean, 1));
+		    raiseV(V,Wv, q.dst(), new xOperBooleanResultKnown(q,true));
 		else if ((left instanceof xIntConstant &&
 			  ((xIntConstant)left).value()!=0 &&
 			  left.minusWidth() > right.minusWidth()) ||
@@ -826,7 +864,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			  ((xIntConstant)right).value()!=0 &&
 			  right.plusWidth() > left.plusWidth()))
 		    // comparison is always false
-		    raiseV(V,Wv, q.dst(), new xIntConstant(HClass.Boolean, 0));
+		    raiseV(V,Wv, q.dst(),new xOperBooleanResultKnown(q,false));
 		// comparisons against zero.
 		else if ((left instanceof xIntConstant &&
 			  ((xIntConstant)left).value()==0 &&
@@ -835,9 +873,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			  ((xIntConstant)right).value()==0 &&
 			  left.plusWidth()==0))
 		    // comparison is always false. 0 > 0+ or 0- > 0
-		    raiseV(V,Wv, q.dst(), new xIntConstant(HClass.Boolean, 0));
+		    raiseV(V,Wv, q.dst(),new xOperBooleanResultKnown(q,false));
 		else // okay, nothing known.
-		    raiseV(V, Wv, q.dst(), new xOperBooleanResult(q));
+		    raiseV(V, Wv, q.dst(), new xOperBooleanResultUnknown(q));
 	    }
 	    public void visit_icmpgt(OPER q) { visit_cmpgt(q); }
 	    public void visit_lcmpgt(OPER q) { visit_cmpgt(q); }
@@ -1209,11 +1247,12 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
     }
     /** An integer value which is the result of an INSTANCEOF. */
-    static class xInstanceofResult extends xBitWidth {
+    static class xInstanceofResultUnknown extends xBitWidth
+	implements xInstanceofResult {
 	Temp tested;
 	INSTANCEOF q;
-	public xInstanceofResult(INSTANCEOF q) { this(q, q.src()); }
-	private xInstanceofResult(INSTANCEOF q, Temp tested) {
+	public xInstanceofResultUnknown(INSTANCEOF q) { this(q, q.src()); }
+	xInstanceofResultUnknown(INSTANCEOF q, Temp tested) {
 	    super(toInternal(HClass.Boolean),0,1);
 	    this.q = q;
 	    this.tested = tested;
@@ -1221,38 +1260,49 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public Temp tested() { return tested; }
 	public INSTANCEOF def() { return q; }
 	public String toString() {
-	    return "xInstanceofResult: " + type + " " +q;
+	    return "xInstanceofResultUnknown: " + type + " " +q;
 	}
 	public boolean equals(Object o) { return _equals(o); }
 	private boolean _equals(Object o) {
-	    return (o instanceof xInstanceofResult && super.equals(o) &&
-		    ((xInstanceofResult)o).q == q &&
-		    ((xInstanceofResult)o).tested == tested);
+	    return (o instanceof xInstanceofResultUnknown && super.equals(o) &&
+		    ((xInstanceofResultUnknown)o).q == q &&
+		    ((xInstanceofResultUnknown)o).tested == tested);
 	}
 	public LatticeVal merge(LatticeVal v) {
-	    if (this._equals(v)) return new xInstanceofResult(q,tested);
+	    if (v instanceof xInstanceofResult)
+		// xInstanceofResultKnown merged with
+		// xInstanceofResultKnown or xInstanceofResultUnknown
+		return makeUnknown();
+	    // all others.
 	    return super.merge(v);
+	}
+	public xInstanceofResultKnown makeKnown(boolean nvalue) {
+	    return new xInstanceofResultKnown(q,tested,nvalue?1:0);
+	}
+	public xInstanceofResultUnknown makeUnknown() {
+	    return new xInstanceofResultUnknown(q,tested);
 	}
 	// override renaming functions.
 	public LatticeVal rename(PHI q, int j) {
 	    for (int i=0; i<q.numPhis(); i++)
 		if (q.src(i, j)==this.tested)
-		    return new xInstanceofResult(def(), q.dst(i));
+		    return new xInstanceofResultUnknown(def(), q.dst(i));
 	    return this;
 	}
 	public LatticeVal rename(SIGMA q, int j) {
 	    for (int i=0; i<q.numSigmas(); i++)
 		if (q.src(i)==this.tested)
-		    return new xInstanceofResult(def(), q.dst(i, j));
+		    return new xInstanceofResultUnknown(def(), q.dst(i, j));
 	    return this;
 	}
     }
-    /** An integer value which is the result of an OPER. */
-    static class xOperBooleanResult extends xBitWidth {
+    /** An unknown boolean value which is the result of an OPER. */
+    static class xOperBooleanResultUnknown extends xBitWidth
+	implements xOperBooleanResult {
 	OPER q;
 	Temp[] operands;
-	public xOperBooleanResult(OPER q) { this(q, q.operands()); }
-	private xOperBooleanResult(OPER q, Temp[] operands) {
+	public xOperBooleanResultUnknown(OPER q) { this(q, q.operands()); }
+	xOperBooleanResultUnknown(OPER q, Temp[] operands) {
 	    super(toInternal(HClass.Boolean),0,1);
 	    this.q = q;
 	    this.operands = operands;
@@ -1260,14 +1310,14 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public Temp[] operands() { return operands; }
 	public OPER def() { return q; }
 	public String toString() {
-	    return "xOperBooleanResult: " + type + " " +q;
+	    return "xOperBooleanResultUnknown: " + type + " " +q;
 	}
 	public boolean equals(Object o) { return _equals(o); }
 	private boolean _equals(Object o) {
 	    if (o==this) return true; // common case.
-	    if (!(o instanceof xOperBooleanResult)) return false;
+	    if (!(o instanceof xOperBooleanResultUnknown)) return false;
 	    if (!super.equals(o)) return false;
-	    xOperBooleanResult oo = (xOperBooleanResult)o;
+	    xOperBooleanResultUnknown oo = (xOperBooleanResultUnknown)o;
 	    if (oo.q != q) return false;
 	    if (oo.operands.length != operands.length) return false;
 	    for (int i=0; i<operands.length; i++)
@@ -1275,21 +1325,31 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    return true;
 	}
 	public LatticeVal merge(LatticeVal v) {
-	    if (this._equals(v)) return new xOperBooleanResult(q,operands);
+	    if (v instanceof xOperBooleanResult)
+		// xOperBooleanResultKnown merged with
+		// xOperBooleanResultKnown or xOperBooleanResultUnknown
+		return makeUnknown();
+	    // all others.
 	    return super.merge(v);
+	}
+	public xOperBooleanResultKnown makeKnown(boolean nvalue) {
+	    return new xOperBooleanResultKnown(q,operands,nvalue?1:0);
+	}
+	public xOperBooleanResultUnknown makeUnknown() {
+	    return new xOperBooleanResultUnknown(q,operands);
 	}
 	// override renaming functions.
 	public LatticeVal rename(PHI q, int j) {
 	    MyTempMap mtm = new MyTempMap();
 	    for (int i=0; i<q.numPhis(); i++)
 		mtm.put(q.src(i,j), q.dst(i));
-	    return new xOperBooleanResult(def(), mtm.tempMap(operands()));
+	    return new xOperBooleanResultUnknown(def(), mtm.tempMap(operands()));
 	}
 	public LatticeVal rename(SIGMA q, int j) {
 	    MyTempMap mtm = new MyTempMap();
 	    for (int i=0; i<q.numSigmas(); i++)
 		mtm.put(q.src(i), q.dst(i, j));
-	    return new xOperBooleanResult(def(), mtm.tempMap(operands()));
+	    return new xOperBooleanResultUnknown(def(), mtm.tempMap(operands()));
 	}
 	private static class MyTempMap extends HashMap implements TempMap {
 	    public Temp tempMap(Temp t) {
@@ -1328,6 +1388,134 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public LatticeVal merge(LatticeVal v) {
 	    if (this._equals(v)) return new xIntConstant(type,value);
 	    return super.merge(v);
+	}
+    }
+    /** An integer value which is the result of an INSTANCEOF. */
+    static class xInstanceofResultKnown extends xIntConstant
+	implements xInstanceofResult {
+	Temp tested;
+	INSTANCEOF q;
+	public xInstanceofResultKnown(INSTANCEOF q, boolean value) {
+	    this(q, q.src(), value?1:0);
+	}
+	private xInstanceofResultKnown(INSTANCEOF q, Temp tested, long value) {
+	    super(toInternal(HClass.Boolean),value);
+	    this.q = q;
+	    this.tested = tested;
+	    Util.assert(value==0 || value==1);
+	}
+	public Temp tested() { return tested; }
+	public INSTANCEOF def() { return q; }
+	public String toString() {
+	    return "xInstanceofResultKnown: " + value + " " +q;
+	}
+	public boolean equals(Object o) { return _equals(o); }
+	private boolean _equals(Object o) {
+	    return (o instanceof xInstanceofResultKnown && super.equals(o) &&
+		    ((xInstanceofResultKnown)o).q == q &&
+		    ((xInstanceofResultKnown)o).tested == tested);
+	}
+	public LatticeVal merge(LatticeVal v) {
+	    if (v instanceof xInstanceofResult)
+		// xInstanceofResultKnown merged with
+		// xInstanceofResultKnown or xInstanceofResultUnknown
+		return this._equals(v) ? (LatticeVal)
+		    makeKnown(value!=0) : makeUnknown();
+	    // all others.
+	    return super.merge(v);
+	}
+	public xInstanceofResultKnown makeKnown(boolean nvalue) {
+	    return new xInstanceofResultKnown(q,tested,nvalue?1:0);
+	}
+	public xInstanceofResultUnknown makeUnknown() {
+	    return new xInstanceofResultUnknown(q,tested);
+	}
+	// override renaming functions.
+	public LatticeVal rename(PHI q, int j) {
+	    for (int i=0; i<q.numPhis(); i++)
+		if (q.src(i, j)==this.tested)
+		    return new xInstanceofResultKnown(def(), q.dst(i), value);
+	    return this;
+	}
+	public LatticeVal rename(SIGMA q, int j) {
+	    for (int i=0; i<q.numSigmas(); i++)
+		if (q.src(i)==this.tested)
+		    return new xInstanceofResultKnown(def(),q.dst(i, j),value);
+	    return this;
+	}
+    }
+    /** A known boolean value which is the result of an OPER. */
+    static class xOperBooleanResultKnown extends xIntConstant
+	implements xOperBooleanResult {
+	OPER q;
+	Temp[] operands;
+	public xOperBooleanResultKnown(OPER q, boolean value) {
+	    this(q, q.operands(), value?1:0);
+	}
+	xOperBooleanResultKnown(OPER q, Temp[] operands, long value)
+	{
+	    super(toInternal(HClass.Boolean),value);
+	    this.q = q;
+	    this.operands = operands;
+	    Util.assert(value==0 || value==1);
+	}
+	public Temp[] operands() { return operands; }
+	public OPER def() { return q; }
+	public String toString() {
+	    return "xOperBooleanResultKnown: " + value + " " +q;
+	}
+	public boolean equals(Object o) { return _equals(o); }
+	private boolean _equals(Object o) {
+	    if (o==this) return true; // common case.
+	    if (!(o instanceof xOperBooleanResultKnown)) return false;
+	    if (!super.equals(o)) return false;
+	    xOperBooleanResultKnown oo = (xOperBooleanResultKnown)o;
+	    if (oo.q != q) return false;
+	    if (oo.operands.length != operands.length) return false;
+	    for (int i=0; i<operands.length; i++)
+		if (oo.operands[i] != operands[i]) return false;
+	    return true;
+	}
+	public LatticeVal merge(LatticeVal v) {
+	    if (v instanceof xOperBooleanResult)
+		// xOperBooleanResultKnown merged with
+		// xOperBooleanResultKnown or xOperBooleanResultUnknown
+		return this._equals(v) ? (LatticeVal)
+		    makeKnown(value!=0) : makeUnknown();
+	    // all others.
+	    return super.merge(v);
+	}
+	public xOperBooleanResultKnown makeKnown(boolean nvalue) {
+	    return new xOperBooleanResultKnown(q,operands,nvalue?1:0);
+	}
+	public xOperBooleanResultUnknown makeUnknown() {
+	    return new xOperBooleanResultUnknown(q,operands);
+	}
+	// override renaming functions.
+	public LatticeVal rename(PHI q, int j) {
+	    MyTempMap mtm = new MyTempMap();
+	    for (int i=0; i<q.numPhis(); i++)
+		mtm.put(q.src(i,j), q.dst(i));
+	    return new xOperBooleanResultKnown(def(), mtm.tempMap(operands()),
+					       value);
+	}
+	public LatticeVal rename(SIGMA q, int j) {
+	    MyTempMap mtm = new MyTempMap();
+	    for (int i=0; i<q.numSigmas(); i++)
+		mtm.put(q.src(i), q.dst(i, j));
+	    return new xOperBooleanResultKnown(def(), mtm.tempMap(operands()),
+					       value);
+	}
+	private static class MyTempMap extends HashMap implements TempMap {
+	    public Temp tempMap(Temp t) {
+		return containsKey(t) ? (Temp) get(t) : t;
+	    }
+	    public Temp[] tempMap(Temp[] t) {
+		Temp[] r = new Temp[t.length];
+		for (int i=0; i<r.length; i++)
+		    r[i] = tempMap(t[i]);
+		return r;
+	    }
 	}
     }
     static class xNullConstant extends xClass implements xConstant {
@@ -1395,6 +1583,18 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     static interface xConstant {
 	public Object constValue();
     }
+    static interface xInstanceofResult {
+	public Temp tested();
+	public INSTANCEOF def();
+	public xInstanceofResultKnown makeKnown(boolean value);
+	public xInstanceofResultUnknown makeUnknown();
+    }
+    static interface xOperBooleanResult {
+	public Temp[] operands();
+	public OPER def();
+	public xOperBooleanResultKnown makeKnown(boolean value);
+	public xOperBooleanResultUnknown makeUnknown();
+    }
     /////////////////////////////////////////////////////////
     // ways to degrade the analysis to collect statistics.
     private final Corruptor corruptor = null; // no corruption.
@@ -1408,8 +1608,8 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     }
     static final Corruptor nobitwidth = new Corruptor() {
 	public LatticeVal corrupt(LatticeVal v) {
-	    if (v instanceof xBitWidth)
-	      return new xClassNonNull(((xClassNonNull)v).type);
+	    if (v!=null && v.toString().startsWith("xBitWidth:"))
+	      return new xClassExact(((xClassExact)v).type);
 	    return v;
 	}
     };
