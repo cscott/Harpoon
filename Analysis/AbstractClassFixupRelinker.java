@@ -24,7 +24,7 @@ import java.util.*;
  * The <code>AbstractClassFixupRelinker</code> remedies the situation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractClassFixupRelinker.java,v 1.5 2002-09-10 18:49:13 cananian Exp $
+ * @version $Id: AbstractClassFixupRelinker.java,v 1.6 2002-09-10 18:52:11 cananian Exp $
  */
 public class AbstractClassFixupRelinker extends Relinker {
     
@@ -42,7 +42,13 @@ public class AbstractClassFixupRelinker extends Relinker {
 	    if (sc!=null) forDescriptor(sc.getDescriptor()); // recurse!
 	    // okay, now fix this class up.
 	    fixup(hc);
-	    // fix up classes mentioned in method signatures?
+
+	    // and to prevent fixup from happening at inopportune times
+	    // (such as after we start modifying method signatures)
+	    // we're going to be aggressive in fixing up other classes
+	    // mentioned in fields and methods of this one.
+
+	    // fix up classes mentioned in method signatures
 	    for (Iterator<HMethod> it=new ArrayIterator<HMethod>
 		     (hc.getDeclaredMethods()); it.hasNext(); ) {
 		HMethod hm = it.next();
