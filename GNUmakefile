@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.44 1999-06-25 08:38:11 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.45 1999-06-25 08:51:21 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -191,8 +191,8 @@ Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
 	xvcg -psoutput $@ -paper 8x11 -color $(VCG_OPT) $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
-harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) bin/test-collections $(MUNGE) $(UNMUNGE) mark-executable
-	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) bin/test-collections $(MUNGE) $(UNMUNGE)
+harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) bin/test-collections bin/annotate.perl $(MUNGE) $(UNMUNGE) mark-executable
+	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) bin/test-collections bin/annotate.perl $(MUNGE) $(UNMUNGE)
 	date '+%-d-%b-%Y at %r %Z.' > harpoon.tgz.TIMESTAMP
 
 tar:	harpoon.tgz harpoon.tgz.TIMESTAMP
