@@ -3,7 +3,7 @@
 UAVDIST=src/corba/UAV
 
 JACORB_HOME=contrib/JacORB1_3_30
-JCC=javac 
+JAVAC=javac 
 JAVA=java
 IDLCC=$(JACORB_HOME)/bin/idl -I$(JACORB_HOME)/idl/omg
 JAR=jar
@@ -47,6 +47,17 @@ JDOCFLAGS += \
 JDOCFLAGS += \
 	$(shell if $(JDOC) -help 2>&1 | grep -- "-group " > /dev/null ; \
 	then echo '$(JDOCGROUPS)' ; fi)
+
+CP:=$(shell if test `echo $(CLASSPATH) | fgrep -c 'contrib/jacorb.jar'` == 0; \
+            then if test "$(CLASSPATH)" == ""; \
+	         then echo contrib/jacorb.jar; \
+	         else echo contrib/jacorb.jar:$(CLASSPATH); \
+	         fi; \
+	    fi)
+
+JDOCFLAGS += -classpath $(CP)
+
+JCC = $(JAVAC) -classpath $(CP)
 
 all:    clean doc imagerec.jar # imagerec.tgz
 
