@@ -19,7 +19,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.1 1999-03-27 22:05:09 duncan Exp $
+ * @version $Id: StaticState.java,v 1.1.2.2 1999-04-23 06:21:48 pnkfelix Exp $
  */
 final class StaticState extends HCLibrary {
 
@@ -30,7 +30,7 @@ final class StaticState extends HCLibrary {
     /** which code representation to use. */
     HCodeFactory hcf;
     /** used to map fields & methods to labels */
-    final InterpreterOffsetMap map;
+    /*final*/ InterpreterOffsetMap map; 
     
 
     StaticState(HCodeFactory hcf, InterpreterOffsetMap map) { 

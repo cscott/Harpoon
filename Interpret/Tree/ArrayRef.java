@@ -13,11 +13,11 @@ import harpoon.Util.Util;
  * by the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayRef.java,v 1.1.2.1 1999-03-27 22:05:07 duncan Exp $
+ * @version $Id: ArrayRef.java,v 1.1.2.2 1999-04-23 06:21:48 pnkfelix Exp $
  */
 final class ArrayRef extends Ref {
     /** Elements of the array (primitives or Refs) */
-    final   Object[]            elements;
+    /*final*/   Object[]            elements;
     private Integer             hashCode = null;
     private Integer             length   = null;
     private ClazPointer         classPtr = null;
@@ -56,7 +56,7 @@ final class ArrayRef extends Ref {
     }
 
     // private constructor for use by clone() method
-    private ArrayRef(StaticState ss, HClass type, Object[] elements) {
+    private ArrayRef(StaticState ss, HClass type, final Object[] elements) {
         super(ss, type);
         this.elements = elements;
         Util.assert(elements!=null);

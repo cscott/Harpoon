@@ -8,11 +8,11 @@ import harpoon.Temp.Label;
  * to static class data.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ClazPointer.java,v 1.1.2.1 1999-03-27 22:05:07 duncan Exp $
+ * @version $Id: ClazPointer.java,v 1.1.2.2 1999-04-23 06:21:48 pnkfelix Exp $
  */
 class ClazPointer extends Pointer {
     private boolean isDerived;
-    private final StaticState ss;
+    private /*final*/ StaticState ss;
 
     // Private constructor used to add two ClazPointers.
     private ClazPointer(ClazPointer base, long offset) {
@@ -20,7 +20,7 @@ class ClazPointer extends Pointer {
     }
 
     // Private constructor used to clone a ClazPointer.
-    private ClazPointer(Label base, StaticState ss, 
+    private ClazPointer(Label base, final StaticState ss, 
 			long offset, boolean isDerived) {
 	super(new Object[] { base, new Long(offset) });
 	this.ss = ss;
@@ -28,7 +28,7 @@ class ClazPointer extends Pointer {
     }
 
     /** Class constructor */
-    ClazPointer(Label base, StaticState ss, long offset) {
+    ClazPointer(Label base, final StaticState ss, long offset) {
 	this(base, ss, offset, false);
     }
     
