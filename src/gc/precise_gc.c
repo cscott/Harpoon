@@ -153,6 +153,19 @@ void cleanup_after_threaded_GC() {
 void trace_array(struct aarray *arr)
 {
   ptroff_t containsPointers = arr->obj.claz->gc_info.bitmap;
+  // this hack is for Wes' stuff; will need to fix properly later
+  // basically, in anything other than standard Java, java.lang.Object
+  // may have fields. since arrays inherit from java.lang.Object,
+  // they have to contend with pointers in the fields.
+#ifdef WITH_REALTIME_JAVA
+  int j;
+  jobject_unwrapped *fields = (jobject_unwrapped *)(arr->_padding_);
+  for(j = 0; j < OBJECT_PADDING; j++)
+    {
+      error_gc("    array field at %p ", fields[j]);
+      handle_reference(&fields[j]);
+    }
+#endif
   assert(containsPointers == 0 || containsPointers == 1);
   if (containsPointers)
     {
@@ -262,4 +275,127 @@ void trace_object(jobject_unwrapped obj)
     }
 }
 
+/* requires: if the array being pointed to by arr is in the middle
+             of being examined, last_index gives the previous array 
+	     index at which there was a pointer. otherwise,
+	     last_index should be 0.
+             new is a boolean that, if 0, indicates the array being
+	     pointed to by arr is in the middle of being examined,
+	     and 1 otherwise. no other values of new are valid.
+   returns:  0 if there are no more pointers in the array, or 1+ the 
+             index of the next array element that contains a pointer.
+*/
+ptroff_t next_array_index(struct aarray *arr, ptroff_t last_index, int new)
+{
+  ptroff_t containsPointers = arr->obj.claz->gc_info.bitmap;
+
+  printf("%p is an array.\n", arr);		  
+  fflush(stdout);
+
+  if (new == 1)
+    {
+      // we have never seen this array before
+      // it may or may not contain pointers
+      assert(containsPointers == 0 || containsPointers == 1);
+      if (containsPointers && arr->length > 0)
+	{
+	  // this array contains pointers
+	  printf("%p contains pointers.\n", arr);
+	  fflush(stdout);
+	  return (INDEX_OFFSET+0);
+	}
+      else
+	return NO_POINTERS;
+    }
+  else
+    {
+      ptroff_t next_index = last_index+1;
+
+      assert(new == 0);
+
+      // the last_index must be >= 0, and since some index in the 
+      // array is a pointer, the array must contain pointers.
+      assert(last_index >= 0 && containsPointers == 1);
+      if (next_index < arr->length)
+	return (INDEX_OFFSET+next_index);
+      else
+	return NO_POINTERS;
+    }
+}
+
+
+/* requires: if the object being pointed to by obj is in the middle
+             of being examined, last_index gives the previous field 
+	     index at which there was a pointer. otherwise,
+	     field_index should be 0.
+             new is a boolean that, if 0, indicates the object being
+	     pointed to by obj is in the middle of being examined,
+	     and 1 otherwise. no other values of new are valid.
+   returns:  0 if there are no more pointers in the object, or 1+ the 
+             index of the next field that contains a pointer.
+*/
+ptroff_t next_field_index(jobject_unwrapped obj, ptroff_t last_index, int new)
+{
+  size_t obj_size_minus_header;
+  int i, num_bitmaps;
+  ptroff_t *bitmap_ptr;
+  ptroff_t next_index;
+
+  //  we have a non-array object
+  printf("%p is an object.\n", obj);
+  fflush(stdout);
+
+  // if the object size minus the object header is bigger than 
+  // COMPACT_ENCODING_SIZE, then the GC bitmap is not inlined.
+  // here we use some clever integer divide roundup thing.
+  obj_size_minus_header = obj->claz->size - sizeof(struct oobj);
+  num_bitmaps = (obj_size_minus_header + COMPACT_ENCODING_SIZE - 1)/COMPACT_ENCODING_SIZE;
+  assert(num_bitmaps >= 0);
+  
+  if (num_bitmaps > 1)
+    bitmap_ptr = obj->claz->gc_info.ptr;
+  else
+    bitmap_ptr = &(obj->claz->gc_info.bitmap);
+  
+  assert(new == 0 || new == 1);
+
+  // if we've already started looking at the object, 
+  // next_index and i will be initialized differently
+  if (new)
+    {
+      next_index = 0;
+      i = 0;
+    } 
+  else
+    {
+      next_index = last_index + 1;
+      i = next_index/(SIZEOF_VOID_P*8);
+    }
+
+  // after the first time around the outer loop, next_index
+  // needs to be initialized relative to i
+  for ( ; i < num_bitmaps; i++, next_index = i*SIZEOF_VOID_P*8)
+    {
+      int j;
+      ptroff_t bitmap = bitmap_ptr[i];
+      print_bitmap(bitmap);
+
+      // if next_index is in the middle of a bitmap
+      // we need to shift the bitmap over
+      bitmap = bitmap >> (next_index - i*SIZEOF_VOID_P*8);
+
+      for ( ; bitmap != 0; next_index++) {
+	// stop when we get to the first set bit
+	if (bitmap & 1)
+	  return (INDEX_OFFSET + next_index);
+
+	// as we examine each bit in the bitmap, we 
+	// shift the bitmap right.
+	bitmap = bitmap >> 1;
+      }
+    }
+  
+  // if we got this far, then we didn't find a pointer
+  return NO_POINTERS;
+}
 #endif /* WITH_PRECISE_GC */
