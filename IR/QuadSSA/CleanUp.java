@@ -23,28 +23,27 @@ import harpoon.Util.Worklist;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CleanUp.java,v 1.7 1998-09-18 00:50:28 cananian Exp $
+ * @version $Id: CleanUp.java,v 1.8 1998-09-21 02:31:26 cananian Exp $
  * @see Translate
  */
 
 class CleanUp  {
     static void cleanup1(Code c) {
-	cleanupPhantomLimbs((Quad[]) c.getElements());
-    }
-    static void cleanup2(HCode c) {
-	cleanupUnused((Quad[]) c.getElements());
-    }
-    private static void cleanupPhantomLimbs(Quad[] ql) {
 	// iterate over all phis.
-	for (int i=0; i<ql.length; i++) {
-	    if (! (ql[i] instanceof PHI) ) continue;
-	    PHI phi = (PHI) ql[i];
-	    // shrink phi functions with null limbs.
-	    for (int j=0; j<phi.prev.length; )
-		if (phi.prev[j]==null)
-		    phi.remove(j);
-		else j++;
-	}
+	for(Enumeration e=c.getElementsE(); e.hasMoreElements(); )
+	    cleanupPhantomLimbs((Quad) e.nextElement());
+    }
+    static void cleanup2(Code c) {
+	cleanupUnused(c);
+    }
+    private static void cleanupPhantomLimbs(Quad q) {
+	if (! (q instanceof PHI) ) return;
+	PHI phi = (PHI) q;
+	// shrink phi functions with null limbs.
+	for (int j=0; j<phi.prev.length; )
+	    if (phi.prev[j]==null)
+		phi.remove(j);
+	    else j++;
     }
 
     static class UsedTable {
@@ -76,23 +75,26 @@ class CleanUp  {
 	}
     }
 
-    private static void cleanupUnused(Quad[] ql) {
+    private static void cleanupUnused(Code c) {
 	// collect all the temps that are used somewhere reachable.
+	// and put all phis and sigmas on a worklist.
 	UsedTable used = new UsedTable();
-	for (int i=0; i<ql.length; i++) {
-	    Temp[] u = ql[i].use();
+	Worklist W = new Set();
+
+	for (Enumeration e = c.getElementsE(); e.hasMoreElements(); ) {
+	    Quad q = (Quad) e.nextElement();
+	    // collect uses/defs
+	    Temp[] u = q.use();
 	    for (int j=0; j<u.length; j++)
 		used.addUse(u[j]);
-	    Temp[] d = ql[i].def();
+	    Temp[] d = q.def();
 	    for (int j=0; j<d.length; j++)
-		used.addDef(d[j], ql[i]);
+		used.addDef(d[j], q);
+	    // put phis and sigmas on worklist.
+	    if (q instanceof PHI || q instanceof SIGMA)
+		W.push(q);
 	}
-	// put all phis and sigmas on a worklist.
-	Worklist W = new Set();
-	for (int i=0; i<ql.length; i++)
-	    if (ql[i] instanceof PHI || ql[i] instanceof SIGMA)
-		W.push(ql[i]);
-	
+
 	// now iterate until we've removed all the phis/sigmas we can.
 	while (!W.isEmpty()) {
 	    Quad q = (Quad) W.pull();

@@ -11,6 +11,7 @@ import harpoon.Temp.TempList;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Stack;
 import java.util.Vector;
@@ -19,7 +20,7 @@ import java.util.Vector;
  * in the Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FixupFunc.java,v 1.9 1998-09-18 00:50:28 cananian Exp $
+ * @version $Id: FixupFunc.java,v 1.10 1998-09-21 02:31:26 cananian Exp $
  * @see Translate
  */
 
@@ -34,14 +35,14 @@ public class FixupFunc  {
 	UseDef ud = new UseDef();
 	Place P = new Place(ud, new DomFrontier(dt), new DomFrontier(pdt));
 	
-	Quad[] ql = (Quad[]) c.getElements();
-	for (int i=0; i< ql.length; i++) {
-	    Temp[] neededPhi = P.phiNeeded(c, ql[i]);
-	    Temp[] neededSig = P.sigNeeded(c, ql[i]);
+	for (Enumeration e = c.getElementsE(); e.hasMoreElements(); ) {
+	    Quad Q = (Quad) e.nextElement();
+	    Temp[] neededPhi = P.phiNeeded(c, Q);
+	    Temp[] neededSig = P.sigNeeded(c, Q);
 	    // algorithm wants to place phis on FOOTER.
-	    if (neededPhi.length > 0 && (!(ql[i] instanceof FOOTER))) {
+	    if (neededPhi.length > 0 && (!(Q instanceof FOOTER))) {
 		// place phi functions.
-		PHI q = (PHI) ql[i]; // better be a phi!
+		PHI q = (PHI) Q; // better be a phi!
 		q.dst = neededPhi;
 		q.src = new Temp[q.dst.length][q.prev.length];
 		for (int j=0; j < q.src.length; j++)
@@ -50,7 +51,7 @@ public class FixupFunc  {
 	    }
 	    if (neededSig.length > 0) {
 		// place sigma functions.
-		SIGMA q = (SIGMA) ql[i]; // better be a sigma!
+		SIGMA q = (SIGMA) Q; // better be a sigma!
 		q.src = neededSig;
 		q.dst = new Temp[q.src.length][q.next.length];
 		for (int j=0; j < q.dst.length; j++)

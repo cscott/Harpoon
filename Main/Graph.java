@@ -12,7 +12,7 @@ import java.util.Enumeration;
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.5 1998-09-16 19:48:05 cananian Exp $
+ * @version $Id: Graph.java,v 1.6 1998-09-21 02:31:36 cananian Exp $
  */
 
 public final class Graph extends harpoon.IR.Registration {
@@ -56,12 +56,12 @@ public final class Graph extends harpoon.IR.Registration {
 	    (args[2].equals("dom") || args[2].equals("post")))
 	    out.println("layoutalgorithm: tree");
 	
-	HCodeElement[] el = hc.getElements();
-	for (int i=0; i<el.length; i++) {
+	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
+	    HCodeElement hce = (HCodeElement) e.nextElement();
 	    out.print("node: { ");
-	    out.print("title:\""+el[i].getID()+"\" ");
-	    out.print("label:\"#" + el[i].getID() + ": " + 
-		      escape(el[i].toString())+"\" ");
+	    out.print("title:\""+hce.getID()+"\" ");
+	    out.print("label:\"#" + hce.getID() + ": " + 
+		      escape(hce.toString())+"\" ");
 	    out.print("shape: box ");
 	    out.println("}");
 	}
@@ -69,26 +69,28 @@ public final class Graph extends harpoon.IR.Registration {
 	    (args[2].equals("dom") || args[2].equals("post"))) {
 	    DomTree dt = new DomTree(args[2].equals("post"));
 	    DomFrontier df = new DomFrontier(dt);
-	    for (int i=0; i<el.length; i++) {
-		HCodeElement idom = dt.idom(hc, el[i]);
+	    for (Enumeration e=hc.getElementsE(); e.hasMoreElements(); ) {
+		HCodeElement hce = (HCodeElement) e.nextElement();
+		HCodeElement idom = dt.idom(hc, hce);
 
 		// make dominance frontier label.
 		StringBuffer sb = new StringBuffer("DF[");
-		sb.append(el[i].getID()); sb.append("]={");
-		for (Enumeration e = df.dfE(hc, el[i]); e.hasMoreElements(); ){
-		    sb.append(((HCodeElement)e.nextElement()).getID());
-		    if (e.hasMoreElements())
+		sb.append(hce.getID()); sb.append("]={");
+		for (Enumeration e2 = df.dfE(hc, hce); e2.hasMoreElements(); ){
+		    sb.append(((HCodeElement)e2.nextElement()).getID());
+		    if (e2.hasMoreElements())
 			sb.append(",");
 		}
 		sb.append("}");
 
 		if (idom!=null)
-		    out.println(edgeString(idom, el[i],
+		    out.println(edgeString(idom, hce,
 					   sb.toString()));
 	    }
 	} else {// control flow graph. The HCodeElements better implement Edges
-	    for (int i=0; i<el.length; i++) {
-		HCodeEdge[] next = ((Edges)el[i]).succ();
+	    for (Enumeration e=hc.getElementsE(); e.hasMoreElements(); ) {
+		HCodeElement hce = (HCodeElement) e.nextElement();
+		HCodeEdge[] next = ((Edges)hce).succ();
 		for (int j=0; j<next.length; j++)
 		    out.println(edgeString(next[j].from(), next[j].to(),
 					   Integer.toString(j)));

@@ -2,6 +2,7 @@
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
+import harpoon.Util.Set;
 import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
 
@@ -16,7 +17,7 @@ import java.util.Stack;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.22 1998-09-21 01:57:44 cananian Exp $
+ * @version $Id: Code.java,v 1.23 1998-09-21 02:31:26 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -100,15 +101,19 @@ public class Code extends HCode {
 
     public Enumeration getElementsE() {
 	return new Enumeration() {
+	    Set visited = new Set();
 	    Stack s = new Stack();
-	    { s.push(quads); } // initialize stack.
+	    { s.push(quads); visited.union(quads); } // initialize stack/set.
 	    public boolean hasMoreElements() { return !s.isEmpty(); }
 	    public Object nextElement() {
 		Quad q = (Quad) s.pop();
 		// push successors on stack before returning.
 		Quad[] next = q.next();
 		for (int i=next.length-1; i>=0; i--)
-		    s.push(next[i]);
+		    if (!visited.contains(next[i])) {
+			s.push(next[i]);
+			visited.union(next[i]);
+		    }
 		// okay.
 		return q;
 	    }
