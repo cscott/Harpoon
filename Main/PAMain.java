@@ -23,12 +23,16 @@ import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
+
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadVisitor;
 
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
@@ -68,7 +72,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.56 2000-06-09 14:40:04 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.57 2000-06-11 21:43:45 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -148,8 +152,15 @@ public abstract class PAMain {
 	"-i             interactive analysis of methods",
 	"--noit         just interprocedural analysis, no interthread",
 	"--inline       use method inlining to enable more stack allocation",
-	"              (makes sense only with --mamaps)"
+	"              (makes sense only with --mamaps)",
+	"--sat=file     generates dummy sets of the .start() and .join() that",
+	"              must be changed (for the thread inlining). Don't try",
+	"              to use it seriously"
     };
+
+
+    private static boolean DO_SAT = false;
+    private static String SAT_FILE = null;
 
     private static PointerAnalysis pa = null;
     // the main method
@@ -416,6 +427,10 @@ public abstract class PAMain {
 
 	if(SHOW_DETAILS)
 	    pa.print_stats();
+
+	if(DO_SAT) {
+	    do_sat();
+	}
     }
     
     private static void display_method(Method method){
@@ -501,7 +516,8 @@ public abstract class PAMain {
 	    new LongOpt("holestats", LongOpt.NO_ARGUMENT,       null, 13),
 	    new LongOpt("mamaps",    LongOpt.REQUIRED_ARGUMENT, null, 14),
 	    new LongOpt("noit",      LongOpt.NO_ARGUMENT,       null, 15),
-	    new LongOpt("inline",    LongOpt.NO_ARGUMENT,       null, 16)};
+	    new LongOpt("inline",    LongOpt.NO_ARGUMENT,       null, 16),
+	    new LongOpt("sat",       LongOpt.REQUIRED_ARGUMENT, null, 17)};
 
 	Getopt g = new Getopt("PAMain", argv, "l:mscoa:i", longopts);
 
@@ -570,6 +586,10 @@ public abstract class PAMain {
 		break;
 	    case 16:
 		MAInfo.DO_METHOD_INLINING = true;
+		break;
+	    case 17:
+		DO_SAT = true;
+		SAT_FILE = new String(g.getOptarg());
 		break;
 	    }
 
@@ -650,6 +670,9 @@ public abstract class PAMain {
 	    System.out.print(" USE_INTER_THREAD");
 	else
 	    System.out.print(" (just inter proc)");
+
+	if(DO_SAT)
+	    System.out.print(" DO_SAT (" + SAT_FILE + ")");
 
 	System.out.println();
     }
@@ -908,6 +931,89 @@ public abstract class PAMain {
 			       nb_calls + " Calls ");
 	}
 
+    }
+
+
+    private static void do_sat() {
+	System.out.println(" Generating the \"start()\" and \"join()\" maps");
+	System.out.println(" DUMMY VERSION");
+	
+	sat_starts = new HashSet();
+	sat_joins  = new HashSet();
+	
+	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); )
+	    do_sat_analyze_mmethod((MetaMethod) it.next());
+
+	System.out.println("Dumping the results into " + SAT_FILE);
+
+	try{
+	    ObjectOutputStream oos = new ObjectOutputStream
+		(new FileOutputStream(SAT_FILE));
+
+	    // write the CachingCodeFactory on the disk
+	    System.out.print(" Dumping the code factory ... ");
+	    oos.writeObject(hcf);
+	    System.out.println("Done");
+
+	    // write the Linker on the disk
+	    System.out.print(" Dumping the linker ... ");
+	    oos.writeObject(linker);
+	    System.out.println("Done");
+
+	    // write the set of .start() sites that need to be inlined
+	    System.out.print(" Dumping the set of .start() ... ");
+	    oos.writeObject(sat_starts);
+	    System.out.println("Done");
+
+	    // write the set of .join() sites that need to be modified
+	    System.out.print(" Dumping the set of .join() ... ");
+	    oos.writeObject(sat_joins);
+	    System.out.println("Done");
+
+	    oos.close();
+	}
+	catch(IOException e){
+	    System.err.println(e);
+	}
+    }
+
+    private static Set sat_starts = null;
+    private static Set sat_joins  = null;
+
+    private static QuadVisitor sat_qv = new QuadVisitor() {
+	    public void visit(Quad q) { // do nothing
+	    }
+	    public void visit(CALL q) {
+		HMethod method = q.method();
+		if(isEqual(method, "java.lang.Thread", "start")) {
+		    System.out.println("START: " + Debug.code2str(q));
+		    sat_starts.add(q);
+		}
+		if(isEqual(method, "java.lang.Thread", "join") &&
+		   (q.paramsLength() == 1)) {
+		    System.out.println("JOIN: " + Debug.code2str(q));
+		    sat_joins.add(q);
+		}
+	    }
+	};
+    
+    // tests whether the method hm is the same thing as
+    // class_name.method_name
+    private static boolean isEqual(HMethod hm, String class_name,
+				   String method_name) {
+	HClass hclass = hm.getDeclaringClass();
+	return(hm.getName().equals(method_name) &&
+	       hclass.getName().equals(class_name));
+    }
+
+    private static void do_sat_analyze_mmethod(MetaMethod mm) {
+	HMethod hm = mm.getHMethod();
+	HCode hcode = hcf.convert(hm);
+	if(hcode == null) return;
+	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
+	    Quad q = (Quad) it.next();
+	    q.accept(sat_qv);
+	}
     }
 
 }
