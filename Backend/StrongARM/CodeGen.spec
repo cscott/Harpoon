@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.106 1999-11-12 22:02:55 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.107 1999-11-12 23:05:42 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -326,27 +326,27 @@ import java.util.Iterator;
 		  temp );
 	    break;			     
 	  case 4: // spread between regs and stack
+	    stackOffset += 4; index--;
 	    emit(new InstrMEM( instrFactory, ROOT,
-			       "str `s0h, [`s1, #-4]!",
+			       "str `s0h, [`s1, #-"+stackOffset+"]",
 			       new Temp[]{ SP }, // SP *implicitly* modified
 			       new Temp[]{ temp, SP })); 
-	    stackOffset += 4; index--;
 	    // not certain an emitMOVE is legal with the l/h modifiers
 	    emit( ROOT, "mov `d0, `s0l",
 		  frame.getRegFileInfo().getRegister(index--),
 		  temp );
 	    break;
 	  default: // start putting args in memory
+	    stackOffset += 4; index--;
 	    emit(new InstrMEM( instrFactory, ROOT,
-			       "str `s0h, [`s1, #-4]!",
+			       "str `s0h, [`s1, #-"+stackOffset+"]",
 			       new Temp[]{ SP }, // SP *implicitly* modified
 			       new Temp[]{ temp, SP })); 
 	    stackOffset += 4; index--;
 	    emit(new InstrMEM( instrFactory, ROOT,
-			       "str `s0l, [`s1, #-4]!", 
+			       "str `s0l, [`s1, #-"+stackOffset+"]", 
 			       new Temp[] { SP }, // SP *implicitly* modified 
 			       new Temp[]{ temp, SP }));
-	    stackOffset += 4; index--;
 	    break;
 	  }
 	} else {
@@ -355,16 +355,18 @@ import java.util.Iterator;
 	    emitMOVE( ROOT, "mov `d0, `s0", 
 		      frame.getRegFileInfo().getRegister(index--), temp);
 	  } else {
+	    stackOffset += 4; index--;
 	    emit(new InstrMEM(
 			      instrFactory, ROOT,
-			      "str `s0, [`s1, #-4]!",
+			      "str `s0, [`s1, #-"+stackOffset+"]",
 			      new Temp[]{ SP }, // SP *implicitly* modified
 			      new Temp[]{ temp, SP }));
-	    stackOffset += 4; index--;
 	  }
 	}
       }
       Util.assert(index==-1);
+      if (stackOffset!=0) // optimize for common case.
+	  emit( ROOT, "sub `d0, `s0, #" + stackOffset, SP , SP );
       return stackOffset;
     }
     /** Make a handler stub. */
