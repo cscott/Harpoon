@@ -23,11 +23,18 @@ public class ImmortalMemory extends MemoryArea {
 
     protected native void newMemBlock(RealtimeThread rt);
 
-    /** */
-
+    /** Returns the only ImmortalMemory instance (which was itself allocated out of
+     *  ImmortalMemory - the native component is actually smart enough to not be 
+     *  confused by this and RTJmalloc will allocate it out of itself).
+     */ 
     public static ImmortalMemory instance() {
 	if (immortalMemory == null) {
-	    immortalMemory = new ImmortalMemory();
+	    (immortalMemory = new ImmortalMemory()).enter(new Runnable() {
+		    public void run() {
+			(immortalMemory = new ImmortalMemory()).memoryArea = 
+			    immortalMemory;
+		    }
+		});
 	}
 	return immortalMemory;
     }

@@ -107,27 +107,27 @@ public abstract class MemoryArea {
 		e.memoryArea = getMemoryArea(e);
 		oldMem.checkAccess(e);
 	    } catch (Exception checkException) {
-		current.exit();
+		current.exitMem();
 		throw new ThrowBoundaryError("An exception occurred that was "
 					     +"allocated in an inner scope that "
 					     +"just exited.");
 	    }
-	    current.exit();
+	    current.exitMem();
 	    throw new ThrowBoundaryError(e.toString());
 	} catch (Error e) {
 	    try {
 		e.memoryArea = getMemoryArea(e);
 		oldMem.checkAccess(e);
 	    } catch (Exception checkException) {
-		current.exit();
+		current.exitMem();
 		throw new ThrowBoundaryError("An exception occurred that was "
 					     +"allocated in an inner scope that "
 					     +"just exited.");
 	    }
-	    current.exit();
+	    current.exitMem();
 	    throw e;
 	}
-	current.exit();
+	current.exitMem();
     }
 
     /** */

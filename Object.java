@@ -29,4 +29,8 @@ public class Object {
     public final Class getClass() {
 	return null;
     }
+
+    public Object clone() {
+	return null;
+    }
 }

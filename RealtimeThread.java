@@ -217,7 +217,7 @@ public class RealtimeThread extends Thread {
 
     /** */
 
-    void exit() {
+    void exitMem() {
 	mem.exitMemBlock(this);
 	mem = memAreaStack.entry;
 	memAreaStack = memAreaStack.next;
