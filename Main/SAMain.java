@@ -67,7 +67,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.77 2000-06-09 23:21:32 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.78 2000-06-13 00:57:32 bdemsky Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -103,6 +103,8 @@ public class SAMain extends harpoon.IR.Registration {
     private static File ASSEM_DIR = null;
     private static HCodeFactory hcf;
 
+    private static Set joinset=null, startset=null;
+
 
     public static void main(String[] args) {
 	hcf = // default code factory.
@@ -112,6 +114,10 @@ public class SAMain extends harpoon.IR.Registration {
 
 	parseOpts(args);
 	Util.assert(className!= null, "must pass a class to be compiled");
+
+	if (SAMain.startset!=null)
+	    hcf=harpoon.IR.Quads.ThreadInliner.codeFactory(hcf,SAMain.startset, SAMain.joinset);
+	
 
 	if (OPTIMIZE) {
 	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
@@ -440,7 +446,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     private static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "m:i:c:o:DOPFHRLlABhq1::C:");
+	Getopt g = new Getopt("SAMain", args, "m:i:s:c:o:DOPFHRLlABhq1::C:");
 	
 	int c;
 	String arg;
@@ -464,6 +470,21 @@ public class SAMain extends harpoon.IR.Registration {
 		    System.err.println("Error reading class "+
 				       "hierarchy from " + 
 				       classHierarchyFilename);
+		}
+		break;
+	    case 's':
+		arg=g.getOptarg();
+		try {
+		    ObjectInputStream ois=new ObjectInputStream(
+								new FileInputStream(arg));
+		    hcf=(HCodeFactory)ois.readObject();
+		    linker=(Linker)ois.readObject();
+		    startset=(Set)ois.readObject();
+		    joinset=(Set)ois.readObject();
+		    ois.close();
+		} catch (Exception e) {
+		    System.out.println(e + " was thrown");
+		    System.exit(-1);
 		}
 		break;
 	    case 'i':

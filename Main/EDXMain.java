@@ -79,7 +79,7 @@ import harpoon.Util.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDXMain.java,v 1.1.2.2 2000-04-06 21:06:18 bdemsky Exp $
+ * @version $Id: EDXMain.java,v 1.1.2.3 2000-06-13 00:57:33 bdemsky Exp $
  */
 public class EDXMain extends harpoon.IR.Registration {
  
@@ -112,6 +112,7 @@ public class EDXMain extends harpoon.IR.Registration {
 
     private static boolean recycle=false, optimistic=false;
 
+    private static Set joinset=null, startset=null;
 
     static class Stage1 implements Serializable {
 	HMethod mo;
@@ -136,6 +137,10 @@ public class EDXMain extends harpoon.IR.Registration {
 		new harpoon.ClassFile.CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory(), true);
 	    else hco=EDXMain.hcf;
 	    
+	    if (EDXMain.startset!=null) {
+		hco=harpoon.IR.Quads.ThreadInliner.codeFactory(hco,EDXMain.startset, EDXMain.joinset);
+	    }
+
 	    Collection cc = new WorkSet();
 	    cc.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
 		      (linker));
@@ -574,7 +579,7 @@ public class EDXMain extends harpoon.IR.Registration {
     
     private static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("EDXMain", args, "m:i:c:o:DOPFHRLArphq1::C:");
+	Getopt g = new Getopt("EDXMain", args, "m:i:c:o:DOPFHRLArphq1::C:s:");
 	
 	int c;
 	String arg;
@@ -641,6 +646,21 @@ public class EDXMain extends harpoon.IR.Registration {
 		break;
 	    case 'M':
 		methodName = g.getOptarg();
+		break;
+	    case 's':
+		arg=g.getOptarg();
+		try {
+		    ObjectInputStream ois=new ObjectInputStream(
+								new FileInputStream(arg));
+		    hcf=(HCodeFactory)ois.readObject();
+		    linker=(Linker)ois.readObject();
+		    startset=(Set)ois.readObject();
+		    joinset=(Set)ois.readObject();
+		    ois.close();
+		} catch (Exception e) {
+		    System.out.println(e + " was thrown");
+		    System.exit(-1);
+		}
 		break;
 	    case 'i':
 		arg=g.getOptarg();
