@@ -20,10 +20,77 @@
 @string{POPL98 = "Proceedings of the 25th {ACM} Symposium on Principles
                   of Programming Languages ({POPL})"}
 @string{TOPLAS = "{ACM} Transactions on Programming Languages and Systems"}
+@string{ASIAN97 = "Advances in Computing Science --- ASIAN '97.  Third
+                  Asian Computing Conference.  Proceedings"}
+@string{TACAS97 = "Tools and Algorithms for the Construction and
+                  Analysis of Systems.  Third International Workshop,
+                  TACAS '97.  Proceedings"}
 @string{CRYPTO97 = "Proc.\ CRYPTO 97"}
 @string{EUROCRYPT97 = {Proc.\ EUROCRYPT 97}}
 
 % papers read.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%% Language issues.
+
+%%%%%%% Esterel.
+
+@InProceedings{gagne97:nonstandard,
+  author = 	 {Jean-Raymond Gagn{\'e} and John Plaice},
+  title = 	 {The Non-standard Semantics of {Esterel}},
+  booktitle = 	 ASIAN97,
+  year = 	 1997,
+  address = 	 {Kathmandu, Nepal},
+  pages =	 {381-382},
+  annote =	 {Presents rationale for using a (time+delta) timeline
+                  instead of Esterel's integer-valued instantaneous
+                  time model.  Claims that Esterel really uses the
+                  (time+delta) timeline without realizing it.}
+}
+
+@InCollection{berry92:hardware_esterel,
+  author = 	 {G{\'e}rard Berry},
+  title = 	 {{Esterel} on hardware},
+  booktitle = 	 {Mechanized Reasoning and Hardware Design},
+  pages =	 {87-103},
+  publisher =	 {Prentice Hall},
+  year =	 1992,
+  editorIGNORE =	 {C.A.R. Hoare and M.J.C. Gordon},
+  annote =	 {a simple hardware implementation of a subset of
+                  esterel, using 4 type of fundamental logic blocks.
+                  Optimizers based on BDDs.  Very useful bibliography.}
+}
+
+@Unpublished{berry:esterel_primer,
+  author = 	 {G{\'e}rard Berry},
+  title = 	 {The {Esterel} v5 Language Primer},
+  note = 	 {Available from 
+                 \texttt{http://www.inria.fr/meije/esterel/esterel-eng.html}},
+  month = 	 mar,
+  year = 	 1998,
+  url = 	 {ftp://ftp-sop.inria.fr/meije/esterel/papers/primer.ps.gz},
+  annote = 	 {Lots of dry technical detail on the language, but
+                  also some enlightening discussion of the rationale
+                  behind it.  See especially sections on
+                  `Transformational, Interactive, and Reactive
+                  Systems,' `Write Things Once,' and preemption.}
+}
+
+@InProceedings{berry97:synth_opt_ver_esterel,
+  author = 	 {G{\'e}rard Berry},
+  title = 	 {Hardware and Software Synthesis, Optimization, and
+                  Verification from {Esterel} Programs},
+  booktitle = 	 TACAS97,
+  year = 	 1997,
+  address = 	 {Enschede, The Netherlands},
+  pages =	 {1-3},
+  month =	 apr,
+  annote =	 {Two-page overview of the Esterel system.  At least
+                  it has a decent bibliography.}
+}
+
+%%%%%%% Other synchronous languages
 
 @InProceedings{amagbegnon95:signal,
   author = 	 {Pascalin Amagb{\'e}gnon and Lo{\"\i}c Besnard and
@@ -39,6 +106,28 @@
   annote =	 {Not terribly useful.  Intriguing use of the word
                   'arborescent' for 'tree-structured'.}
 }
+
+@Article{chung95:language_constructs,
+  author = 	 {Tai M. Chung and Hank G. Dietz},
+  title = 	 {Language Constructs and Transformation for Hard
+                  Real-time Systems},
+  journal = 	 {{ACM} {SIGPLAN} Notices},
+  year = 	 1995,
+  volume =	 30,
+  number =	 11,
+  pages =	 {41-49},
+  month =	 nov,
+  note =	 {Presents a simple set of language-independent
+                  extensions to specify real-time constraints.  Also
+                  contains the interesting claim that the compilation
+                  problems are solved, and references an unpublished
+                  paper to prove it.}
+}
+
+%%%%%%% Other language issues.
+
+
+%%%%%%% Compiler issues
 
 @InProceedings{weise94:vdg,
   author = 	 {Daniel Weise and Roger F. Crew and Michael Ernst and
