@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.70 1999-10-14 17:44:49 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.71 1999-10-14 19:43:31 pnkfelix Exp $
  */
 %%
 
@@ -644,7 +644,6 @@ BINOP<p,i>(SHR, j, k) = i %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0, lsr `s1", i, j, k );
 }%
-
 BINOP<l>(SHR, j, k) = i %{
     Temp i = makeTwoWordTemp();
     emit( ROOT, "mov `d0, `s0l", r0, j );
@@ -655,11 +654,11 @@ BINOP<l>(SHR, j, k) = i %{
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 
+
 BINOP<p,i>(USHR, j, k) = i %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0, asr `s1", i, j, k );
 }%
-
 BINOP<l>(USHR, j, k) = i %{
     Temp i = makeTwoWordTemp();
     emit( ROOT, "mov `d0, `s0l", r0, j );
@@ -670,16 +669,17 @@ BINOP<l>(USHR, j, k) = i %{
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 
+
 BINOP<p,i>(XOR, j, k) = i %{
     Temp i = makeTemp();		
     emit( ROOT, "eor `d0, `s0, `s1", i, j, k );
 }%
-
 BINOP<l>(XOR, j, k) = i %{
     Temp i = makeTwoWordTemp();		
     emit( ROOT, "eor `d0l, `s0l, `s1l", i, j, k );
     emit( ROOT, "eor `d0h, `s0h, `s1h", i, j, k );
 }%
+
 
 CONST<l,d>(c) = i %{
     Temp i = makeTwoWordTemp();
