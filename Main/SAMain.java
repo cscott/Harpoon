@@ -68,6 +68,7 @@ import harpoon.Analysis.SizeOpt.BitWidthAnalysis;
 import harpoon.Analysis.Transactions.SyncTransformer;
 
 import gnu.getopt.Getopt;
+import gnu.getopt.LongOpt;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -107,7 +108,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.35 2003-02-22 17:29:14 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.36 2003-03-03 23:34:09 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -254,7 +255,7 @@ public class SAMain extends harpoon.IR.Registration {
 		if(PreallocOpt.PREALLOC_OPT) {
 		    System.out.println("PreallocAllocationStrategy");
 		    return new harpoon.Analysis.MemOpt.
-			PreallocAllocationStrategy(frame, PreallocOpt.ap2id);
+			PreallocAllocationStrategy(frame);
 		}
 
 		if(Realtime.REALTIME_JAVA) {
@@ -404,8 +405,8 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 	
 	handleAllocationInstrumentation(roots, mainM);
-	
-	if(PreallocOpt.PREALLOC_OPT)
+
+	if(PreallocOpt.PREALLOC_OPT || PreallocOpt.ONLY_SYNC_REMOVAL)
 	    hcf = PreallocOpt.preallocAnalysis
 		(linker, hcf, classHierarchy, mainM, roots, as, frame);
 	
@@ -710,6 +711,8 @@ public class SAMain extends harpoon.IR.Registration {
 
 	if(PreallocOpt.PREALLOC_OPT)
 	    hcf = PreallocOpt.addMemoryPreallocation(linker, hcf, frame);
+	else if(PreallocOpt.ONLY_SYNC_REMOVAL)
+	    hcf = PreallocOpt.BOGUSaddMemoryPreallocation(linker, hcf, frame);
 
 	if(Realtime.REALTIME_JAVA)
 	{
@@ -862,7 +865,7 @@ public class SAMain extends harpoon.IR.Registration {
 	Set roots = new java.util.HashSet
 	    (frame.getRuntime().runtimeCallableMethods());
 	
-	if(PreallocOpt.PREALLOC_OPT)
+	if(PreallocOpt.PREALLOC_OPT || PreallocOpt.ONLY_SYNC_REMOVAL)
 	    PreallocOpt.updateRoots(roots, linker);
 	
 	// and our main method is a root, too...
@@ -1023,6 +1026,10 @@ public class SAMain extends harpoon.IR.Registration {
 	      HData wbData = writeBarrierStats.getData(hclass, frame);
 	      it=new CombineIterator(it, Default.singletonIterator(wbData));
 	  }
+	  if(PreallocOpt.PREALLOC_OPT) {
+	      HData poData = PreallocOpt.getData(hclass, frame);
+	      it = new CombineIterator(it, Default.singletonIterator(poData));
+	  }
       }
       while (it.hasNext() ) {
 	final Data data = (Data) it.next();
@@ -1140,9 +1147,16 @@ public class SAMain extends harpoon.IR.Registration {
     }
     
     protected static void parseOpts(String[] args) {
+	LongOpt[] longopts = new LongOpt[] {
+	    new LongOpt("prealloc-opt", LongOpt.NO_ARGUMENT, null, 1000),
+	    new LongOpt("ia-only-sync-removal", LongOpt.NO_ARGUMENT,
+			null, 1001)
+	};
+
 	Getopt g = 
 	    new Getopt("SAMain", args, 
-		       "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Td::mw::x::y::YZ:W:");
+		       "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Td::mw::x::y::Z:W:",
+		       longopts);
 	
 	int c;
 	String arg;
@@ -1328,8 +1342,14 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 'I':
 		USE_OLD_CLINIT_STRATEGY = true;
 		break;
-	    case 'Y':
+	    case 1000: // prealloc-opt
 		PreallocOpt.PREALLOC_OPT = true;
+		// make sure we use Runtime2
+		System.setProperty("harpoon.runtime","2");
+		break;
+	    case 1001: // ia-only-sync-removal
+		PreallocOpt.ONLY_SYNC_REMOVAL = true;
+		System.setProperty("harpoon.runtime","2");
 		break;
 	    case 'Z':
 		READ_ALLOC_STATS = true;
@@ -1380,93 +1400,102 @@ public class SAMain extends harpoon.IR.Registration {
 	"usage is: -c <class>"+
 	" [-eDOPRLABIhq] [-o <assembly output directory>]";
 
+
+    private static String[] help_lines = new String[] {
+	"-c <class> (required)",
+	"\tCompile <class>\n",
+	
+	"-e Rol(e) Inference",
+	
+	"-o <dir> (optional)",
+	"\tOutputs the program text to files within <dir>.",
+	
+	"-D",
+	"\tOutputs DATA information for <class>",
+	
+	"-t (analysis)",
+	"\tTurns on Realtime Java extensions with the optional",
+	"\tanalysis method: NONE, CHEESY, REAL",
+	
+	"-O",
+	"\tOutputs Original Tree IR for <class>",
+	
+	"-P",
+	"\tOutputs Pre-Register Allocated Instr IR for <class>",
+	
+	"-B",
+	"\tOutputs Abstract Register Allocated Instr IR for <class>",
+	
+	"-L",
+	"\tOutputs Local Register Allocated Instr IR for <class>",
+	
+	"-R",
+	"\tOutputs Global Register Allocated Instr IR for <class>",
+
+	"-E",
+	"EventDriven transformation",
+	
+	"-p",
+	"Optimistic option for EventDriven",
+	
+	"-f",
+	"Recycle option for EventDriven.  Environmentally (f)riendly",
+	
+	"-A",
+	"\tSame as -OPR",
+	
+	"-i <filename>",
+	"Read CodeFactory in from FileName",
+	
+	"-N <filename>",
+	"\tWrite out allocation Instrumentation to FileName",
+	
+	"-W <filename>",
+	"\tSame as -N <filename>, but writes only a small text file (an AllocationNumberingStub)",
+	"\tThis file can be read with the -Z option",
+	"\tUse if serialization makes if troubles.",
+	
+	"-Z <allocNumberingStub.filename>,<instrResults.filename>",
+	"\tReads in an allocation numbering stub and an instrumentation result file; prints dynamic memory allocation statistics",
+	
+	"-b <backend name>",
+	"\tSupported backends are StrongARM (default), MIPS, Sparc, or PreciseC",
+	
+	"-l",
+	"Turn on Loop Optimizations",
+	
+	"-q",
+	"\tTurns on quiet mode (status messages are not output)",
+	
+	"-1<optional class name>",
+	"\tCompiles only a single method or class.  Without a classname, only compiles <class>.main()",
+	"\tNote that you may not have whitespace between the '-1' and the classname",
+	
+	"-r <root set file>",
+	"\tAdds additional classes/methods to the root set as specified by <root set file>.",
+
+	"-I",
+	"\tUse old simple-but-not-always-correct class init strategy.",
+	"-T",
+	"\tDo transactions transformation.",
+
+	"--prealloc-opt",
+	"\tPreallocation Optimization using Incompatibility Analysis.",
+	"\tSyncronizations on preallocated objects are removed (prealocated",
+	"\tobjects are anyway thread local.",
+
+	"--ia-only-sync-removal",
+	"\tUses the Incompatibility Analysis only to remove the",
+	"\tsyncronizations on the preallocatable objects.  No actual",
+	"\tpreallocation.",
+
+	"-h",
+	"\tPrints out this help message"
+    };
+
     protected static void printHelp() {
-	out.println("-c <class> (required)");
-	out.println("\tCompile <class>");
-	out.println();
-
-	out.println("-e Rol(e) Inference");
-	out.println();
-
-	out.println("-o <dir> (optional)");
-	out.println("\tOutputs the program text to files within <dir>.");
-	
-	out.println("-D");
-	out.println("\tOutputs DATA information for <class>");
-
-	out.println("-t (analysis)");
-	out.println("\tTurns on Realtime Java extensions with the optional");
-	out.println("\tanalysis method: NONE, CHEESY, REAL");
-
-	out.println("-O");
-	out.println("\tOutputs Original Tree IR for <class>");
-
-	out.println("-P");
-	out.println("\tOutputs Pre-Register Allocated Instr IR for <class>");
-
-	out.println("-B");
-	out.println("\tOutputs Abstract Register Allocated Instr IR for <class>");
-
-	out.println("-L");
-	out.println("\tOutputs Local Register Allocated Instr IR for <class>");
-
-	out.println("-R");
-	out.println("\tOutputs Global Register Allocated Instr IR for <class>");
-
-	out.println("-E");
-	out.println("EventDriven transformation");
-	
-	out.println("-p");
-	out.println("Optimistic option for EventDriven");
-
-	out.println("-f");
-	out.println("Recycle option for EventDriven.  Environmentally (f)riendly");
-	    
-	out.println("-A");
-	out.println("\tSame as -OPR");
-
-	out.println("-i <filename>");
-	out.println("Read CodeFactory in from FileName");
-
-	out.println("-N <filename>");
-	out.println("\tWrite out allocation Instrumentation to FileName");
-
-	out.println("-W <filename>");
-	out.println("\tSame as -N <filename>, but writes only a small text file (an AllocationNumberingStub)");
-	out.println("\tThis file can be read with the -Z option");
-	out.println("\tUse if serialization makes if troubles.");
-
-	out.println("-Z <allocNumberingStub.filename>,<instrResults.filename>");
-	out.println("\tReads in an allocation numbering stub and an instrumentation result file; prints dynamic memory allocation statistics");
-
-	out.println("-b <backend name>");
-	out.println("\t Supported backends are StrongARM (default), MIPS, " +
-		    "Sparc, or PreciseC");
-
-	out.println("-l");
-	out.println("Turn on Loop Optimizations");
-
-	out.println("-q");
-	out.println("\tTurns on quiet mode (status messages are not output)");
-
-	out.println("-1<optional class name>"); 
-	out.println("\tCompiles only a single method or class.  Without a classname, only compiles <class>.main()");
-	out.println("\tNote that you may not have whitespace between the '-1' and the classname");
-
-	out.println("-r <root set file>");
-	out.println("\tAdds additional classes/methods to the root set as specified by <root set file>.");
-
-	out.println("-I");
-	out.println("\tUse old simple-but-not-always-correct class init strategy.");
-	out.println("-T");
-	out.println("\tDo transactions transformation.");
-
-	out.println("-h");
-	out.println("\tPrints out this help message");
-
-	out.println("-Y");
-	out.println("\tPreallocation Optimization using IncompatibilityAnalysis.");
-	
+	for(int i = 0; i < help_lines.length; i++)
+	    System.out.println(help_lines[i]);
     }
 
     protected static void info(String str) {
