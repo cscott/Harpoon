@@ -88,16 +88,24 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_enterMemBlock
 JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_exitMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread, jobject memAreaStack) {
   struct MemBlock *memBlock, *newMemBlock;
+  /* This should be whittled down to the minimal atomic section. */
+#ifdef WITH_REALTIME_THREADS 
+  int state = StopSwitching();
+#endif  
 #ifdef RTJ_DEBUG
   printf("MemoryArea.exitMemBlock(%p, %p, %p)\n",
 	 env, memoryArea, realtimeThread);
 #endif
+
   memBlock = MemBlock_currentMemBlock();
   MemBlock_setCurrentMemBlock(env, realtimeThread, newMemBlock = 
 			      getInflatedObject(env, memAreaStack)->memBlock);
   if (MemBlock_free(memBlock)) {
     MemBlock_free(newMemBlock);
   }
+#ifdef WITH_REALTIME_THREADS
+  RestoreSwitching(state);
+#endif
 }
 
 /*

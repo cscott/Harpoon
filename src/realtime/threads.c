@@ -149,12 +149,20 @@ void context_switch() {
   raise(SIGALRM);
 }
 
+inline int IsSwitching() {
+  sigset_t mask;
+  sigset_t empty;
+  sigemptyset(&empty);
+  sigprocmask(SIG_BLOCK, &empty, &mask);
+  return !sigismember(&mask, SIGALRM);
+} 
+
 /* set flag to do thread switching */
 inline void StartSwitching()
 {
   sigset_t alarm_mask;
 #ifdef RTJ_DEBUG_THREADS
-  printf("\n    StartSwitching()");
+  if (!IsSwitching()) printf("\n    StartSwitching()");
 #endif
   sigemptyset(&alarm_mask);
   sigaddset(&alarm_mask, SIGALRM);
@@ -167,7 +175,7 @@ inline int StopSwitching()
   sigset_t old_set;
   sigset_t alarm_mask;
 #ifdef RTJ_DEBUG_THREADS
-  printf("\n    StopSwitching()");
+  if (IsSwitching()) printf("\n    StopSwitching()");
 #endif
   sigemptyset(&alarm_mask);
   sigaddset(&alarm_mask, SIGALRM);
@@ -179,7 +187,7 @@ inline int StopSwitching()
 inline void RestoreSwitching(int state)
 {
 #ifdef RTJ_DEBUG_THREADS
-  printf("\n    RestoreSwitching(%d)", state);
+  if (IsSwitching()!=state) printf("\n    RestoreSwitching(%d)", state);
 #endif
   if (state) {
     StartSwitching();
@@ -255,9 +263,14 @@ void CheckQuanta(int signal)
   jlong threadID; //threadID returned by the scheduler
   jobject scheduler; //scheduler object
   struct thread_queue_struct* threadq;
+  sigset_t pending;
 #ifdef WITH_NOHEAP_SUPPORT
   int noheap;
 #endif
+  setQuanta((jlong)0); /* Don't switch until setup for next period */
+  settimer(); /* Register handler */
+  sigpending(&pending);
+  if (sigismember(&pending, SIGALRM)) return; /* Make sure CheckQuanta is top before switching */
   gettimeofday(&time, NULL);
 #ifdef RTJ_DEBUG_THREADS  
   printf("\nCheckQuanta()");
@@ -325,6 +338,7 @@ void settimer() {
   sigemptyset(&timer.sa_mask);
   timer.sa_flags=SA_ONESHOT;
   sigaction(SIGALRM, &timer, NULL);
+  siginterrupt(SIGALRM, 0); /* Allow system calls to be restarted after CheckQuanta */
   setitimer(ITIMER_REAL, &quanta, NULL);
 }
 #else
@@ -573,6 +587,7 @@ void FNI_java_lang_Thread_mainThreadSetup
   tc = currentThread;
 
   pthread_mutex_init(&runMainThread_mutex, NULL);
+  setQuanta(0);
   settimer();
   StartSwitching(); //startup thread switching
   /* wait for thread to copy mainThr */
@@ -736,6 +751,7 @@ void* startMain(void* mclosure) {
   /* remove this thread from the scheduler */
   pthread_mutex_unlock(&runMainThread_mutex);
   realtime_unschedule_thread(env, thread);
+  StartSwitching();
   context_switch();
 #ifdef WITH_CLUSTERED_HEAPS
   /* give us a chance to deallocate the thread-clustered heap */

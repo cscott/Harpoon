@@ -14,6 +14,10 @@ inline void* RTJ_malloc(size_t size) {
   struct MemBlock* memBlock; 
   struct PTRinfo* newInfo;
 #endif
+/* This should be whittled down to the minimal atomic section */
+#ifdef WITH_REALTIME_THREADS
+  int state = StopSwitching();
+#endif
 #ifdef RTJ_DEBUG
   checkException();
 #ifndef RTJ_DEBUG_REF
@@ -56,6 +60,9 @@ inline void* RTJ_malloc(size_t size) {
   } else {
     printf("No memBlock yet, PTR info is lost\n");
   }
+#endif
+#ifdef WITH_REALTIME_THREADS
+  RestoreSwitching(state);
 #endif
   return newPtr;
 }
