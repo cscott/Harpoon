@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.EnvBuilder;
 
+import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.Quads.SCC.SCCAnalysis;
 import harpoon.ClassFile.HClass;
@@ -15,6 +16,7 @@ import harpoon.ClassFile.HConstructorSyn;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HFieldSyn;
 import harpoon.ClassFile.UpdateCodeFactory;
+import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
@@ -26,7 +28,7 @@ import java.util.Set;
  * <code>EnvBuilder</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvBuilder.java,v 1.1.2.2 1999-11-12 05:18:38 kkz Exp $
+ * @version $Id: EnvBuilder.java,v 1.1.2.3 1999-11-12 07:47:47 cananian Exp $
  */
 public class EnvBuilder {
     protected final UpdateCodeFactory ucf;
@@ -86,7 +88,7 @@ public class EnvBuilder {
 	HField[] fields = new HField[vars.length];
 
 	System.out.println("Starting SCCAnalysis");
-	SCCAnalysis map = new SCCAnalysis(this.hc);
+	TypeMap map = ((QuadNoSSA) this.hc).typeMap;
 	System.out.println("Finished SCCAnalysis");
 	for (int i=0; i<vars.length; i++) {
 	    this.liveout[i] = (Temp)vars[i];
