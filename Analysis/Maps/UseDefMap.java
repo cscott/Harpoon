@@ -1,4 +1,6 @@
 // UseDefMap.java, created Sun Sep 13 23:11:39 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Maps;
 
 import harpoon.ClassFile.HCode;
@@ -11,7 +13,7 @@ import java.util.Enumeration;
  * <code>HCodeElements</code> that define them.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDefMap.java,v 1.2 1998-09-19 06:20:36 cananian Exp $
+ * @version $Id: UseDefMap.java,v 1.3 1998-10-11 02:37:07 cananian Exp $
  */
 
 public interface UseDefMap  {

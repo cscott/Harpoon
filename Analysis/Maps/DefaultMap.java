@@ -1,4 +1,6 @@
 // DefaultMap.java, created Sat Sep 12 17:30:49 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Maps;
 
 import harpoon.ClassFile.*;
@@ -10,7 +12,7 @@ import harpoon.Temp.Temp;
  * executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultMap.java,v 1.1 1998-09-13 23:57:13 cananian Exp $
+ * @version $Id: DefaultMap.java,v 1.2 1998-10-11 02:37:07 cananian Exp $
  */
 
 public class DefaultMap implements ConstMap, ExecMap {

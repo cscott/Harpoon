@@ -1,4 +1,6 @@
 // IIR_StringLiteral.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.AIRE;
 
 import java.util.Hashtable;
@@ -7,7 +9,7 @@ import java.util.Hashtable;
  * of zero or more character literals defined by ISO Std. 8859-1.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_StringLiteral.java,v 1.6 1998-10-11 01:25:03 cananian Exp $
+ * @version $Id: IIR_StringLiteral.java,v 1.7 1998-10-11 02:37:24 cananian Exp $
  */
 
 //-----------------------------------------------------------

@@ -1,4 +1,6 @@
 // IIR_AccessSubtypeDefinition.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.AIRE;
 
 import harpoon.Util.Tuple;
@@ -8,7 +10,7 @@ import java.util.Hashtable;
  * a subtype of an access type definition.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_AccessSubtypeDefinition.java,v 1.3 1998-10-11 01:24:52 cananian Exp $
+ * @version $Id: IIR_AccessSubtypeDefinition.java,v 1.4 1998-10-11 02:37:10 cananian Exp $
  */
 
 //-----------------------------------------------------------

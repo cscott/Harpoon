@@ -1,4 +1,6 @@
 // SWITCH.java, created Wed Aug 26 20:45:24 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -9,7 +11,7 @@ import harpoon.Temp.TempMap;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.11 1998-09-18 00:50:29 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.12 1998-10-11 02:37:57 cananian Exp $
  */
 
 public class SWITCH extends SIGMA {

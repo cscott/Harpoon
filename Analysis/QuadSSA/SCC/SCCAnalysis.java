@@ -1,4 +1,6 @@
 // SCC.java, created Fri Sep 18 17:45:07 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.QuadSSA.SCC;
 
 import harpoon.Analysis.Maps.ConstMap;
@@ -20,7 +22,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.12 1998-09-25 17:17:08 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.13 1998-10-11 02:37:07 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {

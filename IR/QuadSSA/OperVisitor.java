@@ -1,4 +1,6 @@
 // OperVisitor.java, created Sat Sep 19 04:49:05 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -14,7 +16,7 @@ import harpoon.ClassFile.*;
  * methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OperVisitor.java,v 1.2 1998-09-19 19:02:39 cananian Exp $
+ * @version $Id: OperVisitor.java,v 1.3 1998-10-11 02:37:57 cananian Exp $
  */
 
 public abstract class OperVisitor  {

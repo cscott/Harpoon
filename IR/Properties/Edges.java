@@ -1,4 +1,6 @@
 // Edges.java, created Sat Sep 12 18:01:09 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Properties;
 
 import harpoon.ClassFile.HCodeEdge;
@@ -7,7 +9,7 @@ import harpoon.ClassFile.HCodeEdge;
  * that are interconnected as directed graphs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edges.java,v 1.2 1998-09-15 01:25:41 cananian Exp $
+ * @version $Id: Edges.java,v 1.3 1998-10-11 02:37:46 cananian Exp $
  */
 
 public interface Edges  {

@@ -1,4 +1,6 @@
 // PHI.java, created Fri Aug  7 13:51:47 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -9,7 +11,7 @@ import harpoon.Util.Util;
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.18 1998-09-25 17:50:01 cananian Exp $
+ * @version $Id: PHI.java,v 1.19 1998-10-11 02:37:57 cananian Exp $
  */
 
 public class PHI extends Quad {

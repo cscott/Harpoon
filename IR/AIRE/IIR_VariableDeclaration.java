@@ -1,4 +1,6 @@
 // IIR_VariableDeclaration.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.AIRE;
 
 /**
@@ -6,7 +8,7 @@ package harpoon.IR.AIRE;
  * variables which may take on a sequence of values as execution proceeds.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_VariableDeclaration.java,v 1.4 1998-10-11 01:25:04 cananian Exp $
+ * @version $Id: IIR_VariableDeclaration.java,v 1.5 1998-10-11 02:37:25 cananian Exp $
  */
 
 //-----------------------------------------------------------

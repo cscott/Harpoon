@@ -1,4 +1,6 @@
 // UseDef.java, created Sat Sep 12 17:55:44 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Properties;
 
 import harpoon.Temp.Temp;
@@ -7,7 +9,7 @@ import harpoon.Temp.Temp;
  * that keep use/def information.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.1 1998-09-13 23:57:18 cananian Exp $
+ * @version $Id: UseDef.java,v 1.2 1998-10-11 02:37:47 cananian Exp $
  */
 
 public interface UseDef  {

@@ -1,4 +1,6 @@
 // QuadVisitor.java, created Fri Sep 11 12:59:44 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -6,7 +8,7 @@ import harpoon.ClassFile.*;
  * <code>QuadVisitor</code> is a Design Pattern, courtesy of Martin.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadVisitor.java,v 1.4 1998-09-18 07:34:16 cananian Exp $
+ * @version $Id: QuadVisitor.java,v 1.5 1998-10-11 02:37:57 cananian Exp $
  */
 
 public abstract class QuadVisitor  {

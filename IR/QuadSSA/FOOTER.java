@@ -1,4 +1,6 @@
 // FOOTER.java, created Mon Sep  7 10:36:08 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -11,7 +13,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.9 1998-09-21 04:45:34 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.10 1998-10-11 02:37:56 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW

@@ -1,4 +1,6 @@
 // IIR_AttributeSpecificationList.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.AIRE;
 
 /**
@@ -7,7 +9,7 @@ package harpoon.IR.AIRE;
  * <code>IIR_AttributeSpecification</code>s.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_AttributeSpecificationList.java,v 1.3 1998-10-11 01:24:53 cananian Exp $
+ * @version $Id: IIR_AttributeSpecificationList.java,v 1.4 1998-10-11 02:37:13 cananian Exp $
  */
 
 //-----------------------------------------------------------

@@ -1,4 +1,6 @@
 // Translate.java, created Sat Aug  8 10:53:03 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.Temp.Temp;
@@ -29,7 +31,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.82 1998-10-10 02:15:35 cananian Exp $
+ * @version $Id: Translate.java,v 1.83 1998-10-11 02:37:57 cananian Exp $
  */
 
 class Translate  { // not public.

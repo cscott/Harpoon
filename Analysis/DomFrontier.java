@@ -1,4 +1,6 @@
 // DomFrontier.java, created Mon Sep 14 22:21:38 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
 import harpoon.ClassFile.*;
@@ -15,7 +17,7 @@ import java.util.Enumeration;
  * the <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.5 1998-09-16 19:46:59 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.6 1998-10-11 02:36:59 cananian Exp $
  */
 
 public class DomFrontier  {

@@ -1,4 +1,6 @@
 // NEW.java, created Wed Aug  5 07:08:20 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import java.lang.reflect.Modifier;
@@ -11,7 +13,7 @@ import harpoon.Util.Util;
  * <code>NEW</code> represents an object creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NEW.java,v 1.13 1998-09-16 06:32:49 cananian Exp $
+ * @version $Id: NEW.java,v 1.14 1998-10-11 02:37:57 cananian Exp $
  */
 
 public class NEW extends Quad {

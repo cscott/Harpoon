@@ -1,4 +1,6 @@
 // Place.java, created Mon Sep 14 23:41:52 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
 import harpoon.ClassFile.*;
@@ -15,7 +17,7 @@ import java.util.Enumeration;
  * <code>Place</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.9 1998-09-18 00:50:28 cananian Exp $
+ * @version $Id: Place.java,v 1.10 1998-10-11 02:36:59 cananian Exp $
  */
 
 public class Place  {

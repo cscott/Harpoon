@@ -1,4 +1,6 @@
 // Main.java, created Fri Aug  7 10:22:20 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
 import harpoon.ClassFile.*;
@@ -7,7 +9,7 @@ import harpoon.IR.QuadSSA.*;
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.6 1998-10-10 09:43:14 cananian Exp $
+ * @version $Id: Main.java,v 1.7 1998-10-11 02:37:58 cananian Exp $
  */
 
 public abstract class Main extends harpoon.IR.Registration {

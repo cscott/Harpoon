@@ -1,10 +1,12 @@
 // IIR_WhileLoopStatement.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.AIRE;
 
 /**
  * <code>IIR_WhileLoopStatement</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_WhileLoopStatement.java,v 1.5 1998-10-11 01:25:05 cananian Exp $
+ * @version $Id: IIR_WhileLoopStatement.java,v 1.6 1998-10-11 02:37:26 cananian Exp $
  */
 
 //-----------------------------------------------------------

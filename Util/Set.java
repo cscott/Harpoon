@@ -1,4 +1,6 @@
 // Set.java, created Tue Sep 15 19:28:05 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
 import java.util.Hashtable;
@@ -7,7 +9,7 @@ import java.util.Enumeration;
  * <code>Set</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Set.java,v 1.2 1998-09-16 21:53:43 cananian Exp $
+ * @version $Id: Set.java,v 1.3 1998-10-11 02:37:59 cananian Exp $
  */
 
 public class Set implements Worklist {

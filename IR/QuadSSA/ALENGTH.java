@@ -1,4 +1,6 @@
 // ALENGTH.java, created Wed Aug 26 18:58:09 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -9,7 +11,7 @@ import harpoon.Temp.TempMap;
  * <code>ALENGTH</code> represents an array length query.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ALENGTH.java,v 1.8 1998-09-16 06:32:46 cananian Exp $
+ * @version $Id: ALENGTH.java,v 1.9 1998-10-11 02:37:56 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ASET

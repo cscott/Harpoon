@@ -1,4 +1,6 @@
 // IIR_List.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.AIRE;
 
 import java.util.Vector;
@@ -8,7 +10,7 @@ import java.util.Vector;
  * or common parent class.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_List.java,v 1.3 1998-10-11 01:24:59 cananian Exp $
+ * @version $Id: IIR_List.java,v 1.4 1998-10-11 02:37:20 cananian Exp $
  */
 
 //-----------------------------------------------------------

@@ -1,4 +1,6 @@
 // MONITOREXIT.java, created Thu Sep 18  1:18:42 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -14,7 +16,7 @@ import harpoon.Temp.TempMap;
  * See the JVM spec for details.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MONITOREXIT.java,v 1.1 1998-09-18 07:34:16 cananian Exp $
+ * @version $Id: MONITOREXIT.java,v 1.2 1998-10-11 02:37:57 cananian Exp $
  */
 
 public class MONITOREXIT extends Quad {

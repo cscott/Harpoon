@@ -1,11 +1,13 @@
 // IIR_Identifier.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.AIRE;
 
 import java.util.Hashtable;
 /**
  * <code>IIR_Identifier</code>
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_Identifier.java,v 1.4 1998-10-11 01:24:57 cananian Exp $
+ * @version $Id: IIR_Identifier.java,v 1.5 1998-10-11 02:37:19 cananian Exp $
  */
 
 //-----------------------------------------------------------

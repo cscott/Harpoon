@@ -1,4 +1,6 @@
 // Worklist.java, created Sat Sep 12 19:38:31 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
 import harpoon.ClassFile.*;
@@ -6,7 +8,7 @@ import harpoon.ClassFile.*;
  * A <code>Worklist</code> is a unique set.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Worklist.java,v 1.1 1998-09-13 23:57:36 cananian Exp $
+ * @version $Id: Worklist.java,v 1.2 1998-10-11 02:37:59 cananian Exp $
  */
 
 public interface Worklist  {

@@ -1,4 +1,6 @@
 // FixupFunc.java, created Tue Sep 15 15:10:05 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -20,7 +22,7 @@ import java.util.Vector;
  * in the Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FixupFunc.java,v 1.11 1998-10-05 06:35:47 cananian Exp $
+ * @version $Id: FixupFunc.java,v 1.12 1998-10-11 02:37:56 cananian Exp $
  * @see Translate
  */
 

@@ -1,4 +1,6 @@
 // CleanUp.java, created Sat Sep 12 20:23:54 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import java.util.Hashtable;
@@ -23,7 +25,7 @@ import harpoon.Util.Worklist;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CleanUp.java,v 1.9 1998-09-22 02:32:15 cananian Exp $
+ * @version $Id: CleanUp.java,v 1.10 1998-10-11 02:37:56 cananian Exp $
  * @see Translate
  */
 

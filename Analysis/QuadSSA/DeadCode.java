@@ -1,4 +1,6 @@
 // DeadCode2.java, created Thu Oct  8 03:11:37 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -18,7 +20,7 @@ import java.util.Hashtable;
  * unused and seeks to prove otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.10 1998-10-10 09:43:00 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.11 1998-10-11 02:37:07 cananian Exp $
  */
 
 public abstract class DeadCode  {

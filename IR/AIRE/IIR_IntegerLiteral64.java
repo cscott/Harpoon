@@ -1,4 +1,6 @@
 // IIR_IntegerLiteral64.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.AIRE;
 
 import harpoon.Util.Tuple;
@@ -9,7 +11,7 @@ import java.util.Hashtable;
  * range covered by a 64-bit signed, two's complement representation.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_IntegerLiteral64.java,v 1.3 1998-10-11 01:24:58 cananian Exp $
+ * @version $Id: IIR_IntegerLiteral64.java,v 1.4 1998-10-11 02:37:19 cananian Exp $
  */
 
 //-----------------------------------------------------------

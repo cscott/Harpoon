@@ -1,4 +1,6 @@
 // Registration.java, created Sat Sep 12 18:49:07 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR;
 
 /**
@@ -12,7 +14,7 @@ package harpoon.IR;
  * typically when the <code>Registration</code> class is loaded.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Registration.java,v 1.1 1998-09-13 23:57:16 cananian Exp $
+ * @version $Id: Registration.java,v 1.2 1998-10-11 02:37:09 cananian Exp $
  */
 
 public class Registration  {

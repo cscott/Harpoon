@@ -1,4 +1,6 @@
 // SIGMA.java, created Mon Sep 14 03:03:50 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -10,7 +12,7 @@ import harpoon.Util.Util;
  * They have the form: <code>&lt;t1, t2, ..., tn&gt; = sigma(t0)</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SIGMA.java,v 1.1 1998-09-18 00:50:29 cananian Exp $
+ * @version $Id: SIGMA.java,v 1.2 1998-10-11 02:37:57 cananian Exp $
  */
 
 public abstract class SIGMA extends Quad {

@@ -1,4 +1,6 @@
 // UseDef.java, created Thu Sep 10 15:17:10 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
 import harpoon.Temp.Temp;
@@ -18,7 +20,7 @@ import java.util.Enumeration;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.9 1998-09-16 19:46:59 cananian Exp $
+ * @version $Id: UseDef.java,v 1.10 1998-10-11 02:36:59 cananian Exp $
  */
 
 public class UseDef implements harpoon.Analysis.Maps.UseDefMap {

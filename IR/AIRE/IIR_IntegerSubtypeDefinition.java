@@ -1,4 +1,6 @@
 // IIR_IntegerSubtypeDefinition.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.AIRE;
 
 import harpoon.Util.Tuple;
@@ -8,7 +10,7 @@ import java.util.Hashtable;
  * represents a subset of an existing integer base type definition.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_IntegerSubtypeDefinition.java,v 1.5 1998-10-11 01:24:58 cananian Exp $
+ * @version $Id: IIR_IntegerSubtypeDefinition.java,v 1.6 1998-10-11 02:37:19 cananian Exp $
  */
 
 //-----------------------------------------------------------

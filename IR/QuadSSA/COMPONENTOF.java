@@ -1,4 +1,6 @@
 // COMPONENTOF.java, created Wed Sep  9 13:05:33 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -12,7 +14,7 @@ import harpoon.Temp.TempMap;
  * array, or boolean <code>false</code> otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.6 1998-09-16 06:32:46 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.7 1998-10-11 02:37:56 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */

@@ -1,4 +1,6 @@
 // Tuple.java, created Sat Oct 10 01:37:39 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
 import harpoon.ClassFile.*;
@@ -7,7 +9,7 @@ import harpoon.ClassFile.*;
  * properly in Hashtables & etc.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tuple.java,v 1.1 1998-10-10 09:23:18 cananian Exp $
+ * @version $Id: Tuple.java,v 1.2 1998-10-11 02:37:59 cananian Exp $
  */
 
 public class Tuple  {

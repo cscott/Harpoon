@@ -1,4 +1,6 @@
 // Peephole.java, created Fri Sep 25 11:56:48 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.Temp.Temp;
@@ -7,7 +9,7 @@ import harpoon.Temp.Temp;
  * Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.2 1998-09-25 18:45:06 cananian Exp $
+ * @version $Id: Peephole.java,v 1.3 1998-10-11 02:37:57 cananian Exp $
  */
 
 class Peephole extends QuadVisitor {

@@ -1,10 +1,12 @@
 // IIR_Choice.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.AIRE;
 
 /**
  * <code>IIR_Choice</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_Choice.java,v 1.3 1998-10-11 01:24:54 cananian Exp $
+ * @version $Id: IIR_Choice.java,v 1.4 1998-10-11 02:37:14 cananian Exp $
  */
 
 //-----------------------------------------------------------

@@ -1,4 +1,6 @@
 // AGET.java, created Wed Aug 26 19:02:57 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -9,7 +11,7 @@ import harpoon.Temp.TempMap;
  * <code>AGET</code> represents an element fetch from an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AGET.java,v 1.8 1998-09-16 06:32:44 cananian Exp $
+ * @version $Id: AGET.java,v 1.9 1998-10-11 02:37:56 cananian Exp $
  * @see ANEW
  * @see ASET
  * @see ALENGTH

@@ -1,4 +1,6 @@
 // Code.java, created Fri Aug  7 13:45:29 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.Analysis.QuadSSA.DeadCode;
@@ -18,7 +20,7 @@ import java.util.Stack;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.26 1998-09-25 16:50:00 cananian Exp $
+ * @version $Id: Code.java,v 1.27 1998-10-11 02:37:56 cananian Exp $
  */
 
 public class Code extends HCode {

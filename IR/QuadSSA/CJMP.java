@@ -1,4 +1,6 @@
 // CJMP.java, created Wed Aug  5 07:07:32 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -12,7 +14,7 @@ import harpoon.Temp.TempMap;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.17 1998-09-18 00:50:28 cananian Exp $
+ * @version $Id: CJMP.java,v 1.18 1998-10-11 02:37:56 cananian Exp $
  */
 
 public class CJMP extends SIGMA {

@@ -1,4 +1,6 @@
 // IIR_ArraySubtypeDefinition.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.AIRE;
 
 import harpoon.Util.Tuple;
@@ -10,7 +12,7 @@ import java.util.Hashtable;
  * is a subset of the base type's domain.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ArraySubtypeDefinition.java,v 1.5 1998-10-11 01:24:53 cananian Exp $
+ * @version $Id: IIR_ArraySubtypeDefinition.java,v 1.6 1998-10-11 02:37:12 cananian Exp $
  */
 
 //-----------------------------------------------------------

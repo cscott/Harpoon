@@ -1,4 +1,6 @@
 // GET.java, created Wed Aug  5 07:05:59 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import java.lang.reflect.Modifier;
@@ -12,7 +14,7 @@ import harpoon.Util.Util;
  * The <code>objectref</code> is null if the field is static.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.18 1998-10-07 23:29:03 cananian Exp $
+ * @version $Id: GET.java,v 1.19 1998-10-11 02:37:56 cananian Exp $
  */
 
 public class GET extends Quad {

@@ -1,4 +1,6 @@
 // SCCOptimize.java, created Sun Sep 20 21:41:44 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.QuadSSA.SCC;
 
 import harpoon.Analysis.Maps.ConstMap;
@@ -17,7 +19,7 @@ import harpoon.Util.Util;
  * graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.4 1998-10-08 00:26:25 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.5 1998-10-11 02:37:08 cananian Exp $
  */
 public class SCCOptimize {
     TypeMap  ti;

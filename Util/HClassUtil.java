@@ -1,4 +1,6 @@
 // HClassUtil.java, created Fri Sep 11 09:14:23 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
 import harpoon.ClassFile.*;
@@ -7,7 +9,7 @@ import harpoon.ClassFile.*;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.5 1998-10-10 09:43:14 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.6 1998-10-11 02:37:58 cananian Exp $
  */
 
 public abstract class HClassUtil  {

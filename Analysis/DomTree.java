@@ -1,4 +1,6 @@
 // DomTree.java, created Mon Sep 14 17:38:43 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
 import harpoon.ClassFile.*;
@@ -12,7 +14,7 @@ import java.util.Vector;
  * <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.7 1998-10-08 04:55:58 cananian Exp $
+ * @version $Id: DomTree.java,v 1.8 1998-10-11 02:36:59 cananian Exp $
  */
 
 public class DomTree /*implements Graph*/ {

@@ -1,4 +1,6 @@
 // UniqueStack.java, created Thu Sep 10 19:08:22 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
 import java.util.EmptyStackException;
@@ -7,7 +9,7 @@ import java.util.EmptyStackException;
  * stack of <b>unique</b> objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueStack.java,v 1.2 1998-09-13 23:57:35 cananian Exp $
+ * @version $Id: UniqueStack.java,v 1.3 1998-10-11 02:37:59 cananian Exp $
  */
 
 public class UniqueStack extends UniqueVector implements Worklist {

@@ -1,4 +1,6 @@
 // HArrayField.java, created Sat Aug  8 09:54:55 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
 import java.lang.reflect.Modifier;
@@ -8,7 +10,7 @@ import java.lang.reflect.Modifier;
  * should appear identical to 'real' <code>HField</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HArrayField.java,v 1.1 1998-08-08 14:38:37 cananian Exp $
+ * @version $Id: HArrayField.java,v 1.2 1998-10-11 02:37:08 cananian Exp $
  * @see HArrayMethod
  * @see HArrayConstructor
  */
