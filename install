@@ -86,9 +86,11 @@ if [ x$dep = xY ]; then
 fi;
 
 if [ -f /etc/redhat-release ]; then 
-   export WEB_ROOT=http://flex-cvs.csail.mit.edu/ImageRec/RPMS; 
-   mkdir RPMS;
-   cd RPMS;
+   if [ x$dep = xY ]; then 
+      export WEB_ROOT=http://flex-cvs.csail.mit.edu/ImageRec/RPMS; 
+      mkdir RPMS;
+      cd RPMS;
+   fi;
    if fgrep -q -c '7.2' /etc/redhat-release; then 
       echo RedHat 7.2 detected.;
       export GUI=N;
@@ -200,9 +202,9 @@ if [ -f /etc/redhat-release ]; then
 		export prmpt=;;
 	esac;
      done;
-     cd ..
+     cd ..;
+     rm -rf RPMS;
    fi;
-   rm -rf RPMS
 fi
 
 if [ -f /etc/debian_version ]; then 
