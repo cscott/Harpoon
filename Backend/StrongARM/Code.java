@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.8 1999-10-20 20:34:13 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.9 1999-11-15 07:49:04 pnkfelix Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -114,7 +114,10 @@ public class Code extends harpoon.Backend.Generic.Code {
 		reg = get(instr, t.getHigh());
 	    } else if (suffix.trim().equals("")) {
 		Util.assert(false, "BREAK!  empty suffix " +
-			    "suffix: " + suffix);
+			    "suffix: " + suffix + "\n" +
+			    "instr: " + instr + "\n" + 
+			    "instr str: " + instr.assem + "\n"+
+			    "temp: " + val);
 	    } else {
 		Util.assert(false, "BREAK!  This parsing needs to be "+
 			    "fixed, strongarm has a lot more cases than this."+

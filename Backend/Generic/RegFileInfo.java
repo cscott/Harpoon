@@ -15,9 +15,20 @@ import java.util.Iterator;
     about the target machine's register file. 
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.6 1999-10-15 01:21:17 pnkfelix Exp $
+    @version $Id: RegFileInfo.java,v 1.1.2.7 1999-11-15 07:49:04 pnkfelix Exp $
  */
 public abstract class RegFileInfo {
+    
+    private static TempFactory myTF = new TempFactory() {
+	public String getScope() { 
+	    return "private TF for RegFileInfo"; 
+	}
+	public String getUniqueID(String suggestion) { 
+	    return "rfi"+suggestion.hashCode(); 
+	}
+    };
+
+    public static Temp PREASSIGNED = new Temp(myTF);
     
     /** Creates a <code>RegFileInfo</code>. */
     public RegFileInfo() {
@@ -82,6 +93,21 @@ public abstract class RegFileInfo {
 	     ones that this <code>RegFileInfo</code> chose to find), or
 	     throws a <code>RegFileInfo.SpillException</code> with a set of
 	     possible spills. 
+	     
+	<P> Note to implementors: Resist the urge to generate an
+	Iterator that produces a series of all possible	assignments.
+	In general, register allocation algorithms need to, at some
+	point, construct an interference graph to represent how the
+	registers should be assigned.  Such a graph would contain a
+	node for each register assignment, which means that even if
+	your Iterator did not keep all of the assignments in memory at
+	once, code that USES your Iterator may very well do so.  Thus,
+	while there may be many ways to assign registers to a Temp
+	that is multiple words in size, and it is possible to write an
+	Iterator that produces all such assignments, such an Iterator
+	would cause an time/space explosion when applied to a decently
+	sized register file.  
+
 	@param t <code>Temp</code> that needs to be assigned to a set
    	         of Registers. 
 	@param regfile A mapping from Register <code>Temp</code>s to
@@ -90,7 +116,9 @@ public abstract class RegFileInfo {
 		       Register <code>Temp</code>s should simply not
 		       have an entry in <code>regfile</code> (as
 		       opposed to the alternative of mapping to some
-		       NoValue object)
+		       NoValue object).  Registers that are
+		       pre-assigned and cannot be spilled should map
+		       to RegFileInfo.PREASSIGNED.
 	@return A <code>List</code> <code>Iterator</code> of Register
 	        <code>Temp</code>s.  The <code>Iterator</code> is
 	        guaranteed to have at least one element.  Each

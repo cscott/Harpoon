@@ -3,6 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
+import harpoon.Util.Util;
+
+import java.util.Iterator;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -13,7 +16,7 @@ import java.util.Set;
     operate on or return <code>CollectionFactory</code>s. 
  
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: Factories.java,v 1.1.2.2 1999-11-02 20:32:57 pnkfelix Exp $
+    @version $Id: Factories.java,v 1.1.2.3 1999-11-15 07:49:05 pnkfelix Exp $
  */
 public final class Factories {
     
@@ -122,6 +125,35 @@ public final class Factories {
 	    }
 	};
     }
+
+    public static CollectionFactory 
+	noNullCollectionFactory(final CollectionFactory cf) {
+	return new CollectionFactory() {
+	    public java.util.Collection makeCollection(final Collection c) {
+		Util.assert(noNull(c));
+		final Collection back = cf.makeCollection(c);
+		return new CollectionWrapper(back) {
+		    public boolean add(Object o) {
+			Util.assert(o != null);
+			return super.add(o);
+		    }
+		    public boolean addAll(Collection c2) {
+			Util.assert(Factories.noNull(c2));
+			return super.addAll(c2);
+		    }
+		};
+	    }
+	};
+    }
+
+    private static boolean noNull(Collection c) {
+	Iterator iter = c.iterator();
+	while(iter.hasNext()) {
+	    if(iter.next() == null) return false;
+	}
+	return true;
+    }
+
 }
 
 

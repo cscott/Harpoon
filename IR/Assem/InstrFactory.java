@@ -17,7 +17,8 @@ import java.util.Map;
  * generic <code>Assem.Instr</code>s used in code generation.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrFactory.java,v 1.1.2.18 1999-09-11 06:12:46 pnkfelix Exp $
+ * @author  Felix S Klock II <pnkfelix@mit.edu>
+ * @version $Id: InstrFactory.java,v 1.1.2.19 1999-11-15 07:49:05 pnkfelix Exp $
  */
 public abstract class InstrFactory {
     /** Maintains a

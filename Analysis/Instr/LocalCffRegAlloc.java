@@ -5,8 +5,10 @@ package harpoon.Analysis.Instr;
 
 import harpoon.Backend.Generic.Code;
 import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Generic.RegFileInfo;
 import harpoon.Backend.Generic.RegFileInfo.SpillException;
 import harpoon.Analysis.BasicBlock;
+import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.Instr.TempInstrPair;
 import harpoon.Analysis.Instr.RegAlloc.FskLoad;
 import harpoon.Analysis.Instr.RegAlloc.FskStore;
@@ -14,13 +16,20 @@ import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.Temp.Temp;
+import harpoon.Temp.Label;
 import harpoon.Util.LinearMap;
 import harpoon.Util.LinearSet;
 import harpoon.Util.CloneableIterator;
 import harpoon.Util.Util;
 
+import harpoon.Util.Collections.SetFactory;
+import harpoon.Util.Collections.Factories;
+import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Collections.DefaultMultiMap;
+
 import java.util.Iterator;
 import java.util.ListIterator;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
@@ -28,6 +37,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.HashSet;
 import java.util.SortedSet;
 import java.util.AbstractSet;
 /** <code>LocalCffRegAlloc</code> performs <A
@@ -35,14 +45,14 @@ import java.util.AbstractSet;
     Local Register Allocation</A> for a given set of
     <code>Instr</code>s using a conservative-furthest-first algorithm.
     The papers <A 
-    HREF="http://lm.lcs.mit.edu/~pnkfelix/papers/OnLocalRegAlloc.ps.gz">
+    HREF="http://ctf.lcs.mit.edu/~pnkfelix/papers/OnLocalRegAlloc.ps.gz">
     "On Local Register Allocation"</A> and <A
-    HREF="http://lm.lcs.mit.edu/~pnkfelix/papers/hardnessLRA.ps">"Hardness and
+    HREF="http://ctf.lcs.mit.edu/~pnkfelix/papers/hardnessLRA.ps">"Hardness and
     Algorithms for Local Register Allocation"</A> lay out the basis
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.43 1999-09-20 16:06:23 pnkfelix Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.44 1999-11-15 07:49:01 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -53,9 +63,14 @@ public class LocalCffRegAlloc extends RegAlloc {
     
     protected Code generateRegAssignment() {
 	Iterator iter = BasicBlock.basicBlockIterator(rootBlock);
+	
+	LiveTemps liveTemps = 
+	    new LiveTemps(iter, frame.getRegFileInfo().liveOnExit());
+
+	iter = BasicBlock.basicBlockIterator(rootBlock);
 	while(iter.hasNext()) {
 	    BasicBlock b = (BasicBlock) iter.next();
-	    localAlloc(b);
+	    localAlloc(b, liveTemps.getLiveOnExit(b));
 	}
 	return code;
     }
@@ -73,103 +88,26 @@ public class LocalCffRegAlloc extends RegAlloc {
 	four registers).  There may be PAPER-WORTHY stuff in here.
 
      */
-    private void localAlloc(BasicBlock b) {
-	// (Step 1)
-	// the following code is an attempt to perform this O(n^2)
-	// description in O(n) time:  
-	// forall(j elem instrs(b))
-	//    forall(l elem pseudo-regs(b))
-	//       nextRef(j, l) <- indexOf(dist to next reference to l)
-	ListIterator instrs = b.listIterator();
-
-	// nextRef: maps (Instr x Temp)->(dist to next reference)
-	Map nextRef = new HashMap();
-	
-	// index: main index counter
-	int index = 0;
-
-	// indexUpdata: maps a Temp->delta(dist)
-	// where delta(dist) is the difference from the main index
-	// counter that yields the distance to the next reference.
-	// To find the actual distance, do "index + delta(dist)"
-	Map indexUpdata = new HashMap();
-
-	// first go FORWARD through instrs and set up
-	// indexUpdata map with initial values for all refs
-	while(instrs.hasNext()) {
-	    Instr i = (Instr) instrs.next();
-	    Iterator refs = getRefs(i);
-	    while(refs.hasNext()) {
-		Temp ref = (Temp) refs.next();
-		if (isTempRegister(ref)) continue; 
-		// every body starts off with +1 (so that all temps
-		// are live on exit, and have a distance of one more
-		// than the end of the list)
-		indexUpdata.put(ref, new Integer(1));
-	    }
-	}
-	
-	// temps: set of all refs in basic block
-	Set temps = indexUpdata.keySet();
-
-	// now go BACKWARD and build the nextRef table while
-	// simultaneously updating the indexUpdata
-	while(instrs.hasPrevious()) {
-	    Instr i = (Instr) instrs.previous();
-	    // first update nextRef
-	    Iterator tempIter = temps.iterator();
-	    while(tempIter.hasNext()) {
-		Temp t = (Temp) tempIter.next();
-		Integer mi = (Integer) indexUpdata.get(t);
-		nextRef.put(new TempInstrPair(i, t), 
-			    new Integer(index + mi.intValue()));
-	    }
-
-	    // second update indexUpdata
-	    Iterator refs = getRefs(i);
-	    while(refs.hasNext()) {
-		Temp ref = (Temp) refs.next();
-		if (isTempRegister(ref)) continue;
-		// this will be added to a new index later, so they
-		// will cancel eachother out to yield the real
-		// distance. 
-		indexUpdata.put(ref, new Integer(-index));
-	    }
-	    
-	    // finally increment the index
-	    index++;
-	}
-	
-	if(true) { // debugging code 
-	    Iterator instrIter = b.listIterator();
-	    while(instrIter.hasNext()) {
-		Instr i = (Instr) instrIter.next();
-		Iterator refIter = getRefs(i);
-		while(refIter.hasNext()) {
-		    Temp ref = (Temp) refIter.next();
-		    if (isTempRegister(ref)) continue;
-		    Integer dist = (Integer) 
-			nextRef.get(new TempInstrPair(i, ref));
-		    Util.assert(dist != null, "Should have a "+
-				"mapping from " + i + " x " + 
-				ref + " to a dist for block " + b);
-		}
-	    }
-	}
+    private void localAlloc(BasicBlock b, Set liveOnExit) {
+	// nextRef: maps (Instr x Temp) -> (dist to next reference)
+	Map nextRef = buildNextRef(b);
 
 	// maps Regs -> PseudoRegs
 	TwoWayMap regfile = new TwoWayMap();
-	instrs = b.listIterator();
+
+	CloneableIterator instrs = new CloneableIterator(b.listIterator());
+
+	Instr instr = null;
 	while(instrs.hasNext()) {
-	    Instr i = (Instr) instrs.next();
+	    instr = (Instr) instrs.next();
 
 	    // skip any Spill Instructions
-	    if (i instanceof FskLoad ||
-		i instanceof FskStore) {
+	    if (instr instanceof FskLoad ||
+		instr instanceof FskStore) {
 		continue; 
 	    }
 
-	    Iterator refs = getRefs(i);
+	    Iterator refs = getRefs(instr);
 	    while(refs.hasNext()) {
 		Temp ref = (Temp) refs.next();
 		if (isTempRegister(ref)) continue;
@@ -178,20 +116,22 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    try {
 			// (Step 2)
 			
-			// TODO (for correctness): add code here to
-			// add mappings to regfile for registers that
-			// are PRECOLORED (already referenced in
-			// future instructions while 'ref' is still
-			// live) 
+			Map precolor = 
+			    getPrecolorMappings
+			    (ref, (Iterator) instrs.clone(),
+			     liveOnExit.contains(ref));
+			regfile.putAll(precolor);
+			
+			
 			CloneableIterator suggestions = 
 			    new CloneableIterator
 			    (frame.getRegFileInfo().suggestRegAssignment
-			     (ref, regfile));
+			     (ref, Collections.unmodifiableMap(regfile)));
 
 			Util.assert(workOnRef < 3, 
 				    "Should not need to work "+
 				    "on ref " + ref + " in Instr " + 
-				    i + " " + workOnRef + " times. " +
+				    instr + " " + workOnRef + " times. " +
 				    "Regfile: " +  regfile + 
 				    "Suggestions: [" + 
 				    printIter((Iterator)suggestions.clone()) + 
@@ -202,12 +142,14 @@ public class LocalCffRegAlloc extends RegAlloc {
 			// suggestion based on future MOVEs to/from
 			// registers.  
 			List regs = (List) suggestions.next();
-			code.assignRegister(i, ref, regs);
+			code.assignRegister(instr, ref, regs);
 			
-			InstrMEM loadInstr = 
-			    new FskLoad(i.getFactory(), i,
-					"FSK-LOAD", regs, ref);
-			loadInstr.insertAt(new InstrEdge(i.getPrev(), i));
+			if (instr.useC().contains(ref)) {
+			    InstrMEM loadInstr = 
+				new FskLoad(instr, "FSK-LOAD", regs, ref);
+			    loadInstr.insertAt
+				(new InstrEdge(instr.getPrev(), instr));
+			}
 
 			Iterator regIter = regs.iterator();
 			while(regIter.hasNext()) {
@@ -232,16 +174,17 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    while(regs.hasNext()) {
 				Temp pseudoReg = (Temp)
 				    regfile.get(regs.next());
-				// pseudoReg should NOT be null; Frame
-				// spec says it won't tell us to spill
-				// regs that are not occupied.
-				Util.assert(pseudoReg != null, 
-					    "pseudoReg should not be null");
 
-				Integer dist = (Integer) nextRef.get
-				    (new TempInstrPair(i, pseudoReg));
-				if (dist.intValue() < cost) { // find Min
-				    cost = dist.intValue();
+				// if pseudoReg is null, then there is
+				// no value in pseudoReg, so it costs
+				// nothing to put a value into it.
+				if (pseudoReg != null) {
+				    Integer dist = (Integer) nextRef.get
+					(new TempInstrPair(instr, pseudoReg));
+				    if (dist != null && 
+					dist.intValue() < cost) { // find Min
+					cost = dist.intValue();
+				    }
 				}
 			    }
 			    weightedSpills.add(new WeightedSet(cand, cost));
@@ -262,37 +205,22 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    // the register file
 			    Temp reg = (Temp) spillIter.next();
 			    Temp value = (Temp) regfile.get(reg);
-			    Set regs = (Set) regfile.inverseMap().get(value); 
-			    
-			    Util.assert(i != null, "i should not be null");
-			    Util.assert(regs != null, 
-					"regs should not be null"+
-					" regfile: "+regfile+
-					" reg: "+reg+
-					" val: "+value);
 
-			    InstrMEM spillInstr =
-				new FskStore(i.getFactory(), i, 
-					     "FSK-STORE", value, regs);
-			    spillInstr.insertAt(new InstrEdge(i.getPrev(), i));
+			    if (value == null) {
+				// no value associated with 'reg', so
+				// we don't need to spill it; can go
+				// straight to storing stuff in it
+
+			    } else {
+				
+				spillValue(value, 
+					   new InstrEdge(instr.getPrev(),
+							 instr),
+					   regfile);
 			    
-			    // Now remove spilled regs from regfile
-			    Iterator regsIter = regs.iterator();
-			    // the iterator returned relies on the
-			    // internal structure of regfile, which we
-			    // are modifying.  Therefore, store the
-			    // elements of regsIter in a temporary
-			    // vector. 
-			    ArrayList v = new ArrayList(regs.size());
-			    while(regsIter.hasNext()) {
-				v.add(regsIter.next());
-			    }
-			    regsIter = v.iterator();
-			    while(regsIter.hasNext()) {
-				regfile.remove(regsIter.next());
 			    }
 			}
-			
+
 			// done spilling (now we'll loop and retry reg
 			// assignment)
 			workOnRef++;
@@ -301,8 +229,165 @@ public class LocalCffRegAlloc extends RegAlloc {
 		}
 	    }
 	}
+	// finished local alloc for 'b', so now we need to empty the
+	// register file.  Note that after the loop finishes, 'instr'
+	// is the last instruction in the series.
+	
+	
+	Iterator vals = new ArrayList(regfile.values()).iterator();
+	while(vals.hasNext()) {
+	    Temp val = (Temp) vals.next();
+	    
+	    // don't spill dead values.
+	    if (!liveOnExit.contains(val)) continue;
+	    
+	    // need to insert the spill in a place where we can be
+	    // sure it will be executed; the easy case is where
+	    // 'instr' does not redefine any temps (so we can just put 
+	    // our spills BEFORE 'instr').  If 'instr' does define
+	    // temps, however, then we MUST wait to spill, and then we
+	    // need to see where control can flow...
+	    // insert a new block solely devoted to spilling
+	    InstrEdge loc;
+	    if (instr.defC().isEmpty()) {
+		loc = new InstrEdge(instr.getPrev(), instr);
+		spillValue(val, loc, regfile);
+	    } else {
+		if (instr.canFallThrough) {
+		    loc = new InstrEdge(instr, instr.getNext());
+		    spillValue(val, loc, regfile);
+		}
+
+		// this is a tricky case (though it seems simple at
+		// first glance)...so I'm going to punt it for now.
+		Util.assert(instr.getTargets().isEmpty(), 
+			    "Uh oh, we gotta handle the 'inserting-"+
+			    "spills-after-an-instruction-with-"+
+			    "multiple-targets' case");
+	    }
+	}
 	
 	//System.out.println("completed local alloc for " + b);
+    }
+
+    /** spills 'val', adding the necessary store at 'loc' and updates
+	the 'regfile' so that it no longer has a mapping for 'val' or
+	its associated registers.
+    */
+    private void spillValue(Temp val, 
+			    InstrEdge loc, 
+			    TwoWayMap regfile) {
+	Collection regs = regfile.inverseMap().getValues(val);
+	
+	if (regs.size() > 1) { 
+	    System.out.println("\n Val: " + val + 
+			       " is held in " + regs);
+	}
+	InstrMEM spillInstr = new FskStore(loc.to, "FSK-STORE", val, regs);
+	spillInstr.insertAt(loc);
+	    
+	// Now remove spilled regs from regfile
+	ArrayList v = new ArrayList(regs);
+	Iterator regsIter = v.iterator();
+	while(regsIter.hasNext()) {
+	    regfile.remove(regsIter.next());
+	}
+    }
+
+    private Map buildNextRef(BasicBlock b) {
+	Map nextRef = new HashMap();
+
+	// < should change code later to attempt to perform this O(n^2) 
+	//   description in O(n) time >
+
+	// forall(j elem instrs(b))
+	//    forall(l elem pseudo-regs(b))
+	//       nextRef(j, l) <- indexOf(dist to next reference to l)
+	CloneableIterator instrs = new CloneableIterator(b.listIterator());
+	while(instrs.hasNext()) {
+	    Instr j = (Instr) instrs.next();
+	    Iterator refs = getRefs(j);
+	    while(refs.hasNext()) {
+		Temp l = (Temp) refs.next();
+		if (isTempRegister(l)) continue;
+		
+		Iterator remainingInstrs = (Iterator) instrs.clone();
+		boolean foundRef = false;
+		for(int dist=1; 
+		    (!foundRef) && remainingInstrs.hasNext(); 
+		    dist++) {
+		    
+		    Instr i2 = (Instr) remainingInstrs.next();
+		    if ( i2.useC().contains(l) ||
+			 i2.defC().contains(l) ) {
+			TempInstrPair jXl = new TempInstrPair(j, l);
+			Integer prev = (Integer) nextRef.get(jXl);
+
+			// Invariant checks...
+			if (prev != null) {
+			    if (prev.intValue() == dist) {
+				Util.assert(false, 
+					    "shouldn't be entering jXl "+
+					    "twice (same)");
+			    } else {
+				Util.assert(false, 
+					    "shouldn't be entering jXl "+
+					    "twice (diff)\n"+
+					    "j: " + j + " l: " + l + "\n" +
+					    "i2: " + i2);
+			    }
+			}
+
+			nextRef.put(jXl, new Integer(dist));
+			foundRef = true;
+		    }
+		}
+	    }
+	}
+
+	return nextRef;
+    }
+
+    /** Searches forward in <code>instrs</code> and finds all of the
+	registers that are referenced while <code>ref</code> is still
+	live (ie still has a use and has not been redefined).  
+
+	If <code>ref</code> is live beyond the end of
+	<code>instrs</code>, then <code>refLiveAtEnd</code> should be
+	true.  If <code>ref</code> is not live beyond the end of
+	<code>instrs</code>, then <code>refLiveAtEnd</code> should be
+	false.
+    */
+    private Map getPrecolorMappings(Temp ref, Iterator instrs, 
+				    boolean refLiveAtEnd) {
+	Map mappings = new HashMap();
+	Map potentials = new HashMap();
+	boolean killedRef = false;
+	while (instrs.hasNext() && !killedRef) {
+	    Instr i = (Instr) instrs.next();
+	    Iterator refs = getRefs(i);
+	    while (refs.hasNext()) {
+		Temp preg = (Temp) refs.next();
+		if (isTempRegister(preg)) {
+		    potentials.put(preg, RegFileInfo.PREASSIGNED);
+		}
+	    }
+	    if (i.useC().contains(ref)) {
+		mappings.putAll(potentials);
+		potentials.clear();
+	    }
+	    if (i.defC().contains(ref)) {
+		killedRef = true;
+	    }
+	}
+	
+	// ref was never redefined ==> need to check if its live
+	// past end of instrs, in which case we STILL add the
+	// 'potentials' mappings.
+	if (!killedRef && refLiveAtEnd) 
+	    mappings.putAll(potentials);
+	
+	return mappings;
     }
 
     private String printSet(Set set) {
@@ -334,50 +419,66 @@ public class LocalCffRegAlloc extends RegAlloc {
     }
     
     /** TwoWayMap maintains a many-to-one map from keys to values, and
-	a one-to-many map from value to keys.  The standard Map
-	methods are applied to the key to value map; to access the
+	a one-to-many map from values to keys.  The standard Map
+	methods are applied to the key->value map; to access the
 	reverse mapping, call inverseMap(), which returns a
-	Map[value->Set[key]].
+	MultiMap mapping from each value to a collection of keys. 
 
-	I should probably change this to take a pair of maps in its
-	constructor and then maintain the structure of the two maps
-	through the methods here, just for generality, but if I go to
-	that effort I'll make this part of the harpoon.Util package.
+	I should probably change this to take a MapFactory and a
+	MultiMapFactory in its constructor and then maintain the
+	structure of the two maps through the methods here, just for
+	generality, but if I go to that effort I'll make this part of
+	the harpoon.Util.Collections package. 
     */
     private class TwoWayMap extends LinearMap {
-	Map rMap;
+	MultiMap rMap;
 
 	TwoWayMap() {
-	    rMap = new LinearMap();
+	    rMap = new DefaultMultiMap
+		// don't allow nulls as values (debug...)
+		(Factories.noNullCollectionFactory(Factories.hashSetFactory()), 
+
+		 Factories.hashMapFactory());
 	}
 	
 	public void clear() { super.entrySet().clear(); rMap.clear(); }
+
 	public Set entrySet() { 
 	    return Collections.unmodifiableSet(super.entrySet()); 
 	}
+
 	public Object put(Object key, Object value) {
-	    Set s = (Set) rMap.get(value);
-	    if (s == null) {
-		s = new LinearSet();
-		rMap.put(value, s);
+	    // remove any past entry mapping to 'key' in rMap
+	    Iterator entries = rMap.entrySet().iterator();
+	    while(entries.hasNext()) {
+		Map.Entry entry = (Map.Entry) entries.next();
+		if (entry.getValue().equals(key)) {
+		    // should be able to just directly remove 'entry'
+		    // from 'entries' and have rMap updated
+		    // accordingly, but the MultiMap class does not
+		    // support that functionality yet...
+
+		    rMap.removeAll
+			(entry.getKey(), Collections.singleton(key));
+
+		    System.out.println("rMap: Removing entry " + entry);
+		}
 	    }
-	    s.add(key);
+
+	    rMap.add(value, key);
 	    return super.put(key, value);
 	}
+
 	public Object remove(Object key) {
 	    Object prev = super.remove(key);
-	    Set s = (Set) rMap.get(prev);
-	    Util.assert(s.remove(key), "key:"+key+
-			" should have been in Set "+
-			"associated with value:"+prev);
-	    if (s.isEmpty()) {
-		rMap.remove(prev);
-	    }
+	    rMap.remove(prev);
 	    return prev;
 	}
-	public Map inverseMap() {
-	    return Collections.unmodifiableMap(rMap);
+
+	public MultiMap inverseMap() {
+	    return rMap;
 	}
+
 	public String toString() {
 	    String s = "[ ";
 	    Iterator entries = entrySet().iterator();

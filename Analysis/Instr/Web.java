@@ -5,6 +5,7 @@ package harpoon.Analysis.Instr;
 
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Util.Util;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -14,7 +15,7 @@ import java.util.HashSet;
  * <code>Web</code> is a helper class used in Register Allocation.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Web.java,v 1.1.2.2 1999-11-09 06:28:26 pnkfelix Exp $
+ * @version $Id: Web.java,v 1.1.2.3 1999-11-15 07:49:01 pnkfelix Exp $
  */
 class Web extends harpoon.Analysis.GraphColoring.SparseNode {
     Temp var;
@@ -32,6 +33,7 @@ class Web extends harpoon.Analysis.GraphColoring.SparseNode {
     int id;
 
     Web(Temp var) {
+	Util.assert(var != null);
 	this.var = var;
 	refs = new HashSet();
 	id = counter;

@@ -35,6 +35,7 @@ import harpoon.Analysis.DataFlow.InstrSolver;
 
 import java.util.Hashtable;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Set;
 import java.util.Vector;
 import java.util.List;
@@ -54,10 +55,11 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.48 1999-11-09 06:28:26 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.49 1999-11-15 07:49:01 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
-    private static final boolean BRAIN_DEAD = true;
+    private static final boolean BRAIN_DEAD = false;
+    private static final boolean DEBUG = true;
 
     protected Frame frame;
     protected Code code;
@@ -85,27 +87,26 @@ public abstract class RegAlloc  {
 
      */
     /* protected (jdk1.1-is-stupid)*/ public class FskLoad extends InstrMEM {
-	FskLoad(InstrFactory inf, HCodeElement hce, 
-		String assem, Temp dst, Temp src) {
-	    super(inf, hce, assem + " `d0, `s0", 
+
+	FskLoad(InstrFactory inf, Instr i, String assem, Temp dst, Temp src) {
+	    super(inf, i, assem + " `d0, `s0", 
 		  new Temp[]{dst}, new Temp[]{src});
+
 	}
-	FskLoad(InstrFactory inf, HCodeElement hce, 
-		String assem, List dsts, Temp src) {
-	    super(inf, hce, assem + " " + 
-		  getDstStr(dsts.size()) + ", `s0",
-		  (Temp[])dsts.toArray(new Temp[dsts.size()]), 
-		  new Temp[]{src});
+	FskLoad(Instr i, String assem, Temp dst, Temp src) {
+	    this(i.getFactory(), i, assem, dst, src);
 	}
 
-	// this is prolly bad (set order not specified) but its my
-	// sketchy class and no one else should be using it anyway.  
-	FskLoad(InstrFactory inf, HCodeElement hce,
-		String assem, Set dsts, Temp src) {
-	    super(inf, hce, assem + " " + 
+	// Note that the order that 'dsts' will appear in is the order
+	// that its iterator returns the Temps in.
+	FskLoad(InstrFactory inf, Instr i, String assem, Collection dsts, Temp src) {
+	    super(inf, i, assem + " " + 
 		  getDstStr(dsts.size()) + ", `s0", 
 		  (Temp[])dsts.toArray(new Temp[dsts.size()]), 
 		  new Temp[]{src});
+	}
+	FskLoad(Instr i, String assem, Collection dsts, Temp src) {
+	    this(i.getFactory(), i, assem, dsts, src);
 	}
 
     }
@@ -117,27 +118,28 @@ public abstract class RegAlloc  {
 
     */
     /* protected (jdk1.1-is-stupid)*/ public class FskStore extends InstrMEM {
+	FskStore(Instr i, String assem, Temp dst, Temp src) {
+	    this(i.getFactory(), i, assem, dst, src);
+	}
+
 	FskStore(InstrFactory inf, HCodeElement hce, 
 		String assem, Temp dst, Temp src) {
 	    super(inf, hce, assem, 
 		  new Temp[]{dst}, new Temp[]{src});
 	}
-	FskStore(InstrFactory inf, HCodeElement hce, 
-		String assem, Temp dst, List srcs) {
-	    super(inf, hce, assem + " `d0, " +
-		  getSrcStr(srcs.size()), 
-		  new Temp[]{dst}, 
-		  (Temp[])srcs.toArray(new Temp[srcs.size()]));
-	}
 
-	// this is prolly bad (set order not specified) but its my
-	// sketchy class and no one else should be using it anyway.  
+	// Note that the order that 'dsts' will appear in is the order
+	// that its iterator returns the Temps in.
 	FskStore(InstrFactory inf, HCodeElement hce,
-		 String assem, Temp dst, Set srcs) {
+		 String assem, Temp dst, Collection srcs) {
 	    super(inf, hce, assem + " `d0, " +
 		  getSrcStr(srcs.size()),
 		  new Temp[]{dst}, 
 		  (Temp[])srcs.toArray(new Temp[srcs.size()]));
+	}
+
+	FskStore(Instr i, String assem, Temp dst, Collection srcs) {
+	    this(i.getFactory(), i, assem, dst, srcs);
 	}
     }
 
@@ -155,6 +157,7 @@ public abstract class RegAlloc  {
 	HasEdges first = (HasEdges) code.getRootElement();
 	rootBlock = BasicBlock.computeBasicBlocks(first);
     }
+
     
     /** Assigns registers in the code for <code>this</code>.
 	
@@ -215,11 +218,7 @@ public abstract class RegAlloc  {
 		if (preAllocCode == null) {
 		    return null;
 		}
-
 		
-		
-/*  --- FSK needs to rethink this...I'm getting hung up on all the
-    wrong issues... ---
 		RegAlloc localCode, globalCode;
 		if (BRAIN_DEAD) {
 		    // very dumb (but correct) reg alloc
@@ -243,8 +242,7 @@ public abstract class RegAlloc  {
 
 		return resolveOutstandingTemps
 		    ( globalCode.generateRegAssignment() );
-*/
-		return null;
+
 	    }
 	    public String getCodeName() {
 		return parent.getCodeName();
@@ -320,7 +318,14 @@ public abstract class RegAlloc  {
 		Iterator instrs = bb.listIterator();
 		while(instrs.hasNext()) {
 		    Instr instr = (Instr) instrs.next();
-		    System.out.println("(" + instr.getID() + ")\t"+ in.toAssem(instr));
+		    if (! (instr instanceof FskLoad || 
+			   instr instanceof FskStore)) {
+			System.out.println("(" + instr.getID() +
+					   ")\t"+ in.toAssem(instr));
+		    } else {
+			System.out.println("(" + instr.getID() +
+					   ")\t"+ instr.toString());
+		    }
 		}
 	    }
 	    
@@ -575,8 +580,7 @@ class BrainDeadLocalAlloc extends RegAlloc {
 			    frame.getRegFileInfo().suggestRegAssignment(preg, regFile); 
 			List regList = (List) iter.next();
 			InstrMEM loadSrcs = 
-			    new FskLoad(inf, null, "FSK-LOAD", 
-					regList, preg); 
+			    new FskLoad(inf, null, "FSK-LOAD", regList, preg); 
 			loadSrcs.insertAt(new InstrEdge(instr.getPrev(), instr));
 			code.assignRegister(instr, preg, regList);
 			Iterator regIter = regList.iterator();
@@ -722,7 +726,8 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    Iterator uses = instr.useC().iterator();
 	    while(uses.hasNext()) {
 		Temp t = (Temp) uses.next();
-		
+
+		Util.assert(t != null, "No nulls for Temps");
 		
 		if ((def.getValues(t)).isEmpty()) {
 		    // if it uses a variable defined in
@@ -740,6 +745,8 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    Iterator defs = instr.defC().iterator();
 	    while(defs.hasNext()) {
 		Temp t = (Temp) defs.next();
+
+		Util.assert(t != null, "No nulls for Temps");
 		
 		if (!(def.getValues(t)).isEmpty()) {
 		    // We have seen a DEF for t in this block
@@ -797,15 +804,15 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    changed = changed || toInfo.in.addAll(key, newVals);
 	}
 
-	System.out.println("\t\t\tMerging from " + from +
-			   " to " + to + ":" + 
-			   (changed?"changed":"nochange"));
+	// System.out.println("\t\t\tMerging from " + from +
+	//		   " to " + to + ":" + 
+	//		   (changed?"changed":"nochange")); 
 	
 	return changed;
     }
     
     public void visit(BasicBlock b) {
-	System.out.println("\t\t\tVisiting " + b);
+	// System.out.println("\t\t\tVisiting " + b);
 
 	WebInfo webInfo = (WebInfo) bbInfoMap.get(b);
 	
@@ -816,7 +823,8 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    Web web = (Web) entry.getValue();
 	    Iterator instrs = webInfo.use.getValues(t).iterator();
 
-	    System.out.println("\t\t\t\t IN -> OUT : [" + web + ", "+b+"]" );
+	    // System.out.println("\t\t\t\t IN -> OUT : [" + 
+	    //		       web + ", "+b+"]" );
 
 	    while(instrs.hasNext()) {
 		web.refs.add(instrs.next());

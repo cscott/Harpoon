@@ -43,10 +43,10 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.59 1999-11-05 07:00:50 cananian Exp $
+ * @version $Id: Instr.java,v 1.1.2.60 1999-11-15 07:49:05 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
-    private String assem;
+    public final String assem; // changed to public for debugging
     private InstrFactory inf;
 
     private Temp[] dst;
@@ -125,6 +125,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	@see Instr#canFallThrough
 	@see Instr#getNext
 	@see Instr#hasModifiableTargets 
+	@return A <code>List</code> of <code>Label</code>s.
     */
     public List getTargets() {
 	if (targets != null) {
@@ -137,6 +138,14 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	    // (targets == null) ==> empty list
 	    return Collections.EMPTY_LIST;
 	}
+    }
+
+    /** Returns the <code>InstrLABEL</code> associated with
+	<code>l</code> in the <code>InstrFactory</code> for
+	<code>this</code>. 
+    */
+    public InstrLABEL getInstrFor(Label l) {
+	return (InstrLABEL) inf.labelToInstrLABELmap.get(l);
     }
 
     /** Defines an array factory which can be used to generate
@@ -195,6 +204,16 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 
 	this.canFallThrough = canFallThrough;
 	this.targets = targets;
+
+	checkForNull(src);
+	checkForNull(dst);
+    }
+
+    private void checkForNull(Temp[] ts) {
+	for(int i=0; i<ts.length; i++) {
+	    Util.assert(ts[i] != null, 
+			"Temp index "+i+" is null in "+ this);
+	}
     }
 
     /** Creates an <code>Instr</code> consisting of the

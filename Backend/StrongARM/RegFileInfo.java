@@ -35,7 +35,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.7 1999-11-04 00:01:44 cananian Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.8 1999-11-15 07:49:04 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -148,13 +148,14 @@ public class RegFileInfo
 	throws harpoon.Backend.Generic.RegFileInfo.SpillException {
 	final ArrayList suggests = new ArrayList();
 	final ArrayList spills = new ArrayList();
+	
+	// macro renaming for clean code
+	final Temp PRECOLORED = harpoon.Backend.Generic.RegFileInfo.PREASSIGNED;
+
 	if (t instanceof TwoWordTemp) {
-	    // double word, find two registers (the strongARM
-	    // doesn't require them to be in a row, but its faster
-	    // to search for adjacent registers for now.  Later we
-	    // can change the system to make the iterator do a
-	    // lazy-evaluation and dynamically create all pairs as
-	    // requested.  
+	    // double word, find two registers ( the strongARM
+	    // doesn't require them to be in a row, but its 
+	    // simpler to search for adjacent registers )
 	    for (int i=0; i<regGeneral.length-1; i++) {
 		Temp[] assign = new Temp[] { regGeneral[i] ,
 					     regGeneral[i+1] };
@@ -162,10 +163,15 @@ public class RegFileInfo
 		    (regFile.get(assign[1]) == null)) {
 		    suggests.add(Arrays.asList(assign));
 		} else {
-		    Set s = new LinearSet(2);
-		    s.add(assign[0]);
-		    s.add(assign[1]);
-		    spills.add(s);
+		    Util.assert(assign[0] != null, "don't add null registers");
+		    Util.assert(assign[1] != null, "don't add null registers");
+		    if (regFile.get(assign[0]) != PRECOLORED &&
+			regFile.get(assign[1]) != PRECOLORED) {
+			Set s = new LinearSet(2);
+			s.add(assign[0]);
+			s.add(assign[1]);
+			spills.add(s);
+		    }
 		}
 	    }
 
@@ -176,6 +182,11 @@ public class RegFileInfo
 		    suggests.add(ListFactory.singleton(regGeneral[i]));
 		} else {
 		    Set s = new LinearSet(1);
+		    
+		    // this assertion SHOULD be unnecessary, but this
+		    // is happening somewhere and I'm debugging so its cool
+		    Util.assert(regGeneral[i] != null, "don't add null registers");
+
 		    s.add(regGeneral[i]);
 		    spills.add(s);
 		}
