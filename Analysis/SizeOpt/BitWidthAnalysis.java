@@ -78,7 +78,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.7 2001-07-20 03:26:23 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.8 2001-07-24 09:48:24 pnkfelix Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -1687,7 +1687,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	private static class MyTempMap extends HashMap implements TempMap {
 	    public Temp tempMap(Temp t) {
-		return containsKey(t) ? (Temp) get(t) : t;
+		return containsKey(t) ? (Temp) super.get(t) : t;
 	    }
 	    public Temp[] tempMap(Temp[] t) {
 		Temp[] r = new Temp[t.length];
@@ -1851,7 +1851,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	private static class MyTempMap extends HashMap implements TempMap {
 	    public Temp tempMap(Temp t) {
-		return containsKey(t) ? (Temp) get(t) : t;
+		return containsKey(t) ? (Temp) super.get(t) : t;
 	    }
 	    public Temp[] tempMap(Temp[] t) {
 		Temp[] r = new Temp[t.length];
