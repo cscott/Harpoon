@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.7 2000-09-26 23:20:19 cananian Exp $
+% $Id: transact.tex,v 1.8 2000-09-27 20:01:53 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.7 $ $}
+\date{\today \\ $ $Revision: 1.8 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -189,6 +189,7 @@ $\text{Read}(\code{struct oobj *} o, \code{int } n)$ =
            \COMMENT{allow gc of other transactions}
     \BREAK
   \ELSIF{$\text{AbortP}(v \ptr \code{transid})$}
+  \STATE \COMMENT{XXX: potential race here --- v could be already removed}
     \STATE remove $v$ from version list atomically
     \STATE $v \gets v\text{'s replacement}$
   \ELSE
@@ -198,6 +199,7 @@ $\text{Read}(\code{struct oobj *} o, \code{int } n)$ =
 \ENDLOOP*
 \STATE $x \gets v \ptr \code{field}[n]$
 \IF{$u=0 \wedge x \neq \code{FLAG\_VALUE}$}
+  \STATE \COMMENT{XXX: race here}
   \STATE $o \ptr \code{field}[n] \gets x$ \COMMENT{store must be atomic}
   \STATE $\code{dec\_use}(o)$
          \COMMENT{will deflate when all fields are copied back}
@@ -207,6 +209,25 @@ $\text{Read}(\code{struct oobj *} o, \code{int } n)$ =
 \end{myalgorithmic}
 \caption{Algorithm for non-transactional read of a field.}
 \label{fig:readnotrans}
+\end{figure}
+
+\begin{figure}
+$\text{StateP}(\code{struct commitrec *} c)$ =
+\begin{myalgorithmic}
+\LOOP
+  \IF{$c = \code{null}$}
+    \RETURN \code{COMMITTED}
+  \ENDIF
+  \STATE $s \gets c \ptr\code{state}$
+         \COMMENT{cache this read to prevent races}
+  \IF{$s \neq \code{COMMITTED}$}
+    \RETURN $s$
+  \ENDIF
+  \STATE $c \gets c \ptr \code{parent}$
+\ENDLOOP*
+\end{myalgorithmic}
+\caption{Algorithm for determining transaction status.}
+\label{fig:statep}
 \end{figure}
 
 %% XXX: separate transactions?  parallel subtransactions?
