@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.92 1999-08-29 10:58:58 cananian Exp $
+% $Id: thesis.tex,v 1.93 1999-08-30 00:33:00 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -37,14 +37,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.92 $ $}
+\date{\today \\ $ $Revision: 1.93 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.92 $ $}{$ $Revision: 1.92 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.93 $ $}{$ $Revision: 1.93 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -449,6 +449,11 @@ contain $X$.
 is assumed to contain a definition and the \code{END} node a use for every
 variable in the original program.
 [Boundary conditions.] \label{crit_boundary}
+
+\item Along any control-flow path, consider any use of a variable $V$
+in the original program and the corresponding use of $V_i$ in the new
+program.  Then $V$ and $V_i$ have the same value.
+[Correctness.] \label{crit_correct}
 \fixme{It would be nice to have a second set of eyes look over these
 criteria to ensure they are necessary and sufficient.}
 \end{enumerate}
@@ -457,10 +462,10 @@ As with the SSA conditions, this definition does not prohibit
 ``extra'' \phisigfunction[or]{s} not required by conditions
 \ref{crit_phiplace} and \ref{crit_sigplace}.
 
-\begin{lemma}
+\begin{property}
 There exists exactly one reaching definition of $V$ at every use of
 $V$ in the new program.
-\end{lemma}
+\end{property}
 \begin{proof}
 Offner \cite{offner95} defines a reaching definition as follows:
 \begin{quote}
@@ -469,32 +474,34 @@ program iff there is a path from the definition to $P$ on which\ldots
 there is no other definition of $v$\ldots.
 \end{quote}
 From this definition and condition \ref{crit_phiname} we directly
-obtain the lemma.
+obtain the property.
 \end{proof}
 
-Note that condition \ref{crit_phiname} and this lemma do not require
+Note that condition \ref{crit_phiname} and this property do not require
 there to be exactly one definition of any variable $V$, just that at
 every use only a single definition is relevant.  The renaming
 algorithm we will present enforces the stricter single-definition
-constraint.
+constraint.\fixme{Do we prove this?}
 
-\begin{lemma}
+\begin{property}
 Every path $S \pathplus Y$ from the \code{START} node to a node $Y$
 containing a use of a variable must contain exactly one node $X$
-defining that variable.  Likewise, every path $X \pathplus E$ from a
-node $X$ containing a definition of a variable to the \code{END} node
-must contain every node $Y$ which is a use of that variable.
-\end{lemma}
+defining that variable in the new program.  Likewise, every path $X
+\pathplus E$ from a node $X$ containing a definition of a variable to
+the \code{END} node must contain every node $Y$ which is a use of that
+variable in the new program.
+\end{property}
 \begin{proof}
 The first statement is direct from conditions \ref{crit_phiname} and
 \ref{crit_boundary}; the second statement follows from conditions
 \ref{crit_signame} and \ref{crit_boundary}.
 \end{proof}
 
-\begin{lemma}
-Every definition of a variable $V$ dominates all uses of $V$, and
-every use of $V$ post-dominates the reaching definition of $V$.
-\end{lemma}
+\begin{property}
+Every definition of a variable $V$ dominates all uses of $V$ and
+every use of $V$ post-dominates the reaching definition of $V$ in the
+new program.
+\end{property}
 \begin{proof}
 The dominance relation is defined in Offner \cite{offner95} as:
 \begin{quote}
@@ -504,7 +511,7 @@ every path from $s$ [\code{START}] to $y$ includes $x$.
 \end{quote}
 Post-dominance is the dual on a flow graph with edges reversed: $x$
 post-dominates $y$ iff every path from \code{END} to $y$ includes $x$.
-With these terms defined, this lemma follows immediately from the
+With these terms defined, this property follows immediately from the
 previous one.
 \end{proof}
 
