@@ -27,7 +27,7 @@ pldi99.dvi: harpoon.bib pldi99-intro.tex pldi99-abstract.tex pldi99-body.tex
 		$< > $@
 # dvi-to-postscript-to-acrobat chain.
 %.ps : %.dvi
-	dvips -o $@ $<
+	dvips -e 0 -o $@ $<
 %.pdf : %.ps
 	ps2pdf $< $@
 %-xdvi : %.dvi
