@@ -22,7 +22,7 @@ if [ ! -d $dir ]; then
 fi
 # you can set FLEXPATH to assign additional components to the harpoon classpath
 #flexc $cls -o $dir
-java -mx64m -oss2m -Dharpoon.class.path=${FLEXPATH}${FLEXPATH:+:}.:../Benchmarks:Support/Lex.jar:SupportNP/sunthunk.jar:SupportNP/collections.jar:SupportNP/classes.zip ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir && \
+java -mx64m -oss2m -Dharpoon.class.path=${FLEXPATH}${FLEXPATH:+:}.:../Benchmarks:Support/Lex.jar:SupportNP/sunthunk.jar:SupportNP/collections.jar:SupportNP/classes.zip:../Runtime/realtime/realtime.jar ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir && \
 if [ -d ../Runtime/include -a -f ../Runtime/config.status ] && \
     grep -q "[-]-with-precise-c" ../Runtime/config.status ; then
     make -C $dir CC="gcc -I../../Runtime/include -g -O9" && \
