@@ -11,7 +11,7 @@ import java.util.Collection;
  * that are interconnected as directed graphs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HasEdges.java,v 1.1.2.2 1999-06-15 20:30:53 sportbilly Exp $
+ * @version $Id: HasEdges.java,v 1.1.2.3 1999-09-11 05:43:20 pnkfelix Exp $
  */
 
 public interface HasEdges  {
@@ -27,9 +27,19 @@ public interface HasEdges  {
      *  this <code>HCodeElement</code>. */
     public Collection edgeC();
     /** Returns a <code>Collection</code> of all the edges to
-     *  this <code>HCodeElement</code>. */
+	this <code>HCodeElement</code>. 
+        Each <code>HCodeEdge</code> returned is guaranteed to return 
+	<code>this</code> in response to a call to <code>to()</code>;
+	the actual predecessor will be returned from
+	<code>from()</code>.  
+     */
     public Collection predC();
     /** Returns a <code>Collection</code> of all the edges from
-     *  this <code>HCodeElement</code>. */
+	this <code>HCodeElement</code>. 
+        Each <code>HCodeEdge</code> returned is guaranteed to return
+	<code>this</code> in response to a call to
+	<code>from()</code>; the actual successor to <code>this</code>
+	will be returned from <code>to()</code>.
+     */
     public Collection succC();
 }

@@ -13,6 +13,9 @@ import harpoon.IR.Properties.UseDef;
 import harpoon.IR.Properties.HasEdges;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
+import harpoon.Backend.Generic.RegFileInfo;
+import harpoon.Backend.Generic.RegFileInfo.SpillException;
+import harpoon.Backend.Generic.InstrBuilder;
 import harpoon.Analysis.UseMap;
 import harpoon.Analysis.DataFlow.BasicBlock;
 import harpoon.ClassFile.HCodeFactory;
@@ -44,7 +47,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.35 1999-09-11 01:16:31 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.36 1999-09-11 05:43:17 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = true;
@@ -497,9 +500,21 @@ class BrainDeadLocalAlloc extends RegAlloc {
 			InstrMEM storeDsts = 
 			    new FskStore(inf, null, "FSK-STORE",
 					 preg, regList);
-			storeDsts.insertAt(new InstrEdge(instr, instr.getNext()));
-			// I'm not certain this code will handle "add
-			// t0, t0, t1" properly 
+
+			// NOTE: if this assertion fails, we can write
+			// code to work around this requirement.  But
+			// for now this implementation is simple and
+			// seems to work.  
+			Util.assert(instr.succC().size() == 1, 
+				    "Instr: "+instr+" should have only"+
+				    " one control flow successor");
+
+			storeDsts.insertAt
+			    (new InstrEdge
+			     (instr, (Instr)instr.succ()[0].to()));
+
+			// I'm not certain this code will handle 
+			// "add t0, t0, t1" properly 
 			code.assignRegister(instr, preg, regList);
 			Iterator regIter = regList.iterator();
 			while(regIter.hasNext()) {
@@ -508,7 +523,7 @@ class BrainDeadLocalAlloc extends RegAlloc {
 			}
 		    }
 		}
-	    } catch (Frame.SpillException e) {
+	    } catch (SpillException e) {
 		// actually...this doesn't necessarily imply that we
 		// have to fail; if a TwoWordTemp can't be fitted, we
 		// could potentially shift the register files contents

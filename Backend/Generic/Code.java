@@ -33,7 +33,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.23 1999-09-08 23:56:49 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.24 1999-09-11 05:43:18 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -159,8 +159,9 @@ public abstract class Code extends HCode {
 			new BufferedReader(new StringReader(toAssem(instr)));
 		    String s = reader.readLine();
 		    while (s != null) {
-			str += "\t"+ s +"\n";
+			str += "\t"+ s;
 			s = reader.readLine();
+			if (s!=null) str+="\n";
 		    }
 		} catch (IOException e ) {
 		    Util.assert(false, "IOException " + e.toString() + 

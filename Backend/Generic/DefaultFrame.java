@@ -12,6 +12,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
+import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.CALL;
@@ -41,7 +42,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.26 1999-09-09 00:36:20 cananian Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.27 1999-09-11 05:43:18 pnkfelix Exp $
  */
 public class DefaultFrame extends Frame implements AllocationInfo {
 
@@ -193,33 +194,18 @@ public class DefaultFrame extends Frame implements AllocationInfo {
     public Temp  getNextPtr()      { return m_nextPtr; }
 
 
-    /** Stub added by FSK */
-    public List makeLoad(Temp reg, int offset, Instr template) {
-	Util.assert(false, "DefaultFrame.makeLoad() Not implemented");
-	return null;
-    }
-
-    /** Stub added by FSK */
-    public List makeStore(Temp reg, int offset, Instr template) {
-	Util.assert(false, "DefaultFrame.makeStore() Not implemented");
-	return null;
-    }
-
-    /** Stub added by FSK */
-    public Iterator suggestRegAssignment(Temp t, Map regfile) {
-	Util.assert(false, "DefaultFrame.suggestRegAssigment() Not implemented");
-	return null;
-    }
-
     /** Not implemented. */
     public GenericCodeGen codegen() { 
 	Util.assert(false, "DefaultFrame.codegen() Not implemented");
 	return null;
     }
 
-    /** Not implemented. */
-    public Set liveOnExit() {
-	Util.assert(false, "DefaultFrame.liveOnExit() Not implemented");
+    /** Stub added by FSK. */
+    public InstrBuilder getInstrBuilder() {
+	return null;
+    }
+    /** Stub added by FSK. */
+    public RegFileInfo getRegFileInfo() {
 	return null;
     }
 }

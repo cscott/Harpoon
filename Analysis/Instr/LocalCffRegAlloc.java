@@ -5,7 +5,7 @@ package harpoon.Analysis.Instr;
 
 import harpoon.Backend.Generic.Code;
 import harpoon.Backend.Generic.Frame;
-import harpoon.Backend.Generic.Frame.SpillException;
+import harpoon.Backend.Generic.RegFileInfo.SpillException;
 import harpoon.Analysis.DataFlow.BasicBlock;
 import harpoon.Analysis.Instr.TempInstrPair;
 import harpoon.Analysis.Instr.RegAlloc.FskLoad;
@@ -30,11 +30,19 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.SortedSet;
 import java.util.AbstractSet;
-/**
- * <code>LocalCffRegAlloc</code>
- * 
- * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.40 1999-08-28 01:08:21 pnkfelix Exp $
+/** <code>LocalCffRegAlloc</code> performs <A
+    HREF="http://lm.lcs.mit.edu/~pnkfelix/papers/hardnessLRA.ps">
+    Local Register Allocation</A> for a given set of
+    <code>Instr</code>s using a conservative-furthest-first algorithm.
+    The papers <A 
+    HREF="http://lm.lcs.mit.edu/~pnkfelix/papers/OnLocalRegAlloc.ps.gz">
+    "On Local Register Allocation"</A> and <A
+    HREF="http://lm.lcs.mit.edu/~pnkfelix/papers/hardnessLRA.ps">"Hardness and
+    Algorithms for Local Register Allocation"</A> lay out the basis
+    for the algorithm it uses to allocate and assign registers.
+  
+    @author  Felix S. Klock II <pnkfelix@mit.edu>
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.41 1999-09-11 05:43:17 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     

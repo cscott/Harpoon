@@ -10,6 +10,9 @@ import harpoon.Backend.Allocation.DefaultAllocationStrategy;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.GenericCodeGen;
 import harpoon.Backend.Generic.Runtime;
+import harpoon.Backend.Generic.RegFileInfo;
+import harpoon.Backend.Generic.RegFileInfo.SpillException;
+import harpoon.Backend.Generic.InstrBuilder;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
@@ -51,71 +54,12 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.38 1999-09-09 00:36:32 cananian Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.39 1999-09-11 05:43:19 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
-    static Temp[] reg = new Temp[16];
-    private static Temp[] regLiveOnExit = new Temp[5];
-    private static Temp[] regGeneral = new Temp[11];
-    private static TempFactory regtf;
     private AllocationStrategy mas;
     private final OffsetMap offmap;
     private final Runtime   runtime;
-
-    static final Temp TP;  // Top of memory pointer
-    static final Temp HP;  // Heap pointer
-    static final Temp FP;  // Frame pointer
-    static final Temp IP;  // Scratch register 
-    static final Temp SP;  // Stack pointer
-    static final Temp LR;  // Link register
-    static final Temp PC;  // Program counter
-
-    static {
-        regtf = new TempFactory() {
-            private int i = 0;
-            private final String scope = "strongarm-registers";
-
-            /* StrongARM has 16 general purpose registers.
-             * Special notes on ones we set aside:
-             *  r11 = fp
-             *  r12 = ip
-             *  r13 = sp
-             *  r14 = lr
-             *  r15 = pc (yes that's right. you can access the 
-             *              program counter like any other register)
-             */
-            private final String[] names = {"r0", "r1", "r2", "r3", "r4", "r5",
-                                            "r6", "r7", "r8", "r9", "r10", 
-                                            "fp", "ip", "sp", "lr", "pc"};
-
-            public String getScope() { return scope; }
-            protected synchronized String getUniqueID(String suggestion) {
-                Util.assert(i < names.length, "Don't use the "+
-			    "TempFactory of Register bound Temps");
-		i++;
-                return names[i-1];
-            }
-        };
-        for (int i = 0; i < 16; i++) {
-            reg[i] = new Temp(regtf);
-            if (i < 11) regGeneral[i] = reg[i];
-        }
-
-	TP = reg[9];
-	HP = reg[10];
-	FP = reg[11];
-	IP = reg[12];
-	SP = reg[13];
-	LR = reg[14];
-	PC = reg[15];
-
-        regLiveOnExit[0] = reg[0];  // return value
-        regLiveOnExit[1] = reg[1]; // return exceptional value
-        regLiveOnExit[2] = FP;
-        regLiveOnExit[3] = SP;
-        regLiveOnExit[4] = PC;
-        // offmap = new OffsetMap32(null);
-    }
 
     CodeGen codegen;
     
@@ -124,37 +68,24 @@ public class SAFrame extends Frame implements AllocationInfo {
 	codegen = new CodeGen(this);
 	runtime = new harpoon.Backend.Runtime1.Runtime();
 	offmap = new OffsetMap32(ch, runtime.nameMap());
+	regFileInfo = new SARegFileInfo();
+	instrBuilder = new SAInstrBuilder(regFileInfo);
     }
 
     public boolean pointersAreLong() { return false; }
 
-    public Temp FP() { return reg[11]; }
-
-    public Temp[] getAllRegisters() { 
-	return (Temp[]) Util.safeCopy(Temp.arrayFactory, reg); 
-    }
-
-    public Temp[] getGeneralRegisters() { 
-	return (Temp[]) Util.safeCopy(Temp.arrayFactory, regGeneral); 
-    }
 
     /* Generic version of the next six methods copied from 
      * DefaultFrame for now */
 
     public Label exitOutOfMemory() { return new Label("_EXIT_OOM"); }
     public Label GC()              { return new Label("_RUNTIME_GC"); }
-    public Temp  getMemLimit()     { return TP; } 
-    public Temp  getNextPtr()      { return HP; }
-
-
-
+    public Temp  getMemLimit()     { return SARegFileInfo.TP; } 
+    public Temp  getNextPtr()      { return SARegFileInfo.HP; }
     public Exp memAlloc(Exp size) { return mas.memAlloc(size); }
-
     public OffsetMap getOffsetMap() { return offmap; }
-
     public Runtime getRuntime() { return runtime; }
 
-    public TempFactory regTempFactory() { return regtf; }
 
     public Stm procPrologue(TreeFactory tf, HCodeElement src, 
                             Temp[] paramdsts, int[] paramtypes) { 
@@ -163,7 +94,7 @@ public class SAFrame extends Frame implements AllocationInfo {
         for (i = 0; i < paramdsts.length && i < 4; i++) {
             move = new MOVE(tf, src,
                             new TEMP(tf, src, paramtypes[i], paramdsts[i]),
-                            new TEMP(tf, src, paramtypes[i], reg[i]));
+                            new TEMP(tf, src, paramtypes[i], SARegFileInfo.reg[i]));
             if (prologue == null) {
                 prologue = move;
             } else {
@@ -209,111 +140,6 @@ public class SAFrame extends Frame implements AllocationInfo {
 	return dir1;
     }
 
-    /** Stub added by FSK */
-    public List makeLoad(Temp r, int offset, Instr template) {
-	if (r instanceof TwoWordTemp) {
-	    InstrMEM load1 = 
-		new InstrMEM(template.getFactory(), template,
-			     "ldr `d0l, [`s0, #" +(-4*offset) + "] " ,
-			     new Temp[]{ r },
-			     new Temp[]{ SP  });
-	    InstrMEM load2 = 
-		new InstrMEM(template.getFactory(), template,
-			     "ldr `d0h, [`s0, #" +(-4*(offset+1)) + "] ",
-			     new Temp[]{ r },
-			     new Temp[]{ SP  });
-	    load2.layout(load1, null);
-	    return Arrays.asList(new InstrMEM[] { load1, load2 });
-	} else {
-	    InstrMEM load = 
-		new InstrMEM(template.getFactory(), template,
-			     "ldr `d0, [`s0, #" +(-4*offset) + "] ",
-			     new Temp[]{ r },
-			     new Temp[]{ SP  });
-	    return Arrays.asList(new InstrMEM[] { load });
-	}
-				     
-    }
-
-    /** Stub added by FSK */
-    public List makeStore(Temp r, int offset, Instr template) {
-	if (r instanceof TwoWordTemp ) {
-	    InstrMEM store1 = 
-		new InstrMEM(template.getFactory(), template,
-			     "str `s0l, [`s1, #" +(-4*offset) + "] ",
-			     new Temp[]{ },
-			     new Temp[]{ r , SP });
-	    InstrMEM store2 = 
-		new InstrMEM(template.getFactory(), template,
-			     "str `s0h, [`s1, #" +(-4*(offset+1)) + "] ",
-			     new Temp[]{ },
-			     new Temp[]{ r , SP });
-	    store2.layout(store1, null);
-	    return Arrays.asList(new InstrMEM[]{ store1, store2 });
-	} else {
-	    InstrMEM store = 
-		new InstrMEM(template.getFactory(), template,
-			     "str `s0, [`s1, #" +(-4*offset) + "] ",
-			     new Temp[]{ },
-			     new Temp[]{ r , SP });
-	    return Arrays.asList(new InstrMEM[] { store });
-	}
-    }
-
-    public int getSize(Temp temp) {
-	if (temp instanceof TwoWordTemp) {
-	    return 2;
-	} else {
-	    return 1;
-	}
-    }
-
-    /** Stub added by FSK */
-    public Iterator suggestRegAssignment(Temp t, final Map regFile) throws Frame.SpillException {
-	final ArrayList suggests = new ArrayList();
-	final ArrayList spills = new ArrayList();
-	if (t instanceof TwoWordTemp) {
-	    // double word, find two registers (the strongARM
-	    // doesn't require them to be in a row, but its faster
-	    // to search for adjacent registers for now.  Later we
-	    // can change the system to make the iterator do a
-	    // lazy-evaluation and dynamically create all pairs as
-	    // requested.  
-	    for (int i=0; i<regGeneral.length-1; i++) {
-		Temp[] assign = new Temp[] { regGeneral[i] ,
-					     regGeneral[i+1] };
-		if ((regFile.get(assign[0]) == null) &&
-		    (regFile.get(assign[1]) == null)) {
-		    suggests.add(Arrays.asList(assign));
-		} else {
-		    Set s = new LinearSet(2);
-		    s.add(assign[0]);
-		    s.add(assign[1]);
-		    spills.add(s);
-		}
-	    }
-
-	} else {
-	    // single word, find one register
-	    for (int i=0; i<regGeneral.length; i++) {
-		if ((regFile.get(regGeneral[i]) == null)) {
-		    suggests.add(ListFactory.singleton(regGeneral[i]));
-		} else {
-		    Set s = new LinearSet(1);
-		    s.add(regGeneral[i]);
-		    spills.add(s);
-		}
-	    }
-	}
-	if (suggests.isEmpty()) {
-	    throw new Frame.SpillException() {
-		public Iterator getPotentialSpills() {
-		    return spills.iterator();
-		}
-	    };
-	}
-	return suggests.iterator();
-    }
 
     /** Returns a <code>StrongArm.CodeGen</code>. 
 	Since no state is maintained in the returned
@@ -324,13 +150,10 @@ public class SAFrame extends Frame implements AllocationInfo {
 	return codegen;
     }
 
-    /** Returns the live registers on exit from a method for the
-	strong-arm. 
-    */ 
-    public Set liveOnExit() {
-	HashSet hs = new HashSet();
-	hs.addAll(Arrays.asList(new Temp[]{ reg[0], TP, HP, FP,
-						IP, SP, LR, PC }));
-	return hs;
-    }
+
+    final SARegFileInfo regFileInfo;
+    public RegFileInfo getRegFileInfo() { return regFileInfo; }
+
+    final SAInstrBuilder instrBuilder;
+    public InstrBuilder getInstrBuilder() { return null; }
 }

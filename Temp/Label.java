@@ -6,7 +6,7 @@ package harpoon.Temp;
 /**
  * A <code>Label</code> represents a (symbolic) address in assembly language.
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Label.java,v 1.3.2.7 1999-08-04 06:31:02 cananian Exp $
+ * @version $Id: Label.java,v 1.3.2.8 1999-09-11 05:43:20 pnkfelix Exp $
  */
 
 public class Label  {
@@ -15,7 +15,10 @@ public class Label  {
 
   /**
    * a printable representation of the label, for use in assembly 
-   * language output.
+   * language output.  Note that the returned <code>String</code>
+   * consists only of a name; any platform specific modifiers (such as
+   * a colon) need to be appended by the code calling
+   * <code>toString()</code>.
    */
    public String toString() {return name;}
 

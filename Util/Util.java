@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.10 1999-08-05 17:53:21 cananian Exp $
+ * @version $Id: Util.java,v 1.12.2.11 1999-09-11 05:43:21 pnkfelix Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -261,6 +261,29 @@ public abstract class Util {
    *  value of the argument. */
   public static final int popcount(long v) {
     return 64-zerocount(v);
+  }
+  /** Return a <code>String</code> representing the elements of
+      <code>collection</code> in a human readable format.  
+      <BR> <B>effects:</B> Iterates over <code>collection</code>,
+           calling <code>toString()</code> on each element and
+	   appending the result to a <code>String</code>.  The format
+	   of the returned <code>String</code> is 
+	   <NOBR>{ elem1, elem2, ... , elemN }</NOBR>
+      @return A <code>String</code> representing
+              <code>collection</code>. 
+  */
+  public static final String print(java.util.Collection collection) {
+    StringBuffer sb = new StringBuffer("{ ");
+    java.util.Iterator iter = collection.iterator();
+    while(iter.hasNext()) {
+      Object elem = iter.next();
+      sb.append(elem.toString());
+      if (iter.hasNext()) {
+	sb.append(", ");
+      }
+    }
+    sb.append(" }");
+    return sb.toString();
   }
 }
 

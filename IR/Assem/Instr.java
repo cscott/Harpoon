@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.51 1999-09-11 01:16:31 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.52 1999-09-11 05:43:19 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -392,11 +392,13 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	Instr from = null, to = null;
 	if (edge.from() != null) {
 	    from = (Instr) edge.from();
-	    Util.assert(from.hasModifiableTargets(), 
-			"<from> should have mutable target list");
+	    Util.assert(from.targets==null || 
+			from.hasModifiableTargets(), 
+			"from: "+from+", if it branches, should have mutable target list");
 	    Util.assert( edge.to() == null || 
 			 from.edgeC().contains(edge),
-			 "edge should be in <from>.edges()");
+			 "edge: "+edge+" should be in <from>.edges(): " + 
+			 Util.print(from.edgeC()));
 	}
 	if (edge.to() != null) {
 	    to = (Instr) edge.to();
@@ -404,7 +406,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 			 to.edgeC().contains(edge),
 			 "edge should be in <to>.edges()");
 	}
-
+	
 	// TODO: add code that will check if edge.from().next !=
 	// edge.to(), in which case frame should create a new InstrLabel
 	// and a new branch, and then we'll find a place to put them
@@ -412,11 +414,21 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	// stream to InstrFactory)
 	// then do: edge.from() -> newInstrLabel -> this -> 
 	//          newBranch -> edge.to()
-
-
-	// the following code is the else condition
-
-	layout(from, to);
+	if (from != null &&
+	    from.next != edge.to()) {
+	    Instr last = this.inf.cachedTail;
+	    Util.assert(last.next == null, "last Instr: "+last+" should really be LAST, "+
+			"but it has next: " + last.next);
+	    Util.assert(last.succC().size() == 0, "last Instr: "+last+
+			"shouldn't have successors: "+Util.print(last.succC()));
+	    
+	    // Oh shit.  How should we design a way to insert
+	    // arbitrary code with a method in the *ARCHITECTURE
+	    // INDEPENDANT* Instr class? 
+	    
+	} else { // edge.from() falls through to edge.to() 
+	    layout(from, to);
+	}
     }
 
     /** Removes <code>this</code> from its current place in the
@@ -520,7 +532,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
         StringBuffer s = new StringBuffer();
         int len = assem.length();
         for (int i = 0; i < len; i++) {
-            if (assem.charAt(i) == '`')
+	    switch(assem.charAt(i)) {
+            case '`':
                 switch (assem.charAt(++i)) {
 		case 'd': { 
 		    int n = Character.digit(assem.charAt(++i), 10);
@@ -550,7 +563,13 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 		    s.append('`');
 		    break;
                 }
-            else s.append(assem.charAt(i));
+		break;
+	    case '\n':
+		s.append("\\n ");
+		break;
+	    default:
+		s.append(assem.charAt(i));
+	    }
 	}
 
         return s.toString();
