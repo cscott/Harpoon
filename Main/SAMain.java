@@ -54,14 +54,14 @@ import java.io.FileInputStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.8 1999-08-18 18:56:46 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.9 1999-08-18 18:59:35 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
     private static boolean PRINT_ORIG = false;
     private static boolean PRINT_DATA = false;
     private static boolean PRE_REG_ALLOC = false;
-    private static boolean REG_ALLOC = true;
+    private static boolean REG_ALLOC = false;
     private static boolean LIVENESS_TEST = false;
 
     private static java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);;
