@@ -9,7 +9,6 @@ extern "C" {
 #endif
 #undef java_lang_Class_serialVersionUID
 #define java_lang_Class_serialVersionUID 3206093459760846163LL
-/* Inaccessible static: unknownProtectionDomain */
 /*
  * Class:     java_lang_Class
  * Method:    getComponentType

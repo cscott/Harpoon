@@ -13,7 +13,6 @@ extern "C" {
 #define java_lang_Thread_NORM_PRIORITY 5L
 #undef java_lang_Thread_MAX_PRIORITY
 #define java_lang_Thread_MAX_PRIORITY 10L
-/* Inaccessible static: numAnonymousThreadsCreated */
 /*
  * Class:     java_lang_Thread
  * Method:    nativeInit
