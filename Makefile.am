@@ -1,6 +1,9 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in configure aclocal.m4 \
-		       include/config.h.in include/stamp-h.in include/asm
+		       include/config.h.in include/stamp-h.in include/asm \
+		       scripts/config.guess scripts/config.sub \
+		       scripts/install-sh scripts/ltconfig scripts/ltmain.sh \
+		       scripts/missing scripts/mkinstalldirs
 EXTRA_DIST =
 SUBDIRS = src
 
