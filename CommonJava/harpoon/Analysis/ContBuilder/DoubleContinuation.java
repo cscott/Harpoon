@@ -7,7 +7,7 @@ package harpoon.Analysis.ContBuilder;
  * <code>DoubleContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: DoubleContinuation.java,v 1.2 2000-03-17 19:41:20 bdemsky Exp $
+ * @version $Id: DoubleContinuation.java,v 1.3 2000-03-17 20:49:19 bdemsky Exp $
  */
 public abstract class DoubleContinuation implements Continuation {
     protected DoubleResultContinuation next;
@@ -16,6 +16,6 @@ public abstract class DoubleContinuation implements Continuation {
 	this.next = next;
     }
     public double result;
-    public double done;
+    public boolean done;
 }
 

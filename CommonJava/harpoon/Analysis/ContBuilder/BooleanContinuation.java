@@ -7,7 +7,7 @@ package harpoon.Analysis.ContBuilder;
  * <code>BooleanContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: BooleanContinuation.java,v 1.1 2000-03-17 18:49:05 bdemsky Exp $
+ * @version $Id: BooleanContinuation.java,v 1.2 2000-03-17 20:49:19 bdemsky Exp $
  */
 public abstract class BooleanContinuation implements Continuation {
     protected BooleanResultContinuation next;
@@ -15,4 +15,6 @@ public abstract class BooleanContinuation implements Continuation {
     public void setNext(BooleanResultContinuation next) {
 	this.next = next;
     }
+    public boolean result;
+    public boolean done;
 }

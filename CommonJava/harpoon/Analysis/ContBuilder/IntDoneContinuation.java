@@ -32,7 +32,7 @@ public class IntDoneContinuation extends IntContinuation implements VoidResultCo
     // depressing, huh
     static public IntContinuation pesimistic(IntContinuation c)
     {
-	return c!=null? c : new IntDoneContinuation(IntContinuation.result);
+	return (!c.done)? c : new IntDoneContinuation(c.result);
     }
     public void exception(Throwable t) {
     }

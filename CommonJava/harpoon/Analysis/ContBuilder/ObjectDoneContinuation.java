@@ -29,7 +29,7 @@ public class ObjectDoneContinuation extends ObjectContinuation implements VoidRe
 
     static public ObjectContinuation pesimistic(ObjectContinuation c)
     {
-	return c!=null? c : new ObjectDoneContinuation(ObjectContinuation.result);
+	return (!c.done)? c : new ObjectDoneContinuation(c.result);
     }
 
 

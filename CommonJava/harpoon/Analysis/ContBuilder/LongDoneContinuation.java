@@ -33,7 +33,7 @@ public final class LongDoneContinuation extends LongContinuation implements Void
     // depressing, huh
     static public LongContinuation pesimistic(LongContinuation c)
     {
-	return c!=null? c : new LongDoneContinuation(LongContinuation.result);
+	return (!c.done)? c : new LongDoneContinuation(c.result);
     }
     //BCD start
     public void exception(Throwable t) {
