@@ -43,7 +43,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.29 1999-08-25 20:42:47 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.30 1999-08-25 23:48:16 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -206,7 +206,7 @@ public abstract class RegAlloc  {
 		}
 
 		RegAlloc localCode, globalCode;
-		if (true) {
+		if (false) {
 		    // very dumb (but correct) reg alloc
 		    localCode = 
 			new BrainDeadLocalAlloc((Code) preAllocCode);

@@ -33,7 +33,7 @@ import java.util.AbstractSet;
  * <code>LocalCffRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.37 1999-08-18 17:52:30 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.38 1999-08-25 23:48:16 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -293,7 +293,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	}
 	
-	System.out.println("completed local alloc for " + b);
+	//System.out.println("completed local alloc for " + b);
     }
 
     private String printSet(Set set) {

@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.Stack;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -58,7 +59,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.14 1999-08-25 20:42:47 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.15 1999-08-25 23:48:17 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -210,7 +211,11 @@ public class SAMain extends harpoon.IR.Registration {
 		BasicBlock block = 
 		    BasicBlock.computeBasicBlocks((HasEdges)root);
 		Iterator iter= BasicBlock.basicBlockIterator(block);
-		LiveVars livevars = new LiveVars(iter); 
+
+		// wrong but makes it compile for now
+		LiveVars livevars = new LiveVars(iter,
+						 Collections.EMPTY_SET); 
+
 		InstrSolver.worklistSolver
 		    (BasicBlock.basicBlockIterator(block), livevars);
 		out.println(livevars.dump());

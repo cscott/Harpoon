@@ -8,6 +8,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.HasEdges;
 import harpoon.IR.Properties.UseDef;
 import harpoon.Temp.Label;
+import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
@@ -21,19 +22,12 @@ import java.util.*;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.25 1999-08-18 17:52:30 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.26 1999-08-25 23:48:17 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
     private InstrFactory inf;
 
-    /* FSK: I made them private again.  The new design for
-       Generic.Code handles Temp substitution in the assembly String
-       in a much more generic manner, so I can move to a Mapping
-       system, making direct modification of the Instr unnecessary.
-     * temporarily public for felix. should modify code to use
-     * TempMaps and accessor functions (use/def) to avoid modifying 
-     * these. */
     private Temp[] dst;
     private Temp[] src;
 
@@ -45,16 +39,41 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     private int id;
 
     // for implementing HasEdges
-    // ADB: the use of vector is intended to be temporary, to be
-    //      replaced by a more specific, efficient data type if necessary.
-
     // contains Instrs which have Edges to this
     private Vector pred;
     // contains Instrs which this has Edges to
     private Vector succ;
 
+
+    /** The next <code>Instr</code> to output after
+	<code>this</code>.  <code>this.next</code> can be significant
+	for control flow, depending on if
+	<code>this.canFallThrough</code>.  
+    */
+    public Instr next;
+
+    /** Sets whether control flow can go to <code>this.next</code>.  
+	Note that if 
+	<code>(!this.canFallThrough) && (this.targets == null)</code>
+	then <code>this</code> represents an exit point for the code
+	and should be treated as such for data flow analysis, etc.
+	@see Instr#next
+    */
+    public boolean canFallThrough;
+
+    /** List of target labels that <code>this</code> can branch to.
+	<code>this.targets</code> may be null (in which case control
+	flow either falls through to the <code>this.next</code> (the
+	case for most <code>Instr</code>s), or returns to some unknown 
+	<code>Instr</code> (the case for 'return' statements)).
+	@see Instr#canFallThrough
+	@see Instr#next
+    */
+    public LabelList targets;
+
     /** Defines an array factory which can be used to generate
-     *  arrays of <code>Instr</code>s. */
+	arrays of <code>Instr</code>s. 
+    */
     public static final ArrayFactory arrayFactory =
         new ArrayFactory() {
             public Object[] newArray(int len) { return new Instr[len]; }
@@ -62,10 +81,26 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 
     // *************** CONSTRUCTORS *****************
 
-    /** Creates an <code>Instr</code> consisting of the String 
-     *  assem and the lists of destinations and sources in dst and src. */
+    /** Creates an <code>Instr</code> consisting of the
+	<code>String</code> <code>assem</code> and the list of
+	destinations and sources in <code>dst</code> and
+	<code>src</code>.
+	@param inf <code>InstrFactory</code> for <code>this</code>
+	@param source <code>HCodeElement</code> that was the source
+	              for <code>this</code>
+	@param assem Assembly code string for <code>this</code>
+	@param dst Set of <code>Temp</code>s that may be written to in
+ 	           the execution of <code>this</code>.
+	@param src Set of <code>Temp</code>s that may be read from in 
+	           the execution of <code>this</code>.
+	@param canFallThrough Decides whether control flow could fall
+	                      to <code>this.next</code>.
+	@param targets List of targets that control flow could
+	               potentially branch to.
+    */
     public Instr(InstrFactory inf, HCodeElement source, 
-          String assem, Temp[] dst, Temp[] src) {
+		 String assem, Temp[] dst, Temp[] src,
+		 boolean canFallThrough, LabelList targets) {
         Util.assert(inf != null);
         Util.assert(assem != null);
 	// Util.assert(dst!=null && src!=null, "DST and SRC should not = null");
@@ -84,6 +119,19 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	if (inf.getMethod() != null) {
 	    this.hashCode ^= inf.getMethod().hashCode(); 
 	}
+
+	if(inf.lastEmitted!=null) {
+	    inf.lastEmitted.next = this;
+	}
+	inf.lastEmitted = this;
+    }
+
+    /** Creates an <code>Instr</code> consisting of the <code>String</code>
+	<code>assem</code> and the lists of destinations and sources
+	in <code>dst</code> and <code>src</code>. */   
+    public Instr(InstrFactory inf, HCodeElement source, 
+          String assem, Temp[] dst, Temp[] src) {
+	this(inf, source, assem, dst, src, true, null);
     }
 
     /** Creates an <code>Instr</code> consisting of the String assem

@@ -21,7 +21,7 @@ import java.util.Iterator;
  * rep instead of <code>Set</code>s of <code>Temp</code>s.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.7 1999-06-24 02:13:32 pnkfelix Exp $
+ * @version $Id: LiveVars.java,v 1.1.2.8 1999-08-25 23:48:09 pnkfelix Exp $
  */
 public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 
@@ -41,7 +41,8 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	          <code>BasicBlock</code> not contained within
 		  <code>basicblocks</code>
 	     <LI> No <code>BasicBlock</code> is repeatedly iterated
-	          by <code>basicblocks</code> </OL>
+	          by <code>basicblocks</code> 
+		  </OL>
 	 <BR> <B>modifies:</B> <code>basicblocks</code>
 	 <BR> <B>effects:</B> constructs a new
 	      <code>BasicBlockVisitor</code> and initializes its
@@ -49,16 +50,17 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	      <code>BasicBlock</code>s in <code>basicblocks</code>,
 	      iterating over all of <code>basicblocks</code> in the
 	      process.
+	 @param liveOnProcExit A set of Temps that are live on exit from the method (for example, r0 for assembly code).
     */	     
-    public LiveVars(Iterator basicblocks) {
+    public LiveVars(Iterator basicblocks, Set liveOnProcExit) {
 	bbToLvi = new HashMap();
 	while(basicblocks.hasNext()) {
 	    BasicBlock bb = (BasicBlock) basicblocks.next();
 	    LiveVarInfo lvi = makeUseDef(bb);
 	    bbToLvi.put(bb, lvi);
 	}
-    }
 
+    }
 
     /** Merge (Confluence) operator.
 	<BR> LVout(bb) = Union over (j elem Succ(bb)) of ( LVin(j) ) 
