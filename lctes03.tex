@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.12 2003-04-25 07:59:17 cananian Exp $
+% $Id: lctes03.tex,v 1.13 2003-04-25 08:57:59 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % lctes03.tex
 % Data Size Optimizations for Java Programs
@@ -562,9 +562,8 @@ bitwise operations on positive numbers.
 
 \subsubsection{Treatment of Fields}
 Dataflow on this bitwidth lattice is performed on the entire Java
-program interprocedurally.  The analysis is what Heintze and Tardieu
-\cite{heintze01}
-would call {\it field-based}; that is, given a field $f$ defined in
+program interprocedurally.  The analysis is
+{\it field-based} \cite{heintze01}; that is, given a field $f$ defined in
 class $X$, and an instance of $X$ named $x$, we consider an assignment
 to $x.f$ to be an assignment to the field $X.f$ and ignore the base
 object $x$.\footnote{An obvious extension is to use pointer
