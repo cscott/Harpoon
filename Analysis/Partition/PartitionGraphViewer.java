@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Sun Oct 25 16:14:14 1998> 
-// Time-stamp: <1998-11-21 16:52:38 mfoltz> 
+// Time-stamp: <1998-11-26 13:51:07 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.Partition;
@@ -29,9 +29,9 @@ public class PartitionGraphViewer extends Observable implements ActionListener {
   static public Color _nodecolors[] = { new Color(0, 255, 0), new Color(255, 0, 0), 
 					new Color(255, 255, 0), new Color(255, 0, 255),
 					new Color(0, 255, 255) };
-  static public Color _edgecolor = new Color(255, 255, 255);
+  static public Color _edgecolor = new Color(255, 255, 0);
   static public Color _textcolor = new Color(255, 255, 255);
-  static public Color _bgcolor = new Color(16, 16, 16);
+  static public Color _bgcolor = new Color(0, 0, 128);
   static public Font _textfont = new Font("HELVETICA", Font.PLAIN, 8);
   static public final int MULTI_CIRCLE = 0;
   static public final int ONE_CIRCLE = 1;
