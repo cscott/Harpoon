@@ -5,6 +5,7 @@
 package javax.realtime;
 
 public class AperiodicParameters extends ReleaseParameters {
+    Schedulable sch;
     
     public AperiodicParameters(RelativeTime cost, RelativeTime deadline,
 			       AsyncEventHandler overrunHandler,
@@ -15,9 +16,20 @@ public class AperiodicParameters extends ReleaseParameters {
 	      overrunHandler, missHandler);
     }
 
-    // What is the scheduler that has to be feasible?
     public boolean setIfFeasible(RelativeTime cost, RelativeTime deadline) {
-	// TODO
-	return false;
+	if (sch == null) return false;
+	else return sch.setReleaseParametersIfFeasible(new AperiodicParameters(cost, deadline,
+									       overrunHandler,
+									       missHandler));
+    }
+
+    public Schedulable bindSchedulable(Schedulable sch) {
+	Schedulable old_sch = this.sch;
+	this.sch = sch;
+	return sch;
+    }
+
+    public Schedulable unbindSchedulable() {
+	return bindSchedulable(null);
     }
 }

@@ -388,6 +388,18 @@ public class RealtimeThread extends Thread implements Schedulable {
 	    PriorityScheduler.getScheduler().waitForNextPeriod(this);
 	return false;
     }
+
+    // Not in specs, but needed for methods in specs
+    public void bindSchedulable() {
+	releaseParameters.bindSchedulable(this);
+	processingGroupParameters.bindSchedulable(this);
+    }
+
+    public void unbindSchedulable() {
+	releaseParameters.unbindSchedulable();
+	processingGroupParameters.unbindSchedulable();
+    }
+
     
     // --------------------
     // Methods not in specs

@@ -9,6 +9,7 @@ public class PeriodicParameters extends ReleaseParameters {
     
     HighResolutionTime start;
     RelativeTime period;
+    Schedulable sch;
     
     public PeriodicParameters(HighResolutionTime start, RelativeTime period,
 			      RelativeTime cost, RelativeTime deadline,
@@ -32,11 +33,11 @@ public class PeriodicParameters extends ReleaseParameters {
 	return start;
     }
 
-    // What is the scheduler that has to be feasible?
     public boolean setIfFeasible(RelativeTime period, RelativeTime cost, 
 				 RelativeTime deadline) {
-	// TODO
-	return false;
+	if (sch == null) return false;
+	else return sch.setReleaseParametersIfFeasible(new PeriodicParameters(start, period, cost, deadline,
+									      overrunHandler, missHandler));
     }
 
     public void setPeriod(RelativeTime period) {
@@ -45,5 +46,15 @@ public class PeriodicParameters extends ReleaseParameters {
     
     public void setStart(HighResolutionTime start) {
 	this.start.set(start);
+    }
+
+    public Schedulable bindSchedulable(Schedulable sch) {
+	Schedulable old_sch = this.sch;
+	this.sch = sch;
+	return old_sch;
+    }
+
+    public Schedulable unbindSchedulable() {
+	return bindSchedulable(null);
     }
 }

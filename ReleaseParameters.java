@@ -9,6 +9,7 @@ public class ReleaseParameters {
     RelativeTime deadline;
     AsyncEventHandler overrunHandler;
     AsyncEventHandler missHandler;
+    Schedulable sch;
     
     protected ReleaseParameters() {}
     
@@ -56,10 +57,21 @@ public class ReleaseParameters {
 	this.missHandler = handler;
     }
 
-    // What is the scheduler that has to be feasible?
     public boolean setIfFeasible(RelativeTime cost,
 				 RelativeTime deadline) {
-	// TODO
-	return false;
+	if (sch == null) return false;
+	else return sch.setReleaseParametersIfFeasible(new ReleaseParameters(cost, deadline,
+									     overrunHandler,
+									     missHandler));
+    }
+
+    public Schedulable bindSchedulable(Schedulable sch) {
+	Schedulable old_sch = this.sch;
+	this.sch = sch;
+	return old_sch;
+    }
+
+    public Schedulable unbindSchedulable() {
+	return bindSchedulable(null);
     }
 }
