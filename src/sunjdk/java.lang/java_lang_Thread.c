@@ -636,8 +636,8 @@ static void * thread_startup_routine(void *closure) {
   (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
   assert(!((*env)->ExceptionOccurred(env)));
 #ifdef WITH_REALTIME_JAVA
-  (*env)->CallVoidMethod(env, thread, cleanupID);
-  assert(!((*env)->ExceptionOccurred(env)));
+//  (*env)->CallVoidMethod(env, thread, cleanupID);
+//  assert(!((*env)->ExceptionOccurred(env)));
 #endif
   /* This thread is dead now. */
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_FALSE;

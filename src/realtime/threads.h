@@ -37,7 +37,6 @@ struct thread_queue_struct {
 };
 
 extern struct thread_queue_struct* thread_queue;
-extern struct thread_queue_struct* end_thread_queue;
 
 extern struct thread_queue_struct* junk_queue;
 
