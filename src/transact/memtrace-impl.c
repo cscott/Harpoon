@@ -32,11 +32,11 @@ static void trace_close() {
   pclose(trace);
 }
 static void trace_init() {
-  char *trace_name, *bzip_cmd = "bzip2 > ";
+  char *trace_name, *bzip_cmd = "gzip > ";
   assert(trace==NULL);
 
   trace_name = getenv("MEMTRACE_FILE");
-  if (trace_name==NULL) trace_name="memtrace.bz2";
+  if (trace_name==NULL) trace_name="memtrace.gz";
   {
     char buf[strlen(bzip_cmd)+strlen(trace_name)+1];
     strcpy(buf, bzip_cmd);
@@ -74,7 +74,8 @@ void TA(EXACT_traceRead)(struct oobj *obj, int offset, int istran) {
   if (istran) tx++;
 #else
   if (trace==NULL) trace_init();
-  fprintf(trace, "%c %p %d\n", istran ? 'r' : 'R', ptr, (int)sizeof(*ptr));
+  fprintf(trace, "%c %p %d %d\n", istran ? 'r' : 'R', ptr, (int)sizeof(*ptr),
+	  (int)FNI_ObjectSize(obj));
 #endif
 }
 void TA(EXACT_traceWrite)(struct oobj *obj, int offset, int istran) {
@@ -83,7 +84,8 @@ void TA(EXACT_traceWrite)(struct oobj *obj, int offset, int istran) {
   if (istran) tx++;
 #else
   if (trace==NULL) trace_init();
-  fprintf(trace, "%c %p %d\n", istran ? 'w' : 'W', ptr, (int)sizeof(*ptr));
+  fprintf(trace, "%c %p %d %d\n", istran ? 'w' : 'W', ptr, (int)sizeof(*ptr),
+	  (int)FNI_ObjectSize(obj));
 #endif
 }
 #endif /* !NO_VALUETYPE */

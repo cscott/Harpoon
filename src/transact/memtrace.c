@@ -3,6 +3,7 @@
 # include "config.h"
 # include <jni.h>
 # include "jni-private.h"
+# include "fni-objsize.h"
 # include <assert.h>
 # include <stdio.h>
 # include <stdlib.h>
