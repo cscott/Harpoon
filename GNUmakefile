@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.43 1999-06-25 04:25:14 pnkfelix Exp $
+# $Id: GNUmakefile,v 1.61.2.44 1999-06-25 08:38:11 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -223,6 +223,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	cd doc; if [ -e $(JDOCIMAGES) ]; then ln -s $(JDOCIMAGES) images; fi
 	cd doc; if [ ! -f index.html ]; then ln -s packages.html index.html; fi
 	cd doc; if [ ! -f API_users_guide.html ]; then ln -s index.html API_users_guide.html; fi
+	$(MUNGE) doc | bin/annotate.perl -link $(JDKDOCLINK) | $(UNMUNGE)
 	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	chmod -R a+rX doc
 
@@ -231,10 +232,6 @@ doc-install: doc/TIMESTAMP mark-executable
 	if [ -d CVS ]; then \
           make ChangeLog; \
 	  cp ChangeLog doc/ChangeLog.txt; \
-	fi
-	if [ ! -f doc/annotated ]; then \
-		bin/annotate.sh ; touch doc/annotated; \
-		chmod -R a+rX doc ;\
 	fi
 	$(SSH) $(INSTALLMACHINE) \
 		/bin/rm -rf $(INSTALLDIR)/doc
