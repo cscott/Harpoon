@@ -62,7 +62,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.67 2000-02-24 01:24:28 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.68 2000-02-28 07:09:04 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -308,8 +308,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    HCode hc = sahcf.convert(hmethod);
 	    info("\t--- INSTR FORM (hacked register allocation)  ---");
 	    HCode rhc = (hc==null) ? null :
-		new harpoon.Backend.CSAHack.RegAlloc.Code(hmethod, (Instr)
-					       hc.getRootElement(), frame);
+		new harpoon.Backend.CSAHack.RegAlloc.Code
+		(hmethod, (Instr) hc.getRootElement(),
+		 ((harpoon.IR.Assem.Code)hc).getDerivation(), frame);
 	    if (rhc != null) {
 		info("Codeview \""+rhc.getName()+"\" for "+
 		     rhc.getMethod()+":");

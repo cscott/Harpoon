@@ -65,7 +65,7 @@ import java.io.PrintWriter;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparcMain.java,v 1.1.2.18 2000-02-17 04:00:14 cananian Exp $
+ * @version $Id: SparcMain.java,v 1.1.2.19 2000-02-28 07:09:05 cananian Exp $
  */
 public class SparcMain extends harpoon.IR.Registration {
  
@@ -310,8 +310,9 @@ public class SparcMain extends harpoon.IR.Registration {
 	    HCode hc = sparchcf.convert(hmethod);
 	    info("\t--- INSTR FORM (hacked register allocation)  ---");
 	    HCode rhc = (hc==null) ? null :
-		new harpoon.Backend.CSAHack.RegAlloc.Code(hmethod, (Instr)
-					       hc.getRootElement(), frame);
+		new harpoon.Backend.CSAHack.RegAlloc.Code
+		(hmethod, (Instr) hc.getRootElement(),
+		 ((harpoon.IR.Assem.Code)hc).getDerivation(), frame);
 	    if (rhc != null) {
 		info("Codeview \""+rhc.getName()+"\" for "+
 		     rhc.getMethod()+":");
