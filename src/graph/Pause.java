@@ -82,7 +82,8 @@ public class Pause extends Node {
      *  @param id The image to process.
      */
 
-    public synchronized void process(ImageData id) {
+    //public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	this.count++;
 	if (count == pauseEvery) {
 	    count = 0;
