@@ -168,12 +168,9 @@ extern struct FNI_method2info method2info_start[], method2info_end[];
 /* MOVED: to fni-threadstate.h, for better precise-c backend integration */
 #include "fni-threadstate.h"
 
-/* ----- bit-masking for stuffing extra info into low bits of pointers ----- */
-#ifdef WITH_MASKED_POINTERS
-# define PTRMASK(x) ((void*) (((ptroff_t)x) & (~3)))
-#else
-# define PTRMASK(x) ((void *) (x))
-#endif
+/* ----------------------- PTRMASK -------------------------------------*/
+/* MOVED: to fni-ptrmask.h, for better precise-c backend integration    */
+#include "fni-ptrmask.h"
 
 /* ---------------------- object size ---------------------------------*/
 /* broken out to fni-objsize.h to aid readability of this file somewhat */
