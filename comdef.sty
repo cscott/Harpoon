@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.32 2000-09-29 23:10:20 cananian Exp $
+% $Id: comdef.sty,v 1.33 2002-04-29 20:59:58 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,9 +118,11 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
 \newcommand{\subvar}[2]{\ensuremath{\text{#1}_{\text{#2}}}}
 
 % Cytron's path symbol
+\@ifundefined{path}{
 \newcommand{\path}{\ensuremath{\rightarrow}}
 \newcommand{\pathstar}{\ensuremath{\stackrel{*}{\path}}}
 \newcommand{\pathplus}{\ensuremath{\stackrel{+}{\path}}}
+}{\typeout{Not defining path macros because they're already defined.}}
 
 % SSI0/+
 \newcommand{\ssizero}{SSI$_{\text{0}}$\xspace}
