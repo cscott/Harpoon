@@ -11,15 +11,17 @@ import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.FOOTER;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.RETURN;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempFactory;
 
 /**
  * <code>EventDrivenCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDrivenCode.java,v 1.1.2.1 1999-11-17 21:57:14 kkz Exp $
+ * @version $Id: EventDrivenCode.java,v 1.1.2.2 1999-11-20 06:37:59 bdemsky Exp $
  */
 public class EventDrivenCode extends Code {
     
@@ -53,7 +55,7 @@ public class EventDrivenCode extends Code {
     private Quad buildCode(HMethod newmain, Temp[] params) {
 	System.out.println("Entering EventDrivenCode.buildCode()");
 	HEADER h = new HEADER(this.qf, null);
-	FOOTER f = new FOOTER(this.qf, null, 2);
+	FOOTER f = new FOOTER(this.qf, null, 4);
 	Quad.addEdge(h, 0, f, 0);
 
 	System.out.println("Debug 1");
@@ -66,8 +68,15 @@ public class EventDrivenCode extends Code {
 	if (newmain == null) System.out.println("newmain is null");
 
 	// call to new main method (mainAsync)
-	CALL c1 = new CALL(this.qf, null, newmain, params, null, null, true,
+	System.out.println(newmain);
+	TempFactory tf=this.qf.tempFactory();
+	Temp t=new Temp(tf);
+	Temp exc=new Temp(tf);
+
+	CALL c1 = new CALL(this.qf, null, newmain, params, t, exc, true,
 			   false, new Temp[0]);
+	THROW throwq=new THROW(this.qf, null, exc);
+	Quad.addEdge(c1, 1, throwq,0);
 	System.out.println("Debug 3");
 
 	Quad.addEdge(m, 0, c1, 0);
@@ -76,7 +85,8 @@ public class EventDrivenCode extends Code {
 	HMethod schloop = null;
 	try {
 	    final HClass sch = 
-		HClass.forName("java.continuation.Scheduler");
+		HClass.forName("harpoon.Analysis.ContBuilder.Scheduler");
+		//		HClass.forName("java.continuation.Scheduler");
 	    schloop = sch.getDeclaredMethod("loop", new HClass[0]);
 	} catch (Exception e) {
 	    System.err.println
@@ -85,15 +95,19 @@ public class EventDrivenCode extends Code {
 
 	System.out.println("Debug 4");
 
-	CALL c2 = new CALL(this.qf, null, schloop, new Temp[0], null, null, 
+	Temp exc2=new Temp(tf);
+	CALL c2 = new CALL(this.qf, null, schloop, new Temp[0], null, exc2, 
 			   true, false, new Temp[0]);
+	THROW throwq2=new THROW(this.qf, null, exc2);
 	Quad.addEdge(c1, 0, c2, 0);
+	Quad.addEdge(c2, 1, throwq,0);
 
 	System.out.println("Debug 5");
 
-	RETURN r = new RETURN(this.qf, null, null);
+	RETURN r = new RETURN(this.qf, null, t);
 	Quad.addEdge(r, 0, f, 1);
-
+	Quad.addEdge(throwq,0,f,2);
+	Quad.addEdge(throwq2,0, f,3);
 	System.out.println("Leaving EventDrivenCode.buildCode()");
 	return h;
     }    

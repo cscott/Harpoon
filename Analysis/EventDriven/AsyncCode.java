@@ -14,11 +14,14 @@ import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.FOOTER;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
+import harpoon.Util.WorkSet;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -28,7 +31,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.4 1999-11-20 00:34:51 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.5 1999-11-20 06:37:59 bdemsky Exp $
  */
 public class AsyncCode extends Code {
 
@@ -66,6 +69,7 @@ public class AsyncCode extends Code {
 	System.out.println("Entering AsyncCode.buildCode()");
 	Object[] maps = Quad.cloneMaps(this.qf, root);
 	Map quadmap = (Map)maps[0];
+	WorkSet needHandler=new WorkSet();
 
 	System.out.println("AsyncCode.buildCode() 1");
 
@@ -105,8 +109,11 @@ public class AsyncCode extends Code {
 	// we want to remove this cloned CALL and replace it
 	// with a call to the asynchronous version of the method
 	Temp async = new Temp(tf);
+	Temp exc = new Temp(tf);
 	CALL nc = new CALL(this.qf, cc, toCall, cc.params(), async,
-			   new Temp(tf), true, false, new Temp[0]);
+			   exc, true, false, new Temp[0]);
+
+	needHandler.add(nc);
 
 	System.out.println("AsyncCode.buildCode() 4");
 
@@ -144,8 +151,10 @@ public class AsyncCode extends Code {
 
 	// since this is a call to the constructor, we mark it as not virtual
 	curr = new CALL(this.qf, cc, env.getConstructors()[0], 
-				   params, null, null, false, 
+				   params, null, exc, false, 
 				   false, new Temp[0]);
+	needHandler.add(curr);
+
 	Quad.addEdge(prev, 0, curr, 0);
 	prev = curr;
 
@@ -163,9 +172,12 @@ public class AsyncCode extends Code {
 		    " constructor(s) found for continuation.");
 
 	// call to constructor is not virtual
+	// BCD needs exception handler...
+
 	curr = new CALL(this.qf, cc, cont.getConstructors()[0],
-			new Temp[] {newcont, newenv}, null, null,
+			new Temp[] {newcont, newenv}, null, exc,
 			false, false, new Temp[0]);
+	needHandler.add(curr);
 	Quad.addEdge(prev, 0, curr, 0);
 	prev = curr;
 
@@ -203,9 +215,12 @@ public class AsyncCode extends Code {
 	//				     new HClass[] {cont});
 	// this is a tail call, but that's not supported yet,
 	// so we mark it as not a tail call.
+
+	// BCD need exception handler for this CALL!!!
 	curr = new CALL(this.qf, cc, setnextmethod, 
 				  new Temp[] {async, newcont}, null, 
-				  null, true, false, new Temp[0]);
+				  exc, true, false, new Temp[0]);
+	needHandler.add(curr);
 	Quad.addEdge(prev, 0, curr, 0);
 	prev = curr;
 	
@@ -216,12 +231,22 @@ public class AsyncCode extends Code {
 
 	System.out.println("AsyncCode.buildCode() 9");
 
+	// Build THROW/PHI's
+	PHI phi = new PHI(this.qf, curr, new Temp[0], needHandler.size());
+	int phiedge=0;
+	for(Iterator callIterator=needHandler.iterator();
+	    callIterator.hasNext();)
+	    Quad.addEdge((Quad)callIterator.next(),1, phi, phiedge++);
+	THROW throwq=new THROW(this.qf, curr, exc);
+	Quad.addEdge(phi,0,throwq,0);
+
 	// find FOOTER
 	HEADER header = (HEADER) hc.getRootElement();
 	FOOTER q = (FOOTER) header.next(0);
 
 	FOOTER f = (FOOTER)quadmap.get(q); // cloned FOOTER
 	FOOTER newf = f.attach(prev,0);
+	newf=newf.attach(throwq,0);
 
 	//Note that quadmap is now invalid for the footer...
 	//But it doesn't escape
