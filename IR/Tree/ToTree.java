@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.4 2002-04-10 03:05:45 cananian Exp $
+ * @version $Id: ToTree.java,v 1.5 2003-06-20 01:21:37 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -451,7 +451,30 @@ static class TranslationVisitor extends LowQuadVisitor {
 	// Create derivation information for the new TEMP
 	DList dl = new DList(objTemp, true, null);
 
-	// set nextPtr to point to arrayBase + q.offset() * size.
+	Object[] qvalue = q.value();
+	int offset = q.offset();
+	// trim zero elements from from and end of this array.  the end is
+	// actually really important, as gcc will try to optimize the
+	// initialization table to a bss segment with the preciseC backend,
+	// screwing with the data layout, if all the elements in a structure
+	// are zero.
+	int start=0, end=qvalue.length;
+	CONST zarro = constZero(q, q.type());
+	while (start < end &&
+	       zarro.value().equals(_CONST(q,q.type(), qvalue[start]).value()))
+	    start++;
+	while (start < end &&
+	       zarro.value().equals(_CONST(q,q.type(), qvalue[end-1]).value()))
+	    end--;
+	// now chop start and end bits off of qvalue.
+	if (start!=0 || end != qvalue.length) {
+	    Object[] old = qvalue;
+	    qvalue = new Object[end-start];
+	    System.arraycopy(old, start, qvalue, 0, qvalue.length);
+	    offset += start;
+	}
+
+	// set nextPtr to point to arrayBase + offset * size.
 	s0 = new MOVE
 	    (m_tf, q, 
 	     _TEMP(q, dl, nextPtr),
@@ -463,12 +486,12 @@ static class TranslationVisitor extends LowQuadVisitor {
 	      .unEx(m_tf),
 	      m_rtb.arrayOffset
 	      (m_tf, q, treeDeriv, arrayType,
-	       new Translation.Ex(new CONST(m_tf, q, q.offset()))).unEx(m_tf)
+	       new Translation.Ex(new CONST(m_tf, q, offset))).unEx(m_tf)
 	      ));
 
 	addStmt(s0);
     
-	Object[] qvalue = q.value();
+	// okay, now pick the proper initialization strategy.
 	if (qvalue.length <= 5 /* magic number */ || !q.type().isPrimitive()) {
 	    // explicit element-by-element initialization
 	    for (int i=0; i<qvalue.length; i++) {
@@ -545,6 +568,14 @@ static class TranslationVisitor extends LowQuadVisitor {
 		if (i==qvalue.length-1)
 		    addStmt(new LABEL(m_tf, q, constTblEnd, false));
 		addStmt(new DATUM(m_tf, q, _CONST(q, q.type(), qvalue[i])));
+		if (i==qvalue.length-1)
+		    assert ! _CONST(q, q.type(), qvalue[i]).value()
+			.equals(constZero(q, q.type()).value()) :
+			"PreciseC backend may relocate this trailing part of "+
+			"the table to the .bss segment, separating it from "+
+			"the rest of the table.  Old versions of gcc didn't "+
+			"used to do this; new versions are too darn smart."
+			/* perhaps this has to do with the -O option to ld? */;
 	    }
 	    // and jump back here when loop's done.
 	    addStmt(new ALIGN(m_tf, q, 8/* safe value for alignment */));
