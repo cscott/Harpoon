@@ -30,7 +30,7 @@ import java.util.List;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.9 2000-04-04 00:38:04 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.10 2000-11-12 18:45:18 cananian Exp $
  */
 public abstract class Runtime {
     /** A <code>NameMap</code> valid for this
@@ -86,6 +86,10 @@ public abstract class Runtime {
      *  tasks---primarily method and field access.
      */
     public abstract static class TreeBuilder {
+	/** Utility method for external analyses that want to know the
+	 *  exact size of an object. */
+	public abstract int objectSize(HClass hc);
+
 	/** Return a <code>Translation.Exp</code> giving the length of the
 	 *  array pointed to by the given expression. */
 	public abstract Exp arrayLength(TreeFactory tf, HCodeElement source,

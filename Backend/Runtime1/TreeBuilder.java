@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.31 2000-11-10 23:30:56 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.32 2000-11-12 18:45:42 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -163,7 +163,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     }
 
     // use the field offset map to get the object size (not including header)
-    int objectSize(HClass hc) {
+    public int objectSize(HClass hc) {
 	List l = cfm.fieldList(hc);
 	if (l.size()==0) return 0;
 	HField lastfield = (HField) l.get(l.size()-1);
