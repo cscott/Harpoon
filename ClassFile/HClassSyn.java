@@ -15,15 +15,31 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.7 1999-10-30 22:20:23 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.8 1999-11-11 22:33:22 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {
-  /** Create an <code>HClassSyn</code> from an <code>HClass</code>. */
+  /** Create an <code>HClassSyn</code> from an <code>HClass</code>
+   *  without replacing the original <code>HClass</code>. */
   public HClassSyn(HClass template) {
+    this(template, false);
+  }
+  /** Create an <code>HClassSyn</code> from an <code>HClass</code>.
+   * If the <code>replaceOriginal</code> parameter is true, the newly
+   * created class with have the exact same name as the original
+   * <code>HClass</code>, and will effectively replace it.  This is
+   * dangerous functionality to use, as many references to the original
+   * <code>HClass</code> and <code>HMember</code>s associated with it
+   * will still exist. If <code>replaceOriginal</code> is false, the
+   * new class will have a unique name derived from the name of the
+   * template class, and you needn't worry about danger. */
+  public HClassSyn(HClass template, boolean replaceOriginal) {
     Util.assert(!template.isArray());
     Util.assert(!template.isPrimitive());
-    this.name = uniqueName(template.getName()); register();
+    this.name = replaceOriginal ? 
+      template.getName() :
+      uniqueName(template.getName()); 
+    register();
     this.superclass = template.getSuperclass();
     this.interfaces = template.getInterfaces();
     this.modifiers  = template.getModifiers();
