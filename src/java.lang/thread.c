@@ -232,3 +232,35 @@ void FNI_java_lang_Thread_finishMain(JNIEnv *env) {
   wait_on_running_thread();
 #endif
 }
+
+#ifdef WITH_INIT_CHECK
+/* functions for dealing with threads deferred during static initialization */
+static struct deferred_thread_list {
+  jobject thread;
+  struct deferred_thread_list *next;
+} *deferred_threads = NULL;
+
+void fni_thread_addDeferredThread(JNIEnv *env, jobject thread) {
+  struct deferred_thread_list *dtl = malloc(sizeof(*dtl));
+  dtl->thread = (*env)->NewGlobalRef(env, thread);
+  /* this interchange is safe from races because only one thread is running
+   * during static initialization. */
+  dtl->next = deferred_threads;
+  deferred_threads = dtl;
+}
+void fni_thread_startDeferredThreads(JNIEnv *env) {
+  struct deferred_thread_list *dtl;
+  while (deferred_threads!=NULL) {
+    /* advance deferred threads list */
+    dtl = deferred_threads;
+    deferred_threads = dtl->next;
+    /* okay, now start the thread */
+    fni_thread_start(env, dtl->thread);
+    /* now free the global ref */
+    (*env)->DeleteGlobalRef(env, dtl->thread);
+    /* finally, free the thread list object */
+    free(dtl);
+  }
+  /* done! */
+}
+#endif /* WITH_INIT_CHECK */

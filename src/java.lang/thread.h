@@ -466,4 +466,25 @@ void fni_thread_interrupt_withtrans(JNIEnv *env, jobject _this, jobject commitre
 }
 #endif /* WITH_TRANSACTIONS */
 
+#ifdef WITH_INIT_CHECK
+/* prototypes for dealing with threads deferred during static initialization */
+void fni_thread_addDeferredThread(JNIEnv *env, jobject thread);
+void fni_thread_startDeferredThreads(JNIEnv *env);
+
+/* Implementation of Thread.start$$inithcheck: */
+/* Not safe to actually start thread while doing static initializers.
+ * So just add this thread to a list of 'threads to start later' -- and
+ * we'll actually start them once static initialization is done.
+ * This is a hack --- you can break it by Thread.join()ing or
+ * Thread.isAlive() or probably other methods on the not-really-started-yet
+ * thread --- but hopefully it will work well enough for those odd cases
+ * where threads are launched in static initializers. */
+static inline
+void fni_thread_start_initcheck(JNIEnv *env, jobject thisthr) {
+  fprintf(stderr, "WARNING: "
+	  "deferring thread start until end of static initialization\n");
+  fni_thread_addDeferredThread(env, thisthr);
+}
+#endif /* WITH_INIT_CHECK */
+
 #endif /* INCLUDED_FNI_THREAD_H */

@@ -106,6 +106,12 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   (JNIEnv *env, jobject _this) {
   fni_thread_start(env, _this);
 }
+#ifdef WITH_INIT_CHECK
+JNIEXPORT void JNICALL Java_java_lang_Thread_start_00024_00024initcheck
+  (JNIEnv *env, jobject thisthr) {
+  fni_thread_start_initcheck(env, thisthr);
+}
+#endif /* WITH_INIT_CHECK */
 
 /*
  * Class:     java_lang_Thread

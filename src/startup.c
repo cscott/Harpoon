@@ -147,6 +147,11 @@ int main(int argc, char *argv[]) {
   skip:;
   }
 
+#ifdef WITH_INIT_CHECK
+  /* start up any threads that were deferred during static initialization */
+  fni_thread_startDeferredThreads(env);
+#endif /* WITH_INIT_CHECK */
+
   /* Wrap argv strings */
   cls = (*env)->FindClass(env, "java/lang/String");
   CHECK_EXCEPTIONS(env);

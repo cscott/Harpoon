@@ -4,6 +4,7 @@
 #include "java_lang_Thread.h"
 
 #include <assert.h>
+#include <stdlib.h> /* for fprintf, stderr */
 #include "../../java.lang/thread.h" /* useful library-indep implementations */
 
 /*
@@ -46,6 +47,12 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   (JNIEnv *env, jobject thisthr) {
   fni_thread_start(env, thisthr);
 }
+#ifdef WITH_INIT_CHECK
+JNIEXPORT void JNICALL Java_java_lang_Thread_start_00024_00024initcheck
+  (JNIEnv *env, jobject thisthr) {
+  fni_thread_start_initcheck(env, thisthr);
+}
+#endif /* WITH_INIT_CHECK */
 
 /*
  * Class:     java_lang_Thread
