@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.56 1999-10-14 00:04:36 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.57 1999-10-14 00:23:42 pnkfelix Exp $
  */
 %%
 
@@ -1147,12 +1147,12 @@ MOVE<i>(MEM(d), src) %{
 		      null, new Temp[]{ src, d }));   
 }%
 
-MOVE<s:8, u:8>(MEM(d), src) %{
+MOVE<i>(MEM<s:8,u:8>(d), src) %{
     emit(new InstrMEM(instrFactory, ROOT,
 		      "strb `s0, [`s1]",
 		      null, new Temp[]{ src, d }));
 }%
-MOVE<s:16, u:16>(MEM(d), src) %{
+MOVE<i>(MEM<s:16,u:16>(d), src) %{
     emit(new InstrMEM(instrFactory, ROOT,
 		      "strh `s0, [`s1]",
 		      null, new Temp[]{ src, d }));
