@@ -19,9 +19,9 @@ import java.io.FileNotFoundException;
  * files.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.8 1998-11-18 03:45:14 cananian Exp $
+ * @version $Id: Loader.java,v 1.9 1998-11-18 05:29:20 cananian Exp $
  */
-public class Loader {
+public abstract class Loader {
   /** Return an enumeration of zipfiles in the CLASSPATH that may be
    *  candidates for preloading. */
   public static Enumeration preloadable() {
