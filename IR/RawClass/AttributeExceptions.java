@@ -12,12 +12,14 @@ package harpoon.IR.RawClass;
  * <code>method_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeExceptions.java,v 1.2 2002-02-25 21:05:26 cananian Exp $
+ * @version $Id: AttributeExceptions.java,v 1.3 2003-09-05 21:45:16 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.5"
  * @see Attribute
  * @see MethodInfo
  */
 public class AttributeExceptions extends Attribute {
+  /** The string naming this <code>Attribute</code> type. */
+  public static final String ATTRIBUTE_NAME = "Exceptions";
   /** Each nonzero value in the <code>exception_index_table</code>
       must be a valid index into the <code>constant_pool</code>
       table.  For each table item, if
@@ -43,6 +45,7 @@ public class AttributeExceptions extends Attribute {
     if (attribute_length != attribute_length())
       throw new ClassDataException("Exceptions attribute with length "
 				   + attribute_length);
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
   
   /** Constructor. */
@@ -50,6 +53,7 @@ public class AttributeExceptions extends Attribute {
 			     int exception_index_table[]) {
     super(parent, attribute_name_index);
     this.exception_index_table = exception_index_table;
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
 
   public long attribute_length() { return 2 + 2*number_of_exceptions(); }

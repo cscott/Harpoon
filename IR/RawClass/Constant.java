@@ -10,7 +10,7 @@ package harpoon.IR.RawClass;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Constant.java,v 1.2 2002-02-25 21:05:26 cananian Exp $
+ * @version $Id: Constant.java,v 1.3 2003-09-05 21:45:16 cananian Exp $
  * @see ConstantUtf8
  * @see ConstantInteger
  * @see ConstantFloat
@@ -41,7 +41,7 @@ public abstract class Constant {
   static final int CONSTANT_NameAndType=12;
 
   protected Constant(ClassFile parent) { this.parent = parent; }
-  int entrySize() { return 1; } // most constants take up one entry in table
+  public int entrySize() { return 1; } // most constants take up one entry in table
 
   /** Read a single Constant item from an input class bytecode file,
    *  and return an object instance corresponding to it.

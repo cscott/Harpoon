@@ -9,11 +9,13 @@ package harpoon.IR.RawClass;
  * classes, methods, and fields.  (GJ)
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeSignature.java,v 1.2 2002-04-10 03:05:30 cananian Exp $
+ * @version $Id: AttributeSignature.java,v 1.3 2003-09-05 21:45:16 cananian Exp $
  * @see Attribute
  * @see ClassFile
  */
 public class AttributeSignature extends Attribute {
+  /** The string naming this <code>Attribute</code> type. */
+  public static final String ATTRIBUTE_NAME = "Signature";
     /** The value of the <code>signature_index</code> item must be a
 	valid index into the <code>constant_pool</code> table.  The
 	constant pool entry at that index must be a
@@ -31,12 +33,14 @@ public class AttributeSignature extends Attribute {
 	    throw new ClassDataException("Signature attribute with length "
 					 + attribute_length);
 	signature_index = in.read_u2();
+	assert ATTRIBUTE_NAME.equals(attribute_name());
     }
     /** Constructor. */
     public AttributeSignature(ClassFile parent, int attribute_name_index,
 			      int signature_index) {
 	super(parent, attribute_name_index);
 	this.signature_index = signature_index;
+	assert ATTRIBUTE_NAME.equals(attribute_name());
     }
     public long attribute_length() { return 2; }
     

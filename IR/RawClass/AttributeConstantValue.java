@@ -22,12 +22,14 @@ package harpoon.IR.RawClass;
  * the attribute is silently ignored.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeConstantValue.java,v 1.2 2002-02-25 21:05:26 cananian Exp $
+ * @version $Id: AttributeConstantValue.java,v 1.3 2003-09-05 21:45:15 cananian Exp $
  * @see Attribute
  * @see FieldInfo
  * @see ClassFile
  */
 public class AttributeConstantValue extends Attribute {
+  /** The string naming this <code>Attribute</code> type. */
+  public static final String ATTRIBUTE_NAME = "ConstantValue";
   /** The value of the <code>constantvalue_index</code> must be a
       valid index into the <code>constant_pool</code> table.  The
       <code>constant_pool</code> entry at that index must give the
@@ -46,12 +48,14 @@ public class AttributeConstantValue extends Attribute {
 				   attribute_length);
 
     constantvalue_index = in.read_u2();
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
   /** Constructor. */
   public AttributeConstantValue(ClassFile parent, int attribute_name_index,
 				int constantvalue_index) {
     super(parent, attribute_name_index);
     this.constantvalue_index = constantvalue_index;
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
 
   public long attribute_length() { return 2; }

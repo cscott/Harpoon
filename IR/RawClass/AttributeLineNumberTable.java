@@ -18,12 +18,14 @@ package harpoon.IR.RawClass;
  * source lines.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeLineNumberTable.java,v 1.2 2002-02-25 21:05:26 cananian Exp $
+ * @version $Id: AttributeLineNumberTable.java,v 1.3 2003-09-05 21:45:16 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.6"
  * @see AttributeCode
  * @see Attribute
  */
 public class AttributeLineNumberTable extends Attribute {
+  /** The string naming this <code>Attribute</code> type. */
+  public static final String ATTRIBUTE_NAME = "LineNumberTable";
   /** Each entry in the <code>line_number_table</code> array indicates
       that the line number in the original Java source file changes at
       a given point in the <code>code</code> array. */
@@ -44,6 +46,7 @@ public class AttributeLineNumberTable extends Attribute {
     if (attribute_length != attribute_length())
       throw new ClassDataException("LineNumberTable attribute with length "
 				   + attribute_length);
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
 
   /** Constructor. */
@@ -51,6 +54,7 @@ public class AttributeLineNumberTable extends Attribute {
 				  LineNumberTable line_number_table[]) {
     super(parent, attribute_name_index);
     this.line_number_table = line_number_table;
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
 
   public long attribute_length() { return 2 + 4*line_number_table_length(); }

@@ -18,12 +18,14 @@ package harpoon.IR.RawClass;
  * <code>/home/lindholm/foo.java</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeSourceFile.java,v 1.2 2002-02-25 21:05:26 cananian Exp $
+ * @version $Id: AttributeSourceFile.java,v 1.3 2003-09-05 21:45:16 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.2"
  * @see Attribute
  * @see ClassFile
  */
 public class AttributeSourceFile extends Attribute {
+  /** The string naming this <code>Attribute</code> type. */
+  public static final String ATTRIBUTE_NAME = "SourceFile";
   /** The value of the <code>sourcefile_index</code> item must be a
       valid index into the <code>constant_pool</code> table.  The
       constant pool entry at that index must be a
@@ -41,12 +43,14 @@ public class AttributeSourceFile extends Attribute {
       throw new ClassDataException("SourceFile attribute with length "
 				   + attribute_length);
     sourcefile_index = in.read_u2();
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
   /** Constructor. */
   public AttributeSourceFile(ClassFile parent, int attribute_name_index,
 			     int sourcefile_index) {
     super(parent, attribute_name_index);
     this.sourcefile_index = sourcefile_index;
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
   public long attribute_length() { return 2; }
 

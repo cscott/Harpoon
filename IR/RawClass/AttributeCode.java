@@ -13,7 +13,7 @@ package harpoon.IR.RawClass;
  * attribute in each <code>method_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeCode.java,v 1.2 2002-02-25 21:05:25 cananian Exp $
+ * @version $Id: AttributeCode.java,v 1.3 2003-09-05 21:45:15 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeLineNumberTable
  * @see AttributeLocalVariableTable
@@ -22,13 +22,15 @@ package harpoon.IR.RawClass;
  * @see ClassFile
  */
 public class AttributeCode extends Attribute {
+  /** The string naming this <code>Attribute</code> type. */
+  public static final String ATTRIBUTE_NAME = "Code";
   /** The value of the <code>max_stack</code> item gives the maximum
       number of words on the operand stack at any point during
       execution of this method. */
   public int max_stack;
   /** The value of the <code>max_locals</code> item gives the number
       of local variables used by this method, including the parameters
-      passes to the method on invocation.  The index of the first
+      passed to the method on invocation.  The index of the first
       local variable is 0. */
   public int max_locals;
   /** The <code>code</code> array gives the actual bytes of Java
@@ -74,6 +76,7 @@ public class AttributeCode extends Attribute {
     if (attribute_length != attribute_length())
       throw new ClassDataException("Code attribute of incorrect length" +
 			    "("+attribute_length+"/"+attribute_length()+").");
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
 
   /** Constructor. */
@@ -87,6 +90,7 @@ public class AttributeCode extends Attribute {
     this.code = code;
     this.exception_table = exception_table;
     this.attributes = attributes;
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
   
   // convenience.

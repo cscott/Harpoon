@@ -13,13 +13,15 @@ package harpoon.IR.RawClass;
  * avoid displaying these methods and fields unnecessarily.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeSynthetic.java,v 1.2 2002-02-25 21:05:26 cananian Exp $
+ * @version $Id: AttributeSynthetic.java,v 1.3 2003-09-05 21:45:16 cananian Exp $
  * @see "Inner Classes Specification"
  * @see AttributeInnerClasses
  * @see Attribute
  * @see ClassFile
  */
 public class AttributeSynthetic extends Attribute {
+  /** The string naming this <code>Attribute</code> type. */
+  public static final String ATTRIBUTE_NAME = "Synthetic";
   /** Constructor. */
   AttributeSynthetic(ClassFile parent, ClassDataInputStream in,
 		     int attribute_name_index) throws java.io.IOException {
@@ -28,10 +30,12 @@ public class AttributeSynthetic extends Attribute {
     if (attribute_length != attribute_length())
       throw new ClassDataException("Synthetic attribute with length " +
 				   attribute_length);
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
   /** Constructor. */
   public AttributeSynthetic(ClassFile parent, int attribute_name_index) {
     super(parent, attribute_name_index);
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
 
   public long attribute_length() { return 0; }

@@ -8,7 +8,7 @@ package harpoon.IR.RawClass;
  * floating-point numeric constants.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantDouble.java,v 1.2 2002-02-25 21:05:26 cananian Exp $
+ * @version $Id: ConstantDouble.java,v 1.3 2003-09-05 21:45:16 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.5"
  * @see Constant
  * @see ConstantLong
@@ -28,7 +28,7 @@ public class ConstantDouble extends ConstantValue {
     super(parent);
     this.val = val; 
   }
-  int entrySize() { return 2; } // takes up two entries in table.
+  public int entrySize() { return 2; } // takes up two entries in table.
 
   /** Write to a bytecode file. */
   public void write(ClassDataOutputStream out) throws java.io.IOException {

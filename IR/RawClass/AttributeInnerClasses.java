@@ -12,13 +12,15 @@ package harpoon.IR.RawClass;
  * originally declared, untransformed access flags.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeInnerClasses.java,v 1.2 2002-02-25 21:05:26 cananian Exp $
+ * @version $Id: AttributeInnerClasses.java,v 1.3 2003-09-05 21:45:16 cananian Exp $
  * @see "Inner Classes Specification"
  * @see InnerClass
  * @see Attribute
  * @see ClassFile
  */
 public class AttributeInnerClasses extends Attribute {
+  /** The string naming this <code>Attribute</code> type. */
+  public static final String ATTRIBUTE_NAME = "InnerClasses";
   /** Each array element records a class with an encoded name,
    *  its defining scope, its simple name, and its originally
    *  declared access flags. */
@@ -38,12 +40,14 @@ public class AttributeInnerClasses extends Attribute {
     if (attribute_length != attribute_length())
       throw new ClassDataException("AttributeInnerClasses attribute with " + 
 				   "length " + attribute_length);
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
   /** Constructor. */
   public AttributeInnerClasses(ClassFile parent, int attribute_name_index,
 				InnerClass[] classes) {
     super(parent, attribute_name_index);
     this.classes = classes;
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
   
   public long attribute_length() { return 2+8*number_of_classes(); }

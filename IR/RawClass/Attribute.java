@@ -11,7 +11,7 @@ package harpoon.IR.RawClass;
  * types of attribute information classes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Attribute.java,v 1.3 2002-04-10 03:05:30 cananian Exp $
+ * @version $Id: Attribute.java,v 1.4 2003-09-05 21:45:15 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7"
  * @see ClassFile
  * @see FieldInfo
@@ -47,23 +47,23 @@ public abstract class Attribute {
     String attribute_name = 
       ((ConstantUtf8) parent.constant_pool[attribute_name_index]).val;
 
-    if (attribute_name.equals("SourceFile"))
+    if (attribute_name.equals(AttributeSourceFile.ATTRIBUTE_NAME))
       return new AttributeSourceFile(parent, in, attribute_name_index);
-    if (attribute_name.equals("ConstantValue"))
+    if (attribute_name.equals(AttributeConstantValue.ATTRIBUTE_NAME))
       return new AttributeConstantValue(parent, in, attribute_name_index);
-    if (attribute_name.equals("Code"))
+    if (attribute_name.equals(AttributeCode.ATTRIBUTE_NAME))
       return new AttributeCode(parent, in, attribute_name_index);
-    if (attribute_name.equals("Exceptions"))
+    if (attribute_name.equals(AttributeExceptions.ATTRIBUTE_NAME))
       return new AttributeExceptions(parent, in, attribute_name_index);
-    if (attribute_name.equals("LineNumberTable"))
+    if (attribute_name.equals(AttributeLineNumberTable.ATTRIBUTE_NAME))
       return new AttributeLineNumberTable(parent, in, attribute_name_index);
-    if (attribute_name.equals("LocalVariableTable"))
+    if (attribute_name.equals(AttributeLocalVariableTable.ATTRIBUTE_NAME))
       return new AttributeLocalVariableTable(parent, in, attribute_name_index);
-    if (attribute_name.equals("InnerClasses"))
+    if (attribute_name.equals(AttributeInnerClasses.ATTRIBUTE_NAME))
       return new AttributeInnerClasses(parent, in, attribute_name_index);
-    if (attribute_name.equals("Synthetic"))
+    if (attribute_name.equals(AttributeSynthetic.ATTRIBUTE_NAME))
       return new AttributeSynthetic(parent, in, attribute_name_index);
-    if (attribute_name.equals("Signature"))
+    if (attribute_name.equals(AttributeSignature.ATTRIBUTE_NAME))
 	return new AttributeSignature(parent, in, attribute_name_index);
     // Unknown attribute type.
     return new AttributeUnknown(parent, in, attribute_name_index);

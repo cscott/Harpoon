@@ -18,12 +18,14 @@ package harpoon.IR.RawClass;
  * not included unless debugging flags are given to the compiler.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeLocalVariableTable.java,v 1.2 2002-02-25 21:05:26 cananian Exp $
+ * @version $Id: AttributeLocalVariableTable.java,v 1.3 2003-09-05 21:45:16 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.7"
  * @see AttributeCode
  * @see Attribute
  */
 public class AttributeLocalVariableTable extends Attribute {
+  /** The string naming this <code>Attribute</code> type. */
+  public static final String ATTRIBUTE_NAME = "LocalVariableTable";
   /** Each entry in the <code>local_variable_table</code> array
       indicates a range of <code>code</code> offsets within which a
       local variable has a value.  It also indicates the index into
@@ -47,6 +49,7 @@ public class AttributeLocalVariableTable extends Attribute {
     if (attribute_length != attribute_length())
       throw new ClassDataException("LocalVariableTable with length "
 				   + attribute_length);
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
   /** Constructor. */
   public AttributeLocalVariableTable(ClassFile parent,int attribute_name_index,
@@ -54,6 +57,7 @@ public class AttributeLocalVariableTable extends Attribute {
   {
     super(parent, attribute_name_index);
     this.local_variable_table = local_variable_table;
+    assert ATTRIBUTE_NAME.equals(attribute_name());
   }
 
   public long attribute_length() { 
