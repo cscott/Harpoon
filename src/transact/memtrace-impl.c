@@ -47,24 +47,44 @@ static void trace_init() {
   atexit(trace_close);
 }
 
+#ifdef COUNT_OPS
+  static int tx = 0; /* counts the number of transactional ops */
+#endif
+
 void EXACT_XACTION_BEGIN(void) {
+#ifdef COUNT_OPS
+  tx = 0;
+#else
   if (trace==NULL) trace_init();
   fprintf(trace, "x\n");
+#endif
 }
 void EXACT_XACTION_END(void) {
   if (trace==NULL) trace_init();
+#ifdef COUNT_OPS
+  fprintf(trace, "%d\n", tx);
+#else
   fprintf(trace, "X\n");
+#endif
 }
 #else /* !NO_VALUETYPE */
 void TA(EXACT_traceRead)(struct oobj *obj, int offset, int istran) {
   VALUETYPE *ptr = (VALUETYPE *)(FIELDBASE(obj) + offset);
+#ifdef COUNT_OPS
+  if (istran) tx++;
+#else
   if (trace==NULL) trace_init();
   fprintf(trace, "%c %p %d\n", istran ? 'r' : 'R', ptr, (int)sizeof(*ptr));
+#endif
 }
 void TA(EXACT_traceWrite)(struct oobj *obj, int offset, int istran) {
   VALUETYPE *ptr = (VALUETYPE *)(FIELDBASE(obj) + offset);
+#ifdef COUNT_OPS
+  if (istran) tx++;
+#else
   if (trace==NULL) trace_init();
   fprintf(trace, "%c %p %d\n", istran ? 'w' : 'W', ptr, (int)sizeof(*ptr));
+#endif
 }
 #endif /* !NO_VALUETYPE */
 #endif /* !IN_MEMTRACE_HEADER */
