@@ -29,7 +29,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.39 2001-07-10 22:49:51 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.40 2001-09-20 01:48:26 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -215,6 +215,7 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    // wrappers (java.lang.Integer, java.lang.Character, etc)
 	    HClass.Boolean, HClass.Byte, HClass.Short, HClass.Int,
 	    HClass.Long, HClass.Float, HClass.Double, HClass.Char,
+	    HClass.Void, /* referenced by java.lang.Void! */
 	    // passed to main()
 	    linker.forDescriptor("[Ljava/lang/String;"),
 	});
