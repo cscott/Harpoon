@@ -8,7 +8,7 @@ import harpoon.ClassFile.*;
  * <code>QuadVisitor</code> is a Design Pattern, courtesy of Martin.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadVisitor.java,v 1.5 1998-10-11 02:37:57 cananian Exp $
+ * @version $Id: QuadVisitor.java,v 1.5.2.1 1998-11-22 02:34:19 cananian Exp $
  */
 
 public abstract class QuadVisitor  {
@@ -24,6 +24,7 @@ public abstract class QuadVisitor  {
     public void visit(CJMP q)		{ visit((SIGMA)q); }
     public void visit(COMPONENTOF q)	{ visit((Quad)q); }
     public void visit(CONST q)		{ visit((Quad)q); }
+    public void visit(DEBUG q)          { visit((Quad)q); }
     public void visit(FOOTER q)		{ visit((Quad)q); }
     public void visit(GET q)		{ visit((Quad)q); }
     public void visit(HEADER q)		{ visit((Quad)q); }
