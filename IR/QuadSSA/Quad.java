@@ -1,11 +1,12 @@
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
+import harpoon.Util.Util;
 /**
  * <code>Quad</code> is the base class for the quadruple representation.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.7 1998-08-22 05:45:58 cananian Exp $
+ * @version $Id: Quad.java,v 1.8 1998-08-24 23:15:55 cananian Exp $
  */
 public abstract class Quad implements HCodeElement {
     String sourcefile;
@@ -25,11 +26,11 @@ public abstract class Quad implements HCodeElement {
     protected Quad(String sourcefile, int linenumber) {
 	this(sourcefile, linenumber, 1, 1);
     }
-    protected Quad(HCodeElement hce,
+    Quad(HCodeElement hce,
 		   int prev_arity, int next_arity) {
 	this(hce.getSourceFile(), hce.getLineNumber(), prev_arity, next_arity);
     }
-    protected Quad(HCodeElement hce) {
+    Quad(HCodeElement hce) {
 	this(hce.getSourceFile(), hce.getLineNumber());
     }
     static int next_id = 0;
@@ -63,6 +64,11 @@ public abstract class Quad implements HCodeElement {
 			       Quad to, int to_index) {
 	from.next[from_index] = to;
 	to.prev[to_index] = from;
+    }
+    public static void addEdge(Quad from, Quad to) {
+	Util.assert(from.next.length==1);
+	Util.assert(to.prev.length==1);
+	addEdge(from, 0, to, 0);
     }
 }
 
