@@ -1,0 +1,19 @@
+This is a description of the files in this directory.
+
+run-tasks                       -- The main script that updates all machines, "tells" each machine which task(s) it should run, waits until all tasks are run and then collect the information from all machines and mails it.
+
+get-run-tasks                   -- cvs updated ./run-tasks and runs it; this script is run by crond daily/weekly.
+
+clean                           -- removes unnecessary files after running a session
+
+machines-all, machines-selected -- Contain the list of machines to be used in this session. Generally, the list in machines-all should contain all machines on which tasks are usually run (daily, for instance), and the list in machines-selected should be a subset of the list in machines-all, representing the machines that are used for running tasks more rarely (weekly, for example).
+
+tasks-all, tasks-selected       -- Contain the list of tasks to be run. Generally, tasks-all should contain the list of all tasks that are usually run (daily, for instance), and tasks-selected should be a sublist of tasks-all, representing the tasks that should be run more rarely (weekly, for example).
+
+mailto-all, mailto-selected     -- Contain the list of people that the results should be mailed to. Generally, mailto-all should contain the list of all people interested in usual results (from daily runs, for example) and mailto-selected should be a sublist of mailto-all, representing all people to whom some more specific results should be mailed (results from weekly runs, for example).
+
+archives                        -- Contains archives for error files, diff files, source files and executables
+
+archives/diffs                  -- Contains the necessary information for diffing current sources with sources from the previous session.
+
+temp                            -- A directory to store some temporary files needed during execution. Is emptied after the session.

@@ -1,0 +1,611 @@
+#!/bin/bash
+
+# This is the main server script. Basically it manages the whole interaction between the server and the machines on which the tasks are run. It also collects information from remote machines after the tasks are run.
+# Modifying this script most probably will involve modifying many other scripts and data files. Since this is one of the main scripts, please make sure that everything IS working, before updating it on the main server.
+
+
+# User-defined functions
+
+# Prints the available options for the script
+function printOptions() {
+    echo "Usage: ./run-tasks [option=value]"
+    echo
+    echo "Values: "
+    echo -e "Either \"yes\" or \"no\"."
+    echo
+    echo "Options: "
+    echo -e "  -all-tasks     -- if set to yes, runs all tasks in \"tasks-all\","
+    echo -e "                    if set to no, runs all tasks in \"tasks-selected\"."
+    echo -e "  -all-machines  -- if set to yes, runs the task set on all machines in \"machines-all\","
+    echo -e "                    if set to no, runs the task set only on machines included in \"machines-selected\"."
+    echo -e "  -compile-stats -- if set to yes, generates compiling statistics,"
+    echo -e "                    if set to no, does not generate compiling statistics."
+    echo -e "  -run-stats     -- if set to yes, generates runtime statistics,"
+    echo -e "                    if set to no, does not generate runtime statistics."
+    echo -e "  -errors        -- if set to yes, print all errors to a file,"
+    echo -e "                    if set to no, does not print any error."
+    echo -e "  -diffs         -- if set to yes, diffs the current versions of benchmarks with the previous ones,"
+    echo -e "                    if set to no, no diffs are generated."
+    echo -e "  -mail-results  -- if set to yes, mails results to people,"
+    echo -e "                    if set to no, does not mail anything to anyone."
+    echo -e "  -mail-to-all   -- if set to yes, mails results to all people in \"mail-all\","
+    echo -e "                    if set to no, mails results only to people included in \"mail-selected\"."
+}
+
+# Beggining of script
+
+if [ "$1" == "--help" ]; then   # Print the command-line options for this script
+    printOptions;
+else
+  # Internal script variables
+    
+    GOT_ERRORS=0   # Did not encounter any errors until now
+
+    DATE=`date +%m`-`date +%d`-`date +%Y`   # current date in mm-dd-yyyy format
+    MACHINES_LIST=   # The list of machines in machines-all/machines-selected
+    WORKING_MACHINES_LIST=   # The list of "working" machines in machines-all/machines-selected
+    USED_MACHINES_LIST=   # The list of the machines that were used in this session
+    TASKS_LIST=   # The list of the tasks to be done from tasks-all/tasks-selected
+    MAILING_LIST=   # The list of the people whom the results should be mailed to
+    ERROR_FILE=errors_$DATE   # The name of the error file for this session
+    DIFFS_FILE=diffs_$DATE   # The name of the diffs file for this session
+    
+    TEMP_DIR=temp
+    ARCHIVE_DIR=archive
+    ARCHIVE_SOURCES_FILE=$ARCHIVE_DIR/sources.tar.gz
+    ARCHIVE_EXECUTABLES_FILE=$ARCHIVE_DIR/executables.tar.gz
+    ARCHIVE_ERRORS_FILE=$ARCHIVE_DIR/errors.tar.gz
+    ARCHIVE_DIFFS_FILE=$ARCHIVE_DIR/diffs.tar.gz
+    ARCHIVE_MOST_RECENT_VERSIONS_DIR=$ARCHIVE_DIR/current
+    DIFFS_DIR=$ARCHIVE_DIR/diffs
+    DIFFS_YESTERDAY_DIR=$DIFFS_DIR/yesterday
+    DIFFS_TODAY_DIR=$DIFFS_DIR/today
+
+  # Default values for script options that can be changed from command-line
+    
+    RUN_ALL_TASKS=yes
+    TASKS_FILE=tasks-all
+    USE_ALL_MACHINES=yes
+    MACHINES_FILE=machines-all
+    COMPILE_STATS=yes
+    RUN_STATS=yes
+    ERRORS=yes
+    DIFFS=yes
+    MAIL_RESULTS=yes
+    MAIL_TO_ALL=yes
+    MAILING_FILE=mailto-all
+    
+    DEBUG=no   # this variable is defined ONLY for debugging the script
+    
+    while [ "$1" != "" ]; do   # parsing the command-line parameters
+	case "$1" in
+	    -all-tasks=yes)
+		RUN_ALL_TASKS=yes   # Run all tasks from "tasks-all"; Default option
+		TASKS_FILE=tasks-all;;
+	    -all-tasks=no)
+		RUN_ALL_TASKS=no    # Run only tasks included in "tasks-selected"
+		TASKS_FILE=tasks-selected;;
+	    -all-machines=yes)
+		USE_ALL_MACHINES=yes   # Distribute tasks to all machines included in "machines-all"; Default option
+		MACHINES_FILE=machines-all;;
+	    -all-machines=no)
+		USE_ALL_MACHINES=no   # Distribute tasks only to machines included in "machines-selected"
+		MACHINES_FILE=machines-selected;;
+	    -compile-stats=yes)
+		COMPILE_STATS=yes;;   # Generate compiling statistics; Default option
+	    -compile-stats=no)
+		COMPILE_STATS=no;;   # Do not generate compiling statistics
+	    -run-stats=yes)
+		RUN_STATS=yes;;   # Generate runtime statistics; Default option
+	    -run-stats=no)
+		RUN_STATS=no;;   # Do not generate runtime statistics
+	    -errors=yes)
+		ERRORS=yes;;   # Report errors; Default option
+	    -errors=no)
+		ERRORS=no;;   # Do not write any error message in $ERROR_FILE
+	    -diffs=yes)
+		DIFFS=yes;;   # Diff the current versions of benchmarks with the previous ones; Default option
+	    -diffs=no)
+		DIFFS=no;;   # Do not diff the current version of benchmarks with the previous ones
+	    -mail-results=yes)
+		MAIL_RESULTS=yes;;   # Mail results to "interested" people; Default option
+	    -mail-results=no)
+		MAIL_RESULTS=no;;   # Do not mail any results to anybody
+	    -mail-to-all=yes)
+		MAIL_TO_ALL=yes   # Mail results to all people in "mail-all"; Default option
+		MAILING_FILE=mailto-all;;
+	    -mail-to-all=no)
+		MAIL_TO_ALL=no   # Mail results only to people included in "mail-selected"
+		MAILING_FILE=mailto-selected;;
+	    -debug)
+		DEBUG=yes;;   # Print some intermediate results on the screen
+	    *)
+		echo >> $ERROR_FILE
+		echo -e "Warning: Parameter $1 not supported. Maybe you just misspelled it." >> $ERROR_FILE
+		echo >> $ERROR_FILE;;
+	esac
+	
+	shift
+    done
+
+# It might happen that the user gave some command-line parameteres that are not supported by the script; in this case, the script automatically log the errors, if these misspelled/unsupported parameters are before the "-errors=<value>" parameter; so, we should delete the $ERROR_FILE, if the parsing block wrote there something and the user chose "-errors=no"
+    
+    if [ "$ERRORS" == "no" -a -e $ERROR_FILE ]; then   
+	rm $ERROR_FILE
+    fi
+    
+    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+	echo >> $ERROR_FILE
+	echo "Error file: $DATE" >> $ERROR_FILE
+	echo >> $ERROR_FILE
+    fi
+    
+    if [ "$DIFFS" == "yes" ]; then   # we want to log errors
+	echo >> $DIFFS_FILE
+	echo "Diffs file: $DATE" >> $DIFFS_FILE
+	echo >> $DIFFS_FILE
+    fi
+    
+  # Getting the list of machines in $MACHINES_LIST
+    
+    NUMBER_LINES=`wc -l $MACHINES_FILE | sed s/\ $MACHINES_FILE//`   # getting the number of lines in $MACHINES_FILE
+    n_line=1
+    while [ $n_line -le $NUMBER_LINES ]; do   # getting the machines on which the tasks will be run
+	CURRENT_MACHINE=`head -n $n_line $MACHINES_FILE | tail -n 1`   # this is the next machine to be added
+	MACHINE_ACCEPT_CONNECTIONS=1
+	ssh $CURRENT_MACHINE "pwd > /dev/null" || MACHINE_ACCEPT_CONNECTIONS=0   # check if this machine accepts ssh connections
+	if [ $MACHINE_ACCEPT_CONNECTIONS -eq 0 ]; then   # this machine does not accept ssh connections
+	    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+		echo >> $ERROR_FILE
+		echo "Machine $CURRENT_MACHINE does not accept ssh connections. Most probably it is turned off, or the sshd daemon is not intalled or properly configured." >> $ERROR_FILE
+		echo "Because of this problem, machine $machine will not be used in this testing session. Please, fix the problem (or remove this machine from \"machines-all\"/\"machines-selected\" file(s)) even if you do not intend to use for the next session." >> $ERROR_FILE
+	    fi
+	else
+	    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+		echo >> $ERROR_FILE
+		echo "          Machine $CURRENT_MACHINE accepts ssh connections." >> $ERROR_FILE
+	    fi
+	    MACHINES_LIST=$MACHINES_LIST" $CURRENT_MACHINE"   # this machine can be accessed through the ssh port
+	fi
+	n_line=$[$n_line+1]
+    done
+    
+  # Getting the task set in $TASKS_LIST
+    
+    NUMBER_LINES=`wc -l $TASKS_FILE | sed s/\ $TASKS_FILE//`   # getting the number of lines in $TASKS_FILE
+    n_line=1
+    while [ $n_line -le $NUMBER_LINES ]; do   # getting the list of tasks to be run
+	TASKS_LIST=$TASKS_LIST":`head -n $n_line $TASKS_FILE | tail -n 1`"   # unfortunately, we cannot use " " as a delimiter between the tasks, since some tasks might have command-line parameters and it seems that there is no way of giving 'for' a list with elements that contain " "
+	n_line=$[$n_line+1]
+    done
+    TASKS_LIST=`echo $TASKS_LIST | sed s/://`   # removing leading ":" from $TASKS_LIST
+        
+  # Getting the mailing list in $MAILING_LIST
+    
+    NUMBER_LINES=`wc -l $MAILING_FILE | sed s/\ $MAILING_FILE//`   # getting the number of lines in $MAILING_FILE
+    n_line=1
+    while [ $n_line -le $NUMBER_LINES ]; do   # getting the list of people who will receive the email
+	MAILING_LIST=$MAILING_LIST" `head -n $n_line $MAILING_FILE | tail -n 1`"
+	n_line=$[$n_line+1]
+    done
+    
+  # Updating and remaking the stuff on all machines where the task set will be run.
+    
+    for machine in $MACHINES_LIST; do
+	if [ "`ssh $machine 'echo $MAIN_TESTING_DIR'`" == "" ]; then   # $MAIN_TESTING_DIR should point to the main testing directory
+	    GOT_ERRORS=1
+	    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+		echo >> $ERROR_FILE
+		echo -e "Machine $machine is not configured properly (file ~/.regtestrc probably missing) and will not be used in this session." >> $ERROR_FILE
+		echo -e "If you want to use it in the next session (or even if you don\'t want to use it), correct the \"machines-all\"/\"machines-selected\" file(s)." >> $ERROR_FILE
+	    fi
+	else
+	    GOT_ALL_NECESSARY_SCRIPTS=1   # in $MAIN_TESTING_DIR there should be 3 scripts for updating; searching for them...
+	    if [ "`ssh $machine 'ls $MAIN_TESTING_DIR | grep cvs-update-all'`" == "" ]; then   # cvs-update-all not found
+		GOT_ALL_NECESSARY_SCRIPTS=0
+		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+		    echo >> $ERROR_FILE
+		    echo -e "Script \"cvs-update-all\" not found in directory \$MAIN_TESTING_DIR on machine $machine." >> $ERROR_FILE
+		fi
+	    fi
+	    if [ "`ssh $machine 'ls $MAIN_TESTING_DIR | grep remake-everything'`" == "" ]; then   # remake-everything not found
+		GOT_ALL_NECESSARY_SCRIPTS=0
+		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+		    echo >> $ERROR_FILE
+		    echo -e "Script \"remake-everything\" not found in directory \$MAIN_TESTING_DIR on machine $machine." >> $ERROR_FILE
+		fi
+	    fi
+	    if [ "`ssh $machine 'ls $MAIN_TESTING_DIR | grep update-and-make'`" == "" ]; then   # update-and-make not found
+		GOT_ALL_NECESSARY_SCRIPTS=0
+		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+		echo >> $ERROR_FILE
+		    echo -e "Script \"update-and-make\" not found in directory \$MAIN_TESTING_DIR on machine $machine." >> $ERROR_FILE
+		fi
+	    fi
+	    
+	    if [ $GOT_ALL_NECESSARY_SCRIPTS -eq 0 ]; then   # any of those 3 scripts missing?
+		GOT_ERRORS=1
+		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+		    echo >> $ERROR_FILE
+		    echo -e "Machine $machine is not configured properly and will not be used in this session." >> $ERROR_FILE
+		    echo -e "If you want to use in in the next session, correct the issues stated above." >> $ERROR_FILE
+		fi
+	    else   # no one missing
+		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+		    echo >> $ERROR_FILE
+		    echo -e "          Machine $machine has all necessary scripts." >> $ERROR_FILE
+		fi
+
+		# Probably you want to run one and only one of the following two lines
+		
+#		ssh -f $machine 'cd $MAIN_TESTING_DIR; ./update-and-make' # cvs updating the entire FLEX and remaking everything in Code, Runtime and Realtime (all this is done in background)
+		ssh -f $machine 'cd $MAIN_TESTING_DIR; ./update-and-make -clean' # cvs updating the entire FLEX and remaking everything in Code, Runtime and Realtime (all this is done in background); -clean parameter makes the scripts do "make clean" in each directory before doing "make"; it also forces the scripts to run ./setup and ./configure in Runtime before running "make clean; make"; should be used if and only if some configuration files were changed
+		sleep 5   # waiting 5 seconds for the remote machine to set up all necessary parameters
+	    fi
+	fi
+    done
+
+    # Now we have to wait for all machines to finish updating and remaking the FLEX stuff
+    
+    if [ $GOT_ERRORS -eq 0 ]; then   # no errors up to now, so we can continue
+	FINISHED_UPDATING=0   # still have some machines that did not finish updating
+	while [ $FINISHED_UPDATING -eq 0 ]; do
+	    if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+		echo -e "in the \"finished updating\" while..."
+	    fi
+	    FINISHED_UPDATING=1
+	    for machine in $MACHINES_LIST; do
+		if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+		    echo -e "in \"for\" in the \"finished updating\" while..."
+		fi
+		if [ "`ssh $machine 'if [ -e $UPDATING_FLEX_FILE ]; then cat $UPDATING_FLEX_FILE; else echo 0; fi'`" != "0" ]; then   # is this machine still updating?
+		    if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+			echo -e "machine $machine is still updating"
+		    fi
+		    FINISHED_UPDATING=0   # if yes, then there's no point to check other machines,
+		    break   # because anyway we have to wait for this one to finish
+		else
+		    if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+			echo -e "machine $machine finished updating"
+		    fi
+		    if [ "`ssh $machine 'if [ -e $UPDATED_SUCCESSFULLY_FILE ]; then cat $UPDATED_SUCCESSFULLY_FILE; else echo 1; fi'`" != "1" ]; then   # did cvs update and make finish successfully?
+			if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+			    echo >> $ERROR_FILE
+			    echo "Script ./update-and-make finished with an error on machine $machine. This means that either $machine has some problems with cvs update, or the newly commited stuff does not compile." >> $ERROR_FILE
+			    echo "Because of this error, $machine will not be used in this session. Please fix this either if you want or not to use $machine for the next testing session." >> $ERROR_FILE
+			fi
+		    else   # yes, everything's fine
+			if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+			    echo >> $ERROR_FILE
+			    echo "          Machine $machine updated successfully." >> $ERROR_FILE
+			fi
+			WORKING_MACHINES_LIST=$WORKING_MACHINES_LIST" $machine"   # this machine is ready for being exploited
+		    fi
+		fi
+	    done
+	    if [ $FINISHED_UPDATING -eq 0 ]; then   # is there any machine that is still updating?
+		if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+		    echo -e "sleeping 30 seconds; waiting for machine $machine to be updated"
+		fi
+		sleep 30   # if yes, then wait 30 seconds and re-iterate through the loop again
+	    fi
+	done
+    fi
+
+    # At this point we should have identified the "working" machines and also updated them all. Also all tasks in the task list should be guaranteed to exist.
+    # Ok, enough preparations -- time to start working!
+    
+    if [ $GOT_ERRORS -eq 0 ]; then   # no errors up to now
+	CURRENT_MACHINE=   # This is the machine that the next task will be run on
+	CURRENT_TASK=   # This is the next task to be run
+	REST_MACHINES=$WORKING_MACHINE_LIST   # These are the machines that don't run anything yet
+	REST_TASKS=$TASKS_LIST   # These are the tasks that weren't run yet
+
+	if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+	    echo -e "\$TASKS_LIST = $TASKS_LIST"
+	    echo -e "\$WORKING_MACHINES_LIST = $WORKING_MACHINES_LIST"
+	fi
+	
+	while [ "$REST_TASKS" != "" ]; do
+	    task=`echo $REST_TASKS | sed s/:.*$//`   # get the next task
+	    if [ "$task" == "$REST_TASKS" ]; then   # is it the last task?
+		REST_TASKS=""
+	    else   # more tasks in the list
+		REST_TASKS=`echo $REST_TASKS | sed s/$task://`
+	    fi
+	    
+	    if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+		echo -e "\$task = $task"
+	    fi
+	    ASSIGNED=0   # this task was not assigned to any machine yet
+	    while [ $ASSIGNED -eq 0 ]; do
+		if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+		    echo "In while, trying to distribute tasks..."
+		fi
+		for machine in $WORKING_MACHINES_LIST; do
+		    if [ "`ssh $machine 'if [ -e $RUNNING_TASK_FILE ]; then cat $RUNNING_TASK_FILE; else echo 0; fi'`" != "1" ]; then   # this machine is not running anything, so the current task can be run on it
+			ssh -f $machine "cd \$MAIN_TESTING_DIR; ./run-benchmark $task -compile-stats=$COMPILE_STATS -run-stats=$RUN_STATS -errors=$ERRORS"   # running the task in background
+			sleep 5   # waiting 5 seconds for the remote machine to set up it's parameters
+			
+			MACHINE_ALREADY_USED=0   # this machine was not used before
+			for used_machine in $USED_MACHINES_LIST; do   # check if this machine was used before
+			    if [ "$used_machine" == "$machine" ]; then   # this machine is already included in $USED_MACHINES_LIST
+				MACHINE_ALREADY_USED=1
+				break
+			    fi
+			done
+			if [ $MACHINE_ALREADY_USED -eq 0 ]; then   # this machine was not used before
+			    USED_MACHINES_LIST=$USED_MACHINES_LIST" $machine"
+			fi
+
+			if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+			    echo -e "\$USED_MACHINES_LIST = $USED_MACHINES_LIST"
+			fi
+			ASSIGNED=1   # This task is assigned
+			break
+		    fi
+		done
+		if [ $ASSIGNED -eq 0 ]; then   # All machines are busy right now; retry reassigning the task after 10 seconds
+		    if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+			echo "Sleeping for 30 seconds; all machines are busy..."
+		    fi
+		    sleep 30   # Pause the script for 30 seconds
+		fi
+	    done   
+	done
+	
+	# At this point, all tasks are either finished or running, but there is no task that did not start running yet
+	# Waiting for all tasks to finish
+	
+	ALL_TASKS_FINISHED=0   # some tasks are still running
+	while [ $ALL_TASKS_FINISHED -eq 0 ]; do
+	    if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+		echo "Did all tasks finish?"
+	    fi
+	    ALL_TASKS_FINISHED=1   # Assume that all tasks finished running
+	    for machine in $USED_MACHINES_LIST; do
+		if [ "`ssh $machine 'if [ -e $RUNNING_TASK_FILE ]; then cat $RUNNING_TASK_FILE; else echo 0; fi'`" != "0" ]; then   # Found a task that did not finish yet
+		    if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+			echo -e "Found a task on machine $machine that is still running"
+		    fi
+		    ALL_TASKS_FINISHED=0   # Have to wait more time for tasks to finish
+		    break   # Exit from "for" loop
+		fi
+	    done
+	    if [ $ALL_TASKS_FINISHED -eq 0 ]; then   # If not all tasks finished, wait for 10 seconds, then recheck again
+		if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+		    echo "Waiting for tasks to finish; sleeping for 30 seconds..."
+		fi
+		sleep 30
+	    fi
+	done
+	if [ "$DEBUG" == "yes" ]; then   # print some debugging information
+	    echo "All tasks finished"
+	fi
+	
+	# Now all tasks should be finished; time to collect the information from the machines on the server
+
+	# Collecting all error messages into one big file
+
+	if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+	    echo >> $ERROR_FILE
+	    echo "LIST OF COMPILING-TIME/RUNTIME ERRORS: " >> $ERROR_FILE   # From here on, all reported errors are compiling-time/runtime errors
+	    echo >> $ERROR_FILE
+	    
+	    for machine in $USED_MACHINES_LIST; do
+		REMOTE_MACHINE_ERROR_FILE=`ssh $machine 'echo $ERROR_FILE'`   # The name of the file with errors on the remote machine
+		echo "Machine $machine :" >> $ERROR_FILE
+		echo "--------------------------------------------------" >> $ERROR_FILE
+		echo >> $ERROR_FILE
+		if [ "$DEBUG" == "yes" ]; then
+		    scp $machine:$REMOTE_MACHINE_ERROR_FILE _errors_   # Copying the error file from each machine to local "_errors_" file...
+		    cat _errors_ >> $ERROR_FILE   # ... and then appending it to $ERROR_FILE
+		else
+		    scp $machine:$REMOTE_MACHINE_ERROR_FILE _errors_ > /dev/null 2>&1   # Copying the error file from each machine to local "_errors_" file...
+		    cat _errors_ >> $ERROR_FILE > /dev/null 2>&1   # ... and then appending it to $ERROR_FILE
+		fi
+		echo >> $ERROR_FILE
+	    done
+	    
+	    echo "End of errors file." >> $ERROR_FILE
+	    echo >> $ERROR_FILE
+	fi
+
+	if [ -e $ARCHIVE_ERRORS_FILE ]; then   # do we have already an $ARCHIVE_ERRORS_FILE?
+	    if [ "$DEBUG" == "yes" ]; then
+		tar zxvf $ARCHIVE_ERRORS_FILE -C $TEMP_DIR   # extracting existing error files to $TEMP_DIR
+		cp $ERROR_FILE $TEMP_DIR   # moving $ERROR_FILE to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz * > `cd -; pwd`/$ARCHIVE_ERRORS_FILE   # adding this error file to the $ARCHIVE_ERRORS_FILE archive
+		rm -r *   # removing everything in $TEMP_DIR directory
+		cd -   # changing the directory back
+	    else
+		tar zxvf $ARCHIVE_ERRORS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting existing error files to $TEMP_DIR
+		cp -f $ERROR_FILE $TEMP_DIR   # moving $ERROR_FILE to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz * > `cd -; pwd`/$ARCHIVE_ERRORS_FILE 2>/dev/null   # adding this error file to the $ARCHIVE_ERRORS_FILE archive
+		rm -rf *   # removing everything in $TEMP_DIR directory
+		cd -   # changing the directory back
+	    fi
+	else
+	    if [ "$DEBUG" == "yes" ]; then
+		tar cz $ERROR_FILE > $ARCHIVE_ERRORS_FILE   # creating the $ARCHIVE_ERRORS_FILE archive
+	    else	
+		tar cz $ERROR_FILE > $ARCHIVE_ERRORS_FILE 2>/dev/null   # creating the $ARCHIVE_ERRORS_FILE archive
+	    fi
+	fi
+
+	# Copying all executables from all machines and adding them to the $ARCHIVE_EXECUTABLES_FILE archive
+
+	mkdir -p $DATE
+	for machine in $USED_MACHINES_LIST; do   # iterating through all machines that were used in this session
+	    REMOTE_MACHINE_FLEX_DIR=`ssh $machine 'echo $FLEX_DIR'`   # getting remote machine's $FLEX_DIR
+	    if [ "$DEBUG" == "yes" ]; then
+		scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/run* $DATE   # copying all executables from $machine
+	    else
+		scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/run* $DATE > /dev/null 2>&1  # copying all executables from $machine
+	    fi
+	done
+	
+	for file in `\ls -A $DATE/run* 2>/dev/null`; do   # looping through all files that start with "run"
+	    if [ ! -x $file ]; then   # is $file executable? trying to avoid possible coincidences in names
+		rm -f $file   # remove the file, if it is not executable
+	    fi
+	done
+
+	if [ -e $ARCHIVE_EXECUTABLES_FILE ]; then   # does the $ARCHIVE_EXECUTABLES_FILE exist?
+	    if [ "$DEBUG" == "yes" ]; then
+		tar zxvf $ARCHIVE_EXECUTABLES_FILE -C $TEMP_DIR   # extracting executables in $ARCHIVE_EXECUTABLES_FILE to $TEMP_DIR
+		mv $DATE $TEMP_DIR   # moving current executables to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz * > `cd -; pwd`/$ARCHIVE_EXECUTABLES_FILE   # adding new executable files to the $ARCHIVE_EXECUTABLES_FILE archive
+		rm -r *   # removing all files from $TEMP_DIR directory
+		cd -   # changing the directory back
+	    else
+		tar zxvf $ARCHIVE_EXECUTABLES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting executables in $ARCHIVE_EXECUTABLES_FILE to $TEMP_DIR
+		mv -f $DATE $TEMP_DIR   # moving current executables to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz * > `cd -; pwd`/$ARCHIVE_EXECUTABLES_FILE 2>/dev/null   # adding new executable files to the $ARCHIVE_EXECUTABLES_FILE archive
+		rm -rf *   # removing all files from $TEMP_DIR directory
+		cd -   # changing the directory back
+	    fi
+	else
+	    if [ "$DEBUG" == "yes" ]; then
+		tar cz $DATE > $ARCHIVE_EXECUTABLES_FILE   # creating the $ARCHIVE_EXECUTABLES_FILE archive
+		rm -r $DATE   # removing the $DATE directory
+	    else
+		tar cz $DATE > $ARCHIVE_EXECUTABLES_FILE 2>/dev/null   # creating the $ARCHIVE_EXECUTABLES_FILE archive
+		rm -rf $DATE   # removing the $DATE directory
+	    fi
+	fi
+
+	# Copying all benchmark sources to the server. Since all machines are cvs updated from the repository, they should all have exactly the same files. Therefore, we can expect to find the sources for ALL benchmarks on a single machine, even if it ran only some of the benchmarks.
+
+	for machine in $USED_MACHINES_LIST; do   # getting the first machine in the $USED_MACHINES list
+	    COPY_FROM_MACHINE=$machine
+	    REMOTE_MACHINE_FLEX_DIR=`ssh $machine 'echo $FLEX_DIR'`
+	    break
+	done
+
+	REST_TASKS=$TASKS_LIST   # the list of the tasks that were not executed yet
+	while [ "$REST_TASKS" != "" ]; do
+	    task=`echo $REST_TASKS | sed s/:*//`   # get the next task
+	    if [ "$task" == "$REST_TASKS" ]; then   # is it the last task?
+		REST_TASKS=""
+	    else   # more tasks in the list
+		REST_TASKS=`echo $REST_TASKS | sed s/$task://`
+	    fi
+	    task=`echo $task | sed s/\ .*$//`   # getting rid of possible command-line parameters
+	    
+	    if [ "$DEBUG" == "yes" ]; then   # print some debug information
+		echo "\$task = $task"
+		echo "\$REST_TASKS = $REST_TASKS"
+		echo "\$COPY_FROM_MACHINE = $COPY_FROM_MACHINE"
+		echo "\$REMOTE_MACHINE_FLEX_DIR = $REMOTE_MACHINE_FLEX_DIR"
+		scp $COPY_FROM_MACHINE:$REMOTE_MACHINE_FLEX_DIR/$task.java $DIFFS_TODAY_DIR   # copy the sources for all tasks from $COPY_FROM_MACHINE
+	    else
+		scp $COPY_FROM_MACHINE:$REMOTE_MACHINE_FLEX_DIR/$task.java $DIFFS_TODAY_DIR > /dev/null 2>&1   # copy the sources for all tasks from $COPY_FROM_MACHINE
+	    fi
+	done
+	
+	# Generating the diffs, merging them into one big file, and adding this file to the $ARCHIVE_DIFFS_FILE
+
+	if [ "$DIFFS" == "yes" ]; then   # we want to generate diffs
+	    diff $DIFFS_TODAY_DIR $DIFFS_YESTERDAY_DIR >> $DIFFS_FILE
+	    rm -f $DIFFS_YESTERDAY_DIR/*   # remove source's from the last session
+	    cp -f $DIFFS_TODAY_DIR/* $DIFFS_YESTERDAY_DIR   # copy today's sources
+
+	    echo >> $DIFFS_FILE
+	    echo "End of diffs file." >> $DIFFS_FILE
+	    echo >> $DIFFS_FILE
+	fi
+
+	if [ -e $ARCHIVE_DIFFS_FILE ]; then   # do we have already an $ARCHIVE_DIFFS_FILE?
+	    if [ "$DEBUG" == "yes" ]; then
+		tar zxvf $ARCHIVE_DIFFS_FILE -C $TEMP_DIR   # extracting existing diffs files to $TEMP_DIR
+		cp $DIFFS_FILE $TEMP_DIR   # moving $DIFFS_FILE to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz * > `cd -; pwd`/$ARCHIVE_DIFFS_FILE   # adding this diffs file to the $ARCHIVE_DIFFS_FILE archive
+		rm -r *   # removing everything in $TEMP_DIR directory
+		cd -   # changing the directory back
+	    else
+		tar zxvf $ARCHIVE_DIFFS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting existing diffs files to $TEMP_DIR
+		cp -f $DIFFS_FILE $TEMP_DIR   # moving $DIFFS_FILE to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz * > `cd -; pwd`/$ARCHIVE_DIFFS_FILE 2>/dev/null   # adding this diffs file to the $ARCHIVE_ERRORS_FILE archive
+		rm -rf *   # removing everything in $TEMP_DIR directory
+		cd -   # changing the directory back
+	    fi
+	else
+	    if [ "$DEBUG" == "yes" ]; then
+		tar cz $DIFFS_FILE > $ARCHIVE_DIFFS_FILE   # creating the $ARCHIVE_ERRORS_FILE archive
+	    else	
+		tar cz $DIFFS_FILE > $ARCHIVE_DIFFS_FILE 2>/dev/null   # creating the $ARCHIVE_ERRORS_FILE archive
+	    fi
+	fi
+
+	# Adding bechmark sources to the $ARCHIVE_SOURCES_FILE archive
+
+	mkdir -p $DATE
+	for file in `\ls -A $DIFFS_TODAY_DIR/*.java`; do   # looping through all files with "java" extension
+	    mv -f $file $DATE   # move today's sources to $DATE directory
+	done
+
+	if [ -e $ARCHIVE_SOURCES_FILE ]; then   # does the $ARCHIVE_SOURCES_FILE exist?
+	    if [ "$DEBUG" == "yes" ]; then
+		tar zxvf $ARCHIVE_SOURCES_FILE -C $TEMP_DIR   # extracting all sources from $ARCHIVE_SOURCES_FILE to $TEMP_DIR
+		mv $DATE $TEMP_DIR   # moving $DATE to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz * > `cd -; pwd`/$ARCHIVE_SOURCES_FILE   # adding today's sources to the $ARCHIVE_SOURCES_FILE archive
+		rm -r *   # removing all files in $TEMP_DIR directory
+		cd -   # changing directory back
+	    else
+		tar zxvf $ARCHIVE_SOURCES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting all sources from $ARCHIVE_SOURCES_FILE to $TEMP_DIR
+		mv -f $DATE $TEMP_DIR   # moving $DATE to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz * > `cd -; pwd`/$ARCHIVE_SOURCES_FILE 2>/dev/null   # adding today's sources to the $ARCHIVE_SOURCES_FILE archive
+		rm -fr *   # removing all files in $TEMP_DIR directory
+		cd -   # changing directory back
+	    fi
+	else
+	    if [ "$DEBUG" == "yes" ]; then
+		tar cz $DATE > $ARCHIVE_SOURCES_FILE   # creating the $ARCHIVE_SOURCES_FILE archive
+		rm -r $DATE   # removing $DATE directory
+	    else
+		tar cz $DATE > $ARCHIVE_SOURCES_FILE 2>/dev/null   # creating the $ARCHIVE_SOURCES_FILE archive
+		rm -rf $DATE   # removing $DATE directory
+	    fi
+	fi
+    fi
+
+    # Finally, we have all the information collected, so it's time to spam the "interested" people
+    
+    if [ "$MAIL_RESULTS" == "yes" ]; then   # do we have to mail the results?
+	if [ "$ERRORS" == "yes" -a "$DIFFS" == "yes" ]; then   # we want both errors and diffs to be mailed
+	    cat $ERROR_FILE $DIFFS_FILE | mail -s "Regression Testing: Results for $DATE" $MAILING_LIST
+	elif [ "$ERRORS" == "yes" -a "$DIFFS" == "no" ]; then   # we want errors, but not diffs
+	    cp $ERROR_FILE mail_temp
+	    echo >> mail_temp
+	    echo >> mail_temp
+	    echo "Diffs generation option has been turned off." >> mail_temp
+	    cat mail_temp | mail -s "Regression Testing: Results for $DATE" $MAILING_LIST
+	    rm mail_temp
+	elif [ "$ERRORS" == "no" -a "$DIFFS" == "yes" ]; then   # we want diffs, but not errors
+	    cp $DIFFS_FILE mail_temp
+	    echo >> mail_temp
+	    echo >> mail_temp
+	    echo "Collecting errors option has been turned off." >> mail_temp
+	    cat mail_temp | mail -s "Regression Testing: Results for $DATE" $MAILING_LIST
+	    rm mail_temp
+	else
+	    echo "Both diffs generation and collecting errors options have been turned off." | mail -s "Regression Testing: Results for $DATE" $MAILING_LIST
+	fi
+    fi
+fi
+
+for machine in $USED_MACHINES_LIST; do
+    ssh $machine '$MAIN_TESTING_DIR/clean'   # cleaning the remote machine
+done
+./clean   # remove all temporary files from this machine
+
+# End of script
