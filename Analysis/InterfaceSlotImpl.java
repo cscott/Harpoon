@@ -1,4 +1,4 @@
-// InterfaceSlotAllocation.java, created Mon Jan 18 15:08:49 1999 by pnkfelix
+// InterfaceSlotImpl.java, created Tue Jan 19 10:59:44 1999 by pnkfelix
 package harpoon.Analysis;
 
 import harpoon.ClassFile.HClass;
@@ -6,19 +6,19 @@ import harpoon.Backend.Maps.MethodMap;
 import java.util.Enumeration;
 
 /**
- * <code>InterfaceSlotAllocation</code>
+ * <code>InterfaceSlotImpl</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceSlotAllocation.java,v 1.1.2.2 1999-01-19 16:07:06 pnkfelix Exp $
+ * @version $Id: InterfaceSlotImpl.java,v 1.1.2.1 1999-01-19 16:07:07 pnkfelix Exp $
  */
 
-public abstract class InterfaceSlotAllocation  {
+public class InterfaceSlotImpl extends InterfaceSlotAllocation {
     
-    /** Creates a <code>InterfaceSlotAllocation</code>. */
-    public InterfaceSlotAllocation() {
+    /** Creates a <code>InterfaceSlotImpl</code>. */
+    public InterfaceSlotImpl() {
         
     }
-
+    
     /** Attempts to order the methods for the interface objects in
 	<code>hclasses</code>.
 	<BR> requires: <code>hclasses</code> is an
@@ -30,6 +30,7 @@ public abstract class InterfaceSlotAllocation  {
 	method->int mapping, where the integer returned represents the
 	placement of the method.
     */
-    public abstract MethodMap sortMethods( Enumeration hclasses );    
-
+    public MethodMap sortMethods( Enumeration hclasses ) {
+	return null;
+    }
 }
