@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.33 2002-07-25 18:47:31 cananian Exp $
+% $Id: ptran.tex,v 1.34 2002-07-25 22:26:44 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.33 $ $}
+\date{\today \\ $ $Revision: 1.34 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -168,7 +168,7 @@ where
 %\right)
 \end{eqnarray*}
 After the analysis is complete, $v$ is (conservatively) singular at
-use $n$ if $\neg\text{Ns}(v,n)$, and 
+use $n$ if $\neg\text{Ns}(v,n)$, and the function 
 $\text{GenSite}(s,v)=\left\{ d | \tuple{v,d}\in\text{In}_\text{Gs}(s) \right\}$.
 Note that $\text{IsBad}(n)$ is true for fetches from the heap and
 definitions of formal parameters.
