@@ -1,6 +1,7 @@
 // IPaqServoController.java, created by wbeebee
 // Copyright (C) 2002 Wes Beebee <wbeebee@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
+package servo;
 
 import java.io.OutputStream;
 import java.io.InputStream;
@@ -9,8 +10,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
-
-package servo;
 
 /**
  * @author Wes Beebee <<a href="mailto:wbeebee@alum.mit.edu">wbeebee@alum.mit.edu</a>>
@@ -127,8 +126,9 @@ public class IPaqServoController {
     private static native final byte readSerial();
 
     private static final synchronized void sendSerial(String s) {
-	for(int i=0; i<s.length; i++) {
-	    sendSerial((byte)s[i]);
+	char c[] = s.toCharArray();
+	for(int i=0; i<c.length; i++) {
+	    sendSerial((byte)c[i]);
 	}
     }
 
