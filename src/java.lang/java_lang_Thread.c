@@ -7,12 +7,13 @@
 #include <errno.h>
 #ifdef WITH_HEAVY_THREADS
 #include <pthread.h>
-#include <sched.h>
 #include <sys/time.h>
 #endif
+#include <sched.h> /* for sched_yield */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h> /* for usleep */
 
 #ifdef WITH_HEAVY_THREADS
 #define EXTRACT_OTHER_ENV(env, thread) \
@@ -198,15 +199,20 @@ JNIEXPORT jobject JNICALL Java_java_lang_Thread_currentThread
   return ((struct FNI_Thread_State *)env)->thread;
 }
 
-#if 0
 /*
  * Class:     java_lang_Thread
  * Method:    yield
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_java_lang_Thread_yield
-  (JNIEnv *env, jclass cls);
+  (JNIEnv *env, jclass cls) {
+  /* two ways of implementing this... not sure which is better. */
+#if 1
+  sched_yield();
+#else
+  usleep(0);
 #endif
+}
 
 /*
  * Class:     java_lang_Thread
