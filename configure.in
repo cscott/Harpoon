@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.114 $)dnl
+AC_REVISION($Revision: 1.115 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -172,7 +172,7 @@ AM_CONDITIONAL(ROLE_INFER, test $with_role_infer = yes)
 dnl process option for Realtime Java support.
 AC_MSG_CHECKING([for realtime java support])
 AC_ARG_WITH(realtime-java,
-[  --with-realtime-java[={yes,full,stubs,fake,threads}][,noheap][,debug[-ref]][,gc-stats][,timer]],
+[  --with-realtime-java[={yes,full,stubs,fake,threads}][,noheap][,debug[-ref]][,threads-debug][,gc-stats][,timer]],
 with_realtime_java="$withval", with_realtime_java="no")
 with_realtime_java_stubs=no
 case ",$with_realtime_java," in
@@ -255,6 +255,16 @@ case ",$with_realtime_java," in
 *)	AC_MSG_RESULT([no])
 	;;
 esac
+AC_MSG_CHECKING([for thread scheduler debugging support])
+case ",$with_realtime_java," in
+*,threads-debug*) AC_MSG_RESULT([yes])
+	AC_DEFINE(RTJ_DEBUG_THREADS, 1,
+	[Define if you want thread scheduler debugging support])
+	;;
+*)	AC_MSG_RESULT([no])
+	;;
+esac
+
 
 AM_CONDITIONAL(REALTIME_JAVA, test $with_realtime_java != no)
 AM_CONDITIONAL(REALTIME_JAVA_STUBS, test $with_realtime_java_stubs = yes)
