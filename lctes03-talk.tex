@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.4 2003-05-22 03:19:22 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.5 2003-05-22 07:31:13 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -27,6 +27,7 @@ oqe
 \usepackage{verbatim}
 %\hypersetup{pdfpagemode=FullScreen}
 
+\slideCaption{Ananian/LCTES'03}
 \title{Size Optimizations for Java Programs}
 \author{\large\href{http://cscott.net}{C.~Scott~Ananian} and Martin~Rinard}
 \email{\{cananian,rinard\}@lcs.mit.edu}
@@ -531,7 +532,7 @@ numbers.
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{8}{
-\begin{slide}{Example, redux redux}
+\begin{slide}{Example redux, redux}
 \begin{center}%
 \parbox[c]{2in}{%
 \begin{mysamplecode}%
@@ -1443,17 +1444,21 @@ are statically unused.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
+\overlays{2}{
 \begin{slide}{Header optimizations:\\\small claz compression}
 \begin{center}
-\includegraphics[scale=0.5]{Figures/Kontour/classcomp-bbox.eps}
+\onlySlide*{1}{\includegraphics[scale=0.5]{Figures/Kontour/classcomp0-bbox.eps}}%
+\onlySlide*{2}{\includegraphics[scale=0.5]{Figures/Kontour/classcomp-bbox.eps}}%
 \end{center}
 \end{slide}
+}
 
 \begin{talknotes}
 And now looking at the second word: the claz pointer typically points
 directly to some structure with information about the object type.
+@
 We can save space by imposing a level of indirection and using
-a small \emph{table-index} instead.
+a small \emph{table index} instead.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
