@@ -11,10 +11,10 @@ import java.util.Collection;
  * that are interconnected as directed graphs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HasEdges.java,v 1.1.2.3 1999-09-11 05:43:20 pnkfelix Exp $
+ * @version $Id: HasEdges.java,v 1.1.2.4 1999-11-05 22:32:54 pnkfelix Exp $
  */
 
-public interface HasEdges  {
+public interface HasEdges extends harpoon.ClassFile.HCodeElement {
     
     /** Returns an array of all the edges to and from this 
      *  <code>HasEdges</code>. */

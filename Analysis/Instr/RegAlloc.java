@@ -53,7 +53,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.46 1999-10-26 23:18:35 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.47 1999-11-05 22:32:43 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = true;
@@ -652,55 +652,6 @@ class BrainDeadLocalAlloc extends RegAlloc {
 
 }
 
-class Web extends harpoon.Analysis.GraphColoring.SparseNode {
-    Temp var;
-    HashSet instrs;
-
-    static int counter=1;
-    int id;
-
-    Web(Temp var) {
-	this.var = var;
-	instrs = new HashSet();
-	id = counter;
-	counter++;
-    }
-    
-    Web(Temp var, Set instrSet) {
-	this(var);
-	Iterator iter = instrSet.iterator();
-	while(iter.hasNext()) {
-	    this.instrs.add(iter.next());
-	}
-    }
-    
-    public boolean equals(Object o) {
-	try {
-	    Web w = (Web) o;
-	    return w.var.equals(this.var) &&
-		w.instrs.equals(this.instrs);
-	} catch (ClassCastException e) {
-	    return false;
-	}
-    }
-    
-    public int hashCode() {
-	// reusing Temp's hash; we shouldn't be using both Webs and
-	// Temps as keys in the same table anyway.
-	return var.hashCode();
-    }
-    
-    public String toString() {
-	String ids = "";
-	Iterator iter = instrs.iterator();
-	while(iter.hasNext()) {
-	    ids += ((Instr)iter.next()).getID();
-	    if (iter.hasNext()) ids+=", ";
-	}
-	return "Web[id: "+id+", Var: " + var + ", Instrs: {"+ ids +"} ]";
-    }
-}
-
 /** Visits <code>BasicBlock</code>s of <code>Instr</code>s and
     uses the <code>FskLoad</code> and <code>FskStore</code>
     instructions to construct <code>Web</code>s for this method,
@@ -757,30 +708,6 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    }
 	}
 
-	
-	/** Delete implementation of ToSetMap after I make sure that
-	    MultiMap works here. */ 
-	class ToSetMap extends HashMap {
-	    public Object get(Object key) {
-		Object s = super.get(key);
-		if (s == null) {
-		    HashSet set = new HashSet() {
-
-		    };
-		    super.put(key, set);
-		    return set;
-		} else {
-		    return s;
-		}
-	    }
-
-	    public boolean containsKey(Object key) {
-		Set s = (Set) super.get(key);
-		return (s != null &&
-			s.size() != 0);
-	    }
-
-	}
 	
 	void foundLoad(RegAlloc.FskLoad instr) {
 	    Iterator uses = instr.useC().iterator();
@@ -883,7 +810,7 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    System.out.println("\t\t\t\t IN -> OUT : [" + web + ", "+b+"]" );
 
 	    while(instrs.hasNext()) {
-		web.instrs.add(instrs.next());
+		web.refs.add(instrs.next());
 	    }
 	    
 	    webInfo.out.put(t, web);

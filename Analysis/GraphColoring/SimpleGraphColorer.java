@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
+import java.util.List;
 import java.util.Vector;
 import java.util.Stack;
 import java.util.Enumeration;
@@ -11,7 +12,7 @@ import java.util.Enumeration;
  * <code>SimpleGraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.7 1999-08-04 05:52:21 cananian Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.8 1999-11-05 22:32:17 pnkfelix Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {
@@ -26,7 +27,7 @@ public class SimpleGraphColorer extends GraphColorer {
 	( http://ceylon.lcs.mit.edu/6035/lecture18/sld064.htm ).
     */
     public final void color( ColorableGraph graph, 
-			     Vector colors ) 
+			     List colors ) 
 	throws UncolorableGraphException {
 	try {
 	    Stack hidden = new Stack();
@@ -99,7 +100,7 @@ public class SimpleGraphColorer extends GraphColorer {
 		
 		Color color = null;
 		for (int i=0; i<colors.size(); i++) {
-		    Color col = (Color) colors.elementAt(i);
+		    Color col = (Color) colors.get(i);
 		    boolean colorMatch = false;
 		    for (int j=0; j<neighborColors.size(); j++) {
 			Color nCol = 

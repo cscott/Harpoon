@@ -42,13 +42,13 @@ import java.util.HashSet;
 	 This has a number of implications for the behavior of
 	 <code>MultiMap</code>:
 
-    <BR> Let <UL>
+    <BR> Let <OL>
          <LI> <code>mm</code> be a <code>MultiMap</code>,
 	 <LI> <code>k</code> be an <code>Object</code> (which may or may
 	          not be a Key in <code>mm</code>)
 	 <LI> <code>c</code> be the <code>Collection</code> returned by
 	          <code>mm.getValues(k)</code>.
-    </UL>
+    </OL>
     <BR> Then <code>c</code> will either be a non-empty
          <code>Collection</code> (the case where <code>k</code> is a
 	 Key in <code>mm</code> or it will be an empty collection (the
@@ -67,7 +67,7 @@ import java.util.HashSet;
 	 <code>key</code> to the singleton set containing
 	 <code>value</code>. 
 
-    <BR> Note that the behavior of <code>MultiMap</code> is
+    <P>  Note that the behavior of <code>MultiMap</code> is
          indistinquishable from that of a <code>Map</code> if none of
 	 the extensions of <code>MultiMap</code> are utilized.  Thus,
 	 users should take care to ensure that other code relying on
@@ -75,7 +75,7 @@ import java.util.HashSet;
 	 does not ever attempt to use a <code>MultiMap</code> when any
 	 of its Keys map to more than one value.
 
-    <BR> Also, right now the implementation tries to preserve the
+    <P>  Also, right now the implementation tries to preserve the
          property that if a key 'k' maps to an empty collection 'c' in
 	 some MultiMap 'mm', then users of 'mm' will not be able to
 	 see that 'k' is a member of the keySet for 'mm'.  However, it
@@ -83,11 +83,26 @@ import java.util.HashSet;
 	 as a means to operate on the state of 'mm', and it is not
 	 clear to me whether one can even ensure that the property
 	 can be maintained if arbitrary operations on mm.getValues(k)
-	 are passed on to 'mm', because of the possibility that 
+	 are passed on to 'mm'.
 
+    <P>  This data structure is a bit experimental; a few changes may
+         be coming:<OL>
+	 <LI> We may make it not extend the <code>Map</code>
+	      interface, because it inherently violates the
+	      constraints of the <code>Map</code> interface once
+	      multiple values are added for one key.
+         <LI> The <code>Collection</code> views returned right now
+	      don't offer very much in terms of modifying the
+	      state of <code>this</code> internally.
+	 <LI> Some of the views returned do not properly reflect
+	      modification in <code>this</code>.  This is a gross
+	      oversight of <code>Collection</code>'s interface
+	      on my part and I need to fix it, which I will do when I
+	      have free time.
+	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.7 1999-11-02 20:32:58 pnkfelix Exp $
+    @version $Id: MultiMap.java,v 1.1.2.8 1999-11-05 22:32:56 pnkfelix Exp $
  */
 public class MultiMap implements Map {
 
@@ -121,7 +136,8 @@ public class MultiMap implements Map {
 	<code>SetFactory</code> for its value collections.  
 	To gain more control over the specific factories used in
 	internal representation of <code>this</code>, use the more
-	specific {@link MultiMap#MultiMap(CollectionFactory, MapFactory) constructor }.
+	specific {@link MultiMap#MultiMap(CollectionFactory,MapFactory) constructor }
+	that takes <code>CollectionFactory</code>s.
     */
     public MultiMap() {
 	this(Factories.hashSetFactory(), Factories.hashMapFactory());

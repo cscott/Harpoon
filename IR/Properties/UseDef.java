@@ -11,10 +11,10 @@ import java.util.Collection;
  * that keep use/def information.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.2.2.1 1999-09-03 15:35:09 pnkfelix Exp $
+ * @version $Id: UseDef.java,v 1.2.2.2 1999-11-05 22:32:55 pnkfelix Exp $
  */
 
-public interface UseDef  {
+public interface UseDef extends harpoon.ClassFile.HCodeElement {
     /** Return all the <code>Temp</code>s used by this 
      *  <code>HCodeElement</code>. */
     public Temp[] use();

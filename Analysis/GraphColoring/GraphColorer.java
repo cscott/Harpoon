@@ -3,13 +3,13 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
-import java.util.Vector;
+import java.util.List;
 
 /**
  * <code>GraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColorer.java,v 1.1.2.6 1999-08-04 05:52:21 cananian Exp $
+ * @version $Id: GraphColorer.java,v 1.1.2.7 1999-11-05 22:32:17 pnkfelix Exp $
  */
 
 public abstract class GraphColorer  {
@@ -111,7 +111,7 @@ public abstract class GraphColorer  {
 				  
     /** Attempts to color <code>graph</code>.
 	<BR> <B>requires:</B> <code>colors</code> is a
-	                      <code>Vector</code> of
+	                      <code>List</code> of
 			      <code>Color</code>s  
 	<BR> <B>modifies:</B> <code>graph</code>
 	<BR> <B>effects:</B> Attempts to color <code>graph</code>
@@ -122,7 +122,7 @@ public abstract class GraphColorer  {
 			     <code>UncolorableGraphException</code>. 
      */
     public abstract void color(ColorableGraph graph,
-			       Vector colors ) 
+			       List colors ) 
 	throws UncolorableGraphException;
 			       
 
