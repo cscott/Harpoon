@@ -27,7 +27,7 @@ import java.util.AbstractCollection;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.32 1999-08-28 00:48:28 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.33 1999-08-28 00:58:23 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -300,9 +300,12 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	     <LI> if <code>edge.from()</code> is not
 	     <code>null</code>, then
 	     <code>!edge.from().hasUnmodifiableTargets()</code>.  
-	     <LI> <code>edge.to()</code> is a successor of
+ 	     <LI> if <code>edge.from()</code> and
+	     <code>edge.to()</code> are not <code>null</code>, then
+	     <code>edge.to()</code> is a successor of   
 	     <code>edge.from()</code>.
-	     <LI> <code>instr</code> is a non-branching instruction.
+	     <LI> <code>instr</code> is a non-branching instruction
+	     (ie, has no extra targets and instr.canFallThrough).
 	</OL>
 	<BR> <B>modifies:</B> <code>edge.from()</code>, <code>edge.to()</code>
 	<BR> <B>effects:</B> changes <code>edge.from()</code> and
@@ -313,29 +316,25 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     */
 
     public static void insertInstrAt(Instr instr, HCodeEdge edge) {
-	Util.assert(instr.getTargets().isEmpty(),
+	Util.assert(instr.getTargets().isEmpty() &&
+		    instr.canFallThrough,
 		    "instr should be nonbranching");
+	Util.assert(edge.to() != null ||
+		    edge.from() != null, 
+		    "edge shouldn't have null for both to and from");
 
-	if (edge.from() == null) {
-	    if (edge.to() == null) {
-		Util.assert(false, 
-			    "edge shouldn't have null for both to and from");
-	    } else {
-		Instr to = (Instr) edge.to();
-		
-	    }
-	} else {
+	if (edge.from() != null) {
 	    Instr from = (Instr) edge.from();
+	    Util.assert( Arrays.asList(from.edges()).contains(edge));
 	    from.next = instr;
 	    instr.prev = from;
-	    
-	    if (edge.to() == null) {
-		
-	    } else {
-
-	    }
 	}
-	
+	if (edge.to() != null) {
+	    Instr to = (Instr) edge.to();
+	    Util.assert( Arrays.asList(to.edges()).contains(edge));
+	    to.prev = instr; 
+	    instr.next = to;	
+	}
     }
 
 
