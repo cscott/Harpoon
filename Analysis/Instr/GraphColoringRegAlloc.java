@@ -53,22 +53,15 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.23 2000-08-15 06:46:01 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.24 2000-08-21 21:53:17 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
     private static final boolean TIME = false;
-    private static void TIME(String s) {
-	if (TIME)    System.out.print(s);
-    }
+
     private static final boolean RESULTS = false;
-    private static void RESULTS(String s) { 
-	if (RESULTS) System.out.print(s);
-    }
+
     private static final boolean STATS = false;
-    private static void STATS(String s) {
-	if (STATS)   System.out.print(s);
-    }
     
     public static RegAlloc.Factory FACTORY =
 	new RegAlloc.Factory() {
@@ -202,7 +195,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	boolean success, coalesced;
 	AdjMtx adjMtx;
 
-	TIME("\n");
+	if (TIME) System.out.println();
 
 	do {
 	    buildRegAssigns();
@@ -213,7 +206,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	    do {
 
-		TIME("Making Webs\n");
+		if (TIME) System.out.println("Making Webs");
 
 		makeWebs(rdefs); 
 
@@ -253,19 +246,18 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		
 		// System.out.println("webs: "+webRecords);
 
-		TIME("Building Matrix\n");
+		if(TIME)System.out.println("Building Matrix");
 
 		adjMtx = buildAdjMatrix();
 
-		TIME(((CachingLiveTemps)liveTemps).cachePerformance());
-		TIME("\n");
+		if(TIME)System.out.println(((CachingLiveTemps)liveTemps).cachePerformance());
 
 		// System.out.println("Adjacency Matrix");
 		// System.out.println(adjMtx);
 		coalesced = coalesceRegs(adjMtx);
 	    } while (coalesced);
 
-	    TIME("Building Lists\n");
+	    if(TIME)System.out.println("Building Lists");
 
 	    WebRecord[] adjLsts = buildAdjLists(adjMtx); 
 
@@ -285,33 +277,32 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		int deg = twr.adjnds.size();
 		tmpStat.add(deg);
 	    }
-	    STATS("\nRegDeg"+regStat + " TmpDeg"+tmpStat );
-	    STATS("\n");
+	    if(STATS)System.out.println("\nRegDeg"+regStat + " TmpDeg"+tmpStat );
 	    // END STAT GATHERING LOOPS
 
 	    // System.out.println(Arrays.asList(adjLsts));
 
 	    computeSpillCosts();
 
-	    TIME("Building Graph\n");
+	    if(TIME)System.out.println("Building Graph");
 
 	    final Graph graph = buildGraph(adjLsts);
 	    
 	    final Map nodeToNum = new HashMap(); 
-	    RESULTS("nodes of graph\n");
+	    if(RESULTS)System.out.println("nodes of graph");
 	    int i=0;
 	    for(Iterator nodes=graph.nodeSet().iterator();nodes.hasNext();){
 		i++;
 		Object n=nodes.next();
 		nodeToNum.put(n, new Integer(i));
-		RESULTS(i+"\t"+n+"\n");
+		if(RESULTS)System.out.println(i+"\t"+n);
 	    }
 	    if (RESULTS){
 		Collection readEdges = readableEdges(graph.edges(),nodeToNum);
-		RESULTS("edges of graph "+readEdges+"\n");
+		System.out.println("edges of graph "+readEdges);
 	    }
-	    STATS(" |g.V|:"+graph.nodeSet().size() + 
-		  " |g.E|:"+graph.edges().size() + "\n");
+	    if(STATS)System.out.println(" |g.V|:"+graph.nodeSet().size() + 
+		  " |g.E|:"+graph.edges().size());
 
 	    try {
 		List colors = new ArrayList(regToColor.values());
@@ -357,9 +348,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		if (RESULTS) 
 		for(Iterator cs=c2n.keySet().iterator();cs.hasNext();){ 
 		    Object col=cs.next();
-		    RESULTS(col + " nodes: "+
-			    readableNodes(c2n.getValues(col),nodeToNum)+
-			    "\n");
+		    System.out.println(col + " nodes: "+
+			    readableNodes(c2n.getValues(col),nodeToNum));
 		}
 		
 
@@ -474,16 +464,12 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	List sd; // [Temp, Def]
 	int i, oldnwebs;
 	
-	// used for experimenting with making register-ranges part of
-	// the TempWebRecords
-	boolean SKIP_REGS = true;
-
 	for(Iterator instrs = code.getElementsI();instrs.hasNext();){ 
 	    Instr inst = (Instr) instrs.next();
 	    for(Iterator uses = inst.useC().iterator(); uses.hasNext();){ 
 		Temp t = (Temp) uses.next();
 
-		if (SKIP_REGS && isRegister(t)) continue;
+		if (isRegister(t)) continue;
 
 		TempWebRecord web = 
 		    new TempWebRecord
@@ -504,7 +490,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    for(Iterator defs=inst.defC().iterator();defs.hasNext();){
 		Temp t = (Temp) defs.next();
 		
-		if (SKIP_REGS && isRegister(t)) continue;
+		if (isRegister(t)) continue;
 		
 		TempWebRecord web =
 		    new TempWebRecord
@@ -1175,15 +1161,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    if (wr instanceof RegWebRecord) {
 		return true;
 	    } else if (isRegister(wr.temp())) {
+		Util.assert(false);
 		return !wr.temp().equals(this.reg);
 	    } else {
-		// return super.conflictsWith(wr);
-		
-		// New approach: don't encode Temp/Reg conflicts using
-		// RegWebRecords; let the reg-live-ranges do it
-		// themselves (need to now precisely define WHAT
-		// RegWebRecord is here for though...)
-		return false;
+		return super.conflictsWith(wr);
 	    }
 	}
     }
