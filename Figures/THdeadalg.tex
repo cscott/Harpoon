@@ -6,7 +6,7 @@ Procedure FindUseful (G: CFG) {
     VarUseful(v) := false;
   for each node n in G, in any order, do {
     NodeUseful(n) := false;
-    if n is a CALL, RETURN, or other special node, then
+    if n is a CALL, RETURN, or other node with side-effects, then
       add n to W;
   }
 

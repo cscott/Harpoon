@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.36 1999-06-13 05:00:06 cananian Exp $
+% $Id: thesis.tex,v 1.37 1999-06-13 05:23:50 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.36 $ $}
+\date{\today \\ $ $Revision: 1.37 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.36 $ $}{$ $Revision: 1.36 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.37 $ $}{$ $Revision: 1.37 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -564,7 +564,7 @@ to show that any \phisigfunction[or]s can be removed, and
 terminates in one pass.\fixme{Are we \emph{sure} similar worst cases
 don't exist for the optimistic algorithm?}
 
-\begin{myfigure}\small
+\begin{myfigure}[t]
 \centering\input{Figures/evil}
 \caption{A worst-case CFG for ``pessimistic'' algorithms.}
 \label{fig:evil}
