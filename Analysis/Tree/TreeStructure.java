@@ -50,7 +50,7 @@ import java.util.Stack;
  * the codeview directly, so should be used with caution.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeStructure.java,v 1.1.2.9 1999-12-20 09:28:53 duncan Exp $
+ * @version $Id: TreeStructure.java,v 1.1.2.10 2000-01-09 00:23:20 duncan Exp $
  */
 public class TreeStructure { 
     private Map structure = new HashMap();
@@ -78,34 +78,11 @@ public class TreeStructure {
      */
     public TreeStructure(harpoon.IR.Tree.Stm stm) { 
 	// stm must be in canonical form. 
-	Util.assert
-	    (((Code.TreeFactory)stm.getFactory()).getParent().getName().equals("canonical-tree")); 
+	//Util.assert
+	//(((Code.TreeFactory)stm.getFactory()).getParent().getName().equals("canonical-tree")); 
 
-	// Fill in the mappings necessary to represent this tree structure. 
-	new StructureBuilder(stm, this.structure); 
     }
 
-    /**
-     * Returns the direct parent of <code>e</code> in this tree structure. 
-     * <br><b>Requires:</b>
-     * <code>e</code> is contained in this tree structure. 
-     */ 
-    public Tree getParent(Exp e) { 
-	return (Tree)this.structure.get(e);
-    }
-
-    /**
-     * Returns the direct parent of <code>s</code> in this tree structure.  
-     * The parent of a <code>Stm</code> is always a <code>SEQ</code> object. 
-     * <br>b>Requires:</b>
-     * <ol>
-     *   <li><code>s</code> is contained in this tree structure.
-     *   <li><code>s</code> is not the root of this tree structure. 
-     * </ol> 
-     */ 
-    public SEQ getParent(Stm s) { 
-	return (SEQ)this.structure.get(s);
-    }
     
     /**
      * Returns the <code>Stm</code> in which <code>e</code> is used. 
@@ -129,7 +106,7 @@ public class TreeStructure {
      *   <li><code>stm</code> is not of type <code>SEQ</code>. 
      *   <li><code>stm</code> is contained in this tree structure. 
      *   <li><code>stm</code> is not the root of the tree.  In general, this
-     *       will be covered by requirement #2.  This rule is necessary to
+     *       will be covered by requirement #1.  This rule is necessary to
      *       handle the special case in which trees consist of only one
      *       statement. 
      * </ol>
@@ -138,26 +115,27 @@ public class TreeStructure {
      */
     public void remove(Stm stm) { 
 	Util.assert(stm.kind() != TreeKind.SEQ); 
-	Util.assert(structure.containsKey(stm));
-
+	
 	// All predecessors in canonical tree form must be SEQs
-	SEQ pred = this.getParent(stm);
+	SEQ pred = (SEQ)stm.getParent();
 	Stm newPred;
 
-	if (!structure.containsKey(pred)) { 
+	if (pred.getParent() == null) { 
 	    // FIXME: The predecessor of "stm" is the root of this tree.  
 	    // Since we don't have access to the tree code directly, we can't 
 	    // update its root pointer as we'd like to here.  The best we can 
-	    // do is to replace "stm" with a NOP. 
+	    // do is to replace "stm" with a NOP.  This situation will 
+	    // not come up very often, but it'd be nice if someone came up
+	    // with a less hacky solution. 
 	    TreeFactory tf = pred.getFactory(); 
 	    this.replace(stm, new EXP(tf, pred, new CONST(tf, pred, 0)));
 	}
 	else { 
 	    // Replace the predecessor of "stm" with the one remaining 
 	    // successor. 
-	    if      (pred.left==stm)  { newPred = pred.right; } 
-	    else if (pred.right==stm) { newPred = pred.left; } 
-	    else { throw new Error("Tree structure has been corrupted!"); }
+	    if      (pred.getLeft()==stm)  { newPred = pred.getRight(); } 
+	    else if (pred.getRight()==stm) { newPred = pred.getLeft(); } 
+	    else { throw new Error("Invalid tree form!"); }
 	    this.replace(pred, newPred); 
 	}
     }
@@ -211,7 +189,7 @@ public class TreeStructure {
 	    //    FIXME: The behavior of Replacer in this situation 
 	    //           needs to be defined!
 	    // 
-	    Tree parent = (Tree)TreeStructure.this.structure.get(tOld); 
+	    Tree parent = tOld.getParent(); 
 	    if (parent == null) { 
 		throw new Error("Could not replace " + tOld + " with " + tNew +
 				" because " + tOld + " was not found."); 
@@ -219,27 +197,23 @@ public class TreeStructure {
 	    else { 
 		// Update the parent's references. 
 		parent.accept(this); 
-		// Update the structure map to reflect this change. 
-		new StructureDeleter(tOld, TreeStructure.this.structure); 
-		new StructureBuilder(tNew, TreeStructure.this.structure); 
-		TreeStructure.this.structure.put(tNew, parent); 
 	    }
 	}
 
 	public void visit(BINOP e) { 
-	    if      (e.left == this.tOld)  { e.left  = (Exp)this.tNew; } 
-	    else if (e.right == this.tOld) { e.right = (Exp)this.tNew; } 
+	    if      (e.getLeft() == this.tOld)  { e.setLeft((Exp)this.tNew); } 
+	    else if (e.getRight() == this.tOld) { e.setRight((Exp)this.tNew); }
 	    else { this.errCorrupt(); } 
 	} 
 
 	public void visit(CALL e) { 
-	    if      (e.retex == this.tOld)   { e.retex   = (TEMP)this.tNew; } 
-	    else if (e.handler == this.tOld) { e.handler = (NAME)this.tNew; } 
+	    if      (e.getRetex() == this.tOld) { e.setRetex((TEMP)this.tNew); }
+ 	    else if (e.getHandler() == this.tOld) { e.setHandler((NAME)this.tNew); } 
 	    else { this.visit((INVOCATION)e); } 
 	}
 
 	public void visit(CJUMP e) { 
-	    if (e.test == this.tOld) { e.test = (Exp)this.tNew; } 
+	    if (e.getTest() == this.tOld) { e.setTest((Exp)this.tNew); } 
 	    else { this.errCorrupt(); } 
 	}
 
@@ -252,17 +226,17 @@ public class TreeStructure {
 	}
 
 	public void visit(INVOCATION e) { 
-	    if (e.func == this.tOld) { e.func = (Exp)this.tNew; } 
-	    else if (e.retval == this.tOld) { e.retval = (TEMP)this.tNew; } 
+	    if (e.getFunc() == this.tOld) { e.setFunc((Exp)this.tNew); } 
+	    else if (e.getRetval() == this.tOld) { e.setRetval((TEMP)this.tNew); } 
 	    else { 
 		ExpList newArgs = 
-		    ExpList.replace(e.args, (Exp)this.tOld, (Exp)this.tNew); 
-		e.args = newArgs; 
+		    ExpList.replace(e.getArgs(), (Exp)this.tOld, (Exp)this.tNew); 
+		e.setArgs(newArgs); 
 	    }
 	}
 
 	public void visit(JUMP e) { 
-	    if (e.exp == this.tOld) { e.exp = (Exp)this.tNew; } 
+	    if (e.getExp() == this.tOld) { e.setExp((Exp)this.tNew); } 
 	    else { this.errCorrupt(); } 
 	}
 
@@ -270,15 +244,20 @@ public class TreeStructure {
 	public void visit(LABEL e) { this.errLeaf(e); } 
 
 	public void visit(MEM e) { 
-	    if (e.exp == this.tOld) { e.exp = (Exp)this.tNew; } 
+	    if (e.getExp() == this.tOld) { e.setExp((Exp)this.tNew); } 
 	    else { this.errCorrupt(); } 
 	}
 
 	public void visit(METHOD e) {
 	    // tOld must be one of the METHOD parameters. 
-	    for (int i=0; i<e.params.length; i++) { 
-		if (e.params[i] == this.tOld) { 
-		    e.params[i] = (TEMP)this.tNew; 
+	    TEMP[] params = e.getParams(); 
+	    TEMP[] newParams = new TEMP[params.length]; 
+	    System.arraycopy(params, 0, newParams, 0, params.length); 
+
+	    for (int i=0; i<params.length; i++) { 
+		if (params[i] == this.tOld) { 
+		    newParams[i] = (TEMP)this.tNew; 
+		    e.setParams(newParams); 
 		    return; 
 		}
 	    }
@@ -286,8 +265,8 @@ public class TreeStructure {
 	}
 
 	public void visit(MOVE e) { 
-	    if      (e.src == this.tOld) { e.src = (Exp)this.tNew; } 
-	    else if (e.dst == this.tOld) { e.dst = (Exp)this.tNew; } 
+	    if      (e.getSrc() == this.tOld) { e.setSrc((Exp)this.tNew); } 
+	    else if (e.getDst() == this.tOld) { e.setDst((Exp)this.tNew); } 
 	    else { this.errCorrupt(); } 
 	}
 
@@ -295,7 +274,7 @@ public class TreeStructure {
 	public void visit(NAME e) { this.errLeaf(e); } 
 
 	public void visit(RETURN e) {
-	    if (e.retval == this.tOld) { e.retval = (Exp)this.tNew; } 
+	    if (e.getRetval() == this.tOld) { e.setRetval((Exp)this.tNew); } 
 	    else { this.errCorrupt(); } 
 	}
 
@@ -303,8 +282,8 @@ public class TreeStructure {
 	public void visit(SEGMENT e) { this.errLeaf(e); }
 
 	public void visit(SEQ e) {
-	    if      (e.left == this.tOld)  { e.left  = (Stm)this.tNew; } 
-	    else if (e.right == this.tOld) { e.right = (Stm)this.tNew; } 
+	    if      (e.getLeft() == this.tOld)  { e.setLeft((Stm)this.tNew); } 
+	    else if (e.getRight() == this.tOld) { e.setRight((Stm)this.tNew); }
 	    else { this.errCorrupt(); } 
 	}
 
@@ -312,15 +291,15 @@ public class TreeStructure {
 	public void visit(TEMP e) { this.errLeaf(e); } 
 
 	public void visit(THROW e) {
-	    if      (e.retex == this.tOld)   { e.retex = (Exp)this.tNew; } 
-	    else if (e.handler == this.tOld) { e.handler = (Exp)this.tNew; } 
+	    if      (e.getRetex() == this.tOld)   { e.setRetex((Exp)this.tNew); } 
+	    else if (e.getHandler() == this.tOld) { e.setHandler((Exp)this.tNew); } 
 	    else { this.errCorrupt(); } 
 	}
 
 	public void visit(Tree t) { throw new Error("No defaults here!"); }
 
 	public void visit(UNOP e) {
-	    if (e.operand == this.tOld) { e.operand = (Exp)this.tNew; } 
+	    if (e.getOperand() == this.tOld) { e.setOperand((Exp)this.tNew); } 
 	    else { this.errCorrupt(); } 
 	}
 
@@ -335,78 +314,6 @@ public class TreeStructure {
 	private void errLeaf(Tree t) { 
 	    throw new Error
 		("Attempted to treat: " + t + " as a non-leaf node."); 
-	}
-    }
-
-    /** 
-     * Class to construct the map of back-pointers that represents the 
-     * tree structure. 
-     */ 
-    private class StructureBuilder extends TreeVisitor { 
-	private Map   structure; 
-	private Stack worklist = new Stack(); 
-
-	/** 
-	 * Class constructor.  
-	 * @param root      the root of the tree to make a structure for.
-	 * @param structure a map to hold the generated structure. 
-	 */ 
-	public StructureBuilder (Tree root, Map structure) { 
-	    this.structure = structure; 
-	    this.worklist.add(root); 
-	    while (!worklist.isEmpty())
-		((Tree)worklist.pop()).accept(this); 
-	}
-
-	/** kids() not applicable to SEQ.  Need a special case. */ 
-	public void visit(SEQ s) { 
-	    Util.assert(!this.structure.containsKey(s.left)); 
-	    Util.assert(!this.structure.containsKey(s.right)); 
-
-	    this.worklist.push(s.left); 
-	    this.worklist.push(s.right);
-	    this.structure.put(s.left, s);
-	    this.structure.put(s.right, s); 
-	}
-
-	public void visit(Tree t) { 
-	    for (ExpList e = t.kids(); e != null; e = e.tail) { 
-		Util.assert(!this.structure.containsKey(e.head)); 
-		this.worklist.push(e.head); 
-		this.structure.put(e.head, t); 
-	    }
-	}
-    }
-
-    private class StructureDeleter extends TreeVisitor { 
-	private Map   structure; 
-	private Stack worklist = new Stack(); 
-
-	/** 
-	 * Class constructor.  
-	 * @param root      the root of the tree to make a structure for.
-	 * @param structure a map to hold the generated structure. 
-	 */ 
-	public StructureDeleter(Tree root, Map structure) { 
-	    this.structure = structure; 
-	    this.worklist.add(root); 
-	    while (!worklist.isEmpty())
-		((Tree)worklist.pop()).accept(this); 
-	}
-
-	/** kids() not applicable to SEQ.  Need a special case. */ 
-	public void visit(SEQ s) { 
-	    this.structure.remove(s); 
-	    this.worklist.push(s.left); 
-	    this.worklist.push(s.right);
-	}
-
-	public void visit(Tree t) { 
-	    this.structure.remove(t); 
-	    for (ExpList e = t.kids(); e != null; e = e.tail) { 
-		this.worklist.push(e.head); 
-		this.structure.remove(e.head); 
-	    }
 	}
     }
 }    

@@ -40,7 +40,7 @@ import java.util.Stack;
  * <p><b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: ConstantPropagation.java,v 1.1.2.3 1999-12-20 09:28:53 duncan Exp $
+ * @version $Id: ConstantPropagation.java,v 1.1.2.4 2000-01-09 00:23:20 duncan Exp $
  */
 public final class ConstantPropagation { 
 
@@ -112,8 +112,8 @@ public final class ConstantPropagation {
 	public void visit(INVOCATION i) { 
 	    // Only the function pointer and the arguments could conceivably
 	    // be replaced by this transformation. 
-	    this.worklist.push(i.func); 
-	    for (ExpList el = i.args; el != null; el = el.tail) { 
+	    this.worklist.push(i.getFunc()); 
+	    for (ExpList el = i.getArgs(); el != null; el = el.tail) { 
 		this.worklist.push(el.head); 
 	    }
 	}
@@ -122,13 +122,13 @@ public final class ConstantPropagation {
 
 	public void visit(MOVE m) { 
 	    // If dst is a TEMP, can't replace it because we're writing to it. 
-	    if (m.dst.kind() != TreeKind.TEMP) { this.worklist.push(m.src); }
-	    this.worklist.push(m.src); 
+	    if (m.getDst().kind() != TreeKind.TEMP) { this.worklist.push(m.getSrc()); }
+	    this.worklist.push(m.getSrc()); 
 	}
 
 	public void visit(SEQ s) { 
-	    this.worklist.push(s.left); 
-	    this.worklist.push(s.right); 
+	    this.worklist.push(s.getLeft()); 
+	    this.worklist.push(s.getRight()); 
 	}
 	
 	public void visit(Stm s) { 
@@ -192,7 +192,7 @@ public final class ConstantPropagation {
 	
 	private Exp getSrc(Stm def) { 
 	    if (def.kind() == TreeKind.MOVE) { 
-		return ((MOVE)def).src; 
+		return ((MOVE)def).getSrc(); 
 	    }
 	    else { return null; }
 	}
@@ -238,7 +238,7 @@ public final class ConstantPropagation {
 	}
 
 	private static Stm RS(Stm seq) { 
-	    while (seq.kind()==TreeKind.SEQ) seq = ((SEQ)seq).left;  
+	    while (seq.kind()==TreeKind.SEQ) seq = ((SEQ)seq).getLeft();  
 	    return seq;
 	}
     }

@@ -30,7 +30,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.3 1999-12-20 09:28:53 duncan Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.4 2000-01-09 00:23:20 duncan Exp $
  */
 public abstract class AlgebraicSimplification { 
     // Define new operator constants that can be masked together. 
@@ -173,8 +173,8 @@ public abstract class AlgebraicSimplification {
 	}
 
 	public void visit(SEQ s) { 
-	    this.worklist.push(s.left); 
-	    this.worklist.push(s.right); 
+	    this.worklist.push(s.getLeft()); 
+	    this.worklist.push(s.getRight()); 
 	}
     }
 
@@ -198,9 +198,9 @@ public abstract class AlgebraicSimplification {
 		    BINOP b = (BINOP)e; 
 		    return 
 		        ((_OP(b.op) & _ADD|_MUL|_SHL|_SHR|_USHR|_AND|_OR|_XOR) != 0) &&
-		        ((_KIND(b.left) & (_CONST|_CONST0)) != 0) &&
+		        ((_KIND(b.getLeft()) & (_CONST|_CONST0)) != 0) &&
 		    
-		        ((_KIND(b.right) & (_CONST|_CONST0)) != 0) &&
+		        ((_KIND(b.getRight()) & (_CONST|_CONST0)) != 0) &&
 		        (!b.isFloatingPoint());
 		}
 	    }
@@ -208,8 +208,8 @@ public abstract class AlgebraicSimplification {
 	    public Exp apply(Exp e) { 
 		TreeFactory tf = e.getFactory(); 
 		BINOP b  = (BINOP)e; 
-		CONST k1 = (CONST)b.left;
-		CONST k2 = (CONST)b.right; 
+		CONST k1 = (CONST)b.getLeft();
+		CONST k2 = (CONST)b.getRight(); 
 
 		Object k1pk2 = harpoon.IR.Tree.BINOP.evalValue
 		    (tf, b.op, b.optype, k1.value, k2.value);
@@ -246,15 +246,15 @@ public abstract class AlgebraicSimplification {
 		    BINOP b = (BINOP)e; 
 		    return 
 		        ((_OP(b.op) & (_ADD|_MUL|_AND|_OR|_XOR)) != 0) &&
-		        ((_KIND(b.left) & (_CONST|_CONST0)) != 0) &&
-		        ((_KIND(b.right) & ~(_CONST|_CONST0|_CONSTNULL)) != 0) &&
+		        ((_KIND(b.getLeft()) & (_CONST|_CONST0)) != 0) &&
+		        ((_KIND(b.getRight()) & ~(_CONST|_CONST0|_CONSTNULL)) != 0) &&
 		        (!b.isFloatingPoint());
 		}
 	    }
 	    public Exp apply(Exp e) { 
 		BINOP b = (BINOP)e; 
 		TreeFactory tf = b.getFactory(); 
-		return new BINOP(tf, b, b.optype, b.op, b.right, b.left); 
+		return new BINOP(tf, b, b.optype, b.op, b.getRight(), b.getLeft()); 
  	    }
 	};
 
@@ -271,13 +271,13 @@ public abstract class AlgebraicSimplification {
 		    BINOP b = (BINOP)e; 
 		    return 
 		        ((_OP(b.op) & _ADD|_SHL|_SHR|_USHR) != 0) &&
-		        ((_KIND(b.left) & _BINOP|_MEM|_NAME|_TEMP|_UNOP)!=0) &&
-		        ((_KIND(b.right) & _CONST0) != 0);
+		        ((_KIND(b.getLeft()) & _BINOP|_MEM|_NAME|_TEMP|_UNOP)!=0) &&
+		        ((_KIND(b.getRight()) & _CONST0) != 0);
 		}
 	    }
 	    public Exp apply(Exp e) { 
 		BINOP b = (BINOP)e; 
-		return b.left; 
+		return b.getLeft(); 
 	    }
 	};
 	
@@ -289,18 +289,18 @@ public abstract class AlgebraicSimplification {
 		if (_KIND(e) != _UNOP) { return false; } 
 		else { 
 		    UNOP u1 = (UNOP)e; 
-		    if (_KIND(u1.operand) != _UNOP) { return false; } 
+		    if (_KIND(u1.getOperand()) != _UNOP) { return false; } 
 		    else { 
-			UNOP u2 = (UNOP)u1.operand; 
+			UNOP u2 = (UNOP)u1.getOperand(); 
 			return u1.op == Uop.NEG && u2.op == Uop.NEG; 
 		    }
 		}
 	    } 
 	    public Exp apply(Exp e) {  
 		UNOP u1 = (UNOP)e;  
-		UNOP u2 = (UNOP)u1.operand;  
+		UNOP u2 = (UNOP)u1.getOperand();  
 		Util.assert(u1.optype == Uop.NEG && u2.optype == Uop.NEG);  
-		return u2.operand;  
+		return u2.getOperand();  
 	    } 
 	}; 
 
@@ -311,13 +311,13 @@ public abstract class AlgebraicSimplification {
 		if (_KIND(e) != _UNOP) { return false; } 
 		else { 
 		    UNOP u = (UNOP)e; 
-		    return _KIND(u.operand) == _CONST0; 
+		    return _KIND(u.getOperand()) == _CONST0; 
 		}
 	    }
 	    public Exp apply(Exp e) { 
 		UNOP u = (UNOP)e; 
-		Util.assert(_KIND(u.operand) == _CONST0); 
-		return u.operand; 
+		Util.assert(_KIND(u.getOperand()) == _CONST0); 
+		return u.getOperand(); 
 	    } 
 	}; 
 
@@ -326,12 +326,12 @@ public abstract class AlgebraicSimplification {
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
 		    BINOP b = (BINOP)e; 
-		    if (_KIND(b.right) != _CONST) { return false; } 
+		    if (_KIND(b.getRight()) != _CONST) { return false; } 
 		    else { 
-			CONST c = (CONST)b.right; 
+			CONST c = (CONST)b.getRight(); 
 			return 
 			    c.value.longValue() > 0                     &&
-		            (_KIND(b.left) & (_BINOP|_UNOP|_TEMP)) != 0 &&
+		            (_KIND(b.getLeft()) & (_BINOP|_UNOP|_TEMP)) != 0 &&
 		            b.op == Bop.MUL                             &&
 		            !b.isFloatingPoint(); 
 		    }
@@ -339,7 +339,7 @@ public abstract class AlgebraicSimplification {
 	    }
 	    public Exp apply(Exp e) { 
 		BINOP b = (BINOP)e; 
-		return mul2shift(b.left, (CONST)b.right); 
+		return mul2shift(b.getLeft(), (CONST)b.getRight()); 
 	    }
 	}; 
 
@@ -349,13 +349,13 @@ public abstract class AlgebraicSimplification {
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
 		    BINOP b = (BINOP)e; 
-		    return b.op == Bop.DIV && _KIND(b.right) == _CONST;
+		    return b.op == Bop.DIV && _KIND(b.getRight()) == _CONST;
 		}
 	    }
 	    public Exp apply(Exp e) { 
 		BINOP b = (BINOP)e; 
 		Util.assert(b.op == Bop.DIV); 
-		return div2mul(b.left, (CONST)b.right); 
+		return div2mul(b.getLeft(), (CONST)b.getRight()); 
 	    }
 	};  
 
