@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.9 2000-09-28 22:18:02 cananian Exp $
+% $Id: transact.tex,v 1.10 2000-09-28 22:31:51 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,10 +8,12 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.9 $ $}
+\date{\today \\ $ $Revision: 1.10 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
+% how big should code listings be?
+\newcommand{\codesize}{\scriptsize}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -73,7 +75,7 @@ seems to entail too much overhead.  We don't want to have to
 transaction commit/abort, do we?
 
 \begin{figure}
-\begin{alltt}\small
+\begin{alltt}\codesize
 /* the oobj structure tells you what's inside the object layout. */
 struct oobj \{
   struct claz *claz;
@@ -93,7 +95,7 @@ struct oobj \{
 \label{fig:oobj}
 \end{figure}
 \begin{figure}
-\begin{alltt}\small
+\begin{alltt}\codesize
 /* the inflated_oobj structure has various bits of information that we
  * want to associate with *some* (not all) objects. */
 struct inflated_oobj \{
@@ -130,7 +132,7 @@ struct inflated_oobj \{
 \end{figure}
 
 \begin{figure}
-\begin{alltt}\small
+\begin{alltt}\codesize
 #if WITH_TRANSACTIONS
 /* The vinfo structure provides values for a given version of the object.
 /* Note that it is identical in size to the oobj struct, so the same 
@@ -148,7 +150,7 @@ struct vinfo \{
 \end{figure}
 
 \begin{figure}
-\begin{alltt}\small
+\begin{alltt}\codesize
 #if WITH_TRANSACTIONS
 /* The commit record for a (possibly nested) transaction */
 struct commitrec \{
@@ -216,6 +218,37 @@ $\text{Read}(\code{struct oobj *} o, \code{int } n)$ =
 \end{figure}
 
 \begin{figure}
+$\text{Write}(\code{struct oobj *} o, \code{int } n,
+              \code{<ty> } x)$ =
+\begin{myalgorithmic}
+\STATE blah
+\end{myalgorithmic}
+\caption{Algorithm for non-transactional write of a field.}
+\label{fig:writenotrans}
+\end{figure}
+
+\begin{figure}
+$\text{ReadTrans}(\code{struct commitrec *}c, 
+                  \code{struct oobj *} o, \code{int } n)=$
+\begin{myalgorithmic}
+\STATE blah
+\end{myalgorithmic}
+\caption{Algorithm for transactional read of a field.}
+\label{fig:readtrans}
+\end{figure}
+
+\begin{figure}
+$\text{WriteTrans}(\code{struct commitrec *}c, 
+                   \code{struct oobj *} o, \code{int } n,
+                   \code{<ty> } x)=$
+\begin{myalgorithmic}
+\STATE blah
+\end{myalgorithmic}
+\caption{Algorithm for transactional write of a field.}
+\label{fig:writetrans}
+\end{figure}
+
+\begin{figure}
 $\text{StateP}(\code{struct commitrec *} c)$ =
 \begin{myalgorithmic}
 \LOOP
@@ -238,7 +271,7 @@ $\text{StateP}(\code{struct commitrec *} c)$ =
 %% XXX: can I have two reads outstanding on an object? (yes?)
 
 %\begin{figure}
-%\begin{alltt}\small
+%\begin{alltt}\codesize
 %\end{alltt}
 %\caption{}
 %\label{fig:}
