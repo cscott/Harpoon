@@ -1,4 +1,4 @@
-// RoundRobinScheduler.java, created by wbeebee
+// PreAllocRoundRobinScheduler.java, created by wbeebee
 // Copyright (C) 2002 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
