@@ -34,10 +34,14 @@ import harpoon.Util.Util;
  * contains just some methods, no persistent data) that wraps
  * the inter-procedural part of the pointer analysis. Normally, this should
  * be a part of the <code>PointerAnalysis</code>, but that class is already
- * too big and some code segmentation is always good!
+ * too big and some code segmentation is always good!<br>
+ * In the implementation of this class, most of the methods are static and
+ * have <code>PointerAnalysis pa</code> as their first argument. This stands
+ * for the <code>this</code> <i>hidden</i> argument that would exist if all
+ * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.39 2000-05-20 19:10:42 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.40 2000-05-25 15:41:52 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -49,11 +53,9 @@ abstract class InterProcPA {
 
     /** Displays some warnings for the call sites with 0 callees etc. 
 	This is not necessarily an error! For example, if an application
-	is never instatiating a SecurityManager, each call to a method
-	from this class has 0 callees! */
+	never instantiates a <code>SecurityManager</code>,
+	each call to a method from this class has ZERO callees! */
     public static boolean WARNINGS = false;
-
-    private static PointerAnalysis pa = null;
 
     /** Analyzes the call site <code>q</code> inside 
 	<code>current_method</code>. If analyzing the call is not possible
@@ -62,21 +64,25 @@ abstract class InterProcPA {
 	through that call site.<br>
 	Parameters:<br>
 	<ul>
+	<li><code>pa</code> - the <code>PointerAnalysis</code> object that
+	calls this method. This parameter stands for the <code>this</code>
+	pointer that would exist if this method were in the
+	<code>PointerAnalysis</code> class.
+	<li><code>current_method</code> - the method that contains in its
+	code the call site <code>q</code>.
+	<li><code>q</code> - the analyzed call site.
 	<li><code>pig_before</code> is the parallel interaction graph at
 	the program point just before the call site; this graph will be 
 	mutated, it is the responsability of the caller to clone it if it
 	is necessary somewhere else.
-	<li><code>pa</code> is the <code>PointerAnalysis</code> object that
-	calls this method. <code>pa</code> is used to extract the external
-	parallel interaction graphs of the callees.
 	</ul>
 	Return result:<b>
 	Two graphs are returned: one for the normal return from the procedure,
 	the other one for a return due to an exception. */
-    public static ParIntGraphPair analyze_call(MetaMethod current_mmethod,
+    public static ParIntGraphPair analyze_call(PointerAnalysis pa,
+					       MetaMethod current_mmethod,
 					       CALL q,
-					       ParIntGraph pig_before,
-					       PointerAnalysis pa){
+					       ParIntGraph pig_before) {
 	if(DEBUG)
 	    System.out.println("Inter-procedural analysis " + q);
 
@@ -85,8 +91,6 @@ abstract class InterProcPA {
 	if(pair != null)
 	    return pair;
 
-	InterProcPA.pa = pa;
-	NodeRepository node_rep = pa.getNodeRepository();
 	MetaMethod[] mms = pa.getMetaCallGraph().getCallees(current_mmethod,q);
 	int nb_callees   = mms.length;
 
@@ -109,7 +113,7 @@ abstract class InterProcPA {
 	if(nb_callees > MAX_CALLEES){
 	    if(DEBUG)
 		System.out.println("TOO MANY CALLEES (" + nb_callees + ") "+q);
-	    return skip_call(q, pig_before, node_rep, q.method());
+	    return skip_call(pa, q, pig_before, q.method());
 	}
 
  	// For each analyzable callee mm, we store it in mms and its associated
@@ -146,7 +150,7 @@ abstract class InterProcPA {
 	    if(!(PointerAnalysis.analyzable(hm))){
 		if(DEBUG)
 		    System.out.println("NEED TO SKIP: " + hm);
-		return skip_call(q, pig_before, node_rep, hm);
+		return skip_call(pa, q, pig_before, hm);
 	    }
 	    
 	    ParIntGraph pig = pa.getExtParIntGraph(mms[i], false);
@@ -181,219 +185,39 @@ abstract class InterProcPA {
 	// minimum number of clone() (cloning a ParIntGraph is very expensive).
 
 	// 1. Special case: only one callee; no ParIntGraph is cloned.
-	if(nb_callees_with_pig == 1){
-	    if(DEBUG)
-		System.out.println("SINGLE CALLEE: " + mms[0]);
-	    return mapUp(mms[0], q, pig_before,pigs[0],
-			 pa.getParamNodes(mms[0]));
-	}
+	if(nb_callees_with_pig == 1)
+	    return mapUp(pa, mms[0], q, pig_before, pigs[0]);
 
 	// 2. More than one callee: 
 	// 2.1. Compute the first term of the join operation.
 	ParIntGraphPair pp_after = 
-	    mapUp(mms[0], q, (ParIntGraph)pig_before.clone(),
-		  pigs[0], pa.getParamNodes(mms[0]));
+	    mapUp(pa, mms[0], q, (ParIntGraph)pig_before.clone(), pigs[0]);
 	
 	// 2.2. Join to it all the others, except for the last one.
 	for(int i = 1; i < nb_callees_with_pig - 1; i++)
-	    pp_after.join(mapUp(mms[i], q, (ParIntGraph)pig_before.clone(),
-				pigs[i], pa.getParamNodes(mms[i])));
+	    pp_after.join(mapUp(pa, mms[i], q, (ParIntGraph)pig_before.clone(),
+				pigs[i]));
 
 	// 2.3. Finally, join the graph for the last callee.
 	MetaMethod last_mm = mms[nb_callees_with_pig - 1];
 	pp_after.join
-	    (mapUp(last_mm, q, pig_before,
-		   pigs[nb_callees_with_pig-1], pa.getParamNodes(last_mm)));
-	
+	    (mapUp(pa, last_mm, q, pig_before, pigs[nb_callees_with_pig-1]));
+
 	return pp_after; // the long awaited moment!
     }
 
 
-    // THE OLD VERSION OF analyze_call
-    /* 
-      public static ParIntGraphPair analyze_call(MetaMethod current_mmethod,
-					       CALL q,
-					       ParIntGraph pig_before,
-					       PointerAnalysis pa){
-
-	InterProcPA.pa = pa;
-
-	///////////
-	if(DEBUG){
-	    System.out.println("Inter-procedural analysis");
-	    System.out.println(" " + q + "\n");
-	}
-
-	// specially treat some native methods
-	ParIntGraphPair pair = treatNatives(pa, q, pig_before);
-	if(pair != null)
-	    return pair;
-
-	MetaCallGraph mcg = pa.getMetaCallGraph();
-	NodeRepository node_rep = pa.getNodeRepository();
-	MetaMethod[] mms = mcg.getCallees(current_mmethod,q);
-	int nb_callees = mms.length;
-
-	////// this is just for debug
-	for(int i = 0; i < mms.length; i++){
-	    HMethod hm = mms[i].getHMethod();
-	    if(Modifier.isNative(hm.getModifiers()))
-		System.out.println("NATIVE: " + hm);
-	}
-
-	if(nb_callees == 0){
-	    if(WARNINGS){
-		System.out.println("Warning: CALL site with no callee! ");
-		System.out.println("Warning:  " + current_mmethod);
-		System.out.println("Warning:  " + q);
-	    }
-
-	    // I count on the fact that if a call site has 0 callees, it 
-	    // means that it doesn't occur in practice (because some classes
-	    // are not instantiated), not because the call graph is buggy!
-	    // So, the CALL is simply ignored.
-	    return new ParIntGraphPair(pig_before, pig_before);
-	    //return skip_call(q,pig_before,node_rep);
-	}
-
-	// Due to the imprecisions in the call graph, most of them due to
-	// dynamic dispatches, several call sites have a huge number of callees
-	// These CALLs are not analyzed (i.e. they are treated as method holes)
-	if(nb_callees > MAX_CALLEES){
-	    System.out.println("TOO MANY CALLEES (" + nb_callees + ") " + q);
-	    return skip_call(q, pig_before, node_rep);
-	}
-
-	ParIntGraph pigs[] = new ParIntGraph[nb_callees];
-	for(int i = 0; i < nb_callees; i++){
-	    HMethod hm = mms[i].getHMethod();
-
-	    if(!(PointerAnalysis.analyzable(hm) ||
-		 (Modifier.isNative(hm.getModifiers()) &&
-		  !pa.harmful_native(hm))) ){
-		/////////
-		System.out.println("NEED TO SKIP: " + hm);
-		return skip_call(q, pig_before, node_rep);
-	    }
-	    else
-		pigs[i] = pa.getExtParIntGraph(mms[i], false);
-	}
-
-	// count the already analyzed callees (those with pigs[i] != null)
-	int counter = 0;
-	for(int i = 0; i < nb_callees; i++){
-	    HMethod hm = mms[i].getHMethod();
-	    if( (pigs[i] != null) ||
-		(Modifier.isNative(hm.getModifiers()))) counter++;
-	}
-
-	// If none of the callers has been analyzed yet, do not do anything
-	// (this can happen only in the strongly connected components of 
-	// mutually recursive methods).
-	if(counter == 0)
-	    return new ParIntGraphPair(pig_before, pig_before);
-
-	//if(counter != nb_callees){
-
-	    //if(true)
-	    //	return new ParIntGraphPair(pig_before, pig_before);
-	    
-	    // some of the graphs are yet unknown (this situation appears
-	    // in strongly connected components); do not consider them.
-	    ParIntGraph pigs2[] = new ParIntGraph[pigs.length];
-	    MetaMethod  mms2[]  = new MetaMethod[mms.length];
-	    int k = 0;
-	    for(int i = 0; i < pigs.length; i++)
-		if(pigs[i] != null){
-		    pigs2[k] = pigs[i];
-		    mms2[k]  = mms[i]; 
-		    k++;
-		}
-
-	    for(int i = 0; i < pigs.length; i++){
-		HMethod hm = mms[i].getHMethod();
-		if(Modifier.isNative(hm.getModifiers())){
-		    Util.assert(!pa.harmful_native(hm),"Harmful native: " +hm);
-		    //////// DEBUG ONLY
-		    System.out.println("Unharmful native: " + hm);
-		    ////////
-		    mms2[k]  = mms[i];
-		    pigs2[k] = null;
-		    k++;
-		}
-	    }
-
-	    pigs = pigs2;
-	    mms  = mms2;
-	    nb_callees = k;
-
-	    //}
-
-	// specialize the graphs of the callees for the context sensitive PA
-	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
-	    for(int i = 0; i < nb_callees; i++)
-		if(pigs[i] != null){
-		    if(DEBUG)
-			System.out.println("Pig_callee before specialization:"
-					   + pigs[i]);
-		    pigs[i] = pa.getSpecializedExtParIntGraph(mms[i],q);
-
-		    if(DEBUG)
-			System.out.println("Pig_callee after  specialization:"
-					   + pigs[i]);
-		}
-	
-	// special case: only one callee; no ParIntGraph is cloned
-	if(nb_callees == 1){
-	    if(DEBUG)
-		System.out.println("CALLEE: " + mms[0]);
-	    return mapUp(mms[0],q,pig_before,pigs[0],pa.getParamNodes(mms[0]));
-	}
-
-	// more than one callee: the graph after the CALL is a join of all
-	// the graphs obtained by combining, for each callee hms[i], the graph
-	// before the CALL with the graph at the end of hms[i]. The
-	// implementation is complicated by the need of doing only the
-	// minmum number of clone() (cloning a ParIntGraph is very expensive)
-
-	// compute the first term of the join operation
-
-	if(DEBUG)
-	    System.out.println("CALLEE0: " + mms[0]);
-	ParIntGraphPair pp_after = mapUp(mms[0], q, 
-					 (ParIntGraph)pig_before.clone(),
-					 pigs[0], pa.getParamNodes(mms[0]));
-
-	// join to it all the others, except the last one
-	for(int i = 1; i < nb_callees - 1; i++){
-	    if(DEBUG)
-		System.out.println("CALLEEi: " + mms[i]);
-	    pp_after.join(mapUp(mms[i], q, (ParIntGraph)pig_before.clone(),
-				pigs[i], pa.getParamNodes(mms[i])));
-	}
-
-	// finally, join with the graph modeling the interaction with
-	// the last callee
-	if(DEBUG)
-	    System.out.println("CALLEElast: " + mms[nb_callees - 1]);
-
-	pp_after.join
-	    (mapUp(mms[nb_callees-1], q, pig_before,
-		   pigs[nb_callees-1], pa.getParamNodes(mms[nb_callees-1])));
-
-	return pp_after;
-    }
-    */
-
     /** Updates the ParIntGraph when the CALL is skipped. Two graphs are
 	returned: one for the normal return from the procedure, the other
 	one for a return due to an exception. */
-    private static ParIntGraphPair skip_call(CALL q, ParIntGraph pig_caller,
-					     NodeRepository node_rep,
+    private static ParIntGraphPair skip_call(PointerAnalysis pa,
+					     CALL q, ParIntGraph pig_caller,
 					     HMethod hm) {
 
 	if(DEBUG)
 	    System.out.println("SKIP: " + q);
+
+	NodeRepository node_rep = pa.getNodeRepository();
 
 	// Construct the set S_M of the objects escaped through this unanalyzed
 	// method invocation site.
@@ -444,10 +268,12 @@ abstract class InterProcPA {
 
 
     // Specially treat unharmful native methods.
-    private static ParIntGraphPair treatUnharmfulNative(ParIntGraph pig_before,
+    private static ParIntGraphPair treatUnharmfulNative(PointerAnalysis pa,
+							ParIntGraph pig_before,
 							MetaMethod mm,
 							CALL q){
 	HMethod hm = mm.getHMethod();
+	NodeRepository node_rep = pa.getNodeRepository();
 	
 	if(DEBUG)
 	    System.out.println("treatUnharmfulNative: " + mm);
@@ -457,32 +283,25 @@ abstract class InterProcPA {
 
 	Temp l_R = q.retval();
 	if((l_R != null) && !hm.getReturnType().isPrimitive()){
-	    NodeRepository node_rep = pa.getNodeRepository();
 	    pig0.G.I.removeEdges(l_R);
 	    PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
 	    pig0.G.I.addEdge(l_R, n_R);
-	    //////// we suppose that escaping into an unharmful method is
-	    //////// no big deal, so we comment next line
 	    pig0.G.e.addMethodHole(n_R, hm);
-	    //////// TODO: THINK & FIX
 	}
 
 	Temp l_E = q.retex();
 	if(l_E != null){
-	    NodeRepository node_rep = pa.getNodeRepository();
 	    pig1.G.I.removeEdges(l_E);
 	    PANode n_E = node_rep.getCodeNode(q, PANode.EXCEPT);
 	    pig1.G.I.addEdge(l_E, n_E);
-	    //////// we suppose that escaping into an unharmful method is
-	    //////// no big deal, so we comment next line
 	    pig1.G.e.addMethodHole(n_E, hm);
-	    //////// TODO: THINK & FIX
 	}
 
 	return new ParIntGraphPair(pig0, pig1);
     }
 
-    /** Update the graph of the caller at an analyzed call site. This consists
+
+    /** Updates the graph of the caller at an analyzed call site. This consists
      * of mapping the important parts of the callee's graph into the graph of
      * the caller. See the paper of Martin and Whaley for a description of the
      * algorithm.<br>
@@ -501,13 +320,15 @@ abstract class InterProcPA {
      *temporaries.
      *</ul>
      */
-    private static ParIntGraphPair mapUp(MetaMethod mm,
+    private static ParIntGraphPair mapUp(PointerAnalysis pa,
+					 MetaMethod mm,
 					 CALL q, 
 					 ParIntGraph pig_caller,
-					 ParIntGraph pig_callee,
-					 PANode[] callee_params){
+					 ParIntGraph pig_callee) {
 	if(pig_callee == null)
-	    return treatUnharmfulNative(pig_caller, mm, q);
+	    return treatUnharmfulNative(pa, pig_caller, mm, q);
+
+	PANode[] callee_params = pa.getParamNodes(mm);
 
 	if(DEBUG){
 	    System.out.println("Pig_caller:" + pig_caller);
@@ -586,6 +407,7 @@ abstract class InterProcPA {
 	return new ParIntGraphPair(pig_caller, pig_caller1);
     }
     
+
     /** Sets the initial mapping: each formal parameter is mapped
      * to the nodes pointed to by the corresponding actual argument
      * (into the caller graph) and each static node is mapped to itself.
@@ -705,6 +527,7 @@ abstract class InterProcPA {
 	    });
     }
 
+
     /** Sets the edges for the result or the exception returned by the callee.
      * Remember the syntax of a method invocation: 
      * <code>&lt;retval,retexc&gt; = CALL (...)</code>. */
@@ -770,6 +593,7 @@ abstract class InterProcPA {
 	ar_callee.forAllParActions(par_act_visitor);
     }
 
+
     // Inserts the edge ordering relation of the callee into the graph of
     // the caller. In addition, records the fact that all the outside edges
     // from the callee appear after all the inside edges of the caller.
@@ -823,6 +647,7 @@ abstract class InterProcPA {
 	    });
     }
 
+
     // Treats some native methods in a special way. Returns a pair of
     // ParIntGraphs or null if it cannot handle this call.
     private static ParIntGraphPair treatNatives(PointerAnalysis pa, CALL q,
@@ -869,6 +694,7 @@ abstract class InterProcPA {
 
 	return ti.getType(et);
     }
+
 
     // Aux method for "treat_clone". Returns the set of all the fields
     // appearing in the types from the set "types".
@@ -1078,6 +904,7 @@ abstract class InterProcPA {
 	return new ParIntGraphPair(pig_before, pig_after1);	
     }
 
+
     // special treatment for 
     // "private native void java.lang.Thread.setPriority0(int)"
     private static ParIntGraphPair
@@ -1096,5 +923,3 @@ abstract class InterProcPA {
     }
 
 }// end of the class
-
-

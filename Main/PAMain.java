@@ -66,7 +66,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.51 2000-05-21 03:00:47 cananian Exp $
+ * @version $Id: PAMain.java,v 1.1.2.52 2000-05-25 15:41:59 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -792,6 +792,13 @@ public abstract class PAMain {
 	System.out.println("GENERATION OF MA INFO TIME  : " +
 			   (System.currentTimeMillis() - g_tstart) + "ms");
 
+	if(SHOW_DETAILS){
+	    // show the allocation policies
+	    System.out.println();
+	    mainfo.print();
+	    System.out.println("===================================");
+	}
+
 	g_tstart = System.currentTimeMillis();
 
 	System.out.print("Dumping the code factory + maps into the file " +
@@ -799,6 +806,7 @@ public abstract class PAMain {
 	try{
 	    ObjectOutputStream oos = new ObjectOutputStream
 		(new FileOutputStream(MA_MAPS_OUTPUT_FILE));
+	    mainfo.prepareForSerialization();
 	    // write the CachingCodeFactory on the disk
 	    oos.writeObject(hcf);
 	    // write the Linker on the disk
@@ -809,13 +817,6 @@ public abstract class PAMain {
 	    System.err.println(e);
 	}
 
-
-	if(SHOW_DETAILS){
-	    // show the allocation policies
-	    System.out.println();
-	    mainfo.print();
-	    System.out.println("===================================");
-	}
 
 	System.out.println((System.currentTimeMillis() - g_tstart) + "ms");
     }

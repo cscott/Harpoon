@@ -50,7 +50,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.21 2000-05-20 19:10:43 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.22 2000-05-25 15:41:52 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -69,8 +69,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    if("currentThread".equals(hms[i].getName()))
 		good_holes.add(hms[i]);
 
-	//B/if(DEBUG)
-	//B/    System.out.println("GOOD HOLES: " + good_holes);
+	/* //B/ */if(DEBUG)
+	/* //B/ */    System.out.println("GOOD HOLES: " + good_holes);
     }
 
     PointerAnalysis pa;
@@ -98,8 +98,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	this.USE_INTER_THREAD = USE_INTER_THREAD;
 
 	analyze();
-
-	// nullifying some stuff to ease the serialization
+    }
+    
+    // nullifying some stuff to ease the serialization
+    public void prepareForSerialization(){
 	this.pa  = null;
 	this.hcf = null;
 	this.mms = null;
@@ -157,8 +159,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     public final void analyze_mm(MetaMethod mm){
 	HMethod hm  = mm.getHMethod();
 
-	//B/if(DEBUG)
-	//B/    System.out.println("MAInfo: Analyzed Meta-Method: " + mm);
+	/* //B/ */System.out.println("\n\nMAInfo: Analyzed Meta-Method: " + mm);
 
 	HCode hcode = hcf.convert(hm);
 
@@ -175,7 +176,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	//System.out.println("GOOD HOLES: " + good_holes); 
 	pig.G.e.removeMethodHoles(good_holes);
 
-	///B/System.out.println("AFTER  REMOVE METHOD HOLES: " + pig);
+	/* //B/ */System.out.println("AFTER  REMOVE METHOD HOLES: " + pig);
 
 	if(pig == null) return;
 
@@ -214,10 +215,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		    Util.assert(q != null, "No quad for " + node);
 		    MyAP ap = getAPObj(q);
 		    ap.sa = true;
-		    //B/System.out.println("STACK: " + node + 
-		    //B/		       " was stack allocated " +
-		    //B/		       q.getSourceFile() + ":" +
-		    //B/		       q.getLineNumber());
+		    /* //B/ */System.out.println("STACK: " + node + 
+		    /* //B/ */		       " was stack allocated " +
+		    /* //B/ */		       q.getSourceFile() + ":" +
+		    /* //B/ */		       q.getLineNumber());
 		}
 	    }
 	    else{
@@ -235,10 +236,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 			MyAP ap = getAPObj(q);
 			ap.ta = true; // thread allocation
 			ap.ah = null; // on the current heap
-			//B/System.out.println("THREAD: " + node +
-			//B/		       " was thread allocated " +
-			//B/		       q.getSourceFile() + ":" +
-			//B/		       q.getLineNumber());
+			/* //B/ */System.out.println("THREAD: " + node +
+			/* //B/ */	          " was thread allocated " +
+			/* //B/ */		  q.getSourceFile() + ":" +
+			/* //B/ */		  q.getLineNumber());
 		    }
 		}
 	    }
@@ -395,7 +396,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    cnewq_ap.ah = l2;
 	}
 
-	//B/
+	/* //B/ */
 	/*
 	if(DEBUG){
 	    System.out.println("After the preallocation transformation:");
@@ -433,18 +434,18 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     private boolean escapes_only_in_thread(PANode node, PANode nt,
 					   ParIntGraph pig){
 	if(pig.G.e.hasEscapedIntoAMethod(node)){
-	    //B/if(DEBUG)
-	    //B/	System.out.println(node + " escapes into a method");
+	    /* //B/ */if(DEBUG)
+	    /* //B/ */	System.out.println(node + " escapes into a method");
 	    return false;
 	}
 	if(pig.G.getReachableFromR().contains(node)) {
-	    //B/if(DEBUG)
-	    //B/	System.out.println(node + " is reachable from R");
+	    /* //B/ */if(DEBUG)
+	    /* //B/ */	System.out.println(node + " is reachable from R");
 	    return false;
 	}
 	if(pig.G.getReachableFromExcp().contains(node)) {
-	    //B/if(DEBUG)
-	    //B/	System.out.println(node + " is reachable from Excp");
+	    /* //B/ */if(DEBUG)
+	    /* //B/ */	System.out.println(node + " is reachable from Excp");
 	    return false;
 	}
 	return true;
@@ -476,37 +477,49 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	if(node == null)
 	    return false;
 
-	//B/System.out.println(ident + "remainInThreadBottom called for " + 
-	//B/		   node + " mm = " + mm);
+	/* //B/ */System.out.println(ident + "remainInThreadBottom called for " + 
+	/* //B/ */		   node + " mm = " + mm);
 
 	ParIntGraph pig = pa.getIntParIntGraph(mm);
 	
 	if(pig.G.captured(node)){
-	    //B/System.out.println(ident + node + " is captured -> true");
+	    /* //B/ */System.out.println(ident + node+ " is captured -> true");
 	    return true;
 	}
 	
 	if(!lostOnlyInCaller(node, pig)){
-	    //B/System.out.println(ident + node +
-	    //B/		       " escapes somewhere else -> false");
+	    /* //B/ */System.out.println(ident + node +
+	    /* //B/ */		       " escapes somewhere else -> false");
 	    return false;
 	}
 
 	if(level == MAX_LEVEL_BOTTOM_MODE){
-	    //B/System.out.println(ident +node + "max level reached -> false");
+	    /* //B/ */System.out.println(ident + node + 
+	    /* //B/ */	                 "max level reached -> false");
 	    return false;
 	}
 
 	MetaMethod[] callers = mac.getCallers(mm);
+
+	// This is a very, very delicate case: if there is no caller, it means
+	// the currently analyzed method is either "main" or the run method of
+	// some thread; the node might accessible from outside the current
+	// thread => we conservatively return "false".
+	if(callers.length == 0){
+	    /* //B/ */System.out.println(ident + node + "pours out of main/run");
+	    return false;
+	}
+
 	for(int i = 0; i < callers.length; i++){
 	    if(!remainInThreadBottom(node.getBottom(), callers[i], level+1,
 				     ident + " ")){
-		//B/System.out.println(ident + node + " -> false");
+		/* //B/ */System.out.println(ident + node + " -> false");
 		return false;
 	    }
 	}
 	
-	//B/System.out.println(ident + node+ " remains in the current thread");
+	/* //B/ */System.out.println(ident + node +
+	/* //B/ */		     " remains in the current thread");
 	return true;
     }
 
@@ -515,8 +528,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     // thread even if it escapes from the method which defines it.
     private boolean remainInThread(PANode node, HMethod hm, String ident){
 
-	//B/System.out.println(ident + "remainInThread called for " + node +
-	//B/		   "  hm = " + hm);
+	
+	/* //B/ */System.out.println(ident + "remainInThread called for " +
+	/* //B/ */		     node + "  hm = " + hm);
 
 	if(node.getCallChainDepth() == PointerAnalysis.MAX_SPEC_DEPTH){
 	    System.out.println(ident + node + " is too old -> might escape");
@@ -529,22 +543,22 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	Util.assert(pig != null, "pig is null for hm = " + hm + " " + mm);
 	
 	if(pig.G.captured(node)){
-	    //B/System.out.println(ident + node + " is captured -> true");
+	    /* //B/ */System.out.println(ident + node+ " is captured -> true");
 	    return true;
 	}
 	
 	if(!lostOnlyInCaller(node, pig)){
-	    //B/System.out.println(ident + node +
-	    //B/		       " escapes somewhere else -> false");
+	    /* //B/ */System.out.println(ident + node +
+	    /* //B/ */		       " escapes somewhere else -> false");
 	    return false;
 	}
 
 	if(node.getCallChainDepth() == PointerAnalysis.MAX_SPEC_DEPTH - 1){
-	    //B/System.out.println(ident + node + 
-	    //B/	           " is almost too old and uncaptured -> " + 
-	    //B/	           "bottom mode");
+	    /* //B/ */System.out.println(ident + node + 
+	    /* //B/ */	           " is almost too old and uncaptured -> " + 
+	    /* //B/ */	           "bottom mode");
 	    boolean retval = remainInThreadBottom(node, mm, 0, ident);
-	    //B/System.out.println(ident + node + " " + retval);
+	    /* //B/ */System.out.println(ident + node + " " + retval);
 	    return retval;
 
 	    // NOTE: replace this brach with "return false;" if
@@ -560,14 +574,16 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    HMethod hm_caller = qf.getMethod();
 
 	    if(!remainInThread(spec, hm_caller, ident + " ")){
-		//B/System.out.println(ident + node+ " might escape -> false");
+		/* //B/ */System.out.println(ident + node +
+		/* //B/ */                   " might escape -> false");
 		return false;
 	    }
 	}
 
-	//B/System.out.println(ident + node + " remains in thread -> true");
+	/* //B/ */System.out.println(ident + node + 
+	/* //B/ */	             " remains in thread -> true");
 
-	return true;	
+	return true;
     }
 
 
@@ -577,13 +593,15 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	for(Iterator it = aps.keySet().iterator(); it.hasNext(); ){
 	    Quad newq = (Quad) it.next();
 	    MyAP ap   = (MyAP) aps.get(newq);
-	    HClass hclass = newq.getFactory().getMethod().getDeclaringClass();
+	    HMethod hm = newq.getFactory().getMethod();
+	    HClass hclass = hm.getDeclaringClass();
+	    PANode node = node_rep.getCodeNode(newq, PANode.INSIDE);
 	    
-
 	    System.out.println(hclass.getPackage() + "." + 
 			       newq.getSourceFile() + ":" +
 			       newq.getLineNumber() + " " +
-			       newq + " -> " + ap); 
+			       newq + "(" + node + ") (" + 
+			       hm + ") \t -> " + ap); 
 	}
 	System.out.println("====================");
     }

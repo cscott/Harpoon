@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.57 2000-05-21 03:00:46 cananian Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.58 2000-05-25 15:41:52 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -88,7 +88,7 @@ public class PointerAnalysis {
     /** Turns on the priniting of some timing info. */
     public static boolean TIMING = false;
     public static final boolean STATS = true;
-    public static boolean SHOW_NODES = false;
+    public static boolean SHOW_NODES = true;
     public static final boolean DETAILS2 = false;
 
 
@@ -857,10 +857,10 @@ public class PointerAnalysis {
 	    }
 
 	    call_pp = 
-		InterProcPA.analyze_call(current_intra_mmethod,
-					 q,      // the CALL site
-					 lbbpig, // the graph before the call
-					 PointerAnalysis.this);
+		InterProcPA.analyze_call(PointerAnalysis.this,
+					 current_intra_mmethod,
+					 q,       // the CALL site
+					 lbbpig); // the graph before the call
 	}
 
 	// We are sure that the call site q corresponds to a thread start

@@ -21,7 +21,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.22 2000-05-17 20:24:17 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.23 2000-05-25 15:41:52 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -157,15 +157,8 @@ public class NodeRepository {
 
 	PANode node = (PANode) code_nodes.get(hce);
 	if(node == null){
-	    code_nodes.put(hce,node = getNewNode(type));
-	    node2code.put(node,hce);
-
-	    //if(type == PANode.LOAD){
-	    //	System.out.println(" new LOAD node " + node + " for " + 
-	    //			   hce.getSourceFile() + ":" + 
-	    //			   hce.getLineNumber() + " " + hce); 
-	    //}
-
+	    code_nodes.put(hce, node = getNewNode(type));
+	    node2code.put(node, hce);
 	}
 	return node;
     }
