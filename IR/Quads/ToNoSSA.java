@@ -25,7 +25,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.19.2.1 1999-09-17 04:38:10 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.19.2.2 1999-09-17 05:31:21 cananian Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -182,11 +182,32 @@ static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
   
     public void visit(AGET q)    { visit((Quad)q); }
     public void visit(ASET q)    { visit((Quad)q); }
-    public void visit(CALL q)    { visit((Quad)q); }
     public void visit(GET q)     { visit((Quad)q); }
     public void visit(HANDLER q) { visit((Quad)q); }
     public void visit(OPER q)    { visit((Quad)q); }
     public void visit(SET q)     { visit((Quad)q); }
+
+    public void visit(CALL q)
+    {
+	SIGMA  q0;
+	int    arity, numSigmas;
+	Temp[] nparams;
+      
+	nparams    = new Temp[q.paramsLength()];
+	for (int i=0; i<nparams.length; i++)
+	    nparams[i] = map(q.params(i));
+	q0         = new CALL(m_qf, q, q.method(), nparams,
+			      (q.retval()!=null)?map(q.retval()):null,
+			      map(q.retex()), q.isVirtual(), new Temp[0]);
+	numSigmas  = q.numSigmas();
+	arity      = q.arity();
+
+	for (int i=0; i<numSigmas; i++)
+	    for (int j=0; j<arity; j++)
+		renameSigma(q, j, i);
+
+	m_qm.put(q, q0);
+    }
 
     public void visit(CJMP q)
     {
@@ -250,13 +271,18 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 
     public void visit(Quad q) { }
 
+    // duplicate QuadVisitor to allow PHIVisitor to work for both
+    // quads and low-quads.
     public void visit(AGET q)    { visit((Quad)q); }
     public void visit(ASET q)    { visit((Quad)q); }
-    public void visit(CALL q)    { visit((Quad)q); }
+    public void visit(CALL q)    { visit((SIGMA)q); }
     public void visit(GET q)     { visit((Quad)q); }
     public void visit(HANDLER q) { visit((Quad)q); }
     public void visit(OPER q)    { visit((Quad)q); }
     public void visit(SET q)     { visit((Quad)q); }
+    // need to redefine SIGMA or else the invocation in CALL above is
+    // ambiguous (by the JLS's tortured definition of ambiguous) [CSA]
+    public void visit(SIGMA q)   { visit((Quad)q); }
   
     public void visit(LABEL q)
     {
