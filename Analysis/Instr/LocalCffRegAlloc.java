@@ -53,12 +53,12 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.64 2000-01-27 14:55:57 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.65 2000-01-27 15:22:38 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
     private static boolean TIME = false;
-    private static boolean VERIFY = true;
+    private static boolean VERIFY = false;
     
     /** Creates a <code>LocalCffRegAlloc</code>. */
     public LocalCffRegAlloc(Code code) {
@@ -394,7 +394,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		// the list of registers that should be mapped to
 		// 'dst' in the regfile
 
-		if (isTempRegister(src) &&
+		if (false && // ignore this case
+		    isTempRegister(src) &&
 		    !isTempRegister(dst) &&
 		    !regfile.hasAssignment(dst)
 
