@@ -39,7 +39,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.1.2.3 1999-10-20 07:05:57 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.1.2.4 1999-10-21 22:10:20 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -81,6 +81,8 @@ public class DataReflection2 extends Data {
 		stmlist.add(_DATA(new CONST(tf, null,(long)memberOffset(hm))));
 	    else
 		stmlist.add(_DATA(new CONST(tf, null,(int) memberOffset(hm))));
+	    // count number of argument words for methods
+	    emitNargs(stmlist, hm);
 	}
 	// ok, mark the end of the table.
 	stmlist.add(new LABEL(tf, null,
@@ -125,6 +127,40 @@ public class DataReflection2 extends Data {
 	int off = hm.isInterfaceMethod() ?
 	    m_tb.imm.methodOrder(hm) : m_tb.cmm.methodOrder(hm);
 	return off * m_tb.POINTER_SIZE;
+    }
+    private void emitNargs(List stmlist, HMember hmf) {
+	final int REGS_PER_WORD = 1;
+	final int REGS_PER_DOUBLEWORD = (pointersAreLong) ? 1 : 2;
+	final int REGS_PER_POINTER = 1;
+
+	int nargs=0;
+	if (hmf instanceof HMethod) {
+	    if (!((HMethod)hmf).isStatic()) nargs+=REGS_PER_POINTER;
+	    String desc=hmf.getDescriptor();
+	    for (int i=1; desc.charAt(i)!=')'; i++) { // skip leading '('
+		switch (desc.charAt(i)) {
+		case 'B': case 'C': case 'F': case 'I': case 'S': case 'Z':
+		    nargs+=REGS_PER_WORD; break;
+		case 'J': case 'D':
+		    nargs+=REGS_PER_DOUBLEWORD; break;
+		case 'L':
+		    nargs+=REGS_PER_POINTER;
+		    i=desc.indexOf(';', i); break;
+		case '[':
+		    nargs+=REGS_PER_POINTER;
+		    do { i++; } while (desc.charAt(i)=='[');
+		    if (desc.charAt(i)=='L') i=desc.indexOf(';',i);
+		    break;
+		default:
+		    throw new Error("Illegal signature: "+desc);
+		}
+	    }
+	}
+	// output nargs value.
+	if (pointersAreLong)
+	    stmlist.add(_DATA(new CONST(tf, null, (long) nargs)));
+	else
+	    stmlist.add(_DATA(new CONST(tf, null, (int) nargs)));
     }
     private void emitString(List stmlist, String str) {
 	byte[] bytes = toUTF8(str);
