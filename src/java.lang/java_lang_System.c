@@ -97,13 +97,13 @@ int do_arraycopy_checks(JNIEnv *env, jobject src, jint srcpos,
       (*env)->Throw(env, (*env)->NewObject(env, nulcls, methodID));
       return -1;
     }
-    if (FNI_UNWRAP(src)->claz->component_claz==NULL) {
+    if (FNI_UNWRAP_MASKED(src)->claz->component_claz==NULL) {
       jclass asecls = (*env)->FindClass
 	(env, "java/lang/ArrayStoreException");
       (*env)->ThrowNew(env, asecls, "src not an array");
       return -1;
     }
-    if (FNI_UNWRAP(dst)->claz->component_claz==NULL) {
+    if (FNI_UNWRAP_MASKED(dst)->claz->component_claz==NULL) {
       jclass asecls = (*env)->FindClass
 	(env, "java/lang/ArrayStoreException");
       (*env)->ThrowNew(env, asecls, "dst not an array");
@@ -112,8 +112,8 @@ int do_arraycopy_checks(JNIEnv *env, jobject src, jint srcpos,
     if ((*env)->IsInstanceOf(env, src, arrcls)==JNI_FALSE ||
 	(*env)->IsInstanceOf(env, dst, arrcls)==JNI_FALSE ) {
       /* one or both is an array of primitive type... */
-      if (FNI_UNWRAP(src)->claz !=
-	  FNI_UNWRAP(dst)->claz ) {
+      if (FNI_UNWRAP_MASKED(src)->claz !=
+	  FNI_UNWRAP_MASKED(dst)->claz ) {
 	jclass asecls = (*env)->FindClass
 	  (env, "java/lang/ArrayStoreException");
 	(*env)->ThrowNew(env, asecls, "primitive array types don't match");
@@ -164,8 +164,8 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
       case 'D': size = sizeof(jdouble); break;
       default: assert(0); /* what kind of primitive array is this? */
       }
-      _src=(struct aarray*) FNI_UNWRAP(src);
-      _dst=(struct aarray*) FNI_UNWRAP(dst);
+      _src=(struct aarray*) FNI_UNWRAP_MASKED(src);
+      _dst=(struct aarray*) FNI_UNWRAP_MASKED(dst);
       /* note: we use memmove to allow the areas to overlap. */
       memmove(((char *)&(_dst->element_start))+(dstpos*size),
 	     ((char *)&(_src->element_start))+(srcpos*size),
@@ -193,7 +193,7 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
  */
 JNIEXPORT jint JNICALL Java_java_lang_System_identityHashCode
   (JNIEnv *env, jclass cls, jobject obj) {
-    jobject_unwrapped oobj = FNI_UNWRAP(obj);
+    jobject_unwrapped oobj = FNI_UNWRAP_MASKED(obj);
     ptroff_t hashcode = oobj->hashunion.hashcode;
     if ((hashcode & 1) == 0) hashcode = oobj->hashunion.inflated->hashcode;
     return (jint) (hashcode>>2);

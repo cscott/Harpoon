@@ -86,7 +86,7 @@ jobject FNI_NewObjectV(JNIEnv *env, jclass clazz, jmethodID methodID,
  */
 jclass FNI_GetObjectClass (JNIEnv *env, jobject obj) {
   assert(FNI_NO_EXCEPTIONS(env) && obj != NULL);
-  return FNI_WRAP(FNI_UNWRAP(obj)->claz->class_object);
+  return FNI_WRAP(FNI_UNWRAP_MASKED(obj)->claz->class_object);
 }
 
 /* Tests whether an object is an instance of a class. 
@@ -100,7 +100,7 @@ jboolean FNI_IsInstanceOf (JNIEnv *env, jobject obj, jclass clazz) {
 
   if (obj==NULL) return JNI_TRUE;/* flakey: not the same as java' instanceof */
 
-  objclz = FNI_UNWRAP(obj)->claz;
+  objclz = FNI_UNWRAP_MASKED(obj)->claz;
   clsclz = FNI_GetClassInfo(clazz)->claz;
   /* first check invariant on scaled_class_depth.. */
   assert(objclz->display[objclz->scaled_class_depth/sizeof(struct claz *)]
@@ -112,7 +112,7 @@ jboolean FNI_IsInstanceOf (JNIEnv *env, jobject obj, jclass clazz) {
 
 /* Tests whether two references refer to the same Java object.  */
 jboolean FNI_IsSameObject (JNIEnv *env, jobject ref1, jobject ref2) {
-  return (FNI_UNWRAP(ref1) == FNI_UNWRAP(ref2)) ? JNI_TRUE : JNI_FALSE;
+  return (FNI_UNWRAP_MASKED(ref1) == FNI_UNWRAP_MASKED(ref2)) ? JNI_TRUE : JNI_FALSE;
 }
 
 

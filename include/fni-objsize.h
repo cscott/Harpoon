@@ -9,7 +9,7 @@
 
 
 static inline jsize FNI_ObjectSize(struct oobj *o) {
-  struct claz *claz = o->claz;
+  struct claz *claz = ((struct oobj*) PTRMASK(o))->claz;
   struct claz *cclaz = claz->component_claz;
   /* handle non-array first */
   if (cclaz==NULL) return claz->size;

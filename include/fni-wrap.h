@@ -23,6 +23,7 @@ typedef struct _jobject_globalref {
 /* define handy (un)wrapper macros */
 #define FNI_WRAP(x) (FNI_NewLocalRef(env, x))
 #define FNI_UNWRAP(_x) ({jobject x=_x; (x==NULL)?NULL:x->obj; })
+#define FNI_UNWRAP_MASKED(_x) ((struct oobj *)PTRMASK(FNI_UNWRAP(_x)))
 
 /* --------------------------------------------------------------*/
 

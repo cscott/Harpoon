@@ -338,7 +338,7 @@ FORPRIMITIVETYPES(FNI_CALL_NONVIRTUAL)
 /* Virtual methods. */
 
 #define VIRTUAL(obj, offset) \
-     (*((ptroff_t *)(((ptroff_t)FNI_UNWRAP(obj)->claz)+(offset))))
+     (*((ptroff_t *)(((ptroff_t)FNI_UNWRAP_MASKED(obj)->claz)+(offset))))
 void FNI_CallVoidMethodA(JNIEnv *env, jobject obj, jmethodID methodID, 
 			 jvalue * args) {
   ptroff_t argtable[methodID->nargs+1];

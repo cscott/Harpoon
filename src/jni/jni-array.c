@@ -18,7 +18,7 @@ JNIEXPORT jboolean JNICALL Java_java_lang_Class_isPrimitive(JNIEnv *, jobject);
 /* Returns the number of elements in the array.
  */
 jsize FNI_GetArrayLength(JNIEnv *env, jarray array) {
-  struct aarray *a = (struct aarray *) FNI_UNWRAP(array);
+  struct aarray *a = (struct aarray *) FNI_UNWRAP_MASKED(array);
   assert(a->obj.claz->component_claz); /* else not an array */
   return a->length;
 }
@@ -55,7 +55,7 @@ jarray FNI_NewObjectArray(JNIEnv *env, jsize length,
   result = FNI_Alloc(env, info, info->claz, NULL/* default alloc func */,
 		     sizeof(struct aarray) + sizeof(ptroff_t)*length);
   if (result==NULL) return NULL; /* bail on error */
-  ((struct aarray *)FNI_UNWRAP(result))->length = length;
+  ((struct aarray *)FNI_UNWRAP_MASKED(result))->length = length;
   if (initialElement != NULL) {
     jsize i;
     for (i=0; i<length; i++)
@@ -88,7 +88,7 @@ type##Array FNI_New##name##Array(JNIEnv *env, jsize length) {\
   result = FNI_Alloc(env, info, info->claz, NULL/*default alloc func*/,\
 		     sizeof(struct aarray) + sizeof(type)*length);\
   if (result==NULL) return NULL; /* bail on error */\
-  ((struct aarray *)FNI_UNWRAP(result))->length = length;\
+  ((struct aarray *)FNI_UNWRAP_MASKED(result))->length = length;\
   ASSIGN_UID;\
   FNI_DeleteLocalRef(env, arrayclazz);\
   return (type##Array) result;\
@@ -117,7 +117,7 @@ NEWPRIMITIVEARRAY(Double, jdouble, "[D");
  */
 jobject FNI_GetObjectArrayElement(JNIEnv *env, 
 				  jobjectArray array, jsize index) {
-  struct aarray *a = (struct aarray *) FNI_UNWRAP(array);
+  struct aarray *a = (struct aarray *) FNI_UNWRAP_MASKED(array);
   jobject_unwrapped result;
   /* check array bounds */
   if (index > a->length || index < 0) {
@@ -140,7 +140,7 @@ jobject FNI_GetObjectArrayElement(JNIEnv *env,
  */
 void FNI_SetObjectArrayElement(JNIEnv *env, jobjectArray array, 
 			       jsize index, jobject value) {
-  struct aarray *a = (struct aarray *) FNI_UNWRAP(array);
+  struct aarray *a = (struct aarray *) FNI_UNWRAP_MASKED(array);
   jclass objCls, arrCls, comCls;
   struct FNI_classinfo *info;
   jobject_unwrapped result;
@@ -193,7 +193,7 @@ void FNI_SetObjectArrayElement(JNIEnv *env, jobjectArray array,
 #define GETPRIMITIVEARRAYELEMENTS(name,type)\
 type * FNI_Get##name##ArrayElements(JNIEnv *env,\
 				    type##Array array, jboolean *isCopy) {\
-  struct aarray *a = (struct aarray *) FNI_UNWRAP(array);\
+  struct aarray *a = (struct aarray *) FNI_UNWRAP_MASKED(array);\
   jsize length = a->length;\
   /* safe to use malloc; no pointers to garbage collected objects in array */\
   type * result = malloc(sizeof(type) * length + DMALLOC_PADDING);\
@@ -228,7 +228,7 @@ FORPRIMITIVETYPES(GETPRIMITIVEARRAYELEMENTS);
 void FNI_Release##name##ArrayElements(JNIEnv *env, type##Array array,\
 				      type *elems, jint mode) {\
   if (mode!=JNI_ABORT) {\
-    struct aarray *a = (struct aarray *) FNI_UNWRAP(array);\
+    struct aarray *a = (struct aarray *) FNI_UNWRAP_MASKED(array);\
     FNI_Set##name##ArrayRegion(env,array,0,a->length,elems);\
   }\
   if (mode!=JNI_COMMIT) {\
@@ -246,7 +246,7 @@ FORPRIMITIVETYPES(RELEASEPRIMITIVEARRAYELEMENTS);
 #define GETPRIMITIVEARRAYREGION(name,type)\
 void FNI_Get##name##ArrayRegion(JNIEnv *env, type##Array array,\
 				jsize start, jsize len, type *buf) {\
-  struct aarray *a = (struct aarray *) FNI_UNWRAP(array);\
+  struct aarray *a = (struct aarray *) FNI_UNWRAP_MASKED(array);\
   if (start+len > a->length || start < 0 || len < 0) {\
     jclass oob=FNI_FindClass(env,"java/lang/ArrayIndexOutOfBoundsException");\
     if (oob!=NULL) FNI_ThrowNew(env, oob, "JNI: Get" #name "ArrayRegion");\
@@ -266,7 +266,7 @@ FORPRIMITIVETYPES(GETPRIMITIVEARRAYREGION);
 #define SETPRIMITIVEARRAYREGION(name,type)\
 void FNI_Set##name##ArrayRegion(JNIEnv *env, type##Array array,\
 				jsize start, jsize len, const type *buf) {\
-  struct aarray *a = (struct aarray *) FNI_UNWRAP(array);\
+  struct aarray *a = (struct aarray *) FNI_UNWRAP_MASKED(array);\
   if (start+len > a->length || start < 0 || len < 0) {\
     jclass oob=FNI_FindClass(env,"java/lang/ArrayIndexOutOfBoundsException");\
     if (oob!=NULL) FNI_ThrowNew(env, oob, "JNI: Get" #name "ArrayRegion");\

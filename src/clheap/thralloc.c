@@ -17,7 +17,7 @@ struct oobj_with_clheap {
   struct oobj oobj;
 };
 #define CLHEAP_FROM_OOBJ(oobj) \
-  (((struct oobj_with_clheap *) (((char *)oobj)-sizeof(clheap_t)))->clheap)
+  (((struct oobj_with_clheap *) (((char *)PTRMASK(oobj))-sizeof(clheap_t)))->clheap)
 
 #ifdef REALLY_DO_THR_ALLOC
 
@@ -130,7 +130,7 @@ void *NTHR_malloc_other(size_t size, struct oobj *oobj) {
 void NTHR_free(jobject obj) {
 #ifdef REALLY_DO_THR_ALLOC
   /* warning -- don't gc in here! We're going to unwrap the obj... */
-  struct oobj *oobj = FNI_UNWRAP(obj);
+  struct oobj *oobj = FNI_UNWRAP_MASKED(obj);
   /* see if this might be a thread w/ a clustered heap */
 #ifdef BDW_CONSERVATIVE_GC
   /* we're going to be uber-tricky here and ask the GC where the start of

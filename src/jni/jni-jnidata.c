@@ -8,7 +8,7 @@
 void * FNI_GetJNIData(JNIEnv *env, jobject obj) {
   void *result = NULL;
   if (FNI_IS_INFLATED(obj)) {
-    struct inflated_oobj *infl= FNI_UNWRAP(obj)->hashunion.inflated;
+    struct inflated_oobj *infl= FNI_UNWRAP_MASKED(obj)->hashunion.inflated;
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
     // acquire read lock.
     pthread_rwlock_rdlock(&(infl->jni_data_lock));
@@ -26,7 +26,7 @@ void FNI_SetJNIData(JNIEnv *env, jobject obj,
 		    void *jni_data, void (*cleanup_func)(void *jni_data)) {
   struct inflated_oobj *infl;
   if (!FNI_IS_INFLATED(obj)) FNI_InflateObject(env, obj);
-  infl = FNI_UNWRAP(obj)->hashunion.inflated;
+  infl = FNI_UNWRAP_MASKED(obj)->hashunion.inflated;
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   // acquire write lock.
   pthread_rwlock_wrlock(&(infl->jni_data_lock));

@@ -29,10 +29,10 @@ JNIEXPORT jint JNICALL Java_java_lang_Object_hashCode
 
 /* helper for clone functions. */
 static inline jobject cloneHelper(JNIEnv *env, jobject obj, jsize len) {
-  jobject clone = FNI_Alloc(env, NULL, FNI_UNWRAP(obj)->claz,
+  jobject clone = FNI_Alloc(env, NULL, FNI_UNWRAP_MASKED(obj)->claz,
 			    NULL/*default alloc func*/, len);
-  memcpy(FNI_UNWRAP(clone)->field_start,
-	 FNI_UNWRAP(obj  )->field_start,
+  memcpy(FNI_UNWRAP_MASKED(clone)->field_start,
+	 FNI_UNWRAP_MASKED(obj  )->field_start,
 	 len - sizeof(struct oobj));
   return clone;
 }
@@ -45,7 +45,7 @@ static inline jobject cloneHelper(JNIEnv *env, jobject obj, jsize len) {
  */
 JNIEXPORT jobject JNICALL Java_java_lang_Object_clone
   (JNIEnv *env, jobject obj) {
-    struct claz *claz = FNI_UNWRAP(obj)->claz;
+    struct claz *claz = FNI_UNWRAP_MASKED(obj)->claz;
     u_int32_t size = claz->size;
     assert(claz->component_claz==NULL/* not an array*/);
     return cloneHelper(env, obj, size);

@@ -202,7 +202,8 @@ jobject FNI_Alloc(JNIEnv *env,
 		  void *(*allocfunc)(jsize length), jsize length);
 
 /* inflation routine/macro */
-#define FNI_IS_INFLATED(obj) ((FNI_UNWRAP(obj)->hashunion.hashcode & 1) == 0)
+#define FNI_IS_INFLATED(obj) \
+		((FNI_UNWRAP_MASKED(obj)->hashunion.hashcode & 1) == 0)
 void FNI_InflateObject(JNIEnv *env, jobject obj);
 
 /* JNI-local object data storage. */
@@ -213,6 +214,13 @@ void FNI_SetJNIData(JNIEnv *env, jobject obj, // frees old data if present.
 /* auxilliary thread synchronization operations */
 void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime);
 void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall);
+
+/* ----- bit-masking for stuffing extra info into low bits of pointers ----- */
+#ifdef WITH_MASKED_POINTERS
+# define PTRMASK(x) ((void*) (((ptroff_t)x) & (~3)))
+#else
+# define PTRMASK(x) ((void *) (x))
+#endif
 
 /* ----- miscellaneous information embedded in the compiler output ----- */
 

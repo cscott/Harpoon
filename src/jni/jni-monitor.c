@@ -41,7 +41,7 @@ jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
   INCREMENT_STATS(monitor_enter, 1);
   /* check object field, inflate lock if necessary. */
   if (!FNI_IS_INFLATED(obj)) FNI_InflateObject(env, obj);
-  li = FNI_UNWRAP(obj)->hashunion.inflated;
+  li = FNI_UNWRAP_MASKED(obj)->hashunion.inflated;
   if (li->tid == self) { /* i already have the lock */
     li->nesting_depth++;
   } else { /* someone else (or no one) has this lock */
@@ -67,7 +67,7 @@ jint FNI_MonitorExit(JNIEnv *env, jobject obj) {
   struct inflated_oobj *li; int st;
   assert(FNI_NO_EXCEPTIONS(env));
   assert(FNI_IS_INFLATED(obj));
-  li = FNI_UNWRAP(obj)->hashunion.inflated;
+  li = FNI_UNWRAP_MASKED(obj)->hashunion.inflated;
   assert(li->tid == pthread_self());
   if (--li->nesting_depth == 0) {
     /* okay, unlock this puppy. */
@@ -81,7 +81,7 @@ void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime){
   struct inflated_oobj *li; jclass ex; int st;
   assert(FNI_NO_EXCEPTIONS(env));
   if (!FNI_IS_INFLATED(obj)) goto error; // we don't have the lock.
-  li = FNI_UNWRAP(obj)->hashunion.inflated;
+  li = FNI_UNWRAP_MASKED(obj)->hashunion.inflated;
   if (li->tid != pthread_self()) goto error; // we don't have the lock.
   else { /* open brace so we can push new stuff on the stack */
     pthread_t tid = li->tid;
@@ -113,7 +113,7 @@ void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall) {
   struct inflated_oobj *li; jclass ex; int st;
   assert(FNI_NO_EXCEPTIONS(env));
   if (!FNI_IS_INFLATED(obj)) goto error; // we don't have the lock.
-  li = FNI_UNWRAP(obj)->hashunion.inflated;
+  li = FNI_UNWRAP_MASKED(obj)->hashunion.inflated;
   if (li->tid != pthread_self()) goto error; // we don't have the lock.
 
   if (wakeall)

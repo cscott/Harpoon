@@ -384,7 +384,7 @@ static jboolean isAptMember(JNIEnv *env, jclass cls, union _jmemberID *mptr,
     return JNI_FALSE;
   /* filter out non-local if which==1 */
   if (which == java_lang_reflect_Member_DECLARED &&
-      mptr->m.reflectinfo->declaring_class_object != FNI_UNWRAP(cls))
+      mptr->m.reflectinfo->declaring_class_object != FNI_UNWRAP_MASKED(cls))
     return JNI_FALSE;
   /* filter out <clinit> if type!=FIELDS */
   if (membersAreMethods && strcmp(mptr->m.name, "<clinit>")==0)

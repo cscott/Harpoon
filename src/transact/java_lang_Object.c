@@ -48,7 +48,7 @@ static struct vinfo *CreateNewVersion(struct inflated_oobj *infl,
 				      jboolean from_scratch) {
     struct vinfo *nv; /* new version goes here */
     u_int32_t size = FNI_ObjectSize(template);/* size including header */
-    if (NULL != template->claz->component_claz) { /* is an array */
+    if (NULL != PTRMASK(template)->claz->component_claz) { /* is an array */
 	INCREMENT_STATS(transact_versions_arr_num_alloc, 1);
 	INCREMENT_STATS(transact_versions_arr_bytes_alloc, size);
     } else {
@@ -57,7 +57,7 @@ static struct vinfo *CreateNewVersion(struct inflated_oobj *infl,
     }
     /** size includes header.  sizeof(struct vinfo) also includes header. */
     nv = MALLOC(size+sizeof(*nv)-sizeof(struct oobj));
-    memcpy(&(nv->obj), template, size);
+    memcpy(&(nv->obj), PTRMASK(template), size);
     /* initialize vinfo fields */
     nv->transid = cr;
     /* RACE CONDITIONS: multiple simultaneous create operations. */
@@ -182,13 +182,13 @@ static inline jint fieldsize(jfieldID fid) {
     /** Get a version suitable for reading. */
 JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadableVersion
     (JNIEnv *env, jobject _this, jobject commitrec) {
-    struct commitrec *c = (struct commitrec *) FNI_UNWRAP(commitrec);
+    struct commitrec *c = (struct commitrec *) FNI_UNWRAP_MASKED(commitrec);
     struct inflated_oobj *infl;
     struct vinfo *v;
     struct tlist *r, *rp;
     if (!FNI_IS_INFLATED(_this)) FNI_InflateObject(env, _this);
     /* get first_version */
-    infl = FNI_UNWRAP(_this)->hashunion.inflated;
+    infl = FNI_UNWRAP_MASKED(_this)->hashunion.inflated;
     v = infl->first_version;
     if (v==NULL) v = CreateNewVersion(infl, NULL, FNI_UNWRAP(_this), JNI_TRUE);
     /* make sure we're on the readers list */
@@ -249,13 +249,13 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadableVersion
     /** Get a version suitable for reading or writing. */
 JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadWritableVersion
     (JNIEnv *env, jobject _this, jobject commitrec) {
-    struct commitrec *c = (struct commitrec *) FNI_UNWRAP(commitrec);
+    struct commitrec *c = (struct commitrec *) FNI_UNWRAP_MASKED(commitrec);
     struct inflated_oobj *infl;
     struct vinfo *v;
     struct tlist *r;
     if (!FNI_IS_INFLATED(_this)) FNI_InflateObject(env, _this);
     /* get first version */
-    infl = FNI_UNWRAP(_this)->hashunion.inflated;
+    infl = FNI_UNWRAP_MASKED(_this)->hashunion.inflated;
     v = infl->first_version;
     if (v==NULL) v = CreateNewVersion(infl, NULL, FNI_UNWRAP(_this), JNI_TRUE);
     /* find last committed transaction */
@@ -332,7 +332,7 @@ static inline void eraseFlag(struct oobj *o, struct oobj *v, jint offset,
 #endif /* RACES */
 
 static inline void eraseAllFlags(JNIEnv *env, jobject _this, struct vinfo *v) {
-  struct oobj *oobj = FNI_UNWRAP(_this);
+  struct oobj *oobj = FNI_UNWRAP_MASKED(_this);
   struct FNI_classinfo *info=FNI_GetClassInfo
     ((*env)->GetObjectClass(env, _this));
   union _jmemberID *mID;
@@ -357,7 +357,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadCommittedVersion
     struct vinfo *v;
     int u = 0;
     assert(FNI_IS_INFLATED(_this));
-    infl = FNI_UNWRAP(_this)->hashunion.inflated;
+    infl = FNI_UNWRAP_MASKED(_this)->hashunion.inflated;
     v = infl->first_version;
     while (1) {
 	assert(v!=NULL);
@@ -390,7 +390,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getWriteCommittedVersion
     struct tlist *r;
     /* xxx: possibly downgrade this field to avoid an abort? */
     assert(FNI_IS_INFLATED(_this));
-    infl = FNI_UNWRAP(_this)->hashunion.inflated;
+    infl = FNI_UNWRAP_MASKED(_this)->hashunion.inflated;
     v = infl->first_version;
     while (AbortCR(v->transid) != COMMITTED) {
 	/* prune list for the sake of writes w/o intervening reads */
@@ -424,7 +424,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_makeCommittedVersion
     struct vinfo *v;
     if (!FNI_IS_INFLATED(_this)) FNI_InflateObject(env, _this);
     /* are there any versions? */
-    infl = FNI_UNWRAP(_this)->hashunion.inflated;
+    infl = FNI_UNWRAP_MASKED(_this)->hashunion.inflated;
     v = infl->first_version;
     if (v==NULL) v = CreateNewVersion(infl, NULL, FNI_UNWRAP(_this), JNI_TRUE);
     /* now that there's at least one version, find one that's committed. */
@@ -462,7 +462,7 @@ JNIEXPORT void JNICALL Java_java_lang_Object_writeArrayElementFlag
 #define WRITEFLAG(type, size, FLAG) \
 inline void Java_java_lang_Object_writeFlag##size \
     (JNIEnv *env, jobject _this, jint offset) { \
-    struct oobj *oobj = FNI_UNWRAP(_this); \
+    struct oobj *oobj = FNI_UNWRAP_MASKED(_this); \
     struct inflated_oobj *infl=oobj->hashunion.inflated; \
     struct vinfo *v; \
     type f; \

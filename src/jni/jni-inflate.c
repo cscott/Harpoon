@@ -27,7 +27,7 @@ static void deflate_object(void* obj, void* client_data);
 #endif
 
 void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
-  struct oobj *obj = FNI_UNWRAP(wrapped_obj);
+  struct oobj *obj = FNI_UNWRAP_MASKED(wrapped_obj);
   FLEX_MUTEX_LOCK(&global_inflate_mutex);
   /* be careful in case someone inflates this guy while our back is turned */
   if (obj->hashunion.hashcode & 1) {

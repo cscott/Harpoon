@@ -37,7 +37,7 @@ struct rettype *FNI_Get##Name##Info(type key) {\
   struct FNI_##name##2info * result;\
   assert(key!=NULL);\
   result =\
-    bsearch(FNI_UNWRAP(key),\
+    bsearch(FNI_UNWRAP_MASKED(key),\
 	    name##2info_start, name##2info_end - name##2info_start,\
 	    sizeof(*name##2info_start), name##2info_compare);\
   return (result==NULL) ? NULL : result accessor ;\
