@@ -72,11 +72,13 @@ static void deflate_object(GC_PTR obj, GC_PTR client_data) {
      * JNI data */
     if (infl->jni_cleanup_func)
 	(infl->jni_cleanup_func)(infl->jni_data);
-    /* deallocate clustered heap */
+    infl->jni_data = infl->jni_cleanup_func = NULL;
+    /* release clustered heap */
 #ifdef WITH_CLUSTERED_HEAPS
-    /* just zero-out -- let the GC take care of freeing it */
-    infl->heap_start = infl->heap_top = NULL;
-    infl->heap_size = 0;
+    /* call release function if non-null */
+    if (infl->heap_release)
+      (infl->heap_release)(infl->heap);
+    infl->heap = infl->heap_release = NULL;
 #endif
     /* okay deallocate mutexes, etc. */
 #ifdef WITH_HEAVY_THREADS
