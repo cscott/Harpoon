@@ -6,8 +6,8 @@ while [ -n "$3" ]; do
 done
 # at this point, there are only two items left on the command line.
 cls=$1
-name=$2
-dir=as$name
+name=`basename $2`
+dir=`dirname $2`/as$name
 # check java version
 optprefix=X
 if java -version 2>&1 | grep -q 'version "1.1'; then
@@ -27,7 +27,7 @@ harpoonpath=${FLEXPATH}${FLEXPATH:+:}.:../Benchmarks:Support/Lex.jar:SupportNP/s
 if type -t cygpath > /dev/null ; then
     harpoonpath=`cygpath -wp "$harpoonpath"`
 fi
-java -${optprefix}mx512m -Dharpoon.class.path=$harpoonpath ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir && \
+${JAVA:=java} -${optprefix}mx${FLEXMEM:=768m} -Dharpoon.class.path=$harpoonpath ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir && \
 if [ -d ../Runtime/include -a -f ../Runtime/config.status ] && \
     grep -q "[-]-with-precise-c" ../Runtime/config.status ; then
     make -C $dir CC="gcc -I../../Runtime/include -g -O9" && \

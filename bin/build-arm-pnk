@@ -6,11 +6,13 @@ while [ -n "$3" ]; do
 done
 # at this point, there are only two items left on the command line.
 cls=$1
-name=$2
-dir=`dirname $name`/as`basename $name`
+name=`basename $2`
+dir=`dirname $2`/as$name
 # check java version
+optprefix=X
 if java -version 2>&1 | grep -q 'version "1.1'; then
   echo "WARNING: YOU ARE USING JAVA 1.1. (JDK1.2 or above is preferred)" 1>&2
+  optprefix=""
 fi
 # ok.
 echo "Building $cls in $dir; result will be ${name}-Java.a" 1>&2
@@ -22,7 +24,7 @@ if [ ! -d $dir ]; then
 fi
 # you can set FLEXPATH to assign additional components to the harpoon classpath
 #flexc $cls -o $dir
-java -mx64m -oss2m -Dharpoon.class.path=${FLEXPATH}${FLEXPATH:+:}.:../Benchmarks:Support/Lex.jar:SupportNP/sunthunk.jar:SupportNP/collections.jar:SupportNP/classes.zip ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain -R $opts -c $cls -o $dir && \
+${JAVA:=java} -${optprefix}mx${FLEXMEM:=768m} -oss2m -Dharpoon.class.path=${FLEXPATH}${FLEXPATH:+:}.:../Benchmarks:Support/Lex.jar:SupportNP/sunthunk.jar:SupportNP/collections.jar:SupportNP/classes.zip ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain -R $opts -c $cls -o $dir && \
 if [ -x "`which arm-unknown-linuxelf-as`" ]; then
     make -C $dir HOST_PREFIX=arm-unknown-linuxelf- && \
     if grep -q arm-unknown-linuxelf ../Runtime/Makefile ; then
