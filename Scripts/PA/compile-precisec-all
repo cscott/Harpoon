@@ -50,7 +50,6 @@ for opt in inter intra none; do
     ${SCR_DIR}/compile-precisec-one \
 	${name}.${opt} \
 	${CALL_DIR}/${opt}/${name}.${opt};
-    echo "WOW:" ${CALL_DIR}/${opt}/${name}.${opt}/run${name}.${opt};
     ls -l ${CALL_DIR}/${opt}/${name}.${opt}/run${name}.${opt};
     mv \
 	${CALL_DIR}/${opt}/${name}.${opt}/run${name}.${opt} \
