@@ -12,15 +12,25 @@ import java.util.Vector;
  * single constructor for a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructorSyn.java,v 1.2.2.3 1999-08-07 04:14:20 cananian Exp $
+ * @version $Id: HConstructorSyn.java,v 1.2.2.4 1999-10-30 22:19:40 cananian Exp $
  * @see HMember
  * @see HClass
  */
-public class HConstructorSyn extends HMethod {
+public class HConstructorSyn extends HConstructor {
 
-  /** Create a new method based on a template. */
+  /** Create a new constructor based on a template. 
+   *  The new constructor will be added to the class containing the 
+   *  template method. The parent class of the template constructor must be
+   *  an <code>HClassSyn</code>. */
   public HConstructorSyn(HConstructor template) {
-    this.parent = template.getDeclaringClass();
+    this((HClassSyn)(template.getDeclaringClass()), template);
+  }
+  
+  /** Create a new constructor like the <code>template</code>, 
+   *  but in class <code>parent</code>. 
+   *  The new constructor will be added to class <code>parent</code>. */
+  public HConstructorSyn(HClassSyn parent, HConstructor template) {
+    this.parent = parent;
     //this.name = template.getName(); // superclass inits.
     // XXX ensure uniqueness (parameter types?)
     this.modifiers = template.getModifiers();
@@ -57,6 +67,13 @@ public class HConstructorSyn extends HMethod {
     this.exceptionTypes = new HClass[0];
     this.isSynthetic = false;
     ((HClassSyn)parent).addDeclaredMethod(this);
+  }
+  /** Create a new empty constructor in the specified class
+   *  with the specified parameter and return types
+   *  that throws no checked exceptions.
+   */
+  public HConstructorSyn(HClassSyn parent, HClass[] paramTypes) {
+    this(parent, HMethodSyn.makeDescriptor (paramTypes, HClass.Void));
   }
 
   public void setModifiers(int m) { this.modifiers = m; }
