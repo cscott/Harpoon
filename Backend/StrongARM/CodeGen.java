@@ -47,7 +47,7 @@ import java.util.*;
  * selection of <code>Instr</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.10 1999-05-25 20:22:04 andyb Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.11 1999-05-27 01:54:54 pnkfelix Exp $
  */
 final class CodeGen {
 
@@ -228,11 +228,17 @@ final class CodeGen {
 
         public void visit(MOVE s) {
             s.dst.visit(this);
+	    Util.assert(visitRet != null, 
+			"visitRet should not be null after visiting " + 
+			s.dst);
             ExpValue dest = visitRet;
             if (s.src instanceof CONST) {
                 emitMoveConst(s, dest.temp(), ((CONST)s.src).value);
             } else {
             s.src.visit(this);
+	    Util.assert(visitRet != null, 
+			"visitRet should not be null after visiting " + 
+			s.src);
             ExpValue source = visitRet;
             if (dest.isDouble()) {
                 emit(new Instr(inf, s, "mov `d0, `s0",
@@ -480,6 +486,7 @@ final class CodeGen {
             visitRet = retval;
         }
 
+
         public void visit(ESEQ e) {
             e.stm.visit(this);
             e.exp.visit(this);
@@ -488,8 +495,24 @@ final class CodeGen {
         }
 
         public void visit(MEM e) {
-            /* XXX */
-        }
+	    /* MEM is handled differently depending on which child of
+	       the Exp it is:
+	       LeftHand Side --> Store
+	       RightHand Side --> Load
+	       The problem is that from the scope of this function, we
+	       don't know whether we are on the LHS or RHS...
+	       one way to handle this is to calcuate the memory
+	       address and then make the calling visit decide whether
+	       this was a load or a store.  That makes this visit
+	       function pretty much useless though, and may require
+	       using instanceof.   
+
+	       TODO: still need to add code to handle memory accesses,
+	       either here or in the other visit methods
+	    */
+	    e.exp.visit(this);
+	    ExpValue addr = visitRet;
+	}
 
         public void visit(NAME e) {
             ExpValue retval = new ExpValue(new Temp(tf));
