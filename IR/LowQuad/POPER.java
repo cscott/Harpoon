@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * <code>LQop</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: POPER.java,v 1.1.2.2 1999-01-21 06:37:25 cananian Exp $
+ * @version $Id: POPER.java,v 1.1.2.3 1999-09-10 00:08:05 cananian Exp $
  */
 public class POPER extends harpoon.IR.Quads.OPER {
     
@@ -33,7 +33,7 @@ public class POPER extends harpoon.IR.Quads.OPER {
 			 map(defMap, dst), map(useMap, operands));
     }
 
-    public void visit(harpoon.IR.Quads.QuadVisitor v) {
+    public void accept(harpoon.IR.Quads.QuadVisitor v) {
 	((LowQuadVisitor)v).visit(this);
     }
 
