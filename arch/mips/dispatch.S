@@ -46,8 +46,8 @@ DECLARE_FNI_Dispatch(Double)
     sw    excptr, 4(sp) # Put the exception pointer on the stack for
                         # possible later use 
     move  fp, sp
-    move  t9, a0        # jump via t9 as that is shared object convention
-                        # (we are not an so, but we need to free up a0)
+    move  t4, a0        # jump via t4, we can't use t9, the regular mips
+                        # .so convention because ypekoe uses that reg
     # Now copy arguments onto the stack
     sll   a1, 2        /* a1 = narg*4 */
     add   t0, a2, a1   /* t0 = endptr  */
@@ -87,7 +87,7 @@ DECLARE_FNI_Dispatch(Double)
 6:  
     lw    a0, 0(t0)
 7:      
-    jalr  t9       # invoke the method
+    jalr  t4       # invoke the method
 return_point:
     move  sp, fp   # restore the stack pointer to the allocated frame
     lw    fp, 8(sp)
