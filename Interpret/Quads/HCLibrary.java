@@ -8,7 +8,7 @@ import harpoon.ClassFile.HClass;
  * <code>HClass</code> objects for common classes into class scope.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCLibrary.java,v 1.1.2.3 1999-01-22 23:53:18 cananian Exp $
+ * @version $Id: HCLibrary.java,v 1.1.2.4 1999-06-22 20:01:30 cananian Exp $
  */
 class HCLibrary  {
     static final HClass 
@@ -45,6 +45,7 @@ class HCLibrary  {
 					      "Exception"),
 	HCioE = HClass.forName("java.io.IOException"),
 	HCsecurityE = HClass.forName("java.lang.SecurityException"),
+	HCillegalaccessErr = HClass.forName("java.lang.IllegalAccessError"),
 	HCnosuchmethodErr = HClass.forName("java.lang.NoSuchMethodError"),
 	HCunsatisfiedlinkErr=HClass.forName("java.lang.UnsatisfiedLinkError");
 }

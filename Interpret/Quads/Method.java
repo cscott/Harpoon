@@ -4,6 +4,8 @@ package harpoon.Interpret.Quads;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMember;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadSSA;
@@ -53,7 +55,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code given a static state.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.8 1999-06-21 05:06:57 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.9 1999-06-22 20:01:32 cananian Exp $
  */
 public final class Method extends HCLibrary {
 
@@ -233,6 +235,49 @@ public final class Method extends HCLibrary {
 	ExplicitI(StaticState ss, QuadStackFrame sf, Object[] params) {
 	    super(ss, sf, params);
 	}
+
+	/** Check access permissions on member, accessed from current frame.
+	 *  The <code>objtype</code> parameter is <code>null</code> if the
+	 *  access is to a static member. */
+	void scopeCheck(HMember hm, HClass objtype) 
+	    throws InterpretedThrowable {
+	    int m = hm.getModifiers();
+	    HClass from = sf.getMethod().getDeclaringClass();
+	    HClass to = hm.getDeclaringClass();
+	    if (Modifier.isProtected(m)) { // protected
+		// from JVM ref on invokevirtual: if method is protected, then
+		// it must be either a member of the current class or a member
+		// of a superclass of the current class, and the class of
+		// objectref must be either the current class or a subclass of
+		// the current class.
+		if (to.isSuperclassOf(from) && 
+		    (objtype==null || from.isSuperclassOf(objtype)))
+		    return; // all clear.
+		// classes in the same package as some superclass can call
+		// protected stuff, too. yuck.
+		for (HClass sc=to; sc!=null; sc=sc.getSuperclass()) {
+		    if (from.getPackage().equals(sc.getPackage()))
+			return; // all clear.
+		}
+	    } else if (Modifier.isPrivate(m)) { // private
+		// check for private class called from outside its class.
+		if (to.equals(from) &&
+		    (objtype==null || from.isSuperclassOf(objtype)))
+		    return; // all clear.
+	    } else if (Modifier.isPublic(m)) { // public
+		return; // always safe.
+	    } else { // package scope
+		// check for package scope called from outside its package
+		if (from.getPackage().equals(to.getPackage()))
+		    return; // all clear.
+	    }
+	    // aha! an illegal access.
+	    String msg=((objtype==null)?"":(objtype.getName()+": ")) +
+		hm.toString();
+	    ObjectRef eor = ss.makeThrowable(HCillegalaccessErr, msg);
+	    throw new InterpretedThrowable(eor, ss);
+	}
+
 	public void visit(Quad q) {
 	    throw new Error("Hello? No defaults here.");
 	}
@@ -279,8 +324,19 @@ public final class Method extends HCLibrary {
 	    HMethod hm = q.method();
 	    if (!q.isStatic() && q.isVirtual()) { // do virtual dispatch
 		Ref obj = (Ref) params[0];
-		hm = obj.type.getMethod(hm.getName(), hm.getDescriptor());
-	    }
+		try {
+		    hm = obj.type.getMethod(hm.getName(), hm.getDescriptor());
+		} catch (NoSuchMethodError ex) {
+		    // duplicate java error message
+		    String msg = obj.type.getName()+": method "+
+			hm.getName() + hm.getDescriptor() +" not found";
+		    ObjectRef eor = ss.makeThrowable(HCnosuchmethodErr, msg);
+		    throw new InterpretedThrowable(eor, ss);
+		}
+		scopeCheck(hm, obj.type); // check virtual access perms
+	    } else
+		scopeCheck(hm, null); // check static access perms
+
 	    try {
 		Object retval = toInternal(invoke(ss, hm, params));
 		if (q.retval()!=null) sf.update(q.retval(), retval);
@@ -330,11 +386,14 @@ public final class Method extends HCLibrary {
 	    throw new Error("Didn't stop!");
 	}
 	public void visit(GET q) {
+	    HField hf = q.field();
 	    if (q.objectref()==null) { // static
-		sf.update(q.dst(), toInternal(ss.get(q.field())));
+		scopeCheck(hf, null); // check static access perms
+		sf.update(q.dst(), toInternal(ss.get(hf)));
 	    } else { // non-static
 		Ref obj = (Ref) sf.get(q.objectref());//arrays have fields too
-		sf.update(q.dst(), toInternal(obj.get(q.field())));
+		scopeCheck(hf, obj.type); // check virtual access perms.
+		sf.update(q.dst(), toInternal(obj.get(hf)));
 	    }
 	    advance(0);
 	}
@@ -343,9 +402,9 @@ public final class Method extends HCLibrary {
 	}
 	public void visit(INSTANCEOF q) {
 	    Ref obj = (Ref) sf.get(q.src());
-	    if (obj==null || obj.type.isInstanceOf(q.hclass())) // true.
+	    if (obj!=null && obj.type.isInstanceOf(q.hclass())) // true.
 		sf.update(q.dst(), new Boolean(true));
-	    else
+	    else // (null instanceof foo)==false
 		sf.update(q.dst(), new Boolean(false));
 	    advance(0);
 	}
@@ -401,12 +460,15 @@ public final class Method extends HCLibrary {
 	    advance(0); // may as well.
 	}
 	public void visit(SET q) {
+	    HField hf = q.field();
 	    Object src = sf.get(q.src());
 	    if (q.objectref()==null) { // static
-		ss.update(q.field(), toExternal(src, q.field().getType()));
+		scopeCheck(hf, null); // check static access perms.
+		ss.update(hf, toExternal(src, hf.getType()));
 	    } else { // non-static
 		ObjectRef obj = (ObjectRef) sf.get(q.objectref());
-		obj.update(q.field(), toExternal(src, q.field().getType()) );
+		scopeCheck(hf, obj.type); // check virtual access perms
+		obj.update(hf, toExternal(src, hf.getType()) );
 	    }
 	    advance(0);
 	}
