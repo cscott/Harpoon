@@ -69,7 +69,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.13 2000-08-26 05:08:35 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.14 2000-08-31 05:24:14 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing cc
 // on MIPS IRIX64 lion 6.2 03131016 IP19.  
@@ -607,17 +607,6 @@ import java.util.Iterator;
        default: return false;
        }
     }
-    private Temp getArgReg(int i) {
-       Util.assert(i < 4 && i >= 0, "Bad arg reg " + i);
-       switch(i) {
-       case 0: return a0;
-       case 1: return a1;
-       case 2: return a2;
-       case 3: return a3;
-       }
-       Util.assert(false);
-       return null;
-    }
     /** Helper for setting up registers/memory with the strongARM standard
      *  calling convention.  Returns the stack offset necessary,
      *  along with a set of registers used by the parameters. */
@@ -659,13 +648,13 @@ import java.util.Iterator;
                                    "sw `s0h, " 
                                    + stack.argOffset(ROOT, index) 
                                    + "(`s1)",
-                                   new Temp[]{ SP },
+                                   null,
                                    new Temp[]{ tl.head, SP })); 
                 emit(new InstrMEM( instrFactory, ROOT,
                                    "sw `s0l, " 
                                    + stack.argSecondOffset(ROOT, index) 
                                    + "(`s1)",
-                                   new Temp[]{ SP },
+                                   null,
                                    new Temp[]{ tl.head, SP })); 
              } else {
                 declare( SP, HClass.Void );
@@ -673,7 +662,7 @@ import java.util.Iterator;
                    instrFactory, ROOT,
                    "sw `s0, " + stack.argOffset(ROOT, index)
                    + "(`s1)",
-                   new Temp[]{ SP },
+                   null,
                    new Temp[]{ tl.head, SP }));
              }
              break;
@@ -1244,10 +1233,9 @@ BINOP<l>(USHR, j, k) = i %{
 /***********************************************************/
 /* Constants */
 
-CONST<l,d>(c) = i 
+CONST<l>(c) = i 
 %{
-    long val = (ROOT.type()==Type.LONG) ? ROOT.value.longValue()
-	: Double.doubleToLongBits(ROOT.value.doubleValue());
+   long val = ROOT.value.longValue();
 
     int loval = (int)(val & 0xFFFFFFFF);
     emit(new Instr( instrFactory, ROOT,
@@ -1259,13 +1247,11 @@ CONST<l,d>(c) = i
                     new Temp[]{ i }, null ));
 }% 
 
-CONST<f,i>(c) = i 
+CONST<i>(c) = i 
 %{
-    int val = (ROOT.type()==Type.INT) ? ROOT.value.intValue()
-	: Float.floatToIntBits(ROOT.value.floatValue());
-    emit(new Instr( instrFactory, ROOT,
-		    "li `d0, " + val, 
-		    new Temp[]{ i }, null ));
+   emit(new Instr( instrFactory, ROOT,
+                   "li `d0, " + ROOT.value.intValue(),
+                   new Temp[]{ i }, null ));
 }%
 
 CONST<p>(c) = i %{
@@ -1274,6 +1260,32 @@ CONST<p>(c) = i %{
     emit(new Instr( instrFactory, ROOT,
                     "li `d0, 0",
                     new Temp[]{ i }, null ));
+}%
+
+CONST<d>(c) = i 
+%{
+   emitDIRECTIVE( ROOT, !is_elf?".rdata ": (mipspro_assem ? ".data\n.section .flex.init_data,1, 3, 4, 16" : ".data\n.section .flex.init_data"));
+   emit( ROOT, "1:\n"
+         + ".double " + ROOT.value.doubleValue());
+   emitDIRECTIVE( ROOT, !is_elf?".text": (mipspro_assem ? ".text\n.section .flex.code,1, 7, 4, 16" : ".text\n.section .flex.code"));
+   emit(new Instr( instrFactory, ROOT,
+                   "lw `d0h, 1b",
+                   new Temp[]{ i }, null ));
+   emit(new Instr( instrFactory, ROOT,
+                   "lw `d0l, 1b + 4",
+                   new Temp[]{ i }, null ));
+
+}% 
+
+CONST<f>(c) = i 
+%{
+   emitDIRECTIVE( ROOT, !is_elf?".rdata ": (mipspro_assem ? ".data\n.section .flex.init_data,1, 3, 4, 16" : ".data\n.section .flex.init_data"));
+   emit( ROOT, "1:\n"
+         + ".float " + ROOT.value.floatValue());
+   emitDIRECTIVE( ROOT, !is_elf?".text": (mipspro_assem ? ".text\n.section .flex.code,1, 7, 4, 16" : ".text\n.section .flex.code"));
+   emit(new Instr( instrFactory, ROOT,
+                   "lw `d0, 1b",
+                   new Temp[]{ i }, null ));
 }%
 
 /***********************************************************/
@@ -1570,8 +1582,7 @@ CJUMP(BINOP(cmpop, j, CONST<i,p>(c)), iftrue, iffalse)
       emit( ROOT, cmpOp2BrStr(cmpop) + " `s0, $0, `L0 # null",
             null, new Temp[] { j }, new Label[] { iftrue });
    } else {
-      emit( ROOT, cmpOp2BrStr(cmpop) + " `s0, " + c + ", `L0 " 
-            + (c==null ? (" # null ") : ""),
+      emit( ROOT, cmpOp2BrStr(cmpop) + " `s0, " + c + ", `L0 ",
             null, new Temp[] { j }, new Label[] { iftrue });
    }
    emitJUMP( ROOT, "b `L0", iffalse );
@@ -1613,36 +1624,56 @@ METHOD(params) %{
     declare(SP, HClass.Void);
     declare(FP, HClass.Void);
     emit(new InstrENTRY( instrFactory, ROOT ));
+    StackInfo param_stack = new StackInfo(regfile);
+    param_stack.callInfo(ROOT);
     // move arguments to temporaries.
-    int loc=0;
     // skip param[0], which is the explicit 'exceptional return address'
     for (int i=1; i<params.length; i++) {
        declare(params[i], code.getTreeDerivation(), ROOT.getParams(i));
-       if (ROOT.getParams(i).isDoubleWord()) {
-          if (loc<=2) { // both halves in registers
-             // ack.  emitMOVE isn't working with long/double types.
-             emit( ROOT, "move `d0l, `s0", params[i], getArgReg(loc++));
-             emit( ROOT, "move `d0h, `s0", params[i], getArgReg(loc++));
+       switch(param_stack.argWhere(ROOT, i-1)) {
+       case StackInfo.REGISTER:
+          if (ROOT.getParams(i).isDoubleWord()) {
+             emit( ROOT, "move `d0h, `s0", params[i],
+                       param_stack.argReg(ROOT, i-1));
+             emit( ROOT, "move `d0l, `s0", params[i],
+                   param_stack.argSecondReg(ROOT, i-1));
           } else {
-             // loc == 3 could mean on in register, one on stack, but
-             // that is not what the C IRIX/MIPS compiler does.
-             emit(new InstrMEM( instrFactory, ROOT,
-                                "lw `d0h, "+(4*(loc++))+"(`s0)",
-                                new Temp[] {params[i]}, new Temp[] {FP}));
-             emit(new InstrMEM( instrFactory, ROOT,
-                                "lw `d0l, "+(4*(loc++))+"(`s0)",
-                                new Temp[] {params[i]}, new Temp[] {FP}));
+             emitMOVE( ROOT, "move `d0, `s0", params[i],
+                       param_stack.argReg(ROOT, i-1));
           }
-       } else { // single word.
-          if (loc<4) { // in register
-             emitMOVE( ROOT, "move `d0, `s0", params[i], getArgReg(loc++));
-          } else { // on stack
+          break;
+       case StackInfo.STACK:
+          if(ROOT.getParams(i).isDoubleWord()) {
+             declare (SP, HClass.Void);
              emit(new InstrMEM( instrFactory, ROOT,
-                                "lw `d0, "+(4*(loc++))+"(`s0)",
-                                new Temp[] {params[i]}, new Temp[] {FP}));
+                                "lw `d0h, " 
+                                + param_stack.argOffset(ROOT, i-1)
+                                + "(`s0)        # arg "
+                                + (i-1) + "h",
+                                new Temp[]{ params[i] },
+                                new Temp[]{ FP })); 
+             emit(new InstrMEM( instrFactory, ROOT,
+                                "lw `d0l, " 
+                                + param_stack.argSecondOffset(ROOT, i-1)
+                                + "(`s0)        # arg "
+                                + (i-1) + "l",
+                                new Temp[]{ params[i] },
+                                new Temp[]{ FP })); 
+          } else {
+             declare( SP, HClass.Void );
+             emit(new InstrMEM(
+                instrFactory, ROOT,
+                "lw `d0, " + param_stack.argOffset(ROOT, i-1)
+                + "(`s0)         # arg " + (i-1),
+                new Temp[]{ params[i] },
+                new Temp[]{ FP }));
           }
+          break;
+       case StackInfo.REGSTACKSPLIT:
+          Util.assert(false);
        }
     }
+    param_stack = null; // free
 }%
 
 THROW(val, handler) %{
@@ -1816,7 +1847,7 @@ DATUM(NAME(l)) %{
 }%
 
 ALIGN(n) %{
-   emitDIRECTIVE( ROOT, "\t.align "+n);
+   emitDIRECTIVE( ROOT, "\t.balign "+n);
 }%
 
 SEGMENT(CLASS) %{
