@@ -46,7 +46,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.4.1 1999-10-12 20:04:59 cananian Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.4.2 1999-10-12 22:39:33 pnkfelix Exp $
  */
 public class DefaultFrame extends harpoon.Backend.Generic.Frame
     implements AllocationInfo {
@@ -205,6 +205,8 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
     }
     private final RegFileInfo m_regfileinfo = new RegFileInfo() {
 	public Set liveOnExit() { return java.util.Collections.EMPTY_SET; }
+	public Set callerSave() { Util.assert(false, "die"); return null; }
+	public Set calleeSave() { Util.assert(false, "die"); return null; }
 	public TempFactory regTempFactory() { return regTempFactory; }
 	public Iterator suggestRegAssignment(Temp t, Map regfile) {
 	    /* stub */

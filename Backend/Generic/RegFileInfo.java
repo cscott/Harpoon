@@ -15,7 +15,7 @@ import java.util.Iterator;
     about the target machine's register file. 
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.4 1999-09-14 23:46:28 pnkfelix Exp $
+    @version $Id: RegFileInfo.java,v 1.1.2.5 1999-10-12 22:39:30 pnkfelix Exp $
  */
 public abstract class RegFileInfo {
     
@@ -28,6 +28,21 @@ public abstract class RegFileInfo {
 	the end of a method. 
     */
     public abstract Set liveOnExit();
+
+    /** Returns the Set of registers that are caller-saved.
+	Any register in this Set can be used arbitrarily in a method
+	call, and therefore it is the responsibility of the caller of
+	a method to save them if it wants them preserved.
+    */
+    public abstract Set callerSave();
+
+    /** Returns the Set of registers that are callee-saved.
+	All registers in this Set are assumed to be preserved during a
+	method call, and therefore it the responsibility of the method
+	being called it save them and restore them before returning if
+	it wants to use them for temporary storage.
+    */
+    public abstract Set calleeSave();
 
     /** Returns the <code>TempFactory</code> of the register
 	<code>Temp</code>s in <code>this</code>. 

@@ -20,7 +20,7 @@ import java.util.HashSet;
  * <code>RegFileInfo</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.1 1999-09-20 15:29:40 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.2 1999-10-12 22:39:32 pnkfelix Exp $
  */
 public class RegFileInfo extends harpoon.Backend.Generic.RegFileInfo {
 
@@ -171,5 +171,8 @@ public class RegFileInfo extends harpoon.Backend.Generic.RegFileInfo {
 						IP, SP, LR, PC }));
 	return hs;
     }
+
+    public Set callerSave() { Util.assert(false, "not implemented yet"); return null; }
+    public Set calleeSave() { Util.assert(false, "not implemented yet"); return null; }
     
 }
