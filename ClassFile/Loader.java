@@ -17,6 +17,11 @@ import java.util.zip.ZipEntry;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
+import harpoon.Util.ArrayIterator;
+import harpoon.Util.CombineIterator;
+import harpoon.Util.Default;
+import harpoon.Util.EnumerationIterator;
+import harpoon.Util.FilterIterator;
 import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
 /** 
@@ -25,13 +30,15 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.10 1999-09-08 17:36:37 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.11 1999-09-12 15:56:47 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
     /** Open a stream to read the given resource, or return 
      *  <code>null</code> if resource cannot be found. */
     abstract InputStream getResourceAsStream(String resourcename);
+    /** Iterate over all classes in the given package. */
+    abstract Iterator listPackage(String packagename);
   }
   /** A .zip or .jar file in the CLASSPATH. */
   static class ZipFileElement extends ClasspathElement {
@@ -45,6 +52,25 @@ public abstract class Loader {
 	System.err.println("UNSATISFIED LINK ERROR: "+name);
 	return null;
       } catch (IOException e) { return null; }
+    }
+    Iterator listPackage(final String pathname) {
+      // look for directory name first
+      final String filesep   = System.getProperty("file.separator");
+      /* not all .JAR files have entries for directories, unfortunately.
+      ZipEntry ze = zf.getEntry(pathname);
+      if (ze==null) return Default.nullIterator;
+      */
+      return new FilterIterator(new EnumerationIterator(zf.entries()),
+				new FilterIterator.Filter() {
+	public boolean isElement(Object o) { ZipEntry zze=(ZipEntry) o;
+	String name = zze.getName();
+	return (!zze.isDirectory()) && name.startsWith(pathname) &&
+	  name.lastIndexOf(filesep)==(pathname.length()-1);
+	}
+	public Object map(Object o) {
+	  return ((ZipEntry)o).getName();
+	}
+      });
     }
     /** Close the zipfile when this object is garbage-collected. */
     protected void finalize() throws Throwable {
@@ -63,6 +89,14 @@ public abstract class Loader {
       } catch (FileNotFoundException e) {
 	return null; // if anything goes wrong, return null.
       }
+    }
+    Iterator listPackage(final String pathname) {
+      File f = new File(path,pathname);
+      if (!f.exists() || !f.isDirectory()) return Default.nullIterator;
+      return new FilterIterator(new ArrayIterator(f.list()),
+				new FilterIterator.Filter() {
+	public Object map(Object o) { return pathname + ((String)o); }
+      });
     }
   }
 
@@ -139,6 +173,32 @@ public abstract class Loader {
     }
     // Couldn't find resource.
     return null;
+  }
+
+  /** Returns an iterator of Strings naming the available classes in
+   *  the given package which are on the classpath. */
+  public static Iterator listClasses(String packagename) {
+    final String filesep = System.getProperty("file.separator");
+    final String pathname = packagename.replace('.',filesep.charAt(0));
+    FilterIterator.Filter cpe2sl = new FilterIterator.Filter() {
+      public Object map(Object o) {
+	return ((ClasspathElement) o).listPackage(pathname+filesep);
+      }
+    };
+    FilterIterator.Filter sl2cl = new FilterIterator.Filter() {
+      private Set nodups = new HashSet();
+      public boolean isElement(Object o) {
+	return ((String)o).toLowerCase().endsWith(".class") &&
+	       !nodups.contains(o);
+      }
+      public Object map(Object o) {
+	String name = (String) o; nodups.add(o);
+	return name.substring(0,name.length()-6)
+	           .replace(filesep.charAt(0),'.');
+      }
+    };
+    return new FilterIterator(new CombineIterator(
+           new FilterIterator(classpathList.iterator(), cpe2sl)), sl2cl);
   }
 }
 // set emacs indentation style.
