@@ -37,7 +37,8 @@ public class Alert extends Node {
     public Alert(CommunicationsModel cm, String name) {
 	super();
 	try {
-  	    cs = cm.setupAlertClient(name);
+//   	    cs = cm.setupAlertClient(name);
+	    cs = null;
 	} catch (Exception e) {
 	    throw new Error(e);
 	}

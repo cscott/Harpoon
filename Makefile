@@ -1,3 +1,7 @@
+# put the location of the BBN UAV OEP distribution files ATRManip.idl,
+# quo.idl, and rss.idl here.
+UAVDIST=src/corba/UAV
+
 JCC=javac
 IDLCC=idl
 JAR=jar
@@ -7,8 +11,9 @@ FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 ISOURCES=$(wildcard src/graph/*.idl src/corba/*.idl)
+BISOURCES=$(wildcard src/corba/UAV/*.idl)
 JSOURCES=$(wildcard src/*.java src/graph/*.java src/util/*.java src/corba/*.java)
-GJSOURCES=imagerec/graph/*.java imagerec/corba/*.java
+GJSOURCES=imagerec/graph/*.java imagerec/corba/*.java ATRManip/*.java quo/*.java rss/*.java
 RTJSOURCES=$(wildcard src/rtj/*.java)
 STUBSOURCES=$(wildcard src/rtj/stubs/*.java)
 SOURCES=$(JSOURCES) $(ISOURCES) $(RTJSOURCES) $(STUBSOURCES)
@@ -17,6 +22,7 @@ DSOURCES=$(wildcard paper/README paper/p* src/*.html src/graph/*.html)
 DSOURCES += $(wildcard src/util/*.html src/corba/*.html src/rtj/*.html)
 DSOURCES += $(wildcard src/rtj/stubs/*.html)
 RELEASE=$(SOURCES) README BUILDING COPYING Makefile $(IMAGES) $(DSOURCES)
+JDIRS=imagerec ATRManip quo rss
 
 # figure out what the current CVS branch is, by looking at the Makefile
 CVS_TAG=$(firstword $(shell cvs status Makefile | grep -v "(none)" | \
@@ -25,42 +31,48 @@ CVS_REVISION=$(patsubst %,-r %,$(CVS_TAG))
 
 # construct the flags for JavaDoc
 JDOCFLAGS:=-J-mx128m -version -author -breakiterator \
-	   -doctitle "MIT ATR program documentation" \
+	   -doctitle "MIT ATR Program Documentation" \
 	   -quiet -private -linksource 
+JDOCGROUPS:=\
+  -group "MIT Image Recognition Program" "imagerec*" \
+  -group "BBN UAV Interface" "ATRManip*:quo*:rss*"
 JDKDOCLINK=http://java.sun.com/j2se/1.4/docs/api
 JDOCFLAGS += \
 	$(shell if $(JDOC) -help 2>&1 | grep -- "-link " > /dev/null ; \
 	then echo -link $(JDKDOCLINK) ; fi) 
-
+JDOCFLAGS += \
+	$(shell if $(JDOC) -help 2>&1 | grep -- "-group " > /dev/null ; \
+	then echo '$(JDOCGROUPS)' ; fi)
 
 all:    clean doc imagerec.jar # imagerec.tgz
 
 clean:
 	@echo Cleaning up docs and imagerec.jar.
-	@rm -rf doc imagerec
+	@rm -rf doc $(JDIRS)
 	@rm -f imagerec.jar imagerec.jar.TIMESTAMP
 	@rm -f imagerec.tgz imagerec.tgz.TIMESTAMP
 #	@rm -f ChangeLog
 
 doc:	$(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating documentation...
-	@rm -rf doc
+	@rm -rf doc $(JDIRS)
 	@mkdir -p doc
-	@rm -rf imagerec
 	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
 	@javadoc $(JDOCFLAGS) -d doc/ $(JSOURCES) $(GJSOURCES) > doc/STATUS
-	@rm -rf imagerec
+	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	@chmod -R a+rX doc
 
 imagerec.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating imagerec.jar file...
-	@rm -rf imagerec
+	@rm -rf $(JDIRS)
 	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -f $(GJSOURCES)
-	@jar -cf $@ imagerec
-	@rm -rf imagerec
+	@jar -cf $@ $(JDIRS)
+	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
 imagerec.tgz: $(RELEASE)

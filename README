@@ -1,3 +1,10 @@
+See paper/ for the paper and presentation that Steven Howard wrote for
+the original implementation of the image recognition program.
+
 The main documentation for this program is available through JavaDoc.
 Please type 'make doc' to generate the documentation.
 Then, point your browser to the doc/ directory.
+
+See COPYING for the GPL v.2 license that covers all code in this package.
+
+See BUILDING for instructions on building the distribution.
