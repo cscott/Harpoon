@@ -31,7 +31,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.83 1998-10-11 02:37:57 cananian Exp $
+ * @version $Id: Translate.java,v 1.84 1998-10-11 05:55:16 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -137,6 +137,13 @@ class Translate  { // not public.
 	State exitJSR() {
 	    Vector c[] = (Vector[]) shrink(this.continuation);
 	    return new State(stack, stackSize, lv, c, stackNames).pop();
+	}
+	/** Scrub state prior to entering PHI (use canonical names). */
+	State scrub() {
+	    StackElement nstk = null;
+	    for (int i=stackSize-1; i >= 0; i--)
+		nstk = new StackElement(stackNames[i], nstk);
+	    return new State(nstk, stackSize, lv, continuation, stackNames);
 	}
 
 	/** Initialize state with temps corresponding to parameters. */
@@ -1250,9 +1257,10 @@ class Translate  { // not public.
 	if (phi==null) {
 	    // create new phi
 	    phi = new PHI(in, new Temp[0], in.arity());
-	    mm.put(in, phi, 0, s);
+	    State ns = s.scrub(); // canonicalize names.
+	    mm.put(in, phi, 0, ns);
 	    // Create new state & keep it around.
-	    result = new TransState[] { new TransState(s, in.next()[0],
+	    result = new TransState[] { new TransState(ns, in.next()[0],
 						       phi, 0) };
 	}
 	// Look up the edge to use.

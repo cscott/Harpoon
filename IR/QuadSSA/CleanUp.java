@@ -18,14 +18,12 @@ import harpoon.Util.Worklist;
  * <code>CleanUp</code> cleans up the phi functions of the IR generated
  * by the <code>Translate</code> class.<p>
  * It: <UL>
- * <LI> Removes phi/sigma functions that define temps that are never used
- *      (which magically removes undefined temps as well).
  * <LI> Shrinks phi functions that have phantom limbs 
  *      (from impossible catches).
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CleanUp.java,v 1.10 1998-10-11 02:37:56 cananian Exp $
+ * @version $Id: CleanUp.java,v 1.11 1998-10-11 05:55:16 cananian Exp $
  * @see Translate
  */
 
