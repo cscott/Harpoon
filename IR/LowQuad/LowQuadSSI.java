@@ -23,10 +23,10 @@ import java.util.Map;
 
 /**
  * The <code>LowQuadSSI</code> codeview exposes a lowquad based 
- * representation in SSA form. 
+ * representation in SSI form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSI.java,v 1.1.2.1 2000-02-25 00:49:29 cananian Exp $
+ * @version $Id: LowQuadSSI.java,v 1.1.2.2 2000-02-25 17:32:02 cananian Exp $
  */
 public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     private Derivation  m_derivation;
@@ -34,7 +34,8 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     /** The name of this code view. */
     public static final String codename  = "low-quad-ssa";
 
-    /** Creates a <code>LowQuadSSI</code> object from a QuadSSA object */
+    /** Creates a <code>LowQuadSSI</code> object from a <code>QuadSSI</code>
+     *  object. */
     LowQuadSSI(final QuadSSI code) {
 	super(code.getMethod(), null);
 	final Map dT = new HashMap();
@@ -125,12 +126,10 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
 
     // implement derivation.
     public DList derivation(HCodeElement hce, Temp t) {
-	// ignore HCodeElement: this is SSA form.
 	return m_derivation.derivation(hce, t);
     }
 
     public HClass typeMap(HCodeElement hce, Temp t) {
-	// Ignores hce:  this is SSA form
 	return m_derivation.typeMap(hce, t);
     }
 }

@@ -10,8 +10,9 @@ import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 
 /**
- * <code>Quads.QuadSSI</code> is a code view that exposes the details of
- * the java classfile bytecodes in a quadruple format.  Implementation
+ * <code>Quads.QuadSSI</code> is a code view in SSI form.
+ * Quad form exposes the details of
+ * the java classfile bytecodes in a pseudo-quadruple format.  Implementation
  * details of the stack-based JVM are hidden in favor of a flat consistent
  * temporary-variable based approach.  The generated quadruples adhere
  * to an SSI form; that is, every variable has exactly one definition,
@@ -19,7 +20,7 @@ import harpoon.Util.Util;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.1.2.7 2000-02-13 04:38:09 bdemsky Exp $
+ * @version $Id: QuadSSI.java,v 1.1.2.8 2000-02-25 17:32:07 cananian Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */

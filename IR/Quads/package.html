@@ -1,11 +1,12 @@
 <HTML>
-<!-- $Id: package.html,v 1.1.2.6 1999-09-11 16:11:09 cananian Exp $ -->
+<!-- $Id: package.html,v 1.1.2.7 2000-02-25 17:32:07 cananian Exp $ -->
 <BODY>
 A flat, typed, high-level quadruple-based IR.
 <p>
 Quad form is used for most analysis and transformation in the
 compiler.  It maintains strong typing, and tries to be minimal.
-There are three main variants:<UL>
+There are three main variants, and an additional variant which is
+occasionally useful as an intermediate:<UL>
 
 <LI><code>QuadWithTry</code>, which contains <code>HANDLER</code>
 quads to handle thrown exceptions, and does implicit safety-checking.
@@ -15,10 +16,13 @@ quads to handle thrown exceptions, and does implicit safety-checking.
 <LI><code>QuadSSI</code> which is the same as the above, except it is
 in <A HREF="http://flexc.lcs.mit.edu/Harpoon/thesis.pdf">SSI form</a>.
 
+<LI><code>QuadRSSI</code> is a relaxed version of
+<code>QuadSSI</code>; during program transformations it is sometimes
+easier to break the phi/sigma constraints of SSI form without doing
+a full translation to/from <code>QuadNoSSA</code>.  Relaxed-SSI (RSSI)
+form is what we call this "SSI form with broken constraints".
 </UL>
 <p>
-These varieties are somewhat misnamed; hopefully this will be fixed
-soon.
 For lower-level transformations involving explicit pointer arithmetic,
 <code>LowQuad</code> form must be used.
 
