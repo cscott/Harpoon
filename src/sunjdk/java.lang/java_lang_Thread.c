@@ -633,9 +633,6 @@ static void * thread_startup_routine(void *closure) {
   /* this thread is dead now.  give it a chance to clean up. */
   /* (this also removes the thread from the ThreadGroup) */
   /* (see also Thread.EDexit() -- keep these in sync) */
-#if defined(WITH_REALTIME_THREADS)
-  realtime_unschedule_thread(env, thread);
-#endif
   (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
   assert(!((*env)->ExceptionOccurred(env)));
 #ifdef WITH_REALTIME_JAVA
@@ -656,6 +653,7 @@ static void * thread_startup_routine(void *closure) {
   remove_running_thread(); /* not smart enough to do this on its own. */
 #endif
 #ifdef WITH_REALTIME_THREADS
+  realtime_unschedule_thread(env, thread);
   realtime_destroy_thread(env, cls->thread, cls);
 #endif
 #ifdef WITH_CLUSTERED_HEAPS
@@ -812,6 +810,8 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
 #endif
   pthread_mutex_lock(&(clsp->parampass_mutex));
   /* wait for new thread to copy _this before proceeding */
+  realtime_schedule_thread(env, _this);
+  StartSwitching();
   pthread_cond_wait(&(clsp->parampass_cond), &(clsp->parampass_mutex));
 #ifdef WITH_PRECISE_GC
   pthread_mutex_unlock(&gc_thread_mutex);
@@ -823,8 +823,9 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
 #if !defined(WITH_REALTIME_THREADS)
   context_switch();
 #else
-  realtime_schedule_thread(env, _this);
+  StopSwitching();
   RestoreSwitching(switching_state);
+  CheckQuanta(1, 0, 1);
 #endif
   /*  while (clsp->parampass_cond==0)
       swapthreads();*/

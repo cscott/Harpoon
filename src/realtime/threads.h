@@ -31,7 +31,6 @@ struct thread_queue_struct {
   JNIEnv* jnienv;
   jlong threadID;
   jobject jthread;
-  int queue_state;
   struct machdep_pthread* mthread;
   struct thread_queue_struct* prev;
   struct thread_queue_struct* next;
@@ -61,6 +60,8 @@ void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args, jclas
 void realtime_destroy_thread(JNIEnv *env, jobject thread, void *cls);
 void realtime_schedule_thread(JNIEnv *env, jobject thread);
 void realtime_unschedule_thread(JNIEnv *env, jobject thread);
+void realtime_schedule_ID(JNIEnv *env, jlong threadID);
+void realtime_unschedule_ID(JNIEnv *env, jlong threadID);
 void add_running_thread(JNIEnv *env);
 
 void* startMain(void* mclosure);

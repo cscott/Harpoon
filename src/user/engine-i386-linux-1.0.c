@@ -10,7 +10,7 @@
 #include "config.h"
 #ifdef WITH_USER_THREADS
 #ifndef lint
-static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.8 2002-08-23 19:07:09 wbeebee Exp $";
+static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.9 2002-08-28 18:21:21 wbeebee Exp $";
 #endif
 
 #include "config.h"
@@ -22,6 +22,9 @@ static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.8 2002-08-23 19:07
 #include <sys/socket.h>
 #if defined __GLIBC__
 //#include <linux/net.h>//CSA: caused my build to break on lesser-magoo.
+#endif
+#ifdef WITH_REALTIME_JAVA
+#include "../realtime/RTJconfig.h"
 #endif
 #include "engine-i386-linux-1.0.h"
 #include "threads.h"
@@ -119,7 +122,11 @@ void machdep_pthread_start(void)
 void __machdep_stack_free(void * stack)
 {  
   /*DECREMENT_MEM_STATS(STACKSIZE);*/
+#ifdef WITH_REALTIME_JAVA
+     RTJ_FREE(stack);
+#else
      free(stack);
+#endif
 }
 
 /* ==========================================================================
@@ -129,7 +136,11 @@ void * __machdep_stack_alloc(size_t size)
 {
     void * stack;
     /*    INCREMENT_MEM_STATS(STACKSIZE);*/
+#ifdef WITH_REALTIME_JAVA
+    return RTJ_MALLOC_UNCOLLECTABLE(size);
+#else
     return(malloc(size));
+#endif
 }
 
 /* ==========================================================================

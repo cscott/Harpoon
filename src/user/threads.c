@@ -8,6 +8,7 @@
 #ifdef WITH_REALTIME_THREADS
 #include <jni.h>
 #include <jni-private.h>
+#include "../realtime/RTJconfig.h"
 #include "../realtime/threads.h"
 #include "../realtime/qcheck.h"
 #include <setjmp.h>
@@ -205,7 +206,11 @@ void doFDs() {
     } else
       tl=tl->next;
   }
+#ifdef WITH_REALTIME_JAVA
+  RTJ_FREE(fd);
+#else
   free(fd);
+#endif
 }
 #endif
 
@@ -229,7 +234,11 @@ void exitthread() {
     }
     oldstack=tl->mthread.machdep_stack;
 
+#ifdef WITH_REALTIME_JAVA
+    RTJ_FREE(tl);
+#else
     free(tl);
+#endif
     DECREMENT_MEM_STATS(sizeof (struct thread_list));
 
     restorethread();
@@ -242,7 +251,11 @@ void exitthread() {
     }
     oldstack=gtl->mthread.machdep_stack;
 
+#ifdef WITH_REALTIME_JAVA
+    RTJ_FREE(gtl);
+#else
     free(gtl);
+#endif
 
     DECREMENT_MEM_STATS(sizeof (struct thread_list));
     gtl=NULL;
@@ -267,9 +280,13 @@ void exitthread() {
 
 void inituser(int *bottom) {
   void * stack;
+#ifdef WITH_REALTIME_JAVA
   struct thread_list * tl = 
+    (struct thread_list *)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct thread_list));
+#else
+  struct thread_list * tl =
     (struct thread_list *)malloc(sizeof(struct thread_list));
-  
+#endif  
 #ifndef WITH_REALTIME_THREADS
   INCREMENT_MEM_STATS(sizeof(struct thread_list));
   /*build stack and stash it*/
@@ -279,10 +296,10 @@ void inituser(int *bottom) {
 #else
   /*build stack and stash it*/
   currentThread = 
-    (struct thread_queue_struct *)malloc(sizeof(struct thread_queue_struct));
+    (struct thread_queue_struct *)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct thread_queue_struct));
   INCREMENT_MEM_STATS(sizeof(struct thread_queue_struct));
   currentThread->mthread =
-    (struct machdep_pthread*)malloc(sizeof(struct machdep_pthread));
+    (struct machdep_pthread*)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct machdep_pthread));
   __machdep_pthread_create(currentThread->mthread, NULL, NULL,STACKSIZE, 0,0);
   /*stash hiptr*/
   currentThread->mthread->hiptr=bottom;
@@ -303,7 +320,6 @@ int user_mutex_init(user_mutex_t *x, void * v) {
 #ifndef WITH_REALTIME_THREADS
   x->tl=NULL;
 #else
-  //RealtimeThreads makes this a thread, not a list
   x->queue = x->endQueue = NULL;
 #endif
   return 0;
@@ -317,27 +333,17 @@ void addwaitthread(user_mutex_t *x) {
   transfer();
 #else
   if(currentThread->threadID != 0) {
-    print_queue(thread_queue, "BEG addwaitthread queue");
-    print_queue(x->queue, "mutex");
+    struct thread_queue_struct* q = RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct thread_queue_struct));
+    print_queue(thread_queue, "addwaitthread queue");
+    print_queue(x->queue, "BEG mutex");
 
-    if(currentThread->queue_state == IN_ACTIVE_QUEUE) {
-      if(currentThread->prev != NULL)
-	currentThread->prev->next = currentThread->next;
-      else
-	thread_queue = currentThread->next;
-      if(currentThread->next != NULL)
-	currentThread->next->prev = currentThread->prev;
-      else
-	end_thread_queue = currentThread->prev;
+    q->threadID = currentThread->threadID;
+    q->jthread = currentThread->jthread;
+    q->next = x->queue;
+    x->queue = q;
 
-      enqueue(&x->queue, &x->endQueue, currentThread);
-    }
-
+    print_queue(x->queue, "END mutex");    
     DisableThread(currentThread);
-
-    print_queue(x->queue, "mutex");
-    print_queue(thread_queue, "END addwaitthread queue");
-    CheckQuanta(1, 0, 1);
   }
 #endif
 }
@@ -365,24 +371,15 @@ void wakewaitthread(user_mutex_t *x) {
   }
 #else
   if(x->queue != NULL) {
-    print_queue(thread_queue, "BEG wakewaitthread queue");
-    print_queue(x->queue, "mutex");
-    EnableThread(x->queue);
+    struct thread_queue_struct* q = x->queue;
+    print_queue(thread_queue, "wakewaitthread queue");
+    print_queue(x->queue, "BEG mutex");
 
-    if(thread_queue == NULL) {
-      thread_queue = end_thread_queue = x->queue;
-      thread_queue->prev = NULL;
-    }
-    else {
-      end_thread_queue->next = x->queue;
-      x->queue->prev = end_thread_queue;
-      end_thread_queue = x->queue;
-    }
+    EnableThread(q);
     x->queue = x->queue->next;
-    end_thread_queue->next = NULL;
-
-    print_queue(x->queue, "mutex");
-    print_queue(thread_queue, "END wakewaitthread queue");
+    RTJ_FREE(q);
+    print_queue(x->queue, "END mutex");
+    
   }
 #endif  
 }
@@ -402,7 +399,7 @@ int user_mutex_trylock(user_mutex_t *x) {
 #ifndef WITH_REALTIME_THREADS
     context_switch();
 #else
-    CheckQuanta(0, 0, 1);
+    CheckQuanta(1, 1, 1);
 #endif
     return EBUSY;
   }
@@ -441,25 +438,17 @@ void addcontthread(user_cond_t *x) {
   transfer();
 #else
   if(currentThread->threadID != 0) {
-    print_queue(thread_queue, "BEG addcontthread queue");
-    print_queue(x->queue, "cond");
+    struct thread_queue_struct* q = RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct thread_queue_struct));
+    print_queue(thread_queue, "addcontthread queue");
+    print_queue(x->queue, "BEG cond");
 
-    if(currentThread->queue_state == IN_ACTIVE_QUEUE) {
-      if(currentThread->prev != NULL)
-	currentThread->prev->next = currentThread->next;
-      else
-	thread_queue = currentThread->next;
-      if(currentThread->next != NULL)
-	currentThread->next->prev = currentThread->prev;
-      else
-	end_thread_queue = currentThread->prev;
-      enqueue(&x->queue, &x->endQueue, currentThread);
-    }
-
+    q->threadID = currentThread->threadID;
+    q->jthread = currentThread->jthread;
+    q->next = x->queue;
+    x->queue = q;
+    
+    print_queue(x->queue, "END cond");
     DisableThread(currentThread);
-    print_queue(x->queue, "cond");
-    print_queue(thread_queue, "END addcontthread queue");
-    CheckQuanta(1, 0, 1);
   }
 #endif
 }
@@ -488,23 +477,15 @@ void wakeacondthread(user_cond_t *x) {
   }
 #else
   if(x->queue != NULL) {
-    print_queue(thread_queue, "BEG wakeacondthread queue");
-    print_queue(x->queue, "cond");
+    struct thread_queue_struct* q = x->queue;
+    print_queue(thread_queue, "wakeacondthread queue");
+    print_queue(x->queue, "BEG cond");
 
-    EnableThread(x->queue);
-    if(thread_queue == NULL) {
-      thread_queue = end_thread_queue = x->queue;
-      thread_queue->prev = NULL;
-    }
-    else {
-      end_thread_queue->next = x->queue;
-      x->queue->prev = end_thread_queue;
-      end_thread_queue = x->queue;
-    }
+    EnableThread(q);
     x->queue = x->queue->next;
-    end_thread_queue->next = NULL;
-    print_queue(x->queue, "cond");
-    print_queue(thread_queue, "END wakeacondthread queue");
+    RTJ_FREE(q);
+    
+    print_queue(x->queue, "END cond");
   }
 #endif
 }
@@ -533,25 +514,17 @@ void wakeallcondthread(user_cond_t *x) {
   }
 #else
   if(x->queue != NULL) {
-    print_queue(thread_queue, "BEG wakeallcondthread queue");
-    print_queue(x->queue, "cond");
+    struct thread_queue_struct* q;
+    print_queue(thread_queue, "wakeallcondthread queue");
+    print_queue(x->queue, "BEG cond");
 
     EnableThreadList(x->queue);
-    if(thread_queue == NULL) {
-      x->queue->prev = NULL;
-      thread_queue = end_thread_queue = x->queue;
+    while ((q = x->queue) != NULL) {
+      x->queue = x->queue->next;
+      RTJ_FREE(q);
     }
-    else
-    {
-      end_thread_queue->next = x->queue;
-      x->queue->prev = end_thread_queue;
-    }
-
-    while(end_thread_queue->next != NULL) {
-      end_thread_queue = end_thread_queue->next;
-    }
-    print_queue(x->queue, "cond");
-    print_queue(thread_queue, "END wakeallcondthread queue");
+    
+    print_queue(x->queue, "END cond");
   }
 #endif
 }

@@ -203,6 +203,9 @@ int main(int argc, char *argv[]) {
   (*env)->DeleteLocalRef(env, args);
   (*env)->DeleteLocalRef(env, cls);
   // call Thread.currentThread().exit() at this point.
+#ifdef WITH_REALTIME_THREADS
+  setupEnv(env); // make sure main still has access to env for exit
+#endif
   exitID = (*env)->GetMethodID(env, thrCls, "exit", "()V");
   CHECK_EXCEPTIONS(env);
   (*env)->CallNonvirtualVoidMethod(env, mainthread, thrCls, exitID);

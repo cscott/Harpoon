@@ -38,7 +38,6 @@ typedef struct user_mutex {
 #ifndef WITH_REALTIME_THREADS
   struct thread_list* tl;
 #else
-    /* use a thread instead of a thread list with Realtime Threads */
   struct thread_queue_struct* queue;
   struct thread_queue_struct* endQueue;
 #endif
@@ -57,7 +56,6 @@ typedef struct user_cond {
 #ifndef WITH_REALTIME_THREADS
   struct thread_list *tl;
 #else
-    /* use a thread instead of a thread list with Realtime Threads */
   struct thread_queue_struct* queue;
   struct thread_queue_struct* endQueue;
 #endif

@@ -21,6 +21,7 @@ jobject FNI_NewLocalRef(JNIEnv *env, jobject_unwrapped obj) {
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
   if (obj==NULL) return NULL; /* null stays null. */
   assert(fts->localrefs_next < fts->localrefs_end);
+  assert(fts->localrefs_stack <= fts->localrefs_next);
   fts->localrefs_next->obj = obj;
   return (jobject) fts->localrefs_next++;
 }
@@ -70,17 +71,18 @@ jobject FNI_NewGlobalRef(JNIEnv * env, jobject obj) {
   /* malloc away... */
   result = 
 #ifdef WITH_PRECISE_GC
-    malloc
+    malloc(sizeof(*result));
 #elif defined(BDW_CONSERVATIVE_GC)
 #ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
+    GC_malloc_uncollectable_stats(sizeof(*result));
 #else
-    GC_malloc_uncollectable
+    GC_malloc_uncollectable(sizeof(*result));
 #endif
+#elif WITH_REALTIME_JAVA
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(*result));
 #else /* okay, use system-default malloc */
-    malloc
+    malloc(sizeof(*result));
 #endif
-    (sizeof(*result));
   result->jobject.obj = obj->obj;
   /* acquire global lock */
   FLEX_MUTEX_LOCK(&globalref_mutex);
@@ -108,6 +110,8 @@ void FNI_DeleteGlobalRef (JNIEnv *env, jobject _globalRef) {
   globalRef->next = globalRef->prev = NULL; /* safety first */
 #ifdef BDW_CONSERVATIVE_GC
   GC_free(globalRef);
+#elif WITH_REALTIME_JAVA
+  RTJ_FREE(globalRef);
 #else /* system-default malloc... */
   free(globalRef);
 #endif
