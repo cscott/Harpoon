@@ -11,6 +11,7 @@ import java.util.Set;
 import harpoon.Analysis.Quads.ArrayInitRemover;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Tree.Canonicalize;
+import harpoon.Analysis.Quads.QuadClassHierarchy;
 
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.Linker;
@@ -22,8 +23,14 @@ import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
+import harpoon.Util.Options.Option;
+import harpoon.Main.CompilerStageEZ;
 
 import harpoon.Backend.Generic.Frame;
+
+import java.util.List;
+import java.util.LinkedList;
+
 /**
  * <code>Realtime</code> is the top-level access point for the rest of the 
  * Harpoon compiler to provide support for the Realtime Java MemoryArea 
@@ -34,7 +41,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.12 2002-11-25 18:49:41 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.13 2003-04-17 00:37:51 salcianu Exp $
  */
 
 public class Realtime {
@@ -369,5 +376,43 @@ public class Realtime {
     
     public static void printStats() {
 	Stats.print();
+    }
+
+
+    public static class QuadPass extends CompilerStageEZ {
+	public QuadPass() { super("realtime-quad-pass"); }
+
+	public List/*<Option>*/ getOptions() {
+	    List/*<Option>*/ opts = new LinkedList/*<Option>*/();
+
+	    opts.add(new Option("t", "", "<analysisMethod>",
+				"Turns on Realtime Java extensions with the optional analysis method: NONE, CHEESY, REAL") {
+		public void action() {
+		    Realtime.configure(getOptionalArg(0));
+		}
+	    });
+
+	    return opts;
+	}
+
+	protected boolean enabled() { return REALTIME_JAVA; }
+
+	protected void real_action() {
+	    hcf = Realtime.setupCode(linker, classHierarchy, hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    hcf = Realtime.addChecks(linker, classHierarchy, hcf, roots);
+	}
+    }
+
+    public static class TreePass extends CompilerStageEZ {
+	public TreePass() { super("realtime-tree-pass"); }
+	protected boolean enabled() { return REALTIME_JAVA; }
+
+	protected void real_action() {
+	    hcf = Realtime.addNoHeapChecks(hcf);
+	    hcf = Realtime.addQuantaChecker(hcf);
+	    hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);
+	    hcf = new CachingCodeFactory(hcf);
+	}
     }
 }
