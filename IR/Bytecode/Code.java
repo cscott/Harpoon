@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.6 1998-10-11 03:01:15 cananian Exp $
+ * @version $Id: Code.java,v 1.7 1998-10-14 03:08:49 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -66,6 +66,7 @@ public class Code extends HCode {
       byte[] code = getCode().code; // bytecode array.
       // First locate merge nodes.
       int[] merge = new int[code.length]; // init to 0.
+      merge[0]++; // the first instruction is reachable from outside.
       for (int pc=0; pc<code.length; pc+=Op.instrSize(code, pc)) {
 	// if its a branch, mark the possible targets.
 	if (Op.isBranch(code[pc])) {
