@@ -54,7 +54,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.23 2000-02-14 20:04:18 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.24 2000-02-14 21:02:59 andyb Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -703,6 +703,14 @@ CALL(retval, retex, NAME(func), arglist, handler)
 %pred %( !ROOT.isTailCall )% 
 %{
     /* AAA - Move paramaters into place, et al. */
+
+    emitDIRECTIVE(ROOT, "\t! coming soon: CALL support\n");
+}%
+
+CALL(retval, retex, func, arglist, handler)
+%pred %( !ROOT.isTailCall )%
+%{
+    /* AAA - move parameters into place, et al. */
 
     emitDIRECTIVE(ROOT, "\t! coming soon: CALL support\n");
 }%

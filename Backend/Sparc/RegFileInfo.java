@@ -35,7 +35,7 @@ import java.util.Set;
  * which are used for tracking global data.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.8 2000-02-14 20:05:12 andyb Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.9 2000-02-14 21:02:59 andyb Exp $
  */
 public class RegFileInfo 
   extends harpoon.Backend.Generic.RegFileInfo 
@@ -98,6 +98,7 @@ public class RegFileInfo
 	int j = 0;
 	for (int i = 0; i < 32; i++) {
 	    integerRegs[i] = new Temp(regtf);
+	    allRegs[i] = integerRegs[i];
 	    if ((i != 0) && (i != 14) && (i != 15) && (i != 30) && (i != 31)) {
 		generalIntRegs[j] = integerRegs[i];
                 generalRegs[j] = integerRegs[i];
