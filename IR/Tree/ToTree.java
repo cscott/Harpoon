@@ -49,7 +49,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.10 1999-03-29 05:03:13 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.11 1999-04-23 08:35:33 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -419,7 +419,8 @@ class TranslationVisitor extends LowQuadVisitor {
   
     public void visit(harpoon.IR.Quads.INSTANCEOF q) {
 	Stm s0 =new MOVE
-	    (m_tf, q, MAP(q.dst(), q), isInstanceOf(q, q.src(), q.hclass()));
+	    (m_tf, q, MAP(q.dst(), q), 
+	     isInstanceOf(q, q.src(), q.hclass()));
 
 	updateDT(q.dst(), q, MAP(q.dst(), q));
 	addStmt(q, s0);
@@ -521,8 +522,9 @@ class TranslationVisitor extends LowQuadVisitor {
 				    new CONST(m_tf, q, q.keys(i))),
 		 (MAP((harpoon.IR.Quads.LABEL)qNext)).label,
 		 lNext.label);
-	    addStmt(q, new Stm[] { MAP((harpoon.IR.Quads.LABEL)qNext), 
-				    branch });
+	    //addStmt(q, new Stm[] { MAP((harpoon.IR.Quads.LABEL)qNext), 
+	    //		    branch });
+	    addStmt(q, new Stm[] { branch, lNext } );
 	}
 	updateDT(q.index(), q, discriminant);
     }
@@ -1033,24 +1035,49 @@ class TranslationVisitor extends LowQuadVisitor {
      *  with this algorithm.
      */
     private Exp isInstanceOf(Quad q, Temp src, HClass type) {
+	TEMP srcTEMP = MAP(src, q);
 	TEMP classPtr = extra(src, q, Type.POINTER);
-	
+	TEMP RESULT = extra(src, q, Type.INT);
+
 	if (type.isPrimitive()) {
-	  return new CONST(m_tf, q, type==type(src)?1:0);
+	    return new CONST(m_tf, q, maptype(type)==maptype(type(src))?1:0);
 	}
 	else {
-	  return new ESEQ
-	    (m_tf, q, 
-	     new MOVE
-	     (m_tf, q,  
-	      classPtr,  
-	      new MEM 
-	      (m_tf, q, Type.POINTER,
-	       new BINOP
-	       (m_tf, q, Type.POINTER, Bop.ADD,
-		new CONST(m_tf, q, m_offm.classOffset(type(src))),
-		MAP(src, q)))),
-	     isInstanceOf(q, classPtr, type));
+	    LABEL isNonNull = new LABEL(m_tf, q, new Label());
+	    LABEL isNull    = new LABEL(m_tf, q, new Label());
+	    LABEL end       = new LABEL(m_tf, q, new Label());
+	    
+	    Stm s0 = new CJUMP
+		(m_tf, q, 
+		 new BINOP
+		 (m_tf, q, Bop.CMPEQ, Type.POINTER, 
+		  srcTEMP, 
+		  new CONST(m_tf, q, 0)),
+		 isNonNull.label, 
+		 isNull.label);
+	    Stm s1 = isNull;
+	    Stm s2 = new MOVE(m_tf, q, RESULT, new CONST(m_tf, q, 0));
+	    Stm s3 = new JUMP(m_tf, q, end.label);
+	    Stm s4 = isNonNull;
+	    Stm s5 = new MOVE
+	      (m_tf, q, 
+	       RESULT,
+	       new ESEQ
+	       (m_tf, q, 
+		new MOVE
+		(m_tf, q,  
+		 classPtr,  
+		 new MEM 
+		 (m_tf, q, Type.POINTER,
+		  new BINOP
+		  (m_tf, q, Type.POINTER, Bop.ADD,
+		   new CONST(m_tf, q, m_offm.classOffset(type(src))),
+		   srcTEMP))),
+		isInstanceOf(q, classPtr, type)));
+	    Stm s6 = end;
+	    
+	    return new ESEQ
+	      (m_tf, q, toStm(new Stm[] {s0, s1, s2, s3, s4, s5, s6}), RESULT);
 	}
     }
   
