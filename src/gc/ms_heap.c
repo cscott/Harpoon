@@ -20,8 +20,13 @@ void *allocate_in_marksweep_heap(size_t size, struct marksweep_heap *h)
   // if no block available, expand the heap and try again
   if (result == NULL)
     {
+      int retval;
       //printf("&");
-      expand_marksweep_heap(aligned_size, h);
+      retval = expand_marksweep_heap(aligned_size, h);
+
+      if (retval == -1)
+	return NULL;
+
       result = find_free_block(aligned_size, 
 			       &(h->free_list), 
 			       h->small_blocks);
@@ -40,8 +45,9 @@ void *allocate_in_marksweep_heap(size_t size, struct marksweep_heap *h)
 
 
 /* effects: expands heap to accommodate size bytes
+   returns: 0 on success, -1 on failure
 */
-void expand_marksweep_heap(size_t size, struct marksweep_heap *h)
+int expand_marksweep_heap(size_t size, struct marksweep_heap *h)
 {
   size_t bytes;
   struct block *b;
@@ -49,7 +55,8 @@ void expand_marksweep_heap(size_t size, struct marksweep_heap *h)
   bytes = ROUND_TO_NEXT_PAGE(size + h->heap_size/MARKSWEEP_HEAP_DIVISOR);
 
   // no memory to be had, fail for now
-  assert (h->heap_end != h->mapped_end);
+  if (h->heap_end != h->mapped_end)
+    return -1;
 
   // if we can't expand the heap as much as we want,
   // expand it as much as possible
@@ -64,6 +71,8 @@ void expand_marksweep_heap(size_t size, struct marksweep_heap *h)
   h->heap_size += bytes;
 
   add_to_free_blocks(b, &h->free_list, h->small_blocks);
+
+  return 0;
 }
 
 
@@ -149,8 +158,7 @@ void init_marksweep_heap(void *mapped,
 
 
 /* effects: moves object to the given mark-and-sweep heap, updating
-   the given pointer and creating a forwarding reference. object is
-   marked as reachable on return.
+   the given pointer and creating a forwarding reference.
    returns: 0 if success, -1 if fail
 */
 int move_to_marksweep_heap(jobject_unwrapped *ref, struct marksweep_heap *h)
@@ -175,10 +183,6 @@ int move_to_marksweep_heap(jobject_unwrapped *ref, struct marksweep_heap *h)
   
   // update given reference
   (*ref) = forwarding_address;
-
-  // mark block as reachable
-  MARK_AS_REACHABLE((struct block *)(forwarding_address - 
-				     BLOCK_HEADER_SIZE));
 
   return 0;
 }

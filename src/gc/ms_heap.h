@@ -22,7 +22,7 @@ struct marksweep_heap
 
 void *allocate_in_marksweep_heap(size_t size, struct marksweep_heap *h);
 
-void expand_marksweep_heap(size_t size, struct marksweep_heap *h);
+int expand_marksweep_heap(size_t size, struct marksweep_heap *h);
 
 void free_unreachable_blocks(struct marksweep_heap *h);
 
