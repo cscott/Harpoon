@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.11 2003-11-10 08:22:31 cananian Exp $
+% $Id: pldi04.tex,v 1.12 2003-11-10 14:51:32 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -762,7 +762,7 @@ percentage, such as ``0.0\%,'' for small nonzero values.}
 {\bf end} oneEntryDirectory
 \end{tabular}
 }
-\caption{A directory object in Emerald, from \cite{28706},
+\caption{A directory object in Emerald, from \cite{BlackHuJuLe86},
   illustrating the use of monitor synchronization.}
 \label{fig:emerald-dir}
 \end{figure}
@@ -811,7 +811,7 @@ language to better support its use for writing operating systems.
 We concentrate on synchronization in the language, eliding as
 orthogonal issues related to direct access to hardware.  We expect
 that slight extensions similar to those in Lisaac \cite{564099} and
-JEPES \cite{780739} will be sufficient to support interrupt handlers
+JEPES \cite{SchultzBuChKn03} will be sufficient to support interrupt handlers
 and memory-mapped I/O.  We then present an efficient implementation
 technique for the synchronization primitives in the language, showing
 first how to synchronize single encapsulated objects, then operations
@@ -826,7 +826,7 @@ or in software with OS support using Bershad's technique
 \cite{GreenwaldCh96,bershad93:practical}.
 
 \subsection{Synchronization in the language}
-The Emerald system \cite{28706,jul91:emerald} introduced
+The Emerald system \cite{BlackHuJuLe86,JulSt91} introduced
 \emph{monitored objects} for synchronization.  Emerald code to
 implement a simple directory object is shown in
 Figure~\ref{fig:emerald-dir}.  Each object is associated with
@@ -1196,7 +1196,7 @@ constant time plus an invocation of \funcname{FA-Read} or
 \begin{figure*}\centering
 \includegraphics[width=7in,clip=true]{Figures/chuang.eps}
 \caption{Shallow binding scheme for functional arrays, from
-  \cite[Figure~1]{156779}.}
+  \cite[Figure~1]{Chuang94}.}
 \label{fig:chuang}
 \end{figure*}
 In this section we will present a lock-free implementation of functional
@@ -1205,7 +1205,7 @@ will complete our implementation of non-blocking \atomic methods for Java.
 
 There have been a number of proposed implementations of functional
 arrays, starting from the ``classical'' functional binary tree
-implementation.  O'Neill and Burton \cite{o'neill97:new} give a fairly
+implementation.  O'Neill and Burton \cite{ONeillBu97} give a fairly
 inclusive overview.  Functional array implementations fall generally
 into one of three categories: \emph{tree-based}, \emph{fat-elements},
 or \emph{shallow-binding}.
@@ -1213,27 +1213,27 @@ or \emph{shallow-binding}.
 Tree-based implementations typically have a logarithmic term in their
 complexity.  The simplest is the persistent binary tree with $O(\ln
 n)$ look-up time; Chris Okasaki 
-\cite{224187} has implemented a purely-functional random-access list
+\cite{Okasaki95} has implemented a purely-functional random-access list
 with $O(\ln i)$ expected lookup time, where $i$ is the index of the
 desired element.
 
 Fat-elements implementations have per-element data structures indexed
-by a master array. Cohen \cite{cohen84:multi} hangs a list of
+by a master array. Cohen \cite{Cohen84} hangs a list of
 versions from each element in the master array.
-O'Neill and Burton \cite{o'neill97:new}, in a more sophisticated
+O'Neill and Burton \cite{ONeillBu97}, in a more sophisticated
 technique, hang a splay tree off each element and achieve $O(1)$
 operations for single-threaded use, $O(1)$ amortized cost when
 accesses to the array are ``uniform'', and $O(\ln n)$ amortized worst
 case time. 
 
-Shallow binding was introduced by Baker \cite{359566} as a method to
+Shallow binding was introduced by Baker \cite{Baker78} as a method to
 achieve fast variable lookup in Lisp environments.  Baker clarified
-the relationship to functional arrays in \cite{122614}.  Shallow
+the relationship to functional arrays in \cite{Baker91}.  Shallow
 binding is also called \emph{version tree arrays}, \emph{trailer
   arrays}, or \emph{reversible differential lists}.  A typical
 drawback of shallow binding is that reads may take $O(u)$ worst-case
 time, where $u$ is the number of updates made to the array.  Tyng-Ruey
-Chuang \cite{156779} uses randomized cuts to the version tree to limit
+Chuang \cite{Chuang94} uses randomized cuts to the version tree to limit
 the cost of a read to $O(n)$ in the worst case.  Single-threaded
 accesses are $O(1)$.
 
