@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.1.2.3 1999-09-09 21:12:19 cananian Exp $
+ * @version $Id: QuadSSI.java,v 1.1.2.3.6.1 2000-01-11 09:25:15 cananian Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -87,9 +87,5 @@ public class QuadSSI extends Code /* which extends HCode */ {
      *  for QuadNoSSA. */
     public static HCodeFactory codeFactory() {
 	return codeFactory(QuadNoSSA.codeFactory());
-    }
-    // obsolete.
-    public static void register() {
-	HMethod.register(codeFactory());
     }
 }

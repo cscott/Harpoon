@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.17 2000-01-05 04:06:35 duncan Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.17.2.1 2000-01-11 09:25:15 cananian Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
@@ -130,9 +130,6 @@ public class CanonicalTreeCode extends Code {
     public static HCodeFactory codeFactory(final Frame frame) {  
 	return codeFactory(TreeCode.codeFactory(frame), frame);
     }
-
-    // obsolete (may not even work with null frame)
-    public static void register() { HMethod.register(codeFactory(null)); }
 
     /**
      * Implementation of the <code>Derivation</code> interface.
