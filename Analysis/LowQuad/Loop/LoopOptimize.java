@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.21 1999-09-22 05:59:29 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.22 1999-09-22 19:23:16 bdemsky Exp $
  */
 public final class LoopOptimize {
     
@@ -124,7 +124,7 @@ public final class LoopOptimize {
 		Set newinds=doLoopind(hc, hcnew, lp,header, usedinvariants);
 		//Move loop test conditions from the original induction variable
 		//to new ones
-		doLooptest(hc, hcnew, lp, header, newinds, usedinvariants);
+		doLooptestmove(hc, hcnew, lp, header, newinds, usedinvariants);
 	    }
 	    else System.out.println("Multiple back edges.");
 	} else
@@ -141,19 +141,17 @@ public final class LoopOptimize {
     /** <code>doLooptest</code> moves test conditions from original induction variables
      * to new ones whenever possible.*/
 
-    void doLooptest(HCode hc, MyLowQuadSSI hcnew, Loops lp,Quad header, Set newinds, Set usedinvariants) {
+    void doLooptestmove(HCode hc, MyLowQuadSSI hcnew, Loops lp,Quad header, Set newinds, Set usedinvariants) {
 	//Create the set of loop elements
-	Set elements=lp.loopIncelements();
-
-	//Iterate through this set
-	Iterator iterate=elements.iterator();
+	Set tests=loopanal.doLooptest(hc, lp);
+	Iterator iterate=tests.iterator();
 
 	//create sets of loop invariants and map of induction variables
 	//to pass to the visitor
 	Set loopinvars=invmap.invariantsMap(hc,lp);
 	Map allinductions=aimap.allInductionsMap(hc,lp);
 
-	TestVisitor visitor=new TestVisitor(newinds, loopinvars, allinductions, header, ssitossamap,hc, hcnew, lp);
+	TestMover mover=new TestMover(newinds, loopinvars, allinductions, header, ssitossamap,hc, hcnew, lp);
 
 	//visit the nodes
 	while (iterate.hasNext()) {
@@ -163,14 +161,14 @@ public final class LoopOptimize {
 	    //Isn't required [should be caught by the fact
 	    //that loop invariant nodes don't rely on induction variables.]
 	    if (!usedinvariants.contains(q))
-		q.accept(visitor);
+		mover.consider((POPER)q);
 	}
     }
 
 
-    /**<code>TestVisitor</code> does all the magic for changing test conditions.*/
+    /**<code>TestMover</code> does all the magic for changing test conditions.*/
 
-    class TestVisitor extends LowQuadVisitor {
+    class TestMover {
 	Set inductvars;
 	Set newinductvars;
 	Set loopinvars;
@@ -181,8 +179,8 @@ public final class LoopOptimize {
 	HCode hc;
 	MyLowQuadSSI hcnew;
 
-	//Create TestVisitor, and inform it of everything.
-	TestVisitor(Set newinductvars, Set loopinvars, Map allinductions, Quad header, TempMap ssitossamap, HCode hc, MyLowQuadSSI hcnew, Loops lp) {
+	//Create TestMover, and inform it of everything.
+	TestMover(Set newinductvars, Set loopinvars, Map allinductions, Quad header, TempMap ssitossamap, HCode hc, MyLowQuadSSI hcnew, Loops lp) {
 	    this.newinductvars=newinductvars;
 	    this.loopinvars=loopinvars;
 	    this.allinductions=allinductions;
@@ -194,18 +192,10 @@ public final class LoopOptimize {
 	    this.lp=lp;
 	}
 
-	//Default method...do nothing
-	public void visit(Quad q) {/* Do nothing*/}
-
 	//POPER visitor
 	//Only look at ICMPEQ, and ICMPGT
 
-	public void visit(POPER q) {
-	    switch (q.opcode()) {
-	    case Qop.ICMPEQ:
-	    case Qop.ICMPGT:
-		//look at the POPER
-		//return new POPER if we can do stuff
+	public void consider(POPER q) {
 		POPER replace=lookat(q);
 		if (replace!=null) {
 		    //Put the new POPER in its place
@@ -213,9 +203,6 @@ public final class LoopOptimize {
 		    Quad.addEdge(qnew.prev(0), qnew.prevEdge(0).which_succ(), replace,0);
 		    Quad.addEdge(replace, 0, qnew.next(0), qnew.nextEdge(0).which_pred());
 		}
-		break;
-	    default:
-	    }
 	}
 
 	/**<code>lookat</code> examines a test condition, to see how we should replace it.*/
@@ -230,65 +217,54 @@ public final class LoopOptimize {
 	    //we need one induction variable
 	    //and one loop invariant
 
-	    for (int i=0;i<operands.length;i++) {
-		if (inductvars.contains(ssitossamap.tempMap(operands[i]))) {
-		    if (flag==-1)
-			flag=i;
-		    else
-			good=false;
-		}
-		else {
-		    HCodeElement[] sources=ud.defMap(hc,ssitossamap.tempMap(operands[i]));
-		    Util.assert(sources.length==1);
-		    if (!loopinvars.contains(sources[0]))
-			good=false;
-		}
-	    }
+	    for (int i=0;i<operands.length;i++)
+		if (inductvars.contains(ssitossamap.tempMap(operands[i])))
+		    flag=i;
 
 
 	    //if we found these, look for possible replacement induction variables
-	    if (good&&(flag!=-1)) {
-		//get the Induction data type for the current induction variable
-		Induction induction=(Induction)allinductions.get(ssitossamap.tempMap(operands[flag]));
-		//Iterate through all of the newly created induction variables
+ 
+	    //get the Induction data type for the current induction variable
+	    Induction induction=(Induction)allinductions.get(ssitossamap.tempMap(operands[flag]));
+	    //Iterate through all of the newly created induction variables
 
-		Iterator iterate=newinductvars.iterator();
-		while (iterate.hasNext()) {
-		    Temp indvar=(Temp) iterate.next();
-		    Induction t=(Induction) allinductions.get(indvar);
-		    /*Policy for moving:
-		      1) Both have the same base induction variable.
-		      2) The new one isn't used to derive any other induction variables.
-		         Presumably it has a use for being around.
-		      3) If the original test was on a pointer, make sure any new pointer
-		         has the same stride.
-		    */
+	    Iterator iterate=newinductvars.iterator();
+	    while (iterate.hasNext()) {
+		Temp indvar=(Temp) iterate.next();
+		Induction t=(Induction) allinductions.get(indvar);
+		/*Policy for moving:
+		  1) Both have the same base induction variable.
+		  2) The new one isn't used to derive any other induction variables.
+		  Presumably it has a use for being around.
+		  3) If the original test was on a pointer, make sure any new pointer
+		  has the same stride.
+		*/
+		
+		if (t.variable()!=induction.variable()) 
+		    continue;
+		if (t.copied)
+		    continue;
 
-		    if (t.variable()!=induction.variable()) 
+		//skipmessy cases
+		if ((!induction.constant())||(!t.constant()))
+		    continue;
+
+		if ((induction.intmultiplier()!=1)&&(induction.intmultiplier()!=-1))
+		    if ((t.intmultiplier()!=induction.intmultiplier())&&(t.intmultiplier()!=-induction.intmultiplier()))
 			continue;
-		    if (t.copied)
+		if (induction.objectsize!=null) {
+		    if ((t.objectsize!=induction.objectsize)||(t.intmultiplier()!=induction.intmultiplier()))
 			continue;
-
-		    //skipmessy cases
-		    if ((!induction.constant())||(!t.constant()))
-			continue;
-
-		    if ((induction.intmultiplier()!=1)&&(induction.intmultiplier()!=-1))
-			if ((t.intmultiplier()!=induction.intmultiplier())&&(t.intmultiplier()!=-induction.intmultiplier()))
-			    continue;
-		    if (induction.objectsize!=null) {
-			if ((t.objectsize!=induction.objectsize)||(t.intmultiplier()!=induction.intmultiplier()))
-			    continue;
-		    }
-		    
-		    //Found something that passes the policy
-
-		    Temp initial=operands[1-flag];
-		    //Call the method to build us a new compare
-		    newpoper=movecompare(hcnew, header, initial, induction, indvar,t,q, flag, new LoopMap(hc,lp,ssitossamap));
-     		    break;
 		}
+		    
+		//Found something that passes the policy
+
+		Temp initial=operands[1-flag];
+		//Call the method to build us a new compare
+		newpoper=movecompare(hcnew, header, initial, induction, indvar,t,q, flag, new LoopMap(hc,lp,ssitossamap));
+		break;
 	    }
+	    
 	    return newpoper;
 	}
     }

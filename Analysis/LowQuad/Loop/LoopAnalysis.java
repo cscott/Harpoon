@@ -9,6 +9,10 @@ import harpoon.Util.WorkSet;
 import harpoon.ClassFile.*;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.Qop;
+import harpoon.IR.LowQuad.LowQuadVisitor;
+import harpoon.IR.LowQuad.POPER;
 import harpoon.Analysis.Loops.*;
 import harpoon.Temp.Temp;
 import harpoon.Analysis.SSITOSSAMap;
@@ -33,7 +37,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.12 1999-09-22 05:59:29 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.13 1999-09-22 19:23:15 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -179,7 +183,6 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    analyzetree(hc, (Loops)iterate.next(),st+" ");
 	}
 
-
 	//Find loop invariants
 	WorkSet elements=(WorkSet)lp.loopIncelements();
 	LoopInvariance invar=new LoopInvariance(tm,hc);
@@ -228,6 +231,128 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	//    System.out.println(st+tmp.toString());
 	//    System.out.println(st+((Induction)allInductions.get(tmp)).toString());
 	//}
+    }
+
+    /** <code>doLooptest</code> moves test conditions from original induction variables
+     * to new ones whenever possible.*/
+
+    Set doLooptest(HCode hc, Loops lp) {
+	//Make sure we have done analysis
+	analyze(hc);
+	//Create the set of loop elements
+	Set elements=lp.loopIncelements();
+	WorkSet tests=new WorkSet();
+	//Iterate through this set
+	Iterator iterate=elements.iterator();
+
+	//create sets of loop invariants and map of induction variables
+	//to pass to the visitor
+	Set loopinvars=(Set)invmap.get(lp.loopEntrances().toArray()[0]);
+	Map allinductions=(Map)aimap.get(lp.loopEntrances().toArray()[0]);
+
+	TestVisitor visitor=new TestVisitor(loopinvars, allinductions, tm,hc, lp, tests);
+	//visit the nodes
+	while (iterate.hasNext()) {
+	    Quad q=(Quad) iterate.next();
+	    q.accept(visitor);
+	}
+	return tests;
+    }
+
+
+    /**<code>TestVisitor</code> does all the magic for changing test conditions.*/
+
+    class TestVisitor extends LowQuadVisitor {
+	Set inductvars;
+	Set loopinvars;
+	Map allinductions;
+	TempMap ssitossamap;
+	Loops lp;
+	HCode hc;
+	Set tests;
+
+	//Create TestVisitor, and inform it of everything.
+	TestVisitor(Set loopinvars, Map allinductions, TempMap ssitossamap, HCode hc, Loops lp, Set tests) {
+	    this.loopinvars=loopinvars;
+	    this.allinductions=allinductions;
+	    this.inductvars=allinductions.keySet();
+	    this.ssitossamap=ssitossamap;
+	    this.hc=hc;
+	    this.lp=lp;
+	    this.tests=tests;
+	}
+
+	//Default method...do nothing
+	public void visit(Quad q) {/* Do nothing*/}
+
+	//POPER visitor
+	//Only look at ICMPEQ, and ICMPGT
+	public void visit(harpoon.IR.Quads.AGET q)    {}
+	
+	public void visit(harpoon.IR.Quads.ASET q)    {}
+
+	public void visit(harpoon.IR.Quads.CALL q)    {}
+
+	public void visit(harpoon.IR.Quads.GET q)     {}
+
+	//      Lets let this error go through...shouldn't see any HANDLERS
+	//      in a loop.
+	//	public void visit(harpoon.IR.Quads.HANDLER q) {}
+
+	public void visit(harpoon.IR.Quads.SET q)     {}
+
+	public void visit(POPER q) {
+	    switch (q.opcode()) {
+	    case Qop.ICMPEQ:
+	    case Qop.ICMPGT:
+		//look at the POPER
+		//return new POPER if we can do stuff
+		if (lookat(q)) tests.add(q);
+		break;
+	    default:
+	    }
+	}
+
+	public void visit(OPER q) {
+	    switch (q.opcode()) {
+	    case Qop.ICMPEQ:
+	    case Qop.ICMPGT:
+		//look at the OPER
+		//return new OPER if we can do stuff
+		if (lookat(q)) tests.add(q);
+		break;
+	    default:
+	    }
+	}
+
+	/**<code>lookat</code> examines a test condition.*/
+	boolean lookat(OPER q) {
+	    Temp[] operands=q.operands();
+	    Util.assert (operands.length==2);
+	    boolean good=true;
+	    int flag=-1;
+	    POPER newpoper=null;
+
+	    //Loop through the operands
+	    //we need one induction variable
+	    //and one loop invariant
+
+	    for (int i=0;i<operands.length;i++) {
+		if (inductvars.contains(ssitossamap.tempMap(operands[i]))) {
+		    if (flag==-1)
+			flag=i;
+		    else
+			good=false;
+		}
+		else {
+		    HCodeElement[] sources=ud.defMap(hc,ssitossamap.tempMap(operands[i]));
+		    Util.assert(sources.length==1);
+		    if (!loopinvars.contains(sources[0]))
+			good=false;
+		}
+	    }
+	    return (good&&(flag!=-1));
+	}
     }
 }
 
