@@ -4,7 +4,8 @@ if [ -z ${PA_CLASSPATH} ]
 then
     echo "Please set the PA_CLASSPATH variable!"
     echo "My \$HOME/.bashrc contains the following line:"
-    echo "export PA_CLASSPATH=\$HOME/Harpoon/Code/SupportNP/NewThread.jar:\
+    echo "export PA_CLASSPATH=.:\
+\$HOME/Harpoon/Code/SupportNP/NewThread.jar:\
 \$HOME/Harpoon/Code/Support/reflect-thunk.jar:\
 \$HOME/Harpoon/Code/SupportNP/sunthunk.jar:\
 \$HOME/Harpoon/Code/SupportNP/collections.jar:\
@@ -20,6 +21,7 @@ rm -f *.class && \
 rm -f *~ && \
 for file in *.java; do \
     echo -n "  Compiling $file ..."; \
+    echo classpath=${PA_CLASSPATH}
     javac -classpath ${PA_CLASSPATH}:. $file; \
     echo done; \
 done;

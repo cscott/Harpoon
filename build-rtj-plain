@@ -1,0 +1,17 @@
+#!/bin/bash
+
+echo "Build rtj-plain barnes" 
+build-rtj-plain-one barnes Barnes/Barnes_RTJ Barnes
+
+echo "Build rtj-plain FibPaper" 
+build-rtj-plain-one main FibPaper Fib
+
+echo "Build rtj-plain water" 
+build-rtj-plain-one water Water/Water_RTJ Water
+
+echo "Build rtj-plain ToyArray" 
+build-rtj-plain-one ToyArray ToyArray ToyArray
+
+echo "Build rtj-plain ToyTree" 
+build-rtj-plain-one ToyTree ToyTree ToyTree
+
