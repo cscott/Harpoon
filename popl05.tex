@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: popl05.tex,v 1.1 2004-07-13 03:11:27 cananian Exp $
+% $Id: popl05.tex,v 1.2 2004-07-16 13:57:22 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csaacmconfbig} % 15 page limit
 %\usepackage{times}
@@ -14,7 +14,7 @@
 \usepackage{varioref} % \vref command
 \usepackage{support}
 \usepackage{xspace}
-\notesfalse
+%\notesfalse
 
 % work around fig2dev wanting to add colors to .figures.
 \providecommand{\color}[2][rgb]{}
@@ -37,7 +37,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.1 $ $}
+%\date{\today \\ $ $Revision: 1.2 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -114,7 +114,7 @@ commits, then all of the loads and stores appear to have run
 atomically with respect to other transactions.  That is, the
 transaction's operations are not interleaved with those of other
 transactions.  If a transaction aborts, then none of its stores take
-effect and the transaction must be restarted, typically using a
+effect and the transaction may be restarted, typically using a
 backoff algorithm to preclude live-lock.
 
 The transaction model is a natural means to express both desired
@@ -182,12 +182,13 @@ The contributions of this paper include:
   transactions.
 }
 \end{itemize}
+\note{Mention UTM relevance?}
 
 \secput{example}{Example and Motivation}
 We present three examples in this section, illustrating how
 transactions can support fault-tolerance and back-tracking,
 simplify locking, and provide a more intuitive
-means for specifying thread-safety properties, and 
+means for specifying thread-safety properties.
 We will first examine destructive list traversal, showing how a
 transaction implementation can be treated as an exception-handling
 mechanism.   We then, using a network flow example, show how this
@@ -257,7 +258,8 @@ try {
 The {\tt try}/{\tt else} block appears to make a non-deterministic
 choice between executing the {\tt try} or the {\tt else} clause,
 depending on whether the {\tt try} would succeed or not.
-We implement this with transactions, always initially attempting
+We implement this with a transaction around the traversal,
+always initially attempting
 the {\tt try}.  Exceptions or faults cause the transaction to abort;
 when it does so all the
 heap side-effects of the {\tt try} block disappear.
@@ -319,7 +321,7 @@ needed!  For a graph with thousands or millions of vertices, the
 number of threads operating on the graph is likely to be less than a
 hundred.  Consequently, the chances are quite small that two different
 threads actually conflict.  Without the locks to implement mutual
-exclusion, however, the program would fail intermittently.
+exclusion, however, the program would occasionally fail.
 
 Software transactions (and some language support) allow the
 programmer to parallelize the original code using an \texttt{atomic}
@@ -349,11 +351,11 @@ Further, we can implement {\tt atomic} using the {\tt try}/{\tt else}
 exception-handling mechanism we've already introduced:
  \par {\footnotesize\samepage
 \begin{verbatim}
-while(true) {
+for (int b=0; ; b++) {
   try {
     // atomic actions
   } else {
-    backOff();
+    backOff(1<<Math.min(b,31));
     continue;
   }
   break; // success!
@@ -366,14 +368,16 @@ We non-deterministically choose to execute the body of the {\tt
 atomically.  The same linguistic mechanism we introduced for
 fault-tolerance and back-tracking provides atomic regions for
 synchronization as well.
+\note{Mention optimistic parallelism here?}
 
 \subsecput{stringbuffer}{The \texttt{StringBuffer} class}
 The existing \defn{monitor synchronization} methodology for Java
 implicitly associates an 
-lock with each object.  As in its progenitor Emerald
-\cite{BlackHuJuLe86,JulSt91}, requiring a thread to acquire the
-object's lock before touching the object's shared fields prevents data
-races.  However, the lack of races is not sufficient to prevent unanticipated
+lock with each object.  As in Java's progenitor, Emerald
+\cite{BlackHuJuLe86,JulSt91}, data races are prevented by
+requiring a thread to acquire an
+object's lock before touching the object's shared fields.
+However, the lack of races is not sufficient to prevent unanticipated
 parallel behavior.
 
 Flanagan and Qadeer \cite{FlanaganQa03} demonstrated this
@@ -424,11 +428,13 @@ atomic, but they do not compose to form an atomic implementation of
 
 Note however that replacing {\tt synchronized} with {\tt atomic} in
 this code gives us the semantics
-we desire: nested {\tt atomic} blocks compose to ensure that the entire
+we desire: the atomicity of nested {\tt atomic} blocks is guaranteed
+by the atomicity of the outermost block, ensuring that the entire
 operation appears atomic.
 
 Both the network flow example and this {\tt StringBuffer} example require
-changes to more than one object to be synchronized.
+synchronization of
+changes to more than one object.
 Monitor synchronization is not
 well-suited to this task.  Atomic regions implemented with
 transactions can be used to simplify the locking discipline required
@@ -436,13 +442,14 @@ to synchronize multi-object mutation
 and provide a more intuitive specification for the desired
 concurrent properties.  Further, the {\tt StringBuffer} example shows
 that simply replacing {\tt synchronized} with {\tt atomic} provides a
-strict alternative semantics which may in fact correct existing
-synchronization errors.   For ``correctly-synchronized'' code, the
+alternative semantics which may in fact correct existing
+synchronization errors.
+For many Java programs, the
 semantics of {\tt atomic} and {\tt synchronized} are identical.
-\note{Is this true?}
+\note{Can we make this rigorous?}
 
 \vspace*{5mm}
-We have designed a software transactions implementation which allows
+We have designed an implementation of software transactions which allows
 us to efficiently implement the {\tt try}/{\tt else} and {\tt atomic}
 constructs.  We have evaluated it by automatically
 ``transactifying'' Java applications by replacing synchronization with
@@ -480,14 +487,15 @@ correctness of the benchmarks we've examined.  Moreover, as
 mentioned in \secref{stringbuffer}, it
 fixes the synchronization issue with {\tt java.lang.StringBuffer}.
 
-A goal of this work was to make such improperly synchronized
+One goal of this work was to make such improperly synchronized
 applications correct and race-free, in effect fixing certain common
 synchronization errors.  To this effect, we needed to preserve the
 correct operation of {\tt atomic} even in the face of unsynchronized
 accesses from outside the {\tt atomic} block to the fields used within
 it.  Imagine unsynchronized code directly altering the length field of
 {\tt StringBuffer}.  This should not cause the {\tt atomic}
-{\tt StringBuffer.append()} method appear non-atomic.
+{\tt StringBuffer.append()} method to appear non-atomic.
+\note{Compare w/ Harris and Fraser?}
 
 \subsecput{properties}{Properties of Transactions}
 This section examines the implications of exposing the transaction
@@ -497,9 +505,10 @@ We compiled the SPECjvm98 benchmark suite with the FLEX Java compiler
 modified to turn synchronized blocks and methods into transactions,
 in order to investigate the properties of the transactions in such
 ``automatically converted'' code.
-Nested, or
-possibly nested, \texttt{atomic} blocks were implemented with a single
-transaction around the shallowest-nested \texttt{atomic} region.  We
+Method splitting was performed to distinguish methods called from
+within an atomic block, and nested
+\texttt{atomic} blocks were implemented as a single
+transaction around the outermost \texttt{atomic} region.  We
 instrumented this transformed program to produce a trace of
 memory references and transaction boundaries for analysis.
 We found both large
@@ -516,7 +525,7 @@ multithreaded \texttt{227\_mtrt} benchmark is identical to its
 serialization, \texttt{205\_raytrace}.  For consistency, we present
 only the latter.
 
-\begin{figure}
+\begin{figure*}
 \begin{center}
 \begin{tabular}{lrrrr}
         & total      &              & transactional & biggest\\
@@ -534,7 +543,7 @@ program & memory ops & transactions & memory ops    & transaction \\\hline
   transaction counts and sizes, compared to total number of memory
   operations (loads and stores).  These are full input size runs.
 }\label{fig:perfnums}
-\end{figure}
+\end{figure*}
 \figput{tr-quad}{Classification of SPECjvm98 benchmarks into quadrants
 based on transaction properties.}
 
@@ -749,7 +758,14 @@ available from a URL given at the end of the paper.
 
 %\subsecput{interface}{Interface}
 \subsecput{datastruct}{Object Structures}
-\figput{tr-multi-obj}{Implementing software transactions with version lists.}
+\figput{tr-multi-obj}{Implementing software transactions with version
+  lists.  A transaction object consists of a single field {\it
+    status}, which indicates if it has COMMITTED, ABORTED, or is WAITING.
+  Each object contains two extra fields: {\it readers}, a
+  singly-linked list of transactions which have read this object; and
+  {\it versions} a linked list of version objects.  If an object field
+  is FLAG, then the value for the field is obtained from the
+  appropriate linked version object.}
 \figref{tr-multi-obj} illustrates the basic data structures of our
 software transaction implementation.  Objects are extended with two
 additional fields.  The first field, {\tt versions}, points to a
@@ -765,7 +781,7 @@ field is used to ensure that a transaction does not operate with
 out-of-date values if the object is later written
 non-transactionally.
 
-There is a special flag value, which we call {\tt FLAG}.  It should be
+There is a special flag value, here denoted by {\tt FLAG}.  It should be
 an uncommon value, i.e. not a small positive or negative integer
 constant, nor zero.  In our implementation, we have chosen the byte
 \texttt{0xCA} to be our flag value, repeated as necessary to fill out
@@ -1467,7 +1483,7 @@ can be expected to use both very small and very large transactions
 when they are able, and transactions are used by the operating system
 and programming libraries to provide synchronization and safety
 properties.  Implementing transactional memory in hardware allows the
-overheads to be low (\textbf{cite figures here}), which is appropriate
+overheads to be low\note{\textbf{cite figures here}}, which is appropriate
 when transactional operations are common.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
