@@ -1,7 +1,7 @@
 // SimpleCheckOracle.java, created Sun Nov 12 01:25:37 2000 by cananian
 // Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis.LowQuad.Transactions;
+package harpoon.Analysis.Transactions;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.AGET;
@@ -16,7 +16,7 @@ import java.util.Set;
  * simple-minded implementation of <code>CheckOracle</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SimpleCheckOracle.java,v 1.1.2.4 2000-11-15 23:48:37 cananian Exp $
+ * @version $Id: SimpleCheckOracle.java,v 1.1.2.1 2001-01-11 20:26:40 cananian Exp $
  */
 class SimpleCheckOracle extends CheckOracle {
     public Set createReadVersions(HCodeElement hce) {

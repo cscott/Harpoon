@@ -1,7 +1,7 @@
 // SimpleFieldOracle.java, created Wed Nov 15 16:01:25 2000 by cananian
 // Copyright (C) 2000  <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis.LowQuad.Transactions;
+package harpoon.Analysis.Transactions;
 
 import harpoon.ClassFile.HField;
 
@@ -10,7 +10,7 @@ import harpoon.ClassFile.HField;
  * simple-minded implementation of <code>FieldOracle</code>.
  * 
  * @author   <cananian@alumni.princeton.edu>
- * @version $Id: SimpleFieldOracle.java,v 1.1.2.2 2000-11-16 01:25:14 cananian Exp $
+ * @version $Id: SimpleFieldOracle.java,v 1.1.2.1 2001-01-11 20:26:40 cananian Exp $
  */
 public class SimpleFieldOracle extends FieldOracle {
     public boolean isSyncRead(HField hf) { return true; }

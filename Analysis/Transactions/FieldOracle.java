@@ -1,7 +1,7 @@
 // FieldOracle.java, created Wed Nov 15 15:57:40 2000 by cananian
 // Copyright (C) 2000  <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis.LowQuad.Transactions;
+package harpoon.Analysis.Transactions;
 
 import harpoon.ClassFile.HField;
 
@@ -10,7 +10,7 @@ import harpoon.ClassFile.HField;
  * decide which field references it can skip checks for.
  * 
  * @author   <cananian@alumni.princeton.edu>
- * @version $Id: FieldOracle.java,v 1.1.2.2 2000-11-16 01:25:14 cananian Exp $
+ * @version $Id: FieldOracle.java,v 1.1.2.1 2001-01-11 20:26:40 cananian Exp $
  */
 abstract class FieldOracle {
     /** Returns <code>true</code> if this field can be read within a

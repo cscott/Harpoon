@@ -1,7 +1,7 @@
 // SyncTransformer.java, created Fri Oct 27 16:50:14 2000 by cananian
 // Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis.LowQuad.Transactions;
+package harpoon.Analysis.Transactions;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.DomTree;
@@ -63,7 +63,7 @@ import java.util.Set;
  * atomic transactions.  Works on <code>QuadSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.16 2000-11-17 07:37:45 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.1 2001-01-11 20:26:40 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
