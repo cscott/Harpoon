@@ -16,7 +16,7 @@ import java.util.Set;
  * <code>SSITOSSAMap</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: SSITOSSAMap.java,v 1.1.2.6 1999-09-09 21:42:46 cananian Exp $
+ * @version $Id: SSITOSSAMap.java,v 1.1.2.7 1999-09-10 05:06:41 bdemsky Exp $
  */
 public class SSITOSSAMap implements TempMap {
     
@@ -100,11 +100,16 @@ public class SSITOSSAMap implements TempMap {
 		else {
 		    //The source isn't in the map
 		    //Create a new backwards entry for it
-		    backset=new WorkSet();
+		    if (backward.containsKey(sigma.src(i))) {
+			backset=(WorkSet)backward.get(sigma.src(i));
+		    }
+		    else {
+			backset=new WorkSet();
 
-		    //Push this entry in the backwards map
-		    backward.put(sigma.src(i), backset);
-
+			//Push this entry in the backwards map
+			backward.put(sigma.src(i), backset);
+		    }
+		    
 		    //Set the source up for the destinations of the sigmas
 		    tmpsrc=sigma.src(i);
 		}
