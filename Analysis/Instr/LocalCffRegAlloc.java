@@ -8,6 +8,7 @@ import harpoon.Backend.Generic.Code;
 import harpoon.Analysis.DataFlow.BasicBlock;
 import harpoon.Temp.Temp;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrMEM;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 import harpoon.Util.CloneableIterator;
@@ -26,7 +27,7 @@ import java.util.Iterator;
     it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.3 1999-04-20 21:26:45 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.4 1999-04-20 22:12:12 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -137,12 +138,12 @@ public class LocalCffRegAlloc extends RegAlloc {
 			instr.src[u] = registers[i];
 		    } else {
 			// Evict a value (storing it to memory).
-			index = findFurthest((Iterator)iter.clone(), values); 
+			int index = findFurthest((Iterator)iter.clone(), values); 
 			
 			// TODO: figure out how to insert InstrMEM into the
 			// Instruction List for 'bb'
 			// storing registers[index] -> values[index]
-			InstrMEM = new InstrMEM (null, null, null, 
+			InstrMEM store = new InstrMEM (null, null, null, 
 						 values[index],
 						 registers[index]); 
 			
