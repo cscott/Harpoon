@@ -1,0 +1,306 @@
+// MultiMap.java, created Tue Oct 19 22:19:36 1999 by pnkfelix
+// Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+package harpoon.Util.Collections;
+
+import harpoon.Util.Util;
+import harpoon.Util.PairMapEntry;
+import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.CombineIterator;
+
+import java.util.Map;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
+
+/** <code>MultiMap</code> maps a key to a collection of values.  These
+    collections are created as needed using a
+    <code>CollectionFactory</code>.  Any constraints on the
+    collections produced by this factory thus hold for the values that
+    <code>this</code> maps to.
+
+    <BR> Formally, a MultiMap is a <i>Multiple Associative
+    Container</i>.  It associates key objects with value objects.  The
+    difference between a <code>MultiMap</code> and a standard 
+    <code>Map</code> is that <code>MultiMap</code> extends the
+    <code>Map</code> interface to allow for the same key to map to
+    multiple values. 
+
+    <BR> Note that an association (known as a (Key, Value) pair or a 
+    <code>Map.Entry</code> in the Java Collections API) is only
+    defined to exist if the collection of objects mapped to by some
+    key is non-empty. 
+    
+    This has a number of implications for the behavior of
+    <code>MultiMap</code>:
+
+    <BR> Let 
+            <code>mm</code> be a <code>MultiMap</code>,
+	    <code>k</code> be an <code>Object</code> (which may or may
+	          not be a Key in <code>mm</code>
+	    <code>c</code> is the <code>Collection</code> returned by
+	          <code>mm.getCollection(k)</code>.
+    <BR> Then <code>c</code> will either be a non-empty
+         <code>Collection</code> (the case where <code>k</code> is a
+	 Key in <code>mm</code> or it will be a empty collection (the
+	 case where <code>k</code> is not a Key in <code>mm</code>.
+	 In this case, however, <code>k</code> is still considered to
+	 not be a Key in <code>mm</code> until <code>c</code> is made
+	 non-empty.  We chose to return an empty
+	 <code>Collection</code> instead of <code>null</code> to allow
+	 for straightforward addition to the collection of values
+	 mapped to by <code>k</code>.
+
+    <BR> To conform to the <code>Map</code> interface, the
+    <code>put(key, value)</code> method has a non-intuitive behavior;
+    it throws away all values previously associated with
+    <code>key</code> and creates a new mapping from <code>key</code>
+    to the singleton set containing <code>value</code>.
+
+    <BR> Note that the behavior of <code>MultiMap</code> is
+    indistinquishable from that of a <code>Map</code> if none of the
+    extensions of <code>MultiMap</code> are utilized.  Thus, users
+    should take care to ensure that other code relying on the
+    constraints enforced by the <code>Map</code> interface does not
+    ever attempt to use a <code>MultiMap</code> when any of its Keys
+    map to more than one value.
+    
+    @author  Felix S. Klock II <pnkfelix@mit.edu>
+    @version $Id: MultiMap.java,v 1.1.2.1 1999-10-20 06:00:26 pnkfelix Exp $
+ */
+public class MultiMap implements Map {
+    
+    // internal Map[KeyType -> Collection[ ValueType ]]
+    private Map internMap;
+
+    // constructs Collections as needed 
+    private CollectionFactory cf;
+    
+    // used by identity constructor
+    private MapFactory mf;
+    
+    /** Creates a <code>MultiMap</code> from a
+	<code>CollectionFactory</code>.
+    */
+    public MultiMap(CollectionFactory cf, MapFactory mf) {
+	this.internMap = mf.makeMap();
+	this.cf = cf;
+	this.mf = mf;
+    }
+
+    /** Creates a <code>MultiMap</code> from another
+	<code>MultiMap</code>.
+	
+	NOTE: I would make this ctor public, but I need to eliminate
+	any issues with the Collection-values being shared between
+	'this' and 'mm'.
+
+    */
+    private MultiMap(MultiMap mm) { 
+	this.mf = mm.mf;
+	this.cf = mm.cf;
+	this.internMap = this.mf.makeMap(mm.internMap);
+    }
+    
+    public int size() {
+	return entrySet().size();
+    }
+
+    public boolean isEmpty() {
+	boolean empty = true;
+	Iterator entries = internMap.entrySet().iterator();
+	while(entries.hasNext()) {
+	    Collection s = (Collection)
+		((Map.Entry)entries.next()).getValue();
+	    if (s != null && s.size() != 0) {
+		empty = false;
+	    }
+	}
+	return empty;
+    }
+    
+    public boolean containsKey(Object key) {
+	Collection s = (Collection) internMap.get(key);
+	return (s != null && s.size() != 0);
+    }
+    
+    public boolean containsValue(Object value) {
+	Iterator entries = internMap.entrySet().iterator();
+	boolean foundVal = false;
+	while(entries.hasNext()) {
+	    Collection s = (Collection) ((Map.Entry)entries.next()).getValue();
+	    if (s.contains(value)) {
+		foundVal = true;
+		break;
+	    }
+	}
+	return foundVal;
+    }
+
+
+    /** Returns some arbitrary value from the set of values to which
+	this map maps the specified key.  Returns <code>null</code> if
+	the map contains no mapping for the key; it's also possible
+	that the map explicitly maps the key to <code>null</code>.
+	The <code>containsKey</code> operation may be used to
+	distinquish these two cases.
+	
+	Note that if only the <code>put</code> method is used to
+	modify <code>this</code>, then <code>get</code> will operate
+	just as it would in any other <code>Map</code>.
+    */
+    public Object get(Object key) {
+	Collection s = (Collection) internMap.get(key);
+	if (s == null || s.size() == 0) {
+	    return null;
+	} else {
+	    return s.iterator().next();
+	}
+    }
+
+    /** Associates the specified value with the specified key in this
+	map.  If the map previously contained any mappings for this
+	key, all of the old values are replaced.  Returns some value
+	that was previous associated with the specified key, or
+	<code>null</code> if no values were associated previously. 
+    */
+    public Object put(Object key,
+		      Object value) {
+	Object val = get(key);
+	internMap.put(key, cf.makeCollection(Collections.singleton(value)));
+	return val;
+    }
+
+    /** Removes all mappings for this key from this map if present. 
+	Returns some previous value associated with specified key, or
+	<code>null</code> if there was no mapping for key.  
+     */
+    public Object remove(Object key) {
+	Collection s = (Collection) internMap.get(key);
+	internMap.remove(key);
+	if (s == null || s.size() == 0) {
+	    return null;
+	} else {
+	    return s.iterator().next();
+	}
+    }
+
+    /** Copies the mappings from the specified map to this
+	map.  These mappings will replace any mappings that this map
+	had for any of the keys currently in the specified map.  Note
+	that <code>putAll(mm)</code> where <code>mm</code> is a
+	<code>MultiMap</code> will NOT add all of the mappings in
+	<code>mm</code>; it will only add all of the Keys in
+	<code>mm</code>, mapping each Key to one of the Values it
+	mapped to in <code>mm</code>.  To add all of the mappings from
+	another <code>MultiMap</code>, use
+	<code>addAll(MultiMap)</code>.
+    */
+    public void putAll(Map t) {
+	Iterator entries = t.entrySet().iterator();
+	while(entries.hasNext()) {
+	    Map.Entry e = (Map.Entry) entries.next();
+	    this.put( e.getKey(), e.getValue() );
+	}
+    }
+    
+    public void clear() {
+	internMap.clear();
+    }
+
+    public Set keySet() {
+	return internMap.keySet();
+    }
+    
+    /** Returns a collection view of the values contained in this
+	map.  
+    */
+    public Collection values() { 
+	final Iterator collIter = internMap.values().iterator();
+	final Iterator iterIter = new UnmodifiableIterator() {
+	    public boolean hasNext() {
+		return collIter.hasNext();
+	    }
+	    public Object next() {
+		return ((Collection)collIter.next()).iterator();
+	    }
+	};
+	return new AbstractCollection() {
+	    public Iterator iterator() {
+		return new CombineIterator(iterIter);
+	    }
+	    public int size() {
+		return MultiMap.this.size();
+	    }
+	};
+    }
+
+    /** Returns a set view of the mappings contained in this map.
+     */
+    public Set entrySet() {
+	int size = 0;
+	Iterator k2cEntries = internMap.entrySet().iterator();
+	while(k2cEntries.hasNext()) {
+	    Iterator cIter = 
+		((Collection) ((Map.Entry)
+			       k2cEntries.next()).getValue()).iterator(); 
+	    while(cIter.hasNext()) { 
+		size++; cIter.next(); 
+	    }
+	}
+	final int sz = size;
+
+	final Iterator entries = internMap.entrySet().iterator();
+	final Iterator iterIter = new UnmodifiableIterator() {
+	    public boolean hasNext() {
+		return entries.hasNext();
+	    }
+	    public Object next() {
+		Map.Entry entry = (Map.Entry) entries.next();
+		final Object key = entry.getKey();
+		final Iterator valueC = ((Collection) entry.getValue()).iterator();
+		return new UnmodifiableIterator() {
+		    public boolean hasNext() {
+			return valueC.hasNext();
+		    }
+		    public Object next() {
+			final Object val = valueC.next();
+			return new PairMapEntry(key, val);
+		    }
+		};
+	    }
+	};
+	return new AbstractSet() {
+	    public Iterator iterator() {
+		return new CombineIterator(iterIter);
+	    }
+
+	    public int size() {
+		return sz;
+	    }
+	};
+    }
+    
+    
+    public boolean equals(Object o) {
+	try {
+	    Set entrySet = ((Map) o).entrySet();
+	    return this.entrySet().equals(entrySet);
+	} catch (ClassCastException e) {
+	    return false;
+	}
+    }
+
+    public int hashCode() {
+	Iterator entries = entrySet().iterator();
+	int sum = 0;
+	while(entries.hasNext()) {
+	    sum += entries.next().hashCode();
+	}
+	return sum;
+    }
+
+}
