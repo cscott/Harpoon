@@ -7,14 +7,15 @@ import harpoon.ClassFile.*;
  * quad graph.  They do not represent bytecode.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HEADER.java,v 1.3 1998-09-03 01:21:56 cananian Exp $
+ * @version $Id: HEADER.java,v 1.4 1998-09-08 14:38:38 cananian Exp $
+ * @see FOOTER
  */
 
 public class HEADER extends Quad {
     /** Creates a <code>HEADER</code>. */
-    public HEADER() {
-        super("---internal---",0, 0 /* no predecessors */, 1);
+    public HEADER(HCodeElement source) {
+        super(source, 0 /* no predecessors */, 1);
     }
-    /** Returns human-readable representation. */
+    /** Returns human-readable representation of this Quad. */
     public String toString() { return "HEADER"; }
 }

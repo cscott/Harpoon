@@ -10,7 +10,7 @@ import harpoon.Temp.Temp;
  * class type.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSTANCEOF.java,v 1.1 1998-09-02 01:22:47 cananian Exp $
+ * @version $Id: INSTANCEOF.java,v 1.2 1998-09-08 14:38:38 cananian Exp $
  */
 
 public class INSTANCEOF extends Quad {
@@ -22,16 +22,14 @@ public class INSTANCEOF extends Quad {
     public HClass hclass;
 
     /** Creates a <code>INSTANCEOF</code>. */
-    public INSTANCEOF(String sourcefile, int linenumber,
+    public INSTANCEOF(HCodeElement source,
 		      Temp dst, Temp src, HClass hclass) {
-	super(sourcefile, linenumber);
+	super(source);
 	this.dst = dst;
 	this.src = src;
 	this.hclass = hclass;
     }
-    INSTANCEOF(HCodeElement hce, Temp dst, Temp src, HClass hclass) {
-	this(hce.getSourceFile(), hce.getLineNumber(), dst, src, hclass);
-    }
+
     /** Returns the <code>Temp</code>s used by this quad. */
     public Temp[] use() { return new Temp[] { src }; }
     /** Returns the <code>Temp</code>s defined by this quad. */

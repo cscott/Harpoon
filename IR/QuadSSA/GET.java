@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>GET</code> represent field access (get) operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.9 1998-09-03 19:16:23 cananian Exp $
+ * @version $Id: GET.java,v 1.10 1998-09-08 14:38:38 cananian Exp $
  */
 
 public class GET extends Quad {
@@ -22,24 +22,18 @@ public class GET extends Quad {
      *  <code>null</code> if field is static.     */
     public Temp objectref;
     /** Creates a <code>GET</code> for a non-static field. */
-    public GET(String sourcefile, int linenumber,
+    public GET(HCodeElement source,
 	       Temp dst, HField field, Temp objectref) {
-	super(sourcefile, linenumber);
+	super(source);
 	this.dst = dst;
 	this.field = field;
 	this.objectref = objectref;
 	if (objectref==null) Util.assert(isStatic());
     }
     /** Creates a <code>GET</code> for a static field. */
-    public GET(String sourcefile, int linenumber,
+    public GET(HCodeElement source,
 	       Temp dst, HField field) {
-	this(sourcefile, linenumber, dst, field, null);
-    }
-    GET(HCodeElement hce, Temp dst, HField field, Temp objectref) {
-	this(hce.getSourceFile(), hce.getLineNumber(), dst, field, objectref);
-    }
-    GET(HCodeElement hce, Temp dst, HField field) {
-	this(hce.getSourceFile(), hce.getLineNumber(), dst, field);
+	this(source, dst, field, null);
     }
 
     /** Returns the Temp used by this Quad. 

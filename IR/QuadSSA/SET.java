@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>SET</code> represents field assignment-to operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SET.java,v 1.7 1998-09-03 19:16:23 cananian Exp $
+ * @version $Id: SET.java,v 1.8 1998-09-08 14:38:39 cananian Exp $
  */
 
 public class SET extends Quad {
@@ -23,25 +23,20 @@ public class SET extends Quad {
     public Temp src;
 
     /** Creates a <code>SET</code> for a non-static field. */
-    public SET(String sourcefile, int linenumber,
+    public SET(HCodeElement source,
 	       HField field, Temp objectref, Temp src) {
-	super(sourcefile, linenumber);
+	super(source);
 	this.field = field;
 	this.objectref = objectref;
 	this.src = src;
 	if (objectref==null) Util.assert(isStatic());
     }
     /** Creates a <code>SET</code> for a static field. */
-    public SET(String sourcefile, int linenumber,
+    public SET(HCodeElement source,
 	       HField field, Temp src) {
-	this(sourcefile, linenumber, field, null, src);
+	this(source, field, null, src);
     }
-    SET(HCodeElement hce, HField field, Temp objectref, Temp src) {
-	this(hce.getSourceFile(), hce.getLineNumber(), field, objectref, src);
-    }
-    SET(HCodeElement hce, HField field, Temp src) {
-	this(hce.getSourceFile(), hce.getLineNumber(), field, src);
-    }
+
     /** Returns the Temps used by this Quad. 
      * @return the <code>objectref</code> and <code>src</code> fields. */
     public Temp[] use() { return new Temp[] { objectref, src }; }

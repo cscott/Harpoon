@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>MONITOR</code> represents a synchronization block.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MONITOR.java,v 1.5 1998-08-26 22:01:40 cananian Exp $
+ * @version $Id: MONITOR.java,v 1.6 1998-09-08 14:38:38 cananian Exp $
  */
 
 public class MONITOR extends Quad {
@@ -18,15 +18,13 @@ public class MONITOR extends Quad {
     /** Creates a <code>MONITOR</code>.  The code in <Code>block</code>
      *  is protected by a monitor lock on the object referenced by
      *  <code>lock</code>. */
-    public MONITOR(String sourcefile, int linenumber,
+    public MONITOR(HCodeElement source,
 		   Temp lock, Quad block) {
-        super(sourcefile, linenumber);
+        super(source);
 	this.lock = lock;
 	this.block = block;
     }
-    MONITOR(HCodeElement hce, Temp lock, Quad block) {
-	this(hce.getSourceFile(), hce.getLineNumber(), lock, block);
-    }
+
     /** Returns the Temp used by this Quad.
      * @return the <code>lock</code> field. */
     public Temp[] use() { return new Temp[] { lock }; }

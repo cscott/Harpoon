@@ -11,20 +11,18 @@ import harpoon.Temp.Temp;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.8 1998-09-01 21:55:07 cananian Exp $
+ * @version $Id: CJMP.java,v 1.9 1998-09-08 14:38:38 cananian Exp $
  */
 
 public class CJMP extends Quad {
     public Temp test;
 
     /** Creates a <code>CJMP</code>. */
-    public CJMP(String sourcefile, int linenumber, Temp test) {
-        super(sourcefile, linenumber, 1, 2 /* two branch targets */);
+    public CJMP(HCodeElement source, Temp test) {
+        super(source, 1, 2 /* two branch targets */);
 	this.test = test;
     }
-    CJMP(HCodeElement hce, Temp test) {
-	this(hce.getSourceFile(), hce.getLineNumber(), test);
-    }
+
     /** Swaps if-true and if-false targets. */
     public void invert() {
 	Quad q = next[0];

@@ -8,7 +8,7 @@ import harpoon.Temp.Temp;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.2 1998-08-27 01:09:49 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.3 1998-09-08 14:38:39 cananian Exp $
  */
 
 public class SWITCH extends Quad {
@@ -24,15 +24,13 @@ public class SWITCH extends Quad {
      *  <code>keys[n]</code> for <code>0 <= n < keys.length</code>. <p>
      *  <code>next[keys.length]</code> is the default target.
      */
-    public SWITCH(String sourcefile, int linenumber,
+    public SWITCH(HCodeElement source,
 		  Temp index, int keys[]) {
-	super(sourcefile, linenumber, 1, keys.length+1 /*multiple targets*/);
+	super(source, 1, keys.length+1 /*multiple targets*/);
 	this.index = index;
 	this.keys = keys;
     }
-    SWITCH(HCodeElement hce, Temp index, int keys[]) {
-	this(hce.getSourceFile(), hce.getLineNumber(), index, keys);
-    }
+
     /** Returns the Temp used by this quad.
      * @return the <code>index</code> field. */
     public Temp[] use() { return new Temp[] { index }; }

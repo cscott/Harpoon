@@ -8,33 +8,27 @@ import harpoon.Temp.Temp;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.10 1998-09-04 01:39:22 cananian Exp $
+ * @version $Id: Quad.java,v 1.11 1998-09-08 14:38:39 cananian Exp $
  */
 public abstract class Quad implements HCodeElement {
     String sourcefile;
     int linenumber;
     int id;
     /** Constructor. */
-    protected Quad(String sourcefile, int linenumber,
+    protected Quad(HCodeElement source,
 		   int prev_arity, int next_arity) {
-	this.sourcefile = sourcefile;
-	this.linenumber = linenumber;
+	this.sourcefile = source.getSourceFile();
+	this.linenumber = source.getLineNumber();
 	synchronized(lock) {
 	    this.id = next_id++;
 	}
 	this.prev = new Quad[prev_arity];
 	this.next = new Quad[next_arity];
     }
-    protected Quad(String sourcefile, int linenumber) {
-	this(sourcefile, linenumber, 1, 1);
+    protected Quad(HCodeElement source) {
+	this(source, 1, 1);
     }
-    Quad(HCodeElement hce,
-		   int prev_arity, int next_arity) {
-	this(hce.getSourceFile(), hce.getLineNumber(), prev_arity, next_arity);
-    }
-    Quad(HCodeElement hce) {
-	this(hce.getSourceFile(), hce.getLineNumber());
-    }
+
     static int next_id = 0;
     static final Object lock = new Object();
 

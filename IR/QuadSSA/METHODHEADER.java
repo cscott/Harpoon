@@ -8,17 +8,18 @@ import harpoon.Temp.Temp;
  * keep track of the temporary variable names used for method parameters.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHODHEADER.java,v 1.1 1998-08-20 22:43:22 cananian Exp $
+ * @version $Id: METHODHEADER.java,v 1.2 1998-09-08 14:38:38 cananian Exp $
  */
 
 public class METHODHEADER extends HEADER {
     public Temp[] params;
     /** Creates a <code>METHODHEADER</code> from the given parameter
      *  list of the method. */
-    public METHODHEADER(Temp[] params) {
-        super();
+    public METHODHEADER(HCodeElement source, Temp[] params) {
+        super(source);
 	this.params = params;
     }
+
     /** Returns a human-readable representation. */
     public String toString() {
 	StringBuffer sb = new StringBuffer("METHODHEADER(");

@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>NEW</code> represents an object creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NEW.java,v 1.7 1998-09-04 01:39:21 cananian Exp $
+ * @version $Id: NEW.java,v 1.8 1998-09-08 14:38:38 cananian Exp $
  */
 
 public class NEW extends Quad {
@@ -20,9 +20,9 @@ public class NEW extends Quad {
     public HClass hclass;
     /** Creates a <code>NEW</code> object.  <code>NEW</code> creates
      *  a new instance of the class <code>hclass</code>. */
-    public NEW(String sourcefile, int linenumber,
+    public NEW(HCodeElement source,
 	       Temp dst, HClass hclass) {
-        super(sourcefile, linenumber);
+        super(source);
 	this.dst = dst;
 	this.hclass = hclass;
 	// from JVM spec:
@@ -30,9 +30,7 @@ public class NEW extends Quad {
 	Util.assert(!hclass.isPrimitive());
 	Util.assert(!Modifier.isAbstract(hclass.getModifiers()));
     }
-    NEW(HCodeElement hce, Temp dst, HClass hclass) {
-	this(hce.getSourceFile(), hce.getLineNumber(), dst, hclass);
-    }
+
     /** Returns the Temp defined by this Quad.
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }

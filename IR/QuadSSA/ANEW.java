@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * <code>ANEW</code> represents an array creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ANEW.java,v 1.3 1998-09-04 06:31:21 cananian Exp $
+ * @version $Id: ANEW.java,v 1.4 1998-09-08 14:38:38 cananian Exp $
  * @see NEW
  * @see AGET
  * @see ASET
@@ -33,16 +33,14 @@ public class ANEW extends Quad {
      *  dimensions than the length of the <code>dims</code> parameter.  In
      *  that case, only the first <code>dims.length</code> dimensions of the
      *  array are created. */
-    public ANEW(String sourcefile, int linenumber,
+    public ANEW(HCodeElement source,
 		Temp dst, HClass hclass, Temp dims[]) {
-        super(sourcefile, linenumber);
+        super(source);
 	this.dst = dst;
 	this.hclass = hclass;
 	this.dims = dims;
     }
-    ANEW(HCodeElement hce, Temp dst, HClass hclass, Temp dims[]) {
-	this(hce.getSourceFile(), hce.getLineNumber(), dst, hclass, dims);
-    }
+
     /** Returns the Temp defined by this Quad. 
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }

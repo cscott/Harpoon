@@ -8,7 +8,7 @@ import harpoon.Temp.Temp;
  * <code>ALENGTH</code> represents an array length query.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ALENGTH.java,v 1.2 1998-09-04 06:31:21 cananian Exp $
+ * @version $Id: ALENGTH.java,v 1.3 1998-09-08 14:38:38 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ASET
@@ -21,15 +21,13 @@ public class ALENGTH extends Quad {
     public Temp objectref;
     
     /** Creates a <code>ALENGTH</code>. */
-    public ALENGTH(String sourcefile, int linenumber,
+    public ALENGTH(HCodeElement source,
 		   Temp dst, Temp objectref) {
-	super(sourcefile, linenumber);
+	super(source);
 	this.dst = dst;
 	this.objectref = objectref;
     }
-    ALENGTH(HCodeElement hce, Temp dst, Temp objectref) {
-	this(hce.getSourceFile(), hce.getLineNumber(), dst, objectref);
-    }
+
     /** Returns the Temp defined by this Quad. 
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }

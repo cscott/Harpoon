@@ -7,33 +7,28 @@ import harpoon.Temp.Temp;
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.8 1998-09-04 09:15:55 cananian Exp $
+ * @version $Id: PHI.java,v 1.9 1998-09-08 14:38:39 cananian Exp $
  */
 
 public class PHI extends Quad {
     public Temp dst[];
     public Temp src[][];
     /** Creates a <code>PHI</code> object. */
-    public PHI(String sourcefile, int linenumber,
+    public PHI(HCodeElement source,
 	       Temp dst[], Temp src[][], int arity) {
-        super(sourcefile,linenumber, arity, 1);
+        super(source, arity, 1);
 	this.dst = dst;
 	this.src = src;
     }
     /** Creates a <code>PHI</code> object with the specified arity. */
-    public PHI(String sourcefile, int linenumber,
+    public PHI(HCodeElement source,
 	       Temp dst[], int arity) {
-	this(sourcefile,linenumber, dst, new Temp[dst.length][arity], arity);
+	this(source, dst, new Temp[dst.length][arity], arity);
 	for (int i=0; i<dst.length; i++)
 	    for (int j=0; j<arity; j++)
 		this.src[i][j] = null;
     }
-    PHI(HCodeElement hce, Temp dst[], Temp src[][], int arity) {
-	this(hce.getSourceFile(), hce.getLineNumber(), dst, src, arity);
-    }
-    PHI(HCodeElement hce, Temp dst[], int arity) {
-	this(hce.getSourceFile(), hce.getLineNumber(), dst, arity);
-    }
+
     /** Grow the arity of a PHI by one. */
     public void grow(Temp args[]) {
 	// increase number of prev links by one.

@@ -8,7 +8,7 @@ import harpoon.Temp.Temp;
  * <code>AGET</code> represents an element fetch from an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AGET.java,v 1.2 1998-09-04 06:31:21 cananian Exp $
+ * @version $Id: AGET.java,v 1.3 1998-09-08 14:38:38 cananian Exp $
  * @see ANEW
  * @see ASET
  * @see ALENGTH
@@ -23,16 +23,14 @@ public class AGET extends Quad {
     public Temp index;
 
     /** Creates an <code>AGET</code> object. */
-    public AGET(String sourcefile, int linenumber,
+    public AGET(HCodeElement source,
 		Temp dst, Temp objectref, Temp index) {
-	super(sourcefile, linenumber);
+	super(source);
 	this.dst = dst;
 	this.objectref = objectref;
 	this.index = index;
     }
-    AGET(HCodeElement hce, Temp dst, Temp objectref, Temp index) {
-	this(hce.getSourceFile(), hce.getLineNumber(), dst, objectref, index);
-    }
+
     /** Returns the Temp defined by this quad.
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }

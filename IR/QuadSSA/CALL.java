@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>CALL</code> objects represent method invocations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.12 1998-09-04 01:39:21 cananian Exp $
+ * @version $Id: CALL.java,v 1.13 1998-09-08 14:38:38 cananian Exp $
  */
 
 public class CALL extends Quad {
@@ -35,10 +35,10 @@ public class CALL extends Quad {
      *  thrown by the called method, <code>retex</code> will be assigned
      *  a non-null value and <code>retval</code> will be null.  If
      *  no exception is thrown, <code>retex</code> will be null. */
-    public CALL(String sourcefile, int linenumber,
+    public CALL(HCodeElement source,
 		HMethod method, Temp objectref, Temp[] params, 
 		Temp retval, Temp retex) {
-	super(sourcefile, linenumber);
+	super(source);
 	this.method = method;
 	this.objectref = objectref;
 	this.params = params;
@@ -57,21 +57,11 @@ public class CALL extends Quad {
     }
     /** Creates a <Code>CALL</code> to a method with a <code>void</code>
      *  return-value descriptor. */
-    public CALL(String sourcefile, int linenumber,
+    public CALL(HCodeElement source,
 		HMethod method, Temp objectref, Temp[] params, Temp retex) {
-	this(sourcefile, linenumber, method, objectref, params, null, retex);
+	this(source, method, objectref, params, null, retex);
     }
-    CALL(HCodeElement hce,
-	 HMethod method, Temp objectref, Temp[] params, 
-	 Temp retval, Temp retex) {
-	this(hce.getSourceFile(), hce.getLineNumber(), 
-	     method, objectref, params, retval, retex);
-    }
-    CALL(HCodeElement hce,
-	 HMethod method, Temp objectref, Temp[] params, Temp retex) {
-	this(hce.getSourceFile(), hce.getLineNumber(), 
-	     method, objectref, params, retex);
-    }
+
     /** Returns all the Temps used by this Quad. 
      * @return objectref (if objectref!=null) and params.
      */

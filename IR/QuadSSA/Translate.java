@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.53 1998-09-04 10:03:44 cananian Exp $
+ * @version $Id: Translate.java,v 1.54 1998-09-08 14:38:39 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -63,7 +63,7 @@ class Translate  { // not public.
 		exitBlock = eb; exitTemp = et; continuation = c; type = ty;
 	    }
 	    BlockContext(int ty) {
-		this(new NOP(), new Temp(), new Vector(), ty);
+		this(null, new Temp(), new Vector(), ty);
 	    }
 	}
 	/** A stack of try/monitor context information. */
@@ -240,7 +240,7 @@ class Translate  { // not public.
 
 	State s = new State(locals, bytecode.getTryBlocks());
 
-	Quad quads = new METHODHEADER(params);
+	Quad quads = new METHODHEADER(bytecode.getElements()[0], params);
 
 	Temp Tnull = new Temp("$null");
 	Temp Tzero = new Temp("$zero");
@@ -278,7 +278,7 @@ class Translate  { // not public.
 		Quad q; State ns;
 		if (isMonitor) { // MONITOR
 		    // Make header nodes for block.
-		    Quad monitorBlock = new HEADER();
+		    Quad monitorBlock = new HEADER(ts.in);
 		    // Recursively generate monitor quads.
 		    ns = s.enterMonitor().pop();
 		    trans(new TransState(ns, ts.in, monitorBlock, 0),

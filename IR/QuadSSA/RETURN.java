@@ -8,27 +8,22 @@ import harpoon.Temp.Temp;
  * optional return value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RETURN.java,v 1.6 1998-09-03 01:21:57 cananian Exp $
+ * @version $Id: RETURN.java,v 1.7 1998-09-08 14:38:39 cananian Exp $
  */
 
 public class RETURN extends Quad {
     /** Return value. <code>null</code> if there is no return value. */
     public Temp retval;
     /** Creates a <code>RETURN</code>. */
-    public RETURN(String sourcefile, int linenumber, Temp retval) {
-	super(sourcefile, linenumber, 1, 0 /* no successors */);
+    public RETURN(HCodeElement source, Temp retval) {
+	super(source, 1, 0 /* no successors */);
 	this.retval = retval;
     }
     /** Creates a <code>RETURN</code> with does not return a value. */
-    public RETURN(String sourcefile, int linenumber) {
-	this(sourcefile,linenumber,null);
+    public RETURN(HCodeElement source) {
+	this(source, null);
     }
-    RETURN(HCodeElement hce, Temp retval) {
-	this(hce.getSourceFile(), hce.getLineNumber(), retval);
-    }
-    RETURN(HCodeElement hce) {
-	this(hce.getSourceFile(), hce.getLineNumber());
-    }
+
     /** Returns all the Temps used by this Quad. */
     public Temp[] use() {
 	if (retval==null) return new Temp[0];

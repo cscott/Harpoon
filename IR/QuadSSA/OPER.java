@@ -14,7 +14,7 @@ import harpoon.Temp.Temp;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.7 1998-08-26 22:01:40 cananian Exp $
+ * @version $Id: OPER.java,v 1.8 1998-09-08 14:38:39 cananian Exp $
  */
 
 public class OPER extends Quad {
@@ -25,16 +25,14 @@ public class OPER extends Quad {
     /** Operands of the operation, in left-to-right order. */
     public Temp[] operands;
     /** Creates a <code>OPER</code>. */
-    public OPER(String sourcefile, int linenumber,
+    public OPER(HCodeElement source,
 		String opcode, Temp dst, Temp[] operands) {
-	super(sourcefile, linenumber);
+	super(source);
 	this.opcode = opcode;
 	this.dst = dst;
 	this.operands = operands;
     }
-    OPER(HCodeElement hce, String opcode, Temp dst, Temp[] operands) {
-	this(hce.getSourceFile(), hce.getLineNumber(), opcode, dst, operands);
-    }
+
     /** Returns the Temps used by this OPER. */
     public Temp[] use() { return (Temp[]) operands.clone(); }
     /** Returns the Temps defined by this OPER. */
