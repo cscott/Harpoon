@@ -1,0 +1,1 @@
+TestPOSIX:./configure  --with-precise-c --with-gc=copying --with-thread-model=user --with-event-driven --disable-shared --with-all-static -with-realtime-java=threads --with-rtj-perf
