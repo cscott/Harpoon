@@ -58,7 +58,7 @@ import java.util.Date;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.34 2000-10-20 08:44:44 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.35 2000-10-24 02:43:48 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -814,6 +814,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	for(Iterator webs = tempWebRecords.iterator(); webs.hasNext(); ){
 	    WebRecord wr = (WebRecord) webs.next();
 	    Temp t = wr.temp();
+
 	    Iterator is = new
 		CombineIterator(wr.defs().iterator(),
 				wr.uses().iterator()); 
@@ -894,20 +895,28 @@ public class GraphColoringRegAlloc extends RegAlloc {
  				 " adjMtx.get:"+adjMtx.get(wUse.sreg(), 
  							   wDef.sreg()));
 		
-		// if (!adjMtx.get(wUse.sreg(), wDef.sreg())) {
-		if (!wUse.conflictsWith(wDef)) {
-		    // System.out.println("Removed " + i);
+		// if (adjMtx.get(wUse.sreg(), wDef.sreg())) {
+		// if (wUse.conflictsWith(wDef)) {
+		if (remap.conflicting(wUse, wDef)) {
+
+		} else {
 		    if (def.equals(use)) {
 			// (nothing special to update)
 			willRemoveNow.add(i);
 		    } else if (isRegister(def)) {
-			if (webPrecolor.containsKey(wUse)) 
+			//if (webPrecolor.containsKey(wUse)) continue;
+			if (remap.anyConflicting
+			    (wUse,webPrecolor.invert().getValues(def))){
 			    continue;
+			}
 			webPrecolor.put(wUse, def);
 			willRemoveLater.add(i);
 		    } else if (isRegister(use)) {
-			if (webPrecolor.containsKey(wUse))
+			// if (webPrecolor.containsKey(wUse)) continue;
+			if (remap.anyConflicting
+			    (wDef,webPrecolor.invert().getValues(use))){
 			    continue;
+			}
 			webPrecolor.put(wDef, use);
 			willRemoveLater.add(i);
 		    } else {
@@ -952,7 +961,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	}
 	return willRemoveNow;
     }
-
+    
     private WebRecord[] buildAdjLists(AdjMtx adjMtx) { 
 	int i, j;
 	final int nwebs = webRecords.size();
@@ -1844,6 +1853,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
     // only defined for unions of WebRecords
     class EqWebRecords extends harpoon.Util.DisjointSet {
 	private HashSet temps = new HashSet();
+	MultiMap wrToEqwrs = new GenericMultiMap();
+
 	public boolean containsTemp(Temp t) {
 	    return temps.contains(t);
 	}
@@ -1862,6 +1873,46 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    temps.add( ((WebRecord)a).temp() );
 	    temps.add( ((WebRecord)b).temp() );
 	    super.union(a, b);
+
+	    Collection as = wrToEqwrs.getValues(a);
+	    Collection bs = wrToEqwrs.getValues(b);
+
+	    // clear old mappings
+	    wrToEqwrs.remove(a);
+	    wrToEqwrs.remove(b);
+
+	    wrToEqwrs.addAll(super.find(a), as);
+	    wrToEqwrs.addAll(super.find(a), bs);
+	    wrToEqwrs.add(super.find(a), a);
+	    wrToEqwrs.add(super.find(a), b);
+
+	}
+	
+	boolean anyConflicting(WebRecord wr1, Collection wrs) {
+	    for(Iterator wrI=wrs.iterator(); wrI.hasNext();) {
+		WebRecord wr2 = (WebRecord) wrI.next();
+		if (conflicting(wr1, wr2)) 
+		    return true;
+	    }
+	    return false;
+	}
+
+	boolean conflicting(WebRecord wr1, WebRecord wr2) {
+	    Collection wrs1 = new HashSet(wrToEqwrs.getValues(super.find(wr1)));
+	    Collection wrs2 = new HashSet(wrToEqwrs.getValues(super.find(wr2)));
+	    
+	    wrs1.add(wr1);
+	    wrs2.add(wr2);
+
+	    for(Iterator i1=wrs1.iterator(); i1.hasNext();) {
+		WebRecord wrA = (WebRecord) i1.next();
+		for(Iterator i2=wrs2.iterator(); i2.hasNext();) {
+		    WebRecord wrB = (WebRecord) i2.next();
+		    if (wrA.conflictsWith(wrB))
+			return true;
+		}
+	    }
+	    return false;
 	}
     }
 
