@@ -19,7 +19,7 @@ import java.util.Map;
  * minimize "holes" between fields.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SortedClassFieldMap.java,v 1.2.2.1 2002-03-11 14:26:20 cananian Exp $
+ * @version $Id: SortedClassFieldMap.java,v 1.2.2.2 2002-03-16 01:35:25 cananian Exp $
  */
 public abstract class SortedClassFieldMap extends ClassFieldMap {
     
@@ -46,6 +46,7 @@ public abstract class SortedClassFieldMap extends ClassFieldMap {
 		if (it.next().isStatic())
 		    it.remove();
 	    // sort declared fields by max(alignment,size)
+	    // (smallest first)
 	    Collections.sort(l, new Comparator<HField>() {
 		public int compare(HField hf1, HField hf2) {
 		    return Math.max(fieldSize(hf1),fieldAlignment(hf1))

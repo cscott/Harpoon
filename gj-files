@@ -82,6 +82,7 @@ Backend/RuntimeTiny/FixUnaligned.java
 Backend/RuntimeTiny/ObjectBuilder.java
 Backend/RuntimeTiny/PreOrderClazNumbering.java
 Backend/RuntimeTiny/Runtime.java
+Backend/RuntimeTiny/TinyClassFieldMap.java
 Backend/RuntimeTiny/TreeBuilder.java
 ClassFile/Factories.java
 ClassFile/HClass.java

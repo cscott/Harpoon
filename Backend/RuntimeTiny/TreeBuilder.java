@@ -62,7 +62,7 @@ import java.util.Set;
  * (but slower) object layout.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.3 2002-03-15 23:03:46 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.4 2002-03-16 01:35:35 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder { 
     Runtime runtime;
@@ -79,11 +79,15 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
     protected FieldMap initClassFieldMap() {
 	final FieldMap sfm = super.initClassFieldMap();
 	if (!runtime.byteAlign) return sfm;
-	return new harpoon.Backend.Analysis.PackedClassFieldMap() {
+	return new TinyClassFieldMap() {
 		public int fieldSize(HField hf) { return sfm.fieldSize(hf); }
 		// conservative gc requires pointers to be aligned.
 		public int fieldAlignment(HField hf) {
 		    if (hf.getType().isPrimitive()) return 1;
+		    return sfm.fieldAlignment(hf);
+		}
+		// "try hard" to align other types of fields.
+		public int fieldPreferredAlignment(HField hf) {
 		    return sfm.fieldAlignment(hf);
 		}
 	    };
