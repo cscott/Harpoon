@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.15 1999-07-22 18:19:17 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.16 1999-07-29 00:11:51 cananian Exp $
  */
 public class Spec  {
 
@@ -32,19 +32,38 @@ public class Spec  {
     */
     public /*final*/ String class_stms;
 
+    /** Java code statements to be inserted in the prologue of the
+     *  code generator method body.
+     */
+    public /*final*/ String method_prologue_stms;
+
+    /** Java code statements to be inserted in the epilogue of the
+     *  code generator method body.
+     */
+    public /*final*/ String method_epilogue_stms;
+
     /** List of Instruction Patterns for this machine specification.
 	<code>null</code> is a legal value.
      */
     public /*final*/ RuleList rules;
     
     /** Creates a <code>Spec</code>. */
-    public Spec(String global_stms, String class_stms, RuleList rules) {
+    public Spec(String global_stms, String class_stms,
+		String method_prologue_stms, String method_epilogue_stms,
+		RuleList rules) {
         this.global_stms = global_stms;
 	this.class_stms = class_stms;
+	this.method_prologue_stms = method_prologue_stms;
+	this.method_epilogue_stms = method_epilogue_stms;
 	this.rules = rules;
     }
     public String toString() {
-	return global_stms+"\n%%\n"+class_stms+"\n%%\n"+rules;
+	return global_stms+"\n%%\n"+class_stms+"\n%%\n"+
+	    ((method_prologue_stms==null)?"":
+	     ("%start with %{"+method_prologue_stms+"}%\n"))+
+	    ((method_epilogue_stms==null)?"":
+	     ("%end with %{"+method_epilogue_stms+"}%\n"))+
+	    rules;
     }
 
 
