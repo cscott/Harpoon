@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.41 1998-09-04 06:07:14 cananian Exp $
+ * @version $Id: Translate.java,v 1.42 1998-09-04 06:23:40 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -453,19 +453,41 @@ class Translate  { // not public.
 		OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
 		ns = s.push(s.lv[opd.getIndex()]);
 		q = null;
-		// Alternate implementation:
-		//ns = s.push(new Temp());
-		//q = new MOVE(in, ns.stack[0], 
-		//	    s.lv[opd.getIndex()]);
 		break;
 	    }
 	case Op.ANEWARRAY:
 	    {
+		// if (count<0) throw new NegativeArraySizeException();
 		OpClass opd = (OpClass) in.getOperand(0);
 		HClass hc = HClass.forDescriptor("[" + 
 						 opd.value().getDescriptor());
 		ns = s.pop().push(new Temp());
-		q = new ANEW(in, ns.stack[0], hc, new Temp[] { s.stack[0] });
+
+		HClass HCex=HClass.forClass(NegativeArraySizeException.class);
+		Temp Tnull = new Temp("$null");
+		Temp Tzero = new Temp("$zero");
+		Temp Tex   = new Temp();
+
+		// set up constants
+		Quad q0 = new CONST(in, Tnull, null, HClass.Void);
+		Quad q1 = new CONST(in, Tzero, new Integer(0), HClass.Int);
+		// check whether count>=0.
+		Quad q2 = new OPER(in, "icmpge", new Temp(),
+				   new Temp[] { s.stack[0], Tzero });
+		Quad q3 = new CJMP(in, q2.def()[0]);
+		Quad q4 = transNewException(HCex, Tex, Tnull, in, q3, 0);
+		r = transThrow(new TransState(s.push(Tex), in, q4, 0),
+			       handlers, false);
+		Quad q5 = new ANEW(in, ns.stack[0], hc, 
+				   new Temp[] { s.stack[0] });
+		// link
+		Quad.addEdge(q0, 0, q1, 0);
+		Quad.addEdge(q1, 0, q2, 0);
+		Quad.addEdge(q2, 0, q3, 0);
+		Quad.addEdge(q3, 1, q5, 0);
+
+		q = q0;
+		last = q5;
 		break;
 	    }
 	case Op.ARRAYLENGTH:
@@ -1293,11 +1315,11 @@ class Translate  { // not public.
 				    in, q1, 1);
 	// array bounds check.
 	Quad q3 = new OPER(in, "icmpge", new Temp(),
-			   new Temp[] { Tzero, Tindex });
+			   new Temp[] { Tindex, Tzero });
 	Quad q4 = new CJMP(in, q3.def()[0]);
 	Quad q5 = new ALENGTH(in, new Temp("$len"), Tobj);
 	Quad q6 = new OPER(in, "icmpgt", new Temp(),
-			   new Temp[] { Tindex, q5.def()[0] });
+			   new Temp[] { q5.def()[0], Tindex });
 	Quad q7 = new CJMP(in, q6.def()[0]);
 	Quad q8 = new PHI(in, new Temp[0], 2);
 	Quad q9 = transNewException(HCoob, new Temp(), Tnull,
