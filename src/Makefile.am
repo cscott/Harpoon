@@ -4,11 +4,11 @@ INCLUDES = @IFLAGS@
 SUBDIRS = jni java.lang.reflect \
 	$(NATIVEDIR) \
 	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) stats cam $(USERDIR) \
-	transact $(REALTIMEDIR) $(RTJPERFDIR) $(ROLEINFERDIR) $(MZFDIR)
+	transact $(REALTIMEDIR) $(RTJPERFDIR) $(ROLEINFERDIR) $(MZFDIR) $(SERVODIR)
 # make sure even the conditionally-compiled subdirectories are included
 # in the distribution.
 DIST_SUBDIRS = jni java.lang.reflect sunjdk \
-        gc clheap nativeio stats cam user transact realtime rtjperf roles mzf
+        gc clheap nativeio stats cam user transact realtime rtjperf roles mzf servo
 EXTRA_DIST = README
 
 # cruft to define the conditional directories. --------------------------
@@ -75,6 +75,11 @@ if RTJ_PERF
 RTJPERFDIR=rtjperf
 RTJPERFLIB=rtjperf/librtjperf.la
 endif
+# for the Jameco servo controller on the iPaq
+if SERVO
+SERVODIR=servo
+SERVOLIB=servo/libservo.la
+endif
 
 # see run% rule in top-level makefile to see how to generate a binary
 # executable from the Java.a file and these two libraries.
@@ -92,6 +97,6 @@ libflexc1_la_LIBADD = \
 	java.lang.reflect/libjavalangreflect.la \
 	$(NATIVELIB) \
 	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) stats/libstats.la cam/libcam.la $(USERLIB) \
-	transact/libtransact.la $(REALTIMELIB) $(RTJPERFLIB) $(ROLEINFERLIB) $(MZFLIB)
+	transact/libtransact.la $(REALTIMELIB) $(RTJPERFLIB) $(ROLEINFERLIB) $(MZFLIB) $(SERVOLIB)
 libflexc1_la_LDFLAGS = -version-info 0:0:0 # -lbfd -liberty
 # this library depends on -lbfd and -liberty, but these ought to be in $LIBS
