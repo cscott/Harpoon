@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * <code>HClassSyn</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.19 2000-11-29 22:12:36 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.20 2000-11-30 21:53:34 vivien Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -356,8 +356,12 @@ class HClassSyn extends HClassCls implements HClassMutator {
     final String descriptor;
     final String[] parameterNames;
     final HPointer[] exceptionTypes;
+    final boolean isConstructor;
+    final boolean isInitializer;
     MethodStub(HMethod hm) {
       super(hm);
+      this.isConstructor = hm instanceof HConstructor;
+      this.isInitializer = hm instanceof HInitializer;
       this.descriptor = hm.getDescriptor().intern();
       String[] pn = hm.getParameterNames();
       this.parameterNames = new String[pn.length];
@@ -369,13 +373,18 @@ class HClassSyn extends HClassCls implements HClassMutator {
 	this.exceptionTypes[i] = new ClassPointer(et[i]);
     }
     HMethodSyn reconstruct(HClassSyn parent) {
-      return reconstruct(new HMethodSyn(parent, MethodStub.this.name, descriptor));
+      return reconstruct
+	(isInitializer ? new HInitializerSyn(parent):
+	 isConstructor ? new HConstructorSyn(parent,descriptor):
+	 new HMethodSyn(parent, MethodStub.this.name, descriptor));
     }
     HMethodSyn reconstruct(HClassArraySyn parent) {
       return reconstruct(new HMethodSyn(parent, MethodStub.this.name, descriptor));
     }
     private HMethodSyn reconstruct(HMethodSyn hm) {
       HMethodMutator hmm = hm.getMutator();
+      hmm.setModifiers(MethodStub.this.modifiers);
+      hmm.setSynthetic(isSynthetic);
       hmm.setParameterNames(parameterNames);
       // back door so that HPointer isn't resolved yet.
       hm.exceptionTypes = this.exceptionTypes;
