@@ -14,6 +14,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
+import harpoon.Util.ParseUtil;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -24,7 +25,7 @@ import java.util.Set;
  * our benchmarks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Sizer.java,v 1.5 2003-03-28 20:20:28 salcianu Exp $
+ * @version $Id: Sizer.java,v 1.6 2003-07-16 00:53:58 cananian Exp $
  */
 public class Sizer extends harpoon.IR.Registration {
 
@@ -33,7 +34,7 @@ public class Sizer extends harpoon.IR.Registration {
 	    System.err.println("USAGE: java harpoon.Main.Sizer <classname>");
 	    System.exit(1);
 	}
-	Linker linker = Loader.systemLinker;
+	final Linker linker = Loader.systemLinker;
 	HCodeFactory hcf = harpoon.IR.Bytecode.Code.codeFactory();
 	HCodeFactory bytecode = new CachingCodeFactory(hcf) {
 	    public void clear(HMethod m) {
@@ -48,9 +49,27 @@ public class Sizer extends harpoon.IR.Registration {
 	HMethod mainMethod = root.getMethod("main", "([Ljava/lang/String;)V");
 	// any frame will do:
 	Frame frame = Backend.getFrame(Backend.PRECISEC, mainMethod);
-	Set roots = new HashSet
+	final Set roots = new HashSet
 	    (frame.getRuntime().runtimeCallableMethods());
 	roots.add(mainMethod);
+	// other roots
+	String fileName="myroots";
+	try {
+	    ParseUtil.readResource(fileName, new ParseUtil.StringParser() {
+		    public void parseString(String s)
+			throws ParseUtil.BadLineException {
+			if (s.indexOf('(') < 0) // parse as class name.
+			    roots.add(ParseUtil.parseClass(linker, s));
+			else // parse as method name.
+			    roots.add(ParseUtil.parseMethod(linker, s));
+		    }
+		});
+	} catch(java.io.IOException ex) {
+	    System.err.println("Error reading " + fileName + ": " + ex);
+	    ex.printStackTrace();
+	    System.exit(1);
+	}
+	// okay, now build class hierarchy
 	ClassHierarchy ch = new QuadClassHierarchy(linker, roots, hcf);
 
 	System.out.println("CLASSES:               " +
