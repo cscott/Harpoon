@@ -1,8 +1,11 @@
 CC = gcc -O0 -Wall -pg -g -a
 
 
-RoleInference: RoleInference.o Hashtable.o ObjectSet.o ObjectPair.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o Incremental.o Names.o Container.o Fields.o
-	$(CC) -o RoleInference RoleInference.o Hashtable.o ObjectSet.o ObjectPair.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o Incremental.o Names.o Container.o Fields.o
+RoleInference: RoleInference.o Hashtable.o ObjectSet.o ObjectPair.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o Incremental.o Names.o Container.o Fields.o RoleRelation.o
+	$(CC) -o RoleInference RoleInference.o Hashtable.o ObjectSet.o ObjectPair.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o Incremental.o Names.o Container.o Fields.o RoleRelation.o
+
+RoleRelation.o: RoleRelation.c RoleRelation.h
+	$(CC) -c RoleRelation.c
 
 Hashtable.o: Hashtable.c Hashtable.h
 	$(CC) -c Hashtable.c

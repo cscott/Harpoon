@@ -44,12 +44,12 @@ struct rolefieldlist {
   struct rolefieldlist * next;
 };
 
-void printrole(struct role * r, char * rolename);
+void printrole(struct heap_state *heap,struct role * r, char * rolename);
 void freerole(struct role * r);
 struct role * calculaterole(struct heap_state *heap, struct genhashtable * dommapping,struct heap_object *ho, int enterexit);
 struct identity_relation * find_identities(struct heap_state *heap, struct heap_object *ho);
 void free_identities(struct identity_relation *irptr);
-void print_identities(struct identity_relation *irptr);
+void print_identities(struct heap_state *heap,struct identity_relation *irptr);
 
 void sortidentities(struct role *role);
 int comparedomroots(struct rolereferencelist *r1, struct rolereferencelist *r2);

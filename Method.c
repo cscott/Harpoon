@@ -6,6 +6,7 @@
 #include "Method.h"
 #include "Role.h"
 #include "Effects.h"
+#include "RoleRelation.h"
 #ifdef MDEBUG
 #include <dmalloc.h>
 #endif
@@ -39,9 +40,41 @@ void exitmethod(struct heap_state *heap, struct hashtable *ht, long long uid) {
   /* Finished building return instantiation of method*/
 
   /* Assign roles to all objects that might have changed*/
-  while(!setisempty(heap->changedset)) {
-    struct heap_object *ho=removeobject(heap->changedset,NULL);
-    free(findrolestring(heap, dommap, ho,1));
+  {
+    struct ositerator *it=getIterator(heap->changedset);
+    while(hasNext(it)) {
+      struct heap_object *ho=nextobject(it);
+      free(findrolestring(heap, dommap, ho,1));
+    }
+    freeIterator(it);
+
+    while(!setisempty(heap->changedset)) {
+      struct heap_object *ho=removeobject(heap->changedset, NULL);
+      struct fieldlist *fl=ho->fl;
+      struct fieldlist *rfl=ho->reversefield;
+      struct arraylist *al=ho->al;
+      struct arraylist *ral=ho->reversearray;
+
+      while(fl!=NULL) {
+	addrolerelation(heap, fl->src, fl->fieldname, fl->object);
+	fl=fl->next;
+      }
+
+      while(rfl!=NULL) {
+	addrolerelation(heap, rfl->src, rfl->fieldname, rfl->object);
+	rfl=rfl->dstnext;
+      }
+
+      while(al!=NULL) {
+	addrolerelation(heap, al->src, getfieldc(heap->namer,al->src->class,"[]", NULL),al->object);
+	al=al->next;
+      }
+
+      while(ral!=NULL) {
+	addrolerelation(heap, ral->src, getfieldc(heap->namer,ral->src->class,"[]", NULL),ral->object);
+	ral=ral->dstnext;
+      }
+    }
   }
   genfreekeyhashtable(dommap);
   /* Merge in any rolechanges we've observed*/
@@ -95,7 +128,6 @@ void entermethod(struct heap_state * heap, struct hashtable * ht) {
   genfreekeyhashtable(dommap);
   freemethodlist(heap);
 } 
-
 
 
 int methodhashcode(struct rolemethod * method) {
@@ -192,34 +224,34 @@ int comparerolemethods(struct rolemethod * m1, struct rolemethod *m2) {
   return 1;
 }
 
-void printrolemethod(struct rolemethod *method) {
+void printrolemethod(struct heap_state *heap, struct rolemethod *method) {
   int i;
   struct rolereturnstate *rrs=method->returnstates;
-  printf("Method {\n");
-  printf(" %s.%s%s\n",method->methodname->classname->classname,method->methodname->methodname,method->methodname->signature);
-  printf("  isStatic=%d\n  ",method->isStatic);
+  fprintf(heap->methodfile,"Method {\n");
+  fprintf(heap->methodfile," %s.%s%s\n",method->methodname->classname->classname,method->methodname->methodname,method->methodname->signature);
+  fprintf(heap->methodfile,"  isStatic=%d\n  ",method->isStatic);
   for(i=0;i<method->numobjectargs;i++)
-    printf("%s ",method->paramroles[i]);
+    fprintf(heap->methodfile,"%s ",method->paramroles[i]);
   if (method->numobjectargs!=0)
-    printf("\n");
-  printf(" Effects:\n");
-  printeffectlist(method->effects);
+    fprintf(heap->methodfile,"\n");
+  fprintf(heap->methodfile," Effects:\n");
+  printeffectlist(heap,method->effects);
   while(rrs!=NULL) {
-    printf("\n  Return Context:\n");
+    fprintf(heap->methodfile,"\n  Return Context:\n");
     if (method->numobjectargs!=0)
-      printf("   ");
+      fprintf(heap->methodfile,"   ");
     for(i=0;i<method->numobjectargs;i++)
-      printf("%s ",rrs->paramroles[i]);
+      fprintf(heap->methodfile,"%s ",rrs->paramroles[i]);
     if (method->numobjectargs!=0)
-      printf("\n");
-   printf("   Return value=%s\n",rrs->returnrole);
+      fprintf(heap->methodfile,"\n");
+    fprintf(heap->methodfile,"   Return value=%s\n",rrs->returnrole);
     rrs=rrs->next;
   }
-  printrolechanges(method);
-  printf("}\n\n");
+  printrolechanges(heap,method);
+  fprintf(heap->methodfile,"}\n\n");
 }
 
-void printrolechanges(struct rolemethod *rm) {
+void printrolechanges(struct heap_state *heap, struct rolemethod *rm) {
   struct genhashtable *rolechanges=rm->rolechanges;
   struct geniterator *it=gengetiterator(rolechanges);
   while(1) {
@@ -227,20 +259,20 @@ void printrolechanges(struct rolemethod *rm) {
     struct rolechangeheader *rch;
     struct rolechangepath *rcp;
     if (rcs==NULL) break;
-    printf("%s -> %s ",rcs->origrole, rcs->newrole);
+    fprintf(heap->methodfile, "%s -> %s ",rcs->origrole, rcs->newrole);
     rch=(struct rolechangeheader *)gengettable(rolechanges, rcs);
     rcp=rch->rcp;
     while(rcp!=NULL) {
-      printf(" Path: ");
+      fprintf(heap->methodfile," Path: ");
       if (rcp->exact==rm->numberofcalls)
-	printf("Exact ");
+	fprintf(heap->methodfile,"Exact ");
       if (rcp->inner==2)
-	printf("Inner ");
+	fprintf(heap->methodfile,"Inner ");
       else if(rcp->inner==1)
-	printf("Maybe Inner ");
+	fprintf(heap->methodfile,"Maybe Inner ");
 
-      printeffectregexpr(rcp->expr);
-      printf("\n");
+      printeffectregexpr(heap,rcp->expr);
+      fprintf(heap->methodfile,"\n");
       rcp=rcp->next;
     }
   }

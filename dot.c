@@ -148,33 +148,33 @@ void addtransition(struct genhashtable *htable, struct classname *class, char *r
   }
 }
 
-void printdot(struct classname *class, struct dotclass *dotclass) {
+void printdot(struct heap_state *heap,struct classname *class, struct dotclass *dotclass) {
   struct dottransition *dot=dotclass->transitions;
-  printf("digraph \"%s\" {\n",class->classname);
-  printf("ratio=auto\n");
+  fprintf(heap->dotfile,"digraph \"%s\" {\n",class->classname);
+  fprintf(heap->dotfile,"ratio=auto\n");
   while(dot!=NULL) {
     if (dot->type==0) {
-      printf("  %s -> %s [fontsize=10,label=\"%s", dot->role1,dot->role2, dot->transitionname);
+      fprintf(heap->dotfile,"  %s -> %s [fontsize=10,label=\"%s", dot->role1,dot->role2, dot->transitionname);
       {
 	struct dottransition *n=dot->same;
 	while(n!=NULL) {
-	  printf(",\\n%s",n->transitionname);
+	  fprintf(heap->dotfile,",\\n%s",n->transitionname);
 	  n=n->same;
 	}
       }
-      printf("\"]\n");
+      fprintf(heap->dotfile,"\"]\n");
     } else {
-      printf("  %s -> %s [fontsize=10,style=dotted,label=\"%s", dot->role1,dot->role2, dot->transitionname);
+      fprintf(heap->dotfile,"  %s -> %s [fontsize=10,style=dotted,label=\"%s", dot->role1,dot->role2, dot->transitionname);
       {
 	struct dottransition *n=dot->same;
 	while(n!=NULL) {
-	  printf(",\\n%s",n->transitionname);
+	  fprintf(heap->dotfile,",\\n%s",n->transitionname);
 	  n=n->same;
 	}
       }
-      printf("\"]\n");
+      fprintf(heap->dotfile,"\"]\n");
     }
     dot=dot->next;
   }
-  printf("}\n");
+  fprintf(heap->dotfile,"}\n");
 }

@@ -16,91 +16,91 @@ static long int rolenumber=1;
 struct heap_state *hshash;
 
 
-void printrole(struct role *r, char * rolename) {
+void printrole(struct heap_state *heap,struct role *r, char * rolename) {
   struct rolereferencelist *dominators=r->dominatingroots;
-  printf("Role %s {\n",rolename);
-  printf(" Class: %s\n", r->class->classname);
-  printf(" Dominated by:\n");
+  fprintf(heap->rolefile,"Role %s {\n",rolename);
+  fprintf(heap->rolefile," Class: %s\n", r->class->classname);
+  fprintf(heap->rolefile," Dominated by:\n");
   while(dominators!=NULL) {
     if (dominators->methodname!=NULL) {
-      printf("  By local variable: (%s) %s in %s.%s%s:%d\n",dominators->lvname, dominators->sourcename, dominators->methodname->classname->classname, dominators->methodname->methodname, dominators->methodname->signature,dominators->linenumber);
+      fprintf(heap->rolefile,"  By local variable: (%s) %s in %s.%s%s:%d\n",dominators->lvname, dominators->sourcename, dominators->methodname->classname->classname, dominators->methodname->methodname, dominators->methodname->signature,dominators->linenumber);
     } else {
-      printf("  By global variable: %s.%s\n",dominators->globalname->classname->classname, dominators->globalname->fieldname);
+      fprintf(heap->rolefile,"  By global variable: %s.%s\n",dominators->globalname->classname->classname, dominators->globalname->fieldname);
     }
     dominators=dominators->next;
   }
 
-  printf(" Pointed to by:\n");
+  fprintf(heap->rolefile," Pointed to by:\n");
   {
     struct rolefieldlist *fl=r->pointedtofl;
     struct rolearraylist *al=r->pointedtoal;
     while(fl!=NULL) {
       if (fl->duplicates<DUPTHRESHOLD)
-	printf("  Field %s from class %s %d times.\n",fl->field->fieldname, fl->field->classname->classname, fl->duplicates+1);
+	fprintf(heap->rolefile,"  Field %s from class %s %d times.\n",fl->field->fieldname, fl->field->classname->classname, fl->duplicates+1);
       else 
-	printf("  Field %s from class %s multiple times.\n",fl->field->fieldname, fl->field->classname->classname);
+	fprintf(heap->rolefile,"  Field %s from class %s multiple times.\n",fl->field->fieldname, fl->field->classname->classname);
       fl=fl->next;
     }
     while(al!=NULL) {
       if (al->duplicates<DUPTHRESHOLD)
-	printf("  Array of type class %s %d times.\n", al->class->classname, al->duplicates+1);
+	fprintf(heap->rolefile,"  Array of type class %s %d times.\n", al->class->classname, al->duplicates+1);
       else
-	printf("  Array of type class %s multiple times.\n", al->class->classname);
+	fprintf(heap->rolefile,"  Array of type class %s multiple times.\n", al->class->classname);
       al=al->next;
     }
   }
 
-  printf(" Has the following identity relations:\n");
+  fprintf(heap->rolefile," Has the following identity relations:\n");
   {
     struct identity_relation *ir=r->identities;
-    print_identities(ir);
+    print_identities(heap,ir);
   }
 
 
-  printf(" Non-null fields:\n");
+  fprintf(heap->rolefile," Non-null fields:\n");
   {
     struct rolefieldlist *fl=r->nonnullfields;
     while(fl!=NULL) {
       if (fl->role==0)
-	printf("  Field %s is non-null.\n",fl->field->fieldname);
+	fprintf(heap->rolefile,"  Field %s is non-null.\n",fl->field->fieldname);
       else
-	printf("  Field %s points to role R%d\n",fl->field->fieldname,fl->role);
+	fprintf(heap->rolefile,"  Field %s points to role R%d\n",fl->field->fieldname,fl->role);
       fl=fl->next;
     }
   }
 
-  printf(" Non-null elements:\n");
+  fprintf(heap->rolefile," Non-null elements:\n");
   {
     struct rolearraylist *al=r->nonnullarrays;
     while(al!=NULL) {
       if (al->role==0) {
 	if (al->duplicates<ARRDUPTHRESHOLD)
-	  printf("  Element %s is non-null with multiplicity %d.\n",al->class->classname, al->duplicates);
+	  fprintf(heap->rolefile,"  Element %s is non-null with multiplicity %d.\n",al->class->classname, al->duplicates);
 	else
-	  printf("  Element %s is non-null at least %d times.\n",al->class->classname, al->duplicates);
+	  fprintf(heap->rolefile,"  Element %s is non-null at least %d times.\n",al->class->classname, al->duplicates);
       } else {
 	if (al->duplicates<ARRDUPTHRESHOLD)
-	  printf("  Element %s points to role R%d with multiplicity %d.\n",al->class->classname,al->role,al->duplicates);
+	  fprintf(heap->rolefile,"  Element %s points to role R%d with multiplicity %d.\n",al->class->classname,al->role,al->duplicates);
 	else
-	  printf("  Element %s points to role R%d at least %d times.\n",al->class->classname,al->role,al->duplicates);
+	  fprintf(heap->rolefile,"  Element %s points to role R%d at least %d times.\n",al->class->classname,al->role,al->duplicates);
       }
       al=al->next;
     }
   }
 
-  printf(" Methods invoked on:\n");
+  fprintf(heap->rolefile," Methods invoked on:\n");
   {
     if (r->methodscalled!=NULL) {
       int i=0;
       for(i=0;i<hshash->statechangesize;i++) {
 	if(r->methodscalled[i]) {
 	  char *methodname=(char *)gettable(hshash->statechangereversetable, i);
-	  printf("   %s\n",methodname);
+	  fprintf(heap->rolefile,"   %s\n",methodname);
 	}
       }
     }
   }
-  printf("}\n\n");
+  fprintf(heap->rolefile,"}\n\n");
 }
 
 
@@ -887,9 +887,9 @@ void free_identities(struct identity_relation *irptr) {
   }
 }
 
-void print_identities(struct identity_relation *irptr) {
+void print_identities(struct heap_state *heap,struct identity_relation *irptr) {
   while(irptr!=NULL) {
-    printf("  Relation: %s.%s\n",irptr->fieldname1->fieldname,irptr->fieldname2->fieldname);
+    fprintf(heap->rolefile,"  Relation: %s.%s\n",irptr->fieldname1->fieldname,irptr->fieldname2->fieldname);
     irptr=irptr->next;
   }
 }

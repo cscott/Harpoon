@@ -125,6 +125,7 @@ struct heap_state {
   struct genhashtable *roletable;
   struct genhashtable *reverseroletable;
   struct genhashtable *methodtable;
+  struct genhashtable *rolereferencetable;
 
   long long currentmethodcount;
   struct genhashtable *atomicmethodtable;
@@ -137,6 +138,9 @@ struct heap_state {
 
   FILE *container;
   struct hashtable *containedobjects;
+
+  char *prefix;
+  FILE *rolefile, *methodfile, *dotfile,*rolediagramfile;
 };
 
 #define OPTION_FCONTAINERS 0x1
@@ -198,4 +202,5 @@ void atomiceval(struct heap_state *heap);
 void loadstatechange(struct heap_state *heap);
 int convertnumberingobjects(char *sig, int isStatic, int orignumber);
 void parseoptions(int argc, char **argv, struct heap_state *heap);
+void openoutputfiles(struct heap_state *heap);
 #endif

@@ -49,9 +49,9 @@ int equivalentrolereturnstate(int numobjectargs, struct rolereturnstate *rrs1, s
 void freerolereturnstate(int numobjectargs, struct rolereturnstate * rrs);
 void entermethod(struct heap_state * heap, struct hashtable * ht);
 void exitmethod(struct heap_state * heap, struct hashtable * ht, long long uid);
-void printrolemethod(struct rolemethod *method);
+void printrolemethod(struct heap_state *heap, struct rolemethod *method);
 int rcshashcode(struct rolechangesum *rcs);
 int equivalentrcs(struct rolechangesum *rcs1, struct rolechangesum *rcs2);
-void printrolechanges(struct rolemethod *rm);
+void printrolechanges(struct heap_state *heap,struct rolemethod *rm);
 #endif
 

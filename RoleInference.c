@@ -13,6 +13,8 @@
 #include "Fields.h"
 #include "dot.h"
 #include "Container.h"
+#include "RoleRelation.h"
+
 #ifdef MDEBUG
 #include <dmalloc.h>
 #endif
@@ -50,7 +52,11 @@ void parseoptions(int argc, char **argv, struct heap_state *heap) {
 	printf("-f use only fields specified in fields file\n");
 	printf("-r no rolechange regular expressions calculated\n");
 	printf("-a don't consider elements of array to change role\n");
+	printf("-pfileprefix\n");
 	exitstate=1;
+	break;
+      case 'p':
+	heap->prefix=copystr(&argv[param][2]);
 	break;
       case 'a':
 	heap->options|=OPTION_LIMITARRAYS;
@@ -90,8 +96,10 @@ void doanalysis(int argc, char **argv) {
   struct hashtable * ht=allocatehashtable();
   int currentparam=0;
   heap.options=0;
+  heap.prefix=NULL;
 
   parseoptions(argc, argv,&heap);
+  openoutputfiles(&heap);
 
   heap.K=createobjectpair();
   heap.N=createobjectset();
@@ -104,6 +112,7 @@ void doanalysis(int argc, char **argv) {
   heap.freemethodlist=NULL;
   heap.namer=allocatenamer();
   heap.roletable=genallocatehashtable((int (*)(void *)) &rolehashcode, (int (*)(void *,void *)) &equivalentroles);
+  heap.rolereferencetable=genallocatehashtable((int (*)(void *)) &rolerelationhashcode, (int (*)(void *,void *)) &equivalentrolerelations);
   heap.reverseroletable=genallocatehashtable((int (*)(void *)) &hashstring, (int (*)(void *,void *)) &equivalentstrings);
   heap.methodtable=genallocatehashtable((int (*)(void *)) &methodhashcode, (int (*)(void *,void *)) &comparerolemethods);
   heap.currentmethodcount=0;
@@ -510,7 +519,7 @@ void doanalysis(int argc, char **argv) {
       struct rolemethod *method=(struct rolemethod *) gennext(it);
       if (method==NULL)
 	break;
-      printrolemethod(method);
+      printrolemethod(&heap,method);
       dotrolemethod(dotmethodtable, heap.reverseroletable, method);
     }
     genfreeiterator(it);
@@ -521,7 +530,7 @@ void doanalysis(int argc, char **argv) {
       if (role==NULL)
 	break;
       rolename=gengettable(heap.roletable, role);
-      printrole(role, rolename);
+      printrole(&heap,role, rolename);
     }
     genfreeiterator(it);
     it=gengetiterator(dotmethodtable);
@@ -531,7 +540,7 @@ void doanalysis(int argc, char **argv) {
       if (class==NULL)
 	break;
       dotclass=(struct dotclass *) gengettable(dotmethodtable, class);
-      printdot(class, dotclass);
+      printdot(&heap,class, dotclass);
     }
     genfreeiterator(it);
   }
@@ -1276,4 +1285,19 @@ int convertnumberingobjects(char *sig, int isStatic, int orignumber) {
   }
   printf("ERROR 2 in convertnumberingobjects\n");
   return -1;
+}
+
+void openoutputfiles(struct heap_state *heap) {
+  char filename[256];
+  char * prefix={'\0'};
+  if (heap->prefix!=NULL)
+    prefix=heap->prefix;
+  snprintf(filename, 256,"%s-role",prefix);
+  heap->rolefile=fopen(filename,"w");
+  snprintf(filename, 256,"%s-method",prefix);
+  heap->methodfile=fopen(filename,"w");
+  snprintf(filename, 256,"%s-transition.dot",prefix);
+  heap->dotfile=fopen(filename,"w");
+  snprintf(filename, 256,"%s-diagram.dot",prefix);
+  heap->rolediagramfile=fopen(filename,"w");
 }

@@ -689,75 +689,75 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
   }
 }
 
-void printeffectlist(struct effectlist *el) {
+void printeffectlist(struct heap_state *heap,struct effectlist *el) {
   while (el!=NULL) {
     if (el->src!=NULL) {
-      printeffectregexpr(el->src);
+      printeffectregexpr(heap,el->src);
       if(el->fieldname!=NULL)
-	printf(".%s=", el->fieldname->fieldname);
+	fprintf(heap->methodfile,".%s=", el->fieldname->fieldname);
       else
-	printf(".[]=");
+	fprintf(heap->methodfile,".[]=");
     } else if(el->fieldname==NULL)
-      printf("Read: ");
+      fprintf(heap->methodfile,"Read: ");
     else
-      printf("%s=",el->fieldname->fieldname);
+      fprintf(heap->methodfile,"%s=",el->fieldname->fieldname);
     if (el->dst!=NULL)
-      printeffectregexpr(el->dst);
-    else printf("NULL");
-    printf("\n");
+      printeffectregexpr(heap, el->dst);
+    else fprintf(heap->methodfile,"NULL");
+    fprintf(heap->methodfile,"\n");
     el=el->next;
   }
 }
 
-void printeffectregexpr(struct effectregexpr *ere) {
+void printeffectregexpr(struct heap_state *heap,struct effectregexpr *ere) {
   if (ere->paramnum==-1&&ere->flag==0)
-    printf("[%s.%s]", ere->globalname->classname->classname, ere->globalname->fieldname);
+    fprintf(heap->methodfile,"[%s.%s]", ere->globalname->classname->classname, ere->globalname->fieldname);
   else if (ere->flag==1)
-    printf("NEW");
+    fprintf(heap->methodfile,"NEW");
   else if (ere->flag==2)
-    printf("NATIVEREACH");
+    fprintf(heap->methodfile,"NATIVEREACH");
   else
-    printf("[Param %d]",ere->paramnum);
+    fprintf(heap->methodfile,"[Param %d]",ere->paramnum);
   if (ere->expr!=NULL)
-    printf(".");
-  printregexprlist(ere->expr);
+    fprintf(heap->methodfile,".");
+  printregexprlist(heap,ere->expr);
 }
 
-void printregexprlist(struct regexprlist *rel) {
+void printregexprlist(struct heap_state *heap, struct regexprlist *rel) {
   while(rel!=NULL) {
     if (rel->fields!=NULL) {
       struct regfieldlist * flptr=rel->fields;
       if (flptr->nextfld!=NULL)
-	printf("(");
+	fprintf(heap->methodfile,"(");
       while(flptr!=NULL) {
-	printf("[%s.%s]",flptr->fieldname->classname->classname,flptr->fieldname->fieldname);
+	fprintf(heap->methodfile,"[%s.%s]",flptr->fieldname->classname->classname,flptr->fieldname->fieldname);
 	if (flptr->nextfld!=NULL)
-	  printf("|");
+	  fprintf(heap->methodfile,"|");
 	flptr=flptr->nextfld;
       }
       if (rel->fields->nextfld!=NULL)
-	printf(")");
+	fprintf(heap->methodfile,")");
       if (rel->multiplicity==1)
-	printf("*");
+	fprintf(heap->methodfile,"*");
     } else if (rel->subtree!=NULL) {
       struct listofregexprlist * flptr=rel->subtree;
       if (flptr->nextlist!=NULL||flptr->expr->nextreg!=NULL)
-	printf("(");
+	fprintf(heap->methodfile,"(");
       while(flptr!=NULL) {
 	if (flptr->expr==NULL)
-	  printf("XXXXX");
-	printregexprlist(flptr->expr);
+	  fprintf(heap->methodfile,"XXXXX");
+	printregexprlist(heap,flptr->expr);
 	if (flptr->nextlist!=NULL)
-	  printf("|");
+	  fprintf(heap->methodfile,"|");
 	flptr=flptr->nextlist;
       }
       if (rel->subtree->nextlist!=NULL||rel->subtree->expr->nextreg!=NULL)
-	printf(")");
+	fprintf(heap->methodfile,")");
       if (rel->multiplicity==1)
-	printf("*");
-    } else printf("ERROR\n");
+	fprintf(heap->methodfile,"*");
+    } else fprintf(heap->methodfile,"ERROR\n");
     rel=rel->nextreg;
     if (rel!=NULL)
-      printf(".");
+      fprintf(heap->methodfile,".");
   }
 }
