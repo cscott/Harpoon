@@ -24,7 +24,7 @@ import harpoon.Temp.Temp;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.4 2000-02-07 02:11:46 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.5 2000-02-08 05:21:29 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -166,10 +166,7 @@ abstract class InterProcPA {
 	// and class node -> class node
 	Relation mu = 
 	    get_initial_mapping(q,pig_caller,pig_callee,callee_params);
-	// get the set of the insertion points:
-	// parameter nodes, static nodes + return node
-	Set roots = new HashSet(mu.keySet());
-	roots.addAll(pig_callee.G.r);
+
 	// update the node map by matching outside edges from the caller
 	// with inside edges from the callee
 	match_edges(mu,pig_caller,pig_callee);
@@ -178,8 +175,16 @@ abstract class InterProcPA {
 	// stay, add n to mu(n).
 	compute_the_final_mapping(mu,pig_caller,pig_callee);
 
+	// get the set of the insertion points:
+	Set roots = new HashSet(mu.keySet());
+	roots.addAll(pig_callee.G.r);
+
 	// translate edges from pig_callee to pig_caller
 	bring_edges(mu,pig_caller,pig_callee,roots);
+
+	// translate the actions too
+	pig_callee.ar.translateTheActions(pig_caller.ar, mu,
+					 pig_caller.tau.activeThreadSet());
 
 	// set the edges for the result and for the exception variables
 	set_edges_res_ex(q.retval(),mu,pig_caller,pig_callee.G.r);
@@ -232,33 +237,6 @@ abstract class InterProcPA {
 	    PANode node = (PANode) enum.nextElement();
 	    if(node.type == PANode.STATIC)
 		mu.add(node,node);
-	}
-
-	// map the return objects that are INSIDE, RETURN or EXCEPT to
-	// themselves (the return nodes should appear in the combined graph)
-	Iterator it_ret = pig_callee.G.r.iterator();
-	while(it_ret.hasNext()){
-	    PANode node = (PANode) it_ret.next();
-	    if((node.type == PANode.INSIDE) || 
-	       (node.type == PANode.RETURN) ||
-	       (node.type == PANode.EXCEPT)){
-		/// System.out.println("Added to mu: " + node + " -> " + node);
-		mu.add(node,node);
-	    }
-	}
-
-
-	// map the exception objects that are INSIDE, RETURN or EXCEPT to
-	// themselves (the exception nodes should appear in the combined graph)
-	Iterator it_excp = pig_callee.G.excp.iterator();
-	while(it_excp.hasNext()){
-	    PANode node = (PANode) it_excp.next();
-	    if((node.type == PANode.INSIDE) || 
-	       (node.type == PANode.RETURN) ||
-	       (node.type == PANode.EXCEPT)){
-		/// System.out.println("Added to mu: " + node + " -> " + node);
-		mu.add(node,node);
-	    }
 	}
 
 	return mu;
@@ -325,27 +303,35 @@ abstract class InterProcPA {
     private static void compute_the_final_mapping(Relation mu,
 						  ParIntGraph pig_caller,
 						  ParIntGraph pig_callee){
-	// the nodes that could be returned as normal results 
-	// must be in the final graph. Only the nodes produced in this 
-	// scope (INSIDE, RETURN and EXCEPT) are considered.
-	Iterator it = pig_callee.G.r.iterator();
-	while(it.hasNext()){
-	    PANode node = (PANode) it.next();
-	    int type = node.type();
-	    // "artificial" nodes (PARAM and LOAD) will be mapped 
-	    // by get_initial_mapping and map_edges
-	    if( (type != PANode.PARAM) && (type != PANode.LOAD))
+	// the normally returned nodes MUST be into the new graph!
+	Iterator it_ret = pig_callee.G.r.iterator();
+	while(it_ret.hasNext()){
+	    PANode node = (PANode) it_ret.next();
+	    if(!mu.containsKey(node)){
+		/// System.out.println("Added to mu: " + node + " -> " + node);
 		mu.add(node,node);
+	    }
 	}
-	// the nodes that could be returned as exceptions
-	// must be in the final graph
-	it = pig_callee.G.excp.iterator();
-	while(it.hasNext()){
-	    PANode node = (PANode) it.next();
-	    int type = node.type();
-	    if( (type != PANode.PARAM) && (type != PANode.LOAD))
+
+	// the exceptionally returned nodes MUST be into the new graph!
+	Iterator it_excp = pig_callee.G.excp.iterator();
+	while(it_excp.hasNext()){
+	    PANode node = (PANode) it_excp.next();
+	    if(!mu.containsKey(node)){
+		/// System.out.println("Added to mu: " + node + " -> " + node);
 		mu.add(node,node);
-	}	
+	    }
+	}
+
+	// the thread nodes MUST be into the new graph!
+	Enumeration enum_threads = pig_callee.tau.activeThreads();
+	while(enum_threads.hasMoreElements()){
+	    PANode node = (PANode) enum_threads.nextElement();
+	    if(!mu.containsKey(node)){
+		/// System.out.println("Added to mu: " + node + " -> " + node);
+		mu.add(node,node);
+	    }
+	}
 	
 	Relation new_info = (Relation)mu.clone();
 	PAWorkList W = new PAWorkList();
