@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.34 2002-07-25 22:26:44 cananian Exp $
+% $Id: ptran.tex,v 1.35 2002-07-25 22:54:59 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.34 $ $}
+\date{\today \\ $ $Revision: 1.35 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -167,11 +167,13 @@ where
 \exists n': \tuple{v,n'}\in\text{In}_\text{Nd}(n)
 %\right)
 \end{eqnarray*}
-After the analysis is complete, $v$ is (conservatively) singular at
-use $n$ if $\neg\text{Ns}(v,n)$, and the function 
-$\text{GenSite}(s,v)=\left\{ d | \tuple{v,d}\in\text{In}_\text{Gs}(s) \right\}$.
 Note that $\text{IsBad}(n)$ is true for fetches from the heap and
 definitions of formal parameters.
+
+After the analysis is complete, $v$ is (conservatively) singular at
+use $n$ if $\neg\text{Ns}(v,n)$.   We can use $\text{In}_\text{Gs}$ to
+compute
+$\text{GenSite}(s,v)=\left\{ d | \tuple{v,d}\in\text{In}_\text{Gs}(s) \right\}$.
 
 This analysis can be performed using a sparse representation, such as
 SSA or SSI, as well.
@@ -197,18 +199,17 @@ having passed through a redef point?}
 
 \subsection{Interprocedural singular value analysis}
 
-We turn our intraprocedural analysis into a compositional
+We turn our intraprocedural singular value analysis into a compositional
 interprocedural analysis by introducing ``conditional singularity''
 for formal parameters and others which depend on them.  A
 conditionally-singular variable is only singular if some set of actual
 parameters is mutually-singular when the method is called.%
 \footnote{Note that aliasing of parameters is one of the ways that
 a set of parameters may fail to be mutually-singular.}
-We define
-$\text{CondParam}(v,n)$ to be the set of formal parameters which the
+We let
+$\text{CondParam}(v,n)$ be the set of formal parameters which the
 singularity of $v$ at $n$ is dependent on.  We can extend our dataflow
 analysis of the previous section to compute this function.
-
 
 Previously, the function $\text{In}_\text{Gs}$ was typed
 $\mathcal{S\to V\times S}$
@@ -234,8 +235,8 @@ We also extend the $\text{IsBad}$ predicate:
 \text{IsBad}(n) = \neg\left(\text{IsMove}(n) \vee \text{IsNew}(n) \vee
                             \text n = \text{\tt HEADER} \right)
 \end{displaymath}
-so that definitions of formal parameters are not marked as
-non-singular reaching definitions.  Now we can define
+so that definitions of formal parameters at the method entry header
+are not marked as non-singular reaching definitions.  Now we can define
 \begin{displaymath}
 \text{CondParam}(v,n) =
     \left\{ p\in P_m | \tuple{v,p}\in \text{In}_\text{Gs}(n) \right\}
