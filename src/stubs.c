@@ -3,6 +3,8 @@
 /* native methods */
 /* in java.io.FileDescriptor */
 void *Java_java_io_FileDescriptor_initSystemFD__Ljava_io_FileDescriptor_2I;
+/* in java.io.FileOutputStream */
+void *Java_java_io_FileOutputStream_writeBytes___3BII;
 /* in java.lang.Class */
 void *Java_java_lang_Class_getPrimitiveClass__Ljava_lang_String_2;
 void *Java_java_lang_Class_getName__;
@@ -17,21 +19,23 @@ void *Java_java_lang_System_setIn0__Ljava_io_InputStream_2;
 void *Java_java_lang_System_setOut0__Ljava_io_PrintStream_2;
 void *Java_java_lang_System_setErr0__Ljava_io_PrintStream_2;
 void *Java_java_lang_System_currentTimeMillis__;
+/* in java.lang.Thread */
+void *Java_java_lang_Thread_currentThread__;
 /* in java.lang.Throwable */
 void *Java_java_lang_Throwable_fillInStackTrace__;
 
 /* errors in class hierarchy */
-void *Java_java_io_PrintStream_newLine__;
+// all gone.
 
 /* errors in backend */
-asm(".global L955\nL955:");
-asm(".global L958\nL958:");
-asm(".global L1185\nL1185:");
-asm(".global L1188\nL1188:");
-asm(".global L3608\nL3608:");
-asm(".global L4473\nL4473:");
-asm(".global L4485\nL4485:");
-asm(".global L6512\nL6512:");
+asm(".global L1944\nL1944:");
+asm(".global L1947\nL1947:");
+asm(".global L2174\nL2174:");
+asm(".global L2177\nL2177:");
+asm(".global L4371\nL4371:");
+asm(".global L5415\nL5415:");
+asm(".global L5427\nL5427:");
+asm(".global L7454\nL7454:");
 
 /* errors in register allocator */
 void *Class_java_lang_Integer;
