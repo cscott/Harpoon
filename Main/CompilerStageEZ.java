@@ -3,12 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
-import harpoon.ClassFile.Linker;
-import harpoon.ClassFile.HMethod;
-import harpoon.ClassFile.HCodeFactory;
-import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.ClassHierarchy;
-
+import harpoon.Backend.Generic.Frame;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.Util.Options.Option;
 import harpoon.Util.Collections.PersistentMap;
 
 import java.util.Set;
@@ -19,14 +19,14 @@ import java.util.List;
  * <code>CompilerStageEZ</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompilerStageEZ.java,v 1.4 2003-04-22 00:09:57 salcianu Exp $
+ * @version $Id: CompilerStageEZ.java,v 1.5 2003-07-09 21:11:16 cananian Exp $
  */
 public abstract class CompilerStageEZ extends CompilerStage {
 
     /** Creates a <code>CompilerStageEZ</code>. */
     public CompilerStageEZ(String name) { super(name); }
     
-    public List/*<Option>*/ getOptions() {
+    public List<Option> getOptions() {
 	return Collections.EMPTY_LIST; // no options by default
     }
 
@@ -45,7 +45,7 @@ public abstract class CompilerStageEZ extends CompilerStage {
     protected HCodeFactory hcf;
     protected ClassHierarchy classHierarchy;
     protected Frame frame;
-    protected PersistentMap/*<String,Object>*/ attribs;
+    protected PersistentMap<String,Object> attribs;
 
     protected final void _UNPACK_CS(CompilerState cs) {
 	this.old_cs = cs;

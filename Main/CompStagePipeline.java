@@ -18,16 +18,16 @@ import java.util.Arrays;
  * list of <code>CompilerStage</code>s.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompStagePipeline.java,v 1.3 2003-04-30 20:04:40 salcianu Exp $ */
+ * @version $Id: CompStagePipeline.java,v 1.4 2003-07-09 21:11:16 cananian Exp $ */
 public class CompStagePipeline extends CompilerStage {
     
     /** Creates a <code>CompStagePipeline</code>. */
-    public CompStagePipeline(List/*<CompilerStage*/ stages, String name) {
+    public CompStagePipeline(List<CompilerStage> stages, String name) {
 	super(name);
         this.stages = stages;
     }
 
-    public CompStagePipeline(List/*<CompilerStage*/ stages) {
+    public CompStagePipeline(List<CompilerStage> stages) {
 	this(stages, build_name(stages));
     }
 
@@ -40,11 +40,11 @@ public class CompStagePipeline extends CompilerStage {
     }
 
 
-    private static String build_name(List/*<CompilerStage>*/ stages) {
+    private static String build_name(List<CompilerStage> stages) {
 	StringBuffer name = new StringBuffer("(");
 	boolean first = true;
-	for(Iterator/*<CompilerStage>*/ it=stages.iterator(); it.hasNext(); ) {
-	    CompilerStage stage = (CompilerStage) it.next();
+	for(Iterator<CompilerStage> it=stages.iterator(); it.hasNext(); ) {
+	    CompilerStage stage = it.next();
 	    if(!first) name.append(",");
 	    first = false;
 	    name.append(stage.name());
@@ -54,17 +54,17 @@ public class CompStagePipeline extends CompilerStage {
     }
 
 
-    private final List/*<CompilerStage*/ stages;
+    private final List<CompilerStage> stages;
 
     /** @return <code>count</code>th CompilerStage from this pipeline. */
     protected CompilerStage getStage(int count) { 
-	return (CompilerStage) stages.get(count);
+	return stages.get(count);
     }
 
-    public List/*<Option>*/ getOptions() {
-	List opts = new LinkedList();
-	for(Iterator/*<CompilerStage>*/ it=stages.iterator(); it.hasNext(); ) {
-	    CompilerStage stage = (CompilerStage) it.next();
+    public List<Option> getOptions() {
+	List<Option> opts = new LinkedList<Option>();
+	for(Iterator<CompilerStage> it=stages.iterator(); it.hasNext(); ) {
+	    CompilerStage stage = it.next();
 	    opts.addAll(stage.getOptions());
 	}
 	return opts;
@@ -73,8 +73,8 @@ public class CompStagePipeline extends CompilerStage {
     public boolean enabled() { return true; }
 
     public final CompilerState action(CompilerState cs) {
-	for(Iterator/*<CompilerStage>*/ it=stages.iterator(); it.hasNext(); ) {
-	    CompilerStage stage = (CompilerStage) it.next();
+	for(Iterator<CompilerStage> it=stages.iterator(); it.hasNext(); ) {
+	    CompilerStage stage = it.next();
 	    if(stage.enabled())
 		cs = stage.action(cs);
 	}

@@ -241,8 +241,14 @@ IR/Tree/TreeGrapher.java
 IR/Tree/TreeUseDefer.java
 IR/Tree/Print.java
 IR/Tree/Stm.java
+Main/CompilerStage.java
+Main/CompilerStageEZ.java
+Main/CompilerState.java
+Main/CompStagePipeline.java
+Main/SAMain.java
 Temp/CloningTempMap.java
 Temp/Temp.java
+Util/Options/Option.java
 
 # not GJ-ized, but we need to co-compile these to satisfy dependencies.
 Analysis/AllCallers.java

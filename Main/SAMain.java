@@ -67,7 +67,7 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.57 2003-07-08 16:27:44 cananian Exp $
+ * @version $Id: SAMain.java,v 1.58 2003-07-09 21:11:16 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -87,12 +87,12 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean PRECISEGC = false;
     static boolean MULTITHREADED = false;
 
-    private static List/*<CompilerStage*/ stages;
+    private static List<CompilerStage> stages;
 
     public static void main(String[] args) {
 	buildCompilerPipeline();
 	
-	List/*<Option>*/ allOptions = getAllOptions();
+	List<Option> allOptions = getAllOptions();
 	parseOpts(args, allOptions);
 	
 	if(className == null) {
@@ -105,8 +105,8 @@ public class SAMain extends harpoon.IR.Registration {
 	
 	CompilerState cs = CompilerState.EMPTY_STATE;
 
-	for(Iterator/*<CompilerStage>*/ it=stages.iterator(); it.hasNext(); ) {
-	    CompilerStage stage = (CompilerStage) it.next();
+	for(Iterator<CompilerStage> it=stages.iterator(); it.hasNext(); ) {
+	    CompilerStage stage = it.next();
 	    if(stage.enabled()) {
 		System.out.println("Execute stage " + stage.name());
 		cs = stage.action(cs);
@@ -118,7 +118,7 @@ public class SAMain extends harpoon.IR.Registration {
     private static void addStage(CompilerStage cs) { stages.add(cs); }
     
     private static void buildCompilerPipeline() {
-	stages = new LinkedList/*<CompilerStage>*/();
+	stages = new LinkedList<CompilerStage>();
 
 	// build a "nascent" compiler state: 
 	// main method, root set, linker and frame
@@ -153,7 +153,7 @@ public class SAMain extends harpoon.IR.Registration {
 	// allocation instrumentation stage
 	AllocationInstrCompStage aics = new AllocationInstrCompStage();
 	addStage(aics);
-	// memory preallocation via incopmaptibility analysis
+	// memory preallocation via incompatibility analysis
 	addStage(new PreallocOpt.QuadPass(aics));
 
 	addStage(new EventDrivenTransformation.QuadPass1());
@@ -222,7 +222,7 @@ public class SAMain extends harpoon.IR.Registration {
 
 
     private static void parseOpts(String[] args,
-				  List/*<Option>*/ allOptions) {
+				  List<Option> allOptions) {
 	PRECISEGC = System.getProperty("harpoon.alloc.strategy", 
 				       "malloc").equalsIgnoreCase("precise");
 	args = Option.parseOptions(allOptions, args);
@@ -234,11 +234,11 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
 
-    private static List/*<Option>*/ getAllOptions() {
-	List/*<Option>*/ opts = new LinkedList/*<Option>*/();
-	Map/*<String,String>*/ opt2stage = new HashMap/*<String,String>*/();
-	for(Iterator/*<CompilerStage>*/ it = stages.iterator(); it.hasNext();){
-	    CompilerStage stage = (CompilerStage) it.next();
+    private static List<Option> getAllOptions() {
+	List<Option> opts = new LinkedList<Option>();
+	Map<String,String> opt2stage = new HashMap<String,String>();
+	for(Iterator<CompilerStage> it = stages.iterator(); it.hasNext();){
+	    CompilerStage stage = it.next();
 	    addOptions(stage, opts, opt2stage);
 	}
 	return opts;
@@ -246,12 +246,12 @@ public class SAMain extends harpoon.IR.Registration {
 
 
     private static void addOptions(CompilerStage stage,
-				   List/*<Option>*/ allOpts,
-				   Map/*<String,String>*/ opt2stage) {
-	for(Iterator/*<Option>*/ it = stage.getOptions().iterator(); it.hasNext(); ) {
-	    Option option = (Option) it.next();
+				   List<Option> allOpts,
+				   Map<String,String> opt2stage) {
+	for(Iterator<Option> it=stage.getOptions().iterator(); it.hasNext();) {
+	    Option option = it.next();
 	    String old_stage = 
-		(String) opt2stage.put(option.optionName(), stage.name());
+		opt2stage.put(option.optionName(), stage.name());
 	    if(old_stage != null) {
 		System.err.println
 		    ("Ambiguity: Option " + option +
@@ -265,66 +265,58 @@ public class SAMain extends harpoon.IR.Registration {
 
 
     // construct list of top level compiler options
-    private static List/*<Option>*/ getTopLevelOptions() {
-	List/*<Option>*/ opts = new LinkedList/*<Option>*/();
-
-	opts.add(new Option("c", "<class>", "Compile <class> (required)") {
-	    public void action() { className = getArg(0); }
-	});
-
-	opts.add(new Option("r", "<rootSetFileName>",
-			    "Read additional roots from file") {
-	    public void action() { rootSetFilename = getArg(0); }
-	});
-
-	opts.add(new Option("b", "<backendName>",
-			    "Supported backends are StrongARM (default), MIPS, Sparc, or PreciseC") {
-	    public void action() {
-		BACKEND = Options.getBackendID(getArg(0));
-	    }
-	});
-
-	opts.add(new Option("F", "Enable standard optimizations") {
-	    public void action() { OPTIMIZE = true; }
-	});
-
-	opts.add(new Option("l", "Loop Optimizations") {
-	    public void action() { LOOPOPTIMIZE = true; }
-	});
-	
-	opts.add(new Option("q", "Quiet mode (status messages not output)") {
-	    public void action() { QUIET = true; }
-	});
-
-	opts.add(new Option("h", "Print help") {
-	    public void action() {
-		SAMain.printHelp(System.out);
-		System.exit(1);
-	    }
-	});
-
-	opts.add(new Option("m", "Multi-threading support for PreciseGC") {
-	    public void action() {
-		MULTITHREADED = true;
-		System.out.println
-		    ("Compiling with precise gc for multiple threads.");
-	    }
-	});
-
-	return opts;
+    private static List<Option> getTopLevelOptions() {
+	return Arrays.asList
+	    (new Option[] {
+		new Option("c", "<class>", "Compile <class> (required)") {
+		    public void action() { className = getArg(0); }
+		},
+		new Option("r", "<rootSetFileName>",
+			   "Read additional roots from file") {
+		    public void action() { rootSetFilename = getArg(0); }
+		},
+		new Option("b", "<backendName>",
+			   "Supported backends are StrongARM (default), MIPS, Sparc, or PreciseC") {
+		    public void action() {
+			BACKEND = Options.getBackendID(getArg(0));
+		    }
+		},
+		new Option("F", "Enable standard optimizations") {
+		    public void action() { OPTIMIZE = true; }
+		},
+		new Option("l", "Loop Optimizations") {
+		    public void action() { LOOPOPTIMIZE = true; }
+		},
+		new Option("q", "Quiet mode (status messages not output)") {
+		    public void action() { QUIET = true; }
+		},
+		new Option("h", "Print help") {
+		    public void action() {
+			SAMain.printHelp(System.out);
+			System.exit(1);
+		    }
+		},
+		new Option("m", "Multi-threading support for PreciseGC") {
+		    public void action() {
+			MULTITHREADED = true;
+			System.out.println
+			    ("Compiling with precise gc for multiple threads.");
+		    }
+		},
+	    });
     }
 
     private static void printHelp(PrintStream ps) {
-	ps.println("Usage:\n\tjava SAMain <options>*");
+	ps.println("Usage:\n\tjava "+SAMain.class.getName()+" <options>*");
 	ps.println("Options:");
-	for(Iterator/*<Option>*/ it = stages.iterator(); it.hasNext(); ) {
-	    printStageOptions((CompilerStage) it.next());
+	for(Iterator<CompilerStage> it = stages.iterator(); it.hasNext(); ) {
+	    printStageOptions(it.next());
 	}
     }
 
     private static void printStageOptions(CompilerStage stage) {
-	for(Iterator it = stage.getOptions().iterator(); it.hasNext(); ) { 
-	    Option option = (Option) it.next();
+	for(Iterator<Option> it=stage.getOptions().iterator(); it.hasNext();) {
+	    Option option = it.next();
 	    option.printHelp(System.out);
 	}
     }
@@ -345,7 +337,7 @@ public class SAMain extends harpoon.IR.Registration {
 
     private static class BuildInitialCompState extends RegularCompilerStageEZ {
 	public BuildInitialCompState() { super("compiler-initialization"); }
-	public List/*<Option>*/ getOptions() { return getTopLevelOptions(); }
+	public List<Option> getOptions() { return getTopLevelOptions(); }
 	
 	protected void real_action() { 
 	    // create an initial compiler state

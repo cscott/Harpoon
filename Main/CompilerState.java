@@ -32,7 +32,7 @@ import java.io.Serializable;
  * compiler&quot;)
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompilerState.java,v 1.5 2003-04-19 01:12:32 salcianu Exp $ */
+ * @version $Id: CompilerState.java,v 1.6 2003-07-09 21:11:16 cananian Exp $ */
 public class CompilerState implements Cloneable, Serializable {
    
     private CompilerState() { 
@@ -49,10 +49,12 @@ public class CompilerState implements Cloneable, Serializable {
     // TODO: [ALEX] It's unclear why frame should be here; the backend
     // should be only one compiler stage, instead of part of the
     // compiler state
+    // CSA: because some stages depend indirectly on which backend is
+    //      selected?
     private Frame frame;
     // other attributes (that don't occcur that often and don't
     // deserve separate fields)
-    private PersistentMap/*<String,Object>*/ attribs;
+    private PersistentMap<String,Object> attribs;
 
     /** @return main method of the compiled program */
     public HMethod getMain() { return main; }
@@ -76,7 +78,7 @@ public class CompilerState implements Cloneable, Serializable {
 
     /** @return (persistent) map from attribute names to attribute
         values */
-    public PersistentMap/*<String,Object>*/ getAttributes() { return attribs; }
+    public PersistentMap<String,Object> getAttributes() { return attribs; }
 
 
     // helper method used by the change* methods: returns a clone of
@@ -149,7 +151,7 @@ public class CompilerState implements Cloneable, Serializable {
     /** @return identical copy of <code>this</code> compiler state,
         with the exception of the attribute map, which is now set to
         <code>attribs</code> */
-    public CompilerState changeAttributes(PersistentMap/*<String,Object>*/ attribs) {
+    public CompilerState changeAttributes(PersistentMap<String,Object> attribs) {
 	CompilerState newCS = this.newCopy();
 	newCS.attribs = attribs;
 	return newCS;

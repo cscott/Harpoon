@@ -17,7 +17,7 @@ import java.io.PrintStream;
  * <code>Option</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Option.java,v 1.2 2003-04-17 00:04:02 salcianu Exp $
+ * @version $Id: Option.java,v 1.3 2003-07-09 21:11:20 cananian Exp $
  */
 public abstract class Option {
 
@@ -111,34 +111,34 @@ public abstract class Option {
     }
 
 
-    public static String[] parseOptions(List/*<Option>*/ options,
+    public static String[] parseOptions(List<Option> options,
 					String[] args) {
-	List/*<String>*/ unparsedArgs = 
+	List<String> unparsedArgs = 
 	    parseOptions(options, array2list(args));
 	return 
-	    (String[]) unparsedArgs.toArray(new String[unparsedArgs.size()]);
+	    unparsedArgs.toArray(new String[unparsedArgs.size()]);
     }
 
 
-    public static List/*<String>*/ parseOptions(List/*<Option>*/ options,
-						List/*<String>*/args) {
+    public static List<String> parseOptions(List<Option> options,
+						List<String> args) {
 	
-	Map/*<String,Option>*/ arg2option = new HashMap/*<String,Option>*/();
-	for(Iterator/*<Option>*/ it = options.iterator(); it.hasNext(); ) {
-	    Option option = (Option) it.next();
+	Map<String,Option> arg2option = new HashMap<String,Option>();
+	for(Iterator<Option> it = options.iterator(); it.hasNext(); ) {
+	    Option option = it.next();
 	    arg2option.put(option.optionName(), option);
 	}
 
-	List/*<String>*/ unparsedArgs = new LinkedList();
+	List<String> unparsedArgs = new LinkedList<String>();
 
-	for(ListIterator/*<String>*/ it = args.listIterator(); it.hasNext();) {
-	    String arg = (String) it.next();
+	for(ListIterator<String> it = args.listIterator(); it.hasNext();) {
+	    String arg = it.next();
 	    if(!isOption(arg) || !arg2option.containsKey(getOption(arg))) {
 		unparsedArgs.add(arg);
 		continue;
 	    }
 
-	    Option option = (Option) arg2option.get(getOption(arg));
+	    Option option = arg2option.get(getOption(arg));
 	    parseOptionArgs(option, it);
 
 	    option.action();
@@ -161,10 +161,10 @@ public abstract class Option {
     }
 
     private static void parseOptionArgs(Option option,
-					ListIterator/*<String>*/ it) {
+					ListIterator<String> it) {
 	for(int i = 0; i < option.numberArgs(); i++) {
 	    String arg = null;
-	    if(!it.hasNext() || isOption(arg = (String) it.next())) {
+	    if(!it.hasNext() || isOption(arg = it.next())) {
 		System.err.println("Error while parsing argument #" + i +
 				   " for option " + option);
 		System.err.println("Help:");
@@ -176,7 +176,7 @@ public abstract class Option {
 
 	for(int i = 0; i < option.numberOptionalArgs(); i++) {
 	    if(!it.hasNext()) break;
-	    String arg = (String) it.next();
+	    String arg = it.next();
 	    if(isOption(arg)) {
 		it.previous(); // put the arg back
 		return;
