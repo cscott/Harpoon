@@ -32,7 +32,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.8 2000-08-15 01:51:39 pnkfelix Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.9 2000-08-15 06:45:52 pnkfelix Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -160,8 +160,8 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	Set results = bsf.makeSet(r.IN);
 	Set defs = (Set) tempToAllDefs.get(t);
 	if (defs == null) {
-	    // no def for t; assume that it was defined on entry
-	    defs = Collections.singleton(cfger.getFirstElement(hc));
+	    // no def for t
+	    defs = Collections.EMPTY_SET;
 	}
 	results.retainAll(defs);
 

@@ -26,10 +26,15 @@ import harpoon.Util.Collections.LinearSet;
  * second stage, but this is parameterizable.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: OptimisticGraphColorer.java,v 1.1.2.6 2000-08-15 01:51:32 pnkfelix Exp $
+ * @version $Id: OptimisticGraphColorer.java,v 1.1.2.7 2000-08-15 06:45:56 pnkfelix Exp $
  */
 public class OptimisticGraphColorer extends GraphColorer {
 
+    private static final boolean MONITOR = true;
+    private static void MONITOR(String s) {
+	if (MONITOR) System.out.print(s);
+    }
+    
     private final NodeSelector selector;
     
     public static abstract class NodeSelector {
@@ -97,6 +102,8 @@ public class OptimisticGraphColorer extends GraphColorer {
 			graph.getColor(n) == null) {
 			graph.hide(n);
 			moreNodesToHide = true;
+
+			// MONITOR("conservative hide: "+n+"\n");
 		    } 
 		}
 	    } while (moreNodesToHide);
@@ -112,6 +119,8 @@ public class OptimisticGraphColorer extends GraphColorer {
 		Object choice = this.selector.chooseNode(graph);
 		graph.hide(choice);
 		spills.add(choice);
+
+		MONITOR("optimistic hide: "+choice+"\n");
 		continue;
 	    }
 	}
@@ -145,6 +154,8 @@ public class OptimisticGraphColorer extends GraphColorer {
 		    try {
 			graph.setColor(n, col);
 			spills.remove(n);
+
+			// MONITOR("set color of "+n+ " to "+col+"\n");
 			continue nextNode;
 		    } catch (ColorableGraph.IllegalColor ic) {
 			// col was not legal for n
@@ -155,6 +166,8 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    }
 	    
 	    // if we ever reach this point, we failed to color n
+	    MONITOR("failed to color "+n+"\n");
+	    spills.add(n);
 	    unableToColor = true;
 	}
 	

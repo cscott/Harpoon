@@ -53,7 +53,7 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.22 2000-08-15 01:51:13 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.23 2000-08-15 06:46:01 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -65,7 +65,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
     private static void RESULTS(String s) { 
 	if (RESULTS) System.out.print(s);
     }
-    private static final boolean STATS = true;
+    private static final boolean STATS = false;
     private static void STATS(String s) {
 	if (STATS)   System.out.print(s);
     }
@@ -369,6 +369,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    } catch (UnableToColorGraph u) {
 		success = false;
 		genSpillCode(u.getRemovalSuggestions(), graph);
+		graph.replaceAll();
+		graph.resetColors();
 	    }
 	} while (!success);
 
@@ -1169,13 +1171,19 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	public Set uses() { return (Set) regToUses.getValues(reg); }
 	public Temp temp() { return reg; }
 
-	boolean conflictsWith(WebRecord wr) {
+	boolean conflictsWith1D(WebRecord wr) {
 	    if (wr instanceof RegWebRecord) {
 		return true;
 	    } else if (isRegister(wr.temp())) {
 		return !wr.temp().equals(this.reg);
 	    } else {
-		return super.conflictsWith(wr);
+		// return super.conflictsWith(wr);
+		
+		// New approach: don't encode Temp/Reg conflicts using
+		// RegWebRecords; let the reg-live-ranges do it
+		// themselves (need to now precisely define WHAT
+		// RegWebRecord is here for though...)
+		return false;
 	    }
 	}
     }
