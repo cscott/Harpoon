@@ -18,6 +18,7 @@ import harpoon.Util.UnmodifiableIterator;
 
 import java.util.Vector;
 import java.util.List;
+import java.util.Set;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -41,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.38 1999-08-30 21:04:13 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.39 1999-08-30 22:20:07 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -159,8 +160,10 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	           the execution of <code>this</code>.
 	@param canFallThrough Decides whether control flow could fall
 	                      to <code>this.next</code>.
-	@param targets List of targets that control flow could
-	               potentially branch to.
+	@param targets List of target <code>Label</code>s that control
+	               flow could potentially branch to.  If
+		       <code>targets</code> is <code>null</code>, then
+		       <code>this</code> is a non-branching instruction.
     */
     public Instr(InstrFactory inf, HCodeElement source, 
 		 String assem, Temp[] dst, Temp[] src,
@@ -183,12 +186,23 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 
 	this.canFallThrough = canFallThrough;
 	this.targets = targets;
+	if (targets != null) {
+	    // add this to inf.labelToBranchingInstrSetMap
+	    Iterator titer = targets.iterator();
+	    while(titer.hasNext()) {
+		Label l = (Label) titer.next();
+		((Set)inf.labelToBranchingInstrSetMap.
+		 get(l)).add(this);
+	    }
+	}
     }
 
     /** Creates an <code>Instr</code> consisting of the
 	<code>String</code> <code>assem</code> and the lists of
 	destinations and sources in <code>dst</code> and
 	<code>src</code>. 
+	<code>canFallThrough</code> is set to <code>true</code> and
+	<code>targets</code> is set to <code>null</code>. 
     */    
     public Instr(InstrFactory inf, HCodeElement source, 
 		 String assem, Temp[] dst, Temp[] src) {
@@ -196,15 +210,21 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     }
 
     /** Creates an <code>Instr</code> consisting of the String assem
-     *  and the list of sources in src. The list of destinations is
-     *  empty. */
+	and the list of sources in src. The list of destinations is
+	empty. 
+	<code>canFallThrough</code> is set to <code>true</code> and
+	<code>targets</code> is set to <code>null</code>.
+    */
     public Instr(InstrFactory inf, HCodeElement source,
 		 String assem, Temp[] src) {
         this(inf, source, assem, null, src);
     }
 
     /** Creates an <code>Instr</code> consisting of the String assem.
-     *  The lists of sources and destinations are empty. */
+	The lists of sources and destinations are empty. 
+	<code>canFallThrough</code> is set to <code>true</code> and
+	<code>targets</code> is set to <code>null</code>.
+    */
     public Instr(InstrFactory inf, HCodeElement source, String assem) {
         this(inf, source, assem, null, null);
     }
