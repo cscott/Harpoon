@@ -147,7 +147,8 @@ struct effectlist * mergeeffectlist(struct effectlist * el1, struct effectlist *
       freeeffectregexpr(mergedsrc);
       return NULL;
     }
-  }
+  } else if (el1->dst!=NULL||el2->dst!=NULL)
+    return NULL;
   {
     struct effectlist * retel=(struct effectlist *)calloc(1, sizeof(struct effectlist));
     retel->src=mergedsrc;
