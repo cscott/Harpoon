@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef WITH_PREALLOC_OPT
   preallocMemCls  = 
-      (*env)->FindClass(env, "harpoon/Runtime/PreallocOpt/PreallocatedMemory");
+      (*env)->FindClass(env, "java/lang/Object");
   CHECK_EXCEPTIONS(env);
   preallocMemInitFields = 
       (*env)->GetStaticMethodID(env, preallocMemCls, "initFields", "()V");
