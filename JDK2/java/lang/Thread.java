@@ -1179,7 +1179,16 @@ class Thread implements Runnable {
 	Scheduler.blocked(c);
 	return c;
     }
-	
+
+    public VoidContinuation join_AsyncO() {
+	if (dead) {return new VoidContinuationOpt();}
+	VoidDoneContinuation c= new VoidDoneContinuation(false);
+	Scheduler.currentThread.link= waitingToJoin;
+	waitingToJoin= Scheduler.currentThread;
+	Scheduler.blocked(c);
+	return c;
+    }
+
     public void die()
     {
 	if (!dead) {
@@ -1194,4 +1203,5 @@ class Thread implements Runnable {
     }
 
 }
+
 
