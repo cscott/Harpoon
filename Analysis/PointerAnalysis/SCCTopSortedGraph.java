@@ -5,17 +5,21 @@ package harpoon.Analysis.PointerAnalysis;
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Collections;
+
+import harpoon.Util.Util;
 
 
 /**
- * <code>SCCTopSortedGraph</code> represents a \
- graph of strongly connected components topologically sorted in decreasing \
+ * <code>SCCTopSortedGraph</code> represents a
+ graph of strongly connected components topologically sorted in decreasing
  order. 
  * To obtain such a graph, use the <code>topSort</code> static method.
  * It uses a Depth First Search to do the sortting in linear time (see
  * Section 23.4 in Cormen and co for the exact algorithm).
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCTopSortedGraph.java,v 1.1.2.1 2000-01-27 06:21:22 salcianu Exp $
+ * @version $Id: SCCTopSortedGraph.java,v 1.1.2.2 2000-03-09 07:28:51 salcianu Exp $
  */
 public class SCCTopSortedGraph {
     
@@ -28,13 +32,13 @@ public class SCCTopSortedGraph {
 	this.last  = last;
     }
 
-    /** Returns the first (i.e. one of the topologically biggest) \
+    /** Returns the first (i.e. one of the topologically biggest)
 	<code>SCComponent</code> */
     public final SCComponent getFirst(){
 	return first;
     }
 
-    /** Returns the last (i.e. one of the topologically smallest) \
+    /** Returns the last (i.e. one of the topologically smallest)
 	<code>SCComponent</code> */
     public final SCComponent getLast(){
 	return last;
@@ -45,15 +49,33 @@ public class SCCTopSortedGraph {
     private static SCComponent first_scc;
     private static SCComponent last_scc;
 
-    /** Sorts all the strongly connected component reachable from \
-     <code>root</code> in decreasing topological order. 
-    * This method sets the <code>nextTopSort</code> and
-    * <code>prevTopSort</code> fields of the <code>SCComponent</code>s,
-    * arranging then in a double linked list according to the 
-    * aforementioned order.<br>
-    * It returns a <code>SCCTopSortedGraph</code> containing the first and
-    * the last elements of this list. */
+    /** Sorts all the strongly connected component reachable from
+	<code>root</code> in decreasing topological order. 
+	This method sets the <code>nextTopSort</code> and
+	<code>prevTopSort</code> fields of the <code>SCComponent</code>s,
+	arranging then in a double linked list according to the 
+	aforementioned order.<br>
+	It returns a <code>SCCTopSortedGraph</code> containing the first and
+	the last elements of this list.
+	<b>Note:</b> This is just a convenient function, for more than one
+	root, please use the more general <code>topSort(Set)</code>. */
     public static SCCTopSortedGraph topSort(SCComponent root){
+	return topSort(Collections.singleton(root));
+    }
+
+    /** Sorts all the strongly connected component reachable from one of
+	the <code>SCComponent</code>s from <code>roots</code> in decreasing
+	topological order. 
+	This method sets the <code>nextTopSort</code> and
+	<code>prevTopSort</code> fields of the <code>SCComponent</code>s,
+	arranging then in a double linked list according to the 
+	aforementioned order.<br>
+	It returns a <code>SCCTopSortedGraph</code> containing the first and
+	the last elements of this list.
+	<b>Note:</b> the <code>roots</code> parameter must contain only
+	root <code>Sccomponent</code>s (ie <code>SCComponent</code>s without
+	any entering edge. */
+    public static SCCTopSortedGraph topSort(Set roots){
 	reached_sccs = new HashSet();
 	// to facilitate insertions into the double linked list of SCCs,
 	// a dummy node is created (now, we don't worry about
@@ -61,7 +83,15 @@ public class SCCTopSortedGraph {
 	last_scc  = new SCComponent();
 	first_scc = last_scc;
 	// Depth First Search to sort the SCCs topologically
-	DFS_topsort(root);
+	Iterator it_sccs = roots.iterator();
+	while(it_sccs.hasNext()){
+	    SCComponent scc =(SCComponent) it_sccs.next();
+	    // TODO: eliminate this paranoic debug when the code is known
+	    // to be stable.
+	    Util.assert(!reached_sccs.contains(scc),
+			"The roots argument contains no-root sccs.");
+	    DFS_topsort(scc);
+	}
 	// get rid of the dummy node
 	last_scc = last_scc.prevTopSort;
 	last_scc.nextTopSort = null;
