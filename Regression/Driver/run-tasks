@@ -22,6 +22,8 @@ function printOptions() {
     echo -e "  -machines-file=<file>          -- explicitly specifies the name of the file containing the machines set (no default value)."
     echo -e "  -update=[yes|no]               -- if set to yes, all machines are updated before starting running tasks on them (default),"
     echo -e "                                    if set to no, no machine is updated before starting running the tasks."
+    echo -e "  -update-clean=[yes|no]         -- if set to yes, all remote machines will do the hardest possible clean, before reconfiguring (default),"
+    echo -e "                                    if set to no, all remote machines will do the minimum necessary clean before reconfiguring."
     echo -e "  -conf-each-test=[yes|no]       -- if set to yes, the remote machines are reconfigured for every test,"
     echo -e "                                    if set to no, all tests use the remote machines' default configuration (default)."
     echo -e "  -compile=[yes|no]              -- if set to yes, the task is compiled (default),"
@@ -90,6 +92,7 @@ else
     TASKS_FILE=tasks-all
     MACHINES_FILE=machines-all
     UPDATE=yes
+    UPDATE_CLEAN=yes
     CONF_EACH_TEST=no
     COMPILE=yes
     COMPILE_STATS=yes
@@ -125,6 +128,10 @@ else
 		UPDATE=yes;;   # Update all machines before starting running tasks on them; Default option
 	    -update=no)
 		UPDATE=no;;   # Do not update any machine before starting running the tasks
+	    -update-clean=yes)
+		UPDATE_CLEAN=yes;;   # Hard clean the remote machines before reconfiguring them; Default option
+	    -update-clean=no)
+		UPDATE_CLEAN=no;;   # Do the minimum necessary cleaning before reconfiguring the remote machines
 	    -conf-each-test=yes)
 		CONF_EACH_TEST=yes;;   # Reconfigure remote machines for every test run on them; Default option
 	    -conf-each-test=no)
@@ -295,9 +302,11 @@ else
 			echo -e "          Machine $machine has all necessary scripts." >> $ERROR_FILE
 		    fi
 
-		    # Probably you want to run one and only one of the following two lines
-		    
-		    ssh -f $machine 'cd $MAIN_TESTING_DIR; ./update-and-make -clean' # cvs updating the entire FLEX and remaking everything in Code, Runtime and Realtime (all this is done in background); -clean parameter makes the scripts do "make clean" in each directory before doing "make"; it also forces the scripts to run ./setup and ./configure in Runtime before running "make clean; make"; should be used if and only if some configuration files were changed
+		    if [ "$UPDATE_CLEAN" == "yes" ]; then   # do a "hard clean" before reconfiguring
+			ssh -f $machine 'cd $MAIN_TESTING_DIR; ./update-and-make -clean' # cvs updating the entire FLEX and remaking everything in Code, Runtime and Realtime (all this is done in background); -clean parameter makes the scripts do "make clean" in each directory before doing "make"; it also forces the scripts to run ./setup and ./configure in Runtime before running "make clean; make"; should be used if and only if some configuration files were changed
+		    else
+			ssh -f $machine 'cd $MAIN_TESTING_DIR; ./update-and-make' # cvs updating the entire FLEX and remaking everything in Code, Runtime and Realtime (all this is done in background)
+		    fi
 		    sleep 5   # waiting 5 seconds for the remote machine to set up all necessary parameters
 		fi
 	    fi
