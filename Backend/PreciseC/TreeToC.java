@@ -52,7 +52,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.11 2000-06-30 05:55:21 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.12 2000-06-30 06:15:40 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -305,8 +305,24 @@ public class TreeToC extends java.io.PrintWriter {
 	    pw.println();
 	}
 	public void visit(CONST e) {
-	    if (e.value==null) { pw.print("NULL"); return; }
-	    String val = e.value.toString();
+	    if (e.value()==null) { pw.print("NULL"); return; }
+	    String val = e.value().toString();
+	    if (e.type()==Type.DOUBLE) {
+		Double d = (Double) e.value();
+		if (d.isInfinite()) {
+		    pw.print("("+(d.doubleValue()<0?"-":"")+"1.0/0.0)");
+		    return;
+		}
+		if (d.isNaN()) { pw.print("(0.0/0.0)"); return; }
+	    }
+	    if (e.type()==Type.FLOAT) {
+		Float f = (Float) e.value();
+		if (f.isInfinite()) {
+		    pw.print("("+(f.floatValue()<0?"-":"")+"1.0f/0.0f)");
+		    return;
+		}
+		if (f.isNaN()) { pw.print("(0.0f/0.0f)"); return; }
+	    }
 	    if (e.type()==Type.INT && e.value().intValue()==Integer.MIN_VALUE)
 		val="0x"+Integer.toHexString(e.value().intValue());
 	    if (e.type()==Type.LONG && e.value().longValue()==Long.MIN_VALUE)
