@@ -42,9 +42,6 @@ else
 	ssh-add $SSH_KEY_FILE >/dev/null 2>&1 &   # trying to add the key to the ssh-agent
 	sleep 5   # waiting 5 seconds for ssh-add to finish (the key must have a blank passphrase)
 	if [ ! -f "$SSH_KEY_FILE" -o "`ps -A | grep ssh-add`" != "" ]; then   # ssh-add did not finish; most probably the $SSH_KEY_FILE does not exist or key requires a passphrase
-	    if [ ! -f $SSH_KEY_FILE ]; then echo "file not found"
-	    else echo "passphrase is not blank."
-	    fi
 	    GOT_ERRORS=1
 	    killall ssh-add >/dev/null 2>&1   # killing all processes ssh-add, if any exists
 	    eval `ssh-agent -k` >/dev/null 2>&1   # killing the ssh-agent

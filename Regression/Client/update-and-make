@@ -7,23 +7,9 @@
 echo "1" > $UPDATING_FLEX_FILE   # a "switch" indicating that the updating process has begun
 echo "1" > $UPDATED_SUCCESSFULLY_FILE   # no errors thrown in the updating process up to now
 
-# Trying to make ssh-agent work with lesser-magoo.lcs.mit.edu and then updating everything in FLEX
-
-eval `ssh-agent` 1>/dev/null 2>&1 || echo "0" > $UPDATED_SUCCESSFULLY_FILE
-if [ "`cat $UPDATED_SUCCESSFULLY_FILE`" == "1" ]; then   # ssh-agent started successfully
-    ssh-add $SSH_KEY_FILE >/dev/null 2>&1 &   # trying to add the key to the ssh-agent
-    sleep 5   # waiting 5 seconds for ssh-add to finish (the key must have a blank passphrase)
-    if [ ! -f $SSH_KEY_FILE -o "`ps -A | grep ssh-add`" != "" ]; then   # ssh-add did not finish; either the key file was not found, or it requires a passphrase
-	echo "0" > $UPDATED_SUCCESSFULLY_FILE
-	killall ssh-add >/dev/null 2>&1   # killing all ssh-add
-	eval `ssh-agent -k` >/dev/null 2>&1   # killing this session of ssh-agent
-    else
-	./cvs-update-all > /dev/null 2>&1 || echo "0" > $UPDATED_SUCCESSFULLY_FILE   # cvs updates everything
-	if [ "`cat $UPDATED_SUCCESSFULLY_FILE`" == "1" ]; then   # cvs updated successfully
-	    ./remake-everything $@ > /dev/null 2>&1 || echo "0" > $UPDATED_SUCCESSFULLY_FILE   # remake everything
-	    eval `ssh-agent -k` >/dev/null 2>&1   # killing this session of ssh-agent
-	fi
-    fi
+./cvs-update-all > /dev/null 2>&1 || echo "0" > $UPDATED_SUCCESSFULLY_FILE   # cvs updates everything
+if [ "`cat $UPDATED_SUCCESSFULLY_FILE`" == "1" ]; then   # cvs updated successfully
+    ./remake-everything $@ > /dev/null 2>&1 || echo "0" > $UPDATED_SUCCESSFULLY_FILE   # remake everything
 fi
 
 echo "0" > $UPDATING_FLEX_FILE   # a "switch" indicating that the updating process finished
