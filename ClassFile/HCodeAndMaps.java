@@ -16,9 +16,9 @@ import java.util.Map;
  * straight-forward to write.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeAndMaps.java,v 1.3 2002-09-01 07:47:05 cananian Exp $
+ * @version $Id: HCodeAndMaps.java,v 1.4 2003-07-11 09:41:28 cananian Exp $
  */
-public final class HCodeAndMaps<HCE extends HCodeElement> {
+public class HCodeAndMaps<HCE extends HCodeElement> {
     private final HCode<HCE> hcode, ancestorHCode;
     private final Map<HCE,HCE> elementMap, ancestorElementMap;
     private final TempMap tempMap, ancestorTempMap;
