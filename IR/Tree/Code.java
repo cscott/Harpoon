@@ -9,6 +9,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.HashSet;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 
@@ -142,19 +143,25 @@ public abstract class Code extends HCode
   public Enumeration getElementsE() 
     { 
       return new Enumeration() {
-        Vector v = new Vector();
+        HashSet h = new HashSet();
 	Stack stack = new Stack();
 	{ 
-        visitElement(getRootElement());
-    }
-	public boolean hasMoreElements() { return !stack.isEmpty(); }
+	  visitElement(getRootElement());
+	}
+	public boolean hasMoreElements() { 
+	  if (stack.isEmpty()) {
+	    h.clear();
+	    return false;
+	  }
+	  else return true;
+	}
 
-    private void visitElement(Object elem) {
-        if (!v.contains(elem)) {
+	private void visitElement(Object elem) {
+	  if (!h.contains(elem)) {
             stack.push(elem);
-            v.addElement(elem);
-        }
-    }
+            h.union(elem);
+	  }
+	}
 	public Object nextElement() {
 	  Tree t;
 	  if (stack.isEmpty()) throw new NoSuchElementException();
