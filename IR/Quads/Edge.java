@@ -5,6 +5,8 @@ package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Properties.CFGEdge; 
+import harpoon.IR.Properties.CFGraphable; 
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.Util;
 /**
@@ -15,10 +17,10 @@ import harpoon.Util.Util;
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.1.2.7 1999-09-19 16:17:32 cananian Exp $
+ * @version $Id: Edge.java,v 1.1.2.8 2000-01-05 04:10:06 duncan Exp $
  */
 
-public class Edge implements HCodeEdge {
+public class Edge extends CFGEdge {
     Quad from, to;
     int from_index, to_index;
     
@@ -37,9 +39,9 @@ public class Edge implements HCodeEdge {
     }
 
     /** Returns the source vertex of this Edge. */
-    public HCodeElement from() { return from; }
+    public CFGraphable fromCFG() { return from; }
     /** Returns the destination vertex of this Edge. */
-    public HCodeElement to() { return to; }
+    public CFGraphable toCFG() { return to; }
     /** Returns the predecessor index of this Edge in <code>to</code>.
      *  <code>this.to().prevEdge(this.which_pred()) == this</code>. */
     public int which_pred() { return to_index; }

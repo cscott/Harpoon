@@ -3,8 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Properties.CFGEdge; 
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
@@ -24,7 +24,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.29 1999-11-30 05:25:04 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.30 2000-01-05 04:10:06 duncan Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -155,14 +155,14 @@ public abstract class Quad
 
     /** Returns an array with all the edges to and from this 
      *  <code>Quad</code>. */
-    public HCodeEdge[] edges() {
+    public CFGEdge[] edges() {
 	Edge[] e = new Edge[next.length+prev.length];
 	System.arraycopy(next,0,e,0,next.length);
 	System.arraycopy(prev,0,e,next.length,prev.length);
-	return (HCodeEdge[]) e;
+	return (CFGEdge[]) e;
     }
-    public HCodeEdge[] pred() { return prevEdge(); }
-    public HCodeEdge[] succ() { return nextEdge(); }
+    public CFGEdge[] pred() { return prevEdge(); }
+    public CFGEdge[] succ() { return nextEdge(); }
 
     public Collection edgeC() {
 	return new AbstractCollection() {
