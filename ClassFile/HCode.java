@@ -15,7 +15,7 @@ import java.util.Iterator;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.13.2.1 2002-03-04 20:26:39 cananian Exp $
+ * @version $Id: HCode.java,v 1.13.2.2 2002-04-07 20:42:32 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
@@ -150,7 +150,7 @@ public abstract class HCode<HCE extends HCodeElement> {
    * Pretty-print this code view using the specified callback.
    */
   public void print(java.io.PrintWriter pw, PrintCallback<HCE> callback) {
-    if (callback==null) callback = new PrintCallback(); // nop callback
+    if (callback==null) callback = new PrintCallback<HCE>(); // nop callback
     pw.println("Codeview \""+getName()+"\" for "+getMethod()+":");
     for (Iterator<HCE> it = getElementsI(); it.hasNext(); ) {
       HCE hce = it.next();
