@@ -59,5 +59,19 @@ public class InGen extends Instr {
   /** Return a list of all the possible <code>Instr</code>s that may
    *  succeed this one. Always returns a one-element array. */
   public Instr[] next() { return new Instr[] { next }; }
+
+  /** Return human-readable instruction string. */
+  public String toString() {
+    StringBuffer sb = new StringBuffer(Op.toString(opcode));
+    for (int i=0; i<operands.length; i++) {
+      sb.append(" (");
+      sb.append(operandTypes[i].getName());
+      sb.append(")");
+      sb.append(operands[i].toString());
+      if (i<operands.length-1)
+	sb.append(", ");
+    }
+    return sb.toString();
+  }
 }
 

@@ -5,7 +5,7 @@ import harpoon.Util.Util;
  * <code>InMerge</code> is used to represent a node where
  * multiple control flows merge.  These are typically branch targets.
  * @author  C. Scott Ananian
- * @version $Id: InMerge.java,v 1.2 1998-08-03 07:00:49 cananian Exp $
+ * @version $Id: InMerge.java,v 1.3 1998-08-03 08:38:28 cananian Exp $
  * @see Instr
  */
 public class InMerge extends Instr {
@@ -24,4 +24,7 @@ public class InMerge extends Instr {
   /** Return a list of all the possible <code>Instr</code>s that may
    *  succeed this one. Always returns a one-element array. */
   public Instr[] next() { return new Instr[] { next }; }
+
+  /** Return human-readable representation. */
+  public String toString() { return "MERGE"; }
 }
