@@ -37,9 +37,10 @@ import java.util.Set;
  * of several 'mostly-zero field' transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstructorClassifier.java,v 1.1.2.8 2001-11-14 23:03:12 cananian Exp $
+ * @version $Id: ConstructorClassifier.java,v 1.1.2.9 2001-11-19 19:19:13 cananian Exp $
  */
 public class ConstructorClassifier {
+    private static final boolean STATISTICS=true;
     private static final boolean DEBUG=false;
     /* Definitions:
      * - a 'this-final' field is only written in constructors of its type.
@@ -58,6 +59,8 @@ public class ConstructorClassifier {
     private final ClassHierarchy ch;
     private final MapFactory mf = new AggregateMapFactory();
     private final Set badFields;
+    /** statistics */
+    private int one_constructor=0, one_const_field=0, one_param_field=0;
     
     /** Creates a <code>ConstructorClassifier</code>. */
     public ConstructorClassifier(HCodeFactory hcf, ClassHierarchy ch) {
@@ -76,6 +79,14 @@ public class ConstructorClassifier {
 		if (!isConstructor(hm)) continue;
 		System.out.println(" "+hm+": "+classifyMethod(hm));
 	    }
+	}
+	// STATISTICS!
+	if (STATISTICS) {
+	    for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
+		HMethod hm = (HMethod) it.next();
+		if (isConstructor(hm)) classifyMethod(hm);
+	    }
+	    System.out.println("CLASSIFIER: "+one_constructor+" constructors, "+one_const_field+" have a constant, and "+one_param_field+" have a parameter-dependent, field.");
 	}
     }
     /** Returns <code>true</code> iff the given field is 'subclass-final'
@@ -311,6 +322,19 @@ public class ConstructorClassifier {
 		}
 	    }
 	}
+	// collect statistics.
+	if (STATISTICS) {
+	    boolean has_const=false, has_param=false;
+	    for (Iterator it=map.values().iterator(); it.hasNext(); ) {
+		Classification c = (Classification) it.next();
+		if (c.param!=-1) has_param=true;
+		if (c.isConstant) has_const=true;
+	    }
+	    if (has_param) one_param_field++;
+	    if (has_const) one_const_field++;
+	    one_constructor++;
+	}
+	// okay, we're done!
 	return Collections.unmodifiableMap(map);
     }
 
