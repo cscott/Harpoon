@@ -57,6 +57,80 @@ public class Node implements Serializable, Runnable {
 	this.out2 = out2;
     }
 
+    /**
+       Equivalent to setLeft, but returns <code>this</code>
+       so that setNode statements may be pieced together in
+       a visually informative manner.
+       <br><br>
+       Example:
+       <br>
+       <code>
+       Node n1 = new Node();<br>
+       Node n2 = new Node();<br>
+       Node n3 = new Node();<br>
+       n1.linkL(n2.linkL(n3))
+       </code>
+       <br><br>
+       
+       @param out1 The new first out edge of <code>this</code>.
+       @return <code>this</code>
+    */
+    public Node linkL(Node out1) {
+	this.out1 = out1;
+	return this;
+    }
+
+    /**
+       Equivalent to setRight, but returns <code>this</code>
+       so that setNode statements may be pieced together in
+       a visually informative manner.
+       <br><br>
+       Example:
+       <br>
+       <code>
+       Node n1 = new Node();<br>
+       Node n2 = new Node();<br>
+       Node n3 = new Node();<br>
+       n1.linkR(n2.linkR(n3))
+       </code>
+       <br><br>
+       
+       @param out2 The new second out edge of <code>this</code>.
+       @return <code>this</code>
+    */
+    public Node linkR(Node out2) {
+	this.out2 = out2;
+	return this;
+    }
+
+    /**
+       Sets both out nodes and returns <code>this</code>
+       so that setNodes statements may be pieced together in
+       a visually informative manner.
+       <br><br>
+       Example:
+       <br>
+       <code>
+       Node n1 = new Node();<br>
+       Node n2 = new Node();<br>
+       Node n3 = new Node();<br>
+       Node n4 = new Node();<br>
+       n1.link(n2.link(null,<br>
+       &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp n3),<br>
+       &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp n4)
+       </code>
+       <br><br>
+       
+       @param out1 The new first out edge of <code>this</code>.
+       @param out2 The new second out edge of <code>this</code>.
+       @return <code>this</code>
+    */
+    public Node link(Node out1, Node out2) {
+	this.out1 = out1;
+	this.out2 = out2;
+	return this;
+    }
+
     /** Get the first out node. 
      *
      *  @return The first out node.
@@ -80,9 +154,9 @@ public class Node implements Serializable, Runnable {
     public synchronized void process(ImageData id) {
 	if (this.out1 != null) {
 	    this.out1.process(id);
-	    if (this.out2 != null) {
-		this.out2.process(id);
-	    }
+	}
+	if (this.out2 != null) {
+	    this.out2.process(id);
 	}
     }
 
