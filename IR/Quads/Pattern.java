@@ -16,7 +16,7 @@ import java.util.Stack;
  * <code>Pattern</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.3 1999-09-08 05:44:10 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.4 1999-09-08 17:41:26 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -634,9 +634,9 @@ class MinusVisitor extends QuadVisitor {
 
     public void visit(CONST q) {
 	if ((status==2)&&
-	    (q.type()==HClass.Void)) {
+	    (q.type()==HClass.Int)) {
 	    Util.assert(compares.length==2);
-	    if ((q.value()==null)&&
+	    if ((((Integer)q.value()).intValue()==0)&&
 		(compares[0]==q.dst())&&(compares[1]==tested))
 		status=3;
 	    else
