@@ -54,7 +54,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.8 2001-06-20 18:10:23 pnkfelix Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.9 2001-06-20 18:20:12 pnkfelix Exp $
  */
 public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     // FSK: super class really SHOULD be RegAlloc, but am doing this
@@ -1635,6 +1635,10 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     // Node n -> Set of Instr i, s.t. n is alive at i
     GenericMultiMap nodeToLiveAt = new GenericMultiMap();
     
+    // Instr i -> Move m such m.instr = i
+    HashMap instrToMove;
+    
+
     /** REQUIRES: i.isMove() 
 	returns a Move corresponding to Instr i. 
     */ 

@@ -22,7 +22,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.5 2001-06-20 18:10:23 pnkfelix Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.6 2001-06-20 18:20:12 pnkfelix Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;
@@ -518,8 +518,6 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	}
     }
 
-    HashMap instrToMove;
-    
     MoveSet coalesced_moves;
     MoveSet constrained_moves;
     MoveSet frozen_moves;
