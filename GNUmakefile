@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.52 1999-07-30 18:44:33 pnkfelix Exp $
+# $Id: GNUmakefile,v 1.61.2.53 1999-07-30 23:40:38 pnkfelix Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -202,7 +202,7 @@ update: needs-cvs
 	@-if [ -x $(FORTUNE) ]; then echo ""; $(FORTUNE); fi
 
 # CodeGeneratorGenerator
-%.java : %.spec $(filter Tools/PatMat/%,$(ALLSOURCE))
+%.java : %.spec $(filter Tools/PatMat/%,$(ALLSOURCE)) Support/NullCodeGen.template
 	@if [ "PASS $(PASS)" = "PASS 1" ]; then \
 	  echo PASS $(PASS): stubbing out $@; \
 	  sed -e 's/PACKAGE/$(subst /,.,$(shell dirname $@))/g' \

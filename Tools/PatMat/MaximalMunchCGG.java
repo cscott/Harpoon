@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.17 1999-07-29 01:49:15 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.18 1999-07-30 23:40:50 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -800,6 +800,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	out.println("\t\t} // end visit("+TREE_Tree+")");
 
 	out.println("\t\tpublic void visit("+TREE_Stm+" treee){");
+	out.println("\t\t\tSystem.out.print(\"munching \"+treee+\"\t\");");
 	out.println("\t\t\tmunchStm(treee);");
 	out.println("\t\t} // end visit("+TREE_Stm+")");
 	
@@ -808,6 +809,14 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	
 	out.println("\t}"); // end CggVisitor
 	
+	out.println("\tCggVisitor visitor = new CggVisitor();");
+	out.println("\t"+TREE_Tree+" t = ("+TREE_Tree+") code.getRootElement();");
+	out.println("\twhile(t instanceof "+TREE_SEQ+") {");
+	out.println("\t\t"+TREE_SEQ+" seq = ("+TREE_SEQ+")t;");
+	out.println("\t\tseq.left.visit(visitor);");
+	out.println("\t\tt=seq.right;");
+	out.println("\t}");
+	out.println("\tt.visit(visitor);");
 	
 	
     }

@@ -37,6 +37,7 @@ import harpoon.IR.Tree.OPER;
 import harpoon.IR.Tree.RETURN;
 import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.UNOP;
+import harpoon.IR.Tree.SEQ;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -46,17 +47,20 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.13 1999-07-29 01:49:14 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.14 1999-07-30 23:40:48 pnkfelix Exp $
  */
 %%
 
 
     // FIELDS
+    // first = null OR first instr passed to emit(Instr)
+    private Instr first;
+
     // last = null OR last instr passed to emit(Instr)
     private Instr last; 
     
     // InstrFactory to generate Instrs from
-    private InstrFactory inf;
+    private InstrFactory instrFactory;
     
     // Frame for instructions to access to get platform specific variables (Register Temps, etc) 
     private SAFrame frame;
@@ -68,18 +72,18 @@ import java.util.HashMap;
 
     public CodeGen(SAFrame frame) {
 	last = null;
-	//	this.frame = (SAFrame) code.getFrame();
 	this.frame = frame;
 	r0 = frame.getAllRegisters()[0];
 	r1 = frame.getAllRegisters()[1];
 	r2 = frame.getAllRegisters()[2];
 	r3 = frame.getAllRegisters()[3];
-	//inf = code.getInstrFactory();
 	blMap = new HashMap();
 	liMap = new HashMap();
     }
 
     private void emit(Instr i) {
+	System.out.println( i );
+	if (first == null) first = i;
 	if (last == null) {
 	    last = i;
 	} else {
@@ -91,7 +95,7 @@ import java.util.HashMap;
     /** Single dest Single source Emit Helper. */
     private void emit( HCodeElement root, String assem, 
 		       Temp dst, Temp src) {
-	emit(new Instr( inf, root, assem,
+	emit(new Instr( instrFactory, root, assem,
 			new Temp[]{ dst },
 			new Temp[]{ src }));
     }
@@ -99,14 +103,14 @@ import java.util.HashMap;
     /** Single dest Two source Emit Helper. */
     private void emit( HCodeElement root, String assem, 
 		       Temp dst, Temp src1, Temp src2) {
-	emit(new Instr( inf, root, assem,
+	emit(new Instr( instrFactory, root, assem,
 			new Temp[]{ dst },
 			new Temp[]{ src1, src2 }));
     }
 
     /** Null dest Null source Emit Helper. */
     private void emit( HCodeElement root, String assem ) {
-	emit(new Instr( inf, root, assem, null, null));
+	emit(new Instr( instrFactory, root, assem, null, null));
     }
 
     private Temp makeTemp() {
@@ -119,10 +123,12 @@ import java.util.HashMap;
 %%
 %start with %{
        // *** METHOD PROLOGUE *** 
+       this.instrFactory = inf;
 }%
 %end with %{
        // *** METHOD EPILOGUE *** 
-     return null;
+       Util.assert(first != null, "Should always generate some instrs");
+       return first;
 }%
     /* this comment will be eaten by the .spec processor (unlike comments above) */
 	
@@ -196,7 +202,7 @@ BINOP<f>(CMPEQ, j, k) = i %{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr( inf, ROOT, 
+    emit(new Instr( instrFactory, ROOT, 
 		    "mov `d1, `s1\n"+
 		    "mov `d0, `s0\n"+
 		    "bl ___eqsf2\n"+
@@ -212,7 +218,7 @@ BINOP<d>(CMPEQ, j, k) = i %{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(inf, ROOT,
+    emit(new Instr(instrFactory, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
 		   "mov `d0, `s0l\n"+
@@ -251,7 +257,7 @@ BINOP<f>(CMPGT, j, k) = i %{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(inf, ROOT,
+    emit(new Instr(instrFactory, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
 		   "bl ___gtsf2\n"+
@@ -267,7 +273,7 @@ BINOP<d>(CMPGT, j, k) = i %{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(inf, ROOT,
+    emit(new Instr(instrFactory, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
 		   "mov `d0, `s0l\n"+
@@ -307,7 +313,7 @@ BINOP<f>(CMPGE, j, k) = i %{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(inf, ROOT,
+    emit(new Instr(instrFactory, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
 		   "bl ___gesf2\n"+
@@ -323,7 +329,7 @@ BINOP<d>(CMPGE, j, k) = i %{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(inf, ROOT,
+    emit(new Instr(instrFactory, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
 		   "mov `d0, `s0l\n"+
@@ -363,7 +369,7 @@ BINOP<f>(CMPLE, j, k) = i %{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(inf, ROOT,
+    emit(new Instr(instrFactory, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
 		   "bl ___lesf2\n"+
@@ -379,7 +385,7 @@ BINOP<d>(CMPLE, j, k) = i %{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(inf, ROOT,
+    emit(new Instr(instrFactory, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
 		   "mov `d0, `s0l\n"+
@@ -418,7 +424,7 @@ BINOP<f>(CMPLT, j, k) = i %{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(inf, ROOT,
+    emit(new Instr(instrFactory, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
 		   "bl ___ltsf2\n"+
@@ -434,7 +440,7 @@ BINOP<d>(CMPLT, j, k) = i %{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(inf, ROOT,
+    emit(new Instr(instrFactory, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
 		   "mov `d0, `s0l\n"+
@@ -507,38 +513,38 @@ CONST<i>(c) = i %{
     b2 = ((val & 0x00FF0000) != 0);
     b3 = ((val & 0xFF000000) != 0);
     if (b0) { // start here
-        emit(new Instr( inf, ROOT, 
+        emit(new Instr( instrFactory, ROOT, 
 			"mov `d0, #"+(val & 0xFF000000), 
 			new Temp[]{ i }, null));
 	b0 = false;
     } else if (b1) {
-        emit(new Instr( inf, ROOT, 
+        emit(new Instr( instrFactory, ROOT, 
 			"mov `d0, #"+(val & 0x00FF0000), 
 			new Temp[]{ i }, null));
 	b1 = false;
     } else if (b2) {
-        emit(new Instr( inf, ROOT, 
+        emit(new Instr( instrFactory, ROOT, 
 			"mov `d0, #"+(val & 0x0000FF00), 
 			new Temp[]{ i }, null));
 	b2 = false;
     } else if (b3) {
-        emit(new Instr( inf, ROOT, 
+        emit(new Instr( instrFactory, ROOT, 
 			"mov `d0, #"+(val & 0x000000FF), 
 			new Temp[]{ i }, null));
 	b3 = false;
     } else {
-        emit(new Instr( inf, ROOT, 
+        emit(new Instr( instrFactory, ROOT, 
 			"mov `d0, #"+(val & 0x00000000), 
 			new Temp[]{ i }, null));
     }
 
-    if(b1) emit(new Instr( inf, ROOT, 
+    if(b1) emit(new Instr( instrFactory, ROOT, 
 			   "orr `d0, #"+(val & 0x00FF0000), 
 			   new Temp[]{ i }, null));
-    if(b2) emit(new Instr( inf, ROOT, 
+    if(b2) emit(new Instr( instrFactory, ROOT, 
 			   "orr `d0, #"+(val & 0x0000FF00), 
 			   new Temp[]{ i }, null));
-    if(b3) emit(new Instr( inf, ROOT, 
+    if(b3) emit(new Instr( instrFactory, ROOT, 
 			   "orr `d0, #"+(val & 0x000000FF), 
 			   new Temp[]{ i }, null));
 }%
@@ -638,16 +644,16 @@ BINOP<l>(REM, j, k) = i %{
 
 MEM<p,i,f>(e) = i %{
     Temp i = makeTemp();		
-    emit(new InstrMEM(inf, ROOT,
+    emit(new InstrMEM(instrFactory, ROOT,
 	             "ldr `d0, [`s0]",
 		     new Temp[]{ i }, new Temp[]{ e }));
 }%
 MEM<l,d>(e) = i %{
     Temp i = makeTwoWordTemp();		
-    emit(new InstrMEM(inf, ROOT,
+    emit(new InstrMEM(instrFactory, ROOT,
 	             "ldr `d0l, [`s0]",
 		     new Temp[]{ i }, new Temp[]{ e }));
-    emit(new InstrMEM(inf, ROOT,
+    emit(new InstrMEM(instrFactory, ROOT,
 	             "ldr `d0h, [`s0, #4]",
 		     new Temp[]{ i }, new Temp[]{ e }));
 }%
@@ -656,23 +662,23 @@ MEM<l,d>(e) = i %{
 NAME(id) = i %{
     // produces a pointer
     Temp i = makeTemp();		
-    emit(new Instr( inf, ROOT,
+    emit(new Instr( instrFactory, ROOT,
 		    "mov `d0, #" + id, 
 		    new Temp[]{ i }, null ));
 }%
 
 MEM<f,i,p>(NAME(id)) = i %{
     Temp i = makeTemp();		
-    emit(new Instr( inf, ROOT,
+    emit(new Instr( instrFactory, ROOT,
 		    "ldr `d0, " + id, 
 		    new Temp[]{ i }, null ));
 }%
 MEM<d,l>(NAME(id)) = i %{
     Temp i = makeTemp();		
-    emit(new Instr( inf, ROOT,
+    emit(new Instr( instrFactory, ROOT,
 		    "ldr `d0l, " + id, 
 		    new Temp[]{ i }, null ));
-    emit(new Instr( inf, ROOT,
+    emit(new Instr( instrFactory, ROOT,
 		    "ldr `d0h, " + id + "+4", 
 		    new Temp[]{ i }, null ));
 }%
@@ -869,7 +875,7 @@ UNOP<p,i>(NOT, arg) = i %{
 
 /* STATEMENTS */
 CJUMP(test, iftrue, iffalse) %{
-    Instr i = new Instr(inf, ROOT, 
+    Instr i = new Instr(instrFactory, ROOT, 
 			"cmp `s0, #0 \n" +
 			"beq " + iffalse + "\n" +
 			"b " + iftrue,
@@ -886,7 +892,7 @@ EXP(e) %{
 }%
 
 JUMP(e) %{
-    Instr i = new Instr(inf, ROOT,"b `s0", null, new Temp[]{e});
+    Instr i = new Instr(instrFactory, ROOT,"b `s0", null, new Temp[]{e});
     emit(i);
     LabelList targets = ((JUMP)ROOT).targets;
     while(targets!=null) {
@@ -897,7 +903,7 @@ JUMP(e) %{
 
 LABEL(id) %{
     LABEL l = (LABEL) ROOT;
-    Instr i = new InstrLABEL(inf, l, l.label + ":", l.label);
+    Instr i = new InstrLABEL(instrFactory, l, l.label + ":", l.label);
     emit(i);
     liMap.put(l.label, i);
 }%
@@ -912,7 +918,7 @@ MOVE<d,l>(dst, src) %{
 }%
 
 MOVE<i>(dst, CONST(s)) %{
-    emit(new Instr(inf, ROOT,
+    emit(new Instr(instrFactory, ROOT,
 		   "mov `d0, #"+((CONST)((MOVE)ROOT).src).value.intValue(),
 		   new Temp[] { dst }, null));
 }%
@@ -930,7 +936,7 @@ MOVE<d,l>(dst, CONST(s)) %{
 */
 
 MOVE<i>(MEM(d), src) %{
-    emit(new InstrMEM(inf, ROOT,
+    emit(new InstrMEM(instrFactory, ROOT,
 		      "str `s0, [`s1]",
 		      null, new Temp[]{ src, d }));   
 }%
@@ -938,7 +944,7 @@ MOVE<i>(MEM(d), src) %{
 RETURN(val) %{
     // FSK: leaving OUT exception handling by passing excep-val in r1
 
-    emit(new InstrMEM(inf, ROOT, 
+    emit(new InstrMEM(instrFactory, ROOT, 
 			   "mov `d0, `s0\n"+
 			   "ldmea `s1, { `d1, `d2, `d3 }",
 			   new Temp[]{ r0,
@@ -977,25 +983,25 @@ CALL(retval, retex, func, arglist) %{
 		    tempExp.temp );
 	      break;			     
 	   case 3: // spread between regs and stack
-	     emit(new Instr( inf, ROOT,
+	     emit(new Instr( instrFactory, ROOT,
 			      "mov `d0, `s0l",
 			      new Temp[]{ frame.getAllRegisters()[index] },
 			      new Temp[]{ tempExp.temp }));
 	     index++;
 	     stackOffset += 4;
-	     emit(new InstrMEM( inf, ROOT,
+	     emit(new InstrMEM( instrFactory, ROOT,
 		      "str `s0h, [`s1, #-4]!",
 		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
 		      new Temp[]{ tempExp.temp, SAFrame.SP })); 
 	     break;
 	   default: // start putting args in memory
-	     emit(new InstrMEM( inf, ROOT,
+	     emit(new InstrMEM( instrFactory, ROOT,
 				"str `s0l, [`s1, #-4]!", 
 				null, 
 			     new Temp[]{ SAFrame.SP, tempExp.temp }));
 	     index++;
 	     stackOffset += 4;
-	     emit(new InstrMEM( inf, ROOT,
+	     emit(new InstrMEM( instrFactory, ROOT,
 		      "str `s0h, [`s1, #-4]!",
 		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
 		      new Temp[]{ tempExp.temp, SAFrame.SP })); 
@@ -1009,7 +1015,7 @@ CALL(retval, retex, func, arglist) %{
 		   frame.getAllRegisters()[index], tempExp.temp);
 	  } else {
 	     emit(new InstrMEM(
-		      inf, ROOT,
+		      instrFactory, ROOT,
 		      "str `s0, [`s1, #-4]!",
 		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
 		      new Temp[]{ tempExp.temp, SAFrame.SP }));
@@ -1056,25 +1062,25 @@ NATIVECALL(retval, retex, func, arglist) %{
 		    tempExp.temp );
 	      break;			     
 	   case 3: // spread between regs and stack
-	     emit(new Instr( inf, ROOT,
+	     emit(new Instr( instrFactory, ROOT,
 			      "mov `d0, `s0l",
 			      new Temp[]{ frame.getAllRegisters()[index] },
 			      new Temp[]{ tempExp.temp }));
 	     index++;
 	     stackOffset += 4;
-	     emit(new InstrMEM( inf, ROOT,
+	     emit(new InstrMEM( instrFactory, ROOT,
 		      "str `s0h, [`s1, #-4]!",
 		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
 		      new Temp[]{ tempExp.temp, SAFrame.SP })); 
 	     break;
 	   default: // start putting args in memory
-	     emit(new InstrMEM( inf, ROOT,
+	     emit(new InstrMEM( instrFactory, ROOT,
 				"str `s0l, [`s1, #-4]!", 
 				null, 
 			     new Temp[]{ SAFrame.SP, tempExp.temp }));
 	     index++;
 	     stackOffset += 4;
-	     emit(new InstrMEM( inf, ROOT,
+	     emit(new InstrMEM( instrFactory, ROOT,
 		      "str `s0h, [`s1, #-4]!",
 		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
 		      new Temp[]{ tempExp.temp, SAFrame.SP })); 
@@ -1088,7 +1094,7 @@ NATIVECALL(retval, retex, func, arglist) %{
 		   frame.getAllRegisters()[index], tempExp.temp);
 	  } else {
 	     emit(new InstrMEM(
-		      inf, ROOT,
+		      instrFactory, ROOT,
 		      "str `s0, [`s1, #-4]!",
 		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
 		      new Temp[]{ tempExp.temp, SAFrame.SP }));

@@ -16,19 +16,23 @@ import java.util.Map;
  * <code>SACode</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SACode.java,v 1.1.2.8 1999-07-30 20:56:54 pnkfelix Exp $
+ * @version $Id: SACode.java,v 1.1.2.9 1999-07-30 23:40:48 pnkfelix Exp $
  */
 public class SACode extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
 
     /** Creates a <code>SACode</code>. */
     public SACode(harpoon.IR.Tree.Code treeCode) {
-        super(treeCode.getMethod(), treeCode.getFrame().codegen().gen(treeCode), treeCode.getFrame());
-	if(instrs!=null) {
-	    instrs=treeCode.getFrame()
-		.procAssemDirectives(treeCode.getFrame()
-				     .procLiveOnExit(instrs));
-	}
+        super(treeCode.getMethod(), 
+	      null,
+	      treeCode.getFrame());
+	treeCode.print(new java.io.PrintWriter(System.out));
+	instrs = treeCode.getFrame().codegen()
+	    .gen(treeCode, newINF(treeCode.getMethod()));
+	Util.assert(instrs != null);
+	instrs=treeCode.getFrame()
+	    .procAssemDirectives(treeCode.getFrame()
+				 .procLiveOnExit(instrs));
     }
 
     public String getName() { return codename; }

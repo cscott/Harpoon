@@ -21,7 +21,7 @@ import java.util.*;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.19 1999-07-30 18:45:15 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.20 1999-07-30 23:40:48 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -253,7 +253,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	<code>Instr</code>, this is not guaranteed.  To produce
 	executable assembly in all cases, use
 	<code>Backend.Generic.Code.toAssem(Instr i)</code>.
-	
+    */
     public String toString() {
         StringBuffer s = new StringBuffer();
         int len = assem.length();
@@ -262,20 +262,26 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
                 switch (assem.charAt(++i)) {
 		case 'd': { 
 		    int n = Character.digit(assem.charAt(++i), 10);
-		    Util.assert(n < dst.length, "Instr can't parse " + assem);
-		    s.append(dst[n]);
+		    if (n < dst.length) 
+			s.append(dst[n]);
+		    else 
+			s.append("d?");
 		}
 		break;
 		case 's': {
 		    int n = Character.digit(assem.charAt(++i), 10);
-		    Util.assert(n < src.length, "Instr can't parse " + assem);
-		    s.append(src[n]);
+		    if (n < src.length) 
+			s.append(src[n]);
+		    else 
+			s.append("s?");
 		}
 		break;
 		case 'j': {
 		    int n = Character.digit(assem.charAt(++i), 10);
-		    Util.assert(n < src.length, "Instr can't parse " + assem);
-		    s.append(src[n]);
+		    if (n < src.length) 
+			s.append(src[n]);
+		    else 
+			s.append("s?");
 		}
 		break;
 		case '`': 
