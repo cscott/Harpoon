@@ -45,7 +45,7 @@
 	  mutex_t GC_allocate_ml;	/* Implicitly initialized.	*/
 #	else
 #          ifdef WIN32_THREADS
-#	      if defined(_DLL) || defined(GC_DLL)
+#	      if !defined(GC_NOT_DLL) && (defined(_DLL) || defined(GC_DLL))
 		 __declspec(dllexport) CRITICAL_SECTION GC_allocate_ml;
 #	      else
 		 CRITICAL_SECTION GC_allocate_ml;
@@ -693,7 +693,7 @@ out:
   }
 
   int GC_write(buf, len)
-  char * buf;
+  GC_CONST char * buf;
   size_t len;
   {
       BOOL tmp;

@@ -84,10 +84,6 @@
     typedef long ptrdiff_t;	/* ptrdiff_t is not defined */
 # endif
 
-#if defined(__CYGWIN32__) && defined(GC_USE_DLL)
-#include "libgc_globals.h"
-#endif
-
 #if defined(__MINGW32__) && defined(WIN32_THREADS)
 # ifdef GC_BUILD
 #   define GC_API __declspec(dllexport)
@@ -97,7 +93,7 @@
 #endif
 
 #if (defined(__DMC__) || defined(_MSC_VER)) \
-		&& (defined(_DLL) && !defined(NOT_GC_DLL) \
+		&& (defined(_DLL) && !defined(GC_NOT_DLL) \
 	            || defined(GC_DLL))
 # ifdef GC_BUILD
 #   define GC_API extern __declspec(dllexport)
