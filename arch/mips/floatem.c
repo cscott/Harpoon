@@ -1,5 +1,5 @@
 #ifndef NO_RCSID
-const char* floatem_rcsid = "$Header: /home/cananian/git-conversion/cvs/Runtime/arch/mips/floatem.c,v 1.1 2000-06-26 20:19:16 witchel Exp $";
+const char* floatem_rcsid = "$Header: /home/cananian/git-conversion/cvs/Runtime/arch/mips/floatem.c,v 1.2 2000-09-25 19:40:04 witchel Exp $";
 #endif
 /*
 
@@ -21,6 +21,8 @@ Contact John Hauser at `jhauser@cs.berkeley.edu' for more information.
 #define DEFAULTSINGLENAN 0x7FBFFFFF
 #define DEFAULTDOUBLENANHIGH 0x7FF7FFFF
 #define DEFAULTDOUBLENANLOW 0xFFFFFFFF
+
+#define TRACE(x) /*x*/
 
 static  void raiseInexact( void )
 {
@@ -855,6 +857,7 @@ void wordToDouble( sbits32 *aPtr, bits32 *zPtr )
     int8 shiftCount;
     bits32 zSig0, zSig1;
 
+    TRACE(printf("i2d %d ", *aPtr));
     a = loadWord( aPtr );
     if ( a == 0 ) {
         storeWholeDouble( 0, 0, zPtr );
@@ -872,7 +875,7 @@ void wordToDouble( sbits32 *aPtr, bits32 *zPtr )
         }
         storeDouble( zSign, 0x3FF + 20 - 1 - shiftCount, zSig0, zSig1, zPtr );
     }
-
+    TRACE(printf("%14g\n", *(double*)zPtr));
 }
 
 void doubleToWord( bits32 *aPtr, sbits32 *zPtr )
@@ -888,6 +891,7 @@ void doubleToWord( bits32 *aPtr, sbits32 *zPtr )
     aSig0 = extractDoubleSig0( a0 );
     aExp = extractDoubleExp( a0 ) - 0x3FF - 31;
     aSign = extractDoubleSign( a0 );
+    TRACE(printf("(%14g) Sgn %d, exp %d, sig0 %x sig1 %x ",*(double*)aPtr, aSign, aExp, aSig0, aSig1));
     if ( 30 - 31 < aExp ) {
         raiseInvalid();
         if (    !aSign
@@ -908,6 +912,7 @@ void doubleToWord( bits32 *aPtr, sbits32 *zPtr )
         z = aSig0>>( -aExp );
         if ( aSign ) z = -z;
     }
+    TRACE(printf("word=%x\n", z));
     storeWord( z, zPtr );
 
 }
@@ -1773,6 +1778,7 @@ void addDouble( bits32 *aPtr, bits32 *bPtr, bits32 *zPtr )
 {
     flag aSign, bSign;
 
+    TRACE(printf("%14g + %14g = ", *(double*)aPtr, *(double*)bPtr));
     aSign = extractDoubleSign( loadDouble0( aPtr ) );
     bSign = extractDoubleSign( loadDouble0( bPtr ) );
     if ( aSign == bSign ) {
@@ -1781,6 +1787,7 @@ void addDouble( bits32 *aPtr, bits32 *bPtr, bits32 *zPtr )
     else {
         subDoubleSigs( aPtr, bPtr, aSign, zPtr );
     }
+    TRACE(printf("%14g\n", *(double*)zPtr));
 
 }
 
@@ -1788,6 +1795,7 @@ void subDouble( bits32 *aPtr, bits32 *bPtr, bits32 *zPtr )
 {
     flag aSign, bSign;
 
+    TRACE(printf("%14g - %14g = ", *(double*)aPtr, *(double*)bPtr));
     aSign = extractDoubleSign( loadDouble0( aPtr ) );
     bSign = extractDoubleSign( loadDouble0( bPtr ) );
     if ( aSign == bSign ) {
@@ -1796,7 +1804,7 @@ void subDouble( bits32 *aPtr, bits32 *bPtr, bits32 *zPtr )
     else {
         addDoubleSigs( aPtr, bPtr, aSign, zPtr );
     }
-
+    TRACE(printf("%14g\n", *(double*)zPtr));
 }
 
 void mulDouble( bits32 *aPtr, bits32 *bPtr, bits32 *zPtr )
@@ -1807,6 +1815,7 @@ void mulDouble( bits32 *aPtr, bits32 *bPtr, bits32 *zPtr )
     bits32 aSig0, aSig1, bSig0, bSig1;
     bits32 zSig0, zSig1, zSig2, zSig3;
 
+    TRACE(printf("%14g * %14g = ", *(double*)aPtr, *(double*)bPtr));
     a1 = loadDouble1( aPtr );
     aSig1 = a1;
     a0 = loadDouble0( aPtr );
@@ -1879,7 +1888,7 @@ void mulDouble( bits32 *aPtr, bits32 *bPtr, bits32 *zPtr )
         zExp++;
     }
     roundAndStoreDouble( zSign, zExp, zSig0, zSig1, zSig2, zPtr );
-
+    TRACE(printf("%14g\n", *(double*)zPtr));
 }
 
 void divDouble( bits32 *aPtr, bits32 *bPtr, bits32 *zPtr )
@@ -1891,6 +1900,7 @@ void divDouble( bits32 *aPtr, bits32 *bPtr, bits32 *zPtr )
     bits32 rem0, rem1, rem2, rem3;
     bits32 term0, term1, term2, term3;
 
+    TRACE(printf("%14g / %14g = ", *(double*)aPtr, *(double*)bPtr));
     a1 = loadDouble1( aPtr );
     aSig1 = a1;
     a0 = loadDouble0( aPtr );
@@ -1986,7 +1996,7 @@ void divDouble( bits32 *aPtr, bits32 *bPtr, bits32 *zPtr )
     }
     shiftDown64ExtraJamming( zSig0, zSig1, 0, 11, &zSig0, &zSig1, &zSig2 );
     roundAndStoreDouble( zSign, zExp, zSig0, zSig1, zSig2, zPtr );
-
+    TRACE(printf("%14g\n", *(double*)zPtr));
 }
 
 void sqrtDouble( bits32 *aPtr, bits32 *zPtr )
