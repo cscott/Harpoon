@@ -16,9 +16,9 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.11 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: SEQ.java,v 1.1.2.12 1999-09-09 05:04:00 cananian Exp $
  */
-public class SEQ extends Stm {
+public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     /** The statement to evaluate first. */
     public Stm left;
     /** The statement to evaluate last. */
