@@ -20,7 +20,7 @@ import java.util.Map;
  * a reachable method which overrides it.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CHFinalMap.java,v 1.1.2.2 2000-10-21 22:48:34 cananian Exp $
+ * @version $Id: CHFinalMap.java,v 1.1.2.3 2000-10-22 19:44:33 cananian Exp $
  */
 public class CHFinalMap extends DefaultFinalMap {
     private final ClassHierarchy ch;
@@ -32,14 +32,15 @@ public class CHFinalMap extends DefaultFinalMap {
 	return super.isFinal(hc) || ch.children(hc).size()==0;
     }
     public boolean isFinal(HMethod hm) {
+	// abstract methods are never final, even if no reachable methods
+	// implement it. (this deals with unexecutable method calls)
+	if (Modifier.isAbstract(hm.getModifiers())) return false;
+	// at least as precise as DefaultFinalMap
 	if (super.isFinal(hm)) return true;
 	// call non-virtual methods final.
 	if (hm.isStatic() ||
 	    Modifier.isPrivate(hm.getModifiers()) ||
 	    hm instanceof HConstructor) return true;
-	// abstract methods are never final, even if no reachable methods
-	// implement it. (this deals with unexecutable method calls)
-	if (Modifier.isAbstract(hm.getModifiers())) return false;
 	// next bit is time consuming.  check cache first.
 	if (!cache.containsKey(hm)) {
 	    // if no overrides, this is final.
