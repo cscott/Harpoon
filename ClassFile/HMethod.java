@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30.2.4 1999-02-01 00:40:32 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30.2.5 1999-02-09 03:57:35 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -59,6 +59,10 @@ public abstract class HMethod implements HMember {
    *  <code>getCode</code> method. */
   public static void register(HCodeFactory f) {
     factories.put(f.getCodeName(), f);
+  }
+  /** Get a (default) code factory by name. */
+  public static HCodeFactory getCodeFactory(String codetype) {
+    return (HCodeFactory) factories.get(codetype);
   }
   static Hashtable factories = new Hashtable();
 
