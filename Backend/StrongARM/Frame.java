@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.21 2000-03-24 19:42:18 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.22 2000-04-04 00:56:36 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -29,8 +29,8 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private GCInfo gcInfo; // should really be final
 
     // HACK: this should really be a command-line parameter.
-    private final static String alloc_func =
-	System.getProperty("harpoon.alloc.func", "malloc");
+    private final static String alloc_strategy =
+	System.getProperty("harpoon.alloc.strategy", "malloc");
     private final static boolean is_elf =
 	System.getProperty("harpoon.target.elf", "yes")
 	.equalsIgnoreCase("yes");
@@ -41,8 +41,16 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	regFileInfo = new RegFileInfo();
 	
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
+	    alloc_strategy.equalsIgnoreCase("nifty") ?
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
+	    new harpoon.Backend.Runtime1.NiftyAllocationStrategy(this) :
+	    alloc_strategy.equalsIgnoreCase("bdw") ?
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
+	    new harpoon.Backend.Runtime1.BDWAllocationStrategy(this) :
+	    // default, "malloc" strategy.
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
-								  alloc_func);
+								  "malloc");
 	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg,
 						       !is_elf);
 	// FSK: CodeGen ctor needs regFileInfo set in 'this' Frame
