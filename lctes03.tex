@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.15 2003-04-25 09:14:31 cananian Exp $
+% $Id: lctes03.tex,v 1.16 2003-04-25 19:40:30 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % lctes03.tex
 % Data Size Optimizations for Java Programs
@@ -37,7 +37,6 @@
 %  talk about static elimination of hash/locks? NO
 %  kava paper in related work? YES
 
-%\renewcommand{\baselinestretch}{0.97}
 \begin{document}
 \bibliographystyle{plain}
 \conferenceinfo{LCTES'03,} {June 11--13, 2003, San Diego, California, USA.}
@@ -67,8 +66,7 @@ and the Singapore-MIT Alliance.}
 % abstract
 \begin{abstract}
 We present a set of techniques for reducing the memory consumption of
-object-oriented programs which are particularly applicable to
-memory-limited embedded systems. These techniques 
+object-oriented programs.  These techniques 
 include optimizations that eliminate fields with
 constant values, reduce the sizes of fields based on the range
 of values that can appear in each field, and 
@@ -79,6 +77,9 @@ to fields declared by the programmer and to implicit fields in
 the runtime object header. We describe analysis
 algorithms to extract the information required to apply these
 optimizations. 
+Although these techniques are applicable to any object-oriented
+program, we expect they will be particularly applicable to
+memory-limited embedded systems. 
 
 We have implemented these techniques in the MIT FLEX compiler
 system and applied them to the programs in the SPECjvm98 
@@ -103,7 +104,7 @@ field externalization, field packing, bitwidth analysis}
 %
 \section{Introduction}
 %
-This paper presents a set of techniques for reducing the
+We present a set of techniques for reducing the
 amount of data space required to represent objects
 in object-oriented programs. Our techniques optimize
 the representation of both the programmer-defined fields
@@ -188,7 +189,7 @@ of our transformations, revealing the extent of the
 savings available and the performance cost of attaining them.
 \end{itemize}
 %
-\section{Example}
+\section{Examples}
 %
 We next present a pair of examples that illustrate the kinds of 
 analyses and transformations that our compiler performs.
@@ -408,9 +409,9 @@ on that field. We can apply this idea recursively to the
 new program to obtain the benefits of splitting on multiple
 fields. 
 
-Note that in this example, the analysis can discover all the required
-facts without examining the rest of the program, due to the particular
-field access modifiers specified.  However, our analysis is powerful
+In this example all of the relevant fields are declared {\tt private},
+enabling the analysis to determine all the required facts without
+examining the rest of the program.  However, our analysis is powerful
 enough to determine the necessary facts by examining use context even
 in the absence of these access annotations.
 
@@ -641,7 +642,6 @@ bitwidth analysis and field reduction using our byte packing strategy.
 222\_mpegaudio  & 6777& 4983&  1&5\% \\
 227\_mtrt       & 7467& 5296&  0&9\% \\
 228\_jack       & 8356& 6037& 17&2\% \\
-% THE JACK NUMBER IS VERY QUESTIONABLE!!!
 \end{tabular}
 \caption{Number of field bits in SPEC benchmarks statically removed
   due to bitwidth analysis,
@@ -717,9 +717,9 @@ are usually ``one'', a third binary to look for fields commonly
 looking for
 field default values in the interval $[-5,5]$.
 For pointer fields, we only look for {\tt null} as a default value.
-Although our use of multiple binaries is by no means necessary,
-for ease of exposition we will discuss our profiling technique
-as if there is a single default value $N$ which we are looking for.
+It should be stressed that our use of multiple separate binaries was
+solely for ease of implementation, and is not an inherent limitation
+of the technique.
 
 Our instrumentation pass starts by
 adding a counter per class
@@ -875,14 +875,13 @@ by attempting to place fields on preferred boundaries.
 
 We have observed that this heuristic strategy works well in practice,
 and the penalties for occasionally placing an unaligned non-pointer
-field have not
-been seen to have a material adverse effect on performance (see
+field were not seen to have a material adverse effect on performance (see
 Section~\ref{sec:byte-pack}). 
 
 % header optimizations.
 % java-vs-byte-vs-bit packing.
 % byte-packing strategy.
-% garbage collection; dynamic methods.  conservative gc. ole aggeson's blah.
+% garbage collection; dynamic methods.  conservative gc.
 % efficiency of field virtualization.
 % single-inheritance when splitting.
 % efficiency of external hashtable
@@ -1154,7 +1153,6 @@ maximum heap required for a program by as much as 40\%.
 Our experimental results from our fully-implemented system validate the
 opportunity for space savings on typical object oriented programs.
 
-\renewcommand{\baselinestretch}{1}
 \bibliography{harpoon}
 
 \end{document}
