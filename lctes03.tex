@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.17 2003-04-25 20:29:52 cananian Exp $
+% $Id: lctes03.tex,v 1.18 2003-04-25 21:51:09 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % lctes03.tex
 % Data Size Optimizations for Java Programs
@@ -516,11 +516,12 @@ amply suffices in these three cases.
 % this allows us to reduce fields and remove unused/const fields.
 We use a flow-sensitive interprocedural bitwidth analysis to
 find constant values, unread and constant fields, and to reduce
-field sizes where possible.  Our dataflow framework uses
+field sizes where possible.  This analysis extends our previous
+intraprocedural analysis \cite{ananian99:tech} and is able
+to derive all the dataflow facts found by
 Wegman and Zadeck's Sparse Conditional Constant (SCC) propagation
-algorithm \cite{wegman91:scc} as a basis.  We then extend their
-analysis interprocedurally, add coverage of Java language features,
-and extend the value lattice to handle bitwidths.
+algorithm \cite{wegman91:scc}, in addition to discovering properties
+of Java objects and arrays and bitwidth information for integral types.
 Since almost all types in Java are signed (with the exception of the
 16-bit {\tt char}), we must be able to describe bitwidths of both
 negative and positive numbers, which we do by splitting the set of
@@ -572,7 +573,7 @@ object $x$.\footnote{An obvious extension is to use pointer
 analysis to discriminate between fields allocated at different sites
 in the program.}  The result of the analysis is a bitwidth
 specification for each variable and field in the program.  As the
-analysis is based on SCC, we also identify constant variables and
+analysis encompasses SCC, we also identify constant variables and
 fields; we replace reads of constant fields with their constant
 value and the field is eliminated.  Fields for which no reads are
 found (even if writes are present) are also eliminated.%
@@ -612,15 +613,15 @@ bitwidth analysis and field reduction using our byte packing strategy.
 &\bf total&&&\multicolumn{2}{c}{\bf\% alloc'ed}\\
 \bf Benchmark&\bf fields &\bf unread &\bf constant &
 \multicolumn{2}{c}{\bf space saved} \\\hline
-%200\_check      & 279 &   79   &   35   &  2&6\% \\
-201\_compress   & 298 &   75   &   31   &  2&5\% \\
-202\_jess       & 485 &   91   &   43   &  9&9\% \\
-205\_raytrace   & 341 &   75   &   30   &  0&0\% \\
-209\_db         & 286 &   75   &   35   &  0&0\% \\
-213\_javac      & 531 &   85   &   34   &  0&6\% \\
-222\_mpegaudio  & 286 &   75   &   35   &  1&4\% \\
-227\_mtrt       & 341 &   75   &   30   &  0&0\% \\
-228\_jack       & 378 &   77   &   31   & 10&2\% \\
+%check      & 279 &   79   &   35   &  2&6\% \\
+compress   & 298 &   75   &   31   &  2&5\% \\
+jess       & 485 &   91   &   43   &  9&9\% \\
+raytrace   & 341 &   75   &   30   &  0&0\% \\
+db         & 286 &   75   &   35   &  0&0\% \\
+javac      & 531 &   85   &   34   &  0&6\% \\
+mpegaudio  & 286 &   75   &   35   &  1&4\% \\
+mtrt       & 341 &   75   &   30   &  0&0\% \\
+jack       & 378 &   77   &   31   & 10&2\% \\
 \end{tabular}
 \caption{Number of unused and constant fields in SPEC benchmarks,
   and the savings realized (in \% of total dynamic allocated bytes) by
@@ -634,15 +635,15 @@ bitwidth analysis and field reduction using our byte packing strategy.
 \bf before & \bf after &
 \multicolumn{2}{c}{\bf space saved} \\ \hline
 % data from 11-15 build of NO and 11-01 build of BW.
-%200\_check      & 7343& 4958&  3&4\% \\
-201\_compress   & 7591& 5430&  3&0\% \\
-202\_jess       &13349&10634& 30&1\% \\
-205\_raytrace   & 7467& 5296&  0&9\% \\
-209\_db         & 6777& 4983&  0&3\% \\
-213\_javac      &11560& 8161&  5&4\% \\
-222\_mpegaudio  & 6777& 4983&  1&5\% \\
-227\_mtrt       & 7467& 5296&  0&9\% \\
-228\_jack       & 8356& 6037& 17&2\% \\
+%check      & 7343& 4958&  3&4\% \\
+compress   & 7591& 5430&  3&0\% \\
+jess       &13349&10634& 30&1\% \\
+raytrace   & 7467& 5296&  0&9\% \\
+db         & 6777& 4983&  0&3\% \\
+javac      &11560& 8161&  5&4\% \\
+mpegaudio  & 6777& 4983&  1&5\% \\
+mtrt       & 7467& 5296&  0&9\% \\
+jack       & 8356& 6037& 17&2\% \\
 \end{tabular}
 \caption{Number of field bits in SPEC benchmarks statically removed
   due to bitwidth analysis,
@@ -708,6 +709,33 @@ analysis are also used when profiling mostly-constant fields, as described
 in the next section.
 %
 \subsection{Profiling Mostly-Constant Fields}
+\begin{table}[t]
+\centering\small
+\begin{tabular}{llrc}
+              &          &\bf bytes & \\
+              &          &\bf alloc'd & \\
+\bf Benchmark &\bf field &\bf for field &\bf \% zero \\ \hline
+compress   & Hashtable\$Entry.next & 3,552 & 49.7\% \\
+           & String.offset & 3,180 & 90.9\% \\
+jess       & jess.Token.negcnt & 7,573,616 & 100.0\% \\
+           & jess.Value.floatval & 5,688,080 & 55.9\% \\
+raytrace   & Point.z & 4,101,328 & 23.5\% \\
+           & Point.x & 3,291,076 & 18.8\% \\
+db         & String.offset & 508,204 & 99.9\% \\
+           & Vector.capacityIncrement & 62,548 & 100.0\% \\
+javac      & String.offset & 3,735,388 & 97.1\% \\
+% missing one here
+           & Statement.labels & 578,608 & 100.0\% \\
+mpegaudio  & Hashtable\$Entry.next & 3,616 & 49.3\% \\
+           & String.offset & 2,352 & 88.0\% \\
+%mtrt       & Point.z & 4,106,728 & 23.5\% \\
+%           & Point.x & 3,296,476 & 18.8\% \\
+jack       & String.offset & 7,442,956 & 100.0\% \\
+           & Hashtable\$Enumerator.type & 5,288,364 & 100.0\% \\
+\end{tabular}
+\caption{Representative ``mostly-zero'' fields found in SPEC benchmarks.}
+\label{tab:mostly-zero}
+\end{table}
 To inform the static specialization and field externalization
 transformations, we instrument a profiling build of the code
 to determine which fields are {\it mostly-constant}.  Our implementation
@@ -750,6 +778,11 @@ definite-initialization analysis described in the previous section to
 increment the
 ``non-$N$'' counter on any path where the field in question is not
 definitely initialized.
+
+Table~\ref{tab:mostly-zero} presents some representative
+``mostly-zero'' fields in the SPEC benchmark identified by profiling
+to help the reader gain some intuition about where such fields can be
+found.
 
 \subsection{Finding Subclass-Final Fields}
 \label{sec:subclass-final}
@@ -1112,7 +1145,7 @@ measurements.
 Sweeney and Tip \cite{SweeneyTip98DeadDataMembers} did a study of dead
 members of C++ programs, which is similar to the unread field
 elimination done by our bitwidth analysis.  However, they
-fail to identify constant members, which our SCC-based algorithm
+fail to identify constant members, which our analysis algorithm
 does.  Further, our results show that unread and constant field
 elimination is very dependent on the coding style of a particular
 application.  The collection of techniques we have presented here
