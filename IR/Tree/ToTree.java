@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.96 2001-07-11 20:24:39 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.97 2001-08-17 23:42:41 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -1148,7 +1148,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    treeDeriv.putTypeAndTemp(dst, type, treeTemp);
 	else
 	    treeDeriv.putDerivation(dst, 
-				    quadDeriv.derivation(defSite, quadTemp));
+				    DList.rename(quadDeriv.derivation(defSite, quadTemp),m_ctm));
 	addStmt(m);
 	return;
     }
@@ -1166,7 +1166,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    Quad def = (Quad) it.next();
 	    TypeBundle tb2 = (quadDeriv.typeMap(def, t)!=null) ?
 		new TypeBundle(quadDeriv.typeMap(def, t)) :
-		new TypeBundle(quadDeriv.derivation(def, t));
+		new TypeBundle(DList.rename(quadDeriv.derivation(def, t),m_ctm));
 	    tb = (tb==null) ? tb2 : tb.merge(tb2);
 	}
 	return tb;
