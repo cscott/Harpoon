@@ -7,9 +7,6 @@
 #include "config.h"
 #include "flexthread.h"
 #include "fni-stats.h"
-#ifdef WITH_PRECISE_GC
-#include "jni-gcthreads.h"
-#endif
 
 DECLARE_STATS_EXTERN(monitor_enter)
 DECLARE_STATS_EXTERN(monitor_contention)
@@ -33,6 +30,9 @@ void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall) {
 #endif /* !WITH_THREADS */
 
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
+#ifdef WITH_PRECISE_GC
+#include "jni-gcthreads.h"
+#endif
 
 jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
   pthread_t self = pthread_self();

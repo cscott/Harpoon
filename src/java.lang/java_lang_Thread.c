@@ -22,6 +22,9 @@
 #include "memstats.h"
 #ifdef WITH_PRECISE_GC
 #include "jni-gc.h"
+#ifdef WITH_THREADS
+#include "jni-gcthreads.h"
+#endif
 #endif
 
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS

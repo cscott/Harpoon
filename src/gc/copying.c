@@ -7,24 +7,12 @@
 #include "jni-private.h"
 #include "jni-gc.h"
 #include "gc-data.h"
+#include "precise_gc.h"
 #ifdef WITH_THREADED_GC
 #include "flexthread.h"
-#include "jni-gcthreads.h"
 #endif
 
-//#define GC_EVERY_TIME
 #define MAGIC_RATIO            14
-#define COMPACT_ENCODING_SIZE (SIZEOF_VOID_P*SIZEOF_VOID_P*8)
-#define HEADERSZ               3 /* size of array header */
-#define ALIGN                  7
-#define BITMASK               (~ALIGN)
-
-#define align(_unaligned_size_) (((_unaligned_size_) + ALIGN) & BITMASK)
-#define aligned_size_of_np_array(_np_arr_) \
-(align((HEADERSZ * WORDSZ_IN_BYTES + \
-	(_np_arr_)->length * (_np_arr_)->obj.claz->component_claz->size)))
-#define aligned_size_of_p_array(_p_arr_) \
-(align((HEADERSZ + (_p_arr_)->length) * WORDSZ_IN_BYTES))
 
 static void *free;
 static void *to_space;
@@ -41,54 +29,49 @@ static jobject_unwrapped *special_ptr = (jobject_unwrapped *)0;
 static jobject_unwrapped special;
 #endif
 
-size_t trace_array(struct aarray *arr);
-size_t trace_object(jobject_unwrapped obj);
-
-/* x: jobject_unwrapped */
-#define trace(x) ({ ((x)->claz->component_claz == NULL) ? \
-                    trace_object(x) : trace_array((struct aarray *)(x)); })
-
 #ifdef WITH_THREADED_GC
-
 /* mutex for the GC variables */
-FLEX_MUTEX_DECLARE_STATIC(gc_mutex);
+FLEX_MUTEX_DECLARE_STATIC(copying_gc_mutex);
 
 /* barriers for synchronizing threads */
-static pthread_barrier_t before;
-static pthread_barrier_t after;
+extern pthread_barrier_t before;
+extern pthread_barrier_t after;
 
-static pthread_cond_t done_cond = PTHREAD_COND_INITIALIZER;
-static pthread_mutex_t done_mutex = PTHREAD_MUTEX_INITIALIZER;
-static int done_count;
+extern pthread_cond_t done_cond;
+extern pthread_mutex_t done_mutex;
+extern int done_count;
+extern jint halt_for_GC_flag; 
 
-jint halt_for_GC_flag = 0;
-void halt_for_GC() {
-  error_gc("Thread %p ready for GC\n", FNI_GetJNIEnv());
-  // ready for GC
-  pthread_barrier_wait(&before);
-  // wait for GC to finish
-  pthread_barrier_wait(&after);
-  // let GC know that we're done
-  pthread_mutex_lock(&done_mutex);
-  done_count++;
-  pthread_cond_signal(&done_cond);
-  pthread_mutex_unlock(&done_mutex);
-}
+void halt_for_GC();
+
+/* halt threads and acquire necessary locks */
+void setup_for_threaded_GC();
+
+/* release locks and allow threads to continue */
+void cleanup_after_threaded_GC();
 #endif /* WITH_THREADED_GC */
 
-void precise_gc_init() {
-#ifdef WITH_HEAVY_THREADS
-    error_gc("Heavy threads\n", "");
-#endif
-#ifdef WITH_PTH_THREADS
-    error_gc("Pth threads\n", "");
-#endif
-#ifdef WITH_USER_THREADS
-    error_gc("User threads\n", "");
-#endif
-#ifdef WITH_THREADED_GC
-  gc_data_init();
-#endif
+void relocate(jobject_unwrapped *obj);
+
+void copying_handle_nonroot(jobject_unwrapped *nonroot) {
+  if ((*nonroot) >= (jobject_unwrapped)from_space && 
+      (*nonroot) <  (jobject_unwrapped)top_of_space) {
+    if (((void *)((*nonroot)->claz) >= to_space) && 
+	((void *)((*nonroot)->claz) < top_of_to_space)) {
+      /* already moved, needs forwarding */
+      error_gc(" already moved from %p to ", (*nonroot));
+      (*nonroot) = (jobject_unwrapped)((*nonroot)->claz);
+      error_gc("%p\n", (*nonroot));
+    } else {
+      /* needs moving */
+      error_gc(" relocated from %p to ", (*nonroot));
+      relocate(nonroot);
+      error_gc("%p\n", (*nonroot));
+    }
+  } else {
+    error_gc("!!!    tracing nonroot at %p\n", (*nonroot));
+    //trace((*field));
+  }
 }
 
 void relocate(jobject_unwrapped *obj) {
@@ -122,97 +105,8 @@ void relocate(jobject_unwrapped *obj) {
   free += obj_size;
 }
 
-size_t trace_object(jobject_unwrapped obj) {
-  size_t obj_size = obj->claz->size;
-  ptroff_t bitmap;
-  ptroff_t mask = 0;
-  int bitmap_position = 0;
-  int num_bitmaps =
-    (obj_size + COMPACT_ENCODING_SIZE - 1)/COMPACT_ENCODING_SIZE;
-  assert(num_bitmaps > 0);
-  if (num_bitmaps > 1)
-    bitmap = *(obj->claz->gc_info.ptr);
-  else
-    bitmap = obj->claz->gc_info.bitmap;  
-  while(num_bitmaps > 0) { /* continue until done w/ all masks */
-    while(bitmap & (~mask)) { /* continue until done w/ this mask */
-      /* update mask */
-      mask |= 1 << bitmap_position;
-      /* check if the current bit is set */
-      if (bitmap & (1 << bitmap_position)) {
-	/* field is pointer */
-	jobject_unwrapped *field = (jobject_unwrapped *)obj + bitmap_position;
-	if ((*field) != NULL) {
-	  if ((*field) >= (jobject_unwrapped)from_space && 
-	      (*field) <  (jobject_unwrapped)top_of_space) {
-	    if (((void *)((*field)->claz) >= to_space) && 
-		((void *)((*field)->claz) < top_of_to_space)) {
-	      /* already moved, needs forwarding */
-	      error_gc("    field already moved from %p to ", (*field));
-	      (*field) = (jobject_unwrapped)((*field)->claz);
-	      error_gc("%p\n", (*field));
-	    } else {
-	      /* needs moving */
-	      error_gc("    field relocated from %p to ", (*field));
-	      relocate(field);
-	      error_gc("%p\n", (*field));
-	    }
-	  } else {
-	    error_gc("!!!    tracing field at %p\n", (*field));
-	    //trace((*field));
-	  }
-	}
-      } /* current bit is set */
-      bitmap_position++;
-    }
-    bitmap = *((&bitmap)+1); /* go to next bitmap */
-    num_bitmaps--;
-    mask = 0;  
-  }
-  return align(obj_size); /* done */
-}
 
-size_t trace_array(struct aarray *arr) {
-  ptroff_t containsPointers = arr->obj.claz->gc_info.bitmap;
-  assert(containsPointers == 0 || containsPointers == 1);
-  if (!containsPointers)
-    /* array of non-pointers */
-    return aligned_size_of_np_array(arr);
-  { /* contains pointers */
-    size_t arr_length = arr->length;
-    size_t element_size = align(arr->obj.claz->size);
-    jobject_unwrapped *element = ((jobject_unwrapped *)arr)+HEADERSZ;
-    while(arr_length > 0) { /* continue until done w/ entire array */
-      if ((*element) != NULL) {
-	if ((jobject_unwrapped)(*element) >= (jobject_unwrapped)from_space && 
-	    (jobject_unwrapped)(*element) <  (jobject_unwrapped)top_of_space) {
-	  /* needs moving/forwarding */
-	  if (((void *)((*element)->claz) >= to_space) &&
-	      ((void *)((*element)->claz) < top_of_to_space)) {
-	    /* already moved, needs forwarding */
-	    error_gc("    array element already moved from %p to ", (*element));
-	    (*element) = (jobject_unwrapped)((*element)->claz);
-	    error_gc("%p\n", (*element));
-	  } else {
-	    /* needs moving */
-	    error_gc("    array element relocated from %p to ", (*element));
-	    relocate(element);
-	    error_gc("%p\n", (*element));
-	  }
-	} else {
-	  error_gc("!!!    tracing field at %p\n", (*element));
-	  //trace(*element);
-	}
-      }
-      arr_length--;
-      element++;
-    }
-    return aligned_size_of_p_array(arr); /* done */
-  }
-}
-
-
-void add_to_root_set(jobject_unwrapped *obj) {
+void copying_add_to_root_set(jobject_unwrapped *obj) {
   if ((*obj) >= (jobject_unwrapped)from_space && 
       (*obj) <  (jobject_unwrapped)top_of_space) {
     void *forwarding_address = (*obj)->claz;
@@ -308,7 +202,7 @@ void *copying_malloc (size_t size_in_bytes, void *saved_registers[])
 
 #ifdef WITH_THREADED_GC
   /* only one thread can get memory at a time */
-  while (pthread_mutex_trylock(&gc_mutex))
+  while (pthread_mutex_trylock(&copying_gc_mutex))
     if (halt_for_GC_flag) halt_for_GC();
 #endif
     
@@ -317,7 +211,7 @@ void *copying_malloc (size_t size_in_bytes, void *saved_registers[])
 #ifdef DEBUG_GC
     //    heap_size = 2*0x848;
 #endif
-   fd = open("/dev/zero", O_RDONLY);
+    fd = open("/dev/zero", O_RDONLY);
     from_space = mmap
       (0, heap_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
     assert(from_space != MAP_FAILED);
@@ -337,24 +231,11 @@ void *copying_malloc (size_t size_in_bytes, void *saved_registers[])
   if (free + aligned_size_in_bytes > top_of_space)
 #endif
     {
-#ifdef WITH_THREADED_GC
-      struct thread_list *nlist;
-      /* get count of the number of threads */
-      pthread_mutex_lock(&gc_thread_mutex);
-      pthread_mutex_lock(&running_threads_mutex);
-      error_gc("%d threads are running.\n", num_running_threads);
-      if (num_running_threads > 1) {
-	pthread_barrier_init(&before, 0, num_running_threads);
-	pthread_barrier_init(&after, 0, num_running_threads);
-	halt_for_GC_flag = 1;
-	// grab done_mutex before any thread gets past the first barruer
-	pthread_mutex_lock(&done_mutex);
-	pthread_barrier_wait(&before);
-	halt_for_GC_flag = 0;
-      }
-#endif /* WITH_THREADED_GC */
       error_gc("\nx%x bytes needed ", aligned_size_in_bytes);
       error_gc("but only x%x bytes available\n", top_of_space - free);
+#ifdef WITH_THREADED_GC
+      setup_for_threaded_GC();
+#endif /* WITH_THREADED_GC */
 #ifdef WITH_PRECISE_C_BACKEND
       collect(/* heap not expanded */0);
 #else
@@ -386,16 +267,7 @@ void *copying_malloc (size_t size_in_bytes, void *saved_registers[])
 	assert(free + aligned_size_in_bytes < top_of_space);
       }
 #ifdef WITH_THREADED_GC
-      if (num_running_threads > 1) {
-	pthread_barrier_wait(&after);
-	// make sure all threads have restarted before continuing
-	done_count = 1;
-	while(done_count < num_running_threads)
-	  pthread_cond_wait(&done_cond, &done_mutex);;
-	pthread_mutex_unlock(&done_mutex);
-      }
-      pthread_mutex_unlock(&gc_thread_mutex);
-      pthread_mutex_unlock(&running_threads_mutex);
+      cleanup_after_threaded_GC();
 #endif
     }
   
@@ -413,7 +285,7 @@ void *copying_malloc (size_t size_in_bytes, void *saved_registers[])
 #endif
 
 #ifdef WITH_THREADED_GC
-  FLEX_MUTEX_UNLOCK(&gc_mutex);
+  FLEX_MUTEX_UNLOCK(&copying_gc_mutex);
 #endif
   return result;
 }

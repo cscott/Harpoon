@@ -10,6 +10,7 @@
 #include "jni-gc.h"
 #include "fni-threadstate.h"
 #include "gc-data.h"
+#include "precise_gc.h"
 #ifdef WITH_THREADED_GC
 #include "jni-gcthreads.h"
 #endif
