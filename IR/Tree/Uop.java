@@ -15,18 +15,41 @@ package harpoon.IR.Tree;
  * proper generation.  This could also be done in a peephole optimization.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Uop.java,v 1.1.2.2 1999-02-05 12:19:28 cananian Exp $
+ * @version $Id: Uop.java,v 1.1.2.3 1999-07-22 18:19:16 pnkfelix Exp $
  */
 public class Uop  {
-    public final static int
+
 	// negation
-	NEG=0,
+    public final static int NEG=0;
 	// binary NOT
-	NOT=1,
+    public final static int NOT=1;
+
 	// int conversion
-	_2B=2, _2C=3, _2S=4,
+
+    /** Converts an int to a byte.  Result is still int type, but it
+	is truncated to 8 bits, then sign extended. 
+    */ 
+    public final static int _2B=2; 
+
+    /** Converts an int to a character.  Result is still int type, but
+	is truncated to 16 bits.  No sign extension.
+    */
+    public final static int _2C=3; 
+
+    /** Converts an int to a short.  Result is still int type, but is
+	truncated to 16 bits, then sign extended.
+    */
+    public final static int _2S=4;
+
 	// general conversion
-	_2I=5, _2L=6, _2F=7, _2D=8;
+    /** Converts to int. */
+    public final static int _2I=5; 
+    /** Converts to long. */
+    public final static int _2L=6; 
+    /** Converts to float. */
+    public final static int _2F=7; 
+    /** Converts to double. */
+    public final static int _2D=8;
 
     /** Determines if the given <code>Uop</code> value is valid. */
     public static boolean isValid(int op) {

@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.14 1999-06-30 20:43:33 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.15 1999-07-22 18:19:17 pnkfelix Exp $
  */
 public class Spec  {
 
@@ -833,7 +833,10 @@ public class Spec  {
      *  <code>Temp</code> to have a place to put the high word of the
      *  result (before you throw it away). The <code>DetailExtra</code>
      *  element contains a list of identifiers naming the working temps
-     *  that you are requesting. */
+     *  that you are requesting. 
+     * 
+     *  <P> <B>syntax:</B> <code> %extra { </code> ID-LIST <code> } </code>
+     */
     public static class DetailExtra extends Detail {
 	public final IdList extras;
 	public DetailExtra(IdList extras) {
@@ -849,6 +852,8 @@ public class Spec  {
 	<code>predicate_string</code> which is a piece of Java code
 	that decides if a particular <code>Spec.Rule</code> can be
 	applied. 
+
+	<P> <B>syntax:</B> <code> %pred %( </code> BOOLEAN-EXPRESSION <code> )% </code>
     */
     public static class DetailPredicate extends Detail {
 	public final String predicate_string;
@@ -871,6 +876,8 @@ public class Spec  {
 	Instruction Generator to choose one pattern over another if
 	it is attempting to optimize for the property 
 	(speed, size, etc) given in <code>name</code>.
+
+	<P> <B>syntax:</B> <code> %weight &lt; </code> ID <code> , </code> WEIGHT <code> &gt; </code>
     */
     public static class DetailWeight extends Detail {
 	/** Describes what metric <code>value</code> is measuring. */
@@ -889,6 +896,7 @@ public class Spec  {
     }
 
     /** A representation for storing Types that values can be. 
+	
 	@see IR.Tree.Type
      */
     public static class TypeSet {
