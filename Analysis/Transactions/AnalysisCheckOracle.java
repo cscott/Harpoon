@@ -3,16 +3,19 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Transactions;
 
-import harpoon.ClassFile.*;
-import harpoon.Util.Collections.*;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.Util.Collections.AggregateSetFactory;
+import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Collections.SetFactory;
 
-import java.util.*;
+import java.util.Set;
 /**
  * An <code>AnalysisCheckOracle</code> is used when one wants to
  * do some analysis and store the results of the check oracle.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AnalysisCheckOracle.java,v 1.1.2.1 2001-01-16 18:42:11 cananian Exp $
+ * @version $Id: AnalysisCheckOracle.java,v 1.1.2.2 2001-01-16 19:31:33 cananian Exp $
  */
 abstract class AnalysisCheckOracle extends CheckOracle {
     final MultiMap readVMap, writeVMap, checkFMap, checkEMap;
@@ -65,6 +68,16 @@ abstract class AnalysisCheckOracle extends CheckOracle {
 	    this.writeVersions.removeAll(cs.writeVersions);
 	    this.fields.removeAll(cs.fields);
 	    this.elements.removeAll(cs.elements);
+	}
+	void clear() {
+	    this.readVersions.clear();
+	    this.writeVersions.clear();
+	    this.fields.clear();
+	    this.elements.clear();
+	}
+	public String toString() {
+	    return "Rd: "+readVersions+" / Wr: "+writeVersions+" / "+
+		"Fld: "+fields+" / Ele: "+elements;
 	}
     }
 }

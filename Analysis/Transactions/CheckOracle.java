@@ -14,7 +14,7 @@ import java.util.Set;
  * field and object version lookups and checks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CheckOracle.java,v 1.1.2.2 2001-01-14 07:53:44 cananian Exp $
+ * @version $Id: CheckOracle.java,v 1.1.2.3 2001-01-16 19:31:33 cananian Exp $
  */
 abstract class CheckOracle {
     
@@ -48,6 +48,8 @@ abstract class CheckOracle {
 	    return this.objref.equals(raf.objref) &&
 		this.field.equals(raf.field);
 	}
+	// for debugging, define toString
+	public String toString() { return "{ "+objref+", "+field+" }"; }
     }
     class RefAndIndexAndType {
 	public final Temp objref;
@@ -65,5 +67,7 @@ abstract class CheckOracle {
 		this.index.equals(rit.index) &&
 		this.type.equals(rit.type);
 	}
+	// for debugging, define toString
+	public String toString() { return "{ "+objref+", "+index+", "+type+" }"; }
     }
 }
