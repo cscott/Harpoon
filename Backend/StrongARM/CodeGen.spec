@@ -47,7 +47,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.14 1999-07-30 23:40:48 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.15 1999-08-03 00:25:56 pnkfelix Exp $
  */
 %%
 
@@ -943,7 +943,6 @@ MOVE<i>(MEM(d), src) %{
 
 RETURN(val) %{
     // FSK: leaving OUT exception handling by passing excep-val in r1
-
     emit(new InstrMEM(instrFactory, ROOT, 
 			   "mov `d0, `s0\n"+
 			   "ldmea `s1, { `d1, `d2, `d3 }",
@@ -954,11 +953,16 @@ RETURN(val) %{
 			
 }%
 
-/* // FSK: leaving OUT exception handling 
-THROW(val) %{
 
+THROW(val) %{
+    emit( ROOT, "mov `d0, `s0", r0, val );
+    emit( ROOT, "bl _lookup ; only r0, lr (& ip?) "+
+		"need to be preserved during lookup" ); 
+    emit( ROOT, "jmp stdexit");
+    
+   
 }%
-*/
+
 
 CALL(retval, retex, func, arglist) %{
     ExpList list = arglist;
@@ -1025,7 +1029,16 @@ CALL(retval, retex, func, arglist) %{
 	list = list.tail;    	
     }
 
-    emit( ROOT, "bl " + func );
+    // this '1f' and '1:' business is taking advantage of a GNU
+    // Assembly feature to avoid polluting the global name space with
+    // local labels
+    emit( ROOT, "bl " + func + "\n"+
+		".section fixup\n"+
+		"\t.word 1f, "+retex+"; 1f is return address, "+
+		retex+" is exception handler code\n"+
+		".section code\n"+
+		"1:"); 
+    
 
     // this will break if stackOffset > 255 (ie >63 args)
     Util.assert( stackOffset < 256, 
@@ -1104,7 +1117,16 @@ NATIVECALL(retval, retex, func, arglist) %{
 	list = list.tail;    	
     }
 
-    emit( ROOT, "bl " + func );
+
+    // this '1f' and '1:' business is taking advantage of a GNU
+    // Assembly feature to avoid polluting the global name space with
+    // local labels
+    emit( ROOT, "bl " + func + "\n"+
+		".section fixup\n"+
+		"\t.word 1f, "+retex+"; 1f is return address, "+
+		retex+" is exception handler code\n"+
+		".section code\n"+
+		"1:"); 
 
     // this will break if stackOffset > 255 (ie >63 args)
     emit( ROOT, "add `d0, `s0, #" + stackOffset );
