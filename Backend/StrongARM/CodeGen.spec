@@ -49,6 +49,7 @@ import harpoon.IR.Tree.SEQ;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Collections.DefaultMultiMap;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -64,7 +65,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.118 2000-01-13 17:54:28 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.119 2000-01-14 08:51:35 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -310,13 +311,34 @@ import java.util.Iterator;
 	return r;
     }
 
+    /** simple tuple class to wrap some bits of info about the call prologue */
+    private class CallState {
+      /** number of parameter bytes pushed on to the stack. */
+      final int stackOffset;
+      /** set of registers used by parameters to the call. */
+      final List callUses;
+      CallState(int stackOffset, List callUses) {
+	this.stackOffset=stackOffset; this.callUses=callUses;
+      }
+      /** Append a stack-offset instruction to the actual call.
+       *  We delay the stack-offset to the point where it is
+       *  atomic with the call, so that the register allocator
+       *  can't insert spill code between the stack adjustment
+       *  and the call. (the spill code would fail horribly in
+       *  that case, because the stack pointer won't be where it
+       *  expects it to be.) */
+      String prependSPOffset(String asmString) {
+	// optimize for common case.
+	if (stackOffset==0) return asmString;
+	return "sub sp, sp, #"+stackOffset+"\n\t"+asmString;
+      }
+    }
     /** Helper for setting up registers/memory with the strongARM standard
-     *  calling convention.  Returns the stack offset necessary. */
-    // XXX: change to only update the stack pointer immediately prior to
-    // the call, in hopes of preventing sp-addressed spills from
-    // being corrupted.
-    private int emitCallPrologue(INVOCATION ROOT, TempList list) {
+     *  calling convention.  Returns the stack offset necessary,
+     *  along with a set of registers used by the parameters. */
+    private CallState emitCallPrologue(INVOCATION ROOT, TempList list) {
 	/** OUTPUT ARGUMENT ASSIGNMENTS IN REVERSE ORDER **/
+      List callUses = new ArrayList(6);
       int stackOffset = 0;
       // reverse list and count # of words required
       TempList reverse=null;
@@ -325,6 +347,9 @@ import java.util.Iterator;
 	  reverse=new TempList(tl.head, reverse);
 	  index+=(tl.head instanceof TwoWordTemp) ? 2 : 1;
       }
+      // add all registers up to and including r3 to callUses list.
+      for (int i=0; i<index && i<4; i++)
+	callUses.add(frame.getRegFileInfo().getRegister(i));
       index--; // so index points to 'register #' of last argument.
       for (TempList tl = reverse; tl != null; tl = tl.tail) { 
 	Temp temp = tl.head;
@@ -381,9 +406,7 @@ import java.util.Iterator;
 	}
       }
       Util.assert(index==-1);
-      if (stackOffset!=0) // optimize for common case.
-	  emit( ROOT, "sub `d0, `s0, #" + stackOffset, SP , SP );
-      return stackOffset;
+      return new CallState(stackOffset, callUses);
     }
     /** Make a handler stub. */
     private void emitHandlerStub(INVOCATION ROOT, Temp retex, Label handler) {
@@ -403,12 +426,12 @@ import java.util.Iterator;
     }
     /** Finish up a CALL or NATIVECALL. */
     private void emitCallEpilogue(INVOCATION ROOT,
-				  Temp retval, int stackOffset) {
+				  Temp retval, CallState cs) {
       // this will break if stackOffset > 255 (ie >63 args)
-      Util.assert( stackOffset < 256, 
+      Util.assert( cs.stackOffset < 256, 
 		   "Update the spec file to handle large SP offsets");
-      if (stackOffset!=0) // optimize for common case.
-	  emit( ROOT, "add `d0, `s0, #" + stackOffset, SP , SP );
+      if (cs.stackOffset!=0) // optimize for common case.
+	  emit( ROOT, "add `d0, `s0, #" + cs.stackOffset, SP , SP );
       if (ROOT.getRetval()==null) {
 	  // this is a void method.  don't bother to emit move.
       } else if (ROOT.getRetval().isDoubleWord()) {
@@ -1854,24 +1877,25 @@ THROW(val, handler) %{
 CALL(retval, retex, func, arglist, handler)
 %pred %( !ROOT.isTailCall )%
 %{
-    int stackOffset = emitCallPrologue(ROOT, arglist);
+    CallState cs = emitCallPrologue(ROOT, arglist);
     Label rlabel = new Label(), elabel = new Label();
     retex = makeTemp(retex);
     // next two instructions are *not* InstrMOVEs, as they have side-effects
     emit2( ROOT, "adr `d0, "+rlabel, new Temp[] { LR }, null );
+    // call uses 'func' as `s0
+    // we add a fake use of PC so that it remains live above the call.
+    cs.callUses.add(PC); cs.callUses.add(0, func);
     // note that r0-r3, LR and IP are clobbered by the call.
-    // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
-    // realloc doesn't clobber these between the time they are set and
-    // the time the call happens.
-    emitNoFall( ROOT, "mov `d0, `s0 @clobbers r0-r3, LR, IP", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
-                // fake use of PC so that it remains live above this point.
-                new Temp[]{ func, PC }, new Label[] { rlabel, elabel } );
+    emitNoFall( ROOT,cs.prependSPOffset("mov `d0, `s0 @ clobbers r0-r3,LR,IP"),
+		new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
+                (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
+                new Label[] { rlabel, elabel } );
     // make handler stub.
     emitLABEL( ROOT, elabel+":", elabel);
     emitHandlerStub(ROOT, retex, handler);
     // normal return
     emitLABEL( ROOT, rlabel+":", rlabel);
-    emitCallEpilogue(ROOT, retval, stackOffset);
+    emitCallEpilogue(ROOT, retval, cs);
     // emit fixup table.
     emitCallFixup(ROOT, rlabel, elabel);
 }%
@@ -1879,53 +1903,53 @@ CALL(retval, retex, func, arglist, handler)
 CALL(retval, retex, NAME(funcLabel), arglist, handler)
 %pred %( !ROOT.isTailCall )%
 %{
-    int stackOffset = emitCallPrologue(ROOT, arglist);
+    CallState cs = emitCallPrologue(ROOT, arglist);
     Label rlabel = new Label(), elabel = new Label();
     retex = makeTemp(retex);
     // do the call.  bl has a 24-bit offset field, which should be plenty.
     // note that r0-r3, LR and IP are clobbered by the call.
-    // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
-    // realloc doesn't clobber these between the time they are set and
-    // the time the call happens.
     emit2( ROOT, "adr `d0, "+rlabel, new Temp[] { LR }, null );
-    emitNoFall( ROOT, "b "+funcLabel+" @clobbers r0-r3, LR, IP", new Temp[] { r0,r1,r2,r3,IP,LR },
-                new Temp[0], new Label[] { rlabel, elabel } );
+    emitNoFall( ROOT, cs.prependSPOffset("b "+funcLabel +
+					 " @ clobbers r0-r3, LR, IP"),
+		new Temp[] { r0,r1,r2,r3,IP,LR },
+                (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
+                new Label[] { rlabel, elabel } );
     // make handler stub.
     emitLABEL( ROOT, elabel+":", elabel);
     emitHandlerStub(ROOT, retex, handler);
     // normal return
     emitLABEL( ROOT, rlabel+":", rlabel);
-    emitCallEpilogue(ROOT, retval, stackOffset);
+    emitCallEpilogue(ROOT, retval, cs);
     // emit fixup table.
     emitCallFixup(ROOT, rlabel, elabel);
 }%
   // slow version when we don't know exactly which method we're calling.
 NATIVECALL(retval, func, arglist) %{
-    int stackOffset = emitCallPrologue(ROOT, arglist);
+    CallState cs = emitCallPrologue(ROOT, arglist);
     // next two instructions are *not* InstrMOVEs, as they have side-effects
     emit( ROOT, "mov `d0, `s0", LR, PC );
+    // call uses 'func' as `s0
+    // we add a fake use of PC so that it remains live above the call.
+    cs.callUses.add(PC); cs.callUses.add(0, func);
     // note that r0-r3, LR and IP are clobbered by the call.
-    // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
-    // regalloc doesn't clobber these between the time they are set and
-    // the time the call happens.
-    emit2( ROOT, "mov `d0, `s0 @clobbers r0-r3, LR, IP", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
-                // fake use of PC so that it remains live above this point.
-                new Temp[]{ func, PC });
+    emit2( ROOT, cs.prependSPOffset("mov `d0, `s0 @ clobbers r0-r3, LR, IP"),
+	   new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
+	   (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]));
     // clean up.
-    emitCallEpilogue(ROOT, retval, stackOffset);
+    emitCallEpilogue(ROOT, retval, cs);
 }%
   // optimized version when we know exactly which method we're calling.
 NATIVECALL(retval, NAME(funcLabel), arglist) %{
-    int stackOffset = emitCallPrologue(ROOT, arglist);
+    CallState cs = emitCallPrologue(ROOT, arglist);
     // do the call.  bl has a 24-bit offset field, which should be plenty.
     // note that r0-r3, LR and IP are clobbered by the call.
-    // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
-    // regalloc doesn't clobber these between the time they are set and
-    // the time the call happens.
-    emit( ROOT, "bl "+funcLabel + " @clobbers r0-r3, LR, IP", new Temp[] { r0,r1,r2,r3,IP,LR }, new Temp[0],
+    emit( ROOT, cs.prependSPOffset("bl "+funcLabel +
+				   " @clobbers r0-r3, LR, IP"),
+	  new Temp[] { r0,r1,r2,r3,IP,LR },
+	  (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
           true, null );
     // clean up.
-    emitCallEpilogue(ROOT, retval, stackOffset);
+    emitCallEpilogue(ROOT, retval, cs);
 }%
 
 DATUM(CONST<i,f>(exp)) %{
