@@ -13,7 +13,7 @@ import java.util.Collections;
  * <code>InstrSolver</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InstrSolver.java,v 1.1.2.6 1999-10-21 23:06:10 pnkfelix Exp $
+ * @version $Id: InstrSolver.java,v 1.1.2.7 2000-01-31 20:48:56 pnkfelix Exp $
  */
 public final class InstrSolver  {
     
@@ -60,7 +60,7 @@ public final class InstrSolver  {
 	    if (DEBUG) 
 		System.out.println
 		    ("Visiting block " + b);
-	    b.visit(v);
+	    b.accept(v);
 	    v.addSuccessors(w, b);
 	}
     } 
@@ -102,7 +102,7 @@ public final class InstrSolver  {
 	    if (DEBUG) 
 		System.out.println
 		    ("Visiting block " + b);
-	    b.visit(v);
+	    b.accept(v);
 	    v.addSuccessors(w, b);
 	}
     } 

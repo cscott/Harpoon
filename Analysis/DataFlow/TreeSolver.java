@@ -22,7 +22,7 @@ import harpoon.Analysis.BasicBlock;
  * <code>BasicBlockSolver</code> class. 
  * 
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeSolver.java,v 1.1.2.9 2000-01-17 11:10:11 cananian Exp $
+ * @version $Id: TreeSolver.java,v 1.1.2.10 2000-01-31 20:48:56 pnkfelix Exp $
  */
 public abstract class TreeSolver {
 
@@ -42,7 +42,7 @@ public abstract class TreeSolver {
 	    while (iter.hasMoreElements()) {
 		BasicBlock q = (BasicBlock)iter.next();
 		if (DEBUG) db("visiting: "+q);
-		q.visit(v);
+		q.accept(v);
 		for (Enumeration e=q.next(); e.hasMoreElements(); ) {
 		    BasicBlock qn = (BasicBlock)e.nextElement();
 		    if (DEBUG) db("doing edge "+q+" -> "+qn);
@@ -63,7 +63,7 @@ public abstract class TreeSolver {
 	    //v.changed = false;
 	    BasicBlock q = (BasicBlock) W.pull();
 	    if (DEBUG) db("visiting: "+q);
-	    q.visit(v);
+	    q.accept(v);
 	    v.addSuccessors(W, q);
 	}
     }
@@ -78,7 +78,7 @@ public abstract class TreeSolver {
 	    //v.changed = false;
 	    BasicBlock q = (BasicBlock) W.pull();
 	    if (DEBUG) db("visiting: "+q);
-	    q.visit(v);
+	    q.accept(v);
 	    v.addSuccessors(W, q);
 	}
     }

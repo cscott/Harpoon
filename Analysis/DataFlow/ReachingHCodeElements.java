@@ -24,7 +24,7 @@ import java.util.Set;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: ReachingHCodeElements.java,v 1.1.2.4 2000-01-17 23:41:25 cananian Exp $ 
+ * @version $Id: ReachingHCodeElements.java,v 1.1.2.5 2000-01-31 20:48:56 pnkfelix Exp $ 
  */
 public class ReachingHCodeElements extends ReachingDefs { 
     private Map hceToBB;
@@ -124,7 +124,8 @@ public class ReachingHCodeElements extends ReachingDefs {
 
 	for (; blocks.hasNext(); ) {
 	    BasicBlock bb = (BasicBlock) blocks.next();
-	    for (Iterator hces = bb.iterator(); hces.hasNext(); ) { 
+	    Iterator hces = bb.statements().iterator(); 
+	    while(hces.hasNext()) { 
 		UseDef udNext = (UseDef)hces.next(); 
 		if (udNext.def().length > 0) { 
 		    this.universe.add(udNext); 
@@ -157,7 +158,8 @@ public class ReachingHCodeElements extends ReachingDefs {
 	
 	while (blocks.hasNext()) { 
 	    BasicBlock bb = (BasicBlock)blocks.next(); 
-	    for (Iterator useDefs = bb.iterator(); useDefs.hasNext(); ) { 
+	    Iterator useDefs = bb.statements().iterator(); 
+	    while(useDefs.hasNext()) { 
 		UseDef udNext = (UseDef)useDefs.next(); 
 		Temp[] defs   = udNext.def();
 		for (int i=0, n=defs.length; i<n; ++i) {
@@ -187,8 +189,9 @@ public class ReachingHCodeElements extends ReachingDefs {
 
 	info.prsv.addAll(this.universe); 
 
-	for (Iterator blocks = bb.iterator(); blocks.hasNext(); ) {
-	    UseDef udNext = (UseDef) blocks.next(); 
+	Iterator useDefs = bb.statements().iterator(); 
+	while(useDefs.hasNext()) {
+	    UseDef udNext = (UseDef) useDefs.next(); 
 	    Temp[] defs   = udNext.def();
 	    for (int i=0, n=defs.length; i<n; ++i) {
 		Temp t    = defs[i];
@@ -249,7 +252,8 @@ public class ReachingHCodeElements extends ReachingDefs {
 	    // Starting from the first element in hce's basic block, traverse
 	    // the block until hce is reached.  Each step updates the
 	    // reaching def information.
-	    for (Iterator i = bb.iterator(); i.hasNext(); ) { 
+	    Iterator i = bb.statements().iterator(); 
+	    while(i.hasNext()) { 
 		UseDef udCurrent = (UseDef)i.next();
 		this.rdCache.put(udCurrent, reachBefore);
 		Temp[] defs = udCurrent.def(); 

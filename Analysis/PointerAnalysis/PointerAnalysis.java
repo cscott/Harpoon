@@ -50,7 +50,7 @@ import harpoon.IR.Quads.FOOTER;
  * computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.9 2000-01-27 06:19:09 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.10 2000-01-31 20:49:23 pnkfelix Exp $
  */
 public class PointerAnalysis {
 
@@ -508,7 +508,7 @@ public class PointerAnalysis {
 	/// System.out.println("BEGIN: Analyze_basic_block " + bb);
 
 	PAVisitor visitor = new PAVisitor();	
-	Iterator instrs = bb.iterator();
+	Iterator instrs = bb.statements().iterator();
 	// bbpig is the graph at the *bb point; it will be 
 	// updated till it become the graph at the bb* point
 	bbpig = get_initial_bb_pig(bb);

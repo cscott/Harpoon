@@ -25,7 +25,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.9 2000-01-31 16:20:06 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.10 2000-01-31 20:48:56 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars {
     private Map hceToBB; 
@@ -172,10 +172,10 @@ public class LiveTemps extends LiveVars {
 	    // traverse the block in reverse order, until hce is
 	    // reached.  Each step updates the liveness information.
 
-	    // for (; current != hce; current = current.pred()[0].from()) {
-	    Iterator iter = new ReverseIterator(bb.iterator());
+	    java.util.ListIterator iter = 
+		bb.statements().listIterator(bb.statements().size());
 	    while(current != hce) {
-		current = (HCodeElement) iter.next();
+		current = (HCodeElement) iter.previous();
 		// put every element into the cache, since we're
 		// bothering to calculate the live sets anyway
 		hce2liveAfter.put(current, 
@@ -207,7 +207,7 @@ public class LiveTemps extends LiveVars {
 	HashSet temps = new HashSet();
 	while(blocks.hasNext()) {
 	    BasicBlock bb = (BasicBlock) blocks.next();
-	    Iterator useDefs = bb.iterator();
+	    Iterator useDefs = bb.statements().iterator();
 	    while(useDefs.hasNext()) {
 		HCodeElement h = (HCodeElement) useDefs.next();
 		temps.addAll(ud.useC(h));
@@ -247,7 +247,7 @@ public class LiveTemps extends LiveVars {
 	    info.lvIN.addAll(liveOnProcExit);
 	}
 
-	Iterator instrs = bb.listIterator();	
+	Iterator instrs = bb.statements().listIterator();	
 	
 	while (instrs.hasNext()) {
 	    HCodeElement h = (HCodeElement) instrs.next();

@@ -25,7 +25,7 @@ import java.util.HashMap;
     <code>Instr</code>s in a <code>Code</code>.
 
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.9 2000-01-27 23:52:18 pnkfelix Exp $ 
+    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.10 2000-01-31 20:49:09 pnkfelix Exp $ 
 */
 public class DemandDrivenRegAlloc extends RegAlloc {
 
@@ -164,7 +164,7 @@ public class DemandDrivenRegAlloc extends RegAlloc {
 
 	// Iterate over instructions in order 
 	
-        ListIterator instrs = block.listIterator();
+        ListIterator instrs = block.statements().listIterator();
 	while(instrs.hasNext()) { 
 	    Instr instr = (Instr) instrs.next();
 	    double delta;

@@ -53,7 +53,7 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.67 2000-01-27 23:52:18 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.68 2000-01-31 20:49:09 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -82,7 +82,7 @@ public class LocalCffRegAlloc extends RegAlloc {
     private static String printInfo(BasicBlock block, Instr i, 
 				    Temp t, Code code) {
 	StringBuffer sb = new StringBuffer();
-	Iterator itr=block.iterator(); 
+	Iterator itr=block.statements().iterator(); 
 	while(itr.hasNext()) {
 	    Instr i2=(Instr)itr.next();
 	    sb.append(toAssem(i2, code)+
@@ -122,7 +122,7 @@ public class LocalCffRegAlloc extends RegAlloc {
     
     private void verify(final BasicBlock block, final Set liveOnExit) {
 	// includes SpillLoads and SpillStores...
-	Iterator instrs = block.iterator();
+	Iterator instrs = block.statements().iterator();
 	final RegFile regfile = new RegFile();
 	
 
@@ -249,7 +249,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    precolorRegfile(block, regfile);
 	    
 	    Iterator instrs = new FilterIterator
-		(block.iterator(),
+		(block.statements().iterator(),
 		 new FilterIterator.Filter() {
 		     public boolean isElement(Object o) {
 			 final Instr j = (Instr) o;
@@ -563,7 +563,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	}
 	
 	private void precolorRegfile(BasicBlock b, RegFile regfile) {
-	    Iterator instrs = b.iterator();
+	    Iterator instrs = b.statements().iterator();
 	    Instr i=null;
 	    while(instrs.hasNext()) {
 		i = (Instr) instrs.next();
@@ -679,7 +679,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    // (Temp:t x Instr:j) -> index of Instr following j referencing t
 	    Map nextRef = new HashMap();
 	    
-	    Iterator instrs = b.iterator();
+	    Iterator instrs = b.statements().iterator();
 	    int c=0;
 	    while(instrs.hasNext()) {
 		Instr instr = (Instr) instrs.next();

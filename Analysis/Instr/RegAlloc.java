@@ -70,7 +70,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.70 2000-01-31 03:31:10 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.71 2000-01-31 20:49:11 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -806,7 +806,7 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    WebInfo info = new WebInfo();
 	    bbInfoMap.put(bb, info);
 	    
-	    ListIterator instrs = bb.listIterator();
+	    ListIterator instrs = bb.statements().listIterator();
 	    while(instrs.hasNext()) {
 		Instr instr = (Instr) instrs.next();
 		if (instr instanceof RegAlloc.SpillLoad) {

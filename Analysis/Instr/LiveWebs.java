@@ -25,7 +25,7 @@ import java.util.Iterator;
  * <code>LiveWebs</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveWebs.java,v 1.1.2.4 1999-11-09 08:27:21 pnkfelix Exp $
+ * @version $Id: LiveWebs.java,v 1.1.2.5 2000-01-31 20:49:09 pnkfelix Exp $
  */
 public class LiveWebs extends LiveVars {
     
@@ -60,7 +60,7 @@ public class LiveWebs extends LiveVars {
     
     protected LiveVars.LiveVarInfo makeUseDef(BasicBlock bb, SetFactory sf) {
 	LiveVars.LiveVarInfo info = new LiveVars.LiveVarInfo(sf);
-	Iterator instrs = bb.listIterator();
+	Iterator instrs = bb.statements().listIterator();
 	
 	while (instrs.hasNext()) {
 	    Instr ref = (Instr) instrs.next();

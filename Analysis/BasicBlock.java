@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
@@ -45,23 +46,27 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.13 2000-01-27 15:26:18 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.14 2000-01-31 20:48:36 pnkfelix Exp $
 */
 public class BasicBlock {
     
-    static protected final boolean DEBUG = false;
-    static protected void db(String s) { System.out.println(s); }
+    static final boolean DEBUG = false;
 
-    static private boolean CHECK_REP = true;
-
-    static int BBnum = 0;
+    // tracks the current id number to assign to the next generated
+    // basic block
+    private static int BBnum = 0;
     
-    HCodeElement first;
-    HCodeElement last;
-    CFGrapher grapher;
-    Set pred_bb;
-    Set succ_bb;
-    protected int num;
+    private HCodeElement first;
+    private HCodeElement last;
+    private CFGrapher grapher;
+    private Set pred_bb;
+    private Set succ_bb;
+
+    // unique id number for this basic block
+    private int num;
+
+    // number of statements in this block
+    private int size;
     
     private BasicBlock root;
     private Set leaves;
@@ -88,7 +93,7 @@ public class BasicBlock {
 	                      the basic block and <code>l</code> is
 			      the last element of the BasicBlock.
     */
-    protected BasicBlock (HCodeElement f, HCodeElement l, CFGrapher gr) {
+    private BasicBlock (HCodeElement f, HCodeElement l, CFGrapher gr) {
 	first = f; last = l; 
 	pred_bb = new HashSet(); succ_bb = new HashSet();
 	grapher = gr;
@@ -162,6 +167,7 @@ public class BasicBlock {
 	}
 	
 	BasicBlock first = new BasicBlock(head, gr);
+	first.size = 1;
 	first.hceToBB = hceToBB;
 	h.put(head, first);
 	hceToBB.put(head, first);
@@ -201,6 +207,7 @@ public class BasicBlock {
 		} else { // one successor
 		    Util.assert(n == 1, "must have one successor");
 		    HCodeElement next = gr.succ(last)[0].to();
+		    current.size++;
 		    int m = gr.predC(next).size();
 		    if (m > 1) { // control flow join
 			BasicBlock bb = (BasicBlock) h.get(next);
@@ -219,9 +226,9 @@ public class BasicBlock {
 			hceToBB.put(next, current);
 			last = next;
 		    }
-		} 
+		}
 	    }
-	    current.setLast(last);
+	    current.last = last;
 	}
 
 	if (false) { // check that all reachables are included in our BasicBlocks somewhere.
@@ -235,7 +242,8 @@ public class BasicBlock {
  		BasicBlock bb = (BasicBlock) hceToBB.get(hce);
 		Util.assert(bb != null, "hce "+hce+" should map to some BB");
 		boolean missing = true;
-		for(Iterator elems = bb.iterator(); missing && elems.hasNext(); ) {
+		Iterator elems = bb.statements().iterator(); 
+		while(missing && elems.hasNext()) {
 		    HCodeElement o = (HCodeElement) elems.next();
 		    if (hce.equals(o)) missing = false;
 		}
@@ -268,8 +276,8 @@ public class BasicBlock {
     public HCodeElement getFirst() { return first; }
     public HCodeElement getLast() { return last; }
     
-    public void addPredecessor(BasicBlock bb) { pred_bb.add(bb); }
-    public void addSuccessor(BasicBlock bb) { succ_bb.add(bb); }
+    private void addPredecessor(BasicBlock bb) { pred_bb.add(bb); }
+    private void addSuccessor(BasicBlock bb) { succ_bb.add(bb); }
     
     public int prevLength() { return pred_bb.size(); }
     public int nextLength() { return succ_bb.size(); }
@@ -286,83 +294,114 @@ public class BasicBlock {
 	return (BasicBlock[]) succ_bb.toArray(new BasicBlock[succ_bb.size()]);
     }
 
+    /** Returns all the predecessors of <code>this</code>. 
+	<BR> <B>effects:</B> returns a <code>Set</code> of
+	     <code>BasicBlock</code>s which precede
+	     <code>this</code>. 
+     */
+    public Set prevSet() { 
+	return Collections.unmodifiableSet(pred_bb); 
+    }
     
-    /** Returns an <code>Enumeration</code> of
+    /** Returns all the successors of <code>this</code>. 
+	<BR> <B>effects:</B> returns a <code>Set</code> of
+	     <code>BasicBlock</code>s which succeed
+	     <code>this</code>. 
+     */
+    public Set nextSet() {
+	return Collections.unmodifiableSet(succ_bb);
+    }
+
+    /** Returns an unmodifiable <code>List</code> for the
 	<code>HCodeElement</code>s within <code>this</code>.  
+	<BR> <B>effects:</B> Generates a new <code>List</code> of
+	<code>HCodeElement</code>s ordered according to the order
+	mandated by the <code>CFGrapher</code> used in the call to
+	<code>computeBasicBlocks</code> that generated
+	<code>this</code>. 
     */
-    public Enumeration elements() {
-	return new IteratorEnumerator(listIterator());
-    }
+    public List statements() {
+	Util.assert(size > 0, "BasicBlock class breaks on empty bbs");
+	return new java.util.AbstractSequentialList() {
+	    public int size() { return size; }
+	    public ListIterator listIterator(int index) {
+		// note that index *can* equal the size of the list,
+		// in which case we start the iterator past the last
+		// element of the list. 
 
-    /** Returns an unmodifiable <code>Iterator</code> for the
-	<code>HCodeElement</code>s within <code>this</code>.  The
-	<code>Iterator</code> returned will iterate through the
-	instructions according to their order in the program.  
-    */
-    public Iterator iterator() {
-	return listIterator();
-    }
-
-    /** Returns an unmodifiable <code>ListIterator</code> for the
-	<code>HCodeElement</code>s within <code>this</code>.  The
-	<code>ListIterator</code> returned will iterate through the
-	instructions according to their order in the program.
-    */
-    public ListIterator listIterator() {
-	return new ListIterator() {
-	    HCodeElement next = first;
-	    HCodeElement prev = null;
-	    int index = 0;
-	    public boolean hasNext() { return next != null; }
-	    public boolean hasPrevious() { return prev != null; } // correct? 
-	    public int nextIndex() { return index + 1; }
-	    public int previousIndex() { return index - 1; } 
-	    public Object next() {
-		if (next == null) throw new NoSuchElementException();
-		if (CHECK_REP) {
-		    Util.assert((next == first) ||
-				(grapher.pred(next).length == 1), 
-				new Object() {
-			public String toString() {
-			    return "BasicBlock REP error; non-first elem has only " + 
-				"one predecessor\n" +
-				BasicBlock.this.dumpElems();
-			}
-		    });
-		    Util.assert((next == last) ||
-				(grapher.succ(next).length == 1),
-				new Object() {
-			public String toString() {
-			    return "BasicBlock REP error; non-last elem has only " + 
-				"one successor\n" + BasicBlock.this.dumpElems();
-			}
-		    });
+		// check argument
+		if (index < 0 || index > size) {
+		    throw new IndexOutOfBoundsException
+			(index +"< 0 || "+index+" > "+size);
 		}
-		prev = next; 
-		if (next == last) next = null;
-		else next = grapher.succ(next)[0].to();
-		index++;
-		return prev; 
-	    }		
-	    public Object previous() {
-		if (prev == null) throw new NoSuchElementException();
-		Util.assert((prev == first) || (grapher.pred(prev).length == 1));
-		Util.assert((prev == last) || (grapher.succ(prev).length == 1));
-		next = prev;
-		if (prev == first) prev = null;
-		else prev = grapher.pred(prev)[0].from();
-		index--;
-		return next;
+		
+		// iterate to correct starting point
+		HCodeElement curr = first;
+		int i;
+		for(i=0; i<index-1; i++) {
+		    curr = grapher.succ(curr)[0].to();
+		}
+		if (index != size) { 
+		    curr = grapher.succ(curr)[0].to();
+		} else {
+		    // slight rep inconsistency; we'll keep next
+		    // pointing at curr, even though that's the
+		    // prev-elem, not the next one.  See
+		    // implementation below for details
+		}
+
+		// new final vars to be passed to ListIterator
+		final HCodeElement fcurr = curr;
+		final int fi = i;
+
+		return new harpoon.Util.UnmodifiableListIterator() {
+		    HCodeElement next = fcurr; //elem for next() to return
+		    int ind = fi; //where currently pointing?
+
+		    public boolean hasNext() {
+			return ind!=size;
+		    }
+		    public Object next() {
+			if (!hasNext()) {
+			    throw new NoSuchElementException();
+			}
+			ind++;
+			Object ret = next;
+			if (ind != size) {
+			    next = grapher.succ(next)[0].to();
+			} else {
+			    // keep 'next' the same, since previous()
+			    // needs to be able to return it
+			}
+			return ret;
+		    }
+		    public boolean hasPrevious() {
+			if (ind == size) {
+			    return true;
+			} else {
+			    return grapher.predC(next).size() == 1;
+			}
+		    }
+		    public Object previous() {
+			if (!hasPrevious()) {
+			    throw new NoSuchElementException();
+			}
+			if (ind != size) {
+			    next = grapher.pred(next)[0].from();
+			}
+			ind--;
+			return next;
+		    } 
+		    public int nextIndex() {
+			return ind;
+		    }
+		};
 	    }
-	    
-	    public void remove() {throw new UnsupportedOperationException();} 
-	    public void set(Object o) {throw new UnsupportedOperationException();} 
-	    public void add(Object o)  {throw new UnsupportedOperationException();} 
 	};
     }
 
     /** Accept a visitor. */
-    public void visit(BasicBlockVisitor v) { v.visit(this); }
+    public void accept(BasicBlockVisitor v) { v.visit(this); }
     
     protected BasicBlock (HCodeElement f, CFGrapher gr) {
 	first = f; last = null; 
@@ -389,15 +428,10 @@ public class BasicBlock {
 	return Collections.unmodifiableSet(leaves);
     }
 
-    protected void setLast (HCodeElement l) {
-	last = l;
-	if (DEBUG) db(this+": from "+first+" to "+last);
-    }
-    
-    public static void addEdge(BasicBlock from, BasicBlock to) {
+    private static void addEdge(BasicBlock from, BasicBlock to) {
 	from.addSuccessor(to);
 	to.addPredecessor(from);
-	if (DEBUG) db("adding CFG edge from "+from+" to "+to);
+	if (DEBUG) System.out.println("adding CFG edge from "+from+" to "+to);
     }
     
     public String toString() {
@@ -405,12 +439,8 @@ public class BasicBlock {
     }
 
     public String dumpElems() {
-	CHECK_REP = false; // a hack; this method uses listIterator(),
-	                   // which now calls dumpElems() (-->infinite
-	                   // loop).  So we make the call to dumpElems
-	                   // conditional 
 	StringBuffer s = new StringBuffer();
-	Iterator iter = listIterator();
+	Iterator iter = statements().listIterator();
 	while(iter.hasNext()) {	    
 	    s.append(iter.next() + "\n");
 	}

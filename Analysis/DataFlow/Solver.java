@@ -19,7 +19,7 @@ import java.util.Iterator;
  * is amicable to data-flow analysis. 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Solver.java,v 1.1.2.5 1999-12-20 09:25:33 duncan Exp $
+ * @version $Id: Solver.java,v 1.1.2.6 2000-01-31 20:48:56 pnkfelix Exp $
  */
 public class Solver {
 
@@ -66,7 +66,7 @@ public class Solver {
 	    if (DEBUG) 
 		System.out.println
 		    ("Visiting block " + b);
-	    b.visit(v);
+	    b.accept(v);
 	    v.addSuccessors(w, b);
 	}
     }
@@ -82,7 +82,7 @@ public class Solver {
 	    while (iter.hasMoreElements()) {
 		BasicBlock q = (BasicBlock)iter.next();
 		if (DEBUG) db("visiting: "+q);
-		q.visit(v);
+		q.accept(v);
 		for (Enumeration e=q.next(); e.hasMoreElements(); ) {
 		    BasicBlock qn = (BasicBlock)e.nextElement();
 		    if (DEBUG) db("doing edge "+q+" -> "+qn);
