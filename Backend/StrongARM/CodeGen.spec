@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.164 2000-10-18 17:24:16 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.165 2000-10-18 20:14:32 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1378,7 +1378,7 @@ BINOP<f>(REM, j, k) = i %{
     declare( r0, HClass.Float ); // retval from call.
     emit2(    ROOT, "bl "+nameMap.c_function_name("fmodf"),
 	      new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1});
-    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
+    emitMoveFromNativeFloatRetVal(ROOT, i);
 }%
 
 BINOP<d>(REM, j, k) = i %{
@@ -1394,8 +1394,7 @@ BINOP<d>(REM, j, k) = i %{
     declare( r1, HClass.Void ); // retval from call.
     emit2(ROOT, "bl "+nameMap.c_function_name("fmod"),
 	 new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
-    emit( ROOT, "mov `d0l, `s0", i, r0 );
-    emit( ROOT, "mov `d0h, `s0", i, r1 );
+    emitMoveFromNativeDoubleRetVal(ROOT, i);
 }%
 
 // addressing modes for MEM are pretty rich.
