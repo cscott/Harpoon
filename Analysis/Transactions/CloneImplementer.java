@@ -64,7 +64,7 @@ import java.util.Set;
  * <code>$clone$()</code> method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloneImplementer.java,v 1.1.2.2 2001-01-18 23:10:45 cananian Exp $
+ * @version $Id: CloneImplementer.java,v 1.1.2.3 2001-01-19 00:19:38 cananian Exp $
  * @see harpoon.IR.Quads.CloneSynthesizer */
 public class CloneImplementer implements HCodeFactory, java.io.Serializable {
     /** CONSTANTS */
@@ -91,10 +91,14 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
     public CloneImplementer(HCodeFactory parent, Linker l, Set knownClasses) { 
 	Util.assert(parent.getCodeName().equals(QuadSSI.codename));
 	this.parent = parent;
+	HClass HCobject = l.forName("java.lang.Object");
+	HClass HCcloneable = l.forName("java.lang.Cloneable");
 	/* okay, we need to add clone() methods to all of the knownClasses */
 	for (Iterator it=knownClasses.iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
 	    if (hc.isPrimitive() || hc.isInterface()) continue;
+	    if (!hc.equals(HCobject) && !hc.isInstanceOf(HCcloneable))
+		continue; // non-cloneable objects get the default impl.
 	    try {
 		HMethod hm =
 		    hc.getMutator().addDeclaredMethod(CLONEX_NAME, CLONE_DESC);
@@ -127,7 +131,9 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	      return new CloneRedirectCode(m);
 	if (m.getName().equals(CLONEX_NAME) &&
 	    m.getDescriptor().equals(CLONE_DESC)) {
-	    if (m.getDeclaringClass().isArray())
+	    if (m.getDeclaringClass().getDescriptor().equals(OBJ_DESC))
+		return new NotCloneableCode(m);
+	    else if (m.getDeclaringClass().isArray())
 		return new ArrayCloneCode(m);
 	    else
 		return new ObjectCloneCode(m);
@@ -157,6 +163,36 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	    Quad.addEdge(q2, 1, q4, 0);
 	    Quad.addEdge(q3, 0, qF, 1);
 	    Quad.addEdge(q4, 0, qF, 2);
+	    // done!
+	    this.quads = q0;
+	}
+    }
+    /** this method throws a CloneNotSupportedException */
+    private static class NotCloneableCode extends QuadSSI {
+	NotCloneableCode(HMethod m) {
+	    super(m, null);
+	    HClass HCcnse = m.getDeclaringClass().getLinker()
+		.forName("java.lang.CloneNotSupportedException");
+	    HMethod hm = HCcnse.getConstructor(new HClass[0]);
+	    Temp thisT = new Temp(qf.tempFactory(), "this");
+	    Temp excT0 = new Temp(qf.tempFactory(), "exc");
+	    Temp excT1 = new Temp(qf.tempFactory(), "exc");
+	    Temp excT2 = new Temp(qf.tempFactory(), "exc");
+	    Quad q0 = new HEADER(qf, null);
+	    Quad q1 = new METHOD(qf, null, new Temp[] { thisT }, 1);
+	    Quad q2 = new NEW(qf, null, excT0, HCcnse);
+	    Quad q3 = new CALL(qf, null, hm, new Temp[] { excT0 }, null,
+	                       excT1, false, false, new Temp[0]);
+	    Quad q4 = new PHI(qf, null,
+			      new Temp[] { excT2 },
+			      new Temp[][] { new Temp[] { excT0, excT1 }}, 2);
+	    Quad q5 = new THROW(qf, null, excT2);
+	    Quad qF = new FOOTER(qf, null, 2);
+	    Quad.addEdge(q0, 0, qF, 0);
+	    Quad.addEdge(q0, 1, q1, 0);
+	    Quad.addEdges(new Quad[] { q1, q2, q3, q4, q5 });
+	    Quad.addEdge(q3, 1, q4, 1);
+	    Quad.addEdge(q5, 0, qF, 1);
 	    // done!
 	    this.quads = q0;
 	}
@@ -233,7 +269,7 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 		Quad.addEdges(new Quad[] { qq, q3, q4 });
 		qq = q4;
 	    }
-	    Quad q5 = new RETURN(qf, null, null);
+	    Quad q5 = new RETURN(qf, null, objT);
 	    Quad qF = new FOOTER(qf, null, 2);
 	    Quad.addEdge(qq, 0, q5, 0);
 	    Quad.addEdge(q5, 0, qF, 1);
