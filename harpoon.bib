@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.44 1999-06-10 02:10:20 cananian Exp $
+% $Id: harpoon.bib,v 1.45 1999-06-10 14:45:25 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -941,6 +941,19 @@
   annote =	 {TGSSA form.}
 }
 
+@InProceedings{ferrante91:pruned,
+  author = 	 {Jong-Deok Choi and Ron Cytron and Jeanne Ferrante},
+  title = 	 {Automatic construction of sparse data flow evaluation graphs},
+  booktitle = 	 POPL91,
+  pages =	 {55-66},
+  year =	 1991,
+  address =	 {Orlando, Florida},
+  month =	 jan,
+  annote =	 {Definition and algorithm for ``pruned'' SSA form.
+                  Incorrectly referenced by \cite{cytron91:ssa}.},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/plan/99583/p55-ferrante/}
+}
+
 %%%%%%%%%%%%%%%%% DERIVED WORKS %%%%%%%%%%%%%%%%%%%%%%%
 % (Referenced in some source paper)
 
@@ -1071,18 +1084,6 @@
                   avoiding such behavior necessitates placing
                   $\phi$-functions without computing or using
                   dominance frontiers.''}
-}
-
-@InProceedings{ferrante91:pruned,
-  author = 	 {Jeanne Ferrante},
-  title = 	 {Automatic construction of sparse data flow evaluation graphs},
-  booktitle = 	 POPL91,
-  pages =	 {55-66},
-  year =	 1991,
-  address =	 {Orlando, Florida},
-  month =	 jan,
-  annote =	 {Referenced by \cite{cytron91:ssa} for `pruned' SSA form},
-  url =		 {http://www.acm.org/pubs/citations/proceedings/plan/99583/p55-ferrante/}
 }
 
 @InProceedings{alpern88:ssa,
