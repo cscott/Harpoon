@@ -36,6 +36,7 @@ import harpoon.Util.WorkSet;
 import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MultiMap;
 
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -48,7 +49,7 @@ import java.util.Set;
  * It should be safe with respect to the revised Java memory model.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemoryOptimization.java,v 1.1.2.4 2001-06-18 14:45:54 cananian Exp $
+ * @version $Id: MemoryOptimization.java,v 1.1.2.5 2001-06-30 16:32:04 cananian Exp $
  */
 public final class MemoryOptimization
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -286,17 +287,26 @@ public final class MemoryOptimization
 					 (Temp)ds.find(q.index()));
 		map.put(v, ds.find(q.src()));
 	    }
-	    public void visit(MONITORENTER q) {
-		map.clear();
+	    public void visit(MONITORENTER q) { visitMONITOR(q); }
+	    public void visit(MONITOREXIT q) { visitMONITOR(q); }
+	    public void visitMONITOR(Quad q) {
+		Util.assert(q instanceof MONITORENTER ||
+			    q instanceof MONITOREXIT);
+		for (Iterator it=map.keySet().iterator(); it.hasNext(); ) {
+		    Value v=(Value) it.next();
+		    if (v.isArray()) continue;
+		    if (!Modifier.isFinal(v.field().getModifiers()))
+			it.remove();
+		}
 	    }
-	    public void visit(MONITOREXIT q) {
-		map.clear();
-	    }
+	    
 	    public void visit(CALL q) {
 		HMethod calls[] = cg.calls(q.getFactory().getMethod(), q);
 		for (Iterator it=map.keySet().iterator(); it.hasNext(); ) {
 		    Value v = (Value) it.next();
 		    if (v.isArray()) it.remove();
+		    else if (Modifier.isFinal(v.field().getModifiers()))
+			continue; // final fields can't be written during call
 		    else for (int i=0; i<calls.length; i++)
 			if (fso.isSync(calls[i]) ||
 			    fso.isWritten(calls[i], v.field())) {
