@@ -1,7 +1,7 @@
 // ToSSA.java, created Sat Jul  3 01:26:14 1999 by root
 // Copyright (C) 1999 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis;
+package harpoon.IR.Quads;
 
 import harpoon.Analysis.SSITOSSAMap;
 import harpoon.Temp.TempMap;
@@ -29,19 +29,20 @@ import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.LowQuad.PCALL;
 
 /**
- * <code>ToSSA</code>
+ * <code>ReHandlerToSSA</code>
  * Converts SSI to SSA.  Should work on LowQuads and Quads. 
+ * <b>NOT FOR USE OUTSIDE REHANDLER</b>.  Use SSIToSSA instead.
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ToSSA.java,v 1.1.2.14 2001-06-17 22:28:36 cananian Exp $
+ * @version $Id: ReHandlerToSSA.java,v 1.1.2.1 2001-09-26 16:15:12 cananian Exp $
  */
 
-public final class ToSSA {
+final class ReHandlerToSSA {
     TempMap ssitossamap;
 
     /** <code>ToSSA</code> takes in a TempMap and returns a <code>ToSSA</code>
      *  object.*/
-    public ToSSA(TempMap ssitossamap) {
+    public ReHandlerToSSA(TempMap ssitossamap) {
 	this.ssitossamap=ssitossamap;
     }
 
@@ -56,7 +57,7 @@ public final class ToSSA {
 		    System.out.println("Error:  clone not supported on class handed to ToSSA");
 		}
 		if (hc!=null) {
-		    (new ToSSA(new SSITOSSAMap(hc))).optimize(hc);
+		    (new ReHandlerToSSA(new SSITOSSAMap(hc))).optimize(hc);
 		}
 		return hc;
 	    }
