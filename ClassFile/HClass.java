@@ -28,7 +28,7 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.40 1998-11-10 00:44:37 cananian Exp $
+ * @version $Id: HClass.java,v 1.41 1998-11-18 20:48:49 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public abstract class HClass {
@@ -46,10 +46,13 @@ public abstract class HClass {
     // find lowest unique number for class.
     for (int i=-1; true; i++) {
       String className = (i<0)?suggestion:(suggestion + "$$" + i);
-      if (dsc2cls.containsKey("L"+className+";")) continue;
-      if (Loader.getResourceAsStream
-	  (Loader.classToResource(className.replace('.','/')))!=null)
+      if (dsc2cls.containsKey("L"+className.replace('.','/')+";")) continue;
+      InputStream is = Loader.getResourceAsStream
+	(Loader.classToResource(className));
+      if (is != null) {
+	try{ is.close(); } catch(java.io.IOException e) { }
 	continue; // named file on disk.
+      }
       // found a valid name.
       return className;
     }
@@ -131,8 +134,9 @@ public abstract class HClass {
       return HClass.Void;
     case 'L': // object type.
       {
+	// classname in descriptor is '/' delimited.
 	String className = descriptor.substring(1, descriptor.indexOf(';'));
-	// classname in descriptor should be '/' delimited.
+	className = className.replace('/','.'); // make proper class name.
 	InputStream is = 
 	  Loader.getResourceAsStream(Loader.classToResource(className));
 	if (is == null) throw new NoClassDefFoundError(className);
