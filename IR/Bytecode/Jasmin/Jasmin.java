@@ -8,17 +8,20 @@ import harpoon.Temp.Temp;
 import harpoon.ClassFile.*;
 import harpoon.Analysis.UseDef;
 import harpoon.Util.WorkSet;
+import harpoon.Analysis.Maps.TypeMap;
 
 import java.io.*;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
 import java.lang.reflect.Modifier;
+import java.util.Enumeration;
+
 /**
  * <code>FinalRaw</code>
  * 
  * @author  root <root@kikashi.lcs.mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.1 1999-08-03 06:56:34 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.2 1999-08-03 22:23:49 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -31,8 +34,6 @@ public class Jasmin {
 	this.hm = hm;
 	this.hclass=hclass;
 	this.classname=hclass.getName();
-
-	
     }
 
     public void outputClass(PrintStream out) {
@@ -40,7 +41,7 @@ public class Jasmin {
 	    out.println(".interface "+Modifier.toString(hclass.getModifiers())+" "+hclass.getName().replace('.','/'));
 	    else
 	out.println(".class "+Modifier.toString(hclass.getModifiers())+" "+hclass.getName().replace('.','/'));
-	out.println(".super "+Modifier.toString(hclass.getSuperclass().getModifiers())+" "+hclass.getSuperclass().getName().replace('.','/'));
+	out.println(".super "+hclass.getSuperclass().getName().replace('.','/'));
 	HClass[] interfaces=hclass.getInterfaces();
 	for (int i=0;i<interfaces.length;i++)
 	    out.println(".implements "+interfaces[i].getName().replace('.','/'));
@@ -57,16 +58,30 @@ public class Jasmin {
     }
 
     public void outputMethod(PrintStream out, int i) {
-	out.println(".method "+hm[i].toString());
+	out.println(".method "+Modifier.toString(hm[i].getModifiers())+" "+hm[i].getName().replace('.','/')
+		    +hm[i].getDescriptor().replace('.','/'));
 	outputQuads(out, hm[i], hc[i]);
 	out.println(".end method");
     }
 
     public void outputQuads(PrintStream out,HMethod hm, HCode hc) {
-	Map map=buildmap(hc);
+	Object[] tuple=buildmap(hc);
+	Map map=(Map) tuple[0];
+	out.println("    .limit locals "+((Integer)tuple[1]).toString());
 	WorkSet done=new WorkSet();
-	Visitor visitor=new Visitor(out, map,done);
+	Visitor visitor=new Visitor(out, map,done,hc);
 	Quad start=(Quad)hc.getRootElement();
+	METHOD m=(METHOD)start.next(1);
+	for (int i=1;i<m.nextLength();i++) {
+	    HANDLER h=(HANDLER)m.next(i);
+	    visitor.labeler(h.next(0));
+	    Enumeration e=h.protectedQuads();
+	    while(e.hasMoreElements()) {
+		Quad q=(Quad)e.nextElement();
+		String tmp=visitor.labeler(q);
+		tmp=visitor.labeler(q.next(0));
+	    }
+	}
 	visitAll(visitor,start, done);
     }
 		 
@@ -80,36 +95,133 @@ public class Jasmin {
         }
     }
 
-
     class Visitor extends QuadVisitor {
 	PrintStream out;
 	int label;
 	Map tempmap;
 	HashMap labelmap;
 	Set done;
+	HCode hc;
+	TypeInfo tm;
 
-	Visitor(PrintStream out, Map tempmap, Set done) {
+	Visitor(PrintStream out, Map tempmap, Set done, HCode hc) {
 	    this.out=out;
 	    this.label=0;
 	    this.tempmap=tempmap;
+	    this.hc=hc;
 	    labelmap=new HashMap();
 	    this.done=done;
+	    this.tm=new TypeInfo();
 	}
 
 	public void visit(Quad q) {
 	    System.out.println("**********Unhandled quad"+q.toString());
 	}
 
+	public void visit(METHOD q) {
+	    for(int i=0;i<q.params().length;i++) {
+		store(q.params(i)); 
+	    }	    
+	}
+
 	public void visit(HEADER q) {
 	}
 
 	public void visit(PHI q) {
-	    out.println(labeler(q)+": "+q.toString());
+	    out.println(iflabel(q));
 	}
+
+	public void visit(FOOTER q) {
+	}
+
+	public void visit(HANDLER q) {
+	    Enumeration e=q.protectedQuads();
+	    String h=labeler(q);
+	    out.println(h+":");
+	    store(q.exceptionTemp());
+	    out.println("    goto "+labeler(q.next(0)));
+	    while(e.hasMoreElements()) {
+		Quad qd=(Quad)e.nextElement();
+		String start=labeler(qd);
+		String stop=labeler(qd.next(0));
+		String handler=labeler(q);
+		if (q.caughtException()!=null)
+		    out.println(".catch "+q.caughtException()+" from "+start+" to "+stop+" using "+handler);
+		else
+		    out.println(".catch all from "+start+" to "+stop+" using "+handler);
+	    }
+	}
+
+	public void visit(CALL q) {
+	    if (q.isVirtual()&&!q.isInterfaceMethod()) {
+		//virtual method
+		out.println(iflabel(q));
+		for(int i=0;i<q.params().length;i++) {
+		    load(q.params(i)); 
+		}
+		out.println("    invokevirtual "+
+			    q.method().getDeclaringClass().getName().replace('.','/')
+			    +"/"+q.method().getName().replace('.','/')
+			    +q.method().getDescriptor().replace('.','/'));
+		if (q.retval()!=null)
+		    store(q.retval());
+	    } 
+	    else {
+		if (q.isInterfaceMethod()) {
+		    System.out.println("Error in call"+q.toString());
+		}
+		else
+		    if(q.isStatic()) {
+			//static method
+			out.println(iflabel(q));
+			for(int i=0;i<q.params().length;i++) {
+			    load(q.params(i)); 
+			}
+			out.println("    invokestatic "+
+			    q.method().getDeclaringClass().getName().replace('.','/')
+			    +"/"+q.method().getName().replace('.','/')
+			    +q.method().getDescriptor().replace('.','/'));
+			if (q.retval()!=null)
+			    store(q.retval());
+		    }
+		    else {
+					//non-virtual method
+			out.println(iflabel(q));
+			for(int i=0;i<q.params().length;i++) {
+			    load(q.params(i)); 
+			}
+			out.println("    invokespecial "+
+			    q.method().getDeclaringClass().getName().replace('.','/')
+			    +"/"+q.method().getName().replace('.','/')
+			    +q.method().getDescriptor().replace('.','/'));
+			if (q.retval()!=null)
+			    store(q.retval());
+		    }
+	    }
+	}
+
+	public void visit(GET q) {
+	    if (q.objectref()==null) {
+		//Static
+		out.println(iflabel(q));
+		out.println("    getstatic "
+			    +q.field().getDeclaringClass().getName().replace('.','/')
+			    +"/"+q.field().getName().replace('.','/')
+			    +" "+q.field().getDescriptor().replace('.','/'));
+	    }
+	    else {
+		load(q.objectref());
+		out.println(iflabel(q));
+		out.println("    getfield "+q.field());
+	    }
+	    store(q.dst());
+	}
+
 
 	public void visit(CJMP q) {
 	    String target=labeler(q);
 	    TempInfo tempinfo=(TempInfo)tempmap.get(q.test());
+	    out.println(iflabel(q));
 	    iload(tempinfo);
 	    out.println("    ifne "+labeler(q.next(1)));
 	    if (done.contains(q.next(0)))
@@ -117,61 +229,139 @@ public class Jasmin {
 	}
 
 	public void visit(THROW q) {
-	    TempInfo tempinfo=(TempInfo)tempmap.get(q.throwable());
-	    aload(tempinfo);
+	    out.println(iflabel(q));
+	    load(q.throwable());
 	    out.println("    athrow");
 	}
 
 	public void visit(MOVE q) {
-	    TempInfo dst=(TempInfo)tempmap.get(q.dst());
-	    TempInfo src=(TempInfo)tempmap.get(q.src());
-	    iload(src);
-	    istore(dst);
+	    out.println(iflabel(q));
+	    load(q.src());
+	    store(q.dst());
+	}
+
+	public void visit(NEW q) {
+	    out.println(iflabel(q));
+	    out.println("    new "+q.hclass().getName().replace('.','/'));
+	    store(q.dst());
 	}
 
 	public void visit(CONST q) {
-	    if (q.value()!=null)
-		out.println("    ldc "+q.value().toString());
-	    else out.println("    ldc null");
-	    TempInfo ti=(TempInfo)tempmap.get(q.dst());
-	    HClass tp=q.type();
+	    out.println(iflabel(q));
+	    if (q.value()!=null) {
+		HClass hclass=tm.typeMap(hc,q.dst());
+		if (hclass==HClass.forName("java.lang.String"))
+		    out.println("    ldc "+'"'+q.value().toString()+'"');
+		else
+		    out.println("    ldc "+q.value().toString());
+	    }
+	    else out.println("    aconst_null");
+	    store(q.dst());
+
+	    //HClass.Void
+	}
+	
+	public void visit(RETURN q) {
+	    out.println(iflabel(q));
+	    if (q.retval()!=null) {
+		String operand="Error";
+		HClass tp=tm.typeMap(hc,q.retval());
+		if ((tp==HClass.Boolean)||
+		(tp==HClass.Byte)||
+		(tp==HClass.Char)||
+		(tp==HClass.Short)||
+		(tp==HClass.Int))
+		operand="    ireturn";
+	    else
+		if (tp==HClass.Double)
+		    operand="    dreturn";
+		else
+		    if (tp==HClass.Float)
+			operand="    freturn";
+		    else
+			if (tp==HClass.Long)
+			    operand="    lreturn";
+			else
+			    operand="    areturn";
+		load(q.retval());
+		out.println(operand);
+	    }
+	    else
+		out.println("    return");
+	}
+
+	public void visit(OPER q) {
+	    switch (q.opcode()) {
+	    case Qop.ACMPEQ:
+		String l1=label(), l2=label();
+		for (int i=0;i<q.operandsLength();i++) {
+		    TempInfo tempinfo=(TempInfo)tempmap.get(q.operands(i));
+		    aload(tempinfo);
+		}
+		out.println(iflabel(q));
+		out.println("    if_acmpeq "+l1);
+		out.println("    bipush 0");
+		out.println("    goto "+l2);
+		out.println(l1+":");
+		out.println("    bipush 1");
+		out.println(l2+":");
+		//Need code to do jump/etc...
+		//To store 0/1
+		store(q.dst());
+		break;
+	    default:
+		out.println(q.toString()+" unimplemented");
+	    }
+	}
+
+	private void store(Temp t) {
+	    HClass tp=tm.typeMap(hc,t);
+	    String operand="***store error";
 	    if ((tp==HClass.Boolean)||
 		(tp==HClass.Byte)||
 		(tp==HClass.Char)||
 		(tp==HClass.Short)||
 		(tp==HClass.Int))
-		istore(ti);
+		operand="istore ";
 	    else
 		if (tp==HClass.Double)
-		    dstore(ti);
+		    operand="dstore ";
 		else
 		    if (tp==HClass.Float)
-			fstore(ti);
+			operand="fstore ";
 		    else
 			if (tp==HClass.Long)
-			    lstore(ti);
+			    operand="lstore ";
 			else
-			    astore(ti);
-	    //HClass.Void
+			    operand="astore ";
+	    TempInfo dest=(TempInfo)tempmap.get(t);
+	    if (!dest.stack)
+		out.println("    "+operand+(new Integer(dest.localvar)).toString());
 	}
-	
 
-	public void visit(OPER q) {
-	    switch (q.opcode()) {
-	    case Qop.ACMPEQ:
-		for (int i=q.operandsLength()-1;i>=0;i--) {
-		    TempInfo tempinfo=(TempInfo)tempmap.get(q.operands(i));
-		    aload(tempinfo);
-		}
-		out.println("    if_acmpeq ");
-		//Need code to do jump/etc...
-		//To store 0/1
-		TempInfo dest=(TempInfo)tempmap.get(q.dst());
-		astore(dest);
-		break;
-	    default:
-		out.println(q.toString()+" unimplemented");
-	    }
+	private void load(Temp t) {
+	    String operand="***load error";
+	    HClass tp=tm.typeMap(hc,t);
+	    if ((tp==HClass.Boolean)||
+		(tp==HClass.Byte)||
+		(tp==HClass.Char)||
+		(tp==HClass.Short)||
+		(tp==HClass.Int))
+		operand="iload ";
+	    else
+		if (tp==HClass.Double)
+		    operand="dload ";
+		else
+		    if (tp==HClass.Float)
+			operand="fload ";
+		    else
+			if (tp==HClass.Long)
+			    operand="lload ";
+			else
+			    operand="aload ";
+	    TempInfo dest=(TempInfo)tempmap.get(t);
+	    if (!dest.stack)
+		out.println("    "+operand+(new Integer(dest.localvar)).toString());
 	}
 
 	private void astore(TempInfo t) {
@@ -218,12 +408,18 @@ public class Jasmin {
 	    }
 	}
 
+	private String iflabel(Quad q) {
+	    if (labelmap.containsKey(q))
+		return (String)labelmap.get(q)+(new String(":"));
+	    else return new String("");
+	}
+
 	private String label() {
 	    return "L"+(new Integer(label++)).toString();
 	}
     }
 
-    public final Map buildmap(final HCode code) {
+    public final Object[] buildmap(final HCode code) {
 	UseDef ud=new UseDef();
 	Temp[] alltemp=ud.allTemps(code);
 	HashMap stacktemps=new HashMap();
@@ -241,7 +437,7 @@ public class Jasmin {
 		stacktemps.put(alltemp[i],new TempInfo(j++));
 	    }
 	}
-	return stacktemps;
+	return new Object[] {stacktemps, new Integer(j)};
     }
 
     void checkPair(Map stacktemps, final Quad use, final Quad def, Temp t) {
@@ -260,7 +456,7 @@ public class Jasmin {
 		if (ptr.prev().length!=1) {
 		    flag=false;break;}
 		Temp[] uses=ptr.use();
-		for (int i=uses.length-1;i>=0;i--) {
+		for (int i=0;i<uses.length;i++) {
 		    if (uses[i]==t) break;
 		    if (stacktemps.containsKey(uses[i])) {
 			if (track.contains(uses[i]))
@@ -270,8 +466,9 @@ public class Jasmin {
 		    }
 		}
 	    }
-	    if ((flag)&&(track.size()==0)) {
+	    if ((flag)&&(track.isEmpty())) {
 		stacktemps.put(t, new TempInfo(true));
+		//		System.out.println("Putting in"+t.toString());
 	    }
 	}
     }
