@@ -1,56 +1,56 @@
 // LiveVars.java, created Wed May 26 16:53:26 1999 by pnkfelix
-// Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
-// Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis.DataFlow;
+ // Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
+ // Licensed under the terms of the GNU GPL; see COPYING for details.
+ package harpoon.Analysis.DataFlow;
 
-import harpoon.Analysis.BasicBlock;
+ import harpoon.Analysis.BasicBlock;
 
-import harpoon.Util.CloneableIterator;
-import harpoon.Util.Collections.BitSetFactory;
-import harpoon.Util.Collections.SetFactory;
+ import harpoon.Util.CloneableIterator;
+ import harpoon.Util.Collections.BitSetFactory;
+ import harpoon.Util.Collections.SetFactory;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Iterator;
+ import java.util.Set;
+ import java.util.Map;
+ import java.util.HashSet;
+ import java.util.HashMap;
+ import java.util.Iterator;
 
-/**
- * <code>LiveVars</code> performs Liveness Analysis for the variables
- * in the <code>BasicBlock</code>s passed to it.
- *
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.12 1999-11-09 06:28:25 pnkfelix Exp $
- */
-public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
+ /**
+  * <code>LiveVars</code> performs Liveness Analysis for the variables
+  * in the <code>BasicBlock</code>s passed to it.
+  *
+  * @author  Felix S Klock <pnkfelix@mit.edu>
+  * @version $Id: LiveVars.java,v 1.1.2.13 1999-11-09 07:57:13 pnkfelix Exp $
+  */
+ public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 
-    private static final boolean DEBUG = false;
-   
-    // maps a BasicBlock 'bb' to the LiveVarInfo associated with 'bb'
-    private Map bbToLvi;
-    
-    /** Constructs a new <code>LiveVars</code> for <code>basicblocks</code>.
-	<BR> <B>requires:</B> <OL> 
-	     <LI> <code>basicblocks</code> is a 
-	          <code>Iterator</code> of <code>BasicBlock</code>s,
-	     <LI> All of the instructions in
- 	          <code>basicblocks</code> implement
- 		  <code>UseDef</code>
-	     <LI> No element of <code>basicblocks</code> links to a 
-	          <code>BasicBlock</code> not contained within 
-		  <code>basicblocks</code> 
-	     <LI> No <code>BasicBlock</code> is repeatedly iterated 
-	          by <code>basicblocks</code>
-		  </OL> 
-	 <BR> <B>modifies:</B> <code>basicblocks</code> 
-	 <BR> <B>effects:</B> constructs a new 
-	      <code>BasicBlockVisitor</code> and initializes its 
-	      internal datasets for analysis of the 
-	      <code>BasicBlock</code>s in <code>basicblocks</code>, 
-	      iterating over all of <code>basicblocks</code> in the 
-	      process.
-	 @param basicblocks <code>Iterator</code> of
-	        <code>BasicBlock</code>s to be analyzed. 
+     private static final boolean DEBUG = false;
+
+     // maps a BasicBlock 'bb' to the LiveVarInfo associated with 'bb'
+     private Map bbToLvi;
+
+     /** Constructs a new <code>LiveVars</code> for <code>basicblocks</code>.
+	 <BR> <B>requires:</B> <OL> 
+	      <LI> <code>basicblocks</code> is a 
+		   <code>Iterator</code> of <code>BasicBlock</code>s,
+	      <LI> All of the instructions in
+		   <code>basicblocks</code> implement
+		   <code>UseDef</code>
+	      <LI> No element of <code>basicblocks</code> links to a 
+		   <code>BasicBlock</code> not contained within 
+		   <code>basicblocks</code> 
+	      <LI> No <code>BasicBlock</code> is repeatedly iterated 
+		   by <code>basicblocks</code>
+		   </OL> 
+	  <BR> <B>modifies:</B> <code>basicblocks</code> 
+	  <BR> <B>effects:</B> constructs a new 
+	       <code>BasicBlockVisitor</code> and initializes its 
+	       internal datasets for analysis of the 
+	       <code>BasicBlock</code>s in <code>basicblocks</code>, 
+	       iterating over all of <code>basicblocks</code> in the 
+	       process.
+	  @param basicblocks <code>Iterator</code> of
+		 	        <code>BasicBlock</code>s to be analyzed. 
     */	     
     public LiveVars(Iterator basicblocks) {
 	CloneableIterator blocks = new CloneableIterator(basicblocks);
@@ -188,10 +188,10 @@ public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     // lvIN(bb):  ( lvOUT(bb) - DEF(bb) ) U USE(bb)
     // lvOUT(bb): Union over (j elem Succ(bb)) of ( lvIN(j) )
     protected static class LiveVarInfo {
-	Set use;
-	Set def;
-	Set lvIN;
-	Set lvOUT;
+	public Set use; 
+	public Set def;
+	public Set lvIN;
+	public Set lvOUT;
 
 	protected LiveVarInfo(SetFactory sf) { 
 	    use = sf.makeSet();
