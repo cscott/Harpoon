@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * <code>SimpleGraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.13 2000-07-27 21:34:13 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.14 2000-07-28 03:06:46 pnkfelix Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {
@@ -70,6 +70,14 @@ public class SimpleGraphColorer extends GraphColorer {
 	for(Object n=graph.replace(); n!=null; n=graph.replace()){
 	    // find color that none of n's neighbors is set to
 
+	    if (graph.getColor(n) != null) {
+		// precolored, skip
+		System.out.println("skipping "+n+
+				   "b/c its precolored to "+
+				   graph.getColor(n));
+		continue;
+	    }
+
 	    Collection nborsC = graph.neighborsOf(n);
 	    HashSet nColors = new HashSet(nborsC.size());
 	    for(Iterator nbors = nborsC.iterator(); nbors.hasNext();){
@@ -90,9 +98,8 @@ public class SimpleGraphColorer extends GraphColorer {
 	    // this point
 	    Util.assert(color != null);
 
-	    // FSK: hack to get around double coloring restriction
-	    graph.setColor(n, null);	    
 	    graph.setColor(n, color);
+
 	}
     }
 

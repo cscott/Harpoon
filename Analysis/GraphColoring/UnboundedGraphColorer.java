@@ -12,7 +12,7 @@ import java.util.List;
  * using a <code>ColorFactory</code>.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: UnboundedGraphColorer.java,v 1.1.2.3 2000-07-27 21:34:13 pnkfelix Exp $
+ * @version $Id: UnboundedGraphColorer.java,v 1.1.2.4 2000-07-28 03:06:47 pnkfelix Exp $
  */
 public class UnboundedGraphColorer extends GraphColorer {
 
@@ -61,9 +61,9 @@ public class UnboundedGraphColorer extends GraphColorer {
 	    }
 	}
 	
-	// some of the arithimetic and control flow above is kooky, so
-	// I'm adding a last check to ensure that things do work.  
-	if (!ableToColor( graph, upperBound )) {
+	try {
+	    color( graph, factory.getColors() );
+	} catch ( UnableToColorGraph u ) {
 	    throw new RuntimeException
 		("Something went horribly wrong with the color search");
 	} 
@@ -93,8 +93,11 @@ public class UnboundedGraphColorer extends GraphColorer {
 
 	try {
 	    color( graph, factory.getColors() );
+	    graph.resetColors();
 	    return true;
 	} catch ( UnableToColorGraph e ) {
+	    graph.replaceAll();
+	    graph.resetColors();
 	    return false;
 	}
     }
