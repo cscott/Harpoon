@@ -20,6 +20,7 @@ import imagerec.util.ImageDataManip;
 public class Load extends Node {
     private JarFile jarFile;
     private String filePrefix;
+    private String fileSuffix;
     private int num;
 
     /** Construct a {@link Load} node that will load the files
@@ -33,7 +34,7 @@ public class Load extends Node {
      */
     public Load(String filePrefix, int num, Node out) {
 	super(out);
-	init(null, filePrefix, num);
+	init(null, filePrefix, null, num);
     }
 
     /** Construct a {@link Load} node that will load the Jar entries
@@ -48,9 +49,13 @@ public class Load extends Node {
      */
     public Load(String jarFile, String filePrefix, int num, Node out) {
 	super(out);
-	init(jarFile, filePrefix, num);
+	init(jarFile, filePrefix, null, num);
     }
 
+    public Load(String jarFile, String filePrefix, String fileSuffix, int num, Node out) {
+	super(out);
+	init(jarFile, filePrefix, fileSuffix, num);
+    }
     
     /** Construct a {@link Load} node that will load the files
      *  <code>filePrefix.0</code> through
@@ -64,12 +69,12 @@ public class Load extends Node {
      */
     public Load(String filePrefix, int num, Node out1, Node out2) {
 	super(out1, out2);
-	init(null, filePrefix, num);
+	init(null, filePrefix, null, num);
     }
 
     public Load(String jarFile, String filePrefix, int num, Node out1, Node out2) {
 	super(out1, out2);
-	init(jarFile, filePrefix, num);
+	init(jarFile, filePrefix, null, num);
     }
 
     /**
@@ -78,8 +83,9 @@ public class Load extends Node {
        <code>filePrefix.0</code> through
        <code>filePrefix.num-1</code>.
     */
-    private void init(String jarFile, String filePrefix, int num) {
+    private void init(String jarFile, String filePrefix, String fileSuffix, int num) {
 	this.filePrefix = filePrefix;
+	this.fileSuffix = fileSuffix;
 	this.num = num;
 	if (jarFile == null) {
 	    this.jarFile = null;
@@ -100,6 +106,8 @@ public class Load extends Node {
 	//ImageDataManip.useSameArrays(true);
 	for (int i=0; i<num; i++) {
 	    String fileName = filePrefix+"."+i;
+	    if (fileSuffix != null)
+		fileName += "."+fileSuffix;
 	    System.out.println("Loading image "+fileName);
 	    id = null;
 	    try {
