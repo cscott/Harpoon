@@ -5,6 +5,7 @@ package imagerec.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
@@ -35,6 +36,13 @@ import imagerec.graph.Cache;
  */
 
 public class ImageDataManip {
+
+    //these fields added by benji as a hack to improve memory usage and speed
+    private static boolean useSameArrays;
+    private static byte[] rvalues;
+    private static byte[] gvalues;
+    private static byte[] bvalues;
+
 
     /** Read a PPM from a file: automatically senses whether it's a GZIP'ed file
      *  (by looking for <code>.gz</code> in the fileName), and whether it's a P3 or P6
@@ -116,9 +124,25 @@ public class ImageDataManip {
 	    int width=dr.read();
 	    int height=dr.read();
 	    dr.read(); /* This is to eat the number of colors. */
-	    byte[] rvals = new byte[width*height];
-	    byte[] gvals = new byte[width*height];
-	    byte[] bvals = new byte[width*height];
+	    byte[] rvals;
+	    byte[] gvals;
+	    byte[] bvals;
+	    if (useSameArrays) {
+		if (rvalues == null || rvalues.length != width*height) {
+		    rvalues = new byte[width*height];
+		    gvalues = new byte[width*height];
+		    bvalues = new byte[width*height];
+		}
+		rvals = rvalues;
+		gvals = gvalues;
+		bvals = bvalues;
+	    }
+	    else {
+		rvals = new byte[width*height];
+		gvals = new byte[width*height];
+		bvals = new byte[width*height];
+	    }
+
 	    if (read==3) {
 		for (int i=0; i<width*height; i++) {
 		    rvals[i] = (byte)dr.read();
@@ -127,7 +151,9 @@ public class ImageDataManip {
 		}
 	    } else {
 		byte[] cbuf=new byte[3*width*height];
-		st.read(cbuf);
+		int count = 0;
+		(new DataInputStream(st)).readFully(cbuf);
+// 		for (int i=0; i<cbuf.length; i++) cbuf[i]=(byte)st.read(); /* Slow, but it works! */
 		int j = 0;
 		for (int i=0; i<width*height; i++) {
 		    rvals[i] = (byte)cbuf[j++];
@@ -374,5 +400,16 @@ public class ImageDataManip {
 				 x, y, width, height,
 				 0, 0, 0, 0, (float)0.0, (float)0.0, (float)0.0);
 	}
+    }
+
+    /**
+       Hack by Benji to try to speed up pipeline by reusing memory.
+       If useSameArrays is called with TRUE
+       Then all images loaded by ImageDataManip
+       will use the same 3 arrays for their rgb values.
+       Use only if you know that you will not need more than one image at a time.
+     */
+    public static void useSameArrays(boolean val) {
+	useSameArrays = val;
     }
 }
