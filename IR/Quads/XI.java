@@ -13,9 +13,9 @@ import harpoon.Util.Util;
  * function.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: XI.java,v 1.1.2.2 1999-09-09 21:43:03 cananian Exp $
+ * @version $Id: XI.java,v 1.1.2.3 2001-09-26 16:05:14 cananian Exp $
  */
-public class XI extends PHI {
+class XI extends PHI {
     protected Temp invariantDst[];
     protected Temp invariantSrc[];
     protected Temp backedgeDst[];
