@@ -90,6 +90,7 @@ public class Keyboard extends Node {
 	    });
 	frame.setSize(new Dimension(WIDTH, HEIGHT));
 	frame.setVisible(true);
+	System.out.println("Keyboard visible");
     }
 
     /** Ignored
