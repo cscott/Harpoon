@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.16 2003-04-25 19:40:30 cananian Exp $
+% $Id: lctes03.tex,v 1.17 2003-04-25 20:29:52 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % lctes03.tex
 % Data Size Optimizations for Java Programs
@@ -67,18 +67,17 @@ and the Singapore-MIT Alliance.}
 \begin{abstract}
 We present a set of techniques for reducing the memory consumption of
 object-oriented programs.  These techniques 
-include optimizations that eliminate fields with
+include analysis algorithms and optimizations that use the results
+of these analyses to eliminate fields with
 constant values, reduce the sizes of fields based on the range
 of values that can appear in each field, and 
 eliminate fields with common default values
 or usage patterns.
 We apply these optimizations both 
 to fields declared by the programmer and to implicit fields in
-the runtime object header. We describe analysis
-algorithms to extract the information required to apply these
-optimizations. 
-Although these techniques are applicable to any object-oriented
-program, we expect they will be particularly applicable to
+the runtime object header.
+Although it is possible to apply these techniques to any object-oriented
+program, we expect they will be particularly appropriate for
 memory-limited embedded systems. 
 
 We have implemented these techniques in the MIT FLEX compiler
@@ -409,11 +408,13 @@ on that field. We can apply this idea recursively to the
 new program to obtain the benefits of splitting on multiple
 fields. 
 
-In this example all of the relevant fields are declared {\tt private},
-enabling the analysis to determine all the required facts without
-examining the rest of the program.  However, our analysis is powerful
-enough to determine the necessary facts by examining use context even
-in the absence of these access annotations.
+In this example all of the relevant fields are {\tt private}, which
+would, in principle, enable an implementation to apply the
+optimization with an analysis of only the {\tt String} class.  Our
+analysis, however, is powerful enough to examine the rest of the
+program and discover the facts required to apply the optimization in
+the absence of {\tt private} or {\tt final} declarations and even for
+fields accessed outside their declaring class.
 
 \subsection{Field Externalization}
 
