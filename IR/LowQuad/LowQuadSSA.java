@@ -21,7 +21,7 @@ import java.util.Hashtable;
  * <blink><b>FILL ME IN</b></blink>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.11 1999-02-18 22:02:56 cananian Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.12 1999-07-13 20:53:56 bdemsky Exp $
  */
 public class LowQuadSSA extends Code
 {
@@ -64,7 +64,7 @@ public class LowQuadSSA extends Code
    * Create a new code object given a quadruple representation of the
    * method instructions.
    */
-  private LowQuadSSA(HMethod method, Quad quads)
+  protected LowQuadSSA(HMethod method, Quad quads)
     {
       super(method, quads);
     }
