@@ -14,11 +14,12 @@ import harpoon.Util.Util;
  * the java classfile bytecodes in a quadruple format.  Implementation
  * details of the stack-based JVM are hidden in favor of a flat consistent
  * temporary-variable based approach.  The generated quadruples adhere
- * to an SSA form; that is, every variable has exactly one definition,
- * and <code>PHI</code> functions are used where control flow merges.
+ * to an SSI form; that is, every variable has exactly one definition,
+ * and <code>PHI</code> and <code>SIGMA</code> functions are used where
+ * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.1.2.1 1999-09-08 16:35:33 cananian Exp $
+ * @version $Id: QuadSSI.java,v 1.1.2.2 1999-09-08 17:39:40 cananian Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
