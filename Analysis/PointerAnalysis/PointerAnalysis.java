@@ -53,25 +53,28 @@ import harpoon.IR.Quads.FOOTER;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.21 2000-03-03 06:23:15 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.22 2000-03-05 03:12:38 salcianu Exp $
  */
 public class PointerAnalysis {
 
     public static final boolean DEBUG = false;
     public static final boolean DEBUG2 = false;
+    public static final boolean DEBUG_SCC = true;
     public static final boolean DETERMINISTIC = true;
     public static final boolean TIMING = true;
     public static final boolean STATS = true;
+    public static final boolean DETAILS = true;
+    public static final boolean DETAILS2 = false;
 
     /** Activates the context sensitivity. When this flag is turned on, 
 	the nodes from the graph of the callee are specialized for each
 	call site (up to <code>MAX_SPEC_DEPTH</code> times). This increases
 	the precision of the analysis but requires more time and memorty. */
-    public static final boolean CONTEXT_SENSITIVE = false;
+    public static final boolean CONTEXT_SENSITIVE = true;
 
     /** The specialization limit. This puts a limit to the otherwise
 	exponential growth of the number of nodes in the analysis. */
-    public static final int MAX_SPEC_DEPTH = 0;
+    public static final int MAX_SPEC_DEPTH = 1;
 
     public static final String ARRAY_CONTENT = "array_elements";
 
@@ -213,8 +216,8 @@ public class PointerAnalysis {
 		    }
 		};
 
-	long begin_time;
-	if(TIMING) begin_time = System.currentTimeMillis();
+	long begin_time = 0;
+	begin_time = System.currentTimeMillis();
 
 	if(DEBUG)
 	  System.out.println("Creating the strongly connected components " +
@@ -229,17 +232,17 @@ public class PointerAnalysis {
 	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(hm,navigator));
 
 
-	if(DEBUG2 || TIMING){
+	if(DEBUG_SCC || TIMING){
 	    long total_time = System.currentTimeMillis() - begin_time;
 	    int counter = 0;
 	    int methods = 0;
 	    SCComponent scc = method_sccs.getFirst();
 
-	    if(DEBUG2)
+	    if(DEBUG_SCC)
 		System.out.println("===== SCCs of methods =====");
 
 	    while(scc != null){
-		if(DEBUG2){
+		if(DEBUG_SCC){
 		    System.out.print(scc.toString(cg));
 		}
 		counter++;
@@ -247,7 +250,7 @@ public class PointerAnalysis {
 		scc = scc.nextTopSort();
 	    }
 
-	    if(DEBUG2)
+	    if(DEBUG_SCC)
 		System.out.println("===== END SCCs ============");
 
 	    if(TIMING)
@@ -295,7 +298,7 @@ public class PointerAnalysis {
 	if(DEBUG)
 	    System.out.print(scc.toString(cg));
 
-	long begin_time;
+	long begin_time = 0;
 	if(TIMING) begin_time = System.currentTimeMillis();
 
 	while(!W_inter_proc.isEmpty()){
@@ -353,7 +356,7 @@ public class PointerAnalysis {
 
     // Performs the intra-procedural pointer analysis.
     private void analyze_intra_proc(HMethod hm){
-	if(DEBUG2)
+	//if(DEBUG2)
 	    System.out.println("METHOD: " + hm);
 
 	if(STATS) Stats.record_method_pass(hm);
@@ -869,6 +872,7 @@ public class PointerAnalysis {
 	Stats.print_stats();
 	nodes.print_stats();
 	System.out.println("==========================================");
+	if(DETAILS) nodes.show_specializations();
     }
 
 }

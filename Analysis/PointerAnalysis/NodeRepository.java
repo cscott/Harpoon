@@ -4,17 +4,19 @@
 package harpoon.Analysis.PointerAnalysis;
 
 import java.util.Hashtable;
+import java.util.Set;
 import java.util.Iterator;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.CALL;
 
 /**
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.10 2000-03-03 06:23:15 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.11 2000-03-05 03:12:37 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -187,6 +189,8 @@ public class NodeRepository {
 
     /** Prints some statistics. */
     public void print_stats(){
+	int nb_total   = PANode.count - 1;
+	// the last -1 is for the InterThreadPA.THIS_THREAD conventional node
 	int nb_excepts = except_nodes.size();
 	int nb_statics = static_nodes.size();
 
@@ -215,21 +219,75 @@ public class NodeRepository {
 	while(it.hasNext())
 	    nb_params += ((PANode[])(param_nodes.get(it.next()))).length;
 
+	int nb_roots = 
+	    nb_insides + nb_returns + nb_excepts +
+	    nb_statics + nb_loads + nb_params;
+
 	System.out.println("-NODE STATS-------------------------------");
-	System.out.println("INSIDE node(s) : " + nb_insides);
+	System.out.println("INSIDE node(s) : " + nb_insides + " roots, " +
+			   (nb_total-nb_roots) + " specializations");
 	System.out.println("RETURN node(s) : " + nb_returns);
 	System.out.println("EXCEPT node(s) : " + nb_excepts);
 	System.out.println("STATIC node(s) : " + nb_statics);
 	System.out.println("LOAD   node(s) : " + nb_loads);
 	System.out.println("PARAM  node(s) : " + nb_params);
-	int nb_total =
-	    nb_insides + nb_returns + nb_excepts +
-	    nb_statics + nb_loads + nb_params;
 	System.out.println("-------------------------");
 	System.out.println("TOTAL          : " + nb_total);
     }
 
+    /** Nice looking info for debug purposes. */
+    public void show_specializations(){
+	System.out.println("-SPECIALIZATIONS--------------------------");
+
+     	Iterator it = code_nodes.keySet().iterator();
+	while(it.hasNext()){
+	    PANode node = (PANode) code_nodes.get(it.next());
+	    if(node.type == PANode.INSIDE)
+		show_node(node,1);
+	}
+    }
+
+    private void show_node(PANode node, int ident){
+	for(int i=0;i<ident;i++) System.out.print(" ");
+
+	System.out.print(node);
+
+	if(!node.isSpecialized()){
+	    HCodeElement hce = node2Code(node);
+	    System.out.print(" created at line " + hce.getSourceFile() + 
+			       ":" + hce.getLineNumber());
+	}
+	else{
+	    CALL q = node.getCallSite();
+	    HMethod method = q.method();
+	    System.out.print(" specialized from " + node.getParent() +
+			     " at line " + q.getSourceFile() +
+			     ":" + q.getLineNumber() + " ");
+	    if(PointerAnalysis.DETAILS2)
+		System.out.print("(CALL " + 
+			     method.getDeclaringClass().getName() + "." +
+			     method.getName() + ") ");
+	}
+
+	Set specs = node.getAllSpecializations();
+
+	if((specs == null) || specs.isEmpty()){
+	    System.out.println();
+	    return;
+	}
+
+	System.out.println(":");
+	Iterator it = specs.iterator();
+	while(it.hasNext()){
+	    show_node((PANode) it.next(), ident + 1);
+	}
+    }
+
 }
+
+
+
+
 
 
 

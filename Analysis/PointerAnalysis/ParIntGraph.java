@@ -17,7 +17,7 @@ import harpoon.IR.Quads.CALL;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.14 2000-03-03 06:23:15 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.15 2000-03-05 03:12:38 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -191,31 +191,42 @@ public class ParIntGraph {
     }
 
 
+    private Set all_nodes = null;
+
     /** Returns the set of all the nodes that appear in <code>this</code>
 	parallel interaction graph. */
     public Set allNodes(){
-	final Set all_nodes = new HashSet();
-	forAllNodes(new PANodeVisitor(){
-		public void visit(PANode node){
-		    all_nodes.add(node);
-		}
-	    });
+	if(all_nodes == null){
+	    final Set nodes = new HashSet();
+	    forAllNodes(new PANodeVisitor(){
+		    public void visit(PANode node){
+			nodes.add(node);
+		    }
+		});
+	    all_nodes = nodes;
+	}
 	return all_nodes;
     }
 
-    public ParIntGraph specialize(final CALL q){
-	final Relation mu = new Relation();
-	forAllNodes(new PANodeVisitor(){
-		public void visit(PANode node){
-		    switch(node.type){
-		    case PANode.INSIDE:
-			mu.add(node,node.specialize(q));
-			break;
-		    default:
-			mu.add(node,node);
-		    }
-		}
-	    });
+    public ParIntGraph specialize(CALL q){
+	Relation mu = new Relation();
+
+	Iterator it_nodes = allNodes().iterator();
+	while(it_nodes.hasNext()){
+	    PANode node = (PANode) it_nodes.next();
+
+	    switch(node.type){
+	    case PANode.INSIDE:
+		mu.add(node,node.specialize(q));
+		break;
+	    default:
+		mu.add(node,node);
+	    }
+	}
+
+	//if(InterProcPA.DEBUG)
+	//    System.out.println("Specialization: " + mu);
+
 	ParIntGraph new_pig = new ParIntGraph();
 	new_pig.insertAllButArEo(this,mu,true);
 	ActionRepository.insertProjection(this.ar,new_pig.ar,mu);

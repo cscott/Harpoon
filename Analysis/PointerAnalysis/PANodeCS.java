@@ -3,6 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
+import java.util.Set;
+import java.util.HashSet;
+
 import harpoon.ClassFile.HMethod;
 
 import harpoon.IR.Quads.CALL;
@@ -12,7 +15,7 @@ import harpoon.IR.Quads.CALL;
  * <code>PANodeCS</code> 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANodeCS.java,v 1.1.2.1 2000-03-03 06:18:25 salcianu Exp $
+ * @version $Id: PANodeCS.java,v 1.1.2.2 2000-03-05 03:12:38 salcianu Exp $
  */
 public class PANodeCS extends PANode {
     // a node is a specialization of its parent for a specific call_site
@@ -71,11 +74,37 @@ public class PANodeCS extends PANode {
 
 	if(!found){
 	    PANodeCS node   = new PANodeCS(type, this, call_site);
-	    ListItem new_l  = new ListItem(call_site,node,specializations);
-	    specializations = new_l;
+	    l  = new ListItem(call_site,node,specializations);
+	    specializations = l;
 	}
 
+	// System.out.println("specialize(" + this + "," + call_site + 
+	//		   ") = " + l.node);
+
 	return l.node;
+    }
+
+    /** Returns the set of nodes that are just a specialization of this one. */
+    public Set getAllSpecializations(){
+	Set set = new HashSet();
+	ListItem l = specializations;
+	while(l != null){
+	    set.add(l.node);
+	    l = l.next;
+	}
+	return set;
+    }
+
+    /** Checks whether this node is a specialization of some other node. */
+    public boolean isSpecialized(){
+	return parent!=null;
+    }
+
+    /** Returns the call site where this node was created through
+	specialization. Returns <code>null</code> if <code>this</code> node
+	is not a speialization of some other node. */
+    public CALL getCallSite(){
+	return call_site;
     }
 
     /** Debug purposes description. */
@@ -93,7 +122,7 @@ public class PANodeCS extends PANode {
 
     /** Returns the parent node. <code>this</code> is a direct specialization
 	of the parent node. */
-    public PANodeCS parent(){ return parent; }
+    public PANode getParent(){ return parent; }
 
     /** Checks whether <code>this</code> node is an unspecialized one
 	(a root node in the chain of specialization). */

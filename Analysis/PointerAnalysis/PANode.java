@@ -3,6 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
+import java.util.Set;
+import java.util.Collections;
+
 import harpoon.Util.Util;
 import harpoon.IR.Quads.CALL;
 
@@ -12,7 +15,7 @@ import harpoon.IR.Quads.CALL;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.7 2000-03-03 06:23:15 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.8 2000-03-05 03:12:38 salcianu Exp $
  */
 public class PANode {
     
@@ -32,15 +35,15 @@ public class PANode {
     /** The null pointers are modeled as pointing to the special node
      * NULL_Node of the special type NULL */
     public static final int NULL       = 128;
-    /** A symbolic node for the null pointers */ 
-    public static final PANode NULL_Node = new PANode(NULL);
+    ///** A symbolic node for the null pointers */ 
+    //public static final PANode NULL_Node = new PANode(NULL);
 
     /** The type of the node */
     public int type;
 
     /** <code>count</code> is used to generate unique IDs 
      *  for debug purposes. */
-    private static int count = 0;
+    static int count = 0;
     /** Holds the unique ID */
     public int number;
 
@@ -48,7 +51,7 @@ public class PANode {
     public PANode(int _type) {
         type   = _type;
 	number = count++;
-	/// System.out.println("New node: " + this);
+	// System.out.println("New node: " + this);
     }
 
     /** Returns the type of the node. */
@@ -65,6 +68,28 @@ public class PANode {
 	version, the PANodeCS subclass */
     public PANode specialize(CALL q){
 	Util.assert(false,"Don't call specialize on a PANode object!");
+	return null;
+    }
+
+    /** Returns the set of nodes that are just a specialization of this one. */
+    public Set getAllSpecializations(){
+	return Collections.EMPTY_SET;
+    }
+
+    /** Checks whether this node is a specialization of some other node. */
+    public boolean isSpecialized(){
+	return false;
+    }
+
+    /** Returns the parent node (for a specialized node).
+     The default implementation always returns <code>null</code>. */
+    public PANode getParent(){ return null; }
+
+    /** Returns the call site where this node was created through
+	specialization. The default implementation always return
+	<code>null</code> (of course, this method is overriden in
+	<code>PANodeCS</code>. */
+    public CALL getCallSite(){
 	return null;
     }
 

@@ -24,11 +24,11 @@ import harpoon.Temp.Temp;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.12 2000-03-03 06:23:15 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.13 2000-03-05 03:12:37 salcianu Exp $
  */
 abstract class InterProcPA {
 
-    private static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
     /** Analyzes the call site <code>q</code> inside 
 	<code>current_method</code>. If analyzing the call is not possible
@@ -192,19 +192,19 @@ abstract class InterProcPA {
 	Relation mu = 
 	    get_initial_mapping(q,pig_caller,pig_callee,callee_params);
 
-	if(DEBUG) System.out.println("Initial mapping:" + mu);
+	//if(DEBUG) System.out.println("Initial mapping:" + mu);
 
 	// update the node mapping by matching outside edges from the caller
 	// with inside edges from the callee
 	match_edges(mu,pig_caller,pig_callee);
 	
-	if(DEBUG) System.out.println("After matching edges:" + mu);
+	//if(DEBUG) System.out.println("After matching edges:" + mu);
 
 	// all the nodes from the caller (except for PARAM) are
 	// initially inserted into the caller's graph
 	compute_the_final_mapping(mu,pig_caller,pig_callee);
 
-	if(DEBUG) System.out.println("Final mapping:" + mu);
+	//if(DEBUG) System.out.println("Final mapping:" + mu);
 
 
 	PAEdgeSet old_caller_I = (PAEdgeSet) pig_caller.G.I.clone();
