@@ -35,6 +35,8 @@ public class State {
     public Hashtable constraintnodes;    
     public Hashtable implicitrule;
     public Hashtable implicitruleinv;
+
+    public SetAnalysis setanalysis;
     State() {
         vConstraints = null;
         vRules = null;

@@ -13,7 +13,7 @@ class ExactSize {
 	this.state=state;
 	this.sizemap=new Hashtable();
 	this.constraintmap=new Hashtable();
-	this.setanalysis=new SetAnalysis(state);
+	this.setanalysis=state.setanalysis;
 	computesizes();
     }
     

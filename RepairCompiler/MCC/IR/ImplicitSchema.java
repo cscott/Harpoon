@@ -9,7 +9,7 @@ public class ImplicitSchema {
     SetAnalysis setanalysis;
     public ImplicitSchema(State state) {
 	this.state=state;
-	this.setanalysis=new SetAnalysis(state);
+	this.setanalysis=state.setanalysis;
     }
 
     public void update() {
@@ -346,6 +346,27 @@ public class ImplicitSchema {
 		if (supersets!=null)
 		    for(Iterator superit=supersets.iterator();superit.hasNext();) {
 			SetDescriptor sd1=(SetDescriptor)superit.next();
+			Expr e=((SetInclusion)r.inclusion).getExpr();
+			while(e instanceof CastExpr) {
+			    e=((CastExpr)e).getExpr();
+			}
+			if (e instanceof VarExpr) {
+			    VarDescriptor vde=((VarExpr)e).getVar();
+			    boolean ok=false;
+			    for (int j=0;j<r.numQuantifiers();j++) {
+				Quantifier tmp=r.getQuantifier(j);
+				if (tmp instanceof SetQuantifier&&
+				    ((SetQuantifier)tmp).getVar()==vde)
+				    ok=true; /* Need to make sure we don't have a relation quantifier. */
+			    }
+
+			    SetDescriptor currentset=e.getSet();
+			    if (ok&&currentset!=null&&currentset.isSubset(sd1))
+				continue; /* This rule doesn't add item to
+					     this set, as item is already
+					     in this set. */
+			}
+			
 			Rule nr=new Rule();
 			nr.setGuardExpr(r.getGuardExpr());
 			nr.quantifiers=r.quantifiers;

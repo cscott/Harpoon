@@ -15,6 +15,10 @@ public class CastExpr extends Expr {
 	return expr.isValue(td);
     }
 
+    public SetDescriptor getSet() {
+	return expr.getSet();
+    }
+
     public Set freeVars() {
 	return expr.freeVars();
     }

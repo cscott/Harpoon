@@ -62,6 +62,7 @@ public class Compiler {
 	success = semantics(state) || error(state, "Semantic analysis failed, not attempting variable initialization.");
 	
 	
+	state.setanalysis=new SetAnalysis(state);
 	Termination termination=null;
 	/* Check partition constraints */
 	(new ImplicitSchema(state)).update();

@@ -156,7 +156,7 @@ public class ConstraintDependence {
 		    continue;
 		for(Iterator fit=functions.iterator();fit.hasNext();) {
 		    Function f=(Function)fit.next();
-		    if (rulesensurefunction(f))
+		    if (rulesensurefunction(state,f,false))
 			continue; //no constraint needed to ensure
 
 		    Set s=providesfunction(f);
@@ -171,7 +171,12 @@ public class ConstraintDependence {
 	}
     }
 
-    private boolean rulesensurefunction(Function f) {
+    /** This method determines whether the model definition rules
+     * ensure that the relation and evaluation domain descriped by f
+     * is either a function (if isPartial=false) or a partial function
+     * (if isPartial=true). */
+
+    static private boolean rulesensurefunction(State state,Function f, boolean isPartial) {
 	boolean foundrule=false;
 	for(int i=0;i<state.vRules.size();i++) {
 	    Rule r=(Rule)state.vRules.get(i);
@@ -181,7 +186,7 @@ public class ConstraintDependence {
 		SetDescriptor sd=e.getSet();
 		if (sd==null)
 		    return false;
-		if (!(sd.isSubset(f.getSet())||f.getSet().isSubset(sd)))
+		if (state.setanalysis.noIntersection(f.getSet(),sd))
 		    continue; /* This rule doesn't effect the function */
 		if (foundrule) /* two different rules are a problem */
 		    return false;
@@ -196,8 +201,8 @@ public class ConstraintDependence {
 		    return false;
 		if (!sq.getSet().isSubset(f.getSet()))
 		    return false;
-		if (!((r.getGuardExpr() instanceof BooleanLiteralExpr)&&
-		      ((BooleanLiteralExpr)r.getGuardExpr()).getValue()==true))
+		if (!(((r.getGuardExpr() instanceof BooleanLiteralExpr)&&
+		       ((BooleanLiteralExpr)r.getGuardExpr()).getValue()==true))||isPartial)
 		    return false;
 		Expr e2=f.isInverse()?ri.getLeftExpr():ri.getRightExpr();
 		if (e2.isSafe())
@@ -255,6 +260,16 @@ public class ConstraintDependence {
 		set.add(c);
 	}
 	return set;
+    }
+
+
+    /** This method determines whether the model definition rules
+     * ensure that the relation r (or inverse relation if inverse is
+     * true) evaluated on the domain sd is either a function (if
+     * isPartial=false) or a partial function (if isPartial=true). */
+
+    static public boolean rulesensurefunction(State state,RelationDescriptor r, SetDescriptor sd,boolean inverse, boolean isPartial) {
+	return rulesensurefunction(state, new Function(r,sd,inverse,null),isPartial);
     }
 
     public static class Function {
