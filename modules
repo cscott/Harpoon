@@ -25,6 +25,6 @@
 # can be useful for creating a module that consists of many directories
 # spread out over the entire source repository.
 
-CVSROOT	CVSROOT -i newgrp java-dev
-Code	Code -i newgrp java-dev
-Design	Design -i newgrp java-dev
+CVSROOT	-i javagrp CVSROOT
+Code	Code
+Design	Design
