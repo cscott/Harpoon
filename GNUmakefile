@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.34 1999-06-13 17:28:28 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.35 1999-06-13 18:12:35 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -227,9 +227,10 @@ find-no-copyright:
 	@find . -name "*.java" \( ! -exec grep -q "GNU GPL" "{}" ";" \) -print
 
 wc:
-	@wc -l $(ALLSOURCE)
 	@echo Top Five:
-	@wc -l $(ALLSOURCE) | sort -n | tail -6 | head -5
+	@wc -l $(TARSOURCE) | sort -n | tail -6 | head -5
+	@echo Total lines of source:
+	@cat $(TARSOURCE) | wc -l
 
 clean:
 	-${RM} -r harpoon silicon gnu Harpoon.jar* harpoon.tgz* \
