@@ -1,0 +1,26 @@
+ARCHIE Compiler
+  
+written by: 
+  Daniel Roy and Brian Demsky
+
+Instructions: 
+  To run the compiler, you must have java 1.4.1.  To compile the FreeCiv
+  specifications, type the following command at the command-line prompt:
+  
+  java -jar MCC.jar specs/freeciv
+  
+  The compiler outputs a C source-code file, specs/freeciv.cc. This file
+  is #include'd in the calltool.cc/.h source file which can be compiled
+  alongside the SimpleHash.cc/.h and linked with FreeCiv. We do not
+  distribute FrleeCiv which is freely-available. The use of calltool
+  should be fairly self-explanatory. We provide a bash "build" script
+  that runs the compiler on the FreeCiv specs, compiles calltool and
+  SimpleHash and builds a library, libchecker.a, which you can link with
+  FreeCiv.
+
+  All optimizations described in the paper are turned on by default. For
+  more information, please contact the author, Daniel Roy, at
+  droy@mit.edu.
+
+  
+
