@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.72 1999-11-02 07:18:38 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.73 1999-11-02 07:29:47 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -57,7 +57,7 @@ BUILD_IGNORE := $(strip $(shell if [ -f .ignore ]; then cat .ignore; fi))
 
 ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		$(patsubst %,egrep -v % |,$(BUILD_IGNORE)) \
-		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
+		egrep -v "^[.]/(harpoon|silicon|gnu|(src)?doc|NOTES|bin|jdb)"|\
 		egrep -v "^[.]/java_cup" | \
 		sed -e "s|^[.]/*||")
 
@@ -74,6 +74,9 @@ CGSPECS:=$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.spec))
 CGJAVA :=$(patsubst %.spec,%.java,$(CGSPECS))
 MACHINE_SRC+=$(CGSPECS)
 MACHINE_GEN+=$(filter-out Tools/PatMat/% Backend/Jouette/%,$(CGJAVA))
+# apply .ignore to MACHINE_GEN
+MACHINE_GEN := $(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
+		$(MACHINE_GEN))
 
 ALLSOURCE :=  $(MACHINE_GEN) $(filter-out $(MACHINE_GEN), \
 		$(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
