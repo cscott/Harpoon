@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: sas02.tex,v 1.8 2002-05-11 09:35:02 cananian Exp $
+% $Id: sas02.tex,v 1.9 2002-05-11 10:11:54 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[oribibl]{llncs}
 %\usepackage[section,plain]{algorithm}
@@ -29,7 +29,7 @@ Cambridge, MA 02139 \\
 \email{\{cananian, rinard\}@lcs.mit.edu}
 }
 
-\renewcommand{\baselinestretch}{0.96}
+\renewcommand{\baselinestretch}{0.98}
 \begin{document}
 \bibliographystyle{plain}
 %
@@ -159,7 +159,7 @@ which essentially implements a tagged
 union.\footnote{This class is a simplfied version of similar
 classes that appear in some of our benchmarks.
 See for example the {\tt jess.Value} class in SPECjvm98 benchmark
-{\tt 202\_jess}.} 
+{\tt jess}.} 
 The class also maintains the {\tt positive} field, which is
 {\tt 1} if the wrapped number is positive and {\tt 0} otherwise. 
 
@@ -455,7 +455,7 @@ have less than 256 instantiated class types.%
 We use this information
 to replace the {\tt claz} pointer in the object header, which
 identifies the type of the object, with a one-byte {\it index} into a
-small lookup table.  The {\tt 202\_jess} and {\tt 213\_javac}
+small lookup table.  The {\tt jess} and {\tt javac}
 benchmarks require more than one byte of index, but a two byte index
 amply suffices in these two cases.
 %
@@ -723,21 +723,18 @@ issues arising in an implementation of our space-saving techniques.
 %
 \subsection{Byte Packing}
 %
-\textbf{SIMPLIFY?}
-
 A typical Java implementation may waste large amounts of space by
 aligning fields for the most efficient memory access.  Fields are
 often aligned to their widths (a 4-byte field will be placed at an address
 which is an even multiple of 4, for example), and the object as a
 whole is often placed on a double-word boundary. Our implementation
-places object fields at the nearest byte boundary, a strategy we
-call ``byte-packing.''
-It is worth noting that the information provided by our bitwidth
-analysis is sufficient to {\it bit}-pack the fields in the object,
-when space is truely at a premium.  However, our investigation
-indicates that the amount of space potentially gained by bit-packing 
-is typically only a few percent.  Our implemented compiler uses byte
-packing.
+places object fields at the nearest byte boundary, although
+the information provided by our bitwidth
+analysis is sufficient to {\it bit}-pack the fields in the object
+when space is truely at a premium.  Preliminary investigation
+indicated that the amount of additional space gained by bit-packing 
+is typically only a few percent, because there aren't enough sub-byte
+fields to fill the space ``wasted'' by byte alignment.
 
 Some architectures penalize unaligned accesses to fields.  It is
 worthwhile to {\it attempt} to align fields to their preferred
@@ -748,7 +745,7 @@ collector; its efficiency decreases markedly if pointers are not
 word-aligned.\footnote{This means that objects have to be word-aligned
   as well.}
 
-We have developed a simple byte-packing heuristic that achieves
+Our ``byte-packing'' heuristic achieves
 tight packing of fields while respecting forced alignments.  Packing
 proceeds recursively through superclasses, and returns a list of
 free-space intervals available between the fields of the superclass.
@@ -760,17 +757,18 @@ the following smaller fields.
 When there are no more forced-alignment fields, we attempt to allocate
 fields on their ``preferred'' alignment boundaries, largest first.
 At this stage fields are not allowed to introduce an alignment gap at
-the end of the object.  That is, if they cannot be placed flush
-against the last field of the object and be on their preferred
-alignment, they are skipped.
+the end of the object.  If their preferred alignment does not allow
+them to be placed flush
+against the last field of the object, they are skipped.
 
-Finally, when there are no more preferred-alignments available, we
-allocate the {\it smallest} available field, ignoring any preferred
-alignment.  The aim is that the small fields will fill space and nudge
+Finally, when there are no more fields satisfying
+preferred-alignments, we
+allocate the {\it smallest} available field at the lowest possible
+byte boundary.
+The aim is that the small fields will fill space and nudge
 the end of the object out so that a larger field may be allocated on
-its preferred alignment.  After each small field is allocated
-unaligned, we try again to allocate fields on their preferred
-boundaries.
+its preferred alignment.  After each field is placed, we begin again
+by attempting to place fields on preferred boundaries.
 
 This heuristic strategy has been observed to work well in practice,
 and the penalties for occasionally placing an unaligned non-pointer
@@ -795,16 +793,15 @@ Section~\ref{sec:byte-pack}).
 
 \subsection{External Hashtable Implementation}
 \label{sec:extern-impl}
-\textbf{CLARIFY?}
 
-Close attention to the implementation of the hashtable used to
-implement field and hash/lock externalization is
-necessary to realize the gains possible in theory.  In order to
-maximize space savings, it is necessary to utilize as little space
+Close attention to the implementation of the hashtable used for
+field and hash/lock externalization is
+necessary to realize the identified possible gains.  In order to
+maximize space savings, we need to use as little space
 per field stored in the table as possible.  The overhead of
 dynamically allocated buckets and the required {\it next} pointers
-makes separate chaining impractical as an implementation technique
-for all but fields with very few non-zero entries.  Open-addressing
+makes separate chaining impractical as a hashtable implementation technique.
+Open-addressing
 implementations are preferable: in addition to the value being stored,
 all that is necessary is a key value and the empty space required to
 limit the load-factor.  A load factor of two-thirds and one-word keys
@@ -821,19 +818,11 @@ one-word field identifier for a two-word key.  The large key will
 shift the break-even point up so that only fields which are 82\% zero
 will profit.  Instead, we can offset the
 object reference (up to the limit of its size) by small integers
-to discriminate the externalized fields of the object, which yields
-a single-word key.  This technique is
-subject to object-size-dependent limits on the number
-of class fields which may be externalized, but these have not been an
-issue in practice.
+to discriminate the externalized fields of the object, yielding
+a single-word key.
 
-Our implementation uses the garbage collector's object finalization
-functionality to remove unneeded entries from the hashtable.  Care
-must be taken, however, that the key value used in the hashtable
-is not confused for an object pointer by a conservative garbage
-collector.  Precise garbage-collection implementations need to
-remember to add the values stored in the hashtable to the
-collector's root set.
+Our implementation leverages the garbage-collector to remove unneeded
+entries from the hashtable.
 %
 \section{Experimental Results}
 \label{sec:results}
@@ -841,11 +830,13 @@ collector's root set.
 We have implemented all of the analyses and transformations described
 in this paper in the MIT FLEX compiler infrastructure.%
 \footnote{Available from {\tt http://flexc.lcs.mit.edu/}.} 
+FLEX is a whole-program static compiler.
 We measure the effectiveness
-of our optimizations by compiling the SPECjvm98 benchmarks with 
-this compiler, then measuring the resulting space savings and
+of our optimizations by using FLEX to analyze the SPECjvm98 benchmarks
+and apply our transformations,
+then measuring the resulting space savings and
 performance.   All benchmarks were run on a dual-processor 900 MHz
-Pentium III running Linux.
+Pentium III running Debian Linux.
 %
 \subsection{Memory Savings}
 %
@@ -897,14 +888,15 @@ the original unoptimized execution that we were able to eliminate
 with each optimization. The black section of each bar indicates the
 amount of live heap data remaining after all optimizations. 
 We obtain as much as 40\% reduction in live data on the {\tt
-  213\_javac} benchmark, with almost all of this coming from our
+  javac} benchmark, with almost all of this coming from our
 bitwidth-driven field reductions and static specialization.  In fact
 we obtain more than 15\% reduction on all of the ``object-oriented''
-benchmarks.  The {\tt 201\_compress} benchmark allocates a small
+benchmarks.  The {\tt compress} benchmark allocates a small
 number of very large arrays, limiting the optimization opportunities
-discoverable by our analysis.  Likewise, the {\tt 205\_raytrace} and
-{\tt 227\_mtrt} benchmarks make heavy use of floating-point numbers.
-However, these raytracing benchmarks {\it do} allocate a large number
+discoverable by our analysis.  Likewise, the {\tt raytrace} and
+{\tt mtrt} benchmarks make heavy use of floating-point numbers,
+limiting the applicability of our integer bitwidth analysis.
+However, these raytracing benchmarks allocate a large number
 of small arrays to represent vectors and matrices, and so our header
 optimizations still allow us to reduce the maximum live data size by
 over 20\%.
@@ -928,14 +920,11 @@ presents space savings numbers for objects alone, omitting
 any storage required for arrays.  The difference is explained by
 Figure~\ref{fig:results}d, which shows how the total
 program allocation for each benchmark is broken down into array and
-object allocations.  The space required for pointer fields, which our
-integer bitwidth analysis can not optimize, are further broken out of
+object allocations.  The space required for pointer fields, which can
+not be compressed, are further broken out of
 the object allocations.
 The reason for our poor performance on {\tt
-  201\_compress} is now obvious.  Note that {\tt 222\_mpegaudio}
-allocates so much less memory than the other benchmarks that its bar
-is barely visible.  Arrays account for 79\% of {\tt mpegaudio}'s total
-allocations.
+  compress} is now obvious.
 %
 \subsection{Execution Times} 
 \label{sec:byte-pack}
@@ -954,7 +943,8 @@ implementation of the field accessors which it adds to the program
 would improve its performance.  Field externalization (including
 hash/lock externalization) causes the expected penalty for hashtable
 lookup; note that synchronization elimination would greatly reduce the
-cost of hash/lock externalization.
+cost of hash/lock externalization in the four cases where the overhead
+is unreasonable.
 %
 %%% distribution of mostly-N fields?
 %
@@ -962,14 +952,14 @@ cost of hash/lock externalization.
 %
 Many researchers have focused on the problem of reducing the amount of
 header space required to represent Java
-locks~\cite{bacon98,OK99,ADGKRW99}. The basic issue is that the vast
+locks~\cite{bacon98,OK99,ADGKRW99}. The vast
 majority of programs do not use the lock associated with every object
 in its full generality, so it is possible to develop improved
 algorithms optimized for the common case.
-The basic idea is to represent the lock with the minimum amount
+The idea is to represent the lock with the minimum amount
 of state (typically a bit) required to support the common usage
-pattern of a thread first acquiring, then releasing the lock in the
-object and to back off to a more elaborate scheme only when the thread
+pattern of an acquire followed by a release,
+and to back off to a more elaborate scheme only when the thread
 exhibits a more complex pattern such as nested locking. The
 primary focus has been on improving performance rather than on
 reducing space; however, many of the algorithms also eliminate the
@@ -989,7 +979,7 @@ based on our field externalization mechanism.
 Several researchers have used bitwidth analysis to reduce the size
 of the generated circuits for compilers that generate hardware
 implementations of programs written in C or similar programming 
-languages~\cite{ananian:siliconc,RR00:PLDI00,SBA00:PLDI00,BGSW00}.
+languages~\cite{ananian:siliconc,ananian99:tech,RR00:PLDI00,SBA00:PLDI00,BGSW00}.
 
 Dieckmann and H\"olzle have performed an in-depth analysis of the
 memory allocation behavior of Java programs~\cite{DH99}. Although 
