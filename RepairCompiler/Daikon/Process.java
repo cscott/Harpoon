@@ -171,7 +171,7 @@ class Process {
 
   static String replace(String str, String tofind, String toreplace) {
     if (str.indexOf(tofind)!=-1) {
-      str=str.substring(0,str.indexOf(tofind))+str.substring(str.indexOf(tofind)+tofind.length());
+      str=str.substring(0,str.indexOf(tofind))+toreplace+str.substring(str.indexOf(tofind)+tofind.length());
     }
     return str;
   }
