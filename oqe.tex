@@ -1,4 +1,4 @@
-% CVSId: $Id: oqe.tex,v 1.12 2002-05-07 01:20:03 cananian Exp $
+% CVSId: $Id: oqe.tex,v 1.13 2002-05-08 22:07:20 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -189,8 +189,11 @@ Three broad techniques:
 
 \begin{talknotes}
 There are three broad techniques we are going to use to effect our
-size reductions: @ field compression, @ mostly-constant field
-elimination, and @ header optimizations.  We will look at each
+size reductions: @ field compression, which reduces the size of the
+programmer-declared fields, @ mostly-constant field
+elimination, to completely eliminate memory used to store common values,
+and @ header optimizations, which leverage more-efficient
+representations for the data needed by the runtime.  We will look at each
 of these in order, starting with\ldots
 \end{talknotes}
 
@@ -261,27 +264,42 @@ programmer.  In the sample class at the bottom of the slide, we
 define an object representing cars.  It's first field is a color,
 and it is declared an integer which allows the enumeration of up
 to $2^{32}$ different colors of cars.
-%
+
 @ The first analysis we do is a standard sparse conditional constant
 propagation pass over the whole program to identify unused, unread,
 or constant fields.  @ Suppose we're building Ford Model-T's.
 Since they only come in black, this field will be constant and
 can be removed.
-%
+
 @ The novel contribution is the next step, bitwidth analysis, which discovers
 tigher upper bounds on field sizes.  @  Actually, Model-T's were
 produced in several different colors before Ford started
 mass-production.  Our bitwidth analysis could determine that
 we really only need two bits to store colors, since our program
-only ever stores three different colors in a Car.
-%
+only ever stores three different colors in a Car object.
+
 @ After we perform the analysis, we use the results to
 reduce the padding between fields.  We'll talk about this later.
+
+~%
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\part{How are these analyses performed?}
+\begin{talknotes}
+So how do we actually obtain the information we need to do field
+compression?
+
+We'll look first at a simple constant propagation analysis, and then
+see how, by a series of incremental extensions, we can obtain a
+powerful bitwidth analysis.
+
+~%
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{10}{
-\begin{slide}{Intraprocedural SPTC Example}
+\begin{slide}{Intraprocedural Analysis}
 \begin{center}%
 \parbox[c]{2in}{%
 \begin{mysamplecode}%
@@ -813,31 +831,25 @@ specialization first.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{2}{
 \begin{slide}{Specialization example:\\\small java.lang.String}
 \fontsize{9}{9}%
-\newcommand{\myOffset}{\onlySlide*{1}{\makebox[0pt][l]{offset}}\onlySlide{2}{{\yellow getOffset()}}}%
 \bfseries\begin{samplecode}%
 public final class String \{\\
 \>private final char value[];\\
-\onlySlide*{2}{\pnode{offl}}%
-\>private final int offset;\onlySlide*{2}{\pnode{offr}}\\
+\>private final int offset;\\
 \>private final int count;\\
-\onlySlide{2}{\>\yellow protected int getOffset() \{ return 0; \}}\\
 \>\ldots\\
 \>public char charAt(int i) \{\\
-\>\>return value[\myOffset{}+1];\\
+\>\>return value[offset+1];\\
 \>\}\\
 \>public String substring(int start) \{\\
-\>\>int noff = \myOffset{} + start;\\
+\>\>int noff = offset + start;\\
 \>\>int ncnt = count - start;\\
 \>\>return new String(value, noff, ncnt);\\
 \>\}\\
 \}\\
 \end{samplecode}
-\onlySlide*{2}{\ncline[linecolor=red,linewidth=2pt]{offl}{offr}}%
 \end{slide}
-}
 
 \begin{talknotes}
 We're going to jump right in with an example.  This is {\tt
@@ -851,12 +863,108 @@ share the same character array.
 The interesting thing about {\tt java.lang.String} is that the {\tt
   offset} field is almost \emph{always} zero.  Only strings created
 with the {\tt substring()} method have non-zero offset fields. 
-And the offset field is never changed after the object is created.  So
-this is a prime opportunity for space reduction.  Here's what we do:
-@ we chop out the offset field from the class and replace it with
-an accessor method, {\tt getOffset()}, which always returns zero.
-All references to the field are made to use the accessor method
-instead.
+And the offset field is never changed after the object is created.
+These are the @ key properties needed to enable this optimization.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Key properties}
+To use static specialization we need:
+\begin{itemize}
+ \item A field with a frequently-occuring value.
+  \begin{itemize}\small
+   \item {\tt\bfseries String.offset} is almost always zero.
+  \end{itemize}
+ \item The value of the field must never be modified after the object
+       is created.
+\end{itemize}
+\end{slide}
+
+\begin{talknotes}
+In order to apply our technique, we need to find a ``mostly-constant''
+field, which in our example is {\tt String.offset}, with the value
+``mostly zero'', and, importantly, the value of that field cannot be
+modified after the object is created.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{4}{
+\begin{slide}{Transforming the class}
+We will split String into two classes:
+\begin{itemize}
+\item {\tt\bfseries\yellow SmallString} without the field.
+\item {\tt\bfseries\yellow BigString} with the field.
+\end{itemize}
+
+We will use {\tt\bfseries SmallString} for all instances where
+the offset field is zero (our ``mostly-constant'' value).
+
+\vspace{1cm}
+\FromSlide{2}
+{\yellow Problems:}
+\FromSlide{3}
+\begin{itemize}
+ \item The code could directly access the to-be-removed field.
+ \fromSlide{4}{%
+ \item Allocation sites directly instantiate the old class.
+ }
+\end{itemize}
+\end{slide}
+}
+
+\begin{talknotes}
+So, how are we going to save memory in {\tt java.lang.String}?
+We're going to split the class in two: there will be a {\tt
+  SmallString} class without the offset field, and a {\tt BigString}
+class that does have it.
+
+@ A couple of problems that come up:
+\begin{itemize}
+\item @ What happens to places in {\tt SmallString} where the removed
+offset field is referenced?
+\item @ And when we see an allocation of {\tt String}, do we change it
+to {\tt SmallString} or {\tt BigString}?
+\end{itemize}
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Specialization example:\\\small java.lang.String}
+\fontsize{9}{9}%
+\newcommand{\myOffset}{\onlySlide*{1}{offset}\onlySlide*{2}{offset}%
+%{\makebox[0pt][l]{offset}}
+\onlySlide*{3}{{\yellow getOffset()}}}%
+\bfseries\begin{samplecode}%
+public final class \onlySlide*{1}{String}\fromSlide*{2}{\yellow SmallString} \{\\
+\>private final char value[];\\
+\pnode{offl}%
+\>private final int offset;%
+\pnode{offr}\\
+\>private final int count;\\
+\onlySlide{3}{\>\yellow protected int getOffset() \{ return 0; \}}\\
+\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[\myOffset{}+1];\\
+\>\}\\
+\>public String substring(int start) \{\\
+\>\>int noff = \myOffset{} + start;\\
+\>\>int ncnt = count - start;\\
+\>\>return new String(value, noff, ncnt);\\
+\>\}\\
+\}\\
+\end{samplecode}
+\fromSlide*{2}{\ncline[linecolor=red,linewidth=2pt]{offl}{offr}}%
+\end{slide}
+}
+
+\begin{talknotes}
+Let's go back and see how this works.  We take the {\tt String} class,
+rename it @ {\tt SmallString} and remove the {\tt offset} field.
+But what do we do with the references to the now-deleted field?
+@ We solve this problem by \emph{virutalizing} the field: adding
+a {\tt getOffset()} accessor method (which always returns zero)
+and replacing references to {\tt offset} with calls to {\tt
+  getOffset()}.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -882,19 +990,27 @@ public final class {\yellow BigString extends SmallString} \{\\
 \end{slide}
 
 \begin{talknotes}
-Now we're going to call this version of the String class
-\emph{SmallString} and we're going to create a subclass
-\emph{BigString} which contains the offset field, and where
-{\tt getOffset()} works as you'd expect.
+Now we create {\tt BigString} as an almost-trivial subclass of {\tt
+  SmallString}.  It shared all of the same functionality, except
+{\tt BigString} \emph{has} an offset field, and implements
+{\tt getOffset()} in the way you'd expect.  So any object which
+needs a non-zero offset can instatiate {\tt BigString} and things will
+work as expected.
 
-Now we have to transform all instantiations of {\tt String} to
-refer to the proper version of the class.
+From our key properties, remember that there are no assignments
+\emph{to} the {\tt offset} field except in the constructor.
+But what do we do there?  And how do we tell if we're supposed
+to replace a call to the {\tt String} constructor with a
+{\tt SmallString} or a {\tt BigString}?
+
+It turns out there are three cases to worry about.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\newcommand{\myString}{\onlySlide*{1}{\makebox[0pt][l]{String}}\onlySlide{2}{{\yellow SmallString}}}%
 \overlays{2}{
 \begin{slide}{Transforming allocation sites}
+\newcommand{\myString}{\onlySlide*{1}{\makebox[0pt][l]{String}}%
+                       \onlySlide{2}{{\yellow SmallString}}}%
 Case 1: field is constant in constructor.
 
 \fontsize{10}{10}%
@@ -914,10 +1030,11 @@ Case 1: field is constant in constructor.
 }
 
 \begin{talknotes}
-In some cases, the field is constant in the constructor.  Every
-instantiation which uses this constructor will set offset to zero.
+In the first case,  the field is constant in the constructor.  Every
+instantiation which uses this constructor will set {\tt offset} to zero.
 (And as we mentioned before, it is never reset after construction.)
-So  we juse @ replace the instantiation of {\tt String} with that
+So  we juse @ remove the assignment to {\tt offset} and
+replace the instantiation of {\tt String} with that
 of {\tt SmallString}.
 \end{talknotes}
 
@@ -951,14 +1068,48 @@ else\\
 }
 
 \begin{talknotes}
-In other cases, the value of the offset field is a simple function of
-some parameter given to the constructor.  @ In this case, we will
+But what if we have code like this, where we don't know what value
+{\tt x} will have when the {\tt String} is created?  This is
+essentially the case for the {\tt substring} method of {\tt String}.
+In this case,  the value of the offset field is a simple function of
+some parameter given to the constructor.  Here's our solution: @ we
 add a test around the allocation site, so that we can construct
-a Small or Big string depending on the value given.  You can imagine a
-third case, which doesn't actually show up in {\tt java.lang.String},
-where we can obtain \emph{no} usable compile-time information about
-the field.  In this case, we always have to create an instance of
-{\tt BigString}.
+a Small or Big string depending on the value {\tt x} actually has
+at runtime.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{2}{
+\begin{slide}{Transforming allocation sites}
+\newcommand{\myString}{\onlySlide*{1}{\makebox[0pt][l]{String}}%
+                       \onlySlide{2}{{\yellow BigString}}}%
+Case 3: assignment to field is unknown.
+
+\fontsize{10}{10}%
+\bfseries\begin{samplecode}%
+\myString{} s = new \myString{}(s, o, l);\\
+\\
+\myString{}(char[] val, int offset, int length) \{\\
+\>this.value = (char[]) val.clone();\\
+\>while (length>0 \&\& value[offset]==' ') \{\\
+\>\>offset++; length--;\\
+\>\}\\
+\>this.offset = offset;\\
+\>this.count = length;\\
+\}\\
+\end{samplecode}
+\end{slide}
+}
+
+\begin{talknotes}
+But what about code such as this?  Here we know \emph{nothing} about
+the value of offset, as it is derived programmatically \emph{within
+  the constructor}.  There's no easy test we can do outside the
+constructor.  @  Here we must simply give up and always allocate an
+instance of {\tt BigString}.  Code such as this is not actually
+found in {\tt java.lang.String}, but this solution allows us to
+take advantage of frequently-constant fields in many cases with a
+fairly neutral (no cost, no gain) fallback in the worst case.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -981,31 +1132,67 @@ the field.  In this case, we always have to create an instance of
 \end{slide}
 
 \begin{talknotes}
-This transformation is what we call ``static specialization.''  We
-split the class into field-less and field-ful versions, and use
-virtual accessor functions to hide the split from users of the class.
-This works only on compile-time constant fields which are not mutated
-after construction.
-We can do this recursively; we use profiling to determine the best
-splitting order if we have multiple candidate fields.
+Let's review the static specialization transformation:  we split the
+target class into two parts, one of which has the field and one which
+doesn't, and use virtual accessor functions to hide this split from
+users of the class.  We have two constraints: the fields must be
+``mostly-constant'', and then cannot be modified after the completion
+of the constructor.
+We can do this recursively on multiple fields; we use profiling to
+determine the best splitting order in that case.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
+\overlays{2}{
+\begin{slide}{Key properties (revisted)}
+To use static specialization we need:
+\begin{itemize}
+ \item A field with a frequently-occuring value.
+  \begin{itemize}\small
+   \item {\tt\bfseries String.offset} is almost always zero.
+  \end{itemize}
+ \item \pnode{part2l}%
+       The value of the field must never be modified after the object
+       is created.\pnode{part2r}
+\end{itemize}
+\onlySlide*{2}{\ncline[linecolor=red,linewidth=4pt]{part2l}{part2r}}%
+\end{slide}
+}
+
+\begin{talknotes}
+Let's look again at the constraints on the static specialization
+technique.
+What if the first of these conditions hold, @ but the second doesn't?
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
 \begin{slide}{Creating external fields}
-\vspace{1cm}
+\vspace{0.5cm}
 \begin{itemize}
  \item Sometimes fields are \textit{\yellow run-time} constants (or nearly so)
       but not \textit{\yellow compile-time} constants.
+ \FromSlide{2} 
  \begin{itemize}
   \item Examples: sparse matrices, ``two-input nodes'' in Jess expert
         system, the ``next'' field in short linked lists.
  \end{itemize}
+ \FromSlide{3}
  \item \bp{\yellow Exploit field$\rightarrow$map duality} to reduce memory
        overhead in the common case.
 \end{itemize}
 \end{slide}
+}
 
 \begin{talknotes}
+Sometimes fields are \emph{run-time} constants but not
+\emph{compile-time} constants. @ Some examples are sparse matrices, an
+example from the SPEC benchmark suite, and short linked lists.
+In graphics applications, the background color will typically be
+another example.  What are we going to do in this case?
+
+@ Our solution is to exploit the relationship between fields and maps
+to reduce memory overhead when we're storing the common value.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1024,6 +1211,53 @@ splitting order if we have multiple candidate fields.
 }
 
 \begin{talknotes}
+Read this slide.
+
+\ldots This means we don't actually have to store this value in the
+map; we can just remove the entry instead.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Externalization example:\\\small java.lang.String}
+\fontsize{9}{9}%
+\newcommand{\myOffset}{\onlySlide*{1}{offset}\onlySlide*{2}{offset}%
+%{\makebox[0pt][l]{offset}}
+\onlySlide*{3}{{\yellow getOffset()}}}%
+\bfseries\begin{samplecode}%
+public final class String \{~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\\
+\>private final char value[];\\
+\pnode{offl}%
+\>private final int offset;%
+\pnode{offr}\\
+\>private final int count;\\
+%\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[\myOffset{}+1];\\
+\>\}\\
+\>public String substring(int start) \{\\
+\>\>int noff = \myOffset{} + start;\\
+\>\>int ncnt = count - start;\\
+\>\>return new String(value, noff, ncnt);\\
+\>\}\\
+\onlySlide*{3}{%
+\yellow\>protected int getOffset() \{\\
+\yellow\>\>Integer i = External.map.get(this, "offset");\\
+\yellow\>\>if (i==null) return 0;\\
+\yellow\>\>else return i.intValue();\\
+\yellow\>\}\\
+}%
+\}\\
+\end{samplecode}
+\fromSlide*{2}{\ncline[linecolor=red,linewidth=2pt]{offl}{offr}}%
+\end{slide}
+}
+
+\begin{talknotes}
+Let's see how it would work if we took our static specialization
+example and externalized the field, instead.  @ Again, the field
+is deleted from the class.  But now, the @ {\tt getOffset()} method
+references an external map.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1049,6 +1283,18 @@ splitting order if we have multiple candidate fields.
 }
 
 \begin{talknotes}
+The efficiency of this external map crucially dictates how much space
+savings we are able to achieve with this scheme.  So let's look at
+implementation for a moment.  We choose an ``open-addressed'' hash
+table, to keep our overhead low.  The alternative is some sort of
+linked-bucket structure, and the links between buckets add crucially
+to our overhead. @ Every hash table needs to have some entries empty
+in order to have good performance; we assume a load-factor of 2/3,
+which means that 1/3 of the hashtable slots will be empty.  @
+We can do the math, and find that a two-word key and one-word values
+mean our break-even point is 82\%; @ that means that no more than 18\%
+of the fields can \emph{differ} from the ``mostly-constant'' value in
+order to attain any space savings at all.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1068,13 +1314,23 @@ splitting order if we have multiple candidate fields.
   \item Offset the object pointer by the field index to get a 1-word key.
   \item Limits the number of fields which may be externalized, based
         on the size of the object.
-  \item one-word key and one-word value lowers break-even point to 66\%.
+  \item One-word key and one-word value lowers break-even point to 66\%.
  \end{itemstep}
 \end{minipage}
 \end{slide}
 }
 
 \begin{talknotes}
+We can do better than this, though:  since all we really need is a
+unique identifier for the object/field pair, we can simply @ offset the
+object pointer to obtain a one-word key.  Note that this is like using
+a pointer to the \emph{field} instead of a field ID and a pointer to
+the \emph{object}; the field we would like to point to is not actually
+present in the object, though.  This means that @ the scheme imposes a
+limit of the number of fields which may be externalized, based on the
+number of non-externalized fields remaining in the object.  @ This
+limitation is not onerous, however, and we lower our break-even point
+to 66\%.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1086,12 +1342,20 @@ splitting order if we have multiple candidate fields.
 \item In our experiments, looked for integer ``mostly-constant''
   values in the range $[-5,5]$ for numeric types.  Only looked at {\tt
     null} as a candidate for pointer types.
-\item 0 and 1 by far the most common.
+\item $0$ and $1$ by far the most common.
 \end{itemstep}
 \end{slide}
 }
 
 \begin{talknotes}
+A few more details on how this is implemented:
+First, we use value profiling to identify where externalization will
+be worthwhile.  Remember, we need at least 2/3 of the values to be
+some constant.  @ When we did the profiling, we looked at integer
+constants from $-5$ to $5$ and at {\tt null} for pointer types.
+@ We could that $0$ and $1$ were by far the most common
+``mostly-constant'' values;  in a production implementation you
+could look only at these two and get most of our savings.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1116,6 +1380,11 @@ Three broad techniques:
 \end{slide}
 
 \begin{talknotes}
+Returning to our outline.  We talked about using bitwidth and constant
+analysis to compress fields, and at two different techniques for
+eliminating the space required to store ``mostly-constant'' values.
+Now we'll look at header optimizations, which reduce the amount of
+overhead needed by the runtime implementation.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1127,17 +1396,49 @@ Three broad techniques:
 \end{slide}
 
 \begin{talknotes}
+Of the two words in a typical object header, let's look at the
+hashcode/lock field first.  We were able to completely eliminate this
+field in a large proportion of our objects.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{2}{
+\overlays{3}{
 \begin{slide}{Header optimizations:\\\small Hashcode/Lock compression}
-\begin{itemstep}
-\item Implemented as a special case of field externalization.
-\item Could also use a static pointer analysis.
-\end{itemstep}
+\begin{itemize}
+ \item Implemented as a special case of field externalization.
+ \FromSlide{2}
+ \item The hashcode/lock field often unused because:
+   \begin{itemize}
+    \item Most objects do not use their built-in hashcode.
+    \item Most objects are not synchronization targets.
+   \end{itemize}
+ \FromSlide{3}
+ \item Could also use a static pointer analysis.
+\end{itemize}
 \end{slide}
 }
+
+\begin{talknotes}
+We implemented this as a special case of field externalization.
+@ Although we can't always tell at compile-time, in fact this field
+is very infrequently used.  Most object types either are never used as keys
+in a hashtable, or implement their own hashing method not based on the
+identity-based hash specified by the Java semantics.  Similarly, most
+programs are either not multi-threaded, or when they are, perform
+synchronization on only a small handful of their object types.
+Implementing it as an instance of externalization means that we
+allocate space as-needed in an external map; @ we could also use
+a static pointer analysis and techniques similar to static
+specialization to remove these fields from types where they
+are statically unused.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Header optimizations:\\\small claz compression}
+\begin{center}
+\includegraphics[scale=0.5]{Figures/Kontour/classcomp-bbox.eps}
+\end{center}
+\end{slide}
 
 \begin{talknotes}
 \end{talknotes}
@@ -1152,16 +1453,6 @@ Three broad techniques:
 \end{itemstep}
 \end{slide}
 }
-
-\begin{talknotes}
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\begin{slide}{Header optimizations:\\\small claz compression}
-\begin{center}
-\includegraphics[scale=0.5]{Figures/Kontour/classcomp-bbox.eps}
-\end{center}
-\end{slide}
 
 \begin{talknotes}
 \end{talknotes}
@@ -1184,6 +1475,16 @@ Class statistics for applications in SPECjvm98 benchmark suite:
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Reduction in total allocations}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/oopsla-ttlalloc-color.eps}
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Reduction in total live data}
 \begin{center}
 \includegraphics[scale=0.45]{Figures/oopsla-ttllive-color.eps}
@@ -1194,9 +1495,9 @@ Class statistics for applications in SPECjvm98 benchmark suite:
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\begin{slide}{Reduction in total allocations}
+\begin{slide}{Available reduction opportunities}
 \begin{center}
-\includegraphics[scale=0.45]{Figures/oopsla-ttlalloc-color.eps}
+\includegraphics[scale=0.45]{Figures/spec-space-2.eps}
 \end{center}
 \end{slide}
 
@@ -1262,28 +1563,29 @@ Class statistics for applications in SPECjvm98 benchmark suite:
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
+\overlays{5}{
 \begin{slide}{Conclusions}
 \begin{itemize}
+ \FromSlide{2}
  \item We achieved substantial space savings on typical
- object-oriented applications.
+   object-oriented applications.
+ \FromSlide{3}
+ \begin{itemize}
+  \item In one case, over 40\% reduction in total live data.
+ \end{itemize}
+ \FromSlide{4}
+ \item Even more space reduction is possible!
+ \FromSlide{5}
+ \item Performance impact was acceptable.
 \end{itemize}
 \end{slide}
+}
 
 \begin{talknotes}
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \part{The Graveyard Of Unused Slides follows this point.}
-
-\begin{talknotes}
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\begin{slide}{Opportunities}
-\begin{center}
-\includegraphics[scale=0.45]{Figures/spec-space-2.eps}
-\end{center}
-\end{slide}
 
 \begin{talknotes}
 \end{talknotes}
