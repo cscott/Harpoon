@@ -26,7 +26,7 @@ import java.util.Map;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.15 2000-01-13 09:31:15 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.16 2000-01-13 23:47:55 cananian Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
@@ -189,7 +189,7 @@ final class Translate { // not public
 		
 		// FIXME
 		if (tym.typeMap(q, q.params(0))==HClass.Void) { 
-		  tT.put(map(q.params(0)), HClass.forName("java.lang.Object"));
+		  tT.put(map(q.params(0)), qf.getLinker().forName("java.lang.Object"));
 		}
 	    }
 	    updateTypeInfo(q);

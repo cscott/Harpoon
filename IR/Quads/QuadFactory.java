@@ -4,6 +4,7 @@
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 
@@ -14,7 +15,7 @@ import harpoon.Temp.TempFactory;
  * <code>HCode</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadFactory.java,v 1.1.2.9 1999-08-04 05:52:29 cananian Exp $
+ * @version $Id: QuadFactory.java,v 1.1.2.10 2000-01-13 23:48:02 cananian Exp $
  */
 public abstract class QuadFactory  {
     /** Returns the <code>TempFactory</code> to use for <code>Temp</code>
@@ -26,6 +27,11 @@ public abstract class QuadFactory  {
     /** Returns the <code>HMethod</code> for which all <code>Quad</code>s
      *  correspond. */
     public HMethod getMethod() { return getParent().getMethod(); }
+    /** Returns the <code>Linker</code> used to resolve class names
+     *  for all <code>Quad</code>s. */
+    public Linker getLinker() {
+	return getMethod().getDeclaringClass().getLinker();
+    }
     /** Returns a unique number for a <code>Quad</code> within
      *  this <code>QuadFactory</code>. */
     public abstract int getUniqueID();

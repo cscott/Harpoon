@@ -24,7 +24,7 @@ import java.util.Set;
  * <code>DataStrings</code> lays out string constant objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataStrings.java,v 1.1.4.1 1999-10-12 20:04:50 cananian Exp $
+ * @version $Id: DataStrings.java,v 1.1.4.2 2000-01-13 23:47:40 cananian Exp $
  */
 public class DataStrings extends Data {
     final NameMap m_nm;
@@ -46,10 +46,11 @@ public class DataStrings extends Data {
     }
     private Stm buildOne(final String str) {
 	final ArrayInfo charArray = new ArrayInfo() {
-	    public HClass type() { return HClass.forDescriptor("[C"); }
+	    public HClass type() { return HCcharA; }
 	    public Label  label() { return m_nm.label(str, "chararray"); }
 	    public int length() { return str.length(); }
 	    public Object get(int i) { return new Character(str.charAt(i)); }
+	    final HClass HCcharA = linker.forDescriptor("[C");
 	};
 	final ObjectInfo strObject = new ObjectInfo() {
 	    public HClass type() { return HCstr; }
@@ -60,10 +61,10 @@ public class DataStrings extends Data {
 		if (HFcnt.equals(hf)) return new Integer(str.length());
 		throw new Error("Unknown field "+hf+" of string object.");
 	    }
-	    final static HClass HCstr = HClass.forName("java.lang.String");
-	    final static HField HFval = HCstr.getField("value");
-	    final static HField HFoff = HCstr.getField("offset");
-	    final static HField HFcnt = HCstr.getField("count");
+	    final HClass HCstr = linker.forName("java.lang.String");
+	    final HField HFval = HCstr.getField("value");
+	    final HField HFoff = HCstr.getField("offset");
+	    final HField HFcnt = HCstr.getField("count");
 	};
 	List stmlist = new ArrayList(4);
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.STRING_CONSTANTS));

@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * <code>UndefinedRef</code> is a reference of an unknown type
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: UndefinedRef.java,v 1.1.2.4 1999-08-11 10:50:38 duncan Exp $
+ * @version $Id: UndefinedRef.java,v 1.1.2.5 2000-01-13 23:48:13 cananian Exp $
  */
 public class UndefinedRef extends Ref {
     private Integer       length;
@@ -50,8 +50,8 @@ public class UndefinedRef extends Ref {
 	long offset = ptr.getOffset();
 	StaticState ss = ref.ss;
 
-	HClass dummy = HClass.forName("java.lang.Integer");
-	HClass dummyA = HCLibrary.HCstringA;
+	HClass dummy = ss.linker.forName("java.lang.Integer");
+	HClass dummyA = ss.HCstringA;
 
 	if (ss.map.hashCodeOffset(dummy)==offset) {
 	    // hashcode field isn't used

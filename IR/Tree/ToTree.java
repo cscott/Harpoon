@@ -65,7 +65,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.56 2000-01-13 04:22:47 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.57 2000-01-13 23:48:07 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -999,7 +999,7 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    constant = new CONST(m_tf, src, ((Float)value).floatValue()); 
 	else if (type==HClass.Double)
 	    constant = new CONST(m_tf, src, ((Double)value).doubleValue());
-	else if (type==HClass.forName("java.lang.String"))
+	else if (type==type.getLinker().forName("java.lang.String"))
 	    constant = m_rtb.stringConst(m_tf, src, (String)value).unEx(m_tf);
 	else 
 	    throw new Error("Bad type for CONST: " + type); 

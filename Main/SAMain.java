@@ -11,6 +11,8 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Tree.Data;
@@ -69,7 +71,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.53 2000-01-10 16:49:36 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.54 2000-01-13 23:48:17 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -86,6 +88,8 @@ public class SAMain extends harpoon.IR.Registration {
     private static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     private static HClass  singleClass = null; // for testing single classes
     
+    private static Linker linker = Loader.systemLinker;
+
     private static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);
         
@@ -117,7 +121,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	}
 
-	HClass hcl = HClass.forName(className);
+	HClass hcl = linker.forName(className);
 	HMethod hm[] = hcl.getDeclaredMethods();
 	HMethod mainM = null;
 	for (int j=0; j<hm.length; j++) {
@@ -139,10 +143,10 @@ public class SAMain extends harpoon.IR.Registration {
 	    // Punting on this question for now, and using a hard-coded
 	    // static method. [CSA 27-Oct-1999]
 	    Set roots =new java.util.HashSet
-		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods());
+		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 	    // and our main method is a root, too...
 	    roots.add(mainM);
-	    classHierarchy = new QuadClassHierarchy(roots, hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
 	callGraph = new CallGraph(classHierarchy, hcf);
@@ -339,7 +343,7 @@ public class SAMain extends harpoon.IR.Registration {
 	throws IOException {
       Iterator it=frame.getRuntime().classData(hclass).iterator();
       // output global data with the java.lang.Object class.
-      if (hclass==HClass.forName("java.lang.Object")) {
+      if (hclass==linker.forName("java.lang.Object")) {
 	  HData data=frame.getLocationFactory().makeLocationData(frame);
 	  it=new CombineIterator(new Iterator[]
 				 { it, Default.singletonIterator(data) });
@@ -462,7 +466,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    case '1':  
 		String optclassname = g.getOptarg();
 		if (optclassname!=null) {
-		    singleClass = HClass.forName(optclassname);
+		    singleClass = linker.forName(optclassname);
 		} else {
 		    ONLY_COMPILE_MAIN = true;
 		}

@@ -13,7 +13,7 @@ import harpoon.Util.Tuple;
  * modified with <code>updateValue()</code>.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: FieldPointer.java,v 1.1.2.6 1999-08-04 06:31:01 cananian Exp $
+ * @version $Id: FieldPointer.java,v 1.1.2.7 2000-01-13 23:48:12 cananian Exp $
  */
 class FieldPointer extends Pointer {
     private boolean isDerived;
@@ -80,8 +80,8 @@ class FieldPointer extends Pointer {
     void updateValue(Object value) {
 	ObjectRef objref = (ObjectRef)getBase();
 	HClass type = objref.ss.getField(this).getType();
-	if (HCLibrary.DEBUG) 
-	    HCLibrary.db("Calling FieldValue.update: " + value + ", " + type);
+	if (Debug.DEBUG) 
+	    Debug.db("Calling FieldValue.update: " + value + ", " + type);
 	ObjectRef.update(this, Method.toNativeFormat(value, type));
     }
 

@@ -3,13 +3,15 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
+import harpoon.Util.ArrayFactory;
+
 /**
  * The <code>HPointer</code> interface allows us to resolve
  * pointers to <code>HClass</code>es transparently (and allows us
  * to demand-load class files, instead of doing them all at once).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HPointer.java,v 1.1.2.3 1999-08-04 05:52:27 cananian Exp $
+ * @version $Id: HPointer.java,v 1.1.2.4 2000-01-13 23:47:47 cananian Exp $
  */
 abstract class HPointer  {
     /** Returns a genuine HClass from the (possible) pointer. */
@@ -22,4 +24,9 @@ abstract class HPointer  {
      * string. 
      */
     public int hashCode() { return getDescriptor().hashCode(); }
+
+    public static final ArrayFactory arrayFactory = 
+	new ArrayFactory() {
+	    public Object[] newArray(int len) { return new HPointer[len]; }
+	};
 }

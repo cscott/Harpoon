@@ -6,14 +6,15 @@ package harpoon.Interpret.Quads;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.NoSuchClassException;
 
 /**
  * <code>Support</code> provides some native method implementations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Support.java,v 1.1.2.7 1999-11-13 06:25:08 cananian Exp $
+ * @version $Id: Support.java,v 1.1.2.8 2000-01-13 23:48:11 cananian Exp $
  */
-final class Support extends HCLibrary {
+final class Support {
     static final void registerNative(StaticState ss) {
 	// java.lang.*
 	INClass.register(ss);
@@ -28,21 +29,21 @@ final class Support extends HCLibrary {
 	INFileOutputStream.register(ss);
 	INRandomAccessFile.register(ss);
 	// miscellaneous.
-	ss.register(fillInStackTrace());
+	ss.register(fillInStackTrace(ss));
 	// JDK 1.1 only
-	try { ss.register(initSystemFD()); } catch (NoSuchMethodError e) { }
+	try { ss.register(initSystemFD(ss)); } catch (NoSuchMethodError e) { }
 	// JDK 1.2 only
-	try { ss.register(initIDs()); } catch (NoSuchMethodError e) { }
-	try { ss.register(doPrivileged()); } catch (NoClassDefFoundError e) { }
-	try { ss.register(registerNatives()); } catch (NoSuchMethodError e) { }
+	try { ss.register(initIDs(ss)); } catch (NoSuchMethodError e) { }
+	try { ss.register(doPrivileged(ss)); } catch (NoSuchClassException e){}
+	try { ss.register(registerNatives(ss)); } catch (NoSuchMethodError e){}
     }
 
     //--------------------------------------------------------
 
     // fill in stack trace for exceptions.
-    private static final NativeMethod fillInStackTrace() {
+    private static final NativeMethod fillInStackTrace(StaticState ss0) {
 	final HMethod hm =
-	    HCthrowable.getMethod("fillInStackTrace", new HClass[0]);
+	    ss0.HCthrowable.getMethod("fillInStackTrace", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -55,32 +56,34 @@ final class Support extends HCLibrary {
 	};
     }
     // initialize file descriptors.
-    private static final NativeMethod initSystemFD() {
+    private static final NativeMethod initSystemFD(StaticState ss0) {
 	final HMethod hm =
-	    HCfiledesc.getMethod("initSystemFD",
-				 new HClass[] { HCfiledesc, HClass.Int });
+	    ss0.HCfiledesc.getMethod("initSystemFD",
+				 new HClass[] { ss0.HCfiledesc, HClass.Int });
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
 		ObjectRef obj = (ObjectRef) params[0];
 		Integer fd = (Integer) params[1];
 		// set 'fd' field
-		HField hf = HCfiledesc.getField("fd");
+		HField hf = ss.HCfiledesc.getField("fd");
 		obj.update(hf, new Integer(fd.intValue()+1));
 		return obj;
 	    }
 	};
     }
     // "initialize JNI offsets" for JDK 1.2. Currently a NOP.
-    private static final NativeMethod initIDs() {
+    private static final NativeMethod initIDs(StaticState ss0) {
 	final HMethod hm =
-	    HCfiledesc.getMethod("initIDs", new HClass[0]);
+	    ss0.HCfiledesc.getMethod("initIDs", new HClass[0]);
 	return new NullNativeMethod(hm);
     }
     // do a privileged action.
-    private static final NativeMethod doPrivileged() {
-	final HClass HCsecAC=HClass.forName("java.security.AccessController");
-	final HClass HCprivA=HClass.forName("java.security.PrivilegedAction");
+    private static final NativeMethod doPrivileged(StaticState ss0) {
+	final HClass HCsecAC =
+	    ss0.linker.forName("java.security.AccessController");
+	final HClass HCprivA =
+	    ss0.linker.forName("java.security.PrivilegedAction");
 	final HMethod hm = HCsecAC.getMethod("doPrivileged",
 					     new HClass[] { HCprivA });
 	return new NativeMethod() {
@@ -95,8 +98,8 @@ final class Support extends HCLibrary {
 	};
     }
     // JDK 1.2 only: Thread.registerNatives()
-    private static final NativeMethod registerNatives() {
-	final HMethod hm = HClass.forName("java.lang.Thread")
+    private static final NativeMethod registerNatives(StaticState ss0) {
+	final HMethod hm = ss0.linker.forName("java.lang.Thread")
 	    .getMethod("registerNatives",new HClass[0]);
 	return new NullNativeMethod(hm);
     }

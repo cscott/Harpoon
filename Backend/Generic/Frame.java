@@ -8,6 +8,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrLABEL;
@@ -37,10 +38,13 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.36 1999-10-21 23:06:11 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.37 2000-01-13 23:47:37 cananian Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
+    /** The <code>Linker</code> object to use when compiling for this
+     *  <code>Frame</code>. */
+    public abstract Linker getLinker();
 
     /** Returns <code>false</code> if pointers can be represented in
      *  32 bits, or <code>true</code> otherwise. */

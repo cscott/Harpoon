@@ -8,6 +8,7 @@ import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
@@ -43,7 +44,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.6 1999-11-22 18:01:30 bdemsky Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.7 2000-01-13 23:47:30 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
@@ -125,16 +126,14 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	Hashtable checkcast;
 	HClass hclassObj;
 	boolean verifierBehavior;
+	Linker linker;
 
 	TypeInfoVisitor(harpoon.IR.Quads.QuadSSI hc, Hashtable checkcast, boolean verifierBehavior) { 
 	    this.hc = hc; this.checkcast = checkcast;
 	    this.verifierBehavior=verifierBehavior;
+	    this.linker = hc.getMethod().getDeclaringClass().getLinker();
 	    if (verifierBehavior)
-		try {
-		    this.hclassObj=HClass.forClass(Class.forName("java.lang.Object"));
-		} catch (ClassNotFoundException e) {
-		    System.out.println(e);
-		}
+		this.hclassObj=linker.forName("java.lang.Object");
 	}
 
 	public void visit(Quad q) { modified = false; }
@@ -163,7 +162,7 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	    boolean r1 = (q.retval()==null) ? false:
 		merge(q, q.retval(), toInternal(q.method().getReturnType()));
 	    // XXX specify class of exception better.
-	    boolean r2 = merge(q,q.retex(),HClass.forClass(Throwable.class));
+	    boolean r2 = merge(q,q.retex(),linker.forClass(Throwable.class));
 	    modified = r1 || r2;
 
 	    // deal with SIGMA functions in CALL

@@ -32,7 +32,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * object layout.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.4.1 1999-10-12 20:04:47 cananian Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.4.2 2000-01-13 23:47:35 cananian Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -205,15 +205,13 @@ public class InterfaceMethodMap extends MethodMap {
     }
 
 	
-    private static HClass objHClass = HClass.forName("java.lang.Object");
-
     /** Checks suitability of an HMethod for inclusion in a graph.
 	<BR> <B>effects:</B> if <code>m</code> is a method of
 	                     <code>java.lang.Object</code> then
 			     returns false.  Else returns true. 
     */
     private static boolean includeMethod(HMethod m) {
-	return m.getDeclaringClass() != objHClass;
+	return !m.getDeclaringClass().getName().equals("java.lang.Object");
     }
 
     /** Generates a <code>Vector</code> of <code>HmNode</code>s for

@@ -11,20 +11,22 @@ import harpoon.ClassFile.HMethod;
  * in <code>java.lang.Float</code> and <code>java.lang.Double</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFloatDouble.java,v 1.1.2.2 1999-08-04 05:52:35 cananian Exp $
+ * @version $Id: INFloatDouble.java,v 1.1.2.3 2000-01-13 23:48:12 cananian Exp $
  */
-public class INFloatDouble extends HCLibrary {
+public class INFloatDouble {
     static final void register(StaticState ss) {
-	ss.register(intBitsToFloat());
-	ss.register(longBitsToDouble());
-	ss.register(floatToIntBits());
-	ss.register(doubleToLongBits());
-	ss.register(valueOf0());
+	ss.register(intBitsToFloat(ss));
+	ss.register(longBitsToDouble(ss));
+	ss.register(floatToIntBits(ss));
+	ss.register(doubleToLongBits(ss));
+	try {
+	ss.register(valueOf0(ss));
+	} catch (NoSuchMethodError e) { /* JDK 1.2 */ }
     }
     // convert int to float
-    private static final NativeMethod intBitsToFloat() {
+    private static final NativeMethod intBitsToFloat(StaticState ss0) {
 	final HMethod hm =
-	    HCfloat.getMethod("intBitsToFloat", new HClass[] { HClass.Int });
+	    ss0.HCfloat.getMethod("intBitsToFloat",new HClass[]{ HClass.Int });
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -34,9 +36,10 @@ public class INFloatDouble extends HCLibrary {
 	};
     }
     // convert float to int
-    private static final NativeMethod floatToIntBits() {
+    private static final NativeMethod floatToIntBits(StaticState ss0) {
 	final HMethod hm =
-	    HCfloat.getMethod("floatToIntBits", new HClass[] { HClass.Float });
+	    ss0.HCfloat.getMethod("floatToIntBits",
+				  new HClass[] { HClass.Float });
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -46,9 +49,10 @@ public class INFloatDouble extends HCLibrary {
 	};
     }
     // convert int to double
-    private static final NativeMethod longBitsToDouble() {
+    private static final NativeMethod longBitsToDouble(StaticState ss0) {
 	final HMethod hm =
-	    HCdouble.getMethod("longBitsToDouble", new HClass[]{HClass.Long});
+	    ss0.HCdouble.getMethod("longBitsToDouble",
+				   new HClass[] { HClass.Long });
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -58,9 +62,10 @@ public class INFloatDouble extends HCLibrary {
 	};
     }
     // convert double to int
-    private static final NativeMethod doubleToLongBits() {
+    private static final NativeMethod doubleToLongBits(StaticState ss0) {
 	final HMethod hm =
-	    HCdouble.getMethod("doubleToLongBits",new HClass[]{HClass.Double});
+	    ss0.HCdouble.getMethod("doubleToLongBits",
+				   new HClass[] { HClass.Double });
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -70,9 +75,9 @@ public class INFloatDouble extends HCLibrary {
 	};
     }
     // convert string to a double
-    private static final NativeMethod valueOf0() {
+    private static final NativeMethod valueOf0(StaticState ss0) {
 	final HMethod hm =
-	    HCdouble.getMethod("valueOf0",new HClass[]{ HCstring });
+	    ss0.HCdouble.getMethod("valueOf0",new HClass[]{ ss0.HCstring });
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {

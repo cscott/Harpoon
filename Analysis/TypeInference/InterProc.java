@@ -12,11 +12,13 @@ import harpoon.Util.Worklist;
 import harpoon.ClassFile.*;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
+
+import java.util.Collections;
 /**
  * <code>InterProc</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: InterProc.java,v 1.1.2.11 1999-09-09 21:12:17 cananian Exp $
+ * @version $Id: InterProc.java,v 1.1.2.12 2000-01-13 23:47:34 cananian Exp $
  */
 
 public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
@@ -25,13 +27,16 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
     Hashtable proc = new Hashtable();
     ClassHierarchy ch = null;
     HCodeFactory hcf;
+    Linker linker;
 
     /** Creates an <code>InterProc</code> analyzer. */
     public InterProc(HCode main, HCodeFactory hcf) {
 	this.main = main; this.hcf = hcf;
+	this.linker = main.getMethod().getDeclaringClass().getLinker();
     }    
     public InterProc(HCode main, ClassHierarchy ch, HCodeFactory hcf) {
 	this.main = main; this.ch = ch; this.hcf = hcf;
+	this.linker = main.getMethod().getDeclaringClass().getLinker();
     }
 
     public SetHClass setTypeMap(HCode c, Temp t) { 
@@ -68,7 +73,7 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 	HMethod m = main.getMethod();
 	/* build class hierarchy of classess reachable from main.
 	   used for coning, i.e. finding all children of a given class. */
-	if (ch==null) ch = new QuadClassHierarchy(m, hcf);
+	if (ch==null) ch = new QuadClassHierarchy(linker, Collections.singleton(m), hcf);
 	cc = new ClassCone(ch);
 	/* worklist of methods that are to be processed. */
 	wl = new AuxUniqueFIFO(16);
@@ -79,7 +84,7 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 	    getIntra(null, ci, ep);
 	}       
 	/* ugly hack - add method(s) invoked automatically at jvm start-up??? */
-	HMethod ci = HClass.forName("java.lang.System").getMethod("initializeSystemClass", new HClass[0]);
+	HMethod ci = linker.forName("java.lang.System").getMethod("initializeSystemClass", new HClass[0]);
 	getIntra(null, ci, ep);
 	/* put the main method on the worklist. */
 	HClass[] c = m.getParameterTypes();

@@ -6,6 +6,7 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.Linker;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
@@ -35,7 +36,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.43 1999-11-17 17:59:23 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.44 2000-01-13 23:48:03 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -223,7 +224,8 @@ final class ReHandler {
 		    HClass thisType=titemp.typeMap(q,t);
 		    //Void policy
 		    if (thisType!=HClass.Void)
-			newType.put(t2, merge(currType, thisType));
+			newType.put(t2, merge(ncode.qf.getLinker(),
+					      currType, thisType));
 		}
 	    }
 	}
@@ -235,16 +237,12 @@ final class ReHandler {
 	};
     }
     
-    static HClass merge(HClass tcurr, HClass t2) {
+    static HClass merge(Linker linker, HClass tcurr, HClass t2) {
 	while((tcurr!=null)&&(!tcurr.isAssignableFrom(t2))) {
 	    tcurr=tcurr.getSuperclass();
 	}
 	if (tcurr==null)
-	    try {
-		tcurr=HClass.forClass(Class.forName("java.lang.Object"));
-	    } catch (ClassNotFoundException e) {
-		System.out.println(e);
-	    }
+	    tcurr=linker.forName("java.lang.Object");
 	return tcurr;
     }
 
@@ -978,11 +976,7 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	this.todo=todo;
 	this.typecast=new HashMap();
 	this.visited=new WorkSet();
-	try {
-	this.otype=HClass.forClass(Class.forName("[Ljava.lang.Object;"));
-	} catch (ClassNotFoundException e) {
-	    System.out.println(e);
-	}
+	this.otype=((Code)hc).qf.getLinker().forDescriptor("[Ljava/lang/Object;");
     }
 
     public Map typecast() {
@@ -1604,6 +1598,7 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
     }
 
     private void checkphi(PHI q, Temp[] map, Temp tf,Set casts, HClass hclass) {
+	Linker linker = q.getFactory().getLinker();
 	boolean good=true;
 	for (int i=1;i<q.arity();i++) {
 	    if (typecast.containsKey(q.prev(i))) {
@@ -1632,13 +1627,8 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 			//Its safe to assume object for interfaces...
 			//because the interface has to be for some sort of
 			//real object
-			try {
-			    if (tc==null)
-				tc=HClass.forClass(Class.forName("java.lang.Object"));
-			} catch (ClassNotFoundException e) {
-			    //Should never happen...java.lang.Object not found?
-			    System.out.println(e);
-			}
+			if (tc==null)
+			    tc=linker.forName("java.lang.Object");
 			if (best==null)
 			    best=tc;
 			else if (best.isAssignableFrom(tc))

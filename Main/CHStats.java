@@ -7,21 +7,25 @@ import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
 import harpoon.Util.UniqueVector;
 
+import java.util.Collections;
 import java.util.Iterator;
 /**
  * <code>CHStats</code> computes interesting statistics of the
  * compiler class hierarchy for inclusion in papers and theses.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CHStats.java,v 1.1.2.6 1999-09-09 21:12:20 cananian Exp $
+ * @version $Id: CHStats.java,v 1.1.2.7 2000-01-13 23:48:17 cananian Exp $
  */
 
 public abstract class CHStats extends harpoon.IR.Registration {
 
     public static final void main(String args[]) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
+	Linker linker = Loader.systemLinker;
 	HMethod m = null;
 
 	if (args.length < 2) {
@@ -30,7 +34,7 @@ public abstract class CHStats extends harpoon.IR.Registration {
 	}
 
 	{
-	    HClass cls = HClass.forName(args[0]);
+	    HClass cls = linker.forName(args[0]);
 	    HMethod hm[] = cls.getDeclaredMethods();
 	    for (int i=0; i<hm.length; i++)
 		if (hm[i].getName().equals(args[1])) {
@@ -42,7 +46,8 @@ public abstract class CHStats extends harpoon.IR.Registration {
 	HCodeFactory hcf =
 	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
 	harpoon.Analysis.ClassHierarchy ch = 
-	    new harpoon.Analysis.Quads.QuadClassHierarchy(m, hcf);
+	    new harpoon.Analysis.Quads.QuadClassHierarchy
+	    (linker, Collections.singleton(m), hcf);
 	System.out.println("For call graph rooted at "+m.getName()+":");
 	int totalclasses=0, depthsum=0, maxdepth=-1; HClass maxc=null;
 	for (Iterator it=ch.classes().iterator();it.hasNext(); totalclasses++){

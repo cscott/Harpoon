@@ -10,11 +10,11 @@ package harpoon.ClassFile;
  * <p> Used for the <code>clone()</code> method of an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HArrayMethod.java,v 1.5.2.2 1999-06-24 00:03:04 cananian Exp $
+ * @version $Id: HArrayMethod.java,v 1.5.2.3 2000-01-13 23:47:43 cananian Exp $
  * @see HArrayField
  * @see HArrayConstructor
  */
-class HArrayMethod extends HMethod {
+class HArrayMethod extends HMethodImpl {
     
     /** Creates a <code>HArrayMethod</code>. */
     public HArrayMethod(HClass parent, String name, int modifiers,

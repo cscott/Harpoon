@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>ARRAYINIT</code> represents an array initialization operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ARRAYINIT.java,v 1.1.2.10 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: ARRAYINIT.java,v 1.1.2.11 2000-01-13 23:47:59 cananian Exp $
  */
 public class ARRAYINIT extends Quad {
     /** The array reference to initialize. */
@@ -89,7 +89,7 @@ public class ARRAYINIT extends Quad {
 	sb.append(type.getName());
 	sb.append(") { ");
 	for (int i=0; i<value.length; i++) {
-	    if (type.equals(HCString))
+	    if (type.getName().equals("java.lang.String"))
 		sb.append("\""+Util.escape(value[i].toString())+"\"");
 	    else if (type.equals(HClass.Char))
 		sb.append("\'"+Util.escape(value[i].toString())+"\'");
@@ -101,6 +101,4 @@ public class ARRAYINIT extends Quad {
 	sb.append(" }");
 	return sb.toString();
     }
-
-    private static final HClass HCString = HClass.forName("java.lang.String");
 }

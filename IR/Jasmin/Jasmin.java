@@ -25,13 +25,14 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.30 1999-11-13 05:21:05 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.31 2000-01-13 23:47:54 cananian Exp $
  */
 public class Jasmin {
     HCode[] hc;
     HMethod[] hm;
     HClass hclass;
     String classname;
+    int andmask,  ormask;
 
     /**Creates a <code>Jasmin</code> object.*/
     public Jasmin(HCode[] hc, HMethod[] hm, HClass hclass) {
@@ -39,19 +40,35 @@ public class Jasmin {
 	this.hm = hm;
 	this.hclass=hclass;
 	this.classname=hclass.getName();
+	this.andmask=Modifier.ABSTRACT|Modifier.FINAL|Modifier.INTERFACE|
+	    Modifier.NATIVE|Modifier.PRIVATE|Modifier.PROTECTED|Modifier.PUBLIC|
+	    Modifier.STATIC|Modifier.SYNCHRONIZED|Modifier.TRANSIENT|Modifier.VOLATILE;
+	this.ormask=0;
+    }
+
+    /**Creates a <code>Jasmin</code> object.*/
+    public Jasmin(HCode[] hc, HMethod[] hm, HClass hclass, int andmask, int ormask) {
+	this.hc = hc;
+	this.hm = hm;
+	this.hclass=hclass;
+	this.classname=hclass.getName();
+	this.andmask=andmask;
+	this.ormask=ormask;
     }
 
     /**Takes in a <code>PrintStream</code> 'out' and dumps
      * Jasmin formatted assembly code to it.*/
     public void outputClass(PrintStream out) {
 	if (hclass.isInterface()) 
-	    out.println(".interface "+Modifier.toString(hclass.getModifiers())+" "+Util.jasminEscape(hclass.getName().replace('.','/')));
+	    out.println(".interface "+Modifier.toString(ormask|(andmask&hclass.getModifiers()))+" "+Util.jasminEscape(hclass.getName().replace('.','/')));
 	    else
-	out.println(".class "+Modifier.toString(hclass.getModifiers())+" "+Util.jasminEscape(hclass.getName().replace('.','/')));
+	out.println(".class "+Modifier.toString(ormask|(andmask&hclass.getModifiers()))+" "+Util.jasminEscape(hclass.getName().replace('.','/')));
+
 	if (hclass.getSuperclass()!=null)
 	    out.println(".super "+Util.jasminEscape(hclass.getSuperclass().getName().replace('.','/')));
 	else
-	    out.println(".super java/lang/Object");
+	    if (hclass.isInterface())
+		out.println(".super java/lang/Object");
 
 	//List the interfaces
 	HClass[] interfaces=hclass.getInterfaces();
@@ -63,7 +80,7 @@ public class Jasmin {
 	for (int i=0;i<hfields.length;i++) {
 	    String value="";
 	    if (hfields[i].isConstant())
-		if (hfields[i].getType()==HClass.forName("java.lang.String"))
+		if (hfields[i].getType().getName().equals("java.lang.String"))
 		    value=" = "+'"'+Util.jasminEscape(hfields[i].getConstant().toString())+'"';
 		else if (hfields[i].getType()==HClass.Float)
 		    value=" = "+escapeFloat((Float)hfields[i].getConstant());
@@ -71,7 +88,7 @@ public class Jasmin {
 		    value=" = "+escapeDouble((Double)hfields[i].getConstant());
 		else
 		    value=" = "+Util.jasminEscape(hfields[i].getConstant().toString());
-	    out.println(".field "+Modifier.toString(hfields[i].getModifiers())+" "+Util.jasminEscape(hfields[i].getName()) +" "+Util.jasminEscape(hfields[i].getDescriptor())+value);
+	    out.println(".field "+Modifier.toString(ormask|(andmask&hfields[i].getModifiers()))+" "+Util.jasminEscape(hfields[i].getName()) +" "+Util.jasminEscape(hfields[i].getDescriptor())+value);
 	}
 
 	//List the methods
@@ -82,7 +99,7 @@ public class Jasmin {
 
    
     private void outputMethod(PrintStream out, int i) {
-	out.println(".method "+Modifier.toString(hm[i].getModifiers())+" "+Util.jasminEscape(hm[i].getName().replace('.','/'))
+	out.println(".method "+Modifier.toString(ormask|(andmask&hm[i].getModifiers()))+" "+Util.jasminEscape(hm[i].getName().replace('.','/'))
 		    +Util.jasminEscape(hm[i].getDescriptor().replace('.','/')));
 	//Get modifiers
 	int modifiers=hm[i].getModifiers();
@@ -540,7 +557,7 @@ public class Jasmin {
 	    out.println(iflabel(q));
 	    if (q.value()!=null) {
 		HClass hclass=q.type();
-		if (hclass==HClass.forName("java.lang.String"))
+		if (hclass.getName().equals("java.lang.String"))
 		    out.println("    ldc "+'"'+Util.jasminEscape(q.value().toString())+'"');
 		else
 		    if (hclass==HClass.Double)

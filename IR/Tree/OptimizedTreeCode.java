@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.14 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.15 2000-01-13 23:48:06 cananian Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = CanonicalTreeCode.codename;
@@ -149,9 +149,6 @@ public class OptimizedTreeCode extends Code {
     public static HCodeFactory codeFactory(final Frame frame) {  
 	return codeFactory(CanonicalTreeCode.codeFactory(frame), frame);
     }
-
-    // obsolete (may not even work with null frame)
-    public static void register() { HMethod.register(codeFactory(null)); }
 
     /**
      * Implementation of the <code>Derivation</code> interface.

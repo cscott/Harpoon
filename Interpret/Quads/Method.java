@@ -9,6 +9,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMember;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadNoSSA;
@@ -57,19 +58,20 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.17 1999-10-13 14:38:36 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.18 2000-01-13 23:48:10 cananian Exp $
  */
-public final class Method extends HCLibrary {
+public final class Method {
 
     /** Write a start-up static state to disk. */
-    public static final void makeStartup(HCodeFactory hcf,
+    public static final void makeStartup(Linker linker, HCodeFactory hcf,
 					 java.io.OutputStream os)
 	throws java.io.IOException {
-	StaticState ss = new StaticState(hcf);
+	StaticState ss = new StaticState(linker, hcf);
 	try {
-	    HMethod HMinit = HCsystem.getMethod("initializeSystemClass","()V");
+	    HMethod HMinit =
+		ss.HCsystem.getMethod("initializeSystemClass", "()V");
 	    // set up static state.
-	    ss.load(HCsystem);
+	    ss.load(ss.HCsystem);
 	    invoke(ss, HMinit, new Object[0]);
 	    System.err.println("Writing.");
 	    java.io.ObjectOutputStream oos=new java.io.ObjectOutputStream(os);
@@ -91,6 +93,8 @@ public final class Method extends HCLibrary {
 	    ss.prof = prof;
 	    ss.hcf = hcf;
 	    ois.close();
+	    Util.assert(cls.getLinker()==ss.linker,
+			"Saved static state uses incompatible linker");
 	} catch (ClassNotFoundException e) {
 	    throw new java.io.IOException(e.toString());
 	} try {
@@ -101,11 +105,12 @@ public final class Method extends HCLibrary {
     /** invoke a static main method with no static state. */
     public static final void run(PrintWriter prof, HCodeFactory hcf,
 				 HClass cls, String[] args) {
-	StaticState ss = new StaticState(hcf, prof);
+	StaticState ss = new StaticState(cls.getLinker(), hcf, prof);
 	try {
-	    HMethod HMinit = HCsystem.getMethod("initializeSystemClass","()V");
+	    HMethod HMinit =
+		ss.HCsystem.getMethod("initializeSystemClass", "()V");
 	    // set up static state.
-	    ss.load(HCsystem);
+	    ss.load(ss.HCsystem);
 	    invoke(ss, HMinit, new Object[0]);
 	    run(ss, cls, args);
 	} catch (InterpretedThrowable it) { prettyPrint(ss, it); }
@@ -113,10 +118,10 @@ public final class Method extends HCLibrary {
 
     private static final void run(StaticState ss, HClass cls, String[] args)
 	throws InterpretedThrowable {
-	HMethod method=cls.getMethod("main", new HClass[]{ HCstringA });
+	HMethod method=cls.getMethod("main", new HClass[]{ ss.HCstringA });
 	Util.assert(method.isStatic());
 	// encapsulate params properly.
-	ArrayRef params=new ArrayRef(ss,HCstringA,new int[]{args.length});
+	ArrayRef params=new ArrayRef(ss,ss.HCstringA,new int[]{args.length});
 	for (int i=0; i<args.length; i++)
 	    params.update(i, ss.makeString(args[i]));
 	// run main() method.
@@ -158,7 +163,7 @@ public final class Method extends HCLibrary {
 	    // non-native, interpret.
 	    HCode c = ss.hcf.convert(method);
 	    if (c==null) {
-		ObjectRef obj = ss.makeThrowable(HCunsatisfiedlinkErr,
+		ObjectRef obj = ss.makeThrowable(ss.HCunsatisfiedlinkErr,
 						 "No definition for "+method);
 		throw new InterpretedThrowable(obj, ss);
 	    }
@@ -313,7 +318,7 @@ public final class Method extends HCLibrary {
 	    // aha! an illegal access.
 	    String msg=((objtype==null)?"":(objtype.getName()+": ")) +
 		hm.toString();
-	    ObjectRef eor = ss.makeThrowable(HCillegalaccessErr, msg);
+	    ObjectRef eor = ss.makeThrowable(ss.HCillegalaccessErr, msg);
 	    throw new InterpretedThrowable(eor, ss);
 	}
 
@@ -345,7 +350,7 @@ public final class Method extends HCLibrary {
 	    Object[] v = q.value();
 	    for (int i=0; i<v.length; i++)
 		af.update(q.offset()+i,
-			  (q.type()!=HCstring) ? v[i] :
+			  (q.type()!=ss.HCstring) ? v[i] :
 			  ss.makeStringIntern((String)v[i]));
 	    advance(0);
 	}
@@ -369,7 +374,7 @@ public final class Method extends HCLibrary {
 		    // duplicate java error message
 		    String msg = obj.type.getName()+": method "+
 			hm.getName() + hm.getDescriptor() +" not found";
-		    ObjectRef eor = ss.makeThrowable(HCnosuchmethodErr, msg);
+		    ObjectRef eor = ss.makeThrowable(ss.HCnosuchmethodErr,msg);
 		    throw new InterpretedThrowable(eor, ss);
 		}
 		scopeCheck(hm, obj.type); // check virtual access perms
@@ -405,7 +410,7 @@ public final class Method extends HCLibrary {
 	    advance(0);
 	}
 	public void visit(CONST q) {
-	    if (q.type()!=HCstring)
+	    if (q.type()!=ss.HCstring)
 		sf.update(q.dst(), toInternal(q.value()));
 	    else {
 		ObjectRef obj=ss.makeStringIntern((String)q.value());
@@ -543,7 +548,7 @@ public final class Method extends HCLibrary {
 	    String msg = // of.type.toString(); // for orthodoxy.
 		"[is: "+of.type.toString()+"] "+ // for debugging
 		"[supposed to be: "+cls.toString()+"]"; // for debugging
-	    ObjectRef obj = ss.makeThrowable(HCclasscastE, msg);
+	    ObjectRef obj = ss.makeThrowable(ss.HCclasscastE, msg);
 	    throw new InterpretedThrowable(obj, ss);
 	}
 	void componentCheck(Temp array, Temp src) throws InterpretedThrowable {
@@ -553,7 +558,7 @@ public final class Method extends HCLibrary {
 	    Ref of = (Ref) sf.get(src);
 	    if (of == null || of.type.isInstanceOf(afCT))
 		return; // yay, no problemos.
-	    ObjectRef obj = ss.makeThrowable(HCarraystoreE,
+	    ObjectRef obj = ss.makeThrowable(ss.HCarraystoreE,
 					     of.type.toString() + " -> " +
 					     af.type.toString());
 	    throw new InterpretedThrowable(obj, ss);
@@ -564,26 +569,26 @@ public final class Method extends HCLibrary {
 	void boundsCheck(Temp array, int index) throws InterpretedThrowable {
 	    ArrayRef af = (ArrayRef) sf.get(array);
 	    if (0 <= index && index < af.length()) return; // a-ok
-	    ObjectRef obj = ss.makeThrowable(HCarrayindexE, 
+	    ObjectRef obj = ss.makeThrowable(ss.HCarrayindexE, 
 					     Integer.toString(index));
 	    throw new InterpretedThrowable(obj, ss);
 	}
 	void nullCheck(Temp t) throws InterpretedThrowable {
 	    if (sf.get(t)!=null) return; // all's well.
-	    ObjectRef obj = ss.makeThrowable(HCnullpointerE);
+	    ObjectRef obj = ss.makeThrowable(ss.HCnullpointerE);
 	    throw new InterpretedThrowable(obj, ss);
 	}
 	void minusCheck(Temp t) throws InterpretedThrowable {
 	    int i = ((Integer)sf.get(t)).intValue();
 	    if (i >= 0) return; // a-ok.
-	    ObjectRef obj = ss.makeThrowable(HCnegativearrayE,
+	    ObjectRef obj = ss.makeThrowable(ss.HCnegativearrayE,
 					     Integer.toString(i));
 	    throw new InterpretedThrowable(obj, ss);
 	}
 	void zeroCheck(Temp t) throws InterpretedThrowable {
 	    long z = ((Number)sf.get(t)).longValue();
 	    if (z != 0) return; // a-ok.
-	    ObjectRef obj = ss.makeThrowable(HCarithmeticE);
+	    ObjectRef obj = ss.makeThrowable(ss.HCarithmeticE);
 	    throw new InterpretedThrowable(obj, ss);
 	}
 
@@ -608,7 +613,7 @@ public final class Method extends HCLibrary {
 	    for (int i=0; i<v.length; i++) {
 		boundsCheck(q.objectref(), q.offset() + i);
 		af.update(q.offset()+i,
-			  (q.type()!=HCstring) ? v[i] :
+			  (q.type()!=ss.HCstring) ? v[i] :
 			  ss.makeStringIntern((String)v[i]));
 	    }
 	    advance(0);

@@ -13,6 +13,7 @@ import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
@@ -46,7 +47,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.4.8 1999-10-21 23:06:12 pnkfelix Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.4.9 2000-01-13 23:48:12 cananian Exp $
  */
 public class DefaultFrame extends harpoon.Backend.Generic.Frame
     implements AllocationInfo {
@@ -60,6 +61,7 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
     private TempFactory         m_tempFactory;
     private static Temp[]       registers;
     private static TempFactory  regTempFactory;
+    private final Linker	linker;
 
     static {
         regTempFactory = new TempFactory() {
@@ -85,6 +87,7 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
 
 
     public DefaultFrame(HMethod main, ClassHierarchy ch, OffsetMap map, AllocationStrategy st) {
+	linker = main.getDeclaringClass().getLinker();
 	m_classHierarchy = ch;
 	m_allocator   = st==null?new DefaultAllocationStrategy(this):st;
 	m_tempFactory = Temp.tempFactory("");
@@ -95,6 +98,8 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
 	m_runtime = new harpoon.Backend.Runtime1.Runtime(this, null, main, ch, null);
     }
 	
+    public Linker getLinker() { return linker; }
+
     /** Returns a <code>Tree.Exp</code> object which represents a pointer
      *  to a newly allocated block of memory, of the specified size.  
      *  Generates code to handle garbage collection, and OutOfMemory errors.

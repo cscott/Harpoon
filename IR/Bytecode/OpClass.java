@@ -13,7 +13,7 @@ import harpoon.IR.RawClass.ConstantClass;
  * <code>CONSTANT_Class</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpClass.java,v 1.2.2.4 1999-08-04 06:30:57 cananian Exp $
+ * @version $Id: OpClass.java,v 1.2.2.5 2000-01-13 23:47:53 cananian Exp $
  * @see harpoon.IR.RawClass.ConstantClass
  */
 public final class OpClass extends Operand {
@@ -28,7 +28,7 @@ public final class OpClass extends Operand {
     String classname = ((ConstantClass) c).name();
     if (classname.charAt(0) != '[') // not a real descriptor yet.
 	classname = "L" + classname + ";";
-    hclass = HClass.forDescriptor(classname);
+    hclass = parent.linker.forDescriptor(classname);
   }
   /** Return the class referenced. */
   public HClass value() { return hclass; }

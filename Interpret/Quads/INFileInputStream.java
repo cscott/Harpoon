@@ -15,19 +15,19 @@ import java.io.IOException;
  * methods in <code>java.io.FileInputStream</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFileInputStream.java,v 1.1.2.5 1999-08-07 11:20:19 cananian Exp $
+ * @version $Id: INFileInputStream.java,v 1.1.2.6 2000-01-13 23:48:10 cananian Exp $
  */
-final class INFileInputStream extends HCLibrary {
+final class INFileInputStream {
     static final void register(StaticState ss) {
-	ss.register(fdConstructor());
-	ss.register(open());
-	ss.register(close());
-	ss.register(read());
-	ss.register(readBytes());
-	ss.register(skip());
-	ss.register(available());
+	ss.register(fdConstructor(ss));
+	ss.register(open(ss));
+	ss.register(close(ss));
+	ss.register(read(ss));
+	ss.register(readBytes(ss));
+	ss.register(skip(ss));
+	ss.register(available(ss));
 	// JDK 1.2 only
-	try { ss.register(initIDs()); } catch (NoSuchMethodError e) { }
+	try { ss.register(initIDs(ss)); } catch (NoSuchMethodError e) { }
     }
     // associate shadow InputStream with every object.
     // Make a serializable wrapper for it.
@@ -50,13 +50,14 @@ final class INFileInputStream extends HCLibrary {
 
     private static final ObjectRef security(StaticState ss) 
 	throws InterpretedThrowable {
-	HMethod hm = HCsystem.getMethod("getSecurityManager", new HClass[0]);
+	HMethod hm=ss.HCsystem.getMethod("getSecurityManager", new HClass[0]);
 	return (ObjectRef) Method.invoke(ss, hm, new Object[0]);
     }
 
     // disallow constructor from FileDescriptor
-    private static final NativeMethod fdConstructor() {
-	final HMethod hm=HCfistream.getConstructor(new HClass[] {HCfiledesc});
+    private static final NativeMethod fdConstructor(StaticState ss0) {
+	final HMethod hm =
+	    ss0.HCfistream.getConstructor(new HClass[] { ss0.HCfiledesc });
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) 
@@ -66,33 +67,34 @@ final class INFileInputStream extends HCLibrary {
 		// check safety.
 		if (fd_obj==null) {
 		    ObjectRef ex_obj =
-			ss.makeThrowable(HCnullpointerE);
+			ss.makeThrowable(ss.HCnullpointerE);
 		    throw new InterpretedThrowable(ex_obj, ss);
 		}
 		ObjectRef security = security(ss);
 		if (security != null) {
 		    HMethod HMcr =
-			HCsmanager.getMethod("checkRead",
-					     new HClass[] { HCfiledesc });
+			ss.HCsmanager.getMethod("checkRead",
+					     new HClass[] { ss.HCfiledesc });
 		    Method.invoke(ss, HMcr, new Object[] { fd_obj });
 		}
 		// compare supplied file descriptor to FileDescriptor.in
-		HField hf = HCfiledesc.getField("in");
+		HField hf = ss.HCfiledesc.getField("in");
 		if (fd_obj == ss.get(hf)) { // System.in
 		    obj.putClosure(new InputStreamWrapper(System.in));
-		    HField hf0 = HCfistream.getField("fd");
+		    HField hf0 = ss.HCfistream.getField("fd");
 		    obj.update(hf0, fd_obj);
 		    return null;
 		} else {
 		    ObjectRef ex_obj =
-			ss.makeThrowable(HCioE, "unsupported.");
+			ss.makeThrowable(ss.HCioE, "unsupported.");
 		    throw new InterpretedThrowable(ex_obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod open() {
-	final HMethod hm=HCfistream.getMethod("open", new HClass[]{HCstring});
+    private static final NativeMethod open(StaticState ss0) {
+	final HMethod hm =
+	    ss0.HCfistream.getMethod("open", new HClass[] { ss0.HCstring });
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) 
@@ -103,44 +105,44 @@ final class INFileInputStream extends HCLibrary {
 		try {
 		    obj.putClosure(new InputStreamWrapper(new FileInputStream(filename)));
 		    // mark file descriptor to indicate it is 'valid'.
-		    HField hf0 = HCfistream.getField("fd");
-		    HField hf1 = HCfiledesc.getField("fd");
+		    HField hf0 = ss.HCfistream.getField("fd");
+		    HField hf1 = ss.HCfiledesc.getField("fd");
 		    ((ObjectRef)obj.get(hf0)).update(hf1, new Integer(4));
 		    return null;
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		} catch (SecurityException e) {
-		    obj = ss.makeThrowable(HCsecurityE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCsecurityE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod close() {
-	final HMethod hm = HCfistream.getMethod("close", new HClass[0]);
+    private static final NativeMethod close(StaticState ss0) {
+	final HMethod hm = ss0.HCfistream.getMethod("close", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
 		throws InterpretedThrowable {
 		ObjectRef obj = (ObjectRef) params[0];
 		InputStream is = ((InputStreamWrapper) obj.getClosure()).is;
-		HField hf = HCfistream.getField("fd");
+		HField hf = ss.HCfistream.getField("fd");
 		try {
 		    is.close();
 		    obj.putClosure(null);
 		    obj.update(hf, null);
 		    return null;
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod read() {
+    private static final NativeMethod read(StaticState ss0) {
 	final HMethod hm =
-	    HCfistream.getMethod("read", "()I");
+	    ss0.HCfistream.getMethod("read", "()I");
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -150,15 +152,15 @@ final class INFileInputStream extends HCLibrary {
 		try {
 		    return new Integer(is.read());
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod readBytes() {
+    private static final NativeMethod readBytes(StaticState ss0) {
 	final HMethod hm =
-	    HCfistream.getMethod("readBytes", "([BII)I");
+	    ss0.HCfistream.getMethod("readBytes", "([BII)I");
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -176,15 +178,15 @@ final class INFileInputStream extends HCLibrary {
 			ba.update(off+i, new Byte(b[i]));
 		    return new Integer(len);
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod skip() {
+    private static final NativeMethod skip(StaticState ss0) {
 	final HMethod hm =
-	    HCfistream.getMethod("skip", "(J)J" );
+	    ss0.HCfistream.getMethod("skip", "(J)J" );
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -195,15 +197,15 @@ final class INFileInputStream extends HCLibrary {
 		try {
 		    return new Long(is.skip(n.longValue()));
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod available() {
+    private static final NativeMethod available(StaticState ss0) {
 	final HMethod hm =
-	    HCfistream.getMethod("available", "()I" );
+	    ss0.HCfistream.getMethod("available", "()I" );
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -213,16 +215,16 @@ final class INFileInputStream extends HCLibrary {
 		try {
 		    return new Integer(is.available());
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
     // "initialize JNI offsets" for JDK 1.2. Currently a NOP.
-    private static final NativeMethod initIDs() {
+    private static final NativeMethod initIDs(StaticState ss0) {
 	final HMethod hm =
-	    HCfistream.getMethod("initIDs", new HClass[0]);
+	    ss0.HCfistream.getMethod("initIDs", new HClass[0]);
 	return new NullNativeMethod(hm);
     }
 }

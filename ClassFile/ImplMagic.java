@@ -23,29 +23,32 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5.2.8 1999-08-07 04:35:10 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.9 2000-01-13 23:47:47 cananian Exp $
  */
-public abstract class ImplMagic  { // wrapper for the Real McCoy.
+abstract class ImplMagic  { // wrapper for the Real McCoy.
 
-    static HClass forStream(java.io.InputStream is) throws java.io.IOException{
+    static HClass forStream(Linker linker, java.io.InputStream is)
+				       throws java.io.IOException {
 	harpoon.IR.RawClass.ClassFile raw =
 	    new harpoon.IR.RawClass.ClassFile(is);
-	return new MagicClass(raw);
+	return new MagicClass(linker, raw);
     }
 
     static class MagicClass extends HClassCls {
 	/** Creates a <code>MagicClass</code> from a 
 	 *  <code>harpoon.IR.RawClass.ClassFile</code>. */
-	MagicClass(harpoon.IR.RawClass.ClassFile classfile) {
+	MagicClass(Linker linker, harpoon.IR.RawClass.ClassFile classfile) {
+	    super(linker);
 	    this.name = classfile.this_class().name().replace('/','.');
 	    this.hashcode = super.hashCode();
-	    this.register();
 	    this.superclass = (classfile.super_class == 0)?null:
-		new ClassPointer("L"+classfile.super_class().name()+";");
+		new ClassPointer(linker,
+				 "L"+classfile.super_class().name()+";");
 	    this.interfaces = new HPointer[classfile.interfaces_count()];
 	    for (int i=0; i<interfaces.length; i++)
 		interfaces[i] = 
-		    new ClassPointer("L"+classfile.interfaces(i).name()+";");
+		    new ClassPointer(linker, 
+				     "L"+classfile.interfaces(i).name()+";");
 	    this.modifiers = classfile.access_flags.access_flags;
 	    this.declaredFields = new HField[classfile.fields.length];
 	    for (int i=0; i<declaredFields.length; i++)
@@ -80,7 +83,7 @@ public abstract class ImplMagic  { // wrapper for the Real McCoy.
     } // END MagicClass
     
     // utility function to initialize HMethod/HConstructor/HInitializer.
-    static private final void initMethod(HMethod _this, HClass parent,
+    static private final void initMethod(HMethodImpl _this, HClass parent,
 		      harpoon.IR.RawClass.MethodInfo methodinfo) {
 	_this.parent = parent;
 	_this.name = methodinfo.name();
@@ -89,7 +92,7 @@ public abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    String desc = methodinfo.descriptor();
 	    // snip off everything but the return value descriptor.
 	    desc = desc.substring(desc.lastIndexOf(')')+1);
-	    _this.returnType = new ClassPointer(desc);
+	    _this.returnType = new ClassPointer(parent.getLinker(), desc);
 	}
 	{ // parameterTypes
 	    String desc = methodinfo.descriptor();
@@ -98,7 +101,8 @@ public abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    Vector v = new Vector();
 	    for (int i=0; i<desc.length(); i++) {
 		// make HClass for first param in list.
-		v.addElement(new ClassPointer(desc.substring(i)));
+		v.addElement(new ClassPointer(parent.getLinker(),
+					      desc.substring(i)));
 		// skip over the one we just added.
 		while (desc.charAt(i)=='[') i++;
 		if (desc.charAt(i)=='L') i=desc.indexOf(';', i);
@@ -145,7 +149,8 @@ public abstract class ImplMagic  { // wrapper for the Real McCoy.
 		for (int i=0; i<exceptions.number_of_exceptions(); i++) {
 		    ConstantClass cc = exceptions.exception_index_table(i);
 		    if (cc != null)
-			v.addElement(new ClassPointer("L"+cc.name()+";"));
+			v.addElement(new ClassPointer(parent.getLinker(),
+						      "L"+cc.name()+";"));
 		}
 		_this.exceptionTypes = new HPointer[v.size()];
 		v.copyInto(_this.exceptionTypes);
@@ -174,10 +179,8 @@ public abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    repository.remove(m); // make methodinfo garbage.
 	}
     };
-    // register method is obsolete, but what the heck.
-    static { HMethod.register(codeFactory); }
     
-    static class MagicMethod extends HMethod {
+    static class MagicMethod extends HMethodImpl {
 	/** Creates a <code>MagicMethod</code> from a 
 	 *  <code>harpoon.IR.RawClass.MethodInfo</code>. */
 	MagicMethod(HClass parent, 
@@ -185,14 +188,14 @@ public abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    initMethod(this, parent, methodinfo);
 	}
 	// optimize hashcode.
-	private int hashcode=0;
+	private transient int hashcode=0;
 	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
 	    if (hashcode==0) hashcode = super.hashCode();
 	    return hashcode;
 	}
     } // END MagicMethod
 
-    static class MagicConstructor extends HConstructor {
+    static class MagicConstructor extends HConstructorImpl {
 	/** Creates a <code>MagicConstructor</code> from a 
 	 *  <code>harpoon.IR.RawClass.MethodInfo</code>. */
 	MagicConstructor(HClass parent,
@@ -200,14 +203,14 @@ public abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    initMethod(this, parent, methodinfo);
 	}
 	// optimize hashcode.
-	private int hashcode=0;
+	private transient int hashcode=0;
 	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
 	    if (hashcode==0) hashcode = super.hashCode();
 	    return hashcode;
 	}
     } // END MagicConstructor
 
-    static class MagicInitializer extends HInitializer {
+    static class MagicInitializer extends HInitializerImpl {
 	/** Creates a <code>MagicInitializer</code> from a
 	 *  <code>harpoon.IR.RawClass.MethodInfo</code>. */
 	MagicInitializer(HClass parent,
@@ -215,20 +218,21 @@ public abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    initMethod(this, parent, methodinfo);
 	}
 	// optimize hashcode.
-	private int hashcode=0;
+	private transient int hashcode=0;
 	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
 	    if (hashcode==0) hashcode = super.hashCode();
 	    return hashcode;
 	}
     } // END MagicInitializer
 
-    static class MagicField extends HField {
+    static class MagicField extends HFieldImpl {
 	/** Creates a <code>MagicField</code> from a 
 	 *  <code>harpoon.IR.RawClass.FieldInfo</code>. */
 	MagicField(HClass parent, 
 		   harpoon.IR.RawClass.FieldInfo fieldinfo) {
 	    this.parent = parent;
-	    this.type = new ClassPointer(fieldinfo.descriptor());
+	    this.type = new ClassPointer(parent.getLinker(),
+					 fieldinfo.descriptor());
 	    this.name = fieldinfo.name();
 	    this.modifiers = fieldinfo.access_flags.access_flags;
 	    {

@@ -17,7 +17,7 @@ import java.util.Map;
  * information about an <code>HClass</code>. 
  *
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: HClassInfo.java,v 1.1.2.14 1999-09-06 18:45:10 duncan Exp $
+ * @version $Id: HClassInfo.java,v 1.1.2.15 2000-01-13 23:47:36 cananian Exp $
  * @see     harpoon.ClassFile.HClass
  */
 public class HClassInfo
@@ -60,12 +60,7 @@ public class HClassInfo
      */
     public String toString(HClass hc) { return m_hcim.get(hc).toString(); }
 
-    private interface HCIMapDefs { 
-	static final HClass HCobject = HClass.forName("java.lang.Object");
-	static final String HCobjD   = HCobject.getDescriptor();
-    }	    
-
-    final class HCIMap implements HCIMapDefs {
+    final class HCIMap {
 	private Map m_table = new HashMap();
 
 	HCIUnit get(HClass hc) {
@@ -80,9 +75,10 @@ public class HClassInfo
 		    HClass baseclass = HClassUtil.baseClass(hc);
 		    superclass = 
 			baseclass.isPrimitive() ? 
-			HCobject 
-			: (HCobjD.equals(baseclass.getDescriptor()) ? 
-			   (HClassUtil.arrayClass(HCobject, dims-1))
+			hc.getLinker().forName("java.lang.Object")
+			: (baseclass.getDescriptor()
+			   .equals("Ljava/lang/Object;") ?
+			   (HClassUtil.arrayClass(baseclass, dims-1))
 			   : HClassUtil.arrayClass
 			     (baseclass.getSuperclass(), dims));
 		} 

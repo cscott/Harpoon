@@ -12,6 +12,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
@@ -26,7 +27,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.15 2000-01-09 09:12:22 pnkfelix Exp $
+ * @version $Id: Runtime.java,v 1.1.2.16 2000-01-13 23:47:40 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -77,44 +78,43 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
      *  and <code>HClass</code>es which are referenced /
      *  callable by code in the runtime implementation (and should
      *  therefore be included in every class hierarchy). */
-    public static Collection runtimeCallableMethods() {
-	HClass HCsystem = HClass.forName("java.lang.System");
-	HClass HCstring = HClass.forName("java.lang.String");
-	HClass HCcharA  = HClass.forDescriptor("[C");
+    public static Collection runtimeCallableMethods(Linker linker) {
+	HClass HCsystem = linker.forName("java.lang.System");
+	HClass HCstring = linker.forName("java.lang.String");
+	HClass HCcharA  = linker.forDescriptor("[C");
 	return Arrays.asList(new Object[] {
 	    // implicitly called during startup
 	    HCsystem.getMethod("initializeSystemClass", "()V"),
 	    // jni implementation uses these:
-	    HClass.forName("java.lang.NoClassDefFoundError")
+	    linker.forName("java.lang.NoClassDefFoundError")
 		.getConstructor(new HClass[] { HCstring }),
-	    HClass.forName("java.lang.NoSuchMethodError")
+	    linker.forName("java.lang.NoSuchMethodError")
 		.getConstructor(new HClass[] { HCstring }),
-	    HClass.forName("java.lang.NoSuchFieldError")
+	    linker.forName("java.lang.NoSuchFieldError")
 		.getConstructor(new HClass[] { HCstring }),
 	    HCstring.getConstructor(new HClass[] { HCcharA }),
 	    HCstring.getMethod("length", "()I"),
 	    HCstring.getMethod("toCharArray","()[C"),
 
-		// FSK start
-	    HClass.forName("java.io.IOException") 
+	    // in java.io implementations
+	    linker.forName("java.io.IOException") 
 		.getConstructor(new HClass[0]),
-	    HClass.forName("java.io.IOException")
+	    linker.forName("java.io.IOException")
 		.getConstructor(new HClass[] { HCstring }),
-		// FSK end
 
 	    // in java.lang implementations
-	    HClass.forName("java.lang.ArrayIndexOutOfBoundsException")
+	    linker.forName("java.lang.ArrayIndexOutOfBoundsException")
 		.getConstructor(new HClass[] { HCstring }),
-	    HClass.forName("java.lang.ArrayStoreException")
+	    linker.forName("java.lang.ArrayStoreException")
 		.getConstructor(new HClass[] { HCstring }),
-	    HClass.forName("java.util.Properties")
+	    linker.forName("java.util.Properties")
 		.getMethod("setProperty", new HClass[] { HCstring, HCstring }),
 	    // referenced by name in static initializers for primitive type
 	    // wrappers (java.lang.Integer, java.lang.Character, etc)
 	    HClass.Boolean, HClass.Byte, HClass.Short, HClass.Int,
 	    HClass.Long, HClass.Float, HClass.Double, HClass.Char,
 	    // passed to main()
-	    HClass.forDescriptor("[Ljava/lang/String;"),
+	    linker.forDescriptor("[Ljava/lang/String;"),
 	});
     }
 

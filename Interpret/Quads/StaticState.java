@@ -7,6 +7,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Quads.Quad;
 import harpoon.Util.Util;
 
@@ -18,14 +19,17 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.9 1999-08-07 11:20:20 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.10 2000-01-13 23:48:11 cananian Exp $
  */
 final class StaticState extends HCLibrary implements java.io.Serializable {
+    /** which linker to use. */
+    /*final*/ Linker linker;
     /** which code representation to use. */
     /*final*/ HCodeFactory hcf;
-    StaticState(HCodeFactory hcf) { this(hcf, null); }
+    StaticState(Linker linker, HCodeFactory hcf) { this(linker, hcf, null); }
     //prof is null for no profiling.
-    StaticState(HCodeFactory hcf, PrintWriter prof) {
+    StaticState(Linker linker, HCodeFactory hcf, PrintWriter prof) {
+	super(linker); this.linker = linker;
 	this.hcf = hcf; this.prof = prof;
 	Support.registerNative(this);
     }

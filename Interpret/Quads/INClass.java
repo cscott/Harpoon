@@ -5,6 +5,7 @@ package harpoon.Interpret.Quads;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.NoSuchClassException;
 
 import java.lang.reflect.Modifier;
 import java.util.Hashtable;
@@ -13,41 +14,41 @@ import java.util.Hashtable;
  * <code>java.lang.Class</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INClass.java,v 1.1.2.4 1999-08-07 06:59:53 cananian Exp $
+ * @version $Id: INClass.java,v 1.1.2.5 2000-01-13 23:48:10 cananian Exp $
  */
-public class INClass extends HCLibrary {
+public class INClass {
     static final void register(StaticState ss) {
-	ss.register(forName());
-	ss.register(getComponentType());
-	ss.register(getInterfaces());
-	ss.register(getModifiers());
-	ss.register(getName());
-	ss.register(getPrimitiveClass());
-	ss.register(getSuperclass());
-	ss.register(isArray());
-	ss.register(isInterface());
-	ss.register(isPrimitive());
-	ss.register(newInstance());
+	ss.register(forName(ss));
+	ss.register(getComponentType(ss));
+	ss.register(getInterfaces(ss));
+	ss.register(getModifiers(ss));
+	ss.register(getName(ss));
+	ss.register(getPrimitiveClass(ss));
+	ss.register(getSuperclass(ss));
+	ss.register(isArray(ss));
+	ss.register(isInterface(ss));
+	ss.register(isPrimitive(ss));
+	ss.register(newInstance(ss));
 	// registry for name->class mapping
-	ss.putNativeClosure(HCclass, new Hashtable());
+	ss.putNativeClosure(ss.HCclass, new Hashtable());
 	// JDK 1.2 only
-	try { ss.register(registerNatives()); } catch (NoSuchMethodError e) { }
+	try { ss.register(registerNatives(ss)); } catch (NoSuchMethodError e){}
     }
     static final ObjectRef forClass(StaticState ss, HClass hc)
 	throws InterpretedThrowable {
-	Hashtable registry = (Hashtable) ss.getNativeClosure(HCclass);
+	Hashtable registry = (Hashtable) ss.getNativeClosure(ss.HCclass);
 	ObjectRef obj = (ObjectRef) registry.get(hc);
 	if (obj!=null) return obj;
-	obj = new ObjectRef(ss, HCclass);
-	Method.invoke(ss, HCclass.getConstructor(new HClass[0]),
+	obj = new ObjectRef(ss, ss.HCclass);
+	Method.invoke(ss, ss.HCclass.getConstructor(new HClass[0]),
 		      new Object[] { obj } );
 	obj.putClosure(hc);
 	registry.put(hc, obj);
 	return obj;
     }
-    private static final NativeMethod forName() {
+    private static final NativeMethod forName(StaticState ss0) {
 	final HMethod hm =
-	    HCclass.getMethod("forName", new HClass[] { HCstring });
+	    ss0.HCclass.getMethod("forName", new HClass[] { ss0.HCstring });
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    // throws ClassNotFoundException
@@ -55,17 +56,18 @@ public class INClass extends HCLibrary {
 		throws InterpretedThrowable {
 		String clsname = ss.ref2str((ObjectRef)params[0]);
 		try {
-		    return forClass(ss, HClass.forName(clsname));
-		} catch (NoClassDefFoundError e) {
-		    ObjectRef obj = ss.makeThrowable(HCclassnotfoundE);
+		    return forClass(ss, ss.linker.forName(clsname));
+		} catch (NoSuchClassException e) {
+		    ObjectRef obj = ss.makeThrowable(ss.HCclassnotfoundE);
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod getPrimitiveClass() {
+    private static final NativeMethod getPrimitiveClass(StaticState ss0) {
 	final HMethod hm =
-	    HCclass.getMethod("getPrimitiveClass", new HClass[] {HCstring});
+	    ss0.HCclass.getMethod("getPrimitiveClass",
+				  new HClass[] {ss0.HCstring});
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -81,13 +83,13 @@ public class INClass extends HCLibrary {
 		if (name.equals("short"))   return forClass(ss,HClass.Short);
 		if (name.equals("void"))    return forClass(ss,HClass.Void);
 		// oops.  throw exception.
-		ObjectRef obj = ss.makeThrowable(HCclassnotfoundE);
+		ObjectRef obj = ss.makeThrowable(ss.HCclassnotfoundE);
 		throw new InterpretedThrowable(obj, ss);
 	    }
 	};
     }
-    private static final NativeMethod getName() {
-	final HMethod hm = HCclass.getMethod("getName", new HClass[0]);
+    private static final NativeMethod getName(StaticState ss0) {
+	final HMethod hm = ss0.HCclass.getMethod("getName", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -97,8 +99,8 @@ public class INClass extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod getSuperclass() {
-	final HMethod hm = HCclass.getMethod("getSuperclass", new HClass[0]);
+    private static final NativeMethod getSuperclass(StaticState ss0) {
+	final HMethod hm=ss0.HCclass.getMethod("getSuperclass", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -108,23 +110,24 @@ public class INClass extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod getInterfaces() {
-	final HMethod hm = HCclass.getMethod("getInterfaces", new HClass[0]);
+    private static final NativeMethod getInterfaces(StaticState ss0) {
+	final HMethod hm=ss0.HCclass.getMethod("getInterfaces", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
 		ObjectRef obj = (ObjectRef) params[0];
 		HClass hc = (HClass) obj.getClosure();
 		HClass in[] = hc.getInterfaces();
-		ArrayRef af=new ArrayRef(ss, HCclassA, new int[]{ in.length });
+		ArrayRef af=new ArrayRef(ss,ss.HCclassA, new int[]{in.length});
 		for (int i=0; i<in.length; i++)
 		    af.update(i, forClass(ss, in[i]));
 		return af;
 	    }
 	};
     }
-    private static final NativeMethod getComponentType() {
-	final HMethod hm = HCclass.getMethod("getComponentType",new HClass[0]);
+    private static final NativeMethod getComponentType(StaticState ss0) {
+	final HMethod hm = ss0.HCclass.getMethod("getComponentType",
+						 new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -134,8 +137,8 @@ public class INClass extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod getModifiers() {
-	final HMethod hm = HCclass.getMethod("getModifiers",new HClass[0]);
+    private static final NativeMethod getModifiers(StaticState ss0) {
+	final HMethod hm = ss0.HCclass.getMethod("getModifiers",new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -145,18 +148,18 @@ public class INClass extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod newInstance() {
-	final HMethod hm0 = HCclass.getMethod("newInstance",new HClass[0]);
+    private static final NativeMethod newInstance(StaticState ss0) {
+	final HMethod hm0 = ss0.HCclass.getMethod("newInstance",new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm0; }
 	    private InterpretedThrowable inst(StaticState ss)
 		throws InterpretedThrowable {
-		ObjectRef obj = ss.makeThrowable(HCinstantiationE);
+		ObjectRef obj = ss.makeThrowable(ss.HCinstantiationE);
 		return new InterpretedThrowable(obj, ss);
 	    }
 	    private InterpretedThrowable illacc(StaticState ss)
 		throws InterpretedThrowable {
-		ObjectRef obj = ss.makeThrowable(HCillegalaccessE);
+		ObjectRef obj = ss.makeThrowable(ss.HCillegalaccessE);
 		return new InterpretedThrowable(obj, ss);
 	    }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -178,8 +181,8 @@ public class INClass extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod isInterface() {
-	final HMethod hm = HCclass.getMethod("isInterface", new HClass[0]);
+    private static final NativeMethod isInterface(StaticState ss0) {
+	final HMethod hm = ss0.HCclass.getMethod("isInterface", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -189,8 +192,8 @@ public class INClass extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod isArray() {
-	final HMethod hm = HCclass.getMethod("isArray", new HClass[0]);
+    private static final NativeMethod isArray(StaticState ss0) {
+	final HMethod hm = ss0.HCclass.getMethod("isArray", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -200,8 +203,8 @@ public class INClass extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod isPrimitive() {
-	final HMethod hm = HCclass.getMethod("isPrimitive", new HClass[0]);
+    private static final NativeMethod isPrimitive(StaticState ss0) {
+	final HMethod hm = ss0.HCclass.getMethod("isPrimitive", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -212,9 +215,9 @@ public class INClass extends HCLibrary {
 	};
     }
     // JDK 1.2 only: Class.registerNatives()
-    private static final NativeMethod registerNatives() {
+    private static final NativeMethod registerNatives(StaticState ss0) {
 	final HMethod hm =
-	    HCclass.getMethod("registerNatives",new HClass[0]);
+	    ss0.HCclass.getMethod("registerNatives",new HClass[0]);
 	return new NullNativeMethod(hm);
     }
 }

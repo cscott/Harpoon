@@ -9,6 +9,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.Temp.Label;
 import harpoon.Util.Tuple;
 import harpoon.Util.HClassUtil;
@@ -22,7 +23,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.9 1999-09-06 18:45:12 duncan Exp $
+ * @version $Id: StaticState.java,v 1.1.2.10 2000-01-13 23:48:13 cananian Exp $
  */
 final class StaticState extends HCLibrary {
     
@@ -30,17 +31,21 @@ final class StaticState extends HCLibrary {
     final private Hashtable classInfo = new Hashtable();// no unloading.
     final private Hashtable nonclassInfo = new Hashtable();   
 
+    /** which linker to use. */
+    Linker linker;
     /** which code representation to use. */
     HCodeFactory hcf;
     /** used to map fields & methods to labels */
     /*final*/ InterpreterOffsetMap map; 
     
     // Class constructor 
-    StaticState(HCodeFactory hcf, InterpreterOffsetMap map) { 
-	this(hcf, null, map);     //prof is null for no profiling.
+    StaticState(Linker linker, HCodeFactory hcf, InterpreterOffsetMap map) { 
+	this(linker, hcf, null, map);     //prof is null for no profiling.
     }
 
-    StaticState(HCodeFactory hcf, PrintWriter prof, InterpreterOffsetMap map) {
+    StaticState(Linker linker, HCodeFactory hcf, PrintWriter prof,
+		InterpreterOffsetMap map) {
+	super(linker); this.linker = linker;
 	// Only translate trees in canonical form 
 	this.hcf = hcf; this.prof = prof; this.map = map;
 	Support.registerNative(this);
@@ -115,7 +120,7 @@ final class StaticState extends HCLibrary {
     
     private HClass getSuperclass(HClass cls) { 
 	if (cls.isArray()) { 
-	    HClass obj  = HClass.forName("java.lang.Object");
+	    HClass obj  = linker.forName("java.lang.Object");
 	    int    dims = HClassUtil.dims(cls);
 	    HClass base = HClassUtil.baseClass(cls);
 	    if (base.isPrimitive()) 
@@ -276,7 +281,7 @@ final class StaticState extends HCLibrary {
 
     // Returns the value of the static field "sf"
     // Throws an error if "sf" is not static
-    private Object get(HField sf) {
+    Object get(HField sf) {
 	Util.assert(sf.isStatic());
 	HClass cls = sf.getDeclaringClass();
 	if (!isLoaded(cls)) load(cls);

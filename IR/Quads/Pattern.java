@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.Linker;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import harpoon.Util.Tuple;
@@ -20,7 +21,7 @@ import java.util.Set;
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.14 1999-11-17 18:01:47 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.15 2000-01-13 23:48:02 cananian Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -240,12 +241,14 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
     QuadWithTry code;
     UseDef ud;
     WorkSet phiremovalset;
+    Linker linker;
 
     public PatternVisitor(QuadWithTry code) {
 	map=new HashMap();
 	this.code=code;
 	this.ud=new UseDef();
 	this.phiremovalset=new WorkSet();
+	this.linker=code.qf.getLinker();
     }
     
     public Set removalSet() {
@@ -284,12 +287,12 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	if (n2!=null) {
 	    qd=(Quad)n2[0];
 	    HClass hclass2=Pattern.exceptionCheck((Quad)((Object[])n2[1])[0]);
-	    if (hclass2==HClass.forName("java.lang.ArrayIndexOutOfBoundsException")) {
+	    if (hclass2==linker.forName("java.lang.ArrayIndexOutOfBoundsException")) {
 		addmap(q,qd);
 	    } else {
 		addmap(q, qd,(Quad)((Object[])n2[1])[0],
 		       (Integer)((Object[])n2[1])[1],
-		       HClass.forName("java.lang.ArrayIndexOutOfBoundsException"));
+		       linker.forName("java.lang.ArrayIndexOutOfBoundsException"));
 	    }
 	}
 
@@ -297,12 +300,12 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	if (nq!=null) {
 	    qd=(Quad)nq[0];
 	    HClass hclass=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
-	    if (hclass==HClass.forName("java.lang.NullPointerException")) {
+	    if (hclass==linker.forName("java.lang.NullPointerException")) {
 		addmap(q,qd);
 	    } else {
 		addmap(q,qd, (Quad)((Object[])nq[1])[0],
 		       (Integer)((Object[])nq[1])[1],
-		       HClass.forName("java.lang.NullPointerException"));
+		       linker.forName("java.lang.NullPointerException"));
 	    }
 	}
     }
@@ -311,10 +314,10 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	Object[] nq=Pattern.nullCheck(q.prev(0), q.objectref(), code, ud);
 	if (nq!=null) {
 	    HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
-	    if (hc==HClass.forName("java.lang.NullPointerException"))
+	    if (hc==linker.forName("java.lang.NullPointerException"))
 		addmap(q, (Quad)nq[0]);
 	    else
-		addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+		addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], linker.forName("java.lang.NullPointerException"));
 	}
     }
 
@@ -350,7 +353,7 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 		//nq[1] is the exception thrown quad...
 		if (i==(q.dimsLength()-1)) {
 		    hclass=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
-		    if (hclass!=HClass.forName("java.lang.NegativeArraySizeException")) {
+		    if (hclass!=linker.forName("java.lang.NegativeArraySizeException")) {
 			handler=(Quad)((Object[])nq[1])[0];
 			handleredge=(Integer)((Object[])nq[1])[1];
 			hclass=null;
@@ -367,11 +370,11 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 		qd=(Quad)nq[0];
 	    }
 	}
-	if (hclass==HClass.forName("java.lang.NegativeArraySizeException")) {
+	if (hclass==linker.forName("java.lang.NegativeArraySizeException")) {
 	    addmap(q, qd);
 	} else {
 	    if (handler!=null)
-		addmap(q, qd, handler, handleredge, HClass.forName("java.lang.NegativeArraySizeException"));
+		addmap(q, qd, handler, handleredge, linker.forName("java.lang.NegativeArraySizeException"));
 	}
     }
 
@@ -381,12 +384,12 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	if (n1!=null) {
 	    qd=(Quad)n1[0];
 	    HClass hclass=Pattern.exceptionCheck((Quad)((Object[])n1[1])[0]);
-	    if (hclass==HClass.forName("java.lang.ArrayStoreException")) {
+	    if (hclass==linker.forName("java.lang.ArrayStoreException")) {
 		addmap(q,qd);
 	    } else {
 		addmap(q,qd, (Quad)((Object[])n1[1])[0],
 		       (Integer)((Object[])n1[1])[1],
-		       HClass.forName("java.lang.ArrayStoreException"));
+		       linker.forName("java.lang.ArrayStoreException"));
 	    }
 	}
 	//componentof null check...
@@ -400,12 +403,12 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	if (n2!=null) {
 	    qd=(Quad)n2[0];
 	    HClass hclass2=Pattern.exceptionCheck((Quad)((Object[])n2[1])[0]);
-	    if (hclass2==HClass.forName("java.lang.ArrayIndexOutOfBoundsException")) {
+	    if (hclass2==linker.forName("java.lang.ArrayIndexOutOfBoundsException")) {
 		addmap(q,qd);
 	    } else {
 		addmap(q, qd,(Quad)((Object[])n2[1])[0],
 		       (Integer)((Object[])n2[1])[1],
-		       HClass.forName("java.lang.ArrayIndexOutOfBoundsException"));
+		       linker.forName("java.lang.ArrayIndexOutOfBoundsException"));
 	    }
 	}
 
@@ -413,12 +416,12 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	if (nq!=null) {
 	    qd=(Quad)nq[0];
 	    HClass hclass=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
-	    if (hclass==HClass.forName("java.lang.NullPointerException")) {
+	    if (hclass==linker.forName("java.lang.NullPointerException")) {
 		addmap(q,qd);
 	    } else {
 		addmap(q,qd, (Quad)((Object[])nq[1])[0],
 		       (Integer)((Object[])nq[1])[1],
-		       HClass.forName("java.lang.NullPointerException"));
+		       linker.forName("java.lang.NullPointerException"));
 	    }
 	}
     }
@@ -428,10 +431,10 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	    Object[] nq=Pattern.nullCheck(q.prev(0), q.params(0),code,ud);
 	    if (nq!=null) {
 		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
-		if (hc==HClass.forName("java.lang.NullPointerException"))
+		if (hc==linker.forName("java.lang.NullPointerException"))
 		    addmap(q, (Quad)nq[0]);
 		else
-		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], linker.forName("java.lang.NullPointerException"));
 	    }	
 	}
     }
@@ -441,10 +444,10 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	    Object[] nq=Pattern.nullCheck(q.prev(0), q.objectref(),code,ud);
 	    if (nq!=null) {
 		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
-		if (hc==HClass.forName("java.lang.NullPointerException"))
+		if (hc==linker.forName("java.lang.NullPointerException"))
 		    addmap(q, (Quad)nq[0]);
 		else
-		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], linker.forName("java.lang.NullPointerException"));
 	    }	
 	}
     }
@@ -453,10 +456,10 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	Object[] nq=Pattern.nullCheck(q.prev(0), q.lock(),code,ud);
 	if (nq!=null) {
 	    HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
-	    if (hc==HClass.forName("java.lang.NullPointerException"))
+	    if (hc==linker.forName("java.lang.NullPointerException"))
 		addmap(q, (Quad)nq[0]);
 	    else
-		addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+		addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], linker.forName("java.lang.NullPointerException"));
 	}
     }
     
@@ -464,10 +467,10 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	Object[] nq=Pattern.nullCheck(q.prev(0), q.lock(),code,ud);
 	if (nq!=null) {
 	    HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
-	    if (hc==HClass.forName("java.lang.NullPointerException"))
+	    if (hc==linker.forName("java.lang.NullPointerException"))
 		addmap(q, (Quad)nq[0]);
 	    else
-		addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+		addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], linker.forName("java.lang.NullPointerException"));
 	}
     }
 
@@ -478,10 +481,10 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	    Object[] nq=Pattern.zeroCheck(q.prev(0), q.operands(1),true,code,ud);
 	    if (nq!=null) {
 		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
-		if (hc==HClass.forName("java.lang.ArithmeticException"))
+		if (hc==linker.forName("java.lang.ArithmeticException"))
 		    addmap(q, (Quad)nq[0]);
 		else
-		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.ArithmeticException"));
+		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], linker.forName("java.lang.ArithmeticException"));
 	    }
 	    break;
 	case Qop.LDIV:
@@ -489,10 +492,10 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	    nq=Pattern.zeroCheck(q.prev(0), q.operands(1),false,code,ud);
 	    if (nq!=null) {
 		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
-		if (hc==HClass.forName("java.lang.ArithmeticException"))
+		if (hc==linker.forName("java.lang.ArithmeticException"))
 		    addmap(q, (Quad)nq[0]);
 		else
-		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.ArithmeticException"));
+		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], linker.forName("java.lang.ArithmeticException"));
 	    }
 	    break;
 	default:
@@ -504,10 +507,10 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	    Object[] nq=Pattern.nullCheck(q.prev(0), q.objectref(),code,ud);
 	    if (nq!=null) {
 		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
-		if (hc==HClass.forName("java.lang.NullPointerException"))
+		if (hc==linker.forName("java.lang.NullPointerException"))
 		    addmap(q, (Quad)nq[0]);
 		else
-		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], linker.forName("java.lang.NullPointerException"));
 	    }	
 	}
     }
@@ -516,10 +519,10 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	Object[] nq=Pattern.nullCheck(q.prev(0), q.throwable(),code,ud);
 	if (nq!=null) {
 	    HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
-	    if (hc==HClass.forName("java.lang.NullPointerException"))
+	    if (hc==linker.forName("java.lang.NullPointerException"))
 		addmap(q, (Quad)nq[0]);
 	    else
-		addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+		addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], linker.forName("java.lang.NullPointerException"));
 	}
     }
 }

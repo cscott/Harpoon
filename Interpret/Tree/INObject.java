@@ -11,17 +11,19 @@ import harpoon.ClassFile.HMethod;
  * <code>java.lang.Object</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INObject.java,v 1.1.2.2 1999-08-04 05:52:35 cananian Exp $
+ * @version $Id: INObject.java,v 1.1.2.3 2000-01-13 23:48:12 cananian Exp $
  */
-public class INObject extends HCLibrary {
+public class INObject {
     static final void register(StaticState ss) {
-	ss.register(_getClass_());
-	ss.register(_hashCode_());
-	ss.register(_clone_());
+	ss.register(_getClass_(ss));
+	ss.register(_hashCode_(ss));
+	ss.register(_clone_(ss));
+	// JDK 1.2 only
+	try { ss.register(registerNatives(ss)); } catch (NoSuchMethodError e){}
     }
     // Object.getClass()
-    private static final NativeMethod _getClass_() {
-	final HMethod hm = HCobject.getMethod("getClass", new HClass[0]);
+    private static final NativeMethod _getClass_(StaticState ss0) {
+	final HMethod hm = ss0.HCobject.getMethod("getClass", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -31,8 +33,8 @@ public class INObject extends HCLibrary {
 	};
     }
     // Object.hashCode()
-    private static final NativeMethod _hashCode_() {
-	final HMethod hm = HCobject.getMethod("hashCode", new HClass[0]);
+    private static final NativeMethod _hashCode_(StaticState ss0) {
+	final HMethod hm = ss0.HCobject.getMethod("hashCode", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -42,15 +44,15 @@ public class INObject extends HCLibrary {
 	};
     }
     // Object.clone()
-    private static final NativeMethod _clone_() {
-	final HMethod hm = HCobject.getMethod("clone", new HClass[0]);
+    private static final NativeMethod _clone_(StaticState ss0) {
+	final HMethod hm = ss0.HCobject.getMethod("clone", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
 		Ref obj = (Ref) params[0];
 		// throw exception if doesn't implement Cloneable
-	        if (!obj.type.isInstanceOf(HCcloneable)) {
-		    obj = ss.makeThrowable(HCclonenotsupportedE,
+	        if (!obj.type.isInstanceOf(ss.HCcloneable)) {
+		    obj = ss.makeThrowable(ss.HCclonenotsupportedE,
 					 obj.type.toString());
 		    throw new InterpretedThrowable((ObjectRef)obj, ss);
 		}
@@ -58,6 +60,10 @@ public class INObject extends HCLibrary {
 	    }
 	};
     }
+    // JDK 1.2 only: Object.registerNatives()
+    private static final NativeMethod registerNatives(StaticState ss0) {
+	final HMethod hm =
+	    ss0.HCobject.getMethod("registerNatives",new HClass[0]);
+	return new NullNativeMethod(hm);
+    }
 }
-
-

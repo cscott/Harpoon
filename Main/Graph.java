@@ -9,20 +9,24 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
+import java.util.Collections;
 /**
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.12.2.12 1999-09-09 21:12:20 cananian Exp $
+ * @version $Id: Graph.java,v 1.12.2.13 2000-01-13 23:48:17 cananian Exp $
  */
 
 public abstract class Graph extends harpoon.IR.Registration {
 
     public static final void main(String args[]) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
+	Linker linker = Loader.systemLinker;
 	HCodeFactory hcf = // default code factory.
 	    harpoon.IR.Bytecode.Code.codeFactory();
 	int n=0;  // count # of args/flags processed.
@@ -34,7 +38,7 @@ public abstract class Graph extends harpoon.IR.Registration {
 	    } else break; // no more command-line options.
 	}
 
-	HClass cls = HClass.forName(args[n++]);
+	HClass cls = linker.forName(args[n++]);
 	HMethod hm[] = cls.getDeclaredMethods();
 	HMethod m = null;
 	for (int i=0; i<hm.length; i++)
@@ -54,7 +58,7 @@ public abstract class Graph extends harpoon.IR.Registration {
 	else if (args[n].equals("post"))
 	    harpoon.Util.Graph.printDomTree(true,hc,out,title);
 	else if (args[n].startsWith("hier"))
-	    harpoon.Util.Graph.printClassHierarchy(out, m, new QuadClassHierarchy(m, new CachingCodeFactory(hcf)));
+	    harpoon.Util.Graph.printClassHierarchy(out, m, new QuadClassHierarchy(linker, Collections.singleton(m), new CachingCodeFactory(hcf)));
     }
 
 }

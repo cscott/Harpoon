@@ -24,20 +24,17 @@ import java.util.Enumeration;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.6 1999-11-12 07:44:57 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.7 2000-01-13 23:47:31 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
+    final Linker linker;
     UseDefMap udm;
-
-    /** Default constructor disallowed:  shouldn't create this class without
-     *  supplying an <code>HCode</code>.
-     */
-    protected SCCAnalysis() { }
 
     /** Creates a <code>SCC</code>. */
     public SCCAnalysis(HCode hc, UseDefMap usedef) {
 	Util.assert(hc.getName().equals(QuadSSI.codename));
+	this.linker = hc.getMethod().getDeclaringClass().getLinker();
 	this.udm = usedef;
 	analyze(hc);
     }
@@ -370,7 +367,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		raiseV(V, Wv, q.retval(), v);
 	    }
 	    raiseV(V, Wv, q.retex(), 
-		   new xClass( HClass.forName("java.lang.Throwable") ) );
+		   new xClass( linker.forName("java.lang.Throwable") ) );
 	    // both outgoing edges are potentially executable.
 	    raiseE(Ee, Eq, Wq, q.nextEdge(1) );
 	    raiseE(Ee, Eq, Wq, q.nextEdge(0) );
@@ -459,7 +456,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	public void visit(CONST q) {
 	    if (q.type() == HClass.Void) // null constant
 		raiseV(V,Wv, q.dst(), new xNullConstant() );
-	    else if (q.type()==HClass.forName("java.lang.String"))// string constant
+	    else if (q.type()==linker.forName("java.lang.String"))// string constant
 		raiseV(V,Wv, q.dst(), new xStringConstant(q.type(),q.value()));
 	    else if (q.type()==HClass.Float || q.type()==HClass.Double) // f-p
 		raiseV(V,Wv, q.dst(), new xFloatConstant(q.type(),q.value()) );
@@ -474,7 +471,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    HClass type = toInternal(q.field().getType());
 	    if (q.field().isConstant()) {
 		Object val = q.field().getConstant();
-		if (type == HClass.forName("java.lang.String"))
+		if (type == linker.forName("java.lang.String"))
 		    raiseV(V, Wv, q.dst(), new xStringConstant(type, val) );
 		else if (type == HClass.Float || type == HClass.Double )
 		    raiseV(V, Wv, q.dst(), new xFloatConstant(type, val) );
@@ -642,7 +639,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		    LatticeVal v;
 		    if (constValue == null)
 			v = new xNullConstant();
-		    else if (mergedType == HClass.forName("java.lang.String"))
+		    else if (mergedType == linker.forName("java.lang.String"))
 			v = new xStringConstant(mergedType, constValue);
 		    else if (mergedType == HClass.Float || 
 			     mergedType == HClass.Double)

@@ -27,7 +27,7 @@ import java.util.StringTokenizer;
  * A simple OffsetMap, used by the Tree Interpreter
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterOffsetMap.java,v 1.1.2.13 1999-10-12 20:04:59 cananian Exp $
+ * @version $Id: InterpreterOffsetMap.java,v 1.1.2.14 2000-01-13 23:48:13 cananian Exp $
  */
 public class InterpreterOffsetMap extends OffsetMap {
 
@@ -80,12 +80,12 @@ public class InterpreterOffsetMap extends OffsetMap {
      *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
     public Object decodeLabel(Label label) {
-	if (HCLibrary.DEBUG) HCLibrary.db("DECODING: " + label);
+	if (Debug.DEBUG) Debug.db("DECODING: " + label);
 	for (Iterator i = m_labels.keySet().iterator(); i.hasNext();) {
 	    Object next = i.next();
 	    Label lNext = (Label)m_labels.get(next);
 	    if (lNext.toString().equals(label.toString())) { 
-		if (HCLibrary.DEBUG) HCLibrary.db("Returning: " + next);
+		if (Debug.DEBUG) Debug.db("Returning: " + next);
 		return next;
 	    }
 	}
@@ -93,7 +93,7 @@ public class InterpreterOffsetMap extends OffsetMap {
 	    Object next = i.next();
 	    Label lNext = (Label)m_strings.get(next);
 	    if (lNext.toString().equals(label.toString())) { 
-		if (HCLibrary.DEBUG) HCLibrary.db("Returning: " + next);
+		if (Debug.DEBUG) Debug.db("Returning: " + next);
 		return next;
 	    }
 	}

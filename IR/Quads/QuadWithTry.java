@@ -21,7 +21,7 @@ import java.util.Map;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.21 1999-09-20 20:31:03 bdemsky Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.22 2000-01-13 23:48:03 cananian Exp $
  * @see QuadNoSSA
  * @see QuadSSI
  */
@@ -117,10 +117,5 @@ public class QuadWithTry extends Code /* which extends HCode */ {
     /** Returns a TypeMap if there is one, or null otherwise**/
     public TypeMap typeMap() {
 	return typemap;
-    }
-    
-    // obsolete.
-    public static void register() {
-	HMethod.register(codeFactory());
     }
 }

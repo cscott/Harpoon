@@ -8,6 +8,8 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.SerializableCodeFactory;
 import harpoon.Interpret.Quads.Method;
 import harpoon.IR.Quads.QuadWithTry;
@@ -22,12 +24,13 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Run.java,v 1.1.2.10 1999-08-30 23:05:34 cananian Exp $
+ * @version $Id: Run.java,v 1.1.2.11 2000-01-13 23:48:17 cananian Exp $
  */
 public abstract class Run extends harpoon.IR.Registration {
     public static void main(String args[]) throws IOException {
 	java.io.InputStream startup = null;
 	java.io.OutputStream dump = null;
+	Linker linker = Loader.systemLinker;
 	HCodeFactory hf = // default code factory.
 	    harpoon.IR.Quads.QuadWithTry.codeFactory();
 	int i=0; // count # of args/flags processed.
@@ -83,12 +86,12 @@ public abstract class Run extends harpoon.IR.Registration {
 	    } else break; // no more command-line options.
 	}
 	if (dump!=null) { // make quick-startup dump.
-	    harpoon.Interpret.Quads.Method.makeStartup(hf, dump);
+	    harpoon.Interpret.Quads.Method.makeStartup(linker, hf, dump);
 	    return;
 	}
 	// arg[i] is class name.  Load its main method.
 	if (args.length < i) throw new Error("No class name.");
-	HClass cls = HClass.forName(args[i]);
+	HClass cls = linker.forName(args[i]);
 	i++;
 	// construct caching code factory.
 	final HCodeFactory hf0 = hf;

@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.2.2.4 1999-08-04 06:30:57 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.2.2.5 2000-01-13 23:47:53 cananian Exp $
  * @see Operand
  * @see Instr
  * @see harpoon.IR.RawClass.ConstantDouble
@@ -41,7 +41,7 @@ public final class OpConstant extends Operand {
   }
   private void check() {
     // assert that value matches type.
-    HClass check = HClass.forClass(value.getClass());
+    HClass check = type.getLinker().forClass(value.getClass());
     if ((!type.isPrimitive() && check!=type) ||
 	( type.isPrimitive() && check!=type.getWrapper()))
       throw new Error("value doesn't match type of OpConstant: " + 
@@ -58,7 +58,7 @@ public final class OpConstant extends Operand {
       else if (c instanceof ConstantInteger) this.type=HClass.Int;
       else if (c instanceof ConstantLong)    this.type=HClass.Long;
       else if (c instanceof ConstantString)  
-	this.type=HClass.forName("java.lang.String");
+	this.type=parent.linker.forName("java.lang.String");
       else throw new Error("Unknown ConstantValue type: "+c);
     } else throw new Error("Unknown constant pool entry: "+c);
     check();
@@ -70,7 +70,7 @@ public final class OpConstant extends Operand {
 
   /** Return a human-readable representation of this OpConstant. */
   public String toString() {
-    if (getType()==HClass.forName("java.lang.String"))
+    if (getType().getName().equals("java.lang.String"))
       return "(String)\""+Util.escape(getValue().toString())+"\"";
     return "("+getType().getName()+")"+getValue().toString();
   }

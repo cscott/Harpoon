@@ -15,31 +15,23 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.9 1999-11-12 19:03:53 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.10 2000-01-13 23:47:46 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
-public class HClassSyn extends HClassCls {
-  /** Create an <code>HClassSyn</code> from an <code>HClass</code>
-   *  without replacing the original <code>HClass</code>. */
-  public HClassSyn(HClass template) {
-    this(template, false);
-  }
-  /** Create an <code>HClassSyn</code> from an <code>HClass</code>.
-   * If the <code>replaceOriginal</code> parameter is true, the newly
-   * created class will have the exact same name as the template
-   * <code>HClass</code>, and will effectively replace it.  This is
-   * dangerous functionality to use, as many references to the original
-   * <code>HClass</code> and <code>HMember</code>s associated with it
-   * will still exist. If <code>replaceOriginal</code> is false, the
-   * new class will have a unique name derived from the name of the
-   * template class, and you needn't worry about danger. */
-  public HClassSyn(HClass template, boolean replaceOriginal) {
+class HClassSyn extends HClassCls implements HClassMutator {
+
+  /** Create an <code>HClassSyn</code> from a template <code>HClass</code>.
+   *  The new <code>HClassSyn</code> will have the (fully-qualified)
+   *  name specified by the <code>name</code> parameter.
+   * @param template The template class to use.
+   * @param name The fully-qualified name for this class object.
+   */
+  HClassSyn(Linker l, String name, HClass template) {
+    super(l);
     Util.assert(!template.isArray());
     Util.assert(!template.isPrimitive());
-    this.name = replaceOriginal ? 
-      template.getName() :
-      uniqueName(template.getName()); 
-    register();
+    Util.assert(l==template.getLinker());
+    this.name = name;
     this.superclass = template.getSuperclass();
     this.interfaces = template.getInterfaces();
     this.modifiers  = template.getModifiers();
@@ -47,43 +39,47 @@ public class HClassSyn extends HClassCls {
 
     this.declaredFields = new HFieldSyn[0];
     HField fields[] = template.getDeclaredFields();
-    for (int i=0; i < fields.length; i++) {
-      new HFieldSyn(this, fields[i]);
-    }
+    for (int i=0; i < fields.length; i++)
+      addDeclaredField(fields[i].getName(), fields[i]);
     Util.assert(fields.length == declaredFields.length);
 
     this.declaredMethods= new HMethodSyn[0];
     HMethod methods[] = template.getDeclaredMethods();
-    for (int i = 0; i < methods.length; i++){
-      if (methods[i] instanceof HConstructor)
-	new HConstructorSyn(this, (HConstructor) methods[i]);
+    for (int i = 0; i < methods.length; i++)
+      if (methods[i] instanceof HInitializer)
+	addClassInitializer();
+      else if (methods[i] instanceof HConstructor)
+	addConstructor((HConstructor)methods[i]);
       else
-	new HMethodSyn(this, methods[i]);
-    }
+	addDeclaredMethod(methods[i].getName(), methods[i]);
     Util.assert(methods.length == declaredMethods.length);
-  }
-  /** Create a new, empty <code>HClassSyn</code>. 
-   *  Default is to create an Interface.
-   */
-  public HClassSyn(String name, String sourcefile) {
-    this.name = uniqueName(name); register();
-    this.superclass = forClass(Object.class);
-    this.interfaces = new HClass[0];
-    this.modifiers = Modifier.INTERFACE | 0x0020; // ACC_SUPER
-    this.declaredFields = new HField[0];
-    this.declaredMethods = new HMethod[0];
-    this.sourcefile = sourcefile;
-  }
 
-  /**
-   * Adds the given <code>HField</code> to the class represented by
-   * this <code>HClassSyn</code>.
-   */
-  public void addDeclaredField(HField f) {
+    hasBeenModified = true; // by default, mark this as 'modified'
+  }
+  public HClassMutator getMutator() { return this; }
+
+  // implementation of HClassMutator.
+  public HField addDeclaredField(String name, HClass type) {
+    return addDeclaredField0(new HFieldSyn(this, name, type));
+  }
+  public HField addDeclaredField(String name, String descriptor) {
+    return addDeclaredField0(new HFieldSyn(this, name, descriptor));
+  }
+  public HField addDeclaredField(String name, HField template) {
+    return addDeclaredField0(new HFieldSyn(this, name, template));
+  }
+  // deal with array housekeeping.
+  private HField addDeclaredField0(HField f) {
+    Util.assert(f.getDeclaringClass()==this);
+    for (int i=0; i<declaredFields.length; i++)
+      if (declaredFields[i].equals(f))
+	throw new DuplicateMemberException("Field "+f+" in "+this);
     declaredFields = 
       (HField[]) Util.grow(HField.arrayFactory,
 			   declaredFields, f, declaredFields.length);
     fields=null; // invalidate cache.
+    hasBeenModified=true; // flag the modification
+    return f;
   }
   public void removeDeclaredField(HField f) throws NoSuchFieldError {
     for (int i=0; i<declaredFields.length; i++) {
@@ -91,20 +87,61 @@ public class HClassSyn extends HClassCls {
 	declaredFields = (HField[]) Util.shrink(HField.arrayFactory,
 						declaredFields, i);
 	fields=null; // invalidate cache.
+	hasBeenModified=true; // flag the modification
 	return;
       }
     }
-    throw new NoSuchFieldError(f.toString());
+    throw new NoSuchMemberException("Field "+f);
   }
 
-  public void addDeclaredMethod(HMethod m) {
-    // only one class initializer ever.
-    if (m instanceof HInitializer) Util.assert(getClassInitializer()==null);
+  public HInitializer addClassInitializer() {
+    return (HInitializer)
+      addDeclaredMethod0(new HInitializerSyn(this));
+  }
+  public void removeClassInitializer(HInitializer m) {
+    removeDeclaredMethod(m);
+  }
+  public HConstructor addConstructor(String descriptor) {
+    return (HConstructor)
+      addDeclaredMethod0(new HConstructorSyn(this, descriptor));
+  }
+  public HConstructor addConstructor(HClass[] paramTypes) {
+    return (HConstructor)
+      addDeclaredMethod0(new HConstructorSyn(this, paramTypes));
+  }
+  public HConstructor addConstructor(HConstructor template) {
+    return (HConstructor)
+      addDeclaredMethod0(new HConstructorSyn(this, template));
+  }
+  public void removeConstructor(HConstructor c) {
+    removeDeclaredMethod(c);
+  }
+  public HMethod addDeclaredMethod(String name, String descriptor) {
+    Util.assert(!name.equals("<init>") && !name.equals("<clinit>"));
+    return addDeclaredMethod0(new HMethodSyn(this, name, descriptor));
+  }
+  public HMethod addDeclaredMethod(String name, HClass[] paramTypes,
+				   HClass returnType) {
+    Util.assert(!name.equals("<init>") && !name.equals("<clinit>"));
+    return addDeclaredMethod0(new HMethodSyn(this,name,paramTypes,returnType));
+  }
+  public HMethod addDeclaredMethod(String name, HMethod template) {
+    Util.assert(!name.equals("<init>") && !name.equals("<clinit>"));
+    return addDeclaredMethod0(new HMethodSyn(this, name, template));
+  }
+
+  private HMethod addDeclaredMethod0(HMethod m) {
+    Util.assert(m.getDeclaringClass()==this);
+    for (int i=0; i<declaredMethods.length; i++)
+      if (declaredMethods[i].equals(m))
+	throw new DuplicateMemberException("Method "+m+" in "+this);
     declaredMethods = 
       (HMethod[]) Util.grow(HMethod.arrayFactory,
 			    declaredMethods, m, declaredMethods.length);
     methods=null; // invalidate cache.
     constructors=null;
+    hasBeenModified=true; // flag the modification
+    return m;
   }
   public void removeDeclaredMethod(HMethod m) throws NoSuchMethodError {
     for (int i=0; i<declaredMethods.length; i++) {
@@ -113,18 +150,15 @@ public class HClassSyn extends HClassCls {
 						  declaredMethods, i);
 	methods=null; // invalidate cache.
 	constructors=null;
+	hasBeenModified=true; // flag the modification
 	return;
       }
     }
-    throw new NoSuchMethodError(m.toString());
-  }
-  public void setClassInitializer(HInitializer m) {
-    HInitializer hi = getClassInitializer();
-    if (hi!=null) removeDeclaredMethod(hi);
-    Util.assert(getClassInitializer()==null);
-    addDeclaredMethod(m);
+    throw new NoSuchMemberException("Method "+m);
   }
 
+  public void addModifiers(int m) { setModifiers(getModifiers()|m); }
+  public void removeModifiers(int m){ setModifiers(getModifiers()&(~m)); }
   public void setModifiers(int m) { 
     // are we changing an interface to a class?
     if ( Modifier.isInterface(modifiers) && !Modifier.isInterface(m)) {
@@ -134,7 +168,7 @@ public class HClassSyn extends HClassCls {
 	throw new Error("Can't change a subinterface to a class. "+
 			"Remove the inheritance first. ("+this+")");
       // inherit from java.lang.Object.
-      superclass = HClass.forName("java.lang.Object");
+      superclass = getLinker().forName("java.lang.Object");
       // tag all the methods as abstract.
       for (int i=0; i<declaredMethods.length; i++)
 	((HMethodSyn)declaredMethods[i]).setModifiers
@@ -144,7 +178,7 @@ public class HClassSyn extends HClassCls {
     if (!Modifier.isInterface(modifiers) &&  Modifier.isInterface(m)) {
       // make sure there are no superclasses or superinterfaces.
       if (superclass != null && 
-	  superclass.actual() != HClass.forName("java.lang.Object"))
+	  superclass.actual() != getLinker().forName("java.lang.Object"))
 	throw new Error("Can't change a subclass to an interface. "+
 			"Remove the inheritance first. ("+this+")");
       if (interfaces.length!=0)
@@ -153,13 +187,13 @@ public class HClassSyn extends HClassCls {
 			"first. ("+this+")");
       // interfaces have no superclass.
       superclass = null;
-      // tag all the methods as abstract & strip the code.
+      // tag all the methods as abstract
       for (int i=0; i<declaredMethods.length; i++) {
 	HMethodSyn hm = (HMethodSyn) declaredMethods[i];
 	hm.setModifiers(hm.getModifiers() | Modifier.ABSTRACT);
-	hm.removeAllCode();
       }
     }
+    if (modifiers!=m) hasBeenModified=true; // flag the modification
     modifiers = m;
   }
 
@@ -171,25 +205,32 @@ public class HClassSyn extends HClassCls {
 		      "  Please mail me at cananian@alumni.princeton.edu and "+
 		      "tell me why you think it's a good idea.");
     // XXX more sanity checks?
+    if (superclass != sc) hasBeenModified=true; // flag the modification
     superclass = sc;
+    constructors=null;
+    fields = null;
+    methods = null;
   }
 
   public void addInterface(HClass in) {
     if (!in.isInterface()) throw new Error("Not an interface.");
     interfaces = (HClass[]) Util.grow(HClass.arrayFactory,
 				      interfaces, in, interfaces.length);
+    hasBeenModified = true;
   }
-  public void removeInterface(HClass in) throws NoClassDefFoundError {
+  public void removeInterface(HClass in) throws NoSuchClassException {
     for (int i=0; i<interfaces.length; i++) {
       if (interfaces[i].equals(in)) {
 	interfaces = (HClass[]) Util.shrink(HClass.arrayFactory,
 					    interfaces, i);
+	hasBeenModified = true;
 	return;
       }
     }
-    throw new NoClassDefFoundError(in.toString());
+    throw new NoSuchClassException(in.toString());
   }
   public void removeAllInterfaces() {
+    if (interfaces.length!=0) hasBeenModified = true;
     // wheee.
     interfaces = new HClass[0];
   }
@@ -197,10 +238,11 @@ public class HClassSyn extends HClassCls {
   /**
    * Set the source file name for this class.
    */
-  public void setSourceFile(String sf) { this.sourcefile = sf; }
+  public void setSourceFile(String sf) {
+    if (!this.sourcefile.equals(sf)) hasBeenModified = true;
+    this.sourcefile = sf;
+  }
 
-  /** Serializable interface. */
-  public Object writeReplace() { return this; }
   /** Serializable interface. */
   public void writeObject(java.io.ObjectOutputStream out)
     throws java.io.IOException {
@@ -213,14 +255,6 @@ public class HClassSyn extends HClassCls {
     this.sourcefile = this.sourcefile.intern();
     // write class data.
     out.defaultWriteObject();
-  }
-  /** Serializable interface. */
-  public void readObject(java.io.ObjectInputStream in)
-    throws java.io.IOException, ClassNotFoundException {
-    // read class data.
-    in.defaultReadObject();
-    // make name unique & register it.
-    this.name = uniqueName(name); register();
   }
 }
 // set emacs indentation style.

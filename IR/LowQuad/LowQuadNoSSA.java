@@ -27,7 +27,7 @@ import harpoon.Temp.Temp;
  * arity will always be 0. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.18 1999-08-09 21:58:25 duncan Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.19 2000-01-13 23:47:55 cananian Exp $
  */
 public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
     private Derivation m_derivation;
@@ -108,11 +108,6 @@ public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
      */
     public static HCodeFactory codeFactory() {  
 	return codeFactory(LowQuadSSA.codeFactory());
-    }
-
-    // obsolete
-    public static void register() {
-	HMethod.register(codeFactory());
     }
 
     public DList derivation(HCodeElement hce, Temp t) {

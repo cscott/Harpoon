@@ -12,32 +12,26 @@ import java.lang.reflect.Modifier;
  * initializer method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HInitializer.java,v 1.1.2.1 1998-11-30 21:58:25 cananian Exp $
+ * @version $Id: HInitializer.java,v 1.1.2.2 2000-01-13 23:47:47 cananian Exp $
  * @see HMethod
  * @see HConstructor
  */
 
-public class HInitializer extends HMethod {
-    HInitializer() { name="<clinit>"; returnType=HClass.Void; }
-    
+public interface HInitializer extends HMethod {
     /**
      * Returns the name of this class initializer, as a string.  This is
      * always the string "<code>&lt;clinit&gt;</code>".
      */
-    public String getName() { return "<clinit>"; }
+    public String getName();
     
     /**
      * Returns a hashcode for this class initializer.  This hashcode is
      * computed as the exclusive-or of the hashcodes of the initializer's
      * declaring class and the string "<code>&lt;clinit&gt;</code>".
      */
-    public int hashCode() {
-	return parent.hashCode() ^ getName().hashCode();
-    }
+    public int hashCode();
 
     /** Array factory: returns new <code>HInitializer[]</code>. */
     public static final ArrayFactory arrayFactory =
-	new ArrayFactory() {
-	    public Object[] newArray(int len) { return new HInitializer[len]; }
-	};
+      Factories.hinitializerArrayFactory;
 }
