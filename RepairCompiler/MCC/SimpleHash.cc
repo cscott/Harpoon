@@ -185,8 +185,10 @@ int SimpleHash::remove(int key, int data) {
     
     LinkedHashNode **ptr = &bucket[hashkey];
 
-    /* check that this key/object pair isn't already here */
-    // TBD can be optimized for set v. relation */
+    for (int i = 0; i < numchildren; i++) {
+      children[i]->remove(key, data);
+    }
+
     while (*ptr) {
         if ((*ptr)->key == key && (*ptr)->data == data) {
 	  LinkedHashNode *toremove=*ptr;
@@ -197,13 +199,11 @@ int SimpleHash::remove(int key, int data) {
 	    toremove->lnext->lprev=toremove->lprev;
 	  delete toremove;
 	  numelements--;
-	  for (int i = 0; i < numparents; i++) {
-	    parents[i]->add(key, data);
-	  }
 	  return 1;
         }
         ptr = &((*ptr)->next);
     }
+
     return 0;
 }
 
