@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.10 2002-07-24 03:53:59 cananian Exp $
+% $Id: ptran.tex,v 1.11 2002-07-24 04:09:22 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.10 $ $}
+\date{\today \\ $ $Revision: 1.11 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -91,7 +91,8 @@ $\text{Nd}$ be the set of \textbf{non-}singular reaching definitions
 of $v$ at $n$.
 An auxilliary predicate $\text{Bad}(n)$ is true for all statements
 which are not allocation sites, move operations, or binary or unary
-operations.  In particular, it is true for fetches from the heap.
+operations.  In particular, it is true for fetches from the heap
+and definitions of formal parameters.
 The appropriate Gen and Kill rules are:
 \begin{eqnarray*}
 % this is the standard reaching-def rule:
@@ -121,32 +122,70 @@ The appropriate Gen and Kill rules are:
 where
 \begin{displaymath}
 \text{Ns}(v,n) =
-v\in\text{use}(n) \wedge \left(
+%v\in\text{use}(n) \wedge \left(
 \tuple{v,n} \in \text{In}_\text{Ru}(n) \vee
 \exists n': \tuple{v,n'}\in\text{In}_\text{Nd}(n)
-\right)
+%\right)
 \end{displaymath}
 After the analysis is complete, $v$ is (conservatively) singular at
-$n$ if $\neg\text{Ns}(v,n)$.
+use $n$ if $\neg\text{Ns}(v,n)$.
 
-%\textbf{XXX: Extend to compute GenSite(v,n)?}
+\textbf{XXX: Extend to compute GenSite(v,n)?}
 
 The mutual singularity of a group of statements can be computed from
 the variable singularity information using the definitions in the
 previous section.
 
+\textbf{XXX: More detail needed?}
+
 \subsection{Interprocedural singular value analysis}
+
+(Roughly) We introduce ``conditional singularity'' for formal
+parameters.  Other variables are ``conditionally singular'' if they
+depend on the singularity of formal parameters.  A compositional
+analysis is presented to compute interprocedural singularity.
+This might be in some ways similar to interprocedural reaching defs?
+Computing mutual singularity can rest on the fact that values
+generated at sites inside a method can never be the same as values generated
+at sites outside the method; we don't have to compare site-by-site.
 
 \section{Compositional Pointer Analysis}
 
+(Roughly) We use the Whaley/Rinard compositional pointer analysis
+framework, except that we can mark edges as ``companion'' and
+``possible companion''.  Annotate edges with the field set statements
+used to create them.  If all field set statements associated with an
+edge are mutually singular, then the edge is a companion ---
+``possibly companion'' if some of the edges are outside edges (thus
+we don't know if the field set statements associated with these edges
+are going to be mutually singular with the rest).  ``Possibly
+companion'' edges must still be mutually singular internally.
+
 \subsection{Evaluating a call-site monomorphically}
+
+present rules.  don't need to say how we choose to eval
+monomorphically yet.  Just keep the companion edges accurate.
+
 \subsection{Evaluating a call-site polymorphically}
+
+present rules.  don't need to say how we choose to eval
+polymorphically yet.  Just keep the companion edges accurate,
+and rename internal nodes by call-site.
 
 \section{Allocating Polymorphism}
 
 We evaluate sites polymorphically if they are factory methods, or
 contain unbalanced companion objects.  Otherwise, the site is
 evaluated monomorphically.
+
+(Roughly) If an allocated (internal?) node escapes via the return
+value, then this is a factory method.  Evaluate it polymorphically.
+If we have ``possible companion'' edges --- that is, we allocate
+a node internally which may be a companion of a node allocated
+externally --- then evaluate it polymorphically.  [I'm guessing
+that possible companion edges which touch only outside, not inside,
+nodes are not sufficient grounds for polymorphic evaluation.]
+Otherwise, evaluate it monomorphically.
 
 \section{Related Work}
 
