@@ -31,7 +31,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.10 2004-03-06 21:52:24 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.11 2004-03-20 02:25:23 cananian Exp $
  */
 public class ParIntGraph implements java.io.Serializable, Cloneable {
 
@@ -72,7 +72,7 @@ public class ParIntGraph implements java.io.Serializable, Cloneable {
     public EdgeOrdering eo;
 
     /** Contains mutated fields. */
-    public PersistentSet<PAField> mutated;
+    public PersistentSet/*<PAField>*/ mutated;
 
     /** Creates a <code>ParIntGraph</code>. */
     public ParIntGraph() {
