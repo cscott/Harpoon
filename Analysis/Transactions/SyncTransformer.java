@@ -67,7 +67,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.5 2001-01-14 08:55:27 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.6 2001-01-14 10:21:35 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -95,7 +95,7 @@ public class SyncTransformer
     private final boolean noFieldModification=false;
     // configuration:
     private final boolean useSmartFieldOracle=true;
-    private final boolean useSmartCheckOracle=false;
+    private final boolean useSmartCheckOracle=true;
 
     // FieldOracle to use.
     final FieldOracle fieldOracle;

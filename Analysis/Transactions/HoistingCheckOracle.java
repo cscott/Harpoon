@@ -7,6 +7,7 @@ import harpoon.Analysis.DomTree;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.UseDefer;
+import harpoon.IR.Quads.MONITORENTER;
 import harpoon.Temp.Temp;
 import harpoon.Util.ArrayIterator;
 import harpoon.Util.Collections.AggregateSetFactory;
@@ -30,7 +31,7 @@ import java.util.Set;
  * process is repeated until no checks can be moved higher.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HoistingCheckOracle.java,v 1.1.2.1 2001-01-14 07:53:44 cananian Exp $
+ * @version $Id: HoistingCheckOracle.java,v 1.1.2.2 2001-01-14 10:21:35 cananian Exp $
  */
 class HoistingCheckOracle extends CheckOracle {
     final MultiMap readVMap, writeVMap, checkFMap, checkEMap;
@@ -80,6 +81,8 @@ class HoistingCheckOracle extends CheckOracle {
 
 	/* can't hoist anything unless this==pidom(idom(this)) */
 	canHoist = canHoist && (hce == pdt.idom(dt.idom(hce)));
+	/* never hoist above a MONITORENTER */
+	canHoist = canHoist && !(dt.idom(hce) instanceof MONITORENTER);
 	
 	/** checks which we can't hoist we leave here. */
 	
