@@ -28,7 +28,7 @@ public class EDFScheduler extends Scheduler {
 	setQuanta(0); // Start switching after a specified number of microseconds
     }
 
-    /** Return an instance of an RMAScheduler */
+    /** Return an instance of an EDFScheduler */
     public static EDFScheduler instance() {
 	if (instance == null) {
 	    ImmortalMemory.instance().enter(new Runnable() {
@@ -41,7 +41,7 @@ public class EDFScheduler extends Scheduler {
 	return instance;
     }
     
-    /** It is not always feasible to add another thread to a RMAScheduler. */
+    /** It is not always feasible to add another thread to a EDFScheduler. */
     protected void addToFeasibility(Schedulable schedulable) {
     }
 
@@ -54,27 +54,27 @@ public class EDFScheduler extends Scheduler {
 	return "EDF Scheduler";
     }
 
-    /** It is not always feasible to add another thread to a RMAScheduler. */
+    /** It is not always feasible to add another thread to a EDFScheduler. */
     public boolean isFeasible() {
 	return true;
     }
 
-    /** It is not always feasible to add another thread to a RMAScheduler. */
+    /** It is not always feasible to add another thread to a EDFScheduler. */
     protected boolean isFeasible(Schedulable s, ReleaseParameters rp) {
 	return true;
     }
 
-    /** It is not always feasible to add another thread to a RMAScheduler. */
+    /** It is not always feasible to add another thread to a EDFScheduler. */
     protected void removeFromFeasibility(Schedulable schedulable) {}
 
-    /** It is not always feasible to add another thread to a RMAScheduler. */
+    /** It is not always feasible to add another thread to a EDFScheduler. */
     public boolean setIfFeasible(Schedulable schedulable,
 				 ReleaseParameters release,
 				 MemoryParameters memory) {
 	return true;
     }
 
-    /** It is not always feasible to add another thread to a RMAScheduler. */
+    /** It is not always feasible to add another thread to a EDFScheduler. */
     public boolean setIfFeasible(Schedulable schedulable,
 				 ReleaseParameters release,
 				 MemoryParameters memory,
@@ -94,6 +94,8 @@ public class EDFScheduler extends Scheduler {
  	    }
  	}
 	long minPeriod = Long.MAX_VALUE;
+	long minPeriodWithWork = Long.MAX_VALUE;
+	int tid = -1;
 	for (int threadID=OFFSET+1; threadID <= numThreads; threadID++) {
 	    long p = period[threadID];
 	    if (p == 0) continue;
@@ -102,10 +104,12 @@ public class EDFScheduler extends Scheduler {
 		// Find the time of the soonest period ender...
 		minPeriod = newPeriod;
 	    }
+	    if ((newPeriod < minPeriodWithWork)&&(enabled[threadID])&&(cost[threadID]!=0)&&(cost[threadID] > work[threadID])) { 
+		// Find the time of the soonest period ender with work left to be done...
+		minPeriodWithWork = newPeriod;
+		tid = threadID;
+	    }
 	}
-
-// 	NoHeapRealtimeThread.print("\nMin Period (before): ");
-// 	NoHeapRealtimeThread.print(minPeriod);
 
 	// Period ended, trigger context switch to rechoose
 	if (minPeriod < 1) {
@@ -118,57 +122,26 @@ public class EDFScheduler extends Scheduler {
 	    minPeriod *= 1000;
 	}
 
-// 	NoHeapRealtimeThread.print("\nMin Period (after): ");
-// 	NoHeapRealtimeThread.print(minPeriod);
-
 	if (currentThreadID != 0) {
 	    int threadID = (int)(currentThreadID+OFFSET);
 	    if (lastTime == 0) {
 		lastTime = startPeriod[threadID];
 	    }
 	    work[threadID]+= currentTime - lastTime; // I've done some work...
-	    lastTime = currentTime;
-	    if (enabled[threadID]) {
-		long timeLeft = (cost[threadID] - work[threadID])*1000;
-		if (cost[threadID]!=0) {
-// 		    NoHeapRealtimeThread.print("\nTime Left: ");
-// 		    NoHeapRealtimeThread.print(timeLeft);
-		}
-		if ((cost[threadID]!=0)&&(timeLeft > 0)) { // I'm not done yet with the current thread, keep running...
-		    setQuanta(timeLeft<minPeriod?timeLeft:minPeriod);
-		    return 0;
-		} else { // I'm done with this thread, choose another to run...
-		    return currentThreadID=chooseThread2(minPeriod);
-		}
-	    } else { // Thread blocked, choose another to run
-		return currentThreadID=chooseThread2(minPeriod);
-	    }
-	} else { // Choose the first to run
-	    lastTime = currentTime;
-	    return currentThreadID=chooseThread2(minPeriod);
 	}
+	lastTime = currentTime;
+	return currentThreadID=chooseThread2(minPeriod, tid);
     }
 
-    protected long chooseThread2(long nextPeriod) {
+    protected long chooseThread2(long nextPeriod, int tid) {
 	long minPeriod = Long.MAX_VALUE;
-	int tid = -1;
-
-	// Iterate through the Java threads
-	for (int threadID=OFFSET+1; threadID <= numThreads; threadID++) { 
-	    if (enabled[threadID] && (period[threadID]!=0) && (cost[threadID] > work[threadID])) {
-		if (period[threadID] < minPeriod) { // Choose minimum period periodic thread
-		    minPeriod = period[threadID];
-		    tid = threadID;
-		}
-	    }
-	}
 
 	if (tid == -1) { // No periodic threads chosen
 	    // Iterate through the Java threads
 	    for (int threadID=OFFSET+1; threadID <= numThreads; threadID++) { 
 		if (enabled[threadID] && (period[threadID]==0)) {
-		    setQuanta(nextPeriod);
-		    return threadID-OFFSET; // Run the non-periodic until next period starts
+		    tid = threadID; // Run the non-periodic until next period starts
+		    break;
 		}
 	    }
 	}
@@ -176,8 +149,8 @@ public class EDFScheduler extends Scheduler {
 	if (tid == -1) { // No threads chosen
 	    for (int threadID=0; threadID<OFFSET; threadID++) { // Go through C threads
 		if (enabled[threadID]) {
-		    setQuanta(nextPeriod);
-		    return threadID-OFFSET; // Run that one until next period starts
+		    tid = threadID; // Run that one until next period starts
+		    break;
 		}
 	    }
 	}
@@ -188,7 +161,7 @@ public class EDFScheduler extends Scheduler {
 	}
 
 	long timeLeft = (cost[tid] - work[tid])*1000;
-	setQuanta(timeLeft<nextPeriod?timeLeft:nextPeriod);
+	setQuanta((timeLeft>0)?(timeLeft<nextPeriod?timeLeft:nextPeriod):nextPeriod);
 	return tid-OFFSET;
     }
 
@@ -228,7 +201,7 @@ public class EDFScheduler extends Scheduler {
 	enabled[(int)(threadID+OFFSET)] = true;
     }
 
-    /** RMAScheduler is too dumb to deal w/periods. */
+    /** EDFScheduler is too dumb to deal w/periods. */
     protected void waitForNextPeriod(RealtimeThread rt) {
     }
 
