@@ -1,8 +1,18 @@
 #include "cp_heap.h"
+#include "precise_gc.h"
 #include "system_page_size.h"
 #include <assert.h>
 
 #define COPYING_HEAP_DIVISOR 4
+
+#ifdef DEBUG_GC
+/* effects: overwrites to-space with recognizable garbage for easy debugging
+ */
+void debug_overwrite_to_space(struct copying_heap *h)
+{
+  memset(h->to_begin, 7, h->heap_size/2);
+}
+#endif
 
 
 /* requires: all live data should reside in to-space
@@ -41,7 +51,8 @@ void grow_copying_heap(size_t needed_space, struct copying_heap *h)
 {
   size_t bytes;
 
-  bytes = ROUND_TO_NEXT_PAGE(needed_space + h->heap_size/COPYING_HEAP_DIVISOR);
+  bytes = ROUND_TO_NEXT_PAGE(needed_space + 
+			     h->heap_size/COPYING_HEAP_DIVISOR);
 
   // check if we have mapped space to expand into
   if (h->heap_end + bytes > h->mapped_end)
@@ -87,3 +98,27 @@ void init_copying_heap(void *mapped,
   h->survived = mapped;
 }
 
+
+/* effects: move object from from-space to to-space, updating
+   the given pointer and creating a forwarding reference */
+void relocate_to_to_space(jobject_unwrapped *ref, struct copying_heap *h)
+{
+  jobject_unwrapped obj = PTRMASK((*ref));
+  void *forwarding_address;
+  size_t obj_size = align(FNI_ObjectSize(obj));
+
+  // relocating objects should not exceed the size of the heap
+  assert(h->to_free + obj_size <= h->to_end);
+
+  // copy over to to-space
+  forwarding_address = TAG_HEAP_PTR(memcpy(h->to_free, obj, obj_size));
+  
+  // write forwarding address to previous location
+  obj->claz = (struct claz *)forwarding_address;
+  
+  // update given reference
+  (*ref) = forwarding_address;
+
+  // increment free
+  h->to_free += obj_size;
+}

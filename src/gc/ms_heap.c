@@ -15,57 +15,55 @@ void *allocate_in_marksweep_heap(size_t size, struct marksweep_heap *h)
   size_t aligned_size = align(size + BLOCK_HEADER_SIZE);
   struct block *result;
 
-  result = faster_find_free_block(aligned_size, 
-				  &(h->free_list), 
-				  h->small_blocks);
+  result = find_free_block(aligned_size, &(h->free_list), h->small_blocks);
 
   // if no block available, expand the heap and try again
   if (result == NULL)
     {
-      printf("&");
+      //printf("&");
       expand_marksweep_heap(aligned_size, h);
-      result = faster_find_free_block(aligned_size, 
-				      &(h->free_list), 
-				      h->small_blocks);
+      result = find_free_block(aligned_size, 
+			       &(h->free_list), 
+			       h->small_blocks);
     }
 
   if (result != NULL)
-    // increment past the block header
-    return result->objects;
+    {
+      h->free_memory -= result->size;
+
+      // increment past the block header
+      return result->object;
+    }
   else
     return NULL;
 }
 
 
-/* effects: expands heap to accommodate size bytes */
-int expand_marksweep_heap(size_t size, struct marksweep_heap *h)
+/* effects: expands heap to accommodate size bytes
+*/
+void expand_marksweep_heap(size_t size, struct marksweep_heap *h)
 {
-  struct page *p = h->allocated_pages;
   size_t bytes;
   struct block *b;
 
   bytes = ROUND_TO_NEXT_PAGE(size + h->heap_size/MARKSWEEP_HEAP_DIVISOR);
 
-  // expand the last page
-  while (p->next != NULL)
-    p = p->next;
-
   // no memory to be had, fail for now
-  assert (p->page_end != p->mapped_end);
+  assert (h->heap_end != h->mapped_end);
 
   // if we can't expand the heap as much as we want,
   // expand it as much as possible
-  if (p->page_end + bytes > p->mapped_end)
-    bytes = p->mapped_end - p->page_end;
+  if (h->heap_end + bytes > h->mapped_end)
+    bytes = h->mapped_end - h->heap_end;
 
-  // new block is at the end of the old heap
-  b = p->page_end;
+  // the new block is at the end of the old heap
+  b = h->heap_end;
   b->size = bytes;
 
-  p->page_end += bytes;
+  h->heap_end += bytes;
   h->heap_size += bytes;
 
-  faster_add_to_free_list(b, &h->free_list, h->small_blocks);
+  add_to_free_blocks(b, &h->free_list, h->small_blocks);
 }
 
 
@@ -76,71 +74,42 @@ int expand_marksweep_heap(size_t size, struct marksweep_heap *h)
 void free_unreachable_blocks(struct marksweep_heap *h)
 {
   static num_collections = 0;
-  struct page *curr_page = h->allocated_pages;
   size_t free_bytes = 0;
   float occupancy;
+  struct block *curr_block = h->heap_begin;
 
-  // go through all the pages
-  while (curr_page != NULL)
+  while ((void *)curr_block < h->heap_end)
     {
-      struct block *curr_block = curr_page->blocks;
-
-      // scan each page
-      while ((void *)curr_block < curr_page->page_end)
+      if (MARKED_AS_REACHABLE(curr_block))
+	// marked, cannot be freed; unmark
+	CLEAR_MARK(curr_block);
+      else if (NOT_MARKED(curr_block))
 	{
-	  if (MARKED_AS_REACHABLE(curr_block))
-	    // marked, cannot be freed; unmark
-	    CLEAR_MARK(curr_block);
-	  else if (NOT_MARKED(curr_block))
+	  // if inflated, need to free associated resources
+	  if ((curr_block->object[0].hashunion.hashcode & 1) == 0)
 	    {
-	      // if inflated, need to free associated resources
-	      if ((curr_block->objects[0].hashunion.hashcode & 1) == 0)
-		{
-		  printf("@");
-		  curr_block->objects[0].hashunion.inflated->
-		    precise_deflate_obj(curr_block->objects, (ptroff_t)0);
-		}
-
-	      printf("!");
-	      free_bytes += curr_block->size;
-	      faster_add_to_free_list(curr_block, 
-				      &h->free_list, 
-				      h->small_blocks);
+	      //printf("@");
+	      curr_block->object[0].hashunion.inflated->
+		precise_deflate_obj(curr_block->object, (ptroff_t)0);
 	    }
-
-	  // go to next block
-	  curr_block = (void *)curr_block + curr_block->size;
+	  
+	  //printf("!");
+	  free_bytes += curr_block->size;
+	  add_to_free_blocks(curr_block, &h->free_list, h->small_blocks);
 	}
-
-      // go to next page
-      curr_page = curr_page->next;
+      
+      // go to next block
+      curr_block = (void *)curr_block + curr_block->size;
     }
+  
+  // update free_memory information
+  h->free_memory += free_bytes;
 
   // calculate new avg_occupancy for heap
   occupancy = ((float)(h->heap_size - free_bytes))/((float) h->heap_size);
   h->avg_occupancy = (num_collections*h->avg_occupancy +
 		      occupancy)/(num_collections + 1);
   num_collections++;
-}
-
-
-/* returns: 1 if the specified object was allocated in the given heap */
-int in_marksweep_heap(jobject_unwrapped obj, struct marksweep_heap *h)
-{
-  struct page *curr_page = h->allocated_pages;
-
-  // check through list of allocated pages
-  while(curr_page != NULL)
-    {
-      if ((void *)obj > (void *)&(curr_page->blocks) && 
-	  (void *)obj < curr_page->page_end)
-	return 1;
-      else
-	curr_page = curr_page->next;
-    }
-
-  // if we got this far, it's not there
-  return 0;  
 }
 
 
@@ -154,13 +123,13 @@ void init_marksweep_heap(void *mapped,
   struct block *new_block;
 
   h->heap_size = heap_size;
+  h->free_memory = heap_size;
   h->avg_occupancy = 0;
 
-  // initialize the allocated page
-  h->allocated_pages = mapped;
-  h->allocated_pages->page_end = mapped + heap_size;
-  h->allocated_pages->mapped_end = mapped + mapped_size;
-  h->allocated_pages->next = NULL;
+  // initialize the allocated memory
+  h->heap_begin = mapped;
+  h->heap_end = mapped + heap_size;
+  h->mapped_end = mapped + mapped_size;
 
   // initialize the free list
   // we'll add the block to it later
@@ -171,10 +140,45 @@ void init_marksweep_heap(void *mapped,
     h->small_blocks[i] = NULL;
 
   // initialize new block
-  new_block = h->allocated_pages->blocks;
-  new_block->size = heap_size - PAGE_HEADER_SIZE;
+  new_block = mapped;
+  new_block->size = heap_size;
 
   // add to the free list
-  faster_add_to_free_list(new_block, &(h->free_list), h->small_blocks);  
+  add_to_free_blocks(new_block, &(h->free_list), h->small_blocks);  
 }
 
+
+/* effects: moves object to the given mark-and-sweep heap, updating
+   the given pointer and creating a forwarding reference. object is
+   marked as reachable on return.
+   returns: 0 if success, -1 if fail
+*/
+int move_to_marksweep_heap(jobject_unwrapped *ref, struct marksweep_heap *h)
+{
+  jobject_unwrapped obj = PTRMASK((*ref));
+  void *forwarding_address;
+  size_t obj_size = align(FNI_ObjectSize(obj));
+
+  // get a block of memory in the heap
+  forwarding_address = allocate_in_marksweep_heap(obj_size, h);
+
+  if (forwarding_address == NULL)
+    return -1;
+
+  // copy over to the newly-allocated space
+  forwarding_address = TAG_HEAP_PTR(memcpy(forwarding_address, 
+					   obj, 
+					   obj_size));
+  
+  // write forwarding address to previous location
+  obj->claz = (struct claz *)forwarding_address;
+  
+  // update given reference
+  (*ref) = forwarding_address;
+
+  // mark block as reachable
+  MARK_AS_REACHABLE((struct block *)(forwarding_address - 
+				     BLOCK_HEADER_SIZE));
+
+  return 0;
+}

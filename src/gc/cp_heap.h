@@ -3,7 +3,7 @@
 
 #include "jni-types.h"
 #include "jni-private.h"
-#include "deflate_objs.h"
+#include "obj_list.h"
 
 /* data structure for a copying generation */
 struct copying_heap
@@ -23,10 +23,18 @@ struct copying_heap
 };
 
 #define IN_TO_SPACE(x,h) \
-((void *)(x) >= (h)->to_begin && (void *)(x) < (h)->to_free)
+((void *)(x) >= (h).to_begin && (void *)(x) < (h).to_free)
 
 #define IN_FROM_SPACE(x,h) \
-((void *)(x) >= (h)->from_begin && (void *)(x) < (h)->from_free)
+((void *)(x) >= (h).from_begin && (void *)(x) < (h).from_free)
+
+#ifdef DEBUG_GC
+void debug_overwrite_to_space(struct copying_heap *h);
+#else
+# define debug_overwrite_to_space(h)
+#endif
+
+void flip_semispaces(struct copying_heap *h);
 
 void grow_copying_heap(size_t needed_space, struct copying_heap *h);
 
@@ -34,5 +42,7 @@ void init_copying_heap(void *mapped,
 		       size_t heap_size, 
 		       size_t mapped_size, 
 		       struct copying_heap *h);
+
+void relocate_to_to_space(jobject_unwrapped *ref, struct copying_heap *h);
 
 #endif

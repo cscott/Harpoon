@@ -2,6 +2,10 @@
 #include "free_list.h"
 #include "precise_gc.h"
 
+struct block *find_block_in_free_list(size_t size,
+				      struct block **free_list_ptr,
+				      struct block *small_blocks[]);
+
 /* requires: that the blocks in the free list are in order of sizeo
    from smallest to biggest
    effects: adds the given block in the appropriate place in the free list
@@ -39,9 +43,9 @@ void add_to_free_list(struct block *new_block, struct block **free_list_ptr)
 /* effects: adds small blocks to the small blocks table, and
    large blocks to the correct location in the free list
 */
-void faster_add_to_free_list(struct block *new_block,
-			     struct block **free_list,
-			     struct block *small_blocks[])
+void add_to_free_blocks(struct block *new_block,
+			struct block **free_list,
+			struct block *small_blocks[])
 {
   // "small" blocks are stored separately for fast allocation
   if (new_block->size <= SMALL_BLOCK_SIZE)
@@ -60,13 +64,23 @@ void faster_add_to_free_list(struct block *new_block,
 }
 
 
+/* effects: overwrites the non-header portion of the given block
+   with recognizable garbage for easy debugging.
+*/
+#ifdef DEBUG_GC
+void debug_clear_memory(struct block *bl)
+{
+  memset(bl->object, 7, (bl->size - BLOCK_HEADER_SIZE));
+}
+#endif
+
 
 /* returns: a block that is greater than or equal in size to the
    request; block is initialized before being returned
  */
-struct block *faster_find_free_block(size_t size,
-				     struct block **free_list_ptr,
-				     struct block *small_blocks[])
+struct block *find_free_block(size_t size,
+			      struct block **free_list_ptr,
+			      struct block *small_blocks[])
 {
   if (size <= SMALL_BLOCK_SIZE)
     {
@@ -90,18 +104,19 @@ struct block *faster_find_free_block(size_t size,
     }
 
   // if we couldn't find a small block that fits, get any block
-  return find_free_block(size, free_list_ptr, small_blocks);
+  return find_block_in_free_list(size, free_list_ptr, small_blocks);
 }
 
 
 /* requires: that the blocks in the free list are in order
    of size from smallest to biggest
-   returns: smallest block that is greater than or equal
-   in size to request; block is initialized before being returned
+   returns: smallest block in the free list that is greater 
+   than or equal in size to request; block is initialized 
+   before being returned
  */
-struct block *find_free_block(size_t size,
-			      struct block **free_list_ptr,
-			      struct block *small_blocks[])
+struct block *find_block_in_free_list(size_t size,
+				      struct block **free_list_ptr,
+				      struct block *small_blocks[])
 {
   struct block *curr_block = (*free_list_ptr);
   struct block *prev_block = NULL;
@@ -140,12 +155,10 @@ struct block *find_free_block(size_t size,
       curr_block->size = size;
       
       // insert in free list
-      faster_add_to_free_list(new_block, free_list_ptr, small_blocks);
+      add_to_free_blocks(new_block, free_list_ptr, small_blocks);
     }
   // clear mark bit
   CLEAR_MARK(curr_block);
 
   return curr_block;
 }
-
-

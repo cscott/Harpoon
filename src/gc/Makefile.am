@@ -10,11 +10,11 @@ libgc_la_SOURCES = \
 else
 if COPYING_GC
 libgc_la_SOURCES = \
-	precise_gc.c copying.c gc-data.c
+	precise_gc.c copying.c gc-data.c cp_heap.c deflate_objs.c
 else
 if MARKSWEEP_GC
 libgc_la_SOURCES = \
-	precise_gc.c marksweep.c gc-data.c
+	precise_gc.c marksweep.c gc-data.c ms_heap.c free_list.c
 else
 if GENERATIONAL_GC
 libgc_la_SOURCES = \

@@ -10,6 +10,7 @@
 #include "ms_heap.h"
 #include "system_page_size.h"
 
+//#define GC_EVERY_TIME
 #define INITIAL_PAGES_TO_MAP_PER_SPACE 16384
 #define INITIAL_PAGES_TO_MAP_TOTAL     (3*INITIAL_PAGES_TO_MAP_PER_SPACE)
 #define INITIAL_PAGES_PER_HEAP  16
@@ -38,40 +39,10 @@ static int fd = 0;
 static collection_type = MAJOR;
 
 /* function declarations */
-void generational_marksweep_reference(jobject_unwrapped obj);
 
-void move_to_to_space(jobject_unwrapped *ref);
+int major_collection_makes_sense(size_t bytes_since_last_GC);
 
-int promote_to_old_gen(jobject_unwrapped *ref);
-
-
-/* effects: verifies the integrity of the given object w/ simple checks */
-void debug_verify_object(jobject_unwrapped obj)
-{
-  // check that this is probably a pointer
-  assert(!((ptroff_t)obj & 1));
-
-  // check that the claz ptr is correct
-  assert(CLAZ_OKAY(obj));
-}
-
-
-/* returns: 1 if we can afford a major collection, 0 otherwise */
-int major_collection_makes_sense(size_t bytes_since_last_GC)
-{
-  size_t young_cost = young_gen.avg_occupancy * young_gen.heap_size;
-  size_t old_cost = old_gen.avg_occupancy * old_gen.heap_size;
-  return (bytes_since_last_GC > young_cost + old_cost);
-}
-
-
-/* returns: 1 if we can afford a minor collection, 0 otherwise */
-int minor_collection_makes_sense(size_t bytes_since_last_GC)
-{
-  size_t cost = young_gen.avg_occupancy * young_gen.heap_size;
-  printf("bytes %d vs cost %d\n", bytes_since_last_GC, cost);
-  return (bytes_since_last_GC > cost);
-}
+int minor_collection_makes_sense(size_t bytes_since_last_GC);
 
 
 /* effects: garbage collects either just the young generation
@@ -127,6 +98,29 @@ void generational_collect()
 }
 
 
+/* returns: amt of free memory available */
+jlong generational_free_memory()
+{
+  jlong result;
+  ENTER_GENERATIONAL_GC();
+  result = (jlong)(young_gen.from_end - young_gen.from_free +
+		   old_gen.free_memory);
+  EXIT_GENERATIONAL_GC();
+  return result;
+}
+
+
+/* returns: heap size */
+jlong generational_get_heap_size()
+{
+  jlong result;
+  ENTER_GENERATIONAL_GC();
+  result = (jlong) (young_gen.heap_size + old_gen.heap_size);
+  EXIT_GENERATIONAL_GC();
+  return result;
+}
+
+
 /* effects: initializes heap */
 void generational_gc_init()
 {
@@ -135,12 +129,13 @@ void generational_gc_init()
   int i;
   struct block *new_block;
 
+  // find out the system page size and pre-calculate some constants
   SYSTEM_PAGE_SIZE = getpagesize();
   PAGE_MASK = SYSTEM_PAGE_SIZE - 1;
 
-  printf("%d\n", sizeof(void *));
-
   bytes_to_map = INITIAL_PAGES_TO_MAP_TOTAL*SYSTEM_PAGE_SIZE;
+
+  assert(bytes_to_map != 0);
 
   // reserve part of the virtual address space
   fd = open("/dev/zero", O_RDONLY);
@@ -169,10 +164,10 @@ void generational_gc_init()
    to to-space. if the object is already in to-space, the pointer is updated */
 void generational_handle_reference(jobject_unwrapped *ref)
 {
-  jobject_unwrapped obj = PTRMASK((*ref));
+  jobject_unwrapped obj = PTRMASK(*ref);
 
   // check if the object is in from-space
-  if (IN_FROM_SPACE(obj, &young_gen))
+  if (IN_FROM_SPACE(obj, young_gen))
     {
       // if the claz pointer is unmodified,
       // the object has not yet been moved
@@ -185,44 +180,35 @@ void generational_handle_reference(jobject_unwrapped *ref)
 	    {
 	      int retval;
 
-	      retval = promote_to_old_gen(ref);
+	      retval = move_to_marksweep_heap(ref, &old_gen);
 
 	      // if success, done
 	      if (retval == 0)
 		{
-		  generational_marksweep_reference(PTRMASK(*ref));
+		  trace(PTRMASK(*ref));
 		  return;
 		}
 	    }
 	  
 	  // if still here, then move to to-space
-	  move_to_to_space(ref);
+	  relocate_to_to_space(ref, &young_gen);
 	}
       else
 	// handle moved objects
 	(*ref) = (jobject_unwrapped) obj->claz;
     }
-  else if (collection_type == MAJOR && in_marksweep_heap(obj, &old_gen))
-    generational_marksweep_reference(obj);
-}
-
-
-/* requires: that object be in a marksweep heap
-   effects: handles references to objects in the heap by
-   marking untouched objects and tracing roots in them.
-*/
-void generational_marksweep_reference(jobject_unwrapped obj)
-{
-  // get a pointer to the block
-  struct block *bl = (void *)obj - BLOCK_HEADER_SIZE;
-  // mark or check for mark
-  if (NOT_MARKED(bl))
+  else if (collection_type == MAJOR && IN_MARKSWEEP_HEAP(obj, old_gen))
     {
-      MARK_AS_REACHABLE(bl);
-      trace(obj);
+      struct block *bl = (void *)obj - BLOCK_HEADER_SIZE;
+      // mark or check for mark
+      if (NOT_MARKED(bl))
+	{
+	  MARK_AS_REACHABLE(bl);
+	  trace(obj);
+	}
+      else
+	assert(MARKED_AS_REACHABLE(bl));
     }
-  else
-    assert(MARKED_AS_REACHABLE(bl));
 }
 
 
@@ -242,8 +228,6 @@ void *generational_malloc(size_t size)
   generational_collect();
 #endif
 
-  assert(old_gen.free_list->size != 0);
-
   // for large objects, try to allocate in the old
   // generation so we don't have to move them around
   if (size > SMALL_OBJ_SIZE)
@@ -252,7 +236,7 @@ void *generational_malloc(size_t size)
 
       if (result != NULL)
 	{
-	  printf(":");
+	  //printf(":");
 	  EXIT_GENERATIONAL_GC();
 	  return result;
 	}
@@ -287,7 +271,7 @@ void *generational_malloc(size_t size)
 	}
       else
 	{
-	  printf("- HELP -");
+	  //printf("- HELP -");
 	  return (void *)malloc(aligned_size);
 	}
     }
@@ -295,7 +279,7 @@ void *generational_malloc(size_t size)
   result = young_gen.from_free;
   young_gen.from_free += aligned_size;
   bytes_since_last_GC += aligned_size;
-  printf(".");
+  //printf(".");
 
   EXIT_GENERATIONAL_GC();
 
@@ -313,59 +297,19 @@ void generational_register_inflated_obj(jobject_unwrapped obj)
 }
 
 
-/* effects: move object from from-space to to-space, updating
-   the given pointer and creating a forwarding reference */
-void move_to_to_space(jobject_unwrapped *ref)
+/* returns: 1 if we can afford a major collection, 0 otherwise */
+int major_collection_makes_sense(size_t bytes_since_last_GC)
 {
-  jobject_unwrapped obj = PTRMASK((*ref));
-  void *forwarding_address;
-  size_t obj_size = align(FNI_ObjectSize(obj));
-
-  // relocating objects should not exceed the size of the heap
-  assert(young_gen.to_free + obj_size <= young_gen.to_end);
-
-  // copy over to to-space
-  forwarding_address = TAG_HEAP_PTR(memcpy(young_gen.to_free, 
-					   obj, 
-					   obj_size));
-  
-  // write forwarding address to previous location
-  obj->claz = (struct claz *)forwarding_address;
-  
-  // update given reference
-  (*ref) = forwarding_address;
-
-  // increment free
-  young_gen.to_free += obj_size;
+  size_t young_cost = young_gen.avg_occupancy * young_gen.heap_size;
+  size_t old_cost = old_gen.avg_occupancy * old_gen.heap_size;
+  return (bytes_since_last_GC > young_cost + old_cost);
 }
 
 
-/* effects: promotes object from from-space to the old generation, 
-   updating the given pointer and creating a forwarding reference. 
-   returns: 0 if success, -1 if fail (lack of space in old generation)
-*/
-int promote_to_old_gen(jobject_unwrapped *ref)
+/* returns: 1 if we can afford a minor collection, 0 otherwise */
+int minor_collection_makes_sense(size_t bytes_since_last_GC)
 {
-  jobject_unwrapped obj = PTRMASK((*ref));
-  void *forwarding_address;
-  size_t obj_size = align(FNI_ObjectSize(obj));
-
-  // get a block of memory in the old generation
-  forwarding_address = allocate_in_marksweep_heap(obj_size, &old_gen);
-
-  if (forwarding_address == NULL)
-    return -1;
-
-  // copy over to the newly-allocated space
-  forwarding_address = TAG_HEAP_PTR(memcpy(forwarding_address, 
-					   obj, 
-					   obj_size));
-  
-  // write forwarding address to previous location
-  obj->claz = (struct claz *)forwarding_address;
-  
-  // update given reference
-  (*ref) = forwarding_address;
-
-  return 0;
+  size_t cost = young_gen.avg_occupancy * young_gen.heap_size;
+  //printf("bytes %d vs cost %d\n", bytes_since_last_GC, cost);
+  return (bytes_since_last_GC > cost);
 }

@@ -1,8 +1,6 @@
 #ifndef INCLUDED_PRECISE_GC_H
 #define INCLUDED_PRECISE_GC_H
 
-//#define GC_EVERY_TIME
-
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
 # define WITH_THREADED_GC
 #endif
@@ -23,6 +21,7 @@
 # define internal_free_memory   marksweep_free_memory
 # define internal_get_heap_size marksweep_get_heap_size
 # define internal_malloc        marksweep_malloc
+
 #elif defined(WITH_COPYING_GC)
 # include "copying.h"
 # define add_to_root_set        copying_handle_reference
@@ -34,6 +33,7 @@
 # define internal_free_memory   copying_free_memory
 # define internal_get_heap_size copying_get_heap_size
 # define internal_malloc        copying_malloc
+
 #elif defined(WITH_GENERATIONAL_GC)
 # include "generational.h"
 # define internal_malloc        generational_malloc
@@ -42,9 +42,9 @@
 # define internal_print_stats()
 # define internal_register_inflated_obj generational_register_inflated_obj
 # define handle_reference       generational_handle_reference
-# define internal_collect()
-# define internal_free_memory()
-# define internal_get_heap_size()
+# define internal_collect       generational_collect
+# define internal_free_memory   generational_free_memory
+# define internal_get_heap_size generational_get_heap_size
 #endif
 
 #ifdef WITH_MASKED_POINTERS
@@ -85,7 +85,14 @@ void setup_for_threaded_GC();
 void cleanup_after_threaded_GC();
 #endif
 
+#ifndef DEBUG_GC
+# define debug_verify_object(obj)
+#else
+void debug_verify_object(jobject_unwrapped obj);
+#endif
+
 /* ---- functions for COPYING and MARKSWEEP GC ---- */ 
+
 /* trace takes a pointer to an object and traces the pointers w/in it */
 void trace(jobject_unwrapped obj);
 

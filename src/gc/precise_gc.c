@@ -1,17 +1,19 @@
+#include <assert.h>
+#include <unistd.h>
 #include "config.h"
 #ifdef BDW_CONSERVATIVE_GC
-#include "gc.h"
-#include "gc_typed.h"
+# include "gc.h"
+# include "gc_typed.h"
 #endif
-#include <assert.h>
 #include <jni.h>
 #include "jni-private.h"
 #include "jni-gc.h"
 #include "precise_gc.h"
-#ifdef WITH_THREADED_GC
-#include "flexthread.h"
 #include "gc-data.h"
-#include "jni-gcthreads.h"
+#include "system_page_size.h"
+#ifdef WITH_THREADED_GC
+# include "flexthread.h"
+# include "jni-gcthreads.h"
 #endif
 
 #ifdef WITH_PRECISE_GC
@@ -19,24 +21,37 @@
 static int print_gc_index = 0;
 static int check_gc_index = 1;
 
+size_t SYSTEM_PAGE_SIZE = 0;
+size_t PAGE_MASK = 0;
+
 #ifdef HAVE_STACK_TRACE_FUNCTIONS
-#include "asm/stack.h" /* snarf in the stack trace functions. */
+# include "asm/stack.h" /* snarf in the stack trace functions. */
 #endif /* HAVE_STACK_TRACE_FUNCTIONS */
+
+
+#ifdef DEBUG_GC
+/* effects: verifies the integrity of the given object w/ simple checks */
+void debug_verify_object (jobject_unwrapped obj)
+{
+  // check that this is probably a pointer
+  assert(!((ptroff_t)obj & 1));
+
+  // check that the claz ptr is correct
+  assert(CLAZ_OKAY(obj));
+}
+#endif
+
 
 void precise_gc_init()
 {
-#ifdef WITH_HEAVY_THREADS
-    error_gc("Heavy threads\n", "");
-#endif
-#ifdef WITH_PTH_THREADS
-    error_gc("Pth threads\n", "");
-#endif
-#ifdef WITH_USER_THREADS
-    error_gc("User threads\n", "");
-#endif
-#ifdef WITH_THREADED_GC
+  // find out the system page size and pre-calculate some constants
+  SYSTEM_PAGE_SIZE = getpagesize();
+  PAGE_MASK = SYSTEM_PAGE_SIZE - 1;
+
+  // do initialization for gc data
   gc_data_init();
-#endif
+
+  // do initialization for the specific collector
   internal_gc_init();
 }
 
@@ -347,7 +362,7 @@ void trace(jobject_unwrapped unaligned_ptr)
 }
 
 
-#ifdef WITH_MARKSWEEP_GC
+#ifdef WITH_POINTER_REVERSAL
 /* requires: that obj be an aligned pointer to an object, and next_index
              be the next index in the object that may need to be examined.
    returns:  NO_POINTERS if there are no more pointers in the object, 

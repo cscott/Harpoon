@@ -22,7 +22,7 @@ void deflate_freed_objs (struct copying_heap *h)
       jobject_unwrapped infl_obj = unit->obj;
 
       // update objects that have been moved
-      if (IN_TO_SPACE(infl_obj->claz, h))
+      if (IN_TO_SPACE(infl_obj->claz, *h))
 	{
 	  // forward pointer appropriately
 	  unit->obj = PTRMASK(infl_obj->claz);
@@ -67,7 +67,7 @@ void register_inflated_obj(jobject_unwrapped obj, struct copying_heap *h)
 {
   struct obj_list *unit = (struct obj_list *)malloc(sizeof(struct obj_list));
 
-  if (IN_FROM_SPACE(obj, h))
+  if (IN_FROM_SPACE(obj, *h))
     {
       unit->obj = obj;
       FLEX_MUTEX_LOCK(&inflated_objs_mutex);

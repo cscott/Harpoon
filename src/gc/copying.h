@@ -8,7 +8,7 @@
 
 void copying_add_to_root_set(jobject_unwrapped *obj);
 
-float copying_collect();
+void copying_collect();
 
 jlong copying_get_heap_size();
 
