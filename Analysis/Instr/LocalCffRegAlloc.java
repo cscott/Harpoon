@@ -34,7 +34,7 @@ import java.util.AbstractSet;
  * <code>LocalCffRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.39 1999-08-27 23:26:57 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.40 1999-08-28 01:08:21 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -199,8 +199,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			InstrMEM loadInstr = 
 			    new FskLoad(i.getFactory(), i,
 					"FSK-LOAD", regs, ref);
-			Instr.insertInstrAt(loadInstr,
-					    new InstrEdge(i.getPrev(), i));
+			loadInstr.insertAt(new InstrEdge(i.getPrev(), i));
 
 			Iterator regIter = regs.iterator();
 			while(regIter.hasNext()) {
@@ -267,8 +266,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    InstrMEM spillInstr =
 				new FskStore(i.getFactory(), i, 
 					     "FSK-STORE", value, regs);
-			    Instr.insertInstrAt(spillInstr,
-						new InstrEdge(i.getPrev(), i));
+			    spillInstr.insertAt(new InstrEdge(i.getPrev(), i));
 			    
 			    // Now remove spilled regs from regfile
 			    Iterator regsIter = regs.iterator();

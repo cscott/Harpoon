@@ -48,7 +48,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.34 1999-08-27 23:27:01 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.35 1999-08-28 01:08:22 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -210,13 +210,13 @@ public class SAFrame extends Frame implements AllocationInfo {
         dir7 = new Instr(inf, src, "sub fp, ip, #4", null, null);
 
 	// Instr.insertInstrBefore(body, dir1);
-	Instr.insertInstrAt(dir1, new InstrEdge(body.getPrev(), body));
-	Instr.insertInstrAt(dir2, new InstrEdge(dir1, body));
-	Instr.insertInstrAt(dir3, new InstrEdge(dir2, body));
-	Instr.insertInstrAt(dir4, new InstrEdge(dir3, body));
-	Instr.insertInstrAt(dir5, new InstrEdge(dir4, body));
-	Instr.insertInstrAt(dir6, new InstrEdge(dir5, body));
-	Instr.insertInstrAt(dir7, new InstrEdge(dir6, body));
+	dir1.insertAt(new InstrEdge(body.getPrev(), body));
+	dir2.insertAt(new InstrEdge(dir1, body));
+	dir3.insertAt(new InstrEdge(dir2, body));
+	dir4.insertAt(new InstrEdge(dir3, body));
+	dir5.insertAt(new InstrEdge(dir4, body));
+	dir6.insertAt(new InstrEdge(dir5, body));
+	dir7.insertAt(new InstrEdge(dir6, body));
 
 	return dir1;
     }

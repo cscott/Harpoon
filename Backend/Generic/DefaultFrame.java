@@ -40,7 +40,7 @@ import java.util.Map;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.23 1999-08-27 23:27:01 pnkfelix Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.24 1999-08-28 01:08:22 pnkfelix Exp $
  */
 public class DefaultFrame extends Frame implements AllocationInfo {
 
@@ -169,10 +169,10 @@ public class DefaultFrame extends Frame implements AllocationInfo {
         dir4 = new Instr(inf, src, inf.getMethod().getName() + ":",
                         null, null);
 
-	Instr.insertInstrAt(dir1, new InstrEdge(body.getPrev(), body));
-	Instr.insertInstrAt(dir2, new InstrEdge(dir1, body));
-	Instr.insertInstrAt(dir3, new InstrEdge(dir2, body));
-	Instr.insertInstrAt(dir4, new InstrEdge(dir3, body));
+	dir1.insertAt(new InstrEdge(body.getPrev(), body));
+	dir2.insertAt(new InstrEdge(dir1, body));
+	dir3.insertAt(new InstrEdge(dir2, body));
+	dir4.insertAt(new InstrEdge(dir3, body));
 	return dir1;
     }
 

@@ -16,6 +16,7 @@ import harpoon.Util.Util;
 
 import java.util.Vector;
 import java.util.List;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Collection;
@@ -27,7 +28,7 @@ import java.util.AbstractCollection;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.33 1999-08-28 00:58:23 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.34 1999-08-28 01:08:23 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -291,7 +292,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	return linear;
     }
     
-    /** Inserts <code>instr</code> at <code>edge</code>.
+    /** Inserts <code>this</code> at <code>edge</code>.
 	<BR> <B>requires:</B> <OL>
 	     <LI> <code>edge.from()</code> and <code>edge.to()</code>
 	     are instances of <code>Instr</code> or one is
@@ -304,21 +305,22 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	     <code>edge.to()</code> are not <code>null</code>, then
 	     <code>edge.to()</code> is a successor of   
 	     <code>edge.from()</code>.
-	     <LI> <code>instr</code> is a non-branching instruction
+	     <LI> <code>this</code> is a non-branching instruction
 	     (ie, has no extra targets and instr.canFallThrough).
 	</OL>
-	<BR> <B>modifies:</B> <code>edge.from()</code>, <code>edge.to()</code>
-	<BR> <B>effects:</B> changes <code>edge.from()</code> and
+	<BR> <B>modifies:</B> <code>edge.from()</code>, 
+	     <code>edge.to()</code>, <code>this</code>
+	<BR> <B>effects:</B> changes <code>edge.from()</code> and 
 	     <code>edge.to()</code> so that after
-	     <code>edge.from()</code> is executed, <code>instr</code>
+	     <code>edge.from()</code> is executed, <code>this</code>
 	     will be executed and then followed by
 	     <code>edge.to()</code>.
     */
 
-    public static void insertInstrAt(Instr instr, HCodeEdge edge) {
-	Util.assert(instr.getTargets().isEmpty() &&
-		    instr.canFallThrough,
-		    "instr should be nonbranching");
+    public void insertAt(HCodeEdge edge) {
+	Util.assert(this.getTargets().isEmpty() &&
+		    this.canFallThrough,
+		    "this should be nonbranching");
 	Util.assert(edge.to() != null ||
 		    edge.from() != null, 
 		    "edge shouldn't have null for both to and from");
@@ -326,14 +328,14 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	if (edge.from() != null) {
 	    Instr from = (Instr) edge.from();
 	    Util.assert( Arrays.asList(from.edges()).contains(edge));
-	    from.next = instr;
-	    instr.prev = from;
+	    from.next = this;
+	    this.prev = from;
 	}
 	if (edge.to() != null) {
 	    Instr to = (Instr) edge.to();
 	    Util.assert( Arrays.asList(to.edges()).contains(edge));
-	    to.prev = instr; 
-	    instr.next = to;	
+	    to.prev = this; 
+	    this.next = to;	
 	}
     }
 

@@ -44,7 +44,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.31 1999-08-27 23:26:57 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.32 1999-08-28 01:08:21 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -321,11 +321,11 @@ public abstract class RegAlloc  {
 		// add a comment saying which temp is being stored
 		Instr first = (Instr) instrs.get(0);
 		Instr.replaceInstrList(m, instrs);		
-		Instr.insertInstrAt(new Instr(first.getFactory(),
-					      first,
-					      "\t@storing " + m.def()[0],
-					      null, null),
-				    new InstrEdge(first.getPrev(), first));
+		Instr newi = new Instr(first.getFactory(),
+				       first,
+				       "\t@storing " + m.def()[0],
+				       null, null);
+		newi.insertAt(new InstrEdge(first.getPrev(), first));
 		
 	    }
 	    
@@ -339,11 +339,11 @@ public abstract class RegAlloc  {
 		// add a comment saying which temp is being loaded
 		Instr first = (Instr) instrs.get(0);
 		Instr.replaceInstrList(m, instrs);
-		Instr.insertInstrAt(new Instr(first.getFactory(),
-					      first,
-					      "\t@loading " + m.use()[0],
-					      null, null),
-				    new InstrEdge(first.getPrev(), first));
+		Instr newi = new Instr(first.getFactory(),
+				       first,
+				       "\t@loading " + m.use()[0],
+				       null, null);
+		newi.insertAt(new InstrEdge(first.getPrev(), first));
 	    }
 	    
 	    public void visit(Instr i) {
@@ -478,8 +478,7 @@ class BrainDeadLocalAlloc extends RegAlloc {
 			InstrMEM loadSrcs = 
 			    new FskLoad(inf, null, "FSK-LOAD", 
 					regList, preg); 
-			Instr.insertInstrAt(loadSrcs,
-					    new InstrEdge(instr.getPrev(), instr));
+			loadSrcs.insertAt(new InstrEdge(instr.getPrev(), instr));
 			code.assignRegister(instr, preg, regList);
 			Iterator regIter = regList.iterator();
 			while(regIter.hasNext()) {
@@ -498,8 +497,7 @@ class BrainDeadLocalAlloc extends RegAlloc {
 			InstrMEM storeDsts = 
 			    new FskStore(inf, null, "FSK-STORE",
 					 preg, regList);
-			Instr.insertInstrAt(storeDsts,
-					    new InstrEdge(instr, instr.getNext()));
+			storeDsts.insertAt(new InstrEdge(instr, instr.getNext()));
 			// I'm not certain this code will handle "add
 			// t0, t0, t1" properly 
 			code.assignRegister(instr, preg, regList);

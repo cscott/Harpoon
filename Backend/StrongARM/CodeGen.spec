@@ -53,7 +53,7 @@ import java.util.Arrays;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.31 1999-08-27 23:27:01 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.32 1999-08-28 01:08:22 pnkfelix Exp $
  */
 %%
 
@@ -91,7 +91,7 @@ import java.util.Arrays;
 	if (last == null) {
 	    last = i;
 	} else {
-	    last.insertInstrAt(i, new InstrEdge(last, last.getNext()));
+	    i.insertAt(new InstrEdge(last, last.getNext()));
 	    last = i;
 	}
     }
