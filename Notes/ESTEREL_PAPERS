@@ -1,0 +1,12 @@
+R. E. Bryant.  On the complexity of VLSI implementations and graph
+representations of Boolean functions with application to integer
+multiplication.  IEEE Transactions on Comp. 40:205-213, 1991.
+
+R. Drechsler, A. Sarabi, M. Theobald, B. Becker, and M.A. Perkowski.
+Efficient representation and manipulation of switching functions based
+on Ordered Kronecker Functional Decision Diagrams.  In Design
+Automation Conf., pages 415-419, 1994.
+
+B. Becker, R. Drechsler, and M. Theobald.  OKFDDs versus OBDDs and
+OFDDs.  In ICALP, LNCS 944. pages 475-486, 1995.
+

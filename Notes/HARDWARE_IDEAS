@@ -1,0 +1,17 @@
+how we differ from the stanford paper:
+  emphasis on java as *hdl*; java-to-java transformations for partitioning.
+  bad aliases disallowed.
+asynchronous design:
+ java spec divided into nested combinational and sequential parts,
+ with all control-dependencies expressed as relations between request and
+ acknowledge signals.  All basic-blocks have a global request/acknowledge
+ signal derived from dfg; data-flow within DFG uses a similar request/ack
+ handshake.  Items as adders/multipliers can be swapped out using any relevant
+ metholodgy (although we should agree on two-phase/four-phase/null convention
+ globally) as long as they provide the request/ack pair.  Thus, we can
+ implement individually as delay-insensitive, self-timed, combin+delay,
+ whatever.
+Open work: determine where to add FIFO elements (sutherland's micropipelines).
+
+I think I need to work through a couple examples.
+ -- CSA Mon Oct 12 21:45:46 EDT 1998

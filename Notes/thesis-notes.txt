@@ -1,0 +1,61 @@
+Regarding executability of representation:
+ at first glance, it seems that every phi node will merge a set of
+ undefined variables with exactly one variable with a valid
+ definition.  HOWEVER, this is not the case for loops.  The loop
+ initializer will be defined at the start, then on the back edge of
+ the loop, the new value for the iteration variable will be defined
+ *in addition to* the still-defined initialization variable.  This is
+ actually a concern for simulation and register allocation, too, since
+ there is no clear point where a variable is dead.  We maintain the
+ values of many many variables, even after we've reached the point
+ where they can never possibly be used again.  for example, an input
+ to a phi function is dead after the phi if there is no subsequent
+ back-edge that reaches about its definition.  In the cycle-eq nesting
+ structure, this can be written more concretely.
+
+ Perhaps we want to give sigma function a 'kill' function, too, so
+ that they terminate some of these dead values.  Since a sigma is
+ assigned conditionally to the value in the sigma being *used*
+ subsequently, we can say that any value *not* sigma'ed is dead.
+ 
+ BUT this is not quite how we want to define it.  We want to be able
+ to *not* sigma a variable if -- regardless of whether it is dead --
+ the direction of the branch does not add any information about its
+ value.
+
+ A concrete translation of that statement is difficult to give, as a
+ test against one value may impart useful information to another.  So
+ we allow arbitrary addition of sigma functions.  Should we allow
+ arbitrary *removal* of sigmas?  What if adding a sigma necessitates
+ the addition of one or more phis, as well.
+
+ In practice, the metric used is that the direction of the branch
+ tells us nothing useful about dead variables; all others may have
+ information added by the branch.  BUT we can prune the SSI form by
+ removing phi/sigma pairs where the variable is not used until after
+ the branch merges again.
+-----
+take the following program, in SSI form:
+ j0 = 1
+ i0 = 0
+label:
+ i1 = phi(i0, i4)
+ i2 = i1 + j0
+ i3 = i2 + 1
+ if (i3 < 10) goto label;
+  <i4, i5> = sigma(i3)
+
+now, there is a problem translating this into a dataflow
+representation: how do we determine which value to take at the phi?
+First cycle, i0 is enabled, and i1 takes i0.  Then, on the back edge,
+i4 is enabled. i1 wants which of i0 and i4?
+
+In dataflow representation presumably this works because every value
+can only be 'consumed' once.  But then what about j0, which needs to
+be consumed several times?  One way is to say that the phi and the
+sigma 'kill' the other enable values: when i1 gets its value it
+'kills' i0 and i4, and when either i4 or i5 get their value, they kill
+i3.  But who says when i2 is invalid? We're looking for an executable
+dataflow semantics.
+---------
+
