@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.87 2003-04-15 02:26:36 cananian Exp $
+# $Id: GNUmakefile,v 1.88 2003-04-15 02:50:47 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -500,9 +500,9 @@ polish: clean
 
 wipe:	clean doc-clean
 
-NONLOCAL=$(shell if [ ! `hostname` = "lesser-magoo.lcs.mit.edu" ]; then echo $(SSH) cananian@lesser-magoo.lcs.mit.edu ; fi)
+NONLOCAL=$(shell if [ ! `hostname` = "flex-cvs.lcs.mit.edu" ]; then echo $(SSH) cananian@flex-cvs.lcs.mit.edu ; fi)
 backup: only-me # SLOW ON NON-LOCAL MACHINES
-	$(NONLOCAL) tar -C ~/Harpoon -c CVSROOT | \
+	$(NONLOCAL) tar -C /data -c cvs | \
 	   $(SSH) catfish.lcs.mit.edu \
 	      "gzip -9 -c > public_html/Projects/Harpoon/flex-backup.tar.gz"
 
