@@ -62,7 +62,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.28 2000-01-14 10:06:57 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.29 2000-01-14 17:41:06 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -185,7 +185,7 @@ public class AsyncCode {
 	    HMethod resume=(q.method().getReturnType()==HClass.Void)?
 		hclass.getDeclaredMethod("resume",new HClass[0])
 		:hclass.getDeclaredMethod("resume",
-					 new HClass[] {q.method().getReturnType()});
+					 new HClass[] {q.method().getReturnType().isPrimitive()?q.method().getReturnType():linker.forName("java.lang.Object")});
 	    HMethod exception=
 		hclass.getDeclaredMethod("exception",
 					 new HClass[] {throwable});
