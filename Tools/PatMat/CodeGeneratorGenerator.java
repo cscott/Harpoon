@@ -17,20 +17,8 @@ import java.io.IOException;
  * <code>Instr</code> form.  In short, a CGG generates a Code
  * Generator.
  * 
- * <BR> <B>NOTE:</B> Should this be creating extensions of
- * <code>harpoon.Backend.Generic.Code</code> or implementations of
- * <code>harpoon.ClassFile.HCodeFactory</code>?  I was thinking to go
- * with <code>Code</code> originally, but looking at it, the only
- * method in <code>Code</code> that this is actually going to work
- * with is the static method <code>codeFactory()</code>, so from my
- * point of view we're better off just making the source to an
- * <code>HCodeFactory</code> and then letting someone else write a
- * <code>Code</code> that will use the produced
- * <code>HCodeFactory</code>.  So for this implementation I will
- * produce <code>HCodeFactory</code>s.
- *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.1 1999-06-25 04:10:56 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.2 1999-06-25 04:25:14 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     /** The machine specification that the CodeGenerators outputted by
@@ -70,8 +58,7 @@ public abstract class CodeGeneratorGenerator {
 	<BR> <B>modifies:</B> <code>out</code>
 	<BR> <B>effects:</B> 
 	     Generates Java source for the machine specification
-	     associated with <code>this</code>.  This source file will
-	     implement an <code>harpoon.ClassFile.HCodeFactory</code>.
+	     associated with <code>this</code>.  
 	     Then writes the Java source code out to <code>out</code>.
 	@param out Target output device for the Java source code.
 	@exception IOException If there is an error writing to <code>out</code>
