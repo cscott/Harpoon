@@ -37,6 +37,7 @@ import harpoon.IR.Tree.TreeCode;
 import harpoon.IR.Tree.TreeVisitor;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Label;
+import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
@@ -47,7 +48,7 @@ import java.util.*;
  * selection of <code>Instr</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.12 1999-05-27 23:02:36 pnkfelix Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.13 1999-06-03 01:47:20 pnkfelix Exp $
  */
 final class CodeGen {
 
@@ -194,8 +195,8 @@ final class CodeGen {
             Util.assert(visitRet!=null, "visitRet was null after visiting " + s.test);
 	    ExpValue test = visitRet;
             emit(new Instr(inf, s, "cmp `s0, #0", 
-                           new Temp[] { test.temp() },
-                           null));
+                           null,
+			   new Temp[] { test.temp() }));
 
 	    Instr i = new Instr(inf, s, "beq " + s.iffalse, null, null);
 	    emit(i);
@@ -214,8 +215,18 @@ final class CodeGen {
         }
 
         public void visit(JUMP s) {
-            /* XXX */
-	    Util.assert(false, "visit(JUMP) not implemented");
+            /* TODO: this may not produce working code.  Check it. */
+	    s.exp.visit(this);
+	    Util.assert(visitRet != null, "visitRet was null after visiting " + s.exp);
+	    Instr i = new Instr(inf, s, "b j0", null, new Temp[]{visitRet.temp()} );
+	    emit(i);
+	    LabelList targets = s.targets;
+	    while (targets != null) {
+		blMap.put(i, targets.head);
+		targets = targets.tail;
+	    }
+	    
+	    // Util.assert(false, "visit(JUMP) not implemented");
 	    visitRet = null;
         }
 
@@ -271,7 +282,7 @@ final class CodeGen {
                 ExpValue retval = visitRet;
                 emit(new Instr(inf, s, "mov r1, #0", null, null));
                 emit(new Instr(inf, s, "mov r0, `s0",
-                              new Temp[] { retval.temp() }, null));
+			       null, new Temp[] { retval.temp() }));
                 emit(new Instr(inf, s, "ldmea fp, {fp, sp, pc}", null, null));
                 visitRet = null;
         }
@@ -286,7 +297,7 @@ final class CodeGen {
             s.retex.visit(this);
             ExpValue retval = visitRet;
             emit(new Instr(inf, s, "mov r1, `s0",
-                           new Temp[] { retval.temp() }, null));
+                           null, new Temp[] { retval.temp() }));
             emit(new Instr(inf, s, "mov r0, #0", null, null));
             emit(new Instr(inf, s, "ldmea fp, {fp, sp, pc}", null, null));
             visitRet = null;
@@ -303,8 +314,8 @@ final class CodeGen {
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
                 emit(new Instr(inf, e, "add `d0, `s0, `s1",
-                               new Temp[] { left.temp(), right.temp() },
-                               new Temp[] { retval.temp() }));
+                               new Temp[] { retval.temp() } ,
+			       new Temp[] { left.temp(), right.temp() } ));
                 visitRet = retval;
                 break;
 	    case Bop.AND: // FSK added, not andyb
@@ -314,8 +325,8 @@ final class CodeGen {
 		right = visitRet;
 		retval = new ExpValue(new Temp(tf));
 		emit(new Instr(inf, e, "and `d0, `s0, `s1",
-			       new Temp[] { left.temp(), right.temp() },
-			       new Temp[] { retval.temp() }));
+			       new Temp[] { retval.temp() },
+			       new Temp[] { left.temp(), right.temp() }));
 		visitRet = retval;
 		break;
             case Bop.CMPEQ:
@@ -325,14 +336,11 @@ final class CodeGen {
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
                 emit(new Instr(inf, e, "mov `d0, #0",
-                               null,
-                               new Temp[] { retval.temp() }));
+                               new Temp[] { retval.temp() }, null));
                 emit(new Instr(inf, e, "cmp `s0, `s1",
-                               new Temp[] { left.temp(), right.temp() },
-                               null));
+                               null,new Temp[] { left.temp(), right.temp() }));
                 emit(new Instr(inf, e, "moveq `d0, #1",
-                               null,
-                               new Temp[] { retval.temp() }));
+                               new Temp[] { retval.temp() },null));
                 visitRet = retval;
                 break;
 	    case Bop.CMPGT: // FSK added, not andyb
@@ -342,14 +350,11 @@ final class CodeGen {
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
                 emit(new Instr(inf, e, "mov `d0, #0",
-                               null,
-                               new Temp[] { retval.temp() }));
+                               new Temp[] { retval.temp() },null));
                 emit(new Instr(inf, e, "cmp `s0, `s1",
-                               new Temp[] { left.temp(), right.temp() },
-                               null));
+                               null,new Temp[] { left.temp(), right.temp() }));
                 emit(new Instr(inf, e, "movgt `d0, #1",
-                               null,
-                               new Temp[] { retval.temp() }));
+			       new Temp[] { retval.temp() }, null));
                 visitRet = retval;
 		break;
 	    case Bop.CMPLE: // FSK added, not andyb
@@ -359,14 +364,11 @@ final class CodeGen {
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
                 emit(new Instr(inf, e, "mov `d0, #0",
-                               null,
-                               new Temp[] { retval.temp() }));
+                               new Temp[] { retval.temp() }, null));
                 emit(new Instr(inf, e, "cmp `s0, `s1",
-                               new Temp[] { left.temp(), right.temp() },
-                               null));
+                               null,new Temp[] { left.temp(), right.temp() }));
                 emit(new Instr(inf, e, "movle `d0, #1",
-                               null,
-                               new Temp[] { retval.temp() }));
+                               new Temp[] { retval.temp() },null));
                 visitRet = retval;
 		break;
 	    case Bop.CMPLT: // FSK added, not andyb
@@ -376,14 +378,11 @@ final class CodeGen {
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
                 emit(new Instr(inf, e, "mov `d0, #0",
-                               null,
-                               new Temp[] { retval.temp() }));
+                               new Temp[] { retval.temp() },null));
                 emit(new Instr(inf, e, "cmp `s0, `s1",
-                               new Temp[] { left.temp(), right.temp() },
-                               null));
+                               null,new Temp[] { left.temp(), right.temp() }));
                 emit(new Instr(inf, e, "movlt `d0, #1",
-                               null,
-                               new Temp[] { retval.temp() }));
+                               new Temp[] { retval.temp() },null));
                 visitRet = retval;
 		break;
 	    case Bop.DIV: // FSK added, not andyb
@@ -396,8 +395,8 @@ final class CodeGen {
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
                 emit(new Instr(inf, e, "mul `d0, `s0, `s1",
-                               new Temp[] { left.temp(), right.temp() },
-                               new Temp[] { retval.temp() }));
+                               new Temp[] { retval.temp() },
+			       new Temp[] { left.temp(), right.temp() }));
                 visitRet = retval;
 		break;
 	    case Bop.OR: // FSK added, not andyb
@@ -407,8 +406,8 @@ final class CodeGen {
 		right = visitRet;
 		retval = new ExpValue(new Temp(tf));
 		emit(new Instr(inf, e, "orr `d0, `s0, `s1",
-			       new Temp[] { left.temp(), right.temp() },
-			       new Temp[] { retval.temp() }));
+			       new Temp[] { retval.temp() },
+			       new Temp[] { left.temp(), right.temp() }));
 		visitRet = retval;
 		break;
 	    case Bop.REM: // FSK added, not andyb
@@ -421,8 +420,8 @@ final class CodeGen {
 		right = visitRet;
 		retval = new ExpValue(new Temp(tf));
 		emit(new Instr(inf, e, "mov `d0, `s0 LSL `s1",
-			       new Temp[] { left.temp(), right.temp() },
-			       new Temp[] { retval.temp() } ));
+			       new Temp[] { retval.temp() } ,
+			       new Temp[] { left.temp(), right.temp() }));
 		visitRet = retval;
 		break;
 	    case Bop.SHR: // FSK added, not andyb
@@ -432,8 +431,8 @@ final class CodeGen {
 		right = visitRet;
 		retval = new ExpValue(new Temp(tf));
 		emit(new Instr(inf, e, "mov `d0, `s0 LSR `s1",
-			       new Temp[] { left.temp(), right.temp() },
-			       new Temp[] { retval.temp() } ));
+			       new Temp[] { retval.temp() } ,
+			       new Temp[] { left.temp(), right.temp() }));
 		visitRet = retval;
 		break;
 	    case Bop.USHR: // FSK added, not andyb
@@ -446,8 +445,8 @@ final class CodeGen {
 		right = visitRet;
 		retval = new ExpValue(new Temp(tf));
 		emit(new Instr(inf, e, "eor `d0, `s0, `s1",
-			       new Temp[] { left.temp(), right.temp() },
-			       new Temp[] { retval.temp() }));
+			       new Temp[] { retval.temp() },
+			       new Temp[] { left.temp(), right.temp() }));
 		visitRet = retval;
 		break;
 	    default:
@@ -530,8 +529,7 @@ final class CodeGen {
             ExpValue retval = new ExpValue(new Temp(tf));
             emitLabelRef(((NAME)e).label, e);
             emit(new Instr(inf, e, "ldr `d0, "+ getLabelRef(((NAME)e).label),
-                           null,
-                           new Temp[] { retval.temp() }));
+                           new Temp[] { retval.temp() },null));
             visitRet = retval;
         }
 
@@ -548,14 +546,100 @@ final class CodeGen {
             }
         }
 
+	/** FIX THIS.
+	 */
         public void visit(UNOP e) {
-            /* XXX */
-	    Util.assert(false, "visit(UNOP) not implemented");
+	    ExpValue retval, exp;
+	    switch(e.op) {
+	    case Uop._2B:
+		e.operand.visit(this);
+		exp = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "_2b `d0, `s0",
+			       new Temp[] { retval.temp() },
+			       new Temp[] { exp.temp() }));
+		break;
+		// Util.assert(false, "FSK: Don't know how to handle _2B for StrongARM " + e);
+	    case Uop._2C:
+		e.operand.visit(this);
+		exp = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "_2c `d0, `s0",
+			       new Temp[] { retval.temp() },
+			       new Temp[] { exp.temp() }));
+		break;
+		// Util.assert(false, "FSK: Don't know how to handle _2C for StrongARM " + e);
+	    case Uop._2D:
+		e.operand.visit(this);
+		exp = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "_2d `d0, `s0",
+			       new Temp[] { retval.temp() },
+			       new Temp[] { exp.temp() }));
+		break;
+		// Util.assert(false, "FSK: Don't know how to handle _2D for StrongARM " + e);
+	    case Uop._2F:
+		e.operand.visit(this);
+		exp = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "_2f `d0, `s0",
+			       new Temp[] { retval.temp() },
+			       new Temp[] { exp.temp() }));
+		break;
+		// Util.assert(false, "FSK: Don't know how to handle _2F for StrongARM " + e);
+	    case Uop._2I:
+		e.operand.visit(this);
+		exp = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "_2i `d0, `s0",
+			       new Temp[] { retval.temp() },
+			       new Temp[] { exp.temp() }));
+		break;
+		// Util.assert(false, "FSK: Don't know how to handle _2I for StrongARM " + e);
+	    case Uop._2L:
+		e.operand.visit(this);
+		exp = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "_2l `d0, `s0",
+			       new Temp[] { retval.temp() },
+			       new Temp[] { exp.temp() }));
+		break;
+		// Util.assert(false, "FSK: Don't know how to handle _2L for StrongARM " + e);
+	    case Uop._2S:
+		e.operand.visit(this);
+		exp = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "_2s `d0, `s0",
+			       new Temp[] { retval.temp() },
+			       new Temp[] { exp.temp() }));
+		break;
+		// Util.assert(false, "FSK: Don't know how to handle _2S for StrongARM " + e);
+	    case Uop.NEG:
+		e.operand.visit(this);
+		exp = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "neg `d0, `s0",
+			       new Temp[] { retval.temp() },
+			       new Temp[] { exp.temp() }));
+		break;
+		// Util.assert(false, "FSK: Don't know how to handle NEG for StrongARM " + e);
+	    case Uop.NOT:
+		e.operand.visit(this);
+		exp = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "not `d0, `s0",
+			       new Temp[] { retval.temp() },
+			       new Temp[] { exp.temp() }));
+		break;
+		// Util.assert(false, "FSK: Don't know how to handle NOT for StrongARM " + e);
+	    default:
+		Util.assert(false, "Failed to match operation " + e);
+	    }
         }
 
         private void emitMoveConst(HCodeElement s, Temp t, Number n) {
-            emit(new Instr(inf, s, "mov `d0, #"+n.intValue(), null,
-                           new Temp[] { t }));
+            emit(new Instr(inf, s, "mov `d0, #"+n.intValue(),
+                           new Temp[] { t },null));
         }
     }
 }
