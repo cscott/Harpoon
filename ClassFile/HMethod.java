@@ -12,7 +12,7 @@ import harpoon.Util.ArrayFactory;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30.2.12 2000-01-13 23:47:47 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30.2.13 2000-01-29 11:05:54 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -84,7 +84,11 @@ public interface HMethod extends HMember {
    */
   public boolean isSynthetic();
 
-  /** Determines whether this <code>HMethod</code> is an interface method. */
+  /** Determines whether this <code>HMethod</code> is an interface method.
+   *  @return true if the declaring class is an interface, unless this
+   *          method represents the static class initializer of the
+   *          interface.
+   */
   public boolean isInterfaceMethod();
 
   /** Determines whether this is a static method. */

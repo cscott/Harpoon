@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  * initializer method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HInitializer.java,v 1.1.2.2 2000-01-13 23:47:47 cananian Exp $
+ * @version $Id: HInitializer.java,v 1.1.2.3 2000-01-29 11:05:54 cananian Exp $
  * @see HMethod
  * @see HConstructor
  */
@@ -24,6 +24,13 @@ public interface HInitializer extends HMethod {
      */
     public String getName();
     
+    /** Determines whether this <code>HInitializer</code> is an interface
+     *  method.
+     *  @return false for all class initializers (even class initializers
+     *          belonging to interface classes)
+     */
+    public boolean isInterfaceMethod();
+
     /**
      * Returns a hashcode for this class initializer.  This hashcode is
      * computed as the exclusive-or of the hashcodes of the initializer's

@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodImpl.java,v 1.1.4.1 2000-01-13 23:47:47 cananian Exp $
+ * @version $Id: HMethodImpl.java,v 1.1.4.2 2000-01-29 11:05:54 cananian Exp $
  * @see HMethod
  */
 abstract class HMethodImpl
@@ -141,7 +141,7 @@ abstract class HMethodImpl
 
   /** Determines whether this <code>HMethod</code> is an interface method. */
   public boolean isInterfaceMethod() {
-    return parent.isInterface();
+    return parent.isInterface() && !(this instanceof HInitializer);
   }
   /** Determines whether this is a static method. */
   public boolean isStatic() {

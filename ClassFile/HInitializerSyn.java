@@ -11,7 +11,7 @@ import java.lang.reflect.Modifier;
  * a class initializer method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HInitializerSyn.java,v 1.1.4.2 2000-01-17 23:49:06 cananian Exp $
+ * @version $Id: HInitializerSyn.java,v 1.1.4.3 2000-01-29 11:05:54 cananian Exp $
  */
 class HInitializerSyn extends HMethodSyn implements HInitializer {
     
@@ -21,6 +21,8 @@ class HInitializerSyn extends HMethodSyn implements HInitializer {
 	this.modifiers = Modifier.STATIC | Modifier.FINAL;
     }
     
+    public boolean isInterfaceMethod() { return false; }
+
     // can't really change any of the properties of a class initializer.
     public HMethodMutator getMutator() { return null; }
    

@@ -12,6 +12,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HDataElement;
 import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HInitializer;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.ALIGN;
@@ -38,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.11 2000-01-25 04:09:12 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.12 2000-01-29 11:05:53 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -249,8 +250,12 @@ public class DataClaz extends Data {
 	    methods.addAll(Arrays.asList(((HClass)it.next()).getMethods()));
 	methods.retainAll(ch.callableMethods());
 	// double-check that these are all interface methods
-	for (Iterator it=methods.iterator(); it.hasNext(); )
-	    Util.assert(((HMethod)it.next()).isInterfaceMethod());
+	// (also discard class initializers from the list)
+	for (Iterator it=methods.iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    if (hm instanceof HInitializer) it.remove();
+	    else Util.assert(hm.isInterfaceMethod());
+	}
 	// remove duplicates (two methods with same signature)
 	Set sigs = new HashSet();
 	for (Iterator it=methods.iterator(); it.hasNext(); ) {

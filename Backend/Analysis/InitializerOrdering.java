@@ -28,7 +28,7 @@ import java.util.Set;
  * in that case.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerOrdering.java,v 1.1.2.1 1999-10-14 20:34:05 cananian Exp $
+ * @version $Id: InitializerOrdering.java,v 1.1.2.2 2000-01-29 11:05:40 cananian Exp $
  */
 public class InitializerOrdering {
     public final List sorted;
@@ -86,6 +86,7 @@ public class InitializerOrdering {
 		examineMethod(ch, cg, initClass, deps[i],
 			      touched, added, _sorted);
 	}
+	// XXX: ACCESSED FIELDS ALSO TRIGGER INITIALIZERS!
 	// okay, done looking at this method.
     }
     private void warnCircle(HClass hc) {

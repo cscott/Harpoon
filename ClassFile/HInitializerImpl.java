@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  * <code>HInitializer</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HInitializerImpl.java,v 1.1.4.1 2000-01-13 23:47:47 cananian Exp $
+ * @version $Id: HInitializerImpl.java,v 1.1.4.2 2000-01-29 11:05:54 cananian Exp $
  * @see HInitializer
  */
 
@@ -25,6 +25,8 @@ abstract class HInitializerImpl extends HMethodImpl implements HInitializer {
      */
     public String getName() { return "<clinit>"; }
     
+    public boolean isInterfaceMethod() { return false; }
+
     /**
      * Returns a hashcode for this class initializer.  This hashcode is
      * computed as the exclusive-or of the hashcodes of the initializer's
