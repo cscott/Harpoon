@@ -882,7 +882,7 @@ public class Termination {
 		// We have an ArrayDescriptor!
 		Expr index=de.getIndex();
 		if (!index.isValue()) {/* Not assignable */
-		    System.out.println("ERROR:Index is assignable");
+		    System.out.println("ERROR:Index isn't assignable");
 		    return false;
 		}
 		Updates updates=new Updates(index,i,ap,lexpr,slotnumber);

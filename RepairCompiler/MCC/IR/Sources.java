@@ -10,11 +10,12 @@ public class Sources {
     }
 
     public boolean setSource(SetDescriptor sd) {
-	if (sd.getSymbol().equals("InodeBitmapBlock"))
+	SetDescriptor usedblock=(SetDescriptor)state.stSets.get("UsedBlock");
+	SetDescriptor usedinode=(SetDescriptor)state.stSets.get("UsedInode");
+
+	if (usedblock.isSubset(sd))
 	    return true;
-	if (sd.getSymbol().equals("InodeTableBlock"))
-	    return true;
-	if (sd.getSymbol().equals("RootDirectoryInode"))
+	if (usedinode.isSubset(sd))
 	    return true;
 
 	return false;
@@ -23,12 +24,14 @@ public class Sources {
 	return !setSource(sd);
     }
     public SetDescriptor getSourceSet(SetDescriptor sd) {
-	if (sd.getSymbol().equals("InodeBitmapBlock"))
+	SetDescriptor usedblock=(SetDescriptor)state.stSets.get("UsedBlock");
+	SetDescriptor usedinode=(SetDescriptor)state.stSets.get("UsedInode");
+
+	if (usedblock.isSubset(sd))
 	    return (SetDescriptor)state.stSets.get("FreeBlock");
-	if (sd.getSymbol().equals("InodeTableBlock"))
-	    return (SetDescriptor)state.stSets.get("FreeBlock");
-	if (sd.getSymbol().equals("RootDirectoryInode"))
+	if (usedinode.isSubset(sd))
 	    return (SetDescriptor)state.stSets.get("FreeInode");
+
 	return null;
     }
 
