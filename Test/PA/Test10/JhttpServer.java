@@ -12,12 +12,13 @@ import java.io.*;
 public class JhttpServer extends Thread{
 
     private ServerSocket server;
-
+    public boolean logging;
 //****************************************************************************
 // Constructor: JhttpServer(int)
 //****************************************************************************
-    public JhttpServer(int port)
+    public JhttpServer(int port, boolean logging)
     {
+	this.logging=logging;
 	System.out.println("starting...");
 	try{
 	    System.out.println("creating the port");
@@ -30,7 +31,7 @@ public class JhttpServer extends Thread{
     }
 
     private void startWorker(Socket client) throws Exception {
-	(new JhttpWorker(client)).start();
+	(new JhttpWorker(client,logging)).start();
 	System.out.println("accepted connection.");
     }
 
@@ -62,7 +63,7 @@ public class JhttpServer extends Thread{
       System.exit(1);
     }
 
-    (new JhttpServer(Integer.parseInt(args[0]))).start();
+    (new JhttpServer(Integer.parseInt(args[0]),Integer.parseInt(args[1])==1)).start();
   }
 }
 

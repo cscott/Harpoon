@@ -21,9 +21,11 @@ public class JhttpWorker extends Thread{
     public  String httpVersion = "http/1.0";
     private Socket client;
     public  int    fileLength, returnCode;
+    private boolean logging;
 
-    public JhttpWorker(Socket client){
+    public JhttpWorker(Socket client, boolean logging){
 	this.client = client;
+	this.logging=logging;
     }
     
     public void run(){ 
@@ -70,11 +72,12 @@ public class JhttpWorker extends Thread{
 	    
 	    try{
 		out.flush();
-		LogFile.write_log(client,methodType,fileName,httpVersion,
-				  resp.returnCode,resp.sentBytes);
+		if (logging)
+		    LogFile.write_log(client,methodType,fileName,httpVersion,
+				      resp.returnCode,resp.sentBytes);
 
-		//out.close();
-		//in.close();
+		out.close();
+		in.close();
 		client.close();
 	    }
 	    catch(IOException e){
