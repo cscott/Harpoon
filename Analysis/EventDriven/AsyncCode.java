@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.58 2000-03-24 06:49:32 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.59 2000-03-25 10:14:26 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -428,29 +428,8 @@ public class AsyncCode {
 	HMethod hconst=continuationClass.getConstructor(new HClass[0]);
 	hconst.getMutator().setParameterTypes(new HClass[]{environment});
 	
-	ContCodeSSI ccssi=new ContCodeSSI(hconst);
-	Temp tenv=new Temp(ccssi.getFactory().tempFactory()),
-	    tthis=new Temp(ccssi.getFactory().tempFactory());
-	HEADER header=new HEADER(ccssi.getFactory(),null);
-	METHOD method=new METHOD(ccssi.getFactory(),null,
-				 new Temp[] {tthis,tenv},1);
-	SET set=new SET(ccssi.getFactory(),null,envf,tthis,tenv);
-	RETURN qreturn=new RETURN(ccssi.getFactory(),null,null); 
-	FOOTER footer=new FOOTER(ccssi.getFactory(),null,2);
-	Quad.addEdge(header,0,footer,0);
-	Quad.addEdge(header,1,method,0);
-	Quad.addEdge(method,0,set,0);
-	Quad.addEdge(set,0,qreturn,0);
-	Quad.addEdge(qreturn,0,footer,1);
-	ccssi.quadSet(header);
-	
-	ucf.put(hconst, ccssi);
 
-	    //new HClassSyn(template);
-	final int numConstructors = continuationClass.getConstructors().length;
-	Util.assert(numConstructors == 1,
-		    "Found " + numConstructors + " constructors in " +
-		    "ContTemplate. Expected one");
+
 
 	// use the return type of the blocking HMethod to get the String 
 	// prefix for the superclass for the continuation we want to create
@@ -460,6 +439,49 @@ public class AsyncCode {
 	// get the superclass for the continuation
 	final HClass superclass = linker.forName
 	    ("harpoon.Analysis.ContBuilder." + superPref + "Continuation");
+
+
+
+
+
+	ContCodeSSI ccssi=new ContCodeSSI(hconst);
+	TempFactory tf=ccssi.getFactory().tempFactory();
+	Temp tenv=new Temp(tf),
+	    tthis=new Temp(tf);
+	HEADER header=new HEADER(ccssi.getFactory(),null);
+	METHOD method=new METHOD(ccssi.getFactory(),null,
+				 new Temp[] {tthis,tenv},1);
+	
+	Temp t1=new Temp(tf),t2=new Temp(tf),retex=new Temp(tf);
+	CALL call =new CALL(ccssi.getFactory(),null,superclass.getConstructor(new HClass[0]), 
+			    new Temp[] {tthis},null,retex,false,false,
+			    new Temp[][] {{t1,new Temp(tf)},{t2,new Temp(tf)}},new Temp[] {tthis, tenv});
+	tthis=t1;tenv=t2;
+	THROW qthrow=new THROW(ccssi.getFactory(),null,retex);
+	SET set=new SET(ccssi.getFactory(),null,envf,tthis,tenv);
+	RETURN qreturn=new RETURN(ccssi.getFactory(),null,null); 
+	FOOTER footer=new FOOTER(ccssi.getFactory(),null,3);
+
+	Quad.addEdge(header,0,footer,0);
+	Quad.addEdge(header,1,method,0);
+	Quad.addEdge(method,0,call,0);
+	Quad.addEdge(call,0,set,0);
+	Quad.addEdge(set,0,qreturn,0);
+	Quad.addEdge(qreturn,0,footer,1);
+	Quad.addEdge(call,1,qthrow,0);
+	Quad.addEdge(qthrow,0,footer,2);
+	
+	ccssi.quadSet(header);
+	
+	
+	ucf.put(hconst, ccssi);
+
+	    //new HClassSyn(template);
+	final int numConstructors = continuationClass.getConstructors().length;
+	Util.assert(numConstructors == 1,
+		    "Found " + numConstructors + " constructors in " +
+		    "ContTemplate. Expected one");
+
 
 	contMutator.setSuperclass(superclass);
 

@@ -34,7 +34,7 @@ import java.util.Set;
  * <code>EnvBuilder</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvBuilder.java,v 1.1.2.9 2000-03-22 19:28:42 bdemsky Exp $
+ * @version $Id: EnvBuilder.java,v 1.1.2.10 2000-03-25 10:14:10 bdemsky Exp $
  */
 public class EnvBuilder {
     protected final CachingCodeFactory ucf;
@@ -130,9 +130,9 @@ public class EnvBuilder {
 						  HClass.Void);
 	
 	
-	ucf.put(nc, new EnvCode(nc, fields));
+	ucf.put(nc, new EnvCode(nc, fields,linker));
 	if (recycle)
-	    ucf.put(hrecycle,new EnvCode(hrecycle,fields));
+	    ucf.put(hrecycle,new EnvCode(hrecycle,fields,null));
 	
 	System.out.println("Leaving EnvBuilder.makeEnv()");
 	return env;
