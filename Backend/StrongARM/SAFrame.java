@@ -1,4 +1,4 @@
-// Frame.java, created by andyb
+// SAFrame.java, created by andyb
 // Copyright (C) 1999 Andrew Berkheimer <andyb@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.StrongARM;
@@ -8,6 +8,7 @@ import harpoon.Temp.TempFactory;
 import harpoon.Backend.Allocation.AllocationStrategy;
 import harpoon.Backend.Allocation.DefaultAllocationStrategy;
 import harpoon.Backend.Allocation.DefaultAllocationInfo;
+import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Exp;
@@ -16,14 +17,13 @@ import harpoon.IR.Tree.TreeFactory;
 import harpoon.ClassFile.HCodeElement;
 
 /**
- * <code>StrongARM.Frame</code> contains the machine-dependant
+ * <code>SAFrame</code> contains the machine-dependant
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.2 1999-02-16 21:33:10 duncan Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.1 1999-02-17 03:29:44 andyb Exp $
  */
-public class Frame extends harpoon.Backend.Generic.Frame 
-  implements DefaultAllocationInfo {
+public class SAFrame extends Frame implements DefaultAllocationInfo {
     private static Temp[] reg = new Temp[16];
     /** TempFactory used to create register temps */
     private TempFactory regtf;
@@ -39,7 +39,7 @@ public class Frame extends harpoon.Backend.Generic.Frame
         //};
     }
 
-    Frame() {
+    SAFrame() {
         mas = new DefaultAllocationStrategy(this);
         tf = Temp.tempFactory("global");
     }
