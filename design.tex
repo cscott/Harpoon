@@ -1,10 +1,10 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: design.tex,v 1.9 1998-07-15 23:48:15 cananian Exp $
+% $Id: design.tex,v 1.10 1998-09-08 14:31:01 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn]{article}
 \author{C.~Scott~Ananian}
 \title{Turning Java into Hardware: \\ Caffinated Compiler Construction}
-\date{\today \\ $ $Revision: 1.9 $ $}
+\date{\today \\ $ $Revision: 1.10 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -99,7 +99,7 @@ This paper explores the design of a compiler for the Java
 programming language.  Unlike many compilers, the target is hardware,
 not bytecodes or machine instructions.
 Java's simplicity, object-orientation, and
-strong typing make it well suited to an class-based hardware
+strong typing make it well suited to class-based hardware
 translation.  It is also possible to leverage Java's thread interfaces
 to model coarse-grain parallelism in hardware.  The goal is the
 efficient generation of hardware from a well-known general-purpose
@@ -107,41 +107,46 @@ programming language.  The use of one specification language for both
 the hardware and software components of a system could also aid
 hardware-software codesign; this may be explored in future work.
 
-Java, as a general-purpose portable programming language, also
+Java, as a general-purpose portable programming language, 
 presents obstacles to its use as a hardware specification language.
 The lack of integer types with parameterized bit-widths is a
 limitation that compiler technology can overcome.  It is not certain
 that Java's inability to specify real-time constraints on code or
 describe hardware interfaces at the wire and timing level can be
-similarly smoothed over.
+similarly smoothed over.  This is a topic of research.
 
 \section{Java/Hardware Semantics}
-The hardware semantics of Java are tied closely to its object model.
+The hardware semantics we give Java are tied closely to its object model.
 As a general rule, every class instance corresponds to a hardware
 block, with the method call graph of the program dictating the wiring
 between blocks.  Fully dynamic allocation is not supported at this
 point, as it would involve dynamically reconfigurable logic.  Only
 static allocations can be synthesized into hardware; however, it is
 possible through intelligent analysis to convert most dynamic
-allocations into static ones.  This analysis is similar to that
-performed when compiling for DSP targets \cite{DSP_targets} and is
+allocations into static ones.  This analysis is similar to 
+global allocation algorithms used
+for DSP targets \cite{DSP_targets} and is
 described further in \ref{sec:ext_type_analysis}.
 
 \subsection{Object semantics}
 Methods form the interfaces to the hardware generated for class
 instances.  The mapping is one-to-one: we associate a bus with
 every formal parameter to the method, and another with the return
-value.  Our static allocation analysis transparently handles
+value.\footnote{Our IR actually represents calls as returning an
+optional exception object in addition to the usual return value; thus
+\textit{two} buses are actually associated with the return.}
+Our static allocation analysis transparently handles
 single-use return-value objects to allow methods to return multiple
 values.  Methods are treated as if they are inlined in the code; that
 is, their logic is typically replicated at every call.\footnote{The
 replicated code blocks should be specially tagged as potential targets
-for later optimization, however.}  The exceptions are
+for later optimization, however.  See also section
+\ref{sec:functional}.}  The exceptions are
 \texttt{synchronized} methods, where the synchronization primitives
 arbitrate method-logic sharing.  In cases where static analysis does
 not permit an exact determination of the object pointed to by
 a variable, multiplexers are inserted to perform method dispatches
-dynamically. 
+dynamically.
 
 Fields in a Java class are also translated as wiring directives,
 utilizing renaming as necessary.  Parallel field accesses should be
@@ -153,15 +158,15 @@ phase and compiled as parallel hardware.  This is a natural extension
 of the object semantics, as \texttt{java.lang.Thread} is a proper 
 object in the Java environment.
 
-Exceptions objects are supported, but they have no special meaning other than
-as a means of transferring control.  They are statically allocated
+Exception objects are supported, but they have no special meaning other than
+as a special type of method return value.  They are statically allocated
 like all other objects.
 
 Up to this point we have left unspecified issues of timing.
 
 \subsection{Timing semantics}
-The efficient implementation of Java in hardware entails walking a
-tight-rope between the usual sequential statement-execution semantics
+The efficient implementation of Java in hardware entails a tight-rope walk
+between the usual sequential statement-execution semantics
 and a radically synchronous reading similar to the languages Esterel
 \cite{berry:esterel_primer}, Lucid \cite{missing_reference}, and
 SIGNAL \cite{amagbegnon95:signal}.  One option is to create an
@@ -189,27 +194,28 @@ Conceptually, all statements take a finite but infinitesimal amount of
 time, excepting at points where we wait for the next clock tick.
 % multiple-emitter example, again.
 
-It is desirable to have a clear timing model for our hardware
-implementation so that a programmer can easily understand and specify
+The external event clock synchronization should follow a clear timing model
+so that a programmer can easily understand and specify
 the clock-cycle-level behavior of a Java specification.  We use a
-simple model which is a variant of a scheme first proposed in
+variant of a scheme first proposed in
 \cite{galloway95:transmogrifier}:  back edges in a control flow graph
 correspond to cycle boundaries.  That is, any loop back to prior code
 will take one cycle.  Looping constructs are the only place where
 these back edges will be found, and they will take one clock cycle for
-every loop iteration.\footnote{It is probably desirable to come up
-with an explicit ``pause for tick'' statement, as well, although it
-can be synthesized from a 2-iteration loop.}
+every loop iteration.\footnote{An explicit ``pause for tick'' statement
+can be synthesized from a 2-iteration loop, although this will
+probably be wrapped in a library method to hide the implementation.}
 
 Note that only backwards control-flow-graph edges cause cycle
 boundaries.  The first loop iteration is executed in the same clock
 cycle as the code preceding it, and the last loop iteration occurs in
-the same clock as code following it.  Zero- or one-iteration loops do
-not create clock cycle boundaries.
+the same clock as code following it.\footnote{This behavior can be
+changed by using the pause-for-tick statement, of course.}
+Zero- or one-iteration loops do not create clock cycle boundaries.
 
 Registers are inserted on any wires that cross clock cycle
-boundaries.  Although typically all objects fields will become
-registers (in order that they might save state across cycle
+boundaries.  Although typically all object fields will become
+registers (in order to save state across cycle
 boundaries), certain short-lived fields will not be registered.  The
 short-lifetime objects used to return multiple values from a function
 are a good example of fields unlikely to be synthesized as registers.
@@ -219,7 +225,7 @@ Our goal is to be able to synthesize any Java program without any
 restrictions.  However, the initial implementation will probably not
 support some language features.
 
-The first language restriction is on dynamic allocations, as
+The first language restriction is on dynamic allocation, as
 previously discussed.  The first compiler implementation will require
 that all objects must be statically allocatable at compile time.
 Future work may lift this restriction through the use of dynamically
@@ -235,6 +241,7 @@ All other language features are supported.
 
 \subsection{External interfacing}
 
+% FIXME FIXME FIXME
 The means by which a Java hardware specification will specify its
 chip-level external interfaces has not yet been determined.
 
@@ -273,6 +280,7 @@ boolean constants resulting from use of the Java \texttt{instanceof}
 operator.
 
 \subsection{Functional Methods}
+\label{sec:functional}
 When attempting to synchronize parallel threads using the Java monitor
 semantics, it will be useful to distinguish between
 \textit{functional} and what we shall call \textit{non-functional}
@@ -298,8 +306,8 @@ multiplication in \cite{granlund94:divopt}; the multipliers generated
 can often be subsequently decomposed as adders.  Certainly
 multiplication and division by powers of two should be optimized.
 
-A variety of parallelizing compiler optimizations can be utilized as
-well to further expose parallelism in the specification.  In
+A variety of parallelizing compiler optimizations can be utilized in addition
+to further expose parallelism in the specification.  In
 particular, it will be desirable to remove unnecessary control
 dependencies from the code, as well as unroll loops if the programmer
 so requests.  Code motion transformations can have a large impact on
@@ -320,17 +328,11 @@ a minimum-required bitwidth from the constants and expressions used.
 This is highly desirable for an efficient hardware implementation.
 
 \subsection{Representations}
-\section{Hardware Synthesis Details}
-\subsection{Translating Dataflow/SSA into Hardware}
-\subsection{Interface Timing Issues}
-\subsection{Object-orientation and Inheritance}
-%\section{Related Research}
-%\subsection{Intermediate Representations}
-%\subsection{Compiling Real-Time programs}
-%\subsection{Array Analysis Techniques}
-%\subsection{Loop Analysis Techniques}
-%\subsection{Logic Synthesis}
-%\section{Conclusion}
+
+The intermediate format of the compiler is described in a separate paper.
+
+\section{Worked example}
+\section{Conclusion}
 
 \bibliography{harpoon}
 
