@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.22 2000-01-10 20:52:22 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.23 2000-01-10 22:22:57 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -687,14 +687,10 @@ public class AsyncCode {
 	    } else {
 		followchildren=true;
 		//need to check if swop necessary
-		final HMethod gis=HClass.forName("java.net.Socket").getDeclaredMethod("getInputStream", new HClass[0]);
-		if (gis.compareTo(q.method())==0) {
+		if (swapTo(q.method())!=null) {
 		    //need to swop
-		    final HMethod gais = 
-			HClass.forName("java.net.Socket").getDeclaredMethod
-			("getAsyncInputStream", new HClass[0]);   
 		    Temp tstream=ctmap.tempMap(q.params(0));
-		    quadmap.put(q,new CALL(hcode.getFactory(), q, gais,
+		    quadmap.put(q,new CALL(hcode.getFactory(), q, swapTo(q.method()),
 				       new Temp[]{tstream}, 
 				       ctmap.tempMap(q.retval()),
 				       ctmap.tempMap(q.retex()), q.isVirtual(),
@@ -706,6 +702,14 @@ public class AsyncCode {
 	}
     }
 
+
+    public static HMethod swapTo(HMethod old) {
+	final HMethod gis=HClass.forName("java.net.Socket").getDeclaredMethod("getInputStream", new HClass[0]);
+	if (gis.compareTo(old)==0)
+	    return HClass.forName("java.net.Socket").getDeclaredMethod
+		("getAsyncInputStream", new HClass[0]);
+	return null;
+    }
 
     // create asynchronous version of HMethod to replace blocking version
     // does not create HCode that goes w/ it...
