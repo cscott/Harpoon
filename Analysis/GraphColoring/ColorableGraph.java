@@ -12,9 +12,9 @@ import java.util.NoSuchElementException;
  * graph colorers defined in this package.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableGraph.java,v 1.1.2.9 1999-08-04 05:52:21 cananian Exp $ */
+ * @version $Id: ColorableGraph.java,v 1.1.2.10 2000-07-20 17:55:43 pnkfelix Exp $ */
 
-public abstract class ColorableGraph extends Graph {
+public abstract class ColorableGraph extends GraphImpl {
 
     private boolean mutable;
 
