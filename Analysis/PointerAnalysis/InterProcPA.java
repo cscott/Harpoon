@@ -45,7 +45,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.44 2000-06-28 23:05:30 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.45 2000-06-29 02:21:31 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -279,13 +279,13 @@ abstract class InterProcPA {
 
 
     // Treat the calls to native methods.
-    private static ParIntGraphPair treatNative(PointerAnalysis pa,
-					       MetaMethod mm,
-					       CALL q,
-					       ParIntGraph pig_caller) {
+    private static ParIntGraphPair treatNatives(PointerAnalysis pa,
+						MetaMethod mm,
+						CALL q,
+						ParIntGraph pig_caller) {
 	NodeRepository node_rep = pa.getNodeRepository();
 	HMethod hm = mm.getHMethod();
-	if(DEBUG) System.out.println("treatNative: " + hm);
+	if(DEBUG) System.out.println("treatNatives: " + hm);
 
 	ParIntGraph pig_before = (ParIntGraph) pig_caller.clone();
 
@@ -368,7 +368,7 @@ abstract class InterProcPA {
 					 ParIntGraph pig_callee) {
 	// if native method, apply special treatment
 	if(pig_callee == null)
-	    return treatNative(pa, mm, q, pig_caller);
+	    return treatNatives(pa, mm, q, pig_caller);
 
 	PANode[] callee_params = pa.getParamNodes(mm);
 
@@ -907,54 +907,6 @@ abstract class InterProcPA {
     }
 
 
-    /*
-    // special treatment for
-    // "public native Throwable java.lang.Throwable.fillInStackTrace()"
-    private static ParIntGraphPair 
-	treat_fillInStackTrace(PointerAnalysis pa, CALL q, 
-			       ParIntGraph pig_before){
-	HMethod hm = q.method();
-	if(!hm.getName().equals("fillInStackTrace") ||
-	   !hm.getDeclaringClass().getName().equals("java.lang.Throwable"))
-	    return null;
-
-	if(DEBUG)
-	    System.out.println(q + "is treated specially (fillInStackTrace)");
-	
-	ParIntGraph pig_after1 = (ParIntGraph) pig_before.clone();
-
-	// Set the edges for the result node in graph 0.
-	Temp l_R = q.retval();
-	if(l_R != null){
-	    NodeRepository node_rep = pa.getNodeRepository();
-	    pig_before.G.I.removeEdges(l_R);
-	    PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
-	    pig_before.G.I.addEdge(l_R, n_R);
-	    pig_before.G.e.addMethodHole(n_R, hm);
-	}
-
-	return new ParIntGraphPair(pig_before, pig_after1);	
-    }
-
-    // special treatment for 
-    // "private native void java.lang.Thread.setPriority0(int)"
-    private static ParIntGraphPair
-	treat_setPriority0(PointerAnalysis pa, CALL q,
-			   ParIntGraph pig_before){
-
-	HMethod hm = q.method();
-	if(!hm.getName().equals("setPriority0") ||
-	   !hm.getDeclaringClass().getName().equals("java.lang.Thread"))
-	    return null;
-
-	if(DEBUG)
-	    System.out.println(q + "is treated specially (setPriority0)"); 
-
-	return new ParIntGraphPair(pig_before, pig_before);
-    }
-    */
-
-
     // Many native methods don't do any synchronizations on their object
     // parameters, don't store them in static fields and don't modify the
     // points-to graph accessible from these object parameters.
@@ -962,7 +914,8 @@ abstract class InterProcPA {
 	return uhms.contains(hm); 
     }
     // Checks whether a method is totally harmful (i.e. all the parameters
-    // must be marked as escaping into it). 
+    // must be marked as escaping into it). A CALL to such a method cannot
+    // be treated otherwise than by skipping it.
     private static boolean isTotallyHarmful(HMethod hm) {
 	return !isUnharmful(hm); // for the moment, conservative treatment
     }
