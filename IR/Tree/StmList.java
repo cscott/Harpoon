@@ -9,7 +9,7 @@ import harpoon.Temp.CloningTempMap;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: StmList.java,v 1.1.2.2 1999-02-09 21:54:23 duncan Exp $
+ * @version $Id: StmList.java,v 1.1.2.3 1999-02-09 22:47:11 duncan Exp $
  */
 public final class StmList {
     /** The statement at this list entry. */
@@ -20,9 +20,12 @@ public final class StmList {
     public StmList(Stm head, StmList tail)
     { this.head=head; this.tail=tail; }
 
-    public StmList rename(TreeFactory tf, CloningTempMap ctm) {
-        return new StmList((Stm)((head==null)?null:head.rename(tf, ctm)),
-			   ((tail==null)?null:tail.rename(tf, ctm)));
+    public static StmList rename(StmList s, TreeFactory tf, 
+				 CloningTempMap ctm) {
+        if (s==null) return null;
+	else return new StmList
+	       ((Stm)((s.head==null)?null:s.head.rename(tf, ctm)),
+		rename(s.tail, tf, ctm));
     }
 }
 

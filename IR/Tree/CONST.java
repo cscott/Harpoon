@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.7 1999-02-09 21:54:23 duncan Exp $
+ * @version $Id: CONST.java,v 1.1.2.8 1999-02-09 22:47:12 duncan Exp $
  */
 public class CONST extends Exp implements Typed {
     /** The constant value of this <code>CONST</code> expression. */
@@ -35,7 +35,13 @@ public class CONST extends Exp implements Typed {
 	super(tf, source);
 	this.type = DOUBLE; this.value = new Double(dval);
     }
-
+    private CONST(TreeFactory tf, HCodeElement source, 
+		  int type, Number value) {
+        super(tf, source);
+	this.type = type; this.value = value;
+    }
+    
+    
     /** Return the constant value of this <code>CONST</code> expression. */
     public Number value() { return value; }
 
@@ -55,21 +61,7 @@ public class CONST extends Exp implements Typed {
     public void visit(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        CONST result;
-	switch (this.type)
-	  {
-	  case INT:     
-	    result = new CONST(tf, this, ((Integer)value).intValue());   break;
-	  case LONG:
-	    result = new CONST(tf, this, ((Long)value).longValue());     break;
-	  case FLOAT:
-	    result = new CONST(tf, this, ((Float)value).floatValue());   break;
-	  case DOUBLE:  
-	    result = new CONST(tf, this, ((Double)value).doubleValue()); break;
-	  default: 
-	    throw new Error("Unexpected type for constant: " + this.type);
-	  }
-	return result;
+        return new CONST(tf, this, type, value);
     }
   
 }

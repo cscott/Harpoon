@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.5 1999-02-09 21:54:22 duncan Exp $
+ * @version $Id: CALL.java,v 1.1.2.6 1999-02-09 22:47:11 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  */
 public class CALL extends Stm {
@@ -50,7 +50,7 @@ public class CALL extends Stm {
 			(Exp)retval.rename(tf, ctm),
 			(Exp)retex.rename(tf, ctm), 
 			(Exp)func.rename(tf, ctm),
-			args.rename(tf, ctm));
+			ExpList.rename(args, tf, ctm));
   }
     
 }

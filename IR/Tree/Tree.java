@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.2 1999-02-09 21:54:23 duncan Exp $
+ * @version $Id: Tree.java,v 1.1.2.3 1999-02-09 22:47:11 duncan Exp $
  */
 public abstract class Tree 
     implements harpoon.ClassFile.HCodeElement
@@ -60,9 +60,9 @@ public abstract class Tree
 	};
   
     
-    public Object clone() { 
-        return rename(this.tf, new CloningTempMap(tf.tempFactory(), 
-						  tf.tempFactory()));
+    public Object clone(TreeFactory tf) { 
+        return rename(tf, new CloningTempMap(this.tf.tempFactory(), 
+					     tf.tempFactory()));
     }
 
     public Object clone(TreeFactory tf, CloningTempMap ctm) { 
@@ -71,7 +71,7 @@ public abstract class Tree
 
     public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);
     public Tree rename(CloningTempMap ctm) {
-      return rename(this.tf, ctm);
+        return rename(this.tf, ctm);
     }
 
     protected final static Temp map(TempMap tm, Temp t) {
