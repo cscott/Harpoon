@@ -45,7 +45,7 @@ public class Display extends Node {
 	frame = new Frame(title);
 	frame.addWindowListener(new WindowAdapter() {
 	    public void windowClosing(WindowEvent e) {
-		System.exit(0);
+		frame.setVisible(false);
 	    }
 	});
 	frame.setLayout(new BorderLayout());
@@ -56,19 +56,21 @@ public class Display extends Node {
 
     /** Display the image represented by <code>id</code>, usually called by the in-node. */
     public synchronized void process(ImageData id) {
-	BufferedImage newImage = new BufferedImage(id.width, id.height, 
-						   BufferedImage.TYPE_INT_RGB);
-	WritableRaster raster = newImage.getRaster();
-
-	/* Horribly inefficient - find a better way... */
-	int[] vals = new int[id.rvals.length];
-	for (int i=0; i<id.rvals.length; i++) vals[i]=(id.rvals[i]|256)&255;       
-	raster.setSamples(0,0,id.width,id.height,0,vals);
-	for (int i=0; i<id.gvals.length; i++) vals[i]=(id.gvals[i]|256)&255;       
-	raster.setSamples(0,0,id.width,id.height,1,vals);
-	for (int i=0; i<id.bvals.length; i++) vals[i]=(id.bvals[i]|256)&255;       
-	raster.setSamples(0,0,id.width,id.height,2,vals);
-	image = newImage;
-	canvas.repaint();
+	if (frame.isVisible()) {
+	    BufferedImage newImage = new BufferedImage(id.width, id.height, 
+						       BufferedImage.TYPE_INT_RGB);
+	    WritableRaster raster = newImage.getRaster();
+	    
+	    /* Horribly inefficient - find a better way... */
+	    int[] vals = new int[id.rvals.length];
+	    for (int i=0; i<id.rvals.length; i++) vals[i]=(id.rvals[i]|256)&255;       
+	    raster.setSamples(0,0,id.width,id.height,0,vals);
+	    for (int i=0; i<id.gvals.length; i++) vals[i]=(id.gvals[i]|256)&255;       
+	    raster.setSamples(0,0,id.width,id.height,1,vals);
+	    for (int i=0; i<id.bvals.length; i++) vals[i]=(id.bvals[i]|256)&255;       
+	    raster.setSamples(0,0,id.width,id.height,2,vals);
+	    image = newImage;
+	    canvas.repaint();
+	}
     }
 }

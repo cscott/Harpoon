@@ -71,8 +71,15 @@ public class Match extends Node {
      *  @param id The image to process.
      */
     public synchronized void process(ImageData id) {
-	for (int i=0; i<numFiles; i++) {
-	    if (match(id, (iddb!=null)?iddb[i]:ImageDataManip.readPPM(filePrefix+"."+i))) {
+	int length = (iddb!=null)?iddb.length:numFiles;
+	ImageData id1 = id;
+	for (int i=0; i<length; i++) {
+	    ImageData id2 = (iddb!=null)?iddb[i]:ImageDataManip.readPPM(filePrefix+"."+i);
+	    if ((i==0)&&((id1.width!=id2.width)||
+			 (id1.height!=id2.height))) {
+		id1 = ImageDataManip.scale(id1, id2.width, id2.height);
+	    }
+	    if (match(id1, id2)) {
 		super.process(id);
 		break;
 	    }
@@ -80,30 +87,29 @@ public class Match extends Node {
     }
 
     private boolean match(ImageData id1, ImageData id2) {
-	int width = id1.width;
-	int height = id1.height;
-	if ((width!=id2.width)||(height!=id2.height)) {
-	    throw new Error("Incorrect width/height of input image.");
-	}
 	/* This sucks!!!! n^4! */
-	int match = 0;
-	int size = height*width;
-	for (int pos=0; pos<size; pos++) {
-	    if (id1.gvals[pos]==127) {
-		int dist=Integer.MAX_VALUE;
-		for (int pos2=0; pos2<size; pos2++) {
-		    if (id2.gvals[pos2]==127) {
-			int newDist=(pos%width)-(pos2%width);
-			int newDist2=(pos/width)-(pos/width);
-			if ((newDist=newDist*newDist+newDist2*newDist2)<dist) {
-			    dist = newDist;
-			}
-		    }
-		}
-		match+=dist;
-	    }
-	}
-	return match<threshold;
+//  	int width = id2.width;
+//  	int height = id2.height;
+//  	int match = 0;
+//  	int size = height*width;
+//  	for (int pos=0; pos<size; pos++) {
+//  	    if (id1.gvals[pos]==127) {
+//  		int dist=Integer.MAX_VALUE;
+//  		for (int pos2=0; pos2<size; pos2++) {
+//  		    if (id2.gvals[pos2]==127) {
+//  			int newDist=(pos%width)-(pos2%width);
+//  			int newDist2=(pos/width)-(pos/width);
+//  			if ((newDist=newDist*newDist+newDist2*newDist2)<dist) {
+//  			    dist = newDist;
+//  			}
+//  		    }
+//  		}
+//  		match+=dist;
+//  	    }
+//  	}
+//  	System.out.println("Distance: "+match);
+//  	return match<threshold;
+	return true;
     }
 
     /** A faster version of the above. */

@@ -2,7 +2,7 @@
 /**
  *  @file    FrameManip.idl
  *
- *  $Id: FrameManip.idl,v 1.3 2003-02-04 15:28:55 wbeebee Exp $
+ *  $Id: FrameManip.idl,v 1.4 2003-02-06 17:12:19 wbeebee Exp $
  *
  *  @author  Gary Duzan <gduzan@bbn.com>
  */
@@ -19,9 +19,10 @@
   * @namespace FrameManip
   * @brief  Interfaces for sending frame data to processing nodes.
   */
+
 module FrameManip {
-  typedef CosPropertyService::Properties	FrameInfo;
-  typedef sequence<octet>			FrameData;
+  typedef ::omg::org::CosPropertyService::Properties	FrameInfo;
+  typedef sequence<octet>			        FrameData;
 
   struct Frame {
     FrameInfo info;

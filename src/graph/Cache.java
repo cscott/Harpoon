@@ -21,6 +21,17 @@ public class Cache extends Node {
     private int lastID=0;
 
     /** Construct a {@link Cache} node which caches the last n images which
+     *  are sent to it.  Send an <code>GET_IMAGE</code> {@link Command}
+     *  to retrieve an image. 
+     *
+     *  @param numIds The size of the cache in number of {@link ImageData}s.
+     *  @param retrieve The node retrieved images go to.
+     */
+    public Cache(int numIds, Node retrieve) {
+	this(numIds, null, retrieve);
+    }
+
+    /** Construct a {@link Cache} node which caches the last n images which
      *  passed through it.  Send an <code>GET_IMAGE</code> {@link Command}
      *  to retrieve an image. 
      *
@@ -44,13 +55,18 @@ public class Cache extends Node {
      */
     public synchronized void process(ImageData id) {
 	switch (Command.read(id)) {
+	case Command.GET_CROPPED_IMAGE:
 	case Command.GET_IMAGE: {
 	    Node right = getRight();
 	    if (right!=null) {
 		for (int i=0; i<ids.length; i++) {
 		    ImageData retID = ids[i];
 		    if ((retID != null)&&(retID.id == id.id)) {
-			right.process(ImageDataManip.crop(retID, id.x, id.y, id.width, id.height));
+			if (Command.read(id)==Command.GET_CROPPED_IMAGE) {
+			    retID = ImageDataManip.crop(retID, id.x, id.y, id.width, id.height);
+			}
+			
+			right.process(retID);
 			break;
 		    }
 		}

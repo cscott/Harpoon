@@ -80,7 +80,6 @@ public class Label extends Node {
 		x1 = x2 = pos%id.width;
 		y1 = y2 = pos/id.width;
 		label(id, num, pos);
-// 		System.out.println("("+x1+","+y1+")-("+x2+","+y2+")");
 		if (((x2-x1)<minwidth)||((x2-x1)>maxwidth)||
 		    ((y2-y1)<minheight)||((y2-y1)>maxheight)) {
 // 		    System.out.println("Out of bounds!");

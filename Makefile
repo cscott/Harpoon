@@ -2,8 +2,9 @@
 # quo.idl, and rss.idl here.
 UAVDIST=src/corba/UAV
 
-JCC=javac
-IDLCC=idl
+JCC=javac 
+JAVA=java
+IDLCC=idl -I$(JACORB_HOME)/idl/omg
 JAR=jar
 JDOC=javadoc
 SSH=ssh
@@ -13,16 +14,18 @@ INSTALLDIR=public_html/Harpoon/
 ISOURCES=$(wildcard src/graph/*.idl src/corba/*.idl)
 BISOURCES=$(wildcard src/corba/UAV/*.idl)
 JSOURCES=$(wildcard src/*.java src/graph/*.java src/util/*.java src/corba/*.java)
-GJSOURCES=imagerec/graph/*.java imagerec/corba/*.java ATRManip/*.java quo/*.java rss/*.java
+GJSOURCES1=imagerec/graph/*.java imagerec/corba/*.java FrameManip/*.java
+GJSOURCES=$(GJSOURCES1) omg/org/CosPropertyService/*.java ATRManip/*.java quo/*.java rss/*.java
 RTJSOURCES=$(wildcard src/rtj/*.java)
 STUBSOURCES=$(wildcard src/rtj/stubs/*.java)
 SOURCES=$(JSOURCES) $(ISOURCES) $(RTJSOURCES) $(STUBSOURCES)
-IMAGES=$(wildcard dbase/*gz*) $(wildcard movie/*gz*)
+IMAGES=$(wildcard dbase/plane/*gz* dbase/plane/*.jar) $(wildcard movie/*gz* movie/*.jar)
 DSOURCES=$(wildcard paper/README paper/p* src/*.html src/graph/*.html)
 DSOURCES += $(wildcard src/util/*.html src/corba/*.html src/rtj/*.html)
 DSOURCES += $(wildcard src/rtj/stubs/*.html)
-RELEASE=$(SOURCES) README BUILDING COPYING Makefile $(IMAGES) $(DSOURCES)
-JDIRS=imagerec ATRManip quo rss
+MANIFEST=src/MANIFEST.MF
+RELEASE=$(SOURCES) README BUILDING COPYING Makefile $(IMAGES) $(DSOURCES) $(MANIFEST)
+JDIRS=imagerec FrameManip omg ATRManip quo rss
 
 # figure out what the current CVS branch is, by looking at the Makefile
 CVS_TAG=$(firstword $(shell cvs status Makefile | grep -v "(none)" | \
@@ -35,7 +38,7 @@ JDOCFLAGS:=-J-mx128m -version -author -breakiterator \
 	   -quiet -private -linksource 
 JDOCGROUPS:=\
   -group "MIT Image Recognition Program" "imagerec*" \
-  -group "BBN UAV Interface" "ATRManip*:quo*:rss*"
+  -group "BBN UAV Interface" "CosPropertyService*:FrameManip*:omg*:ATRManip*:quo*:rss*"
 JDKDOCLINK=http://java.sun.com/j2se/1.4/docs/api
 JDOCFLAGS += \
 	$(shell if $(JDOC) -help 2>&1 | grep -- "-link " > /dev/null ; \
@@ -59,7 +62,7 @@ doc:	$(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@mkdir -p doc
 	@$(IDLCC) -d . $(ISOURCES)
 	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
-	@javadoc $(JDOCFLAGS) -d doc/ $(JSOURCES) $(GJSOURCES) > doc/STATUS
+	@$(JDOC) $(JDOCFLAGS) -d doc/ $(JSOURCES) $(GJSOURCES) > doc/STATUS
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	@chmod -R a+rX doc
@@ -71,7 +74,7 @@ imagerec.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -f $(GJSOURCES)
-	@jar -cf $@ $(JDIRS)
+	@$(JAR) -cfm $@ $(MANIFEST) $(JDIRS)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
@@ -116,4 +119,4 @@ needs-cvs:
 
 run: doc imagerec.jar
 	@echo Running the program...
-	@java -cp imagerec.jar:$(CLASSPATH) imagerec.Main
+	@$(JAVA) -jar imagerec.jar

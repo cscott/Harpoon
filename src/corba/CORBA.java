@@ -3,12 +3,13 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec.corba;
 
+import FrameManip.ProcessorPOA;
+import FrameManip.ProcessorHelper;
+import FrameManip.Frame;
+
 import ATRManip.ATRSysCond;
 import ATRManip.ATRSysCondHelper;
 import ATRManip.Coordinate;
-import ATRManip.Frame;
-import ATRManip.ProcessorPOA;
-import ATRManip.ProcessorHelper;
 
 import org.omg.CosNaming.NamingContext;
 import org.omg.CORBA.ORB;
@@ -128,9 +129,10 @@ public class CORBA implements CommunicationsModel {
 	ProcessorPOA p = new ProcessorPOA() {
 	    private int id = 0;
 
-	    public void calibrate(Frame f) {
-		// Unused
+	    public FrameManip.Frame transform(FrameManip.Frame f) {
+		return null; // Not currently used.
 	    }
+
 	    public void process(Frame f) {
 		out.process(ImageDataManip.readPPM(f.data));
 	    }
