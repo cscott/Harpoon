@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.64 1999-09-11 17:54:01 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.65 1999-09-13 01:35:47 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -60,9 +60,11 @@ ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		egrep -v "^[.]/java_cup" | \
 		sed -e "s|^[.]/*||")
 
-MACHINE_SRC := Tools/PatMat/Lexer.jlex Tools/PatMat/Parser.cup
+MACHINE_SRC := Tools/PatMat/Lexer.jlex Tools/PatMat/Parser.cup \
+               Tools/Annotation/Java12.cup
 MACHINE_GEN := Tools/PatMat/Lexer.java Tools/PatMat/Parser.java \
-	     Tools/PatMat/Sym.java
+               Tools/Annotation/Java12.java \
+               Tools/PatMat/Sym.java Tools/Annotation/Sym.java
 
 CGSPECS:=$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.spec))
 CGJAVA :=$(patsubst %.spec,%.java,$(CGSPECS))
