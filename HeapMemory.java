@@ -33,16 +33,12 @@ public final class HeapMemory extends MemoryArea {
     
     /** Overrides memoryConsumed() from <code>MemoryArea</code> */
     public long memoryConsumed() {
-	// TODO
-
-	return 0;
+	return memoryConsumed;
     }
 
     /** Overrides memoryRemaining() from <code>MemoryArea</code> */
     public long memoryRemaining() {
-	// TODO
-
-	return 0;
+	return (size - memoryConsumed);
     }
 
 

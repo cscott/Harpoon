@@ -6,8 +6,7 @@ package javax.realtime;
 import java.util.HashSet;
 
 public abstract class Scheduler {
-    // shoud this field be here?
-    private static Scheduler defaultScheduler;
+    protected static Scheduler defaultScheduler;
     
     
     protected Scheduler() {}
@@ -27,7 +26,6 @@ public abstract class Scheduler {
     protected abstract boolean removeFromFeasibility(Schedulable schedulable);
 
     public static void setDefaultScheduler(Scheduler scheduler) {
-	// should we do this?
 	defaultScheduler = scheduler;
     }
 

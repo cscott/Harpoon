@@ -30,6 +30,10 @@ public final class SizeEstimator {
 	// TODO
     }
 
+    public void reserve(SizeEstimator s) {
+	// TODO
+    }
+
     public void reserve(SizeEstimator s, int n) {
 	// TODO
     }

@@ -52,7 +52,7 @@ public abstract class SporadicParameters extends AperiodicParameters {
 	initialArrivalTimeQueueLength = initial;
     }
 
-    public void setMinInterarrival(RelativeTime minInterarrival) {
+    public void setMinimumInterarrival(RelativeTime minInterarrival) {
 	minInterarrival.set(minInterarrival);
     }
 
@@ -60,6 +60,7 @@ public abstract class SporadicParameters extends AperiodicParameters {
 	mitViolationBehavior = new String(behavior);
     }
 
+    // What is the scheduler that has to be feasible?
     public boolean setIfFeasible(RelativeTime interarrival,
 				 RelativeTime cost, RelativeTime deadline) {
 	// TODO

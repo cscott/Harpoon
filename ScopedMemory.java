@@ -10,6 +10,7 @@ package javax.realtime;
 
 public abstract class ScopedMemory extends MemoryArea {
     protected Object portal;
+    private int count = 0;
 
     /** <code>logic.run()</code> is executed when <code>enter()</code>
      *  is called.
@@ -30,10 +31,7 @@ public abstract class ScopedMemory extends MemoryArea {
     }
     
     public ScopedMemory(SizeEstimator size) {
-	// TODO
-
-	// This line inserted only to make everything compile!
-	super(size);
+	this(size.getEstimate());
     }
 
     public ScopedMemory(SizeEstimator size, Runnable r) {
@@ -71,9 +69,7 @@ public abstract class ScopedMemory extends MemoryArea {
     }
     
     public int getReferenceCount() {
-	// TODO
-
-	return 0;
+	return count;
     }
 
     public void join() throws InterruptedException {

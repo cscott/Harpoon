@@ -140,9 +140,8 @@ public class PriorityScheduler extends Scheduler {
     }
     
     public static PriorityScheduler instance() {
-	// TODO
-
-	return null;
+	if (defaultScheduler == null) return new PriorityScheduler();
+	else return (PriorityScheduler)defaultScheduler;
     }
 
     // This one's a bit twisted, but it's much more
@@ -229,8 +228,7 @@ public class PriorityScheduler extends Scheduler {
     public boolean setIfFeasible(Schedulable schedulable,
 				 ReleaseParameters release,
 				 MemoryParameters memory) {
-	// TODO
-	return false;
+	return setIfFeasible(schedulable, release, memory, schedulable.getProcessingGroupParameters());
     }
 
     public boolean setIfFeasible(Schedulable schedulable,

@@ -25,6 +25,8 @@ public class RealtimeThread extends Thread implements Schedulable {
     /** Specifies whether this RealtimeThread has access to the heap. */
     boolean noHeap;
 
+    private boolean blocked = false;
+
     /** Contains the memoryArea associated with this mem. */
 
     MemoryArea mem, original;
@@ -83,6 +85,13 @@ public class RealtimeThread extends Thread implements Schedulable {
     // Other constructors not in specs
     // -------------------------------
 
+    public RealtimeThread(ThreadGroup group, Runnable target) {
+	super(group, (Runnable)null);
+	this.target = target;
+	mem = null;
+	setup();
+    }
+    
     public RealtimeThread(MemoryArea memory) {
 	super();
 	target = null;
@@ -175,7 +184,7 @@ public class RealtimeThread extends Thread implements Schedulable {
     }
     
     public void deschedulePeriodic() {
-
+	blocked = true;
     }
 
     public MemoryArea getCurrentMemoryArea() {
@@ -248,7 +257,7 @@ public class RealtimeThread extends Thread implements Schedulable {
     }
     
     public void schedulePeriodic() {
-	// TODO
+	blocked = false;
     }
 
     public boolean setIfFeasible(ReleaseParameters release, MemoryParameters memory) {
@@ -291,13 +300,6 @@ public class RealtimeThread extends Thread implements Schedulable {
 	this.processingGroupParameters = parameters;
     }
 
-    public RealtimeThread(ThreadGroup group, Runnable target) {
-	super(group, (Runnable)null);
-	this.target = target;
-	mem = null;
-	setup();
-    }
-    
     public boolean setProcessingGroupParametersIfFeasible(ProcessingGroupParameters groupParameters) {
 	return setIfFeasible(releaseParameters, memoryParameters, groupParameters);
     }
@@ -314,6 +316,7 @@ public class RealtimeThread extends Thread implements Schedulable {
     public void setScheduler(Scheduler scheduler)
 	throws IllegalThreadStateException {
 	currentScheduler = scheduler;
+	// TODO
     }
     
     public void setScheduler(Scheduler scheduler,
@@ -378,9 +381,8 @@ public class RealtimeThread extends Thread implements Schedulable {
     }
 
     public boolean waitForNextPeriod() throws IllegalThreadStateException {
-        PriorityScheduler.getScheduler().waitForNextPeriod(this);
-
-	// TODO -- return type changed from 'void' to 'boolean'
+	if ((releaseParameters instanceof PeriodicParameters) && (!blocked))
+	    PriorityScheduler.getScheduler().waitForNextPeriod(this);
 	return false;
     }
     

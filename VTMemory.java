@@ -28,10 +28,7 @@ public class VTMemory extends ScopedMemory {
     }
 
     public VTMemory(SizeEstimator initial, SizeEstimator maximum) {
-	// TODO
-
-	// This line inserted only to make everything compile!
-	super(maximum);
+	this(initial.getEstimate(), maximum.getEstimate());
     }
 
     public VTMemory(SizeEstimator initial, SizeEstimator maximum,
@@ -54,9 +51,7 @@ public class VTMemory extends ScopedMemory {
      *  <code>ScopedMemory</code>.
      */
     public long getMaximumSize() {
-	// TODO
-
-	return 0;
+	return size;
     }
 
     /** Return a helpful string describing this VTMemory.

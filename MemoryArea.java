@@ -99,7 +99,7 @@ public abstract class MemoryArea {
     }
 
     protected MemoryArea(SizeEstimator size) {
-	// TODO
+	this(size.getEstimate());
     }
 
     protected MemoryArea(SizeEstimator size,
