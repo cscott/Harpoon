@@ -10,14 +10,16 @@ NORMAL_RUNTIME_OPTS="--with-precise-c --with-gc=conservative --with-thread-model
 PRE_ALLOC_RUNTIME_OPTS="${NORMAL_RUNTIME_OPTS} --with-prealloc-opt"
 
 # all SPECjvm98 applications
-#SPEC_APPS="_200_check _201_compress _202_jess _205_raytrace _209_db _222_mpegaudio _228_jack"
-#" _213_javac"
+#SPEC_APPS="_200_check _201_compress _202_jess _205_raytrace _209_db _222_mpegaudio _228_jack _213_javac"
+
+#SPEC_APPS="_200_check _201_compress _205_raytrace _209_db _222_mpegaudio _228_jack"
 
 #SPEC_APPS="_200_check"
-#SPEC_APPS="_205_raytrace"
+SPEC_APPS="_205_raytrace"
 #SPEC_APPS="_228_jack"
-#SPEC_APPS="_202_jess"
+#SPEC_APPS="_202_jess _213_javac"
 #SPEC_APPS="_222_mpegaudio"
+#" _202_jess "
 #SPEC_APPS="_201_compress"
 #SPEC_APPS="_999_checkit _209_db"
 
@@ -25,7 +27,7 @@ PRE_ALLOC_RUNTIME_OPTS="${NORMAL_RUNTIME_OPTS} --with-prealloc-opt"
 # all Java OLDEN applications
 #JOLDEN_APPS="BH BiSort Em3d Health MST Perimeter Power TreeAdd TSP Voronoi"
 
-#JOLDEN_APPS="BH"
+#JOLDEN_APPS="MST"
 
 
 function execute_build_command() {
@@ -71,8 +73,8 @@ function build_spec_app1() {
 
     echo
     echo Building normal version for $name
-    execute_build_command "bin/build-precisec $buildOptions $mainClass $name.normal"
-    rm -rf ${FLEX_DIR}/as$name.normal
+    execute_build_command "bin/build-precisec --ia-only-sync-removal $buildOptions $mainClass $name.normal"
+    #rm -rf ${FLEX_DIR}/as$name.normal
 
     echo
     echo Building instrumented version for $name
@@ -124,8 +126,8 @@ function build_spec_app2() {
 
     echo
     echo Building version with preallocation for $name
-    execute_build_command "bin/build-precisec $buildOptions -Z tmp/$name.an.txt,tmp/$name.profile -Y $mainClass $name.pre_alloc" | tee $resultDir/$name.ia.stat
-    rm -rf ${FLEX_DIR}/as$name.pre_alloc
+    execute_build_command "bin/build-precisec -Dharpoon.runtime=2 $buildOptions -Z tmp/$name.an.txt,tmp/$name.profile --prealloc-opt $mainClass $name.pre_alloc" | tee $resultDir/$name.ia.stat
+    #rm -rf ${FLEX_DIR}/as$name.pre_alloc
 
     $specialCmd
     if [ "$testCaseParams" = "< Parser.cup" ] ; then
@@ -142,13 +144,11 @@ function use_runtime() {
     runtime=$1
     echo
     echo USING THE `echo $runtime | tr [:lower:] [:upper:]` RUNTIME
+    echo
 
     cd ${HARPOON_DIR}
     rm Runtime
     ln -sf Runtime.$runtime Runtime
-
-    ls -ld Runtime
-    echo    
 }
 
 function verify() {
@@ -240,7 +240,7 @@ function build_jolden_app1() {
     
     echo
     echo Building normal version for $name
-    execute_build_command "bin/build-precisec $mainClass $name.normal"
+    execute_build_command "bin/build-precisec --ia-only-sync-removal $mainClass $name.normal"
     rm -rf ${FLEX_DIR}/as$name.normal
 
     cd ${RUNTIME_DIR}
@@ -288,7 +288,7 @@ function build_jolden_app2() {
     
     echo
     echo Building version with preallocation for $name
-    execute_build_command "bin/build-precisec -Y -Z tmp/${name}.an.txt,tmp/${name}.profile $mainClass ${name}.pre_alloc" | tee ${resultDir}/${name}.ia.stat
+    execute_build_command "bin/build-precisec --prealloc-opt -Z tmp/${name}.an.txt,tmp/${name}.profile $mainClass ${name}.pre_alloc" | tee ${resultDir}/${name}.ia.stat
     #rm -rf ${FLEX_DIR}/as$name.pre_alloc
 
     cd ${RUNTIME_DIR}
@@ -320,6 +320,6 @@ use_normal_runtime;
 
 use_pre_alloc_runtime;
 #build_spec_app2 JLEX ${FLEX_DIR}/Support/Lex.jar JLex.Main " " Lexer.jlex "cd ${RUNTIME_DIR}"
-build_spec_app2 JCUP ${FLEX_DIR}/Support/CUP.jar java_cup.Main "-r Support/locale-root-set"  "< Parser.cup"  "cd ${RUNTIME_DIR}"
+#build_spec_app2 JCUP ${FLEX_DIR}/Support/CUP.jar java_cup.Main "-r Support/locale-root-set"  "< Parser.cup"  "cd ${RUNTIME_DIR}"
 build_spec 2;
 build_jolden 2;
