@@ -16,7 +16,7 @@ import java.io.PrintWriter;
  * <code>TreeCode</code>.  In short, a CGG generates a Code Generator.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.9 1999-06-30 20:58:28 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.10 1999-07-07 00:25:23 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -123,8 +123,13 @@ public abstract class CodeGeneratorGenerator {
 		 <code>Temp</code> to the name given in
 		 <code>Spec.RuleExp.result_id</code>. 
 	     <LI>The <code>HCodeElement</code> <code>ROOT</code>.  
-	         ( This should be defined as the <code>IR.Tree.Tree</code> 
-		   element being analyzed.) 
+	         This should be defined as the
+		 <code>IR.Tree.Tree</code> element being analyzed.  To
+		 reference specific fields or methods of the
+		 <code>IR.Tree.Tree</code> element being analyzed, one
+		 should cast <code>ROOT</code> to the appropriate
+		 subclass of <code>IR.Tree.Tree</code> (though this
+		 requirement may be dropped in the future).
 	     </OL>
 	     <BR>Generated method finds a tiling for
 	     <code>tree</code>, using the information in

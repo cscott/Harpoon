@@ -29,7 +29,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.16 1999-07-02 21:15:07 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.17 1999-07-07 00:25:22 pnkfelix Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -69,41 +69,59 @@ public abstract class Frame {
      *  needed to initialize stack space. */
     public abstract Instr procAssemDirectives(Instr body);
 
-    /** Returns the appropriate offset map for this frame */
+    /** Returns the appropriate <code>OffsetMap</code> for
+	<code>this</code>. 
+    */
     public abstract OffsetMap getOffsetMap();
 
-    /** Returns the TempFactory to create new Temps in this Frame */
+    /** Returns the <code>TempFactory</code> to create new
+	<code>Temp</code>s in <code>this</code>. 
+    */
     public abstract TempFactory tempFactory();
 
-    /** Returns the TempFactory of the register Temps in this Frame */
+    /** Returns the <code>TempFactory</code> of the register
+	<code>Temp</code>s in <code>this</code>. 
+    */
     public abstract TempFactory regTempFactory();
 
-    /** Generates a new set of Instrs for memory traffic from RAM to
-	the register file. 'offset' is an ordinal number, it is NOT
-	meant to be a multiple of some byte size.  This offset is
-	zero-indexed.  This frame should perform the necessary magic
-	to turn the number into an appropriate stack
-	offset. 'template' gives the Frame the ability to incorporate
-	additional information into the produced List of Instrs.  */
+    /** Generates a new set of <code>Instr</code>s for memory traffic
+	from RAM to the register file.
+	@param <code>offset</code> The stack offset.  This is an
+	       ordinal number, it is NOT meant to be a multiple of
+	       some byte size.  This frame should perform the
+	       necessary magic to turn the number into an appropriate
+	       stack offset. 
+	@param <code>template</code> An <code>Instr</code> to derive
+	       the generated <code>List</code> from
+	       <code>template</code> gives <code>this</code> the
+	       ability to incorporate additional information into the
+	       produced <code>List</code> of <code>Instr</code>s.   
+    */ 
     public abstract List makeLoad(Temp reg, int offset, Instr template);
 
-    /** Generates a new set of Instrs for memory traffic from the
-	register file to RAM. 'offset' is an ordinal number, it is NOT
-	meant to be a multiple of some byte size.  This frame should
-	perform the necessary magic to turn the number into an
-	appropriate stack offset. 'template' gives the Frame the
-	ability to incorporate information into the produced List of
-	Instrs. */
+    /** Generates a new set of <code>Instr</code>s for memory traffic
+	from the register file to RAM. 
+	@param <code>offset</code> The stack offset.  This is an
+	       ordinal number, it is NOT meant to be a multiple of
+	       some byte size.  This frame should perform the
+	       necessary magic to turn the number into an appropriate
+	       stack offset. 
+	@param <code>template</code> An <code>Instr</code> to derive
+	       the generated <code>List</code> from
+	       <code>template</code> gives <code>this</code> the
+	       ability to incorporate additional information into the
+	       produced <code>List</code> of <code>Instr</code>s.   
+    */ 
     public abstract List makeStore(Temp reg, int offset, Instr template);
 
     /** Create a new Frame one level below the current one. */
     public abstract Frame newFrame(String scope);
 
-    /** Analyzes <code>regfile</code> to find a free register that
+    /** Analyzes <code>regfile</code> to find free registers that
 	<code>t</code> can be assigned to.  
-	<BR> <B>effects:</B> Either returns a set of possible
-	     assignments (though this is not guaranteed to be a
-	     complete list of all possible choices, merely the ones
+	<BR> <B>effects:</B> Either returns an <code>Iterator</code>
+	     possible assignments (though this is not guaranteed to be
+	     a complete list of all possible choices, merely the ones 
 	     that this <code>Frame</code> chose to find), or throws a
 	     <code>Frame.SpillException</code> with a set of possible
 	     spills. 
@@ -112,9 +130,17 @@ public abstract class Frame {
 	@param regfile A mapping from Register <code>Temp</code>s to
 	               NonRegister <code>Temp</code>s representing the
 		       current state of the register file. 
-	@return An <code>Iterator</code> of <code>SortedSet</code>s of 
-                Register <code>Temp</code>s.  Each
-		<code>SortedSet</code> represents a safe 
+	@return A <code>List</code> <code>Iterator</code> of Register
+                <code>Temp</code>s.  Each <code>List</code> represents
+		a safe place for the value in <code>t</code> to be
+		stored (safe with regard to the architecture targeted
+		and the type of <code>t</code>, <b>not</b> with regard
+		to the current contents of <code>regfile</code> or the
+		data-flow of the procedure being analyzed).  The
+		elements of the <code>List</code> in the
+		<code>Iterator</code> returned are ordered according
+		to proper placement of the Register-bitlength words of
+		the value in <code>t</code>, low-order words first.
      */
     public abstract Iterator suggestRegAssignment(Temp t, Map regfile) throws Frame.SpillException;
 
@@ -122,15 +148,28 @@ public abstract class Frame {
 	<code>Temp</code>s are appropriate for spilling in order to
 	allocate space for another <code>Temp</code>.  In the common
 	case, <code>this.getPotentialSpills()</code> will just return
-	an <code>Iterator</code> that iterates through all of the
-	registers. 
+	an <code>Iterator</code> that iterates through singleton
+	<code>Set</code>s for all of the registers. 
      */
-    public abstract class SpillException extends Exception {
+    public static abstract class SpillException extends Exception {
 	public SpillException() { super(); }
 	public SpillException(String s) { super(s); }
 
-	/** Returns a set of spill candidates.
-	 */
+	/** Returns an iterator of spill candidates. 
+	    <BR> <B>effects:</B> Returns a <code>Set</code>
+    	         <code>Iterator</code> of spill candidates.  Each
+		 element of the <code>Iterator</code> returned
+		 represents a <code>Set</code> of Register
+		 <code>Temp</code>s that could be spilled to free up
+		 the amount of space needed for the attempted
+		 assignment in the register file.  The returned
+		 <code>Iterator</code> is not guaranteed to iterate
+		 through all possible <code>Set</code>s of
+		 combinations of spill candidates, but should iterate
+		 through a decent selection so that the Register
+		 Allocator has significant freedom in selecting
+		 registers to spill. 
+	*/ 
 	public abstract Iterator getPotentialSpills();
     }
 
