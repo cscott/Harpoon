@@ -3,11 +3,13 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
+import java.util.Set;
+
 /**
  * <code>PAEdge</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdge.java,v 1.1.2.1 2000-02-17 00:52:54 salcianu Exp $
+ * @version $Id: PAEdge.java,v 1.1.2.2 2000-02-24 22:34:02 salcianu Exp $
  */
 public class PAEdge {
 
@@ -36,5 +38,12 @@ public class PAEdge {
     /** String representation for debug purposes. */
     public String toString(){
 	return "<" + n1.toString() + "," + f + "," + n2.toString() + ">";
+    }
+
+    /** Checks whether <code>this</code> edge refers to at least one
+	node from the set <code>bad_nodes</code>. This is supposed to
+	help us to determine which edges must go when we remove some nodes. */
+    public boolean badEdge(Set bad_nodes){
+	return bad_nodes.contains(n1) || bad_nodes.contains(n2);
     }
 }

@@ -3,13 +3,16 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
+
+import java.util.Set;
+
 /**
  * <code>PALoad</code> models a LD action.
  * A <code>PALoad</code> object represents the loading of the 
  * outside reference <code>n1--f-->n2</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PALoad.java,v 1.1.2.1 2000-02-08 05:18:38 salcianu Exp $
+ * @version $Id: PALoad.java,v 1.1.2.2 2000-02-24 22:34:02 salcianu Exp $
  */
 class PALoad {
     
@@ -47,6 +50,15 @@ class PALoad {
 	return "< ld , " + n1 + " , " + f + " , " + n2 + 
 	    ((nt!=ActionRepository.THIS_THREAD)? (" , " + nt) : "") +
 	    " >";
+    }
+
+    /** Checks whether <code>this</code> load contains at least one 
+	<i>bad node</i>. This method is designed to help us identifying
+	the loads that are eliminated when some nodes are removed. */
+    public boolean isBad(Set bad_nodes){
+	return
+	    bad_nodes.contains(n1) || bad_nodes.contains(n2) ||
+	    bad_nodes.contains(nt);
     }
 
 }
