@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.138 2001-02-13 21:55:24 kkz Exp $
+ * @version $Id: SAMain.java,v 1.1.2.139 2001-02-26 23:40:50 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -295,6 +295,8 @@ public class SAMain extends harpoon.IR.Registration {
 		syncTransformer = new SyncTransformer
 		    (hcf, classHierarchy, linker, mainM, roots, resource);
 		hcf = syncTransformer.codeFactory();
+		hcf = harpoon.Analysis.Counters.CounterFactory
+		    .codeFactory(hcf, linker, mainM);
 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
