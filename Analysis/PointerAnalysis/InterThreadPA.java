@@ -40,7 +40,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.36 2001-03-04 17:00:42 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.37 2001-03-08 21:39:11 salcianu Exp $
  */
 public abstract class InterThreadPA implements java.io.Serializable {
 
@@ -49,7 +49,7 @@ public abstract class InterThreadPA implements java.io.Serializable {
     /** Activates even more debug messages! */
     public static final boolean DEBUG2 = false;
     /** Displays some time statistics. */
-    public static boolean TIMING = false;
+    public static boolean TIMING = true;
 
     /* Set of all the processed threads (thread nodes). PANodes keep
        accumulating here since the beginning of the inter-thread analysis,

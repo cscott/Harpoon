@@ -23,6 +23,8 @@ import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.LightRelation;
 import harpoon.Util.DataStructs.RelationEntryVisitor;
 
+import harpoon.Util.Util;
+
 /**
  * <code>ActionRepository</code> merges together the <code>alpha</code> and
  <code>pi</code> sets from the original paper of Martin Rinard & John Whaley.
@@ -42,7 +44,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.26 2001-03-04 17:00:42 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.27 2001-03-08 21:39:11 salcianu Exp $
  */
 public class ActionRepository implements java.io.Serializable {
     
@@ -303,6 +305,10 @@ public class ActionRepository implements java.io.Serializable {
 	This method is called in the control-flow join points. */
     public final void join(ActionRepository ar2){
 	// these first three are really easy
+
+	Util.assert(alpha_ld != null, "alpha_ld == null");
+	Util.assert(ar2 != null, "ar2 == null");
+
 	alpha_ld.addAll(ar2.alpha_ld);
 	pi_ld.union(ar2.pi_ld);
 	alpha_sync.union(ar2.alpha_sync);

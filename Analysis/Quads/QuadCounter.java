@@ -18,7 +18,7 @@ import harpoon.ClassFile.HMethod;
  * @author Wes Beebee <a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>
  */
 
-public class QuadCounter implements HCodeFactory {
+public class QuadCounter implements HCodeFactory, java.io.Serializable {
     private long numQuads;
     private HCodeFactory parent;
 
@@ -35,6 +35,9 @@ public class QuadCounter implements HCodeFactory {
      *  returned. 
      */
     public HCode convert(HMethod m) {
+
+	System.out.println("CONVERT " + m);
+
 	HCode hc = parent.convert(m);
 	if (hc != null) {
 	    numQuads += hc.getElements().length;

@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.141 2001-03-04 21:36:52 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.1.2.142 2001-03-08 21:39:53 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -503,6 +503,9 @@ public class SAMain extends harpoon.IR.Registration {
     // It was very mean to do this ... Just a desperate move to integrate
     // the pointer analysis with the Realtime Java stuff.
     public static void do_it_nortj() {
+
+	System.out.println("\ndo_it_nortj\n");
+
 	if (SAMain.startset!=null)
 	    hcf = harpoon.IR.Quads.ThreadInliner.codeFactory
 		(hcf, SAMain.startset, SAMain.joinset);

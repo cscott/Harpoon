@@ -73,7 +73,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.81 2001-03-04 17:00:43 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.82 2001-03-08 21:39:11 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -209,7 +209,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	scc_lbb_factory = new CachingSCCLBBFactory(lbbconv);
 	this.linker = linker;
 	
-	InterProcPA.build_graphs_for_natives(this);
+	InterProcPA.static_init(this);
 
 	if(SAVE_MEMORY)
 	    aamm = new HashSet();

@@ -33,7 +33,6 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
-import harpoon.ClassFile.Loader;
 import harpoon.Analysis.Maps.AllocationInformation;
 
 import harpoon.Analysis.Quads.Unreachable;
@@ -78,7 +77,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.48 2001-03-04 17:00:43 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.49 2001-03-08 21:39:11 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -166,6 +165,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
     
     private static boolean DEBUG = false;
+    // Controls the "inlining chains" - related debug messages
+    private final boolean DEBUG_IC = false;
+
 
     /** Forces the allocation of ALL the threads on the stack. Of course,
 	dummy and unsafe. */
@@ -198,7 +200,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	this.node_rep = pa.getNodeRepository();
 
 	this.opt = (MAInfoOptions) opt.clone();
-	System.out.println("After cloning:\n" + opt);
+	System.out.println("After cloning:\n");
+	this.opt.print("\t");
 
 	java_lang_Thread    = linker.forName("java.lang.Thread");
 	java_lang_Throwable = linker.forName("java.lang.Throwable");
@@ -282,10 +285,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
     // analyze all the methods
     public void analyze() {
-	if(opt.DO_METHOD_INLINING)
-	    ih = new HashMap();
-
-	set_hm2rang();
+	if(opt.DO_METHOD_INLINING) {
+	    //ih = new HashMap();
+	    set_hm2rang();
+	}
 
 	for(Iterator it = mms.iterator(); it.hasNext(); ){
 	    MetaMethod mm = (MetaMethod) it.next();
@@ -293,23 +296,21 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		analyze_mm(mm);
 	}
 	
-	//if(DEBUG)
-	display_inlining_chains();
-
 	if(opt.DO_METHOD_INLINING) {
 	    //do_the_inlining(hcf, ih);
 	    process_inlining_chains();
 	    ih = null; // allow some GC
-	    chains = null;
 	}
-	hm2rang = null;
     }
 
 
-
+    // compute a function rang : HMethods -> natural numbers such that
+    // if m1 calls m2, rang(m1) >= rang(m2). Basically, the leafs of the call
+    // graph will have the smallest rang; all the methods from the same
+    // strongly connected component of the call graph have the same rang.
     private void set_hm2rang() {
-
-	System.out.println("set_hm2rang");
+	if(DEBUG_IC)
+	    System.out.println("set_hm2rang");
 
 	hm2rang = new HashMap();
 	Set allmms = mcg.getAllMetaMethods();
@@ -330,7 +331,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    SCCTopSortedGraph.topSort
 	    (SCComponent.buildSCC(mms_array, mm_navigator));
 
-	//if(DEBUG)
+	if(DEBUG_IC)
 	    System.out.println("\n\nMethod rang:");
 
 	int counter = 0;
@@ -339,25 +340,17 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    Object[] mms = scc.nodes();
 	    for(int i = 0; i < mms.length; i++) {
 		HMethod hm = ((MetaMethod) mms[i]).getHMethod();
-		//if(DEBUG)
+		if(DEBUG_IC)
 		    System.out.println(hm + " -> " + counter);
 		hm2rang.put(hm, new Integer(counter));
 	    }
 	    counter++;
 	}
-	//if(DEBUG)
+	if(DEBUG_IC)
 	    System.out.println("======================================");
     }
     private Map hm2rang;
 
-
-
-    private void display_inlining_chains() {
-	System.out.println("\n\nINLINING CHAINS:\n");
-	for(Iterator it = chains.iterator(); it.hasNext(); )
-	    System.out.println(it.next());
-	System.out.println("=========================================");
-    }
 
 
     // get the type of the object allocated by the object creation site hce;
@@ -392,7 +385,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	       (quad instanceof ANEW))
 		nodes.add(node_rep.getCodeNode(quad, PANode.INSIDE));
 	}
-	System.out.println("inside nodes " + mm.getHMethod() + " " + nodes);
+
+	if(DEBUG)
+	    System.out.println("inside nodes " + mm.getHMethod() + 
+			       " " + nodes);
 
 	// Obtain a clone of the internal pig (no interthread analysis yet)
 	// at the end of hm and "cosmetize" it a bit.
@@ -1602,8 +1598,6 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     // different strongly connected components in the call graph (to avoid
     // circular inlining in nests of mutually recursive methods).
     private void generate_inlining_chains(MetaMethod mm) {
-	System.out.println("generate_inlining_chains " + mm);
-
 	ParIntGraph pig = pa.getExtParIntGraph(mm);
 
 	Set nodes = getInterestingLevel0InsideNodes(pig);
@@ -1677,7 +1671,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 			    new InliningChain(current_chain_cs,
 					      current_chain_callees,
 					      get_news(B));
-			System.out.println("Discovered chain: " + new_ic);
+			if(DEBUG_IC)
+			    System.out.println("Discovered chain: " + new_ic);
 			if(new_ic.isAcceptable())
 			    chains.add(new_ic);
 			else
@@ -1826,8 +1821,6 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    return hcode.getElementsL().size();
 	}
 
-	private final boolean DEBUG_IC = false;
-
 	// The call cs has just been inlined. As a consequence, any inlining
 	// chain containing cs should be updated in the following way: cs
 	// must be removed from there and the previous call in the chain
@@ -1941,6 +1934,11 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 
     private void process_inlining_chains() {
+	if(DEBUG_IC) {
+	    Util.print_collection(chains, "\n\nINLINING CHAINS");
+	    System.out.println("=======================");
+	}
+
 	sort_chains();
 
 	Set toPrune = new HashSet();
@@ -1955,18 +1953,16 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	// remove the newly introduced unreachable code
 	for(Iterator pit = toPrune.iterator(); pit.hasNext(); ) {
 	    HCode hcode = (HCode) pit.next();
-	    System.out.print("Pruning " + hcode.getMethod() + "...");
+	    if(DEBUG_IC)
+		System.out.print("Pruning " + hcode.getMethod());
 	    Unreachable.prune(hcode);
-	    System.out.println("OK");
 	}
 
-	chains = null;
+	chains = null;  // enable some GC
+	hm2rang = null;
     }
-
 
     //////////// INLINING STUFF END /////////////////////////////////////
     /////////////////////////////////////////////////////////////////////
-
-
 }
 

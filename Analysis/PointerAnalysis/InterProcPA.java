@@ -24,7 +24,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
-import harpoon.ClassFile.Loader;
+import harpoon.ClassFile.Linker;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
@@ -51,7 +51,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.52 2001-03-04 17:00:42 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.53 2001-03-08 21:39:11 salcianu Exp $
  */
 abstract class InterProcPA implements java.io.Serializable {
 
@@ -67,6 +67,8 @@ abstract class InterProcPA implements java.io.Serializable {
      *  never instantiates a <code>SecurityManager</code>,
      *	each call to a method of that class has ZERO callees! */
     public static final boolean WARNINGS = true;
+
+    private static final boolean CONSIDER_WES_GOOD = true;
 
     /** Analyzes the call site <code>q</code> inside 
      *	<code>current_method</code>. If analyzing the call is not possible
@@ -164,7 +166,18 @@ abstract class InterProcPA implements java.io.Serializable {
 		continue;
 	      }
 	    }
-	    
+
+	    // RTJ stuff START - Wes's stuff is supposed to be safe
+	    if(CONSIDER_WES_GOOD) {
+		if(wes_methods.contains(hm)) {
+		    pigs[nb_callees_with_pig] = null;
+		    mms[nb_callees_with_pig]  = mms[i];
+		    nb_callees_with_pig++;
+		    continue;
+		}
+	    }
+	    // RTJ stuff END
+
 	    if(!(PointerAnalysis.analyzable(hm))){
 		if(DEBUG)
 		    System.out.println("NEED TO SKIP: " + Debug.code2str(q));
@@ -963,11 +976,33 @@ abstract class InterProcPA implements java.io.Serializable {
     }
 
 
+    private static Set wes_methods = new HashSet();
+    private static void build_rtj_methods(Linker linker) {
+	String[][] methods = {
+	    {"javax.realtime.RealtimeThread", "getMemoryArea"},
+	    {"javax.realtime.RealtimeThread", "currentRealtimeThread"},
+	    {"javax.realtime.MemoryArea",     "checkAccess"},
+	    {"javax.realtime.MemoryArea",     "bless"},
+	    {"javax.realtime.Stats",          "addCheck"},
+	    {"javax.realtime.Stats",          "addNewObject"},
+	    {"javax.realtime.Stats",          "addNewArrayObject"},
+	    {"javax.realtime.HeapMemory",     "instance"},
+	    {"javax.realtime.ImmortalMemory", "instance"}
+	};
+	for(int i = 0; i < methods.length; i++)
+	    wes_methods.addAll
+		(getMethods(methods[i][0], methods[i][1], linker));
+ 
+	Util.print_collection(uhms, "Wes RTJ methods");
+    }
+
     // Many native methods don't do any synchronizations on their object
     // parameters, don't store them in static fields and don't modify the
     // points-to graph accessible from these object parameters.
     private static boolean isUnharmful(HMethod hm) {
-	return uhms.contains(hm); 
+	return
+	    uhms.contains(hm) ||
+	    (CONSIDER_WES_GOOD && wes_methods.contains(hm)); 
     }
     // Checks whether a method is totally harmful (i.e. all the parameters
     // must be marked as escaping into it). A CALL to such a method cannot
@@ -976,7 +1011,7 @@ abstract class InterProcPA implements java.io.Serializable {
 	return !isUnharmful(hm); // for the moment, conservative treatment
     }
     private static Set uhms = new HashSet();
-    static {
+    private static void build_uhms(Linker linker) {
 	String[][] methods = {
 	    {"java.io.File", "length0"},
 
@@ -1014,16 +1049,17 @@ abstract class InterProcPA implements java.io.Serializable {
 	};
 
 	for(int i = 0; i < methods.length; i++)
-	    uhms.addAll(getMethods(methods[i][0], methods[i][1]));
+	    uhms.addAll(getMethods(methods[i][0], methods[i][1], linker));
 
-	System.out.println("UNHARMFUL METHODS: " + uhms);
+	Util.print_collection(uhms, "Unharmful methods");
     }
 
     // Returns all the methods having the name m_name
     // that are declared in class c_name.
-    private static Collection getMethods(String c_name, String m_name) {
+    private static Collection getMethods(String c_name, String m_name,
+					 Linker linker) {
 	List retval = new LinkedList();
-	HClass hclass = Loader.systemLinker.forName(c_name);
+	HClass hclass = linker.forName(c_name);
 	HMethod[] hms = hclass.getDeclaredMethods();
 	for(int i = 0; i < hms.length; i++)
 	    if(m_name.equals(hms[i].getName()))
@@ -1039,7 +1075,7 @@ abstract class InterProcPA implements java.io.Serializable {
     
 	
     private static Map graphs_for_natives = new HashMap();
-    static void build_graphs_for_natives(PointerAnalysis pa) {
+    private static void build_graphs_for_natives(PointerAnalysis pa) {
 	// java_lang_Object_wait
 	HMethod hm = get_method(pa, "java.lang.Object", "wait", 0);
 	MetaMethod mm = new MetaMethod(hm, true);
@@ -1075,6 +1111,13 @@ abstract class InterProcPA implements java.io.Serializable {
 	Util.assert(set.size() == 1, "Too many methods");
 
 	return (HMethod) set.iterator().next();
+    }
+
+    // should be called before any other method
+    static void static_init(PointerAnalysis pa) {
+	build_uhms(pa.getLinker());
+	build_rtj_methods(pa.getLinker());
+	build_graphs_for_natives(pa);
     }
 
 }// end of the class

@@ -29,7 +29,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.44 2001-03-04 17:00:43 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.45 2001-03-08 21:39:11 salcianu Exp $
  */
 public class ParIntGraph implements java.io.Serializable {
 
@@ -545,13 +545,16 @@ public class ParIntGraph implements java.io.Serializable {
 	    eo.removeEdges(fake_outside_edges);
     }
 
+    public static boolean SHOW_ACTIONS = false;
+
     /** Pretty-print function for debug purposes. 
 	Two equal <code>ParIntGraph</code>s are guaranteed to have the same
 	string representation. */
     public String toString(){
 	return
 	    "\nParIntGraph{\n" + G + " " + tau +
-	    (PointerAnalysis.RECORD_ACTIONS ? ar.toString() : "") + 
+	    (PointerAnalysis.RECORD_ACTIONS && SHOW_ACTIONS ? 
+	     ar.toString() : "") + 
 	    (PointerAnalysis.IGNORE_EO ? "" : eo.toString())  + 
 	    "}";
     }

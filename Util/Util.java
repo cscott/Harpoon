@@ -3,11 +3,18 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.HashSet;
+
+import java.io.PrintWriter;
+
 import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.17 2000-01-18 15:23:43 pnkfelix Exp $
+ * @version $Id: Util.java,v 1.12.2.18 2001-03-08 21:40:14 salcianu Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -355,6 +362,61 @@ public abstract class Util {
     }
     sb.append(" }");
     return sb.toString();
+  }
+
+  /** Pretty printer for collections.
+
+      @param c The <code>Collection</code> to be printed.
+      @param c_name The name of the collection.
+      @param indent String used for indentation (eg &quot;<code>\t</code>&quot;.
+      @param pw The <code>PrintWriter</code> used to do the printing itself.
+
+      The collection is printed in the following format: the name of
+  the collection followed by the collection size (in parans) and one
+  opening curly bracet on the first line, the elements of the
+  collection, one by one, each on a separate line and indented with a
+  tab; on the last line, one closing curly bracet. In addition, each
+  line is prefixed with the string <code>indent</code>. */
+  public static final void print_collection(Collection c, String c_name,
+					    String indent, PrintWriter pw) {
+    pw.print(indent + c_name + " (" + c.size() + "): {");
+    if(c.isEmpty()) {
+      pw.println("}");
+      return;
+    }
+    pw.println();
+    for(Iterator it = c.iterator(); it.hasNext(); ) {
+      pw.print(indent);
+      pw.print("\t");
+      pw.println(it.next());
+    }
+    pw.println(indent + "}");
+  }
+
+  /** Simplified version of <code>print_collection</code>.
+      Uses the default value
+      <code>new java.io.PrintWriter(System.out, true)</code>
+      for the <code>pw</code> parameter. */
+  public static final void print_collection(Collection c, String c_name,
+					    String indent) {
+    print_collection(c, c_name, indent,
+		     new java.io.PrintWriter(System.out, true));
+  }
+
+
+  /** Even more simplified version of <code>print_collection</code>.
+      Uses the default value <code>&quot;&quot;</code> for <code>indent</code>
+      and <code>new java.io.PrintWriter(System.out, true)</code>
+      for the <code>pw</code> parameter. */
+  public static final void print_collection(Collection c, String c_name) {
+    print_collection(c, c_name, "");
+  }
+
+  /** Computes the difference of two sets: <code>a-b</code>. */
+  public static final Set set_diff(final Set a, final Set b) {
+    Set diff = new HashSet(a);
+    diff.removeAll(b);
+    return diff;
   }
 }
 

@@ -50,7 +50,7 @@ import harpoon.Util.Util;
  * <code>CheesyPACheckRemoval</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CheesyPACheckRemoval.java,v 1.1.2.4 2001-03-04 17:01:12 salcianu Exp $
+ * @version $Id: CheesyPACheckRemoval.java,v 1.1.2.5 2001-03-08 21:39:44 salcianu Exp $
  */
 public class CheesyPACheckRemoval implements CheckRemoval {
 
@@ -175,7 +175,7 @@ public class CheesyPACheckRemoval implements CheckRemoval {
     
     /** Checks whether any inside node escapes from <code>mm</code>. */
     private boolean containsEscapingStuff(MetaMethod mm) {
-	if(!analyzable(mm)) return true;
+	if(!PointerAnalysis.analyzable(mm.getHMethod())) return true;
 
 	// the set of nodes appearing in the external pig is the
 	// set of the escaping objects
@@ -193,15 +193,6 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 	return false;
     }
     
-
-    private boolean analyzable(MetaMethod mm) {
-	HMethod hm = mm.getHMethod();
-	if(java.lang.reflect.Modifier.isNative(hm.getModifiers()))
-	    return false;
-	return true;
-    }
-
-
     private long time() {
 	return System.currentTimeMillis();
     }

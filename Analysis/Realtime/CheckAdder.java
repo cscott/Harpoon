@@ -64,6 +64,9 @@ class CheckAdder extends MethodMutator {
     CheckAdder(CheckRemoval cr, NoHeapCheckRemoval nhcr, HCodeFactory parent) {
 	super(parent);
 	checkRemoval = cr;
+
+	System.out.println("checkRemoval = " + checkRemoval);
+
 	noHeapCheckRemoval = nhcr;
 	Util.assert(parent.getCodeName().equals(QuadWithTry.codename),
 		    "CheckAdder takes a QuadWithTry HCodeFactory not a " +

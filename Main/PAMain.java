@@ -86,13 +86,14 @@ import harpoon.IR.Jasmin.Jasmin;
 
 import harpoon.Analysis.Realtime.Realtime;
 
+import harpoon.Analysis.Quads.QuadCounter;
 
 /**
  * <code>PAMain</code> is a simple Pointer Analysis top-level class.
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.93 2001-03-04 21:36:52 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.94 2001-03-08 21:39:53 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -143,20 +144,20 @@ public abstract class PAMain {
     
     // Load the preanalysis results from PRE_ANALYSIS_IN_FILE
     private static boolean LOAD_PRE_ANALYSIS = false;
-    private static String PRE_ANALYSIS_IN_FILE = null;
+    private static String  PRE_ANALYSIS_IN_FILE = null;
 
     // Save the preanalysis results into PRE_ANALYSIS_OUT_FILE
     private static boolean SAVE_PRE_ANALYSIS = false;
-    private static String PRE_ANALYSIS_OUT_FILE = null;
+    private static String  PRE_ANALYSIS_OUT_FILE = null;
 
 
     // Load the preanalysis results from PRE_ANALYSIS_IN_FILE
     private static boolean LOAD_ANALYSIS = false;
-    private static String ANALYSIS_IN_FILE = null;
+    private static String  ANALYSIS_IN_FILE = null;
 
     // Save the preanalysis results into PRE_ANALYSIS_OUT_FILE
     private static boolean SAVE_ANALYSIS = false;
-    private static String ANALYSIS_OUT_FILE = null;
+    private static String  ANALYSIS_OUT_FILE = null;
 
     private static boolean RTJ_REMOVE_CHECKS = false;
     private static boolean RTJ_SUPPORT = false;
@@ -235,6 +236,9 @@ public abstract class PAMain {
 	}
 	print_options();
 
+	if(mainfo_opts.USE_INTER_THREAD)
+	    PointerAnalysis.RECORD_ACTIONS = true;
+
 	if(RTJ_SUPPORT) {
 	    Realtime.setupObject(linker);
 	}
@@ -259,6 +263,24 @@ public abstract class PAMain {
 	    pa = new PointerAnalysis(mcg, mac, lbbconv, linker);
 	}
 
+	Set ch_methods = new HashSet(ch.callableMethods());
+
+	Set good_callables = null;
+	if(LOAD_CALLABLES) {
+	    good_callables = load_callables();
+	    if(!good_callables.equals(ch_methods)) {
+		System.out.println("Bad set of callable methods!");
+		Util.print_collection
+		    (Util.set_diff(good_callables, ch_methods),
+		     "Missing methods");
+		Util.print_collection
+		    (Util.set_diff(ch_methods, good_callables),
+		     "New methods");
+	    }
+	    else
+		System.out.println("Set of callable methods (I) is good!");
+	}
+
 	if(RTJ_REMOVE_CHECKS) {
 	    System.out.println( can_remove_all_checks() ?
 				"can remove all checks!" :
@@ -274,9 +296,6 @@ public abstract class PAMain {
 	   System.exit(1);
 	*/
 
-	if(mainfo_opts.USE_INTER_THREAD)
-	    PointerAnalysis.RECORD_ACTIONS = true;
-
 	if(DO_ANALYSIS)
 	    do_analysis();
 
@@ -291,8 +310,8 @@ public abstract class PAMain {
 	if(DO_INTERACTIVE_ANALYSIS)
 	    do_interactive_analysis();
     
-	if(MA_MAPS)
-	    ma_maps();
+	//	if(MA_MAPS)
+	//    ma_maps();
 
 	/*
 	if(DO_SAT)
@@ -322,24 +341,51 @@ public abstract class PAMain {
 	    // It seems that something is broken in the new strategy ...
 	    SAMain.USE_OLD_CLINIT_STRATEGY = true;
 	    SAMain.linker = linker;
-	    SAMain.hcf = hcf;
+	    SAMain.hcf    = hcf;
 	    SAMain.className = root_method.declClass; // params[optind];
 	    SAMain.rootSetFilename = rootSetFilename;
 
 	    if(RTJ_SUPPORT)
 		SAMain.do_it_nortj();
-	    else
+	    else {
+		System.out.println("CALLING NORMAL do_it()");
 		SAMain.do_it();
+	    }
 
 	    System.out.println("Backend time: " +
 			       (time() - g_tstart) + "ms");
+	}
+
+	Set ch_methods2 = new HashSet(ch.callableMethods());
+	if(ch_methods.equals(ch_methods2))
+	    System.out.println("ch.callableMethods is OK");
+	else
+	    System.out.println("ch.callableMethods has CHANGED!");
+
+	if(SAVE_CALLABLES)
+	    save_callables(ch_methods2);
+
+	if(LOAD_CALLABLES) {
+	    if(!good_callables.equals(ch_methods2)) {
+		System.out.println("Bad set of callable methods (2)!");
+		Util.print_collection
+		    (Util.set_diff(good_callables, ch_methods2),
+		     "Missing methods 2");
+		Util.print_collection
+		    (Util.set_diff(ch_methods2, good_callables),
+		     "New methods 2");
+	    }
+	    else {
+		System.out.println("Set of callable methods (II) is good!");
+		Util.print_collection(good_callables, "Here it is");
+	    }
 	}
 
 	if(RTJ_SUPPORT)
 	    Realtime.printStats();
     }
 
-    private static final boolean USE_OLD_STYLE = true;
+    private static final boolean USE_OLD_STYLE = false;
     
     // Constructs some data structures used by the analysis: the code factory
     // providing the code of the methods, the class hierarchy, call graph etc.
@@ -347,8 +393,13 @@ public abstract class PAMain {
 	g_tstart = System.currentTimeMillis();
 
 	if(RTJ_SUPPORT) {
-	    // produce the HCodefactory that contains all the checks
+	    // produce the HCodeFactory that contains all the checks
 	    hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
+	    hcf = new CachingCodeFactory(hcf, true);
+	    hcf = new QuadCounter(hcf);
+
+	    // in SAMain.do_it() some Nonvirtualize stuff is called ...
+
 	    construct_class_hierarchy();
 
 	    hcf = Realtime.setupCode(linker, ch, hcf);
@@ -370,14 +421,36 @@ public abstract class PAMain {
 		    System.out.println("Use new style class initializers!");
 		    hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
 		    construct_class_hierarchy();
+
+		    //DEBUG
+		    Set hms1 = new HashSet(ch.callableMethods());
 		    
 		    String resource =
 			"harpoon/Backend/Runtime1/init-safe.properties";
 		    hcf = new harpoon.Analysis.Quads.InitializerTransform
 			(hcf, ch, linker, resource).codeFactory();
 		    
+		    construct_class_hierarchy();
+		    Set hms2a = new HashSet(ch.callableMethods());
+
 		    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 		    construct_class_hierarchy();
+
+		    // DEBUG
+		    Set hms2 = new HashSet(ch.callableMethods());
+		    Util.print_collection(Util.set_diff(hms1, hms2),
+					  "hms1 - hms2");
+		    Util.print_collection(Util.set_diff(hms2, hms1),
+					  "hms2 - hms1");
+		    if(!hms2a.equals(hms2)) {
+			System.out.println("hms2a != hms2");
+			Util.print_collection(Util.set_diff(hms2a, hms2),
+					      "hms2a - hms2");
+			Util.print_collection(Util.set_diff(hms2a, hms2),
+					      "hmsa - hms2a");
+		    }
+		    else
+			System.out.println("hms2a == hms");
 		}
 	    }
 	    else
@@ -558,6 +631,44 @@ public abstract class PAMain {
 	System.out.println((time() - start) + "ms");
     }
 
+
+    static private boolean LOAD_CALLABLES = true;
+    static private boolean SAVE_CALLABLES = false;
+    static private String CALLABLE_OUT_FILE = "callables";
+    static private String CALLABLE_IN_FILE  = "callables";
+
+    private static void save_callables(Set callables) {
+	System.out.print("Saving the callables ... ");
+	try {
+	    ObjectOutputStream oos = new ObjectOutputStream
+		(new FileOutputStream(CALLABLE_OUT_FILE));
+	    oos.writeObject(callables);
+	    System.out.println("done");
+	} catch(Exception e) {
+	    System.err.println("\nError while saving the callable methods!");
+	    System.err.println(e);
+	    System.exit(1);
+	}
+    }
+
+    private static Set load_callables() {
+	System.out.print("Loading the callables ... ");
+	try {
+	    ObjectInputStream ois = new ObjectInputStream
+		(new FileInputStream(CALLABLE_IN_FILE));
+	    Set result = (Set) ois.readObject();
+	    System.out.println("done");
+	    return result;
+	} catch(Exception e) {
+	    System.err.println("Error while loading the callable methods!");
+	    System.err.println(e);
+	    System.exit(1);
+	    return null; // make the compiler happy
+	}
+	
+    }
+
+
     private static void save_analysis() {
 	long start = time();
 	System.out.print("Saving the PA into " + ANALYSIS_OUT_FILE + 
@@ -724,8 +835,8 @@ public abstract class PAMain {
 	    new LongOpt("dumpjava",      LongOpt.NO_ARGUMENT,       null, 23),
 	    new LongOpt("analyzeroots",  LongOpt.NO_ARGUMENT,       null, 24),
 	    new LongOpt("syncelimroots", LongOpt.NO_ARGUMENT,       null, 25),
-	    new LongOpt("backend",       LongOpt.REQUIRED_ARGUMENT, null, 'b'),
-	    new LongOpt("output",        LongOpt.REQUIRED_ARGUMENT, null, 'o'),
+	    new LongOpt("backend",       LongOpt.REQUIRED_ARGUMENT, null,'b'),
+	    new LongOpt("output",        LongOpt.REQUIRED_ARGUMENT, null,'o'),
 	    new LongOpt("sa",            LongOpt.REQUIRED_ARGUMENT, null, 26),
 	    new LongOpt("ta",            LongOpt.REQUIRED_ARGUMENT, null, 27),
 	    new LongOpt("ns",            LongOpt.REQUIRED_ARGUMENT, null, 28),
@@ -952,7 +1063,7 @@ public abstract class PAMain {
 	return g.getOptind();
     }
 
-    private static void print_options(){
+    private static void print_options() {
 	if(METAMETHODS && SMART_CALL_GRAPH){
 	    System.out.println("Call Graph Type Ambiguity");
 	    System.exit(1);
@@ -1031,7 +1142,6 @@ public abstract class PAMain {
 	    System.out.println("\tMA_MAPS in \"" + MA_MAPS_OUTPUT_FILE + "\"");
 	    mainfo_opts.print("\t\t");
 	}
-
 
 	if(DO_SAT)
 	    System.out.println("\tDO_SAT (" + SAT_FILE + ")");
@@ -1112,18 +1222,22 @@ public abstract class PAMain {
                            (time() - g_tstart) + "ms");
 	System.out.println("===================================\n");
 
-        if (mainfo_opts.USE_INTER_THREAD) {
-          g_tstart = System.currentTimeMillis();
-          for(Iterator it = allmms.iterator(); it.hasNext(); ) {
-            MetaMethod mm = (MetaMethod) it.next();
-            if(!analyzable(mm)) continue;
-            pa.getIntThreadInteraction(mm);
-          }
-          System.out.println("Interthread Analysis time: " +
-                           (time() - g_tstart) + "ms");
-	  System.out.println("===================================\n");
-        }
 
+	if(false) {  // make sure you remove this "if" at some point
+
+	    if (mainfo_opts.USE_INTER_THREAD) {
+		g_tstart = System.currentTimeMillis();
+		for(Iterator it = allmms.iterator(); it.hasNext(); ) {
+		    MetaMethod mm = (MetaMethod) it.next();
+		    if(!analyzable(mm)) continue;
+		    pa.getIntThreadInteraction(mm);
+		}
+		System.out.println("Interthread Analysis time: " +
+				   (time() - g_tstart) + "ms");
+		System.out.println("===================================\n");
+	    }
+	    
+	}
 
 	g_tstart = time();
 	MAInfo mainfo = 
@@ -1132,11 +1246,11 @@ public abstract class PAMain {
 			   (time() - g_tstart) + "ms");
 	System.out.println("===================================\n");
 
-	//	if(SHOW_DETAILS) { // show the allocation policies	    
+	if(SHOW_DETAILS) { // show the allocation policies	    
 	    System.out.println();
 	    mainfo.print();
 	    System.out.println("===================================");
-	    //}
+	}
 
 	if(!COMPILE) {
 	    g_tstart = time();
@@ -1649,10 +1763,9 @@ public abstract class PAMain {
 	    "\t\t... and only for them :-(");
     }
 
-
-    // Constructs the class hierarchy of the analyzed program.
-    private static void construct_class_hierarchy() {
-	program_roots = new HashSet();
+    // Fills in the set of program_roots (methods & classes)
+    private static void construct_program_roots() {
+        program_roots = new HashSet();
 	program_roots.add(hroot);
 	program_roots.addAll
 	    (harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
@@ -1661,25 +1774,17 @@ public abstract class PAMain {
 	    program_roots.addAll(Realtime.getRoots(linker));
 
 	// load additional roots (if any)
-	if (rootSetFilename!=null) try {
+	if (rootSetFilename != null)
 	    addToRootSet(program_roots, rootSetFilename);
-	} catch (IOException ex) {
-	    System.err.println("Error reading " + rootSetFilename + ": " + ex);
-	    System.exit(1);
-	}
 	
-	if(SHOW_CH) {
-	    System.out.println("Set of roots: {");
-	    for(Iterator it = program_roots.iterator(); it.hasNext(); ) {
-		Object o = it.next();
-		if(o instanceof HMethod)
-		    System.out.println(" m: " + o);
-		else
-		    System.out.println(" c: " + o);
-	    }
-	    System.out.println("}");
-	}
+	if(SHOW_CH)
+	    Util.print_collection(program_roots, "Set of roots");
+    }
 
+    // Constructs the class hierarchy of the analyzed program.
+    private static void construct_class_hierarchy() {
+	construct_program_roots();
+	
 	System.out.print("ClassHierarchy ... ");
 	long tstart = time();
 
@@ -1689,38 +1794,29 @@ public abstract class PAMain {
 
 
 	if(SHOW_CH) {
-	    System.out.println("Root method = " + hroot);	    
-	    Set inst_cls = ch.instantiatedClasses();
-	    System.out.println("Instantiated classes (" +
-			       inst_cls.size() + ") : {");
-	    for(Iterator it = inst_cls.iterator(); it.hasNext(); )
-		System.out.println(" " + it.next());
-	    System.out.println("}\n\n");
-
-	    /*
-	    for(Iterator it = ch.instantiatedClasses().iterator();
-		it.hasNext(); ) {
-		HClass hc = (HClass) it.next();
-		hc.print(new PrintWriter(System.out, true));
-		System.out.println("\n\n");
-	    }
-	    */
+	    System.out.println("Root method = " + hroot);
+	    Util.print_collection(ch.instantiatedClasses(),
+				  "Instantiated classes");
+	    Util.print_collection(ch.callableMethods(), "Callable methods");
 	}
-
     }
 
 
-    private static void addToRootSet(final Set roots, String filename) 
-	throws IOException {
-	ParseUtil.readResource(filename, new ParseUtil.StringParser() {
-	    public void parseString(String s)
-		throws ParseUtil.BadLineException {
-		if (s.indexOf('(') < 0) // parse as class name.
-		    roots.add(ParseUtil.parseClass(linker, s));
-		else // parse as method name.
-		    roots.add(ParseUtil.parseMethod(linker, s));
-	    }
-	});
+    private static void addToRootSet(final Set roots, String filename) {
+	try {
+	    ParseUtil.readResource(filename, new ParseUtil.StringParser() {
+		    public void parseString(String s)
+			throws ParseUtil.BadLineException {
+			if (s.indexOf('(') < 0) // parse as class name.
+			    roots.add(ParseUtil.parseClass(linker, s));
+			else // parse as method name.
+			    roots.add(ParseUtil.parseMethod(linker, s));
+		    }
+		});
+	} catch (IOException ex) {
+	    System.err.println("Error reading " + filename + ": " + ex);
+	    System.exit(1);
+	}
     }
 
 
@@ -1849,11 +1945,33 @@ public abstract class PAMain {
     private static HClass java_lang_Runnable = null;
 
     private static boolean can_remove_all_checks() {
+	long start = time();
+	boolean result = can_remove_all_checks2();
+	System.out.println("can_remove_all_checks ... " + 
+			   (time() - start) + " ms");
+	return result;
+    }
+
+    // does the real job
+    private static boolean can_remove_all_checks2() {
 	java_lang_Runnable = linker.forName("java.lang.Runnable");
 	Util.assert(java_lang_Runnable != null,
 		    "java.lang.Runnable not found!");
 
 	Set runs = get_interesting_runs();
+
+	if(runs.isEmpty()) {
+	    System.out.println("Pattern 1 unfound, switch to pattern 2");
+	    Set all_runs = get_all_runs();
+	    if(DEBUG_RT)
+		print_set(all_runs, "All runs in the program");
+	    for(Iterator it = all_runs.iterator(); it.hasNext(); ) {
+		HMethod hmethod = (HMethod) it.next();
+		if(!nothing_escapes_intra_thread(hmethod))
+		    return false;
+	    }
+	    return true;
+	}
 
 	if(DEBUG_RT)
 	    print_set(runs, "Interesting runs");
@@ -2046,5 +2164,40 @@ public abstract class PAMain {
 	for(Iterator it = set.iterator(); it.hasNext(); )
 	    System.out.println("\t" + it.next());
 	System.out.println("}");
+    }
+
+
+    private static Set get_all_runs() {
+	Set runs = new HashSet();
+	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); ) {
+	    HMethod hm = ((MetaMethod) it.next()).getHMethod();
+	    HClass hclass = hm.getDeclaringClass();
+	    if(hm.getName().equals("run") &&
+	       hclass.isInstanceOf(java_lang_Runnable)) 
+		runs.add(hm);
+	}
+	return runs;
+    }
+
+    private static boolean nothing_escapes_intra_thread(HMethod hm) {
+	if(!PointerAnalysis.analyzable(hm))
+	    return true;
+
+	MetaMethod mm = hm2mm(hm);
+	// the set of nodes appearing in the external pig is the
+	// set of the escaping objects
+	ParIntGraph pig = pa.getExtParIntGraph(mm);
+	if(DEBUG_RT)
+	    System.out.println("ExtPIG(" + hm + ")\n" + pig);
+	Set nodes = pig.allNodes();
+
+	// if one of the elements of the set nodes is an INSIDE node,
+	// some objects are leaking out of the memory scope ...
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(node.type == PANode.INSIDE) return false;
+	}
+	// nothing escapes!
+	return true;
     }
 }
