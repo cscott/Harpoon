@@ -14,10 +14,10 @@ import java.util.List;
  * an array type.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassArraySyn.java,v 1.1.2.3 2000-10-22 08:26:16 cananian Exp $
+ * @version $Id: HClassArraySyn.java,v 1.1.2.4 2000-11-09 01:09:33 cananian Exp $
  */
 class HClassArraySyn extends HClassArray implements HClassMutator {
-    List declaredMethods = new ArrayList(4);
+    final List declaredMethods = new ArrayList(4);
     
     /** Creates a <code>HClassArraySyn</code>. */
     HClassArraySyn(Linker linker, HClass baseType, int dims) {
@@ -143,4 +143,31 @@ class HClassArraySyn extends HClassArray implements HClassMutator {
 	return hc.isPrimitive() || hc.getLinker()==getLinker();
     }
     //----------------------------------------------------------
+
+    /** Serializable interface. */
+    public Object writeReplace() {
+	if (!hasBeenModified()) return super.writeReplace();
+	else return new Stub(this);
+    }
+    private static final class Stub implements java.io.Serializable {
+	private final Linker linker;
+	private final HClass baseType;
+	private final int dims;
+	private final List declaredMethods;
+	private final boolean modified;
+	Stub(HClassArraySyn c) { // store salient information.
+	    this.linker = c.getLinker();
+	    this.baseType = c.baseType;
+	    this.dims = c.dims;
+	    this.declaredMethods = c.declaredMethods;
+	    this.modified = c.hasBeenModified;
+	}
+	public Object readResolve() {
+	    HClassArraySyn c = new HClassArraySyn(linker, baseType, dims);
+	    c.declaredMethods.clear();
+	    c.declaredMethods.addAll(this.declaredMethods);
+	    c.hasBeenModified = this.modified;
+	    return c;
+	}
+    }
 }

@@ -11,11 +11,10 @@ import harpoon.Util.Util;
  * Instances of the class <code>HClassSyn</code> represent modifiable
  * classes and interfaces of a java program.  Arrays and primitive types
  * are not modifiable, and thus are not represented by 
- * <code>HClassSyn</code>.  <code>HClassSyn</code> objects are assigned
- * unique names automagically on creation.
+ * <code>HClassSyn</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.16 2000-01-27 08:24:10 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.17 2000-11-09 01:09:33 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -60,6 +59,22 @@ class HClassSyn extends HClassCls implements HClassMutator {
       Util.assert(checkLinker((HClass)this.interfaces[i]));
 
     hasBeenModified = true; // by default, mark this as 'modified'
+  }
+  /** private constructor for serialization. */
+  private HClassSyn(Linker l, String name,
+		    HClass superclass, HClass[] interfaces,
+		    int modifiers, String sourcefile,
+		    HField[] declaredFields, HMethod[] declaredMethods,
+		    boolean hasBeenModified) {
+    super(l);
+    this.name = name;
+    this.superclass = superclass;
+    this.interfaces = interfaces;
+    this.modifiers  = modifiers;
+    this.sourcefile = sourcefile;
+    this.declaredFields = declaredFields;
+    this.declaredMethods= declaredMethods;
+    this.hasBeenModified = hasBeenModified;
   }
   public HClassMutator getMutator() { return this; }
 
@@ -265,17 +280,39 @@ class HClassSyn extends HClassCls implements HClassMutator {
   //----------------------------------------------------------
 
   /** Serializable interface. */
-  public void writeObject(java.io.ObjectOutputStream out)
-    throws java.io.IOException {
-    // resolve class name pointers.
-    this.superclass = (this.superclass==null)? null : this.superclass.actual();
-    for (int i=0; i<this.interfaces.length; i++)
-      this.interfaces[i] = this.interfaces[i].actual();
-    // intern strings.
-    this.name = this.name.intern();
-    this.sourcefile = this.sourcefile.intern();
-    // write class data.
-    out.defaultWriteObject();
+  public Object writeReplace() {
+    if (!hasBeenModified()) return super.writeReplace();
+    else return new Stub(this);
+  }
+  private static final class Stub implements java.io.Serializable {
+    private final Linker linker;
+    private final String name;
+    private final HClass superclass;
+    private final HClass[] interfaces;
+    private final int modifiers;
+    private final String sourcefile;
+    private final HField[] declaredFields;
+    private final HMethod[] declaredMethods;
+    private final boolean hasBeenModified;
+    Stub(HClassSyn c) { // store salient information
+      // using the method versions below allows up to resolve
+      // class name pointers.  note that we intern strings below.
+      this.linker = c.getLinker();
+      this.name = c.getName().intern();
+      this.superclass = c.getSuperclass();
+      this.interfaces = c.getInterfaces();
+      this.modifiers  = c.getModifiers();
+      this.sourcefile = c.getSourceFile().intern();
+      this.declaredFields = c.getDeclaredFields();
+      this.declaredMethods= c.getDeclaredMethods();
+      this.hasBeenModified = c.hasBeenModified();
+    }
+    public Object readResolve() {
+      return new HClassSyn(linker, name, superclass, interfaces,
+			   modifiers, sourcefile,
+			   declaredFields, declaredMethods,
+			   hasBeenModified);
+    }
   }
 }
 // set emacs indentation style.
