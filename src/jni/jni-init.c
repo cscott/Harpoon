@@ -27,12 +27,14 @@ static JNIEnv * FNI_CreateThreadState(void) {
   env->exception = NULL;
   env->localrefs_stack =
   env->localrefs_next =
+  env->localrefs_end =
 #ifdef BDW_CONSERVATIVE_GC
     GC_malloc_uncollectable /* local ref stack has heap pointers */
 #else /* okay, use system-default malloc */
     malloc
 #endif
     (sizeof(*(env->localrefs_stack))*LOCALREF_STACK_SIZE);
+  env->localrefs_end += LOCALREF_STACK_SIZE;
   env->thread = NULL;
   env->stack_top = NULL;
   env->is_alive = JNI_FALSE;

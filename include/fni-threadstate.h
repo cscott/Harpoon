@@ -19,12 +19,13 @@
 // any changes to this structure should be reflected in
 // Code/Backend/Runtime1/StubCode.<foo>_OFFSET (see constructor)
 // and Code/Backend/Runtime1/TreeBuilder._call_FNI_Monitor()
-// (specifically, any changes above and including the localrefs field) */
+// (specifically, any changes above and including the localrefs_next field) */
 struct FNI_Thread_State {
   JNIEnv vtable;
   jthrowable exception; /* outstanding exception, or NULL if no exception. */
   struct _jobject *localrefs_stack; /* bottom of local refs stack */
   struct _jobject *localrefs_next; /* points to next empty slot on lr stack */
+  struct _jobject *localrefs_end;/*points after the last valid slot on lr stk*/
   jobject thread; /* thread object corresponding to this thread state. */
   void *stack_top; /* top of stack */
   jboolean is_alive; /* true while the thread is running */

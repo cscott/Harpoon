@@ -16,6 +16,7 @@
 jobject FNI_NewLocalRef(JNIEnv *env, jobject_unwrapped obj) {
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
   if (obj==NULL) return NULL; /* null stays null. */
+  assert(fts->localrefs_next < fts->localrefs_end);
   fts->localrefs_next->obj = obj;
   return (jobject) fts->localrefs_next++;
 }
