@@ -23,7 +23,7 @@ import java.util.Set;
  * <code>QuadLiveness</code> if you have changed the <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: QuadLiveness.java,v 1.1.2.4.2.1 2000-01-13 08:12:30 bdemsky Exp $
+ * @version $Id: QuadLiveness.java,v 1.1.2.4.2.2 2000-01-13 08:24:46 bdemsky Exp $
  */
 public class QuadLiveness extends Liveness {
     final Hashtable livein;
@@ -105,9 +105,11 @@ public class QuadLiveness extends Liveness {
 	    Temp[] retval=new Temp[count];
 	    iter=set.iterator();
 	    count=0;
-	    while (iter.hasNext())
-		if (setin.contains(iter.next()))
-		    retval[count++]=(Temp) iter.next();
+	    while (iter.hasNext()) {
+		Temp tt=(Temp) iter.next();
+		if (setin.contains(tt))
+		    retval[count++]=tt;
+	    }
 	    tempinout.put(hce, retval);
 	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, retval);
 	}
