@@ -40,7 +40,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.1.2.13 2001-07-10 22:49:50 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.1.2.14 2001-09-24 17:05:55 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -126,10 +126,20 @@ public class DataReflection2 extends Data {
 	    return m_nm.label((HField)hm, suffix);
 	else return m_nm.label((HMethod)hm, suffix);
     }
+    /* some methods are both defined in interfaces *and* inherited from
+     * java.lang.Object.  Use the java.lang.Object version. */
+    private HMethod remap(HMethod hm) {
+	try {
+	    return linker.forName("java.lang.Object")
+		.getMethod(hm.getName(), hm.getDescriptor());
+	} catch (NoSuchMethodError nsme) {
+	    return hm;
+	}
+    }
     private int memberOffset(HMember hmf) {
 	if (hmf instanceof HField)
 	    return  m_tb.OBJ_FZERO_OFF + m_tb.cfm.fieldOffset((HField)hmf);
-	HMethod hm = (HMethod) hmf;
+	HMethod hm = remap((HMethod) hmf);
 	if (hm.isInterfaceMethod())
 	    return m_tb.CLAZ_INTERFACES_OFF -
 		m_tb.POINTER_SIZE * m_tb.imm.methodOrder(hm);

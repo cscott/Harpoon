@@ -61,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.52 2001-09-21 19:57:18 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.53 2001-09-24 17:05:55 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -974,10 +974,21 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	      _claz_(tf, source, dg, objectref),
 	      new CONST(tf, source, CLAZ_METHODS_OFF)));
     }
+    /* some methods are both defined in interfaces *and* inherited from
+     * java.lang.Object.  Use the java.lang.Object version. */
+    private HMethod remap(HMethod hm) {
+	try {
+	    return linker.forName("java.lang.Object")
+		.getMethod(hm.getName(), hm.getDescriptor());
+	} catch (NoSuchMethodError nsme) {
+	    return hm;
+	}
+    }
     public Translation.Exp methodOffset(TreeFactory tf, HCodeElement source,
 					DerivationGenerator dg,
 					HMethod method) {
 	Util.assert(!method.isStatic());
+	method = remap(method);//handle interface methods inherited from Object
 	if (method.isInterfaceMethod()) {
 	    // use interface method map.
 	    return new Translation.Ex

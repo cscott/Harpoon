@@ -33,7 +33,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * object layout.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.4.6 2001-09-24 16:36:57 cananian Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.4.7 2001-09-24 17:05:45 cananian Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -109,6 +109,8 @@ public class InterfaceMethodMap extends MethodMap {
 	Util.assert(hm.isInterfaceMethod() && !hm.isStatic());
 	Util.assert(Modifier.isPublic(hm.getModifiers()));
 	Util.assert(!(hm instanceof HConstructor));
+	// also disallow methods inherited from java.lang.Object
+	Util.assert(includeMethod(hm), hm);
 	HmNode node = (HmNode) mtable.get( hm );
 	Util.assert(node != null, 
 		    "InterfaceMethodMap must contain "+
@@ -210,7 +212,19 @@ public class InterfaceMethodMap extends MethodMap {
 			     returns false.  Else returns true. 
     */
     private static boolean includeMethod(HMethod m) {
-	return !m.getDeclaringClass().getName().equals("java.lang.Object");
+	// can't just check m.getDeclaringClass() because some interfaces
+	// re-define methods from java.lang.Object.  Try to find the
+	// method's signature in java.lang.Object instead.
+	try {
+	    // safe to getLinker because m.getDeclaringClass() is non-primitive
+	    m.getDeclaringClass().getLinker().forName("java.lang.Object")
+		.getMethod(m.getName(), m.getDescriptor());
+	    // if this call succeeded, then *don't* include this method as
+	    // an interface method!
+	    return false;
+	} catch (NoSuchMethodError nsme) {
+	    return true;
+	}
     }
 
     /** Generates a <code>Vector</code> of <code>HmNode</code>s for
