@@ -26,9 +26,12 @@ FLEX native backend TODO:
     that takes the InlineMap into account (not that hard).
 - write garbage-collector in C.  Don't forget finalization and weak references.
   Use the semi-depth-first copying algorithm from appel.
-- write Quad-to-LowQuad translator (Scott will do)
+X write Quad-to-LowQuad translator [done]
+- extend TypeInfo analysis to work with LowQuads.
+- (highly optional) extend Interpret.Quads.Method to work with LowQuads.
 - write LowQuad-to-Tree translator.  Remember to preserve Derivation.
   (see harpoon.IR.Properties.Deriviation)
+- (option) write Interpret/Tree methods to simulate Tree form for verification
 - write Tree-to-Instr pass (instruction selection)
   should be in harpoon.Backend.<architecture>.InSel?
   Scott will write an abstract superclass for this eventually.
