@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.35 2002-05-04 05:42:24 cananian Exp $
+% $Id: comdef.sty,v 1.36 2003-11-09 20:22:23 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -74,12 +74,17 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
 {\end{array}\end{math}\end{center}\renewcommand{\arraystretch}{1}}
 
 % Theorem-like environments
-\newtheorem{definition}{Definition}[section]
-\newtheorem{observation}{Observation}[section]
-\newtheorem{property}{Property}[section]
-\newtheorem{lemma}{Lemma}[section]
-\newtheorem{corollary}{Corollary}[section]
-\newtheorem{theorem}{Theorem}[section]
+\@ifundefined{observation}{\newtheorem{observation}{Observation}[section]}{}%
+\@ifundefined{definition}{\newtheorem{definition}{Definition}[section]}{}%
+\@ifundefined{property}{\newtheorem{property}{Property}[section]}{}%
+\@ifundefined{lemma}{\newtheorem{lemma}{Lemma}[section]}{}%
+\@ifundefined{corollary}{\newtheorem{corollary}{Corollary}[section]}{}%
+\@ifundefined{theorem}{\newtheorem{theorem}{Theorem}[section]}{}%
+%\newtheorem{definition}{Definition}[section]
+%\newtheorem{property}{Property}[section]
+%\newtheorem{lemma}{Lemma}[section]
+%\newtheorem{corollary}{Corollary}[section]
+%\newtheorem{theorem}{Theorem}[section]
 
 % enumerated environment with no indent
 \newcounter{enumnoind}
