@@ -21,15 +21,15 @@ public class GameServer2 {
 	ServerSocket s= new ServerSocket(port);
 	
 	while(true) {
-	    Worker w1= new Worker(s.accept());
-	    Worker w2= new Worker(s.accept());
+	    GWorker w1= new GWorker(s.accept());
+	    GWorker w2= new GWorker(s.accept());
 
 	    w2.startWith(w1,null);
 	    w1.startWith(w2,"Player 1");
 	}
     }
 
-    static class Worker extends Thread 
+    static class GWorker extends Thread 
     {
 
 	Socket s;
@@ -37,9 +37,9 @@ public class GameServer2 {
 	OutputStream os;
 	PrintStream ps;
 
-	Worker partner;
+	GWorker partner;
 	
-	public Worker(Socket s) 
+	public GWorker(Socket s) 
 	{
 	    this.s= s;
 	    try {
@@ -53,7 +53,7 @@ public class GameServer2 {
 	    }
 	}
 
-	public void startWith(Worker w, String toPrint)
+	public void startWith(GWorker w, String toPrint)
 	{
 	  if (toPrint!=null)
 	    ps.println(toPrint);
