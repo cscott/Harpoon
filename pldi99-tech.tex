@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi99-tech.tex,v 1.9 1999-11-11 23:51:56 cananian Exp $
+% $Id: pldi99-tech.tex,v 1.10 1999-11-13 05:56:53 rinard Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{The Static Single Information form}
 In this section we will provide a formal specification of SSI form and
@@ -42,12 +42,14 @@ inserting \sigfunction{s}.  We consider the start node to contain an
 implicit definition of every variable, and the end node to contain an
 implicit use of every variable.
 
+\mycomment{
 Note that this criterion is very similar to the path-con\-ver\-gence
 criterion for inserting \phifunction{s} described in
 \cite{appel:modern,cytron91:ssa}.  And, just as in the \phifunction{}
 case, the above criterion is open-ended: since the \sigfunction{}
 itself counts as a use of $a$, we must iterate the above definition
 to determine the final set of \sigfunction{s}.
+}
 
 Upon examination, we see that the path-con\-ver\-gence criteria for $\phi$- and
 \sigfunction{s} interact.  Since \sigfunction{s} are variable
@@ -59,6 +61,7 @@ a single $\phi$- and/or \sigfunction{} per variable at any given
 flowgraph node, so the total number of added functions is limited to 
 $2 \cdot N \cdot V$.
 
+\mycomment{
 Cytron et al.\ \cite{cytron91:ssa} has shown that the iterated
 path-con\-ver\-gence criterion for \phifunction{s} is equivalent to the
 \textit{iterated dominance frontier criterion}: whenever a node $x$
@@ -68,12 +71,13 @@ dominance frontier of any added \phifunction{} similarly need
 \phifunction{s}.  The equivalent statement for \sigfunction{s}
 references \textit{uses} of the variable $a$ and nodes in its
 post-dominance frontier. 
+}
 
 \subsection{Variable renaming after \phisigfunction insertion}
 
-Renaming variables after \phisigfunction insertion is done so as to
-satisfy the following two conditions:\fixme{The first is similar to
-the SSA form constraint on \phifunction{s}.  Skip it?}
+Once the compiler has determined where to place the 
+\phifunction{s} and \sigfunction{s}, it renames variables to
+satisfy the following two conditions:
 \begin{enumerate}
 \item For every node $x$ containing a definition of a variable $a$ in
 the renamed program and node $y$ containing a use of that variable, there
@@ -202,21 +206,26 @@ for variable renaming in SSI form after \phisigfunction{s} are placed.
 % refer to program structure tree and cycle-equivalency algorithms.
 Our construction algorithm begins with a program structure tree of
 single-entry single-exit (SESE) regions, constructed as described by
-Johnson, Pearson, and Pingali \cite{johnson94:pst}.  We will review
+Johnson, Pearson, and Pingali \cite{johnson94:pst}.  
+\mycomment{
+We will review
 the algorithms involved, as their published descriptions
 \cite{johnson93:sese} contain a number of errors.
 % copy algorithm 5.3 from thesis here.
+}
+\mycomment{
 \begin{myalgorithm}\small
 \input{Figures/THssialg}
 \caption{Placing \phisigfunction{s}.}\label{alg:SSIplace}
 \end{myalgorithm}
+}
 
-As with the presentation of SSA form in \cite{cytron91:ssa}, we split
-construction of SSI form into two parts: placing \phisigfunction{s}
+We split the construction of SSI form into two parts: placing \phisigfunction{s}
 and renaming variables.  The placement algorithm runs in $O(N V_0)$
-time, and is presented as Algorithm~\vref{alg:SSIplace}.  No new node
-properties or datatypes are required; however, it is parameterized on
-a function called \code{MaybeLive}.  For minimal SSI form,
+time, and is presented as Algorithm~\vref{alg:SSIplace}.  
+The algorithm is parameterized on
+a function called \code{MaybeLive}.  
+For minimal SSI form,
 \code{MaybeLive} should always return \code{true}.  Faster practical
 run-time may be obtained if pruned SSI form is the desired goal by
 allowing \code{MaybeLive} to return any conservative approximation of
@@ -226,6 +235,7 @@ precise; conservative values will only result in an excess of
 \phisigfunction{s}, not an invalid SSI form.  Section
 \ref{sec:unusedcode} describes a post-processing algorithm to
 efficiently remove the excess \phisigfunction{s}.%
+\mycomment{
 \footnote{Note that equivalent results could be
 obtained by adding a \phifunction{} for every variable at every merge
 and a \sigfunction{} for every variable at every split, and
@@ -234,11 +244,16 @@ obtained.  There is a large practical difference in actual runtime and
 space costs, however, which motivates our more efficient approach.}
 The remainder of this section will be devoted to a correctness proof
 of Algorithm~\ref{alg:SSIplace}.
+}
 
 \begin{lemma}\label{lem:sese_child}
 No \phifunction{s} (\sigfunction{s}) for a variable $v$ are needed in
 an SESE region not containing a definition (use) of $v$.
 \end{lemma}
+\begin{proof}
+See Appendix~\ref{app:proofs}.
+\end{proof}
+\mycomment{
 \begin{proof}
 Let us assume a \phifunction for $v$ is needed at some node $Z$
 inside an SESE not containing a definition of $v$.  
@@ -265,11 +280,14 @@ A symmetric argument holds for \sigfunction{s} for $v$, using
 condition \ref{crit_sigplace} of the SSI form definition, and the fact
 that there exists one exit edge from the SESE.
 \end{proof}
+}
 
+\mycomment{
 The above lemma justifies line~\ref{line:place_skip} of the algorithm
 on page~\pageref{line:place_skip}, which skips over any SESE region
 not containing a definition (use) of $v$ when placing
 \phifunction{s} (\sigfunction{s}) for $v$.
+}
 
 \begin{lemma}\label{lem:ssi_place_dom}
 If a definition (use) or a \phisigfunction[or]{} for a variable $v$ is
@@ -282,6 +300,10 @@ $v$ is needed at every node $N$:
 \item which is not dominated by $D$ (not post-dominated by $U$).
 \end{enumerate}
 \end{lemma}
+\begin{proof}
+See Appendix~\ref{app:proofs}.
+\end{proof}
+\mycomment{
 \begin{proof}
 We will first prove that a node $N$ failing any one of the conditions does
 not need a \phisigfunction[or].
@@ -317,21 +339,26 @@ examination of conditions \ref{crit_phiplace} and \ref{crit_sigplace}
 of the SSI form definition and lemma \ref{lem:sese_child} that they are
 sufficient.
 \end{proof}
+}
 
-In practice, the conditions of lemma \ref{lem:ssi_place_dom} are too expensive
+In practice, the conditions of Lemma \ref{lem:ssi_place_dom} are too expensive
 to implement directly.  Instead, we use a conservative approximation
 to SSI form, which allows us to place more \phisigfunction{s} than
-minimal SSI requires (for example, a \phifunction for $v$ at the
-circled node in Figure~\ref{fig:placeerror}), while satisfying the
+minimal SSI requires 
+\mycomment{(for example, a \phifunction for $v$ at the
+circled node in Figure~\ref{fig:placeerror}), }
+while satisfying the
 conditions of the SSI form definition.  
 Our algorithm also allows us to do pre-pruning of the SSI
 form during placement.  The result is not pruned SSI, but contains a
 tight superset of the \phisigfunction{s} that pruned form requires.
+\mycomment{
 \begin{myfigure}
 \centering\renewcommand{\figscale}{0.30}\input{Figures/THmorephi}
 \caption{An flowgraph where Algorithm~\ref{alg:SSIplace} places
 \phifunction{s} conservatively.}\label{fig:placeerror}
 \end{myfigure}
+}
 
 \begin{theorem}\label{thm:placeproof}
 Algorithm~\ref{alg:SSIplace} places all the
@@ -372,6 +399,7 @@ graphs it should not be difficult to quickly generate a rough
 approximation.
 
 \subsubsection{Variable renaming}
+\mycomment{
 \begin{myfigure}[p]\small
 \input{Figures/THssirend}
 \caption{Environment datatype for the SSI renaming algorithm.}
@@ -385,10 +413,25 @@ approximation.
 \input{Figures/THssiren2}
 \caption{SSI renaming algorithm, cont.}\label{alg:SSIrename2}
 \end{myalgorithm}
-Algorithm~\ref{alg:SSIrename1} performs variable renaming on a
-flow-graph with placed \phisigfunction{s} in a single depth-first
-traversal.  When the algorithm is complete, the control flow-graph
-will be in proper SSI form.  The variable renaming algorithm requires
+}
+
+We have shown that Algorithm~\ref{alg:SSIplace} places all the
+required \phisigfunction{s} in the control-flow graph according to SSI
+form conditions \ref{crit_phiplace}, \ref{crit_sigplace}, and
+\ref{crit_boundary}. The next step is to rename variables to
+be consistent with conditions \ref{crit_phiname} and
+\ref{crit_signame}. Algorithm~\ref{alg:SSIrename1} 
+in Appendix~\ref{app:algorithms} performs
+this variable renaming. 
+Algorithm~\ref{alg:SSIrename1} starts on a
+flow-graph with placed \phisigfunction{s}. 
+When the algorithm finishes, the control flow-graph
+will be in proper SSI form.  The SSI form is not necessarily
+minimal. The next section will show how to post-process 
+to create minimal or pruned SSI form.
+
+\mycomment{
+The algorithm requires
 an \code{Environment} datatype which is defined in
 Figure~\ref{fig:SSIrename_data}.  Using an imperative programming
 style, it is possible to perform a sequence of any $N$ operations on
@@ -409,17 +452,15 @@ implementation of \code{Environment} a total time bounds of
 $O(E+U_{SSA}+D_{SSA})$ for the variable renaming algorithm is
 obtained.
 
-We have shown that Algorithm~\ref{alg:SSIplace} places all the
-required \phisigfunction{s} in the control-flow graph according to SSI
-form conditions \ref{crit_phiplace}, \ref{crit_sigplace}, and
-\ref{crit_boundary}; we will now show that this algorithm renames
-variables consistent with conditions \ref{crit_phiname} and
-\ref{crit_signame} to prove that these algorithms combined suffice to
+ to prove that these algorithms combined suffice to
 convert a program into SSI form.  The SSI form is not necessarily
 minimal, as we showed in section~\ref{sec:SSIplace}; the next
 section will show how to post-process to create minimal or pruned SSI
 form.
+}
 
+
+\mycomment{
 \begin{lemma}\label{lem:path_construct}
 The stack trace of calls to \code{Search} defines a unique path
 through $G$ from \code{START}.
@@ -592,7 +633,7 @@ the value of the new variable
 $\mathcal{E}_{\text{after}}^{N_k}[V]=\mathcal{E}^{e_k}[V]$ on $e_k$.
 \item[Case III:] $k>0$ and $N_k$ has multiple predecessors and one
 successor.  In this case $N_k$ may have multiple \phifunction{s} in
-the new program, and by the definition in section~\ref{sec:defs} $N_k$
+the new program, and \mycomment{by the definition in section~\ref{sec:defs}} $N_k$
 has no statements in the original program.  Thus the value of any
 variable $V$ in the original program along edge $e_k$ is identical to
 its value along edge $e_{k-1}$.  We need only show that the value of
@@ -622,6 +663,7 @@ $e_k$ correctly gets $\mathcal{E}^{e_k}[V]$.  Therefore the values of
 original variables $V$ correspond to the value of
 $\mathcal{E}^{e_k}[V]$ by the induction hypothesis and the semantics
 of the \sigfunction{s}.
+\comment{
 \item[Case V:] $N_k$ has multiple predecessors and multiple
 successors.  Forbidden by the CFG definition in section~\ref{sec:defs}.
 \end{description}
@@ -630,6 +672,8 @@ original variables correspond to the values of the renamed SSI form
 variables. The value correspondence at the path endpoint (a use of
 some variable $V$) follows.
 \end{proof}
+}
+}
 
 \begin{theorem}\label{thm:renameproof}
 Algorithm~\ref{alg:SSIrename1} renames variables such that SSI form
@@ -685,6 +729,7 @@ $O(U_{SSI}+V_{SSI})=O(U_{SSI})$.
 %operands and \phisigfunction{} arities are limited by a
 %constant, we get a time bound of $O(N)$.}
 
+\mycomment{
 \begin{myfigure}\small
 \input{Figures/THdeaddata}
 \caption{Datatypes and operations used in unused code elimination.}
@@ -696,10 +741,10 @@ $O(U_{SSI}+V_{SSI})=O(U_{SSI})$.
 \caption{Identifying unused code using SSI form.}
 \label{alg:deadalg}
 \end{myalgorithm}
+}
 
 \subsubsection{Discussion}
-Note that our algorithm for placing \phisigfunction{s} in
-SSI form is
+Note that our algorithm for placing \phisigfunction{s} in SSI form is
 \emph{pessimistic}; that is, we at first assume every node in the
 control-flow graph with input arity larger than one requires a
 \phifunction{} for every variable and every node with out-arity larger
@@ -709,7 +754,18 @@ determine safe places to
 \emph{omit} \phisigfunction[or]{s}.  Most SSA construction
 algorithms, by contrast, are \emph{optimistic}; they assume no
 \phisigfunction[or]{s} are needed and attempt to determine where
-they are provably necessary.  In my experience, optimistic algorithms tend to
+they are provably necessary.  
+In our experience, optimistic algorithms tend to have poor
+time bounds because, in the worst case, they 
+may need to perform multiple
+passes over the graph as they propagate \phisigfunction[or]{s}.
+In such cases, a pessimistic algorithm assumes the correct answer at the 
+start, fails to show that any \phisigfunction[or]{s} can be removed, and
+terminates in one pass. See Appendix~\ref{app:optimistic} for more
+information.
+
+\mycomment{
+In our experience, optimistic algorithms tend to
 have poor time bounds because of the possibility of input graphs like
 the one illustrated in Figure~\vref{fig:evil}.
 Proving that all but two nodes require
@@ -718,7 +774,7 @@ inherently require $O(N)$ passes over the graph; each pass can prove
 that \phisigfunction[or]{s} are required for only those nodes adjacent to
 nodes tagged in the previous pass.  Starting with the circled node, the
 \phisigfunction{s} spread one node left on each pass. On the other hand,
-an pessimistic algorithm assumes the correct answer at the start, fails
+a pessimistic algorithm assumes the correct answer at the start, fails
 to show that any \phisigfunction[or]{s} can be removed, and
 terminates in one pass.\dontfixme{Are we \emph{sure} similar worst cases
 don't exist for the pessimistic algorithm?}
@@ -728,6 +784,7 @@ don't exist for the pessimistic algorithm?}
 \caption{A worst-case CFG for ``optimistic'' algorithms.}
 \label{fig:evil}
 \end{myfigure}
+}
 
 \subsection{Time and space complexity of SSI form}\label{sec:ssi_complexity}
 %\begin{myfigure}%[t]
@@ -781,10 +838,13 @@ programs $E$ will be a small constant factor multiple of $N$; as
 Wegman and Zadeck \cite{wegman91:scc} note, most control flow graph
 nodes will have at most two successors.  For those graphs where $E$ is
 not $O(N)$, it can be argued that $E$ is the more relevant measure of
-program complexity.\footnote{We will not follow Cytron \cite{cytron91:ssa} in
+program complexity.
+\mycomment{
+\footnote{We will not follow Cytron \cite{cytron91:ssa} in
 defining a new variable $R$ to denote $\max(N,E,\ldots)$ to avoid
 following him in declaring worst-case complexity $O(R^3)$ and leaving
 it to the reader to puzzle out whether $O(N^6)$ (!) is really being implied.}
+}
 
 Thus the ``linearity'' of our SSI construction algorithm rests on the
 quantities $N V_0$ and $U_{SSI}$.  Figures~\ref{fig:ussidata} and
@@ -891,7 +951,6 @@ properties of expressions to properties on variables.  We will
 therefore consider properties $\text{BSY}(v,N)$, $\text{ANT}(v,N)$,
 and $\text{PAN}(v,N)$ denoting very busy, totally anticipatable, and
 partially anticipatable variables $v$ at some program point $N$.
-
 To compute BSY, we start with pruned SSI form.  Any variable defined
 in a \phisigfunction[or]{} is used at some point, by definition.
 So for statements at a point $P$ we have the rules:
@@ -943,10 +1002,10 @@ floating-point- and string-constant-propagation in addition to the
 integer constant propagation of standard SCC.
 
 We will describe this algorithm incrementally, beginning with the
-standard SCC constant-propagation algorithm for review.
+standard SCC constant-propagation algorithm.
 Wegman and Zadeck's algorithm operates on a program in SSA form; we will
-call this SCC/SSA to differentiate it from SCC/SSI, using the SSI
-form, which we will describe in section \ref{sec:sccssi}. Section
+call this SCC/SSA to differentiate it from SCC/SSI, which uses the SSI
+form.  Section
 \vref{sec:bitwidth} will discuss an extension to SPTC which does
 \newterm{bit-width analysis}.
 
@@ -974,6 +1033,8 @@ c     &   c  &c\oplus d& \top \\
 \caption{Meet and binary operation rules on the SCC value lattice.}
 \label{tab:sccmeet1}
 \end{mytable}
+
+\mycomment{
 \begin{myalgorithm}\small
 \input{Figures/THsccalg1}
 \caption{SCC algorithm for SSA form.}\label{alg:scc}
@@ -982,10 +1043,18 @@ c     &   c  &c\oplus d& \top \\
 \input{Figures/THsccalg2}
 \caption{SCC algorithm for SSA form, cont.}\label{alg:scc2}
 \end{myalgorithm}
+}
+
 The SCC algorithm works on a simple three-level value lattice
 associated with variable definition points and a two-level
 executability lattice associated with flow-graph edges.  These
-lattices are shown in Figure~\vref{fig:scclat1}.  Associating a lattice
+lattices are shown in Figure~\vref{fig:scclat1}.  
+The SCC algorithm itself,
+which runs in $O(E+U_{SSA})$ time, is presented in Figures~\ref{alg:scc}
+and \ref{alg:scc2} from Appendix~\ref{app:algorithms}.
+
+\mycomment{
+Associating a lattice
 value with a definition point is a conservative statement that, for
 all possible program paths, the value of that variable has a certain
 property.  The value lattice is, formally, $\domain{Int}_\bot^\top$;
@@ -1025,8 +1094,10 @@ depth $D$ is the constant 3 in this version of the algorithm, so it
 drops out of the expression.  The \code{RaiseE} procedure itself is
 called at most $E$ times.  The time complexity is thus
 $O(E+N+U_{SSA}(D-1))$ which simplifies to $O(E+U_{SSA})$.
+}
 
 \subsubsection{SCC/SSI: predication using \sigfunction{s}.}\label{sec:sccssi}
+\mycomment{
 \begin{myfigure}%
 \begin{samplecode}[2]%
 foo = f();        & \subvar{foo}{0} = f();\\
@@ -1042,12 +1113,30 @@ else              & else \\
 \caption{A simple constant-propagation example.}
 \label{fig:ssa_vs_ssi}
 \end{myfigure}
+}
+
 \begin{myalgorithm}\small
 \input{Figures/THsccssi}
 \caption{A revised \code{Visit} procedure for SCC/SSI.}\label{alg:sccssi}
 \end{myalgorithm}
-Porting the SCC algorithm from SSA to SSI form immediately increases
-the number of constants we can find.  A simple example is shown in
+Porting the SCC algorithm from SSA to SSI form 
+(so that it takes information from conditionals into 
+account) immediately increases
+the number of constants we can find.
+Only the \code{Visit} procedure must be updated for SCC/SSI: lattice
+update rules for \sigfunction{s} must be added.
+Algorithm~\ref{alg:sccssi} shows a new \code{Visit} procedure for the
+two-level integer constant lattice of Wegman and Zadeck's SCC/SSA;
+with this restricted value set only integer equality tests tap the
+algorithm's full power.  The utility of SCC/SSI's \newterm{predicated
+analysis} will become more evident as the value lattice is extended to
+cover more constant types.
+The time complexity of the updated algorithm is identical to that of
+SCC/SSA: $O(E+U_{SSA})$.
+
+
+\mycomment{
+A simple example is shown in
 Figure~\ref{fig:ssa_vs_ssi}: the version of the program on the right
 is in SSI form, and SCC/SSI---unlike SCC/SSA---can
 determine that \code{\subvar{foo}{2}} is a constant with value 1
@@ -1057,18 +1146,7 @@ determine that \code{\subvar{foo}{2}} is a constant with value 1
 \code{\subvar{bar}{2}} are constants with the value 2.
 SSI form creates a new name for \code{bar} at the conditional branch
 to indicate that more information about its value is known.
-
-Only the \code{Visit} procedure must be updated for SCC/SSI: lattice
-update rules for \sigfunction{s} must be added.
-Algorithm~\ref{alg:sccssi} shows a new \code{Visit} procedure for the
-two-level integer constant lattice of Wegman and Zadeck's SCC/SSA;
-with this restricted value set only integer equality tests tap the
-algorithm's full power.  The utility of SCC/SSI's \newterm{predicated
-analysis} will become more evident as the value lattice is extended to
-cover more constant types.
-
-The time complexity of the updated algorithm is identical to that of
-SCC/SSA: $O(E+U_{SSA})$, by the same argument as before.
+}
 
 \subsubsection{Extending the value domain}
 \begin{myfigure}
@@ -1214,7 +1292,7 @@ proven to be null, not those which might be proven to be non-null
 (which is the more useful case).  The next section will provide a more
 satisfactory treatment.
 
-\subsubsection{Addressing array-bounds and null-pointer checks}
+\subsubsection{Array-bounds and null-pointer checks}
 \begin{myfigure}
 \centering\renewcommand{\figscale}{0.5}\input{Figures/THlat5}
 \caption{Value lattice extended with array and null information.}
@@ -1317,8 +1395,8 @@ outlined in Figure~\vref{fig:scclat6}, with
 negligible performance cost.  However, handling upper bounds
 completely requires a symbolic analysis that is out of the current
 scope of this work.  Future work will use induction variable analysis
-and integrate an existing integer linear programming approach
-\cite{rugina99:divide} to fully address array-bounds checks.
+and integrate an existing linear programming approach
+\cite{rugina99:dividePutSubmissionRefHere} to fully address array-bounds checks.
 \begin{myfigure}[t]
 \centering\renewcommand{\figscale}{0.6}\input{Figures/THlat6}
 \caption[An integer lattice for signed integers.]
