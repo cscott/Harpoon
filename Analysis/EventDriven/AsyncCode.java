@@ -62,7 +62,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.31 2000-01-14 18:29:29 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.32 2000-01-14 20:11:56 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -924,28 +924,38 @@ public class AsyncCode {
 		throw new RuntimeException("Name collision with run_Async method");
 	    } catch (NoSuchMethodError e) {
 	    }
+	} else if (original.getName().compareTo("<init>")==0) {
+	    newMethodName = "<init>";
 	} else {
 	    int i = 0;
 	    while(true) {
 		try {
 		    newMethodName = methodNamePrefix + i++; 
 		    originalClass.getMethod(newMethodName, 
-					       original.getParameterTypes());
+					    original.getParameterTypes());
 		} catch (NoSuchMethodError e) {
 		    break;
 		}
 	    }
 	}
 	// create replacement method
-	HMethod replacement=originalMutator.addDeclaredMethod(newMethodName, 
-					  original.getParameterTypes(),
-					  newReturnType);
-	HMethodMutator rmutator=replacement.getMutator();
+	HMethod replacement=null;
+	if (original.getName().compareTo("<init>")!=0) {
+	    replacement=originalMutator.addDeclaredMethod(newMethodName, 
+							  original.getParameterTypes(),
+							  newReturnType);
+	    HMethodMutator rmutator=replacement.getMutator();
+	    rmutator.setExceptionTypes(original.getExceptionTypes());
+	    rmutator.setModifiers(original.getModifiers());
+	    rmutator.setParameterNames(original.getParameterNames());
+	    rmutator.setSynthetic(original.isSynthetic());
+	}
+	else {
+	    replacement=original;
+	    HMethodMutator rmutator=replacement.getMutator();
+	    rmutator.setReturnType(newReturnType);
+	}
 
-	rmutator.setExceptionTypes(original.getExceptionTypes());
-	rmutator.setModifiers(original.getModifiers());
-	rmutator.setParameterNames(original.getParameterNames());
-	rmutator.setSynthetic(original.isSynthetic());
 	old2new.put(original, replacement);
 	return replacement;
     }
