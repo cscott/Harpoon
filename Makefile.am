@@ -4,6 +4,7 @@ MAINTAINERCLEANFILES = Makefile.in configure aclocal.m4 \
 		       scripts/config.guess scripts/config.sub \
 		       scripts/install-sh scripts/ltconfig scripts/ltmain.sh \
 		       scripts/missing scripts/mkinstalldirs
+CONFIG_STATUS_DEPENDENCIES = scripts/gen-link-script
 CLEANFILES = configure.done
 EXTRA_DIST =
 SUBDIRS = Contrib arch src
