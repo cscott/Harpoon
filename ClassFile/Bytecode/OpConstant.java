@@ -9,7 +9,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>constant_pool</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.2 1998-08-04 01:56:56 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.3 1998-08-04 02:09:32 cananian Exp $
  * @see Operand
  * @see Instr
  */
@@ -23,9 +23,10 @@ public class OpConstant extends Operand {
   private void check() {
     // assert that value matches type.
     HClass check = HClass.forClass(value.getClass());
-    if ((type.isPrimitive() && check!=type) ||
-	(!type.isPrimitive()&& check!=type.getWrapper()))
-      throw new Error("value doesn't match type of OpConstant.");
+    if ((!type.isPrimitive() && check!=type) ||
+	( type.isPrimitive() && check!=type.getWrapper()))
+      throw new Error("value doesn't match type of OpConstant: " + 
+		      type + "/" + check+":"+(check==type)+":"+type.isPrimitive());
   }
   /** Make a new <code>OpConstant</code> from a 
    *  <code>constant_pool</code> entry. */
