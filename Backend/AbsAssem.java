@@ -165,7 +165,7 @@ public class AbsAssem  {
 		    } else {
 			Util.assert(defs.isEmpty() &&
 				    uses.isEmpty() &&
-				    jumps.isEmpty(), s);
+				    jumps.isEmpty(), "line:"+line+" token:"+s);
 			return addLabel(s, inf);
 		    }
 		    
@@ -177,9 +177,14 @@ public class AbsAssem  {
 				      " jumps:"+jumps);
 
 	StringBuffer assemSB = new StringBuffer();
-	assemSB.append(getDefStr(defs));
-	assemSB.append(" <- ");
-	assemSB.append(getSrcStr(uses));
+	if (defs.isEmpty() && uses.isEmpty()) {
+	    assemSB.append("\t\t");
+	} else {
+	    assemSB.append(getDefStr(defs));
+	    assemSB.append(" <- ");
+	    assemSB.append(getSrcStr(uses));
+	    assemSB.append("\t");
+	}
 	if (!jumps.isEmpty()) {
 	    assemSB.append(" => ");
 	    assemSB.append(getJmpStr(jumps));
