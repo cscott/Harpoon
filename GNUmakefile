@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.88 2003-04-15 02:50:47 cananian Exp $
+# $Id: GNUmakefile,v 1.89 2003-04-23 01:32:12 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -38,7 +38,7 @@ INSTALLDIR=public_html/Harpoon/
 JDKDOCLINK = http://java.sun.com/j2se/1.4/docs/api
 #JDKDOCLINK = http://java.sun.com/products/jdk/1.2/docs/api
 #JDKDOCLINK = http://palmpilot.lcs.mit.edu/~pnkfelix/jdk-javadoc/java.sun.com/products/jdk/1.2/docs/api
-CVSWEBLINK = http://flexc.lcs.mit.edu/Harpoon/cvsweb.cgi
+CVSWEBLINK = http://flex-cvs.lcs.mit.edu/cgi-bin/viewcvs.cgi
 
 # make this file work with make version less than 3.77
 ifndef CURDIR
