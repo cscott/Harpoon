@@ -15,7 +15,7 @@ import java.util.Iterator;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.12.2.6 2000-02-10 22:17:09 cananian Exp $
+ * @version $Id: HCode.java,v 1.12.2.7 2000-02-15 18:51:34 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
@@ -130,6 +130,14 @@ public abstract class HCode {
    */
   public HCode clone(HMethod newMethod) throws CloneNotSupportedException {
     throw new CloneNotSupportedException(this.toString());
+  }
+  /**
+   * Clone this <code>HCode</code> and all associated 
+   * <code>HCodeElement</code>s.
+   * Calls <code>clone(getMethod())</code>.
+   */
+  public Object clone() throws CloneNotSupportedException {
+    return clone(getMethod());
   }
 
   /**
