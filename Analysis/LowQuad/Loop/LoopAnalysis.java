@@ -31,7 +31,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.6 1999-06-29 20:51:21 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.7 1999-06-30 18:22:02 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -59,17 +59,17 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 
     public Set allInductionsMap(HCode hc, Loops lp) {
 	analyze(hc);
-	return (Set) aimap.get(lp);
+	return (Set) aimap.get(lp.loopEntrances().toArray()[0]);
     }
 
     public Set basicInductionsMap(HCode hc, Loops lp) {
 	analyze(hc);
-	return (Set) bimap.get(lp);
+	return (Set) bimap.get(lp.loopEntrances().toArray()[0]);
     }
 
     public Set invariantsMap(HCode hc, Loops lp) {
 	analyze(hc);
-	return (Set) invmap.get(lp);
+	return (Set) invmap.get(lp.loopEntrances().toArray()[0]);
     }
 
 
@@ -115,9 +115,9 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	HashMap allInductions=ainductor.doAllInductions(lp, invariants, basicinductions);
 
 	//Add to our maps
-	aimap.put(lp, allInductions);
-	bimap.put(lp, basicinductions);
-	invmap.put(lp,invar);
+	aimap.put(lp.loopEntrances().toArray()[0], allInductions);
+	bimap.put(lp.loopEntrances().toArray()[0], basicinductions);
+	invmap.put(lp.loopEntrances().toArray()[0], invariants);
 
 
 	//Show the user everything
