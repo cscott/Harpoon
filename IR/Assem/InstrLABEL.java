@@ -5,13 +5,20 @@ package harpoon.IR.Assem;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Label;
+import harpoon.Util.CombineIterator;
+import harpoon.Util.Default;
+
+import java.util.Iterator;
+import java.util.AbstractCollection;
+import java.util.Collection;
+import java.util.Set;
 
 /**
  * <code>InstrLABEL</code> is used to represents code labels in
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.8 1999-08-28 01:36:01 pnkfelix Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.9 1999-08-30 21:04:15 pnkfelix Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;
@@ -38,5 +45,35 @@ public class InstrLABEL extends Instr {
     */
     protected boolean hasMultiplePredecessors() {
 	return true;
+    }
+
+    public Collection predC() {
+	return new AbstractCollection() {
+	    public int size() {
+		int total=0;
+		if (prev!=null && prev.canFallThrough) {
+		    total++;
+		}
+
+		Set s = (Set) getFactory().labelToBranchingInstrSetMap.get(label);
+		total += s.size();
+
+		return total;
+	    }
+	    public Iterator iterator() {
+		return new CombineIterator
+		    (new Iterator[] {
+			
+			// first iterator: prev falls to this?
+			((prev!=null && prev.canFallThrough)?
+			 Default.singletonIterator
+			 (new InstrEdge(prev, InstrLABEL.this)):
+			 Default.nullIterator),
+
+			// second iterator: branches to this?
+			    ((Set) (getFactory().labelToBranchingInstrSetMap.get
+			     (label))).iterator() });
+	    }
+	};
     }
 }

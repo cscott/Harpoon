@@ -8,6 +8,7 @@ import harpoon.Temp.TempFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,7 +17,7 @@ import java.util.Map;
  * generic <code>Assem.Instr</code>s used in code generation.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrFactory.java,v 1.1.2.10 1999-08-30 20:30:15 pnkfelix Exp $
+ * @version $Id: InstrFactory.java,v 1.1.2.11 1999-08-30 21:04:15 pnkfelix Exp $
  */
 public abstract class InstrFactory {
     /** Maintains a
@@ -33,8 +34,22 @@ public abstract class InstrFactory {
 	<code>Map</code> for <code>Instr</code>s constructed by
 	<code>this</code>.  Used in dynamic <code>HasEdges</code>
 	predecessor resolution. 
+	Note that the <code>get(label)</code> method for this object
+	will never return <code>null</code>; it will just create new
+	empty sets as needed and return them instead. 
     */
-    Map labelToBranchingInstrMap = new HashMap();
+    Map labelToBranchingInstrSetMap = new HashMap() {
+	public Object get(Object key) {
+	    Object v = super.get(key);
+	    if (v != null) {
+		return v;
+	    } else {
+		v = new HashSet();
+		put(key, v);
+		return v;
+	    }
+	}
+    };
 
     /** Returns the <code>TempFactory</code> to use for creating
      *  <code>Temp</code>s which are used as arguments to <code>Instr</code>s

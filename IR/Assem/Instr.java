@@ -32,14 +32,16 @@ import java.util.AbstractCollection;
  * Important Note: Most <code>Instr</code>s have only one
  * predecessor.  One type of <code>Instr</code> with more than
  * one predecessor is an <code>InstrLABEL</code>.  In any case, any
- * code that relies on the "only one predecessor"-invariant should
+ * code that relies on the "only one predecessor"-invariant must
  * check each <code>Instr</code> with
- * <code>hasMultiplePredecessors()</code> and should override
- * <code>predC</code> 
+ * <code>hasMultiplePredecessors()</code>.  Likewise, extensions of
+ * <code>Instr</code> which are designed to allow multiple predecessors
+ * must override <code>predC()</code> and
+ * <code>hasMultiplePredecessors()</code>   
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.37 1999-08-30 20:35:59 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.38 1999-08-30 21:04:13 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
