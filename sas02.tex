@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: sas02.tex,v 1.10 2002-05-11 10:59:50 cananian Exp $
+% $Id: sas02.tex,v 1.11 2002-05-11 20:29:21 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[oribibl]{llncs}
 %\usepackage[section,plain]{algorithm}
@@ -41,10 +41,10 @@ We present a set of techniques for reducing the memory consumption of
 object-oriented programs. These techniques 
 include optimizations that eliminate fields with
 constant values, reduce the sizes of fields based on the range
-of values that can appear in each field, and use a variety of
-transformations to eliminate fields with common default values
-or usage patterns from many objects.
-We can apply these optimizations both 
+of values that can appear in each field, and 
+eliminate fields with common default values
+or usage patterns.
+We apply these optimizations both 
 to fields declared by the programmer and to implicit fields in
 the runtime object header. We describe analysis
 algorithms to extract the information required to apply these
@@ -82,10 +82,10 @@ with the constant value.  Fields without executable reads are
 also removed.
 \item {\bf Static Specialization:} Our analysis finds 
 classes with fields whose values do not change after initialization,
-even though various instances of the object may
+even though different instances of the object may
 have different values for these fields. It then generates 
 specialized versions of each class which omit these fields,
-substituting accessor methods which may return constant values.
+substituting accessor methods which return constant values.
 \item {\bf Field Externalization:} Our analysis uses profiling
 to find fields that almost always have the same default value. 
 It then removes these fields from their enclosing class, 
@@ -96,15 +96,15 @@ default value) or a removal from the hash table (if the written value
 is the default value). It replaces reads with hash table lookups; 
 if the object is not present in the hash table, the lookup simply
 returns the default value. 
-\item {\bf Claz Compression:} Our rapid type analysis
+\item {\bf Class Pointer Compression:} Our rapid type analysis
 computes an upper bound on the number of classes that the
 program may instantiate. Objects in standard 
 Java implementations have a header field, commonly called {\tt claz},
 which contains a pointer
 to the class data for that object,
 such as inheritance information and method dispatch tables.
-Our compiler uses the results of the class
-hierarchy analysis to replace the reference with a smaller
+Our compiler uses the results of the 
+analysis to replace the reference with a smaller
 offset into a table of pointers to the class data. 
 \item {\bf Byte Packing:} All of the above transformations may
 reduce or eliminate the amount of space required to store each
@@ -155,7 +155,7 @@ Figure~\ref{fig:value}a presents the {\tt JValue} class, which is
 a wrapper around either an {\tt Integer} object or a {\tt Float}
 object. The {\tt type} field indicates which kind of object
 is stored in the {\tt value} field of the class, 
-which essentially implements a tagged 
+essentially implementing a tagged 
 union.\footnote{This class is a simplfied version of similar
 classes that appear in some of our benchmarks.
 See for example the {\tt jess.Value} class in SPECjvm98 benchmark
@@ -304,7 +304,7 @@ public SmallString substring(int start)\\
 \label{fig:split}
 \end{figure}
 
-In practice, most strings are created as explicit substrings of other
+In practice, most strings are not created as explicit substrings of other
 strings, so
 the {\tt offset} field in most strings is zero.
 In fact, all of the public {\tt String} constructors create
@@ -356,7 +356,7 @@ the value of the {\tt offset} field is simply
 the value of the {\tt noff} parameter to this constructor. 
 
 This analysis identifies a set of candidate fields. 
-The analysis then chooses one of the candidate fields, then 
+The analysis chooses one of the candidate fields, then 
 splits the class along the possible values
 that can appear in the field. Our current implementation uses
 profiling to select the field that will provide the largest
@@ -418,9 +418,9 @@ Note that, in general, this transformation (as well as field
 externalization) may actually increase space usage. But in
 practice, we have found that our set of benchmark programs
 rarely uses these fields. The overall result is a substantial
-space savings. The combination of claz compression 
+space savings. The combination of class pointer compression 
 and hash/lock elimination can produce a common-case object header
-size of one byte --- one byte for a claz index and no
+size of one byte --- one byte for a class index and no
 space at all for hash code or lock.
 %
 \section{Analysis Algorithms}
@@ -430,9 +430,9 @@ our transformations.
 %
 \subsection{Rapid Type Analysis}
 We start with a rapid type analysis \cite{bacon96} to collect the set of
-instantiated classes and callable methods.  This allows us to generate
+instantiated classes and callable methods.  This analysis allows us to generate
 a conservative call graph for the program, using the known receiver
-type at the call-site and the its set of instantiated subclasses in the
+type at the call-site and its set of instantiated subclasses in the
 hierarchy.  Based on the class hierarchy, we can also tag all leaf
 classes as {\tt final}, regardless of whether the source code contained
 this modifier.  Methods which are not overridden, based on
@@ -453,7 +453,7 @@ typical Java program, and all but two of the benchmarks in SPECjvm98
 have less than 256 instantiated class types.%
 \footnote{\emph{All} have more than 256 \emph{total} class types.}
 We use this information
-to replace the {\tt claz} pointer in the object header, which
+to replace the class pointer in the object header, which
 identifies the type of the object, with a one-byte {\it index} into a
 small lookup table.  The {\tt jess} and {\tt javac}
 benchmarks require more than one byte of index, but a two byte index
@@ -471,7 +471,7 @@ field sizes where possible.  Our dataflow framework uses
 Wegman and Zadeck's Sparse Conditional Constant (SCC) propagation
 algorithm \cite{wegman91:scc} as a basis.  We then extend their
 analysis interprocedurally, add coverage of Java language features,
-and extend the value lattice to handle bitwidth.
+and extend the value lattice to handle bitwidths.
 Since almost all types in Java are signed (with the exception of the
 16-bit {\tt char}), we must be able to describe bitwidths of both
 negative and positive numbers, which we do by splitting the set of
@@ -504,7 +504,7 @@ bitfield operations on positive numbers.
 \tuple{0,p_l} \wedge \tuple{0,p_r} &=& \tuple{0,\min(p_l,p_r)}\\
 \tuple{m_l,p_l}\wedge \tuple{m_r,p_r} &=& \tuple{\max(m_l,m_r),\max(p_l,p_r)}
 \end{eqnarray*}%
-\caption{Some combination rules for bit-width analysis.
+\caption{Some combination rules for bitwidth analysis.
   Note that the penultimate entry is a
   special-case rule that only applies if the neither of the
   arguments can be negative.}\label{fig:bitrules}
@@ -522,13 +522,12 @@ analysis to discriminate between fields allocated at different sites
 in the program.}  The result of the analysis is a bitwidth
 specification for each variable and field in the program.  As the
 analysis is based on SCC, we also identify constant variables and
-fields; reads of constant fields are replaced with their constant
-value and the field is eliminated.  Fields which we do not discover
-any reads of during our analysis are also removed as unused.
+fields; we replace reads of constant fields with their constant
+value and the field is eliminated.
 
 \subsubsection{Other Details}
 Our analysis handles method calls by merging the lattice values of the
-method parameters at the call-site with the formal parameters of the
+method parameters at the call site with the formal parameters of the
 method.  Similarly, the return value of the method is propagated back
 to all call-sites.  Our compiler's intermediate representation handles
 thrown exceptions by treating the method return value as a tuple, and
@@ -697,10 +696,11 @@ In a single pass over the constructor, we merge the values written
 to a selected subclass-final field, treating $\text{\tt Param}N$ as an
 abstract value for the $N$th constructor parameter.
 We treat any call to a {\tt this()}
-constructor as if it were inlined.  We know that all writes to the
+constructor as if it were inlined.  By the properties of
+subclass-final fields, we know that all writes to the
 field are to the {\tt this} object and that there are no bad writes to
-the field outside of the constructor, by the properties of
-subclass-final fields. If the merged value at the end of the pass 
+the field outside of the constructor.
+If the merged value at the end of the pass 
 is a {\tt Param} value or a constant equal to the desired ``default''
 value of the selected field,
 then we can statically specialize on the field at this constructor
@@ -723,7 +723,7 @@ whole is often placed on a double-word boundary. Our implementation
 places object fields at the nearest byte boundary, although
 the information provided by our bitwidth
 analysis is sufficient to {\it bit}-pack the fields in the object
-when space is truely at a premium.  Preliminary investigation
+when space is truly at a premium.  Preliminary investigation
 indicated that the amount of additional space gained by bit-packing 
 is typically only a few percent, because there aren't enough sub-byte
 fields to fill the space ``wasted'' by byte alignment.
@@ -788,7 +788,7 @@ Section~\ref{sec:byte-pack}).
 
 Close attention to the implementation of the hashtable used for
 field and hash/lock externalization is
-necessary to realize the identified possible gains.  In order to
+necessary to realize the identified possible gains.  To
 maximize space savings, we need to use as little space
 per field stored in the table as possible.  The overhead of
 dynamically allocated buckets and the required {\it next} pointers
@@ -817,11 +817,13 @@ Our implementation leverages the garbage-collector to remove unneeded
 entries from the hashtable.
 %
 \subsection{Class Loading and Reflection}
-Although this research was conducted using FLEX, which is a static
-compiler, it would be straightforward to use \emph{extent analysis}
-\cite{sreedhar00} to apply transformations to the closed-world
+This research was conducted using the MIT FLEX compiler infrastructure,%
+\footnote{Available from {\tt http://flexc.lcs.mit.edu/}.} which is a
+whole-program static compiler.  Although the analyses as described reflect
+this, it would be straightforward to use \emph{extent analysis}
+\cite{sreedhar00} to apply transformations to only the closed-world
 portions of a program which used dynamic class loading.  The space
-allocated to the claz index could be updated during garbage collection
+allocated to the class index could be updated during garbage collection
 as new classes are discovered.  Concurrent profiling could actually
 expose more opportunities for space compression in a JIT environment.
 And our various transformations need not be user-visible if the
@@ -831,9 +833,7 @@ reflection implementation is carefully written.
 \label{sec:results}
 %
 We have implemented all of the analyses and transformations described
-in this paper in the MIT FLEX compiler infrastructure.%
-\footnote{Available from {\tt http://flexc.lcs.mit.edu/}.} 
-FLEX is a whole-program static compiler.
+in this paper in FLEX.
 We measure the effectiveness
 of our optimizations by using FLEX to analyze the SPECjvm98 benchmarks
 and apply our transformations,
@@ -846,8 +846,8 @@ Pentium III running Debian Linux.
 To evaluate the effectiveness of our technique at reducing the
 amount of memory required to execute the program, 
 we first ran an instrumented version of each
-application without any space optimizations. We used this
-instrumented version to compute the total amount of data live on the
+application with no space optimizations. We used this
+instrumented version to compute the maximum amount of live data on the
 heap at any point during the execution.  
 We then ran an instrumented version of our program after each stage of
 optimization.
@@ -891,7 +891,7 @@ the original unoptimized execution that we were able to eliminate
 with each optimization. The black section of each bar indicates the
 amount of live heap data remaining after all optimizations. 
 We obtain as much as 40\% reduction in live data on the {\tt
-  javac} benchmark, with almost all of this coming from our
+  javac} benchmark, with almost all of this reduction coming from our
 bitwidth-driven field reductions and static specialization.  In fact
 we obtain more than 15\% reduction on all of the ``object-oriented''
 benchmarks.  The {\tt compress} benchmark allocates a small
@@ -920,14 +920,16 @@ object fields rather than arrays. For context, we present numbers
 that characterize the reductions in total allocation for objects only,
 rather than for both objects and arrays. Figure~\ref{fig:results}c
 presents space savings numbers for objects alone, omitting
-any storage required for arrays.  The difference is explained by
-Figure~\ref{fig:results}d, which shows how the total
+any storage required for arrays.
+Figure~\ref{fig:results}d explains the difference by showing how the total
 program allocation for each benchmark is broken down into array and
-object allocations.  The space required for pointer fields, which can
-not be compressed, are further broken out of
-the object allocations.
-The reason for our poor performance on {\tt
-  compress} is now obvious.
+object allocations.
+%The space required for pointer fields, which can
+%not be compressed, are further broken out of
+%the object allocations.
+The reason for our poor performance on {\tt compress} is now
+  obvious---a few large uncompressible integer arrays
+  account for over 99\% of the total space allocated.
 %
 \subsection{Execution Times} 
 \label{sec:byte-pack}
@@ -936,7 +938,7 @@ We next evaluate the execution time impact of applying our space
 optimizations. Figure~\ref{fig:results}e presents the normalized execution 
 times of each application after the application of our sequence
 of optimizations. These numbers show that the first several
-optimizations (claz compression, field reduction, and byte packing)
+optimizations (class pointer compression, field reduction, and byte packing)
 typically reduce the execution times, while the
 remainder (static specialization, field externalization, and  hash/lock
 externalization) generate modest increases in the execution times.
@@ -1019,6 +1021,7 @@ consumption of object-oriented programs.  Our techniques include
 program analyses to detect unused, constant, or overly-wide fields,
 and transformations to eliminate fields with common default values
 or usage patterns.  These techniques apply equally well to
+both user-defined fields and
 fields implicit in the runtime's object header, and can reduce the
 maximum heap required for a program by as much as 40\%. 
 Our experimental results from our fully-implemented system validate the
