@@ -11,7 +11,7 @@ package harpoon.Runtime.Transactions;
  * records.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CommitRecord.java,v 1.1.2.2 2000-11-06 21:28:17 cananian Exp $
+ * @version $Id: CommitRecord.java,v 1.1.2.3 2000-11-07 20:41:26 cananian Exp $
  */
 public class CommitRecord {
     // enumerated constants
@@ -25,9 +25,35 @@ public class CommitRecord {
     /** The 'state' of this record: initialized to WAITING, and
      *  write-once to either COMMITTED or ABORTED. */
     State state = WAITING;
-    public CommitRecord(CommitRecord parent) {
-	this.parent = parent;
+
+    /** Constructor method. */
+    public static CommitRecord newTransaction(CommitRecord parent) {
+	return new CommitRecord(parent, 0);
     }
+    /** Returns a new commit record suitable for retrying this transaction.
+     * @exception TransactionAbortException if this transaction has been
+     * retried too many times.
+     */
+    public final CommitRecord retryTransaction()
+	throws TransactionAbortException {
+	if (retry_count > 2) throw new TransactionAbortException(parent);
+	try {
+	    Thread.sleep(retry_count); // sleep for a few milliseconds.
+	} catch (InterruptedException ex) { /* wake up */ }
+	return new CommitRecord(this.parent, retry_count+1);
+    }
+    public final void commitTransaction() throws TransactionAbortException {
+	if (this.commit()!=COMMITTED)
+	    throw new TransactionAbortException(this);
+    }
+
+    /** Private constructor. */
+    private CommitRecord(CommitRecord parent, int retry_count) {
+	this.parent = parent;
+	this.retry_count = retry_count;
+    }
+    /** Keep track of how many times this transaction's been retried. */
+    private final int retry_count;
 
     /** Returns the 'state' of this record (including dependencies) */
     public State state() { return state(this); }
