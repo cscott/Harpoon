@@ -61,6 +61,26 @@ inline jlong precise_get_heap_size()
   return internal_get_heap_size();
 }
 
+#ifndef WITH_STATS_GC
+# define COLLECT_NOPTR_STATS()
+# define COLLECT_LRGOBJ_STATS() 
+#else
+/* object statistics */
+static int no_pointers = 0;
+static int large_objects = 0;
+
+# define COLLECT_NOPTR_STATS() ({ no_pointers++; })
+# define COLLECT_LRGOBJ_STATS() ({ large_objects++; })
+
+/* effects: prints out statistics */
+void precise_gc_print_stats()
+{
+  printf("no_pointers = %d\n", no_pointers);
+  printf("large_objects = %d\n", large_objects);
+  internal_print_stats();
+}
+#endif
+
 
 #ifdef WITH_PRECISE_C_BACKEND
 inline void *precise_malloc (size_t size_in_bytes)
@@ -178,9 +198,6 @@ void cleanup_after_threaded_GC() {
 }
 #endif
 
-/* the number of bits in the in-line gc bitmap is platform-dependent */
-#define BITS_IN_GC_BITMAP (SIZEOF_VOID_P*8)
-
 /* prints given bitmap */
 #ifndef DEBUG_GC
 #define print_bitmap(bitmap)
@@ -202,11 +219,11 @@ void print_bitmap(ptroff_t bitmap)
 }
 #endif
 
+
 /* trace takes a pointer to an object and traces the pointers w/in it */
 void trace(jobject_unwrapped unaligned_ptr)
 {
   jobject_unwrapped obj;
-  size_t obj_size_minus_header;
   int bits_needed, bitmaps_needed, i;
   ptroff_t *bitmap_ptr;
   struct aarray *arr = NULL;
@@ -216,11 +233,16 @@ void trace(jobject_unwrapped unaligned_ptr)
 
   obj = PTRMASK(unaligned_ptr);
 
+  // this object contains no pointers
+  if (obj->claz->gc_info.bitmap == 0)
+    {
+      COLLECT_NOPTR_STATS();
+      return;
+    }
+
   claz_ptr = obj->claz;
 
-  assert(&claz_start <= claz_ptr && claz_ptr < &claz_end);
-
-  // each word in the object (excluding the header words) is
+  // each word in the object (including the header words) is
   // represented by a corresponding bit in the GC bitmap. if
   // the object is too large for the in-line bitmap, then an
   // auxiliary bitmap is used. here we determine whether the
@@ -228,30 +250,28 @@ void trace(jobject_unwrapped unaligned_ptr)
   // future, we may be cleverer by stealing the low bit to
   // determine whether the in-line bitmap is used, since the
   // low 2 bits are free when we use the auxiliary bitmap.
-  obj_size_minus_header = claz_ptr->size - OBJ_HEADER_SIZE;
-  bits_needed = (obj_size_minus_header + SIZEOF_VOID_P - 1)/SIZEOF_VOID_P;
+  bits_needed = (claz_ptr->size + SIZEOF_VOID_P - 1)/SIZEOF_VOID_P;
 
   if (claz_ptr->component_claz != NULL)
     {
       // for arrays, we keep an extra bit for fields
       bits_needed++;
-      // in arrays, fields have a different location
       arr = (struct aarray *)obj;
-      fields = (jobject_unwrapped *)(arr->_padding_);
       error_gc("Object is an array.\n", "");
     }
-  else
-    fields = (jobject_unwrapped *)(obj->field_start);
+
+  fields = (jobject_unwrapped *)obj;
 
   bitmaps_needed = (bits_needed + BITS_IN_GC_BITMAP - 1)/BITS_IN_GC_BITMAP;
   error_gc("object size = %d bytes\n", claz_ptr->size);
-  error_gc("header size = %d bytes\n", OBJ_HEADER_SIZE);
-  error_gc("obj_size_minus_header = %d bytes\n", obj_size_minus_header);
   error_gc("bitmaps_needed = %d\n", bitmaps_needed);
   assert(bitmaps_needed >= 0);
 
   if (bitmaps_needed > 1)
-    bitmap_ptr = claz_ptr->gc_info.ptr;
+    {
+      bitmap_ptr = claz_ptr->gc_info.ptr;
+      COLLECT_LRGOBJ_STATS();
+    }
   else
     bitmap_ptr = &(claz_ptr->gc_info.bitmap);
 
@@ -328,23 +348,28 @@ void trace(jobject_unwrapped unaligned_ptr)
 */
 ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t next_index)
 {
-  size_t obj_size_minus_header;
   int i, bits_needed, bitmaps_needed;
   ptroff_t *bitmap_ptr;
 
   // should only be called w/ aligned ptrs
   assert(obj == PTRMASK(obj));
 
+  // this object contains no pointers
+  if (obj->claz->gc_info.bitmap == 0)
+    {
+      COLLECT_NOPTR_STATS();
+      return NO_POINTERS;
+    }
+
   // we want to initialize i based on where we are in the object
   i = next_index/BITS_IN_GC_BITMAP;
 
   // we use one bit in the GC bitmap for each pointer-sized 
-  // word in the object. if the object size (minus header)
+  // word in the object. if the object size (including header)
   // is too big to be encoded in the in-line bitmap, then it's
   // put in the auxiliary bitmap, and the in-line field
   // contains a pointer to the bitmap
-  obj_size_minus_header = obj->claz->size - OBJ_HEADER_SIZE;
-  bits_needed = (obj_size_minus_header + SIZEOF_VOID_P - 1)/SIZEOF_VOID_P;
+  bits_needed = (obj->claz->size + SIZEOF_VOID_P - 1)/SIZEOF_VOID_P;
 
   // if we are looking at the elements of the array, 
   // we may not need to examine the bitmap at all
@@ -372,7 +397,10 @@ ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t next_index)
   assert(bitmaps_needed >= 0);
   
   if (bitmaps_needed > 1)
-    bitmap_ptr = obj->claz->gc_info.ptr;
+    {
+      bitmap_ptr = obj->claz->gc_info.ptr;
+      COLLECT_LRGOBJ_STATS();
+    }
   else
     bitmap_ptr = &(obj->claz->gc_info.bitmap);
   
@@ -380,7 +408,6 @@ ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t next_index)
   // needs to be initialized relative to i
   for ( ; i < bitmaps_needed; i++, next_index = i*BITS_IN_GC_BITMAP)
     {
-      int j;
       ptroff_t bitmap = bitmap_ptr[i];
       print_bitmap(bitmap);
 

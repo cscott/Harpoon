@@ -66,8 +66,6 @@ if (halt_for_GC_flag) halt_for_GC(); })
 
 #endif /* WITH_THREADED_GC */
 
-size_t copying_get_size_of_obj(jobject_unwrapped ptr_to_obj);
-
 void relocate(jobject_unwrapped *obj);
 
 
@@ -93,13 +91,32 @@ jlong copying_get_heap_size()
 }
 
 
+#ifndef DEBUG_GC
+#define debug_overwrite_to_space()
+#define debug_verify_object(obj)
+#else
+/* effects: overwrites to-space with recognizable garbage for easy debugging */
+void debug_overwrite_to_space()
+{
+  memset(to_space, 7, heap_size/2);
+}
+
+
+/* effects: verifies the integrity of the given object with simple checks */
+void debug_verify_object(jobject_unwrapped obj)
+{
+  // check that this is probably a pointer
+  assert(!((ptroff_t)obj & 1));
+  
+  // check that the claz ptr is correct
+  assert(&claz_start <= obj->claz && obj->claz < &claz_end);
+}
+#endif
+
+
 /* copying_handle_references handles refereneces to objects. objects in the
    heap that need to be copied to the new semispace are copied. if the 
-   object has already been copied, the pointer is updated. the second
-   argument tells the function whether the given reference is a part of
-   the root set. if not, references outside the heap are ignored, since
-   tracing them can put the GC in an infinite loop. if so, even references
-   outside the heap are traced. */
+   object has already been copied, the pointer is updated. */
 void copying_handle_reference(jobject_unwrapped *ref)
 {
   jobject_unwrapped obj = PTRMASK((*ref));
@@ -118,6 +135,7 @@ void copying_handle_reference(jobject_unwrapped *ref)
 	}
       else
 	{
+	  debug_verify_object(obj);
 	  // move to new semispace
 	  relocate(ref);
 	  error_gc("relocated to %p.\n", PTRMASK((*ref)));
@@ -127,20 +145,6 @@ void copying_handle_reference(jobject_unwrapped *ref)
     error_gc("not in heap, not traced.\n", "");
 }
 
-/* overwrite_to_space writes over to_space so that, when debugging, it is
-   clear when there is a memory reference to the heap that is bad. */
-
-#ifndef DEBUG_GC
-#define debug_overwrite_to_space()
-#else
-void debug_overwrite_to_space()
-{
-  int *curr;
-  // write over to_space
-  for(curr = (int *)to_space; curr < (int *)top_of_to_space; curr++)
-    (*curr) = 0x77777777;
-}
-#endif
 
 void relocate(jobject_unwrapped *ref) {
   jobject_unwrapped obj = (jobject_unwrapped)PTRMASK((*ref));
@@ -192,7 +196,7 @@ void copying_gc_init()
 }
 
 
-void copying_cleanup ()
+void copying_print_stats ()
 {
     printf("Maximum heap size = %d bytes.\n", max_heap_size);
 }
@@ -269,9 +273,6 @@ void *copying_malloc (size_t size_in_bytes, void *saved_registers[])
   
   result = free;
   free += aligned_size_in_bytes;
-
-  // zero out memory before returning
-  // result = memset(result, 0, aligned_size_in_bytes);
 
   //calculate statistics for max_heap_size
   max_heap_size = (max_heap_size > (free - from_space)) ? max_heap_size : (free - from_space);
@@ -361,20 +362,3 @@ void copying_collect(void *saved_registers[], int expand_amt)
   // this function is a nop if not debug
   debug_overwrite_to_space();
 }
-
-/* copying_get_size_of_obj returns the size (in bytes) of
-   the object to which the argument points. */
-size_t copying_get_size_of_obj(jobject_unwrapped ptr_to_obj)
-{
-  /* assert that the object is in the currently occupied heap */
-  assert(IN_HEAP((void *)ptr_to_obj));;
-  return align(FNI_ObjectSize(ptr_to_obj));
-}
-
-/* to free an object, we need it to be big enough to go on the free list */
-#define MINIMUM_SIZE sizeof(struct free_block)
-
-/* we keep an unsorted, singly-linked list of free blocks of memory */
-static struct free_block *free_list = NULL;
-/* mutex for free_list */
-FLEX_MUTEX_DECLARE_STATIC(copying_free_list_mutex);

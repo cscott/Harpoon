@@ -10,7 +10,7 @@
 #endif
 
 #ifndef WITH_PRECISE_C_BACKEND
-# error /* unimplemented */
+# error unimplemented
 #else
 
 #define BLOCK_SIZE        (sizeof(struct block))
@@ -152,8 +152,6 @@ void add_to_free_list(struct block *new_block)
   
   bl_size = new_block->bheader.size_of_block;
   
-  //assert(bl_size > SMALL_OBJ_SIZE + BLOCK_HEADER_SIZE);
-
   error_gc("Adding %d bytes to free list.\n", bl_size);
 
   while (curr != NULL)
@@ -354,20 +352,19 @@ void debug_verify_block(struct block *bl)
 {
   struct block *begin = free_list;
 
+  // check that this is probably a pointer
+  assert(!((ptroff_t)bl & 1));
+
+  // check that the claz ptr is correct
+  assert(&claz_start <= bl->object.claz && bl->object.claz < &claz_end);
+      
+  // check that this is not something from the free list
   while (begin != NULL)
     {
       struct block *end = ((void *)begin) + begin->bheader.size_of_block;
-      struct claz *claz_ptr;
 
-      assert(!((ptroff_t)bl & 1));
-
-      // check that this is not something from the free list
       assert(!(begin <= bl && bl < end));
 
-      // check that the claz ptr is correct
-      claz_ptr = bl->object.claz;
-      assert(&claz_start <= claz_ptr && claz_ptr < &claz_end);
-      
       begin = begin->bheader.markunion.next;
     }
 }
@@ -437,12 +434,6 @@ void* marksweep_malloc(size_t size_in_bytes) {
     }
   assert(result != NULL);
 
-  /*
-  printf("%d\t", ++num_mallocs);
-  printf("Allocated %d bytes ", size_in_bytes);
-  printf("at %p (for a total of ", result+1);
-  printf("%d bytes)\n", (total_memory_requested += size_in_bytes));
-  */
   error_gc("%d\t", ++num_mallocs);
   error_gc("Allocated %d bytes ", size_in_bytes);
   error_gc("at %p (for a total of ", result+1);
@@ -497,19 +488,10 @@ void pointerreversed_handle_reference(jobject_unwrapped *ref)
 
 	      error_gc("%p is unmarked.\n", obj);
 
-	      assert(&claz_start <= obj->claz && obj->claz < &claz_end);
+	      elements_and_fields = (jobject_unwrapped *)obj;
 
-	      if (obj->claz->component_claz != NULL)
-		{
-		  // we have an array
-		  struct aarray *arr = (struct aarray *) obj;
-		  elements_and_fields = (jobject_unwrapped *)(arr->_padding_);
-		}
-	      else
-		// we have a non-array object
-		elements_and_fields = (jobject_unwrapped *)(obj->field_start);
-
-	      next_index = get_next_index(obj, 0);
+	      // we know the header does not contain heap pointers
+	      next_index = get_next_index(obj, OBJ_HEADER_SIZE/SIZEOF_VOID_P);
 
 	      if (next_index == NO_POINTERS)
 		{
@@ -565,14 +547,7 @@ void pointerreversed_handle_reference(jobject_unwrapped *ref)
 
 	  last_index = GET_INDEX(bl);
 
-	  if (obj->claz->component_claz != NULL)
-	    {
-	      // prev is an array
-	      struct aarray *arr = (struct aarray *)obj;
-	      elements_and_fields = (jobject_unwrapped *)(arr->_padding_);
-	    }
-	  else
-	      elements_and_fields = (jobject_unwrapped *)(obj->field_start);
+	  elements_and_fields = (jobject_unwrapped *)obj;
 
 	  next_index = get_next_index(obj, last_index+1);
 

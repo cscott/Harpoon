@@ -2,11 +2,7 @@
 #define INCLUDED_JNI_GC_H
 
 //#define DEBUG_GC
-
-#if defined(WITH_PRECISE_GC) || defined(WITH_SEMI_PRECISE_GC)
-# define WORDSZ          (SIZEOF_VOID_P*8)
-# define WORDSZ_IN_BYTES  SIZEOF_VOID_P
-#endif /* WITH_PRECISE_GC/WITH_SEMI_PRECISE_GC */
+//#define WITH_STATS_GC
 
 #ifdef WITH_PRECISE_GC
 
@@ -16,16 +12,10 @@
 # define error_gc(fs,a) (/* do nothing */0)
 #endif
 
-#ifdef DEBUG_GC
-#if defined(WITH_MARKSWEEP_GC)
-# include "../src/gc/marksweep.h"
-# define precise_gc_cleanup     marksweep_cleanup
-#elif defined(WITH_COPYING_GC)
-# include "../src/gc/copying.h"
-# define precise_gc_cleanup     copying_cleanup
-#endif
+#ifndef WITH_STATS_GC
+# define precise_gc_print_stats()
 #else
-# define precise_gc_cleanup()
+void precise_gc_print_stats();
 #endif
 
 /* returns: amt of free memory available */
