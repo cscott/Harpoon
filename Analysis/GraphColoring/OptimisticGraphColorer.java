@@ -25,7 +25,7 @@ import harpoon.Util.Util;
  * second stage, but this is parameterizable.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: OptimisticGraphColorer.java,v 1.1.2.3 2000-08-02 01:15:15 pnkfelix Exp $
+ * @version $Id: OptimisticGraphColorer.java,v 1.1.2.4 2000-08-02 20:43:42 pnkfelix Exp $
  */
 public class OptimisticGraphColorer extends GraphColorer {
 
@@ -114,7 +114,7 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    for(Iterator nbors = nborsC.iterator(); nbors.hasNext();){
 		Object nb = nbors.next();
 		Color col = graph.getColor(nb);
-		Util.assert(col != null);
+		Util.assert(col != null, "no color for "+nb);
 		nColors.add(col);
 	    }
 	    
