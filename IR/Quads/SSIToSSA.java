@@ -30,7 +30,7 @@ import java.util.Map;
  * in an SSI-form codeview, yielding an SSA codeview.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIToSSA.java,v 1.5 2003-03-11 18:23:04 cananian Exp $
+ * @version $Id: SSIToSSA.java,v 1.6 2003-07-11 09:42:50 cananian Exp $
  */
 public class SSIToSSA {
     // Return values for the algorithm:
@@ -39,8 +39,12 @@ public class SSIToSSA {
     public final HEADER rootQuad;
     /** Map from old ssi temps to new ssa temps. */
     public final TempMap tempMap;
+    /** Map from new ssa temps to old ssi temps. */
+    public final TempMap revTempMap;
     /** Map from old ssi quads to new ssa quads. */
     public final Map<Quad,Quad> quadMap;
+    /** Map from new ssa quads to old ssi quads. */
+    public final Map<Quad,Quad> revQuadMap;
     /** <code>AllocationInformation</code> for the new quads, or
      *  <code>null</code> if no allocation information for the old
      *  quads was supplied. */
@@ -67,6 +71,8 @@ public class SSIToSSA {
 	this.rootQuad = (HEADER) cloner.old2new.get(oldhead);
 	this.tempMap = scanner.unmodifiable();
 	this.quadMap = Collections.unmodifiableMap(cloner.old2new);
+	this.revTempMap = scanner.reverseTempMap();
+	this.revQuadMap = Collections.unmodifiableMap(cloner.new2old);
 	this.allocInfo = cloner.naim;
 	this.derivation = cloner.nderiv;
     }
@@ -76,6 +82,7 @@ public class SSIToSSA {
     static class Scanner extends LowQuadVisitor implements TempMap {
 	final DisjointSet<Temp> map = new DisjointSet<Temp>();
 	final CloningTempMap ctm;
+	final Map<Temp,Temp> reverseMap = new HashMap<Temp,Temp>();
 	Scanner(Code c, TempFactory oldtf, TempFactory newtf) {
 	    super(c instanceof harpoon.IR.LowQuad.Code);// strictness.
 	    this.ctm = new CloningTempMap(oldtf, newtf);
@@ -84,12 +91,23 @@ public class SSIToSSA {
 		it.next().accept(this);
 	}
 	// implement TempMap via CloningTempMap.
-	public Temp tempMap(Temp t) { return ctm.tempMap(map.find(t)); }
+	public Temp tempMap(Temp t) {
+	    Temp r = ctm.tempMap(map.find(t));
+	    reverseMap.put(r, t);
+	    return r;
+	}
 	public TempMap unmodifiable() {
 	    final TempMap uctm = ctm.unmodifiable();
 	    return new TempMap() {
 		public Temp tempMap(Temp t) {
 		    return uctm.tempMap(map.find(t));
+		}
+	    };
+	}
+	public TempMap reverseTempMap() {
+	    return new TempMap() {
+		public Temp tempMap(Temp t) {
+		    return reverseMap.get(t);
 		}
 	    };
 	}
@@ -108,6 +126,8 @@ public class SSIToSSA {
     static class Cloner extends LowQuadVisitor {
 	/** Maps SSI quads to SSA quads. */
 	final Map<Quad,Quad> old2new = new HashMap<Quad,Quad>();
+	/** Maps SSA quads to SSI quads. */
+	final Map<Quad,Quad> new2old = new HashMap<Quad,Quad>();
 	/** Maps old temps to new temps. */
 	final TempMap tm;
 	/** QuadFactory to use for new Quads. */
@@ -136,6 +156,7 @@ public class SSIToSSA {
 	}
 	private void record(Quad oldq, Quad newq, boolean transferDeriv) {
 	    old2new.put(oldq, newq);
+	    new2old.put(newq, oldq);
 	    if (transferDeriv && nderiv!=null)
 		nderiv.transfer(newq, oldq, oldq.def(), tm, oderiv);
 	    if (newq instanceof ANEW || newq instanceof NEW)
