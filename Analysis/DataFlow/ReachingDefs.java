@@ -12,6 +12,7 @@ package harpoon.Analysis.DataFlow;
  * - Mapping from Temps to stuff (preferably unique, small integers)
  *
  * @author  John Whaley
+ * @author Felix Klock (pnkfelix@mit.edu)
  */
 
 import java.util.Enumeration;
@@ -60,15 +61,23 @@ public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
 
   /**
    * Merge function.
+   *
+   * <BR> <B>requires:</B> <code>f</code> and <code>t</code> are
+   *                       instances of QuadBasicBlocks.
    */
-  public boolean merge(BasicBlock from, BasicBlock to) {
-    ReachingDefInfo from_info = getInfo(from);
-    Util.assert(from_info != null);
+  public boolean merge(BasicBlock f, BasicBlock t) {
+    ReachingDefInfo from_info = getInfo(f);
+    Util.assert(from_info != null &&
+		f instanceof QuadBasicBlock &&
+		t instanceof QuadBasicBlock);
+    QuadBasicBlock from = (QuadBasicBlock) f;
+    QuadBasicBlock to   = (QuadBasicBlock) t;
+
     boolean result = false;
     ReachingDefInfo to_info = getInfo(to);
     if (to_info == null) {
-      putInfo(to, to_info = new ReachingDefInfo(to, maxQuadID, tempsToPrsvs));
-      result = true;
+	putInfo(to, to_info = new ReachingDefInfo(to, maxQuadID, tempsToPrsvs));
+	result = true;
     }
     if (DEBUG) db("looking at in set of "+to+": "+to_info.inSet);
     if(to_info.mergePredecessor(from_info)) {
@@ -80,12 +89,16 @@ public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
 
   /**
    * Visit function.  In our case, it simply updates the out set.
+   *
+   * <BR> <B>requires:</B> <code>bb</code> is an instance of a 
+   *                       <code>QuadBasicBlock</code>.
    */
   public void visit(BasicBlock bb) {
     ReachingDefInfo info = getInfo(bb);
     if (info == null) {
       Util.assert(bb.getFirst() instanceof HEADER);
-      putInfo(bb, info = new ReachingDefInfo(bb, maxQuadID, tempsToPrsvs));
+      putInfo(bb, info = 
+	      new ReachingDefInfo((QuadBasicBlock) bb, maxQuadID, tempsToPrsvs));
     }
     info.updateOutSet();
   }
