@@ -164,6 +164,32 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_killlocal(JNIEnv *env, jclas
   (*env)->ReleaseCharArrayElements(env, carray, strchr, JNI_ABORT);
 }
 
+void RoleInference_clone(JNIEnv *env, jobject orig, jobject clone) {
+  jlong origuid, cloneuid;
+  if (orig!=NULL)
+    origuid=(*env)->GetLongField(env, orig, UIDfd);
+  else
+    origuid=-1;
+  if (clone!=NULL)
+    cloneuid=(*env)->GetLongField(env, clone, UIDfd);
+  else
+    cloneuid=-1;
+  fprintf(rolefile, "ON: %lld %lld\n",origuid, cloneuid);
+}
+
+JNIEXPORT void JNICALL Java_java_lang_RoleInference_arraycopy(JNIEnv *env, jclass syscls, jobject src, jint srcpos, jobject dst, jint dstpos, jint length) {
+  jlong srcuid, dstuid;
+  if (src!=NULL) 
+    srcuid=(*env)->GetLongField(env, src, UIDfd);
+  else
+    srcuid=-1;
+  if (dst!=NULL) 
+    dstuid=(*env)->GetLongField(env, dst, UIDfd);
+  else
+    dstuid=-1;
+  fprintf(rolefile,"CA: %lld %ld %lld %ld %ld\n", srcuid, srcpos, dstuid, dstpos, length);
+}
+
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_returnmethod(JNIEnv *env, jclass cls, jobject obj) {
   jlong objuid;
   if (obj!=NULL)

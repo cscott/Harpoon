@@ -49,6 +49,9 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_returnmethod
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_invokemethod
   (JNIEnv *, jclass, jobject, jint);
 
+JNIEXPORT void JNICALL Java_java_lang_RoleInference_arraycopy(JNIEnv *env, jclass syscls, jobject src, jint srcpos, jobject dst, jint dstpos, jint length);
+
+void RoleInference_clone(JNIENV *env, jobject orig, jobject clone);
 
 #ifdef __cplusplus
 }

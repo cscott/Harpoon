@@ -147,7 +147,7 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
 
     int isPrimitive=do_arraycopy_checks(env, src, srcpos, dst, dstpos, length);
     if (isPrimitive<0) return; /* exception occurred. */
-
+    
     /* for primitive array, we're all set: */
     if (isPrimitive) {
       struct aarray *_src, *_dst;
@@ -175,6 +175,9 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
       /* check for overlap */
       int backward = ( FNI_IsSameObject(env, src, dst) && srcpos < dstpos );
       int i = backward ? (length-1) : 0;
+#ifdef WITH_ROLE_INFER
+      Java_java_lang_RoleInference_arraycopy(env, syscls, src, srcpos, dst, dstpos, length);
+#endif
       while (backward ? (i >= 0) : (i < length)) {
 	jobject o = (*env)->GetObjectArrayElement(env, src, srcpos+i);
 	(*env)->SetObjectArrayElement(env, dst, dstpos+i, o);
