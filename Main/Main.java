@@ -9,11 +9,15 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+
 /**
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.8.2.6 1999-02-09 03:59:30 cananian Exp $
+ * @version $Id: Main.java,v 1.8.2.7 1999-07-23 06:50:55 cananian Exp $
  */
 public abstract class Main extends harpoon.IR.Registration {
 
@@ -21,8 +25,9 @@ public abstract class Main extends harpoon.IR.Registration {
      *  An optional "-code codename" option allows you to specify which
      *  codeview to use.
      */
-    public static void main(String args[]) {
+    public static void main(String args[]) throws java.io.IOException {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
+
 	HCodeFactory hcf = // default code factory.
 	    harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
 	    (harpoon.IR.Quads.QuadSSA.codeFactory()
@@ -35,6 +40,17 @@ public abstract class Main extends harpoon.IR.Registration {
 		hcf = HMethod.getCodeFactory(args[n]);
 		if (hcf==null)
 		    throw new Error("Invalid codename: "+args[n]);
+	    } else if (args[n].startsWith("-stat")) {
+		String filename = "./phisig.data";
+		if (args[n].startsWith("-stat:"))
+		    filename = args[n].substring(6);
+		try {
+		    Options.statWriter = 
+			new PrintWriter(new FileWriter(filename), true);
+		} catch (IOException e) {
+		    throw new Error("Could not open " + filename +
+				    " for statistics: " + e.toString());
+		}
 	    } else break; // no more command-line options.
 	}
 	// rest of command-line options are class names.
@@ -49,5 +65,7 @@ public abstract class Main extends harpoon.IR.Registration {
 		if (hc!=null) hc.print(out);
 	    }
 	}
+	if (Options.profWriter!=null) Options.profWriter.close();
+	if (Options.statWriter!=null) Options.statWriter.close();
     }
 }

@@ -10,6 +10,7 @@ import harpoon.Interpret.Quads.Method;
 import harpoon.IR.Quads.QuadWithTry;
 
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.zip.GZIPOutputStream;
@@ -18,7 +19,7 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Run.java,v 1.1.2.6 1999-02-09 03:59:30 cananian Exp $
+ * @version $Id: Run.java,v 1.1.2.7 1999-07-23 06:50:55 cananian Exp $
  */
 public abstract class Run extends harpoon.IR.Registration {
     public static void main(String args[]) {
@@ -27,7 +28,6 @@ public abstract class Run extends harpoon.IR.Registration {
 	    (harpoon.IR.Quads.QuadSSA.codeFactory());
 	int i=0; // count # of args/flags processed.
 	// check for "-prof" and "-code" flags in arg[i]
-	PrintWriter prof = null;
 	for (; i < args.length ; i++) {
 	    if (args[i].startsWith("-code")) {
 		if (++i < args.length)
@@ -39,10 +39,22 @@ public abstract class Run extends harpoon.IR.Registration {
 		    filename = args[i].substring(6);
 		try {
 		    FileOutputStream fos = new FileOutputStream(filename);
-		    prof = new PrintWriter(new GZIPOutputStream(fos));
+		    Options.profWriter =
+			new PrintWriter(new GZIPOutputStream(fos));
 		} catch (IOException e) {
 		    throw new Error("Could not open " + filename +
 				    " for profiling: "+ e.toString());
+		}
+	    } else if (args[i].startsWith("-stat")) {
+		String filename = "./phisig.data";
+		if (args[i].startsWith("-stat:"))
+		    filename = args[i].substring(6);
+		try {
+		    Options.statWriter = 
+			new PrintWriter(new FileWriter(filename), true);
+		} catch (IOException e) {
+		    throw new Error("Could not open " + filename +
+				    " for statistics: " + e.toString());
 		}
 	    } else break; // no more command-line options.
 	}
@@ -55,7 +67,9 @@ public abstract class Run extends harpoon.IR.Registration {
 	//////////// now call interpreter with truncated args list.
 	String[] params = new String[args.length-i];
 	System.arraycopy(args, i, params, 0, params.length);
-	harpoon.Interpret.Quads.Method.run(prof, hf, cls, params);
-	if (prof!=null) prof.close();
+	harpoon.Interpret.Quads.Method.run(Options.profWriter,
+					   hf, cls, params);
+	if (Options.profWriter!=null) Options.profWriter.close();
+	if (Options.statWriter!=null) Options.statWriter.close();
     }
 }
