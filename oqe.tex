@@ -1,4 +1,4 @@
-% CVSId: $Id: oqe.tex,v 1.11 2002-05-07 00:29:08 cananian Exp $
+% CVSId: $Id: oqe.tex,v 1.12 2002-05-07 01:20:03 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -127,8 +127,8 @@ The second section of the object contains the fields declared by
 the programmer.  If this were a car object, these fields might
 indicate the color and model of the car.  The last section
 consists of padding which the runtime implementation will
-add to bring the object's size to some alignment boundary, typically
-word-size.
+add to bring the various parts of the object to certain alignment
+boundaries.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -260,7 +260,7 @@ Field compression targets the space directly allocated by the
 programmer.  In the sample class at the bottom of the slide, we
 define an object representing cars.  It's first field is a color,
 and it is declared an integer which allows the enumeration of up
-to $2^32$ different colors of cars.
+to $2^{32}$ different colors of cars.
 %
 @ The first analysis we do is a standard sparse conditional constant
 propagation pass over the whole program to identify unused, unread,
@@ -275,8 +275,8 @@ mass-production.  Our bitwidth analysis could determine that
 we really only need two bits to store colors, since our program
 only ever stores three different colors in a Car.
 %
-@ After we perform the analysis, we use the results to pack the fields
-more tightly together.  We will return to this later.
+@ After we perform the analysis, we use the results to
+reduce the padding between fields.  We'll talk about this later.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -813,22 +813,6 @@ specialization first.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\begin{slide}{Static specialization}
-\begin{itemize}
-\item Split class implementations into ``field-less'' and
-  ``field-ful'' versions.
-\item Use virtual accessor functions to hide this split from users of
-  the class.
-\item Done at compile time, on fields which can be shown to be
-  compile-time constants, thus ``static.''
-\item Profiling guides splitting order if there are multiple candidate fields.
-\end{itemize}
-\end{slide}
-
-\begin{talknotes}
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
 \overlays{2}{
 \begin{slide}{Specialization example:\\\small java.lang.String}
 \fontsize{9}{9}%
@@ -856,6 +840,23 @@ public final class String \{\\
 }
 
 \begin{talknotes}
+We're going to jump right in with an example.  This is {\tt
+  java.lang.String} from the Java standard class library.  It has
+three fields: a character array and an integer length and offset.
+This representation was chosen to allow you to perform the substring
+operation in constant time; you don't have to copy the string, you
+just create a new string with a different offset and length and
+share the same character array.
+
+The interesting thing about {\tt java.lang.String} is that the {\tt
+  offset} field is almost \emph{always} zero.  Only strings created
+with the {\tt substring()} method have non-zero offset fields. 
+And the offset field is never changed after the object is created.  So
+this is a prime opportunity for space reduction.  Here's what we do:
+@ we chop out the offset field from the class and replace it with
+an accessor method, {\tt getOffset()}, which always returns zero.
+All references to the field are made to use the accessor method
+instead.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -873,7 +874,7 @@ public final class {\yellow SmallString} \{\\
 \>\}\\
 \>\ldots\\
 \}\\
-public final class {\yellow String extends SmallString} \{\\
+public final class {\yellow BigString extends SmallString} \{\\
 \>private final int {\yellow offset};\\
 \>protected int {\yellow getOffset()} \{ return offset; \}\\
 \}\\
@@ -881,6 +882,13 @@ public final class {\yellow String extends SmallString} \{\\
 \end{slide}
 
 \begin{talknotes}
+Now we're going to call this version of the String class
+\emph{SmallString} and we're going to create a subclass
+\emph{BigString} which contains the offset field, and where
+{\tt getOffset()} works as you'd expect.
+
+Now we have to transform all instantiations of {\tt String} to
+refer to the proper version of the class.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -891,7 +899,7 @@ Case 1: field is constant in constructor.
 
 \fontsize{10}{10}%
 \bfseries\begin{samplecode}
-String s = new \myString(new char[] \{'a', 'b', 'c'\});\\
+\onlySlide*{2}{Small}String s = new \myString(new char[] \{'a', 'b', 'c'\});\\
 \\
 \myString(char[] val) \{\\
 \>this.value = (char[]) val.clone();\\
@@ -906,6 +914,11 @@ String s = new \myString(new char[] \{'a', 'b', 'c'\});\\
 }
 
 \begin{talknotes}
+In some cases, the field is constant in the constructor.  Every
+instantiation which uses this constructor will set offset to zero.
+(And as we mentioned before, it is never reset after construction.)
+So  we juse @ replace the instantiation of {\tt String} with that
+of {\tt SmallString}.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -926,18 +939,55 @@ String(char[] val, int offset, int length) \{\\
 \}\\
 }%
 \onlySlide*{2}{%
-String s;\\
+SmallString s;\\
 \\
 if (x==0)\\
 \>s = new {\yellow SmallString}(new char[] \{'a', 'b', 'c'\}, x, 1);\\
 else\\
-\>s = new {\yellow String}(new char[] \{'a', 'b', 'c'\}, x, 1);\\
+\>s = new {\yellow BigString}(new char[] \{'a', 'b', 'c'\}, x, 1);\\
 }%
 \end{samplecode}
 \end{slide}
 }
 
 \begin{talknotes}
+In other cases, the value of the offset field is a simple function of
+some parameter given to the constructor.  @ In this case, we will
+add a test around the allocation site, so that we can construct
+a Small or Big string depending on the value given.  You can imagine a
+third case, which doesn't actually show up in {\tt java.lang.String},
+where we can obtain \emph{no} usable compile-time information about
+the field.  In this case, we always have to create an instance of
+{\tt BigString}.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Static specialization}
+\begin{itemize}
+\item Split class implementations into ``field-less'' and
+  ``field-ful'' versions.
+\item Use virtual accessor functions to hide this split from users of
+  the class.
+\item Done at compile time, on fields which can be shown to be
+  compile-time constants, thus ``static.''
+\begin{itemize}
+\item Fields can not be mutated after the constructor completes.
+\end{itemize}
+\item Can be done recursively on multiple fields.
+\begin{itemize}
+\item Profiling guides splitting order if there are multiple candidates.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{talknotes}
+This transformation is what we call ``static specialization.''  We
+split the class into field-less and field-ful versions, and use
+virtual accessor functions to hide the split from users of the class.
+This works only on compile-time constant fields which are not mutated
+after construction.
+We can do this recursively; we use profiling to determine the best
+splitting order if we have multiple candidate fields.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
