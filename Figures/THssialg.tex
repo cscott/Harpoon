@@ -3,24 +3,27 @@
 Place($G$:~CFG) =
 \begin{myalgorithmic}
 \LET $r$ be the top-level region for $G$
-%  let r be the top-level region for G;
 \FOREACH{variable $v$ in $G$}
-\STATE PlaceOne($r$, $v$)
+\STATE PlaceOne($r$, $v$, \code{false}) \COMMENT{place phis}
+\STATE PlaceOne($r$, $v$, \code{true})  \COMMENT{place sigmas}
 \ENDFOR
 \end{myalgorithmic}
 ~\\
-PlaceOne($r$:~region, $v$:~variable):~boolean =
+PlaceOne($r$:~region, $v$:~variable, $ps$:~boolean):~boolean =
 \begin{myalgorithmic}
 \STATE \COMMENT{Post-order traversal}
 \STATE flag $\gets$ false
 \FOREACH{child region $r'$}
-  \IF{PlaceOne($r'$, $v$)}
+  \IF{PlaceOne($r'$, $v$, $ps$)}
     \STATE flag $\gets$ true
    \ENDIF 
 \ENDFOR
                              \EMPTYLINE
 \FOREACH{node $n$ in region $r$ not contained in a child region}
-  \IF{$n$ contains a use or definition of $v$}
+  \IF{$ps$ is \code{false} and $n$ contains a definition of $v$}
+    \STATE flag $\gets$ true
+  \ENDIF
+  \IF{$ps$ is \code{true} and $n$ contains a use of $v$}
     \STATE flag $\gets$ true
   \ENDIF
 \ENDFOR
@@ -29,10 +32,10 @@ PlaceOne($r$:~region, $v$:~variable):~boolean =
 \IF{flag = true}
   \FOREACH{node $n$ in region $r$ not contained in a child region}
     \IF{MaybeLive($n$) = true}
-      \IF{the input arity of $n$ exceeds 1}
+      \IF{$ps$ is \code{false} and the input arity of $n$ exceeds 1}
         \STATE place a phi function for $v$ at $n$
       \ENDIF
-      \IF{the output arity of $n$ exceeds 1}         
+      \IF{$ps$ is \code{true} and the output arity of $n$ exceeds 1}         
         \STATE place a sigma function for $v$ at $n$
       \ENDIF
     \ENDIF
