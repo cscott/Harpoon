@@ -33,7 +33,7 @@ jobject_unwrapped FNI_Unwrap(jobject obj) {
 /* clear local refs in stack frame */
 void FNI_DeleteLocalRefsUpTo(JNIEnv *env, jobject markerRef) {
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
-  assert(markerRef <= fts->localrefs_next);
+  assert((fts->localrefs_stack <= markerRef)&&(markerRef <= fts->localrefs_next));
 #ifdef BDW_CONSERVATIVE_GC
   /* clear unused stack space, so as not to confuse conservative collector */
   memset(markerRef, 0, fts->localrefs_next - markerRef);

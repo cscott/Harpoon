@@ -154,8 +154,7 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
     schedClass = (*env)->GetObjectClass(env, scheduler);
     assert(!((*env)->ExceptionOccurred(env)));
       
-    chooseThreadMethod = (*env)->GetMethodID(env, schedClass,
-					     "chooseThread", "(J)J");
+    chooseThreadMethod = (*env)->GetMethodID(env, schedClass, "jChooseThread", "(J)J");
     assert(!((*env)->ExceptionOccurred(env)));
       
     threadq = NULL;
