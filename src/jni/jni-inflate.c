@@ -8,6 +8,7 @@
 #endif
 #include "flexthread.h"
 #include <stdlib.h>
+#include "../realtime/RTJconfig.h"
 #include "memstats.h"
 
 /* lock for inflating locks */
@@ -25,7 +26,11 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     /* all data in inflated_oobj is managed manually, so we can use malloc */
     struct inflated_oobj *infl = 
 #if defined(WITH_TRANSACTIONS) && defined(BDW_CONSERVATIVE_GC)
-	GC_malloc_uncollectable /* transactions stores version info here */
+#ifdef WITH_GC_STATS
+      GC_malloc_uncollectable_stats
+#else
+      GC_malloc_uncollectable /* transactions stores version info here */
+#endif
 #else
 	malloc
 #endif

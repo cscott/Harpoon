@@ -10,6 +10,7 @@ extern struct JNINativeInterface FLEX_JNI_vtable;
 #include "dmalloc.h"
 #endif
 #include "flexthread.h"
+#include "../realtime/RTJconfig.h"
 
 #ifndef LOCALREF_STACK_SIZE
 #define LOCALREF_STACK_SIZE (64*1024) /* 64k word stack */
@@ -31,7 +32,11 @@ static JNIEnv * FNI_CreateThreadState(void) {
 #ifdef WITH_PRECISE_GC
     malloc
 #elif defined(BDW_CONSERVATIVE_GC)
+#ifdef WITH_GC_STATS
+    GC_malloc_uncollectable_stats
+#else
     GC_malloc_uncollectable /* local ref stack has heap pointers */
+#endif
 #else /* okay, use system-default malloc */
     malloc
 #endif

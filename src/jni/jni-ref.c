@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h> /* for memset */
 #include "config.h"
+#include "../realtime/RTJconfig.h"
 #ifdef WITH_DMALLOC
 #include "dmalloc.h"
 #endif
@@ -69,7 +70,11 @@ jobject FNI_NewGlobalRef(JNIEnv * env, jobject obj) {
 #ifdef WITH_PRECISE_GC
     malloc
 #elif defined(BDW_CONSERVATIVE_GC)
+#ifdef WITH_GC_STATS
+    GC_malloc_uncollectable_stats
+#else
     GC_malloc_uncollectable
+#endif
 #else /* okay, use system-default malloc */
     malloc
 #endif

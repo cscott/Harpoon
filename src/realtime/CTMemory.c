@@ -13,19 +13,23 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_initNative
 (JNIEnv* env, jobject memoryArea, jlong size) {
   struct MemBlock* mb = (struct MemBlock*)
 #ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_GC_STATS
+    GC_malloc_uncollectable_stats
+#else
     GC_malloc_uncollectable
+#endif
 #else
     malloc
 #endif
     (sizeof(struct MemBlock));
-#ifdef DEBUG
+#ifdef RTJ_DEBUG
   printf("CTMemory.initNative(%d)\n", (size_t)size);
 #endif
   getInflatedObject(env, memoryArea)->memBlock = mb;
   mb->block = Block_new(memoryArea, (size_t)size);
-#ifdef DEBUG
+#ifdef RTJ_DEBUG
   printf("  storing MemBlock in %08x\n", mb->block); 
-#endif DEBUG
+#endif RTJ_DEBUG
 }
 
 /*
@@ -37,7 +41,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_newMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
   struct MemBlock* mb = getInflatedObject(env, realtimeThread)->temp;
   struct BlockInfo* bi = mb->block_info;
-#ifdef DEBUG
+#ifdef RTJ_DEBUG
   printf("CTMemory.newMemBlock(%08x, %08x, %08x)\n", env, memoryArea, 
 	 realtimeThread);
 #endif
@@ -51,7 +55,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_newMemBlock
     bi->allocator = CTScope_RThread_MemBlock_allocator(memoryArea);
   }
   mb->block = getInflatedObject(env, memoryArea)->memBlock->block;
-#ifdef DEBUG
+#ifdef RTJ_DEBUG
   printf("  retrieving memBlock from %08x\n", mb->block);
 #endif
 }

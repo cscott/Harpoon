@@ -12,21 +12,33 @@ static struct BlockAllocator* BlockAllocator_new(size_t size) {
   struct BlockAllocator* ba = 
     (struct BlockAllocator*)
 #ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_GC_STATS
+    GC_malloc_uncollectable_stats
+#else
     GC_malloc_uncollectable
+#endif
 #else
     malloc
 #endif
     (sizeof(struct BlockAllocator));
   struct Block* block = (struct Block*)
 #ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_GC_STATS
+    GC_malloc_uncollectable_stats
+#else
     GC_malloc_uncollectable
+#endif
 #else
     malloc
 #endif
     (sizeof(struct Block));
   block->end = (block->free = block->begin = 
 #ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_GC_STATS
+    GC_malloc_uncollectable_stats
+#else
     GC_malloc_uncollectable
+#endif
 #else
     malloc
 #endif	 
@@ -41,7 +53,11 @@ static struct Block* BlockAllocator_splitBlock(struct Block* block,
   /* left - block - b2 - right */
   struct Block* b2 = (struct Block*)
 #ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_GC_STATS
+    GC_malloc_uncollectable_stats
+#else
     GC_malloc_uncollectable
+#endif
 #else
     malloc
 #endif
@@ -70,7 +86,11 @@ static struct Block* BlockAllocator_mergeBlocks(struct Block* left,
   left->next = right->next;
   right->next->prev = left;
 #ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_GC_STATS
+  GC_free_stats
+#else
   GC_free
+#endif
 #else
     free
 #endif

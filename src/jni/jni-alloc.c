@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "config.h"
+#include "../realtime/RTJconfig.h"
 #ifdef WITH_DMALLOC
 #include "dmalloc.h"
 #endif
@@ -17,15 +18,24 @@
 #ifdef WITH_CLUSTERED_HEAPS
 #include "../clheap/alloc.h"
 #endif
+#ifdef WITH_REALTIME_JAVA
+#include "../realtime/RTJmalloc.h"
+#endif
 
 /* eventually many of these? */
 void *FNI_RawAlloc(JNIEnv *env, jsize length) {
 #if defined(WITH_CLUSTERED_HEAPS)
   return NGBL_malloc(length);
+#elif defined(WITH_RTJ_NATIVE_MALLOC)
+  return RTJ_malloc(length);
 #elif defined(WITH_PRECISE_GC)
   return precise_malloc(length);
 #elif defined(BDW_CONSERVATIVE_GC)
+#ifdef WITH_GC_STATS
+  return GC_malloc_stats(length);
+#else
   return GC_malloc(length);
+#endif
 #else /* okay, use system-default... */
   return malloc(length);
 #endif

@@ -41,6 +41,8 @@ inline void* MemBlock_alloc( struct MemBlock* memBlock,
 			     size_t size);
 inline void MemBlock_free(struct MemBlock* memBlock);
 inline struct MemBlock* MemBlock_prevMemBlock( struct MemBlock* memBlock);
+inline long MemBlock_INCREF(struct MemBlock* memBlock);
+inline long MemBlock_DECREF(struct MemBlock* memBlock);
 inline struct inflated_oobj* getInflatedObject(JNIEnv* env, 
 					        jobject obj);
 inline int IsNoHeapRealtimeThread(JNIEnv *env, 

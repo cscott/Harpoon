@@ -3,14 +3,14 @@
    Licensed under the terms of the GNU GPL; see COPYING for details. */
 
 #include <jni.h>
-#include "MemBlock.h"
-/* Header for class LTMemory */
 
 #ifndef _Included_LTMemory
 #define _Included_LTMemory
+#include "RTJmalloc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /*
  * Class:     LTMemory
  * Method:    initNative

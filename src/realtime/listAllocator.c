@@ -8,7 +8,11 @@ inline struct ListAllocator* ListAllocator_new(int noHeap) {
   struct ListAllocator* ls = 
     (struct ListAllocator*)
 #ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_GC_STATS
+    GC_malloc_stats
+#else
     GC_malloc
+#endif
 #else
     malloc
 #endif
@@ -38,7 +42,11 @@ inline void* ListAllocator_alloc(struct ListAllocator* ls,
 				 size_t size) {
   void* obj = 
 #ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_GC_STATS
+    GC_malloc_uncollectable_stats
+#else
     GC_malloc_uncollectable
+#endif
 #else
     malloc
 #endif
@@ -48,23 +56,27 @@ inline void* ListAllocator_alloc(struct ListAllocator* ls,
 }
 
 inline void ListAllocator_free(struct ListAllocator* ls) {
-#ifdef DEBUG
+#ifdef RTJ_DEBUG
   printf("ObjectList_free(ls->heapRefs)\n");
 #endif
   ObjectList_free(ls->heapRefs);
-#ifdef DEBUG
+#ifdef RTJ_DEBUG
   printf("ObjectList_freeRefs(ls->objects)\n");
 #endif
   ObjectList_freeRefs(ls->objects);
-#ifdef DEBUG
+#ifdef RTJ_DEBUG
   printf("ObjectList_free(ls->objects)\n");
 #endif
   ObjectList_free(ls->objects);
-#ifdef DEBUG
+#ifdef RTJ_DEBUG
   printf("free(ls)\n");
 #endif
 #ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_GC_STATS
+  GC_free_stats
+#else
   GC_free
+#endif
 #else
     free
 #endif

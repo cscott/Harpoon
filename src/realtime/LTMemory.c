@@ -22,7 +22,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_LTMemory_initNative
 JNIEXPORT void JNICALL Java_javax_realtime_LTMemory_newMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
   struct BlockInfo* bi = getInflatedObject(env, realtimeThread)->temp->block_info;
-#ifdef DEBUG
+#ifdef RTJ_DEBUG
   printf("LTMemory.newMemBlock(%08x, %08x, %08x)\n", env, memoryArea,
 	 realtimeThread);
 #endif

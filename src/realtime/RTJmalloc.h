@@ -11,7 +11,8 @@
 
 inline void RTJ_preinit();
 inline void RTJ_init();
-inline void* RTJ_malloc( size_t size);
+inline void* RTJ_jmalloc(jsize size);
+inline void* RTJ_malloc(size_t size);
 inline void* RTJ_malloc_block( size_t size, 
 			      struct MemBlock* memBlock);
 inline struct MemBlock* MemBlock_currentMemBlock();

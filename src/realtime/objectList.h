@@ -2,7 +2,7 @@
    Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
    Licensed under the terms of the GNU GPL; see COPYING for details. */
 
-#include "config.h"
+#include "RTJconfig.h"
 #ifndef WITH_THREADS
 # error Realtime Java is turned on, but threads are not turned on
 #endif

@@ -5,6 +5,7 @@
 #ifndef __HEAP_MEMORY_H__
 #define __HEAP_MEMORY_H__
 
+#include "RTJconfig.h"
 #include "objectList.h"
 #include "gc.h"
 

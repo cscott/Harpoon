@@ -11,7 +11,7 @@
  */
 JNIEXPORT void JNICALL Java_javax_realtime_ScopedPhysicalMemory_initNative
 (JNIEnv* env, jobject memoryArea, jlong size) {
-
+  
 }
 
 /*
@@ -22,7 +22,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_ScopedPhysicalMemory_initNative
 JNIEXPORT void JNICALL Java_javax_realtime_ScopedPhysicalMemory_newMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
   struct BlockInfo* bi = getInflatedObject(env, realtimeThread)->temp->block_info;
-#ifdef DEBUG
+#ifdef RTJ_DEBUG
   printf("ScopedPhysicalMemory.newMemBlock(%08x, %08x, %08x)\n", env,
 	 memoryArea, realtimeThread);
 #endif

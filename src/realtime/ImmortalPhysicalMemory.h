@@ -3,13 +3,14 @@
    Licensed under the terms of the GNU GPL; see COPYING for details. */
 
 #include <jni.h>
-#include "MemBlock.h"
 
 #ifndef _Included_ImmortalPhysicalMemory
 #define _Included_ImmortalPhysicalMemory
+#include "RTJmalloc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /*
  * Class:     ImmortalPhysicalMemory
  * Method:    initNative

@@ -21,7 +21,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_NullMemoryArea_initNative
  */
 JNIEXPORT void JNICALL Java_javax_realtime_NullMemoryArea_newMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
-#ifdef DEBUG
+#ifdef RTJ_DEBUG
   assert("Should never enter a NullMemoryArea!\n");
 #endif
 }

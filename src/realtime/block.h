@@ -7,6 +7,8 @@
 #ifndef __BLOCK_H__
 #define __BLOCK_H__
 
+#define __need_timeval
+#include <time.h>
 #include <stdlib.h>
 #include <assert.h>
 #include "RTJconfig.h"

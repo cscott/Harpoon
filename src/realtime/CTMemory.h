@@ -1,15 +1,15 @@
 /* CTMemory.h, created by wbeebee
    Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
    Licensed under the terms of the GNU GPL; see COPYING for details. */
-
 #include <jni.h>
-#include "MemBlock.h"
 
 #ifndef _Included_CTMemory
 #define _Included_CTMemory
+#include "RTJmalloc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /*
  * Class:     CTMemory
  * Method:    initNative

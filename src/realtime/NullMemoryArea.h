@@ -3,13 +3,13 @@
    Licensed under the terms of the GNU GPL; see COPYING for details. */
 
 #include <jni.h>
-#include "MemBlock.h"
 
 #ifndef _Included_NullMemoryArea
 #define _Included_NullMemoryArea
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /*
  * Class:     NullMemoryArea
  * Method:    initNative

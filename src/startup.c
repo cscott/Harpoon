@@ -6,6 +6,9 @@
 #ifdef WITH_PRECISE_GC
 #include "jni-gc.h"
 #endif
+#ifndef WITH_REALTIME_JAVA
+#include "realtime/RTJstubs.h"
+#endif
 
 /* these functions are defined in src/java.lang/java_lang_Thread.c but only
  * used here. */

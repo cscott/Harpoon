@@ -12,7 +12,11 @@ inline void HeapMemory_init() {
 inline void* HeapMemory_alloc(size_t size) {
   void* result =
 #ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_GC_STATS
+    GC_malloc_stats
+#else
     GC_malloc
+#endif
 #else
     malloc
 #endif
