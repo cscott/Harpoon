@@ -1,3 +1,4 @@
+#include "config.h" /* for WITH_INIT_CHECK, WITH_TRANSACTIONS */
 #include <jni.h>
 #include <jni-private.h>
 #include "java_lang_Class.h"

@@ -1,4 +1,5 @@
 /* Implementation for class java_net_InetAddressImpl */
+#include "config.h" /* for WITH_TRANSACTIONS */
 #include <jni.h>
 #include "java_net_InetAddressImpl.h"
 
