@@ -22,22 +22,21 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Run.java,v 1.1.2.9 1999-08-07 11:22:05 cananian Exp $
+ * @version $Id: Run.java,v 1.1.2.10 1999-08-30 23:05:34 cananian Exp $
  */
 public abstract class Run extends harpoon.IR.Registration {
     public static void main(String args[]) throws IOException {
 	java.io.InputStream startup = null;
 	java.io.OutputStream dump = null;
 	HCodeFactory hf = // default code factory.
-	    harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
-	    (harpoon.IR.Quads.QuadSSA.codeFactory());
+	    harpoon.IR.Quads.QuadWithTry.codeFactory();
 	int i=0; // count # of args/flags processed.
 	// check for "-prof" and "-code" flags in arg[i]
 	for (; i < args.length ; i++) {
-	    if (args[i].startsWith("-code")) {
+	    if (args[i].startsWith("-pass")) {
 		if (++i < args.length)
-		    hf = HMethod.getCodeFactory(args[i]);
-		else throw new Error("-code option needs codename");
+		    hf = Options.cfFromString(args[i], hf);
+		else throw new Error("-pass option needs codename");
 	    } else if (args[i].startsWith("-prof")) {
 		String filename = "./java.prof";
 		if (args[i].startsWith("-prof:"))
