@@ -41,11 +41,19 @@ void FNI_DeleteLocalRefsUpTo(JNIEnv *env, jobject markerRef) {
 void FNI_DeleteLocalRef(JNIEnv *env, jobject localRef) {
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
   assert(FNI_NO_EXCEPTIONS(env));
-  /* references at the end of the stack can be freed easily */
+  /* can't delete it w/o a lot of work; we just zero it out */
+  localRef->obj=NULL; /* won't keep anything live */
+  /* shrink the stack from the top, if possible */
+#ifdef WITH_PRECISE_C_BACKEND
+  /* precise-c pushes NULLs onto the stack occasionally; be conservative */
   if (localRef+1==fts->localrefs_next)
     fts->localrefs_next = localRef;
-  else /* can't delete it w/o a lot of work; we just zero it out */
-    localRef->obj=NULL; /* won't keep anything live */
+#else
+  /* this works as long as there aren't any *valid* localrefs with value NULL*/
+  while ((fts->localrefs_stack < fts->localrefs_next) &&
+	 ((fts->localrefs_next-1)->obj==NULL))
+    fts->localrefs_next--;
+#endif /* WITH_PRECISE_C_BACKEND */
 }
 
 /*-----------------------------------------------------------------*/
