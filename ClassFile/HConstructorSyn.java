@@ -12,7 +12,7 @@ import java.util.Vector;
  * single constructor for a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructorSyn.java,v 1.2 1998-10-16 11:42:57 cananian Exp $
+ * @version $Id: HConstructorSyn.java,v 1.2.2.1 1998-12-11 06:54:51 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -46,11 +46,11 @@ public class HConstructorSyn extends HMethod {
       String desc = descriptor.substring(1, descriptor.lastIndexOf(')'));
       Vector v = new Vector();
       for (int i=0; i<desc.length(); i++) {
-	v.addElement(HClass.forDescriptor(desc.substring(i)));
+	v.addElement(new ClassPointer(desc.substring(i)));
 	while (desc.charAt(i)=='[') i++;
 	if (desc.charAt(i)=='L') i=desc.indexOf(';', i);
       }
-      this.parameterTypes = new HClass[v.size()];
+      this.parameterTypes = new HPointer[v.size()];
       v.copyInto(this.parameterTypes);
     }
     this.parameterNames = new String[parameterTypes.length];

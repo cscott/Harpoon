@@ -29,10 +29,10 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.3 1998-11-30 21:58:25 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.4 1998-12-11 06:54:50 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
-public abstract class HClass {
+public abstract class HClass extends HPointer {
   static Hashtable dsc2cls = new Hashtable();
 
   /** Make a unique class name from a given suggestion. */
@@ -275,7 +275,7 @@ public abstract class HClass {
    */
   public HField getField(String name) throws NoSuchFieldError {
     // construct master field list, if we haven't already.
-    if (fields==null) getFields();
+    HField[] fields=getFields();
     // look for field name in master field list.
     // look backwards to be sure we find local fields first (scoping)
     for (int i=fields.length-1; i>=0; i--)
@@ -303,17 +303,15 @@ public abstract class HClass {
    * @see HField
    */
   public HField[] getFields() { 
-    // Cache fields value so we only have to compute this once.
-    if (fields==null) {
-      if (isPrimitive() || isArray()) {
-	fields = new HField[0];
-      } else {
-	fields = getFields(this); 
-      }
+    HField[] fields;
+    if (isPrimitive() || isArray()) {
+      fields = new HField[0];
+    } else {
+      fields = getFields(this); 
     }
-    return (HField[]) Util.safeCopy(HField.arrayFactory, fields);
+    return fields;
   }
-  HField[] fields=null;
+
   /* does the actual work.  Because of permissions issues, it's important
    * to know which class is asking for the fields listing.
    */
@@ -497,17 +495,14 @@ public abstract class HClass {
    * @see "The Java Language Specification, sections 8.2 and 8.4"
    */
   public HMethod[] getMethods() {
-    // cache methods value so we only have to compute this once.
-    if (methods==null) {
-      if (isPrimitive()) {
-	methods = new HMethod[0];
-      } else {
-	methods = getMethods(this);
-      }
+    HMethod[] methods;
+    if (isPrimitive()) {
+      methods = new HMethod[0];
+    } else {
+      methods = getMethods(this);
     }
-    return (HMethod[]) Util.safeCopy(HMethod.arrayFactory, methods);
+    return methods;
   }
-  HMethod[] methods=null;
   /* does the actual work.  Because of permissions issues, it's important
    * to know which class is asking for the methods listing.
    */
@@ -571,25 +566,22 @@ public abstract class HClass {
    * @see "The Java Language Specification, section 8.2"
    */
   public HConstructor[] getConstructors() {
-    if (constructors == null) {
-      if (isPrimitive() || isArray() || isInterface())
-	constructors = new HConstructor[0];
-      else {
-	HMethod[] hm = getMethods();
-	int n=0;
-	for (int i=0; i<hm.length; i++)
-	  if (hm[i] instanceof HConstructor)
-	    n++;
-	constructors = new HConstructor[n];
-	for (int i=0; i<hm.length; i++)
-	  if (hm[i] instanceof HConstructor)
-	    constructors[--n] = (HConstructor) hm[i];
-      }
+    HConstructor[] constructors;
+    if (isPrimitive() || isArray() || isInterface())
+      constructors = new HConstructor[0];
+    else {
+      HMethod[] hm = getMethods();
+      int n=0;
+      for (int i=0; i<hm.length; i++)
+	if (hm[i] instanceof HConstructor)
+	  n++;
+      constructors = new HConstructor[n];
+      for (int i=0; i<hm.length; i++)
+	if (hm[i] instanceof HConstructor)
+	  constructors[--n] = (HConstructor) hm[i];
     }
-    return (HConstructor[]) Util.safeCopy(HConstructor.arrayFactory,
-					  constructors);
+    return constructors;
   }
-  HConstructor[] constructors = null;
 
   /**
    * Returns the class initializer method, if there is one; otherwise
@@ -945,6 +937,8 @@ public abstract class HClass {
     new ArrayFactory() {
       public Object[] newArray(int len) { return new HClass[len]; }
     };
+  /** HPointer interface. */
+  HClass actual() { return this; /* no dereferencing necessary. */ }
 }
 
 class HClassPrimitive extends HClass {

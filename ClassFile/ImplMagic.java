@@ -10,6 +10,7 @@ import harpoon.Util.Util;
 import java.lang.reflect.Modifier;
 import java.util.Hashtable;
 import java.util.Vector;
+
 /**
  * <code>ImplMagic</code> provides concrete implementation for
  * <code>HClass</code>, <code>HMethod</code>, <code>HConstructor</code>,
@@ -17,9 +18,8 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5.2.1 1998-11-30 21:58:25 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.2 1998-12-11 06:54:52 cananian Exp $
  */
-
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
     static HClass forStream(java.io.InputStream is) throws java.io.IOException{
@@ -35,11 +35,11 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    this.name = classfile.this_class().name().replace('/','.');
 	    this.register();
 	    this.superclass = (classfile.super_class == 0)?null:
-		forName(classfile.super_class().name().replace('/','.'));
-	    this.interfaces = new HClass[classfile.interfaces_count()];
+		new ClassPointer("L"+classfile.super_class().name()+";");
+	    this.interfaces = new HPointer[classfile.interfaces_count()];
 	    for (int i=0; i<interfaces.length; i++)
 		interfaces[i] = 
-		    forName(classfile.interfaces(i).name().replace('/','.'));
+		    new ClassPointer("L"+classfile.interfaces(i).name()+";");
 	    this.modifiers = classfile.access_flags.access_flags;
 	    this.declaredFields = new HField[classfile.fields.length];
 	    for (int i=0; i<declaredFields.length; i++)
@@ -73,7 +73,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    String desc = methodinfo.descriptor();
 	    // snip off everything but the return value descriptor.
 	    desc = desc.substring(desc.lastIndexOf(')')+1);
-	    _this.returnType = HClass.forDescriptor(desc);
+	    _this.returnType = new ClassPointer(desc);
 	}
 	{ // parameterTypes
 	    String desc = methodinfo.descriptor();
@@ -82,16 +82,17 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    Vector v = new Vector();
 	    for (int i=0; i<desc.length(); i++) {
 		// make HClass for first param in list.
-		v.addElement(HClass.forDescriptor(desc.substring(i)));
+		v.addElement(new ClassPointer(desc.substring(i)));
 		// skip over the one we just added.
 		while (desc.charAt(i)=='[') i++;
 		if (desc.charAt(i)=='L') i=desc.indexOf(';', i);
 	    }
-	    _this.parameterTypes = new HClass[v.size()];
+	    _this.parameterTypes = new HPointer[v.size()];
 	    v.copyInto(_this.parameterTypes);
 	}
 	// Make sure our parsing/construction is correct.
-	Util.assert(_this.getDescriptor().equals(methodinfo.descriptor()));
+	// COMMENTED OUT because it was causing us to load unnecessary classes
+	//Util.assert(_this.getDescriptor().equals(methodinfo.descriptor()));
 	
 	AttributeCode code = null;
 	AttributeExceptions exceptions = null;
@@ -128,10 +129,9 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 		for (int i=0; i<exceptions.number_of_exceptions(); i++) {
 		    ConstantClass cc = exceptions.exception_index_table(i);
 		    if (cc != null)
-			v.addElement(HClass.forName(cc.name()
-						    .replace('/','.')));
+			v.addElement(new ClassPointer("L"+cc.name()+";"));
 		}
-		_this.exceptionTypes = new HClass[v.size()];
+		_this.exceptionTypes = new HPointer[v.size()];
 		v.copyInto(_this.exceptionTypes);
 	    }
 	}
@@ -191,7 +191,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	MagicField(HClass parent, 
 		   harpoon.ClassFile.Raw.FieldInfo fieldinfo) {
 	    this.parent = parent;
-	    this.type = HClass.forDescriptor(fieldinfo.descriptor());
+	    this.type = new ClassPointer(fieldinfo.descriptor());
 	    this.name = fieldinfo.name();
 	    this.modifiers = fieldinfo.access_flags.access_flags;
 	    {

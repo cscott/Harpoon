@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.2 1998-11-30 21:58:25 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.3 1998-12-11 06:54:51 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {
@@ -125,7 +125,7 @@ public class HClassSyn extends HClassCls {
     if (!Modifier.isInterface(modifiers) &&  Modifier.isInterface(m)) {
       // make sure there are no superclasses or superinterfaces.
       if (superclass != null && 
-	  superclass != HClass.forName("java.lang.Object"))
+	  superclass.actual() != HClass.forName("java.lang.Object"))
 	throw new Error("Can't change a subclass to an interface. "+
 			"Remove the inheritance first. ("+this+")");
       if (interfaces.length!=0)

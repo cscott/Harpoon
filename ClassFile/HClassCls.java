@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassCls.java,v 1.1.2.2 1998-11-30 21:21:01 cananian Exp $
+ * @version $Id: HClassCls.java,v 1.1.2.3 1998-12-11 06:54:51 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 abstract class HClassCls extends HClass {
@@ -23,9 +23,9 @@ abstract class HClassCls extends HClass {
    *  <code>HClassCls</code> object. */
   String name;
   /** Superclass of this <code>HClassCls</code>. */
-  HClass superclass;
+  HPointer superclass;
   /** Interfaces of this <code>HClassCls</code>. */
-  HClass interfaces[];
+  HPointer interfaces[];
   /** Access flags for this class. */
   int modifiers;
   /** List of fields in this <code>HClassCls</code> object. */
@@ -34,7 +34,11 @@ abstract class HClassCls extends HClass {
   HMethod[] declaredMethods;
   /** Name of the source file for this class. */
   String sourcefile;
-  
+  // CACHES: (reset to null to recompute)
+  HConstructor[] constructors = null;
+  HField[] fields = null;
+  HMethod[] methods = null;
+
   /** Implementations must provide their own constructor to initialize. */
   protected HClassCls() { /* no implementation */ }
 
@@ -173,7 +177,12 @@ abstract class HClassCls extends HClass {
    * <code>null</code> is returned.
    * @return the superclass of the class represented by this object.
    */
-  public HClass getSuperclass() { return superclass; }
+  public HClass getSuperclass() {
+    if (superclass==null) return null;
+    HClass sc = superclass.actual();
+    superclass = sc;
+    return sc;
+  }
 
   /**
    * Determines the interfaces implemented by the class or interface 
@@ -192,7 +201,17 @@ abstract class HClassCls extends HClass {
    * returns an array of length 0.
    * @return an array of interfaces implemented by this class.
    */
-  public HClass[] getInterfaces() { return interfaces; }
+  public HClass[] getInterfaces() {
+    HClass[] in;
+    if (interfaces instanceof HClass[]) in = (HClass[]) interfaces;
+    else {
+      in = new HClass[interfaces.length];
+      for (int i=0; i<in.length; i++)
+	in[i] = interfaces[i].actual();
+      interfaces = in;
+    }
+    return in;
+  }
 
   /**
    * Return the name of the source file for this class, or a
@@ -222,6 +241,23 @@ abstract class HClassCls extends HClass {
     return ((isInterface())?"interface ":"class ")+getName();
   }
 
+  // CACHING CODE:
+  public HConstructor[] getConstructors() {
+    if (constructors==null)
+      constructors = super.getConstructors();
+    return (HConstructor[]) Util.safeCopy(HConstructor.arrayFactory, 
+					  constructors);
+  }
+  public HField[] getFields() {
+    if (fields==null)
+      fields = super.getFields();
+    return  (HField[]) Util.safeCopy(HField.arrayFactory, fields);
+  }
+  public HMethod[] getMethods() {
+    if (methods==null)
+      methods = super.getMethods();
+    return (HMethod[]) Util.safeCopy(HMethod.arrayFactory, methods);
+  }
 }
 // set emacs indentation style.
 // Local Variables:

@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30.2.1 1998-11-30 21:21:01 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30.2.2 1998-12-11 06:54:52 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -23,10 +23,10 @@ public abstract class HMethod implements HMember {
   HClass parent;
   String name;
   int modifiers;
-  HClass returnType;
-  HClass[] parameterTypes;
+  HPointer returnType;
+  HPointer[] parameterTypes;
   String[] parameterNames;
-  HClass[] exceptionTypes;
+  HPointer[] exceptionTypes;
   boolean isSynthetic;
 
   /** Make a unique method name from a given suggestion. */
@@ -140,18 +140,21 @@ public abstract class HMethod implements HMember {
    * return type of the method represented by this <code>HMethod</code>
    * object.
    */
-  public HClass getReturnType() { return returnType; }
+  public HClass getReturnType() {
+    HClass rt = returnType.actual();
+    returnType = rt;
+    return rt;
+  }
 
   /**
    * Returns the descriptor for this method.
    */
   public String getDescriptor() {
     StringBuffer sb = new StringBuffer("(");
-    HClass[] pt = getParameterTypes();
-    for (int i=0; i<pt.length; i++)
-      sb.append(pt[i].getDescriptor());
+    for (int i=0; i<parameterTypes.length; i++)
+      sb.append(parameterTypes[i].getDescriptor());
     sb.append(')');
-    sb.append(getReturnType().getDescriptor());
+    sb.append(returnType.getDescriptor());
     return sb.toString();
   }
 
@@ -162,7 +165,15 @@ public abstract class HMethod implements HMember {
    * of length 0 is the underlying method takes no parameters.
    */
   public HClass[] getParameterTypes() {
-    return (HClass[]) Util.safeCopy(HClass.arrayFactory, parameterTypes);
+    HClass[] pt;
+    if (parameterTypes instanceof HClass[]) pt = (HClass[]) parameterTypes;
+    else {
+      pt = new HClass[parameterTypes.length];
+      for (int i=0; i<pt.length; i++)
+	pt[i] = parameterTypes[i].actual();
+      parameterTypes = pt;
+    }
+    return (HClass[]) Util.safeCopy(HClass.arrayFactory, pt);
   }
 
   /**
@@ -186,7 +197,15 @@ public abstract class HMethod implements HMember {
    * of length 0 if the method throws no checked exceptions.
    */
   public HClass[] getExceptionTypes() {
-    return (HClass[]) Util.safeCopy(HClass.arrayFactory, exceptionTypes);
+    HClass[] et;
+    if (exceptionTypes instanceof HClass[]) et = (HClass[]) exceptionTypes;
+    else {
+      et = new HClass[exceptionTypes.length];
+      for (int i=0; i<et.length; i++)
+	et[i] = exceptionTypes[i].actual();
+      exceptionTypes = et;
+    }
+    return (HClass[]) Util.safeCopy(HClass.arrayFactory, et);
   }
 
   /**
@@ -262,20 +281,20 @@ public abstract class HMethod implements HMember {
       r.append(Modifier.toString(m));
       r.append(' ');
     }
-    r.append(getTypeName(getReturnType()));
+    r.append(getTypeName(returnType));
     r.append(' ');
     r.append(getTypeName(parent));
     r.append('.');
     r.append(getName());
     r.append('(');
-    HClass hcp[] = getParameterTypes();
+    HPointer hcp[] = parameterTypes;
     for (int i=0; i<hcp.length; i++) {
       r.append(getTypeName(hcp[i]));
       if (i < hcp.length-1)
 	r.append(',');
     }
     r.append(')');
-    HClass ecp[] = getExceptionTypes();
+    HPointer ecp[] = exceptionTypes;
     if (ecp.length > 0) {
       r.append(" throws ");
       for (int i=0; i<ecp.length; i++) {
@@ -287,7 +306,7 @@ public abstract class HMethod implements HMember {
     return r.toString();
   }
   
-  static String getTypeName(HClass hc) {
+  static String getTypeName(HPointer hc) {
     // cheat.  We already implemented this function once.
     return HField.getTypeName(hc);
   }
