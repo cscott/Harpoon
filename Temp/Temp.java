@@ -15,12 +15,12 @@ import harpoon.Util.Util;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.16.2.1 2002-02-27 08:37:21 cananian Exp $
+ * @version $Id: Temp.java,v 1.16.2.2 2002-03-04 20:26:50 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
  */
-public class Temp implements Cloneable, Comparable, ReferenceUnique, java.io.Serializable {
+public class Temp implements Cloneable, Comparable<Temp>, ReferenceUnique, java.io.Serializable {
   /*final*/ TempFactory tf;
   /*final*/ String name;
   /*final*/ int hashcode;
@@ -88,8 +88,8 @@ public class Temp implements Cloneable, Comparable, ReferenceUnique, java.io.Ser
   public int hashCode() { return hashcode; }
 
   /** Comparable interface: sorted by fullname(). */
-  public int compareTo(Object o) {
-    return fullname().compareTo(((Temp)o).fullname());
+  public int compareTo(Temp o) {
+    return fullname().compareTo(o.fullname());
   }
 
   /** Returns a new <code>TempFactory</code> with the given scope. */
@@ -122,14 +122,14 @@ public class Temp implements Cloneable, Comparable, ReferenceUnique, java.io.Ser
   // Array Factory interface:
 
   /** Returns an array of <code>Temp</code>s. */
-  public static final ArrayFactory arrayFactory =
-    new ArrayFactory() {
-      public Object[] newArray(int len) { return new Temp[len]; }
+  public static final ArrayFactory<Temp> arrayFactory =
+    new ArrayFactory<Temp>() {
+      public Temp[] newArray(int len) { return new Temp[len]; }
     };
   /** Returns an array of <code>Temp[]</code>s. */
-  public static final ArrayFactory doubleArrayFactory =
-    new ArrayFactory() {
-      public Object[] newArray(int len) { return new Temp[len][]; }
+  public static final ArrayFactory<Temp[]> doubleArrayFactory =
+    new ArrayFactory<Temp[]>() {
+      public Temp[][] newArray(int len) { return new Temp[len][]; }
     };
 
 }

@@ -15,13 +15,13 @@ import java.util.Iterator;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.13 2002-02-25 21:03:03 cananian Exp $
+ * @version $Id: HCode.java,v 1.13.2.1 2002-03-04 20:26:39 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
  * @see harpoon.IR.Bytecode.Instr
  */
-public abstract class HCode {
+public abstract class HCode<HCE extends HCodeElement> {
   /**
    * Return the <code>HMethod</code> to which this <code>HCode</code>
    * belongs.
@@ -46,11 +46,10 @@ public abstract class HCode {
    * @deprecated use getElementsL() instead.
    * @see harpoon.IR.Bytecode.Instr
    */
-  public HCodeElement[] getElements() {
-    java.util.List l = getElementsL();
-    HCodeElement[] r =
-      (HCodeElement[]) elementArrayFactory().newArray(l.size());
-    return (HCodeElement[]) l.toArray(r);
+  public HCE[] getElements() {
+    java.util.List<HCE> l = getElementsL();
+    HCE[] r = elementArrayFactory().newArray(l.size());
+    return l.toArray(r);
   }
   /**
    * Return an ordered <code>Collection</code> (a <code>List</code>) of
@@ -61,9 +60,9 @@ public abstract class HCode {
    * must have been implemented for the default implementation to work
    * properly.
    */
-  public java.util.List getElementsL() {
-    java.util.List l = new java.util.ArrayList();
-    for (Iterator i = getElementsI(); i.hasNext(); )
+  public java.util.List<HCE> getElementsL() {
+    java.util.List<HCE> l = new java.util.ArrayList<HCE>();
+    for (Iterator<HCE> i = getElementsI(); i.hasNext(); )
       l.add(i.next());
     return java.util.Collections.unmodifiableList(l);
   }
@@ -76,8 +75,8 @@ public abstract class HCode {
    * @deprecated use getElementsI() instead.
    * @see harpoon.IR.Bytecode.Instr
    */
-  public Enumeration getElementsE() {
-    return new harpoon.Util.IteratorEnumerator(getElementsI());
+  public Enumeration<HCE> getElementsE() {
+    return new harpoon.Util.IteratorEnumerator<HCE>(getElementsI());
   }
   /**
    * Return an Iterator over the component objects making up this
@@ -86,8 +85,8 @@ public abstract class HCode {
    * Implementations must implement at least one of
    * <code>getElementsE()</code>, or <code>getElementsI()</code>.
    */
-  public Iterator getElementsI() {
-    return new harpoon.Util.EnumerationIterator(getElementsE());
+  public Iterator<HCE> getElementsI() {
+    return new harpoon.Util.EnumerationIterator<HCE>(getElementsE());
   }
 
   /**
@@ -95,8 +94,8 @@ public abstract class HCode {
    * @return root of the code view, or <code>null</code> if this notion
    *         is not applicable.
    */
-  public HCodeElement getRootElement() {
-    return (HCodeElement) (getElementsI().next());
+  public HCE getRootElement() {
+    return getElementsI().next();
   }
   /**
    * Return the 'leaves' of this code view; that is,
@@ -104,13 +103,13 @@ public abstract class HCode {
    * @return leaves of the code view, or <code>null</code> if this notion
    *         is not applicable.
    */
-  public HCodeElement[] getLeafElements() { return null; }
+  public HCE[] getLeafElements() { return null; }
 
   /**
    * Return an <code>ArrayFactory</code> for the <code>HCodeElement</code>s
    * composing this <code>HCode</code>.
    */
-  public abstract ArrayFactory elementArrayFactory();
+  public abstract ArrayFactory<HCE> elementArrayFactory();
 
   /**
    * Return an <code>Indexer</code> for the <code>HCodeElement</code>s
@@ -145,16 +144,16 @@ public abstract class HCode {
    * Pretty-print this code view using an empty callback.
    */
   public final void print(java.io.PrintWriter pw) {
-    print(pw, new PrintCallback());
+    print(pw, new PrintCallback<HCE>());
   }
   /**
    * Pretty-print this code view using the specified callback.
    */
-  public void print(java.io.PrintWriter pw, PrintCallback callback) {
+  public void print(java.io.PrintWriter pw, PrintCallback<HCE> callback) {
     if (callback==null) callback = new PrintCallback(); // nop callback
     pw.println("Codeview \""+getName()+"\" for "+getMethod()+":");
-    for (Iterator it = getElementsI(); it.hasNext(); ) {
-      HCodeElement hce = (HCodeElement) it.next();
+    for (Iterator<HCE> it = getElementsI(); it.hasNext(); ) {
+      HCE hce = it.next();
       callback.printBefore(pw, hce);
       pw.println("  #"+hce.getID()+"/"+
 		 hce.getSourceFile()+":"+hce.getLineNumber()+" - " +
@@ -171,13 +170,13 @@ public abstract class HCode {
   }
 
   /** Callback interface for annotating pretty-prints of <code>HCode</code>s.*/
-  public static class PrintCallback {
+  public static class PrintCallback<HCE extends HCodeElement> {
     /** This method is called right *before* each <code>HCodeElement</code>
      *  is output. */
-    public void printBefore(java.io.PrintWriter pw, HCodeElement hce) { }
+    public void printBefore(java.io.PrintWriter pw, HCE hce) { }
     /** This method is called right *after* each <code>HCodeElement</code>
      *  is output. */
-    public void printAfter(java.io.PrintWriter pw, HCodeElement hce) { }
+    public void printAfter(java.io.PrintWriter pw, HCE hce) { }
   }
 }
 

@@ -12,25 +12,26 @@ import java.util.Collection;
  * control-flow graphs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGraphable.java,v 1.2 2002-02-25 21:04:44 cananian Exp $
+ * @version $Id: CFGraphable.java,v 1.2.2.1 2002-03-04 20:26:44 cananian Exp $
  * @see harpoon.IR.Properties.CFGrapher
  * @see harpoon.IR.Properties.CFGrapher#DEFAULT
  */
-public interface CFGraphable extends harpoon.ClassFile.HCodeElement {       
+public interface CFGraphable<E extends CFGEdge>
+    extends harpoon.ClassFile.HCodeElement {       
     /** Returns an array of all the edges to and from this 
      *  <code>CFGraphable</code>. */
-    public CFGEdge[] edges();
+    public E[] edges();
     /** Returns an array of all the edges entering this
      *  <code>CFGraphable</code>. */
-    public CFGEdge[] pred();
+    public E[] pred();
     /** Returns an array of all the edges leaving this
      *  <code>CFGraphable</code>. */
-    public CFGEdge[] succ();
+    public E[] succ();
 
     // JDK 1.2 collections API: [CSA, 15-Jun-1999]
     /** Returns a <code>Collection</code> of all the edges to and from
      *  this <code>HCodeElement</code>. */
-    public Collection edgeC();
+    public Collection<E> edgeC();
     /** Returns a <code>Collection</code> of all the edges to
 	this <code>HCodeElement</code>. 
         Each <code>CFGEdge</code> returned is guaranteed to return 
@@ -38,7 +39,7 @@ public interface CFGraphable extends harpoon.ClassFile.HCodeElement {
 	the actual predecessor will be returned from
 	<code>from()</code>.  
      */
-    public Collection predC();
+    public Collection<E> predC();
     /** Returns a <code>Collection</code> of all the edges from
 	this <code>HCodeElement</code>. 
         Each <code>CFGEdge</code> returned is guaranteed to return
@@ -46,5 +47,5 @@ public interface CFGraphable extends harpoon.ClassFile.HCodeElement {
 	<code>from()</code>; the actual successor to <code>this</code>
 	will be returned from <code>to()</code>.
      */
-    public Collection succC();
+    public Collection<E> succC();
 }
