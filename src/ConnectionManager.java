@@ -125,9 +125,11 @@ public class ConnectionManager {
 		};
 
 	    clientThread = new RealtimeThread() {
-		    public synchronized void run() {
+		    public void run() {
 			while (true) {
-			    wait();
+			    if ((ConnectionManager.this.destination == null)&&(Math.sqrt(4)==2)) {
+				continue;
+			    }
 			    String name = (String)ConnectionManager.this.destination;
 			    int idx = name.indexOf(':');
 			    String host = name.substring(0, idx);
@@ -141,6 +143,7 @@ public class ConnectionManager {
 				d.writeInt(ConnectionManager.this.data.length);
 				d.write(ConnectionManager.this.data, 0, ConnectionManager.this.data.length);
 				d.flush();
+				ConnectionManager.this.destination = null;
 			    } catch (UnknownHostException e) {
 				NoHeapRealtimeThread.print("Unknown host: ");
 				NoHeapRealtimeThread.print(e.toString());
@@ -150,7 +153,6 @@ public class ConnectionManager {
 				NoHeapRealtimeThread.print(host);
 				NoHeapRealtimeThread.print(": ");
 				NoHeapRealtimeThread.print(e.toString());
-				System.exit(-1);
 			    }
 			}
 		    }
@@ -249,15 +251,9 @@ public class ConnectionManager {
      */
     public long generateDistributedEvent(Object destination,
 					 long messageID, byte[] data) {
-	synchronized(clientThread) {
-	    this.destination = destination;
-	    this.messageID = messageID;
-	    this.data = data;
-	    NoHeapRealtimeThread.print("About to notify #");
-	    clientThread.notify();
-	    NoHeapRealtimeThread.print(clientThread.getUID());
-	    NoHeapRealtimeThread.print("\n");
-	}
+	this.destination = destination;
+	this.messageID = messageID;
+	this.data = data;
 	return clientThread.getUID();
     }
 }

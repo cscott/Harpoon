@@ -17,8 +17,8 @@ public class DistributedRoundRobinScheduler extends Scheduler {
     private boolean[] enabled = new boolean[MAX_THREADS];
     private int currentThreadID;
     private int numThreads = 10;
-    private final String name = "30002";
-    private final String remoteName = "18.111.1.28:30001";
+    public String name = "30008";
+    public String remoteName = "18.111.1.28:30007";
     
     private Object remoteObj = null;
     private long serverID = 0;
@@ -100,11 +100,6 @@ public class DistributedRoundRobinScheduler extends Scheduler {
 	
 	for (int newIndex = (currentThreadID+1)%(numThreads+1); newIndex != currentThreadID; 
 	     newIndex=(newIndex+1)%(numThreads+1)) {
-	    NoHeapRealtimeThread.print("Considering #");
-	    NoHeapRealtimeThread.print(newIndex);
-	    NoHeapRealtimeThread.print("/");
-	    NoHeapRealtimeThread.print(numThreads);
-	    NoHeapRealtimeThread.print("\n");
 	    if (enabled[newIndex]) {
 		return (currentThreadID=newIndex)-OFFSET;
 	    }
@@ -114,8 +109,6 @@ public class DistributedRoundRobinScheduler extends Scheduler {
 	    System.exit(-1);
 	    return 0;
 	}
-	NoHeapRealtimeThread.print(currentThreadID);
-	NoHeapRealtimeThread.print("!\n");
 	return currentThreadID-OFFSET;
     }
 
