@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.18 2000-01-06 22:14:27 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.19 2000-01-07 19:34:47 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -641,9 +641,8 @@ public class AsyncCode {
 				    false, false, new Temp[0]);
 		Quad.addEdge(newc,0,call2,0);
 		Quad.addEdge(call2,1,phi,2);
-		HClass rettype=hc.getMethod().getReturnType();
 		String pref = 
-		    ContBuilder.getPrefix(rettype);
+		    ContBuilder.getPrefix(q.method().getReturnType());
 		HMethod setnextmethod=
 		    calleemethod.getReturnType().getMethod("setNext",
 							  new HClass[] {HClass.forName("harpoon.Analysis.ContBuilder."+pref+"ResultContinuation")});
@@ -660,10 +659,17 @@ public class AsyncCode {
 		    GET get=new GET(hcode.getFactory(),q,
 				    tnext, hfield, tthis);
 		    Quad.addEdge(call3,0,get,0);
+		    //XXXX TEST
+		    System.out.println(hcode.getMethod());
+		    String pref2 =
+			ContBuilder.getPrefix(hc.getMethod().getReturnType());
+		    //Debug
+		    HMethod[] methods=contclass.getMethods();
+		    for (int ii=0;ii<methods.length;ii++)
+			System.out.println(methods[ii].toString());
 		    HMethod setnextmethod2=
-			hcode.getMethod().getReturnType().getMethod("setNext",
-							       new HClass[] {HClass.forName("harpoon.Analysis.ContBuilder."+pref+"ResultContinuation")});
-
+			contclass.getMethod("setNext",
+					    new HClass[] {HClass.forName("harpoon.Analysis.ContBuilder."+pref2+"ResultContinuation")});
 		    Util.assert(setnextmethod2!=null,"no setNext method found");
 		    CALL call4=new CALL(hcode.getFactory(), q,
 					setnextmethod2, new Temp[] {tcont, tnext},
