@@ -64,6 +64,7 @@ import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 
 import harpoon.IR.Quads.QuadVisitor;
+import harpoon.Util.Graphs.Navigator;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 
@@ -75,7 +76,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.9 2003-04-30 20:04:37 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.10 2003-04-30 21:26:16 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -353,7 +354,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 		ih = new HashMap();
 	    else {
 		chains = new LinkedList();
-		set_hm2rang();
+		hm2rang = get_hm2rang();
 	    }
 	}
 
@@ -377,37 +378,22 @@ public class MAInfo implements AllocationInformation, Serializable {
 	quad2scc = null;
     }
 
+    private Map/*<HMethod,Integer>*/ hm2rang;
 
     // compute a function rang : HMethods -> natural numbers such that
     // if m1 calls m2, rang(m1) >= rang(m2). Basically, the leafs of the call
     // graph will have the smallest rang; all the methods from the same
     // strongly connected component of the call graph have the same rang.
-    private void set_hm2rang() {
+    private Map/*<HMethod,Integer>*/ get_hm2rang() {
 	if(DEBUG_IC)
 	    System.out.println("set_hm2rang");
 
-	hm2rang = new HashMap();
-	Set allmms = mcg.getAllMetaMethods();
-	Object[] mms_array = allmms.toArray(new Object[allmms.size()]);
-
-	SCComponent.Navigator mm_navigator =
-	    new SCComponent.Navigator() {
-		    public Object[] next(Object node) {
-			return mcg.getCallees((MetaMethod) node);
-		    }
-		    
-		    public Object[] prev(Object node) {
-			return mac.getCallers((MetaMethod) node);
-		    }
-		};
-
-	SCCTopSortedGraph mmethod_sccs = 
-	    SCCTopSortedGraph.topSort
-	    (SCComponent.buildSCC(mms_array, mm_navigator));
-
+	SCCTopSortedGraph mmethod_sccs = mcg.getTopDownSortedView();
+	
 	if(DEBUG_IC)
 	    System.out.println("\n\nMethod rang:");
 
+	Map/*<HMethod,Integer>*/hm2rang = new HashMap/*<HMethod,Integer>*/();
 	int counter = 0;
 	for(SCComponent scc = mmethod_sccs.getLast(); scc != null;
 	    scc = scc.prevTopSort()) {
@@ -422,8 +408,9 @@ public class MAInfo implements AllocationInformation, Serializable {
 	}
 	if(DEBUG_IC)
 	    System.out.println("======================================");
+
+	return hm2rang;
     }
-    private Map hm2rang;
 
 
 
@@ -1387,7 +1374,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    m2csTOm.add(extract_callee(cs), cs);
 	}
 
-	final SCComponent.Navigator nav = new SCComponent.Navigator() {
+	final Navigator nav = new Navigator() {
 		public Object[] next(final Object node) {
 		    CALL cs = (CALL) node;
 		    HMethod hm = extract_callee(cs);
