@@ -10,7 +10,7 @@ import harpoon.ClassFile.Raw.Attribute.AttributeConstantValue;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.7 1998-08-02 05:24:07 cananian Exp $
+ * @version $Id: HField.java,v 1.8 1998-08-04 01:49:38 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -58,6 +58,13 @@ public class HField implements HMember {
   public HClass getType() {
     return type;
   }
+  /**
+   * Return the type descriptor for this <code>HField</code> object.
+   */
+  public String getDescriptor() {
+    return fieldinfo.descriptor();
+  }
+
   /**
    * Determines whether this <code>HField</code> represents a constant
    * field.
