@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.33 1998-09-03 04:19:14 cananian Exp $
+ * @version $Id: Translate.java,v 1.34 1998-09-03 04:42:12 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -794,19 +794,6 @@ class Translate  { // not public.
 	    q = new GET(in, ns.stack[0], opd.value(), s.stack[0]);
 	    break;
 	    }
-	case Op.IF_ICMPEQ:
-	case Op.IF_ICMPNE:
-	case Op.IF_ICMPLT:
-	case Op.IF_ICMPGE:
-	case Op.IF_ICMPGT:
-	case Op.IF_ICMPLE:
-	case Op.IFEQ:
-	case Op.IFNE:
-	case Op.IFLT:
-	case Op.IFGE:
-	case Op.IFGT:
-	case Op.IFLE:
-	    throw new Error("Ack!"); // FIXME
 
 	case Op.IINC:
 	    {
@@ -1101,6 +1088,68 @@ class Translate  { // not public.
 		r = new TransState[] {
 		    new TransState(ns, in.next()[0], q1, iffalse),
 		    new TransState(ns, in.next()[1], q1, iftrue)
+		};
+		break;
+	    }
+	case Op.IFEQ:
+	case Op.IFNE:
+	case Op.IFLT:
+	case Op.IFGE:
+	case Op.IFGT:
+	case Op.IFLE:
+	case Op.IF_ICMPEQ:
+	case Op.IF_ICMPNE:
+	case Op.IF_ICMPLT:
+	case Op.IF_ICMPGE:
+	case Op.IF_ICMPGT:
+	case Op.IF_ICMPLE:
+	    {
+		byte opcode = in.getOpcode();
+		State ns;
+
+		boolean invert = false;
+		String op = null;
+		switch (opcode) {
+		case Op.IFNE:
+		case Op.IF_ICMPNE:
+		    invert = true;
+		case Op.IFEQ:
+		case Op.IF_ICMPEQ:
+		    op = "icmpeq";
+		    break;
+		case Op.IFLT:
+		case Op.IF_ICMPLT:
+		    invert = true;
+		case Op.IFGE:
+		case Op.IF_ICMPGE:
+		    op = "icmpge";
+		    break;
+		case Op.IFLE:
+		case Op.IF_ICMPLE:
+		    invert = true;
+		case Op.IFGT:
+		case Op.IF_ICMPGT:
+		    op = "icmpgt";
+		    break;
+		default: Util.assert(false);
+		}
+		Quad Qo;
+		if (opcode>=Op.IFEQ && opcode<=Op.IFLE) {
+		    ns = s.pop();
+		    q  = new CONST(in, new Temp(), new Integer(0), HClass.Int);
+		    Qo = new OPER(in, op, new Temp(),
+				  new Temp[] { s.stack[0], q.def()[0] });
+		    Quad.addEdge(q, 0, Qo, 0);
+		} else {
+		    ns = s.pop(2);
+		    q = Qo = new OPER(in, op, new Temp(),
+				      new Temp[] { s.stack[1], s.stack[0] } );
+		}
+		Quad Qc = new CJMP(in, Qo.def()[0]);
+		Quad.addEdge(Qo, 0, Qc, 0);
+		r = new TransState[] {
+		    new TransState(ns, in.next()[0], Qc, invert?1:0),
+		    new TransState(ns, in.next()[1], Qc, invert?0:1)
 		};
 		break;
 	    }
