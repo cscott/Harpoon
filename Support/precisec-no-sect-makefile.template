@@ -15,17 +15,17 @@ AR:=$(HOST_PREFIX)$(AR)
 CFLAGS=$(patsubst %,-fno-%,$(findstring zero-initialized-in-bss,$(shell $(CC) -v --help 2>&1)))
 
 SECTIONS=\
-	SECTION_FLEX_CODE SECTION_FLEX_CODE_RW \
-	SECTION_FLEX_FIXUP \
-	SECTION_FLEX_CLASS SECTION_FLEX_INIT_DATA \
-	SECTION_FLEX_STATIC_PRIMITIVES SECTION_FLEX_STRING_DATA \
-	SECTION_FLEX_REFLECTION_OBJECTS SECTION_FLEX_REFLECTION_DATA \
-	SECTION_FLEX_GC_INDEX SECTION_FLEX_GC SECTION_FLEX_STATIC_OBJECTS \
-	SECTION_FLEX_STRING_CONSTANTS \
-	SECTION_FLEX_ZERO \
-	SECTION_TEXT
-# only one pass needed.
-PASSES = SECTION_FLEX_STRING_CONSTANTS
+	FLEX_CODE FLEX_CODE_RW \
+	FLEX_FIXUP \
+	FLEX_INIT_DATA FLEX_STATIC_PRIMITIVES FLEX_STRING_DATA \
+	FLEX_REFLECTION_OBJECTS FLEX_REFLECTION_DATA \
+	FLEX_CLASS FLEX_GC_INDEX FLEX_GC FLEX_STATIC_OBJECTS \
+	FLEX_STRING_CONSTANTS \
+	FLEX_ZERO \
+	TEXT
+# only one pass needed, at the moment.  For GC support, we'd
+# probably need more.
+PASSES = FLEX_STRING_CONSTANTS
 
 SRCS=header.c $(wildcard _Primitive_*.c _Class_*.c) footer.c
 OBJS=$(patsubst %.c,%.o,$(SRCS))
@@ -46,10 +46,10 @@ $(TARGETOBJ): $(OBJS)
 $(PASS)-$(TARGETOBJ): $(patsubst %.o,$(PASS)-%.o,$(OBJS))
 	$(LD) -r -o $@ $^
 $(PASS)-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ -DNO_SECTION_SUPPORT -D$(PASS) $<
+	$(CC) $(CFLAGS) -c -o $@ -DNO_SECTION_SUPPORT -DSECTION_$(PASS) $<
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ -DNO_SECTION_SUPPORT \
-		$(patsubst %,-D%,$(filter-out $(PASSES),$(SECTIONS))) $<
+	    $(patsubst %,-DSECTION_%,$(filter-out $(PASSES),$(SECTIONS))) $<
 clean:
 	$(RM) *.o header.c footer.c
 wipe: clean
