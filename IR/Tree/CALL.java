@@ -29,7 +29,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.24 2000-01-09 01:04:41 duncan Exp $
+ * @version $Id: CALL.java,v 1.1.2.25 2000-01-09 01:18:07 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
@@ -65,8 +65,10 @@ public class CALL extends INVOCATION {
   
     public void setRetval(TEMP retval) { 
 	super.setRetval(retval); 
-	retval.parent  = this;
-	retval.sibling = this.retex; 
+	if (retval != null) { 
+	    retval.parent  = this;
+	    retval.sibling = this.retex; 
+	}
     }
 
     public void setRetex(TEMP retex) { 
