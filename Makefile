@@ -6,7 +6,7 @@ FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 SOURCES=$(wildcard src/*.java)
-RELEASE=$(SOURCES) README BUILDING Makefile ChangeLog
+RELEASE=$(SOURCES) README BUILDING COPYING Makefile ChangeLog 
 
 # figure out what the current CVS branch is, by looking at the Makefile
 CVS_TAG=$(firstword $(shell cvs status Makefile | grep -v "(none)" | \
