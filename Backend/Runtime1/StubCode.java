@@ -50,7 +50,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.10 2000-03-09 03:56:17 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.11 2000-03-24 23:34:27 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
@@ -97,17 +97,15 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	    paramTEMPs[i+1] = _TEMP(tf, null, paramTypes[i], paramTemps[i+1]);
 	}
 	stmlist.add(new METHOD(tf, null, paramTEMPs));
-	// get JNIEnv *
-	// this is a cheesy one-thread implementation at the moment;
-	// it should eventually call pthread_getspecific() to use thread-local
-	// memory.
+	// get JNIEnv * (which is thread-local)
 	Temp envT = new Temp(tf.tempFactory(), "env");
-	stmlist.add(new MOVE(tf, null,
-			     _TEMP(tf, null, HClass.Void, envT),
-			     _MEM(tf, null, HClass.Void,
-				     _NAME(tf, null, HClass.Void,
-					      new Label(m_nm.c_function_name
-							("FNI_JNIEnv"))))));
+	stmlist.add(new NATIVECALL
+		    (tf, null,
+		     _TEMP(tf, null, HClass.Void, envT) /*retval*/,
+		     _NAME(tf, null, HClass.Void,
+			   new Label(m_nm.c_function_name("FNI_GetJNIEnv"))),
+		     null/* no args*/));
+
 	// reset the exception field in the thread state.
 	stmlist.add(new MOVE(tf, null,
 			     _MEM(tf, null, HClass.Void,
