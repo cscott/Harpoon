@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Assem;
 
+import harpoon.IR.Properties.CFGrapher;
+import harpoon.IR.Properties.UseDefer;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Temp.TempFactory;
 import harpoon.ClassFile.HMethod;
@@ -18,7 +20,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrFactory.java,v 1.1.2.20 1999-11-30 05:24:58 cananian Exp $
+ * @version $Id: InstrFactory.java,v 1.1.2.21 2001-06-05 04:24:22 pnkfelix Exp $
  */
 public abstract class InstrFactory {
     /** Maintains a
@@ -107,4 +109,43 @@ public abstract class InstrFactory {
     }
 
     public int hashCode() { return getParent().getName().hashCode(); }
+
+    class ToMap extends HashMap {
+	public Map getMap(Object key) {
+	    Map m = (Map) get(key);
+	    if (m == null) { m = new HashMap(); super.put(key, m); }
+	    return m;
+	}
+    }
+    private ToMap typeToInstrToGroup = new ToMap();
+
+    /** Adds information from <code>group</code> to the
+	InstrGroup.Type -> CFGrapher mapping for <code>this</code>.
+	<BR> <B>requires:</B> <code>group</code> has had its entry and
+	     exit fields assigned.
+    */
+    public void addGroup(InstrGroup group) {
+	Map m = typeToInstrToGroup.getMap(group.type);
+	m.put(group.entry, group);
+	m.put(group.exit, group);
+    }
+    
+    /** Returns a <code>CFGrapher</code> that treats
+	<code>InstrGroup</code>s of <code>Type</code>
+	<code>t</code> as single atomic elements.
+    */
+    public CFGrapher getGrapherFor(InstrGroup.Type t) { 
+	final Map i2g = typeToInstrToGroup.getMap(t); 
+	return new InstrGroup.GroupGrapher(i2g);
+    }
+    
+    /** Returns a <code>UseDefer</code> that treats
+	<code>InstrGroup</code>s of <code>Type</code> 
+	<code>t</code> as single atomic elements.
+    */
+    public UseDefer getUseDeferFor(InstrGroup.Type t) {
+	final Map i2g = typeToInstrToGroup.getMap(t);
+	return new InstrGroup.GroupUseDefer(i2g, t);
+    }
+
 }

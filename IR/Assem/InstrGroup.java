@@ -13,6 +13,7 @@ import harpoon.IR.Properties.UseDefable;
 import harpoon.Util.Util;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,7 +27,7 @@ import java.util.Arrays;
  * single-entry single-exit region.
  * 
  * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrGroup.java,v 1.1.2.2 2001-05-15 06:33:50 pnkfelix Exp $ */
+ * @version $Id: InstrGroup.java,v 1.1.2.3 2001-06-05 04:24:22 pnkfelix Exp $ */
 public class InstrGroup {
     Type type;
     Instr entry, exit;
@@ -47,8 +48,9 @@ public class InstrGroup {
     }
     
     public String toString() { 
-	return "InstrGroup:"+type.typeString+
-	    ", <"+entry+"> <"+exit+">";
+	return "<group type:"+type.typeString+
+	    ",entry:"+((entry==null)?"null":""+entry.getID())+
+	    ",exit:"+((exit==null)?"null":""+exit.getID())+">";
     }
 
     /** Returns true if this is contained in a super group, else
@@ -61,6 +63,16 @@ public class InstrGroup {
 	contained in any super group.
     */
     public InstrGroup getContainer() { return containedIn; }
+
+    /** Returns true if this is (reflexively) contained in
+	<code>group</code>.  */
+    public boolean subgroupOf(InstrGroup group) {
+	return (group != null) && 
+	    (this == group || 
+	     this.containedIn == group || 
+	     (containedIn != null && 
+	      containedIn.subgroupOf( group )));
+    }
 
     /** Sets the entry point for a group of instructions.  Should be
 	called once (and only once), before setExit is called.  */
@@ -166,6 +178,12 @@ public class InstrGroup {
 	    i2g = instrToGroup;
 	    this.t = t;
 	}
+
+	// TODO verify correctness of useC/defC.  I did
+	// guess-and-check a lot here (and this wasn't even the source
+	// of the problem at the time!)
+
+	// **NOTE** defC and useC are ASYMMETRIC.  
 	public Collection useC(HCodeElement hce) { 
 	    Instr i=(Instr)hce;
 
@@ -174,17 +192,20 @@ public class InstrGroup {
 		// Util.assert(!i.partOf(t));
 		return i.useC();
 	    } else {
-		// work backwards, gathering up uses but killing
-		// defined uses...
 		InstrGroup ig = ((InstrGroup)i2g.get(i));
+		if(i == ig.entry) {
+		    return i.useC();
+		}
+		Util.assert(i == ig.exit);
+		// else work backwards, gathering up uses but killing
+		// defined uses...
 		Instr curr = ig.exit;
 		Collection set = new HashSet();
-
 		do {
-		    set.removeAll(curr.defC()); // order here is key
 		    set.addAll(curr.useC());
 		    Util.assert(curr.predC().size() == 1);
 		    curr = (Instr) curr.pred()[0].from();
+		    set.removeAll(curr.defC()); // order here is key
 		} while(curr != ig.entry);
 
 		return set;
@@ -197,15 +218,19 @@ public class InstrGroup {
 		// Util.assert(i.partOf(t));
 		return i.defC();
 	    } else {
-		// gather up all defs and pass them out
 		InstrGroup ig = (InstrGroup)i2g.get(i);
+		if (i == ig.exit) {
+		    return Collections.EMPTY_SET;
+		} 
+		// else gather up all defs and pass them out
+		Util.assert(i == ig.entry);
 		Instr curr = ig.exit;
 		Collection set = new HashSet();
 
 		do {
-		    set.addAll(curr.defC());
 		    Util.assert(curr.predC().size() == 1);
 		    curr = (Instr) curr.pred()[0].from();
+		    set.addAll(curr.defC());
 		} while(curr != ig.entry);
 
 		return set;
@@ -218,9 +243,10 @@ public class InstrGroup {
 	<code>Assem.Code</code>.  */
     public static class Type {
 	private String typeString;
-
-	private Type(String groupType) { 
+	private String details;
+	private Type(String groupType, String details) { 
 	    typeString = groupType;
+	    this.details = details;
 	}
 
 	/** Creates an <code>InstrGroup</code> of the type for
@@ -249,13 +275,13 @@ public class InstrGroup {
 
     /** groups code such as local labels (1f/1:).
      */
-    public static Type NO_REORDER = new Type("order sensitive dependencies");
+    public static Type NO_REORDER=new Type("ord","order sensitive dependencies");
     
     /** groups code such as double word moves where we do not want to
 	allow one half of the location to be assigned to hold the 2nd
 	half.
     */
-    public static Type AGGREGATE = new Type("aggregate instructions");
+    public static Type AGGREGATE=new Type("agg","aggregate instructions");
 
     /** groups code where we cannot insert spill code (such as
 	aggregates where spill code would destroy effect of virtual
@@ -263,11 +289,11 @@ public class InstrGroup {
 	spill code BEFORE the group, just not between instructions
 	contained within the group.
     */
-    public static Type NO_SPILL = new Type("spill sensitive dependencies");
+    public static Type NO_SPILL=new Type("!sp","spill sensitive dependencies");
 
     /** groups code with special delay slot instructions... (usable?)
      */
-    public static Type DELAY_SLOT = new Type("delay slot");
+    public static Type DELAY_SLOT=new Type("del","delay slot");
     
 }
 

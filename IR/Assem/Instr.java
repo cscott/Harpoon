@@ -19,6 +19,7 @@ import harpoon.Util.UnmodifiableIterator;
 import java.util.Vector;
 import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -42,7 +43,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.84 2001-01-13 21:45:40 cananian Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.85 2001-06-05 04:24:22 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDefable, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -51,6 +52,75 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
     private final String assem; 
     private InstrFactory inf;
+
+    private InstrGroup groupList = null;
+    boolean partOf(InstrGroup.Type t) {
+	InstrGroup curr = groupList;
+	while(curr != null) {
+	    if (curr.type == t) 
+		return true;
+	    curr = curr.containedIn;
+	}
+	return false;
+    }
+    /** Sets the InstrGroup sequence associated with
+	<code>this</code>.  
+	<BR><B>requires:</B> <code>this</code> is not 
+	    associated with any group.
+    */
+    public void setGroup(InstrGroup seq) {
+	Util.assert(groupList == null || groupList == seq,
+		    " current group: "+groupList+
+		    " setGroup( "+seq+" )"
+		    );
+	// this actually isn't as conservative as we could be, since
+	// <seq> can be null.
+
+	groupList = seq;
+    }
+    /** Returns the Set of InstrGroups that this is an element of. */
+    public Set getGroups() {
+	HashSet set = new HashSet();
+	InstrGroup curr = groupList;
+	while(curr != null) {
+	    set.add(curr);
+	    curr = curr.containedIn;
+	}
+	return set;
+    }
+    /** Returns the entry <code>Instr</code> when the
+	instructions are being viewed as collected by
+	<code>type</code>.  Note that if <code>this</code> is not
+	contained in any member of <code>type</code>, then
+	<code>this</code> is its own group, and thus
+	<code>this</code> is returned.
+     */
+    public Instr getEntry(InstrGroup.Type type) {
+	return getRep(type, false);
+    }
+    /** Returns the exit <code>Instr</code> when the
+	instructions are being viewed as collected by
+	<code>type</code>.  Note that if <code>this</code> is not
+	contained in any member of <code>type</code>, then
+	<code>this</code> is its own group, and thus
+	<code>this</code> is returned.
+     */
+    public Instr getExit(InstrGroup.Type type) {
+	Instr i = getRep(type, true);
+	return i;
+    }
+    private Instr getRep(InstrGroup.Type type, boolean retExit) {
+	InstrGroup curr = groupList;
+	while(curr != null) {
+	    if (curr.type == type) {
+		return retExit?curr.exit:curr.entry;
+	    } else {
+		curr = curr.containedIn;
+	    }
+	}
+	// got here, no containing group is a member of <type>
+	return this;
+    }
 
     private final Temp[] dst;
     private final Temp[] src;
@@ -443,7 +513,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	    // Oh shit.  How should we design a way to insert
 	    // arbitrary code with a method in the *ARCHITECTURE
 	    // INDEPENDANT* Instr class? 
-	    
+	    Util.assert(false);
 	} else { // edge.from() falls through to edge.to() 
 	    layout(from, to);
 	}
@@ -554,6 +624,25 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 		 get(l)).add(this);
 	    }
 	}
+
+	// choose group of whichever group is in the SURROUNDING area
+	// (ie higher in the nested scopes)
+	if (from != null && to != null) {
+	    if (from.groupList != null && 
+		from.groupList.subgroupOf( to.groupList )) {
+		this.setGroup( to.groupList );
+		// System.out.println("FSK: setGroup(to) code called (Instr.java) on "+this);
+	    } else if (to.groupList != null &&
+		       to.groupList.subgroupOf( from.groupList )) {
+		this.setGroup( from.groupList );
+		// System.out.println("FSK: setGroup(from) code called (Instr.java) on "+this);
+	    }
+
+	    // Else we're inserting an instruction inbetween two
+	    // instructions which don't have a group in common, in
+	    // which case we shouldn't assign a group to the new
+	    // instruction at all.
+	}
     }
 
     /* Replaces <code>inOld</code> with <code>inNew</code> in the
@@ -563,6 +652,10 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	Util.assert(inOld.next!=null || inOld.prev!=null, "oldI has no loc");
 
 	if (PRINT_REPLACES) System.out.println("replacing Instr:"+inOld+" with Instr:"+inNew);
+
+	inNew.setGroup(inOld.groupList);
+	inOld.groupList = null;
+
 	inNew.layout(inOld, inOld.getNext());
 	inOld.remove();
     }

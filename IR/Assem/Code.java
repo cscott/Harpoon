@@ -33,7 +33,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.15 2001-01-24 19:33:49 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.16 2001-06-05 04:24:22 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -151,10 +151,13 @@ public abstract class Code extends HCode {
 	myPrint(pw, true, false, callback);
     }
     
+
     /** Displays the assembly instructions of this codeview. Attempts
      *  to do so in a well-formatted, easy to read way. <BR>
      *  XXX - currently uses generic, not so easy to read, printer.
      *
+     *  @deprecated Use Code#myPrint(PrintWriter,boolean,PrintCallback)
+     * 
      *  @param  pw    The PrintWriter to send the formatted output to.
      *  @param  assem If true, uses <code>toAssem(Instr)</code> to
      *          convert Instrs to assembly form.  Else just calls
@@ -163,20 +166,42 @@ public abstract class Code extends HCode {
      *          before printing the Instr itself.
      *  @see Code#toAssem
      */
-    protected void myPrint(java.io.PrintWriter pw, 
-			   boolean assem,
-			   boolean annotateID,
-			   PrintCallback callback) {
+    protected final void myPrint(java.io.PrintWriter apw, 
+				 boolean assem,
+				 final boolean annotateID,
+				 final PrintCallback callback) {
+	myPrint(apw, assem, new PrintCallback() {
+		public void printBefore(java.io.PrintWriter pw, HCodeElement hce ){
+		    callback.printBefore(pw,hce);
+		    if (annotateID) {
+			pw.print( ((Instr)hce).getID() );
+			pw.print( '\t' );
+		    }
+		}
+		public void printAfter(java.io.PrintWriter pw, HCodeElement hce ){
+		    callback.printAfter(pw, hce);
+		}
+	    });
+    }
+
+    /** Displays the assembly instructions of this codeview. Attempts
+     *  to do so in a well-formatted, easy to read way. <BR>
+     *  XXX - currently uses generic, not so easy to read, printer.
+     *
+     *  @param  pw    The PrintWriter to send the formatted output to.
+     *  @param  assem If true, uses <code>toAssem(Instr)</code> to
+     *          convert Instrs to assembly form.  Else just calls
+     *          <code>Instr.toString()</code>. 
+     *  @see Code#toAssem
+     */
+    protected final void myPrint(java.io.PrintWriter pw, 
+				 boolean assem,
+				 PrintCallback callback) {
 	final HashSet outputLabels = new HashSet();
 	final MultiMap labelsNeeded = new GenericMultiMap();
 
 	for (Instr instr=instrs; instr != null; instr=instr.getNext()) {
 	    StringBuffer str = new StringBuffer();
-
-	    if (annotateID) {
-		str.append(instr.getID());
-		str.append('\t');
-	    }
 
             if (instr instanceof InstrLABEL ||
 		instr instanceof InstrDIRECTIVE) {
@@ -203,9 +228,9 @@ public abstract class Code extends HCode {
             }
 
 	    callback.printBefore(pw, instr);
-	    pw.println(str.toString());
+	    pw.print(str.toString()); // FSK: was println!
 	    callback.printAfter(pw, instr);
-
+	    pw.println();             // FSK: moved after callback
         }
 	
 	pw.flush();
