@@ -256,7 +256,7 @@ void createlink(struct block *ptr, char *filename, char *linkname)
 	  if(strcmp(filename,db->entries[j].name)==0) 
 	    {
 	      int inode=db->entries[j].inodenumber;
-	      struct InodeTable * itb=(struct InodeTable *) &ptr[4];
+	      struct InodeTable * itb=(struct InodeTable *) &ptr[itbptr];
 	      itb->entries[inode].referencecount++;
 	      addtode(ptr, inode, linkname);
 	    }
@@ -266,7 +266,7 @@ void createlink(struct block *ptr, char *filename, char *linkname)
 
 void closefile(struct block *ptr, int fd) 
 {
-  struct InodeTable * itb=(struct InodeTable *) &ptr[4];  
+  struct InodeTable * itb=(struct InodeTable *) &ptr[itbptr];  
   files[fd].used=false;
 }
 
@@ -283,7 +283,7 @@ int writefile(struct block *ptr, int fd, char *s, int len)
   if (tfd->used==false)
     return -1;
 
-  struct InodeTable * itb=(struct InodeTable *) &ptr[4];
+  struct InodeTable * itb=(struct InodeTable *) &ptr[itbptr];
   int filelen=itb->entries[tfd->inode].filesize;
   if ((12*BLOCKSIZE-tfd->offset)<len)
     len=12*BLOCKSIZE-tfd->offset;
