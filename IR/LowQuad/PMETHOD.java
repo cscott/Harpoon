@@ -13,11 +13,11 @@ import harpoon.Temp.TempMap;
  * object methods.  Only necessary for <b>virtual</b> methods.
  * Non-virtual methods can be invoked via the <code>POINTER</code>
  * obtained by <code>PMCONST</code>. <br>
- * <b>NOTE THAT<b> constructors and invocations using the <code>super</code>
+ * <b>NOTE THAT</b> constructors and invocations using the <code>super</code>
  * keyword are non-virtual.  See the <code>harpoon.IR.Quads.CALL</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PMETHOD.java,v 1.1.2.1 1999-01-21 06:37:25 cananian Exp $
+ * @version $Id: PMETHOD.java,v 1.1.2.2 1999-01-23 10:06:16 cananian Exp $
  */
 public class PMETHOD extends PPTR {
 

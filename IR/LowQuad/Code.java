@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.LowQuad;
 
+import harpoon.Analysis.Maps.TypeMap;
+import harpoon.Backend.Maps.FinalMap;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
@@ -18,7 +20,7 @@ import java.util.Hashtable;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.1 1999-01-22 22:39:39 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.2 1999-01-23 10:06:16 cananian Exp $
  */
 public class Code extends harpoon.IR.Quads.Code /* which extends HCode */ 
     implements harpoon.IR.Properties.Derivation
@@ -45,7 +47,10 @@ public class Code extends harpoon.IR.Quads.Code /* which extends HCode */
     Code(QuadSSA qsa)
     {
 	super(qsa.getMethod(), null);
-	quads = Translate.translate((LowQuadFactory)this.qf, qsa, hD);
+	TypeMap tym = new harpoon.Analysis.QuadSSA.TypeInfo();
+	FinalMap fm = new harpoon.Backend.Maps.DefaultFinalMap();
+	quads = Translate.translate((LowQuadFactory)this.qf, qsa,
+				    tym, fm, hD);
     }
     private Code(HMethod parent, Quad quads) {
 	super(parent, quads);

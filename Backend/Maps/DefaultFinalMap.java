@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  * access modifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultFinalMap.java,v 1.1.2.1 1999-01-17 02:51:28 cananian Exp $
+ * @version $Id: DefaultFinalMap.java,v 1.1.2.2 1999-01-23 10:06:08 cananian Exp $
  */
 
 public class DefaultFinalMap extends FinalMap {
@@ -30,6 +30,7 @@ public class DefaultFinalMap extends FinalMap {
 	return
 	    isFinal(hm.getDeclaringClass()) ||
 	    Modifier.isFinal(hm.getModifiers());
+	// private methods are really final, too.
     }
     public boolean isFinal(HField hf) {
 	// trust the JVM, even though it lies about System.{in,out,err}
