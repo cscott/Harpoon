@@ -4,6 +4,7 @@
 #include "java_lang_reflect_Constructor.h"
 #include "java_lang_reflect_Method.h"
 #include "java_lang_reflect_Modifier.h"
+#include "reflect-util.h" /* for REFLECT_staticinit */
 
 /*
  * Class:     java_lang_reflect_Constructor
@@ -15,13 +16,10 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Constructor_getModifiers
     return Java_java_lang_reflect_Method_getModifiers(env, _this);
 }
 
-/*
- * Class:     java_lang_reflect_Constructor
- * Method:    newInstance
- * Signature: ([Ljava/lang/Object;)Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_newInstance
-  (JNIEnv *env, jobject constructorobj, jobjectArray args) {
+/* helper */
+static inline
+jobject _newInstance
+  (JNIEnv *env, jobject constructorobj, jobjectArray args, jboolean init) {
   struct FNI_method2info *method; /* method information */
   jclass methodclazz; /* declaring class of method */
   jobject result;
@@ -31,6 +29,11 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_newInstance
   assert(method!=NULL);
   methodclazz = FNI_WRAP(method->declaring_class_object);
   assert(!(*env)->ExceptionOccurred(env));
+
+#ifdef WITH_INIT_CHECK
+  if (init)
+    if (!REFLECT_staticinit(env, methodclazz)) return NULL; /* init failed */
+#endif /* WITH_INIT_CHECK */
 
   /* check that declaring class is not abstract. */
   if (FNI_GetClassInfo(methodclazz)->modifiers & 
@@ -49,6 +52,21 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_newInstance
   /* done, ta-da! */
   return result;
 }
+/*
+ * Class:     java_lang_reflect_Constructor
+ * Method:    newInstance
+ * Signature: ([Ljava/lang/Object;)Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_newInstance
+  (JNIEnv *env, jobject constructorobj, jobjectArray args) {
+  return _newInstance(env, constructorobj, args, JNI_FALSE);
+}
+#ifdef WITH_INIT_CHECK
+JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_newInstance_00024_00024initcheck
+  (JNIEnv *env, jobject constructorobj, jobjectArray args) {
+  return _newInstance(env, constructorobj, args, JNI_TRUE);
+}
+#endif /* WITH_INIT_CHECK */
 
 #if !defined(WITHOUT_HACKED_REFLECTION) /* this is our hacked implementation */
 /*
