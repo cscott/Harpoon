@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.34 2001-01-21 01:26:54 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.34.2.1 2001-03-04 00:12:12 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -180,7 +180,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 			AllocationProperties ap,
 			HClass objectType, Exp length) {
 	Temp Tobj = new Temp(tf.tempFactory(), "rt");
-	return new ESEQ
+	Exp exp = new ESEQ
 	    (tf, source,
 	     new SEQ
 	     (tf, source,
@@ -226,6 +226,18 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	     // result of ESEQ is new object pointer
 	     DECLARE(dg, objectType/*finally an obj*/, Tobj,
 	     new TEMP(tf, source, Type.POINTER, Tobj)));
+	// inflate object if harpoon.runtime.inflate_all is 'true'
+	if (Boolean.getBoolean("harpoon.runtime.inflate_all"))
+	    exp = new ESEQ
+		(tf, source,
+		 _call_FNI_Inflate
+		 (tf, source, dg,
+		  new Translation.Ex(exp)),
+		 // result of ESEQ is new object pointer
+		 DECLARE(dg, objectType/*finally an obj*/, Tobj,
+		 new TEMP(tf, source, Type.POINTER, Tobj)));
+	// done.
+	return exp;
     }
 
     public Translation.Exp arrayLength(TreeFactory tf, HCodeElement source,
@@ -551,6 +563,76 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	     new NAME(tf, source, new Label
 		      (runtime.nameMap.c_function_name
 		       (isEnter?"FNI_MonitorEnter":"FNI_MonitorExit")))),
+	     new ExpList
+	     (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
+	      new TEMP(tf, source, Type.POINTER, envT)),
+	      new ExpList
+	      (DECLARE(dg, HClass.Void/* jobject */, objT,
+	       new TEMP(tf, source, Type.POINTER, objT)),
+	       null)));
+
+	// okay, now free the localref and we're set.
+	result1 = new SEQ
+	    (tf, source, result1,
+	     new NATIVECALL
+	     (tf, source, null/*void retval*/,
+	      DECLARE(dg, HClass.Void/* c function ptr */,
+	      new NAME(tf, source, new Label(runtime.nameMap.c_function_name
+					     ("FNI_DeleteLocalRefsUpTo")))),
+	      new ExpList
+	      (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
+	       new TEMP(tf, source, Type.POINTER, envT)),
+	       new ExpList
+	       (DECLARE(dg, HClass.Void/* jobject */, objT,
+		new TEMP(tf, source, Type.POINTER, objT)),
+		null))));
+	
+	return new SEQ(tf, source, result0, result1);
+    }
+    /** wrap objectref and then call FNI_Inflate() */
+    private Stm _call_FNI_Inflate(TreeFactory tf, HCodeElement source,
+				  DerivationGenerator dg,
+				  Translation.Exp objectref) {
+	// keep this synchronized with StubCode.java
+	// and Runtime/include/jni-private.h
+	final int REF_OFFSET = 3 * POINTER_SIZE;
+
+	// first get JNIEnv *
+	Temp envT = new Temp(tf.tempFactory(), "env");
+	Stm result0 = new NATIVECALL
+	    (tf, source, (TEMP)
+	     DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
+	     new TEMP(tf, source, Type.POINTER, envT)) /*retval*/,
+	     DECLARE(dg, HClass.Void/* c function ptr */,
+	     new NAME(tf, source, new Label
+		      (runtime.nameMap.c_function_name("FNI_GetJNIEnv")))),
+	     null/* no args*/);
+
+	// wrap objectref.
+	Temp objT = new Temp(tf.tempFactory(), "obj");
+	result0 = new SEQ
+	    (tf, source, result0,
+	     new NATIVECALL
+	     (tf, source, (TEMP)
+	      DECLARE(dg, HClass.Void/* jobject */, objT,
+	      new TEMP(tf, source, Type.POINTER, objT)) /*retval*/,
+	      DECLARE(dg, HClass.Void/* c function ptr */,
+	      new NAME(tf, source, new Label
+		       (runtime.nameMap.c_function_name("FNI_NewLocalRef")))),
+	      new ExpList
+	      (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
+	       new TEMP(tf, source, Type.POINTER, envT)),
+	       new ExpList
+	       (objectref.unEx(tf), null))));
+
+	// call FNI_InflateObject
+	// proto is 'void FNI_InflateObject(JNIEnv *env, jobject obj);
+	Stm result1 = new NATIVECALL
+	    (tf, source, null/*retval*/,
+	     DECLARE(dg, HClass.Void/* c function ptr */,
+	     new NAME(tf, source, new Label
+		      (runtime.nameMap.c_function_name
+		       ("FNI_InflateObject")))),
 	     new ExpList
 	     (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
 	      new TEMP(tf, source, Type.POINTER, envT)),
