@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Sun Oct 25 12:37:16 1998> 
-// Time-stamp: <1998-11-27 17:52:49 mfoltz> 
+// Time-stamp: <1998-12-03 00:47:56 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.Partition;
@@ -86,7 +86,7 @@ public class Main  {
 
       g.addDummies(g.size());
 
-      Partition.initialPartition(g, 2, pt);
+      Partition.initialPartition(g, pt);
 
       // add pseudo-nodes that allow bindings of object creation sites to nodes
       for (i = 0; i < 2; i++) 
