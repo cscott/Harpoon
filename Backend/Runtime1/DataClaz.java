@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.18 2000-06-07 20:19:27 kkz Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.19 2000-06-08 20:07:24 kkz Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -98,11 +98,9 @@ public class DataClaz extends Data {
     private Stm gc(Frame f, ClassHierarchy ch) {
 	if (hc.isArray()) { // arrays are special
 	    final List stmlist = new ArrayList();
-	    // bit 0 and bit 1 are set (pointers in the object header)
-	    // bit 2 is not set (array length field)
-	    // bit 3 is set if the component type is not primitive
+	    // bit 0 is set if the component type is not primitive
 	    final long bitmap = 
-		hc.getComponentType().isPrimitive() ? 03L : 013L; 
+		hc.getComponentType().isPrimitive() ? 0 : 1; 
 	    if (f.pointersAreLong()) {
 		//System.out.println("Array: " + Long.toBinaryString(bitmap));
 		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
@@ -122,8 +120,7 @@ public class DataClaz extends Data {
 	} else { // in-line bitmap for small objects
 	    final List stmlist = new ArrayList();
 	    final List fields = m_tb.cfm.fieldList(hc);
-	    // encode object header
-	    long bitmap = 03L; // octal
+	    long bitmap = 0; // octal
 	    for (Iterator it=fields.iterator(); it.hasNext(); ) {
 		final HField hf = (HField)it.next();
 		final HClass type = hf.getType();
@@ -162,7 +159,7 @@ public class DataClaz extends Data {
 	stmlist.add(new ALIGN(tf, null, 4));
 	stmlist.add(new LABEL(tf, null, m_nm.label(hc, "gc_aux"), true));
 	final List fields = m_tb.cfm.fieldList(hc);
-	long bitmap = 03L; // encode object header
+	long bitmap = 0;
 	int j = 0; // keep track of number of bitmaps created
 	final int MAX_SIZE = 8 * m_tb.POINTER_SIZE * m_tb.POINTER_SIZE;
 	for (Iterator it = fields.iterator(); it.hasNext(); ) {

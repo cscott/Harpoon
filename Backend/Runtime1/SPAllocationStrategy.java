@@ -24,13 +24,14 @@ import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Type;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 /**
  * <code>SPAllocationStrategy</code> implements a "semi-precise"
  * allocation strategy by providing the BDW collector with more 
  * precise information about pointer locations.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: SPAllocationStrategy.java,v 1.1.2.1 2000-06-07 20:19:27 kkz Exp $
+ * @version $Id: SPAllocationStrategy.java,v 1.1.2.2 2000-06-08 20:07:24 kkz Exp $
  */
 public class SPAllocationStrategy extends AllocationStrategy {
     final Frame frame;
@@ -42,10 +43,21 @@ public class SPAllocationStrategy extends AllocationStrategy {
 			DerivationGenerator dg,
 			AllocationProperties ap,
 			Exp length) {
-	String func = ap.actualClass().isArray() ?
-	    (ap.actualClass().getComponentType().isPrimitive() ?
-	     "SP_malloc" : "SP_malloc_array") :
-	    ap.hasInteriorPointers() ? "SP_malloc" : "SP_malloc_atomic";
+	String func;
+	if (ap.hasInteriorPointers()) {
+	    if (ap.actualClass().isArray()) { // array with interior pointers
+		Util.assert(!ap.actualClass().getComponentType().
+			    isPrimitive());
+		func = "SP_malloc_array";
+	    } else { // non-array
+		func = "SP_malloc";
+	    }
+	} else {
+	    if (ap.actualClass().isArray()) // array with no interior pointers
+		Util.assert(ap.actualClass().getComponentType().
+			    isPrimitive());
+	    func = "SP_malloc_atomic";
+	}
 	return buildAllocCall(tf, source, dg, ap, func, length, null); 
     }
     protected Exp buildAllocCall(TreeFactory tf, HCodeElement source,
