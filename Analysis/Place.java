@@ -12,7 +12,7 @@ import java.util.Hashtable;
  * <code>Place</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.4 1998-09-16 00:42:21 cananian Exp $
+ * @version $Id: Place.java,v 1.5 1998-09-16 01:00:06 cananian Exp $
  */
 
 public class Place  {
@@ -63,7 +63,6 @@ public class Place  {
     }
 
     void placePhi(HCode hc) {
-	System.err.println("Analyze: Place / "+hc.getMethod());
 	// for each defined variable a
 	Temp[] al = (!isPost) ? usedef.allDefs(hc) : usedef.allUses(hc);
 	for (int i=0; i < al.length; i++) {
