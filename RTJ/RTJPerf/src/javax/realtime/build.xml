@@ -1,0 +1,21 @@
+<!-- $Id: build.xml,v 1.1 2002-07-02 15:55:16 wbeebee Exp $ -->
+
+<project name="Javax-Realtime" default="all" basedir="../../../">
+
+   <property file="rtjperf-build-bootstrap.properties"/>
+   <property file="rtjperf-build.properties"/>
+
+   <target name="all">
+      <javac srcdir="${rtjperf.srcdir}"
+             destdir="${rtjperf.classdir}"
+             classpath="${rtjperf.classdir}:${rtjperf.rtjlib}"
+             debug="${rtjperf.debug}"
+             optimize="${rtjperf.optimization}"
+             includes="javax/realtime/**"/>
+   </target>
+
+   <target name="clean">
+      <delete dir="${rtjperf.classdir}/javax"/>
+   </target>
+
+</project>

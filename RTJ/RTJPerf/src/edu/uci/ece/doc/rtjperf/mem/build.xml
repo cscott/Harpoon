@@ -1,0 +1,17 @@
+<!-- $Id: build.xml,v 1.1 2002-07-02 15:53:26 wbeebee Exp $ -->
+
+<project name="Time Tests" default="all" basedir="../../../../../../..">
+
+   <property file="rtjperf-build-bootstrap.properties"/>
+   <property file="rtjperf-build.properties"/>
+
+   <target name="all">
+      <javac srcdir="${rtjperf.srcdir}"
+             destdir="${rtjperf.classdir}"
+             classpath="${rtjperf.classdir}:${rtjperf.rtjlib}"
+             debug="${rtjperf.debug}"
+             optimize="${rtjperf.optimization}"
+             includes="edu/uci/ece/doc/rtjperf/mem/**"/>
+   </target>
+
+</project>
