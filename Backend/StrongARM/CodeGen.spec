@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.89 1999-10-26 01:47:55 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.90 1999-10-26 22:54:46 cananian Exp $
  */
 %%
 
@@ -415,6 +415,8 @@ import java.util.Iterator;
 		Instr in1 = new InstrDIRECTIVE(inf, il, ".align 4");
 		Instr in2 = new InstrDIRECTIVE(inf, il, ".global " +
 					       methodlabel.name);
+		Instr in2a= new InstrDIRECTIVE(inf, il, ".type " +
+					       methodlabel.name+",#function");
 		Instr in3 = new InstrLABEL(inf, il, methodlabel.name+":",
 					   methodlabel);
 		Instr in4 = new Instr(inf, il, "mov ip, sp", null, null);
@@ -429,7 +431,8 @@ import java.util.Iterator;
 		in5.layout(il, in6);
 		in4.layout(il, in5);
 		in3.layout(il, in4);
-		in2.layout(il, in3);
+		in2a.layout(il,in3);
+		in2.layout(il, in2a);
 		in1.layout(il, in2);
 		if (il==instr) instr=in1; // fixup root if necessary.
 		if (stackspace==0) in7.remove(); // optimize
