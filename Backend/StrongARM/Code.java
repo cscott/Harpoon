@@ -27,7 +27,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.3.2.1 2002-02-27 08:35:24 cananian Exp $
+ * @version $Id: Code.java,v 1.3.2.2 2002-03-20 00:20:37 cananian Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -251,8 +251,10 @@ class Code extends harpoon.Backend.Generic.Code {
 			       final List regs) {
 	Iterator iter = regs.iterator();
 	while(iter.hasNext()) {
-	    assert regFileInfo.isRegister((Temp)iter.next()) : (true ? "every elem should be reg " 
-			 : "every element of "+regs+" should be register");
+	    Temp t = (Temp)iter.next();
+	    assert regFileInfo.isRegister(t)
+		: "every element of "+regs+" should be register, but "+t+
+		"is not.";
 	}
 
 	if (pseudoReg instanceof TwoWordTemp) {

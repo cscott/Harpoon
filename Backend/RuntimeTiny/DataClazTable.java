@@ -34,7 +34,7 @@ import java.util.Map;
  * of an instantiated object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClazTable.java,v 1.1.2.1 2002-03-11 04:40:51 cananian Exp $
+ * @version $Id: DataClazTable.java,v 1.1.2.2 2002-03-20 00:20:31 cananian Exp $
  */
 public class DataClazTable extends Data {
     final NameMap m_nm;
@@ -57,8 +57,10 @@ public class DataClazTable extends Data {
 						  ("FNI_claz_table")),true));
 	// make a list of all instantiated classes.
 	List<HClass> all = new ArrayList<HClass>(ch.instantiatedClasses());
-	for (Iterator<HClass> it=all.iterator(); it.hasNext(); )
-	    assert !it.next().isInterface();
+	for (Iterator<HClass> it=all.iterator(); it.hasNext(); ) {
+	    HClass hc = it.next();
+	    assert !hc.isInterface();
+	}
 	// sort these by clazNumber
 	Collections.sort(all, new Comparator<HClass>() {
 	    public int compare(HClass a, HClass b) {

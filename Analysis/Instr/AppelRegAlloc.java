@@ -52,7 +52,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.3.2.1 2002-02-27 08:31:21 cananian Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.3.2.2 2002-03-20 00:20:08 cananian Exp $
  */
 public abstract class AppelRegAlloc extends AppelRegAllocClasses {
     public static final boolean PRINT_DEPTH_TO_SPILL_INFO = true;
@@ -270,7 +270,8 @@ checkPrecolored();
 	if (!CHECK_INV) return;
 
 	for(NodeIter ni=precolored.iter(); ni.hasNext();){
-	    assert ni.next().isPrecolored();
+	    Node n = ni.next();
+	    assert n.isPrecolored();
 	}
 	for(Iterator nodes=allNodes(); nodes.hasNext(); ){
 	    Node n = (Node) nodes.next();
