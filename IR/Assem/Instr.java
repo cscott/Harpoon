@@ -15,7 +15,7 @@ import harpoon.Temp.Temp;
  * the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.4 1999-02-17 03:23:19 andyb Exp $
+ * @version $Id: Instr.java,v 1.1.2.5 1999-02-26 17:58:50 andyb Exp $
  */
 public class Instr implements HCodeElement, UseDef {
     protected String assem;
@@ -29,7 +29,7 @@ public class Instr implements HCodeElement, UseDef {
 
     /** Creates an <code>Instr</code> consisting of the String 
      *  assem and the lists of destinations and sources in dst and src. */
-    Instr(InstrFactory inf, HCodeElement source, 
+    public Instr(InstrFactory inf, HCodeElement source, 
           String assem, Temp[] dst, Temp[] src) {
         this.source_file = (source != null)?source.getSourceFile():"unknown";
         this.source_line = (source != null)?source.getLineNumber():0;
@@ -45,7 +45,9 @@ public class Instr implements HCodeElement, UseDef {
         /* XXX - needs to be done. */
         return null;
     }
-    
+
+    public InstrFactory getFactory() { return inf; }
+
     /** Defines an array factory which can be used to generate
      *  arrays of <code>Instr</code>s. */
     public static final ArrayFactory arrayFactory =

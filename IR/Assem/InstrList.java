@@ -8,13 +8,13 @@ package harpoon.IR.Assem;
  * list of Instrs.  From the Appel book.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrList.java,v 1.1.2.1 1999-02-16 21:13:44 andyb Exp $
+ * @version $Id: InstrList.java,v 1.1.2.2 1999-02-26 17:58:50 andyb Exp $
  */
 public class InstrList {
     public Instr head; 
     public InstrList tail;
 
-    InstrList(Instr head, InstrList tail) {
+    public InstrList(Instr head, InstrList tail) {
         this.head = head;
         this.tail = tail;
     }
