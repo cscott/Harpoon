@@ -8,6 +8,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.SerializableCodeFactory;
 import harpoon.Interpret.Quads.Method;
 import harpoon.IR.Quads.QuadWithTry;
 
@@ -21,10 +22,12 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Run.java,v 1.1.2.8 1999-08-04 05:52:36 cananian Exp $
+ * @version $Id: Run.java,v 1.1.2.9 1999-08-07 11:22:05 cananian Exp $
  */
 public abstract class Run extends harpoon.IR.Registration {
-    public static void main(String args[]) {
+    public static void main(String args[]) throws IOException {
+	java.io.InputStream startup = null;
+	java.io.OutputStream dump = null;
 	HCodeFactory hf = // default code factory.
 	    harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
 	    (harpoon.IR.Quads.QuadSSA.codeFactory());
@@ -58,19 +61,52 @@ public abstract class Run extends harpoon.IR.Registration {
 		    throw new Error("Could not open " + filename +
 				    " for statistics: " + e.toString());
 		}
+	    } else if (args[i].startsWith("-startup")) {
+		String filename = "./startup-dump";
+		if (args[i].startsWith("-startup:"))
+		    filename = args[i].substring(9);
+		try {
+		    startup = new java.io.FileInputStream(filename);
+		} catch (IOException e) {
+		    throw new Error("Could not open " + filename +
+				    " for startup: " + e.toString());
+		}
+	    } else if (args[i].startsWith("-dump")) {
+		String filename = "./startup-dump";
+		if (args[i].startsWith("-dump:"))
+		    filename = args[i].substring(6);
+		try {
+		    dump = new java.io.FileOutputStream(filename);
+		} catch (IOException e) {
+		    throw new Error("Could not open " + filename +
+				    " for dump: " + e.toString());
+		}
 	    } else break; // no more command-line options.
+	}
+	if (dump!=null) { // make quick-startup dump.
+	    harpoon.Interpret.Quads.Method.makeStartup(hf, dump);
+	    return;
 	}
 	// arg[i] is class name.  Load its main method.
 	if (args.length < i) throw new Error("No class name.");
 	HClass cls = HClass.forName(args[i]);
 	i++;
 	// construct caching code factory.
-	hf = new CachingCodeFactory(hf);
+	final HCodeFactory hf0 = hf;
+	hf = new CachingCodeFactory(new SerializableCodeFactory() {
+	    public String getCodeName() { return hf0.getCodeName(); }
+	    public HCode convert(HMethod m) { return hf0.convert(m); }
+	    public void clear(HMethod m) { /* don't clear. */ }
+	});
 	//////////// now call interpreter with truncated args list.
 	String[] params = new String[args.length-i];
 	System.arraycopy(args, i, params, 0, params.length);
-	harpoon.Interpret.Quads.Method.run(Options.profWriter,
-					   hf, cls, params);
+	if (startup!=null)
+	    harpoon.Interpret.Quads.Method.run(Options.profWriter,
+					       hf, cls, params, startup);
+	else
+	    harpoon.Interpret.Quads.Method.run(Options.profWriter,
+					       hf, cls, params);
 	if (Options.profWriter!=null) Options.profWriter.close();
 	if (Options.statWriter!=null) Options.statWriter.close();
     }
