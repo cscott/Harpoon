@@ -19,6 +19,7 @@ import imagerec.util.ImageDataManip;
  */
 public class AlertServer extends Server {
     private Node out;
+    private Node out2;
 
     /** Construct an {@link AlertServer} node with the default {@link CommunicationsModel}
      *  and name of server as a test for integration with existing BBN UAV software.
@@ -59,7 +60,14 @@ public class AlertServer extends Server {
 		    try {
 			cm.runAlertServer(name, new CommunicationsAdapter() {
 			    public void alert(float c1, float c2, float c3) {
-				AlertServer.this.out.process(ImageDataManip.create(c1, c2, c3));
+				//System.out.println("Alert Server #"+getUniqueID()+" received image.");
+				ImageData newID = ImageDataManip.create(c1, c2, c3);
+				if (out != null) {
+				    AlertServer.this.out.process(newID);
+				}
+				if (out2 != null) {
+				    AlertServer.this.out2.process(newID);
+				}
 			    }
 			});
 		    } catch (Exception e) {
@@ -71,4 +79,31 @@ public class AlertServer extends Server {
 	    throw new Error(e);
 	}
     }
+
+    public void setLeft(Node out) {
+	super.setLeft(out);
+	this.out = out;
+    }
+
+    public void setRight(Node out2) {
+	super.setRight(out2);
+	this.out2 = out2;
+    }
+
+    public Node linkL(Node out) {
+	setLeft(out);
+	return this;
+    }
+    
+    public Node linkR(Node out2) {
+	setRight(out2);
+	return this;
+    }
+
+    public Node link(Node out, Node out2) {
+	setLeft(out);
+	setRight(out2);
+	return this;
+    }
+
 }
