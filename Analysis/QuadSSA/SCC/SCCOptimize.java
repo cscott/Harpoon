@@ -20,7 +20,7 @@ import harpoon.Util.Util;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.5.2.7 1999-02-03 23:10:54 pnkfelix Exp $
+ * @version $Id: SCCOptimize.java,v 1.5.2.8 1999-02-25 21:07:24 cananian Exp $
  */
 public final class SCCOptimize {
     TypeMap  ti;
@@ -108,10 +108,14 @@ public final class SCCOptimize {
 	    public void visit(CONST q) { /* do nothing. */ }
 	    public void visit(FOOTER q) {
 		// remove unexecutable FOOTER edges.
-		for (int i=0; i < q.prev().length; )
-		    if (!execMap(hc, q.prevEdge(i)))
-			q.remove(i);
-		    else i++;
+		FOOTER newF = q;
+		Edge[] prv = q.prevEdge();
+		for (int i=prv.length-1; i>=0; i--)
+		    if (!execMap(hc, prv[i]))
+			newF = newF.remove(i);
+		// add new executable edges to set.
+		for (int i=0; i<newF.prevLength(); i++)
+		    Ee.union(newF.prevEdge(i));
 	    }
 	    public void visit(SIGMA q) {
 		// if the condition is constant, link this sigma (cjmp/switch)
