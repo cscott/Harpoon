@@ -33,7 +33,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.20 1999-09-02 21:28:09 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.21 1999-09-08 18:02:15 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -70,6 +70,12 @@ public abstract class Code extends HCode {
         this.inf = newINF(parent);
     }
     
+    /**
+     * Clone this <code>HCode</code>, possibly moving it to a different method.
+     * Throws <code>CloneNotSupportedException</code> if not overridden.
+     * @exception CloneNotSupportedException if it is not possible to clone
+     *            this <code>HCode</code>.
+     */
     public abstract HCode clone(HMethod newMethod) 
         throws CloneNotSupportedException;
 

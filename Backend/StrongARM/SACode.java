@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>SACode</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SACode.java,v 1.1.2.17 1999-08-18 18:56:36 pnkfelix Exp $
+ * @version $Id: SACode.java,v 1.1.2.18 1999-09-08 18:02:22 cananian Exp $
  */
 public class SACode extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -47,6 +47,8 @@ public class SACode extends harpoon.Backend.Generic.Code {
 
     public String getName() { return codename; }
 
+    /** @exception CloneNotSupportedException <code>clone()</code> is not
+     *             implemented. */
     public HCode clone(HMethod m) throws CloneNotSupportedException {
 	throw new CloneNotSupportedException(this.toString());
     }
