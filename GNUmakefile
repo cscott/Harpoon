@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.60 1999-08-12 16:53:23 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.61 1999-08-18 21:16:51 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -287,6 +287,7 @@ doc-install: doc/TIMESTAMP mark-executable
 	if [ -d CVS ]; then \
           make ChangeLog; \
 	  cp ChangeLog doc/ChangeLog.txt; \
+	  chmod a+r doc/ChangeLog.txt; \
 	fi
 	$(SSH) $(INSTALLMACHINE) \
 		/bin/rm -rf $(INSTALLDIR)/doc
