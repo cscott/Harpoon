@@ -1,5 +1,6 @@
 /* mark segment beginnings */
 #include <config.h>
+#include <sym.h>
 #include "segments.h"
 
 /* quickie convenience macro for tracking down memory errors in
@@ -8,43 +9,43 @@
 #if defined(DEBUG) && defined(WITH_DMALLOC)
 	stmfd sp!, {r0, r1, r2, r3}
 	mov r0, #0
-	bl _dmalloc_verify
+	bl csymbol(dmalloc_verify)
 	ldmfd sp!, {r0, r1, r2, r3}
 #endif /* DEBUG && WITH_DMALLOC */
 .endm
 
 	GC_SEGMENT
 	.align 4
-.global _gc_start
-_gc_start:
+.global csymbol(gc_start)
+csymbol(gc_start):
 
 	GC_INDEX_SEGMENT
 	.align 4
-.global _gc_index_start
-_gc_index_start:
+.global csymbol(gc_index_start)
+csymbol(gc_index_start):
 
 	STATIC_OBJECTS_SEGMENT
 	.align 4
-.global _static_objects_start
-_static_objects_start:
+.global csymbol(static_objects_start)
+csymbol(static_objects_start):
 
 	STRING_CONSTANTS_SEGMENT
 	.align 4
-.global _string_constants_start
-_string_constants_start:
+.global csymbol(string_constants_start)
+csymbol(string_constants_start):
 	
 	FIXUP_SEGMENT
 	.align 8 @ makes the math work out nicer.
-.global _fixup_start
-_fixup_start:
+.global csymbol(fixup_start)
+csymbol(fixup_start):
 
 	CODE_SEGMENT
-.global _code_start
-_code_start:
+.global csymbol(code_start)
+csymbol(code_start):
 
 	TEXT_SEGMENT
-.global _text_start
-_text_start:
+.global csymbol(text_start)
+csymbol(text_start):
 
 	REFLECTION_DATA_SEGMENT
 	.align 4

@@ -1,3 +1,5 @@
+#include <config.h>
+#include <sym.h>
 #include "segments.h"
 
 @ _lookup: tweak the return address on an exception so that execution
@@ -15,8 +17,8 @@ pc	.req	r15
 
 	CODE_SEGMENT
 	
-1:	.word _fixup_start	@ first entry in fixup table
-	.word _fixup_end-8	@ last entry in fixup table
+1:	.word csymbol(fixup_start)	@ first entry in fixup table
+	.word csymbol(fixup_end) - 8	@ last entry in fixup table
 
 	.global _lookup
 _lookup:

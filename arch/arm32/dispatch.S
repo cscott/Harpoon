@@ -1,5 +1,7 @@
 /* do a flex-native method invocation.  This helps patch together
  * flex-native and JNI exception handling. */
+#include <config.h>
+#include <sym.h>
 #include "segments.h"
 
 	CODE_SEGMENT
@@ -23,8 +25,8 @@
 #define argptr	r2
 #define excptr  r3
 
-	.global	_FNI_Dispatch
-_FNI_Dispatch:
+	.global	csymbol(FNI_Dispatch)
+csymbol(FNI_Dispatch):
 	stmfd sp!, { methptr, excptr, fp, sp, lr } @ save caller''s state
 	add fp, sp, #16			@ make frame pointer point at lr.
 	cmp nargs, #2
