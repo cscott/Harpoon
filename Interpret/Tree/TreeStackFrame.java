@@ -14,7 +14,7 @@ import java.util.Hashtable;
  * <code>TreeStackFrame</code> is a stack frame for an interpreted method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeStackFrame.java,v 1.1.2.2 1999-05-10 00:01:17 duncan Exp $
+ * @version $Id: TreeStackFrame.java,v 1.1.2.3 1999-05-17 20:10:01 andyb Exp $
  */
 final class TreeStackFrame extends StackFrame {
     /** current location in the method */
@@ -43,12 +43,12 @@ final class TreeStackFrame extends StackFrame {
     }
 
     void update(Temp t, Object value) {
-	if (DEBUG) db("Updating: " + t + " --> " + value);
+	//if (DEBUG) db("Updating: " + t + " --> " + value);
 	state.put(t, (value==null)?Onull:value);
     }
      
     void update(Exp exp, Object value) {
-	if (DEBUG) db("Updating: " + exp + " --> " + value);
+	//if (DEBUG) db("Updating: " + exp + " --> " + value);
 	state.put(exp, (value==null)?Onull:value);
     }
 

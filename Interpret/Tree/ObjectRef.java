@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>ObjectRef</code> is an object reference in the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectRef.java,v 1.1.2.2 1999-05-10 00:01:16 duncan Exp $
+ * @version $Id: ObjectRef.java,v 1.1.2.3 1999-05-17 20:10:00 andyb Exp $
  */
 class ObjectRef extends Ref {
 
@@ -84,7 +84,7 @@ class ObjectRef extends Ref {
     /** Returns the value of the specified field of this <code>ObjectRef</code>
      */
     Object get(HField f) {
-	if (DEBUG) db("Accessing field: " + f + " in " + this);
+	//if (DEBUG) db("Accessing field: " + f + " in " + this);
 	return FieldValueList.get(this.fields, f);
     }
  
@@ -97,7 +97,7 @@ class ObjectRef extends Ref {
     /** Updates the specified field of this <code>ObjectRef</code> to have
      *  the specified value */
     void update(HField f, Object value) {
-	if (DEBUG) db("Updating field " + f + " in " + this + " to " + value);
+	//if (DEBUG) db("Updating field " + f + " in " + this + " to " + value);
 	this.fields = FieldValueList.update(this.fields, f, value);
     }
 

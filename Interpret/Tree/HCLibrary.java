@@ -8,10 +8,10 @@ import harpoon.ClassFile.HClass;
  * <code>HClass</code> objects for common classes into class scope.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCLibrary.java,v 1.1.2.2 1999-05-10 00:01:14 duncan Exp $
+ * @version $Id: HCLibrary.java,v 1.1.2.3 1999-05-17 20:10:00 andyb Exp $
  */
 class HCLibrary  {
-    void db(String str) { System.out.println(str); } 
+    static void db(String str) { System.out.println(str); } 
     static boolean DEBUG = false;
     static final HClass 
         HCbyteA = HClass.forDescriptor("[B"),
