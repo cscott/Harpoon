@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.13 2001-01-05 21:29:05 pnkfelix Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.14 2001-01-13 21:44:50 cananian Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -62,7 +62,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 
     /** Creates a <code>ReachingDefsImpl</code> object for the
 	provided <code>HCode</code> for an IR implementing
-	<code>UseDef</code> using the provided <code>CFGrapher</code>.
+	<code>UseDefable</code> using the provided <code>CFGrapher</code>.
 	This may take a while since the analysis is done at this time. 
     */
     public ReachingDefsAltImpl(HCode hc, CFGrapher cfger) {

@@ -7,7 +7,7 @@ package harpoon.Analysis.DataFlow;
 import harpoon.Analysis.EdgesIterator;
 import harpoon.Analysis.BasicBlock;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.UseDef;
+import harpoon.IR.Properties.UseDefable;
 import harpoon.Temp.Temp;
 import harpoon.Util.CloneableIterator; 
 import harpoon.Util.Util;
@@ -24,12 +24,12 @@ import java.util.Set;
  * <code>ReachingDefs</code> is a <code>ForwardDataFlowBasicBlockVisitor</code>
  * for performing reaching definitions analysis on any IR that implements
  * <code>HCodeElement</code>, <code>CFGraphable</code>, and 
- * <code>UseDef</code>.  
+ * <code>UseDefable</code>.  
  *
  * @author  John Whaley
  * @author  Felix S Klock <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ReachingDefs.java,v 1.1.2.17 2000-02-03 21:11:55 pnkfelix Exp $
+ * @version $Id: ReachingDefs.java,v 1.1.2.18 2001-01-13 21:45:18 cananian Exp $
  */
 public abstract class ReachingDefs { 
     
@@ -49,7 +49,7 @@ abstract static class BBVisitor extends ForwardDataFlowBasicBlockVisitor {
      *   <LI> <code>basicBlocks</code> is an <code>Iterator</code> of 
      *        <code>BasicBlock</code>s,	       
      *   <LI> All of the instructions in <code>basicBlocks</code> implement
-     *        <code>UseDef</code>, 
+     *        <code>UseDefable</code>, 
      *   <LI> No element of <code>basicblocks</code> links to a
      *        <code>BasicBlock</code> not contained within 
      *        <code>basicBlocks</code>,
@@ -85,7 +85,7 @@ abstract static class BBVisitor extends ForwardDataFlowBasicBlockVisitor {
      *   <LI> <code>basicBlocks</code> is an <code>Iterator</code> of 
      *        <code>BasicBlock</code>s,	       
      *   <LI> All of the instructions in <code>basicBlocks</code> implement
-     *        <code>UseDef</code>, 
+     *        <code>UseDefable</code>, 
      *   <LI> No element of <code>basicblocks</code> links to a
      *        <code>BasicBlock</code> not contained within 
      *        <code>basicBlocks</code>,

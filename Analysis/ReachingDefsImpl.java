@@ -28,7 +28,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.14 2000-07-14 22:17:58 pnkfelix Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.15 2001-01-13 21:44:50 cananian Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -39,7 +39,7 @@ public class ReachingDefsImpl extends ReachingDefs {
     final protected UseDefer ud;
     /** Creates a <code>ReachingDefsImpl</code> object for the
 	provided <code>HCode</code> for an IR implementing
-	<code>UseDef</code> using the provided <code>CFGrapher</code>.
+	<code>UseDefable</code> using the provided <code>CFGrapher</code>.
 	This may take a while since the analysis is done at this time. 
     */
     public ReachingDefsImpl(HCode hc, CFGrapher cfger) {

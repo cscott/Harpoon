@@ -26,7 +26,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.22 2000-10-04 21:21:21 witchel Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.23 2001-01-13 21:45:17 cananian Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -58,7 +58,7 @@ public class LiveTemps extends LiveVars.BBVisitor {
 
     /** Produces a default live variable analysis object and solves
 	it.  elements in <code>code</code> must implement
-	<code>UseDef</code>, <code>CFGraphable</code>, etc, and
+	<code>UseDefable</code>, <code>CFGraphable</code>, etc, and
 	<code>liveOnExit</code> must be a Set of Temps that are live
 	on exit from <code>code</code>.
      */

@@ -10,7 +10,7 @@ import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrVisitor;
-import harpoon.IR.Properties.UseDef;
+import harpoon.IR.Properties.UseDefable;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
@@ -77,7 +77,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.123 2001-01-13 21:08:05 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.124 2001-01-13 21:45:23 cananian Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -810,11 +810,11 @@ public abstract class RegAlloc  {
 	     <BR> 2. <code>iter</code> is left at an undetermined
 	             index. 
     */
-    protected static boolean lastUse(Temp reg, UseDef i, Iterator iter) {
-	UseDef curr = i;
+    protected static boolean lastUse(Temp reg, UseDefable i, Iterator iter) {
+	UseDefable curr = i;
 	boolean r = true;
 	while (iter.hasNext() && ! curr.defC().contains(reg ) ) {
-	    curr = (UseDef) iter.next();
+	    curr = (UseDefable) iter.next();
 
 	    if (curr.useC().contains(reg)) {
 		r = false;

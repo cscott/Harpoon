@@ -6,7 +6,7 @@ package harpoon.IR.Assem;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGEdge;
 import harpoon.IR.Properties.CFGraphable;
-import harpoon.IR.Properties.UseDef;
+import harpoon.IR.Properties.UseDefable;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
@@ -42,8 +42,8 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.83 2000-11-17 23:17:28 pnkfelix Exp $ */
-public class Instr implements HCodeElement, UseDef, CFGraphable {
+ * @version $Id: Instr.java,v 1.1.2.84 2001-01-13 21:45:40 cananian Exp $ */
+public class Instr implements HCodeElement, UseDefable, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
     private static boolean PRINT_INSERTS = false || PRINT_UPDATES_TO_IR;
@@ -675,7 +675,7 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
         return s.toString();
     }
 
-    // ******************** UseDef Interface
+    // ******************** UseDefable Interface
 
     /** Returns the <code>Temp</code>s used by this <code>Instr</code>. */
     public final Temp[] use() { 

@@ -5,7 +5,6 @@ package harpoon.Analysis.Instr;
 
 import harpoon.Temp.Temp;
 import harpoon.IR.Assem.Instr;
-import harpoon.IR.Properties.UseDef;
 import harpoon.Backend.Generic.RegFileInfo;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
@@ -27,7 +26,7 @@ import java.util.HashMap;
     <code>Instr</code>s in a <code>Code</code>.
 
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.14 2001-01-13 21:08:05 cananian Exp $ 
+    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.15 2001-01-13 21:45:23 cananian Exp $ 
 */
 public class DemandDrivenRegAlloc extends RegAlloc {
 

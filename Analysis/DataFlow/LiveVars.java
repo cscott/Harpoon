@@ -48,7 +48,7 @@ import java.util.Iterator;
  * <code>UseDefer</code>s 
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.24 2000-02-16 22:38:00 cananian Exp $ */
+ * @version $Id: LiveVars.java,v 1.1.2.25 2001-01-13 21:45:18 cananian Exp $ */
 public class LiveVars extends Liveness {
     
     private static final boolean DEBUG = false; 
@@ -93,7 +93,7 @@ public class LiveVars extends Liveness {
 
      /** Constructs a new <code>LiveVars</code> for <code>basicblocks</code>.
 	 <BR> <B>requires:</B> All of the statements in
-	      <code>bbFact</code> implement <code>UseDef</code> 
+	      <code>bbFact</code> implement <code>UseDefable</code> 
 	  <BR> <B>effects:</B> constructs a new 
 	       <code>BasicBlockVisitor</code> and initializes its 
 	       internal datasets for analysis of the 
@@ -116,7 +116,7 @@ public class LiveVars extends Liveness {
 	          members of the universe for
 		  <code>tempSetFact</code>.
 	     <LI> All of the statements in <code>bbFact</code>
-	          implement <code>UseDef</code>
+	          implement <code>UseDefable</code>
 	     </OL>
 	 <BR> <B>effects:</B> constructs a new 
 	      <code>BasicBlockVisitor</code> and initializes its 

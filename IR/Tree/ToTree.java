@@ -41,7 +41,6 @@ import harpoon.IR.LowQuad.PMOFFSET;
 import harpoon.IR.LowQuad.POPER;
 import harpoon.IR.LowQuad.PPTR;
 import harpoon.IR.LowQuad.PSET;
-import harpoon.IR.Properties.UseDef;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.Quad;
@@ -77,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.90 2001-01-13 21:08:15 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.91 2001-01-13 21:45:57 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;

@@ -7,14 +7,14 @@ import harpoon.Temp.Temp;
 
 import java.util.Collection;
 /**
- * <code>UseDef</code> defines an interface for intermediate representations
- * that keep use/def information.
+ * <code>UseDefable</code> defines an interface for intermediate
+ * representations that keep use/def information.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.2.2.2 1999-11-05 22:32:55 pnkfelix Exp $
+ * @version $Id: UseDefable.java,v 1.1.2.1 2001-01-13 21:45:47 cananian Exp $
  */
 
-public interface UseDef extends harpoon.ClassFile.HCodeElement {
+public interface UseDefable extends harpoon.ClassFile.HCodeElement {
     /** Return all the <code>Temp</code>s used by this 
      *  <code>HCodeElement</code>. */
     public Temp[] use();

@@ -6,7 +6,7 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
-import harpoon.IR.Properties.UseDef;
+import harpoon.IR.Properties.UseDefable;
 import harpoon.Temp.Temp;
 
 import java.util.Collection;
@@ -17,7 +17,7 @@ import java.util.Set;
  * before they are used.  It aids in debugging code transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDefChecker.java,v 1.1.2.2 2001-01-13 21:10:38 cananian Exp $
+ * @version $Id: UseDefChecker.java,v 1.1.2.3 2001-01-13 21:44:50 cananian Exp $
  */
 public class UseDefChecker implements HCodeFactory {
     HCodeFactory parent;
@@ -39,7 +39,7 @@ public class UseDefChecker implements HCodeFactory {
 	if (hc!=null) {
 	    ReachingDefs rd = rdf.makeReachingDefs(hc);
 	    for (Iterator it=hc.getElementsI(); it.hasNext(); ) {
-		UseDef ud = (UseDef) it.next();
+		UseDefable ud = (UseDefable) it.next();
 		for (Iterator it2=ud.useC().iterator(); it2.hasNext(); ) {
 		    Temp t = (Temp) it2.next();
 		    if (rd.reachingDefs(ud, t).size()==0) {

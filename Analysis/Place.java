@@ -6,7 +6,7 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCode;
 import harpoon.IR.Properties.CFGraphable;
-import harpoon.IR.Properties.UseDef;
+import harpoon.IR.Properties.UseDefable;
 import harpoon.Temp.Temp;
 import harpoon.Util.WorkSet;
 import harpoon.Util.Collections.BitSetFactory;
@@ -23,7 +23,7 @@ import java.util.Set;
  * thesis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.10.2.12 2000-11-10 19:54:12 cananian Exp $
+ * @version $Id: Place.java,v 1.10.2.13 2001-01-13 21:44:49 cananian Exp $
  */
 public class Place {
     private final MultiMap phis;
@@ -36,7 +36,7 @@ public class Place {
 	// collect all vars
         Set vars = new WorkSet();
 	for (Iterator it=hc.getElementsI(); it.hasNext(); )
-	    vars.addAll(((UseDef)it.next()).defC());
+	    vars.addAll(((UseDefable)it.next()).defC());
 	// create result multimaps
 	phis = new GenericMultiMap(new BitSetFactory(vars));
 	sigmas = new GenericMultiMap(new BitSetFactory(vars));
@@ -54,7 +54,7 @@ public class Place {
 	    if (PlaceOne((SESE.Region)it.next(), v, live))
 		flag = true;
 	for (Iterator it=r.nodes().iterator(); !flag && it.hasNext(); ) {
-	    UseDef n = (UseDef) it.next();
+	    UseDefable n = (UseDefable) it.next();
 	    // we need phis for 'use-only' vars because the sigma is
 	    // going to create a definition for them.  Likewise we
 	    // need sigmas for 'def-only' vars. [CSA]

@@ -12,7 +12,7 @@ import java.util.Collection;
  * def information with elements of an intermediate representation.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: UseDefer.java,v 1.1.2.3 2001-01-13 21:12:11 cananian Exp $
+ * @version $Id: UseDefer.java,v 1.1.2.4 2001-01-13 21:45:47 cananian Exp $
  */
 public abstract class UseDefer {
     
@@ -41,20 +41,20 @@ public abstract class UseDefer {
     public abstract Collection defC(HCodeElement hce);
     
     /** Default <code>UseDefer</code> for <code>HCodeElement</code>s
-	which implement <code>UseDef</code>.  Does nothing but cast
+	which implement <code>UseDefable</code>.  Does nothing but cast
 	the supplied <code>HCodeElement</code> to a
-	<code>UseDef</code> and invoke the appropriate corresponding
-	method in the <code>UseDef</code> interface.
+	<code>UseDefable</code> and invoke the appropriate corresponding
+	method in the <code>UseDefable</code> interface.
 	@see java.util.Comparator
 	@see java.lang.Comparable
 	@see harpoon.Util.Default.comparator
     */
     public static final UseDefer DEFAULT = new UseDefer() {
 	public Collection useC(HCodeElement hce) {
-	    return ((UseDef)hce).useC();
+	    return ((UseDefable)hce).useC();
 	}
 	public Collection defC(HCodeElement hce) {
-	    return ((UseDef)hce).defC();
+	    return ((UseDefable)hce).defC();
 	}
     };
 

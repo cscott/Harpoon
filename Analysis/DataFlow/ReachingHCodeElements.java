@@ -6,7 +6,7 @@ package harpoon.Analysis.DataFlow;
 import harpoon.Analysis.BasicBlock; 
 import harpoon.ClassFile.HCodeElement; 
 import harpoon.IR.Properties.CFGraphable; 
-import harpoon.IR.Properties.UseDef; 
+import harpoon.IR.Properties.UseDefable; 
 import harpoon.Temp.Temp; 
 import harpoon.Util.Util; 
 import harpoon.Util.Collections.SetFactory; 
@@ -24,7 +24,7 @@ import java.util.Set;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: ReachingHCodeElements.java,v 1.1.2.8 2000-02-14 13:03:40 cananian Exp $ 
+ * @version $Id: ReachingHCodeElements.java,v 1.1.2.9 2001-01-13 21:45:18 cananian Exp $ 
  */
 public class ReachingHCodeElements extends ReachingDefs.BBVisitor { 
     private BasicBlock.Factory bbfactory;
@@ -42,7 +42,7 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
      *   <LI> <code>bbfactory</code> is a valid
      *        <code>BasicBlock.Factory</code>.
      *   <LI> All of the instructions in <code>basicBlocks</code> implement
-     *        <code>UseDef</code>, 
+     *        <code>UseDefable</code>, 
      * </OL>
      * <BR> <B>effects:</B> constructs a new <code>BasicBlockVisitor</code> 
      *   and initializes internal datasets for analysis of the 
@@ -67,7 +67,7 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
      *   <LI> <code>bbfactory</code> is a valid
      *        <code>BasicBlock.Factory</code>.
      *   <LI> All of the instructions in <code>basicBlocks</code> implement
-     *        <code>UseDef</code>, 
+     *        <code>UseDefable</code>, 
      *   <LI> All of the <code>HCodeElements</code> in <code>basicBlocks</code>
      *        which have non-empty def sets are members of the universe of
      *        <code>setFact</code>. 
@@ -98,7 +98,7 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
      *   <LI> <code>blocks</code> is an <code>Iterator</code> of
      *        <code>BasicBlock</code>s. 
      *   <LI> All of the instructions in each element of <code>blocks</code> 
-     *        implement <code>UseDef</code>. 
+     *        implement <code>UseDefable</code>. 
      * </OL>
      * <BR> <B>modifies:</B> <code>blocks</code>
      * <BR> <B>effects:</B> 
@@ -115,7 +115,7 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
 	    BasicBlock bb = (BasicBlock) blocks.next();
 	    Iterator hces = bb.statements().iterator(); 
 	    while(hces.hasNext()) { 
-		UseDef udNext = (UseDef)hces.next(); 
+		UseDefable udNext = (UseDefable)hces.next(); 
 		if (udNext.def().length > 0) { 
 		    this.universe.add(udNext); 
 		}
@@ -133,7 +133,7 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
      *   <LI> <code>blocks</code> is an <code>Iterator</code> of 
      *        <code>BasicBlock</code>s.  
      *   <LI> All of the instructions in each element of <code>blocks</code>
-     *        implement <code>UseDef</code>. 
+     *        implement <code>UseDefable</code>. 
      *   <LI> All of the <code>HCodeElements</code> in <code>basicBlocks</code>
      *        which have non-empty def sets are members of the universe of
      *        <code>setFact</code>. 
@@ -149,7 +149,7 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
 	    BasicBlock bb = (BasicBlock)blocks.next(); 
 	    Iterator useDefs = bb.statements().iterator(); 
 	    while(useDefs.hasNext()) { 
-		UseDef udNext = (UseDef)useDefs.next(); 
+		UseDefable udNext = (UseDefable)useDefs.next(); 
 		Temp[] defs   = udNext.def();
 		for (int i=0, n=defs.length; i<n; ++i) {
 		    Temp t    = defs[i];
@@ -180,7 +180,7 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
 
 	Iterator useDefs = bb.statements().iterator(); 
 	while(useDefs.hasNext()) {
-	    UseDef udNext = (UseDef) useDefs.next(); 
+	    UseDefable udNext = (UseDefable) useDefs.next(); 
 	    Temp[] defs   = udNext.def();
 	    for (int i=0, n=defs.length; i<n; ++i) {
 		Temp t    = defs[i];
@@ -225,7 +225,7 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
 	    // reaching def information.
 	    Iterator i = bb.statements().iterator(); 
 	    while(i.hasNext()) { 
-		UseDef udCurrent = (UseDef)i.next();
+		UseDefable udCurrent = (UseDefable)i.next();
 		this.rdCache.put(udCurrent, reachBefore);
 		Temp[] defs = udCurrent.def(); 
 		for (int n=0; n<defs.length; n++) { 
@@ -261,7 +261,7 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
     public Set getReachingAfter(HCodeElement hce) { 
 	Set reachAfter = this.getReachingBefore(hce); 
 	
-	Temp[] defs = ((UseDef)hce).def(); 
+	Temp[] defs = ((UseDefable)hce).def(); 
 	for (int i=0; i<defs.length; i++) { 
 	    reachAfter.retainAll((Set)this.tempsToPrsvs.get(defs[i])); 
 	}

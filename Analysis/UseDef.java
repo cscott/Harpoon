@@ -24,7 +24,7 @@ import java.util.Set;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.10.2.5 1999-06-17 20:57:18 cananian Exp $
+ * @version $Id: UseDef.java,v 1.10.2.6 2001-01-13 21:44:50 cananian Exp $
  */
 
 public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
@@ -71,10 +71,10 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	lastHCode = code;
 
 	HCodeElement[] el = code.getElements();
-	if (!(el instanceof harpoon.IR.Properties.UseDef[]))
-	    throw new Error(code.getName() + " does not implement UseDef");
-	harpoon.IR.Properties.UseDef[] udl =
-	    (harpoon.IR.Properties.UseDef[]) el;
+	if (!(el instanceof harpoon.IR.Properties.UseDefable[]))
+	    throw new Error(code.getName() + " does not implement UseDefable");
+	harpoon.IR.Properties.UseDefable[] udl =
+	    (harpoon.IR.Properties.UseDefable[]) el;
 
 	Map workUse = new HashMap();
 	Map workDef = new HashMap();
