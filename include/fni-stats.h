@@ -32,6 +32,14 @@ typedef unsigned long long stat_t;
 # define DECLARE_STATS_LOCAL(which) \
 	stat_t stat_counter_##which;\
 	DECLARE_LOCK_LOCAL(which)
+# define UPDATE_STATS(which, amount) \
+	do {\
+	  stat_t _old_value_;\
+	  LOCK_STATS(which);\
+          _old_value_ = stat_counter_##which;\
+          stat_counter_##which = amount;\
+	  UNLOCK_STATS(which);\
+	} while(0)
 # define INCREMENT_STATS(which, amount) \
 	do {\
 	  LOCK_STATS(which);\
@@ -47,6 +55,7 @@ typedef unsigned long long stat_t;
 #else /* !WITH_STATISTICS */
 # define DECLARE_STATS_EXTERN(which)
 # define DECLARE_STATS_LOCAL(which)
+# define UPDATE_STATS(which, amount) /* no op */
 # define INCREMENT_STATS(which, amount) /* no op */
 # define FETCH_STATS(which) ((size_t)0)
 #endif /* WITH_STATISTICS */
