@@ -42,7 +42,7 @@ import harpoon.Util.Util;
  interation of the loop. 
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Matching.java,v 1.2 2002-02-25 20:58:39 cananian Exp $
+ * @version $Id: Matching.java,v 1.3 2002-11-27 18:29:53 salcianu Exp $
  */
 abstract class Matching implements java.io.Serializable {
 
@@ -83,52 +83,6 @@ abstract class Matching implements java.io.Serializable {
 	    }
 	}
     }
-
-
-    /** Applies rule 0: if there is a mu[i] relation from node1 to node2
-	and there is a mu[ib]/mu[i] relation from node2 to node3, then put a
-	mu[i] relation from node1 to node2.<br>
-	<i>Note</i>: you won't find this rule in the paper; it was added
-	by me to fix the algorithm. */
-    /*
-    public static final void rule0(PANode node1, Set new_mappings_for_node,
-		   ParIntGraph pig[],
-		   PAWorkList W[], Relation mu[], Relation new_info[], 
-		   int i, int ib){
-	HashSet new_nodes3 = new HashSet();
-
-	// for all the possible instances of node2 from the inference rule ...
-	Iterator it2 = new_mappings_for_node.iterator();
-	while(it2.hasNext()){
-	    PANode node2 = (PANode) it2.next();
-	    // ... find all the possible instances of node3 ...
-	    Iterator it3 = mu[ib].getValues(node2).iterator();
-	    while(it3.hasNext()) {
-		PANode node3 = (PANode) it3.next();
-		if(!mu[i].contains(node1,node3))
-		    new_nodes3.add(node3); 
-	    }
-
-	    it3 = mu[i].getValues(node2).iterator();
-	    while(it3.hasNext()){
-		PANode node3 = (PANode) it3.next();
-		if(!mu[i].contains(node1,node3))
-		    new_nodes3.add(node3); 
-	    }
-	}
-
-	System.out.println("rule0 " + node1 + " -> " + new_mappings_for_node);
-
-	if(!new_nodes3.isEmpty()){
-
-	    System.out.println("New mappings: " + node1 + " -> " + new_nodes3);
-
-	    mu[i].addAll(node1, new_nodes3);
-	    new_info[i].addAll(node1, new_nodes3);
-	    W[i].add(node1);
-	}
-    }
-    */
 
 
     /** Applies rule 2: matches an outside edge starting from node1 in 

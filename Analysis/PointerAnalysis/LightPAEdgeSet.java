@@ -23,7 +23,7 @@ import harpoon.Temp.Temp;
  * <code>LightPAEdgeSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: LightPAEdgeSet.java,v 1.4 2002-04-10 03:00:41 cananian Exp $
+ * @version $Id: LightPAEdgeSet.java,v 1.5 2002-11-27 18:29:53 salcianu Exp $
  */
 public class LightPAEdgeSet extends AbstrPAEdgeSet
     implements java.io.Serializable {
@@ -73,6 +73,7 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet
 
 
     public void addEdge(PANode node1, String f, PANode node2) {
+	if(node1.type == PANode.NULL) return;
 	Relation rel = (Relation) node_edges.get(node1);
 	if(rel == null)
 	    node_edges.put(node1, rel = new LightRelation());
@@ -81,6 +82,7 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet
 
 
     public void addEdges(PANode node1, String f, Collection node2s) {
+	if(node1.type == PANode.NULL) return;
 	if(node2s.isEmpty()) return;
 	Relation rel = (Relation) node_edges.get(node1);
 	if(rel == null)

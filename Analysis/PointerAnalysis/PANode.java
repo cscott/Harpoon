@@ -21,7 +21,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PANode.java,v 1.4 2002-04-10 03:00:42 cananian Exp $
+ * @version $Id: PANode.java,v 1.5 2002-11-27 18:29:53 salcianu Exp $
  */
 final public class PANode implements java.io.Serializable {
     // activates some safety tests
@@ -30,27 +30,27 @@ final public class PANode implements java.io.Serializable {
     /** Possible type: Inside node */
     public static final int INSIDE          = 1;
     /** Possible type: Load node */
-    public static final int LOAD            = 4;
+    public static final int LOAD            = 2;
     /** Possible type: Parameter node */
-    public static final int PARAM           = 8;
+    public static final int PARAM           = 3;
     /** Possible type: Return node. Nodes of this type are used to represent
 	the objects normally (i.e. not through a <code>throw</code>)
 	returned by an unanalyzed method. */
-    public static final int RETURN          = 16;
+    public static final int RETURN          = 4;
     /** Possible type: Exception node. Nodes of this type are used to
 	represent the objects returned as exceptions from an unalyzed
 	method. */
-    public static final int EXCEPT          = 32;
+    public static final int EXCEPT          = 5;
     /** Possible type: Static node. 
 	The class nodes from the original algorithm have been renamed
 	STATIC now (just for confusion :-)) */
-    public static final int STATIC          = 64;
+    public static final int STATIC          = 6;
 
-    // /** The null pointers are modeled as pointing to the special node
-    // * NULL_Node of the special type NULL */
-    // public static final int NULL            = 128;
-    ///** A symbolic node for the null pointers */ 
-    //public static final PANode NULL_Node = new PANode(NULL);
+    /** Possible type: null pointers. */
+    public static final int NULL            = 7;
+
+    /** Possible type: constant objects (e.g., Strings) */
+    public static final int CONST           = 8;
 
     /** The type of the node */
     public int type;
@@ -384,17 +384,19 @@ final public class PANode implements java.io.Serializable {
     }
 
     /** Pretty-print function for debug purposes */
-    public final String toString(){
+    public final String toString() {
 	String str = null;
-	switch(type){
-	case INSIDE: str="I";break;
-	case LOAD:   str="L";break;
-	case PARAM:  str="P";break;
-	case RETURN: str="R";break;
-	case EXCEPT: str="E";break;
-	case STATIC: str="S";break;
+	switch(type) {
+	case INSIDE: str="I"; break;
+	case LOAD:   str="L"; break;
+	case PARAM:  str="P"; break;
+	case RETURN: str="R"; break;
+	case EXCEPT: str="E"; break;
+	case STATIC: str="S"; break;
+	case NULL:   str="NULL"; break;
 	}
-	str = str + number;
+	if(type != NULL)
+	    str = str + number;
 	if(isBottom()) str += "B";
 	return str;
     }

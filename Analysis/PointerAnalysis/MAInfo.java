@@ -74,7 +74,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.4 2002-04-10 03:00:41 cananian Exp $
+ * @version $Id: MAInfo.java,v 1.5 2002-11-27 18:29:53 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -261,8 +261,6 @@ public class MAInfo implements AllocationInformation, Serializable {
 	this.node_rep = pa.getNodeRepository();
 
 	this.opt = (MAInfoOptions) opt.clone();
-	System.out.println("After cloning:\n");
-	this.opt.print("\t");
 
 	java_lang_Thread    = linker.forName("java.lang.Thread");
 	java_lang_Throwable = linker.forName("java.lang.Throwable");
@@ -320,8 +318,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	if(ap != null)
 	    return ap;
 
-	// conservative allocation property: on the global heap
-	// (by default).
+	// conservative allocation property: in the global heap
 	return new MyAP(getAllocatedType(allocationSite));
     }
 

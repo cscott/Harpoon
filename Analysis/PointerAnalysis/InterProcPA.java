@@ -51,7 +51,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterProcPA.java,v 1.5 2002-04-22 02:03:32 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.6 2002-11-27 18:29:53 salcianu Exp $
  */
 public abstract class InterProcPA implements java.io.Serializable {
 
@@ -465,13 +465,15 @@ public abstract class InterProcPA implements java.io.Serializable {
     // activates the use of the new mapping constraints
     private static boolean NEW_MAPPING_CONSTRAINTS = false;
     public static boolean VERY_NEW_MAPPINGS = true;
+
+    // activates the use of constraints from Alex Salcianu's thesis.
+    private static boolean THESIS_MAPPING_CONSTRAINTS = true;
     static {
-	if(NEW_MAPPING_CONSTRAINTS) {
-	    System.out.println("InterProcPA: NEW_MAPPING_CONSTRAINTS");
-	    if(VERY_NEW_MAPPINGS)
-		System.out.println("InterProcPA: VERY_NEW_MAPPING");
-	}
-    }    // generates lots of debug messages about the construction of mu
+	if(THESIS_MAPPING_CONSTRAINTS)
+	    System.out.println("InterProcPA: Alex Salcianu's SM thesis");
+    }
+
+    // generates lots of debug messages about the construction of mu
     private static boolean DEBUG_MU = false;
 
     // Computes the mapping mu of the callee nodes
@@ -481,8 +483,9 @@ public abstract class InterProcPA implements java.io.Serializable {
 	 PANode[] callee_params) {
 
 	// use the new mapping constraints, if asked to do so
-	if(NEW_MAPPING_CONSTRAINTS)
-	    return compute_mu(q, pig_caller, pig_callee, callee_params);
+	if(THESIS_MAPPING_CONSTRAINTS)
+	    return ComputeInterProcMuClosure.computeInterProcMu
+		(q, pig_caller, pig_callee, callee_params);
 
 	// get the initial mapping: formal param -> actual parameter,
 	// and class node -> class node
@@ -533,31 +536,26 @@ public abstract class InterProcPA implements java.io.Serializable {
     }
 
 
-    // Updates the mapping mu to contain the mappings for the parameter nodes
+    // Update the mapping mu to contain the mappings for the parameter nodes
     private static void map_parameters
-	(Relation mu, CALL q, ParIntGraph pig_caller, PANode[] callee_params) {
-
-	Temp[] args = q.params();
+	(Relation mu, CALL call,
+	 ParIntGraph pig_caller, PANode[] callee_params) {
+	Temp[] args = call.params();
 	int object_params_count = 0;
-
 	// map the object formal parameter nodes to the actual arguments
 	for(int i = 0; i < args.length; i++)
-	    if(!q.paramType(i).isPrimitive()){
+	    if(!call.paramType(i).isPrimitive()) {
 		mu.addAll(callee_params[object_params_count],
 			  pig_caller.G.I.pointedNodes(args[i]));
 		object_params_count++;
 	    }
-
-	if(object_params_count != callee_params.length){
-	    System.err.println("Fatal error in get_initial_mapping");
-	    System.out.println("\tDifferent numbers of object formal " +
-			       "parameters (" + callee_params.length + 
-			       ") and object arguments (" +
-			       object_params_count + ")");
-	    System.out.println(q);
-	    System.exit(1);
-	}
+	
+	assert object_params_count == callee_params.length :
+	    "\tDifferent numbers of object formals (" + 
+	    callee_params.length + ") and object arguments (" +
+	    object_params_count + ") for \n\t" + Debug.code2str(call);
     }
+
 
     // aux method for get_initial_mapping
     private static void process_STATICs(final Set set, final Relation mu) {
@@ -676,213 +674,6 @@ public abstract class InterProcPA implements java.io.Serializable {
 	return pig;
     }
 
-
-    /////////////////////////////////////////////////////////////////////
-    ////////////////// New mapping constraints START ////////////////////
-
-    private static Relation compute_mu
-	(CALL q,
-	 ParIntGraph pig_caller, ParIntGraph pig_callee,
-	 PANode[] callee_params) {
-
-	// M0 + M1
-	Relation mu = get_initial_mu(q, pig_caller, pig_callee, callee_params);
-
-	if(DEBUG_MU) 
-	    System.out.println("Initial mu: " + mu);
-
-	// M2 + M3
-	extend_mu(mu, pig_caller, pig_callee);
-
-	if(VERY_NEW_MAPPINGS) {
-	    if(DEBUG_MU)
-		System.out.println("mu AFTER extend_mu: " + mu);
-	    compute_the_final_mapping(mu, pig_callee, Collections.EMPTY_SET);
-	}
-
-	if(DEBUG_MU)
-	    System.out.println("Final mu: " + mu);
-
-	return mu;
-    }
-
-
-    // Returns a node mapping initialized by M0 and M1.
-    private static Relation get_initial_mu
-	(CALL q,
-	 ParIntGraph pig_caller, ParIntGraph pig_callee,
-	 PANode[] callee_params) {
-
-	Relation mu = new RelationImpl();
-
-	// constraints M0 & M0'
-	for(Iterator it = pig_callee.allNodes().iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
-	    if(VERY_NEW_MAPPINGS) {
-		// constraint M0': <n,n> \in \mu \forall static nodes n
-		if(node.type == PANode.STATIC)
-		    mu.add(node, node);
-	    } else {
-		// constraint M0: <n,n> \in \mu \forall n \not\in N_P
-		if(node.type != PANode.PARAM)
-		    mu.add(node, node);
-	    }
-	}
-
-	// constraint M1
-	map_parameters(mu, q, pig_caller, callee_params);
-
-	return mu;
-    }
-
-
-    // extend mu through the rules M2 & M3 to obtain the l.f.p. of M0-3
-    private static void extend_mu
-	(Relation mu, ParIntGraph pig_caller, ParIntGraph pig_callee) {
-
-	PAWorkList W = new PAWorkList();
-	// here is the new stuff; only nodes with new stuff are
-	// put in the worklist W.
-	Relation new_info = (Relation) mu.clone();
-
-	W.addAll(mu.keys());
-	while(!W.isEmpty()) {
-	    while(!W.isEmpty()) {
-		PANode node1 = (PANode) W.remove();
-		extend_mu_M2(node1, mu, W, new_info, pig_caller, pig_callee);
-	    }
-	    extend_mu_M3(mu, W, new_info, pig_caller, pig_callee);
-	}
-    }
-
-    // try to extend mu by applying constraint M2 in node node1
-    private static void extend_mu_M2
-	(PANode node1, Relation mu, PAWorkList W, Relation new_info,
-	 ParIntGraph pig_caller, ParIntGraph pig_callee) {
-	// nodes3 stands for all the new instances of n3
-	// from the inference rule
-	HashSet nodes3 = new HashSet(new_info.getValues(node1));
-	new_info.removeKey(node1);
-	
-	Iterator itf = pig_callee.G.O.allFlagsForNode(node1).iterator();
-	while(itf.hasNext()) {
-	    String f = (String) itf.next();
-	    // nodes2 stands for all the nodes that could play
-	    // the role of n2 from the inference rule
-	    Set nodes2 = pig_callee.G.O.pointedNodes(node1, f);
-	    if(nodes2.isEmpty()) continue;
-	    
-	    // nodes4 stands for all the nodes that could play
-	    // the role of n4 from the inference rule
-	    Set nodes4 = pig_caller.G.I.pointedNodes(nodes3, f);
-	    if(!nodes4.isEmpty()) {
-		// set up the relation from any node from nodes2
-		// to any node from nodes4
-		for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-		    PANode node2 = (PANode) it2.next();
-		    boolean changed = false;
-		    for(Iterator it4 = nodes4.iterator(); it4.hasNext();) {
-			PANode node4 = (PANode)it4.next();
-			if(mu.add(node2,node4)){
-			    changed = true;
-			    new_info.add(node2, node4);
-			}
-		    }
-		    // nodes with new info are put in the worklist
-		    if(changed) W.add(node2);
-		}
-	    }
-	}
-    }
-
-
-    // Extend mu to cope with the potential aliasing between nodes in callee
-    private static void extend_mu_M3
-	(Relation mu, PAWorkList W, Relation new_info,
-	 ParIntGraph pig_caller, ParIntGraph pig_callee) {
-	
-	Relation um = new RelationImpl();
-	mu.revert(um);
-	
-	for(Iterator it = um.keys().iterator(); it.hasNext(); ) {
-	    PANode node5 = (PANode) it.next();
-	    Set n1n3 = um.getValues(node5);
-	    if(n1n3.size() < 2) continue;
-
-	    for(Iterator it1 = n1n3.iterator(); it1.hasNext(); ) {
-		PANode node1 = (PANode) it1.next();
-		for(Iterator it3 = n1n3.iterator(); it3.hasNext(); ) {
-		    PANode node3 = (PANode) it3.next();
-		    if(node1 == node3) continue;
-		    extend_mu_M3(node1, node3, mu, W, new_info, pig_callee);
-		}
-	    }
-	}
-    }
-
-
-    // Extend mu to cope with the potential aliasing between node1 and node3
-    private static void extend_mu_M3
-	(PANode node1, PANode node3,
-	 Relation mu, PAWorkList W, Relation new_info,
-	 ParIntGraph pig_callee) {
-
-	if(DEBUG_MU)
-	    System.out.println("extend_mu_M3: node1 = " + node1 +
-			       " node3 = " + node3);
-	
-	Iterator itf = pig_callee.G.I.allFlagsForNode(node3).iterator();
-	while(itf.hasNext()) {
-	    String f = (String) itf.next();
-
-	    Set nodes2 = pig_callee.G.O.pointedNodes(node1, f);
-	    if(nodes2.isEmpty()) continue;
-
-	    Set nodes4 = pig_callee.G.I.pointedNodes(node3, f);
-	    if(nodes4.isEmpty()) continue;
-
-	    Set mu_nodes4 = new HashSet();
-	    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
-		PANode node4 = (PANode) it4.next();
-		mu_nodes4.addAll(mu.getValues(node4));
-	    }
-
-	    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-		PANode node2 = (PANode) it2.next();
-		boolean changed = false;
-		
-		for(Iterator it6 = mu_nodes4.iterator(); it6.hasNext(); ) {
-		    PANode node6 = (PANode) it6.next();
-
-		    if(mu.add(node2, node6)) {
-			if(DEBUG_MU)
-			    System.out.println("  " + node2 + " -> " + node6);
-			changed = true;
-			new_info.add(node2, node6);
-		    }
-		}
-
-		if(VERY_NEW_MAPPINGS) {
-		    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
-			PANode node4 = (PANode) it4.next();
-			if(mu.add(node2, node4)) {
-			    if(DEBUG_MU)
-				System.out.println
-				    ("  " + node2 + " -> " + node4);
-			    changed = true;
-			    new_info.add(node2, node4);
-			}
-		    }
-		}
-
-		// nodes with new info are put in the worklist
-		if(changed) W.add(node2);
-	    }
-	}
-    }
-    
-    ////////////////// New mapping constraints END //////////////////////
-    /////////////////////////////////////////////////////////////////////
 
 
     /** Sets the edges for the result or the exception returned by the callee.

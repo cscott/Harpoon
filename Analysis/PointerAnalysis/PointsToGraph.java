@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.4 2002-04-10 03:00:42 cananian Exp $
+ * @version $Id: PointsToGraph.java,v 1.5 2002-11-27 18:29:53 salcianu Exp $
  */
 public class PointsToGraph implements Cloneable, java.io.Serializable{
 
@@ -198,7 +198,7 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 		       Set noholes,
 		       ODInformation odi_org,
 		       Set holes_b4_callee,
-		       ODInformation odi_new){
+		       ODInformation odi_new) {
 
 	insert_edges(G2.O, G2.I, 
 		     mu, 
@@ -213,7 +213,7 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 		       PAEdgeSet I_org,
 		       Relation mu,
 		       ODInformation odi_tmp,
-		       ODParIntGraph pig){
+		       ODParIntGraph pig) {
 
 	insert_edges(O_org,
 		     I_org,

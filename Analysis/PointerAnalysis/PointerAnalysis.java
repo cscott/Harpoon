@@ -39,6 +39,7 @@ import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.AGET;
 import harpoon.IR.Quads.ALENGTH;
 import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.CONST;
 import harpoon.IR.Quads.ASET;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.MOVE;
@@ -73,7 +74,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.6 2002-07-31 01:15:59 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.7 2002-11-27 18:29:53 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -817,7 +818,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	    // node, referenced through a conventional named field
 	    process_load(q, q.dst(), q.objectref(), ARRAY_CONTENT);
 	}
-	
+
 	/** Does the real processing of a load statement. */
 	public void process_load(Quad q, Temp l1, Temp l2, String f){
 	    Set set_aux = lbbpig.G.I.pointedNodes(l2);
@@ -897,24 +898,34 @@ public class PointerAnalysis implements java.io.Serializable {
 
 	// OBJECT CREATION SITES
 	/** Object creation sites; normal case */
-	public void visit(NEW q){
-	    process_new(q, q.dst());
+	public void visit(NEW q) {
+	    PANode node = process_new(q, q.dst());
+	    HField[] fields = q.hclass().getFields();
+	    for(int i = 0; i < fields.length; i++)
+		if(!fields[i].isStatic())
+		    lbbpig.G.I.addEdge(node, fields[i].getName(),
+				       NodeRepository.NULL_NODE);
 	}
 	
 	/** Object creation sites; special case - arrays */
-	public void visit(ANEW q){
-	    process_new(q, q.dst());
+	public void visit(ANEW q) {
+	    PANode node = process_new(q, q.dst());
+	    lbbpig.G.I.addEdge(node, ARRAY_CONTENT, NodeRepository.NULL_NODE);
 	}
 	
-	private void process_new(Quad q,Temp tmp){
+	private PANode process_new(Quad q, Temp tmp) {
 	    // Kill_I = edges(I,l)
 	    PANode node = nodes.getCodeNode(q,PANode.INSIDE);
 	    lbbpig.G.I.removeEdges(tmp);
 	    // Gen_I = {<l,n>}
 	    lbbpig.G.I.addEdge(tmp,node);
+	    return node;
 	}
 	
-	
+	public void visit(CONST q) {
+	    // TODO
+	}
+
 	/** Return statement: r' = I(l) */
 	public void visit(RETURN q){
 	    Temp tmp = q.retval();
@@ -967,7 +978,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	    Set set1 = lbbpig.G.I.pointedNodes(l1);
 	    Set set2 = lbbpig.G.I.pointedNodes(l2);
 		
-	    lbbpig.G.I.addEdges(set1,f,set2);
+	    lbbpig.G.I.addEdges(set1, f, set2);
 	    lbbpig.G.propagate(set1);
 	}
 	
@@ -1415,32 +1426,4 @@ public class PointerAnalysis implements java.io.Serializable {
     public final Set pointedNodes(Quad q, Temp l) {
 	return pointedNodes(new MetaMethod(quad2method(q), true), q, l);
     }
-    
-
-    /*
-    ////////// SPECIAL HANDLING FOR SOME NATIVE METHODS ////////////////////
-
-    final ParIntGraph getExpParIntGraph(MetaMethod mm){
-	HMethod hm = mm.getHMethod();
-
-	ParIntGraph pig = (ParIntGraph) hash_proc_ext.get(mm);
-	if(pig == null){
-	    pig = ext_pig_for_native(hm);
-	    if(pig != null) hash_proc_ext.put(mm, pig);
-	}
-
-	return pig;
-    }
-
-    private final ParIntGraph ext_pig_for_native(HMethod hm){
-	HClass hclass = hm.getDeclaringClass();
-	String clname = hclass.getName();
-	String hmname = hm.getName();
-
-	if(clname.equals("java.lang.Object") &&
-	   hmname.equals("hashCode"));
-	    
-    }
-    */
-
 }
