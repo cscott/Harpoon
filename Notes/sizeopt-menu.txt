@@ -80,3 +80,9 @@ contained classes?  alloc-once anal.  associate elements info w/
   container's site, not array alloc site.  (now we can say, "only
   integers go into the elementData alloc'd at the Vector alloc site)
   containerizing.
+
+Also: binary trees: MAJORITY of right/left tree links are null
+(see ex 14 in Knuth 2.3.1); make special subclasses of Tree.Node
+for null left, null right, and null right+left links.  Easy if
+Nodes are immutable (like in our PersistentMap structure); hard
+if the nodes are mutable.
