@@ -2,6 +2,7 @@
 #include <jni.h>
 #include "jni-private.h"
 #include "java_lang_reflect_Field.h"
+#include "reflect-util.h"
 
 /*
  * Class:     java_lang_reflect_Field
@@ -38,8 +39,8 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set
  * Signature: ()Ljava/lang/Class;
  */
 JNIEXPORT jclass JNICALL Java_java_lang_reflect_Field_getDeclaringClass
-  (JNIEnv *env, jobject obj) {
-  assert(0);
+  (JNIEnv *env, jobject _this) {
+    return FNI_WRAP(FNI_GetFieldInfo(_this)->declaring_class_object);
 }
 
 /*
@@ -48,8 +49,8 @@ JNIEXPORT jclass JNICALL Java_java_lang_reflect_Field_getDeclaringClass
  * Signature: ()Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_java_lang_reflect_Field_getName
-  (JNIEnv *env, jobject obj) {
-  assert(0);
+  (JNIEnv *env, jobject _this) {
+    return (*env)->NewStringUTF(env, FNI_GetFieldInfo(_this)->fieldID->name);
 }
 /*
  * Class:     java_lang_reflect_Field
@@ -57,8 +58,9 @@ JNIEXPORT jstring JNICALL Java_java_lang_reflect_Field_getName
  * Signature: ()Ljava/lang/Class;
  */
 JNIEXPORT jclass JNICALL Java_java_lang_reflect_Field_getType
-  (JNIEnv *env, jobject obj) {
-  assert(0);
+  (JNIEnv *env, jobject _this) {
+    return REFLECT_parseDescriptor
+	(env, FNI_GetFieldInfo(_this)->fieldID->desc);
 }
 
 #else /* this is the original Sun header */

@@ -10,4 +10,5 @@ libjavalangreflect_la_SOURCES = \
 	java_lang_reflect_Field.c java_lang_reflect_Field.h \
 	java_lang_refect_Member.h \
 	java_lang_reflect_Method.c java_lang_reflect_Method.h \
-	java_lang_reflect_Modifier.h
+	java_lang_reflect_Modifier.h \
+	reflect-util.c reflect-util.h

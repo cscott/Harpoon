@@ -4,6 +4,7 @@
 #include "java_lang_Class.h"
 #include "../java.lang.reflect/java_lang_reflect_Member.h"
 #include "../java.lang.reflect/java_lang_reflect_Modifier.h"
+#include "../java.lang.reflect/reflect-util.h"
 #ifdef WITH_TRANSACTIONS
 # include "../transact/transact.h"
 #endif
@@ -388,7 +389,7 @@ static jboolean isAptMember(JNIEnv *env, jclass cls, union _jmemberID *mptr,
 }
 
 /* helper method */
-static jobjectArray JNICALL Java_java_lang_Class_getMembers
+static jobjectArray Java_java_lang_Class_getMembers
   (JNIEnv *env, jclass cls, jint which, enum memberType type) {
   /* membersAreMethods is JNI_TRUE to collect methods, else JNI_FALSE */
   /* 'which' can be Member.PUBLIC (0) or Member.DECLARED (1) */
@@ -433,7 +434,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getFields0
  * Signature: (I)[Ljava/lang/reflect/Method;
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getMethods0
-  (JNIEnv *env, jobject cls, jint which) {
+  (JNIEnv *env, jclass cls, jint which) {
   return Java_java_lang_Class_getMembers(env, cls, which, METHODS);
 }
 
@@ -443,18 +444,50 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getMethods0
  * Signature: (I)[Ljava/lang/reflect/Constructor;
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getConstructors0
-  (JNIEnv *env, jobject cls, jint which) {
+  (JNIEnv *env, jclass cls, jint which) {
   return Java_java_lang_Class_getMembers(env, cls, which, CONSTRUCTORS);
 }
 
-#if 0
+/* helper method */
+static jobject findMember(JNIEnv *env, jclass cls,
+			  int which, enum memberType type,
+			  int (*f)(union _jmemberID *ptr),
+			  char *exclassname) {
+  struct FNI_classinfo *info = FNI_GetClassInfo(cls);
+  jclass excls, memberClass;
+  union _jmemberID *ptr;
+  /* find class corresponing to the type of member we're interested in */
+  memberClass = (*env)->FindClass(env,
+				  (type==FIELDS)?"java/lang/reflect/Field":
+				  (type==METHODS)?"java/lang/reflect/Method":
+				  "java/lang/reflect/Constructor");
+  /* search for member */
+  for (ptr=info->memberinfo; ptr < info->memberend; ptr++)
+    if (isAptMember(env, cls, ptr, which, (type!=FIELDS), memberClass) &&
+	f(ptr))
+      /* found! */
+      return FNI_WRAP(ptr->f.reflectinfo->field_object);
+  /* not found =( */
+  excls = (*env)->FindClass(env, exclassname);
+  if ((*env)->ExceptionOccurred(env)) return;
+  (*env)->ThrowNew(env, excls, "no such member");
+  return NULL;
+}
+
 /*
  * Class:     java_lang_Class
  * Method:    getField0
  * Signature: (Ljava/lang/String;I)Ljava/lang/reflect/Field;
  */
 JNIEXPORT jobject JNICALL Java_java_lang_Class_getField0
-  (JNIEnv *, jobject, jstring, jint);
+  (JNIEnv *env, jclass cls, jstring name, jint which) {
+  const char *cname = (*env)->GetStringUTFChars(env, name, NULL);
+  int cmp(union _jmemberID *ptr) { return 0==strcmp(ptr->f.name, cname); }
+  jobject result = findMember(env, cls, which, FIELDS, cmp,
+			      "java/lang/NoSuchFieldException");
+  (*env)->ReleaseStringUTFChars(env, name, cname);
+  return result;
+}
 
 /*
  * Class:     java_lang_Class
@@ -462,7 +495,27 @@ JNIEXPORT jobject JNICALL Java_java_lang_Class_getField0
  * Signature: (Ljava/lang/String;[Ljava/lang/Class;I)Ljava/lang/reflect/Method;
  */
 JNIEXPORT jobject JNICALL Java_java_lang_Class_getMethod0
-  (JNIEnv *, jobject, jstring, jobjectArray, jint);
+  (JNIEnv *env, jclass cls, jstring name, jobjectArray paramTypes, jint which){
+  const char *cname = (*env)->GetStringUTFChars(env, name, NULL);
+  int nparams = (*env)->GetArrayLength(env, paramTypes);
+  /* method comparison function */
+  int cmp(union _jmemberID *ptr) {
+    int i; char *desc;
+    if (strcmp(ptr->m.name, cname)!=0) return 0;
+    for (i=0, desc=ptr->m.desc+1; desc!=NULL && *desc!=')';
+	 desc = REFLECT_advanceDescriptor(desc), i++) {
+      if (i>=nparams) return 0; /* too many parameters */
+      if (!(*env)->IsSameObject
+	  (env, REFLECT_parseDescriptor(env, desc),
+	   (*env)->GetObjectArrayElement(env, paramTypes, i))) return 0;
+    }
+    return (i==nparams);
+  }
+  jobject result = findMember(env, cls, which, METHODS, cmp,
+			      "java/lang/NoSuchMethodException");
+  (*env)->ReleaseStringUTFChars(env, name, cname);
+  return result;
+}
 
 /*
  * Class:     java_lang_Class
@@ -470,6 +523,21 @@ JNIEXPORT jobject JNICALL Java_java_lang_Class_getMethod0
  * Signature: ([Ljava/lang/Class;I)Ljava/lang/reflect/Constructor;
  */
 JNIEXPORT jobject JNICALL Java_java_lang_Class_getConstructor0
-  (JNIEnv *, jobject, jobjectArray, jint);
-
-#endif
+  (JNIEnv *env, jclass cls, jobjectArray paramTypes, jint which) {
+  int nparams = (*env)->GetArrayLength(env, paramTypes);
+  /* method comparison function */
+  int cmp(union _jmemberID *ptr) {
+    int i; char *desc;
+    for (i=0, desc=ptr->m.desc+1; desc!=NULL && *desc!=')';
+	 desc = REFLECT_advanceDescriptor(desc), i++) {
+      if (i>=nparams) return 0; /* too many parameters */
+      if (!(*env)->IsSameObject
+	  (env, REFLECT_parseDescriptor(env, desc),
+	   (*env)->GetObjectArrayElement(env, paramTypes, i))) return 0;
+    }
+    return (i==nparams);
+  }
+  jobject result = findMember(env, cls, which, CONSTRUCTORS, cmp,
+			      "java/lang/NoSuchMethodException");
+  return result;
+}
