@@ -46,19 +46,19 @@ import java.util.Map;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.5 2003-07-11 09:38:35 cananian Exp $
  */
 
-public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
-    UseDefMap usedef;
+public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap<Quad> {
+    UseDefMap<Quad> usedef;
     boolean verifierBehavior;
 
-    Map map = new HashMap();
+    Map<Temp,ExactType> map = new HashMap<Temp,ExactType>();
 
     /** Creates a <code>TypeInfo</code> analyzer for the specified
      *  <code>HCode</code>, which must be in quad-ssi form.
      */
-    public TypeInfo(harpoon.IR.Quads.Code hc, UseDefMap usedef) { 
+    public TypeInfo(harpoon.IR.Quads.Code hc, UseDefMap<Quad> usedef) { 
 	this(hc, usedef, false);
     }
 
@@ -72,7 +72,7 @@ public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
      *  the <code>TypeInfo</code> handles this case gracefully, rather than
      *  failing an assertion.
      */
-    public TypeInfo(harpoon.IR.Quads.Code hc, UseDefMap usedef, boolean vBehavior) { 
+    public TypeInfo(harpoon.IR.Quads.Code hc, UseDefMap<Quad> usedef, boolean vBehavior) { 
 	this.usedef = usedef; 
 	this.verifierBehavior=vBehavior;
 	assert hc.getName().equals(harpoon.IR.Quads.QuadSSI.codename);
@@ -82,32 +82,34 @@ public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
     /** Creates a <code>TypeInfo</code> analyzer for the specified
      *  <code>HCode</code>, which must be in quad-ssi form.
      */
-    public TypeInfo(harpoon.IR.Quads.Code hc) { this(hc, new UseDef()); }
+    public TypeInfo(harpoon.IR.Quads.Code hc) { this(hc, new UseDef<Quad>()); }
     
-    public HClass typeMap(HCodeElement hce, Temp t)
+    public HClass typeMap(Quad hce, Temp t)
 	throws TypeNotKnownException { return exactType(hce, t).type; }
-    public boolean isExactType(HCodeElement hce, Temp t)
+    public boolean isExactType(Quad hce, Temp t)
 	throws TypeNotKnownException { return exactType(hce, t).isExact; }
-    private ExactType exactType(HCodeElement hce, Temp t)
+    private ExactType exactType(Quad hce, Temp t)
 	throws TypeNotKnownException {
+	assert hce!=null : "HCE is null! "+hce+"/"+t;
+	assert t!=null : "t is null! "+hce+"/"+t;
 	if (hce==null || t==null) throw new NullPointerException();
 	if (!hasType(hce, t)) throw new TypeNotKnownException(hce, t);
-	return (ExactType) map.get(t);
+	return map.get(t);
     }
-    private boolean hasType(HCodeElement hce, Temp t) {
+    private boolean hasType(Quad hce, Temp t) {
 	return map.containsKey(t);
     }
 
     private void analyze(harpoon.IR.Quads.Code hc) {
-	Quad ql[] = (Quad[]) hc.getElements();
+	Quad ql[] = hc.getElements();
 	
-	WorkSet worklist = new WorkSet(); // use as FIFO
+	WorkSet<Quad> worklist = new WorkSet<Quad>(); // use as FIFO
 	for (int i=0; i<ql.length; i++)
 	    worklist.add(ql[i]);
 
 	// hack to handle typecasting:
 	//  keep track of booleans defined by instanceof's and acmpeq's.
-	Map checkcast = new HashMap();
+	Map<Temp,Quad> checkcast = new HashMap<Temp,Quad>();
 	if (!verifierBehavior)
 	    for (int i=0; i<ql.length; i++)
 		if (ql[i] instanceof INSTANCEOF ||
@@ -116,15 +118,15 @@ public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
 	
 	TypeInfoVisitor tiv = new TypeInfoVisitor(hc, checkcast, verifierBehavior);
 	while(!worklist.isEmpty()) {
-	    Quad q = (Quad) worklist.removeFirst(); // use as FIFO
+	    Quad q = worklist.removeFirst(); // use as FIFO
 	    tiv.modified = false;
 	    q.accept(tiv);
 	    if (tiv.modified) {
 		Temp[] d = q.def();
 		for (int i=0; i<d.length; i++) {
-		    HCodeElement[] u = usedef.useMap(hc, d[i]);
+		    Quad[] u = usedef.useMap(hc, d[i]);
 		    for (int j=0; j<u.length; j++) {
-			worklist.add((Quad)u[j]); // only pushes unique quads.
+			worklist.add(u[j]); // only pushes unique quads.
 		    }
 		}
 	    }
@@ -134,12 +136,12 @@ public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
     class TypeInfoVisitor extends QuadVisitor {
 	harpoon.IR.Quads.Code hc;
 	boolean modified = false;
-	Map checkcast;
+	Map<Temp,Quad> checkcast;
 	HClass hclassObj;
 	boolean verifierBehavior;
 	Linker linker;
 
-	TypeInfoVisitor(harpoon.IR.Quads.Code hc, Map checkcast, boolean verifierBehavior) { 
+	TypeInfoVisitor(harpoon.IR.Quads.Code hc, Map<Temp,Quad> checkcast, boolean verifierBehavior) { 
 	    this.hc = hc; this.checkcast = checkcast;
 	    this.verifierBehavior=verifierBehavior;
 	    this.linker = hc.getMethod().getDeclaringClass().getLinker();
@@ -270,7 +272,7 @@ public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
 	    // special case comparisons against NULL.
 	    INSTANCEOF idef = null; // CJMP test is from this INSTANCEOF
 	    OPER       odef = null; // CJMP test is from this OPER
-	    Quad def = (Quad) checkcast.get(q.test());
+	    Quad def = checkcast.get(q.test());
 	    if (def instanceof INSTANCEOF) idef = (INSTANCEOF)def;
 	    if (def instanceof OPER)       odef = (OPER)def;
 
@@ -322,9 +324,9 @@ public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
     ExactType exact(HClass c) { return new ExactType(c, true); }
     ExactType inexact(HClass c) { return new ExactType(c, false); }
 
-    boolean merge(HCodeElement hce, Temp t, ExactType newType) {
+    boolean merge(Quad hce, Temp t, ExactType newType) {
 	if (!hasType(hce, t)) { map.put(t, newType); return true; }
-     	ExactType oldType = (ExactType) map.get(t);
+     	ExactType oldType = map.get(t);
 	if (oldType.equals(newType)) return false;
 	// special case 'Void' HClass, which is used for null constants.
 	if (oldType.type==HClass.Void && newType.type != HClass.Void) {

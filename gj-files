@@ -115,6 +115,7 @@ Analysis/Quads/Nonvirtualize.java
 Analysis/Quads/QuadClassHierarchy.java
 Analysis/Quads/QuadInterferenceGraph.java
 Analysis/Quads/QuadLiveness.java
+Analysis/Quads/TypeInfo.java
 Analysis/Quads/TypeSwitchRemover.java
 Analysis/Quads/Unreachable.java
 Analysis/Quads/Virtualize.java
@@ -135,6 +136,7 @@ Analysis/SSxReachingDefsImpl.java
 Analysis/Transactions/AnalysisCheckOracle.java
 Analysis/Transactions/DominatingCheckOracle.java
 Analysis/Transactions/CheckOracle.java
+Analysis/Transactions/MethodGenerator.java
 Analysis/Transactions/SimpleCheckOracle.java
 Analysis/Transactions/SyncTransformer.java
 Analysis/Transformation/MethodMutator.java
@@ -144,6 +146,7 @@ Analysis/Tree/DeadCodeElimination.java
 Analysis/Tree/JumpOptimization.java
 Analysis/Tree/MemHoisting.java
 Analysis/Tree/Simplification.java
+Analysis/UseDef.java
 Backend/Analysis/ClassFieldMap.java
 Backend/Analysis/InsertWriteBarrier.java
 Backend/Analysis/MakeGCThreadSafe.java
