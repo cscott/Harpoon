@@ -24,7 +24,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.28 1999-08-10 18:13:54 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.29 1999-08-10 18:22:22 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -205,7 +205,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    
 	    // look at exp
 	    TypeExpRecurse r = new 
-		TypeExpRecurse("(("+TREE_EXP+")"+ stmPrefix + ").exp",
+		TypeExpRecurse("(("+TREE_DATA+")"+ stmPrefix + ").data",
 			       indentPrefix + "\t");
 	    s.data.accept(r);
 	    degree += r.degree;
