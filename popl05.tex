@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: popl05.tex,v 1.5 2004-07-16 16:24:56 cananian Exp $
+% $Id: popl05.tex,v 1.6 2004-07-16 16:58:48 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csaacmconfbig} % 15 page limit
 %\usepackage{times}
@@ -37,7 +37,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.5 $ $}
+%\date{\today \\ $ $Revision: 1.6 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -1240,6 +1240,24 @@ checked with Spin version 4.1.0 and verified to operate correctly and
 without races.  The verification was done on an SGI 64-processor MIPS
 machine with 16G of memory.
 
+Sequences of transactional and non-transactional load and store
+operations were checked using two concurrent processes, and all possible
+interleavings were found to produce correct results consistent with
+the semantic atomicity of the transactions.  A number of subtle race
+conditions were discovered and corrected during this process.
+In particular, early versions of the algorithms sometimes allowed
+readers to escape being aborted while racing a writer in
+createVersion, and could allow inconsistent reads.
+
+Spin is not particularly suited to checking models with dynamic
+allocation and deallocation.  In particular, it considers the
+location of objects part of the state space, and allocating object
+A before object B produces a different state than if object B
+were allocated first.  This artificially enlarges the
+state space.  A great deal of effort was expended tweaking the
+model to approach a canonical allocation ordering.  A better solution
+to this problem would allow larger model instances to be checked.
+
 \punt{
 \secput{eval}{Evaluation}
 
@@ -1310,6 +1328,11 @@ easier to break up the large transaction than to break up a locked
 block.
 }
 \secput{related}{Related work}
+A number of researchers have been investigating transactional memory
+systems.  This is the first paper to present a model-checked non-blocking
+object-oriented system which allows co-existence of non-transactional and
+transactional accesses to a dynamic set of object fields.
+
 \subsecput{nb-sync}{Non-blocking synchronization}
 
 Lamport presented the first alternative to synchronization via mutual
@@ -1644,6 +1667,7 @@ available for download at
 \bibliographystyle{plain}
 \bibliography{xaction}
 
+\clearpage
 \appendix
 \secput{promela}{Promela Primer}
 A concise Promela reference is available at
@@ -1656,7 +1680,8 @@ conventions.  Statements are separated by either a semi-colon, or,
 equivalently, an arrow.  The arrow is typically used to separate a
 guard expression from the statements it is guarding.
 
-Execution of a statement occurs only if it is enabled.  Most
+The program counter moves past a statement only if the statement is
+{\it enabled}.  Most
 statements, including assignments, are always enabled.
 A statement consisting only of an expression is enabled iff the
 expression is true (non-zero).
@@ -1706,8 +1731,8 @@ indivisible.
 
 Functions as specified in this model are similar to C macros: every
 parameter is potentially both an input {\it and} an output.  Calls to
-functions beginning with {\tt move} are simple assignments; they've
-been turned into macros so that reference counting allocated objects
+functions with names starting with {\tt move} are simple assignments;
+they've been turned into macros so that reference counting
 can be performed.
 
 \punt{
