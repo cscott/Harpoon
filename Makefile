@@ -25,7 +25,7 @@ DSOURCES=$(wildcard paper/README paper/p* src/*.html src/graph/*.html)
 DSOURCES += $(wildcard src/util/*.html src/corba/*.html src/rtj/*.html)
 DSOURCES += $(wildcard src/rtj/stubs/*.html)
 MANIFEST=$(wildcard src/manifest/*.MF)
-RELEASE=$(SOURCES) README BUILDING COPYING Makefile $(IMAGES) $(DSOURCES) $(BISOURCES) $(MANIFEST)
+RELEASE=$(SOURCES) README BUILDING COPYING CREDITS Makefile $(IMAGES) $(DSOURCES) $(BISOURCES) $(MANIFEST)
 JDIRS=imagerec FrameManip omg ATRManip quo rss HTTPClient demo java_cup org
 
 # figure out what the current CVS branch is, by looking at the Makefile
