@@ -23,6 +23,7 @@ import harpoon.ClassFile.SerializableCodeFactory;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ANEW;
 import harpoon.IR.Quads.ARRAYINIT;
 import harpoon.IR.Quads.ASET;
 import harpoon.IR.Quads.CALL;
@@ -38,6 +39,7 @@ import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.MONITORENTER;
 import harpoon.IR.Quads.MONITOREXIT;
 import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.NOP;
 import harpoon.IR.Quads.OPER;
 import harpoon.IR.Quads.PHI;
@@ -74,7 +76,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.17 2001-02-26 23:31:43 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.18 2001-03-03 17:43:25 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -109,6 +111,9 @@ public class SyncTransformer
 	!Boolean.getBoolean("harpoon.synctrans.nofieldoracle");
     private final boolean useSmartCheckOracle = // dumb down check oracle
 	!Boolean.getBoolean("harpoon.synctrans.nocheckoracle");
+    // this might have to be tweaked if we're using counters which are
+    // added *before* SyncTransformer gets the code.
+    private final boolean excludeCounters = true;
 
     // FieldOracle to use.
     final FieldOracle fieldOracle;
@@ -273,8 +278,10 @@ public class SyncTransformer
 	METHOD qM = qH.method();
 	// recursively decend the dominator tree, rewriting as we go.
 	if (enabled &&
-	    ! ("harpoon.Runtime.Transactions".equals
-	       (hc.getMethod().getDeclaringClass().getPackage()))) {
+	    (! "harpoon.Runtime.Transactions".equals
+	       (hc.getMethod().getDeclaringClass().getPackage())) &&
+	    (!excludeCounters || ! "harpoon.Runtime.Counters".equals
+	     (hc.getMethod().getDeclaringClass().getName()))) {
 	    CheckOracle co = new SimpleCheckOracle(noArrayModification);
 	    if (useSmartCheckOracle) {
 		DomTree dt = new DomTree(hc, false);
@@ -392,6 +399,16 @@ public class SyncTransformer
 	}
 
 	public void visit(Quad q) { addChecks(q); }
+	public void visit(ANEW q) {
+	    CounterFactory.spliceIncrement
+		(qf, q.prevEdge(0), "synctrans.new_array");
+	    visit((Quad)q);
+	}
+	public void visit(NEW q) {
+	    CounterFactory.spliceIncrement
+		(qf, q.prevEdge(0), "synctrans.new_object");
+	    visit((Quad)q);
+	}
 
 	public void visit(METHOD q) {
 	    addChecks(q);
@@ -538,6 +555,8 @@ public class SyncTransformer
 	    addChecks(q);
 	    if (noFieldModification || noArrayModification) return;
 	    if (handlers==null) { // non-transactional read
+		CounterFactory.spliceIncrement
+		    (qf, q.prevEdge(0), "synctrans.read_nt_array");
 		Edge e = readNonTrans(q.nextEdge(0), q,
 				      q.dst(), q.objectref(), q.type());
 		e = addArrayTypeCheck(e, q, ts.versioned(q.objectref()),
@@ -548,6 +567,8 @@ public class SyncTransformer
 		// workaround for multi-dim arrays. yucky.
 		addArrayTypeCheck(q.prevEdge(0), q, q.objectref(), q.type());
 	    } else { // transactional read
+		CounterFactory.spliceIncrement
+		    (qf, q.prevEdge(0), "synctrans.read_t_array");
 		CounterFactory.spliceIncrement
 		    (qf, q.prevEdge(0), "synctrans.read_t");
 		AGET q0 = new AGET(qf, q, q.dst(),
@@ -630,6 +651,8 @@ public class SyncTransformer
 	    addChecks(q);
 	    if (noFieldModification || noArrayModification) return;
 	    if (handlers==null) { // non-transactional write
+		CounterFactory.spliceIncrement
+		    (qf, q.prevEdge(0), "synctrans.write_nt_array");
 		Temp t0 = new Temp(tf, "oldval");
 		Edge in = q.prevEdge(0);
 		in = addArrayTypeCheck(in, q, q.objectref(), q.type());//workaround
@@ -639,6 +662,8 @@ public class SyncTransformer
 	    } else {
 		CounterFactory.spliceIncrement
 		    (qf, q.prevEdge(0), "synctrans.write_t");
+		CounterFactory.spliceIncrement
+		    (qf, q.prevEdge(0), "synctrans.write_t_array");
 	    }
 	    // both transactional and non-transactional write.
 	    ASET q0 = new ASET(qf, q, ts.versioned(q.objectref()),
@@ -772,7 +797,7 @@ public class SyncTransformer
 	    }
 	    if (skipped > 0)
 		in = CounterFactory.spliceIncrement
-		    (qf, in, "synctrans.fieldschecks_skipped", skipped);
+		    (qf, in, "synctrans.fieldchecks_skipped", skipped);
 	    if (done > 0)
 		in = CounterFactory.spliceIncrement
 		    (qf, in, "synctrans.fieldchecks", done);
