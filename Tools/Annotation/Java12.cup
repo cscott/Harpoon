@@ -23,13 +23,21 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
 
-/* Java 1.2 parser for CUP.  
+/* Java 1.4 parser for CUP.  (despite the class name)
  * Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
  * This program is released under the terms of the GPL; see the file
  * COPYING for more details.  There is NO WARRANTY on this code.
  */
 
 /*
+JDK 1.4 Features added:
+  assertion statement.
+  statement_without_trailing_substatement ::= ...
+     |		assert_statement ;
+assert_statement ::=
+		ASSERT expression SEMICOLON
+	|	ASSERT expression COLON expression SEMICOLON
+	;
 JDK 1.2 Features added:
   strictfp modifier.
   explicit_constructor_invocation ::= ...
@@ -470,11 +478,12 @@ terminal java.lang.Character CHARACTER_LITERAL;
 terminal java.lang.String STRING_LITERAL;
 terminal NULL_LITERAL;
 
-// strictfp keyword, new in Java 1.2
-terminal STRICTFP;
-
 // Reserved but unused:
 terminal CONST, GOTO;
+// strictfp keyword, new in Java 1.2
+terminal STRICTFP;
+// lexer compatibility with Java 1.4
+terminal ASSERT;
 
 // 19.2) The Syntactic Grammar
 non terminal goal;
@@ -560,6 +569,7 @@ non terminal return_statement, throw_statement;
 non terminal synchronized_statement, try_statement;
 non terminal catches_opt, catches, catch_clause;
 non terminal finally;
+non terminal assert_statement;
 // 19.12) Expressions
 non terminal HClass primary, primary_no_new_array;
 non terminal class_instance_creation_expression;
@@ -791,7 +801,6 @@ class_body_declaration ::=
 	|	static_initializer
 	|	constructor_declaration
 	|	block
-	|	SEMICOLON /* the extra semicolon has become official JLS */
 	;
 class_member_declaration ::=
 		field_declaration
@@ -802,6 +811,7 @@ class_member_declaration ::=
            annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
 	:} class_body {: popenv(); :}
 	|	interface_declaration
+	|	SEMICOLON /* the extra semicolon has become official JLS */
 	;
 
 // 19.8.2) Field Declarations
@@ -1042,6 +1052,7 @@ statement_without_trailing_substatement ::=
 	|	synchronized_statement
 	|	throw_statement
 	|	try_statement
+	|	assert_statement
 	;
 empty_statement ::=
 		SEMICOLON
@@ -1167,6 +1178,10 @@ catch_clause ::=
 		CATCH LPAREN {:pushenv();:} formal_parameter RPAREN block {:popenv();:}
 	;
 finally ::=	FINALLY block
+	;
+assert_statement ::=
+		ASSERT expression SEMICOLON
+	|	ASSERT expression COLON expression SEMICOLON
 	;
 
 // 19.12) Expressions

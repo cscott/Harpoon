@@ -16,9 +16,7 @@ import java.io.FileReader;
 public class Main {
   public static void main(String args[]) throws Exception {
     Reader fr = new BufferedReader(new FileReader(args[0]));
-    // Change the boolean in the next line to 'false' for a
-    // pre-java 1.2 lexer.
-    Lexer l = new harpoon.Tools.Annotation.Lex.Lexer(fr, true);
+    Lexer l = new harpoon.Tools.Annotation.Lex.Lexer(fr);
     Java12 g = new Java12(l);
     g./*debug_*/parse();
     System.exit(l.numErrors());

@@ -13,17 +13,19 @@ import java.util.Arrays;
 public class Lexer implements harpoon.Tools.Annotation.Lexer {
   LineNumberReader reader;
   boolean isJava12;
+  boolean isJava14;
   String line = null;
   int line_pos = 1;
   int line_num = 0;
   LineList lineL = new LineList(-line_pos, null); // sentinel for line #0
   
   public Lexer(Reader reader) {
-    this(reader, true); // by default, use a Java 1.2-compatible lexer.
+    this(reader, 4); // by default, use a Java 1.4-compatible lexer.
   }
-  public Lexer(Reader reader, boolean isJava12) {
+  public Lexer(Reader reader, int java_minor_version) {
     this.reader = new LineNumberReader(new EscapedUnicodeReader(reader));
-    this.isJava12 = isJava12;
+    this.isJava12 = java_minor_version >= 2;
+    this.isJava14 = java_minor_version >= 4;
   }
   
   public java_cup.runtime.Symbol nextToken() throws java.io.IOException {
@@ -207,7 +209,7 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
   }
 
   static final String[] keywords = new String[] {
-    "abstract", "boolean", "break", "byte", "case", "catch", "char",
+    "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
     "class", "const", "continue", "default", "do", "double", "else", 
     "extends", "final", "finally", "float", "for", "goto", "if", 
     "implements", "import", "instanceof", "int", "interface", "long", 
@@ -229,6 +231,8 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
     if (s.equals("true")) return new BooleanLiteral(true);
     if (s.equals("false")) return new BooleanLiteral(false);
     // Check against keywords.
+    //  pre-java 1.4 compatibility:
+    if (!isJava14 && s.equals("assert")) return new Identifier(s);
     //  pre-java 1.2 compatibility:
     if (!isJava12 && s.equals("strictfp")) return new Identifier(s);
     // use binary search.

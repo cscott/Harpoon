@@ -23,6 +23,7 @@ class Keyword extends Token {
   static private final Hashtable key_table = new Hashtable();
   static {
     key_table.put("abstract", new Integer(Sym.ABSTRACT));
+    key_table.put("assert", new Integer(Sym.ASSERT));
     key_table.put("boolean", new Integer(Sym.BOOLEAN));
     key_table.put("break", new Integer(Sym.BREAK));
     key_table.put("byte", new Integer(Sym.BYTE));
