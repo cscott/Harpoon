@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <stdlib.h> /* for malloc */
 #include "flexthread.h" /* for mutex ops */
 #ifdef WITH_DMALLOC
 #include "dmalloc.h"
@@ -14,7 +15,6 @@
 
 static jfieldID pathID = 0; /* The field ID of File.path */
 static int inited = 0; /* whether the above variables have been initialized */
-static jclass MEMExcCls  = 0; /* The java/io/IOException class object */
 FLEX_MUTEX_DECLARE_STATIC(init_mutex);
 
 static int initializeFI(JNIEnv *env) {
@@ -28,11 +28,6 @@ static int initializeFI(JNIEnv *env) {
   if ((*env)->ExceptionOccurred(env)) goto done;
   pathID = (*env)->GetFieldID(env,FIcls,"path","Ljava/lang/String;");
   if ((*env)->ExceptionOccurred(env)) goto done;
-
-  MEMExcCls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
-  if ((*env)->ExceptionOccurred(env)) goto done;
-  /* make IOExcCls into a global reference for future use */
-  MEMExcCls = (*env)->NewGlobalRef(env, MEMExcCls);
 
   inited = 1;
  done:
@@ -314,7 +309,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_io_File_list0(JNIEnv *env, jobject this
   }
  error0:
   (*env)->ReleaseStringUTFChars(env,jstr,path);
-  if (oom) (*env)->Throw(env, MEMExcCls);
+  if (oom) (*env)->Throw(env, (*env)->FindClass(env, "java/lang/OutOfMemoryError"));
   return NULL;
 }
 
