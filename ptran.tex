@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.29 2002-07-25 16:10:14 cananian Exp $
+% $Id: ptran.tex,v 1.30 2002-07-25 17:56:21 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.29 $ $}
+\date{\today \\ $ $Revision: 1.30 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -296,9 +296,9 @@ U =
 then
 \begin{multline*}
 \forall \left\{\tuple{v_1,s_1},\tuple{v_2,s_2}\right\} \subseteq U :
-\\\shoveright{
+\hfill
 v_1 \text{ singular at } s_1 \text{ conditional on } P_1
-}\\\shoveright{{}\wedge
+\mspace{-2mu}\quad\\\shoveright{{}\wedge
 v_2 \text{ singular at } s_2 \text{ conditional on } P_2
 }\\\shoveright{{}\wedge
 v_1 \text{ at } s_1 \text{ on } P_1
@@ -322,15 +322,19 @@ formal parameters.
 
 \section{Compositional Pointer Analysis}
 
-(Roughly) We use the Whaley/Rinard compositional pointer analysis
-framework, except that we can mark edges as ``companion'' and
-``possible companion''.  Annotate edges with the field set statements
-used to create them.  If all field set statements associated with an
-edge are mutually-singular, then the edge is a companion ---
-``possibly companion'' if some of the edges are outside edges (thus
-we don't know if the field set statements associated with these edges
-are going to be mutually-singular with the rest).  ``Possibly
-companion'' edges must still be mutually-singular internally.
+\subsection{Overview}
+Our compositional pointer analysis is loosely based on the Whaley/Rinard
+escape and points-to framework.  We maintain additional
+information sufficient to mark possible ``companion'' edges, and
+extend the composition rules to maintain this information.
+Unlike Whaley/Rinard, our analysis is flow-insensitive
+and may be partially context-insensitive as well.  
+We use the potential companion edges, in addition to escape information,
+to determine whether to evaluate call-sites monomorphically or
+polymorphically.
+We also allow points-to solutions via Steensgaard-style unification as well as
+the Anderson-style set constraints in the previous Whaley/Rinard
+work.\footnote{Not yet.}
 
 \begin{myfigure}
 \begin{tabular}{ll|ll}
@@ -339,10 +343,10 @@ $p\in P$ & formal parameter variables&$N_I\subseteq N$ & inside nodes\\
 $v\in V=L\cup P$& all variables      &$N_T\subseteq N_I$ & thread nodes\\
 $c\in C$ & classes                   &$N_O\subseteq N$ & outside nodes\\
 $m\in M$ & methods                   &$C\subseteq N$ & (static) class nodes\\
-$f\in F$ & fields                    &$N_P\subseteq N_I$ & parameter nodes\\
-$s\in S$ & statements                &$N_G\subseteq N_I$ & global nodes\\
-         &                           &$N_L\subseteq N_I$ & load nodes\\
-         &                           &$N_R\subseteq N_I$ & return nodes\\
+$f\in F$ & fields                    &$N_P\subseteq N_O$ & parameter nodes\\
+$s\in S$ & statements                &$N_G\subseteq N_O$ & global nodes\\
+         &                           &$N_L\subseteq N_O$ & load nodes\\
+         &                           &$N_R\subseteq N_O$ & return nodes\\
 \end{tabular}
 \caption{Definitions}
 \label{fig:defin}
@@ -388,20 +392,34 @@ and then recursively:
 \end{multline*}
 % INVARIANT: a node n never *un*escapes during the (intraproc?) analysis.
 
-We can determine whether an inside edge is a companion or possible
-companion as follows:
+We define the following auxilliary function:
 \begin{multline*}
-\text{companion}(\tuple{O,I,e,s,r},\tuple{\tuple{n_1,f},n_2})=\\
-\exists P : c(\tuple{\tuple{n_1,f},n_2})
-\text{ are mutually singular conditional on }P
+\text{condsing}(S):2^S\to 2^P_\bot = \begin{cases}
+P & \text{such that } S \text{ are mutually-singular conditional on }P \\
+\bot & \text{if no such }P\text{ exists.}
+\end{cases}
 \end{multline*}
+Now we say that given \tuple{O,I,e,s,r},
+an edge $\tuple{\tuple{n_1,f},n_2} \in I$ is a:
+\begin{itemize}
+\item \newterm{Definite companion} if:
 \begin{multline*}
-\text{companion}_\text{possible}(\tuple{O,I,e,s,r},\tuple{\tuple{n_1,f},n_2})=
-\\
-\text{companion}(\tuple{O,I,e,s,r},\tuple{\tuple{n_1,f},n_2}) \wedge {}\\
-\exists n'\in N:\tuple{\tuple{n',f},n_2}\in O
+ n_1\in I \wedge n_2\in I \wedge
+ \text{condsing}(c(\tuple{\tuple{n_1,f},n_2}))=\emptyset \wedge {}\\
+ \neg\text{escaped}(n_1) \wedge
+ \neg\exists n'\in N: \tuple{\tuple{n',f},n_2}\in O
 \end{multline*}
+% XXX some redundancy here?
+\item \newterm{Non-companion} if:
+\begin{displaymath}
+ \text{condsing}(c(\tuple{\tuple{n_1,f},n_2})) = \bot
+\end{displaymath}
+\item \newterm{Possible companion} otherwise.
+\end{itemize}
+We will say that an edge is a \newterm{companion edge} if it is a
+definite or possible companion.
 
+\subsection{Inference rules}
 At the start of the analysis, we set $I=\emptyset$, $O=\emptyset$,
 $e(n)=\emptyset$ for all $n\in N$, $c(i)=\emptyset$ for all $i\in I$,
 and $r=\emptyset$.
