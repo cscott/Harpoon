@@ -22,7 +22,7 @@ import java.util.Vector;
  * in the Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FixupFunc.java,v 1.1.2.4 1999-03-03 01:18:01 cananian Exp $
+ * @version $Id: FixupFunc.java,v 1.1.2.5 1999-08-04 04:31:23 cananian Exp $
  * @see Translate
  */
 
@@ -34,12 +34,15 @@ class FixupFunc  {
     }
     private static void place(QuadSSA c) {
 	Place P = new Place(c);
+	int phicount=0, sigcount=0, quadcount=0;
 	
 	for (Enumeration e = c.getElementsE(); e.hasMoreElements(); ) {
 	    Quad Q = (Quad) e.nextElement();
+	    quadcount++;
 	    // algorithm wants to place phis on FOOTER.
 	    if (Q instanceof PHI) {
 		Temp[] neededPhi = P.phiNeeded(Q);
+		phicount+=neededPhi.length;
 		if (neededPhi.length > 0) {
 		    // place phi functions.
 		    PHI q = (PHI) Q; // better be a phi!
@@ -53,6 +56,7 @@ class FixupFunc  {
 	    // algorithm wants to place sigmas on HEADER and METHOD.
 	    if (Q instanceof SIGMA) {
 		Temp[] neededSig = P.sigNeeded(Q);
+		sigcount+=neededSig.length;
 		if (neededSig.length > 0) {
 		    // place sigma functions.
 		    SIGMA q = (SIGMA) Q; // better be a sigma!
@@ -64,6 +68,8 @@ class FixupFunc  {
 		}
 	    }
 	}
+	if (harpoon.Main.Options.statWriter!=null)
+	    harpoon.Main.Options.statWriter.println("PHISIG: "+quadcount+" "+phicount+" "+sigcount+" "+(phicount+sigcount));
     }
     private static void rename(final QuadSSA c, final DomTree dt) {
 	final FFCount Count = new FFCount();
