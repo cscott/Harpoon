@@ -60,9 +60,17 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.40 2001-07-05 05:03:41 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.41 2001-07-05 19:35:14 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
+    // turning on this option means that no calls to synchronization primitives
+    // will be generated.  this will obviously impair correctness if such
+    // primitives are actually needed by the program, but allows us to
+    // make a quick-and-dirty benchmark of the maximum-possible performance
+    // improvement due to synchronization optimizations.
+    private static boolean noSync =
+	Boolean.getBoolean("harpoon.runtime1.nosync");
+
     // allocation strategy to use.
     final AllocationStrategy as;
 
@@ -515,8 +523,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     public Translation.Exp monitorEnter(TreeFactory tf, HCodeElement source,
 					DerivationGenerator dg,
 					Translation.Exp objectref) {
-	if (Boolean.getBoolean("harpoon.runtime1.nosync"))
-	    return new Translation.Ex(new CONST(tf, source, 0));
+	if (noSync) return objectref; // may have side-effects.
 	// call FNI_MonitorEnter()
 	return new Translation.Nx(_call_FNI_Monitor(tf, source, dg, objectref,
 						    true));
@@ -525,8 +532,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     public Translation.Exp monitorExit(TreeFactory tf, HCodeElement source,
 				       DerivationGenerator dg,
 				       Translation.Exp objectref) {
-	if (Boolean.getBoolean("harpoon.runtime1.nosync"))
-	    return new Translation.Ex(new CONST(tf, source, 0));
+	if (noSync) return objectref; // may have side-effects.
 	// call FNI_MonitorExit()
 	return new Translation.Nx(_call_FNI_Monitor(tf, source, dg, objectref,
 						    false));
