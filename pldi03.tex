@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi03.tex,v 1.6 2002-11-16 08:45:07 cananian Exp $
+% $Id: pldi03.tex,v 1.7 2002-11-16 09:11:12 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{acmconf}
 %\usepackage[section,plain]{algorithm}
@@ -9,6 +9,7 @@
 \usepackage{graphicx} % for eps figures
 \usepackage{color}
 \usepackage{comdef}
+\usepackage{support}
 \newcommand{\figscale}{1.0}
 
 %setup varioref package
@@ -30,23 +31,23 @@ Cambridge, MA 02139 \\
 }
 
 % MISSING IDEAS:
-%  pointer compression?
-%  more discussion of multithreading semantics?
-%  atomic update of 3-byte objects
-%  hashtable picture?
-%  more discussion of exectution time?
-%  more back-patting on bitwidth analysis?  signed integers.
-%  which fields got split/specialized?
-%  make the case for constant field elimination *in the compiler*
-%  talk about static elimination of hash/locks?
-%  kava paper in related work?
-%  page numbers for citations
+%  pointer compression? NO
+%  more discussion of multithreading semantics? NO
+%  atomic update of 3-byte objects NO
+%  hashtable picture? NO
+%  more discussion of exectution time? YES
+%  more back-patting on bitwidth analysis?  signed integers. NO
+%  which fields got split/specialized? YES
+%  make the case for constant field elimination *in the compiler* YES
+%  talk about static elimination of hash/locks? NO
+%  kava paper in related work? YES
 
 %\renewcommand{\baselinestretch}{0.97}
 \begin{document}
 \bibliographystyle{plain}
 %
 \maketitle
+\support{This research was supported by DARPA/AFRL Contract F33615-00-C-1692.}
 %
 % abstract
 \begin{abstract}
