@@ -29,11 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.16 1998-08-31 23:42:54 cananian Exp $
- */
-
-/*
- * To do: figure out interface for trans(State, ...)
+ * @version $Id: Translate.java,v 1.17 1998-09-01 21:55:07 cananian Exp $
  */
 
 /* State holds state *after* execution of corresponding instr. */
@@ -100,6 +96,16 @@ class Translate  { // not public.
 	    tb[0] = ee;
 	    ns[0] = new BlockContext();
 	    return new State(stack, lv, tb, monitorDepth, ns);
+	}
+	/** Make new state by clearing the stack and pushing a 
+	    <code>Temp</code>. */
+	State enterCatch(Temp top) {
+	    Temp stk[] = new Temp[] { top };
+	    BlockContext ns[] = (BlockContext[]) this.nest.clone();
+	    ns[0] = new BlockContext(nest[0].exitBlock,
+				     nest[0].exitTemp,
+				     (Vector) nest[0].continuation.clone());
+	    return new State(stk, lv, tryBlock, monitorDepth, ns);
 	}
 	/** Make new state by entering a monitor block. */
 	State enterMonitor() {
@@ -197,78 +203,152 @@ class Translate  { // not public.
 	Quad quads = new METHODHEADER(params);
 
 	// translate using state.
-	//trans(s); // FIXME
+	trans(s, bytecode.getTryBlocks(), (Instr) bytecode.getElements()[0], 
+	      quads, 0);
 
 	// return result.
 	return quads;
     }
-    static final Quad trans(State initialState, ExceptionEntry allTries[],
+
+    static class TransState {
+	State initialState;
+	Instr in;
+	Quad  header; 
+	int which_succ;
+	TransState(State initialState, Instr in, Quad header, int which_succ) {
+	    this.initialState = initialState;
+	    this.in = in;
+	    this.header = header;
+	    this.which_succ = which_succ;
+	}
+    }
+
+    static final void trans(State initialState, ExceptionEntry allTries[],
 			    Instr blockTop, Quad header, int which_succ) {
-	Stack todo = new Stack(); todo.push(blockTop);
-	State s = initialState; // abbreviation, for convenience.
+	trans(new TransState(initialState, blockTop, 
+				    header, which_succ), allTries);
+    }
+    static private final void trans(TransState ts0, ExceptionEntry allTries[]){
+	Stack todo = new Stack(); todo.push(ts0);
 	StateMap sm = new StateMap();
 
 	while (!todo.empty()) {
-	    in = todo.pop();
-	// Are we entering a new TRY block?
-	if (countTry(in, allTries) > s.tryBlock.length) {
-	    // determine which try block we're entering
-	    ExceptionEntry newTry = null;
-	    for (int i=0; i<allTries.length; i++) {
-		if (allTries[i].inTry(in)) {
-		    int j;
-		    for (j=0; j<s.tryBlock.length; j++)
-			if (s.tryBlock[j]==allTries[i])
-			    break;
-		    if (j==s.tryBlock.length) { // try not in current state.
-			newTry = allTries[i];
-			break;
-		    }
+	    TransState ts = (TransState) todo.pop();
+	    // convenience abbreviations of TransState fields.
+	    State s = ts.initialState;
+
+	    // Are we entering a new TRY block?
+	    if (countTry(ts.in, allTries) > s.tryBlock.length) {
+		// determine which try block we're entering
+		ExceptionEntry newTry = whichTry(ts.in, s, allTries);
+		Util.assert(newTry != null);
+		// Make header nodes for new TRY.
+		Quad tryBlock = new HEADER();
+		Quad catchBlock = new HEADER();
+		// Recursively generate tryBlock quads.
+		State ns0 = s.enterTry(newTry);
+		trans(ns0, allTries, ts.in, tryBlock, 0);
+		// Generate catchBlock
+		State ns1 = ns0.enterCatch(new Temp("catch"));
+		trans(ns1, allTries, newTry.handler(), catchBlock, 0);
+		// make quad.
+		Quad q = new TRY(ts.in, tryBlock, catchBlock, 
+				 newTry.caughtException(), ns1.stack[0]);
+		// Link TRY to header.
+		Quad.addEdge(ts.header, ts.which_succ, q, 0);
+		// make post-TRY quads.
+		int i;
+		for (i=0; i<ns1.nest[0].continuation.size()-1; i++) {
+		    // if exitTemp==i then goto continuation[i]
+		    Instr dstInstr = 
+			(Instr) ns1.nest[0].continuation.elementAt(i);
+		    Quad q0 = new CONST(dstInstr, new Temp(),
+					new Integer(i), HClass.Int);
+		    Quad q1 = new OPER(dstInstr, "icmpeq", new Temp(),
+				       new Temp[] { ns1.nest[0].exitTemp,
+						    q0.def()[0] });
+		    Quad q2 = new CJMP(dstInstr, q1.def()[0] );
+		    Quad.addEdge(q, 0, q0, 0);
+		    Quad.addEdge(q0,0, q1, 0);
+		    Quad.addEdge(q1,0, q2, 0);
+		    TransState nts;
+		    if (i<ns0.nest[0].continuation.size())
+			nts = new TransState(ns0.exitTry(),
+					     dstInstr, q2, 1);
+		    else
+			nts = new TransState(ns1.exitTry(),
+					     dstInstr, q2, 1);
+		    todo.push(nts);
+		    q = q2;
 		}
+		// default branch.
+		Instr dstInstr = (Instr) ns1.nest[0].continuation.elementAt(i);
+		TransState nts;
+		if (i<ns0.nest[0].continuation.size())
+		    nts = new TransState(ns0.exitTry(),
+					 dstInstr, q, 0);
+		else
+		    nts = new TransState(ns1.exitTry(),
+					 dstInstr, q, 0);
+		todo.push(nts);
+		continue;
 	    }
-	    Util.assert(newTry != null);
-	    // Make header nodes for new TRY.
-	    Quad tryBlock = new HEADER();
-	    Quad catchBlock = new HEADER();
-	    // Recursively generate tryBlock quads.
-	    State ns = s.enterTry(newTry);
-	    trans(ns, allTries, in, tryBlock, 0);
-	    // FIXME catchBlock
-	    Quad q = new TRY(in, tryBlock, catchBlock, 
-			     newTry.caughtException());
-	    // Link everything together.
-	    Quad.addEdge(header, which_succ, q, 0);
-	    // FIXME make post-TRY quads.
-	    return q;
+	    // Are we entering a new MONITOR block?
+	    else if (ts.in.getOpcode() == Op.MONITORENTER) {
+		// Make header nodes for block.
+		Quad monitorBlock = new HEADER();
+		// Recursively generate monitor quads.
+		State ns = s.enterMonitor().pop();
+		trans(ns, allTries, ts.in, monitorBlock, 0);
+		// Make and link MONITOR
+		Quad q = new MONITOR(ts.in, s.stack[0], monitorBlock);
+		Quad.addEdge(ts.header, ts.which_succ, q, 0);
+		// FIXME make post-MONITOR quads.
+		int i;
+		for (i=0; i<ns.nest[0].continuation.size()-1; i++) {
+		    // if exitTemp==i then goto continuation[i]
+		    Instr dstInstr = 
+			(Instr) ns.nest[0].continuation.elementAt(i);
+		    Quad q0 = new CONST(dstInstr, new Temp(),
+					new Integer(i), HClass.Int);
+		    Quad q1 = new OPER(dstInstr, "icmpeq", new Temp(),
+				       new Temp[] { ns.nest[0].exitTemp,
+						    q0.def()[0] });
+		    Quad q2 = new CJMP(dstInstr, q1.def()[0] );
+		    Quad.addEdge(q, 0, q0, 0);
+		    Quad.addEdge(q0,0, q1, 0);
+		    Quad.addEdge(q1,0, q2, 0);
+		    todo.push(new TransState(ns.exitMonitor(),
+					     dstInstr, q2, 1));
+		    q = q2;
+		}
+		// default branch.
+		Instr dstInstr = (Instr) ns.nest[0].continuation.elementAt(i);
+		todo.push(new TransState(ns.exitMonitor(), dstInstr, q, 0));
+		continue;
+	    }
+	    // Are we exiting a TRY or MONITOR block?
+	    else if ((!s.tryBlock[0].inTry(ts.in)) ||
+		     (ts.in.getOpcode() == Op.MONITOREXIT)) {
+		// FIXME PHI FUNCTION.
+		Quad q1 = new CONST(ts.in, s.nest[0].exitTemp,
+				    new Integer(s.nest[0].continuation.size()),
+				    HClass.Int);
+		s.nest[0].continuation.addElement(ts.in);
+		Quad q2 = new JMP(ts.in); // to s.exitBlock()
+		// FIXME
+		continue;
+	    }
+	    // Are we exiting a CATCH block...
+	    else if (false) { // FIXME write test.
+	    }
+	    // None of the above.
+	    else {
+		//Quad q = transInstr(initialState, ts.in) // FIXME
+	    }
 	}
-	// Are we entering a new MONITOR block?
-	else if (in.getOpcode() == Op.MONITORENTER) {
-	    // Make header nodes for block.
-	    Quad monitorBlock = new HEADER();
-	    // Recursively generate monitor quads.
-	    State ns = s.enterMonitor().pop();
-	    trans(ns, allTries, in, monitorBlock, 0);
-	    // Make and link MONITOR
-	    Quad q = new MONITOR(in, s.stack[0], monitorBlock);
-	    Quad.addEdge(header, which_succ, q, 0);
-	    // FIXME make post-MONITOR quads.
-	    return q;
-	}
-	// Are we exiting a TRY or MONITOR block?
-	else if ((!s.tryBlock[0].inTry(in)) ||
-		 (in.getOpcode() == Op.MONITOREXIT)) {
-	    Quad q1 = new CONST(in, s.nest[0].exitTemp,
-				new Integer(s.nest[0].continuation.size()),
-				HClass.Int);
-	    s.nest[0].continuation.addElement(in);
-	    Quad q2 = new JMP(in); // to s.exitBlock()
-	    // FIXME
-	}
-	// None of the above.
-	else {
-	    //Quad q = transInstr(initialState, in) // FIXME
-	}
-	return null; // FIXME
+	// done.
+	return;
     }
     private static int countTry(Instr in, ExceptionEntry[] tb) {
 	int n=0;
@@ -276,6 +356,25 @@ class Translate  { // not public.
 	    if (tb[i].inTry(in))
 		n++;
 	return n;
+    }
+    private static ExceptionEntry whichTry(Instr in, State s,
+					   ExceptionEntry[] allTries)
+    {
+	// determine which try block we're entering
+	ExceptionEntry newTry = null;
+	for (int i=0; i<allTries.length; i++) {
+	    if (allTries[i].inTry(in)) {
+		int j;
+		for (j=0; j<s.tryBlock.length; j++)
+		    if (s.tryBlock[j]==allTries[i])
+			break;
+		if (j==s.tryBlock.length) { // try not in current state.
+		    newTry = allTries[i];
+		    break;
+		}
+	    }
+	}
+	return newTry; // null if can't find.
     }
 
     static final Instr[] transBasicBlock(StateMap s, Instr in) {
@@ -333,10 +432,19 @@ class Translate  { // not public.
 		      new HClass[] {HClass.Int, HClass.forClass(short.class)});
     }
 
-    static final Quad transInstr(StateMap sm, InGen in) {
-	State s = sm.get(in.prev()[0]);
+    static class Chunk {
+	Quad start, end;
+	State exitState;
+	Chunk(State exitState, Quad start, Quad end) {
+	    this.start = start; this.end = end;
+	    this.exitState = exitState;
+	}
+    }
+    static final Chunk transInstr(State s, InGen in) {
 	State ns;
 	Quad q;
+	Quad last = null;
+
 	switch(in.getOpcode()) {
 	case Op.AALOAD:
 	    ns = s.pop(2).push(new Temp());
@@ -378,6 +486,7 @@ class Translate  { // not public.
 			     new CALL(in, hc.getMethod("<init>","(I)V"),
 				      ns.stack[0], new Temp[] {s.stack[0]})
 			     );
+		last = q.next[0];
 		break;
 	    }
 	case Op.ARRAYLENGTH:
@@ -717,6 +826,7 @@ class Translate  { // not public.
 				      new Temp[] { s.lv[opd0.getIndex()], 
 						       constant})
 			     );
+		last = q.next[0];
 		break;
 	    }
 	case Op.INSTANCEOF:
@@ -829,8 +939,9 @@ class Translate  { // not public.
 	default:
 	    throw new Error("Unknown InGen opcode.");
 	}
-	sm.put(in, ns);
-	return q;
+	// Okay.  Make a nice Chunk like a well-behaved method ought.
+	if (last == null) last = q;
+	return new Chunk(ns, q, last);
     }
     static final Quad transInstr(StateMap s, InCti in) {
 	/*

@@ -11,10 +11,10 @@ import harpoon.Temp.Temp;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.7 1998-08-27 00:59:05 cananian Exp $
+ * @version $Id: CJMP.java,v 1.8 1998-09-01 21:55:07 cananian Exp $
  */
 
-public abstract class CJMP extends Quad {
+public class CJMP extends Quad {
     public Temp test;
 
     /** Creates a <code>CJMP</code>. */
