@@ -66,7 +66,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.49 2000-05-17 20:24:22 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.50 2000-05-20 19:10:45 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -105,6 +105,8 @@ public abstract class PAMain {
     // use the inter-thread stage of the analysis while determining the
     // memory allocation policies
     private static boolean USE_INTER_THREAD = true;
+
+    private static boolean DEBUG = false;
 
     private static String[] examples = {
 	"java -mx200M harpoon.Main.PAMain -a multiplyAdd --ccs=2 --wts" + 
@@ -171,6 +173,12 @@ public abstract class PAMain {
     // the methods.
     private static HCodeFactory hcf = null;
 
+
+    // global variables used for benchmarking (19/05/2000).
+    // TODO: Remove with the first occasion!
+    private static long g_tstart = 0L;
+    private static long g_tend   = 0L;
+
     public static final void main(String[] params){
 
 	int optind = get_options(params);
@@ -206,6 +214,11 @@ public abstract class PAMain {
 	long tstop  = 0;
 
 	long start_pre_time = System.currentTimeMillis();
+
+	//B/
+	g_tstart = System.currentTimeMillis();
+
+
 	root_method.name = "main";
 	root_method.declClass = params[optind];
 	optind++;
@@ -218,7 +231,6 @@ public abstract class PAMain {
 	    if(hm[i].getName().equals(root_method.name))
 		hroot = hm[i];
 	if(hroot == null){
-
 	    root_method.name = "init"; // maybe it's an applet
 	    hroot = null;
 	    for(int i = 0;i<hm.length;i++)
@@ -353,9 +365,14 @@ public abstract class PAMain {
 	    Debug.show_split(mcg.getSplitRelation());
 	}
 
+	//B/
+	System.out.println("Total pre-analysis time : " +
+			   (System.currentTimeMillis() - start_pre_time) +
+			   "ms");
+
 	pa = new PointerAnalysis(mcg, mac, lbbconv);
 
-	if(MA_STATS) ma_statistics(pa,hroot);
+	if(MA_STATS) ma_statistics(pa, hroot);
 
 	if(DO_ANALYSIS){
 	    for(Iterator it = mm_to_analyze.iterator(); it.hasNext(); ){
@@ -746,25 +763,36 @@ public abstract class PAMain {
 	    mms.addAll(mcg.getTransCallees(mm));
 	}
 
-	System.out.println("ROOT META-METHOD: " + mroot);
-	System.out.println("RELEVANT META-METHODs:{");
-	for(Iterator it = mms.iterator(); it.hasNext(); ){
-	    MetaMethod mm = (MetaMethod) it.next();
-	    if(pa.analyzable(mm.getHMethod()))
-		System.out.println("  " + mm);
+	if(DEBUG){
+	    System.out.println("ROOT META-METHOD: " + mroot);
+	    System.out.println("RELEVANT META-METHODs:{");
+	    for(Iterator it = mms.iterator(); it.hasNext(); ){
+		MetaMethod mm = (MetaMethod) it.next();
+		if(pa.analyzable(mm.getHMethod()))
+		    System.out.println("  " + mm);
+	    }
+	    System.out.println("}");
 	}
-	System.out.println("}");
 
 	// this should analyze everything
 	pa.getIntParIntGraph(mroot);
 	pa.getExtParIntGraph(mroot);
 	pa.threadInteraction(mroot);  
 
-	MAInfo mainfo = new MAInfo(pa, hcf, mms, USE_INTER_THREAD);
-	// show the allocation policies
-	mainfo.print();
+	
+	//B/
+	System.out.println("PRE-ANALYSIS + ANALYSIS TIME : " +
+			   (System.currentTimeMillis() - g_tstart) + "ms");
 
-	System.out.println("===================================");
+	g_tstart = System.currentTimeMillis(); //B/
+
+	MAInfo mainfo = new MAInfo(pa, hcf, mms, USE_INTER_THREAD);
+
+	//B/
+	System.out.println("GENERATION OF MA INFO TIME  : " +
+			   (System.currentTimeMillis() - g_tstart) + "ms");
+
+	g_tstart = System.currentTimeMillis();
 
 	System.out.print("Dumping the code factory + maps into the file " +
 			 MA_MAPS_OUTPUT_FILE + " ... ");
@@ -781,7 +809,15 @@ public abstract class PAMain {
 	    System.err.println(e);
 	}
 
-	System.out.println("done!");
+
+	if(SHOW_DETAILS){
+	    // show the allocation policies
+	    System.out.println();
+	    mainfo.print();
+	    System.out.println("===================================");
+	}
+
+	System.out.println((System.currentTimeMillis() - g_tstart) + "ms");
     }
 
     // extract the method roots from the set of all the roots

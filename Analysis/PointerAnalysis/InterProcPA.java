@@ -37,7 +37,7 @@ import harpoon.Util.Util;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.38 2000-05-18 03:51:54 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.39 2000-05-20 19:10:42 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -51,7 +51,7 @@ abstract class InterProcPA {
 	This is not necessarily an error! For example, if an application
 	is never instatiating a SecurityManager, each call to a method
 	from this class has 0 callees! */
-    public static boolean WARNINGS = true;
+    public static boolean WARNINGS = false;
 
     private static PointerAnalysis pa = null;
 
@@ -135,7 +135,7 @@ abstract class InterProcPA {
 
 	    if(Modifier.isNative(hm.getModifiers()) && 
 	       !pa.harmful_native(hm)){
-		//if(DEBUG)
+		if(DEBUG)
 		    System.out.println("NATIVE: " + hm);
 		pigs[nb_callees_with_pig] = null;
 		mms[nb_callees_with_pig]  = mms[i];
@@ -927,11 +927,11 @@ abstract class InterProcPA {
 	PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
 
 	Set lo_types = aux_clone_get_types(q);
-	// if(DEBUG)
+	if(DEBUG)
 	    System.out.println("CLONE: POSSIBLE TYPES:" + lo_types);
 
 	Set flags = aux_clone_get_obj_fields(lo_types);
-	// if(DEBUG)
+	if(DEBUG)
 	    System.out.println("CLONE: POSSIBLE FLAGS:" + flags);
 
 	int nb_flags = flags.size();
@@ -990,7 +990,7 @@ abstract class InterProcPA {
 	   !hm.getDeclaringClass().getName().equals("java.lang.System"))
 	    return null;
 
-	//if(DEBUG)
+	if(DEBUG)
 	    System.out.println(q + "is treated specially (arraycopy)");
 
 	// the conventional field name used for the array's entries
@@ -1060,7 +1060,7 @@ abstract class InterProcPA {
 	   !hm.getDeclaringClass().getName().equals("java.lang.Throwable"))
 	    return null;
 
-	//if(DEBUG)
+	if(DEBUG)
 	    System.out.println(q + "is treated specially (fillInStackTrace)");
 	
 	ParIntGraph pig_after1 = (ParIntGraph) pig_before.clone();
@@ -1089,7 +1089,7 @@ abstract class InterProcPA {
 	   !hm.getDeclaringClass().getName().equals("java.lang.Thread"))
 	    return null;
 
-	//if(DEBUG)
+	if(DEBUG)
 	    System.out.println(q + "is treated specially (setPriority0)"); 
 
 	return new ParIntGraphPair(pig_before, pig_before);

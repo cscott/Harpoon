@@ -20,7 +20,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.21 2000-05-18 03:31:07 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.22 2000-05-20 19:10:43 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests
@@ -142,6 +142,7 @@ final public class PANode {
 		bottom.call_chain_depth = this.call_chain_depth + 1;
 		bottom.call_site = call_site;
 		bottom.cs_parent = this;
+		bottom.bottom = bottom;
 	    }
 	    return bottom;
 	}
@@ -336,10 +337,8 @@ final public class PANode {
 	// nodes that are at the limit of the maximal call chain depth
 	// are signaled by attaching a B to them: they don't carry any
 	// exact information about the call path so they are "bottom"
-	if(call_chain_depth == PointerAnalysis.MAX_SPEC_DEPTH){
-	    buffer.append("B");
+	if(call_chain_depth == PointerAnalysis.MAX_SPEC_DEPTH)
 	    return buffer.toString();
-	}
 	// print the ancestors on the call specialization brach
 	if(isCSSpec()){
 	    buffer.append(" <-CS- ");

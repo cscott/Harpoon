@@ -14,4 +14,4 @@ cvs-tmp
 VERSIONS
 ChangeLog
 jdb
-.ignore
+Test/webserver.ignore

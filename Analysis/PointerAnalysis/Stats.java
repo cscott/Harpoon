@@ -26,7 +26,7 @@ import harpoon.Util.Graphs.SCComponent;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.10 2000-05-16 17:50:23 salcianu Exp $
+ * @version $Id: Stats.java,v 1.1.2.11 2000-05-20 19:10:43 salcianu Exp $
  */
 abstract class Stats {
 
@@ -222,8 +222,7 @@ abstract class Stats {
 	System.out.println("ANALYZED CLASSES:");
 	for(Iterator it = cls.iterator(); it.hasNext(); ) {
 	    HClass hclass = (HClass) it.next();
-	    System.out.println("CLS " + hclass.getPackage() + "." +
-			       hclass.getName());
+	    System.out.println("CLS " + hclass.getName());
 	    StringBuffer buff = new StringBuffer(hclass.getPackage());
 	    for(int i = 0; i < buff.length(); i++)
 		if(buff.charAt(i) == '.')

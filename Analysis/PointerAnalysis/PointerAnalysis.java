@@ -72,13 +72,12 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.55 2000-05-17 20:24:17 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.56 2000-05-20 19:10:43 salcianu Exp $
  */
 public class PointerAnalysis {
-
     public static final boolean DEBUG     = false;
     public static final boolean DEBUG2    = false;
-    public static final boolean DEBUG_SCC = true;
+    public static final boolean DEBUG_SCC = false;
 
     /** Makes the pointer analysis deterministic to make the debug easier.
 	The main source of undeterminism in our code is the intensive use of
@@ -87,10 +86,10 @@ public class PointerAnalysis {
     public static final boolean DETERMINISTIC = true;
 
     /** Turns on the priniting of some timing info. */
-    public static boolean TIMING = true;
+    public static boolean TIMING = false;
     public static final boolean STATS = true;
-    public static boolean SHOW_NODES = true;
-    public static final boolean DETAILS2 = true;
+    public static boolean SHOW_NODES = false;
+    public static final boolean DETAILS2 = false;
 
 
     /** Hack to speed it up: it appears to me that the edge ordering
@@ -155,6 +154,7 @@ public class PointerAnalysis {
     private final MetaCallGraph  mcg;
     public final MetaCallGraph getMetaCallGraph() { return mcg; }
     private final MetaAllCallers mac;
+    public final MetaAllCallers getMetaAllCallers() { return mac; }
     private final CachingSCCLBBFactory scc_lbb_factory;
 
     // Maintains the partial points-to and escape information for the
@@ -308,8 +308,8 @@ public class PointerAnalysis {
     // Top-level procedure for the analysis. Receives the main method as
     // parameter. For the moment, it is not doing the inter-thread analysis
     private void analyze(MetaMethod mm){
-
-	System.out.println("ANALYZE: " + mm);
+	if(DEBUG)
+	    System.out.println("ANALYZE: " + mm);
 
 	// Navigator for the SCC building phase. The code is complicated
 	// by the fact that we are interested only in yet unexplored methods
@@ -528,7 +528,7 @@ public class PointerAnalysis {
 
     // Performs the intra-procedural pointer analysis.
     private void analyze_intra_proc(MetaMethod mm){
-	//if(DEBUG2)
+	if(DEBUG)
 	    System.out.println("META METHOD: " + mm);
 
 	if(STATS) Stats.record_mmethod_pass(mm);
