@@ -60,7 +60,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.14 2001-06-15 00:36:56 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.15 2001-06-15 01:31:06 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -151,7 +151,7 @@ public class CacheEquivalence {
 		//  2) known base & unknown offset, but object is smaller
 		//     than cache line size.
 		//  3) all others.
-		Dataflow.DefPoint dp = null, kgroup = null;
+		Dataflow.DefPoint dp = null; KGroup kgroup = null;
 		long line=0; long modulus=0;
 		if (v.isBaseKnown() &&
 		    ((Dataflow.BaseAndOffset)v).def.isWellTyped()) {
@@ -223,11 +223,10 @@ public class CacheEquivalence {
 	private Map valueMap = new HashMap();
 	Value valueUseAt(Temp t, Stm s) {
 	    Value v = Value.NOINFO;
-	    for (Iterator it=rd.reachingDefs(s, t).iterator(); it.hasNext(); ){
-		Stm def = (Stm) it.next();
-		v = v.unify(valueDefAt(t, def));
-	    }
-	    return v;
+	    Set rdset=rd.reachingDefs(s, t);
+	    for (Iterator it=rdset.iterator(); it.hasNext(); )
+		v = v.unify(valueDefAt(t, (Stm)it.next()));
+	    return v.fillKGroup(rdset, t);
 	}
 	Value valueDefAt(Temp t, Stm s) {
 	    Value v = (Value) valueMap.get(Default.pair(t,s));
@@ -300,7 +299,7 @@ public class CacheEquivalence {
 			       new BaseAndOffset(new TempDefPoint(t, s),0));
 		    else {
 			// if kgroup is unset, fill it now.
-			update(t.temp, s, v.fillKGroup(new TempDefPoint(t,s)));
+			update(t.temp, s, v.fillKGroup(s, t.temp));
 		    }
 		}
 	    }
@@ -362,7 +361,10 @@ public class CacheEquivalence {
 	    abstract protected int specificity();
 	    boolean isBaseKnown() { return false; }
 	    boolean isOffsetKnown() { return false; }
-	    Value fillKGroup(DefPoint dp) { return this; }
+	    Value fillKGroup(Set defs, Temp t) { return this; }
+	    final Value fillKGroup(Stm def, Temp t) {
+		return fillKGroup(Collections.singleton(def), t);
+	    }
 	    Value unify(Value v) {
 		Util.assert(this!=NOINFO);
 		if (v==NOINFO) return this;
@@ -422,8 +424,8 @@ public class CacheEquivalence {
 	}
 	static class ConstantModuloN extends IntegerValue {
 	    protected int specificity() { return 2; }
-	    final long number; final long modulus; final DefPoint kgroup;
-	    ConstantModuloN(long number, long modulus, DefPoint kgroup) {
+	    final long number; final long modulus; final KGroup kgroup;
+	    ConstantModuloN(long number, long modulus, KGroup kgroup) {
 		this.number=number; this.modulus=modulus; this.kgroup=kgroup;
 		Util.assert(modulus>1);
 		Util.assert(kgroup!=null || (number>=0 && number<modulus));
@@ -433,10 +435,11 @@ public class CacheEquivalence {
 		this.number=number; this.modulus=0; this.kgroup=null;
 	    }
 	    boolean isOffsetKnown() { return true; }
-	    Value fillKGroup(DefPoint dp) {
+	    Value fillKGroup(Set defs, Temp t) {
 		if (kgroup!=null || this instanceof Constant)
-		    return super.fillKGroup(dp);
-		return new ConstantModuloN(mymod(number, modulus),modulus,dp);
+		    return this;
+		return new ConstantModuloN(mymod(number, modulus),modulus,
+					   new KGroup(defs, t));
 	    }
 	    Value unify(Value v) {
 		if (!(v instanceof ConstantModuloN)) return super.unify(v);
@@ -523,14 +526,13 @@ public class CacheEquivalence {
 					   modulus, null/*k'=-k*/);
 	    }
 	    public boolean equals(Object o) {
-		try {
-		    ConstantModuloN cmn = (ConstantModuloN) o;
-		    return (this.kgroup==null ? cmn.kgroup==null :
-			    (cmn.kgroup!=null &&
-			     this.kgroup.equals(cmn.kgroup))) &&
-			this.number == cmn.number &&
-			this.modulus == cmn.modulus;
-		} catch (ClassCastException cce) { return false; }
+		if (!(o instanceof ConstantModuloN)) return false;
+		ConstantModuloN cmn = (ConstantModuloN) o;
+		return (this.kgroup==null ? cmn.kgroup==null :
+			(cmn.kgroup!=null &&
+			 this.kgroup.equals(cmn.kgroup))) &&
+		    this.number == cmn.number &&
+		    this.modulus == cmn.modulus;
 	    }
 	    public int hashCode() { return (int)number + 7*(int)modulus; }
 	    public String toString() {
@@ -592,6 +594,10 @@ public class CacheEquivalence {
 	    }
 	    boolean isBaseKnown() { return true; }
 	    boolean isOffsetKnown() { return offset.isOffsetKnown(); }
+	    Value fillKGroup(Set defs, Temp t) {
+		return new BaseAndOffset(def, (IntegerValue)
+					 offset.fillKGroup(defs, t));
+	    }
 	    Value unify(Value v) {
 		if (!(v instanceof BaseAndOffset)) return super.unify(v);
 		// BaseAndOffset is common superclass of this and v
@@ -616,11 +622,10 @@ public class CacheEquivalence {
 	    }
 	    Value negate() { return Value.BOTTOM; }
 	    public boolean equals(Object o) {
-		try {
-		    BaseAndOffset bao = (BaseAndOffset) o;
-		    return this.def.equals(bao.def) &&
-			this.offset.equals(bao.offset);
-		} catch (ClassCastException cce) { return false; }
+		if (!(o instanceof BaseAndOffset)) return false;
+		BaseAndOffset bao = (BaseAndOffset) o;
+		return this.def.equals(bao.def) &&
+		    this.offset.equals(bao.offset);
 	    }
 	    public int hashCode() {
 		return def.hashCode()+7*offset.hashCode();
@@ -668,6 +673,20 @@ public class CacheEquivalence {
 	    public int hashCode() { return name.label.hashCode(); }
 	    public String toString() { return name.label.toString(); }
 	}
+    }
+    /*------------------------------------------------------------- */
+
+    /** a k-group is a "phi-function" definition point. */
+    static class KGroup {
+	final Set defs; final Temp t;
+	KGroup(Set defs, Temp t) { this.defs=defs; this.t=t; }
+	public String toString() { return "<"+t+","+defs+">"; }
+	public boolean equals(Object o) {
+	    if (!(o instanceof KGroup)) return false;
+	    KGroup kg = (KGroup) o;
+	    return this.t.equals(kg.t) && this.defs.equals(kg.defs);
+	}
+	public int hashCode() { return t.hashCode() + 11*defs.hashCode(); }
     }
     
     /*----------------------------------------------------------------*/
