@@ -26,7 +26,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.20 2000-08-25 06:57:27 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.21 2000-09-22 21:53:24 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -38,19 +38,32 @@ public class LiveTemps extends LiveVars.BBVisitor {
     protected UseDefer ud;
 
     /** Produces a default live variable analysis object and solves
+	it.  Uses <code>ud</code> to define Temp references in
+	elements of <code>code</code>. elements in <code>code</code>
+	must implement <code>CFGraphable</code>, and
+	<code>liveOnExit</code> must be a Set of Temps (mapped to by
+	<code>ud</code>) that are live on exit from
+	<code>code</code>. 
+     */
+    public static LiveTemps make(HCode code, UseDefer ud, 
+				 Set liveOnExit) {
+	BasicBlock.Factory bbf = new BasicBlock.Factory(code);
+	LiveTemps lt = new LiveTemps(bbf, liveOnExit, ud);
+	Solver.worklistSolve
+	    // (bbFact.preorderBlocksIter(),
+	    (new harpoon.Util.ReverseIterator(bbf.postorderBlocksIter()),
+	     lt);
+	return lt;
+    }
+
+    /** Produces a default live variable analysis object and solves
 	it.  elements in <code>code</code> must implement
 	<code>UseDef</code>, <code>CFGraphable</code>, etc, and
 	<code>liveOnExit</code> must be a Set of Temps that are live
 	on exit from <code>code</code>.
      */
     public static LiveTemps make(HCode code, Set liveOnExit) {
-	BasicBlock.Factory bbf = new BasicBlock.Factory(code);
-	LiveTemps lt = new LiveTemps(bbf, liveOnExit);
-	Solver.worklistSolve
-	    // (bbFact.preorderBlocksIter(),
-	    (new harpoon.Util.ReverseIterator(bbf.postorderBlocksIter()),
-	     lt);
-	return lt;
+	return make(code, UseDefer.DEFAULT, liveOnExit);
     }
     
     /** Constructs a new <code>LiveTemps</code> for <code>basicblocks</code>.
