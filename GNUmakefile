@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.40 1999-06-24 02:14:10 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.41 1999-06-24 02:24:12 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -220,7 +220,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	      -e 's/<dd> "The,/<dd> /g' -e 's/<body>/<body bgcolor=white>/' | \
 		$(UNMUNGE)
 	cd doc; if [ -e $(JDOCIMAGES) ]; then ln -s $(JDOCIMAGES) images; fi
-	cd doc; if [ ! -f index.html]; then ln -s packages.html index.html; fi
+	cd doc; if [ ! -f index.html ]; then ln -s packages.html index.html; fi
 	cd doc; if [ ! -f API_users_guide.html ]; then ln -s index.html API_users_guide.html; fi
 	# only include ChangeLog if we've got CVS access
 	if [ -d CVS ]; then \
