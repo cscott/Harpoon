@@ -1,0 +1,4 @@
+ssh nameservice.mit-phase1.pces.emulab.net 'killall -9 java; killall -9 runATR'
+ssh tracker.mit-phase1.pces.emulab.net  'killall -9 java; killall -9 runATR'
+ssh ATR.mit-phase1.pces.emulab.net 'killall -9 java; killall -9 runATR'
+ssh receiver.mit-phase1.pces.emulab.net k'illall -9 java; killall -9 runATR'

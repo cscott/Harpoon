@@ -1,0 +1,16 @@
+# Usage: ./run-corba-with-stats <ATR Pipeline number> <"arguments to be passed into the VM">
+# Note that all arguments to the VM need to be passed in as one big string.
+# Dumps data to ../raw-stats.txt and ../raw-tracker-stats.txt
+
+cd ..
+export CURRENTDIR=`pwd`
+ssh nameservice.mit-phase1.pces.emulab.net 'cd '$CURRENTDIR'; source ~/.bashrc; java '$2' -jar ns.jar .jacorb' &
+sleep 5
+
+ssh tracker.mit-phase1.pces.emulab.net 'cd '$CURRENTDIR'; source ~/.bashrc; java '$2' -jar trackerStub.jar timer "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb > raw-tracker-stats.txt' &
+sleep 5
+
+ssh ATR.mit-phase1.pces.emulab.net 'cd '$CURRENTDIR'; source ~/.bashrc; ./runATR timer '$1' "LMCO ATR" "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb > raw-stats.txt' &
+sleep 5
+
+ssh receiver.mit-phase1.pces.emulab.net 'cd '$CURRENTDIR'; source ~/.bashrc; java '$2' -jar receiverStub.jar GUI.jar tank.gz 533 1 "LMCO ATR" -ORBInitRef NameService=file:/`pwd`/.jacorb' &
