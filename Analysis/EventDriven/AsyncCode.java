@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.60 2000-04-04 02:16:36 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.61 2000-04-06 18:51:33 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -173,10 +173,8 @@ public class AsyncCode {
 	}
 
 	void addCode(HMethod hm, HCode hc) {
-	    //XXXXX NEED HOOK FOR AIMAP
-
 	    if (clonevisit.needsRepair()) {
-		//	hc.print(new java.io.PrintWriter(System.out, true));
+		//hc.print(new java.io.PrintWriter(System.out, true));
 		ucf.put(hm,hc);
 	    } else {
 		//hc.print(new java.io.PrintWriter(System.out, true));
@@ -384,11 +382,10 @@ public class AsyncCode {
 		newMethodName = methodNamePrefix; 
 		originalClass.getDeclaredMethod(newMethodName, 
 					original.getParameterTypes());
-		//throw new RuntimeException("Name collision with "+newMethodName+ " method");
-		System.out.println("Name collision with "+newMethodName+ " method");
-		createmethod=false;
-		old2new.put(original,originalClass.getDeclaredMethod(newMethodName, 
-								     original.getParameterTypes()));
+		throw new RuntimeException("Name collision with "+newMethodName+ " method");
+		//System.out.println("Name collision with "+newMethodName+ " method");
+		//createmethod=false;
+		//old2new.put(original,originalClass.getDeclaredMethod(newMethodName, original.getParameterTypes()));
 	    } catch (NoSuchMethodError e) {
 	    }
 	}

@@ -71,7 +71,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.25 2000-04-06 17:15:54 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.26 2000-04-06 18:51:33 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -794,6 +794,9 @@ public class CloningVisitor extends QuadVisitor {
     }
 
 
+
+
+
     /** scheduleMethods takes a given method that is being called,
      * either directly or by a start->run type connection, etc,
      * and schedules Asynchronous versions to be made.  This is currently
@@ -830,12 +833,15 @@ public class CloningVisitor extends QuadVisitor {
 			    HCode toConvert=ucf.convert(hm);
 			    if (toConvert!=null)
 				async_todo.add(toConvert);
-			    else if (Modifier.isNative(hm.getModifiers())) {
-				System.out.println("XXX:ERROR Native blocking: "+hm);
-			    }
+			    //else if (Modifier.isNative(hm.getModifiers())) {
+			    //System.out.println("XXX:ERROR Native blocking: "+hm);
+			    //System.exit(1);
+			    //}
 			    HMethod temp=AsyncCode.makeAsync(old2new, hm,
 							     ucf,linker,optimistic);
-			} else {
+			    if (Modifier.isNative(hm.getModifiers()))
+				buildNativeWrapper(hm);
+			    } else {
 			    System.out.println("XXX:ERROR "+hm+" is blocking!");
 			}
 		    }
@@ -845,6 +851,98 @@ public class CloningVisitor extends QuadVisitor {
 	    }
 	}
     }
+
+    private void buildNativeWrapper(HMethod hm) {
+	HMethod newhm=(HMethod)old2new.get(hm);
+	ContCodeSSI wrappercode=new ContCodeSSI(newhm);
+	QuadFactory qf=wrappercode.getFactory();
+	TempFactory tf=qf.tempFactory();
+	HClass[] methodTypes=hm.getParameterTypes();
+	Temp[] params=new Temp[methodTypes.length];
+	boolean isVirtual=hm.isStatic()?false:((hm.getName().equals("<init>")||
+						hm.getName().equals("<clinit>"))?false:true);
+	boolean isVoid=hm.getReturnType()==HClass.Void;
+	Temp retval=isVoid?null:new Temp(tf); 
+	Temp retex=new Temp(tf);
+	for (int i=0;i<params.length;i++)
+	    params[i]=new Temp(tf);
+
+	HEADER header=new HEADER(qf,null);
+	METHOD method=new METHOD(qf, null, params, 1);
+	CALL call=new CALL(qf, null, hm, params,retval, retex,
+			   isVirtual, false, new Temp[0]);
+	FOOTER footer=new FOOTER(qf, null, 3);
+	Quad.addEdge(header,0,footer,0);
+	Quad.addEdge(header,1,method,0);
+	Quad.addEdge(method,0,call,0);
+	wrappercode.quadSet(header);
+
+	if (optimistic) {
+	    Temp tnew=new Temp(tf);
+	    String pref = 
+		ContBuilder.getPrefix(hm.getReturnType());
+	    HClass contClass=linker.forName("harpoon.Analysis.ContBuilder."+pref+"ContinuationOpt");
+	    Temp retex2=new Temp(tf), retex3=new Temp(tf);
+	    Temp retval1=new Temp(tf),retval2=new Temp(tf);
+
+	    NEW qnew=new NEW(qf, null, tnew, contClass);
+	    CALL call2=new CALL(qf, null, contClass.getConstructor(new HClass[]{hm.getReturnType()}), isVoid?new Temp[] {tnew}:new Temp[] {tnew, retval},
+	    null, retex2, false, false,new Temp[][]{{retval1},{retval2}} ,new Temp[]{tnew});
+	    PHI phi=new PHI(qf, null, new Temp[] {retex3},new Temp[][] {{retex},{retex2}}, 2);
+	    THROW qthrow=new THROW(qf, null, retex3);
+	    RETURN qreturn=new RETURN(qf, null, retval1);
+	    Quad.addEdge(call, 0, qnew,0);
+	    Quad.addEdge(call, 1, phi, 0);
+	    Quad.addEdge(qnew,0, call2,0);
+	    Quad.addEdge(call2,0,qreturn,0);
+	    Quad.addEdge(call2,1,phi,1);
+	    Quad.addEdge(phi,0,qthrow,0);
+	    Quad.addEdge(qreturn,0, footer,1);
+	    Quad.addEdge(qthrow,0,footer,2);
+	} else {
+	    Temp tnew1=new Temp(tf),tnew2=new Temp(tf);
+	    String pref = 
+		ContBuilder.getPrefix(hm.getReturnType());
+	    HClass contClass=linker.forName("harpoon.Analysis.ContBuilder."+pref+"DoneContinuation");
+	    Temp retex1=new Temp(tf), retex2=new Temp(tf);
+	    Temp retexa=new Temp(tf), retexb=new Temp(tf);
+	    Temp retval1=new Temp(tf),retval2=new Temp(tf);
+	    Temp finret=new Temp(tf), finex=new Temp(tf);
+	    //Non Exception edge
+	    NEW qnew1=new NEW(qf, null, tnew1, contClass);
+	    CALL call21=new CALL(qf, null, contClass.getConstructor(new HClass[]{hm.getReturnType()}), isVoid?new Temp[] {tnew1}:new Temp[] {tnew1, retval},
+	    null, retexa, false, false,new Temp[][]{{retval1},{retval2}} ,new Temp[]{tnew1});
+
+	    //Exception edge
+	    NEW qnew2=new NEW(qf, null, tnew2, contClass);
+	    CALL call22=new CALL(qf, null, contClass.getConstructor(new HClass[]{linker.forName("java.lang.Throwable")}), new Temp[] {tnew2, retex},
+	    null, retexb, false, false,new Temp[][]{{retex1},{retex2}} ,new Temp[]{tnew2});
+
+
+	    PHI phix=new PHI(qf, null, new Temp[] {finex},new Temp[][] {{retexa},{retexb}}, 2);
+
+	    PHI phir=new PHI(qf, null, new Temp[] {finret},new Temp[][] {{retval1},{retex1}}, 2);
+	    THROW qthrow=new THROW(qf, null, finex);
+	    RETURN qreturn=new RETURN(qf, null, finret);
+
+	    Quad.addEdge(call, 0, qnew1,0);
+	    Quad.addEdge(call, 1, qnew2, 0);
+	    Quad.addEdge(qnew1,0, call21,0);
+	    Quad.addEdge(qnew2,0, call22,0);
+	    Quad.addEdge(call21,0,phir,0);
+	    Quad.addEdge(call22,0,phir,1);
+	    Quad.addEdge(call21,1,phix,0);
+	    Quad.addEdge(call22,1,phix,1);
+	    Quad.addEdge(phir,0,qreturn,0);
+	    Quad.addEdge(phix,0,qthrow,0);
+	    Quad.addEdge(qreturn,0, footer,1);
+	    Quad.addEdge(qthrow,0,footer,2);
+	}
+	ucf.put(newhm, wrappercode);
+    }
+
+
+
     //---------------------------------------------------------
     //Need to ->SSI
     private void handleBlocking(CALL q) {
