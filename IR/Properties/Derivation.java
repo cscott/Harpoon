@@ -12,10 +12,15 @@ import harpoon.Temp.TempMap;
  * <code>Derivation</code> provides a means to access the derivation
  * of a particular derived pointer.  Given a compiler temporary, it
  * will enumerate the base pointers and signs needed to allow proper
- * garbage collection of the derived pointer.
+ * garbage collection of the derived pointer.<p>
+ * See Diwan, Moss, and Hudson, <A
+ * HREF="http://www.acm.org/pubs/citations/proceedings/pldi/143095/p273-diwan/"
+ * >"Compiler Support for Garbage Collection in a Statically Typed
+ * Language"</A> in PLDI'92 for background on the derivation structure
+ * and its motivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.7 1999-06-24 01:04:41 cananian Exp $
+ * @version $Id: Derivation.java,v 1.1.2.8 1999-09-09 21:55:21 cananian Exp $
  */
 public interface Derivation  {
 
