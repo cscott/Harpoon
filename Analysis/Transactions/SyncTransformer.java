@@ -88,7 +88,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.11.2.2 2003-11-14 20:50:53 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.11.2.2.2.1 2003-12-08 04:22:05 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -151,8 +151,6 @@ public class SyncTransformer
 
     // FieldOracle to use.
     final FieldOracle fieldOracle;
-    // BitFieldNumbering to use
-    final BitFieldNumbering bfn;
 
     /** Cache the <code>java.lang.Class</code> <code>HClass</code>. */
     private final HClass HCclass;
@@ -275,12 +273,14 @@ public class SyncTransformer
 	}
 	// set up our BitFieldNumbering (and create array-check fields in
 	// all array classes)
+	/*
 	if (noFieldModification) this.bfn = null;
 	else {
 	    this.bfn = new BitFieldNumbering(l, pointersAreLong);
 	    this.bfn.ignoredFields.add(vlistF);
 	    this.bfn.ignoredFields.add(rlistF);
 	}
+	*/
 
 	// fixup code factory for 'known safe' methods.
 	final HCodeFactory superfactory = super.codeFactory();
@@ -864,19 +864,11 @@ public class SyncTransformer
 	    Quad q1;
 	    in = addAt(in, q0);
 	    if (handlers==null) { // non-transactional read
-		// VALUETYPE TA(EXACT_readNT)(struct oobj *obj, int offset,
-		//                            int flag_offset, int flag_bit)
-		Temp t2 = new Temp(tf, "flag_field");
-		Temp t3 = new Temp(tf, "flag_bit");
-		BitFieldTuple bft = bfn.bfLoc(q.field());
-		in = addAt(in, new CONST(qf, q, t2, bft.field, HCfield));
-		in = addAt(in, new CONST(qf, q, t3, new Integer(1<<bft.bit),
-				     HClass.Int));
+		// VALUETYPE TA(EXACT_readNT)(struct oobj *obj, int offset)
 		q1 = new CALL(qf, q, gen.lookupMethod
-			      ("readNT", new HClass[] { HCobj, HCfield,
-							HCfield, HClass.Int },
+			      ("readNT", new HClass[] { HCobj, HCfield },
 			       q.field().getType()),
-			      new Temp[] { q.objectref(), t0, t2, t3 },
+			      new Temp[] { q.objectref(), t0 },
 			      q.dst(), t1, false, false, new Temp[0]);
 	    } else { // transactional read
 		// VALUETYPE TA(EXACT_readT)(struct oobj *obj, int offset,
@@ -1052,20 +1044,12 @@ public class SyncTransformer
 	    in = addAt(in, q0);
 	    if (handlers==null) { // non-transactional read
 		// void TA(EXACT_writeNT)(struct oobj *obj, int offset,
-		//                        VALUETYPE value,
-		//	                  int flag_offset, int flag_bit);
-		Temp t2 = new Temp(tf, "flag_field");
-		Temp t3 = new Temp(tf, "flag_bit");
-		BitFieldTuple bft = bfn.bfLoc(q.field());
-		in = addAt(in, new CONST(qf, q, t2, bft.field, HCfield));
-		in = addAt(in, new CONST(qf, q, t3, new Integer(1<<bft.bit),
-				     HClass.Int));
+		//                        VALUETYPE value)
 		q1 = new CALL(qf, q, gen.lookupMethod
 			      ("writeNT", new HClass[] { HCobj, HCfield,
-							 q.field().getType(),
-							 HCfield, HClass.Int },
+							 q.field().getType() },
 			       HClass.Void),
-			      new Temp[]{ q.objectref(), t0, q.src(), t2, t3 },
+			      new Temp[]{ q.objectref(), t0, q.src() },
 			      null, t1, false, false, new Temp[0]);
 	    } else { // transactional read
 		// void TA(EXACT_writeT)(struct oobj *obj, int offset,
@@ -1182,28 +1166,21 @@ public class SyncTransformer
 		// (check that read-bit is set, else call fixup code,
 		//  which will do atomic-set of this bit.)
 		transFields.add(raf.field);
-		BitFieldTuple bft = bfn.bfLoc(raf.field);
 
 		// struct vinfo *TA(EXACT_setReadFlags)
 		//      (struct oobj *obj, int offset,
-		//       int flag_offset, int flag_bit,
 		//       struct vinfo *version,
 		//       struct commitrec*cr/*this trans*/);
 		HMethod hm = gen.lookupMethod
 		    ("setReadFlags", new HClass[]
 			{ raf.field.getDeclaringClass(), HCfield,
-			  HCfield, HClass.Int, HCvinfo, HCcommitrec },
+			  HCvinfo, HCcommitrec },
 		     HCvinfo);
 
 		Temp t0 = new Temp(tf, "readcheck_field");
-		Temp t1 = new Temp(tf, "readcheck_flag_field");
-		Temp t2 = new Temp(tf, "readcheck_flag_bit");
 		in = addAt(in, new CONST(qf, q, t0, raf.field, HCfield));
-		in = addAt(in, new CONST(qf, q, t1, bft.field, HCfield));
-		in = addAt(in, new CONST(qf, q, t2, new Integer(1<<bft.bit),
-				    HClass.Int));
 		CALL q0= new CALL(qf, q, hm,
-				  new Temp[] { raf.objref, t0, t1, t2,
+				  new Temp[] { raf.objref, t0,
 					       ts.versioned(raf.objref),
 					       currtrans },
 				  ts.versioned(raf.objref), retex,
@@ -1234,24 +1211,17 @@ public class SyncTransformer
 		// create write check code (set field to FLAG).
 		// (check that field==FLAG is set, else call fixup code)
 		transFields.add(raf.field);
-		BitFieldTuple bft = bfn.bfLoc(raf.field);
 
-		// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset,
-		//                              int flag_offset, int flag_bit)
+		// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset)
 		HMethod hm = gen.lookupMethod
 		    ("setWriteFlags", new HClass[]
-			{ raf.field.getDeclaringClass(), HCfield,
-			  HCfield, HClass.Int }, HClass.Void);
+			{ raf.field.getDeclaringClass(), HCfield },
+		     HClass.Void);
 
 		Temp t0 = new Temp(tf, "writecheck_field");
-		Temp t1 = new Temp(tf, "writecheck_flag_field");
-		Temp t2 = new Temp(tf, "writecheck_flag_bit");
 		in = addAt(in, new CONST(qf, q, t0, raf.field, HCfield));
-		in = addAt(in, new CONST(qf, q, t1, bft.field, HCfield));
-		in = addAt(in, new CONST(qf, q, t2, new Integer(1<<bft.bit),
-					 HClass.Int));
 		CALL q0= new CALL(qf, q, hm,
-				  new Temp[] { raf.objref, t0, t1, t2 },
+				  new Temp[] { raf.objref, t0 },
 				  null, retex, false, false, new Temp[0]);
 		// never throws exception.
 		Quad q1 = new THROW(qf, q, retex);
@@ -1279,40 +1249,15 @@ public class SyncTransformer
 		    HClassUtil.arrayClass(qf.getLinker(), rit.type, 1);
 		// struct vinfo *TA(EXACT_setReadFlags)
 		//      (struct oobj *obj, int offset,
-		//       int flag_offset, ptroff_t flag_bit,
 		//       struct vinfo *version,
 		//       struct commitrec*cr/*this trans*/);
 		HMethod hm = gen.lookupMethod
 		    ("setReadFlags_Array", new HClass[]
-			{ arrayClass, HClass.Int, HClass.Int,
-			  pointersAreLong ? HClass.Long : HClass.Int,
+			{ arrayClass, HClass.Int,
 			  HCvinfo, HCcommitrec }, HCvinfo);
 
-		Temp t0 = new Temp(tf, "arrayreadcheck");
-		Temp t1 = new Temp(tf, "arrayreadcheck_flag_field");
-		Temp t2 = new Temp(tf, "arrayreadcheck_flag_bit");
-		// t1=(index/PTRBITS)*(PTRBITS/8)=(index & (~PTRBITS-1)) >>> 3
-		in = addAt(in, new CONST(qf, q, t1, new Integer(~(PTRBITS-1)),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.IAND, t1,
-					new Temp[] { rit.index, t1 }));
-		in = addAt(in, new CONST(qf, q, t0, new Integer(3),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.IUSHR, t1,
-					new Temp[] { t1, t0 }));
-		// t3 = 1 << (index&PTRBITS-1)
-		in = addAt(in, new CONST(qf, q, t0, new Integer(PTRBITS-1),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.IAND, t0,
-				   new Temp[]{ rit.index, t0 }));
-		in = addAt(in, new CONST(qf, q, t2, pointersAreLong ?
-					 (Number) new Long(1) : new Integer(1),
-					 pointersAreLong ?
-					 HClass.Long : HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.ISHL, t2,
-					new Temp[]{t2, t0}));
 		CALL q0= new CALL(qf, q, hm,
-				  new Temp[] { rit.objref, rit.index, t1, t2,
+				  new Temp[] { rit.objref, rit.index,
 					       ts.versioned(rit.objref),
 					       currtrans },
 				  ts.versioned(rit.objref), retex,
@@ -1336,39 +1281,13 @@ public class SyncTransformer
 		CheckOracle.RefAndIndexAndType rit = it.next();
 		HClass arrayClass =
 		    HClassUtil.arrayClass(qf.getLinker(), rit.type, 1);
-		// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset,
-		//                           int flag_offset,ptroff_t flag_bit)
+		// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset)
 		HMethod hm = gen.lookupMethod
 		    ("setWriteFlags_Array", new HClass[]
-			{ arrayClass, HClass.Int, HClass.Int,
-			  pointersAreLong ? HClass.Long : HClass.Int },
-		     HClass.Void);
+			{ arrayClass, HClass.Int }, HClass.Void);
 
-		Temp t0 = new Temp(tf, "arraywritecheck");
-		Temp t1 = new Temp(tf, "arraywritecheck_flag_field");
-		Temp t2 = new Temp(tf, "arraywritecheck_flag_bit");
-		// t1=(index/PTRBITS)*(PTRBITS/8)=(index & (~PTRBITS-1)) >>> 3
-		in = addAt(in, new CONST(qf, q, t1, new Integer(~(PTRBITS-1)),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.IAND, t1,
-					new Temp[] { rit.index, t1 }));
-		in = addAt(in, new CONST(qf, q, t0, new Integer(3),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.IUSHR, t1,
-					new Temp[] { t1, t0 }));
-		// t3 = 1 << (index&PTRBITS-1)
-		in = addAt(in, new CONST(qf, q, t0, new Integer(PTRBITS-1),
-					 HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.IAND, t0,
-				   new Temp[]{ rit.index, t0 }));
-		in = addAt(in, new CONST(qf, q, t2, pointersAreLong ?
-					 (Number) new Long(1) : new Integer(1),
-					 pointersAreLong ?
-					 HClass.Long : HClass.Int));
-		in = addAt(in, new OPER(qf, q, Qop.ISHL, t2,
-					new Temp[]{t2, t0}));
 		CALL q0= new CALL(qf, q, hm,
-				  new Temp[] { rit.objref, rit.index, t1, t2 },
+				  new Temp[] { rit.objref, rit.index },
 				  null, retex, false, false, new Temp[0]);
 		// never throws exception.
 		Quad q1 = new THROW(qf, q, retex);
@@ -1489,16 +1408,19 @@ public class SyncTransformer
      *  which can't be represented in quad form. */
     public HCodeFactory treeCodeFactory(Frame f, HCodeFactory hcf) {
 	Set<HField> allFields = new HashSet<HField>(transFields);
-	if (bfn!=null) allFields.addAll(bfn.bitfields);
+	//if (bfn!=null) allFields.addAll(bfn.bitfields);
 	return new TreePostPass(f, FLAG_VALUE, HFflagvalue, gen, allFields)
 	    .codeFactory(hcf);
     }
 
     /** Munge <code>HData</code>s to insert bit-field numbering information. */
     public Iterator<HData> filterData(Frame f, Iterator<HData> it) {
+	/*
 	if (bfn==null) return it;
 	if (tdf==null) tdf = new TreeDataFilter(f, bfn, transFields);
 	return new FilterIterator<HData,HData>(it, tdf);
+	*/
+	return it;
     }
     TreeDataFilter tdf=null;
 
