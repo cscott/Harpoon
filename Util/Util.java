@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
@@ -15,19 +14,11 @@ import java.io.PrintWriter;
 
 import java.lang.reflect.Array;
 
-// XXX note that the presence of these import statements indicate some
-// methods which don't really belong in this class.  nothing else
-// depended on these class definitions.
-import harpoon.ClassFile.HCode;
-import harpoon.IR.Quads.Quad;
-import harpoon.IR.Quads.QuadKind;
-import harpoon.IR.Quads.CALL;
-
 
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.18 2002-04-11 00:41:58 cananian Exp $
+ * @version $Id: Util.java,v 1.19 2002-04-11 18:50:40 salcianu Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -436,31 +427,6 @@ public abstract class Util {
     return diff;
   }
 
-  /** Selects all quads of a given type from <code>hcode</code>.
-      @param hcode code view of a method
-      @param kind  kind of desired quad; valid kinds are defined in
-      <code>harpoon.IR.Quads.QuadKind</code>
-      @return vector of quads of desired kind from <code>hcode</code>.  */ 
-  // XXX CSA: do we *really* need this here?
- public static final List<Quad> selectQuads(harpoon.IR.Quads.Code code,
-					    int kind) {
-    final List<Quad> l = new ArrayList<Quad>();
-    // TODO: better thing - exception?
-    if (code == null)
-      return l;
-    
-    for(Iterator<Quad> it = code.getElementsI(); it.hasNext(); ) {
-      Quad q = it.next();
-      if (q.kind() == kind) l.add(q);
-    }
-    return l;
-  }
-
-  // XXX CSA: do we *really* need this here?
-  public static final CALL[] selectCALLs(final harpoon.IR.Quads.Code code) {
-    List<Quad> l = selectQuads(code, QuadKind.CALL);
-    return l.toArray(new CALL[l.size()]);
-  }
 
   /** Returns a string that is identical to <code>str</code>, except
       that every <code>&quot;</code> character has been replaced with

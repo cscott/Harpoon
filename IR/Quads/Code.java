@@ -23,6 +23,9 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Stack;
+import java.util.List;
+import java.util.ArrayList;
+
 
 /**
  * <code>Quads.Code</code> is an abstract superclass of codeviews
@@ -30,7 +33,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
+ * @version $Id: Code.java,v 1.5 2002-04-11 18:50:32 salcianu Exp $
  */
 public abstract class Code extends HCode<Quad>
     implements java.io.Serializable {
@@ -191,4 +194,54 @@ public abstract class Code extends HCode<Quad>
     public void print(java.io.PrintWriter pw, PrintCallback<Quad> callback) {
 	Print.print(pw, this, callback);
     }
+
+    /** Returns the list of all quads <code>q</code> from
+	<code>this</code> code for which <code>q.accept(v)</code> is
+	<code>true</code>. */
+    public List<Quad> selectQuads(QuadValueVisitor<Boolean> v) {
+	final List<Quad> l = new ArrayList<Quad>();
+
+	for(Iterator<Quad> it = getElementsI(); it.hasNext(); ) {
+	    Quad q = it.next();
+	    if (q.accept(v).booleanValue()) l.add(q);
+	}
+
+	return l;
+    }
+
+
+    /** Returns the list of all <code>CALL</code> quads from
+	<code>this</code> code. */
+    public List<Quad> selectCALLs() {
+	return selectQuads(call_visitor);
+    }
+    private static QuadValueVisitor<Boolean> call_visitor = 
+	new QuadValueVisitor<Boolean>() {
+	    public Boolean visit(CALL q) {
+		return Boolean.TRUE;
+	    }
+	    public Boolean visit(Quad q) {
+		return Boolean.FALSE;
+	    }
+	};
+
+
+    /** Returns the list of all allocation sites (ie, <code>NEW</code>
+	and <code>ANEW</code> quads) from <code>this</code> code. */
+    public List<Quad> selectAllocations() {
+	return selectQuads(allocation_visitor);
+    }
+    private static QuadValueVisitor<Boolean> allocation_visitor = 
+	new QuadValueVisitor<Boolean>() {
+	    public Boolean visit(NEW q) {
+		return Boolean.TRUE;
+	    }
+	    public Boolean visit(ANEW q) {
+		return Boolean.TRUE;
+	    }
+	    public Boolean visit(Quad q) {
+		return Boolean.FALSE;
+	    }
+	};
+
 }
