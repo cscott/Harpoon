@@ -6,7 +6,7 @@ package harpoon.IR.Tree;
  * class. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * $Id: TreeKind.java,v 1.1.2.3 1999-07-23 17:39:22 duncan Exp $
+ * $Id: TreeKind.java,v 1.1.2.4 1999-07-27 16:43:42 duncan Exp $
  */
 public abstract class TreeKind  {
     public final static int BINOP      = 0;
@@ -23,13 +23,14 @@ public abstract class TreeKind  {
     public final static int NAME       = 11;
     public final static int NATIVECALL = 12;
     public final static int RETURN     = 13;
-    public final static int SEQ        = 14;
-    public final static int TEMP       = 15;
-    public final static int THROW      = 16;
-    public final static int UNOP       = 17;
+    public final static int SEGMENT    = 14;
+    public final static int SEQ        = 15;
+    public final static int TEMP       = 16;
+    public final static int THROW      = 17;
+    public final static int UNOP       = 18;
 
     public static int min() { return 0; }
-    public static int max() { return 18; }
+    public static int max() { return 19; }
 
     public static boolean isValid(int k) {
 	return (min()<=k) && (k<max());

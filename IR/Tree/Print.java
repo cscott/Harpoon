@@ -11,7 +11,7 @@ import java.io.PrintWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.11 1999-07-23 17:39:22 duncan Exp $
+ * @version $Id: Print.java,v 1.1.2.12 1999-07-27 16:43:42 duncan Exp $
  */
 public class Print {
     final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -193,6 +193,12 @@ public class Print {
             pw.print(")");
             indlevel--;
         }
+
+	public void visit(SEGMENT s) { 
+	    indent(--indlevel);
+	    pw.print(s.toString());
+	    indlevel++;
+	}
 
         public void visit(SEQ s) {
             indent(--indlevel);
