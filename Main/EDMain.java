@@ -21,8 +21,7 @@ import harpoon.Temp.TempFactory;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.DataFlow.InstrSolver;
 import harpoon.Analysis.Instr.RegAlloc;
-import harpoon.Backend.StrongARM.Code;
-import harpoon.Backend.StrongARM.Frame;
+import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
@@ -79,7 +78,7 @@ import harpoon.Util.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDMain.java,v 1.1.2.6 2000-03-30 09:47:50 cananian Exp $
+ * @version $Id: EDMain.java,v 1.1.2.7 2000-06-29 02:24:03 cananian Exp $
  */
 public class EDMain extends harpoon.IR.Registration {
  
@@ -95,6 +94,11 @@ public class EDMain extends harpoon.IR.Registration {
 
     private static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     private static String  singleClass = null; // for testing single classes
+    private static final int STRONGARM_BACKEND = 0;
+    private static final int MIPS_BACKEND = 1;
+    private static final int SPARC_BACKEND = 2;
+    private static final int PRECISEC_BACKEND = 3;
+    private static int     BACKEND = STRONGARM_BACKEND;
     
     private static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);
@@ -312,7 +316,21 @@ public class EDMain extends harpoon.IR.Registration {
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
 	callGraph = new CallGraphImpl(classHierarchy, hcf);
-	frame = new Frame(mainM, classHierarchy, callGraph);
+	switch(BACKEND) {
+	case STRONGARM_BACKEND:
+	    frame = new harpoon.Backend.StrongARM.Frame
+		(mainM, classHierarchy, callGraph);
+	    break;
+	case SPARC_BACKEND:
+	    frame = new harpoon.Backend.Sparc.Frame
+		(mainM, classHierarchy, callGraph);
+	    break;
+	case MIPS_BACKEND:
+	    frame = new harpoon.Backend.MIPS.Frame
+		(mainM, classHierarchy, callGraph);
+	    break;
+	default: throw new Error("Unknown Backend: "+BACKEND);
+	}
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
 	hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
@@ -321,7 +339,7 @@ public class EDMain extends harpoon.IR.Registration {
 	hcf = harpoon.Analysis.Tree.JumpOptimization.codeFactory(hcf);
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     
-	HCodeFactory sahcf = Code.codeFactory(hcf, frame);
+	HCodeFactory sahcf = frame.getCodeFactory(hcf);
 	sahcf = new harpoon.ClassFile.CachingCodeFactory(sahcf);
 
 	if (classHierarchyFilename != null) {
