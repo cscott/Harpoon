@@ -129,7 +129,13 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   jstring mainStr;
   jobject mainThr, mainThrGrp;
   /* first make main thread object. */
-  thrCls  = (*env)->FindClass(env, "java/lang/Thread");
+  thrCls  = (*env)->FindClass(env,
+#ifdef WITH_REALTIME_JAVA
+                              "realtime/RealtimeThread"
+#else
+                              "java/lang/Thread"
+#endif
+			      );
   assert(!((*env)->ExceptionOccurred(env)));
   thrConsID = (*env)->GetMethodID(env, thrCls, "<init>", "("
 				  "Ljava/lang/ThreadGroup;"
