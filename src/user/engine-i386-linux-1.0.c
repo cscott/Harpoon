@@ -10,7 +10,7 @@
 #include "config.h"
 #ifdef WITH_USER_THREADS
 #ifndef lint
-static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.13 2003-03-10 21:04:02 wbeebee Exp $";
+static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.14 2003-07-25 22:11:46 wbeebee Exp $";
 #endif
 
 #include "config.h"
@@ -193,6 +193,7 @@ void __machdep_pthread_create(struct machdep_pthread *machdep_pthread,
       (char *)machdep_pthread->machdep_stack + stack_size;
 #endif
 #ifdef WITH_REALTIME_THREADS
+    sigdelset(&machdep_pthread->machdep_state->__saved_mask, SIGIO);
     sigdelset(&machdep_pthread->machdep_state->__saved_mask, SIGALRM);
 #endif
 }
