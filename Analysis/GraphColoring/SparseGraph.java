@@ -11,7 +11,7 @@ import java.util.Enumeration;
  * references <code>SparseNode</code>s store internally.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseGraph.java,v 1.1.2.6 1999-02-01 19:13:44 pnkfelix Exp $ 
+ * @version $Id: SparseGraph.java,v 1.1.2.7 1999-02-02 22:08:21 pnkfelix Exp $ 
  */
 
 public class SparseGraph extends ColorableGraph {
@@ -108,7 +108,7 @@ public class SparseGraph extends ColorableGraph {
 	<BR> <B>requires:</B> <code>node</code> is present in
 	                      <code>this</code>.
 	<BR> <B>effects:</B> Returns an <code>Enumeration</code> of
-	                     the <code>Node<code>s that have an edge
+	                     the <code>Node</code>s that have an edge
 			     from <code>node</code> to them that are
 			     not hidden. 
         <BR> <B>requires:</B> <code>this</code> is not modified while
@@ -127,9 +127,9 @@ public class SparseGraph extends ColorableGraph {
     }
 
     /** Constructs an enumeration for the parents of a specific node.
-	<BR> effects: Returns an <code>Enumeration</code> of the nodes
-	              that have an edge from them to
-		      <code>node</code>.
+	<BR> <B>effects:</B> Returns an <code>Enumeration</code> of
+	                     the nodes that have an edge from them to
+			     <code>node</code>. 
         <BR> <B>requires:</B> <code>this</code> is not modified while
 	                      the <code>Enumeration</code> returned is
 			      still in use.
@@ -149,9 +149,9 @@ public class SparseGraph extends ColorableGraph {
     /** Constructs an enumeration for the parents of a specific node.
 	<BR> <B>requires:</B> <code>node</code> is present in
 	                      <code>this</code>.
-	<BR> effects: Returns an <code>Enumeration</code> of the nodes
-	              that have an edge between <code>node</code> and
-		      them. 
+	<BR> <B>effects:</B> Returns an <code>Enumeration</code> of
+	                     the nodes that have an edge between
+			     <code>node</code> and them. 
         <BR> <B>requires:</B> <code>this</code> is not modified while
 	                      the <code>Enumeration</code> returned is
 			      still in use.

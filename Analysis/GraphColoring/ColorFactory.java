@@ -8,7 +8,7 @@ import java.util.Vector;
  * <code>ColorFactory</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorFactory.java,v 1.1.2.4 1999-02-01 17:24:10 pnkfelix Exp $
+ * @version $Id: ColorFactory.java,v 1.1.2.5 1999-02-02 22:08:21 pnkfelix Exp $
  */
 
 public abstract class ColorFactory  {
@@ -31,7 +31,7 @@ public abstract class ColorFactory  {
 			     recently removed <code>Color</code> and
 			     flags the <code>Color</code> returned as
 			     no longer being removed from
-			     <code>this<code>.
+			     <code>this</code>.
     */
     public Color makeColor() {
 	// modifies: this.colors, this.removedColors
@@ -61,15 +61,15 @@ public abstract class ColorFactory  {
     }
 
     /** Color generator that subclasses must implement.
-	<BR> <B>effects:</B> Constructs a new <code>Color</code> and returns
-	              it.  
+	<BR> <B>effects:</B> Constructs a new <code>Color</code> and
+	                     returns it.  
     */
     protected abstract Color newColor();
 
     /** Inventory accessor.
 	<BR> <B>effects:</B> Returns a <code>Vector</code> of all of
 	                     the <code>Color</code>s currently
-			     distibutable from <code>this</code>.
+			     distributable from <code>this</code>. 
 	<BR> <B>requires:</B> <code>makeColor</code> and
 	                      <code>removeColor</code> are not called
 			      as long as the <code>Vector</code>

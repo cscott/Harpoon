@@ -26,7 +26,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * object layout.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.2.6 1999-02-01 18:00:59 pnkfelix Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.2.7 1999-02-02 22:08:03 pnkfelix Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -69,10 +69,11 @@ public class InterfaceMethodMap extends MethodMap {
     }
     
     /** Returns an ordering of the given method. 
-	<B>requires:</B> <code>this</code> contains an ordering for
-	                 <code>hm</code> 
-	<B>effects:</B> returns the zero-indexed integer corresponding to
-	                <code>hm</code>'s placement in the ordering. 
+	<BR> <B>requires:</B> <code>this</code> contains an ordering
+	                      for <code>hm</code> 
+	<BR> <B>effects:</B> returns the zero-indexed integer
+	                     corresponding to <code>hm</code>'s
+			     placement in the ordering.  
      */
     public int methodOrder( HMethod hm ) {
 	HmNode node = (HmNode) mtable.get( hm );
@@ -85,7 +86,7 @@ public class InterfaceMethodMap extends MethodMap {
 
     /** Assembles a graph for use by the graph colorer.
 	<BR> <B>requires:</B> <code>hclasses</code> is an enumeration of 
-	               <code>HClass</code> objects
+	                      <code>HClass</code> objects
 	<BR> <B>modifies:</B> <code>hclasses</code>
 	<BR> <B>effects:</B> Iterates through <code>hclasses</code>,
 	                     building up a graph with nodes
