@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: quads.tex,v 1.7 1998-09-09 04:36:05 cananian Exp $
+% $Id: quads.tex,v 1.8 1998-09-09 13:31:27 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn,twoside]{article}
 
@@ -9,7 +9,7 @@
 
 \author{C.~Scott~Ananian}
 \title{\Harpoon\ Project Compiler Intermediate Representation}
-\date{\today \\ $ $Revision: 1.7 $ $}
+\date{\today \\ $ $Revision: 1.8 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -215,6 +215,95 @@ With the exception of \texttt{CJMP}, \texttt{SWITCH}, \texttt{PHI},
 \texttt{Quad}s have exactly one predecessor and one successor in the
 control flow graph.
 
+\subsection{Quads}
+Here are more details on each Quad statement.  First the header and
+footer nodes:
+\begin{description}
+%
+\item[HEADER($f$)] Start node in the control flow graph with end node $f$.
+Performs no operation.  Zero predecessors, one successor.
+%
+\item[METHODHEADER($f$, $p$)] Start node in the control flow graph for
+a method with parameters $p$ and end node $f$.  A subclass of \texttt{HEADER}.
+The method arguments are loaded into $p_0 \ldots p_n$ before execution starts.
+Zero predecessors, one successor.
+%
+\item[FOOTER( )] Final node in control-flow graph.  Performs no operation.
+All \texttt{RETURN} and \texttt{THROW} statements must have the graph's
+\texttt{FOOTER} as their only successor.  \texttt{FOOTER} nodes may
+have any positive number of predecessors.  They have no successors.
+\end{description}
+%
+The following \texttt{Quad}s modify the control-flow:
+\begin{description}
+%
+\item[PHI($t$, $l$)] Control flow merges at \texttt{PHI} nodes.
+A phi node represents a list of \phifunction{s} of the form
+\[ t_i = \phi(l_{i0}, l_{i1} \ldots l_{ij}) \]
+where $j$ is the \textit{arity} of the \phifunction; that is, 
+the number of predecessors to the node.  Any non-negative number of
+predecessors, one successor.
+%
+\item[CJMP($t$)] Conditional jump based on the boolean $t$.  If $t$ is
+false (0), control flows to the first successor (\texttt{next[0]}).
+If $t$ is true (1), control flows to the second successor
+(\texttt{next[1]}).  One predecessor, two successors.
+%
+\item[SWITCH($t$, $k$)] Indexed jump.  Depending on the value of index
+variable $t$ and a key list $k$, control is transferred to 
+${target}_n$ where $t = k_n$.  If $t$ does not match any key in $k$,
+control is transferred to the default ${target}_{n+1}$ where $k_n$ is
+the last key in the key list.  One predecessor, multiple successors.
+%
+\item[RETURN($t$)] Return an optional value $t$ from this method.
+One predecessor, one successor.  The single successor should be a
+\texttt{FOOTER} node.
+%
+\item[THROW($t$)] Throws an exception $t$ as the result of this method.
+One predecessor, one successor.  The single successor should be a
+\texttt{FOOTER} node.
+\end{description}
+%
+The remaining \texttt{Quad}s have no effect on control flow, and have
+exactly one predecessor and one successor.  No exceptions are thrown.
+\begin{description}
+\item[AGET($t_1$, $t_2$, $t_3$)] Fetches the element at index $t_3$
+from array $t_2$ and stores the value in $t_1$.
+%
+\item[ALENGTH($t_1$, $t_2$)] Puts the length of array $t_2$ into
+variable $t_1$.
+%
+\item[ANEW($t_1$, $c$, $l$)] Creates a new uninitialized array with
+type $c$ and dimensions $l_0 \ldots l_n$, storing a reference in
+$t_1$.  The number of dimensions
+supplied in list $l$ may be smaller than the number of dimensions of
+array class type $c$, in which case only the $n$ dimensions specified
+in $l$ will be created.
+%
+\item[ASET($t_1$, $t_2$, $t_3$)] Sets the element at index $t_2$ of
+array $t_1$ to the value in $t_3$.
+%
+\item[CALL($m$, $t$, $p$, $r$, $e$)] Calls method $m$ of optional class
+reference $t$ with parameter list $p_0 \ldots p_n$, 
+putting the return value in $r$
+if no exception is thrown, or setting $e$ to the thrown exception.
+Either $r$ or $e$ will be \texttt{null} on completion of the
+\texttt{CALL}.  Exception $e$ is not automatically thrown from the
+method containing the \texttt{CALL}: $e$ must be explicitly tested and
+its exception rethrown if that behaviour is desired.
+%
+\item[CONST($t$, $c$, $y$)] Assigns numeric or string constant $c$ of 
+type $y$ to variable $t$.
+%
+\item[GET($t_1$, $f$, $t_2$)] Puts the value of field $f$ of optional
+object $t_2$ in variable $t_1$.
+%
+\item[INSTANCEOF($t_1$, $t_2$, $c$)] Puts the boolean value
+\texttt{true} (1) in $t_1$ if object $t_2$ is an instance of class
+$c$, or \texttt{false} (0) otherwise.
+\end{description}
+
+
 \begin{figure*}[!p]
 \begin{tabular}{p{1.25in}p{4.5in}} 
 \small\bf Class Name & \small\bf Description \\ \hline
@@ -272,6 +361,7 @@ control flow graph.
                   \expn{// objectref, retval may be null}
 \item[\cls{CJMP}](HCodeElement source, Temp test)
 \item[\cls{CONST}](HCodeElement source, Temp dst, Object value, HClass type)
+\item[\cls{FOOTER}](HCodeElement source)
 \item[\cls{GET}](HCodeElement source, Temp dst, HField field, \\ 
 	         Temp objectref)  \expn{// objectref may be null}
 \item[\cls{HEADER}](HCodeElement source, FOOTER footer)
