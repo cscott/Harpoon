@@ -35,7 +35,10 @@ import harpoon.Util.HashEnvironment;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 /**
  * <code>InitializerTransform</code> transforms class initializers so
@@ -43,7 +46,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.4 2000-10-19 23:56:35 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.5 2000-10-20 01:18:47 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -100,7 +103,51 @@ public class InitializerTransform
     }
     /** Determine if this method is 'safe' (will never need initializers
      *  inserted) or not. */
-    private boolean isSafe(HMethod hm) { return false; /*conservative*/ }
+    private boolean isSafe(HMethod hm) {
+	if (safetyCache.containsKey(hm))
+	    return ((Boolean) safetyCache.get(hm)).booleanValue();
+	safetyCache.put(hm, new Boolean(true));// deals with cycles.
+	final HClass hc = hm.getDeclaringClass();
+	class BooleanVisitor extends QuadVisitor {
+	    boolean unsafe = false;
+	    public void visit(Quad q) { /* ignore */ }
+	}
+	BooleanVisitor bv = new BooleanVisitor() {
+	    // look for static references outside 'hc' (GET/SET/ANEW/NEW/CALL)
+	    public void visit(GET q) {
+		if (q.isStatic()) check(q.field().getDeclaringClass());
+	    }
+	    public void visit(SET q) {
+		if (q.isStatic()) check(q.field().getDeclaringClass());
+	    }
+	    public void visit(ANEW q) {
+		check(q.hclass());
+	    }
+	    public void visit(NEW q) {
+		check(q.hclass());
+	    }
+	    public void visit(CALL q) {
+		if (q.isStatic()) {
+		    check(q.method().getDeclaringClass());
+		    unsafe = unsafe || !isSafe(q.method());
+		} else unsafe = true; // virtual calls aren't safe.
+	    }
+	    void check(HClass c) {
+		if (c==hc) return;
+		if (c.getClassInitializer()==null) return;
+		unsafe = true;
+	    }
+	};
+	HCode code = codeFactory().convert(hm);
+	if (code==null) return false; // no clue what this does!
+	for (Iterator it=code.getElementsI();
+	     (!bv.unsafe) && it.hasNext(); )
+	    ((Quad) it.next()).accept(bv);
+	safetyCache.put(hm, new Boolean(!bv.unsafe));
+	return !bv.unsafe;
+    }
+    /** Cache for safety tests. */
+    private Map safetyCache = new HashMap();
     /** Add initialization checks to every static use of a class. */
     private Code addChecks(Code hc) {
 	final HEADER qH = (HEADER) hc.getRootElement();
@@ -136,7 +183,7 @@ public class InitializerTransform
 	    public void visit(CALL q) {
 		if (q.isStatic())
 		    addCheckBefore(q, q.method().getDeclaringClass(), seenSet);
-		if (!isSafe(q.method())) {
+		if (q.isVirtual() || !isSafe(q.method())) {
 		    // use a 'checking' version of this method.
 		    Quad ncall = new CALL
 			(q.getFactory(), q, select(q.method(), CHECKED),
