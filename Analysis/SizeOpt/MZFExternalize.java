@@ -44,10 +44,12 @@ import java.util.Set;
  * really *are* mostly-zero, then the net will be a space savings.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFExternalize.java,v 1.1.2.2 2001-11-14 20:53:48 cananian Exp $
+ * @version $Id: MZFExternalize.java,v 1.1.2.3 2001-11-14 23:05:14 cananian Exp $
  */
 class MZFExternalize {
-    public static final double THRESHOLD=75;
+    public static final double THRESHOLD =
+	Double.parseDouble(System.getProperty("harpoon.sizeopt.mzf.threshold",
+					      "75.0"/*default*/));
     final HCodeFactory hcf;
     final Linker linker;
     final private HMethod intGET, intSET, longGET, longSET;
