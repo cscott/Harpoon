@@ -9,10 +9,10 @@ package harpoon.ClassFile;
  * @see HClass.getMutator()
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassMutator.java,v 1.1.2.1 2000-01-10 21:50:38 cananian Exp $
+ * @version $Id: HClassMutator.java,v 1.1.2.2 2000-01-11 01:40:49 cananian Exp $
  */
 public interface HClassMutator {
-    public HField addDeclaredField(String name, HClass type);
+    public abstract HField addDeclaredField(String name, HClass type);
     public HField addDeclaredField(String name, String descriptor);
     public HField addDeclaredField(HField template, boolean shouldRename);
     public void removeDeclaredField(HField f) throws NoSuchFieldError;
@@ -30,7 +30,10 @@ public interface HClassMutator {
     public void removeInterface(HClass in);
     public void removeAllInterfaces();
 
+    public void addModifiers(int m);
     public void setModifiers(int m);
+    public void removeModifiers(int m);
+
     public void setSuperclass(HClass sc);
     public void setSourceFile(String sourcefilename);
 }
