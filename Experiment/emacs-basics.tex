@@ -1,0 +1,93 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{dsfont}
+\usepackage{epsfig}
+\usepackage{bbold}
+
+\title{}
+\author{Emacs basics\footnote{Adapted from the document found at http://www.cs.dartmouth.edu/~cs23/emacs-basics.html}}
+\date{July 30, 2003}
+
+\setlength{\topmargin}{0in}
+\setlength{\oddsidemargin}{0in}
+\setlength{\evensidemargin}{0in}
+\setlength{\textwidth}{6.6in}
+\setlength{\textheight}{9in}
+\setlength{\parindent}{0.5in}
+
+
+
+\begin{document}
+\maketitle
+\begin{flushleft}
+
+\thispagestyle{empty}
+
+The operating system under which the experiment is going to be run is a 
+UNIX-type operating system.  You can use whatever editor you like during
+this experiment.  If you are not familiar with any editor under UNIX, here 
+is a quick guide to one of them, called Emacs.
+
+\vspace{0.2in}
+
+Emacs commands usually involve the Control key.  A control key command is 
+written with C-. For example, C-x means "hold down the Control key and press 
+the x key."
+
+\section*{Starting and quitting Emacs}
+To open a certain file in Emacs, type 'emacs {\it filename} \&' on the command
+line.  To simply run Emacs, type 'emacs \&'.
+
+To exit Emacs, type 'C-x C-c'.   If any files have been changed since they were
+last saved, Emacs offers to save them. 
+
+
+\section*{Saving}
+To save the current file, use the command 'C-x C-s'.
+
+To save the file under another name (``save as''), use the command  'C-x C-w', 
+and enter the new file name when prompted.
+
+
+\section*{Basics commands to change the text}
+To change the current position of the cursor, simply use the arrow keys.
+
+To move the cursor at the beginning of the line, type 'C-a'.
+
+To move the cursor at the end of the line, type 'C-e'.
+
+To delete the character just before the cursor, use the Backspace key.
+
+To delete the character on which the cursor is positioned, use the command 
+'C-d'.
+
+To undo changes, use the command 'C-x u'. (type C-x and then press the u key).
+
+To delete the current line, place the cursor at the beginning of the line, 
+and then use the command 'C-k'.
+
+
+\section*{Searching}
+To perform an 'incremental' search, type 'C-s'. Emacs will prompt you for a 
+search string. As you type characters, they add to the search string and are 
+found. Type DEL to cancel characters from the end of search string. Type ESC
+to exit, leaving the point at the location found. Type C-s  to search again 
+forward, or C-r to search again backward. Typing C-g when the search has failed
+transforms the search string back to what has been found successfully. Typing 
+C-g when the search is successful aborts and moves the point to the starting 
+point.
+
+Note that Emacs has an unusual notion of case sensitivity when it searches for 
+text. If the search string contains only lowercase letters, then it matches 
+either uppercase or lowercase letters in the file. But if the search string 
+contains any uppercase letters, the case must match the file exactly. 
+
+
+\section*{Getting out of trouble}
+If anything goes wrong while you try to perform a certain operation, type 
+'C-g' until things are ok.  If this doesn't work, ask for assistance.
+
+\end{flushleft}
+\end{document}
