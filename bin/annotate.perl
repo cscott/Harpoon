@@ -55,9 +55,12 @@ sub fuzzhash {
     my %all = @_;
     my %cls2url;
     foreach my $key (keys %all) {
-	my $fuzz=$key; $fuzz =~ s/^.*\.([A-Za-z0-9_]*)$/$1/;
 	$cls2url{$key}=$all{$key};
-	$cls2url{$fuzz}=$all{$key};
+	my $fuzz=$key;
+	while ($fuzz=~/\./) {
+	    $fuzz =~ s/^[A-Za-z0-9_]*\.//;
+	    $cls2url{$fuzz}=$all{$key};
+	}
     }
     return %cls2url;
 }
