@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.29 1999-09-16 19:05:30 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.30 1999-09-16 20:10:47 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -199,7 +199,7 @@ final class ReHandler {
 	    if (reachable.contains(q))
 		q.accept(v);
 	}
-	return new Object{qH, typemap};
+	return new Object[] {qH, typemap};
     }
 
     public static void clean(QuadWithTry code) {

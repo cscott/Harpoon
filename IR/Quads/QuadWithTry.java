@@ -9,12 +9,13 @@ import harpoon.ClassFile.HMethod;
 import harpoon.Analysis.Quads.DeadCode;
 import harpoon.Util.Util;
 
+import java.util.Map;
 /**
  * <code>QuadWithTry</code> is a code view with explicit try-block
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.17 1999-09-16 19:05:30 bdemsky Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.18 1999-09-16 20:10:47 cananian Exp $
  * @see QuadNoSSA
  * @see QuadSSI
  */
