@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.94 1999-08-30 16:17:24 cananian Exp $
+% $Id: thesis.tex,v 1.95 1999-08-30 16:57:38 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -37,14 +37,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.94 $ $}
+\date{\today \\ $ $Revision: 1.95 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.94 $ $}{$ $Revision: 1.94 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.95 $ $}{$ $Revision: 1.95 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -738,6 +738,19 @@ figure~\ref{fig:CQdata} can be completed in constant time (and
 \cite{johnson93:sese} shows how to do so), this computation is $O(E)$.
 
 \subsubsection{SESE regions and the program structure tree}
+\begin{myfigure}\small\input{Figures/THsesedata}
+\caption{Datatypes and operations used in construction of the PST.}
+\label{fig:SESEdata}\end{myfigure}
+\begin{myalgorithm}\small\input{Figures/THsesealg}
+\caption{Computing nested SESE regions and the PST.}
+\label{alg:SESEalg}\end{myalgorithm}
+\begin{myfigure}\centering
+\vertcenter{\renewcommand*{\figscale}{0.5}\input{Figures/THcqex}}\hspace{1cm}
+\vertcenter{\renewcommand*{\figscale}{0.7}\input{Figures/THpst}}
+\caption{SESE regions and PST for the CFG of
+         figure~\ref{fig:CQex} (from \cite{johnson94:pst}).}
+\label{fig:SESEex}\end{myfigure}
+
 Johnson, Pearson, and Pingali show how to construct a tree structure
 of nested SESE regions from the cycle-equivalency information in
 \cite{johnson94:pst}.  The cycle-equivalent regions are sorted by
@@ -755,21 +768,6 @@ the right for the example of figure~\vref{fig:CQex}.%
 \emph{sequentially composed} \cite{johnson94:pst}. 
 However, our SSI construction algorithm doesn't use this property.}
 
-\begin{myfigure}\small\input{Figures/THsesedata}
-\caption{Datatypes and operations used in construction of the PST.}
-\label{fig:SESEdata}\end{myfigure}
-
-\begin{myalgorithm}\small\input{Figures/THsesealg}
-\caption{Computing nested SESE regions and the PST.}
-\label{alg:SESEalg}\end{myalgorithm}
-
-\begin{myfigure}\centering
-\vertcenter{\renewcommand*{\figscale}{0.5}\input{Figures/THcqex}}\hspace{1cm}
-\vertcenter{\renewcommand*{\figscale}{0.7}\input{Figures/THpst}}
-\caption{SESE regions and PST for the CFG of
-         figure~\ref{fig:CQex} (from \cite{johnson94:pst}).}
-\label{fig:SESEex}\end{myfigure}
-
 The time complexity for constructing the PST is easily seen to be
 $O(E)$. The algorithm presented in figure~\vref{alg:SESEalg} begins
 with a depth first traversal of $G$ to construct an ordered edge list
@@ -783,6 +781,11 @@ and {\tt LinkRegion}.  All steps are $O(E)$ and their sequential
 composition is also $O(E)$.
 
 \subsubsection{Placing \phisigfunction{s}}
+\begin{myalgorithm}\small
+\input{Figures/THssialg}
+\caption{Placing \phisigfunction{s}.}\label{alg:SSIplace}
+\end{myalgorithm}
+
 As with the presentation of SSA form in \cite{cytron91:ssa}, we split
 construction of SSI form into two parts: placing \phisigfunction{s}
 and renaming variables.  The placement algorithm runs in $O(N V_0)$
@@ -806,11 +809,6 @@ obtained.  There is a large practical difference in actual runtime and
 space costs, however, which motivates our more efficient approach.}
 The remainder of this section will be devoted to a correctness proof
 of the algorithm of figure~\ref{alg:SSIplace}.
-
-\begin{myalgorithm}\small
-\input{Figures/THssialg}
-\caption{Placing \phisigfunction{s}.}\label{alg:SSIplace}
-\end{myalgorithm}
 
 \begin{lemma}\label{lem:sese_child}
 No \phifunction{s} (\sigfunction{s}) for a variable $v$ are needed in
@@ -898,10 +896,17 @@ sufficient.
 In practice, the conditions of lemma \ref{lem:ssi_dom} are too expensive
 to implement directly.  Instead, we use a conservative approximation
 to SSI form, which allows us to place more \phisigfunction{s} than
-minimal SSI requires, while satisfying the conditions of the SSI form
-definition.  Our algorithm also allows us to do pre-pruning of the SSI
+minimal SSI requires (for example, a \phifunction for $v$ at the
+circled node in figure~\ref{fig:placeerror}), while satisfying the
+conditions of the SSI form definition.  
+Our algorithm also allows us to do pre-pruning of the SSI
 form during placement.  The result is not pruned SSI, but contains a
-superset of the \phisigfunction{s} that pruned form requires.
+tight superset of the \phisigfunction{s} that pruned form requires.
+\begin{myfigure}
+\centering\renewcommand*{\figscale}{0.30}\input{Figures/THmorephi}
+\caption{An flowgraph where algorithm~\ref{alg:SSIplace} places
+\phifunction{s} conservatively.}\label{fig:placeerror}
+\end{myfigure}
 
 \begin{theorem}\label{thm:placeproof}
 The algorithm in figure~\ref{alg:SSIplace} places all the
