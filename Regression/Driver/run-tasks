@@ -2,6 +2,7 @@
 
 # This is the main server script. Basically it manages the whole interaction between the server and the machines on which the tasks are run. It also collects information from remote machines after the tasks are run.
 # Modifying this script most probably will involve modifying many other scripts and data files. Since this is one of the main scripts, please make sure that everything IS working, before updating it on the main server.
+# Also, if you modify this script, please make sure that you update the FILES and README files.
 
 
 # User-defined functions
@@ -69,8 +70,7 @@ else
     TASKS_CHANGED="Tasks changed:"   # the list of the tasks with changed output
     ERROR_FILE=errors_$DATE   # The name of the error file for this session
     ERROR_FILE_SHORT=$ERROR_FILE"_short"   # The name of the short error file (the contents of which will be mailed)
-    DIFFS_SOURCES_FILE=diffs_sources_$DATE   # The name of the sources diffs file for this session
-    DIFFS_RESULTS_FILE=diffs_results_$DATE   # The name of the results diffs file for this session
+    DIFFS_SOURCES_FILE=diffs_$DATE   # The name of the sources diffs file for this session
     
     TEMP_DIR=temp
     DIFFS_DIR=$TEMP_DIR/diffs
@@ -82,7 +82,7 @@ else
     ARCHIVE_EXECUTABLES_FILE=$ARCHIVE_DIR/executables.tar.gz   # executables archive
     ARCHIVE_ERRORS_FILE=$ARCHIVE_DIR/errors.tar.gz   # errors archive
     ARCHIVE_ERRORS_SHORT_FILE=$ARCHIVE_DIR/errors_short.tar.gz   # short errors archive
-    ARCHIVE_DIFFS_SOURCES_FILE=$ARCHIVE_DIR/diffs_sources.tar.gz   # sources diffs archive
+    ARCHIVE_DIFFS_SOURCES_FILE=$ARCHIVE_DIR/diffs.tar.gz   # sources diffs archive
     ARCHIVE_COMPILE_RESULTS_FILE=$ARCHIVE_DIR/compile_results.tar.gz   # compiling time results
     ARCHIVE_RUN_RESULTS_FILE=$ARCHIVE_DIR/run_results.tar.gz   # runtime results archive
     JOURNAL_FILE=$ARCHIVE_DIR/journal   # for each benchmark, keeps information about its last execution
