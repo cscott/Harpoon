@@ -6,6 +6,9 @@ import java.util.Iterator;
 /** <code>GenericInvertibleMap</code> is a default implementation of
     <code>InvertibleMap</code>.  It returns unmodifiable inverted
     views of the mappings it maintains.
+
+    @author  Felix S. Klock II <pnkfelix@mit.edu>
+    @version $Id: GenericInvertibleMap.java,v 1.1.2.4 2001-06-17 20:13:18 cananian Exp $
 */
 public class GenericInvertibleMap extends MapWrapper implements InvertibleMap {
     // inverted map

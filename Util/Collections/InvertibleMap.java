@@ -11,6 +11,9 @@ package harpoon.Util.Collections;
     <code>this</code> is (ie, changes to the data structure may still
     have to be made through <code>this</code> rather than directly to
     the returned <code>MultiMap</code>).
+
+    @author  Felix S. Klock II <pnkfelix@mit.edu>
+    @version $Id: InvertibleMap.java,v 1.1.2.3 2001-06-17 20:13:18 cananian Exp $
 */
 public interface InvertibleMap extends java.util.Map {
     /** Returns a inverted view of <code>this</code>.
