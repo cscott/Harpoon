@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.57 1999-10-14 00:23:42 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.58 1999-10-14 04:29:48 cananian Exp $
  */
 %%
 
@@ -213,6 +213,19 @@ import java.util.Iterator;
 	    return newT;
     }
 
+    // helper for predicate clauses
+    private boolean is12BitOffset(long val) {
+	// addressing mode two takes a 12 bit unsigned offset, with
+	// an additional bit in the instruction word indicating whether
+	// to add or subtract this offset.  This means that there
+	// are two representations for zero offset: +0 and -0.
+	long absval = (val<0)?-val:val;
+	return (absval&(~0xFFF))==0;
+    }
+    private boolean is12BitOffset(Number n) {
+	if (n instanceof Double || n instanceof Float) return false;
+	else return is12BitOffset(n.longValue());
+    }
 %%
 %start with %{
        // *** METHOD PROLOGUE *** 
@@ -574,14 +587,44 @@ BINOP<p,i>(SHL, j, k) = i %{
     emit( ROOT, "mov `d0, `s0 lsl `s1", i, j, k );
 }%
 
+BINOP<l>(SHL, j, k) = i %{
+    Temp i = makeTwoWordTemp();
+    emit( ROOT, "mov `d0, `s0l", r0, j );
+    emit( ROOT, "mov `d0, `s0h", r1, j );
+    emit( ROOT, "mov `d0, `s0 ", r2, k );
+    emit( ROOT, "bl ___ashldi3");
+    emit( ROOT, "mov `d0l, `s0", i, r0 );
+    emit( ROOT, "mov `d0h, `s1", i, r1 );
+}%
+
 BINOP<p,i>(SHR, j, k) = i %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0 lsr `s1", i, j, k );
 }%
 
+BINOP<l>(SHR, j, k) = i %{
+    Temp i = makeTwoWordTemp();
+    emit( ROOT, "mov `d0, `s0l", r0, j );
+    emit( ROOT, "mov `d0, `s0h", r1, j );
+    emit( ROOT, "mov `d0, `s0 ", r2, k );
+    emit( ROOT, "bl ___ashrdi3");
+    emit( ROOT, "mov `d0l, `s0", i, r0 );
+    emit( ROOT, "mov `d0h, `s1", i, r1 );
+}%
+
 BINOP<p,i>(USHR, j, k) = i %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0 asr `s1", i, j, k );
+}%
+
+BINOP<l>(USHR, j, k) = i %{
+    Temp i = makeTwoWordTemp();
+    emit( ROOT, "mov `d0, `s0l", r0, j );
+    emit( ROOT, "mov `d0, `s0h", r1, j );
+    emit( ROOT, "mov `d0, `s0 ", r2, k );
+    emit( ROOT, "bl ___lshrdi3");
+    emit( ROOT, "mov `d0l, `s0", i, r0 );
+    emit( ROOT, "mov `d0h, `s1", i, r1 );
 }%
 
 BINOP<p,i>(XOR, j, k) = i %{
@@ -599,7 +642,7 @@ BINOP<l>(XOR, j, k) = i %{
 CONST<f>(c) = i %{
     // NOTE: this may be the wrong way to handle constants
     Temp i = makeTemp();
-    float val = ((CONST)ROOT).value.floatValue();		
+    float val = ROOT.value.floatValue();		
     emit(new Instr( instrFactory, ROOT,
 		    "mov `d0, #"+val,
 		    new Temp[]{ i }, null));
@@ -608,7 +651,7 @@ CONST<f>(c) = i %{
 CONST<d>(c) = i %{
     // NOTE: this is probably the wrong way to handle constants
     Temp i = makeTwoWordTemp();		
-    double val = ((CONST)ROOT).value.doubleValue();		
+    double val = ROOT.value.doubleValue();		
     emit(new Instr( instrFactory, ROOT,
 		    "mov `d0l, #"+val,
 		    new Temp[]{ i }, null));
@@ -620,7 +663,7 @@ CONST<d>(c) = i %{
 CONST<l>(c) = i %{
     // NOTE: this may be the wrong way to handle constants
     Temp i = makeTwoWordTemp();		
-    long val = ((CONST)ROOT).value.longValue();		
+    long val = ROOT.value.longValue();		
     emit(new Instr( instrFactory, ROOT,
 		    "mov `d0l, #"+val,
 		    new Temp[]{ i }, null));
@@ -632,7 +675,7 @@ CONST<l>(c) = i %{
 
 CONST<i>(c) = i %{
     Temp i = makeTemp();		
-    int val = ((CONST)ROOT).value.intValue();
+    int val = ROOT.value.intValue();
     emit(new Instr( instrFactory, ROOT,
 		    "mov `d0, #"+val,
 		    new Temp[]{ i }, null));
@@ -782,11 +825,54 @@ BINOP<l>(REM, j, k) = i %{
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 
-MEM<p,i,f>(e) = i %{
-    Temp i = makeTemp();		
+// fix me: addressing mode for MEM is actually much richer than this.
+// we can do offsets and scaling in same oper.
+MEM<s:16,u:16>(e) = i %{ // addressing mode 3
+    Temp i = makeTemp();
+    String suffix=ROOT.signed()?"sh":"h";
     emit(new InstrMEM(instrFactory, ROOT,
-	             "ldr `d0, [`s0]",
+		      "ldr"+suffix+" `d0, [`s0] @ halfword load",
+		      new Temp[]{ i }, new Temp[]{ e }));
+}%
+MEM<s:8,u:8,p,i,f>(e) = i %{ // addressing mode 2
+    Temp i = makeTemp();		
+    String suffix="";
+    if (ROOT.isSmall() && ROOT.signed()) suffix+="s";
+    if (ROOT.isSmall() && ROOT.bitwidth()==8) suffix+="b";
+    emit(new InstrMEM(instrFactory, ROOT,
+	             "ldr"+suffix+" `d0, [`s0]",
 		     new Temp[]{ i }, new Temp[]{ e }));
+}%
+MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, j, k)) = i %{ // addressing mode 2
+    Temp i = makeTemp();		
+    String suffix="";
+    if (ROOT.isSmall() && ROOT.signed()) suffix+="s";
+    if (ROOT.isSmall() && ROOT.bitwidth()==8) suffix+="b";
+    emit(new InstrMEM(instrFactory, ROOT,
+	             "ldr"+suffix+" `d0, [`s0, `s1]",
+		     new Temp[]{ i }, new Temp[]{ j, k }));
+}%
+MEM<s:8,u:8,p,i,f>(BINOP(ADD, j, CONST<i,p>(c))) = i
+%pred %( is12BitOffset(c) )%
+%{
+    Temp i = makeTemp();		
+    String suffix="";
+    if (ROOT.isSmall() && ROOT.signed()) suffix+="s";
+    if (ROOT.isSmall() && ROOT.bitwidth()==8) suffix+="b";
+    emit(new InstrMEM(instrFactory, ROOT,
+	             "ldr"+suffix+" `d0, [`s0, #"+c+"]",
+		     new Temp[]{ i }, new Temp[]{ j }));
+}%
+MEM<s:8,u:8,p,i,f>(BINOP(ADD, CONST<i,p>(c), j)) = i
+%pred %( is12BitOffset(c) )%
+%{
+    Temp i = makeTemp();		
+    String suffix="";
+    if (ROOT.isSmall() && ROOT.signed()) suffix+="s";
+    if (ROOT.isSmall() && ROOT.bitwidth()==8) suffix+="b";
+    emit(new InstrMEM(instrFactory, ROOT,
+	             "ldr"+suffix+" `d0, [`s0, #"+c+"]",
+		     new Temp[]{ i }, new Temp[]{ j }));
 }%
 MEM<l,d>(e) = i %{
     Temp i = makeTwoWordTemp();		
@@ -796,31 +882,6 @@ MEM<l,d>(e) = i %{
     emit(new InstrMEM(instrFactory, ROOT,
 	             "ldr `d0h, [`s0, #4]",
 		     new Temp[]{ i }, new Temp[]{ e }));
-}%
-
-MEM<s:8>(e) = i %{
-    Temp i = makeTemp();
-    emit( new InstrMEM(instrFactory, ROOT,
-		       "ldrsb `d0, [`s0]",
-		       new Temp[]{ i }, new Temp[]{ e }));
-}%
-MEM<u:8>(e) = i %{
-    Temp i = makeTemp();
-    emit( new InstrMEM(instrFactory, ROOT,
-		       "ldrb `d0, [`s0]",
-		       new Temp[]{ i }, new Temp[]{ e }));
-}%
-MEM<s:16>(e) = i %{
-    Temp i = makeTemp();
-    emit( new InstrMEM(instrFactory, ROOT,
-		       "ldrsh `d0, [`s0]",
-		       new Temp[]{ i }, new Temp[]{ e }));
-}%
-MEM<u:16>(e) = i %{
-    Temp i = makeTemp();
-    emit( new InstrMEM(instrFactory, ROOT,
-		       "ldrh `d0, [`s0]",
-		       new Temp[]{ i }, new Temp[]{ e }));
 }%
 
 // can use adr for 8 bit offsets to variables close by,
@@ -859,9 +920,9 @@ MEM<d,l>(NAME(id)) = i %{
 */
 
 TEMP<p,i,f>(id) = i %{
-    Temp i = makeTemp( ((TEMP)ROOT).temp );
-    if (((TEMP)ROOT) != param0) {
-	emitMOVE( ROOT, "mov `d0, `s0", i, ((TEMP)ROOT).temp);
+    Temp i = makeTemp( ROOT.temp );
+    if (ROOT != param0) {
+	emitMOVE( ROOT, "mov `d0, `s0", i, ROOT.temp);
     } else {
 	emit( ROOT, /* "\t.global _lookup\n"+ */ // not necessary
 		    "bl _lookup\n"+
@@ -872,8 +933,8 @@ TEMP<p,i,f>(id) = i %{
 TEMP<l,d>(id) = i %{
     // Will need to modify these to do something like mapping from
     // TEMP's Temp to the necessary TwoWordTemp
-    TwoWordTemp i = makeTwoWordTemp( ((TEMP)ROOT).temp );		
-    // Temp i = ((TEMP)ROOT).temp;
+    TwoWordTemp i = makeTwoWordTemp( ROOT.temp );		
+    // Temp i = ROOT.temp;
     
 
 }%
@@ -1076,7 +1137,7 @@ EXP(e) %{
 }%
 
 JUMP(e) %{
-    List labelList = LabelList.toList( ((JUMP)ROOT).targets );
+    List labelList = LabelList.toList( ROOT.targets );
     Instr j = 
        emit(new Instr( instrFactory, ROOT, 
 		       "mov `d0, `s0",
@@ -1090,20 +1151,20 @@ JUMP(e) %{
 }%
 
 LABEL(id) %{
-    LABEL l = (LABEL) ROOT;
-    if (l.exported) {
-      emitLABEL( l, "\t.global "+l.label+"\n"+
-		    l.label + ":", l.label);
+    if (ROOT.exported) {
+      emitLABEL( ROOT, "\t.global "+ROOT.label+"\n"+
+		    ROOT.label + ":", ROOT.label);
     } else {
-      emitLABEL( l, l.label + ":", l.label);
+      emitLABEL( ROOT, ROOT.label + ":", ROOT.label);
     }
 }%
 
-MOVE<p,i,f>(dst, src) %{
+MOVE<p,i,f>(TEMP(dst), src) %{
     emitMOVE( ROOT, "mov `d0, `s0", dst, src );
 }%
 
-MOVE<d,l>(dst, src) %{
+MOVE<d,l>(TEMP(dst), src) %{
+    dst = makeTwoWordTemp(dst);
     Util.assert( dst instanceof TwoWordTemp, "why is dst: "+dst + 
 		 " a normal Temp? " + harpoon.IR.Tree.Print.print(ROOT));
 
@@ -1114,15 +1175,15 @@ MOVE<d,l>(dst, src) %{
 		    "mov `d0h, `s0h", dst, src );
 }%
 
-MOVE<i>(dst, CONST<i>(s)) %{
+MOVE<i>(TEMP(dst), CONST<i>(s)) %{
     // TODO: this needs to be fixed, because StrongARM can't load more
     // than a byte of information at a time...
     emit(new Instr(instrFactory, ROOT,
-		   "mov `d0, #"+((CONST)((MOVE)ROOT).src).value.intValue(),
+		   "mov `d0, #"+((CONST)ROOT.src).value.intValue(),
 		   new Temp[] { dst }, null));
 }%
 
-MOVE<p>(dst, CONST<p>(s)) %{ 
+MOVE<p>(TEMP(dst), CONST<p>(s)) %{ 
     // we should only see CONST of type pointer when the value is NULL
     emit(new Instr(instrFactory, ROOT,
 		   "mov `d0, #0",
@@ -1132,30 +1193,50 @@ MOVE<p>(dst, CONST<p>(s)) %{
 /* // FSK: I don't want to code these now (will probably need some for
    // MOVE<d,f,l>(MEM(d), s) as well...)
 
-MOVE<f>(dst, CONST(s)) %{
+MOVE<f>(TEMP(dst), CONST(s)) %{
 
 }%
 
-MOVE<d,l>(dst, CONST(s)) %{
+MOVE<d,l>(TEMP(dst), CONST(s)) %{
 
 }%
 */
 
-MOVE<i>(MEM(d), src) %{
+MOVE(MEM<s:8,u:8,p,i,f>(d), src) %{ // addressing mode 2
+    String suffix="";
+    if (((MEM)ROOT.dst).isSmall() && ((MEM)ROOT.dst).bitwidth()==8)
+	 suffix+="b";
     emit(new InstrMEM(instrFactory, ROOT,
-		      "str `s0, [`s1]",
+		      "str"+suffix+" `s0, [`s1]",
 		      null, new Temp[]{ src, d }));   
 }%
-
-MOVE<i>(MEM<s:8,u:8>(d), src) %{
+MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, d1, d2)), src) %{ // addressing mode 2
+    String suffix="";
+    if (((MEM)ROOT.dst).isSmall() && ((MEM)ROOT.dst).bitwidth()==8)
+	 suffix+="b";
     emit(new InstrMEM(instrFactory, ROOT,
-		      "strb `s0, [`s1]",
-		      null, new Temp[]{ src, d }));
+		      "str"+suffix+" `s0, [`s1, `s2]",
+		      null, new Temp[]{ src, d1, d2 }));   
 }%
-MOVE<i>(MEM<s:16,u:16>(d), src) %{
+MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, d, CONST<i,p>(c))), src)
+%pred %( is12BitOffset(c) )%
+%{
+    String suffix="";
+    if (((MEM)ROOT.dst).isSmall() && ((MEM)ROOT.dst).bitwidth()==8)
+	 suffix+="b";
     emit(new InstrMEM(instrFactory, ROOT,
-		      "strh `s0, [`s1]",
-		      null, new Temp[]{ src, d }));
+		      "str"+suffix+" `s0, [`s1, #"+c+"]",
+		      null, new Temp[]{ src, d }));   
+}%
+MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, CONST<i,p>(c), d)), src)
+%pred %( is12BitOffset(c) )%
+%{
+    String suffix="";
+    if (((MEM)ROOT.dst).isSmall() && ((MEM)ROOT.dst).bitwidth()==8)
+	 suffix+="b";
+    emit(new InstrMEM(instrFactory, ROOT,
+		      "str"+suffix+" `s0, [`s1, #"+c+"]",
+		      null, new Temp[]{ src, d }));   
 }%
 
 RETURN(val) %{
