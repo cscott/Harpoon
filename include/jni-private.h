@@ -80,10 +80,6 @@ struct inflated_oobj {
   pthread_cond_t  cond; /* condition variable */
   pthread_rwlock_t jni_data_lock; /*read/write lock for jni_data field, above*/
 #endif
-#ifdef WITH_CLUSTERED_HEAPS
-  struct clustered_heap * heap;
-  void (*heap_release)(struct clustered_heap *);
-#endif
 #ifdef BDW_CONSERVATIVE_GC
   /* for cleanup via finalization */
   GC_finalization_proc old_finalizer;
