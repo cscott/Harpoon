@@ -1,0 +1,1 @@
+g++ file2.cc libchecker.a -o file2
