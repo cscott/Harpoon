@@ -45,7 +45,7 @@ public class Sources {
 	e.generate(cr, size);
 	cr.popSymbolTable();
 	cr.outputline(td.getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"=("+td.getGenerateType().getSafeSymbol()+") calloc(1,"+size.getSafeSymbol()+");");
-	
+	cr.outputline("alloc("+vd.getSafeSymbol()+","+size.getSafeSymbol()+");");
 	if (Compiler.ALLOCATECPLUSPLUS) {
 	    if (td instanceof StructureTypeDescriptor) {
 		if (((StructureTypeDescriptor)td).size()>0) {
