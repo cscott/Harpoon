@@ -48,8 +48,8 @@ import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Default;
 import harpoon.Util.HClassUtil;
-import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
@@ -68,7 +68,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.65 2000-02-11 06:32:28 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.66 2000-02-11 18:10:37 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -96,6 +96,9 @@ class ToTree {
 		  EdgeOracle eo, FoldNanny fn, ReachingDefs rd) {
 	Util.assert(((Code.TreeFactory)tf).getParent()
 		    .getName().equals("tree"));
+	if (fn==null) fn = new FoldNanny() {
+	    public boolean canFold(HCodeElement hce, Temp t) { return false; }
+	};
 	translate(tf, code, eo, fn, rd);
     }
     
@@ -229,18 +232,12 @@ static class TranslationVisitor extends LowQuadVisitor {
 	addStmt(new LABEL(m_tf, src, label, false));
     }
     public void emitPhiFixup(harpoon.IR.Quads.PHI q, int which_pred) {
-	for (int i=0; i<q.numPhis(); i++) {
-	    Exp dst = _TEMP(q.dst(i), q);
-	    Exp src = _TEMP(q.src(i, which_pred), q);
-	    addStmt(new MOVE(m_tf, q, dst, src));
-	}
+	for (int i=0; i<q.numPhis(); i++)
+	    addMove(q, q.dst(i), _TEMPte(q.src(i, which_pred), q));
     }
     public void emitSigmaFixup(harpoon.IR.Quads.SIGMA q, int which_succ) {
-	for (int i=0; i<q.numSigmas(); i++) {
-	    Exp dst = _TEMP(q.dst(i, which_succ), q);
-	    Exp src = _TEMP(q.src(i), q);
-	    addStmt(new MOVE(m_tf, q, dst, src));
-	}
+	for (int i=0; i<q.numSigmas(); i++)
+	    addMove(q, q.dst(i, which_succ), _TEMPte(q.src(i), q));
     }
     // end labels and phis and sigmas, oh my! --------
 
@@ -423,10 +420,8 @@ static class TranslationVisitor extends LowQuadVisitor {
     }
 
     public void visit(harpoon.IR.Quads.CJMP q) { 
-	Stm s0 = new CJUMP
-	    (m_tf, q, _TEMP(q.test(), q),
-	     label(q.nextEdge(1)), label(q.nextEdge(0))); 
-	addStmt(s0);
+	addStmt(_TEMPte(q.test(), q).unCx
+		(m_tf, label(q.nextEdge(1)), label(q.nextEdge(0))));
     }
   
     public void visit(harpoon.IR.Quads.COMPONENTOF q) {
@@ -788,16 +783,18 @@ static class TranslationVisitor extends LowQuadVisitor {
 
     // foldable _TEMP
     private Translation.Exp _TEMPte(Temp quadTemp, Quad useSite) {
-	// this will be smarter eventually.
-	return new Translation.Ex(_TEMP(quadTemp, useSite));
-    }
-    // creates a properly typed TEMP -- may fold this use!
-    private Exp _TEMP(Temp quadTemp, Quad useSite) {
 	// this constructor takes quad temps.
 	Util.assert(quadTemp.tempFactory()!=m_tf.tempFactory(),
 		    "Temp should be from LowQuad factory, not Tree factory.");
 	// use reachingDefs to find definition sites.
 	Set defSites = reachingDefs.reachingDefs(useSite, quadTemp);
+	if (defSites.size()==1) {
+	    HCodeElement hce = (HCodeElement) defSites.iterator().next();
+	    if (foldNanny.canFold(hce, quadTemp))
+		// fold this use!
+		return (Translation.Exp)
+		    foldMap.remove(Default.pair(hce,quadTemp));
+	}
 	TypeBundle tb = mergeTypes(quadTemp, defSites);
 	Temp treeTemp = m_ctm.tempMap(quadTemp);
 	TEMP result = new TEMP(m_tf, useSite, tb.simpleType, treeTemp);
@@ -805,7 +802,11 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    treeDeriv.putTypeAndTemp(result, tb.classType, treeTemp);
 	else
 	    treeDeriv.putDerivation(result, tb.derivation);
-	return result;
+	return new Translation.Ex(result);
+    }
+    // creates a properly typed TEMP -- may fold this use!
+    private Exp _TEMP(Temp quadTemp, Quad useSite) {
+	return _TEMPte(quadTemp, useSite).unEx(m_tf);
     }
     private TEMP _TEMP(HCodeElement src, HClass type, Temp treeTemp) {
 	// this constructor takes TreeTemps.
@@ -823,26 +824,33 @@ static class TranslationVisitor extends LowQuadVisitor {
 	treeDeriv.putDerivation(result, deriv);
 	return result;
     }
+    // make a move.  unless, of course, the expression should be folded.
     private void addMove(Quad defSite, Temp quadTemp, Translation.Exp value) {
-	// eventually this will be more clever
-	addMove(defSite, quadTemp, value.unEx(m_tf));
-    }
-    private void addMove(Quad defSite, Temp quadTemp, Exp value) {
 	// this constructor takes quad temps.
 	Util.assert(quadTemp.tempFactory()!=m_tf.tempFactory(),
 		    "Temp should be from LowQuad factory, not Tree factory.");
-	// eventually will consult folding map.
+	if (foldNanny.canFold(defSite, quadTemp)) {
+	    foldMap.put(Default.pair(defSite, quadTemp), value);
+	    return;
+	}
+	// otherwise... make Tree.MOVE
 	HClass type = quadDeriv.typeMap(defSite, quadTemp);
 	Temp treeTemp = m_ctm.tempMap(quadTemp);
 	TEMP dst = new TEMP(m_tf, defSite, TYPE(type), treeTemp);
-	MOVE m = new MOVE(m_tf, defSite, dst, value);
+	MOVE m = new MOVE(m_tf, defSite, dst, value.unEx(m_tf));
 	if (type!=null)
 	    treeDeriv.putTypeAndTemp(dst, type, treeTemp);
 	else
 	    treeDeriv.putDerivation(dst, 
 				    quadDeriv.derivation(defSite, quadTemp));
 	addStmt(m);
+	return;
     }
+    private void addMove(Quad defSite, Temp quadTemp, Exp value) {
+	addMove(defSite, quadTemp, new Translation.Ex(value));
+    }
+    // storage for folded definitions.
+    private final Map foldMap = new HashMap();
 
     private TypeBundle mergeTypes(Temp t, Set defSites) {
 	Util.assert(defSites.size() > 0);
