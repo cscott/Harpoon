@@ -22,7 +22,13 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
   /* be careful in case someone inflates this guy while our back is turned */
   if (obj->hashunion.hashcode & 1) {
     /* all data in inflated_oobj is managed manually, so we can use malloc */
-    struct inflated_oobj *infl = malloc(sizeof(*infl));
+    struct inflated_oobj *infl = 
+#if defined(WITH_TRANSACTIONS) && defined(BDW_CONSERVATIVE_GC)
+	GC_malloc_uncollectable /* transactions stores version info here */
+#else
+	malloc
+#endif
+	(sizeof(*infl));
     /* initialize infl */
     memset(infl, 0, sizeof(*infl));
     infl->hashcode = obj->hashunion.hashcode;
@@ -88,7 +94,12 @@ static void deflate_object(GC_PTR obj, GC_PTR client_data) {
 #endif
     /* wow, all done. */
     oobj->hashunion.hashcode = infl->hashcode;
-    free(infl);
+#if defined(WITH_TRANSACTIONS) && defined(BDW_CONSERVATIVE_GC)
+    GC_free
+#else
+    free
+#endif
+	(infl);
 }
 #endif
 
