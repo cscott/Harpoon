@@ -17,13 +17,14 @@ import java.util.AbstractCollection;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 /**
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.20 1999-06-15 20:30:54 sportbilly Exp $
+ * @version $Id: Quad.java,v 1.1.2.21 1999-07-07 22:14:01 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -272,17 +273,41 @@ public abstract class Quad
     {
 	Util.assert(header instanceof HEADER, 
 		    "Argument to Quad.clone() should be a HEADER.");
-	return copyone(qf, header, new Hashtable(),
+	return copyone(qf, header, new HashMap(),
 		       new CloningTempMap(header.qf.tempFactory(),
 					  qf.tempFactory()));
     }
-    private static Quad copyone(QuadFactory qf, Quad q, Hashtable old2new,
+    /** Create a new copy of a string of <code>Quad</code>s starting
+     * at the given header using the specified
+     * <code>QuadFactory</code>, and returns a pair of mappings as a
+     * two-element array.  The first element contains a 
+     * mapping from old quads to the newly cloned
+     * quads, and the last element contains a mapping from old temps to
+     * newly cloned temps.<p>
+     * The cloned quads will be rooted at
+     *  <code>((Map)cloneMaps(qf, header)[0]).get(header)</code>.
+     * The <code>TempMap</code> is
+     *  <code>((TempMap)cloneMaps(qf, header)[1])</code>.
+     */
+    public static Object[] cloneMaps(QuadFactory qf, Quad header)
+    {
+	Util.assert(header instanceof HEADER, 
+		    "Argument to Quad.clone() should be a HEADER.");
+	Map qm = new HashMap();
+	CloningTempMap ctm = new CloningTempMap(header.qf.tempFactory(),
+						qf.tempFactory());
+	copyone(qf, header, qm, ctm);
+	Map quadMap = Collections.unmodifiableMap(qm);
+	TempMap tempMap = ctm.unmodifiable();
+	return new Object[] { quadMap, tempMap };
+    }
+    private static Quad copyone(QuadFactory qf, Quad q, Map old2new,
 				CloningTempMap ctm)
     {
 	Quad r = (Quad) old2new.get(q);
 	// if we've already done this one, return previous clone.
 	if (r!=null) return r;
-	// clone the fields, add to hashtable.
+	// clone the fields, add to map.
 	r = (Quad) q.clone(qf, ctm);
 	old2new.put(q, r);
 	// fixup the edges.
