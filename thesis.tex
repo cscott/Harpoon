@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.110 1999-09-02 19:34:33 cananian Exp $
+% $Id: thesis.tex,v 1.111 1999-09-02 21:10:12 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -24,6 +24,8 @@
 % lattice inequalities
 \newcommand{\latlt}{\ensuremath{\sqsubset}}
 \newcommand{\latleq}{\ensuremath{\sqsubseteq}}
+% what to use for executable semantics
+\newcommand{\sgt}{\sqsupset}%{\succ}
 
 % get rid of crutft
 \newcommand{\ignore}[1]{}
@@ -41,20 +43,21 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.110 $ $}
+\date{\today \\ $ $Revision: 1.111 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.110 $ $}{$ $Revision: 1.110 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.111 $ $}{$ $Revision: 1.111 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
 
 \section{Introduction}
-The selection of a compiler internal respresentation from the many
+\ignore{
+The selection of a compiler internal representation from the many
 littering the academic literature may at times seem a black art.  Each
 IR is accompanied by papers trumpeting its superiority for one purpose
 or another, and each IR feels compelled to introduce new terms and
@@ -67,15 +70,18 @@ theorist will derive proofs based upon intermediate representations
 regard to current implementation practices.%
 \dontfixme{This paragraph will be revised to be less offensive, eventually.}
 
-This paper introduces yet another intermediate
-representation to the literature:  Static Single Information (SSI) form.
+This paper introduces yet another intermediate representation to the
+literature:  
+}
+This paper introduces a compiler intermediate representation:
+Static Single Information (SSI) form.
 This IR is the core of the FLEX compiler project, which is primarily
 investigating intelligent compilation techniques for distributed
 systems.  This thesis, in presenting the IR,
 attempts to keep both the mathematician and the programmer in mind.  
 SSI form has both a rigorous mathematical semantics and a factored
 form which aids efficient implementation of advanced analyses.
-I believe that it best straddles the gap between dataflow-oriented,
+I believe that it effectively straddles the gap between dataflow-oriented,
 graph-structured, and control-flow driven IRs, while maintaining the
 sparsity needed to achieve practical efficiency.  The construction
 algorithms are linear in the size of the program.
@@ -85,9 +91,10 @@ tied to the source language of the FLEX compiler, Java.  Unlike many
 abstract IRs, the choices made in the design of SSI form have been
 dictated by the necessities of compiling a real-world imperative
 language.  Java, however, has several theoretical properties that make
-mathematical analysis more tractable.  In particular, we
-will mention here Java's strict constraints on pointer variables.
-Pointers in C can be abused in many ways that Java disallows.
+program analysis more tractable.  In particular, we
+mention here Java's strict constraints on pointer variables.
+Pointers in earlier languages such as C can be abused in many ways
+that Java disallows.
 
 Ultimately, the choice of compiler internal representation is fundamental.
 Advances in IRs translate into advances in compilers.  SSI form
@@ -129,7 +136,7 @@ our Static Single Information form may be summarized as follows:
 \item It is simple.
 \item It is efficient.
 \item It has no explicit control dependencies.
-\item It allows both forward and reverse dataflow analyses.
+\item It supports both forward and reverse dataflow analyses.
 \end{itemize}
 SSI form is used as an IR for the FLEX compiler for the Java
 programming language, which informs some of these design decisions.
@@ -142,13 +149,13 @@ point in turn.
 further in section \ref{sec:ssa}) assigns unique names to unique \emph{static
 values} of a variable.  However, it ignores the value information
 which may be added to a variable at program branch points.  SSI form
-renames at branch points which allows us to associate unique names
+renames variable at branch points, which allows us to associate unique names
 with unique \emph{information} about static values.  For example, a
 program may test the value of an integer against zero before using it
 as a divisor.  After the branch on the tested predicate, it is
 possible to make statements about values (regarding equality or
 inequality to zero) which were impossible to make previously.  SSI
-form allows us to take advantage of this additional information.
+form allows us to exploit this additional information.
 
 \textbf{It is complete.}\label{sec:complete}
 By this we mean that there exists an
@@ -202,7 +209,7 @@ variables used in the complexity bounds of these two paragraphs.}
 This bound
 was dominated by the time and space required to construct the
 dominance frontier, as $|{DF}|$, the size of the dominance frontier,
-could be $O(N^2)$ for common cases.  Taking the dominant term, we will
+could be $O(N^2)$ for common cases.  Taking the dominant term, we
 abbreviate the time complexity of the Cytron's SSA-construction
 algorithm as $O(N^2 V)$.
 
@@ -222,7 +229,7 @@ experimental evidence that run times on real programs are $O(N)$.}
 
 \textbf{All explicit control dependencies are eliminated.}
 Some researchers (including \cite{appel:modern} and
-\cite{pingali97:apt}) view control-dependence as a fundamental
+\cite{pingali97:apt}) view control dependence as a fundamental
 property of the CFG, and \cite{ballance90:pdw,appel:modern} suggest
 that accurate knowledge of control-dependence relations is the sole
 key to automatic parallelization.  Often, incomplete intermediate
@@ -255,7 +262,7 @@ form is able to handle both of these cases, as we demonstrate in
 section \ref{sec:bidirectional}.
 
 \section{Definitions}\label{sec:defs}
-Before we begin, we will take time to make some definitions.
+We next provide some definitions.
 Our complexity metrics will usually be in terms of the following
 variables:
 \begin{itemize}
@@ -289,9 +296,10 @@ the nodes $s_i$ in it are distinct.
 
 Control-flow graphs are assumed to be connected, and to contain unique
 \code{START} and \code{END} nodes marking procedure entry and exit
-points, respectively.  To ensure connectedness of graphs representing
-infinite loops, an edge will typically exist between \code{START} and
-\code{END}.  The presence of unique \code{START} and \code{END} nodes
+points, respectively.  To ensure that graphs representing
+infinite loops are connected, an edge will typically exist between
+the \code{START} and \code{END} nodes.  
+The presence of unique \code{START} and \code{END} nodes
 ensures that both the dominance and post-dominance relation define
 trees rooted at \code{START} and \code{END}, respectively.
 
@@ -302,18 +310,18 @@ partial ordering relation for a lattice.
 \section{Static Single Assignment form}\label{sec:ssa}
 Static Single Information (SSI) form derives many features from Static
 Single Assignment (SSA) form, as described by Cytron in
-\cite{cytron89:ssa}.  We will review SSA form to provide context for
-our definition of SSI form in section~\ref{sec:ssi}.
+\cite{cytron89:ssa}.  To provide context for
+our definition of SSI form in section~\ref{sec:ssi}, we review SSA form.
 
 \subsection{Definition of SSA form}
 
 Static Single-Assignment form is a sparse program representation in
 which each variable has exactly one definition point.  As a
-consequence only one assignment can reach each use, which means that
+consequence, only one assignment can reach each use, which means that
 SSA form can be viewed as a type of sparse \newterm{def-use chain}
 \cite{aho88:dragon}.
 
-For straight-line code, the SSA transformation is straight-forward:
+For straight-line code, the SSA transformation is straightforward:
 each assignment to a variable is given a unique name (conventionally
 indicated by the use of a subscripted version of the original variable
 name) and each use is renamed to match its reaching definition.
@@ -362,7 +370,7 @@ an SSA form using the smallest number of \phifunction{s} such that the
 above three conditions hold.  
 %The first condition is obviously the
 %most important for this definition.
-The SSA form in the previous example (figure~\vref{fig:tossa}) is minimal.
+The SSA form in the previous example (Figure~\vref{fig:tossa}) is minimal.
 
 A variation
 on minimal SSA form, called \newterm{pruned form},
@@ -392,8 +400,8 @@ SSI form extends SSA form to achieve symmetry for both forward and
 reverse dataflow.   SSI form recognizes that information about
 variables is generated at branches and generates new names at these
 points.  This provides us with a one-to-one mapping between variable
-names and information about those variables which is independent of
-control-flow graph context.  Analyses can then associate information
+names and information about the variables at each point in the program.
+Analyses can then associate information
 with variable names and propagate this information efficiently and
 directly both with and against the control-flow direction.
 
@@ -408,8 +416,11 @@ one of the disjoint paths from the split uses the value of $V$.
 \end{enumerate}
 
 Figure~\vref{fig:tossi} compares the SSA and SSI forms for 
-the example of figure~\ref{fig:tossa}.%
-\fixme{add text here about how SSI is better?}
+the example of Figure~\ref{fig:tossa}.  Note that $X$ is renamed at
+the conditional branch, allowing the compiler to distinguish between
+$X_1$ (which is always the constant 2) from $X_2$ (which is never
+equal to 2).
+
 \begin{myfigure}
 \begin{center}
 \input{Figures/THex1ssa} \vline\ \input{Figures/THex1ssi}
@@ -457,9 +468,6 @@ variable in the original program.
 in the original program and the corresponding use of $V_i$ in the new
 program.  Then $V$ and $V_i$ have the same value.
 [Correctness.] \label{crit_correct}
-\fixme{It would be nice to have a second set of eyes look over these
-criteria to ensure they are necessary and sufficient.}
-\fixme{Correctness of these definitions?}
 \end{enumerate}
 
 As with the SSA conditions, this definition does not prohibit
@@ -467,8 +475,8 @@ As with the SSA conditions, this definition does not prohibit
 \ref{crit_phiplace} and \ref{crit_sigplace}.
 
 \begin{property}
-There exists exactly one reaching definition of $V$ at every use of
-$V$ in the new program.
+There exists exactly one reaching definition of $V$ at every 
+non-\phifunction{} use of $V$ in the new program.
 \end{property}
 \begin{proof}
 Offner \cite{offner95} defines a reaching definition as follows:
@@ -488,7 +496,7 @@ algorithm we will present enforces the stricter single-definition
 constraint.
 
 \begin{property}\label{pty:ssi_dom}
-Every path $S \pathplus Y$ from the \code{START} node to a node $Y$
+Every cycle-free path $S \pathplus Y$ from the \code{START} node to a node $Y$
 containing a non-\phifunction{} use of a variable must contain exactly
 one node $X$ defining that variable in the new program.  Likewise,
 every path $X \pathplus E$ from a node $X$ containing a
@@ -688,14 +696,15 @@ cycle-equivalency of the edges in the program control flow graph.  The
 cycle-equivalency algorithm works on undirected graphs, so we prepare the
 directed control flow graph $G$ as follows:
 \begin{enumerate}
-\item \textbf{Add an edge from END to START in $\mathbf{G}$.} It is common
-practice to add an edge from START to END in order to root the control
-dependence graph at START \cite{cytron89:ssa}.  However in this case
-the edge serves to make the control flow graph into a single strongly
-connected component, and for this reason the direction of the edge is
-from END to START.
+\item \textbf{Add an edge from \code{END} to \code{START} in
+$\mathbf{G}$.} It is common practice to add an edge from \code{START}
+to \code{END} in order to root the control dependence graph at
+\code{START} \cite{cytron89:ssa}.  However, our goal is not rooted
+control dependence but to make the control flow graph into a single
+strongly connected component; for this reason the direction of the
+edge is from \code{END} to \code{START} instead.
 \item \textbf{Create an equivalent undirected graph.}  Johnson et al.\
-prove that the node expansion illustrated in figure~\vref{fig:CQundir}
+prove that the node expansion illustrated in Figure~\vref{fig:CQundir}
 results in an undirected graph with the same cycle-equivalency
 properties as the original directed graph.  More precisely, nodes $a$
 and $b$ in directed graph $G$ are cycle-equivalent if and only if
@@ -718,9 +727,9 @@ later.
 This is done with a simple depth-first search of $G'$.  When we visit
 a node $a_i$ or $a_o$, we prefer to visit $a'$ before any other
 neighbor.  This ensures that representative nodes are interior nodes
-in the DFS spanning tree. The START node is numbered 0, and succeeding
+in the DFS spanning tree. The \code{START} node is numbered 0, and succeeding
 nodes in the traversal get increasing numbers.  Thus low-numbered
-nodes are closest to START and we will call them ``highest'' in the
+nodes are closest to \code{START} and we will call them ``highest'' in the
 DFS spanning tree.
 \end{enumerate}
 
@@ -735,7 +744,7 @@ DFS spanning tree.
 
 The above steps form an undirected graph $G'$ from the control-flow
 graph $G$.  The remainder of the cycle-equivalency algorithm is
-presented in figure~\vref{alg:CQalg}, with the above procedure
+presented as Algorithm~\vref{alg:CQalg}, with the above procedure
 corresponding to the statement \code{G':=Preprocess(G)}.  The
 algorithm has been corrected from the published version in
 \cite{johnson93:sese}; in addition it has been extended to compute
@@ -744,10 +753,10 @@ both node and edge equivalencies (in effect, merging the algorithm of
 \cite{johnson93:sese} are indicated in the figure with a vertical bar
 in the left margin.  The datatype \code{BracketList} and the node
 and edge properties used in the algorithm are described in
-figure~\vref{fig:CQdata}.  The interested reader is encouraged to consult
+Figure~\vref{fig:CQdata}.  The interested reader is encouraged to consult
 \cite{johnson93:sese} for additional detail on these data structures
 and representations.%
-\fixme{Um, change to compute \emph{edge}
+\dontfixme{Um, change to compute \emph{edge}
 equivalency as well as \emph{node} equivalency.  Merge algorithms from
 \cite{johnson93:sese} and \cite{johnson94:pst}.}
 Figure~\vref{fig:CQex} shows cycle-equivalent regions in a simple
@@ -759,7 +768,7 @@ node $d$.
 \begin{myfigure}\centering
 \vertcenter{\input{Figures/THcqex2}}
 $\begin{array}[c]{cc}
-\tuple{\text{START},1}\cyceq\tuple{16,\text{END}}\\
+\tuple{\code{START},1}\cyceq\tuple{16,\code{END}}\\
 \tuple{1,2}\cyceq\tuple{8,16}\\
 \tuple{2,3}\cyceq\tuple{3,4}\cyceq\tuple{7,8}\\
 \tuple{4,5}\cyceq\tuple{5,7}\\
@@ -772,7 +781,7 @@ $\begin{array}[c]{cc}
 
 Calculating cycle-equivalent regions is based on a single reverse
 depth-first traversal of $G$, so as long as all datatype operations in
-figure~\ref{fig:CQdata} can be completed in constant time (and
+Figure~\ref{fig:CQdata} can be completed in constant time (and
 \cite{johnson93:sese} shows how to do so), this computation is $O(E)$.
 
 \subsubsection{SESE regions and the program structure tree}
@@ -786,7 +795,7 @@ figure~\ref{fig:CQdata} can be completed in constant time (and
 \vertcenter{\renewcommand*{\figscale}{0.5}\input{Figures/THcqex}}\hspace{1cm}
 \vertcenter{\renewcommand*{\figscale}{0.7}\input{Figures/THpst}}
 \caption{SESE regions and PST for the CFG of
-         figure~\ref{fig:CQex} (from \cite{johnson94:pst}).}
+         Figure~\ref{fig:CQex} (from \cite{johnson94:pst}).}
 \label{fig:SESEex}\end{myfigure}
 
 Johnson, Pearson, and Pingali show how to construct a tree structure
@@ -798,16 +807,16 @@ edges from the cycle-equivalence classes.  Another depth-first search
 of the CFG suffices to obtain to nesting of these regions,
 which is represented in a data structure called the 
 \emph{program structure tree}.
-The algorithm and data structures required are presented in figures
-\ref{fig:SESEdata} and \ref{alg:SESEalg}.  Figure~\vref{fig:SESEex}
+The algorithm and data structures required are presented in Figure~%
+\ref{fig:SESEdata} and Algorithm~\ref{alg:SESEalg}.  Figure~\vref{fig:SESEex}
 shows the SESE regions on the left and program structure tree on
-the right for the example of figure~\vref{fig:CQex}.%
+the right for the example of Figure~\vref{fig:CQex}.%
 \footnote{In addition, the regions ${c,d,e}$ and ${f,g}$ are
 \emph{sequentially composed} \cite{johnson94:pst}. 
 However, our SSI construction algorithm doesn't use this property.}
 
 The time complexity for constructing the PST is easily seen to be
-$O(E)$. The algorithm presented in figure~\vref{alg:SESEalg} begins
+$O(E)$. Algorithm~\vref{alg:SESEalg} begins
 with a depth first traversal of $G$ to construct an ordered edge list
 for each cycle-equivalent region; the traversal is $O(E)$ and the
 list-append operation can be done in constant time.  We then iterate
@@ -827,7 +836,7 @@ composition is also $O(E)$.
 As with the presentation of SSA form in \cite{cytron91:ssa}, we split
 construction of SSI form into two parts: placing \phisigfunction{s}
 and renaming variables.  The placement algorithm runs in $O(N V_0)$
-time, and is presented in figure~\vref{alg:SSIplace}.  No new node
+time, and is presented as Algorithm~\vref{alg:SSIplace}.  No new node
 properties or datatypes are required; however, it is parameterized on
 a function called \code{MaybeLive}.  For minimal SSI form,
 \code{MaybeLive} should always return \code{true}.  Faster practical
@@ -846,7 +855,7 @@ post-processing.  In fact the same time bounds ($O(N V_0)$) would be
 obtained.  There is a large practical difference in actual runtime and
 space costs, however, which motivates our more efficient approach.}
 The remainder of this section will be devoted to a correctness proof
-of the algorithm of figure~\ref{alg:SSIplace}.
+of Algorithm~\ref{alg:SSIplace}.
 
 \begin{lemma}\label{lem:sese_child}
 No \phifunction{s} (\sigfunction{s}) for a variable $v$ are needed in
@@ -935,25 +944,25 @@ In practice, the conditions of lemma \ref{lem:ssi_place_dom} are too expensive
 to implement directly.  Instead, we use a conservative approximation
 to SSI form, which allows us to place more \phisigfunction{s} than
 minimal SSI requires (for example, a \phifunction for $v$ at the
-circled node in figure~\ref{fig:placeerror}), while satisfying the
+circled node in Figure~\ref{fig:placeerror}), while satisfying the
 conditions of the SSI form definition.  
 Our algorithm also allows us to do pre-pruning of the SSI
 form during placement.  The result is not pruned SSI, but contains a
 tight superset of the \phisigfunction{s} that pruned form requires.
 \begin{myfigure}
 \centering\renewcommand*{\figscale}{0.30}\input{Figures/THmorephi}
-\caption{An flowgraph where algorithm~\ref{alg:SSIplace} places
+\caption{An flowgraph where Algorithm~\ref{alg:SSIplace} places
 \phifunction{s} conservatively.}\label{fig:placeerror}
 \end{myfigure}
 
 \begin{theorem}\label{thm:placeproof}
-The algorithm in figure~\ref{alg:SSIplace} places all the
+Algorithm~\ref{alg:SSIplace} places all the
 \phisigfunction{s} required by conditions \ref{crit_phiplace} and
 \ref{crit_sigplace} of the SSI form definition.
 \end{theorem}
 \begin{proof}
 Lemma \ref{lem:sese_child} states that the child region exclusion of
-algorithm~\ref{alg:SSIplace} does not cause required \phisigfunction[or]{s} to
+Algorithm~\ref{alg:SSIplace} does not cause required \phisigfunction[or]{s} to
 be omitted.  Property~\ref{pty:pruned_live} allows the omission of
 \phisigfunction{s} for $v$ at nodes where $v$ is dead when creating
 pruned form; \code{MaybeLive} may not return \code{false} for nodes
@@ -1003,13 +1012,13 @@ flow-graph with placed \phisigfunction{s} in a single depth-first
 traversal.  When the algorithm is complete, the control flow-graph
 will be in proper SSI form.  The variable renaming algorithm requires
 an \code{Environment} datatype which is defined in
-figure~\ref{fig:SSIrename_data}.  Using an imperative programming
+Figure~\ref{fig:SSIrename_data}.  Using an imperative programming
 style, it is possible to perform a sequence of any $N$ operations on
 \code{Environment} as defined in the figure in $O(N)$ time; in a
 functional programming style any $N$ operations can be completed in
 $O(N \log N)$ time.\footnote{The curious reader is referred to section
 5.1 of Appel \cite{appel:modern} for implementation details.}  As the
-course structure of algorithm~\ref{alg:SSIrename1} is a simple
+coarse structure of Algorithm~\ref{alg:SSIrename1} is a simple
 depth-first search, it is easy to see that the \code{Search} procedure
 can be invoked from line~\fullref{line:search1} and
 line~\fullref{line:search2} a total of $O(E)$ times; likewise its
@@ -1022,7 +1031,7 @@ implementation of \code{Environment} a total time bounds of
 $O(E+U_{SSA}+D_{SSA})$ for the variable renaming algorithm is
 obtained.
 
-We have shown that algorithm~\ref{alg:SSIplace} places all the
+We have shown that Algorithm~\ref{alg:SSIplace} places all the
 required \phisigfunction{s} in the control-flow graph according to SSI
 form conditions \ref{crit_phiplace}, \ref{crit_sigplace}, and
 \ref{crit_boundary}; we will now show that this algorithm renames
@@ -1053,7 +1062,7 @@ bottom of the call stack to the top we construct a unique path from
 \end{proof}
 \begin{lemma}\label{lem:renamephi}
 SSI form condition~\ref{crit_phiname} holds for variables renamed
-according to algorithm~\ref{alg:SSIrename1}.
+according to Algorithm~\ref{alg:SSIrename1}.
 \end{lemma}
 \begin{proof}
 We restate SSI form condition~\ref{crit_phiname} for reference:
@@ -1137,7 +1146,7 @@ path may exist, completing the proof of the lemma.
 
 \begin{lemma}\label{lem:renamesig}
 SSI form condition~\ref{crit_signame} holds for variables renamed
-according to algorithm~\ref{alg:SSIrename1}.
+according to Algorithm~\ref{alg:SSIrename1}.
 \end{lemma}
 \begin{proof}
 We restate SSI form condition~\ref{crit_signame} for reference:
@@ -1161,7 +1170,7 @@ node $N$ present on both $P_2: Z\pathstar N\pathplus Y$ and
 $P_3: \code{START}\pathplus Z\pathstar N\pathplus X$.  By SSI
 condition~\ref{crit_sigplace} this node $N$ requires a \sigfunction{}
 for $V$.  If $N\not=Z$ then line~\ref{line:rendef1} of
-algorithm~\ref{alg:SSIrename1} would rename $V$ along $P_3$
+Algorithm~\ref{alg:SSIrename1} would rename $V$ along $P_3$
 and $X$ would not use the same variable $Z$ defined; if
 $N=Z$, then line~\ref{line:rendef2} would have ensured that $X$
 and $Y$ used different names.  Either case contradicts our choices of
@@ -1206,7 +1215,7 @@ be executed, from \emph{unused code elimination}, which deletes
 sections of code whose results are never used.  Both are often called
 ``dead code elimination'' in the literature.} is performed to remove
 extra \phisigfunction{s} added and create pruned SSI.
-Figures \ref{fig:deaddata} and
+Figure~\ref{fig:deaddata} and Algorithm~%
 \ref{alg:deadalg} present an algorithm to identify unused code in
 $O(N V_{SSI})$ time, after which a simple $O(N)$ pass suffices to remove it.
 The complexity analysis is simple: nodes and variables are visited at
@@ -1252,7 +1261,7 @@ algorithms, by contrast, are \emph{optimistic}; they assume no
 \phisigfunction[or]{s} are needed and attempt to determine where
 they are provably necessary.  In my experience, optimistic algorithms tend to
 have poor time bounds because of the possibility of input graphs like
-the one illustrated in figure~\vref{fig:evil}.
+the one illustrated in Figure~\vref{fig:evil}.
 Proving that all but two nodes require
 \phisigfunction[and/or]{s} for the variable $a$ in this example seems to
 inherently require $O(N)$ passes over the graph; each pass can prove
@@ -1291,12 +1300,12 @@ procedure~length.}
 Discussions of time and space complexity for sparse evaluation
 frameworks in the literature are often misleadingly called ``linear''
 regardless of what the $O$-notation runtime bounds are.  A canonical
-example is \cite{sreedhar95:lintime}, which claims guilelessly that
+example is \cite{sreedhar95:lintime}, which states that
 for SSA form, ``the number of $\phi$-nodes needed remains linear.''
 Typically Cytron \cite{cytron91:ssa} is cited; however, that reference
-actually states:
+actually reads:
 \begin{quote}
-For the programs we tested, the plot in [figure 21 of Cytron's paper]
+For the programs we tested, the plot in [Figure 21 of Cytron's paper]
 shows that the number of \phifunction{s} is also linear in the size of
 the original program.
 \end{quote}
@@ -1335,7 +1344,7 @@ to 6,642 statements and were taken from the dynamic call-graph of the
 FLEX compiler itself, which includes large portions of the standard
 Java class libraries.  Figure~\ref{fig:ussidata} shows convincingly
 that $U_{SSI}$ grows as $N$ for large procedures, and
-figure~\ref{fig:v0data} supports an argument that $V_0$ grows very
+Figure~\ref{fig:v0data} supports an argument that $V_0$ grows very
 slowly and that the quantity $N V_0$ would tend to grow as $N^{1.3}$.
 This would argue for a near-linear practical run-time.
 
@@ -1354,7 +1363,7 @@ at best and at times as bad as $O(N^3)$.
 Note that the space complexity of SSI form, which may be $O(EV)$ in
 the worst case (\phisigfunction{s} for every variable inserted at
 every node) is certainly not greater than $U_{SSI}$, and thus
-figure~\ref{fig:ussidata} shows linear practical space use.
+Figure~\ref{fig:ussidata} shows linear practical space use.
 
 \section{Uses and applications of SSI}
 The principle benefits of using SSI form are the ability to do
@@ -1481,8 +1490,9 @@ Zadeck's Sparse Conditional Constant (SCC) algorithm
 \cite{wegman91:scc} and removes unnecessary array-bounds and
 null-pointer checks, computes variable types, and performs
 floating-point- and string-constant-propagation in addition to the
-integer constant propagation of standard SCC.\footnote{It also washes
-the dishes and does the laundry.}
+integer constant propagation of standard SCC.
+\ignore{\footnote{It also washes
+the dishes and does the laundry.}}
 
 We will describe this algorithm incrementally, beginning with the
 standard SCC constant-propagation algorithm for review.
@@ -1527,7 +1537,7 @@ c     &   c  &c\oplus d& \top \\
 The SCC algorithm works on a simple three-level value lattice
 associated with variable definition points and a two-level
 executability lattice associated with flow-graph edges.  These
-lattices are shown in figure \vref{fig:scclat1}.  Associating a lattice
+lattices are shown in Figure~\vref{fig:scclat1}.  Associating a lattice
 value with a definition point is a conservative statement that, for
 all possible program paths, the value of that variable has a certain
 property.  The value lattice is, formally, $\domain{Int}_\bot^\top$;
@@ -1550,9 +1560,9 @@ that the control flow edge is traversed in some execution of the
 program (marked ``executable''), or if it can be proven that the edge
 is never traversed in any valid program path (marked ``not
 executable'').  The algorithm works with SSA form, and is presented
-as algorithm \ref{alg:scc}.  Binary operations on lattice values and
+as Algorithm~\ref{alg:scc}.  Binary operations on lattice values and
 combination at $\phi$-nodes follow the rules in
-table~\ref{tab:sccmeet1}; notice that the meet operation ($\meet$) is
+Table~\ref{tab:sccmeet1}; notice that the meet operation ($\meet$) is
 simply the least upper bound on the lattice.
 The time complexity of SCC/SSA can be found
 easily: the procedure \code{RaiseE} puts each node on the $W_n$
@@ -1560,7 +1570,7 @@ worklist at most once, and \code{RaiseV} puts a variable on the $W_v$
 worklist at most $D-1$ times, where $D$ is the maximum lattice depth.
 The \code{Visit} procedure can thus be invoked a maximum of $N$ times
 by line~\ref{line:visitWn} of the \code{Analyze} procedure of
-algorithm~\ref{alg:scc}, and a maximum of $U_{SSA}(D-1)$ times by
+Algorithm~\ref{alg:scc}, and a maximum of $U_{SSA}(D-1)$ times by
 line~\ref{line:visitWv}, where $U_{SSA}$ is the number of variable
 \newterm{uses} in the SSA representation of the program.  The lattice
 depth $D$ is the constant 3 in this version of the algorithm, so it
@@ -1590,7 +1600,7 @@ else              & else \\
 \end{myalgorithm}
 Porting the SCC algorithm from SSA to SSI form immediately increases
 the number of constants we can find.  A simple example is shown in
-figure \ref{fig:ssa_vs_ssi}: the version of the program on the right
+Figure~\ref{fig:ssa_vs_ssi}: the version of the program on the right
 is in SSI form, and SCC/SSI---unlike SCC/SSA---can
 determine that \code{\subvar{foo}{2}} is a constant with value 1
 (although nothing can be said about the value of
@@ -1621,8 +1631,8 @@ SCC/SSA: $O(E+U_{SSA})$, by the same argument as before.
 The first simple extension of the SCC value lattice enables us to
 represent floating-point and other values.  For this work, we extended
 the domain to cover the full type system of Java bytecode
-\cite{gosling95:bytecode}; the extended lattice is presented in figure
-\ref{fig:scclat2}.
+\cite{gosling95:bytecode}; the extended lattice is presented in
+Figure~\ref{fig:scclat2}.
 The figure also introduces the abbreviated lattice notation we will use
 through the following sections; it is understood that the
 lattice entry labelled ``int'' stands for a finite-but-large set of
@@ -1643,7 +1653,7 @@ members.\footnote{In IEEE-standard floating-point, some possible bit
 patterns are not valid number encodings.}  The
 Java \code{String} type is also included, to allow simple constant
 string coalescing to be performed.  The propagation algorithm over
-this lattice is a trivial modification to algorithm \ref{alg:sccssi}, and
+this lattice is a trivial modification to Algorithm~\ref{alg:sccssi}, and
 will be omitted for brevity.  In the next sections, the ``int'' and ``long''
 entries in this lattice will be summarized as ``Integer Constant'',
 the ``float'' and ``double'' entries as ``Floating-point Constant'',
@@ -1659,7 +1669,7 @@ identical to that of the previous algorithm.
 \end{myfigure}
 \begin{myfigure}[p]
 \centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat4}
-\caption{``Typed'' category of figure \ref{fig:scclat3} shown expanded.}
+\caption{``Typed'' category of Figure~\ref{fig:scclat3} shown expanded.}
 \label{fig:scclat4}
 \end{myfigure}
 \begin{myfigure}%
@@ -1691,16 +1701,16 @@ Objectworks 4.1$^\dag$&Smalltalk & 774 &   4.4     &    10      \\ \hline
 \caption{\code{Visit} procedure for typed SCC/SSI.}
 \label{alg:scctyped}
 \end{myalgorithm}
-In figure \ref{fig:scclat3} we extend the lattice to compute Java type
+In Figure~\ref{fig:scclat3} we extend the lattice to compute Java type
 information.  The new lattice entry marked ``Typed'' is actually
-forest-structured as shown in figure \ref{fig:scclat4}; it is as deep
+forest-structured as shown in Figure~\ref{fig:scclat4}; it is as deep
 as the class hierarchy, and the roots and leaves are all comparable to
 $\top$ and $\bot$.  Only the \code{Visit} procedure must be modified;
-the new procedure is given as algorithm~\ref{alg:scctyped}.
+the new procedure is given as Algorithm~\ref{alg:scctyped}.
 Because the lattice $L$ is
 deeper, the asymptotic runtime complexity is now $O(E+U_{SSA}D_c)$
 where $D_c$ is the maximum depth of the class hierarchy.  
-To form an estimate of the magnitude of $D_c$, table \ref{tab:chstats}
+To form an estimate of the magnitude of $D_c$, Table~\ref{tab:chstats}
 compares class hierarchy statistics for several large
 object-oriented projects in various source languages. Our FLEX
 compiler infrastructure, as a typical Java example, has an average
@@ -1710,7 +1720,7 @@ In a forced example, of course, one can make the class depth $O(N)$;
 however, one can infer from the data given that in real code the $D_c$
 term is not likely to make the algorithm significantly non-linear.
 
-A brief word on the roots of the hierarchy forest in figure
+A brief word on the roots of the hierarchy forest in Figure~%
 \ref{fig:scclat4} is called for: Java has both a class hierarchy,
 rooted at \code{java.lang.Object}, and several primitive types, which
 we will also use as roots.  The primitive types include
@@ -1736,7 +1746,7 @@ The Java class hierarchy also includes \newterm{interfaces}, which are
 the means by which Java implements multiple inheritance.  Base
 interface classes (which do not extend other interfaces) are additional
 roots in the hierarchy forest, although no examples of this are shown
-in figure \ref{fig:scclat4}.
+in Figure~\ref{fig:scclat4}.
 
 Since untypeable variables are generally forbidden, no operation
 should ever raise a lattice value above ``Typed'' to $\top$.  The
@@ -1807,18 +1817,18 @@ do \{\\
 At this point, we can expand the value lattice once more to allow
 elimination of unnecessary array-bounds and null-pointer checks, based
 on our constant-propagation algorithm.  The new lattice is shown in
-figure \ref{fig:scclat5}; we have split the ``Typed'' lattice entry to
-allow distinguishing between non-null and possibly-null
+Figure~\ref{fig:scclat5}; we have split the ``Typed'' lattice entry to
+enable the algorithm to distinguish between non-null and possibly-null
 values,\footnote{Values which are always-null were discussed in the
 previous section; they are identified as having primitive type \code{void}.}
 and added a lattice level for arrays of known constant length.  
 Some formal definition of the new value lattice can be found in
-figure \ref{fig:arraynull_rules}; the meet rule is still the least upper
+Figure~\ref{fig:arraynull_rules}; the meet rule is still the least upper
 bound on the lattice.  Modifications to the \code{Visit} procedure are
-outlined in algorithm~\ref{alg:arraynull_scc}.
+outlined in Algorithm~\ref{alg:arraynull_scc}.
 Notice that we exploit the pre-existing integer-constant propagation to
 identify constant-length arrays, and that our integrated approach
-allows one-pass optimization of the program in figure \ref{fig:combined}.
+allows one-pass optimization of the program in Figure~\ref{fig:combined}.
 
 \begin{myfigure}\newcommand{\implicitcheck}[1]{\underline{#1}}
 \begin{samplecode}
@@ -1841,9 +1851,9 @@ for (int i=1; i < 10; i++) \{\\
 Note that the variable renaming performed by the SSI form at
 control-flow splits is essential in allowing the algorithm to do 
 null-pointer check elimination.  However, the lattice we are using
-can remove bound-checks from an expression $A[k]$ when $k$ is a
+can remove bound checks from an expression $A[k]$ when $k$ is a
 constant, but not when $k$ is an bounded induction variable.
-In the example of figure~\vref{fig:induction}, the first two implicit
+In the example of Figure~\vref{fig:induction}, the first two implicit
 checks are optimized away by this version of the algorithm, but the
 loop-borne test is not. 
 
@@ -1855,7 +1865,7 @@ handled by slight modifications to the same techniques.} By
 identifying integer constants as either positive, negative, or zero
 the first half of the bounds check may be eliminated.  This requires a
 simple extension of the integer constant portion of the lattice,
-outlined in figure~\vref{fig:scclat6}, with
+outlined in Figure~\vref{fig:scclat6}, with
 negligible performance cost.  However, handling upper bounds
 completely requires a symbolic analysis that is out of the current
 scope of this work.  Future work will use induction variable analysis
@@ -1872,11 +1882,11 @@ aid clarity.}
 \end{myfigure}
 
 \subsubsection{Experimental results}\label{sec:sptc_results}
-The full SPTC analysis and optimization has been implemented on the
+The full SPTC analysis and optimization has been implemented in the
 FLEX java compiler platform.\footnote{See
 section~\ref{sec:methodology} for details of methodology.}
 Some quantitative measure of the utility
-of SPTC is given as figure~\ref{fig:sptc_numbers}.  The ``run-times''
+of SPTC is given as Figure~\ref{fig:sptc_numbers}.  The ``run-times''
 given are intermediate representation dynamic statement counts
 generated by the FLEX compiler SSI IR interpreter.  The FLEX
 infrastructure is still under development, and its backends are not
@@ -1922,8 +1932,8 @@ bit-width analysis can be made efficient.
 Bit-width analysis allows optimization for modern media-processing
 instruction set extensions which typically offer vector processing of
 limited-width types. Intel's MMX extensions, for example, offer packed
-8-bit, 16-bit, 32-bit and 64-bit vectors \cite{peleg97:mmx}.  In order
-to take advantage of these functional units without explicit human
+8-bit, 16-bit, 32-bit and 64-bit vectors \cite{peleg97:mmx}.
+To take advantage of these functional units without explicit human
 annotation, the compiler must be able to guarantee that the data in a
 vector can be expressed using the limited bit-width available.  A
 simpler bit-width analysis in a previous work \cite{ananian:siliconc}
@@ -1956,7 +1966,7 @@ The bit-width analysis algorithm has been implemented in the FLEX
 compiler infrastructure.  Because most types in Java are signed, it is
 necessary to separate bit-width information into ``positive width''
 and ``negative width.''  This is just an extension of the
-signed value lattice of figure~\ref{fig:scclat6} to variable
+signed value lattice of Figure~\ref{fig:scclat6} to variable
 bit-widths.  In practice the bit-widths are represented by a tuple,
 extending the integer constant lattice with
 $(\domain{Int}\times\domain{Int})_{\bot}$ under the natural total
@@ -2060,7 +2070,7 @@ more flexibly reorder execution.
 
 In particular, we would like a representation that eliminates
 unnecessary control dependencies such as exist in the program of
-figure~\vref{fig:ctrldep}.  A control-flow graph for this program, as
+Figure~\vref{fig:ctrldep}.  A control-flow graph for this program, as
 it is written, will explicitly specify that no assignments to
 \code{B[]} will take place until all elements of \code{A[]} have
 been assigned; that is, the second loop will be
@@ -2088,13 +2098,13 @@ apply the techniques of abstract interpretation \cite{pingali90:dfg}.
 Although abstract interpretation may be applied to the original SSI
 form using information extracted from the control flow graph, an
 executable SSI form allows more concise (and thus, more easily derived
-and verified) interpretation algorithms.
+and verified) abstract interpretation algorithms.
 
-The modifications outlined here will extend SSI form in order to
+The modifications outlined here extend SSI form to
 provide a useful and descriptive operational semantics.  We will call
 the extended form \ssiplus.  For clarity, SSI form as originally
 presented we will call \ssizero.  We will describe algorithms to
-contruct \ssiplus{} efficiently,\fixme{I will make this more precise
+contruct \ssiplus{} efficiently,\dontfixme{I will make this more precise
 as soon as I get the math done; construction should be $O(N)$, and space
 $O(N^2)$, but $\Theta(N)$.} and illustrate analyses and
 optimizations using the form.
@@ -2111,7 +2121,7 @@ handle these imperative constructs is quite easy: we simply define a
 ``variable'' $S$ to represent an updatable store.  This variable is
 renamed and numbered as before, so that $S_0$ represents the initial
 contents of the store and $S_i, i>0$ represents the contents of the
-store after some sequence of writes.  Figure \ref{fig:store} shows a
+store after some sequence of writes.  Figure~\ref{fig:store} shows a
 simple imperative program in \ssiplus\ form.  Note that modifications
 to the store typically take the previous contents of the store as
 input, and that subroutines with side-effects modifying the store must
@@ -2136,13 +2146,13 @@ is a straight-forward application of pointer analysis, which may
 benefit from an initial conversion of register variables to \ssizero\
 form.   In type-safe languages, defining multiple stores for differing
 type sets is a trivial implementation of basic pointer analysis;
-figure~\ref{fig:manystore} shows a simple example of this form of
+Figure~\ref{fig:manystore} shows a simple example of this form of
 decomposition using  two different subtypes (\texttt{Integer} and
 \texttt{Float}) of a common base class (\texttt{Number}).
 Pointer analysis is a huge and rapidly-growing field which we cannot
-attempt to summarize here; suffice to say that the \emph{may-point}
+attempt to summarize here; suffice to say that the \emph{may-point-to}
 relation from pointer analysis may be used
-to define a very fine-grained model of the store.
+to define a fine-grained model of the store.
 
 \begin{figure}[t]
 \centering$\vdash N:\mathbf{Number},I:\mathbf{Integer},F:\mathbf{Float}$\\
@@ -2165,7 +2175,7 @@ Proper sequencing among statements with side-effects may be handled in
 a similar way: a special SSI name is used/defined where side-effects
 occur to impose an implicit ordering.  For maximum symmetry with the
 `store' case, we will name this special variable $S^{fx}$.  This
-variable may be further decomposed using effects analysis for more
+variable may be further decomposed using effect analysis for more
 precision.
 
 \begin{figure}[t]
@@ -2185,10 +2195,10 @@ return x;	& $\mbox{\tt return } x_1$ \\
 
 Note that precise analysis of side-effects and the store is much more
 important in C-like languages. The
-example on the left in figure \ref{fig:messyC} shows the difficulties
+example on the left in Figure~\ref{fig:messyC} shows the difficulties
 one may encounter in dealing with pointer variables that may rewrite
 SSI temporaries.  It is possible to deal with this in the manner of
-figure \ref{fig:manystore} using explicit stores,
+Figure~\ref{fig:manystore} using explicit stores,
 and with sufficient analysis one may write the SSI
 representation on the right in the figure.  The source language for
 our FLEX compiler does not encounter this difficulty:  Java has no
@@ -2212,7 +2222,7 @@ $\}$ while (i<5);	& \>$P_0=(i_2<5)$	& $P_0=(i_2<5)$\\
 \label{fig:loop}
 \end{figure}
 
-The center column of figure~\vref{fig:loop} shows a typical loop in
+The center column of Figure~\vref{fig:loop} shows a typical loop in
 \ssizero\ form.  Note first that an explicit ``control flow''
 expression (\texttt{goto L1}) is required in order to make sense of
 the program.  Note also that $i_1$, $i_2$ and $i_3$ are potentially
@@ -2227,7 +2237,7 @@ before flowing out at the end, but the token for $j_0$ seems to be
 ``used up'' in the first iteration.
 
 \ssiplus\ introduces a \xifunction\ in the block of \phifunction{s} to
-clarify the loop semantics. The left-hand column of figure
+clarify the loop semantics. The left-hand column of Figure~%
 \ref{fig:loop} illustrates the nature of this function.  The
 \xifunction{} arbitrates loop iteration, and will be defined precisely
 by the operational semantics of \ssiplus\ form.  For now note that it
@@ -2293,7 +2303,7 @@ set of valid transitions is generated from the program text.
 The semantics operate over a lifted value domain
 $\domain{V}=\domain{Int}_\bot$. When some variable
 $t = \bot_\domainsm{V}$ we say it is
-\emph{undefined}; conversely $t\succ\bot_\domainsm{V}$ indicates that the
+\emph{undefined}; conversely $t\sgt\bot_\domainsm{V}$ indicates that the
 variable is \emph{defined}.  ``Store'' metavariables $S_x$ are not
 explicitly handled by the semantics, but the extension is trivial with
 an appropriate redefinition of the value domain $\domain{V}$.  Floating-point
@@ -2316,22 +2326,22 @@ single trigger input which does not affect the output.
 t=\mathbf{op}(t_1,\ldots,t_n):
 & \trule{\rho[t]=\bot \wedge 
          \left(
-          \rho[t_1]\succ\bot \wedge \ldots \wedge \rho[t_n]\succ\bot
+          \rho[t_1]\sgt\bot \wedge \ldots \wedge \rho[t_n]\sgt\bot
 	 \right)}
 	{\rho \to \rho[t \mapsto
 		         \mathbf{op}(\rho[t_1],\ldots,\rho[t_n])] } \\
 
 t=\phi(t_1,\ldots,t_n):
 & \trule{\rho[t]=\bot \wedge
-         \rho[t_j]\succ\bot \wedge
+         \rho[t_j]\sgt\bot \wedge
          \text{all other}\,\rho[t_1],\ldots,\rho[t_n]=\bot}
         {\rho \to \rho[t \mapsto \rho[t_j]] } \\
 
 \tuple{t_1,\ldots,t_n}=\sigma(P,t):
 & \myarray{r}{
-  \trule{\rho[P]=v\succ\bot \wedge
+  \trule{\rho[P]=v\sgt\bot \wedge
          \rho[t_{v-1}]=\bot \wedge
-         \rho[t]\succ\bot
+         \rho[t]\sgt\bot
          %\text{ where } (0\leq v\leq n-1)
 	}
 	{\rho \to \rho[t_{v-1} \mapsto \rho[t]] }
@@ -2342,7 +2352,7 @@ t=\phi(t_1,\ldots,t_n):
 \xivec{t_1,\ldots,t_n}{t_{n+1},\ldots,t_{m}}=\xi(\xivec{t'_1,\ldots,t'_n}{t'_{n+1},\ldots,t'_m}):
 & \myarray{r}{
   \trule{\rho[t_j]=\bot \wedge
-         \rho[t'_j]\succ\bot %\mbox{ where } (1\le j\le n)}
+         \rho[t'_j]\sgt\bot %\mbox{ where } (1\le j\le n)}
 	}
         {\rho \to \rho[t_j \mapsto \rho[t'_j]] }
   \qquad\qquad\qquad \hfill \\ \footnotesize \mbox{where } (1\le j\le n)}
@@ -2351,7 +2361,7 @@ t=\phi(t_1,\ldots,t_n):
 \footnotesize % latex complains, but does the right thing.
 \xivec{t_1,\ldots,t_n}{t_{n+1},\ldots,t_{m}}=\xi(\xivec{t'_1,\ldots,t'_n}{t'_{n+1},\ldots,t'_m}):
 & \footnotesize % latex complains, but does the right thing.
-  \trule{\rho[t'_{n+1}]\succ\bot \wedge \ldots \wedge \rho[t'_m]\succ\bot}
+  \trule{\rho[t'_{n+1}]\sgt\bot \wedge \ldots \wedge \rho[t'_m]\sgt\bot}
         {\myarray{r @{} l}{
          \rho \to
 %	 \hfill \\ \: % line-break
@@ -2381,7 +2391,7 @@ $\bot_\domainsm{V}$.
 configuration is $\rho_\emptyset[\mathcal{C}_T\to 0]$ extended with
 mappings for procedure parameters.  That is, all names in $\domain{N}$
 are mapped to $\bot_\domainsm{V}$ except for the default constant trigger
-$\mathcal{C}_T$ mapped to 0,\footnote{Any $k\succ\bot_\domainsm{V}$
+$\mathcal{C}_T$ mapped to 0,\footnote{Any $k\sgt\bot_\domainsm{V}$
 would do.} and any procedure parameters mapped to their proper entry values.
 \end{enumerate}
 \end{definition}
@@ -2499,12 +2509,12 @@ triggers to constants from variables defined at this lowest node
 post-dominated by the constant use; using the default trigger
 $\mathcal{C}_T$ where necessary.  We then place \phisigfunction{s}
 for all variables, including constant triggers, using
-algorithm~\ref{alg:SSIplace}.
+Algorithm~\ref{alg:SSIplace}.
 
 We then generate \xifunction{s}.  A standard interval analysis
 creates a loop nesting tree, and each loop is scanned for invariants
 and other definitions/uses to create the proper \xifunction{} tuples.
-Renaming is done using algorithm~\ref{alg:SSIrename1}, as before.
+Renaming is done using Algorithm~\ref{alg:SSIrename1}, as before.
 
 \subsection{Dataflow and control dependence}\label{sec:parallelism}
 The \ssiplus\ semantics are data-driven, and thus bring to mind work
@@ -2583,8 +2593,8 @@ We have demonstrated efficient construction of SSI form, and several
 optimizations which use it to obtain efficiency improvements over
 previous methods.  The many SSA-variant papers in the literature
 attest to limitations of standard SSA form; we believe SSI form solves
-these problems in the simplest and most symmetric manner.  The FLEX
-compiler infrastructure demonstrates practically the real advantages
+these problems in a simple and symmetric manner.  The FLEX
+compiler infrastructure demonstrates the practicality
 of SSI form.
 
 \newpage
