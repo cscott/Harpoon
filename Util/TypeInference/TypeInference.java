@@ -14,7 +14,8 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
-import harpoon.Analysis.PointerAnalysis.Relation;
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
 
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -46,7 +47,7 @@ import harpoon.IR.Quads.CONST;
  extensions for the other quads).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: TypeInference.java,v 1.1.2.3 2000-04-03 10:07:55 salcianu Exp $
+ * @version $Id: TypeInference.java,v 1.1.2.4 2000-07-02 08:37:55 salcianu Exp $
  */
 public class TypeInference {
     // switch on the debug messages
@@ -62,7 +63,7 @@ public class TypeInference {
 
     // the private repositoy of the type information: it is filled in
     // by analyze and read by the query methods.
-    private Relation types = new Relation();
+    private Relation types = new LightRelation();
 
     ///////////////// QUERY METHODS /////////////////////////////
 
@@ -71,7 +72,7 @@ public class TypeInference {
 	<code>ExactTemp</code> that were in the <code>ietemps</code> set
 	passed to the constructor of <code>this</code> object. */
     public Set getType(ExactTemp et){
-	return types.getValuesSet(et);
+	return types.getValues(et);
     }
 
     /** Checks whether the temp <code>et.t</code> in instruction
@@ -114,7 +115,7 @@ public class TypeInference {
     private void analyze(HMethod hm, HCode hcode, Set ietemps){
 	W    = new PAWorkList(); 
 	rdef = new ReachingDefsImpl(hcode);
-	dependencies  = new Relation(); 
+	dependencies  = new LightRelation(); 
 
 	fill_in_dep_and_W(ietemps);
 	
@@ -307,7 +308,7 @@ public class TypeInference {
 		public void visit(MOVE q){
 		    boolean modified = false;
 
-		    for(Iterator it = types.getValues(wrapper2.et1);
+		    for(Iterator it = types.getValues(wrapper2.et1).iterator();
 			it.hasNext(); ){
 			HClass hclass = (HClass) it.next();
 			if(types.add(wrapper2.et2, hclass))
@@ -320,7 +321,7 @@ public class TypeInference {
 		public void visit(AGET q){
 		    boolean modified = false;
 		    
-		    for(Iterator it = types.getValues(wrapper2.et1);
+		    for(Iterator it = types.getValues(wrapper2.et1).iterator();
 			it.hasNext();){
 			HClass hclass = (HClass) it.next();
 			HClass hcomp = hclass.getComponentType();
@@ -340,7 +341,8 @@ public class TypeInference {
 	while(!W.isEmpty()){
 	    ExactTemp et1 = (ExactTemp) W.remove();
 	    wrapper2.et1  = et1;
-	    for(Iterator it = dependencies.getValues(et1); it.hasNext(); ){
+	    Iterator it = dependencies.getValues(et1).iterator();
+	    while(it.hasNext()) {
 		ExactTemp et2 = (ExactTemp) it.next();
 		wrapper2.et2   = et2;
 		et2.q.accept(type_calculator);
@@ -350,7 +352,7 @@ public class TypeInference {
 
     // Computes the types of the exact temps from the set ietemps.
     private void compute_interesting_types(Set ietemps){
-	Relation types2 = new Relation();
+	Relation types2 = new LightRelation();
 
 	for(Iterator it = ietemps.iterator(); it.hasNext(); ){
 	    ExactTemp et = (ExactTemp) it.next();
@@ -358,7 +360,7 @@ public class TypeInference {
 	    for(Iterator it_rdef = rdef.reachingDefs(et.q, et.t).iterator();
 		it_rdef.hasNext(); ){
 		Quad q = (Quad) it_rdef.next();
-		types2.addAll(et, types.getValuesSet(new ExactTemp(q, et.t)));
+		types2.addAll(et, types.getValues(new ExactTemp(q, et.t)));
 	    }
 	}
 

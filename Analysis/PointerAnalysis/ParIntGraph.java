@@ -16,13 +16,18 @@ import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Util.Util;
 
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
+import harpoon.Util.DataStructs.RelationEntryVisitor;
+
+
 /**
  * <code>ParIntGraph</code> models a Parallel Interaction Graph data
  structure. Most of its fields retain the original name from the paper
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.34 2000-06-07 03:29:16 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.35 2000-07-02 08:37:44 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -103,8 +108,8 @@ public class ParIntGraph {
 	are inserted. */
     void insertAllButArEo(ParIntGraph pig2, Relation mu,
 			boolean principal, Set noholes){
-	G.insert(pig2.G,mu,principal,noholes);
-	tau.insert(pig2.tau,mu);
+	G.insert(pig2.G, mu, principal, noholes);
+	tau.insert(pig2.tau, mu);
     }
 
     /** Convenient function equivalent to 

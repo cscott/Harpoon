@@ -5,6 +5,7 @@ package harpoon.Util.DataStructs;
 
 import java.util.Set;
 import java.util.Map;
+import java.util.Collections;
 
 import java.io.Serializable;
 
@@ -13,7 +14,7 @@ import java.io.Serializable;
  * <code>AbstrRelationMapBased</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AbstrRelationMapBased.java,v 1.1.2.1 2000-07-01 23:09:43 salcianu Exp $
+ * @version $Id: AbstrRelationMapBased.java,v 1.1.2.2 2000-07-02 08:37:52 salcianu Exp $
  */
 public abstract class AbstrRelationMapBased extends AbstrRelation
     implements Serializable {
@@ -29,6 +30,13 @@ public abstract class AbstrRelationMapBased extends AbstrRelation
 
     
     public Set getValues(Object key) {
+	Set retval = (Set) getValues2(key);
+	if(retval == null)
+	    retval = Collections.EMPTY_SET;
+	return retval;
+    }
+
+    protected Set getValues2(Object key) {	
 	return (Set) map.get(key);
     }
 

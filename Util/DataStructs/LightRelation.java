@@ -16,7 +16,7 @@ import harpoon.Util.Collections.LinearSet;
  * <code>LightRelation</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightRelation.java,v 1.1.2.1 2000-07-01 23:07:05 salcianu Exp $
+ * @version $Id: LightRelation.java,v 1.1.2.2 2000-07-02 08:37:52 salcianu Exp $
  */
 public class LightRelation extends AbstrRelationMapBased
     implements Serializable {
@@ -34,7 +34,7 @@ public class LightRelation extends AbstrRelationMapBased
 
     public boolean add(Object key, Object value) {
 	hashCode = 0;
-	Collection vals = getValues(key);
+	Collection vals = getValues2(key);
 	if(vals == null)
 	    map.put(key, vals = new LinearSet());
 	return vals.add(value);
@@ -43,9 +43,9 @@ public class LightRelation extends AbstrRelationMapBased
 
     public boolean addAll(Object key, Collection values) {
 	hashCode = 0;
-	if(values.isEmpty())
+	if((values == null) || values.isEmpty())
 	    return false;
-	Collection vals = getValues(key);
+	Collection vals = getValues2(key);
 	if(vals == null)
 	    map.put(key, vals = new LinearSet());
 	return vals.addAll(values);
@@ -54,7 +54,7 @@ public class LightRelation extends AbstrRelationMapBased
 
     public void removeAll(Object key, Collection values) {
 	hashCode = 0;
-	Collection vals = getValues(key);
+	Collection vals = getValues2(key);
 	if((vals == null) || vals.isEmpty()) return;
 
 	for(Iterator it = values.iterator(); it.hasNext(); )

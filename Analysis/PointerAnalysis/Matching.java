@@ -8,6 +8,8 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
+import harpoon.Util.DataStructs.Relation;
+
 /**
  * <code>Matching</code> is a wrapper for some functions related to the \
  mapping of nodes due to the interaction of two entities: caller-callee \
@@ -37,7 +39,7 @@ import java.util.Set;
  interation of the loop. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Matching.java,v 1.1.2.7 2000-07-01 23:23:25 salcianu Exp $
+ * @version $Id: Matching.java,v 1.1.2.8 2000-07-02 08:37:44 salcianu Exp $
  */
 abstract class Matching {
 
@@ -49,17 +51,16 @@ abstract class Matching {
     public static final void rule0(Relation mu[], PAWorkList W[]){
 	for(int i=0;i<2;i++){
 	    int ib = 1-i;
-	    Iterator it_n1 = mu[i].keySet().iterator();
-	    while(it_n1.hasNext()){
+	    for(Iterator it_n1 = mu[i].keys().iterator(); it_n1.hasNext(); ) {
 		PANode n1 = (PANode) it_n1.next();
-		Set n1_mappings = mu[i].getValuesSet(n1);
+		Set n1_mappings = mu[i].getValues(n1);
 
 		Set new_n1 = new HashSet();
-		Iterator it_n2 = mu[i].getValues(n1);
-		while(it_n2.hasNext()){
+		for(Iterator it_n2 = mu[i].getValues(n1).iterator();
+		    it_n2.hasNext(); ) {
 		    PANode n2 = (PANode) it_n2.next();
-		    new_n1.addAll(mu[i].getValuesSet(n2));
-		    new_n1.addAll(mu[ib].getValuesSet(n2));
+		    new_n1.addAll(mu[i].getValues(n2));
+		    new_n1.addAll(mu[ib].getValues(n2));
 		}
 		
 		if(n1_mappings.addAll(new_n1))
@@ -85,14 +86,14 @@ abstract class Matching {
 	while(it2.hasNext()){
 	    PANode node2 = (PANode) it2.next();
 	    // ... find all the possible instances of node3 ...
-	    Iterator it3 = mu[ib].getValues(node2);
-	    while(it3.hasNext()){
+	    Iterator it3 = mu[ib].getValues(node2).iterator();
+	    while(it3.hasNext()) {
 		PANode node3 = (PANode) it3.next();
 		if(!mu[i].contains(node1,node3))
 		    new_nodes3.add(node3); 
 	    }
 
-	    it3 = mu[i].getValues(node2);
+	    it3 = mu[i].getValues(node2).iterator();
 	    while(it3.hasNext()){
 		PANode node3 = (PANode) it3.next();
 		if(!mu[i].contains(node1,node3))
@@ -106,7 +107,7 @@ abstract class Matching {
 
 	    System.out.println("New mappings: " + node1 + " -> " + new_nodes3);
 
-	    mu[i].addAll(node1,new_nodes3);
+	    mu[i].addAll(node1, new_nodes3);
 	    new_info[i].addAll(node1, new_nodes3);
 	    W[i].add(node1);
 	}

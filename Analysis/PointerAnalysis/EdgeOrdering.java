@@ -12,6 +12,11 @@ import java.util.Enumeration;
 
 import harpoon.Temp.Temp;
 
+import harpoon.Util.PredicateWrapper;
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
+import harpoon.Util.DataStructs.RelationEntryVisitor;
+
 
 /**
  * <code>EdgeOrdering</code> models the ordering relation between the 
@@ -30,7 +35,7 @@ import harpoon.Temp.Temp;
  correctly; speed was only a second issue.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: EdgeOrdering.java,v 1.1.2.9 2000-07-01 23:23:25 salcianu Exp $
+ * @version $Id: EdgeOrdering.java,v 1.1.2.10 2000-07-02 08:37:43 salcianu Exp $
  */
 public class EdgeOrdering{
 
@@ -43,7 +48,7 @@ public class EdgeOrdering{
 
     /** Creates a <code>EdgeOrdering</code> object. */
     public EdgeOrdering(){
-	after = new Relation();
+	after = new LightRelation();
     }
 
     /** Adds a piece of ordering information. More specifically, it records
@@ -61,7 +66,7 @@ public class EdgeOrdering{
 	match an outside edge against those inside edges from the same scope
 	that could be created when the load is done. */
     public Iterator getBeforeEdges(PAEdge eo){
-	return after.getValues(eo);
+	return after.getValues(eo).iterator();
     }
 
     /** Checks whether the inside edge <code>ei</code> could have been
@@ -169,7 +174,7 @@ public class EdgeOrdering{
     /** Returns a new relation containing information only about the ordering
 	of edges between nodes from <code>remaining_nodes</code>. */
     public EdgeOrdering keepTheEssential(final Set remaining_nodes){
-	final Relation essence = new Relation();
+	final Relation essence = new LightRelation();
 	after.forAllEntries(new RelationEntryVisitor(){
 		public void visit(Object o1, Object o2){
 		    PAEdge eo = (PAEdge) o1;

@@ -18,11 +18,14 @@ import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.ClassFile.HCodeElement;
 
+import harpoon.Util.DataStructs.Relation;
+
+
 /**
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.10 2000-07-01 23:23:25 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.11 2000-07-02 08:37:43 salcianu Exp $
  */
 public abstract class Debug {
 
@@ -75,12 +78,13 @@ public abstract class Debug {
 
     /** Displays a <i>split</i> relation (see the MetaCallGraph stuff). */
     public static void show_split(Relation split){
-	for(Iterator it = split.keySet().iterator(); it.hasNext(); ){
+	for(Iterator it = split.keys().iterator(); it.hasNext(); ){
 	    HMethod hm = (HMethod) it.next();
 	    System.out.print(hm);
-	    System.out.println("  (" + split.getValuesSet(hm).size() +
+	    System.out.println("  (" + split.getValues(hm).size() +
 			       " specialization(s))");
-	    for(Iterator itmm = split.getValues(hm); itmm.hasNext(); ){
+	    Iterator itmm = split.getValues(hm).iterator();
+	    while(itmm.hasNext()) {
 		System.out.print("  ");
 		System.out.println((MetaMethod)itmm.next());
 	    }

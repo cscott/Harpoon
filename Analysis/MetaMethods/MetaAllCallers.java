@@ -10,7 +10,8 @@ import java.util.Map;
 import java.util.HashMap;
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
 
-import harpoon.Analysis.PointerAnalysis.Relation;
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
 
 /**
  * <code>MetaAllCallers</code> is the dual of <code>MetaCallGraph</code>.
@@ -20,7 +21,7 @@ import harpoon.Analysis.PointerAnalysis.Relation;
  precomputed graph.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaAllCallers.java,v 1.1.2.3 2000-06-27 19:28:11 salcianu Exp $
+ * @version $Id: MetaAllCallers.java,v 1.1.2.4 2000-07-02 08:37:40 salcianu Exp $
  */
 public class MetaAllCallers implements java.io.Serializable {
 
@@ -66,7 +67,7 @@ public class MetaAllCallers implements java.io.Serializable {
     private void process(MetaCallGraph mcg){
 	// keeps the callers of each meta-method
 	// Relation<MetaMethod mm_callee, MetaMethod mm_caller>.
-	Relation callers = new Relation();
+	Relation callers = new LightRelation();
 
 	Iterator it_callers = mcg.getAllMetaMethods().iterator();
 	while(it_callers.hasNext()){
@@ -86,9 +87,9 @@ public class MetaAllCallers implements java.io.Serializable {
     // one (array based)
     private void compact(Relation callers){
 	callers_cmpct = new HashMap();
-	for(Iterator it = callers.keySet().iterator(); it.hasNext(); ){
+	for(Iterator it = callers.keys().iterator(); it.hasNext(); ){
 	    MetaMethod mm = (MetaMethod) it.next();
-	    Set set = callers.getValuesSet(mm);
+	    Set set = callers.getValues(mm);
 	    MetaMethod[] mms = 
 		(MetaMethod[]) set.toArray(new MetaMethod[set.size()]);
 	    callers_cmpct.put(mm,mms);

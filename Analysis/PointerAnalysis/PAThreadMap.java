@@ -14,6 +14,8 @@ import java.util.Arrays;
 
 import harpoon.Util.Util;
 
+import harpoon.Util.DataStructs.Relation;
+
 /**
  * <code>PAThreadMap</code> implements the parallel thread map
  * (i.e. the "tau" function from the algorithm). For each thread node
@@ -27,7 +29,7 @@ import harpoon.Util.Util;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.1.2.13 2000-03-18 23:39:28 salcianu Exp $
+ * @version $Id: PAThreadMap.java,v 1.1.2.14 2000-07-02 08:37:44 salcianu Exp $
  */
 public class PAThreadMap{
 
@@ -165,7 +167,7 @@ public class PAThreadMap{
 	while(e.hasMoreElements()){
 	    PANode node = (PANode) e.nextElement();
 	    int tau_node = tau2.getValue(node);
-	    Iterator it_new_node = mu.getValues(node);
+	    Iterator it_new_node = mu.getValues(node).iterator();
 	    while(it_new_node.hasNext()){
 		PANode new_node = (PANode) it_new_node.next();
 		add(new_node,tau_node);

@@ -8,11 +8,14 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
+
 /**
  * <code>PAEdge</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdge.java,v 1.1.2.7 2000-03-18 23:39:27 salcianu Exp $
+ * @version $Id: PAEdge.java,v 1.1.2.8 2000-07-02 08:37:44 salcianu Exp $
  */
 public class PAEdge {
 
@@ -30,11 +33,10 @@ public class PAEdge {
     /* Project this edge through the relation <code>mu</code>. */
     public Set project(Relation mu){
 	Set edges = new HashSet();
-	Iterator it_n1 = mu.getValues(n1);
-	while(it_n1.hasNext()){
+	for(Iterator it_n1 = mu.getValues(n1).iterator(); it_n1.hasNext(); ) {
 	    PANode new_n1 = (PANode) it_n1.next();
-	    Iterator it_n2 = mu.getValues(n2);
-	    while(it_n2.hasNext()){
+	    for(Iterator it_n2 = mu.getValues(n2).iterator();
+		it_n2.hasNext(); ) {
 		PANode new_n2 = (PANode) it_n2.next();
 		edges.add(new PAEdge(new_n1, f, new_n2));
 	    }

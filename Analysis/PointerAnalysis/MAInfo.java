@@ -55,11 +55,15 @@ import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 
 
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
+
+
 /**
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.31 2000-07-01 23:23:25 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.32 2000-07-02 08:37:44 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -842,8 +846,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 
     private SCComponent reverse_top_sort_of_cs(Map ih) {
-	final Relation m2csINm = new Relation();
-	final Relation m2csTOm = new Relation();
+	final Relation m2csINm = new LightRelation();
+	final Relation m2csTOm = new LightRelation();
 	for(Iterator it = ih.keySet().iterator(); it.hasNext(); ) {
 	    CALL cs = (CALL) it.next();
 	    m2csINm.add(quad2method(cs), cs);
@@ -852,11 +856,11 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 	final SCComponent.Navigator nav = new SCComponent.Navigator() {
 		public Object[] next(final Object node) {
-		    Set set = m2csINm.getValuesSet(node);
+		    Set set = m2csINm.getValues(node);
 		    return set.toArray(new Object[set.size()]);
 		}
 		public Object[] prev(final Object node) {
-		    Set set = m2csTOm.getValuesSet(node);
+		    Set set = m2csTOm.getValues(node);
 		    return set.toArray(new Object[set.size()]);
 		}
 	    };

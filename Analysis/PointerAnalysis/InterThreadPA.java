@@ -22,6 +22,10 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.GenType;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
 
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
+import harpoon.Util.DataStructs.RelationEntryVisitor;
+
 
 /**
  * <code>InterThreadPA</code> groups together the functions related to the
@@ -36,7 +40,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.30 2000-07-01 23:23:25 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.31 2000-07-02 08:37:44 salcianu Exp $
  */
 public abstract class InterThreadPA {
 
@@ -368,10 +372,10 @@ public abstract class InterThreadPA {
 	// Paranoic debug! Trust no one!
 	Util.assert(params.length == 1, "Thread function with too many args");
 
-	Relation mu0 = new Relation();
+	Relation mu0 = new LightRelation();
 	map_static_nodes(pig[0],mu0);
 
-	Relation mu1 = new Relation();
+	Relation mu1 = new LightRelation();
 	mu1.add(params[0],nt);
 	map_static_nodes(pig[1],mu1);
 
@@ -408,8 +412,8 @@ public abstract class InterThreadPA {
 	Relation new_info[] = { (Relation)(mu[0].clone()),
 				(Relation)(mu[1].clone()) };
 	
-	W[0].addAll(mu[0].keySet());
-	W[1].addAll(mu[1].keySet());
+	W[0].addAll(mu[0].keys());
+	W[1].addAll(mu[1].keys());
 
 	while(true){
 	    int i,ib;
@@ -425,8 +429,8 @@ public abstract class InterThreadPA {
 	    PANode node = (PANode) W[i].remove();
 
 	    // new mappings for node
-	    Set new_mappings = new HashSet(new_info[i].getValuesSet(node));
-	    new_info[i].removeAll(node);
+	    Set new_mappings = new HashSet(new_info[i].getValues(node));
+	    new_info[i].removeKey(node);
 
 	    // Matching.rule0(node,new_mappings,pig,W,mu,new_info,i,ib);
 	    Matching.rule2(node,new_mappings,pig,W,mu,new_info,i,ib);
@@ -555,10 +559,10 @@ public abstract class InterThreadPA {
 				load.n2 + "->" + load.n2 +
 				"  should be in mu_starter");
 
-		    new_pig.ar.add_ld(mu_starter.getValuesSet(load.n1),
+		    new_pig.ar.add_ld(mu_starter.getValues(load.n1),
 				      load.f,
 				      load.n2,
-				      mu_starter.getValuesSet(load.nt),
+				      mu_starter.getValues(load.nt),
 				      Collections.EMPTY_SET);
 		}
 		public void visit_sync(PASync sync){
@@ -577,21 +581,21 @@ public abstract class InterThreadPA {
 				"  should be in mu_starter");
 
 		    Set parallel_threads =
-			new HashSet(mu_starter.getValuesSet(nt2));
+			new HashSet(mu_starter.getValues(nt2));
 
 		    if(nt2 == nt)
 			parallel_threads.addAll(startee_active_threads);
 
-		    new_pig.ar.add_ld(mu_starter.getValuesSet(load.n1),
+		    new_pig.ar.add_ld(mu_starter.getValues(load.n1),
 				      load.f,
 				      load.n2,
-				      mu_starter.getValuesSet(load.nt),
+				      mu_starter.getValues(load.nt),
 				      parallel_threads);
 		}
 
 		public void visit_par_sync(PASync sync, PANode nt2){
 		    Set parallel_threads = 
-			new HashSet(mu_starter.getValuesSet(nt2));
+			new HashSet(mu_starter.getValues(nt2));
 
 		    if(nt2 == nt)
 			parallel_threads.addAll(startee_active_threads);
@@ -617,10 +621,10 @@ public abstract class InterThreadPA {
 	ActionVisitor act_visitor_startee = new ActionVisitor(){
 		public void visit_ld(PALoad load){
 		    if(!mu_startee.contains(load.n2,load.n2)) return;
-		    new_pig.ar.add_ld(mu_startee.getValuesSet(load.n1),
+		    new_pig.ar.add_ld(mu_startee.getValues(load.n1),
 				      load.f,
 				      load.n2,
-				      mu_startee.getValuesSet(load.nt),
+				      mu_startee.getValues(load.nt),
 				      starter_active_threads);
 		}
 		public void visit_sync(PASync sync){
@@ -634,15 +638,15 @@ public abstract class InterThreadPA {
 	ParActionVisitor par_act_visitor_startee = new ParActionVisitor(){
 		public void visit_par_ld(PALoad load, PANode nt2){
 		    if(!mu_startee.contains(load.n2,load.n2)) return;
-		    new_pig.ar.add_ld(mu_startee.getValuesSet(load.n1),
+		    new_pig.ar.add_ld(mu_startee.getValues(load.n1),
 				      load.f,
 				      load.n2,
-				      mu_startee.getValuesSet(load.nt),
-				      mu_startee.getValuesSet(nt2));
+				      mu_startee.getValues(load.nt),
+				      mu_startee.getValues(nt2));
 		}
 		public void visit_par_sync(PASync sync, PANode nt2){
 		    new_pig.ar.add_sync(sync.project(mu_startee),
-					mu_startee.getValuesSet(nt2));
+					mu_startee.getValues(nt2));
 		}
 	    };
 

@@ -18,9 +18,9 @@ import harpoon.Util.Util;
  the <code>java.util.Map</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightMap.java,v 1.1.2.4 2000-07-02 00:54:59 salcianu Exp $
+ * @version $Id: LightMap.java,v 1.1.2.5 2000-07-02 08:37:52 salcianu Exp $
  */
-public class LightMap implements Map, Cloneable {
+public class LightMap implements Map, Cloneable, java.io.Serializable {
     // the number of mappings in this map
     private int size = 0;
     // the root of the binary tree used to store the mapping
@@ -403,7 +403,7 @@ public class LightMap implements Map, Cloneable {
 	    compute_hash_code(node.right);
     }
 
-    private static class BinTreeNode {
+    private static class BinTreeNode implements java.io.Serializable {
 	final Object key;
 	Object value;
 	final int keyHashCode;

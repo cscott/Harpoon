@@ -12,13 +12,13 @@ import java.util.Collections;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.MetaMethods.MetaMethod;
-import harpoon.Analysis.PointerAnalysis.Relation;
+import harpoon.Util.DataStructs.Relation;
 
 /**
  * <code>PASync</code> models a <code>sync</code> action.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PASync.java,v 1.1.2.3 2000-05-18 03:51:55 salcianu Exp $
+ * @version $Id: PASync.java,v 1.1.2.4 2000-07-02 08:37:44 salcianu Exp $
  */
 public class PASync {
     /** The node on which the <code>sync</code> is performed on. */
@@ -92,8 +92,8 @@ public class PASync {
     /** Returns the image of <code>this</code> <code>sync</code> action
 	projected through the relation <code>mu</code>. */
     public Set project(Relation mu){
-	Set set_n  = mu.getValuesSet(n);
-	Set set_nt = mu.getValuesSet(nt);
+	Set set_n  = mu.getValues(n);
+	Set set_nt = mu.getValues(nt);
 	if(set_n.isEmpty() || set_nt.isEmpty())
 	    return Collections.EMPTY_SET;
 	

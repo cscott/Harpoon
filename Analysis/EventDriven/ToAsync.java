@@ -14,7 +14,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.ContBuilder.ContBuilder;
 import harpoon.Analysis.EnvBuilder.EnvBuilder;
-import harpoon.Analysis.PointerAnalysis.Relation;
+import harpoon.Util.DataStructs.Relation;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HClass;
@@ -42,7 +42,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.29 2000-04-04 02:16:36 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.30 2000-07-02 08:37:20 salcianu Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -81,7 +81,7 @@ public class ToAsync {
 	WorkSet mm=new WorkSet();
 	Relation mrelation=mcg.getSplitRelation();
 	for (int i=0;i<bmethods.length;i++) {
-	    mm.addAll(mrelation.getValuesSet(bmethods[i]));
+	    mm.addAll(mrelation.getValues(bmethods[i]));
 	}
 	blockingmm=new WorkSet(mm);
 	for (Iterator i=mm.iterator();i.hasNext();) {

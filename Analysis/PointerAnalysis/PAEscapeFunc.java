@@ -10,6 +10,12 @@ import java.util.Map;
 
 import harpoon.ClassFile.HMethod;
 
+import harpoon.Util.PredicateWrapper;
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
+import harpoon.Util.DataStructs.RelationEntryVisitor;
+
+
 /**
  * <code>PAEscapeFunc</code> models the escape information.
  For each <code>PANode</code> <code>node</code>, it maintains all the nodes
@@ -17,7 +23,7 @@ import harpoon.ClassFile.HMethod;
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.20 2000-05-17 20:24:17 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.21 2000-07-02 08:37:44 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -36,9 +42,9 @@ public class PAEscapeFunc {
 
     /** Creates a <code>EscapeFunc</code>. */
     public PAEscapeFunc() {
-        rel_n  = new Relation();
+        rel_n  = new LightRelation();
 	///////// escaped_into_mh = new HashSet();
-	rel_m  = new Relation();
+	rel_m  = new LightRelation();
     }
     
     /** Records the fact that <code>node</code> can escape through
@@ -65,7 +71,7 @@ public class PAEscapeFunc {
     public void removeNodeHoleFromAll(PANode n_hole){
 	// make a private copy of the set of keys so that I avoid
 	//  "java.util.ConcurrentModificationException"
-	Set set = new HashSet(rel_n.keySet());
+	Set set = new HashSet(rel_n.keys());
     	for(Iterator it = set.iterator(); it.hasNext(); )
     	    rel_n.remove((PANode) it.next(), n_hole);
     }
@@ -73,12 +79,12 @@ public class PAEscapeFunc {
     /** Returns the set of all the node &quot;holes&quot; <code>node</code>
 	escapes through. */
     public Set nodeHolesSet(PANode node){
-	return rel_n.getValuesSet(node);
+	return rel_n.getValues(node);
     }
 
     /** Checks whether <code>node</code> escapes through a node or not. */
     public boolean hasEscapedIntoANode(PANode node){
-	return !rel_n.getValuesSet(node).isEmpty();
+	return !rel_n.getValues(node).isEmpty();
     }
 
     /** Records the fact that <code>node</code> escaped into a method hole.
@@ -116,19 +122,19 @@ public class PAEscapeFunc {
 
     /** Returns the set of methods that <code>node</code> escapes into. */
     public Set methodHolesSet(PANode node){
-	return rel_m.getValuesSet(node);
+	return rel_m.getValues(node);
     }
 
     /** Returns the set of nodes which escape into a method hole. */
     public Set getEscapedIntoMH(){
 	////// return escaped_into_mh;
-	return rel_m.keySet();
+	return rel_m.keys();
     }
 
     /** Checks whether <code>node</code> escapes into a method hole or not. */
     public boolean hasEscapedIntoAMethod(PANode node){
 	///// return escaped_into_mh.contains(node);
-	return !rel_m.getValuesSet(node).isEmpty();
+	return !rel_m.getValues(node).isEmpty();
     }
 
     /** Checks if <code>node</code> has escaped in some hole, ie if
@@ -143,9 +149,9 @@ public class PAEscapeFunc {
     public void remove(Set set){
 	for(Iterator it_nodes = set.iterator(); it_nodes.hasNext(); ){
 	    PANode node = (PANode) it_nodes.next();
-	    rel_n.removeAll(node);
+	    rel_n.removeKey(node);
 	    //////// escaped_into_mh.remove(node);
-	    rel_m.removeAll(node);
+	    rel_m.removeKey(node);
 	}
     }
 
@@ -166,11 +172,11 @@ public class PAEscapeFunc {
 	    new RelationEntryVisitor(){
 		    public void visit(Object key, Object value){
 			if(noholes.contains(value)) return;
-			Iterator it_key_image = mu.getValues(key);
+			Iterator it_key_image = mu.getValues(key).iterator();
 			while(it_key_image.hasNext()){
 			    PANode node = (PANode) it_key_image.next();
 			    PAEscapeFunc.this.addNodeHoles(
-				     node,mu.getValuesSet(value)); 
+				     node, mu.getValues(value)); 
 			}
 		    }
 		};
@@ -179,11 +185,12 @@ public class PAEscapeFunc {
 
 	///// for(Iterator it = e2.escaped_into_mh.iterator(); it.hasNext(); ){
 	/////    PANode node = (PANode) it.next();
-	/////    escaped_into_mh.addAll(mu.getValuesSet(node));
+	/////    escaped_into_mh.addAll(mu.getValues(node));
 	///// }
 	for(Iterator it = e2.getEscapedIntoMH().iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
-	    for(Iterator it_img = mu.getValues(node); it_img.hasNext(); ) {
+	    Iterator it_img = mu.getValues(node).iterator();
+	    while(it_img.hasNext()) {
 		PANode node_img = (PANode) it_img.next();
 		addMethodHoles(node_img, e2.methodHolesSet(node_img));
 	    }
@@ -195,10 +202,11 @@ public class PAEscapeFunc {
     public PAEscapeFunc specialize(Map map){
 	PAEscapeFunc e2 = new PAEscapeFunc();
 
-	for(Iterator itn = rel_n.keySet().iterator(); itn.hasNext(); ){
+	for(Iterator itn = rel_n.keys().iterator(); itn.hasNext(); ){
 	    PANode node  = (PANode) itn.next();
 	    PANode node2 = PANode.translate(node, map);
-	    for(Iterator itnh = rel_n.getValues(node); itnh.hasNext(); )
+	    Iterator itnh = rel_n.getValues(node).iterator();
+	    while(itnh.hasNext())
 		e2.addNodeHole(node2,
 			       PANode.translate((PANode)itnh.next(),map));
 	}
@@ -231,9 +239,9 @@ public class PAEscapeFunc {
 
     /** Returns the set of escaped nodes. */
     public Set escapedNodes(){
-	HashSet set = new HashSet(rel_n.keySet());
+	HashSet set = new HashSet(rel_n.keys());
 	////// set.addAll(escaped_into_mh);
-	set.addAll(rel_m.keySet());
+	set.addAll(rel_m.keys());
 	//////
 	return set;
     }
@@ -273,8 +281,8 @@ public class PAEscapeFunc {
 	/////    new PAEscapeFunc((Relation)(rel_n.clone()),
 	/////		     (Set) ((HashSet) escaped_into_mh).clone());
 	return
-	    new PAEscapeFunc((Relation)(rel_n.clone()),
-			     (Relation)(rel_m.clone()));
+	    new PAEscapeFunc((Relation) (rel_n.clone()),
+			     (Relation) (rel_m.clone()));
     }
 
     /** Pretty-print debug function.
@@ -283,9 +291,9 @@ public class PAEscapeFunc {
     public String toString(){
 	StringBuffer buffer = new StringBuffer(" Escape function:\n");
 
-        Set set = new HashSet(rel_n.keySet());
+        Set set = new HashSet(rel_n.keys());
 	////// set.addAll(escaped_into_mh);
-	set.addAll(rel_m.keySet());
+	set.addAll(rel_m.keys());
 
 	Object[] nodes = Debug.sortedSet(set);
 	for(int i = 0; i < nodes.length ; i++){

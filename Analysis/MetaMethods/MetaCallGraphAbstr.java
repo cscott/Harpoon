@@ -14,15 +14,18 @@ import java.util.LinkedList;
 import java.io.PrintWriter;
 
 import harpoon.IR.Quads.CALL;
-import harpoon.Analysis.PointerAnalysis.Relation;
 import harpoon.ClassFile.HCodeElement;
+
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
+import harpoon.Util.DataStructs.RelationEntryVisitor;
 
 /**
  * <code>MetaCallGraphAbstr</code> Abstract implementation of the
  <code>MetaCallGraph</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphAbstr.java,v 1.1.2.9 2000-06-27 19:28:11 salcianu Exp $
+ * @version $Id: MetaCallGraphAbstr.java,v 1.1.2.10 2000-07-02 08:37:40 salcianu Exp $
  */
 public abstract class MetaCallGraphAbstr implements MetaCallGraph {
     // Map<MetaMethod,MetaMethod[]>
@@ -92,7 +95,7 @@ public abstract class MetaCallGraphAbstr implements MetaCallGraph {
 	<code>MetaMethod</code>s specialized from it. */
     public Relation getSplitRelation(){
 	if(split != null) return split;
-	split = new Relation();
+	split = new LightRelation();
 	for(Iterator it = getAllMetaMethods().iterator(); it.hasNext(); ){
 	    MetaMethod mm = (MetaMethod) it.next();
 	    split.add(mm.getHMethod(), mm);

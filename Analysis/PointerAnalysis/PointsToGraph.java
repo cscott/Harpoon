@@ -14,6 +14,8 @@ import java.util.LinkedList;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
+import harpoon.Util.Collections.LinearSet;
+import harpoon.Util.DataStructs.Relation;
 
 /**
  * <code>PointsToGraph</code> models the memory, as specified by the 
@@ -24,9 +26,9 @@ import harpoon.Util.Util;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.31 2000-07-02 00:54:39 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.32 2000-07-02 08:37:44 salcianu Exp $
  */
-public class PointsToGraph {
+public class PointsToGraph implements Cloneable {
 
     public static boolean DEBUG = false;
     
@@ -47,7 +49,7 @@ public class PointsToGraph {
     /** Creates a <code>PointsToGraph</code>. */
     public PointsToGraph() {
 	this(new LightPAEdgeSet(), new LightPAEdgeSet(),
-	     new PAEscapeFunc(), new HashSet(), new HashSet());
+	     new PAEscapeFunc(), new LinearSet(), new LinearSet());
     }
 
     // set of nodes reachable from nodes from r (r included)
@@ -176,7 +178,7 @@ public class PointsToGraph {
 	<code>principal</code> controls whether the return and exception set
         are inserted. */
     public void insert(PointsToGraph G2, Relation mu,
-		       boolean principal,Set noholes){
+		       boolean principal, Set noholes){
 	insert_edges( G2.O , G2.I , mu );
 	e.insert( G2.e , mu , noholes );
 	if(principal){
@@ -197,8 +199,8 @@ public class PointsToGraph {
 		}
 		public void visit(PANode node1,String f, PANode node2){
 		    if(!mu.contains(node2,node2)) return;
-		    Set mu_node1 = mu.getValuesSet(node1);
-		    O.addEdges(mu_node1,f,node2);
+		    Set mu_node1 = mu.getValues(node1);
+		    O.addEdges(mu_node1, f, node2);
 		}
 	    };
 
@@ -207,12 +209,12 @@ public class PointsToGraph {
 	// visitor for the inside edges
 	PAEdgeVisitor visitor_I = new PAEdgeVisitor(){
 		public void visit(Temp var, PANode node){
-		    Set mu_node = mu.getValuesSet(node);
+		    Set mu_node = mu.getValues(node);
 		    I.addEdges(var,mu_node);
 		}
 		public void visit(PANode node1,String f, PANode node2){
-		    Set mu_node1 = mu.getValuesSet(node1);
-		    Set mu_node2 = mu.getValuesSet(node2);
+		    Set mu_node1 = mu.getValues(node1);
+		    Set mu_node2 = mu.getValues(node2);
 		    I.addEdges(mu_node1,f,mu_node2);
 		}
 	    };
@@ -239,7 +241,7 @@ public class PointsToGraph {
 	Iterator it = source.iterator();
 	while(it.hasNext()){
 	    PANode node = (PANode) it.next();
-	    Set node_image = mu.getValuesSet(node);
+	    Set node_image = mu.getValues(node);
 	    dest.addAll(node_image);
 	}
     }
@@ -341,12 +343,18 @@ public class PointsToGraph {
 
 
     /** Deep copy of a <code>PointsToGraph</code>. */ 
-    public Object clone(){
-	return new PointsToGraph((PAEdgeSet)(O.clone()),
-				 (PAEdgeSet)(I.clone()),
-				 (PAEscapeFunc)(e.clone()),
-				 (Set)( ((HashSet)r).clone()),
-				 (Set)( ((HashSet)excp).clone()));
+    public Object clone() {
+	try {
+	    PointsToGraph newptg = (PointsToGraph) super.clone();
+	    newptg.O    = (PAEdgeSet) O.clone();
+	    newptg.I    = (PAEdgeSet) I.clone();
+	    newptg.e    = (PAEscapeFunc) e.clone();
+	    newptg.r    = (Set) ((LinearSet) r).clone();
+	    newptg.excp = (Set) ((LinearSet) excp).clone();
+	    return newptg;
+	} catch(CloneNotSupportedException e) {
+	    throw new InternalError();
+	}
     }
 
 
@@ -378,8 +386,8 @@ public class PointsToGraph {
 	PAEdgeSet _O = new LightPAEdgeSet();
 	PAEdgeSet _I = new LightPAEdgeSet();
 	// the same sets of return nodes and exceptions
-	Set _r = (Set) ((HashSet)r).clone();
-	Set _excp = (Set) ((HashSet)excp).clone();
+	Set _r    = (Set) ((LinearSet) r).clone();
+	Set _excp = (Set) ((LinearSet) excp).clone();
 
 	// Put the parameter nodes in the root set
 	for(int i = 0; i < params.length; i++)

@@ -17,6 +17,11 @@ import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.ClassFile.HCodeElement;
 
+import harpoon.Util.PredicateWrapper;
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
+import harpoon.Util.DataStructs.RelationEntryVisitor;
+
 /**
  * <code>ActionRepository</code> merges together the <code>alpha</code> and
  <code>pi</code> sets from the original paper of Martin Rinard & John Whaley.
@@ -36,7 +41,7 @@ import harpoon.ClassFile.HCodeElement;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.20 2000-05-15 22:49:33 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.21 2000-07-02 08:37:43 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -50,8 +55,8 @@ public class ActionRepository {
     /** Creates a <code>ActionRepository</code>. */
     public ActionRepository() {
         alpha_ld   = new HashSet();
-	pi_ld      = new Relation();
-	alpha_sync = new Relation();
+	pi_ld      = new LightRelation();
+	alpha_sync = new LightRelation();
 	pi_sync    = new Hashtable();
     }
 
@@ -156,7 +161,7 @@ public class ActionRepository {
     private final void pi_add_sync(PASync sync, PANode nt2){
 	Relation rel = (Relation) pi_sync.get(nt2);
 	if(rel == null){
-	    rel = new Relation();
+	    rel = new LightRelation();
 	    pi_sync.put(nt2,rel);
 	}
 	rel.add(sync.n, sync);
@@ -281,7 +286,7 @@ public class ActionRepository {
 	    Relation rel2 = (Relation) entry.getValue();
 	    Relation rel1 = (Relation) pi_sync.get(nt2);
 	    if(rel1 == null)
-		pi_sync.put(nt2,(Relation) rel2.clone());
+		pi_sync.put(nt2, (Relation) rel2.clone());
 	    else
 		rel1.union(rel2);
 	}
@@ -296,9 +301,10 @@ public class ActionRepository {
 	    visitor.visit_ld((PALoad) it_ld.next());
 	}
 	// visit all the "sync" actions
-	for(Iterator it_n = alpha_sync.keySet().iterator(); it_n.hasNext(); ){
+	for(Iterator it_n = alpha_sync.keys().iterator(); it_n.hasNext(); ){
 	    PANode n = (PANode) it_n.next();
-	    for(Iterator it_sync = alpha_sync.getValues(n); it_sync.hasNext();)
+	    Iterator it_sync = alpha_sync.getValues(n).iterator();
+	    while(it_sync.hasNext())
 		visitor.visit_sync((PASync) it_sync.next());
 	}
     }
@@ -311,10 +317,9 @@ public class ActionRepository {
 	<code>action</code>. */
     public final void forAllParActions(ParActionVisitor visitor){
 	// visit all the "ld" || nt entries
-	Enumeration enum_nt2 = pi_ld.keys();
-	while(enum_nt2.hasMoreElements()){
-	    PANode nt2 = (PANode) enum_nt2.nextElement();
-	    Iterator it_loads = pi_ld.getValues(nt2);
+	for(Iterator it_nt2 = pi_ld.keys().iterator(); it_nt2.hasNext(); ) {
+	    PANode nt2 = (PANode) it_nt2.next();
+	    Iterator it_loads = pi_ld.getValues(nt2).iterator();
 	    while(it_loads.hasNext()){
 		PALoad load = (PALoad) it_loads.next();
 		visitor.visit_par_ld(load,nt2);
@@ -325,10 +330,11 @@ public class ActionRepository {
 	for(Iterator it_nt2 = pi_sync.keySet().iterator(); it_nt2.hasNext();){
 	    PANode nt2 = (PANode) it_nt2.next();
 	    Relation rel = (Relation) pi_sync.get(nt2);
-	    for(Iterator it_n = rel.keySet().iterator(); it_n.hasNext(); ){
+	    for(Iterator it_n = rel.keys().iterator(); it_n.hasNext(); ){
 		PANode n = (PANode) it_n.next();
-		for(Iterator it_sync = rel.getValues(n); it_sync.hasNext();)
-		    visitor.visit_par_sync((PASync)it_sync.next(), nt2);
+		Iterator it_sync = rel.getValues(n).iterator();
+		while(it_sync.hasNext())
+		    visitor.visit_par_sync((PASync) it_sync.next(), nt2);
 	    }
 	}
     }
@@ -337,7 +343,7 @@ public class ActionRepository {
     /** Returns an iterator over the set of loads that are performed in 
 	parallel with an <code>nt</code> thread. <code>O(1)</code> time. */
     public final Iterator parallelLoads(PANode nt){
-	return pi_ld.getValues(nt);
+	return pi_ld.getValues(nt).iterator();
     }
 
 
@@ -434,12 +440,13 @@ public class ActionRepository {
 	NOT be removed. */
     public final boolean independent(PANode n){
 	// Goes through all the threads nt2 that are synchronizing on n
-	for(Iterator it_sync = alpha_sync.getValues(n); it_sync.hasNext(); ){
+	Iterator it_sync = alpha_sync.getValues(n).iterator();
+	while(it_sync.hasNext()) {
 	    PANode nt2 = ((PASync) it_sync.next()).nt;
 	    // if(nt2 == THIS_THREAD) continue;
 	    // Find the set of all the threads nt1 that synchronize 
 	    // on n in || with nt2
-	    Set concurent_syncs = ((Relation)pi_sync.get(nt2)).getValuesSet(n);
+	    Set concurent_syncs = ((Relation)pi_sync.get(nt2)).getValues(n);
 	    // If there are such threads, we can have concurrent accesses.
 	    if(!concurent_syncs.isEmpty())
 		return false;
@@ -450,7 +457,7 @@ public class ActionRepository {
     /** Checks whether any <code>sync</code> action is done on the node
 	<code>node</code>. */
     public boolean isSyncOn(PANode node){
-	return !alpha_sync.getValuesSet(node).isEmpty();
+	return !alpha_sync.getValues(node).isEmpty();
     }
 
     // Private constructor for clone and keepTheEssential

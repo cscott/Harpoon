@@ -8,7 +8,11 @@ import java.util.Set;
 import java.io.PrintWriter;
 
 import harpoon.IR.Quads.CALL;
-import harpoon.Analysis.PointerAnalysis.Relation;
+
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
+import harpoon.Util.DataStructs.RelationEntryVisitor;
+
 
 /**
  * <code>MetaCallGraph</code> is for meta methods what <code>callGraph</code>
@@ -16,7 +20,7 @@ import harpoon.Analysis.PointerAnalysis.Relation;
  methods are called by a given meta method [at a specific call site].
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraph.java,v 1.1.2.5 2000-06-27 19:28:11 salcianu Exp $
+ * @version $Id: MetaCallGraph.java,v 1.1.2.6 2000-07-02 08:37:40 salcianu Exp $
  */
 
 public interface MetaCallGraph extends java.io.Serializable {

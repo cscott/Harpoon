@@ -31,6 +31,10 @@ import harpoon.Util.TypeInference.ExactTemp;
 import harpoon.Util.TypeInference.TypeInference;
 import harpoon.IR.Quads.QuadFactory;
 
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
+import harpoon.Util.DataStructs.RelationEntryVisitor;
+
 import harpoon.Util.Util;
 
 /**
@@ -45,7 +49,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.46 2000-07-01 23:23:25 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.47 2000-07-02 08:37:43 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -403,7 +407,7 @@ abstract class InterProcPA {
 	Set params = new HashSet();
 	for(int i=0;i<callee_params.length;i++)
 	    params.add(callee_params[i]);
-	pig_caller.insertAllButArEo(pig_callee,mu,false,params);
+	pig_caller.insertAllButArEo(pig_callee, mu, false, params);
 
 	// bring the actions of the callee into the caller's graph
 	bring_actions(pig_caller.ar, pig_callee.ar,
@@ -456,7 +460,7 @@ abstract class InterProcPA {
 						ParIntGraph pig_caller,
 						ParIntGraph pig_callee,
 						PANode[] callee_params){
-	Relation mu = new Relation();
+	Relation mu = new LightRelation();
 	Temp[] args = q.params();
 	int object_params_count = 0;
 
@@ -491,7 +495,7 @@ abstract class InterProcPA {
 	for(Iterator it = set.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    if(node.type == PANode.STATIC)
-		mu.add(node,node);
+		mu.add(node, node);
 	}
     }
 
@@ -509,14 +513,14 @@ abstract class InterProcPA {
 	// put in the worklist W.
 	Relation new_info = (Relation) mu.clone();
 
-	W.addAll(mu.keySet());
+	W.addAll(mu.keys());
 	while(!W.isEmpty()){
 	    PANode node1 = (PANode) W.remove();
 
 	    // nodes3 stands for all the new instances of n3
 	    // from the inference rule
-	    HashSet nodes3 = new HashSet(new_info.getValuesSet(node1));
-	    new_info.removeAll(node1);
+	    HashSet nodes3 = new HashSet(new_info.getValues(node1));
+	    new_info.removeKey(node1);
 
 	    Iterator itf = pig_callee.G.O.allFlagsForNode(node1).iterator();
 	    while(itf.hasNext()) {
@@ -578,7 +582,7 @@ abstract class InterProcPA {
 	Set mu_nodes = new HashSet();
 	Iterator it = nodes.iterator();
 	while(it.hasNext())
-	    mu_nodes.addAll(mu.getValuesSet((PANode)it.next()));
+	    mu_nodes.addAll(mu.getValues((PANode) it.next()));
 	pig_caller.G.I.addEdges(l,mu_nodes);
     }
 
@@ -596,10 +600,10 @@ abstract class InterProcPA {
 	ActionVisitor act_visitor = new ActionVisitor(){
 		public void visit_ld(PALoad load){
 		    if(!mu.contains(load.n2,load.n2)) return;
-		    ar_caller.add_ld(mu.getValuesSet(load.n1),
+		    ar_caller.add_ld(mu.getValues(load.n1),
 				     load.f,
 				     load.n2,
-				     mu.getValuesSet(load.nt),
+				     mu.getValues(load.nt),
 				     active_threads_in_caller);
 		}
 		public void visit_sync(PASync sync){
@@ -617,15 +621,15 @@ abstract class InterProcPA {
 	ParActionVisitor par_act_visitor = new ParActionVisitor(){
 		public void visit_par_ld(PALoad load, PANode nt2){
 		    if(!mu.contains(load.n2,load.n2)) return;
-		    ar_caller.add_ld(mu.getValuesSet(load.n1),
+		    ar_caller.add_ld(mu.getValues(load.n1),
 				     load.f,
 				     load.n2,
-				     mu.getValuesSet(load.nt),
-				     mu.getValuesSet(nt2));
+				     mu.getValues(load.nt),
+				     mu.getValues(nt2));
 		}
 		public void visit_par_sync(PASync sync, PANode nt2){
 		    ar_caller.add_sync(sync.project(mu),
-				       mu.getValuesSet(nt2));
+				       mu.getValues(nt2));
 		}
 	    };
 
@@ -649,11 +653,11 @@ abstract class InterProcPA {
 		    // make sure eo will appear into the new graph
 		    if(!mu.contains(eo.n2,eo.n2)) return;
 
-		    Set ei_n1_set = mu.getValuesSet(ei.n1);
+		    Set ei_n1_set = mu.getValues(ei.n1);
 		    if(ei_n1_set.isEmpty()) return;
-		    Set ei_n2_set = mu.getValuesSet(ei.n2);
+		    Set ei_n2_set = mu.getValues(ei.n2);
 		    if(ei_n2_set.isEmpty()) return;
-		    Set eo_n1_set = mu.getValuesSet(eo.n1);
+		    Set eo_n1_set = mu.getValues(eo.n1);
 		    if(eo_n1_set.isEmpty()) return;
 
 		    Iterator it_ei_n1 = ei_n1_set.iterator();
@@ -681,7 +685,7 @@ abstract class InterProcPA {
 		public void visit(Temp var, PANode node){}
 		public void visit(PANode n1, String f, PANode n2){
 		    if(!mu.contains(n2,n2)) return;
-		    eo_caller.add(mu.getValuesSet(n1),f,n2,callerI);
+		    eo_caller.add(mu.getValues(n1),f,n2,callerI);
 		}
 	    });
     }

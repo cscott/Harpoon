@@ -44,9 +44,13 @@ import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Util.BasicBlocks.CachingBBConverter;
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
-import harpoon.Analysis.PointerAnalysis.Relation;
 
 import harpoon.Util.Util;
+
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
+import harpoon.Util.DataStructs.RelationEntryVisitor;
+
 
 /**
  * <code>MetaCallGraphImpl</code> is a full-power implementation of the
@@ -60,7 +64,7 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.20 2000-06-27 19:28:11 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.21 2000-07-02 08:37:40 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -116,9 +120,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // Converts the big format (Set oriented) into the compact one (arrays)
     // Takes the data from callees1(2) and puts it into callees1(2)_cmpct
     private void compact(){
-	for(Iterator it = callees1.keySet().iterator(); it.hasNext();){
+	for(Iterator it = callees1.keys().iterator(); it.hasNext();){
 	    MetaMethod mm = (MetaMethod) it.next();
-	    Set callees = callees1.getValuesSet(mm);
+	    Set callees = callees1.getValues(mm);
 	    MetaMethod[] mms = 
 		(MetaMethod[]) callees.toArray(new MetaMethod[callees.size()]);
 	    callees1_cmpct.put(mm,mms);
@@ -130,10 +134,10 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    Map map_cmpct = (Map) callees2_cmpct.get(mm);
 	    if(map_cmpct == null)
 		callees2_cmpct.put(mm,map_cmpct = new HashMap());
-	    for(Iterator it_cs = rel.keySet().iterator(); it_cs.hasNext();){
+	    for(Iterator it_cs = rel.keys().iterator(); it_cs.hasNext();){
 		CALL cs = (CALL) it_cs.next();
 		// cees is the set of callees in "mm" at call site "cs".
-		Set cees = rel.getValuesSet(cs);
+		Set cees = rel.getValues(cs);
 		MetaMethod[] mms =
 		    (MetaMethod[]) cees.toArray(new MetaMethod[cees.size()]);
 		map_cmpct.put(cs,mms);
@@ -143,7 +147,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
     // Relation<MetaMethod, MetaMethod>  stores the association between
     //  the caller and its callees
-    private Relation callees1 = new Relation();
+    private Relation callees1 = new LightRelation();
 
     // Map<MetaMethod,Relation<CALL,MetaMethod>> stores the association
     // between the caller and its calees at a specific call site
@@ -271,7 +275,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	callees1.add(mcaller,mcallee);
 	Relation rel = (Relation) callees2.get(mcaller);
 	if(rel == null)
-	    callees2.put(mcaller,rel = new Relation());
+	    callees2.put(mcaller,rel = new LightRelation());
 	rel.add(cs,mcallee);
     }
 
@@ -977,7 +981,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// (ExactTemp); the successors are put into the next field of the
 	// the ExactTemps; predecessors are not put into the ExactTemps, but
 	// into a separate relation - "prev_rel".
-	Relation prev_rel = new Relation();
+	Relation prev_rel = new LightRelation();
 	Set already_visited = new HashSet();
 	PAWorkList W = new PAWorkList();
 	W.addAll(initial_set);
@@ -1005,10 +1009,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	}
 
 	// now, put the predecessors in the ExactTemps
-	Enumeration enum = prev_rel.keys();
-	while(enum.hasMoreElements()){
-	    ExactTemp et = (ExactTemp) enum.nextElement();
-	    Set values = prev_rel.getValuesSet(et);
+	for(Iterator it = prev_rel.keys().iterator(); it.hasNext(); ) {
+	    ExactTemp et = (ExactTemp) it.next();
+	    Set values = prev_rel.getValues(et);
 	    et.prev = 
 		(ExactTemp[]) values.toArray(new ExactTemp[values.size()]);
 	}

@@ -45,7 +45,7 @@ import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.PointerAnalysis.PointerAnalysis;
 import harpoon.Analysis.PointerAnalysis.PANode;
 import harpoon.Analysis.PointerAnalysis.ParIntGraph;
-import harpoon.Analysis.PointerAnalysis.Relation;
+import harpoon.Util.DataStructs.Relation;
 import harpoon.Analysis.PointerAnalysis.MAInfo;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
@@ -73,7 +73,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.66 2000-06-27 19:28:16 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.67 2000-07-02 08:37:47 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -343,7 +343,8 @@ public abstract class PAMain {
 
 		// look for all the meta-methods originating into this method
 		// and do all the analysis stuff on them.
-		for(Iterator it = split_rel.getValues(hmethod); it.hasNext();){
+		for(Iterator it = split_rel.getValues(hmethod).iterator();
+		    it.hasNext();){
 		    nbmm++;
 		    MetaMethod mm = (MetaMethod) it.next();
 		    System.out.println("HMETHOD " + hmethod

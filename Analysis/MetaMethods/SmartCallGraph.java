@@ -14,15 +14,18 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
-import harpoon.Analysis.PointerAnalysis.Relation;
 
 import harpoon.Util.Util;
+
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
+import harpoon.Util.DataStructs.RelationEntryVisitor;
 
 /**
  * <code>SmartCallGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SmartCallGraph.java,v 1.1.2.4 2000-03-29 06:54:56 salcianu Exp $
+ * @version $Id: SmartCallGraph.java,v 1.1.2.5 2000-07-02 08:37:40 salcianu Exp $
  */
 public class SmartCallGraph implements CallGraph {
     
@@ -86,7 +89,7 @@ public class SmartCallGraph implements CallGraph {
     private final void compute(final MetaCallGraph mcg){
 	final Relation split = mcg.getSplitRelation();
 
-	for(Iterator ithm = split.keySet().iterator(); ithm.hasNext(); ){
+	for(Iterator ithm = split.keys().iterator(); ithm.hasNext(); ){
 	    HMethod hm = (HMethod) ithm.next();
 	    // vc stores all the callees of hm
 	    Set sc = new HashSet();
@@ -94,7 +97,8 @@ public class SmartCallGraph implements CallGraph {
 	    // the code of hm)
 	    Map map = new HashMap();
 
-	    for(Iterator itmm = split.getValues(hm); itmm.hasNext(); ){
+	    Iterator itmm = split.getValues(hm).iterator();
+	    while(itmm.hasNext()) {
 		MetaMethod mm = (MetaMethod) itmm.next();
 
 		Iterator itcs = mcg.getCallSites(mm).iterator();
