@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: quads.tex,v 1.12 1998-09-09 23:44:55 cananian Exp $
+% $Id: quads.tex,v 1.13 1998-09-09 23:48:08 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn,twoside]{article}
 
@@ -9,7 +9,7 @@
 
 \author{C.~Scott~Ananian}
 \title{\Harpoon{} Project Compiler Intermediate Representation}
-\date{\today \\ $ $Revision: 1.12 $ $}
+\date{\today \\ $ $Revision: 1.13 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -283,7 +283,7 @@ if no exception is thrown, or setting $e$ to the thrown exception.
 Either $r$ or $e$ will be \texttt{null} on completion of the
 \texttt{CALL}.  Exception $e$ is not automatically thrown from the
 method containing the \texttt{CALL}: $e$ must be explicitly tested and
-its exception rethrown if that behaviour is desired. $t$ is not needed
+its exception rethrown if that behavior is desired. $t$ is not needed
 for static methods.
 %
 \item[COMPONENTOF($t_1$, $t_2$, $t_3$)] Puts the boolean value
@@ -312,7 +312,7 @@ storing a reference in $t$.  A class constructor must be invoked using
 list $l$, storing the result in $t$.  The operation is represented as
 a string; figure \ref{fig:classes} lists all valid operation strings.
 The operations performed by the strings are identical to the
-operations performed by the java bytecode operation of the same name,
+operations performed by the Java bytecode operation of the same name,
 except that no exceptions are ever thrown.  See \cite{jvm} for
 details.
 %
