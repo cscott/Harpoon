@@ -166,7 +166,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri Apr 25 04:15:27 2003"
+@timestamp def "Fri Apr 25 05:10:32 2003"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -282,30 +282,30 @@
 @    xaxis  ticklabel start 0.000000
 @    xaxis  ticklabel stop type auto
 @    xaxis  ticklabel stop 0.000000
-@    xaxis  ticklabel char size 0.690000
+@    xaxis  ticklabel char size 1.200000
 @    xaxis  ticklabel font 0
 @    xaxis  ticklabel color 1
 @    xaxis  tick place both
 @    xaxis  tick spec type both
 @    xaxis  tick spec 9
 @    xaxis  tick major 0,                1
-@    xaxis  ticklabel 0, "200_check"
+@    xaxis  ticklabel 0, "check"
 @    xaxis  tick major 1,                2
-@    xaxis  ticklabel 1, "201_compress"
+@    xaxis  ticklabel 1, "compress"
 @    xaxis  tick major 2,                3
-@    xaxis  ticklabel 2, "202_jess"
+@    xaxis  ticklabel 2, "jess"
 @    xaxis  tick major 3,                4
-@    xaxis  ticklabel 3, "205_raytrace"
+@    xaxis  ticklabel 3, "raytrace"
 @    xaxis  tick major 4,                5
-@    xaxis  ticklabel 4, "209_db"
+@    xaxis  ticklabel 4, "db"
 @    xaxis  tick major 5,                6
-@    xaxis  ticklabel 5, "213_javac"
+@    xaxis  ticklabel 5, "javac"
 @    xaxis  tick major 6,                7
-@    xaxis  ticklabel 6, "222_mpegaudio"
+@    xaxis  ticklabel 6, "mpegaudio"
 @    xaxis  tick major 7,                8
-@    xaxis  ticklabel 7, "227_mtrt"
+@    xaxis  ticklabel 7, "mtrt"
 @    xaxis  tick major 8,                9
-@    xaxis  ticklabel 8, "228_jack"
+@    xaxis  ticklabel 8, "jack"
 @    yaxis  on
 @    yaxis  type zero false
 @    yaxis  offset 0.000000 , 0.000000
