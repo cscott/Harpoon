@@ -14,7 +14,8 @@ public class LTPhysicalMemory extends ScopedMemory {
 
     protected void initNative(long sizeInBytes) {
     }
-    
+
+    /** Create an instance of <code>LTPhysicalMemory</code> with the given parameters. */
     public LTPhysicalMemory(Object type, long size)
 	throws SecurityException, SizeOutOfBoundsException,
 	       UnsupportedPhysicalMemoryException,

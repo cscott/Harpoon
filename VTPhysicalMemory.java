@@ -91,4 +91,3 @@ public class VTPhysicalMemory extends ScopedMemory {
 	return "VTPhysicalMemory: " + super.toString();
     }
 }
-

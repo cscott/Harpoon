@@ -16,7 +16,7 @@ package javax.realtime;
  *  heap objects, immoratl objects continue to exist even after there are
  *  no other references to them.
  */
-public class ImmortalMemory extends MemoryArea {
+public /* specs says it's final */ class ImmortalMemory extends MemoryArea {
     private static ImmortalMemory immortalMemory;
    
     /* Don't use this! */

@@ -37,16 +37,22 @@ public final class PhysicalMemoryManager {
     public static final String SHARED = "SHARED";
 
 
-    // METHODS IN SPECS
+    public PhysicalMemoryManager() {}
 
-    /** Is the specified range of memory removable? */
+    /** Query the system about the removability of the specified range
+     *  of memory.
+     */
     public static boolean isRemovable(long address, long size) {
 	// TODO
 
 	return false;
     }
 
-    /** Is any part of the specified range of memory presently removed? */
+    /** Query the system about the removed state of the specified range
+     *  of memory. This method is used for devices that lien in the
+     *  memory address space and can be removed while the system is
+     *  running (such as PC cards).
+     */
     public static boolean isRemoved(long address, long size) {
 	// TODO
 

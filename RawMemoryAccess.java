@@ -254,4 +254,4 @@ public class RawMemoryAccess {
     public RawMemoryAccess subregion(long offset, long size) {
 	return new RawMemoryAccess(offset, size);
     }
-};
+}

@@ -193,7 +193,7 @@ public abstract class MemoryArea {
      *  available for future allocated objects, measured in bytes.
      */
     public long memoryRemaining() {
-	return size()-memoryConsumed();
+	return size() - memoryConsumed();
     }
     
     protected native Object newArray(RealtimeThread rt, 
