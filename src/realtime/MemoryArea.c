@@ -257,8 +257,8 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_shadow
   jobject clone = memoryArea;
 #ifdef WITH_NOHEAP_SUPPORT
   if (((ptroff_t)FNI_UNWRAP(memoryArea))&1) {
-      size = FNI_UNWRAP_MASKED(memoryArea)->claz->size;
-      clone = FNI_Alloc(env, NULL, FNI_UNWRAP_MASKED(memoryArea)->claz, allocfunc, size);
+      size = FNI_CLAZ(FNI_UNWRAP_MASKED(memoryArea))->size;
+      clone = FNI_Alloc(env, NULL, FNI_CLAZ(FNI_UNWRAP_MASKED(memoryArea)), allocfunc, size);
       memcpy(FNI_UNWRAP_MASKED(clone)->field_start,
 	     FNI_UNWRAP_MASKED(memoryArea)->field_start,
 	     size - sizeof(struct oobj));

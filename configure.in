@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.107 $)dnl
+AC_REVISION($Revision: 1.108 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -519,6 +519,17 @@ if test x$with_mzf_support = xyes; then
 fi
 AM_CONDITIONAL(MZF_SUPPORT, test x$with_mzf_support = xyes)
 AC_MSG_RESULT($with_mzf_support)
+
+dnl experimental support for claz compression.
+AC_MSG_CHECKING([for experimental claz compression support])
+AC_ARG_WITH(claz-shrink,
+[  --with-claz-shrink	  build experimental claz compression support],
+with_claz_shrink=$withval, with_claz_shrink=no) # default is 'no'
+if test x$with_claz_shrink = xyes; then
+  AC_DEFINE(WITH_CLAZ_SHRINK, 1,
+        [Define to build the experimental claz compression support])
+fi
+AC_MSG_RESULT($with_claz_shrink)
 
 dnl select whether to collect and print statistics
 AC_MSG_CHECKING([whether to collect and print statistics])

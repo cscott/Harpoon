@@ -107,7 +107,7 @@ static void deflate_object(struct oobj *obj, ptroff_t client_data) {
 #if defined(BDW_CONSERVATIVE_GC) || defined(WITH_PRECISE_GC) || defined(WITH_REALTIME_JAVA)
     struct oobj *oobj = (struct oobj *) ((void*)obj+(ptroff_t)client_data);
     struct inflated_oobj *infl = oobj->hashunion.inflated;
-    /*printf("Deflating object %p (clazz %p)\n", oobj, oobj->claz);*/
+    /*printf("Deflating object %p (clazz %p)\n", oobj, FNI_CLAZ(oobj));*/
     /* okay, first invoke java finalizer.  afterwards this object
      * *should* be dead, but the java finalizer might resurrect it.
      * we don't behave well in this case. */

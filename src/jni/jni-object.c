@@ -86,7 +86,7 @@ jobject FNI_NewObjectV(JNIEnv *env, jclass clazz, jmethodID methodID,
  */
 jclass FNI_GetObjectClass (JNIEnv *env, jobject obj) {
   assert(FNI_NO_EXCEPTIONS(env) && obj != NULL);
-  return FNI_WRAP(FNI_UNWRAP_MASKED(obj)->claz->class_object);
+  return FNI_WRAP(FNI_CLAZ(FNI_UNWRAP_MASKED(obj))->class_object);
 }
 
 /* Tests whether an object is an instance of a class. 
@@ -100,7 +100,7 @@ jboolean FNI_IsInstanceOf (JNIEnv *env, jobject obj, jclass clazz) {
 
   if (obj==NULL) return JNI_TRUE;/* flakey: not the same as java' instanceof */
 
-  objclz = FNI_UNWRAP_MASKED(obj)->claz;
+  objclz = FNI_CLAZ(FNI_UNWRAP_MASKED(obj));
   clsclz = FNI_GetClassInfo(clazz)->claz;
   /* different tests depending on whether clazz is a class or interface type*/
   if (0==clsclz->scaled_class_depth && clsclz!=clsclz->display[0]) {

@@ -66,6 +66,10 @@ struct claz {
 	/* the first word in the object may be a pointer.		*/
 #endif
   } gc_info;
+  /* extra claz info goes here */
+#ifdef WITH_CLAZ_SHRINK
+  jint claz_index;              /* enumerated value of this claz */
+#endif
   u_int32_t scaled_class_depth; /* sizeof(struct claz *) * class_depth */
   struct claz *display[0];	/* sized by FLEX */
   /* class method dispatch table after display */
@@ -110,7 +114,11 @@ struct inflated_oobj {
 
 /* the oobj structure tells you what's inside the object layout. */
 struct oobj {
+#ifdef WITH_CLAZ_SHRINK
+  jint claz_index; /* claz shrink replaces the pointer w/ a table index */
+#else
   struct claz *claz;
+#endif
   /* if low bit is one, then this is a fair-dinkum hashcode. else, it's a
    * pointer to a struct inflated_oobj. this pointer needs to be freed
    * when the object is garbage collected, which is done w/ a finalizer. */
@@ -161,6 +169,18 @@ struct FNI_method2info {
   jint modifiers; /* reflection info: access modifiers of method. */
 };
 extern struct FNI_method2info method2info_start[], method2info_end[];
+
+/* --------- dealing w/ variant representations of oobj->claz -------- */
+#ifdef WITH_CLAZ_SHRINK
+/* claz indirection table for claz compression */
+extern struct claz *FNI_claz_table[];
+#endif /* WITH_CLAZ_SHRINK */
+
+#ifdef WITH_CLAZ_SHRINK
+# define FNI_CLAZ(x) ({struct oobj* _o=x; FNI_claz_table[_o->claz_index]; })
+#else
+# define FNI_CLAZ(x) ({struct oobj* _o=x; _o->claz; })
+#endif
 
 /* --------------- wrapping and unwrapping objects. ------------ */
 /* MOVED: to fni-wrap.h, for better precise-c backend integration */

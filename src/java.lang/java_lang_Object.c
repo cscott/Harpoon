@@ -29,13 +29,13 @@ JNIEXPORT jint JNICALL Java_java_lang_Object_hashCode
 
 /* helper for clone functions. */
 static inline jobject cloneHelper(JNIEnv *env, jobject obj, jsize len) {
-  jobject clone = FNI_Alloc(env, NULL, FNI_UNWRAP_MASKED(obj)->claz,
+  jobject clone = FNI_Alloc(env, NULL, FNI_CLAZ(FNI_UNWRAP_MASKED(obj)),
 			    NULL/*default alloc func*/, len);
   memcpy(FNI_UNWRAP_MASKED(clone)->field_start,
 	 FNI_UNWRAP_MASKED(obj  )->field_start,
 	 len - sizeof(struct oobj));
 #ifdef WITH_ROLE_INFER
-  NativeassignUID(env, clone, FNI_WRAP(FNI_UNWRAP(obj)->claz->class_object));
+  NativeassignUID(env, clone, FNI_WRAP(FNI_CLAZ(FNI_UNWRAP(obj))->class_object));
   RoleInference_clone(env, obj, clone);
 #endif
   return clone;
@@ -49,7 +49,7 @@ static inline jobject cloneHelper(JNIEnv *env, jobject obj, jsize len) {
  */
 JNIEXPORT jobject JNICALL Java_java_lang_Object_clone
   (JNIEnv *env, jobject obj) {
-    struct claz *claz = FNI_UNWRAP_MASKED(obj)->claz;
+    struct claz *claz = FNI_CLAZ(FNI_UNWRAP_MASKED(obj));
     u_int32_t size = claz->size;
     assert(claz->component_claz==NULL/* not an array*/);
     return cloneHelper(env, obj, size);

@@ -97,13 +97,13 @@ int do_arraycopy_checks(JNIEnv *env, jobject src, jint srcpos,
       (*env)->Throw(env, (*env)->NewObject(env, nulcls, methodID));
       return -1;
     }
-    if (FNI_UNWRAP_MASKED(src)->claz->component_claz==NULL) {
+    if (FNI_CLAZ(FNI_UNWRAP_MASKED(src))->component_claz==NULL) {
       jclass asecls = (*env)->FindClass
 	(env, "java/lang/ArrayStoreException");
       (*env)->ThrowNew(env, asecls, "src not an array");
       return -1;
     }
-    if (FNI_UNWRAP_MASKED(dst)->claz->component_claz==NULL) {
+    if (FNI_CLAZ(FNI_UNWRAP_MASKED(dst))->component_claz==NULL) {
       jclass asecls = (*env)->FindClass
 	(env, "java/lang/ArrayStoreException");
       (*env)->ThrowNew(env, asecls, "dst not an array");
@@ -112,8 +112,8 @@ int do_arraycopy_checks(JNIEnv *env, jobject src, jint srcpos,
     if ((*env)->IsInstanceOf(env, src, arrcls)==JNI_FALSE ||
 	(*env)->IsInstanceOf(env, dst, arrcls)==JNI_FALSE ) {
       /* one or both is an array of primitive type... */
-      if (FNI_UNWRAP_MASKED(src)->claz !=
-	  FNI_UNWRAP_MASKED(dst)->claz ) {
+      if (FNI_CLAZ(FNI_UNWRAP_MASKED(src)) !=
+	  FNI_CLAZ(FNI_UNWRAP_MASKED(dst)) ) {
 	jclass asecls = (*env)->FindClass
 	  (env, "java/lang/ArrayStoreException");
 	(*env)->ThrowNew(env, asecls, "primitive array types don't match");
@@ -283,7 +283,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_System_initProperties
     }
 #endif /* HAVE_GETCWD */
 #ifdef HAVE_LOCALTIME
-    { /* borrowed from Japahar */
+    { /* borrowed from Japhar */
       time_t t = time(NULL);
       struct tm *tminfo = localtime(&t);
       ckey = "user.timezone";

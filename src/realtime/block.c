@@ -64,7 +64,7 @@ inline void Block_scan(struct Block* block) {
 #endif
   for(oobj_ptr = (struct oobj*)RTJ_ALIGN(block->begin+sizeof(void*)); 
       oobj_ptr; oobj_ptr = *(((struct oobj**)oobj_ptr)-1)) {
-    if (oobj_ptr->claz) {
+    if (FNI_CLAZ(oobj_ptr)) {
 #ifdef RTJ_DEBUG
       printf("0x%08x ", oobj_ptr);
 #endif
@@ -94,11 +94,11 @@ inline void Block_finalize(struct Block* block) {
   for(obj = (struct oobj*)RTJ_ALIGN(block->begin+sizeof(void*)); obj; 
       obj = *(((struct oobj**)obj)-1)) {
 #ifdef RTJ_DEBUG
-    if ((obj->claz)&&(RTJ_should_finalize(obj))) {
+    if (FNI_CLAZ(obj)&&(RTJ_should_finalize(obj))) {
       printf("0x%08x ", obj);
     }
 #endif
-    if (obj->claz) {
+    if (FNI_CLAZ(obj)) {
       RTJ_finalize(obj);
     }
   }

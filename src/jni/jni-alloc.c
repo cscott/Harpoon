@@ -62,7 +62,11 @@ jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, struct claz *claz,
   }
   masked = (struct oobj *) PTRMASK(newobj);
   memset(masked, 0, length);
+#ifdef WITH_CLAZ_SHRINK
+  masked->claz_index = claz->claz_index;
+#else
   masked->claz = claz;
+#endif
   /* note -- setting the last bit also has the convenient property of
    * eliminating a possible self-cycle that would keep conservative gc
    * from finalizing the object. */
