@@ -72,7 +72,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.14 2000-02-01 14:03:02 pnkfelix Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.15 2000-02-01 16:42:37 pnkfelix Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -265,7 +265,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
     // FIX: this method could probably be cleaned up substantially
     // 
     private void computeUseDef(BasicBlock root, Map tempsToDefs) { 
-	for (Iterator i = BasicBlock.basicBlockIterator(root); i.hasNext();) { 
+	for (Iterator i = root.blocksIterator(); i.hasNext();) { 
 	    BasicBlock      bb      = (BasicBlock)i.next();
 	    TreeFoldingInfo bbInfo  = (TreeFoldingInfo)bb2tfi.get(bb);
 	    BitString       bbIn    = (BitString)((bbInfo.inSet[0]).clone());

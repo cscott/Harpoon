@@ -53,7 +53,7 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.68 2000-01-31 20:49:09 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.69 2000-02-01 16:42:35 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -97,10 +97,9 @@ public class LocalCffRegAlloc extends RegAlloc {
     
     protected void generateRegAssignment() {
 	LiveTemps liveTemps = 
-	    doLVA(BasicBlock.basicBlockIterator(rootBlock));
+	    doLVA(rootBlock.blocksIterator());
 	
-	Iterator blocks = 
-	    BasicBlock.basicBlockIterator(rootBlock);
+	Iterator blocks = rootBlock.blocksIterator();
 	while(blocks.hasNext()) {
 	    BasicBlock b = (BasicBlock) blocks.next();
 	    Set liveOnExit = liveTemps.getLiveOnExit(b);
@@ -774,8 +773,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	LiveTemps liveTemps = 
 	    new LiveTemps(blocks, frame.getRegFileInfo().liveOnExit());
 	harpoon.Analysis.DataFlow.Solver.worklistSolve
-	    (BasicBlock.basicBlockIterator(rootBlock),
-	     liveTemps);
+	    (rootBlock.blocksIterator(), liveTemps);
 	return liveTemps;
     }
 

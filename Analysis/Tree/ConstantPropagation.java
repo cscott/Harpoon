@@ -43,7 +43,7 @@ import java.util.Stack;
  * <p><b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: ConstantPropagation.java,v 1.1.2.8 2000-02-01 14:03:02 pnkfelix Exp $
+ * @version $Id: ConstantPropagation.java,v 1.1.2.9 2000-02-01 16:42:37 pnkfelix Exp $
  */
 public final class ConstantPropagation { 
 
@@ -86,9 +86,7 @@ public final class ConstantPropagation {
 	    BasicBlock root = (new BasicBlock.Factory
 		(RS((Stm)code.getRootElement()), 
 		 CFGrapher.DEFAULT)).getRoot(); 
-	    CloneableIterator bbi = new CloneableIterator
-		(BasicBlock.basicBlockIterator(root)); 
-	    this.rch = new ReachingHCodeElements((Iterator)bbi.clone()); 
+	    this.rch = new ReachingHCodeElements(root.blocksIterator());
 	    Solver.forwardRPOSolve(root, this.rch); 
 
 
