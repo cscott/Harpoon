@@ -17,7 +17,7 @@ void dotrolemethod(struct genhashtable * htable, struct genhashtable *reverserol
     struct rolereturnstate *rs=rm->returnstates;
     if (rm->paramroles[i]!=NULL)
       while(rs!=NULL) {
-	char buf[300],buf1[100];
+	char buf[600],buf1[100];
 	int place=convertnumberingobjects(rm->signature, rm->isStatic, i);
 	int total=convertnumberingobjects(rm->signature, rm->isStatic, -1);
 	int ii=0,j=0;
@@ -42,7 +42,7 @@ void dotrolechange(struct genhashtable *htable, struct heap_state *hs,
   char *role1=rc->origrole;
   char *role2=rc->newrole;
   int depth=0,bdepth;
-  char buf[200];
+  char buf[600];
   int i;
 
   struct dynamiccallmethod *dcm=(struct dynamiccallmethod *) gettable(hs->dynamiccallchain, rc->origmethod-1); 

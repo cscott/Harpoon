@@ -291,7 +291,7 @@ void doanalysis() {
 	  if(currentparam==heap.methodlist->numobjectargs) {
 	    int i=0;
 	    for(;i<heap.methodlist->numobjectargs;i++) {
-	      char buf[200];
+	      char buf[600];
 	      sprintf(buf,"%s.%s%s %d", heap.methodlist->classname,
 		      heap.methodlist->methodname, heap.methodlist->signature,
 		      convertnumberingobjects(heap.methodlist->signature, heap.methodlist->isStatic,i));
@@ -386,7 +386,7 @@ void doanalysis() {
 	  dofieldassignment(&heap, src, fieldname, dst);
 	  addeffect(&heap, suid, fieldname, duid);
 	} else {
-	  char buffer[1000];
+	  char buffer[600];
 	  sprintf(buffer,"%s.%s", classname,fieldname);
 	  doglobalassignment(&heap,classname,fieldname,dst);
 	  addeffect(&heap, -1, buffer,duid);
@@ -1480,7 +1480,7 @@ void loadatomics(struct heap_state *heap) {
 
 void loadstatechange(struct heap_state *heap) {
   FILE *file=fopen("statechange","r");
-  char buf[200],tmp[200];
+  char buf[600],tmp[600];
   int counter=0;
   if (file==NULL)
     return;

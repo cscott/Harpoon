@@ -97,7 +97,11 @@ void addobjectpair(struct objectpair *os, struct heap_object *src, struct localv
 }
 
 long int ophashfunction(struct heap_object *src, void *lv, struct heap_object *dst) {
-  return ((((long int)src)<<2)^(((long int) lv)<<1)^((long int)dst))%OPHASHSIZE;
+  long int hashcode=((((long int)src)<<2)^(((long int) lv)<<1)^((long int)dst))%OPHASHSIZE;
+  if (hashcode>=0)
+    return hashcode;
+  else
+    return -hashcode;
 }
 
 void freeobjectpairlist(struct objectpairlist *opl) {
