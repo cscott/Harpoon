@@ -44,6 +44,8 @@ import harpoon.IR.LowQuad.PCALL;
 import harpoon.IR.LowQuad.PSET;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Default;
 import harpoon.Util.WorkSet;
 import harpoon.Util.Worklist;
@@ -53,6 +55,7 @@ import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -64,7 +67,7 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.1.2.7 2000-10-11 01:52:45 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.1.2.8 2001-10-31 23:33:02 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -78,11 +81,13 @@ public abstract class DeadCode  {
 	NameMap nm = new NameMap();
 	// keep track of defs.
 	Map defMap = new HashMap();
+	// keep track of PHI/SIGMAs which use certain temps.
+	MultiMap useMap = new GenericMultiMap();
 	// we'll have a coupla visitors
 	LowQuadVisitor v;
 	
 	// make a worklist (which everything's on, at the beginning)
-	Worklist W = new WorkSet();
+	WorkSet W = new WorkSet();
 	Quad[] ql = (Quad[]) hc.getElements();
 	for (int i=0; i<ql.length; i++) {
 	    W.push(ql[i]);
@@ -90,6 +95,10 @@ public abstract class DeadCode  {
 	    Temp d[] = ql[i].def();
 	    for (int j=0; j<d.length; j++)
 		defMap.put(d[j], ql[i]);
+	    // and keep track of phis/sigmas which use certain temps.
+	    if (ql[i] instanceof PHI || ql[i] instanceof SIGMA)
+		for (Iterator it=ql[i].useC().iterator(); it.hasNext(); )
+		    useMap.add((Temp)it.next(), ql[i]);
 	}
 	// ...and a visitor
 	v = new UsefulVisitor(W, useful, defMap, nm);
@@ -102,7 +111,7 @@ public abstract class DeadCode  {
 	// remove the useless stuff, including useless cjmps/phis
 	for (int i=0; i<ql.length; i++)
 		W.push(ql[i]);
-	v = new EraserVisitor(W, useful, nm);
+	v = new EraserVisitor(W, useful, useMap, nm);
 	while (!W.isEmpty()) {
 	    Quad q = (Quad) W.pull();
 	    q.accept(v);
@@ -126,12 +135,13 @@ public abstract class DeadCode  {
     }
 
     static class EraserVisitor extends LowQuadVisitor {
-	Worklist W;
+	WorkSet W;
 	Set useful;
+	MultiMap useMap;
 	NameMap nm;
-	EraserVisitor(Worklist W, Set useful, NameMap nm) {
+	EraserVisitor(WorkSet W, Set useful, MultiMap useMap, NameMap nm) {
 	    super(false/*non-strict*/);
-	    this.W = W; this.useful = useful; this.nm = nm;
+	    this.W= W; this.useful= useful; this.useMap= useMap; this.nm= nm;
 	}
 	void unlink(Quad q) {
 	    Edge before = q.prevEdge(0);
@@ -179,6 +189,10 @@ public abstract class DeadCode  {
 			int prev = ((Integer) phidup.get(src)).intValue();
 			nm.map(q.dst(i), q.dst(prev));
 			q.removePhi(i--);
+			// this could enable more merging in PHI/SIGMAs that
+			// use q.dst(i) or q.dst(prev)
+			W.addAll(useMap.getValues(q.dst(i)));
+			W.addAll(useMap.getValues(q.dst(prev)));
 		    } else phidup.put(src, new Integer(i));
 		}
 	    }
@@ -215,8 +229,13 @@ public abstract class DeadCode  {
 		Temp src = nm.tempMap(q.src(i));
 		if (sigdup.containsKey(src)) { // delete it!
 		    int prev = ((Integer) sigdup.get(src)).intValue();
-		    for (int j=0; j<q.arity(); j++)
+		    for (int j=0; j<q.arity(); j++) {
 			nm.map(q.dst(i,j), q.dst(prev,j));
+			// this could enable more merging in PHI/SIGMAs that
+			// use q.dst(i,j) or q.dst(prev,j)
+			W.addAll(useMap.getValues(q.dst(i,j)));
+			W.addAll(useMap.getValues(q.dst(prev,j)));
+		    }
 		    q.removeSigma(i--);
 		} else sigdup.put(src, new Integer(i));
 	    }
