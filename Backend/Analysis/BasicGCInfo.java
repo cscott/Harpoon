@@ -38,7 +38,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.2 2000-01-31 22:16:07 cananian Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.3 2000-02-01 14:03:03 pnkfelix Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     
@@ -83,7 +83,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		// use CFGrapher.DEFAULT for now at Felix's bequest
 		// Instrs should graduate to having their own CFGrapher
 		BasicBlock root = 
-		    BasicBlock.computeBasicBlocks(hce, cfger);
+		    (new BasicBlock.Factory(hce, cfger)).getRoot();
 		Iterator it = BasicBlock.basicBlockIterator(root);
 		Set liveOnExit = f.getRegFileInfo().liveOnExit();
 		LiveTemps ltAnalysis = new LiveTemps(it, liveOnExit);

@@ -65,7 +65,7 @@ import java.io.PrintWriter;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparcMain.java,v 1.1.2.8 2000-01-17 23:41:31 cananian Exp $
+ * @version $Id: SparcMain.java,v 1.1.2.9 2000-02-01 14:03:03 pnkfelix Exp $
  */
 public class SparcMain extends harpoon.IR.Registration {
  
@@ -273,7 +273,8 @@ public class SparcMain extends harpoon.IR.Registration {
 	    if (hc != null) {
 		HCodeElement root = hc.getRootElement();
 		BasicBlock block = 
-		    BasicBlock.computeBasicBlocks(root, CFGrapher.DEFAULT);
+		    (new BasicBlock.Factory(root,
+					    CFGrapher.DEFAULT)).getRoot(); 
 		Iterator iter= BasicBlock.basicBlockIterator(block);
 
 		// wrong but makes it compile for now

@@ -20,7 +20,7 @@ import harpoon.IR.Properties.CFGrapher;
  * to <code>BasicBlock</code>s.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCBBFactory.java,v 1.1.2.1 2000-01-27 06:24:11 salcianu Exp $
+ * @version $Id: SCCBBFactory.java,v 1.1.2.2 2000-02-01 14:03:02 pnkfelix Exp $
  */
 public class SCCBBFactory {
     
@@ -43,9 +43,9 @@ public class SCCBBFactory {
      * <code>BasicBlock</code>s). */
     public SCCTopSortedGraph computeSCCBB(HMethod hm){
 	HCode hcode = hcf.convert(hm);
-	BasicBlock bb = BasicBlock.computeBasicBlocks(
+	BasicBlock bb = (new BasicBlock.Factory(
 			     hcode.getRootElement(),
-			     CFGrapher.DEFAULT);
+			     CFGrapher.DEFAULT)).getRoot();
 
 	SCComponent.Navigator navigator = 
 	    new SCComponent.Navigator(){

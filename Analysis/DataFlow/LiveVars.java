@@ -48,7 +48,7 @@ import java.util.Iterator;
  * <code>UseDefer</code>s 
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.18 2000-02-01 02:57:52 pnkfelix Exp $ */
+ * @version $Id: LiveVars.java,v 1.1.2.19 2000-02-01 14:03:01 pnkfelix Exp $ */
 public abstract class LiveVars extends Liveness {
     
     private static final boolean DEBUG = false; 
@@ -62,7 +62,7 @@ public abstract class LiveVars extends Liveness {
     public LiveVars(HCode hc, CFGrapher gr, UseDefer ud, Set liveOnExit) {
 	super(hc);
 	BasicBlock b1 = 
-	    BasicBlock.computeBasicBlocks(hc.getRootElement(), gr); 
+	    (new BasicBlock.Factory(hc.getRootElement(), gr)).getRoot(); 
 	lv = new LiveTemps(b1.blocksIterator(), liveOnExit);
 	Solver.worklistSolve(b1.blocksIterator(), lv);
     }
