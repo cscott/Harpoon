@@ -22,7 +22,7 @@ import java.util.Iterator;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.5 1999-08-19 17:38:03 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.6 1999-08-19 17:49:36 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -488,6 +488,7 @@ public class Jasmin {
 		out.println(l1+":");
 		out.println("    bipush 1");
 		out.println(l2+":");
+		store(q.dst());
 		break;
 	    case Qop.LCMPGT:
 		l1=label();l2=label();
@@ -500,6 +501,7 @@ public class Jasmin {
 		out.println(l1+":");
 		out.println("    bipush 1");
 		out.println(l2+":");
+		store(q.dst());
 		break;
 	    case Qop.DCMPEQ:
 	    case Qop.DCMPGE:
@@ -519,6 +521,7 @@ public class Jasmin {
 		out.println(l1+":");
 		out.println("    bipush 1");
 		out.println(l2+":");
+		store(q.dst());
 		break;
 
 	    case Qop.FCMPEQ:
@@ -539,6 +542,7 @@ public class Jasmin {
 		out.println(l1+":");
 		out.println("    bipush 1");
 		out.println(l2+":");
+		store(q.dst());
 		break;
 
 	    case Qop.ACMPEQ:
