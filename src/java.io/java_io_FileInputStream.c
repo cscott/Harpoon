@@ -96,20 +96,15 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_read
     fdObj    = (*env)->GetObjectField(env, obj, fdObjID);
     fd       = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
+    do {
+	result = read(fd, (void*)buf, 1);
 #ifdef USERIO
-    /*Should be okay with just this*/
-    do {
-	result = read(fd, (void*)buf, 1);
-	if (result<0 && errno == EAGAIN) 
-	  SchedulerAddRead(fd);
-	/* if we're interrupted by a signal, just retry. */
-    } while (result<0 && (errno == EINTR || errno==EAGAIN));
-#else
-    do {
-	result = read(fd, (void*)buf, 1);
+	if (result<0 && errno == EAGAIN) {
+	  SchedulerAddRead(fd); errno = EINTR;/* loop */
+	}
+#endif
 	/* if we're interrupted by a signal, just retry. */
     } while (result<0 && errno == EINTR);
-#endif
 
     if (result==-1) {
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
@@ -141,23 +136,15 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_readBytes
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
     fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
-
-
-
-#ifdef USERIO
-    do {
-      result = read(fd, (void*)buf, bufsize);
-      if (result<0 && errno==EAGAIN)
-	SchedulerAddRead(fd);
-    } while (result<0 && (errno == EINTR||errno==EAGAIN));
-#else
     do {
 	result = read(fd, (void*)buf, bufsize);
+#ifdef USERIO
+	if (result<0 && errno == EAGAIN) {
+	  SchedulerAddRead(fd); errno = EINTR;/* loop */
+	}
+#endif
 	/* if we're interrupted by a signal, just retry. */
     } while (result<0 && errno == EINTR);
-#endif
-
-
 
     if (result==-1) {
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
