@@ -7,6 +7,7 @@ import harpoon.Util.Util;
 import harpoon.Util.IteratorEnumerator;
 import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Collections.LinearSet;
+import harpoon.Util.Collections.UnmodifiableListIterator;
 import harpoon.Util.Worklist;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeEdge;
@@ -63,7 +64,7 @@ import java.util.Collection;
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BasicBlock.java,v 1.4 2002-04-10 02:58:48 cananian Exp $ */
+ * @version $Id: BasicBlock.java,v 1.5 2002-08-30 22:37:12 cananian Exp $ */
 public class BasicBlock<HCE extends HCodeElement>
     implements BasicBlockInterf<HCE,BasicBlock<HCE>>, java.io.Serializable {
     
@@ -233,7 +234,7 @@ public class BasicBlock<HCE extends HCodeElement>
 				" next: "+fcurr+
 				" ind: "+fi);
 
-		return new harpoon.Util.UnmodifiableListIterator<HCE>() {
+		return new UnmodifiableListIterator<HCE>() {
 		    //elem for next() to return
 		    HCE next = fcurr; 
 		    

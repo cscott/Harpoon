@@ -7,8 +7,8 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Label;
 import harpoon.Temp.TempMap;
 import harpoon.Util.CombineIterator;
-import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Default;
+import harpoon.Util.Collections.UnmodifiableIterator;
 
 import java.util.Iterator;
 import java.util.AbstractCollection;
@@ -20,7 +20,7 @@ import java.util.Set;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.3 2002-04-10 03:04:29 cananian Exp $
+ * @version $Id: InstrLABEL.java,v 1.4 2002-08-30 22:39:11 cananian Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;

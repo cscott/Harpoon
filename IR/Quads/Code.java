@@ -14,7 +14,7 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.ArrayFactory;
-import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Collections.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.util.HashSet;
@@ -33,7 +33,7 @@ import java.util.ArrayList;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.5 2002-04-11 18:50:32 salcianu Exp $
+ * @version $Id: Code.java,v 1.6 2002-08-30 22:39:33 cananian Exp $
  */
 public abstract class Code extends HCode<Quad>
     implements java.io.Serializable {

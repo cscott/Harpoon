@@ -20,7 +20,7 @@ import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
-import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Collections.UnmodifiableIterator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,7 +39,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.4 2002-04-10 03:05:44 cananian Exp $
+ * @version $Id: Code.java,v 1.5 2002-08-30 22:39:44 cananian Exp $
  */
 public abstract class Code extends HCode<Tree> {
     /** The Tree Objects composing this code view. */

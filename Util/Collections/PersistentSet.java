@@ -4,7 +4,7 @@
 package harpoon.Util.Collections;
 
 import harpoon.Util.Default;
-import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Collections.UnmodifiableIterator;
 
 import java.util.AbstractSet;
 import java.util.Comparator;
@@ -18,7 +18,7 @@ import java.util.Stack;
  * binary search tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentSet.java,v 1.3 2002-04-10 03:07:13 cananian Exp $
+ * @version $Id: PersistentSet.java,v 1.4 2002-08-30 22:39:56 cananian Exp $
  */
 public class PersistentSet<T>  {
     final PersistentTreeNode<T,T> root;

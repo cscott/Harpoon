@@ -25,9 +25,9 @@ import harpoon.IR.Quads.HANDLER.ProtectedSet;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.Collections.AbstractMapEntry;
+import harpoon.Util.Collections.UnmodifiableIterator;
 import harpoon.Util.Default;
 import harpoon.Util.MapComparator;
-import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.5 2002-07-10 17:57:08 cananian Exp $
+ * @version $Id: Translate.java,v 1.6 2002-08-30 22:39:35 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {

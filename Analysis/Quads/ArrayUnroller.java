@@ -17,7 +17,7 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.Temp.Temp;
-import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Collections.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
@@ -31,7 +31,7 @@ import java.util.Stack;
  * <code>CacheEquivalence</code> can make larger equivalence sets.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayUnroller.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: ArrayUnroller.java,v 1.5 2002-08-30 22:38:26 cananian Exp $
  */
 public final class ArrayUnroller
     extends harpoon.Analysis.Transformation.MethodMutator {

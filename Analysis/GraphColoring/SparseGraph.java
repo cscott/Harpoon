@@ -4,9 +4,10 @@
 package harpoon.Analysis.GraphColoring;
 
 import harpoon.Util.Collections.UniqueStack;
-import harpoon.Util.EnumerationIterator;
+import harpoon.Util.Collections.UnmodifiableIterator;
 import harpoon.Util.Default;
-import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.EnumerationIterator;
+
 import java.util.Enumeration;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,7 +24,7 @@ import java.util.Iterator;
  * references <code>SparseNode</code>s store internally.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparseGraph.java,v 1.4 2002-04-10 02:59:41 cananian Exp $ 
+ * @version $Id: SparseGraph.java,v 1.5 2002-08-30 22:37:54 cananian Exp $ 
  */
 
 public class SparseGraph extends ColorableGraphImpl implements ColorableGraph {

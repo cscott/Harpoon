@@ -24,15 +24,17 @@ import harpoon.Util.CombineIterator;
 import harpoon.Util.Default;
 import harpoon.Util.EnumerationIterator;
 import harpoon.Util.FilterIterator;
-import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
+
+import harpoon.Util.Collections.UnmodifiableIterator;
+
 /** 
  * Class file loader.
  * Looks through CLASSPATH to find resources.  Understands .jar and .zip
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.14 2002-04-10 03:04:15 cananian Exp $
+ * @version $Id: Loader.java,v 1.15 2002-08-30 22:37:26 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {

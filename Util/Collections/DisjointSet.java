@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
-import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Collections.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.util.AbstractMap;
@@ -22,7 +22,7 @@ import java.util.Set;
  * function.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DisjointSet.java,v 1.4 2002-04-10 03:07:11 cananian Exp $
+ * @version $Id: DisjointSet.java,v 1.5 2002-08-30 22:39:56 cananian Exp $
  */
 public class DisjointSet<E>  {
     private final Map<E,Node<E>> elmap = new HashMap<E,Node<E>>();

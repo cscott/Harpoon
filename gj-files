@@ -11,10 +11,6 @@ Util/FilterIterator.java
 Util/Grapher.java
 Util/Indexer.java
 Util/IteratorEnumerator.java
-Util/ReverseIterator.java
-Util/ReverseListIterator.java
-Util/UnmodifiableIterator.java
-Util/UnmodifiableListIterator.java
 Util/Util.java
 Util/Worklist.java
 Util/Collections/AbstractHeap.java
@@ -52,6 +48,10 @@ Util/Collections/PersistentEnvironment.java
 Util/Collections/PersistentMap.java
 Util/Collections/PersistentSet.java
 Util/Collections/PersistentTreeNode.java
+Util/Collections/ReverseIterator.java
+Util/Collections/ReverseListIterator.java
+Util/Collections/UnmodifiableIterator.java
+Util/Collections/UnmodifiableListIterator.java
 Util/Collections/SetFactory.java
 Util/Collections/SetWrapper.java
 Util/Collections/UniqueStack.java

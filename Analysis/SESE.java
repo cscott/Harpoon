@@ -6,7 +6,7 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Collections.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.util.AbstractSet;
@@ -34,7 +34,7 @@ import java.util.Stack;
  * control regions in linear time" might also provide a useful reference.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SESE.java,v 1.4 2002-04-10 02:58:48 cananian Exp $
+ * @version $Id: SESE.java,v 1.5 2002-08-30 22:37:12 cananian Exp $
  */
 public class SESE  {
     /** Root of <code>Region</code> tree. */

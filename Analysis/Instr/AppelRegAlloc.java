@@ -25,14 +25,14 @@ import harpoon.Analysis.DataFlow.Solver;
 
 import harpoon.Util.Util;
 import harpoon.Util.Default;
-import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.FilterIterator;
-import harpoon.Util.ReverseIterator;
+import harpoon.Util.Collections.Factories;
+import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.LinearSet;
 import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.Factories;
+import harpoon.Util.Collections.ReverseIterator;
+import harpoon.Util.Collections.UnmodifiableIterator;
 
 import java.util.Map;
 import java.util.Collection;
@@ -52,7 +52,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.4 2002-04-10 02:59:46 cananian Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.5 2002-08-30 22:38:06 cananian Exp $
  */
 public abstract class AppelRegAlloc extends AppelRegAllocClasses {
     public static final boolean PRINT_DEPTH_TO_SPILL_INFO = true;

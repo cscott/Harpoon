@@ -9,7 +9,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.ArrayIterator;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.FilterIterator;
-import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Collections.UnmodifiableIterator;
 
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
@@ -26,7 +26,7 @@ import java.util.Stack;
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.3 2002-04-10 03:05:07 cananian Exp $
+ * @version $Id: CFGrapher.java,v 1.4 2002-08-30 22:39:22 cananian Exp $
  * @see harpoon.IR.Properties.CFGraphable
  */
 public abstract class CFGrapher<HCE extends HCodeElement> {

@@ -7,11 +7,12 @@ import harpoon.IR.Assem.Instr;
 
 import harpoon.Temp.Temp;
 
-import harpoon.Util.Util;
 import harpoon.Util.BitString;
 import harpoon.Util.Default;
-import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Util;
+
 import harpoon.Util.Collections.LinearSet;
+import harpoon.Util.Collections.UnmodifiableIterator;
 
 import java.util.Iterator;
 import java.util.Collection;
@@ -24,7 +25,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.5 2002-04-10 02:59:46 cananian Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.6 2002-08-30 22:38:07 cananian Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;
@@ -433,7 +434,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 		public int size() { return size; }
 		public Iterator iterator() {
 		    final NodeIter ni = iter();
-		    return new harpoon.Util.UnmodifiableIterator() {
+		    return new UnmodifiableIterator() {
 			    public boolean hasNext() {return ni.hasNext();}
 			    public Object next() {return ni.next();}
 			};
@@ -850,7 +851,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	    assert size == checkSize : "size should be "+checkSize+" not "+size;
 	}
 	Iterator iter() {
-	    return new harpoon.Util.UnmodifiableIterator() {
+	    return new UnmodifiableIterator() {
 		    Move curr = head;
 		    public boolean hasNext() { return curr.s_next != head; }
 		    public Object next() {

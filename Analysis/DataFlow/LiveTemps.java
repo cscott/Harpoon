@@ -9,10 +9,10 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Util.CloneableIterator; 
-import harpoon.Util.ReverseIterator;
 import harpoon.Util.Util; 
-import harpoon.Util.Collections.SetFactory;
 import harpoon.Util.Collections.BitSetFactory;
+import harpoon.Util.Collections.ReverseIterator;
+import harpoon.Util.Collections.SetFactory;
 
 import java.util.Set;
 import java.util.Map;
@@ -26,7 +26,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.4 2002-04-10 02:59:09 cananian Exp $
+ * @version $Id: LiveTemps.java,v 1.5 2002-08-30 22:37:43 cananian Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -51,8 +51,7 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	LiveTemps lt = new LiveTemps(bbf, liveOnExit, ud);
 	Solver.worklistSolve
 	    // (bbFact.preorderBlocksIter(),
-	    (new harpoon.Util.ReverseIterator(bbf.postorderBlocksIter()),
-	     lt);
+	    (new ReverseIterator(bbf.postorderBlocksIter()), lt);
 	return lt;
     }
     
@@ -62,8 +61,7 @@ public class LiveTemps extends LiveVars.BBVisitor {
     */
     public void solve() {
 	Solver.worklistSolve
-	    (new harpoon.Util.ReverseIterator
-		(bbFact.postorderBlocksIter()),this);
+	    (new ReverseIterator(bbFact.postorderBlocksIter()), this);
     }
 
     /** Produces a default live variable analysis object and solves

@@ -7,8 +7,8 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Collections.UnmodifiableIterator;
 import harpoon.Util.IteratorEnumerator;
-import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.util.AbstractSet;
@@ -21,7 +21,7 @@ import java.util.Set;
  * A <code>HANDLER</code> quad marks an entry to an exception handler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HANDLER.java,v 1.5 2002-04-11 04:00:34 cananian Exp $
+ * @version $Id: HANDLER.java,v 1.6 2002-08-30 22:39:34 cananian Exp $
  * @see METHOD
  */
 public class HANDLER extends Quad {

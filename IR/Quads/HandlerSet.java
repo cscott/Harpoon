@@ -3,8 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.Util.Collections.UnmodifiableIterator;
 import harpoon.Util.IteratorEnumerator;
-import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.util.Enumeration;
@@ -16,7 +16,7 @@ import java.util.NoSuchElementException;
  * both <code>Translate</code> and <code>Print</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HandlerSet.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
+ * @version $Id: HandlerSet.java,v 1.5 2002-08-30 22:39:35 cananian Exp $
  */
 final public class HandlerSet {
     final HANDLER h;

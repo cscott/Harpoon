@@ -5,7 +5,7 @@ package harpoon.Util.Collections;
 
 import harpoon.Util.Default;
 import harpoon.Util.Collections.PairMapEntry;
-import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Collections.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.util.AbstractCollection;
@@ -22,7 +22,7 @@ import java.util.Map;
  * Leiserson, and Rivest, on page 400 and following.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinomialHeap.java,v 1.4 2002-04-10 03:07:10 cananian Exp $
+ * @version $Id: BinomialHeap.java,v 1.5 2002-08-30 22:39:56 cananian Exp $
  */
 public class BinomialHeap<K,V> extends AbstractHeap<K,V> implements Cloneable {
     private static final boolean debug=false;
@@ -474,7 +474,7 @@ public class BinomialHeap<K,V> extends AbstractHeap<K,V> implements Cloneable {
 	    int el[] = { -4, -1, -3, -2, -16, -9, -10, -14, -8, -7 };
 	    public int size() { return el.length; }
 	    public Iterator<Map.Entry<Integer,Integer>> iterator() {
-		return new harpoon.Util.UnmodifiableIterator<Map.Entry<Integer,Integer>>() {
+		return new UnmodifiableIterator<Map.Entry<Integer,Integer>>() {
 		    int i = 0;
 		    public boolean hasNext() { return i<el.length; }
 		    public Map.Entry<Integer,Integer> next() {

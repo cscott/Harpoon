@@ -40,6 +40,7 @@ import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Collections.SetFactory;
 import harpoon.Util.Collections.BitSetFactory;
+import harpoon.Util.Collections.ReverseIterator;
 
 import java.util.Arrays;
 import java.util.List;
@@ -70,7 +71,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.4 2002-04-10 02:59:47 cananian Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.5 2002-08-30 22:38:10 cananian Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -280,7 +281,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	harpoon.Analysis.DataFlow.Solver.worklistSolve
 
 	    // (bbFact.preorderBlocksIter(),
-	    (new harpoon.Util.ReverseIterator(bbFact.postorderBlocksIter()),
+	    (new ReverseIterator(bbFact.postorderBlocksIter()),
 	    
 	    liveTemps);
     }

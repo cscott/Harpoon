@@ -3,9 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
-import harpoon.Util.FilterIterator;
-import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Collections.UnmodifiableIterator;
 import harpoon.Util.Default;
+import harpoon.Util.FilterIterator;
 
 import java.util.Iterator;
 import java.util.Collection;
@@ -29,7 +29,7 @@ import java.util.List;
  * methods  (which otherwise throws UnsupportedOperationException).
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AbstractGraph.java,v 1.2 2002-02-25 20:57:12 cananian Exp $
+ * @version $Id: AbstractGraph.java,v 1.3 2002-08-30 22:37:54 cananian Exp $
  */
 public abstract class AbstractGraph implements Graph {
     
