@@ -108,13 +108,21 @@ public class Match extends Node {
 
     /** A faster version of the above. */
     private boolean matchFast(ImageData id1, ImageData id2) {
-	if ((id1.width!=id2.width)||(id1.height!=id2.height)) {
-	    throw new Error("Incorrect width/height of input image.");
-	}
+//  	if ((id1.width!=id2.width)||(id1.height!=id2.height)) {
+//  	    throw new Error("Incorrect width/height of input image.");
+//  	}
 
-	int match = 0;
-	int width = id1.width;
-	int height = id1.height;
+//  	int match = 0;
+//  	int width = id1.width;
+//  	int height = id1.height;
+	
+//  	for (int pos=0; pos<size; pos++) {
+//  	    if (id1.gvals[pos]==127) {
+
+//  	    }
+
+//  	}
+
 	return true;
     }
 

@@ -20,6 +20,17 @@ public class Thresholding extends Node {
 
     /** Create a new {@link Thresholding} node which will determine whether
      *  an edge should be considered "maybe" or "definite".
+     *
+     *  Uses default values for the thresholds.
+     *
+     *  @param out the node to send thresholded images to.
+     */
+    public Thresholding(Node out) {
+	this(90, 120, out); /* Completely arbitrary defaults! */
+    }
+
+    /** Create a new {@link Thresholding} node which will determine whether
+     *  an edge should be considered "maybe" or "definite".
      *  
      *  @param T1 this and above are definitely edges.
      *  @param T2 this and above are maybe edges.

@@ -242,7 +242,7 @@ public class ImageDataManip {
 	byte[] gvals = new byte[width*height+1];
 	byte[] bvals = new byte[width*height+1];
 	int newPos = 0;
-	for (int j=y; j<=y+width; j++) {
+	for (int j=y; j<y+width; j++) {
 	    int oldPos = y*id.width+x;
 	    System.arraycopy(id.rvals, oldPos, rvals, newPos, width);
 	    System.arraycopy(id.gvals, oldPos, gvals, newPos, width);
