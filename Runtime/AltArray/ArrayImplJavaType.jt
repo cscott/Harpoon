@@ -8,11 +8,13 @@ package harpoon.Runtime.AltArray;
  * array implementation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayImplJavaType.jt,v 1.2 2002-02-25 21:06:36 cananian Exp $
+ * @version $Id: ArrayImplJavaType.jt,v 1.2.8.1 2003-12-08 04:19:58 cananian Exp $
  */
 public abstract class ArrayImplJavaType {
     /* can't enforce this, but should have a constructor like the following */
     public ArrayImplJavaType(int length) { }
+    public abstract int length();
     public abstract javaType get(int index);
     public abstract void set(int index, javaType value);
+    public boolean componentOf(javaType value) { return true; }
 }

@@ -8,7 +8,7 @@ package harpoon.Runtime.AltArray;
  * array implementation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SimpleArrayJavaType.jt,v 1.2 2002-02-25 21:06:36 cananian Exp $
+ * @version $Id: SimpleArrayJavaType.jt,v 1.2.8.1 2003-12-08 04:19:58 cananian Exp $
  */
 public final class SimpleArrayJavaType extends ArrayImplJavaType {
     private final javaType[] a;
@@ -16,6 +16,7 @@ public final class SimpleArrayJavaType extends ArrayImplJavaType {
     public SimpleArrayJavaType(int length) { super(length);
 	this.a = new javaType[length];
     }
+    public int length() { return a.length; }
     public javaType get(int index) { return a[index]; }
     public void set(int index, javaType value) {
 	a[index] = value;
