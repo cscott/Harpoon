@@ -24,9 +24,8 @@ label_error:\
 
 
 
-#define ENDREPAIR(label) popstack(&stackptr); \
-  goto label_skip;\
-label_skip:
+#define ENDREPAIR(label) popstack(&stackptr);
+
 
 
 #endif

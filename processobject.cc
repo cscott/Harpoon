@@ -192,7 +192,11 @@ bool processobject::processconstraint(Constraint *c) {
     while(true) {
       if (c->getstatement()!=NULL) {
 	if (processstatement(c->getstatement(),st->env)!=PTRUE) {
-	  printf("ERROR: Predicate violation\n");
+	  //	  printf("ERROR: Predicate violation\n");
+	  if (c->getcrash()) {
+	    printf("Fatal program error violating special constraint.\n");
+	    exit(-1);
+	  }
 	  repair->repairconstraint(c,this,st->env);
 	  clean=false;
 	}

@@ -261,7 +261,10 @@ class Constraint {
   int numquants();
   Quantifier * getquant(int i);
   Statement * getstatement();
+  void setcrash(bool c);
+  bool getcrash();
  private:
+  bool crash;
   int numquantifiers;
   Quantifier **quantifiers;
   Statement *statement;

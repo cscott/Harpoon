@@ -15,6 +15,11 @@ Constraint * Parser::parseconstraint() {
   }
   if (token.token_type==TOKEN_EOF)
     return NULL;
+  bool crash=false;
+  if (token.token_type==TOKEN_CRASH) {
+    crash=true;
+    skiptoken();
+  }
   Constraint *c;
   /*Get Quantifiers*/
   if (token.token_type==TOKEN_OPENBRACK) {
@@ -23,9 +28,8 @@ Constraint * Parser::parseconstraint() {
     needtoken(TOKEN_COMMA);
   } else c=new Constraint();
   /*Peek ahead to see if sizeof*/
-
+  c->setcrash(crash);
   c->setstatement(parsestatement(false));
-    
   return c;
 }
 

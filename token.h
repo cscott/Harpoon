@@ -75,6 +75,7 @@ void tokenname(int t);
 #define TOKEN_CAST 53
 #define TOKEN_SHORT 54
 #define TOKEN_NULL 55
+#define TOKEN_CRASH 56
 
 
 

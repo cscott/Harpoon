@@ -181,6 +181,8 @@ Token Reader::checktoken() {
 	return Token(copystr(buf),TOKEN_AND);
       if (strcmp(buf,"or")==0)
 	return Token(copystr(buf),TOKEN_OR);
+      if (strcmp(buf,"crash")==0)
+	return Token(copystr(buf),TOKEN_CRASH);
       if (strcmp(buf,"cast")==0)
 	return Token(copystr(buf),TOKEN_CAST);
       if (strcmp(buf,"NULL")==0)

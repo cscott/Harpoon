@@ -526,6 +526,14 @@ Constraint::Constraint() {
   statement=NULL;
 }
 
+void Constraint::setcrash(bool c) {
+  crash=c;
+}
+
+bool Constraint::getcrash() {
+  return crash;
+}
+
 Constraint::Constraint(Quantifier **q, int nq) {
   quantifiers=q;
   numquantifiers=nq;
