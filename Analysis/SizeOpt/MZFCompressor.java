@@ -4,16 +4,32 @@
 package harpoon.Analysis.SizeOpt;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HClassMutator;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HFieldMutator;
+import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Relinker;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.Code;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.SET;
 import harpoon.Util.Default;
+import harpoon.Util.Util;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -28,10 +44,11 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.1.2.2 2001-11-12 01:53:23 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.1.2.3 2001-11-12 22:55:58 cananian Exp $
  */
 public class MZFCompressor {
-    final HCodeFactory parent;
+    final CachingCodeFactory parent;
+    final Map code_cache = new HashMap();
     
     /** Creates a <code>MZFCompressor</code>, using the field profiling
      *  information found in the resource at <code>resourcePath</code>.
@@ -41,23 +58,35 @@ public class MZFCompressor {
 			 String resourcePath) {
 	ConstructorClassifier cc = new ConstructorClassifier(hcf, ch);
         ProfileParser pp = new ProfileParser(linker, resourcePath);
-	// okay, process this data.  what we want is a list of fields
-	// sorted by savedbytes.
-	// xx debug: show java.lang.String.
-	System.out.println("SORTED FIELDS of java.lang.String: "+
-			   sortFields(linker.forName("java.lang.String"),pp,cc)
-			   );
-	//List sorted = sortFields(xx, pp, new ConstructorClassifier());
-
-	// collect all good fields.
-	Set flds = new HashSet();
+	// process the profile data.
+	// collect all good fields; sort them (within class) by savedbytes.
+	Set flds = new HashSet();  Map listmap = new HashMap();
 	for (Iterator it=ch.instantiatedClasses().iterator(); it.hasNext(); ){
-	    List sorted = sortFields((HClass)it.next(), pp, cc);
+	    HClass hc = (HClass) it.next();
+	    List sorted = sortFields(hc, pp, cc);
+	    if (sorted.size()>0) listmap.put(hc, sorted);
 	    for (Iterator it2=sorted.iterator(); it2.hasNext(); )
 		flds.add( (HField) ((List)it2.next()).get(0) );
 	}
 	// make accessors for these fields.
-	this.parent = new Field2Method(hcf, flds).codeFactory();
+	Field2Method f2m = new Field2Method(hcf, flds);
+	hcf = new CachingCodeFactory(f2m.codeFactory());
+	// pull every method of each relevant class through the code factory.
+	for (Iterator it=listmap.keySet().iterator(); it.hasNext(); ) {
+	    HClass hc = (HClass) it.next();
+	    for (Iterator it2=Arrays.asList(hc.getDeclaredMethods())
+		     .iterator(); it2.hasNext(); )
+		hcf.convert((HMethod) it2.next());
+	}
+	// we're going to add new HCode representations to parent, so set
+	// the field.
+	this.parent = (CachingCodeFactory) hcf;
+	// okay.  foreach relevant class, split it.
+	for (Iterator it=listmap.keySet().iterator(); it.hasNext(); ) {
+	    HClass hc = (HClass) it.next();
+	    splitOne((Relinker)linker, hc, (List)listmap.get(hc), f2m);
+	}
+	// we should be done now.
     }
     public HCodeFactory codeFactory() { return parent; }
 
@@ -113,7 +142,145 @@ public class MZFCompressor {
 	    Integer mostlyN = (Integer) me.getKey();
 	    nl.add(Default.pair(hf, mostlyN));
 	}
+	nl = Collections.unmodifiableList(nl);
 	// ta-da!
-	return Collections.unmodifiableList(nl);
+	return nl;
+    }
+
+    // splits one class.
+    void splitOne(Relinker relinker, HClass hc, List sortedFields,
+		  Field2Method f2m) {
+	Util.assert(sortedFields.size()>0);
+	// for each entry in the sorted fields list, make a split.
+	for (Iterator it=sortedFields.iterator(); it.hasNext(); ) {
+	    List pair = (List) it.next();
+	    hc = moveOne(relinker, hc,
+			 (HField)pair.get(0),
+			 ((Number)pair.get(1)).longValue(), f2m);
+	}
+	// done!
+    }
+    /** Create a class with all the fields of <code>oldC</code> except for
+     *  <code>hf</code>.  In the new class, <code>hf</code> has constant
+     *  value <code>val</code>. */
+    HClass moveOne(Relinker relinker, HClass oldC, HField hf, long val,
+		   Field2Method f2m) {
+	// make a copy of our empty Template class.
+	HClass hcT = relinker.forClass(Template.class);
+	HClass newC = relinker.createMutableClass(oldC.getName()+"$z", hcT);
+	// remove all constructors from newC (since we're going to
+	// clone them from oldC)
+	for (Iterator it=Arrays.asList(newC.getConstructors()).iterator();
+	     it.hasNext(); )
+	    newC.getMutator().removeConstructor((HConstructor)it.next());
+	// insert this new class between hcS and its superclass.
+	newC.getMutator().setSuperclass(oldC.getSuperclass());
+	oldC.getMutator().setSuperclass(newC);
+	// move interfaces from oldC to newC.
+	for (Iterator it=Arrays.asList(newC.getInterfaces()).iterator();
+	     it.hasNext(); )
+	    newC.getMutator().addInterface((HClass)it.next());
+	oldC.getMutator().removeAllInterfaces();
+	// fetch representations for everything before we start messing
+	// with the fields.
+	for (Iterator it=Arrays.asList(oldC.getDeclaredMethods()).iterator();
+	     it.hasNext(); )
+	    parent.convert((HMethod)it.next());
+	// move all but the desired field to newC
+	// (also strip 'private' modifier)
+	HField[] allF = oldC.getDeclaredFields();
+	for (int i=0; i<allF.length; i++)
+	    if (!hf.equals(allF[i])) {
+		relinker.move(allF[i], newC);
+		allF[i].getMutator().removeModifiers(Modifier.PRIVATE);
+	    }
+	// move all non-constructor methods of oldC to newC
+	// copy the constructors. make copies of the getter/setters to override
+	HMethod[] allM = oldC.getDeclaredMethods();
+	HMethod getter = (HMethod) f2m.field2getter.get(hf);
+	HMethod setter = (HMethod) f2m.field2setter.get(hf);
+	for (int i=0; i<allM.length; i++) {
+	    if (allM[i] instanceof HConstructor) {
+		// copy, don't move.
+		HConstructor newcon =
+		    newC.getMutator().addConstructor((HConstructor)allM[i]);
+		harpoon.IR.Quads.Code hcode =
+		    (harpoon.IR.Quads.Code) parent.convert(allM[i]);
+		parent.put(newcon, hcode.clone(newcon).hcode());
+	    } else relinker.move(allM[i], newC);
+	}	    
+	// getter and setter are now in newC.  copy implementation to oldC.
+	HMethod fullgetter =
+	    oldC.getMutator().addDeclaredMethod(getter.getName(), getter);
+	HMethod fullsetter =
+	    oldC.getMutator().addDeclaredMethod(setter.getName(), setter);
+	harpoon.IR.Quads.Code gettercode = (harpoon.IR.Quads.Code)
+	    parent.convert(getter);
+	harpoon.IR.Quads.Code settercode = (harpoon.IR.Quads.Code)
+	    parent.convert(setter);
+	parent.put(fullgetter, gettercode.clone(fullgetter).hcode());
+	parent.put(fullsetter, settercode.clone(fullsetter).hcode());
+	// rewrite newC's getter and setter.
+	parent.put(getter, makeGetter(getter, hf, val));
+	parent.put(setter, makeSetter(setter, hf, val));
+	// done!
+	return newC;
+    }
+    static class Template { }
+
+    /** make a getter method that returns constant 'val'. */
+    HCode makeGetter(HMethod getter, HField hf, long val) {
+	// xxx cheat: get old getter and replace GET with CONST.
+	// would be better to make this from scratch.
+	HCode hc = parent.convert(getter);
+	Quad[] qa = (Quad[]) hc.getElements();
+	for (int i=0; i<qa.length; i++)
+	    if (qa[i] instanceof GET) {
+		GET q = (GET) qa[i];
+		Util.assert(q.field().equals(hf));
+		// type of CONST depends on type of hf.
+		HClass type=widen(hf.getType());
+		CONST nc;
+		if (!type.isPrimitive()) {
+		    // pointer.  only val==0 makes sense.
+		    Util.assert(val==0);
+		    nc = new CONST(q.getFactory(), q, q.dst(),
+				   null, HClass.Void);
+		} else
+		    nc = new CONST(q.getFactory(), q, q.dst(),
+				   wrap(type, val), type);
+		Quad.replace(q, nc);
+	    }
+	// done!
+	return hc;
+    }
+    private static HClass widen(HClass hc) {
+	if (hc==HClass.Boolean || hc==HClass.Byte ||
+	    hc==HClass.Short || hc==HClass.Char)
+	    return HClass.Int;
+	else return hc;
+    }
+    private static Object wrap(HClass type, long val) {
+	Util.assert(type.isPrimitive());
+	Number n = new Long(val);
+	if (type==HClass.Int) return new Integer(n.intValue());
+	if (type==HClass.Long) return new Long(n.longValue());
+	if (type==HClass.Float) return new Float(n.floatValue());
+	if (type==HClass.Double) return new Double(n.doubleValue());
+	Util.assert(false, "unknown type: "+type);
+	return null;
+    }
+    /** make a setter method that does nothing (but perhaps verifies
+     *  that the value to set is equal to 'val'). */
+    HCode makeSetter(HMethod setter, HField hf, long val) {
+	// xxx cheat: get old setter and remove the SET operand.
+	// would be better to make this from scratch.
+	HCode hc = parent.convert(setter);
+	Quad[] qa = (Quad[]) hc.getElements();
+	for (int i=0; i<qa.length; i++)
+	    if (qa[i] instanceof SET)
+		qa[i].remove();
+	// done!
+	return hc;
     }
 }
