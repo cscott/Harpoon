@@ -2,6 +2,7 @@ package harpoon.ClassFile.Bytecode;
 
 import harpoon.ClassFile.*;
 import harpoon.ClassFile.Raw.Constant.*;
+import harpoon.Util.Util;
 
 /**
  * <code>OpConstant</code> represents a constant operand of a java bytecode
@@ -13,7 +14,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.5 1998-08-05 00:52:25 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.6 1998-08-07 09:52:41 cananian Exp $
  * @see Operand
  * @see Instr
  * @see harpoon.ClassFile.Raw.Constant.ConstantDouble
@@ -61,22 +62,7 @@ public class OpConstant extends Operand {
   /** Return a human-readable representation of this OpConstant. */
   public String toString() {
     if (getType()==HClass.forName("java.lang.String"))
-      return "(String)\""+escape(getValue().toString())+"\"";
+      return "(String)\""+Util.escape(getValue().toString())+"\"";
     return "("+getType().getName()+")"+getValue().toString();
-  }
-  // copied from Constant.Utf8
-  static String escape(String str) {
-    StringBuffer sb = new StringBuffer();
-    for (int i=0; i<str.length(); i++) {
-      char c = str.charAt(i);
-      if (Character.isISOControl(c)) {
-	String hexval=Integer.toHexString((int)c);
-	while(hexval.length()<4) hexval="0"+hexval;
-	sb.append('\\'); sb.append('u');
-	sb.append(hexval);
-      }
-      else sb.append(c);
-    }
-    return sb.toString();
   }
 }
