@@ -15,12 +15,16 @@ import java.lang.reflect.Modifier;
  * "redefined" after creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassProxy.java,v 1.1.2.2 2000-01-11 20:04:58 cananian Exp $
+ * @version $Id: HClassProxy.java,v 1.1.2.3 2000-01-12 22:50:22 cananian Exp $
  */
 class HClassProxy extends HClass implements HClassMutator {
   Relinker relinker;
   HClass proxy;
   HClassMutator proxyMutator;
+  // this boolean indicates whether the proxied class is from
+  // the same linker as this HClassProxy, which only happens
+  // when our linker create new HClassSyns
+  boolean sameLinker;
 
   HClassProxy(Relinker l, HClass proxy) {
       super(l);
@@ -55,6 +59,7 @@ class HClassProxy extends HClass implements HClassMutator {
     // okay, now that the members are updated, let's update this guy.
     this.proxy = newproxy;
     this.proxyMutator = newproxy.getMutator();
+    this.sameLinker = (getLinker() == newproxy.getLinker());
   }
 
   /**
@@ -231,7 +236,6 @@ class HClassProxy extends HClass implements HClassMutator {
 
   // wrap/unwrap methods.
   private HClass wrap(HClass hc) { return relinker.wrap(hc); }
-  private HClass unwrap(HClass hc) { return relinker.unwrap(hc); }
   private HField wrap(HField hf) { return relinker.wrap(hf); }
   private HMethod wrap(HMethod hm) { return relinker.wrap(hm); }
   private HConstructor wrap(HConstructor hc) { return relinker.wrap(hc); }
@@ -239,10 +243,17 @@ class HClassProxy extends HClass implements HClassMutator {
 
   // array wrap/unwrap
   private HClass[] wrap(HClass hc[]) { return relinker.wrap(hc); }
-  private HClass[] unwrap(HClass[] hc) { return relinker.unwrap(hc); }
   private HField[] wrap(HField hf[]) { return relinker.wrap(hf); }
   private HMethod[] wrap(HMethod hm[]) { return relinker.wrap(hm); }
   private HConstructor[] wrap(HConstructor hc[]) {return relinker.wrap(hc);}
+
+  private HClass unwrap(HClass hc) {return sameLinker?hc:relinker.unwrap(hc);}
+  private HClass[] unwrap(HClass[] hc) {
+    HClass[] result = new HClass[hc.length];
+    for (int i=0; i<result.length; i++)
+      result[i] = unwrap(hc[i]);
+    return result;
+  }
 }
 
 // set emacs indentation style.
