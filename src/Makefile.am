@@ -1,11 +1,11 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in Runtime.a
 INCLUDES = @IFLAGS@
-SUBDIRS = jni java.io java.lang java.util.zip
-LDADD = jni/libjni.la ../Java.a libflexc.la
+SUBDIRS = jni java.io java.lang java.util.zip gc
+LDADD = jni/libjni.la ../Java.a libflexc.la gc/libgc.la
 LDADD += $(foreach lib,@GC_LIB@,../$(lib))
 
-bin_PROGRAMS = startup dump-fixup test-lookup
+bin_PROGRAMS = startup dump-fixup test-lookup test-gc static
 
 lib_LTLIBRARIES = libflexc.la
 libflexc_la_SOURCES = # Hello3.c
