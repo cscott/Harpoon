@@ -2,7 +2,7 @@
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
-ALLDOCS=design bibnote readnote quads # pldi99
+ALLDOCS=design bibnote readnote quads proposal # pldi99
 
 all: $(ALLDOCS:=.ps)
 preview: pldi99-xdvi
