@@ -5,7 +5,10 @@ package harpoon.ClassFile;
 
 import harpoon.Util.Util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 /**
  * A <code>Relinker</code> object is a <code>Linker</code> where one
@@ -13,7 +16,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.4.7 2000-11-11 23:43:12 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.4.8 2000-11-12 03:23:21 cananian Exp $
  */
 public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;
@@ -90,8 +93,29 @@ public class Relinker extends Linker implements java.io.Serializable {
     private void readObject(java.io.ObjectInputStream in)
 	throws java.io.IOException, ClassNotFoundException {
 	in.defaultReadObject();
+	// create new memberMap
 	// note that linker descCache is cleared magically on read, too.
 	memberMap = new HashMap();
+	// now restore the "odd" entries in the descCache.
+	for (Iterator it=((List)in.readObject()).iterator(); it.hasNext(); ) {
+	    String descK = (String) it.next();
+	    String descV = (String) it.next();
+	    relink(forDescriptor(descK),forDescriptor(descV));
+	}
+	// done.
+    }
+    private void writeObject(java.io.ObjectOutputStream out)
+	throws java.io.IOException {
+	out.defaultWriteObject();
+	// write out list of relinked descriptors.
+	List l = new ArrayList();
+	for (Iterator it=descCache.keySet().iterator(); it.hasNext(); ) {
+	    String descK = (String) it.next();
+	    String descV = forDescriptor(descK).getDescriptor();
+	    if (descK.equals(descV)) continue; // not an interesting entry.
+	    l.add(descK); l.add(descV);
+	}
+	out.writeObject(l);
     }
 
     // WRAP/UNWRAP CODE
