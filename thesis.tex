@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.49 1999-06-28 08:04:06 cananian Exp $
+% $Id: thesis.tex,v 1.50 1999-07-07 00:02:58 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,12 +13,13 @@
 % double-space
 \linespread{1.2} %one-and-a-half spacing is 1.3
 
-\title{Static Single Information Form}
+\title{Static Single Information Form\\
+\small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.49 $ $}
+\date{\today \\ $ $Revision: 1.50 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.49 $ $}{$ $Revision: 1.49 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.50 $ $}{$ $Revision: 1.50 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -117,7 +118,8 @@ possible to make statements about values (regarding equality or
 inequality to zero) which were impossible to make previously.  SSI
 form allows us to take advantage of this additional information.
 
-\textbf{It is complete.}  By this we mean that there exists an
+\textbf{It is complete.}\label{sec:complete}
+By this we mean that there exists an
 executable semantics for the IR that does not require the use of
 information external to the IR.  The original SSA form---and most
 derivatives---require use of the original program control flow graph
@@ -186,13 +188,23 @@ experimental evidence that run times on real programs are $O(N)$.}
 \textbf{All explicit control dependencies are eliminated.}
 Some researchers (including \cite{appel:modern} and
 \cite{pingali97:apt}) view control-dependence as a fundamental
-property of the CFG, and \cite{pdw,appel:modern} suggest that accurate
-knowledge of control-dependence relations is key to automatic
-parallelization.   Many intermediate representations \cite{here} are
-augmented with control-dependence edges to ensure proper execution.
+property of the CFG, and \cite{ballance90:pdw,appel:modern} suggest
+that accurate knowledge of control-dependence relations is the sole
+key to automatic parallelization.  Often, incomplete intermediate
+representations\footnote{See page \pageref{sec:complete} for our
+definition of ``completeness'' in an IR.} are augmented with
+control-dependence edges to express proper program semantics---see
+\cite{johnson93:dfg} on DFGs and \cite{weise94:vdg} on VDGs, for
+example.
 
 Unfortunately, explicit control-flow edges tend to serialize
-computation more than strictly necessary.\fixme{cite arvind's
+computation more than strictly necessary.  Figure \ref{fig:ctrldep},
+for example, contains two parallel loops which would be serialized by
+the explicit control dependency between them.  Prior work often
+focused on fine-grain intra-loop parallelism and ignored this coarser
+inter-loop parallelism.\footnote{See for example \cite{traub86:ttdfa}
+on tagged-token dataflow machines, and\ldots}% FORTRAN compilers?
+\fixme{cite arvind's
 compiler, and others.  Free your mind: delete control-dependence!}
 
 \textbf{It is efficient for both forward and backward dataflow analyses.}
