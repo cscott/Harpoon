@@ -9,7 +9,7 @@ import harpoon.Analysis.QuadSSA.SCC.*;
 import harpoon.Analysis.*;
 import harpoon.ClassFile.*;
 import harpoon.IR.QuadSSA.*;
-import harpoon.Analysis.QuadSSA.TypeInfo;
+import harpoon.Analysis.TypeInfo;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.QuadSSA.Profile;
 
@@ -17,8 +17,8 @@ import harpoon.IR.QuadNoSSA.*;
 /**
  * <code>Main</code> is the command-line interface to the compiler.
  * 
- * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version 
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ProfileMain.java,v 1.2.4.1 1998-11-27 23:13:28 mfoltz Exp $
  */
 
 //<<<<<<< Main.java
@@ -26,7 +26,7 @@ import harpoon.IR.QuadNoSSA.*;
     // hide away constructor.
 //private Main() { }
 //=======
-public abstract class ProfileMain extends harpoon.IR.Registration {
+public abstract class Main extends harpoon.IR.Registration {
     //>>>>>>> 1.7
 
     /** The compiler should be invoked with the names of classes
@@ -35,10 +35,13 @@ public abstract class ProfileMain extends harpoon.IR.Registration {
     public static void main(String args[]) {
 	java.io.PrintWriter out;
 	String title;
+	boolean profile;
 
-	HClass interfaceClasses[] = new HClass[args.length];
-	for (int i=0; i<args.length; i++)
-	    interfaceClasses[i] = HClass.forName(args[i]);
+	if (args[0].equals("1")) profile = true;
+
+	HClass interfaceClasses[] = new HClass[args.length-1];
+	for (int i=1; i<args.length; i++)
+	    interfaceClasses[i-1] = HClass.forName(args[i]);
 	// Do something intelligent with these classes. XXX
 	for (int i=0; i<interfaceClasses.length; i++) {
 	    NClass nclass = new NClass(interfaceClasses[i]);
@@ -57,7 +60,7 @@ public abstract class ProfileMain extends harpoon.IR.Registration {
 		//sco.optimize(hc1);
 		try {
 		//insert profiling stuff -- mfoltz
-		harpoon.Analysis.QuadSSA.Profile.optimize(hc1);
+		if (profile) harpoon.Analysis.QuadSSA.Profile.optimize(hc1);
 		title = interfaceClasses[i].getName()+":"+hm[j].getName();
 		out = new PrintWriter( 
 				      new FileOutputStream 
