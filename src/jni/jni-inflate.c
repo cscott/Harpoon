@@ -22,6 +22,8 @@ FLEX_MUTEX_DECLARE_STATIC(global_inflate_mutex);
 
 #if defined(BDW_CONSERVATIVE_GC)
 static void deflate_object(GC_PTR obj, GC_PTR client_data);
+#elif defined(WITH_PRECISE_GC)
+static void deflate_object(struct oobj *obj, ptroff_t client_data);
 #elif defined(WITH_REALTIME_JAVA)
 static void deflate_object(void* obj, void* client_data);
 #endif
@@ -66,12 +68,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     obj->hashunion.inflated = infl;
     assert(FNI_IS_INFLATED(wrapped_obj));
 #ifdef WITH_PRECISE_GC 
-    /* Karen - put an appropriate finalizer here, look at how BDW does it. */
-    /* Don't rely on masked pointers to determine whether something's in the heap
-     * here - unless masked pointers are turned on... */
-    if (0 /* precise_in_heap(obj) */) {
-      /* precise_register_finalizer(obj, deflate_object); */
-    }
+    precise_register_inflated_obj(obj, deflate_object);
 #elif defined(BDW_CONSERVATIVE_GC)
     /* register finalizer to deallocate inflated_oobj on gc */
     if (GC_base(obj)!=NULL) {// skip if this is not a heap-allocated object
@@ -99,10 +96,12 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
  *  dead).  we're punting on the potential problem for now. */
 #ifdef BDW_CONSERVATIVE_GC 
 static void deflate_object(GC_PTR obj, GC_PTR client_data) {
+#elif defined(WITH_PRECISE_GC)
+static void deflate_object(struct oobj *obj, ptroff_t client_data) {
 #elif defined(WITH_REALTIME_JAVA)
 static void deflate_object(void* obj, void* client_data) {
 #endif
-#if defined(BDW_CONSERVATIVE_GC) || defined(WITH_REALTIME_JAVA)
+#if defined(BDW_CONSERVATIVE_GC) || defined(WITH_PRECISE_GC) || defined(WITH_REALTIME_JAVA)
     struct oobj *oobj = (struct oobj *) ((void*)obj+(ptroff_t)client_data);
     struct inflated_oobj *infl = oobj->hashunion.inflated;
     /*printf("Deflating object %p (clazz %p)\n", oobj, oobj->claz);*/

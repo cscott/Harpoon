@@ -17,6 +17,7 @@
 #  define handle_reference       marksweep_handle_reference
 # endif
 # define internal_print_stats()
+# define internal_register_inflated_obj(obj)
 # define internal_gc_init       marksweep_gc_init
 # define internal_collect       marksweep_collect
 # define internal_free_memory   marksweep_free_memory
@@ -27,6 +28,7 @@
 # define add_to_root_set        copying_handle_reference
 # define internal_gc_init       copying_gc_init
 # define internal_print_stats   copying_print_stats
+# define internal_register_inflated_obj copying_register_inflated_obj
 # define handle_reference       copying_handle_reference
 # define internal_collect()     copying_collect((int)0)
 # define internal_free_memory   copying_free_memory

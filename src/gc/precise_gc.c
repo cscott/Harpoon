@@ -41,6 +41,15 @@ void precise_gc_init()
 }
 
 
+/* effects: registers inflated obj so its resources are freed after GC */
+void precise_register_inflated_obj(jobject_unwrapped obj,
+				   void (*deflate_fcn)(struct oobj *obj, 
+						       ptroff_t client_data))
+{
+  obj->hashunion.inflated->precise_deflate_obj = deflate_fcn;
+  internal_register_inflated_obj(obj);
+}
+
 /* effects: forces garbage collection to occur */
 inline void precise_collect()
 {

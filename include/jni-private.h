@@ -103,6 +103,8 @@ struct inflated_oobj {
   /* for cleanup via finalization */
   GC_finalization_proc old_finalizer;
   GC_PTR old_client_data;
+#elif defined(WITH_PRECISE_GC)
+  void (*precise_deflate_obj)(struct oobj *obj, ptroff_t client_data);
 #endif
 };
 

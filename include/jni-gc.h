@@ -30,6 +30,11 @@ jlong precise_get_heap_size ();
 /* effects: forces garbage collection to occur */
 void precise_collect ();
 
+/* effects: registers inflated obj for resources to be freed after GC */
+void precise_register_inflated_obj(jobject_unwrapped obj,
+				   void (*deflate_fcn)(jobject_unwrapped obj, 
+						       ptroff_t client_data));
+
 /* effects: given the struct FNI_Thread_State ptr of a
             thread, adds its thread-local references to 
 	    the root set using add_to_root_set */
