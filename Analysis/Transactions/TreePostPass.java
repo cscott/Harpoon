@@ -48,7 +48,7 @@ import java.util.Set;
  * This pass is invoked by <code>SyncTransformer.treeCodeFactory()</code>.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreePostPass.java,v 1.4.2.4 2003-07-15 07:40:50 cananian Exp $
+ * @version $Id: TreePostPass.java,v 1.4.2.5 2003-07-15 08:29:18 cananian Exp $
  */
 class TreePostPass extends harpoon.Analysis.Tree.Simplification {
     private final List<Rule> RULES = new ArrayList<Rule>(); 
@@ -60,7 +60,7 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 	final NameMap nm = f.getRuntime().getNameMap();
 	// map generated methods to labels.
 	final Map<Label,HMethod> label2method = new HashMap<Label,HMethod>();
-	for (Iterator<HMethod> it=gen.generatedMethodSet().iterator();
+	for (Iterator<HMethod> it=gen.generatedMethodSet.iterator();
 	     it.hasNext(); ) {
 	    HMethod hm = it.next();
 	    label2method.put(nm.label(hm), hm);

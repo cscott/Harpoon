@@ -17,7 +17,7 @@ import java.util.Set;
  * parameters/return types you specify.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodGenerator.java,v 1.1.2.1 2003-07-12 03:31:07 cananian Exp $
+ * @version $Id: MethodGenerator.java,v 1.1.2.2 2003-07-15 08:29:17 cananian Exp $
  */
 class MethodGenerator {
     private final HClassMutator classMutator;
@@ -29,16 +29,10 @@ class MethodGenerator {
 	this.classMutator = baseClass.getMutator();
     }
 
-    /** Return the <code>Set</code> of all <code>HMethod</code>s generated
-     *  by this <code>MethodGenerator</code>. */
-    public Set<HMethod> generatedMethodSet() {
-	return Collections.unmodifiableSet(descriptors.keySet());
-    }
-
     /** Return the 'name' originally given to lookupMethod (which will
      *  differ from the name reported by the method via getName()). */
     public String baseName(HMethod hm) {
-	assert generatedMethodSet().contains(hm);
+	assert generatedMethodSet.contains(hm);
 	return descriptors.get(hm).namePrefix;
     }
     public HMethod lookupMethod(String name, HClass[] argTypes, HClass retType)
@@ -49,7 +43,7 @@ class MethodGenerator {
 	// add counter to name to guarantee uniqueness.
 	hm = classMutator.addDeclaredMethod
 	    (name+separator+(counter++), argTypes, retType);
-	hm.getMutator().addModifiers(Modifier.FINAL | Modifier.NATIVE |
+	hm.getMutator().addModifiers(Modifier.FINAL | //Modifier.NATIVE |
 				     Modifier.STATIC | Modifier.PUBLIC);
 	methods.put(md, hm);
 	descriptors.put(hm, md);
@@ -60,6 +54,11 @@ class MethodGenerator {
     private final Map<HMethod,MethodDescriptor> descriptors =
 	new HashMap<HMethod,MethodDescriptor>();
     int counter = 0;
+
+    /** The <code>Set</code> of all <code>HMethod</code>s generated
+     *  by this <code>MethodGenerator</code>. */
+    public final Set<HMethod> generatedMethodSet =
+	Collections.unmodifiableSet(descriptors.keySet());
 
     /** The <code>MethodDescriptor</code> is a handy tuple type to serve
      *  as keys in the hashtable. */

@@ -83,7 +83,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.5.2.5 2003-07-15 07:41:12 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.5.2.6 2003-07-15 08:29:17 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -260,6 +260,8 @@ public class SyncTransformer
 		    select(select(m, ORIGINAL), WITH_TRANSACTION).equals(m))
 		    // call the original, 'safe' method.
 		    return redirectCode(m);
+		else if (gen.generatedMethodSet.contains(m))
+		    return emptyCode(m);
 		else return superfactory.convert(m);
 	    }
 	});
@@ -1279,6 +1281,56 @@ public class SyncTransformer
 	    Quad.addEdge(q2, 1, q4, 0);
 	    Quad.addEdge(q3, 0, q5, 1);
 	    Quad.addEdge(q4, 0, q5, 2);
+	    this.quads = q0;
+	    // done!
+	} };
+    }
+    /** Create an empty stub for generated placeholder methods. */
+    private QuadRSSx emptyCode(final HMethod hm) {
+	// make the Code for this method (note how we work around the
+	// protected fields).
+	return new QuadRSSx(hm, null) { /* constructor */ {
+	    // figure out how many temps we need, then make them.
+	    int nargs = hm.getParameterTypes().length + (hm.isStatic()? 0: 1);
+	    Temp[] params = new Temp[nargs];
+	    for (int i=0; i<params.length; i++)
+		params[i] = new Temp(qf.tempFactory(), "param"+i);
+	    Temp[] nparams = new Temp[nargs-1];
+	    int i=0;
+	    if (!hm.isStatic())
+		nparams[i++] = params[0];
+	    for (i++ ; i<params.length; i++)
+		nparams[i-1] = params[i];
+
+	    HClass type = hm.getReturnType();
+	    Temp retval = new Temp(qf.tempFactory(), "retval");
+
+	    Quad q0 = new HEADER(qf, null);
+	    Quad q1 = new METHOD(qf, null, params, 1);
+	    Quad q2=null;
+	    if (type==HClass.Void || !type.isPrimitive())
+		q2 = new CONST(qf, null, retval, null, HClass.Void);
+	    else if (type==HClass.Boolean ||
+		     type==HClass.Byte ||
+		     type==HClass.Char ||
+		     type==HClass.Short ||
+		     type==HClass.Int)
+		q2 = new CONST(qf, null, retval, new Integer(0), HClass.Int);
+	    else if (type==HClass.Long)
+		q2 = new CONST(qf, null, retval, new Long(0), HClass.Long);
+	    else if (type==HClass.Float)
+		q2 = new CONST(qf, null, retval, new Float(0), HClass.Float);
+	    else if (type==HClass.Double)
+		q2 = new CONST(qf, null, retval, new Double(0), HClass.Double);
+	    else assert false;
+	    Quad q3 = new RETURN(qf, null, (type==HClass.Void)? null : retval);
+	    Quad q4 = new FOOTER(qf, null, 2);
+	    Quad.addEdge(q0, 0, q4, 0);
+	    Quad.addEdge(q0, 1, q1, 0);
+	    Quad.addEdge(q1, 0, q2, 0);
+	    Quad.addEdge(q2, 0, q3, 0);
+	    Quad.addEdge(q2, 1, q4, 0);
+	    Quad.addEdge(q3, 0, q4, 1);
 	    this.quads = q0;
 	    // done!
 	} };
