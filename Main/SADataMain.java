@@ -21,6 +21,7 @@ import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.util.Stack;
+import java.util.Vector;
 import java.util.NoSuchElementException;
 import java.util.Iterator;
 import java.util.Set;
@@ -30,7 +31,7 @@ import java.util.HashSet;
  * <code>SADataMain</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SADataMain.java,v 1.1.2.2 1999-08-10 18:41:31 pnkfelix Exp $
+ * @version $Id: SADataMain.java,v 1.1.2.3 1999-08-18 18:56:45 pnkfelix Exp $
  */
 public class SADataMain extends harpoon.IR.Registration {
     
@@ -42,57 +43,20 @@ public class SADataMain extends harpoon.IR.Registration {
     public static void main(String[] args) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
 
-	final SAFrame frame = new SAFrame();
+	final SAFrame frame=null;// = new SAFrame();
 	
 	int n = 0; // count # of args/flags processed
 
 	// rest of command-line options are class names
-	HClass[] classes = new HClass[args.length - n];
+	Vector classes = new Vector();
 	for (int i=n; i<args.length; i++) {
-	    classes[i-n] = HClass.forName(args[i]);
+	    classes.add(HClass.forName(args[i]));
 	}
 	
-	for (int i=0; i<classes.length; i++) {
-	    final Data data = new Data(classes[i], frame);
+	for (int i=0; i<classes.size(); i++) {
+	    final Data data = new Data((HClass)classes.get(i), frame);
 
 	    
-	    out.println("\t--- TREE FORM ---");
-	    data.print(out);
-	    out.println();
-
-	    final String scope = data.getName();
-	    final Instr instr = frame.codegen().gen(data, new InstrFactory() {
-		private final TempFactory tf = Temp.tempFactory(scope);
-		{ Util.assert(tf != null, "TempFactory cannot be null"); }
-		private int id = 0;
-		public TempFactory tempFactory() { return tf; }
-		public HCode getParent() { return data; }
-		public Frame getFrame() { return frame; }
-		public synchronized int getUniqueID() { return id++; }
-		public HMethod getMethod() { return null; }
-	    });
-	    
-	    Iterator iter = new UnmodifiableIterator() {
-		Set visited = new HashSet();
-		Stack stk = new Stack();
-		{ stk.push(instr); visited.add(instr); }
-		public boolean hasNext(){return !stk.empty(); }
-		public Object next() {
-		    if (stk.empty()) throw new NoSuchElementException();
-		    Instr instr2 = (Instr) stk.pop();
-		    HCodeEdge[] next = instr2.succ();
-		    for (int j=next.length-1; j>=0; j--) {
-			if (!visited.contains(next[j].to())) {
-			    stk.push(next[j].to());
-			    visited.add(next[j].to());
-			}
-		    }
-		    return instr2;
-		}
-	    };
-	    out.println("\t--- INSTR FORM ---");
-	    while(iter.hasNext()) { out.println( iter.next() ); }
-	    out.println();
 	}
     }
 }

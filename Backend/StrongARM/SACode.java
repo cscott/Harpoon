@@ -6,7 +6,8 @@ package harpoon.Backend.StrongARM;
 import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Assem.Instr;
 import harpoon.Analysis.Instr.TempInstrPair;
-
+import harpoon.Backend.Maps.OffsetMap;
+import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
@@ -22,7 +23,7 @@ import java.util.Map;
  * <code>SACode</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SACode.java,v 1.1.2.16 1999-08-06 21:00:58 pnkfelix Exp $
+ * @version $Id: SACode.java,v 1.1.2.17 1999-08-18 18:56:36 pnkfelix Exp $
  */
 public class SACode extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -62,7 +63,8 @@ public class SACode extends harpoon.Backend.Generic.Code {
      *      code factory returned by <code>CanonicalTreeCode</code>.
      * @see CanonicalTreeCode#codeFactory(HCodeFactory, Frame)
      */
-    public static HCodeFactory codeFactory(final HCodeFactory hcf) {
+    public static HCodeFactory codeFactory(final HCodeFactory hcf, 
+					   final Frame frame) {
 	if(hcf.getCodeName().equals(CanonicalTreeCode.codename)){
 	    return new HCodeFactory() {
 		public HCode convert(HMethod m) {
@@ -74,12 +76,20 @@ public class SACode extends harpoon.Backend.Generic.Code {
 		public String getCodeName() { return codename; }
 	    };
 	} else {
-	    return codeFactory(CanonicalTreeCode.codeFactory(hcf, new SAFrame()));
+	    // recursion can be ugly some times.
+	    return codeFactory(CanonicalTreeCode.
+			       codeFactory(hcf, frame), frame);
 	}
     }
     
-    public static HCodeFactory codeFactory() {
-	return codeFactory(CanonicalTreeCode.codeFactory( new SAFrame() ));
+    public static HCodeFactory codeFactory(final HCodeFactory hcf,
+					   final OffsetMap offmap) {
+	return codeFactory(hcf, new SAFrame(offmap));
+    }
+
+    public static HCodeFactory codeFactory(OffsetMap offmap) {
+	return codeFactory(CanonicalTreeCode.
+			   codeFactory( new SAFrame(offmap) ), offmap);
     }
     
     private Temp get(Instr instr, Temp val) {

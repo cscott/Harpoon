@@ -47,7 +47,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.32 1999-08-17 19:15:39 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.33 1999-08-18 18:56:37 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -116,7 +116,7 @@ public class SAFrame extends Frame implements AllocationInfo {
     CodeGen codegen;
     
     /** this form of the ctor may become deprecated. */
-    public SAFrame() { 
+    private SAFrame() { 
         mas = new DefaultAllocationStrategy(this);
 	codegen = new CodeGen(this);
 	tf = Temp.tempFactory( "S@Frame_scope" );
@@ -125,7 +125,7 @@ public class SAFrame extends Frame implements AllocationInfo {
     /** This probably isn't implemented correctly; this class needs
 	serious review/revision. 
     */ 
-    public SAFrame(OffsetMap32 map) {
+    public SAFrame(OffsetMap map) {
 	this();
 	offmap = map;
     }

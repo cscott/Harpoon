@@ -6,19 +6,28 @@ package harpoon.Main;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.HasEdges;
 import harpoon.IR.Tree.CanonicalTreeCode;
+import harpoon.IR.Tree.Data;
+import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrFactory;
+import harpoon.Temp.Temp;
+import harpoon.Temp.TempFactory;
 import harpoon.Analysis.DataFlow.LiveVars;
 import harpoon.Analysis.DataFlow.InstrSolver;
 import harpoon.Analysis.DataFlow.BasicBlock;
 import harpoon.Analysis.Instr.RegAlloc;
+import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.StrongARM.SAFrame;
 import harpoon.Backend.StrongARM.SACode;
 import harpoon.Analysis.QuadSSA.ClassHierarchy;
+import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
+import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import gnu.getopt.Getopt;
@@ -26,8 +35,11 @@ import gnu.getopt.Getopt;
 import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Vector;
+import java.util.Stack;
+import java.util.NoSuchElementException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
@@ -42,11 +54,12 @@ import java.io.FileInputStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.7 1999-08-18 17:52:31 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.8 1999-08-18 18:56:46 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
     private static boolean PRINT_ORIG = false;
+    private static boolean PRINT_DATA = false;
     private static boolean PRE_REG_ALLOC = false;
     private static boolean REG_ALLOC = true;
     private static boolean LIVENESS_TEST = false;
@@ -54,9 +67,11 @@ public class SAMain extends harpoon.IR.Registration {
     private static java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);;
         
     private static String className;
-
+    
     private static String classHierarchyFilename;
     private static ClassHierarchy classHierarchy;
+    private static Frame frame;
+    private static OffsetMap offmap;
 
     public static void main(String[] args) {
 	HCodeFactory hcf = // default code factory.
@@ -64,7 +79,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    (harpoon.IR.Quads.QuadSSA.codeFactory()
 	     );
 	
-	Getopt g = new Getopt("SAMain", args, "m:c:OPRLA");
+	Getopt g = new Getopt("SAMain", args, "m:c:dOPRLA");
 	
 	int c;
 	String arg;
@@ -87,6 +102,9 @@ public class SAMain extends harpoon.IR.Registration {
 				       "hierarchy from " + 
 				       classHierarchyFilename);
 		}
+		break;
+	    case 'd':
+		PRINT_DATA = true;
 		break;
 	    case 'O': 
 		PRINT_ORIG = true;
@@ -198,11 +216,55 @@ public class SAMain extends harpoon.IR.Registration {
 		HCode hc = sahcf.convert(hmethod);
 			
 		out.println("\t--- INSTR FORM (register allocation)  ---");
-		HCodeFactory regAllocCF = RegAlloc.codeFactory(sahcf, new SAFrame());
+		HCodeFactory regAllocCF = RegAlloc.codeFactory(sahcf, frame);
 		HCode rhc = regAllocCF.convert(hmethod);
 		if (rhc != null) rhc.print(out);
 		out.println("\t--- end INSTR FORM (register allocation)  ---");
 		out.println();
+	    }
+
+	    if (PRINT_DATA) {
+		final Data data = new Data(hclass, frame);
+		
+		out.println("\t--- TREE FORM ---");
+		data.print(out);
+		out.println();
+		
+		final String scope = data.getName();
+		final Instr instr = 
+		    frame.codegen().gen(data, new InstrFactory() {
+			private final TempFactory tf = Temp.tempFactory(scope);
+			{ Util.assert(tf != null, "TempFactory cannot be null"); }
+			private int id = 0;
+			public TempFactory tempFactory() { return tf; }
+			public HCode getParent() { return data; }
+			public Frame getFrame() { return frame; }
+			public synchronized int getUniqueID() { return id++; }
+			public HMethod getMethod() { return null; }
+		    });
+	    
+		Iterator iter = new UnmodifiableIterator() {
+		    Set visited = new HashSet();
+		    Stack stk = new Stack();
+		    { stk.push(instr); visited.add(instr); }
+		    public boolean hasNext(){return !stk.empty(); }
+		    public Object next() {
+			if (stk.empty()) throw new NoSuchElementException();
+			Instr instr2 = (Instr) stk.pop();
+			HCodeEdge[] next = instr2.succ();
+			for (int j=next.length-1; j>=0; j--) {
+			    if (!visited.contains(next[j].to())) {
+				stk.push(next[j].to());
+				visited.add(next[j].to());
+			    }
+			}
+			return instr2;
+		    }
+		};
+		out.println("\t--- INSTR FORM ---");
+		while(iter.hasNext()) { out.println( iter.next() ); }
+		out.println();
+		
 	    }
 
 	    out.flush();
@@ -229,10 +291,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    classHierarchy = new ClassHierarchy(m, qhcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
-	HCodeFactory tcf = new CachingCodeFactory
-	    (CanonicalTreeCode.codeFactory
-	     ( qhcf, new SAFrame(new OffsetMap32(classHierarchy)) ));
-	sahcf = SACode.codeFactory(tcf);
+	offmap = new OffsetMap32(classHierarchy);
+	frame = new SAFrame(offmap);
+	sahcf = SACode.codeFactory(qhcf, frame);
 	time += System.currentTimeMillis();
 	//out.println("\t\tFinished creation of a StrongARM Code "+
 	//    "Factory.  Time (ms): " + time);
