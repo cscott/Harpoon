@@ -65,7 +65,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.14 2000-03-22 19:29:33 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.15 2000-03-22 20:29:01 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -920,12 +920,32 @@ public class CloningVisitor extends QuadVisitor {
 	    HMethod hrecycle=getEnv(q).getDeclaredMethod("recycle", envparams);
 	    CALL callrec=new CALL(qf,q, hrecycle, params, null,tretex,
 				  true,false, new Temp[0]);
-	    RETURN qret=new RETURN(qf,q,null);
-	    THROW qthrow=new THROW(qf,q,tretex);
+
+	    PHI qphi=new PHI(qf,q,new Temp[0],2);
+	    
+
+
+	    String pref = 
+		ContBuilder.getPrefix(q.method().getReturnType());
+	    HClass[] nextarray=
+		new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref+"ResultContinuation")};
+	    HMethod setnextmethod=
+		calleemethod.getReturnType().getMethod("setNext",nextarray);
+	    Util.assert(setnextmethod!=null,"no setNext method found");
+	    CALL callrec2=new CALL(qf, q,
+				   setnextmethod, new Temp[] {retcont, tthis},
+				   null, tretex, true, false, 
+				   new Temp[0]);
+	    RETURN qret=new RETURN(qf, q, null);
+    	    THROW qthrow=new THROW(qf,q,tretex);
+	
 	    Quad.addEdge(cnext,0,get1,0);
 	    Quad.addEdge(get1,0,callrec,0);
-	    Quad.addEdge(callrec,0,qret,0);
-	    Quad.addEdge(callrec,1,qthrow,0);
+	    Quad.addEdge(callrec,0,callrec2,0);
+	    Quad.addEdge(callrec2,0,qret,0);
+	    Quad.addEdge(callrec,1,qphi,0);
+	    Quad.addEdge(callrec2,1,qphi,1);
+	    Quad.addEdge(qphi,0,qthrow,0);
 	    linkFooters.add(qthrow);
 	    linkFooters.add(qret);
 	} else { 
