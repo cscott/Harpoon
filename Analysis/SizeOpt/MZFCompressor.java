@@ -48,11 +48,10 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.1.2.4 2001-11-13 03:09:01 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.1.2.5 2001-11-13 05:32:33 cananian Exp $
  */
 public class MZFCompressor {
-    final CachingCodeFactory parent;
-    final Map code_cache = new HashMap();
+    final HCodeFactory parent;
     
     /** Creates a <code>MZFCompressor</code>, using the field profiling
      *  information found in the resource at <code>resourcePath</code>.
@@ -76,6 +75,8 @@ public class MZFCompressor {
 	    for (Iterator it2=sorted.iterator(); it2.hasNext(); )
 		flds.add( (HField) ((List)it2.next()).get(0) );
 	}
+	flds = Collections.unmodifiableSet(flds);
+	listmap = Collections.unmodifiableMap(listmap);
 	// make accessors for these fields.
 	Field2Method f2m = new Field2Method(hcf, flds);
 	hcf = new CachingCodeFactory(f2m.codeFactory());
@@ -86,15 +87,22 @@ public class MZFCompressor {
 		     .iterator(); it2.hasNext(); )
 		hcf.convert((HMethod) it2.next());
 	}
-	// we're going to add new HCode representations to parent, so set
-	// the field.
-	this.parent = (CachingCodeFactory) hcf;
 	// okay.  foreach relevant class, split it.
+	Map field2class = new HashMap();
 	for (Iterator it=listmap.keySet().iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
-	    splitOne(linker, hc, (List)listmap.get(hc), f2m);
+	    splitOne(linker, (CachingCodeFactory) hcf,
+		     hc, (List)listmap.get(hc), f2m, field2class);
 	}
+	field2class = Collections.unmodifiableMap(field2class);
+	// chain through MZFWidenType to change INSTANCEOF, ANEW, and
+	// TYPESWITCH quads to use the new supertype of a split class.
+	//hcf = new MZFWidenType(hcf, listmap, field2class).codeFactory();
+	// chain through MZFChooser to pick the appropriate superclass
+	// at each instantiation site.
+	hcf = new MZFChooser(hcf, cc, listmap, field2class).codeFactory();
 	// we should be done now.
+	this.parent = hcf;
     }
     public HCodeFactory codeFactory() { return parent; }
 
@@ -156,23 +164,27 @@ public class MZFCompressor {
     }
 
     // splits one class.
-    void splitOne(Relinker relinker, HClass hc, List sortedFields,
-		  Field2Method f2m) {
+    void splitOne(Relinker relinker, CachingCodeFactory hcf,
+		  HClass hc, List sortedFields,
+		  Field2Method f2m, Map field2class) {
 	Util.assert(sortedFields.size()>0);
 	// for each entry in the sorted fields list, make a split.
 	for (Iterator it=sortedFields.iterator(); it.hasNext(); ) {
 	    List pair = (List) it.next();
-	    hc = moveOne(relinker, hc,
+	    hc = moveOne(relinker, hcf, hc,
 			 (HField)pair.get(0),
-			 ((Number)pair.get(1)).longValue(), f2m);
+			 ((Number)pair.get(1)).longValue(),
+			 f2m, field2class);
 	}
 	// done!
     }
     /** Create a class with all the fields of <code>oldC</code> except for
      *  <code>hf</code>.  In the new class, <code>hf</code> has constant
      *  value <code>val</code>. */
-    HClass moveOne(Relinker relinker, HClass oldC, HField hf, long val,
-		   Field2Method f2m) {
+    HClass moveOne(Relinker relinker, CachingCodeFactory hcf,
+		   HClass oldC, HField hf, long val,
+		   Field2Method f2m, Map field2class) {
+	Util.assert(!field2class.containsKey(hf));
 	// make a copy of our empty Template class.
 	HClass hcT = relinker.forClass(Template.class);
 	HClass newC = relinker.createMutableClass
@@ -194,7 +206,7 @@ public class MZFCompressor {
 	// with the fields.
 	for (Iterator it=Arrays.asList(oldC.getDeclaredMethods()).iterator();
 	     it.hasNext(); )
-	    parent.convert((HMethod)it.next());
+	    hcf.convert((HMethod)it.next());
 	// move all but the desired field to newC
 	// (also strip 'private' modifier)
 	HField[] allF = oldC.getDeclaredFields();
@@ -210,13 +222,16 @@ public class MZFCompressor {
 	HMethod setter = (HMethod) f2m.field2setter.get(hf);
 	for (int i=0; i<allM.length; i++) {
 	    if (allM[i].isStatic()) continue;
-	    if (allM[i] instanceof HConstructor) {
+	    if (isConstructor(allM[i])) {
 		// copy, don't move.
-		HConstructor newcon =
-		    newC.getMutator().addConstructor((HConstructor)allM[i]);
+		HMethod newcon = (allM[i] instanceof HConstructor) ?
+		    newC.getMutator().addConstructor
+		      ((HConstructor)allM[i]) :
+		    newC.getMutator().addDeclaredMethod
+		      (allM[i].getName(), allM[i]);
 		harpoon.IR.Quads.Code hcode =
-		    (harpoon.IR.Quads.Code) parent.convert(allM[i]);
-		parent.put(newcon, hcode.clone(newcon).hcode());
+		    (harpoon.IR.Quads.Code) hcf.convert(allM[i]);
+		hcf.put(newcon, hcode.clone(newcon).hcode());
 	    } else relinker.move(allM[i], newC);
 	}	    
 	// getter and setter are now in newC.  copy implementation to oldC.
@@ -225,24 +240,25 @@ public class MZFCompressor {
 	HMethod fullsetter =
 	    oldC.getMutator().addDeclaredMethod(setter.getName(), setter);
 	harpoon.IR.Quads.Code gettercode = (harpoon.IR.Quads.Code)
-	    parent.convert(getter);
+	    hcf.convert(getter);
 	harpoon.IR.Quads.Code settercode = (harpoon.IR.Quads.Code)
-	    parent.convert(setter);
-	parent.put(fullgetter, gettercode.clone(fullgetter).hcode());
-	parent.put(fullsetter, settercode.clone(fullsetter).hcode());
+	    hcf.convert(setter);
+	hcf.put(fullgetter, gettercode.clone(fullgetter).hcode());
+	hcf.put(fullsetter, settercode.clone(fullsetter).hcode());
 	// rewrite newC's getter and setter.
-	parent.put(getter, makeGetter(getter, hf, val));
-	parent.put(setter, makeSetter(setter, hf, val));
+	hcf.put(getter, makeGetter(hcf, getter, hf, val));
+	hcf.put(setter, makeSetter(hcf, setter, hf, val));
 	// done!
+	field2class.put(hf, newC);
 	return newC;
     }
     static class Template { }
 
     /** make a getter method that returns constant 'val'. */
-    HCode makeGetter(HMethod getter, HField hf, long val) {
+    HCode makeGetter(HCodeFactory hcf, HMethod getter, HField hf, long val) {
 	// xxx cheat: get old getter and replace GET with CONST.
 	// would be better to make this from scratch.
-	HCode hc = parent.convert(getter);
+	HCode hc = hcf.convert(getter);
 	Quad[] qa = (Quad[]) hc.getElements();
 	for (int i=0; i<qa.length; i++)
 	    if (qa[i] instanceof GET) {
@@ -282,16 +298,34 @@ public class MZFCompressor {
     }
     /** make a setter method that does nothing (but perhaps verifies
      *  that the value to set is equal to 'val'). */
-    HCode makeSetter(HMethod setter, HField hf, long val) {
+    HCode makeSetter(HCodeFactory hcf, HMethod setter, HField hf, long val) {
 	// xxx cheat: get old setter and remove the SET operand.
 	// would be better to make this from scratch.
-	HCode hc = parent.convert(setter);
+	HCode hc = hcf.convert(setter);
 	Quad[] qa = (Quad[]) hc.getElements();
 	for (int i=0; i<qa.length; i++)
 	    if (qa[i] instanceof SET)
 		qa[i].remove();
 	// done!
 	return hc;
+    }
+    // utility.
+    ///////// copied from harpoon.Analysis.Quads.DefiniteInitOracle.
+    /** return an approximation to whether this is a constructor
+     *  or not.  it's always safe to return false. */
+    private static boolean isConstructor(HMethod hm) {
+	// this is tricky, because we want split constructors to
+	// count, too, even though renamed constructors (such as
+	// generated by initcheck, for instance) won't always be
+	// instanceof HConstructor.  Look for names starting with
+	// '<init>', as well.
+	if (hm instanceof HConstructor) return true;
+	if (hm.getName().startsWith("<init>")) return true;
+	// XXX: what about methods generated by RuntimeMethod Cloner?
+	// we could try methods ending with <init>, but then the
+	// declaringclass information would be wrong.
+	//if (hm.getName().endsWidth("<init>")) return true;//not safe yet.
+	return false;
     }
     //---------------------------------------------
     /** Parse a "stop list" of classes we should not attempt to optimize */
