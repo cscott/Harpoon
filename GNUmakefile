@@ -6,9 +6,9 @@ INSTALLDIR=public_html/Harpoon/
 export TEXINPUTS=/home/cananian/src/tex4ht//:
 
 ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99 pldi02 \
-	pldi03 oopsla02 oqe lctes03 pldi04 ecoop04
+	pldi03 oopsla02 oqe lctes03 pldi04 ecoop04 oopsla04
 
-default: ecoop04.ps
+default: oopsla04.ps
 .PRECIOUS: %.dvi
 
 ## funky stuff for martin.
