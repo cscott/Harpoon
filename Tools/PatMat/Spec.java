@@ -10,7 +10,7 @@ import java.util.List;
  * <code>Spec</code> represents the parsed specification.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Spec.java,v 1.1.2.2 1999-02-18 22:02:57 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.3 1999-02-19 02:05:43 cananian Exp $
  */
 public class Spec  {
     public /*final*/ String global_stms;
@@ -35,7 +35,9 @@ public class Spec  {
 	    this.details = details; this.action_str = action_str;
 	}
 	public String toString() {
-	    return details + " %{" + action_str + "}%";
+	    String s = " %{" + action_str + "}%";
+	    if (details==null) return s;
+	    else return details.toString()+s;
 	}
     }
     public static class RuleExp extends Rule {

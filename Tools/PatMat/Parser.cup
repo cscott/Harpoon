@@ -43,7 +43,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.5 1999-02-18 11:46:39 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.6 1999-02-19 02:05:43 cananian Exp $
  */
 
 action code {:
@@ -108,24 +108,35 @@ start with program;
 
 program	::=	GLOBAL_STATEMENTS:g CLASS_STATEMENTS:c ruleSeq:rl
 		{: RESULT=new Spec(g, c, rl); :}
+	|	/* error recovery.  Sync on valid ruleSeq. */
+		error ruleSeq:rl
+		{: RESULT=new Spec("","", rl); :}
 	;
 
 ruleSeq	::=	/* empty */
 		{: RESULT=null; :}
 	|	rule:r ruleSeq:rl
-		{: RESULT=new RuleList(r, rl); :}
+		{: RESULT=(r==null)?rl:new RuleList(r, rl); :}
+	|	/* error recovery. Sync on valid rule. */
+		error ruleSeq:rl
+		{: RESULT=rl; :}
 	;
 
 rule	::=	exp:e EQUALS ID:id detailSeq:dl BRACED:rs
 		{: RESULT=new RuleExp(e, id, dl, rs); :}
 	|	stm:s detailSeq:dl BRACED:rs
 		{: RESULT=new RuleStm(s, dl, rs); :}
+	|	/* error recovery: sync on BRACED */
+		error BRACED
+		{: RESULT=null; :}
 	;
 
 detailSeq ::=	/* empty */
 		{: RESULT=null; :}
 	|	detail:d detailSeq:dl
 		{: RESULT=new DetailList(d, dl); :}
+	|	error detailSeq:dl
+		{: RESULT=dl; :}
 	;
 
 detail	::=	KEY_EXTRA LBRACE opt_idList:il RBRACE

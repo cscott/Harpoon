@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.17 1999-02-18 22:02:56 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.18 1999-02-19 02:05:41 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes +$$
@@ -128,8 +128,8 @@ update: needs-cvs
 	java java_cup.Main -parser `basename $@ .java` -symbols Sym \
 	< `basename $<`
 
+# don't know how to automagically generate this dependency.
 Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
-Tools/PatMat/Lexer.java : Tools/PatMat/Sym.java
 
 # print graphs
 %.ps : %.vcg

@@ -6,7 +6,7 @@ package harpoon.Tools.PatMat;
 /** Input file lexer for instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Lexer.jlex,v 1.1.2.4 1999-02-18 11:46:38 cananian Exp $
+ * @version $Id: Lexer.jlex,v 1.1.2.5 1999-02-19 02:05:43 cananian Exp $
  */
 %%
 
@@ -15,7 +15,7 @@ package harpoon.Tools.PatMat;
 %class Lexer
 %function nextToken
 %type java_cup.runtime.Symbol
-%state CLASS_SCOPE RULES BRACED PARENED STRING COMMENT1 COMMENT2 TYPES
+%state CLASS_SCOPE RULES BRACED PARENED STRING COMMENT1 COMMENT2
 
 %{
 private void newline() { errorMsg.newline(yychar); }
@@ -45,13 +45,46 @@ private StringBuffer strText=new StringBuffer(); // Space to build up a string.
 private int strStart=0;	      // Starting location of the string.
 
 private int prevState;
+private boolean doneEOF=false;
 %}
 
 %eofval{
     {
-	if (yy_lexical_state==STRING) {
+	if (doneEOF) return tok(Sym.EOF);
+	switch(yy_lexical_state) {
+	case CLASS_SCOPE:
+	    err("No rules section found.");
+	    /* error recovery */
+	    yybegin(RULES);
+	    return tok(Sym.CLASS_STATEMENTS,
+		       strStart, yychar, strText.toString());
+	case RULES:
+	    /* rules is okay. */ break;
+	case BRACED:
+	    err("Unterminated action string at end of file.");
+	    /* error recovery */
+	    yybegin(RULES);
+	    return tok(Sym.BRACED, strStart, yychar, strText.toString());
+	case PARENED:
+	    err("Unterminated predicate at end of file.");
+	    /* error recovery */
+	    yybegin(RULES);
+	    return tok(Sym.PARENED, strStart, yychar, strText.toString());
+	case STRING:
 	    err("Unterminated string at end of file.");
+	    /* error recovery */
+	    yybegin(RULES);
+	    return tok((prevState==BRACED)?Sym.BRACED:
+	               (prevState==PARENED)?Sym.PARENED:Sym.error,
+	               strStart, yychar, strText.toString());
+	case COMMENT1:
+	    /* i guess an unterminate slash-slash comment is okay. */ break;
+	case COMMENT2:
+	    err("Unterminated comment at end of file."); break;
+	default:
+	    err("Unexpected end of file."); break; // will never happen?
 	}
+	doneEOF=true;
 	return tok(Sym.EOF);
     }
 %eofval}
@@ -68,6 +101,8 @@ NL=([\r]|[\r]?[\n])
 %%
 
 <YYINITIAL>	^"%%"{WS}*{NL}	{ yybegin(CLASS_SCOPE);
+				  /* two NLs because of how Jlex matches ^ */
+				  newline();newline();
 				  String global = strText.toString();
 				  strText = new StringBuffer();
 				  strStart = yychar;
@@ -75,6 +110,8 @@ NL=([\r]|[\r]?[\n])
 					     0, yychar, global);
 				}
 <CLASS_SCOPE>	^"%%"{WS}*{NL}	{ yybegin(RULES);
+				  /* two NLs because of how Jlex matches ^ */
+				  newline();newline();
 				  return tok(Sym.CLASS_STATEMENTS,
 					     strStart, yychar,
 					     strText.toString());
@@ -82,18 +119,34 @@ NL=([\r]|[\r]?[\n])
 <YYINITIAL,CLASS_SCOPE>	{NL}	{ newline(); strText.append('\n'); }
 <YYINITIAL,CLASS_SCOPE>	.	{ strText.append(yytext()); }
 
-<RULES>		"%{"		{ yybegin(BRACED);
+<RULES,PARENED>	"%{"		{ int old_state = yy_lexical_state;
+				  int old_start = strStart;
+				  yybegin(BRACED);
 				  strText = new StringBuffer();
 				  strStart = yychar;
+				  /* Error recovery. */
+				  if (old_state==PARENED) {
+				    err("Unterminated predicate.");
+				    return tok(Sym.error, old_start, yychar-2,
+				               null);
+				  }
 				}
 <BRACED>	"}%"		{ yybegin(RULES);
 				  return tok(Sym.BRACED,
 					     strStart, yychar,
 					     strText.toString());
 				}
-<RULES>		"%("		{ yybegin(PARENED);
+<RULES,BRACED>	"%("		{ int old_state = yy_lexical_state;
+				  int old_start = strStart;
+				  yybegin(PARENED);
 				  strText = new StringBuffer();
 				  strStart = yychar;
+				  /* Error recovery. */
+				  if (old_state==BRACED) {
+				    err("Unterminated action string.");
+				    return tok(Sym.error, old_start, yychar-2,
+				               null);
+				  }
 				}
 <PARENED>	")%"		{ yybegin(RULES);
 				  return tok(Sym.PARENED,
@@ -119,6 +172,7 @@ NL=([\r]|[\r]?[\n])
 				  err("Embedded newline in string.");
 				  newline();
 				  strText.append(yytext());
+				  yybegin(prevState); // end quote.
 				}
 <STRING>	[\"]		{ /* saw closing quote. */
 				  strText.append(yytext());
@@ -199,7 +253,7 @@ NL=([\r]|[\r]?[\n])
 <RULES>		","		{ return tok(Sym.COMMA); }
 <RULES>		"="		{ return tok(Sym.EQUALS); }
 
-<RULES,TYPES>	{NL}            { newline(); }
-<RULES,TYPES>	{WS}		{/*eat whitespace*/}
+<RULES>		{NL}            { newline(); }
+<RULES>		{WS}		{/*eat whitespace*/}
 
-<RULES,TYPES>	.		{ err("Illegal input character."); }
+<RULES>		.		{ err("Illegal input character."); }
