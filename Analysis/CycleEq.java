@@ -30,7 +30,7 @@ import java.util.Stack;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.14 1999-06-11 11:05:36 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.15 1999-06-11 19:56:32 cananian Exp $
  */
 
 public class CycleEq  {
@@ -41,7 +41,7 @@ public class CycleEq  {
 	    (Graph) new EdgeGraph(hc) :
 	    (Graph) new ElementGraph(hc);
 	compute_cyeq(g);
-	for (Iterator e = g.primes(); e.hasNext(); ) {
+	for (Iterator e = g.primes(); e.hasNext(); ) { /* dfs order */
 	    Node n = (Node) e.next();
 	    List l = (List) equiv.get(n.cd_class);
 	    if (l==null) { l = new LinkedList(); equiv.put(n.cd_class, l); }
