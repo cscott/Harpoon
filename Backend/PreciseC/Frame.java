@@ -1,4 +1,4 @@
-_// Frame.java, created Wed Jun 28 22:25:27 2000 by cananian
+// Frame.java, created Wed Jun 28 22:25:27 2000 by cananian
 // Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.PreciseC;
@@ -43,7 +43,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.11 2001-03-23 15:27:34 wbeebee Exp $
+ * @version $Id: Frame.java,v 1.1.2.12 2001-03-23 16:04:51 wbeebee Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
