@@ -5,6 +5,7 @@ package harpoon.Backend.Sparc;
 
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.LocationFactory.Location;
+import harpoon.Backend.Generic.RegFileInfo.SpillException;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HData;
@@ -34,7 +35,7 @@ import java.util.Set;
  * which are used for tracking global data.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.7 2000-01-17 23:41:28 cananian Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.8 2000-02-14 20:05:12 andyb Exp $
  */
 public class RegFileInfo 
   extends harpoon.Backend.Generic.RegFileInfo 
@@ -156,7 +157,7 @@ public class RegFileInfo
     public TempFactory regTempFactory() { return regtf; }
 
     public Iterator suggestRegAssignment(Temp t, final Map regFile)
-	throws harpoon.Backend.Generic.RegFileInfo.SpillException {
+	throws SpillException {
 
 	final ArrayList suggests = new ArrayList();
 	final ArrayList spills = new ArrayList();
@@ -196,7 +197,7 @@ public class RegFileInfo
 	    }
 	}
 	if (suggests.isEmpty()) {
-	    throw new harpoon.Backend.Generic.RegFileInfo.SpillException() {
+	    throw new SpillException() {
 		public Iterator getPotentialSpills() {
 		    return spills.iterator();
 		}

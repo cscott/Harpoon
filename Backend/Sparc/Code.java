@@ -15,15 +15,19 @@ import harpoon.Util.Util;
 
 import java.lang.String;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * <code>Code</code> is a code-view for SPARC assembly.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.9 2000-01-29 00:13:30 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.10 2000-02-14 20:05:12 andyb Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "sparc";
@@ -76,9 +80,17 @@ public class Code extends harpoon.Backend.Generic.Code {
 	    } else if (suffix.startsWith("h")) {
 		reg = get(i, tb.getHigh(val));
 	    } else if (suffix.trim().equals("")) {
-		Util.assert(false, "BREAK! empty suffix for " + val + " in: " + i);
+		Util.assert(false, "BREAK!  empty suffix \n " +
+			    "suffix: " + suffix + "\n" +
+			    "instr: " + i + "\n" + 
+			    "instr str: " + i.getAssem() + "\n"+
+			    "temp: " + val);
 	    } else {
-		Util.assert(false, "BREAK! AAA - what to do here");
+		Util.assert(false, "BREAK! Unknown suffix \n" +
+                            "suffix: " + suffix + "\n" +
+                            "instr: " + i + "\n" + 
+                            "instr str: " + i.getAssem() + "\n"+
+                            "temp: " + val);
 	    }
 	    if (reg != null) {
 		s = reg.name() + suffix.substring(1);
@@ -97,6 +109,22 @@ public class Code extends harpoon.Backend.Generic.Code {
 	return s;
     }
 
+    public Collection getRegisters(Instr i, Temp val) {
+	Util.assert (i != null, "Instr was null in Code.getRegisters");
+	TempBuilder tb = (TempBuilder) frame.getTempBuilder();
+	if (tb.isTwoWord(val)) {
+	    Temp low = get(i, tb.getLow(val));
+	    Temp high = get(i, tb.getHigh(val));
+	    Util.assert(low != null, "low reg for "+val+" in "+i+" was null");
+	    Util.assert(high != null, "high reg for "+val+" in "+i+" was null");
+	    return Arrays.asList(new Temp[] { low, high });
+	} else {
+	    Temp t = get(i, val);
+	    Util.assert(t != null, "register for "+val+" in "+i+" was null");
+	    return Collections.singleton(t);
+	}
+    }
+
     public void assignRegister(Instr i, Temp pseudoReg, List regs) { 
 	TempBuilder tb = (TempBuilder) frame.getTempBuilder();
 	if (tb.isTwoWord(pseudoReg)) {
@@ -112,9 +140,29 @@ public class Code extends harpoon.Backend.Generic.Code {
 		regs.get(0));
 	}
     }
+
     public boolean registerAssigned(Instr i, Temp pr) {
-	throw new Error("unimplemented");
+	TempBuilder tb = (TempBuilder) frame.getTempBuilder();
+	Set keys = tempInstrPairToRegisterMap.keySet();
+	if (tb.isTwoWord(pr)) {
+	    TempInstrPair pair1 = new TempInstrPair(i, tb.getLow(pr));
+	    TempInstrPair pair2 = new TempInstrPair(i, tb.getHigh(pr));
+	    return (keys.contains(pair1) && keys.contains(pair2));
+	} else {
+	    return (keys.contains(new TempInstrPair(i, pr)));
+	}
     }
 
-
+    public void removeAssignment(Instr i, Temp pseudoReg) {
+	TempBuilder tb = (TempBuilder) frame.getTempBuilder();
+	if (tb.isTwoWord(pseudoReg)) {
+	    tempInstrPairToRegisterMap.remove(
+		new TempInstrPair(i, tb.getLow(pseudoReg)));
+	    tempInstrPairToRegisterMap.remove(
+		new TempInstrPair(i, tb.getHigh(pseudoReg)));
+	} else {
+	    tempInstrPairToRegisterMap.remove(
+		new TempInstrPair(i, pseudoReg));
+	}
+    }
 }
