@@ -33,7 +33,7 @@ import java.util.Enumeration;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.19 1999-08-26 22:15:42 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.20 1999-08-27 18:12:46 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -126,8 +126,13 @@ final class ReHandler {
 	    }
 	}
 
-	Edge e = old_method.nextEdge(0);
+	//reachable is needed to find out what phi functions have incoming
+	//edges that can't ever be used....
+	//Only puts in handlers edges that are reachable
+	//ie...have reachable elements in their protectQuad set...
+	//this is all handlers for now...
 
+	Edge e = old_method.nextEdge(0);
 	WorkSet reachable=new WorkSet();
 	WorkSet todo=new WorkSet();
 	todo.push(qm.getHead((Quad)e.to()));
@@ -165,6 +170,7 @@ final class ReHandler {
 	final METHOD qM = new METHOD(qf, old_method, qMp,
 				     1 + handlerset.size());
 	final HEADER qH = (HEADER)qm.getHead(old_header);
+	reachable.add(qM);
 	Quad.addEdge(qH, 1, qM, 0);
 	Quad.addEdge(qM, 0, qm.getHead((Quad)e.to()), e.which_pred());
 	Iterator iterate=handlerset.iterator();
@@ -182,21 +188,18 @@ final class ReHandler {
     }
 
     public static void clean(QuadWithTry code) {
-	UseDef ud=new UseDef();
-	Temp []defs=ud.allDefs(code);
-	CleanVisitor v=new CleanVisitor();
-	WorkSet toclean=new WorkSet();
-	for(int i=0;i<defs.length;i++) {
-	    if (ud.useMap(code, defs[i]).length==0) {
-		HCodeElement []udefs=ud.defMap(code, defs[i]);
-		for (int j=0;j<udefs.length;j++) {
-		    toclean.add(udefs[j]);
-		}
-	    }
+	WorkSet todo=new WorkSet();
+	CleanVisitor v=new CleanVisitor(todo);
+	todo.add(code.getRootElement());
+	while (!todo.isEmpty()) {
+	    ((Quad)todo.pop()).visit(v);
 	}
-	Iterator iterate=toclean.iterator();
-	while (iterate.hasNext())
-	    ((Quad)iterate.next()).visit(v);
+
+	Iterator iterate=v.useless().iterator();
+	while (iterate.hasNext()) {
+	    Quad q=(Quad)iterate.next();
+	    Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), q.next(0), q.nextEdge(0).which_pred());
+	}
     }
 
     private static boolean removable(Set throwset, Set phiset, HandInfo hi, CALL call) {
@@ -1317,16 +1320,230 @@ class TypeVisitor extends QuadVisitor {
 }
 
 class CleanVisitor extends QuadVisitor {
+    Set todo;
+    Map map;
+    Set usefulquads;
+    Set visited;
+
+    public CleanVisitor(Set todo) {
+	this.todo=todo;
+	//map of quads->set of {temp, quad} pairs
+	this.map=new HashMap();
+	
+	this.usefulquads=new WorkSet();
+	this.visited=new WorkSet();
+    }
+
     public void visit(Quad q) {
+	useful(q, false);
+    }
+
+    public void visit(HANDLER q) {
+	useful(q, true);
+    }
+
+    public Set useless() {
+	WorkSet useless=new WorkSet(visited);
+	Iterator iterate=usefulquads.iterator();
+	while (iterate.hasNext())
+	    useless.remove(iterate.next());
+	return useless;
+    }
+
+    public void useful(Quad q, boolean handler) {
+	usefulquads.add(q);
+	WorkSet livedefs=new WorkSet();
+	for (int i=0;i<q.prev().length;i++) {
+	    Set thispred=(Set)map.get(q.prev(i));
+	    if (thispred!=null) {
+		Iterator iterate=thispred.iterator();
+		while (iterate.hasNext())
+		    livedefs.add(iterate.next());
+	    }
+    	}
+	if (handler) {
+	    for (Enumeration enum=((HANDLER)q).protectedQuads();enum.hasMoreElements();) {
+		Quad quad=(Quad)enum.nextElement();
+		Set thispred=(Set)map.get(quad);
+		if (thispred!=null) {
+		    Iterator iterate=thispred.iterator();
+		    while (iterate.hasNext())
+			livedefs.add(iterate.next());
+		}
+	    }
+	}
+
+	if (visited.contains(q)) {
+	    boolean change=false;
+	    Iterator iterate=livedefs.iterator();
+	    Set ourset=(Set)map.get(q);
+	    while (iterate.hasNext()) {
+		Tuple item=(Tuple)iterate.next();
+		if (!ourset.contains(item)) {
+		    //new item...maybe pass it on
+		    Temp t=(Temp)item.asList().get(0);
+		    Temp[] uses=q.use();
+		    for (int i=0;i<uses.length;i++)
+			if (uses[i]==t) {
+			    if (!usefulquads.contains(item.asList().get(1))) {
+				//it is useful now...
+				usefulquads.add(item.asList().get(1));
+				//force reanalysis
+				visited.remove(item.asList().get(1));
+				todo.add(item.asList().get(1));
+			    }
+			}
+		    Temp []defs=q.def();
+		    boolean addtoset=true;
+		    for (int i=0;i<defs.length;i++)
+			if (defs[i]==t) {
+			    addtoset=false;
+			    break;
+			}
+		    if (addtoset) {
+			ourset.add(item);
+			change=true;
+		    }
+		}
+	    }
+	    if (change) {
+		for (int i=0;i<q.next().length;i++)
+		    todo.add(q.next(i));
+		Iterator iterateh=HandlerSet.iterator(q.handlers());
+		while (iterateh.hasNext()) {
+		    todo.add(iterateh.next());
+		}
+	    }
+	} else {
+	    Iterator iterate=livedefs.iterator();
+	    Set ourset=new WorkSet();
+	    map.put(q, ourset);
+	    while (iterate.hasNext()) {
+		Tuple item=(Tuple)iterate.next();
+		if (!ourset.contains(item)) {
+		    //new item...maybe pass it on
+		    Temp t=(Temp)item.asList().get(0);
+		    Temp[] uses=q.use();
+		    for (int i=0;i<uses.length;i++)
+			if (uses[i]==t) {
+			    if (!usefulquads.contains(item.asList().get(1))) {
+				//it is useful now...
+				usefulquads.add(item.asList().get(1));
+				todo.add(item.asList().get(1));
+			    }
+			}
+		    Temp []defs=q.def();
+		    boolean addtoset=true;
+		    for (int i=0;i<defs.length;i++)
+			if (defs[i]==t) {
+			    addtoset=false;
+			    break;
+			}
+		    if (addtoset)
+			ourset.add(item);
+		}
+	    }
+    	    for (int i=0;i<q.next().length;i++)
+		todo.add(q.next(i));
+	    Iterator iterateh=HandlerSet.iterator(q.handlers());
+	    while (iterateh.hasNext()) {
+		todo.add(iterateh.next());
+	    }
+	    visited.add(q);
+	}
 	//Do nothing by default
     }
+
+    public void maybeuseful(Quad q) {
+	if (visited.contains(q)) {
+	    if (usefulquads.contains(q))
+		useful(q, false);
+	    else {
+		Set ourset=(Set)map.get(q);
+		boolean change=false;
+		for(int i=0;i<q.prev().length;i++) {
+		    //go through our predecessors
+		    Set prevset=(Set)map.get(q.prev(i));
+		    if (prevset!=null) {
+			Iterator iterate=prevset.iterator();
+			while (iterate.hasNext()) {
+			    Tuple item=(Tuple) iterate.next();
+			    if (!ourset.contains(item)) {
+				//maybe new info
+				Temp t=(Temp)item.asList().get(0);
+				Temp []defs=q.def();
+				boolean addtoset=true;
+				for (int j=0;j<defs.length;j++)
+				    if (defs[j]==t) {
+					addtoset=false;
+					break;
+				    }
+				if (addtoset) {
+				    ourset.add(item);
+				    change=true;
+				}
+			    }
+			}
+		    }
+		}
+		//pass on changed info
+		if (change) {
+		    for (int i=0;i<q.next().length;i++)
+			todo.add(q.next(i));
+		    Iterator iterate=HandlerSet.iterator(q.handlers());
+		    while (iterate.hasNext()) {
+			todo.add(iterate.next());
+		    }
+		}
+	    }
+	} else {
+	    //We haven't been visited yet...
+	    WorkSet ourset=new WorkSet();
+	    map.put(q, ourset);
+	    for(int i=0;i<q.prev().length;i++) {
+		//go through our predecessors
+		Set prevset=(Set)map.get(q.prev(i));
+		if (prevset!=null) {
+		    Iterator iterate=prevset.iterator();
+		    while (iterate.hasNext()) {
+			Tuple item=(Tuple) iterate.next();
+			if (!ourset.contains(item)) {
+			    //maybe new info
+			    Temp t=(Temp)item.asList().get(0);
+			    Temp []defs=q.def();
+			    boolean addtoset=true;
+			    for (int j=0;j<defs.length;j++)
+				if (defs[j]==t) {
+				    addtoset=false;
+				    break;
+				}
+			    if (addtoset) {
+				ourset.add(item);
+			    }
+			}
+		    }
+		}
+	    }
+	    Temp []defs=q.def();
+	    for (int i=0;i<defs.length;i++)
+		ourset.add(new Tuple(new Object[] {defs[i],q}));
+	    //pass on changed info
+	    
+	    for (int i=0;i<q.next().length;i++)
+		todo.add(q.next(i));
+	    Iterator iterate=HandlerSet.iterator(q.handlers());
+	    while (iterate.hasNext()) {
+		todo.add(iterate.next());
+	    }
+	    visited.add(q);
+	}
+    }
+
     public void visit(CONST q) {
-	deleteit(q);
+	maybeuseful(q);
     }
-    private void deleteit(Quad q) {
-	Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), q.next(0), q.nextEdge(0).which_pred());
-    }
+
     public void visit(MOVE q) {
-	deleteit(q);
+	maybeuseful(q);
     }
 }
