@@ -46,7 +46,7 @@ DECLARE_FNI_Dispatch(Double)
     sw    excptr, 4(sp) # Put the exception pointer on the stack for
                         # possible later use 
     move  fp, sp
-    move  t4, a0        # jump via t4, we can't use t9, the regular mips
+    move  t4, a0        # jump via t4, we cant use t9, the regular mips
                         # .so convention because ypekoe uses that reg
     # Now copy arguments onto the stack
     sll   a1, 2        /* a1 = narg*4 */
