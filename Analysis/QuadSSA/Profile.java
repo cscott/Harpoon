@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@@ai.mit.edu> 
 // Version: 
 // Created: <Tue Oct  6 12:41:25 1998> 
-// Time-stamp: <1998-11-28 16:35:11 mfoltz> 
+// Time-stamp: <1998-12-03 00:39:31 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.QuadSSA;
@@ -22,7 +22,7 @@ import java.io.FileInputStream;
 import java.util.Properties;
 import java.util.Enumeration;
 
-/**
+/** A visitor that inserts profiling Quads into the CFG after <code>CALL</code> and <code>NEW</code> quads. 
  * 
  * @@author  Mark A. Foltz <mfoltz@@ai.mit.edu>
  * @@version 
@@ -32,6 +32,9 @@ public class Profile {
 
   private Profile() { }
 
+  /** After each <code>CALL</code> and <code>NEW</code> quad in <code>hc</code>, 
+   * insert a call to the appropriate profiling method. 
+   */
   public static void optimize(HCode hc) {
 
     HMethod _method = hc.getMethod();
@@ -63,25 +66,30 @@ public class Profile {
     }
   }
 
+  /** This class implements the <code>Visitor</code> for <code>optimize()</code> */
   static class Visitor extends QuadVisitor {
 
-    // worklist
+    /** the worklist */
     Set _W;
 
-    // calling method, class, and this for this quad graph
+    /** calling method, class, and <code>this</code> for this quad graph */
     HMethod _method;
     HClass _class;
+
+    /** Temps that hold the <code>this</code> reference, a <code>null</code> constant,
+     * a <code>String</code> constant with the name of <code>_method</code>, and a 
+     * <code>String</code> constant with the name of <code>_class</code>.
+     */
     Temp _this, _null_temp, _calling_method_name_temp, _calling_class_name_temp;
 
-    // classes for constants
+    /** The <code>java.lang.String HClass</code>.
     HClass _java_lang_string;
-    //    HClass _java_lang_integer;
 
-    // profiling callbacks
+    /** The static profiling methods, from <code>harpoon.RunTime.Monitor</code>. */
     HMethod _call_profiling_method;
     HMethod _new_profiling_method;
 
-    // static monitor implementation
+    /** A static class that logs compile-time information about who might call whom. */
     StaticMonitor _static_monitor;
 
     Visitor(Set W, HMethod M, HClass C) {
@@ -125,11 +133,15 @@ public class Profile {
       
     }
 
-    // Do nothing to regular statements.
+    /** Do nothing to regular statements. */
     public void visit(Quad q) { }
 
-    // Insert quads calling the profiling procedure
-    // before each CALL quad, and log some static info. 
+    /** Visit the <code>CALL</code> quad <code>q</code>.<p>
+     * Insert a <code>CONST</code> quad with a <code>String</code>
+     * naming the method in <code>q<code>, then a <code>CALL</code> quad invoking 
+     * <code>_call_profile_method</code>.<p>
+     * Also, log the fact in <code>_static_monitor</code>that this method may invoke the method in 
+     * <code>q</code>. */
     public void visit(CALL q) {
 
       System.err.print("@");
@@ -166,6 +178,12 @@ public class Profile {
 
     }
 
+    /** Visit the <code>NEW</code> quad <code>q</code>.<p>
+     * Search for the quad initializing the object created in <code>q</code>. After it, insert an <code>int</code> 
+     * <code>CONST</code> quad with the line number of 
+     * the object creation site, and then a <code>CALL</code> quad invoking 
+     * <code>_new_profile_method</code>.
+     */
     public void visit(NEW q) {
 
       Temp[] parameters = new Temp[5];
@@ -228,6 +246,10 @@ public class Profile {
 
     }
 
+    /** Visit the <code>METHODHEADER</code> quad <code>q</code>.<p>
+     * After it, insert <code>String<code> <code>CONST</code> quads with the names
+     * of this class and method. 
+     */
     public void visit(METHODHEADER q) {
 
       System.err.print("!");
@@ -266,6 +288,7 @@ public class Profile {
 
   }
 
+  /** This class logs compile-time information about the call graph of a method. */
   static class StaticMonitor {
     
     Properties _properties = new Properties();

@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Fri Oct 23 00:24:17 1998> 
-// Time-stamp: <1998-11-26 11:47:57 mfoltz> 
+// Time-stamp: <1998-12-02 22:38:24 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.Partition;
@@ -12,7 +12,7 @@ package harpoon.Analysis.Partition;
 import java.util.Enumeration;
 import java.util.Vector;
 
-/**
+/** Kernighan and Bell's graph partitioning algorithm.<p>
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
  * @version 
@@ -20,7 +20,14 @@ import java.util.Vector;
 
 public class Partition {
 
-  public static void initialPartition(WeightedGraph g, int k, WeightedGraph p[]) {
+  /** Take a <code>WeightedGraph</code>, and partition it into two new <code>WeightedGraphs</code> 
+   * respecting the bindings on particular nodes.  Unbound nodes are alternately placed into <code>p[0]</code>
+   * and <code>p[1]</code>. The new <code>WeightedGraphs</code> will differ in size by at most 1.
+   *
+   * @param <code>g</code>   The graph to partition.
+   * @param <code>p[]</code> Partitioned graphs.
+   */
+  public static void initialPartition(WeightedGraph g, WeightedGraph p[]) {
 
     Enumeration nodes;
     WGNode node;
@@ -35,20 +42,27 @@ public class Partition {
     }
 
     nodes = g.getNodes();
-    while (p[0].size() < g.size()/2) {
-      node = (WGNode) nodes.nextElement();
-      if (node._binding < 0) p[0].addNode(node);
-    }
-
     while (nodes.hasMoreElements()) {
       node = (WGNode) nodes.nextElement();
-      if (node._binding < 0) p[1].addNode(node);
+      if (node._binding < 0) p[0].addNode(node);
+      if (nodes.hasMoreElements()) {
+	node = (WGNode) nodes.nextElement();
+	if (node._binding < 0) p[1].addNode(node);
+      }
     }
-
     return;
-    
   }
 
+  /** Perform an exchange of the nodes in <code>g1</code> and <code>g2</code>, to reduce the
+   * external edge weight sum between them.
+   *
+   * @param <code>g1</code> The first half of the working partition.  
+   * @param <code>g2</code> The second half of the working partition.
+   * 
+   * @return    The external edge weight between the partitions.
+   *
+   * @exception Exception if <code>g1</code> and <code>g2</code> are not the same size.
+   */
   public static long exchange(WeightedGraph g1, WeightedGraph g2) throws Exception {
 
     // we assume g1 and g2 are the same size
@@ -174,7 +188,14 @@ public class Partition {
     
   }
 
-  // traverse the lists and pick the best pair a, b to exchange.
+  /** Traverse the lists of nodes <code>Ap</code> and <code>Bp</code> and pick the best 
+   *  pair to exchange.
+   *
+   * @param <code>Ap[]</code>  The sorted list of nodes from the first half of the partition.
+   * @param <code>Bp[]</code>  The sorted list of nodes from the second half of the partition.
+   * @param <code>pair[]</code> Holds the indices of the best pair found.
+   * @return       The maximum gain associated with <code>pair[]</code>.
+   */
   private static long findBestPair(WGNode Ap[], WGNode Bp[], int pair[]) {
 
       long gain, max_gain = 0;
@@ -220,8 +241,13 @@ public class Partition {
       return max_gain;
   }
 
-      
-  // recompute D for nodes in the enumeration, some subset of g1
+  /** Recompute D, the difference between internal and external edge weights, 
+   *  for nodes in <code>nodes</code> , some subset of <code>g1</code>.
+   * 
+   * @param <code>nodes</code> The nodes to recompute.
+   * @param <code>g1</code> The first half of the working partition.  
+   * @param <code>g2</code> The second half of the working partition.
+   */
   private static void recomputeD(Enumeration nodes, WeightedGraph g1, WeightedGraph g2) {
     
     Enumeration adjacents, weights;
@@ -247,7 +273,12 @@ public class Partition {
 
   }
 
-  // sort nodes in descending order by D.  
+  /** Sort nodes in descending order by D.  Operates recursively.
+   *
+   * @param <code>X[]</code>  The nodes to sort.
+   * @param <code>i</code>    The beginning index of <code>X[]</code> to sort.
+   * @param <code>j</code>    The ending index of <code>X[]</code> to sort.
+   */
   private static void quicksort(WGNode X[], int i, int j) {
 
     // System.err.println("quicksort(X[],"+i+","+j+")\n");
@@ -276,6 +307,10 @@ public class Partition {
     return;
   }
 
+  /** Fixes nodes in the graphs that point to each other. 
+   *
+   * @param <code>A,B</code> Graphs 
+   */
   private static void fixPartition(WeightedGraph A, WeightedGraph B) {
 
     // fix up edge pointers in A to point to nodes in B.
@@ -295,6 +330,13 @@ public class Partition {
     }
   }
 
+  /** Returns the external edge weight between two subgraphs.
+   *
+   * @param <code>g1</code> A subgraph.
+   * @param <code>g2</code> Another subgraph.
+   *
+   * @return The sum of the external edge weights between them.
+   */
   public static long computeEdgeSum(WeightedGraph g1, WeightedGraph g2) {
     
     Enumeration nodes;
