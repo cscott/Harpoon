@@ -16,7 +16,7 @@ for s in `ls $SPECPATH/spec/benchmarks | sort | sed -ne ${start},${end}p`; do
     dir=`echo $s | tr "[:lower:]" "[:upper:]" | tr -d "[_]"`sa
     echo $dir $rootset
     rm -rf as$dir as$dir.err as$dir.out
-    bin/build-precisec -r $tmprootset SpecApplication $dir \
+    bin/build-precisec $SPECBUILDOPTS -r $tmprootset SpecApplication $dir \
 	2> as$dir.err | tee as$dir.out
     if [ $? -ne 0 ]; then
 	errors="$errors$dir "
