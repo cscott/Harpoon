@@ -11,7 +11,7 @@ import harpoon.Temp.Label;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.6 1999-08-04 06:30:57 cananian Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.7 1999-08-26 00:15:02 pnkfelix Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;
@@ -23,6 +23,7 @@ public class InstrLABEL extends Instr {
     public InstrLABEL(InstrFactory inf, HCodeElement src, String a, Label l) {
         super(inf, src, a, null, null);
         label = l;
+	inf.labelToInstrLABELmap.put(l, this);
     } 
 
     /** Return the code label specified in the constructor. */
