@@ -53,13 +53,13 @@ import harpoon.Util.Util;
  block, hence the name <i>factored</i>.
 
  <p>
- Similar to <codeBasicBlock</code>s, the only way of producing
+ Similar to <code>BasicBlock</code>s, the only way of producing
  <code>FCFGBasicBlock</code>s is by using
  <code>FCFGBasicBlock.Factory</code>. 
 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: FCFGBasicBlock.java,v 1.3 2002-02-26 22:39:08 cananian Exp $ */
+ * @version $Id: FCFGBasicBlock.java,v 1.4 2002-03-10 02:32:38 cananian Exp $ */
 public class FCFGBasicBlock implements BasicBlockInterf {
     
     /** Creates a <code>FCFGBasicBlock</code>. This method is called

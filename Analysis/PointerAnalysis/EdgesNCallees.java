@@ -44,7 +44,7 @@ public class EdgesNCallees implements java.io.Serializable {
     }
 
 
-    /** Creates a <code>EdgesNCalles</code> coding a strict precedence
+    /** Creates a <code>EdgesNCallees</code> coding a strict precedence
      * relation.*/
     public EdgesNCallees(){
 	edges = new LightMap();
@@ -52,7 +52,7 @@ public class EdgesNCallees implements java.io.Serializable {
     }
 
 	
-    /** Creates a <code>EdgesNCalles</code> coding a strict precedence
+    /** Creates a <code>EdgesNCallees</code> coding a strict precedence
      * relation iff the argument is true.*/
     public EdgesNCallees(boolean strictness){
 	edges = new LightMap();
@@ -60,9 +60,9 @@ public class EdgesNCallees implements java.io.Serializable {
     }
 	
 
-    /** Add the <node>callees</node> to the precedence relation of the
-     * edge from a node in <node>heads</node> to a node in
-     * <node>tails</node> via the field <node> f </node>, according to
+    /** Add the <code>callees</code> to the precedence relation of the
+     * edge from a node in <code>heads</code> to a node in
+     * <code>tails</code> via the field <code>f</code>, according to
      * the precedence policy (strict or not). */
     public void add(Set heads, String f, Set tails, Set callees)
     {
@@ -73,9 +73,9 @@ public class EdgesNCallees implements java.io.Serializable {
     }
    
 
-    /** Add the <node>callees</node> to the precedence relation of the
-     * edge from a node in <node>heads</node> to <node>tail</node> via
-     * the field <node> f </node>, according to the precedence policy
+    /** Add the <code>callees</code> to the precedence relation of the
+     * edge from a node in <code>heads</code> to <code>tail</code> via
+     * the field <code>f</code>, according to the precedence policy
      * (strict or not). */
     public void add(Set heads, String f, PANode tail, Set callees)
     {
@@ -86,9 +86,9 @@ public class EdgesNCallees implements java.io.Serializable {
     }
 
    
-    /** Add the <node>callees</node> to the precedence relation of the
-     * edge from <node>head</node> to <node>tail</node> via the field
-     * <node> f </node>, according to the precedence policy (strict or
+    /** Add the <code>callees</code> to the precedence relation of the
+     * edge from <code>head</code> to <code>tail</code> via the field
+     * <code>f</code>, according to the precedence policy (strict or
      * not). */
     public void add(PANode head, String f, PANode tail, Set callees)
     {
@@ -141,9 +141,9 @@ public class EdgesNCallees implements java.io.Serializable {
     }
 
 
-    /** Add the <node>callees</node> to the precedence relation of all
-     * the edges from <node>head</node> to a node in
-     * <node>tails</node> via the field <node> f </node>, according to
+    /** Add the <code>callees</code> to the precedence relation of all
+     * the edges from <code>head</code> to a node in
+     * <code>tails</code> via the field <code>f</code>, according to
      * the precedence policy (strict or not). */
     public void add(PANode head, String f, Set tails, Set callees)
     {
@@ -214,9 +214,9 @@ public class EdgesNCallees implements java.io.Serializable {
     }
 
 
-    /** Set the <node>callees</node> to the precedence relation of the
-     * edge from <node>head</node> to <node>tail</node> via the field
-     * <node> f </node>.
+    /** Set the <code>callees</code> to the precedence relation of the
+     * edge from <code>head</code> to <code>tail</code> via the field
+     * <code>f</code>.
      */
     public void set(PANode head, String f, PANode tail, Set callees)
     {
@@ -252,8 +252,8 @@ public class EdgesNCallees implements java.io.Serializable {
 
 
     /** Return the set of callees in relation with the edges from
-     * <node>head</node> to <node>tail</node> via the field
-     * <node>f</node>.*/
+     * <code>head</code> to <code>tail</code> via the field
+     * <code>f</code>.*/
     public Set callees(PANode head, String f, PANode tail)
     {
  	Map from_head = (Map) edges.get(head);

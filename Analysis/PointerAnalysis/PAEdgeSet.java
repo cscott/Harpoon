@@ -18,7 +18,7 @@ import harpoon.Temp.Temp;
  * <code>PAEdgeSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEdgeSet.java,v 1.2 2002-02-25 20:58:40 cananian Exp $
+ * @version $Id: PAEdgeSet.java,v 1.3 2002-03-10 02:32:55 cananian Exp $
  */
 public interface PAEdgeSet {
     
@@ -105,7 +105,7 @@ public interface PAEdgeSet {
     public void union(PAEdgeSet edges2);
 
 
-    /** Returns a relation that contains all the pairs <code><n2,n1></code>
+    /** Returns a relation that contains all the pairs <code>&lt;n2,n1&gt;</code>
 	such that there was an edge from <code>n1</code> to <code>n2</code>
 	(through some field <code>f</code>). */
     public Relation getPrecedenceRelation();

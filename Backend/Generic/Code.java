@@ -18,7 +18,7 @@ import java.util.List;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.3 2002-02-26 22:43:41 cananian Exp $
+ * @version $Id: Code.java,v 1.4 2002-03-10 02:33:01 cananian Exp $
  */
 public abstract class Code extends harpoon.IR.Assem.Code {
 
@@ -154,10 +154,10 @@ public abstract class Code extends harpoon.IR.Assem.Code {
 	UPDATE: it does buy us something:
 	since it allows for smaller webs w/o move instructions.  we
 	can get around this problem relatively cheaply by maintaining
-	not just a Instr x Temp -> List<Reg> mapping, but instead two
+	not just a Instr x Temp -> List&lt;Reg&gt; mapping, but instead two
 	mappings: 
-	   Instr x Use -> List<Reg> 
-	   Instr x Def -> List<Reg>.
+	   Instr x Use -> List&lt;Reg&gt; 
+	   Instr x Def -> List&lt;Reg&gt;.
 	i will implement this after preliminary Global Register 
 	Allocation is working. 
 	 

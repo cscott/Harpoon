@@ -30,7 +30,7 @@ import java.util.HashSet;
  *  called the Representative (or Rep for short).
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EqTempSets.java,v 1.3 2002-02-26 22:40:22 cananian Exp $
+ * @version $Id: EqTempSets.java,v 1.4 2002-03-10 02:32:44 cananian Exp $
  */
 public abstract class EqTempSets implements harpoon.Temp.TempMap {
     
@@ -93,15 +93,15 @@ public abstract class EqTempSets implements harpoon.Temp.TempMap {
     
     /** Adds an equivalency between <code>t1</code> and
 	<code>t2</code> to <code>this</code>.
-	requires: <t1> or <t2> is not a register 
-	modifies: this
-	effects: puts <t1> and <t2> in the same equivalence class,
+	requires: <code>t1</code> or <code>t2</code> is not a register 
+	modifies: <code>this</code>
+	effects: puts <code>t1</code> and <code>t2</code> in the same equivalence class,
                  unifying all the temps in the two equivalence
-		 classes for <t1> and <t2>
+		 classes for <code>t1</code> and <code>t2</code>
 		 unless:
 		 - one of the temps is a register and the equivalence
 		   set for the other temp already has a register 
-		   => no modification to this
+		   => no modification to <code>this</code>
     */
     public void add(Temp t1, Temp t2) {
 	Util.ASSERT( (!ra.isRegister(t1)) ||
@@ -148,8 +148,8 @@ public abstract class EqTempSets implements harpoon.Temp.TempMap {
     public abstract Temp getRep(Temp t);
     
     /** Unifies <code>t1</code> and <code>t2</code>.
-	requires: <t1> and <t2> are not registers
-	modifies: this
+	requires: <code>t1</code> and <code>t2</code> are not registers
+	modifies: <code>this</code>
 	effects: unifies the equivalence classes for t1 and t2,
 	         removing the old equivalence sets and creating a
 		 new one whose rep is either t1 or t2.

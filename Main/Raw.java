@@ -10,8 +10,8 @@ import harpoon.ClassFile.Loader;
  * class file corresponding to the class name given on the
  * command-line.
  * 
- * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Raw.java,v 1.2 2002-02-25 21:06:09 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: Raw.java,v 1.3 2002-03-10 02:33:12 cananian Exp $
  */
 
 public abstract class Raw /*extends harpoon.IR.Registration*/ {

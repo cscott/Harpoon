@@ -24,7 +24,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.3 2002-02-26 22:40:21 cananian Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.4 2002-03-10 02:32:44 cananian Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;
@@ -41,7 +41,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	retrieval using <code>resetState()</code>.  
 
 	Note that <code>this</code> only carries <code>Node</code> and
-	<class>Move</code> state; additional state added by subclasses
+	<code>Move</code> state; additional state added by subclasses
 	will not be checkpointed unless this method and reset state
 	are overridden.
 

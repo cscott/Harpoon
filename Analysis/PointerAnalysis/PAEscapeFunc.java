@@ -23,7 +23,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEscapeFunc.java,v 1.2 2002-02-25 20:58:40 cananian Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.3 2002-03-10 02:32:55 cananian Exp $
  */
 public class PAEscapeFunc implements java.io.Serializable {
 
@@ -298,7 +298,7 @@ public class PAEscapeFunc implements java.io.Serializable {
     }
 
 
-    /** <code>clone</clone> does a deep copy of <code>this</code> object. */
+    /** <code>clone</code> does a deep copy of <code>this</code> object. */
     public Object clone(){
 	/////	return
 	/////    new PAEscapeFunc((Relation)(rel_n.clone()),
