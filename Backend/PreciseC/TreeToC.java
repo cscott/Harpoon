@@ -52,25 +52,33 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.8 2000-06-28 20:06:46 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.9 2000-06-29 23:38:10 cananian Exp $
  */
-public class TreeToC {
+public class TreeToC extends java.io.PrintWriter {
+    private TranslationVisitor tv;
     
     /** Creates a <code>TreeToC</code>. */
-    public TreeToC() {
-        
+    public TreeToC(Writer out) {
+	super(out);
+	this.tv = new TranslationVisitor();
     }
-    public static void test(PrintWriter out, HCode hc) {
-	test(out, (Tree)hc.getRootElement(), true);
+    public void translate(HCode hc) { translate((Tree)hc.getRootElement()); }
+    public void translate(HData hd) { translate((Tree)hd.getRootElement()); }
+    private void translate(Tree t) {
+	tv.switchto(tv.NONE);
+	if (t!=null) tv.trans(t);
     }
-    public static void test(PrintWriter out, HData hd) {
-	test(out, (Tree)hd.getRootElement(), false);
+    public void close() {
+	tv.switchto(tv.NONE);
+	this.println("#include <precisec.h>");
+	// collect symbol declarations.
+	tv.emitSymbols(this);
+	// now all the code & data
+	tv.emitOutput(this);
+	// okay, now (really) flush and close.
+	super.close();
     }
-    private static void test(PrintWriter out, Tree t, boolean isCode) {
-	if (t!=null)
-	    out.print(new TranslationVisitor().translate(t, isCode));
-    }
-
+	
     /** Tree Visitor does the real work. */
     private static class TranslationVisitor extends TreeVisitor {
 	// default case throws error: we should handle each tree specifically.
@@ -108,9 +116,9 @@ public class TreeToC {
 	int field_counter = 0;
 
 	// switch from one mode to the next.
-	private static final int NONE = 0;
-	private static final int DATA = 1;
-	private static final int CODE = 2;
+	static final int NONE = 0;
+	static final int DATA = 1;
+	static final int CODE = 2;
 	int current_mode = NONE;
 	void switchto(int mode) {
 	    switch(current_mode) {
@@ -151,25 +159,18 @@ public class TreeToC {
 	Map sym2decl = new HashMap();
 	/** these are the *local* labels which are defined in this file. */
 	Set local_labels = new HashSet();
-	String translate(Tree t, boolean isCode) {
-	    // foreach tree...
-	    switchto(NONE);
-	    trans(t);
-	    switchto(NONE);
-	    // collect symbol declarations.
-	    StringWriter mysw = new StringWriter();
-	    PrintWriter mypw = new PrintWriter(mysw);
-	    mypw.println("#include <precisec.h>");
+
+	void emitSymbols(PrintWriter pw) {
 	    for (Iterator it=sym2decl.keySet().iterator(); it.hasNext(); ) {
 		Label l = (Label) it.next();
 		if (!local_labels.contains(l))
-		    mypw.println(sym2decl.get(l));
+		    pw.println(sym2decl.get(l));
 	    }
-	    // now collect output.
-	    mypw.print(output);
-	    mypw.close();
-	    return mysw.getBuffer().toString();
 	}
+	void emitOutput(PrintWriter pw) {
+	    pw.print(output);
+	}
+
 	// useful line number update function.
 	private boolean EMIT_LINE_DIRECTIVES=false;
 	private String last_file = null;
