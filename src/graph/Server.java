@@ -43,6 +43,7 @@ public class Server extends Node {
 		    try {
 			cm.runIDServer(name, new CommunicationsAdapter() {
 			    public void process(ImageData id) {
+				//System.out.println("Server #"+getUniqueID()+" received image #"+id.id);
 				Server.super.process(id);
 			    }
 			});
@@ -55,4 +56,7 @@ public class Server extends Node {
 	    throw new Error(e);
 	}
     }
+
+
+
 }

@@ -42,9 +42,10 @@ public class Thinning extends Node {
      *  @param id The image to thin.
      */
     public void process(ImageData id) {
+	//System.out.println("Thinning image #"+id.id);
 	int changed=1;
 	byte[] in;
-
+	//System.out.println("inside thinning");
 	if (colorChannel == RED) {in = id.rvals;}
 	else if (colorChannel == GREEN) {in = id.gvals;}
 	else {in = id.bvals;}
