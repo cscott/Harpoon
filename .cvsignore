@@ -6,3 +6,4 @@ config.cache
 config.status
 config.log
 libtool
+configure.done
