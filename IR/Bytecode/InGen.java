@@ -22,11 +22,11 @@ import harpoon.Util.Util;
  * opcode in the raw bytecode array.
  *
  * @author  C. Scott Ananian
- * @version $Id: InGen.java,v 1.3.2.1 1998-11-30 21:21:02 cananian Exp $
+ * @version $Id: InGen.java,v 1.3.2.2 1998-12-21 21:21:28 cananian Exp $
  */
 public class InGen extends Instr {
-  byte opcode;
-  Operand operands[];
+  final byte opcode;
+  final Operand operands[];
 
   /** Create an <code>InGen</code> from a chunk of bytecode starting at
    *  offset <code>pc</code>. <code>parent</code> is used to lookup
@@ -34,7 +34,7 @@ public class InGen extends Instr {
   public InGen(String sourcefile, int linenumber, 
 	       byte[] code, int pc, Code parent) {
     super(sourcefile, linenumber);
-    this.opcode = code[pc];
+    this.opcode = (code[pc]==Op.WIDE)?code[pc+1]:code[pc];
     // Make operands, if necessary.
     switch(code[pc]) {
       // Constant local variable index 0:
@@ -198,13 +198,13 @@ public class InGen extends Instr {
       };
       break;
     case Op.WIDE: // this is evil.
-      this.opcode = code[pc+1];
-      operands = new Operand[] { new OpLocalVariable(u2(code, pc+2)) };
       if (code[pc+1]==Op.IINC) // very evil.
 	operands = new Operand[] { 
-	  operands[0], 
+	  new OpLocalVariable(u2(code, pc+2)),
 	  new OpConstant(new Integer(u2(code,pc+4)), HClass.Int) 
 	};
+      else
+	  operands = new Operand[] { new OpLocalVariable(u2(code, pc+2)) };
       break;
       // Takes an operand, but don't belong:
     case Op.GOTO:

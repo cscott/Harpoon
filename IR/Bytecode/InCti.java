@@ -15,11 +15,11 @@ import harpoon.Util.Util;
  * Instructions like <code>ireturn</code> have no successors.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InCti.java,v 1.2 1998-10-11 03:01:15 cananian Exp $
+ * @version $Id: InCti.java,v 1.2.2.1 1998-12-21 21:21:28 cananian Exp $
  * @see Instr
  */
 public class InCti extends Instr {
-  byte opcode;
+  final byte opcode;
   int arity;
 
   /** Create an <code>InCti</code> from a chunk of bytecode starting

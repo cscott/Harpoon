@@ -10,10 +10,10 @@ import harpoon.ClassFile.*;
  * instruction which indicates a local variable index.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpLocalVariable.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
+ * @version $Id: OpLocalVariable.java,v 1.2.2.1 1998-12-21 21:21:29 cananian Exp $
  */
-public class OpLocalVariable extends Operand {
-  int index;
+public final class OpLocalVariable extends Operand {
+  final int index;
   /** Create an <code>OpLocalVariable</code> given the index of the 
    *  local variable referenced. */
   public OpLocalVariable(int local_variable_index) {

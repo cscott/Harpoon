@@ -17,7 +17,7 @@ import java.util.Vector;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.3.2.2 1998-12-20 12:50:34 cananian Exp $
+ * @version $Id: Instr.java,v 1.3.2.3 1998-12-21 21:21:28 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -26,9 +26,9 @@ import java.util.Vector;
  */
 public abstract class Instr 
   implements HCodeElement, harpoon.IR.Properties.Edges {
-  String sourcefile;
-  int linenumber;
-  int id;
+  /*final*/ String sourcefile;
+  /*final*/ int linenumber;
+  /*final*/ int id;
   /** Constructor. */
   protected Instr(String sourcefile, int linenumber) {
     this.sourcefile = sourcefile;
@@ -82,9 +82,9 @@ public abstract class Instr
   void removeNext(Instr next) { this.next.removeElement(next); }
 
   /** Internal predecessor list. */
-  Vector prev = new Vector(2);
+  final Vector prev = new Vector(2);
   /** Internal successor list. */
-  Vector next = new Vector(2);
+  final Vector next = new Vector(2);
 
   // Edges interface:
   public HCodeEdge newEdge(final Instr from, final Instr to) {

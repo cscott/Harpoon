@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.2.2.1 1998-12-21 21:21:28 cananian Exp $
  * @see Operand
  * @see Instr
  * @see harpoon.ClassFile.Raw.Constant.ConstantDouble
@@ -26,9 +26,9 @@ import harpoon.Util.Util;
  * @see harpoon.ClassFile.Raw.Constant.ConstantLong
  * @see harpoon.ClassFile.Raw.Constant.ConstantString
  */
-public class OpConstant extends Operand {
-  Object value;
-  HClass type;
+public final class OpConstant extends Operand {
+  final Object value;
+  final HClass type;
   /** Make a new <code>OpConstant</code> with the specified value and type. */
   public OpConstant(Object value, HClass type) {
     this.value = value;  this.type=type; check();

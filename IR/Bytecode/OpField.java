@@ -12,11 +12,11 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>CONSTANT_Fieldref</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpField.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
+ * @version $Id: OpField.java,v 1.2.2.1 1998-12-21 21:21:29 cananian Exp $
  * @see harpoon.ClassFile.Raw.Constant.ConstantFieldref
  */
-public class OpField extends Operand {
-  HField hfield;
+public final class OpField extends Operand {
+  final HField hfield;
   /** Create an <code>OpField</code> from the <code>CONSTANT_Fieldref</code>
    *  at the given index in the constant pool. */
   public OpField(Code parent, int constant_pool_index) {

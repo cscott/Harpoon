@@ -12,11 +12,11 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>CONSTANT_Class</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpClass.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
+ * @version $Id: OpClass.java,v 1.2.2.1 1998-12-21 21:21:28 cananian Exp $
  * @see harpoon.ClassFile.Raw.Constant.ConstantClass
  */
-public class OpClass extends Operand {
-  HClass hclass;
+public final class OpClass extends Operand {
+  final HClass hclass;
   /** Creates an <code>OpClass</code> from the <code>CONSTANT_CLASS</code>
    *  at the given index in the constant pool.
    */

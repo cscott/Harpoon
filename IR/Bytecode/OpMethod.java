@@ -13,13 +13,13 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>CONSTANT_InterfaceMethodref</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpMethod.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
+ * @version $Id: OpMethod.java,v 1.2.2.1 1998-12-21 21:21:29 cananian Exp $
  * @see harpoon.ClassFile.Raw.Constant.ConstantMethodref
  * @see harpoon.ClassFile.Raw.Constant.ConstantInterfaceMethodref
  */
-public class OpMethod extends Operand {
-  boolean isInterfaceMethod;
-  HMethod hmethod;
+public final class OpMethod extends Operand {
+  final boolean isInterfaceMethod;
+  final HMethod hmethod;
   /** Create an <code>OpMethod</code> from the <code>CONSTANT_Methodref</code>
    *  or <code>CONSTANT_InterfaceMethodref</code> at the given index in
    *  the constant pool. */

@@ -15,11 +15,11 @@ import harpoon.Util.Util;
  * <code>key</code> method.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InSwitch.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
+ * @version $Id: InSwitch.java,v 1.2.2.1 1998-12-21 21:21:28 cananian Exp $
  * @see Instr
  */
 public class InSwitch extends InCti {
-  int keys[];
+  final int keys[];
 
   /** Constructor.  Creates an <code>InSwitch</code> from a chunk of
    *  bytecode starting at the given pc.
