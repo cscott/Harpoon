@@ -27,7 +27,7 @@ import java.lang.reflect.Modifier;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.29.2.1 2000-01-10 22:06:53 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.29.2.2 2000-01-11 08:29:38 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -45,6 +45,12 @@ public abstract class HClass extends HPointer
    * <code>HClass</code> object.
    */
   public final Linker getLinker() { return _linker; }
+
+  /**
+   * Returns a mutator for this <code>HClass</code>, or <code>null</code>
+   * if this object is immutable.
+   */
+  public HClassMutator getMutator() { return null; }
 
   /**
    * If this class represents an array type, returns the <code>HClass</code>
@@ -496,7 +502,7 @@ public abstract class HClass extends HPointer
     pw.println("}");
   }
   private String getSimpleTypeName(HClass cls) {
-    String tn = HField.getTypeName(cls);
+    String tn = HClass.getTypeName(cls);
     while (cls.isArray()) cls=cls.getComponentType();
     if (cls.getPackage()!=null &&
 	(cls.getPackage().equals(getPackage()) ||
@@ -544,6 +550,28 @@ public abstract class HClass extends HPointer
    *  descriptors. */
   public final int compareTo(Object o) {
     return getDescriptor().compareTo(((HClass)o).getDescriptor());
+  }
+
+  // UTILITY CLASSES (used in toString methods all over the place)
+  static String getTypeName(HPointer hc) {
+    HClass hcc;
+    try { hcc = (HClass) hc; }
+    catch (ClassCastException e) { return hc.getName(); }
+    return getTypeName(hcc);
+  }
+  static String getTypeName(HClass hc) {
+    if (hc.isArray()) {
+      StringBuffer r = new StringBuffer();
+      HClass sup = hc;
+      int i=0;
+      for (; sup.isArray(); sup = sup.getComponentType())
+	i++;
+      r.append(sup.getName());
+      for (int j=0; j<i; j++)
+	r.append("[]");
+      return r.toString();
+    }
+    return hc.getName();
   }
 }
 
