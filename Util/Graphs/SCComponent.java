@@ -3,14 +3,16 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Graphs;
 
-import java.util.Vector;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.Iterator;
-import java.util.Hashtable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.Vector;
 
 import java.io.Serializable;
 
@@ -41,7 +43,7 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCComponent.java,v 1.10 2004-02-08 04:53:35 cananian Exp $
+ * @version $Id: SCComponent.java,v 1.11 2004-02-09 19:56:27 cananian Exp $
  */
 public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<Vertex>*/>, Serializable {
 
@@ -120,20 +122,20 @@ public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<V
     public static final <Node> Set<SCComponent/*<Node>*/>
 	buildSCC(final Set<Node> roots,
 		 final Navigator<Node> navigator) {
-	return buildSCC(roots.toArray(new Object[roots.size()]), navigator);
+	return buildSCC((Node[])roots.toArray(new Object[roots.size()]), navigator);
     }
 
     /** Convenient version for the single root case (see the other 
 	<code>buildSCC</code> for details). Returns the single element of
 	the set of top level SCCs. */
-    public static final SCComponent buildSCC
-	(final Object root, final Navigator navigator) {
-	Set set = buildSCC(new Object[]{root}, navigator);
+    public static final <Node> SCComponent/*<Node>*/ buildSCC
+	(final Node root, final Navigator<Node> navigator) {
+	Set<SCComponent/*<Node>*/> set = buildSCC((Node[])new Object[]{root}, navigator);
 	if((set == null) || set.isEmpty()) return null;
 	assert set.size() <= 1 : "More than one root SCComponent " +
 		    "in a call with a a single root";
 	// return the single element of the set of root SCComponents.
-	return (SCComponent)(set.iterator().next());
+	return set.iterator().next();
     }
 
 
@@ -145,8 +147,8 @@ public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<V
 	by any other component. This constraint is actively used in
 	the topological sorting agorithm (see
 	<code>SCCTopSortedGraph</code>). */
-    public static final Set buildSCC
-	(final Object[] roots, final Navigator navigator) {
+    public static final <Node> Set<SCComponent/*<Node>*/> buildSCC
+	(final Node[] roots, final Navigator<Node> navigator) {
 	scc_vector = new Vector();
 	// STEP 1: compute the finished time of each node in a DFS
 	// exploration.  At the end of this step, nodes_vector will
@@ -165,11 +167,11 @@ public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<V
 	// STEP 2. build the SCCs by doing a DFS in the reverse graph.
 	node2scc = new Hashtable();
 	// "in reverse" navigator
-	nav = new Navigator() {
-		public Object[] next(Object node) {
+	nav = new Navigator<Node>() {
+		public Node[] next(Node node) {
 		    return navigator.prev(node);
 		}
-		public Object[] prev(Object node) {
+		public Node[] prev(Node node) {
 		    return navigator.next(node);
 		}
 	    };
@@ -200,8 +202,8 @@ public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<V
 	build_compressed_format(navigator);
 
 	// Save the root SCComponents somewhere before activating the GC.
-	Set root_sccs = new HashSet();
-	Vector root_sccs_vec = new Vector();
+	Set<SCComponent/*<Node>*/> root_sccs = new HashSet<SCComponent/*<Node>*/>();
+	List<SCComponent/*<Node>*/> root_sccs_vec = new ArrayList<SCComponent/*<Node>*/>();
 	for(int i = 0; i < roots.length; i++) {
 	    Object root = roots[i];
 	    SCComponent root_scc = ((SCComponentInt) node2scc.get(root)).comp;
