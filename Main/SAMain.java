@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.181 2001-11-15 03:01:13 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.182 2001-11-19 19:24:03 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -413,6 +413,16 @@ public class SAMain extends harpoon.IR.Registration {
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
 	    /*--- size optimizations ---*/
+	    if (Boolean.getBoolean("mzf.compressor")) {
+		// if we're going to do mzf compression, make sure that
+		// the MZFExternalMap methods are in the root set and
+		// the class hierarchy (otherwise the FieldReducer
+		// will stub them out as uncallable).
+		HClass hcx = linker.forClass
+		    (harpoon.Runtime.MZFExternalMap.class);
+		roots.addAll(Arrays.asList(hcx.getDeclaredMethods()));
+		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    }	    
 	    if (Boolean.getBoolean("bitwidth")) {
  		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
  		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
