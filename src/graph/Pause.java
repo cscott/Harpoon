@@ -61,7 +61,7 @@ public class Pause extends Node {
     /**
        Construct a {@link Pause} node that allows stepping though images.
        @param length The length of time to wait during a pause.
-       @param pauseEvery Indicates this {@link Pause} node should block every <pauseEvery> images.
+       @param pauseEvery Indicates this {@link Pause} node should block every <code>pauseEvery</code> images.
     */
     public Pause(double length, int pauseEvery, Node out) {
 	super(out);
