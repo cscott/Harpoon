@@ -21,7 +21,7 @@ import java.util.List;
  * speed becomes an issue. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.7 1999-06-19 18:52:37 cananian Exp $
+ * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.8 1999-06-19 21:49:24 cananian Exp $
  */
 public class BinHeapPriorityQueue extends AbstractCollection implements MaxPriorityQueue {
 
@@ -90,6 +90,16 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
 	    _swap(i, largest);
 	    _heapify(largest);
 	}
+    }
+    private void _remove(int index) {
+	// replace element to remove with smallest element.
+	int sizem1 = size()-1;
+	heap.set(index, heap.get(sizem1));
+	priorities.set(index, heap.get(sizem1));
+	heap.remove(sizem1);
+	priorities.remove(sizem1);
+	// now heapify to restore heap condition.
+	_heapify(index);
     }
 
     public void insert(Object item, int priority) {
@@ -169,16 +179,12 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
 	return Default.unmodifiableIterator(heap.iterator());
     }
 
-    /* This is slow. */
+    /** This is slow. */
     public boolean remove(Object o) {
-	int index = heap.indexOf(o);
-	if (index >= 0) {
-	    heap.remove(index);
-	    priorities.remove(index);
-	    return true;
-	} else {
-	    return false;
-	}
+	int index = heap.indexOf(o); // this is the slow bit.
+	if (index<0) return false;
+	_remove(index);
+	return true;
     }
 
     /* Use default implementation from AbstractCollection for
