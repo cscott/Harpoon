@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.28 2000-04-03 22:36:14 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.29 2000-04-04 04:29:31 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -404,7 +404,7 @@ public class ParIntGraph {
 	return
 	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
 			    ar.tSpecialize(map, run),
-			    PointerAnalysis.IGNORE_EO? null: eo.specialize(map),
+			    PointerAnalysis.IGNORE_EO?null:eo.specialize(map),
 			    PANode.specialize_set(touched_threads, map));
     }
 

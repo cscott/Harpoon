@@ -1,0 +1,336 @@
+// MAInfo.java, created Mon Apr  3 18:17:57 2000 by salcianu
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+package harpoon.Analysis.PointerAnalysis;
+
+import java.util.Iterator;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HMethod;
+import harpoon.Analysis.Maps.AllocationInformation;
+
+import harpoon.Analysis.MetaMethods.MetaMethod;
+
+import harpoon.Analysis.DefaultAllocationInformation;
+
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.QuadFactory;
+
+import harpoon.Temp.Temp;
+import harpoon.Temp.TempFactory;
+
+import harpoon.Util.Util;
+
+/**
+ * <code>MAInfo</code>
+ * 
+ * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
+ * @version $Id: MAInfo.java,v 1.1.2.1 2000-04-04 04:29:31 salcianu Exp $
+ */
+public class MAInfo implements AllocationInformation {
+    
+    private static boolean DEBUG = true;
+
+    PointerAnalysis pa;
+    HCodeFactory    hcf;
+    // the meta-method we are interested in (only those that could be
+    // started by the main or by one of the threads (transitively) started
+    // by the main thread.
+    Set             mms;
+    NodeRepository node_rep;
+    
+    /** Creates a <code>MAInfo</code>. */
+    public MAInfo(PointerAnalysis pa, HCodeFactory hcf,
+		  Set mms) {
+        this.pa  = pa;
+	this.hcf = hcf;
+	this.mms = mms;
+	this.node_rep = pa.getNodeRepository();
+
+	analyze();
+    }
+
+
+    // Map<NEW, AllocationProperties>
+    Map aps = new HashMap();
+    
+    // conservative allocation property: on the global heap
+    // (by default).
+    private final AllocationInformation.AllocationProperties 
+	cons_ap = new MyAP();
+    
+
+    /** Returns the allocation policy for <code>allocationSite</code>. */
+    public AllocationInformation.AllocationProperties 
+	query(HCodeElement allocationSite){
+	
+	AllocationInformation.AllocationProperties ap = 
+	    (AllocationInformation.AllocationProperties)
+	    aps.get(allocationSite);
+
+	if(ap != null)
+	    return ap;
+
+	return cons_ap;
+    }
+
+
+    //    /** Records the allocation policy <code>ap</code> for the
+    //	object creation site <code>quad</code>. */
+    //    public record_newAP(HCodeElement quad,
+    //			AllocationInformation.AllocationProperties ap){
+    //	aps.put(quad, ap);
+    //    }
+
+    public final void analyze(){
+	for(Iterator it = mms.iterator(); it.hasNext(); ){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    if(pa.analyzable(mm.getHMethod()))
+		analyze_mm(mm);
+	}
+    }
+
+    public HClass getAllocatedType(HCodeElement hce){
+	if(hce instanceof NEW)
+	    return ((NEW) hce).hclass();
+	if(hce instanceof ANEW)
+	    return ((ANEW) hce).hclass();
+	Util.assert(false,"Not a NEW or ANEW: " + hce);
+	return null; // should never happen
+    }
+
+    public final void analyze_mm(MetaMethod mm){
+	HMethod hm  = mm.getHMethod();
+	HCode hcode = hcf.convert(hm);
+	ParIntGraph pig = pa.getIntParIntGraph(mm);
+
+	if(pig == null) return;
+
+	((harpoon.IR.Quads.Code) hcode).setAllocationInformation(this);
+
+	Set news = new HashSet();
+
+	for(Iterator it = hcode.getElementsI(); it.hasNext(); ){
+	    HCodeElement hce = (HCodeElement) it.next();
+	    if((hce instanceof NEW) || (hce instanceof ANEW)){
+		news.add(hce);
+		MyAP ap = getAPObj((Quad) hce);
+		HClass hclass = getAllocatedType(hce);
+		ap.hip = 
+		    DefaultAllocationInformation.hasInteriorPointers(hclass);
+	    }
+	}
+	
+	Set nodes = pig.allNodes();
+	
+	for(Iterator it = nodes.iterator(); it.hasNext(); ){
+	    PANode node = (PANode) it.next();
+	    if(node.type != PANode.INSIDE) continue;
+	    int depth = node.getCallChainDepth();
+
+	    if(pig.G.captured(node)){
+		if(depth == 0){
+		    // captured nodes of depth 0 (ie allocated in this method,
+		    // not in a callee) are allocated on the stack.
+		    Quad q  = (Quad) node_rep.node2Code(node);
+		    Util.assert(q != null, "No quad for " + node);
+		    MyAP ap = getAPObj(q);
+		    ap.sa = true;
+		}
+	    }
+	    else{
+		if(depth == 0){
+		    Quad q = (Quad) node_rep.node2Code(node);
+		    if(escapes_only_in_methods(node, pig)){
+			// objects that escape only in a method hole are
+			// considered to remain in this thread and so, they
+			// can be thread allocated
+			MyAP ap = getAPObj(q);
+			ap.ta = true; // thread allocation
+			ap.ah = null; // on the current heap
+		    }
+		}
+	    }
+	}
+	
+	if(pig.tau.activeThreadSet().size() == 1)
+	    analyze_prealloc(mm, hcode, pig);
+
+    }
+
+
+    private boolean escapes_only_in_methods(PANode node, ParIntGraph pig){
+	if(!pig.G.e.nodeHolesSet(node).isEmpty())
+	    return false;
+	if(pig.G.getReachableFromR().contains(node))
+	    return false;
+	if(pig.G.getReachableFromExcp().contains(node))
+	    return false;
+	
+	return true;
+    }
+
+    // hope that this eavil string really don't exsist anywhere else
+    private static String my_scope = "pa!";
+    private static final TempFactory 
+	temp_factory = Temp.tempFactory(my_scope);
+
+    // try to apply some aggressive preallocation into the thread specific
+    // heap.
+    private void analyze_prealloc(MetaMethod mm, HCode hcode, ParIntGraph pig){
+
+	Set active_threads = pig.tau.activeThreadSet();
+	PANode nt = (PANode) (active_threads.iterator().next());
+
+	// protect against some patological cases
+	Util.assert(nt.type == PANode.INSIDE, "Non-INSIDE thread node!");
+	Util.assert(nt.getCallChainDepth() == 0,
+		    "The thread object is not allocated in this method!");
+
+	// pray that no thread is allocated through an ANEW!
+	// (it seems quite a reasonable assumption)
+	NEW qnt = (NEW) node_rep.node2Code(nt);
+
+	// compute the nodes pointed to by the thread node at the moment of 
+	// the "start()" call. Since we analyze only "good" programs (we
+	// have to produce a paper, don't we?) we know that the start() is
+	// the last operation in the method so we just take the info from
+	// the graph at the end of the method.
+	Set pointed = pig.G.I.getPointedNodes(nt);
+
+	// retain in "pointed" only the nodes allocated in this method, 
+	// and which escaped only through the thread nt.
+	for(Iterator it = pointed.iterator(); it.hasNext(); ){
+	    PANode node = (PANode) it.next();
+	    if( (node.type != PANode.INSIDE) ||
+		(node.getCallChainDepth() != 0) ||
+		!escapes_only_in_thread(node, nt, pig) )
+		it.remove();
+ 	}
+
+	// grab into "news" the set of the NEW quads allocating objects that
+	// should be put into the heap of "nt".
+	Set news = new HashSet();
+	for(Iterator it = pointed.iterator(); it.hasNext(); ){
+	    PANode node = (PANode) it.next();
+	    news.add(node_rep.node2Code(node));
+	}
+	
+	if(news.isEmpty()){
+	    // specially treat this simple case:
+	    // just allocate the thread node nt on its own heap
+	    MyAP ap = getAPObj(qnt);
+	    ap.uoh = true; // useOwnHeap for allocating this thread object
+	    return;
+	}
+	
+	// TODO: move the NEW q at the beginning of the method,
+	// and modify the object creation sites from the set "news" so
+	// that they allocate on the heap specific thread.	
+
+	// this NEW no longer exists
+	aps.remove(qnt);
+
+	Temp l2 = new Temp(temp_factory);
+	QuadFactory qf = (QuadFactory) hcf;
+	MOVE moveq = new MOVE(qf, null, qnt.dst(), l2);
+	NEW newq   = new  NEW(qf, null, l2, qnt.hclass());
+
+	// insert the MOVE instead of the original allocation
+	Quad.replace(qnt, moveq);
+	// insert the new NEW quad right after the METHOD quad
+	// (at the very top of the method)
+	insert_newq((METHOD) (((Quad)hcode.getRootElement()).next(1)), newq);
+
+	// the thread object should be allocated in its own
+	// thread specific heap.
+	MyAP newq_ap = getAPObj(newq);
+
+	newq_ap.ta  = true;
+	newq_ap.uoh = true; // useOwnHeap for the thread object
+	HClass hclass = getAllocatedType(newq);
+	newq_ap.hip = 
+	    DefaultAllocationInformation.hasInteriorPointers(hclass);
+	
+	// the objects pointed by the thread node and which don't escape
+	// anywhere else are allocated on the heap of the thread node
+	for(Iterator it = news.iterator(); it.hasNext(); ){
+	    NEW cnewq = (NEW) it.next();
+	    MyAP cnewq_ap = getAPObj(cnewq);
+	    cnewq_ap.ta = true;
+	    cnewq_ap.ah = l2;
+	}
+
+	if(DEBUG){
+	    System.out.println("After the preallocation transformation:");
+	    hcode.print(new java.io.PrintWriter(System.out, true));
+	    System.out.println("Thread specific NEW:");
+	    for(Iterator it = news.iterator(); it.hasNext(); ){
+		NEW new_site= (NEW) it.next();
+		System.out.println(new_site.getSourceFile() + ":" + 
+				   new_site.getLineNumber() + " " + 
+				   new_site);
+	    }
+	}
+
+    }
+
+    private void insert_newq(METHOD method, NEW newq){
+	Util.assert(method.nextLength() == 1,
+		    "A METHOD quad should have exactly one successor!");
+	Edge nextedge = method.nextEdge(0);
+	Quad nextquad = method.next(1);
+	Quad.addEdge(method, nextedge.which_pred(), newq, 0);
+	Quad.addEdge(newq, 0, nextquad, nextedge.which_succ());
+    }
+
+
+    // returns the AllocationProperties object for the object creation site q
+    private MyAP getAPObj(Quad q){
+	MyAP retval = (MyAP) aps.get(q);
+	if(retval == null)
+	    aps.put(q, retval = new MyAP());
+	return retval;
+    }
+
+    // checks whether "node" escapes only through the thread node "nt".
+    private boolean escapes_only_in_thread(PANode node, PANode nt,
+					   ParIntGraph pig){
+
+	if(pig.G.e.hasEscapedIntoAMethod(node))
+	    return false;
+	if(pig.G.getReachableFromR().contains(node))
+	    return false;
+	if(pig.G.getReachableFromExcp().contains(node))
+	    return false;
+	return true;
+    }
+
+    /** Pretty printer for debug. */
+    public void print(){
+	System.out.println("ALLOCATION POLICIES:");
+	for(Iterator it = aps.keySet().iterator(); it.hasNext(); ){
+	    Quad newq = (Quad) it.next();
+	    MyAP ap   = (MyAP) aps.get(newq);
+	    System.out.println(newq.getSourceFile() + ":" +
+			       newq.getLineNumber() + " " +
+			       newq + " -> " + ap); 
+	}
+	System.out.println("====================");
+    }
+
+}
+

@@ -37,6 +37,7 @@ import harpoon.Analysis.PointerAnalysis.PointerAnalysis;
 import harpoon.Analysis.PointerAnalysis.PANode;
 import harpoon.Analysis.PointerAnalysis.ParIntGraph;
 import harpoon.Analysis.PointerAnalysis.Relation;
+import harpoon.Analysis.PointerAnalysis.MAInfo;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
@@ -62,7 +63,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.37 2000-04-03 22:57:17 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.38 2000-04-04 04:29:43 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -90,6 +91,8 @@ public abstract class PAMain {
     private static boolean DO_ANALYSIS = false;
     // turns on the interactive analysis
     private static boolean DO_INTERACTIVE_ANALYSIS = false;
+    // turns on the computation of the memory allocation policies
+    private static boolean MA_MAPS = false;
 
     private static String[] examples = {
 	"java -mx200M harpoon.Main.PAMain -a multiplyAdd --ccs=2 --wts" + 
@@ -118,6 +121,7 @@ public abstract class PAMain {
 	"--ts           activates full thread sensitivity",
 	"--wts          activates weak thread sensitivity",
 	"--ls           activates loop sensitivity",
+	"--mamaps       computes the allocation policy map",
 	"--mastats      shows some statistics about memory allocation",
 	"--holestats    shows statistics about holes",
 	"-a method      analyzes he given method. If the method is in the",
@@ -144,8 +148,11 @@ public abstract class PAMain {
     private static MetaAllCallers mac = null;
     private static Relation split_rel = null;
 
-
     private static Set roots = null;
+
+    // the code factory (in fact a quad factory) generating the code of
+    // the methods.
+    private static HCodeFactory hcf = null;
 
     public static final void main(String[] params){
 
@@ -199,8 +206,8 @@ public abstract class PAMain {
 	    System.exit(1);
 	}
 
-	HCodeFactory hcf  = 
-	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
+	hcf = new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory(),
+				     true);
 
 	Set roots = new HashSet();
 	roots.add(hroot);
@@ -352,6 +359,9 @@ public abstract class PAMain {
 	    }
 	}
     
+	if(MA_MAPS)
+	    ma_maps(pa, hroot);
+
 	pa.print_stats();
 
 	// if(HOLE_STATS) hole_stats(pa);
@@ -423,7 +433,7 @@ public abstract class PAMain {
     private static int get_options(String[] argv){
 	int c, c2;
 	String arg;
-	LongOpt[] longopts = new LongOpt[12];
+	LongOpt[] longopts = new LongOpt[13];
 	longopts[0]  = new LongOpt("meta", LongOpt.NO_ARGUMENT, null, 'm');
 	longopts[1]  = new LongOpt("smartcg", LongOpt.NO_ARGUMENT, null, 's');
 	longopts[2]  = new LongOpt("showch", LongOpt.NO_ARGUMENT, null, 'c');
@@ -436,6 +446,7 @@ public abstract class PAMain {
 	longopts[9]  = new LongOpt("shownodes", LongOpt.NO_ARGUMENT, null, 11);
 	longopts[10] = new LongOpt("mastats", LongOpt.NO_ARGUMENT, null, 12);
 	longopts[11] = new LongOpt("holestats", LongOpt.NO_ARGUMENT, null, 13);
+	longopts[12] = new LongOpt("mamaps", LongOpt.NO_ARGUMENT, null, 14);
 	
 
 	Getopt g = new Getopt("PAMain", argv, "l:mscoa:i", longopts);
@@ -496,6 +507,9 @@ public abstract class PAMain {
 	    case 13:
 		HOLE_STATS = true;
 		break;
+	    case 14:
+		MA_MAPS = true;
+		break;
 	    }
 
 	return g.getOptind();
@@ -549,6 +563,9 @@ public abstract class PAMain {
 
 	if(DO_INTERACTIVE_ANALYSIS)
 	    System.out.print(" DO_INTERACTIVE_ANALYSIS");
+
+	if(MA_MAPS)
+	    System.out.print(" MA_MAPS");
 
 	System.out.println();
     }
@@ -656,6 +673,46 @@ public abstract class PAMain {
 	} 
 
 	System.out.println("TOTAL PSEUDO CAPTURED NODES: " + nb_pcaptured);
+	System.out.println("===================================");
+    }
+
+
+    // print statictics about the memory allocation policies
+    private static void ma_maps(PointerAnalysis pa, HMethod hroot){
+	MetaCallGraph mcg = pa.getMetaCallGraph();
+	MetaMethod mroot = new MetaMethod(hroot, true);
+
+	// analyze just the method tree rooted in the main method, i.e.
+	// just the user program, not the other methods called by the
+	// JVM before "main".
+	Set mms = new HashSet();
+	Set roots = new HashSet(mcg.getRunMetaMethods());
+	roots.add(mroot);
+
+	for(Iterator it = roots.iterator(); it.hasNext(); ){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    mms.add(mm);
+	    mms.addAll(mcg.getTransCallees(mm));
+	}
+
+	// this should analyze everything
+	pa.getIntParIntGraph(mroot);
+	pa.getExtParIntGraph(mroot);
+	pa.threadInteraction(mroot);  
+
+	System.out.println("ROOT META-METHOD: " + mroot);
+	System.out.println("RELEVANT META-METHODs:{");
+	for(Iterator it = mms.iterator(); it.hasNext(); ){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    if(pa.analyzable(mm.getHMethod()))
+		System.out.println("  " + mm);
+	}
+	System.out.println("}");
+
+	MAInfo mainfo = new MAInfo(pa, hcf, mms);
+	// show the allocation policies
+	mainfo.print();
+
 	System.out.println("===================================");
     }
 

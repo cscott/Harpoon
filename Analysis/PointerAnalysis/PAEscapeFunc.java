@@ -16,7 +16,7 @@ import java.util.Map;
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.18 2000-04-03 22:36:14 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.19 2000-04-04 04:29:31 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -83,6 +83,11 @@ public class PAEscapeFunc {
 	return
 	    !rel_n.getValuesSet(node).isEmpty() || 
 	    escaped_into_mh.contains(node);
+    }
+
+    /** Checks whether <code>node</code> escapes into a method hole or not. */
+    public boolean hasEscapedIntoAMethod(PANode node){
+	return escaped_into_mh.contains(node);
     }
 
     /** Returns the set of all the node &quot;holes&quot; <code>node</code>

@@ -27,7 +27,7 @@ import harpoon.ClassFile.HField;
  algorithm and will generate a bigger number of <i>artificial</i> nodes.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ArtificialTempFactory.java,v 1.1.2.3 2000-02-15 04:37:39 salcianu Exp $
+ * @version $Id: ArtificialTempFactory.java,v 1.1.2.4 2000-04-04 04:29:30 salcianu Exp $
  */
 public abstract class ArtificialTempFactory {
 
@@ -61,7 +61,4 @@ public abstract class ArtificialTempFactory {
 	}
 	return temp;
     }
-
 }
-
-
