@@ -6,7 +6,7 @@ import harpoon.ClassFile.*;
  * <code>Eval</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Eval.java,v 1.2 1998-09-19 19:17:01 cananian Exp $
+ * @version $Id: Eval.java,v 1.3 1998-09-19 19:49:16 cananian Exp $
  */
 
 class Eval  {
@@ -32,15 +32,15 @@ class Eval  {
 	return a + b;
     }
     /** Compare two doubles for equality */
-    static int dcmpeq(double a, double b) {
+    static boolean dcmpeq(double a, double b) {
 	return (a==b);
     }
     /** Compare two doubles for greater-than-or-equal-to. */
-    static int dcmpge(double a, double b) {
+    static boolean dcmpge(double a, double b) {
 	return (a>=b);
     }
     /** Compare two doubles for greater-than. */
-    static int dcmpgt(double a, doube b) {
+    static boolean dcmpgt(double a, double b) {
 	return (a>b);
     }
     /** @deprecated */
@@ -96,15 +96,15 @@ class Eval  {
 	return a + b;
     }
     /** Compare two floats for equality. */
-    static int fcmpeq(float a, float b) {
+    static boolean fcmpeq(float a, float b) {
 	return (a==b);
     }
     /** Compare two floats for greater-than-or-equal-to. */
-    static int fcmpge(float a, float b) {
+    static boolean fcmpge(float a, float b) {
 	return (a>=b);
     }
     /** Compare two floats for greater-than. */
-    static int fcmpgt(float a, float b) {
+    static boolean fcmpgt(float a, float b) {
 	return (a>b);
     }
     /** @deprecated */
