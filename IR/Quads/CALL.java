@@ -43,9 +43,15 @@ import harpoon.Util.Util;
  * valid for <code>retval</code> and <code>retex</code> to be identical</b>.
  * Of course, for type-safety the return type cannot be primitive if this
  * is so.
+ * <p>
+ * The <code>Temp</code> not defined by the <code>CALL</code> 
+ * (if the <code>retex</code> and <code>retval</code> <code>Temp</code>s
+ *  are different) is <i>undefined</i> --- this is different from the 
+ * semantics of <code>IR.LowQuad.PCALL</code> and <code>IR.Tree.CALL</code>,
+ * both of which leave the "other" <code>Temp</code> <i>untouched</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.17 2000-03-30 09:48:13 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.18 2000-07-07 22:15:35 cananian Exp $ 
  */
 public class CALL extends SIGMA {
     /** The method to invoke. */
