@@ -144,6 +144,39 @@ __ll_mul:
 LLSHIFTSDONE
 }
 
+sub print_double_rem {
+print <<'DOUBLEREMDONE';
+.text    
+.align 2    
+.globl __d_rem
+.ent __d_rem
+__d_rem:
+    .set noreorder
+    .cpload $25
+    .set reorder
+    .frame sp, 48, $31
+    subu sp, 48
+    sw   ra, 44(sp)
+    sw   a0, 0(sp)
+    sw   a1, 4(sp)
+    ldc1 $f0, 0(sp)
+    mov.d $f12, $f0
+    sw   a2, 8(sp)
+    sw   a3, 12(sp)
+    ldc1 $f0, 8(sp)
+    mov.d $f14, $f0
+    jal  d_rem
+    sdc1 $f0, 0(sp)
+    lw   v0, 0(sp)
+    lw   v1, 4(sp)
+    lw   ra, 44(sp)
+    addu sp, 48
+    j    ra
+.end __d_rem
+DOUBLEREMDONE
+}
+
+
 ################################################################
 #  Jacket routines for software floating point.
 #   The compiler passes everything in registers.  Our C functions
@@ -300,3 +333,4 @@ Print_Asm_Jacket("__d2i", "doubleToWord", [d,of], 0);
 Print_Asm_Jacket("__f2d", "singleToDouble", [f,od], 0);
 Print_Asm_Jacket("__d2f", "doubleToSingle", [d,of], 0);
 print_double_long_conversion();
+print_double_rem();

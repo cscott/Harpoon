@@ -1,3 +1,5 @@
+#include <math.h>
+
 typedef unsigned int uint32;
 typedef long long int64;
 typedef unsigned long long uint64;
@@ -48,4 +50,12 @@ ll_rem( int64* aPtr, int64* bPtr, int64* zPtr)
    TRACE(printf("%x%x % %x%x = ", *(uint32*)aPtr, *((uint32*)aPtr + 1), *(uint32*)bPtr, *((uint32*)bPtr + 1)));
    *zPtr = *aPtr % *bPtr;
    TRACE(printf("%x%x\n", *(uint32*)zPtr,*((uint32*)zPtr+1)));
+}
+
+double
+d_rem( double a, double b)
+{
+   //printf("LLL %g %% %g = %g (%g)\n", a, b, fmod(a,b), fmod(b,a));
+   //printf("LLL %g %% %g = %g \n", a, b, fmod(a,b));
+   return fmod(a,b);
 }
