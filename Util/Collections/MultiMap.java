@@ -69,7 +69,7 @@ import java.util.AbstractSet;
     map to more than one value.
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.1 1999-10-20 06:00:26 pnkfelix Exp $
+    @version $Id: MultiMap.java,v 1.1.2.2 1999-10-20 06:29:09 pnkfelix Exp $
  */
 public class MultiMap implements Map {
     
@@ -169,9 +169,9 @@ public class MultiMap implements Map {
     */
     public Object put(Object key,
 		      Object value) {
-	Object val = get(key);
+	Object prev = get(key);
 	internMap.put(key, cf.makeCollection(Collections.singleton(value)));
-	return val;
+	return prev;
     }
 
     /** Removes all mappings for this key from this map if present. 
@@ -179,13 +179,9 @@ public class MultiMap implements Map {
 	<code>null</code> if there was no mapping for key.  
      */
     public Object remove(Object key) {
-	Collection s = (Collection) internMap.get(key);
+	Object prev = get(key);
 	internMap.remove(key);
-	if (s == null || s.size() == 0) {
-	    return null;
-	} else {
-	    return s.iterator().next();
-	}
+	return prev;
     }
 
     /** Copies the mappings from the specified map to this
@@ -303,4 +299,69 @@ public class MultiMap implements Map {
 	return sum;
     }
 
+    /** Ensures that <code>this</code> contains an association from
+	<code>key</code> to <code>value</code>.
+
+	(<code>MultiMap</code> specific operation).
+
+	@return <code>true</code> if this mapping changed as a result of
+	        the call
+    */
+    public boolean add(Object key, Object value) {
+	return getValues(key).add(value);
+    }
+    
+    /** Adds to the current mappings: associations for
+	<code>key</code> to each value in <code>values</code>.  
+
+	(<code>MultiMap</code> specific operation). 
+
+	@return <code>true</code> if this mapping changed as a result
+	        of the call
+    */
+    public boolean addAll(Object key, Collection values) {
+	return getValues(key).addAll(values);
+    }
+	
+    /** Removes from the current mappings: associations for
+	<code>key</code> to any value not in <code>values</code>. 
+
+	(<code>MultiMap</code> specific operation). 
+
+	@return <code>true</code> if this mapping changed as a result
+	        of the call
+    */
+    public boolean retainAll(Object key, Collection values) {
+	return getValues(key).retainAll(values);
+    }
+
+    /** Removes from the current mappings: associations for
+	<code>key</code> to any value in <code>values</code>.
+
+	(<code>MultiMap</code> specific operation). 
+
+	@return <code>true</code> if this mapping changed as a result
+	        of the call
+    */
+    public boolean removeAll(Object key, Collection values) {
+	return getValues(key).removeAll(values);
+    }
+    
+    /** Returns the collection of Values associated with
+	<code>key</code>.  Modifications to the returned
+	<code>Collection</code> affect <code>this</code> as well.  If
+	there are no Values currently associated with
+	<code>key</code>, constructs a new, mutable, empty
+	<code>Collection</code> and returns it.
+	(<code>MultiMap</code> specific operation). 
+    */
+    public Collection getValues(Object key) {
+	Collection c = (Collection) internMap.get(key);
+	if (c == null) {
+	    c = cf.makeCollection();
+	    internMap.put(key, c);
+	}
+	return c;
+    }
 }
+
