@@ -69,7 +69,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.19 2000-09-27 22:48:01 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.20 2000-10-04 21:06:17 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -731,7 +731,7 @@ import java.util.Iterator;
           // float retval passed in float registers.
           declare(retval, type); declare ( SP, HClass.Void );
           //emitMOVE( ROOT, "move `d0, `s0", retval, v0 );
-          emit( ROOT, "swc1 $f0, 0($sp)");
+          emit( ROOT, "swc1 $f0, 0($sp)", null, SP);
           emit2( ROOT, "lw   `d0, 0(`s0)", 
                  new Temp[]{retval,SP},new Temp[]{SP});
           //emit2(ROOT, "lw `d0, 4($sp)",new Temp[]{retval,SP},new Temp[]{SP});
@@ -743,9 +743,9 @@ import java.util.Iterator;
           //emit( ROOT, "move `d0h, `s0", retval, v0 );
           // emit( ROOT, "move `d0l, `s0", retval, v1 );
           // sdc1 is mips2
-          emit( ROOT, "sdc1 $f0, 0($sp)", SP, SP);
-          emit2(ROOT, "lw `d0l, 4($sp)",new Temp[]{retval,SP},new Temp[]{SP});
-          emit2(ROOT, "lw `d0h, 0($sp)",new Temp[]{retval,SP},new Temp[]{SP});
+          emit( ROOT, "sdc1 $f0, 0($sp)", null, SP);
+          emit(ROOT, "lw `d0l, 4($sp)", retval, SP);
+          emit(ROOT, "lw `d0h, 0($sp)", retval, SP);
        } else if (ROOT.getRetval().isDoubleWord()) {
           // not certain an emitMOVE is legal with the l/h modifiers
           declare(retval, type);
@@ -802,13 +802,14 @@ import java.util.Iterator;
                 new InstrLABEL(inf, il, methodlabel.name+":", methodlabel),
                 new InstrDIRECTIVE(inf, il, ".frame $sp," +
                                    stack.frameSize() + ", $31"),
-                new Instr(inf, il, "subu $sp, "+ stack.frameSize(), null, null),
+                new Instr(inf, il, "subu $sp, "+ stack.frameSize(), 
+                          new Temp[] {SP}, new Temp[] {SP}),
                 new Instr(inf, il, "sw $31, " + stack.getRAOffset() +"($sp)", 
-                          null,null),
+                          null, new Temp[] { LR, SP }),
                 new Instr(inf, il, "sw $30, " + stack.getFPOffset() +"($sp)", 
-                          null, null),
+                          null, new Temp[] { FP, SP }),
                 new Instr(inf, il, "addu $30, $sp, "+ stack.frameSize(),
-                          null, null),
+                          new Temp[]{FP}, new Temp[]{SP} ),
              };
              ////// Now create instrs to save non-trivial callee saved regs
              Instr[] callee_save = new Instr [stack.calleeSaveTotal()];
@@ -822,7 +823,7 @@ import java.util.Iterator;
                                 + stack.calleeReg(i) + ", "
                                 + stack.calleeSaveOffset(i)
                                 + "($sp)        # callee save", 
-                                null, null);
+                                null, new Temp[]{stack.calleeReg(i),SP});
                 }
              }
              /// Layout function entry
@@ -842,10 +843,14 @@ import java.util.Iterator;
           }
           if (il instanceof InstrEXIT) { // exit stub
              Instr[] exit_instr = {
-                new Instr(inf, il, "lw $30, " + stack.getFPOffset() + "($sp)",null, null),
-                new Instr(inf, il, "lw $31, " + stack.getRAOffset() + "($sp)", null, null),
-                new Instr(inf, il, "addu $sp, " + stack.frameSize(),null, null),
-                new Instr(inf, il, "j  $31  # return", null, null),
+                new Instr(inf, il, "lw $30, " + stack.getFPOffset() + "($sp)",
+                          new Temp[] {FP}, new Temp[] {SP}),
+                new Instr(inf, il, "lw $31, " + stack.getRAOffset() + "($sp)",
+                          new Temp[] {LR}, new Temp[] {SP}),
+                new Instr(inf, il, "addu $sp, " + stack.frameSize(),
+                          new Temp[] {SP}, new Temp[] {SP}),
+                new Instr(inf, il, "j  $31  # return",
+                          null, new Temp[]{LR}),
              };
              Instr[] callee_restore = new Instr [nregs];
              if(stack.calleeSaveTotal() > 0) {
@@ -857,7 +862,8 @@ import java.util.Iterator;
                                 + stack.calleeReg(i) + ", "
                                 + stack.calleeSaveOffset(i) 
                                 + "($sp)        # callee restore", 
-                                null, null);
+                                new Temp[]{stack.calleeReg(i)}, 
+                                new Temp[]{SP});
                 }
              }
 
