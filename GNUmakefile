@@ -31,7 +31,9 @@ readnote.dvi: unread_.bib
 	fi
 clean:
 	$(RM) *.dvi *.log *.aux *.bbl *.blg
-	$(RM) design.ps design.pdf bibnote.ps bibnote.pdf
+	$(RM) design.ps design.pdf \
+	      bibnote.ps bibnote.pdf \
+	      readnote.ps readnote.pdf
 	$(RM) harpoon_.bib unread_.bib
 
 wipe: clean
