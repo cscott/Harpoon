@@ -47,7 +47,7 @@ import java.util.Stack;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.13 1999-02-24 02:31:27 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.14 1999-02-24 06:41:40 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -70,6 +70,8 @@ final class Translate { // not public.
 	final MergeMap mergeMap;
 	/** Liveness information from bytecode. */
 	final Liveness liveness;
+	/** Set of translated exception handlers. */
+	final Map transHandler;
 
 	/** Constructor. */
 	StaticState(QuadFactory qf, int max_stack, int max_locals,
@@ -88,6 +90,7 @@ final class Translate { // not public.
 	    this.header = header;
 	    this.mergeMap = new MergeMap();
 	    this.liveness = liveness;
+	    this.transHandler = new HashMap();
 	}	
 	/** Get an "extra" <code>Temp</code>. */
 	final Temp extra(int n) {
@@ -117,6 +120,8 @@ final class Translate { // not public.
 	    h.put(Arrays.asList(new Object[] { m, calls }),
 		  Arrays.asList(new Object[] { p, new Integer(arity) }));
 	}
+	public String toString() { return h.toString(); }
+
 	void fixupPhis(State s) { // eliminate null limbs
 	    for (Iterator i=h.entrySet().iterator(); i.hasNext(); ) {
 		Map.Entry me = (Map.Entry) i.next();
@@ -170,7 +175,7 @@ final class Translate { // not public.
 	    if (js.next == nnxt) return js;
 	    return new JSRStack(js.index, js.target, nnxt);
 	}
-	/** human-readable string for debugging. */
+	/** Human-readable string for debugging. */
 	public String toString() { return asMap(this).toString(); }
 	/** Collection view of target <code>Instr</code>s in stack. */
 	static Map asMap(final JSRStack js) {
@@ -221,6 +226,16 @@ final class Translate { // not public.
 	/** Constructor. */
 	LongStack(int index, LongStack next) {
 	    this.index = index; this.next = next;
+	}
+	/** Make data human-readable for debugging. */
+	public String toString() {
+	    StringBuffer sb=new StringBuffer("[");
+	    for (LongStack lsp = this; lsp!=null; lsp=lsp.next) {
+		sb.append(lsp.index);
+		if (lsp.next!=null) sb.append(", ");
+	    }
+	    sb.append("]");
+	    return sb.toString();
 	}
     }
     static final private class State {
