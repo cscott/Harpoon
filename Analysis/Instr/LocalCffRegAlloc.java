@@ -15,6 +15,8 @@ import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.Util.Util;
+import harpoon.Util.AbstractMapEntry;
+import harpoon.Util.ArrayIterator;
 import harpoon.Util.WorkSet;
 import harpoon.Util.UniqueVector;
 import harpoon.Util.CloneableIterator;
@@ -24,11 +26,13 @@ import harpoon.Util.BinHeapPriorityQueue;
 import harpoon.Util.UnmodifiableIterator;
 
 import java.util.Set;
+import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.AbstractMap;
 import java.util.Vector;
 import java.util.Stack;
 import java.util.Enumeration;
@@ -45,7 +49,7 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.26 1999-07-30 18:45:12 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.27 1999-08-03 02:25:19 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -698,16 +702,23 @@ public class LocalCffRegAlloc extends RegAlloc {
 
     }
 
-
+    /** RegToValueMap is a helper class for representing the register
+	file.  
+    */
     class RegToValueMap {
-	// if 'REGISTER( i )' (which is stored in regs[ i ] ) is holding
+	// if 'REGISTER( i )' (which is stored in allRegs[ i ] ) is holding
 	// a value, vals[ i ] will have that value.  Else, vals[ i ]
 	// will be set to null.
 	Temp[] allRegs;
+
+	// genRegs is just a list of what the general registers are;
+	// the indices of the registers in genRegs do not necessarily
+	// map to indices of the corresponding registers in allRegs.
 	Temp[] genRegs;
 	Temp[] vals;
 	boolean[] dirty; // tracks dirty bit for regs
 
+	// TODO: NO LONGER NECESSARY (uses are commented out)
 	// A place holder for unknown values (needed for Instrs that
 	// directly write to registers instead of pseudo registers)
 	TempFactory unknownTF = 
@@ -818,10 +829,11 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    <BR> <B>requires:</B> <code>futureInstrs</code> is a
 	         linear series of <code>Instr</code>s in the order
 		 that they will be executed.
-	    <BR> <B>effects:</B> Returns a <code>Temp</code> that is
-	         mapped to <code>null</code> in <code>this</code>, and
-		 that is not DEFined by any <code>Instr</code> in
-		 <code>futureInstrs</code>, or <code>null</code>.
+	    <BR> <B>effects:</B> Returns a general register
+	         <code>Temp</code> that is mapped to <code>null</code>
+		 in <code>this</code>, and that is not DEFined by any
+		 <code>Instr</code> in <code>futureInstrs</code>, or
+		 <code>null</code>. 
 	*/
 	public Temp getFreeRegister(Temp val, 
 				    CloneableIterator futureInstrs) {
@@ -896,6 +908,50 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    return v;
 	}
 
+	/** Returns an immutable <code>Map</code> view of the state of
+	    the register file.  The <code>Map</code> produced is
+	    immutable even with regards to changes to
+	    <code>this</code>; later alterations to the mappings in
+	    <code>this</code> will not be reflected in the
+	    <code>Map</code> returned.
+	    <BR> Note: the <code>Map</code> produced reflects mappings
+	         of the entire register file, not just the general
+		 registers.  Therefore, some registers/keys may be
+		 implicitly reserved (to conform to the specification
+		 of the target platform) even if they map to null in
+		 the <code>Map</code> returned by
+		 <code>toMap()</code>. 
+	*/
+	public Map toMap() {
+	    return new AbstractMap(){
+		public Set entrySet() {
+		    return new AbstractSet(){
+			AbstractMapEntry[] entries;
+			{
+			    entries = new
+				AbstractMapEntry[allRegs.length];
+			    for (int i=0; i<allRegs.length; i++) {
+				final int index = i;
+				entries[index] = new AbstractMapEntry(){
+				    public Object getKey(){ 
+					return allRegs[index]; }
+				    public Object getValue() {
+					return vals[index];
+				    }
+				};
+			    }
+			}
+			public Iterator iterator() {
+			    return new ArrayIterator(entries);
+			}
+			public int size() {
+			    return entries.length;
+			}
+		    };
+		}
+	    };
+	}
+	
 	public String toString() {
 	    String s = "RegFile[ ";
 	    for (int i=0; i<vals.length; i++) {
