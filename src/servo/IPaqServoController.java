@@ -120,6 +120,22 @@ public class IPaqServoController {
 	send("BD0D"+millis);
     }
 
+    public void moveDelayMoveLocal(int servo, int position1, long millis, int position2) {
+	if ((servo>8)||(servo<1)) {
+	    throw new RuntimeException("Servo is out of range.");
+	}
+	if ((position1>255)||(position1<1)) {
+	    throw new RuntimeException("Position 1 is out of range.");
+	}
+	if ((millis<1)||(millis>65535)) {
+	    throw new RuntimeException("Delay out of range.");
+	}
+	if ((position2>255)||(position2<1)) {
+	    throw new RuntimeException("Position 2 is out of range.");
+	}
+	sendSerial("BD0SV"+servo+"M"+position1+"D"+millis+"M"+position2);
+    }
+
     private static native final void setup();
     
     private static native final void sendSerial(byte b);
@@ -131,6 +147,7 @@ public class IPaqServoController {
 	    sendSerial((byte)c[i]);
 	}
 	sendSerial((byte)'\n');
+	sendSerial((byte)13);
     }
 
     public static void main(String args[]) {
