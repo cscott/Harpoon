@@ -124,7 +124,9 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketConnect
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
     fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
-    rc = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
+    do {
+      rc = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
+    } while (rc<0 && errno==EINTR); /* repeat if interrupted */
 
     /* Check for error condition */
     if (rc<0)
@@ -201,7 +203,9 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketAccept
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
     fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
-    rc = accept(fd, (struct sockaddr *) &sa, &sa_size);
+    do {
+      rc = accept(fd, (struct sockaddr *) &sa, &sa_size);
+    } while (rc<0 && errno==EINTR); /* repeat if interrupted */
     /* Check for error condition */
     if (rc<0) {
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
