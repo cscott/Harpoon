@@ -205,7 +205,9 @@ jvalue REFLECT_unwrapPrimitive(JNIEnv *env, jobject wrapped, char desiredsig) {
 int REFLECT_staticinit(JNIEnv *env, jclass c) {
   jmethodID methodID; jclass sc;
   /* XXX: Doesn't initialize interfaces */
-  assert(!fni_class_isArray(c));
+  if (fni_class_isArray(env, c) &&
+      !REFLECT_staticinit(env, fni_class_getComponentType(env, c)))
+    return 0; /* fail if component type init fails */
   sc = (*env)->GetSuperclass(env, c);
   if (sc && !REFLECT_staticinit(env, sc))
     return 0; /* fail if superclass init fails */
