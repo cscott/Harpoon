@@ -26,6 +26,10 @@
 # spread out over the entire source repository.
 
 CVSROOT	CVSROOT
+modules CVSROOT modules
+
 Code	Code
 Design	Design
-pldi99.sigma Design harpoon.bib pldi.tex acmconf.sty acmconfbig.sty
+
+# pldi '99 paper.
+pldi99 -d pldi99.sigma Design harpoon.bib pldi.tex acmconf.sty acmconfbig.sty
