@@ -41,8 +41,11 @@ void FNI_DeleteLocalRefsUpTo(JNIEnv *env, jobject markerRef) {
 void FNI_DeleteLocalRef(JNIEnv *env, jobject localRef) {
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
   assert(FNI_NO_EXCEPTIONS(env));
-  /* can't delete it w/o a lot of work; we just zero it out */
-  localRef->obj=NULL; /* won't keep anything live */
+  /* references at the end of the stack can be freed easily */
+  if (localRef+1==fts->localrefs_next)
+    fts->localrefs_next = localRef;
+  else /* can't delete it w/o a lot of work; we just zero it out */
+    localRef->obj=NULL; /* won't keep anything live */
 }
 
 /*-----------------------------------------------------------------*/
