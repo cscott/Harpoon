@@ -36,7 +36,7 @@
 #                         (you must also specify '-u' to commit_prep)
 #	%s		- must follow other options at the end of the line
 #-------------------------------------------------------------------
-ALL	( chgrp -R -f java-dev $CVSROOT/. ; chgrp -R -f java-public $CVSROOT/Classpath $CVSROOT/Code $CVSROOT/Runtime $CVSROOT/CVSROOT $CVSROOT/Realtime $CVSROOT/BuildScripts ; chmod -R -f go+rX,o-w $CVSROOT/. )
+ALL	( chgrp -R -f java-dev $CVSROOT/. ; chgrp -R -f java-public $CVSROOT/{BuildScripts,Classpath,Code,CVSROOT,Realtime,Repair,Runtime} ; chmod -R -f go+rX,o-w $CVSROOT/. )
 Benchmarks $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
 BuildScripts	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
 Classpath $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
