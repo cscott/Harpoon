@@ -1,0 +1,64 @@
+***VideoCapture.class for Linux***
+version 1.1alpha
+author Kazushi Mukaiyama <kazu@arizona.ne.jp>
+                         <http://www.arizona.ne.jp/~kazu/>
+
+This is Video Capture class using Video4Linux. 
+I developed with WipeOut1.4.6pro
+on GNU/Debian Linux 2.1 Japanese extention (Slink-JP) 
+and Kernel 2.2.3-ac1. 
+
+supported device: 
+Bt848
+  Althogh I checked Justy JVC-02, perhaps almost Bt848 chip boards 
+  will be able... 
+Quickcam-Black and White
+  !NOTE! highly recommed Kernel 2.2.3-ac1 if you use this one. 
+
+THis class is free using for all Java lovers and Linux lovers.
+This will work on Kernel 2.2.1 heigher and JDK 1.1.7 heigher.
+But I don't have no resonsebility that all troubles using this.
+Also non-commacial using only.
+Please feel free to contact me by email if you have a question or 
+report. However, I may not be able to answer perfectly because this
+is my first programming work for public:-)
+
+Have fun!
+
+<HOW TO USE>
+Did kernel recognized caputure device which you have?
+Did you install JDK?
+Anyhow you want to try soon?
+OK!
+First, put libvideo_capture.so and libvideo_capture.so.0.1 in some 
+directory setted by LD_LIBRARY_PATH.
+Next type:
+    java TestBt848
+or
+    java TestQCBW
+in the directory which have Test*.class. You will get a shapshot 
+in AWT window.
+Also, you can check device infomation
+    java ShowDevInfo
+That's all;-)
+
+<HOW TO MAKE>
+If you make *.class and *.so from src by yourself, please type:
+    make clean
+    make shared_lib
+    make java
+If you can't make it unfortunately, Please modify -I, -l or "javac" 
+path in Linux.def.
+
+<Thanks>
+*advice
+    Masahiro Ikemoto
+    Daisuke Amano
+*powerd by Arizona Design
+    Tsuyoshi Ueno <president of Arizona Design>
+and all persons who support me....
+
+<History>
+1.1alpha: March 15, 1999
+   first release
+
