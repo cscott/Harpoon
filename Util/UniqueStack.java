@@ -3,13 +3,15 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import java.util.Collection;
 import java.util.EmptyStackException;
 /**
  * The <code>UniqueStack</code> class represents a last-in-first-out
  * stack of <b>unique</b> objects.
+ * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueStack.java,v 1.3.2.1 1999-02-03 23:13:09 pnkfelix Exp $
+ * @version $Id: UniqueStack.java,v 1.3.2.2 1999-06-17 20:58:57 cananian Exp $
  */
 
 public class UniqueStack extends UniqueVector implements Worklist {
@@ -70,5 +72,14 @@ public class UniqueStack extends UniqueVector implements Worklist {
     /** Creates a <code>UniqueStack</code>. */
     public UniqueStack() {
         super();
+    }
+    /** Constructs a <code>UniqueStack</code> containing the elements of
+     *  the specified <code>Collection</code>, in the order they are returned
+     *  by the collection's iterator in LIFO order.  That is, the first
+     *  item returned by the collection iterator will be at the bottom of
+     *  the stack, and thus last to be popped. Duplicate elements in
+     *  <code>c</code> are skipped. */
+    public UniqueStack(Collection c) {
+	super(c);
     }
 }

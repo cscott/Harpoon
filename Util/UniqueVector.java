@@ -3,27 +3,44 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
-import java.util.Vector;
-import java.util.Hashtable;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A unique vector refuses to addElement duplicates.
+ * <p>Conforms to the JDK 1.2 Collections API.
+ *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueVector.java,v 1.6 1998-10-11 03:01:19 cananian Exp $
+ * @version $Id: UniqueVector.java,v 1.6.2.1 1999-06-17 20:58:57 cananian Exp $
  * @see java.util.Vector
  * @see java.util.Hashtable
  */
-public class UniqueVector implements Cloneable {
-  Vector    vect;
-  Hashtable uniq;
+public class UniqueVector extends AbstractList
+  implements Set, Cloneable {
+  List  vect;
+  Map   uniq;
 
   /** Constructs an empty UniqueVector. */
   public UniqueVector() 
-  { vect = new Vector(); uniq = new Hashtable(); }
+  { vect = new ArrayList(); uniq = new HashMap(); }
   /** Constructs an empty UniqueVector with the specified initial capacity. */
   public UniqueVector(int initialCapacity) 
-  { vect = new Vector(initialCapacity); uniq=new Hashtable(initialCapacity); }
+  { vect = new ArrayList(initialCapacity); uniq=new HashMap(initialCapacity); }
+  /** Constructs a vector containing the elements of the specified 
+   *  <code>Collection</code>, in the order they are returned by the
+   *  collection's iterator.  Duplicate elements are skipped. */
+  public UniqueVector(Collection c) {
+    this(c.size());
+    for (Iterator it=c.iterator(); it.hasNext(); )
+      add(it.next());
+  }
 
   /**
    * Adds the specified component to the end of this vector, increasing
@@ -33,16 +50,41 @@ public class UniqueVector implements Cloneable {
    * @param obj the component to be added.
    */
   public synchronized void addElement(Object obj) {
-    if (obj==null) throw new NullPointerException();
-    if (uniq.get(obj) != null) return;
-    vect.addElement(obj);
-    uniq.put(obj, new Integer(vect.size()-1));
+    add(obj);
   }
   /**
-   * Returns the current capacity of this vector.
-   * @return the current capacity of this vector.
+   * Inserts the specified element at the specified position in this list.
+   * To maintain uniqueness, any previous instance of this element in the
+   * vector is removed prior to insertion.
+   * @param obj the element to be inserted.
    */
-  public int capacity() { return vect.capacity(); }
+  public void add(int index, Object element) {
+    if (element==null) throw new NullPointerException();
+    removeElement(element);
+    vect.add(index, element);
+    for (int i=index; i<vect.size(); i++)
+      uniq.put(element, new Integer(i));
+  }
+  /**
+   * Adds the specified component to the end of this vector, increasing
+   * its size by one, <b>if it doesn't already exist in the vector</b>.
+   * Duplicate elements are thrown away.  The capacity of the vector
+   * is increased if necessary.
+   * @param obj the component to be added.
+   */
+  public boolean add(Object obj) {
+    if (obj==null) throw new NullPointerException();
+    if (contains(obj)) return false;
+    vect.add(obj);
+    uniq.put(obj, new Integer(vect.size()-1));
+    return true;
+  }
+
+  /**
+   * Returns the current capacity of this vector.
+   * @exception UnsupportedOperationException not supported.
+   */
+  public int capacity() { throw new UnsupportedOperationException(); }
   /**
    * Returns a clone of this vector.
    * @return a clone of this vector.
@@ -50,10 +92,7 @@ public class UniqueVector implements Cloneable {
    *            if the UniqueVector cannot be cloned.
    */
   public synchronized Object clone() throws CloneNotSupportedException {
-    UniqueVector v = (UniqueVector)super.clone();
-    v.vect = (Vector) vect.clone();
-    v.uniq = (Hashtable) uniq.clone();
-    return v;
+    return new UniqueVector(this);
   }
   /**
    * Tests if the specified object is a component in this vector.
@@ -70,8 +109,12 @@ public class UniqueVector implements Cloneable {
    * @param anArray the array into which the components get copied.
    */
   public synchronized void copyInto(Object anArray[]) {
-    vect.copyInto(anArray);
+    if (anArray.length < size()) throw new IndexOutOfBoundsException();
+    vect.toArray(anArray);
   }
+  public Object[] toArray() { return vect.toArray(); }
+  public Object[] toArray(Object[] a) { return vect.toArray(a); }
+
   /**
    * Returns the component at the specified index.
    * @param index an index into this vector.
@@ -80,15 +123,20 @@ public class UniqueVector implements Cloneable {
    *            if an invalid index was given.
    */
   public synchronized Object elementAt(int index) {
-    return vect.elementAt(index);
+    return get(index);
+  }
+  /** Returns the element at the specified posision in this vector. */
+  public Object get(int index) {
+    return vect.get(index);
   }
   /**
    * Returns an enumeration of the components of this vector.
    * @return an enumeration of the components of this vector.
    */
   public synchronized Enumeration elements() {
-    return vect.elements();
+    return new IteratorEnumerator(vect.iterator());
   }
+     
   /**
    * Increases the capacity of this vector, if necessary, to ensure that
    * it can hold at least the number of components specified by the minimum
@@ -96,7 +144,7 @@ public class UniqueVector implements Cloneable {
    * @param minCapacity the desired minimum capacity.
    */
   public synchronized void ensureCapacity(int minCapacity) {
-    vect.ensureCapacity(minCapacity);
+    ((ArrayList)vect).ensureCapacity(minCapacity);
   }
   /**
    * Returns the first component of this vector.
@@ -105,7 +153,7 @@ public class UniqueVector implements Cloneable {
    *            if this vector has no components.
    */
   public synchronized Object firstElement() { 
-    return vect.firstElement(); 
+    return vect.get(0);
   }
   /** 
    * Returns the first (and only) occurrence of the given argument, testing
@@ -115,9 +163,8 @@ public class UniqueVector implements Cloneable {
    *         vector; returns <code>-1</code> if the object is not found.
    */
   public synchronized int indexOf(Object elem) {
-    Integer in = (Integer) uniq.get(elem);
-    if (in==null) return -1;
-    else return in.intValue();
+    if (!contains(elem)) return -1;
+    return ((Integer) uniq.get(elem)).intValue();
   }
   /**
    * Returns the first occurrence of the given argument, beginning the search
@@ -150,10 +197,7 @@ public class UniqueVector implements Cloneable {
    *            if the index was invalid.
    */
   public synchronized void insertElementAt(Object obj, int index) {
-    removeElement(obj);
-    vect.insertElementAt(obj, index);
-    for (int i=index; i<vect.size(); i++)
-      uniq.put(elementAt(i), new Integer(i));
+    add(index, obj);
   }
   /**
    * Tests if this vector has no components.
@@ -169,7 +213,7 @@ public class UniqueVector implements Cloneable {
    *            if this vector is empty.
    */
   public synchronized Object lastElement() { 
-    return vect.elementAt(vect.size()-1); 
+    return vect.get(vect.size()-1); 
   }
   /**
    * Returns the index of the last (and only) occurrence of the specified 
@@ -197,10 +241,10 @@ public class UniqueVector implements Cloneable {
   /**
    * Removes all components from this vector and sets its size to zero.
    */
-  public synchronized void removeAllElements() {
-    vect.removeAllElements();
-    uniq.clear();
-  }
+  public synchronized void removeAllElements() { clear(); }
+  /** Removes all of the elements from this collection. */
+  public void clear() { vect.clear(); uniq.clear(); }
+
   /**
    * Removes the first (and only) occurance of the argument from this
    * vector.  If the object is found in this vector, each component
@@ -227,14 +271,23 @@ public class UniqueVector implements Cloneable {
    * @exception ArrayIndexOutOfBoundsException if the index was invalid.
    */
   public synchronized void removeElementAt(int index) {
-    if (index<0 || index >= vect.size()) 
+    try {
+      remove(index);
+    } catch (IndexOutOfBoundsException e) {
       throw new ArrayIndexOutOfBoundsException();
-    Object obj = vect.elementAt(index);
-    vect.removeElementAt(index);
+    }
+  }
+  /** Removes the element at the specified position in this vector. */
+  public Object remove(int index) {
+    if (index<0 || index >= vect.size()) 
+      throw new IndexOutOfBoundsException();
+    Object obj = vect.get(index);
+    vect.remove(index);
     uniq.remove(obj);
     // fixup indices.
     for (int i=index; i<vect.size(); i++)
-      uniq.put(vect.elementAt(i), new Integer(i));
+      uniq.put(vect.get(i), new Integer(i));
+    return obj;
   }
   /**
    * Sets the component at the specified <code>index</code> of this vector
@@ -250,11 +303,18 @@ public class UniqueVector implements Cloneable {
    * @exception ArrayIndexOutOfBoundsException if the index was invalid.
    */
   public synchronized void setElementAt(Object obj, int index) {
-    if (vect.elementAt(index).equals(obj)) return;
-    removeElement(obj);
-    uniq.remove(vect.elementAt(index));
-    vect.setElementAt(obj, index);
-    uniq.put(obj, new Integer(index));
+    set(index, obj);
+  }
+  /** Replaces the element at the specified position in this vector with the
+   *  specified element.
+   */
+  public Object set(int index, Object obj) {
+    Object old = vect.get(index);
+    if (old.equals(obj)) return obj;
+    remove(obj);
+    uniq.put(obj, uniq.remove(old));
+    vect.set(index, obj);
+    return old;
   }
   /**
    * Returns the number of components in this vector.
@@ -271,5 +331,5 @@ public class UniqueVector implements Cloneable {
    * An application can use this operation to minimize the storage of a
    * vector.
    */
-  public synchronized void trimToSize() { vect.trimToSize(); }
+  public synchronized void trimToSize() { ((ArrayList) vect).trimToSize(); }
 }
