@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.27 1999-06-05 07:14:59 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.28 1999-06-07 04:39:28 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -19,11 +19,16 @@ FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
-SUPPORT := Support/Lex.jar Support/CUP.jar
 ifndef CURDIR   # make this file work with make version less than 3.77
 	CURDIR := $(shell pwd)
 endif
-CLASSPATH:=$(subst $(space),:,$(addprefix $(CURDIR)/,$(SUPPORT))):$(CLASSPATH)
+SUPPORT := Support/Lex.jar Support/CUP.jar Support/collections.jar
+# filter out collections.jar if we don't need it.
+SUPPORTC:= $(filter-out \
+   $(shell chmod u+x bin/test-collections;\
+           if bin/test-collections; then echo Support/collections.jar; fi),\
+   $(SUPPORT))
+CLASSPATH:=$(subst $(space),:,$(addprefix $(CURDIR)/,$(SUPPORTC))):$(CLASSPATH)
 CLASSPATH:=.:$(CLASSPATH)
 export CLASSPATH
 
