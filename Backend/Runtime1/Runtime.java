@@ -17,6 +17,7 @@ import harpoon.Util.Util;
 import java.lang.reflect.Modifier;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,7 +26,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.11 1999-10-25 22:18:08 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.12 1999-10-28 02:41:16 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -70,6 +71,36 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 		return c;
 	    }
 	};
+    }
+
+    /** Return a <code>Set</code> of <code>HMethod</code>s which are
+     *  callable by code in the runtime implementation (and should
+     *  therefore be included in every class hierarchy). */
+    public static Collection runtimeCallableMethods() {
+	HClass HCsystem = HClass.forName("java.lang.System");
+	HClass HCstring = HClass.forName("java.lang.String");
+	HClass HCcharA  = HClass.forDescriptor("[C");
+	return Arrays.asList(new HMethod[] {
+	    // implicitly called during startup
+	    HCsystem.getMethod("initializeSystemClass", "()V"),
+	    // jni implementation uses these:
+	    HClass.forName("java.lang.NoClassDefFoundError")
+		.getConstructor(new HClass[] { HCstring }),
+	    HClass.forName("java.lang.NoSuchMethodError")
+		.getConstructor(new HClass[] { HCstring }),
+	    HClass.forName("java.lang.NoSuchFieldError")
+		.getConstructor(new HClass[] { HCstring }),
+	    HCstring.getConstructor(new HClass[] { HCcharA }),
+	    HCstring.getMethod("length", "()I"),
+	    HCstring.getMethod("toCharArray","()[C"),
+	    // in java.lang implementations
+	    HClass.forName("java.lang.ArrayIndexOutOfBoundsException")
+		.getConstructor(new HClass[] { HCstring }),
+	    HClass.forName("java.lang.ArrayStoreException")
+		.getConstructor(new HClass[] { HCstring }),
+	    HClass.forName("java.util.Properties")
+		.getMethod("setProperty", new HClass[] { HCstring, HCstring }),
+	});
     }
 
     public List classData(HClass hc) {
