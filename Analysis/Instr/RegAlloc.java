@@ -44,9 +44,11 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.33 1999-09-07 18:52:50 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.34 1999-09-08 23:49:05 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
+    private static final boolean BRAIN_DEAD = true;
+
     protected Frame frame;
     protected Code code;
     protected BasicBlock rootBlock;
@@ -178,9 +180,6 @@ public abstract class RegAlloc  {
 	     <code>parentFactory</code> using the machine properties
 	     specified in <code>frame</code>.
 
-	<!-- (Design Note is (temporarily?) outdated; we've gone From
-	     Smart To Dumb, and we're loving every minute of it.)
-
 	     <BR> <B>DESIGN NOTE:</B> This method relies on the subclasses
 	     of <code>RegAlloc</code> to perform actual allocation.
 	     This causes a cycle in our module dependency graph,
@@ -192,7 +191,6 @@ public abstract class RegAlloc  {
 	     this method to be used in the compiler.  Perhaps should
 	     also design a way to parameterize which
 	     <code>RegAlloc</code> subclasses will be used. 
-	  -->
      */
     public static HCodeFactory codeFactory(final HCodeFactory parentFactory, 
 					   final Frame frame) {
@@ -207,7 +205,7 @@ public abstract class RegAlloc  {
 		}
 
 		RegAlloc localCode, globalCode;
-		if (false) {
+		if (BRAIN_DEAD) {
 		    // very dumb (but correct) reg alloc
 		    localCode = 
 			new BrainDeadLocalAlloc((Code) preAllocCode);

@@ -33,7 +33,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.21 1999-09-08 18:02:15 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.22 1999-09-08 23:49:10 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -168,8 +168,14 @@ public abstract class Code extends HCode {
 				" code processing.");
 		}
             }
+
 	    pw.println(str);
-	    System.out.println("InstrStr:"+str+" Next:"+instr.getNext());
+
+	    if (str.indexOf("RETURN") != -1) {
+		System.out.println("Contained RETURN; hasNext():" + iter.hasNext());
+	    } 
+
+	    System.out.println("InstrStr:"+str+" Next:"+instr.getNext()); 
         }
     }
 
