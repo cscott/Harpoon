@@ -9,7 +9,7 @@
 
 /* undefine to disable statistics logging */
 #define MAKE_STATS
-/* #define REALLY_DO_ALLOC */
+#define REALLY_DO_ALLOC
 
 /* do allocation without updating statistics: this is used
  * by various allocators when REALLY_DO_ALLOC is not defined. */
