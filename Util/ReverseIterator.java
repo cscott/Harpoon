@@ -13,7 +13,7 @@ import java.util.List;
  * in reverse order.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ReverseIterator.java,v 1.1.2.1 1999-03-02 10:48:13 cananian Exp $
+ * @version $Id: ReverseIterator.java,v 1.1.2.2 1999-03-02 19:37:49 cananian Exp $
  */
 public class ReverseIterator implements Iterator {
     final List l = new ArrayList();
@@ -22,9 +22,8 @@ public class ReverseIterator implements Iterator {
     /** Creates a <code>ReverseIterator</code> of <code>Iterator</code>
      *  <code>it</code>. */
     public ReverseIterator(Iterator it) {
-	ArrayList l = new ArrayList();
 	while (it.hasNext()) l.add(it.next());
-	l.trimToSize();
+	((ArrayList)l).trimToSize();
 	i = l.size()-1;
     }
     public boolean hasNext() { return ( i >= 0 ); }
