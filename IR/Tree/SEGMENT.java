@@ -16,7 +16,7 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.22 2000-06-24 04:45:01 kkz Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.23 2000-06-26 16:39:13 cananian Exp $
  */
 public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     /** R/O storage for static class data (display, vmtable, etc) */
@@ -46,6 +46,26 @@ public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     public static final int ZERO_DATA            = 11; 
     /** R/O storage for GC index */
     public static final int GC_INDEX             = 12;
+
+    /** Converts a segtype string into its enumerated value.
+     *  Returns -1 if the string does not represent a valid segtype. */
+    public static final int encode(String segtype) {
+	segtype = segtype.intern();
+	if (segtype=="CLASS") return CLASS;
+	if (segtype=="CODE") return CODE;
+	if (segtype=="GC") return GC;
+	if (segtype=="INIT_DATA") return INIT_DATA;
+	if (segtype=="REFLECTION_OBJECTS") return REFLECTION_OBJECTS;
+	if (segtype=="REFLECTION_DATA") return REFLECTION_DATA;
+	if (segtype=="STATIC_OBJECTS") return STATIC_OBJECTS;
+	if (segtype=="STATIC_PRIMITIVES") return STATIC_PRIMITIVES;
+	if (segtype=="STRING_CONSTANTS") return STRING_CONSTANTS;
+	if (segtype=="STRING_DATA") return STRING_DATA;
+	if (segtype=="TEXT") return TEXT;
+	if (segtype=="ZERO_DATA") return ZERO_DATA;
+	if (segtype=="GC_INDEX") return GC_INDEX;
+	return -1;
+    }
 
     /** Converts a segtype into its string representation.
      */

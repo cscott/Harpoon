@@ -50,7 +50,7 @@ import java_cup.runtime.lr_parser;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.35 2000-03-26 06:29:21 jwhaley Exp $
+ * @version $Id: Parser.cup,v 1.1.2.36 2000-06-26 16:39:27 cananian Exp $
  */
 
 action code {:
@@ -339,31 +339,8 @@ unops	::=	_2B	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2B); :}
 	;
 
 sym_segtype ::=	ID:id
-		{: if (id.equals("CLASS"))
-		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.CLASS);
-		   else if (id.equals("CODE"))
-		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.CODE);
-		   else if (id.equals("GC"))
-		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.GC);
-		   else if (id.equals("INIT_DATA"))
-		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.INIT_DATA);
-		   else if (id.equals("REFLECTION_OBJECTS"))
-		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.REFLECTION_OBJECTS);
-		   else if (id.equals("REFLECTION_DATA"))
-		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.REFLECTION_DATA);
-		   else if (id.equals("STATIC_OBJECTS"))
-		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.STATIC_OBJECTS);
-		   else if (id.equals("STATIC_PRIMITIVES"))
-		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.STATIC_PRIMITIVES);
-		   else if (id.equals("STRING_CONSTANTS"))
-		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.STRING_CONSTANTS);
-		   else if (id.equals("STRING_DATA"))
-		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.STRING_DATA);
-		   else if (id.equals("TEXT"))
-		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.TEXT);
-		   else if (id.equals("ZERO_DATA"))
-		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.ZERO_DATA);
-		   else
-		     RESULT=new LeafId(id);
+		{: int segtype = harpoon.IR.Tree.SEGMENT.encode(id);
+		   if (segtype<0) RESULT=new LeafId(id);
+		   else RESULT=new LeafSegType(segtype);
 		:}
 	;
