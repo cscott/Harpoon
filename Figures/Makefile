@@ -47,6 +47,16 @@ THcqex2.tex: THcqex.fig
 	awk "/^[[:blank:]]/{if (foo==1) next;} /^2 4 1/||/^4 0 0 100 0 0 12 0.0000 2/{foo=1;next} {print; foo=0;}" < $< | \
 	fig2dev -L latex -m 0.5 > $@
 
+# tricky THlat6c-processing.
+THlat6c2.tex: THlat6c.tex
+	sed -e 's/\\color\[rgb\]{0,0,0}/\\white/g' \
+	    -e 's/\\color\[rgb\]{1,0,0}/\\white\\onlySlide*{2}{\\yellow}/g' \
+	    -e 's/\\color\[rgb\]{1,1,0}/\\white\\onlySlide*{2}{\\yellow}\\onlySlide*{3}{\\yellow}/g' \
+	    -e 's/\\color\[rgb\]{0,1,0}/\\white\\onlySlide*{3}{\\yellow}/g' \
+	    -e 's/\\color\[rgb\]{0,1,1}/\\white\\onlySlide*{3}{\\yellow}\\onlySlide*{4}{\\yellow}/g' \
+	    -e 's/\\color\[rgb\]{0,0,1}/\\white\\onlySlide*{4}{\\yellow}/g' \
+	< $< > $@
+
 # default fig->eps rule
 %.eps: %.fig
 	fig2dev -L eps -m 1.0 $< > $@
