@@ -37,9 +37,12 @@ import java.util.Set;
  * <code>SCCOptimize</code> optimizes the code after <code>SCCAnalysis</code>.
  * The optimization invalidates the <code>ExecMap</code> used.
  * All edges in the graph after optimization are executable.
+ * (Edges leaving a <code>CALL</code> quad may be an exception if your
+ *  <code>ExecMap</code> marks one or both of the edges leaving the
+ *  <code>CALL</code> non-executable.)
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.1.2.11 2001-09-18 20:42:34 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.1.2.12 2001-09-20 01:45:48 cananian Exp $
  */
 public final class SCCOptimize implements ExecMap {
     TypeMap  ti;
@@ -183,6 +186,21 @@ public final class SCCOptimize implements ExecMap {
 		//  we don't want to delete it.)
 		if (hasDefault) visit((SIGMA)nts);
 		// ta-da!
+	    }
+	    public void visit(CALL q) {
+		// calls are like sigmas, but we can't actually
+		// remove either of the edges.
+		// Instead, we must stub out the bogus edge with an
+		// infinite loop.
+		for (int i=0; i<q.nextLength(); i++) {
+		    if (!execMap(q.nextEdge(i))) {
+			Quad loop = new PHI(q.getFactory(), q, new Temp[0], 2);
+			Quad.addEdge(q, i, loop, 0);
+			Quad.addEdge(loop, 0, loop, 1);
+			// don't add these edges to Ee because they're still
+			// not executable.
+		    }
+		}
 	    }
 	    public void visit(SIGMA q) {
 		// if the condition is constant, link this sigma (cjmp/switch)
