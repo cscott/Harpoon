@@ -11,6 +11,7 @@ import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.CombineIterator;
 import harpoon.Util.Util;
 
 import java.util.*;
@@ -20,7 +21,7 @@ import java.util.*;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.17 1999-06-14 23:53:44 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.18 1999-06-15 20:30:53 sportbilly Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -307,20 +308,31 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	System.arraycopy(s, 0, e, p.length, s.length);
 	return e;
     }
+    public Collection edgeC() {
+	return new AbstractCollection() {
+	    public int size() { return pred.size()+succ.size(); }
+	    public Iterator iterator() {
+		return new CombineIterator(new Iterator[] { pred.iterator(),
+							    succ.iterator() });
+	    }
+	};
+    }
 
-    public HCodeEdge[] pred() { 
-	Object[] predarr = pred.toArray();
-	HCodeEdge[] edges = new HCodeEdge[predarr.length];
-	for (int i = 0; i < predarr.length; i++)
-	    edges[i] = (HCodeEdge) predarr[i];
+    public HCodeEdge[] pred() {
+	HCodeEdge[] edges = new HCodeEdge[pred.size()];
+	pred.copyInto(edges);
 	return edges;
+    }
+    public Collection predC() {
+	return Collections.unmodifiableCollection(pred);
     }
 
     public HCodeEdge[] succ() { 
-	Object[] succarr = succ.toArray();
-	HCodeEdge[] edges = new HCodeEdge[succarr.length];
-	for (int i = 0; i < succarr.length; i++)
-	    edges[i] = (HCodeEdge) succarr[i];
+	HCodeEdge[] edges = new HCodeEdge[succ.size()];
+	succ.copyInto(edges);
         return edges;
+    }
+    public Collection succC() {
+	return Collections.unmodifiableCollection(succ);
     }
 }

@@ -8,15 +8,22 @@ import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.ArrayIterator;
+import harpoon.Util.CombineIterator;
 import harpoon.Util.HashSet;
 import harpoon.Util.Set;
 import harpoon.Util.Util;
 
+import java.util.AbstractCollection;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 /**
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.7 1999-05-19 06:45:19 andyb Exp $
+ * @version $Id: Tree.java,v 1.1.2.8 1999-06-15 20:30:54 sportbilly Exp $
  */
 public abstract class Tree 
     implements harpoon.ClassFile.HCodeElement, 
@@ -206,6 +213,22 @@ public abstract class Tree
     public HCodeEdge[] succ() { 
 	Util.assert(((Code)tf.getParent()).isCanonical());
 	return nextEdge(); 
+    }
+
+    public Collection edgeC() {
+	return new AbstractCollection() {
+	    public int size() { return next.length + prev.length; }
+	    public Iterator iterator() {
+		return new CombineIterator(new Iterator[] {
+		    new ArrayIterator(next), new ArrayIterator(prev) });
+	    }
+	};
+    }
+    public Collection predC() {
+	return Collections.unmodifiableList(Arrays.asList(prev));
+    }
+    public Collection succC() {
+	return Collections.unmodifiableList(Arrays.asList(next));
     }
 
     /** Adds an edge between two Trees.  The <code>from_index</code>ed

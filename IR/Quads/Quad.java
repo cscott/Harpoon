@@ -8,15 +8,22 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Util;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.ArrayIterator;
+import harpoon.Util.CombineIterator;
+import harpoon.Util.Util;
 
+import java.util.AbstractCollection;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Hashtable;
+import java.util.Iterator;
 /**
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.19 1999-05-19 06:45:17 andyb Exp $
+ * @version $Id: Quad.java,v 1.1.2.20 1999-06-15 20:30:54 sportbilly Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -154,6 +161,22 @@ public abstract class Quad
     }
     public HCodeEdge[] pred() { return prevEdge(); }
     public HCodeEdge[] succ() { return nextEdge(); }
+
+    public Collection edgeC() {
+	return new AbstractCollection() {
+	    public int size() { return next.length + prev.length; }
+	    public Iterator iterator() {
+		return new CombineIterator(new Iterator[] {
+		    new ArrayIterator(next), new ArrayIterator(prev) });
+	    }
+	};
+    }
+    public Collection predC() {
+	return Collections.unmodifiableList(Arrays.asList(prev));
+    }
+    public Collection succC() {
+	return Collections.unmodifiableList(Arrays.asList(next));
+    }
 
     /** Adds an edge between two Quads.  The <code>from_index</code>ed
      *  outgoing edge of <code>from</code> is connected to the 

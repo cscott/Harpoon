@@ -8,6 +8,8 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.ArrayFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 /**
  * <code>Bytecode.Instr</code> is the base type for the specific
@@ -19,7 +21,7 @@ import java.util.List;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.3.2.6 1999-05-19 06:45:15 andyb Exp $
+ * @version $Id: Instr.java,v 1.3.2.7 1999-06-15 20:30:53 sportbilly Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -134,4 +136,7 @@ public abstract class Instr
     System.arraycopy(p, 0, r, n.length, p.length);
     return r;
   }
+  public Collection edgeC() { return Arrays.asList(edges()); }
+  public Collection predC() { return Arrays.asList(pred()); }
+  public Collection succC() { return Arrays.asList(succ()); }
 }
