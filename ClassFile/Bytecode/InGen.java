@@ -112,7 +112,7 @@ public class InGen extends Instr {
       // Short
     case Op.SIPUSH:
       operands = new Operand[] { 
-	new OpConstant(new Short((short)u2(code,pc+1)), HClass.Byte)
+	new OpConstant(new Short((short)u2(code,pc+1)), HClass.Short)
       };
       break;
       // Integer constant.
