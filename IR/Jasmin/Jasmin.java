@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.18 1999-10-13 18:38:19 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.19 1999-11-04 03:57:56 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -45,15 +45,15 @@ public class Jasmin {
      * Jasmin formatted assembly code to it.*/
     public void outputClass(PrintStream out) {
 	if (hclass.isInterface()) 
-	    out.println(".interface "+Modifier.toString(hclass.getModifiers())+" "+hclass.getName().replace('.','/'));
+	    out.println(".interface "+Modifier.toString(hclass.getModifiers())+" "+Util.jasminEscape(hclass.getName().replace('.','/')));
 	    else
-	out.println(".class "+Modifier.toString(hclass.getModifiers())+" "+hclass.getName().replace('.','/'));
-	out.println(".super "+hclass.getSuperclass().getName().replace('.','/'));
+	out.println(".class "+Modifier.toString(hclass.getModifiers())+" "+Util.jasminEscape(hclass.getName().replace('.','/')));
+	out.println(".super "+Util.jasminEscape(hclass.getSuperclass().getName().replace('.','/')));
 
 	//List the interfaces
 	HClass[] interfaces=hclass.getInterfaces();
 	for (int i=0;i<interfaces.length;i++)
-	    out.println(".implements "+interfaces[i].getName().replace('.','/'));
+	    out.println(".implements "+Util.jasminEscape(interfaces[i].getName().replace('.','/')));
 	HField[] hfields=hclass.getDeclaredFields();
 
 	//List the fields
@@ -61,10 +61,10 @@ public class Jasmin {
 	    String value="";
 	    if (hfields[i].isConstant())
 		if (hfields[i].getType()==HClass.forName("java.lang.String"))
-		    value=" = "+'"'+hfields[i].getConstant().toString()+'"';
+		    value=" = "+'"'+Util.jasminEscape(hfields[i].getConstant().toString())+'"';
 		else
-		value=" = "+hfields[i].getConstant().toString();
-	    out.println(".field "+Modifier.toString(hfields[i].getModifiers())+" "+hfields[i].getName() +" "+hfields[i].getDescriptor()+value);
+		value=" = "+Util.jasminEscape(hfields[i].getConstant().toString());
+	    out.println(".field "+Modifier.toString(hfields[i].getModifiers())+" "+Util.jasminEscape(hfields[i].getName()) +" "+Util.jasminEscape(hfields[i].getDescriptor())+value);
 	}
 
 	//List the methods
@@ -75,8 +75,8 @@ public class Jasmin {
 
    
     private void outputMethod(PrintStream out, int i) {
-	out.println(".method "+Modifier.toString(hm[i].getModifiers())+" "+hm[i].getName().replace('.','/')
-		    +hm[i].getDescriptor().replace('.','/'));
+	out.println(".method "+Modifier.toString(hm[i].getModifiers())+" "+Util.jasminEscape(hm[i].getName().replace('.','/'))
+		    +Util.jasminEscape(hm[i].getDescriptor().replace('.','/')));
 	//Get modifiers
 	int modifiers=hm[i].getModifiers();
 	//Only print method quads if it isn't Abstract
@@ -226,7 +226,7 @@ public class Jasmin {
 	    out.println(iflabel(q));
 	    for (int i=0;i<q.dimsLength();i++)
 		load(q,q.dims(i));
-	    out.println("    multianewarray "+q.hclass().getName().replace('.','/') +" "+q.dimsLength());
+	    out.println("    multianewarray "+Util.jasminEscape(q.hclass().getName().replace('.','/')) +" "+q.dimsLength());
             store(q,q.dst());
 	}
 
@@ -367,7 +367,7 @@ public class Jasmin {
 		String stop=labeler(qd.next(0));
 		String handler=labeler(q);
 		if (q.caughtException()!=null)
-		    out.println(".catch "+q.caughtException().getName().replace('.','/')+" from "+start+" to "+stop+" using "+handler);
+		    out.println(".catch "+Util.jasminEscape(q.caughtException().getName().replace('.','/'))+" from "+start+" to "+stop+" using "+handler);
 		else
 		    out.println(".catch all from "+start+" to "+stop+" using "+handler);
 	    }
@@ -376,7 +376,7 @@ public class Jasmin {
 	public void visit(INSTANCEOF q) {
 	    out.println(iflabel(q));
 	    load(q,q.src());
-	    out.println("    instanceof "+q.hclass().getName().replace('.','/'));
+	    out.println("    instanceof "+Util.jasminEscape(q.hclass().getName().replace('.','/')));
 	    store(q,q.dst());
 	}
 	
@@ -388,9 +388,9 @@ public class Jasmin {
 		    load(q,q.params(i)); 
 		}
 		out.println("    invokevirtual "+
-			    q.method().getDeclaringClass().getName().replace('.','/')
-			    +"/"+q.method().getName().replace('.','/')
-			    +q.method().getDescriptor().replace('.','/'));
+			    Util.jasminEscape(q.method().getDeclaringClass().getName().replace('.','/'))
+			    +"/"+Util.jasminEscape(q.method().getName().replace('.','/'))
+			    +Util.jasminEscape(q.method().getDescriptor().replace('.','/')));
 		if (q.retval()!=null)
 		    store(q,q.retval());
 	    } 
@@ -401,9 +401,9 @@ public class Jasmin {
 			load(q,q.params(i)); 
 		    }
 		    out.println("    invokeinterface "+
-				q.method().getDeclaringClass().getName().replace('.','/')
-				+"/"+q.method().getName().replace('.','/')
-				+q.method().getDescriptor().replace('.','/')
+				Util.jasminEscape(q.method().getDeclaringClass().getName().replace('.','/'))
+				+"/"+Util.jasminEscape(q.method().getName().replace('.','/'))
+				+Util.jasminEscape(q.method().getDescriptor().replace('.','/'))
 				+" "+q.params().length);
 		    if (q.retval()!=null)
 			store(q,q.retval());
@@ -416,9 +416,9 @@ public class Jasmin {
 			    load(q,q.params(i)); 
 			}
 			out.println("    invokestatic "+
-			    q.method().getDeclaringClass().getName().replace('.','/')
-			    +"/"+q.method().getName().replace('.','/')
-			    +q.method().getDescriptor().replace('.','/'));
+			    Util.jasminEscape(q.method().getDeclaringClass().getName().replace('.','/'))
+			    +"/"+Util.jasminEscape(q.method().getName().replace('.','/'))
+			    +Util.jasminEscape(q.method().getDescriptor().replace('.','/')));
 			if (q.retval()!=null)
 			    store(q,q.retval());
 		    }
@@ -429,9 +429,9 @@ public class Jasmin {
 			    load(q,q.params(i)); 
 			}
 			out.println("    invokespecial "+
-			    q.method().getDeclaringClass().getName().replace('.','/')
-			    +"/"+q.method().getName().replace('.','/')
-			    +q.method().getDescriptor().replace('.','/'));
+			    Util.jasminEscape(q.method().getDeclaringClass().getName().replace('.','/'))
+			    +"/"+Util.jasminEscape(q.method().getName().replace('.','/'))
+			    +Util.jasminEscape(q.method().getDescriptor().replace('.','/')));
 			if (q.retval()!=null)
 			    store(q,q.retval());
 		    }
@@ -443,17 +443,17 @@ public class Jasmin {
 		//Static
 		out.println(iflabel(q));
 		out.println("    getstatic "
-			    +q.field().getDeclaringClass().getName().replace('.','/')
-			    +"/"+q.field().getName().replace('.','/')
-			    +" "+q.field().getDescriptor().replace('.','/'));
+			    +Util.jasminEscape(q.field().getDeclaringClass().getName().replace('.','/'))
+			    +"/"+Util.jasminEscape(q.field().getName().replace('.','/'))
+			    +" "+Util.jasminEscape(q.field().getDescriptor().replace('.','/')));
 	    }
 	    else {
 		out.println(iflabel(q));
 		load(q,q.objectref());
 		out.println("    getfield "
-			    +q.field().getDeclaringClass().getName().replace('.','/')
-			    +"/"+q.field().getName().replace('.','/')
-			    +" "+q.field().getDescriptor().replace('.','/'));
+			    +Util.jasminEscape(q.field().getDeclaringClass().getName().replace('.','/'))
+			    +"/"+Util.jasminEscape(q.field().getName().replace('.','/'))
+			    +" "+Util.jasminEscape(q.field().getDescriptor().replace('.','/')));
 	    }
 	    store(q,q.dst());
 	}
@@ -493,7 +493,7 @@ public class Jasmin {
 
 	public void visit(NEW q) {
 	    out.println(iflabel(q));
-	    out.println("    new "+q.hclass().getName().replace('.','/'));
+	    out.println("    new "+Util.jasminEscape(q.hclass().getName().replace('.','/')));
 	    store(q,q.dst());
 	}
 
@@ -512,7 +512,7 @@ public class Jasmin {
 	    if (q.value()!=null) {
 		HClass hclass=q.type();
 		if (hclass==HClass.forName("java.lang.String"))
-		    out.println("    ldc "+'"'+q.value().toString()+'"');
+		    out.println("    ldc "+'"'+Util.jasminEscape(q.value().toString())+'"');
 		else
 		    if ((hclass==HClass.Double)||(hclass==HClass.Long))
 			out.println("    ldc2_w "+q.value().toString());
@@ -560,18 +560,18 @@ public class Jasmin {
 		out.println(iflabel(q));
 		load(q,q.src());
 		out.println("    putstatic "
-			    +q.field().getDeclaringClass().getName().replace('.','/')
-			    +"/"+q.field().getName().replace('.','/')
-			    +" "+q.field().getDescriptor().replace('.','/'));
+			    +Util.jasminEscape(q.field().getDeclaringClass().getName().replace('.','/'))
+			    +"/"+Util.jasminEscape(q.field().getName().replace('.','/'))
+			    +" "+Util.jasminEscape(q.field().getDescriptor().replace('.','/')));
 	    }
 	    else {
 		out.println(iflabel(q));
 		load(q,q.objectref());
 		load(q,q.src());
 		out.println("    putfield "
-			    +q.field().getDeclaringClass().getName().replace('.','/')
-			    +"/"+q.field().getName().replace('.','/')
-			    +" "+q.field().getDescriptor().replace('.','/'));
+			    +Util.jasminEscape(q.field().getDeclaringClass().getName().replace('.','/'))
+			    +"/"+Util.jasminEscape(q.field().getName().replace('.','/'))
+			    +" "+Util.jasminEscape(q.field().getDescriptor().replace('.','/')));
 	    }
 	}
 
@@ -587,7 +587,7 @@ public class Jasmin {
 	public void visit(TYPECAST q) {
 	    out.println(iflabel(q));
 	    load(q,q.objectref());
-	    out.println("    checkcast "+q.hclass().getName().replace('.','/'));
+	    out.println("    checkcast "+Util.jasminEscape(q.hclass().getName().replace('.','/')));
 	    TempInfo dest=(TempInfo)tempmap.get(q.objectref());
 	    if (!dest.stack)
 		store(q,q.objectref());
