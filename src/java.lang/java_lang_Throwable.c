@@ -29,7 +29,12 @@ void jprintln(JNIEnv *env, jobject sobj, char *format, ...) {
     (*env)->ReleaseStringChars(env, str, ca);
     (*env)->CallVoidMethod(env, sobj, mid, chararr);
 }
-
+#ifdef WITH_TRANSACTIONS
+JNIEXPORT void JNICALL Java_java_lang_Throwable_printStackTrace0_00024_00024withtrans
+  (JNIEnv *env, jobject thisobj, jobject commitrec, jobject sobj) {
+  /* undoing a transactional print is problematic.  so do nothing instead. */
+}
+#endif /* WITH_TRANSACTIONS */
 
 #if ! (defined(HAVE_STACK_TRACE_FUNCTIONS) && \
        defined(HAVE_LIBBFD) && defined(HAVE_LIBIBERTY))
