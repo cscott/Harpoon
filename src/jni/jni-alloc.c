@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h> /* for memset */
 #include "config.h"
+#include "compiler.h" /* for likely()/unlikely() */
 #if defined(WITH_REALTIME_JAVA) || defined(WITH_REALTIME_JAVA_STUBS)
 #include "../realtime/RTJconfig.h"
 #endif
@@ -56,7 +57,7 @@ jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, struct claz *claz,
 
   assert(claz); /* info may be NULL.  claz may not be. */
   newobj = (allocfunc==NULL) ? FNI_RawAlloc(env,length) : (*allocfunc)(length);
-  if (newobj==NULL) {
+  if (unlikely(newobj==NULL)) {
     FNI_ThrowNew(env, FNI_FindClass(env, "java/lang/OutOfMemoryError"),
 		 "JNI: allocation failed");
     return NULL;

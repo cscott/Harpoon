@@ -7,6 +7,7 @@
 
 #include <jni.h>
 #include <config.h>
+#include <compiler.h> /* for likely() */
 #if WITH_PRECISE_C_BACKEND
 #include <setjmp.h>
 #endif
@@ -45,7 +46,7 @@ struct FNI_Thread_State {
 extern struct _jobject_globalref FNI_globalrefs;
 
 #define FNI_NO_EXCEPTIONS(env) \
-	(((struct FNI_Thread_State *)(env))->exception==NULL)
+	(likely(((struct FNI_Thread_State *)(env))->exception==NULL))
 
 /* -------------- end thread state structure. ------------- */
 

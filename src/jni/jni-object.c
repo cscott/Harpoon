@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "compiler.h" /* for likely()/unlikely() */
 #include "../java.lang/class.h" /* for fni_class_isInterface */
 
 /* Allocates a new Java object without invoking any of the constructors
@@ -63,7 +64,7 @@ jobject FNI_NewObjectA(JNIEnv *env, jclass clazz, jmethodID methodID,
   jobject result;
   assert(FNI_NO_EXCEPTIONS(env));
   result = FNI_AllocObject(env, clazz);
-  if (FNI_ExceptionOccurred(env)) return result; /* bail */
+  if (unlikely(FNI_ExceptionOccurred(env)!=NULL)) return result; /* bail */
 #ifdef WITH_ROLE_INFER
   NativeassignUID(env,result,clazz);
 #endif
@@ -75,7 +76,7 @@ jobject FNI_NewObjectV(JNIEnv *env, jclass clazz, jmethodID methodID,
   jobject result;
   assert(FNI_NO_EXCEPTIONS(env));
   result = FNI_AllocObject(env, clazz);
-  if (FNI_ExceptionOccurred(env)) return result; /* bail */
+  if (unlikely(FNI_ExceptionOccurred(env)!=NULL)) return result; /* bail */
 #ifdef WITH_ROLE_INFER
   NativeassignUID(env,result,clazz);
 #endif

@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <errno.h> /* for EBUSY */
 #include "config.h"
+#include "compiler.h" /* for likely()/unlikely() */
 #include "flexthread.h"
 #include "fni-stats.h"
 
@@ -40,7 +41,10 @@ jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
   assert(FNI_NO_EXCEPTIONS(env));
   INCREMENT_STATS(monitor_enter, 1);
   /* check object field, inflate lock if necessary. */
-  if (!FNI_IS_INFLATED(obj)) FNI_InflateObject(env, obj);
+  /*   it's likely that we will be repeatedly locking on the same objects,
+   *   not always locking on different objects (or else why are we locking?),
+   *   so we'll add an 'unlikely' annotation to this next test. */
+  if (unlikely(!FNI_IS_INFLATED(obj))) FNI_InflateObject(env, obj);
   li = FNI_INFLATED(obj);
   if (li->tid == self) { /* i already have the lock */
     li->nesting_depth++;
@@ -82,9 +86,9 @@ jint FNI_MonitorExit(JNIEnv *env, jobject obj) {
 void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime){
   struct inflated_oobj *li; jclass ex; int st;
   assert(FNI_NO_EXCEPTIONS(env));
-  if (!FNI_IS_INFLATED(obj)) goto error; // we don't have the lock.
+  if (unlikely(!FNI_IS_INFLATED(obj))) goto error; // we don't have the lock.
   li = FNI_INFLATED(obj);
-  if (li->tid != pthread_self()) goto error; // we don't have the lock.
+  if (unlikely(li->tid != pthread_self())) goto error; // don't have the lock.
   else { /* open brace so we can push new stuff on the stack */
     pthread_t tid = li->tid;
     jint nesting_depth = li->nesting_depth;
@@ -107,16 +111,16 @@ void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime){
 
  error:
   ex = (*env)->FindClass(env, "java/lang/IllegalMonitorStateException");
-  if ((*env)->ExceptionOccurred(env)) return;
+  if (unlikely((*env)->ExceptionOccurred(env)!=NULL)) return;
   (*env)->ThrowNew(env, ex, "wait() called but we don't have the lock");
   return;
 }
 void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall) {
   struct inflated_oobj *li; jclass ex; int st;
   assert(FNI_NO_EXCEPTIONS(env));
-  if (!FNI_IS_INFLATED(obj)) goto error; // we don't have the lock.
+  if (unlikely(!FNI_IS_INFLATED(obj))) goto error; // we don't have the lock.
   li = FNI_INFLATED(obj);
-  if (li->tid != pthread_self()) goto error; // we don't have the lock.
+  if (unlikely(li->tid != pthread_self())) goto error; // don't have the lock.
 
   if (wakeall)
     st = pthread_cond_broadcast(&(li->cond));
@@ -127,7 +131,7 @@ void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall) {
 
  error:
   ex = (*env)->FindClass(env, "java/lang/IllegalMonitorStateException");
-  if ((*env)->ExceptionOccurred(env)) return;
+  if (unlikely((*env)->ExceptionOccurred(env)!=NULL)) return;
   (*env)->ThrowNew(env, ex, "notify() called but we don't have the lock");
   return;
 }

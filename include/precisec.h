@@ -6,6 +6,7 @@
 #include "fni-threadstate.h" /* for struct FNI_Thread_State */
 #include "fni-ptroff.h" /* for ptroff_t */
 #include "fni-ptrmask.h" /* for PTRMASK */
+#include "compiler.h" /* for likely()/unlikely() */
 #ifdef WITH_GENERATIONAL_GC
 # include "write_barrier.h" /* for generational_write_barrier */
 #endif /* WITH_GENERATIONAL_GC */
@@ -80,13 +81,13 @@ void * (*) argtypes
 #define CALL(rettype, retval, funcref, args, exv, handler, restoreexpr)\
 { rettype ## _and_ex __r = (funcref) args;\
   restoreexpr;\
-  if (__r.ex) { exv = __r.ex; goto handler; }\
+  if (unlikely(__r.ex!=NULL)) { exv = __r.ex; goto handler; }\
   else retval = __r.value;\
 }
 #define CALLV(funcref, args, exv, handler, restoreexpr)\
 { void * __r = (funcref) args;\
   restoreexpr;\
-  if (__r) { exv = __r; goto handler; }\
+  if (unlikely(__r!=NULL)) { exv = __r; goto handler; }\
 }
 /* no-handler case is same as handler case */
 #define CALL_NH(rettype, retval, funcref, args, exv, handler, restoreexpr)\
@@ -148,7 +149,7 @@ void (*) argtypes
   jptr _ex_; jmp_buf _jb_, *oldhandler;\
   IFPRECISE(void *_top_=STACKTOP());\
   oldhandler=fts->handler; fts->handler=&_jb_;\
-  if ((_ex_=(jptr)setjmp(_jb_))!=NULL) {\
+  if (unlikely((_ex_=(jptr)setjmp(_jb_))!=NULL)) {\
     exv=_ex_; fts->handler=oldhandler;\
     IFPRECISE(SETSTACKTOP(_top_)); restoreexpr; goto hlabel;\
   }
