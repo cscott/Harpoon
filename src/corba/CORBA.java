@@ -178,6 +178,8 @@ public class CORBA implements CommunicationsModel {
 	    public void doubleValue(double newValue) {}
 	    public String stringValue() { return ""; }
 	    public void stringValue(String newValue) {}
+	    public String getName() { return ""; }
+	    public void setNotificationThreshold(double d) {}
 	});
     }
 
