@@ -40,17 +40,14 @@ import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
-import java.util.Enumeration;
-import java.util.Vector;
-import java.util.List;
-import java.util.Arrays;
+import java.util.*;
 
 /**
  * <code>CodeGen</code> is a utility class which implements instruction
  * selection of <code>Instr</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.9 1999-05-25 16:50:36 andyb Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.10 1999-05-25 20:22:04 andyb Exp $
  */
 final class CodeGen {
 
@@ -71,12 +68,12 @@ final class CodeGen {
         Frame f = code.getFrame();
         Vector instrList = new Vector();
         Vector dataList = new Vector();
-        Visitor v = new Visitor(inf, instrList, dataList, f);
+	Hashtable blMap = new Hashtable();
+	Hashtable liMap = new Hashtable();
+        Visitor v = new Visitor(inf, instrList, dataList, f, blMap, liMap);
 
         ((Tree)tree.getRootElement()).visit(v);
 
-	/* XXX - this isn't a complete instrList -> dataflow graph
-         * implementations. */
         Instr instrs = null, curr = null;
 
         Enumeration enum = instrList.elements();
@@ -106,6 +103,16 @@ final class CodeGen {
 	    Instr.insertInstrAfter(curr, i);
 	    curr = i;
         } 
+
+	// add branch edges
+	enum = blMap.keys();
+	while (enum.hasMoreElements()) {
+            Instr i = (Instr)enum.nextElement();
+	    Label l = (Label)blMap.get(i);
+	    Instr labeli = (Instr)liMap.get(l); 
+            Instr.addEdge(i, labeli);
+        }
+
         return instrs;
     }
 
@@ -118,12 +125,22 @@ final class CodeGen {
         Vector dataList;
         Label dataLabel;
 
-        Visitor(InstrFactory inf, Vector instrList, Vector dataList,Frame f) {
+	// maps instr's with branchs to the label that they branch to
+	// strongarm instruction set only has condition branching - no switch
+        Hashtable blMap;
+
+	// maps labels to the instrLABEL's for those labels
+	Hashtable liMap;
+
+        Visitor(InstrFactory inf, Vector instrList, Vector dataList,
+                Frame f, Hashtable blMap, Hashtable liMap) {
             this.f = f;
             this.inf = inf; 
             this.instrList = instrList;
             this.dataList = dataList;
-			tf = inf.tempFactory();
+	    this.blMap = blMap;
+	    this.liMap = liMap;
+            tf = inf.tempFactory();
         }
 
         void emit(Instr instr) {
@@ -160,17 +177,14 @@ final class CodeGen {
 	}
 
         public void visit(Exp e) {
-            // Error! Error!
 	    Util.assert(false, "Should not be visiting Exp in CodeGen");
         }
 
         public void visit(Stm e) {
-            // Error! Error!
 	    Util.assert(false, "Should not be visiting Stm in CodeGen");
         }
 
         public void visit(OPER e) {
-            // Error! Error!
 	    Util.assert(false, "Should not be visiting OPER in CodeGen");
         }
 
@@ -183,9 +197,13 @@ final class CodeGen {
                            new Temp[] { test.temp() },
                            null));
 
-	    /* XXX - update this to mark these as jump-tos */
-            emit(new Instr(inf, s, "beq " + s.iffalse, null, null));
-            emit(new Instr(inf, s, "b " + s.iftrue, null, null));
+	    Instr i = new Instr(inf, s, "beq " + s.iffalse, null, null);
+	    emit(i);
+	    blMap.put(i, s.iffalse);
+
+	    i = new Instr(inf, s, "b " + s.iftrue, null, null);
+            emit(i);
+            blMap.put(i, s.iftrue);
 
             visitRet = null;
         }
@@ -201,9 +219,10 @@ final class CodeGen {
         }
 
         public void visit(LABEL s) {
+            Instr i = new InstrLABEL(inf, s, s.label + ":", s.label);
+            emit(i);
+            liMap.put(s.label, i);
 
-            /* XXX - update this to mark this as jump-dests */
-            emit(new InstrLABEL(inf, s, s.label + ":", s.label));
             visitRet = null;
         }
 
@@ -461,7 +480,7 @@ final class CodeGen {
             visitRet = retval;
         }
 
-            public void visit(ESEQ e) {
+        public void visit(ESEQ e) {
             e.stm.visit(this);
             e.exp.visit(this);
             /* this returns whatever the last visitor set

@@ -13,14 +13,14 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.Util;
 
-import java.util.Vector;
+import java.util.*;
 
 /**
  * <code>Instr</code> is the primary class for representing
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.12 1999-05-25 16:45:13 andyb Exp $
+ * @version $Id: Instr.java,v 1.1.2.13 1999-05-25 20:22:04 andyb Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -106,6 +106,30 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	return e;
     }
 
+    /** Removes an <code>Edge</code> which previously connected <code>src</code>
+     *  to <code>dest</code> */
+    public static void removeEdge(Instr src, Instr dest) {
+	Util.assert(src != null);
+	Util.assert(dest != null);
+
+	/* ADB: dangerous way of doing this, should be done better in
+         * future. XXX */
+	Enumeration enum = src.succ.elements();
+	while (enum.hasMoreElements()) {
+	    HCodeEdge hce = (HCodeEdge)enum.nextElement();	
+            if (hce.to() == dest) {
+		src.succ.removeElement(hce);
+            }
+        }
+	enum = dest.pred.elements();
+        while (enum.hasMoreElements()) {
+	    HCodeEdge hce = (HCodeEdge)enum.nextElement();
+            if (hce.from() == src) {
+		dest.pred.removeElement(hce);
+            }
+        }
+    }
+
     /** Inserts <code>newi</code> as an Instr after <code>pre</code>, such
      *  that <code>pre</code>'s successors become <code>newi</code>'s
      *  successors, and <code>pre</code>'s only successor is <code>newi</code>.
@@ -114,7 +138,11 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	Util.assert(pre != null);
         Util.assert(newi != null);
 
-        newi.succ = pre.succ;
+        HCodeEdge[] oldsucc = pre.succ();
+	for (int i = 0; i < oldsucc.length; i++) {
+	    removeEdge(pre, (Instr)oldsucc[i].to());
+	    addEdge(newi, (Instr)oldsucc[i].to());
+        }
 	pre.succ = new Vector();
 	addEdge(pre, newi);
     }
@@ -127,7 +155,11 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
         Util.assert(post != null);
         Util.assert(newi != null);
 
-	newi.pred = post.pred;
+	HCodeEdge[] oldpred = post.pred();
+	for (int i = 0; i < oldpred.length; i++) {
+            removeEdge((Instr)oldpred[i].from(), post);
+	    addEdge((Instr)oldpred[i].from(), newi);
+	}
 	post.pred = new Vector();
 	addEdge(newi, post);
     }
