@@ -82,6 +82,11 @@ public class Cache extends Node {
     public void process(ImageData id) {
 	switch (Command.read(id)) {
 	case Command.GET_CROPPED_IMAGE:
+	    //System.out.println("Getting cropped image:");
+	    //System.out.println("  id.id = "+id.id);
+	    //System.out.println("  id.width = "+id.width);
+	    //System.out.println("  id.height = "+id.height);
+	    //System.out.println("");
 	    //no break, so continues onto next case
 	case Command.GET_IMAGE: {
 	    Node right = getRight();
@@ -93,10 +98,14 @@ public class Cache extends Node {
 			    retID = ImageDataManip.crop(retID, id.x, id.y, id.width, id.height);
 			}
 			
+			//WARNING: if the ImageData defining the cropping boundaries (id)
+			//has information that you want propogated to the new image,
+			//you must do that here.
 			retID.c1 = id.c1;
 			retID.c2 = id.c2;
-			retID.c3 = id.c3;
-			
+			retID.c3 = id.c3;			
+			retID.trackedObjectUniqueID = id.trackedObjectUniqueID;
+
 			right.process(retID);
 			break;
 		    }
