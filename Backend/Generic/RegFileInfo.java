@@ -58,7 +58,7 @@ import java.util.Iterator;
     maintained by the hardcoded references.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.17 2000-01-26 04:51:33 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.18 2000-01-26 05:22:05 cananian Exp $ */
 public abstract class RegFileInfo {
     
     /** Common super class for <code>StackOffsetLoc</code> and 
@@ -88,7 +88,7 @@ public abstract class RegFileInfo {
     /** Defines the upper bound on possible indexes for
 	<code>MachineRegLoc</code>s. 
     */
-    public abstract int regIndexRange();
+    public int maxRegIndex() { throw new Error("Unimplemented."); }
 
     /** Represents Machine Register <code>Temp</code>s. */
     static interface MachineRegLoc extends CommonLoc {
@@ -102,7 +102,7 @@ public abstract class RegFileInfo {
 		 have an index of "0").  Each register for a given
 		 architecture will have a different index. 
 		 The index is bounded as follows:
-		 0 &lt;= index &lt; <code>RegFileInfo.this.regIndexRange()</code>. 
+		 0 &lt;= index &lt; <code>RegFileInfo.this.maxRegIndex()</code>. 
 	*/
 	int regIndex();
     }
