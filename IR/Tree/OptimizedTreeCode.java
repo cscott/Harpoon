@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.4 1999-07-27 21:45:12 duncan Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.5 1999-07-30 20:41:35 duncan Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = "optimized-tree";
@@ -81,15 +81,6 @@ public class OptimizedTreeCode extends Code {
 	    (CanonicalTreeCode)tree.getFactory().getParent();
 	this.tree = (Tree)Tree.clone(this.tf, ctm, tree);
 	(this.edgeInitializer = new EdgeInitializer()).computeEdges();
-
-	// Must update the temps in your frame when you clone the tree form
-	// Failure to do this causes an inconsistency between the new temps
-	// created for the new frame, and the frame's registers mapped
-	// using ctm in Tree.clone(). 
-	Temp[] oldTemps = tree.getFactory().getFrame().getAllRegisters();
-	Temp[] newTemps = this.tf.getFrame().getAllRegisters();
-	for (int i=0; i<oldTemps.length; i++) 
-	    newTemps[i] = oldTemps[i]==null?null:ctm.tempMap(oldTemps[i]);
 	
 	this.derivation = new Derivation() { 
 	    public DList derivation(HCodeElement hce, Temp t) { 

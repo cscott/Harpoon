@@ -11,7 +11,7 @@ import java.io.PrintWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.12 1999-07-27 16:43:42 duncan Exp $
+ * @version $Id: Print.java,v 1.1.2.13 1999-07-30 20:41:35 duncan Exp $
  */
 public class Print {
     final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -19,6 +19,16 @@ public class Print {
         PrintVisitor pv = new PrintVisitor(pw, tm);
 
         pw.print("Codeview \""+c.getName()+"\" for "+c.getMethod()+":");
+        tr.visit(pv);
+        pw.println();
+        pw.flush();
+    }
+
+    final static void print(PrintWriter pw, Data d, TempMap tm) { 
+	Tree tr = (Tree)d.getRootElement();
+        PrintVisitor pv = new PrintVisitor(pw, tm);
+
+        pw.print("Dataview \""+d.getName()+"\" for "+d.getHClass()+":");
         tr.visit(pv);
         pw.println();
         pw.flush();

@@ -15,7 +15,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.15 1999-07-07 09:47:24 duncan Exp $
+ * @version $Id: TEMP.java,v 1.1.2.16 1999-07-30 20:41:35 duncan Exp $
  */
 public class TEMP extends Exp {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -49,7 +49,11 @@ public class TEMP extends Exp {
     public void visit(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new TEMP(tf, this, this.type, map(ctm, this.temp));
+	// Registers are immutable
+	if (getFactory().getFrame().isRegister(this.temp)) 
+	    return new TEMP(tf, this, this.type, this.temp);
+	else 
+	    return new TEMP(tf, this, this.type, map(ctm, this.temp));
     }
 
     public String toString() {

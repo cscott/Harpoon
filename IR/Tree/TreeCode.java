@@ -23,7 +23,7 @@ import harpoon.Temp.Temp;
  * The tree form is based around Andrew Appel's tree form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: TreeCode.java,v 1.1.2.7 1999-07-07 09:08:28 duncan Exp $
+ * @version $Id: TreeCode.java,v 1.1.2.8 1999-07-30 20:41:35 duncan Exp $
  * 
  */
 public class TreeCode extends Code {
@@ -59,15 +59,6 @@ public class TreeCode extends Code {
 	    (this.tf.tempFactory(), tc.tf.tempFactory());
 
 	tc.tree = (Tree)(Tree.clone(tc.tf, ctm, tree));
-	// Must update the temps in your frame when you clone the tree form
-	// Failure to do this causes an inconsistency between the new temps
-	// created for the new frame, and the frame's registers mapped
-	// using ctm in Tree.clone(). 
-	Temp[] oldTemps = this.tf.getFrame().getAllRegisters();
-	Temp[] newTemps = tc.tf.getFrame().getAllRegisters();
-	for (int i=0; i<oldTemps.length; i++) 
-	    newTemps[i] = oldTemps[i]==null?null:ctm.tempMap(oldTemps[i]);
-
 	tc.derivation = new Derivation() { 
 	    public DList derivation(HCodeElement hce, Temp t) { 
 		return this.derivation(hce, t==null?null:ctm.tempMap(t));

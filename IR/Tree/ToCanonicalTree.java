@@ -21,7 +21,7 @@ import java.util.Hashtable;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.5 1999-06-28 18:51:24 duncan Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.6 1999-07-30 20:41:35 duncan Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -101,13 +101,6 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	root = (Stm)code.getRootElement();
 	ctm  = new CloningTempMap
 	    (root.getFactory().tempFactory(), tf.tempFactory());
-
-	// Must update the temps in your frame when you clone the tree form
-	Temp[] oldTemps = root.getFactory().getFrame().getAllRegisters();
-	Temp[] newTemps = tf.getFrame().getAllRegisters();
-	for (int i=0; i<oldTemps.length; i++) { 
-	    newTemps[i] = oldTemps[i]==null?null:ctm.tempMap(oldTemps[i]);
-	}
 	
 	// OK, frame is updated.  now clone the tree form
 	rootClone = (Stm)(Tree.clone(tf, ctm, root));
