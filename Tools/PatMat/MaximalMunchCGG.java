@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.38 1999-10-14 04:15:09 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.39 1999-10-14 05:42:04 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -742,8 +742,9 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 		String matchStm = (indent + "if (" + typeCheck + indent + "){\n"+
 				   recurse.initStms.toString() +
+				   indent + recurse.rootType + " ROOT = (" + recurse.rootType + ") " + stmArg + ";\n" +
 				   indent + "\t_matched_ = " + makePred.predicate.toString()+";\n" +
-				   indent + recurse.rootType + " ROOT = (" + recurse.rootType + ") " + stmArg + ";\n");
+				   "");
 
 		//String matchStm = indent + "_matched_ = (" + typeCheck + indent + ");";
 		stmMatchActionPairs.add( new RuleTuple
@@ -768,8 +769,9 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		// TODO: add PREDICATE CHECK to end of matchStm
 		String matchStm = (indent + "if ("+typeCheck+indent+"){\n" +
 				   recurse.initStms.toString() +
+				   indent + recurse.rootType + " ROOT = (" + recurse.rootType + ") " + expArg + ";\n" +
 				   indent + "\t_matched_ = "+makePred.predicate.toString()+";\n" +
-				   indent + recurse.rootType + " ROOT = (" + recurse.rootType + ") " + expArg + ";\n");
+				   "");
 		//String matchStm = indent + "_matched_ =  (" + typeCheck + indent + ");";
 		expMatchActionPairs.add( new RuleTuple
 					 ( r.exp.toString(),
