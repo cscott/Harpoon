@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodProxy.java,v 1.2 2002-02-25 21:03:04 cananian Exp $
+ * @version $Id: HMethodProxy.java,v 1.3 2003-03-18 02:27:02 cananian Exp $
  * @see HMethod
  */
 class HMethodProxy extends HMemberProxy
@@ -45,6 +45,18 @@ class HMethodProxy extends HMemberProxy
     public boolean isStatic() { return proxy.isStatic(); }
     public String toString() { return HMethodImpl.toString(this); }
     public boolean equals(Object obj) { return HMethodImpl.equals(this, obj); }
+    /* ------- JSR-14 extensions. ----------- */
+    public HType[] getGenericParameterTypes() {
+	// xxx need to be able to wrap HTypes.
+	throw new RuntimeException("Unimplemented.");
+    }
+    public HType getGenericReturnType() {
+	// xxx need to be able to wrap HTypes.
+	throw new RuntimeException("Unimplemented.");
+    }
+    public HMethodTypeVariable[] getTypeParameters() {
+	throw new RuntimeException("Unimplemented.");
+    }
     // HMethodMutator interface
     // BE CAREFUL TO KEEP TRACK OF PROXY'S HASHCODE CHANGES.
     // flushMemberMap() and updateMemberMap() need to be called whenever the

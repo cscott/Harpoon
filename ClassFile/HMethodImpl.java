@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodImpl.java,v 1.3 2002-04-10 03:04:15 cananian Exp $
+ * @version $Id: HMethodImpl.java,v 1.4 2003-03-18 02:27:02 cananian Exp $
  * @see HMethod
  */
 abstract class HMethodImpl
@@ -147,6 +147,18 @@ abstract class HMethodImpl
   public boolean isStatic() {
     return Modifier.isStatic(getModifiers());
   }
+
+  /* ------- JSR-14 extensions. ----------- */
+  public HType[] getGenericParameterTypes() {
+    throw new RuntimeException("Unimplemented.");
+  }
+  public HType getGenericReturnType() {
+    throw new RuntimeException("Unimplemented.");
+  }
+  public HMethodTypeVariable[] getTypeParameters() {
+    throw new RuntimeException("Unimplemented.");
+  }
+
 
   /** Returns a mutator for this <code>HMethod</code>, or <code>null</code>
    *  if the object is immutable. */

@@ -11,7 +11,7 @@ import java.lang.reflect.Modifier;
  * <code>HFieldImpl</code> is the basic implementation of <code>HField</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldImpl.java,v 1.3 2002-04-10 03:04:15 cananian Exp $
+ * @version $Id: HFieldImpl.java,v 1.4 2003-03-18 02:27:02 cananian Exp $
  * @see HField
  */
 abstract class HFieldImpl
@@ -88,6 +88,10 @@ abstract class HFieldImpl
   /** Determines whether this is a static field. */
   public boolean isStatic() {
     return Modifier.isStatic(getModifiers());
+  }
+
+  public HType getGenericType() {
+    throw new RuntimeException("Unimplemented");
   }
 
   /** Returns a mutator for this <code>HField</code>, or <code>null</code>

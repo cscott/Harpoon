@@ -13,7 +13,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.17 2002-04-10 03:04:15 cananian Exp $
+ * @version $Id: HField.java,v 1.18 2003-03-18 02:27:02 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -103,6 +103,20 @@ public interface HField extends HMember {
    * <code>volatile</code>.
    */
   public String toString();
+
+  /*****************************************************************/
+  // JSR-14 extensions.
+
+  /**
+   * Returns an <code>HType</code> object that represents the declared
+   * compile-time type for the field represented by this
+   * <code>HField</code> object.  In particular, if the compile-time
+   * type of this field is a type variable or a parameterized type,
+   * than an object of the appropriate type (i.e.,
+   * <code>HTypeVariable</code> or <code>HParameterizedType</code>)
+   * will be returned.
+   */
+  public HType getGenericType();
 
   /** Array factory: returns new <code>HField[]</code>. */
   public static final ArrayFactory<HField> arrayFactory =

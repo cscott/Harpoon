@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * <code>HField</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldProxy.java,v 1.2 2002-02-25 21:03:03 cananian Exp $
+ * @version $Id: HFieldProxy.java,v 1.3 2003-03-18 02:27:02 cananian Exp $
  * @see HField
  */
 class HFieldProxy extends HMemberProxy
@@ -39,6 +39,10 @@ class HFieldProxy extends HMemberProxy
     public boolean isStatic() { return proxy.isStatic(); }
     public String toString() { return HFieldImpl.toString(this); }
     public boolean equals(Object obj) { return HFieldImpl.equals(this, obj); }
+    public HType getGenericType() {
+	// xxx need to be able to wrap generic types.
+	throw new RuntimeException("Unimplemented");
+    }
     // HFieldMutator interface
     // BE CAREFUL TO KEEP TRACK OF PROXY'S HASHCODE CHANGES.
     // flushMemberMap() and updateMemberMap() need to be called whenever the

@@ -12,7 +12,7 @@ import harpoon.Util.ArrayFactory;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.32 2002-04-10 03:04:15 cananian Exp $
+ * @version $Id: HMethod.java,v 1.33 2003-03-18 02:27:02 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -128,6 +128,39 @@ public interface HMethod extends HMember {
    * <code>synchronized</code>, <code>native</code>.
    */
   public String toString();
+
+  /*****************************************************************/
+  // JSR-14 extensions.
+
+  /**
+   * Returns an array of <code>HType</code> objects that represent the
+   * formal parameter types, in declaration order, of the method
+   * represented by this <code>HMethod</code> object.  Returns an
+   * array of length 0 if the underlying method takes no parameters.
+   * <p>
+   * In particular, if the compile-time type of any formal parameter
+   * is a type variable or a parameterized type, than an object of the
+   * appropriate type (i.e., <code>HTypeVariable</code> or
+   * <code>HParameterizedType</code>) will be returned.
+   */
+  public HType[] getGenericParameterTypes();
+  /**
+   * Returns an <code>HType</code> object that represents the formal
+   * return type of the method represented by this
+   * <code>HMethod</code> object.  In particular, if the compile-time
+   * return type a parameterized type, than an object of the
+   * appropriate type (i.e., <code>HTypeVariable</code> or
+   * <code>HParameterizedType</code> will be returned.
+   */
+  public HType getGenericReturnType();
+  /**
+   * Returns an array of <code>HMethodTypeVariable</code> objects that
+   * represent the type variables declared by the method represented
+   * by this <code>HMethod</code> object, in declaration order.
+   * Returns an array of length 0 if the underlying method declares no
+   * type variables.
+   */
+  public HMethodTypeVariable[] getTypeParameters();
 
   /** Array factory: returns new <code>HMethod[]</code>. */
   public static final ArrayFactory<HMethod> arrayFactory =

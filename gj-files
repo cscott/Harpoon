@@ -165,6 +165,7 @@ ClassFile/HClassArray.java
 ClassFile/HClassPrimitive.java
 ClassFile/HClassProxy.java
 ClassFile/HClassSyn.java
+ClassFile/HClassTypeVariable.java
 ClassFile/HCode.java
 ClassFile/HCodeAndMaps.java
 ClassFile/HCodeEdge.java
@@ -177,7 +178,11 @@ ClassFile/HMember.java
 ClassFile/HMemberProxy.java
 ClassFile/HMethod.java
 ClassFile/HMethodImpl.java
+ClassFile/HMethodTypeVariable.java
+ClassFile/HParameterizedType.java
 ClassFile/HPointer.java
+ClassFile/HType.java
+ClassFile/HTypeVariable.java
 IR/Assem/Code.java
 IR/Assem/Instr.java
 IR/Assem/InstrEdge.java

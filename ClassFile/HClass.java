@@ -27,16 +27,16 @@ import java.util.Map;
  * <p>
  * There is no public constructor for the class <code>HClass</code>.
  * <code>HClass</code> objects are created with the <code>forName</code>,
- * <code>forDescriptor</code> and <code>forClass</code> methods of this
- * class.
+ * <code>forDescriptor</code> and <code>forClass</code> methods of
+ * <code>Linker</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.45 2003-03-11 23:20:03 cananian Exp $
+ * @version $Id: HClass.java,v 1.46 2003-03-18 02:27:02 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
 public abstract class HClass extends HPointer
-  implements java.lang.Comparable<HClass>, ReferenceUnique {
+  implements java.lang.Comparable<HClass>, ReferenceUnique, HType {
   /** The linker responsible for the resolution of this <code>HClass</code>
    *  object. */
   private final Linker _linker;
@@ -758,6 +758,69 @@ public abstract class HClass extends HPointer
       else return tn.substring(lastdot+1);
     }
     else return tn;
+  }
+
+  /*****************************************************************/
+  // JSR-14 extensions.
+
+  /**
+   * Returns the <code>HType</code>s representing the interfaces
+   * implemented by the class or interface represented by this object.
+   * <p>
+   * If this object represents a class, the return value is an
+   * array containing objects representing all interfaces implemented
+   * by the class. The order of the interface objects in the array
+   * corresponds to the order of the interface names in the
+   * <code>implements</code> clause of the declaration of the class
+   * represented by this object.  In the case of an array class, the
+   * interfaces <code>Cloneable</code> and <code>Serializable</code> are
+   * returned in that order.
+   * <p>
+   * If this object represents an interface, the array contains
+   * objects representing all interfaces extended by the interface. The
+   * order of the interface objects in the array corresponds to the order
+   * of the interface names in the <code>extends</code> clause of the
+   * declaration of the interface represented by this object.
+   * <p>
+   * If this object represents a class or interface that implements no
+   * interfaces, the method returns an array of length 0.
+   * <p>
+   * If this object represents a primitive type or void, the method
+   * returns an array of length 0.
+   * <p>
+   * In particular, if the compile-time type of any superinterface is
+   * a parameterized type, than an object of the appropriate type
+   * (i.e., <code>HParameterizedType</code>) will be returned.
+   * @return an array of interfaces implemented by this class.
+   */
+  public HType[] getGenericInterfaces() {
+    throw new RuntimeException("Unimplemented");
+  }
+  /**
+   * Returns the <code>HType</code> representing the superclass of the
+   * entity (class, interface, primitive type or void) represented by
+   * this <code>HClass</code>.  If this <code>HClass</code> represents
+   * either the <code>Object</code> class, an interface, a primitive
+   * type, or void, then null is returned.  If this object represents
+   * an array class then the <code>HClass</code> object representing
+   * the <code>Object</code> class is returned.
+   * <p>
+   * In particular, if the compile-time superclass declaration is a
+   * parameterized type, than an object of the appropriate type (i.e.,
+   * <code>HParameterizedType</code>) will be returned.
+   * @return the superclass of the class represented by this object.
+   */
+  public HType getGenericSuperclass() {
+    throw new RuntimeException("Unimplemented");
+  }
+  /**
+   * Returns an array of <code>HClassTypeVariable</code> objects that
+   * represents the type variables declared by the class or interface
+   * represented by this <code>HClass</code> object, in declaration
+   * order.  Returns an array of length 0 if the underlying class or
+   * interface declares no type variables. */
+  public HClassTypeVariable[] getTypeParameters() {
+    throw new RuntimeException("Unimplemented");
   }
 
   /*****************************************************************/
