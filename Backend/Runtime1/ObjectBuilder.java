@@ -32,20 +32,21 @@ import java.util.Random;
  * <code>Runtime1</code> runtime.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.4.5 2000-03-27 02:51:41 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.4.6 2000-03-27 20:33:50 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
     final boolean pointersAreLong;
     final NameMap nm;
     final FieldMap cfm;
-    private final Random rnd = new Random();
+    private final Random rnd;
 
     /** Creates a <code>ObjectBuilder</code>. */
     public ObjectBuilder(Runtime runtime) {
 	this.pointersAreLong = runtime.frame.pointersAreLong();
 	this.nm = runtime.nameMap;
 	this.cfm= ((TreeBuilder) runtime.treeBuilder).cfm;
+	this.rnd = new Random(runtime.frame.hashCode());//quasi-repeatable?
     }
 
     public Stm buildObject(TreeFactory tf, ObjectInfo info,
