@@ -10,7 +10,7 @@ import java.io.PrintStream;
  * using counters identified by integers.
  * 
  * @author  bdemsky <bdemsky@lm.lcs.mit.edu>
- * @version $Id: CounterSupport.java,v 1.1.2.5 2000-11-14 00:05:25 bdemsky Exp $
+ * @version $Id: CounterSupport.java,v 1.1.2.6 2000-11-14 16:21:36 bdemsky Exp $
  */
 public class CounterSupport {
     static int size,sizesync;
@@ -20,7 +20,7 @@ public class CounterSupport {
     static Object[][] boundedkey;
     static int[][] boundedvalue;
     static Object lock=new Object();
-    static boolean counton;
+    static boolean counton,setup;
     static int error;
     static int overflow;
     static int[] callchain;
@@ -48,9 +48,11 @@ public class CounterSupport {
 	size2=10;
 	alloccall=new int[size1][size2];
 	counton=true;
+	setup=true;
     }
     
     static void count(int value) {
+	if (setup)
 	synchronized(lock) {
 	    if (counton) {
 		boolean resize=false;
@@ -90,6 +92,7 @@ public class CounterSupport {
 
     //Sync code only
     static void countm(Object obj) {
+	if (setup)
 	synchronized(lock) {
 	    if (counton) {
 		counton=false;
@@ -125,6 +128,7 @@ public class CounterSupport {
     }
 
     static void label(Object obj, int value) {
+	if (setup)
 	synchronized(lock) {
 	    if (counton) {
 		counton=false;
@@ -145,20 +149,22 @@ public class CounterSupport {
     }
 
     static void callenter(int callsite) {
-	synchronized(lock) {
-	    if (counton) {
-		if (depth<csize)
-		    callchain[depth]=callsite+1;
-		depth++;
+	if (setup)
+	    synchronized(lock) {
+		if (counton) {
+		    if (depth<csize)
+			callchain[depth]=callsite+1;
+		    depth++;
+		}
 	    }
-	}
     }
 
     static void callexit() {
-	synchronized(lock) {
-	    if (counton)
-		depth--;
-	}
+	if (setup)
+	    synchronized(lock) {
+		if (counton)
+		    depth--;
+	    }
     }
 
     static void exit() {
@@ -213,15 +219,6 @@ public class CounterSupport {
 	    e.printStackTrace();
 	}
     }
-    static class LinkedList {
-	public LinkedList(LinkedList next, int callsite) {
-	    this.next=next;
-	    this.callsite=callsite;
-	}
-	LinkedList next;
-	int callsite;
-    }
-
 }
 
 
