@@ -3,16 +3,41 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>RawMemoryAccess</code> models "raw storage" as a fixed-sequence
- *  of bytes.
+/** An instance of <code>RawMemoryAccess</code> models a range of
+ *  physical memory as a fixed sequence of bytes. A full complement
+ *  of accessor methods allow the contents of the physical area to
+ *  be accessed through offsets from the base, interpreted as byte,
+ *  short, int, or long data values or as arrays of these types.
+ *  Whether the offset addresses the high-order of low-order byte
+ *  is based on the value of the <code>BYTE_ORDER</code> static
+ *  boolean variable in class <code>RealtimeSystem</code>.
+ *  The <code>RawMemoryAccess</code> class allows a real-time
+ *  program to implement device drivers, memory-mapped I/O, flash
+ *  memory, battery-backed RAM, and similar low-level software.
+ *  A raw memory area cannot contain references to Java objects.
+ *  Such a capability would be unsafe (since it could be used to
+ *  defeat Java's type checking) and error-prone (since it is
+ *  sensitive to the specific representational choices made by
+ *  the Java compiler).
+ *  Many of the constructors and methods in this class throw
+ *  <code>OffsetOutOfBoundsException</code>. This exception means
+ *  that the value given in the offset parameter is either negative
+ *  or outside the memory area.
+ *  Many of the constructors and methods in this class throw
+ *  <code>SizeOutOfBoundsException</code>. This exception means
+ *  that the value given in the size parameter is either negative,
+ *  larger than an allowable range, or would cause an accessor
+ *  method to access an address outside of the memory area.
+ *  Unlike other integral parameters in this chapter, negative
+ *  values are valid for <code>byte, short, int</code> and
+ *  <code>long</code> values that are copied in and out of memory
+ *  by the <code>set</code> and <code>get</code> methods of this class.
  */
-
 public class RawMemoryAccess {
 
     private long base, size;
     private Runnable logic;
 
-    // CONSTRUCTORS IN SPECS
     public RawMemoryAccess(Object type, long size)
 	throws SecurityException, OffsetOutOfBoundsException,
 	       SizeOutOfBoundsException,
@@ -37,8 +62,7 @@ public class RawMemoryAccess {
 	
     }
 
-    /** Constructor reserved for use by the memory object factory. 
-     */
+    /** Constructor reserved for use by the memory object factory. */
     protected RawMemoryAccess(RawMemoryAccess memory, long base, long size) {
 
     }
@@ -55,7 +79,6 @@ public class RawMemoryAccess {
 
 
     // METHODS IN SPECS
-
     
     /** Get the byte at the given offset. */
     public byte getByte(long offset)
@@ -224,10 +247,6 @@ public class RawMemoryAccess {
     public void unmap() {
 	// TODO
     }
-
-
-    // METHODS NOT IN SPECS
-
 
     /** Construct a RawMemoryAccess area at offset bytes from the 
      *  base of this area.

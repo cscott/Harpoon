@@ -3,16 +3,26 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>RawMemoryFloatAccess</code> holds accessor methods for accessing
- *  a raw memory area by float and double types.
+/** This class holds methods for accessing a raw memory area by
+ *  float and double types. Implementations are required to
+ *  implement this class if and only if the underlying Java
+ *  Virtual Machine supports floating point data types.
+ *  <p>
+ *  Many of the constructors and methods in this class throw
+ *  <code>OffsetOutOfBoundsException</code>. This exception means
+ *  that the value given in the offset parameter is either negative
+ *  or outside the memory area.
+ *  <p>
+ *  Many of the constructors and methods in this class throw
+ *  <code>SizeOutOfBoundsException</code>. This exception means
+ *  that the value given in the size parameter is either negative,
+ *  larger than an allowable range, or would cause an accessor
+ *  method to access an address outside of the memory area.
  */
-
 public class RawMemoryFloatAccess extends RawMemoryAccess {
     
     private long base, size;
     private Runnable logic;
-
-    // CONSTRUCTORS IN SPECS
 
     public RawMemoryFloatAccess(Object type, long size)
 	throws SecurityException, OffsetOutOfBoundsException,
@@ -78,8 +88,6 @@ public class RawMemoryFloatAccess extends RawMemoryAccess {
 	return new RawMemoryFloatAccess(base, size);
     }
 
-
-    // METHODS IN SPECS
 
     /** Get the double at the given offset. */
     public double getDouble(long offset)

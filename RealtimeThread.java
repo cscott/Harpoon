@@ -192,9 +192,7 @@ public class RealtimeThread extends Thread implements Schedulable {
 	if(currentScheduler != null) {
 	    currentScheduler.addToFeasibility(this);
 	    return currentScheduler.isFeasible();
-	} else {
-	    return false;
-	}
+	} else return false;
     }
     
     /** This will throw a <code>ClassCastException</code> if the current thread
@@ -533,11 +531,13 @@ public class RealtimeThread extends Thread implements Schedulable {
     public void bindSchedulable() {
 	releaseParameters.bindSchedulable(this);
 	processingGroupParameters.bindSchedulable(this);
+	memoryParameters.bindSchedulable(this);
     }
 
     public void unbindSchedulable() {
 	releaseParameters.unbindSchedulable(this);
 	processingGroupParameters.unbindSchedulable(this);
+	memoryParameters.unbindSchedulable(this);
     }
 
     

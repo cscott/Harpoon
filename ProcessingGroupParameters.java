@@ -124,10 +124,12 @@ public class ProcessingGroupParameters {
 	setDeadline(deadline);
 	while (b && it.hasNext())
 	    b = ((Schedulable)it.next()).setProcessingGroupParametersIfFeasible(this);
-	if (!b) {
-	    setPeriod(old_period);
+	if (!b) {   // something is not feasible
+	    setPeriod(old_period);   // returning the values back
 	    setCost(old_cost);
 	    setDeadline(old_deadline);
+	    for (it = schList.iterator(); it.hasNext(); )   // undoing all changes
+		((Schedulable)it.next()).setProcessingGroupParameters(this);
 	}
 	return b;
     }

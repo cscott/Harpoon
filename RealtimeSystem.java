@@ -11,16 +11,7 @@ package javax.realtime;
  *  collector and scheduler, to make queries from them or to set 
  *  parameters.
  */
-
 public class RealtimeSystem {
-    /** <code>RealtimeSystem</code> provides a means for tuning the
-     *  behavior of the implementation by specifying parameters such
-     *  as the maximum number of locks tht can be in use concurrently,
-     *  and the monitor control policy. In addition,
-     *  <code>RealtimeSystem</code> provides a mechanism for obtaining
-     *  access to the security manager, garbage collector and scheduler,
-     *  to make queries from them or to set parameters.
-     */
     
     public static final byte BIG_ENDIAN = 0;
     public static final byte LITTLE_ENDIAN = 1;    
@@ -38,14 +29,10 @@ public class RealtimeSystem {
 	maxHard = false;
     }
 
-    /** Native call to retrieve the current <code>GarbageCollector</code>.
-     */
-
+    /** Native call to retrieve the current <code>GarbageCollector</code>. */
     native static GarbageCollector getCurrentGC();
 
-    /** Return a reference to the currently active garbage collector
-     *  for the heap.
-     */
+    /** Return a reference to the currently active garbage collector for the heap. */
     public static GarbageCollector currentGC() {
 	if (garbageCollector == null) {
 	    garbageCollector = getCurrentGC();
@@ -65,7 +52,6 @@ public class RealtimeSystem {
      *  without incurring an execution time increase as set by the
      *  setMaximumConcurrentLocks() methods.
      */
-
     public static int getMaximumConcurrentLocks() {
 	return maxConcurrentLocks;
     }
@@ -73,7 +59,6 @@ public class RealtimeSystem {
     /** Get a reference to the security manager used to control access
      *  to real-time system features such as access to physical memory.
      */
-
     public static RealtimeSecurity getSecurityManager() {
 	return securityManager;
     }
@@ -82,7 +67,6 @@ public class RealtimeSystem {
      *  or waited on concurrently.  Provide a hint to systems that use
      *  a monitor cache as to how much space to dedicate to the cache.
      */
-
     public static void setMaximumConcurrentLocks(int number) {
 	if (number > 0) {
 	    maxConcurrentLocks = number;
@@ -93,7 +77,6 @@ public class RealtimeSystem {
      *  waited on concurrently.  Provide a limit for the size of the 
      *  monitor cache on systems that provide one if hard is true.
      */
-
     public static void setMaximumConcurrentLocks(int number, boolean hard) {
 	if (number > 0) {
 	    maxConcurrentLocks = number;
@@ -101,9 +84,7 @@ public class RealtimeSystem {
 	}
     }
 
-    /** Set a new real-time security manager.
-     */
-
+    /** Set a new real-time security manager. */
     public static void setSecurityManager(RealtimeSecurity manager) 
 	throws SecurityException
     {

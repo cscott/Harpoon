@@ -92,9 +92,11 @@ public class ReleaseParameters {
 	setDeadline(deadline);
 	while (b && it.hasNext())
 	    b = ((Schedulable)it.next()).setReleaseParametersIfFeasible(this);
-	if (!b) {
-	    setCost(old_cost);
+	if (!b) {   // something is not feasible
+	    setCost(old_cost);   /// returning the values back
 	    setDeadline(old_deadline);
+	    for (it = schList.iterator(); it.hasNext(); )   // undoing all changes
+		((Schedulable)it.next()).setReleaseParameters(this);
 	}
 	return b;
     }

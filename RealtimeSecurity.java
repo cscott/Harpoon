@@ -3,25 +3,21 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>RealtimeSecurity</code> sets the security policy for real-time
- *  specific issues.  Primarily used to control access to physical memory. 
+/**
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
+/** Security policy object for real-time specific issues. Primarily
+ *  used to control access to physical memory.
+ */
 public class RealtimeSecurity {
-    /** Security policy object for real-time specific issues. Primarily
-     *  used to control access to physical memory.
-     */
 
     private static boolean accessPhysical = true;
     private static boolean setFactory = false;
     private static boolean setScheduler = false;
     private static boolean setFilter = true;
 
-    /** Constructor. */
-    public RealtimeSecurity() {
-
-    }
+    public RealtimeSecurity() {}
 
     /** Check whether the application is allowed to access physical memory. */
     public void checkAccessPhysical() throws SecurityException
@@ -41,6 +37,7 @@ public class RealtimeSecurity {
 				    base + ":" + size+ ".");
     }
 
+    /** Check whether the application is allowed to set filter objects. */
     public void checkSetFilter() throws SecurityException {
 	if (!setFilter) {
 	    throw new SecurityException("Not allowed to set filter objects.");
@@ -56,7 +53,6 @@ public class RealtimeSecurity {
 	}
     }
 
-    // NOT IN SPECS
     /** Check whether the application is allowed to set factory objects. */
     public void checkSetFactory()
 	throws SecurityException

@@ -2,8 +2,15 @@ package javax.realtime;
 
 import java.util.HashMap;
 
+/** Use instances of <code>AsyncEvent</code> to handle POSIX signals. Usage:
+ *  <code>
+ *      POSIXSignalHandler.addHandler(SIGINT, intHandler);
+ *  </code>
+ *  <p>
+ *  This class is required to be implemented only if the underlying
+ *  system supports POSIX signarls.
+ */
 public final class POSIXSignalHandler {
-    /** Use instances of <code>asyncEvent</code> to ahandle POSIX signals. */
 
     // Spec says all these fields should be final, but I don't see how
     // to make them final and to guarantee the "platform independence".
@@ -56,19 +63,27 @@ public final class POSIXSignalHandler {
     private static AsyncEvent[] signalsHandlersList = new AsyncEvent[MAX_SIG];
     
     public POSIXSignalHandler() {
-	// TODO
 	setSignals();
 	for (int i = 0; i < MAX_SIG; i++) signalsHandlersList[i] = new AsyncEvent();
     }
 
+    /** Add the given <code>AsyncEventHandler</code> to the list of
+     *  handlers of the <code>AsyncEvent</code> of the given signal.
+     */
     public static void addHandler(int signal, AsyncEventHandler handler) {
 	signalsHandlersList[signal].addHandler(handler);
     }
 
+    /** Remove the given <code>AsyncEventHandler</code> to the list
+     *  of handlers of the <code>AsyncEvent</code> of the given signal.
+     */
     public static void removeHandler(int signal, AsyncEventHandler handler) {
 	signalsHandlersList[signal].removeHandler(handler);
     }
 
+    /** Set the given <code>AsyncEventHandler</code> as the handler
+     *  of the <code>AsyncEvent</code> of the given signal.
+     */
     public static void setHandler(int signal, AsyncEventHandler handler) {
 	signalsHandlersList[signal].setHandler(handler);
     }
