@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.35 1999-09-09 15:02:29 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.36 1999-09-10 05:21:45 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -301,7 +301,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "// check statement type");
 	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_MOVE+" ");
 
-	    String checkPrefix = "\t(("+TREE_MOVE+")" + stmPrefix + ").type() ==";
+	    String checkPrefix = "(("+TREE_MOVE+")" + stmPrefix + ")";
 	    appendTypeCheck(this, exp, checkPrefix, s.types);
 	    
 	    // look at src
@@ -365,7 +365,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "// check expression type");
 	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_RETURN+"");
 
-	    String checkPrefix = "\t(("+TREE_RETURN+")" + stmPrefix + ").retval.type() ==";
+	    String checkPrefix = "(("+TREE_RETURN+")" + stmPrefix + ").retval";
 	    appendTypeCheck(this, exp, checkPrefix, s.types);
 	    
 	    // look at exp
@@ -472,8 +472,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		}
 	    });
 
-	    String checkPrefix = "\t" + expPrefix + ".type() ==";
-	    appendTypeCheck(this, exp, checkPrefix, e.types);
+	    appendTypeCheck(this, exp, expPrefix, e.types);
 
 	    // save state before outputing children-checking code
 	    String oldPrefix = expPrefix;
@@ -500,8 +499,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "// check expression type");
 	    append(exp, "&& " + expPrefix + " instanceof " + TREE_CONST + " ");
 
-	    final String checkPrefix = "\t" + expPrefix + ".type() ==";
-	    appendTypeCheck(this, exp, checkPrefix, e.types);
+	    appendTypeCheck(this, exp, expPrefix, e.types);
 
 	    e.value.accept(new Spec.LeafVisitor() {
 		public void visit(Spec.Leaf l) {
@@ -518,7 +516,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		    append(exp, expPrefix + ".longValue() == " + l.number.longValue() + ")");
 		}
 		public void visit(Spec.LeafNull l) {
-		    append(exp, "&& " + checkPrefix + " Type.POINTER ");
+		    append(exp, "&& " + expPrefix + ".type() == Type.POINTER ");
 		}
 	    });
 	}
@@ -537,8 +535,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "// check expression type");
 	    append(exp, "&& " + expPrefix + " instanceof " + TREE_MEM + " ");
 
-	    String checkPrefix = "\t" + expPrefix + ".type() ==";
-	    appendTypeCheck(this, exp, checkPrefix, e.types);
+	    appendTypeCheck(this, exp, expPrefix, e.types);
 
 	    // save state before outputing child-checking code
 	    String oldPrefix = expPrefix;
@@ -571,8 +568,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "// check expression type");
 	    append(exp, "&& " + expPrefix + " instanceof " + TREE_TEMP +" ");
 	    
-	    String checkPrefix = "\t" + expPrefix + ".type() ==";
-	    appendTypeCheck(this, exp, checkPrefix, e.types);
+	    appendTypeCheck(this, exp, expPrefix, e.types);
 
 	    append(initStms, TEMP_Temp +" "+ e.name + " = ((" +TREE_TEMP + ")"+
 		   expPrefix + ").temp;");
@@ -597,8 +593,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		}
 	    });
 
-	    String checkPrefix = "\t"+expPrefix + ".type() ==";
-	    appendTypeCheck(this, exp, checkPrefix, e.types);
+	    appendTypeCheck(this, exp, expPrefix, e.types);
 	    
 	    // save state before outputting child-checking code
 	    String oldPrefix = expPrefix;
@@ -618,20 +613,41 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
     /** Append a type-checking expression to <code>exp</code>. */
     static void appendTypeCheck(AppendingVisitor av, StringBuffer exp,
-				String checkPrefix, Spec.TypeSet types) {
+				String tree, Spec.TypeSet types) {
+	String PRECISELYTYPED="harpoon.IR.Tree.PreciselyTyped";
 	av.append(exp, "// check operand types");
 	boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer;
 	allowDouble = types.contains(Type.DOUBLE);
 	allowFloat = types.contains(Type.FLOAT);
-	allowInt = types.contains(Type.INT) || types.containsSmall();
+	allowInt = types.contains(Type.INT);
 	allowLong = types.contains(Type.LONG);
 	allowPointer = types.contains(Type.POINTER);
 	av.append(exp, "&& ( ");
+	String checkPrefix = "\t" + tree + ".type() ==";
+	String precise = "(("+PRECISELYTYPED+")"+tree+")";
 	if(allowDouble) av.append(exp, checkPrefix + " Type.DOUBLE ||");
 	if(allowFloat) av.append(exp, checkPrefix + " Type.FLOAT ||");
-	if(allowInt) av.append(exp, checkPrefix + " Type.INT ||");
 	if(allowLong) av.append(exp, checkPrefix + " Type.LONG ||");
 	if(allowPointer) av.append(exp, checkPrefix + " Type.POINTER ||");
+	// INT is special because Small types are also INTs
+	if(allowInt) {
+	    av.append(exp, "("+checkPrefix + " Type.INT && !");
+	    av.append(exp, " ("+tree+" instanceof "+PRECISELYTYPED+" &&");
+	    av.append(exp, "  "+precise+".isSmall())) ||");
+	}
+	// check for small types.
+	if(types.containsSmall()) {
+	    av.append(exp, "\t(" + precise + ".isSmall() && (");
+	    av.append(exp, "\t "+precise + ".signed() ? (");
+	    for (int i=1; i<=32; i++)
+		if (types.containsSigned(i))
+		    av.append(exp, "\t  "+precise+".bitwidth()=="+i+" ||");
+	    av.append(exp, "\t  "+"false) : (");
+	    for (int i=1; i<=32; i++)
+		if (types.containsUnsigned(i))
+		    av.append(exp, "\t  "+precise+".bitwidth()=="+i+" ||");
+	    av.append(exp, "\t  "+"false) ) ) ||");
+	}
 	av.append(exp, "\tfalse )"); 
 	av.append(exp, "// end check operand types");
     }

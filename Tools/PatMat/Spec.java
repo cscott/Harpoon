@@ -21,7 +21,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.28 1999-09-09 15:02:29 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.29 1999-09-10 05:21:46 cananian Exp $
  */
 public class Spec  {
 
@@ -1040,7 +1040,17 @@ public class Spec  {
 	}
 	/** Returns true if <code>this</code> contains any small types. */
 	public boolean containsSmall() {
-	    return !bs.isZero();
+	    return !(unsignedPrecises.isZero() && signedPrecises.isZero());
+	}
+	/** Returns true if <code>this</code> contains the specified
+	 *  signed precise type. */
+	public boolean containsSigned(int bitwidth) {
+	    return signedPrecises.get(bitwidth-1);
+	}
+	/** Returns true if <code>this</code> contains the specified
+	 *  unsigned precise type. */
+	public boolean containsUnsigned(int bitwidth) {
+	    return unsignedPrecises.get(bitwidth-1);
 	}
 
 	/** Records that <code>this</code> contains
