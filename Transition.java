@@ -27,6 +27,10 @@ class Transition {
 	}
     }
 
+    public String rewrite(String input) {
+	return input;
+    } 
+
     static public String filtername(String input) {
 	int start=0;
 	String retval="";

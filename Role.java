@@ -159,6 +159,8 @@ class Role {
     public Role project(RoleUniverse univ) {
 	if (this.rolenumber==1)
 	    return this; /*Garbage role*/
+	if (univ.cache.containsKey(new Integer(this.rolenumber)))
+	    return (Role) rolei.roletable.get(univ.cache.get(new Integer(this.rolenumber)));
 
 	String newclassname=univ.classmatters?classname:null;
 
@@ -223,6 +225,7 @@ class Role {
 	Role r=new Role(rolei, -1, newclassname, contained, newdominators,
 			newrolefieldlist, newrolearraylist,
 			newidentityrelations, newnonnullfields, newnonnullarrays, newinvokedmethods);
+	univ.cache.put(new Integer(this.rolenumber), new Integer(r.rolenumber));
 	return (Role) rolei.roletable.get(new Integer(r.rolenumber));
     }
 

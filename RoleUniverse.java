@@ -25,6 +25,8 @@ class RoleUniverse {
     boolean restrictdominators;
     HashSet alloweddominators;
 
+    HashMap cache;
+
     public RoleUniverse() {
 	classmatters=true;
 	singleroleclass=new HashSet();
@@ -35,6 +37,7 @@ class RoleUniverse {
 	restrictidentity=false;
 	restrictinvokedmethods=false;
 	restrictdominators=false;
+	cache=new HashMap();
     }
 
     public RoleUniverse(boolean classmatters,boolean restrictarrayreferenceto,
@@ -104,6 +107,7 @@ class RoleUniverse {
 		this.alloweddominators.add(alloweddominators[i]);
 	    }
 	}
+	cache=new HashMap();
     }
 
     public void setclass(boolean classmatters) {

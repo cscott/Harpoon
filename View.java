@@ -4,6 +4,7 @@ class View {
     RoleUniverse []display;
     RoleDisplay roled;
 
+
     public View(RoleI rolei,RoleUniverse[] universes, RoleUniverse[] display) {
 	this.rolei=rolei;
 	this.universes=new RoleUniverse[universes.length];

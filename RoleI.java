@@ -1298,7 +1298,7 @@ class RoleI {
 	    observedroles.add(new Integer(tr.rolefrom));
 	    observedroles.add(new Integer(tr.roleto));
 	    for(int i=0;i<tr.names.length;i++) {
-		ps.print(tr.names[i]);
+		ps.print(tr.rewrite(tr.names[i]));
 		if ((i+1)<tr.names.length)
 		    ps.print(",");
 	    }

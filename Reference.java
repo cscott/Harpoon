@@ -70,7 +70,7 @@ class Reference {
     public Reference project(RoleUniverse univ) {
 	if (role>0) {/* exclude -1 or 0 */
 	    Role r=(Role) rolei.roletable.get(new Integer(role));
-	    System.out.println(role);
+	    //	    System.out.println(role);
 	    Role rp=r.project(univ);
 	    if (rp.rolenumber!=role) {
 		Reference newr=new Reference(rolei, classname, fieldname,duplicates);
@@ -105,9 +105,9 @@ class Reference {
 		    return fieldname+"<p>\n";
 	    } else {
 		if (fieldname==null)
-		    return classname+"<a href=\"rm-L"+role+"\"> R"+role+"</a> "+duplicates+" times.<p>\n";
+		    return classname+"<a href=\"rm-L"+role+"\">"+((Role)rolei.roletable.get(new Integer(role))).shortname()+"</a> "+duplicates+" times.<p>\n";
 		else
-		    return  fieldname+"<a href=\"rm-L"+role+"\"> R"+role+"</a><p>\n";
+		    return  fieldname+"<a href=\"rm-L"+role+"\">"+((Role)rolei.roletable.get(new Integer(role))).shortname()+"</a><p>\n";
 
 	    }
 	}
