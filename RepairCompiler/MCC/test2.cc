@@ -3574,4 +3574,5 @@ SimpleHash* __blockstatus___hash = new SimpleHash();
   }
 
 
-if (__Success) { printf("all tests passed"); }
+if (__Success) { //printf("all tests passed"); 
+}
