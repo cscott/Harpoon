@@ -31,7 +31,7 @@ import java.util.HashSet;
  * <code>SADataMain</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SADataMain.java,v 1.1.2.4 1999-08-18 18:58:23 pnkfelix Exp $
+ * @version $Id: SADataMain.java,v 1.1.2.5 1999-08-18 19:21:24 pnkfelix Exp $
  */
 public class SADataMain extends harpoon.IR.Registration {
     
@@ -41,7 +41,7 @@ public class SADataMain extends harpoon.IR.Registration {
     }
     
     public static void main(String[] args) {
-	System.out.println("SADataMain is deprecated, use 'SAMain -d' instead");
+	System.out.println("SADataMain is deprecated, use 'SAMain -D' instead");
 	System.exit(0);
 
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);

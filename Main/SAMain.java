@@ -54,7 +54,7 @@ import java.io.FileInputStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.9 1999-08-18 18:59:35 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.10 1999-08-18 19:21:24 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -64,7 +64,8 @@ public class SAMain extends harpoon.IR.Registration {
     private static boolean REG_ALLOC = false;
     private static boolean LIVENESS_TEST = false;
 
-    private static java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);;
+    private static java.io.PrintWriter out = 
+	new java.io.PrintWriter(System.out, true);;
         
     private static String className;
     
@@ -79,7 +80,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    (harpoon.IR.Quads.QuadSSA.codeFactory()
 	     );
 	
-	Getopt g = new Getopt("SAMain", args, "m:c:dOPRLA");
+	Getopt g = new Getopt("SAMain", args, "m:c:DOPRLAh");
 	
 	int c;
 	String arg;
@@ -103,7 +104,7 @@ public class SAMain extends harpoon.IR.Registration {
 				       classHierarchyFilename);
 		}
 		break;
-	    case 'd':
+	    case 'D':
 		PRINT_DATA = true;
 		break;
 	    case 'O': 
@@ -128,10 +129,17 @@ public class SAMain extends harpoon.IR.Registration {
 		className = arg;
 		break;
 	    case '?':
-		break; // getopt() already printed an error
+	    case 'h':
+		System.out.println("usage is: [-m <mapfile>] -c <class> [-DOPRLA]");
+		System.out.println();
+		printHelp();
+		System.exit(-1);
 	    default: 
 		System.out.println("getopt() returned " + c);
-		System.out.println("usage is: [-m <mapfile>] -c <class> [-OPRLA]");
+		System.out.println("usage is: [-m <mapfile>] -c <class> [-DOPRLA]");
+		System.out.println();
+		printHelp();
+		System.exit(-1);
 	    }
 	}
 
@@ -226,10 +234,12 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (PRINT_DATA) {
 		final Data data = new Data(hclass, frame);
 		
-		out.println("\t--- TREE FORM ---");
-		data.print(out);
-		out.println();
-		
+		if (PRINT_ORIG) {
+		    out.println("\t--- TREE FORM (for DATA)---");
+		    data.print(out);
+		    out.println("\t--- end TREE FORM (for DATA)---");
+		}		
+
 		final String scope = data.getName();
 		final Instr instr = 
 		    frame.codegen().gen(data, new InstrFactory() {
@@ -261,9 +271,9 @@ public class SAMain extends harpoon.IR.Registration {
 			return instr2;
 		    }
 		};
-		out.println("\t--- INSTR FORM ---");
+		out.println("\t--- INSTR FORM (for DATA)---");
 		while(iter.hasNext()) { out.println( iter.next() ); }
-		out.println();
+		out.println("\t--- end INSTR FORM (for DATA)---");
 		
 	    }
 
@@ -298,5 +308,37 @@ public class SAMain extends harpoon.IR.Registration {
 	//out.println("\t\tFinished creation of a StrongARM Code "+
 	//    "Factory.  Time (ms): " + time);
 	return sahcf;
+    }
+
+    private static void printHelp() {
+	out.println("-c <class> (required)");
+	out.println("\tCompile <class>");
+	out.println();
+
+	out.println("-m <file> (optional)");
+	out.println("\tLoads the ClassHierarchy object from <file>.");
+	out.println("\tIn the event of an error loading the object,");
+	out.println("\tconstructs a new ClassHierarchy and stores it");
+	out.println("\tin <file>");
+	
+	out.println("-D");
+	out.println("\tOutputs DATA information for <class>");
+
+	out.println("-O");
+	out.println("\tOutputs Original Tree IR for <class>");
+
+	out.println("-P");
+	out.println("\tOutputs Pre-Register Allocated Instr IR for <class>");
+
+	out.println("-L");
+	out.println("\tOutputs Liveness info for BasicBlocks of Instr IR");
+	out.println("\tfor <class>");
+
+	out.println("-R");
+	out.println("\tOutputs Register Allocated Instr IR for <class>");
+
+	out.println("-A");
+	out.println("\tSame as -OPLR");
+	
     }
 }
