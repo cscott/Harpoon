@@ -1,10 +1,33 @@
-
-
-
-
-
-
-
+;; emacs hacking! (thanks to darko for the ideas & initial implementation)
+;;;; extract the package name from the buffer-file-name
+(defun harpoon-subdir-name (basename-fragment)
+  "Returns the subdirectory of the current buffer, after stripping everything up to and including the basename-fragment."
+  (let ((directory (file-name-directory buffer-file-name)))
+    (string-match (concat "\\(.*" basename-fragment "\\)*\\(.*\\)/$") 
+		  directory)
+    (substring directory (match-end 1) (match-end 2))))
+;;;; extract the work directory name from the buffer-file-name
+(defun harpoon-basepath-name (basename-fragment)
+  "Returns the subdirectory of the current buffer, after stripping everything after (but not including) the basename-fragment."
+  (let ((directory (file-name-directory buffer-file-name)))
+    (string-match (concat "\\(.*" basename-fragment "\\)*\\(.*\\)/$") 
+		  directory)
+    (substring directory (match-beginning 1) (match-end 1))))
+;;;; extract a dot-delimited package name from the path to the current buffer.
+(defun harpoon-package-name (basename-fragment)
+  "Returns the package name of the current buffer, after stripping the directory up to and including basename-fragment"
+  (let ((pkgname (harpoon-subdir-name basename-fragment)))
+    (while (string-match "\\(.*\\)/\\(.*\\)" pkgname)
+      (setq pkgname (concat 
+		     (substring pkgname (match-beginning 1) (match-end 1)) "."
+		     (substring pkgname (match-beginning 2) (match-end 2)))))
+    pkgname))
+;;;; extract the root project dir.
+(defun user-specific-project-dir ()
+  "Returns the pathname to the root project directory."
+  (harpoon-basepath-name "Harpoon/Code/"))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; jde properties & settings.
 (jde-set-project-name "harpoon")
 (jde-set-variables 
  '(jde-run-option-properties nil)
@@ -45,19 +68,19 @@
  '(jde-quote-classpath nil t)
  '(jde-gen-to-string-method-template (quote ("'&" "\"public String toString() {\" 'n>" "\"return super.toString();\" 'n>" "\"}\" 'n>")))
  '(jde-run-read-app-args nil)
- '(jde-db-source-directories (quote ("/home/cananian/Harpoon/Code")))
+ '(jde-db-source-directories (list (user-specific-project-dir)))
  '(jde-db-option-properties nil)
  '(jde-db-option-stack-size (quote ((128 . "kilobytes") (400 . "kilobytes"))))
  '(jde-db-set-initial-breakpoint t)
  '(jde-run-option-application-args nil)
  '(jde-gen-mouse-listener-template (quote ("'& (P \"Component name: \")" "\".addMouseListener(new MouseAdapter() {\" 'n>" "\"public void mouseClicked(MouseEvent e) {}\" 'n>" "\"public void mouseEntered(MouseEvent e) {}\" 'n>" "\"public void mouseExited(MouseEvent e) {}\" 'n>" "\"public void mousePressed(MouseEvent e) {}\" 'n>" "\"public void mouseReleased(MouseEvent e) {}});\" 'n>")))
  '(jde-gen-console-buffer-template (quote ("(funcall jde-gen-boilerplate-function) 'n" "\"/**\" 'n" "\" * \"" "(file-name-nondirectory buffer-file-name) 'n" "\" *\" 'n" "\" *\" 'n" "\" * Created: \" (current-time-string) 'n" "\" *\" 'n" "\" * @author \" (user-full-name) 'n" "\" * @version\" 'n" "\" */\" 'n>" "'n>" "\"public class \"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\" {\" 'n> 'n>" "\"public \"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"() {\" 'n>" "'n>" "\"}\" 'n>" "'n>" "\"public static void main(String[] args) {\" 'n>" "'p 'n>" "\"}\" 'n> 'n>" "\"} // \"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "'n>")))
- '(jde-compile-option-directory "/home/cananian/Harpoon/Code" t)
+ '(jde-compile-option-directory (user-specific-project-dir) t)
  '(jde-run-option-vm-args nil)
  '(jde-make-program "make")
  '(jde-use-font-lock t)
  '(jde-db-option-garbage-collection (quote (t t)))
- '(jde-gen-class-buffer-template (quote ("\"// \" (file-name-nondirectory buffer-file-name)" "\", created \" (current-time-string)" "\" by \" (user-login-name) 'n" "(funcall jde-gen-boilerplate-function)" "\"package harpoon.\" (cananian-package-name \"Harpoon/Code/\") \";\" 'n" "'n" "\"import harpoon.ClassFile.*;\" 'n" "\"/**\" 'n" "\" * <code>\"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"</code>\" 'n" "\" * \" 'n" "\" * @author  \" (user-full-name)" "\" <\" user-mail-address \">\" 'n" "\" * @version $I\" \"d$\" 'n" "\" */\" 'n>" "'n>" "\"public class \"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\" \" (jde-gen-get-super-class) \" {\" 'n> 'n>" "\"/** Creates a <code>\" " "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"</code>. */\" 'n" "\"public \"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"() {\" 'n>" "\"    \" 'p 'n>" "\"}\" 'n>" "'n>" "\"}\"")) t)
+ '(jde-gen-class-buffer-template (quote ("\"// \" (file-name-nondirectory buffer-file-name)" "\", created \" (current-time-string)" "\" by \" (user-login-name) 'n" "(funcall jde-gen-boilerplate-function)" "\"package harpoon.\" (harpoon-package-name \"Harpoon/Code/\") \";\" 'n" "'n" "\"import harpoon.ClassFile.*;\" 'n" "\"/**\" 'n" "\" * <code>\"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"</code>\" 'n" "\" * \" 'n" "\" * @author  \" (user-full-name)" "\" <\" user-mail-address \">\" 'n" "\" * @version $I\" \"d$\" 'n" "\" */\" 'n>" "'n>" "\"public class \"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\" \" (jde-gen-get-super-class) \" {\" 'n> 'n>" "\"/** Creates a <code>\" " "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"</code>. */\" 'n" "\"public \"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"() {\" 'n>" "\"    \" 'p 'n>" "\"}\" 'n>" "'n>" "\"}\"")) t)
  '(jde-compiler "javac")
  '(jde-jdk-doc-url "http://www.javasoft.com/products/jdk/1.1/docs/api/index.html")
  '(jde-db-debugger (quote ("jdb" . "Executable")))
@@ -66,7 +89,7 @@
  '(jde-gen-mouse-motion-listener-template (quote ("'& (P \"Component name: \")" "\".addMouseMotionListener(new MouseMotionAdapter() {\" 'n>" "\"public void mouseDragged(MouseEvent e) {}\" 'n>" "\"public void mouseMoved(MouseEvent e) {}});\" 'n>")))
  '(jde-db-marker-regexp "^Breakpoint hit: .*(\\([^$]*\\).*:\\([0-9]*\\))")
  '(jde-gen-window-listener-template (quote ("'& (P \"Window name: \")" "\".addWindowListener(new WindowAdapter() {\" 'n>" "\"public void windowActivated(WindowEvent e) {}\" 'n>" "\"public void windowClosed(WindowEvent e) {}\" 'n>" "\"public void windowClosing(WindowEvent e) {System.exit(0);}\" 'n>" "\"public void windowDeactivated(WindowEvent e) {}\" 'n>" "\"public void windowDeiconified(WindowEvent e) {}\" 'n>" "\"public void windowIconified(WindowEvent e) {}\" 'n>" "\"public void windowOpened(WindowEvent e) {}});\" 'n>")))
- '(jde-global-classpath (quote ("/home/cananian/Harpoon/Code" "/usr/local/jdk1.1.6/lib/classes.zip")) t)
+ '(jde-global-classpath (list (user-specific-project-dir) "/usr/local/jdk/lib/classes.zip") t)
  '(jde-enable-abbrev-mode nil)
  '(jde-run-option-heap-profile (quote (nil "./java.hprof" 5 20 "Allocation objects")))
  '(jde-db-read-app-args nil)
@@ -83,5 +106,5 @@
  '(jde-db-option-heap-size (quote ((1 . "megabytes") (16 . "megabytes"))))
  '(jde-compile-option-verbose nil)
  '(jde-mode-abbreviations (quote (("ab" . "abstract") ("bo" . "boolean") ("br" . "break") ("by" . "byte") ("byv" . "byvalue") ("cas" . "cast") ("ca" . "catch") ("ch" . "char") ("cl" . "class") ("co" . "const") ("con" . "continue") ("de" . "default") ("dou" . "double") ("el" . "else") ("ex" . "extends") ("fa" . "false") ("fi" . "final") ("fin" . "finally") ("fl" . "float") ("fo" . "for") ("fu" . "future") ("ge" . "generic") ("go" . "goto") ("impl" . "implements") ("impo" . "import") ("ins" . "instanceof") ("in" . "int") ("inte" . "interface") ("lo" . "long") ("na" . "native") ("ne" . "new") ("nu" . "null") ("pa" . "package") ("pri" . "private") ("pro" . "protected") ("pu" . "public") ("re" . "return") ("sh" . "short") ("st" . "static") ("su" . "super") ("sw" . "switch") ("sy" . "synchronized") ("th" . "this") ("thr" . "throw") ("throw" . "throws") ("tra" . "transient") ("tr" . "true") ("vo" . "void") ("vol" . "volatile") ("wh" . "while"))))
- '(jde-make-args "-C /home/cananian/Harpoon/Code java" t)
+ '(jde-make-args (concat "-C " (user-specific-project-dir) " java") t)
  '(jde-gen-code-templates (quote (("Get Set Pair" . jde-gen-get-set) ("toString method" . jde-gen-to-string-method) ("Action Listener" . jde-gen-action-listener) ("Window Listener" . jde-gen-window-listener) ("Mouse Listener" . jde-gen-mouse-listener) ("Mouse Motion Listener" . jde-gen-mouse-motion-listener) ("Inner Class" . jde-gen-inner-class)))))
