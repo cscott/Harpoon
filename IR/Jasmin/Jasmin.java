@@ -19,10 +19,12 @@ import java.util.Enumeration;
 import java.util.Iterator;
 
 /**
- * <code>FinalRaw</code>
- * 
+ * <code>Jasmin</code> converts from QuadWithTry to bytecode
+ * formatted for the Jasmin assembler.  
+ * Note:  Requires patch on 1.06 to do sane things with
+ * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.12 1999-08-24 19:20:32 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.13 1999-08-24 21:35:59 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -30,6 +32,7 @@ public class Jasmin {
     HClass hclass;
     String classname;
 
+    /**Creates a <code>Jasmin</code> object.*/
     public Jasmin(HCode[] hc, HMethod[] hm, HClass hclass) {
 	this.hc = hc;
 	this.hm = hm;
@@ -37,16 +40,22 @@ public class Jasmin {
 	this.classname=hclass.getName();
     }
 
+    /**Takes in a <code>PrintStream</code> 'out' and dumps
+     * Jasmin formatted assembly code to it.*/
     public void outputClass(PrintStream out) {
 	if (hclass.isInterface()) 
 	    out.println(".interface "+Modifier.toString(hclass.getModifiers())+" "+hclass.getName().replace('.','/'));
 	    else
 	out.println(".class "+Modifier.toString(hclass.getModifiers())+" "+hclass.getName().replace('.','/'));
 	out.println(".super "+hclass.getSuperclass().getName().replace('.','/'));
+
+	//List the interfaces
 	HClass[] interfaces=hclass.getInterfaces();
 	for (int i=0;i<interfaces.length;i++)
 	    out.println(".implements "+interfaces[i].getName().replace('.','/'));
 	HField[] hfields=hclass.getDeclaredFields();
+
+	//List the fields
 	for (int i=0;i<hfields.length;i++) {
 	    String value="";
 	    if (hfields[i].isConstant())
@@ -56,32 +65,46 @@ public class Jasmin {
 		value=" = "+hfields[i].getConstant().toString();
 	    out.println(".field "+Modifier.toString(hfields[i].getModifiers())+" "+hfields[i].getName() +" "+hfields[i].getDescriptor()+value);
 	}
+
+	//List the methods
 	for(int i=0;i<hc.length;i++) {
 	    outputMethod(out, i);
 	}
     }
 
-    public void outputMethod(PrintStream out, int i) {
+   
+    private void outputMethod(PrintStream out, int i) {
 	out.println(".method "+Modifier.toString(hm[i].getModifiers())+" "+hm[i].getName().replace('.','/')
 		    +hm[i].getDescriptor().replace('.','/'));
+	//Get modifiers
 	int modifiers=hm[i].getModifiers();
+	//Only print method quads if it isn't Abstract
 	if (!Modifier.isAbstract(modifiers))
 	    outputQuads(out, hm[i], hc[i]);
+
 	out.println(".end method");
     }
 
-    public void outputQuads(PrintStream out,HMethod hm, HCode hc) {
+    private void outputQuads(PrintStream out,HMethod hm, HCode hc) {
+	//Output assembly from the quads
+
         TypeInfo tp=new TypeInfo(hc);
+	//Build mapping from temps to localvars/stack
 	Object[] tuple=buildmap(hc,tp);
+	//Store the map
 	Map map=(Map) tuple[0];
+	//Print out the number of local variables
 	out.println("    .limit locals "+((Integer)tuple[1]).toString());
-	//Fix ME
+
+	//FIX ME
 	//This is wrong....
-	out.println("    .limit stack "+((Integer)tuple[1]).toString());
+	out.println("    .limit stack "+(((Integer)tuple[1]).intValue()+2));
 	WorkSet done=new WorkSet();
 	Visitor visitor=new Visitor(out, map,hc,tp);
 	Quad start=(Quad)hc.getRootElement();
 	METHOD m=(METHOD)start.next(1);
+	//Loop through the handlers
+	//We do this to label the quad ranges protected by the handler
 	for (int i=1;i<m.nextLength();i++) {
 	    HANDLER h=(HANDLER)m.next(i);
 	    visitor.labeler(h.next(0));
@@ -92,16 +115,21 @@ public class Jasmin {
 		tmp=visitor.labeler(q.next(0));
 	    }
 	}
+	//Visit all the quads
 	visitAll(out,visitor,start.next(1), done);
-	visitAll(out,visitor,start.next(0), done);
     }
 		 
     private static final void visitAll(PrintStream out, Visitor visitor, Quad start, Set qm) {
+	//Visit the node passed to us
 	start.visit(visitor);
+	//If we have a node after us, but we've already printed it
+	//we need to do a goto
 	if (start.next().length!=0)
 	    if (qm.contains(start.next(0)))
 		out.println("    goto "+visitor.labeler(start.next(0)));
+	//add this node to the done list
 	qm.add(start);
+	//visit the kids
         Quad[] ql = start.next();
         for (int i=0; i<ql.length; i++) {
             if (qm.contains(ql[i])) continue; // skip if already done.
@@ -109,6 +137,7 @@ public class Jasmin {
         }
     }
 
+    /** This Visitor prints out opcodes for each quad visited.*/
 
     class Visitor extends QuadVisitor {
 	PrintStream out;
@@ -405,7 +434,6 @@ public class Jasmin {
 	    store(q.dst());
 	}
 
-
 	public void visit(CJMP q) {
 	    String target=labeler(q);
 	    out.println(iflabel(q));
@@ -540,6 +568,11 @@ public class Jasmin {
 	    else
 		out.println("    pop");
 	}
+
+	//This method handles operands
+	//really 3 cases:
+	//normal, compares that are done with compares,
+	//compares done with conditional branches
 
 	public void visit(OPER q) {
 	    out.println(iflabel(q));
@@ -776,6 +809,7 @@ public class Jasmin {
 		out.println("    iload "+(new Integer(t.localvar)).toString());
 	}
 
+	//Give unique labels to quads
 	private String labeler(Quad q) {
 	    if (labelmap.containsKey(q))
 		return (String)labelmap.get(q);
@@ -786,16 +820,22 @@ public class Jasmin {
 	    }
 	}
 
+	//Returns string with label in it
 	private String iflabel(Quad q) {
 	    if (labelmap.containsKey(q))
 		return (String)labelmap.get(q)+(new String(":"));
 	    else return new String("");
 	}
 
+	//Assigns label numbers
 	private String label() {
 	    return "L"+(new Integer(label++)).toString();
 	}
     }
+
+    /** <code>buildmap</code> takes in a <code>HCode</code> and a <code>TypeMap</code>
+     *  and returns a Map and number of local variables used.
+     *  Buildmap maps each temp either to the stack or to a localvariable.*/
 
     public final Object[] buildmap(final HCode code, TypeMap tp) {
 	Quad q=(Quad)code.getRootElement();
