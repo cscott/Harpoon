@@ -22,7 +22,7 @@ import java.util.Vector;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.9 1999-02-18 19:13:32 duncan Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.10 1999-02-18 19:37:31 duncan Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -60,9 +60,10 @@ public class ToNoSSA implements Derivation, TypeMap
 	   newQF.tempFactory());
       m_quads = translate(newQF, derivation, typeMap, dT, code);
       m_derivation = new Derivation() {
-	  public DList derivation(HCodeElement hce, Temp t) {
-	      return (DList)dT.get(new Tuple(new Object[] { hce, t }));
-	  }
+	public DList derivation(HCodeElement hce, Temp t) {
+	  return ((t==null)||(hce==null))? null:
+	    (DList)dT.get(new Tuple(new Object[] { hce, t }));
+	}
       };
       m_typeMap = new TypeMap() {
 	  public HClass typeMap(HCode hc, Temp t) {

@@ -381,7 +381,7 @@ class TranslationVisitor extends LowQuadVisitor
     if (q.retval()!=null)  // is this ok for void func?
       addStmt(new MOVE(m_tf, q, 
 		       new TEMP(m_tf, q, 
-				maptype(type(q.retval())), m_frame.RV()), 
+				TYPE(q, q.retval()), m_frame.RV()), 
 		       MAP(q.retval(), q)));
 
     //addStmt(new JUMP(m_tf, q, (MAP((harpoon.IR.Quads.LABEL)q.next(0))).label));
@@ -407,7 +407,7 @@ class TranslationVisitor extends LowQuadVisitor
     addStmt
       (new MOVE
        (m_tf, q, 
-	new TEMP(m_tf, q, maptype(type(q.throwable())), m_frame.RX()), 
+	new TEMP(m_tf, q, TYPE(q, q.throwable()), m_frame.RX()), 
 	MAP(q.throwable(), q)));
     //addStmt(new JUMP(m_tf, q, (MAP((harpoon.IR.Quads.LABEL)q.next(0))).label));
   }
@@ -444,7 +444,7 @@ class TranslationVisitor extends LowQuadVisitor
       // If q.retval() is null, create a throwaway TEMP to store the retval
       retval = 
 	(q.retval()==null) ? 
-	extra(q.ptr(), q, maptype(type(q.retval()))) : MAP(q.retval(), q);
+	extra(q.ptr(), q, TYPE(q, q.retval())) : MAP(q.retval(), q);
       qParams = q.params(); params = null; 
       for (int i=qParams.length-1; i >= 0; i--)
 	params = new ExpList(MAP(qParams[i], q), params);      
@@ -458,7 +458,11 @@ class TranslationVisitor extends LowQuadVisitor
   }
 
   public void visit(PFIELD q) { 
-    addStmt(new MOVE(m_tf, q, MAP(q.dst(), q), MAP(q.objectref(), q)));
+    addStmt
+      (new MOVE
+       (m_tf, q, 
+	MAP(q.dst(), q, Type.POINTER), 
+	MAP(q.objectref(), q)));
   }
   
   public void visit(PFOFFSET q) {
@@ -469,7 +473,7 @@ class TranslationVisitor extends LowQuadVisitor
   public void visit(PGET q) {
     addStmt(new MOVE(m_tf, q, 
 		     MAP(q.dst(), q), 
-		     new MEM(m_tf, q, maptype(type(q.dst())), 
+		     new MEM(m_tf, q, TYPE(q, q.dst()), 
 			     MAP(q.ptr(), q, Type.POINTER))));
   }
   
@@ -567,10 +571,10 @@ class TranslationVisitor extends LowQuadVisitor
     }
     
     if (operands.length==1)
-      oper = new UNOP(m_tf, q, maptype(type(q.dst())), optype,
+      oper = new UNOP(m_tf, q, TYPE(q, q.dst()), optype,
 		      MAP(operands[0], q)); 
     else if (operands.length==2)
-      oper = new BINOP(m_tf, q, maptype(type(q.dst())), optype,
+      oper = new BINOP(m_tf, q, TYPE(q, q.dst()), optype,
 		       MAP(operands[0], q), MAP(operands[1], q)); 
     else 
       throw new Error("Unexpected # of operands: " + q);
@@ -580,7 +584,7 @@ class TranslationVisitor extends LowQuadVisitor
   
   public void visit(PSET q) {
     addStmt(new MOVE(m_tf, q, 
-		     new MEM(m_tf, q, maptype(type(q.src())), MAP(q.ptr(), q)),
+		     new MEM(m_tf, q, TYPE(q, q.src()), MAP(q.ptr(), q)),
 		     MAP(q.src(), q)));
   }
 
@@ -602,8 +606,9 @@ class TranslationVisitor extends LowQuadVisitor
   private LABEL MAP(harpoon.IR.Quads.LABEL label) 
     { return m_labelMap.labelMap(label); }
 
-  private TEMP MAP(Temp t, HCodeElement source) 
-    { return MAP(t, source, maptype(type(t))); }
+  private TEMP MAP(Temp t, HCodeElement source) { 
+    return MAP(t, source, TYPE(source, t));
+  }
 
   private TEMP MAP(Temp t, HCodeElement source, int type) 
     { return m_tempMap.tempMap(t, source, type); }
@@ -611,7 +616,14 @@ class TranslationVisitor extends LowQuadVisitor
   private HClass type(Temp t) 
     { return (t==null)?null:m_typeMap.typeMap(m_code, t); }
 
-  private static int maptype(HClass hc) {
+  private int TYPE(HCodeElement src, Temp t)
+    { return hastype(src, t)?maptype(type(t)):Type.POINTER; }
+
+  private boolean hastype(HCodeElement hce, Temp t) {
+    return m_derivation.derivation(hce, t)!=null;
+  }
+
+  private int maptype(HClass hc) {
       if (hc==HClass.Boolean ||
 	  hc==HClass.Byte    ||
 	  hc==HClass.Char    ||

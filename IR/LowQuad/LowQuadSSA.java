@@ -21,7 +21,7 @@ import java.util.Hashtable;
  *
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.9 1999-02-17 00:45:17 duncan Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.10 1999-02-18 19:37:38 duncan Exp $
  */
 public class LowQuadSSA extends Code
 {
@@ -43,7 +43,7 @@ public class LowQuadSSA extends Code
       
       m_derivation = new Derivation() {
 	public DList derivation(HCodeElement hce, Temp t) {
-	  return (DList)dT.get(t);
+	  return ((hce==null)||(t==null))?null:(DList)dT.get(t);
 	}
       };
       m_typeMap = new TypeMap() { 
