@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.159 2000-06-30 21:57:41 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.160 2000-07-02 02:09:12 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1820,17 +1820,17 @@ JUMP(NAME(id)) %{ // direct jump
 
 JUMP(e) %{
     List labelList = LabelList.toList( ROOT.targets );
-    Instr j = 
-       emit(new Instr( instrFactory, ROOT, 
-		       "mov `d0, `s0",
-		       new Temp[]{ PC },
-		       // fake use of PC so that the register allocator
-		       // doesn't think that PC is not live above this point
-		       new Temp[]{ e, PC },
-		       false, labelList ) {
-			      public boolean hasModifiableTargets(){ 
-				     return false; 
-			      }
+    declare( PC, HClass.Void );
+    emit(new Instr( instrFactory, ROOT, 
+		    "mov `d0, `s0",
+		    new Temp[]{ PC },
+		    // fake use of PC so that the register allocator
+		    // doesn't think that PC is not live above this point
+		    new Temp[]{ e, PC },
+		    false, labelList ) {
+	public boolean hasModifiableTargets(){ 
+	    return false; 
+	}
     });
 }%
 
