@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.60 2000-02-19 10:35:17 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.61 2000-02-28 20:50:51 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -190,13 +190,15 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    mergeStms(r);
 
 	    // initialize retval
-	    append(initStms, TEMP_Temp+" "+s.retval+" = "+
-		   "((("+TREE_CALL+")"+stmPrefix + ").getRetval()==null)?null:"+
-		   "(("+TREE_CALL+")"+stmPrefix + ").getRetval().temp;");
+	    String retval = "(("+TREE_CALL+")"+stmPrefix + ").getRetval()";
+	    append(munchStms, TEMP_Temp+" "+s.retval+" = "+
+		   "("+retval+"==null) ? null : "+
+		   "munchExp("+retval+");");
 
 	    // initialize retex
-	    append(initStms, TEMP_Temp+" "+s.retex+" = "+
-		   "(("+TREE_CALL+")"+stmPrefix + ").getRetex().temp;");
+	    String retex = "(("+TREE_CALL+")"+stmPrefix + ").getRetex()";
+	    append(munchStms, TEMP_Temp+" "+s.retex+" = "+
+		   "munchExp("+retex+");");
 
 	    // initialize handler
 	    append(initStms, TEMP_Label+" "+s.handler+" = "+
@@ -398,9 +400,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    mergeStms(r);
 
 	    // initialize retval
-	    append(initStms, TEMP_Temp+" "+s.retval+" = "+
-		   "((("+TREE_NATIVECALL+")"+stmPrefix+").getRetval()==null)?null:"+
-		   "(("+TREE_NATIVECALL+")"+stmPrefix+").getRetval().temp;");
+	    String retval = "(("+TREE_NATIVECALL+")"+stmPrefix+").getRetval()";
+	    append(munchStms, TEMP_Temp+" "+s.retval+" = "+
+		   "("+retval+"==null) ? null : "+
+		   "munchExp("+retval+");");
 	    
 	    // initialize arg list
 	    append(munchStms, "/* munch argument ExpList into a TempList */");
@@ -646,8 +649,9 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    
 	    appendTypeCheck(this, exp, expPrefix, e.types);
 
-	    append(initStms, TEMP_Temp +" "+ e.name + " = ((" +TREE_TEMP + ")"+
-		   expPrefix + ").temp;");
+	    append(initStms, TEMP_Temp +" "+ e.name + " = "+
+		   "makeTemp((" +TREE_TEMP + ")"+expPrefix+", "+
+		   "inf.tempFactory());");
 	}
 	public void visit(Spec.ExpUnop e) { 
 	    if (rootType==null) rootType=TREE_UNOP;
@@ -899,6 +903,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	
+	/*
 	Spec.TypeSet nonPtr = new Spec.TypeSet();
 	nonPtr.set(Type.INT); nonPtr.set(Type.LONG);
 	nonPtr.set(Type.FLOAT); nonPtr.set(Type.DOUBLE);
@@ -912,6 +917,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	tempRuleNP.accept(srv);
 	tempRuleP.accept(srv);
+	*/
 
 	Comparator compare = new RuleTupleComparator();
 	Collections.sort(expMatchActionPairs, compare);

@@ -6,7 +6,9 @@ package harpoon.Backend.Generic;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Tree.TEMP;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempFactory;
 import harpoon.Analysis.Maps.Derivation;
 
 import harpoon.Util.Util;
@@ -24,7 +26,7 @@ import java.util.HashMap;
  * their own extensions of <code>CodeGen</code>.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: MaxMunchCG.java,v 1.1.2.8 2000-02-28 06:44:44 cananian Exp $ */
+ * @version $Id: MaxMunchCG.java,v 1.1.2.9 2000-02-28 20:50:36 cananian Exp $ */
 public abstract class MaxMunchCG extends CodeGen {
     
     /** Creates a <code>MaxMunchCG</code>. */
@@ -62,6 +64,20 @@ public abstract class MaxMunchCG extends CodeGen {
 
 	return i;
     }
+
+    /** tempmap from tree temps to instr temps */
+    protected Temp makeTemp(TEMP t, TempFactory tf) {
+	Temp treeTemp  = t.temp;
+	Util.assert(!frame.getRegFileInfo().isRegister(treeTemp));
+	Temp instrTemp = (Temp) tempmap.get(treeTemp);
+	if (instrTemp==null) {
+	    instrTemp = frame.getTempBuilder().makeTemp(t, tf);
+	    tempmap.put(treeTemp, instrTemp);
+	}
+	Util.assert(instrTemp.tempFactory()==tf);
+	return instrTemp;
+    }
+    private Map tempmap = new HashMap();
 
     public Derivation getDerivation() {
 	final Map ti2td = this.ti2td; // keep own copy of this map.
@@ -105,6 +121,7 @@ public abstract class MaxMunchCG extends CodeGen {
 	// initialize state variables each time gen() is called
 	first = null; last = null;
 	ti2td = new HashMap(); // reset derivation information.
+	tempmap.clear();
     }
     
     // union type for Derivation.DList and HClass

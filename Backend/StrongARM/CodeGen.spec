@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.147 2000-02-28 20:34:09 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.148 2000-02-28 20:50:49 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -226,34 +226,6 @@ import java.util.Iterator;
     /* InstrDIRECTIVE emit helper. */
     private Instr emitNoFallDIRECTIVE( HCodeElement root, String assem ) {
 	return emit( InstrDIRECTIVE.makeNoFall( instrFactory, root, assem ));
-    }
-
-    private Temp makeTemp() {
-	    return new Temp(instrFactory.tempFactory());
-    }
-
-    private TwoWordTemp makeTwoWordTemp() {
-	    return new TwoWordTemp(instrFactory.tempFactory());
-    }
-
-    Map origTempToNewTemp;
-
-    private Temp makeTemp( Temp orig ) {
-	    Temp newT = (Temp) origTempToNewTemp.get(orig);
-	    if (newT == null) {
-	    	newT = makeTemp();
-		origTempToNewTemp.put(orig, newT);
-	    }	
-	    return newT;
-    }
-
-    private TwoWordTemp makeTwoWordTemp( Temp orig ) {
-	    TwoWordTemp newT = (TwoWordTemp) origTempToNewTemp.get(orig);
-	    if (newT == null) {
-	    	newT = makeTwoWordTemp();
-		origTempToNewTemp.put(orig, newT);
-	    }	
-	    return newT;
     }
 
     // helper for predicate clauses
@@ -533,14 +505,11 @@ import java.util.Iterator;
       if (ROOT.getRetval()==null) {
 	  // this is a void method.  don't bother to emit move.
       } else if (ROOT.getRetval().isDoubleWord()) {
-	retval = makeTwoWordTemp(retval);
 	// not certain an emitMOVE is legal with the l/h modifiers
-
 	declare(retval, type);
 	emit( ROOT, "mov `d0l, `s0", retval, r0 );
 	emit( ROOT, "mov `d0h, `s0", retval, r1 );
       } else {
-	retval = makeTemp(retval);
 	declare(retval, type);
 	emitMOVE( ROOT, "mov `d0, `s0", retval, r0 );
       }  
@@ -691,7 +660,6 @@ import java.util.Iterator;
 %start with %{
 	// *** METHOD PROLOGUE ***
 	this.instrFactory = inf; // XXX this should probably move to superclass
-	origTempToNewTemp = new HashMap(); // XXX this should also go away
 }%
 %end with %{
        // *** METHOD EPILOGUE *** 
@@ -1093,7 +1061,6 @@ CONST<p>(c) = i %{
 // register allocator.
 
 MOVE(TEMP(dst), CONST<l,d>(c)) %{
-    Temp i = makeTwoWordTemp(dst);
     CONST cROOT = (CONST) ROOT.getSrc();
     long val = (cROOT.type()==Type.LONG) ? cROOT.value.longValue()
 	: Double.doubleToLongBits(cROOT.value.doubleValue());
@@ -1101,34 +1068,32 @@ MOVE(TEMP(dst), CONST<l,d>(c)) %{
     // why.  They just are.
     String lomod = (ROOT.type()==Type.LONG) ? "l" : "h";
     String himod = (ROOT.type()==Type.LONG) ? "h" : "l";
-    declare( i, code.getTreeDerivation(),  ROOT.getSrc() );
+    declare( dst, code.getTreeDerivation(),  ROOT.getSrc() );
 
     emit(new Instr( instrFactory, ROOT,
 		    loadConst32("`d0"+lomod, (int)val, "lo("+cROOT.value+")"),
-		    new Temp[]{ i }, null));
+		    new Temp[]{ dst }, null));
     val>>>=32;
     emit(new Instr( instrFactory, ROOT,
 		    loadConst32("`d0"+himod, (int)val, "hi("+cROOT.value+")"),
-		    new Temp[]{ i }, null));
+		    new Temp[]{ dst }, null));
 }% 
 
 MOVE(TEMP(dst), CONST<f,i>(c)) %{
-    Temp i = makeTemp(dst);	
     CONST cROOT = (CONST) ROOT.getSrc();
     int val = (cROOT.type()==Type.INT) ? cROOT.value.intValue()
 	: Float.floatToIntBits(cROOT.value.floatValue());
-    declare( i, code.getTreeDerivation(),  ROOT.getSrc());
+    declare( dst, code.getTreeDerivation(),  ROOT.getSrc());
     emit(new Instr( instrFactory, ROOT,
 		    loadConst32("`d0", val, cROOT.value.toString()),
-		    new Temp[]{ i }, null));
+		    new Temp[]{ dst }, null));
 }%
 
 MOVE(TEMP(dst), CONST<p>(c)) %{
     // the only CONST of type Pointer we should see is NULL
-    Temp i = makeTemp(dst);
-    declare( i, code.getTreeDerivation(),  ROOT.getSrc());
+    declare( dst, code.getTreeDerivation(),  ROOT.getSrc());
     emit(new Instr( instrFactory, ROOT, 
-		    "mov `d0, #0 @ null", new Temp[]{ i }, null));
+		    "mov `d0, #0 @ null", new Temp[]{ dst }, null));
 }%
 
 BINOP<p,i>(MUL, j, k) = i %{
@@ -1444,13 +1409,7 @@ MEM<d,l>(NAME(id)) = i %{
 }%
 */
 
-TEMP<p,i,f>(id) = i %{
-    i = makeTemp( ROOT.temp );
-}%
-TEMP<l,d>(id) = i %{
-    i = makeTwoWordTemp( ROOT.temp );		
-}%
-
+TEMP(t) = i %{ i=t; /* this case is basically handled entirely by the CGG */ }%
 
 UNOP(_2B, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
@@ -1712,8 +1671,8 @@ METHOD(params) %{
     int loc=0;
     // skip param[0], which is the explicit 'exceptional return address'
     for (int i=1; i<params.length; i++) {
-	if (params[i] instanceof TwoWordTemp) {
-	    declare(params[i], HClass.Void);
+	declare(params[i], code.getTreeDerivation(), ROOT.getParams(i));
+	if (ROOT.getParams(i).isDoubleWord()) {
 	    if (loc<=2) { // both halves in registers
 		// ack.  emitMOVE isn't working with long/double types.
 		emit( ROOT, "mov `d0l, `s0", params[i],regfile.reg[loc++]);
@@ -1733,8 +1692,6 @@ METHOD(params) %{
 				   new Temp[] {params[i]}, new Temp[] {FP}));
 	    }
 	} else { // single word.
-	    declare(params[i], 
-		    code.getTreeDerivation(), ROOT.getParams()[i]);
 	    if (loc<4) { // in register
 		emitMOVE( ROOT, "mov `d0, `s0", params[i], regfile.reg[loc++]);
 	    } else { // on stack
@@ -1818,13 +1775,11 @@ LABEL(id) %{
 }%
 
 MOVE<p,i,f>(TEMP(dst), src) %{
-    dst = makeTemp(dst);
     declare( dst, code.getTreeDerivation(), ROOT.getSrc());
     emitMOVE( ROOT, "mov `d0, `s0", dst, src );
 }%
 
 MOVE<d,l>(TEMP(dst), src) %{
-    dst = makeTwoWordTemp(dst);
     Util.assert( dst instanceof TwoWordTemp, "why is dst: "+dst + 
 		 " a normal Temp? " + harpoon.IR.Tree.Print.print(ROOT));
 
@@ -1966,7 +1921,6 @@ CALL(retval, retex, func, arglist, handler)
 %{
     CallState cs = emitCallPrologue(ROOT, arglist, code.getTreeDerivation());
     Label rlabel = new Label(), elabel = new Label();
-    retex = makeTemp(retex);
     // next two instructions are *not* InstrMOVEs, as they have side-effects
     emit2( ROOT, "adr `d0, "+rlabel, new Temp[] { LR }, null );
     // call uses 'func' as `s0
@@ -1994,7 +1948,6 @@ CALL(retval, retex, NAME(funcLabel), arglist, handler)
 %{
     CallState cs = emitCallPrologue(ROOT, arglist, code.getTreeDerivation());
     Label rlabel = new Label(), elabel = new Label();
-    retex = makeTemp(retex);
     // do the call.  bl has a 24-bit offset field, which should be plenty.
     // note that r0-r3, LR and IP are clobbered by the call.
     declare( LR, HClass.Void );
