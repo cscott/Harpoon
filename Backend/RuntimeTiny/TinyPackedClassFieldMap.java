@@ -26,7 +26,7 @@ import java.util.Map;
  * space required by objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TinyPackedClassFieldMap.java,v 1.1.2.1 2002-03-16 13:23:24 cananian Exp $
+ * @version $Id: TinyPackedClassFieldMap.java,v 1.1.2.2 2002-03-20 23:36:42 cananian Exp $
  */
 public abstract class TinyPackedClassFieldMap extends FieldMap {
     final Runtime runtime;
@@ -157,7 +157,7 @@ public abstract class TinyPackedClassFieldMap extends FieldMap {
 	    // if 'prefAlign' boot fields which aren't preferentially aligned
 	    if (prefAlign && (!li.hasNext()) && 0!=(l%palign)) continue;
 	    // okay, otherwise add padding if necessary.
-	    if ((l%malign)!=0) l+= malign - (l % malign);
+	    while ((l%malign)!=0) l++; // (slow, but works even w/ negative l)
 	    int h = l + size;
 	    if (h <= i.high) { // yay, the field fits here!
 		// update interval list.
