@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.27 1999-09-15 20:41:58 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.28 1999-09-15 21:21:27 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -120,13 +120,13 @@ final class ReHandler {
 		    HandInfo nexth=(HandInfo)iterate.next();
 		    //cover default exit case
 		    if (nexth.defaultexit())
-			makedefaultexit(qf, ss, qm, call, nexth, phiset);
+			makedefaultexit(qf, ss, qm, call, nexth, phiset,typemap, ti);
 		    //cover any handler if it is needed
 		    if (nexth.anyhandler()&&!any)
-			makeanyhandler(qf, ss, qm, call, nexth, protlist, phiset);
+			makeanyhandler(qf, ss, qm, call, nexth, protlist, phiset,typemap, ti);
 		    //cover other handlers
    		    if (nexth.specificex()) 
-			makespechandler(qf, ss, qm, call, throwset, nexth, protlist, phiset, phiold, any);
+			makespechandler(qf, ss, qm, call, throwset, nexth, protlist, phiset, phiold, any,typemap, ti);
 		}
 	    }
 	}
@@ -192,7 +192,8 @@ final class ReHandler {
 
 	// Modify this new CFG by emptying PHI nodes
 	// Need to make NoSSA for QuadWithTry
-	PHVisitor v = new PHVisitor(qf, reachable);
+	// Also empties out phi nodes that can't be reached.
+	PHVisitor v = new PHVisitor(qf, reachable, typemap);
 	for (Iterator it = phiset.iterator(); it.hasNext();) {
 	    Quad q=(Quad)it.next();
 	    if (reachable.contains(q))
@@ -274,7 +275,7 @@ final class ReHandler {
     }
 
     //make an exceptionless exit for the call statement
-    private static void makedefaultexit(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, Set phiset) {
+    private static void makedefaultexit(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, Set phiset, Map ntypemap, TypeMap otypemap) {
 	Map phimap=nexth.map();
 	Temp[] dst=new Temp[phimap.size()];
 	Temp[][] src=new Temp[phimap.size()][2];
@@ -288,6 +289,15 @@ final class ReHandler {
 	    count++;
 	}
 	Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
+	ksit=phimap.keySet().iterator();
+	while (ksit.hasNext()) {
+	    Temp t=(Temp)ksit.next();
+	    Temp t2=(Temp)phimap.get(t);
+	    HClass type=otypemap.typeMap(null, t),
+		type2=otypemap.typeMap(null, t2);
+	    ntypemap.put(new Tuple(new Object[] {phi, Quad.map(ss.ctm,t)}), type);
+	    ntypemap.put(new Tuple(new Object[] {phi, Quad.map(ss.ctm,t2)}), type2);
+	}
 	phiset.add(phi);
 	Quad.addEdge(qm.getFoot(call),0, phi, 0);
 	Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
@@ -296,10 +306,12 @@ final class ReHandler {
     }
 
     //makes an exit for the anyhandler
-    private static void makeanyhandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, ReProtection protlist, Set phiset) {
+    private static void makeanyhandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, ReProtection protlist, Set phiset, Map ntypemap, TypeMap otypemap) {
 	Quad newhandler = new HANDLER(qf, qm.getHead(call),
 				      Quad.map(ss.ctm, call.retex()),
 				      null, protlist);
+	ntypemap.put(new Tuple(new Object[]{newhandler, Quad.map(ss.ctm, call.retex()) }),
+		     otypemap.typeMap(call, call.retex()));
 	ss.al.add(newhandler);
 	Map phimap=nexth.map();
 	Temp[] dst=new Temp[phimap.size()];
@@ -314,6 +326,15 @@ final class ReHandler {
 	    count++;
 	}
 	Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
+	ksit=phimap.keySet().iterator();
+	while (ksit.hasNext()) {
+	    Temp t=(Temp)ksit.next();
+	    Temp t2=(Temp)phimap.get(t);
+	    HClass type=otypemap.typeMap(null, t),
+		type2=otypemap.typeMap(null, t2);
+	    ntypemap.put(new Tuple(new Object[] {phi, Quad.map(ss.ctm,t)}), type);
+	    ntypemap.put(new Tuple(new Object[] {phi, Quad.map(ss.ctm,t2)}), type2);
+	}
 	phiset.add(phi);
 	Quad.addEdge(newhandler,0, phi, 0);
 	Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
@@ -324,7 +345,7 @@ final class ReHandler {
 
 
     //makes a specific handler    
-    private static void makespechandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, Set throwset, HandInfo nexth, ReProtection protlist, Set phiset, Set phiold, boolean any) {
+    private static void makespechandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, Set throwset, HandInfo nexth, ReProtection protlist, Set phiset, Set phiold, boolean any, Map ntypemap, TypeMap otypemap) {
 	boolean needhand=true;
      
 	if (any)
@@ -341,6 +362,8 @@ final class ReHandler {
 	    Quad newhandler = new HANDLER(qf, qm.getHead(call), 
 					  Quad.map(ss.ctm, call.retex()),
 					  nexth.hclass(), protlist);
+	    ntypemap.put(new Tuple(new Object[] {newhandler, Quad.map(ss.ctm, call.retex()) }),
+			 otypemap.typeMap(call, call.retex()));
 	    ss.al.add(newhandler);
 	    Map phimap=nexth.map();
 	    Temp[] dst=new Temp[phimap.size()];
@@ -355,6 +378,15 @@ final class ReHandler {
 		count++;
 	    }
 	    Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
+	    ksit=phimap.keySet().iterator();
+	    while (ksit.hasNext()) {
+		Temp t=(Temp)ksit.next();
+		Temp t2=(Temp)phimap.get(t);
+		HClass type=otypemap.typeMap(null, t),
+		    type2=otypemap.typeMap(null, t2);
+		ntypemap.put(new Tuple(new Object[] {phi, Quad.map(ss.ctm,t)}), type);
+		ntypemap.put(new Tuple(new Object[] {phi, Quad.map(ss.ctm,t2)}), type2);
+	    }
 	    phiset.add(phi);
 	    Quad.addEdge(newhandler,0, phi, 0);
 	    Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
@@ -803,11 +835,13 @@ class PHVisitor extends QuadVisitor
 {
     private QuadFactory     m_qf;
     private Set             reachable;
+    private Map             typemap;
 
-    public PHVisitor(QuadFactory qf, Set reachable)
+    public PHVisitor(QuadFactory qf, Set reachable, Map typemap)
     {     
 	m_qf          = qf;
 	this.reachable=reachable;
+	this.typemap=typemap;
     }
 
     public void visit(Quad q) { }
@@ -941,6 +975,10 @@ class PHVisitor extends QuadVisitor
 	    Edge from = q.prevEdge(srcIndex);
 	    MOVE m    = new MOVE(m_qf, q, q.dst(dstIndex), 
 				 q.src(dstIndex, srcIndex));
+	    typemap.put(new Tuple(new Object[] {m,q.dst(dstIndex)}),
+			typemap.get(new Tuple(new Object[]{q,q.dst(dstIndex)})));
+	    typemap.put(new Tuple(new Object[] {m,q.src(dstIndex,srcIndex)}),
+			typemap.get(new Tuple(new Object[] {q,q.src(dstIndex,srcIndex)})));
 	    reachable.add(m);
 	    Quad.addEdge(q.prev(srcIndex), from.which_succ(), m, 0);
 	    Quad.addEdge(m, 0, q, from.which_pred());
