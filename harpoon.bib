@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.29 1998-10-07 00:59:55 cananian Exp $
+% $Id: harpoon.bib,v 1.30 1998-10-07 02:28:17 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -926,3 +926,22 @@
   annote =	 {The other canonical SSA form paper.}
 }
 
+@Article{cytron95:ssa,
+  author = 	 {Ron K. Cytron and Jeanne Ferrante},
+  title = 	 {Efficiently computing $\phi$-nodes on-the-fly},
+  journal = 	 TOPLAS,
+  year = 	 1995,
+  volume =	 17,
+  number =	 3,
+  pages =	 {487-506},
+  month =	 may,
+  url =		 {http://www.acm.org/pubs/citations/journals/toplas/1995-17-3/p487-cytron/},
+  annote =	 {Contains: ``Since one reason for introducing
+                  $\phi$-functions is to eliminate potentially
+                  quadratic behavior when solving actual data flow
+                  problems, such worst-case behavior during SEG or SSA 
+                  construction could be problematic.  Clearly,
+                  avoiding such behavior necessitates placing
+                  $\phi$-functions without computing or using
+                  dominance frontiers.''}
+}
