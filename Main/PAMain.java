@@ -30,7 +30,7 @@ import harpoon.Analysis.PointerAnalysis.ParIntGraph;
  * <code>PAMain</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.4 2000-02-12 01:41:42 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.5 2000-02-17 18:04:35 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -91,9 +91,6 @@ public abstract class PAMain {
 
 	if(PointerAnalysis.DETERMINISTIC && !PointerAnalysis.TIMING)
 	    total_time = -1;
-
-	System.out.println("The entire Pointer Analysis done in " 
-			   + total_time + "ms");
 
 	if(PointerAnalysis.DEBUG2){
 	    System.out.println("===== NODES ========================");
