@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.141 $)dnl
+AC_REVISION($Revision: 1.142 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -182,7 +182,7 @@ no|yes)  ;;
 *)   LDFLAGS="$LDFLAGS -L$with_classpath"
      AC_CHECK_LIB(gtkpeer, Java_gnu_java_awt_peer_gtk_GtkWindowPeer_create)
      AC_CHECK_LIB(javautil, Java_java_util_TimeZone_getDefaultTimeZoneId)
-     AC_CHECK_LIB(javaio, Java_java_io_RandomAccessFile_open)
+     AC_CHECK_LIB(javaio, Java_java_io_ObjectInputStream_allocateObject)
      AC_CHECK_LIB(javalangreflect, Java_java_lang_reflect_Array_getLength)
      AC_CHECK_LIB(javalang, Java_java_lang_Math_sin)
      AC_CHECK_LIB(javanet, Java_java_net_PlainSocketImpl_accept)
@@ -238,7 +238,7 @@ AM_CONDITIONAL(ROLE_INFER, test "$with_role_infer" = yes)
 dnl process option for Realtime Java support.
 AC_MSG_CHECKING([for realtime java support])
 AC_ARG_WITH(realtime-java,
-[  --with-realtime-java[={yes,full,stubs,fake,threads}][,noheap][,debug[-ref]][,threads-debug][,gc-stats][,timer][,preempt]],
+[  --with-realtime-java[={yes,full,stubs,fake,threads}][,noheap][,debug[-ref]][,threads-debug][,gc-stats][,timer][,preempt][,timesys]],
 with_realtime_java="$withval", with_realtime_java="no")
 with_realtime_java_stubs=no
 case ",$with_realtime_java," in
@@ -341,11 +341,23 @@ case ",$with_realtime_java," in
 *)	AC_MSG_RESULT([no])
 	;;
 esac
-
+AC_MSG_CHECKING([for TimeSys linux support])
+case ",$with_realtime_java," in
+*,timesys*) AC_MSG_RESULT([yes])
+        AC_CHECK_LIB(rk, rk_cpu_reserve_create)
+	AC_DEFINE(WITH_REALTIME_THREADS_TIMESYS, 1,
+	[Define if you want CPU and NET reservations through the RTJ Scheduler])
+	with_realtime_threads_timesys=yes
+	;;
+*)      AC_MSG_RESULT([no])
+	with_realtime_threads_timesys=no
+	;;
+esac
 
 AM_CONDITIONAL(REALTIME_JAVA, test "$with_realtime_java" != no)
 AM_CONDITIONAL(REALTIME_JAVA_STUBS, test "$with_realtime_java_stubs" = yes)
 AM_CONDITIONAL(REALTIME_JAVA_THREADS, test "$with_realtime_threads" = yes)
+AM_CONDITIONAL(REALTIME_JAVA_THREADS_TIMESYS, test "$with_reatime_threads_timesys" = yes)
 
 dnl set up RTJPerf performance benchmarks - requires native clock code
 AC_MSG_CHECKING([for RTJPerf library support])
