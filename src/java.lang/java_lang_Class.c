@@ -5,6 +5,9 @@
 #include <assert.h>
 
 static void wrapNthrow(JNIEnv *env, char *exclsname);
+#ifdef WITH_INIT_CHECK
+static int  staticinit(JNIEnv *env, jclass cls);
+#endif /* WITH_INIT_CHECK */
 
 /*
  * Class:     java_lang_Class
@@ -34,6 +37,21 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_forName
     wrapNthrow(env, "java/lang/ClassNotFoundException");
     return NULL;
 }
+#ifdef WITH_INIT_CHECK
+JNIEXPORT jclass JNICALL Java_java_lang_Class_forName_00024_00024initcheck
+  (JNIEnv *env, jclass cls, jstring str) {
+  jclass result, clscls;
+  jmethodID methodID;
+  /* initialize java.lang.Class */
+  clscls = (*env)->FindClass(env, "java/lang/Class");
+  if (clscls && !staticinit(env, clscls)) return NULL; /* failed init */
+  /* invoke Class.forName() */
+  result = Java_java_lang_Class_forName(env, cls, str);
+  /* now initialize the loaded class */
+  if (result && !staticinit(env, result)) return NULL; /* failed init */
+  return result;
+}
+#endif /* WITH_INIT_CHECK */
 
 // try to wrap currently active exception as the exception specified by
 // the exclsname parameter.  if this fails, just throw the original exception.
@@ -65,27 +83,37 @@ static void wrapNthrow(JNIEnv *env, char *exclsname) {
     (*env)->Throw(env, ex);
     return;
 }
+#ifdef WITH_INIT_CHECK
+// run the static initializer for the given class.
+static int staticinit(JNIEnv *env, jclass c) {
+  jmethodID methodID; jclass sc;
+  /* XXX: Doesn't initialize interfaces */
+  sc = (*env)->GetSuperclass(env, c);
+  if (sc && !staticinit(env, sc)) return 0; /* fail if superclass init fails */
+  methodID=(*env)->GetStaticMethodID(env, c, "<clinit>", "()V");
+  if (methodID==NULL) {
+    (*env)->ExceptionClear(env); /* no static initializer, ignore */
+  } else {
+    (*env)->CallStaticVoidMethod(env, c, methodID);
+    if ((*env)->ExceptionOccurred(env)) {
+      wrapNthrow(env, "java/lang/ExceptionInInitializerError");
+      return 0; /* exception in initializer */
+    }
+  }
+  return 1; /* success */
+}
+#endif /* WITH_INIT_CHECK */
 
-/** Private helper for newInstance and newInstance_00024_00024initcheck */    
-static jobject _newInstance_(JNIEnv *env, jobject cls, jboolean initcheck) {
+
+/*
+ * Class:     java_lang_Class
+ * Method:    newInstance
+ * Signature: ()Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_java_lang_Class_newInstance
+  (JNIEnv *env, jobject cls) {
     jobject result;
     jmethodID methodID;
-    if (initcheck==JNI_TRUE) { /* call static initializers if initcheck */
-      jclass c;
-      /* XXX: Doesn't initialize interfaces */
-      for (c = (jclass) cls; c!=NULL; c=(*env)->GetSuperclass(env, c)) {
-	methodID=(*env)->GetStaticMethodID(env, c, "<clinit>", "()V");
-	if (methodID==NULL)
-	  (*env)->ExceptionClear(env); /* no static initializer, ignore */
-	else {
-	  (*env)->CallStaticVoidMethod(env, (jclass) cls, methodID);
-	  if ((*env)->ExceptionOccurred(env)) {
-	    wrapNthrow(env, "java/lang/ExceptionInInitializerError");
-	    return NULL;
-	  }
-	}
-      }
-    }
     /* okay, get constructor for this object and create it. */
     methodID=(*env)->GetMethodID(env, (jclass) cls, "<init>", "()V");
     /* if methodID=NULL, throw InstantiationException */
@@ -99,19 +127,13 @@ static jobject _newInstance_(JNIEnv *env, jobject cls, jboolean initcheck) {
     return NULL;
 }
 
-/*
- * Class:     java_lang_Class
- * Method:    newInstance
- * Signature: ()Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_newInstance
-  (JNIEnv *env, jobject cls) {
-  return _newInstance_(env, cls, JNI_FALSE);
-}
 #ifdef WITH_INIT_CHECK
 JNIEXPORT jobject JNICALL Java_java_lang_Class_newInstance_00024_00024initcheck
   (JNIEnv *env, jobject cls) {
-  return _newInstance_(env, cls, JNI_TRUE);
+  /* this next static init may be redundant; class should be initialized
+   * when Class object fetched via forName() or suchlike. */
+  if (!staticinit(env, cls)) return NULL; /* init failed */
+  return Java_java_lang_Class_newInstance(env, cls);
 }
 #endif /* WITH_INIT_CHECK */
 
@@ -260,6 +282,14 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_getComponentType
   struct claz *compclz = thisclz->component_claz;
   return compclz ? FNI_WRAP(compclz->class_object) : NULL;
 }
+#ifdef WITH_INIT_CHECK
+JNIEXPORT jclass JNICALL Java_java_lang_Class_getComponentType_00024_00024initcheck
+  (JNIEnv *env, jobject _this) {
+  jclass r = Java_java_lang_Class_getComponentType(env, _this);
+  if (!staticinit(env, r)) return NULL; /* init failed */
+  return r;
+}
+#endif /* WITH_INIT_CHECK */
 
 #if 0
 /*
