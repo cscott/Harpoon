@@ -25,7 +25,7 @@ import harpoon.IR.Quads.NEW;
  * too big and some code segmentation is always good! 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.14 2000-03-03 06:23:15 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.15 2000-03-05 03:49:56 salcianu Exp $
  */
 abstract class InterThreadPA {
     
@@ -39,7 +39,7 @@ abstract class InterThreadPA {
     public static ParIntGraph resolve_threads(ParIntGraph pig,
 					      PointerAnalysis pa){
 
-	long begin_time;
+	long begin_time = 0;
 	if(TIMING) begin_time = System.currentTimeMillis();
 
 	processed_threads.clear();
