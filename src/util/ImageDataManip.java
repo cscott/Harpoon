@@ -26,6 +26,8 @@ import java.util.jar.JarFile;
 import imagerec.graph.ImageData;
 import imagerec.graph.Cache;
 
+import Img.ImageHeader;
+
 /**
  * Various utilities for manipulating images contained in {@link ImageData}s. 
  *
@@ -427,6 +429,7 @@ public class ImageDataManip {
 	    id.blueThreshold2 = is.readInt();
 	    id.scaleFactor = is.readFloat();
 	    id.trackedObjectUniqueID = is.readInt();
+	    id.header = is.readBoolean()?new ImageHeader(is.readLong(), is.readInt(), is.readInt()):null;
 	} catch (IOException e) {
 	    throw new Error(e.toString());
 	}
@@ -460,6 +463,14 @@ public class ImageDataManip {
 	    out.writeInt(id.blueThreshold2);
 	    out.writeFloat(id.scaleFactor);
 	    out.writeInt(id.trackedObjectUniqueID);
+	    if (id.header == null) {
+		out.writeBoolean(false);
+	    } else {
+		out.writeBoolean(true);
+		out.writeLong(id.header.timestamp);
+		out.writeInt(id.header.importance);
+		out.writeInt(id.header.id);
+	    }
 	    out.flush();
 	} catch (IOException e) {
 	    throw new Error(e.toString());
@@ -513,13 +524,13 @@ public class ImageDataManip {
 				 id.conditional, id.angle, id.blueThreshold1,
 				 id.blueThreshold2, id.scaleFactor,
 				 id.trackedObjectUniqueID, id.origWidth,
-				 id.origHeight);
+				 id.origHeight, id.header);
 	} else {
 	    return new ImageData(rvals, gvals, bvals,
 				 x, y, width, height,
 				 0, 0, 0, 0, (float)0.0, (float)0.0, (float)0.0,
 				 false, (byte)0, false, 0, 0, 0, (float)0.0,
-				 -1, 0, 0);
+				 -1, 0, 0, new ImageHeader((long)0, 0, 0));
 	}
     }
 
@@ -528,13 +539,15 @@ public class ImageDataManip {
      *  @param c1 The target x coordinate.
      *  @param c2 The target y coordinate.
      *  @param c3 The target z coordinate.
+     *  @param time A time stamp to pass through.
+     *  @param header Header data to pass through.
      *  @return The created {@link ImageData}.
      */
-    public static ImageData create(float c1, float c2, float c3, long time) {
+    public static ImageData create(float c1, float c2, float c3, long time, Img.ImageHeader header) {
 	return new ImageData(new byte[0], new byte[0], new byte[0],
 			     0, 0, 0, 0, time, 0, 0, 0,
 			     c1, c2, c3, false, (byte)0, false, 0, 0, 0, 0,
-			     -1, 0, 0);
+			     -1, 0, 0, header);
     }
 
     /** Factory to create an {@link ImageData} given partial information.
@@ -549,7 +562,8 @@ public class ImageDataManip {
 	return new ImageData(new byte[0], new byte[0], new byte[0],
 			     0, 0, 0, 0, time, 0, command, 0,
 			     (float)0.0, (float)0.0, (float)0.0, 
-			     false, (byte)0, false, 0, 0, 0, 0, -1, 0, 0);
+			     false, (byte)0, false, 0, 0, 0, 0, -1, 0, 0, 
+			     new ImageHeader((long)0, 0, 0));
     }
 
     /**

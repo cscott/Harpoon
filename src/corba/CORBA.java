@@ -30,6 +30,8 @@ import imagerec.util.ImageDataManip;
 import imagerec.graph.Alert;
 import imagerec.graph.ATR;
 
+import Img.ImageHeader;
+
 /** {@link CORBA} provides a transport mechanism for
  *  <a href="http://www.omg.org/gettingstarted/corbafaq.htm">CORBA</a> servers
  *  and clients used in the image recognition program.
@@ -171,8 +173,8 @@ public class CORBA implements CommunicationsModel {
 	throws Exception {
 	final ATRSysCond atr = ATRSysCondHelper.narrow(setupClient(name));
 	return new CommunicationsAdapter() {
-	    public void alert(float c1, float c2, float c3, long time) {
-		atr.send_coordinate(new Coordinate(c1, c2, c3, time));
+	    public void alert(float c1, float c2, float c3, long time, ImageHeader header) {
+		atr.send_coordinate(new Coordinate(c1, c2, c3, time), header);
 	    }
 	};
     }
@@ -186,8 +188,8 @@ public class CORBA implements CommunicationsModel {
     public void runAlertServer(String name, final CommunicationsAdapter out) 
 	throws Exception {
 	runServer(name, new ATRSysCondPOA() {
-	    public void send_coordinate(Coordinate c) {
-		out.alert(c.c1, c.c2, c.c3, c.timestamp);
+	    public void send_coordinate(Coordinate c, Img.ImageHeader header) {
+		out.alert(c.c1, c.c2, c.c3, c.timestamp, header);
 	    }
 	    
 	    public boolean isReady() { return true; }
@@ -228,7 +230,7 @@ public class CORBA implements CommunicationsModel {
 	final Processor p = ProcessorHelper.narrow(setupClient(name));
 	return new CommunicationsAdapter() {
 	    public void process(ImageData id) {
-		p.process(new Frame(id.time, new Property[0], ImageDataManip.writePPM(id)));
+		p.process(new Frame(id.time, new Property[0], id.header, ImageDataManip.writePPM(id)));
 	    }
 	};
     }

@@ -9,6 +9,8 @@ import imagerec.corba.CORBA;
 
 import imagerec.util.ImageDataManip;
 
+import Img.ImageHeader;
+
 /** An {@link AlertServer} is a {@link Server} which can be connected to 
  *  from a {@link Server} node.
  *  {@link ImageData}s flow from {@link Alert} to {@link AlertServer}.
@@ -59,9 +61,9 @@ public class AlertServer extends Server {
 		public void run() {
 		    try {
 			cm.runAlertServer(name, new CommunicationsAdapter() {
-			    public void alert(float c1, float c2, float c3, long time) {
+			    public void alert(float c1, float c2, float c3, long time, ImageHeader header) {
 				//System.out.println("Alert Server #"+getUniqueID()+" received image.");
-				ImageData newID = ImageDataManip.create(c1, c2, c3, time);
+				ImageData newID = ImageDataManip.create(c1, c2, c3, time, header);
 				if (out != null) {
 				    AlertServer.this.out.process(newID);
 				}

@@ -142,7 +142,7 @@ public class Display extends Node {
     /** Construct a {@link Display} node, given a <code>title</code> for the window. 
      *  Note that this actually opens a frame visible on the screen. By default,
      *  all color channels are displayed.
-     *  @param The title of the window that will be opened.
+     *  @param title The title of the window that will be opened.
      */
     public Display(String title) {
 	super();

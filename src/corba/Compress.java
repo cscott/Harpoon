@@ -5,6 +5,7 @@ package imagerec.corba;
 
 import imagerec.graph.ImageData;
 import imagerec.util.CODEC;
+import Img.ImageHeader;
 
 /** {@link Compress} is a {@link CommunicationsModel} that wraps a {@link CommunicationsModel} 
  *  and uses a {@link CODEC} to compress and decompress information sent over the network.
@@ -36,8 +37,8 @@ public class Compress implements CommunicationsModel {
 		ca.process(codec.compress(id));
 	    }
 
-	    public void alert(float c1, float c2, float c3, long time) {
-		ca.alert(c1, c2, c3, time);
+	    public void alert(float c1, float c2, float c3, long time, ImageHeader header) {
+		ca.alert(c1, c2, c3, time, header);
 	    }
 	};
     }
@@ -51,8 +52,8 @@ public class Compress implements CommunicationsModel {
 		ca.process(codec.decompress(id));
 	    }
 	    
-	    public void alert(float c1, float c2, float c3, long time) {
-		ca.alert(c1, c2, c3, time);
+	    public void alert(float c1, float c2, float c3, long time, ImageHeader header) {
+		ca.alert(c1, c2, c3, time, header);
 	    }
 	};
     }

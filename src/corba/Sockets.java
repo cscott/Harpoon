@@ -21,6 +21,8 @@ import imagerec.graph.ImageData;
 
 import imagerec.graph.Alert;
 
+import Img.ImageHeader;
+
 /** {@link Sockets} provides a simple socket-based transport mechanism
  *  for use with the image recognition program.
  *
@@ -102,12 +104,20 @@ public class Sockets implements CommunicationsModel {
     public CommunicationsAdapter setupAlertClient(String name) throws Exception {
 	final DataOutputStream out = new DataOutputStream(setupClient(name));
 	return new CommunicationsAdapter() {
-		public void alert(float c1, float c2, float c3, long time) {
+		public void alert(float c1, float c2, float c3, long time, ImageHeader header) {
 		    try {
 			out.writeFloat(c1);
 			out.writeFloat(c2);
 			out.writeFloat(c3);
 			out.writeLong(time);
+			if (header == null) {
+			    out.writeBoolean(false);
+			} else {
+			    out.writeBoolean(true);
+			    out.writeLong(header.timestamp);
+			    out.writeInt(header.importance);
+			    out.writeInt(header.id);
+			}
 			out.flush();
 		    } catch (IOException e) {
 			throw new Error(e.toString());
@@ -120,7 +130,8 @@ public class Sockets implements CommunicationsModel {
 	final DataInputStream is = new DataInputStream(runServer(name));
 	while (true) {
 	    try {
-		out.alert(is.readFloat(), is.readFloat(), is.readFloat(), is.readLong());
+		out.alert(is.readFloat(), is.readFloat(), is.readFloat(), is.readLong(), 
+			  is.readBoolean()?new ImageHeader(is.readLong(), is.readInt(), is.readInt()):null);
 	    } catch (IOException e) {
 		throw new Error(e.toString());
 	    }

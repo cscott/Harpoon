@@ -33,7 +33,7 @@ public class Match extends Node {
     
     /** Construct a {@link Match} node using Steven Howard's original database.
      * 
-     *  @param db
+     *  @param fileName The file name of the data base to match
      *  @param threshold The threshold to determine whether an image is a match or not.
      *  @param out The node to send matches to.
      */

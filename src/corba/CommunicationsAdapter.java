@@ -4,6 +4,7 @@
 package imagerec.corba;
 
 import imagerec.graph.ImageData;
+import Img.ImageHeader;
 
 /** This class, together with {@link CommunicationsModel} provide
  *  a server/client abstraction that allows pluggable transport
@@ -40,8 +41,10 @@ public class CommunicationsAdapter {
      *  @param c1 The x coordinate relative to the current location in meters.
      *  @param c2 The y coordinate relative to the current location in meters.
      *  @param c3 The z coordinate relative to the current location in meters.
+     *  @param time This is a pass-through time stamp.
+     *  @param header This is a pass-through header.
      */
-    public void alert(float c1, float c2, float c3, long time) {
+    public void alert(float c1, float c2, float c3, long time, ImageHeader header) {
 	throw new Error("This should be overridden if callable.");
     }
 }

@@ -6,6 +6,7 @@ package imagerec.graph;
 import imagerec.corba.CommunicationsAdapter;
 import imagerec.corba.CommunicationsModel;
 import imagerec.corba.CORBA;
+import Img.ImageHeader;
 
 /**
  * {@link Alert} is a {@link Client} which sets an alert syscond
@@ -80,6 +81,7 @@ public class Alert extends Client {
 	final float c3 = id.c3;
 	final long time = id.time;
 	final int idNo = id.id;
+	final ImageHeader header = id.header;
 	final CommunicationsAdapter finalCS = cs;
 	(new Thread() {
 	    public void run() {
@@ -87,7 +89,7 @@ public class Alert extends Client {
 		//System.out.println("Alert Client:     c2: "+c2);
 		//System.out.println("Alert Client:     c3: "+c3);
 		
-		finalCS.alert(c1, c2, c3, time);
+		finalCS.alert(c1, c2, c3, time, header);
 		//System.out.println("Alert client #"+getUniqueID()+" sent image #"+idNo);
 	    }
 	}).start();

@@ -12,6 +12,9 @@
 #ifndef IMAGEDATA_IDL
 #define IMAGEDATA_IDL
 
+
+#include "Image.idl"
+
 /**
  * @namespace imagerec.graph
  * @brief  Interface for sending data through MIT's ATR.
@@ -81,8 +84,11 @@ module imagerec
        * {@link SetOrigDimensions} node.
        */
       long origHeight;
-    };
+      /**
+       * This field ferries data for others through the pipeline.
+       */
+      ::Img::ImageHeader header;
   };
 };
-
+};
 #endif
