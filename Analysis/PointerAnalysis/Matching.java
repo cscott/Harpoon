@@ -37,7 +37,7 @@ import java.util.Set;
  interation of the loop. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Matching.java,v 1.1.2.6 2000-05-10 14:48:05 salcianu Exp $
+ * @version $Id: Matching.java,v 1.1.2.7 2000-07-01 23:23:25 salcianu Exp $
  */
 abstract class Matching {
 
@@ -128,9 +128,9 @@ abstract class Matching {
 	// from the inference rule
 	Set nodes3 = new_mappings_for_node1;
 
-	Enumeration flags = pig[i].G.O.allFlagsForNode(node1);
-	while(flags.hasMoreElements()){
-	    String f = (String) flags.nextElement();
+	Iterator itf = pig[i].G.O.allFlagsForNode(node1).iterator();
+	while(itf.hasNext()) {
+	    String f = (String) itf.next();
 	    
 	    // nodes2 stands for all the nodes that could play
 	    // the role of n2 from the inference rule
@@ -144,16 +144,14 @@ abstract class Matching {
 
 	    // set up the relation mu[i] from any node from nodes2
 	    // to any node from nodes4
-	    Iterator it2 = nodes2.iterator();
-	    while(it2.hasNext()){
-		PANode node2 = (PANode)it2.next();
+	    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
+		PANode node2 = (PANode) it2.next();
 		boolean changed = false;
-		Iterator it4 = nodes4.iterator();
-		while(it4.hasNext()){
-		    PANode node4 = (PANode)it4.next();
-		    if(mu[i].add(node2,node4)){
+		for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
+		    PANode node4 = (PANode) it4.next();
+		    if(mu[i].add(node2, node4)){
 			changed = true;
-			new_info[i].add(node2,node4);
+			new_info[i].add(node2, node4);
 		    }
 		}
 		// nodes with new info are put in the worklist
@@ -190,18 +188,17 @@ abstract class Matching {
 
 	out_edge.n1 = node1;
 
-	Enumeration flags = pig[i].G.O.allFlagsForNode(node1);
-	while(flags.hasMoreElements()){
-	    String f = (String) flags.nextElement();
-	    
+	Iterator itf = pig[i].G.O.allFlagsForNode(node1).iterator();
+	while(itf.hasNext()) {
+	    String f = (String) itf.next();
+
 	    // nodes2 stands for all the nodes that could play
 	    // the role of n2 from the inference rule
 	    Set nodes2 = pig[i].G.O.pointedNodes(node1,f);
 	    if(nodes2.isEmpty()) continue;
 	    
 	    out_edge.f = f;
-	    Iterator it2 = nodes2.iterator();
-	    while(it2.hasNext()){
+	    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
 		PANode node2 = (PANode) it2.next();
 		out_edge.n2 = node2;
 
@@ -213,7 +210,8 @@ abstract class Matching {
 		Iterator it_edges = null;
 
 		if(PointerAnalysis.IGNORE_EO)
-		    it_edges = pig[i].G.I.getEdgesFrom(out_edge.n1,out_edge.f);
+		    it_edges = 
+		  pig[i].G.I.getEdgesFrom(out_edge.n1, out_edge.f).iterator();
 		else
 		    it_edges = pig[i].eo.getBeforeEdges(out_edge);
 
@@ -249,9 +247,9 @@ abstract class Matching {
         // from the inference rule
         Set nodes3 = new_mappings_for_node1;
 
-        Enumeration flags = pig[i].G.I.allFlagsForNode(node1);
-        while(flags.hasMoreElements()){
-            String f = (String) flags.nextElement();
+        Iterator itf = pig[i].G.I.allFlagsForNode(node1).iterator();
+        while(itf.hasNext()) {
+            String f = (String) itf.next();
             
             // nodes2 stands for all the nodes that could play
             // the role of n2 from the inference rule
@@ -265,16 +263,14 @@ abstract class Matching {
 
             // set up the relation mu[ib] from any node from nodes4
             // to any node from nodes2
-            Iterator it4 = nodes4.iterator();
-            while(it4.hasNext()){
+            for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
                 PANode node4 = (PANode) it4.next();
                 boolean changed = false;
-                Iterator it2 = nodes2.iterator();
-                while(it2.hasNext()){
+                for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
                     PANode node2 = (PANode) it2.next();
-                    if(mu[ib].add(node4,node2)){
+                    if(mu[ib].add(node4, node2)){
                         changed = true;
-                        new_info[ib].add(node4,node2);
+                        new_info[ib].add(node4, node2);
                     }
                 }
                 // nodes with new info are put in the worklist
@@ -304,9 +300,9 @@ abstract class Matching {
 
 	inside_edge.n1 = node1;
 
-	Enumeration flags = pig[i].G.I.allFlagsForNode(node1);
-	while(flags.hasMoreElements()){
-	    String f = (String) flags.nextElement();
+	Iterator itf = pig[i].G.I.allFlagsForNode(node1).iterator();
+	while(itf.hasNext()) {
+	    String f = (String) itf.next();
 	    
 	    inside_edge.f  = f;
 	    out_edge.f = f;
@@ -316,8 +312,7 @@ abstract class Matching {
 	    Set nodes2 = pig[i].G.I.pointedNodes(node1,f);
 	    if(nodes2.isEmpty()) continue;
 	    
-	    Iterator it3 = nodes3.iterator();
-	    while(it3.hasNext()){
+	    for(Iterator it3 = nodes3.iterator(); it3.hasNext(); ) {
 		PANode node3 = (PANode) it3.next();
 		out_edge.n1 = node3;
 
@@ -326,8 +321,7 @@ abstract class Matching {
 		    PANode node4 = (PANode) it4.next();
 		    out_edge.n2 = node4;
 		    
-		    Iterator it2 = nodes2.iterator();
-		    while(it2.hasNext()){
+		    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
 			PANode node2 = (PANode) it2.next();
 			inside_edge.n2 = node2;
 

@@ -45,7 +45,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.45 2000-06-29 02:21:31 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.46 2000-07-01 23:23:25 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -478,19 +478,22 @@ abstract class InterProcPA {
 	    System.exit(1);
 	}
 
-	// map the static nodes to themselves
-	Enumeration enum = pig_callee.G.O.allSourceNodes();
-	while(enum.hasMoreElements()){
-	    PANode node = (PANode) enum.nextElement();
-	    if(node.type == PANode.STATIC)
-		mu.add(node,node);
-	}
+	// map the static nodes to themselves;
 	// only the static nodes that appear as sources of the outside edges
 	// must be initially mapped
+	process_STATICs(pig_callee.G.O.allSourceNodes(), mu);
 
 	return mu;
     }
 
+    // aux method for get_initial_mapping
+    private static void process_STATICs(final Set set, final Relation mu) {
+	for(Iterator it = set.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(node.type == PANode.STATIC)
+		mu.add(node,node);
+	}
+    }
 
     /** Matches outside edges from the graph of (used by ) the callee 
 	against inside edges from the graph of (created by) the caller.
@@ -515,9 +518,9 @@ abstract class InterProcPA {
 	    HashSet nodes3 = new HashSet(new_info.getValuesSet(node1));
 	    new_info.removeAll(node1);
 
-	    Enumeration flags = pig_callee.G.O.allFlagsForNode(node1);
-	    while(flags.hasMoreElements()){
-		String f = (String) flags.nextElement();
+	    Iterator itf = pig_callee.G.O.allFlagsForNode(node1).iterator();
+	    while(itf.hasNext()) {
+		String f = (String) itf.next();
 
 		// nodes2 stands for all the nodes that could play
 		// the role of n2 from the inference rule
@@ -531,12 +534,10 @@ abstract class InterProcPA {
 
 		// set up the relation from any node from nodes2
 		// to any node from nodes4
-		Iterator it2 = nodes2.iterator();
-		while(it2.hasNext()){
+		for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
 		    PANode node2 = (PANode)it2.next();
 		    boolean changed = false;
-		    Iterator it4 = nodes4.iterator();
-		    while(it4.hasNext()){
+		    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
 			PANode node4 = (PANode)it4.next();
 			if(mu.add(node2,node4)){
 			    changed = true;

@@ -30,7 +30,7 @@ import harpoon.Temp.Temp;
  correctly; speed was only a second issue.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: EdgeOrdering.java,v 1.1.2.8 2000-03-18 23:39:26 salcianu Exp $
+ * @version $Id: EdgeOrdering.java,v 1.1.2.9 2000-07-01 23:23:25 salcianu Exp $
  */
 public class EdgeOrdering{
 
@@ -81,13 +81,12 @@ public class EdgeOrdering{
     private boolean add(final Set outside_edges, PAEdgeSet I, String f){
 	boolean modified = false;
 
-	Enumeration enum_node1 = I.allSourceNodes();
-	while(enum_node1.hasMoreElements()){
-	    PANode node1 = (PANode) enum_node1.nextElement();
-	    Iterator it_node2 = I.pointedNodes(node1,f).iterator();
-	    while(it_node2.hasNext()){
-		PANode node2 = (PANode) it_node2.next();
-		PAEdge ei = new PAEdge(node1,f,node2);
+	for(Iterator it1 = I.allSourceNodes().iterator(); it1.hasNext(); ) {
+	    PANode node1 = (PANode) it1.next();
+	    for(Iterator it2 = I.pointedNodes(node1, f).iterator();
+		it2.hasNext(); ) {
+		PANode node2 = (PANode) it2.next();
+		PAEdge ei = new PAEdge(node1, f, node2);
 		Iterator it_eo = outside_edges.iterator();
 		while(it_eo.hasNext()){
 		    PAEdge eo = (PAEdge) it_eo.next();

@@ -15,9 +15,10 @@ import java.util.Iterator;
  * small.  It is backed by a <code>List</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearSet.java,v 1.1.2.5 2000-06-30 16:37:45 salcianu Exp $
+ * @version $Id: LinearSet.java,v 1.1.2.6 2000-07-01 23:23:45 salcianu Exp $
  */
-public class LinearSet extends AbstractSet implements java.io.Serializable {
+public class LinearSet extends AbstractSet implements Cloneable,
+						      java.io.Serializable {
     private List list;
 
     /** Creates a <code>LinearSet</code>. Uses an

@@ -72,11 +72,11 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.64 2000-06-28 15:57:49 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.65 2000-07-01 23:23:25 salcianu Exp $
  */
 public class PointerAnalysis {
-    public static final boolean DEBUG     = false;
-    public static final boolean DEBUG2    = false;
+    public static final boolean DEBUG     = true;
+    public static final boolean DEBUG2    = true;
     public static final boolean DEBUG_SCC = true;
 
     /** Turns on the save memory mode. In this mode, some of the speed is
@@ -599,10 +599,10 @@ public class PointerAnalysis {
 	    System.out.println("\nSCC" + scc.getId());
 
 	// add ALL the BBs from this SCC to the worklist.
-	if(DETERMINISTIC){
-	    Object[] obj = Debug.sortedSet(scc.nodeSet());
-	    for(int i = 0; i < obj.length; i++)
-		W_intra_proc.add(obj[i]);
+	if(DETERMINISTIC) {
+	    Object[] objs = Debug.sortedSet(scc.nodeSet());
+	    for(int i = 0; i < objs.length; i++)
+		W_intra_proc.add(objs[i]);
 	}
 	else
 	    W_intra_proc.addAll(scc.nodeSet());

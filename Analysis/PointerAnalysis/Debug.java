@@ -6,6 +6,7 @@ package harpoon.Analysis.PointerAnalysis;
 import java.util.Set;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Collection;
 
 import harpoon.Util.UComp;
 
@@ -21,30 +22,35 @@ import harpoon.ClassFile.HCodeElement;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.9 2000-06-09 14:39:45 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.10 2000-07-01 23:23:25 salcianu Exp $
  */
 public abstract class Debug {
 
     /** Returns a sorted array containing all the objects from
 	<code>set</code>. Increasing lexicographic order of the
 	string representation of the objects is used. */
-    public static Object[] sortedSet(Set set){
-	Object[] obj = set.toArray(new Object[set.size()]);
-	Arrays.sort(obj,UComp.uc);
-	return obj;
+    public static Object[] sortedCollection(Collection col){
+	Object[] objs = col.toArray(new Object[col.size()]);
+	Arrays.sort(objs, UComp.uc);
+	return objs;
     }
 
+    public static Object[] sortedSet(Set set) {
+	return sortedCollection(set);
+    }
+
+    
     /** Provides a string representation of a set; the elements of the
 	set appear in increasing lexicographic order.
 	<code>set1.equals(set2) <==> stringImg(set1).equals(stringImg(set2)).</code>*/
-    public static String stringImg(Set set){
+    public static String stringImg(Collection col){
 	StringBuffer buffer = new StringBuffer();
 
-	Object obj[] = sortedSet(set);
+	Object[] objs = sortedCollection(col);
 
 	buffer.append("[ ");
-	for(int i=0; i<obj.length;i++){
-	    buffer.append(obj[i]);
+	for(int i = 0; i < objs.length; i++){
+	    buffer.append(objs[i]);
 	    buffer.append(" ");
 	}
 	buffer.append("]");

@@ -22,9 +22,9 @@ import harpoon.Util.Util;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.18 2000-05-18 21:51:58 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.19 2000-07-01 23:23:26 salcianu Exp $
  */
-public class Relation implements java.io.Serializable{
+public class Relation implements java.io.Serializable {
     
     /** The top-level <code>Hashtable</code>. */
     Hashtable hash;
@@ -92,7 +92,7 @@ public class Relation implements java.io.Serializable{
 	satisfy the predicate.check() predicate.
 	Returns true if there is no value attached to key at the end of this
 	method so that the caller can erase key from the hash. */
-    private boolean removeValues(Object key, PredicateWrapper predicate){
+    private boolean removeValues(Object key, PredicateWrapper predicate) {
 	Set values = (Set) hash.get(key);
 	Iterator it_values = values.iterator();
 	while(it_values.hasNext()){
@@ -103,8 +103,7 @@ public class Relation implements java.io.Serializable{
 	return values.isEmpty();
     }
 
-    /** Removes all the values that fails to satisfy
-	<code>predicate.check()</code>. */
+    /** Removes all the values that satisfy <code>predicate.check()</code>. */
     public void removeValues(PredicateWrapper predicate){
 	Iterator it_keys = keySet().iterator();
 	while(it_keys.hasNext())
@@ -112,7 +111,7 @@ public class Relation implements java.io.Serializable{
 		it_keys.remove();
     }
 
-    /** Removes all the relations involving at least one object that doesn't
+    /** Removes all the relations involving at least one object that
 	satisfy <code>predicate.check()</code>. */
     public void removeObjects(PredicateWrapper predicate){
 	removeKeys(predicate);

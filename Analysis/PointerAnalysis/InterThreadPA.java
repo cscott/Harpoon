@@ -36,7 +36,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.29 2000-06-19 16:56:36 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.30 2000-07-01 23:23:25 salcianu Exp $
  */
 public abstract class InterThreadPA {
 
@@ -251,7 +251,7 @@ public abstract class InterThreadPA {
        outside edges that are read in parallel with an nt thread.
        Returns the new set of edges. */
     private static PAEdgeSet construct_new_O(ParIntGraph pig, PANode nt){
-	PAEdgeSet new_O = new PAEdgeSet();
+	PAEdgeSet new_O = new LightPAEdgeSet();
 
 	Iterator it_loads = pig.ar.parallelLoads(nt);
 	while(it_loads.hasNext()){
@@ -384,20 +384,19 @@ public abstract class InterThreadPA {
        necessary, the others wil be mapped by the rest of the algorithm.
        (the matching goes always "forward" on the edges, never "backward", so
        it's necessary to trigger it just in the sources of the edges. */
-    private static void map_static_nodes(ParIntGraph pig, Relation mu){
-	Enumeration enum = pig.G.O.allSourceNodes();
-	while(enum.hasMoreElements()){
-	    PANode node = (PANode) enum.nextElement();
-	    if(node.type == PANode.STATIC)
-		mu.add(node,node);
-	}
-	enum = pig.G.I.allSourceNodes();
-	while(enum.hasMoreElements()){
-	    PANode node = (PANode) enum.nextElement();
+    private static void map_static_nodes(ParIntGraph pig, Relation mu) {
+	process_STATICs(pig.G.O.allSourceNodes(), mu);
+	process_STATICs(pig.G.I.allSourceNodes(), mu);
+    }
+    // aux method for map_static_nodes
+    private static void process_STATICs(final Set set, final Relation mu) {
+	for(Iterator it = set.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
 	    if(node.type == PANode.STATIC)
 		mu.add(node,node);
 	}
     }
+
 
 
     /* Computes the mappings by matching outside edges from one graph

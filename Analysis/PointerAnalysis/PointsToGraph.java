@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.29 2000-06-28 23:05:30 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.30 2000-07-01 23:23:26 salcianu Exp $
  */
 public class PointsToGraph {
 
@@ -46,8 +46,8 @@ public class PointsToGraph {
     
     /** Creates a <code>PointsToGraph</code>. */
     public PointsToGraph() {
-	this(new PAEdgeSet(),new PAEdgeSet(),
-	     new PAEscapeFunc(),new HashSet(),new HashSet());
+	this(new LightPAEdgeSet(), new LightPAEdgeSet(),
+	     new PAEscapeFunc(), new HashSet(), new HashSet());
     }
 
     // set of nodes reachable from nodes from r (r included)
@@ -295,31 +295,31 @@ public class PointsToGraph {
 	if(o==null) return false;
 	PointsToGraph G2 = (PointsToGraph)o;
 	if(!O.equals(G2.O)){
-	    if(ParIntGraph.DEBUG2){
+	    if(ParIntGraph.DEBUG2 || DEBUG){
 		System.out.println("different O's");
-		PAEdgeSet.show_evolution(G2.O, O);
+		AbstrPAEdgeSet.show_evolution(G2.O, O);
 	    }
 	    return false;
 	}
 	if(!I.equals(G2.I)){
-	    if(ParIntGraph.DEBUG2){
+	    if(ParIntGraph.DEBUG2 || DEBUG){
 		System.out.println("different I's");
-		PAEdgeSet.show_evolution(G2.I, I);
+		AbstrPAEdgeSet.show_evolution(G2.I, I);
 	    }
 	    return false;
 	}
 	if(!r.equals(G2.r)){
-	    if(ParIntGraph.DEBUG2)
+	    if(ParIntGraph.DEBUG2 || DEBUG)
 		System.out.println("different r's");
 	    return false;
 	}
 	if(!excp.equals(G2.excp)){
-	    if(ParIntGraph.DEBUG2)
+	    if(ParIntGraph.DEBUG2 || DEBUG)
 		System.out.println("different excp's");
 	    return false;
 	}
 	if(!e.equals(G2.e)){
-	    if(ParIntGraph.DEBUG2){
+	    if(ParIntGraph.DEBUG2 || DEBUG) {
 		System.out.println("different e's");
 		System.out.println("this.e : " + e);
 		System.out.println("G2.e   : " + G2.e);
@@ -353,9 +353,8 @@ public class PointsToGraph {
     /** Finds the static nodes that appear as source nodes in the set of
 	edges <code>E</code> and add them to <code>set</code> */
     private void grab_static_roots(PAEdgeSet E, Set set){
-	Enumeration enum = E.allSourceNodes();
-	while(enum.hasMoreElements()){
-	    PANode node = (PANode)enum.nextElement();
+	for(Iterator it = E.allSourceNodes().iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
 	    if(node.type == PANode.STATIC)
 		set.add(node);
 	}
@@ -376,8 +375,8 @@ public class PointsToGraph {
     public PointsToGraph keepTheEssential(PANode[] params,
 					  final Set remaining_nodes,
 					  boolean is_main){
-	PAEdgeSet _O = new PAEdgeSet();
-	PAEdgeSet _I = new PAEdgeSet();
+	PAEdgeSet _O = new LightPAEdgeSet();
+	PAEdgeSet _I = new LightPAEdgeSet();
 	// the same sets of return nodes and exceptions
 	Set _r = (Set) ((HashSet)r).clone();
 	Set _excp = (Set) ((HashSet)excp).clone();

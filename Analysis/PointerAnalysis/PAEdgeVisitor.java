@@ -12,11 +12,11 @@ import harpoon.Temp.Temp;
  There is no other way to pass a function in Java (no pointers to methods ...)
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdgeVisitor.java,v 1.1.2.2 2000-02-12 23:05:20 salcianu Exp $
+ * @version $Id: PAEdgeVisitor.java,v 1.1.2.3 2000-07-01 23:23:25 salcianu Exp $
  */
 interface  PAEdgeVisitor {
     /** Visits a <code>&lt;var,node&gt;</code> edge. */
-    public void visit(Temp var,PANode node);
+    public void visit(Temp var, PANode node);
     /** Visits a <code>&lt;node1,f,node2&gt;</code> edge. */
     public void visit(PANode node1, String f, PANode node2);
 }

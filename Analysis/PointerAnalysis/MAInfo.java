@@ -59,7 +59,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.30 2000-06-28 23:05:30 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.31 2000-07-01 23:23:25 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -388,7 +388,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	// have to produce a paper, don't we?) we know that the start() is
 	// the last operation in the method so we just take the info from
 	// the graph at the end of the method.
-	Set pointed = pig.G.I.getPointedNodes(nt);
+	Set pointed = pig.G.I.pointedNodes(nt);
 
 	////////
 	//if(DEBUG)
