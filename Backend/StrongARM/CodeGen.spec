@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.141 2000-02-19 08:39:46 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.142 2000-02-19 10:36:32 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -969,14 +969,14 @@ BINOP<l>(OR, j, k) = i %{
     emit( ROOT, "orr `d0h, `s0h, `s1h", i, j, k );
 }%
 
-BINOP<p,i>(shiftop, j, k) = i
+BINOP<p,i>(shiftop, j, k) = i %extra<i>{ extra }
 %pred %( isShiftOp(shiftop) )%
 %{
-    // FIXME: this pattern is incorrect if k>31.
     // java lang spec says shift should occur according to
     // 'least significant five bits' of k; StrongARM uses
     // least significant *byte*... w/ result 0 if k>31.
-    emit( ROOT, "mov `d0, `s0, "+shiftOp2Str(shiftop)+" `s1", i, j, k );
+    emit( ROOT, "and `d0, `s0, #31 @ mask shift", extra, k );
+    emit( ROOT, "mov `d0, `s0, "+shiftOp2Str(shiftop)+" `s1", i, j, extra );
 }%
 
 BINOP<p,i>(shiftop, j, CONST(c)) = i 
@@ -992,7 +992,7 @@ BINOP<l>(SHL, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emitMOVE( ROOT, "mov `d0, `s0 ", r2, k );
+    emit( ROOT, "and `d0, `s0, #31 @ mask shift ", r2, k );
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
@@ -1009,7 +1009,7 @@ BINOP<l>(SHR, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emitMOVE( ROOT, "mov `d0, `s0 ", r2, k );
+    emit( ROOT, "and `d0, `s0, #31 @ mask shift ", r2, k );
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
@@ -1026,7 +1026,7 @@ BINOP<l>(USHR, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emitMOVE( ROOT, "mov `d0, `s0 ", r2, k );
+    emit( ROOT, "and `d0, `s0, #31 @ mask shift ", r2, k );
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
