@@ -60,7 +60,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.28 1999-08-09 22:30:59 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.29 1999-08-09 22:51:41 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -219,8 +219,6 @@ public class ToTree implements Derivation, TypeMap {
 class TranslationVisitor extends LowQuadWithDerivationVisitor {
 
     private CloningTempMap    m_ctm;          // Clones Temps to new tf
-    private Frame             m_frame;        // The machine-specific Frame
-    private LabelMap          m_labelMap;     // Converts labels to Tree LABELs
     private OffsetMap         m_offm;         // Machine-specific offset map
     private List              m_stmList;      // Holds translated statements
     private TreeFactory       m_tf;           // The new TreeFactory
@@ -231,10 +229,8 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 			      TypeMap typeMap,NameMap nm,CloningTempMap ctm) {
 	super(derivation, typeMap);
 	m_ctm          = ctm;
-	m_frame        = tf.getFrame();
-	m_labelMap     = new LabelMap();
-	m_offm         = m_frame.getOffsetMap();
-	m_tf           = tf;
+	m_offm         = m_tf.getFrame().getOffsetMap();
+	m_tf           = tf; 
 	m_nm           = nm;
 	m_stmList      = new ArrayList();
     }
@@ -303,7 +299,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    // Step 1: allocate memory needed for the array. 
 	    stms[base++] = new MOVE
 		(m_tf, q, arrayRefs[i], 
-		 m_frame.memAlloc
+		 m_tf.getFrame().memAlloc
 		 (new BINOP
 		  (m_tf, q, Type.INT, Bop.ADD, 
 		   // Add space for hashcode, length, and finalization info
@@ -527,7 +523,8 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	s0 = new MOVE
 	    (m_tf, q, 
 	     objectref, 
-	     m_frame.memAlloc(new CONST(m_tf, q, m_offm.size(q.hclass()))));
+	     m_tf.getFrame().
+	     memAlloc(new CONST(m_tf, q, m_offm.size(q.hclass()))));
 
 	// Assign the new object a hashcode
 	s1 = new MOVE
@@ -903,7 +900,9 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
     }
 
     private LABEL _LABEL(harpoon.IR.Quads.LABEL label) { 
-	return m_labelMap.labelMap(label); 
+	String s = "_" + harpoon.Backend.Maps.NameMap.munge(m_tf.getMethod()) +
+	    "_" + label.label();
+	return new LABEL(m_tf, label, new Label(s));
     }
 
     private TEMP _TEMP(TEMP t) { 
@@ -957,7 +956,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
     // Implmentation of binary numeric promotion found in the Java
     // language spec. 
     private int MERGE_TYPE(int type1, int type2) { 
-	boolean longptrs = m_frame.pointersAreLong();
+	boolean longptrs = m_tf.getFrame().pointersAreLong();
 	if (type1==type2) return type1;
 	else { 
 	    if (type1==Type.DOUBLE || type2==Type.DOUBLE) { 
@@ -987,7 +986,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	Exp constant;
 
 	if (type==HClass.Void) // HClass.Void reserved for null constants
-	    constant = new CONST(m_tf, src, m_frame.pointersAreLong());
+	    constant = new CONST(m_tf, src, m_tf.getFrame().pointersAreLong());
 	else if (type==HClass.Boolean)
 	    constant = new CONST
 		(m_tf, src, ((Boolean)value).booleanValue()?1:0);
@@ -1014,19 +1013,6 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	else 
 	    throw new Error("Bad type for CONST " + type); 
 	return constant;
-    }
-
-    class LabelMap {
-	private final Map h = new HashMap();
-	public LABEL labelMap(harpoon.IR.Quads.LABEL q) {
-	    if (q==null) return null;
-	    else if (h.containsKey(q)) return (LABEL)h.get(q);
-	    else {
-		String s = q.label();
-		h.put(q, new LABEL(m_tf, q, new Label(s)));
-		return (LABEL)h.get(q);
-	    }
-	}
     }
 
     /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*
