@@ -48,7 +48,6 @@ public class AsyncEventHandler implements Schedulable {
 	this.memParams = memory;
 	this.memArea = area;
 	this.group = group;
-	// TODO (?)
     }
 
     public AsyncEventHandler(SchedulingParameters scheduling,
@@ -63,7 +62,6 @@ public class AsyncEventHandler implements Schedulable {
 	this.memParams = memory;
 	this.memArea = area;
 	this.group = group;
-	// TODO (?)
     }
 
     // NOT IN SPECS
@@ -126,7 +124,7 @@ public class AsyncEventHandler implements Schedulable {
     }
 
     public void handleAsyncEvent() {
-	// TODO
+	if (logic != null) logic.run();
     }
 
     public void removeFromFeasibility() {
@@ -134,8 +132,7 @@ public class AsyncEventHandler implements Schedulable {
     }
     
     public final void run() {
-	while (fireCount > 0)
-	    handleAsyncEvent();
+	while (fireCount > 0) handleAsyncEvent();
     }   
 
     public boolean setIfFeasible(ReleaseParameters release,
@@ -186,8 +183,8 @@ public class AsyncEventHandler implements Schedulable {
 
     public void setScheduler(Scheduler scheduler)
 	throws IllegalThreadStateException {
-	defaultScheduler = scheduler;
-	// TODO (?)
+	setScheduler(scheduler, getSchedulingParameters(), getReleaseParameters(),
+		     getMemoryParameters(), getProcessingGroupParameters());
     }
 
     public void setScheduler(Scheduler scheduler,

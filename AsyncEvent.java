@@ -5,7 +5,7 @@ import java.util.LinkedList;
 public class AsyncEvent {
     /** Asynchronous event */
 
-    private LinkedList handlersList = null;
+    protected LinkedList handlersList = null;
 
     public AsyncEvent() {
 	// TODO
@@ -13,7 +13,6 @@ public class AsyncEvent {
 
     public void addHandler(AsyncEventHandler handler) {
 	handlersList.add(handler);
-	// TODO
     }
 
     public void bindTo(String happening)
@@ -37,13 +36,11 @@ public class AsyncEvent {
 
     public void removeHandler(AsyncEventHandler handler) {
 	handlersList.remove(handler);
-	// TODO
     }
 
     public void setHandler(AsyncEventHandler handler) {
 	handlersList.clear();
 	handlersList.add(handler);
-	// TODO
     }
 
     public void unbindTo(String happening)
