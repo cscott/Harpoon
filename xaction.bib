@@ -331,6 +331,22 @@ reduced network accesses and increased processor idle time.
  ,bibstatus    = {Bradley checked}
  }
 
+@InProceedings{Bershad93,
+  bibnote = 	 {was bershad93:practical},
+  author = 	 {Brian N. Bershad},
+  title = 	 {Practical considerations for non-blocking concurrent
+                  objects},
+  booktitle =	 {Proceedings of the 13th {IEEE} International Conference on
+                  Distributed Computing Systems},
+  pages =	 {264--273},
+  year =	 1993,
+  address =	 {Los Alamitos, CA},
+  month =	 may,
+  publisher =	 {IEEE Computer Society Press},
+  url =		 {http://ieeexplore.ieee.org/xpl/abs_free.jsp?arNumber=287700},
+  summary = {OS-aided DCAS, etc.},
+}
+
 @InProceedings{Binder75
  ,author       = {R. Binder and N. Abramson and F. Kuo and A. Okinaka and D. Wax}
  ,title	       = {{ALOHA} Packet Broadcasting:  A Retrospect}
@@ -2599,6 +2615,27 @@ month = oct
   OPTannote = 	 {}
 }
 
+@InProceedings{SonntagCo02,
+ bibnote = {was 564099},
+ author = {Beno{\^\i}t Sonntag and Dominique Colnet},
+ title = {Lisaac: The Power of Simplicity At Work for Operating System},
+ booktitle = {Proceedings of the 40th International Conferenece on
+                  Technology of Object-Oriented Languages and Systems
+                  (TOOLS Pacific)},
+ year = {2002},
+ isbn = {0-909925-88-7},
+ pages = {45--52},
+ location = {Sydney, Australia},
+ publisher = {Australian Computer Society, Inc.},
+ local = {p45-sonntag.pdf},
+ summary = {OS written in Lisaac language, roughly equal to Self+Eiffel.
+  ``Package'' and ``Interrupt'' sections are the interesting bits that
+  enable OS implementation.  Package defines hardware data structure.
+  Interrupt sections compiled with interrupt entry/exit code.  Some access
+  control stuff; not sure how parallelism/context-switching is done
+  (or if).  Chase down continuing work?},
+ }
+
 @Misc{Spec92,
   key =		 {Spec92},
   howpublished = {SPEC Newsletter, Volume 3,4},
@@ -2647,6 +2684,7 @@ International Symposium of Formal Methods Europe (FME 2001)}
 %       Israeli and Rappoport's Heap [20] using three-word compare&swap
 %       Israeli and Rappoport's [21] show a non-blocking k-word compare-and swap using load-linked-store-conditional
 %       Herlihy and Moss is described as being {\em blocking} which is probably inaccurate
+%             [CSA: No, I think it's accurate.]
 %       Bershad [7]; Alemany and Felton [4]; and LaMarca [22] use OS support
 % Still reading...
 
