@@ -104,9 +104,6 @@ public class RMAScheduler extends Scheduler {
 	    }
 	}
 
-// 	NoHeapRealtimeThread.print("\nMin Period (before): ");
-// 	NoHeapRealtimeThread.print(minPeriod);
-
 	// Period ended, trigger context switch to rechoose
 	if (minPeriod < 1) {
 	    minPeriod = 1;
@@ -118,9 +115,6 @@ public class RMAScheduler extends Scheduler {
 	    minPeriod *= 1000;
 	}
 
-// 	NoHeapRealtimeThread.print("\nMin Period (after): ");
-// 	NoHeapRealtimeThread.print(minPeriod);
-
 	if (currentThreadID != 0) {
 	    int threadID = (int)(currentThreadID+OFFSET);
 	    if (lastTime == 0) {
@@ -130,10 +124,6 @@ public class RMAScheduler extends Scheduler {
 	    lastTime = currentTime;
 	    if (enabled[threadID]) {
 		long timeLeft = (cost[threadID] - work[threadID])*1000;
-// 		if (cost[threadID]!=0) {
-// 		    NoHeapRealtimeThread.print("\nTime Left: ");
-// 		    NoHeapRealtimeThread.print(timeLeft);
-// 		}
  		if ((cost[threadID]!=0)&&(timeLeft > 0)) { // I'm not done yet with the current thread, choose one (including current thread).
  		    return currentThreadID=chooseThread2(timeLeft<minPeriod?timeLeft:minPeriod);
  		} else { // I'm done with this thread, choose another to run...
