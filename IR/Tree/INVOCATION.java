@@ -5,17 +5,17 @@ import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
 /**
- * <code>INVOKATION</code> objects are statements which stand for 
+ * <code>INVOCATION</code> objects are statements which stand for 
  * procedure calls.  The return value of the <code>CALL</code> is 
  * stored in <code>retval</code>.  If the call throws an exception, 
  * the exception object will be placed in <code>retex</code>.
  * 
  * @author  Duncan Bryce, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOKATION.java,v 1.1.2.1 1999-02-18 22:31:09 duncan Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.1 1999-02-18 22:43:19 duncan Exp $
  * @see harpoon.IR.Quads.CALL, CALL, NATIVECALL
  */
-public abstract class INVOKATION extends Stm {
+public abstract class INVOCATION extends Stm {
     /** A subexpression which evaluates to the function reference to invoke.*/
     public Exp func;
     /** Subexpressions for the arguments to the function. */
@@ -28,7 +28,7 @@ public abstract class INVOKATION extends Stm {
 
 
     /** Constructor. */
-    protected INVOKATION(TreeFactory tf, HCodeElement source,
+    protected INVOCATION(TreeFactory tf, HCodeElement source,
 			 Exp retval, Exp retex, Exp func, ExpList args) {
 	super(tf, source);
 	this.retval=retval; this.retex=retex; this.func=func; this.args=args;

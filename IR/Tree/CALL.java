@@ -11,10 +11,10 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.7 1999-02-18 22:31:09 duncan Exp $
- * @see harpoon.IR.Quads.CALL, INVOKATION, NATIVECALL
+ * @version $Id: CALL.java,v 1.1.2.8 1999-02-18 22:43:19 duncan Exp $
+ * @see harpoon.IR.Quads.CALL, INVOCATION, NATIVECALL
  */
-public class CALL extends INVOKATION {
+public class CALL extends INVOCATION {
     public CALL(TreeFactory tf, HCodeElement source,
 		Exp retval, Exp retex, Exp func, ExpList args) {
 	super(tf, source, retval, retex, func, args);
