@@ -62,7 +62,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.29 2000-01-14 17:41:06 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.30 2000-01-14 17:53:25 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -793,8 +793,8 @@ public class AsyncCode {
 		    Temp tstream=ctmap.tempMap(q.params(0));
 		    quadmap.put(q,new CALL(hcode.getFactory(), q, swapTo(q.method()),
 				       new Temp[]{tstream}, 
-				       ctmap.tempMap(q.retval()),
-				       ctmap.tempMap(q.retex()), q.isVirtual(),
+				       (q.retval()==null)?null:ctmap.tempMap(q.retval()),
+				       (q.retex()==null)?null:ctmap.tempMap(q.retex()), q.isVirtual(),
 				       q.isTailCall(), new Temp[0]));
 		}
 		else
