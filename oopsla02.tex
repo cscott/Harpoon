@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.22 2002-03-23 08:05:34 cananian Exp $
+% $Id: oopsla02.tex,v 1.23 2002-03-23 08:18:49 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -33,7 +33,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.22 $ $}{$ $Revision: 1.22 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.23 $ $}{$ $Revision: 1.23 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -562,26 +562,29 @@ method parameters at the call-site with the formal parameters of the
 method.  Similarly, the return value of the method is propagated back
 to all call-sites.  Our compiler's intermediate representation handles
 thrown exceptions by treating the method return value as a tuple, and
-the call site as a conditional branch.  The ``return value'' is
+the call site as a conditional branch.  The ``normal return value'' is
 assigned and the first branch taken on a normal method return, and the
-``exception value'' is assigned and the second branch taken when an
+``exceptional return value'' is assigned and the second branch taken when an
 exception is thrown from the method.
 
 Our implementation of this analysis is actually context-sensitive,
 with a user-defined context length.  All results presented here were
-obtained with the context set to zero.
+obtained with the context set to zero; we saw no clear benefit from 1-
+or 2-deep calling contexts, and the increase in analysis execution
+time was considerable.
 
-Space does not permit us to describe the full extension of the value
-lattice to handle all Java types, the class hierarchy, {\tt
-  null} and {\tt String} constants, and fixed-length arrays.
+Space does not permit us to describe the remaining details of the full
+analysis, including the extension of the value
+lattice to handle the full range of Java types, the class hierarchy,
+{\tt null} and {\tt String} constants, and fixed-length arrays.
 We refer the interested reader to \cite{ananian99:tech} for an
 exhaustive description.
 
 \subsection{Definite Initialization Analysis}
-The Java field semantics dictate that uninitialized fields must have
+Java field semantics dictate that uninitialized fields must have
 the value zero (or {\tt null}, for pointer fields).  It may seem,
 then, that the starting lattice value for every integer field should
-be {\tt 0}.  This, however, prevents us from finding non-zero field
+be $\mathbf{0}$.  This, however, prevents us from finding non-zero field
 constants in the program: a simple initialization statement like {\tt
   x=5} will assign {\tt x} the value $\mathbf{0}\meet\mathbf{5}$,
 which is not equal to $\mathbf{5}$!\footnote{On the lattice of
@@ -593,24 +596,30 @@ problem and restore precision to our analysis.
 Figure~\ref{fig:definit-example} shows an example of a simple
 constant field.
 With only constructor {\tt A$_1$}, field {\tt f} will get the
-lattice value {\bf 5}.  Without constructor {\tt A$_2$} in the class,
+lattice value $\mathbf{5}$.  Without constructor {\tt A$_2$} in the class,
 we say that field {\tt f} is {\it definitely initialized} because
 every constructor of {\tt A} assigns a value to {\tt f} before
-control-flow leaves it.  
+returning or calling an unsafe method.
 Adding constructor {\tt A$_2$} allows the
-default {\bf 0} value of {\tt f} to be seen by not {\it definitely
-  assigning} a value to {\tt f}; {\tt f} is thus no longer
-definitely-initialized.  We construct a mapping from methods to all
-fields which they may read (in a flow-insensitive manner) and
-transitively close over the call-graph to determine a ``safe set'' of
+default $\mathbf{0}$ value of {\tt f} to be seen; {\tt f} is thus no longer
+definitely-initialized.
+
+We actually allow the constructor great flexibility in regard to
+definite initialization; it is free to call any method which does not
+read {\tt A.f} before finally executing a definite initializer.
+We construct a mapping from methods to all
+fields which they may read, in a flow-insensitive manner, and compute
+a transitive closure of this map over the call graph to determine 
+a ``safe set'' of
 methods which the constructor may call before a definite
-initialization of {\tt f}.  If control flow may pass to a method not
-in the safe set before {\tt f} is initialized, then {\tt f} is not
+initialization of {\tt f}.  As long as control flow may not pass to a
+method not in the safe set before {\tt f} is set, then {\tt f} is
 definitely initialized.
 
-Definitely-initialized fields are allowed to start at $\bot$ in the
-bitwidth analysis lattice.  All other fields must start at value
-{\bf 0}, which will make it impossible for the field to represent a
+When performing bitwidth analysis,
+definitely-initialized fields are allowed to start at $\bot$ in the
+dataflow lattice.  All other fields must start at value
+$\mathbf{0}$, which will make it impossible for the field to represent a
 non-zero constant value.  The results of the definite initialization
 analysis are also used to profile mostly-constant fields, as described
 in the next section.
@@ -625,7 +634,7 @@ public class A \{\\
 \>\}\\
 \}\\
 \end{samplecode}
-\caption{Use example for the definite initialization analysis.
+\caption{Simple example of the definite initialization analysis.
 The field {\tt f} is {\it definitely initialized} if only constructor
 {\tt A$_1$} is in the class; with constructor {\tt A$_2$} present it
 is not.}
