@@ -7,10 +7,10 @@
 CWD=`pwd`   # keep the directory where we are now
 
 cd $FLEX_DIR/..
-for d in `\ls -A`; do   # looping through all directories
-    if [ -d $d ]; then
-	cd $d
-	echo -e "\nUpdating $d...\n"
+for dir in `\ls -A`; do   # looping through all directories
+    if [ -d $dir ]; then
+	cd $dir
+	echo -e "\nUpdating $dir...\n"
 	cvs update -AP   # Updating each directory
 	cd ..
     fi

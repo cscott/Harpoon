@@ -213,7 +213,7 @@ else
     
     # Getting the list of machines in $MACHINES_LIST
     
-    NUMBER_LINES=`wc -l $MACHINES_FILE | sed s/\ $MACHINES_FILE//`   # getting the number of lines in $MACHINES_FILE
+    NUMBER_LINES=`wc -l $MACHINES_FILE | sed "s|\ $MACHINES_FILE||g"`   # getting the number of lines in $MACHINES_FILE
     n_line=1
     while [ $n_line -le $NUMBER_LINES ]; do   # getting the machines on which the tasks will be run
 	CURRENT_MACHINE=`head -n $n_line $MACHINES_FILE | tail -n 1`   # this is the next machine to be added
@@ -238,7 +238,7 @@ else
     
   # Getting the task set in $TASKS_LIST
     
-    NUMBER_LINES=`wc -l $TASKS_FILE | sed s/\ $TASKS_FILE//`   # getting the number of lines in $TASKS_FILE
+    NUMBER_LINES=`wc -l $TASKS_FILE | sed "s|\ $TASKS_FILE||g"`   # getting the number of lines in $TASKS_FILE
     n_line=1
     while [ $n_line -le $NUMBER_LINES ]; do   # getting the list of tasks to be run
 	TASKS_LIST=$TASKS_LIST":`head -n $n_line $TASKS_FILE | tail -n 1`"   # unfortunately, we cannot use " " as a delimiter between the tasks, since some tasks might have command-line parameters and it seems that there is no way of giving 'for' a list with elements that contain " "
@@ -248,7 +248,7 @@ else
         
   # Getting the mailing list in $MAILING_LIST
     
-    NUMBER_LINES=`wc -l $MAILING_FILE | sed s/\ $MAILING_FILE//`   # getting the number of lines in $MAILING_FILE
+    NUMBER_LINES=`wc -l $MAILING_FILE | sed "s|\ $MAILING_FILE||g"`   # getting the number of lines in $MAILING_FILE
     n_line=1
     while [ $n_line -le $NUMBER_LINES ]; do   # getting the list of people who will receive the email
 	MAILING_LIST=$MAILING_LIST" `head -n $n_line $MAILING_FILE | tail -n 1`"
@@ -375,11 +375,11 @@ else
 	fi
 	
 	while [ "$REST_TASKS" != "" ]; do
-	    task=`echo $REST_TASKS | sed s/:.*$//`   # get the next task
+	    task=`echo $REST_TASKS | sed s/:.*$/`   # get the next task
 	    if [ "$task" == "$REST_TASKS" ]; then   # is it the last task?
 		REST_TASKS=""
 	    else   # more tasks in the list
-		REST_TASKS=`echo $REST_TASKS | sed s/"$task:"//`
+		REST_TASKS=`echo $REST_TASKS | sed "s|$task:||g"`
 	    fi
 	    
 	    if [ "$DEBUG" == "yes" ]; then   # print some debugging information
@@ -848,7 +848,7 @@ else
 	    if [ "$task" == "$REST_TASKS" ]; then   # is it the last task?
 		REST_TASKS=""
 	    else   # more tasks in the list
-		REST_TASKS=`echo $REST_TASKS | sed s/"$task:"//`
+		REST_TASKS=`echo $REST_TASKS | sed "s|$task:||g"`
 	    fi
 	    task=`echo $task | sed s/\ .*$// | sed s/,.*$//`   # getting rid of possible command-line parameters and bin/build-precisec options
 	    
