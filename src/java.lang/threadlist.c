@@ -163,8 +163,8 @@ static pthread_mutex_t running_threads_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t running_threads_cond = PTHREAD_COND_INITIALIZER;
 
 void add_running_thread(JNIEnv *env) {
-  struct FNI_Thread_State* thrstate = (struct FNI_Thread_State*)env;
 #ifdef WITH_PRECISE_GC
+  struct FNI_Thread_State* thrstate = (struct FNI_Thread_State*)env;
   struct gc_thread_list *gctl;
 #if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
   if (thrstate->noheap) return;
