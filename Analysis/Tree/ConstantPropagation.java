@@ -8,6 +8,7 @@ import harpoon.Analysis.DataFlow.ReachingDefs;
 import harpoon.Analysis.DataFlow.ReachingHCodeElements; 
 import harpoon.Analysis.DataFlow.Solver; 
 import harpoon.IR.Properties.CFGrapher;
+import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Tree.CALL; 
 import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.CONST;
@@ -43,7 +44,7 @@ import java.util.Stack;
  * <p><b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: ConstantPropagation.java,v 1.1.2.13 2000-02-15 15:49:47 cananian Exp $
+ * @version $Id: ConstantPropagation.java,v 1.1.2.14 2000-02-16 19:47:20 cananian Exp $
  */
 public final class ConstantPropagation { 
 
@@ -222,11 +223,12 @@ public final class ConstantPropagation {
 
 	// Maps each temp to the Stms that define it. 
 	private void mapTempsToDefs(Code code) { 
+	    UseDefer ud = code.getUseDefer();
 	    for (Iterator i = code.getElementsI(); i.hasNext(); ) { 
 		Tree tNext = (Tree)i.next(); 
 		if (tNext instanceof Stm && !(tNext instanceof SEQ)) { 
 		    Stm sNext = (Stm)tNext; 
-		    Temp[] defs = sNext.def(); 
+		    Temp[] defs = ud.def(sNext); 
 		    for (int n=0; n<defs.length; n++) { 
 			if (!this.tempsToDefs.containsKey(defs[n]))
 			    this.tempsToDefs.put(defs[n], new HashSet()); 

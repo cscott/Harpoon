@@ -10,7 +10,7 @@ import harpoon.Analysis.DataFlow.ReversePostOrderIterator;
 import harpoon.Analysis.EdgesIterator;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
-import harpoon.IR.Properties.UseDef;
+import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.Exp;
@@ -72,7 +72,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.17 2000-02-15 05:37:48 cananian Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.18 2000-02-16 19:47:20 cananian Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -87,6 +87,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
     private /*final*/ BasicBlock.Factory bbfactory;
 
     private CFGrapher grapher;
+    private UseDefer  usedefer;
 
     /** Constructs a new <code>TreeFolding</code> object for the
      *  <code>code</code>.
@@ -113,6 +114,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	this.code         = code;
 	this.root         = (Stm)this.code.getRootElement();
 	this.grapher      = code.getGrapher();
+	this.usedefer     = code.getUseDefer();
 	this.maxTreeID    = TreeSolver.getMaxID(RS(this.root));
 	this.bb2tfi       = new HashMap();
 	this.DUChains     = new HashMap();
@@ -234,15 +236,15 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
     private void initTempsToPrsvs(Map tempsToPrsvs) { 
 	for (Iterator i = ((Code.TreeFactory)root.getFactory()).getParent().getElementsI();
 	     i.hasNext();) { 
-	    UseDef u    = (UseDef)i.next();
-	    Temp[] tmps = (u instanceof Stm)?u.def():u.use();
+	    Tree u = (Tree)i.next();
+	    Temp[] tmps = (u instanceof Stm)?usedefer.def(u):usedefer.use(u);
 	    for (int n=0; n<tmps.length; n++) { 
 		BitString bs = (BitString)tempsToPrsvs.get(tmps[n]);
 		if (bs==null) { 
 		    tempsToPrsvs.put(tmps[n], bs=new BitString(maxTreeID+1));
 		    bs.setAll();
 		}
-		bs.clear(((HCodeElement)u).getID());
+		bs.clear(u.getID());
 	    }		
 	}
     }
@@ -253,7 +255,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	    Stm stm = (Stm)i.next();
 	    if (!((stm.kind()==TreeKind.CALL) || 
 		  (stm.kind()==TreeKind.NATIVECALL))) { 
-		Temp[] defs = stm.def();  Util.assert(defs.length<=1);
+		Temp[] defs = usedefer.def(stm);  Util.assert(defs.length<=1);
 		if (defs.length==1) { 
 		    MAP_TO_SET(defs[0], new Integer(stm.getID()), tempsToDefs);
 		}
@@ -272,7 +274,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	    for (Iterator j = bb.statements().listIterator(); j.hasNext();) {
 		Stm      stm   = (Stm)j.next();
 		Integer  useID = new Integer(stm.getID());
-		Temp[]   uses  = stm.use();
+		Temp[]   uses  = usedefer.use(stm);
 		for (int n=0; n<uses.length; n++) { 
 		    Temp use    = uses[n]; 
 		    Set  defIDs = (Set)tempsToDefs.get(use);
@@ -290,7 +292,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 		    }
 		}
 		// Update IN set
-		Temp[] defs = stm.def(); 
+		Temp[] defs = usedefer.def(stm); 
 		Util.assert(defs.length<=1 || 
 			    stm.kind()==TreeKind.CALL ||
 			    stm.kind()==TreeKind.NATIVECALL);
@@ -318,7 +320,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	    
 	    for (Iterator bbi = bb.statements().listIterator(); bbi.hasNext();) { 
 		Stm stm = (Stm)bbi.next();
-		Temp[] uses = stm.use();
+		Temp[] uses = usedefer.use(stm);
 		for (int j=0; j<uses.length; j++) { 
 		    Tuple useT = 
 			new Tuple(new Object[] 
@@ -359,7 +361,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 		    memIn.setAll();
 		else if (stm.kind()==TreeKind.MOVE) { 
 		    dataIn.and
-			((BitString)tempsToPrsvs.get(stm.def()[0]));
+			((BitString)tempsToPrsvs.get(usedefer.def(stm)[0]));
 		    dataIn.set(stm.getID());
 		    memIn.clear(stm.getID()); 
 		}
@@ -450,7 +452,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 		else { 
 		    if (stm.kind()==TreeKind.MOVE) { 
 			prsvSet[0].and
-			    ((BitString)tempsToPrsvs.get(stm.def()[0]));
+			    ((BitString)tempsToPrsvs.get(usedefer.def(stm)[0]));
 			genSet[0].set(stm.getID());
 			genSet[1].clear(stm.getID());
 		    }
