@@ -38,6 +38,8 @@ taginfo 	CVSROOT taginfo
 # Version controlled sources:
 Code	Code
 Design	Design
+Runtime Runtime
+FLEX    -a Code Runtime
 
 # pldi '99 paper (defunct)
 #pldi99 -d pldi99.sigma Design harpoon.bib acmconf.sty acmconfbig.sty \
