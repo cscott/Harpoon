@@ -45,7 +45,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.9 2000-01-09 09:12:02 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.10 2000-01-09 09:17:37 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -132,28 +132,19 @@ public class BasicBlock {
     
     /** BasicBlock generator.
 	<BR> <B>requires:</B> 
-	     <UL>
-	     <LI> 1. <code>head</code> is an appropriate entry point
-	             for a basic block (I'm working on eliminating
-		     this requirement, but for now its safer to keep
-		     it) 
-	     <LI> 2. All <code>HCodeEdge</code>s linked to by the set
-	             of <code>HCodeElement</code> in the code body have
-		     <code>HCodeElement</code> objects in their
-		     <code>to</code> and <code>from</code> fields.
-		     <B>NOTE:</B> this really should be an implicit
-		     invariant of <code>HCodeElement</code>.  Convince 
-		     Scott to change it or let us change it. 
-	     </UL>
+	      <code>head</code> is an appropriate entry point for a
+	      basic block (I'm working on eliminating this
+	      requirement, but for now its safer to keep it)
+
 	<BR> <B>effects:</B>  Creates a set of
-     	     <code>BasicBlock</code>s corresponding to the blocks
+	     <code>BasicBlock</code>s corresponding to the blocks
 	     implicitly contained in <code>head</code> and the
 	     <code>HCodeElement</code> objects that <code>head</code>
 	     points to, and returns the <code>BasicBlock</code> that
 	     <code>head</code> is an instruction in.  The
 	     <code>BasicBlock</code> returned is considered to be the
 	     root (entry-point) of the set of <code>BasicBlock</code>s
-	     created. 
+	     created.
     */
     public static BasicBlock computeBasicBlocks(HCodeElement head,
 						final CFGrapher gr) {
@@ -285,27 +276,27 @@ public class BasicBlock {
     public Enumeration prev() { return new IteratorEnumerator(pred_bb.iterator()); }
     public Enumeration next() { return new IteratorEnumerator(succ_bb.iterator()); }
     
-    /** Returns an <code>Enumeration</code> of <code>HCodeElement</code>s
-	within <code>this</code>.  
+    /** Returns an <code>Enumeration</code> of
+	<code>HCodeElement</code>s within <code>this</code>.  
     */
     public Enumeration elements() {
 	return new IteratorEnumerator(listIterator());
     }
 
     /** Returns an unmodifiable <code>Iterator</code> for the
-	<code>HCodeElement</code>s within <code>this</code>.
-	The <code>Iterator</code> returned will iterate through the
-	instructions according to their order in the program.
+	<code>HCodeElement</code>s within <code>this</code>.  The
+	<code>Iterator</code> returned will iterate through the
+	instructions according to their order in the program.  
     */
     public Iterator iterator() {
 	return listIterator();
     }
 
     /** Returns an unmodifiable <code>ListIterator</code> for the
-	<code>HCodeElement</code>s within <code>this</code>. 
-	The <code>ListIterator</code> returned will iterate through the
+	<code>HCodeElement</code>s within <code>this</code>.  The
+	<code>ListIterator</code> returned will iterate through the
 	instructions according to their order in the program.
-    */  
+    */
     public ListIterator listIterator() {
 	return new ListIterator() {
 	    HCodeElement next = first;
@@ -372,7 +363,7 @@ public class BasicBlock {
     /** Returns the root <code>BasicBlock</code>.
 	<BR> <B>effects:</B> returns the <code>BasicBlock</code> that
 	     is at the start of the set of <code>HCodeElement</code>s
-	     being analyzed. 
+	     being analyzed.
     */
     public BasicBlock getRoot() {
 	return root;
