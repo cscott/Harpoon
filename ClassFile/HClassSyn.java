@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.12 2000-01-26 07:11:49 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.13 2000-01-26 07:13:10 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -55,7 +55,8 @@ class HClassSyn extends HClassCls implements HClassMutator {
     Util.assert(methods.length == declaredMethods.length);
 
     // ensure linker information is consistent.
-    Util.assert(getLinker()==((HClass)this.superclass).getLinker());
+    Util.assert(this.superclass==null ||
+		getLinker()==((HClass)this.superclass).getLinker());
     for (int i=0; i<this.interfaces.length; i++)
       Util.assert(getLinker()==((HClass)this.interfaces[i]).getLinker());
 
