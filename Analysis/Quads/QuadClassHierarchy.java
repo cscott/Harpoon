@@ -45,7 +45,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.28 2001-02-22 01:25:17 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.29 2001-02-22 01:52:00 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -212,14 +212,14 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 			if (q.type().isPrimitive()) return;
 			discoverInstantiatedClass(S, q.type());
 			// string constants use intern()
-			discoverMethod(S, HMstrIntern);
+			discoverMethod(S, HMstrIntern, false/*non-virtual*/);
 		    }
 		    // CALLs:
 		    public void visit(CALL q) {
 			if (q.isStatic() || !q.isVirtual())
-			    discoverSpecial(S, q.method());
+			    discoverMethod(S, q.method(),false/*non-virtual*/);
 			else
-			    discoverMethod(S, q.method());
+			    discoverMethod(S, q.method(),true/*virtual*/);
 		    }
 		    // get and set discover classes (don't instantiate, though)
 		    public void visit(GET q) {
@@ -334,12 +334,24 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
        if method in interface i:
         add method of c and all implementations of c.
     */
-    private void discoverMethod(State S, HMethod m) {
-	if (S.done.contains(m) || S.W.contains(m)) return;
+    private void discoverMethod(State S, HMethod m, boolean isVirtual) {
+	if (isVirtual && S.nonvirtual.contains(m)) {
+	    // this is the first virtual invocation of a previously
+	    // nonvirtual method.
+	    S.nonvirtual.remove(m);
+	} else if (S.done.contains(m) || S.W.contains(m)) {
+	    // we've done this guy before
+	    return;
+	}
 	discoverClass(S, m.getDeclaringClass());
 	// Thread.start() implicitly causes a call to Thread.run()
 	if (m.equals(HMthrStart))
-	    discoverMethod(S, HMthrRun);
+	    discoverMethod(S, HMthrRun, true/*virtual*/);
+	if (!isVirtual) { // short-cut for non-virtual methods.
+	    S.nonvirtual.add(m);
+	    methodPush(S, m);
+	    return; // that's all folks.
+	}
 	// mark as pending in its own class.
 	Set s = (Set) S.classMethodsPending.get(m.getDeclaringClass());
 	s.add(m);
@@ -367,16 +379,6 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	// done.
     }
 
-    /* methods invoked with INVOKESPECIAL or INVOKESTATIC... */
-    private void discoverSpecial(State S, HMethod m) {
-	if (S.done.contains(m) || S.W.contains(m)) return;
-	discoverClass(S, m.getDeclaringClass());
-	// Thread.start() implicitly causes a call to Thread.run()
-	if (m.equals(HMthrStart))
-	    discoverMethod(S, HMthrRun);
-	// okay, push this method.
-	methodPush(S, m);
-    }
     private void methodPush(State S, HMethod m) {
 	Util.assert(!S.done.contains(m));
 	if (S.W.contains(m)) return; // already on work list.
@@ -400,6 +402,8 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	final Map classKnownChildren = new HashMap(); // class->set map.
 	// keeps track of which methods we've done already.
 	final Set done = new HashSet();
+	// keeps track of methods we've only seen non-virtual invocations for.
+	final Set nonvirtual = new HashSet();
 
 	// Worklist.
 	final WorkSet W = new WorkSet();
