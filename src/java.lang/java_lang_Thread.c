@@ -349,6 +349,14 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
     { _this, PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
   int status;
   assert(runID!=NULL/* run() is certainly callable! */);
+  /* first of all, see if this thread has already been started. */
+  if (FNI_GetJNIData(env, _this)!=NULL) {
+    // throw IllegalThreadStateException.
+    jclass ex = (*env)->FindClass(env,"java/lang/IllegalThreadStateException");
+    if ((*env)->ExceptionOccurred(env)) return;
+    (*env)->ThrowNew(env, ex, "Thread.start() called more than once.");
+    return;
+  }
   /* fetch some attribute fields from the Thread */
   pri = (*env)->GetIntField(env, _this, priorityID);
   assert(!((*env)->ExceptionOccurred(env)));
