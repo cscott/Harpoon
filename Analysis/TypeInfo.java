@@ -18,7 +18,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.8 1998-10-11 02:36:59 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.9 1998-10-17 05:22:31 marinov Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
@@ -137,6 +137,18 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 		    if (merge(hc, q.dst[i], ty))
 			r = true;
 		}
+	    modified = r;
+	}
+	public void visit(SIGMA q) {
+	    boolean r = false;
+	    for (int i=0; i<q.src.length; i++) {
+		if (q.src[i]==null) continue;
+		HClass ty = typeMap(hc, q.src[i]);
+		if (ty==null) continue;
+		for (int j=0; j<q.dst[i].length; j++)
+		    if (merge(hc, q.dst[i][j], ty))
+			r = true;
+	    }
 	    modified = r;
 	}
     }
