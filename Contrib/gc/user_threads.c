@@ -78,6 +78,8 @@ long GC_nprocs = 1;	/* Number of processors.  We may not have	*/
 			/* a guess as any ...				*/
 
 
+
+
 static __inline__ void start_mark_threads()
 {
 }
@@ -137,6 +139,12 @@ void GC_push_all_stacks()
   }
 }
 
+void GC_push_thread_structures GC_PROTO((void))
+{
+  ABORT("user threads doesn't support GC_push_thread_structures");
+  /* Not quite sure what this is suppose to do...PCR support aborts, so
+     we will too...this is suppose to be used for pushing internal roots*/
+}
 
 VOLATILE GC_bool GC_collecting = 0;
 /* A hint that we're in the collector and       */
