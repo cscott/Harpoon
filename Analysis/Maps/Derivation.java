@@ -1,7 +1,7 @@
 // Derivation.java, created Fri Jan 22 16:46:17 1999 by cananian
 // Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.IR.Properties;
+package harpoon.Analysis.Maps;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
@@ -20,7 +20,7 @@ import harpoon.Temp.TempMap;
  * and its motivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.10 2000-01-31 03:31:13 cananian Exp $
+ * @version $Id: Derivation.java,v 1.1.2.1 2000-01-31 22:14:45 cananian Exp $
  */
 public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 
