@@ -25,7 +25,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.18 1998-08-03 08:17:51 cananian Exp $
+ * @version $Id: HClass.java,v 1.19 1998-08-03 22:05:59 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -657,7 +657,28 @@ public class HClass {
   }
   private String sourcefile=null;
 
-  /** 
+  /**
+   * If this <code>HClass</code> is a primitive type, return the
+   * wrapper class for values of this type.  For example:<p>
+   * <DL><DD><CODE>HClass.forDescriptor("I").getWrapper()</CODE></DL><p>
+   * will return <code>HClass.forName("java.lang.Integer")</code>.
+   * Calling <code>getWrapper</code> with a non-primitive <code>HClass</code>
+   * will return the value <code>null</code>.
+   */
+  public HClass getWrapper() {
+    if (this==this.Boolean) return forName("java.lang.Boolean");
+    if (this==this.Byte)    return forName("java.lang.Byte");
+    if (this==this.Char)    return forName("java.lang.Character");
+    if (this==this.Double)  return forName("java.lang.Double");
+    if (this==this.Float)   return forName("java.lang.Float");
+    if (this==this.Int)     return forName("java.lang.Integer");
+    if (this==this.Long)    return forName("java.lang.Long");
+    if (this==this.Short)   return forName("java.lang.Short");
+    if (this==this.Void)    return forName("java.lang.Void");
+    return null; // not a primitive type;
+  }
+
+  /**
    * If this <code>HClass</code> object represents an array type, 
    * returns <code>true</code>, otherwise returns <code>false</code>.
    */
