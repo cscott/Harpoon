@@ -3,3 +3,4 @@ Makefile.in
 .libs
 .deps
 *.l?
+java_lang_Class_MethodKey.h

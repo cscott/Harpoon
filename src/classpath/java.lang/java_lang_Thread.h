@@ -16,6 +16,22 @@ extern "C" {
 /* Inaccessible static: numAnonymousThreadsCreated */
 /*
  * Class:     java_lang_Thread
+ * Method:    nativeInit
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_java_lang_Thread_nativeInit
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     java_lang_Thread
+ * Method:    countStackFrames
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_java_lang_Thread_countStackFrames
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     java_lang_Thread
  * Method:    currentThread
  * Signature: ()Ljava/lang/Thread;
  */
@@ -24,26 +40,18 @@ JNIEXPORT jobject JNICALL Java_java_lang_Thread_currentThread
 
 /*
  * Class:     java_lang_Thread
- * Method:    yield
- * Signature: ()V
+ * Method:    holdsLock
+ * Signature: (Ljava/lang/Object;)Z
  */
-JNIEXPORT void JNICALL Java_java_lang_Thread_yield
-  (JNIEnv *, jclass);
+JNIEXPORT jboolean JNICALL Java_java_lang_Thread_holdsLock
+  (JNIEnv *, jclass, jobject);
 
 /*
  * Class:     java_lang_Thread
- * Method:    sleep
- * Signature: (JI)V
- */
-JNIEXPORT void JNICALL Java_java_lang_Thread_sleep
-  (JNIEnv *, jclass, jlong, jint);
-
-/*
- * Class:     java_lang_Thread
- * Method:    start
+ * Method:    nativeInterrupt
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_java_lang_Thread_start
+JNIEXPORT void JNICALL Java_java_lang_Thread_nativeInterrupt
   (JNIEnv *, jobject);
 
 /*
@@ -72,27 +80,35 @@ JNIEXPORT jboolean JNICALL Java_java_lang_Thread_isAlive
 
 /*
  * Class:     java_lang_Thread
- * Method:    countStackFrames
- * Signature: ()I
+ * Method:    nativeResume
+ * Signature: ()V
  */
-JNIEXPORT jint JNICALL Java_java_lang_Thread_countStackFrames
+JNIEXPORT void JNICALL Java_java_lang_Thread_nativeResume
   (JNIEnv *, jobject);
 
 /*
  * Class:     java_lang_Thread
- * Method:    holdsLock
- * Signature: (Ljava/lang/Object;)Z
+ * Method:    yield
+ * Signature: ()V
  */
-JNIEXPORT jboolean JNICALL Java_java_lang_Thread_holdsLock
-  (JNIEnv *, jclass, jobject);
+JNIEXPORT void JNICALL Java_java_lang_Thread_yield
+  (JNIEnv *, jclass);
 
 /*
  * Class:     java_lang_Thread
- * Method:    nativeInit
- * Signature: (J)V
+ * Method:    sleep
+ * Signature: (JI)V
  */
-JNIEXPORT void JNICALL Java_java_lang_Thread_nativeInit
-  (JNIEnv *, jobject, jlong);
+JNIEXPORT void JNICALL Java_java_lang_Thread_sleep
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     java_lang_Thread
+ * Method:    start
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_java_lang_Thread_start
+  (JNIEnv *, jobject);
 
 /*
  * Class:     java_lang_Thread
@@ -104,26 +120,10 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_nativeStop
 
 /*
  * Class:     java_lang_Thread
- * Method:    nativeInterrupt
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_java_lang_Thread_nativeInterrupt
-  (JNIEnv *, jobject);
-
-/*
- * Class:     java_lang_Thread
  * Method:    nativeSuspend
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_java_lang_Thread_nativeSuspend
-  (JNIEnv *, jobject);
-
-/*
- * Class:     java_lang_Thread
- * Method:    nativeResume
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_java_lang_Thread_nativeResume
   (JNIEnv *, jobject);
 
 /*

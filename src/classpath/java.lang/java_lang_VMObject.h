@@ -17,14 +17,6 @@ JNIEXPORT jobject JNICALL Java_java_lang_VMObject_clone
 
 /*
  * Class:     java_lang_VMObject
- * Method:    getClass
- * Signature: (Ljava/lang/Object;)Ljava/lang/Class;
- */
-JNIEXPORT jclass JNICALL Java_java_lang_VMObject_getClass
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     java_lang_VMObject
  * Method:    notify
  * Signature: (Ljava/lang/Object;)V
  */

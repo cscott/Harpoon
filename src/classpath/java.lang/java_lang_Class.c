@@ -120,83 +120,11 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_getDeclaringClass
 
 /*
  * Class:     java_lang_Class
- * Method:    getClasses
- * Signature: ()[Ljava/lang/Class;
- */
-JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getClasses
-  (JNIEnv *env, jobject cls) {
-    assert(0); /* unimplemented */
-    return NULL;
-}
-
-/*
- * Class:     java_lang_Class
- * Method:    getFields
- * Signature: ()[Ljava/lang/reflect/Field;
- */
-JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getFields
-  (JNIEnv *env, jobject cls) {
-    return fni_class_getMembers(env, (jclass)cls, ONLY_PUBLIC, FIELDS);
-}
-
-/*
- * Class:     java_lang_Class
- * Method:    getMethods
- * Signature: ()[Ljava/lang/reflect/Method;
- */
-JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getMethods
-  (JNIEnv *env, jobject cls) {
-    return fni_class_getMembers(env, (jclass)cls, ONLY_PUBLIC, METHODS);
-}
-
-/*
- * Class:     java_lang_Class
- * Method:    getConstructors
- * Signature: ()[Ljava/lang/reflect/Constructor;
- */
-JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getConstructors
-  (JNIEnv *env, jobject cls) {
-    return fni_class_getMembers(env, (jclass)cls, ONLY_PUBLIC, CONSTRUCTORS);
-}
-
-/*
- * Class:     java_lang_Class
- * Method:    getField
- * Signature: (Ljava/lang/String;)Ljava/lang/reflect/Field;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_getField
-  (JNIEnv *env, jobject cls, jstring name) {
-    return fni_class_getField(env, (jclass)cls, name, ONLY_PUBLIC);
-}
-
-/*
- * Class:     java_lang_Class
- * Method:    getMethod
- * Signature: (Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_getMethod
-  (JNIEnv *env, jobject cls, jstring name, jobjectArray paramTypes) {
-    return fni_class_getMethod(env, (jclass)cls, name, paramTypes,
-			       ONLY_PUBLIC);
-}
-
-/*
- * Class:     java_lang_Class
- * Method:    getConstructor
- * Signature: ([Ljava/lang/Class;)Ljava/lang/reflect/Constructor;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_getConstructor
-  (JNIEnv *env, jobject cls, jobjectArray paramTypes) {
-    return fni_class_getConstructor(env, (jclass)cls, paramTypes, ONLY_PUBLIC);
-}
-
-/*
- * Class:     java_lang_Class
  * Method:    getDeclaredClasses
- * Signature: ()[Ljava/lang/Class;
+ * Signature: (Z)[Ljava/lang/Class;
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getDeclaredClasses
-  (JNIEnv *env, jobject cls) {
+  (JNIEnv *env, jobject cls, jboolean publicOnly) {
     assert(0); /* unimplemented */
     return NULL;
 }
@@ -204,61 +132,39 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getDeclaredClasses
 /*
  * Class:     java_lang_Class
  * Method:    getDeclaredFields
- * Signature: ()[Ljava/lang/reflect/Field;
+ * Signature: (Z)[Ljava/lang/reflect/Field;
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getDeclaredFields
-  (JNIEnv *env, jobject cls) {
-    return fni_class_getMembers(env, (jclass)cls, ONLY_DECLARED, FIELDS);
+  (JNIEnv *env, jobject cls, jboolean publicOnly) {
+    return fni_class_getMembers(env, (jclass)cls, (publicOnly?ONLY_PUBLIC:0)|ONLY_DECLARED, FIELDS);
 }
 
 /*
  * Class:     java_lang_Class
  * Method:    getDeclaredMethods
- * Signature: ()[Ljava/lang/reflect/Method;
+ * Signature: (Z)[Ljava/lang/reflect/Method;
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getDeclaredMethods
-  (JNIEnv *env, jobject cls) {
-    return fni_class_getMembers(env, (jclass)cls, ONLY_DECLARED, METHODS);
+  (JNIEnv *env, jobject cls, jboolean publicOnly) {
+    return fni_class_getMembers(env, (jclass)cls, (publicOnly?ONLY_PUBLIC:0)|ONLY_DECLARED, METHODS);
 }
 
 /*
  * Class:     java_lang_Class
  * Method:    getDeclaredConstructors
- * Signature: ()[Ljava/lang/reflect/Constructor;
+ * Signature: (Z)[Ljava/lang/reflect/Constructor;
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getDeclaredConstructors
-  (JNIEnv *env, jobject cls) {
-    return fni_class_getMembers(env, (jclass)cls, ONLY_DECLARED, CONSTRUCTORS);
+  (JNIEnv *env, jobject cls, jboolean publicOnly) {
+    return fni_class_getMembers(env, (jclass)cls, (publicOnly?ONLY_PUBLIC:0)|ONLY_DECLARED, CONSTRUCTORS);
 }
 
 /*
  * Class:     java_lang_Class
- * Method:    getDeclaredField
- * Signature: (Ljava/lang/String;)Ljava/lang/reflect/Field;
+ * Method:    throwException
+ * Signature: (Ljava/lang/Throwable;)V
  */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_getDeclaredField
-  (JNIEnv *env, jobject cls, jstring name) {
-    return fni_class_getField(env, (jclass)cls, name, ONLY_DECLARED);
-}
-
-/*
- * Class:     java_lang_Class
- * Method:    getDeclaredMethod
- * Signature: (Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_getDeclaredMethod
-  (JNIEnv *env, jobject cls, jstring name, jobjectArray paramTypes) {
-    return fni_class_getMethod(env, (jclass)cls, name, paramTypes,
-			       ONLY_DECLARED);
-}
-
-/*
- * Class:     java_lang_Class
- * Method:    getDeclaredConstructor
- * Signature: ([Ljava/lang/Class;)Ljava/lang/reflect/Constructor;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_getDeclaredConstructor
-  (JNIEnv *env, jobject cls, jobjectArray paramTypes) {
-    return fni_class_getConstructor(env, (jclass)cls, paramTypes,
-				    ONLY_DECLARED);
+JNIEXPORT void JNICALL Java_java_lang_Class_throwException
+  (JNIEnv *env, jobject cls, jthrowable thr) {
+  (*env)->Throw(env, thr);
 }

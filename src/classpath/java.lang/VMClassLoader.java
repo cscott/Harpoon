@@ -47,6 +47,8 @@ import java.util.HashMap;
 import java.lang.reflect.Constructor;
 import gnu.java.lang.SystemClassLoader;
 
+import gnu.java.util.EmptyEnumeration;
+
 /**
  * java.lang.VMClassLoader is a package-private helper for VMs to implement
  * on behalf of java.lang.ClassLoader.
@@ -76,7 +78,7 @@ final class VMClassLoader
    */
   static final Class defineClass(ClassLoader cl, String name,
                                         byte[] data, int offset, int len)
-      throws ClassFormatError {
+    throws ClassFormatError {//CSA HACK
       return defineClass(cl, name, data, offset, len,
 			 ClassLoader.defaultProtectionDomain);
   }
@@ -98,14 +100,9 @@ final class VMClassLoader
    * @throws ClassFormatError if data is not in proper classfile format
    */
   static final native Class defineClass(ClassLoader cl, String name,
-					byte[] data, int offset, int len,
-					ProtectionDomain pd)
-      throws ClassFormatError;
-    /*
-  {
-    return defineClass(cl, name, data, offset, len);
-  }
-    */
+                                 byte[] data, int offset, int len,
+                                 ProtectionDomain pd)
+    throws ClassFormatError;//CSA HACK
 
   /**
    * Helper to resolve all references to other classes from this class.
@@ -117,22 +114,21 @@ final class VMClassLoader
   /**
    * Helper to load a class from the bootstrap class loader.
    *
-   * XXX - Not implemented yet; this requires native help.
+   * XXX - Not implemented; this requires native help.
    *
    * @param name the class name to load
    * @param resolve whether to resolve it
-   * @return the class, loaded by the bootstrap classloader
+   * @return the class, loaded by the bootstrap classloader or null
+   * if the class wasn't found. Returning null is equivalent to throwing
+   * a ClassNotFoundException (but a possible performance optimization).
    */
   static final native Class loadClass(String name, boolean resolve)
-      throws ClassNotFoundException;
-    /*
-  {
-    return Class.forName(name, resolve, ClassLoader.getSystemClassLoader());
-  }
-    */
+    throws ClassNotFoundException;//CSA HACK
 
   /**
    * Helper to load a resource from the bootstrap class loader.
+   *
+   * XXX - Not implemented; this requires native help.
    *
    * @param name the resource to find
    * @return the URL to the resource
@@ -145,7 +141,7 @@ final class VMClassLoader
   /**
    * Helper to get a list of resources from the bootstrap class loader.
    *
-   * XXX - Not implemented yet; this requires native help.
+   * XXX - Not implemented; this requires native help.
    *
    * @param name the resource to find
    * @return an enumeration of resources
@@ -307,33 +303,33 @@ final class VMClassLoader
     // This method is called as the initialization of systemClassLoader,
     // so if there is a null value, this is the first call and we must check
     // for java.system.class.loader.
-      String loader = System.getProperty("java.system.class.loader",
-                                           "gnu.java.lang.SystemClassLoader");
-      try
-          {
-	      // Give the new system class loader a null parent.
-	      Constructor c = Class.forName(loader).getConstructor
-		  ( new Class[] { ClassLoader.class } );
-	      return (ClassLoader) c.newInstance(new Object[1]);
-          }
-      catch (Exception e)
-          {
-	      try
-		  {
-		      System.err.println("Requested system classloader "
-					 + loader + " failed, trying "
-					 + "gnu.java.lang.SystemClassLoader");
-		      e.printStackTrace();
-		      // Fallback to gnu.java.lang.SystemClassLoader.
-		      return new SystemClassLoader(null);
-		  }
-	      catch (Exception e1)
-		  {
-		      throw (Error) new InternalError
-			  ("System class loader could not be found: " + e1)
-			  .initCause(e1);
-		  }
-          }
+    String loader = System.getProperty("java.system.class.loader",
+				       "gnu.java.lang.SystemClassLoader");
+    try
+      {
+	// Give the new system class loader a null parent.
+	Constructor c = Class.forName(loader).getConstructor
+	  ( new Class[] { ClassLoader.class } );
+	return (ClassLoader) c.newInstance(new Object[1]);
+      }
+    catch (Exception e)
+      {
+	try
+	  {
+	    System.err.println("Requested system classloader "
+			       + loader + " failed, trying "
+			       + "gnu.java.lang.SystemClassLoader");
+	    e.printStackTrace();
+	    // Fallback to gnu.java.lang.SystemClassLoader.
+	    return new SystemClassLoader(null);
+	  }
+	catch (Exception e1)
+	  {
+	    throw (Error) new InternalError
+	      ("System class loader could not be found: " + e1)
+	      .initCause(e1);
+	  }
+      }
  
   }
 }

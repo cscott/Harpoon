@@ -48,13 +48,13 @@ PRIMITIVEARRAYCLONE(Object, struct oobj *, Ljava_lang_Object_2);
 #endif /* !WITH_TRANSACTIONS */
 
 /*
- * Class:     java_lang_VMObject
+ * Class:     java_lang_Object
  * Method:    getClass
- * Signature: (Ljava/lang/Object;)Ljava/lang/Class;
+ * Signature: ()Ljava/lang/Class;
  */
-JNIEXPORT jclass JNICALL Java_java_lang_VMObject_getClass
-  (JNIEnv *env, jclass vmcls, jobject obj) {
-  return (*env)->GetObjectClass(env, obj);
+JNIEXPORT jclass JNICALL Java_java_lang_Object_getClass
+  (JNIEnv *env, jobject obj) {
+    return (*env)->GetObjectClass(env, obj);
 }
 
 /*

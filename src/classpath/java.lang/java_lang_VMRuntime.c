@@ -1,7 +1,7 @@
 #include "config.h"
 #include <jni.h>
 #include <jni-private.h>
-#include "java_lang_Runtime.h"
+#include "java_lang_VMRuntime.h"
 
 #include <assert.h>
 #include <stdio.h> /* for fprintf, stderr */
@@ -9,62 +9,62 @@
 #include "../../java.lang/properties.h" /* same, for setting up properties */
 
 /*
- * Class:     java_lang_Runtime
+ * Class:     java_lang_VMRuntime
  * Method:    availableProcessors
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_java_lang_Runtime_availableProcessors
-  (JNIEnv *env, jobject runtime) {
+JNIEXPORT jint JNICALL Java_java_lang_VMRuntime_availableProcessors
+  (JNIEnv *env, jclass runtimeCls) {
     assert(0); /* unimplemented */
 }
 
 /*
- * Class:     java_lang_Runtime
+ * Class:     java_lang_VMRuntime
  * Method:    freeMemory
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_java_lang_Runtime_freeMemory
-  (JNIEnv *env, jobject runtime) {
+JNIEXPORT jlong JNICALL Java_java_lang_VMRuntime_freeMemory
+  (JNIEnv *env, jclass runtimeCls) {
     return fni_runtime_freeMemory(env);
 }
 
 /*
- * Class:     java_lang_Runtime
+ * Class:     java_lang_VMRuntime
  * Method:    totalMemory
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_java_lang_Runtime_totalMemory
-  (JNIEnv *env, jobject runtime) {
+JNIEXPORT jlong JNICALL Java_java_lang_VMRuntime_totalMemory
+  (JNIEnv *env, jclass runtimeCls) {
     return fni_runtime_totalMemory(env);
 }
 
 /*
- * Class:     java_lang_Runtime
+ * Class:     java_lang_VMRuntime
  * Method:    maxMemory
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_java_lang_Runtime_maxMemory
-  (JNIEnv *env, jobject runtime) {
+JNIEXPORT jlong JNICALL Java_java_lang_VMRuntime_maxMemory
+  (JNIEnv *env, jclass runtimeCls) {
     assert(0); /* unimplemented */
 }
 
 /*
- * Class:     java_lang_Runtime
+ * Class:     java_lang_VMRuntime
  * Method:    gc
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_java_lang_Runtime_gc
-  (JNIEnv *env, jobject runtime) {
+JNIEXPORT void JNICALL Java_java_lang_VMRuntime_gc
+  (JNIEnv *env, jclass runtimeCls) {
     fni_runtime_gc(env);
 }
 
 /*
- * Class:     java_lang_Runtime
+ * Class:     java_lang_VMRuntime
  * Method:    runFinalization
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_java_lang_Runtime_runFinalization
-  (JNIEnv *env, jobject runtime) {
+JNIEXPORT void JNICALL Java_java_lang_VMRuntime_runFinalization
+  (JNIEnv *env, jclass runtimeCls) {
     fni_runtime_runFinalization(env);
 }
 
@@ -73,8 +73,8 @@ JNIEXPORT void JNICALL Java_java_lang_Runtime_runFinalization
  * Let's hope that never actually happens in practice, because it's wildly
  * unsafe.  Or would be if we were actually to run finalizers. */
 #ifdef WITH_INIT_CHECK
-JNIEXPORT void JNICALL Java_java_lang_Runtime_runFinalization_00024_00024initcheck
-  (JNIEnv *env, jobject runtime) {
+JNIEXPORT void JNICALL Java_java_lang_VMRuntime_runFinalization_00024_00024initcheck
+  (JNIEnv *env, jclass runtimeCls) {
   fprintf(stderr,
 	  "RUNNING FINALIZATION INSIDE A STATIC INITIALIZER IS NOT SAFE!\n");
   assert(0); /* die */
@@ -82,42 +82,56 @@ JNIEXPORT void JNICALL Java_java_lang_Runtime_runFinalization_00024_00024initche
 #endif /* WITH_INIT_CHECK */
 
 /*
- * Class:     java_lang_Runtime
+ * Class:     java_lang_VMRuntime
+ * Method:    runFinalizationForExit
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_java_lang_VMRuntime_runFinalizationForExit
+  (JNIEnv *env, jclass runtimeCls) {
+  /* this is *UNLIKE* runFinalization in that *all* objects should be
+   * finalized (not just dead ones).  We don't support this yet. */
+  Java_java_lang_VMRuntime_runFinalization(env, runtimeCls);
+  assert(0); /* unimplemented. */
+}
+
+
+/*
+ * Class:     java_lang_VMRuntime
  * Method:    traceInstructions
  * Signature: (Z)V
  */
-JNIEXPORT void JNICALL Java_java_lang_Runtime_traceInstructions
-  (JNIEnv *env, jobject runtime, jboolean value) {
+JNIEXPORT void JNICALL Java_java_lang_VMRuntime_traceInstructions
+  (JNIEnv *env, jclass runtimeCls, jboolean value) {
     /* ignore this, because we don't implement this feature */
 }
 
 /*
- * Class:     java_lang_Runtime
+ * Class:     java_lang_VMRuntime
  * Method:    traceMethodCalls
  * Signature: (Z)V
  */
-JNIEXPORT void JNICALL Java_java_lang_Runtime_traceMethodCalls
-  (JNIEnv *env, jobject runtime, jboolean value) {
+JNIEXPORT void JNICALL Java_java_lang_VMRuntime_traceMethodCalls
+  (JNIEnv *env, jclass runtimeCls, jboolean value) {
     /* ignore this, because we don't implement this feature */
 }
 
 /*
- * Class:     java_lang_Runtime
- * Method:    runFinalizersOnExitInternal
+ * Class:     java_lang_VMRuntime
+ * Method:    runFinalizersOnExit
  * Signature: (Z)V
  */
-JNIEXPORT void JNICALL Java_java_lang_Runtime_runFinalizersOnExitInternal
+JNIEXPORT void JNICALL Java_java_lang_VMRuntime_runFinalizersOnExit
   (JNIEnv *env, jclass cls, jboolean value) {
     /* ignore this setting */
 }
 
 /*
- * Class:     java_lang_Runtime
- * Method:    exitInternal
+ * Class:     java_lang_VMRuntime
+ * Method:    exit
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_java_lang_Runtime_exitInternal
-  (JNIEnv *env, jobject runtime, jint status) {
+JNIEXPORT void JNICALL Java_java_lang_VMRuntime_exit
+  (JNIEnv *env, jclass runtimeCls, jint status) {
     fni_runtime_exitInternal(env, status);
 }
 
@@ -129,12 +143,12 @@ JNIEXPORT void JNICALL Java_java_lang_Runtime_exitInternal
    * @return 0 on failure, nonzero on success
    */
 /*
- * Class:     java_lang_Runtime
+ * Class:     java_lang_VMRuntime
  * Method:    nativeLoad
  * Signature: (Ljava/lang/String;)I
  */
-JNIEXPORT jint JNICALL Java_java_lang_Runtime_nativeLoad
-  (JNIEnv *env, jobject runtime, jstring filename) {
+JNIEXPORT jint JNICALL Java_java_lang_VMRuntime_nativeLoad
+  (JNIEnv *env, jclass runtimeCls, jstring filename) {
     /* yeah, we already loaded this. =) so do nothing. */
     return 1;
 }
@@ -149,11 +163,11 @@ JNIEXPORT jint JNICALL Java_java_lang_Runtime_nativeLoad
    * @return the full filename
    */
 /*
- * Class:     java_lang_Runtime
+ * Class:     java_lang_VMRuntime
  * Method:    nativeGetLibname
  * Signature: (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_java_lang_Runtime_nativeGetLibname
+JNIEXPORT jstring JNICALL Java_java_lang_VMRuntime_nativeGetLibname
   (JNIEnv *env, jclass runtime, jstring pathname, jstring libname) {
     /* somebody calls this, I don't know who. */
     return libname;
@@ -173,12 +187,12 @@ JNIEXPORT jstring JNICALL Java_java_lang_Runtime_nativeGetLibname
    * @throws NullPointerException if cmd or env have null elements
    */
 /*
- * Class:     java_lang_Runtime
- * Method:    execInternal
+ * Class:     java_lang_VMRuntime
+ * Method:    exec
  * Signature: ([Ljava/lang/String;[Ljava/lang/String;Ljava/io/File;)Ljava/lang/Process;
  */
-JNIEXPORT jobject JNICALL Java_java_lang_Runtime_execInternal
-  (JNIEnv *env, jobject runtime, jobjectArray cmd, jobjectArray environment,
+JNIEXPORT jobject JNICALL Java_java_lang_VMRuntime_exec
+  (JNIEnv *env, jclass runtimeCls, jobjectArray cmd, jobjectArray environment,
    jobject dir) {
     assert(0); /* unimplemented */
 }
@@ -225,11 +239,11 @@ JNIEXPORT jobject JNICALL Java_java_lang_Runtime_execInternal
    * @param p the Properties object to insert the system properties into
    */
 /*
- * Class:     java_lang_Runtime
+ * Class:     java_lang_VMRuntime
  * Method:    insertSystemProperties
  * Signature: (Ljava/util/Properties;)V
  */
-JNIEXPORT void JNICALL Java_java_lang_Runtime_insertSystemProperties
+JNIEXPORT void JNICALL Java_java_lang_VMRuntime_insertSystemProperties
   (JNIEnv *env, jclass runtime, jobject properties) {
     fni_properties_init(env, properties, JNI_TRUE);
 }
