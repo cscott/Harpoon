@@ -29,7 +29,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.43.2.1 2002-02-27 08:35:37 cananian Exp $
+ * @version $Id: HClass.java,v 1.43.2.2 2002-03-10 08:01:56 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -781,7 +781,7 @@ public abstract class HClass extends HPointer
   public static final HClass Void=new HClassPrimitive("void", "V");
 
   /** Array factory: returns new <code>HClass[]</code>. */
-  public static final ArrayFactory arrayFactory = Factories.hclassArrayFactory;
+  public static final ArrayFactory<HClass> arrayFactory = Factories.hclassArrayFactory;
 
   /** HPointer interface. */
   final HClass actual() { return this; /* no dereferencing necessary. */ }

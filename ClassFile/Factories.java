@@ -14,37 +14,37 @@ import harpoon.Util.ArrayFactory;
  * instead.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Factories.java,v 1.2 2002-02-25 21:03:01 cananian Exp $
+ * @version $Id: Factories.java,v 1.2.2.1 2002-03-10 08:01:56 cananian Exp $
  */
 abstract class Factories {
   /** Array factory: returns new <code>HClass[]</code>. */
-  public static final ArrayFactory hclassArrayFactory =
-    new ArrayFactory() {
-      public Object[] newArray(int len) { return new HClass[len]; }
+  public static final ArrayFactory<HClass> hclassArrayFactory =
+    new ArrayFactory<HClass>() {
+      public HClass[] newArray(int len) { return new HClass[len]; }
     };
   /** Array factory: returns new <code>HMember[]</code>. */
-  public static final ArrayFactory hmemberArrayFactory =
-    new ArrayFactory() {
-      public Object[] newArray(int len) { return new HMember[len]; }
+  public static final ArrayFactory<HMember> hmemberArrayFactory =
+    new ArrayFactory<HMember>() {
+      public HMember[] newArray(int len) { return new HMember[len]; }
     };
   /** Array factory: returns new <code>HField[]</code>. */
-  public static final ArrayFactory hfieldArrayFactory =
-    new ArrayFactory() {
-      public Object[] newArray(int len) { return new HField[len]; }
+  public static final ArrayFactory<HField> hfieldArrayFactory =
+    new ArrayFactory<HField>() {
+      public HField[] newArray(int len) { return new HField[len]; }
     };
   /** Array factory: returns new <code>HMethod[]</code>. */
-  public static final ArrayFactory hmethodArrayFactory =
-    new ArrayFactory() {
-      public Object[] newArray(int len) { return new HMethod[len]; }
+  public static final ArrayFactory<HMethod> hmethodArrayFactory =
+    new ArrayFactory<HMethod>() {
+      public HMethod[] newArray(int len) { return new HMethod[len]; }
     };
   /** Array factory: returns new <code>HConstructor[]</code>. */
-  public static final ArrayFactory hconstructorArrayFactory =
-    new ArrayFactory() {
-      public Object[] newArray(int len) { return new HConstructor[len]; }
+  public static final ArrayFactory<HConstructor> hconstructorArrayFactory =
+    new ArrayFactory<HConstructor>() {
+      public HConstructor[] newArray(int len) { return new HConstructor[len]; }
     };
   /** Array factory: returns new <code>HInitializer[]</code>. */
-  public static final ArrayFactory hinitializerArrayFactory =
-    new ArrayFactory() {
-      public Object[] newArray(int len) { return new HInitializer[len]; }
+  public static final ArrayFactory<HInitializer> hinitializerArrayFactory =
+    new ArrayFactory<HInitializer>() {
+      public HInitializer[] newArray(int len) { return new HInitializer[len]; }
     };
 }

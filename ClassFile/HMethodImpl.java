@@ -13,11 +13,11 @@ import java.util.Hashtable;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodImpl.java,v 1.2 2002-02-25 21:03:03 cananian Exp $
+ * @version $Id: HMethodImpl.java,v 1.2.2.1 2002-03-10 08:01:57 cananian Exp $
  * @see HMethod
  */
 abstract class HMethodImpl
-  implements HMethod, java.io.Serializable, java.lang.Comparable {
+  implements HMethod, java.io.Serializable, java.lang.Comparable<HMember> {
   HClass parent;
   String name;
   int modifiers;
@@ -110,8 +110,8 @@ abstract class HMethodImpl
    * <code>null</code>.
    */
   public String[] getParameterNames() {
-    return (String[]) Util.safeCopy(new ArrayFactory() {
-      public Object[] newArray(int len) { return new String[len]; }
+    return Util.safeCopy(new ArrayFactory<String>() {
+      public String[] newArray(int len) { return new String[len]; }
     }, parameterNames);
   }
 
@@ -258,7 +258,7 @@ abstract class HMethodImpl
   // Comparable interface
   /** Compares two <code>HMethod</code>s lexicographically; first by
    *  declaring class, then by name, and lastly by descriptor. */
-  public int compareTo(Object o) {
+  public int compareTo(HMember o) {
     return memberComparator.compare(this, o);
   }
 }

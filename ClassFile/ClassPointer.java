@@ -9,13 +9,13 @@ import harpoon.Util.Util;
  * the HClass itself.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassPointer.java,v 1.3.2.1 2002-02-27 08:35:37 cananian Exp $
+ * @version $Id: ClassPointer.java,v 1.3.2.2 2002-03-10 08:01:56 cananian Exp $
  */
 class ClassPointer extends HPointer implements java.io.Serializable {
     final Linker linker;
     final String descriptor;
     ClassPointer(Linker linker, String descriptor) {
-	assert descriptor.indexOf('.')==-1; // slashes, not dots.
+	assert descriptor.indexOf('.')==-1 ; // slashes, not dots.
 	// trim descriptor.
 	int i;
 	for (i=0; i<descriptor.length(); i++) {

@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * <code>HClassSyn</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.8.2.1 2002-02-27 08:35:42 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.8.2.2 2002-03-10 08:01:57 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -240,16 +240,16 @@ class HClassSyn extends HClassCls implements HClassMutator {
   public void addInterface(HClass in) {
     if (!in.isInterface()) throw new Error("Not an interface.");
     assert checkLinker(in);
-    interfaces = (HClass[]) Util.grow(HClass.arrayFactory,
-				      interfaces, in, interfaces.length);
+    interfaces = Util.grow(HClass.arrayFactory,
+			   (HClass[]) interfaces, in, interfaces.length);
     hasBeenModified = true;
   }
   public void removeInterface(HClass in) throws NoSuchClassException {
     assert checkLinker(in);
     for (int i=0; i<interfaces.length; i++) {
       if (interfaces[i].equals(in)) {
-	interfaces = (HClass[]) Util.shrink(HClass.arrayFactory,
-					    interfaces, i);
+	interfaces = Util.shrink(HClass.arrayFactory,
+				 (HClass[]) interfaces, i);
 	hasBeenModified = true;
 	return;
       }

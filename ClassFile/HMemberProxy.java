@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * <code>HMember</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMemberProxy.java,v 1.3.2.1 2002-02-27 08:35:44 cananian Exp $
+ * @version $Id: HMemberProxy.java,v 1.3.2.2 2002-03-10 08:01:57 cananian Exp $
  * @see HFieldProxy
  * @see HMethodProxy
  */
@@ -45,7 +45,7 @@ abstract class HMemberProxy implements HMember {
     // Comparable interface
     /** Compares two <code>HMember</code>s lexicographically; first by
      *  declaring class, then by name, and lastly by descriptor. */
-    public int compareTo(Object o) {
+    public int compareTo(HMember o) {
         return memberComparator.compare(this, o);
     }
 

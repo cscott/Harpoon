@@ -12,7 +12,7 @@ import harpoon.Util.ArrayFactory;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.31 2002-02-25 21:03:03 cananian Exp $
+ * @version $Id: HMethod.java,v 1.31.2.1 2002-03-10 08:01:57 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -130,7 +130,7 @@ public interface HMethod extends HMember {
   public String toString();
 
   /** Array factory: returns new <code>HMethod[]</code>. */
-  public static final ArrayFactory arrayFactory =
+  public static final ArrayFactory<HMethod> arrayFactory =
     Factories.hmethodArrayFactory;
 }
 
