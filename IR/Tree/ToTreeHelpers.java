@@ -15,6 +15,7 @@ import harpoon.IR.Quads.MONITOREXIT;
 import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.LowQuad.PCALL;
+import harpoon.IR.LowQuad.PGET;
 import harpoon.IR.LowQuad.PSET;
 import harpoon.Temp.Temp;
 import harpoon.Util.Collections.BinaryHeap;
@@ -37,7 +38,7 @@ import java.util.Set;
  * <code>ToTreeHelpers</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTreeHelpers.java,v 1.1.2.7 2000-06-07 02:40:57 cananian Exp $
+ * @version $Id: ToTreeHelpers.java,v 1.1.2.8 2000-06-27 19:53:55 cananian Exp $
  */
 abstract class ToTreeHelpers {
     //------------ EdgeOracle IMPLEMENTATIONS ------------------
@@ -142,6 +143,8 @@ abstract class ToTreeHelpers {
 	public boolean canFold(HCodeElement hce, Temp t) { return false; }
     }
     static class SSXSimpleFoldNanny implements ToTree.FoldNanny {
+	// Set to 'false' to enable foldings which break derived types.
+	final private static boolean RESTRICT_DERIVED_TYPES = true;
 	final Set safe = new HashSet();
 	SSXSimpleFoldNanny(HCode hc) {
 	    // first, find all the single-use variables
@@ -162,6 +165,7 @@ abstract class ToTreeHelpers {
 	    // we don't want anything folded which is live over a memory
 	    // store or a synchronization.  we're going to be a bit
 	    // conservative here.
+	    // ALSO: we need to be careful about derived types.
 	    dfs((Quad)hc.getRootElement(), new HashSet(),
 		new HashEnvironment(), singleUse);
 	    // done!
@@ -198,8 +202,15 @@ abstract class ToTreeHelpers {
 		}
 	    }
 	}
+	// the folded expression BINOP<p>(+, CONST(x), PGET(y)) is untypeable
+	// in our system, because derived types must reference a base pointer
+	// IN A TEMPORARY -- we can't represent bases in memory.  So to be
+	// safe (if a bit conservative) we don't fold non-primitive fetches
+	// (PGETs).
 	public static boolean isUnfoldableDef(Quad q) {
 	    if (q instanceof PCALL) return true; // CALLS CAN NOT BE FOLDED
+	    if (q instanceof PGET && !((PGET)q).type().isPrimitive() &&
+		RESTRICT_DERIVED_TYPES) return true; // MAY BE UNTYPEABLE
 	    if (q instanceof PHI) return true; // multiple definitions
 	    return false;
 	}
