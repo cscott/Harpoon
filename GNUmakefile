@@ -8,7 +8,7 @@ export TEXINPUTS=/home/cananian/src/tex4ht//:
 ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99 pldi02 \
 	oopsla02 oqe
 
-all: oqe.pdf
+all: oqe.pdf oqe-notes.ps
 
 ## funky stuff for martin.
 put:
@@ -103,6 +103,21 @@ Figures/%: always
 	@$(MAKE) --no-print-directory -C Figures $*
 always:
 
+# change prosper options.
+%-adobe.tex: %.tex
+	sed -e 's.\\documentclass\[.\\documentclass[distiller,.' < $< > $@
+%-notes.tex: %.tex
+	sed -e 's.\\documentclass\[.\\documentclass[ps,slideBW,nocolorBG,accumulate,.' -e '/documentclass/,/prosper/{' -e 's/pdf,/ps,/' -e 's/slideColor,/slideBW,/' -e 's/^colorBG,/nocolorBG,/' -e '}' < $< > $@
+%-4.ps: %.ps
+	psnup -4 -Pletter -ld < $< > $@
+
+# distill on catfish. (has to precede normal dvi-to-pdf rules)
+%-adobe.pdf: %-adobe.dvi
+	dvips -t letter -e 0 -f < $< \
+	| ssh catfish.lcs.mit.edu \
+	"mkdir csa-foo ; cd csa-foo ; cat > $*.ps ; distill $*.ps ; acroexch $*.pdf ; cat $*.pdf ; cd .. ; /bin/rm -rf csa-foo" \
+	> $@
+
 # Tex rules. [have to add explicit dependencies on appropriate bibtex files.]
 %.dvi %.aux: %.tex
 	$(LATEX) $*
@@ -130,12 +145,6 @@ always:
 	else \
 		(xdvi $< &) ; \
 	fi
-
-# distill on catfish.
-%-a.pdf: %.ps
-	cat $< | ssh catfish.lcs.mit.edu \
-	"mkdir csa-foo ; cd csa-foo ; cat > $< ; distill $< ; acroexch `basename $< .ps`.pdf ; cat `basename $< .ps`.pdf ; cd .. ; /bin/rm -rf csa-foo" \
-	> $@
 
 # progress graphs.
 %.stats: %.tex
