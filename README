@@ -1,14 +1,6 @@
 This is the Realtime Java implementation for FLEX.
 
-What is implemented of the specification fairly accurately conforms to the specification,
-with the exception that the numbers returned for the number of bytes left in each MemoryArea,
-though completely consistent, are rather bogus.  Also, I didn't worry about the performance
-guarantees for CTMemory, since the numbers for bytes left are not accurate anyway.
-
 The Java Realtime specification can be found in:
 http://java.sun.com/aboutJava/communityprocess/first/jsr001/rtj.pdf
-
-In any case, the scoping access restrictions part of the implementation should accurately
-reflect the specification.
 
 - Wes Beebee
