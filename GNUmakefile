@@ -9,6 +9,7 @@ SSH=ssh
 SCP=scp -A
 MUNGE=bin/munge
 UNMUNGE=bin/unmunge
+FORTUNE=/usr/games/fortune
 
 ALLPKGS = $(shell find . -type d | grep -v CVS | \
 		egrep -v "^[.]/(harpoon|silicon|doc|NOTES|bin)" | \
@@ -42,8 +43,10 @@ cvs-commit: cvs-add
 	cvs -q commit
 	$(RM) cvs-tmp
 commit: cvs-commit # convenient abbreviation
-update:
-	cvs update # it's so easy to forget...
+update: # it's so easy to forget...
+	cvs update 
+	@echo ""
+	@-$(FORTUNE)
 
 doc:	doc/TIMESTAMP
 
