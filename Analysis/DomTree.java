@@ -12,7 +12,7 @@ import java.util.Vector;
  * <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.6 1998-09-16 00:42:20 cananian Exp $
+ * @version $Id: DomTree.java,v 1.7 1998-10-08 04:55:58 cananian Exp $
  */
 
 public class DomTree /*implements Graph*/ {
@@ -143,7 +143,7 @@ public class DomTree /*implements Graph*/ {
 		HCodeElement v = (!isPost) ? el[j].from() : el[j].to();
 		// ignore unreachable nodes.
 		if (!dfnum.containsKey(v)) continue;
-		if (dfnum.getInt(v) < dfnum.getInt(n))
+		if (dfnum.getInt(v) <= dfnum.getInt(n))
 		    sprime = v;
 		else
 		    sprime = (HCodeElement) semi.get(u.Eval(v));
