@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.56 2000-02-18 01:19:47 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.57 2000-02-19 02:45:34 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -114,6 +114,9 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	/** constantly updated set of statements to initialize the
             identifiers that the action statements will reference. */
 	StringBuffer initStms;
+	/** constantly updated set of statements to munch the rules'
+	 *  children if this rule matches. */
+	StringBuffer munchStms;
 
 	/** constantly updated (and reset) with current statement
 	    prefix throughout recursive calls. */
@@ -136,6 +139,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    // hack to make everything else additive
 	    exp = new StringBuffer("true\n"); 
 	    initStms = new StringBuffer();
+	    munchStms = new StringBuffer();
 	    degree = 0;
 	    this.stmPrefix = stmPrefix;
 	    this.indentPrefix = indentPrefix;
@@ -154,10 +158,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "&& " + stmPrefix + " instanceof " + TREE_METHOD + " ");
 
 	    // initialize params
-	    append(initStms, TEMP_Temp+"[] "+s.params+" = new "+TEMP_Temp+"["+
+	    append(munchStms, TEMP_Temp+"[] "+s.params+" = new "+TEMP_Temp+"["+
 		           "(("+TREE_METHOD+")"+stmPrefix+").getParamsLength()];");
-	    append(initStms, "for (int _i_=0; _i_<"+s.params+".length; _i_++)");
-	    append(initStms, "  "+s.params+"[_i_] = munchExp("+
+	    append(munchStms, "for (int _i_=0; _i_<"+s.params+".length; _i_++)");
+	    append(munchStms, "  "+s.params+"[_i_] = munchExp("+
 		           "(("+TREE_METHOD+")"+stmPrefix+").getParams(_i_));");
 	}
 	
@@ -176,6 +180,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() +indentPrefix+")");
 	    initStms.append(r.initStms.toString());
+	    munchStms.append(r.munchStms.toString());
 
 	    // initialize retval
 	    append(initStms, TEMP_Temp+" "+s.retval+" = "+
@@ -191,17 +196,17 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		   "(("+TREE_CALL+")"+stmPrefix + ").getHandler().label;");
 
 	    // initialize arg list
-	    append(initStms, "/* munch argument ExpList into a TempList */");
-	    append(initStms, "harpoon.Temp.TempList "+ s.arglist +
+	    append(munchStms, "/* munch argument ExpList into a TempList */");
+	    append(munchStms, "harpoon.Temp.TempList "+ s.arglist +
 		   " = new harpoon.Temp.TempList(null, null);");
-	    append(initStms, "{ harpoon.Temp.TempList tl="+s.arglist+";");
-	    append(initStms, "  for ("+TREE_ExpList+" el"+
+	    append(munchStms, "{ harpoon.Temp.TempList tl="+s.arglist+";");
+	    append(munchStms, "  for ("+TREE_ExpList+" el"+
 		   " = (("+TREE_CALL+")"+stmPrefix+").getArgs();" +
 		   " el!=null; el=el.tail, tl=tl.tail) ");
-	    append(initStms, "    tl.tail = new harpoon.Temp.TempList("+
+	    append(munchStms, "    tl.tail = new harpoon.Temp.TempList("+
 		   "munchExp(el.head), null);");
-	    append(initStms, "}");
-	    append(initStms, s.arglist+" = "+s.arglist+".tail;");
+	    append(munchStms, "}");
+	    append(munchStms, s.arglist+" = "+s.arglist+".tail;");
 	}
 
 	public void visit(Spec.StmCjump s) {
@@ -219,6 +224,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
 	    initStms.append(r.initStms.toString());
+	    munchStms.append(r.munchStms.toString());
 
 	    // code to initialize the target label identifiers so
 	    // that they can be referred to.
@@ -246,6 +252,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
 	    initStms.append(r.initStms.toString());
+	    munchStms.append(r.munchStms.toString());
 	}
 
 	public void visit(Spec.StmAlign s) {
@@ -308,6 +315,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
 	    initStms.append(r.initStms.toString());
+	    munchStms.append(r.munchStms.toString());
 	}
 
 	public void visit(Spec.StmJump s) {
@@ -325,6 +333,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
 	    initStms.append(r.initStms.toString());
+	    munchStms.append(r.munchStms.toString());
 
 	}
 
@@ -360,6 +369,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() + indentPrefix  +")");
 	    initStms.append(r.initStms.toString());
+	    munchStms.append(r.munchStms.toString());
 
 	    // look at dst
 	    r = new TypeExpRecurse("(("+TREE_MOVE+") " + stmPrefix + ").getDst()",
@@ -368,6 +378,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
 	    initStms.append(r.initStms.toString());
+	    munchStms.append(r.munchStms.toString());
 	}
 
 	public void visit(Spec.StmNativeCall s) {
@@ -385,6 +396,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+")");
 	    initStms.append(r.initStms.toString());
+	    munchStms.append(r.munchStms.toString());
 
 	    // initialize retval
 	    append(initStms, TEMP_Temp+" "+s.retval+" = "+
@@ -392,17 +404,17 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		   "(("+TREE_NATIVECALL+")"+stmPrefix+").getRetval().temp;");
 	    
 	    // initialize arg list
-	    append(initStms, "/* munch argument ExpList into a TempList */");
-	    append(initStms, "harpoon.Temp.TempList "+ s.arglist +
+	    append(munchStms, "/* munch argument ExpList into a TempList */");
+	    append(munchStms, "harpoon.Temp.TempList "+ s.arglist +
 		   " = new harpoon.Temp.TempList(null, null);");
-	    append(initStms, "{ harpoon.Temp.TempList tl="+s.arglist+";");
-	    append(initStms, "  for ("+TREE_ExpList+" el"+
+	    append(munchStms, "{ harpoon.Temp.TempList tl="+s.arglist+";");
+	    append(munchStms, "  for ("+TREE_ExpList+" el"+
 		   " = (("+TREE_NATIVECALL+")"+stmPrefix+").getArgs();" +
 		   " el!=null; el=el.tail, tl=tl.tail) ");
-	    append(initStms, "    tl.tail = new harpoon.Temp.TempList("+
+	    append(munchStms, "    tl.tail = new harpoon.Temp.TempList("+
 		   "munchExp(el.head), null);");
-	    append(initStms, "}");
-	    append(initStms, s.arglist+" = "+s.arglist+".tail;");
+	    append(munchStms, "}");
+	    append(munchStms, s.arglist+" = "+s.arglist+".tail;");
 	}
 
 	public void visit(Spec.StmReturn s) {
@@ -423,6 +435,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+")");
 	    initStms.append(r.initStms.toString());
+	    munchStms.append(r.munchStms.toString());
 	}
 
 
@@ -441,6 +454,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+ ")");
 	    initStms.append(r.initStms.toString());
+	    munchStms.append(r.munchStms.toString());
 
 	    // look at handler
 	    r = new 
@@ -450,6 +464,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+ ")");
 	    initStms.append(r.initStms.toString());
+	    munchStms.append(r.munchStms.toString());
 	}
     }
 
@@ -468,6 +483,9 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	/** constantly updated set of statements to initialize the
             identifiers that the action statements will reference. */
 	StringBuffer initStms;
+	/** constantly updated set of statements to munch the rules'
+	 *  children if this rule matches. */
+	StringBuffer munchStms;
 
 	/** constantly updated (and reset) with current expression
 	    prefix throughout recursive calls. */ 
@@ -491,6 +509,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    // hack to make everything else additive
 	    exp = new StringBuffer("true\n"); 	    
 	    initStms = new StringBuffer();
+	    munchStms = new StringBuffer();
 
 	    degree = 0;
 	    this.expPrefix = expPrefix;
@@ -579,7 +598,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    // specification to refer back to items in the parsed
 	    // tree)
 	    append(exp, "// no check needed for ExpId children");
-	    append(initStms, TEMP_Temp +" "+ e.id +" = munchExp(" + expPrefix + "); ");
+	    append(munchStms, TEMP_Temp +" "+ e.id +" = munchExp(" + expPrefix + "); ");
 	    return;
 	}
 	public void visit(Spec.ExpMem e) { 
@@ -773,6 +792,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		stmMatchActionPairs.add( new RuleTuple
 					 ( r.stm.toString(),
 					   matchStm, 
+					   indent + recurse.munchStms + "\n" +
 					   indent + r.action_str + 
 					   indent + "return;" +
 					   indent + "}", null,
@@ -801,6 +821,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		expMatchActionPairs.add( new RuleTuple
 					 ( r.exp.toString(),
 					   matchStm, 
+					   recurse.munchStms.toString()+"\n"+
 					   "Temp " + r.result_id + " = " +
 					   "frame.getTempBuilder()."+
 					   "makeTemp( ROOT , inf.tempFactory());\n" +
