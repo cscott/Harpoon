@@ -21,7 +21,7 @@ import java.util.Iterator;
  * <code>LoopFinder</code> implements Dominator Tree Loop detection.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopFinder.java,v 1.1.2.15 2001-11-20 21:51:07 bdemsky Exp $
+ * @version $Id: LoopFinder.java,v 1.1.2.16 2001-11-26 17:46:13 bdemsky Exp $
  */
 
 public class LoopFinder implements Loops {
@@ -93,9 +93,11 @@ public class LoopFinder implements Loops {
     
     public Set loopEntrances() {
       WorkSet entries=new WorkSet();
+      analyze();
       entries.push(ptr.header);
       return entries;
     }
+
     public Set loopEntranceEdges() {
       analyze();
       WorkSet A=new WorkSet();
