@@ -8,7 +8,7 @@ import harpoon.Temp.Temp;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.12 1998-09-10 01:38:22 cananian Exp $
+ * @version $Id: Quad.java,v 1.13 1998-09-10 01:52:18 cananian Exp $
  */
 public abstract class Quad implements HCodeElement {
     String sourcefile;
@@ -64,7 +64,7 @@ public abstract class Quad implements HCodeElement {
     public Quad[] next() { 
 	Quad[] r = new Quad[next.length];
 	for (int i=0; i<r.length; i++)
-	    r[i] = next[i].to();
+	    r[i] = (next[i]==null)?null:next[i].to();
 	return r;
     }
     /** Returns an array containing all the predecessors of this quad,
@@ -72,7 +72,7 @@ public abstract class Quad implements HCodeElement {
     public Quad[] prev() {
 	Quad[] r = new Quad[prev.length];
 	for (int i=0; i<r.length; i++)
-	    r[i] = next[i].from();
+	    r[i] = (prev[i]==null)?null:prev[i].from();
 	return r;
     }
     
