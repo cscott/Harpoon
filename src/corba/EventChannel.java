@@ -13,10 +13,11 @@ import com.lmco.eagan.pces_demo.tracker.XYZT;
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>
  */
 public class EventChannel extends CORBA {
-    private MIF_Sender mifSender = new MIF_Sender("contactService");
+    private MIF_Sender mifSender;
     
-    public EventChannel(String[] args) {
+    public EventChannel(String[] args, String name) {
 	super(args);
+	mifSender = new MIF_Sender(name);
     }
     
     public CommunicationsAdapter setupAlertClient(String name) {
