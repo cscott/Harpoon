@@ -53,7 +53,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.41 1999-09-11 17:58:00 cananian Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.42 1999-09-11 18:25:10 cananian Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     private AllocationStrategy mas;
@@ -61,8 +61,7 @@ public class SAFrame extends Frame implements AllocationInfo {
     private final Runtime   runtime;
     private final SARegFileInfo regFileInfo; 
     private final SAInstrBuilder instrBuilder;
-
-    harpoon.Backend.Generic.CodeGen codegen;
+    private final CodeGen codegen;
     
     public SAFrame(ClassHierarchy ch) { 
 	super();
@@ -148,7 +147,7 @@ public class SAFrame extends Frame implements AllocationInfo {
 	<code>StrongARM.CodeGen</code>, the same one is returned on
 	every call to this method.
      */
-    public harpoon.Backend.Generic.CodeGen codegen() { 
+    public harpoon.Backend.Generic.CodeGen getCodeGen() { 
 	return codegen;
     }
 

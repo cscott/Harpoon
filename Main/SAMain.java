@@ -63,7 +63,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.30 1999-09-10 05:30:48 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.31 1999-09-11 18:25:13 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -275,7 +275,7 @@ public class SAMain extends harpoon.IR.Registration {
 	if (!PRE_REG_ALLOC && !LIVENESS_TEST && !REG_ALLOC) continue;
 
 	final Instr instr = 
-	    frame.codegen().gen((harpoon.IR.Tree.Data)data, new InstrFactory() {
+	    frame.getCodeGen().gen((harpoon.IR.Tree.Data)data, new InstrFactory() {
 		private int id = 0;
 		public TempFactory tempFactory() { return null; }
 		public HCode getParent() { return null/*data*/; }// FIXME!

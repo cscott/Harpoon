@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>SACode</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SACode.java,v 1.1.2.20 1999-09-10 21:42:31 pnkfelix Exp $
+ * @version $Id: SACode.java,v 1.1.2.21 1999-09-11 18:25:10 cananian Exp $
  */
 public class SACode extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -36,7 +36,7 @@ public class SACode extends harpoon.Backend.Generic.Code {
 	      null,
 	      treeCode.getFrame());
 	// treeCode.print(new java.io.PrintWriter(System.out));
-	instrs = treeCode.getFrame().codegen()
+	instrs = treeCode.getFrame().getCodeGen()
 	    .gen(treeCode, newINF(treeCode.getMethod()));
 	Util.assert(instrs != null);
 	instrs=treeCode.getFrame()
