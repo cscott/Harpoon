@@ -14,7 +14,7 @@ import harpoon.IR.Tree.Print;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.8 2000-01-29 01:27:24 pnkfelix Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.9 2000-02-13 00:43:19 pnkfelix Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -22,10 +22,31 @@ public abstract class CodeGen {
     // Frame for instructions to access to get platform specific
     // variables (Register Temps, etc)   
     public final Frame frame;
+
+    // first = null OR first instr passed to emit(Instr)
+    protected Instr first;
+
+    // last = null OR last instr passed to emit(Instr)
+    protected Instr last; 
+    
     
     /** Creates a <code>Generic.CodeGen</code>. */
     public CodeGen(Frame frame) {
         this.frame = frame;
+    }
+
+    /** Emits <code>i</code> as the next instruction in the
+        instruction stream.
+    */	
+    protected Instr emit(Instr i) {
+	debug( "Emitting "+i.toString() );
+	if (first == null) {
+	    first = i;
+	}
+	// its correct that last==null the first time this is called
+	i.layout(last, null);
+	last = i;
+	return i;
     }
     
     /** Fixes up the procedure entry and exit code for a list of instrs, once

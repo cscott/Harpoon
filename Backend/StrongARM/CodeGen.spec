@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.126 2000-02-08 01:13:56 kkz Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.127 2000-02-13 00:43:30 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -77,13 +77,6 @@ import java.util.Iterator;
 %%
 
 
-    // FIELDS
-    // first = null OR first instr passed to emit(Instr)
-    private Instr first;
-
-    // last = null OR last instr passed to emit(Instr)
-    private Instr last; 
-    
     // InstrFactory to generate Instrs from
     private InstrFactory instrFactory;
     
@@ -127,19 +120,6 @@ import java.util.Iterator;
 	};
     }
 
-    /** Emits <code>i</code> as the next instruction in the
-        instruction stream.
-    */	
-    private Instr emit(Instr i) {
-	debug( "Emitting "+i.toString() );
-	if (first == null) {
-	    first = i;
-	}	   
-	// its correct that last==null the first time this is called
-	i.layout(last, null);
-	last = i;
-	return i;
-    }
 
     /** The main Instr layer; nothing below this line should call
 	emit(Instr) directly, unless they are constructing extensions

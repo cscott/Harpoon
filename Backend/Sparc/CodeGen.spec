@@ -54,7 +54,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.21 2000-01-10 05:08:39 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.22 2000-02-13 00:43:28 pnkfelix Exp $
  */
 %%
     private Instr root;
@@ -82,13 +82,14 @@ import java.util.Set;
         FP = regfile.FP();
     }
 
-    private Instr emit(Instr i) {
+/*    private Instr emit(Instr i) {
 	if (root == null)
 	    root = i;
         i.layout(last, null);
 	last = i;
         return i;
-    }
+      }
+*/
 
     // Lots of variations on emit() to make it a bit friendlier
     // to use in the patterns below.
