@@ -43,7 +43,10 @@ struct claz {
   struct claz *component_claz;	/* component type, or NULL if non-array. */
   struct claz **interfaces; /* NULL terminated list of implemented interfaces*/
   u_int32_t size;		/* object size, including header */
-  struct aux_bitmap *gc_bitmap;        /* garbage collection field bitmap */  
+  union {
+    ptroff_t bitmap;		/* garbage collection field bitmap, or */
+    struct aux_bitmap *ptr;	/* pointer to larger gc bitmap. */
+  } gc_info;
   u_int32_t scaled_class_depth; /* sizeof(struct claz *) * class_depth */
   struct claz *display[0];	/* sized by FLEX */
   /* class method dispatch table after display */
@@ -132,7 +135,7 @@ extern char *FNI_javamain;
 extern char *FNI_static_inits[];
 
 /* starts and ends of various segments */
-/* extern int *gc_start, *gc_end; */
+extern int *gc_start, *gc_end;
 extern int *static_objects_start, *static_objects_end;
 extern int *string_constants_start, *string_constants_end;
 extern int *code_start, *code_end;
