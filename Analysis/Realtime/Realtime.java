@@ -68,8 +68,16 @@ public class Realtime {
 	if (opts.indexOf("fakescopes")!=-1) {
 	    System.out.print("no");
 	    REAL_SCOPES = false;
+	    Util.assert(false, "Fake scopes is broken... sorry!  Will fix.");
 	} else {
 	    System.out.print("yes");
+	}
+	System.out.print(", Collect Statistics: ");
+	if (opts.indexOf("stats")!=-1) {
+	    System.out.print("yes");
+	    COLLECT_RUNTIME_STATS = true;
+	} else {
+	    System.out.print("no");
 	}
 	System.out.print(", Analysis Method: ");
 	if (opts.indexOf("simple")!=-1) {
@@ -90,11 +98,8 @@ public class Realtime {
 		System.out.print("yes");
 	    }
 	    ANALYSIS_METHOD = ALL;
-	} else if (opts.indexOf("stats")!=-1) {
-	    System.out.print("Collect Statistics");
-	    ANALYSIS_METHOD = SIMPLE;
-	    COLLECT_RUNTIME_STATS = true;
-	    REAL_SCOPES = false;
+	} else {
+	    Util.assert(false, "Please specify an analysis method.");
 	}
 	System.out.println();
     }
@@ -183,39 +188,40 @@ public class Realtime {
 	if (REAL_SCOPES) {
 	    roots.add(linker.forName("javax.realtime.CTMemory")
 		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.CTMemory")
-		      .getMethod("checkAccess", new HClass[] { object }));
 	    roots.add(linker.forName("javax.realtime.HeapMemory")
 		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.HeapMemory")
-		      .getMethod("checkAccess", new HClass[] { object }));
 	    roots.add(linker.forName("javax.realtime.ImmortalMemory")
 		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.ImmortalMemory")
-		      .getMethod("checkAccess", new HClass[] { object }));
 	    roots.add(linker.forName("javax.realtime.ImmortalPhysicalMemory")
 		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.ImmortalPhysicalMemory")
-		      .getMethod("checkAccess", new HClass[] { object }));
 	    roots.add(linker.forName("javax.realtime.LTMemory")
 		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.LTMemory")
-		      .getMethod("checkAccess", new HClass[] { object }));
 	    roots.add(linker.forName("javax.realtime.NullMemoryArea")
 		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.NullMemoryArea")
-		      .getMethod("checkAccess", new HClass[] { object }));
 	    roots.add(linker.forName("javax.realtime.ScopedPhysicalMemory")
 		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.ScopedPhysicalMemory")
-		      .getMethod("checkAccess", new HClass[] { object }));
 	    roots.add(linker.forName("javax.realtime.VTMemory")
 		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.VTMemory")
-		      .getMethod("checkAccess", new HClass[] { object }));
-	    roots.add(linker.forName("javax.realtime.NoHeapRealtimeThread"));
 	}
+	roots.add(linker.forName("javax.realtime.CTMemory")
+		  .getMethod("checkAccess", new HClass[] { object }));
+	roots.add(linker.forName("javax.realtime.HeapMemory")
+		  .getMethod("checkAccess", new HClass[] { object }));
+	roots.add(linker.forName("javax.realtime.ImmortalMemory")
+		  .getMethod("checkAccess", new HClass[] { object }));
+	roots.add(linker.forName("javax.realtime.ImmortalPhysicalMemory")
+		  .getMethod("checkAccess", new HClass[] { object }));
+	roots.add(linker.forName("javax.realtime.ScopedPhysicalMemory")
+		  .getMethod("checkAccess", new HClass[] { object }));
+	roots.add(linker.forName("javax.realtime.NullMemoryArea")
+		  .getMethod("checkAccess", new HClass[] { object }));
 
+	roots.add(linker.forName("javax.realtime.VTMemory")
+		  .getMethod("checkAccess", new HClass[] { object }));
+	roots.add(linker.forName("javax.realtime.LTMemory")
+		  .getMethod("checkAccess", new HClass[] { object }));
+	roots.add(linker.forName("javax.realtime.NoHeapRealtimeThread"));
+	
 //  	roots.add(linker.forName("java.lang.Class")
 //  		  .getMethod("getConstructor", 
 //  			     new HClass[] { 
