@@ -71,3 +71,26 @@ Constructor is given N integer arguments, where
  1<=N<=# of dimensions of the array class.  Each argument codes for a size.
 new [[I(10)  is equivalent to new Int[10][];
 new [[F(1,2) is equivalent to new Float[1][2];
+>> from 'The Java Language Specification' section 10.7:
+> An array thus has the same methods as the following class:
+>
+>class A implements Cloneable {
+>        public final int length = X;
+>        public Object clone() {
+>                try {
+>                        return super.clone();
+>                } catch (CloneNotSupportedException e) {
+>                        throw new InternalError(e.getMessage());
+>                }
+>        }
+>}
+
+The standard java.lang.Class interface does not show the clone() method,
+nor the length field, nor the Cloneable interface.
+We show these, PLUS two other methods:
+
+public <componentType> get(int index) 
+	throws ArrayIndexOutOfBoundsException;
+public void set(int index, <componentType> value) 
+	throws ArrayIndexOutOfBoundsException;
+-------------------------------------------------------
