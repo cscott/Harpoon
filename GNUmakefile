@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.79 2002-07-08 03:54:39 cananian Exp $
+# $Id: GNUmakefile,v 1.80 2002-07-11 19:32:07 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -186,7 +186,7 @@ java:	$(PROPERTIES) out-of-date gj-files
 	@rm -f "##out-of-date##"
 	@touch "##out-of-date##"
 	@if [ -d harpoon -a -x $(firstword ${JCC5}) ]; then \
-	  if [ -n "$(filter $(shell grep -v '^#' gj-files), $(shell cat out-of-date))" ] ; then \
+	  if [ -n "$(firstword $(filter $(shell grep -v '^#' gj-files), $(shell cat out-of-date)))" ] ; then \
 	    echo Building with $(firstword ${JCC5}). ;\
 	    ${JCC5} ${JFLAGS} $(filter $(shell grep -v "^#" gj-files), $(shell cat out-of-date)) ; \
 	  fi \
@@ -199,7 +199,7 @@ java:	$(PROPERTIES) out-of-date gj-files
 	@if [ ! -d harpoon ]; then \
 	  $(MAKE) first; \
 	fi
-	@if [ -n "$(filter-out $(shell grep -v '^#' gj-files), $(shell cat out-of-date))" ] ; then \
+	@if [ -n "$(firstword $(filter-out $(shell grep -v '^#' gj-files), $(shell cat out-of-date)))" ] ; then \
 	  echo Compiling... ; \
 	  ${JCC} ${JFLAGS} $(filter-out $(shell grep -v "^#" gj-files), $(shell cat out-of-date)) ; \
 	fi
@@ -221,7 +221,7 @@ jikes: 	$(PROPERTIES) out-of-date gj-files
 	@rm -f "##out-of-date##"
 	@touch "##out-of-date##"
 	@if [ -d harpoon -a -x $(firstword ${JCC5}) ]; then \
-	  if [ -n "$(filter $(shell grep -v '^#' gj-files), $(shell cat out-of-date))" ] ; then \
+	  if [ -n "$(firstword $(filter $(shell grep -v '^#' gj-files), $(shell cat out-of-date)))" ] ; then \
 	    echo Building with $(firstword ${JCC5}). ;\
 	    ${JCC5} ${JFLAGS} $(filter $(shell grep -v "^#" gj-files), $(shell cat out-of-date)) ; \
 	  fi \
@@ -234,7 +234,7 @@ jikes: 	$(PROPERTIES) out-of-date gj-files
 	@if [ ! -d harpoon ]; then \
 	  $(MAKE) first; \
 	fi
-	@if [ -n "$(filter-out $(shell grep -v '^#' gj-files), $(shell cat out-of-date))" ] ; then \
+	@if [ -n "$(firstword $(filter-out $(shell grep -v '^#' gj-files), $(shell cat out-of-date)))" ] ; then \
 	  echo -n Compiling... "" && \
 	  ${JIKES} ${JFLAGS} $(filter-out $(shell grep -v "^#" gj-files), $(shell cat out-of-date)) && \
 	  echo done. ; \
@@ -482,7 +482,8 @@ wc:
 
 clean:
 	-${RM} -r harpoon silicon gnu Harpoon.jar* harpoon.tgz* \
-		VERSIONS ChangeLog $(MACHINE_GEN) out-of-date
+		VERSIONS ChangeLog $(MACHINE_GEN) \
+		out-of-date "##out-of-date##"
 	-${RM} java `find . -name "*.class"`
 
 polish: clean
