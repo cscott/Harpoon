@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.18 1998-09-02 01:22:47 cananian Exp $
+ * @version $Id: Translate.java,v 1.19 1998-09-02 04:22:15 cananian Exp $
  */
 
 /* State holds state *after* execution of corresponding instr. */
@@ -51,7 +51,7 @@ class Translate  { // not public.
 	    Quad exitBlock;
 	/** Temp to store exit destination instr index in. */
 	    Temp exitTemp;
-	/** Indexed continuation Instrs after close of try/monitor block. */
+	/** Continuation TransStates at exit of try/monitor block. */
 	    Vector continuation;
 	/** Constructor */
 	    BlockContext(Quad eb, Temp et, Vector c) {
@@ -237,106 +237,98 @@ class Translate  { // not public.
 	    // convenience abbreviations of TransState fields.
 	    State s = ts.initialState;
 
-	    // Are we entering a new TRY block?
-	    if (countTry(ts.in, allTries) > s.tryBlock.length) {
-		// determine which try block we're entering
-		ExceptionEntry newTry = whichTry(ts.in, s, allTries);
-		Util.assert(newTry != null);
-		// Make header nodes for new TRY.
-		Quad tryBlock = new HEADER();
-		Quad catchBlock = new HEADER();
-		// Recursively generate tryBlock quads.
-		State ns0 = s.enterTry(newTry);
-		trans(ns0, allTries, ts.in, tryBlock, 0);
-		// Generate catchBlock
-		State ns1 = ns0.enterCatch(new Temp("catch"));
-		trans(ns1, allTries, newTry.handler(), catchBlock, 0);
-		// make quad.
-		Quad q = new TRY(ts.in, tryBlock, catchBlock, 
-				 newTry.caughtException(), ns1.stack[0]);
-		// Link TRY to header.
+	    // Are we entering a new TRY or MONITOR block?
+	    if ((countTry(ts.in, allTries) > s.tryBlock.length) ||
+		(ts.in.getOpcode() == Op.MONITORENTER)) {
+		boolean isMonitor = (ts.in.getOpcode() == Op.MONITORENTER);
+		Quad q; State ns;
+		if (!isMonitor) { // TRY
+		    // determine which try block we're entering
+		    ExceptionEntry newTry = whichTry(ts.in, s, allTries);
+		    Util.assert(newTry != null);
+		    // Make header nodes for new TRY.
+		    Quad tryBlock = new HEADER();
+		    Quad catchBlock = new HEADER();
+		    // Recursively generate tryBlock quads.
+		    ns = s.enterTry(newTry);
+		    trans(ns, allTries, ts.in, tryBlock, 0);
+		    // Generate catchBlock
+		    ns = ns.enterCatch(new Temp("catch"));
+		    trans(ns, allTries, newTry.handler(), catchBlock, 0);
+		    // make quad.
+		    q = new TRY(ts.in, tryBlock, catchBlock, 
+				newTry.caughtException(), ns.stack[0]);
+		} else { // MONITOR
+		    // Make header nodes for block.
+		    Quad monitorBlock = new HEADER();
+		    // Recursively generate monitor quads.
+		    ns = s.enterMonitor().pop();
+		    trans(ns, allTries, ts.in, monitorBlock, 0);
+		    // Make and link MONITOR
+		    q = new MONITOR(ts.in, s.stack[0], monitorBlock);
+		}
+		// Link new TRY/MONITOR quad.
 		Quad.addEdge(ts.header, ts.which_succ, q, 0);
-		// make post-TRY quads.
+
+		// make PHI at exit of TRY/MONITOR
+		ns.nest[0].exitBlock = 
+		    new PHI(ts.in, new Temp[] { ns.nest[0].exitTemp },
+		            ns.nest[0].continuation.size());
+		// make post-block quads.
 		int i;
-		for (i=0; i<ns1.nest[0].continuation.size()-1; i++) {
-		    // if exitTemp==i then goto continuation[i]
-		    Instr dstInstr = 
-			(Instr) ns1.nest[0].continuation.elementAt(i);
-		    Quad q0 = new CONST(dstInstr, new Temp(),
+		for (i=0; i<ns.nest[0].continuation.size(); i++) {
+		    TransState tsi = 
+			(TransState) ns.nest[0].continuation.elementAt(i);
+		    // exitTemp=i; goto exitBlock;
+		    CONST c0 = new CONST(tsi.in, new Temp(ns.nest[0].exitTemp),
 					new Integer(i), HClass.Int);
-		    Quad q1 = new OPER(dstInstr, "icmpeq", new Temp(),
-				       new Temp[] { ns1.nest[0].exitTemp,
+		    Quad.addEdge(tsi.header, tsi.which_succ, c0, 0);
+		    //  jmp
+		    Quad.addEdge(c0, 0, ns.nest[0].exitBlock, i);
+		    ((PHI)ns.nest[0].exitBlock).src[0][i] = c0.dst;
+		    
+		    // different test for final val.
+		    if (i==ns.nest[0].continuation.size()-1)
+			break;
+
+		    // if exitTemp==i then goto continuation[i]
+		    Quad q0 = new CONST(tsi.in, new Temp(),
+					new Integer(i), HClass.Int);
+		    Quad q1 = new OPER(tsi.in, "icmpeq", new Temp(),
+				       new Temp[] { ns.nest[0].exitTemp,
 						    q0.def()[0] });
-		    Quad q2 = new CJMP(dstInstr, q1.def()[0] );
+		    Quad q2 = new CJMP(tsi.in, q1.def()[0] );
 		    Quad.addEdge(q, 0, q0, 0);
 		    Quad.addEdge(q0,0, q1, 0);
 		    Quad.addEdge(q1,0, q2, 0);
 		    TransState nts;
-		    if (i<ns0.nest[0].continuation.size())
-			nts = new TransState(ns0.exitTry(),
-					     dstInstr, q2, 1);
+		    if (isMonitor)
+			nts = new TransState(tsi.initialState.exitMonitor(),
+					     tsi.in, q2, 1);
 		    else
-			nts = new TransState(ns1.exitTry(),
-					     dstInstr, q2, 1);
+			nts = new TransState(tsi.initialState.exitTry(),
+					     tsi.in, q2, 1);
 		    todo.push(nts);
 		    q = q2;
 		}
 		// default branch.
-		Instr dstInstr = (Instr) ns1.nest[0].continuation.elementAt(i);
+		TransState tsi = 
+		    (TransState) ns.nest[0].continuation.elementAt(i);
 		TransState nts;
-		if (i<ns0.nest[0].continuation.size())
-		    nts = new TransState(ns0.exitTry(),
-					 dstInstr, q, 0);
+		if (isMonitor)
+		    nts = new TransState(tsi.initialState.exitMonitor(),
+					 tsi.in, q, 0);
 		else
-		    nts = new TransState(ns1.exitTry(),
-					 dstInstr, q, 0);
+		    nts = new TransState(tsi.initialState.exitTry(),
+					 tsi.in, q, 0);
 		todo.push(nts);
-		continue;
-	    }
-	    // Are we entering a new MONITOR block?
-	    else if (ts.in.getOpcode() == Op.MONITORENTER) {
-		// Make header nodes for block.
-		Quad monitorBlock = new HEADER();
-		// Recursively generate monitor quads.
-		State ns = s.enterMonitor().pop();
-		trans(ns, allTries, ts.in, monitorBlock, 0);
-		// Make and link MONITOR
-		Quad q = new MONITOR(ts.in, s.stack[0], monitorBlock);
-		Quad.addEdge(ts.header, ts.which_succ, q, 0);
-		// FIXME make post-MONITOR quads.
-		int i;
-		for (i=0; i<ns.nest[0].continuation.size()-1; i++) {
-		    // if exitTemp==i then goto continuation[i]
-		    Instr dstInstr = 
-			(Instr) ns.nest[0].continuation.elementAt(i);
-		    Quad q0 = new CONST(dstInstr, new Temp(),
-					new Integer(i), HClass.Int);
-		    Quad q1 = new OPER(dstInstr, "icmpeq", new Temp(),
-				       new Temp[] { ns.nest[0].exitTemp,
-						    q0.def()[0] });
-		    Quad q2 = new CJMP(dstInstr, q1.def()[0] );
-		    Quad.addEdge(q, 0, q0, 0);
-		    Quad.addEdge(q0,0, q1, 0);
-		    Quad.addEdge(q1,0, q2, 0);
-		    todo.push(new TransState(ns.exitMonitor(),
-					     dstInstr, q2, 1));
-		    q = q2;
-		}
-		// default branch.
-		Instr dstInstr = (Instr) ns.nest[0].continuation.elementAt(i);
-		todo.push(new TransState(ns.exitMonitor(), dstInstr, q, 0));
 		continue;
 	    }
 	    // Are we exiting a TRY or MONITOR block?
 	    else if ((!s.tryBlock[0].inTry(ts.in)) ||
 		     (ts.in.getOpcode() == Op.MONITOREXIT)) {
-		// FIXME PHI FUNCTION.
-		Quad q1 = new CONST(ts.in, s.nest[0].exitTemp,
-				    new Integer(s.nest[0].continuation.size()),
-				    HClass.Int);
-		s.nest[0].continuation.addElement(ts.in);
-		Quad q2 = new JMP(ts.in); // to s.exitBlock()
-		// FIXME
+		s.nest[0].continuation.addElement(ts);
+		// we'll fix up this dangling end later.
 		continue;
 	    }
 	    // Are we exiting a CATCH block...
