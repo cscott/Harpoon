@@ -18,7 +18,7 @@ import harpoon.IR.RawClass.ConstantInterfaceMethodref;
  * <code>CONSTANT_InterfaceMethodref</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpMethod.java,v 1.3 2002-02-25 21:04:17 cananian Exp $
+ * @version $Id: OpMethod.java,v 1.4 2002-09-19 20:12:24 cananian Exp $
  * @see harpoon.IR.RawClass.ConstantMethodref
  * @see harpoon.IR.RawClass.ConstantInterfaceMethodref
  */
@@ -45,7 +45,12 @@ public final class OpMethod extends Operand {
     } else 
       throw new Error("OpMethod not given Methodref or InterfaceMethodref");
 
-    HClass cls = parent.linker.forName(cc.name().replace('/','.'));
+    // jikes is very sketchy: they invoke methods of arrays, so cc.name()
+    // may start with a '[', in which case treat cc.name() as a descriptor
+    // instead of a funny form of /-delimited class name.
+    HClass cls = cc.name().charAt(0)=='[' ?
+	parent.linker.forDescriptor(cc.name()) :
+	parent.linker.forDescriptor("L"+cc.name()+";");
     this.hmethod = cls.getMethod(cnt.name(), cnt.descriptor());
   }
   /** Return the method referenced by this operand. */
