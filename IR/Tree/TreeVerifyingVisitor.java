@@ -21,7 +21,7 @@ import java.util.HashSet;
  * violation of the invariant.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: TreeVerifyingVisitor.java,v 1.1.2.3 2000-01-29 01:27:28 pnkfelix Exp $
+ * @version $Id: TreeVerifyingVisitor.java,v 1.1.2.4 2000-01-30 17:11:53 pnkfelix Exp $
  */
 public abstract class TreeVerifyingVisitor extends TreeVisitor {
     
@@ -31,7 +31,6 @@ public abstract class TreeVerifyingVisitor extends TreeVisitor {
     
 
     public static TreeVerifyingVisitor norepeats() {
-	Util.assert(false);
 	return new NoRepeats();
     }
 
