@@ -3,6 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
+import harpoon.Util.Default;
+import harpoon.Util.Default.PairList;
+
 import java.lang.ref.WeakReference;
 import java.util.AbstractSet;
 import java.util.Collection;
@@ -17,7 +20,7 @@ import java.util.WeakHashMap;
  * also fast.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentSetFactory.java,v 1.1 2003-06-11 03:05:42 cananian Exp $
+ * @version $Id: PersistentSetFactory.java,v 1.2 2003-06-14 20:44:42 cananian Exp $
  */
 public class PersistentSetFactory<T> extends SetFactory<T> {
     final Allocator<T> allocator = new Allocator<T>();
@@ -86,6 +89,15 @@ public class PersistentSetFactory<T> extends SetFactory<T> {
 	    } else // slow case
 		return super.addAll(c);
 	}
+	public <V> boolean containsAll(Collection<V> c) {
+	    // special fast case for sets from the same factory
+	    // sets from the same factory can be compared very quickly
+	    if (c instanceof SetImpl &&
+		factory() == ((SetImpl)c).factory())
+		return containsAll(this.root, ((SetImpl)c).root);
+	    else // slow case
+		return super.containsAll(c);
+	}
 	public Iterator<T> iterator() {
 	    final Iterator<Node<T>> it = Node.iterator(root);
 	    return new Iterator<T>() {
@@ -103,7 +115,42 @@ public class PersistentSetFactory<T> extends SetFactory<T> {
 		}
 	    };
 	}
-	// XXX fast impl of 'containsAll()' ?
+	// fast implementation of containsAll
+	/** Returns true iff the <code>container</code> tree contains all
+	 *  elements in the <code>subset</code> tree. */
+	boolean containsAll(Node<T> container, Node<T> subset) {
+	    if (subset==null || container==subset) return true;
+	    if (container==null) return false; // subset not null.
+	    assert container!=null && subset!=null;
+	    assert container!=subset; // needed for next test to be correct
+	    if (subset.size >= container.size) return false; // pigeonhole
+	    int cmp = comparator.compare(container.key, subset.key);
+	    if (cmp==0)
+		return containsAll(container.left, subset.left) &&
+		    containsAll(container.right, subset.right);
+	    PairList<Node<T>,Node<T>> pair =
+		removeAndSplit(subset, container.key);
+	    return containsAll(container.left, pair.left()) &&
+		containsAll(container.right, pair.right());
+	}
+	PairList<Node<T>,Node<T>> removeAndSplit(Node<T> node, T key) {
+	    int cmp = comparator.compare(node.key, key);
+	    if (cmp==0)
+		return new PairList<Node<T>,Node<T>>(node.left, node.right);
+	    if (cmp <0) {
+		PairList<Node<T>,Node<T>> pair=removeAndSplit(node.right, key);
+		return new PairList<Node<T>,Node<T>>
+		    (allocator.newNode(node.key, node.getValue(),
+				       node.left, pair.left()),
+		     pair.right());
+	    } else {
+		PairList<Node<T>,Node<T>> pair=removeAndSplit(node.left, key);
+		return new PairList<Node<T>,Node<T>>
+		    (pair.left(),
+		     allocator.newNode(node.key, node.getValue(),
+				       pair.right(), node.right));
+	    }
+	}
     }
     // PersistentTreeNode subclass
     private static class Node<T>
