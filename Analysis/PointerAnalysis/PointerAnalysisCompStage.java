@@ -57,7 +57,7 @@ import java.io.InputStreamReader;
  * <code>PointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysisCompStage.java,v 1.5 2003-06-04 18:44:32 salcianu Exp $
+ * @version $Id: PointerAnalysisCompStage.java,v 1.6 2003-10-26 16:41:19 salcianu Exp $
  */
 public class PointerAnalysisCompStage extends CompilerStageEZ {
 
@@ -191,7 +191,7 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     private boolean SAVE_PRE_ANALYSIS = false;
     private String preAnalysisFileName = null;
     
-    // by defult, use the SmartCallGraph
+    // by default, use the SmartCallGraph
     private boolean SMART_CALL_GRAPH  = true;
     
     private boolean TIMING = false;
