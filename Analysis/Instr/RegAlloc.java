@@ -6,10 +6,15 @@ package harpoon.Analysis.Instr;
 import harpoon.Temp.Temp;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Properties.UseDef;
+import harpoon.IR.Properties.Edges;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Analysis.UseMap;
 import harpoon.Analysis.DataFlow.BasicBlock;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HMethod;
 
 import java.util.Hashtable;
 import java.util.Set;
@@ -19,19 +24,23 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 
+
 /**
- * <code>RegAlloc</code> performs Demand-Driven Register Allocation
- * for a set of <code>Instr</code>s in a <code>Code</code>.
+ * <code>RegAlloc</code> performs Register Allocation for a set of
+ * <code>Instr</code>s in a <code>Code</code>.  After register
+ * allocation is completed for a set of <code>Instr</code>s, the only
+ * references to non-register <code>Temp</code>s in the
+ * <code>Instr</code>s will be <code>InstrMEM</code> instructions to
+ * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.2 1999-04-05 21:08:37 pnkfelix Exp $ */
-public class RegAlloc  {
+ * @version $Id: RegAlloc.java,v 1.1.2.3 1999-04-20 19:02:13 pnkfelix Exp $ */
+public abstract class RegAlloc  {
     
-    Frame frame;
-    Code code;
+    protected Frame frame;
+    protected Code code;
+    protected BasicBlock rootBlock;
 
-    UseMap uses;
-    
     /** Creates a <code>RegAlloc</code>. 
 	
 	<BR> <B>Design Issue:</B> should there be a RegAlloc object for every
@@ -39,204 +48,81 @@ public class RegAlloc  {
 	associating a new one with every method will save a lot of
 	headaches.
 
-	<BR> <B>requires:</B> Local register allocation has been run
-	                      on <code>code</code> already .
     */
-    public RegAlloc(Frame frame, Code code) {
+    protected RegAlloc(Frame frame, Code code) {
         this.frame = frame;
 	this.code = code;
-	uses = new UseMap( code );
+	Edges first = (Edges) code.getRootElement();
+	rootBlock = BasicBlock.computeBasicBlocks(first);
     }
     
-    /* procedure for register allocation for a procedure (taken from
-       Demand-Driven Register Allocation):
-       
-       1. Do local allocation for all basic blocks in the procedure.
-       2. For all loops, l. in the procedure, from innermost to
-          outermost do the following: 
-          (a) Attempt to remove loads in l: 
-	      i.   Compute delta-estimates for all instructions in the
-	           loop (with ComputeDeltas() ).
-	      ii.  For each load of a register candidate in the loop,
-	           estimate the chance that the value will reach the
-		   load in a register.  This is the product of all the
-		   delta-estimates for that candidate in the load's
-		   register-live-range.  
-	      iii. If no loads have an estimate greater than 0, then
-	           quit processing loads.
-	      iv.  Otherwise, remove the load with the greatest figure
-	           of merit, and allocate the candidate a register
-		   across its entire register-live-range.  (This may
-		   require putting a load in the loop's preheader.)
-	  (b) Attempt to remove stores in l:
-	      i.   Compute delta-estimates for all instructions in the
-	           loop (with ComputeDeltas() ).
-	      ii.  For each store of a register candidate in the loop,
-	           estimate the chance that the stored value will
-		   reach *all* remaining reachable loads in l, and
-		   those postexits in which the value is live in a
-		   register.  This is the product of all the
-		   delta-estimates for that candidate along all paths
-		   to these loads and postexits.
-	      iii. If no stores have an estimate greater than 0, then
-	           quit processing stores.
-	      iv.  Otherwise, remove the store with the greatest
-	           figure of merit, and allocate the candidate a
-		   register along all paths to the postexits.  This
-		   requires putting stores in the loop's postexits.
-       3. Remove loads that are not in any loop (Use techniques
-          described in (2a) above.)
-       4. Remove stores that are not in any loop (Use techniques
-          described in (2b) above).
-       5. Assign registers to all candidates allocated registers using
-          the Graph Coloring Framework.
+    /** Assigns registers in the code for <code>this</code>.
+	
+	<BR> <B>effects:</B> Partially or completely allocates
+	     registers for the values defined and used in the code for
+	     <code>this</code>.  Values will be preserved in the code;
+	     any live value will be stored before its assigned
+	     register is overwritten.
+    */
+    protected abstract Code generateRegAssignment();
+
+    
+    /** Returns the root of the <code>BasicBlock</code> hierarchy for
+	the <code>Code</code> associated with <code>this</code>.
+    */
+    protected BasicBlock getBasicBlocks() {
+	return rootBlock;
+    }
+
+
+    /** Creates a register-allocating <code>HCodeFactory</code> for
+	"instr" form.
+	<BR> <B>requires:</B> <code>parentFactory</code> produces code
+	     in a derivative of "instr" form.
+	<BR> <B>effects:</B> Produces an <code>HCodeFactory</code>
+	     which allocates registers in the code produced by
+	     <code>parentFactory</code> using the machine properties
+	     specified in <code>frame</code>.
+
+	<BR> <B>DESIGN NOTE:</B> This method relies on the subclasses
+	     of <code>RegAlloc</code> to perform actual allocation.
+	     This causes a cycle in our module dependency graph,
+	     which, while not strictly illegal, tends to be a sign of
+	     a design flaw. Consider moving the code factory generator
+	     out of the <code>RegAlloc</code> class into a seperate
+	     class to get rid of the cycle.  In the meantime, any new
+	     <code>RegAlloc</code> subclasses can be incorporated into
+	     this method to be used in the compiler.
+     */
+    public static HCodeFactory codeFactory(final HCodeFactory parentFactory, 
+					   final Frame frame) {
+	return new HCodeFactory() {
+	    HCodeFactory parent = parentFactory;
+	    Frame f = frame;
+	    public HCode convert(HMethod m) {
+		HCode preAllocCode = parent.convert(m);
+		LocalCffRegAlloc localCode = 
+		    new LocalCffRegAlloc(frame, (Code) preAllocCode);
+		DemandDrivenRegAlloc globalCode =
+		    new DemandDrivenRegAlloc
+		    (frame, localCode.generateRegAssignment());		
+		return globalCode.generateRegAssignment();
+	    }
+	    public String getCodeName() {
+		return parent.getCodeName();
+	    }
+	    public void clear(HMethod m) {
+		parent.clear(m);
+	    }
+	};
+    }
+
+    /** Checks if <code>t</code> is a register (Helper method).
+	<BR> <B>effects:</B> If <code>t</code> is a register for the
+	     <code>frame</code> associated with <code>this</code>,
+	     then returns true.  Else returns false.   
     */ 
-
-    /** Delta computing function. Taken from the paper "Demand-Driven
-	Register Allocation." 
-	<BR> <B>requires:</B> <code>BasicBlock</code> is a set of
-	      <code>Instr</code>s. 
-	<BR> <B>effects:</B> returns a 
-	Map[TempInstrPair, Double] mapping 
-	(instr x temp) -> deltaValue
-    */
-    private Map computeDeltas(BasicBlock block) {
-	// initialize configuration
-	
-	// Set of { variables allocated registers entering block };
-	// before global allocation begins, allocated will be empty
-	// here.
-	Set allocated = new HashSet(); 
-
-	// Set of { live variables entering block } - allocated
-	Set candidates = new HashSet();
-	
-	// Min( NumRegisters - |allocated|, |candidates| )
-	int possibly = (frame.getGeneralRegisters().length - 
-			allocated.size() < candidates.size()) ?
-	    frame.getGeneralRegisters().length - allocated.size() :
-	    candidates.size();
-	
-	// NumRegisters - ( |allocated| + possibly )
-	int unallocated = frame.getGeneralRegisters().length - 
-	    (allocated.size() + possibly);
-	
-
-	// *** Implementation Specific local variables *** 
-	Map regXinstrToValueMap = new HashMap();
-	
-
-	// Iterate over instructions in order 
-	
-        ListIterator instrs = block.listIterator();
-	while(instrs.hasNext()) { 
-	    Instr instr = (Instr) instrs.next();
-	    double delta;
-
-
-	    { // BELOW: Last use of a register frees it
-		Vector vec = new Vector(); 
-		for (int i=0; i<instr.use().length; i++) {
-		    if (isTempRegister(instr.use()[i]) &&  
-			lastUse( instr.use()[i], instr, instrs)){ 
-			vec.addElement(instr.use()[i]);
-		    }
-		}
-		Temp[] tmpUses = new Temp[vec.size()];
-		vec.copyInto(tmpUses);
-		// for all f of { registers freed by instr }
-		for (int i=0;i<tmpUses.length;i++) { 
-		    Temp f = tmpUses[i];
-		    Temp t= (Temp) 
-			regXinstrToValueMap.get
-			(new TempInstrPair(instr, f)) ; // Let v be value held in f
-		    if (t != null) {
-			allocated.remove(t);
-			if(true) { // if t is a live variable
-			    candidates.add(t);
-			    possibly++;
-			} else {
-			    unallocated++;
-			}
-		    } else {
-			unallocated++;
-		    }
-		}
-	    }
-
-
-	    { // BELOW: First use of a register allocates it
-		if (true) { // if instr allocated r, a register 
-		    Temp v=null; // Let v be value held in r
-		    allocated.add(v);
-		    if (true) { // if v holds the value of variable (ie not a Temporary) 
-			candidates.remove(v);
-		    }
-		    if (possibly > candidates.size() ) {
-			// Only occurs when possibly == |candidates| prior
-			// to satisfying preceding conditional
-			delta = 1.0;
-			possibly--;
-		    } else if (unallocated > 0) {
-			// Allocating an empty register cannot kill
-			// anything
-			delta = 1.0;
-			unallocated--;
-		    } else {
-			delta = ((double)(possibly-1)) /
-			    ((double)possibly);
-			possibly--;
-		    }
-		} else {
-		    delta = 1.0;
-		}
-	    }
-	    
-	    for (;;) { // for all v elem candidates
-		// deltaTable[instr][v] = delta
-	    }
-	}
-
-	return null;
-
-    }	    
-
-    /** TempInstrPair is a data structure that uniquely
-	associates an Instr with a Temp.
-    */
-    class TempInstrPair {
-	Temp t;
-	Instr i;
-	TempInstrPair(Instr i, Temp t) {
-	    this.i = i;
-	    this.t = t;
-	}
-	public boolean equals(Object o) {
-	    return (o instanceof TempInstrPair && 
-		    ((TempInstrPair)o).t.equals(this.t) &&
-		    ((TempInstrPair)o).i.equals(this.i));
-	}
-	public int hashCode() {
-	    return i.hashCode();
-	}
-    }
-    
-
-    private static boolean contained(Object[] array, Object o) {
-	boolean yes = false;
-	for (int i=0; i<array.length; i++) {
-	    if (array[i] == o) {
-		yes = true;
-		break;
-	    }
-	}
-	return yes;
-    }
-
-    /** Checks if <code>t</code> is a register for the
-	<code>frame</code> associated with <code>this</code>.
-    */
-    private boolean isTempRegister(Temp t) {
+    protected boolean isTempRegister(Temp t) {
 	Temp[] allRegs = frame.getAllRegisters();
 	boolean itIs = false;
 	for (int i=0; i < allRegs.length; i++) {
@@ -252,16 +138,17 @@ public class RegAlloc  {
 	the block of instructions lists in <code>iter</code>.  
 	
 	<BR> <B>requires:</B> 
-	1. <code>i</code> is an element in <code>iter</code>
-	2. <code>iter</code> is currently indexed at <code>i</code>
-	3. <code>reg</code> is used by <code>i</code>
-	<BR> <B>effects:</B>
-	Returns true if no instruction after <code>i</code> in
-	<code>iter</code> uses <code>reg</code> before 
-	<code>reg</code> is redefined (<code>i</code> redefining
-	<code>reg</code> is sufficient).  Else returns false.
+	     1. <code>i</code> is an element in <code>iter</code> 
+	     2. <code>iter</code> is currently indexed at
+	        <code>i</code> 
+	     3. <code>reg</code> is used by <code>i</code>
+	<BR> <B>effects:</B> Returns true if no instruction after
+	     <code>i</code> in <code>iter</code> uses <code>reg</code>
+	     before <code>reg</code> is redefined (<code>i</code>
+	     redefining <code>reg</code> is sufficient).  Else returns
+	     false.  
     */
-    private boolean lastUse(Temp reg, UseDef i, ListIterator iter) {
+    protected boolean lastUse(Temp reg, UseDef i, ListIterator iter) {
 	int index = 0;
 	UseDef curr = i;
 	boolean r = true;
@@ -277,13 +164,18 @@ public class RegAlloc  {
 	    iter.previous();
 	}
 	return r;
+    } 
+
+    private static boolean contained(Object[] array, Object o) {
+	boolean yes = false;
+	for (int i=0; i<array.length; i++) {
+	    if (array[i] == o) {
+		yes = true;
+		break;
+	    }
+	}
+	return yes;
     }
-    
-    
-
-
-
-
-
+   
 }
 
