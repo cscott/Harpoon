@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.65 1999-08-18 16:05:26 cananian Exp $
+% $Id: thesis.tex,v 1.66 1999-08-18 16:40:09 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -30,14 +30,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.65 $ $}
+\date{\today \\ $ $Revision: 1.66 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.65 $ $}{$ $Revision: 1.65 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.66 $ $}{$ $Revision: 1.66 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -891,7 +891,7 @@ SCC/SSA: $O(N+U_{SSA})$, by the same argument as before.
 The first simple extension of the SCC value lattice enables us to
 represent floating-point and other values.  For this work, we extended
 the domain to cover the full type system of Java bytecode
-\cite{javabytecode}; the extended lattice is presented in figure
+\cite{gosling95:bytecode}; the extended lattice is presented in figure
 \ref{fig:scclat2}.
 The figure also introduces the abbreviated lattice notation we will use
 through the following sections; it is understood that the

@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.55 1999-08-17 16:39:21 cananian Exp $
+% $Id: harpoon.bib,v 1.56 1999-08-18 16:40:09 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -11,6 +11,10 @@
                   international conference on Supercomputing"}
 @string{PLDI90 = "Proceedings of the {ACM} {SIGPLAN} '90 Conference on
                   Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI91 = "Proceedings of the {ACM} {SIGPLAN} '91 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI92 = "Proceedings of the {ACM} {SIGPLAN} '92 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
 @string{PLDI93 = "Proceedings of the {ACM} {SIGPLAN} '93 Conference on
                   Programming Language Design and Implementation ({PLDI})"}
 @string{PLDI94 = "Proceedings of the {ACM} {SIGPLAN} '94 Conference on
@@ -20,6 +24,8 @@
 @string{PLDI96 = "Proceedings of the {ACM} {SIGPLAN} '96 Conference on
                   Programming Language Design and Implementation ({PLDI})"}
 @string{PLDI97 = "Proceedings of the {ACM} {SIGPLAN} '97 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI98 = "Proceedings of the {ACM} {SIGPLAN} '98 Conference on
                   Programming Language Design and Implementation ({PLDI})"}
 @string{POPL88 = "Proceedings of the 15th {ACM} Symposium on Principles
                   of Programming Languages ({POPL})"}
@@ -55,6 +61,8 @@
 @string{EUROCRYPT97 = "Proc.\ {EUROCRYPT} 97"}
 @string{MICRO30 = "{MICRO} 30. Proceedings of the thirtieth annual {IEEE/ACM}
                    international symposium on Microarchitecture"}
+@string{IR95 = "Papers of the First {ACM} {SIGPLAN} workshop on
+                Intermediate Representations"}
 
 % papers read.
 
@@ -249,8 +257,8 @@
 @InProceedings{click95:IR,
   author =       {Cliff Click and Michael Paleczny},
   title =        "A Simple Graph-Based Intermediate Representation",
-  booktitle =    "The First {ACM} {SIGPLAN} Workshop on Intermediate
-                 Representations",
+  booktitle =    IR95,
+  pages =        {35-49},
   address =      {San Francisco, California},
   month =        jan,
   year =         "1995",
@@ -1313,6 +1321,18 @@
   publisher = 	 {Addison-Wesley},
   year = 	 1988,
   note =	 {The ``Dragon Book''}
+}
+
+@InProceedings{gosling95:bytecode,
+  author = 	 {James Gosling},
+  title = 	 {Java intermediate bytecodes},
+  booktitle = 	 IR95,
+  pages =	 {111-118},
+  year =	 1995,
+  address =	 {San Francisco, California},
+  month =	 jan,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/plan/202529/p111-gosling/},
+  annote =	 {Description of the design of the Java bytecode IR.}
 }
 
 %%%% Misc.
