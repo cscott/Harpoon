@@ -2,6 +2,7 @@ Research ideas:
  - java car... use single unified language for uC programming and
                simple fpga hdl for vision processing or somesuch.
                [get names & details from martin]
+ - write once, run anywhere on hardware?
  - interesting hardware backends:
     -- synchronous:
        fpgas
@@ -9,6 +10,7 @@ Research ideas:
     -- asynchronous:
        four-phase, two-phase, one-phase
        superconducting logic, based on josephson junctions.
+    -- RAW??
     REFERENCES!
  - type analysis interesting in itself?
  - bitwidth analysis to construct specialized dsp/processor cores?
