@@ -42,7 +42,7 @@ import java.util.Set;
  * <code>AllocationHoisting</code>
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: AllocationHoisting.java,v 1.3 2002-02-26 22:41:31 cananian Exp $
+ * @version $Id: AllocationHoisting.java,v 1.4 2002-02-28 00:55:30 kkz Exp $
  */
 public class AllocationHoisting extends 
     harpoon.Analysis.Transformation.MethodSplitter {
@@ -278,10 +278,14 @@ public class AllocationHoisting extends
     private void setupiMap(String rName) {
 	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
-	    // only consifer methods where the receiver
-	    // object is always the most recently allocated 
-	    // object entering the method
-	    if (!mraf.isSafeMethod(hm)) continue;
+	    // only consider initializers whose receiver
+	    // is always the most recently allocated object
+	    // on entry to the initializer
+	    if (!hm.getName().equals("<init>") ||
+		hm.getDeclaringClass().getName().startsWith("java.") ||
+		hm.getDeclaringClass().getName().startsWith("sun.") ||
+		!mraf.isSafeMethod(hm))
+		continue;
 	    Code c = (Code) parent.convert(hm);
 	    // start with the beginning of the executable code
 	    Quad q = ((HEADER)c.getRootElement()).method().next(0);
@@ -313,6 +317,7 @@ public class AllocationHoisting extends
 		    Quad alloc = (Quad) t.proj(2);
 		    if (alloc.kind() == QuadKind.NEW) {
 			iMap.put(hm, new Tuple(new Object[] { alloc }));
+			System.out.println(c.getMethod()+" is optimizable.\n");
 			// done with this initializer
 			break;
 		    } else {
@@ -335,6 +340,7 @@ public class AllocationHoisting extends
 			if (valid) {
 			    iMap.put(hm, new Tuple(new Object[] 
 						   { alloc, consts }));
+			    System.out.println(c.getMethod()+" is optimizable.\n");
 			    // done w/ this method
 			    break;
 			}
@@ -347,6 +353,7 @@ public class AllocationHoisting extends
     /** Checks whether the given <code>Code</code> can benefit
      *  from the transformation.
      */
+    /*
     private boolean optimizable(Code c) {
 	// only worry about safe initializers
 	if (!mraf.isSafeMethod(c.getMethod())) return false;
@@ -397,6 +404,8 @@ public class AllocationHoisting extends
 	}
 	return false;
     }
+    */
+
     /** Check the validity of a given <code>MethodSplitter.Token</code>.
      */
     protected boolean isValidToken(Token which) {

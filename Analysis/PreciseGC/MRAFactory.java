@@ -64,7 +64,7 @@ import java.util.Set;
  * <code>MRAFactory</code> generates <code>MRA</code>s.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: MRAFactory.java,v 1.3 2002-02-26 22:41:32 cananian Exp $
+ * @version $Id: MRAFactory.java,v 1.4 2002-02-28 00:55:30 kkz Exp $
  */
 public class MRAFactory {
     
@@ -95,9 +95,9 @@ public class MRAFactory {
 	this.cache = new HashMap();
 	this.method2types = 
 	    (optLevel == 2 || optLevel == 3)? dynamicDispatchM2TMap(l, rName): 
-	    (optLevel == 4 || optLevel == 5)? createMethod2TypesMap(l, rName):
-	    new HashMap();
-	if (optLevel == 2 || optLevel == 4 || optLevel == 6)
+	    (optLevel == 4 || optLevel == 5 || optLevel == 7) ? 
+	    createMethod2TypesMap(l, rName): new HashMap();
+	if (optLevel == 2 || optLevel == 4 || optLevel == 6 || optLevel == 7)
 	    findSafeMethods();
 	else
 	    safeMethods = Collections.EMPTY_SET;
@@ -259,6 +259,12 @@ public class MRAFactory {
 	    HMethod hm = (HMethod) it.next();
 	    Code c = (Code) hcf.convert(hm);
 	    if (c != null) {
+		/*
+		if (hm.getName().equals("createTree")) {
+		    c.print(new java.io.PrintWriter(System.out), null);
+		    System.exit(1);
+		}
+		*/
 		Set cls = new HashSet();
 		safe.put(hm, cls);
 		for (Iterator stms = c.getElementsI(); stms.hasNext(); ) {
