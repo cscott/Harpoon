@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <fcntl.h> /* for O_RDWR, O_RDONLY */
 #include <unistd.h>
 #include <stdlib.h> /* for malloc */
 #include "flexthread.h" /* for mutex ops */
@@ -60,24 +61,60 @@ JNIEXPORT jboolean JNICALL Java_java_io_File_exists0(JNIEnv *env, jobject this) 
     return ((jboolean)1);
 }
 
-#if 0
 /*
  * Class:     java_io_File
  * Method:    canWrite0
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_java_io_File_canWrite0
-  (JNIEnv *, jobject);
+JNIEXPORT jboolean JNICALL Java_java_io_File_canWrite0(JNIEnv *env, jobject this) {
+  /* lazy strategy borrowed from classpath: open the file for writing to
+   * verify that it can be done. Problem: without O_CREAT the call will
+   * fail if the file doesn't exist, even if it could be opened for
+   * writing.  Look for ENOENT and retry in that case? */
+  jobject jstr;
+  const char * cstr;    
+  int fd;
+  
+  if (!inited && !initializeFI(env)) return 0; /* exception occurred; bail */
+  
+  jstr=(*env)->GetObjectField(env, this, pathID);
+  cstr=(*env)->GetStringUTFChars(env,jstr,0);
+  fd = open(cstr, O_RDWR);
+  (*env)->ReleaseStringUTFChars(env,jstr,cstr);
+
+  if (fd==-1) {
+    if (errno==ENOENT) printf("WARNING: canWrite0 may return wrong info\n");
+    return JNI_FALSE; /* couldn't open the file */
+  }
+  close(fd);
+  return JNI_TRUE;
+}
 
 /*
  * Class:     java_io_File
  * Method:    canRead0
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_java_io_File_canRead0
-  (JNIEnv *, jobject);
+JNIEXPORT jboolean JNICALL Java_java_io_File_canRead0(JNIEnv *env, jobject this) {
+  /* lazy strategy borrowed from classpath: open the file for reading to
+   * verify that it can be done. */
+  jobject jstr;
+  const char * cstr;    
+  int fd;
+  
+  if (!inited && !initializeFI(env)) return 0; /* exception occurred; bail */
+  
+  jstr=(*env)->GetObjectField(env, this, pathID);
+  cstr=(*env)->GetStringUTFChars(env,jstr,0);
+  fd = open(cstr, O_RDONLY);
+  (*env)->ReleaseStringUTFChars(env,jstr,cstr);
 
-#endif
+  if (fd==-1)
+    return JNI_FALSE; /* couldn't open the file */
+  close(fd);
+  return JNI_TRUE;
+}
+
 /*
  * Class:     java_io_File
  * Method:    isFile0
