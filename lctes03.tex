@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.22 2003-04-26 00:04:34 cananian Exp $
+% $Id: lctes03.tex,v 1.23 2003-04-26 00:51:03 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % lctes03.tex
 % Data Size Optimizations for Java Programs
@@ -707,33 +707,30 @@ in the next section.
 \subsection{Profiling Mostly-Constant Fields}
 \begin{table*}[t]
 \centering\small
-\begin{tabular}{llrc}
-%              &          &\bf field & \\
-\bf Benchmark &\bf field &\bf alloc'n &\bf \% zero \\ \hline
-compress   & Hashtable\$Entry.next & 7k & 49.7\% \\
-           & String.offset & 3k & 90.9\% \\
-jess       & jess.Token.negcnt & 7,396k & 100.0\% \\
-           & jess.Value.floatval & 9,937k & 55.9\% \\
-raytrace   & Point.z & 17,043k & 23.5\% \\
-           & Point.x & 17,095k & 18.8\% \\
-db         & String.offset & 497k & 99.9\% \\
-           & Vector.capacityIncrement & 61k & 100.0\% \\
-javac      & String.offset & 3,757k & 97.1\% \\
+\begin{tabular}{llrcrrr}
+              &     &\bf always-zero&&\bf field bytes&\bf zero&\bf benchmark\\
+\bf Benchmark &\bf Field &\bf bytes &&\bf dyn. alloc'd & \bf \% & \bf total
+dyn. alloc'n\\
+\hline
+compress   & Hashtable\$Entry.next & 3,552 &/& 7,148 & 49.7\% & 105MB\\
+           & String.offset & 3,180 &/& 3,500 & 90.9\% \\
+jess       & jess.Token.negcnt & 7,573,616 &/& 7,573,616 & 100.0\% & 252MB\\
+           & jess.Value.floatval & 5,688,080 &/& 10,170,640 & 55.9\% \\
+raytrace   & Point.z & 4,101,328 &/& 17,464,188 & 23.5\% & 126MB\\
+           & Point.x & 3,291,076 &/& 17,464,188 & 18.8\% \\
+db         & String.offset & 508,204 &/& 508,524 & 99.9\% & 73MB\\
+           & Vector.capacityIncrement & 62,548 &/& 62,548 & 100.0\% \\
+javac      & String.offset & 3,735,388 &/& 3,847,816 & 97.1\% & 161MB\\
 % missing one here
-           & Statement.labels & 565k & 100.0\% \\
-mpegaudio  & Hashtable\$Entry.next & 7,335k & 49.3\% \\
-           & String.offset & 3k & 88.0\% \\
-%mtrt       & Point.z & 17,066k & 23.5\% \\
-%           & Point.x & 17,123k & 18.8\% \\
-jack       & String.offset & 7,269k & 100.0\% \\
-           & Hashtable\$Enumerator.type & 5,164k & 100.0\% \\
+           & Statement.labels & 578,608 &/& 578,688 & 100.0\% \\
+mpegaudio  & Hashtable\$Entry.next & 3,616 &/& 7,336 & 49.3\% & 666kB\\
+           & String.offset & 2,352 &/& 2,672 & 88.0\% \\
+%mtrt       & Point.z & 4,106,728 &/& 17,846,808 & 23.0\% & 132MB\\
+%           & Point.x & 3,296,476 &/& 17,846,808 & 18.5\% \\
+jack       & String.offset & 7,442,956 &/& 7,443,276 & 100.0\% & 178MB\\
+           & Hashtable\$Enumerator.type & 5,288,364 &/& 5,288,364 & 100.0\% \\
 \end{tabular}
-\caption{Representative ``mostly-zero'' fields found in SPEC
-           benchmarks.
-%  Allocation numbers represent the number of
-%           dynamically allocated bytes directly due to the specified
-%           field.
-}
+\caption{Representative ``mostly-zero'' fields found in SPEC benchmarks.}
 \label{tab:mostly-zero}
 \end{table*}
 To inform the static specialization and field externalization
