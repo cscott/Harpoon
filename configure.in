@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.61 $)dnl
+AC_REVISION($Revision: 1.62 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -94,6 +94,8 @@ AC_CHECK_FUNCS(select, ,AC_MSG_ERROR([select() not found]))
 AC_CHECK_FUNCS(nanosleep usleep sleep) dnl find some sleep function.
  dnl needed to set java properties, but not always available:
 AC_CHECK_FUNCS(uname getcwd)
+ dnl emmett's environment doesn't support fsync.
+AC_CHECK_FUNCS(fsync) dnl used in java.io.FileDescriptor.sync() impl
 
 dnl process option for 'precise c' backend.
 AC_MSG_CHECKING([precise c backend])

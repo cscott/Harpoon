@@ -71,13 +71,18 @@ JNIEXPORT jboolean JNICALL Java_java_io_FileDescriptor_valid
  */
 JNIEXPORT void JNICALL Java_java_io_FileDescriptor_sync
 (JNIEnv * env, jobject obj) { 
-    int    fd;
+    int    fd, status;
     jclass SFExcCls;  /* SyncFailedException class */
     
     if (!inited && !initializeFD(env)) return; /* exception occurred; bail */
     
     fd = Java_java_io_FileDescriptor_getfd(env, obj);
-    if (fsync(fd) < 0) { /* An error has occured */
+#ifdef HAVE_FSYNC
+    status = fsync(fd);
+#else
+    status = -1; /* we don't have fsync; this method will always fail. */
+#endif
+    if (status < 0) { /* An error has occured */
 	SFExcCls = (*env)->FindClass(env, "java/io/SyncFailedException");
 	if (SFExcCls == NULL) { return; /* Give up */ }
 	(*env)->ThrowNew(env, SFExcCls, strerror(errno));
