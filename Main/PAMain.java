@@ -83,7 +83,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.85 2000-11-14 00:57:56 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.86 2000-11-16 00:02:01 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -546,6 +546,10 @@ public abstract class PAMain {
 	    case 'm':
 		SMART_CALL_GRAPH = false;
 		METAMETHODS = true;
+		break;
+	    case 'd':
+		SMART_CALL_GRAPH = false;
+		METAMETHODS = false;
 		break;
 	    case 's':
 		METAMETHODS = false;
