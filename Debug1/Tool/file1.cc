@@ -40,7 +40,6 @@ int main(int argc, char **argv)
 {
   ptr=createdisk();
 
-
   for(int i=0;i<MAXFILES;i++)
     files[i].used=false;
 

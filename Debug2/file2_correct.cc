@@ -240,6 +240,7 @@ void createlink(struct block *ptr, char *filename, char *linkname)
 	      int inode=db->entries[j].inodenumber;
 	      struct InodeTable * itb=(struct InodeTable *) &ptr[itbptr];
 	      itb->entries[inode].referencecount++;
+	      addtode(ptr, inode, linkname);
 	    }
     }
 }

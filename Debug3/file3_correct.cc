@@ -40,6 +40,7 @@ int main(int argc, char **argv)
 {
   ptr=createdisk();
 
+
   for(int i=0;i<MAXFILES;i++)
     files[i].used=false;
 
@@ -240,6 +241,7 @@ void createlink(struct block *ptr, char *filename, char *linkname)
 	      int inode=db->entries[j].inodenumber;
 	      struct InodeTable * itb=(struct InodeTable *) &ptr[itbptr];
 	      itb->entries[inode].referencecount++;
+	      addtode(ptr, inode, linkname);
 	    }
     }
 }
@@ -371,7 +373,6 @@ void printfile(char *filename, struct block *ptr)
     for(int j=0;j<BLOCKSIZE/DIRECTORYENTRYSIZE;j++) {
       if (db->entries[j].name[0]!=0) {
 	if(strcmp(filename,db->entries[j].name)==0) {
-	  /* Found file */
 	  int inode=db->entries[j].inodenumber;
 
 	  struct InodeTable * itb=(struct InodeTable *) &ptr[itbptr];

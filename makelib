@@ -1,0 +1,17 @@
+ #!/bin/bash
+rm libchecker.a
+
+mv file.cc file.bak
+mv danfile.cc danfile.bak
+
+g++ -Wno-deprecated -g -O0 -c *.cc
+gcc -Wno-deprecated -g -O0 -c *.c
+
+rm danfile.o
+rm file.o
+
+ar -r libchecker.a *.o
+ranlib libchecker.a
+
+mv file.bak file.cc
+mv danfile.bak danfile.cc

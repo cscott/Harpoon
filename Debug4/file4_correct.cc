@@ -40,6 +40,7 @@ int main(int argc, char **argv)
 {
   ptr=createdisk();
 
+
   for(int i=0;i<MAXFILES;i++)
     files[i].used=false;
 
@@ -63,7 +64,7 @@ int main(int argc, char **argv)
 
   createlink(ptr, "file2", "link2");
 
-  printfile("link1", ptr);
+  printfile("link2", ptr);
 }
 
 
@@ -240,6 +241,7 @@ void createlink(struct block *ptr, char *filename, char *linkname)
 	      int inode=db->entries[j].inodenumber;
 	      struct InodeTable * itb=(struct InodeTable *) &ptr[itbptr];
 	      itb->entries[inode].referencecount++;
+	      addtode(ptr, inode, linkname);
 	    }
     }
 }
