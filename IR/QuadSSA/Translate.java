@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.75 1998-09-19 06:25:25 cananian Exp $
+ * @version $Id: Translate.java,v 1.76 1998-09-19 21:18:43 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -626,10 +626,35 @@ class Translate  { // not public.
 	    break;
 	case Op.DCMPG:
 	case Op.DCMPL:
+	    {
+	    boolean isDCMPG = (in.getOpcode()==Op.DCMPG);
 	    ns = s.pop(4).push();
-	    q = new OPER(in, Op.toString(in.getOpcode())/*"dcmpg" or "dcmpl"*/,
-			 ns.stack(0), new Temp[] { s.stack(2), s.stack(0) });
+	    Quad q0 = new OPER(in, "dcmpgt", s.extra(0),
+			       isDCMPG ?
+			       new Temp[] { s.stack(0), s.stack(2) } :
+			       new Temp[] { s.stack(2), s.stack(0) } );
+	    Quad q1 = new CJMP(in, q0.def()[0], new Temp[0]);
+	    Quad q2 = new OPER(in, "dcmpeq", s.extra(0),
+			       new Temp[] { s.stack(2), s.stack(0) });
+	    Quad q3 = new CJMP(in, q2.def()[0], new Temp[0]);
+	    Quad q4 = new CONST(in, ns.stack(0), new Integer(-1), HClass.Int);
+	    Quad q5 = new CONST(in, ns.stack(0), new Integer( 0), HClass.Int);
+	    Quad q6 = new CONST(in, ns.stack(0), new Integer( 1), HClass.Int);
+	    Quad q7 = new PHI(in, new Temp[0], 3);
+	    // link.
+	    Quad.addEdge(q0, 0, q1, 0);
+	    Quad.addEdge(q1, 0, q2, 0);
+	    Quad.addEdge(q1, 1, isDCMPG?q4:q6, 0);
+	    Quad.addEdge(q2, 0, q3, 0);
+	    Quad.addEdge(q3, 0, isDCMPG?q6:q4, 0);
+	    Quad.addEdge(q3, 1, q5, 0);
+	    Quad.addEdge(q4, 0, q7, 0);
+	    Quad.addEdge(q5, 0, q7, 1);
+	    Quad.addEdge(q6, 0, q7, 2);
+	    // setup next state.
+	    q = q0; last = q7;
 	    break;
+	    }
 	case Op.DCONST_0:
 	case Op.DCONST_1:
 	case Op.LCONST_0:
@@ -798,10 +823,35 @@ class Translate  { // not public.
 	    }
 	case Op.FCMPG:
 	case Op.FCMPL:
+	    {
+	    boolean isFCMPG = (in.getOpcode()==Op.FCMPG);
 	    ns = s.pop(2).push();
-	    q = new OPER(in, Op.toString(in.getOpcode())/*"fcmpg" or "fcmpl"*/,
-			 ns.stack(0), new Temp[] { s.stack(1), s.stack(0) });
+	    Quad q0 = new OPER(in, "fcmpgt", s.extra(0),
+			       isFCMPG ?
+			       new Temp[] { s.stack(0), s.stack(1) } :
+			       new Temp[] { s.stack(1), s.stack(0) } );
+	    Quad q1 = new CJMP(in, q0.def()[0], new Temp[0]);
+	    Quad q2 = new OPER(in, "fcmpeq", s.extra(0),
+			       new Temp[] { s.stack(1), s.stack(0) });
+	    Quad q3 = new CJMP(in, q2.def()[0], new Temp[0]);
+	    Quad q4 = new CONST(in, ns.stack(0), new Integer(-1), HClass.Int);
+	    Quad q5 = new CONST(in, ns.stack(0), new Integer( 0), HClass.Int);
+	    Quad q6 = new CONST(in, ns.stack(0), new Integer( 1), HClass.Int);
+	    Quad q7 = new PHI(in, new Temp[0], 3);
+	    // link.
+	    Quad.addEdge(q0, 0, q1, 0);
+	    Quad.addEdge(q1, 0, q2, 0);
+	    Quad.addEdge(q1, 1, isFCMPG?q4:q6, 0);
+	    Quad.addEdge(q2, 0, q3, 0);
+	    Quad.addEdge(q3, 0, isFCMPG?q6:q4, 0);
+	    Quad.addEdge(q3, 1, q5, 0);
+	    Quad.addEdge(q4, 0, q7, 0);
+	    Quad.addEdge(q5, 0, q7, 1);
+	    Quad.addEdge(q6, 0, q7, 2);
+	    // setup next state.
+	    q = q0; last = q7;
 	    break;
+	    }
 	case Op.FCONST_0:
 	case Op.FCONST_1:
 	case Op.FCONST_2:
@@ -965,7 +1015,7 @@ class Translate  { // not public.
 	    }
 	    break;
 	case Op.LCMP: // break this up into lcmpeq, lcmpgt, etc.
-	    { // optimization should work well on this.
+	    { // optimization doesn't work well on this, unfortunately.
 	    ns = s.pop(4).push();
 	    Quad q0 = new OPER(in, "lcmpeq", s.extra(0),
 			       new Temp[] { s.stack(2), s.stack(0) });
