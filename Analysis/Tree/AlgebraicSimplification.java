@@ -38,88 +38,18 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.14 2000-02-15 01:01:46 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.15 2000-02-15 01:23:22 cananian Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
-public abstract class AlgebraicSimplification { 
-    private static final boolean debug = false;
+public abstract class AlgebraicSimplification extends Simplification { 
     // hide constructor
     private AlgebraicSimplification() { }
-
-    // Define new operator constants that can be masked together. 
-    private final static int _CMPLT = (1<<0);
-    private final static int _CMPLE = (1<<1);
-    private final static int _CMPEQ = (1<<2);
-    private final static int _CMPGE = (1<<3);
-    private final static int _CMPGT = (1<<4);
-    private final static int _ADD   = (1<<5);
-    private final static int _MUL   = (1<<6);
-    private final static int _DIV   = (1<<7);
-    private final static int _REM   = (1<<8);
-    private final static int _SHL   = (1<<9);
-    private final static int _SHR   = (1<<10);
-    private final static int _USHR  = (1<<11);
-    private final static int _AND   = (1<<12);
-    private final static int _OR    = (1<<13);
-    private final static int _XOR   = (1<<14);
-
-    // Define new TreeKind constants that can be masked together. 
-    private final static int _ALIGN      = (1<<0);
-    private final static int _BINOP      = (1<<1);
-    private final static int _CALL       = (1<<2);
-    private final static int _CJUMP      = (1<<3);
-    // _CONST represents all constants including 0 and null. 
-    // _CONST0 _CONST1 _CONSTm1 and _CONSTNULL represent specific constants.
-    private final static int _CONST      = (1<<4);
-    private final static int _DATUM      = (1<<5);
-    private final static int _ESEQ       = (1<<6);
-    private final static int _EXP        = (1<<7);
-    private final static int _JUMP       = (1<<8);
-    private final static int _LABEL      = (1<<9);
-    private final static int _MEM        = (1<<10);
-    private final static int _METHOD     = (1<<11);
-    private final static int _MOVE       = (1<<12);
-    private final static int _NAME       = (1<<13);
-    private final static int _NATIVECALL = (1<<14);
-    private final static int _RETURN     = (1<<15);
-    private final static int _SEGMENT    = (1<<16);
-    private final static int _SEQ        = (1<<17);
-    private final static int _TEMP       = (1<<18);
-    private final static int _THROW      = (1<<19);
-    private final static int _UNOP       = (1<<20);
-
-    // Define more specialized types used to match rules. 
-    private final static int _CONSTNULL  = (1<<21); 
-    private final static int _CONSTm1    = (1<<22); 
-    private final static int _CONST0     = (1<<23); 
-    private final static int _CONST1     = (1<<24); 
 
     private final static List _DEFAULT_RULES = new ArrayList(); 
     /** Default alegraic simplification rules. */
     public final static List DEFAULT_RULES = // protect the rules list.
 	Collections.unmodifiableList(_DEFAULT_RULES);
 
-    /**
-     * Code factory for applying a set of simplification rules to
-     * tree form.  Clones the tree before simplifying it in-place.
-     */
-    public static HCodeFactory codeFactory(final HCodeFactory parent,
-					   final List rules) {
-	Util.assert(parent.getCodeName().equals(CanonicalTreeCode.codename));
-	return new HCodeFactory() {
-	    public HCode convert(HMethod m) {
-		HCode hc = parent.convert(m);
-		if (hc!=null) {
-		    harpoon.IR.Tree.Code code = (harpoon.IR.Tree.Code) hc;
-		    // um, i should really clone code here. FIXME
-		    simplify((Stm)code.getRootElement(), rules);
-		}
-		return hc;
-	    }
-	    public String getCodeName() { return parent.getCodeName(); }
-	    public void clear(HMethod m) { parent.clear(m); }
-	};
-    }
     /** Code factory for applying the default set of simplifications to
      *  the given tree form.  Clones the tree before simplifying it
      *  in-place. */
@@ -127,102 +57,6 @@ public abstract class AlgebraicSimplification {
 	return codeFactory(parent, DEFAULT_RULES);
     }
 
-    /**
-     * Performs algebraic simplification on <code>root</code>.
-     * <b>Requires:</b>
-     *   <code>root</code> is a tree in canonical form. 
-     * 
-     * @param root  the tree to simplify
-     */ 
-    public static void simplify(Stm root) { simplify(root, DEFAULT_RULES); }
-
-    /**
-     * Performs algebraic simplification on <code>root</code>, using the
-     * specified set of simplification rules.  
-     * <b>Requires:</b>
-     * <OL>
-     *   <LI><code>root</code> is a tree in canonical form.
-     *   <LI>Each element of <code>rules</code> is an implementation of the 
-     *       <code>AlgebraicSimplification.Rule</code> interface.  
-     *   <LI>The supplied set of rules monotonically reduces all possible
-     *       <code>Exp</code> objects to some fixed point. 
-     * </OL>
-     * 
-     * @param root  the tree to simplify
-     * @param rules the set of simplification rules to apply to the elements
-     *              of <code>root</code>. 
-     */ 
-    public static void simplify(Stm root, List rules) { 
-	// Shouldn't pass a null ptr. 
-	Util.assert(root != null); 
-
-	// Perform the simplification. 
-	while (new SimplificationVisitor(root, rules).changed())
-	    /* repeat */ ;
-    }
-
-    /**
-     * A class to applies simplification rules to elements of a canonical
-     * tree form. 
-     */ 
-    private static class SimplificationVisitor extends TreeVisitor { 
-	private final List  rules; 
-	private boolean changed = false;
-
-	public SimplificationVisitor(Stm root, List rules) { 
-	    this.rules = rules; 
-	    // evaluate each subtree from leaves up to root.
-	    postorder(root);
-	}
-	void postorder(Tree t) {
-	    // post-order traversal: visit all children first.
-	    for (Tree tp = t.getFirstChild(); tp!=null; ) {
-		Tree one = tp;
-		tp=tp.getSibling();// advance *before* we (possibly) unlink tp!
-		postorder(one);
-	    }
-	    // now visit this.
-	    t.accept(this);
-	}
-	public boolean changed() { return changed; }
-
-	public void visit(Tree t) { 
-	    throw new Error("No defaults here."); 
-	}
-
-	public void visit(ESEQ e) { 
-	    // Although this tree form is canonical, the simplification visitor
-	    // could reduce expressions to ESEQs.  For now, this feature is
-	    // neither needed, nor supported. 
-	    //
-	    throw new Error("Not implemented."); 
-	}
-
-	public void visit(Exp e) { 
-	RESTART: do {
-	    for (Iterator i = this.rules.iterator(); i.hasNext();) { 
-		Rule rule = (Rule)i.next();
-		if (rule.match(e)) {
-		    Exp simpleE = rule.apply(e); 
-		    if (debug)
-			System.out.println("Replacing: " + e + " with " +
-					   simpleE + " by rule " + rule);
-		    e.replace(simpleE);
-		    e = simpleE;
-		    changed = true;
-		    // revisit this.
-		    continue RESTART;
-		}
-	    }
-	} while (false); // okay, so this is just a hacked-together 'goto'
-	}
-
-	public void visit(Stm s) { 
-	    /* do nothing.  At the moment, at least. */
-	}
-    }
-
-    
     // Static initialization: add all available rules to the rule set. 
     // 
     static { 
@@ -235,8 +69,7 @@ public abstract class AlgebraicSimplification {
 	// K1 | K2 --> K3
 	// K1 ^ K2 --> K3 
 	// 
-	Rule combineConstants = new Rule() { 
-	    public String toString() { return "combineConstants"; }
+	Rule combineConstants = new Rule("combineConstants") { 
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
@@ -285,8 +118,7 @@ public abstract class AlgebraicSimplification {
 	// const ^ exp --> exp ^ const
 	// const ==exp --> exp ==const
 	//
-	Rule commute = new Rule() { 
-	    public String toString() { return "commute"; }
+	Rule commute = new Rule("commute") { 
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
@@ -312,8 +144,7 @@ public abstract class AlgebraicSimplification {
 	// (exp | const) | const --> exp | (const | const)
 	// (exp ^ const) ^ const --> exp ^ (const ^ const)
 	//      note that == is not associative.
-	Rule associate = new Rule() {
-	    public String toString() { return "associate"; }
+	Rule associate = new Rule("associate") {
 	    public boolean match(Exp e) {
 		if (_KIND(e) != _BINOP) return false;
 		BINOP b1 = (BINOP) e; 
@@ -344,9 +175,8 @@ public abstract class AlgebraicSimplification {
 	// exp * 0 --> 0
 	// exp % 1 --> 0
 	//
-	Rule makeZero = new Rule() {
+	Rule makeZero = new Rule("makeZero") {
 	    // NOTE: this rule is dangerous if tree is not canonical.
-	    public String toString() { return "makeZero"; }
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
@@ -382,8 +212,7 @@ public abstract class AlgebraicSimplification {
 	// exp * 1   --> exp
 	// exp / 1   --> exp
 	// 
-	Rule removeZero = new Rule() { 
-	    public String toString() { return "removeZero"; }
+	Rule removeZero = new Rule("removeZero") { 
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
@@ -407,9 +236,8 @@ public abstract class AlgebraicSimplification {
 	
 	// x ^ -1 --> ~ x
 	//
-	Rule createNot = new Rule() {
+	Rule createNot = new Rule("createNot") {
 	    // note that since Qop doesn't have NOT, we have to recreate it.
-	    public String toString() { return "createNot"; }
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _BINOP) return false;
 		BINOP b = (BINOP) e;
@@ -428,8 +256,7 @@ public abstract class AlgebraicSimplification {
 	// -(-i) --> i 
 	// ~(~i) --> i
 	// 
-	Rule doubleNegative = new Rule() { 
-	    public String toString() { return "doubleNegative"; }
+	Rule doubleNegative = new Rule("doubleNegative") { 
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _UNOP) { return false; } 
 		else { 
@@ -452,8 +279,7 @@ public abstract class AlgebraicSimplification {
 
 	// -0 --> 0 
 	//
-	Rule negZero = new Rule() {  
-	    public String toString() { return "negZero"; }
+	Rule negZero = new Rule("negZero") {  
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _UNOP) { return false; } 
 		else { 
@@ -470,9 +296,8 @@ public abstract class AlgebraicSimplification {
 	}; 
 
 	// exp * const --> (recoded as shifts)
-	Rule mulToShift = new Rule() { 
+	Rule mulToShift = new Rule("mulToShift") { 
 	    // NOTE: this rule is dangerous if tree is not canonical.
-	    public String toString() { return "mulToShift"; }
 	    public boolean match (Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
@@ -496,9 +321,8 @@ public abstract class AlgebraicSimplification {
 
 
 	// exp / const --> (recoded as multiplication)
-	Rule divToMul = new Rule() { 
+	Rule divToMul = new Rule("divToMul") { 
 	    // NOTE: this rule is dangerous if tree is not canonical.
-	    public String toString() { return "divToMul"; }
 	    public boolean match(Exp e) { 
 		if (e.type() != Type.INT ) return false;
 		if (_KIND(e) != _BINOP) { return false; } 
@@ -530,27 +354,6 @@ public abstract class AlgebraicSimplification {
 	_DEFAULT_RULES.add(divToMul); 
     }
 		  
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-    //                                                                 //
-    //                       Auxiliary Classes                         //
-    //                                                                 //
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-
-    /**
-     * A simplification rule for use with the tree algebraic simplifier. 
-     */ 
-    public static interface Rule {
-	/** Returns true if <code>exp</code> matches this rule. */ 
-	public boolean match(Exp exp); 
-	/** Applies this rule to <code>exp</code>, and returns the result. 
-	 *  <code>apply()</code> should always succeed when
-	 *  <code>match()</code> returns <code>true</code>.  Otherwise, 
-	 *  the behavior of <code>apply</code> is undefined. 
-	 */ 
-	public Exp apply(Exp exp);  
-    }
-
-
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                                 //
     //                    Simplification Routines                      //
@@ -708,64 +511,6 @@ public abstract class AlgebraicSimplification {
 	}
 	
 	return product; 
-    }
-
-    private static boolean contains(int val, int mask) {
-	return (val & mask) != 0;
-    }
-    private static int _KIND(Tree t) { 
-	switch (t.kind()) { 
-	    case TreeKind.ALIGN:      return _ALIGN; 
-	    case TreeKind.BINOP:      return _BINOP;
-	    case TreeKind.CALL:       return _CALL;
-	    case TreeKind.CJUMP:      return _CJUMP;
-	    case TreeKind.CONST:      
-		CONST c = (CONST)t; 
-		return _CONST |
-		    (c.value            == null ? _CONSTNULL : 
-		     c.value.intValue() == 0    ? _CONST0 : 
-		     c.value.intValue() == 1    ? _CONST1 :
-		     c.value.intValue() ==-1    ? _CONSTm1:
-		     0);
-	    case TreeKind.DATUM:      return _DATUM;
-	    case TreeKind.ESEQ:       return _ESEQ;
-	    case TreeKind.EXP:        return _EXP;
-	    case TreeKind.JUMP:       return _JUMP;
-	    case TreeKind.LABEL:      return _LABEL;
-	    case TreeKind.MEM:        return _MEM;
-	    case TreeKind.METHOD:     return _METHOD;
-	    case TreeKind.MOVE:       return _MOVE;
-	    case TreeKind.NAME:       return _NAME;
-	    case TreeKind.NATIVECALL: return _NATIVECALL;
-	    case TreeKind.RETURN:     return _RETURN;
-	    case TreeKind.SEGMENT:    return _SEGMENT;
-	    case TreeKind.SEQ:        return _SEQ;
-	    case TreeKind.TEMP:       return _TEMP;
-	    case TreeKind.THROW:      return _THROW;
-	    case TreeKind.UNOP:       return _UNOP; 
-	default: throw new Error("Unrecognized type: " + t.kind()); 
-	}
-    }
-
-    private static int _OP(int op) { 
-	switch (op) { 
-	case Bop.CMPLT: return _CMPLT; 
-	case Bop.CMPLE: return _CMPLE; 
-	case Bop.CMPEQ: return _CMPEQ; 
-	case Bop.CMPGE: return _CMPGE;
-	case Bop.CMPGT: return _CMPGT; 
-	case Bop.ADD:   return _ADD; 
-	case Bop.MUL:   return _MUL;
-	case Bop.DIV:   return _DIV; 
-	case Bop.REM:   return _REM;   
-	case Bop.SHL:   return _SHL;   
-	case Bop.SHR:   return _SHR;   
-	case Bop.USHR:  return _USHR;  
-	case Bop.AND:   return _AND;   
-	case Bop.OR:    return _OR;    
-	case Bop.XOR:   return _XOR;
-	default: throw new Error("Unrecognized op: " + op); 
-	}
     }
 }
 
