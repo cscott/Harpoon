@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.7 2003-05-22 18:03:53 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.8 2003-05-22 20:26:53 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -36,7 +36,7 @@ Laboratory for Computer Science\\
 Massachusetts Institute of Technology
 \\
 \vspace{.5cm}
-LCTES'03
+LCTES'03, June 2003
 }
 
 %\DefaultTransition{Wipe}
@@ -1645,7 +1645,7 @@ Static techniques for lock-removal will mitigate this cost greatly.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{10}{
+\overlays{11}{
 \begin{slide}{How can we make this even better?}
 \fromSlide{2}{
 \begin{itemize}
@@ -1660,20 +1660,22 @@ Static techniques for lock-removal will mitigate this cost greatly.
  \fromSlide{5}{
  \begin{itemize} \yellow\small
   \item Investigate region-based/enumerated approaches.
+  \fromSlide{6}{
   \item Zhang, Gupta (ICCC '02)
+  }
  \end{itemize}
- \fromSlide{6}{
- \item The mostly-constant analysis requires profiling.
  \fromSlide{7}{
+ \item The mostly-constant analysis requires profiling.
+ \fromSlide{8}{
  \begin{itemize} \yellow\small
   \item Investigate heuristic methods.
-  \fromSlide{8}{
+  \fromSlide{9}{
   \item Leverage dynamic profiling; identify cold fields.
   }
  \end{itemize}
- \fromSlide{9}{
- \item We know nothing about ``field-like'' maps.
  \fromSlide{10}{
+ \item We know nothing about ``field-like'' maps.
+ \fromSlide{11}{
  \begin{itemize} \yellow\small
   \item Enable \emph{internalization}.
  \end{itemize}
@@ -1699,7 +1701,7 @@ On a related note, we don't attempt to compress fields with pointer
 values at all.
 @
 We have a region-based approach to limiting pointer sizes which we
-feel is worth exploring in this regard, and Zhang and Gupta have
+feel is worth exploring in this regard, and @ Zhang and Gupta have
 described an orthogonal technique which it may be useful to
 incorporate.
 @
