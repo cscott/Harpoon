@@ -1,0 +1,26 @@
+To profile your compiled java application, do something like the
+following:
+
+ % cd ~/Harpoon/Runtime
+ % make clean
+ % make CC="gcc -pg"
+
+Compile your (precisec) application like this:
+ % cd ~/Harpoon/Code
+ % make -C as<foodir> CC="gcc -I${HARPOON_DIR}/Runtime/include -g -O9 -pg"
+ % mv as<foodir>/Java.a ~/Harpoon/Runtime/<foodir>-Java.a
+
+And build the final executable like so (don't forget the -pg at this step!):
+ % cd ~/Harpoon/Runtime
+ % make CC="gcc -pg" run<foodir>
+
+Ta-da!  Now run your executable.  Your will get a gmon.out file in the
+current directory when it finishes execution.  (If you don't, the
+most likely cause is that you forgot to include -pg in the last linking
+step, immediate above.)  Use
+
+ % gprof run<foodir>
+
+to see the profile.
+
+  --s, 26-jan-2001
