@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MEM.java,v 1.1.2.14 1999-08-11 20:38:09 duncan Exp $
+ * @version $Id: MEM.java,v 1.1.2.15 1999-08-11 20:40:09 duncan Exp $
  */
 public class MEM extends Exp implements PreciselyTyped {
     /** A subexpression evaluating to a memory reference. */
@@ -51,6 +51,7 @@ public class MEM extends Exp implements PreciselyTyped {
 	this.bitwidth=bitwidth; this.signed=signed;
 	Util.assert(exp!=null);
 	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
+	Util.assert((0<=bitwidth)&&(bitwidth<32), "Invalid bitwidth");
     }
     
     private MEM(TreeFactory tf, HCodeElement source, int type, Exp exp, 
