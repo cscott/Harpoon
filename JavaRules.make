@@ -28,7 +28,7 @@ clean-classes:
 # rules to make .h files from JAVASRC
 JAVAHDR:=$(foreach f,$(JAVASRC),$(dir $f)$(call javahdr,$(f)))
 $(JAVAHDR): $(JAVASRC) $(JARFILE)
-	javah -classpath $(JARFILE) $(foreach f,$(JAVASRC),$(call javacls,$(f)))
+	javah -bootclasspath $(JARFILE) $(foreach f,$(JAVASRC),$(call javacls,$(f)))
 	for f in $(JAVAHDR); do \
 	  if [ `dirname $$f` != "." ] ; then \
 	    mv `basename $$f` `dirname $$f` ; \
