@@ -102,6 +102,9 @@ struct inflated_oobj {
   pthread_cond_t  cond; /* condition variable */
   pthread_rwlock_t jni_data_lock; /*read/write lock for jni_data field, above*/
 #endif
+#ifdef WITH_REALTIME_THREADS
+  struct machdep_pthread mthread;
+#endif
 #ifdef WITH_CLUSTERED_HEAPS
   struct clustered_heap * heap;
   void (*heap_release)(struct clustered_heap *);
@@ -112,9 +115,6 @@ struct inflated_oobj {
   GC_PTR old_client_data;
 #elif defined(WITH_PRECISE_GC)
   void (*precise_deflate_obj)(struct oobj *obj, ptroff_t client_data);
-#endif
-#ifdef WITH_REALTIME_THREADS
-  struct machdep_pthread mthread;
 #endif
 };
 
