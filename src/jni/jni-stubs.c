@@ -18,5 +18,5 @@ jint FNI_UnregisterNatives(JNIEnv *env, jclass clazz) {
 /* complain about an unimplemented method */
 void FNI_Unimplemented(void) {
   fprintf(stderr, "Unimplemented JNI function.  Aborting.");
-  abort();
+  assert(0);
 }
