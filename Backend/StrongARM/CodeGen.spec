@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.62 1999-10-14 07:05:59 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.63 1999-10-14 07:14:17 cananian Exp $
  */
 %%
 
@@ -260,7 +260,7 @@ BINOP<f>(ADD, j, k) = i %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit( ROOT, "bl ___addsf" );
+    emit2( ROOT, "bl ___addsf", new Temp[] { r0, r1 }, new Temp[] { r0, r1 } );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -272,9 +272,10 @@ BINOP<d>(ADD, j, k) = i %{
     emit( ROOT, "mov `d0, `s0h", r3, k );
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emit( ROOT, "bl ___adddf3" );
+    emit2(ROOT, "bl ___adddf3", // uses & stomps on these registers
+	 new Temp[]{r0,r1,r2,r3}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
-    emit( ROOT, "mov `d0h, `s0", i, r3 );
+    emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 
 BINOP<p,i>(AND, j, k) = i %{
@@ -602,7 +603,7 @@ BINOP<l>(SHL, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit( ROOT, "mov `d0, `s0 ", r2, k );
-    emit( ROOT, "bl ___ashldi3");
+    emit2(ROOT, "bl ___ashldi3", new Temp[]{r0,r1,r2}, new Temp[]{r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -617,7 +618,7 @@ BINOP<l>(SHR, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit( ROOT, "mov `d0, `s0 ", r2, k );
-    emit( ROOT, "bl ___ashrdi3");
+    emit2(ROOT, "bl ___ashrdi3", new Temp[]{r0,r1,r2}, new Temp[] {r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -632,7 +633,7 @@ BINOP<l>(USHR, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit( ROOT, "mov `d0, `s0 ", r2, k );
-    emit( ROOT, "bl ___lshrdi3");
+    emit2(ROOT, "bl ___lshrdi3", new Temp[]{r0,r1,r2}, new Temp[] {r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -754,7 +755,8 @@ BINOP<l>(MUL, j, k) = i %{
     emit( ROOT, "mov `d0, `s0h", r3, k );
     emit( ROOT, "mov `d0, `s0l", r1, j );
     emit( ROOT, "mov `d0, `s0h", r0, j );
-    emit( ROOT, "bl ___muldi3");
+    emit2(ROOT, "bl ___muldi3", // uses & stomps on these registers
+	 new Temp[]{r0,r1,r2,r3}, new Temp[]{r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -763,7 +765,7 @@ BINOP<f>(MUL, j, k) = i %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit( ROOT, "bl ___mulsf");
+    emit2(    ROOT, "bl ___mulsf", new Temp[] {r0,r1}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -773,7 +775,8 @@ BINOP<d>(MUL, j, k) = i %{
     emit( ROOT, "mov `d0, `s0h", r3, k );
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emit( ROOT, "bl ___muldf3");
+    emit2(ROOT, "bl ___muldf3", // uses & stomps on these registers
+	 new Temp[] {r0,r1,r2,r3}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -782,7 +785,7 @@ BINOP<p,i>(DIV, j, k) = i %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit( ROOT, "bl ___divsi3");
+    emit2(    ROOT, "bl ___divsi3", new Temp[] {r0,r1}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -792,7 +795,8 @@ BINOP<l>(DIV, j, k) = i %{
     emit( ROOT, "mov `d0, `s0h", r3, k );
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emit( ROOT, "bl ___divdi3");
+    emit2(ROOT, "bl ___divdi3",	// uses and stomps on these registers
+	 new Temp[] {r0,r1,r2,r3}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -801,7 +805,7 @@ BINOP<f>(DIV, j, k) = i %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit( ROOT, "bl ___divsf3");
+    emit2(    ROOT, "bl ___divsf3", new Temp[] {r0,r1}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -811,7 +815,8 @@ BINOP<d>(DIV, j, k) = i %{
     emit( ROOT, "mov `d0, `s0h", r3, k );
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emit( ROOT, "bl ___divdf3");
+    emit2(ROOT, "bl ___divdf3",
+	 new Temp[] {r0,r1,r2,r3}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -820,7 +825,7 @@ BINOP<p,i>(REM, j, k) = i %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit( ROOT, "bl ___modsi3");
+    emit2(    ROOT, "bl ___modsi3", new Temp[] {r0,r1}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -830,7 +835,8 @@ BINOP<l>(REM, j, k) = i %{
     emit( ROOT, "mov `d0, `s0h", r3, k );
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emit( ROOT, "bl ___moddi3");
+    emit2(ROOT, "bl ___moddi3",
+	 new Temp[] {r0,r1,r2,r3}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -1008,21 +1014,21 @@ UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     TwoWordTemp i = makeTwoWordTemp();
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit( ROOT, "bl ___floatdidf" );
+    emit2(ROOT, "bl ___floatdidf", new Temp[] {r0,r1}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     TwoWordTemp i = makeTwoWordTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit( ROOT, "bl ___floatsidf" );
+    emit2(ROOT, "bl ___floatsidf", new Temp[] {r0,r1}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTwoWordTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit( ROOT, "bl ___extendsfdf2" );
+    emit2(ROOT, "bl ___extendsfdf2", new Temp[] {r0,r1}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 
@@ -1040,13 +1046,13 @@ UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit( ROOT, "bl ___floatdisf" );
+    emit2(ROOT, "bl ___floatdisf", new Temp[] {r0,r1}, new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit( ROOT, "bl ___floatsisf" );   
+    emit2(    ROOT, "bl ___floatsisf", new Temp[] {r0}, new Temp[] {r0} );   
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 /* useless.  should never really be in tree form.
@@ -1059,7 +1065,7 @@ UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit( ROOT, "bl ___truncdfsf2" );
+    emit2(ROOT, "bl ___truncdfsf2", new Temp[] {r0,r1}, new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -1074,14 +1080,14 @@ UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.POINTER )% %{
 UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit( ROOT, "bl ___fixsfsi" );
+    emit2(    ROOT, "bl ___fixsfsi", new Temp[] {r0}, new Temp[] {r0} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit( ROOT, "bl ___fixdfsi" );
+    emit2(ROOT, "bl ___fixdfsi", new Temp[] {r0,r1}, new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -1100,7 +1106,7 @@ UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
 UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTwoWordTemp();	
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit( ROOT, "bl ___fixsfdi" );
+    emit2(ROOT, "bl ___fixsfdi", new Temp[] {r0,r1}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -1108,7 +1114,7 @@ UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     Temp i = makeTwoWordTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit( ROOT, "bl ___fixdfdi" );
+    emit2(ROOT, "bl ___fixdfdi", new Temp[] {r0,r1}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );	 
 }%
@@ -1128,7 +1134,7 @@ UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit( ROOT, "bl ___negsf2" );
+    emit2(    ROOT, "bl ___negsf2", new Temp[] {r0}, new Temp[] {r0} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )%
@@ -1136,7 +1142,7 @@ UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )%
     Temp i = makeTwoWordTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit( ROOT, "bl ___negdf2" );
+    emit2(ROOT, "bl ___negdf2", new Temp[] {r0,r1}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );	 
 }%
