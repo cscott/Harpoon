@@ -29,7 +29,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.39 2000-12-07 00:43:57 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.40 2001-01-23 01:08:37 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -40,7 +40,7 @@ public class ParIntGraph {
     public static boolean DEBUG_AS = false;
 
     /** Activates the aggressive shrinking. Buggy for the moment ... */
-    public static boolean AGGRESSIVE_SHRINKING = true;
+    public static boolean AGGRESSIVE_SHRINKING = false;
 
     /** Default (empty) graph. It doesn't contain any information.  */
     public static final ParIntGraph EMPTY_GRAPH = new ParIntGraph();

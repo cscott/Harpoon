@@ -18,10 +18,10 @@ import harpoon.IR.Quads.CALL;
  of the call graph, without doing any specialization. This is possible because
  there is an obvious mapping from each method of the program to an
  unspecialized meta-method consisting of that method plus its declared
- parameter types (marked as polymorphic to cope with all the possible cases
- where that method could be called).
+ parameter types (marked as polymorphic to cope with all the possible ways
+ that method could be called).
 
- Although it doesn't offer any additional interface,
+ Although it doesn't offer any additional power,
  <code>FakeMetaCallGraph</code> allows the use of the components that require
  &quot;meta methods&quot; even without specializing methods to meta-methods.
  For example, if you need to use the <code>PointerAnalysis</code> stuff, but
@@ -29,7 +29,7 @@ import harpoon.IR.Quads.CALL;
  <code>FakeMetaCallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: FakeMetaCallGraph.java,v 1.1.2.4 2000-06-27 04:36:10 salcianu Exp $
+ * @version $Id: FakeMetaCallGraph.java,v 1.1.2.5 2001-01-23 01:08:19 salcianu Exp $
  */
 public class FakeMetaCallGraph extends MetaCallGraphAbstr {
 
@@ -43,11 +43,11 @@ public class FakeMetaCallGraph extends MetaCallGraphAbstr {
     */
     public FakeMetaCallGraph(CallGraph cg, Set methods, Set runs) {
 	Map map = create_map(methods);
-	translate(cg,map);
+	translate(cg, map);
 
 	// initialize the set of "run" methods.
 	if(runs != null)
-	    for(Iterator it = runs.iterator(); it.hasNext(); ){
+	    for(Iterator it = runs.iterator(); it.hasNext(); ) {
 		MetaMethod mm = (MetaMethod) it.next();
 		run_mms.add(new MetaMethod(mm.getHMethod(), true));
 	    }
@@ -56,7 +56,7 @@ public class FakeMetaCallGraph extends MetaCallGraphAbstr {
     // Create the HMethod -> MetaMethod one-to-one map.
     private Map create_map(Set methods){
 	Map map = new HashMap();
-	for(Iterator it =  methods.iterator(); it.hasNext(); ){
+	for(Iterator it = methods.iterator(); it.hasNext(); ){
 	    HMethod hm = (HMethod) it.next();
 	    MetaMethod mm = new MetaMethod(hm);
 	    map.put(hm,mm);

@@ -69,7 +69,7 @@ public class Realtime {
 
   public static int ANALYSIS_METHOD = NONE;
 
-  private static CheckRemoval cr = new KeepChecks();
+  private static CheckRemoval cr = new SimpleCheckRemoval();
 
     /** Creates a field memoryArea on <code>java.lang.Object</code>.
      *  Since primitive arrays inherit from java.lang.Object, this catches them as well. 
@@ -238,7 +238,8 @@ public class Realtime {
 
         public void visit(NEW q) {
           if (q.hclass().getName().equals("java.lang.Thread")) {
-            NEW newQuad = new NEW(q.getFactory(), q, q.dst(), linker.forName("realtime.RealtimeThread"));
+            NEW newQuad = new NEW(q.getFactory(), q, q.dst(),
+				  linker.forName("realtime.RealtimeThread"));
             Quad.replace(q, newQuad);
           }
         }

@@ -41,7 +41,7 @@ import harpoon.Util.Util;
  concerned call-sites to point to it.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaMethod.java,v 1.1.2.4 2000-03-30 03:05:06 salcianu Exp $
+ * @version $Id: MetaMethod.java,v 1.1.2.5 2001-01-23 01:08:19 salcianu Exp $
  */
 public class MetaMethod implements java.io.Serializable {
     // Turns on some severe correctness tests.
@@ -92,7 +92,7 @@ public class MetaMethod implements java.io.Serializable {
 	that is we are maximally conservative in our initial estimation.
 	The types of can be specialized to by using <code>setType</code>. */
     public MetaMethod(HMethod hm){
-	this(hm,true);
+	this(hm, true);
     }
 
     /** Returns the <code>HMethod</code> that <code>this</code> meta-method
