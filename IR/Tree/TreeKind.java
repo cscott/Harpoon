@@ -9,8 +9,7 @@ package harpoon.IR.Tree;
  * class. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeKind.java,v 1.2 2002-02-25 21:05:42 cananian Exp $
- * $Id: TreeKind.java,v 1.2 2002-02-25 21:05:42 cananian Exp $
+ * @version $Id: TreeKind.java,v 1.3 2003-04-11 00:30:08 cananian Exp $
  */
 public abstract class TreeKind  {
     public final static int ALIGN      = 0;
