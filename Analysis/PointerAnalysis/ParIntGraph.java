@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.31 2000-05-15 22:49:34 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.32 2000-05-18 01:48:14 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -353,8 +353,9 @@ public class ParIntGraph {
     /* Specialize <code>this</code> <code>ParIntGraph</code> for the call
        site <code>q</code>. */
     final ParIntGraph csSpecialize(final CALL call){
-	/* contains mappings old node -> speciaized node; each unmapped
+	/* contains mappings old node -> specialized node; each unmapped
 	   node is supposed to be mapped to itself. */
+	all_nodes = null;
 	final Map map = new HashMap();
 	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
 	    PANode node = (PANode) itn.next();

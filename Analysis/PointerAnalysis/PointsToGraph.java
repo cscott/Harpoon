@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.27 2000-05-17 20:24:18 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.28 2000-05-18 01:48:14 salcianu Exp $
  */
 public class PointsToGraph {
 
@@ -53,6 +53,12 @@ public class PointsToGraph {
     private Set reachable_from_r = null;
     // set of nodes reachable from nodes from excp (excp included)
     private Set reachable_from_excp = null;
+
+    /** Flushes the internal caches in this <code>PointsToGraph</code>. */
+    public void flushCaches(){
+	reachable_from_r    = null;
+	reachable_from_excp = null;
+    }
 
     /** Computes the set of nodes reachable from nodes in <code>roots</code>
 	through paths that use inside and outside edges. The argument must
