@@ -8,7 +8,7 @@ import java.util.Hashtable;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.6 1998-08-19 05:09:06 cananian Exp $
+ * @version $Id: Temp.java,v 1.7 1998-08-22 05:46:44 cananian Exp $
  * @see TypeMap
  * @see TempList
  */
@@ -42,6 +42,10 @@ public class Temp {
     this.name = m_prefix + "_" + i.toString();
     // update the table.
     table.put(m_prefix, new Integer(i.intValue()+1));
+  }
+  /** Creates a new temp based on the name of an existing temp. */
+  public Temp(Temp t) {
+    this(t.name().substring(0, t.name().lastIndexOf('_')));
   }
 
   /** Returns the name of this temporary */
