@@ -1,7 +1,7 @@
 #! /usr/bin/perl
 # -*-Perl-*-
 #
-#ident	"@(#)ccvs/contrib:$Name:  $:$Id: log_accum,v 1.1 1998-10-18 08:16:25 cananian Exp $"
+#ident	"@(#)ccvs/contrib:$Name:  $:$Id: log_accum,v 1.2 1998-10-18 09:10:21 cananian Exp $"
 #
 # Perl filter to handle the log messages from the checkin of files in
 # a directory.  This script will group the lists of files by log
@@ -14,6 +14,9 @@
 # Contributed by David Hampton <hampton@cisco.com>
 #
 # hacked greatly by Greg A. Woods <woods@planix.com>
+#
+# modified by C. Scott Ananian <cananian@alumni.princeton.edu> to add
+# support for including a diff of the changes in the commit email.
 
 # Usage: log_accum.pl [-d] [-s] [-M module] [[-m mailto] ...] [[-R replyto] ...] [-f logfile]
 #	-d		- turn on debugging
@@ -22,6 +25,7 @@
 #	-M modulename	- set module name to "modulename"
 #	-f logfile	- write commit messages to logfile too
 #	-s		- *don't* run "cvs status -v" for each file
+#	-u		- run "cvs diff -u" for each file
 
 #
 #	Configurable options
@@ -258,6 +262,7 @@ chop($domainname = `domainname`);
 $hostdomain = $hostname . $domainname;
 $cvsroot = $ENV{'CVSROOT'};
 $do_status = 1;
+$do_diff = 0;
 $modulename = "";
 
 # parse command line arguments (file list is seen as one arg)
@@ -284,6 +289,8 @@ while (@ARGV) {
 	$modulename = shift @ARGV;
     } elsif ($arg eq '-s') {
 	$do_status = 0;
+    } elsif ($arg eq '-u') {
+	$do_diff = 1;
     } elsif ($arg eq '-f') {
 	($commitlog) && die("Too many '-f' args\n");
 	$commitlog = shift @ARGV;
@@ -476,6 +483,7 @@ if ($debug) {
 #
 @text = ();
 @status_txt = ();
+@diff_txt = ();
 push(@text, &build_header());
 push(@text, "");
 
@@ -505,7 +513,7 @@ for ($i = 0; ; $i++) {
 	push(@text, @lines);
 	push(@text, "");
     }
-    if ($do_status) {
+    if ($do_status || $do_diff) {
 	local(@changed_files);
 
 	@changed_files = ();
@@ -525,13 +533,28 @@ for ($i = 0; ; $i++) {
 	    if ($dofile =~ /\/$/) {
 		next;		# ignore the silly "dir" entries
 	    }
-	    if ($debug) {
-		print STDERR "main(): doing 'cvs -nQq status -v $dofile'\n";
+	    if ($do_status) {
+		if ($debug) {
+		    print STDERR 
+			"main(): doing 'cvs -nQq status -v $dofile'\n";
+		}
+		open(STATUS, "-|") || 
+		    exec 'cvs', '-nQq', 'status', '-v', $dofile;
+		while (<STATUS>) {
+		    chop;
+		    push(@status_txt, $_);
+		}
 	    }
-	    open(STATUS, "-|") || exec 'cvs', '-nQq', 'status', '-v', $dofile;
-	    while (<STATUS>) {
-		chop;
-		push(@status_txt, $_);
+	    if ($do_diff) {
+		if ($debug) {
+		    print STDERR "main(): doing 'cvs -nQq diff -u $dofile'\n";
+		}
+		open(STATUS, "-|") || 
+		    exec 'cvs', '-nQq', 'diff', '-u' , $dofile;
+		while (<STATUS>) {
+		    chop;
+		    push(@diff_txt, $_);
+		}
 	    }
 	}
     }
@@ -541,6 +564,10 @@ for ($i = 0; ; $i++) {
 #
 if ($commitlog) {
     &write_commitlog($commitlog, @text);
+}
+
+if ($#diff_txt >= 0) {
+    push(@text, @diff_txt);
 }
 
 if ($#status_txt >= 0) {
