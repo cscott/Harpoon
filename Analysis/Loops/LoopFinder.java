@@ -63,7 +63,7 @@ public class LoopFinder implements Loops {
       *  Does the same thing as the constructor call, but for an existing
       *  LoopFinder object.*/
 
-    public Loops GetRootLoop(HCode hc) {
+    public Loops getRootloop(HCode hc) {
       this.hc=hc;
       analyze();
       return new LoopFinder(hc,root,root);
@@ -73,7 +73,7 @@ public class LoopFinder implements Loops {
      *   For the natural loops we consider, that is simply the header. 
      *   It returns a <code>Set</code> of <code>HCodeElements</code>.*/
 
-    public Set Loopentrances() {
+    public Set loopEntrances() {
       analyze();
       WorkSet entries=new WorkSet();
       entries.push(ptr.header);
@@ -85,7 +85,7 @@ public class LoopFinder implements Loops {
      *   can be greater than one. This method returns a <code>Set</code> of
      *   <code>HCodeElements</code>.*/
 
-    public Set Loopbackedges() {
+    public Set loopBackedges() {
       analyze();
       WorkSet A=new WorkSet();
       Iterator iterate=ptr.entries.iterator();
@@ -104,7 +104,7 @@ public class LoopFinder implements Loops {
     /**  This metho returns all of the exits from a loop.
      *   It returns them in the form <code>Set</code> of <code>HCodeElements</code>.*/
 
-    public Set Loopexits() {
+    public Set loopExits() {
       analyze();
       WorkSet A=new WorkSet();
       Iterator iterate=ptr.entries.iterator();
@@ -123,7 +123,7 @@ public class LoopFinder implements Loops {
     /**Returns a <code>Set</code> with all of the <code>HCodeElement</code>s of the loop and
       *loops included entirely within this loop. */
 
-    public Set LoopincElements() {
+    public Set loopIncelements() {
       analyze();
       WorkSet A=new WorkSet(ptr.entries);
       return A;
@@ -132,7 +132,7 @@ public class LoopFinder implements Loops {
     /** Returns all of the <code>HCodeElement</code>s of this loop that aren't in a nested
      *  loop. This returns a <code>Set</code> of <code>HCodeElement</code>s.*/
 
-    public Set LoopexcElements() {
+    public Set loopExcelements() {
       analyze();
       WorkSet A=new WorkSet(ptr.entries);
       WorkSet todo=new WorkSet();
@@ -156,7 +156,7 @@ public class LoopFinder implements Loops {
 
     /** Returns a <code>Set</code> of loops that are nested inside of this loop.*/
 
-    public Set NestedLoops() {
+    public Set nestedLoops() {
       analyze();
       WorkSet L=new WorkSet();
       Iterator iterate=ptr.children.iterator();
@@ -168,7 +168,7 @@ public class LoopFinder implements Loops {
     /** Returns the <code>Loops</code> that contains this loop.
      *  If this is the top level loop, this call returns a null pointer.*/
 
-    public Loops ParentLoop() {
+    public Loops parentLoop() {
       analyze();
       if (ptr.parent!=null)
         return new LoopFinder(hc,root,ptr.parent);

@@ -12,28 +12,28 @@ public interface Loops {
 
         /** Returns entrances to the Loop.
          *  This is a <code>Set</code> of <code>HCodeElements</code>.*/
-	public Set Loopentrances();
+	public Set loopEntrances();
 
         /** Returns backedges in the Loop.
          *  This is a <code>Set</code> of <code>HCodeElements</code>.*/
-	public Set Loopbackedges();
+	public Set loopBackedges();
 
         /** Returns nodes that have edges exiting the loop.
          *  This is a <code>Set</code> of <code>HCodeElements</code>.*/
-	public Set Loopexits();
+	public Set loopExits();
 
         /** Returns elements of this loops and all nested loop.
          *  This is a <code>Set</code> of <code>HCodeElements</code>.*/
-	public Set LoopincElements();
+	public Set loopIncelements();
 
         /** Returns elements of this loop not in any nested loop.
          *  This is a <code>Set</code> of <code>HCodeElements</code>.*/
-	public Set LoopexcElements();
+	public Set loopExcelements();
 
         /** Returns a <code>Set</code> containing <code>Loops</code> that are nested.*/
-	public Set NestedLoops();
+	public Set nestedLoops();
 
         /** Returns the loop immediately nesting this loop.
          *  If this is the highest level loop, returns a null pointer.*/
-	public Loops ParentLoop();
+	public Loops parentLoop();
 }
