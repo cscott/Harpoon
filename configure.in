@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.138 $)dnl
+AC_REVISION($Revision: 1.139 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -23,7 +23,7 @@ AC_SUBST(BDWFLAGS) BDWFLAGS='' dnl for B-D-W garbage collector build.
 dnl Checks for programs.
 AC_PROG_CC # also sets cross_compiling variable
 AC_SUBST(HOSTCC) HOSTCC=${HOSTCC:=$CC} # for local helper executables.
-if test x$cross_compiling = xyes ; then
+if test "$cross_compiling" = yes ; then
 	AC_SUBST(CCAS) CCAS=$CC
 	AC_SUBST(CCASCOMPILE) CCASCOMPILE=$CC
 	AC_SUBST(AR) AR=$host_alias-ar
@@ -35,7 +35,7 @@ AC_PROG_MAKE_SET
 AM_MAINTAINER_MODE
 AC_PATH_PROG(FORTUNE, fortune, /usr/games/fortune)
 AC_SUBST(FORTUNE)
-AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
+AM_CONDITIONAL(CROSS_COMPILING, test "$cross_compiling" = yes)
 
 # find a java compiler and tools
 AC_CHECK_PROGS(JAVAC, jikes javac, not-found)
@@ -58,7 +58,7 @@ AC_EGREP_CPP(yes,
   yes
 #endif
 ], flexrun_has_fionread=yes, flexrun_has_fionread=no)
-if test x$flexrun_has_fionread = xyes ; then
+if test "$flexrun_has_fionread" = yes ; then
     AC_DEFINE(HAVE_IOCTL_FIONREAD, 1,
 	      [Define if <sys/ioctl.h> defines a FIONREAD ioctl.])
 fi
@@ -74,7 +74,7 @@ AC_CACHE_CHECK([whether the system uses the O_BINARY flag],
  yes
 #endif
 ], flexrun_cv_sys_obinary=yes, flexrun_cv_sys_obinary=no))
-if test $flexrun_cv_sys_obinary != yes; then
+if test "$flexrun_cv_sys_obinary" != yes; then
   AC_DEFINE(O_BINARY, 0,
     [Define if your system doesn't support (or need) the O_BINARY flag])
 fi
@@ -83,7 +83,7 @@ dnl Determine size of pointer types.
 AC_ARG_WITH(pointer-size,
 [  --with-pointer-size	  specify sizeof(void *) when cross-compiling],
   unset ac_cv_sizeof_void_p
-  with_pointer_size=$withval, with_pointer_size=0 )
+  with_pointer_size="$withval", with_pointer_size=0 )
 AC_CHECK_SIZEOF(void *, $with_pointer_size)
 if test 0$ac_cv_sizeof_void_p -eq 0; then
   AC_MSG_ERROR([Cannot determine size of void *; use --with-pointer-size.])
@@ -94,7 +94,7 @@ AC_CACHE_CHECK(for _ prefix on C symbol names, flexrun_cv_asm_underscores,
 	[AC_TRY_LINK([asm("_flexrun_foobar:");], [flexrun_foobar();],
 	flexrun_cv_asm_underscores=yes,
 	flexrun_cv_asm_underscores=no)]);
-if test $flexrun_cv_asm_underscores = no; then
+if test "$flexrun_cv_asm_underscores" = no; then
 	AC_DEFINE(NO_UNDERSCORES, 1,
 		[Define if there is no _ prefix on C symbol names])
 fi
@@ -102,7 +102,7 @@ fi
 dnl Checks for aout-style or elf-style segment declarations
 AC_ARG_WITH(segment-type,
 [  --with-segment-type={elf,aout} specify segment type (if autoconf can't guess)],
-flexrun_cv_asm_segment_style=$withval,
+flexrun_cv_asm_segment_style="$withval",
 AC_CACHE_CHECK(for segment declaration style, flexrun_cv_asm_segment_style,
 	[AC_TRY_COMPILE([asm(".section foobar");],,
 	flexrun_cv_asm_segment_style=elf,
@@ -118,7 +118,7 @@ elif test "$flexrun_cv_asm_segment_style" = elf; then
 else
 	AC_MSG_ERROR([Cannot determine proper segment declaration format.])
 fi
-AM_CONDITIONAL(AOUT_BUILD, test $flexrun_cv_asm_segment_style = aout)
+AM_CONDITIONAL(AOUT_BUILD, test "$flexrun_cv_asm_segment_style" = aout)
 
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL  # sometimes needed for ioctl to work properly.
@@ -130,7 +130,7 @@ AC_CHECK_FUNCS(uname getcwd localtime)
 AC_CHECK_FUNCS(fsync) # used in java.io.FileDescriptor.sync() impl
  dnl stripped-down platforms might not support networking.
 AC_CHECK_FUNC(socket, build_java_net=yes, build_java_net=no)
-AM_CONDITIONAL(BUILD_JAVA_NET, test x$build_java_net = xyes)
+AM_CONDITIONAL(BUILD_JAVA_NET, test "$build_java_net" = yes)
 
 dnl Checks for build options follow.
 object_padding=0 # several transformations might increment this.
@@ -201,7 +201,7 @@ no,yes)	AC_MSG_RESULT([GNU classpath])
 *)	AC_MSG_ERROR([Must use *one of* Sun's JDK or GNU classpath.])
 	;;
 esac
-AM_CONDITIONAL(SUNJDK, test $with_sunjdk = yes)
+AM_CONDITIONAL(SUNJDK, test "$with_sunjdk" = yes)
 
 dnl process option for 'precise c' backend.
 AC_MSG_CHECKING([precise c backend])
@@ -216,7 +216,7 @@ yes)	AC_MSG_RESULT([yes])
 *)	AC_MSG_RESULT([no])
 	;;
 esac
-AM_CONDITIONAL(PRECISE_C_BACKEND, test $with_precise_c = yes)
+AM_CONDITIONAL(PRECISE_C_BACKEND, test "$with_precise_c" = yes)
 
 dnl process option for Role Inference support
 AC_MSG_CHECKING([for role inference support])
@@ -233,7 +233,7 @@ yes)	AC_MSG_RESULT([yes])
 *)	AC_MSG_RESULT([no])
 	;;
 esac
-AM_CONDITIONAL(ROLE_INFER, test $with_role_infer = yes)
+AM_CONDITIONAL(ROLE_INFER, test "$with_role_infer" = yes)
 
 dnl process option for Realtime Java support.
 AC_MSG_CHECKING([for realtime java support])
@@ -343,9 +343,9 @@ case ",$with_realtime_java," in
 esac
 
 
-AM_CONDITIONAL(REALTIME_JAVA, test $with_realtime_java != no)
-AM_CONDITIONAL(REALTIME_JAVA_STUBS, test $with_realtime_java_stubs = yes)
-AM_CONDITIONAL(REALTIME_JAVA_THREADS, test $with_realtime_threads = yes)
+AM_CONDITIONAL(REALTIME_JAVA, test "$with_realtime_java" != no)
+AM_CONDITIONAL(REALTIME_JAVA_STUBS, test "$with_realtime_java_stubs" = yes)
+AM_CONDITIONAL(REALTIME_JAVA_THREADS, test "$with_realtime_threads" = yes)
 
 dnl set up RTJPerf performance benchmarks - requires native clock code
 AC_MSG_CHECKING([for RTJPerf library support])
@@ -359,7 +359,7 @@ yes)	AC_MSG_RESULT([yes])
 *)	AC_MSG_RESULT([no])
 	;;
 esac
-AM_CONDITIONAL(RTJ_PERF, test $with_rtj_perf = yes) 
+AM_CONDITIONAL(RTJ_PERF, test "$with_rtj_perf" = yes) 
 
 dnl set up Ovy's memory preallocation optimization
 AC_MSG_CHECKING([enable memory preallocation optimization])
@@ -374,7 +374,7 @@ yes)	AC_MSG_RESULT([yes])
 *)	AC_MSG_RESULT([no])
 	;;
 esac
-AM_CONDITIONAL(PREALLOC_OPT, test $with_prealloc_opt = yes) 
+AM_CONDITIONAL(PREALLOC_OPT, test "$with_prealloc_opt" = yes) 
 
 dnl enable passing execution environment (e.g., MAX HEAP) arguments to the executable
 AC_MSG_CHECKING([enable command line execution environment arguments])
@@ -388,7 +388,7 @@ yes)	AC_MSG_RESULT([yes])
 *)	AC_MSG_RESULT([no])
 	;;
 esac
-AM_CONDITIONAL(EXEC_ENV_ARGS, test $with_exec_env_args = yes)
+AM_CONDITIONAL(EXEC_ENV_ARGS, test "$with_exec_env_args" = yes)
 
 dnl process option to select full stack trace on exceptions.
 AC_MSG_CHECKING([stack trace verbosity])
@@ -450,7 +450,7 @@ heavy)  AC_MSG_RESULT([heavy-weight threads])
 	AC_MSG_RESULT([not found.  installing work-around.])
 	CFLAGS="$oldcflags"
 	have_pthread_rwlock_t=no))
-	if test x$have_pthread_rwlock_t = xyes; then
+	if test "$have_pthread_rwlock_t" = yes; then
 		AC_DEFINE(HAVE_PTHREAD_RWLOCK_T, 1,
 		    [Define if your pthread library includes pthread_rwlock_t])
 	fi
@@ -474,7 +474,7 @@ none)   AC_MSG_RESULT([no thread support])
 *)	AC_MSG_ERROR([unknown threading model: $thread_model]) ;;
 esac
 AM_CONDITIONAL(USER_THREADS, test "$thread_model" = "user")	
-if test $thread_model != none; then
+if test "$thread_model" != none; then
 	AC_DEFINE(WITH_THREADS, 1,
 		  [Define if you want support for threads])
 fi
@@ -509,7 +509,7 @@ conservative)
 	AC_MSG_RESULT([B-D-W conservative gc])
 	AC_DEFINE(WITH_CONSERVATIVE_GC, 1,
 		[Define if you are using the plain (not semi) conservative gc])
-	if test x$with_all_static = xyes; then
+	if test "$with_all_static" = yes; then
 		LDFLAGS="$LDFLAGS -Wl,-defsym,_DYNAMIC=0" 
 	fi
 	;;
@@ -520,13 +520,13 @@ none)	AC_MSG_RESULT([no garbage collection])
 *)	AC_MSG_ERROR([unknown garbage collector: $gc_type])	
 	;;
 esac
-if test $gc_type = semi -o $gc_type = conservative; then
+if test "$gc_type" = semi -o "$gc_type" = conservative; then
 	AC_DEFINE(BDW_CONSERVATIVE_GC, 1,
     	[Define if you are using the B-D-W conservative garbage collector])
 	GC_LIB="Contrib/gc/libgc.la"
 	AC_CONFIG_SUBDIRS(Contrib/gc)
 fi	
-if test $gc_type = copying -o $gc_type = marksweep -o $gc_type = generational; then
+if test "$gc_type" = copying -o "$gc_type" = marksweep -o "$gc_type" = generational; then
 	AC_DEFINE(WITH_PRECISE_GC, 1,
 		  [Define if you want support for precise garbage collection])
 fi
@@ -535,13 +535,13 @@ AC_LINK_FILES(Contrib/gc/include/gc_pthread_redirects.h, include/gc_pthread_redi
 AC_LINK_FILES(Contrib/gc/include/gc_typed.h, include/gc_typed.h)
 AC_LINK_FILES(Contrib/gc/include/private/gcconfig.h, include/gcconfig.h)
 AM_CONDITIONAL(CONSERVATIVE_GC,
-	test $gc_type = conservative -o $gc_type = semi)
+	test "$gc_type" = conservative -o "$gc_type" = semi)
 AM_CONDITIONAL(PRECISE_GC,
-	test $gc_type = copying -o $gc_type = marksweep -o $gc_type = semi -o $gc_type = generational)
-AM_CONDITIONAL(COPYING_GC, test $gc_type = copying)
-AM_CONDITIONAL(MARKSWEEP_GC, test $gc_type = marksweep)
-AM_CONDITIONAL(SEMI_PRECISE_GC, test $gc_type = semi)
-AM_CONDITIONAL(GENERATIONAL_GC, test $gc_type = generational)
+	test "$gc_type" = copying -o "$gc_type" = marksweep -o "$gc_type" = semi -o "$gc_type" = generational)
+AM_CONDITIONAL(COPYING_GC, test "$gc_type" = copying)
+AM_CONDITIONAL(MARKSWEEP_GC, test "$gc_type" = marksweep)
+AM_CONDITIONAL(SEMI_PRECISE_GC, test "$gc_type" = semi)
+AM_CONDITIONAL(GENERATIONAL_GC, test "$gc_type" = generational)
 
 dnl process option for using pointer-reversal in mark-and-sweep garbage 
 dnl collection.
@@ -597,7 +597,7 @@ AC_DEFINE(WITH_CLUSTERED_HEAPS, 1,
     [Define if you want to build the experimental clustered heap support]),
 with_clustered_heaps=no)
 AC_MSG_RESULT($with_clustered_heaps)
-AM_CONDITIONAL(CLUSTERED_HEAPS, test $with_clustered_heaps = yes)
+AM_CONDITIONAL(CLUSTERED_HEAPS, test "$with_clustered_heaps" = yes)
 
 dnl experimental support for event-driven code.
 AC_MSG_CHECKING([for experimental event-driven support])
@@ -608,7 +608,7 @@ AC_DEFINE(WITH_EVENT_DRIVEN, 1,
     [Define if you want to build the experimental event-driven code support]),
 with_event_driven=no)
 AC_MSG_RESULT($with_event_driven)
-AM_CONDITIONAL(EVENT_DRIVEN, test $with_event_driven = yes)
+AM_CONDITIONAL(EVENT_DRIVEN, test "$with_event_driven" = yes)
 
 dnl experimental support for camera code.
 AC_MSG_CHECKING([for experimental camera support])
@@ -646,8 +646,8 @@ dnl support for initialization-check rewrite.
 AC_MSG_CHECKING([for initialization transformation support])
 AC_ARG_WITH(init-check,
 [  --without-init-check	  don't build experimental initializer trans. support],
-with_init_check=$withval, with_init_check=yes) # default is 'yes'
-if test x$with_init_check = xyes; then
+with_init_check="$withval", with_init_check=yes) # default is 'yes'
+if test "$with_init_check" = yes; then
   AC_DEFINE(WITH_INIT_CHECK, 1,
          [Define to build the experimental initializer transformation support])
 fi
@@ -657,35 +657,35 @@ dnl experimental support for transaction rewrite.
 AC_MSG_CHECKING([for experimental transactions support])
 AC_ARG_WITH(transactions,
 [  --with-transactions	  build experimental transactions trans. support],
-with_transactions=$withval, with_transactions=no) # default is 'no'
-if test x$with_transactions = xyes; then
+with_transactions="$withval", with_transactions=no) # default is 'no'
+if test "$with_transactions" = yes; then
   AC_DEFINE(WITH_TRANSACTIONS, 1,
         [Define to build the experimental transactions transformation support])
 fi
-AM_CONDITIONAL(TRANSACTIONS, test x$with_transactions = xyes)
+AM_CONDITIONAL(TRANSACTIONS, test "$with_transactions" = yes)
 AC_MSG_RESULT($with_transactions)
 
 dnl experimental support for mostly-zero fields transformations.
 AC_MSG_CHECKING([for experimental mostly-zero fields support])
 AC_ARG_WITH(mzf,
 [  --with-mzf		  build experimental mostly-zero fields support],
-with_mzf_support=$withval, with_mzf_support=no) # default is 'no'
-if test x$with_mzf_support = xyes; then
+with_mzf_support="$withval", with_mzf_support=no) # default is 'no'
+if test "$with_mzf_support" = yes; then
   AC_DEFINE(WITH_MZF_SUPPORT, 1,
         [Define to build the experimental mostly-zero fields support])
 fi
-AM_CONDITIONAL(MZF_SUPPORT, test x$with_mzf_support = xyes)
+AM_CONDITIONAL(MZF_SUPPORT, test "$with_mzf_support" = yes)
 AC_MSG_RESULT($with_mzf_support)
 
 dnl experimental support for claz compression.
 AC_MSG_CHECKING([for experimental claz compression support])
 AC_ARG_WITH(claz-shrink,
 [  --with-claz-shrink=N	  compress claz pointers to N bytes (experimental)],
-with_claz_shrink=$withval, with_claz_shrink=no) # default is 'no'
-if test x$with_claz_shrink = xyes; then
+with_claz_shrink="$withval", with_claz_shrink=no) # default is 'no'
+if test "$with_claz_shrink" = yes; then
   with_claz_shrink=4
 fi
-if test x$with_claz_shrink = xno; then
+if test "$with_claz_shrink" = no; then
   AC_MSG_RESULT($with_claz_shrink)
 else
   AC_DEFINE_UNQUOTED(WITH_CLAZ_SHRINK, $with_claz_shrink,
@@ -697,8 +697,8 @@ dnl experimental support for hashfield compression.
 AC_MSG_CHECKING([for experimental hashlock field compression support])
 AC_ARG_WITH(hashlock-shrink,
 [  --with-hashlock-shrink  compress hashlock field (experimental)],
-with_hashlock_shrink=$withval, with_hashlock_shrink=no) # default is 'no'
-if test x$with_hashlock_shrink = xyes; then
+with_hashlock_shrink="$withval", with_hashlock_shrink=no) # default is 'no'
+if test "$with_hashlock_shrink" = yes; then
   AC_DEFINE(WITH_HASHLOCK_SHRINK, 1,
         [Define to compress the hashlock field, where possible])
 fi
@@ -726,21 +726,21 @@ with_live_heap_statistics=yes, with_live_heap_statistics=no)
 AC_MSG_RESULT($with_live_heap_statistics)
 
 dnl set #defines and AM_CONDITIONALs for various statistics.
-if test x$with_live_heap_statistics = xyes; then
+if test "$with_live_heap_statistics" = yes; then
 	with_statistics=yes # live-heap statistics imply regular statistics.
 	AC_DEFINE(WITH_LIVE_HEAP_STATISTICS, 1,
     	[Define if you want to collect and print live-heap-size statistics])
 fi
-if test x$with_memory_statistics = xyes; then
+if test "$with_memory_statistics" = yes; then
 	with_statistics=yes # memory statistics imply regular statistics.
 	AC_DEFINE(WITH_MEMORY_STATISTICS, 1,
     	[Define if you want to collect and print memory statistics])
 fi
-if test x$with_statistics = xyes; then
+if test "$with_statistics" = yes; then
 	AC_DEFINE(WITH_STATISTICS, 1,
     	[Define if you want to collect and print execution statistics])
 fi
-AM_CONDITIONAL(STATISTICS, test $with_statistics = yes)
+AM_CONDITIONAL(STATISTICS, test "$with_statistics" = yes)
 
 dnl some transformations pad java.lang.Object with extra fields.
 dnl (object_padding should is initialized to zero higher up in this file)
@@ -759,7 +759,7 @@ AC_MSG_CHECKING([whether to zero the low bits of pointers before use])
 AC_ARG_WITH(masked-pointers,
 [  --with-masked-pointers  Zero out the low bits of pointers before use],
 masked_pointers="$withval", )
-if test x$masked_pointers = xyes; then
+if test "$masked_pointers" = yes; then
   AC_DEFINE(WITH_MASKED_POINTERS, 1,
         [Define to zero the low bits of pointers before their use])
 fi
@@ -784,7 +784,7 @@ AC_DEFINE(WITH_DMALLOC, 1,
     [Define if you are using the debugging malloc from www.dmalloc.com])
 IFLAGS="$IFLAGS -I${withval}/include"
 LDFLAGS="$LDFLAGS -L${withval}/lib"
-if test x$thread_model = xheavy; then
+if test "$thread_model" = heavy; then
 	AC_MSG_RESULT([yes (threaded)])
 	LIBS="$LIBS -ldmallocth"
 else
@@ -806,14 +806,14 @@ i?86) archdir=ix86 ;;
 mips) archdir=mips ;;
 *)    AC_MSG_ERROR([no port for $target_cpu]) ;;
 esac
-AM_CONDITIONAL(ARM32, test $archdir = arm32)
-AM_CONDITIONAL(I386, test $archdir = ix86)
+AM_CONDITIONAL(ARM32, test "$archdir" = arm32)
+AM_CONDITIONAL(I386, test "$archdir" = ix86)
 AC_SUBST(ARCHDIR) ARCHDIR=${archdir}
 
 dnl For cross-compiling, add cross-compiling libs directory to the beginning of
 dnl the search list.
-if test x$cross_compiling = xyes; then
-  if test x$with_all_static = xyes; then
+if test "$cross_compiling" = yes; then
+  if test "$with_all_static" = yes; then
     LDFLAGS="-static -L`pwd`/arch/${archdir}/crosslibs $LDFLAGS"
     GC_LDFLAGS="-static -L`pwd`/arch/${archdir}/crosslibs $GC_LDFLAGS"
   fi
@@ -837,9 +837,9 @@ AC_MSG_CHECKING(link script for $target_cpu)
 CC="$CC" scripts/gen-link-script > arch/${archdir}/link-script
 AC_MSG_RESULT(created in arch/${archdir}/link-script)
 
-if test x$with_rtj_perf = xyes; then
-  AC_PATH_PROG(PYTHON, 'python', x)
-  if test $PYTHON != x ; then 
+if test "$with_rtj_perf" = yes; then
+  AC_PATH_PROG(PYTHON, 'python', not-found)
+  if test $PYTHON != not-found ; then 
     cd src/rtjperf
     $PYTHON genSysInfo.py
     cd ../..
