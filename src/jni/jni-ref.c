@@ -82,19 +82,18 @@ jobject FNI_NewGlobalRef(JNIEnv * env, jobject obj) {
   /* malloc away... */
   result = 
 #ifdef WITH_PRECISE_GC
-    malloc
+    malloc(sizeof(*result));
 #elif defined(BDW_CONSERVATIVE_GC)
 #ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
+    GC_malloc_uncollectable_stats(sizeof(*result));
 #else
-    GC_malloc_uncollectable
+    GC_malloc_uncollectable(sizeof(*result));
 #endif
 #elif WITH_REALTIME_JAVA
-    RTJ_MALLOC_UNCOLLECTABLE
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(*result));
 #else /* okay, use system-default malloc */
-    malloc
+    malloc(sizeof(*result));
 #endif
-      (sizeof(*result));
   result->jobject.obj = obj->obj;
   /* acquire global lock */
   FLEX_MUTEX_LOCK(&globalref_mutex);
