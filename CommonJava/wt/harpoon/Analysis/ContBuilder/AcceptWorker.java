@@ -11,37 +11,36 @@ import java.net.Socket;
  * <code>AcceptWorker</code>
  *
  * @author P.Govereau govereau@mit.edu
- * @version $Id: AcceptWorker.java,v 1.1 2000-03-24 02:32:25 govereau Exp $
+ * @version $Id: AcceptWorker.java,v 1.2 2000-04-01 21:50:40 bdemsky Exp $
  */
 class AcceptWorker extends Thread {
-	public void run() {
-		Socket clientSocket;
-		AsyncRequest req;
-		ObjectDoneContinuation oc;
-		try {
-			while (true) {
-				synchronized (Scheduler.acceptRequests) {
-					Scheduler.acceptRequests.wait();
-				}
-				req = Scheduler.acceptRequests.nextRequest();
-				if (req == null) {
-					throw new RuntimeException("assert: AcceptWorker: req == null");
-				}
-
-				oc = (ObjectDoneContinuation)req.thread.cc;
-				try {
-					clientSocket = req.s.accept();
-					oc.setResult((Object)clientSocket);
-				}
-				catch (IOException ex) {
-					oc.setException((Throwable)ex);
-					System.out.println("AcceptWorker: Accept error");
-				}
-				Scheduler.addReadyThread(req.thread);
-			}
+    public void run() {
+	Socket clientSocket;
+	AsyncRequest req;
+	ObjectDoneContinuation oc;
+	try {
+	    while (true) {
+		synchronized (Scheduler.acceptRequests) {
+		    while ((req=Scheduler.acceptRequests.nextRequest())==null)
+			Scheduler.acceptRequests.wait();
 		}
-		catch (Exception ex) {
-			System.err.println(ex);
-		}		
+		
+		oc = (ObjectDoneContinuation)req.thread.cc;
+		//System.out.println("Trying accept request");
+		try {
+		    clientSocket = req.s.accept();
+		    oc.setResult((Object)clientSocket);
+		}
+		catch (IOException ex) {
+		    oc.setException((Throwable)ex);
+		    System.out.println("AcceptWorker: Accept error");
+		}
+		//System.out.println("Completing accept request");
+		Scheduler.addReadyThread(req.thread);
+	    }
 	}
+	catch (Exception ex) {
+	    System.err.println("AW"+ex);
+	}		
+    }
 }

@@ -10,42 +10,41 @@ import java.io.InputStream;
  * <code>ReadWorker</code>
  *
  * @author P.Govereau govereau@mit.edu
- * @version $Id: ReadWorker.java,v 1.1 2000-03-24 02:32:25 govereau Exp $
+ * @version $Id: ReadWorker.java,v 1.2 2000-04-01 21:50:40 bdemsky Exp $
  */
 class ReadWorker extends Thread {
 	
-	public void run() {
-		int result;
-		AsyncRequest req;
-		IntDoneContinuation ic;
-		try {
-			while (true) {
-				synchronized (Scheduler.readRequests) {
-					Scheduler.readRequests.wait();
-				}
-				req = Scheduler.readRequests.nextRequest();
-				if (req == null) {
-					throw new RuntimeException("assert: ReadWorker: req == null");
-				}
-
-				ic = (IntDoneContinuation)req.thread.cc;
-				try {
-					if (req.b == null) {
-						result = req.in.read();
-					} else {
-						result = req.in.read(req.b, req.off, req.len);
-					}
-					ic.setResult(result);
-				}
-				catch (IOException ex) {
-					ic.setException((Throwable)ex);
-				}
-				Scheduler.addReadyThread(req.thread);
-			}
-		}
-		catch (Exception ex) {
-			System.err.println(ex);
+    public void run() {
+	int result;
+	AsyncRequest req;
+	IntDoneContinuation ic;
+	try {
+	    while (true) {
+		synchronized (Scheduler.readRequests) {
+		    while ((req=Scheduler.readRequests.nextRequest())==null)
+			Scheduler.readRequests.wait();
 		}
 		
+		ic = (IntDoneContinuation)req.thread.cc;
+		//System.out.println("Trying read request");
+		try {
+		    if (req.b == null) {
+			result = req.in.read();
+		    } else {
+			result = req.in.read(req.b, req.off, req.len);
+		    }
+		    ic.setResult(result);
+		}
+		catch (IOException ex) {
+		    ic.setException((Throwable)ex);
+		}
+		//System.out.println("Completeds read request");
+		Scheduler.addReadyThread(req.thread);
+	    }
 	}
+	catch (Exception ex) {
+	    ex.printStackTrace();
+	    System.err.println("RW"+ex);
+	}
+    }
 }

@@ -7,7 +7,7 @@ package harpoon.Analysis.ContBuilder;
  * <code>Scheduler</code>
  *
  * @author unknown and P.Govereau govereau@mit.edu
- * @version $Id: Scheduler.java,v 1.1 2000-03-24 02:32:25 govereau Exp $
+ * @version $Id: Scheduler.java,v 1.2 2000-04-01 21:50:40 bdemsky Exp $
  */
 public final class Scheduler
 {
@@ -55,8 +55,8 @@ public final class Scheduler
 		 */
 	public static ObjectDoneContinuation addAccept(AsyncRequest req) {
 		ObjectDoneContinuation cont = new ObjectDoneContinuation();
-		acceptRequests.addRequest(req);
 		blocked(cont);
+		acceptRequests.addRequest(req);
 		synchronized (acceptRequests) {
 			acceptRequests.notify();
 		}
@@ -72,8 +72,8 @@ public final class Scheduler
 		 */
     public static IntDoneContinuation addRead(AsyncRequest req) {
 		IntDoneContinuation cont = new IntDoneContinuation();
-		readRequests.addRequest(req);
 		blocked(cont);
+		readRequests.addRequest(req);
 		synchronized (readRequests) {
 			readRequests.notify();
 		}
@@ -89,8 +89,8 @@ public final class Scheduler
 		 */		   
     public static VoidDoneContinuation addWrite(AsyncRequest req) {
 		VoidDoneContinuation cont = new VoidDoneContinuation();
-		writeRequests.addRequest(req);
 		blocked(cont);
+		writeRequests.addRequest(req);
 		synchronized (writeRequests) {
 			writeRequests.notify();
 		}
@@ -178,7 +178,7 @@ class SchedulerThreadC
     }
 	
     public void exception(Throwable t) {
-		System.err.println(t);
+		System.err.println("STC"+t);
 	}
 }
 
