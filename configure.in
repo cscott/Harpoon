@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.157 $)dnl
+AC_REVISION($Revision: 1.158 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -117,7 +117,7 @@ AC_ARG_WITH(segment-type,
 [  --with-segment-type={elf,aout,xcoff}   force given segment type],
 flexrun_cv_asm_segment_style="$withval",
 AC_CACHE_CHECK(for segment declaration style, flexrun_cv_asm_segment_style,
-	[AC_TRY_COMPILE([asm(".section foobar");],,
+	[AC_TRY_COMPILE([asm(".section .rodata");],,
 	flexrun_cv_asm_segment_style=elf,
 	dnl Note we're using "quadrigraphs" here; see the autoconf man page.
 	AC_TRY_COMPILE([asm(".csect .text@<:@PR@:>@");],,
