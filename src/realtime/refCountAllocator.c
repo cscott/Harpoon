@@ -84,13 +84,16 @@ inline void cleanup(RefCountAllocator rc) {
       if (rc->refCount) {
 	compare_and_swap((long int*)(&(rc->cleaning)), 1, 0);
       } else {
-	rc->collectable = rc->freeList;
-	rc->cleaning = 2;
+	struct refCons* freeList = rc->freeList;
+	if (freeList) {
+	  rc->collectable = freeList;
+	}
+	compare_and_swap((long int*)(&(rc->cleaning)), 1, 2);
       }
     }
     if (rc->cleaning == 2) {
       rc->freeList = NULL;
-      rc->cleaning = 3;
+      compare_and_swap((long int*)(&(rc->cleaning)), 2, 3);
     }
     if (!(rc->refCount)) {
       while (rc->collectable) {
