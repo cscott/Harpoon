@@ -26,7 +26,7 @@ import java.util.Map;
  * representation in SSA form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.19 1999-08-07 04:35:20 cananian Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.20 1999-08-09 21:58:25 duncan Exp $
  */
 public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
     private Derivation  m_derivation;
@@ -40,25 +40,26 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
 	super(code.getMethod(), null);
 	final Map dT = new HashMap();
 	final Map tT = new HashMap();
-	final TypeMap tym = new harpoon.Analysis.QuadSSA.TypeInfo();
+	final TypeMap tym = new harpoon.Analysis.QuadSSA.TypeInfo(code);
 	FinalMap fm = new harpoon.Backend.Maps.DefaultFinalMap();
 	quads = Translate.translate((LowQuadFactory)qf, code, tym, fm, dT, tT);
       
 	m_derivation = new Derivation() {
 	    public DList derivation(HCodeElement hce, Temp t) {
-		return ((hce==null)||(t==null))?null:(DList)dT.get(t);
+		Util.assert(hce!=null && t!=null);
+		return (DList)dT.get(t);
 	    }
 	};
 	final LowQuadFactory lqf =  // javac bug workaround to let qf be
 	    (LowQuadFactory) qf;    // visible in anonymous TypeMap below.
 	m_typeMap = new TypeMap() { 
-	    public HClass typeMap(HCode hc, Temp t) { 
+	    public HClass typeMap(HCodeElement hce, Temp t) { 
 		Util.assert(lqf.tempFactory()==t.tempFactory());
-		Object type = tT.get(t);   // Ignores hc parameter
-		if (type instanceof Error) 
+		Object type = tT.get(t);   // Ignores hce: this is SSA form
+		try { return (HClass)type; } 
+		catch (ClassCastException cce) { 
 		    throw (Error)((Error)type).fillInStackTrace();
-		else
-		    return (HClass)type;
+		}
 	    }
 	};
     }
@@ -134,8 +135,8 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
 	return m_derivation.derivation(hce, t);
     }
 
-    public HClass typeMap(HCode hc, Temp t) {
-	// Ignores hc parameter
-	return m_typeMap.typeMap(this, t);
+    public HClass typeMap(HCodeElement hce, Temp t) {
+	// Ignores hce:  this is SSA form
+	return m_typeMap.typeMap(hce, t);
     }
 }

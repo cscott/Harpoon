@@ -6,6 +6,7 @@ package harpoon.IR.LowQuad;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Maps.FinalMap;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.Derivation.DList;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.Quad;
@@ -25,7 +26,7 @@ import java.util.Map;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.8 1999-08-05 05:47:16 duncan Exp $
+ * @version $Id: Translate.java,v 1.1.2.9 1999-08-09 21:58:25 duncan Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
@@ -96,7 +97,7 @@ final class Translate { // not public
 	        Temp[] tmps = (i==0)?q.def():q.use();
 	        for (int j=0; j<tmps.length; j++) {
 		    if (!tT.containsKey(map(tmps[j]))) 
-		        tT.put(map(tmps[j]), tym.typeMap(code, tmps[j]));
+		        tT.put(map(tmps[j]), tym.typeMap(q, tmps[j]));
 		}
 	    }
 	}
@@ -112,7 +113,7 @@ final class Translate { // not public
 	public final void visit(harpoon.IR.Quads.AGET q) {
 	    Quad q0 = new PARRAY(qf, q, extra(q.objectref()),
 				 map(q.objectref()));
-	    Quad q1 = new PAOFFSET(qf, q, extra(q.index()),type(q.objectref()),
+	    Quad q1 = new PAOFFSET(qf,q,extra(q.index()),type(q,q.objectref()),
 				   map(q.index()));
 	    Quad q2 = new POPER(qf, q, LQop.PADD, extra(q.objectref()),
 				new Temp[] { q0.def()[0], q1.def()[0] });
@@ -135,7 +136,7 @@ final class Translate { // not public
 	public final void visit(harpoon.IR.Quads.ASET q) {
 	    Quad q0 = new PARRAY(qf, q, extra(q.objectref()),
 				 map(q.objectref()));
-	    Quad q1 = new PAOFFSET(qf, q, extra(q.index()),type(q.objectref()),
+	    Quad q1 = new PAOFFSET(qf,q,extra(q.index()),type(q,q.objectref()),
 				   map(q.index()));
 	    Quad q2 = new POPER(qf, q, LQop.PADD, extra(q.objectref()),
 				new Temp[] { q0.def()[0], q1.def()[0] });
@@ -182,7 +183,7 @@ final class Translate { // not public
 		       new Error("Cant type derived pointer: " + q2.def()[0]));
 		
 		// FIXME
-		if (tym.typeMap(code, q.params(0))==HClass.Void) { 
+		if (tym.typeMap(q, q.params(0))==HClass.Void) { 
 		  tT.put(map(q.params(0)), HClass.forName("java.lang.Object"));
 		}
 	    }
@@ -269,7 +270,9 @@ final class Translate { // not public
  	// UTILITY FUNCTIONS:
 	private Temp extra() { return new Temp(qf.tempFactory(), "lq_"); }
 	private Temp extra(Temp t) { return t.clone(qf.tempFactory()); }
-	private HClass type(Temp t) { return tym.typeMap(code, t); }
+	private HClass type(HCodeElement hce, Temp t) { 
+	    return tym.typeMap(hce, t); 
+	}
 	private Temp map(Temp t) {
 	    return (t==null)?null:ctm.tempMap(t);
 	}

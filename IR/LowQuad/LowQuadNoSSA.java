@@ -27,7 +27,7 @@ import harpoon.Temp.Temp;
  * arity will always be 0. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.17 1999-08-07 04:35:20 cananian Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.18 1999-08-09 21:58:25 duncan Exp $
  */
 public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
     private Derivation m_derivation;
@@ -119,8 +119,7 @@ public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
 	return m_derivation.derivation(hce, t);
     }
 
-    public HClass typeMap(HCode hc, Temp t) {
-	// Ignores hc parameter
-	return m_typeMap.typeMap(this, t);
+    public HClass typeMap(HCodeElement hce, Temp t) {
+	return m_typeMap.typeMap(hce, t);
     }
 }
