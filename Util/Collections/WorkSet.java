@@ -8,6 +8,9 @@ import harpoon.Util.Worklist;
 
 import java.util.HashMap;
 import java.util.Iterator;
+
+import java.io.Serializable;
+
 /**
  * A <code>WorkSet</code> is a <code>Set</code> offering constant-time
  * access to the first/last element inserted, and an iterator whose speed
@@ -15,9 +18,9 @@ import java.util.Iterator;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.4 2002-04-10 03:07:14 cananian Exp $
+ * @version $Id: WorkSet.java,v 1.5 2002-11-29 20:19:46 salcianu Exp $
  */
-public class WorkSet<E> extends java.util.AbstractSet<E> implements Worklist<E>
+public class WorkSet<E> extends java.util.AbstractSet<E> implements Worklist<E>, Serializable
 {
     private final HashMap<E,EntryList<E>> hm;
     private EntryList<E> listhead = EntryList.init(); // header and footer nodes.
@@ -198,7 +201,7 @@ public class WorkSet<E> extends java.util.AbstractSet<E> implements Worklist<E>
     public int size() { return hm.size(); }
 
     // INNER CLASS. -------------------------------------------
-    private static final class EntryList<E> {
+    private static final class EntryList<E> implements Serializable {
 	final E o;
 	EntryList<E> prev=null, next=null;
 	EntryList(E o) { this.o = o; }
