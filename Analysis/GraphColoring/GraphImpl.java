@@ -8,16 +8,17 @@ import harpoon.Util.UniqueVector;
 import java.util.Enumeration;
 
 /**
- * <code>Graph</code> is an abstract class containing the framework
+ * <code>GraphImpl</code> is an abstract class containing the framework
  * for implementing a graph object.
  * 
+ * @deprecated replaced by <code>Graph</code> interface.
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: GraphImpl.java,v 1.1.2.2 2000-07-20 21:05:37 pnkfelix Exp $
+ * @version $Id: GraphImpl.java,v 1.1.2.3 2000-07-21 21:54:40 pnkfelix Exp $
  */
 
 public abstract class GraphImpl {
     
-    private UniqueVector nodes;
+    protected UniqueVector nodes;
 
     /** Creates a <code>Graph</code>. */
     public GraphImpl() {
@@ -50,7 +51,7 @@ public abstract class GraphImpl {
 		 this + "; it is not modifiable.");
 	}
     }
-
+    
     /** Node type-checking method for subclasses to implement.
 	<BR> <B>effects:</B> If <code>node</code> is of the wrong type
 	                     for the graph implementation being used,

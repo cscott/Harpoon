@@ -7,12 +7,13 @@ import java.util.Enumeration;
 import java.util.NoSuchElementException;
 
 /**
- * <code>ColorableGraph</code> defines a set of methods that graphs to
+ * <code>ColorableGraphImpl</code> defines a set of methods that graphs to
  * be colored should implement.  They are meant to be called by the
  * graph colorers defined in this package.
- * 
+ *
+ * @deprecated replaced by <code>ColorableGraph</code> interface.
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableGraphImpl.java,v 1.1.2.1 2000-07-20 21:03:21 pnkfelix Exp $ */
+ * @version $Id: ColorableGraphImpl.java,v 1.1.2.2 2000-07-21 21:54:40 pnkfelix Exp $ */
 
 public abstract class ColorableGraphImpl extends GraphImpl {
 

@@ -4,7 +4,17 @@
 package harpoon.Analysis.GraphColoring;
 
 import harpoon.Util.UniqueStack;
+import harpoon.Util.EnumerationIterator;
+import harpoon.Util.Default;
+import harpoon.Util.UnmodifiableIterator;
 import java.util.Enumeration;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.AbstractCollection;
+import java.util.Set;
+import java.util.List;
+import java.util.HashSet;
+import java.util.Iterator;
 
 /**
  * <code>SparseGraph</code> is an implementation of a
@@ -13,10 +23,10 @@ import java.util.Enumeration;
  * references <code>SparseNode</code>s store internally.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseGraph.java,v 1.1.2.9 2000-07-20 21:05:37 pnkfelix Exp $ 
+ * @version $Id: SparseGraph.java,v 1.1.2.10 2000-07-21 21:54:40 pnkfelix Exp $ 
  */
 
-public class SparseGraph extends ColorableGraphImpl {
+public class SparseGraph extends ColorableGraphImpl { // implements ColorableGraph {
 
     // List of hidden nodes, so that we may properly check when nodes
     // are unhid.
@@ -309,4 +319,308 @@ public class SparseGraph extends ColorableGraphImpl {
 	return hiddenNodes.size() == 0 && super.isModifiable();
     }
     
+
+    public void addNode( Node n ) {
+	super.addNode(n);
+    }
+
+    /** Ensures that this graph contains <code>node</code> (adapter
+	method for <code>ColorableGraph</code> interface).
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B>  If this method returns normally,
+	     <code>node</code> will be present in the node-set for
+	     <code>this</code>.  Returns <tt>true</tt> if this graph
+	     changed as a result of the call, <tt>false</tt>
+	     otherwise.
+	@throws UnsupportedOperationException addNode is not supported
+	        by this graph.
+	@throws ClassCastException class of specified element prevents
+	        it from being added to this graph.
+	@throws AlreadyHiddenException node is part of the set of
+	        hidden nodes in <code>this</code>
+	@throws IllegalArgumentException some aspect of
+	        <code>node</code> prevents it from being added to the
+		node-set for this graph.
+    */
+    public boolean addNode( Object node ) {
+	throw new UnsupportedOperationException();
+    }
+
+    /** Returns all nodes in graph to their original state.
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> the Node -> Color mapping 
+	     is cleared and each hidden node is restored;
+	     <code>this</code> is otherwise unchanged.
+    */
+    public void resetGraph() {
+
+    }
+
+    /** Reverts the graph to an uncolored state.
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> clears the Node -> Color mapping.
+    */
+    public void resetColors() {
+
+    }
+
+    /** Sets the color of <code>n</code>.
+	<BR> <B>effects:</B> If <code>c</code> is null, then
+	     removes <code>n</code> from the Node -> Color mapping.
+	     Else puts (n, c) in the Node -> Color mapping.
+        @throws IllegalArgumentException If <code>n</code> is not
+	     present in the node set for <code>this</code> or
+	     <code>n</code> has already been colored.
+    */
+    public void setColor(Object n, Color c) {
+	throw new IllegalArgumentException();
+    }
+
+
+    /** Returns the color of <code>node</code>.
+	<BR> <B>effects:</B> Returns the color associated with
+	     <code>node</code> in the Node -> Color mapping, or null
+	     if there is no entry in the mapping for
+	     <code>node</code>.  
+        @throws IllegalArgumentException If <code>node</code> is not
+	     present in the node set for <code>this</code>.
+    */
+    public Color getColor(Object node) {
+	throw new IllegalArgumentException();
+    }
+
+    /** Temporarily removes <code>node</code> from graph.
+	<BR> <B>modifies:</B> <code>this</code>, <code>node</code>
+	<BR> <B>effects:</B> Removes <code>node</code> and
+	     <code>node</code>'s associated edges from
+	     <code>this</code>, pushing it onto hidden-nodes stack
+	     for later replacement in the graph.  Also updates all
+	     edges and nodes of <code>this</code> to reflect that 
+	     <code>node</code> has been hidden.
+        @throws IllegalArgumentException If <code>node</code> is not
+	     present in the node set for <code>this</code>.
+    */
+    public void hide( Object node ) {
+	throw new IllegalArgumentException();
+    }
+    
+    /** Replaces the last hidden node</code> into the graph.
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> 
+	     if hidden-nodes stack is empty,
+	     then returns null
+	     else let n = Pop(hidden-nodes stack).
+	          puts `n' and its associated edges back in the
+		  graph, updating all edges and nodes of
+		  <code>this</code> to reflect that n has been 
+		  replaced. 
+		  Returns n. 
+    */
+    public Object replace() {
+	return null;
+    }
+
+    /** Replaces all hidden nodes in graph.
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> 
+	     until hidden-nodes stack is empty,
+	          let n = Pop(hidden-nodes stack).
+	          puts `n' and its associated edges back in the
+		  graph, updating all edges and nodes of
+		  <code>this</code> to reflect that n has been 
+		  replaced. 
+    */
+    public void replaceAll() {
+	
+    }
+
+    /** Wrapper implementation of <code>super.addEdge(m,n)</code>.
+	Needed to resolve ambiguity at compile-time.
+    */
+    public void addEdge( Node m, Node n ) {
+	super.addEdge(m, n);
+    }
+
+    /** Ensures that this graph contains an edge between
+	<code>m</code> and <code>n</code> (optional operation). 
+	<BR> <B>modifies:</B> <code>this</code>.
+	<BR> <B>effects:</B> If this method returns normally, an edge
+	     between <code>m</code> and <code>n</code> will be in 
+	     <code>this</code>.  Returns <tt>true</tt> if
+	     <code>this</code> changed as a result of the call.
+	@throws IllegalArgumentException <code>m</code> or
+	     <code>n</code> is not present in the node set for
+	     <code>this</code>.
+	@throws UnsupportedOperationException addEdge is not supported
+	     by this graph.
+    */
+    public boolean addEdge( Object m, Object n ) {
+	throw new UnsupportedOperationException();
+    }
+
+    /** Returns the degree of <code>node</code>.
+	<BR> <B>effects:</B> Returns the number of other
+	     <code>Object</code>s that <code>node</code> is joined
+	     with.
+        @throws IllegalArgumentException If <code>node</code> is not
+	     present in the node set for <code>this</code>.
+    */
+    public int getDegree( Object node ) {
+	throw new IllegalArgumentException();
+    }
+
+    /** Returns a set view of the nodes in <code>this</code>.
+	<BR> <B>effects:</B> Returns an <code>Set</code> of
+	     the <code>Object</code>s that have been successfully
+	     added to <code>this</code>.   
+    */
+    public Set nodeSet() {
+	return Collections.unmodifiableSet(nodes);
+    }
+
+    /** Returns a collection view for the neighbors of a specific node. 
+	<BR> <B>effects:</B> Returns an <code>Collection</code> of
+	     <code>Object</code>s that have an edge between
+	     <code>node</code> and them.  
+	<BR> <B>mandates:</B> <code>node</code> is not removed from 
+	     <code>this</code> while the returned
+	     <code>Collection</code> is in use. 
+	@throws IllegalArgumentException <code>node</code> is not
+	     present in the node set for <code>this</code>.
+     */
+    public Collection neighborsOf( Object node ) {
+	final SparseNode sn;
+	try {
+	    sn = (SparseNode) node;
+	} catch (ClassCastException e) {
+	    throw new IllegalArgumentException();
+	}
+	return new AbstractCollection() {
+	    public int size() {
+		return sn.getDegree();
+	    }
+	    public Iterator iterator() {
+		Enumeration e = sn.getNeighboringNodes();
+		return new EnumerationIterator(e);
+	    }
+	};
+    }
+
+    /** Returns a collection view of the edges joining
+	<code>node</code> to nodes in the graph (adapter method).
+	<BR> <B>effects:</B> Returns a <code>Collection</code> of
+	     two-element <code>Collection</code>s (known as 
+	     <i>pairs</i>) where each pair corresponds to an edge
+	     { node, n } in this.  If the graph is modified while an
+	     iteration over the collection is in progress, the results
+	     of the iteration are undefined.  Order may or may not be
+	     significant in the pairs returned.
+        @throws IllegalArgumentException If <code>node</code> is not
+	     present in the node set for <code>this</code>.
+    */
+    public Collection edgesFor( final Object node ) {
+	final Collection neighbors = neighborsOf(node);
+	return new AbstractCollection() {
+	    public int size() {
+		return neighbors.size();
+	    }
+	    public Iterator iterator() {
+		return new UnmodifiableIterator() {
+		    Iterator ns = neighbors.iterator();
+		    public boolean hasNext() {
+			return ns.hasNext();
+		    }
+		    public Object next() {
+			return Default.pair(node,ns.next());
+		    }
+		};
+	    }
+	};
+    }
+
+
+    /** Returns a collection view of the edges contained in this graph
+	(adapter method).
+	<BR> <B>effects:</B> Returns a <code>Collection</code> of
+	     two-element <code>Collection</code>s (known as
+	     <i>pairs</i>) where each pair corresponds to an edge 
+	     { n1, n2 } in this.  If the graph is modified while an
+	     iteration over the collection is in progress, the results
+	     of the iteration are undefined.  Order may or
+	     may not be significant in the pairs returned.
+    */
+    public Collection edges() {
+	return new AbstractCollection() {
+	    public int size() {
+		int d = 0;
+		for(Iterator nodesI=nodes.iterator();nodesI.hasNext();){
+		    SparseNode n = (SparseNode) nodesI.next();
+		    d += n.getDegree();
+		}
+		return d/2;
+	    }
+	    public Iterator iterator() {
+		final Set visited = new HashSet();
+		final Iterator nodesI = nodeSet().iterator();
+		final SparseNode firstNode;
+		if (nodesI.hasNext()) {
+		    firstNode = (SparseNode) nodesI.next();
+		    visited.add(firstNode);
+		} else {
+		    firstNode = null;
+		}
+		final Iterator firstNeighbors;
+		if (firstNode != null) {
+		    Enumeration e = firstNode.getNeighboringNodes();
+		    firstNeighbors = new EnumerationIterator(e);
+		} else {
+		    firstNeighbors = Default.nullIterator;
+		}
+		return new UnmodifiableIterator(){
+		    SparseNode currNode = firstNode;
+		    
+		    // niter iterates over currNode's neighbors
+		    Iterator niter = firstNeighbors;
+
+		    // (neighbor != null) ==> next is <currNode,neighbor>
+		    SparseNode neighbor = null;
+
+		    // (hasNext() returns true) <==> neighbor != null
+		    public boolean hasNext() {
+			if(neighbor!=null){
+			    return true;
+			}
+			while(true) {
+			    while(niter.hasNext()) {
+				neighbor=(SparseNode)niter.next();
+				if(!visited.contains(neighbor)) 
+				    return true;
+			    }
+			    // got here, finished with neighbors for
+			    // currNode 
+			    neighbor = null;
+
+			    if(nodesI.hasNext()) {
+				currNode = (SparseNode)nodesI.next();
+				visited.add(currNode);
+				Enumeration e=currNode.getNeighboringNodes();
+				niter= new EnumerationIterator(e);
+			    } else {
+				return false;
+			    }
+			}
+		    }
+		    public Object next() {
+			if(hasNext()){
+			    List edge = Default.pair(currNode,neighbor);
+			    neighbor = null;
+			    return edge;
+			} else {
+			    throw new java.util.NoSuchElementException();
+			}
+		    }
+		};
+	    }
+	};
+    }
 }
