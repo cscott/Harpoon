@@ -21,7 +21,7 @@ import java.util.Iterator;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.2 1999-11-19 03:58:41 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.3 1999-11-22 20:59:27 bdemsky Exp $
  */
 public class EventDriven {
     protected final UpdateCodeFactory ucf;
@@ -50,6 +50,7 @@ public class EventDriven {
 	// clone methods
 	HMethod[] toClone = 
 	    this.hc.getMethod().getDeclaringClass().getDeclaredMethods();
+
 	HMethod copyOfMain = null;
 	for (int i=0; i<toClone.length; i++) {
 	    HMethod curr = 
@@ -74,14 +75,6 @@ public class EventDriven {
 	HEADER header=(HEADER) (this.hc.getRootElement());
 	METHOD method=(METHOD) (header.next(1));
 	params=method.params();
-
-	//for(Iterator i=this.hc.getElementsI(); i.hasNext(); ) {
-	//    Quad q = (Quad)i.next();
-	//    if (q instanceof METHOD) {
-	//	params = ((METHOD)q).params();
-	//	break;
-	//    }
-	//}
 
 	this.ucf.update(hms, new EventDrivenCode(hms, newmain, params));
 	return hms;

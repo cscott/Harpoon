@@ -31,9 +31,9 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.5 1999-11-20 06:37:59 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.6 1999-11-22 20:59:27 bdemsky Exp $
  */
-public class AsyncCode extends Code {
+public class AsyncCode extends harpoon.IR.Quads.QuadNoSSA {
 
     /** Creates a <code>AsyncCode</code>. */
     public AsyncCode(HMethod parent, HCode hc, CALL c, HMethod toCall,
@@ -138,6 +138,7 @@ public class AsyncCode extends Code {
 	prev = curr;
 
 	// create params (need to add receiver object)
+
 	Temp[] params = new Temp[liveout.length+1];
 	params[0] = newenv;
 	for (int i=0;i<liveout.length;i++) {
