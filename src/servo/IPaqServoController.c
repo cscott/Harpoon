@@ -33,7 +33,7 @@ JNIEXPORT void JNICALL Java_IPaqServoController_setup(JNIEnv *env, jclass claz) 
     perror("unable to open serial device");
     return;
   }
-  setline(fd, CS8, B9600);
+  setline(fd, CS8, B19200);
 /*    write(fd,"hit setup\n",10); */
 }
 

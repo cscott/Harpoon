@@ -113,9 +113,6 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
 #endif
     return;
   }
-#ifdef RTJ_DEBUG_THREADS  
-  printf("\nCheckQuanta(%d, %d, %d)", notimecheck, force, actually_transfer);
-#endif
   gettimeofday(&time, NULL);
 
   // If there was a previous time check
@@ -125,6 +122,9 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
   lastCheckTime = time;
 
   if(quanta <= 0 || notimecheck) {
+#ifdef RTJ_DEBUG_THREADS  
+    printf("\nCheckQuanta(%d, %d, %d)", notimecheck, force, actually_transfer);
+#endif
     switching_state = StopSwitching();
 
     env = (JNIEnv*)FNI_GetJNIEnv(); //get JNI environment
