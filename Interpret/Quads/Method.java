@@ -53,7 +53,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code given a static state.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.6 1999-02-07 21:45:53 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.7 1999-03-02 21:39:09 cananian Exp $
  */
 public final class Method extends HCLibrary {
 
@@ -105,25 +105,25 @@ public final class Method extends HCLibrary {
 
 	long start_count = ss.getInstructionCount();
 	try { // pop stack, end profiling, etc.
-	    // easy to verify that every path through try executes
-	    // pushStack *exactly once*.
+	    // easy to verify that every path through try leaves
+	    // *exactly one* frame on the stack.
+	    ss.pushStack(new NativeStackFrame(method));
 
 	    NativeMethod nm = ss.findNative(method);
 	    if (nm!=null) {
-		ss.pushStack(new NativeStackFrame(method));
 		//ss.incrementInstructionCount(); //native methods take 0 time
 		return nm.invoke(ss, params);
 	    }
 	    // non-native, interpret.
 	    HCode c = ss.hcf.convert(method);
 	    if (c==null) {
-		ss.pushStack(new NativeStackFrame(method)); // gonna pop it
 		ObjectRef obj = ss.makeThrowable(HCunsatisfiedlinkErr,
 						 "No definition for "+method);
 		throw new InterpretedThrowable(obj, ss);
 	    }
 	    QuadStackFrame sf = new QuadStackFrame((Quad)c.getRootElement());
-	    ss.pushStack(sf);
+	    ss.popStack(); // get rid of native stack frame
+	    ss.pushStack(sf); // and replace with QuadStackFrame.
 
 	    Interpreter i;
 	    if (c instanceof QuadWithTry)
@@ -155,6 +155,7 @@ public final class Method extends HCLibrary {
 	
 	    // Return or throw.
 	    if (i.Texc!=null) {
+		Util.assert(sf.get(i.Texc)!=null, "Undefined throwable");
 		System.err.println("THROWING " +
 				   ((ObjectRef)sf.get(i.Texc)).type +
 				   " at " + sf.pc.getSourceFile() + ":" +
