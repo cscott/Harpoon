@@ -134,6 +134,7 @@ Analysis/SizeOpt/MZFExternalize.java
 Analysis/SizeOpt/MZFWidenType.java
 Analysis/SizeOpt/SizeCounters.java
 Analysis/SSxReachingDefsImpl.java
+Analysis/Transactions/AltArrayTransformer.java
 Analysis/Transactions/AnalysisCheckOracle.java
 Analysis/Transactions/BitFieldNumbering.java
 Analysis/Transactions/DominatingCheckOracle.java
