@@ -54,7 +54,7 @@ JNIEXPORT void JNICALL Java_java_io_RandomAccessFile_open
     if (!inited && !initializeRAF(env)) return; /* exception occurred; bail */
 
     cstr = (*env)->GetStringUTFChars(env, name, NULL);
-    fd = open(cstr, O_BINARY|O_CREAT|O_TRUNC|
+    fd = open(cstr, O_BINARY|O_CREAT|
 	      (writeable==JNI_TRUE?O_RDWR:O_RDONLY), 0666);
     (*env)->ReleaseStringUTFChars(env, name, cstr);
     fdObj = (*env)->GetObjectField(env, objRAF, fdObjID);
