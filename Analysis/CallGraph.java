@@ -8,8 +8,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.ReverseNavigator;
-
+import harpoon.Util.Graphs.ForwardNavigator;
 import harpoon.Util.Graphs.DiGraph;
 
 import java.util.Set;
@@ -21,7 +20,7 @@ import java.util.Set;
  * call-site information.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.3 2003-05-06 15:00:38 salcianu Exp $
+ * @version $Id: CallGraph.java,v 1.4 2003-06-04 15:56:14 salcianu Exp $
  */
 public abstract class CallGraph extends DiGraph {
     /** Returns an array containing all possible methods called by
@@ -47,17 +46,33 @@ public abstract class CallGraph extends DiGraph {
     	return callableMethods();
     }
 
+
     /** Returns a bi-directional top-down graph navigator through
-        <code>this</code> meta-callgraph. */
+        <code>this</code> callgraph.  Result is internally cached. */
     public Navigator/*<HMethod>*/ getDiGraphNavigator() {
-	final AllCallers ac = new AllCallers(this);
-	
-	return new Navigator() {
+	if(navigator == null) {
+	    final AllCallers ac = new AllCallers(this);
+	    navigator = new Navigator() {
+		public Object[] next(Object node) {
+		    return calls((HMethod) node);
+		}  
+		public Object[] prev(Object node) {
+		    return ac.directCallers((HMethod) node);
+		}
+	    };
+	}
+	return navigator;
+    }
+    /** cached bi-directional navigator */
+    protected Navigator navigator = null;
+
+
+    /** Returns a forward-only top-down graph navigator through
+        <code>this</code> callgraph. */
+    public ForwardNavigator/*<HMethod>*/ getDiGraphForwardNavigator() {
+	return new ForwardNavigator() {
 	    public Object[] next(Object node) {
 		return calls((HMethod) node);
-	    }  
-	    public Object[] prev(Object node) {
-		return ac.directCallers((HMethod) node);
 	    }
 	};
     }
