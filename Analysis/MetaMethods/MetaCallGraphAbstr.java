@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import java.io.PrintWriter;
+import java.io.PrintStream;
 
 import harpoon.IR.Quads.CALL;
 import harpoon.ClassFile.HCodeElement;
@@ -25,7 +25,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>MetaCallGraph</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphAbstr.java,v 1.3 2002-05-02 22:11:39 salcianu Exp $
+ * @version $Id: MetaCallGraphAbstr.java,v 1.4 2003-04-19 01:16:12 salcianu Exp $
  */
 public abstract class MetaCallGraphAbstr implements MetaCallGraph {
     // Map<MetaMethod,MetaMethod[]>
@@ -113,46 +113,46 @@ public abstract class MetaCallGraphAbstr implements MetaCallGraph {
 
 
     /** Nice pretty-printer for debug purposes. */
-    public void print(PrintWriter pw, boolean detailed_view, MetaMethod root){
+    public void print(PrintStream ps, boolean detailed_view, MetaMethod root) {
 
 	Set mms = new HashSet();
 	Set roots = new HashSet(getRunMetaMethods());
 	roots.add(root);
 
-	for(Iterator it = roots.iterator(); it.hasNext(); ){
+	for(Iterator it = roots.iterator(); it.hasNext(); ) {
 	    MetaMethod mm = (MetaMethod) it.next();
 	    mms.add(mm);
 	    mms.addAll(getTransCallees(mm));
 	}
 
-	pw.println("MetaCallGraph rooted in " + root);
-	pw.println("Roots: ");
+	ps.println("MetaCallGraph rooted in " + root);
+	ps.println("Roots: ");
 	for(Iterator it = roots.iterator(); it.hasNext(); )
 	    System.out.println("  " + (MetaMethod) it.next());
-	pw.println("===========================================");
+	ps.println("===========================================");
 	
-	for(Iterator itmm = mms.iterator(); itmm.hasNext();){
+	for(Iterator itmm = mms.iterator(); itmm.hasNext();) {
 	    MetaMethod mm = (MetaMethod) itmm.next();
-	    pw.println();
-	    pw.print(mm);
-	    if(detailed_view){
-		pw.println();
+	    ps.println();
+	    ps.print(mm);
+	    if(detailed_view) {
+		ps.println();
 		for(Iterator itcs=getCallSites(mm).iterator();itcs.hasNext();){
 		    CALL cs = (CALL) itcs.next();
 		    HCodeElement hce = (HCodeElement) cs;
 		    MetaMethod[] callees = getCallees(mm,cs);
-		    pw.println(" " + hce.getSourceFile() + ":" + 
+		    ps.println(" " + hce.getSourceFile() + ":" + 
 			       hce.getLineNumber() + " " + cs + " (" +
 			       callees.length + " callee(s)):");
 		    for(int i = 0; i < callees.length; i++)
-			pw.println("  " + callees[i]);
+			ps.println("  " + callees[i]);
 		}
 	    }
-	    else{
+	    else {
 		MetaMethod[] callees = getCallees(mm);
-		pw.println(" (" + callees.length + " callee(s)) :");
+		ps.println(" (" + callees.length + " callee(s)) :");
 		for(int i = 0; i < callees.length; i++)
-		    pw.println("  " + callees[i]);
+		    ps.println("  " + callees[i]);
 	    }
 	}
     }

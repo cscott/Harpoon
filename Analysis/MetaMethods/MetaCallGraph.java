@@ -5,7 +5,7 @@ package harpoon.Analysis.MetaMethods;
 
 import java.util.Set;
 
-import java.io.PrintWriter;
+import java.io.PrintStream;
 
 import harpoon.IR.Quads.CALL;
 
@@ -20,7 +20,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  methods are called by a given meta method [at a specific call site].
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraph.java,v 1.2 2002-02-25 20:58:16 cananian Exp $
+ * @version $Id: MetaCallGraph.java,v 1.3 2003-04-19 01:16:12 salcianu Exp $
  */
 
 public interface MetaCallGraph extends java.io.Serializable {
@@ -55,5 +55,5 @@ public interface MetaCallGraph extends java.io.Serializable {
     public Set getRunMetaMethods();
 
     /** Nice pretty-printer for debug purposes. */
-    public void print(PrintWriter pw, boolean detailed_view, MetaMethod root);
+    public void print(PrintStream ps, boolean detailed_view, MetaMethod root);
 }

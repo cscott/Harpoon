@@ -66,7 +66,7 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.51 2003-04-18 16:27:14 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.52 2003-04-19 01:16:14 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -95,14 +95,13 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean MULTITHREADED = false;
 
     private static List/*<CompilerStage*/ stages;
-    private static List/*<Option>*/ allOptions;
 
     public static void main(String[] args) {
 
 	buildCompilerPipeline();
 
-	allOptions = getAllOptions();
-	parseOpts(args);
+	List/*<Option>*/ allOptions = getAllOptions();
+	parseOpts(args, allOptions);
 
 	if(className == null) {
 	    System.err.println("must pass a class to be compiled");
@@ -112,7 +111,7 @@ public class SAMain extends harpoon.IR.Registration {
 
 	checkOptionConsistency();
 
-	CompilerState cs = buildInitialCompilerState();
+	CompilerState cs = CompilerState.EMPTY_STATE;
 
 	for(Iterator/*<CompilerStage*/ it = stages.iterator(); it.hasNext();) {
 	    CompilerStage stage = (CompilerStage) it.next();
@@ -125,6 +124,8 @@ public class SAMain extends harpoon.IR.Registration {
     
     private static void buildCompilerPipeline() {
 	stages = new LinkedList/*<CompilerStage>*/();
+
+	addStage(new BuildInitialCompState());
 
 	addStage(new BuildQuadForm());
 	// At this point in the pipeline, we have a full compiler
@@ -190,178 +191,7 @@ public class SAMain extends harpoon.IR.Registration {
 	});
     }
 
-
-    private static CompilerState buildInitialCompilerState() {
-	// create an initial compiler state
-	Linker linker = Loader.systemLinker;
-	if (!USE_OLD_CLINIT_STRATEGY || EventDrivenTransformation.EVENTDRIVEN)
-	    linker = new AbstractClassFixupRelinker(linker);
-	HMethod mainM = getMainMethod(linker);      // main method
-	Frame frame = construct_frame(mainM);       // target frame
-	Set roots = getRoots(linker, mainM, frame); // set of roots
-
-	return 
-	    CompilerState.EMPTY_STATE.
-	    changeLinker(linker).
-	    changeMain(mainM).
-	    changeRoots(roots).
-	    changeFrame(frame);
-    }
     
-
-    // returns the main method of the program to compile
-    private static HMethod getMainMethod(Linker linker) {
-	// find main method
-	HClass hcl = linker.forName(className);
-	HMethod mainM;
-	try {
-	    mainM = hcl.getDeclaredMethod("main","([Ljava/lang/String;)V");
-	} catch (NoSuchMethodError e) {
-	    throw new Error("Class " + className + " has no main method");
-	}
-	assert mainM != null;
-	assert Modifier.isStatic(mainM.getModifiers()) : "main is not static";
-	assert Modifier.isPublic(mainM.getModifiers()) : "main is not public";
-	
-	return mainM;
-    }
-
-
-    // constructs and returns the target Frame
-    // the frame specifies the combination of target architecture,
-    // runtime, and allocation strategy we want to use.
-    // ADD YOUR FRAME SETTING CODE HERE
-    private static Frame construct_frame(HMethod mainM) {
-	Frame frame = Backend.getFrame(BACKEND, mainM,
-				       getAllocationStrategyFactory());
-	
-	// check the configuration of the runtime.
-	// (in particular, the --with-precise-c option)
-	if (BACKEND == Backend.PRECISEC)
-	    frame.getRuntime().configurationSet.add
-		("check_with_precise_c_needed");
-	else
-	    frame.getRuntime().configurationSet.add
-		("check_with_precise_c_not_needed");
-	
-	return frame;
-    }
-
-
-    // construct the set of roots for the program we compile
-    static Set getRoots(Linker linker, HMethod mainM, Frame frame) {
-	// ask the runtime which roots it requires.
-	Set roots = new java.util.HashSet
-	    (frame.getRuntime().runtimeCallableMethods());
-	
-	// and our main method is a root, too...
-	roots.add(mainM);
-
-	// load roots from file (if any)
-	if (rootSetFilename!=null)
-	    addToRootSet(roots, rootSetFilename, linker);
-
-	// other optimization specific roots
-	if (EventDrivenTransformation.EVENTDRIVEN) {
-	    roots.add(linker.forName
-		      ("harpoon.Analysis.ContBuilder.Scheduler")
-		      .getMethod("loop",new HClass[0]));
-	}
-
-	if (Realtime.REALTIME_JAVA)
-	    roots.addAll(Realtime.getRoots(linker));
-	
-	return roots;
-    }
-
-    private static void addToRootSet(final Set roots, final String fileName,
-				     final Linker linker) {
-	try {
-	    ParseUtil.readResource(fileName, new ParseUtil.StringParser() {
-		public void parseString(String s)
-		    throws ParseUtil.BadLineException {
-		    if (s.indexOf('(') < 0) // parse as class name.
-			roots.add(ParseUtil.parseClass(linker, s));
-		    else // parse as method name.
-			roots.add(ParseUtil.parseMethod(linker, s));
-		}
-	    });
-	} catch(IOException ex) {
-	    System.err.println("Error reading " + fileName + ": " + ex);
-	    ex.printStackTrace();
-	    System.exit(1);
-	}
-    }
-
-
-    private static AllocationStrategyFactory getAllocationStrategyFactory() {
-
-	return new AllocationStrategyFactory() {
-	    public AllocationStrategy getAllocationStrategy(Frame frame) {
-		
-		System.out.print("Allocation strategy: ");
-		
-		if(AllocationInstrCompStage.INSTRUMENT_ALLOCS && 
-		   (AllocationInstrCompStage.INSTRUMENT_ALLOCS_TYPE == 2)) {
-		    System.out.println("InstrumentedAllocationStrategy");
-		    return new harpoon.Instrumentation.AllocationStatistics.
-			InstrumentedAllocationStrategy(frame);
-		}
-
-		if(PreallocOpt.PREALLOC_OPT) {
-		    System.out.println("PreallocAllocationStrategy");
-		    return new harpoon.Analysis.MemOpt.
-			PreallocAllocationStrategy(frame);
-		}
-
-		if(Realtime.REALTIME_JAVA) {
-		    System.out.println("RTJ");
-		    return new harpoon.Analysis.Realtime.
-			RealtimeAllocationStrategy(frame);
-		}
-
-		String alloc_strategy = 
-		    System.getProperty("harpoon.alloc.strategy", "malloc");
-
-		System.out.println(alloc_strategy);
-
-		if(alloc_strategy.equalsIgnoreCase("nifty"))
-		    return new harpoon.Backend.PreciseC.
-			PGCNiftyAllocationStrategy(frame);
-
-		if(alloc_strategy.equalsIgnoreCase("niftystats"))
-		    return new harpoon.Backend.PreciseC.	    
-			PGCNiftyAllocationStrategyWithStats(frame);
-
-		if(alloc_strategy.equalsIgnoreCase("bdw"))
-		    return new harpoon.Backend.Runtime1.
-			BDWAllocationStrategy(frame);
-
-		if(alloc_strategy.equalsIgnoreCase("sp"))
-		    return new harpoon.Backend.Runtime1.
-			SPAllocationStrategy(frame);
-
-		if(alloc_strategy.equalsIgnoreCase("precise"))
-		    return new harpoon.Backend.Runtime1.
-			MallocAllocationStrategy(frame, "precise_malloc");
-
-		if(alloc_strategy.equalsIgnoreCase("heapstats"))
-		    return new harpoon.Backend.Runtime1.
-			HeapStatsAllocationStrategy(frame);
-
-		System.out.println
-		    ("AllocationStrategy " + alloc_strategy +
-		     " unknown; use default \"malloc\" strategy instead");
-
-		// default, "malloc" strategy.
-		return
-		    new harpoon.Backend.Runtime1.MallocAllocationStrategy
-		    (frame,
-		     System.getProperty("harpoon.alloc.func", "malloc"));
-	    }
-	};
-    }
-
 
     // ADD YOUR OPTION CONSISTENCY TESTS HERE
     private static void checkOptionConsistency() {
@@ -382,7 +212,8 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
 
-    private static void parseOpts(String[] args) {
+    private static void parseOpts(String[] args,
+				  List/*<Option>*/ allOptions) {
 	PRECISEGC = System.getProperty("harpoon.alloc.strategy", 
 				       "malloc").equalsIgnoreCase("precise");
 	args = Option.parseOptions(allOptions, args);
@@ -397,27 +228,26 @@ public class SAMain extends harpoon.IR.Registration {
     private static List/*<Option>*/ getAllOptions() {
 	List/*<Option>*/ opts = new LinkedList/*<Option>*/();
 	Map/*<String,String>*/ opt2stage = new HashMap/*<String,String>*/();
-	addOptions(getTopLevelOptions(), "top-level", opts, opt2stage);
 	for(Iterator/*<CompilerStage>*/ it = stages.iterator(); it.hasNext();){
 	    CompilerStage stage = (CompilerStage) it.next();
-	    addOptions(stage.getOptions(), stage.name(), opts, opt2stage);
+	    addOptions(stage, opts, opt2stage);
 	}
 	return opts;
     }
 
-    private static void addOptions(List/*<Option>*/ stageOpts,
-				   String stageName,
+
+    private static void addOptions(CompilerStage stage,
 				   List/*<Option>*/ allOpts,
 				   Map/*<String,String>*/ opt2stage) {
-	for(Iterator/*<Option>*/ it = stageOpts.iterator(); it.hasNext(); ) {
+	for(Iterator/*<Option>*/ it = stage.getOptions().iterator(); it.hasNext(); ) {
 	    Option option = (Option) it.next();
 	    String old_stage = 
-		(String) opt2stage.put(option.optionName(), stageName);
+		(String) opt2stage.put(option.optionName(), stage.name());
 	    if(old_stage != null) {
 		System.err.println
 		    ("Ambiguity: Option " + option +
 		     " is defined in two compiler stages: " + 
-		     old_stage + " and " + stageName);
+		     old_stage + " and " + stage.name());
 		System.exit(1);
 	    }
 	    allOpts.add(option);
@@ -482,11 +312,16 @@ public class SAMain extends harpoon.IR.Registration {
 
     private static void printHelp(PrintStream ps) {
 	ps.println("Usage:\n\tjava SAMain <options>*");
-	if(allOptions.size() > 0)
-	    ps.println("Options:");
-	for(Iterator/*<Option>*/ it = allOptions.iterator(); it.hasNext(); ) {
+	ps.println("Options:");
+	for(Iterator/*<Option>*/ it = stages.iterator(); it.hasNext(); ) {
+	    printStageOptions((CompilerStage) it.next());
+	}
+    }
+
+    private static void printStageOptions(CompilerStage stage) {
+	for(Iterator it = stage.getOptions().iterator(); it.hasNext(); ) { 
 	    Option option = (Option) it.next();
- 	    option.printHelp(ps);
+	    option.printHelp(System.out);
 	}
     }
 
@@ -501,6 +336,185 @@ public class SAMain extends harpoon.IR.Registration {
     protected static void messageln(String msg) {
 	if(!QUIET) System.out.println(msg);
     }
+
+
+
+    private static class BuildInitialCompState extends CompilerStageEZ {
+	public BuildInitialCompState() { super("compiler-initialization"); }
+	public List/*<Option>*/ getOptions() { return getTopLevelOptions(); }
+	
+	protected boolean enabled() { return true; }
+	
+	protected void real_action() { 
+	    // create an initial compiler state
+	    linker = Loader.systemLinker;
+	    if (!USE_OLD_CLINIT_STRATEGY || 
+		EventDrivenTransformation.EVENTDRIVEN)
+		linker = new AbstractClassFixupRelinker(linker);
+	    mainM = getMainMethod(linker);          // main method
+	    frame = construct_frame(mainM);         // target frame
+	    roots = getRoots(linker, mainM, frame); // set of roots
+	}
+
+	// returns the main method of the program to compile
+	private static HMethod getMainMethod(Linker linker) {
+	    // find main method
+	    HClass hcl = linker.forName(className);
+	    HMethod mainM;
+	    try {
+		mainM = hcl.getDeclaredMethod("main","([Ljava/lang/String;)V");
+	    } catch (NoSuchMethodError e) {
+		throw new Error("Class " + className + " has no main method");
+	    }
+	    assert mainM != null;
+	    assert Modifier.isStatic(mainM.getModifiers()) : 
+		"main is not static";
+	    assert Modifier.isPublic(mainM.getModifiers()) : 
+		"main is not public";
+	    
+	    return mainM;
+	}
+	
+
+	// constructs and returns the target Frame
+	// the frame specifies the combination of target architecture,
+	// runtime, and allocation strategy we want to use.
+	// ADD YOUR FRAME SETTING CODE HERE
+	private static Frame construct_frame(HMethod mainM) {
+	    Frame frame = Backend.getFrame(BACKEND, mainM,
+					   getAllocationStrategyFactory());
+	
+	    // check the configuration of the runtime.
+	    // (in particular, the --with-precise-c option)
+	    if (BACKEND == Backend.PRECISEC)
+		frame.getRuntime().configurationSet.add
+		    ("check_with_precise_c_needed");
+	    else
+		frame.getRuntime().configurationSet.add
+		    ("check_with_precise_c_not_needed");
+	    
+	    return frame;
+	}
+
+
+	// construct the set of roots for the program we compile
+	static Set getRoots(Linker linker, HMethod mainM, Frame frame) {
+	    // ask the runtime which roots it requires.
+	    Set roots = new java.util.HashSet
+		(frame.getRuntime().runtimeCallableMethods());
+	    
+	    // and our main method is a root, too...
+	    roots.add(mainM);
+	    
+	    // load roots from file (if any)
+	    if (rootSetFilename!=null)
+		addToRootSet(roots, rootSetFilename, linker);
+	    
+	    // other optimization specific roots
+	    if (EventDrivenTransformation.EVENTDRIVEN) {
+		roots.add(linker.forName
+			  ("harpoon.Analysis.ContBuilder.Scheduler")
+			  .getMethod("loop",new HClass[0]));
+	    }
+	    
+	    if (Realtime.REALTIME_JAVA)
+		roots.addAll(Realtime.getRoots(linker));
+	    
+	    return roots;
+	}
+
+	private static void addToRootSet(final Set roots,
+					 final String fileName,
+					 final Linker linker) {
+	    try {
+		ParseUtil.readResource(fileName, new ParseUtil.StringParser() {
+		    public void parseString(String s)
+			throws ParseUtil.BadLineException {
+			if (s.indexOf('(') < 0) // parse as class name.
+			    roots.add(ParseUtil.parseClass(linker, s));
+			else // parse as method name.
+			    roots.add(ParseUtil.parseMethod(linker, s));
+		    }
+		});
+	    } catch(IOException ex) {
+		System.err.println("Error reading " + fileName + ": " + ex);
+		ex.printStackTrace();
+		System.exit(1);
+	    }
+	}
+    }
+
+
+    private static AllocationStrategyFactory getAllocationStrategyFactory() {
+	
+	return new AllocationStrategyFactory() {
+	    public AllocationStrategy getAllocationStrategy(Frame frame) {
+		
+		System.out.print("Allocation strategy: ");
+		
+		if(AllocationInstrCompStage.INSTRUMENT_ALLOCS && 
+		   (AllocationInstrCompStage.INSTRUMENT_ALLOCS_TYPE == 2)) {
+		    System.out.println("InstrumentedAllocationStrategy");
+		    return new harpoon.Instrumentation.AllocationStatistics.
+			InstrumentedAllocationStrategy(frame);
+		}
+		
+		if(PreallocOpt.PREALLOC_OPT) {
+		    System.out.println("PreallocAllocationStrategy");
+		    return new harpoon.Analysis.MemOpt.
+			PreallocAllocationStrategy(frame);
+		}
+		
+		if(Realtime.REALTIME_JAVA) {
+		    System.out.println("RTJ");
+		    return new harpoon.Analysis.Realtime.
+			RealtimeAllocationStrategy(frame);
+		}
+
+		String alloc_strategy = 
+		    System.getProperty("harpoon.alloc.strategy", "malloc");
+
+		System.out.println(alloc_strategy);
+
+		if(alloc_strategy.equalsIgnoreCase("nifty"))
+		    return new harpoon.Backend.PreciseC.
+			PGCNiftyAllocationStrategy(frame);
+
+		if(alloc_strategy.equalsIgnoreCase("niftystats"))
+		    return new harpoon.Backend.PreciseC.	    
+			PGCNiftyAllocationStrategyWithStats(frame);
+		
+		if(alloc_strategy.equalsIgnoreCase("bdw"))
+		    return new harpoon.Backend.Runtime1.
+			BDWAllocationStrategy(frame);
+
+		if(alloc_strategy.equalsIgnoreCase("sp"))
+		    return new harpoon.Backend.Runtime1.
+			SPAllocationStrategy(frame);
+
+		if(alloc_strategy.equalsIgnoreCase("precise"))
+		    return new harpoon.Backend.Runtime1.
+			MallocAllocationStrategy(frame, "precise_malloc");
+
+		if(alloc_strategy.equalsIgnoreCase("heapstats"))
+		    return new harpoon.Backend.Runtime1.
+			HeapStatsAllocationStrategy(frame);
+
+		if(!alloc_strategy.equalsIgnoreCase("malloc"))
+		    System.out.println
+			("AllocationStrategy " + alloc_strategy +
+			 " unknown; use default \"malloc\" strategy instead");
+
+		// default, "malloc" strategy.
+		return
+		    new harpoon.Backend.Runtime1.MallocAllocationStrategy
+		    (frame,
+		     System.getProperty("harpoon.alloc.func", "malloc"));
+	    }
+	};
+    };
+
+
 
     private static class BuildQuadForm extends RegularCompilerStageEZ {
 	public BuildQuadForm() { super("build-quad-form"); }

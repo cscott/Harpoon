@@ -74,7 +74,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.9 2003-04-18 16:27:16 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.10 2003-04-19 01:16:13 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -254,6 +254,11 @@ public class PointerAnalysis implements java.io.Serializable {
 	}
     }
 
+
+    public ParIntGraph getIntParIntGraph(HMethod hm) {
+	return getIntParIntGraph(new MetaMethod(hm, true));
+    }
+
     /** Returns the simplified (external) <code>ParIntGraph</code> attached to
      * the method <code>hm</code> i.e. the graph at the end of the method.
      * of which only the parts reachable from the exterior (via parameters,
@@ -264,6 +269,10 @@ public class PointerAnalysis implements java.io.Serializable {
      * Returns <code>null</code> if no such graph is available. */
     public ParIntGraph getExtParIntGraph(MetaMethod mm){
 	return getExtParIntGraph(mm, true);
+    }
+
+    public ParIntGraph getExtParIntGraph(HMethod hm) {
+	return getExtParIntGraph(new MetaMethod(hm, true));
     }
 
     // internal method doing the job
@@ -1328,6 +1337,11 @@ public class PointerAnalysis implements java.io.Serializable {
     public final ParIntGraph getPIGAtQuad(MetaMethod mm, Quad q){
 	return getPigBeforeQuad(mm, q);
     }
+
+    public final ParIntGraph getPIGAtQuad(HMethod hm, Quad q) {
+	return getPIGAtQuad(new MetaMethod(hm, true), q);
+    }
+
     
     /** Returns the parallel interaction graph attached to the program point
 	right after <code>q</code> in the body of meta-method
