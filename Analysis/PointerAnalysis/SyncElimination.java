@@ -76,7 +76,7 @@ import harpoon.Util.Util;
  * based on the results of pointer analysis.
  * 
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: SyncElimination.java,v 1.1.2.3 2000-07-17 17:01:22 rinard Exp $
+ * @version $Id: SyncElimination.java,v 1.1.2.4 2000-07-20 21:13:55 pnkfelix Exp $
  */
 public class SyncElimination {
 
@@ -205,7 +205,7 @@ public class SyncElimination {
 		while (calliter.hasNext()) {
 		    CALL cq = (CALL)calliter.next();
 		    // need a way to go from a CALL to the HMethod that contains that CALL.
-		    HMethod caller; // = cq.getContainingMethod();
+		    HMethod caller = null; // = cq.getContainingMethod();
 		    HClass hc = caller.getDeclaringClass();
 		    HClassMutator mut = hc.getMutator();
 		    String newMethodName = caller.getName()+"__spec"+specialization_path_number+"_"+i;
