@@ -10,7 +10,6 @@
 #include <stdio.h>
 
 #define EFFECTS
-#define DMALLOC
 
 struct heap_object {
   struct classname *class; /*class of object*/
@@ -140,7 +139,7 @@ struct heap_state {
   struct hashtable *containedobjects;
 
   char *prefix;
-  FILE *rolefile, *methodfile, *dotfile,*rolediagramfile;
+  FILE *rolefile, *methodfile, *dotfile,*rolediagramfile, *rolediagramfilemerge;
 };
 
 #define OPTION_FCONTAINERS 0x1

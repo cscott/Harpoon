@@ -31,8 +31,26 @@ void addrolerelation(struct heap_state *heap, struct heap_object *src, struct fi
   }
 }
 
+void addentry(struct hashtable *h, int origrole, int newrole) {
+  if (!contains(h,origrole)) {
+    int *nr=(int *)malloc(sizeof (int));
+    *nr=newrole;
+    puttable(h, origrole, nr);
+  }
+}
+
+int remap(struct hashtable *h, int origrole) {
+  while(contains(h,origrole)) {
+    origrole=*((int *) gettable(h, origrole));
+  }
+  return origrole;
+}
+
 void outputrolerelations(struct heap_state *heap) {
   struct geniterator *it=gengetiterator(heap->rolereferencetable);
+  struct hashtable *roletable=allocatehashtable();
+  struct genhashtable *rrtable=genallocatehashtable((int (*)(void *)) &rolerelationhashcode, (int (*)(void *,void *)) &equivalentrolerelations);
+
   fprintf(heap->rolediagramfile,"digraph \"Role Relation Diagram\" {\n");
   fprintf(heap->rolediagramfile,"ratio=auto\n");
   while(1) {
@@ -54,9 +72,51 @@ void outputrolerelations(struct heap_state *heap) {
 	fprintf(heap->rolediagramfile,"R%d -> R%d [label=\"%s\"]\n",rr->srcrole, rr->dstrole,rr->field->fieldname);
       } else {
 	fprintf(heap->rolediagramfile,"R%d -> R%d [style=dotted,label=\"%s\"]\n",rr->srcrole, rr->dstrole,rr->field->fieldname);
+	addentry(roletable, rr->dstrole, rr->srcrole);
       }
     }
   }
   fprintf(heap->rolediagramfile,"}\n");
   genfreeiterator(it);
+
+
+
+  it=gengetiterator(heap->rolereferencetable);
+  fprintf(heap->rolediagramfilemerge,"digraph \"Merged Role Relation Diagram\" {\n");
+  fprintf(heap->rolediagramfilemerge,"ratio=auto\n");
+  while(1) {
+    struct rolerelation *rr=(struct rolerelation *)gennext(it);
+    char srcname[30];
+    if (rr==NULL)
+      break;
+    sprintf(srcname, "R%d", rr->srcrole);
+    {
+      struct role *srcrole=(struct role *)gengettable(heap->reverseroletable,srcname);
+      struct rolefieldlist *rfl=srcrole->nonnullfields;
+      while(rfl!=NULL) {
+	if ((rfl->field==rr->field)&&
+	    (rfl->role==rr->dstrole))
+	  break;
+	rfl=rfl->next;
+      }
+      if (rfl==NULL) {
+	int src=remap(roletable, rr->srcrole);
+	int dst=remap(roletable, rr->dstrole);
+	struct rolerelation trr={src,rr->field,dst};
+	if (!gencontains(rrtable,&trr)) {
+	  struct rolerelation *nrr=(struct rolerelation *) calloc(1,sizeof(struct rolerelation));
+	  nrr->srcrole=src;
+	  nrr->dstrole=dst;
+	  nrr->field=rr->field;
+	  genputtable(rrtable, nrr,nrr);
+	  fprintf(heap->rolediagramfilemerge,"R%d -> R%d [label=\"%s\"]\n",src, dst,rr->field->fieldname);
+	}
+      }
+    }
+  }
+  fprintf(heap->rolediagramfilemerge,"}\n");
+  genfreeiterator(it);
+  genfreekeyhashtable(rrtable);
+  freedatahashtable(roletable, &free);
 }
+

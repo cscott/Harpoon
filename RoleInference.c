@@ -597,7 +597,7 @@ void checksafety(struct heap_object *src, struct heap_object *dst) {
     
     if (src==dst) {
       /* Bad news...cycle...need to break it*/
-      dst->reachable&=NOTCONTAINER;
+      dst->reachable|=NOTCONTAINER;
       break;
     }
   }
@@ -1324,4 +1324,6 @@ void openoutputfiles(struct heap_state *heap) {
   heap->dotfile=fopen(filename,"w");
   snprintf(filename, 256,"%s-diagram.dot",prefix);
   heap->rolediagramfile=fopen(filename,"w");
+  snprintf(filename, 256,"%s-diagram-meged.dot",prefix);
+  heap->rolediagramfilemerge=fopen(filename,"w");
 }
