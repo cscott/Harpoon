@@ -4,9 +4,12 @@
 package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock;
+import harpoon.IR.Properties.HasEdges; 
 import harpoon.IR.Properties.UseDef;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
+import harpoon.Util.CloneableIterator; 
+import harpoon.Util.Util; 
 import harpoon.Util.Collections.SetFactory;
 
 import java.util.Set;
@@ -21,9 +24,10 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.2 1999-11-24 00:47:38 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.3 1999-11-29 02:21:09 duncan Exp $
  */
 public class LiveTemps extends LiveVars {
+    private Map hceToBB; 
     
     /** Constructs a new <code>LiveTemps</code> for <code>basicblocks</code>.
 	<BR> <B>requires:</B> <OL>
@@ -51,10 +55,13 @@ public class LiveTemps extends LiveVars {
 	 <P> FSK: Note to Self: Actual SUPPORT for liveOnProcExit
 	     would be nice... 
     */	     
+
     public LiveTemps(Iterator basicBlocks, Set liveOnProcExit) {
-        super(basicBlocks);
+        super(basicBlocks); 
     }
     
+    
+
     /** Constructor for LiveVars that allows the user to pass in their
 	own <code>SetFactory</code> for constructing sets of the
 	<code>Temp</code>s in the analysis.  
@@ -86,27 +93,16 @@ public class LiveTemps extends LiveVars {
 	     <code>hce</code>. 
     */
     public Set getLiveBefore(HCodeElement hce) {
-	// Put implementation here!
-
-	// implementation hints for this and the next method:
-	// 1. Use BasicBlock.getHceToBB()... it seems right now that
-	//    there is no reference to the basicblocks associated with
-	//    'this' stored in the object; get around this by either
-	//    adding an extra field to this or LiveVars, either a
-	//    BasicBlock field named 'root' or just make a direct
-	//    reference to the Hce->BB Map returned by getHceToBB()
-	// 2. Once you have the Hce->BB Map, use LiveVars'
-	//    getLiveOnEntry/getLiveOnExit methods to extract coarse
-	//    grain information
-	// 3. With coarse grain information in hand, traverse across
-	//    the remaining span of the BasicBlock until you reach
-	//    'hce'...be SURE to update the information as you
-	//    traverse since the liveness properties may change across
-	//    the expanse of the instructions in the block
-
-	return null;
+	// hce must implement UseDef.  
+	UseDef udHce = (UseDef)hce; 
+	// live_before(hce) <-- UNION(USE(hce), (live_after(hce) - DEF(hce)))
+	Set liveBefore = this.getLiveAfter(hce); 
+	liveBefore.removeAll(udHce.defC()); 
+	liveBefore.addAll(udHce.useC());
+	
+	return liveBefore; 
     }
-
+    
     /** Returns the <code>Set</code> of <code>Temp</code>s that are
 	live on exit from <code>hce</code>.
 	<BR> <B>requires:</B> A DataFlow Equation Solver has been run
@@ -119,8 +115,22 @@ public class LiveTemps extends LiveVars {
 	     <code>hce</code>. 
     */
     public Set getLiveAfter(HCodeElement hce) {
-	// Put implementation here!
-	return null;
+	Util.assert(this.hceToBB.containsKey(hce)); 
+
+	BasicBlock bb        = (BasicBlock)this.hceToBB.get(hce); 
+	Set        liveAfter = this.getLiveOnExit(bb); 
+	HasEdges   current   = bb.getLast(); 
+
+	// Starting from the last element in hce's basic block, traverse
+	// the block in reverse order, until hce is reached.  Each step 
+	// updates the liveness information.
+	for (; current != hce; current = (HasEdges)current.pred()[0].from()) {
+	    UseDef udCurrent = (UseDef)current;
+	    liveAfter.addAll(udCurrent.useC()); 
+	    liveAfter.removeAll(udCurrent.defC()); 
+	}
+
+	return liveAfter; 
     }
 
     /** Constructs a <code>Set</code> of all of the <code>Temp</code>s
@@ -150,6 +160,20 @@ public class LiveTemps extends LiveVars {
 	    }
 	}
 	return temps;	
+    }
+
+    /** Initializes the mapping of <code>HCodeElement</code>s to 
+	<code>BasicBlocks</code>.  
+	
+	@param basicblocks  an <code>Iterator</code> of the basic blocks to be
+	                    analyzed. 
+    */
+    protected final void initializeHceToBB(Iterator blocks) { 
+	if (blocks.hasNext()) { 
+	    this.hceToBB = ((BasicBlock)blocks.next()).getHceToBB();
+	} else { 
+	    this.hceToBB = new HashMap();
+	}
     }
 
     /** Initializes the USE/DEF information for 'bb' and stores in in

@@ -20,22 +20,21 @@
   * in the <code>BasicBlock</code>s passed to it.
   *
   * @author  Felix S Klock <pnkfelix@mit.edu>
-  * @version $Id: LiveVars.java,v 1.1.2.14 1999-11-09 08:15:14 pnkfelix Exp $
+  * @version $Id: LiveVars.java,v 1.1.2.15 1999-11-29 02:21:09 duncan Exp $
   */
- public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
-
-     private static final boolean DEBUG = false;
-
+public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
+    private static final boolean DEBUG = false; 
+    
      // maps a BasicBlock 'bb' to the LiveVarInfo associated with 'bb'
-     private Map bbToLvi;
+    private Map bbToLvi;
+    private Map hceToBB; 
 
      /** Null arg ctor for use by subclasses so that the system won't
 	 break when calling abstract methods that require data that
 	 subclasses haven't initialized yet.
      */
-     protected LiveVars() {
-	 
-     }
+    protected LiveVars() {
+    }
 
      /** Constructs a new <code>LiveVars</code> for <code>basicblocks</code>.
 	 <BR> <B>requires:</B> <OL> 
@@ -56,15 +55,17 @@
 	       internal datasets for analysis of the 
 	       <code>BasicBlock</code>s in <code>basicblocks</code>, 
 	       iterating over all of <code>basicblocks</code> in the 
-	       process.
+	       process.  Initializes the mapping between 
+	       <code>HCodeElement</code>s and <code>BasicBlock</code>s. 
 	  @param basicblocks <code>Iterator</code> of
 		 	        <code>BasicBlock</code>s to be analyzed. 
-    */	     
+     */	     
     public LiveVars(Iterator basicblocks) {
 	CloneableIterator blocks = new CloneableIterator(basicblocks);
 	Set universe = findUniverse((Iterator) blocks.clone());
 	SetFactory setFact = new BitSetFactory(universe);
-
+	
+	initializeHceToBB( (Iterator)blocks.clone() ); 
 	initializeBBtoLVI( blocks, setFact );
     }
 
@@ -80,7 +81,10 @@
     */
     public LiveVars(Iterator basicblocks, 
 		    SetFactory tempSetFact) {
-	initializeBBtoLVI( basicblocks, tempSetFact );
+	CloneableIterator blocks = new CloneableIterator(basicblocks); 
+
+	initializeHceToBB( (Iterator)blocks.clone() ); 
+	initializeBBtoLVI( blocks, tempSetFact );
     }
 
     protected void initializeBBtoLVI(Iterator blocks, SetFactory setFact) {
@@ -136,11 +140,21 @@
     */
     public void visit(BasicBlock b) {
 	LiveVarInfo info = (LiveVarInfo) bbToLvi.get(b);
+
 	info.lvIN = new HashSet();
 	info.lvIN.addAll(info.lvOUT);
 	info.lvIN.removeAll(info.def);
 	info.lvIN.addAll(info.use);
     }
+
+    /** Initializes the mapping of <code>HCodeElement</code>s to 
+	<code>BasicBlocks</code>.  Implementations interested in this mapping
+	should override this method. 
+	
+	@param basicblocks  an <code>Iterator</code> of the basic blocks to be
+	                    analyzed. 
+    */
+    protected void initializeHceToBB(Iterator basicblocks) { }
     
     /** Initializes the USE/DEF information for bb and stores it in
 	the returned LiveVarInfo.  An example implementation would
