@@ -6,7 +6,6 @@ package harpoon.IR.Properties;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Util.ArrayFactory;
 import harpoon.Util.ArrayIterator;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.FilterIterator;
@@ -27,7 +26,7 @@ import java.util.Stack;
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.1.2.10 2001-06-12 16:24:47 cananian Exp $
+ * @version $Id: CFGrapher.java,v 1.1.2.11 2001-06-12 20:54:30 cananian Exp $
  * @see harpoon.IR.Properties.CFGraphable
  */
 public abstract class CFGrapher {
@@ -142,9 +141,11 @@ public abstract class CFGrapher {
 		    Set visited = new HashSet();
 		    Stack s = new Stack();
 		    { // initialize stack/set.
-			Iterator it=new CombineIterator
-			    (new ArrayIterator(getLastElements(code)),
-			     new ArrayIterator(getFirstElements(code)));
+			Iterator it=new ArrayIterator(getFirstElements(code));
+			HCodeElement[] leaves = getLastElements(code);
+			if (leaves!=null)
+			    it = new CombineIterator
+				(new ArrayIterator(leaves), it);
 			while (it.hasNext()) {
 			    HCodeElement hce = (HCodeElement) it.next();
 			    s.push(hce); visited.add(hce);
