@@ -25,7 +25,7 @@ import java.util.Enumeration;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.7 1999-02-01 00:40:33 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.8 1999-02-17 03:24:34 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -77,7 +77,7 @@ public class Code extends HCode {
       String sf = parent.getDeclaringClass().getSourceFile(); // source file.
       byte[] code = getCode().code; // bytecode array.
       // First locate merge nodes.
-      int[] merge = new int[code.length]; // init to 0.
+      int[] merge = new int[code.length+1]; // init to 0.
       merge[0]++; // the first instruction is reachable from outside.
       for (int pc=0; pc<code.length; pc+=Op.instrSize(code, pc)) {
 	// if its a branch, mark the possible targets.
@@ -96,6 +96,10 @@ public class Code extends HCode {
       // try handlers count as targets, too
       for (int i=0; i<getCode().exception_table.length; i++)
 	merge[getCode().exception_table[i].handler_pc]++;
+
+      // if merge[code.length]!=0, then execution may run off end of method.
+      if (merge[code.length]>0)
+	System.err.println("WARNING: execution may run off end of "+parent);
 
       // now all pc's for which merge>1 are merge nodes.
       Instr[] sparse = new Instr[code.length]; // index by pc still. 
@@ -133,10 +137,14 @@ public class Code extends HCode {
 	  curr = ((InMerge)curr).next(0);
 	if ((!Op.isUnconditionalBranch(code[pc])) ||
 	    Op.isJSR(code[pc])) { // jsrs return to next instruction eventually
-	  // link to next pc.
-	  Instr next = sparse[pc+Op.instrSize(code, pc)];
-	  curr.addNext(next);
-	  next.addPrev(curr);
+	  // JVM spec is not clear whether 'code can run off end of array'
+	  // or not.
+	  if ((pc+Op.instrSize(code, pc)) < code.length) {
+	    // link to next pc.
+	    Instr next = sparse[pc+Op.instrSize(code, pc)];
+	    curr.addNext(next);
+	    next.addPrev(curr);
+	  }
 	}
 	if (Op.isBranch(code[pc])) {
 	  // link to branch targets.
