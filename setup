@@ -1,6 +1,7 @@
 #!/bin/sh
 #  build the automake/autoconf magic needed to build the rest of the runtime.
 test -f include/stamp-h.in || touch include/stamp-h.in
+test -f ChangeLog || touch ChangeLog
 libtoolize --automake
 aclocal
 autoheader
