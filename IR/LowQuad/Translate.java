@@ -23,7 +23,7 @@ import java.util.Hashtable;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.6 1999-02-17 00:44:22 duncan Exp $
+ * @version $Id: Translate.java,v 1.1.2.7 1999-07-08 06:08:12 duncan Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
@@ -158,7 +158,10 @@ final class Translate { // not public
 	    if (!q.isVirtual() || fm.isFinal(q.method())) {
 		// non-virtual or final.  Method address is constant.
 		q0 = qN = new PMCONST(qf, q, extra(), q.method());
-		tT.put(q0.def()[0], HClass.Int); 
+		// Map q0.def()[0] to a generic pointer type.
+		dT.put(q0.def()[0], new DList(q0.def()[0], true, null));
+		tT.put(q0.def()[0], 
+		       new Error("Cant type derived pointer: " + q0.def()[0]));
 	    } else { // virtual; perform table lookup.
 		q0 = new PMETHOD(qf, q, extra(q.params(0)), map(q.params(0)));
 		Quad q1 = new PMOFFSET(qf, q, extra(q.params(0)), q.method());
@@ -175,6 +178,11 @@ final class Translate { // not public
 		tT.put(q1.def()[0], HClass.Int);
 		tT.put(q2.def()[0], 
 		       new Error("Cant type derived pointer: " + q2.def()[0]));
+		
+		// FIXME
+		if (tym.typeMap(code, q.params(0))==HClass.Void) { 
+		  tT.put(map(q.params(0)), HClass.forName("java.lang.Object"));
+		}
 	    }
 	    updateTypeInfo(q);
 	    Quad q3 = new PCALL(qf, q, qN.def()[0], map(q.params()),
@@ -187,7 +195,10 @@ final class Translate { // not public
 	    Quad q0, qN;
 	    if (q.isStatic()) {
 		q0 = qN = new PFCONST(qf, q, extra(), q.field());
-		tT.put(q0.def()[0], HClass.Int);
+		// Map q0.def()[0] to a generic pointer type.
+		dT.put(q0.def()[0], new DList(q0.def()[0], true, null));
+		tT.put(q0.def()[0], 
+		       new Error("Cant type derived pointer: " + q0.def()[0]));
 	    } else { // virtual
 		q0 = new PFIELD(qf, q,
 				extra(q.objectref()), map(q.objectref()));
@@ -223,8 +234,11 @@ final class Translate { // not public
 	public final void visit(harpoon.IR.Quads.SET q) {
 	    Quad q0, qN;
 	    if (q.isStatic()) {
-		q0 = qN = new PFCONST(qf, q, extra(), q.field());
-		tT.put(q0.def()[0], HClass.Int);
+		q0 = qN = new PFCONST(qf, q, extra(), q.field());	
+		// Map q0.def()[0] to a generic pointer type.
+		dT.put(q0.def()[0], new DList(q0.def()[0], true, null));
+		tT.put(q0.def()[0], 
+		       new Error("Cant type derived pointer: " + q0.def()[0]));
 	    } else { // virtual
 		q0 = new PFIELD(qf, q,
 				extra(q.objectref()), map(q.objectref()));
