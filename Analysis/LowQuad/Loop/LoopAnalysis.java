@@ -22,6 +22,7 @@ import harpoon.Analysis.Maps.BasicInductionsMap;
 import harpoon.Analysis.Maps.InvariantsMap;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.Iterator;
@@ -31,7 +32,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.8 1999-07-01 19:15:17 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.9 1999-07-01 20:57:23 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -57,12 +58,12 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	return rtloop;
     }
 
-    public HashMap allInductionsMap(HCode hc, Loops lp) {
+    public Map allInductionsMap(HCode hc, Loops lp) {
 	analyze(hc);
 	return (HashMap) aimap.get(lp.loopEntrances().toArray()[0]);
     }
 
-    public HashMap basicInductionsMap(HCode hc, Loops lp) {
+    public Map basicInductionsMap(HCode hc, Loops lp) {
 	analyze(hc);
 	return (HashMap) bimap.get(lp.loopEntrances().toArray()[0]);
     }

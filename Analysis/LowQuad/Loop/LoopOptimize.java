@@ -23,12 +23,13 @@ import harpoon.Temp.Temp;
 
 import java.util.Iterator;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 /**
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.7 1999-07-01 19:15:17 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.8 1999-07-01 20:57:23 bdemsky Exp $
  */
 public final class LoopOptimize {
     
@@ -111,8 +112,8 @@ public final class LoopOptimize {
     }
 
     void doLoopind(HCode hc, Loops lp,Quad header) {
-	HashMap basmap=bimap.basicInductionsMap(hc,lp);
-	HashMap allmap=aimap.allInductionsMap(hc,lp);
+	Map basmap=bimap.basicInductionsMap(hc,lp);
+	Map allmap=aimap.allInductionsMap(hc,lp);
 
 	WorkSet basic=new WorkSet(basmap.keySet());
 	WorkSet complete=new WorkSet(allmap.keySet());
@@ -139,40 +140,66 @@ public final class LoopOptimize {
 		iterate.remove();
 	    } else {
 		//Non pointer index...
+		//We have a derived induction variable...
+
+		Temp initial=initialTemp(hc, induction.variable, lp.loopIncelements());
+		if (induction.intmultiplier!=1) {
+		    //Add multiplication
+		    Temp newtemp=new Temp(initial.tempFactory(),initial.name());
+		    Temp newtemp2=new Temp(initial.tempFactory(),initial.name());
+		    Temp[] sources=new Temp[2];
+		    sources[0]=newtemp;
+		    sources[1]=initial;
+		    Quad newquad=new CONST(loopcaller.getFactory(),loopcaller,newtemp, new Integer(induction.intmultiplier), HClass.Int);
+		    Quad.addEdge(loopcaller, which_succ,newquad,0);
+		    loopcaller=newquad; which_succ=0;
+		    newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,Qop.IMUL,newtemp2, sources);
+		    Quad.addEdge(loopcaller, which_succ,newquad,0);
+		    loopcaller=newquad; which_succ=0;
+		    Quad.addEdge(loopcaller, which_succ, successor, which_pred);
+		    initial=newtemp2;
+		}
+
+		if (induction.offset!=0) {
+		    //Add addition
+		    Temp newtemp=new Temp(initial.tempFactory(),initial.name());
+		    Temp newtemp2=new Temp(initial.tempFactory(),initial.name());
+		    Temp[] sources=new Temp[2];
+		    sources[0]=newtemp;
+		    sources[1]=initial;
+		    Quad newquad=new CONST(loopcaller.getFactory(),loopcaller,newtemp, new Integer(induction.offset), HClass.Int);
+		    Quad.addEdge(loopcaller, which_succ,newquad,0);
+		    loopcaller=newquad; which_succ=0;
+		    newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,Qop.IADD,newtemp2, sources);
+		    Quad.addEdge(loopcaller, which_succ,newquad,0);
+		    loopcaller=newquad; which_succ=0;
+		    Quad.addEdge(loopcaller, which_succ, successor, which_pred);
+		    initial=newtemp2;
+		}
+
 		if (induction.objectsize!=null) {
-		    //We have a derived induction variable...
-		    Temp initial=initialTemp(hc, induction.variable, lp.loopIncelements());
-		    if (induction.intmultiplier!=1) {
-			//Add multiplication
-			Temp newtemp=new Temp(initial.tempFactory(),initial.name());
-			Temp newtemp2=new Temp(initial.tempFactory(),initial.name());
+		    //add array dereference
+		    Temp newtemp=new Temp(indvariable.tempFactory(),indvariable.name());
+		    Quad newquad=new PAOFFSET(((LowQuadFactory)loopcaller.getFactory()),loopcaller,newtemp,induction.objectsize, initial);
+		    Quad.addEdge(loopcaller, which_succ,newquad,0);
+		    loopcaller=newquad; which_succ=0;
+		    Quad.addEdge(loopcaller, which_succ, successor, which_pred);
+		    initial=newtemp;
+		}
+
+		if (!induction.pointeroffset.isEmpty()) {
+		    Iterator pointers=induction.pointeroffset.iterator();
+		    while (pointers.hasNext()) {
+			Temp t=(Temp) pointers.next();
+			Temp newtemp=new Temp(indvariable.tempFactory(),indvariable.name());
 			Temp[] sources=new Temp[2];
-			sources[0]=newtemp;
+			sources[0]=t;
 			sources[1]=initial;
-			Quad newquad=new CONST(loopcaller.getFactory(),loopcaller,newtemp, new Integer(induction.intmultiplier), HClass.Int);
-       			Quad.addEdge(loopcaller, which_succ,newquad,0);
-			loopcaller=newquad; which_succ=0;
-			newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,Qop.IMUL,newtemp2, sources);
+			Quad newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,LQop.PADD,newtemp, sources);
 			Quad.addEdge(loopcaller, which_succ,newquad,0);
 			loopcaller=newquad; which_succ=0;
 			Quad.addEdge(loopcaller, which_succ, successor, which_pred);
-			initial=newtemp2;
-		    }
-		    if (induction.offset!=0) {
-			//Add addition
-			Temp newtemp=new Temp(initial.tempFactory(),initial.name());
-			Temp newtemp2=new Temp(initial.tempFactory(),initial.name());
-			Temp[] sources=new Temp[2];
-			sources[0]=newtemp;
-			sources[1]=initial;
-			Quad newquad=new CONST(loopcaller.getFactory(),loopcaller,newtemp, new Integer(induction.offset), HClass.Int);
-       			Quad.addEdge(loopcaller, which_succ,newquad,0);
-			loopcaller=newquad; which_succ=0;
-			newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,Qop.IADD,newtemp2, sources);
-			Quad.addEdge(loopcaller, which_succ,newquad,0);
-			loopcaller=newquad; which_succ=0;
-			Quad.addEdge(loopcaller, which_succ, successor, which_pred);
-			initial=newtemp2;
+			initial=newtemp;
 		    }
 		}
 	    }
@@ -204,7 +231,7 @@ public final class LoopOptimize {
 	return initial;
     }
 
-    /**  takes in a <code>Temp</code> t that needs to be a basic
+    /** <code>addQuad</code> takes in a <code>Temp</code> t that needs to be a basic
      *  induction variable, and returns the <code>Quad</code> that does the adding. */
     
     Quad addQuad(HCode hc, Temp t, Set loopelements) {
@@ -223,6 +250,21 @@ public final class LoopOptimize {
 	    }
 	}
 	return adder;
+    }
+
+    /** <code>findIncrement</code>*/
+
+    Temp findIncrement(HCode hc, Temp t, Set loopelements, Set loopinvariants) {
+	Quad q=addQuad(hc,t,loopelements);
+	Temp[] uses=q.use();
+	Temp result=null;
+	for (int i=0;i<uses.length;i++) {
+	    if (loopinvariants.contains(ud.defMap(hc,ssitossamap.tempMap(uses[i])))) {
+		result=uses[i];
+		break;
+	    }
+	}
+	return result;
     }
 
     void doLoopinv(HCode hc, Loops lp,Quad header, WorkSet usedinvariants) {
