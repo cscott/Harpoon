@@ -15,12 +15,8 @@
 /*                                                                            */
 /******************************************************************************/
 
-package VTMemory;
-
 import java.io.*;
 import java.lang.Math.*;
-import javax.realtime.VTMemory;
-import javax.realtime.RealtimeThread;
 
 class vec { 
   public static final int NDIM   = 3;
@@ -1549,36 +1545,33 @@ class NBodySystem {
 
   void maketreeParallelLoop(final int first, final int num) {
     final NBodySystem nb = this;
-    VTMemory m = new VTMemory(10, 10);
-    m.enter(new Runnable () {
-      public void run () {
-        maketreeThread t[] = new maketreeThread[num];
-        for (int i = 0; i < num; i++) {
-          // Wes Beebee: this thread goes in its own region
-          t[i] = new maketreeThread(nb, first+i);
-          t[i].start();
-        }
-        for (int i = 0; i < num; i++) {
-          try {
-            t[i].join();
-          } catch (java.lang.InterruptedException e) {
-            System.err.print("InterruptedException in maketreeParallelLoop\n");
-          }
-        }
-      }
-    });
+    barnes.run(new Runnable () {
+	public void run () {
+	  maketreeThread t[] = new maketreeThread[num];
+	  for (int i = 0; i < num; i++) {
+	    t[i] = new maketreeThread(nb, first+i);
+	    t[i].start();
+	  }
+	  for (int i = 0; i < num; i++) {
+	    try {
+	      t[i].join();
+	    } catch (java.lang.InterruptedException e) {
+	      System.err.print("InterruptedException in maketreeParallelLoop\n");
+	    }
+	  }
+	}
+      });
   }
 
   void maketreeLoop(final int first, final int num) {
     final NBodySystem nb = this;
-    VTMemory m = new VTMemory(10, 10);
-    m.enter(new Runnable () {
-      public void run () {
-        for (int i = 0; i < num; i++) {
-          nb.maketreeIteration(first+i);
-        }
-      }
-    });
+    barnes.run(new Runnable () {
+	public void run () {
+	  for (int i = 0; i < num; i++) {
+	    nb.maketreeIteration(first+i);
+	  }
+	}
+      });
   }
   
   void maketree() throws java.lang.InterruptedException {
@@ -1597,36 +1590,33 @@ class NBodySystem {
 
   void AdvanceParallelLoop(final double hts, final double ts, final int first, final int num) {
     final NBodySystem nb = this;
-    VTMemory m = new VTMemory(10, 10);
-    m.enter(new Runnable () {
-      public void run () {
-        AdvanceThread t[] = new AdvanceThread[num];
-        for (int i = 0; i < num; i++) {
-          // Wes Beebee: this thread goes in its own region
-          t[i] = new AdvanceThread(nb, hts, ts, first+i);
-          t[i].start();
-        }
-        for (int i = 0; i < num; i++) {
-          try {
-            t[i].join();
-          } catch (java.lang.InterruptedException e) {
+    barnes.run(new Runnable () {
+	public void run () {
+	  AdvanceThread t[] = new AdvanceThread[num];
+	  for (int i = 0; i < num; i++) {
+	    t[i] = new AdvanceThread(nb, hts, ts, first+i);
+	    t[i].start();
+	  }
+	  for (int i = 0; i < num; i++) {
+	    try {
+	      t[i].join();
+	    } catch (java.lang.InterruptedException e) {
             System.err.print("InterruptedException in AdvanceParallelLoop\n");
-          }
-        }
-      }
-    });
+	    }
+	  }
+	}
+      });
   }
 
   void AdvanceLoop(final double hts, final double ts, final int first, final int num) {
     final NBodySystem nb = this;
-    VTMemory m = new VTMemory(10, 10);
-    m.enter(new Runnable () {
-      public void run () {
-        for (int i = 0; i < num; i++) {
-          nb.AdvanceIteration(hts, ts, first+i);
-        }
-      }
-    });
+    barnes.run(new Runnable () {
+	public void run () {
+	  for (int i = 0; i < num; i++) {
+	    nb.AdvanceIteration(hts, ts, first+i);
+	  }
+	}
+      });
   }
 
   void Advance(double hts, double ts) throws java.lang.InterruptedException {
@@ -1645,36 +1635,33 @@ class NBodySystem {
 
   void SwapAccsParallelLoop(final int first, final int num) {
     final NBodySystem nb = this;
-    VTMemory m = new VTMemory(10, 10);
-    m.enter(new Runnable () {
-      public void run () {
-        SwapAccsThread t[] = new SwapAccsThread[num];
-        for (int i = 0; i < num; i++) {
-          // Wes Beebee: this thread goes in its own region
-          t[i] = new SwapAccsThread(nb, first+i);
-          t[i].start();
-        }
-        for (int i = 0; i < num; i++) {
-          try {
-            t[i].join();
-          } catch (java.lang.InterruptedException e) {
-            System.err.print("InterruptedException in SwapAccsParallelLoop\n");
-          }
-        }
-      }
-    });
+    barnes.run(new Runnable () {
+	public void run () {
+	  SwapAccsThread t[] = new SwapAccsThread[num];
+	  for (int i = 0; i < num; i++) {
+	    t[i] = new SwapAccsThread(nb, first+i);
+	    t[i].start();
+	  }
+	  for (int i = 0; i < num; i++) {
+	    try {
+	      t[i].join();
+	    } catch (java.lang.InterruptedException e) {
+	      System.err.print("InterruptedException in SwapAccsParallelLoop\n");
+	    }
+	  }
+	}
+      });
   }
 
   void SwapAccsLoop(final int first, final int num) {
     final NBodySystem nb = this;
-    VTMemory m = new VTMemory(10, 10);
-    m.enter(new Runnable () {
-      public void run () {
-        for (int i = 0; i < num; i++) {
-          nb.SwapAccsIteration(first+i);
-        }
-      }
-    });
+    barnes.run(new Runnable () {
+	public void run () {
+	  for (int i = 0; i < num; i++) {
+	    nb.SwapAccsIteration(first+i);
+	  }
+	}
+      });
   }
 
   void SwapAccs() throws java.lang.InterruptedException {
@@ -1693,36 +1680,33 @@ class NBodySystem {
 
   void ComputeAccelsParallelLoop(final double tol, final double eps, final int first, final int num) {
     final NBodySystem nb = this;
-    VTMemory m = new VTMemory(10, 10);
-    m.enter(new Runnable () {
-      public void run() {
-        ComputeAccelsThread t[] = new ComputeAccelsThread[num];
-        for (int i = 0; i < num; i++) {
-          // Wes Beebee: this thread goes in its own region
-          t[i] = new ComputeAccelsThread(nb, tol, eps, first+i);
-          t[i].start();
-        }
-        for (int i = 0; i < num; i++) {
-          try {
-            t[i].join();
-          } catch (java.lang.InterruptedException e) {
-            System.err.print("InterruptedException in ComputeAccelsParallelLoop\n");
-          }
-        }
-      }
-    });
+    barnes.run(new Runnable () {
+	public void run() {
+	  ComputeAccelsThread t[] = new ComputeAccelsThread[num];
+	  for (int i = 0; i < num; i++) {
+	    t[i] = new ComputeAccelsThread(nb, tol, eps, first+i);
+	    t[i].start();
+	  }
+	  for (int i = 0; i < num; i++) {
+	    try {
+	      t[i].join();
+	    } catch (java.lang.InterruptedException e) {
+	      System.err.print("InterruptedException in ComputeAccelsParallelLoop\n");
+	    }
+	  }
+	}
+      });
   }
 
   void ComputeAccelsLoop(final double tol, final double eps, final int first, final int num) {
     final NBodySystem nb = this;
-    VTMemory m = new VTMemory(10, 10);
-    m.enter(new Runnable () {
-      public void run() {
-        for (int i = 0; i < num; i++) {
-          nb.ComputeAccelsIteration(tol, eps, first+i);
-        }
-      }
-    });
+    barnes.run(new Runnable () {
+	public void run() {
+	  for (int i = 0; i < num; i++) {
+	    nb.ComputeAccelsIteration(tol, eps, first+i);
+	  }
+	}
+      });
   }
 
   void ComputeAccels(double tol, double eps) throws java.lang.InterruptedException {
@@ -1741,36 +1725,33 @@ class NBodySystem {
 
   void StartVelsParallelLoop(final double hts, final int first, final int num) {
     final NBodySystem nb = this;
-    VTMemory m = new VTMemory(10, 10);
-    m.enter(new Runnable () {
-      public void run() {
-        StartVelsThread t[] = new StartVelsThread[num];
-        for (int i = 0; i < num; i++) {
-          // Wes Beebee: this thread goes in its own region
-          t[i] = new StartVelsThread(nb, hts, first+i);
-          t[i].start();
-        }
-        for (int i = 0; i < num; i++) {
-          try {
-            t[i].join();
-          } catch (java.lang.InterruptedException e) {
-            System.err.print("InterruptedException in StartVelsParallelLoop\n");
-          }
-        }
-      }
-    });
+    barnes.run(new Runnable () {
+	public void run() {
+	  StartVelsThread t[] = new StartVelsThread[num];
+	  for (int i = 0; i < num; i++) {
+	    t[i] = new StartVelsThread(nb, hts, first+i);
+	    t[i].start();
+	  }
+	  for (int i = 0; i < num; i++) {
+	    try {
+	      t[i].join();
+	    } catch (java.lang.InterruptedException e) {
+	      System.err.print("InterruptedException in StartVelsParallelLoop\n");
+	    }
+	  }
+	}
+      });
   }
 
   void StartVelsLoop(final double hts, final int first, final int num) {
     final NBodySystem nb = this;
-    VTMemory m = new VTMemory(10, 10);
-    m.enter(new Runnable () {
-      public void run() {
-        for (int i = 0; i < num; i++) {
-          nb.StartVelsIteration(hts, first+i);
-        }
-      }
-    });
+    barnes.run(new Runnable () {
+	public void run() {
+	  for (int i = 0; i < num; i++) {
+	    nb.StartVelsIteration(hts, first+i);
+	  }
+	}
+      });
   }
   
   void StartVels(double hts) throws java.lang.InterruptedException {
@@ -1896,12 +1877,50 @@ class StartVelsThread extends Thread {
 class barnes { 
   public static parms simparms = new parms();
   public static NBodySystem Nbody = new NBodySystem();
+  public static final int NO_RTJ = 0;
+  public static final int CT_MEMORY = 1;
+  public static final int VT_MEMORY = 2;
+  public static long ctsize = 0;
+  public static int RTJ_alloc_method;
 
+  public static void run(Runnable r) {
+    switch (RTJ_alloc_method) {
+    case NO_RTJ: {
+      r.run();
+      break;
+    }
+    case CT_MEMORY: {
+      (new javax.realtime.CTMemory(ctsize)).enter(r);
+      break;
+    }
+    case VT_MEMORY: {
+      (new javax.realtime.VTMemory(1000, 1000)).enter(r);
+      break;
+    } 
+    default: {
+      System.out.println("Invalid memory area type!");
+      System.exit(1);
+    }
+    }
+  }
+    
   public static void main(String args[]) throws java.lang.InterruptedException, java.io.IOException, java.io.FileNotFoundException { 
-    if (args.length == 0) {
-      System.out.print("usage: java barnes <input filename>\n");
+    if (args.length < 2) {
+      System.out.print("usage: java barnes <input filename> <noRTJ | CT | VT> [stats | nostats] [ctsize]\n");
       return;
     }
+    if (args[1].equalsIgnoreCase("noRTJ")) {
+      RTJ_alloc_method = NO_RTJ;
+    } else if (args[1].equalsIgnoreCase("CT")) {
+      RTJ_alloc_method = CT_MEMORY;
+      ctsize = Long.parseLong(args[3]);
+    } else if (args[1].equalsIgnoreCase("VT")) {
+      RTJ_alloc_method = VT_MEMORY;
+    } else {
+      System.out.println("Invalid memory area type argument");
+      return;
+    }
+
     simparms.readParameterFile(args[0]);
     Nbody.init();
     Nbody.startrun(simparms);
@@ -1914,6 +1933,11 @@ class barnes {
     Nbody.output(simparms);
     if (simparms.getiparam("dump") == 1) { 
       Nbody.dump();
+    }
+
+    if ((RTJ_alloc_method != NO_RTJ) &&
+	(args[2].equalsIgnoreCase("stats"))) {
+      javax.realtime.Stats.print();
     }
   }
 }
