@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.66 1999-10-14 14:18:04 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.67 1999-10-14 15:53:14 cananian Exp $
  */
 %%
 
@@ -845,6 +845,8 @@ BINOP<l>(REM, j, k) = i %{
 
 // fix me: addressing mode for MEM is actually much richer than this.
 // we can do offsets and scaling in same oper.
+
+/* ACK! Our assembler doesn't support this, even though our processor does. =(
 MEM<s:8,s:16,u:16>(e) = i %{ // addressing mode 3
     Temp i = makeTemp();
     String suffix="";
@@ -854,6 +856,24 @@ MEM<s:8,s:16,u:16>(e) = i %{ // addressing mode 3
     emit(new InstrMEM(instrFactory, ROOT,
 		      "ldr"+suffix+" `d0, [`s0]",
 		      new Temp[]{ i }, new Temp[]{ e }));
+}%
+*/
+MEM<s:8>(e) = i %{ /* hack. ARMv4 has a special instr for this. */
+    Temp i = makeTemp();
+    emit(new InstrMEM(instrFactory, ROOT, "ldrb `d0, [`s0] @ load signed byte",
+		      new Temp[]{ i }, new Temp[]{ e }));
+    emit( ROOT, "mov `d0, `s0, asl #24", i, i);
+    emit( ROOT, "mov `d0, `s0, asr #24", i, i);
+}%
+MEM<s:16,u:16>(e) = i %{ /* hack. ARMv4 has a special instr for this. */
+    Temp i = makeTemp();
+    emit(new InstrMEM(instrFactory, ROOT, "ldr `d0, [`s0, #2] @ load halfword",
+		      new Temp[]{ i }, new Temp[]{ e }));
+    emit( ROOT, "mov `d0, `s0, asl #16", i, i);
+    if (ROOT.signed())
+	emit( ROOT, "mov `d0, `s0, asr #16", i, i);
+    else
+	emit( ROOT, "mov `d0, `s0, lsr #16", i, i);
 }%
 MEM<u:8,p,i,f>(e) = i %{ // addressing mode 2
     Temp i = makeTemp();		
@@ -1222,10 +1242,22 @@ MOVE<d,l>(TEMP(dst), src) %{
 		    "mov `d0h, `s0h", dst, src );
 }%
 
+/* ACK! Our assembler doesn't support this, even though our processor does. =(
 MOVE(MEM<s:16,u:16>(d), src) %{ // addressing mode 3
     emit(new InstrMEM(instrFactory, ROOT,
 		      "strh `s0, [`s1]",
 		      null, new Temp[]{ src, d }));
+}%
+*/
+MOVE(MEM<s:16,u:16>(d), src) %{ /* hack. ARMv4 has a special instr for this. */
+    emit(new InstrMEM(instrFactory, ROOT,
+		      "strb `s0, [`s1, #0] @ store halfword lo",
+		      null, new Temp[]{ src, d }));
+    emit( ROOT, "mov 'd0, 's0, ror #8", src, src );
+    emit(new InstrMEM(instrFactory, ROOT,
+		      "strb `s0, [`s1, #1] @ store halfword hi",
+		      null, new Temp[]{ src, d }));
+    emit( ROOT, "mov 'd0, 's0, ror #24", src, src );
 }%
 MOVE(MEM<s:8,u:8,p,i,f>(d), src) %{ // addressing mode 2
     String suffix="";
