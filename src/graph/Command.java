@@ -45,18 +45,14 @@ public class Command extends Node {
     public static final int CHECK_FOR_BLUE = 110;
 
     /**
-     * This command created for use with Switch.java
-     * and ConditionalBranch.java.
+     * This command created for use with Switch.java.
      * @see Switch.java
-     * @see ConditionalBranch.java
      */
     public static final int GO_LEFT = 120;
     
     /**
      * This command created for use with Switch.java
-     * and ConditionalBranch.java.
      * @see Switch.java
-     * @see ConditionalBranch.java
      */
     public static final int GO_RIGHT = 121;
 
