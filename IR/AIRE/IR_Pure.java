@@ -7,7 +7,7 @@ package harpoon.IR.AIRE;
  * which specifies various options associated with predefined 
  * <code>IIR_FunctionDeclaration</code> classes.
  */
-public class IR_Pure {
+public abstract class IR_Pure {
     public static int IR_UNKNOWN_PURE = 0;
     public static int IR_PURE_FUNCTION = 1;
     public static int IR_IMPURE_FUNCTION = 2;

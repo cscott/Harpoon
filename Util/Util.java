@@ -4,11 +4,11 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.8 1998-09-19 06:20:51 cananian Exp $
+ * @version $Id: Util.java,v 1.9 1998-10-10 09:43:14 cananian Exp $
  */
-public final class Util {
-  // Disable constructor.  Only static methods here.
-  private Util() { }
+public abstract class Util {
+  // Only static methods.
+
   /**
    * Copy an array type to prevent modification.  Does not bother
    * to copy array types of length 0, because they're already immutable.

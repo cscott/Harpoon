@@ -7,7 +7,7 @@ package harpoon.IR.AIRE;
  * which specifies the original source language in which an 
  * AIRE/CE fragment originated.
  */
-public class IR_SourceLanguage {
+public abstract class IR_SourceLanguage {
     public static int IR_VHDL87_SOURCE = 0;
     public static int IR_VHDL93_SOURCE = 1;
     public static int IR_VHDL98_SOURCE = 2;

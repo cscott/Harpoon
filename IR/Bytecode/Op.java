@@ -15,15 +15,13 @@ package harpoon.IR.Bytecode;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Op.java,v 1.1 1998-09-14 02:49:21 cananian Exp $
+ * @version $Id: Op.java,v 1.2 1998-10-10 09:43:13 cananian Exp $
  * @see     harpoon.ClassFile.Raw.Attribute.AttributeCode
  * @see     harpoon.IR.Bytecode.Instr
  * @see     harpoon.IR.Bytecode.Code
  */
 
-public final class Op {
-  // No constructor (static only)
-  private Op() { }
+public abstract class Op {
 
   // Set up table of opcodes.
   public final static byte 

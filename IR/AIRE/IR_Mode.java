@@ -7,7 +7,7 @@ package harpoon.IR.AIRE;
  * which specifies various options associated with predefined 
  * <code>IIR_InterfaceDeclaration</code> classes.
  */
-public class IR_Mode {
+public abstract class IR_Mode {
     public static int IR_UNKNOWN_MODE = 0;
     public static int IR_IN_MODE = 1;
     public static int IR_OUT_MODE = 2;

@@ -18,12 +18,10 @@ import java.util.Hashtable;
  * unused and seeks to prove otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.9 1998-10-10 03:13:03 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.10 1998-10-10 09:43:00 cananian Exp $
  */
 
-public class DeadCode  {
-    /** Hide the constructor. */
-    private DeadCode() { }
+public abstract class DeadCode  {
 
     public static void optimize(HCode hc) {
 	// Assume everything's useless.

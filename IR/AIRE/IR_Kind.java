@@ -12,7 +12,7 @@ import java.util.Hashtable;
  * prior to any labels associated with completely new, instatiable IIR
  * extension classes:
  */
-public class IR_Kind {
+public abstract class IR_Kind {
     public static int IR_DESIGN_FILE = 1;
     public static int IR_COMMENT = 2;
     public static int IR_IDENTIFIER = 3;

@@ -7,7 +7,7 @@ package harpoon.IR.AIRE;
  * which specifies various options associated with predefined 
  * signal assignement statement classes.
  */
-public class IR_DelayMechanism {
+public abstract class IR_DelayMechanism {
     public static int IR_UNKNOWN_DELAY = 0;
     public static int IR_INERTIAL_DELAY = 1;
     public static int IR_TRANSPORT_DELAY = 2;

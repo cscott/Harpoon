@@ -7,12 +7,11 @@ import harpoon.ClassFile.*;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.4 1998-09-14 03:08:51 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.5 1998-10-10 09:43:14 cananian Exp $
  */
 
-public final class HClassUtil  {
-    // Disable constructor.  Only static methods here.
-    private HClassUtil() { }
+public abstract class HClassUtil  {
+    // Only static methods.
     
     /** Count the number of dimensions of an array type.
      *  @return 0 for a non-array, n for an n-dimensional array type.
