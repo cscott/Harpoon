@@ -18,10 +18,17 @@ import java.util.List;
 
 /**
  * A <code>Frame</code> encapsulates the machine-dependent information
- * needed for compilation.
+ * needed for compilation.  <code>Frame</code>s are not intended to be
+ * <i>entirely</i> machine-specific; all machines with roughly the same
+ * datatypes (for example, 32-bit words) and which use the same runtime
+ * implementation should be able to share most, if not all, of a
+ * <code>Frame</code> implementation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.14 1999-06-14 23:53:43 pnkfelix Exp $
+ * @author  Felix Klock <pnkfelix@mit.edu>
+ * @author  Andrew Berkheimer <andyb@mit.edu>
+ * @version $Id: Frame.java,v 1.1.2.15 1999-06-24 19:18:49 cananian Exp $
+ * @see harpoon.IR.Assem
  */
 public abstract class Frame {
 
