@@ -14,6 +14,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HFieldMutator;
+import harpoon.ClassFile.HInitializer;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Relinker;
@@ -48,7 +49,7 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.1.2.8 2001-11-13 23:35:23 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.1.2.9 2001-11-14 01:34:40 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
@@ -223,12 +224,14 @@ public class MZFCompressor {
 		allF[i].getMutator().removeModifiers(Modifier.PRIVATE);
 	    }
 	// move all non-constructor non-static methods of oldC to newC
+	// (move static initializers to newC, since it has the static fields)
 	// copy the constructors. make copies of the getter/setters to override
 	HMethod[] allM = oldC.getDeclaredMethods();
 	HMethod getter = (HMethod) f2m.field2getter.get(hf);
 	HMethod setter = (HMethod) f2m.field2setter.get(hf);
 	for (int i=0; i<allM.length; i++) {
-	    if (allM[i].isStatic()) continue;
+	    if (allM[i].isStatic() && !(allM[i] instanceof HInitializer))
+		continue;
 	    if (isConstructor(allM[i])) {
 		// copy, don't move.
 		HMethod newcon = (allM[i] instanceof HConstructor) ?
