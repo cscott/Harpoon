@@ -65,7 +65,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec.instrGroups,v 1.1.2.3 2001-06-22 16:19:22 pnkfelix Exp $
+ * @version $Id: CodeGen.spec.instrGroups,v 1.1.2.4 2001-07-03 23:04:05 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1050,12 +1050,14 @@ BINOP(cmpop, j, CONST<i,p>(c)) = i
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
+    { InstrGroup agg = startGroup(InstrGroup.AGGREGATE);
     { InstrGroup nrg = startGroup(InstrGroup.NO_REORDER);
       emitUse( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString()), j );
       emitDef( ROOT, "mov"+cmpOp2Str(cmpop)+" `d0, #1", i );
       emitDef( ROOT, "mov"+cmpOp2Str(Bop.invert(cmpop))+" `d0, #0", i );
 
     endGroup(nrg); }
+    endGroup(agg); }
 }%
 
 BINOP(cmpop, j, k) = i
@@ -1065,11 +1067,13 @@ BINOP(cmpop, j, k) = i
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
+    { InstrGroup agg = startGroup(InstrGroup.AGGREGATE);
     { InstrGroup nrg = startGroup(InstrGroup.NO_REORDER);
       emitUses( ROOT, "cmp `s0, `s1", j, k );
       emitDef( ROOT, "mov"+cmpOp2Str(cmpop)+" `d0, #1", i );
       emitDef( ROOT, "mov"+cmpOp2Str(Bop.invert(cmpop))+" `d0, #0", i );
     endGroup(nrg); }
+    endGroup(agg); }
 }%
 
     /* efficient four-instruction (in)equality test */
@@ -1077,12 +1081,14 @@ BINOP(cmpop, j, k) = i
 %pred %( ROOT.operandType()==Type.LONG && isCmpOp(cmpop) &&
 	 (cmpop == Bop.CMPEQ || cmpop == Bop.CMPNE) )%
 %{
+    { InstrGroup agg = startGroup(InstrGroup.AGGREGATE);
     { InstrGroup nrg = startGroup(InstrGroup.NO_REORDER);
       emitUses( ROOT, "cmp `s0h, `s1h", j, k );
       emitUses( ROOT, "cmpeq `s0l, `s1l", j, k );
       emitDef( ROOT, "mov `d0, #0", i );
       emitDef( ROOT, "mov"+cmpOp2Str(cmpop)+" `d0, #1", i );
     endGroup(nrg); }
+    endGroup(agg); }
 }%
     /* less efficient six-instruction comparison: doesn't work for EQ/NE */
 BINOP(cmpop, j, k) = i
@@ -1139,11 +1145,13 @@ BINOP(cmpop, j, k) = i
     // --- in addition to converting to a one-bit boolean value,
     //      we fixup the possibly inverted test here --
     int t=cmpOpFuncInverted(cmpop) ? 0 : 1, f = (t==0) ? 1 : 0;
+    { InstrGroup agg = startGroup(InstrGroup.AGGREGATE);    
     { InstrGroup nrg = startGroup(InstrGroup.NO_REORDER);
     emitUse( ROOT, "cmp `s0, #0", r0 );
     emitDef( ROOT, "moveq `d0, #"+f, i );
     emitDef( ROOT, "movne `d0, #"+t, i );
     endGroup(nrg); }
+    endGroup(agg); }
 }%
 
 BINOP(cmpop, j, k) = i
@@ -1178,11 +1186,13 @@ BINOP(cmpop, j, k) = i
     // --- in addition to converting to a one-bit boolean value,
     //      we fixup the possibly inverted test here --
     int t=cmpOpFuncInverted(cmpop) ? 0 : 1, f = (t==0) ? 1 : 0;
+    { InstrGroup agg = startGroup(InstrGroup.AGGREGATE);
     { InstrGroup nrg = startGroup(InstrGroup.NO_REORDER);
     emitUse( ROOT, "cmp `s0, #0", r0 );
     emitDef( ROOT, "moveq `d0, #"+f, i );
     emitDef( ROOT, "movne `d0, #"+t, i );
     endGroup(nrg); }
+    endGroup(agg); }
 }%
 
 BINOP<p,i>(OR, j, k) = i
