@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.133 2001-01-23 21:09:53 wbeebee Exp $
+ * @version $Id: SAMain.java,v 1.1.2.134 2001-01-23 22:16:27 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -280,6 +280,17 @@ public class SAMain extends harpoon.IR.Registration {
 		String resource =
 		    "harpoon/Backend/Runtime1/transact-safe.properties";
 		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+		hcf = new harpoon.Analysis.Transactions.ArrayCopyImplementer
+		    (hcf, linker);
+		hcf = new harpoon.Analysis.Transactions.CloneImplementer
+		    (hcf, linker, classHierarchy.classes());
+		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    
+		hcf = new harpoon.Analysis.Quads.ArrayInitRemover(hcf)
+		    .codeFactory();
+		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+
 		syncTransformer = new SyncTransformer
 		    (hcf, classHierarchy, linker, mainM, roots, resource);
 		hcf = syncTransformer.codeFactory();
