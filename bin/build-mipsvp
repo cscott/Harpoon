@@ -1,0 +1,80 @@
+#!/bin/sh
+
+# Usage: $0 <class_name> <directory>
+
+# find the root of the Harpoon tree file. If you plan to run this script from
+# a directory different from ~/Harpoon/Code please set HARPOON_DIR.
+if [ -z $HARPOON_DIR ]; then
+    FLEX_DIR=`pwd`
+    HARPOON_DIR=`cd $FLEX_DIR/..; pwd`
+else
+    FLEX_DIR="${HARPOON_DIR}/Code"
+fi
+if [ -z $RUNTIME_DIR ]; then
+    RUNTIME_DIR="${HARPOON_DIR}/Runtime"
+fi
+
+# grab flex options from the command line.
+while [ -n "$3" ]; do
+    opts="$opts $1"
+    shift
+done
+
+# at this point, there are only two items left on the command line.
+cls=$1
+name=`basename $2`
+dir=`dirname $2`/as$name
+
+# check java version
+optprefix=X
+if java -version 2>&1 | grep -q 'version "1.1'; then
+  echo "WARNING: YOU ARE USING JAVA 1.1. (JDK1.2 or above is preferred)" 1>&2
+  optprefix=""
+fi
+# ok.
+
+echo "Building $cls in $dir; result will be ${name}-Java.a" 1>&2
+if [ -d $dir ]; then
+    /bin/rm -rf $dir
+fi
+if [ ! -d $dir ]; then
+    mkdir $dir
+fi
+
+# you can set OPT_FLEX_SUPPORT_FILES to add additional support files: .jar/.zip
+FLEX_SUPPORT_FILES="${OPT_FLEX_SUPPORT_FILES} ${FLEX_DIR}/Support/reflect-thunk.jar ${FLEX_DIR}/SupportNP/sunthunk.jar ${FLEX_DIR}/SupportNP/collections.jar ${FLEX_DIR}/SupportNP/classes.zip ${FLEX_DIR}/Support/realtime.jar"
+
+for supp_file in ${FLEX_SUPPORT_FILES}; do
+    if [ ! -f $supp_file ]; then
+	echo Support file ${supp_file} missing!;
+	exit -1;
+    else
+	SUPP_FILES_PATH="${SUPP_FILES_PATH}:${supp_file}";
+    fi;
+done
+
+# you can set FLEXPATH to assign additional components to the harpoon classpath
+harpoonpath=${FLEXPATH}${FLEXPATH:+:}.${SUPP_FILES_PATH}
+
+if type -t cygpath > /dev/null ; then
+    harpoonpath=`cygpath -wp "$harpoonpath"`
+fi
+
+echo
+echo harpoonpath=$harpoonpath
+echo
+
+${JAVA:=java} -${optprefix}mx${FLEXMEM:=1536m} -Dharpoon.class.path=$harpoonpath  harpoon.Main.SAMain $opts -Rspec.regalloc -bMIPS -c $cls -o $dir && \
+if [ -d ${RUNTIME_DIR}/include -a -f ${RUNTIME_DIR}/config.status ] && \
+    grep -q "[-]-target=mips-unknown-linux" ${RUNTIME_DIR}/config.status ; then
+    make -f ${RUNTIME_DIR}/Makefile.spec -C $dir && \
+    mv -f $dir/Java.a ${RUNTIME_DIR}/${name}-Java.a && \
+    make -C ${RUNTIME_DIR} run${name} && \
+    if [ -z $KEEP_ARCHIVE ]; then \
+	rm -f ${RUNTIME_DIR}/${name}-Java.a ; \
+    fi && \
+    echo "EXECUTABLE left in ${RUNTIME_DIR}/run${name}." 1>&2
+else
+    echo "ASSEMBLY FILES left in $dir; see $dir/Makefile to build." 1>&2
+fi
+exit $?
