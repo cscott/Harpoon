@@ -13,16 +13,16 @@ import java.util.EmptyStackException;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueStack.java,v 1.2 2002-02-25 21:09:15 cananian Exp $
+ * @version $Id: UniqueStack.java,v 1.2.2.1 2002-04-07 20:52:51 cananian Exp $
  */
 
-public class UniqueStack extends UniqueVector implements Worklist {
+public class UniqueStack<E> extends UniqueVector<E> implements Worklist<E> {
     /** 
      * Pushes an item onto the top of this stack, if it is unique.
      * Otherwise, does nothing.
      * @param item the item to be pushed onto this stack.
      */
-    public void push(Object item) {
+    public void push(E item) {
 	addElement(item);
     }
     /**
@@ -31,14 +31,14 @@ public class UniqueStack extends UniqueVector implements Worklist {
      * @return The object at the top of this stack.
      * @exception EmptyStackException if this empty.
      */
-    public synchronized Object pop() {
-	Object obj;
+    public synchronized E pop() {
+	E obj;
 	int len = size();
 	obj = peek();
 	removeElementAt(len-1);
 	return obj;
     }
-    public Object pull() { return pop(); }
+    public E pull() { return pop(); }
 
     /**
      * Looks at the object at the top of this stack without removing it
@@ -46,7 +46,7 @@ public class UniqueStack extends UniqueVector implements Worklist {
      * @return the object at the top of this stack.
      * @exception EmptyStackException if this stack is empty.
      */
-    public synchronized Object peek() {
+    public synchronized E peek() {
 	int len = size();
 	if (len==0) throw new EmptyStackException();
 	return elementAt(len-1);
@@ -81,7 +81,7 @@ public class UniqueStack extends UniqueVector implements Worklist {
      *  item returned by the collection iterator will be at the bottom of
      *  the stack, and thus last to be popped. Duplicate elements in
      *  <code>c</code> are skipped. */
-    public UniqueStack(Collection c) {
+    public <T extends E> UniqueStack(Collection<T> c) {
 	super(c);
     }
 }
