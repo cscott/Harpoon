@@ -46,7 +46,7 @@ import harpoon.Temp.Temp;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.7 2002-12-02 17:12:23 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.8 2002-12-03 04:04:13 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -251,9 +251,11 @@ public abstract class PreallocOpt {
 
 	aim.associate((HCodeElement) qn, new PreallocAP(f, formerAP));
 
+	/*
 	System.out.println
 	    ("setAllocationProperty for " + 
 	     harpoon.Analysis.PointerAnalysis.Debug.code2str(qn));
+	*/
     }
 
 

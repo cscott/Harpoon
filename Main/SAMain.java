@@ -101,7 +101,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.27 2002-12-02 23:12:51 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.28 2002-12-03 04:04:31 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -342,7 +342,11 @@ public class SAMain extends harpoon.IR.Registration {
 			it.hasNext(); ) {
 			Quad quad = (Quad) it.next();
 			assert an.allocID(quad) == ans.allocID(quad) :
-			    "different allocID's for " + Debug.code2str(quad);
+			//if(an.allocID(quad) == ans.allocID(quad))
+			//    System.out.println(
+			    "different allocID's for " + Debug.code2str(quad)
+			    //	 )
+			    ;
 		    }
 		    System.out.println("OK");
 		}

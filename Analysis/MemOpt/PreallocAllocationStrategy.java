@@ -35,7 +35,7 @@ import harpoon.IR.Tree.Type;
     </ul>
  
     @author  Alexandru Salcianu <salcianu@MIT.EDU>
-    @version $Id: PreallocAllocationStrategy.java,v 1.1 2002-11-29 20:43:43 salcianu Exp $ */
+    @version $Id: PreallocAllocationStrategy.java,v 1.2 2002-12-03 04:04:13 salcianu Exp $ */
 public class PreallocAllocationStrategy extends MallocAllocationStrategy {
     
     /** Creates a <code>PreallocAllocationStrategy</code>. */
@@ -50,9 +50,11 @@ public class PreallocAllocationStrategy extends MallocAllocationStrategy {
 	HField hfield = ap.getMemoryChunkField();
 	if(hfield != null) {
 
+	    /*
 	    System.out.println
 		("I was called for " + 
 		 harpoon.Analysis.PointerAnalysis.Debug.code2str(source));
+	    */
 
 	    return
 		DECLARE

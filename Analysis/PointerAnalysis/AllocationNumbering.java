@@ -25,6 +25,7 @@ import java.io.PrintWriter;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 /**
  * An <code>AllocationNumbering</code> object assigns unique numbers
@@ -33,7 +34,7 @@ import java.io.IOException;
  * (e.g. <code>InstrumentAllocs</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.7 2002-12-02 23:12:42 salcianu Exp $ */
+ * @version $Id: AllocationNumbering.java,v 1.8 2002-12-03 04:04:24 salcianu Exp $ */
 public class AllocationNumbering implements java.io.Serializable {
     private final CachingCodeFactory ccf;
     public  final Map alloc2int;
@@ -106,7 +107,7 @@ public class AllocationNumbering implements java.io.Serializable {
 	PrintWriter pw =
 	    new PrintWriter(new BufferedWriter(new FileWriter(filename)));
 	Collection methods = get_methods();
-	pw.println(methods.size());
+	writeInt(pw, methods.size());
 	for(Iterator it = methods.iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
 	    writeMethodSignature(pw, hm);
@@ -127,26 +128,37 @@ public class AllocationNumbering implements java.io.Serializable {
     }
 
     private void writeMethodSignature(PrintWriter pw, HMethod hm) {
-	pw.println(hm.getDeclaringClass().getName());
-
-	String methodName = hm.getName();
-	if(methodName.equals("?")) {
-	    pw.println("STRANGE METHOD" + hm);
-	}
-
-	pw.println(hm.getName());
+	writeString(pw, hm.getDeclaringClass().getName());
+	writeString(pw, hm.getName());
 	HClass[] ptypes = hm.getParameterTypes();
-	pw.println(ptypes.length);
+	writeInt(pw, ptypes.length);
 	for(int i = 0; i < ptypes.length; i++)
-	    pw.println(ptypes[i].getName());
+	    writeString(pw, ptypes[i].getName());
     }
 
     private void writeAllocs(PrintWriter pw, Collection allocs) {
-	pw.println(allocs.size());
+	writeInt(pw, allocs.size());
 	for(Iterator it = allocs.iterator(); it.hasNext(); ) {
 	    Quad quad = (Quad) it.next();
-	    pw.println(quad.getID());
-	    pw.println(allocID(quad));
+	    writeInt(pw, quad.getID());
+	    writeInt(pw, allocID(quad));
 	}
+    }
+
+    private static void writeString(PrintWriter pw, String str) {
+	try {
+	    pw.println("// " + str); // added for comment
+	    byte[] bytes = str.getBytes("UTF8");
+	    writeInt(pw, bytes.length);
+	    for(int i = 0; i < bytes.length; i++)
+		writeInt(pw, bytes[i]);
+	} catch (UnsupportedEncodingException e) {
+	    e.printStackTrace();
+	    System.exit(1);
+	}
+    }
+
+    private static void writeInt(PrintWriter pw, int i) {
+	pw.println(i);
     }
 }

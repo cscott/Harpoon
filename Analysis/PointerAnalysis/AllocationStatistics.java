@@ -26,12 +26,13 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 
 /**
  * <code>AllocationStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationStatistics.java,v 1.4 2002-12-02 23:09:41 salcianu Exp $
+ * @version $Id: AllocationStatistics.java,v 1.5 2002-12-03 04:04:24 salcianu Exp $
  */
 public class AllocationStatistics {
     
@@ -111,19 +112,16 @@ public class AllocationStatistics {
 	    for(int i = 0; i < nb_allocs; i++) {
 		int quadID = readInt(br);
 		int counter = readInt(br);
-		if(hm != null)
-		    getMap4Method(hm).put
-			(new Integer(quadID), new Integer(counter));
+		getMap4Method(hm).put
+		    (new Integer(quadID), new Integer(counter));
 	    }
 	}
 
 	private static HClass readClass(Linker linker, BufferedReader br)
 	    throws IOException {
-	    String class_name = br.readLine();
+	    String class_name = readString(br);
 	    HClass hc = (HClass) primitives.get(class_name);
-	    if(hc == null)
-		hc = linker.forName(class_name);
-	    return hc;
+	    return (hc != null) ? hc : linker.forName(class_name);
 	}
 	
 	private static Map primitives;
@@ -143,7 +141,7 @@ public class AllocationStatistics {
 	private static HMethod  readMethod(Linker linker, BufferedReader br)
 	    throws IOException {
 	    HClass hc = readClass(linker, br);
-	    String method_name = br.readLine();
+	    String method_name = readString(br);
 	    int nb_params = readInt(br);
 	    HClass[] ptypes = new HClass[nb_params];
 	    for(int i = 0; i < nb_params; i++)
@@ -158,8 +156,7 @@ public class AllocationStatistics {
 		for(int i = 0; i < hms.length; i++)
 		    System.out.println("\t" + hms[i]);
 		System.out.println("is \"?\" : " + method_name.equals("?"));
-		return null;
-		//throw e;
+		throw e;
 	    }
 	}
     } // end of AllocationNumberingStub
@@ -181,6 +178,23 @@ public class AllocationStatistics {
 
     private static int readInt(BufferedReader br) throws IOException {
 	return new Integer(br.readLine()).intValue();
+    }
+
+    private static String readString(BufferedReader br) throws IOException {
+	try {
+	    br.readLine(); // eat the line added as comment
+	    int size = readInt(br);
+	    byte[] bytes = new byte[size];
+	    for(int i = 0; i < size; i++)
+		bytes[i] = (byte) readInt(br);
+	    String str = new String(bytes, "UTF8");
+	    System.out.println("READSTRING: " + str);
+	    return str;
+	} catch (UnsupportedEncodingException e) {
+	    e.printStackTrace();
+	    System.exit(1);
+	    return null; // never executed
+	}
     }
 
 
@@ -236,7 +250,7 @@ public class AllocationStatistics {
 		 site.getFactory().getMethod());
 	    if(visitor != null)
 		site.accept(visitor);
-	    if((frac < 0.01) || 
+	    if((frac < 1) || // don't print sites with < 1% allocations
 	       (((double) partial_count / (double) total_count) > 0.90)) {
 		i++;
 		break;
