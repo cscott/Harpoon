@@ -25,11 +25,22 @@ import java.util.HashMap;
     <code>Instr</code>s in a <code>Code</code>.
 
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.2 1999-05-24 19:00:41 pnkfelix Exp $ 
+    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.3 1999-05-27 01:54:33 pnkfelix Exp $ 
 */
 public class DemandDrivenRegAlloc extends RegAlloc {
 
     UseMap uses;
+
+    // maps basicblocks to the variables allocated to registers
+    // entering the block
+    private Map bbToAllocatedMap;
+
+    // maps basicblocks to the live variables entering the block
+    private Map bbToLiveVarMap;
+    
+    // TODO: should probably add a local var storing info on
+    // LiveVarAnalysis. 
+
     
     /** Creates a <code>DemandDrivenRegAlloc</code>. 
 	
@@ -45,6 +56,10 @@ public class DemandDrivenRegAlloc extends RegAlloc {
     protected DemandDrivenRegAlloc(Frame frame, Code code) {
         super(frame, code);
 	uses = new UseMap( code );
+
+	bbToAllocatedMap = new HashMap(); // built during allocation 
+
+	bbToLiveVarMap = findLiveVars(code); // invariant during allocation
     }
    
     protected Code generateRegAssignment() {
@@ -124,27 +139,28 @@ public class DemandDrivenRegAlloc extends RegAlloc {
     private Map computeDeltas(BasicBlock block) {
 	// initialize configuration
 	
-	// Set of { variables allocated registers entering block };
-	// before global allocation begins, allocated will be empty
-	// here.
-	Set allocated = new HashSet(); 
-
-	// Set of { live variables entering block } - allocated
+	// { variables allocated registers entering block };
+	Set allocated = (Set) bbToAllocatedMap.get(block);
+	
+	// { live variables entering block } - allocated
 	Set candidates = new HashSet();
+	candidates.addAll((Set)bbToLiveVarMap.get(block));
+
+	candidates.removeAll(allocated);
 	
-	// Min( NumRegisters - |allocated|, |candidates| )
-	int possibly = (frame.getGeneralRegisters().length - 
-			allocated.size() < candidates.size()) ?
-	    frame.getGeneralRegisters().length - allocated.size() :
-	    candidates.size();
+	// min( REGISTERS - |allocated|, |candidates| )
+	int possibly = Math.min(frame.getGeneralRegisters().length - 
+				allocated.size(), candidates.size() );
 	
-	// NumRegisters - ( |allocated| + possibly )
+  	// REGISTERS - ( |allocated| + possibly )
 	int unallocated = frame.getGeneralRegisters().length - 
 	    (allocated.size() + possibly);
-	
 
 	// *** Implementation Specific local variables *** 
-	Map regXinstrToValueMap = new HashMap();
+	
+	// maps register uses in a particular instruction to the
+	// variable that the register is storing.
+	Map regXinstrToVarMap = new HashMap();
 	
 
 	// Iterate over instructions in order 
@@ -153,27 +169,24 @@ public class DemandDrivenRegAlloc extends RegAlloc {
 	while(instrs.hasNext()) { 
 	    Instr instr = (Instr) instrs.next();
 	    double delta;
-
-
+	    
 	    { // BELOW: Last use of a register frees it
-		Vector vec = new Vector(); 
+		Vector regsFreedByInstr = new Vector(); 
 		for (int i=0; i<instr.use().length; i++) {
 		    if (isTempRegister(instr.use()[i]) &&  
 			lastUse( instr.use()[i], instr, instrs)){ 
-			vec.addElement(instr.use()[i]);
+			regsFreedByInstr.addElement(instr.use()[i]);
 		    }
 		}
-		Temp[] tmpUses = new Temp[vec.size()];
-		vec.copyInto(tmpUses);
 		// for all f of { registers freed by instr }
-		for (int i=0;i<tmpUses.length;i++) { 
-		    Temp f = tmpUses[i];
-
+		for (int i=0;i<regsFreedByInstr.size();i++) { 
+		    Temp f = (Temp) regsFreedByInstr.get(i);
+		    
 		    // Let t be value held in f
 		    Temp t= (Temp) 
-			regXinstrToValueMap.get
+			regXinstrToVarMap.get
 			(new TempInstrPair(instr, f)) ; 
-
+		    
 		    if (t != null) {
 			allocated.remove(t);
 			if(true) { // if t is a live variable
@@ -246,6 +259,11 @@ public class DemandDrivenRegAlloc extends RegAlloc {
 	}
     }
     
+
+    private Map findLiveVars(Code code) {
+	UseMap useMap = new UseMap(code);
+	return null;
+    }
 
 }
 

@@ -30,7 +30,7 @@ import java.util.Iterator;
     it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.9 1999-05-25 16:43:44 andyb Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.10 1999-05-27 01:54:33 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -156,12 +156,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 	        <code>Instr</code>s.
 	     2. <code>values</code> f
 	<BR> <B>modifies:</B> <code>iter</code>
+	<BR> <B>effects:</B> TODO: fill in
 
-	NOTE: to perform true CFF, we need to know which variables
-	were *DEFINED* in this round, versus just being used.  Thus we
-	need a more complex data structure.  For now, just deal
-	without checking for clean variables.
-     */
+	<BR> NOTE: to perform true CFF, we need to know which
+	variables were *DEFINED* in this round, versus just being
+	used.  Thus we need a more complex data structure.  For now,
+	just deal without checking for clean variables.  
+    */
     private int findFurthest(Iterator iter, Temp[] values) {
 	int count=0;
 	
