@@ -48,7 +48,7 @@ import java.util.Iterator;
  * <code>UseDefer</code>s 
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.21 2000-02-02 04:21:48 pnkfelix Exp $ */
+ * @version $Id: LiveVars.java,v 1.1.2.22 2000-02-02 04:28:04 pnkfelix Exp $ */
 public abstract class LiveVars extends Liveness {
     
     private static final boolean DEBUG = false; 
@@ -82,11 +82,11 @@ public abstract class LiveVars extends Liveness {
 
     protected BasicBlock.Factory bbFact;
 
-     /** One arg ctor for use by subclasses so that the system won't
+     /** Special ctor for use by subclasses so that the system won't
 	 break when calling abstract methods that require data that
 	 subclasses haven't initialized yet.
      */
-    protected BBVisitor(BasicBlock.Factory bbFact) {
+    protected BBVisitor(BasicBlock.Factory bbFact, boolean ignore) {
 	this.bbFact = bbFact;
     }
 
