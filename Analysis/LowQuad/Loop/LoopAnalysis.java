@@ -32,7 +32,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.9 1999-07-01 20:57:23 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.10 1999-07-13 20:49:38 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -122,32 +122,32 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 
 
 	//Show the user everything
-	iterate=invariants.iterator();
-	System.out.println(st+"Invariants:");
-	while (iterate.hasNext()) {
-	    System.out.println(st+((Quad)iterate.next()).toString());
-	}
-	iterate=elements.iterator();
-	System.out.println(st+"Noninvariants:");
-	while (iterate.hasNext()) {
-	    System.out.println(st+((Quad)iterate.next()).toString());
-	}
-	iterate=(basicinductions.keySet()).iterator();
+	//iterate=invariants.iterator();
+	//System.out.println(st+"Invariants:");
+	//while (iterate.hasNext()) {
+	//    System.out.println(st+((Quad)iterate.next()).toString());
+	//}
+	//iterate=elements.iterator();
+	//System.out.println(st+"Noninvariants:");
+	//while (iterate.hasNext()) {
+	//    System.out.println(st+((Quad)iterate.next()).toString());
+	//}
+	//iterate=(basicinductions.keySet()).iterator();
 
-	System.out.println(st+"Basic induction variables:");
-	while (iterate.hasNext()) {
-	    Temp tmp=(Temp) iterate.next();
-	    System.out.println(st+tmp.toString());
-	    System.out.println(st+((Induction)basicinductions.get(tmp)).toString());
-	}
-	iterate=(allInductions.keySet()).iterator();
+	//System.out.println(st+"Basic induction variables:");
+	//while (iterate.hasNext()) {
+	//    Temp tmp=(Temp) iterate.next();
+	//    System.out.println(st+tmp.toString());
+	//    System.out.println(st+((Induction)basicinductions.get(tmp)).toString());
+	//}
+	//iterate=(allInductions.keySet()).iterator();
 
-	System.out.println(st+"All induction variables:");
-	while (iterate.hasNext()) {
-	    Temp tmp=(Temp) iterate.next();
-	    System.out.println(st+tmp.toString());
-	    System.out.println(st+((Induction)allInductions.get(tmp)).toString());
-	}
+	//System.out.println(st+"All induction variables:");
+	//while (iterate.hasNext()) {
+	//    Temp tmp=(Temp) iterate.next();
+	//    System.out.println(st+tmp.toString());
+	//    System.out.println(st+((Induction)allInductions.get(tmp)).toString());
+	//}
     }
 }
 
