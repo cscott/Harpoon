@@ -23,7 +23,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.23 2000-11-15 21:48:38 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.24 2000-12-11 23:14:28 vivien Exp $
  */
 public class PAEscapeFunc {
 
@@ -106,6 +106,13 @@ public class PAEscapeFunc {
 	}
 	return changed;
     }
+
+
+    /** The dual of <code>addMethodHole</code> */
+    public final void removeMethodHole(PANode node, HMethod hm){
+	rel_m.remove(node, hm);
+    }
+
 
 
     /** The methods from the set <code>good_holes</code> are unharmful
