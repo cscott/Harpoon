@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.65 1999-10-14 09:24:33 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.66 1999-10-14 14:18:04 cananian Exp $
  */
 %%
 
@@ -845,14 +845,17 @@ BINOP<l>(REM, j, k) = i %{
 
 // fix me: addressing mode for MEM is actually much richer than this.
 // we can do offsets and scaling in same oper.
-MEM<s:16,u:16>(e) = i %{ // addressing mode 3
+MEM<s:8,s:16,u:16>(e) = i %{ // addressing mode 3
     Temp i = makeTemp();
-    String suffix=ROOT.signed()?"sh":"h";
+    String suffix="";
+    if (ROOT.isSmall() && ROOT.signed()) suffix+="s";
+    if (ROOT.isSmall() && ROOT.bitwidth()==8) suffix+="b";
+    if (ROOT.isSmall() && ROOT.bitwidth()==16) suffix+="h";
     emit(new InstrMEM(instrFactory, ROOT,
-		      "ldr"+suffix+" `d0, [`s0] @ halfword load",
+		      "ldr"+suffix+" `d0, [`s0]",
 		      new Temp[]{ i }, new Temp[]{ e }));
 }%
-MEM<s:8,u:8,p,i,f>(e) = i %{ // addressing mode 2
+MEM<u:8,p,i,f>(e) = i %{ // addressing mode 2
     Temp i = makeTemp();		
     String suffix="";
     if (ROOT.isSmall() && ROOT.signed()) suffix+="s";
@@ -861,7 +864,7 @@ MEM<s:8,u:8,p,i,f>(e) = i %{ // addressing mode 2
 	             "ldr"+suffix+" `d0, [`s0]",
 		     new Temp[]{ i }, new Temp[]{ e }));
 }%
-MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, j, k)) = i %{ // addressing mode 2
+MEM<u:8,p,i,f>(BINOP<p>(ADD, j, k)) = i %{ // addressing mode 2
     Temp i = makeTemp();		
     String suffix="";
     if (ROOT.isSmall() && ROOT.signed()) suffix+="s";
@@ -870,7 +873,7 @@ MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, j, k)) = i %{ // addressing mode 2
 	             "ldr"+suffix+" `d0, [`s0, `s1]",
 		     new Temp[]{ i }, new Temp[]{ j, k }));
 }%
-MEM<s:8,u:8,p,i,f>(BINOP(ADD, j, CONST<i,p>(c))) = i
+MEM<u:8,p,i,f>(BINOP(ADD, j, CONST<i,p>(c))) = i
 %pred %( is12BitOffset(c) )%
 %{
     Temp i = makeTemp();		
@@ -881,7 +884,7 @@ MEM<s:8,u:8,p,i,f>(BINOP(ADD, j, CONST<i,p>(c))) = i
 	             "ldr"+suffix+" `d0, [`s0, #"+c+"]",
 		     new Temp[]{ i }, new Temp[]{ j }));
 }%
-MEM<s:8,u:8,p,i,f>(BINOP(ADD, CONST<i,p>(c), j)) = i
+MEM<u:8,p,i,f>(BINOP(ADD, CONST<i,p>(c), j)) = i
 %pred %( is12BitOffset(c) )%
 %{
     Temp i = makeTemp();		
@@ -1219,6 +1222,11 @@ MOVE<d,l>(TEMP(dst), src) %{
 		    "mov `d0h, `s0h", dst, src );
 }%
 
+MOVE(MEM<s:16,u:16>(d), src) %{ // addressing mode 3
+    emit(new InstrMEM(instrFactory, ROOT,
+		      "strh `s0, [`s1]",
+		      null, new Temp[]{ src, d }));
+}%
 MOVE(MEM<s:8,u:8,p,i,f>(d), src) %{ // addressing mode 2
     String suffix="";
     if (((MEM)ROOT.dst).isSmall() && ((MEM)ROOT.dst).bitwidth()==8)
