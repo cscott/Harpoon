@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.5 1998-09-23 19:45:21 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.6 1998-09-23 23:14:42 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -623,7 +623,8 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 				     Math.min(32, bw.minusWidth()),
 				     Math.min(31, bw.plusWidth()) ));
 	    }
-	    public void visit_iadd(OPER q) {
+
+	    void visit_add(OPER q) {
 		xBitWidth left = extractWidth( get( q.operands[0] ) );
 		xBitWidth right= extractWidth( get( q.operands[1] ) );
 		int m = Math.max( left.minusWidth(), right.minusWidth() );
@@ -633,9 +634,10 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		if (p > 0) p++;
 		raiseV(V, Wv, q.dst, new xBitWidth(q.evalType(), m, p) );
 	    }
-	    public void visit_ladd(OPER q) { visit_iadd(q); }
+	    public void visit_iadd(OPER q) { visit_add(q); }
+	    public void visit_ladd(OPER q) { visit_add(q); }
 
-	    public void visit_iand(OPER q) {
+	    void visit_and(OPER q) {
 		xBitWidth left = extractWidth( get( q.operands[0] ) );
 		xBitWidth right= extractWidth( get( q.operands[1] ) );
 		// if there are zero crossings, we have worst-case performance.
@@ -646,11 +648,93 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		    p = Math.min( left.plusWidth(), right.plusWidth() );
 		raiseV(V, Wv, q.dst, new xBitWidth(q.evalType(), m, p) );
 	    }
-	    public void visit_land(OPER q) { visit_iand(q); }
+	    public void visit_iand(OPER q) { visit_and(q); }
+	    public void visit_land(OPER q) { visit_and(q); }
+
+	    void visit_div(OPER q) {
+		// we can ignore divide-by-zero.
+		xBitWidth left = extractWidth( get( q.operands[0] ) );
+		xBitWidth right= extractWidth( get( q.operands[1] ) );
+		// worst case: either number both pos and neg
+		int m = Math.max(left.minusWidth(), left.plusWidth());
+		int p = Math.max(left.minusWidth(), left.plusWidth());
+		// check for special one-quadrant cases.
+		if (left.minusWidth()==0) {
+		    if (right.minusWidth()==0)  m=0; // result positive
+		    if (right.plusWidth()==0)   p=0; // result negative
+		}
+		if (left.plusWidth()==0) {
+		    if (right.minusWidth()==0)  m=0; // result negative
+		    if (right.plusWidth()==0)   p=0; // result positive
+		}
+		// special case if divisor is a constant.
+		if (right instanceof xIntConstant) {
+		    if (right.minusWidth()==0) { // a positive constant
+			m = Math.max(0, left.minusWidth() - right.plusWidth());
+			p = Math.max(0, left.plusWidth()  - right.plusWidth());
+		    }
+		    if (right.plusWidth()==0) { // a negative constant
+			m = Math.max(0, left.minusWidth()-right.minusWidth());
+			p = Math.max(0, left.plusWidth() -right.minusWidth());
+		    }
+		}
+		// done.
+		raiseV(V, Wv, q.dst, new xBitWidth(q.evalType(), m, p) );
+	    }
+	    public void visit_idiv(OPER q) { visit_div(q); }
+	    public void visit_ldiv(OPER q) { visit_div(q); }
+
+	    void visit_mul(OPER q) {
+		xBitWidth left = extractWidth( get( q.operands[0] ) );
+		xBitWidth right= extractWidth( get( q.operands[1] ) );
+		// worst case: either number both pos and neg
+		int m = Math.max(left.minusWidth() + right.plusWidth(),
+				 left.plusWidth()  + left.minusWidth());
+		int p = Math.max(left.minusWidth() + right.minusWidth(),
+				 left.plusWidth()  + right.plusWidth());
+		// special case multiplication by zero, one, and two.
+		if (left instanceof xIntConstant) {
+		    long val = ((xIntConstant)left).value();
+		    if (val==0) {
+			raiseV(V, Wv, q.dst, left); return;
+		    }
+		    if (val==1) {
+			raiseV(V, Wv, q.dst, right); return;
+		    }
+		    if (val==2) {
+			m = right.minusWidth()+1;
+			p = right.plusWidth() +1;
+		    }
+		}
+		if (right instanceof xIntConstant) {
+		    long val = ((xIntConstant)left).value();
+		    if (val==0) {
+			raiseV(V, Wv, q.dst, right); return;
+		    }
+		    if (val==1) {
+			raiseV(V, Wv, q.dst, left); return;
+		    }
+		    if (val==2) {
+			m = left.minusWidth()+1;
+			p = left.plusWidth() +1;
+		    }
+		}
+		// XXX special case multiplication by one-bit quantities?
+		// done.
+		raiseV(V, Wv, q.dst, new xBitWidth(q.evalType(), m, p) );
+	    }
+	    public void visit_imul(OPER q) { visit_mul(q); }
+	    public void visit_lmul(OPER q) { visit_mul(q); }
+
+	    void visit_neg(OPER q) {
+		xBitWidth bw = extractWidth( get( q.operands[0] ) );
+		int m = bw.plusWidth();
+		int p = bw.minusWidth();
+		raiseV(V, Wv, q.dst, new xBitWidth(q.evalType(), m, p) );
+	    }
+	    public void visit_ineg(OPER q) { visit_neg(q); }
+	    public void visit_lneg(OPER q) { visit_neg(q); }
 	    /*
-    public void visit_idiv(OPER q) { visit_default(q); }
-    public void visit_imul(OPER q) { visit_default(q); }
-    public void visit_ineg(OPER q) { visit_default(q); }
     public void visit_ior(OPER q) { visit_default(q); }
     public void visit_irem(OPER q) { visit_default(q); }
     public void visit_ishl(OPER q) { visit_default(q); }
@@ -658,9 +742,6 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     public void visit_isub(OPER q) { visit_default(q); }
     public void visit_iushr(OPER q) { visit_default(q); }
     public void visit_ixor(OPER q) { visit_default(q); }
-    public void visit_ldiv(OPER q) { visit_default(q); }
-    public void visit_lmul(OPER q) { visit_default(q); }
-    public void visit_lneg(OPER q) { visit_default(q); }
     public void visit_lor(OPER q) { visit_default(q); }
     public void visit_lrem(OPER q) { visit_default(q); }
     public void visit_lshl(OPER q) { visit_default(q); }
