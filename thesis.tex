@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.31 1999-06-12 19:08:24 cananian Exp $
+% $Id: thesis.tex,v 1.32 1999-06-12 19:42:52 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.31 $ $}
+\date{\today \\ $ $Revision: 1.32 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.31 $ $}{$ $Revision: 1.31 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.32 $ $}{$ $Revision: 1.32 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -401,6 +401,11 @@ $\tuple{a,b}\cyceq\tuple{c,d}$ to indicate that the CFG edge from node
 $a$ to node $b$ is edge cycle-equivalent to the edge from node $c$ to
 node $d$.
 
+Calculating cycle-equivalent regions is based on a single reverse
+depth-first traversal of $G$, so as long as all datatype operations in
+figure~\ref{fig:CQdata} can be completed in constant time (and
+\cite{johnson93:sese} shows how to do so), this computation is $O(E)$.
+
 \begin{myfigure}\small
 \input{Figures/THcqdata}
 \caption{Datatypes and operations used in the cycle-equivalency algorithm.}
@@ -443,19 +448,31 @@ which is represented in a data structure called the
 The algorithm and data structures required are presented in figures
 \ref{fig:SESEdata} and \ref{fig:SESEalg}.  Figure~\ref{fig:SESEex}
 shows the SESE regions on the left and program structure tree on
-the right for the example of figure~\ref{fig:CQex}.
-% note that node f,g  and nodes c,d,e are 'sequentially composed'?
-% does this matter?
+the right for the example of figure~\ref{fig:CQex}.%
+\footnote{In addition, the regions ${c,d,e}$ and ${f,g}$ are
+\emph{sequentially composed} \cite{johnson94:pst}.  Does this matter?}
+
+The time complexity for constructing the PST is easily seen to be
+$O(E)$. The algorithm presented in figure \ref{fig:SESEalg} begins
+with a depth first traversal of $G$ to construct an ordered edge list
+for each cycle-equivalent region; the traversal is $O(E)$ and the
+list-append operation can be done in constant time.  We then iterate
+through the cycle-equivalence classes and the edge lists of each
+constructing SESE regions.  No edge can be on more than one list, so
+this step is $O(E)$.  Finally, we do a final $O(E)$ depth-first
+traversal of $G$, performing the constant-time operations {\tt append}
+and {\tt LinkRegion}.  All steps are $O(E)$ and their sequential
+composition is also $O(E)$.
 
 \begin{myfigure}\small
 \input{Figures/THsesedata}
-\caption{Datatypes and operations used in the nested SESE algorithm.}
+\caption{Datatypes and operations used in construction of the PST.}
 \label{fig:SESEdata}
 \end{myfigure}
 
 \begin{myfigure}\small\linespread{0.75}
 \input{Figures/THsesealg}
-\caption{Computing nested SESE regions.}
+\caption{Computing nested SESE regions and the PST.}
 \label{fig:SESEalg}
 \end{myfigure}
 
@@ -469,13 +486,19 @@ the right for the example of figure~\ref{fig:CQex}.
 \label{fig:SESEex}
 \end{myfigure}
 
-\subsubsection{Computing liveness}
-
 \subsubsection{Placing $\phi$- and \sigfunction{s}}
 \textbf{Compute variable
 liveness.  Traverse the tree from bottom up, adding phi/sigmas if:
 the variable is used or defined inside the PST block, and the variable
 is live.}
+
+\subsubsection{Computing liveness}
+We can compute pruned SSI form if we have access to liveness
+information.
+We get this for free in our compiler framework.  There's also an
+$O(E+N^2)$ algorithm.  I hope to do better using the properties of the
+PST.  I want an $O(EV)$ algorithm, which means solving the
+one-variable case in $O(E)$.  Argh.
 
 \subsection{Uses and applications}
 \textbf{Discuss predicated analysis, anticipatibility, PRE, etc.}%
