@@ -20,7 +20,7 @@ import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
-//import harpoon.Analysis.QuadSSA.DeadCode;
+import harpoon.Analysis.QuadSSA.DeadCode;
 
 import java.util.Iterator;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.10 1999-07-02 19:26:52 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.11 1999-07-02 21:25:05 bdemsky Exp $
  */
 public final class LoopOptimize {
     
@@ -87,7 +87,7 @@ public final class LoopOptimize {
 	while (iterate.hasNext())
 	    recursetree(hc, (Loops)iterate.next(), new WorkSet());
 	//      Put this in soon
-	//       	DeadCode.optimize(hc);
+	DeadCode.optimize(hc);
     }
 
     void recursetree(HCode hc, Loops lp, WorkSet usedinvariants) {
@@ -132,7 +132,17 @@ public final class LoopOptimize {
 	while (iterate.hasNext()) {
 	    Temp indvariable=(Temp) iterate.next();
 	    Induction induction=(Induction) allmap.get(indvariable);
-	    if (induction.pointerindex) {
+	    Temp[] headuses=header.use();
+	    boolean skip=false;
+	    for(int l=0;l<headuses.length;l++)
+		if (ssitossamap.tempMap(headuses[l])==indvariable) {
+		    skip=true;
+		    break;
+		}
+		    
+	    
+
+	    if (induction.pointerindex||skip) {
 		iterate.remove();
 	    } else {
 		//Non pointer index...
@@ -429,10 +439,3 @@ public final class LoopOptimize {
 	}
     } 
 }
-
-
-
-
-
-
-
