@@ -1,3 +1,36 @@
+2003-09-25:
+fix version look up: need to fall through to older version in certain
+   cases, add a 'transparent' flag for each field in the version
+   structure.  if value in version==FLAG *and* transparent=1, then
+   look up. (transparent bit can steal a key bit in hashtable)
+Keep use counter in each version which is incremented *before* new field
+   is added (or made non-transparent) and decremented *after* field is
+   copied-back; this allows us to safely gc old versions.
+   (note that over-allocation in the non-free case will mean nothing
+   is ever on the free list for the allocator and make us very slow)
+Review thread-safety in light of: parallel modifications to a version
+   not allowed!  parallelism must happen in child trans and both must
+   be committed before execution in parent can continue.  This is the
+   'stack' model and should limit interactions.
+Blow up sub-word fields which are touched during synchronization.
+   this should eliminate our non-atomicity.
+Fix version hash clustering problem: since addresses are most likely
+   to be multiples of the word size, we will have a lot of unused
+   space in the hash table.  fix with something like:
+    index = (address>>4)+(address&3)
+   look up efficient % (2^n - 1)
+"Don't allow writes to a committed version" -> make this work for
+   false transactions, too.  tricky: how to handle false trans.
+   one answer: false trans are just transparent all the way down.
+   so creating a new 'all transparent' committed version is always
+   fine.  We 'un-false' this by writing to original object, *not*
+   to committed version.
+Test LL/SC on AIX
+Fix array aliasing to allow complete copyback.
+Write test case: increment integer field from just below flag value to
+   just above it.  Now do the same w/in sync block.  Now do the same
+   with just the increment in the sync block.
+----------------------------------------------------------------------
 implement:
 X EXACT_setWriteFlags
 X EXACT_setArrayWriteFlags
@@ -20,6 +53,10 @@ make subtransactions lookup missing entries in their parents.
  problems with doing a safe SC on the version, which is needed
  for copyback.  No way to do a single atomic action to set a
  field to FLAG/reset a field from FLAG.
+ [must have field=FLAG *and* bit set to indicate transparency.
+  now we can safely set the bit, then atomically set field=FLAG.
+  This gets tricky if/when field is already transparent, field
+  is non-transparent but FLAG, etc.  But do-able?]
 X copy back on arrays must deal with fact that read flag corresponds
 X  to a number of different array elements (every 32, in fact).
 X  can't clear read bit until *all* of these have been copied back. =(
