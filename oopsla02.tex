@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.26 2002-03-23 10:19:57 cananian Exp $
+% $Id: oopsla02.tex,v 1.27 2002-03-23 10:25:35 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -33,7 +33,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.26 $ $}{$ $Revision: 1.26 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.27 $ $}{$ $Revision: 1.27 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -957,7 +957,8 @@ primary focus has been on improving performance rather than on
 reducing space; however, many of the algorithms also eliminate the
 need to store the complicated locking objects required to support the
 most general lock usage pattern possible in a Java program. These
-techniques typically reduce the lock space overhead to 24 header bits.
+techniques typically reduce the lock space overhead to 24 header bits
+\cite{BKMS98}.
 
 Research in escape analysis and related analyses can enable the
 compiler to find objects whose locks are never 
@@ -1001,7 +1002,15 @@ gives much more consistent savings over a wide range of benchmarks.
 
 \section{Conclusions}
 
-{\bf\Large WRITE ME}
+We have presented a set of techniques for reducing the memory
+consumption of object-oriented programs.  Our techniques include
+program analyses to detect unused, constant, or overly-wide fields,
+and transformations to eliminate fields with common default values
+or usage patterns.  These techniques apply equally well to
+field implicit in the runtime's object header, and can reduce the
+maximum heap required for a program by as much as 40\%. 
+Our experimental results from our fully-implemented system validate the
+opportunity for space savings on typical object oriented programs.
 
 \bibliography{harpoon}
 
