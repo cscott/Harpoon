@@ -26,7 +26,7 @@ import java.util.Map;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.19 2000-01-31 22:16:10 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.20 2000-02-09 04:23:37 cananian Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
@@ -166,7 +166,7 @@ final class Translate { // not public
 		// update derivation table.
 		// pointers into claz structure are opaque.
 		tT.put(q0.def()[0], HClass.Void);
-		tT.put(q1.def()[0], HClass.Void);
+		tT.put(q1.def()[0], HClass.Int);
 		tT.put(q2.def()[0], HClass.Void);
 	    }
 	    updateTypeInfo(q);
