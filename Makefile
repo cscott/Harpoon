@@ -204,7 +204,8 @@ trackerStub-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
 	@$(JAR) xf contrib/jacorb.jar
-	@$(IDLCC_ZEN) -o . $(ZEN_IDLS)
+#	@$(IDLCC_ZEN) -o . $(ZEN_IDLS)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
