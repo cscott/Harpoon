@@ -7,6 +7,7 @@ LIBS =
 noinst_LTLIBRARIES = libgnuvmstack.la
 
 libgnuvmstack_la_SOURCES = \
+	empty.c \
 	gnu_vm_stack_StackFrame.h \
 	gnu_vm_stack_StackTrace.h
 

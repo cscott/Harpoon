@@ -12,6 +12,8 @@ CAMSRC =\
 	            AltVideo.c AltVideo.h IPaqVideo.h IPaqVideo.c
 if CAMERA
 libcam_la_SOURCES = $(CAMSRC)
+else
+libcam_la_SOURCES = empty.c
 endif
 # automake won't allow EXTRA_DIST to be conditionally defined, so we
 # define it even when it's not necessary (when CAMERA is set)

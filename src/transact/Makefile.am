@@ -30,6 +30,8 @@ libtransact_la_SOURCES = $(TRANSACTSRC)
 else # using classpath...
 libtransact_la_SOURCES = $(TRANSACTSRC) $(GNUCP_TRANSACTSRC)
 endif
+else
+libtransact_la_SOURCES = empty.c
 endif
 # automake won't allow EXTRA_DIST to be conditionally defined, so we
 # define it even when it's not necessary (when TRANSACTIONS is set)

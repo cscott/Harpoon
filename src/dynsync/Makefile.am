@@ -13,6 +13,8 @@ DYNSYNCSRC = \
 
 if DYNAMIC_SYNC_REMOVAL
 libdynsync_la_SOURCES = $(DYNSYNCSRC)
+else
+libdynsync_la_SOURCES = empty.c
 endif
 # automake won't allow EXTRA_DIST to be conditionally defined, so we
 # define it even when it's not necessary (when DYNAMIC_SYNC_REMOVAL is set)

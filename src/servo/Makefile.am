@@ -10,6 +10,8 @@ SERVOSRC =\
 		IPaqServoController.c IPaqServoController.h
 if SERVO
 libservo_la_SOURCES = $(SERVOSRC)
+else
+libservo_la_SOURCES = empty.c
 endif
 # automake won't allow EXTRA_DIST to be conditionally defined, so we
 # define it even when it's not necessary (when SERVO is set)
