@@ -32,15 +32,16 @@ void doanalysis()
   unsigned long t;
   gettimeofday(&begin,NULL);
   exportmodel->doabstraction();
-  exportmodel->getdomainrelation()->fixstuff();  
+  exportmodel->getdomainrelation()->fixstuff();
   bool found = exportmodel->docheck();
   exportmodel->doconcrete();
   gettimeofday(&end,NULL);
   t=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
 
 #ifdef DEBUGMANYMESSAGES
-  exportmodel->getdomainrelation()->print();
+
 #endif
+  exportmodel->getdomainrelation()->print();
   printf("Time used for analysis(us): %ld\n",t);
 }
 
@@ -50,8 +51,8 @@ void doanalysisfordebugging(char* msg)
 { 
   printf("%s\n", msg);
   exportmodel->doabstraction(); 
-  exportmodel->getdomainrelation()->fixstuff();
-  bool found = exportmodel->docheck(); 
+  bool found = exportmodel->getdomainrelation()->fixstuff() ||
+    exportmodel->docheck();
 
 #ifdef DEBUGMANYMESSAGES
   exportmodel->getdomainrelation()->print();
