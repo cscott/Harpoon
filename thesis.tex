@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.40 1999-06-14 03:49:26 cananian Exp $
+% $Id: thesis.tex,v 1.41 1999-06-14 05:42:55 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.40 $ $}
+\date{\today \\ $ $Revision: 1.41 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.40 $ $}{$ $Revision: 1.40 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.41 $ $}{$ $Revision: 1.41 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -501,10 +501,33 @@ composition is also $O(E)$.
 \end{myfigure}
 
 \subsubsection{Placing \phisigfunction{s}}
-\textbf{Compute variable
-liveness.  Traverse the tree from bottom up, adding phi/sigmas if:
-the variable is used or defined inside the PST block, and the variable
-is live.}
+As with the presentation of SSA form in \cite{cytron91:ssa}, we split
+construction of SSI form into two parts: placing \phisigfunction{s}
+and renaming variables.  The placement algorithm runs in $O(N V_0)$
+time, and is presented in figure~\ref{fig:SSIalg}.  No new node
+properties or datatypes are required; however, it is parameterized on
+a function called \texttt{MaybeLive}.  The purpose of this function is
+to generate pruned or minimal SSI form by suppressing unnecessary
+\phisigfunction{s}.  However, it need not be precise.  If
+\texttt{MaybeLive} returns a conservative value, the generated SSI
+form will have too many \phisigfunction{s}.  This can be
+post-processed to remove the excess; section \ref{sec:unusedcode} will
+discuss this further.\footnote{Note that equivalent results could be
+obtained by adding a \phifunction{} for every variable at every merge
+and a \sigfunction{} for every variable at every split, and
+post-processing.  In fact the same time bounds ($O(N V_0)$) would be
+obtained.  There is a large practical difference in actual runtime,
+however, which motivates our choice of approach.}  The remainder of
+this section will be devoted to a correctness proof of the algorithm
+of figure~\ref{fig:SSIalg}.
+
+\begin{myfigure}\small\linespread{0.75}
+\input{Figures/THssialg}
+\caption{Algorithm for placing \phisigfunction{s}.}
+\label{fig:SSIalg}
+\end{myfigure}
+
+My algorithm is correct.\fixme{Prove this.}
 
 \subsubsection{Computing liveness}
 We can compute pruned SSI form if we have access to liveness
@@ -514,7 +537,7 @@ $O(E+N^2)$ algorithm.  I hope to do better using the properties of the
 PST.  I want an $O(E V_0)$ algorithm, which means solving the
 one-variable case in $O(E)$.  Argh.
 
-\subsubsection{Pruning SSI form}
+\subsubsection{Pruning SSI form}\label{sec:unusedcode}
 The SSI algorithm can be run using any conservative approximation to
 the liveness information
 (including the function $\mbox{\bf Live}(v)=\mbox{\tt true}$) if
