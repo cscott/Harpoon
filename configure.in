@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.111 $)dnl
+AC_REVISION($Revision: 1.112 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -420,6 +420,20 @@ case "$with_pointer_reversal" in
 yes)	AC_MSG_RESULT([yes])
 	AC_DEFINE(WITH_POINTER_REVERSAL, 1,
 	[Define if you want to use pointer-reversal in the mark-and-sweep gc])
+	;;
+*)	AC_MSG_RESULT([no])
+	;;
+esac
+
+dnl experimental support for dynamic write barriers
+AC_MSG_CHECKING([whether to use dynamic write barriers for generational gc])
+AC_ARG_WITH(dynamic-write-barriers,
+[  --with-dynamic-write-barriers dynamic write barriers],
+with_dynamic_write_barriers="$withval", with_dynamic_write_barriers="no")
+case "$with_dynamic_write_barriers" in
+yes)	AC_MSG_RESULT([yes])
+	AC_DEFINE(WITH_DYNAMIC_WB, 1,
+	[Define if you want dynamic write barriers for generational gc])
 	;;
 *)	AC_MSG_RESULT([no])
 	;;
