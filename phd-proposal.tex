@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-proposal.tex,v 1.5 2004-09-03 18:44:16 cananian Exp $
+% $Id: phd-proposal.tex,v 1.6 2004-09-03 19:00:09 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt]{article}
 %\usepackage{pdffonts}
@@ -707,7 +707,8 @@ Some existing work on software transaction systems \cite{HarrisFr03}
 does not support this style of operation.
 
 \subsecput{properties}{Properties of Transactions}
-This section examines the implications of exposing the transaction
+This section examines some preliminary results of this thesis, which
+explore the implications of exposing the transaction
 mechanism to user-level code through a compiler.
 I compiled the SPECjvm98 benchmark suite with the FLEX Java compiler
 \cite{Flex},
@@ -766,7 +767,7 @@ require an efficient transaction implementation, because they contain
 many transactional operations.
 Quads III and IV contain at least some very large transactions, which
 pose difficulties for currently-proposed hardware transactional memory
-schemes.  I now
+schemes.  We will now
 examine the benchmarks in each quadrant to determine why its program
 logic caused it to be classified in that quadrant.
 
@@ -863,7 +864,7 @@ applications.
 
 \vspace*{5mm}
 
-Our Java studies show that real applications can be
+These preliminary results show that real applications can be
 transactified with modest effort, yielding significant gains in
 concurrency.  In other work \cite{AnanianAsKuLeLi04} we have shown
 that a factor of 4 increase in concurrency can be obtained
@@ -871,26 +872,25 @@ by doing nothing more than converting locks to transactions.  Since
 the transactified applications may contain large transactions,
 proposed hardware support for transactions is inadequate.
 
-
 \secput{efficient}{Designing Efficient Transactions}
-In this section I briefly describe some desired properties of my
-software transaction system.
+In this section I briefly describe some desired properties of the
+software transaction system being designed for this thesis.
 
 \subsection{Field Flags}\label{sec:flagfield}
 \note{Missing: performance numbers for adding check.  Use ``no trans''
 version of transaction app and add check into the access functions.}
-I would like non-transactional code to execute with minimal overhead,
+We would like non-transactional code to execute with minimal overhead,
 however, transactions should still appear atomic to non-transactional
-code.  Our basic mechanism is loosely based on the
+code.  My basic mechanism is loosely based on the
 distributed shared memory implementation of Scales and Gharachorloo
-\cite{ScalesGh97}.  I will pick a special ``flag'' value, and
+\cite{ScalesGh97}.  I pick a special ``flag'' value, and
 ``cross-out'' locations currently involved in a transaction by
 overwriting them with the flag value.  Reading or attempting to
 overwrite a flagged value will indicate to non-transactional code
 that exceptional processing is necessary; all other non-transactional
 operations proceed as usual.
 
-Note that our technique explicitly allows safe access to fields
+Note that this technique explicitly allows safe access to fields
 involved in a transaction from non-transactional code.
 \punt{
 Ensuring that transactional updates remain atomic to non-transactional
@@ -944,102 +944,21 @@ reserving the extra allocation effort for transactional writes.
 See \secref{properties}.
 }
 
-\secput{verification}{Verification}
-The Promela model of this software transaction system was model
-checked with Spin version 4.1.0 and verified to operate correctly and
-without races.  The verification was done on an SGI 64-processor MIPS
-machine with 16G of memory.
+\section{Verification}
+My initial work on both software and hardware transaction systems has
+reiterated the difficulty of creating correct implementations of
+concurrent and fault-tolerant constructs.  Automatic model checking is
+a requirement to achieve confidence in the design and implementation.
+Versions of the software transaction system have been modelled in
+Promela using Spin 4.1.0 and verified on an SGI 64-processor MIPS
+machine with 16G of main memory; detecting an correcting a number of
+subtle race-conditions in the process.  I plan to construct a model of
+the proposed hardware transaction system as well in order to gain more
+confidence in its correct specification.
 
-Sequences of transactional and non-transactional load and store
-operations were checked using two concurrent processes, and all possible
-interleavings were found to produce correct results consistent with
-the semantic atomicity of the transactions.  A number of subtle race
-conditions were discovered and corrected during this process.
-In particular, early versions of the algorithms sometimes allowed
-readers to escape being aborted while racing a writer in
-createVersion, and could allow inconsistent reads.
-
-Spin is not particularly suited to checking models with dynamic
-allocation and deallocation.  In particular, it considers the
-location of objects part of the state space, and allocating object
-A before object B produces a different state than if object B
-were allocated first.  This artificially enlarges the
-state space.  A great deal of effort was expended tweaking the
-model to approach a canonical allocation ordering.  A better solution
-to this problem would allow larger model instances to be checked.
-
-\punt{
-\secput{eval}{Evaluation}
-
-\begin{figure}\sis%
-\footnotesize
-\begin{center}
-\begin{tabular}{lr|rr|rr}
-Benchmark                 &  Base       & Locks         & Trans              & Time                     & Overflow       \\
-                          &             & time          & time               & in trans              & overhead       \\
-                          &  (cycles)   & \multicolumn{2}{c|}{(\% of Base)}   & \multicolumn{2}{c}{(\% of Trans time)}                 \\ \hline
-\texttt{200\_check}       &   8,062,716 & 124.0\%       &  101.7\%           & 32.9\%           & 0.00366\%      \\
-\texttt{202\_jess}        &  75,012,964 & 140.9\%       &  107.1\%           & 59.3\%           & 0.00761\%      \\
-\texttt{209\_db}          &  11,784,220 & 142.4\%       &  105.1\%           & 53.9\%           & 0              \\
-\texttt{213\_javac}       &  30,688,574 & 169.9\%       & 1469.5\%           & 99.0\%           & 93.0\%         \\
-\texttt{222\_mpegaudio}&  98,961,244    & 100.3\%       &   99.6\%           & 0.817\%          & 0              \\
-\texttt{228\_jack}        & 261,441,564 & 175.3\%       &  104.4\%           & 32.2\%           & 0.00260\%      \\
-\end{tabular}
-\end{center}
-\caption{SPECjvm98 performance and overheads on a 1-processor UVSIM simulation. The {\em Base }
- time uses no synchronization.  The {\em Locks time} is the time using
- locks as a percentage of the base.  The {\em Trans time} is the time using BTM
- transactions as a percentage of the base. The
- {\em time in Trans} is the fraction of the {\em Trans time} actually
- spent running a transaction.  The {\em
- Overflow overhead} column is fraction of the {\em Trans time}
- spent handling overflows.}
-\label{fig:specperf}
-\end{figure}
-}
-\punt{
-We found that using BTM transactions in the SPECjvm98 benchmarks
-results in very little overhead compared to using locks. We compiled
-the benchmarks to use BTM transactions using our modified Java
-compiler.  The \texttt{201\_compress} and \texttt{205\_raytrace}
-benchmarks were omitted due to unresolved bugs in the base UVSIM
-simulator, and similarly \texttt{libpthread} deficiencies prevented
-the execution of \texttt{227\_mtrt}.
-The remaining benchmarks were run on one processor in UVSIM to compare the
-performance overheads associated with BTM transactions compared to
-locks.  As shown in \figref{specperf}, there is a significant amount
-of overhead associated with locking (more than 75\% over the base case
-in {\texttt{228\_jack})}. %Put that {} around the texttt to prevent the jack from being separated from the )
-For BTM, there are two main sources of
-overhead: The transactions may abort, wasting the cycles spent
-computing, and also executing the branch to the abort handler.  For
-these Java programs, the transactions never abort because they are
-single-threaded programs.  The second overhead is the cost of handling
-overflows.
-
-The only application that has a significant transaction overhead is
-\texttt{javac}, which runs 14 times slower under BTM than without any
-mutual exclusion.  Virtually all of the overhead comes from handling
-overflows, which is not surprising since the entire compilation is
-enclosed in one large transaction.  The transaction touches 253,547
-cache lines, and there are only 16K cache lines in the L2 cache,
-meaning that the overflow memory contains at least 237K cache lines.
-So even though only 0.5\% of the xops miss, those few misses incur
-huge search costs, as the finite state machine looks through the
-linear array of overflowed cache lines.  We intend to look into using
-a better data structure, such as a hash table.  Though there is a
-significant performance decrease in this case, BTM still ensures the
-application runs correctly. Namely, the programmer wanted the entire
-compile process to occur as one atomic action so BTM will ensure that
-is the case.  It may be the case that \texttt{javac} really cannot be
-parallelized, in which case locks may be the best choice.  But if the
-programmer wishes to parallelize \texttt{javac}, she may be find it
-easier to break up the large transaction than to break up a locked
-block.
-}
 \secput{related}{Related work}
 A number of researchers have been investigating transactional memory
-systems.  This thesis is the first to present a model-checked non-blocking
+systems.  This thesis will be the first to present a model-checked non-blocking
 object-oriented system which allows co-existence of non-transactional and
 transactional accesses to a dynamic set of object fields.
 
@@ -1244,7 +1163,7 @@ code when it results in their code running more slowly on the uniprocessor
 and small-SMP systems which are most common today.
 \note{Segue into hardware transactions writeup?}
 
-Our SPECjvm98 and Linux case studies indicate that
+Our preliminary work with SPECjvm98 and Linux case studies indicate that
 transactional memory operations can be extremely common when
 transactions are made easy to use and natural to express.  Programmers
 can be expected to use both very small and very large transactions
@@ -1254,107 +1173,10 @@ properties.  Implementing transactional memory in hardware allows the
 overheads to be low\note{\textbf{cite figures here}}, which is appropriate
 when transactional operations are common.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\punt{
-Ideas:
- - virtual memory/overlays comparison
- - what is expensive in software versions XBEGIN?  XLD?
- - basic ideas of software impls
-   also, how they handle overflow & other limits.
- - honest about what we're showing.
-   here's what happens if you explore the hardware avenue.
-   sw technology problems become solved hw problems.
- - k-compare-and-swap insufficient?
- - say when we couldn't find performance numbers.
-   performance #s in terms of reads/writes.
- - now that we know what transactions look like,
-   we want to use BTM\@.
- - use categories?
- - STM systems always use ridiculously large # processors for benchmarks.
-
-The software just ain't good enough!
-\begin{itemize}
-\item Argue that SW isn't good
-\item Also, lots of transactional loads and stores
-\end{itemize}
-
-Software transactional memory implementations:
-% FOR EACH: PERFORMANCE.  IDEA.  LIMITS.
-\begin{itemize}
-\item Shavit and Touitou \cite{ShavitTo95}: static transactions only;
-  that is, input and output locations must be known in advance.
-  Performance?
-  Non-blocking, based on LL/SC. k-word compare\&swap operation.
-  ``outperforms Herlihy's translation method for sufficiently large
-  numbers of processors.''  Alleges Herlihy/Moss is blocking?
-  I think this is actually the case.  Our scheme is not.
-  Elsewhere, ``but not non-blocking, since a single process which is
-  repeatedly swapped during the execution of a transaction will never
-  terminate successfully''.  They define non-blocking as ``repeated
-  execution of some transaction by a process implies that some process
-  (not necessarily the same one and with a possibly different
-  transaction) will terminate successfully after a finite number of
-  attempts in the whole system.''
-  ``static transactions, that is, transactions which access a
-  pre-determined sequence of locations.  This class includes most of
-  the known and proposed synchronization primitives in the
-  literature.''
-  Requires one ownership record for every location in the memory.
-  no limits to size of trans, since we allocate one ownership record
-  per memory location.
-
-  Performance: *at least* 5 fetches, 5 LL, and 4SC per location
-  accessed.
-
-  64 processors; no numbers presented for less than 10 processors.
-
-  acquire/release/agree are expensive.
-
-\item Rudys and Wallach \cite{RudysWa02}: transactions for security.
-  6x to 23x slowdown.  Creates 'backup' objects.  Predictably bad
-  for large objects.  10x slowdown for field/array accesses.
-  only uniprocessor.
-
-\item Herlihy et al \cite{HerlihyLuMoSc03}: dynamic transactions, but
-  copies entire object and so works for small objects only.  Basically
-  Herlihy's method.  You must explicitly \emph{open} every object
-  accessed, at which time conflict-checking is done.
-  O((R+W)R) work to open R objects for reading and W objects for
-  writing, plus cost to copy W objects once.  Concretely: for simple
-  list insert/delete, locks perform 768 ops/ms, and best DSTM scheme
-  is 80 ops/ms.   So over 9x slowdown.
-  Up to 576 threads on 72 processors.
-
-  open and commit are the expensive operations.
-\item Harris and Fraser \cite{HarrisFr03}: atomic sections, word-based
-  scheme.  no safety for non-transactional operations which might
-  touch transactional locations.  transactional operation at least 2x
-  slower than normal op.
-  XBEGIN = CAS + STORE
-  XFAIL = STORE
-  Tread = 2 FETCH (best case)
-  Twrite = 1 FETCH + (1 FETCH and 2 STOREs, on same cache line)
-  XEND = > (1 FETCH + 1 CAS) for each distinct word read or written.
-
-  overhead of a committing transaction performing r reads and w writes
-  to 'l' distinct locations.
-  is at least (2r+2w+(l)) reads (2w+1) writes, and (l+1) CAS
-  operations.  2(r+w)+l reads, 2w+1 writes, and (l+1) CAS operations.
-
-m memory operations to l locations does m+l extra reads and l+1 CAS operations.
-
-  4 proc; also 48 proc of 106-processor machine.  I think the
-  crossover point is around 4 proc.
-
-  COMMIT is the most expensive operation.
-\end{itemize}
-}
-
-
 \section{Expected Contributions}
 
 \subsecput{contrib}{Contributions}
-The contributions of this thesis include:
+The contributions of this thesis are expected to include:
 \begin{itemize}
 \item A way to ``transactify'' existing Java programs, and a
   description of the transaction properties of typical Java programs
@@ -1364,31 +1186,28 @@ The contributions of this thesis include:
   synchronization.
 %\note{This is \texttt{try \{\ldots\} else \{\ldots\}} syntax.}
 %\note{Omitting ``optimistic concurrency'' from this list for now.}
-\item An efficient implementation of this design which extends
-  race-protection to unsynchronized code.
-\item A mechanically-verified Promela model of the implementation.
+\item Efficient implementations of this design in both software and
+  hardware which extend race-protection to unsynchronized code.
+\item An implementation variation which leverages hardware
+  support for small transactions which performing large and long-lived
+  transactions in software.
+\item Mechanically-verified Promela models of these implementations.
 \item Empirical data to justify the design choices.
-\punt{
 \item Compiler optimizations to improve the speed of software
   transactions.
 \item An application of fast functional arrays to solve the ``large
   object'' problem with Herlihy's universal non-blocking protocol.
   \note{Short section; cite my Area Exam as a Technical Report here
   for more details. Omit this?}
-\item A variation of the implementation which leverages hardware
-  support for small transactions.  This allows hardware small
-  transactions to be bootstrapped to provide efficient large
-  transactions.
-}
 \end{itemize}
 
-We have outlined a mechanism to integrate transactions into an object
+I have outlined a mechanism to integrate transactions into an object
 oriented language to provide fault-tolerance, back-tracking, and
-non-blocking synchronization.  We have also shown the potential for
+non-blocking synchronization.  I have also shown the potential for
 automatically ``transactifying'' existing Java programs, and presented
 empirical data on the properties of these transactified applications.
-We have
-presented an efficient implementation of software transactions which
+I propose to present in my thesis
+efficient software and hardware implementations of transactions which
 has been verified with the Spin model checker to be correct and race
 free.
 
