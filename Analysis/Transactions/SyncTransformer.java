@@ -67,7 +67,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.7 2001-01-15 21:21:56 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.8 2001-01-16 20:18:52 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -240,8 +240,11 @@ public class SyncTransformer
 	if (! ("harpoon.Runtime.Transactions".equals
 	       (hc.getMethod().getDeclaringClass().getPackage()))) {
 	    CheckOracle co = new SimpleCheckOracle();
-	    if (useSmartCheckOracle)
-		co = new HoistingCheckOracle(hc, UseDefer.DEFAULT, co);
+	    if (useSmartCheckOracle) {
+		DomTree dt = new DomTree(hc, false);
+		co = new DominatingCheckOracle(dt, co);
+		co = new HoistingCheckOracle(hc, UseDefer.DEFAULT, dt, co);
+	    }
 	    Tweaker tw = new Tweaker(co, qF, (which==WITH_TRANSACTION));
 	    tweak(new DomTree(hc, false), qM, tw);
 	    tw.fixup();
