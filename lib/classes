@@ -1473,6 +1473,7 @@
 ../javax/print/attribute/Attribute.java
 ../javax/print/attribute/AttributeSet.java
 ../javax/print/attribute/PrintRequestAttributeSet.java
+../gnu/classpath/Configuration.java
 ../gnu/classpath/RawData.java
 ../gnu/java/awt/image/GdkPixbufDecoder.java
 ../gnu/java/awt/image/GtkOffScreenDecoder.java
