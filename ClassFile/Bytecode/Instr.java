@@ -13,10 +13,11 @@ import java.util.Vector;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.9 1998-08-05 11:11:19 cananian Exp $
+ * @version $Id: Instr.java,v 1.10 1998-08-22 05:45:12 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
+ * @see InSwitch
  * @see Code
  */
 public abstract class Instr implements HCodeElement {
