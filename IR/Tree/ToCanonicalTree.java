@@ -1,11 +1,13 @@
 package harpoon.IR.Tree;
 
 import harpoon.Analysis.Maps.TypeMap;
+import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
@@ -19,15 +21,22 @@ import java.util.Hashtable;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.3 1999-04-26 10:58:08 duncan Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.4 1999-05-10 02:07:39 duncan Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
     private Derivation m_derivation;
     private TypeMap m_typeMap;
 
-    /** Class constructor. */
+    /** Class constructor. 
+     *
+     * @param tf    The <code>TreeFactory</code> which will be used for all
+     *              elements of the new <code>CanonicalTreeCode</code>.
+     * @param code  The <code>TreeCode</code> which we wish to translate
+     */
     public ToCanonicalTree(final TreeFactory tf, TreeCode code) { 
+	Util.assert(tf.getParent().getName().equals("canonical-tree"));
+	
     	final Hashtable dT = new Hashtable();
 
 	m_tree = translate(tf, code, dT);
@@ -82,10 +91,32 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 
     // translate to canonical form
     private Tree translate(TreeFactory tf, TreeCode code, Hashtable dT) {
-	TreeMap tm = new TreeMap();
-	Stm rootClone = (Stm)((Stm)code.getRootElement()).clone(tf);
-	CanonicalizingVisitor cv = new CanonicalizingVisitor(tf, tm, code, dT);
+	CanonicalizingVisitor cv;  // Translates the TreeCode
+	CloningTempMap ctm; // The TempMap used to clone temps in the TreeCode
+	Stm     root;       // The root of the TreeCode to be translated
+	Stm     rootClone;  // A clone of the TreeCode which uses the new tf.
+	TreeMap tm;         // Maps old Tree objects to translated ones
+ 
+	tm   = new TreeMap();
+	root = (Stm)code.getRootElement();
+	ctm  = new CloningTempMap
+	    (root.getFactory().tempFactory(), tf.tempFactory());
+
+	// Must update the temps in your frame when you clone the tree form
+	Temp[] oldTemps = root.getFactory().getFrame().getAllRegisters();
+	Temp[] newTemps = tf.getFrame().getAllRegisters();
+	for (int i=0; i<oldTemps.length; i++) { 
+	    newTemps[i] = oldTemps[i]==null?null:ctm.tempMap(oldTemps[i]);
+	}
+	
+	// OK, frame is updated.  now clone the tree form
+	rootClone = (Stm)(Tree.clone(tf, ctm, root));
+	cv = new CanonicalizingVisitor(tf, tm, code, dT);
+
+	// This visitor recursively visits all relevant nodes on its own
 	rootClone.visit(cv);
+
+	// Return the node which rootClone has been mapped to
 	return tm.get(rootClone);
     }
 
@@ -209,13 +240,16 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	
 	protected void updateDT(TEMP tOld, TEMP tNew) {
 	    if (this.derivation.derivation(tOld, tOld.temp) != null) {
-		dT.put(new Tuple(new Object[] { tNew, tNew.temp }),
-		       DList.clone(this.derivation.derivation(tOld, tOld.temp)));
-		dT.put(tNew.temp,new Error("*** Derived pointers have no type"));
+		dT.put
+		    (new Tuple(new Object[] { tNew, tNew.temp }),
+		     DList.clone(this.derivation.derivation(tOld, tOld.temp)));
+		dT.put
+		    (tNew.temp,new Error("*** Derived pointers have no type"));
 	    }
 	    else {
 		if (this.typeMap.typeMap(this.code, tOld.temp) != null) {
-		    dT.put(tNew.temp, this.typeMap.typeMap(this.code, tOld.temp));
+		    dT.put
+			(tNew.temp,this.typeMap.typeMap(this.code, tOld.temp));
 		}
 	    }
 	}

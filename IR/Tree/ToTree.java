@@ -49,7 +49,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.11 1999-04-23 08:35:33 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.12 1999-05-10 02:07:40 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -57,10 +57,12 @@ public class ToTree implements Derivation, TypeMap {
     private TypeMap     m_typeMap;
   
     /** Class constructor */
-    public ToTree(final TreeFactory tf, LowQuadNoSSA code, Frame frame) {
+    public ToTree(final TreeFactory tf, LowQuadNoSSA code) {
+	Util.assert(tf.getParent().getName().equals("tree"));
+
 	final Hashtable dT = new Hashtable();
 	
-	m_tree = translate(tf, code, frame, dT);
+	m_tree = translate(tf, code, dT);
 	m_derivation = new Derivation() {
 	    public DList derivation(HCodeElement hce, Temp t) {
 		if ((hce==null)||(t==null)) return null;
@@ -110,8 +112,7 @@ public class ToTree implements Derivation, TypeMap {
 	return m_typeMap.typeMap(hc, t);
     }
 
-    private Tree translate(TreeFactory tf, LowQuadNoSSA code, 
-			   Frame frame, Hashtable dT) {
+    private Tree translate(TreeFactory tf, LowQuadNoSSA code, Hashtable dT) {
 	CloningTempMap                ctm;
 	LowQuadMap                    lqm;
 	LowQuadWithDerivationVisitor  dv;
@@ -146,7 +147,7 @@ public class ToTree implements Derivation, TypeMap {
 	
 	// pass in typemap/deriv explicitly
 	tv = new TranslationVisitor(tf, dv.getDerivation(), code, 
-				    dv.getTypeMap(), frame, ctm, dT);;
+				    dv.getTypeMap(), ctm, dT);;
 	for (Enumeration e = quadGraph(lqm.get((Quad)code.getRootElement()), tv);
 	     e.hasMoreElements();)
 	    ((Quad)e.nextElement()).visit(tv);
@@ -238,15 +239,15 @@ class TranslationVisitor extends LowQuadVisitor {
     private TypeMap           m_typeMap;      // Old typing info
   
     public TranslationVisitor(TreeFactory tf, Derivation derivation, 
-			      LowQuadNoSSA code, TypeMap typeMap, Frame frame,
+			      LowQuadNoSSA code, TypeMap typeMap, 
 			      CloningTempMap ctm, Hashtable dT) {
 	m_code         = code;
 	m_ctm          = ctm;
 	m_derivation   = derivation;
 	m_dT           = dT;
-	m_frame        = frame;
+	m_frame        = tf.getFrame();
 	m_labelMap     = new LabelMap();
-	m_offm         = frame.getOffsetMap();
+	m_offm         = m_frame.getOffsetMap();
 	m_tempMap      = new TreeTempMap();
 	m_tf           = tf;
 	m_typeMap      = typeMap;
@@ -674,7 +675,12 @@ class TranslationVisitor extends LowQuadVisitor {
     }
 
     public void visit(PMETHOD q) {
-	Stm s0 = 
+      HClass type = type(q.objectref());
+      
+      // FIXME: type of object should not be void!
+      if (type==HClass.Void) type = HClass.forName("java.lang.Object");
+
+      Stm s0 = 
 	    new MOVE
 	    (m_tf, q, 
 	     MAP(q.dst(), q),              
@@ -684,7 +690,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	      (m_tf, q, Type.POINTER, Bop.ADD, 
 	       MAP(q.objectref(), q), 
 	       new CONST
-	       (m_tf, q, m_offm.classOffset(type(q.objectref()))))));
+	       (m_tf, q, m_offm.classOffset(type)))));
     
 	updateDT(q.dst(), q, MAP(q.dst(), q));
 	updateDT(q.objectref(), q, MAP(q.objectref(), q));
@@ -1050,11 +1056,11 @@ class TranslationVisitor extends LowQuadVisitor {
 	    Stm s0 = new CJUMP
 		(m_tf, q, 
 		 new BINOP
-		 (m_tf, q, Bop.CMPEQ, Type.POINTER, 
+		 (m_tf, q, Type.POINTER, Bop.CMPEQ,
 		  srcTEMP, 
 		  new CONST(m_tf, q, 0)),
-		 isNonNull.label, 
-		 isNull.label);
+		 isNull.label, 
+		 isNonNull.label);
 	    Stm s1 = isNull;
 	    Stm s2 = new MOVE(m_tf, q, RESULT, new CONST(m_tf, q, 0));
 	    Stm s3 = new JUMP(m_tf, q, end.label);

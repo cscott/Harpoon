@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.1.2.9 1999-03-12 20:38:46 duncan Exp $
+ * @version $Id: BINOP.java,v 1.1.2.10 1999-05-10 02:07:38 duncan Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -23,6 +23,7 @@ public class BINOP extends OPER {
     public BINOP(TreeFactory tf, HCodeElement source,
 		 int optype, int binop, Exp left, Exp right) {
 	super(tf, source, optype, binop);
+	  
 	this.left=left; this.right=right;
 	Util.assert(Bop.isValid(binop));
     }
@@ -31,7 +32,7 @@ public class BINOP extends OPER {
 	switch(op) {
 	case Bop.CMPLT: case Bop.CMPLE: case Bop.CMPEQ:
 	case Bop.CMPGE: case Bop.CMPGT:
-	    return INT; // boolean comparison result
+	    return Type.INT; // boolean comparison result
 	default:
 	    return optype;
 	}

@@ -11,6 +11,7 @@ import harpoon.IR.LowQuad.LowQuadNoSSA;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
 import harpoon.Temp.Label;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
 import harpoon.Util.HashSet;
@@ -23,8 +24,8 @@ import java.util.Stack;
 
 public class CanonicalTreeCode extends Code {
     private static final String codename = "canonical-tree";
-    private Derivation m_derivation;
-    private TypeMap    m_typeMap;
+    private final Derivation derivation;
+    private final TypeMap    typeMap;
   
     CanonicalTreeCode(TreeCode code, Frame frame) {
 	super(code.getMethod(), null, frame);
@@ -33,22 +34,41 @@ public class CanonicalTreeCode extends Code {
 
 	translator   = new ToCanonicalTree(this.tf, code);
 	tree         = translator.getTree();
-	m_derivation = translator;
-	m_typeMap    = translator;
-	
+	derivation   = translator;
+	typeMap      = translator;
+
 	// Compute edges for the Trees in this codeview
 	new EdgeInitializer().computeEdges();
     }
 
-    private CanonicalTreeCode(HMethod newMethod, Tree tree, Frame frame) {
-	super(newMethod, tree, frame);
-    }
+    //    private CanonicalTreeCode(HMethod newMethod, Tree tree, Frame frame) {
+    //super(newMethod, tree, frame);
+    //    }
 
     public HCode clone(HMethod newMethod, Frame frame) {
-	// assumes Frame is immutable
+	/*
 	CanonicalTreeCode tc = new CanonicalTreeCode(newMethod, null, frame); 
-	tc.tree = (Tree)this.tree.clone(tc.tf);
-	return tc;
+	final CloningTempMap ctm = new CloningTempMap
+	    (this.tf.tempFactory(), tc.tf.tempFactory());
+	tc.tree = (Tree)(Tree.clone(tc.tf, ctm, tree));
+	tc.derivation = new Derivation() { 
+	    public DList derivation(HCodeElement hce, Temp t) { 
+		return derivation.derivation(hce, ctm.tempMap(t));
+	    }
+	};
+	tc.typeMap = new TypeMap() { 
+	    public HClass typeMap(HCode hc, Temp t) { 
+		return typeMap.typeMap(hc, ctm.tempMap(t));
+	    }
+	};
+
+	// Correctly update the new Frame's registers
+	Temp[] temps = tc.frame.getAllRegisters();
+	for (int i=0; i<temps.length; i++) { 
+	    temps[i] = ctm.tempMap(this.frame.getAllRegisters()[i]);
+	}
+	*/
+	return null;  //tc;
     }
 
     public String getName() { return codename; }
@@ -87,11 +107,20 @@ public class CanonicalTreeCode extends Code {
     public static void register() { HMethod.register(codeFactory(null)); }
 
     public DList derivation(HCodeElement hce, Temp t){
-	return m_derivation.derivation(hce, t);
+	return derivation.derivation(hce, t);
     }
 
     public HClass typeMap(HCode hc, Temp t) {
 	// Ignores hc parameter
-	return m_typeMap.typeMap(this, t);
+	return typeMap.typeMap(this, t);
     }
 }
+
+
+
+
+
+
+
+
+

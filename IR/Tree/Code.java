@@ -26,21 +26,21 @@ public abstract class Code extends HCode
     implements Derivation, TypeMap {
     /** The Tree Objects composing this code view. */
     protected Tree tree;
-    /** The Frame containing machine-specific information*/
+    /** The Frame. */
     protected final Frame frame;
     /** Tree factory. */
     protected final TreeFactory tf;
     /** The method that this code view represents. */
     protected final HMethod parent;
 
-  /** Create a proper TreeFactory. */
-    protected TreeFactory newTF(final HMethod parent) {
+    /** Create a proper TreeFactory. */
+    protected TreeFactory newTF(final HMethod parent) { 
 	return new TreeFactory() {
 	    private int id=0;
 	    // Everyone uses same TempFactory now.
 	    public TempFactory tempFactory() { return frame.tempFactory(); }
-	    public Frame getFrame()  { return frame; }
 	    public HCode getParent() { return Code.this; }
+	    public Frame getFrame() { return Code.this.frame; } 
 	    public synchronized int getUniqueID() { return id++; }
 	    public String toString() { 
 		return "TreeFactory["+getParent().toString()+"]"; 
@@ -196,6 +196,10 @@ public abstract class Code extends HCode
 	Print.print(pw,this);
     } 
 
+    public boolean isCanonical() { 
+	return getName().equals("canonical-tree");
+    }
+
     public abstract DList derivation(HCodeElement hce, Temp t);
 
     public abstract HClass typeMap(HCode hc, Temp t);
@@ -217,7 +221,7 @@ public abstract class Code extends HCode
 	private int       state;
 
 	EdgeInitializer() { 
-	    Util.assert(getName().equals("canonical-tree"));
+	    Util.assert(isCanonical());
 	    mapLabels(); 
 	}
 	
@@ -387,3 +391,21 @@ public abstract class Code extends HCode
 	}
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
