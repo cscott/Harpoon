@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.38 1998-09-03 19:16:23 cananian Exp $
+ * @version $Id: Translate.java,v 1.39 1998-09-03 19:38:24 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -832,6 +832,7 @@ class Translate  { // not public.
 	case Op.INVOKESTATIC:
 	case Op.INVOKEVIRTUAL:
 	    {
+	    boolean isStatic = (in.getOpcode()==Op.INVOKESTATIC);
 	    OpMethod opd = (OpMethod) in.getOperand(0);
 	    HClass paramtypes[] = opd.value().getParameterTypes();
 	    Temp param[] = new Temp[paramtypes.length];
@@ -840,16 +841,17 @@ class Translate  { // not public.
 		param[i] = s.stack[j];
 		if (isLongDouble(paramtypes[i])) j++;
 	    }
+	    Temp objectref = isStatic?null:s.stack[j];
 	    if (opd.value().getReturnType()==HClass.Void) { // no return value.
-		ns = s.pop(j+1);
-		q = new CALL(in, opd.value(), s.stack[j], param);
+		ns = s.pop(j+(isStatic?0:1));
+		q = new CALL(in, opd.value(), objectref, param);
 	    } else if (!isLongDouble(opd.value().getReturnType())) {
 		// 32-bit return value.
-		ns = s.pop(j+1).push(new Temp());
-		q = new CALL(in, opd.value(), s.stack[j], param, ns.stack[0]);
+		ns = s.pop(j+(isStatic?0:1)).push(new Temp());
+		q = new CALL(in, opd.value(), objectref, param, ns.stack[0]);
 	    } else { // 64-bit return value.
-		ns = s.pop(j+1).push(null).push(new Temp());
-		q = new CALL(in, opd.value(), s.stack[j], param, ns.stack[0]);
+		ns = s.pop(j+(isStatic?0:1)).push(null).push(new Temp());
+		q = new CALL(in, opd.value(), objectref, param, ns.stack[0]);
 	    }
 	    }
 	    break;
