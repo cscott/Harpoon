@@ -117,7 +117,8 @@ public class Load extends Node {
 		    (id = ImageDataManip.readPPM(jarFile, fileName)).id = i;
 		}
 	    } catch (Error e) {
-		System.out.println("  ... missing file: "+fileName);
+		System.out.println("Error:" + e);
+		System.exit(-1);
 	    } 
 	    if (id != null) {
 		if (i == num-1)
