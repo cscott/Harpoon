@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
   };
   JNIEnv *env;
   jclass cls;
-  jmethodID mid;
+  jmethodID mid, exitID;
   jobject args;
   jclass thrCls;
   jobject mainthread;
@@ -82,11 +82,11 @@ int main(int argc, char *argv[]) {
 #ifdef WITH_GC_STATS
   setup_GC_stats();
 #endif
-#if defined(WITH_REALTIME_JAVA) || defined(WITH_FAKE_SCOPES)
+#if defined(WITH_REALTIME_JAVA) || defined(WITH_FAKE_SCOPES) 
   RTJ_preinit();
 #endif
   FNI_java_lang_Thread_setupMain(env);
-#if defined(WITH_REALTIME_JAVA) || defined(WITH_FAKE_SCOPES)
+#if defined(WITH_REALTIME_JAVA) || defined(WITH_FAKE_SCOPES) 
   RTJ_init();
 #endif
 #ifdef WITH_REALTIME_THREADS
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     // call thread.getThreadGroup().uncaughtException(thread, exception)
     jclass thrGrpCls;
     jobject threadgroup;
-    jmethodID gettgID, uncaughtID;
+    jmethodID gettgID, uncaughtID, exitID;
     (*env)->ExceptionClear(env); /* clear the thread's exception */
     st=1; /* main() exit status will be non-zero. */
     // Thread.currentThread().getThreadGroup()...
@@ -204,14 +204,10 @@ int main(int argc, char *argv[]) {
   (*env)->DeleteLocalRef(env, args);
   (*env)->DeleteLocalRef(env, cls);
   // call Thread.currentThread().exit() at this point.
-#if !defined(WITH_REALTIME_THREADS) /* cata commented this out */
-  {
-    jmethodID exitID = (*env)->GetMethodID(env, thrCls, "exit", "()V");
-    CHECK_EXCEPTIONS(env);
-    (*env)->CallNonvirtualVoidMethod(env, mainthread, thrCls, exitID);
-    CHECK_EXCEPTIONS(env);
-  }
-#endif /* !WITH_REALTIME_THREADS */
+  exitID = (*env)->GetMethodID(env, thrCls, "exit", "()V");
+  CHECK_EXCEPTIONS(env);
+  (*env)->CallNonvirtualVoidMethod(env, mainthread, thrCls, exitID);
+  CHECK_EXCEPTIONS(env);
   (*env)->DeleteLocalRef(env, thrCls);
   /* main thread is dead now. */
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_FALSE;
@@ -221,9 +217,7 @@ int main(int argc, char *argv[]) {
   FNI_MonitorNotify(env, mainthread, JNI_TRUE);
   FNI_MonitorExit(env, mainthread);
   // wait for all threads to finish up.
-#if !defined(WITH_REALTIME_THREADS) /* cata commented this out */
   FNI_java_lang_Thread_finishMain(env);
-#endif /* !WITH_REALTIME_THREADS */
 
 #ifdef WITH_STATISTICS
   /* print out collected statistics */
