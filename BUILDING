@@ -1,1 +1,16 @@
-.
+Make sure that JacORB 1.3.30 is in your CLASSPATH, and
+some 1.4 compliant JDK and JVM.  
+
+(Currently works with SunJDK 1.4 and HotSpot - 
+FLEX and GNU Classpath support should be added soon.)
+
+Type 'make' to build the program and documentation.
+
+Point your browser to doc/index.html for the main program documentation.
+
+Type 'make run', 'java -jar imagerec.jar', or 'jar -x imagerec.jar' 
+to run the program.
+
+src/MANIFEST.MF points to the Main class to be run.
+
+
