@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.28.2.3 1999-09-16 21:26:05 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.28.2.4 1999-09-17 04:38:10 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -785,7 +785,7 @@ final class ReHandler {
 		} else weird(q);
 	}
     }
-}
+
 
 /**
  * Performs the second phase of the transformation to NoSSA form:
@@ -793,7 +793,7 @@ final class ReHandler {
  * the CFG directly, so it is advisable to use this visitor only
  * on a clone of the actual CFG you wish to translate.  
  */
-class PHVisitor extends QuadVisitor
+static class PHVisitor extends QuadVisitor // this is an inner class
 {
     private QuadFactory     m_qf;
     private Set             reachable;
@@ -951,7 +951,7 @@ class PHVisitor extends QuadVisitor
 /** <code>TypeVisitor</code> determines what implicit <code>TYPECAST</code>
  *  exist. */
 
-class TypeVisitor extends QuadVisitor {
+static class TypeVisitor extends QuadVisitor { // this is an inner class
     TypeMap ti;
     HashMap typecast;
     Set visited;
@@ -1359,7 +1359,7 @@ class TypeVisitor extends QuadVisitor {
 
 }
 
-class CleanVisitor extends QuadVisitor {
+static class CleanVisitor extends QuadVisitor { // this is an inner class
     Stack todo;
     Map map;
     Set usefulquads;
@@ -1587,3 +1587,6 @@ class CleanVisitor extends QuadVisitor {
 	maybeuseful(q);
     }
 }
+
+} // close the ReHandler class (yes, the indentation's screwed up,
+  // but I don't feel like re-indenting all this code) [CSA]

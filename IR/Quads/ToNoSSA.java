@@ -25,7 +25,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.19 1999-09-09 21:43:03 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.19.2.1 1999-09-17 04:38:10 cananian Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -151,8 +151,6 @@ public class ToNoSSA implements Derivation, TypeMap
 	return qm.get(old_header);
     }
 
-}
-
 /*
  * Performs the first phase of the transformation to NoSSA form:
  * removing the SIGMAs.  This visitor also serves the purpose of cloning
@@ -160,7 +158,7 @@ public class ToNoSSA implements Derivation, TypeMap
  * will actually modify these quads, and we do not want these effects
  * to propagate outside of the ToNoSSA class.
  */
-class SIGMAVisitor extends LowQuadVisitor
+static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
 {
     private CloningTempMap m_ctm;
     private NameMap        m_nm;
@@ -237,7 +235,7 @@ class SIGMAVisitor extends LowQuadVisitor
  * the CFG directly, so it is advisable to use this visitor only
  * on a clone of the actual CFG you wish to translate.  
  */
-class PHIVisitor extends LowQuadVisitor
+static class PHIVisitor extends LowQuadVisitor // this is an inner class
 {
     private Map             m_dT;
     private QuadFactory     m_qf;
@@ -352,7 +350,7 @@ class PHIVisitor extends LowQuadVisitor
 }
 
 
-class QuadMap 
+static class QuadMap // this is an inner class
 {
     private CloningTempMap  m_ctm;
     private Derivation      m_derivation;
@@ -442,7 +440,7 @@ class QuadMap
     }
 }
 
-class NameMap implements TempMap {
+static class NameMap implements TempMap { // this is an inner class
     Map h = new HashMap();
     public Temp tempMap(Temp t) {
 	while (h.containsKey(t)) { t = (Temp)h.get(t); }
@@ -451,4 +449,5 @@ class NameMap implements TempMap {
     public void map(Temp Told, Temp Tnew) { h.put(Told, Tnew); }
 }
 
-
+} // close the ToNoSSA class (yes, the indentation's screwed up,
+  // but I don't feel like re-indenting all this code) [CSA]

@@ -14,10 +14,10 @@ import java.util.Map;
 import java.util.Iterator;
 import java.util.Stack;
 /**
- * <code>Pattern</code>
+ * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.8 1999-09-13 05:45:46 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.8.2.1 1999-09-17 04:38:09 cananian Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -147,11 +147,9 @@ public class Pattern {
 	}
 	Quad.addEdge(newm, 0, m.next(0),m.nextEdge(0).which_pred());
     }
-}
 
 
-
-class PatternVisitor extends QuadVisitor {
+static class PatternVisitor extends QuadVisitor { // this is an inner class
     private Map map;
     QuadWithTry code;
     UseDef ud;
@@ -406,7 +404,7 @@ class PatternVisitor extends QuadVisitor {
     }
 }
 
-class HInfo {
+static class HInfo { // this is an inner class
     Quad to;
     Stack handlers;
     //entries look like
@@ -448,7 +446,7 @@ class HInfo {
     }
 }
 
-class ExcVisitor extends QuadVisitor {
+static class ExcVisitor extends QuadVisitor { // this is an inner class
     int status;
     HClass hclass;
     Temp exctemp;
@@ -519,7 +517,7 @@ class ExcVisitor extends QuadVisitor {
     }
 }
 
-class HighBoundVisitor extends QuadVisitor {
+static class HighBoundVisitor extends QuadVisitor { // this is an inner class
     int status;
     Temp []compares;
     Temp test;
@@ -614,13 +612,13 @@ class HighBoundVisitor extends QuadVisitor {
     }
 }
 
-class LowBoundVisitor extends MinusVisitor {
+static class LowBoundVisitor extends MinusVisitor { // this is an inner class
     LowBoundVisitor(Temp tested,QuadWithTry code, UseDef ud) {
 	super(tested,code,ud);
     }
 }
 
-class MinusVisitor extends QuadVisitor {
+static class MinusVisitor extends QuadVisitor { // this is an inner class
     int status;
     Temp []compares;
     Temp test;
@@ -696,7 +694,7 @@ class MinusVisitor extends QuadVisitor {
     }
 }
 
-class NullVisitor extends QuadVisitor {
+static class NullVisitor extends QuadVisitor { // this is an inner class
     int status;
     Temp []compares;
     Temp test;
@@ -773,7 +771,7 @@ class NullVisitor extends QuadVisitor {
     }
 }
 
-class CompVisitor extends QuadVisitor {
+static class CompVisitor extends QuadVisitor { // this is an inner class
     int status;
     Temp test;
     Quad exchandler;
@@ -832,7 +830,7 @@ class CompVisitor extends QuadVisitor {
     }
 }
 
-class ZeroVisitor extends QuadVisitor {
+static class ZeroVisitor extends QuadVisitor { // this is an inner class
     int status;
     Temp []compares;
     Temp test;
@@ -919,8 +917,5 @@ class ZeroVisitor extends QuadVisitor {
     }
 }
 
-
-
-
-
-
+} // close the Pattern class (yes, the indentation's screwed up,
+  // but I don't feel like re-indenting all this code) [CSA]
