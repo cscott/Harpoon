@@ -61,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.5 2002-06-25 18:09:59 kkz Exp $
+ * @version $Id: TreeBuilder.java,v 1.6 2002-07-18 21:06:21 kkz Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -289,6 +289,42 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	     // result of ESEQ is new object pointer
 	     DECLARE(dg, objectType/*finally an obj*/, Tobj,
 	     new TEMP(tf, source, Type.POINTER, Tobj)));
+    }
+
+    public Stm clearHashBit(TreeFactory tf, HCodeElement source,
+			    DerivationGenerator dg, Exp objExp) {
+	// masked version of object pointer
+	//Derivation.DList objectDL = dg.derivation(objExp);
+	//assert objectDL != null : "huh?" + objExp;
+	Temp Thash = new Temp(tf.tempFactory(), "cb");
+	return new SEQ
+	    (tf, source,
+	     new MOVE // save a pointer to the hashcode field
+	     (tf, source,
+	      DECLARE(dg, HClass.Void/* pointer to hashcode */,
+	      new TEMP(tf, source, Type.POINTER, Thash)),
+	      new BINOP
+	      (tf, source, Type.POINTER, Bop.ADD,
+	       // DECLARE(dg, objectDL,
+		       PTRMASK(tf, source, dg, objExp)/*)*/,
+	       new CONST(tf, source, OBJ_HASH_OFF))),
+	     new MOVE // clear next-to-low bit of hashcode
+	     (tf, source,
+	      DECLARE(dg, HClass.Void/*hashcode, not an object*/,
+	      new MEM
+	      (tf, source, Type.POINTER, /* hashcode is pointer size */
+	       DECLARE(dg, HClass.Void,
+	       new TEMP(tf, source, Type.POINTER, Thash)))),
+	      new BINOP // mask out next-to-low bit of hashcode
+	      (tf, source, Type.POINTER, Bop.AND,
+	       DECLARE(dg, HClass.Void,
+	       new MEM
+	       (tf, source, Type.POINTER,
+		DECLARE(dg, HClass.Void,
+		new TEMP(tf, source, Type.POINTER, Thash)))),
+	       new CONST
+	       (tf, source, 
+		(POINTER_SIZE>WORD_SIZE) ? ~((long)2) : ~((int)2)))));
     }
 
     public Translation.Exp arrayLength(TreeFactory tf, HCodeElement source,
