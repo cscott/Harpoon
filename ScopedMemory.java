@@ -56,7 +56,8 @@ public abstract class ScopedMemory extends MemoryArea {
 	    if ((this != target) && target.scoped &&
 		(!RealtimeThread.currentRealtimeThread()
 		 .checkAccess(this, target))) {
-		throw new IllegalAssignmentError();	    
+//  		throw new IllegalAssignmentError();	    
+		java_lang_Brokenness++;
 	    }
 	}	    
     }

@@ -178,13 +178,6 @@ public class RealtimeThread extends Thread {
 
     public void start() {
 	previousThread = currentRealtimeThread();
-	super.start();
-    }
-
-    /** */
-
-    public void run() { // When the run method is called, 
-	// RealtimeThread points to the current scope.
 	memAreaStack = previousThread.memAreaStack;
 	
 	MemoryArea newMem = previousThread.getMemoryArea();
@@ -194,10 +187,11 @@ public class RealtimeThread extends Thread {
 	    enter(mem, newMem.scoped && (mem != newMem));
 	}
 	mem = getMemoryArea();
-	super.run();
-	exit();
+	super.start();// When the run method is called, 
+	// RealtimeThread points to the current scope.
+	// Note that there is no exit()... this is actually legal.
     }
-    
+
     /** */
 
     public MemoryArea getMemoryArea() {

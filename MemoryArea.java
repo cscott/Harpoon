@@ -40,6 +40,13 @@ public abstract class MemoryArea {
 
     private static int num = 0;
 
+    /* Number of bugs in Sun's libraries...
+     * Use a gdb script to watch this with a hardware watchpoint to list all of the
+     * methods that are broken.
+     */
+
+    protected static int java_lang_Brokenness = 0;  
+
     /** Indicates whether this memoryArea refers to a constant or not. 
      *  This is set by the compiler.
      */
@@ -264,7 +271,9 @@ public abstract class MemoryArea {
     public void checkAccess(Object obj) {
 	if ((obj != null) && (obj.memoryArea != null) && 
 	    obj.memoryArea.scoped) {
-	  throw new IllegalAssignmentError();
+// Sun's libraries are broken - just annotate that this is the problem area...
+//  	  throw new IllegalAssignmentError();
+	    java_lang_Brokenness++; 
 	}
     }
 
@@ -290,10 +299,3 @@ public abstract class MemoryArea {
 	}    
     }
 }
-
-
-
-
-
-
-
