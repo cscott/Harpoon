@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.85 2003-03-10 18:34:13 cananian Exp $
+# $Id: GNUmakefile,v 1.86 2003-03-18 16:42:27 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -117,8 +117,6 @@ MACHINE_GEN := $(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
 ALLSOURCE :=  $(MACHINE_GEN) $(filter-out $(MACHINE_GEN), \
 		$(filter-out .%.java \#% $(patsubst %,\%%,$(BUILD_IGNORE)),\
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java))))
-TARSOURCE := $(filter-out $(MACHINE_GEN), $(filter-out JavaChip%, \
-	        $(filter-out Test%,$(ALLSOURCE)))) GNUmakefile $(MACHINE_SRC)
 JARPKGS := $(subst harpoon/Contrib,gnu, \
 		$(foreach pkg, $(filter-out JavaChip%, \
 			$(filter-out Test%,$(ALLPKGS))), harpoon/$(pkg)))
@@ -132,16 +130,17 @@ PKGDESC:=$(wildcard overview.html) $(wildcard README) \
 	 $(foreach dir, $(ALLPKGS),\
 	    $(wildcard $(dir)/package.html) $(wildcard $(dir)/README))
 
-NONEMPTYPKGS := $(shell ls  $(filter-out GNUmakefile,$(TARSOURCE))  | \
-		sed -e 's|/*[A-Za-z0-9_]*\.[A-Za-z0-9_]*$$||' | sort -u)
-
-PKGSWITHJAVASRC := $(shell ls  $(filter-out GNUmakefile,$(TARSOURCE))  | \
-		   sed -ne 's|/*[A-Za-z0-9_]*\.java$$||p' | sort -u)	
 endif
 # list all the definitions in the above block for export to children.
 export BUILD_IGNORE ALLPKGS MACHINE_SRC MACHINE_GEN CGSPECS CGJAVA
-export SCRIPTS ALLSOURCE TARSOURCE JARPKGS PROPERTIES PKGDESC
-export NONEMPTYPKGS PKGSWITHJAVASRC
+export SCRIPTS ALLSOURCE JARPKGS PROPERTIES PKGDESC
+# recompute these, to keep the size of the environment down.
+TARSOURCE := $(filter-out $(MACHINE_GEN), $(filter-out JavaChip%, \
+	        $(filter-out Test%,$(ALLSOURCE)))) GNUmakefile $(MACHINE_SRC)
+NONEMPTYPKGS := $(shell ls  $(filter-out GNUmakefile,$(TARSOURCE))  | \
+		sed -e 's|/*[A-Za-z0-9_]*\.[A-Za-z0-9_]*$$||' | sort -u)
+PKGSWITHJAVASRC := $(shell ls  $(filter-out GNUmakefile,$(TARSOURCE))  | \
+		   sed -ne 's|/*[A-Za-z0-9_]*\.java$$||p' | sort -u)	
 
 all:	java
 
