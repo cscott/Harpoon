@@ -100,18 +100,18 @@ public class BypassLatchSchedule {
             int space = assem.indexOf(' ');
             String opcode = assem.substring(0, space);
             boolean reverse = false;
-            if(opcode.equalsIgnoreCase("sw")
-               || opcode.equalsIgnoreCase("sh")
-               || opcode.equalsIgnoreCase("sb")
-               || opcode.equalsIgnoreCase("sc")
-               || opcode.equalsIgnoreCase("sdc1")
-               || opcode.equalsIgnoreCase("sllv")
-               || opcode.equalsIgnoreCase("sll")
-               || opcode.equalsIgnoreCase("sra")
-               || opcode.equalsIgnoreCase("srav")
-               || opcode.equalsIgnoreCase("srl")
-               || opcode.equalsIgnoreCase("srlv")
-               || opcode.equalsIgnoreCase("negu")
+            if(opcode.startsWith("sw")
+               || opcode.startsWith("sh")
+               || opcode.startsWith("sb")
+               || opcode.startsWith("sc")
+               || opcode.startsWith("sdc1")
+               || opcode.startsWith("sllv")
+               || opcode.startsWith("sll")
+               || opcode.startsWith("sra")
+               || opcode.startsWith("srav")
+               || opcode.startsWith("srl")
+               || opcode.startsWith("srlv")
+               || opcode.startsWith("negu")
                ) {
                reverse = true;
             }
@@ -133,9 +133,7 @@ public class BypassLatchSchedule {
 
             if(trace)
                System.out.println("  " + instr.getAssem() + " ==> "+ new_assem);
-            Instr new_i = new Instr( instr.getFactory(), instr, new_assem,
-                                     instr.def(), instr.use(), true,/*XXX*/
-                                     instr.getTargets() );
+            Instr new_i = instr.cloneMutateAssem(new_assem);
             // XXX This is a gross hack to manually copy register
             // assignment information because the instr interface
             // doesn't have a good copy method.
