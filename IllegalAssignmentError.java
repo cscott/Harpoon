@@ -3,22 +3,24 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>IllegalAssignmentError</code> is thrown when there is an
- *  assignment that could create a dangling reference.
+/**
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
+/** The exception thrown on an attempt to make an illegal assignment.
+ *  For example, this will be thrown if logic attempts to assign a
+ *  reference to an object in <code>ScopedMemory</code> to a field in
+ *  an object in <code>ImmortalMemory</code>.
+ */
 public class IllegalAssignmentError extends Error
     implements java.io.Serializable {
 
-    /** Constructor, no description. */
-
+    /** A constructor for <code>IllegalAssignmentError</code>. */
     public IllegalAssignmentError() {
 	super();
     }
 
-    /** Constructor with description. */
-
+    /** A descriptive constructor for <code>IllegalAssignmentError</code>. */
     public IllegalAssignmentError(String description) {
 	super(description);
     }

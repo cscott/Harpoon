@@ -3,25 +3,26 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>MemoryAccessError</code> is thrown when a NoHeapRealtimeThread
- *  tries to access the heap.
- * 
+
+/** 
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
+/** This error is thrown on an attempt to refer to an object in an
+ *  accessible <code>MemoryArea</code>. For example this will be thrown
+ *  if logic in a <code>NoHeapRealtimeThread</code> attempts to refer
+ *  to an object in the traditional Java heap.
+ */
 public class MemoryAccessError extends Error
     implements java.io.Serializable {
 
-    /** Constructor, no description. */
-
+    /** A constructor for <code>MemoryAccessError</code>. */
     public MemoryAccessError() { 
 	super(); 
     }
     
-    /** Constructor with description. */
-
+    /** A descriptive constructor for <code>MemoryAccessError</code>. */
     public MemoryAccessError(String description) { 
 	super(description); 
     }
-
 }
