@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>Tree.Exp</code>s can be inferred from these.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationGenerator.java,v 1.1.2.5 2000-02-15 18:53:20 cananian Exp $
+ * @version $Id: DerivationGenerator.java,v 1.1.2.6 2000-02-15 20:12:38 cananian Exp $
  */
 public class DerivationGenerator implements TreeDerivation {
     /** private partial type map */
@@ -100,6 +100,11 @@ public class DerivationGenerator implements TreeDerivation {
 	Util.assert(exp!=null && derivation!=null);
 	Util.assert(!dtM.containsKey(exp));
 	dtM.put(exp, new TypeAndDerivation(derivation));
+    }
+    /** Transfer typing from one exp to another. */
+    public void update(Exp oldE, Exp newE) {
+	if (dtM.containsKey(oldE))
+	    dtM.put(newE, dtM.remove(oldE));
     }
     // allow implementations to flush old data from the derivation generator
     /** Remove all type and derivation mappings for the given
@@ -231,7 +236,8 @@ public class DerivationGenerator implements TreeDerivation {
     private static TypeAndDerivation TADadd(TypeAndDerivation lefttad,
 					    TypeAndDerivation righttad) {
 	// if there's a constant, put it on the right.
-	if (lefttad.type!=null && lefttad.type.isPrimitive())
+	if (lefttad.type!=null && lefttad.type.isPrimitive() &&
+	    !(righttad.type!=null && righttad.type.isPrimitive()))
 	    return TADadd(righttad, lefttad);
 	// okay, deal with adding constants (including opaque pointers)
 	if (righttad.type!=null && righttad.type.isPrimitive())
