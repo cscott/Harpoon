@@ -64,7 +64,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.46 1999-09-13 23:48:29 pnkfelix Exp $
+ * @version $Id: ToTree.java,v 1.1.2.47 1999-09-14 00:50:54 pnkfelix Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -129,8 +129,22 @@ public class ToTree implements Derivation, TypeMap {
 	// *MODIFY* the cloned quad graph to have explicit labels at the
 	// destination of each branch.  
 	dv = new LabelingVisitor(dv, dv);
-	for (Iterator i = code.getElementsI(); i.hasNext();)
-	    lqm.get((Quad)i.next()).accept(dv);
+
+	/* Replacing this Iterator code because the labelling visitor
+	   screws up the internal representation for the quads.  It
+	   would work if we were constructing a new quad graph or if
+	   we didn't mess with the internal rep, but the quickest way
+	   to fix everything is to use an Array instead of an
+	   Iterator, since an Array is static while an Iterator will
+	   update itself incrementally with each change.
+
+	  for (Iterator i = code.getElementsI(); i.hasNext();)
+	      lqm.get((Quad)i.next()).accept(dv);
+	*/
+	Quad[] qa = (Quad[]) code.getElements();
+	for(int i=0; i<qa.length; i++) {
+	    lqm.get(qa[i]).accept(dv);
+	}
 
 	// *MODIFY* the cloned (and labeled) quad graph to 
 	// a) Not explicitly check exceptional values.   
@@ -1619,24 +1633,26 @@ class LabelingVisitor extends LowQuadWithDerivationVisitor {
 		     new Label().name);
 		Quad.replace(q, label);
 		m_QToL.put(q, label);  // Don't replace same quad twice!
-	    }
-	    else {
+		m_QToL.put(label, label);
+	    } else {
+		Util.assert(q.prevEdge().length == 1, "q:"+q+" should have arity 1");
 		Quad newQ = (Quad)q.clone();  // IS THIS CORRECT????
 		updateDT(q, newQ);
 
 		label = new harpoon.IR.Quads.LABEL
 		    (q.getFactory(), q, new Label().name, 
 		     new Temp[] {}, q.prevEdge().length);
-		Edge[] el = q.prevEdge();
-		for (int i=0; i<el.length; i++) 
-		    Quad.addEdge((Quad)el[i].from(), el[i].which_succ(),
-				 label, el[i].which_pred());
+	        Edge prevEdge  = q.prevEdge(0);
+		Quad.addEdge((Quad)prevEdge.from(), prevEdge.which_succ(),
+				 label, prevEdge.which_pred());
 		Quad.addEdge(label, 0, newQ, 0);
-		el = q.nextEdge();
+		Edge[] el = q.nextEdge();
 		for (int i=0; i<el.length; i++) 
 		    Quad.addEdge(newQ, el[i].which_succ(),
 				 (Quad)el[i].to(), el[i].which_pred());
 		m_QToL.put(q, label); // Don't replace same quad twice!
+		m_QToL.put(newQ, label);
+		m_QToL.put(label, label);
 	    }
 	}
     }
