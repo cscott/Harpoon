@@ -8,18 +8,21 @@ import harpoon.Temp.Temp;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.1 1998-08-27 00:59:05 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.2 1998-08-27 01:09:49 cananian Exp $
  */
 
 public class SWITCH extends Quad {
-    /** The discriminant. */
+    /** The discriminant, compared against each value in <code>keys</code>.*/
     public Temp index;
-    /** Integer keys for the cases of the switch. */
+    /** Integer keys for switch cases. <p>
+     *  <code>next[n]</code> is the jump target corresponding to
+     *  <code>keys[n]</code> for <code>0 <= n < keys.length</code>. <p>
+     *  <code>next[keys.length]</code> is the default target. */
     public int keys[];
     /** Creates a <code>SWITCH</code> operation. <p>
      *  <code>next[n]</code> is the jump target corresponding to
-     *  <code>key[n]</code>.
-     *  <code>next[key.length]</code> is the default target.
+     *  <code>keys[n]</code> for <code>0 <= n < keys.length</code>. <p>
+     *  <code>next[keys.length]</code> is the default target.
      */
     public SWITCH(String sourcefile, int linenumber,
 		  Temp index, int keys[]) {
