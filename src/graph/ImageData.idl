@@ -38,6 +38,7 @@ module imagerec
       boolean lastImage;
       octet labelID;
       boolean conditional;
+      float angle;
     };
   };
 };
