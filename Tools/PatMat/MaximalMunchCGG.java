@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.59 2000-02-19 09:06:45 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.60 2000-02-19 10:35:17 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -62,6 +62,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
     private static final String TREE_Exp = "harpoon.IR.Tree.Exp";
     private static final String TREE_Stm = "harpoon.IR.Tree.Stm";
     private static final String TREE_TreeVisitor = "harpoon.IR.Tree.TreeVisitor";
+    private static final String TREE_Type = "harpoon.IR.Tree.Type";
 
     private static final String TEMP_Label = "harpoon.Temp.Label";
     private static final String TEMP_Temp = "harpoon.Temp.Temp";
@@ -742,6 +743,46 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    predicate.append("&& ("+d.predicate_string+")");
 	}
     }
+    /** Build 'extra' temps */
+    static class ExtraBuilder extends Spec.DetailVisitor {
+	final StringBuffer extras = new StringBuffer();
+	public void visit(Spec.Detail d) { /* do nothing */ }
+	public void visit(Spec.DetailExtra d) {
+	    String clsname, tyname, isFloat, isDouble;
+	    switch(d.type) {
+	    case Type.INT:
+		tyname="INT"; clsname="Int";
+		isFloat="false"; isDouble="false"; break;
+	    case Type.LONG:
+		tyname="LONG"; clsname="Long";
+		isFloat="false"; isDouble="true"; break;
+	    case Type.FLOAT:
+		tyname="FLOAT"; clsname="Float";
+		isFloat="true"; isDouble="false"; break;
+	    case Type.DOUBLE:
+		tyname="DOUBLE"; clsname="Double";
+		isFloat="true"; isDouble="true"; break;
+	    case Type.POINTER:
+		tyname="POINTER"; clsname="Void";
+		isFloat="false"; isDouble="frame.pointersAreLong()"; break;
+	    default: throw new Error("unknown type!");
+	    }
+	    for(Spec.IdList ilp = d.extras; ilp!=null; ilp=ilp.tail) {
+		extras.append("Temp "+ilp.head+" = frame.getTempBuilder()."+
+			      "makeTemp(new Typed() {\n");
+		extras.append("\tpublic int type() { return "+
+			      TREE_Type+"."+tyname+"; }\n");
+		extras.append("\tpublic boolean isFloatingPoint() { return "+
+			      isFloat+"; }\n");
+		extras.append("\tpublic boolean isDoubleWord() { return "+
+			      isDouble+"; }\n");
+		extras.append("}, inf.tempFactory() );\n");
+		if (d.type != Type.POINTER) // pointers must be declared expl.
+		    extras.append("declare("+ilp.head+", "+
+				  "HClass."+clsname+");\n");
+	    }
+	}
+    }
     /** Writes the Instruction Selection Method to <code>out</code>.
 	<BR> <B>modifies:</B> <code>out</code>
 	<BR> <B>effects:</B>
@@ -781,6 +822,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 		PredicateBuilder makePred = new PredicateBuilder();
 	        if (r.details!=null) r.details.accept(makePred);
+		ExtraBuilder makeExtra = new ExtraBuilder();
+		if (r.details!=null) r.details.accept(makeExtra);
 
 		String matchStm = (indent + "if (" + typeCheck + indent + "){\n"+
 				   recurse.initStms.toString() +
@@ -793,6 +836,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 					 ( r.stm.toString(),
 					   matchStm, 
 					   indent + recurse.munchStms + "\n" +
+					   // declare and assign %extra Temps 
+					   makeExtra.extras.toString()+
 					   indent + r.action_str + 
 					   indent + "return;" +
 					   indent + "}", null,
@@ -810,6 +855,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		
 		PredicateBuilder makePred = new PredicateBuilder();
 		if (r.details!=null) r.details.accept(makePred);
+		ExtraBuilder makeExtra = new ExtraBuilder();
+		if (r.details!=null) r.details.accept(makeExtra);
 		
 		// TODO: add PREDICATE CHECK to end of matchStm
 		String matchStm = 
@@ -826,15 +873,15 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 					   "frame.getTempBuilder()."+
 					   "makeTemp( ROOT , inf.tempFactory());\n" +
 
-					   // declare and assign %extra Temps 
-
-					   
 					   // insert a type declare
 					   // for r.result.id 
 					   (isData?"":"clearDecl();\n"+
 					    "declare("+r.result_id+", "+
 					   "code.getTreeDerivation(), ROOT);"+
 					    "\n")+
+					   
+					   // declare and assign %extra Temps 
+					   makeExtra.extras.toString()+
 					   
 					   r.action_str + 
 					   indent + "return " + r.result_id + ";\n" +

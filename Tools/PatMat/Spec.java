@@ -22,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.42 2000-02-17 22:46:55 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.43 2000-02-19 10:35:17 cananian Exp $
  */
 public class Spec  {
 
@@ -1133,14 +1133,15 @@ public class Spec  {
      *  <P> <B>syntax:</B> <code> %extra { </code> ID-LIST <code> } </code>
      */
     public static class DetailExtra extends Detail {
+	public final int type;
 	public final IdList extras;
-	public DetailExtra(IdList extras) {
-	    this.extras = extras;
+	public DetailExtra(int type, IdList extras) {
+	    this.type = type; this.extras = extras;
 	}
 	/** Applies <code>v</code>'s <code>visit</code> method to <code>this</code>. */
 	public void accept(DetailVisitor v) { v.visit(this); }
 	public String toString() {
-	    return "%extra{"+((extras==null)?"":extras.toString())+"}";
+	    return "%extra"+new TypeSet(type)+"{"+((extras==null)?"":extras.toString())+"}";
 	}
     }
     /** Extension of <code>Spec.Detail</code> that stores a

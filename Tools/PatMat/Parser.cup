@@ -50,7 +50,7 @@ import java_cup.runtime.lr_parser;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.32 2000-01-14 12:32:59 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.33 2000-02-19 10:35:17 cananian Exp $
  */
 
 action code {:
@@ -114,6 +114,7 @@ non terminal DetailList detailSeq;
 non terminal IdList	idList, opt_idList;
 non terminal Exp	exp;
 non terminal Stm	stm;
+non terminal Integer    simpletype;
 non terminal TypeSet	type, typeList, opt_types;
 non terminal Integer	binops, unops;
 non terminal Leaf	sym_binops, sym_unops, sym_number, sym_segtype;
@@ -167,8 +168,9 @@ detailSeq ::=	/* empty */
 		{: RESULT=dl; :}
 	;
 
-detail	::=	KEY_EXTRA LBRACE opt_idList:il RBRACE
-		{: RESULT=new DetailExtra(il); :}
+detail	::=	KEY_EXTRA LANGLE simpletype:ty RANGLE
+                          LBRACE opt_idList:il RBRACE
+		{: RESULT=new DetailExtra(ty.intValue(), il); :}
 	|	KEY_PRED PARENED:ps
 		{: RESULT=new DetailPredicate(ps); :}
 	|	KEY_WEIGHT LANGLE ID:id COMMA number:num RANGLE
@@ -248,16 +250,22 @@ typeList ::=	type:t
 		{: t.addAll(tl); RESULT=t; :}
 	;
 
-type ::=	ID:id
-		{: TypeSet ts = new TypeSet();
+simpletype ::=	ID:id
+		{: int ty=harpoon.IR.Tree.Type.POINTER;//used if error.
 		   id = id.intern();
-		   if (id == "i") ts.set(harpoon.IR.Tree.Type.INT);
-		   else if (id == "l") ts.set(harpoon.IR.Tree.Type.LONG);
-		   else if (id == "f") ts.set(harpoon.IR.Tree.Type.FLOAT);
-		   else if (id == "d") ts.set(harpoon.IR.Tree.Type.DOUBLE);
+		   if (id == "i") ty=harpoon.IR.Tree.Type.INT;
+		   else if (id == "l") ty=harpoon.IR.Tree.Type.LONG;
+		   else if (id == "f") ty=harpoon.IR.Tree.Type.FLOAT;
+		   else if (id == "d") ty=harpoon.IR.Tree.Type.DOUBLE;
 		   else if (id == "a" || id == "p")
-		     ts.set(harpoon.IR.Tree.Type.POINTER);
+		     ty=harpoon.IR.Tree.Type.POINTER;
 		   else error("Bad type modifier: "+id, idleft);
+		   RESULT=new Integer(ty);
+		:}
+	;
+type ::=	simpletype:ty
+		{: TypeSet ts = new TypeSet();
+		   ts.set(ty.intValue());
 		   RESULT=ts;
 		:}
 	|	ID:id COLON INTEGER:w
