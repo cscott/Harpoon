@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.55 2000-03-22 08:50:36 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.56 2000-03-22 19:29:33 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -96,7 +96,8 @@ public class AsyncCode {
 			   CachingCodeFactory ucf, AllCallers.MethodSet bm,
 			   HMethod mroot, Linker linker, ClassHierarchy ch,
 			   Set other, Set done_other, boolean methodstatus,
-			   TypeMap typemap, boolean optimistic) 
+			   TypeMap typemap, boolean optimistic,
+			   boolean recycle) 
 	throws NoClassDefFoundError
     {
 	System.out.println("Entering AsyncCode.buildCode()");
@@ -123,7 +124,7 @@ public class AsyncCode {
 					   blockingcalls, hc.getMethod(), 
 					   hc, ucf,bm,mroot, linker,ch,
 					   other, done_other,methodstatus,
-					   typemap,optimistic);
+					   typemap,optimistic,recycle);
 	    quadc.accept(cv);
 	}
     }
@@ -148,7 +149,8 @@ public class AsyncCode {
 			   AllCallers.MethodSet bm, HMethod mroot, 
 			   Linker linker, ClassHierarchy ch,
 			   Set other, Set done_other, boolean methodstatus,
-			   TypeMap typemap, boolean optimistic) {
+			   TypeMap typemap, boolean optimistic,
+			   boolean recycle) {
 	    this.liveness=liveness;
 	    this.env_map=env_map;
 	    this.cont_todo=cont_todo;
@@ -166,7 +168,7 @@ public class AsyncCode {
 					       async_todo, old2new,
 					       hc,ucf,bm,mroot, linker,ch,
 					       other, done_other,methodstatus,
-					       typemap,optimistic);
+					       typemap,optimistic,recycle);
 	}
 
 	void addCode(HMethod hm, HCode hc) {
@@ -196,7 +198,7 @@ public class AsyncCode {
 	    //mark header flag
 	    System.out.println("ContVisiting"+ q);
 	    header=true;
-	    clonevisit.reset(nhm,q.getFactory().tempFactory(),false);
+	    clonevisit.reset(nhm,q.getFactory().tempFactory(),false,null);
 
 
 	    System.out.println("Reset clone visitor");
@@ -224,7 +226,7 @@ public class AsyncCode {
 
 	    //Resume method
 	    //have to reset state in visitor class
-	    clonevisit.reset(resume,q.getFactory().tempFactory(), true);
+	    clonevisit.reset(resume,q.getFactory().tempFactory(), true,q);
 	    copy(q,0);
 	    System.out.println("Finished resume copying");
 	    //addEdges should add appropriate headers
@@ -234,7 +236,7 @@ public class AsyncCode {
 
 
 	    //Exception method
-	    clonevisit.reset(exception, q.getFactory().tempFactory(), true);
+	    clonevisit.reset(exception, q.getFactory().tempFactory(), true,q);
 	    copy(q,1);
 	    System.out.println("Finished exception copying");
 	    //addEdges should add appropriate headers

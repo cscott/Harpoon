@@ -28,7 +28,7 @@ import harpoon.Util.WorkSet;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.9 2000-03-21 20:57:24 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.10 2000-03-22 19:29:34 bdemsky Exp $
  */
 public class EventDriven {
     protected final CachingCodeFactory ucf;
@@ -37,6 +37,7 @@ public class EventDriven {
     protected Map classmap;
     protected final Linker linker;
     protected boolean optimistic;
+    protected boolean recycle;
 
     /** Creates a <code>EventDriven</code>. The <code>CachingCodeFactory</code>
      *  needs to have been created from a <code>QuadSSI</code> that contains
@@ -44,12 +45,13 @@ public class EventDriven {
      *
      *  <code>HCode</code> needs to be the <code>HCode</code> for main.
      */
-    public EventDriven(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker, boolean optimistic) {
+    public EventDriven(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker, boolean optimistic, boolean recycle) {
         this.ucf = ucf;
 	this.hc = hc;
 	this.ch = ch;
 	this.linker=linker;
 	this.optimistic=optimistic;
+	this.recycle=recycle;
     }
 
     /** Returns the converted main
@@ -77,7 +79,7 @@ public class EventDriven {
 //  	    }
 //  	}
 
-	ToAsync as = new ToAsync(ucf,hc ,ch ,linker,optimistic,mcg);
+	ToAsync as = new ToAsync(ucf,hc ,ch ,linker,optimistic,mcg,recycle);
 	// transform main to mainAsync
 	HMethod newmain = as.transform();
 

@@ -42,7 +42,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.23 2000-03-22 08:50:37 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.24 2000-03-22 19:29:34 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -51,19 +51,21 @@ public class ToAsync {
     protected final Linker linker;
     protected boolean optimistic;
     protected HCodeFactory hcf;
+    protected boolean recycle;
 
     Set blockingmm;
     MetaCallGraph mcg;
 
 
     /** Creates a <code>ToAsync</code>. */
-    public ToAsync(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker, boolean optimistic, MetaCallGraph mcg) {
+    public ToAsync(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker, boolean optimistic, MetaCallGraph mcg, boolean recycle) {
 	this.linker=linker;
         this.ucf = ucf;
 	this.hc = hc;
 	this.ch = ch;
 	this.optimistic=optimistic;
 	this.mcg=mcg;
+	this.recycle=recycle;
     }
     
     public void metaStuff(BMethod bm) {
@@ -138,7 +140,8 @@ public class ToAsync {
 	    System.out.println("ToAsync is running AsyncCode on "+selone);
 	    AsyncCode.buildCode(selone, old2new, async_todo,
 				ql,blockingcalls,ucf,  bm, hc.getMethod(), 
-				linker,ch,other, done_other,status, typemap, optimistic);
+				linker,ch,other, done_other,status, typemap, 
+				optimistic,recycle);
 	}
 	return nhm;
     }

@@ -65,7 +65,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.13 2000-03-22 08:50:37 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.14 2000-03-22 19:29:33 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -88,7 +88,10 @@ public class CloningVisitor extends QuadVisitor {
     QuadFactory qf;
     boolean stillokay;
     boolean optimistic;
+    boolean recycle;
     Set blocking;
+    CALL origCall;
+
     public CloningVisitor(Set blockingcalls, Set cont_todo,
 			  Map cont_map, Map env_map, 
 			  QuadLiveness liveness, Set async_todo,
@@ -98,7 +101,7 @@ public class CloningVisitor extends QuadVisitor {
 			  Linker linker, ClassHierarchy ch,
 			  Set other, Set done_other, 
 			  boolean methodstatus, TypeMap typemap,
-			  boolean optimistic) {
+			  boolean optimistic, boolean recycle) {
 	this.liveness=liveness;
 	this.blockingcalls=blockingcalls;
 	this.cont_todo=cont_todo;
@@ -117,9 +120,10 @@ public class CloningVisitor extends QuadVisitor {
 	this.methodstatus=methodstatus;
 	this.typemap=typemap;
 	this.optimistic=optimistic;
+	this.recycle=recycle;
     }
 
-    public void reset(HMethod nhm, TempFactory otf, boolean isCont) {
+    public void reset(HMethod nhm, TempFactory otf, boolean isCont, CALL origCall) {
 	followchildren=true;
 	hcode=new ContCodeSSI(nhm);
 	qf=((ContCodeSSI)hcode).getFactory();
@@ -138,6 +142,7 @@ public class CloningVisitor extends QuadVisitor {
 	    blocking=new WorkSet();
 	else
 	    blocking=null;
+	this.origCall=origCall;
     }
     
     public HCode getCode() {
@@ -153,7 +158,7 @@ public class CloningVisitor extends QuadVisitor {
 	    return (HClass) env_map.get(q);
 	HClass nhclass=(new EnvBuilder(ucf, hc, 
 				       q, getEnvTemps(q),linker,
-				       typemap)).makeEnv();
+				       typemap,recycle)).makeEnv();
 	env_map.put(q, nhclass);
 	return nhclass;
     }
@@ -905,97 +910,116 @@ public class CloningVisitor extends QuadVisitor {
 	params[0]=tenv;
 	for (int i=0;i<src.length;i++)
 	    params[i+1]=dst[i][0];
-
-	//---------------------------------------------------------------------
-	//Build Environment NEW & CALL to init
-	HClass env=getEnv(q);
-	NEW envq=new NEW(qf, q, tenv, env);
-	Quad.addEdge(cnext,0,envq,0);
-	Temp t1=new Temp(tf),t2=new Temp(tf),t21=new Temp(tf),t22=new Temp(tf);
-	CALL callenv=new CALL(qf, q, env.getConstructors()[0],
-			      params, null, retex[1+offset], false, false, 
-			      new Temp[][]{{t1,t2},{t21,t22}},
-			      new Temp[] {tenv,retcont});
-	tenv=t1;retcont=t21;
-	Quad.addEdge(envq,0,callenv,0);
-	Quad.addEdge(callenv,1,phi,1+offset);
-	
-	//---------------------------------------------------------------------
-	//Build Continuation NEW & CALL to init
-	
-	Temp tcont=new Temp(tf);
-	HClass contclass=(HClass)cont_map.get(q);
-	NEW newc=new NEW(qf, q, tcont, contclass);
-	Quad.addEdge(callenv,0,newc,0);
-	//	HClass environment=linker.forName("harpoon.Analysis.EnvBuilder.Environment");
-	HConstructor call2const=contclass.getConstructor(new HClass[]{
-	    env});
-	Temp nt1=new Temp(tf),nt2=new Temp(tf),nt21=new Temp(tf),nt22=new Temp(tf);
-	CALL call2=new CALL(qf,q,
-			    call2const,
-			    new Temp[] {tcont, tenv}, null, retex[2+offset], 
-			    false, false, new Temp[][]{{nt1,nt2},{nt21,nt22}},
-			    new Temp[]{tcont,retcont});
-	tcont=nt1;retcont=nt21;
-	Quad.addEdge(newc,0,call2,0);
-	Quad.addEdge(call2,1,phi,2+offset);
-	
-	//---------------------------------------------------------------------
-	//Link new Continuation onto Continuation returned by blocking call
-	String pref = 
-	    ContBuilder.getPrefix(q.method().getReturnType());
-	HClass[] nextarray=
-	    new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref+"ResultContinuation")};
-	HMethod setnextmethod=
-	    calleemethod.getReturnType().getMethod("setNext",nextarray);
-	Util.assert(setnextmethod!=null,"no setNext method found");
-	Temp nnt1=new Temp(tf),nnt2=new Temp(tf);
-	CALL call3=new CALL(qf, q,
-			    setnextmethod, new Temp[] {retcont, tcont},
-			    null, retex[3+offset], true, false, 
+	if (recycle&&isCont&&(q==origCall)) {
+	    //We can recycle!!!
+	    //tthis has the temp for our object
+	    Temp tretex=new Temp(tf);
+	    HField envfield=hcode.getMethod().getDeclaringClass().getField("e");
+	    GET get1=new GET(qf,q,tenv,envfield,tthis);
+	    HClass[] envparams=getEnv(q).getConstructors()[0].getParameterTypes();
+	    HMethod hrecycle=getEnv(q).getDeclaredMethod("recycle", envparams);
+	    CALL callrec=new CALL(qf,q, hrecycle, params, null,tretex,
+				  true,false, new Temp[0]);
+	    RETURN qret=new RETURN(qf,q,null);
+	    THROW qthrow=new THROW(qf,q,tretex);
+	    Quad.addEdge(cnext,0,get1,0);
+	    Quad.addEdge(get1,0,callrec,0);
+	    Quad.addEdge(callrec,0,qret,0);
+	    Quad.addEdge(callrec,1,qthrow,0);
+	    linkFooters.add(qthrow);
+	    linkFooters.add(qret);
+	} else { 
+	    //---------------------------------------------------------------------
+	    //Build Environment NEW & CALL to init
+	    HClass env=getEnv(q);
+	    NEW envq=new NEW(qf, q, tenv, env);
+	    Quad.addEdge(cnext,0,envq,0);
+	    Temp t1=new Temp(tf),t2=new Temp(tf),t21=new Temp(tf),t22=new Temp(tf);
+	    CALL callenv=new CALL(qf, q, env.getConstructors()[0],
+				  params, null, retex[1+offset], false, false, 
+				  new Temp[][]{{t1,t2},{t21,t22}},
+				  new Temp[] {tenv,retcont});
+	    tenv=t1;retcont=t21;
+	    Quad.addEdge(envq,0,callenv,0);
+	    Quad.addEdge(callenv,1,phi,1+offset);
+	    
+	    //---------------------------------------------------------------------
+	    //Build Continuation NEW & CALL to init
+	    
+	    Temp tcont=new Temp(tf);
+	    HClass contclass=(HClass)cont_map.get(q);
+	    NEW newc=new NEW(qf, q, tcont, contclass);
+	    Quad.addEdge(callenv,0,newc,0);
+	    //	HClass environment=linker.forName("harpoon.Analysis.EnvBuilder.Environment");
+	    HConstructor call2const=contclass.getConstructor(new HClass[]{
+		env});
+	    Temp nt1=new Temp(tf),nt2=new Temp(tf),nt21=new Temp(tf),nt22=new Temp(tf);
+	    CALL call2=new CALL(qf,q,
+				call2const,
+				new Temp[] {tcont, tenv}, null, retex[2+offset], 
+				false, false, new Temp[][]{{nt1,nt2},{nt21,nt22}},
+				new Temp[]{tcont,retcont});
+	    tcont=nt1;retcont=nt21;
+	    Quad.addEdge(newc,0,call2,0);
+	    Quad.addEdge(call2,1,phi,2+offset);
+	    
+	    //---------------------------------------------------------------------
+	    //Link new Continuation onto Continuation returned by blocking call
+	    String pref = 
+		ContBuilder.getPrefix(q.method().getReturnType());
+	    HClass[] nextarray=
+		new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref+"ResultContinuation")};
+	    HMethod setnextmethod=
+		calleemethod.getReturnType().getMethod("setNext",nextarray);
+	    Util.assert(setnextmethod!=null,"no setNext method found");
+	    Temp nnt1=new Temp(tf),nnt2=new Temp(tf);
+	    CALL call3=new CALL(qf, q,
+				setnextmethod, new Temp[] {retcont, tcont},
+				null, retex[3+offset], true, false, 
 			    new Temp[][]{{nnt1,nnt2}},new Temp[]{tcont});
-	tcont=nnt1;
-	Quad.addEdge(call2, 0, call3, 0);
-	Quad.addEdge(call3, 1, phi, 3+offset);
-	
-
-	//---------------------------------------------------------------------
-	//Two possibilities:
-	//1)  We are a continuation, so we want to do a setNext(this.next)
-	//2)  We are a Async method, so we want to return continuation
-	
-	if (isCont) {
-	    Temp tnext=new Temp(tf);
-	    HClass hclass=hcode.getMethod().getDeclaringClass();
-	    HField hfield=hclass.getField("next");
-	    GET get=new GET(qf,q,
-			    tnext, hfield, tthis);
-	    Quad.addEdge(call3,0,get,0);
-	    String pref2 =
-		ContBuilder.getPrefix(hc.getMethod().getReturnType());
-	    HMethod setnextmethod2=
-		contclass.getMethod("setNext",
-				    new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref2+"ResultContinuation")});
-	    Util.assert(setnextmethod2!=null,"no setNext method found");
-	    CALL call4=new CALL(qf, q,
-				setnextmethod2, new Temp[] {tcont, tnext},
-				null, retex[4+offset], true, false, new Temp[0]);
-	    Quad.addEdge(get,0,call4,0);
-	    Quad.addEdge(call4,1,phi,4+offset);
-	    RETURN returnq=new RETURN(qf, q, null);
-	    Quad.addEdge(call4,0,returnq,0);
-	    linkFooters.add(returnq);
-	} else {
-	    RETURN returnq=new RETURN(qf,q,tcont);
-	    Quad.addEdge(call3, 0, returnq,0);
-	    linkFooters.add(returnq);
-	}
-	//---------------------------------------------------------------
-	//Do THROW of exceptions from phi node
-	
-	THROW throwq=new THROW(qf,q,pretex);    
-	Quad.addEdge(phi,0,throwq,0);
-	linkFooters.add(throwq);
+	    tcont=nnt1;
+	    Quad.addEdge(call2, 0, call3, 0);
+	    Quad.addEdge(call3, 1, phi, 3+offset);
+	    
+	    
+	    //---------------------------------------------------------------------
+	    //Two possibilities:
+	    //1)  We are a continuation, so we want to do a setNext(this.next)
+	    //2)  We are a Async method, so we want to return continuation
+	    
+	    if (isCont) {
+		Temp tnext=new Temp(tf);
+		HClass hclass=hcode.getMethod().getDeclaringClass();
+		HField hfield=hclass.getField("next");
+		GET get=new GET(qf,q,
+				tnext, hfield, tthis);
+		Quad.addEdge(call3,0,get,0);
+		String pref2 =
+		    ContBuilder.getPrefix(hc.getMethod().getReturnType());
+		HMethod setnextmethod2=
+		    contclass.getMethod("setNext",
+					new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref2+"ResultContinuation")});
+		Util.assert(setnextmethod2!=null,"no setNext method found");
+		CALL call4=new CALL(qf, q,
+				    setnextmethod2, new Temp[] {tcont, tnext},
+				    null, retex[4+offset], true, false, new Temp[0]);
+		Quad.addEdge(get,0,call4,0);
+		Quad.addEdge(call4,1,phi,4+offset);
+		RETURN returnq=new RETURN(qf, q, null);
+		Quad.addEdge(call4,0,returnq,0);
+		linkFooters.add(returnq);
+	    } else {
+		RETURN returnq=new RETURN(qf,q,tcont);
+		Quad.addEdge(call3, 0, returnq,0);
+		linkFooters.add(returnq);
+	    }
+	    //---------------------------------------------------------------
+	    //Do THROW of exceptions from phi node
+	    
+	    THROW throwq=new THROW(qf,q,pretex);    
+	    Quad.addEdge(phi,0,throwq,0);
+	    linkFooters.add(throwq);
+	}	//end *******
 	quadmap.put(q,call);
 	if (optimistic)
 	    followchildren=true;

@@ -17,6 +17,7 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.HClassMutator;
 import harpoon.ClassFile.HMethodMutator;
+import harpoon.ClassFile.HMethod;
 
 import harpoon.ClassFile.Relinker;
 import harpoon.ClassFile.UniqueName;
@@ -33,7 +34,7 @@ import java.util.Set;
  * <code>EnvBuilder</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvBuilder.java,v 1.1.2.8 2000-02-08 08:40:09 bdemsky Exp $
+ * @version $Id: EnvBuilder.java,v 1.1.2.9 2000-03-22 19:28:42 bdemsky Exp $
  */
 public class EnvBuilder {
     protected final CachingCodeFactory ucf;
@@ -43,6 +44,8 @@ public class EnvBuilder {
     public Temp[] liveout;
     protected final Linker linker;
     protected TypeMap typemap;
+    protected boolean recycle;
+
 
     /** Creates a <code>EnvBuilder</code>. Requires that the 
      *  <code>HCode</code> and <code>HCodeElement</code> objects
@@ -50,13 +53,14 @@ public class EnvBuilder {
      *  works with quad-no-ssa. <code>HCodeFactory</code> must
      *  be an <code>CachingCodeFactory</code>.
      */
-    public EnvBuilder(CachingCodeFactory ucf, HCode hc, HCodeElement hce, Temp[] lives, Linker linker,TypeMap typemap) {
+    public EnvBuilder(CachingCodeFactory ucf, HCode hc, HCodeElement hce, Temp[] lives, Linker linker,TypeMap typemap, boolean recycle) {
 	this.ucf = ucf;
         this.hc = hc;
 	this.hce = hce;
 	this.liveout = lives;
 	this.linker=linker;
 	this.typemap=typemap;
+	this.recycle=recycle;
     }
 
     public HClass makeEnv() {
@@ -82,6 +86,8 @@ public class EnvBuilder {
 
 	HConstructor nc = c[0];
 	HMethodMutator ncmutator=nc.getMutator();
+
+
 
 	int size=0;
 	for (int ii=0;ii<liveout.length;ii++)
@@ -117,8 +123,16 @@ public class EnvBuilder {
 	}
 	ncmutator.setParameterNames(parameterNames);
 	ncmutator.setParameterTypes(parameterTypes);
+
+	HMethod hrecycle=null;
+	if (recycle)
+	    hrecycle=envmutator.addDeclaredMethod("recycle", parameterTypes,
+						  HClass.Void);
+	
 	
 	ucf.put(nc, new EnvCode(nc, fields));
+	if (recycle)
+	    ucf.put(hrecycle,new EnvCode(hrecycle,fields));
 	
 	System.out.println("Leaving EnvBuilder.makeEnv()");
 	return env;

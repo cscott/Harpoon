@@ -39,7 +39,7 @@ import harpoon.Tools.BasicBlocks.BBConverter;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.11 2000-03-21 20:57:23 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.12 2000-03-22 19:28:00 bdemsky Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -153,7 +153,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 
 
 	harpoon.Analysis.EventDriven.EventDriven ed = 
-	    new harpoon.Analysis.EventDriven.EventDriven(hcf, hc, ch, linker,true);
+	    new harpoon.Analysis.EventDriven.EventDriven(hcf, hc, ch, linker,true,true);
 
 
 	
