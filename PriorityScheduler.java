@@ -317,11 +317,10 @@ public class PriorityScheduler extends Scheduler {
 
 
     protected native void setQuantaInC(long microsecs);
-    protected native long getTimeInC();
     
     /** Implements EDF (Earliest Deadline First) Algorithm */
     public long chooseThread(long micros) {
-	long microsBegin = getTimeInC();
+	long microsBegin = RealtimeClock.getTimeInC();
 	invocations++;
 	AbsoluteTime now = new AbsoluteTime(0, (int)micros*1000);
 	
@@ -428,12 +427,12 @@ public class PriorityScheduler extends Scheduler {
 		runningTime.set(defaultQuanta.getMilliseconds(),
 				defaultQuanta.getNanoseconds());
 	    setQuantaInC(runningTime.getMilliseconds()*1000);
-	    runningTimeMicros += getTimeInC() - microsBegin;
+	    runningTimeMicros += RealtimeClock.getTimeInC() - microsBegin;
 	    return runningThread;
 	}
 	
 	// Nothing to do, remain idle
-	runningTimeMicros += getTimeInC() - microsBegin;
+	runningTimeMicros += RealtimeClock.getTimeInC() - microsBegin;
 	return runningThread = 0;
     }
     
