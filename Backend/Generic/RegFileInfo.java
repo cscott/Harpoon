@@ -48,7 +48,7 @@ import java.util.Iterator;
     together before mapping them to Physical Register Temps.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.30 2000-07-14 22:18:06 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.31 2000-07-21 22:53:17 pnkfelix Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -188,17 +188,17 @@ public abstract class RegFileInfo {
 	return t.tempFactory() == regTempFactory();
     }
 
-    /** Produces a <code>Set</code> of register assignments that can
-	hold <code>t</code>.  FSK: experimental method.
+    /** Produces a mutable <code>Set</code> of register assignments
+	that can hold <code>t</code>.  FSK: experimental method.
 	<BR> <B>effects:</B> Returns a <code>Set</code> of possible
 	     register assignments for <code>t</code>, where each
-	     assignment is a <code>List</code> of Register
-	     <code>Temp</code>s.  The elements of each
+	     assignment is an unmodifiable <code>List</code> of
+	     Register <code>Temp</code>s.  The elements of each
 	     <code>List</code> are ordered according to proper
 	     placement of the Register-bitlength words of the value in
-	     <code>t</code>, low-order words first.   The Set may be
-	     a <code>SortedSet</code>, in which case the earlier
-	     assignments are favored over later ones.
+	     <code>t</code>, low-order words first.   The Set returned
+	     may be a <code>SortedSet</code>, in which case the
+	     earlier assignments are favored over later ones.
     */
     public Set getRegAssignments(Temp t) { 
 	harpoon.Util.Util.assert(false, 
