@@ -12,9 +12,11 @@ import java.util.Set;
  * <code>Liveness</code> defines an abstract class for live variable analysis.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: Liveness.java,v 1.1.2.2 2000-02-01 03:06:35 pnkfelix Exp $
+ * @version $Id: Liveness.java,v 1.1.2.3 2000-02-02 08:16:34 cananian Exp $
  */
 public abstract class Liveness {
+    /** The <code>HCode</code> for which this object contains analysis
+     *  results. */
     protected final HCode hc;
 
     /** Creates a <code>Liveness</code> object from
