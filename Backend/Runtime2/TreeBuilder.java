@@ -63,7 +63,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.2 2000-11-11 00:17:36 bdemsky Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.3 2001-05-15 16:07:07 wbeebee Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
     TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
@@ -78,7 +78,9 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 			HClass objectType, Exp length) {
 	Exp old=super.objAlloc(tf,source,dg,ap,objectType,length);
 	Temp Tobj = new Temp(tf.tempFactory(), "BRIANTEMP");
-	if (ap.noSync())
+	// If the noSync flag is on, then the second bit of the hashcode will
+	// be set, allowing locks on this object to fall through.
+	if (false||ap.noSync())
 	    return new ESEQ(tf,source, 
 		 new SEQ(tf,source,
 		   new MOVE(tf,source,
@@ -123,7 +125,6 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 				  boolean isEnter/*else exit*/) {
 	// keep this synchronized with StubCode.java
 	// and Runtime/include/jni-private.h
-	final int REF_OFFSET = 3 * POINTER_SIZE;
 
 	// first get JNIEnv *
 	Temp envT = new Temp(tf.tempFactory(), "env");

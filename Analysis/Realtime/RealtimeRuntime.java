@@ -33,13 +33,13 @@ import java.util.List;
 
 /**
  * <code>RealtimeRuntime</code> is a trivial extension of 
- * <code>harpoon.Backend.Runtime1.Runtime</code> that allows constants
+ * <code>harpoon.Backend.Runtime2.Runtime</code> that allows constants
  * to be tagged with an ImmortalMemory.
  * 
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
-public class RealtimeRuntime extends harpoon.Backend.Runtime1.Runtime {
+public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
 
     /** Create a RealtimeRuntime. */
 
