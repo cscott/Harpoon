@@ -40,6 +40,12 @@ import harpoon.Tools.PatMat.Spec.TypeSet;
 
 import java_cup.runtime.*;
 
+/** Input file parser for the instruction selection tool.
+ *
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: Parser.cup,v 1.1.2.5 1999-02-18 11:46:39 cananian Exp $
+ */
+
 action code {:
 	void error(Parser p, String message, int pos) {
 		p.errorMsg.error(pos, message);

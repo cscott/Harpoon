@@ -3,6 +3,11 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Tools.PatMat;
 
+/** Input file lexer for instruction selection tool.
+ *
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: Lexer.jlex,v 1.1.2.4 1999-02-18 11:46:38 cananian Exp $
+ */
 %%
 
 %line
