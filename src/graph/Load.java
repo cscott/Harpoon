@@ -114,6 +114,7 @@ public class Load extends Node {
 	    if (id != null) {
 		if (i == num-1)
 		    id.lastImage = true;
+		id.scaleFactor = (float)1./id.width;
 		super.process(id);
 	    }
 	    /* Continue even if a file isn't found or there are exceptions... */
