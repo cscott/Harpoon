@@ -1,18 +1,12 @@
 #!/bin/sh
 
 # Usage: run-java <class_name> <args>
+#
+# note that you can set JAVA=jdb to invoke the debugger with an identical
+# environment.
 
-# find the root of the Harpoon tree file. If you plan to run this script from
-# a directory different from ~/Harpoon/Code please set HARPOON_DIR.
-if [ -z $HARPOON_DIR ]; then
-    FLEX_DIR=`pwd`
-    HARPOON_DIR=`cd $FLEX_DIR/..; pwd`
-else
-    FLEX_DIR="${HARPOON_DIR}/Code"
-fi
-if [ -z $RUNTIME_DIR ]; then
-    RUNTIME_DIR="${HARPOON_DIR}/Runtime"
-fi
+# set FLEX_DIR
+. `dirname $0`/find-flex-dir
 
 # check java version
 optprefix=X
@@ -41,5 +35,5 @@ if type -t cygpath > /dev/null ; then
     harpoonpath=`cygpath -wp "$harpoonpath"`
 fi
 
-${JAVA:=java} -${optprefix}mx${FLEXMEM:=768m} $javaopts -Dharpoon.class.path=$harpoonpath ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} $*
+${JAVA:=java} -${optprefix}mx${FLEXMEM:=768m} $javaopts -Dharpoon.class.path=$harpoonpath $*
 exit $?
