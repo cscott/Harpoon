@@ -12,6 +12,14 @@ public class CastExpr extends Expr {
         this.expr = expr;
     }
 
+    public abstract boolean equals(Map remap, Expr e) {
+	if (e==null)
+	    return false;
+	else if (!e instanceof CastExpr)
+	    return false;
+	else return ((this.type==((CastExpr)e).type)&&equals(remap,expr,((CastExpr)e).expr));
+    }
+
     public Set getRequiredDescriptors() {
         return expr.getRequiredDescriptors();
     }

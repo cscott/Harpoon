@@ -8,6 +8,8 @@ public abstract class Expr {
 
     public Expr() {}
 
+    public abstract boolean equals(Map remap, Expr e);
+
     public abstract Set getRequiredDescriptors();
 
     public abstract void generate(CodeWriter writer, VarDescriptor dest);

@@ -11,6 +11,14 @@ public class BooleanLiteralExpr extends LiteralExpr {
         td = ReservedTypeDescriptor.INT;
     }
 
+    public abstract boolean equals(Map remap, Expr e) {
+	if (e==null)
+	    return false;
+	else if (!e instanceof BooleanLiteralExpr)
+	    return false;
+	else return (((BooleanLiteralExpr)e).value==value);
+    }
+
     public boolean getValue() {
         return value;
     }

@@ -9,6 +9,14 @@ public class IntegerLiteralExpr extends LiteralExpr {
         td = ReservedTypeDescriptor.INT;
     }
 
+    public abstract boolean equals(Map remap, Expr e) {
+	if (e==null)
+	    return false;
+	else if (!e instanceof IntegerLiteralExpr)
+	    return false;
+	else return (((IntegerLiteralExpr)e).value==value);
+    }
+
     public int getValue() {
         return value;
     }

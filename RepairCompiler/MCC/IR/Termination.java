@@ -254,9 +254,10 @@ public class Termination {
 			    boolean foundall=true;
 			    if ((q instanceof SetQuantifier)||(q instanceof ForQuantifier)) {
 				VarDescriptor vd=null;
-				if (q instanceof SetQuantifier)
+				SetDescriptor set=null;
+				if (q instanceof SetQuantifier) {
 				    vd=((SetQuantifier)q).getVar();
-				else
+				} else
 				    vd=((ForQuantifier)q).getVar();
 				if(inc instanceof SetInclusion) {
 				    SetInclusion si=(SetInclusion)inc;

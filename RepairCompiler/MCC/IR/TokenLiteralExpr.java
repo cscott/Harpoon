@@ -22,6 +22,14 @@ public class TokenLiteralExpr extends LiteralExpr {
         }           
     }
 
+    public abstract boolean equals(Map remap, Expr e) {
+	if (e==null)
+	    return false;
+	else if (!e instanceof TokenLiteralExpr)
+	    return false;
+	else return ((BooleanLiteralExpr)e).num.equals(num);
+    }
+
     public String getValue() {
         return token;
     }
