@@ -38,7 +38,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.8 2000-02-13 18:51:05 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.9 2000-02-13 20:19:10 cananian Exp $
  */
 public abstract class AlgebraicSimplification { 
     // hide constructor
@@ -239,7 +239,7 @@ public abstract class AlgebraicSimplification {
 		else { 
 		    BINOP b = (BINOP)e; 
 		    return 
-		        ((_OP(b.op) & _ADD|_MUL|_SHL|_SHR|_USHR|_AND|_OR|_XOR) != 0) &&
+		        ((_OP(b.op) & (_ADD|_MUL|_SHL|_SHR|_USHR|_AND|_OR|_XOR)) != 0) &&
 		        ((_KIND(b.getLeft()) & (_CONST|_CONST0)) != 0) &&
 		    
 		        ((_KIND(b.getRight()) & (_CONST|_CONST0)) != 0) &&
@@ -257,7 +257,7 @@ public abstract class AlgebraicSimplification {
 		    (tf, b.op, b.optype, k1.value, k2.value);
 
 
-		switch (b.optype) { 
+		switch (b.type()) { 
 		    case Type.INT: 
 		        return new CONST(tf,b,((Integer)k1pk2).intValue());
 		    case Type.LONG: 
@@ -270,7 +270,7 @@ public abstract class AlgebraicSimplification {
 		            return new CONST(tf,b,((Integer)k1pk2).intValue());
 		        }
 		    default: 
-		        throw new Error("Invalid optype: " + b.optype);
+		        throw new Error("Invalid type: " + b.type());
 		}
 	    }
 	};  
@@ -289,7 +289,7 @@ public abstract class AlgebraicSimplification {
 		    return 
 		        ((_OP(b.op) & (_ADD|_MUL|_AND|_OR|_XOR)) != 0) &&
 		        ((_KIND(b.getLeft()) & (_CONST|_CONST0)) != 0) &&
-		        ((_KIND(b.getRight()) & ~(_CONST|_CONST0|_CONSTNULL)) != 0) &&
+		        ((_KIND(b.getRight()) & (_CONST|_CONST0|_CONSTNULL)) == 0) &&
 		        (!b.isFloatingPoint());
 		}
 	    }
@@ -312,8 +312,8 @@ public abstract class AlgebraicSimplification {
 		else { 
 		    BINOP b = (BINOP)e; 
 		    return 
-		        ((_OP(b.op) & _ADD|_SHL|_SHR|_USHR) != 0) &&
-		        ((_KIND(b.getLeft()) & _BINOP|_MEM|_NAME|_TEMP|_UNOP)!=0) &&
+		        ((_OP(b.op) & (_ADD|_SHL|_SHR|_USHR)) != 0) &&
+		        ((_KIND(b.getLeft()) & (_BINOP|_MEM|_NAME|_TEMP|_UNOP))!=0) &&
 		        ((_KIND(b.getRight()) & _CONST0) != 0);
 		}
 	    }
@@ -341,7 +341,7 @@ public abstract class AlgebraicSimplification {
 	    public Exp apply(Exp e) {  
 		UNOP u1 = (UNOP)e;  
 		UNOP u2 = (UNOP)u1.getOperand();  
-		Util.assert(u1.optype == Uop.NEG && u2.optype == Uop.NEG);  
+		Util.assert(u1.op == Uop.NEG && u2.op == Uop.NEG);  
 		return u2.getOperand();  
 	    } 
 	}; 
