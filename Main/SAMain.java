@@ -93,7 +93,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.12 2002-07-09 00:20:55 cananian Exp $
+ * @version $Id: SAMain.java,v 1.13 2002-07-11 11:12:22 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -659,7 +659,7 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 	hcf = harpoon.Analysis.Tree.AlgebraicSimplification.codeFactory(hcf);
 	//hcf = harpoon.Analysis.Tree.DeadCodeElimination.codeFactory(hcf);
-	hcf = harpoon.Analysis.Tree.JumpOptimization.codeFactory(hcf);
+	//hcf = harpoon.Analysis.Tree.JumpOptimization.codeFactory(hcf);
 	if (DO_TRANSACTIONS) {
 	    hcf = syncTransformer.treeCodeFactory(frame, hcf);
 	}
