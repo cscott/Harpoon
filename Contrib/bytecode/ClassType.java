@@ -3,6 +3,7 @@
 
 package gnu.bytecode;
 import java.io.*;
+import java.util.Enumeration;
 
 public class ClassType extends ObjectType implements AttrContainer {
   public static final int minor_version = 3;
@@ -48,8 +49,6 @@ public class ClassType extends ObjectType implements AttrContainer {
   public final void setAttributes (Attribute attributes)
     { this.attributes = attributes; }
 
-  String sourcefile;
-
   boolean emitDebugInfo = true;
 
   ConstantPool constants;
@@ -85,6 +84,11 @@ public class ClassType extends ObjectType implements AttrContainer {
   {
     SourceFileAttr.setSourceFile(this, name);
   }
+  /** Get the name of the SourceFile associated with this class. */
+  public String getSourceFile() {
+      SourceFileAttr sfa = (SourceFileAttr) Attribute.get(this, "SourceFile");
+      return sfa.getSourceFile();
+  }
 
   /**
    * Set the superclass of the is class.
@@ -99,6 +103,8 @@ public class ClassType extends ObjectType implements AttrContainer {
   {
     this.superClass = superClass;
   }
+
+  public ClassType getSuper() { return this.superClass; }
 
   public ClassType[] getInterfaces() { return interfaces; }
 
@@ -241,6 +247,27 @@ public class ClassType extends ObjectType implements AttrContainer {
     Method meth = addMethod(name, flags);
     meth.setSignature(signature);
     return meth;
+  }
+  public Enumeration methods() {
+    return new Enumeration() {
+      Method m = methods;
+      public boolean hasMoreElements() { return (m!=null); }
+      public Object nextElement() { Method r = m; m=m.next; return r; }
+    };
+  }
+  public Enumeration fields() {
+    return new Enumeration() {
+      Field f = fields;
+      public boolean hasMoreElements() { return (f!=null); }
+      public Object nextElement() { Field r = f; f=f.next; return r; }
+    };
+  }
+  public Enumeration constructors() {
+    return new Enumeration() {
+      Method m = constructor;
+      public boolean hasMoreElements() { return (m!=null); }
+      public Object nextElement() { Method r = m; m=m.next; return r; }
+    };
   }
 
   /** Do various fixups after generating code but before we can write it out.

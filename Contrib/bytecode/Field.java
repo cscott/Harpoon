@@ -28,6 +28,9 @@ public class Field extends Location implements AttrContainer {
     ctype.fields_count++;
     owner = ctype;
   }
+  public int getModifiers() { return flags; }
+  public void setModifiers(int m) { flags = m; }
+
 
   void write (DataOutputStream dstr, ClassType classfile)
        throws java.io.IOException

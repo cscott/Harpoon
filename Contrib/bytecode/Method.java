@@ -45,6 +45,9 @@ public class Method implements AttrContainer {
     classfile = clfile;
   }
 
+  public final void setModifiers(int m) { access_flags = m; }
+  public final int  getModifiers() { return access_flags; }
+
   public final void setStaticFlag (boolean is_static) {
     if (is_static)
       access_flags |= Access.STATIC;
