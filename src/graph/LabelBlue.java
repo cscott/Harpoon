@@ -248,16 +248,18 @@ public class LabelBlue extends Node {
 	*/
 	//this sampling method steps through the image at regular intervals and
 	//takes a jittered random sample centered around each step
-	int sampleStep = 4;
+	int sampleStep = 1;
 	int halfStep = sampleStep/2;
 	int jitter;
 	for (int count = halfStep; count < length - halfStep; count += sampleStep) {
-	    jitter = (int)(Math.random()*sampleStep - halfStep);
+	    //jitter = (int)(Math.random()*sampleStep - halfStep);
+	    jitter = 0;
 	    point = count+jitter;
 	    rval = (rvals[point]|256)&255;
 	    gval = (gvals[point]|256)&255;
 	    bval = (bvals[point]|256)&255;
 	    diff = calcDiff(rval, gval, bval);
+	    //diff = bval-rval-gval;
 	    sumDiff += diff;
 	    if (diff > maxDiff)
 		maxDiff = diff;
@@ -274,7 +276,6 @@ public class LabelBlue extends Node {
 	System.out.println("Threshold1: "+threshold1);
 	System.out.println("Threshold2: "+threshold2);
 	*/
-	
     }
 
     /**
@@ -465,6 +466,7 @@ public class LabelBlue extends Node {
 	    int gval = (gvals[curL]|256)&255;
 	    int rval = (rvals[curL]|256)&255;
 	    int diff = calcDiff(rval, gval, bval);
+	    //int diff = bval-rval-gval;
 	    //if below lower threshold, then mark as seen
 	    if (diff < threshold2)
 		labels[curL] = (byte)2;
