@@ -139,7 +139,7 @@ static void deflate_object(void* obj, void* client_data) {
 #elif defined(BDW_CONSERVATIVE_GC) 
 static void deflate_object(GC_PTR obj, GC_PTR client_data) {
 #elif defined(WITH_PRECISE_GC)
-static void deflate_object(struct oobj *obj, ptroff_t client_data) {
+static void deflate_object(jobject_unwrapped obj, ptroff_t client_data) {
 #endif
 #if defined(BDW_CONSERVATIVE_GC) || defined(WITH_PRECISE_GC) || defined(WITH_REALTIME_JAVA)
     struct oobj *oobj = (struct oobj *) ((void*)obj+(ptroff_t)client_data);
