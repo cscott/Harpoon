@@ -24,7 +24,7 @@ import java.util.Map;
  * control-flow graph information with elements of a canonical tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeGrapher.java,v 1.1.2.9 2000-07-16 23:40:39 cananian Exp $
+ * @version $Id: TreeGrapher.java,v 1.1.2.10 2000-07-16 23:53:51 cananian Exp $
  */
 class TreeGrapher extends CFGrapher {
     Tree firstElement = null;
@@ -38,31 +38,24 @@ class TreeGrapher extends CFGrapher {
     TreeGrapher(Code code) {
 	// Tree grapher only works on canonical trees. 
 	Util.assert(code.getName().equals("canonical-tree"));
-	Edger e = new Edger(code, new Labeler(code));
+	Edger e = new Edger(code);
 	// done.
     }
     public HCodeElement getFirstElement(HCode hcode) { return firstElement; }
     public Collection predC(HCodeElement hc) { return predMap.getValues(hc); }
     public Collection succC(HCodeElement hc) { return succMap.getValues(hc); }
 
-    private static class Labeler {
+    /** this class does the real work of the grapher */
+    private class Edger {
+	/** maps Temp.Labels to IR.Tree.LABELs */
 	private final Map labelmap = new HashMap();
-	Labeler(Code code) {
-	    class LVisitor extends TreeVisitor {
-		public void visit(Tree e) { /* no op */ }
-		public void visit(LABEL l) { labelmap.put(l.label, l); }
-	    }
-	    TreeVisitor tv = new LVisitor();
-	    for (Iterator it=code.getElementsI(); it.hasNext(); )
-		((Tree)it.next()).accept(tv);
-	}
-	LABEL lookup(Label l) {
+	/** Look up an IR.Tree.LABEL given a Temp.Label. */
+	private LABEL lookup(Label l) {
 	    Util.assert(labelmap.containsKey(l));
 	    return (LABEL)labelmap.get(l);
 	}
-    }
-    private class Edger {
-	void addEdge(final Tree from, final Tree to) {
+	/** Add a <from, to> edge to the predMap and succMap */
+	private void addEdge(final Tree from, final Tree to) {
 	    HCodeEdge hce = new HCodeEdge() {
 		public HCodeElement from() { return from; }
 		public HCodeElement to() { return to; }
@@ -71,8 +64,17 @@ class TreeGrapher extends CFGrapher {
 	    predMap.add(to, hce);
 	    succMap.add(from, hce);
 	}
-	Edger(Code code, final Labeler labeler) {
-	    class EVisitor extends TreeVisitor {
+	/** the constructor does the analysis. */
+	Edger(Code code) {
+	    // collect labels from tree
+	    TreeVisitor labelv = new TreeVisitor() {
+		public void visit(Tree e) { /* no op */ }
+		public void visit(LABEL l) { labelmap.put(l.label, l); }
+	    };
+	    for (Iterator it=code.getElementsI(); it.hasNext(); )
+		((Tree)it.next()).accept(labelv);
+	    // now make all the edges
+	    TreeVisitor edgev = new TreeVisitor() {
 		Tree last = null;
 		void linkup(Stm s, boolean canFallThrough) {
 		    if (firstElement==null) firstElement = s;
@@ -83,13 +85,13 @@ class TreeGrapher extends CFGrapher {
 		public void visit(Stm s) { linkup(s, true); }
 		public void visit(CALL c) {
 		    // edge to handler; also fall-through.
-		    addEdge(c, labeler.lookup(c.getHandler().label));
+		    addEdge(c, lookup(c.getHandler().label));
 		    linkup(c, true);
 		}
 		public void visit(CJUMP c) {
 		    // edges to iftrue and iffalse; no fall-through.
-		    addEdge(c, labeler.lookup(c.iffalse));
-		    addEdge(c, labeler.lookup(c.iftrue));
+		    addEdge(c, lookup(c.iffalse));
+		    addEdge(c, lookup(c.iftrue));
 		    linkup(c, false);
 		}
 		public void visit(ESEQ e) {
@@ -98,7 +100,7 @@ class TreeGrapher extends CFGrapher {
 		public void visit(JUMP j) {
 		    // edges to targets list. no fall-through.
 		    for (LabelList ll=j.targets; ll!=null; ll=ll.tail)
-			addEdge(j, labeler.lookup(ll.head));
+			addEdge(j, lookup(ll.head));
 		    linkup(j, false);
 		}
 		public void visit(RETURN r) {
@@ -110,11 +112,11 @@ class TreeGrapher extends CFGrapher {
 		    // no fall-through.
 		    linkup(t, false);
 		}
-	    }
-	    TreeVisitor tv = new EVisitor();
+	    };
 	    // iterate in depth-first pre-order:
 	    for (Iterator it=code.getElementsI(); it.hasNext(); )
-		((Tree)it.next()).accept(tv);
+		((Tree)it.next()).accept(edgev);
+	    // done!
 	}
     }
 }
