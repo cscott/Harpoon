@@ -157,6 +157,16 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
     }
 }
 
+#ifdef WITH_TRANSACTIONS
+/* transactional version of writeBytes -- problematic!  how do we
+ * undo bytes written to a file descriptor? punting on the problem
+ * for now & just writing the bytes. */
+JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes_00024_00024withtrans
+(JNIEnv * env, jobject obj, jobject commitrec, jbyteArray ba, jint start, jint len) { 
+  Java_java_io_FileOutputStream_writeBytes(env, obj, ba, start, len);
+}
+#endif /* WITH_TRANSACTIONS */
+
 /*
  * Class:     java_io_FileOutputStream
  * Method:    close

@@ -3,12 +3,13 @@ MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
 SUBDIRS = jni java.io java.lang java.lang.reflect java.net \
 	java.util java.util.zip \
-	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) $(STATSDIR) $(CAMDIR)
+	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) $(STATSDIR) $(CAMDIR) \
+	$(TRANSACTDIR)
 # make sure even the conditionally-compiled subdirectories are included
 # in the distribution.
 DIST_SUBDIRS = jni java.io java.lang java.lang.reflect java.net \
 	java.util java.util.zip \
-        gc clheap nativeio stats cam
+        gc clheap nativeio stats cam transact
 EXTRA_DIST = README
 
 # cruft to define the conditional directories. --------------------------
@@ -39,6 +40,11 @@ if CAMERA
 CAMDIR=cam
 CAMLIB=cam/libcam.la
 endif
+# for transaction support, build transaction libraries.
+if TRANSACTIONS
+TRANSACTDIR=transact
+TRANSACTLIB=transact/libtransact.la
+endif
 
 # see run% rule in top-level makefile to see how to generate a binary
 # executable from the Java.a file and these two libraries.
@@ -58,7 +64,8 @@ libflexc1_la_LIBADD = \
 	java.net/libjavanet.la \
 	java.util/libjavautil.la \
 	java.util.zip/libjavautilzip.la \
-	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) $(STATSLIB) $(CAMLIB)
+	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) $(STATSLIB) $(CAMLIB) \
+	$(TRANSACTLIB)
 libflexc1_la_LDFLAGS = -version-info 0:0:0 # -lbfd -liberty
 # this library depends on -lbfd and -liberty, but these ought to be in $LIBS
 
@@ -66,7 +73,8 @@ libflexc1_la_LDFLAGS = -version-info 0:0:0 # -lbfd -liberty
 if AOUT_BUILD
 LDADD = jni/libjni.la ../Java.a libflexc.la \
 	jni/jni-inflate.lo jni/jni-jnidata.lo \
-	$(foreach lib,@GC_LIB@,../$(lib)) $(PGCLIB) $(STATSLIB)
+	$(foreach lib,@GC_LIB@,../$(lib)) $(PGCLIB) $(STATSLIB) \
+	$(CLHEAPLIB) $(NATIVEIOLIB) $(CAMLIB) $(TRANSACTLIB)
 bin_PROGRAMS = startup # dump-fixup test-lookup test-gc static
 AOUTLIBRARY = libflexc.la
 endif

@@ -3,6 +3,7 @@
 #include "java_lang_Object.h"
 
 #include <assert.h>
+#include "config.h" /* for WITH_TRANSACTIONS */
 #include <sys/time.h> /* for struct timeval */
 #include <time.h> /* for struct timespec */
 
@@ -44,10 +45,9 @@ static jobject cloneHelper(JNIEnv *env, jobject obj, jsize len) {
  */
 JNIEXPORT jobject JNICALL Java_java_lang_Object_clone
   (JNIEnv *env, jobject obj) {
-    jclass clazz = (*env)->GetObjectClass(env, obj);
-    struct FNI_classinfo *info = FNI_GetClassInfo(clazz);
-    u_int32_t size = info->claz->size;
-    assert(Java_java_lang_Class_isArray(env, clazz)==JNI_FALSE);
+    struct claz *claz = FNI_UNWRAP(obj)->claz;
+    u_int32_t size = claz->size;
+    assert(claz->component_claz==NULL/* not an array*/);
     return cloneHelper(env, obj, size);
 }
 
@@ -109,3 +109,49 @@ JNIEXPORT void JNICALL Java_java_lang_Object_wait
   /* okay, do the wait */
   FNI_MonitorWait(env, _this, (millis==0)?NULL:&ts);
 }
+
+#ifdef WITH_TRANSACTIONS
+/* transaction support.  no monitor is held initially. */
+/*
+ * Class:     java_lang_Object
+ * Method:    notify
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_java_lang_Object_notify_00024_00024withtrans
+  (JNIEnv *env, jobject _this, jobject commitrec) {
+  /* called inside transaction context.  since 'too many notifies' is
+   * valid semantics, we don't have to worry about undo-ing this notify
+   * if the transaction doesn't commit.  Lock, notify, unlock.
+   * new transaction can't modify anything until this transaction commits.
+   * XXX: possible problem because listener will wake up before this
+   * transaction commits, causing a lost notification? */
+  FNI_MonitorEnter(env, _this);
+  Java_java_lang_Object_notify(env, _this);
+  FNI_MonitorExit(env, _this);
+}
+
+/*
+ * Class:     java_lang_Object
+ * Method:    notifyAll
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_java_lang_Object_notifyAll_00024_00024withtrans
+  (JNIEnv *env, jobject _this, jobject commitrec) {
+  /* same comments as above. */
+  FNI_MonitorEnter(env, _this);
+  Java_java_lang_Object_notifyAll(env, _this);
+  FNI_MonitorExit(env, _this);
+}
+/*
+ * Class:     java_lang_Object
+ * Method:    wait
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_java_lang_Object_wait_00024_00024withtrans
+  (JNIEnv *env, jobject _this, jobject commitrec, jlong millis) {
+  /* should do a commit, then a wait (ought to be atomic w/respect to
+   * notify) and then start a new (sub) transaction.  In other words,
+   * really needs to return a CommitRec. */
+  assert(0);
+}
+#endif WITH_TRANSACTIONS

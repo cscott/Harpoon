@@ -296,3 +296,12 @@ JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace
 }
 
 #endif /* HAVE_STACK_TRACE_FUNCTIONS */
+
+#ifdef WITH_TRANSACTIONS
+/* transactional version of this native method */
+JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace_00024_00024withtrans
+  (JNIEnv *env, jobject thisobj, jobject commitrec) {
+  /* SKETCH!  Leave unimplemented. */
+    return thisobj;
+}
+#endif WITH_TRANSACTIONS

@@ -81,6 +81,10 @@ struct inflated_oobj {
   ptroff_t hashcode; /* the real hashcode, since we've booted it */
   void *jni_data; /* information associated with this object by the JNI */
   void (*jni_cleanup_func)(void *jni_data);
+  /* TRANSACTION SUPPORT */
+#if WITH_TRANSACTIONS
+  struct vinfo *first_version; /* linked list of object versions */
+#endif
   /* locking information */
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   pthread_t tid; /* can be zero, if no one has this lock */

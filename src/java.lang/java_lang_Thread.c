@@ -493,6 +493,13 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_interrupt0
   (JNIEnv *env, jobject obj) {
     assert(0);
 }
+#ifdef WITH_TRANSACTIONS
+/* transactional version of this native method */
+JNIEXPORT void JNICALL Java_java_lang_Thread_interrupt0_00024_00024withtrans
+  (JNIEnv *env, jobject obj, jobject commitrec) {
+  assert(0); /* unimplemented */
+}
+#endif /* WITH_TRANSACTIONS */
 
 /* for compatibility with IBM JDK... */
 JNIEXPORT void JNICALL Java_java_lang_Thread_newThreadEvent0
