@@ -33,7 +33,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.15 1999-11-30 02:35:34 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.16 1999-11-30 03:09:34 andyb Exp $
  */
 %%
     private Instr root;
@@ -236,13 +236,13 @@ ALIGN(n) %{
 // xor: 	i,p,l
 // or:  	i,p,l
 // add: 	i,p,l,f,d
-// "sub":	i,p,f,d		l
-// shl:		i,p		l
-// shr:		i,p		l
-// ushr:	i,p		l
-// mul:		i,p,f,d		l
-// div:		i,p,f,d		l
-// rem:		i,p		l,f,d
+// "sub":	i,p,l,f,d		
+// shl:		i,p,l		
+// shr:		i,p,l		
+// ushr:	i,p,l		
+// mul:		i,p,l,f,d	
+// div:		i,p,l,f,d		
+// rem:		i,p,l		f,d
 // cmplt:	i,p,l,f		d
 // cmple:	i,p,l,f		d
 // cmpeq:	i,p,l,f		d
@@ -257,6 +257,42 @@ BINOP<i,p>(op, CONST(c), e)=r %pred %( isCommutative(op) && is13bit(c) )% %{
 BINOP<i,p>(op, e, CONST(c))=r %pred %( (isShift(op) || isCommutative(op)) && is13bit(c) )% %{
     emit (ROOT, bop(op)+" `s0, "+c+", `d0\n",
                 new Temp[] { r }, new Temp[] { e });
+}%
+
+BINOP<l>(SHL, e1, e2)=r %{
+    emit (ROOT, "mov `s0h, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r9 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r10 }, new Temp[] { e2 });
+    emit (ROOT, "call __ashldi3\n",
+          new Temp[] { r1 }, new Temp[] { r8, r9, r10 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r8 });
+    emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r9 });
+
+}%
+
+BINOP<l>(SHR, e1, e2)=r %{
+    emit (ROOT, "mov `s0h, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r9 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r10 }, new Temp[] { e2 });
+    emit (ROOT, "call __ashrdi3\n",
+          new Temp[] { r1 }, new Temp[] { r8, r9, r10 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r8 });
+    emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r9 });
+
+}%
+
+BINOP<l>(USHR, e1, e2)=r %{
+    emit (ROOT, "mov `s0h, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r9 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r10 }, new Temp[] { e2 });
+    emit (ROOT, "call __lshrdi3\n",
+          new Temp[] { r1 }, new Temp[] { r8, r9, r10 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r8 });
+    emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r9 });
+
 }%
 
 BINOP<i,p>(op, e1, e2)=r  %pred %( isShift(op) || isCommutative(op) )% %{
@@ -286,9 +322,9 @@ BINOP<l>(OR, e1, e2) = r %{
 }%
 
 BINOP<l>(ADD, e1, e2) = r %{
-    emit (ROOT, "addcc `s0l, `s1l, `d0l\n",
+    emitCC (ROOT, "addcc `s0l, `s1l, `d0l\n",
                new Temp[] { r }, new Temp[] { e1, e2 });
-    emit (ROOT, "addx `s0h, `s1h, `d0h\n",
+    emitCC (ROOT, "addx `s0h, `s1h, `d0h\n",
                new Temp[] { r }, new Temp[] { e1, e2 });
 }%
 
@@ -300,6 +336,13 @@ BINOP<f,d>(ADD, e1, e2)=r %{
 
 BINOP<i,p>(ADD, e1, UNOP(NEG, e2))=r /* subtraction */ %{
     emit (ROOT, "sub `s0, `s1, `d0\n",
+                new Temp[] { r }, new Temp[] { e1, e2 });
+}%
+
+BINOP<l>(ADD, e1, UNOP(NEG, e2))=r %{
+    emitCC (ROOT, "subcc `s0l, `s1l, `d0l\n", 
+                new Temp[] { r }, new Temp[] { e1, e2 });
+    emitCC (ROOT, "subx `s0h, `s1h, `d0h\n", 
                 new Temp[] { r }, new Temp[] { e1, e2 });
 }%
 
@@ -920,8 +963,10 @@ UNOP<i,p>(NEG, e)=r %{
 }%
 
 UNOP<l>(NEG, e)=r %{
-    emit (ROOT, "subcc `s0, `s1l, `d0l\n", new Temp[] { r }, new Temp[] { r0, e });
-    emit (ROOT, "subx `s0, `s1h, `d0h\n", new Temp[] { r }, new Temp[] { r0, e });
+    emitCC (ROOT, "subcc `s0, `s1l, `d0l\n", 
+                  new Temp[] { r }, new Temp[] { r0, e });
+    emitCC (ROOT, "subx `s0, `s1h, `d0h\n", 
+                  new Temp[] { r }, new Temp[] { r0, e });
 }%
 
 UNOP<f>(NEG, e)=r %{
