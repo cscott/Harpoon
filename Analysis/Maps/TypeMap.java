@@ -11,7 +11,7 @@ import harpoon.ClassFile.HCodeElement;
  * A <code>TypeMap</code> is a mapping from temporaries to their types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeMap.java,v 1.3.2.3 2000-01-31 01:47:10 cananian Exp $
+ * @version $Id: TypeMap.java,v 1.3.2.4 2000-01-31 03:31:11 cananian Exp $
  */
 public interface TypeMap  { 
     /** 
@@ -28,8 +28,8 @@ public interface TypeMap  {
      * low-level IRs to indicate an opaque pointer value which does
      * <b>not</b> correspond to a java object pointer or some
      * derivation thereof --- for example, a pointer into a method
-     * dispatch table.  This is the only time <code>HClass.Void</code>
-     * should be returned.
+     * dispatch table.  The only other time <code>HClass.Void</code>
+     * should be returned is for known-<code>null</code> pointer values.
      * 
      * @param hce The <code>HCodeElement</code> defining <code>t</code>.
      * @param t The temporary to examine.

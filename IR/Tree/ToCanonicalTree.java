@@ -26,12 +26,11 @@ import java.util.HashSet;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.21 2000-01-11 06:42:16 duncan Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.22 2000-01-31 03:31:15 cananian Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
     private Derivation m_derivation;
-    private TypeMap m_typeMap;
 
     /** Class constructor. 
      *
@@ -45,25 +44,22 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 
     	final Map dT = new HashMap();
 	final Map tT = new HashMap();
-	long time = System.currentTimeMillis(); 
-	
 
 	m_tree = translate(tf, code, dT, tT);
 	m_derivation = new Derivation() {
 	    public DList derivation(HCodeElement hce, Temp t) {
 		Util.assert(hce!=null && t!=null);
-		return (DList)dT.get(new Tuple(new Object[] { hce, t }));
+		Tuple tuple = new Tuple(new Object[] { hce, t });
+		if (dT.get(tuple)==null && tT.get(tuple)==null)
+		    throw new TypeNotKnownException(hce, t);
+		return (DList)dT.get(tuple);
 	    }
-	};
-	m_typeMap = new TypeMap() {
 	    public HClass typeMap(HCodeElement hce, Temp t) {
-		Util.assert(t.tempFactory()==tf.tempFactory());
 		Util.assert(hce!=null && t!=null);
-		Object type = tT.get(t);   // Ignores hc parameter
-		try { return (HClass)type; } 
-		catch (ClassCastException cce) { 
-		    throw (Error)((Error)type).fillInStackTrace();
-		}
+		Tuple tuple = new Tuple(new Object[] { hce, t });
+		if (dT.get(tuple)==null && tT.get(tuple)==null)
+		    throw new TypeNotKnownException(hce, t);
+		return (HClass) tT.get(tuple);
 	    }
 	};
 
@@ -87,7 +83,7 @@ public class ToCanonicalTree implements Derivation, TypeMap {
      *  <code>Temp</code>.  The <code>HCode</code> paramter is
      *  ignored. */
     public HClass typeMap(HCodeElement hce, Temp t) {
-	return m_typeMap.typeMap(hce, t);
+	return m_derivation.typeMap(hce, t);
     }
 
     // translate to canonical form
@@ -126,7 +122,6 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	    this.dT         = dT;
 	    this.tT         = tT;
 	    this.tf         = tf;
-	    this.typeMap    = code;
 	    this.ctm        = new CloningTempMap
 		(((Stm)code.getRootElement()).getFactory().tempFactory(), 
 		 tf.tempFactory());
@@ -271,20 +266,17 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	}
 	
 	protected void updateDT(TEMP tOld, TEMP tNew) {
+	    Tuple hceT = new Tuple(new Object[] { tNew, tNew.temp });
 	    if (this.derivation.derivation(tOld, tOld.temp) != null) {
-		Tuple hceT = new Tuple(new Object[] { tNew, tNew.temp });
 		dT.put
 		    (hceT, 
 		     DList.clone(this.derivation.derivation(tOld, tOld.temp)));
-		tT.put
-		    (hceT, 
-		     new Error("*** Derived pointers have no type"));
 	    }
 	    else {
-		if (this.typeMap.typeMap(tOld, tOld.temp) != null) {
+		if (this.derivation.typeMap(tOld, tOld.temp) != null) {
 		    tT.put
-			(new Tuple(new Object[] {tNew,tNew.temp}),
-			 this.typeMap.typeMap(tNew, tOld.temp));
+			(hceT,
+			 this.derivation.typeMap(tNew, tOld.temp));
 		}
 	    }
 	}

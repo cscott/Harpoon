@@ -27,75 +27,88 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.25 2000-01-14 05:12:37 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.26 2000-01-31 03:31:14 cananian Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
     private CloningTempMap  m_ctm;
     private Derivation      m_derivation;
     private Quad            m_quads;
-    private TypeMap         m_typeMap;
     
-    static class DerivationI implements Derivation {
+    private static class NullDerivation implements Derivation {
 	public DList derivation(HCodeElement hce, Temp t) { 
 	    Util.assert(hce!=null && t!=null);
-	    return null; 
+	    throw new TypeNotKnownException(hce, t);
 	}
+	public HClass typeMap(HCodeElement hce, Temp t) { 
+	    Util.assert(hce!=null && t!=null); 
+	    throw new TypeNotKnownException(hce, t);
+	} 
     }
 
     public ToNoSSA(QuadFactory newQF, Code code)
     {
-	this(newQF, code, null, null);
+	this(newQF, code, null, false);
     }
-
-    static class TypeMapI implements TypeMap {
-	public HClass typeMap(HCodeElement hce, Temp t) { 
-	    Util.assert(hce!=null && t!=null); 
-	    return null; 
-	} 
+    public ToNoSSA(QuadFactory newQF, Code code, final TypeMap typeMap)
+    {
+	this(newQF, code, typeMap==null ? null : new Derivation() {
+	    public HClass typeMap(HCodeElement hce, Temp t) {
+		// proxy given typeMap
+		return typeMap.typeMap(hce, t);
+	    }
+	    public DList derivation(HCodeElement hce, Temp t) {
+		// return null (indicating base pointer) iff typeMap is okay.
+		if (typeMap(hce,t)!=null) return null;
+		throw new TypeNotKnownException(hce, t);
+	    }
+	}, typeMap!=null);
     }
-  
-    public ToNoSSA(final QuadFactory newQF, Code code,
-		   Derivation derivation, TypeMap typeMap) {
+    public ToNoSSA(QuadFactory newQF, Code code, Derivation derivation) {
+	this(newQF, code, derivation, derivation!=null);
+    }
+    private ToNoSSA(QuadFactory newQF, Code code, Derivation derivation,
+		    boolean validDerivation) {
 	Util.assert(code.getName().equals(harpoon.IR.Quads.QuadSSI.codename) ||
 		    code.getName().equals(harpoon.IR.LowQuad.LowQuadSSA.codename) ||
 		    code.getName().equals(harpoon.IR.Quads.QuadWithTry.codename));
     
-	final Map dT = new HashMap();
-	if (derivation==null) derivation = new DerivationI();
-	if (typeMap==null) typeMap = new TypeMapI();
+	final Map dT = validDerivation ? new HashMap() : null;
 
 	m_ctm   = new CloningTempMap
 	    (((Quad)code.getRootElement()).getFactory().tempFactory(),
 	     newQF.tempFactory());
-	m_quads = translate(newQF, derivation, typeMap, dT, code);
-	m_derivation = new Derivation() {
+	m_quads = translate(newQF, derivation, dT, code);
+	m_derivation = validDerivation ? (Derivation) new Derivation() {
 	    public DList derivation(HCodeElement hce, Temp t) {
-		Util.assert(hce!=null && t!=null); 
-		return (DList)dT.get(new Tuple(new Object[] { hce, t }));
+		Util.assert(hce!=null && t!=null);
+		Util.assert(t.tempFactory() ==
+			    ((Quad)hce).getFactory().tempFactory());
+		Object type = dT.get(new Tuple(new Object[] { hce, t }));
+		if (type instanceof HClass) return null;
+		if (type instanceof DList) return (DList) type;
+		throw new TypeNotKnownException(hce, t);
 	    }
-	};
-	m_typeMap = new TypeMap() {
 	    // Note:  because we have just translated from SSA, the 
 	    // HCodeElement parameter is not necessary.  
 	    public HClass typeMap(HCodeElement hce, Temp t) {
 		Util.assert(hce!=null && t!=null);
-		Object type = dT.get(t);   // Ignores hce parameter
-		try { return (HClass)type; }
-		catch (ClassCastException cce) { 
-		    throw (Error)((Error)type).fillInStackTrace();
-		}
+		Util.assert(t.tempFactory() ==
+			    ((Quad)hce).getFactory().tempFactory());
+		Object type = dT.get(new Tuple(new Object[] { hce, t }));
+		if (type instanceof HClass) return (HClass)type;
+		if (type instanceof DList) return null;
+		throw new TypeNotKnownException(hce, t);
 	    }
-	};
+	} : (Derivation) new NullDerivation();
     }
-
-    public DList derivation(HCodeElement hce, Temp t)
-    { return m_derivation.derivation(hce, t); }
 
     public Quad getQuads()        { return m_quads; }
     public HClass typeMap(HCodeElement hce, Temp t) { 
-	return m_typeMap.typeMap(hce, t);
+	return m_derivation.typeMap(hce, t);
     }
+    public DList derivation(HCodeElement hce, Temp t)
+    { return m_derivation.derivation(hce, t); }
 
     /**
      * Translates the code in the supplied codeview from SSA to No-SSA form, 
@@ -110,7 +123,7 @@ public class ToNoSSA implements Derivation, TypeMap
      *                  translate.
      */
     private Quad translate(QuadFactory qf, Derivation derivation, 
-			   TypeMap typeMap, Map dT, Code code)
+			   Map dT, Code code)
     {
 	CloningTempMap  ctm;
 	NameMap         nm;
@@ -120,15 +133,18 @@ public class ToNoSSA implements Derivation, TypeMap
 
 	old_header   = (Quad)code.getRootElement();
 	nm           = new NameMap(); 
-	qm           = new QuadMap(m_ctm, derivation, dT, typeMap);
+	qm           = new QuadMap(m_ctm, derivation, dT);
 
 	// Remove all SIGMAs from the code
 	v = new SIGMAVisitor(m_ctm, nm, qf, qm);
 	for (Iterator i = code.getElementsI(); i.hasNext();)
 	    ((Quad)i.next()).accept(v);
       
-	// Rename variables appropriately to account for the removed SIGMAs
-	qm.rename(qf, nm, nm);
+	// note that there's no need to rename variables to account for
+	// removed sigmas, as the variables split by a sigma simply
+	// revert to their original type & definition point above the sigma.
+	// (and this *is* SSA/SSI form we're converting from: no redefinitions
+	// of SIGMA'ed variables elsewhere).
 
 	// Connect the edges of these new Quads
 	for (Iterator i = code.getElementsI(); i.hasNext();) {
@@ -314,9 +330,8 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 	int numPhis = q.numPhis(), arity = q.arity();
 	for (int i=0; i<numPhis; i++)
 	    for (int j=0; j<arity; j++)
-		pushBack(q, i, j);
+		pushBack(q, i, j); // Adds moves & updates derivation table
       
-	removeTuples(q);  // Updates derivation table
 	Quad.replace(q, label);
     }
       
@@ -327,28 +342,12 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 	int numPhis = q.numPhis(), arity = q.arity();
 	for (int i=0; i<numPhis; i++)
 	    for (int j=0; j<arity; j++)
-		pushBack(q, i, j);
+		pushBack(q, i, j); // Adds moves & updates derivation table
 
-	removeTuples(q);  // Updates derivation table
 	Quad.replace(q, phi);
     }
 
-    private void removeTuples(Quad q)
-    {
-	Temp[] tDef = q.def(), tUse = q.use();       
-	Tuple t;
-
-	for (int i=0; i<tDef.length; i++) {
-	    t = new Tuple(new Object[] { q, tDef[i] });
-	    m_dT.remove(t);
-	}
-	for (int i=0; i<tUse.length; i++) {
-	    t = new Tuple(new Object[] { q, tUse[i] });
-	    m_dT.remove(t);
-	}
-    }
-  
-    // insert MOVE on edge into PHI.
+    // insert MOVE on edge into PHI & update derivation table.
     private void pushBack(PHI q, int dstIndex, int srcIndex)
     {
 	Edge e    = q.prevEdge(srcIndex);
@@ -357,12 +356,14 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 	Quad.addEdge((Quad)e.from(), e.which_succ(), m, 0);
 	Quad.addEdge(m, 0, (Quad)e.to(), e.which_pred());
 
-	// Type information does not change, *but* we need to update
-	// the derivation table
-	DList dlDst = (DList)m_dT.get(new Tuple(new Object[] { q, m.dst() }));
-	DList dlSrc = (DList)m_dT.get(new Tuple(new Object[] { q, m.src() }));
-	if (dlDst!=null) m_dT.put(new Tuple(new Object[] { m, m.dst() }), dlDst);
-	if (dlSrc!=null) m_dT.put(new Tuple(new Object[] { m, m.src() }), dlSrc);
+	if (m_dT != null) { // skip this if we're not maintaining type info
+	    // update the derivation table to reflect the new def points.
+	    Tuple oldtup = new Tuple(new Object[] { q, m.dst() });
+	    Object type = m_dT.remove(oldtup);
+	    Util.assert(type!=null, "No type for "+m.dst()+" in "+q);
+	    Tuple newtup = new Tuple(new Object[] { m, m.dst() });
+	    m_dT.put(newtup, type);
+	}
     }
 
 }
@@ -373,17 +374,14 @@ static class QuadMap // this is an inner class
     private CloningTempMap  m_ctm;
     private Derivation      m_derivation;
     private Map             m_dT;
-    private TypeMap         m_typeMap;
 
     final private Map h = new HashMap();
 
-    QuadMap(CloningTempMap ctm, Derivation derivation, 
-	    Map dT, TypeMap typeMap)
+    QuadMap(CloningTempMap ctm, Derivation derivation, Map dT)
     {
 	m_ctm         = ctm;
 	m_derivation  = derivation;
 	m_dT          = dT;
-	m_typeMap     = typeMap;
     }
 
     boolean contains(Quad old)  { return h.containsKey(old); }  
@@ -395,37 +393,9 @@ static class QuadMap // this is an inner class
     void put(Quad qOld, Quad qNew)
     {
 	h.put(qOld, qNew);
-	updateDTInfo(qOld, qNew);
+	if (m_dT!=null) updateDTInfo(qOld, qNew);
     }
   
-    // usemap not used -- remove redundant parameter
-    //
-    void rename(QuadFactory qf, TempMap defmap, TempMap usemap)
-    {
-	for (Iterator i = new HashMap(h).keySet().iterator(); i.hasNext();) {
-	    Quad head, key, value, newValue; Tuple tuple;
-
-	    key      = (Quad)i.next();
-	    value    = (Quad)h.get(key);	
-	    newValue = (Quad)value.rename(qf, defmap, usemap);
-	    h.put(key, newValue);
-	    for (int n=0; n<2; n++) {
-		Temp[] tmps = (n==0)?value.def():value.use();
-		for (int j=0; j<tmps.length; j++) {
-		    tuple = new Tuple(new Object[] { value, tmps[j] });
-		    if (m_dT.containsKey(tuple)) {
-			DList dl = DList.rename((DList)m_dT.get(tuple), defmap);
-			Temp tmp = (n==0)?newValue.def()[j]:newValue.use()[j];
-			m_dT.put(new Tuple(new Object[] { newValue, tmp }), dl);
-		    }
-		    if (m_dT.containsKey(tmps[j])) {
-			m_dT.put(defmap.tempMap(tmps[j]), m_dT.get(tmps[j]));
-		    }
-		}
-	    }
-	}
-    }
-      
     /* UTILITY METHODS FOLLOW */
 
     private Temp map(Temp t) 
@@ -435,25 +405,18 @@ static class QuadMap // this is an inner class
     {
 	Util.assert(qOld!=null && qNew != null);
 
-	DList dl; HClass hc; Temp[] tmps; Temp newTmp;
-
-	for (int j=0; j<2; j++) {
-	    tmps = (j==0)?qOld.def():qOld.use();
-	    for (int i=0; i<tmps.length; i++) {
-		dl = DList.clone(m_derivation.derivation(qOld, tmps[i]), m_ctm);
-		if (dl!=null) { // If tmps[i] is a derived ptr, update deriv info.
-		    m_dT.put(new Tuple(new Object[] { qNew, map(tmps[i]) }),dl);
-		    m_dT.put(map(tmps[i]), 
-			     new Error("*** Can't type a derived pointer: " + 
-				       map(tmps[i])));
-		}
-		else { // If the tmps[i] is NOT a derived pointer, assign its type
-		    hc = m_typeMap.typeMap(qOld, tmps[i]);
-		    if (hc!=null) {
-			m_dT.put(map(tmps[i]), hc);
-		    }
-		}
-	    }
+	Temp[] defs = qOld.def();
+	for (int i=0; i<defs.length; i++) {
+	    Tuple tuple = new Tuple(new Object[] { qNew, map(defs[i]) });
+	    HClass hc = m_derivation.typeMap(qOld, defs[i]);
+	    if (hc!=null) { // not a derived pointer.
+		m_dT.put(tuple, hc);
+		continue;
+	    } // else, is a derived pointer.
+	    DList dl = m_derivation.derivation(qOld, defs[i]);
+	    Util.assert(dl!=null, 
+			"No type information for "+defs[i]+" in "+qOld);
+	    m_dT.put(tuple, dl);
 	}
     }
 }

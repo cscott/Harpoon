@@ -26,7 +26,7 @@ import java.util.Map;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.17 2000-01-14 05:12:34 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.18 2000-01-31 03:31:12 cananian Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
@@ -93,13 +93,9 @@ final class Translate { // not public
 	}
 
         private void updateTypeInfo(Quad q) {
-	    for (int i=0; i<2; i++) {
-	        Temp[] tmps = (i==0)?q.def():q.use();
-	        for (int j=0; j<tmps.length; j++) {
-		    if (!tT.containsKey(map(tmps[j]))) 
-		        tT.put(map(tmps[j]), tym.typeMap(q, tmps[j]));
-		}
-	    }
+	    Temp[] defs = q.def();
+	    for (int i=0; i<defs.length; i++)
+		tT.put(map(defs[i]), tym.typeMap(q, defs[i]));
 	}
 
 	/** By default, just clone and set all destinations to top. */
@@ -125,13 +121,9 @@ final class Translate { // not public
 	    DList dl = new DList(map(q.objectref()), true, null);
 	    dT.put(q0.def()[0], dl);
 	    dT.put(q2.def()[0], dl);
-	    updateTypeInfo(q);
 	    // update type info
-	    tT.put(q0.def()[0], 
-		   new Error("Cant type derived pointer: " + q0.def()[0]));
-	    tT.put(q1.def()[0], HClass.Int);
-	    tT.put(q2.def()[0], 
-		   new Error("Cant type derived pointer: " + q2.def()[0]));
+	    updateTypeInfo(q);
+	    tT.put(q1.def()[0], HClass.Int);// maybe should be HClass.Void?
 	}
 
 	public final void visit(harpoon.IR.Quads.ASET q) {
@@ -151,11 +143,7 @@ final class Translate { // not public
 	    dT.put(q2.def()[0], dl);
 	    // Update type information
 	    updateTypeInfo(q);
-	    tT.put(q0.def()[0], 
-		   new Error("Cant type derived pointer: " + q0.def()[0]));
-	    tT.put(q1.def()[0], HClass.Int);
-	    tT.put(q2.def()[0], 
-		   new Error("Cant type derived pointer: " + q2.def()[0]));
+	    tT.put(q1.def()[0], HClass.Int);// maybe should be HClass.Void?
 	}
 
 	public final void visit(harpoon.IR.Quads.CALL q) {
@@ -166,9 +154,7 @@ final class Translate { // not public
 		isVirtual = false;
 		q0 = qN = new PMCONST(qf, q, extra(), q.method());
 		// Map q0.def()[0] to a generic pointer type.
-		dT.put(q0.def()[0], new DList(q0.def()[0], true, null));
-		tT.put(q0.def()[0], 
-		       new Error("Cant type derived pointer: " + q0.def()[0]));
+		tT.put(q0.def()[0], HClass.Void); // opaque pointer
 	    } else { // virtual; perform table lookup.
 		isVirtual = true;
 		q0 = new PMETHOD(qf, q, extra(q.params(0)), map(q.params(0)));
@@ -178,19 +164,10 @@ final class Translate { // not public
 		qN = q2;
 		Quad.addEdges(new Quad[] { q0, q1, q2 });
 		// update derivation table.
-		DList dl = new DList(map(q.params(0)), true, null);
-		dT.put(q0.def()[0], dl);
-		dT.put(q2.def()[0], dl);
-		tT.put(q0.def()[0], 
-		       new Error("Cant type derived pointer: " + q0.def()[0]));
-		tT.put(q1.def()[0], HClass.Int);
-		tT.put(q2.def()[0], 
-		       new Error("Cant type derived pointer: " + q2.def()[0]));
-		
-		// FIXME
-		if (tym.typeMap(q, q.params(0))==HClass.Void) { 
-		  tT.put(map(q.params(0)), qf.getLinker().forName("java.lang.Object"));
-		}
+		// pointers into claz structure are opaque.
+		tT.put(q0.def()[0], HClass.Void);
+		tT.put(q1.def()[0], HClass.Void);
+		tT.put(q2.def()[0], HClass.Void);
 	    }
 	    updateTypeInfo(q);
 	    // for some reason SIGMA doesn't have a whole-array accessor.
@@ -213,9 +190,7 @@ final class Translate { // not public
 	    if (q.isStatic()) {
 		q0 = qN = new PFCONST(qf, q, extra(), q.field());
 		// Map q0.def()[0] to a generic pointer type.
-		dT.put(q0.def()[0], new DList(q0.def()[0], true, null));
-		tT.put(q0.def()[0], 
-		       new Error("Cant type derived pointer: " + q0.def()[0]));
+		tT.put(q0.def()[0], HClass.Void);
 	    } else { // virtual
 		q0 = new PFIELD(qf, q,
 				extra(q.objectref()), map(q.objectref()));
@@ -228,11 +203,7 @@ final class Translate { // not public
 		DList dl = new DList(map(q.objectref()), true, null);
 		dT.put(q0.def()[0], dl);
 		dT.put(q2.def()[0], dl);
-		tT.put(q0.def()[0], 
-		       new Error("Cant type derived pointer: " + q0.def()[0]));
 		tT.put(q1.def()[0], HClass.Int);
-		tT.put(q2.def()[0], 
-		       new Error("Cant type derived pointer: " + q2.def()[0]));
 	    }
 	    updateTypeInfo(q);
 	    Quad q3 = new PGET(qf, q, map(q.dst()), qN.def()[0],
@@ -254,9 +225,7 @@ final class Translate { // not public
 	    if (q.isStatic()) {
 		q0 = qN = new PFCONST(qf, q, extra(), q.field());	
 		// Map q0.def()[0] to a generic pointer type.
-		dT.put(q0.def()[0], new DList(q0.def()[0], true, null));
-		tT.put(q0.def()[0], 
-		       new Error("Cant type derived pointer: " + q0.def()[0]));
+		tT.put(q0.def()[0], HClass.Void);
 	    } else { // virtual
 		q0 = new PFIELD(qf, q,
 				extra(q.objectref()), map(q.objectref()));
@@ -269,11 +238,7 @@ final class Translate { // not public
 		DList dl = new DList(map(q.objectref()), true, null);
 		dT.put(q0.def()[0], dl);
 		dT.put(q2.def()[0], dl);
-		tT.put(q0.def()[0], 
-		       new Error("Cant type derived pointer: " + q0.def()[0]));
 		tT.put(q1.def()[0], HClass.Int);
-		tT.put(q2.def()[0], 
-		       new Error("Cant type derived pointer: " + q0.def()[0]));
 	    }
 	    updateTypeInfo(q);
 	    Quad q3 = new PSET(qf, q, qN.def()[0], map(q.src()),

@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Properties;
 
-import harpoon.Analysis.Maps.TypeMap.TypeNotKnownException;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
@@ -21,9 +20,9 @@ import harpoon.Temp.TempMap;
  * and its motivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.9 2000-01-31 01:46:59 cananian Exp $
+ * @version $Id: Derivation.java,v 1.1.2.10 2000-01-31 03:31:13 cananian Exp $
  */
-public interface Derivation /*extends harpoon.Analysis.Maps.TypeMap*/ {
+public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 
     /** Map compiler temporaries to their derivations.
      * @param t The temporary to query.

@@ -26,11 +26,10 @@ import java.util.Map;
  * representation in SSA form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.23 2000-01-13 23:47:55 cananian Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.24 2000-01-31 03:31:12 cananian Exp $
  */
 public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
     private Derivation  m_derivation;
-    private TypeMap     m_typeMap;
 
     /** The name of this code view. */
     public static final String codename  = "low-quad-ssa";
@@ -44,22 +43,20 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
 	FinalMap fm = new harpoon.Backend.Maps.DefaultFinalMap();
 	quads = Translate.translate((LowQuadFactory)qf, code, tym, fm, dT, tT);
       
+	final LowQuadFactory lqf =  // javac bug workaround to let qf be
+	    (LowQuadFactory) qf;    // visible in anonymous TypeMap below.
 	m_derivation = new Derivation() {
 	    public DList derivation(HCodeElement hce, Temp t) {
 		Util.assert(hce!=null && t!=null);
+		if (dT.get(t)==null && tT.get(t)==null)
+		    throw new TypeNotKnownException(hce, t);
 		return (DList)dT.get(t);
 	    }
-	};
-	final LowQuadFactory lqf =  // javac bug workaround to let qf be
-	    (LowQuadFactory) qf;    // visible in anonymous TypeMap below.
-	m_typeMap = new TypeMap() { 
 	    public HClass typeMap(HCodeElement hce, Temp t) { 
 		Util.assert(lqf.tempFactory()==t.tempFactory());
-		Object type = tT.get(t);   // Ignores hce: this is SSA form
-		try { return (HClass)type; } 
-		catch (ClassCastException cce) { 
-		    throw (Error)((Error)type).fillInStackTrace();
-		}
+		if (dT.get(t)==null && tT.get(t)==null)
+		    throw new TypeNotKnownException(hce, t);
+		return (HClass)tT.get(t);
 	    }
 	};
     }
@@ -134,6 +131,6 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
 
     public HClass typeMap(HCodeElement hce, Temp t) {
 	// Ignores hce:  this is SSA form
-	return m_typeMap.typeMap(hce, t);
+	return m_derivation.typeMap(hce, t);
     }
 }

@@ -27,13 +27,12 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.18 2000-01-13 23:48:06 cananian Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.19 2000-01-31 03:31:15 cananian Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
     public  static   final String           codename = "canonical-tree";
     private          final Derivation       derivation;
-    private          final TypeMap          typeMap;
 
     /** Create a new <code>CanonicalTreeCode</code> from a
      *  <code>TreeCode</code> object, and a <code>Frame</code>.
@@ -46,7 +45,6 @@ public class CanonicalTreeCode extends Code {
 	translator   = new ToCanonicalTree(this.tf, code);
 	tree         = translator.getTree();
 	derivation   = translator;
-	typeMap      = translator;
     }
 
     /* Copy constructor, should only be called by the clone() method. */
@@ -64,9 +62,6 @@ public class CanonicalTreeCode extends Code {
 		Util.assert(hce!=null && t!=null);
 		return code.derivation(hce, ctm.tempMap(t));
 	    }
-	};
-
-	this.typeMap    = new TypeMap() { 
 	    public HClass typeMap(HCodeElement hce, Temp t) { 
 		Util.assert(hce!=null && t!=null);
 		return code.typeMap(hce, ctm.tempMap(t));
@@ -142,7 +137,7 @@ public class CanonicalTreeCode extends Code {
      * Implementation of the <code>Typemap<code> interface.
      */
     public HClass typeMap(HCodeElement hce, Temp t) {
-	return typeMap.typeMap(hce, t);
+	return derivation.typeMap(hce, t);
     }
 }
 

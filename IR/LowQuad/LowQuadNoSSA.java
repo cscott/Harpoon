@@ -27,11 +27,10 @@ import harpoon.Temp.Temp;
  * arity will always be 0. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.19 2000-01-13 23:47:55 cananian Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.20 2000-01-31 03:31:12 cananian Exp $
  */
 public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
     private Derivation m_derivation;
-    private TypeMap    m_typeMap;
 
     /** The name of this code view. */
     public static final String codename  = "low-quad-no-ssa";
@@ -42,10 +41,9 @@ public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
       
 	ToNoSSA translator;
       
-	translator   = new ToNoSSA(qf, code, code, code);
+	translator   = new ToNoSSA(qf, code, (Derivation) code);
 	quads        = translator.getQuads();
 	m_derivation = translator;
-	m_typeMap    = translator;
     }
   
     /**
@@ -115,6 +113,6 @@ public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
     }
 
     public HClass typeMap(HCodeElement hce, Temp t) {
-	return m_typeMap.typeMap(hce, t);
+	return m_derivation.typeMap(hce, t);
     }
 }

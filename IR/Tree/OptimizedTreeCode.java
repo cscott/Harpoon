@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.15 2000-01-13 23:48:06 cananian Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.16 2000-01-31 03:31:15 cananian Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = CanonicalTreeCode.codename;
@@ -42,7 +42,6 @@ public class OptimizedTreeCode extends Code {
     };
 
     private /*final*/ Derivation       derivation;
-    private /*final*/ TypeMap          typeMap;
   
     /** Create a new <code>OptimizedTreeCode</code> from a
      *  <code>CanonicalTreeCode</code> object, a <code>Frame</code>,
@@ -59,7 +58,6 @@ public class OptimizedTreeCode extends Code {
 	final CanonicalTreeCode optimizedCode = code;
 
 	this.derivation = optimizedCode;
-	this.typeMap    = optimizedCode;
 	this.tree       = (Stm)optimizedCode.getRootElement();
 
     }
@@ -78,9 +76,6 @@ public class OptimizedTreeCode extends Code {
 		Util.assert(hce!=null && t!=null);
 		return code.derivation(hce, ctm.tempMap(t));
 	    }
-	};
-
-	this.typeMap    = new TypeMap() { 
 	    public HClass typeMap(HCodeElement hce, Temp t) { 
 		Util.assert(hce!=null && t!=null);
 		return code.typeMap(hce, ctm.tempMap(t));
@@ -161,7 +156,7 @@ public class OptimizedTreeCode extends Code {
      * Implementation of the <code>Typemap<code> interface.
      */
     public HClass typeMap(HCodeElement hce, Temp t) {
-	return typeMap.typeMap(hce, t);
+	return derivation.typeMap(hce, t);
     }
 
     public interface TreeOptimizer { 
