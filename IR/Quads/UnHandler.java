@@ -16,7 +16,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.11 1999-03-03 02:35:12 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.12 1999-04-12 20:10:52 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -397,11 +397,12 @@ final class UnHandler {
 	    if (!q.isStatic() && !ti.get(q.params(0)).isNonNull())
 		head = nullCheck(q, head, q.params(0));
 	    ss.qm.put(q, head, nq);
+	    // 'this' is non-null by now.
+	    if (!q.isStatic()) ti.put(q.params(0),
+				      alsoNonNull(ti.get(q.params(0))));
 	    // nothing known about return values or exceptions thrown.
 	    if (q.retval()!=null) ti.put(q.retval(), Type.top);
 	    if (q.retex()!=null) ti.put(q.retex(), Type.top);
-	    if (!q.isStatic()) ti.put(q.params(0),
-				      alsoNonNull(ti.get(q.params(0))));
 	}
 
 	// no run-time checks necessary:
