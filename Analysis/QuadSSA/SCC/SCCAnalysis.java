@@ -23,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.16 1999-08-31 00:03:40 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.17 1999-09-02 18:18:11 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -790,7 +790,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		xBitWidth right= extractWidth( get( q.operands(1) ) );
 		// worst case: either number both pos and neg
 		int m = Math.max(left.minusWidth() + right.plusWidth(),
-				 left.plusWidth()  + left.minusWidth());
+				 left.plusWidth()  + right.minusWidth());
 		int p = Math.max(left.minusWidth() + right.minusWidth(),
 				 left.plusWidth()  + right.plusWidth());
 		// special case multiplication by zero, one, and two.
