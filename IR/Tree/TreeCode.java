@@ -75,7 +75,7 @@ public class TreeCode extends Code {
     // obsolete
     public static void register() { 
 	HMethod.register
-	    (codeFactory(new harpoon.Backend.Generic.DefaultFrame())); 
+	    (codeFactory(new harpoon.Backend.StrongARM.SAFrame())); 
     }
 
     public DList derivation(HCodeElement hce, Temp t) {
@@ -87,11 +87,3 @@ public class TreeCode extends Code {
 	return typeMap.typeMap(this, t);
     }
 }
-
-
-
-
-
-
-
-

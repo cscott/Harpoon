@@ -27,11 +27,11 @@ public abstract class Code extends HCode
     /** The Tree Objects composing this code view. */
     protected Tree tree;
     /** The Frame. */
-    protected final Frame frame;
+    protected /* final */ Frame frame;
     /** Tree factory. */
-    protected final TreeFactory tf;
+    protected /* final */ TreeFactory tf;
     /** The method that this code view represents. */
-    protected final HMethod parent;
+    protected /* final */ HMethod parent;
 
     /** Create a proper TreeFactory. */
     protected TreeFactory newTF(final HMethod parent) { 
@@ -209,9 +209,9 @@ public abstract class Code extends HCode
      *  the edges representing the CFG of this Tree form
      */
     class EdgeInitializer extends TreeVisitor { 
-	private static final int COMPUTE_EDGE_SETS = 0;
-	private static final int ALLOC_EDGE_ARRAYS = 1;
-	private static final int ASSIGN_EDGE_DATA  = 2;
+	private /* static */ final int COMPUTE_EDGE_SETS = 0;
+	private /* static */ final int ALLOC_EDGE_ARRAYS = 1;
+	private /* static */ final int ASSIGN_EDGE_DATA  = 2;
 
 	private Hashtable labels       = new Hashtable();
 	private Hashtable successors   = new Hashtable();
