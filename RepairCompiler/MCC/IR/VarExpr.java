@@ -38,7 +38,7 @@ public class VarExpr extends Expr {
     public VarExpr(VarDescriptor vd) {
 	this.vd=vd;
 	varname=vd.getSymbol();
-        this.td = vd.getType();	
+        this.td = vd.getType();
     }
 
     public String name() {
@@ -85,7 +85,7 @@ public class VarExpr extends Expr {
     public Set getRequiredDescriptors() {
         return new HashSet();
     }
-    
+
     public VarDescriptor getVar() {
         return vd;
     }
@@ -103,12 +103,12 @@ public class VarExpr extends Expr {
 	    Set s=new HashSet();
 	    s.add(this);
 	    return s;
-	} else 
+	} else
 	    return new HashSet();
     }
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
-        // #TBD#: bit of a hack, really should have been type checked properly 
+        // #TBD#: bit of a hack, really should have been type checked properly
         assert vd != null;
         assert vd.getType() != null;
 	this.td = vd.getType();
@@ -121,16 +121,16 @@ public class VarExpr extends Expr {
 	    return;
 	}
 
-        writer.outputline(vd.getType().getGenerateType().getSafeSymbol() + " " + dest.getSafeSymbol() + 
+        writer.outputline(vd.getType().getGenerateType().getSafeSymbol() + " " + dest.getSafeSymbol() +
                           " = (" + vd.getType().getGenerateType().getSafeSymbol() + ") " + vd.getSafeSymbol() + "; //varexpr");
 	if (vd.isGlobal() && (DOTYPECHECKS||DOMEMCHECKS) && (td instanceof StructureTypeDescriptor)) {
 	    VarDescriptor typevar=VarDescriptor.makeNew("typechecks");
 	    writer.outputline("if ("+dest.getSafeSymbol()+")");
 	    writer.startblock();
 	    if (DOTYPECHECKS)
-		writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + td.getId() + ");"); 
+		writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + td.getId() + ");");
 	    else
-		writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + td.getId() + ");"); 
+		writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + td.getId() + ");");
 	    writer.outputline("if (!"+typevar.getSafeSymbol()+")");
 	    writer.startblock();
 	    writer.outputline(dest.getSafeSymbol()+"=0;");
@@ -148,17 +148,13 @@ public class VarExpr extends Expr {
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {
         typechecked = true;
         vd = (VarDescriptor) sa.getSymbolTable().get(varname);
-
         if (vd == null) {
             //System.out.println(varname);
             sa.getErrorReporter().report(null, "Undefined variable '" + varname + "'");
             return null;
         }
-        
         assert vd.getType() != null;
-
         this.td = vd.getType();
         return this.td;
     }
-    
 }

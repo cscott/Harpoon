@@ -3,7 +3,7 @@ import MCC.Compiler;
 import java.util.*;
 
 public class SetInclusion extends Inclusion {
-    
+
     Expr elementexpr;
     SetDescriptor set;
 
@@ -59,22 +59,22 @@ public class SetInclusion extends Inclusion {
         String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
         generatedaddeditem = addeditem; // allows access to the result of the set addition later.
 
-        // we set equal to one so that if dostore == false the guard in teh 
-        // metainclusion generation for the subrules and sub quantifiers will go on        
+        // we set equal to one so that if dostore == false the guard in teh
+        // metainclusion generation for the subrules and sub quantifiers will go on
 
 
         if (dostore) {
 	    /*	    if (!Compiler.REPAIR) {
 		writer.outputline("int " + addeditem + " = 1;");
-		writer.outputline(addeditem + " = " + set.getSafeSymbol() + "_hash->add((int)" + vd.getSafeSymbol() 
+		writer.outputline(addeditem + " = " + set.getSafeSymbol() + "_hash->add((int)" + vd.getSafeSymbol()
 				  +  ", (int)" + vd.getSafeSymbol() + ");");
 				  } else {*/
 		Repair.generate_dispatch(writer, set, vd.getSafeSymbol());
 		//	    }
-	    
+
             if (SetInclusion.worklist) {
                 writer.outputline("if (" + addeditem + ")");
-                writer.startblock(); {                
+                writer.startblock(); {
                     WorkList.generate_dispatch(writer, set, vd.getSafeSymbol());
                 }
                 writer.endblock();
@@ -84,8 +84,9 @@ public class SetInclusion extends Inclusion {
 
     public boolean typecheck(SemanticAnalyzer sa) {
         TypeDescriptor td = elementexpr.typecheck(sa);
-        
+
         if (td == null) {
+            sa.getErrorReporter().report(null, "No type found for:"+elementexpr);
             return false;
         }
 
@@ -95,7 +96,7 @@ public class SetInclusion extends Inclusion {
             sa.getErrorReporter().report(null, "Type mismatch: attempting to test for types '" + td.getSymbol() + "' in set of type '" + settype.getSymbol() + "'");
             return false;
         }
-        
+
         return true;
     }
 

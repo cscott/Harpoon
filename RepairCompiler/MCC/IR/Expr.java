@@ -3,7 +3,7 @@ package MCC.IR;
 import java.util.*;
 
 public abstract class Expr {
-    
+
     TypeDescriptor td = null;
 
     public Expr() {}
@@ -17,6 +17,10 @@ public abstract class Expr {
     public TypeDescriptor getType() {
         assert td != null : toString();
         return td;
+    }
+
+    public String toString() {
+        return name();
     }
 
     public String name() {

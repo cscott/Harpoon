@@ -1,5 +1,5 @@
 #!/bin/bash
-FLAG='-O9'
+FLAG='-O0 -g'
 g++ $FLAG -c SimpleHash.cc
 g++ $FLAG -c tmap.cc
 g++ $FLAG -c instrument.cc

@@ -194,6 +194,7 @@ nonterminal	ParseNode		label;
 nonterminal	ParseNode		field;
 nonterminal	ParseNode		optptr;
 nonterminal	ParseNode		type;
+nonterminal	ParseNode		primtype;
 nonterminal	ParseNode		optindex;
 nonterminal	ParseNode		expr;
 nonterminal	ParseNode		simple_expr;
@@ -250,7 +251,17 @@ structure ::=
 	{:
 	debugMessage(PRODSTRING);
 	ParseNode global = new ParseNode("global", parser.curLine(4));
+	global.addChild("ptr");
 	global.addChild("type").addChild(type);
+	global.addChild("name").addChild(name);
+	RESULT = global;
+	:}
+
+	| primtype:type ID:name SEMICOLON
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode global = new ParseNode("global", parser.curLine(4));
+	global.addChild(type);
 	global.addChild("name").addChild(name);
 	RESULT = global;
 	:}
@@ -594,3 +605,38 @@ type ::=
 	RESULT = type;
 	:}
      	;
+
+primtype ::= 
+     
+	BIT
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode type = new ParseNode("type", parser.curLine(1));
+	type.addChild("bit");
+	RESULT = type;
+	:}
+     
+	| BYTE
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode type = new ParseNode("type", parser.curLine(1));
+	type.addChild("byte");
+	RESULT = type;
+	:}
+     
+	| SHORT
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode type = new ParseNode("type", parser.curLine(1));
+	type.addChild("short");
+	RESULT = type;
+	:}
+     
+	| INT 
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode type = new ParseNode("type", parser.curLine(1));
+	type.addChild("int");
+	RESULT = type;
+	:}
+;
