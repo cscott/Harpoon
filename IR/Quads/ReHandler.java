@@ -27,12 +27,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Enumeration;
 /**
  * <code>ReHandler</code> make exception handling implicit and adds
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.18 1999-08-26 16:13:52 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.19 1999-08-26 22:15:42 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -125,31 +126,52 @@ final class ReHandler {
 	    }
 	}
 
-	//--------------------
-	// fixup try blocks.
-	Temp[] qMp = ((METHOD)qm.getHead(old_method)).params();
-	final METHOD qM = new METHOD(qf, old_method, qMp,
-				     1 + ss.al.size());
-	final HEADER qH = (HEADER)qm.getHead(old_header);
-	Quad.addEdge(qH, 1, qM, 0);
 	Edge e = old_method.nextEdge(0);
-	Quad.addEdge(qM, 0, qm.getHead((Quad)e.to()), e.which_pred());
-	Iterator iterate=ss.al.iterator();
-	for (int i=1; iterate.hasNext();i++)
-	    Quad.addEdge(qM, i, (Quad)iterate.next(),0);
 
 	WorkSet reachable=new WorkSet();
 	WorkSet todo=new WorkSet();
-	todo.push(qH);
-	while(!todo.isEmpty()) {
-	    Quad quad=(Quad)todo.pop();
-	    if (!reachable.contains(quad)) {
-		reachable.push(quad);
-		for (int i=0;i<quad.next().length;i++) {
-		    todo.push(quad.next(i));
+	todo.push(qm.getHead((Quad)e.to()));
+	boolean  change=true;
+	WorkSet handlerset=new WorkSet();
+	while (change) {
+	    while(!todo.isEmpty()) {
+		Quad quad=(Quad)todo.pop();
+		if (!reachable.contains(quad)) {
+		    reachable.push(quad);
+		    for (int i=0;i<quad.next().length;i++) {
+			todo.push(quad.next(i));
+		    }
+		}
+	    }
+	    change=false;
+	    Iterator iterate=ss.al.iterator();
+	    while (iterate.hasNext()) {
+		HANDLER h=(HANDLER) iterate.next();
+		if (!reachable.contains(h)) {
+		    Enumeration enum=h.protectedQuads();
+		    while (enum.hasMoreElements()) {
+			if (reachable.contains(enum.nextElement())) {
+			    todo.push(h);
+			    handlerset.push(h);
+			    change=true;
+			    break;
+			}
+		    }
 		}
 	    }
 	}
+
+	Temp[] qMp = ((METHOD)qm.getHead(old_method)).params();
+	final METHOD qM = new METHOD(qf, old_method, qMp,
+				     1 + handlerset.size());
+	final HEADER qH = (HEADER)qm.getHead(old_header);
+	Quad.addEdge(qH, 1, qM, 0);
+	Quad.addEdge(qM, 0, qm.getHead((Quad)e.to()), e.which_pred());
+	Iterator iterate=handlerset.iterator();
+	for (int i=1; iterate.hasNext();i++)
+	    Quad.addEdge(qM, i, (Quad)iterate.next(),0);
+
+
 	// Modify this new CFG by emptying PHI nodes
 	// Need to make NoSSA for QuadWithTry
 	PHVisitor v = new PHVisitor(qf, reachable);
@@ -157,6 +179,24 @@ final class ReHandler {
 	    ((Quad)it.next()).visit(v);
 
 	return qH;
+    }
+
+    public static void clean(QuadWithTry code) {
+	UseDef ud=new UseDef();
+	Temp []defs=ud.allDefs(code);
+	CleanVisitor v=new CleanVisitor();
+	WorkSet toclean=new WorkSet();
+	for(int i=0;i<defs.length;i++) {
+	    if (ud.useMap(code, defs[i]).length==0) {
+		HCodeElement []udefs=ud.defMap(code, defs[i]);
+		for (int j=0;j<udefs.length;j++) {
+		    toclean.add(udefs[j]);
+		}
+	    }
+	}
+	Iterator iterate=toclean.iterator();
+	while (iterate.hasNext())
+	    ((Quad)iterate.next()).visit(v);
     }
 
     private static boolean removable(Set throwset, Set phiset, HandInfo hi, CALL call) {
@@ -760,6 +800,7 @@ class PHVisitor extends QuadVisitor
 
 	for (int i=0; i<numPhis; i++)
 	    for (int j=0; j<arity; j++)
+		if (info[j])
 		pushBack(q, i, j);
       
 	//removePHIs(q, new LABEL(m_qf, q, q.label(), new Temp[] {}, q.arity()));
@@ -768,11 +809,18 @@ class PHVisitor extends QuadVisitor
 	Quad []prev=q.prev();
 	Quad []next=q.next(); Util.assert(next.length==1);
 	int recount=0;
-	for(int i=0;i<prev.length;i++) {
-	    if (info[i])
-		Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),label,recount++);
+	if (count!=1) {
+	    for(int i=0;i<prev.length;i++) {
+		if (info[i])
+		    Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),label,recount++);
+	    }	    
+	    Quad.addEdge(label,0,next[0],q.nextEdge(0).which_pred());
+	} else {
+	    int i=0;
+	    while (!info[i])
+		i++;
+	    Quad.addEdge(prev[i], q.prevEdge(i).which_succ(), next[0], q.nextEdge(0).which_pred());
 	}
-	Quad.addEdge(label,0,next[0],q.nextEdge(0).which_pred());
     }
       
     public void visit(PHI q)
@@ -791,7 +839,8 @@ class PHVisitor extends QuadVisitor
 	int numPhis = q.numPhis(), arity = q.arity();
 	for (int i=0; i<numPhis; i++)
 	    for (int j=0; j<arity; j++)
-		pushBack(q, i, j);
+		if (info[j])
+		    pushBack(q, i, j);
 
 	//removePHIs(q, new PHI(m_qf, q, new Temp[] {}, q.arity()));
 	removeTuples(q);  // Updates derivation table
@@ -799,11 +848,18 @@ class PHVisitor extends QuadVisitor
 	Quad []prev=q.prev();
 	Quad []next=q.next(); Util.assert(next.length==1);
 	int recount=0;
-	for(int i=0;i<prev.length;i++) {
-	    if (info[i])
-		Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),phi,recount++);
+	if (count!=1) {
+	    for(int i=0;i<prev.length;i++) {
+		if (info[i])
+		    Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),phi,recount++);
+	    }
+	    Quad.addEdge(phi,0,next[0],q.nextEdge(0).which_pred());
+	} else {
+	    int i=0;
+	    while (!info[i])
+		i++;
+	    Quad.addEdge(prev[i], q.prevEdge(i).which_succ(), next[0], q.nextEdge(0).which_pred());
 	}
-	Quad.addEdge(phi,0,next[0],q.nextEdge(0).which_pred());
     }
 
     private void removePHIs(PHI q, PHI q0)
@@ -842,6 +898,7 @@ class PHVisitor extends QuadVisitor
 	    Edge from = q.prevEdge(srcIndex);
 	    MOVE m    = new MOVE(m_qf, q, q.dst(dstIndex), 
 				 q.src(dstIndex, srcIndex));
+	    reachable.add(m);
 	    Quad.addEdge(q.prev(srcIndex), from.which_succ(), m, 0);
 	    Quad.addEdge(m, 0, q, from.which_pred());
 	}
@@ -1257,4 +1314,19 @@ class TypeVisitor extends QuadVisitor {
 	return ti.typeMap(q, t);
     }
 
+}
+
+class CleanVisitor extends QuadVisitor {
+    public void visit(Quad q) {
+	//Do nothing by default
+    }
+    public void visit(CONST q) {
+	deleteit(q);
+    }
+    private void deleteit(Quad q) {
+	Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), q.next(0), q.nextEdge(0).which_pred());
+    }
+    public void visit(MOVE q) {
+	deleteit(q);
+    }
 }

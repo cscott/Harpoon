@@ -6,6 +6,7 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.Analysis.QuadSSA.DeadCode;
 import harpoon.Util.Util;
 
 /**
@@ -13,7 +14,7 @@ import harpoon.Util.Util;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.11 1999-08-19 04:06:57 bdemsky Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.12 1999-08-26 22:15:42 bdemsky Exp $
  * @see QuadNoSSA
  * @see QuadSSA
  */
@@ -37,6 +38,9 @@ public class QuadWithTry extends Code /* which extends HCode */ {
     QuadWithTry(harpoon.IR.Quads.QuadSSA quad) {
         super(quad.getMethod(), null);
 	quads = ReHandler.rehandler(this.qf, quad);
+	Peephole.normalize(quads);
+	Peephole.optimize(quads, false);
+	ReHandler.clean(this);
     }
 
     private QuadWithTry(HMethod parent, Quad quads) {
@@ -81,7 +85,7 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 		public String getCodeName() { return codename; }
 	    };
 	} else if (hcf.getCodeName().equals(harpoon.IR.Quads.QuadNoSSA.codename)) {
-	    return codeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf));
+	    return codeFactory(harpoon.IR.Quads.QuadSSA.codeFactory(hcf));
 	} else throw new Error("don't know how to make " + codename +
 			       " from " + hcf.getCodeName());
     }
