@@ -51,16 +51,19 @@ public class ATRMain {
 	    boolean timer = args[0].equalsIgnoreCase("timer");
 	    Node timer1;
 	    Node timer2;
+	    Node receivingTimer;
 	    //if timer is requested, then timer1/timer2 are made to be Timer nodes,
 	    //otherwise, they become dummy Nodes, and ImageDatas will just be passed through
 	    //with minimal performance impact
 	    if (timer) {
 		timer1 = new Timer(true, false, null);
-		timer2 = new Timer(false, true, null);
+		timer2 = new Timer(false, true, "Processing", null);
+		receivingTimer = new Timer(false, true, "Receiving Frame", null);
 	    }
 	    else {
 		timer1 = new Node();
 		timer2 = new Node();
+		receivingTimer = new Node();
 	    }
 	    Node pipe = null;
 	    Node alert = null;
@@ -103,7 +106,7 @@ public class ATRMain {
 		Node range = new RangeFind(null);
 		Node getLabelSmCmd = new Command(Command.GET_IMAGE, null);
 		pipe = 
-		timer1.linkL(cleanCache.link(n.link(calibCmd.linkL(labelBlue),
+		receivingTimer.linkL(timer1.linkL(cleanCache.link(n.link(calibCmd.linkL(labelBlue),
 						    noneCmd.linkL(copy.linkL(robCross.link(null,
 											   thresh.link(null,
 												       hyst.link(null,
@@ -113,7 +116,7 @@ public class ATRMain {
 																			range.linkL(timer2.linkL(alert))))))))))),
 					    
 					     labelBlue.link(null,
-							    getLabelSmCmd.linkL(labelSmCache))));
+							    getLabelSmCmd.linkL(labelSmCache)))));
     
 	    }
 	    else {
