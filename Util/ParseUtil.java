@@ -20,7 +20,7 @@ import java.io.PrintStream;
  * data types.  Input is from named resource files.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ParseUtil.java,v 1.1.2.4 2001-09-17 21:49:54 cananian Exp $
+ * @version $Id: ParseUtil.java,v 1.1.2.5 2001-11-10 04:14:11 cananian Exp $
  */
 public abstract class ParseUtil {
     /** Reads from the given resource, ignoring '#' comments and blank lines,
@@ -82,6 +82,8 @@ public abstract class ParseUtil {
 	if (dot < 0)
 	    throw new BadLineException("No dot separating class and field: "+
 				       fieldName);
+	if (!(dot+1 < fieldName.length()))
+	    throw new BadLineException("Dot at end of field: "+fieldName);
 	String field = fieldName.substring(dot+1);
 	String classN = fieldName.substring(0, dot);
 	HClass hc = parseClass(l, classN);
@@ -108,6 +110,8 @@ public abstract class ParseUtil {
 	    throw new BadLineException("No dot separating class and method: "+
 				       methodName);
 	String desc = methodName.substring(lparen);
+	if (!(dot+1 < lparen))
+	    throw new BadLineException("No method part: "+methodName);
 	String method = methodName.substring(dot+1, lparen);
 	String classN = methodName.substring(0, dot);
 	HClass hc = parseClass(l, classN);
@@ -162,7 +166,7 @@ public abstract class ParseUtil {
     public static class BadLineException extends IOException {
 	/** readResource will set this to the right value. */
 	int line=0;
-	BadLineException(String message) { super(message); }
+	public BadLineException(String message) { super(message); }
 	public String toString() {
 	    return super.toString() + " (line "+line+")";
 	}
