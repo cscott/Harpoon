@@ -27,7 +27,7 @@ import java.lang.reflect.Modifier;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.29.2.7 2000-01-12 00:49:42 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.29.2.8 2000-01-13 08:52:01 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -423,7 +423,8 @@ public abstract class HClass extends HPointer
   public final void print(java.io.PrintWriter pw) {
     int m;
     // package declaration.
-    pw.println("package " + getPackage() + ";");
+    if (getPackage()!=null && !getPackage().equals(""))
+      pw.println("package " + getPackage() + ";");
     // class declaration.
     m = getModifiers() & (~32); // unset the ACC_SUPER flag.
     pw.println(((m==0)?"":(Modifier.toString(m) + " ")) + 
