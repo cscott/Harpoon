@@ -24,6 +24,8 @@ public final class Scheduler
     
     // these two map fds (indices) to Threads that are blocked on them
     private static Thread[] rTable= new Thread[MAX_FD], wTable= new Thread[MAX_FD];
+    private static int[] fdarray=new int[MAX_FD];
+
 
     private static int nBlockedIO= 0;
 
@@ -123,16 +125,16 @@ public final class Scheduler
 	
 
     private static void getFDs() {
-	int fds[]= NativeIO.getFDs();
+	int fdsize= NativeIO.getFDs(fdarray);
 
 
         Thread[] table= rTable;
 
-	for (int i= 0; i < fds.length; i++)
-	    if (fds[i] != -1) { 
-	        Thread t= table[fds[i]];
+	for (int i= 0; i < fdsize; i++)
+	    if (fdarray[i] != -1) { 
+	        Thread t= table[fdarray[i]];
 		addReadyThread(t);
-		table[fds[i]]= null;
+		table[fdarray[i]]= null;
 		nBlockedIO --;
 	    }
 	    else table= wTable;
