@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.19 1998-09-02 04:22:15 cananian Exp $
+ * @version $Id: Translate.java,v 1.20 1998-09-02 04:47:12 cananian Exp $
  */
 
 /* State holds state *after* execution of corresponding instr. */
@@ -53,12 +53,17 @@ class Translate  { // not public.
 	    Temp exitTemp;
 	/** Continuation TransStates at exit of try/monitor block. */
 	    Vector continuation;
+	/** Indicates the type of context this is. */
+	    int type;
+	    static final int TRY = 0;
+	    static final int CATCH = 1;
+	    static final int MONITOR = 2;
 	/** Constructor */
-	    BlockContext(Quad eb, Temp et, Vector c) {
-		exitBlock = eb; exitTemp = et; continuation = c;
+	    BlockContext(Quad eb, Temp et, Vector c, int ty) {
+		exitBlock = eb; exitTemp = et; continuation = c; type = ty;
 	    }
-	    BlockContext() {
-		this(new NOP(), new Temp(), new Vector());
+	    BlockContext(int ty) {
+		this(new NOP(), new Temp(), new Vector(), ty);
 	    }
 	}
 	BlockContext nest[];
@@ -94,7 +99,7 @@ class Translate  { // not public.
 	    ExceptionEntry tb[] = (ExceptionEntry[]) grow(this.tryBlock);
 	    BlockContext ns[] = (BlockContext[]) grow(this.nest);
 	    tb[0] = ee;
-	    ns[0] = new BlockContext();
+	    ns[0] = new BlockContext(BlockContext.TRY);
 	    return new State(stack, lv, tb, monitorDepth, ns);
 	}
 	/** Make new state by clearing the stack and pushing a 
@@ -104,13 +109,14 @@ class Translate  { // not public.
 	    BlockContext ns[] = (BlockContext[]) this.nest.clone();
 	    ns[0] = new BlockContext(nest[0].exitBlock,
 				     nest[0].exitTemp,
-				     (Vector) nest[0].continuation.clone());
+				     (Vector) nest[0].continuation.clone(),
+				     BlockContext.CATCH);
 	    return new State(stk, lv, tryBlock, monitorDepth, ns);
 	}
 	/** Make new state by entering a monitor block. */
 	State enterMonitor() {
 	    BlockContext ns[] = (BlockContext[]) grow(this.nest);
-	    ns[0] = new BlockContext();
+	    ns[0] = new BlockContext(BlockContext.MONITOR);
 	    return new State(stack, lv, tryBlock, monitorDepth+1, ns);
 	}
 	/** Make new state by exiting a monitor block. */
@@ -325,14 +331,23 @@ class Translate  { // not public.
 		continue;
 	    }
 	    // Are we exiting a TRY or MONITOR block?
-	    else if ((!s.tryBlock[0].inTry(ts.in)) ||
-		     (ts.in.getOpcode() == Op.MONITOREXIT)) {
+	    else if ((s.nest.length > 0) && 
+		     (((s.nest[0].type == State.BlockContext.TRY) &&
+		       (!s.tryBlock[0].inTry(ts.in))) ||
+		      ((s.nest[0].type == State.BlockContext.MONITOR) &&
+		       (ts.in.getOpcode() == Op.MONITOREXIT)))) {
 		s.nest[0].continuation.addElement(ts);
-		// we'll fix up this dangling end later.
+		// we'll fix up the dangling end later.
 		continue;
 	    }
 	    // Are we exiting a CATCH block...
-	    else if (false) { // FIXME write test.
+	    else if ((s.nest.length > 0) &&
+		     (s.nest[0].type == State.BlockContext.CATCH) &&
+		     (ts.in instanceof InMerge) &&
+		     phiFromTry(s.tryBlock[0], ts.in)) {
+		s.nest[0].continuation.addElement(ts);
+		// we'll fix up the dangling end later.
+		continue;
 	    }
 	    // None of the above.
 	    else {
@@ -341,6 +356,14 @@ class Translate  { // not public.
 	}
 	// done.
 	return;
+    }
+    private static boolean phiFromTry(ExceptionEntry theTry,
+				      Instr theMerge) {
+	Instr pr[] = theMerge.prev();
+	for (int i=0; i<pr.length; i++)
+	    if (theTry.inTry(pr[i]))
+		return true;
+	return false;
     }
     private static int countTry(Instr in, ExceptionEntry[] tb) {
 	int n=0;
