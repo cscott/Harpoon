@@ -12,6 +12,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.Temp;
+import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.QuadFactory;
@@ -39,13 +40,11 @@ import java.util.Map;
  * the program.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: InstrumentAllocs.java,v 1.1 2003-02-03 16:20:31 salcianu Exp $ */
+ * @version $Id: InstrumentAllocs.java,v 1.2 2003-02-08 23:22:39 salcianu Exp $ */
 public class InstrumentAllocs extends MethodMutator
     implements java.io.Serializable {
 
     private final HMethod main;
-    private final Linker linker;
-    private final HCodeFactory parenthcf;
     private final AllocationNumbering an;
 
     private final boolean syncs;
@@ -78,58 +77,54 @@ public class InstrumentAllocs extends MethodMutator
 	    parent.getCodeName().equals(QuadNoSSA.codename) :
 	    "InstrumentAllocs works only with QuadNoSSA";
 
-	parenthcf = parent;
-
 	this.main   = main;
-	this.linker = linker;
 	this.an     = an;
 	this.syncs      = syncs;
 	this.callchains = callchains;
 
-	init_methods();
+	init_methods(linker);
     }
 
-    private void init_methods() {
+
+    private void init_methods(Linker linker) {
 	hc_obj = linker.forName("java.lang.Object");
 
 	hm_count_alloc =
-	    get_method("harpoon.Runtime.CounterSupport", "count",
+	    getMethod(linker, "harpoon.Runtime.CounterSupport", "count",
 		       new HClass[]{HClass.Int});    
 	hm_count_sync =
-	    get_method("harpoon.Runtime.CounterSupport", "countm",
+	    getMethod(linker, "harpoon.Runtime.CounterSupport", "countm",
 		       new HClass[]{hc_obj});
 
 	method3 =
-	    get_method("harpoon.Runtime.CounterSupport", "label",
+	    getMethod(linker, "harpoon.Runtime.CounterSupport", "label",
 		       new HClass[]{hc_obj, HClass.Int});
     
 	hm_call_enter = 
-	    get_method("harpoon.Runtime.CounterSupport", "callenter",
+	    getMethod(linker, "harpoon.Runtime.CounterSupport", "callenter",
 		       new HClass[]{HClass.Int});
     
 	hm_call_exit =
-	    get_method("harpoon.Runtime.CounterSupport", "callexit",
+	    getMethod(linker, "harpoon.Runtime.CounterSupport", "callexit",
 		       new HClass[0]);
 	
 	hm_instr_exit = 
-	    get_method("harpoon.Runtime.CounterSupport",
+	    getMethod(linker, "harpoon.Runtime.CounterSupport",
 		       "exit", new HClass[0]);
 	
-	hm_orig_exit = get_method("java.lang.System", "exit", "(I)V");	       
-    }
-
-    public HCodeFactory parent() {
-	return parenthcf;
+	hm_orig_exit = getMethod(linker, "java.lang.System", "exit", "(I)V");
     }
 
     // returns that method of class clsn that is called mn and has
     // arguments of types a_types
-    private HMethod get_method(String clsn, String mn, HClass[] atypes) {
+    static HMethod getMethod(Linker linker, String clsn, String mn,
+			     HClass[] atypes) {
 	return linker.forName(clsn).getMethod(mn, atypes);
     }
-
+    
     // like previous method except that the arg types are given as a string
-    private HMethod get_method(String clsn, String mn, String atypes) {
+    static HMethod getMethod(Linker linker, String clsn, String mn,
+			     String atypes) {
 	return linker.forName(clsn).getMethod(mn, atypes);
     }
 
@@ -146,7 +141,6 @@ public class InstrumentAllocs extends MethodMutator
     private HMethod hm_instr_exit;
     private HMethod hm_orig_exit;
 
-
     protected HCode mutateHCode(HCodeAndMaps input) {
 	HCode hc = input.hcode();
 
@@ -155,7 +149,7 @@ public class InstrumentAllocs extends MethodMutator
 	    equals("harpoon.Runtime.CounterSupport"))
 	    return hc;
 
-	instr_visitor.ancestor = input.ancestorElementMap();
+	instrumentProgramTermination(hc, hm_orig_exit, hm_instr_exit);
 
 	WorkSet newset = new WorkSet();
 	for(Iterator it = hc.getElementsI(); it.hasNext(); ) {
@@ -166,6 +160,8 @@ public class InstrumentAllocs extends MethodMutator
 		newset.add(q);
 	}
 	
+	instr_visitor.ancestor = input.ancestorElementMap();
+
 	for(Iterator setit = newset.iterator(); setit.hasNext(); ) {
 	    Quad q = (Quad) setit.next();
 	    instr_visitor.qf = q.getFactory();
@@ -174,9 +170,11 @@ public class InstrumentAllocs extends MethodMutator
 	}
 
 	instr_visitor.ancestor = null;
+	instr_visitor.qf       = null;
+	instr_visitor.tf       = null;
 	    
 	if (hc.getMethod().equals(main))
-	    treat_main_method(hc);
+	    treatMainMethod(hc, hm_instr_exit);
 
 	// hc.print(new java.io.PrintWriter(System.out, true));
 	return hc;
@@ -278,8 +276,8 @@ public class InstrumentAllocs extends MethodMutator
 	private void treat_allocs_real(Quad q) {
 	    assert ((q instanceof NEW) || (q instanceof ANEW)) :
 		"unexpected quad type " + q;
-	    
-	    Temp tconst = new Temp(tf);
+
+	    Temp tconst  = new Temp(tf);
 	    Temp texcept = new Temp(tf);
 
 	    // index inside AllocationNumbering
@@ -327,7 +325,7 @@ public class InstrumentAllocs extends MethodMutator
     }
     
     // connect q.prev(0) -> qcall => qphi -> q
-    private static void make_links(Quad q, CALL qcall, PHI qphi) {
+    static void make_links(Quad q, CALL qcall, PHI qphi) {
 	link_call_2_phi(qcall, qphi);
 	Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), qcall, 0);
 	Quad.addEdge(qphi, 0, q, 0);
@@ -337,11 +335,11 @@ public class InstrumentAllocs extends MethodMutator
     // make sure that any normal / exceptional return from main (which
     // is equivalent to the program termination) outputs the computed
     // allocated map by calling harpoon.Runtime.CounterSupport.exit();
-    private void treat_main_method(HCode hc) {
+    static void treatMainMethod(HCode hc, HMethod hm_instr_exit) {
 	WorkSet exitset = new WorkSet();
 	
 	for(Iterator it = hc.getElementsI(); it.hasNext(); ) {
-	    Quad q = (Quad)it.next();
+	    Quad q = (Quad) it.next();
 	    if ((q instanceof RETURN) || (q instanceof THROW))
 		exitset.add(q);
 	}
@@ -356,6 +354,27 @@ public class InstrumentAllocs extends MethodMutator
 			 false, false, new Temp[0][2], new Temp[0]);
 	    PHI qphi = new PHI(qf, q, new Temp[0], new Temp[0][2], 2);
 	    make_links(q, qcall, qphi);
+	}
+    }
+
+
+    // add code to precede each call to hm_exit by a call to hm_instr_exit
+    // (the method that outputs the result of the instrumentation)
+    static void instrumentProgramTermination
+	(HCode hcode, HMethod hm_exit, HMethod hm_instr_exit) {
+	for(Iterator it = ((Code) hcode).selectCALLs().iterator();
+	    it.hasNext(); ) {
+	    CALL call = (CALL) it.next();
+	    if (call.method().equals(hm_exit)) {
+		QuadFactory qf = call.getFactory();
+		TempFactory tf = qf.tempFactory();
+		CALL qcall =
+		    new CALL(qf, call, hm_instr_exit, new Temp[0], null,
+			     new Temp(tf), false, false, new Temp[0][2],
+			     new Temp[0]);
+		PHI qphi = new PHI(qf, call, new Temp[0], new Temp[0][2], 2);
+		make_links(call, qcall, qphi);
+	    }
 	}
     }
 
