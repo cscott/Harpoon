@@ -45,17 +45,16 @@ struct _gc_derivs {
     struct _gc_derived *derived;  /* array of derivations */
 };
 
-struct _gc_derived {
-    jint num_locs;         /* number of locations of the derived pointer */
-    jint num_base;         /* number of base pointers in the derivation */
-    struct _gc_loc *locs;  /* array of locations */
-    struct _gc_loc *base;  /* array of base pointers */
-};
-
 struct _gc_loc {
     enum loctype _loctype;  /* type of location: REG or STACK */
     jint offset_or_index;   /* offset if STACK, index if REG */
     enum sign _sign;        /* sign of base pointer, NONE if derived pointer */
+};
+
+struct _gc_derived {
+    struct _gc_loc loc;      /* location of derived pointer */
+    jint num_base;           /* number of base pointers in the derivation */
+    struct _gc_loc *base;    /* array of base pointers */
 };
 
 /* beginning and end of index */
@@ -217,6 +216,7 @@ gc_derivs_ptr get_live_derivs(gc_index_ptr ptr, int num) {
 
   /* handle remaining case */
   {
+      jint numRegDerivs = 0, numStackDerivs = 0;
       jint *data = &desc; 
       int index, offset = 0, offset_in_bits = 0;
       gc_derivs_ptr result = (gc_derivs_ptr)malloc(sizeof(struct _gc_derivs));
@@ -240,53 +240,59 @@ gc_derivs_ptr get_live_derivs(gc_index_ptr ptr, int num) {
       /* ceiling trick, get data to point to derivations */
       data += (offset_in_bits + JINT_SIZE - 1)/JINT_SIZE;
 
-      /* read in num_derivs and advance data pointer */
-      result->num_derivs = *(data++);
+      /* number of derived pointers in registers */
+      numRegDerivs = *(data++);
+      /* total number of derived pointers in stack */
+      result->num_derivs = *(data++) + numRegDerivs;
+      /* allocate memory for array of derivations */
       result->derived = (gc_derived_ptr)malloc(result->num_derivs * 
 					       sizeof(struct _gc_derived));
       
       for (index = 0; index < result->num_derivs; index++) {
-	  int locindex, baseindex, num_regs;
+	  int regindex, stackindex, baseindex = 0;
 	  struct _gc_derived *derived = result->derived+index;
-	  derived->num_locs = *(data++);
-	  num_regs = *(data++); /* number of derived pointers in regs */
-	  derived->locs = (gc_loc_ptr)malloc(derived->num_locs * 
-					     sizeof(struct _gc_loc));
-	  for (locindex = 0; locindex < derived->num_locs; locindex++) {
-	      (derived->locs+locindex)->offset_or_index = *(data++);
-	      (derived->locs+locindex)->_sign = NONE;
-	      (derived->locs+locindex)->_loctype = 
-		  (locindex < num_regs) ? REG : STACK;
-	  }
+	  /* location of derived pointer */
+	  derived->loc.offset_or_index = *(data++);
+	  /* derived pointer has no sign */
+	  derived->loc._sign = NONE;
+	  /* whether the location is in a register or on the stack */
+	  derived->loc._loctype = (index < numRegDerivs) ? REG : STACK;
+	  /* number of base pointers in this derivation */
 	  derived->num_base = *(data++);
 	  derived->base = (gc_loc_ptr)malloc(derived->num_base *
 					     sizeof(struct _gc_loc));
-	  for (baseindex = 0; baseindex < num; baseindex++) {
-	      int i = (2 * baseindex) / JINT_SIZE;
-	      int j = (2 * baseindex) % JINT_SIZE;
+	  for (regindex = 0; regindex < num; regindex++) {
+	      int i = (2 * regindex) / JINT_SIZE;
+	      int j = (2 * regindex) % JINT_SIZE;
 	      jint mask_live = 1 << (JINT_SIZE - j - 1);
 	      jint mask_sign = 1 << (JINT_SIZE - j - 2);
 	      jint reg_live = *(data+i) & mask_live;
 	      jint reg_sign = *(data+i) & mask_sign;
 	      if (reg_live) {
-		  (derived->base+baseindex)->offset_or_index = (jint)baseindex;
+		  (derived->base+baseindex)->offset_or_index = (jint)regindex;
 		  (derived->base+baseindex)->_loctype = REG;
 		  (derived->base+baseindex)->_sign = reg_sign ? PLUS : MINUS;
+		  baseindex++;
 	      }
 	  }
+	  /* increment data pointer */
 	  data += (num + JINT_SIZE - 1)/JINT_SIZE;
 
-	  for ( ; baseindex < derived->num_base; baseindex++) {
-	      (derived->base+baseindex)->offset_or_index = *(data++);
-	      (derived->base+baseindex)->_loctype = STACK;
+	  /* baseindex initially equals number of base pointers in registers */
+	  for (stackindex = baseindex; stackindex < derived->num_base; 
+	       stackindex++) {
+	      (derived->base+stackindex)->offset_or_index = *(data++);
+	      (derived->base+stackindex)->_loctype = STACK;
 	  }
-	  for (baseindex = num; baseindex < derived->num_base; baseindex++) {
-	      int i = baseindex / JINT_SIZE;
-	      int j = baseindex % JINT_SIZE;
+	  for (stackindex = baseindex ; stackindex < derived->num_base; 
+	       stackindex++) {
+	      int i = stackindex / JINT_SIZE;
+	      int j = stackindex % JINT_SIZE;
 	      jint mask_sign = 1 << (JINT_SIZE - j - 2);
 	      jint stack_sign = *(data+i) & mask_sign;
-	      (derived->base+baseindex)->_sign = stack_sign ? PLUS : MINUS;
+	      (derived->base+stackindex)->_sign = stack_sign ? PLUS : MINUS;
 	  }
+	  /* increment data pointer */
 	  data += (derived->num_base + JINT_SIZE - 1)/JINT_SIZE;
       }
       return result;
@@ -332,19 +338,10 @@ gc_derived_ptr live_derived_ptr_at(gc_derivs_ptr ptr, int n) {
     return NULL;
 }
 
-/* given a gc_derived_ptr, returns the number of locations
-   where the derived pointer is stored */
-jint num_locations(gc_derived_ptr ptr) {
-    return ptr->num_locs;
-}
-
-/* given a gc_derived_ptr, returns the nth location where the
+/* given a gc_derived_ptr, returns the location where the
    derived pointer is stored */
-gc_loc_ptr location_at(gc_derived_ptr ptr, int n) {
-    if (n < ptr->num_locs)
-	return ptr->locs+n;
-    report("ERROR: Index out of bounds");
-    return NULL;
+gc_loc_ptr location_at(gc_derived_ptr ptr) {
+  return &(ptr->loc);
 }
 
 /* given a gc_derived_ptr, returns the number of base pointers

@@ -67,13 +67,9 @@ jint num_live_derivs(gc_derivs_ptr);
    derived pointer */
 gc_derived_ptr live_derived_ptr_at(gc_derivs_ptr, int);
 
-/* given a gc_derived_ptr, returns the number of locations
-   where the derived pointer is stored */
-jint num_locations(gc_derived_ptr);
-
-/* given a gc_derived_ptr, returns the nth location where the
+/* given a gc_derived_ptr, returns the location where the
    derived pointer is stored */
-gc_loc_ptr location_at(gc_derived_ptr, int);
+gc_loc_ptr location_at(gc_derived_ptr);
 
 /* given a gc_derived_ptr, returns the number of base pointers
    making up this derived pointer */
