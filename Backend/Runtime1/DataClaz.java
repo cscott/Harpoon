@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.24 2000-12-17 20:35:10 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.25 2001-06-12 03:29:30 kkz Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -50,6 +50,7 @@ public class DataClaz extends Data {
         super("class-data", hc, f);
 	this.m_nm = f.getRuntime().nameMap;
 	this.m_tb = (TreeBuilder) f.getRuntime().treeBuilder;
+	this.MAX_SIZE = 8 * m_tb.POINTER_SIZE * m_tb.POINTER_SIZE;
 	this.root = build(f, hc, ch);
     }
 
@@ -99,11 +100,18 @@ public class DataClaz extends Data {
 	return (HDataElement) Stm.toStm(stmlist);
     }
 
+    // MAX_SIZE is the maximum size of an object (minus the header)
+    // that we can encode in the inline bitmap.
+    final int MAX_SIZE;
+
     /** Make gc bitmap or pointer to bitmap. */
     private Stm gc(Frame f, ClassHierarchy ch) {
 	if (hc.isArray()) { // arrays are special
 	    final List stmlist = new ArrayList();
-	    // bit 0 is set if the component type is not primitive
+	    // In arrays, we don't actually need the bitmap, but since the 
+	    // space is there, we use it to indicate whether the array 
+	    // contains pointers, so that the GC won't have to look into 
+	    // the claz of the component type.
 	    final long bitmap = 
 		hc.getComponentType().isPrimitive() ? 0 : 1; 
 	    if (f.pointersAreLong()) {
@@ -117,20 +125,18 @@ public class DataClaz extends Data {
 	    return Stm.toStm(stmlist);
 	}
 	// non-arrays
-	final int MAX_SIZE = 8 * m_tb.POINTER_SIZE * m_tb.POINTER_SIZE;
-	final int objectSize = m_tb.objectSize(hc) + m_tb.OBJECT_HEADER_SIZE;
+	final int objectSize = m_tb.objectSize(hc);
 	//System.out.println("Size: " + objectSize);
 	if (objectSize > MAX_SIZE) { // auxiliary table for large objects
 	    return gcaux(f, ch);
 	} else { // in-line bitmap for small objects
 	    final List stmlist = new ArrayList();
 	    final List fields = m_tb.cfm.fieldList(hc);
-	    long bitmap = 0; // octal
+	    long bitmap = 0;
 	    for (Iterator it=fields.iterator(); it.hasNext(); ) {
 		final HField hf = (HField)it.next();
 		final HClass type = hf.getType();
-		final int fieldOffset = 
-		    m_tb.cfm.fieldOffset(hf) + m_tb.OBJECT_HEADER_SIZE;
+		final int fieldOffset = m_tb.cfm.fieldOffset(hf);
 		// non-aligned objects should never be pointers
 		if (fieldOffset%m_tb.POINTER_SIZE != 0) {
 		    Util.assert(type.isPrimitive());
@@ -166,11 +172,9 @@ public class DataClaz extends Data {
 	final List fields = m_tb.cfm.fieldList(hc);
 	long bitmap = 0;
 	int j = 0; // keep track of number of bitmaps created
-	final int MAX_SIZE = 8 * m_tb.POINTER_SIZE * m_tb.POINTER_SIZE;
 	for (Iterator it = fields.iterator(); it.hasNext(); ) {
 	    HField hf = (HField)it.next();
-	    final int fieldOffset =
-		m_tb.cfm.fieldOffset(hf) + m_tb.OBJECT_HEADER_SIZE;
+	    final int fieldOffset = m_tb.cfm.fieldOffset(hf);
 	    Util.assert(j <= fieldOffset/m_tb.POINTER_SIZE);
 	    // write out completed bitmaps
 	    while(j < fieldOffset/MAX_SIZE) {
@@ -199,7 +203,7 @@ public class DataClaz extends Data {
 	    }
 	}
 	// write out remaining bitmaps
-	final int objectSize = m_tb.objectSize(hc) + m_tb.OBJECT_HEADER_SIZE;
+	final int objectSize = m_tb.objectSize(hc);
 	while(j*MAX_SIZE < objectSize) {
 	    if (f.pointersAreLong()) {
 		//System.out.println("Aux: " + 
