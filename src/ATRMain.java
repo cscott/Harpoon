@@ -95,7 +95,7 @@ public class ATRMain {
 		Node thin = new Thinning(Thinning.BLUE, null);
 		Node range = new RangeFind(null);
 		Node getLabelSmCmd = new Command(Command.GET_IMAGE, null);
-		
+		pipe = 
 		timer1.linkL(cleanCache.link(n.link(calibCmd.linkL(labelBlue),
 						    noneCmd.linkL(copy.linkL(robCross.link(null,
 											   thresh.link(null,
