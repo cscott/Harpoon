@@ -21,7 +21,7 @@ import java.util.Iterator;
  * rep instead of <code>Set</code>s of <code>Temp</code>s.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.5 1999-06-18 18:27:26 pnkfelix Exp $
+ * @version $Id: LiveVars.java,v 1.1.2.6 1999-06-24 02:02:39 pnkfelix Exp $
  */
 public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 
@@ -30,18 +30,18 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     // maps a BasicBlock 'bb' to the LiveVarInfo associated with 'bb'
     private Map bbToLvi;
     
-    /** Constructs a new <code>LiveVars</code> for <code>basicblocks</code>
-	<BR> <B>requires:</B> 
-	     <BR> 1. <code>basicblocks</code> is a
+    /** Constructs a new <code>LiveVars</code> for <code>basicblocks</code>.
+	<BR> <B>requires:</B> <OL>
+	     <LI> 1. <code>basicblocks</code> is a
 	          <code>Iterator</code> of <code>BasicBlock</code>s,	       
-	     <BR> 2. All of the instructions in
+	     <LI> 2. All of the instructions in
 	          <code>basicblocks</code> implement
 		  <code>UseDef</code>
-	     <BR> 3. No element of <code>basicblocks</code> links to a
+	     <LI> 3. No element of <code>basicblocks</code> links to a
 	          <code>BasicBlock</code> not contained within
 		  <code>basicblocks</code>
-	     <BR> 4. No <code>BasicBlock</code> is repeatedly iterated
-	          by <code>basicblocks</code>
+	     <LI> 4. No <code>BasicBlock</code> is repeatedly iterated
+	          by <code>basicblocks</code> </OL>
 	 <BR> <B>modifies:</B> <code>basicblocks</code>
 	 <BR> <B>effects:</B> constructs a new
 	      <code>BasicBlockVisitor</code> and initializes its

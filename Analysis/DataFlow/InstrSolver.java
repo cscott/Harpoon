@@ -12,7 +12,7 @@ import java.util.Collections;
  * <code>InstrSolver</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InstrSolver.java,v 1.1.2.3 1999-06-18 18:27:26 pnkfelix Exp $
+ * @version $Id: InstrSolver.java,v 1.1.2.4 1999-06-24 02:02:39 pnkfelix Exp $
  */
 public final class InstrSolver  {
     
@@ -23,7 +23,9 @@ public final class InstrSolver  {
         
     }
 
-    /** Performs dataflow analysis on a set of <code>BasicBlock</code>s.
+    /** Performs dataflow analysis on a set of
+	<code>BasicBlock</code>s.  Finds a maximum fixed point for the
+	data-flow equations defined by <code>v</code>.
 	
 	<BR> <B>requires:</B> 
 	     <OL>
@@ -40,7 +42,13 @@ public final class InstrSolver  {
 	     <code>BasicBlock</code>s linked to by <code>root</code>,
 	     performing <code>v</code>'s transfer function on each
 	     <code>BasicBlock</code> in turn, tracking for when no
-	     change occurs, at which point the analysis is complete.    
+	     change occurs, at which point the analysis is complete.
+	     Note that while this method guarantees that
+	     <code>root</code> will be visited by <code>v</code>,
+	     there is no guarantee on the number of times, if at all,
+	     <code>v</code> will visit the siblings of
+	     <code>root</code>, and therefore the analysis may
+	     terminate prematurely.
      */
     public static void worklistSolver(BasicBlock root, DataFlowBasicBlockVisitor v) {
 	WorkSet w = new WorkSet();
@@ -57,10 +65,12 @@ public final class InstrSolver  {
     } 
 
 
-    /** Performs dataflow analysis on a set of <code>BasicBlock</code>s.
+    /** Performs dataflow analysis on a set of
+	<code>BasicBlock</code>s.  Finds a maximum fixed point for the
+	data-flow equations defined by <code>v</code>.
 	
 	<BR> <B>requires:</B> 
-             <UL>
+             <OL>
 	     <LI> The elements of <code>iter</code> are
 	          <code>BasicBlock</code>s.
 	     <LI> Every instruction in the elements of
@@ -70,7 +80,7 @@ public final class InstrSolver  {
 		  <code>Instr</code>.   
 	     <LI> <code>v</code> can visit instructions of type
 	          <code>Instr</code>. 
-	     </UL>
+	     </OL>
 	<BR> <B>modifies:</B> <code>v</code>, <code>iter</code>
 	<BR> <B>effects:</B> 
              Sends <code>v</code> into the elements of
@@ -79,7 +89,9 @@ public final class InstrSolver  {
 	     performing <code>v</code>'s transfer function on each 
 	     <code>BasicBlock</code> in turn, tracking for when no
 	     change occurs, at which point the analysis is complete.
-     */ 
+	     This method guarantees that all of the
+	     <code>BasicBlock</code>s in <code>iter</code> will be
+	     visited by <code>v</code> at least once.  */
     public static void worklistSolver(Iterator iter, DataFlowBasicBlockVisitor v) {
 	WorkSet w = new WorkSet();
 	while (iter.hasNext()) w.push(iter.next());
