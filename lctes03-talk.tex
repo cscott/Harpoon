@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.5 2003-05-22 07:31:13 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.6 2003-05-22 08:34:40 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -126,7 +126,7 @@ the runtime implementation but not directly specified by the
 programmer.  This includes a claz pointer, which points to an
 external structure of information about the object's type, and
 some information to support the hashcode and locking semantics of
-Java.  Every object has a hashcode and can be locked upon, etc, etc.
+Java.  % Every object has a hashcode and can be locked upon, etc, etc.
 The second section of the object contains the fields declared by
 the programmer.  If this were a car object, these fields might
 indicate the color and model of the car.  The last section
@@ -270,7 +270,7 @@ class Car \{\\
 \begin{talknotes}
 Field compression targets the space directly allocated by the
 programmer.  In the sample class at the bottom of the slide, we
-define an object representing cars.  It's first field is a color,
+define an object representing cars.  Its first field is a color,
 and it is declared an integer which allows the enumeration of up
 to $2^{32}$ different colors of cars.
 
@@ -280,8 +280,8 @@ or constant fields.  @ Suppose we're building Ford Model-T's.
 Since they only come in black, this field will be constant and
 can be removed.
 
-@ The novel contribution is the next step, bitwidth analysis, which discovers
-tigher upper bounds on field sizes.  @  Actually, Model-T's were
+@ A novel contribution is the next step, bitwidth analysis, which discovers
+tighter upper bounds on field sizes.  @  Actually, Model-T's were
 produced in several different colors before Ford started
 mass-production.  Our bitwidth analysis could determine that
 we really only need two bits to store colors, since our program
@@ -300,7 +300,7 @@ So how do we actually obtain the information we need to do field
 compression?
 
 We'll look first at a simple constant propagation analysis, and then
-see how, by a series of incremental extensions, we can obtain a
+see how, by a series of extensions, we can obtain a
 powerful bitwidth analysis.
 
 ~%
@@ -395,9 +395,9 @@ flat integer constant domain.
 So let's see how we'd extend the lattice to make the analysis
 stronger.  Here we have a lattice that allows us to classify
 values as positive or negative, even if we don't know what the
-actual value will be. @ Here if we join $1$ and $2$ we get the
+actual value will be. @ Here if we perform meet on $1$ and $2$ we get the
 element {\tt (\_\_P)}, which indicates ``any positive number''.
-If we then join that with a negative number, say, $-2$, @ we'll
+If we then do a meet with a negative number, say, $-2$, @ we'll
 get {\tt (M\_P)}, or ``a non-zero number''.  If we later discover
 an assignment of zero, @ we finally get the $\top$ element.
 \end{talknotes}
@@ -441,8 +441,8 @@ int foo() \{\\
 
 \begin{talknotes}
 With the new lattice, we start at $\bot$ as before. @ Looking at {\tt
-  i=1}, @ we do a join with $1$ @ to get $1$.  But now, when we see
-{\tt i=2}, @ and join with $2$, @ we get {\tt (\_\_P)}, or ``a positive
+  i=1}, @ we do a meet with $1$ @ to get $1$.  But now, when we see
+{\tt i=2}, @ and meet with $2$, @ we get {\tt (\_\_P)}, or ``a positive
   integer.'' @ This time, when we get to the comparison, we can tell
 that {\tt i>0} will always be true.
 \end{talknotes}
@@ -523,7 +523,7 @@ tuples, with the ordering relations shown.
 \begin{talknotes}
 The picture is actually a little more complicated.  Here we see
 a small piece of the new expanded lattice.  We see that performing a
-join of any two positive integers will result in a tuple which
+meet of any two positive integers will result in a tuple which
 accurately reflects the minimum bitwidth needed to represent both
 numbers.
 % Performing this expansion has actually only increased the
@@ -569,12 +569,13 @@ int foo() \{\\
 
 \begin{talknotes}
 Revisiting our example: we still start with $\text{\tt i}=\bot$.
-@ Looking at {\tt i=1}, @ we do a join with $1$ @ to get $1$.
-@ We look at {\tt i=2}, @ and join with $2$, @
+@ Looking at {\tt i=1}, @ we do a meet with $1$ @ to get $1$.
+@ We look at {\tt i=2}, @ and meet with $2$, @
 now we get the tuple \tuple{0,2}, indicating that {\tt i} can not be
 negative and that we only need two bits to store the positive portion.
-Note that we \emph{don't} recenter the range; we \emph{could} use only
-one bit if we offset the values stored.  @ We can still tell at the
+%Note that we \emph{don't} recenter the range; we \emph{could} use only
+%one bit if we offset the values stored.  
+@ We can still tell at the
 comparison point that {\tt i>0} will always be true, but the real
 value of this analysis will be the space reductions we obtain when we
 apply it to fields.
@@ -602,7 +603,14 @@ Some combination rules for bit-width analysis.
 \begin{talknotes}
 For completeness: here are some of the combination rules we use to
 perform abstract evaluation of unary and binary operations using
-our bitwidth value domain.  The first entry simply says that negation
+our bitwidth value domain.  I'm afraid time doesn't permit us to go
+through these individually at this point, but these are in the paper.
+Note for the first rule that we're tracking the bitwidth of the
+\textit{absolute value} of the number, so the rule for negation is
+simply interchanging the positive and negative portions of the tuple.
+
+\textit{If questioned:}
+The first entry simply says that negation
 exchanges the positive and negative bitwidths.  The second entry gives
 the rules for addition: we have to add one to the width to allow for
 carry out.  The rule for multiplication should remind you that we're
@@ -628,15 +636,18 @@ anywhere there is a zero in the input.
 \overlays{3}{
 \begin{slide}{Interprocedural analysis}
 \newcommand{\myi}{\onlySlide*{1}{i}\fromSlide*{2}{this.f}}
+\newcommand{\myia}{\onlySlide*{1}{i}\fromSlide*{2}{a.f}}
+\newcommand{\myib}{\onlySlide*{1}{i}\fromSlide*{2}{b.f}}
+\newcommand{\myic}{\onlySlide*{1}{i}\fromSlide*{2}{c.f}}
 \begin{center}%
 \parbox[c]{2.3in}{%
 \begin{mysamplecode}%
 int foo() \{\\
 \>if (\ldots)\\
-\>\>\myi =1;\\
+\>\>\myia =1;\\
 \>else\\
-\>\>\myi =2;\\
-\>if (\myi >0)\\
+\>\>\myib =2;\\
+\>if (\myic >0)\\
 \>\>$\vdots$\\
 \}\\
 \end{mysamplecode}%
@@ -874,7 +885,7 @@ The interesting thing about {\tt java.lang.String} is that the {\tt
   offset} field is almost \emph{always} zero.  Only strings created
 with the {\tt substring()} method have non-zero offset fields. 
 And the offset field is never changed after the object is created.
-These are the @ key properties needed to enable this optimization.
+These are the key properties needed to enable static specialization.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1333,14 +1344,14 @@ order to attain any space savings at all.
 \begin{talknotes}
 We can do better than this, though:  since all we really need is a
 unique identifier for the object/field pair, we can simply @ offset the
-object pointer to obtain a one-word key.  Note that this is like using
+object pointer to obtain a one-word key. @ Note that this is like using
 a pointer to the \emph{field} instead of a field ID and a pointer to
 the \emph{object}; the field we would like to point to is not actually
 present in the object, though.  This means that @ the scheme imposes a
 limit of the number of fields which may be externalized, based on the
-number of non-externalized fields remaining in the object.  @ This
-limitation is not onerous, however, and we lower our break-even point
-to 66\%.
+number of non-externalized fields, including header fields, remaining
+in the object.  @ This limitation is not overly burdensome, however,
+and we lower our break-even point to 66\%.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1358,7 +1369,7 @@ to 66\%.
 }
 
 \begin{talknotes}
-A few more details on how this is implemented:
+A few more implementation details:
 First, we use value profiling to identify where externalization will
 be worthwhile.  Remember, we need at least 2/3 of the values to be
 some constant.  @ When we did the profiling, we looked at integer
@@ -1393,7 +1404,7 @@ Three broad techniques:
 Returning to our outline.  We talked about using bitwidth and constant
 analysis to compress fields, and at two different techniques for
 eliminating the space required to store ``mostly-constant'' values.
-Now we'll look at header optimizations, which reduce the amount of
+Now we'll quickly look at header optimizations, which reduce the amount of
 overhead needed by the runtime implementation.
 \end{talknotes}
 
@@ -1436,7 +1447,7 @@ in a hashtable, or implement their own hashing method not based on the
 identity-based hash specified by the Java semantics.  Similarly, most
 programs are either not multi-threaded, or when they are, perform
 synchronization on only a small handful of their object types.
-Implementing it as an instance of externalization means that we
+Using externalization means that we
 allocate space as-needed in an external map; @ we could also use
 a static pointer analysis and techniques similar to static
 specialization to remove these fields from types where they
@@ -1490,7 +1501,7 @@ Class statistics for applications in SPECjvm98 benchmark suite:
 
 \begin{talknotes}
 Here are the class statistics, etc.
-Note that all but two are below 256 classes, or \emph{1 byte} of claz
+Note that all but three are below 256 classes, or \emph{1 byte} of claz
 index.  I have never seen an application that required more than
 2 bytes of claz index.
 \end{talknotes}
@@ -1528,7 +1539,8 @@ But if you're paying attention, you'll realize that these aren't
 actually the \emph{really} interesting numbers.  A reduction in total
 allocated bytes is great, it reduces the amount of allocation work the
 garbage collector has to do, but what you'd really like to see is a
-reduction in the maximum \emph{live data} in the program.
+reduction in the maximum \emph{live data} in the program.  This would
+mean that the program would run in a smaller memory environment.
 
 ~%
 \end{talknotes}
@@ -1566,7 +1578,7 @@ techniques I've been describing are fundamentally integer-based;
 apart from sometimes being able to remove mostly-null fields,
 they are not terribly effective on fields of pointer type.  So the
 yellow bars show you how much of the program is \emph{left} for our
-stuff to optimize, after you take away the pointers and the arrays.
+techniques to optimize, after you take away the pointers and the arrays.
 Compress is \emph{all} array allocations; hence our poor performance
 should make sense now.  The thing to notice here is that we do a
 fantastic job with the portion of the program allocation that we're
@@ -1605,10 +1617,10 @@ One represents the speed of the program before we touch it.
 You'll notice that the first three transformations, which are
 claz/field compression and byte-packing, offer a moderate speed
 \emph{improvement} over the original code.  This is wholly due to
-better performance in the garbage collector as we shrink the
+better performance in the garbage collector and cache as we shrink the
 objects.  The potential performance penalty for the claz indirection
-and the unaligned memory accesses are overwhelmed by the GC
-improvement.
+and the unaligned memory accesses are overwhelmed by the GC and caching
+improvements.
 
 Static specialization, the white bar, gives back some of that
 performance gain.  This is due to the fact that we've virtualized
@@ -1644,7 +1656,7 @@ Static techniques for lock-removal will mitigate this cost greatly.
     by allocation site; optimize each alloc site.
  \end{itemize}
  \fromSlide{4}{
- \item We don't compress pointers at all.
+ \item We hardly compress pointers at all.
  \fromSlide{5}{
  \begin{itemize} \yellow\small
   \item Investigate region-based/enumerated approaches.
@@ -1728,8 +1740,16 @@ the program.
 \begin{talknotes}
 Read this slide.
 
-Mention ``memory wall'': memory compaction increases effective cache
-size, while ALU unpacking ops will become relatively cheaper.
+It's worth mentioning the ``memory wall'' in this regard.  We've
+already seen a decent improvement in performance in many cases for
+some of these transformations, caused simply by reducing memory costs
+(including GC) and improving caching.  This is despite adding extra
+instructions in the form of indirections and virtualization.  One can
+expect that the memory wall will continue to get steeper and the
+benefits of increasing the effective cache size will get greater, even
+as the ALU cost of unpacking operations becomes releatively cheaper.
+We believe this work has shown that space optimizations can be
+remarkably effective.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
