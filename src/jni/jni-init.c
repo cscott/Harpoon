@@ -24,6 +24,8 @@ static JNIEnv * FNI_CreateThreadState(void) {
   env->localrefs.obj = NULL;
   env->localrefs.next= NULL;
   env->thread = NULL;
+  env->stack_top = NULL;
+  env->is_alive = JNI_FALSE;
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   pthread_mutex_init(&(env->sleep_mutex), NULL);
   pthread_mutex_lock(&(env->sleep_mutex));
