@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.5 1999-06-10 22:32:18 cananian Exp $
+% $Id: comdef.sty,v 1.6 1999-06-11 16:22:50 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -45,11 +45,11 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
 {\end{array}\end{math}\end{center}\renewcommand{\arraystretch}{1}}
 
 % Theorem-like environments
-\newtheorem{definition}{Definition}
-\newtheorem{observation}{Observation}
-\newtheorem{property}{Property}
-\newtheorem{lemma}{Lemma}
-\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{observation}{Observation}[section]
+\newtheorem{property}{Property}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{theorem}{Theorem}[section]
 
 % enumerated environment with no indent
 \newcounter{enumnoind}
@@ -59,14 +59,23 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
                {\usecounter{enumnoind} \setlength{\leftmargin}{.4cm}}}
   {\end{list}}
 
-% description environment without so much space between items
+% list environments without so much space between items
 \newenvironment{tightdesc}
   {\begin{description}\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}}
   {\end{description}}
+\newenvironment{tightenum}
+  {\begin{enumerate}\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}}
+  {\end{enumerate}}
 
 % domain names, properly spaced
 \newcommand{\domain}[1]{{\mbox{\em #1}}}
 \newcommand{\domainsm}[1]{{\mbox{\scriptsize\em #1}}}
+
+% term names, in definition environments
+\newcommand{\term}[1]{\textbf{\em #1}}
+
+% uniform format for Stuff Not Yet Done
+\newcommand{\fixme}[1]{\footnote{\textbf{FIXME:} #1}}
 
 % phi, sigma, and xi functions
 \newcommand{\phifunction}{$\phi$-function}
