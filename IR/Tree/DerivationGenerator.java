@@ -7,6 +7,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap.TypeNotKnownException;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
@@ -22,7 +23,7 @@ import java.util.Map;
  * <code>Tree.Exp</code>s can be inferred from these.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationGenerator.java,v 1.1.2.4 2000-02-15 05:46:52 cananian Exp $
+ * @version $Id: DerivationGenerator.java,v 1.1.2.5 2000-02-15 18:53:20 cananian Exp $
  */
 public class DerivationGenerator implements TreeDerivation {
     /** private partial type map */
@@ -49,6 +50,14 @@ public class DerivationGenerator implements TreeDerivation {
 	    this.type = type;
 	    this.derivation = derivation;
 	    this.temp = temp;
+	}
+	TypeAndDerivation rename(TempMap tm) {
+	    if (this.derivation!=null)
+		return new TypeAndDerivation(DList.rename(this.derivation,tm));
+	    if (this.temp!=null && tm!=null)
+		return new TypeAndDerivation(this.type, tm.tempMap(this.temp));
+	    // no need to create a new object, as tad's are immutable.
+	    return this;
 	}
     }
 
@@ -97,6 +106,42 @@ public class DerivationGenerator implements TreeDerivation {
      *  <code>Tree.Exp</code>. Used for memory management purposes. */
     public void remove(Exp exp) {
 	dtM.remove(exp);
+    }
+
+    // provide for cloning.
+    public Tree.CloneCallback cloneCallback(final TreeDerivation oldDeriv) {
+	if (oldDeriv instanceof DerivationGenerator)
+	    return cloneCallback((DerivationGenerator)oldDeriv);
+	// okay, just brute-force add all MEM/NAME/TEMP types to map.
+	return new Tree.CloneCallback() {
+	    public Tree callback(Tree oldTree, Tree newTree, TempMap tm) {
+		if (newTree instanceof MEM || newTree instanceof NAME ||
+		    newTree instanceof TEMP) {
+		    Exp oldExp = (Exp) oldTree, newExp = (Exp) newTree;
+		    HClass hc = oldDeriv.typeMap(oldExp);
+		    TypeAndDerivation tad = (hc == null)
+			? new TypeAndDerivation(oldDeriv.derivation(oldExp))
+			: (newExp instanceof TEMP)
+			? new TypeAndDerivation(hc, ((TEMP)newExp).temp)
+			: new TypeAndDerivation(hc);
+		    DerivationGenerator.this.dtM.put(newExp, tad.rename(tm));
+		}
+		return newTree;
+	    }
+	};
+    }
+    private Tree.CloneCallback cloneCallback(final
+					     DerivationGenerator oldDeriv) {
+	return new Tree.CloneCallback() {
+	    public Tree callback(Tree oldTree, Tree newTree, TempMap tm) {
+		if (oldDeriv.dtM.containsKey(oldTree)) {
+		    TypeAndDerivation tad =
+			(TypeAndDerivation) oldDeriv.dtM.get(oldTree);
+		    DerivationGenerator.this.dtM.put(newTree, tad.rename(tm));
+		}
+		return newTree;
+	    }
+	};
     }
 
     // private interface
