@@ -189,10 +189,10 @@ class FileOutputStream extends OutputStream
      * @since      JDK1.0
      */
     public void write(byte b[], int off, int len) throws IOException {
-	//	writeBytes(b, off, len);
-	for (int i = 0 ; i < len ; i++) {
+	writeBytes(b, off, len);
+	/*for (int i = 0 ; i < len ; i++) {
 	    write(b[off + i]);
-	}
+	}*/
     }
 
     public VoidContinuation writeAsync(byte b[], int off, int len) {
