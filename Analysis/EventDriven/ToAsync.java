@@ -42,7 +42,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.22 2000-03-21 21:05:58 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.23 2000-03-22 08:50:37 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -392,8 +392,8 @@ public class ToAsync {
 	    final HClass HCthrd = linker.forName("java.lang.Thread");
 
 	    return new HMethod[] {
-		//fd.getMethod("sync", new HClass[0]),
-		//is.getMethod("skip", new HClass[]{HClass.Long}),
+		fd.getMethod("sync", new HClass[0]),
+		is.getMethod("skip", new HClass[]{HClass.Long}),
 		HCthrd.getMethod("join", new HClass[0]),
 		    
 		is.getDeclaredMethod("read", new HClass[0]),
@@ -414,23 +414,23 @@ public class ToAsync {
 		    new HClass[] {HClassUtil.arrayClass(b, 1),
 				  HClass.Int, HClass.Int}),
 
-		//os.getDeclaredMethod("write", new HClass[]{HClass.Int}),
+		os.getDeclaredMethod("write", new HClass[]{HClass.Int}),
 
-	        //os.getDeclaredMethod("write", 
-		    //new HClass[] {HClassUtil.arrayClass(b, 1)}),
+	        os.getDeclaredMethod("write", 
+		    new HClass[] {HClassUtil.arrayClass(b, 1)}),
 
-		//os.getDeclaredMethod("write", 
-		    //new HClass[] {HClassUtil.arrayClass(b, 1),
-		    //HClass.Int, HClass.Int}),
+		os.getDeclaredMethod("write", 
+		    new HClass[] {HClassUtil.arrayClass(b, 1),
+		    HClass.Int, HClass.Int}),
 
-		//fos.getDeclaredMethod("write", new HClass[]{HClass.Int}),
+		fos.getDeclaredMethod("write", new HClass[]{HClass.Int}),
 
-		//fos.getDeclaredMethod("write", 
-		    //new HClass[] {HClassUtil.arrayClass(b, 1)}),
+		fos.getDeclaredMethod("write", 
+		    new HClass[] {HClassUtil.arrayClass(b, 1)}),
 		    
-		//fos.getDeclaredMethod("write", 
-		    //new HClass[] {HClassUtil.arrayClass(b, 1),
-		    //HClass.Int, HClass.Int}),
+		fos.getDeclaredMethod("write", 
+		    new HClass[] {HClassUtil.arrayClass(b, 1),
+		    HClass.Int, HClass.Int}),
 
 		ss.getDeclaredMethod("accept", new HClass[0])
 		    };
@@ -452,7 +452,7 @@ public class ToAsync {
 
 	    HMethod retval = (HMethod)cache.get(m);
 	    if (retval == null) {
-		/*if(m.equals(fd.getMethod("sync",
+		if(m.equals(fd.getMethod("sync",
 					 new HClass[0]))) {
 		    retval=fd.getMethod("syncAsyncO", new HClass[0]);
 		    cache.put(m,retval);
@@ -460,7 +460,7 @@ public class ToAsync {
 						 new HClass[]{HClass.Long}))) {
 		    retval=is.getMethod("skipAsyncO", new HClass[]{HClass.Long});
 		    cache.put(m,retval);
-		    } else*/ if (m.equals(HCthrd.getMethod("join",
+		    } else if (m.equals(HCthrd.getMethod("join",
 						new HClass[0]))) {
 			retval=HCthrd.getMethod("join_AsyncO",
 					    new HClass[0]);
@@ -514,7 +514,7 @@ public class ToAsync {
 			    cache.put(m, retval);
 			}
 		    }
-		} /*else if (os.equals(m.getDeclaringClass())){
+		} else if (os.equals(m.getDeclaringClass())){
 		    if (m.getName().equals("write")) {
 			final HMethod bm1 = 
 			    os.getDeclaredMethod("write", new HClass[]{HClass.Int});
@@ -566,7 +566,7 @@ public class ToAsync {
 			    cache.put(m, retval);
 			}
 		    }
-		    }*/ else if (ss.equals(m.getDeclaringClass())) {
+		    } else if (ss.equals(m.getDeclaringClass())) {
 		    final HMethod bm4 = 
 			ss.getDeclaredMethod("accept", new HClass[0]);
 		    if (bm4.equals(m)) {

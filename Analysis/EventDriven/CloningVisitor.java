@@ -65,7 +65,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.12 2000-03-21 18:04:36 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.13 2000-03-22 08:50:37 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -247,7 +247,7 @@ public class CloningVisitor extends QuadVisitor {
 		cont_todo.add(q);
 		//Build Class for the continuation
 		HClass hclass=AsyncCode.createContinuation(hc.getMethod(),  q,
-						 ucf, linker); 
+						 ucf, linker,getEnv(q)); 
 		//Add mapping of call->class
 		cont_map.put(q,hclass);
 		//Schedule blocking method for transformation
@@ -927,9 +927,9 @@ public class CloningVisitor extends QuadVisitor {
 	HClass contclass=(HClass)cont_map.get(q);
 	NEW newc=new NEW(qf, q, tcont, contclass);
 	Quad.addEdge(callenv,0,newc,0);
-	HClass environment=linker.forName("harpoon.Analysis.EnvBuilder.Environment");
+	//	HClass environment=linker.forName("harpoon.Analysis.EnvBuilder.Environment");
 	HConstructor call2const=contclass.getConstructor(new HClass[]{
-	    environment});
+	    env});
 	Temp nt1=new Temp(tf),nt2=new Temp(tf),nt21=new Temp(tf),nt22=new Temp(tf);
 	CALL call2=new CALL(qf,q,
 			    call2const,

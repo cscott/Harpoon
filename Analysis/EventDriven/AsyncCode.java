@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.54 2000-03-19 20:55:56 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.55 2000-03-22 08:50:36 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -406,7 +406,8 @@ public class AsyncCode {
 
     // creates the HClass and constructor for the continuation
     static HClass createContinuation(HMethod blocking, CALL callsite,
-				      CachingCodeFactory ucf, Linker linker) 
+				      CachingCodeFactory ucf, Linker linker,
+				     HClass environment) 
 	throws NoClassDefFoundError
     {
 	final HClass template = 
@@ -418,6 +419,30 @@ public class AsyncCode {
 	Util.assert(template.getLinker()==linker &&
 		    continuationClass.getLinker()==linker);
 	HClassMutator contMutator=continuationClass.getMutator();
+
+	//Environment field
+	HField envf=contMutator.addDeclaredField("e",environment);
+	HMethod hconst=continuationClass.getConstructor(new HClass[0]);
+	hconst.getMutator().setParameterTypes(new HClass[]{environment});
+	
+	ContCodeSSI ccssi=new ContCodeSSI(hconst);
+	Temp tenv=new Temp(ccssi.getFactory().tempFactory()),
+	    tthis=new Temp(ccssi.getFactory().tempFactory());
+	HEADER header=new HEADER(ccssi.getFactory(),null);
+	METHOD method=new METHOD(ccssi.getFactory(),null,
+				 new Temp[] {tthis,tenv},1);
+	SET set=new SET(ccssi.getFactory(),null,envf,tthis,tenv);
+	RETURN qreturn=new RETURN(ccssi.getFactory(),null,null); 
+	FOOTER footer=new FOOTER(ccssi.getFactory(),null,2);
+	Quad.addEdge(header,0,footer,0);
+	Quad.addEdge(header,1,method,0);
+	Quad.addEdge(method,0,set,0);
+	Quad.addEdge(set,0,qreturn,0);
+	Quad.addEdge(qreturn,0,footer,1);
+	ccssi.quadSet(header);
+	
+	ucf.put(hconst, ccssi);
+
 	    //new HClassSyn(template);
 	final int numConstructors = continuationClass.getConstructors().length;
 	Util.assert(numConstructors == 1,
@@ -447,17 +472,18 @@ public class AsyncCode {
 
 	HMethod hmethods[]=template.getDeclaredMethods();
 	for(int i=0;i<hmethods.length;i++) {
-	    try {
-		HMethod nhm=continuationClass
-		    .getDeclaredMethod(hmethods[i].getName(),
-				       hmethods[i].getDescriptor());
-		HCode hchc = ((Code)ucf.convert(hmethods[i])).clone(nhm);
-		(new ChangingVisitor(template,continuationClass))
-		    .reName((Quad)hchc.getRootElement());
-		ucf.put(nhm, hchc);
-	    } catch (NoSuchMethodError e) {
-		System.err.println(e);
-	    }
+	    if (!hmethods[i].getName().equals("<init>"))
+		try {
+		    HMethod nhm=continuationClass
+			.getDeclaredMethod(hmethods[i].getName(),
+					   hmethods[i].getDescriptor());
+		    HCode hchc = ((Code)ucf.convert(hmethods[i])).clone(nhm);
+		    (new ChangingVisitor(template,continuationClass))
+			.reName((Quad)hchc.getRootElement());
+		    ucf.put(nhm, hchc);
+		} catch (NoSuchMethodError e) {
+		    System.err.println(e);
+		}
 	}
 
 	HMethod hm = continuationClass.getDeclaredMethod("resume", new HClass[0]);
