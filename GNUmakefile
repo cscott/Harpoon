@@ -1,4 +1,4 @@
-# $Revision: 1.36 $
+# $Revision: 1.37 $
 JFLAGS=-g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JCC=javac -d .
@@ -56,7 +56,7 @@ update: needs-cvs
 
 # print graphs
 %.ps : %.vcg
-	-@rm $@ # xvcg won't overwrite an output file.
+	@if [ -f $@ ]; then rm $@; fi # xvcg won't overwrite an output file.
 	xvcg -psoutput $@ -paper 8x11 -color $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 

@@ -1,13 +1,27 @@
+---- Sep-16-98
+[cananian@lesser-magoo Code]$ time java -mx128m harpoon.Main.Main harpoon.IR.QuadSSA.Translate
+java.lang.OutOfMemoryError: 
+        at java.util.Hashtable.<init>(Hashtable.java)
+        at java.util.Hashtable.<init>(Hashtable.java)
+        at harpoon.Util.Set.<init>(Set.java:17)
+        at harpoon.IR.QuadSSA.CleanUp$UsedTable.addDef(CleanUp.java:61)
+        at harpoon.IR.QuadSSA.CleanUp.cleanupUnused(CleanUp.java:88)
+        at harpoon.IR.QuadSSA.CleanUp.cleanup2(CleanUp.java:35)
+        at harpoon.IR.QuadSSA.Code.<init>(Code.java:40)
+        at harpoon.IR.QuadSSA.Code$1.convert(Code.java:57)
+        at harpoon.ClassFile.HMethod.getCode(HMethod.java:83)
+        at harpoon.Main.Main.main(Main.java:30)
+354.490u 2.850s 9:55.96 59.9%   0+0k 0+0io 20466pf+5635w
 ---- Sep-15-98
-Phi-placement analysis works, it just needs 'dead-code elimination'.
- Remove any phi function that defines a variable that is never used.
+X Phi-placement analysis works, it just needs 'dead-code elimination'.
+X  Remove any phi function that defines a variable that is never used.
 ---- Sep-14-98
 Make sure Test/zeroopt.java is properly optimized.
-SWITCH processing is still broken.
+X SWITCH processing is still broken.
 Check try/catch processing.  I don't think we're putting in the right
   PHI functions.
-Maybe split phi/switch stuff into separate entities:
- QUESTION: what do we do about optimizing ( x+1 < y )
+X Maybe split phi/switch stuff into separate entities:
+X  QUESTION: what do we do about optimizing ( x+1 < y )
 ---- Sep-14-98
 Peephole optimizations on QuadSSA to normalize:
  1) instanceof -> icmp -> cjmp (or in general, boolean->icmp->cjmp)
@@ -48,20 +62,20 @@ Make Optimization class that works given a ConstMap and an ExecMap.
 X [make dummy execmap and constmap classes that return 'not a const' and
 X  'is executable' for everything.]
 ---- Sep-11-98, cont
-/Add SWITCH nodes to CJMP, SWITCH:
- call them lamba-functions.  <t1, t2, ...> = lambda(t0)
- return a tuple, given a temp (and a predicate?)
- reverse of phi functions.  translated the same way.
- There should be a lamba-function for variable a at node z of the flowgraph
- example when:
-  1) block x contains a *use* of a
-  2) block y contains a *use* of a
-  3) there is a non-empty path Pxz of edges from z to x,
-  4) there is a non-empty path Pyz of edges from z to y, and
-  5) paths Pxz and Pyz do not have any node in common except z (that is,
-     z is the first point of convergence of these paths).
-QUESTION: are criteria 1 and 2 correct.  Maybe where 1 *or* 2 is true?
-QUESTION: how do you make a predicated analysis based on this?
+X Add SWITCH nodes to CJMP, SWITCH:
+X  call them lamba-functions.  <t1, t2, ...> = lambda(t0)
+X  return a tuple, given a temp (and a predicate?)
+X  reverse of phi functions.  translated the same way.
+X  There should be a lamba-function for variable a at node z of the flowgraph
+X  example when:
+X   1) block x contains a *use* of a
+X   2) block y contains a *use* of a
+X   3) there is a non-empty path Pxz of edges from z to x,
+X   4) there is a non-empty path Pyz of edges from z to y, and
+X   5) paths Pxz and Pyz do not have any node in common except z (that is,
+X      z is the first point of convergence of these paths).
+X QUESTION: are criteria 1 and 2 correct.  Maybe where 1 *or* 2 is true?
+X QUESTION: how do you make a predicated analysis based on this?
 QUESTION: how does phi-function placement interact with lamba-function 
           placement?
 write analysis to remove unnecessary control dependencies.  PARALLEL quad?
@@ -90,7 +104,7 @@ X   1) Remove phi functions that define a temp that is never used.
 X      (this will magically remove undefined temps as well).
 X   2) Shrink PHI functions that have phantom limbs (from impossible catches).
 ---- Sep-09-98
-Undo MONITOR block transform.  Make it a poor statement.
+/ Undo MONITOR block transform.  Make it a poor statement.
 Change DCMPL/DCMPG/FCMPL/FCMPG bytecode operations to
 conform to the integer standard: _CMPEQ, _CMPGE, _CMPGT.
 ---- Sep-04-98
