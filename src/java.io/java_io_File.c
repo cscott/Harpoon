@@ -20,7 +20,7 @@ JNIEXPORT jlong Java_java_io_File_length0(JNIEnv * env, jobject this)
   jobject jstr;
   const char * cstr;    
   
-  if (!inited && !initializeFD(env)) return 0; /* exception occurred; bail */
+  if (!inited && !initializeFI(env)) return 0; /* exception occurred; bail */
   
   jstr=(*env)->GetObjectField(env, this, pathID);
   cstr=(*env)->GetStringUTFChars(env,jstr,0);
