@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.76 1999-08-21 20:45:53 cananian Exp $
+% $Id: thesis.tex,v 1.77 1999-08-21 22:08:46 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.76 $ $}
+\date{\today \\ $ $Revision: 1.77 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.76 $ $}{$ $Revision: 1.76 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.77 $ $}{$ $Revision: 1.77 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -955,7 +955,7 @@ identical to that of the previous algorithm.
 \end{myfigure}
 \begin{mytable}%[t]
 \begin{tabular}{|l|l|c|c|c|}\hline
-Hierarchy & Source language & Classes & Avg. depth & Max. depth \\ \hline
+\small Hierarchy & \small Source language & \small Classes & \small Avg. depth & \small Max. depth \\ \hline
 FLEX infrastructure & Java  &   550   &    1.9     &     5      \\
 \code{javac} compiler & Java&   304   &    2.8     &     7      \\
 NeXTStep 3.2$^\dag$& Objective-C & 488 &   3.5     &     8      \\
