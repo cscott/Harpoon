@@ -63,7 +63,8 @@ public abstract class Scheduler {
      */
     public static Scheduler getDefaultScheduler() {
 	if (defaultScheduler == null) {
-	    setDefaultScheduler(PreAllocRoundRobinScheduler.instance());
+//	    setDefaultScheduler(PreAllocRoundRobinScheduler.instance());
+	    setDefaultScheduler(NativeScheduler.instance());
 	    return getDefaultScheduler();
 	}
 	return defaultScheduler;
@@ -194,6 +195,28 @@ public abstract class Scheduler {
 
     /** Turns on/off timed thread switching */
     protected final native void setTimer(boolean state);
+
+    /** Reserve <code>compute</code> CPU every <code>period</code>, 
+     *  starting at time <code>time</code>.
+     *
+     *  This function is only available on the TimeSys operating system
+     *  with the Real-Time CPU development kit.
+     *
+     *  @param compute The compute time for each period in nanoseconds
+     *  @param period The length of each period in nanoseconds
+     *  @param begin The absolute time to start the reservation in nanoseconds 
+     *               (0 indicates as soon as possible)
+     *
+     *  @return Whether admission control was successful
+     */
+    protected final native boolean reserveCPU(long compute, long period, long begin);
+
+    /** Reserve Network 
+     *
+     *  This function is only available on the TimeSys operating system
+     *  with the Real-Time NET development kit.
+     */
+    protected final native boolean reserveNET(long bytes, long transfer, long period, long begin);
 
     /** This is the list of handlers that can be registered with a new scheduler to
 	intercept events.  When these run out, register multiplexer events and send messages. */
