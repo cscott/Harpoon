@@ -11,20 +11,19 @@ package harpoon.Runtime.Transactions;
  * records.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CommitRecord.java,v 1.1.2.3 2000-11-07 20:41:26 cananian Exp $
+ * @version $Id: CommitRecord.java,v 1.1.2.4 2000-11-17 07:40:25 cananian Exp $
  */
 public class CommitRecord {
     // enumerated constants
-    private static class State { }
-    public static final State WAITING = null;
-    public static final State COMMITTED = new State();
-    public static final State ABORTED = new State();
+    public final static int WAITING=0;
+    public final static int COMMITTED=1;
+    public final static int ABORTED=2;
     // fields.
     /** The commit record that this is dependent on, if any. */
     public final CommitRecord parent;
     /** The 'state' of this record: initialized to WAITING, and
      *  write-once to either COMMITTED or ABORTED. */
-    State state = WAITING;
+    private int state = WAITING;
 
     /** Constructor method. */
     public static CommitRecord newTransaction(CommitRecord parent) {
@@ -56,54 +55,27 @@ public class CommitRecord {
     private final int retry_count;
 
     /** Returns the 'state' of this record (including dependencies) */
-    public State state() { return state(this); }
+    public int state() { return state(this); }
+
     /** 'StateP' procedure from write-up. */
-    public static State state(CommitRecord c) {
-	// XXX: may return 'WAITING' even if parent is aborted.
-	for( ; c!=null; c = c.parent) {
-	    State s = c.state; // fetch once (atomically?) to prevent race.
-	    if (s != COMMITTED) return s;
-	}
-	return COMMITTED;
-    }
+    public static native int state(CommitRecord c);
+
     /** Abort this (sub)transaction, if possible.
      *  @return the final state of the (sub)transaction. 
      */
-    public State abort() { return abort(this); }
+    public int abort() { return abort(this); }
     /** Commit this (sub)transaction, if possible.
      *  @return the final state of the (sub)transaction.
      */
-    public State commit() { return commit(this); }
+    public int commit() { return commit(this); }
+
     /** Abort a transaction, if possible.
      *  @return the final state of the (sub)transaction. 
      */
-    public static State abort(CommitRecord c) {
-	if (c==null) return COMMITTED;
-	synchronized(c) {
-	    State s = c.state;
-	    if (s == WAITING)
-		s = c.state = ABORTED;
-	    return s;
-	}
-    }
+    public static native int abort(CommitRecord c);
+
     /** Commit a transaction, if possible.
      *  @return the final state of the (sub)transaction.
      */
-    public static State commit(CommitRecord c) {
-	if (c==null) return COMMITTED;
-	synchronized(c) {
-	    State s = c.state;
-	    if (s == WAITING)
-		s = c.state = COMMITTED;
-	    return s;
-	}
-    }
-    /** A singly-linked list of <code>CommitRecord</code>s. */
-    public static class List {
-	public final CommitRecord transid;
-	List next;
-	public List(CommitRecord transid, List next) {
-	    this.transid = transid; this.next = next;
-	}
-    }
+    public static native int commit(CommitRecord c);
 }
