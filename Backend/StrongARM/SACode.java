@@ -21,7 +21,7 @@ import java.util.Arrays;
  * assembly-like syntax (currently without register allocation).
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: SACode.java,v 1.1.2.3 1999-05-24 19:07:13 pnkfelix Exp $
+ * @version $Id: SACode.java,v 1.1.2.4 1999-05-25 16:50:36 andyb Exp $
  */
 public class SACode extends Code {
     /** The name of this code view. */
@@ -31,13 +31,11 @@ public class SACode extends Code {
         super(tree.getMethod(), null, tree.getFrame());
         instrs = CodeGen.codegen(tree, this);
         Util.assert(instrs != null, "Code generation failed for SACode");
-        instrs = Arrays.asList(frame.procLiveOnExit
-			       ((Instr[]) instrs.toArray(new Instr[instrs.size()])));
-	instrs = Arrays.asList(frame.procAssemDirectives
-			       ((Instr[]) instrs.toArray(new Instr[instrs.size()])));
+        instrs = frame.procLiveOnExit(instrs);
+        instrs = frame.procAssemDirectives(instrs);
     }
 
-    private SACode(HMethod parent, List instrs, Frame frame) {
+    private SACode(HMethod parent, Instr instrs, Frame frame) {
         super(parent, instrs, frame);
     }
 

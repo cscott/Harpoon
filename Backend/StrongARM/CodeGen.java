@@ -50,7 +50,7 @@ import java.util.Arrays;
  * selection of <code>Instr</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.8 1999-05-24 19:07:13 pnkfelix Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.9 1999-05-25 16:50:36 andyb Exp $
  */
 final class CodeGen {
 
@@ -65,7 +65,7 @@ final class CodeGen {
                         representing the newly generated StrongARM
 			instructions.   
      */
-    public static final List codegen(TreeCode tree, SACode code) {
+    public static final Instr codegen(TreeCode tree, SACode code) {
                                       
         InstrFactory inf = code.getInstrFactory();
         Frame f = code.getFrame();
@@ -75,21 +75,38 @@ final class CodeGen {
 
         ((Tree)tree.getRootElement()).visit(v);
 
-        Instr[] instrs = new Instr[instrList.size()+dataList.size()];
+	/* XXX - this isn't a complete instrList -> dataflow graph
+         * implementations. */
+        Instr instrs = null, curr = null;
+
         Enumeration enum = instrList.elements();
-        for (int i = 0; enum.hasMoreElements(); i++) {
-            instrs[i] = (Instr)enum.nextElement();
+	if (enum.hasMoreElements()) {
+	    curr = instrs = (Instr)enum.nextElement();
         }
-        enum = dataList.elements();
-        for (int i = instrList.size(); enum.hasMoreElements(); i++) {
-            Label l = (Label)enum.nextElement();
-            if (i == instrList.size()) {
-                instrs[i] = new InstrLABEL(inf, null, l+":", l);
+	while (enum.hasMoreElements()) {
+	    Instr tinstr = (Instr)enum.nextElement();
+	    Instr.insertInstrAfter(curr, tinstr);
+	    curr = tinstr;
+        }
+
+	enum = dataList.elements();
+	if (enum.hasMoreElements()) {
+	    Label l = (Label)enum.nextElement();
+	    Instr i = new InstrLABEL(inf, null, l+":", l);	
+	    if (curr != null) {
+		Instr.insertInstrAfter(curr, i);
+		curr = i;
             } else {
-                instrs[i] = new InstrDIRECTIVE(inf, null, ".word "+l);
+		curr = instrs = i;
             }
         }
-        return Arrays.asList(instrs);
+	while (enum.hasMoreElements()) {
+            Label l = (Label)enum.nextElement();
+	    Instr i = new InstrDIRECTIVE(inf, null, ".word " + l);
+	    Instr.insertInstrAfter(curr, i);
+	    curr = i;
+        } 
+        return instrs;
     }
 
     static final class Visitor extends TreeVisitor {
@@ -165,10 +182,11 @@ final class CodeGen {
             emit(new Instr(inf, s, "cmp `s0, #0", 
                            new Temp[] { test.temp() },
                            null));
-            emit(new Instr(inf, s, "beq " + s.iffalse, null, null,
-                           new Label[] { s.iffalse }));
-            emit(new Instr(inf, s, "b " + s.iftrue, null, null,
-                           new Label[] { s.iftrue }));
+
+	    /* XXX - update this to mark these as jump-tos */
+            emit(new Instr(inf, s, "beq " + s.iffalse, null, null));
+            emit(new Instr(inf, s, "b " + s.iftrue, null, null));
+
             visitRet = null;
         }
 
@@ -183,6 +201,8 @@ final class CodeGen {
         }
 
         public void visit(LABEL s) {
+
+            /* XXX - update this to mark this as jump-dests */
             emit(new InstrLABEL(inf, s, s.label + ":", s.label));
             visitRet = null;
         }
@@ -466,12 +486,12 @@ final class CodeGen {
         }
 
         public void visit(TEMP e) {
-			if (e.isDoubleWord()) {
-                /* to be fixed */
-				visitRet = new ExpValue(new Temp(tf), new Temp(tf));
-			} else {
-				visitRet = new ExpValue(e.temp);
-			}
+    	    if (e.isDoubleWord()) {
+                /* XXX - to be fixed */
+	        visitRet = new ExpValue(new Temp(tf), new Temp(tf));
+	    } else {
+		visitRet = new ExpValue(e.temp);
+            }
         }
 
         public void visit(UNOP e) {

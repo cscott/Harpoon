@@ -35,7 +35,7 @@ import harpoon.Util.Util;
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.7 1999-05-17 20:02:08 andyb Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.8 1999-05-25 16:50:36 andyb Exp $
  */
 public class SAFrame extends Frame implements DefaultAllocationInfo {
     private static Temp[] reg = new Temp[16];
@@ -159,28 +159,38 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
         return prologue;
     }
 
-    public Instr[] procLiveOnExit(Instr[] body) { 
+    public Instr procLiveOnExit(Instr body) { 
         return body; 
     }
 
-    public Instr[] procAssemDirectives(Instr[] body) { 
-        Util.assert((body != null) && (body.length > 0));
-        Instr[] newbody = new Instr[body.length + 7];
-        HCodeElement src = body[0];
+    public Instr procAssemDirectives(Instr body) { 
+        Util.assert(body != null);
+
+        HCodeElement src = body;
         InstrFactory inf = ((Instr)src).getFactory();
-        newbody[0] = new InstrDIRECTIVE(inf, src, ".text");
-        newbody[1] = new InstrDIRECTIVE(inf, src, ".align 0");
-        newbody[2] = new InstrDIRECTIVE(inf, src, ".global " + 
+	Instr dir1, dir2, dir3, dir4, dir5, dir6, dir7;
+
+        dir1 = new InstrDIRECTIVE(inf, src, ".text");
+        dir2 = new InstrDIRECTIVE(inf, src, ".align 0");
+        dir3 = new InstrDIRECTIVE(inf, src, ".global " + 
                         offmap.label(inf.getMethod()));
         /* this should be a label */
-        newbody[3] = new InstrLABEL(inf, src, 
+        dir4 = new InstrLABEL(inf, src, 
                         offmap.label(inf.getMethod()) + ":",
                         offmap.label(inf.getMethod()));
-        newbody[4] = new Instr(inf, src, "mov ip, sp", null, null);
-        newbody[5] = new Instr(inf, src, "stmfd sp!, {fp, ip, lr, pc}",
+        dir5 = new Instr(inf, src, "mov ip, sp", null, null);
+        dir6 = new Instr(inf, src, "stmfd sp!, {fp, ip, lr, pc}",
                               null, null);
-        newbody[6] = new Instr(inf, src, "sub fp, ip, #4", null, null);
-        System.arraycopy(body, 0, newbody, 7, body.length);
-        return newbody; 
+        dir7 = new Instr(inf, src, "sub fp, ip, #4", null, null);
+
+	Instr.insertInstrBefore(body, dir1);
+	Instr.insertInstrAfter(dir1, dir2);
+	Instr.insertInstrAfter(dir2, dir3);
+	Instr.insertInstrAfter(dir3, dir4);
+	Instr.insertInstrAfter(dir4, dir5);
+	Instr.insertInstrAfter(dir5, dir6);
+	Instr.insertInstrAfter(dir6, dir7);
+
+	return dir1;
     }
 }
