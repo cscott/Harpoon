@@ -6,9 +6,10 @@ package harpoon.ClassFile;
 /**
  * <code>HFieldMutator</code> allows you to change properties of
  * an <code>HField</code>.
+ * @see HField#getMutator
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldMutator.java,v 1.1.2.1 2000-01-11 01:50:54 cananian Exp $
+ * @version $Id: HFieldMutator.java,v 1.1.2.2 2000-01-11 02:06:36 cananian Exp $
  */
 public interface HFieldMutator {
     public void addModifiers(int m);

@@ -6,10 +6,10 @@ package harpoon.ClassFile;
 /**
  * An <code>HClassMutator</code> allows you to change members and
  * properties of an <code>HClass</code>.
- * @see HClass.getMutator()
+ * @see HClass#getMutator
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassMutator.java,v 1.1.2.2 2000-01-11 01:40:49 cananian Exp $
+ * @version $Id: HClassMutator.java,v 1.1.2.3 2000-01-11 02:06:36 cananian Exp $
  */
 public interface HClassMutator {
     public abstract HField addDeclaredField(String name, HClass type);

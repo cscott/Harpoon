@@ -6,9 +6,10 @@ package harpoon.ClassFile;
 /**
  * <code>HMethodMutator</code> allows you to change properties of
  * an <code>HMethod</code>.
+ * @see HMethod#getMutator
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodMutator.java,v 1.1.2.1 2000-01-11 01:40:50 cananian Exp $
+ * @version $Id: HMethodMutator.java,v 1.1.2.2 2000-01-11 02:06:36 cananian Exp $
  */
 public interface HMethodMutator {
     public void addModifiers(int m);
