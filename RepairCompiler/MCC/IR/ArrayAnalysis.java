@@ -85,7 +85,7 @@ public class ArrayAnalysis {
 	Expr ptr=e;
 	while(true) {
 	    if (!(ptr instanceof DotExpr))
-		return null; /* Does something other than a dereference */
+		return AccessPath.NONE; /* Does something other than a dereference */
 	    DotExpr de=(DotExpr)ptr;
 	    dotvector.add(de);
 	    ptr=de.left;
