@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.7 2002-03-22 15:15:08 cananian Exp $
+% $Id: oopsla02.tex,v 1.8 2002-03-22 17:23:34 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.7 $ $}{$ $Revision: 1.7 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.8 $ $}{$ $Revision: 1.8 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -265,16 +265,35 @@ public final class String \{\\
 \end{figure}
 
 In practice, most strings are not substrings of other strings. 
-The {\tt offset} field in most strings is therefore {\tt 0}.
+The {\tt offset} field in most strings is therefore zero.
 Moreover, it is possible to tell at the object creation site
-whether the {\tt offset} will be {\tt 0} or some other number.
+whether the {\tt offset} will be zero or some other number.
 In fact, all of the public {\tt String} constructors create
-strings with {\tt offset} 0; only the {\tt substring} method
+strings with {\tt offset} zero; only the {\tt substring} method
 creates strings with a non-zero offset. And even at 
 calls to the private {\tt String(int, int, char[])} constructor
 inside the {\tt substring} method, it is possible to dynamically
 test the values of the parameters to determine if the newly
 constructed string will have a zero or non-zero offset.
+
+Our analysis exploits this fact by splitting the 
+{\tt String} class into two classes: a superclass {\tt SmallString}
+that omits the {\tt offset} field, and a subclass {\tt BigString} that
+extends {\tt SmallString} and includes the {\tt offset} field. 
+Each of these two new classes implements a {\tt getOffset} method
+that returns the value of the offset. The {\tt getOffset} method
+in the {\tt SmallString} class simply returns zero; the {\tt
+getOffset} method in the {\tt BigString} method returns the 
+value of the offset field. 
+
+At every allocation site except the one inside the {\tt substring}
+method, the transformed program allocates a {\tt SmallString} 
+object. Inside the {\tt substring} method, the program generates
+code that dynamically tests if the offset in the substring
+will be zero. If so, it allocates a {\tt SmallString} object;
+if not, it allocates a {\tt BigString} object. This transformation
+therefore eliminates the {\tt offset} field in the majority
+of strings. 
 
 \begin{figure}
 \begin{samplecode}
@@ -287,7 +306,7 @@ public final class SmallString \{\\
 \>\>return value[getOffset()+i];\\
 \>\}\\
 \}\\
-public final class String\\
+public final class BigString\\
 \>\>extends SmallString \{\\
 \>private final int offset;\\
 \>int getOffset() \{ return offset; \}\\
@@ -305,13 +324,41 @@ public SmallString substring(int start) \{\\
 \>if (noff==0)\\
 \>\>return new SmallString(value, noff, ncnt);\\
 \>else\\
-\>\>return new String(value, noff, ncnt);\\
+\>\>return new BigString(value, noff, ncnt);\\
 \}\\
 \end{samplecode}
 \caption{Dynamic selection among specialized classes in a method
   from {\tt java.lang.String}.}
 \label{fig:dyn-select}
 \end{figure}
+
+The analysis required to support this transformation takes place
+in two phases. The first phase scans the program
+to identify fields that
+are constant after initialization. In our example, the analysis
+determines that the {\tt offset} field is never written after
+it is initialized. The next phase determines if the value
+of this field is determined either by the constructor that
+initialized it or if it is a simple function of the parameters
+of the constructor. In our example, the analysis determines
+that the {\tt offset} field is zero for all constructors
+except the private constructor invoked within the {\tt substring}
+method. It also determines that, for objects initialized by 
+this constructor, the value of the {\tt offset} field is simply
+the value of the {\tt noff} parameter to this constructor. 
+
+This analysis identifies a set of candidate fields. 
+The analysis then chooses one of the candidate fields, then 
+splits the class along the possible values
+that can appear in the field. Our current implementation uses
+profiling to select the field that will provide the largest
+space savings; our policy takes both the size of the field
+and the percentage of objects that have the same value for 
+that field. In our example, the analysis identifies the 
+{\tt offset} field as the best candidate and splits the class
+on that field. We can apply this idea recursively to the 
+new program to obtain the benefits of splitting on multiple
+fields. 
 
 \subsection{Required Analysis Information}
 
