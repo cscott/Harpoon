@@ -4,9 +4,11 @@
 package harpoon.Util.Collections;
 
 import java.util.AbstractMap;
-import java.util.Set;
-import java.util.Map;
+import java.util.AbstractSet;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <code>LinearMap</code> is a simplistic light-weight
@@ -14,7 +16,7 @@ import java.util.Iterator;
  * small.  It is backed by a <code>LinearSet</code>.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearMap.java,v 1.3 2002-04-10 03:07:12 cananian Exp $
+ * @version $Id: LinearMap.java,v 1.4 2003-05-07 23:00:28 cananian Exp $
  */
 public class LinearMap<K,V> extends AbstractMap<K,V> {
     private LinearSet<Map.Entry<K,V>> set;
@@ -24,9 +26,8 @@ public class LinearMap<K,V> extends AbstractMap<K,V> {
         set = new LinearSet<Map.Entry<K,V>>();
     }
 
-    public LinearMap(Map map) {
-	set = new LinearSet<Map.Entry<K,V>>();
-	putAll(map);
+    public LinearMap(Map<K,V> map) {
+	set = new LinearSet<Map.Entry<K,V>>(map.entrySet());
     }
 
     /** Creates a <code>LinearMap</code> with specified capacity. */
@@ -35,7 +36,11 @@ public class LinearMap<K,V> extends AbstractMap<K,V> {
     }
 
     public Set<Map.Entry<K,V>> entrySet() {
-	return set;
+	// support remove operations only; otherwise allows multimaps.
+	return new AbstractSet<Map.Entry<K,V>>() {
+	    public int size() { return set.size(); }
+	    public Iterator<Map.Entry<K,V>> iterator() {return set.iterator();}
+	};
     }
 
     public V put(K key, V value) {
@@ -49,7 +54,7 @@ public class LinearMap<K,V> extends AbstractMap<K,V> {
 		return oldValue;
 	    }
 	}
-	set.add(new PairMapEntry(key, value));
+	set.add(new PairMapEntry<K,V>(key, value));
 	return oldValue;
     }
 
