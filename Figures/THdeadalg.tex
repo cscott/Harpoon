@@ -1,34 +1,44 @@
 % fast algorithm for dead code elimination (unused code elimination)
-\begin{verbatim}
-Procedure FindUseful (G: CFG) {
-  let W be an empty work list;
-  for each variable v, do
-    VarUseful(v) := false;
-  for each node n in G, in any order, do {
-    NodeUseful(n) := false;
-    if n is a CALL, RETURN, or other node with side-effects, then
-      add n to W;
-  }
 
-  while W is not empty, do {
-    let n be any element from W;
-    remove n from W;
-    MarkNodeUseful(n, W);
-  }
-}
-Procedure MarkNodeUseful(n: node, W: WorkList) {
-  NodeUseful(n) := true;
-  /* everything used by a useful node is useful */
-  for each v in Uses(n), do
-    if not VarUseful(v), then
-      MarkVarUseful(v, W);
-}
-Procedure MarkVarUseful(v: variable, W: WorkList) {
-  VarUseful(v) := true;
-  /* The definition of a useful variable is useful */
-  for each n in Definitions(v), then
-    /* size(Definitions(v)) <= 1 in SSI form */
-    if not NodeUseful(n), then
-      add n to W;
-}
-\end{verbatim}
+FindUseful($G$:~CFG) =
+\begin{myalgorithmic}
+\LET $W$ be an empty work list
+\FOREACH{variable $v$ in $G$}
+ \STATE $\text{VarUseful}(v) \gets \code{false}$
+\ENDFOR
+\FOREACH{node $n$ in $G$ in any order}
+ \STATE $\text{NodeUseful}(n) \gets \code{false}$
+ \IF{$n$ is a \code{CALL}, \code{RETURN}, or other node with side-effects}
+  \STATE add $n$ to $W$
+ \ENDIF
+\ENDFOR
+      \EMPTYLINE
+\WHILE{$W$ is not empty}
+ \LET $n$ be any element from $W$
+ \STATE remove $n$ from $W$
+ \STATE $\text{MarkNodeUseful}(n, W)$
+\ENDWHILE
+\end{myalgorithmic}
+~\\
+MarkNodeUseful($n$:~node, $W$:~WorkList) =
+\begin{myalgorithmic}
+\STATE $\text{NodeUseful}(n) \gets \code{true}$
+\STATE\COMMENT{everything used by a useful node is useful}
+\FOREACH{variable $v$ in $\text{Uses}(n)$}
+ \IF{not $\text{VarUseful(v)}$}
+  \STATE $\text{MarkVarUseful}(v, W)$
+ \ENDIF
+\ENDFOR
+\end{myalgorithmic}
+~\\
+MarkVarUseful($v$:~variable, $W$:~WorkList) =
+\begin{myalgorithmic}
+\STATE $\text{VarUseful}(v) \gets \code{true}$
+\STATE\COMMENT{The definition of a useful variable is useful}
+\FOREACH{node $n$ in $\text{Definitions}(v)$}
+ \STATE\COMMENT{In SSI form, $\text{size}(\text{Definitions}(v)) \leq 1$}
+ \IF{not $\text{NodeUseful}(n)$}
+  \STATE add $n$ to $W$
+ \ENDIF
+\ENDFOR
+\end{myalgorithmic}
