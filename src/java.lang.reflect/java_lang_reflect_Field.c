@@ -110,6 +110,21 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set
   fieldclazz = FNI_WRAP(field->declaring_class_object);
   assert(!(*env)->ExceptionOccurred(env));
   
+  /* according to spec, we do receiver checks first */
+  if (!(field->modifiers & java_lang_reflect_Modifier_STATIC)) {
+    /* check receiver */
+    if (receiverobj==NULL) {
+      jclass excls = (*env)->FindClass(env, "java/lang/NullPointerException");
+      (*env)->ThrowNew(env, excls, "null receiver for non-static field");
+      return;
+    }
+    if (!(*env)->IsInstanceOf(env, receiverobj, fieldclazz)) {
+      jclass excls=(*env)->FindClass(env,"java/lang/IllegalArgumentException");
+      (*env)->ThrowNew(env, excls,
+		       "receiver not instance of field declaring class");
+      return;
+    }
+  }
   /* if underlying field is final, throws an IllegalAccessException */
   if (field->modifiers & java_lang_reflect_Modifier_FINAL) { /* final field */
       jclass excls=(*env)->FindClass(env,"java/lang/IllegalAccessException");
@@ -145,18 +160,6 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set
       return;
     }
   } else { /* non-static field */
-    /* check receiver */
-    if (receiverobj==NULL) {
-      jclass excls = (*env)->FindClass(env, "java/lang/NullPointerException");
-      (*env)->ThrowNew(env, excls, "null receiver for non-static field");
-      return;
-    }
-    if (!(*env)->IsInstanceOf(env, receiverobj, fieldclazz)) {
-      jclass excls=(*env)->FindClass(env,"java/lang/IllegalArgumentException");
-      (*env)->ThrowNew(env, excls,
-		       "receiver not instance of field declaring class");
-      return;
-    }
     /* set field value */
     switch(desc) {
 #define NONSTATICCASE(sigchar, name, jvalfield)\
