@@ -29,13 +29,19 @@ THex1base.tex: $(EX1FIG)
 	| sed -e 's/STMT[3789]//' $(SEDCMD) -e 's/\([PXYZ]\)_[01234]/\1/g'> $@
 
 THundir.tex: THundir.fig
-	fig2dev -L latex -m 0.6 $< $@
-
-THcqex.tex: THcqex.fig Makefile
 	fig2dev -L latex -m 0.5 $< $@
+
+THseseex.tex: THcqex.fig
+	fig2dev -L latex -m 0.5 $< $@
+# sed out dashed arc-boxes and left-justified italic text from the figure.
+THcqex.tex: THcqex.fig
+	awk "/^[[:blank:]]/{if (foo==1) next;} /^2 4 1/||/^4 0 0 100 0 3/{foo=1;next} {print; foo=0;}" < $< | \
+	fig2dev -L latex -m 0.5 > $@
 
 evil.tex: evil.fig
 	fig2dev -L latex -m 0.25 $< $@
 
 clean:
-	$(RM) THex1*.tex *.fig.bak evil.tex *~
+	$(RM) THex1*.tex *.fig.bak evil.tex \
+		THcqex.tex THseseex.tex THundir.tex \
+		*~
