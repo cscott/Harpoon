@@ -17,6 +17,11 @@ import java.util.NoSuchElementException;
 import java.lang.ref.WeakReference;
 import java.lang.ref.ReferenceQueue;
 
+import java.io.FileDescriptor;
+import java.util.Hashtable;
+import java.net.InetAddress;
+import java.lang.reflect.Member;
+
 /**
  * <code>CollectSyncStats</code> is used at run time to collect information
  * about synchronization operations.  (<code>InstrumentSyncOps</code>
@@ -50,7 +55,37 @@ public abstract class CollectSyncStats {
 	    CollectSyncStats.init(2, 2);
 	    System.setSecurityManager(new SecurityManager() {
 		public void checkExit(int status) { throw new SecurityException(); }
-		});
+
+		public void checkCreateClassLoader() { } 
+		public void checkAccess(Thread g) { }
+		public void checkAccess(ThreadGroup g) { }
+		public void checkExec(String cmd) { }
+		public void checkLink(String lib) { }
+		public void checkRead(FileDescriptor fd) { }
+		public void checkRead(String file) { }
+		public void checkRead(String file, Object context) { }
+		public void checkWrite(FileDescriptor fd) { }
+		public void checkWrite(String file) { }
+		public void checkDelete(String file) { }
+		public void checkConnect(String host, int port) { }
+		public void checkConnect(String host, int port, Object context) { }
+		public void checkListen(int port) { }
+		public void checkAccept(String host, int port) { }
+		public void checkMulticast(InetAddress maddr) { }
+		public void checkMulticast(InetAddress maddr, byte ttl) { }
+		public void checkPropertiesAccess() { }
+		public void checkPropertyAccess(String key) { }
+		public void checkPropertyAccess(String key, String def) { }
+		public boolean checkTopLevelWindow(Object window) { return true; }
+		public void checkPrintJobAccess() { }
+		public void checkSystemClipboardAccess() { }
+		public void checkAwtEventQueueAccess() { }
+		public void checkPackageAccess(String pkg) { }
+		public void checkPackageDefinition(String pkg) { }
+		public void checkSetFactory() { }
+		public void checkMemberAccess(Class clazz, int which) { }
+		public void checkSecurityAccess(String provider) { }
+	        });
 	    enabled = true;
 	    m.invoke(null, new Object[] { arg });
 	    enabled = false;
