@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.55 1998-10-14 20:25:38 cananian Exp $
+# $Id: GNUmakefile,v 1.56 1998-10-16 02:23:59 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -31,24 +31,29 @@ all:	java
 list:
 	@echo $(filter-out GNUmakefile,$(TARSOURCE))
 
-java:	$(ALLSOURCE)
+java:	$(ALLSOURCE) Contrib/getopt/MessagesBundle.properties
 	if [ ! -d harpoon ]; then \
 	  $(MAKE) first; \
 	fi
 	${JCC} ${JFLAGS} ${JFLAGSVERB} $(ALLSOURCE) | \
 		egrep -v '^\[[lc]'
+	@$(MAKE) properties
 	touch java
 
 jikes: 	
 	@if [ ! -d harpoon ]; then $(MAKE) first; fi
 	@${JIKES} ${JFLAGS} ${ALLSOURCE}
+	@$(MAKE) properties
+
+properties:
+	cp Contrib/getopt/MessagesBundle.properties gnu/getopt
 
 first:
 	@echo Please wait...
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
-	${JAR} c0f Harpoon.jar COPYING VERSIONS \
+	${JAR} c0f Harpoon.jar COPYING VERSIONS gnu/getopt/*.properties \
 		$(foreach pkg,$(JARPKGS),$(pkg)/*.class)
 	date '+%-d-%b-%Y at %r %Z.' > Harpoon.jar.TIMESTAMP
 
@@ -140,7 +145,7 @@ clean:
 	-${RM} java `find . -name "*.class"`
 
 polish: clean
-	-${RM} *~ */*~ `find . -name "*.java~"`
+	-${RM} *~ */*~ `find . -name "*.java~"` core
 
 wipe:	clean doc-clean
 
