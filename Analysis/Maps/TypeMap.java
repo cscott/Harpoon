@@ -6,10 +6,10 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 
 /**
- * <code>TypeMap</code> is a mapping from temporaries to their types.
+ * A <code>TypeMap</code> is a mapping from temporaries to their types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeMap.java,v 1.1 1998-09-13 23:57:13 cananian Exp $
+ * @version $Id: TypeMap.java,v 1.2 1998-09-14 05:18:43 cananian Exp $
  */
 public interface TypeMap  { 
     /** 
