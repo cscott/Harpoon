@@ -159,8 +159,10 @@ always:
 	fi
 
 # rules for LCTES camera-ready copy.
-p072-ananian.tex: lctes03.tex
-	cp $< $@
+p072-ananian.tex: lctes03.tex lctes03.dvi
+	sed -e '/^\\bibliographystyle/d' -e '/^\\bibliography{/,$$ d' < $< > $@
+	echo '\balancecolumns' | sed -e '117 r /dev/stdin' lctes03.bbl >> $@
+	sed -e '0,/^\\bibliography{/ d' < $< >> $@
 
 # progress graphs.
 %.stats: %.tex
