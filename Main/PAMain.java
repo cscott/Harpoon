@@ -66,7 +66,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.42 2000-05-10 14:58:25 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.43 2000-05-11 22:04:06 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -587,12 +587,20 @@ public abstract class PAMain {
 	    System.out.print(" HOLE_STATS");
 
 	if(DO_ANALYSIS){
-	    System.out.print("\nDO_ANALYSIS{");
-	    for(Iterator it = mm_to_analyze.iterator(); it.hasNext();){
-		Method method = (Method) it.next();
-		System.out.println(method.name);
+	    if(mm_to_analyze.size() == 1){
+		Method method = (Method) (mm_to_analyze.iterator().next());
+		System.out.println("DO_ANALYSIS (" +
+				   method.declClass + "." + method.name);
 	    }
-	    System.out.println("}");
+	    else{
+		System.out.println("\nDO_ANALYSIS");
+		for(Iterator it = mm_to_analyze.iterator(); it.hasNext();){
+		    Method method = (Method) it.next();
+		    System.out.println("  " + method.declClass + "." +
+				       method.name);
+		}
+		System.out.println("}");
+	    }
 	}
 
 	if(DO_INTERACTIVE_ANALYSIS)
