@@ -3,7 +3,14 @@ MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
 SUBDIRS = jni java.io java.lang java.net java.util java.util.zip \
 	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) $(STATSDIR) $(CAMDIR)
+# make sure even the conditionally-compiled subdirectories are included
+# in the distribution.
+DIST_SUBDIRS = jni java.io java.lang java.net java.util java.util.zip \
+        gc clheap nativeio stats cam
 EXTRA_DIST = README
+
+# cruft to define the conditional directories. --------------------------
+# please keep these in the same order that they appear in the SUBDIRS list
 
 # for precise gc, add gc to SUBDIRS
 if PRECISE_GC
@@ -15,13 +22,6 @@ if CLUSTERED_HEAPS
 CLHEAPDIR=clheap
 CLHEAPLIB=clheap/libclheap.la
 endif
-
-# for camera support, build camera libraries.
-if CAMERA
-CAMDIR=cam
-CAMLIB=cam/libcam.la
-endif
-
 # for event-driven support, build nativeio libraries.
 if EVENT_DRIVEN
 NATIVEIODIR=nativeio # rename to eventdriven?
@@ -31,6 +31,11 @@ endif
 if STATISTICS
 STATSDIR=stats
 STATSLIB=stats/libstats.la
+endif
+# for camera support, build camera libraries.
+if CAMERA
+CAMDIR=cam
+CAMLIB=cam/libcam.la
 endif
 
 # see run% rule in top-level makefile to see how to generate a binary
