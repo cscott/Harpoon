@@ -30,10 +30,11 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.22 1999-08-11 13:11:15 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.23 1999-08-18 18:36:54 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  */
-public abstract class HClass extends HPointer implements java.io.Serializable {
+public abstract class HClass extends HPointer
+  implements java.io.Serializable, java.lang.Comparable {
   static Hashtable dsc2cls = new Hashtable();
 
   /** Protected constructor, not for external use. */
@@ -990,6 +991,12 @@ public abstract class HClass extends HPointer implements java.io.Serializable {
     private String desc;
     HClassStub(HClass c) { this.desc = c.getDescriptor().intern(); }
     public Object readResolve() { return HClass.forDescriptor(desc); }
+  }
+  // Comparable interface.
+  /** Compares two <code>HClass</code>es by lexicographic order of their
+   *  descriptors. */
+  public int compareTo(Object o) {
+    return getDescriptor().compareTo(((HClass)o).getDescriptor());
   }
 }
 

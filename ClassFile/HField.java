@@ -13,11 +13,12 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.15.2.8 1999-08-07 11:17:21 cananian Exp $
+ * @version $Id: HField.java,v 1.15.2.9 1999-08-18 18:36:54 cananian Exp $
  * @see HMember
  * @see HClass
  */
-public abstract class HField implements HMember, java.io.Serializable {
+public abstract class HField
+  implements HMember, java.io.Serializable, java.lang.Comparable {
   HClass parent;
   HPointer type;
   String name;
@@ -212,6 +213,16 @@ public abstract class HField implements HMember, java.io.Serializable {
     public Object readResolve() {
       return parent.getDeclaredField(name);
     }
+  }
+  // Comparable interface
+  /** Compares two <code>HField</code>s lexicographically; first by
+   *  declaring class, then by name. */
+  public int compareTo(Object o) {
+    HField hf = (HField) o;
+    int c = getDeclaringClass().compareTo(hf.getDeclaringClass());
+    if (c!=0) return c;
+    c = getName().compareTo(hf.getName());
+    return c;
   }
 }
 // set emacs indentation style.

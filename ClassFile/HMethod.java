@@ -15,11 +15,12 @@ import java.util.Hashtable;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30.2.10 1999-08-07 11:17:21 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30.2.11 1999-08-18 18:36:54 cananian Exp $
  * @see HMember
  * @see HClass
  */
-public abstract class HMethod implements HMember, java.io.Serializable {
+public abstract class HMethod
+  implements HMember, java.io.Serializable, java.lang.Comparable {
   HClass parent;
   String name;
   int modifiers;
@@ -343,6 +344,18 @@ public abstract class HMethod implements HMember, java.io.Serializable {
     public Object readResolve() {
       return parent.getDeclaredMethod(name, descriptor);
     }
+  }
+  // Comparable interface
+  /** Compares two <code>HMethod</code>s lexicographically; first by
+   *  declaring class, then by name, and lastly by descriptor. */
+  public int compareTo(Object o) {
+    HMethod hm = (HMethod) o;
+    int c = getDeclaringClass().compareTo(hm.getDeclaringClass());
+    if (c!=0) return c;
+    c = getName().compareTo(hm.getName());
+    if (c!=0) return c;
+    c = getDescriptor().compareTo(hm.getDescriptor());
+    return c;
   }
 }
 
