@@ -21,7 +21,7 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.8 2003-07-23 20:35:16 cananian Exp $
+ * @version $Id: Javap.java,v 1.9 2003-07-23 20:45:40 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
     public static final void main(String args[]) {
@@ -118,6 +118,8 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 		    md+="^L"+cc.name()+";";
 		}
 	    }
+	    // is this a varargs method?
+	    boolean isVarArgs= (null!=findAttribute(mi.attributes, "Varargs"));
 	    // indent.
 	    System.out.print("    ");
 	    // access flags
@@ -142,7 +144,14 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    for (int off=1; md.charAt(off)!=')'; ) {
 		OffsetAndString param_oas = munchTypeSig(md.substring(off));
 		if (off!=1) System.out.print(", ");
-		System.out.print(param_oas.string);
+		if (isVarArgs &&
+		    md.charAt(off+param_oas.offset)==')' /* last arg */) {
+		    // print var arg parameter, omitting outermost array spec
+		    assert md.charAt(off)=='[';
+		    System.out.print(munchTypeSig(md.substring(off+1)).string);
+		    System.out.print("...");
+		} else // ordinary, non-vararg parameter
+		    System.out.print(param_oas.string);
 		off += param_oas.offset;
 	    }
 	    System.out.print(')');
