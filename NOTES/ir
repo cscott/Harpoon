@@ -63,7 +63,11 @@ Do we want to create an ir representation of throw/etc so that we can
 perform the rewrite in the IR? [probably not, but going from bytecode to
 IR to bytecode can be a useful sanity check on the basic conversion
 process.]
-
-
-
-
+----------
+Array representation:
+Would like pseudo-field length (public static final int), and
+pseudo-methods <init>, set(i, obj), get(i).
+Constructor is given N integer arguments, where 
+ 1<=N<=# of dimensions of the array class.  Each argument codes for a size.
+new [[I(10)  is equivalent to new Int[10][];
+new [[F(1,2) is equivalent to new Float[1][2];
