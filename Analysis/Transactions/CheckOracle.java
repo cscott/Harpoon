@@ -14,7 +14,7 @@ import java.util.Set;
  * field and object version lookups and checks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CheckOracle.java,v 1.1.2.1 2001-01-11 20:26:40 cananian Exp $
+ * @version $Id: CheckOracle.java,v 1.1.2.2 2001-01-14 07:53:44 cananian Exp $
  */
 abstract class CheckOracle {
     
@@ -40,6 +40,14 @@ abstract class CheckOracle {
 	RefAndField(Temp objref, HField field) {
 	    this.objref = objref; this.field = field;
 	}
+	// define hashCode and equals so these objects work well in sets
+	public int hashCode() { return objref.hashCode() ^ field.hashCode(); }
+	public boolean equals(Object o) {
+	    if (!(o instanceof RefAndField)) return false;
+	    RefAndField raf = (RefAndField) o;
+	    return this.objref.equals(raf.objref) &&
+		this.field.equals(raf.field);
+	}
     }
     class RefAndIndexAndType {
 	public final Temp objref;
@@ -47,6 +55,15 @@ abstract class CheckOracle {
 	public final HClass type;
 	RefAndIndexAndType(Temp objref, Temp index, HClass type) {
 	    this.objref = objref; this.index = index; this.type = type;
+	}
+	// define hashCode and equals so these objects work well in sets
+	public int hashCode() { return objref.hashCode() ^ index.hashCode(); }
+	public boolean equals(Object o) {
+	    if (!(o instanceof RefAndIndexAndType)) return false;
+	    RefAndIndexAndType rit = (RefAndIndexAndType) o;
+	    return this.objref.equals(rit.objref) &&
+		this.index.equals(rit.index) &&
+		this.type.equals(rit.type);
 	}
     }
 }
