@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.17 2000-01-28 02:47:30 kkz Exp $
+ * @version $Id: Frame.java,v 1.1.2.18 2000-01-28 03:07:42 kkz Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -83,7 +83,6 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	return tempBuilder;
     }
     public harpoon.Backend.Generic.GCInfo getGCInfo() {
-	Util.assert(gcInfo != null, "use new constructor for Frame");
 	return gcInfo;
     }
 }

@@ -14,7 +14,7 @@ import harpoon.ClassFile.Linker;
  * for the Sparc Backend.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.6 2000-01-28 02:48:00 kkz Exp $
+ * @version $Id: Frame.java,v 1.1.2.7 2000-01-28 03:07:21 kkz Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame
 {
@@ -75,8 +75,6 @@ public class Frame extends harpoon.Backend.Generic.Frame
     }
 
     public harpoon.Backend.Generic.GCInfo getGCInfo() {
-	harpoon.Util.Util.assert(gcInfo != null, 
-				 "use new constructor for Frame");
 	return gcInfo;
     }
 }
