@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.138 2000-02-19 04:49:41 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.139 2000-02-19 05:54:45 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -679,11 +679,9 @@ import java.util.Iterator;
     }
 %%
 %start with %{
-       // initialize state variables each time gen() is called
-       first = null; last = null;
-       origTempToNewTemp = new HashMap();
-       this.instrFactory = inf;
-
+	// *** METHOD PROLOGUE ***
+	this.instrFactory = inf; // XXX this should probably move to superclass
+	origTempToNewTemp = new HashMap(); // XXX this should also go away
 }%
 %end with %{
        // *** METHOD EPILOGUE *** 

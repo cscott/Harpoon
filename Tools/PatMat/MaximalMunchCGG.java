@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.57 2000-02-19 02:45:34 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.58 2000-02-19 05:54:46 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -885,6 +885,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	out.println("\t\t " + TEMP_Temp + " munchExp(" + TREE_Exp +" "+ expArg + ") {");
 	
 	out.println("\t\t\tboolean _matched_ = false;");
+	out.println("\t\t\tclearDecl(); // reset temp type mappings");
 
 	Iterator expPairsIter = expMatchActionPairs.iterator();
 	
@@ -915,6 +916,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	out.println("\t\t void munchStm("+TREE_Stm + " " + stmArg + ") {");
 	out.println("\t\t\t globalStmArg = " + stmArg +";");
 	out.println("\t\t\tboolean _matched_ = false;");
+	out.println("\t\t\tclearDecl(); // reset temp type mappings");
 	
 	Iterator stmPairsIter = stmMatchActionPairs.iterator();
 	i=1;
