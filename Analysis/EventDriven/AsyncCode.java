@@ -31,6 +31,7 @@ import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.FOOTER;
 import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.NEW;
@@ -60,7 +61,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.25 2000-01-13 23:51:10 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.26 2000-01-14 07:56:26 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -807,6 +808,61 @@ public class AsyncCode {
     }
 
 
+    static class ChangingVisitor extends QuadVisitor {
+	HClass oldn, newn;
+	WorkSet done;
+	ChangingVisitor(HClass oldn, HClass newn) {
+	    this.oldn=oldn;
+	    this.newn=newn;
+	}
+
+	public void visit(Quad q) {
+	    done.add(q);
+	}
+
+	public void visit(GET q) {
+	    if (q.field().getDeclaringClass()==oldn) {
+		HField hfield=
+		    newn.getDeclaredField(q.field().getName());
+		GET get=new GET(q.getFactory(),q,
+				q.dst(),hfield,q.objectref());
+		done.add(get);
+		Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),
+			     get,0);
+		Quad.addEdge(get,0,
+			     q.next(0),q.nextEdge(0).which_pred());
+	    }
+	}
+
+	public void visit(SET q) {
+	    if (q.field().getDeclaringClass()==oldn) {
+		HField hfield=
+		    newn.getDeclaredField(q.field().getName());
+		SET set=new SET(q.getFactory(),q,
+				hfield,q.objectref(),q.src());
+		done.add(set);
+		Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),
+			     set,0);
+		Quad.addEdge(set,0,
+			     q.next(0),q.nextEdge(0).which_pred());
+	    }
+	}
+
+	public void reName(Quad q) {
+	    done=new WorkSet();
+	    WorkSet todo=new WorkSet();
+	    todo.add(q);
+	    while(!todo.isEmpty()) {
+		Quad qq=(Quad)todo.pop();
+		Quad[] next=qq.next();
+		for(int i=0;i<next.length;i++)
+		    if (!done.contains(next[i]))
+			todo.add(next[i]);
+		qq.accept(this);
+	    }
+	}
+    }
+
 
 
     // create asynchronous version of HMethod to replace blocking version
@@ -945,6 +1001,8 @@ public class AsyncCode {
 		HMethod nhm=continuationClass.getDeclaredMethod(hmethods[i].getName(),
 								hmethods[i].getDescriptor());
 		HCode hchc = ((Code)ucf.convert(hmethods[i])).clone(nhm);
+		(new ChangingVisitor(template,continuationClass))
+		    .reName((Quad)hchc.getRootElement());
 		ucf.update(nhm, hchc);
 	    } catch (NoSuchMethodError e) {
 		System.err.println(e);
