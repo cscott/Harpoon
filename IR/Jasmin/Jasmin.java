@@ -22,7 +22,7 @@ import java.util.Iterator;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.10 1999-08-23 22:45:36 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.11 1999-08-24 04:17:32 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -196,13 +196,19 @@ public class Jasmin {
 		else if (q.type()==HClass.Int) {
 		    dup(i,q.value().length);
 		    out.println("    bipush "+(i+q.offset()));
-		    out.println("    bipush "+q.value()[i].toString());
+		    out.println("    ldc "+q.value()[i].toString());
 		    out.println("    iastore");
+		}
+		else if (q.type()==HClass.Byte) {
+		    dup(i,q.value().length);
+		    out.println("    bipush "+(i+q.offset()));
+		    out.println("    bipush "+q.value()[i].toString());
+		    out.println("    bastore");
 		}
 		else if (q.type()==HClass.Char) {
 		    dup(i,q.value().length);
 		    out.println("    bipush "+(i+q.offset()));
-		    out.println("    bipush "+q.value()[i].toString());
+		    out.println("    sipush "+q.value()[i].toString());
 		    out.println("    castore");
 		}
 		else if (q.type()==HClass.Short) {
