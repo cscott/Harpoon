@@ -10,9 +10,9 @@ import harpoon.ClassFile.HField;
  * simple-minded implementation of <code>FieldOracle</code>.
  * 
  * @author   <cananian@alumni.princeton.edu>
- * @version $Id: SimpleFieldOracle.java,v 1.1.2.1 2001-01-11 20:26:40 cananian Exp $
+ * @version $Id: SimpleFieldOracle.java,v 1.1.2.2 2001-01-11 23:14:12 cananian Exp $
  */
-public class SimpleFieldOracle extends FieldOracle {
+class SimpleFieldOracle extends FieldOracle {
     public boolean isSyncRead(HField hf) { return true; }
     public boolean isSyncWrite(HField hf) { return true; }
     public boolean isUnsyncRead(HField hf) { return true; }

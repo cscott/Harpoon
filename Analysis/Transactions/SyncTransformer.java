@@ -5,6 +5,7 @@ package harpoon.Analysis.Transactions;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.DomTree;
+import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HClassMutator;
 import harpoon.ClassFile.HCode;
@@ -63,7 +64,7 @@ import java.util.Set;
  * atomic transactions.  Works on <code>QuadSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.1 2001-01-11 20:26:40 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.2 2001-01-11 23:14:12 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -692,7 +693,8 @@ public class SyncTransformer
     private Quad makeFlagConst(QuadFactory qf, HCodeElement src,
 			       Temp dst, HClass type) {
 	if (!type.isPrimitive())
-	    /* address of FLAG_VALUE field is used as marker. */
+	    /* value in FLAG_VALUE field is used as marker. */
+	    /* (a post-pass converts this to a constant) */
 	    return new GET(qf, src, dst, HFflagvalue, null);
 	else if (type==HClass.Boolean) //XXX
 	    return new CONST(qf, src, dst, booleanFlag, HClass.Int);
@@ -711,6 +713,13 @@ public class SyncTransformer
 	else if (type==HClass.Double)
 	    return new CONST(qf, src, dst, doubleFlag, HClass.Double);
 	else throw new Error("ACK: "+type);
+    }
+
+    /** Return an <code>HCodeFactory</code> that will clean up the
+     *  tree form of the transformed code by performing some optimizations
+     *  which can't be represented in quad form. */
+    public HCodeFactory treeCodeFactory(Frame f, HCodeFactory hcf) {
+	return new TreePostPass(f, FLAG_VALUE, HFflagvalue).codeFactory(hcf);
     }
     
     private class TempSplitter {
