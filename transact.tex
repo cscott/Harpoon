@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.17 2000-09-29 18:26:14 cananian Exp $
+% $Id: transact.tex,v 1.18 2000-09-29 20:31:37 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.17 $ $}
+\date{\today \\ $ $Revision: 1.18 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -34,45 +34,50 @@ overhead entailed by such ``false'' transactions is expected to be
 extremely low.
 
 The ``inflated object'' data structure, shown in figure
-\ref{fig:infl}, has a simple ``object versions'' linked list associated with
+\ref{fig:infl}, has an ``object versions'' linked list associated with
 it.  Each entry conceptually stores information about a different,
 possibly-uncommitted, version of the object.  One of these versions is
 guaranteed to be ``most recent committed'', and it is guaranteed that
 the ``most recent committed'' version will be the first committed
 version in the list.
 
-Note that the ``object version'' structure, shown in figure
-\ref{fig:version}, is the same size as the object structure shown in
-figure \ref{fig:oobj}, so that the same field offsets can be used.
-In addition, the \texttt{vinfo} structure contains a ``next'' field
-(as it is a singly linked list) and a pointer to a commit record which
-identifies the transaction which this version is part of.  This allows
-client code to determine which version it should address.
-
 The commit record structure is shown in figure \ref{fig:commitrec}.
 The pointer to the commit record also serves as a transaction
 identifier.  Transactions can be nested, therefore every commit record
 may contain a pointer to a ``parent'' transaction which it is
 dependent upon.  The commit record also contains a three-value
-``status'' field which indicates whether the transaction it represents
+``state'' field which indicates whether the transaction it represents
 has been committed or aborted yet.
 
-We can also chain commit records together using the ``waiting'' field
-of the \texttt{commitrec} structure to more efficiently restart
-transactions which aborted because of reservations held by this
-one.  Experimentation will determine whether this is worthwhile or
-whether a simple exponential backoff scheme will work better.
-If this field is used, it is expected to link multiple ``aborted''
-commit records to a single ``waiting'' record at the head.  When the
-record at the head is either committed or aborted, the other
-transactions should be restarted.
+The ``object version'' structure, shown in figure
+\ref{fig:version}, is similar to the object structure shown in
+figure \ref{fig:oobj} so that field pointers can be converted easily.
+Each \texttt{vinfo} structure identifies an object version which is
+associated with a particular transaction (via \code{transid}) which
+has mutated the object.  Readers are associated with each mutated
+version using the \texttt{readers} list, which is inlined to avoid an
+extra memory dereference in the hot path through \code{ReadTrans}
+(figure \ref{fig:readtrans}).
 
-In practice, this will probably work better if there is a condition
-value/mutex pair associated with every commit record which
-transactions would signal when aborting or commiting --- but this
-seems to entail too much overhead.  We don't want to have to
-\texttt{pthread\_mutex\_lock} and \texttt{pthread\_cond\_signal} at every
-transaction commit/abort, do we?
+Subtransactions cause a possible race condition when traversing the
+versions list.  The parent of each subtransaction will have a separate
+``pre-subtransaction'' version entry in order to allow retrying an
+aborting subtransaction.  A non-transactional reader may examine the
+subtransaction and find that it is still waiting and move on to the
+next item in the versions list, which will be the subtransaction's
+parent.  But if both the subtransaction and then its parent are then
+committed before the non-transactional reader proceeds, it may
+erroneously fetch the ``pre-subtransaction'' version of the
+now-committed parent instead of the correct version associated with
+the newly-committed subtransaction.
+
+To prevent this race, there are two ``next'' fields for the versions
+list.  The \code{anext} field is followed if the version's transaction
+has been aborted.  This allows correct fail back to the parent
+transaction's version in this case.  However, if the version's
+transaction is in the \code{WAITING} state (review figure
+\ref{fig:commitrec}), we skip examining its parent transaction(s),
+avoiding the possible race, by following the \code{wnext} field.
 
 \begin{figure}
 \begin{alltt}\codesize
@@ -134,12 +139,18 @@ struct inflated_oobj \{
 \begin{figure}
 \begin{alltt}\codesize
 #if WITH_TRANSACTIONS
-/* The vinfo structure provides values for a given version of the object.
-/* Note that it is identical in size to the oobj struct, so the same 
- * offsets can be used. */
+/* A simple linked list of transaction identifiers. */
+struct tlist \{
+  struct commitrec *transid; /* transaction id */ 
+  struct tlist *next; /* next version. */
+\};
+
+/* The vinfo structure provides values for a given version of the object. */
 struct vinfo \{
   struct commitrec *transid; /* transaction id */ 
-  struct vinfo *next; /* next version. */
+  struct tlist readers; /* list of readers.  first node is inlined. */
+  struct vinfo *anext; /* next version to look at if transid is aborted. */
+  struct vinfo *wnext; /* next version to look at if transid is waiting. */
   /* fields below this point */
   char field_start[0];
 \};
@@ -158,16 +169,31 @@ struct commitrec \{
   struct commitrec *parent;
   /* The 'state' should be initialized to W and write-once to C or A. */
   enum \{ WAITING=0, COMMITTED, ABORTED \} state;
-  /* optional! (not sure we need/can use this at all) */
-  /* this is a list of transactions which aborted waiting for this one. */
-  /* martin sez we should use exponential back-off instead. */
-  struct commitrec *waiting;
 \};
 #endif
 \end{alltt}
 \caption{Commit record structure.}
 \label{fig:commitrec}
 \end{figure}
+
+These data structures allow a single-writer multiple-readers
+transaction consistency scheme to be implemented.  To avoid polling
+where possible, our transactions prefer committing suicide to aborting
+another transaction when consistency only allows a single outstanding
+transaction.  At the end of every versions list we guarantee there is
+at least one committed transaction.  Other ordering is also preserved
+in the list: for every \code{vinfo} structure $v$,
+$v\ptr\code{transid}$ is a subtransaction of
+$v\ptr\code{anext}\ptr\code{transid}$ and \emph{not} a subtransaction of
+$v\ptr\code{wnext}\ptr\code{transid}$.  Every reader is a
+subtransaction of every writer; formally, for every reader $r$ in
+$v\ptr\code{readers}$, $r\ptr\code{transid}$ is a subtransaction of
+$v\ptr\code{transid}$.  Finally, to enforce consistency, there are
+never any non-aborted readers of $v$'s parent transaction which are
+subtransactions of $v$; that is, for all readers $r$ in
+$v\ptr\code{anext}\code{readers}$, $v\ptr\code{transid}$ is a
+subtransaction of $r\ptr\code{transid}$ (and not the other way
+around), unless $r\ptr\code{transid}$ has been aborted.
 
 \section{Algorithms}
 
