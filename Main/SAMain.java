@@ -36,7 +36,7 @@ import harpoon.Util.CombineIterator;
 import harpoon.Util.Default;
 import harpoon.Util.Util;
 
-import harpoon.Analysis.PointerAnalysis.InstrumentateAllocs;
+import harpoon.Analysis.PointerAnalysis.InstrumentAllocs;
 
 import gnu.getopt.Getopt;
 
@@ -73,7 +73,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.103 2000-11-08 23:43:23 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.104 2000-11-09 00:50:29 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -89,9 +89,9 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean OPTIMIZE = false;
     static boolean LOOPOPTIMIZE = false;
     static boolean USE_OLD_CLINIT_STRATEGY = false;
-    static boolean INSTRUMENTATE = false;
+    static boolean INSTRUMENT_ALLOCS = false;
     static String IFILE=null;
-    static InstrumentateAllocs insta = null;
+    static InstrumentAllocs insta = null;
 
 
     static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
@@ -206,9 +206,9 @@ public class SAMain extends harpoon.IR.Registration {
 		// recompute the hierarchy after transformation.
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
-	    if (INSTRUMENTATE) {
+	    if (INSTRUMENT_ALLOCS) {
 		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-		insta=new InstrumentateAllocs(hcf, mainM, linker);
+		insta=new InstrumentAllocs(hcf, mainM, linker);
 		hcf=insta.codeFactory();
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
@@ -332,7 +332,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    System.exit(1);
 		}
 	    }
-	    if (INSTRUMENTATE) {
+	    if (INSTRUMENT_ALLOCS) {
 		System.out.println("Serializing Instrumentation to "+IFILE);
 		try {
 		    ObjectOutputStream ois =
@@ -626,7 +626,7 @@ public class SAMain extends harpoon.IR.Registration {
 		}
 		break;
 	    case 'N':
-		INSTRUMENTATE=true;
+		INSTRUMENT_ALLOCS=true;
 		IFILE=g.getOptarg();
 		break;
 	    case 'l':
