@@ -64,10 +64,10 @@ import java.util.Set;
 import java.util.Stack;
 
 /**
- * The ToTree class is used to translate low-quad-no-ssa code to tree code.
+ * The ToTree class is used to translate low-quad code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.63 2000-02-09 04:23:39 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.64 2000-02-09 21:57:27 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -78,7 +78,7 @@ class ToTree {
     public ToTree(final TreeFactory tf, LowQuadNoSSA code) {
 	this(tf, code, new EdgeOracle() {
 	    public int defaultEdge(HCodeElement hce) { return 0; }
-	}, null);
+	}, null/*um, fixme.  i need a reachingdefs for no-ssa form*/);
     }
     public ToTree(final TreeFactory tf, final LowQuadSSA code) {
 	this(tf, code, new EdgeOracle() {
@@ -585,7 +585,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	// deal with function pointer.
 	func  = _TEMP(q.ptr(), q);
 	ptr = q.isVirtual() ? // extra dereference for virtual functions.
-	    (Exp) new MEM(m_tf, q, Type.POINTER, func) : (Exp) func;
+	    (Exp) makeMEM(q, HClass.Void, func) : (Exp) func;
 	    
 	qParams = q.params(); params = null; 
 	for (int i=qParams.length-1; i >= 0; i--) {
@@ -626,7 +626,6 @@ static class TranslationVisitor extends LowQuadVisitor {
 
     // runtime-independent
     public void visit(PGET q) {
-	// XXX type MEM.
 	MEM m = makeMEM(q, q.type(), _TEMP(q.ptr(), q));
 	addMove(q, q.dst(), m);
     }
@@ -768,7 +767,6 @@ static class TranslationVisitor extends LowQuadVisitor {
   
     public void visit(PSET q) {
 	Exp src = _TEMP(q.src(), q), ptr = _TEMP(q.ptr(), q);
-	// XXX UPDATE DT FOR MEM
 	MEM m = makeMEM(q, q.type(), ptr);
 	Stm s0 = new MOVE(m_tf, q, m, src);
 	addStmt(s0);
@@ -858,13 +856,17 @@ static class TranslationVisitor extends LowQuadVisitor {
 
     // make a properly-sized MEM
     private MEM makeMEM(HCodeElement source, HClass type, Exp ptr) {
+	MEM result;
 	if (type.equals(HClass.Boolean) || type.equals(HClass.Byte))
-	    return new MEM(m_tf, source, 8, true, ptr);
-	if (type.equals(HClass.Char))
-	    return new MEM(m_tf, source, 16, false, ptr);
-	if (type.equals(HClass.Short))
-	    return new MEM(m_tf, source, 16, true, ptr);
-	return new MEM(m_tf, source, maptype(type), ptr);
+	    result = new MEM(m_tf, source, 8, true, ptr);
+	else if (type.equals(HClass.Char))
+	    result = new MEM(m_tf, source, 16, false, ptr);
+	else if (type.equals(HClass.Short))
+	    result = new MEM(m_tf, source, 16, true, ptr);
+	else
+	    result = new MEM(m_tf, source, maptype(type), ptr);
+	treeDeriv.putType(result, type);// update type information!
+	return result;
     }
 
     // Implmentation of binary numeric promotion found in the Java
