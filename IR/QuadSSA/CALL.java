@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * <code>CALL</code> objects represent method invocations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.19 1998-09-16 06:32:46 cananian Exp $
+ * @version $Id: CALL.java,v 1.20 1998-09-24 23:14:08 cananian Exp $
  */
 
 public class CALL extends Quad {
@@ -26,6 +26,8 @@ public class CALL extends Quad {
     public Temp retval;
     /** Destination for any exception thrown by the method. */
     public Temp retex;
+    /** Special flag for INVOKESPECIAL (different invoke semantics) */
+    public boolean isSpecial;
 
     /** Creates a <code>CALL</code>. <code>params</code> should match
      *  exactly the number of parameters in the method descriptor,
@@ -38,13 +40,14 @@ public class CALL extends Quad {
      *  no exception is thrown, <code>retex</code> will be null. */
     public CALL(HCodeElement source,
 		HMethod method, Temp objectref, Temp[] params, 
-		Temp retval, Temp retex) {
+		Temp retval, Temp retex, boolean isSpecial) {
 	super(source);
 	this.method = method;
 	this.objectref = objectref;
 	this.params = params;
 	this.retval = retval;
 	this.retex  = retex;
+	this.isSpecial = isSpecial;
 	// check static methods.
 	if (objectref==null) Util.assert(isStatic());
 	else Util.assert(!isStatic());
@@ -55,12 +58,6 @@ public class CALL extends Quad {
 	// check miscellanea.
 	Util.assert(retex!=null && params!=null && method!=null);
 	// I guess it's legal, then.
-    }
-    /** Creates a <Code>CALL</code> to a method with a <code>void</code>
-     *  return-value descriptor. */
-    public CALL(HCodeElement source,
-		HMethod method, Temp objectref, Temp[] params, Temp retex) {
-	this(source, method, objectref, params, null, retex);
     }
 
     /** Returns all the Temps used by this Quad. 
@@ -106,6 +103,8 @@ public class CALL extends Quad {
 	if (retval!=null)
 	    sb.append(retval.toString() + " = ");
 	sb.append("CALL ");
+	if (isSpecial)
+	    sb.append("(special) ");
 	if (isStatic())
 	    sb.append("static ");
 	sb.append(method.getDeclaringClass().getName()+"."+method.getName());
@@ -127,4 +126,8 @@ public class CALL extends Quad {
     /** Determines whether this <code>CALL</code> is to a static method. */
     public boolean isStatic() 
     { return method.isStatic(); }
+    /** Determine whether this <code>CALL</code> uses INVOKESPECIAL
+     *  semantics. */
+    public boolean isSpecial()
+    { return isSpecial; }
 }

@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.78 1998-09-21 04:45:34 cananian Exp $
+ * @version $Id: Translate.java,v 1.79 1998-09-24 23:14:08 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -959,6 +959,7 @@ class Translate  { // not public.
 	case Op.INVOKESTATIC:
 	case Op.INVOKEVIRTUAL:
 	    {
+	    boolean isSpecial = (in.getOpcode()==Op.INVOKESPECIAL);
 	    boolean isStatic = (in.getOpcode()==Op.INVOKESTATIC);
 	    OpMethod opd = (OpMethod) in.getOperand(0);
 	    HClass paramtypes[] = opd.value().getParameterTypes();
@@ -972,16 +973,17 @@ class Translate  { // not public.
 	    Temp Tex = SS.Tex;
 	    if (opd.value().getReturnType()==HClass.Void) { // no return value.
 		ns = s.pop(j+(isStatic?0:1));
-		q = new CALL(in, opd.value(), objectref, param, Tex);
+		q = new CALL(in, opd.value(), objectref, param, 
+			     null, Tex, isSpecial);
 	    } else if (!isLongDouble(opd.value().getReturnType())) {
 		// 32-bit return value.
 		ns = s.pop(j+(isStatic?0:1)).push();
 		q = new CALL(in, opd.value(), objectref, param, 
-			     ns.stack(0), Tex);
+			     ns.stack(0), Tex, isSpecial);
 	    } else { // 64-bit return value.
 		ns = s.pop(j+(isStatic?0:1)).push(null).push();
 		q = new CALL(in, opd.value(), objectref, param, 
-			     ns.stack(0), Tex);
+			     ns.stack(0), Tex, isSpecial);
 	    }
 	    // check for thrown exception.
 	    Quad q1 = new OPER(in, "acmpeq", ns.extra(0),
@@ -1454,8 +1456,8 @@ class Translate  { // not public.
 	    Quad q3 = new CJMP(ts.in, q2.def()[0], new Temp[0]);
 	    Quad q4 = new NEW(ts.in, Tex, hc);
 	    Quad q5 = new CALL(ts.in, hc.getConstructor(new HClass[0]),
-			       Tex, new Temp[0], 
-			       ns.extra(0)/*exception*/);
+			       Tex, new Temp[0], null /*retval*/,
+			       ns.extra(0)/*exception*/, true /*special*/);
 	    Quad q6 = new OPER(ts.in, "acmpeq", ns.extra(1),
 			       new Temp[] { q5.def()[0], SS.Tnull } );
 	    Quad q7 = new CJMP(ts.in, q6.def()[0], new Temp[0]);
@@ -1544,7 +1546,8 @@ class Translate  { // not public.
 
 	Quad q0 = new NEW(in, Tex, exClass);
 	Quad q1 = new CALL(in, exClass.getConstructor(new HClass[0]),
-			   q0.def()[0], new Temp[0], s.extra(0) /*ex*/);
+			   q0.def()[0], new Temp[0], null /*retval*/,
+			   s.extra(0) /*ex*/, true /*special*/);
 	// check whether the constructor threw an exception.
 	Quad q2 = new OPER(in, "acmpeq", s.extra(1),
 			   new Temp[] { q1.def()[0], SS.Tnull } );
