@@ -9,6 +9,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadVisitor;
@@ -54,7 +55,7 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.15 1999-09-09 21:42:57 cananian Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.15.6.1 2000-01-11 18:53:33 cananian Exp $
  */
 
 public class IntraProc {
@@ -62,6 +63,7 @@ public class IntraProc {
     HMethod method;
     QuadSSI code;
     UseDefMap usedef;
+    Linker linker;
             
     SetHClass[] parameterTypes;
     SetHClass returnType;
@@ -73,6 +75,7 @@ public class IntraProc {
     public IntraProc(InterProc e, HMethod m, HCodeFactory hcf) { 
 	environment = e;
 	method = m;
+	linker = m.getDeclaringClass().getLinker();
 	code = (QuadSSI)hcf.convert(m);
 	usedef = new UseDef();
 	parameterTypes = new SetHClass[m.getParameterTypes().length+(m.isStatic()?0:1)];
@@ -126,15 +129,15 @@ public class IntraProc {
     void nativeMethods() {
 	if (method.getDeclaringClass().getName().equals("java.lang.System")) {
 	    if (method.getName().equals("setIn0"))
-		environment.mergeType(HClass.forName("java.lang.System").getDeclaredField("in"), parameterTypes[0]);
+		environment.mergeType(linker.forName("java.lang.System").getDeclaredField("in"), parameterTypes[0]);
 	    else if (method.getName().equals("setOut0"))
-		environment.mergeType(HClass.forName("java.lang.System").getDeclaredField("out"), parameterTypes[0]);
+		environment.mergeType(linker.forName("java.lang.System").getDeclaredField("out"), parameterTypes[0]);
 	    else if (method.getName().equals("setErr0"))
-		environment.mergeType(HClass.forName("java.lang.System").getDeclaredField("err"), parameterTypes[0]);
+		environment.mergeType(linker.forName("java.lang.System").getDeclaredField("err"), parameterTypes[0]);
 	}
 	returnType = environment.cone(method.getReturnType());
 	if (exceptionAnalysis) // UGLY?! otherwise, running out of memory now
-	    exceptionType = environment.cone(HClass.forClass(Throwable.class));
+	    exceptionType = environment.cone(linker.forClass(Throwable.class));
     } 
 
     boolean outputChanged;

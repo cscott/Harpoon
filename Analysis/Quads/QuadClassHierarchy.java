@@ -29,7 +29,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.14 1999-11-15 19:14:05 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.14.2.1 2000-01-11 18:53:32 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -101,12 +101,19 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	return sb.toString();
     }
 
-    // compatibility method.
-    /** @deprecated Use QuadClassHierarchy(Collections.singleton(root), hcf)
-     *              instead. */
-    public QuadClassHierarchy(HMethod root, HCodeFactory hcf) {
-	this(Collections.singleton(root), hcf);
+    ////// hclass objects
+    private final HMethod HMstrIntern;
+    private final HMethod HMthrStart;
+    private final HMethod HMthrRun;
+    private QuadClassHierarchy(Linker linker) {
+	HMstrIntern = linker.forName("java.lang.String")
+	    .getMethod("intern",new HClass[0]);
+	HMthrStart = linker.forName("java.lang.Thread")
+	    .getMethod("start", new HClass[0]);
+	HMthrRun = linker.forName("java.lang.Thread")
+	    .getMethod("run", new HClass[0]);
     }
+
     /** Creates a <code>ClassHierarchy</code> of all classes
      *  reachable/usable from <code>HMethod</code>s in the <code>roots</code>
      *  <code>Collection</code>.  <code>HClass</code>es included in
@@ -118,7 +125,9 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
      *  a constructor or non-static method of that class to the
      *  <code>roots</code> <code>Collection</code>.<p> <code>hcf</code>
      *  must be a code factory that generates quad form. */
-    public QuadClassHierarchy(Collection roots, HCodeFactory hcf) {
+    public QuadClassHierarchy(Linker linker,
+			      Collection roots, HCodeFactory hcf) {
+	this(linker); // initialize hclass objects.
 	// state.
 	// keeps track of methods which are actually invoked at some point.
 	Map classMethodsUsed = new HashMap(); // class->set map.
@@ -248,8 +257,6 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    children.put(c, ch);
 	}
     }
-    private static final HMethod HMstrIntern =
-	HClass.forName("java.lang.String").getMethod("intern",new HClass[0]);
 
     /* when we discover a new class nc:
         for each superclass c or superinterface i of this class,
@@ -377,10 +384,6 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	}
 	// done.
     }
-    private static final HMethod HMthrStart =
-	HClass.forName("java.lang.Thread").getMethod("start", new HClass[0]);
-    private static final HMethod HMthrRun =
-	HClass.forName("java.lang.Thread").getMethod("run", new HClass[0]);
 
     /* methods invoked with INVOKESPECIAL or INVOKESTATIC... */
     private void discoverSpecial(HMethod m, 
