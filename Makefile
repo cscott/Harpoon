@@ -362,6 +362,10 @@ buffer.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
+movie/tank.jar:
+	@echo Downloading the tank movie...
+	@wget -nv http://www.flex-compiler.lcs.mit.edu/Harpoon/ImageRec/tank.jar -O movie/tank.jar
+
 jars: clean doc movie/tank.jar
 	@echo Generating imagerec.jar file...
 	@rm -rf $(JDIRS)
