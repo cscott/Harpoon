@@ -32,6 +32,8 @@
 ({ void *__sp; \
    asm("ldr %0, [fp, #-8]" : "=r" (__sp) :: "memory"); \
    __sp; })
+#define set_stackptr(__sp) \
+   asm("str %0, [fp, #-8]" : : "r" (__sp) : "memory")
 
 /* Do lookup & update of this function's return address, in order to
  * throw an exception. */
