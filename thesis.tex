@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.61 1999-08-03 19:35:54 cananian Exp $
+% $Id: thesis.tex,v 1.62 1999-08-05 19:10:00 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -7,7 +7,7 @@
 \usepackage{beton}\usepackage{euler}
 %\usepackage{pdffonts}\usepackage{euler}
 % useful stuff
-\usepackage{algorithm} % algorithm environment, \listofalgorithms
+\usepackage[section,plain]{algorithm} % algorithm environment,\listofalgorithms
 \usepackage{amsthm} % proof environment
 \usepackage{amstext} % the \text command for math mode (replaces \mbox)
 \usepackage{varioref}\vrefwarning % \vref command
@@ -27,14 +27,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.61 $ $}
+\date{\today \\ $ $Revision: 1.62 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.61 $ $}{$ $Revision: 1.61 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.62 $ $}{$ $Revision: 1.62 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -145,7 +145,7 @@ structure of the control flow graph, and switch nodes (where control
 flow splits) are undecipherable without referring to the control flow
 graph.
 
-In practice, this seems not a great disadvantage---it merely forces up to
+In practice, this seems not a great disadvantage---it merely forces us to
 maintain a mapping of SSA statements to nodes (equivalently, basic
 blocks) of the original control flow graph.  But maintaining this
 correspondence complicates editing the IR.  Also, it complicates the
@@ -576,10 +576,10 @@ however, which motivates our choice of approach.}  The remainder of
 this section will be devoted to a correctness proof of the algorithm
 of figure~\ref{fig:SSIalg}.
 
-\begin{myfigure}\small%\linespread{0.75}
+\begin{myalgorithm}\small%\linespread{0.75}
 \input{Figures/THssialg}
-\caption{Algorithm for placing \phisigfunction{s}.}\label{fig:SSIalg}
-\end{myfigure}
+\caption{Place \phisigfunction{s}.}\label{fig:SSIalg}
+\end{myalgorithm}
 
 \begin{lemma}
 If a \phifunction{} (\sigfunction{}) for a variable $v$ is needed in
@@ -753,7 +753,7 @@ Zadeck's Sparse Conditional Constant (SCC) algorithm
 null-pointer checks, computes variable types, and performs
 floating-point- and string-constant-propagation in addition to the
 integer constant propagation of standard SCC.\footnote{It also washes
-the dishes and does the laundry.  It does not do windows$^{TM}$.}
+the dishes and does the laundry.  It does not do windows$^{\text{TM}}$.}
 
 We will describe this algorithm incrementally, beginning with the
 standard SCC constant-propagation algorithm for review.
@@ -780,7 +780,15 @@ about the value is known, the lattice value $\top$ indicates that it
 is possible that the variable has more than one dynamic value, and the
 other lattice entries (corresponding to integer constants and occuping
 a flat space between $\top$ and $\bot$) indicate that the variable can
-be proven to have a single constant value in all runs of the program.
+be proven to have a single constant value in all runs of the program.%
+\footnote{Note that we follow the $\top$ and $\bot$ conventions used
+in semantics and abstract interpretation; authors in dataflow analysis
+(including Wegman and Zadeck in their SCC paper \cite{wegman91:scc})
+often use contrary definitions, letting $\top$ mean undefined and
+$\bot$ indicate overdefinition.  As section \ref{sec:semantics} will
+discuss the semantics of \ssiplus at length, we thought it best to
+adhere to one set of definitions consistently, instead of switching
+mid-paper.}
 Similarly, the executability lattice indicates whether it is possible
 that the control flow edge is traversed in some execution of the
 program (marked ``executable''), or if it can be proven that the edge
@@ -848,7 +856,9 @@ members of the Java \code{int} integer type.
 Java \code{int}s are 32 bits long, so the ``int'' entry abbreviates
 $2^{32}$ lattice elements.  Similarly, the ``double'' entry encodes not
 the infinite domain of real numbers, but the domain spanned by the
-Java \code{double} type which has fewer than $2^{64}$ members.  The
+Java \code{double} type which has fewer than $2^{64}$
+members.\footnote{In IEEE-standard floating-point, some possible bit
+patterns are not valid number encodings.}  The
 Java \code{String} type is also included, to allow simple constant
 string coalescing to be performed.  The propagation algorithm over
 this lattice is a trivial modification to algorithm \ref{alg:sccssi}, and
@@ -959,6 +969,8 @@ new meet and join rules are described in figure \ref{fig:nothereyet}.
 Notice that we exploit the pre-existing integer-constant propagation to
 identify constant-length arrays, and that our integrated approach
 allows one-pass optimization of the program in figure \ref{fig:combined}.
+\fixme{Note that SSI form is \textbf{essential} in allowing SPTC to do
+array-bounds and null-pointer checks in a useful manner.}
 
 \subsection{Bit-width analysis}\label{sec:bitwidth}
 \begin{myfigure}[t]
