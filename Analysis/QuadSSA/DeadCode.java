@@ -15,15 +15,12 @@ import java.util.Hashtable;
  * a method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.2 1998-09-21 21:51:00 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.3 1998-09-22 02:31:45 cananian Exp $
  */
 
 public class DeadCode  {
-    
-    /** Creates a <code>DeadCode</code>. */
-    public DeadCode() {
-        
-    }
+    /** Hide the constructor. */
+    private DeadCode() { }
 
     static class IntTable extends Hashtable {
 	int putInt(Object o, int v) {
@@ -38,7 +35,7 @@ public class DeadCode  {
 	}
     }
 
-    private void markAbsent(Temp t, Worklist W, 
+    private static void markAbsent(Temp t, Worklist W, 
 			    IntTable uses, Hashtable defs) {
 	int n = uses.getInt(t)-1;
 	uses.putInt(t, n);
@@ -47,7 +44,7 @@ public class DeadCode  {
 	    W.push(defs.get(t));
     }
 
-    public void optimize(HCode hc) {
+    public static void optimize(HCode hc) {
 	Hashtable defs = new Hashtable();
 	IntTable uses = new IntTable();
 	Worklist W = new Set();
@@ -84,7 +81,7 @@ public class DeadCode  {
 		    if (uses.getInt(Q.dst[i]) > 0) continue;
 		    // erase this phi! (fun for the whole family)
 		    //   decrement uses of the phi args.
-		    for (int j=0; j < Q.src[i].length; i++)
+		    for (int j=0; j < Q.src[i].length; j++)
 			markAbsent(Q.src[i][j], W, uses, defs);
 		    //   shrink the phi function (secret headhunter's ritual)
 		    Q.dst = (Temp[])   Util.shrink(Q.dst, i);
