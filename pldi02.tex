@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.11 2001-11-16 19:36:25 cananian Exp $
+% $Id: pldi02.tex,v 1.12 2001-11-16 20:08:47 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -7,7 +7,7 @@
 %\usepackage{amsthm} % proof environment
 %\usepackage{amstext} % the \text command for math mode (replaces \mbox)
 \usepackage{varioref} % \vref command
-%\usepackage{graphicx} % for SCC bargraph
+\usepackage{graphicx} % for eps figures
 \usepackage{color}
 \usepackage{comdef}
 \newcommand{\figscale}{1.0}
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.11 $ $}{$ $Revision: 1.11 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.12 $ $}{$ $Revision: 1.12 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -183,9 +183,9 @@ average of 12\% of the total bytes allocated by our benchmarks, and we
 can reclaim roughly three-quarters of that.
 \begin{table}
 \begin{tabular}{lcr@{.}lr@{.}l}
-&& \multicolumn{4}{c}{\% alloc'ed space saved} \\
-\bf Benchmark & \# classes & \multicolumn{2}{c}{std/byte} &
-                             \multicolumn{2}{l}{~~bit} \\ \hline
+&& \multicolumn{4}{c}{\bf \% alloc'ed space saved} \\
+\bf Benchmark &\bf \# classes & \multicolumn{2}{c}{\bf std/byte} &
+                             \multicolumn{2}{l}{\bf~~bit} \\ \hline
 200\_check	& 253 &  3&8\% &  3&8\% \\
 201\_compress	& 216 &  0&0\% &  0&0\% \\
 202\_jess	& 379 &  6&0\% &  8&6\% \\
@@ -253,8 +253,8 @@ space savings due to eliminating the second header field when it is
 unused.
 \begin{table}
 \begin{tabular}{lccr@{.}l}
-&\multicolumn{2}{c}{\# classes requiring}&\multicolumn{2}{c}{\% alloc'ed}\\
-\bf Benchmark & hashcodes&locks & \multicolumn{2}{c}{space saved} \\\hline
+&\multicolumn{2}{c}{\bf\# classes requiring:}&\multicolumn{2}{c}{\bf\% alloc'ed}\\
+\bf Benchmark &\bf hashcodes&\bf locks&\multicolumn{2}{c}{\bf space saved}\\\hline
 200\_check	&   0 &   ~0   &  5&1\% \\
 201\_compress	&   0 &   ~0   &  0&1\% \\
 202\_jess	&   0 &   ~0   & 12&0\% \\
@@ -364,9 +364,9 @@ realized by removing them.  With the exception of 202\_jess and
 very rarely instantiated.
 \begin{table}
 \begin{tabular}{lcccr@{.}l}
-&total&&&\multicolumn{2}{c}{\% alloc'ed}\\
-\bf Benchmark & fields & unread & constant &
-\multicolumn{2}{c}{space saved} \\\hline
+&\bf total&&&\multicolumn{2}{c}{\bf\% alloc'ed}\\
+\bf Benchmark &\bf fields &\bf unread &\bf constant &
+\multicolumn{2}{c}{\bf space saved} \\\hline
 200\_check	& 279 &   79   &   35   &  2&6\% \\
 201\_compress	& 298 &   75   &   31   &  2&5\% \\
 202\_jess	& 485 &   91   &   43   &  9&9\% \\
@@ -385,6 +385,34 @@ very rarely instantiated.
 
 \subsection{Field packing}
 \label{sec:field-packing}
+
+\begin{figure*}
+\centering
+\begin{tabular}{|l|}
+\hline
+Standard packing word-aligns the object and aligns each field to the
+width of its type (4-byte data is 4-byte aligned):\\
+\includegraphics[scale=0.7]{Figures/standardAlignment.eps}\\
+``Byte'' alignment byte-aligns the object and all fields:
+\hfill\raisebox{-1ex}[0pt][0pt]{\parbox[t]{3in}{
+\begin{samplecode}
+class A \{\\
+\>int x;  /* actual width 24 bits */\\
+\>byte y; /* actual width 5 bits */\\
+\>boolean z; /* actual width 1 bit */\\
+\}\\
+\end{samplecode}
+}}\\
+\includegraphics[scale=0.7]{Figures/byteAlignment.eps}\\
+``Bit'' alignment requires not alignment of objects or fields:\\
+\includegraphics[scale=0.7]{Figures/bitAlignment.eps}\\
+\hline
+\end{tabular}
+\caption{An example of different field packing scenarios.  The object
+  header has been omitted for clarity.}
+\label{fig:packing}
+\end{figure*}
+
 If the program is going to run on a standard java virtual machine, or
 for some other reason modifications to the runtime environment are not
 possible, then optimization based on the bitwidth analysis can only
@@ -414,8 +442,9 @@ can bit-align objects as well by shifting our pointers left by 3 and
 using the new lower-order bits to encode a bit-within-the-byte offset.
 This requires much more time overhead to decode pointers and fields.
 This scenario is called ``bit''.
-
-{\bf DIAGRAM HERE?}
+%
+Figure~\ref{fig:packing} illustrates the three different packing
+scenarios for an illustrative class.
 
 Note that all but the most aggressive form of the {\it bit} scenario
 requires some amount of object padding.  In a space-conscious
