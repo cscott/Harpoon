@@ -3,11 +3,16 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
+
+import java.util.Set;
+import java.util.HashSet;
+
+
 /**
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.1.2.2 2000-01-15 03:38:16 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.3 2000-01-16 02:24:32 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -54,7 +59,8 @@ public class ParIntGraph {
 	return G.equals(pig2.G) && tau.equals(pig2.tau);
     }
 
-    /** private constructor for the <code>clone</code> method. */
+    /** Private constructor for <code>clone</code> and 
+     * <code>keepTheEssential</code>. */
     private ParIntGraph(PointsToGraph _G,PAThreadMap _tau 
 			/*,PAActionSet _alpha, PAParallelAction _pi*/){
 	G     = _G;
@@ -70,6 +76,18 @@ public class ParIntGraph {
 			       (PAThreadMap)tau.clone()
 			       /* ,alpha.clone(),pi.clone() */);
     }
+
+    
+    /** Produces a <code>ParIntGraph</code> containing only the 
+     *  nodes that could be reached from <code>root_set</code>. */
+    public ParIntGraph keepTheEssential(PANode[] params,boolean is_main){
+	HashSet remaining_nodes = new HashSet();
+	PointsToGraph _G = 
+	    G.keepTheEssential(params, remaining_nodes, is_main);
+	PAThreadMap _tau = tau.keepTheEssential(remaining_nodes); 
+	return new ParIntGraph(_G,_tau);
+    }
+
 
     /** pretty-print function for debug purposes */
     public String toString(){

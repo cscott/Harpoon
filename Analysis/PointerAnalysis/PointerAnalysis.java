@@ -35,15 +35,19 @@ import harpoon.IR.Quads.MOVE;
 import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.SET;
-import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.FOOTER;
 
 
 /**
- * <code>PointerAnalysis</code>
+ * <code>PointerAnalysis</code> is the biggest class of the Pointer Analysis
+ * package. It is designed to act as a <i>query-object</i>: after being
+ * initialized, it can be asked to provide the Parallel InteractionGraph
+ * valid at the end of a specific method. All the computation is done at
+ * the construction time; the queries are only retrieving the already
+ * computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.1.2.2 2000-01-15 03:38:16 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.3 2000-01-16 02:24:32 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -59,10 +63,26 @@ public class PointerAnalysis {
     // Maintains the partial points-to and escape information for the
     // analyzed methods. This info is successively refined by the fixed
     // point algorithm until no further change is possible
-    // mapping HMethod -> ParIntGraph
-    private Hashtable hash = new Hashtable();
+    // mapping HMethod -> ParIntGraph.
+    private Hashtable hash_proc_int = new Hashtable();
 
-    /** Creates a <code>PointerAnalysis</code>. */
+    // Maintains the external view of the parallel interaction graphs
+    // attached with the analyzed methods. These "bricks" are used
+    // for the processing of the CALL nodes.
+    // Mapping HMethod -> ParIntGraph.
+    private Hashtable hash_proc_ext = new Hashtable();
+
+    /** Creates a <code>PointerAnalysis</code>. It is also triggering
+     * the analysis of <code>hm</code> and of all methods that are called
+     * directly or indirectly by <codehm</code>.<br>
+     *<b>Parameters</b>
+     *<ul>
+     *<li>The <code>CallGraph</code> and the <code>AllCallers</code> that
+     * models the relations between the different methods;
+     *<li>A <code>HCodefactory</code> that is used to generate the actual
+     * code of the methods and
+     *<li>The <i>root</i>method <code>hm</code>.
+     *</ul> */
     public PointerAnalysis(CallGraph _cg, AllCallers _ac,
 			   HCodeFactory _hcf, HMethod hm){
 	cg  = _cg;
@@ -71,15 +91,29 @@ public class PointerAnalysis {
 	analyze(hm);
     }
 
-    // Returns the Parallel Interaction Graph attached to the method hm
-    // (i.e. the graph at the end of the method)
-    public ParIntGraph getParIntGraph(HMethod hm){
-	return (ParIntGraph)hash.get(hm);
+    /** Returns the full (internal) <code>ParIntGraph</code> attached to
+     * the method <code>hm</code> i.e. the graph at the end of the method.
+     * Returns <code>null</code> if no such graph is available. */
+    public ParIntGraph getIntParIntGraph(HMethod hm){
+	return (ParIntGraph)hash_proc_int.get(hm);
     }
 
+    /** Returns the simplified (external) <code>ParIntGraph</code> attached to
+     * the method <code>hm</code> i.e. the graph at the end of the method.
+     * of which only the parts reachable from the exterior (via parameters,
+     * returned objects or static classes) have been preserved.
+     * Returns <code>null</code> if no such graph is available. */
+    public ParIntGraph getExtParIntGraph(HMethod hm){
+	return (ParIntGraph)hash_proc_ext.get(hm);
+    }
+
+    /** Returns the parameter nodes of the method <code>hm</code>. This is
+     * useful for the understanding of the <code>ParIntGraph</code> attached
+     * to <code>hm</code> */
     public PANode[] getParamNodes(HMethod hm){
 	return nodes.getAllParams(hm);
     }
+
 
     // Worklist for the inter-procedural analysis: only <code>HMethod</code>s
     // will be put here.
@@ -101,9 +135,9 @@ public class PointerAnalysis {
 	    // grab a method from the worklist
 	    HMethod hm_work = (HMethod)W_inter_proc.remove();
 
-	    ParIntGraph old_info = (ParIntGraph) hash.get(hm_work);
+	    ParIntGraph old_info = (ParIntGraph) hash_proc_int.get(hm_work);
 	    analyze_intra(hm_work);
-	    ParIntGraph new_info = (ParIntGraph) hash.get(hm_work);
+	    ParIntGraph new_info = (ParIntGraph) hash_proc_int.get(hm_work);
 
 	    // new info?
 	    // TODO: this test is overkill! think about it!
@@ -158,13 +192,13 @@ public class PointerAnalysis {
 
 
     /** The Parallel Interference Graph which is updated by the
-     *  <code>analyze_nasic_block</code>. This should normally be a
+     *  <code>analyze_basic_block</code>. This should normally be a
      *  local variable of that function but it must be also accessible
      *  to the <code>PAVisitor</code> class */
     private ParIntGraph bbpig = null;
 
     /** QuadVisitor for the <code>analyze_basic_block</code> */
-    class PAVisitor extends QuadVisitor{
+    private class PAVisitor extends QuadVisitor{
 
 	public void visit(Quad q){
 	    // do nothing
@@ -285,21 +319,36 @@ public class PointerAnalysis {
 	}
 	
 
-	/** End of the currently analyzed method; [trim the graph
-	 *  of unnecessary edges], store it in the hash etc. */
-	// TODO: trimming
+	/** End of the currently analyzed method; trim the graph
+	 *  of unnecessary edges, store it in the hash tables etc. */
 	public void visit(FOOTER q){
-	    // bbpig=bbpig.simplify();
-	    hash.put(current_intra_method,bbpig);
+
+	    // The full graph is stored in the hash_proc_int hashtable;
+	    hash_proc_int.put(current_intra_method,bbpig);
+
+	    // To obtain the external view of the method, the graph must be
+	    // shrinked to the really necessary parts: only the stuff
+	    // that is accessible from the "root" nodes (i.e. the nodes
+	    // that can be accessed by the rest of the program - e.g.
+	    // the caller).
+	    // The set of root nodes consists of the param and return nodes,
+	    // and (only for the non-"main" methods) the static node.
+	    PANode[] nodes = getParamNodes(current_intra_method);
+	    boolean is_main = current_intra_method.getName().equals("main");
+      	    ParIntGraph shrinked_graph = bbpig.keepTheEssential(nodes,is_main);
+
+	    // The external view of the graph is stored in the
+	    // hash_proc_ext hashtable;
+	    hash_proc_ext.put(current_intra_method,shrinked_graph);
 	}
 	
     };
     
     
-    // Analyzes a basic block - a Parallel Interaction Graph is computed at
-    // the beginning of the basic block, it is next updated by all the 
-    // instructions appearing in the basic block (in the order they appear
-    // in the original program).
+    /** Analyzes a basic block - a Parallel Interaction Graph is computed at
+     *  the beginning of the basic block, it is next updated by all the 
+     *  instructions appearing in the basic block (in the order they appear
+     *  in the original program). */
     private ParIntGraph analyze_basic_block(BasicBlock bb){
 
 	System.out.println("Analyze_basic_block " + bb);
@@ -332,17 +381,19 @@ public class PointerAnalysis {
     /** Returns the Parallel Interaction Graph at the point bb*
      *  The returned <code>ParIntGraph</code> must not be modified 
      *  by the caller. This function is used by 
-     * <code>get_initial_bb_pig</code>. */
+     *  <code>get_initial_bb_pig</code>. */
     private ParIntGraph get_after_bb_pig(BasicBlock bb){
 	ParIntGraph pig = (ParIntGraph) hash_bb.get(bb);
 	return (pig==null)?ParIntGraph.EMPTY_GRAPH:pig;
     }
 
-    // Recomputes the Parallel Interaction Thread associated with
-    // the beginning of the <code>BasicBlock</code> <code>bb</code>.
-    // This method is recomputing the stuff (instead of just grabbing it
-    // from the cache) because the information attached with some of
-    // the predecessors has changed (that's why bb is reanalyzed)
+
+    /** (Re)computes the Parallel Interaction Thread associated with
+     *  the beginning of the <code>BasicBlock</code> <code>bb</code>.
+     *  This method is recomputing the stuff (instead of just grabbing it
+     *  from the cache) because the information attached with some of
+     *  the predecessors has changed (that's why <code>bb</code> is 
+     *  reanalyzed) */
     private ParIntGraph get_initial_bb_pig(BasicBlock bb){
 	if(bb.prevLength() == 0){
 
@@ -374,6 +425,11 @@ public class PointerAnalysis {
     }
 
 
+    /** Computes the parallel interaction graph at the beginning of a 
+     *  method; an almost empty graph except for the parameter nodes
+     *  for the object formal parameter (i.e. primitive type parameters
+     *  such as <code>int</code>, <code>float</code> do not have associated
+     *  nodes */
     private ParIntGraph method_initial_pig(HMethod hm){
 	BasicBlock bb = bb_factory.computeBasicBlocks(hm); 
 	HEADER hce = (HEADER) bb.getFirst();
@@ -383,10 +439,21 @@ public class PointerAnalysis {
 
 	ParIntGraph pig = new ParIntGraph();
 
+	// the following code is quite messy ... The problem is that I 
+	// create param nodes only for the parameter with object types;
+	// unfortunately, the types could be found only in HMethod (and
+	// do not include the evetual this parameter for non-static nodes)
+	// while the actual Temps associated with all the formal parameters
+	// could be found only in METHOD. So, we have to coordinate
+	// information from two different places and, even more, we have
+	// to handle the missing this parameter (which is present in METHOD
+	// but not in HMethod). 
 	boolean isStatic = 
 	    java.lang.reflect.Modifier.isStatic(hm.getModifiers());
-	
+	// if the method is non-static, the first parameter is not metioned
+	// in HMethod - it's the implicit this parameter.
 	int skew = isStatic?0:1;
+	// number of object formal parameters = the number of param nodes
 	int count = skew;
 	for(int i=0;i<types.length;i++)
 	    if(!types[i].isPrimitive()) count++;

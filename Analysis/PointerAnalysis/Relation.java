@@ -19,7 +19,7 @@ import java.util.Map;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Relation.java,v 1.1.2.2 2000-01-15 03:38:16 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.3 2000-01-16 02:24:32 salcianu Exp $
  */
 public class Relation{
     

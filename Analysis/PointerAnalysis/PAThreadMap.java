@@ -8,6 +8,7 @@ import java.util.Hashtable;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * <code>PAThreadMap</code> implements the parallel thread map
@@ -22,7 +23,7 @@ import java.util.Iterator;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.1.2.1 2000-01-14 20:50:59 salcianu Exp $
+ * @version $Id: PAThreadMap.java,v 1.1.2.2 2000-01-16 02:24:32 salcianu Exp $
  */
 public class PAThreadMap{
 
@@ -47,7 +48,7 @@ public class PAThreadMap{
 	else return 0;
     }
 
-    // Increment the value attached to n
+    /** Increments the value attached to <code>n</code> */
     public void inc(PANode n){
 	Integer v = (Integer)hash.get(n);
 
@@ -55,7 +56,7 @@ public class PAThreadMap{
 	if(v == ONE) hash.put(n,TWO);
     }
     
-    // Decrement the value attached to n
+    /** Decrements the value attached to <code>n</code> */
     public void dec(PANode n){
 	Integer v = (Integer)hash.get(n);
 
@@ -91,19 +92,34 @@ public class PAThreadMap{
 	}
     }
 
-    /** Private constructor used only for the <code>clone</code> method */
+    /** Private constructor used by <code>clone</code> and  
+     * <code>keepTheEssential</code> */
     private PAThreadMap(Hashtable _hash){
 	hash = _hash;
     }
     
     /** <code>clone</code> creates a copy of <code>this</code> thread map;
-     *	by doing a simple shallow copy of the <code>hash<code> field 
+     *	by doing a simple shallow copy of the <code>hash<code> field. 
      */
     public Object clone(){
 	return new PAThreadMap((Hashtable)hash.clone());
     }
 
-    // Pretty print function for debug purposes.
+    /** Produces a new <code>PAThreadMap</code> containing only the thread
+     * nodes that appear in <code>essential_nodes</code>, too */
+    public PAThreadMap keepTheEssential(Set essential_nodes){
+	Hashtable _hash = new Hashtable();
+	Iterator it = hash.entrySet().iterator();
+	while(it.hasNext()){
+	    Map.Entry entry = (Map.Entry)it.next();
+	    PANode node = (PANode)entry.getKey();    
+	    if(essential_nodes.contains(node))
+		_hash.put(node,entry.getValue());
+	}
+	return new PAThreadMap(_hash);
+    }
+
+    /** Pretty print function for debug purposes. */
     public String toString(){
 	StringBuffer buffer = new StringBuffer("Parallel Thread Map:\n");
 	Iterator it = hash.entrySet().iterator();

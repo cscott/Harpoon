@@ -17,7 +17,7 @@ import harpoon.ClassFile.HCodeElement;
  * <code>EscapeFunc</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.2 2000-01-15 03:38:16 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.3 2000-01-16 02:24:32 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -118,6 +118,13 @@ public class PAEscapeFunc {
 	if(o==null) return false;
 	PAEscapeFunc e2 = (PAEscapeFunc)o;
 	return rel_n.equals(e2.rel_n) && rel_m.equals(e2.rel_m);
+    }
+
+    public Set escapedNodes(){
+	HashSet set = new HashSet();
+	set.addAll(rel_n.keySet());
+	set.addAll(rel_m.keySet());
+	return set;
     }
 
     /** Private constructor used only by <code>clone</code> */
