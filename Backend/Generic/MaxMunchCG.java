@@ -24,7 +24,7 @@ import java.util.HashMap;
  * their own extensions of <code>CodeGen</code>.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: MaxMunchCG.java,v 1.1.2.7 2000-02-19 08:23:17 cananian Exp $ */
+ * @version $Id: MaxMunchCG.java,v 1.1.2.8 2000-02-28 06:44:44 cananian Exp $ */
 public abstract class MaxMunchCG extends CodeGen {
     
     /** Creates a <code>MaxMunchCG</code>. */
@@ -57,7 +57,7 @@ public abstract class MaxMunchCG extends CodeGen {
 		(TypeAndDerivation) tempToType.get(t);
 	    Util.assert(td != null, 
 			"Uh oh forgot to declare "+t+" before "+i);
-	    ti2td.put(Default.pair(t, i), td);
+	    ti2td.put(Default.pair(i, t), td);
 	}
 
 	return i;
@@ -68,16 +68,18 @@ public abstract class MaxMunchCG extends CodeGen {
 	return new Derivation() {
 	    public Derivation.DList derivation(HCodeElement hce, Temp t) 
 		throws TypeNotKnownException {
-		return 
-		    ((TypeAndDerivation) 
-		     ti2td.get( Default.pair(hce, t) )).dlist;
+		TypeAndDerivation tad = 
+		    (TypeAndDerivation) ti2td.get( Default.pair(hce, t) );
+		if (tad==null) throw new TypeNotKnownException(hce, t);
+		return tad.dlist;
 	    }
 	    
 	    public HClass typeMap(HCodeElement hce, Temp t) 
 		throws TypeNotKnownException {
-		return 
-		    ((TypeAndDerivation) 
-		     ti2td.get( Default.pair(hce, t) )).type;
+		TypeAndDerivation tad = 
+		    (TypeAndDerivation) ti2td.get( Default.pair(hce, t) );
+		if (tad==null) throw new TypeNotKnownException(hce, t);
+		return tad.type;
 	    }
 	};
     }
