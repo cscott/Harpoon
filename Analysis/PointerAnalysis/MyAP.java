@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  <code>AllocationProperties</code>. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MyAP.java,v 1.1.2.4 2000-05-17 20:24:17 salcianu Exp $
+ * @version $Id: MyAP.java,v 1.1.2.5 2000-05-17 21:04:06 salcianu Exp $
  */
 public class MyAP implements AllocationInformation.AllocationProperties,
 			     java.io.Serializable {
@@ -68,14 +68,19 @@ public class MyAP implements AllocationInformation.AllocationProperties,
 	if(canBeStackAllocated())
 	    return hipstr + "Stack allocation";
 
-	if(canBeThreadAllocated())
-	    if(allocationHeap() != null)
-		return (hipstr + "Thread allocation on the heap of " +
-			allocationHeap());
-	    else
-		return
-		    hipstr + "Thread allocation on the current thread's heap";
-
+	if(canBeThreadAllocated()){
+	    if(makeHeap())
+		return hipstr + " Thread allocation on its own heap";
+	    else{
+		if(allocationHeap() != null)
+		    return (hipstr + "Thread allocation on the heap of " +
+			    allocationHeap());
+		else
+		    return
+			hipstr + 
+			"Thread allocation on the current thread's heap";
+	    }
+	}
 	return hipstr + "Global heap allocation";
     }
 }
