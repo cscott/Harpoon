@@ -19,10 +19,6 @@
 
 # define PTRBITS (SIZEOF_VOID_P*8)
 # define FIELDBASE(obj) \
-	OBJ_OR_ARRAY(obj->field_start,((struct aarray *)obj)->element_start+\
-                                (((((struct aarray *)obj)->length+PTRBITS-1) &\
-				  (~(PTRBITS-1)))>>3))
-# define FLAGBASE(obj) \
 	OBJ_OR_ARRAY(obj->field_start,((struct aarray *)obj)->element_start)
 # endif /* !NO_VALUETYPE */
 
@@ -36,7 +32,6 @@
 # undef OBJ_OR_ARRAY
 # undef BASE
 # undef FIELDBASE
-# undef FLAGBASE
 # undef PTRBITS
 
 #endif
