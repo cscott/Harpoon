@@ -25,7 +25,7 @@ import java.util.HashMap;
     <code>Instr</code>s in a <code>Code</code>.
 
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.5 1999-06-11 04:23:54 pnkfelix Exp $ 
+    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.6 1999-07-30 18:45:11 pnkfelix Exp $ 
 */
 public class DemandDrivenRegAlloc extends RegAlloc {
 
@@ -53,8 +53,8 @@ public class DemandDrivenRegAlloc extends RegAlloc {
 	     1. Local register allocation has been run on
 	        <code>code</code> already. 
     */
-    protected DemandDrivenRegAlloc(Frame frame, Code code) {
-        super(frame, code);
+    protected DemandDrivenRegAlloc(Code code) {
+        super(code);
 	uses = new UseMap( code );
 
 	bbToAllocatedMap = new HashMap(); // built during allocation 

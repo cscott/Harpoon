@@ -4,6 +4,7 @@
 package harpoon.Backend.Generic;
 
 import harpoon.IR.Tree.Code;
+import harpoon.IR.Assem.Instr;
 
 /**
  * <code>CodeGen</code> is a general class for specific Backends to
@@ -11,7 +12,7 @@ import harpoon.IR.Tree.Code;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericCodeGen.java,v 1.1.2.1 1999-07-29 00:39:56 pnkfelix Exp $ */
+ * @version $Id: GenericCodeGen.java,v 1.1.2.2 1999-07-30 18:45:13 pnkfelix Exp $ */
 public abstract class GenericCodeGen {
     
     /** Creates a <code>CodeGen</code>. */
@@ -19,5 +20,12 @@ public abstract class GenericCodeGen {
         
     }
     
-    public abstract harpoon.Backend.Generic.Code gen(harpoon.IR.Tree.Code tree);
-}
+    /** Creates a <code>Instr</code> list from the
+	<code>IR.Tree.Code</code> <code>tree</code>. 
+	<BR> <B>effects:</B> Generates and returns a list of
+	     <code>Instr</code>s to execute <code>tree</code>.
+	@return The head of a list of <code>Instr</code>s
+    */
+    public abstract Instr gen(harpoon.IR.Tree.Code tree); 
+
+} 

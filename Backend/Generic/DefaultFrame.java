@@ -36,7 +36,7 @@ import java.util.Map;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.17 1999-07-29 00:38:35 pnkfelix Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.18 1999-07-30 18:45:13 pnkfelix Exp $
  */
 public class DefaultFrame extends Frame implements AllocationInfo {
 
@@ -178,13 +178,6 @@ public class DefaultFrame extends Frame implements AllocationInfo {
     public Iterator suggestRegAssignment(Temp t, Map regfile) {
 	Util.assert(false, "DefaultFrame.suggestRegAssigment() Not implemented");
 	return null;
-    }
-
-    /** Not implemented. */    
-    public String getRegisterName(Temp val, String suffix, Map valToRegMap) {
-	Util.assert(false, "DefaultFrame.getRegisterName() Not implemented");
-	return null;
-
     }
 
     /** Not implemented. */

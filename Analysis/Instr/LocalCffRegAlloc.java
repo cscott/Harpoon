@@ -45,7 +45,7 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.25 1999-07-29 00:38:32 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.26 1999-07-30 18:45:12 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -56,8 +56,8 @@ public class LocalCffRegAlloc extends RegAlloc {
     /** Creates a <code>LocalRegAlloc</code>. 
 	
     */
-    public LocalCffRegAlloc(Frame frame, Code code) {
-        super(frame, code);
+    public LocalCffRegAlloc(Code code) {
+        super(code);
     }
 
     /** Assigns registers in the code for <code>this</code>.

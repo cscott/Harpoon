@@ -16,12 +16,13 @@ import java.io.PrintWriter;
  * <code>TreeCode</code>.  In short, a CGG generates a Code Generator.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.12 1999-07-29 01:49:15 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.13 1999-07-30 18:45:17 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
     private static final String TREE_Code = "harpoon.IR.Tree.Code";
     private static final String GENERIC_Code = "harpoon.Backend.Generic.Code";
+    private static final String ASSEM_Instr = "harpoon.IR.Assem.Instr";
 
     /** The machine specification that the CodeGenerators outputted by
 	<code>this</code> will target.  
@@ -74,8 +75,7 @@ public abstract class CodeGeneratorGenerator {
 		 <code>public class <u>this.className</u> extends
 		 harpoon.Backend.Generic.CodeGen</code>. 
 	     <LI>codegen method signature.  This is already hardcoded as 
-		 <code>public final harpoon.Backend.Generic.Code
-		       gen(harpoon.IR.Tree.TreeCode tree)</code>. 
+		 <code>public final Instr gen(harpoon.IR.Tree.TreeCode tree)</code>. 
 	     </OL>
 	@param out Target output device for the Java source code.
     */
@@ -94,7 +94,7 @@ public abstract class CodeGeneratorGenerator {
 	out.println("\t    @param tree Set of abstract <code>Tree</code> instructions ");
 	out.println("\t                that form the body of the procedure being compiled.");
 	out.println("\t*/");
-	out.println("\tpublic final "+GENERIC_Code+" gen(" + TREE_Code +" code) {"); // method start
+	out.println("\tpublic final "+ASSEM_Instr+" gen(" + TREE_Code +" code) {"); // method start
 
 	out.println(spec.method_prologue_stms);
 

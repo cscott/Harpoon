@@ -21,7 +21,7 @@ import java.util.*;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.18 1999-06-15 20:30:53 sportbilly Exp $
+ * @version $Id: Instr.java,v 1.1.2.19 1999-07-30 18:45:15 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -241,23 +241,32 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     /** Returns the hashcode for this. */
     public int hashCode() { return hashCode; }
 
+    public String getAssem() { return assem; }
+
     // ********* INTERFACE IMPLEMENTATIONS and SUPERCLASS OVERRIDES
 
     // ******************** Object overrides
  
+    /** Returns a string representation of the <code>Instr</code>.  
+	Note that while in the common case the <code>String</code>
+	returned will match the executable assembly code for the
+	<code>Instr</code>, this is not guaranteed.  To produce
+	executable assembly in all cases, use
+	<code>Backend.Generic.Code.toAssem(Instr i)</code>.
+	
     public String toString() {
         StringBuffer s = new StringBuffer();
         int len = assem.length();
         for (int i = 0; i < len; i++) 
             if (assem.charAt(i) == '`')
                 switch (assem.charAt(++i)) {
-		case 'd': { // FSK changed s -> d
+		case 'd': { 
 		    int n = Character.digit(assem.charAt(++i), 10);
 		    Util.assert(n < dst.length, "Instr can't parse " + assem);
 		    s.append(dst[n]);
 		}
 		break;
-		case 's': { // FSK changed d -> s
+		case 's': {
 		    int n = Character.digit(assem.charAt(++i), 10);
 		    Util.assert(n < src.length, "Instr can't parse " + assem);
 		    s.append(src[n]);

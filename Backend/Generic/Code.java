@@ -11,6 +11,7 @@ import harpoon.ClassFile.HCodeEdge;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.Util;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrDIRECTIVE;
@@ -26,7 +27,7 @@ import java.util.*;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.7 1999-06-16 02:34:58 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.8 1999-07-30 18:45:12 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -140,4 +141,52 @@ public abstract class Code extends HCode {
             }
         }
     }
+
+    /** Produces an assembly code string for <code>i</code>.
+	
+     */
+    public String toAssem(Instr instr) {
+        StringBuffer s = new StringBuffer();
+	String assem = instr.getAssem();
+        int len = assem.length();
+        for (int i = 0; i < len; i++) 
+            if (assem.charAt(i) == '`')
+                switch (assem.charAt(++i)) {
+		case 'd': { 
+		    int n = Character.digit(assem.charAt(++i), 10);
+		    Util.assert(n < instr.dst.length, 
+				"Code can't parse " + assem);
+		    s.append(instr.dst[n]);
+		}
+		break;
+		case 's': {
+		    int n = Character.digit(assem.charAt(++i), 10);
+		    Util.assert(n < instr.src.length, 
+				"Code can't parse " + assem);
+		    s.append(instr.src[n]);
+		}
+		break;
+		case 'j': {
+		    int n = Character.digit(assem.charAt(++i), 10);
+		    Util.assert(n < instr.src.length, 
+				"Code can't parse " + assem);
+		    s.append(instr.src[n]);
+		}
+		break;
+		case '`': 
+		    s.append('`');
+		    break;
+                }
+            else s.append(assem.charAt(i));
+
+        return s.toString();
+    }
+
+
+    /** Returns an assembly code identifier for the register that
+	<code>val</code> will be stored into.
+     */
+    protected abstract String getRegisterName(Temp val, String suffix,
+					      Map valToRegMap);
+
 }

@@ -33,7 +33,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.19 1999-07-29 00:38:35 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.20 1999-07-30 18:45:13 pnkfelix Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -180,36 +180,6 @@ public abstract class Frame {
 	*/ 
 	public abstract Iterator getPotentialSpills();
     }
-
-    /** Returns a code factory for assembly code of this backend.
-	<BR> <B>requires:</B> <code>hcf</code> is a code factory for
-	     <code>Tree.Code</code>.
-	     I *think* that it also requires that it be a code factory
-	     for a <code>Tree.Code</code> that has been canonicalized
-	     (i.e. a code factory for <code>CanonicalTreeCode</code>
-	     or <code>OptimizedTreeCode</code>).
-	<BR> <B>effects:</B> Creates a new <code>HCodeFactory</code>
-	     for producing <code>Instr</code>s corresponding to the
-	     assembly for this backend.
-     */
-    public HCodeFactory codeFactory(final HCodeFactory hcf) {
-	return new HCodeFactory(){
-	    public void clear(HMethod m) { hcf.clear(m); }
-	    public HCode convert(HMethod m) {
-		return codegen().
-		    gen((harpoon.IR.Tree.Code)hcf.convert(m));
-	    }
-	    public String getCodeName() { return "instr"; }
-	};
-    }
-
-    /** Returns an assembly code identifier for the register that
-	<code>val</code> will be stored into.
-	<BR> <B>requires:</B> 
-     */
-    public abstract String getRegisterName(Temp val, String suffix,
-					   Map valToRegMap);
-
 
     /** Returns the <code>GenericCodeGen</code> for the backend
 	associated with <code>this</code>.

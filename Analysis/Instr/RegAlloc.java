@@ -32,14 +32,14 @@ import java.util.HashMap;
 
 /**
  * <code>RegAlloc</code> performs Register Allocation for a set of
- * <code>Instr</code>s in a <code>Code</code>.  After register
- * allocation is completed for a set of <code>Instr</code>s, the only
- * references to non-register <code>Temp</code>s in the
+ * <code>Instr</code>s in a <code>Backend.Generic.Code</code>.  After
+ * register allocation is completed for a set of <code>Instr</code>s,
+ * the only references to non-register <code>Temp</code>s in the
  * <code>Instr</code>s will be <code>InstrMEM</code> instructions to
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.11 1999-07-29 00:38:33 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.12 1999-07-30 18:45:12 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -54,8 +54,8 @@ public abstract class RegAlloc  {
 	lot of headaches.
 
     */
-    protected RegAlloc(Frame frame, Code code) {
-        this.frame = frame;
+    protected RegAlloc(Code code) {
+        this.frame = code.getFrame();
 	this.code = code;
 	HasEdges first = (HasEdges) code.getRootElement();
 	rootBlock = BasicBlock.computeBasicBlocks(first);
@@ -109,7 +109,7 @@ public abstract class RegAlloc  {
 	    public HCode convert(HMethod m) {
 		HCode preAllocCode = parent.convert(m);
 		LocalCffRegAlloc localCode = 
-		    new LocalCffRegAlloc(frame, (Code) preAllocCode);
+		    new LocalCffRegAlloc((Code) preAllocCode);
 		//DemandDrivenRegAlloc globalCode = 
 		//   new DemandDrivenRegAlloc(frame, localCode.generateRegAssignment()); 
 		//return globalCode.generateRegAssignment();
