@@ -3,12 +3,20 @@
 #include <jni-private.h>
 #include "java.lang/java_lang_Thread.h"
 #include "flexthread.h"
+#include <assert.h>
 #ifdef WITH_PRECISE_GC
 # include "jni-gc.h"
 # ifdef WITH_GENERATIONAL_GC
 #  include "gc/omit_gc_timer.h"
 # endif
 #endif
+
+#ifdef WITH_REALTIME_THREADS
+#include "realtime/threads.h"
+#include <setjmp.h> //for setjmp and longjmp
+jmp_buf main_return_jump; //a jump point for when the main thread exits
+#endif
+
 #ifdef WITH_GC_STATS
 #include "realtime/GCstats.h"
 #endif
@@ -36,10 +44,20 @@ int main(int argc, char *argv[]) {
   jclass thrCls;
   jobject mainthread;
   jthrowable threadexc;
+  jmethodID getCurrentThreadMethod;
   char **namep;
   int st=0;
   int i;
-  
+  int nest=0;
+
+#ifdef WITH_REALTIME_THREADS
+  jobject scheduler; //scheduler object
+  /*methods to get the scheduler, and to add a thread to it*/
+  jmethodID addThreadMethod, getSchedMethod;
+
+  StopSwitching(); //turn off thread switching to start
+#endif
+
 #ifdef WITH_GENERATIONAL_GC
   init_timer();
 #endif
@@ -54,14 +72,17 @@ int main(int argc, char *argv[]) {
 #ifdef WITH_USER_THREADS
   inituser(&top_of_stack);
 #endif
+
   /* ignore SIGPIPE; we look at errno to handle this condition */
   signal(SIGPIPE, SIG_IGN);
 
   /* set up JNIEnv structures. */
   FNI_InitJNIEnv();
   env = FNI_CreateJNIEnv();
+
   ((struct FNI_Thread_State *)(env))->stack_top = &top_of_stack;
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_TRUE;
+
   /* setup GC */
 #ifdef WITH_PRECISE_GC
   precise_gc_init();
@@ -78,10 +99,27 @@ int main(int argc, char *argv[]) {
 #if defined(WITH_REALTIME_JAVA) || defined(WITH_FAKE_SCOPES)
   RTJ_init();
 #endif
+#ifndef WITH_REALTIME_THREADS
   thrCls  = (*env)->FindClass(env, "java/lang/Thread");
+#else
+  //get the RealtimeThread class instead for Realtime Java
+  thrCls = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
+#endif
   CHECK_EXCEPTIONS(env);
-
+#ifndef WITH_REALTIME_THREADS
   mainthread = Java_java_lang_Thread_currentThread(env, thrCls);
+#else
+  //need to get the current RealtimeThread for Realtime Java
+  getCurrentThreadMethod = (*env)->GetStaticMethodID(env, thrCls,
+  						     "currentRealtimeThread",
+  					  "()Ljavax/realtime/RealtimeThread;");
+  assert(!((*env)->ExceptionOccurred(env)));
+
+  mainthread = (*env)->CallStaticObjectMethod(env, thrCls,
+  				    getCurrentThreadMethod);
+  assert(!((*env)->ExceptionOccurred(env)));
+#endif
+
   CHECK_EXCEPTIONS(env);
 
   /* initialize pre-System.initializeSystemClass() initializers. */
@@ -139,8 +177,42 @@ int main(int argc, char *argv[]) {
 #endif
 
 #ifdef WITH_REALTIME_THREADS
-  Start_QuantaThread(env);
-#endif
+  setupScheduler(); //get the thread scheduler ready
+  
+  /* set up the main Java function as a thread, so we can switch back to it */
+  FNI_java_lang_Thread_mainThreadSetup(env, mainthread, args);
+  
+  //get the scheduler
+  getSchedMethod = (*env)->GetStaticMethodID(env, thrCls,
+					     "getScheduler",
+					     "()Ljavax/realtime/Scheduler;");
+  assert(!((*env)->ExceptionOccurred(env)));
+
+  scheduler = (*env)->CallStaticObjectMethod(env, thrCls, getSchedMethod);
+  assert(!((*env)->ExceptionOccurred(env)));
+  
+  //add the main Java thread to it
+  addThreadMethod = (*env)->GetMethodID(env, 
+					FNI_GetObjectClass(env, scheduler),
+					"addToFeasibility",
+					"(Ljavax/realtime/Schedulable;)V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  //  printf("mthread->start_argument is %p\n",
+  //	 mainthread->mthread->start_argument);
+  (*env)->CallVoidMethod(env, scheduler, addThreadMethod, mainthread);
+  assert(!((*env)->ExceptionOccurred(env)));
+  
+  //  printf("About to start switching\n");
+  StartSwitching(); //startup thread switching
+  
+  setjmp(main_return_jump); //set a jump point here so we can return when done
+  // by cata: A dirty hack so we don't run CheckQuanta the second time through
+  if (++nest == 1)
+    CheckQuanta(1, 1, 1); //check the threads to start the program
+  /* And we're back - the main Java thread has exited */
+  StopSwitching(); //stop Thread switching
+  cleanupThreadQueue(env); //get rid of the threadQueue
+#else
 
   /* Execute main() method. */
   cls = (*env)->FindClass(env, FNI_javamain);
@@ -149,10 +221,7 @@ int main(int argc, char *argv[]) {
   CHECK_EXCEPTIONS(env);
   (*env)->CallStaticVoidMethod(env, cls, mid, args);
 
-#ifdef WITH_REALTIME_THREADS
-  //stop quantathread
-  Stop_QuantaThread(env);
-#endif
+#endif //WITH_REALTIME_THREADS
 
 #ifdef WITH_GC_STATS
   print_GC_stats();
@@ -189,8 +258,9 @@ int main(int argc, char *argv[]) {
   {
     jmethodID exitID = (*env)->GetMethodID(env, thrCls, "exit", "()V");
     CHECK_EXCEPTIONS(env);
-    (*env)->CallNonvirtualVoidMethod(env, mainthread, thrCls, exitID);
-    CHECK_EXCEPTIONS(env);
+    // by cata: I commented these one out
+    //    (*env)->CallNonvirtualVoidMethod(env, mainthread, thrCls, exitID);
+    //    CHECK_EXCEPTIONS(env);
   }
   (*env)->DeleteLocalRef(env, thrCls);
   /* main thread is dead now. */
@@ -201,7 +271,8 @@ int main(int argc, char *argv[]) {
   FNI_MonitorNotify(env, mainthread, JNI_TRUE);
   FNI_MonitorExit(env, mainthread);
   // wait for all threads to finish up.
-  FNI_java_lang_Thread_finishMain(env);
+  // by cata: I commented this one out
+  //  FNI_java_lang_Thread_finishMain(env);
 
 #ifdef WITH_STATISTICS
   /* print out collected statistics */

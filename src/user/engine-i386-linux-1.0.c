@@ -9,7 +9,7 @@
 #include "config.h"
 #ifdef WITH_USER_THREADS
 #ifndef lint
-static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.5 2001-01-26 17:40:51 cananian Exp $";
+static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.6 2002-06-25 20:18:15 dumi Exp $";
 #endif
 
 #include "config.h"
@@ -31,7 +31,13 @@ static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.5 2001-01-26 17:40
  */
 int machdep_save_state(void)
 {
-    return(_setjmp(gtl->mthread.machdep_state));
+#ifndef WITH_REALTIME_THREADS
+  return(_setjmp(gtl->mthread.machdep_state));
+#else
+  //  puts(">>>>>>>>>>>>>>>>>>>>>>>>>>>>machdep_save_state");
+  return(_setjmp(currentThread->mthread->machdep_state));
+  //set jump in currentThread
+#endif
 }
 
 /* ==========================================================================
@@ -39,7 +45,14 @@ int machdep_save_state(void)
  */
 void machdep_restore_state(void)
 {
-  longjmp(gtl->mthread.machdep_state, 1);
+  //  puts(">>>>>>>>>>>>>>>>>>>>>>>>>>>>machdep_restore_state");
+  longjmp(
+#ifndef WITH_REALTIME_THREADS
+	  gtl->mthread.machdep_state,
+#else
+	 currentThread->mthread->machdep_state, //jump to currentThread
+#endif
+	  1);
 }
 
 /* ==========================================================================
@@ -47,9 +60,9 @@ void machdep_restore_state(void)
  */
 int machdep_save_float_state(struct machdep_pthread * mthread)
 {
-	char * fdata = mthread->machdep_float_state;
-
-	__asm__ ("fsave %0"::"m" (*fdata));
+  char * fdata = (char *)mthread->machdep_float_state;
+  //  puts(">>>>>>>>>>>>>>>>>>>>>>>>>>>>machdep_save_float_state");  
+  __asm__ ("fsave %0"::"m" (*fdata));
 }
 
 /* ==========================================================================
@@ -57,9 +70,16 @@ int machdep_save_float_state(struct machdep_pthread * mthread)
  */
 int machdep_restore_float_state(void)
 {
-	char * fdata = (char *)gtl->mthread.machdep_float_state;
-
-	__asm__ ("frstor %0"::"m" (*fdata));
+#ifndef WITH_REALTIME_THREADS
+  char * fdata = (char *)gtl->mthread.machdep_float_state;
+#else
+  /* restore currentThread's float state */
+  char * fdata = (char *)currentThread->mthread->machdep_float_state;
+#endif
+  //  printf("threadid = %d\n", currentThread->threadID);
+  //printf("Restoring float state from %p, currentthread is %p\n",
+  //	 fdata, currentThread);
+  __asm__ ("frstor %0"::"m" (*fdata));
 }
 
 /* ==========================================================================
@@ -78,9 +98,12 @@ void machdep_pthread_start(void)
   /* Run current threads start routine with argument */
   /*pthread_exit*/
   /*Stash the arg value on the stack*/
-  
+#ifndef WITH_REALTIME_THREADS  
   exitthread(gtl->mthread.start_routine(gtl->mthread.start_argument));
-
+#else
+  /* call startup routine of current thread */
+  exitthread(currentThread->mthread->start_routine(currentThread->mthread->start_argument));
+#endif
 }
 
 /* ==========================================================================
@@ -118,7 +141,6 @@ void __machdep_pthread_create(struct machdep_pthread *machdep_pthread,
     machdep_pthread->machdep_timer.it_value.tv_usec = nsec / 1000;
 
     setjmp(machdep_pthread->machdep_state);
-
     machdep_save_float_state(machdep_pthread);
     /*
      * Set up new stact frame so that it looks like it

@@ -113,6 +113,9 @@ struct inflated_oobj {
 #elif defined(WITH_PRECISE_GC)
   void (*precise_deflate_obj)(struct oobj *obj, ptroff_t client_data);
 #endif
+#ifdef WITH_REALTIME_THREADS
+  struct machdep_pthread mthread;
+#endif
 };
 
 /* the oobj structure tells you what's inside the object layout. */

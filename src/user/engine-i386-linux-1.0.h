@@ -1,7 +1,7 @@
 /* ==== machdep.h ============================================================
  * Copyright (c) 1993 Chris Provenzano, proven@athena.mit.edu
  *
- * $Id: engine-i386-linux-1.0.h,v 1.2 2000-12-04 19:16:47 bdemsky Exp $
+ * $Id: engine-i386-linux-1.0.h,v 1.3 2002-06-25 20:18:15 dumi Exp $
  */
 #ifndef MACHDEP
 #define MACHDEP
@@ -41,14 +41,14 @@ typedef long    semaphore;
  * New Strutures
  */
 struct machdep_pthread {
-    void        		*(*start_routine)(void *);
-    void        		*start_argument;
-    void        		*machdep_stack;
-    void                        *hiptr;
-	struct itimerval	machdep_timer;
-    jmp_buf     		machdep_state;
+  void        		*(*start_routine)(void *);
+  void        		*start_argument;
+  void        		*machdep_stack;
+  void                  *hiptr;
+  struct itimerval	machdep_timer;
+  jmp_buf     		machdep_state;
   char 	    		machdep_float_state[108];
-    int                         started;
+  int                   started;
 };
 
 /*

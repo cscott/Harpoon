@@ -1,10 +1,24 @@
 #include "config.h"
+#include <assert.h>
 #ifdef WITH_USER_THREADS
 #include "threads.h"
 #include <errno.h>
 #include "memstats.h"
 
+#ifdef WITH_REALTIME_THREADS
+#include <jni.h>
+#include <jni-private.h>
+#include "../realtime/threads.h"
+#include "../realtime/qcheck.h"
+#include <setjmp.h>
+/* jump point for the final jump back to main - defined in startup.c */
+extern jmp_buf main_return_jump;
+#endif
+
 struct thread_list *gtl,*ioptr;
+#ifdef WITH_REALTIME_THREADS
+struct thread_queue_struct *currentThread; //pointer to the current thread
+#endif
 void *oldstack;
 
 void startnext();
@@ -20,12 +34,36 @@ void restorethread() {
   machdep_restore_state();
 }
 
-void transfer() {
+/* when using RealtimeThreads, this function will be called with the */
+/* thread to switch to */
+#ifndef WITH_REALTIME_THREADS
+void transfer()
+#else
+void transfer(struct thread_queue_struct * mthread)
+#endif
+{
   struct thread_list *tl;
+
+#ifndef WITH_REALTIME_THREADS
   machdep_save_float_state(&(gtl->mthread));
-  if (_setjmp(gtl->mthread.machdep_state)) {
+  if (machdep_save_state()) {
     return;
   }
+#else
+  /* if the transfer thread is the current thread, just return */
+  if(mthread == currentThread)
+    return;
+
+  /* if there is currently a thread running, save it's state */
+  if(currentThread != NULL) {
+    machdep_save_float_state(currentThread->mthread);
+    if (machdep_save_state()) {
+      return;
+    }
+  }
+#endif
+
+#ifndef WITH_REALTIME_THREADS
   tl=gtl;
   tl->prev->next=tl->next;
   tl->next->prev=tl->prev;
@@ -46,6 +84,10 @@ void transfer() {
     tl->prev=tl;
   }
   startnext();
+#else
+  currentThread = mthread; //set the transfer thread to be the current thread
+  restorethread(); //switch to it#
+#endif
 }
 
 void context_switch() {
@@ -54,21 +96,22 @@ void context_switch() {
     return;
   }
   if (ioptr!=NULL)
-    doFDs();
-  
+    {
+      doFDs();
+    }
   gtl=gtl->next;
-  
+
   startnext();
 }
 
 void startnext() {
+#ifndef WITH_REALTIME_THREADS
   /* Moved threads...*/
   /*  if (gtl==NULL) */
   static int count=0;
 
   if ((gtl==NULL)&&(ioptr==NULL))
     exit(0);
-
   count++;
   while(1) {
 #ifdef WITH_EVENT_DRIVEN
@@ -80,6 +123,7 @@ void startnext() {
     if (gtl!=NULL)
       restorethread();
   }
+#endif
 }
 
 #ifdef WITH_EVENT_DRIVEN
@@ -90,7 +134,11 @@ void SchedulerAddRead(int fd) {
   Java_java_io_NativeIO_registerRead(NULL,NULL, fd);
   gtl->syncrdwr=1;
   gtl->fd=fd;
+#ifndef WITH_REALTIME_THREADS  
   transfer();
+#else
+  transfer(currentThread); //just transfer to self
+#endif
 }
 
 void SchedulerAddWrite(int fd) {
@@ -99,7 +147,11 @@ void SchedulerAddWrite(int fd) {
   Java_java_io_NativeIO_registerWrite(NULL,NULL, fd);
   gtl->syncrdwr=2;
   gtl->fd=fd;
+#ifndef WITH_REALTIME_THREADS  
   transfer();
+#else
+  transfer(currentThread); //just transfer to self
+#endif
 }
 
 void doFDs() {
@@ -149,6 +201,7 @@ void doFDs() {
 #endif
 
 void exitthread() {
+#ifndef WITH_REALTIME_THREADS
   struct thread_list *tl;
   /*LOCK ON GTL*/
   if (gtl!=gtl->next) {
@@ -170,8 +223,7 @@ void exitthread() {
     free(tl);
     DECREMENT_MEM_STATS(sizeof (struct thread_list));
 
-    machdep_restore_float_state();
-    machdep_restore_state();
+    restorethread();
     return;
   } else {
     FNI_DestroyThreadState(gtl->jnienv);
@@ -182,21 +234,46 @@ void exitthread() {
     oldstack=gtl->mthread.machdep_stack;
 
     free(gtl);
+
     DECREMENT_MEM_STATS(sizeof (struct thread_list));
     gtl=NULL;
     startnext();
   }
+
+#else // WITH_REALTIME_THREADS
+  /* if no new thread has been set (by the end of thread_startup_routine) */
+  //  puts("----------EXITING-------------");
+  //  printf("CurrentThread is %p\n", currentThread);
+  if(currentThread == NULL)
+    longjmp(main_return_jump, 1); //jump back to main to clean up and end
+  else
+    restorethread(); //otherwise, restore the new thread
+#endif
+
 }
 
 void inituser(int *bottom) {
   void * stack;
-  struct thread_list * tl=(struct thread_list*)
-    malloc(sizeof(struct thread_list));
+  struct thread_list * tl = 
+    (struct thread_list *)malloc(sizeof(struct thread_list));
+  
+#ifndef WITH_REALTIME_THREADS
   INCREMENT_MEM_STATS(sizeof(struct thread_list));
   /*build stack and stash it*/
   __machdep_pthread_create(&(tl->mthread), NULL, NULL,STACKSIZE, 0,0);
   /*stash hiptr*/
   tl->mthread.hiptr=bottom;
+#else
+  /*build stack and stash it*/
+  currentThread = 
+    (struct thread_queue_struct *)malloc(sizeof(struct thread_queue_struct));
+  INCREMENT_MEM_STATS(sizeof(struct thread_queue_struct));
+  currentThread->mthread =
+    (struct machdep_pthread*)malloc(sizeof(struct machdep_pthread));
+  __machdep_pthread_create(currentThread->mthread, NULL, NULL,STACKSIZE, 0,0);
+  /*stash hiptr*/
+  currentThread->mthread->hiptr=bottom;
+#endif
   gtl=tl;
   tl->next=tl;
   tl->prev=tl;
@@ -210,19 +287,53 @@ void inituser(int *bottom) {
 
 int user_mutex_init(user_mutex_t *x, void * v) {
   x->mutex=SEMAPHORE_CLEAR;
+#ifndef WITH_REALTIME_THREADS
   x->tl=NULL;
+#else
+  //RealtimeThreads makes this a thread, not a list
+  x->queue = x->endQueue = NULL;
+#endif
   return 0;
 }
 
 void addwaitthread(user_mutex_t *x) {
+#ifndef WITH_REALTIME_THREADS  
   gtl->syncrdwr=0;
   gtl->lnext=x->tl;
   x->tl=gtl;
   transfer();
+#else
+  //  CheckQuanta(0, 0, 1);
+  if(currentThread->threadID != 0) {
+    print_queue(thread_queue, "BEG addwaitthread queue");
+    print_queue(x->queue, "mutex");
+
+    if(currentThread->queue_state == IN_ACTIVE_QUEUE) {
+      if(currentThread->prev != NULL)
+	currentThread->prev->next = currentThread->next;
+      else
+	thread_queue = currentThread->next;
+      if(currentThread->next != NULL)
+	currentThread->next->prev = currentThread->prev;
+      else
+	end_thread_queue = currentThread->prev;
+
+      enqueue(&x->queue, &x->endQueue, currentThread);
+    }
+
+    DisableThread(currentThread);
+
+    print_queue(x->queue, "mutex");
+    print_queue(thread_queue, "END addwaitthread queue");
+    CheckQuanta(1, 0, 1);
+  }
+#endif
 }
 
 void wakewaitthread(user_mutex_t *x) {
+#ifndef WITH_REALTIME_THREADS
   struct thread_list *tl;
+
   tl=x->tl;
   if (tl!=NULL) {
     x->tl=tl->lnext;
@@ -240,6 +351,28 @@ void wakewaitthread(user_mutex_t *x) {
     tl->prev->next=tl;
     tl->next->prev=tl;
   }
+#else
+  if(x->queue != NULL) {
+    print_queue(thread_queue, "BEG wakewaitthread queue");
+    print_queue(x->queue, "mutex");
+    EnableThread(x->queue);
+
+    if(thread_queue == NULL) {
+      thread_queue = end_thread_queue = x->queue;
+      thread_queue->prev = NULL;
+    }
+    else {
+      end_thread_queue->next = x->queue;
+      x->queue->prev = end_thread_queue;
+      end_thread_queue = x->queue;
+    }
+    x->queue = x->queue->next;
+    end_thread_queue->next = NULL;
+
+    print_queue(x->queue, "mutex");
+    print_queue(thread_queue, "END wakewaitthread queue");
+  }
+#endif  
 }
 
 int user_mutex_lock(user_mutex_t *x) {
@@ -254,7 +387,11 @@ int user_mutex_trylock(user_mutex_t *x) {
   if (test==SEMAPHORE_CLEAR)
     return 0;
   else {
+#ifndef WITH_REALTIME_THREADS
     context_switch();
+#else
+    CheckQuanta(0, 0, 1);
+#endif
     return EBUSY;
   }
 }
@@ -285,14 +422,40 @@ int user_cond_signal(user_cond_t *x) {
 }
 
 void addcontthread(user_cond_t *x) {
+#ifndef WITH_REALTIME_THREADS  
   gtl->syncrdwr=0;
   gtl->lnext=x->tl;
   x->tl=gtl;
   transfer();
+#else
+  if(currentThread->threadID != 0) {
+    print_queue(thread_queue, "BEG addcontthread queue");
+    print_queue(x->queue, "cond");
+
+    if(currentThread->queue_state == IN_ACTIVE_QUEUE) {
+      if(currentThread->prev != NULL)
+	currentThread->prev->next = currentThread->next;
+      else
+	thread_queue = currentThread->next;
+      if(currentThread->next != NULL)
+	currentThread->next->prev = currentThread->prev;
+      else
+	end_thread_queue = currentThread->prev;
+      enqueue(&x->queue, &x->endQueue, currentThread);
+    }
+
+    DisableThread(currentThread);
+    print_queue(x->queue, "cond");
+    print_queue(thread_queue, "END addcontthread queue");
+    CheckQuanta(1, 0, 1);
+  }
+#endif
 }
 
 void wakeacondthread(user_cond_t *x) {
   struct thread_list *tl;
+
+#ifndef WITH_REALTIME_THREADS
   tl=x->tl;
   if (tl!=NULL) {
     x->tl=tl->lnext;
@@ -311,10 +474,32 @@ void wakeacondthread(user_cond_t *x) {
     tl->prev->next=tl;
     tl->next->prev=tl;
   }
+#else
+  if(x->queue != NULL) {
+    print_queue(thread_queue, "BEG wakeacondthread queue");
+    print_queue(x->queue, "cond");
+
+    EnableThread(x->queue);
+    if(thread_queue == NULL) {
+      thread_queue = end_thread_queue = x->queue;
+      thread_queue->prev = NULL;
+    }
+    else {
+      end_thread_queue->next = x->queue;
+      x->queue->prev = end_thread_queue;
+      end_thread_queue = x->queue;
+    }
+    x->queue = x->queue->next;
+    end_thread_queue->next = NULL;
+    print_queue(x->queue, "cond");
+    print_queue(thread_queue, "END wakeacondthread queue");
+  }
+#endif
 }
 
 void wakeallcondthread(user_cond_t *x) {
   struct thread_list *tl;
+#ifndef WITH_REALTIME_THREADS
   tl=x->tl;
   while (tl!=NULL) {
     x->tl=tl->lnext;
@@ -334,6 +519,29 @@ void wakeallcondthread(user_cond_t *x) {
     tl->next->prev=tl;
     tl=tl->lnext;
   }
+#else
+  if(x->queue != NULL) {
+    print_queue(thread_queue, "BEG wakeallcondthread queue");
+    print_queue(x->queue, "cond");
+
+    EnableThreadList(x->queue);
+    if(thread_queue == NULL) {
+      x->queue->prev = NULL;
+      thread_queue = end_thread_queue = x->queue;
+    }
+    else
+    {
+      end_thread_queue->next = x->queue;
+      x->queue->prev = end_thread_queue;
+    }
+
+    while(end_thread_queue->next != NULL) {
+      end_thread_queue = end_thread_queue->next;
+    }
+    print_queue(x->queue, "cond");
+    print_queue(thread_queue, "END wakeallcondthread queue");
+  }
+#endif
 }
 
 int user_cond_wait(user_cond_t *cond, user_mutex_t *mutex) {
@@ -353,8 +561,3 @@ int user_cond_destroy(user_cond_t *cond) {
   return 0;
 }
 #endif
-
-
-
-
-

@@ -7,6 +7,11 @@
 #include "engine-i386-linux-1.0.h"
 #endif
 
+#ifdef WITH_REALTIME_THREADS
+#include <jni.h>
+#include "../realtime/threads.h"
+#endif
+
 struct thread_list {
   struct thread_list *prev;
   struct machdep_pthread mthread;
@@ -18,13 +23,25 @@ struct thread_list {
 };
 
 extern struct thread_list *gtl,*ioptr;
+
+#ifdef WITH_REALTIME_THREADS
+/* the current thread - defined in threads.c */
+extern struct thread_queue_struct *currentThread;
+#endif
+
 extern void *oldstack;
 #define USER_MUTEX_INITIALIZER {SEMAPHORE_CLEAR,NULL}
 #define STACKSIZE 0x10000
 
 typedef struct user_mutex {
   semaphore mutex;
+#ifndef WITH_REALTIME_THREADS
   struct thread_list* tl;
+#else
+    /* use a thread instead of a thread list with Realtime Threads */
+  struct thread_queue_struct* queue;
+  struct thread_queue_struct* endQueue;
+#endif
 }  user_mutex_t;
 
 void inituser();
@@ -37,7 +54,13 @@ int user_mutex_destroy(user_mutex_t *x);
 
 typedef struct user_cond {
   long counter;
+#ifndef WITH_REALTIME_THREADS
   struct thread_list *tl;
+#else
+    /* use a thread instead of a thread list with Realtime Threads */
+  struct thread_queue_struct* queue;
+  struct thread_queue_struct* endQueue;
+#endif
 } user_cond_t;
 
 #define USER_COND_INIT {0,NULL}
@@ -56,8 +79,15 @@ void doFDs();
 /* ------- pthreads compatibility ------------- */
 #ifdef USER_THREADS_COMPATIBILITY
 
+#ifndef WITH_REALTIME_THREADS
 #define pthread_self()		gtl
 #define pthread_t               struct thread_list *
+#else
+#define pthread_self()          currentThread
+#define pthread_t               struct thread_queue_struct *
+#endif
+
+
 
 #define PTHREAD_MUTEX_INITIALIZER  USER_MUTEX_INITIALIZER
 #define pthread_mutex_t		user_mutex_t

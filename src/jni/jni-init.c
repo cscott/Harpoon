@@ -111,10 +111,18 @@ void FNI_InitJNIEnv(void) {
 }
 
 JNIEnv *FNI_CreateJNIEnv(void) {
+#ifndef WITH_REALTIME_THREADS
   gtl->jnienv = FNI_CreateThreadState();
+#else
+  currentThread->jnienv = FNI_CreateThreadState();
+#endif
   return FNI_GetJNIEnv();
 }
 JNIEnv *FNI_GetJNIEnv(void) {
+#ifndef WITH_REALTIME_THREADS
   return gtl->jnienv;
+#else
+  return currentThread->jnienv;
+#endif
 }
 #endif /* WITH_USER_THREADS */

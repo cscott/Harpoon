@@ -26,6 +26,11 @@
 #include "jni-gcthreads.h"
 #endif
 #endif
+#ifdef WITH_REALTIME_THREADS
+#include "../realtime/RTJconfig.h" //for RTJ_MALLOC_UNCOLLECTABLE
+#include "../realtime/threads.h"
+#include "../realtime/qcheck.h"
+#endif
 
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
 #define EXTRACT_OTHER_ENV(env, thread) \
@@ -317,6 +322,189 @@ static int sched_min_priority, sched_norm_priority, sched_max_priority;
 pth_key_t flex_timedwait_key = PTH_KEY_INIT;
 #endif
 
+#ifdef WITH_REALTIME_THREADS
+
+/* this structure will hold the information 
+ * needed to start the main Java thread
+ */
+struct main_closure_struct {
+  jobject thread;        //the thread object
+  jobject args;          //args from the command line
+  pthread_cond_t parampass_cond;   //thread info
+  pthread_mutex_t parampass_mutex;
+};
+
+/* start the main Java thread */
+static void* startMain(void* mclosure) {
+  int top_of_stack; /* special variable holding top-of-stack position */
+  
+  jclass claz; //the class of the main Java thread
+  /* the main method id, id for getting the scheduler,
+     and an id for removing threads */
+  jmethodID mid, getSchedMethod, removeThreadMethod;
+  /* an object for this thread, it's thread group, and the scheduler */
+  jobject thread, threadgroup, scheduler;
+  /* an exception thrown by the thread */
+  jthrowable threadexc;
+  /* cast the incoming argument to a main_closure_struct */
+  struct main_closure_struct* mcls = (struct main_closure_struct*)mclosure;
+  
+  JNIEnv* env = FNI_CreateJNIEnv(); //create a JNI Environment
+  ((struct FNI_Thread_State *)env)->stack_top = &top_of_stack;
+  /* This thread is alive! */
+  ((struct FNI_Thread_State *)env)->is_alive = JNI_TRUE;
+  
+  /* make sure creating thread is in cond_wait before proceeding. */
+  pthread_mutex_lock(&(mcls->parampass_mutex));
+  /* copy thread wrapper to local stack */
+  thread = FNI_NewLocalRef(env, FNI_UNWRAP_MASKED(mcls->thread));
+
+  /* copy thread information */
+  ((struct FNI_Thread_State *)env)->thread = thread;
+  ((struct FNI_Thread_State *)env)->pthread = pthread_self();
+
+  FNI_SetJNIData(env, thread, env, NULL);
+#if defined(WITH_REALTIME_JAVA) && defined(WITH_NOHEAP_SUPPORT)
+  ((struct FNI_Thread_State *)env)->noheap =
+    (*env)->IsInstanceOf(env, 
+			 ((struct FNI_Thread_State *)env)->thread,
+			 (*env)->FindClass(env,
+				      "javax/realtime/NoHeapRealtimeThread"));
+#endif  
+  /* add this to the running_threads list, unless its a daemon thread */
+  if((*env)->GetBooleanField(env, thread, daemonID) == JNI_FALSE)
+    add_running_thread((struct FNI_Thread_State *)env);
+  /* okay, parameter passing is done. we can unblock the creating thread now.
+   * (note that we're careful to make sure we're on the 'running threads'
+   *  list before letting the parent --- who may decide to exit -- continue.)
+   */
+  pthread_cond_signal(&(mcls->parampass_cond));
+  pthread_mutex_unlock(&(mcls->parampass_mutex));
+  /* okay, now start run() method */
+
+  /* get the class of the main Java thead, and an id for the main method */
+  claz = (*env)->FindClass(env, FNI_javamain);
+  assert(!((*env)->ExceptionOccurred(env)));
+  mid = (*env)->GetStaticMethodID(env, claz, "main",
+				  "([Ljava/lang/String;)V");
+  assert(!((*env)->ExceptionOccurred(env)));
+
+  /* call main */
+  (*env)->CallStaticVoidMethod(env, claz, mid, mcls->args);
+  if ( (threadexc = (*env)->ExceptionOccurred(env)) != NULL) {
+    // call thread.getThreadGroup().uncaughtException(thread, exception)
+     /* clear the thread's exception */
+    (*env)->ExceptionClear(env);
+    threadgroup = (*env)->CallObjectMethod(env, thread, gettgID);
+    (*env)->CallVoidMethod(env, threadgroup, 
+			   uncaughtID, thread, threadexc);
+  }
+  /* this thread is dead now.  give it a chance to clean up. */
+  /* (this also removes the thread from the ThreadGroup) */
+  /* (see also Thread.EDexit() -- keep these in sync) */
+  StopSwitching(); //stop thread switching
+
+  /* get the scheduler */
+  getSchedMethod = (*env)->GetStaticMethodID(env,
+					     FNI_GetObjectClass(env, thread),
+					     "getScheduler",
+					     "()Ljavax/realtime/Scheduler;");
+  assert(!((*env)->ExceptionOccurred(env)));
+  scheduler = (*env)->CallStaticObjectMethod(env,
+					     FNI_GetObjectClass(env, thread),
+					     getSchedMethod);
+  assert(!((*env)->ExceptionOccurred(env)));
+  /* remove this thread from the scheduler */
+  removeThreadMethod =
+    (*env)->GetMethodID(env, FNI_GetObjectClass(env, scheduler),
+			"removeFromFeasibility",
+			"(Ljavax/realtime/Schedulable;)V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  (*env)->CallVoidMethod(env, scheduler, removeThreadMethod, thread);
+  assert(!((*env)->ExceptionOccurred(env)));
+
+  /* call it's exit function to clean up */
+  // by cata: I commented this out
+  //  (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
+  //  assert(!((*env)->ExceptionOccurred(env)));
+  /* This thread is dead now. */
+  ((struct FNI_Thread_State *)env)->is_alive = JNI_FALSE;
+  /** Get rid of the JNIEnv in the JNIData for the thread, since it is going
+   *  to be destroyed by the thread clean-up code [see isAlive() ] */
+  FNI_SetJNIData(env, thread, NULL, NULL);
+  /* Notify others that it's dead (before we deallocate the thread object!). */
+  FNI_MonitorEnter(env, thread);
+  FNI_MonitorNotify(env, thread, JNI_TRUE);
+  FNI_MonitorExit(env, thread);
+  assert(!((*env)->ExceptionOccurred(env)));
+#ifdef WITH_CLUSTERED_HEAPS
+  /* give us a chance to deallocate the thread-clustered heap */
+  NTHR_free(thread);
+#endif
+  /* main has finished, so it is time to exit, set currentThread to NULL */
+  // by cata: wait a second, what if we have other threads still running?
+  //  currentThread = NULL;
+  RTJ_FREE(mcls); //free the closure structure
+  CheckQuanta(1, 1, 0);
+  StartSwitching();
+}
+
+/* setup the 'main' function as a thread */
+void FNI_java_lang_Thread_mainThreadSetup
+(JNIEnv *env, jobject mainThr, jobject args) {
+    jobject* ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
+  jint pri; //the thread's priority
+  void * stackptr; //pointer to the stack
+
+  struct inflated_oobj* infObj; //inflated object to hang on mainThr
+  
+  /* create the structure that will be passed to startMain later */
+  /* use RTJ_MALLOC_UNCOLLECTABLE so it will stay in memory when */
+  /* this function exits */
+  struct main_closure_struct oldmcls =
+  {mainThr,args, PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER};
+  struct main_closure_struct* mcls = (struct main_closure_struct *)
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct main_closure_struct));
+  memcpy(mcls, &oldmcls, sizeof(struct main_closure_struct));
+  
+  /* get the inflated object for mainThr */
+  infObj = (struct inflated_oobj*)getInflatedObject(env, mainThr);
+
+  /* get the threads priority */
+  pri = (*env)->GetIntField(env, mainThr, priorityID);
+  assert(!((*env)->ExceptionOccurred(env)));
+
+  stackptr = __machdep_stack_alloc(STACKSIZE); //create the stack
+
+  __machdep_stack_set(&(infObj->mthread), stackptr); //set the thread's stack
+
+#ifdef WITH_PRECISE_GC
+  /* may need to stop for GC */
+  while (pthread_mutex_trylock(&gc_thread_mutex))
+    if (halt_for_GC_flag) halt_for_GC();
+#endif
+
+  /* create the thread with startMain as its startup routine and */
+  /* mcls as its start argument */
+  __machdep_pthread_create(&(infObj->mthread), &startMain,
+			   mcls,STACKSIZE, 0,0);
+  
+  /* wait for thread to copy mainThr */
+  pthread_mutex_lock(&(mcls->parampass_mutex));
+  pthread_cond_wait(&(mcls->parampass_cond), &(mcls->parampass_mutex));
+#ifdef WITH_PRECISE_GC
+  pthread_mutex_unlock(&gc_thread_mutex);
+#endif
+  pthread_cond_destroy(&(mcls->parampass_cond));
+  pthread_mutex_unlock(&(mcls->parampass_mutex));
+  pthread_mutex_destroy(&(mcls->parampass_mutex));
+  /* release locks & return */
+
+  FNI_DeleteLocalRefsUpTo(env, ref_marker);
+}
+   
+#endif //WITH_REALTIME_THREADS  
+
 void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   jclass thrGrpCls;
   jmethodID thrConsID, thrGrpConsID;
@@ -356,7 +544,7 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
     extern struct oobj *
       _Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread;
     _Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread =
-      FNI_UNWRAP(mainThr);
+      FNI_UNWRAP_MASKED(mainThr);
   }
 #endif
 
@@ -582,6 +770,20 @@ static void * thread_startup_routine(void *closure) {
   struct closure_struct *cls = (struct closure_struct *)closure;
   JNIEnv *env = FNI_CreateJNIEnv();
   jobject thread, threadgroup; jthrowable threadexc;
+#ifdef WITH_REALTIME_THREADS
+  /* methods to get the scheduler and remove a thread */
+  jmethodID getSchedMethod, removeThreadMethod;
+  /* methods to check if there are threads, and to pick one to switch to */
+  jmethodID emptyMethod, chooseThreadMethod;
+  /* the threadID of the next thread to run */
+  jlong threadID;
+  /* the scheduler */
+  jobject scheduler;
+  /* the inflated object attached to this thread */
+  struct inflated_oobj* infObj;
+  /* a pointer to this threads queue spot */
+  struct thread_queue_struct* oldthread;
+#endif
   /* set up the top of the stack for this thread for exception stack trace */
   ((struct FNI_Thread_State *)(env))->stack_top = &top_of_stack;
   /* This thread is alive! */
@@ -589,7 +791,7 @@ static void * thread_startup_routine(void *closure) {
   /* make sure creating thread is in cond_wait before proceeding. */
   pthread_mutex_lock(&(cls->parampass_mutex));
   /* copy thread wrapper to local stack */
-  thread = FNI_NewLocalRef(env, FNI_UNWRAP(cls->thread));
+  thread = FNI_NewLocalRef(env, FNI_UNWRAP_MASKED(cls->thread));
   /* fill in the blanks in env */
   ((struct FNI_Thread_State *)env)->thread = thread;
   ((struct FNI_Thread_State *)env)->pthread = pthread_self();
@@ -611,6 +813,7 @@ static void * thread_startup_routine(void *closure) {
   pthread_cond_signal(&(cls->parampass_cond));
   pthread_mutex_unlock(&(cls->parampass_mutex));
   /* okay, now start run() method */
+
   (*env)->CallVoidMethod(env, thread, runID);
   if ( (threadexc = (*env)->ExceptionOccurred(env)) != NULL) {
     // call thread.getThreadGroup().uncaughtException(thread, exception)
@@ -621,11 +824,36 @@ static void * thread_startup_routine(void *closure) {
   /* this thread is dead now.  give it a chance to clean up. */
   /* (this also removes the thread from the ThreadGroup) */
   /* (see also Thread.EDexit() -- keep these in sync) */
+#ifdef WITH_REALTIME_THREADS
+  StopSwitching(); //stop thread switching
+
+  /* get the scheduler */
+  getSchedMethod = (*env)->GetStaticMethodID(env,
+					     FNI_GetObjectClass(env, thread),
+					     "getScheduler",
+					     "()Ljavax/realtime/Scheduler;");
+  assert(!((*env)->ExceptionOccurred(env)));
+  scheduler = (*env)->CallStaticObjectMethod(env,
+					     FNI_GetObjectClass(env, thread),
+					     getSchedMethod);
+  assert(!((*env)->ExceptionOccurred(env)));
+  /* remove the thread from the scheduler */
+  removeThreadMethod =
+    (*env)->GetMethodID(env, FNI_GetObjectClass(env, scheduler),
+			"removeFromFeasibility",
+			"(Ljavax/realtime/Schedulable;)V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  (*env)->CallVoidMethod(env, scheduler, removeThreadMethod, thread);
+  assert(!((*env)->ExceptionOccurred(env)));
+#else
+  (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
+  assert(!((*env)->ExceptionOccurred(env)));
+#endif
+
 #ifdef WITH_REALTIME_JAVA
   (*env)->CallVoidMethod(env, thread, cleanupID);
 #endif
-  (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
-  assert(!((*env)->ExceptionOccurred(env)));
+
   /* This thread is dead now. */
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_FALSE;
   /** Get rid of the JNIEnv in the JNIData for the thread, since it is going
@@ -643,6 +871,16 @@ static void * thread_startup_routine(void *closure) {
   /* give us a chance to deallocate the thread-clustered heap */
   NTHR_free(thread);
 #endif
+
+#ifdef WITH_REALTIME_THREADS
+  oldthread = currentThread;
+  FNI_DeleteGlobalRef(env, cls->thread); //remove the global ref to the thread
+  RTJ_FREE(cls); //free the closure argument
+
+  CheckQuanta(1, 1, 0);
+  FNI_DestroyThreadState(oldthread);
+  StartSwitching();
+#endif
 }
 
 #ifndef WITH_USER_THREADS
@@ -659,10 +897,12 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   struct closure_struct cls =
     { _this, PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
   int status;
+
 #if defined(WITH_REALTIME_JAVA) && defined(WITH_NOHEAP_SUPPORT)
   jclass noHeapThreadClass = 
     (*env)->FindClass(env, "javax/realtime/NoHeapRealtimeThread");
 #endif
+
   assert(runID!=NULL/* run() is certainly callable! */);
   /* first of all, see if this thread has already been started. */
   if (FNI_GetJNIData(env, _this)!=NULL) {
@@ -721,13 +961,34 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
 JNIEXPORT void JNICALL Java_java_lang_Thread_start
   (JNIEnv *env, jobject _this) {
   jint pri;
+  void * stackptr;
+
+#ifdef WITH_REALTIME_THREADS
+
+  struct inflated_oobj* infObj; //the thread's inflated object
+  int switching_state;
+
+  /* setup the argument that will be passed to thread_startup_routine */
+  struct closure_struct oldcls =
+  {_this = (*env)->NewGlobalRef(env, _this), 
+   PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER};
+  struct closure_struct* cls = (struct closure_struct *) 
+      RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct closure_struct));
+  memcpy(cls, &oldcls, sizeof(struct closure_struct));
+
+  /* get the thread's inflated object */
+  infObj = (struct inflated_oobj*)getInflatedObject(env, _this);
+
+  switching_state = StopSwitching();
+
+#else //NO Realtime Threads
 
   struct closure_struct cls =
-    { _this , PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
-  int status;
-  void * stackptr;
-  struct machdep_pthread *mp;
+  {_this, PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER};
   struct thread_list *tl;
+
+#endif //WITH_REALTIME_THREADS
+
   assert(runID!=NULL/* run() is certainly callable! */);
   /* first of all, see if this thread has already been started. */
 
@@ -742,14 +1003,19 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   pri = (*env)->GetIntField(env, _this, priorityID);
   assert(!((*env)->ExceptionOccurred(env)));
 
-  
   //build stack and stash it
+#ifndef WITH_REALTIME_THREADS
   INCREMENT_MEM_STATS(sizeof(struct thread_list));
   tl=malloc(sizeof(struct thread_list));
-
+#endif
   stackptr = __machdep_stack_alloc(STACKSIZE);
 
+#ifndef WITH_REALTIME_THREADS
   __machdep_stack_set(&(tl->mthread), stackptr);
+#else
+  /* set the stack for the thread */
+  __machdep_stack_set(&(infObj->mthread), stackptr);
+#endif
 
 #ifdef WITH_PRECISE_GC
   /* may need to stop for GC */
@@ -757,15 +1023,20 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
     if (halt_for_GC_flag) halt_for_GC();
 #endif
 
+#ifndef WITH_REALTIME_THREADS
   __machdep_pthread_create(&(tl->mthread), &thread_startup_routine, &cls,STACKSIZE, 0,0);
+#else
+  /* create the thread with thread_startup_routine and cls as starts */
+  __machdep_pthread_create(&(infObj->mthread), &thread_startup_routine, cls,STACKSIZE, 0,0);
+#endif
 
-
-
+#ifndef WITH_REALTIME_THREADS
   /*LOCK ON GTL*/
   tl->next=gtl->next;
   tl->prev=gtl;
   tl->prev->next=tl;
   tl->next->prev=tl;
+
   pthread_mutex_lock(&(cls.parampass_mutex));
   /* wait for new thread to copy _this before proceeding */
   pthread_cond_wait(&(cls.parampass_cond), &(cls.parampass_mutex));
@@ -777,6 +1048,24 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   pthread_mutex_unlock(&(cls.parampass_mutex));
   pthread_mutex_destroy(&(cls.parampass_mutex));
   context_switch();
+
+#else //WITH Realtime Threads
+#ifdef WITH_PRECISE_GC
+  pthread_mutex_unlock(&gc_thread_mutex);
+#endif
+  /* wait for new thread to copy _this before proceeding */
+  pthread_mutex_lock(&(cls->parampass_mutex));
+  pthread_cond_wait(&(cls->parampass_cond), &(cls->parampass_mutex));
+
+  /* release resources */
+  pthread_cond_destroy(&(cls->parampass_cond));
+  pthread_mutex_unlock(&(cls->parampass_mutex));
+  pthread_mutex_destroy(&(cls->parampass_mutex));
+
+  RestoreSwitching(switching_state);
+#endif
+
+  //  printf("!!!!!!!Done starting thread\n");
   /*  while (cls.parampass_cond==0)
       swapthreads();*/
   /* done! */
@@ -901,6 +1190,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_EDexit
 (JNIEnv *env, jobject _this) {
   /* (see also the end of thread_startup_routine() -- keep these in sync. */
   /* call Thread.exit() */
+  // by cata: I commented this out
   (*env)->CallNonvirtualVoidMethod(env, _this, thrCls, exitID);
 #ifdef WITH_CLUSTERED_HEAPS
   /* give us a chance to deallocate the thread-clustered heap */

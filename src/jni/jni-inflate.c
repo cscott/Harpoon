@@ -4,7 +4,7 @@
 #endif /* WITH_HASHLOCK_SHRINK */
 
 #include <jni.h>
-#include <jni-private.h>
+#include <jni-privat1e.h>
 
 #include <assert.h>
 #ifdef BDW_CONSERVATIVE_GC
@@ -74,7 +74,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     /* initialize infl */
     memset(infl, 0, sizeof(*infl));
 #ifndef WITH_HASHLOCK_SHRINK
-    infl->hashcode = HASHCODE_MASK(obj->hashunion.hashcode);
+    infl->hashcode = obj->hashunion.hashcode;
 #endif /* !WITH_HASHLOCK_SHRINK */
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
 # ifdef ERROR_CHECKING_LOCKS
@@ -91,11 +91,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     pthread_rwlock_init(&(infl->jni_data_lock), NULL);
 #endif
 #ifndef WITH_HASHLOCK_SHRINK
-#ifndef WITH_DYNAMIC_WB
     obj->hashunion.inflated = infl;
-#else
-    obj->hashunion.inflated = (ptroff_t) infl | (obj->hashunion.hashcode & 2);
-#endif
 #else
     infl_table_set(INFL_LOCK, obj, infl, NULL);
 #endif /* WITH_HASHLOCK_SHRINK */
@@ -118,7 +114,10 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     } 
 #endif
 #ifdef WITH_REALTIME_JAVA
-    RTJ_register_finalizer(wrapped_obj, deflate_object); 
+#if defined(BDW_CONSERVATIVE_GC)
+    else 
+#endif
+      RTJ_register_finalizer(wrapped_obj, deflate_object);    
 #endif
   }
   FLEX_MUTEX_UNLOCK(&global_inflate_mutex);
@@ -140,7 +139,7 @@ static void deflate_object(struct oobj *obj, ptroff_t client_data) {
 #if defined(BDW_CONSERVATIVE_GC) || defined(WITH_PRECISE_GC) || defined(WITH_REALTIME_JAVA)
     struct oobj *oobj = (struct oobj *) ((void*)obj+(ptroff_t)client_data);
 #ifndef WITH_HASHLOCK_SHRINK
-    struct inflated_oobj *infl = INFLATED_MASK(oobj->hashunion.inflated);
+    struct inflated_oobj *infl = oobj->hashunion.inflated;
 #else
     struct inflated_oobj *infl = infl_table_get(INFL_LOCK, oobj, NULL);
 #endif
@@ -171,12 +170,7 @@ static void deflate_object(struct oobj *obj, ptroff_t client_data) {
 #endif
     /* wow, all done. */
 #ifndef WITH_HASHLOCK_SHRINK
-#ifndef WITH_DYNAMIC_WB
     oobj->hashunion.hashcode = infl->hashcode;
-#else
-    oobj->hashunion.hashcode = 
-      infl->hashcode | ((ptroff_t) oobj->hashunion.inflated & 2);
-#endif
 #else
     infl_table_remove(INFL_LOCK, oobj);
 #endif /* WITH_HASHLOCK_SHRINK */
@@ -191,4 +185,3 @@ static void deflate_object(struct oobj *obj, ptroff_t client_data) {
 #endif
 }
 #endif
-
