@@ -17,7 +17,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.13 1998-08-08 12:10:38 cananian Exp $
+ * @version $Id: HMethod.java,v 1.14 1998-08-08 12:26:43 cananian Exp $
  * @see HMember
  * @see HClass
  */

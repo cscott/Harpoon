@@ -15,7 +15,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.8 1998-08-08 12:10:39 cananian Exp $
+ * @version $Id: Code.java,v 1.9 1998-08-08 12:26:43 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {

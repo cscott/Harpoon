@@ -18,7 +18,7 @@ import java.util.Vector;
  * identical to 'real' <code>HMethod</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HArrayMethod.java,v 1.1 1998-08-08 12:10:38 cananian Exp $
+ * @version $Id: HArrayMethod.java,v 1.2 1998-08-08 12:26:43 cananian Exp $
  */
 
 class HArrayMethod extends HMethod {
