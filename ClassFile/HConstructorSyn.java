@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * single constructor for a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructorSyn.java,v 1.2.2.5 2000-01-13 23:47:46 cananian Exp $
+ * @version $Id: HConstructorSyn.java,v 1.2.2.6 2000-11-30 21:54:52 vivien Exp $
  */
 class HConstructorSyn extends HMethodSyn implements HConstructor {
 
@@ -19,7 +19,7 @@ class HConstructorSyn extends HMethodSyn implements HConstructor {
    */
   HConstructorSyn(HClassSyn parent, HConstructor template) {
     super(parent, "<init>", template);
-    Util.assert(this.returnType==HClass.Void);
+    Util.assert(this.returnType.actual()==HClass.Void);
   }
 
   /** Create a new empty constructor for the specified class
@@ -29,7 +29,7 @@ class HConstructorSyn extends HMethodSyn implements HConstructor {
    */
   HConstructorSyn(HClassSyn parent, String descriptor) {
     super(parent, "<init>", descriptor);
-    Util.assert(this.returnType==HClass.Void);
+    Util.assert(this.returnType.actual()==HClass.Void);
   }
   /** Create a new empty constructor in the specified class
    *  with the specified parameter and return types
@@ -37,7 +37,7 @@ class HConstructorSyn extends HMethodSyn implements HConstructor {
    */
   HConstructorSyn(HClassSyn parent, HClass[] paramTypes) {
     super(parent, "<init>", paramTypes, HClass.Void);
-    Util.assert(this.returnType==HClass.Void);
+    Util.assert(this.returnType.actual()==HClass.Void);
   }
 
   public void setReturnType(HClass returnType) {
