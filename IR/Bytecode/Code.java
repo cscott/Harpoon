@@ -29,7 +29,7 @@ import java.util.Set;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.12 2000-01-13 23:47:52 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.13 2000-03-29 06:43:37 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -63,14 +63,6 @@ public class Code extends HCode {
    * @return the string <code>"bytecode"</code>.
    */
   public String getName() { return codename; }
-
-  /**
-   * Convert from a different code view, by way of intermediates.
-   * <code>Bytecode</code> is the basic codeview; no conversion
-   * functions are implemented.
-   * @return <code>null</code>, always.
-   */
-  public static HCode convertFrom(HCode codeview) { return null; }
 
   /**
    * Return an ordered list of the <code>Bytecode.Instr</code>s
