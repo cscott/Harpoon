@@ -19,11 +19,14 @@ public abstract class MemoryArea {
   protected MemoryArea parent;
   protected long size, memoryConsumed;  // Size is somewhat inaccurate - may want to fix in future
   protected boolean scoped;
+  protected int id;
+  private static int num = 0;
   
   protected MemoryArea(long sizeInBytes) {
     size = sizeInBytes;
     scoped = false; // To avoid the dreaded instanceof
     parent = null;
+    id = num++;
   }
   
   public void enter(java.lang.Runnable logic) {
@@ -35,6 +38,10 @@ public abstract class MemoryArea {
   }
   
   public static MemoryArea getMemoryArea(java.lang.Object object) {
+    if (object.memoryArea == null) { // Constants/native objects 
+	                             // are attached to theHeap
+	return HeapMemory.instance();
+    }
     return object.memoryArea;
   }
   
@@ -50,20 +57,15 @@ public abstract class MemoryArea {
     return size;
   }
   
-  public synchronized java.lang.Object newArray(java.lang.Class type,
-                                                int number) {
+  private long checkMem(java.lang.Class type, int number) {
     long size = 4 * number;
     if ((memoryConsumed + size) > this.size) {
       throw new OutOfMemoryError();
     }
-    java.lang.Object newArray = Array.newInstance(type, number);
-    memoryConsumed += size;
-    newArray.memoryArea = this;
-    return newArray;
+    return size;
   }
-  
-  protected synchronized java.lang.Object newArray(java.lang.Class type,
-                                                   int[] dimensions) {
+
+  private long checkMem(java.lang.Class type, int[] dimensions) {
     long size = 4;
     for (int i = 0; i < dimensions.length; i++) {
       size *= dimensions[i];
@@ -71,10 +73,47 @@ public abstract class MemoryArea {
     if ((memoryConsumed + size) > this.size) {
       throw new OutOfMemoryError();
     }
-    java.lang.Object newArray = Array.newInstance(type, dimensions);
+    return size;
+  }
+
+  private java.lang.Object update(java.lang.Object obj, long size) {
     memoryConsumed += size;
-    newArray.memoryArea = this;
-    return newArray;	
+    obj.memoryArea = this;
+    return obj;
+  }
+
+  public synchronized void bless(java.lang.Object obj) { // Called implicitly by compiler...
+    long size;
+    try {
+      size = checkMem(obj.getClass(), 1);
+    } catch (OutOfMemoryError e) {
+      obj = null;
+      throw e;
+    }
+    update(obj, size);
+  }
+
+  public synchronized void bless(java.lang.Object obj, int[] dimensions) { // Called implicitly by compiler...
+    long size;
+    try {
+      size = checkMem(obj.getClass(), dimensions);
+    } catch (OutOfMemoryError e) {
+      obj = null;
+      throw e;
+    }
+    update(obj, size);
+  }
+
+  public synchronized java.lang.Object newArray(java.lang.Class type,
+                                                int number) {
+    long size = checkMem(type, number);
+    return update(Array.newInstance(type, number), size);
+  }
+  
+  protected synchronized java.lang.Object newArray(java.lang.Class type,
+                                                   int[] dimensions) {
+    long size = checkMem(type, dimensions);
+    return update(Array.newInstance(type, dimensions), size);	
     
   }
   
@@ -83,13 +122,14 @@ public abstract class MemoryArea {
     OutOfMemoryError {
     return newInstance(type, new java.lang.Class[0], new java.lang.Object[0]);
   }
-    
+
   protected synchronized java.lang.Object newInstance(java.lang.Class type,
                                                       java.lang.Class[] parameterTypes,
                                                       java.lang.Object[]
                                                       parameters) 
     throws IllegalAccessException, InstantiationException,
     OutOfMemoryError {
+    long size = checkMem(type, 1);
     java.lang.Object newObj;
     try {
       newObj = type.getConstructor(parameterTypes).newInstance(parameters);
@@ -98,17 +138,25 @@ public abstract class MemoryArea {
     } catch (InvocationTargetException e) {
 	    throw new InstantiationException(e.getMessage());
     }
-    newObj.memoryArea = this;
-    memoryConsumed += 4;
-    return newObj;
+    return update(newObj, size);
   }
 
   public synchronized void checkAccess(java.lang.Object obj) throws IllegalAccessException {
+    Stats.addCheck();
     if ((obj!=null)&&(obj.memoryArea!=null)&&obj.memoryArea.scoped) {
       throw new IllegalAccessException();
     }
   }
+
+  public String toString() {
+    if (parent == null) {
+      return String.valueOf(id);      
+    } else {
+      return parent.toString() + "." + String.valueOf(id);
+    }    
+  }
 }
+
 
 
 

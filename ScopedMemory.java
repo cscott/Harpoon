@@ -31,6 +31,7 @@ public abstract class ScopedMemory extends MemoryArea {
   }
 
   public synchronized void checkAccess(java.lang.Object obj) throws IllegalAccessException { 
+    Stats.addCheck();
     if ((obj!=null)&&(obj.memoryArea!=null)&&obj.memoryArea.scoped) {
       ScopedMemory target = (ScopedMemory)(obj.memoryArea);
       MemoryArea p = this;
