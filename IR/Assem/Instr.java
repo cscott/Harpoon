@@ -43,7 +43,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.57 1999-11-05 01:10:29 cananian Exp $
+ * @version $Id: Instr.java,v 1.1.2.58 1999-11-05 05:09:27 cananian Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -535,8 +535,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     public Instr rename(InstrFactory inf, TempMap defMap, TempMap useMap) {
 	return new Instr(inf, this, getAssem(),
 			 map(defMap,dst), map(useMap,src),
-			 this.canFallThrough, 
-			 new ArrayList(this.targets));
+			 this.canFallThrough, getTargets());
     }
 
     /** Accept a visitor. */
