@@ -92,7 +92,7 @@ public class Timer extends Node {
 		min = diff;
 	    cache[cacheCount] = diff;
 	    cacheCount++;
-	    if(cacheCount == cache.length){
+	    if(cacheCount >= cache.length){
 		if (announce) {
 		    if(rawOutput){
 			for(int i = 0; i< cache.length; i++){
