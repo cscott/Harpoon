@@ -31,7 +31,10 @@
 
 /* ANSI C requires that a compilation unit contains something */
 
-# if defined(GC_USER_THREADS) || defined(USER_THREADS)
+# if defined(USER_THREADS)
+# error Please change all USER_THREADS declarations to GC_USER_THREADS.
+# endif
+# if defined(GC_USER_THREADS)
 
 # include "private/gc_priv.h"
 # include "private/specific.h"
