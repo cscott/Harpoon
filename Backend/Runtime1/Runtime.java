@@ -35,7 +35,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.9 2003-04-19 01:03:55 salcianu Exp $
+ * @version $Id: Runtime.java,v 1.10 2003-10-03 16:59:24 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime
     implements java.io.Serializable {
@@ -81,6 +81,10 @@ public class Runtime extends harpoon.Backend.Generic.Runtime
 	if (Boolean.getBoolean("harpoon.runtime1.sunjdk")) {
 	    basename="sunjdk."+basename;
 	    configurationSet.add("check_with_sunjdk_needed");
+	} else if (Boolean.getBoolean("harpoon.runtime1.minilib")) {
+	    basename="minilib."+basename;
+	    // minilib uses the classpath native library support.
+	    configurationSet.add("check_with_classpath_needed");
 	} else
 	    configurationSet.add("check_with_classpath_needed");
 	return "harpoon/Backend/Runtime1/"+basename;
