@@ -26,7 +26,7 @@ public class Servo {
      * Start moving the vehicle forward, but don't stop.
      */
     public static void forward() {
-	servo2.command2(SERVO2_CENTER+FORWARD_SPEED, 0, SERVO2_CENTER+FORWARD_SPEED);
+	servo2.command(SERVO2_CENTER+FORWARD_SPEED, 0, SERVO2_CENTER+FORWARD_SPEED);
     }
     
     /**
@@ -48,14 +48,14 @@ public class Servo {
      *             the car forward.
      */              
     public static void forward(long time, int speed) {
-	servo2.command2(SERVO2_CENTER+speed, time, SERVO2_CENTER);
+	servo2.command(SERVO2_CENTER+speed, time, SERVO2_CENTER);
     }
     
     /**
      * Start moving the vehicle backward, but don't stop.
      */
     public static void backward() {
-	servo2.command2(SERVO2_CENTER-BACKWARD_SPEED, 0, SERVO2_CENTER-BACKWARD_SPEED);
+	servo2.command(SERVO2_CENTER-BACKWARD_SPEED, 0, SERVO2_CENTER-BACKWARD_SPEED);
     }
     
     /**
@@ -77,14 +77,14 @@ public class Servo {
      *             the car backward.
      */
     public static void backward(long time, int speed) {
-	servo2.command2(SERVO2_CENTER-speed, time, SERVO2_CENTER);
+	servo2.command(SERVO2_CENTER-speed, time, SERVO2_CENTER);
     }
 
     /** 
      * Turn the front wheels left and don't stop.
      */
     public static void left() {
-	servo1.command2(SERVO1_CENTER-LEFT_AMOUNT, 0, SERVO1_CENTER-LEFT_AMOUNT);
+	servo1.command(SERVO1_CENTER-LEFT_AMOUNT, 0, SERVO1_CENTER-LEFT_AMOUNT);
     }
 
     /**
@@ -106,14 +106,14 @@ public class Servo {
      *               to which the front wheels should turn left.
      */
     public static void left(long time, int degree) {
-	servo1.command2(SERVO1_CENTER-degree, time, SERVO1_CENTER);
+	servo1.command(SERVO1_CENTER-degree, time, SERVO1_CENTER);
     }
      
     /**
      * Turn the front wheels of the vehicle to the right and don't stop.
      */
     public static void right() {
-	servo1.command2(SERVO1_CENTER+RIGHT_AMOUNT, 0, SERVO1_CENTER+RIGHT_AMOUNT);
+	servo1.command(SERVO1_CENTER+RIGHT_AMOUNT, 0, SERVO1_CENTER+RIGHT_AMOUNT);
     }
 
     /**
@@ -135,21 +135,21 @@ public class Servo {
      *               to which the front wheels should turn right.
      */
     public static void right(long time, int degree) {
-	servo1.command2(SERVO1_CENTER+degree, time, SERVO1_CENTER);
+	servo1.command(SERVO1_CENTER+degree, time, SERVO1_CENTER);
     }
 
     /**
      * Stop turning.
      */
     public static void stop_turn() {
-	servo1.command2(SERVO1_CENTER, 0, SERVO1_CENTER);
+	servo1.command(SERVO1_CENTER, 0, SERVO1_CENTER);
     }
     
     /**
      * Stop moving forward or backward.
      */
     public static void stop_moving() {
-	servo2.command2(SERVO2_CENTER, 0, SERVO2_CENTER);
+	servo2.command(SERVO2_CENTER, 0, SERVO2_CENTER);
     }
 }
 
