@@ -31,7 +31,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.7 1999-06-30 18:22:02 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.8 1999-07-01 19:15:17 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -57,14 +57,14 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	return rtloop;
     }
 
-    public Set allInductionsMap(HCode hc, Loops lp) {
+    public HashMap allInductionsMap(HCode hc, Loops lp) {
 	analyze(hc);
-	return (Set) aimap.get(lp.loopEntrances().toArray()[0]);
+	return (HashMap) aimap.get(lp.loopEntrances().toArray()[0]);
     }
 
-    public Set basicInductionsMap(HCode hc, Loops lp) {
+    public HashMap basicInductionsMap(HCode hc, Loops lp) {
 	analyze(hc);
-	return (Set) bimap.get(lp.loopEntrances().toArray()[0]);
+	return (HashMap) bimap.get(lp.loopEntrances().toArray()[0]);
     }
 
     public Set invariantsMap(HCode hc, Loops lp) {
