@@ -51,11 +51,15 @@ OK, now to compile the automated testing driver:
 % cd ~/Harpoon/Code
 % cp ~/Harpoon/Tests/Java/RTJ/Tester.java .
 % javac Tester.java
-% bin/build-precisec -t Tester Test
+% bin/build-precisec -t SIMPLE Tester Test
 
-The -t option turns on realTime java extensions.  This will create code
-files in Code/asTest, assembled source in Runtime/Test-Java.a, and an 
-executable in Runtime/runTest.
+The -t option turns on realTime java extensions.  
+SIMPLE = simple conservative analysis
+CHEESY = a little less conservative pointer analysis
+REAL = real pointer analysis
+
+This will create code files in Code/asTest, assembled source in 
+Runtime/Test-Java.a, and an executable in Runtime/runTest.
 
 Have fun!
 
