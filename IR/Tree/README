@@ -1,0 +1,4 @@
+The harpoon.IR.Tree representation is an expression-tree-structured
+representation with extremely fine granularity.  It is an 'abstract
+assembly code' that will later be pattern-matched to yield machine-
+dependant instructions.
