@@ -29,9 +29,9 @@ import java.util.List;
  * A simple-minded version of Appel's fast-allocation strategy
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.1 1999-10-13 16:29:08 cananian Exp $
+ * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.2 1999-10-13 16:35:02 cananian Exp $
  */
-public class DefaultAllocationStrategy implements AllocationStrategy {
+class DefaultAllocationStrategy implements AllocationStrategy {
 
     private AllocationInfo info;
 

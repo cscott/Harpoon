@@ -11,9 +11,9 @@ import harpoon.Temp.Temp;
  * to be needed for most memory allocation schemes.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AllocationInfo.java,v 1.1.2.1 1999-10-13 16:29:08 cananian Exp $
+ * @version $Id: AllocationInfo.java,v 1.1.2.2 1999-10-13 16:35:02 cananian Exp $
  */
-public interface AllocationInfo {
+interface AllocationInfo {
 
     /** Returns the label of the garbage collection function */
     public Label GC();

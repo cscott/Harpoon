@@ -7,8 +7,8 @@ import harpoon.IR.Tree.Exp;
 
 /* <b>FILL ME IN</b>
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AllocationStrategy.java,v 1.1.2.1 1999-10-13 16:29:08 cananian Exp $
+ * @version $Id: AllocationStrategy.java,v 1.1.2.2 1999-10-13 16:35:02 cananian Exp $
  */
-public interface AllocationStrategy {
+interface AllocationStrategy {
     public Exp memAlloc(Exp size);
 }
