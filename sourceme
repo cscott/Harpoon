@@ -1,0 +1,52 @@
+cd ..
+export FLEXPATH=""
+export CLASSPATH=""
+
+source ~/.bashrc
+
+export JAVA_HOME=`cd /usr/java/j2sdk*; pwd`
+export PATH=$JAVA_HOME/bin:$PATH
+export CVS_RSH=ssh
+export CVSEDITOR=emacs
+export JAVA="java"
+
+# adding_generics
+export J2SE14=$JAVA_HOME
+export JSR14DISTR=/usr/java/adding_generics-1_2-ea
+export JSR14_v1=/usr/java/jsr14_adding_generics-1_2-ea/scripts/javac
+#export JSR14_v2=/usr/java/adding_generics-2_0-ea/scripts/javac
+
+#FLEX
+export FLEX=`pwd`
+export CLASSPATH=.:$FLEX/Realtime/realtime.jar:$CLASSPATH
+export OPT_FLEX_SUPPORT_FILES="$FLEX/Realtime/support/rtjperf.jar"
+export CLASSPATH=$FLEX/Code/Support/gjlib.jar:$CLASSPATH
+export PRECISEC_CFLAGS="-g"
+
+#Sun JDK
+export CLASSPATH=$JAVA_HOME/jre/lib/rt.jar:$CLASSPATH
+
+#imagerec
+export CLASSPATH=$FLEX/ImageRec/ATR-ZEN.jar:$CLASSPATH
+
+#GNU Classpath support
+export CLASSPATH_HOME=$FLEX/Classpath
+export CLASSPATH=$CLASSPATH_HOME/install/share/classpath/glibj.zip:$CLASSPATH
+export FLEXPATH=$CLASSPATH
+export LD_LIBRARY_PATH=$CLASSPATH_HOME/install/lib/classpath
+export USE_GNU_CLASSPATH=true
+
+#More FLEX
+export FLEXPATH=$FLEX/Runtime/src/classpath/cpvm.jar:$FLEXPATH
+export FLEXPATH=$FLEX/Runtime/src/java.lang.reflect/reflect-thunk.jar:$FLEXPATH
+export FLEXPATH=$FLEX/Realtime/realtime.jar:$FLEXPATH
+
+if [ "$1" == "arm" ]; then \
+echo "Adding arm-linux, camera, video support"; \
+export FLEXPATH=$FLEX/Runtime/src/cam/video.jar:$FLEXPATH; \
+export FLEXPATH=$FLEX/Runtime/src/servo/servo.jar:$FLEXPATH; \
+export PATH=/usr/local/arm-linux/bin:$PATH; \
+else \
+echo "Not adding arm-linux, camera, video support"; \
+fi;
+
