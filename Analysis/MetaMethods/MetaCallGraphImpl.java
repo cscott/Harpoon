@@ -19,6 +19,7 @@ import java.lang.reflect.Modifier;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.ReachingDefs;
 import harpoon.Analysis.ReachingDefsImpl;
+import harpoon.Analysis.SSxReachingDefsImpl;
 import harpoon.Analysis.BasicBlock;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
@@ -32,6 +33,9 @@ import harpoon.ClassFile.Loader;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadNoSSA;
+import harpoon.IR.Quads.QuadSSA;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.CALL;
@@ -46,6 +50,9 @@ import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.CJMP;
 import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.Qop;
 
 import harpoon.Temp.Temp;
 
@@ -74,7 +81,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.6 2002-04-20 20:22:56 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.7 2002-04-22 02:03:13 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -99,19 +106,26 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // by the analyzed application.
     private Set instantiated_classes = null;
 
+    // indicates whether we use the SSA / SSI format
+    private boolean ssx_form = false;
+
     /** Creates a <code>MetaCallGraphImpl</code>. It must receive, in its
 	last parameter, the <code>main</code> method of the program. */
     public MetaCallGraphImpl(CachingCodeFactory hcf, ClassHierarchy ch,
 			     Set hmroots) {
 
 	assert
-	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadNoSSA.codename) ||
-	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSA.codename) ||
-	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSI.codename) :
+	    hcf.getCodeName().equals(QuadNoSSA.codename) ||
+	    hcf.getCodeName().equals(QuadSSA.codename) ||
+	    hcf.getCodeName().equals(QuadSSI.codename) :
 	    "Cannot work with " + hcf.getCodeName();
 
+	ssx_form = 
+	    hcf.getCodeName().equals(QuadSSA.codename) ||
+	    hcf.getCodeName().equals(QuadSSI.codename);
+
 	System.out.println("MetaCallGraphImpl started with " +
-			   hcf.getCodeName());
+			   hcf.getCodeName() + " ssx = " + ssx_form);
 
         this.hcf = hcf;
 	this.ch  = ch;
@@ -285,22 +299,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	ets2et = md.ets2et;
 	calls  = md.calls;
 
-	if(DEBUG){
-	    System.out.println("Call sites: =======");
-	    for(Iterator it = calls.iterator(); it.hasNext(); ){
-		CALL q = (CALL) it.next();
-		System.out.println(q.getLineNumber() + "\t" + q);
-	    }
-	    System.out.println("===================");
-	}
-
-
-	if(DEBUG){
-	    System.out.println("SCC of ExactTemp definitions: =====");
-	    for(SCComponent scc2=scc; scc2!=null; scc2=scc2.nextTopSort())
-		System.out.println(scc2.toString());
-	    System.out.println("===================================");
-	}
+	if(DEBUG)
+	    display_mm_data(mm_work);
 
 	set_parameter_types(mm_work, hcf.convert(hm));
 
@@ -570,9 +570,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     private void display_mm_data(MetaMethod mm) {
 	HMethod hm = mm_work.getHMethod();
 	MethodData md = get_method_data(hm);
-	System.out.println("DATA FOR " + mm_work + ":");
+	System.out.println("\n\nDATA FOR " + mm_work + ":");
 	System.out.println(md);
-	System.out.println("COMPUTED TYPES:");
+	System.out.println("\nCOMPUTED TYPES:");
 	for(SCComponent scc = md.first_scc; scc != null; 
 	    scc = scc.nextTopSort())
 	    for(Iterator it = scc.nodeSet().iterator(); it.hasNext(); ) {
@@ -586,7 +586,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		System.out.println("}");
 	    }
 
-	System.out.println("CODE:");
+	System.out.println("\nCODE:");
 	HCode hcode = hcf.convert(hm);
 	hcode.print(new java.io.PrintWriter(System.out, true));
 	System.out.println("--------------------------------------");
@@ -767,6 +767,14 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	}
     }
 
+    // return an appropriate impl. of ReachingDefs for hcode
+    private ReachingDefs getReachingDefsImpl(HCode hcode) {
+	if(ssx_form)
+	    return new SSxReachingDefsImpl(hcode);
+	else
+	    return new ReachingDefsImpl(hcode);
+    }
+
     // Map<HMethod,MethodData>
     private Map mh2md = new HashMap();
     // Adds some caching over "compute_md".
@@ -777,7 +785,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    Collection calls = ((Code) hcode).selectCALLs();
 	    // initialize the ets2et map (see the comments near its definition)
 	    ets2et = new HashMap();
-	    ReachingDefs rdef = new ReachingDefsImpl(hcode);
+	    ReachingDefs rdef = getReachingDefsImpl(hcode);
 	    Set initial_set = get_initial_set(rdef, calls);
 	    SCComponent scc = compute_scc(initial_set, rdef);
 	    md = new MethodData(scc, ets2et, calls);
@@ -1000,16 +1008,12 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// a CJMP t2 preceded by a t2 = t INSTANCEOF hclass; treat it
 	// as a TYPECAST
 	public void visit(CJMP q) {
-	    if(is_typecast(q, t) != null) {
+	    if(ssx_form && (is_typecast(q, t) != null)) {
 		// do nothing; t's type will be determined by the typecast
-		/*
-		System.out.println
-		    ("\n\ttypecast " +
-		     harpoon.Analysis.PointerAnalysis.Debug.code2str(q.prev(0))
-		     + " \n" + 
-		     harpoon.Analysis.PointerAnalysis.Debug.code2str(q) +
-		     "\n");
-		*/
+	    }
+	    else if(is_nulltest(q, t)) {
+		// Once again, do nothing
+		// t will be null, ie HClass.Void
 	    }
 	    else
 		visit((SIGMA) q);
@@ -1119,7 +1123,6 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		    int i = getSigmaForTemp(q, tested);
 
 		    if(i == -1) return null;
-		    //assert (i != -1) : tested + " is not defined by " + q;
 
 		    Temp dst[] = q.dst(i);
 		    if(t.equals(dst[1])) {
@@ -1132,6 +1135,53 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// not a typecast
 	return null;
     }
+
+
+    // Checks whether t is defined as the restriction on the true
+    // branch of a test t2 == null (in that case t is null, ie type
+    // Void).
+    //
+    // Right way to do it: verify that all following cond hold:
+    //  q = CJMP tb; SIGMA:  < _ , t> = t2
+    //  tb     is defined by tb = OPER acmpeq(t2, t_null)
+    //  t_null is defined by t_null = CONST null
+    // 
+    // MIT hack:
+    //  suppose they come in the order: CONST, OPER, SIGMA
+    //  this way we don't need reaching defs here.
+    private static boolean is_nulltest(CJMP q, Temp t) {
+	if((q.prevLength() != 1) ||
+	   !(q.prev(0) instanceof OPER))
+	    return false;
+	OPER oper = (OPER) q.prev(0);
+
+	if(!oper.dst().equals(q.test()) ||
+	   (oper.opcode() != Qop.ACMPEQ))
+	    return false;
+
+	if((oper.prevLength() != 1) ||
+	   !(oper.prev(0) instanceof CONST))
+	    return false;
+	CONST con = (CONST) oper.prev(0);
+
+	if(con.type() != HClass.Void)
+	    return false;
+
+	Temp t_null = con.dst(); 
+	Temp t2 = null;
+	if(t_null.equals(oper.operands(0)))
+	    t2 = oper.operands(1);
+	else if(t_null.equals(oper.operands(1)))
+	    t2 = oper.operands(0);
+	else
+	    return false;
+
+	int i = getSigmaForTemp(q, t2);
+	if(i == -1) return false;
+
+	return t.equals(q.dst(i)[1]);	
+    }
+
 
     // returns the index of the sigma function that has t_src as a
     // source in the big SIGMA node q (with potentially many sigma
@@ -1285,10 +1335,15 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // computes the types of the interesting ExactTemps, starting 
     // with those in the strongly connected component "scc".
     private void compute_types(SCComponent scc) {
-	for( ; scc != null; scc = scc.nextTopSort())
-	    process_scc(scc);
+	try{
+	    for( ; scc != null; scc = scc.nextTopSort())
+		process_scc(scc);
+	}
+	catch(AssertionError e) {
+	    display_mm_data(mm_work);
+	    throw e;
+	}
     }
-
 
     // TYPE INFERENCE QUAD VISITOR - BEGIN
 
@@ -1319,14 +1374,19 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		ExactTemp eta = et.prev[i];
 		for(Iterator it_types = eta.getTypes(); it_types.hasNext(); ) {
 		    HClass c = ((GenType) it_types.next()).getHClass();
-		    if(c.equals(HClass.Void))
+		    if(c.equals(HClass.Void)) {
 			et.addType(new GenType(HClass.Void, GenType.MONO));
+			// commented it: I think continue is the right attitude!
+			// NO!
+			// continue;
+		    }
 		    else {
 			HClass hcomp = c.getComponentType();
 			assert
 			    hcomp != null :
-			    q.objectref() + " could have non-array types in "
-			    + q;
+			    "\n" + q.objectref() +
+			    " could have the non-array type <" + c + "> in " +
+			    Debug.code2str(q);
 			et.addType(new GenType(hcomp, GenType.POLY));
 		    }
 		}
@@ -1414,9 +1474,15 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// recognize the translation of a TYPECAST in QuadSSI:
 	// a CJMP t2 preceded by a t2 = t INSTANCEOF hclass
 	public void visit(CJMP q) {
-	    HClass hclass = is_typecast(q, t);
-	    if(hclass != null)
+	    HClass hclass = null;
+	    if(ssx_form && ((hclass = is_typecast(q, t)) != null)) {
 		et.addType(new GenType(hclass, GenType.POLY));
+	    }
+	    else if(is_nulltest(q, t)) {
+		// t is t2's restriction on the true branch of a
+		// t2 != null test -> it is always null
+		et.addType(new GenType(HClass.Void, GenType.MONO));
+	    }
 	    else
 		visit((SIGMA) q);
 	}
@@ -1431,7 +1497,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    for(int i = 0; i < et.prev.length; i++)
 		et.addTypes(et.prev[i].getTypeSet());	    
 	}
-	
+
 	public void visit(Quad q) {
 	    assert false : "Unsupported Quad " + q;
 	}
@@ -1450,7 +1516,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	final PAWorkList W = new PAWorkList();
 
 	if(DEBUG)
-	    System.out.println("Processing " + scc);
+	    System.out.println("\n\nProcessing " + scc);
 	
 	W.addAll(scc.nodeSet());
 	while(!W.isEmpty()) {
@@ -1476,8 +1542,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	if(DEBUG)
 	    for(Iterator it = scc.nodeSet().iterator(); it.hasNext();){
 		ExactTemp et = (ExactTemp) it.next();
-		System.out.println("##:< " + et.shortDescription() + 
-				   " -> " + et.getTypeSet() + " >");
+		System.out.println("\n##:< " + et.shortDescription() + 
+				   " -> " + et.getTypeSet() + " >\n");
 	    }
     }
 

@@ -51,7 +51,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterProcPA.java,v 1.4 2002-04-10 03:00:41 cananian Exp $
+ * @version $Id: InterProcPA.java,v 1.5 2002-04-22 02:03:32 salcianu Exp $
  */
 public abstract class InterProcPA implements java.io.Serializable {
 
@@ -68,7 +68,7 @@ public abstract class InterProcPA implements java.io.Serializable {
      *	each call to a method of that class has ZERO callees! */
     public static final boolean WARNINGS = true;
 
-    private static final boolean CONSIDER_WES_GOOD = true;
+    private static final boolean CONSIDER_WES_GOOD = false;
 
     /** Analyzes the call site <code>q</code> inside 
      *	<code>current_method</code>. If analyzing the call is not possible
@@ -1250,7 +1250,8 @@ public abstract class InterProcPA implements java.io.Serializable {
 	    wes_methods.addAll
 		(getMethods(methods[i][0], methods[i][1], linker));
  
-	Util.print_collection(wes_methods, "Wes RTJ methods");
+	if(DEBUG)
+	    Util.print_collection(wes_methods, "Wes RTJ methods");
     }
 
     // Many native methods don't do any synchronizations on their object
@@ -1314,7 +1315,8 @@ public abstract class InterProcPA implements java.io.Serializable {
 	for(int i = 0; i < methods.length; i++)
 	    uhms.addAll(getMethods(methods[i][0], methods[i][1], linker));
 
-	Util.print_collection(uhms, "Unharmful methods");
+	if(DEBUG)
+	    Util.print_collection(uhms, "Unharmful methods");
     }
 
     // Returns all the methods having the name m_name
@@ -1352,8 +1354,6 @@ public abstract class InterProcPA implements java.io.Serializable {
 	    pig.ar.add_sync
 		(new PASync(node, ActionRepository.THIS_THREAD, null), null);
 	graphs_for_natives.put(hm, pig);
-
-	System.out.println("Graph for  java.lang.Object.wait() " + pig);
     }
 
     private static HMethod get_method(PointerAnalysis pa,
@@ -1379,7 +1379,10 @@ public abstract class InterProcPA implements java.io.Serializable {
     // should be called before any other method
     static void static_init(PointerAnalysis pa) {
 	build_uhms(pa.getLinker());
-	build_rtj_methods(pa.getLinker());
+
+	if(CONSIDER_WES_GOOD)
+	    build_rtj_methods(pa.getLinker());
+
 	build_graphs_for_natives(pa);
     }
 
