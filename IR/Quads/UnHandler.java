@@ -13,7 +13,7 @@ import java.util.Vector;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.2 1999-01-03 03:01:43 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.3 1999-01-12 08:48:53 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -141,7 +141,7 @@ final class UnHandler {
 	/** Constructor. */
 	HandlerMap(QuadFactory qf, METHOD oldQm) {
 	    this.oldQm = oldQm;
-	    this.Tex = new Temp(qf.tempFactory());
+	    this.Tex = new Temp(qf.tempFactory(), "exc_");
 	    // make entries for all HANDLERs.
 	    Quad[] ql = oldQm.next();
 	    for (int i=1; i<ql.length; i++)
@@ -271,7 +271,8 @@ final class UnHandler {
 	}
 	Temp extra(int i) {
 	    while (extra.size() <= i)
-		extra.addElement(new Temp(qf.tempFactory()));
+		extra.addElement(new Temp(qf.tempFactory(),
+					  "un"+extra.size()+"_"));
 	    return (Temp) extra.elementAt(i);
 	}
     }
