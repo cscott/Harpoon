@@ -1,0 +1,16 @@
+	int i j t
+	ref p
+	def(i)
+	def(j) use(i)
+	mov(t,i)
+	jump(L0,L1) use(i,j)
+L0:
+	def(p) use(i,j)
+	def(j) use(i,p)
+	jump(L2)
+L1:
+	def(p) use(j)
+L2:
+	use(p)
+	def(i,j) use(p,i)
+	use(t)
