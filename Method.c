@@ -261,8 +261,12 @@ void mergerolechanges(struct heap_state *heap) {
       struct genhashtable * rolechanges=rm->rolechanges;
       struct rolechangesum *rcs=(struct rolechangesum *)calloc(1,sizeof(struct rolechangesum));
       struct rolechangeheader *rch;
-      struct effectregexpr *ere=buildregexpr(method->pathtable, rc->uid);
+      struct effectregexpr *ere=NULL;
       struct rolechangepath *rcp;
+
+      if (!(heap->options&OPTION_NORCEXPR))
+	ere=buildregexpr(method->pathtable, rc->uid);
+
 
       rcs->origrole=copystr(rc->origrole);
       rcs->newrole=copystr(rc->newrole);
