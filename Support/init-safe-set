@@ -1,0 +1,35 @@
+# Set of safe native methods.
+java.io.FileDescriptor.initSystemFD(Ljava/io/FileDescriptor;I)Ljava/io/FileDescriptor;=
+java.io.FileInputStream.available()I=
+java.io.FileInputStream.readBytes([BII)I=
+java.io.FileInputStream.read()I=
+java.io.FileOutputStream.writeBytes([BII)V=
+java.lang.ClassLoader.findSystemClass0(Ljava/lang/String;)Ljava/lang/Class;=java.lang.Class
+# getSystemResourceAsStream0 is unimplemented.
+java.lang.ClassLoader.getSystemResourceAsStream0(Ljava/lang/String;)Ljava/io/InputStream;=
+# ClassLoader.init is unimplemented.
+java.lang.ClassLoader.init()V=
+java.lang.Class.forName(Ljava/lang/String;)Ljava/lang/Class;=java.lang.Class
+java.lang.Class.getClassLoader()Ljava/lang/ClassLoader;=java.lang.ClassLoader
+java.lang.Class.getName()Ljava/lang/String;=
+java.lang.Class.getPrimitiveClass(Ljava/lang/String;)Ljava/lang/Class;=java.lang.Class
+java.lang.Class.isInterface()Z=
+java.lang.Class.isPrimitive()Z=
+# java.lang.Class.newInstance= # this does need the check.
+java.lang.Double.doubleToLongBits(D)L=
+java.lang.Double.longBitsToDouble(L)D=
+java.lang.Float.floatToIntBits(F)I=
+java.lang.Math.floor(D)D=
+java.lang.Math.log(D)D=
+java.lang.Object.clone()Ljava/lang/Object;=
+java.lang.Object.getClass()Ljava/lang/Class;=java.lang.Class
+java.lang.Object.hashCode()I=
+java.lang.Runtime.exitInternal(I)V=
+java.lang.String.intern()Ljava/lang/String;=
+java.lang.System.arraycopy(Ljava/lang/Object;ILjava/lang/Object;II)V=
+java.lang.System.currentTimeMillis()L=
+java.lang.Thread.currentThread()Ljava/lang/Thread;=java.lang.Thread
+java.lang.Thread.interrupt0()V=
+java.lang.Throwable.fillInStackTrace()Ljava/lang/Throwable;=
+java.lang.Throwable.printStackTrace0(Ljava/lang/Object;)V=
+java.util.ResourceBundle.getClassContext()[Ljava/lang/Class;=java.lang.Class
