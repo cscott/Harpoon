@@ -167,11 +167,6 @@ extern struct _jobject FNI_globalrefs; /* header node in global refs list. */
 #define FNI_NO_EXCEPTIONS(env) \
 	(((struct FNI_Thread_State *)(env))->exception==NULL)
 
-#define FNI_STACK_TOP() \
-({ void *__top; \
-   asm("mov %0, fp" : "=r" (__top)); \
-   __top; })
-
 /* -------------- internal function prototypes. ------------- */
 
 /* Initialize JNIEnv management code at startup. */

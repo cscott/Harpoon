@@ -284,11 +284,12 @@ struct closure_struct {
   pthread_mutex_t parampass_mutex;
 };
 static void * thread_startup_routine(void *closure) {
+  int top_of_stack; /* special variable holding top-of-stack position */
   struct closure_struct *cls = (struct closure_struct *)closure;
   JNIEnv *env = FNI_CreateJNIEnv();
   jobject thread, threadgroup; jthrowable threadexc;
   /* set up the top of the stack for this thread for exception stack trace */
-  ((struct FNI_Thread_State *)(env))->stack_top = FNI_STACK_TOP();
+  ((struct FNI_Thread_State *)(env))->stack_top = &top_of_stack;
   /* This thread is alive! */
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_TRUE;
   /* make sure creating thread is in cond_wait before proceeding. */

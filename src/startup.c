@@ -14,6 +14,7 @@ if ((*env)->ExceptionOccurred(env)){ (*env)->ExceptionDescribe(env); exit(1); }
 extern char *name_of_binary;
 
 int main(int argc, char *argv[]) {
+  int top_of_stack; /* special variable holding the top-of-stack position */
   char *firstclasses[] = {
     "java/util/Properties", "java/io/FileDescriptor", "java/lang/System", 
     "java/io/BufferedWriter", NULL
@@ -39,7 +40,7 @@ int main(int argc, char *argv[]) {
   /* set up JNIEnv structures. */
   FNI_InitJNIEnv();
   env = FNI_CreateJNIEnv();
-  ((struct FNI_Thread_State *)(env))->stack_top = FNI_STACK_TOP();
+  ((struct FNI_Thread_State *)(env))->stack_top = &top_of_stack;
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_TRUE;
   /* setup main thread info. */
   FNI_java_lang_Thread_setupMain(env);
