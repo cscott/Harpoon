@@ -72,7 +72,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.59 2000-06-12 20:38:31 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.60 2000-06-13 19:18:14 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -93,8 +93,6 @@ public abstract class PAMain {
     private static boolean SHOW_SPLIT = false;
     // show some details/statistics about the analysis
     private static boolean SHOW_DETAILS = false;
-    // show some memory allocation statistics
-    private static boolean MA_STATS = false;
     // show some statistics about the method hole of the analyzed program
     private static boolean HOLE_STATS = false;
 
@@ -393,8 +391,6 @@ public abstract class PAMain {
 
 	pa = new PointerAnalysis(mcg, mac, lbbconv);
 
-	if(MA_STATS) ma_statistics(pa, hroot);
-
 	if(DO_ANALYSIS){
 	    for(Iterator it = mm_to_analyze.iterator(); it.hasNext(); ){
 		Method analyzed_method = (Method) it.next();
@@ -430,9 +426,8 @@ public abstract class PAMain {
 	if(SHOW_DETAILS)
 	    pa.print_stats();
 
-	if(DO_SAT) {
+	if(DO_SAT)
 	    do_sat();
-	}
     }
     
     private static void display_method(Method method){
@@ -514,7 +509,6 @@ public abstract class PAMain {
 	    new LongOpt("showcg",    LongOpt.NO_ARGUMENT,       null, 9),
 	    new LongOpt("showsplit", LongOpt.NO_ARGUMENT,       null, 10),
 	    new LongOpt("details",   LongOpt.NO_ARGUMENT,       null, 11),
-	    new LongOpt("mastats",   LongOpt.NO_ARGUMENT,       null, 12),
 	    new LongOpt("holestats", LongOpt.NO_ARGUMENT,       null, 13),
 	    new LongOpt("mamaps",    LongOpt.REQUIRED_ARGUMENT, null, 14),
 	    new LongOpt("noit",      LongOpt.NO_ARGUMENT,       null, 15),
@@ -573,9 +567,6 @@ public abstract class PAMain {
 		break;
 	    case 11:
 		SHOW_DETAILS = true;
-		break;
-	    case 12:
-		MA_STATS = true;
 		break;
 	    case 13:
 		HOLE_STATS = true;
@@ -639,9 +630,6 @@ public abstract class PAMain {
 	if(SHOW_DETAILS)
 	    System.out.print(" SHOW_DETAILS");
 
-	if(MA_STATS)
-	    System.out.print(" MA_STATS");
-
 	if(HOLE_STATS)
 	    System.out.print(" HOLE_STATS");
 
@@ -686,114 +674,7 @@ public abstract class PAMain {
 	System.out.println();
     }
 
-    // print statictics about the memory allocation policies
-    private static void ma_statistics(PointerAnalysis pa, HMethod hroot){
-	int nb_captured = 0;
-
-	MetaCallGraph mcg = pa.getMetaCallGraph();
-	MetaMethod mroot = new MetaMethod(hroot, true);
-
-	// analyze just the method tree rooted in the main method, i.e.
-	// just the user program, not the other methods called by the
-	// JVM before "main".
-	Set mms = new HashSet();
-	Set roots = new HashSet(mcg.getRunMetaMethods());
-	roots.add(mroot);
-
-	for(Iterator it = roots.iterator(); it.hasNext(); ){
-	    MetaMethod mm = (MetaMethod) it.next();
-	    mms.add(mm);
-	    mms.addAll(mcg.getTransCallees(mm));
-	}
-
-	// this should analyze everything
-	pa.getIntParIntGraph(mroot);
-	pa.getExtParIntGraph(mroot);
-	pa.threadInteraction(mroot);  
-
-	for(Iterator it = mms.iterator(); it.hasNext();){
-	    MetaMethod mm = (MetaMethod) it.next();
-	    if(!pa.analyzable(mm.getHMethod())) continue;
-	    ParIntGraph pig = pa.getIntParIntGraph(mm);
-	    System.out.println("META-METHOD: " + mm);
-	    System.out.println(pig);
-	}
-
-	System.out.println("ROOT META-METHOD: " + mroot);
-	System.out.println("RELEVANT META-METHODs:{");
-	for(Iterator it = mms.iterator(); it.hasNext(); ){
-	    MetaMethod mm = (MetaMethod) it.next();
-	    if(pa.analyzable(mm.getHMethod()))
-		System.out.println("  " + mm);
-	}
-	System.out.println("}");
-
-	System.out.println("MEMORY ALLOCATION STATISTICS ======");
-	harpoon.Analysis.PointerAnalysis.InterThreadPA.TIMING = false;
-
-	System.out.println("CAPTURED NODES:");
-
-	for(Iterator it = mms.iterator(); it.hasNext();){
-	    MetaMethod mm = (MetaMethod) it.next();
-	    if(!pa.analyzable(mm.getHMethod())) continue;
-	    ParIntGraph pig = pa.getIntParIntGraph(mm);
-	    Set nodes = pig.allNodes();
-	    Set captured = new HashSet();
-	    for(Iterator it2 = nodes.iterator(); it2.hasNext(); ){
-		PANode node = (PANode) it2.next();
-		if(node.type != PANode.INSIDE) continue;
-		if(pig.G.captured(node))
-		    captured.add(node);
-	    }
-	    
-	    if(captured.size() > 0){
-		System.out.println("METHOD " + mm.getHMethod());
-		for(Iterator it2 = captured.iterator(); it2.hasNext();)
-		    System.out.println(" " + ((PANode)it2.next()).details());
-	    }
-	    
-	    nb_captured += captured.size();
-	}
-
-	System.out.println("TOTAL CAPTURED NODES: " + nb_captured);
-
-
-	System.out.println("PSEUDO-CAPTURED:");
-
-	int nb_pcaptured = 0;
-
-	for(Iterator it = mms.iterator(); it.hasNext();){
-	    MetaMethod mm = (MetaMethod) it.next();
-	    if(!pa.analyzable(mm.getHMethod())) continue;
-	    ParIntGraph pig = pa.getIntParIntGraph(mm);
-	    Set nodes = pig.allNodes();
-	    Set captured = new HashSet();
-	    for(Iterator it2 = nodes.iterator(); it2.hasNext(); ){
-		PANode node = (PANode) it2.next();
-		if(node.type != PANode.INSIDE) continue;
-		if(pig.G.captured(node)) continue; // has been already counted
-		if(!pig.G.willEscape(node)){
-		    Set nhs = pig.G.e.nodeHolesSet(node);
-		    if(!nhs.isEmpty()) continue;
-		    captured.add(node);
-		}
-	    }
-	    
-	    if(captured.size() > 0){
-		System.out.println("METHOD " + mm.getHMethod());
-		for(Iterator it2 = captured.iterator(); it2.hasNext();)
-		    System.out.println(" " + ((PANode)it2.next()).details());
-	    }
-	    
-	    nb_pcaptured += captured.size();
-	} 
-
-	System.out.println("TOTAL PSEUDO CAPTURED NODES: " + nb_pcaptured);
-	System.out.println("===================================");
-    }
-
-
-    // print statistics about the memory allocation policies
+    // Generates the memory allocation policies.
     private static void ma_maps(PointerAnalysis pa, HMethod hroot){
 	MetaCallGraph mcg = pa.getMetaCallGraph();
 	MetaMethod mroot = new MetaMethod(hroot, true);

@@ -59,7 +59,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.28 2000-06-12 20:38:29 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.29 2000-06-13 19:18:12 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -287,7 +287,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	if(DO_PREALLOCATION && (tau.activeThreadSet().size() == 1))
 	    analyze_prealloc(mm, hcode, pig, tau);
 
-	set_make_heap(tau.activeThreadSet());
+	/// DUMMY CODE: we don't have NSTK_malloc_with_heap yet
+	if(!NO_TG)
+	    set_make_heap(tau.activeThreadSet());
 
 	/// DUMMY CODE: Stack allocate ALL the threads
 	if(NO_TG) {
@@ -302,6 +304,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		if(thread_on_stack(node, q)) {
 		    MyAP ap = getAPObj(q);
 		    ap.sa = true;
+		    ap.ta = false;
 		}
 	    }
 	}
