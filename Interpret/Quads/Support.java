@@ -11,7 +11,7 @@ import harpoon.ClassFile.HMethod;
  * <code>Support</code> provides some native method implementations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Support.java,v 1.1.2.6 1999-08-07 06:59:53 cananian Exp $
+ * @version $Id: Support.java,v 1.1.2.7 1999-11-13 06:25:08 cananian Exp $
  */
 final class Support extends HCLibrary {
     static final void registerNative(StaticState ss) {
@@ -23,6 +23,7 @@ final class Support extends HCLibrary {
 	INString.register(ss);
 	INSystem.register(ss);
 	// java.io.*
+	INFile.register(ss);
 	INFileInputStream.register(ss);
 	INFileOutputStream.register(ss);
 	INRandomAccessFile.register(ss);

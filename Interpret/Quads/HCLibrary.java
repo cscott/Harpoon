@@ -10,7 +10,7 @@ import harpoon.ClassFile.HClass;
  * <code>HClass</code> objects for common classes into class scope.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCLibrary.java,v 1.1.2.5 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: HCLibrary.java,v 1.1.2.6 1999-11-13 06:25:07 cananian Exp $
  */
 class HCLibrary  {
     static final HClass 
@@ -27,6 +27,7 @@ class HCLibrary  {
 	HCstringA = HClass.forDescriptor("[Ljava/lang/String;"),
 	HCsystem = HClass.forName("java.lang.System"),
 	HCthrowable = HClass.forName("java.lang.Throwable"),
+	HCfile = HClass.forName("java.io.File"),
 	HCfiledesc = HClass.forName("java.io.FileDescriptor"),
 	HCfistream = HClass.forName("java.io.FileInputStream"),
 	HCfostream = HClass.forName("java.io.FileOutputStream"),
