@@ -63,6 +63,7 @@ public class RegAlloc implements TempMap {
   DerivationGenerator dg;
 
   boolean debug = false; // enable debugging output.
+  static boolean quiet = false; // don't show progress
 
 
   /**
@@ -90,10 +91,13 @@ public class RegAlloc implements TempMap {
 	registers = new TempList(reg[i], registers);
     
     // repeat these steps until no more variables need to be spilled:
+    if (!quiet) System.err.print("{");
     do {
       // create a flow graph
+      if (!quiet) System.err.print("F");
       flow = new AssemFlowGraph(this.instrs, ud, true);
       // create an interference graph after analyzing the flow for liveness.
+      if (!quiet) System.err.print("L");
       Liveness live = new Liveness(flow);
       // possibly dump these graphs for debugging.
       if (debug) {
@@ -101,12 +105,14 @@ public class RegAlloc implements TempMap {
         live.show(System.err);
       }
       // color the temporaries using the interference graph.
+      if (!quiet) System.err.print("C");
       color = new Color(flow, live, new TempMap() {
 	  public Temp tempMap(Temp t) {
 	      Util.assert(f.getRegFileInfo().isRegister(t));
 	      return t;
 	  }
       }, registers);
+      if (!quiet) System.err.print("S");
       // rewrite program to spill temporaries, if necessary.
       if (color.spills() != null) {
 	rewriteProgram(root, color.spills());
@@ -114,6 +120,7 @@ public class RegAlloc implements TempMap {
 	if (dg!=null) ud = new DerivedUseDefer(c, ud0);
       }
     } while (color.spills() != null);
+    if (!quiet) System.err.print("}");
 
     // trim redundant instructions.
     instrs = trim(instrs);
@@ -122,6 +129,10 @@ public class RegAlloc implements TempMap {
   // use the Spiller class to rewrite the program.
   private void rewriteProgram(Instr root, TempList spilled) {
     //throw new Error(root.getFactory().getMethod()+" needs "+color.spills()+" spilled.");
+    if (!quiet) {
+      int i=0; for (TempList tl=spilled; tl!=null; tl=tl.tail) i++;
+      System.err.print("("+i+")");
+    }
     Spiller spiller = new Spiller(code, spilled);
     instrs = spiller.rewrite(instrs);
   }
@@ -168,11 +179,13 @@ public class RegAlloc implements TempMap {
       this.ud = ud;
       if (c.getDerivation()==null) return; // no deriv info.
 
+      if (!quiet) System.err.print("[COMPUTING EXTRAS...");
       // do a depth-first search of the CFG to determine (one of the)
       // reaching definitions for each use.
       CFGrapher cfg = CFGrapher.DEFAULT;
       dfs(cfg.getFirstElement(c), cfg, c.getDerivation(),
 	  new HashEnvironment(), new HashSet());
+      if (!quiet) System.err.print("done.]");
     }
     /** dfs of cfg to determine (a) reaching def for each use.
      *  current reaching defs are in 'env'. */
