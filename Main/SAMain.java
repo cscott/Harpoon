@@ -46,12 +46,16 @@ import harpoon.Util.Default;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 
+import harpoon.Backend.Runtime1.AllocationStrategy;
+import harpoon.Backend.Runtime1.AllocationStrategyFactory;
+
 import harpoon.IR.Quads.Quad;
 import harpoon.Instrumentation.AllocationStatistics.AllocationNumbering;
 import harpoon.Instrumentation.AllocationStatistics.AllocationNumberingStub;
 import harpoon.Instrumentation.AllocationStatistics.InstrumentAllocs;
 import harpoon.Instrumentation.AllocationStatistics.InstrumentAllocs2;
 import harpoon.Instrumentation.AllocationStatistics.AllocationStatistics;
+
 import harpoon.Analysis.PointerAnalysis.Debug;
 import harpoon.Analysis.PreciseGC.MRA;
 import harpoon.Analysis.PreciseGC.WriteBarrierPrePass;
@@ -103,7 +107,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.32 2003-02-09 21:27:03 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.33 2003-02-11 21:40:02 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -126,7 +130,7 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean INSTRUMENT_ALLOCS = false;
     // 1 - Brian's instrumentation
     // 2 - Alex's  instrumentation
-    static int INSTRUMENT_ALLOCS_TYPE = 1;
+    static int INSTRUMENT_ALLOCS_TYPE = 2;
     // TODO: add command line options about instrumenting syncs/calls
     static boolean INSTRUMENT_SYNCS = false;
     static boolean INSTRUMENT_CALLS = false;
@@ -226,10 +230,81 @@ public class SAMain extends harpoon.IR.Registration {
 	// create the target Frame way up here!
 	// the frame specifies the combination of target architecture,
 	// runtime, and allocation strategy we want to use.
-	frame = Options.frameFromString(BACKEND_NAME, mainM);
+	frame = Options.frameFromString(BACKEND_NAME, mainM,
+					getAllocationStrategyFactory());
 
 	do_it(mainM);
     }
+
+
+    private static AllocationStrategyFactory getAllocationStrategyFactory() {
+
+	return new AllocationStrategyFactory() {
+	    public AllocationStrategy getAllocationStrategy(Frame frame) {
+		
+		System.out.print("Allocation strategy: ");
+		
+		if((INSTRUMENT_ALLOCS || INSTRUMENT_ALLOCS_STUB) && 
+		   (INSTRUMENT_ALLOCS_TYPE==2)) {
+		    System.out.println("InstrumentedAllocationStrategy");
+		    return new harpoon.Instrumentation.AllocationStatistics.
+			InstrumentedAllocationStrategy(frame);
+		}
+
+		if(PreallocOpt.PREALLOC_OPT) {
+		    System.out.println("PreallocAllocationStrategy");
+		    return new harpoon.Analysis.MemOpt.
+			PreallocAllocationStrategy(frame);
+		}
+
+		if(Realtime.REALTIME_JAVA) {
+		    System.out.println("RTJ");
+		    return new harpoon.Analysis.Realtime.
+			RealtimeAllocationStrategy(frame);
+		}
+
+		String alloc_strategy = 
+		    System.getProperty("harpoon.alloc.strategy", "malloc");
+
+		System.out.println(alloc_strategy);
+
+		if(alloc_strategy.equalsIgnoreCase("nifty"))
+		    return new harpoon.Backend.PreciseC.
+			PGCNiftyAllocationStrategy(frame);
+
+		if(alloc_strategy.equalsIgnoreCase("niftystats"))
+		    return new harpoon.Backend.PreciseC.	    
+			PGCNiftyAllocationStrategyWithStats(frame);
+
+		if(alloc_strategy.equalsIgnoreCase("bdw"))
+		    return new harpoon.Backend.Runtime1.
+			BDWAllocationStrategy(frame);
+
+		if(alloc_strategy.equalsIgnoreCase("sp"))
+		    return new harpoon.Backend.Runtime1.
+			SPAllocationStrategy(frame);
+
+		if(alloc_strategy.equalsIgnoreCase("precise"))
+		    return new harpoon.Backend.Runtime1.
+			MallocAllocationStrategy(frame, "precise_malloc");
+
+		if(alloc_strategy.equalsIgnoreCase("heapstats"))
+		    return new harpoon.Backend.Runtime1.
+			HeapStatsAllocationStrategy(frame);
+
+		System.out.println
+		    ("AllocationStrategy " + alloc_strategy +
+		     " unknown; use default \"malloc\" strategy instead");
+
+		// default, "malloc" strategy.
+		return
+		    new harpoon.Backend.Runtime1.MallocAllocationStrategy
+		    (frame,
+		     System.getProperty("harpoon.alloc.func", "malloc"));
+	    }
+	};
+    }
+
 
     // hcf is QuadWithTry at the beginning of do_it();
     static void do_it(HMethod mainM) {
@@ -1034,12 +1109,17 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 2:
 		hcf = (new InstrumentAllocs2(hcf, mainM,
 					     linker, an)).codeFactory();
+		roots.add(InstrumentAllocs.getMethod
+			  (linker,
+			   "harpoon.Runtime.CounterSupport", "count2",
+			   new HClass[]{HClass.Int, HClass.Int}));
 		break;
 	    default:
 		assert false : "Illegal INSTRUMENT_ALLOCS_TYPE" +
 		    INSTRUMENT_ALLOCS_TYPE;		    
 	    }
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+
+	    hcf = new CachingCodeFactory(hcf);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	}
 	else if(READ_ALLOC_STATS) {

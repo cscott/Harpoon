@@ -34,6 +34,9 @@ import harpoon.Temp.TempFactory;
 import harpoon.Util.Default;
 import harpoon.Util.Util;
 
+import harpoon.Backend.Runtime1.AllocationStrategy;
+import harpoon.Backend.Runtime1.AllocationStrategyFactory;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -44,56 +47,27 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.6 2002-11-29 20:43:36 salcianu Exp $
+ * @version $Id: Frame.java,v 1.7 2003-02-11 21:39:56 salcianu Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
     private final Linker linker;
-    // HACK: this should really be a command-line parameter.
-    private final static String alloc_strategy =
-	System.getProperty("harpoon.alloc.strategy", "malloc");
     private final static boolean pointersAreLong =
 	System.getProperty("harpoon.frame.pointers", "short")
 	.equalsIgnoreCase("long");
     private final static boolean is_elf = true;
 
-    /** Creates a <code>Frame</code>. */
     public Frame(HMethod main) {
+	this(main, null);
+    }
+
+    /** Creates a <code>Frame</code>. */
+    public Frame(HMethod main, AllocationStrategyFactory asFact) {
 	super();
 	linker = main.getDeclaringClass().getLinker();
-	System.out.println("AllocationStrategy: "+
-			   (Realtime.REALTIME_JAVA? 
-			    "RTJ":alloc_strategy));
-	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
-	    PreallocOpt.PREALLOC_OPT ?
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new harpoon.Analysis.MemOpt.PreallocAllocationStrategy(this) :
-	    Realtime.REALTIME_JAVA ?
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new harpoon.Analysis.Realtime.RealtimeAllocationStrategy(this) :
-	    alloc_strategy.equalsIgnoreCase("nifty") ?
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new PGCNiftyAllocationStrategy(this) :
-	    alloc_strategy.equalsIgnoreCase("niftystats") ?
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new PGCNiftyAllocationStrategyWithStats(this) :
-	    alloc_strategy.equalsIgnoreCase("bdw") ?
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new harpoon.Backend.Runtime1.BDWAllocationStrategy(this) :
-	    alloc_strategy.equalsIgnoreCase("sp") ?
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new harpoon.Backend.Runtime1.SPAllocationStrategy(this) :	    
-	    alloc_strategy.equalsIgnoreCase("precise") ?
-	    new harpoon.Backend.Runtime1.MallocAllocationStrategy
-	    (this, "precise_malloc") :
-	    alloc_strategy.equalsIgnoreCase("heapstats") ?
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new harpoon.Backend.Runtime1.HeapStatsAllocationStrategy(this) :
-	    // default, "malloc" strategy.
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new harpoon.Backend.Runtime1.MallocAllocationStrategy
-	    (this,
-	     System.getProperty("harpoon.alloc.func", "malloc"));
+	// if the "asFact" argument is non-null, use it to produce
+	// an allocation strategy
+	AllocationStrategy as = asFact.getAllocationStrategy(this);
 
 	harpoon.Backend.Generic.Runtime m_runtime =
 	    Realtime.REALTIME_JAVA ?

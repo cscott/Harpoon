@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
+import harpoon.Backend.Runtime1.AllocationStrategyFactory;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
@@ -12,7 +13,7 @@ import harpoon.ClassFile.HMethod;
  * environment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Options.java,v 1.3 2002-08-08 17:51:38 cananian Exp $
+ * @version $Id: Options.java,v 1.4 2003-02-11 21:40:03 salcianu Exp $
  */
 public class Options {
     /** Stream for writing statistics. */
@@ -48,8 +49,17 @@ public class Options {
 	else throw new Error("Unknown code factory type: "+name);
     }
 
-    /** Create a frame object, given the name of a backend. */
-    public static Frame frameFromString(String backendName, HMethod mainMethod)
+    /** Create a frame object, given the name of a backend.
+
+	@param backendName string name of the backend
+
+	@param mainMethod  main method of the compiled program
+
+	@param asFact factory that produces the
+	<code>AllocationStrategy</code> for compiling allocation
+	sites.  May be null. */
+    public static Frame frameFromString(String backendName, HMethod mainMethod,
+					AllocationStrategyFactory asFact)
     {
 	backendName = backendName.toLowerCase().intern();
 	if (backendName == "strongarm")
@@ -63,7 +73,13 @@ public class Options {
 	if (backendName == "mipsda")
 	    return new harpoon.Backend.MIPS.Frame(mainMethod, "da");
 	if (backendName == "precisec")
-	    return new harpoon.Backend.PreciseC.Frame(mainMethod);
+	    return new harpoon.Backend.PreciseC.Frame(mainMethod, asFact);
 	throw new Error("Unknown Backend: "+backendName);
+    }
+
+    /** Create a frame object, given the name of a backend. */
+    public static Frame frameFromString(String backendName, HMethod mainMethod)
+    {
+	return frameFromString(backendName, mainMethod, null);
     }
 }
