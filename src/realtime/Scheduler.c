@@ -120,5 +120,15 @@ JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_sleep
   nanosleep(&req, NULL);
 }
 
+JNIEXPORT jint JNICALL Java_javax_realtime_Scheduler_clock
+(JNIEnv* env, jobject _this) {
+  clock_t c = clock();
+#ifdef RTJ_DEBUG_THREADS
+  printf("\n  %ld = Scheduler.clock(%p, %p)", c, env, _this);
+#endif
+  return (jint)c;
+}
+
+
 #endif
 
