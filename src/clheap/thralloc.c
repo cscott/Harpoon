@@ -19,17 +19,28 @@ struct oobj_with_clheap {
   (((struct oobj_with_clheap *) (((char *)oobj)-sizeof(clheap_t)))->clheap)
 
 #ifdef REALLY_DO_ALLOC
-#ifdef WITH_THREADS
+
+#if defined(WITH_THREADS) && !defined(WITH_EVENT_DRIVEN)
+/* Heavy-weight threads.  Not the thing to use if you've got an
+ * event-driven transformation going on w/ your code. */
 # define FETCH_THIS_THREAD() \
 	(((struct FNI_Thread_State *)FNI_GetJNIEnv())->thread)
-#else
+# define FETCH_THIS_THREAD_UNWRAPPED() FNI_UNWRAP(FETCH_THIS_THREAD())
+
+#elif !defined(WITH_THREADS) && defined(WITH_EVENT_DRIVEN)
+/* Event-driven code.  No heavy-weight threading allowed. */
+# define FETCH_THIS_THREAD_UNWRAPPED() \
+	Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread
+# define FETCH_THIS_THREAD() FNI_WRAP(FETCH_THIS_THREAD_UNWRAPPED())
+
+#else /* some other case */
 # error unimplemented
 #endif
 #endif
 
 void *NTHR_malloc(size_t size) {
 #ifdef REALLY_DO_ALLOC
-  return NTHR_malloc_other(size, FNI_UNWRAP(FETCH_THIS_THREAD()));
+  return NTHR_malloc_other(size, FETCH_THIS_THREAD_UNWRAPPED());
 #else
   UPDATE_STATS(thr, size);
   return NGBL_malloc_noupdate(size);
