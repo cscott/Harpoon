@@ -33,6 +33,8 @@ if [ "$TASK" == "" ]; then   # when a task requires a special configuration, it 
 	done
     fi
     make   # remaking Code
+    make   # don't ask me why there MUST be 3 "make"s here...
+    make
     echo -e "Finished making Code.\n"
 fi
 

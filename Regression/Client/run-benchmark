@@ -85,6 +85,9 @@ fi
 
 if [ "$ERRORS" == "yes" ]; then   # we want to log errors
     echo >> $ERROR_FILE
+    echo $BENCHMARK >> $ERROR_FILE
+    echo ---------------------- >> $ERROR_FILE
+    echo >> $ERROR_FILE
 fi
 
 # Reconfiguring FLEX for this task
