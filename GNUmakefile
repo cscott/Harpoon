@@ -1,4 +1,4 @@
-# $Revision: 1.48 $
+# $Revision: 1.49 $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -120,6 +120,8 @@ doc-clean:
 
 mark-executable:
 	@chmod a+x bin/*
+find-no-copyright:
+	@find . -name "*.java" \( ! -exec grep -q "GNU GPL" "{}" ";" \) -print
 
 wc:
 	@wc -l $(ALLSOURCE)
