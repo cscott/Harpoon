@@ -49,11 +49,13 @@ import harpoon.Analysis.MetaMethods.SmartCallGraph;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.12 2000-03-21 22:20:42 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.13 2000-03-22 00:26:17 salcianu Exp $
  */
 public abstract class PAMain {
 
-    private static boolean METAMETHODS = true;
+    private static boolean METAMETHODS = false;
+    private static boolean SMART_CALL_GRAPH = true;
+
     private static boolean DEBUG_CH = false;
 
     private static String[] example ={
@@ -157,20 +159,41 @@ public abstract class PAMain {
 	    tstop = System.currentTimeMillis();
 	    System.out.println((tstop - tstart) + "ms");
 	}
-	else{ // fake meta-methods
+	else{
+	    CallGraph cg = null;
+	    Set methods = null;
+	    if(SMART_CALL_GRAPH){ // smart call graph!
+		System.out.print("MetaCallGraph ... ");
+		tstart = System.currentTimeMillis();
+		MetaCallGraph fmcg = new MetaCallGraphImpl(bbconv, ch, hroot);
+		tstop  = System.currentTimeMillis();
+		System.out.println((tstop - tstart) + "ms");
+
+		System.out.print("SmartCallGraph ... ");
+		tstart = System.currentTimeMillis();
+		SmartCallGraph scg = new SmartCallGraph(fmcg);
+		cg = scg;
+		methods = scg.getAllExecutableMethods();
+		tstop  = System.currentTimeMillis();
+		System.out.println((tstop - tstart) + "ms");
+	    }
+	    else{
+		cg = new CallGraphImpl(ch, hcf);
+		methods = ch.callableMethods();
+	    }
 	    System.out.print("FakeMetaCallGraph ... ");
 	    tstart = System.currentTimeMillis();
-	    CallGraph  cg = new CallGraphImpl(ch, hcf);
-	    mcg = new FakeMetaCallGraph(cg, ch.callableMethods());
+	    mcg = new FakeMetaCallGraph(cg, methods);
 	    tstop  = System.currentTimeMillis();
 	    System.out.println((tstop - tstart) + "ms");
-
+	    
 	    System.out.print("(Fake)MetaAllCallers ... ");
 	    tstart = System.currentTimeMillis();
 	    mac = new MetaAllCallers(mcg);
 	    tstop  = System.currentTimeMillis();
 	    System.out.println((tstop - tstart) + "ms");
 	}
+	
 
 	//System.out.println("MetaCallGraph:");
 	//mcg.print(new java.io.PrintWriter(System.out, true), true);

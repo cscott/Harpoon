@@ -16,11 +16,13 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
 import harpoon.Analysis.PointerAnalysis.Relation;
 
+import harpoon.Util.Util;
+
 /**
  * <code>SmartCallGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SmartCallGraph.java,v 1.1.2.1 2000-03-21 22:28:44 salcianu Exp $
+ * @version $Id: SmartCallGraph.java,v 1.1.2.2 2000-03-22 00:26:03 salcianu Exp $
  */
 public class SmartCallGraph implements CallGraph {
     
@@ -73,6 +75,11 @@ public class SmartCallGraph implements CallGraph {
 	return (CALL[]) css.toArray(new CALL[css.size()]);
     }
 
+    /** Returns the set of all the methods that can be executed. */
+    public Set getAllExecutableMethods(){
+	return hm2callees.keySet();
+    }
+
     // Does the main computation: fill the hm2callees and hm2cs2callees
     // structures using the info from mcg.
     private final void compute(final MetaCallGraph mcg){
@@ -87,7 +94,6 @@ public class SmartCallGraph implements CallGraph {
 	    Map map = new HashMap();
 
 	    for(Iterator itmm = split.getValues(hm); itmm.hasNext(); ){
-
 		MetaMethod mm = (MetaMethod) itmm.next();
 
 		Iterator itcs = mcg.getCallSites(mm).iterator();
@@ -95,16 +101,13 @@ public class SmartCallGraph implements CallGraph {
 		    CALL cs = (CALL) itcs.next();
 		    // vc_cs stores all the callers at site cs
 		    Vector vc_cs = new Vector();
-
 		    // get the meta-method whih are called at cs
 		    MetaMethod[] callees = mcg.getCallees(mm,cs);
-
 		    for(int i = 0; i < callees.length; i++){
 			HMethod hm_callee = callees[i].getHMethod();
 			vc.add(hm_callee);
 			vc_cs.add(hm_callee);
 		    }
-
 		    map.put(cs, 
 		       (HMethod[]) vc_cs.toArray(new HMethod[vc_cs.size()]));
 		}

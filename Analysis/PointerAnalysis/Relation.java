@@ -13,6 +13,7 @@ import java.util.Map;
 
 import java.util.Arrays;
 
+import harpoon.Util.Util;
 
 /**
  * <code>Relation</code> implements a generalized (i.e. one to many) relation.
@@ -21,7 +22,7 @@ import java.util.Arrays;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.15 2000-03-01 01:11:03 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.16 2000-03-22 00:26:15 salcianu Exp $
  */
 public class Relation{
     
