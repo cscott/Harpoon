@@ -32,7 +32,7 @@ import java.util.Set;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.15 1999-08-24 22:19:03 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.16 1999-08-25 20:37:43 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -50,15 +50,15 @@ final class ReHandler {
 	//add in TYPECAST as necessary to make the bytecode verifier happy
 	//does dataflow analysis, etc...
 	analyzeTypes(ncode, ti);
-	
+
 	//Do pattern matching to make exceptions implicit...
-	
+
 	WorkSet callset=new WorkSet();
 	WorkSet throwset=new WorkSet();
+	WorkSet phiold=new WorkSet();
 	WorkSet instanceset=new WorkSet();
-
 	//Do actual pattern matching here
-	HashMapList handlermap=analyze(ncode,callset,throwset, instanceset);
+	HashMapList handlermap=analyze(ncode,callset,throwset, instanceset, phiold);
 
 	final QuadMap qm = new QuadMap();
 	final HEADER old_header = (HEADER)ncode.getRootElement();
@@ -101,15 +101,9 @@ final class ReHandler {
 		    //see if the any case is handled
 		    //if so, we can't simply omit more specific handlers
 		    //that just rethrow the exception
-		    if (hi.anyhandler()) {
-			if (throwset.contains(hi.handler())) {
-			    Temp t=((THROW)hi.handler()).throwable();
-			    if (hi.map().containsKey(t))
-				t=(Temp)hi.map().get(t);
-			    if (t==call.retex())
-				any=true;
-			}
-		    }
+		    if (hi.anyhandler())
+			if (!any) 
+			    any=removable(throwset, phiold, hi, call);
 		}
 		//iterate through the handlers again
 		iterate=handlermap.get(call).iterator();
@@ -126,7 +120,7 @@ final class ReHandler {
 			makeanyhandler(qf, ss, qm, call, nexth, protlist, phiset);
 		    //cover other handlers
    		    if (nexth.specificex()) 
-			makespechandler(qf, ss, qm, call, throwset, nexth, protlist, phiset, any);
+			makespechandler(qf, ss, qm, call, throwset, nexth, protlist, phiset, phiold, any);
 		}
 	    }
 	}
@@ -168,6 +162,53 @@ final class ReHandler {
 	    ((Quad)it.next()).visit(v);
 
 	return qH;
+    }
+
+    private static boolean removable(Set throwset, Set phiset, HandInfo hi, CALL call) {
+	boolean any=false;
+	if (throwset.contains(hi.handler())) {
+	    Temp t=((THROW)hi.handler()).throwable();
+	    if (hi.map().containsKey(t))
+		t=(Temp)hi.map().get(t);
+	    if (t==call.retex())
+		any=true;
+	}
+	Quad handler=hi.handler();
+	Temp ctemp=call.retex();
+	int edge=hi.handleredge();
+	boolean first=true;
+	
+	while (phiset.contains(handler)) {
+	    PHI phi=(PHI)handler;
+	    int phinum=-1;
+	    for (int i=0;i<phi.numPhis();i++) {
+		Temp t=phi.src(i, edge);
+		if (first&&hi.map().containsKey(t))
+		    t=(Temp)hi.map().get(t);
+		if (ctemp==t) {
+		    phinum=i;
+		    break;
+		}
+	    }
+
+	    edge=phi.nextEdge(0).which_pred();
+
+	    if (phinum!=-1) {
+		ctemp=phi.dst(phinum);
+		first=false;
+	    }
+	    
+	    if (throwset.contains(handler.next(0))) {
+		Temp t=((THROW)handler.next(0)).throwable();
+		if (first&&hi.map().containsKey(t))
+		    t=(Temp)hi.map().get(t);
+		if (t==ctemp)
+		    any=true;
+	    }
+	    handler=handler.next(0);
+	}
+	    
+	return any;
     }
 
     //make an exceptionless exit for the call statement
@@ -219,9 +260,14 @@ final class ReHandler {
     }
 
 
-    //makes a specific handler
-    private static void makespechandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, Set throwset, HandInfo nexth, ReProtection protlist, Set phiset, boolean any) {
+
+    //makes a specific handler    
+    private static void makespechandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, Set throwset, HandInfo nexth, ReProtection protlist, Set phiset, Set phiold, boolean any) {
 	boolean needhand=true;
+     
+	if (any)
+	    needhand=!removable(throwset, phiold, nexth, call);
+	
 	if (throwset.contains(nexth.handler())&&any) {
 	    Temp t=((THROW)nexth.handler()).throwable();
 	    if (nexth.map().containsKey(t))
@@ -326,8 +372,8 @@ final class ReHandler {
     
     //This method does the pattern matching on calls
     //to determine HANDLERS
-    private static HashMapList analyze(final Code code, Set callset, Set throwset, Set instanceset) {
-	CALLVisitor cv=new CALLVisitor(callset, throwset, instanceset);
+    private static HashMapList analyze(final Code code, Set callset, Set throwset, Set instanceset, Set phiset) {
+	CALLVisitor cv=new CALLVisitor(callset, throwset, instanceset, phiset);
 	for (Iterator e =  code.getElementsI(); e.hasNext(); )
 	    ((Quad)e.next()).visit(cv);
 	HashMapList callhand=new HashMapList();
@@ -400,13 +446,19 @@ final class ReHandler {
 	Set callset;
 	Set throwset;
 	Set instanceset;
+	Set phiset;
 
-	CALLVisitor(Set callset, Set throwset, Set instanceset) {
+	CALLVisitor(Set callset, Set throwset, Set instanceset, Set phiset) {
 	    this.callset=callset;
 	    this.throwset=throwset;
 	    this.instanceset=instanceset;
+	    this.phiset=phiset;
 	}
 	public void visit(Quad q) {}
+
+	public void visit(PHI q) {
+	    phiset.add(q);
+	}
 
 	public void visit(THROW q) {
 	    throwset.add(q);
@@ -526,6 +578,8 @@ final class ReHandler {
 
 	public void reset() {
 	    phimap=new HashMap();
+	    anyhandler=null;
+	    anyedge=0;
 	    last=null;
 	    reset=true;
 	    oldphimap=null;
@@ -577,7 +631,7 @@ final class ReHandler {
 
 	public void visit(PHI q) {
 	    Util.assert(last!=null);
-	    int ent=last.nextEdge(0).which_succ();
+	    int ent=last.nextEdge(0).which_pred();
 	    for (int i=0;i<q.numPhis();i++) {
 		phimap.put(q.dst(i),remap(q.src(i,ent)));
 		phimap.remove(q.src(i,ent));
@@ -633,12 +687,10 @@ final class ReHandler {
 	public void visit(CJMP q) {
 	    if (callquad!=null)
 		if (callmap.containsKey(q.test())) {
-		    System.out.println("**CJMP");
 		    if (callmap.get(q.test())==null) {
 			//we have a acmpeq
 			//next[1] is the no exception case
 			//fix********
-			System.out.println("1**");
 			handlermap.add(callquad,new HandInfo(false, q.next(1), q.nextEdge(1).which_pred(), new HashMap(phimap)));
 			oldphimap=new HashMap(phimap);	
 			anyhandler=q.next(0);
@@ -646,13 +698,13 @@ final class ReHandler {
 		    } else {
 			//we have an exception
 			//next[1] is the case of this exception
-			System.out.println("2**");
 			handlermap.add(callquad, 
 				       new HandInfo((HClass)callmap.get(q.test()), q.next(1), q.nextEdge(1).which_pred(),new HashMap(phimap)));
 			oldphimap=new HashMap(phimap);
 			anyhandler=q.next(0);
 			anyedge=q.nextEdge(0).which_pred();
 		    }
+		    standard(q);
 		} else weird(q);
 	}
     }
