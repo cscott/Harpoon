@@ -58,7 +58,7 @@ import java.util.Date;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.37 2000-11-01 00:31:09 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.38 2000-11-02 11:30:46 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
 
@@ -69,6 +69,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
     private static final boolean STATS = false;
     private static final boolean COALESCE_STATS = false;
     private static final boolean SCARY_OUTPUT = false;
+    private static final boolean UNIFY_INFO = false;
 
     // Code output control flags
     private static final boolean COALESCE_MOVES = true;
@@ -1880,40 +1881,76 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    return i.rename(tmap);
 	}
 	public void union(Object a, Object b) {
-	    temps.add( ((WebRecord)a).temp() );
-	    temps.add( ((WebRecord)b).temp() );
-	    super.union(a, b);
+	    if ( super.find(a).equals(super.find(b))) 
+		return;
 
-	    Collection as = wrToEqwrs.getValues(a);
-	    Collection bs = wrToEqwrs.getValues(b);
+	    WebRecord wrA = (WebRecord) a;
+	    WebRecord wrB = (WebRecord) b;
+	    if (UNIFY_INFO)
+		System.out.println(" unioning  " + asTemps(unified(wrA)) 
+				   + " and " + asTemps(unified(wrB)));
+
+	    Collection as = unified(wrA);
+	    Collection bs = unified(wrB);
+	    
+	    temps.add( wrA.temp() );
+	    temps.add( wrB.temp() );
+	    super.union(super.find(wrA), super.find(wrB));
 
 	    // clear old mappings
-	    wrToEqwrs.remove(a);
-	    wrToEqwrs.remove(b);
+	    wrToEqwrs.remove(wrA);
+	    wrToEqwrs.remove(wrB);
 
-	    wrToEqwrs.addAll(super.find(a), as);
-	    wrToEqwrs.addAll(super.find(a), bs);
-	    wrToEqwrs.add(super.find(a), a);
-	    wrToEqwrs.add(super.find(a), b);
+	    if (UNIFY_INFO)
+		System.out.println(" unioning2 " + asTemps(unified(wrA)) 
+				   + " and " + asTemps(unified(wrB)));
 
+	    wrToEqwrs.addAll(super.find(wrA), as);
+	    wrToEqwrs.addAll(super.find(wrB), bs);
+
+	    if (UNIFY_INFO)
+		System.out.println(" unioning3 " + asTemps(unified(wrA)) 
+				   + " and " + asTemps(unified(wrB)));
 	}
 	
 	boolean anyConflicting(WebRecord wr1, Collection wrs) {
 	    for(Iterator wrI=wrs.iterator(); wrI.hasNext();) {
 		WebRecord wr2 = (WebRecord) wrI.next();
-		if (conflicting(wr1, wr2)) 
+		if (real_conflicting(wr1, wr2)) 
 		    return true;
 	    }
 	    return false;
 	}
 
 	boolean conflicting(WebRecord wr1, WebRecord wr2) {
-	    Collection wrs1 = new HashSet(wrToEqwrs.getValues(super.find(wr1)));
-	    Collection wrs2 = new HashSet(wrToEqwrs.getValues(super.find(wr2)));
-	    
-	    wrs1.add(wr1);
-	    wrs2.add(wr2);
+	    boolean rtn = real_conflicting(wr1, wr2);
+	    return rtn;
+	}
+	
+	private Collection unified(WebRecord wr) {
+	    Collection wrs = new ArrayList(wrToEqwrs.getValues(super.find(wr)));
+	    wrs.add(wr);
+	    return wrs;
+	}
 
+	private Collection asTemps(final Collection wrs) {
+	    return new java.util.AbstractCollection() {
+		    public int size() { return wrs.size(); }
+		    public Iterator iterator() { 
+			return new FilterIterator
+			    (wrs.iterator(), 
+			     new FilterIterator.Filter() {
+				     public Object map(Object o) {
+					 return ((WebRecord)o).temp();
+				     }
+				 });
+		    }
+		};
+	}
+	private boolean real_conflicting(WebRecord wr1, WebRecord wr2) {
+	    Collection wrs1 = unified(wr1);
+	    Collection wrs2 = unified(wr2);
+	    
 	    for(Iterator i1=wrs1.iterator(); i1.hasNext();) {
 		WebRecord wrA = (WebRecord) i1.next();
 		for(Iterator i2=wrs2.iterator(); i2.hasNext();) {
