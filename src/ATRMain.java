@@ -4,6 +4,7 @@
 package imagerec;
 
 import imagerec.corba.CORBA;
+//import imagerec.corba.EventChannel;
 
 import imagerec.graph.*;
 
@@ -29,11 +30,25 @@ public class ATRMain {
 	 */
 
 	if (args.length<4) {
-	    System.out.println("Usage: java -jar ATR.jar <'timer'|'notimer'> <pipeline #>"); 
-	    System.out.println("       <CORBA name for ATR> <CORBA name for Alert> [CORBA options]");
+	    System.out.println("Usage: java -jar ATR.jar");
+	    System.out.println("       <'timer'|'notimer'>");
+	    System.out.println("       <pipeline #>");
+	    System.out.println("       <CORBA name for ATR>");
+	    System.out.println("       <CORBA name for Alert>");
+	    System.out.println("       [CORBA options]");
+	    System.out.println("--or-- ");
+	    System.out.println("       java -jar ATR.jar");
+	    System.out.println("       <'timer'|'notimer'>");
+	    System.out.println("       <pipeline #>");
+	    System.out.println("       <Event Channel Name>");
+	    System.out.println("       <CORBA name for ATR>");
+	    System.out.println("       <CORBA name for Alert>");
+	    System.out.println("       [CORBA options]");
+	    System.out.println("");
+	    System.out.println("For pipelines 1-3, use format #1.");
+	    System.out.println("For pipeline 4, use format #2.");
 	    System.exit(-1);
 	}
-	
 	int pipelineNumber = 0;
 	try {
 	    pipelineNumber = Integer.parseInt(args[1]);
@@ -66,13 +81,8 @@ public class ATRMain {
 		receivingTimer = new Node();
 	    }
 	    Node pipe = null;
-	    Node alert = null;
-	    if ((pipelineNumber == 1)||
-		(pipelineNumber == 2)||
-		(pipelineNumber == 3)) {
-		alert = new Alert(new CORBA(args), args[3]);
-	    }
 	    if (pipelineNumber == 1) {
+		Node alert = new Alert(new CORBA(args), args[3]);
 		
 		Node robCross = new RobertsCross(null);
 		Node thresh = new Thresholding(null);
@@ -81,14 +91,18 @@ public class ATRMain {
 		Node range = new RangeFind(null);
 		pipe = timer1.linkL(robCross.linkL(thresh.linkL(label.link(null,
 									   range.linkL(timer2.linkL(alert))))));
+		(new ATR(new CORBA(args), args[2], pipe)).run();
 	    }
 	    else if (pipelineNumber == 2) {
+		Node alert = new Alert(new CORBA(args), args[3]);
 		Node labelBlue = new LabelBlue(null, null);
 		Node range = new RangeFind(null);
 		pipe = timer1.linkL(labelBlue.link(null,
 						   range.linkL(timer2.linkL(alert))));
+		(new ATR(new CORBA(args), args[2], pipe)).run();
 	    }
 	    else if (pipelineNumber == 3) {
+		Node alert = new Alert(new CORBA(args), args[3]);
 		Node cleanCache = new Cache(1, null, null);
 		Node n = new Node();
 		LabelBlue labelBlue = new LabelBlue(null, null);
@@ -118,12 +132,47 @@ public class ATRMain {
 					     labelBlue.link(null,
 							    getLabelSmCmd.linkL(labelSmCache)))));
     
+		(new ATR(new CORBA(args), args[2], pipe)).run();
+	    }
+	    else if (pipelineNumber == 4) {
+		/*
+		Node alert = new Alert(new EventChannel(args), args[4]);
+		Node cleanCache = new Cache(1, null, null);
+		Node n = new Node();
+		LabelBlue labelBlue = new LabelBlue(null, null);
+		labelBlue.calibrateAndProcessSeparately(true);
+		Node calibCmd = new Command(Command.CALIBRATION_IMAGE, null);
+		Node noneCmd = new Command(Command.NONE, null);
+		Node copy = new Copy(null);
+		Node robCross = new RobertsCross(null);
+		Node thresh = new Thresholding(null);
+		Node hyst = new Hysteresis(null);
+		Node label = new Label(null, null);
+		Node labelSmCache = new Cache(1, null, null);
+		Node getCropCmd = new Command(Command.GET_CROPPED_IMAGE, null);
+		Node thin = new Thinning(Thinning.BLUE, null);
+		Node range = new RangeFind(null);
+		Node getLabelSmCmd = new Command(Command.GET_IMAGE, null);
+		pipe = 
+		receivingTimer.linkL(timer1.linkL(cleanCache.link(n.link(calibCmd.linkL(labelBlue),
+						    noneCmd.linkL(copy.linkL(robCross.link(null,
+											   thresh.link(null,
+												       hyst.link(null,
+														 label.link(null,
+															    labelSmCache.link(getCropCmd.linkL(cleanCache),
+																	      thin.link(null,
+																			range.linkL(timer2.linkL(alert))))))))))),
+					    
+					     labelBlue.link(null,
+							    getLabelSmCmd.linkL(labelSmCache)))));
+    
+		(new ATR(new CORBA(args), args[3], pipe)).run();
+		*/
 	    }
 	    else {
 		System.out.println("Error: Pipeline #"+pipelineNumber+" not implemented yet.");
 		System.exit(-1);
 	    }
-	    (new ATR(new CORBA(args), args[2], pipe)).run();
 
 	}//else [if(pipelineNumber <= 0)]
     }//public static void main()
