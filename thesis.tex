@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.91 1999-08-29 06:32:20 cananian Exp $
+% $Id: thesis.tex,v 1.92 1999-08-29 10:58:58 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -10,10 +10,13 @@
 \usepackage[section,plain]{algorithm} % algorithm environment,\listofalgorithms
 \usepackage{amsthm} % proof environment
 \usepackage{amstext} % the \text command for math mode (replaces \mbox)
-\usepackage{varioref}\vrefwarning % \vref command
+\usepackage{varioref} % \vref command
 % common definitions
 \usepackage{comdef}
 \newcommand*{\figscale}{1.0}
+
+%setup varioref package
+\vrefwarning\renewcommand{\reftextbefore}{on the preceding page}
 
 % Meet symbol
 \newcommand{\meet}{\ensuremath{\sqcap}}
@@ -34,14 +37,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.91 $ $}
+\date{\today \\ $ $Revision: 1.92 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.91 $ $}{$ $Revision: 1.91 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.92 $ $}{$ $Revision: 1.92 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -779,9 +782,9 @@ this contradicts our choice of $X$ and $Y$.
 If both $X$ and $Y$ are not definitions of $v$ but rather
 \phisigfunction[or]{s} for $v$, then by recursive application of this proof
 there must exist some choice of $X$, $Y$, and $Z$ inside this SESE
-where at least one of $X$ and $Y$ is a definition.  So without loss of
-generality assume one of $X$ and $Y$ is a definition of $v$.  But this
-contradicts our choice of $Z$.
+where at least one of $X$ and $Y$ is a definition.  But $X$ or $Y$
+cannot be a definition of $v$ because they are inside the SESE of $Z$ which
+was chosen to contain no definitions of $v$.
 \end{description}
 
 A symmetric argument holds for \sigfunction{s} for $v$, using
@@ -789,9 +792,10 @@ condition \ref{crit_sigplace} of the SSI form definition, and the fact
 that there exists one exit edge from the SESE.
 \end{proof}
 
-The above lemma justifies our algorithm's skipping over any SESE
-region not containing a definition or use of $v$ when placing
-\phisigfunction{s} for $v$.
+The above lemma justifies line~\ref{line:place_skip} of the algorithm
+on page~\pageref{line:place_skip}, which skips over any SESE region
+not containing a definition (use) of $v$ when placing
+\phifunction{s} (\sigfunction{s}) for $v$.
 
 \begin{lemma}\label{lem:ssi_dom}
 If a definition (use) or a \phisigfunction[or]{} for a variable $v$ is
@@ -848,8 +852,10 @@ definition.  Our algorithm also allows us to do pre-pruning of the SSI
 form during placement.  The result is not pruned SSI, but contains a
 superset of the \phisigfunction{s} that pruned form requires.
 
-\begin{theorem}
-The algorithm in figure~\ref{alg:SSIplace} is conservatively correct.
+\begin{theorem}\label{thm:placeproof}
+The algorithm in figure~\ref{alg:SSIplace} places all the
+\phisigfunction{s} required by conditions \ref{crit_phiplace} and
+\ref{crit_sigplace} of the SSI form definition.
 \end{theorem}
 \begin{proof}
 Lemma \ref{lem:sese_child} states that the child region exclusion of
@@ -878,21 +884,193 @@ don't need a fast liveness algorithm; we get what we need `for free'.}
 \subsubsection{Variable renaming}
 \begin{myfigure}[p]\small
 \input{Figures/THssirend}
-\caption{Environment datatype for the SSI renaming algorithm.}\label{fig:ssirend}
+\caption{Environment datatype for the SSI renaming algorithm.}
+\label{fig:SSIrename_data}
 \end{myfigure}
 \begin{myalgorithm}\small
 \input{Figures/THssiren1}
-\caption{SSI renaming algorithm.}\label{alg:ssiren1}
+\caption{SSI renaming algorithm.}\label{alg:SSIrename1}
 \end{myalgorithm}
 \begin{myalgorithm}\small
 \input{Figures/THssiren2}
-\caption{SSI renaming algorithm, cont.}\label{alg:ssiren2}
+\caption{SSI renaming algorithm, cont.}\label{alg:SSIrename2}
 \end{myalgorithm}
-Um, my current (SSA-inspired) algorithm requires dominance
-information, which we've done away with in general.  Need to rewrite
-to use the PST structure instead, which I'm pretty sure I can do.
-I have to prove that the results are correct, though, which may be harder.%
-\fixme{Do this.}
+Algorithm~\ref{alg:SSIrename1} performs variable renaming on a
+flow-graph with placed \phisigfunction{s} in a single depth-first
+traversal.  When the algorithm is complete, the control flow-graph
+will be in proper SSI form.  The variable renaming algorithm requires
+an \code{Environment} datatype which is defined in
+figure~\ref{fig:SSIrename_data}.  Using an imperative programming
+style, it is possible to perform a sequence of any $N$ operations on
+\code{Environment} as defined in the figure in $O(N)$ time; in a
+functional programming style any $N$ operations can be completed in
+$O(N \log N)$ time.\footnote{The curious reader is referred to section
+5.1 of Appel \cite{appel:modern} for implementation details.}  As the
+course structure of algorithm~\ref{alg:SSIrename1} is a simple
+depth-first search, it is easy to see that the \code{Search} procedure
+can be invoked from line~\fullref{line:search1} and
+line~\fullref{line:search2} a total of $O(E)$ times; likewise its
+inner loop (lines~\ref{line:searchloop_start} to
+\ref{line:searchloop_end}) can be executed a total of $E$ times across
+all invocations of \code{Search}.  A total of $U_{SSA}+D_{SSA}$ calls
+to the operations of the \code{Environment} datatype will be made
+within all executions of \code{Search}.  For the imperative
+implementation of \code{Environment} a total time bounds of
+$O(E+U_{SSA}+D_{SSA})$ for the variable renaming algorithm is
+obtained.
+
+We have shown that algorithm~\ref{alg:SSIplace} places all the
+required \phisigfunction{s} in the control-flow graph according to SSI
+form conditions \ref{crit_phiplace}, \ref{crit_sigplace}, and
+\ref{crit_boundary}; we will now show that this algorithm renames
+variables consistent with conditions \ref{crit_phiname} and
+\ref{crit_signame} to prove that these algorithms combined suffice to
+convert a program into SSI form.  The SSI form is not necessarily
+minimal, as we showed in section~\ref{sec:notminimal}; the next
+section will show how to post-process to create minimal or pruned SSI
+form.
+
+\begin{lemma}\label{lem:path_construct}
+The stack trace of calls to \code{Search} defines a unique path
+through $G$ from \code{START}.
+\end{lemma}
+\begin{proof}
+We will prove this lemma by construction.  For every consecutive pair
+of calls to \code{Search} we construct a path $X\pathplus Y$ starting with the
+edge $\tuple{X,N_0}$ which is the argument of the first call, and
+ending with the edge $\tuple{N_n, Y}$ which is the argument of the
+second call.  From line~\ref{line:search_onesucc} of the \code{Search}
+procedure on page~\pageref{line:search_onesucc} we note that every
+edge $\tuple{N_i, N_{i+1}}$ between the first and last has exactly one
+successor.  Furthermore, the call to search on line~\ref{line:search2}
+defines a path starting with the edge which our segment $X\pathplus Y$
+ends with; therefore the paths can be combined.  By so doing from the
+bottom of the call stack to the top we construct a unique path from
+\code{START}.
+\end{proof}
+\begin{lemma}\label{lem:renamephi}
+SSI form condition~\ref{crit_phiname} holds for variables renamed
+according to algorithm~\ref{alg:SSIrename1}.
+\end{lemma}
+\begin{proof}
+We restate SSI form condition~\ref{crit_phiname} for reference:
+\begin{quote}
+For every node $X$ containing a definition of a variable $V$ in
+the new program and node $Y$ containing a use of that variable, there
+exists at least one path $X \pathplus Y$ and no such path contains a
+definition of $V$ other than at $X$.
+\end{quote}
+We consider the path $\code{START}\pathplus Y$ for some use of a
+variable $v$, constructed according to lemma~\ref{lem:path_construct}
+from a stack trace of calls to \code{Search}.  Every edge is visited
+exactly once by \code{Search}, so the path $\code{START}\pathplus Y$
+exists and is unique.  This path must contain $X$, a definition of
+$v$, if $Y$ uses a variable defined in $X$, as \code{Search} renames
+all definitions (in lines \ref{line:rendef1}, \ref{line:rendef2}, and
+\ref{line:rendef3}) and destroys the name mapping in $\mathcal{E}$
+just it returns.  The call to \code{Search} which creates the
+definition of $v$ must always be on the stack for any use to receive
+the name $v$.
+
+We have proved that $\code{START}\pathplus X\pathplus Y$ exists; now
+we must prove that no other path from $X$ to $Y$ contains a definition
+of $v$.  Obviously this other definition cannot be on our canonical
+path $\code{START}\pathplus X\pathplus Y$, or line~\ref{line:rendef3}
+would have caused $Y$ to use a different name.  So let us call this
+definition node $D$, and consider the path $D\pathplus Y$.  Since
+$D\pathplus Y$ and $\code{START}\pathplus X\pathplus Y$ share at least
+node $Y$ in common, there must be an earliest node $N$ where they
+converge.  But by condition~\ref{crit_phiplace} of the SSI form
+definition there should be a \phifunction for $v$ at $N$, and
+line~\ref{line:rendef1} would have caused $Y$ to use a different name.
+Since assuming the existence of such a path leads to contradiction no
+other path $X\pathplus Y$ can contain a definition of $v$, completing
+the proof of the lemma.
+\end{proof}
+
+\begin{lemma}\label{lem:rename_postdom1}
+If every node $U$ containing a use of a variable $v$ post-dominates
+every node $D$ containing a definition $D$, then SSI form condition
+\ref{crit_signame} holds.
+\end{lemma}
+\begin{proof}
+We restate SSI form condition~\ref{crit_signame} for reference:
+\begin{quote}
+For every pair of nodes $X$ and $Y$ containing uses of a
+variable $V$ defined at node $Z$ in the new program, either every path
+$Z \pathplus X$ must contain $Y$ or every path $Z \pathplus Y$ must
+contain $X$.
+\end{quote}
+Let us assume that there are paths $Z\pathplus X$ and $Z\pathplus Y$
+violating this condition even though both $X$ and $Y$ post-dominate
+$Z$; that is, let us choose nodes $X$ and $Y$ using $v$ which both
+dominate a node $Z$ defining $v$ such that there exists a path
+$Z\pathplus X$ not containing $Y$ and a path $Z\pathplus Y$ not
+containing $X$.  Since $X$ post-dominates $Z$, every path $E\pathplus
+Z$ includes $X$.  But $E \pathplus X \pathplus Z$ must contain $Y$ as
+well, as $Y$ also post-dominates $Z$.  Either $X$ must precede $Y$ in
+the path or vice-versa:
+\begin{description}
+\item[Case I:] $E \pathplus X \pathplus Y \pathplus Z$.  Replace the
+segment $X\pathplus Y\pathplus Z$ with the path $X\pathplus Z$ not
+containing $Y$.  We now have a path $E\pathplus Z$ not containing
+$Y$.  But this violates our claim that $Y$ post-dominates $Z$.
+\item[Case II:] $E \pathplus Y \pathplus X \pathplus Z$.  As before,
+replace $Y\pathplus X\pathplus Z$ with the path $Y\pathplus Z$ not
+containing $X$.  But then $X$ cannot post-dominate $Z$.
+\end{description}
+Both options lead to contradiction.  Therefore SSI form condition
+\ref{crit_signame} must hold if $X$ and $Y$ both post-dominate $Z$.
+\end{proof}
+
+\begin{lemma}\label{lem:rename_postdom2}
+Every node $U$ containing a use of a variable $v$ postdominates the
+node $D$ containing the definition of $v$ in a graph renamed according
+to algorithm~\ref{alg:SSIrename1}.
+\end{lemma}
+\begin{proof}
+Let us assume there are some nodes $U$ using $v$ and $D$ defining $v$
+such that $U$ does not post-dominate $D$.  Construct the canonical
+path $\code{START}\pathplus U$ according to
+lemma~\ref{lem:path_construct}.  As we did in the proof of
+lemma~\ref{lem:renamephi} we can show that this path contains $D$, and
+speak of the ``canonical'' path $D\pathplus U$ contained in
+$\code{START}\pathplus U$.  If $U$ does not post-dominate $D$, then
+there is some edge $\tuple{N_0,N_1}$ on $D\pathplus U$ such that $U$
+post-dominates $N_1$ and all nodes on the every path $N_1 \pathplus U$
+but not does not post-dominate $N_0$.  Because $U$ does not
+post-dominate $N_0$, there must exist some path $\code{END}\pathplus
+N_0$ that does not include $U$.  But by SSI form
+conditions~\ref{crit_sigplace} and \ref{crit_boundary} there should be
+a \sigfunction at $N_0$.  Thus line~\ref{line:rendef2} would have
+renamed $v$ on the path $D\pathplus N_0 \pathplus U$ and $U$ could not
+be a use of the variable defined at $D$.  Assuming $U$ does not
+post-dominate $D$ leads to contradiction, proving the lemma.
+\end{proof}
+
+\begin{theorem}\label{thm:renameproof}
+Algorithm~\ref{alg:SSIrename1} renames variables such that SSI form
+conditions \ref{crit_phiname} and \ref{crit_signame} hold.
+\end{theorem}
+\begin{proof}
+Lemma~\ref{lem:renamephi} proves that condition~\ref{crit_phiname}
+holds, and lemmas~\ref{lem:rename_postdom1} and
+\ref{lem:rename_postdom2} together prove that
+condition~\ref{crit_signame} holds.
+\end{proof}
+
+\begin{theorem}
+Algorithms~\ref{alg:SSIplace} and \ref{alg:SSIrename1} correctly
+transform a program into SSI form.
+\end{theorem}
+\begin{proof}
+Theorem~\ref{thm:placeproof} proves that \phisigfunction{s} are placed
+correctly to satisfy conditions~\ref{crit_phiplace},
+\ref{crit_sigplace} and \ref{crit_boundary} of the SSI form
+definition, and theorem~\ref{thm:renameproof} proves that variables
+are renamed correctly to satisfy conditions~\ref{crit_phiname} and
+\ref{crit_signame}.
+\end{proof}
 
 \subsubsection{Pruning SSI form}\label{sec:unusedcode}
 The SSI algorithm can be run using any conservative approximation to
