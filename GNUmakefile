@@ -18,9 +18,6 @@ ALLSOURCE = $(filter-out .%.java, \
 all:	java
 
 java:	$(ALLSOURCE)
-#	${JCC} ${JFLAGS} `javamake.sh */*.java`
-#	${JCC} ${JFLAGS} ${JFLAGSVERB} `javamake.sh $(ALLSOURCE)` | \
-#		egrep -v '^\[[lc]'
 	${JCC} ${JFLAGS} ${JFLAGSVERB} $(ALLSOURCE) | \
 		egrep -v '^\[[lc]'
 	touch java
@@ -61,8 +58,11 @@ doc/TIMESTAMP:	$(ALLSOURCE)
 	chmod a+rx doc ; chmod a+r doc/*
 
 doc-install: doc/TIMESTAMP
-	$(SSH) miris.lcs.mit.edu /bin/rm -rf public_html/Projects/Harpoon/doc
-	$(SCP) -r doc miris.lcs.mit.edu:public_html/Projects/Harpoon
+	if [ `whoami` = "cananian" ]; then \
+	  $(SSH) miris.lcs.mit.edu \
+		/bin/rm -rf public_html/Projects/Harpoon/doc; \
+	  $(SCP) -r doc miris.lcs.mit.edu:public_html/Projects/Harpoon; \
+	fi
 
 doc-clean:
 	-${RM} -r doc
@@ -82,8 +82,11 @@ polish: clean
 wipe:	clean doc-clean
 
 backup: # DOESN'T WORK ON NON-LOCAL MACHINES
-	$(RM) ../harpoon-backup.tar.gz
-	cd ..; tar czf harpoon-backup.tar.gz CVSROOT
-	$(SCP) ../harpoon-backup.tar.gz \
-		miris.lcs.mit.edu:public_html/Projects/Harpoon
-	$(RM) ../harpoon-backup.tar.gz
+	if [ `whoami` = "cananian" -a \
+	     `hostname` = "lesser-magoo.lcs.mit.edu" ]; then \
+	  $(RM) ../harpoon-backup.tar.gz ; \
+	  (cd ..; tar czf harpoon-backup.tar.gz CVSROOT); \
+	  $(SCP) ../harpoon-backup.tar.gz \
+		miris.lcs.mit.edu:public_html/Projects/Harpoon ; \
+	  $(RM) ../harpoon-backup.tar.gz ; \
+	fi
