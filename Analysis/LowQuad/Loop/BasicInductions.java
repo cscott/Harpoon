@@ -24,6 +24,7 @@ import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.SET;
 import harpoon.Util.Collections.WorkSet;
+import harpoon.Util.Util;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 
@@ -36,7 +37,7 @@ import java.util.Iterator;
  * <code>BasicInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInductions.java,v 1.1.2.13 2001-11-20 06:32:42 ovy Exp $
+ * @version $Id: BasicInductions.java,v 1.1.2.14 2001-12-07 18:58:59 bdemsky Exp $
  */
 public class BasicInductions {
     HCode hc;
@@ -60,9 +61,7 @@ public class BasicInductions {
 	Iterator iterate=(lp.loopEntrances()).iterator();
 
         /* bail out if loop has no entrance (root loop) */
-        if (lp.loopEntrances().isEmpty()) {
-            return basicinductions;
-        }
+	Util.assert(!lp.loopEntrances().isEmpty());
         
 	Quad header=(Quad) iterate.next();
 	if (iterate.hasNext())
