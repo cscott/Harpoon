@@ -1,0 +1,108 @@
+// dependency information for 
+// testabstract from sEXT2
+
+1-6: none
+
+7: delayed 14
+8: delayed 1 2 3 4 5 11
+
+ 9: 3     6
+10: 3     6   14
+11: 3     6   14
+12:   4
+13:   4
+14:         9
+15:         9
+16: 3     6   14
+17: 3     6   14
+18:     5
+19:     5
+
+ 9: 3 6
+10: 3 6 14
+11: 3 6 14
+12: 4
+13: 4
+14: 9
+15: 9
+16: 3 6 14
+17: 3 6 14
+18: 5
+19: 5
+ 
+
+algorithm:
+
+a. if quantifiers are empty than rule has no dependencies
+b. if not ( x in Set ) or relation than dependent on everything that
+   touches the Set or Relation (also known as delayed).
+c. otherwise, if set or relation mentioned in quantifier, edge between
+   that rule and any rule who modifies that set or relation (in the 
+   inclusion constraint portion of any rule)
+
+
+// dependency information betweeen constraints and rules
+
+ 1:           6           12 13 14
+ 2:             7         12 13
+ 3: 1 2 3 4 5          11                   18 19
+ 4:               8                         18 19
+ 5:           6                 14 15 16
+ 6:           6     10          14       17
+ 7:                 10 11
+ 8: 1
+ 9:   2
+10:     3
+11:       4
+12:         5
+13:           6
+
+ 1:  6 12 13 14
+ 2:  7 12 13
+ 3:  1  2  3  4  5 11 18 19
+ 4:  8 18 19
+ 5:  6 14 15 16
+ 6:  6 10 14 17
+ 7: 10 11
+ 8:  1
+ 9:  2
+10:  3 
+11:  4
+12:  5
+13:  6 
+
+
+algorithm:
+
+a. if quantifier mentions a set, include all rules that touch that set
+   or its subsets/partitions
+b. if the body mentions a set or relation, add that an edge to any rule
+   that touches those sets or relations
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,4 @@
+structure Node {
+     int data;
+     Node *next;
+}
