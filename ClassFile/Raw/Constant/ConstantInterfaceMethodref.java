@@ -1,5 +1,6 @@
-package harpoon.ClassFile.Raw;
+package harpoon.ClassFile.Raw.Constant;
 
+import harpoon.ClassFile.Raw.*;
 /**
  * The <code>CONSTANT_InterfaceMethodref</code> structure represents
  * an interface method.
@@ -9,7 +10,7 @@ package harpoon.ClassFile.Raw;
  * @see ConstantFieldref
  * @see ConstantMethodref
  */
-class ConstantInterfaceMethodref extends Constant {
+public class ConstantInterfaceMethodref extends Constant {
   /** The value of the <code>class_index</code> item must be a valid
       index into the <code>constant_pool</code> table of the
       <code>parent</code>.  The <code>constant_pool</code> entry at
@@ -20,7 +21,7 @@ class ConstantInterfaceMethodref extends Constant {
       The <code>class_index</code> item of a
       <code>CONSTANT_InterfaceMethodref</code> must be an interface
       type that declares the given method. */
-  int class_index;
+  public int class_index;
   /** The value of the <code>name_and_type_index</code> item must be a
       valid index into the <code>constant_pool</code> table of the
       <code>parent</code>.  The <code>constant_pool</code> entry at
@@ -33,7 +34,7 @@ class ConstantInterfaceMethodref extends Constant {
       ('\u003c'), then the name must be one of the special internal
       methods, either &lt;init&gt; or &lt;clinit&gt;.  In this case,
       the method must return no value. */
-  int name_and_type_index;
+  public int name_and_type_index;
   
   /** Constructor. */
   ConstantInterfaceMethodref(ClassFile parent, ClassDataInputStream in) 
@@ -51,15 +52,15 @@ class ConstantInterfaceMethodref extends Constant {
   }
 
   /** Write to a bytecode file. */
-  void write(ClassDataOutputStream out) throws java.io.IOException {
+  public void write(ClassDataOutputStream out) throws java.io.IOException {
     out.write_u1(CONSTANT_InterfaceMethodref);
     out.write_u2(class_index);
     out.write_u2(name_and_type_index);
   }
   
   // convenience.
-  ConstantClass class_index()
+  public ConstantClass class_index()
   { return (ConstantClass) parent.constant_pool[class_index]; }
-  ConstantNameAndType name_and_type_index()
+  public ConstantNameAndType name_and_type_index()
   { return (ConstantNameAndType) parent.constant_pool[name_and_type_index]; }
 }

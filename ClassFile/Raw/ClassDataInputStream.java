@@ -2,11 +2,12 @@ package harpoon.ClassFile.Raw;
 
 /**
  * A specialized input stream reader for java bytecode files.
+ *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassDataInputStream.java,v 1.5 1998-07-31 05:51:09 cananian Exp $
+ * @version $Id: ClassDataInputStream.java,v 1.6 1998-07-31 07:05:54 cananian Exp $
  * @see ClassDataOutputStream
  */
-class ClassDataInputStream extends java.io.DataInputStream {
+public class ClassDataInputStream extends java.io.DataInputStream {
   /** Creates a <code>ClassDataInputStream</code> from a standard 
    *  <code>InputStream</code>. */
   public ClassDataInputStream(java.io.InputStream in) {

@@ -1,11 +1,13 @@
 package harpoon.ClassFile.Raw;
 
+import harpoon.ClassFile.Raw.Attribute.*;
+import harpoon.ClassFile.Raw.Constant.*;
 /**
  * Represents a java bytecode class file.
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.6 1998-07-31 06:21:55 cananian Exp $
+ * @version $Id: ClassFile.java,v 1.7 1998-07-31 07:05:54 cananian Exp $
  */
 
 public class ClassFile {
@@ -16,10 +18,10 @@ public class ClassFile {
 
   /** The minor version number of the compiler that produced this
       <code>class</code> file. */
-  int minor_version;
+  public int minor_version;
   /** The major version number of the compiler that produced this
       <code>class</code> file. */
-  int major_version;
+  public int major_version;
 
   /** The <code>constant_pool</code> is a table of variable-length
       structures representing various string constants, class names,
@@ -30,17 +32,17 @@ public class ClassFile {
       <code>constant_pool[0]</code>, is reserved for internal use by a
       Java Virtual Machine Implementation.  That entry is <i>not</i>
       present in the <code>class</code> file. */
-  Constant constant_pool[];
+  public Constant constant_pool[];
   /** The value of the <code>access_flags</code> item is a mask of
       modifiers used with class and interface declarations. */
-  AccessFlags access_flags;
+  public AccessFlags access_flags;
 
   /** The value of the <code>this_class</code> item must be a valid
       index into the <code>constant_pool</code> table.  The
       <code>constant_pool</code> entry at that index must be a
       <code>CONSTANT_Class_info</code> structure representing the
       class or interface defined by this <code>class</code> file. */
-  int this_class;
+  public int this_class;
   /** For a class, the value of the <code>super_class</code> item
       either must be zero or must be a valid index into the
       <code>constant_pool</code> table.  If the value of the
@@ -61,7 +63,7 @@ public class ClassFile {
       table.  The <code>constant_pool</code> entry at that index must
       be a <code>CONSTANT_Class_info</code> structure representing the
       class <code>java.lang.Object</code>. */
-  int super_class;
+  public int super_class;
 
   /** Each value in the <code>interfaces</code> array must be a valid
       index into the <code>constant_pool</code> table.  The
@@ -71,7 +73,7 @@ public class ClassFile {
       interface which is a direct superinterface of this class or
       interface type, in the left-to-right order given in the source
       for the type. */
-  int interfaces[];
+  public int interfaces[];
 
   /** Each value in the <code>fields</code> table must be a
       variable-length <code>field_info</code> structure giving a
@@ -80,7 +82,7 @@ public class ClassFile {
       are declared by this class or interface.  It does not include
       items representing fields that are inherited from superclasses
       or superinterfaces. */
-  FieldInfo fields[];
+  public FieldInfo fields[];
   /** Each value in the <code>methods</code> table must be a
       variable-length <code>method_info</code> structure giving a
       complete description of and Java Virtual Machine code for a
@@ -96,7 +98,7 @@ public class ClassFile {
       method.  The <code>methods</code> table does not include items
       representing methods that are inherited from superclasses or
       superinterfaces. */
-  MethodInfo methods[];
+  public MethodInfo methods[];
   /** Each value of the <code>attributes</code> table must be a
       variable-length attribute structure. A <code>ClassFile</code>
       structure can have any number of attributes associated with it.
@@ -104,9 +106,9 @@ public class ClassFile {
       The only attribute defined by this specification for the
       <code>attributes</code> table of a <code>ClassFile</code>
       structure is the <code>SourceFile</code> attribute. */
-  Attribute attributes[];
+  public Attribute attributes[];
 
-  void read(ClassDataInputStream in) throws java.io.IOException {
+  public void read(ClassDataInputStream in) throws java.io.IOException {
     int constant_pool_count;
     int interfaces_count;
     int fields_count;

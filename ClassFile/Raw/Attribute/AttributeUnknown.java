@@ -1,15 +1,18 @@
-package harpoon.ClassFile.Raw;
+package harpoon.ClassFile.Raw.Attribute;
 
+import harpoon.ClassFile.Raw.*;
+import harpoon.ClassFile.Raw.Constant.*;
 /** 
  * An attribute of unknown format.
+ *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeUnknown.java,v 1.2 1998-07-31 06:21:55 cananian Exp $
+ * @version $Id: AttributeUnknown.java,v 1.3 1998-07-31 07:05:59 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7"
  * @see Attribute
  */
-class AttributeUnknown extends Attribute {
+public class AttributeUnknown extends Attribute {
   /** Generic attribute information of unknown type. */
-  byte[] info;
+  public byte[] info;
   
   /** Constructor. */
   AttributeUnknown(ClassFile parent, ClassDataInputStream in,
@@ -26,10 +29,10 @@ class AttributeUnknown extends Attribute {
     this.info = info;
   }
 
-  long attribute_length() { return info.length; }
+  public long attribute_length() { return info.length; }
 
   /** Write to bytecode stream. */
-  void write(ClassDataOutputStream out) throws java.io.IOException {
+  public void write(ClassDataOutputStream out) throws java.io.IOException {
     out.write_u2(attribute_name_index);
     out.write_u4(attribute_length());
     out.write(info);

@@ -1,20 +1,23 @@
 package harpoon.ClassFile.Raw;
 
+import harpoon.ClassFile.Raw.Attribute.*;
+import harpoon.ClassFile.Raw.Constant.*;
 /**
  * Each method, and each instance initialization method &lt;init&gt;,
  * is described by a variable-length <code>method_info</code>
  * structure.
+ *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodInfo.java,v 1.6 1998-07-31 06:21:56 cananian Exp $
+ * @version $Id: MethodInfo.java,v 1.7 1998-07-31 07:05:54 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.6"
  * @see ClassFile
  */
 public class MethodInfo {
   /** ClassFile in which this method information is found. */
-  public ClassFile parent;
+  protected ClassFile parent;
 
   /** Access permissions and properties of the method. */
-  AccessFlags access_flags;
+  public AccessFlags access_flags;
 
   /** The value of the <code>name_index</code> item must be a valid
       index into the <code>constant_pool</code> table.  The
@@ -23,23 +26,23 @@ public class MethodInfo {
       one of the special internal method names, either &lt;init&gt; or
       &lt;clint&gt;, or a valid Java method name, stored as a simple
       (not fully qualified) name. */
-  int name_index;
+  public int name_index;
   /** The value of the <code>descriptor_index</code> item must be a
       valid index into the <code>constant_pool</code> table.  The
       <code>constant_pool</code> entry at that index must be a
       <code>CONSTANT_Utf8_info</code> structure representing a valid
       Java method descriptor. */
-  int descriptor_index;
+  public int descriptor_index;
   
   /** A method can have any number of optional attributes associated
       with it. <p> The only attributes defined by this specification
       for the <code>attributes</code> table of a
       <code>method_info</code> structure are the <code>Code</code> and
       <code>Exceptions</code> attributes. */
-  Attribute attributes[];
+  public Attribute attributes[];
   
   /** Read a single MethodInfo item from an input class bytecode file. */
-  void read(ClassFile p, ClassDataInputStream in)
+  public void read(ClassFile p, ClassDataInputStream in)
        throws java.io.IOException {
     this.parent = p;
 
@@ -71,7 +74,7 @@ public class MethodInfo {
   }
 
   /** Writes a MethodInfo item out to a class bytecode file. */
-  void write(ClassDataOutputStream out) throws java.io.IOException {
+  public void write(ClassDataOutputStream out) throws java.io.IOException {
     access_flags.write(out);
     out.write_u2(name_index);
     out.write_u2(descriptor_index);
@@ -85,11 +88,11 @@ public class MethodInfo {
   }
 
   // convenience
-  ConstantUtf8 name_index()
+  public ConstantUtf8 name_index()
   { return (ConstantUtf8) parent.constant_pool[name_index]; }
-  ConstantUtf8 descriptor_index()
+  public ConstantUtf8 descriptor_index()
   { return (ConstantUtf8) parent.constant_pool[descriptor_index]; }
 
-  String name() { return name_index().val; }
-  String descriptor() { return descriptor_index().val; }
+  public String name() { return name_index().val; }
+  public String descriptor() { return descriptor_index().val; }
 }

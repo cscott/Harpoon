@@ -1,5 +1,6 @@
-package harpoon.ClassFile.Raw;
+package harpoon.ClassFile.Raw.Constant;
 
+import harpoon.ClassFile.Raw.*;
 /**
  * The <code>Constant</code> class represents a single item in
  * the constant pool of a class file.  It is a super-class for the
@@ -7,7 +8,7 @@ package harpoon.ClassFile.Raw;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Constant.java,v 1.6 1998-07-31 06:21:55 cananian Exp $
+ * @version $Id: Constant.java,v 1.7 1998-07-31 07:05:59 cananian Exp $
  * @see ConstantUtf8
  * @see ConstantInteger
  * @see ConstantFloat
@@ -22,7 +23,7 @@ package harpoon.ClassFile.Raw;
  */
 public abstract class Constant {
   /** ClassFile in which this Constant is found. */
-  public ClassFile parent;
+  protected ClassFile parent;
 
   /* See Table 4.2 in The Java Virtual Machine Specification */
   static final int CONSTANT_Utf8=1;
@@ -43,7 +44,7 @@ public abstract class Constant {
    *  and return an object instance corresponding to it.
    * @exception java.io.IOException on error reading from input stream.
    */
-  static Constant read(ClassFile p, ClassDataInputStream in) 
+  static public Constant read(ClassFile p, ClassDataInputStream in) 
        throws java.io.IOException {
 
     int tag = in.read_u1();
@@ -78,6 +79,6 @@ public abstract class Constant {
   /** Write a single constant pool item to a class bytecode file. 
    *  @exception java.io.IOException on error writing to output stream.
    */
-  abstract void write(ClassDataOutputStream out)
+  abstract public void write(ClassDataOutputStream out)
     throws java.io.IOException;
 }

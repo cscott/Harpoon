@@ -1,5 +1,7 @@
-package harpoon.ClassFile.Raw;
+package harpoon.ClassFile.Raw.Attribute;
 
+import harpoon.ClassFile.Raw.*;
+import harpoon.ClassFile.Raw.Constant.*;
 /**
  * The <code>Exceptions</code> attribute is a variable-length
  * attribute used in the <code>attributes</code> table of a
@@ -9,12 +11,12 @@ package harpoon.ClassFile.Raw;
  * <code>method_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeExceptions.java,v 1.4 1998-07-31 05:51:09 cananian Exp $
+ * @version $Id: AttributeExceptions.java,v 1.5 1998-07-31 07:05:59 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.5"
  * @see Attribute
  * @see MethodInfo
  */
-class AttributeExceptions extends Attribute {
+public class AttributeExceptions extends Attribute {
   /** Each nonzero value in the <code>exception_index_table</code>
       must be a valid index into the <code>constant_pool</code>
       table.  For each table item, if
@@ -23,7 +25,7 @@ class AttributeExceptions extends Attribute {
       entry at index <code>exception_index_table[i]</code> must be a
       <code>CONSTANT_Class_info</code> structure representing a class
       type that this method is declared to throw. */
-  int exception_index_table[];
+  public int exception_index_table[];
   
   /** Constructor. */
   AttributeExceptions(ClassFile parent, ClassDataInputStream in,
@@ -49,18 +51,18 @@ class AttributeExceptions extends Attribute {
     this.exception_index_table = exception_index_table;
   }
 
-  long attribute_length() { return 2 + 2*number_of_exceptions(); }
+  public long attribute_length() { return 2 + 2*number_of_exceptions(); }
 
   // convenience.
-  int number_of_exceptions() { return exception_index_table.length; }
-  ConstantClass exception_index_table(int i) {
+  public int number_of_exceptions() { return exception_index_table.length; }
+  public ConstantClass exception_index_table(int i) {
     if (exception_index_table[i]==0) return null;
     else return (ConstantClass)
 	   parent.constant_pool[exception_index_table[i]];
   }
 
   /** Write to bytecode stream. */
-  void write(ClassDataOutputStream out) throws java.io.IOException {
+  public void write(ClassDataOutputStream out) throws java.io.IOException {
     out.write_u2(attribute_name_index);
     out.write_u4(attribute_length());
     out.write_u2(number_of_exceptions());
@@ -68,4 +70,3 @@ class AttributeExceptions extends Attribute {
       out.write_u2(exception_index_table[i]);
   }
 }
-    

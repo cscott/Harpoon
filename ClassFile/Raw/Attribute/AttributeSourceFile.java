@@ -1,5 +1,7 @@
-package harpoon.ClassFile.Raw;
+package harpoon.ClassFile.Raw.Attribute;
 
+import harpoon.ClassFile.Raw.*;
+import harpoon.ClassFile.Raw.Constant.*;
 /** 
  * The <code>SourceFile</code> attribute is an optional fixed-length
  * attribute in the <code>attributes</code> table of the
@@ -15,19 +17,19 @@ package harpoon.ClassFile.Raw;
  * <code>/home/lindholm/foo.java</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeSourceFile.java,v 1.4 1998-07-31 05:51:09 cananian Exp $
+ * @version $Id: AttributeSourceFile.java,v 1.5 1998-07-31 07:05:59 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.2"
  * @see Attribute
  * @see ClassFile
  */
-class AttributeSourceFile extends Attribute {
+public class AttributeSourceFile extends Attribute {
   /** The value of the <code>sourcefile_index</code> item must be a
       valid index into the <code>constant_pool</code> table.  The
       constant pool entry at that index must be a
       <code>CONSTANT_Utf8_info</code> structure representing the
       string giving the name of the source file from which this
       <code>class</code> file was compiled. */
-  int sourcefile_index;
+  public int sourcefile_index;
   
   /** Constructor. */
   AttributeSourceFile(ClassFile parent, ClassDataInputStream in,
@@ -45,15 +47,15 @@ class AttributeSourceFile extends Attribute {
     super(parent, attribute_name_index);
     this.sourcefile_index = sourcefile_index;
   }
-  long attribute_length() { return 2; }
+  public long attribute_length() { return 2; }
 
   // convenience
-  ConstantUtf8 sourcefile_index()
+  public ConstantUtf8 sourcefile_index()
   { return (ConstantUtf8) parent.constant_pool[sourcefile_index]; }
-  String sourcefile() { return sourcefile_index().val; }
+  public String sourcefile() { return sourcefile_index().val; }
 
   /** Write to bytecode stream. */
-  void write(ClassDataOutputStream out) throws java.io.IOException {
+  public void write(ClassDataOutputStream out) throws java.io.IOException {
     out.write_u2(attribute_name_index);
     out.write_u4(attribute_length());
     out.write_u2(sourcefile_index);

@@ -1,17 +1,18 @@
-package harpoon.ClassFile.Raw;
+package harpoon.ClassFile.Raw.Constant;
 
+import harpoon.ClassFile.Raw.*;
 /** 
  * The <code>CONSTANT_Long_info</code> structure represents eight-byte
  * integer numeric constants.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantLong.java,v 1.7 1998-07-31 06:21:55 cananian Exp $
+ * @version $Id: ConstantLong.java,v 1.8 1998-07-31 07:05:59 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.5"
  * @see Constant
  * @see ConstantDouble
  */
 public class ConstantLong extends Constant {
   /** The value of the <code>long</code> constant. */
-  long val;
+  public long val;
   
   /** Constructor. */
   ConstantLong(ClassFile parent, ClassDataInputStream in) 
@@ -26,7 +27,7 @@ public class ConstantLong extends Constant {
   }
 
   /** Write to a bytecode file. */
-  void write(ClassDataOutputStream out) throws java.io.IOException {
+  public void write(ClassDataOutputStream out) throws java.io.IOException {
     out.write_u1(CONSTANT_Long);
     out.writeLong(val);
   }

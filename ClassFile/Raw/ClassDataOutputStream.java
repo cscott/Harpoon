@@ -2,11 +2,12 @@ package harpoon.ClassFile.Raw;
 
 /**
  * A specialized output stream writer for java bytecode files.
+ *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassDataOutputStream.java,v 1.3 1998-07-31 06:21:55 cananian Exp $
+ * @version $Id: ClassDataOutputStream.java,v 1.4 1998-07-31 07:05:54 cananian Exp $
  * @see ClassDataInputStream
  */
-class ClassDataOutputStream extends java.io.DataOutputStream {
+public class ClassDataOutputStream extends java.io.DataOutputStream {
 
   /** Constructs a <code>ClassDataOutputStream</code> from a standard
    *  <code>OutputStream</code>. */

@@ -1,18 +1,20 @@
 package harpoon.ClassFile.Raw;
 
+import harpoon.ClassFile.Raw.Attribute.*;
+import harpoon.ClassFile.Raw.Constant.*;
 /** 
  * Each <code>ExceptionTable</code> object describes one exception
  * handler in the <code>code</code> array of an
  * <code>AttributeCode</code>. 
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ExceptionTable.java,v 1.4 1998-07-31 05:51:10 cananian Exp $
+ * @version $Id: ExceptionTable.java,v 1.5 1998-07-31 07:05:54 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeCode
  */
-class ExceptionTable {
+public class ExceptionTable {
   /** ClassFile in which this attribute information is found. */
-  public ClassFile parent;
+  protected ClassFile parent;
 
   /** The values of the two items <code>start_pc</code> and
       <code>end_pc</code> indicate the ranges in the <code>code</code>
@@ -22,7 +24,7 @@ class ExceptionTable {
       value of <code>start_pc</code> must be less than the value of
       <code>end_pc</code>. <p> The <code>start_pc</code> is
       inclusive. */
-  int start_pc;
+  public int start_pc;
   /** The values of the two items <code>start_pc</code> and
       <code>end_pc</code> indicate the ranges in the <code>code</code>
       array at which the exception handler is active.  The value of
@@ -32,13 +34,13 @@ class ExceptionTable {
       <code>code</code> array.  The value of <code>start_pc</code>
       must be less than the value of <code>end_pc</code>. 
       <p> The <code>end_pc</code> is exclusive. */
-  int end_pc;
+  public int end_pc;
   /** The value of the <code>handler_pc</code> item indicates the
       start of the exception handler.  The value of the item must be a
       valid index into the <code>code</code> array, must be the index
       of the opcode of an instruction, and must be less than the value
       of the <code>code_length</code> item. */
-  int handler_pc;
+  public int handler_pc;
   /** If the value of the <code>catch_type</code> item is nonzero, it
       must be a valid index into the <code>constant_pool</code>
       table.  the <code>constant_pool</code> entry at that index must
@@ -52,7 +54,7 @@ class ExceptionTable {
       If the value of the <code>catch_type</code> item is zero, this
       exception handler is called for all exceptions.  This is used to
       implement <code>finally</code>. */
-  int catch_type;
+  public int catch_type;
 
   /** Constructor. */
   ExceptionTable(ClassFile parent, ClassDataInputStream in)
@@ -79,7 +81,7 @@ class ExceptionTable {
   }
 
   /** Write to bytecode stream. */
-  void write(ClassDataOutputStream out) throws java.io.IOException {
+  public void write(ClassDataOutputStream out) throws java.io.IOException {
     out.write_u2(start_pc);
     out.write_u2(end_pc);
     out.write_u2(handler_pc);
@@ -87,6 +89,6 @@ class ExceptionTable {
   }
 
   // convenience
-  ConstantClass catch_type() 
+  public ConstantClass catch_type() 
   { return (ConstantClass) parent.constant_pool[catch_type]; }
 }

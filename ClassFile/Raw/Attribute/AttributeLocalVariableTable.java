@@ -1,5 +1,7 @@
-package harpoon.ClassFile.Raw;
+package harpoon.ClassFile.Raw.Attribute;
 
+import harpoon.ClassFile.Raw.*;
+import harpoon.ClassFile.Raw.Constant.*;
 /** 
  * The <code>LocalVariableTable</code> attribute is an optional
  * variable-length attribute of a <code>Code</code> attribute.  It may
@@ -15,7 +17,7 @@ package harpoon.ClassFile.Raw;
  * not included unless debugging flags are given to the compiler.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeLocalVariableTable.java,v 1.7 1998-07-31 06:21:55 cananian Exp $
+ * @version $Id: AttributeLocalVariableTable.java,v 1.8 1998-07-31 07:05:59 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.7"
  * @see AttributeCode
  * @see Attribute
@@ -26,7 +28,7 @@ public class AttributeLocalVariableTable extends Attribute {
       local variable has a value.  It also indicates the index into
       the local variables of the current frame at which that local
       variable can be found. */
-  LocalVariableTable local_variable_table[];
+  public LocalVariableTable local_variable_table[];
 
   /** Constructor. */
   AttributeLocalVariableTable(ClassFile parent, ClassDataInputStream in,
@@ -53,13 +55,14 @@ public class AttributeLocalVariableTable extends Attribute {
     this.local_variable_table = local_variable_table;
   }
 
-  long attribute_length() { return 2 + 10*local_variable_table_length(); }
+  public long attribute_length() { return 2 + 10*local_variable_table_length(); }
 
   // Convenience.
-  int local_variable_table_length() { return local_variable_table.length; }
+  public int local_variable_table_length() 
+  { return local_variable_table.length; }
 
   /** Write to bytecode stream. */
-  void write(ClassDataOutputStream out) throws java.io.IOException {
+  public void write(ClassDataOutputStream out) throws java.io.IOException {
     out.write_u2(attribute_name_index);
     out.write_u4(attribute_length());
 
@@ -86,14 +89,14 @@ public class AttributeLocalVariableTable extends Attribute {
 
   /** Each object indicates a range of <code>code</code> array offsets
       within which a local variable has a value. */
-  class LocalVariableTable {
+  public class LocalVariableTable {
     /** The given local variable must have a value at indices into the
 	<code>code</code> array in the closed interval
 	<code>[start_pc, start_pc + length]</code>.
 	<p> The value of <code>start_pc</code> must be a valid index
 	into the <code>code</code> array of this <code>Code</code>
 	attribute of the opcode of an instruction. */
-    int start_pc;
+    public int start_pc;
     /** The given local variable must have a value at indices into the
 	<code>code</code> array in the closed interval
 	<code>[start_pc, start_pc + length]</code>.
@@ -102,26 +105,26 @@ public class AttributeLocalVariableTable extends Attribute {
 	<code>Code</code> attribute of the opcode of an instruction,
 	or the first index beyond the end of that <code>code</code>
 	array.  */
-    int length;
+    public int length;
     /** The value of the <code>name_index</code> item must be a valid
 	index into the <code>constant_pool</code> table.  The
 	<code>constant_pool</code> entry at that index must contain a
 	<code>CONSTANT_Utf8_info</codE> structure representing a valid
 	Java local variable name stored as a simple name. */
-    int name_index;
+    public int name_index;
     /** The value of the <code>descriptor_index</code> item must be a
 	valid index into the <code>constant_pool</code> table.  The
 	<code>constant_pool</code> entry at that index must contain a
 	<code>CONSTANT_Utf8_info</code> structure representing a valid
 	descriptor for a Java local variable.  Java local variable
 	descriptors have the same form as field descriptors. */
-    int descriptor_index;
+    public int descriptor_index;
     /** The given local variable must be at <code>index</code> in its
 	method's local variables.  If the local variable at
 	<code>index</code> is a two-word type (<code>double</code> or
 	<code>long</code>), it occupies both <code>index</code> and
 	<code>index+1</code>. */
-    int index;
+    public int index;
 
     /** Constructor. */
     LocalVariableTable(ClassDataInputStream in) throws java.io.IOException {
@@ -144,7 +147,7 @@ public class AttributeLocalVariableTable extends Attribute {
       this.index = index;
     }
     /** Writes to bytecode stream. */
-    void write(ClassDataOutputStream out) throws java.io.IOException {
+    public void write(ClassDataOutputStream out) throws java.io.IOException {
       out.write_u2(start_pc);
       out.write_u2(length);
 
@@ -154,12 +157,12 @@ public class AttributeLocalVariableTable extends Attribute {
       out.write_u2(index);
     }
     // convenience functions.
-    ConstantUtf8 name_index()
+    public ConstantUtf8 name_index()
     { return (ConstantUtf8) parent.constant_pool[name_index]; }
-    ConstantUtf8 descriptor_index()
+    public ConstantUtf8 descriptor_index()
     { return (ConstantUtf8) parent.constant_pool[descriptor_index]; }
 
-    String name() { return name_index().val; }
-    String descriptor() { return descriptor_index().val; }
+    public String name() { return name_index().val; }
+    public String descriptor() { return descriptor_index().val; }
   }
 }

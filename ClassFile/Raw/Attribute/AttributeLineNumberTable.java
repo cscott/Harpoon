@@ -1,5 +1,7 @@
-package harpoon.ClassFile.Raw;
+package harpoon.ClassFile.Raw.Attribute;
 
+import harpoon.ClassFile.Raw.*;
+import harpoon.ClassFile.Raw.Constant.*;
 /**
  * The <code>LineNumberTable</code> attribute is an optional
  * variable-length attribute in the <code>attributes</code> table of a
@@ -15,16 +17,16 @@ package harpoon.ClassFile.Raw;
  * source lines.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeLineNumberTable.java,v 1.4 1998-07-31 05:51:09 cananian Exp $
+ * @version $Id: AttributeLineNumberTable.java,v 1.5 1998-07-31 07:05:59 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.6"
  * @see AttributeCode
  * @see Attribute
  */
-class AttributeLineNumberTable extends Attribute {
+public class AttributeLineNumberTable extends Attribute {
   /** Each entry in the <code>line_number_table</code> array indicates
       that the line number in the original Java source file changes at
       a given point in the <code>code</code> array. */
-  LineNumberTable line_number_table[];
+  public LineNumberTable line_number_table[];
 
   /** Constructor. */
   AttributeLineNumberTable(ClassFile parent, ClassDataInputStream in,
@@ -50,13 +52,13 @@ class AttributeLineNumberTable extends Attribute {
     this.line_number_table = line_number_table;
   }
 
-  long attribute_length() { return 2 + 4*line_number_table_length(); }
+  public long attribute_length() { return 2 + 4*line_number_table_length(); }
 
   // Convenience.
-  int line_number_table_length() { return line_number_table.length; }
+  public int line_number_table_length() { return line_number_table.length; }
   
   /** Write to bytecode stream. */
-  void write(ClassDataOutputStream out) throws java.io.IOException {
+  public void write(ClassDataOutputStream out) throws java.io.IOException {
     out.write_u2(attribute_name_index);
     out.write_u4(attribute_length());
     
@@ -72,7 +74,7 @@ class AttributeLineNumberTable extends Attribute {
   /** Each object indicates that the line number in the original Java
       source file changes at a given point in the <code>code</code>
       array. */ 
-  class LineNumberTable {
+  public class LineNumberTable {
     /** The value of the <code>start_pc</code> item must indicate the
 	index into the <code>code</code> array at which the code for a
 	new line in the original Java source file begins.  The value
@@ -80,10 +82,10 @@ class AttributeLineNumberTable extends Attribute {
 	<code>code_length</code> item of the <code>Code</code>
 	attribute of which this <code>LineNumberTable</code> is an
 	attribute. */
-    int start_pc;
+    public int start_pc;
     /** The value of the <code>line_number</code> item must give the
 	corresponding line number in the original Java source file. */
-    int line_number;
+    public int line_number;
 
     /** Constructor. */
     LineNumberTable(ClassDataInputStream in) throws java.io.IOException {
@@ -96,7 +98,7 @@ class AttributeLineNumberTable extends Attribute {
       this.line_number = line_number;
     }
     /** Writes to bytecode stream. */
-    void write(ClassDataOutputStream out) throws java.io.IOException {
+    public void write(ClassDataOutputStream out) throws java.io.IOException {
       out.write_u2(start_pc);
       out.write_u2(line_number);
     }

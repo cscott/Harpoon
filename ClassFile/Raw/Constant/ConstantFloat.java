@@ -1,17 +1,19 @@
-package harpoon.ClassFile.Raw;
+package harpoon.ClassFile.Raw.Constant;
 
+import harpoon.ClassFile.Raw.*;
 /**
  * The <code>CONSTANT_Float_info</code> structure represents four-byte
  * floating-point numeric constants.
+ *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantFloat.java,v 1.7 1998-07-31 06:21:55 cananian Exp $
+ * @version $Id: ConstantFloat.java,v 1.8 1998-07-31 07:05:59 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.4"
  * @see Constant
  * @see ConstantInteger
  */
 public class ConstantFloat extends Constant {
   /** The value of the <code>float</code> constant. */
-  float val;
+  public float val;
 
   /** Constructor. */
   ConstantFloat(ClassFile parent, ClassDataInputStream in) 
@@ -26,7 +28,7 @@ public class ConstantFloat extends Constant {
   }
 
   /** Write to a bytecode file. */
-  void write(ClassDataOutputStream out) throws java.io.IOException {
+  public void write(ClassDataOutputStream out) throws java.io.IOException {
     out.write_u1(CONSTANT_Float);
     out.writeFloat(val);
   }

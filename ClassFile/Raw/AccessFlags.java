@@ -3,8 +3,9 @@ package harpoon.ClassFile.Raw;
 /** 
  * Represents a set of method or field access flags, containing
  * permissions and properties of a field or method.
+ *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AccessFlags.java,v 1.5 1998-07-31 05:51:08 cananian Exp $
+ * @version $Id: AccessFlags.java,v 1.6 1998-07-31 07:05:53 cananian Exp $
  * @see "The Java Virtual Machine Specification"
  * @see ClassFile
  * @see FieldInfo
@@ -36,7 +37,7 @@ public class AccessFlags {
   /** No implementation is provided. */
   static final int ACC_ABSTRACT =0x400;
 
-  int access_flags;
+  public int access_flags;
 
   /** Constructor. */
   public AccessFlags(int flags) {
@@ -47,22 +48,22 @@ public class AccessFlags {
     this(in.read_u2());
   }
   /** Write to bytecode file. */
-  void write(ClassDataOutputStream out) throws java.io.IOException {
+  public void write(ClassDataOutputStream out) throws java.io.IOException {
     out.write_u2(access_flags);
   }
 
-  boolean isPublic()   { return (access_flags & ACC_PUBLIC) != 0; }
-  boolean isPrivate()  { return (access_flags & ACC_PRIVATE) != 0; }
-  boolean isProtected(){ return (access_flags & ACC_PROTECTED) != 0; }
-  boolean isStatic()   { return (access_flags & ACC_STATIC) != 0; }
-  boolean isFinal()    { return (access_flags & ACC_FINAL) != 0; }
-  boolean isVolatile() { return (access_flags & ACC_VOLATILE) != 0; }
-  boolean isTransient(){ return (access_flags & ACC_TRANSIENT) != 0; }
-  boolean isSynchronized(){return(access_flags& ACC_SYNCHRON) != 0; }
-  boolean isNative()   { return (access_flags & ACC_NATIVE) != 0; }
-  boolean isAbstract() { return (access_flags & ACC_ABSTRACT) != 0; }
-  boolean isSuper()    { return (access_flags & ACC_SUPER) != 0; }
-  boolean isInterface(){ return (access_flags & ACC_INTERFACE) != 0; }
+  public boolean isPublic()   { return (access_flags & ACC_PUBLIC) != 0; }
+  public boolean isPrivate()  { return (access_flags & ACC_PRIVATE) != 0; }
+  public boolean isProtected(){ return (access_flags & ACC_PROTECTED) != 0; }
+  public boolean isStatic()   { return (access_flags & ACC_STATIC) != 0; }
+  public boolean isFinal()    { return (access_flags & ACC_FINAL) != 0; }
+  public boolean isVolatile() { return (access_flags & ACC_VOLATILE) != 0; }
+  public boolean isTransient(){ return (access_flags & ACC_TRANSIENT) != 0; }
+  public boolean isSynchronized(){return(access_flags& ACC_SYNCHRON) != 0; }
+  public boolean isNative()   { return (access_flags & ACC_NATIVE) != 0; }
+  public boolean isAbstract() { return (access_flags & ACC_ABSTRACT) != 0; }
+  public boolean isSuper()    { return (access_flags & ACC_SUPER) != 0; }
+  public boolean isInterface(){ return (access_flags & ACC_INTERFACE) != 0; }
 
   // ClassFile uses:  PUBLIC, FINAL, SUPER, INTERFACE, ABSTRACT.
   // FieldInfo uses:  PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, 

@@ -1,5 +1,7 @@
-package harpoon.ClassFile.Raw;
+package harpoon.ClassFile.Raw.Attribute;
 
+import harpoon.ClassFile.Raw.*;
+import harpoon.ClassFile.Raw.Constant.*;
 /**
  * The <code>ConstantValue</code> attribute is a fixed-length
  * attribute used in the <code>attributes</code> table of the
@@ -16,19 +18,19 @@ package harpoon.ClassFile.Raw;
  * attribute as part of its initialization.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeConstantValue.java,v 1.4 1998-07-31 05:51:09 cananian Exp $
+ * @version $Id: AttributeConstantValue.java,v 1.5 1998-07-31 07:05:59 cananian Exp $
  * @see Attribute
  * @see FieldInfo
  * @see ClassFile
  */
-class AttributeConstantValue extends Attribute {
+public class AttributeConstantValue extends Attribute {
   /** The value of the <code>constantvalue_index</code> must be a
       valid index into the <code>constant_pool</code> table.  The
       <code>constant_pool</code> entry at that index must give the
       constant value represented by this attribute. <p>  The
       <code>constant_pool</code> entry must be of a type appropriate
       to the field. */
-  int constantvalue_index;
+  public int constantvalue_index;
 
   /** Constructor. */
   AttributeConstantValue(ClassFile parent, ClassDataInputStream in,
@@ -48,14 +50,14 @@ class AttributeConstantValue extends Attribute {
     this.constantvalue_index = constantvalue_index;
   }
 
-  long attribute_length() { return 2; }
+  public long attribute_length() { return 2; }
   
   // convenience.
-  Constant constantvalue_index()
+  public Constant constantvalue_index()
   { return parent.constant_pool[constantvalue_index]; }
 
   /** Write to bytecode stream. */
-  void write(ClassDataOutputStream out) throws java.io.IOException {
+  public void write(ClassDataOutputStream out) throws java.io.IOException {
     out.write_u2(attribute_name_index);
     out.write_u4(attribute_length());
     out.write_u2(constantvalue_index);
