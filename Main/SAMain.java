@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.142 2001-03-08 21:39:53 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.1.2.143 2001-04-25 15:08:32 wbeebee Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -943,26 +943,7 @@ public class SAMain extends harpoon.IR.Registration {
 		MULTITHREADED = true; break;
 	    case 't': // Realtime Java extensions (WSB)
 		linker = new Relinker(Loader.systemLinker);
-		Realtime.REALTIME_JAVA = true;
-		if (g.getOptarg() != null) {
-		    String analysis = g.getOptarg().toLowerCase().intern();
-		    if (analysis == "simple") {
-			Realtime.ANALYSIS_METHOD = 
-			    Realtime.SIMPLE;
-		    } else if (analysis == "cheesy") {
-			Realtime.ANALYSIS_METHOD = 
-			    Realtime.CHEESY_POINTER_ANALYSIS;
-		    } else if (analysis == "real") {
-			Realtime.ANALYSIS_METHOD = 
-			    Realtime.REAL_POINTER_ANALYSIS;
-		    } else if (analysis == "all") {
-			Realtime.ANALYSIS_METHOD =
-			    Realtime.ALL;
-		    } else {
-			Util.assert(false, "Unknown option after -t: " +
-				    g.getOptarg());
-		    }
-		}
+		Realtime.configure(g.getOptarg());
 		break;
 	    case 's':
 		arg=g.getOptarg();

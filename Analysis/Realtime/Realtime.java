@@ -55,7 +55,49 @@ public class Realtime {
      */
     public static final int ALL = 3;
 
-    public static final boolean COLLECT_RUNTIME_STATS = true;
+    /** Add code to the executable to enable gathering of runtime statistics. 
+     */
+    public static boolean COLLECT_RUNTIME_STATS = false;
+
+    /** Configure Realtime Java based on the following command-line options. 
+     */
+    public static void configure(String options) {
+	String opts = options.toLowerCase();
+	System.out.print("RTJ: on, Real Scopes: ");
+	REALTIME_JAVA = true;
+	if (opts.indexOf("fakescopes")!=-1) {
+	    System.out.print("no");
+	    REAL_SCOPES = false;
+	} else {
+	    System.out.print("yes");
+	}
+	System.out.print(", Analysis Method: ");
+	if (opts.indexOf("simple")!=-1) {
+	    ANALYSIS_METHOD = SIMPLE;
+	    System.out.print("simple");
+	} else if (opts.indexOf("cheesy")!=-1) {
+	    ANALYSIS_METHOD = CHEESY_POINTER_ANALYSIS;
+	    System.out.print("cheesy");
+	} else if (opts.indexOf("realpa")!=-1) {
+	    ANALYSIS_METHOD = REAL_POINTER_ANALYSIS;
+	    System.out.print("realpa");
+	} else if (opts.indexOf("all")!=-1) {
+	    System.out.print("all, Keep Tags: ");
+	    if (opts.indexOf("keeptags")!=-1) {
+		System.out.print("no");
+		REMOVE_TAGS = false;
+	    } else {
+		System.out.print("yes");
+	    }
+	    ANALYSIS_METHOD = ALL;
+	} else if (opts.indexOf("stats")!=-1) {
+	    System.out.print("Collect Statistics");
+	    ANALYSIS_METHOD = SIMPLE;
+	    COLLECT_RUNTIME_STATS = true;
+	    REAL_SCOPES = false;
+	}
+	System.out.println();
+    }
 
     /** Creates a field memoryArea on <code>java.lang.Object</code>.
      *  Since primitive arrays inherit from <code>java.lang.Object</code>, 
@@ -116,14 +158,14 @@ public class Realtime {
 		  .getMethod("checkAccess", new HClass[] { object }));
 	roots.add(linker.forName("javax.realtime.ScopedMemory")
 		  .getMethod("checkAccess", new HClass[] { object }));
-	roots.add(memoryArea
-		  .getMethod("bless", new HClass[] { object }));
-	roots.add(memoryArea
-		  .getMethod("bless", 
-			     new HClass[] { 
-				 object, 
-				 HClassUtil.arrayClass(linker, HClass.Int, 1)
-			     }));
+//  	roots.add(memoryArea
+//  		  .getMethod("bless", new HClass[] { object }));
+//  	roots.add(memoryArea
+//  		  .getMethod("bless", 
+//  			     new HClass[] { 
+//  				 object, 
+//  				 HClassUtil.arrayClass(linker, HClass.Int, 1)
+//  			     }));
 	roots.add(memoryArea
 		  .getMethod("getMemoryArea", new HClass[] { object }));
 	roots.add(HClassUtil.arrayClass(linker, HClass.Int, 1));
@@ -230,7 +272,7 @@ public class Realtime {
      *       <code>harpoon.IR.Quads.ASET</code>s. </li>
      *  </ul>
      */
-    
+
     public static HCodeFactory addChecks(Linker linker, 
 					 ClassHierarchy ch, 
 					 HCodeFactory parent,
