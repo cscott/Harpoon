@@ -58,16 +58,16 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.7 2000-03-27 18:33:29 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.8 2000-03-27 21:12:32 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
     private static boolean DEBUG = false;
-    private static boolean DEBUG_CH = true;
+    private static boolean DEBUG_CH = false;
 
     // in "caution" mode, plenty of tests are done to protect ourselves
     // against errors in other components (ex: ReachingDefs)
-    private static final boolean CAUTION = false;
+    private static final boolean CAUTION = true;
     
     private CachingBBConverter bbconv;
     private ClassHierarchy ch;
@@ -298,8 +298,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	    Iterator it_types = getExactTemp(t,qdef).getTypes();
 	    while(it_types.hasNext()){
 		GenType gt = (GenType) it_types.next();
-		// fix some strange bug
-		if(gt.getHClass().isPrimitive()) return;
+		// fix some strange bug // TODO: study the impact of type "void"
+		// if(gt.getHClass().isPrimitive()) return;
 		param_types[pos] = gt;
 		rec(hm,cs,pos+1,max_pos);
 	    }

@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.17 2000-03-27 18:33:44 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.18 2000-03-27 21:12:47 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -86,27 +86,36 @@ public class PointsToGraph {
 	return set;
     }
 
-    /** Tests whether the node <code>n</code> is an escaped node.
-	An <i>escaped</i> node is a node which has escaped through some node
-	or method hole or is reachable (possibly through a 0-length path)
-	from a node which is returned as a normal result or as an exception,
-	from the method.  */
-    public boolean escaped(PANode n){
+    /** Checks whether node <code>node</code> will escape because
+	it is returned or because it is reachable from a returned node.
+	Both kinds of returns - <code>return</code> and <code>throw</code> -
+	are considered. */
+    public boolean willEscape(PANode node){
 	if(reachable_from_r == null)
 	    reachable_from_r = reachableNodes(r);
 	if(reachable_from_excp== null)
 	    reachable_from_excp = reachableNodes(excp);
-	
+
 	return 
-	    e.hasEscaped(n) || 
-	    reachable_from_r.contains(n) ||
-	    reachable_from_excp.contains(n);
+	    reachable_from_r.contains(node) ||
+	    reachable_from_excp.contains(node);
     }
 
-    /** Tests whether the node <code>n</code> is captured. 
+    /** Tests whether node <code>node</code> is an escaped node.
+	An <i>escaped</i> node is a node which has escaped through some node
+	or method hole or is reachable (possibly through a 0-length path)
+	from a node which is returned as a normal result or as an exception,
+	from the method.  */
+    public boolean escaped(PANode node){
+	return 
+	    e.hasEscaped(node) || 
+	    willEscape(node);
+    }
+
+    /** Tests whether node <code>node</code> is captured. 
      * This method is simply the negation of <code>escaped</code>. */
-    public boolean captured(PANode n){
-	return !escaped(n);
+    public boolean captured(PANode node){
+	return !escaped(node);
     }
 
 

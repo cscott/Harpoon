@@ -14,13 +14,14 @@ import java.io.PrintWriter;
 
 import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.PointerAnalysis.Relation;
+import harpoon.ClassFile.HCodeElement;
 
 /**
  * <code>MetaCallGraphAbstr</code> Abstract implementation of the
  <code>MetaCallGraph</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphAbstr.java,v 1.1.2.2 2000-03-20 21:28:59 salcianu Exp $
+ * @version $Id: MetaCallGraphAbstr.java,v 1.1.2.3 2000-03-27 21:12:32 salcianu Exp $
  */
 public abstract class MetaCallGraphAbstr implements MetaCallGraph {
 
@@ -89,14 +90,17 @@ public abstract class MetaCallGraphAbstr implements MetaCallGraph {
 	Set mms = getAllMetaMethods();
 	for(Iterator itmm = mms.iterator(); itmm.hasNext();){
 	    MetaMethod mm = (MetaMethod) itmm.next();
+	    pw.println();
 	    pw.print(mm);
 	    if(detailed_view){
 		pw.println();
 		for(Iterator itcs=getCallSites(mm).iterator();itcs.hasNext();){
 		    CALL cs = (CALL) itcs.next();
+		    HCodeElement hce = (HCodeElement) cs;
 		    MetaMethod[] callees = getCallees(mm,cs);
-		    pw.println(" " + cs + " (" + callees.length +
-			       " callee(s)):");
+		    pw.println(" " + hce.getSourceFile() + ":" + 
+			       hce.getLineNumber() + " " + cs + " (" +
+			       callees.length + " callee(s)):");
 		    for(int i = 0; i < callees.length; i++)
 			pw.println("  " + callees[i]);
 		}

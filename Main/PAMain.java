@@ -60,7 +60,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.24 2000-03-27 18:33:45 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.25 2000-03-27 21:12:49 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -519,8 +519,10 @@ public abstract class PAMain {
 	    pa.threadInteraction(mm);  
 	}
 
-	System.out.println("MEMORY ALLOCATION STATISTICS");
+	System.out.println("MEMORY ALLOCATION STATISTICS ======");
 	harpoon.Analysis.PointerAnalysis.InterThreadPA.TIMING = false;
+
+	System.out.println("CAPTURED NODES:");
 
 	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext();){
 	    MetaMethod mm = (MetaMethod) it.next();
@@ -544,7 +546,41 @@ public abstract class PAMain {
 	    nb_captured += captured.size();
 	}
 
-	System.out.println("TOTAL: " + nb_captured + " captured node(s)");
+	System.out.println("TOTAL CAPTURED NODES: " + nb_captured);
+
+
+	System.out.println("PSEUDO-CAPTURED:");
+
+	int nb_pcaptured = 0;
+
+	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext();){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    if(!pa.analyzable(mm.getHMethod())) continue;
+	    ParIntGraph pig = pa.threadInteraction(mm);
+	    Set nodes = pig.allNodes();
+	    Set captured = new HashSet();
+	    for(Iterator it2 = nodes.iterator(); it2.hasNext(); ){
+		PANode node = (PANode) it2.next();
+		if(node.type != PANode.INSIDE) continue;
+		if(pig.G.captured(node)) continue; // has been already counted
+		if(!pig.G.willEscape(node)){
+		    Set nhs = pig.G.e.nodeHolesSet(node);
+		    if(!nhs.isEmpty()) continue;
+		    captured.add(node);
+		}
+	    }
+	    
+	    if(captured.size() > 0){
+		System.out.println("METHOD " + mm.getHMethod());
+		for(Iterator it2 = captured.iterator(); it2.hasNext();)
+		    System.out.println(" " + ((PANode)it2.next()).details());
+	    }
+	    
+	    nb_pcaptured += captured.size();
+	} 
+
+	System.out.println("TOTAL PSEUDO CAPTURED NODES: " + nb_pcaptured);
+	System.out.println("===================================");
     }
 
     // displays the set of method holes from the analyzed program
@@ -573,7 +609,7 @@ public abstract class PAMain {
 		    HCodeElement hce = (HCodeElement) q;
 		    if(holes.add(q.method()))
 			System.out.println("NEW HOLE:" + hce.getSourceFile() + 
-					   ":" + hce.getLineNumber() + " " + q);
+					   ":" + hce.getLineNumber() +" "+q);
 		}
 	    }
 	}
