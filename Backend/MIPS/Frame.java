@@ -11,6 +11,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.Util.Util;
+import java.util.HashMap;
 
 /**
  * <code>Frame</code> contains the machine-dependant
@@ -18,7 +19,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.6 2000-10-31 01:54:32 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.7 2000-11-15 19:59:36 witchel Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
    private final harpoon.Backend.Generic.Runtime   runtime;
@@ -29,6 +30,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private final Linker linker;
     private GCInfo gcInfo; // should really be final
    private String type = "";
+   private HashMap noTagCheck;
 
     // HACK: this should really be a command-line parameter.
     private final static String alloc_strategy =
@@ -41,6 +43,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	super();
 	linker = main.getDeclaringClass().getLinker();
 	regFileInfo = new RegFileInfo();
+    noTagCheck = null;
 	
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
 	    alloc_strategy.equalsIgnoreCase("nifty") ?
@@ -79,6 +82,13 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     public Linker getLinker() { return linker; }
    
     public boolean pointersAreLong() { return false; }
+
+   public void setNoTagCheckHashMap(HashMap hm) {
+      noTagCheck = hm;
+   }
+   public boolean memAccessNoTagCheck(HCodeElement hce) {
+      return noTagCheck.containsKey(hce);
+   }
 
     /** Returns a <code>MIPS.CodeGen</code>. 
 	Since no state is maintained in the returned
