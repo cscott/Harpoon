@@ -16,7 +16,7 @@
 
 #ifdef WITH_HEAVY_THREADS
 #define EXTRACT_OTHER_ENV(env, thread) \
-  ( (struct FNI_Thread_State *) (*env)->GetIntField(env, thread, tID) )
+  ( (struct FNI_Thread_State *) FNI_GetJNIData(env, thread) )
 #define EXTRACT_PTHREAD_T(env, thread) \
   ( EXTRACT_OTHER_ENV(env, thread)->pthread )
 
@@ -61,7 +61,6 @@ static void wait_on_running_thread() {
 
 #endif /* WITH_HEAVY_THREADS */
 
-static jfieldID tID; /* Thread field to store corresponding pthread. */
 static jfieldID priorityID; /* "priority" field in Thread object. */
 static jfieldID daemonID; /* "daemon" field in Thread object. */
 static jmethodID runID; /* Thread.run() method. */
@@ -121,13 +120,10 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
     sched_max_priority = sched_get_priority_max(policy);
   }
 #endif
-  /* make Thread object-to-pthread mapping. */
-  tID = (*env)->GetFieldID(env, thrCls, "PrivateInfo","I");
-  assert(!((*env)->ExceptionOccurred(env)));
+  /* make Thread object-to-JNIEnv mapping. */
+  FNI_SetJNIData(env, mainThr, env, NULL);
 #ifdef WITH_HEAVY_THREADS
   ((struct FNI_Thread_State *)env)->pthread = pthread_self();
-  assert(sizeof(jint)==sizeof(env));// this don't work on 64-bit boxen, gah!
-  (*env)->SetIntField(env, mainThr, tID, (jint) env);
 #endif
   /* as the thread constructor method uses 'current thread' as a template
    * for setting the fields of the new thread, we need to hand-kludge some
@@ -271,9 +267,7 @@ static void * thread_startup_routine(void *closure) {
   /* fill in the blanks in env */
   ((struct FNI_Thread_State *)env)->thread = thread;
   ((struct FNI_Thread_State *)env)->pthread = pthread_self();
-  assert(sizeof(jint)==sizeof(env));// this don't work on 64-bit boxen, gah!
-  (*env)->SetIntField(env, thread, tID, (jint) env);
-  assert(!((*env)->ExceptionOccurred(env)));
+  FNI_SetJNIData(env, thread, env, NULL);
   /* add this to the running_threads list, unless its a daemon thread */
   if ((*env)->GetBooleanField(env, thread, daemonID) == JNI_FALSE)
     add_running_thread(pthread_self());
