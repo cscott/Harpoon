@@ -2,22 +2,27 @@
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
-ALLDOCS=design bibnote readnote quads proposal thesis exec# pldi99
+ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99
 
 all: $(ALLDOCS:=.ps)
-preview: pldi99-xdvi
+preview: thesis-xdvi
+
+# comdef dependencies
+exec.dvi thesis.dvi proposal.dvi: comdef.sty
+pldi99.dvi pldi99-outline.dvi: comdef.sty
 
 # bibtex dependencies
-exec.dvi: harpoon.bib
-quads.dvi: harpoon.bib
-design.dvi: harpoon.bib
+exec.dvi quads.dvi design.dvi thesis.dvi: harpoon.bib
+pldi99.dvi pldi99-outline.dvi: harpoon.bib
 bibnote.dvi: harpoon_.bib
 readnote.dvi: unread_.bib
+
 # lots of dependencies for the pldi paper
-pldi99.dvi: harpoon.bib pldi99-intro.tex pldi99-abstract.tex pldi99-tech.tex
+pldi99.dvi: pldi99-intro.tex pldi99-abstract.tex pldi99-tech.tex
 pldi99.dvi: Figures/evil.tex
+
 # thesis figure dependencies
-thesis.dvi: harpoon.bib Figures/THex1base.tex \
+thesis.dvi: Figures/THex1base.tex \
 	Figures/THex1ssa.tex Figures/THex1ssaPr.tex \
 	Figures/THex1ssi.tex Figures/THex1ssiPr.tex
 # thesis figure rules
@@ -71,7 +76,8 @@ update:
 	cvs update -Pd
 
 clean:
-	$(RM) *.dvi *.log *.aux *.bbl *.blg
+	$(RM) *.aux *.bbl *.blg *.dvi *.glo *.gls *.idx *.ilg *.ind *.lis \
+	      *.lof *.log *.lot *.toc
 	$(RM) $(foreach doc,$(ALLDOCS),$(doc).ps $(doc).pdf)
 	$(RM) harpoon_.bib unread_.bib
 	$(RM) -r html

@@ -1,0 +1,65 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: comdef.sty,v 1.1 1999-05-08 00:18:33 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Common definitions for Harpoon design documents. %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{comdef}[1999/05/07 v1.0 (C. Scott Ananian)]
+\RequirePackage{latexsym}
+\RequirePackage{ifthen}
+
+% A breaking non-space for URLs
+\newcommand{\bp}{\hspace{0pt}}
+
+% environment for code examples
+\ifthenelse{\boolean{@compatibility}}{}{% don't define this in 2.09 mode.
+\newenvironment{samplecode}[1][1]
+  {\setlength{\tabcolsep}{2\tabcolsep}%
+\renewcommand{\>}{~~~~}%
+\newcommand{\comment}[1]{\rm\it // ##1}%
+\newcommand{\com}[1]{\comment{##1}}%
+\newcommand{\ells}[1]{\ifcase#1\or l\or l|l\or l|l|l\or l|l|l|l\or
+l|l|l|l|l\or l|l|l|l|l|l\fi}%
+\begin{center}\tt\begin{tabular}{\ells{#1}}}
+  {\end{tabular}\end{center}}
+}
+% math abbreviations
+\newcommand{\Rho}{P}
+\newcommand{\set}[1]{\ensuremath{\left\{#1\right\}}}
+\newenvironment{transitions}{
+ \newcommand{\isdef}[1]{\ensuremath{##1\:\mbox{defined}}}
+ \newcommand{\notdef}[1]{\ensuremath{##1\:\mbox{undefined}}}
+% \newcommand{\isdef}[1]{\ensuremath{##1\succ\bot}}
+% \newcommand{\notdef}[1]{\ensuremath{##1=\bot}}
+ \newcommand{\trule}[2]{\ensuremath{\displaystyle\frac{##1}{##2}}}
+ \renewcommand{\arraystretch}{2.5}
+ \newcommand{\myarray}[2]{\renewcommand{\arraystretch}{1}\begin{array}{##1}##2\end{array}\renewcommand{\arraystretch}{2.5}}
+ \begin{center}\begin{math}\begin{array}{lc}}
+{\end{array}\end{math}\end{center}\renewcommand{\arraystretch}{1}}
+
+% Theorem-like environments
+\newtheorem{definition}{Definition}
+\newtheorem{observation}{Observation}
+\newtheorem{property}{Property}
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
+
+% phi, sigma, and xi functions
+\newcommand{\phifunction}{$\phi$-function}
+\newcommand{\sigfunction}{$\sigma$-function}
+\newcommand{\xifunction}{$\xi$-function}
+\newcommand{\tuple}[1]{\ensuremath{\left\langle #1 \right\rangle}}
+\newcommand{\xivec}[2]{\ensuremath{\left[\tuple{#1}\atop\tuple{#2}\right]}}
+
+% Cytron's path symbol
+\newcommand{\path}{\ensuremath{\rightarrow}}
+\newcommand{\pathplus}{\ensuremath{\stackrel{+}{\path}}}
+
+% SSI0/+
+\newcommand{\ssizero}{SSI$_0$}
+\newcommand{\ssiplus}{SSI$^+$}
+
+% hyphenation problems
+\hyphenation{con-ver-gence da-ta-flow stat-ic Stat-ic}
