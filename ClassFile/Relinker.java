@@ -13,7 +13,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.4.5 2000-10-20 22:50:46 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.4.6 2000-10-22 08:41:22 cananian Exp $
  */
 public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;
@@ -26,7 +26,8 @@ public class Relinker extends Linker implements java.io.Serializable {
 	return new HClassProxy(this, linker.forDescriptor(descriptor));
     }
     protected HClass makeArray(HClass baseType, int dims) {
-	return new HClassArraySyn(this, baseType, dims);
+	String desc = Util.repeatString("[",dims) + baseType.getDescriptor();
+	return new HClassProxy(this, linker.forDescriptor(desc));
     }
     
     /** Creates a mutable class with the given name which is based on
@@ -102,7 +103,7 @@ public class Relinker extends Linker implements java.io.Serializable {
     }
     HClass unwrap(HClass hc) {
 	if (hc==null || hc.isPrimitive()) return hc;
-	if (hc.isArray() || ((HClassProxy)hc).sameLinker)
+	if (((HClassProxy)hc).sameLinker)
 	    return linker.forDescriptor(hc.getDescriptor());
 	return ((HClassProxy)hc).proxy;
     }
@@ -113,10 +114,7 @@ public class Relinker extends Linker implements java.io.Serializable {
 		    "should never try to proxy a proxy of this same relinker");
 	HField result = (HField) memberMap.get(hf);
 	if (result==null) {
-	    if (hf.getDeclaringClass().isArray())
-		result=wrap(hf.getDeclaringClass()).getField(hf.getName());
-	    else
-		result = new HFieldProxy(this, hf);
+	    result = new HFieldProxy(this, hf);
 	    Util.assert(result.getDeclaringClass().getLinker()==this);
 	    memberMap.put(hf, result);
 	}
@@ -131,11 +129,7 @@ public class Relinker extends Linker implements java.io.Serializable {
 	if (hm instanceof HConstructor) return wrap((HConstructor)hm);
 	HMethod result = (HMethodProxy) memberMap.get(hm);
 	if (result==null) {
-	    if (hm.getDeclaringClass().isArray())
-		result=wrap(hm.getDeclaringClass())
-		    .getMethod(hm.getName(), hm.getDescriptor());
-	    else
-		result = new HMethodProxy(this, hm);
+	    result = new HMethodProxy(this, hm);
 	    Util.assert(result.getDeclaringClass().getLinker()==this);
 	    memberMap.put(hm, result);
 	}

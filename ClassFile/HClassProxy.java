@@ -16,7 +16,7 @@ import java.io.Serializable;
  * "redefined" after creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassProxy.java,v 1.1.4.6 2000-04-02 03:53:12 cananian Exp $
+ * @version $Id: HClassProxy.java,v 1.1.4.7 2000-10-22 08:41:22 cananian Exp $
  */
 class HClassProxy extends HClass implements HClassMutator, Serializable {
   Relinker relinker;
@@ -34,8 +34,6 @@ class HClassProxy extends HClass implements HClassMutator, Serializable {
   }
   void relink(HClass newproxy) {
     Util.assert(newproxy!=null);
-    Util.assert(!(newproxy instanceof HClassArray),
-		"arrays should never be proxied");
     Util.assert(!(newproxy instanceof HClassProxy &&
 		  ((HClassProxy)newproxy).relinker==relinker),
 		"should never proxy to a proxy of this same relinker.");
@@ -74,7 +72,11 @@ class HClassProxy extends HClass implements HClassMutator, Serializable {
    */
   public HClassMutator getMutator() {
     if (proxyMutator==null) {
-      relink(new HClassSyn(relinker, proxy.getName(), this));
+      relink(isArray()
+	     ? (HClass) new HClassArraySyn(relinker,
+					   ((HClassArray)proxy).baseType,
+					   ((HClassArray)proxy).dims)
+	     : (HClass) new HClassSyn(relinker, proxy.getName(), this));
       proxy.hasBeenModified = false; // exact copy of proxy.
     }
     return (proxyMutator==null) ? null : this;
@@ -82,7 +84,6 @@ class HClassProxy extends HClass implements HClassMutator, Serializable {
 
   // the following methods need no special handling:
   public boolean hasBeenModified() { return proxy.hasBeenModified(); }
-  public HClass getComponentType() { return proxy.getComponentType(); }
   public String getName() { return proxy.getName(); }
   public String getPackage() { return proxy.getPackage(); }
   public String getDescriptor() { return proxy.getDescriptor(); }
@@ -126,6 +127,9 @@ class HClassProxy extends HClass implements HClassMutator, Serializable {
   }
   public HClass[] getInterfaces() {
     return wrap(proxy.getInterfaces());
+  }
+  public HClass getComponentType() {
+    return wrap(proxy.getComponentType());
   }
   // HClassMutator interface
   public HField addDeclaredField(String name, HClass type)
