@@ -11,18 +11,20 @@ import harpoon.Util.Util;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.HashMap;
 
 /**
  * <code>Print</code> pretty-prints Trees.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.37 2000-03-26 06:29:09 jwhaley Exp $
+ * @version $Id: Print.java,v 1.1.2.38 2000-11-16 22:40:38 witchel Exp $
  */
 public class Print {
-    public final static void print(PrintWriter pw, Code c, TempMap tm) {
+    public final static void print(PrintWriter pw, Code c, TempMap tm,
+                                   HashMap ht) {
         Tree tr = (Tree) c.getRootElement();
-        PrintVisitor pv = new PrintVisitor(pw, tm);
+        PrintVisitor pv = new PrintVisitor(pw, tm, ht);
 
         pw.print("Codeview \""+c.getName()+"\" for "+c.getMethod()+":");
 	for (StmList slp=linearize((Stm)tr, null); slp!=null; slp=slp.tail)
@@ -33,7 +35,7 @@ public class Print {
 
     public final static void print(PrintWriter pw, Data d, TempMap tm) { 
 	Tree tr = (Tree)d.getRootElement();
-        PrintVisitor pv = new PrintVisitor(pw, tm);
+        PrintVisitor pv = new PrintVisitor(pw, tm, null);
 
         pw.print("Dataview \""+d.getDesc()+"\" for "+d.getHClass()+":");
 	for (StmList slp=linearize((Stm)tr, null); slp!=null; slp=slp.tail)
@@ -49,8 +51,12 @@ public class Print {
         print(pw, d, null);
     }
 
+    public final static void print(PrintWriter pw, Code c, HashMap ht) {
+        print(pw, c, null, ht);
+    }
+
     public final static void print(PrintWriter pw, Tree t) {
-	PrintVisitor pv = new PrintVisitor(pw, null);
+	PrintVisitor pv = new PrintVisitor(pw, null, null);
 	t.accept(pv);
 	pw.println();
 	pw.flush();
@@ -59,7 +65,7 @@ public class Print {
     public final static String print(Tree t) {
 	StringWriter sw = new StringWriter();
 	PrintWriter pw = new PrintWriter(sw);
-	PrintVisitor pv = new PrintVisitor(pw, null);
+	PrintVisitor pv = new PrintVisitor(pw, null, null);
 	if (t!=null) {
 	    t.accept(pv);
 	} else {
@@ -82,12 +88,17 @@ public class Print {
         private final static int TAB = 1;
         private PrintWriter pw;
         private TempMap tm;
+        private HashMap ht;
         private int indlevel;
 
-        PrintVisitor(PrintWriter pw, TempMap tm) {
+        PrintVisitor(PrintWriter pw, TempMap tm, HashMap ht) {
             indlevel = 1;
             this.pw = pw;
             this.tm = tm;
+            if(ht == null)
+               this.ht = new HashMap();
+            else 
+               this.ht = ht;
 
 	    // Util.assert(false, "Printing Trees is *slow*");
         }
@@ -105,6 +116,9 @@ public class Print {
 	public void visit(ALIGN s) { 
 	    indent(indlevel);
 	    pw.print(s.toString());
+        if(ht.containsKey(s)) {
+           pw.print(ht.get(s).toString());
+        }
 	}
 
         public void visit(BINOP e) {
@@ -115,6 +129,10 @@ public class Print {
             pw.print(",");
             e.getRight().accept(this);
             pw.print(")");
+            pw.print(e.hashCode());
+            if(ht.containsKey(e)) {
+               pw.print(ht.get(e).toString());
+            }
             indlevel--;
         }
 
@@ -150,6 +168,9 @@ public class Print {
             pw.print("handler:");
             s.getHandler().accept(this);
             pw.print(")");
+            if(ht.containsKey(s)) {
+               pw.print(ht.get(s).toString());
+            }
             indlevel -= 2;
         }
             
@@ -161,12 +182,18 @@ public class Print {
             pw.print("if-true: " + s.iftrue + ",");
             indent(indlevel);
             pw.print("if-false: " + s.iffalse + ")");
+            if(ht.containsKey(s)) {
+               pw.print(ht.get(s).toString());
+            }
             indlevel--;
         }
 
         public void visit(CONST e) {
             indent(indlevel);
             pw.print("CONST<" + Type.toString(e) + ">(" + e.value + ")");
+            if(ht.containsKey(e)) {
+               pw.print(ht.get(e).toString());
+            }
         }
 
 	public void visit(DATUM s) { 
@@ -180,6 +207,9 @@ public class Print {
 	    else s.getData().accept(this); 
 	    indent(indlevel--);
 	    pw.print(")");
+        if(ht.containsKey(s)) {
+           pw.print(ht.get(s).toString());
+        }
 	}
 
         public void visit(ESEQ e) {
@@ -189,6 +219,9 @@ public class Print {
             pw.print(",");
             e.getExp().accept(this);
             pw.print(")");
+            if(ht.containsKey(e)) {
+               pw.print(ht.get(e).toString());
+            }
             indlevel--;
         }
 
@@ -197,6 +230,9 @@ public class Print {
             pw.print("EXPR(");
             s.getExp().accept(this);
             pw.print(")");
+            if(ht.containsKey(s)) {
+               pw.print(ht.get(s).toString());
+            }
             indlevel--;
         }
 
@@ -214,6 +250,9 @@ public class Print {
             }
             s.getExp().accept(this);
             pw.print(")");
+            if(ht.containsKey(s)) {
+               pw.print(ht.get(s).toString());
+            }
             indlevel--;
         }
             
@@ -221,6 +260,10 @@ public class Print {
         public void visit(LABEL s) {
             indent(indlevel);
             pw.print("LABEL(" + s.label + ")");
+            pw.print(s.hashCode());
+            if(ht.containsKey(s)) {
+               pw.print(ht.get(s).toString());
+            }
         }
 
         public void visit(MEM e) {
@@ -228,6 +271,10 @@ public class Print {
             pw.print("MEM<" + Type.toString(e) + ">(");
             e.getExp().accept(this);
             pw.print(")");
+            pw.print(e.hashCode());
+            if(ht.containsKey(e)) {
+               pw.print(ht.get(e).toString());
+            }
             indlevel--;
         }
 
@@ -238,6 +285,9 @@ public class Print {
 	    for (int i=0; i<params.length; i++)
 		params[i].accept(this);
 	    pw.print(")");
+        if(ht.containsKey(s)) {
+           pw.print(ht.get(s).toString());
+        }
 	    indlevel--;
 	}
 
@@ -248,12 +298,19 @@ public class Print {
             pw.print(",");
             s.getSrc().accept(this);
             pw.print(")");
+            pw.print(s.hashCode());
+            if(ht.containsKey(s)) {
+               pw.print(ht.get(s).toString());
+            }
             indlevel--;
         }
 
         public void visit(NAME e) {
             indent(indlevel);
             pw.print("NAME(" + e.label + ")");
+            if(ht.containsKey(e)) {
+               pw.print(ht.get(e).toString());
+            }
         }
 
         public void visit(NATIVECALL s) {
@@ -280,6 +337,9 @@ public class Print {
                 list = list.tail;
             }
             pw.print(")");
+            if(ht.containsKey(s)) {
+               pw.print(ht.get(s).toString());
+            }
             indlevel -= 2;
         }
 
@@ -288,12 +348,18 @@ public class Print {
             pw.print("RETURN(");
             s.getRetval().accept(this);
             pw.print(")");
+            if(ht.containsKey(s)) {
+               pw.print(ht.get(s).toString());
+            }
             indlevel--;
         }
 
 	public void visit(SEGMENT s) { 
 	    indent(indlevel);
 	    pw.print(s.toString());
+        if(ht.containsKey(s)) {
+           pw.print(ht.get(s).toString());
+        }
 	}
 
         public void visit(SEQ s) {
@@ -303,6 +369,9 @@ public class Print {
             pw.print(",");
             s.getRight().accept(this);
             pw.print(")");
+            if(ht.containsKey(s)) {
+               pw.print(ht.get(s).toString());
+            }
             indlevel--;
         }
 
@@ -310,6 +379,9 @@ public class Print {
             Temp t = (tm == null) ? e.temp : tm.tempMap(e.temp);
             indent(indlevel);
             pw.print("TEMP<" + Type.toString(e.type) + ">(" + t + ")");
+            if(ht.containsKey(e)) {
+               pw.print(ht.get(e).toString());
+            }
         }
 
         public void visit(THROW s) {
@@ -319,6 +391,9 @@ public class Print {
 	    pw.print(",");
 	    s.getHandler().accept(this);
             pw.print(")");
+            if(ht.containsKey(s)) {
+               pw.print(ht.get(s).toString());
+            }
             indlevel--;
         }
 
@@ -328,6 +403,9 @@ public class Print {
             pw.print(Uop.toString(e.op) + ",");
             e.getOperand().accept(this);
             pw.print(")");
+            if(ht.containsKey(e)) {
+               pw.print(ht.get(e).toString());
+            }
             indlevel--;
         }
     } 
