@@ -15,6 +15,8 @@ RUN=yes   # run the benchmark?
 RUN_STATS=yes   # generate runtime statistics?
 LONG_RUN_STATS=no   # should the runtime statistics be long?
 ERRORS=yes   # log errors?
+ERRORS_SHORT_PREFFIX=$RESULTS_DIR/errors_short   # a preffix for all short error files
+ERRORS_SHORT_LINE=   # a line of text that will be written in the short errors file of this benchmark
 
 # Beginning of script
 
@@ -96,6 +98,7 @@ else
     if [ "$COMPILE" == "yes" ]; then   # compiling the benchmark...
 	cd $FLEX_DIR
 	if [ ! -e $BENCHMARK.java ]; then   # does the benchmark file exist?
+	    ERRORS_SHORT_LINE="compil-error"
 	    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 		echo >> $ERROR_FILE
 		echo -e "The file $BENCHMARK.java not found. Looking for the executable run$BENCHMARK or for the script $BENCHMARK..." >> $ERROR_FILE
@@ -103,6 +106,7 @@ else
 	else   # yes, the file $BENCHMARK.java exists
 	    javac $BENCHMARK.java >> $COMPILING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
 	    if [ $GOT_ERRORS -eq 1 ]; then   # the file $BENCHMARK.java contains some syntactic errors
+		ERRORS_SHORT_LINE="compile-error"
 		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 		    echo >> $ERROR_FILE
 		    echo -e "\"javac\" could not compile the file $BENCHMARK.java. Please check the correctness of the syntax of $BENCHMARK.java" >> $ERROR_FILE
@@ -110,6 +114,7 @@ else
 	    else
 		$COMMAND $BENCHMARK $BENCHMARK >> $COMPILING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
 		if [ $GOT_ERRORS -eq 1 ]; then   # Did the benchmark compile without any error
+		    ERRORS_SHORT_LINE="compile-error"
 		    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 			echo -e "Benchmark $BENCHMARK did not compile." >> $ERROR_FILE
 		    fi
@@ -131,6 +136,7 @@ else
 			fi
 		    fi
 		else   # no compiling-time errors
+		    ERRORS_SHORT_LINE="compile-success"
 		    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 			echo >> $ERROR_FILE
 			echo -e "          Benchmark $BENCHMARK compiled without any error." >> $ERROR_FILE
@@ -139,6 +145,7 @@ else
 	    fi   # if [ $GOT_ERRORS -eq 1 ]; then
 	fi   # if [ ! -e $BENCHMARK.java ]; then
     else   # "$COMPILE" == "no"
+	ERRORS_SHORT_LINE="compile-nothing"
 	echo >> $ERROR_FILE
 	echo "User chose not to compile the task." >> $ERROR_FILE
     fi   # if [ "$COMPILE" == "yes" ]; then
@@ -167,6 +174,7 @@ else
 	fi
 	if [ $GOT_ERRORS != 10 ]; then   # was anything executed?
 	    if [ $GOT_ERRORS -eq 1 ]; then   # Did the program end because of an error?
+		ERRORS_SHORT_LINE=$ERRORS_SHORT_LINE":run-error"
 		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 		    echo >> $ERROR_FILE
 		    echo -e "Benchmark $BENCHMARK finished its execution because of an error." >> $ERROR_FILE
@@ -190,16 +198,20 @@ else
 		fi
 	    else
 		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+		    ERRORS_SHORT_LINE=$ERRORS_SHORT_LINE":run_success"
 		    echo >> $ERROR_FILE
 		    echo -e "          Benchmark $BENCHMARK ran without throwing any error." >> $ERROR_FILE
 		fi
 	    fi
 	fi
     else   # "$RUN" == "no"
+	ERRORS_SHORT_LINE=$ERRORS_SHORT_LINE":run-nothing"
 	echo >> $ERROR_FILE
 	echo "User chose not to run the task." >> $ERROR_FILE
     fi
 fi
+
+echo $ERRORS_SHORT_LINE > $ERRORS_SHORT_PREFFIX"_"$BENCHMARK
 
 echo "0" > $RUNNING_TASK_FILE   # This machine is free again and ready to accept another task
 

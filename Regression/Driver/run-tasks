@@ -71,13 +71,16 @@ else
     DIFFS_DIR=$TEMP_DIR/diffs
     DIFFS_YESTERDAY_DIR=$DIFFS_DIR/yesterday
     DIFFS_TODAY_DIR=$DIFFS_DIR/today
+    CORRECT_RESULTS_DIR=correct-results
     ARCHIVE_DIR=archive
     ARCHIVE_SOURCES_FILE=$ARCHIVE_DIR/sources.tar.gz   # sources archive
     ARCHIVE_EXECUTABLES_FILE=$ARCHIVE_DIR/executables.tar.gz   # executables archive
     ARCHIVE_ERRORS_FILE=$ARCHIVE_DIR/errors.tar.gz   # errors archive
     ARCHIVE_ERRORS_SHORT_FILE=$ARCHIVE_DIR/errors_short.tar.gz   # short errors archive
     ARCHIVE_DIFFS_SOURCES_FILE=$ARCHIVE_DIR/diffs_sources.tar.gz   # sources diffs archive
-    ARCHIVE_DIFFS_RESULTS_FILE=$ARCHIVE_DIR/diffs_results.tar.gz   # results diffs archive
+    ARCHIVE_COMPILE_RESULTS_FILE=$ARCHIVE_DIR/compile_results.tar.gz   # compiling time results
+    ARCHIVE_RUN_RESULTS_FILE=$ARCHIVE_DIR/run_results.tar.gz   # runtime results archive
+    JOURNAL_FILE=$ARCHIVE_DIR/journal   # for each benchmark, keeps information about its last execution
 
   # Default values for script options that can be changed from command-line
     
@@ -88,9 +91,11 @@ else
     COMPILE=yes
     COMPILE_STATS=yes
     LONG_COMPILE_STATS=no
+    COLLECT_COMPILE_RESULTS=yes
     RUN=yes
     RUN_STATS=yes
     LONG_RUN_STATS=no
+    COLLECT_RUN_RESULTS=yes
     ERRORS=yes
     DIFFS=yes
     MAIL_RESULTS=yes
@@ -189,10 +194,6 @@ else
 	echo >> $DIFFS_SOURCES_FILE
 	echo "Diffs file: $DATE" >> $DIFFS_SOURCES_FILE
 	echo >> $DIFFS_SOURCES_FILE
-
-	echo >> $DIFFS_RESULTS_FILE
-	echo "Diffs file: $DATE" >> $DIFFS_RESULTS_FILE
-	echo >> $DIFFS_RESULTS_FILE
     fi
     
   # Getting the list of machines in $MACHINES_LIST
@@ -288,7 +289,6 @@ else
 
 		    # Probably you want to run one and only one of the following two lines
 		    
-#		    ssh -f $machine 'cd $MAIN_TESTING_DIR; ./update-and-make' # cvs updating the entire FLEX and remaking everything in Code, Runtime and Realtime (all this is done in background)
 		    ssh -f $machine 'cd $MAIN_TESTING_DIR; ./update-and-make -clean' # cvs updating the entire FLEX and remaking everything in Code, Runtime and Realtime (all this is done in background); -clean parameter makes the scripts do "make clean" in each directory before doing "make"; it also forces the scripts to run ./setup and ./configure in Runtime before running "make clean; make"; should be used if and only if some configuration files were changed
 		    sleep 5   # waiting 5 seconds for the remote machine to set up all necessary parameters
 		fi
@@ -297,7 +297,7 @@ else
     else
 	if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 	    echo >> $ERROR_FILE
-	    echo "The server was given the -update=no option -- no machines updated."
+	    echo "The server was given the -update=no option -- no machines updated." >> $ERROR_FILE
 	fi
     fi
 
@@ -485,6 +485,209 @@ else
 	    fi
 	fi
 
+	# Copying all compile results files from all machines and adding them to the $ARCHIVE_COMPILE_RESULTS_FILE archive
+
+	mkdir -p $TEMP_DIR/$DATE
+	for machine in $USED_MACHINES_LIST; do   # iterating through all machines that were used in this session
+	    REMOTE_MACHINE_RESULTS_DIR=`ssh $machine 'echo $RESULTS_DIR'`   # getting remote machine's $TEMP_DIR
+
+	    if [ "$DEBUG" == "yes" ]; then
+		scp $machine:$REMOTE_MACHINE_RESULTS_DIR/compile_* $TEMP_DIR/$DATE   # copying all compile_* files from the $RESULTS_DIR of $machine
+	    else
+		scp $machine:$REMOTE_MACHINE_RESULTS_DIR/compile_* $TEMP_DIR/$DATE > /dev/null 2>&1   # copying all compile_* files from the $RESULTS_DIR of $machine
+	    fi
+	done
+	
+	if [ -f $ARCHIVE_COMPILE_RESULTS_FILE ]; then   # does the $ARCHIVE_COMPILE_RESULTS_FILE exist?
+	    if [ "$DEBUG" == "yes" ]; then
+		tar zxvf $ARCHIVE_COMPILE_RESULTS_FILE -C $TEMP_DIR   # extracting files in $ARCHIVE_COMPILE_RESULTS_FILE to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_COMPILE_RESULTS_FILE   # adding new files to the $ARCHIVE_COMPILE_RESULTS_FILE archive
+		rm -r `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
+		cd -   # changing the directory back
+	    else
+		tar zxvf $ARCHIVE_COMPILE_RESULTS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting files in $ARCHIVE_COMPILE_RESULTS_FILE to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_COMPILE_RESULTS_FILE 2>/dev/null   # adding new files to the $ARCHIVE_COMPILE_RESULTS_FILE archive
+		rm -rf `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
+		cd -   # changing the directory back
+	    fi
+	else
+	    if [ "$DEBUG" == "yes" ]; then
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz $DATE > `cd -; pwd`/$ARCHIVE_COMPILE_RESULTS_FILE   # creating the $ARCHIVE_COMPILE_RESULTS_FILE archive
+		rm -r $DATE   # removing the $DATE directory
+		cd -   # changing the directory back
+	    else
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz $DATE > `cd -; pwd`/$ARCHIVE_COMPILE_RESULTS_FILE 2>/dev/null   # creating the $ARCHIVE_COMPILE_RESULTS_FILE archive
+		rm -rf $DATE   # removing the $DATE directory
+		cd -   # changing the directory back
+	    fi
+	fi
+
+	# Copying all runtime results files from all machines and adding them to the $ARCHIVE_RUN_RESULTS_FILE archive
+
+	mkdir -p $TEMP_DIR/$DATE
+	for machine in $USED_MACHINES_LIST; do   # iterating through all machines that were used in this session
+	    REMOTE_MACHINE_RESULTS_DIR=`ssh $machine 'echo $RESULTS_DIR'`   # getting remote machine's $TEMP_DIR
+
+	    if [ "$DEBUG" == "yes" ]; then
+		scp $machine:$REMOTE_MACHINE_RESULTS_DIR/run_* $TEMP_DIR/$DATE   # copying all run_* files from the $RESULTS_DIR of $machine
+	    else
+		scp $machine:$REMOTE_MACHINE_RESULTS_DIR/run_* $TEMP_DIR/$DATE > /dev/null 2>&1   # copying all run_* files from the $RESULTS_DIR of $machine
+	    fi
+	done
+	
+	if [ -f $ARCHIVE_RUN_RESULTS_FILE ]; then   # does the $ARCHIVE_RUN_RESULTS_FILE exist?
+	    if [ "$DEBUG" == "yes" ]; then
+		tar zxvf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR   # extracting files in $ARCHIVE_RUN_RESULTS_FILE to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_RUN_RESULTS_FILE   # adding new files to the $ARCHIVE_RUN_RESULTS_FILE archive
+		rm -r `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
+		cd -   # changing the directory back
+	    else
+		tar zxvf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting files in $ARCHIVE_RUN_RESULTS_FILE to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_RUN_RESULTS_FILE 2>/dev/null   # adding new files to the $ARCHIVE_RUN_RESULTS_FILE archive
+		rm -rf `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
+		cd -   # changing the directory back
+	    fi
+	else
+	    if [ "$DEBUG" == "yes" ]; then
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz $DATE > `cd -; pwd`/$ARCHIVE_RUN_RESULTS_FILE   # creating the $ARCHIVE_RUN_RESULTS_FILE archive
+		rm -r $DATE   # removing the $DATE directory
+		cd -   # changing the directory back
+	    else
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz $DATE > `cd -; pwd`/$ARCHIVE_RUN_RESULTS_FILE 2>/dev/null   # creating the $ARCHIVE_RUN_RESULTS_FILE archive
+		rm -rf $DATE   # removing the $DATE directory
+		cd -   # changing the directory back
+	    fi
+	fi
+
+	# Generating the $ERROR_FILE_SHORT file, which will be mailed if $MAIL_RESULTS is set to "yes"
+
+	mkdir -p $TEMP_DIR/$DATE
+	for machine in $USED_MACHINES_LIST; do
+	    REMOTE_MACHINE_RESULTS_DIR=`ssh $machine 'echo $RESULTS_DIR'`   # get the $RESULTS_DIR of the remote machine
+	    if [ "$DEBUG" == "yes" ]; then
+		scp $machine:$REMOTE_MACHINE_RESULTS_DIR/errors_short_* $TEMP_DIR/$DATE   # Copying all errors_short_* files from $machine
+	    else
+		scp $machine:$REMOTE_MACHINE_RESULTS_DIR/errors_short_* $TEMP_DIR/$DATE > /dev/null 2>&1   # Copying all errors_short_* files from $machine
+	    fi
+	done
+
+	if [ "$DEBUG" == "yes" ]; then   # print some information
+	    echo
+	    echo Generating \$ERROR_FILE_SHORT
+	    echo
+	fi
+	for file in `\ls $TEMP_DIR/$DATE/errors_short_* 2>/dev/null`; do   # preparing the file to be mailed
+	    BENCHMARK=`echo $file | sed s/^.*errors_short_//`
+
+	    if [ "$DEBUG" == "yes" ]; then   # print some information
+		echo "\$BENCHMARK = $BENCHMARK"
+	    fi
+
+	    echo $BENCHMARK >> $ERROR_FILE_SHORT
+	    if [ -f $JOURNAL_FILE ]; then   # does the file $JOURNAL_FILE exist?
+		LAST_RECORD=`cat $JOURNAL_FILE | grep $BENCHMARK:`   # getting the last record for this $BENCHMARK
+	    else
+		LAST_RECORD=""   # no record for this $BENCHMARK
+	    fi
+	    if [ "$LAST_RECORD" == "" ]; then   # no previous record for this benchmark
+		echo "   was: N/A" >> $ERROR_FILE_SHORT   # writing the previous record for this $BENCHMARK to $ERROR_FILE_SHORT
+	    else
+		echo $LAST_RECORD | sed s/$BENCHMARK/"   was"/ >> $ERROR_FILE_SHORT   # writing the previous record for this $BENCHMARK to $ERROR_FILE_SHORT
+	    fi
+
+	    if [ "$DEBUG" == "yes" ]; then   # printing some information
+		echo "\$LAST_RECORD = $LAST_RECORD"
+	    fi
+
+	    CURRENT_RECORD="now:"$DATE":"`cat $file`   # making this session's record for this $BENCHMARK
+	    if [ "$RUN_STATS" == "yes" -a -f $CORRECT_RESULTS_DIR/$BENCHMARK ]; then   # found the file with the "correct" output
+		if [ "$DEBUG" == "yes" ]; then   # print some information
+		    tar zxvf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
+		    cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		    cp $DATE/run"_"$BENCHMARK run"_"$BENCHMARK"_"$DATE   # copy the only important file to $TEMP_DIR
+		    rm -r `\ls -A | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+		    cd -   # changing directory back
+		else
+		    tar zxf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
+		    cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		    cp $DATE/run"_"$BENCHMARK ./run"_"$BENCHMARK"_"$DATE   # copy the only important file to $TEMP_DIR
+		    rm -rf `\ls -A 2>/dev/null | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+		    cd -   # changing the directory back
+		fi
+
+		if [ "`diff $TEMP_DIR/run'_'$BENCHMARK'_'$DATE $CORRECT_RESULTS_DIR/$BENCHMARK`" == "" ]; then   # the output matches perfectly
+		    CURRENT_RECORD=$CURRENT_RECORD":correct"
+		else
+		    if [ "$LAST_RECORD" != "" ]; then   # do we have the result for this benchmark from the previous session?
+			LAST_DATE=`echo $LAST_RECORD | sed s/$BENCHMARK:// | sed s/:.*$//`
+			if [ "$DEBUG" == "yes" ]; then   # print some information
+			    tar zxvf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
+			    cd $TEMP_DIR   # changing directory to $TEMP_DIR
+			    cp $LAST_DATE/run"_"$BENCHMARK ./run"_"$BENCHMARK"_"$LAST_DATE   # copy one more important file to $TEMP_DIR
+			    rm -r `\ls -A | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+			    cd -   # changing directory back
+			else
+			    tar zxf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
+			    cd $TEMP_DIR   # changing directory to $TEMP_DIR
+			    cp $LAST_DATE/run"_"$BENCHMARK ./run"_"$BENCHMARK"_"$LAST_DATE   # copy one more important file to $TEMP_DIR
+			    rm -rf `\ls -A 2>/dev/null | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+			    cd -   # changing directory back
+			fi
+
+			if [ "`diff $TEMP_DIR/run'_'$BENCHMARK'_'$DATE $TEMP_DIR/run'_'$BENCHMARK'_'$LAST_DATE`" == "" ]; then   # nothing changed in the output since the last running of this benchmark
+			    CURRENT_RECORD=$CURRENT_RECORD":incorrect (no changes)"
+			else
+			    CURRENT_RECORD=$CURRENT_RECORD":incorrect (but changed)"
+			fi
+		    else
+			CURRENT_RECORD=$CURRENT_RECORD":incorrect (N/A)"
+		    fi
+		fi
+	    else
+		CURRENT_RECORD=$CURRENT_RECORD":N/A"
+	    fi
+	    echo "   $CURRENT_RECORD" >> $ERROR_FILE_SHORT
+	    echo >> $ERROR_FILE_SHORT
+
+	    if [ -f $JOURNAL_FILE ]; then   # do we have a $JOURNAL_FILE already?
+		cat $JOURNAL_FILE | grep -v $BENCHMARK: > $JOURNAL_FILE   # remove the old record for $BENCHMARK, if it existed
+	    fi
+	    echo $CURRENT_RECORD | sed s/now/$BENCHMARK/ >> $JOURNAL_FILE
+	done
+	rm -rf $TEMP_DIR/$DATE
+
+	if [ -e $ARCHIVE_ERRORS_SHORT_FILE ]; then   # do we have already an $ARCHIVE_ERRORS_SHORT_FILE?
+	    if [ "$DEBUG" == "yes" ]; then
+		tar zxvf $ARCHIVE_ERRORS_SHORT_FILE -C $TEMP_DIR   # extracting existing error files to $TEMP_DIR
+		cp $ERROR_FILE_SHORT $TEMP_DIR   # moving $ERROR_FILE_SHORT to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz `\ls -A | grep -v CVS`  > `cd -; pwd`/$ARCHIVE_ERRORS_SHORT_FILE   # adding this error file to the $ARCHIVE_ERRORS_SHORT_FILE archive
+		rm -r `\ls -A | grep -v CVS`   # removing everything in $TEMP_DIR directory
+		cd -   # changing the directory back
+	    else
+		tar zxf $ARCHIVE_ERRORS_SHORT_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting existing error files to $TEMP_DIR
+		cp -f $ERROR_FILE_SHORT $TEMP_DIR   # moving $ERROR_FILE_SHORT to $TEMP_DIR
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_ERRORS_SHORT_FILE 2>/dev/null   # adding this error file to the $ARCHIVE_ERRORS_SHORT_FILE archive
+		rm -rf `\ls -A | grep -v CVS`   # removing everything in $TEMP_DIR directory
+		cd -   # changing the directory back
+	    fi
+	else
+	    if [ "$DEBUG" == "yes" ]; then
+		tar cvz $ERROR_FILE_SHORT > $ARCHIVE_ERRORS_SHORT_FILE   # creating the $ARCHIVE_ERRORS_SHORT_FILE archive
+	    else	
+		tar cz $ERROR_FILE_SHORT > $ARCHIVE_ERRORS_SHORT_FILE 2>/dev/null   # creating the $ARCHIVE_ERRORS_SHORT_FILE archive
+	    fi
+	fi
+
 	# Copying all executables from all machines and adding them to the $ARCHIVE_EXECUTABLES_FILE archive
 
 	mkdir -p $TEMP_DIR/$DATE
@@ -522,7 +725,7 @@ else
 		rm -r `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
 		cd -   # changing the directory back
 	    else
-		tar zxvf $ARCHIVE_EXECUTABLES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting executables in $ARCHIVE_EXECUTABLES_FILE to $TEMP_DIR
+		tar zxf $ARCHIVE_EXECUTABLES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting executables in $ARCHIVE_EXECUTABLES_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_EXECUTABLES_FILE 2>/dev/null   # adding new executable files to the $ARCHIVE_EXECUTABLES_FILE archive
 		rm -rf `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
@@ -536,7 +739,7 @@ else
 		cd -   # changing the directory back
 	    else
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz $DATE > `cd -; pwd`/$ARCHIVE_EXECUTABLES_FILE 2>/dev/null   # creating the $ARCHIVE_EXECUTABLES_FILE archive
+		tar cvz $DATE > `cd -; pwd`/$ARCHIVE_EXECUTABLES_FILE 2>/dev/null   # creating the $ARCHIVE_EXECUTABLES_FILE archive
 		rm -rf $DATE   # removing the $DATE directory
 		cd -   # changing the directory back
 	    fi
@@ -564,7 +767,7 @@ else
 		rm -r `\ls -A | grep -v CVS | grep -v -E $DIFFS_DIR_ALIAS"$"`   # removing everything in $TEMP_DIR except $DIFFS_DIR
 		cd -   # changing directory back
 	    else
-		tar zxvf $ARCHIVE_SOURCES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracti previous sources
+		tar zxf $ARCHIVE_SOURCES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracti previous sources
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		mv -f last/* `cd -; pwd`/$DIFFS_YESTERDAY_DIR   # moving all files from "last" to $DIFFS_YESTERDAY_DIR
 		rm -rf `\ls -A | grep -v CVS | grep -v -E $DIFFS_DIR_ALIAS"$"`   # removing everything in $TEMP_DIR except $DIFFS_DIR
@@ -608,11 +811,11 @@ else
 		tar zxvf $ARCHIVE_DIFFS_SOURCES_FILE -C $TEMP_DIR   # extracting existing diffs files to $TEMP_DIR
 		cp $DIFFS_SOURCES_FILE $TEMP_DIR   # moving $DIFFS_SOURCES_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz `\ls -A | grep -v CVS | grep -v -E $DIFFS_DIR_ALIAS"$"` > `cd -; pwd`/$ARCHIVE_DIFFS_SOURCES_FILE   # adding this diffs file to the $ARCHIVE_DIFFS_SOURCES_FILE archive
+		tar cvz `\ls -A | grep -v CVS | grep -v -E $DIFFS_DIR_ALIAS"$"` > `cd -; pwd`/$ARCHIVE_DIFFS_SOURCES_FILE   # adding this diffs file to the $ARCHIVE_DIFFS_SOURCES_FILE archive
 		rm -r `\ls -A | grep -v CVS | grep -v -E $DIFFS_DIR_ALIAS"$"`   # removing everything in $TEMP_DIR directory except $DIFFS_DIR
 		cd -   # changing the directory back
 	    else
-		tar zxvf $ARCHIVE_DIFFS_SOURCES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting existing diffs files to $TEMP_DIR
+		tar zxf $ARCHIVE_DIFFS_SOURCES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting existing diffs files to $TEMP_DIR
 		cp -f $DIFFS_SOURCES_FILE $TEMP_DIR   # moving $DIFFS_SOURCES_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		tar cz `\ls -A | grep -v CVS | grep -v -E $DIFFS_DIR_ALIAS"$"` > `cd -; pwd`/$ARCHIVE_DIFFS_SOURCES_FILE 2>/dev/null   # adding this diffs file to the $ARCHIVE_DIFFS_SOURCES_FILE archive
@@ -621,7 +824,7 @@ else
 	    fi
 	else
 	    if [ "$DEBUG" == "yes" ]; then
-		tar cz $DIFFS_SOURCES_FILE > $ARCHIVE_DIFFS_SOURCES_FILE   # creating the $ARCHIVE_DIFFS_SOURCES_FILE archive
+		tar cvz $DIFFS_SOURCES_FILE > $ARCHIVE_DIFFS_SOURCES_FILE   # creating the $ARCHIVE_DIFFS_SOURCES_FILE archive
 	    else	
 		tar cz $DIFFS_SOURCES_FILE > $ARCHIVE_DIFFS_SOURCES_FILE 2>/dev/null   # creating the $ARCHIVE_DIFFS_SOURCES_FILE archive
 	    fi
@@ -642,11 +845,11 @@ else
 		tar zxvf $ARCHIVE_SOURCES_FILE -C $TEMP_DIR   # extracting all sources from $ARCHIVE_SOURCES_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		cp -r $DATE/* last   # making a copy of $DATE in "last"
-		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_SOURCES_FILE   # adding today's sources to the $ARCHIVE_SOURCES_FILE archive
+		tar cvz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_SOURCES_FILE   # adding today's sources to the $ARCHIVE_SOURCES_FILE archive
 		rm -r `\ls -A | grep -v CVS`   # removing all files in $TEMP_DIR directory
 		cd -   # changing directory back
 	    else
-		tar zxvf $ARCHIVE_SOURCES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting all sources from $ARCHIVE_SOURCES_FILE to $TEMP_DIR
+		tar zxf $ARCHIVE_SOURCES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting all sources from $ARCHIVE_SOURCES_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		cp -rf $DATE/* last   # making a copy of $DATE in "last"
 		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_SOURCES_FILE 2>/dev/null   # adding today's sources to the $ARCHIVE_SOURCES_FILE archive
@@ -658,7 +861,7 @@ else
 		mkdir -p $TEMP_DIR/last   # creating the directory "last"
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		cp -r $DATE/* last   # making a copy of $DATE in "last"
-		tar cz $DATE last > `cd -; pwd`/$ARCHIVE_SOURCES_FILE   # creating the $ARCHIVE_SOURCES_FILE archive
+		tar cvz $DATE last > `cd -; pwd`/$ARCHIVE_SOURCES_FILE   # creating the $ARCHIVE_SOURCES_FILE archive
 		rm -r $DATE last   # removing $DATE directory
 		cd -   # changing directory back
 	    else
@@ -675,25 +878,7 @@ else
     # Finally, we have all the information collected, so it's time to spam the "interested" people
     
     if [ "$MAIL_RESULTS" == "yes" ]; then   # do we have to mail the results?
-	if [ "$ERRORS" == "yes" -a "$DIFFS" == "yes" ]; then   # we want both errors and diffs to be mailed
-	    cat $ERROR_FILE $DIFFS_SOURCES_FILE | mail -s "Regression Testing: Results for $DATE" $MAILING_LIST
-	elif [ "$ERRORS" == "yes" -a "$DIFFS" == "no" ]; then   # we want errors, but not diffs
-	    cp $ERROR_FILE mail_temp
-	    echo >> mail_temp
-	    echo >> mail_temp
-	    echo "Diffs generation option has been turned off." >> mail_temp
-	    cat mail_temp | mail -s "Regression Testing: Results for $DATE" $MAILING_LIST
-	    rm mail_temp
-	elif [ "$ERRORS" == "no" -a "$DIFFS" == "yes" ]; then   # we want diffs, but not errors
-	    cp $DIFFS_SOURCES_FILE mail_temp
-	    echo >> mail_temp
-	    echo >> mail_temp
-	    echo "Collecting errors option has been turned off." >> mail_temp
-	    cat mail_temp | mail -s "Regression Testing: Results for $DATE" $MAILING_LIST
-	    rm mail_temp
-	else
-	    echo "Both diffs generation and collecting errors options have been turned off." | mail -s "Regression Testing: Results for $DATE" $MAILING_LIST
-	fi
+	cat $ERROR_FILE_SHORT | mail -s "Regression Testing: Results for $DATE" $MAILING_LIST
     fi
 fi
 
