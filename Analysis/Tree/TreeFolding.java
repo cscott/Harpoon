@@ -72,7 +72,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.11 2000-01-14 02:44:26 cananian Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.12 2000-01-16 01:25:32 duncan Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -85,7 +85,6 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
     private /*final*/ Map            tempsToPrsvs;
     private /*final*/ Stm            root;
     private /*final*/ BasicBlock     rootbb;
-    private /*final*/ TreeStructure  structure;
 
     private CFGrapher grapher;
 
@@ -119,7 +118,6 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	this.DUChains     = new HashMap();
 	this.UDChains     = new HashMap();
 	this.tempsToPrsvs = new HashMap();
-	this.structure    = new TreeStructure(this.code);
 	this.rootbb       = BasicBlock.computeBasicBlocks(RS(this.root),
 							  grapher);
 	
@@ -344,13 +342,13 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 				    Stm DStm = 
 					(Stm)(IDsToTrees.get(defT.proj(0)));
 				    DStm = (Stm)GET_TREE(tm, DStm);
-				    structure.remove(DStm);
+				    code.remove(DStm);
 				    Stm foldedStm = 
 					stm.build
 					(replace(((MOVE)DStm).getSrc(), 
 						 GET_TREE(tm, stm).kids(), 
 						 uses[j]));
-				    structure.replace((Stm)GET_TREE(tm, stm), 
+				    code.replace((Stm)GET_TREE(tm, stm), 
 						      foldedStm);
 				    MAP_TREE(tm, GET_TREE(tm, stm), foldedStm);
 				}
