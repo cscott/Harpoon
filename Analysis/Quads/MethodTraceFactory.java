@@ -3,12 +3,18 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
-import harpoon.Analysis.Transformation.*;
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
-import harpoon.Util.*;
+import harpoon.Analysis.Transformation.MethodMutator;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.IR.Quads.DEBUG;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.THROW;
 
-import java.util.*;
 /**
  * <code>MethodTraceFactory</code> adds <code>DEBUG</code> quads
  * to the entry and exit points of every method.  Comparing
@@ -17,7 +23,7 @@ import java.util.*;
  * isn't behaving as expected.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodTraceFactory.java,v 1.1.2.1 2001-11-03 19:18:58 cananian Exp $
+ * @version $Id: MethodTraceFactory.java,v 1.1.2.2 2001-11-04 00:18:49 cananian Exp $
  */
 public class MethodTraceFactory extends MethodMutator {
     
