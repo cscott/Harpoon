@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.18 2000-09-29 20:31:37 cananian Exp $
+% $Id: transact.tex,v 1.19 2000-09-29 21:50:46 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.18 $ $}
+\date{\today \\ $ $Revision: 1.19 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -209,25 +209,31 @@ $\text{Read}(\code{struct oobj *} o, \code{int } n)$ =
 \STATE $u \gets 0$ \COMMENT{count uncommitted transactions}
 \LOOP
   \ASSERT $v \neq \code{null}$
-  \MATCHING{$\text{StateP}(v \ptr \code{transid})$}
-   \CASE{\code{COMMITTED}}
+  \MATCHING{$\text{StateP}'(\code{\&}(v \ptr \code{transid}))$}
+   \CASE{\tuple{\code{COMMITTED},l}}
     \ASSERT \small$\forall n,\: o \ptr \code{field}[n]=\code{FLAG\_VALUE}
              \Rightarrow  v \ptr \code{field}[n] \text{ is valid }$
-    \STATE \COMMENT{this store should be atomic (but no one will read it)}
-    \STATE $v\ptr\code{next} \gets \code{null}$
-           \COMMENT{allow gc of other transactions}
-    \STATE \COMMENT{XXX: should check v\ptr\code{next}\ptr\code{transid}
-                    for identical transid, in which case we'd need to prune.}
+    \STATE \COMMENT{these stores should be atomic (but no one will read them)}
+    \STATE \COMMENT{this might be better done by the gc}
+    \STATE $v\ptr\code{anext} \gets v\ptr\code{wnext} \gets \code{null}$
     \BREAK \textbf{loop}
    \ENDCASE
-   \CASE{\code{ABORTED}}
+   \CASE{\tuple{\code{ABORTED},l}}
     \STATE \COMMENT{XXX: potential race here --- v could be already removed}
-    \STATE remove $v$ from version list atomically
-    \STATE $v \gets v\text{'s replacement}$
+    \STATE $v \gets v\ptr\code{anext}$
+    \STATE \COMMENT{the following store ought to be atomic}
+    \STATE $o \ptr \code{hashunion.inflated} \ptr \code{first\_version}
+            \gets v$
    \ENDCASE
-   \CASEDEFAULT
+   \CASE{\tuple{\code{WAITING},l}}
+    \IF[transid was pruned; snip out parents]{$l$}
+      \WHILE{$v\ptr\code{transid} = v\ptr\code{anext}\ptr\code{transid}$}
+        \STATE $v\ptr\code{anext} \gets v\ptr\code{anext}\ptr\code{anext}$
+               \COMMENT{XXX: race here.}
+      \ENDWHILE
+    \ENDIF
     \STATE $u \gets u + 1$
-    \STATE $v \gets v \ptr \code{next}$
+    \STATE $v \gets v \ptr \code{wnext}$
    \ENDCASE
   \ENDMATCHING
 \ENDLOOP*
@@ -254,10 +260,19 @@ $\text{Write}(\code{struct oobj *} o, \code{int } n,
   \WHILE{$\text{AbortTransaction}(v\ptr\code{transid}) \neq \code{COMMITTED}$}
     \STATE \COMMENT{prune list for the sake of writes w/o intervening reads}
     \STATE \COMMENT{XXX: potential race here --- v could be already removed}
-    \STATE remove $v$ from version list atomically
-    \STATE $v \gets v\text{'s replacement}$
+    \STATE $v \gets v\ptr\code{anext}$
+    \STATE $o \ptr \code{hashunion.inflated} \ptr \code{first\_version}
+            \gets v$
   \ENDWHILE
-  \STATE $v\ptr\code{next} \gets \code{null}$ \COMMENT{atomic}
+  \STATE \COMMENT{v is a committed transaction}
+  \STATE $v\ptr\code{anext} \gets v\ptr\code{wnext} \gets \code{null}$
+         \COMMENT{atomic stores}
+  \STATE \COMMENT{abort all readers of this committed transaction}
+  \STATE $r \gets \code{\&}(v\ptr\code{readers})$
+  \WHILE{$r \neq \code{null}$}
+    \STATE $\text{AbortTransaction}(r\ptr\code{transid})$
+    \STATE $r \gets r\ptr\code{next}$
+  \ENDWHILE
 \ELSIF{$x = \code{FLAG\_VALUE}$}
   \STATE \COMMENT{XXX: define CreateNewVersion (watch those races)}
 % when we define CreateNewVersion, we'll need: o\ptr\code{claz}\ptr\code{size}
@@ -275,12 +290,28 @@ $\text{Write}(\code{struct oobj *} o, \code{int } n,
 $\text{ReadTrans}(\code{struct commitrec *}c, 
                   \code{struct oobj *} o, \code{int } n)$~=
 \begin{myalgorithmic}
-\STATE $v \gets \text{FindVersion}(o, c, \code{false})$
+\STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
+\STATE $r \gets \code{\&}(v\ptr\code{readers})$
+\IF{$r\ptr\code{transid} \neq c$}\label{line:rtL1}
+  \STATE $r \gets r\ptr\code{next}$
+  \IF{$r \neq \code{null}$}
+    \GOTO line \ref{line:rtL1}
+  \ENDIF
+  \IF{$c$ is not a subtransaction of $v\ptr\code{transid}$
+      or $\text{StateP}(c) = \code{ABORTED}$}
+    \STATE commit suicide \COMMENT{can't guarantee consistency}
+  \ENDIF
+  \STATE add $c$ to head of readers list, atomically.
+\ENDIF
+\STATE \COMMENT{$v$ has correct version}
+
 \IF{$o\ptr\code{field}[n] \neq \code{FLAG\_VALUE}$}
   \STATE \COMMENT{XXX: race here, most likely}
   \STATE copy current value somewhere (how far over?)
   \STATE $\code{inc\_use}(o)$
   \STATE $o\ptr\code{field}[n] \gets \code{FLAG\_VALUE}$
+  \STATE \COMMENT{XXX: even if this transaction is aborted now, we
+                  still register a dependency on this field.}
 \ENDIF
 \RETURN $v\ptr\code{field}[n]$
 \end{myalgorithmic}
@@ -293,7 +324,17 @@ $\text{WriteTrans}(\code{struct commitrec *}c,
                    \code{struct oobj *} o, \code{int } n,
                    \code{<ty> } x)$~=
 \begin{myalgorithmic}
-\STATE $v \gets \text{FindVersion}(o, c, \code{true})$
+\STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
+\IF{$v\ptr\code{transid} \neq c$}
+  \IF{$c$ is not a subtransaction of $v\ptr\code{transid}$
+      or $\text{StateP}(c) = \code{ABORTED}$}
+    \STATE commit suicide \COMMENT{can't guarantee consistency}
+  \ENDIF
+  \STATE kill some of the readers
+  \STATE $v \gets \text{CreateNewVersion}(o, c, v)$
+\ENDIF
+\STATE \COMMENT{$v$ has correct version}
+
 \IF{$o\ptr\code{field}[n] \neq \code{FLAG\_VALUE}$}
   \STATE watch for races here
   \STATE copy current value somewhere (how far over?)
@@ -419,6 +460,16 @@ $\text{AbortTransaction}(\code{struct commitrec *} c)$ =
          Change the constant \code{ABORTED} in line \ref{line:abort}
          to \code{COMMITTED} to obtain the \code{CommitTransaction} algorithm.}
 \label{fig:aborttrans}
+\end{figure}
+
+\begin{figure}
+$\text{TouchV}(\code{struct vinfo **} v_p)$ =
+\begin{myalgorithmic}
+\STATE
+\end{myalgorithmic}
+\caption{Fetch the first non-aborted version, trimming out aborted
+         versions in the process.}
+\label{fig:touchv}
 \end{figure}
 
 %% XXX: separate transactions?  parallel subtransactions?
