@@ -15,13 +15,13 @@ import harpoon.Temp.Temp;
  * executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultMap.java,v 1.2.2.1 1999-01-22 23:33:37 cananian Exp $
+ * @version $Id: DefaultMap.java,v 1.2.2.2 1999-08-09 23:39:38 cananian Exp $
  */
 public class DefaultMap implements ConstMap, ExecMap {
-    public boolean isConst(HCode hc, Temp t) { return false; }
-    public Object constMap(HCode hc, Temp t) {
+    public boolean isConst(HCodeElement hce, Temp t) { return false; }
+    public Object constMap(HCodeElement hce, Temp t) {
 	throw new Error("Temp "+t+" not constant.");
     }
-    public boolean execMap(HCode hc, HCodeElement node) { return true; }
-    public boolean execMap(HCode hc, HCodeEdge edge) { return true; }
+    public boolean execMap(HCodeElement node) { return true; }
+    public boolean execMap(HCodeEdge edge) { return true; }
 }

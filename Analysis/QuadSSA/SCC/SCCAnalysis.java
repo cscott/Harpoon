@@ -23,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.14 1999-08-09 20:26:24 duncan Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.15 1999-08-09 23:39:48 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -39,6 +39,11 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	this.udm = usedef;
 	analyze(hc);
     }
+    /** Creates a <code>SCC</code>, and uses <code>UseDef</code> for the
+     *  <code>UseDefMap</code>. */
+    public SCCAnalysis(HCode hc) {
+	this(hc, new harpoon.Analysis.UseDef());
+    }
 
     /*-----------------------------*/
     // Class state.
@@ -52,17 +57,15 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     /*---------------------------*/
     // public information accessor methods.
 
-    /** Determine whether <code>Quad</code> <code>q</code> in
-     *  <code>HMethod</code> <code>m</code>
+    /** Determine whether <code>Quad</code> <code>q</code>
      *  is executable. */
-    public boolean execMap(HCode hc, HCodeElement quad) {
+    public boolean execMap(HCodeElement quad) {
 	// ignore hc
 	return Eq.contains(quad);
     }
-    /** Determine whether <code>Edge</code> <code>e</code> in 
-     *  <code>HMethod</code> <code>m</code>
+    /** Determine whether <code>Edge</code> <code>e</code>
      *  is executable. */
-    public boolean execMap(HCode hc, HCodeEdge edge) {
+    public boolean execMap(HCodeEdge edge) {
 	// ignore hc
 	return Ee.contains(edge);
     }
@@ -74,39 +77,35 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	if (v instanceof xClass) return ((xClass)v).type();
 	return null;
     }
-    /** Determine whether <code>Temp</code> <code>t</code> in 
-     *  <code>HMethod</code> <code>m</code>
+    /** Determine whether <code>Temp</code> <code>t</code>
      *  has a constant value. */
-    public boolean isConst(HCode hc, Temp t) {
-	// ignore hc
+    public boolean isConst(HCodeElement hce, Temp t) {
+	// ignore hce -- this is SSA form
 	return (V.get(t) instanceof xConstant);
     }
-    /** Determine the constant value of <code>Temp</code> <code>t</code> in 
-     *  <code>HMethod</code> <code>m</code>. 
+    /** Determine the constant value of <code>Temp</code> <code>t</code>.
      *  @exception Error if <code>Temp</code> <code>t</code> is not a constant.
      */
-    public Object constMap(HCode hc, Temp t) {
-	// ignore hc
+    public Object constMap(HCodeElement hce, Temp t) {
+	// ignore hce -- this is SSA form.
 	LatticeVal v = (LatticeVal) V.get(t);
 	if (v instanceof xConstant) return ((xConstant)v).constValue();
 	throw new Error(t.toString() + " not a constant");
     }
 
-    /** Determine the positive bit width of <code>Temp</code> <code>t</code>
-     *  in <code>HMethod</code> <code>m</code>.
+    /** Determine the positive bit width of <code>Temp</code> <code>t</code>.
      */
-    public int plusWidthMap(HCode hc, Temp t) {
-	// ignore hc
+    public int plusWidthMap(HCodeElement hce, Temp t) {
+	// ignore hce -- this is SSA form
 	LatticeVal v = (LatticeVal) V.get(t);
 	if (v==null) throw new Error("Unknown "+t);
 	xBitWidth bw = extractWidth(v);
 	return bw.plusWidth();
     }
-    /** Determine the negative bit width of <code>Temp</code> <code>t</code>
-     *  in <code>HMethod</code> <code>m</code>.
+    /** Determine the negative bit width of <code>Temp</code> <code>t</code>.
      */
-    public int minusWidthMap(HCode hc, Temp t) {
-	// ignore hc	
+    public int minusWidthMap(HCodeElement hce, Temp t) {
+	// ignore hce -- this is SSA form.
 	LatticeVal v = (LatticeVal) V.get(t);
 	if (v==null) throw new Error("Unknown "+t);
 	xBitWidth bw = extractWidth(v);
@@ -117,7 +116,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     // Analysis code.
 
     /** Main analysis method. */
-    void analyze(HCode hc) {
+    private void analyze(HCode hc) {
 	// Initialize worklists.
 	Worklist Wv = new HashSet(); // variable worklist.
 	Worklist Wq = new HashSet(); // block worklist.

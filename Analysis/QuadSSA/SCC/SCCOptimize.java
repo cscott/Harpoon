@@ -20,7 +20,7 @@ import harpoon.Util.Util;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.5.2.10 1999-08-09 20:26:24 duncan Exp $
+ * @version $Id: SCCOptimize.java,v 1.5.2.11 1999-08-09 23:39:48 cananian Exp $
  */
 public final class SCCOptimize {
     TypeMap  ti;
@@ -52,14 +52,14 @@ public final class SCCOptimize {
     }
 
     Set Ee = new HashSet();
-    boolean execMap(HCode hc, HCodeEdge e) {
+    boolean execMap(HCodeEdge e) {
 	if (Ee.contains(e)) return true;
-	else return em.execMap(hc, e);
+	else return em.execMap(e);
     }
-    boolean execMap(HCode hc, HCodeElement node) {
+    boolean execMap(HCodeElement node) {
 	HCodeEdge[] pred = ((harpoon.IR.Properties.HasEdges)node).pred();
 	for (int i=0; i<pred.length; i++)
-	    if (execMap(hc, pred[i]))
+	    if (execMap(pred[i]))
 		return true;
 	return false;
     }
@@ -80,7 +80,7 @@ public final class SCCOptimize {
 		Temp d[] = q.def();
 		if (d.length == 0) return; // nothing to do here.
 		int i; for (i=0; i<d.length; i++)
-		    if (!cm.isConst(hc, d[i]))
+		    if (!cm.isConst(q, d[i]))
 			break;
 		if (i!=d.length) // not all args are constant
 		    return;
@@ -94,7 +94,7 @@ public final class SCCOptimize {
 
 		for (i=0; i<d.length; i++) {
 		    Quad qq = newCONST(q.getFactory(), q, d[i],
-				       cm.constMap(hc, d[i]),
+				       cm.constMap(q, d[i]),
 				       ti.typeMap(q, d[i]) );
 		    Quad.addEdge(header, which_succ, qq, 0);
 		    Ee.union(header.nextEdge(which_succ));
@@ -111,7 +111,7 @@ public final class SCCOptimize {
 		FOOTER newF = q;
 		Edge[] prv = q.prevEdge();
 		for (int i=prv.length-1; i>=0; i--)
-		    if (!execMap(hc, prv[i]))
+		    if (!execMap(prv[i]))
 			newF = newF.remove(i);
 		// add new executable edges to set.
 		for (int i=0; i<newF.prevLength(); i++)
@@ -123,9 +123,9 @@ public final class SCCOptimize {
 		// executable.
 		Edge[] next = q.nextEdge();
 		int i; for (i=0; i < next.length; i++)
-		    if (execMap(hc, next[i]))
+		    if (execMap(next[i]))
 			break;
-		if (i==next.length-1 || !execMap(hc, next[i+1])) {
+		if (i==next.length-1 || !execMap(next[i+1])) {
 		    // only one edge is executable.
 		    int liveEdge = i;
 
@@ -151,16 +151,16 @@ public final class SCCOptimize {
 	    public void visit(PHI q) {
 		// remove non-executable edges into this PHI.
 		for (int i=0; i < q.prev().length; ) {
-		    if (!execMap(hc, q.prevEdge(i)))
+		    if (!execMap(q.prevEdge(i)))
 			q.removePred(i);
 		    else i++;
 		}
 		// replace any phi's with constant args with a CONST.
 		for (int i=0; i < q.numPhis(); ) {
-		    if (cm.isConst(hc, q.dst(i))) {
+		    if (cm.isConst(q, q.dst(i))) {
 			// insert CONST.
 			Quad qq = newCONST(q.getFactory(), q, q.dst(i), 
-					   cm.constMap(hc, q.dst(i)),
+					   cm.constMap(q, q.dst(i)),
 					   ti.typeMap(q, q.dst(i)) );
 			Edge edge = q.nextEdge(0);
 			Quad.addEdge(qq, 0,(Quad)edge.to(), edge.which_pred());
@@ -176,7 +176,7 @@ public final class SCCOptimize {
 	// actual traversal code.
 	Quad[] ql = (Quad[]) hc.getElements();
 	for (int i=0; i<ql.length; i++)
-	    if (execMap(hc, ql[i]))
+	    if (execMap(ql[i]))
 		ql[i].visit(visitor);
 
 	// clean up the mess
