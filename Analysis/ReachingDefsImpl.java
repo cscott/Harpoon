@@ -26,7 +26,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.5 2000-02-25 00:20:33 cananian Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.6 2000-03-02 02:10:15 kkz Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -47,7 +47,8 @@ public class ReachingDefsImpl extends ReachingDefs {
 	report("Leaving analyze()");
     }
     /** Creates a <code>ReachingDefsImpl</code> object for the
-	provided <code>HCode</code>. Uses <code>CFGrapher.DEFAULT</code>.
+	provided <code>HCode</code> using <code>CFGrapher.DEFAULT</code>.
+	This may take a while since the analysis is done at this time.
     */
     public ReachingDefsImpl(HCode hc) {
 	this(hc, CFGrapher.DEFAULT);
@@ -116,12 +117,11 @@ public class ReachingDefsImpl extends ReachingDefs {
 		if (defPts == null) {
 		    // have not yet encountered this Temp
 		    defPts = new HashSet();
-		    defPts.add(hce);
+		    // add to map
 		    m.put(t, defPts);
-		} else {
-		    // simply add this definition pt to set
-		    defPts.add(hce);
 		}
+		// add this definition point
+		defPts.add(hce);
 	    }
 	}
 	return m;
@@ -146,10 +146,11 @@ public class ReachingDefsImpl extends ReachingDefs {
     // 2 - in Set
     // 3 - out Set
     private void buildGenKillSets(Map DefPts) {
-	// calculate Gen and Kill sets
+	// calculate Gen and Kill sets for each basic block 
 	for(Iterator blocks=bbf.blockSet().iterator(); blocks.hasNext(); ) {
 	    BasicBlock b = (BasicBlock)blocks.next();
 	    Map Temp_to_BitSets = new HashMap();
+	    // iterate through the instructions in the basic block
 	    for(Iterator it=b.statements().iterator(); it.hasNext(); ) {
 		HCodeElement hce = (HCodeElement)it.next();
 		Temp[] tArray = ((UseDef)hce).def();
@@ -198,12 +199,13 @@ public class ReachingDefsImpl extends ReachingDefs {
 		    (BitSetFactory)Temp_to_BitSetFactories.get(t);
 		Set[] old = new Set[2];
 		old[IN] = bsf.makeSet(bitSet[IN]); // clone old in Set
-		old[OUT] = bsf.makeSet(bitSet[OUT]); // clone old out Set
+		bitSet[IN].clear();
 		for(Iterator preds=b.prevSet().iterator(); preds.hasNext(); ) {
 		    BasicBlock pred = (BasicBlock)preds.next();
 		    Set[] pBitSet = (Set[])((Map)cache.get(pred)).get(t);
-		    bitSet[IN].addAll(pBitSet[OUT]); // union 
+		    bitSet[IN].addAll(pBitSet[OUT]); // union
 		}
+		old[OUT] = bitSet[OUT]; // keep old out Set
 		bitSet[OUT] = bsf.makeSet(bitSet[IN]);
 		bitSet[OUT].removeAll(bitSet[KILL]);
 		bitSet[OUT].addAll(bitSet[GEN]);

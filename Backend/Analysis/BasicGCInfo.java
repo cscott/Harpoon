@@ -18,6 +18,7 @@ import harpoon.Backend.Generic.RegFileInfo.CommonLoc;
 import harpoon.Backend.Generic.RegFileInfo.MachineRegLoc;
 import harpoon.Backend.Generic.RegFileInfo.StackOffsetLoc;
 import harpoon.Backend.Generic.RegFileInfo.TempLocator;
+import harpoon.Backend.Maps.BackendDerivation;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
@@ -48,7 +49,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.10 2000-02-18 21:28:59 kkz Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.11 2000-03-02 02:10:23 kkz Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -213,7 +214,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		protected final LiveTemps lt;
 		protected final ReachingDefs rd;
 		protected final Set s;
-		protected final TempLocator tl = getTempLocator();
+		protected final TempLocator tl;
 		protected final harpoon.Analysis.Maps.Derivation d;
 		protected final HMethod hm; 
 		protected int index = 0;
@@ -237,6 +238,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    this.rd = rd;
 		    this.s = s;
 		    this.d = d;
+		    this.tl = getTempLocator();
 		}
 		public void visit(InstrCALL c) {
 		    // all InstrCALLs are GC points
@@ -264,6 +266,8 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    // filter out non-pointers and derived pointers
 		    Set liveLocs = new HashSet();
 		    Map derivedPtrs = new HashMap();
+		    StackOffsetLoc[] calleeSaved = 
+			new StackOffsetLoc[f.getRegFileInfo().maxRegIndex()];
 		    while(!live.isEmpty()) {
 			Temp t = (Temp)live.pull();
 			Instr[] defPts = 
@@ -272,16 +276,36 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 			Util.assert(defPts != null && defPts.length > 0);
 			// all of the above defPts should work
 			DList ddl = d.derivation(defPts[0], t);
-			if (ddl == null && d.typeMap(i,t).isPrimitive())
-			    // a non-derived pointer: add all 
-			    // locations where it can be found
-			    liveLocs.addAll(tl.locate(t, defPts[0]));
-			else if (ddl != null)
+			if (ddl == null) {
+			    // try and find its type
+			    HClass hclass = d.typeMap(i, t);
+			    if (hclass == null) {
+				// no derivation, no type means
+				// this is a callee-saved register
+				BackendDerivation bd = (BackendDerivation)d;
+				// find out which register's contents we have
+				BackendDerivation.Register reg =
+				    bd.calleeSaveRegister(defPts[0], t);
+				int rindex = reg.regIndex();
+				Set locationSet = tl.locate(t, defPts[0]);
+				// this may be a bad assumption, but...
+				Util.assert(locationSet.size() == 1);
+				for (Iterator it=locationSet.iterator();
+				     it.hasNext(); )
+				    // another possibly bad assumption
+				    calleeSaved[rindex] = 
+					(StackOffsetLoc)it.next();
+			    } else if (!hclass.isPrimitive())
+				// a non-derived pointer: add all 
+				// locations where it can be found
+				liveLocs.addAll(tl.locate(t, defPts[0]));
+			} else
 			    // a derived pointer: add to set of derived ptrs
 			    derivedPtrs.put(tl.locate(t, defPts[0]), 
 					    unroll(ddl, i));
 		    }
-		    GCPoint gcp = new GCPoint(i, l, derivedPtrs, live);
+		    GCPoint gcp = 
+			new GCPoint(i, l, derivedPtrs, live, calleeSaved);
 		    results.add(gcp);
 		}
 		private DLoc unroll(DList ddl, Instr instr) {

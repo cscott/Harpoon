@@ -28,7 +28,7 @@ import java.util.Set;
  * the instruction stream.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: GCInfo.java,v 1.1.2.6 2000-02-18 21:28:58 kkz Exp $
+ * @version $Id: GCInfo.java,v 1.1.2.7 2000-03-02 02:10:24 kkz Exp $
  */
 public abstract class GCInfo {
     /** Creates an <code>IntermediateCodeFactory</code> that
@@ -80,6 +80,7 @@ public abstract class GCInfo {
 	protected Map stackDerivations;
 	protected Set liveStackOffsetLocs;
 	protected Set liveMachineRegLocs;
+	protected StackOffsetLoc[] calleeSaved;
 	/** Creates a <code>GCPoint</code> object 
 	    @param label
 	           the <code>Label</code> identifying
@@ -91,12 +92,20 @@ public abstract class GCInfo {
 		   <code>DLoc</code>s
 	    @param locations
 	           a <code>Set</code> of <code>CommonLoc</code>s that
-		   represent live pointers at the given GC point 
+		   represent live pointers at the given GC point
+	    @param calleeSaved
+	           an array of <code>StackOffsetLoc</code>s where
+                   the contents of some callee-saved register with
+		   register index i has been stored at index i in
+                   the array. The definition of register index in
+                   this context corresponds to the definition in
+                   <code>harpoon.Backend.Maps.BackendDerivation.Register</code>
 	*/
 	public GCPoint(Instr gcPoint, Label label, Map liveDerivations,
-		       Set locations) {
+		       Set locations, StackOffsetLoc[] calleeSaved) {
 	    this.gcPoint = gcPoint;
 	    this.label = label;
+	    this.calleeSaved = calleeSaved;
 	    filter(liveDerivations);
 	    filter(locations);
 	}
@@ -151,6 +160,12 @@ public abstract class GCInfo {
 	/** Returns the <code>Set</code> of live, non-derived pointers
 	    in <code>MachineRegLoc</code>s at that GC point */
 	public Set liveMachineRegLocs() { return liveMachineRegLocs; }
+	/** Returns the array of <code>StackOffsetLoc</code>s where
+	    the contents callee-save registers have been dumped.
+	    The definition of register index in this context 
+	    corresponds to the definition in
+	    <code>harpoon.Backend.Maps.BackendDerivation.Register</code> */
+	public StackOffsetLoc[] calleeSaved() { return calleeSaved; }
     }
     /** 
 	Derivation information stored as <code>CommonLoc</code>s.
