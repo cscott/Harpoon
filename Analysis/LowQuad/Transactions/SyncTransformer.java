@@ -18,7 +18,7 @@ import java.util.*;
  * atomic transactions.  Works on <code>LowQuadNoSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.9 2000-11-15 00:09:00 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.10 2000-11-15 18:04:37 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -193,6 +193,7 @@ public class SyncTransformer
 	}
 	/** Insert abort exception check on the given edge. */
 	private Edge checkForAbort(Edge e, HCodeElement src, Temp tex) {
+	    if (handlers.head==null) return e; // rethrow directly.
 	    Temp tst = new Temp(tf);
 	    e = addAt(e, new INSTANCEOF(qf, src, tst, tex, HCabortex));
 	    e = addAt(e, new CJMP(qf, src, tst, new Temp[0]));
@@ -258,8 +259,7 @@ public class SyncTransformer
 				  q.dst(), q.src());
 	    Quad.replace(q, ncall);
 	    // now check for abort case.
-	    if (handlers.head!=null) // unless we rethrow directly...
-		checkForAbort(ncall.nextEdge(1), ncall, ncall.retex());
+	    checkForAbort(ncall.nextEdge(1), ncall, ncall.retex());
 	    // done.
 	}
 	public void visit(MONITORENTER q) {
@@ -366,7 +366,12 @@ public class SyncTransformer
 	}
 	public void visit(GET q) {
 	    addChecks(q);
-	    if (q.isStatic()) { Util.assert(currtrans==null); return; }
+	    if (q.isStatic()) {
+		if (currtrans==null) return;
+		System.err.println("WARNING: read of "+q.field()+" in "+
+				   qf.getMethod());
+		return;
+	    }
 	    if (currtrans==null) { // non-transactional read
 		Edge e = readNonTrans(q.nextEdge(0), q,
 				      q.dst(), q.objectref(),
@@ -431,7 +436,12 @@ public class SyncTransformer
 	}
 	public void visit(SET q) {
 	    addChecks(q);
-	    if (q.isStatic()) { Util.assert(currtrans==null); return; }
+	    if (q.isStatic()) {
+		if (currtrans==null) return;
+		System.err.println("WARNING: write of "+q.field()+" in "+
+				   qf.getMethod());
+		return;
+	    }
 	    if (currtrans==null) { // non-transactional write
 		Temp t0 = new Temp(tf, "oldval");
 		Edge in = q.prevEdge(0);
@@ -449,7 +459,13 @@ public class SyncTransformer
 	    // don't add checks if we're not currently in transaction context.
 	    if (handlers==null) return;
 	    // only deal with quads where "just before" makes sense.
-	    Util.assert(q.prevLength()==1);
+	    if (q.prevLength()!=1) {
+		Util.assert(co.createReadVersions(q).size()==0);
+		Util.assert(co.createWriteVersions(q).size()==0);
+		Util.assert(co.checkField(q).size()==0);
+		Util.assert(co.checkArrayElement(q).size()==0);
+		return;
+	    }
 	    Edge in = q.prevEdge(0);
 	    // create read/write versions for objects that need it.
 	    Set rS = co.createReadVersions(q);
@@ -549,41 +565,42 @@ public class SyncTransformer
 	    else if (type==HClass.Double) return Qop.DCMPEQ;
 	    else throw new Error("ACK: "+type);
 	}	    
-	// flag values.
-	private static final long FLAG_VALUE = 0xCACACACACACACACAL;
-	private static final Integer booleanFlag=new Integer((int)FLAG_VALUE&3);
-	private static final Integer byteFlag = new Integer((byte)FLAG_VALUE);
-	private static final Integer charFlag = new Integer((char)FLAG_VALUE);
-	private static final Integer shortFlag= new Integer((short)FLAG_VALUE);
-	private static final Integer intFlag = new Integer((int)FLAG_VALUE);
-	private static final Long longFlag = new Long(FLAG_VALUE);
-	private static final Float floatFlag = new Float(1976.0927);
-	private static final Double doubleFlag = new Double(1976.0927);
-
-	private Quad makeFlagConst(QuadFactory qf, HCodeElement src,
-				    Temp dst, HClass type) {
-	    if (!type.isPrimitive())
-		/* address of FLAG_VALUE field is used as marker. */
-		return new GET(qf, src, dst, HFflagvalue, null);
-	    else if (type==HClass.Boolean) //XXX
-		return new CONST(qf, src, dst, booleanFlag, HClass.Int);
-	    else if (type==HClass.Byte)
-		return new CONST(qf, src, dst, byteFlag, HClass.Int);
-	    else if (type==HClass.Char)
-		return new CONST(qf, src, dst, charFlag, HClass.Int);
-	    else if (type==HClass.Short)
-		return new CONST(qf, src, dst, shortFlag, HClass.Int);
-	    else if (type==HClass.Int)
-		return new CONST(qf, src, dst, intFlag, HClass.Int);
-	    else if (type==HClass.Long)
-		return new CONST(qf, src, dst, longFlag, HClass.Long);
-	    else if (type==HClass.Float)
-		return new CONST(qf, src, dst, floatFlag, HClass.Float);
-	    else if (type==HClass.Double)
-		return new CONST(qf, src, dst, doubleFlag, HClass.Double);
-	    else throw new Error("ACK: "+type);
-	}
     }
+    // flag values.
+    private static final long FLAG_VALUE = 0xCACACACACACACACAL;
+    private static final Integer booleanFlag=new Integer((int)FLAG_VALUE&3);
+    private static final Integer byteFlag = new Integer((byte)FLAG_VALUE);
+    private static final Integer charFlag = new Integer((char)FLAG_VALUE);
+    private static final Integer shortFlag= new Integer((short)FLAG_VALUE);
+    private static final Integer intFlag = new Integer((int)FLAG_VALUE);
+    private static final Long longFlag = new Long(FLAG_VALUE);
+    private static final Float floatFlag = new Float(1976.0927);
+    private static final Double doubleFlag = new Double(1976.0927);
+    
+    private Quad makeFlagConst(QuadFactory qf, HCodeElement src,
+			       Temp dst, HClass type) {
+	if (!type.isPrimitive())
+	    /* address of FLAG_VALUE field is used as marker. */
+	    return new GET(qf, src, dst, HFflagvalue, null);
+	else if (type==HClass.Boolean) //XXX
+	    return new CONST(qf, src, dst, booleanFlag, HClass.Int);
+	else if (type==HClass.Byte)
+	    return new CONST(qf, src, dst, byteFlag, HClass.Int);
+	else if (type==HClass.Char)
+	    return new CONST(qf, src, dst, charFlag, HClass.Int);
+	else if (type==HClass.Short)
+	    return new CONST(qf, src, dst, shortFlag, HClass.Int);
+	else if (type==HClass.Int)
+	    return new CONST(qf, src, dst, intFlag, HClass.Int);
+	else if (type==HClass.Long)
+	    return new CONST(qf, src, dst, longFlag, HClass.Long);
+	else if (type==HClass.Float)
+	    return new CONST(qf, src, dst, floatFlag, HClass.Float);
+	else if (type==HClass.Double)
+	    return new CONST(qf, src, dst, doubleFlag, HClass.Double);
+	else throw new Error("ACK: "+type);
+    }
+    
     private class TempSplitter {
 	private final Map m = new HashMap();
 	public Temp versioned(Temp t) {
