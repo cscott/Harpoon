@@ -29,7 +29,7 @@ import harpoon.Util.WorkSet;
  * <code>JMain</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JMain.java,v 1.1.2.1 1999-11-12 20:42:21 bdemsky Exp $
+ * @version $Id: JMain.java,v 1.1.2.2 1999-11-12 21:38:29 bdemsky Exp $
  */
 public abstract class JMain extends harpoon.IR.Registration {
 
@@ -83,7 +83,9 @@ public abstract class JMain extends harpoon.IR.Registration {
 	Iterator iterate=cm1.iterator();
 	WorkSet classes=new WorkSet();
 	while(iterate.hasNext()) {
-	    classes.add(((HMethod)iterate.next()).getDeclaringClass());
+	    HClass cl=((HMethod)iterate.next()).getDeclaringClass();
+	    if ((!cl.isArray())&&(!cl.isPrimitive()))
+		classes.add(((HMethod)iterate.next()).getDeclaringClass());
 	}
 	HClass interfaceClasses[] = new HClass[classes.size()];
 	iterate=classes.iterator();
