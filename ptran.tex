@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.16 2002-07-24 16:46:37 cananian Exp $
+% $Id: ptran.tex,v 1.17 2002-07-24 16:59:09 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.16 $ $}
+\date{\today \\ $ $Revision: 1.17 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -194,6 +194,17 @@ defs we've passed and halting when we hit another node without
 having passed through a redef point?}
 
 \subsection{Interprocedural singular value analysis}
+
+We turn our intraprocedural analysis into a compositional
+interprocedural analysis by introducing ``conditional singularity''
+for formal parameters and others which depend on them.  A
+conditionally-singular variable is singular if some set $P$ of formal
+parameters is mutually singular at the call-site.  We extend
+our dataflow analysis by introducing a new relation $\text{Cp}(v)$
+representing the set of formal parameters which the singularity of $v$
+at $n$ is dependent upon.  A variable $v$ at $n$ is
+conditionally-singular if $\exists p:\tuple{v,p}\in\text{In}_\text{Cp}(n)$
+and $\neg\text{Ns}(v,n)$.
 
 (Roughly) We introduce ``conditional singularity'' for formal
 parameters.  Other variables are ``conditionally singular'' if they
