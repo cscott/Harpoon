@@ -67,7 +67,7 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.59 2003-07-09 22:28:51 cananian Exp $
+ * @version $Id: SAMain.java,v 1.60 2003-11-04 16:02:53 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -274,7 +274,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    public void action() { className = getArg(0); }
 		},
 		new Option("r", "<rootSetFileName>",
-			   "Read additional roots from file") {
+			   "Read additional roots (classes and/or methods) from file") {
 		    public void action() { rootSetFilename = getArg(0); }
 		},
 		new Option("b", "<backendName>",
