@@ -9,11 +9,11 @@
 
 #ifdef MARKSWEEP
 #include "marksweep.h"
-// #define add_to_root_set  pointerreversed_handle_reference
-#define add_to_root_set  marksweep_handle_reference
+#define add_to_root_set  pointerreversed_handle_reference
+//#define add_to_root_set  marksweep_handle_reference
 #define internal_gc_init marksweep_gc_init
-// #define handle_reference pointerreversed_handle_reference
-#define handle_reference marksweep_handle_reference
+#define handle_reference pointerreversed_handle_reference
+//#define handle_reference marksweep_handle_reference
 #define internal_malloc  marksweep_malloc
 #else
 #include "copying.h"
@@ -26,6 +26,12 @@
 #define ALIGN                  7
 #define BITMASK               (~ALIGN)
 #define HEADERSZ               3 /* size of array header */
+
+#ifdef WITH_MASKED_POINTERS
+#define TAG_HEAP_PTR(x) ((void*) ((ptroff_t)(x) | 1))
+#else
+#define TAG_HEAP_PTR(x) ((void*) (x))
+#endif
 
 #define align(_unaligned_size_) (((_unaligned_size_) + ALIGN) & BITMASK)
 #define aligned_size_of_np_array(_np_arr_) \

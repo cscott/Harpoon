@@ -42,7 +42,12 @@ void precise_gc_init() {
 #ifdef WITH_PRECISE_C_BACKEND
 inline void *precise_malloc (size_t size_in_bytes)
 {
-  return internal_malloc(size_in_bytes);
+  return TAG_HEAP_PTR(internal_malloc(size_in_bytes));
+  /*
+  void *result = TAG_HEAP_PTR(internal_malloc(size_in_bytes)); 
+  error_gc("Returning tagged heap ptr: %p\n", result);
+  return result;
+  */
 }
 #else
 /* for StrongARM backend only
@@ -175,8 +180,9 @@ void print_bitmap(ptroff_t bitmap)
 #endif
 
 /* trace takes a pointer to an object and traces the pointers w/in it */
-void trace(jobject_unwrapped obj)
+void trace(jobject_unwrapped unaligned_ptr)
 {
+  jobject_unwrapped obj = PTRMASK(unaligned_ptr);
   size_t obj_size_minus_header;
   int bits_needed, bitmaps_needed, i;
   ptroff_t *bitmap_ptr;
@@ -330,6 +336,7 @@ ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t last_index, int new)
   if (obj->claz->component_claz != NULL)
     {
       struct aarray *arr = (struct aarray *)obj;
+      error_gc("Array has length %d.\n", arr->length);
       // if we have already started examining array
       // elements, then the array must contain pointers
       if (last_index >= bits_needed)
