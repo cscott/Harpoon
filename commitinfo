@@ -26,6 +26,8 @@ Code	$CVSROOT/CVSROOT/stop_magic
 EventDriven $CVSROOT/CVSROOT/commit_prep -u -r
 ImageRec $CVSROOT/CVSROOT/commit_prep -u -r
 Realtime	$CVSROOT/CVSROOT/commit_prep -u -r
+Repair	$CVSROOT/CVSROOT/commit_prep -u -r
+RoleDiscovery	$CVSROOT/CVSROOT/commit_prep -u -r
 RoleInference	$CVSROOT/CVSROOT/commit_prep -u -r
 Runtime	$CVSROOT/CVSROOT/commit_prep -u -r
 #SupportNP	$CVSROOT/CVSROOT/commit_prep -u -r

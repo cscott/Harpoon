@@ -43,6 +43,8 @@ Docs	Docs
 EventDriven EventDriven
 ImageRec ImageRec
 Realtime Realtime
+Repair	Repair
+RoleDiscovery RoleDiscovery
 RoleInference RoleInference
 Runtime Runtime
 SupportNP SupportNP
