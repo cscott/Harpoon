@@ -1,0 +1,11 @@
+[],sizeof(ROOT)=1
+
+[forall v in USED], v in ROOT or sizeof(v.PARENT)=1
+//[forall v in USED], v in ROOT or sizeof(v.~LEFT)+sizeof(v.~RIGHT)=1
+
+[forall v in USED],v in REFERENCED
+[forall v in REFERENCED],v in USED
+
+//[forall v in USED],!sizeof(v.LEFT)>1 or (v.LEFT>literal(0)-literal(1) and v.LEFT<literal(200)))
+//[forall v in USED],v.RIGHT>literal(0)-literal(2) and v.RIGHT<literal(200)
+//[forall v in USED],v.RIGHT in LEGALVALUES

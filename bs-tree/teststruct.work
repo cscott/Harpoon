@@ -1,0 +1,11 @@
+structure treeentry {
+  int inuse;
+  int leftindex;
+  int rightindex;
+  int value;
+}
+
+structure treenodes {
+  treeentry nodes[treesize];
+}
+

@@ -1,0 +1,11 @@
+set ROOT(int):
+set NODES(int):
+set TREE(treenodes):
+set USED(int):
+set REFERENCED(int):
+set LEGALVALUES(int):
+
+PARENT: int -> int (many->many)
+LEFT: int -> int (many->many)
+RIGHT: int -> int (many->many)
+
