@@ -11,6 +11,7 @@ import harpoon.Backend.Maps.BackendDerivation;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.ReachingDefs;
+import harpoon.Analysis.ReachingDefsImpl;
 import harpoon.Analysis.ReachingDefsCachingImpl;
 import harpoon.Analysis.ReachingDefsAltImpl;
 import harpoon.Analysis.Instr.TempInstrPair;
@@ -41,6 +42,7 @@ import harpoon.Util.Collections.BitSetFactory;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collection;
@@ -67,7 +69,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.105 2000-07-14 22:18:03 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.106 2000-07-18 22:32:07 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -201,7 +203,7 @@ public class LocalCffRegAlloc extends RegAlloc {
     protected void generateRegAssignment() {
 	if (TIME) System.out.print("L");
 	liveVariableAnalysis();
-	if (TIME) System.out.print("A");
+	// if (TIME) System.out.print("A");
 	allocationAnalysis();
 	// analysis complete; now update Instrs (which will break
 	// current BasicBlock analysis results...
@@ -230,11 +232,34 @@ public class LocalCffRegAlloc extends RegAlloc {
     }
 
     private void allocationAnalysis() {
-	Iterator blocks = bbFact.blockSet().iterator();
-	while(blocks.hasNext()) {
-	    BasicBlock b = (BasicBlock) blocks.next();
-	    Set liveOnExit = liveTemps.getLiveOnExit(b);
-	    alloc(b, liveOnExit);
+	if (!TIME) { 
+	    // old way (more space efficient, but harder to profile)
+	    Iterator blocks = bbFact.blockSet().iterator();
+	    while(blocks.hasNext()) {
+		BasicBlock block = (BasicBlock) blocks.next();
+		Set liveOnExit = liveTemps.getLiveOnExit(block);
+		BlockAlloc la = new BlockAlloc(block, liveOnExit);
+		la.alloc();
+	    }
+	} else { 
+	    // temporary method for profiling purposes
+	    if (TIME) System.out.print("B"); 
+	    Set blockSet = bbFact.blockSet();
+	    Iterator blocks = blockSet.iterator();
+	    List blockAllocList = new ArrayList(blockSet.size());
+	    while(blocks.hasNext()) {
+		BasicBlock block = (BasicBlock) blocks.next();
+		Set liveOnExit = liveTemps.getLiveOnExit(block);
+		BlockAlloc la = new BlockAlloc(block, liveOnExit);
+		blockAllocList.add(la);
+	    }
+
+	    if (TIME) System.out.print("A");
+	    Iterator blockAllocs = blockAllocList.iterator();
+	    while(blockAllocs.hasNext()) {
+		BlockAlloc la = (BlockAlloc) blockAllocs.next();
+		la.alloc();
+	    }
 	}
     }
 
@@ -339,13 +364,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 		     "Spill Store of unused Temps: "+vDefs));
     }
     
-    private void alloc(BasicBlock block, Set liveOnExit) {
-	if (false && TIME) System.out.print("B"); 
-	BlockAlloc la = new BlockAlloc(block, liveOnExit);
-	if (false && TIME) System.out.print("L");
-	la.alloc();
-    }
-
     boolean hasRegs(Instr i, Temp t) {
 	return (isRegister(t) || code.registerAssigned(i, t));
     }
@@ -679,7 +697,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		// System.out.println(curr + " ("+allocV.iloc+")");
 		if (false && TIME) System.out.print(".");
 	    }
-	    emptyRegFile(regfile, curr, liveOnExit, allocV.iloc);
+	    emptyRegFile(allocV.iloc);
 	}
 	
 	private boolean instrHasRemappedTemps(Instr i) {
@@ -1212,10 +1230,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	}
 	
-	private void emptyRegFile(RegFile regfile, Instr instr,
-				  Set liveOnExit, Instr iloc) {
+	private void emptyRegFile(Instr iloc) {
 	    // System.out.println("live on exit from " + b + " :\n" + liveOnExit);
-	    
+	    Instr instr = curr;
 
 	    // use a new Set here because we cannot modify regfile
 	    // and traverse its tempSet simultaneously.

@@ -60,7 +60,7 @@ import java.util.Collection;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.36 2000-07-14 07:18:22 pnkfelix Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.37 2000-07-18 22:32:04 pnkfelix Exp $ */
 public class BasicBlock implements java.io.Serializable {
     
     static final boolean DEBUG = false;
@@ -350,8 +350,9 @@ public class BasicBlock implements java.io.Serializable {
 	<code>this</code>. 
     */
     public String dumpElems() {
-	StringBuffer s = new StringBuffer();
-	Iterator iter = statements().listIterator();
+	List stms = statements();
+	StringBuffer s = new StringBuffer(stms.size()*16);
+	Iterator iter = stms.listIterator();
 	while(iter.hasNext()) {	    
 	    s.append(iter.next() + "\n");
 	}

@@ -78,17 +78,30 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.105 2000-07-14 07:18:52 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.106 2000-07-18 22:32:08 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
+    /** Flags whether debugging information should be printed to
+	System.out. */
     public static final boolean DEBUG = false;
-    public static final boolean TIME = false;
 
+    /** Flags whether timing information should be printed to
+	System.out. */ 
+    public static final boolean TIME = true;
+
+    /** <code>Generic.Frame</code> for <code>this</code>. */
     protected Frame frame;
+
+    /** <code>Generic.Code</code> for <code>this</code>. */
     protected Code code;
+
+    /** <code>BasicBlock.Factory</code> for BasicBlocks of
+	<code>this.code</code>. */ 
     protected BasicBlock.Factory bbFact;
 
+    /** Tracks <code>Instr</code>s that have been verified for
+	debugging purposes. */
     protected HashSet checked = new HashSet();
 
     /** Map[ Instr:i -> Instr:b ], where `i' was added to `code'
@@ -215,11 +228,14 @@ public abstract class RegAlloc  {
     */
     protected abstract Derivation getDerivation();
     
+    /** Computes <code>BasicBlock</code>s for the <code>Code</code>
+	associated with <code>this</code>.
+	requires: `this.code' has been set
+	modifies: `this.bbFact'
+	effects:  computes `this.bbFact' and a associated set of
+                  basic blocks for the current state of `this.code'
+    */
     protected void computeBasicBlocks() {
-	// requires: `this.code' has been set
-	// modifies: `this.bbFact'
-	// effects:  computes `this.bbFact' and a associated set of
-	//           basic blocks for the current state of `this.code'
 	bbFact = new BasicBlock.Factory(code, CFGrapher.DEFAULT);
     }
     
