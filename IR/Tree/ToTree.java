@@ -49,7 +49,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.19 1999-07-17 11:58:16 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.20 1999-07-28 18:23:36 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -300,14 +300,11 @@ class TranslationVisitor extends LowQuadVisitor {
 	    int base = i*9;
 	    int rear = (instructionsPerIter*q.dimsLength()) - (i*3) - 1;
 	    
-	    System.out.println("Adding to array: " + base);
 	    stms[base++] = 
 		new MOVE(m_tf, q, inductionVars[i], new CONST(m_tf, q, 0));
 		 
-	    System.out.println("Adding to array: " + base);
 	    stms[base++] = loopHeaders[i]; 
 
-	    System.out.println("Adding to array: " + base);
 	    stms[base++] = new CJUMP
 		(m_tf, q, 
 		 new BINOP
@@ -317,11 +314,9 @@ class TranslationVisitor extends LowQuadVisitor {
 		 loopFooters[i].label, 
 		 loopMid[i].label);
 
-	    System.out.println("Adding to array: " + base);
 	    stms[base++] = loopMid[i];
 		  
 	    // Step 1: allocate memory needed for the array. 
-	    System.out.println("Adding to array: " + base);
 	    stms[base++] = new MOVE
 		(m_tf, q, arrayRefs[i], 
 		 m_frame.memAlloc
@@ -342,7 +337,6 @@ class TranslationVisitor extends LowQuadVisitor {
 	
 	    // Assign the array a hashcode
 	    //
-	    System.out.println("Adding to array: " + base);
 	    stms[base++] = new MOVE
 		(m_tf, q, 
 		 new MEM
@@ -355,7 +349,6 @@ class TranslationVisitor extends LowQuadVisitor {
 	    
 	    // Assign the array's length field
 	    //
-	    System.out.println("Adding to array: " + base);
 	    stms[base++] = new MOVE
 		(m_tf, q,
 		 new MEM
@@ -368,7 +361,6 @@ class TranslationVisitor extends LowQuadVisitor {
 	    
 	    // Assign the array a class ptr
 	    //
-	    System.out.println("Adding to array: " + base);
 	    stms[base++] = new MOVE
 		(m_tf, q, 
 		 new MEM
@@ -382,7 +374,6 @@ class TranslationVisitor extends LowQuadVisitor {
 	    // Move the pointer to the new array into the appropriate 
 	    // memory location.	    
 	    
-	    System.out.println("Adding to array: " + base);
 	    if (i>0) { 
 		stms[base++] = new MOVE
 		    (m_tf, q, 
@@ -399,7 +390,6 @@ class TranslationVisitor extends LowQuadVisitor {
 	    }
 	    
 	    // Increment the correct induction variable
-	    System.out.println("Adding to array: " + (rear-2));
 	    stms[rear-2] = new MOVE
 		(m_tf, q, 
 		 inductionVars[i], 
@@ -408,9 +398,7 @@ class TranslationVisitor extends LowQuadVisitor {
 		  inductionVars[i],
 		  new CONST(m_tf, q, 1)));
 	    
-	    System.out.println("Adding to array: " + (rear-1));
 	    stms[rear-1] = new JUMP(m_tf, q, loopHeaders[i].label);
-	    System.out.println("Adding to array: " + rear);
 	    stms[rear]   = loopFooters[i];
 	}
 
@@ -512,9 +500,12 @@ class TranslationVisitor extends LowQuadVisitor {
     public void visit(harpoon.IR.Quads.METHOD q) {
 	Temp params[] = q.params(); 
 	Temp mappedParams[] = new Temp[params.length];
-	for (int i = 0; i < params.length; i++)
+	int  mappedTypes[]  = new int[params.length];
+	for (int i = 0; i < params.length; i++) { 
 	    mappedParams[i] = m_ctm.tempMap(params[i]);
-	Stm s0 = m_frame.procPrologue(m_tf, q, mappedParams);
+	    mappedTypes[i]  = TYPE(q, params[i]);
+	}
+	Stm s0 = m_frame.procPrologue(m_tf, q, mappedParams, mappedTypes);
 	if (s0 != null) addStmt(q, s0);
     }
 
@@ -937,7 +928,8 @@ class TranslationVisitor extends LowQuadVisitor {
     }
 
     void addEndJump(Quad q) {
-	m_stmList = new StmList(new JUMP(m_tf, q, END.label), m_stmList);
+	m_stmList = 
+	    new StmList(new RETURN(m_tf, q, new CONST(m_tf, q, 0)), m_stmList);
     }
 
     private void addStmt(Quad q, Stm stm) { 
