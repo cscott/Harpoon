@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.5 1999-09-20 15:29:39 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.6 1999-10-14 06:28:33 cananian Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -117,7 +117,11 @@ public class Code extends harpoon.Backend.Generic.Code {
 		reg = get(instr, t.getHigh());
 	    } else {
 		Util.assert(false, "BREAK!  This parsing needs to be "+
-			    "fixed, strongarm has a lot more cases than this.");
+			    "fixed, strongarm has a lot more cases than this."+
+			    "\n" +
+			    "Alternatively, the pattern could be trying to "+
+			    "use a TwoWordTemp without the appropriate "+
+			    "double word modifier (l, h) in " + instr);
 	    }
 	    if(reg != null) {
 		s = reg.name() + suffix.substring(1);
