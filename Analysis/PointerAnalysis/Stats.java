@@ -1,5 +1,5 @@
 // Stats.java, created Tue Feb 29 11:55:35 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -25,8 +25,8 @@ import harpoon.Util.Graphs.SCComponent;
 /**
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.15 2001-03-04 17:00:43 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: Stats.java,v 1.1.2.16 2001-06-17 22:30:50 cananian Exp $
  */
 abstract class Stats implements java.io.Serializable {
 

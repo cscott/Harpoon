@@ -1,5 +1,5 @@
 // ParIntGraph.java, created Sun Jan  9 15:40:59 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -29,8 +29,8 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  structure. Most of its fields retain the original name from the paper
  of Martin and John Whaley.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.48 2001-06-07 15:21:22 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: ParIntGraph.java,v 1.1.2.49 2001-06-17 22:30:49 cananian Exp $
  */
 public class ParIntGraph implements java.io.Serializable {
 

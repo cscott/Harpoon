@@ -1,5 +1,5 @@
 // EdgesIterator.java, created Mon Apr  5 16:15:47 1999 by pnkfelix
-// Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
@@ -18,8 +18,8 @@ import java.util.HashSet;
  * <code>EdgesIterator</code> is a generic iterator for a set of
  * <code>CFGraphable</code> objects. 
  * 
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: EdgesIterator.java,v 1.1.2.5 2000-01-14 02:43:35 cananian Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: EdgesIterator.java,v 1.1.2.6 2001-06-17 22:28:35 cananian Exp $
  */
 public class EdgesIterator extends UnmodifiableIterator implements Iterator {
     private CFGrapher grapher;

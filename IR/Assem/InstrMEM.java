@@ -1,5 +1,5 @@
 // InstrMEM.java, created Mon Apr  5 17:27:57 1999 by pnkfelix
-// Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Assem;
 
@@ -13,8 +13,8 @@ import java.util.List;
  * <code>InstrMEM</code> is used to represent memory operations in
  * assembly-level instruction representations.
  * 
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InstrMEM.java,v 1.1.2.6 2000-11-17 23:17:29 pnkfelix Exp $ 
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: InstrMEM.java,v 1.1.2.7 2001-06-17 22:33:12 cananian Exp $ 
  */
 public class InstrMEM extends Instr {
     

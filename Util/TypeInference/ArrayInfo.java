@@ -1,5 +1,5 @@
 // ArrayInfo.java, created Sun Apr  2 18:18:01 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.TypeInference;
 
@@ -21,8 +21,8 @@ import harpoon.IR.Quads.AGET;
 /**
  * <code>ArrayInfo</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ArrayInfo.java,v 1.1.2.4 2001-02-27 22:11:51 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: ArrayInfo.java,v 1.1.2.5 2001-06-17 22:37:16 cananian Exp $
  */
 public class ArrayInfo implements java.io.Serializable {
     

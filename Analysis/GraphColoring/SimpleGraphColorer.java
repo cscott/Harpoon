@@ -1,5 +1,5 @@
 // SimpleGraphColorer.java, created Wed Jan 13 14:17:43 1999 by pnkfelix
-// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1998 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
@@ -26,8 +26,8 @@ import harpoon.Util.Collections.LinearSet;
  * Inspired by a 6.035 
  * <A href="http://ceylon.lcs.mit.edu/6035/lecture18/sld064.htm">lecture</A>.
  * 
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.17 2000-08-02 01:15:15 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.18 2001-06-17 22:29:39 cananian Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {

@@ -1,5 +1,5 @@
 // SparseNode.java, created Wed Jan 13 16:17:46 1999 by pnkfelix
-// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1998 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
@@ -10,8 +10,8 @@ import java.util.Enumeration;
  * <code>SparseNode</code> is an extension of a ColorableNode for
  * use with the SparseGraph object.
  * 
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseNode.java,v 1.1.2.8 2000-07-22 01:09:04 pnkfelix Exp $ 
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: SparseNode.java,v 1.1.2.9 2001-06-17 22:29:39 cananian Exp $ 
  */
 
 public abstract class SparseNode extends ColorableNode {

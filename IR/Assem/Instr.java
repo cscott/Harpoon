@@ -42,8 +42,8 @@ import java.util.ArrayList;
  * <code>hasMultiplePredecessors()</code>
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.85 2001-06-05 04:24:22 pnkfelix Exp $ */
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: Instr.java,v 1.1.2.86 2001-06-17 22:33:12 cananian Exp $ */
 public class Instr implements HCodeElement, UseDefable, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;

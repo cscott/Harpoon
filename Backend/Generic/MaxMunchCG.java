@@ -1,5 +1,5 @@
 // MaxMunchCG.java, created Fri Feb 11 01:26:47 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Generic;
 
@@ -27,8 +27,8 @@ import java.util.HashMap;
  * <code>CodeGeneratorGenerator</code> implementations should add
  * their own extensions of <code>CodeGen</code>.
  * 
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: MaxMunchCG.java,v 1.1.2.14 2001-06-05 04:03:24 pnkfelix Exp $ */
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: MaxMunchCG.java,v 1.1.2.15 2001-06-17 22:32:11 cananian Exp $ */
 public abstract class MaxMunchCG extends CodeGen {
     
     /** Creates a <code>MaxMunchCG</code>. */

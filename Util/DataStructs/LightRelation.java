@@ -1,5 +1,5 @@
 // LightRelation.java, created Fri Jun 30 11:11:17 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.DataStructs;
 
@@ -15,8 +15,8 @@ import harpoon.Util.Collections.LinearSet;
 /**
  * <code>LightRelation</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightRelation.java,v 1.1.2.3 2000-07-06 02:38:18 cananian Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: LightRelation.java,v 1.1.2.4 2001-06-17 22:36:59 cananian Exp $
  */
 public class LightRelation extends AbstrRelationMapBased
     implements Serializable {

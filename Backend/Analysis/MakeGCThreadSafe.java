@@ -1,5 +1,5 @@
 // MakeGCThreadSafe.java, created Tue Jan 23 14:24:35 2001 by kkz
-// Copyright (C) 2000 Karen K. Zee <kkz@tesuji.lcs.mit.edu>
+// Copyright (C) 2000 Karen K. Zee <kkzee@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Analysis;
 
@@ -52,8 +52,8 @@ import java.util.Set;
  * <p>
  * This pass is invoked in <code>harpoon.Main.SAMain</code>.
  *
- * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: MakeGCThreadSafe.java,v 1.1.2.2 2001-02-16 22:35:44 kkz Exp $
+ * @author  Karen K. Zee <kkzee@alum.mit.edu>
+ * @version $Id: MakeGCThreadSafe.java,v 1.1.2.3 2001-06-17 22:32:02 cananian Exp $
  */
 public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
     // hide constructor

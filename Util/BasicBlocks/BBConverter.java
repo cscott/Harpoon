@@ -1,5 +1,5 @@
 // BBConverter.java, created Wed Mar  8 15:42:33 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.BasicBlocks;
 
@@ -13,8 +13,8 @@ import harpoon.IR.Properties.CFGrapher;
  * <code>BBConverter</code> is a convenient class that offers a function
  * which returns a basic block view of the code of a method.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: BBConverter.java,v 1.1.2.2 2000-06-27 19:28:18 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: BBConverter.java,v 1.1.2.3 2001-06-17 22:36:24 cananian Exp $
  */
 public class BBConverter implements java.io.Serializable{
     // the HCode factory used to generate the code of the methods.

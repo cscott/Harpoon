@@ -18,8 +18,8 @@ import harpoon.Util.Util;
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.28 2001-06-15 17:02:51 cananian Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: Frame.java,v 1.1.2.29 2001-06-17 22:32:55 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;

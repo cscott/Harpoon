@@ -1,5 +1,5 @@
 // PointerAnalysis.java, created Sat Jan  8 23:22:24 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -72,8 +72,8 @@ import harpoon.Util.Util;
  initialized, it can be asked to provide the Parallel Interaction Graph
  valid at the end of a specific method.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.84 2001-06-07 15:21:22 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: PointerAnalysis.java,v 1.1.2.85 2001-06-17 22:30:49 cananian Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;

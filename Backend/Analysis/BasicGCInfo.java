@@ -1,5 +1,5 @@
 // BasicGCInfo.java, created Wed Jan 26 11:05:45 2000 by kkz
-// Copyright (C) 2000 Karen K. Zee <kkz@tesuji.lcs.mit.edu>
+// Copyright (C) 2000 Karen K. Zee <kkzee@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Analysis;
 
@@ -56,8 +56,8 @@ import java.util.Set;
  * <code>BasicGCInfo</code> selects as GC points all
  * call sites and backward branches.
  * 
- * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.20 2000-08-23 06:33:33 pnkfelix Exp $
+ * @author  Karen K. Zee <kkzee@alum.mit.edu>
+ * @version $Id: BasicGCInfo.java,v 1.1.2.21 2001-06-17 22:32:02 cananian Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points

@@ -29,8 +29,8 @@ import harpoon.Util.Util;
 /**
  * <code>NodeRepository</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.32 2001-04-26 18:26:54 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: NodeRepository.java,v 1.1.2.33 2001-06-17 22:30:41 cananian Exp $
  */
 public class NodeRepository implements java.io.Serializable {
     

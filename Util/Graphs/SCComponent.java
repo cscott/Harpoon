@@ -1,5 +1,5 @@
 // SCComponent.java, created Mon Jan 24 19:26:30 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Graphs;
 
@@ -40,8 +40,8 @@ import harpoon.Util.Util;
  * case, the strongly connected components group together sets of mutually
  * recursive methods).
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCComponent.java,v 1.1.2.5 2001-04-19 17:17:12 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: SCComponent.java,v 1.1.2.6 2001-06-17 22:37:04 cananian Exp $
  */
 public final class SCComponent implements Comparable, Serializable {
 

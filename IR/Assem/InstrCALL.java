@@ -1,5 +1,5 @@
 // InstrCALL.java, created Wed Jan 26 10:56:44 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Assem;
 
@@ -11,8 +11,8 @@ import java.util.List;
 /**
  * <code>InstrCALL</code>
  * 
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: InstrCALL.java,v 1.1.2.3 2000-11-17 23:17:29 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: InstrCALL.java,v 1.1.2.4 2001-06-17 22:33:12 cananian Exp $
  */
 public class InstrCALL extends Instr {
     

@@ -1,5 +1,5 @@
 // MAInfo.java, created Mon Apr  3 18:17:57 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 
 package harpoon.Analysis.PointerAnalysis;
@@ -73,8 +73,8 @@ import harpoon.Util.DataStructs.LightRelation;
 /**
  * <code>MAInfo</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.55 2001-04-26 18:26:53 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: MAInfo.java,v 1.1.2.56 2001-06-17 22:30:41 cananian Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 

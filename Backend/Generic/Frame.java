@@ -15,9 +15,9 @@ import harpoon.ClassFile.Linker;
  * <code>Frame</code> implementation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @author  Felix Klock <pnkfelix@mit.edu>
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.42 2000-06-29 02:16:51 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.43 2001-06-17 22:32:10 cananian Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {

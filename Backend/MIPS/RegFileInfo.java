@@ -39,8 +39,8 @@ import java.util.HashSet;
  * <code>Generic.LocationFactory</code>, allowing the creation of
  * global registers for the use of the runtime.
  * 
- * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.8 2001-01-24 19:33:30 cananian Exp $
+ * @author  Emmett Witchel <witchel@mit.edu>
+ * @version $Id: RegFileInfo.java,v 1.1.2.9 2001-06-17 22:32:23 cananian Exp $
  */
 public class RegFileInfo
 extends harpoon.Backend.Generic.RegFileInfo 

@@ -1,5 +1,5 @@
 // ActionRepository.java, created Mon Feb  7 15:03:29 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -43,8 +43,8 @@ import harpoon.Util.Util;
  Of course, there is no problem in modifying it to support new types of
  actions.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.27 2001-03-08 21:39:11 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: ActionRepository.java,v 1.1.2.28 2001-06-17 22:30:39 cananian Exp $
  */
 public class ActionRepository implements java.io.Serializable {
     

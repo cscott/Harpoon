@@ -1,3 +1,6 @@
+// InvertibleMultiMap.java, created Sun Jun 17 16:19:35 2001 by cananian
+// Copyright (C) 2001 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
 /**
@@ -15,7 +18,7 @@ package harpoon.Util.Collections;
  * <code>this.invert().invert()==this</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InvertibleMultiMap.java,v 1.1.2.2 2001-06-17 20:22:55 cananian Exp $
+ * @version $Id: InvertibleMultiMap.java,v 1.1.2.3 2001-06-17 22:36:32 cananian Exp $
  */
 public interface InvertibleMultiMap extends MultiMap {
     /** Returns a inverted view of <code>this</code>.

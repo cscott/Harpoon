@@ -1,5 +1,5 @@
 // HClassInfo.java, created Wed Jan 13 17:09:19 1999 by duncan
-// Copyright (C) 1998 Duncan Bryce  <duncan@lcs.mit.edu>
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
@@ -16,8 +16,8 @@ import java.util.Map;
  * The <code>HClassInfo</code> class provides various useful bits of 
  * information about an <code>HClass</code>. 
  *
- * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: HClassInfo.java,v 1.1.2.1 2000-06-22 19:04:16 cananian Exp $
+ * @author  Duncan Bryce <duncan@lcs.mit.edu>
+ * @version $Id: HClassInfo.java,v 1.1.2.2 2001-06-17 22:34:14 cananian Exp $
  * @see     harpoon.ClassFile.HClass
  */
 class HClassInfo

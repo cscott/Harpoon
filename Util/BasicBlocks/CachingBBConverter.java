@@ -1,5 +1,5 @@
 // CachingBBConverter.java, created Wed Mar  8 15:57:12 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.BasicBlocks;
 
@@ -17,8 +17,8 @@ import harpoon.Analysis.BasicBlock;
  * the <code>BasicBlock</code> view of the same method multiple times and
  * don't want to litter all your code with caching mechanisms.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CachingBBConverter.java,v 1.1.2.1 2000-03-23 21:29:08 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: CachingBBConverter.java,v 1.1.2.2 2001-06-17 22:36:26 cananian Exp $
  */
 public class CachingBBConverter extends BBConverter{
     

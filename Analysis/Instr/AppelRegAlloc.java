@@ -1,5 +1,5 @@
 // AppelRegAlloc.java, created Mon Feb  5 13:44:00 2001 by pnkfelix
-// Copyright (C) 2000 Felix  Klock II <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
@@ -53,8 +53,8 @@ import java.util.Iterator;
 /**
  * <code>AppelRegAlloc</code>
  * 
- * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.3 2001-06-15 14:25:43 cananian Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.4 2001-06-17 22:29:48 cananian Exp $
  */
 public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     // FSK: super class really SHOULD be RegAlloc, but am doing this

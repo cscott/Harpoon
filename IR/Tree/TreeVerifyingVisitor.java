@@ -1,5 +1,5 @@
 // TreeVerifyingVisitor.java, created Mon Jan 10 20:40:46 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
@@ -20,8 +20,8 @@ import java.util.HashSet;
  * analyze a given Tree form and assert false when it finds a
  * violation of the invariant.
  * 
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: TreeVerifyingVisitor.java,v 1.1.2.4 2000-01-30 17:11:53 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: TreeVerifyingVisitor.java,v 1.1.2.5 2001-06-17 22:33:43 cananian Exp $
  */
 public abstract class TreeVerifyingVisitor extends TreeVisitor {
     

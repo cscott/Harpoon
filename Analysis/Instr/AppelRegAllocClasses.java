@@ -1,3 +1,6 @@
+// AppelRegAllocClasses.java, created Tue Jun  5  0:02:27 2001 by pnkfelix
+// Copyright (C) 2001 Felix S. Klock II <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
 import harpoon.Analysis.Instr.AppelRegAlloc.Move;
@@ -21,7 +24,8 @@ import java.util.HashSet;
 import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
-    
+ *  @author  Felix S. Klock II <pnkfelix@mit.edu>
+ *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.3 2001-06-17 22:29:48 cananian Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public AppelRegAllocClasses(harpoon.Backend.Generic.Code code) { 

@@ -19,8 +19,8 @@ import java.util.Set;
  * information necessary to compile for the MIPS processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.11 2001-06-08 00:47:09 witchel Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: Frame.java,v 1.1.2.12 2001-06-17 22:32:23 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
    private final harpoon.Backend.Generic.Runtime   runtime;

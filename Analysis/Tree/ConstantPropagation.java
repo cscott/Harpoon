@@ -1,5 +1,5 @@
 // ConstantPropagation.java, created Sun Dec  5  1:26:37 1999 by duncan
-// Copyright (C) 1998 Duncan Bryce  <duncan@lcs.mit.edu>
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Tree;
 
@@ -41,8 +41,8 @@ import java.util.Stack;
  * 
  * <p><b>CAUTION</b>: it modifies code in-place.
  * 
- * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: ConstantPropagation.java,v 1.1.2.16 2001-01-11 19:57:07 cananian Exp $
+ * @author  Duncan Bryce <duncan@lcs.mit.edu>
+ * @version $Id: ConstantPropagation.java,v 1.1.2.17 2001-06-17 22:31:58 cananian Exp $
  */
 public final class ConstantPropagation { 
 

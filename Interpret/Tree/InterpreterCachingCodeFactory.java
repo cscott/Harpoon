@@ -18,8 +18,8 @@ import harpoon.ClassFile.HMethod;
  * it uses a non-caching, non-optimizing codefactory to save memory.  
  * For all other methods, it uses a caching, optimizing code factory. 
  *
- * @author Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: InterpreterCachingCodeFactory.java,v 1.1.2.5 1999-08-05 05:03:10 duncan Exp $
+ * @author Duncan Bryce <duncan@lcs.mit.edu>
+ * @version $Id: InterpreterCachingCodeFactory.java,v 1.1.2.6 2001-06-17 22:34:14 cananian Exp $
  */
 class InterpreterCachingCodeFactory implements HCodeFactory { 
     private HCodeFactory factory;

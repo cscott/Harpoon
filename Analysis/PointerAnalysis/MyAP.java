@@ -1,5 +1,5 @@
 // MyAP.java, created Mon Apr  3 18:22:05 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -14,8 +14,8 @@ import harpoon.Util.Util;
  * <code>MyAP</code> is my own implementation for the
  <code>AllocationProperties</code>. 
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MyAP.java,v 1.1.2.11 2000-11-13 20:55:24 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: MyAP.java,v 1.1.2.12 2001-06-17 22:30:41 cananian Exp $
  */
 public class MyAP implements AllocationInformation.AllocationProperties,
 			     java.io.Serializable,

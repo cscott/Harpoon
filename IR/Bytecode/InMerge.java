@@ -10,8 +10,8 @@ import harpoon.Util.Util;
  * An <code>InMerge</code> will have exactly one successor, and
  * multiple predecessors.
  *
- * @author  C. Scott Ananian
- * @version $Id: InMerge.java,v 1.2.2.2 1999-08-04 06:30:57 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: InMerge.java,v 1.2.2.3 2001-06-17 22:33:16 cananian Exp $
  * @see Instr
  */
 public class InMerge extends Instr {

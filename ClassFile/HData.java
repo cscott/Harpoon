@@ -1,5 +1,5 @@
 // HData.java, created Wed Jul 28 13:55:51 1999 by duncan
-// Copyright (C) 1998 Duncan Bryce     <duncan@lcs.mit.edu>
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
@@ -19,8 +19,8 @@ import java.util.List;
  * <code>HData</code>s associated with it, each of which encapsulates
  * a certain set of class data.
  *
- * @author  Duncan Bryce     <duncan@lcs.mit.edu>
- * @version $Id: HData.java,v 1.1.2.7 2001-01-24 19:33:45 cananian Exp $
+ * @author  Duncan Bryce <duncan@lcs.mit.edu>
+ * @version $Id: HData.java,v 1.1.2.8 2001-06-17 22:33:00 cananian Exp $
  */
 public abstract class HData { 
     

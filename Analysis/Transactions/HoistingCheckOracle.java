@@ -1,5 +1,5 @@
 // HoistingCheckOracle.java, created Sat Jan 13 14:45:14 2001 by cananian
-// Copyright (C) 2000  <cananian@alumni.princeton.edu>
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Transactions;
 
@@ -33,7 +33,7 @@ import java.util.Set;
  * process is repeated until no checks can be moved higher.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HoistingCheckOracle.java,v 1.1.2.6 2001-01-27 00:00:03 cananian Exp $
+ * @version $Id: HoistingCheckOracle.java,v 1.1.2.7 2001-06-17 22:31:54 cananian Exp $
  */
 class HoistingCheckOracle extends AnalysisCheckOracle {
     /** Creates a <code>HoistingCheckOracle</code> for the given

@@ -1,5 +1,5 @@
 // PALoad.java, created Mon Feb  7 15:24:14 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -12,8 +12,8 @@ import java.util.Map;
  * A <code>PALoad</code> object represents the loading of the 
  * outside reference <code>n1--f-->n2</code>.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PALoad.java,v 1.1.2.6 2001-02-27 22:11:12 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: PALoad.java,v 1.1.2.7 2001-06-17 22:30:43 cananian Exp $
  */
 class PALoad implements java.io.Serializable {
     

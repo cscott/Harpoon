@@ -1,5 +1,5 @@
 // BitString.java, created Wed Mar 10  8:57:56 1999 by jwhaley
-// Copyright (C) 1998 John Whaley
+// Copyright (C) 1998 John Whaley <jwhaley@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
@@ -28,7 +28,7 @@ package harpoon.Util;
  * The length of a bit set related to the logical length of a bit set
  * and is defined independently of implementation.
  *
- * @author  John Whaley
+ * @author  John Whaley <jwhaley@alum.mit.edu>
  */
 
 public final class BitString implements Cloneable, java.io.Serializable {

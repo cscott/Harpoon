@@ -1,5 +1,5 @@
 // PASync.java, created Wed Mar 29 12:38:44 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -17,8 +17,8 @@ import harpoon.Util.DataStructs.Relation;
 /**
  * <code>PASync</code> models a <code>sync</code> action.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PASync.java,v 1.1.2.6 2001-03-04 17:00:43 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: PASync.java,v 1.1.2.7 2001-06-17 22:30:46 cananian Exp $
  */
 public class PASync implements java.io.Serializable {
     /** The node on which the <code>sync</code> is performed on. */

@@ -1,5 +1,5 @@
-// LocalVariableNamer, created Wed Jun  6 15:14:26 2001 by root
-// Copyright (C) 2000 root <root@windsurf.lcs.mit.edu>
+// LocalVariableNamer, created Wed Jun  6 15:14:26 2001 by bdemsky
+// Copyright (C) 2000 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.RoleInference;
 import harpoon.IR.RawClass.AttributeCode;
@@ -15,8 +15,8 @@ import java.io.InputStream;
 /**
  * <code>LocalVariableNamer</code>
  * 
- * @author  root <root@windsurf.lcs.mit.edu>
- * @version $Id: LocalVariableNamer.java,v 1.1.2.2 2001-06-14 20:14:04 bdemsky Exp $
+ * @author  Brian Demsky <bdemsky@mit.edu>
+ * @version $Id: LocalVariableNamer.java,v 1.1.2.3 2001-06-17 22:31:43 cananian Exp $
  */
 public class LocalVariableNamer {
 

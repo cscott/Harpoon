@@ -1,13 +1,13 @@
 // ListCell.java, created Wed Mar 29 13:32:14 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
 /**
  * <code>ListCell</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ListCell.java,v 1.1.2.2 2001-02-27 22:11:12 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: ListCell.java,v 1.1.2.3 2001-06-17 22:30:41 cananian Exp $
  */
 public class ListCell implements java.io.Serializable {
 

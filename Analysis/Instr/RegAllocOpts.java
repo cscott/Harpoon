@@ -1,5 +1,5 @@
 // RegAllocOpts.java, created Thu Oct 19 19:14:47 2000 by pnkfelix
-// Copyright (C) 2000 Felix S Klock II <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
@@ -64,8 +64,8 @@ import java.util.StringTokenizer;
  * produce wrapper <code>RegAlloc.Factory</code>s around other
  * <code>RegAlloc.Factory</code>s
  * 
- * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAllocOpts.java,v 1.1.2.5 2001-06-05 04:02:28 pnkfelix Exp $ */
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: RegAllocOpts.java,v 1.1.2.6 2001-06-17 22:29:53 cananian Exp $ */
 public class RegAllocOpts {
     public static final boolean INFO = false;
     Filter disableReachingDefs;

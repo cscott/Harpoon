@@ -1,5 +1,5 @@
 // OffsetMap.java, created Thu Jan 14 22:17:20 1999 by duncan
-// Copyright (C) 1998 Duncan Bryce  <duncan@lcs.mit.edu>
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
@@ -15,8 +15,8 @@ import java.util.Set;
  * <code>HMethod</code> to an offset in bytes.  It also reports the
  * total size of an <code>HClass</code> object.
  * 
- * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: OffsetMap.java,v 1.1.2.1 2000-01-17 12:49:34 cananian Exp $
+ * @author  Duncan Bryce <duncan@lcs.mit.edu>
+ * @version $Id: OffsetMap.java,v 1.1.2.2 2001-06-17 22:34:15 cananian Exp $
  */
 abstract class OffsetMap { // use an abstract class, if we can.
 

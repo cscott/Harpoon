@@ -1,5 +1,5 @@
 // Graph.java, created Wed Jan 13 15:51:26 1999 by pnkfelix
-// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1998 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
@@ -23,8 +23,8 @@ import java.util.Collection;
  * representation, the edges may have to be constructed on demand
  * (a performance drain).
  * 
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Graph.java,v 1.1.2.11 2000-07-25 23:25:03 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: Graph.java,v 1.1.2.12 2001-06-17 22:29:38 cananian Exp $
  */
 
 public interface Graph  {

@@ -1,5 +1,5 @@
 // RegUseDefer.java, created Fri Sep 22 17:10:34 2000 by pnkfelix
-// Copyright (C) 2000 Felix S Klock II <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Generic;
 
@@ -20,8 +20,8 @@ import java.util.ArrayList;
  * @see harpoon.IR.Assem.Instr
  * @see harpoon.Backend.Generic.Code;
  * 
- * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: RegUseDefer.java,v 1.1.2.2 2000-10-04 19:20:32 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: RegUseDefer.java,v 1.1.2.3 2001-06-17 22:32:11 cananian Exp $
  */
 public class RegUseDefer extends UseDefer {
     

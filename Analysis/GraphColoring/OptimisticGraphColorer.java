@@ -1,5 +1,5 @@
 // OptimisticGraphColorer.java, created Fri Jul 28 18:45:20 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
@@ -27,8 +27,8 @@ import harpoon.Util.Collections.LinearSet;
  * selects the nodes with the largest degree for removal in this
  * second stage, but this is parameterizable.
  * 
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: OptimisticGraphColorer.java,v 1.1.2.10 2000-08-27 09:33:56 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: OptimisticGraphColorer.java,v 1.1.2.11 2001-06-17 22:29:39 cananian Exp $
  */
 public class OptimisticGraphColorer extends GraphColorer {
 

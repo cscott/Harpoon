@@ -1,5 +1,5 @@
 // TempInstrPair.java, created Mon May 31 13:52:05 1999 by pnkfelix
-// Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
@@ -9,8 +9,8 @@ import harpoon.Temp.Temp;
   <code>TempInstrPair</code> is an immutable data structure that
   associates an <code>Instr</code> with a <code>Temp</code>. 
   
-  @author  Felix S Klock <pnkfelix@mit.edu>
-  @version $Id: TempInstrPair.java,v 1.1.2.3 1999-08-04 21:46:11 pnkfelix Exp $
+  @author  Felix S. Klock II <pnkfelix@mit.edu>
+  @version $Id: TempInstrPair.java,v 1.1.2.4 2001-06-17 22:29:56 cananian Exp $
  */
 public class TempInstrPair {
     private final Temp t;

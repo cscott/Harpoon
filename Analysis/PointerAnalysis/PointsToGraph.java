@@ -25,8 +25,8 @@ import harpoon.Util.DataStructs.Relation;
  information.
  Look into one of Martin and John Whaley papers for the complete definition.
  *
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.38 2001-06-07 15:21:22 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: PointsToGraph.java,v 1.1.2.39 2001-06-17 22:30:49 cananian Exp $
  */
 public class PointsToGraph implements Cloneable, java.io.Serializable{
 

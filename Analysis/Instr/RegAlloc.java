@@ -1,5 +1,5 @@
 // RegAlloc.java, created Mon Mar 29 16:47:25 1999 by pnkfelix
-// Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
@@ -78,8 +78,8 @@ import java.util.HashMap;
  * Perhaps should also design a way to parameterize which
  * <code>RegAlloc</code> subclasses will be used.
  * 
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.125 2001-06-05 04:02:28 pnkfelix Exp $ 
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: RegAlloc.java,v 1.1.2.126 2001-06-17 22:29:52 cananian Exp $ 
  */
 public abstract class RegAlloc  {
 

@@ -1,3 +1,6 @@
+// GenericInvertibleMultiMap.java, created Sun Jun 17 16:19:35 2001 by cananian
+// Copyright (C) 2001 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
 import java.util.AbstractCollection;
@@ -16,7 +19,7 @@ import java.util.Set;
  * correctly extends <code>Map</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GenericInvertibleMultiMap.java,v 1.1.2.1 2001-06-17 20:19:35 cananian Exp $
+ * @version $Id: GenericInvertibleMultiMap.java,v 1.1.2.2 2001-06-17 22:36:32 cananian Exp $
  */
 public class GenericInvertibleMultiMap implements InvertibleMultiMap {
     private final MultiMap map, imap;

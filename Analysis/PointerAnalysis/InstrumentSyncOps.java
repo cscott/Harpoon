@@ -1,3 +1,4 @@
+// InstrumentSyncOps.java, created Thu Jul 13  2:18:26 2000 by jwhaley
 // Copyright (C) 2000 John Whaley <jwhaley@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 

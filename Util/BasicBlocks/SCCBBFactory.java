@@ -1,5 +1,5 @@
 // SCCBBFactory.java, created Wed Jan 12 15:51:47 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.BasicBlocks;
 
@@ -21,8 +21,8 @@ import harpoon.Util.UComp;
  * <code>SCCBBFactory</code> converts the code of a method into the
  topollogically sorted component graph of <code>BasicBlock</code>s.
  *
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCBBFactory.java,v 1.1.2.5 2000-06-27 19:28:18 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: SCCBBFactory.java,v 1.1.2.6 2001-06-17 22:36:26 cananian Exp $
  */
 public class SCCBBFactory implements java.io.Serializable {
 

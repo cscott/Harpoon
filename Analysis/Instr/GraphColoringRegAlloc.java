@@ -1,5 +1,5 @@
 // GraphColoringRegAlloc.java, created Mon Jul 17 16:39:13 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
@@ -57,8 +57,8 @@ import java.util.Date;
  * <code>GraphColoringRegAlloc</code> uses graph coloring heuristics
  * to find a register assignment for a Code.
  * 
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.43 2001-06-05 04:02:28 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.44 2001-06-17 22:29:49 cananian Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
 

@@ -1,5 +1,5 @@
 // InterProcPA.java, created Tue Jan 18 11:04:20 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -50,8 +50,8 @@ import harpoon.Util.Util;
  * for the <code>this</code> <i>hidden</i> argument that would exist if all
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.54 2001-06-07 15:21:21 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: InterProcPA.java,v 1.1.2.55 2001-06-17 22:30:40 cananian Exp $
  */
 public abstract class InterProcPA implements java.io.Serializable {
 

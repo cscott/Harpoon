@@ -1,5 +1,5 @@
 // PAEscapeFunc.java, created Sun Jan  9 20:53:09 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -22,8 +22,8 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>node</code> escapes through (e.g. parameter nodes).
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.26 2001-06-07 15:21:22 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.27 2001-06-17 22:30:42 cananian Exp $
  */
 public class PAEscapeFunc implements java.io.Serializable {
 

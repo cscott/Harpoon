@@ -1,4 +1,4 @@
-// Timer.java, created by wbeebee
+// Timer.java, created Tue Jan 23 16:09:55 2001 by wbeebee
 // Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;

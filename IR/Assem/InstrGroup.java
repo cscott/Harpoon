@@ -1,5 +1,5 @@
 // InstrGroup.java, created Fri Jan  5 11:25:20 2001 by pnkfelix
-// Copyright (C) 2000 Felix S Klock II <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Assem;
 
@@ -26,8 +26,8 @@ import java.util.Arrays;
  * collected by an <code>InstrGroup</code> must collectively form a
  * single-entry single-exit region.
  * 
- * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrGroup.java,v 1.1.2.3 2001-06-05 04:24:22 pnkfelix Exp $ */
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: InstrGroup.java,v 1.1.2.4 2001-06-17 22:33:12 cananian Exp $ */
 public class InstrGroup {
     Type type;
     Instr entry, exit;

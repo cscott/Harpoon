@@ -1,5 +1,5 @@
 // CallGraph.java, created Tue Mar 21 16:13:06 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
@@ -11,8 +11,8 @@ import harpoon.IR.Quads.CALL;
  * <code>CallGraph</code> is a general interface that should be
  implemented by a call graph.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CallGraph.java,v 1.1.2.7 2000-08-24 23:35:33 cananian Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: CallGraph.java,v 1.1.2.8 2001-06-17 22:31:26 cananian Exp $
  */
 public interface CallGraph extends harpoon.Analysis.CallGraph {
     // XXX: to talk about a CALL quad, you really need to have the HCode

@@ -1,4 +1,4 @@
-// Realtime.java, created by wbeebee
+// Realtime.java, created Sun Nov 12 14:42:50 2000 by wbeebee
 // Copyright (C) 2000 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
@@ -29,7 +29,7 @@ import harpoon.Backend.Generic.Frame;
  *  "http://java.sun.com/aboutJava/communityprocess/first/jsr001/rtj.pdf">
  * Realtime Java Specification</a>.
  *
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ * @author Wes Beebee <wbeebee@mit.edu>
  */
 
 public class Realtime {

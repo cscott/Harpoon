@@ -1,5 +1,5 @@
 // Induction.java, created Mon Jun 28 13:36:40 1999 by root
-// Copyright (C) 1999 root <root@kikashi.lcs.mit.edu>
+// Copyright (C) 1999 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.LowQuad.Loop;
 
@@ -13,8 +13,8 @@ import java.util.Iterator;
 /**
  * <code>Induction</code>
  * 
- * @author  root <root@kikashi.lcs.mit.edu>
- * @version $Id: Induction.java,v 1.1.2.6 1999-07-12 17:09:53 bdemsky Exp $
+ * @author  Brian Demsky <bdemsky@mit.edu>
+ * @version $Id: Induction.java,v 1.1.2.7 2001-06-17 22:30:18 cananian Exp $
  * This class allows us to store information on Basic/Derived Induction variables.
  */
 

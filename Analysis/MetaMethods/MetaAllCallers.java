@@ -1,5 +1,5 @@
 // MetaAllCallers.java, created Sun Mar 12 22:30:17 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.MetaMethods;
 
@@ -22,8 +22,8 @@ import harpoon.Util.Util;
  <code>MetaCallGraph</code>, this class just inverts the edges of a
  precomputed graph.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaAllCallers.java,v 1.1.2.5 2000-12-07 00:43:52 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: MetaAllCallers.java,v 1.1.2.6 2001-06-17 22:30:33 cananian Exp $
  */
 public class MetaAllCallers implements java.io.Serializable {
 

@@ -1,5 +1,5 @@
 // ParActionVisitor.java, created Wed Feb  9 15:35:27 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -8,8 +8,8 @@ package harpoon.Analysis.PointerAnalysis;
  called on a "paralel action" piece of information.
  There is no other way to pass a function in Java (no pointers to methods ...)
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParActionVisitor.java,v 1.1.2.2 2000-03-30 03:05:14 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: ParActionVisitor.java,v 1.1.2.3 2001-06-17 22:30:49 cananian Exp $
  */
 interface ParActionVisitor {
     /** Visits a "parallel action" item of information of the form

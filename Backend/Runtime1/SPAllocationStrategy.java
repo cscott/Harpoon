@@ -1,5 +1,5 @@
 // SPAllocationStrategy.java, created Fri Jun  2 13:51:38 2000 by kkz
-// Copyright (C) 2000 Karen K. Zee <kkz@tesuji.lcs.mit.edu>
+// Copyright (C) 2000 Karen K. Zee <kkzee@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Runtime1;
 
@@ -29,8 +29,8 @@ import harpoon.Util.Util;
  * allocation strategy by providing the BDW collector with more 
  * precise information about pointer locations.
  * 
- * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: SPAllocationStrategy.java,v 1.1.2.4 2001-01-11 19:57:11 cananian Exp $
+ * @author  Karen K. Zee <kkzee@alum.mit.edu>
+ * @version $Id: SPAllocationStrategy.java,v 1.1.2.5 2001-06-17 22:32:40 cananian Exp $
  */
 public class SPAllocationStrategy extends MallocAllocationStrategy {
     /** Creates a <code>SPAllocationStrategy</code>. */

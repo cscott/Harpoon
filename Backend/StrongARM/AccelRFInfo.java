@@ -1,3 +1,6 @@
+// AccelRFInfo.java, created Mon Jul 10  8:43:42 2000 by pnkfelix
+// Copyright (C) 2001 Felix S. Klock II <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.StrongARM;
 
 import harpoon.Temp.Temp;
@@ -20,6 +23,9 @@ import java.util.ArrayList;
  * <code>RegFileInfo</code> that is designed to allocate less
  * temporary storage for the Iterators returned by
  * suggestRegAssignment(..) methods.
+ *
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: AccelRFInfo.java,v 1.1.2.3 2001-06-17 22:32:55 cananian Exp $
  */
 class AccelRFInfo extends RegFileInfo {
     // rls stands for RegListSet

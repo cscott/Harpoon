@@ -1,6 +1,6 @@
-// DominatingMemoryAccess.java created Fri Oct 27 16:33:24 EDT 2000
-// Copyright (C) 2000 Emmett Witchel <witchel@lcs.mit.edu>
-
+// DominatingMemoryAccess.java, created Fri Oct 27 16:33:24 2000 by witchel
+// Copyright (C) 2001 Emmett Witchel <witchel@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Tree;
 
 import harpoon.Analysis.ClassHierarchy;
@@ -73,8 +73,8 @@ import java.util.Collection;
  The backend needs to know which direct address register numbers we
  used since it needs to invalidate them on a function return.
  * 
- * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.1.2.13 2001-06-17 02:58:42 cananian Exp $
+ * @author  Emmett Witchel <witchel@mit.edu>
+ * @version $Id: DominatingMemoryAccess.java,v 1.1.2.14 2001-06-17 22:31:58 cananian Exp $
  */
 public class DominatingMemoryAccess {
 

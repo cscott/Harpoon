@@ -1,5 +1,5 @@
 // ConstMapProxy.java, created Wed Nov 15 21:37:39 2000 by cananian
-// Copyright (C) 2000  <cananian@alumni.princeton.edu>
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Maps;
 
@@ -12,8 +12,8 @@ import harpoon.Temp.Temp;
  * specifies its relationship to an <code>HCode</code> for which a
  * <code>ConstMap</code> is known.
  * 
- * @author   <cananian@alumni.princeton.edu>
- * @version $Id: ConstMapProxy.java,v 1.1.2.1 2000-11-16 04:55:04 cananian Exp $
+ * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ConstMapProxy.java,v 1.1.2.2 2001-06-17 22:30:22 cananian Exp $
  */
 public class ConstMapProxy extends MapProxy implements ConstMap {
     private ConstMap cm;

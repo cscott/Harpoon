@@ -1,5 +1,5 @@
 // ParseUtil.java, created Thu Nov 16 00:56:01 2000 by cananian
-// Copyright (C) 2000  <cananian@alumni.princeton.edu>
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
@@ -18,8 +18,8 @@ import java.io.PrintStream;
  * <code>ParseUtil</code> implements simple parsers for common string
  * data types.  Input is from named resource files.
  * 
- * @author   <cananian@alumni.princeton.edu>
- * @version $Id: ParseUtil.java,v 1.1.2.2 2000-11-16 08:08:00 cananian Exp $
+ * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ParseUtil.java,v 1.1.2.3 2001-06-17 22:35:59 cananian Exp $
  */
 public abstract class ParseUtil {
     /** Reads from the given resource, ignoring '#' comments and blank lines,

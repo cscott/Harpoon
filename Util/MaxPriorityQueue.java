@@ -1,5 +1,5 @@
 // PriorityQueue.java, created Tue Jun  1 13:43:17 1999 by pnkfelix
-// Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
@@ -14,8 +14,8 @@ import java.util.Collection;
  * <code>Collection</code> interface, since they do not associate each
  * added <code>Object</code> with a priority.
  * 
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MaxPriorityQueue.java,v 1.1.2.2 1999-06-25 11:17:31 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: MaxPriorityQueue.java,v 1.1.2.3 2001-06-17 22:35:59 cananian Exp $
  */
 public interface MaxPriorityQueue extends Collection {
 

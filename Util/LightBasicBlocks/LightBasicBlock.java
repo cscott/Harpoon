@@ -1,5 +1,5 @@
 // LightBasicBlock.java, created Thu Mar 23 17:44:52 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.LightBasicBlocks;
 
@@ -33,8 +33,8 @@ import harpoon.Util.UComp;
  <code>i&lt;pred.length</code> instead of <code>i&lt;lbb.predLength()</code>
  (one method call per iteration!).
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightBasicBlock.java,v 1.1.2.7 2001-04-19 17:17:20 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: LightBasicBlock.java,v 1.1.2.8 2001-06-17 22:37:13 cananian Exp $
  */
 public class LightBasicBlock implements java.io.Serializable {
 

@@ -1,5 +1,5 @@
 // ActionVisitor.java, created Wed Feb  9 15:26:32 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -8,8 +8,8 @@ package harpoon.Analysis.PointerAnalysis;
  called on an action. There is no other way to
  pass a function in Java (no pointers to methods ...)
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionVisitor.java,v 1.1.2.2 2000-03-30 03:05:14 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: ActionVisitor.java,v 1.1.2.3 2001-06-17 22:30:40 cananian Exp $
  */
 interface ActionVisitor {
     /** Visits a <code>ld</code> action. */

@@ -1,5 +1,5 @@
 // LightPAEdgeSet.java, created Fri Jun 30 19:32:01 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -22,8 +22,8 @@ import harpoon.Temp.Temp;
 /**
  * <code>LightPAEdgeSet</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightPAEdgeSet.java,v 1.1.2.3 2001-02-27 22:11:12 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: LightPAEdgeSet.java,v 1.1.2.4 2001-06-17 22:30:41 cananian Exp $
  */
 public class LightPAEdgeSet extends AbstrPAEdgeSet
     implements java.io.Serializable {

@@ -1,4 +1,4 @@
-// CheckAdder.java, created by wbeebee
+// CheckAdder.java, created Fri Mar 23 10:31:56 2001 by wbeebee
 // Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
@@ -47,7 +47,7 @@ import harpoon.Util.Util;
  * <code>CheckRemoval</code> indicates that the check cannot be removed.
  * It takes QuadsNoSSA form code as input. 
  *
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ * @author Wes Beebee <wbeebee@mit.edu>
  */
 
 

@@ -1,5 +1,5 @@
 // GraphColorer.java, created Thu Jan 14 19:02:55 1999 by pnkfelix
-// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1998 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
@@ -9,8 +9,8 @@ import java.util.List;
  * <code>GraphColorer</code> is a class for describing a graph coloring
  * algorithm.
  * 
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColorer.java,v 1.1.2.13 2000-07-29 00:26:55 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: GraphColorer.java,v 1.1.2.14 2001-06-17 22:29:38 cananian Exp $
  */
 
 public abstract class GraphColorer  {

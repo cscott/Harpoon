@@ -1,5 +1,5 @@
 // InlineMap.java, created Thu Jan 14 22:17:20 1999 by duncan
-// Copyright (C) 1998 Duncan Bryce  <duncan@lcs.mit.edu>
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Maps;
 
@@ -17,8 +17,8 @@ import harpoon.ClassFile.HField;
  * and its heuristics, which just means you'd like to inline wherever
  * possible.  Have I confused everyone yet?
  * 
- * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: InlineMap.java,v 1.1.2.5 1999-08-04 06:30:55 cananian Exp $
+ * @author  Duncan Bryce <duncan@lcs.mit.edu>
+ * @version $Id: InlineMap.java,v 1.1.2.6 2001-06-17 22:32:27 cananian Exp $
  */
 public abstract class InlineMap // may need to be an interface later, but
                                 // we'll try to keep it a class if we can.

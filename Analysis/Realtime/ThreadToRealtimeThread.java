@@ -1,4 +1,4 @@
-// ThreadToRealtimeThread.java, created by wbeebee
+// ThreadToRealtimeThread.java, created Tue Jan 23 16:09:50 2001 by wbeebee
 // Copyright (C) 2000 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
@@ -29,7 +29,7 @@ import harpoon.Util.Util;
  * replaces <code>java.lang.Thread</code> with 
  * <code>javax.realtime.RealtimeThread</code>.
  *
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ * @author Wes Beebee <wbeebee@mit.edu>
  */
 
 class ThreadToRealtimeThread extends ClassReplacer {

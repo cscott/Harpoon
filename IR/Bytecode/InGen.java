@@ -21,8 +21,8 @@ import harpoon.Util.Util;
  * signature) nor for the dummy placeholder value which trails the
  * opcode in the raw bytecode array.
  *
- * @author  C. Scott Ananian
- * @version $Id: InGen.java,v 1.3.2.5 1999-11-12 19:16:10 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: InGen.java,v 1.3.2.6 2001-06-17 22:33:16 cananian Exp $
  */
 public class InGen extends Instr {
   final byte opcode;

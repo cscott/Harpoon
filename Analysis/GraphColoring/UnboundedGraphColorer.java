@@ -1,5 +1,5 @@
 // UnboundedGraphColorer.java, created Mon Jul 24 10:56:07 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
@@ -11,8 +11,8 @@ import java.util.List;
  * minimum number of colors required.  It generates colors dynamically
  * using a <code>ColorFactory</code>.
  * 
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: UnboundedGraphColorer.java,v 1.1.2.5 2000-08-25 18:33:22 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: UnboundedGraphColorer.java,v 1.1.2.6 2001-06-17 22:29:39 cananian Exp $
  */
 public class UnboundedGraphColorer extends GraphColorer {
 

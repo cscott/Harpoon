@@ -1,5 +1,5 @@
 // GCInfo.java, created Wed Jan 26 09:40:41 2000 by kkz
-// Copyright (C) 2000 Karen K. Zee <kkz@tesuji.lcs.mit.edu>
+// Copyright (C) 2000 Karen K. Zee <kkzee@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Generic;
 
@@ -29,8 +29,8 @@ import java.util.Set;
  * garbage collection and makes necessary annotations to
  * the instruction stream.
  * 
- * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: GCInfo.java,v 1.1.2.10 2000-06-24 04:44:54 kkz Exp $
+ * @author  Karen K. Zee <kkzee@alum.mit.edu>
+ * @version $Id: GCInfo.java,v 1.1.2.11 2001-06-17 22:32:11 cananian Exp $
  */
 public abstract class GCInfo {
     /** Creates an <code>IntermediateCodeFactory</code> that

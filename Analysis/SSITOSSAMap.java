@@ -1,5 +1,5 @@
 // SSITOSSAMap.java, created Thu Jun 17 16:11:41 1999 by root
-// Copyright (C) 1999 bdemsky <bdemsky@mit.edu>
+// Copyright (C) 1999 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 import harpoon.Temp.TempMap;
@@ -24,7 +24,7 @@ import java.util.Set;
  * <code>SSITOSSAMap</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: SSITOSSAMap.java,v 1.1.2.11 2001-01-11 19:57:17 cananian Exp $
+ * @version $Id: SSITOSSAMap.java,v 1.1.2.12 2001-06-17 22:28:35 cananian Exp $
  */
 public class SSITOSSAMap implements TempMap {
     

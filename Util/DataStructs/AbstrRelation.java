@@ -1,5 +1,5 @@
 // AbstrRelation.java, created Thu Jun 29 19:13:12 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.DataStructs;
 
@@ -16,8 +16,8 @@ import harpoon.Analysis.PointerAnalysis.Debug;
 /**
  * <code>AbstrRelation</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AbstrRelation.java,v 1.1.2.4 2001-06-07 15:21:40 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: AbstrRelation.java,v 1.1.2.5 2001-06-17 22:36:58 cananian Exp $
  */
 public abstract class AbstrRelation implements Relation, Cloneable, 
 					java.io.Serializable {

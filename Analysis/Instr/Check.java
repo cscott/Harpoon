@@ -1,5 +1,5 @@
 // AppelRegAlloc.java, created Sun Apr  8 10:56:00 2001 by pnkfelix
-// Copyright (C) 2000 Felix S Klock II <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 

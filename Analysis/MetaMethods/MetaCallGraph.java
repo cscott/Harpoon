@@ -1,5 +1,5 @@
 // MetaCallGraph.java, created Mon Mar 13 15:53:31 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.MetaMethods;
 
@@ -19,8 +19,8 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  is for &quot;normal&quot; methods. It provides information on what meta
  methods are called by a given meta method [at a specific call site].
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraph.java,v 1.1.2.6 2000-07-02 08:37:40 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: MetaCallGraph.java,v 1.1.2.7 2001-06-17 22:30:33 cananian Exp $
  */
 
 public interface MetaCallGraph extends java.io.Serializable {

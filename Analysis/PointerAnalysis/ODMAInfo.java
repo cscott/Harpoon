@@ -1,5 +1,5 @@
 // ODMAInfo.java, created Mon Apr  3 18:17:57 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 
 // NOTE: I eliminated lots of debug messages by commenting them with
@@ -68,8 +68,8 @@ import harpoon.Util.DataStructs.LightMap;
 /**
  * <code>ODMAInfo</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ODMAInfo.java,v 1.1.2.2 2001-02-15 19:51:17 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: ODMAInfo.java,v 1.1.2.3 2001-06-17 22:30:42 cananian Exp $
  */
 public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 

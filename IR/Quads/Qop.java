@@ -18,8 +18,8 @@ import harpoon.ClassFile.HClass;
  * LAND/LOR could be removed, but the translation involved too many
  * steps to be deemed worthwhile.
  * 
- * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1.2.13 2000-11-12 01:27:26 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: Qop.java,v 1.1.2.14 2001-06-17 22:33:36 cananian Exp $
  */
 public abstract class Qop  {
     /** Compares references for equality. */

@@ -1,5 +1,5 @@
 // ReachingDefsCachingImpl.java, created Thu Jul 13 13:37:11 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
@@ -31,8 +31,8 @@ import java.util.HashMap;
  * <code>BasicBlock</code> as the last query don't have to iterate
  * over all the statements in the BasicBlock again.
  * 
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsCachingImpl.java,v 1.1.2.2 2000-07-21 22:30:45 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: ReachingDefsCachingImpl.java,v 1.1.2.3 2001-06-17 22:28:35 cananian Exp $
  */
 public class ReachingDefsCachingImpl extends ReachingDefsAltImpl {
 

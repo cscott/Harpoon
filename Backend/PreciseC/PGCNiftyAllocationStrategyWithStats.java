@@ -29,8 +29,8 @@ import harpoon.Temp.Temp;
  * This code originally written by Brian; Scott rearranged it.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @author  Brian Demsky
- * @version $Id: PGCNiftyAllocationStrategyWithStats.java,v 1.1.2.1 2000-11-12 04:05:18 cananian Exp $
+ * @author  Brian Demsky <bdemsky@mit.edu>
+ * @version $Id: PGCNiftyAllocationStrategyWithStats.java,v 1.1.2.2 2001-06-17 22:32:31 cananian Exp $
  */
 public class PGCNiftyAllocationStrategyWithStats
      extends PGCNiftyAllocationStrategy {

@@ -1,5 +1,5 @@
 // IgnoreSpillUDr.java, created Fri Jun 30 19:14:06 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
@@ -12,8 +12,8 @@ import java.util.Collections;
 /**
  * <code>IgnoreSpillUseDefer</code>
  * 
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: IgnoreSpillUseDefer.java,v 1.1.2.7 2001-01-13 21:45:23 cananian Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: IgnoreSpillUseDefer.java,v 1.1.2.8 2001-06-17 22:29:52 cananian Exp $
  */
 public class IgnoreSpillUseDefer extends UseDefer {
 

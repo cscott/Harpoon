@@ -1,5 +1,5 @@
 // PAEdgeSet.java, created Fri Jun 30 14:25:53 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -17,8 +17,8 @@ import harpoon.Temp.Temp;
 /**
  * <code>PAEdgeSet</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdgeSet.java,v 1.1.2.18 2000-11-15 21:48:38 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: PAEdgeSet.java,v 1.1.2.19 2001-06-17 22:30:42 cananian Exp $
  */
 public interface PAEdgeSet {
     

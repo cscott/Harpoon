@@ -1,5 +1,5 @@
 // ExactTemp.java, created Sun Apr  2 16:06:58 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.TypeInference;
 
@@ -17,8 +17,8 @@ import harpoon.Temp.Temp;
  be used to simply denote the temp t used (not defined) in the instruction
  q (as for example in the constructor of <code>TypeInference</code>).
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ExactTemp.java,v 1.1.2.3 2001-02-27 22:11:51 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: ExactTemp.java,v 1.1.2.4 2001-06-17 22:37:18 cananian Exp $
  */
 public class ExactTemp implements java.io.Serializable {
 

@@ -1,5 +1,5 @@
 // ToSSA.java, created Sat Jul  3 01:26:14 1999 by root
-// Copyright (C) 1999 root <root@bdemsky.mit.edu>
+// Copyright (C) 1999 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
@@ -33,7 +33,7 @@ import harpoon.IR.LowQuad.PCALL;
  * Converts SSI to SSA.  Should work on LowQuads and Quads. 
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ToSSA.java,v 1.1.2.13 2000-11-16 00:11:54 cananian Exp $
+ * @version $Id: ToSSA.java,v 1.1.2.14 2001-06-17 22:28:36 cananian Exp $
  */
 
 public final class ToSSA {

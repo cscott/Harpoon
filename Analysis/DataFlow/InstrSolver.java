@@ -1,5 +1,5 @@
 // InstrSolver.java, created Wed Apr  7 22:37:59 1999 by pnkfelix
-// Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
@@ -12,8 +12,8 @@ import java.util.Collections;
 /**
  * <code>InstrSolver</code>
  * 
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InstrSolver.java,v 1.1.2.7 2000-01-31 20:48:56 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: InstrSolver.java,v 1.1.2.8 2001-06-17 22:29:19 cananian Exp $
  */
 public final class InstrSolver  {
     

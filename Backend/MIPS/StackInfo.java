@@ -1,5 +1,5 @@
 // StackInfo.java, created Mon Aug 21 21:02:54 EDT 2000 by witchel
-// Copyright (C) 2000 Emmett Witchel <witchel@lcs.mit.edu>
+// Copyright (C) 2000 Emmett Witchel <witchel@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.MIPS;
 

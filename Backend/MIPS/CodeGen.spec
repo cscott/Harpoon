@@ -66,8 +66,8 @@ import java.util.Iterator;
  * <code>MIPS.CodeGen</code> is a code-generator for the MIPS II architecture.
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
- * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.41 2001-06-14 19:48:45 witchel Exp $
+ * @author  Emmett Witchel <witchel@mit.edu>
+ * @version $Id: CodeGen.spec,v 1.1.2.42 2001-06-17 22:32:23 cananian Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -206,7 +206,7 @@ import java.util.Iterator;
     /** Sub-class to represent delay-slots.
      * <code>optimize()</code> uses this class information to determine that
      * it should rearrange code to try to eliminate these instructions.
-     * @author Emmett Witchel
+     * @author Emmett Witchel <witchel@mit.edu>
      */
     private class InstrDELAYSLOT extends Instr {
        // a nop to fill the delay slot

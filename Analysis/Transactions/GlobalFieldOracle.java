@@ -1,5 +1,5 @@
 // GlobalFieldOracle.java, created Sun Jan 14 00:56:29 2001 by cananian
-// Copyright (C) 2000  <cananian@alumni.princeton.edu>
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Transactions;
 
@@ -38,7 +38,7 @@ import java.util.Set;
  * synchronized contexts.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GlobalFieldOracle.java,v 1.1.2.3 2001-03-04 00:02:13 cananian Exp $
+ * @version $Id: GlobalFieldOracle.java,v 1.1.2.4 2001-06-17 22:31:54 cananian Exp $
  */
 class GlobalFieldOracle extends FieldOracle {
     Set syncRead = new HashSet(); Set syncWrite = new HashSet();

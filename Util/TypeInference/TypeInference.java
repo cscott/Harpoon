@@ -1,5 +1,5 @@
 // TypeInference.java, created Sun Apr  2 14:42:04 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.TypeInference;
 
@@ -50,8 +50,8 @@ import harpoon.IR.Quads.CONST;
  Works for <code>quad-no-ssa</code> only (anyway, it is trivial to write the
  extensions for the other quads).
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: TypeInference.java,v 1.1.2.7 2001-06-06 15:29:34 bdemsky Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: TypeInference.java,v 1.1.2.8 2001-06-17 22:37:20 cananian Exp $
  */
 public class TypeInference implements java.io.Serializable {
     // switch on the debug messages

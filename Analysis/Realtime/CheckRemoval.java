@@ -1,3 +1,6 @@
+// CheckRemoval.java, created Mon Jan 22 18:40:16 2001 by wbeebee
+// Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
 
 import harpoon.IR.Quads.Quad;
@@ -8,7 +11,7 @@ import harpoon.IR.Quads.Quad;
  * <code>harpoon.IR.Quads.ASET</code>'s for possible removal of checks should 
  * implement.
  *
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ * @author Wes Beebee <wbeebee@mit.edu>
  */
 
 public interface CheckRemoval {

@@ -1,5 +1,5 @@
 // RegAlloc.java, created Mon Mar 29 16:47:25 1999 by pnkfelix
-// Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
@@ -25,8 +25,8 @@ import java.util.HashMap;
     Demand-Driven Register Allocation</A> for a set of
     <code>Instr</code>s in a <code>Code</code>.
 
-    @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.15 2001-01-13 21:45:23 cananian Exp $ 
+    @author  Felix S. Klock II <pnkfelix@mit.edu>
+    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.16 2001-06-17 22:29:49 cananian Exp $ 
 */
 public class DemandDrivenRegAlloc extends RegAlloc {
 

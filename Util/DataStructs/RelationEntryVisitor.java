@@ -1,5 +1,5 @@
 // RelationEntryVisitor.java, created Sat Feb 12 14:31:04 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.DataStructs;
 
@@ -8,8 +8,8 @@ package harpoon.Util.DataStructs;
  called on a relation entry of the form <code>&lt;key,value&gt;</code>.
  There is no other way to pass a function in Java (no pointers to methods ...)
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: RelationEntryVisitor.java,v 1.1.2.1 2000-07-01 23:30:07 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: RelationEntryVisitor.java,v 1.1.2.2 2001-06-17 22:36:59 cananian Exp $
  */
 public interface RelationEntryVisitor {
     /** Visits a <code>&lt;key,value&gt;</code> entry of a relation. */

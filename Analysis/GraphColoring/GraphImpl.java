@@ -1,5 +1,5 @@
 // Graph.java, created Wed Jan 13 15:51:26 1999 by pnkfelix
-// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1998 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
@@ -12,8 +12,8 @@ import java.util.Enumeration;
  * for implementing a graph object.
  * 
  * @deprecated replaced by <code>Graph</code> interface.
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: GraphImpl.java,v 1.1.2.4 2000-07-27 21:34:13 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: GraphImpl.java,v 1.1.2.5 2001-06-17 22:29:38 cananian Exp $
  */
 
 abstract class GraphImpl extends AbstractGraph {

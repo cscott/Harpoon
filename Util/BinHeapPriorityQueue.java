@@ -1,5 +1,5 @@
 // BinHeapPriorityQueue.java, created Tue Jun  1 15:08:45 1999 by pnkfelix
-// Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
@@ -20,8 +20,8 @@ import java.util.List;
  * Look into implementing a FibinocciHeap-based representation if
  * speed becomes an issue. 
  * 
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.9 1999-07-29 00:38:36 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.10 2001-06-17 22:35:51 cananian Exp $
  */
 public class BinHeapPriorityQueue extends AbstractCollection implements MaxPriorityQueue {
 

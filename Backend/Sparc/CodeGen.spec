@@ -58,7 +58,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.35 2000-09-11 21:33:25 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.36 2001-06-17 22:32:51 cananian Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -345,7 +345,7 @@ import java.util.Set;
     /** Sub-class to represent delay-slots.
      * <code>optimize()</code> uses this class information to determine that
      * it should rearrange code to try to eliminate these instructions.
-     * @author C. Scott Ananian
+     * @author C. Scott Ananian <cananian@alumni.princeton.edu>
      * @see Sparc.CodeGen#optimize
      */
     public class InstrDELAYSLOT extends Instr {

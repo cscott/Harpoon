@@ -1,5 +1,5 @@
 // PACheckRemoval.java, created Mon Jan 22 19:51:51 2001 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
 
@@ -48,8 +48,8 @@ import harpoon.Util.Util;
  * <code>PACheckRemoval</code> is a pointer analysis based
  * implementation of the <codE>CheckRemoval</code> interface.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PACheckRemoval.java,v 1.1.2.5 2001-04-19 17:16:37 salcianu Exp $ */
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: PACheckRemoval.java,v 1.1.2.6 2001-06-17 22:31:33 cananian Exp $ */
 public class PACheckRemoval implements CheckRemoval {
 
     PointerAnalysis pa = null;

@@ -1,4 +1,4 @@
-// ClassReplacer.java, created by wbeebee
+// ClassReplacer.java, created Fri Mar 23 10:31:56 2001 by wbeebee
 // Copyright (C) 2000 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;

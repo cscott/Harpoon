@@ -1,7 +1,5 @@
-
-
 // RSSxToNoSSA.java, created Thu Feb 10 13:58:12 2000 by root
-// Copyright (C) 2000 root <root@bdemsky.mit.edu>
+// Copyright (C) 2000 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
@@ -26,8 +24,8 @@ import java.util.Map;
 /**
  * <code>RSSxToNoSSA</code>
  * 
- * @author  root <root@bdemsky.mit.edu>
- * @version $Id: RSSxToNoSSA.java,v 1.1.2.2 2000-11-16 00:12:15 cananian Exp $
+ * @author  Brian Demsky <bdemsky@mit.edu>
+ * @version $Id: RSSxToNoSSA.java,v 1.1.2.3 2001-06-17 22:33:36 cananian Exp $
  */
 public class RSSxToNoSSA {
     QuadFactory newQF;

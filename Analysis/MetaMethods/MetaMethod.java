@@ -1,5 +1,5 @@
 // MetaMethod.java, created Tue Mar  7 15:52:47 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.MetaMethods;
 
@@ -40,8 +40,8 @@ import harpoon.Util.Util;
  of it, do whatever optimizations you do on that copy and modify the
  concerned call-sites to point to it.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaMethod.java,v 1.1.2.5 2001-01-23 01:08:19 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: MetaMethod.java,v 1.1.2.6 2001-06-17 22:30:33 cananian Exp $
  */
 public class MetaMethod implements java.io.Serializable {
     // Turns on some severe correctness tests.

@@ -1,5 +1,5 @@
 // MethodInliningCodeFactory.java, created Mon Feb  1 09:22:29 1999 by pnkfelix
-// Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
@@ -41,8 +41,8 @@ import harpoon.ClassFile.HCodeElement;
  * Recursive functions are legal, but this factory does not provide
  * facilities for specifying number of recursive inlinings.
  *
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.5 2001-01-13 21:08:10 cananian Exp $ */
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.6 2001-06-17 22:31:27 cananian Exp $ */
 public class MethodInliningCodeFactory implements HCodeFactory {
 
     static PrintWriter pw = new PrintWriter(System.out);

@@ -1,4 +1,4 @@
-// RealtimeRuntime.java, created by wbeebee
+// RealtimeRuntime.java, created Wed Jan 31 16:35:49 2001 by wbeebee
 // Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
@@ -36,7 +36,7 @@ import java.util.List;
  * <code>harpoon.Backend.Runtime2.Runtime</code> that allows constants
  * to be tagged with an ImmortalMemory.
  * 
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ * @author Wes Beebee <wbeebee@mit.edu>
  */
 
 public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {

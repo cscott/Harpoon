@@ -1,5 +1,5 @@
 // MetaCallGraphImpl.java, created Wed Mar  8 15:20:29 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.MetaMethods;
 
@@ -66,8 +66,8 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  by simply providing a meta methods-like interface for the standard
  <code>CallGraph</code>.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.26 2001-03-10 18:30:48 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.27 2001-06-17 22:30:33 cananian Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 

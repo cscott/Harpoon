@@ -1,3 +1,6 @@
+// GraphVisualizer.java, created Tue Apr 10 23:19:52 2001 by rhlee
+// Copyright (C) 2001 Robert Lee <rhlee@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
 
@@ -6,9 +9,9 @@ package harpoon.Analysis.GraphColoring;
  * static methods for generating dot visualizations for 
  * the Graph abstraction
  *
- * Robert Lee <rhlee@mit.edu>
+ * @author  Robert Lee <rhlee@mit.edu>
+ * @version $Id: GraphVisualizer.java,v 1.1.2.2 2001-06-17 22:29:38 cananian Exp $
  */
-
 
 import java.io.PrintWriter;
 import java.io.OutputStream;

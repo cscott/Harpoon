@@ -1,5 +1,5 @@
 // BackwardDataFlowBasicBlockVisitor.java, created Wed May 26 16:33:58 1999 by pnkfelix
-// Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
@@ -10,8 +10,8 @@ import harpoon.Util.Worklist;
 /**
  * <code>BackwardDataFlowBasicBlockVisitor</code>
  * 
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.1.2.4 1999-10-21 23:06:10 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.1.2.5 2001-06-17 22:29:19 cananian Exp $
  */
 public abstract class BackwardDataFlowBasicBlockVisitor 
     extends DataFlowBasicBlockVisitor {

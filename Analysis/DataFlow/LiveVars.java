@@ -1,5 +1,5 @@
 // LiveVars.java, created Wed May 26 16:53:26 1999 by pnkfelix
-// Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
@@ -47,8 +47,8 @@ import java.util.Iterator;
  * should avoid passing in strange <code>CFGrapher</code>s and
  * <code>UseDefer</code>s 
  *
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.28 2001-05-15 05:32:20 pnkfelix Exp $ */
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: LiveVars.java,v 1.1.2.29 2001-06-17 22:29:20 cananian Exp $ */
 public class LiveVars extends Liveness {
     
     protected static final boolean DEBUG = false; 

@@ -1,5 +1,5 @@
 // PANode.java, created Sun Jan  9 16:24:57 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -20,8 +20,8 @@ import harpoon.Util.DataStructs.LightMap;
  * <code>PANode</code> class models a node for the Pointer Analysis
  * algorithm.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.27 2001-06-07 15:21:22 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: PANode.java,v 1.1.2.28 2001-06-17 22:30:43 cananian Exp $
  */
 final public class PANode implements java.io.Serializable {
     // activates some safety tests

@@ -1,5 +1,5 @@
 // BasicBlock.java, created Wed Mar 10  9:00:53 1999 by jwhaley
-// Copyright (C) 1998 John Whaley
+// Copyright (C) 1998 John Whaley <jwhaley@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
@@ -61,9 +61,9 @@ import java.util.Collection;
    that intermediate representation if they wish to perform a second
    analysis pass.
  *
- * @author  John Whaley
- * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.45 2001-05-15 19:46:37 pnkfelix Exp $ */
+ * @author  John Whaley <jwhaley@alum.mit.edu>
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: BasicBlock.java,v 1.1.2.46 2001-06-17 22:28:34 cananian Exp $ */
 public class BasicBlock implements java.io.Serializable {
     
     static final boolean DEBUG = false;

@@ -1,5 +1,5 @@
 // CheesyPACheckRemoval.java, created Tue Jan 23 16:14:25 2001 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
 
@@ -50,8 +50,8 @@ import harpoon.Util.Util;
 /**
  * <code>CheesyPACheckRemoval</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CheesyPACheckRemoval.java,v 1.1.2.6 2001-04-19 17:16:37 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: CheesyPACheckRemoval.java,v 1.1.2.7 2001-06-17 22:31:33 cananian Exp $
  */
 public class CheesyPACheckRemoval implements CheckRemoval {
 

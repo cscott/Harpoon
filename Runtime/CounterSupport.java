@@ -1,5 +1,5 @@
 // CounterSupport.java, created Tue Nov  7 14:12:49 2000 by root
-// Copyright (C) 2000 bdemsky <bdemsky@LM.LCS.MIT.EDU>
+// Copyright (C) 2000 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Runtime;
 import java.io.ObjectOutputStream;
@@ -9,8 +9,8 @@ import java.io.PrintStream;
  * <code>CounterSupport</code> provides support for simple instrumentation.
  * using counters identified by integers.
  * 
- * @author  bdemsky <bdemsky@lm.lcs.mit.edu>
- * @version $Id: CounterSupport.java,v 1.1.2.8 2000-11-14 17:22:33 bdemsky Exp $
+ * @author  Brian Demsky <bdemsky@mit.edu>
+ * @version $Id: CounterSupport.java,v 1.1.2.9 2001-06-17 22:35:46 cananian Exp $
  */
 public class CounterSupport {
     static int size,sizesync;

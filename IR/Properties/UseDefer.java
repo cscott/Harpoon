@@ -1,5 +1,5 @@
 // UseDefer.java, created Thu Jan 27 15:33:54 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Properties;
 
@@ -11,8 +11,8 @@ import java.util.Collection;
  * <code>UseDefer</code> provides a means to externally associate use and
  * def information with elements of an intermediate representation.
  * 
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: UseDefer.java,v 1.1.2.4 2001-01-13 21:45:47 cananian Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: UseDefer.java,v 1.1.2.5 2001-06-17 22:33:25 cananian Exp $
  */
 public abstract class UseDefer {
     

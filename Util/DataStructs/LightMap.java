@@ -1,5 +1,5 @@
 // LightMap.java, created Sun Mar 19 15:46:56 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.DataStructs;
 
@@ -17,8 +17,8 @@ import harpoon.Util.Util;
  * <code>LightMap</code> is a very lightweight implementation of
  the <code>java.util.Map</code> interface.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightMap.java,v 1.1.2.5 2000-07-02 08:37:52 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: LightMap.java,v 1.1.2.6 2001-06-17 22:36:58 cananian Exp $
  */
 public class LightMap implements Map, Cloneable, java.io.Serializable {
     // the number of mappings in this map

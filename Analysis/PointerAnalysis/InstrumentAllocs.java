@@ -1,5 +1,5 @@
 // InstrumentAllocs.java, created Tue Nov  7 14:29:16 2000 by root
-// Copyright (C) 2000 root <root@BDEMSKY.MIT.EDU>
+// Copyright (C) 2000 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -31,8 +31,8 @@ import java.util.Map;
 /**
  * <code>InstrumentAllocs</code> adds counters to each allocation site.
  * 
- * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: InstrumentAllocs.java,v 1.1.2.11 2000-12-12 20:45:55 vivien Exp $
+ * @author  Brian Demsky <bdemsky@mit.edu>
+ * @version $Id: InstrumentAllocs.java,v 1.1.2.12 2001-06-17 22:30:40 cananian Exp $
  */
 public class InstrumentAllocs extends MethodMutator implements java.io.Serializable {
     int count;

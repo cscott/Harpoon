@@ -1,5 +1,5 @@
 // SimpleCheckRemoval.java, created Mon Jan 22 19:49:35 2001 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
 
@@ -10,8 +10,8 @@ import harpoon.IR.Quads.Quad;
  * the interface <code>CheckRemoval</code>: it just keeps all the
  * checks!
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SimpleCheckRemoval.java,v 1.1.2.2 2001-01-31 21:35:49 wbeebee Exp $ */
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: SimpleCheckRemoval.java,v 1.1.2.3 2001-06-17 22:31:33 cananian Exp $ */
 public class SimpleCheckRemoval implements CheckRemoval, NoHeapCheckRemoval {
     
     /** Creates a <code>SimpleCheckRemoval</code>. */

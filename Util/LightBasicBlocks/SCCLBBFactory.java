@@ -1,5 +1,5 @@
 // SCCLBBFactory.java, created Thu Mar 23 19:37:33 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.LightBasicBlocks;
 
@@ -13,8 +13,8 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  * <code>SCCLBBFactory</code> computes the topologically sorted component
  graph of the light basic blocks containing the code of a method.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCLBBFactory.java,v 1.1.2.7 2001-02-27 22:11:37 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: SCCLBBFactory.java,v 1.1.2.8 2001-06-17 22:37:13 cananian Exp $
  */
 public class SCCLBBFactory implements java.io.Serializable {
 

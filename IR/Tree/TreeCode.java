@@ -1,5 +1,5 @@
 // TreeCode.java, created Mon Feb 15 12:53:14 1999 by duncan
-// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu> 
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
@@ -31,8 +31,8 @@ import harpoon.Util.Util;
  * 
  * The tree form is based around Andrew Appel's tree form.  
  *
- * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: TreeCode.java,v 1.1.2.34 2001-01-11 23:12:38 cananian Exp $
+ * @author  Duncan Bryce <duncan@lcs.mit.edu>
+ * @version $Id: TreeCode.java,v 1.1.2.35 2001-06-17 22:33:42 cananian Exp $
  * 
  */
 public class TreeCode extends Code {

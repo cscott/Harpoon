@@ -1,5 +1,5 @@
 // AbstractGraph.java, created Tue Jul 25 15:52:49 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
@@ -28,8 +28,8 @@ import java.util.List;
  * override this class's <code>addNode</code> and <code>addEdge</code>
  * methods  (which otherwise throws UnsupportedOperationException).
  *
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: AbstractGraph.java,v 1.1.2.3 2000-08-25 06:57:30 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: AbstractGraph.java,v 1.1.2.4 2001-06-17 22:29:37 cananian Exp $
  */
 public abstract class AbstractGraph implements Graph {
     

@@ -1,5 +1,5 @@
 // TESTER.java, created Wed Nov 15 23:01:44 2000 by root
-// Copyright (C) 2000 root <root@BDEMSKY.MIT.EDU>
+// Copyright (C) 2000 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 import harpoon.Util.WorkSet;
@@ -11,8 +11,8 @@ import java.util.Set;
  * mention any quads in its <code>HANDLER</code>'s protectedSets which
  * aren't reachable in the code.  For debugging purposes.
  * 
- * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: TESTER.java,v 1.1.2.2 2000-11-16 04:58:01 cananian Exp $
+ * @author  Brian Demsky <bdemsky@mit.edu>
+ * @version $Id: TESTER.java,v 1.1.2.3 2001-06-17 22:33:36 cananian Exp $
  */
 class TESTER {
     

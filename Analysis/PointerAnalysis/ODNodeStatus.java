@@ -1,6 +1,13 @@
+// ODNodeStatus.java, created Mon Dec 11 17:58:49 2000 by vivien
+// Copyright (C) 2001 Frederic VIVIEN <vivien@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 import harpoon.IR.Quads.Quad;
 
+/**
+ * @author  Frederic VIVIEN <vivien@lcs.mit.edu>
+ * @version $Id: ODNodeStatus.java,v 1.1.2.2 2001-06-17 22:30:42 cananian Exp $
+ */
 public class ODNodeStatus {
 
     public boolean onStack     = false;

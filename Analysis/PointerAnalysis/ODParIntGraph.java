@@ -1,5 +1,5 @@
 // ODParIntGraph.java, created Sun Jan  9 15:40:59 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -27,8 +27,8 @@ import harpoon.Util.DataStructs.LightMap;
  structure. Most of its fields retain the original name from the paper
  of Martin and John Whaley.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ODParIntGraph.java,v 1.1.2.1 2000-12-11 22:58:49 vivien Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: ODParIntGraph.java,v 1.1.2.2 2001-06-17 22:30:42 cananian Exp $
  */
 public class ODParIntGraph {
 

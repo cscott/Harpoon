@@ -1,5 +1,5 @@
 // ODPAMain.java, created Fri Jan 14 10:54:16 2000 by salcianu
-// Copyright (C) 1999 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 1999 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
@@ -96,7 +96,7 @@ import harpoon.Util.DataStructs.LightMap;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPAMain.java,v 1.1.2.2 2001-02-15 19:51:23 salcianu Exp $
+ * @version $Id: ODPAMain.java,v 1.1.2.3 2001-06-17 22:34:55 cananian Exp $
  */
 public abstract class ODPAMain {
 

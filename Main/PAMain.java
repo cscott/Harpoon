@@ -1,5 +1,5 @@
 // PAMain.java, created Fri Jan 14 10:54:16 2000 by salcianu
-// Copyright (C) 1999 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 1999 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
@@ -94,7 +94,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.102 2001-06-07 15:21:26 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.103 2001-06-17 22:34:56 cananian Exp $
  */
 public abstract class PAMain {
 

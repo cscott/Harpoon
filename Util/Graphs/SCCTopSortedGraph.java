@@ -1,5 +1,5 @@
 // SCCTopSortedGraph.java, created Wed Jan 26 11:39:40 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Graphs;
 
@@ -20,8 +20,8 @@ import harpoon.Util.Util;
  * To obtain such a graph, use the <code>topSort</code> static method.
  * It uses a Depth First Search to do the sortting in linear time (see
  * <code>Section 23.4</code> in Cormen and co for the exact algorithm).
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCTopSortedGraph.java,v 1.1.2.2 2001-04-19 17:17:12 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: SCCTopSortedGraph.java,v 1.1.2.3 2001-06-17 22:37:04 cananian Exp $
  */
 public class SCCTopSortedGraph implements Serializable {
     

@@ -1,5 +1,5 @@
 // BypassLatchSchedule.java, created Wed Sep 27 20:01:40 EDT 2000 by witchel
-// Copyright (C) 1999 Emmett Witchel <witchel@lcs.mit.edu>
+// Copyright (C) 1999 Emmett Witchel <witchel@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.MIPS;
 
@@ -28,7 +28,7 @@ import java.util.Set;
  * which says that this use of operand 1 (RS) is the last use.  The
  * assembler will use this information to not write the t0 value
  * generated in the add instruction back to the register file.
- * @author  Emmett Witchel <witchel@lcs.mit.edu>
+ * @author  Emmett Witchel <witchel@mit.edu>
  * @version $Id: 
  */
 

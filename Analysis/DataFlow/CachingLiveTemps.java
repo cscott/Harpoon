@@ -1,5 +1,5 @@
 // CachingLiveTemps.java, created Sat Jul 29 15:22:48 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
@@ -27,8 +27,8 @@ import java.util.Iterator;
  * accessed, along with the results of liveness analysis on all of the
  * statements in the basic blocks.
  * 
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: CachingLiveTemps.java,v 1.1.2.3 2000-08-25 06:57:27 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: CachingLiveTemps.java,v 1.1.2.4 2001-06-17 22:29:19 cananian Exp $
  */
 public class CachingLiveTemps extends LiveTemps {
 

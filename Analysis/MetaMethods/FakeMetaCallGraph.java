@@ -1,5 +1,5 @@
 // FakeMetaCallGraph.java, created Mon Mar 13 15:56:57 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.MetaMethods;
 
@@ -28,8 +28,8 @@ import harpoon.IR.Quads.CALL;
  don't feel very comfortable with meta-methods, just pass it a 
  <code>FakeMetaCallGraph</code>.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: FakeMetaCallGraph.java,v 1.1.2.6 2001-04-10 21:46:47 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: FakeMetaCallGraph.java,v 1.1.2.7 2001-06-17 22:30:32 cananian Exp $
  */
 public class FakeMetaCallGraph extends MetaCallGraphAbstr {
 

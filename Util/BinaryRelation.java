@@ -1,5 +1,5 @@
 // BinaryRelation.java, created Sat Feb  5 15:09:13 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
@@ -11,8 +11,8 @@ package harpoon.Util;
  * requirements your <code>BinaryRelation</code> needs.
  * Examples of <code>BinaryRelation</code>s include 
  * "less than" ( &lt; ) and "equals" ( == ).
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: BinaryRelation.java,v 1.1.2.1 2000-02-05 20:24:34 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: BinaryRelation.java,v 1.1.2.2 2001-06-17 22:35:54 cananian Exp $
  */
 public interface BinaryRelation {
     

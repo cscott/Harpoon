@@ -1,5 +1,5 @@
 // ReachingDefs.java, created Wed Mar 10  9:00:54 1999 by jwhaley
-// Copyright (C) 1998 John Whaley
+// Copyright (C) 1998 John Whaley <jwhaley@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
@@ -26,10 +26,10 @@ import java.util.Set;
  * <code>HCodeElement</code>, <code>CFGraphable</code>, and 
  * <code>UseDefable</code>.  
  *
- * @author  John Whaley
- * @author  Felix S Klock <pnkfelix@mit.edu>
+ * @author  John Whaley <jwhaley@alum.mit.edu>
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ReachingDefs.java,v 1.1.2.18 2001-01-13 21:45:18 cananian Exp $
+ * @version $Id: ReachingDefs.java,v 1.1.2.19 2001-06-17 22:29:21 cananian Exp $
  */
 public abstract class ReachingDefs { 
     

@@ -1,5 +1,5 @@
 // ThreadInliner.java, created Mon Jun 12 13:38:59 2000 by root
-// Copyright (C) 2000 root <root@bdemsky.mit.edu>
+// Copyright (C) 2000 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
@@ -22,8 +22,8 @@ import java.util.Iterator;
 /**
  * <code>ThreadInliner</code>
  * 
- * @author  root <root@bdemsky.mit.edu>
- * @version $Id: ThreadInliner.java,v 1.1.2.3 2000-10-06 23:02:40 cananian Exp $
+ * @author  Brian Demsky <bdemsky@mit.edu>
+ * @version $Id: ThreadInliner.java,v 1.1.2.4 2001-06-17 22:33:36 cananian Exp $
  */
 public class ThreadInliner {
     /** Creates a <code>ThreadInliner</code>. */

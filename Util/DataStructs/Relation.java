@@ -1,5 +1,5 @@
 // Relation.java, created Tue Jan 11 14:52:48 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.DataStructs;
 
@@ -16,8 +16,8 @@ import harpoon.Util.PredicateWrapper;
  * to be simpler and better tailored for the implementation of the Pointer
  * Analysis algorithm.
  *
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.2 2001-06-07 15:21:40 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: Relation.java,v 1.1.2.3 2001-06-17 22:36:59 cananian Exp $
  */
 public interface Relation {
     

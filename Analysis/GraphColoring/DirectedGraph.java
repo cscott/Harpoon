@@ -1,5 +1,5 @@
 // DirectedGraph.java, created Thu Jul 20 15:34:24 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
@@ -13,8 +13,8 @@ import java.util.Collection;
  * and the addition of two new methods, <code>childrenOf(node)</code>
  * and <code>parentsOf(node)</code>.
  *
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: DirectedGraph.java,v 1.1.2.1 2000-07-20 21:05:37 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: DirectedGraph.java,v 1.1.2.2 2001-06-17 22:29:38 cananian Exp $
  */
 public interface DirectedGraph extends Graph {
     

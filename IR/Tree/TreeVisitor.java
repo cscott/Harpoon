@@ -1,13 +1,13 @@
 // TreeVisitor.java, created Thu Jan 14 19:06:18 1999 by duncan
-// Copyright (C) 1998 Duncan Bryce  <duncan@lcs.mit.edu>
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
 /**
  * <code>TreeVisitor</code> is a Design Pattern, courtesy of Martin.
  * 
- * @author   Duncan Bryce  <duncan@lcs.mit.edu>
- * @version  $Id: TreeVisitor.java,v 1.1.2.17 2000-03-26 06:29:10 jwhaley Exp $
+ * @author   Duncan Bryce <duncan@lcs.mit.edu>
+ * @version  $Id: TreeVisitor.java,v 1.1.2.18 2001-06-17 22:33:43 cananian Exp $
  */
 public abstract class TreeVisitor
 {

@@ -1,5 +1,5 @@
-// CloningVisitor.java, created Mon Feb  7 17:04:30 2000 by root
-// Copyright (C) 2000 root <root@bdemsky.mit.edu>
+// CloningVisitor.java, created Mon Feb  7 17:04:30 2000 by bdemsky
+// Copyright (C) 2000 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.EventDriven;
 
@@ -69,8 +69,8 @@ import harpoon.Analysis.Maps.AllocationInformation;
 /**
  * <code>CloningVisitor</code>
  * 
- * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.34 2000-11-05 00:39:44 salcianu Exp $
+ * @author  Brian Demsky <bdemsky@mit.edu>
+ * @version $Id: CloningVisitor.java,v 1.1.2.35 2001-06-17 22:29:29 cananian Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;

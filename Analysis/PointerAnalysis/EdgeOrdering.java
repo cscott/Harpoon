@@ -1,5 +1,5 @@
 // EdgeOrdering.java, created Wed Feb 16 14:50:33 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -34,8 +34,8 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  a very performant one. My main concern was to make the algorithm work
  correctly; speed was only a second issue.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: EdgeOrdering.java,v 1.1.2.11 2001-02-27 22:11:11 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: EdgeOrdering.java,v 1.1.2.12 2001-06-17 22:30:40 cananian Exp $
  */
 public class EdgeOrdering implements java.io.Serializable {
 

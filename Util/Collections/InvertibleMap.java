@@ -1,3 +1,6 @@
+// InvertibleMap.java, created Wed Jun 21  3:22:34 2000 by pnkfelix
+// Copyright (C) 2001 Felix S. Klock II <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
 /** An <code>InvertibleMap</code> is an extension of the
@@ -13,7 +16,7 @@ package harpoon.Util.Collections;
     the returned <code>MultiMap</code>).
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InvertibleMap.java,v 1.1.2.3 2001-06-17 20:13:18 cananian Exp $
+    @version $Id: InvertibleMap.java,v 1.1.2.4 2001-06-17 22:36:32 cananian Exp $
 */
 public interface InvertibleMap extends java.util.Map {
     /** Returns a inverted view of <code>this</code>.

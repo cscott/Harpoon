@@ -1,4 +1,4 @@
-// CheckAdder.java, created by wbeebee
+// CheckAdder.java, created Tue Jan 23 16:09:50 2001 by wbeebee
 // Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
@@ -43,7 +43,7 @@ import harpoon.Util.Util;
  * <code>SET</code>s and <code>ASET</code>s only if the 
  * <code>CheckRemoval</code> indicates that the check cannot be removed.
  *
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ * @author Wes Beebee <wbeebee@mit.edu>
  */
 
 // Fix to be non-static...

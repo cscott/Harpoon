@@ -1,5 +1,5 @@
 // TreePostPass.java, created Thu Jan 11 16:04:23 2001 by cananian
-// Copyright (C) 2000  <cananian@alumni.princeton.edu>
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Transactions;
 
@@ -26,8 +26,8 @@ import java.util.List;
  * <p>
  * This pass is invoked by <code>SyncTransformer.treeCodeFactory()</code>.
  * 
- * @author   <cananian@alumni.princeton.edu>
- * @version $Id: TreePostPass.java,v 1.1.2.2 2001-01-15 21:21:56 cananian Exp $
+ * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: TreePostPass.java,v 1.1.2.3 2001-06-17 22:31:54 cananian Exp $
  */
 class TreePostPass extends harpoon.Analysis.Tree.Simplification {
     private final List RULES = new ArrayList(); 

@@ -1,5 +1,5 @@
 // InterfaceMethodMap.java, created Tue Jan 19 17:10:17 1999 by pnkfelix
-// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1998 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Analysis;
 
@@ -32,8 +32,8 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * methods to the offset that the method-pointers should have on the
  * object layout.
  * 
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.4.4 2000-07-25 03:01:19 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: InterfaceMethodMap.java,v 1.1.4.5 2001-06-17 22:32:02 cananian Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {

@@ -1,5 +1,5 @@
 // SparseGraph.java, created Wed Jan 13 16:32:04 1999 by pnkfelix
-// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Copyright (C) 1998 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
@@ -22,8 +22,8 @@ import java.util.Iterator;
  * list <code>SparseNode</code>s, and edges are represented by the
  * references <code>SparseNode</code>s store internally.
  * 
- * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseGraph.java,v 1.1.2.16 2000-08-27 09:33:56 pnkfelix Exp $ 
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: SparseGraph.java,v 1.1.2.17 2001-06-17 22:29:39 cananian Exp $ 
  */
 
 public class SparseGraph extends ColorableGraphImpl implements ColorableGraph {

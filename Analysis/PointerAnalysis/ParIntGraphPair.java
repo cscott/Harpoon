@@ -1,5 +1,5 @@
 // ParIntGraphPair.java, created Mon Mar 27 20:11:14 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -17,8 +17,8 @@ package harpoon.Analysis.PointerAnalysis;
  and hence, we need to maintain two graphs.
 
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraphPair.java,v 1.1.2.3 2001-02-27 22:11:13 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: ParIntGraphPair.java,v 1.1.2.4 2001-06-17 22:30:49 cananian Exp $
  */
 class ParIntGraphPair implements java.io.Serializable {
 

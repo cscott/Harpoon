@@ -1,3 +1,6 @@
+// GenericInvertibleMap.java, created Wed Jun 21  3:22:34 2000 by pnkfelix
+// Copyright (C) 2001 Felix S. Klock II <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
 import java.util.Map;
@@ -8,7 +11,7 @@ import java.util.Iterator;
     views of the mappings it maintains.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: GenericInvertibleMap.java,v 1.1.2.4 2001-06-17 20:13:18 cananian Exp $
+    @version $Id: GenericInvertibleMap.java,v 1.1.2.5 2001-06-17 22:36:32 cananian Exp $
 */
 public class GenericInvertibleMap extends MapWrapper implements InvertibleMap {
     // inverted map

@@ -1,3 +1,6 @@
+// NoHeapCheckRemoval.java, created Wed Jan 31 16:35:49 2001 by wbeebee
+// Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
 
 import harpoon.IR.Quads.Quad;
@@ -9,7 +12,7 @@ import harpoon.IR.Quads.Quad;
  * for possible removal of checks for heap access in a NoHeapRealtimeThread
  * should implement.
  *
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ * @author Wes Beebee <wbeebee@mit.edu>
  */
 
 public interface NoHeapCheckRemoval {

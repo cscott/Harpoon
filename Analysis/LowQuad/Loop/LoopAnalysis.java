@@ -72,8 +72,8 @@ import java.util.Iterator;
  * <code>LoopAnalysis</code> implements <code>AllInductionsMap</code>,
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
- * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.22 2001-06-15 14:26:25 cananian Exp $
+ * @author  Brian Demsky <bdemsky@mit.edu>
+ * @version $Id: LoopAnalysis.java,v 1.1.2.23 2001-06-17 22:30:19 cananian Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {

@@ -1,5 +1,5 @@
 // ForwardDataFlowQuadVisitor.java, created Wed Mar 10  9:00:53 1999 by jwhaley
-// Copyright (C) 1998 John Whaley
+// Copyright (C) 1998 John Whaley <jwhaley@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
@@ -9,7 +9,7 @@ import harpoon.IR.Quads.Quad;
 /**
  * ForwardDataFlowQuadVisitor
  *
- * @author  John Whaley
+ * @author  John Whaley <jwhaley@alum.mit.edu>
  */
 
 public abstract class ForwardDataFlowQuadVisitor extends DataFlowQuadVisitor {

@@ -1,3 +1,6 @@
+// QuantaChecker.java, created Fri Jun  8 14:02:02 2001 by wingman
+// Copyright (C) 2001 Bryan Fink <wingman@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
 
 import harpoon.Analysis.Transformation.MethodMutator;
@@ -38,6 +41,10 @@ import java.util.List;
 import java.util.ArrayList;
 import java.io.PrintWriter;
 
+/**
+ * @author  Bryan Fink <wingman@mit.edu>
+ * @version $Id: QuantaChecker.java,v 1.1.2.2 2001-06-17 22:31:33 cananian Exp $
+ */
 public class QuantaChecker extends MethodMutator
 {
     protected Frame frame;

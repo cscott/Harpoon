@@ -23,8 +23,8 @@ import harpoon.Util.Util;
  * proceeds as if there were implicit <code>MOVE</code>s on the edges
  * leading to/coming from the <code>PHI</code>/<code>SIGMA</code> nodes.
  * 
- * @author  Brian Demsky
- * @version $Id: QuadRSSx.java,v 1.1.2.2 2000-11-15 19:43:59 cananian Exp $
+ * @author  Brian Demsky <bdemsky@mit.edu>
+ * @version $Id: QuadRSSx.java,v 1.1.2.3 2001-06-17 22:33:36 cananian Exp $
  */
 public class QuadRSSx extends Code /* which extends HCode */ {
     /** The name of this code view. */

@@ -1,5 +1,6 @@
+// EqTempSets.java, created Thu May 25 20:26:25 2000 by pnkfelix
 /// EqTempSets.java, created Thu May 25 19:42:05 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
@@ -28,8 +29,8 @@ import java.util.HashSet;
  *  Each element of S is represented by one of its members,
  *  called the Representative (or Rep for short).
  * 
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: EqTempSets.java,v 1.1.2.8 2000-10-20 19:42:17 cananian Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: EqTempSets.java,v 1.1.2.9 2001-06-17 22:29:49 cananian Exp $
  */
 public abstract class EqTempSets implements harpoon.Temp.TempMap {
     

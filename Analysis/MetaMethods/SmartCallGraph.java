@@ -1,5 +1,5 @@
 // SmartCallGraph.java, created Tue Mar 21 15:32:43 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.MetaMethods;
 
@@ -24,8 +24,8 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
 /**
  * <code>SmartCallGraph</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SmartCallGraph.java,v 1.1.2.5 2000-07-02 08:37:40 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: SmartCallGraph.java,v 1.1.2.6 2001-06-17 22:30:33 cananian Exp $
  */
 public class SmartCallGraph implements CallGraph {
     

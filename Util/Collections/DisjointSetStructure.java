@@ -1,5 +1,5 @@
 // DisjointSetStructure.java, created Mon Jan 10 13:22:33 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
@@ -30,8 +30,8 @@ import java.util.Set;
  * <code>java.util.Set</code> containing the members of the
  * <code>Set</code> represented by <code>rep</code>.
  * 
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: DisjointSetStructure.java,v 1.1.2.5 2000-01-29 00:13:41 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: DisjointSetStructure.java,v 1.1.2.6 2001-06-17 22:36:32 cananian Exp $
  */
 public abstract class DisjointSetStructure { 
     // note: having this extend SetFactory doesn't make sense any

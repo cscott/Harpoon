@@ -1,4 +1,4 @@
-// Stats.java, created by wbeebee
+// Stats.java, created Sat Jan 20 23:39:00 2001 by wbeebee
 // Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * <code>Stats</code> calculates statistics for the static analysis 
  * and compilation of RTJ extensions.
  *
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ * @author Wes Beebee <wbeebee@mit.edu>
  */
 
 class Stats {

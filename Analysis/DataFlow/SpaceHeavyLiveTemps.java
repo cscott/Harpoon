@@ -1,5 +1,5 @@
 // SpaceHeavyLiveTemps.java, created Wed Aug 23 17:20:37 2000 by pnkfelix
-// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
@@ -36,8 +36,8 @@ import java.util.Iterator;
  * corresponding increase in recomputation-times; for now the class
  * can be treated as if the scaling factor were equal to 1.
  * 
- * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: SpaceHeavyLiveTemps.java,v 1.1.2.4 2001-05-15 20:05:32 pnkfelix Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: SpaceHeavyLiveTemps.java,v 1.1.2.5 2001-06-17 22:29:23 cananian Exp $
  */
 public class SpaceHeavyLiveTemps extends LiveTemps {
     CFGrapher grapher;

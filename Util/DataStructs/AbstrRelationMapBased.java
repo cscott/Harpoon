@@ -1,5 +1,5 @@
 // AbstrRelationMapBased.java, created Fri Jun 30 11:17:10 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.DataStructs;
 
@@ -13,8 +13,8 @@ import java.io.Serializable;
 /**
  * <code>AbstrRelationMapBased</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AbstrRelationMapBased.java,v 1.1.2.2 2000-07-02 08:37:52 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: AbstrRelationMapBased.java,v 1.1.2.3 2001-06-17 22:36:58 cananian Exp $
  */
 public abstract class AbstrRelationMapBased extends AbstrRelation
     implements Serializable {

@@ -1,5 +1,5 @@
 // CleanHandlers.java, created Wed Nov 15 23:31:06 2000 by cananian
-// Copyright (C) 2000  <cananian@alumni.princeton.edu>
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
@@ -15,7 +15,7 @@ import java.util.Set;
  * risk touching <code>Translate</code> after all this time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CleanHandlers.java,v 1.1.2.1 2000-11-16 04:49:21 cananian Exp $
+ * @version $Id: CleanHandlers.java,v 1.1.2.2 2001-06-17 22:33:35 cananian Exp $
  */
 class CleanHandlers {
     static void clean(Code code) {

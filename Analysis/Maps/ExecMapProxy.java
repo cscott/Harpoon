@@ -1,5 +1,5 @@
 // ExecMapProxy.java, created Wed Nov 15 21:42:10 2000 by cananian
-// Copyright (C) 2000  <cananian@alumni.princeton.edu>
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Maps;
 
@@ -13,8 +13,8 @@ import harpoon.IR.Quads.Edge;
  * specifies its relationship to an <code>HCode</code> for which a
  * <code>ExecMap</code> is known.
  * 
- * @author   <cananian@alumni.princeton.edu>
- * @version $Id: ExecMapProxy.java,v 1.1.2.1 2000-11-16 04:55:04 cananian Exp $
+ * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ExecMapProxy.java,v 1.1.2.2 2001-06-17 22:30:23 cananian Exp $
  */
 public class ExecMapProxy extends MapProxy implements ExecMap {
     private ExecMap em;

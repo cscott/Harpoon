@@ -1,5 +1,5 @@
 // CachingLBBConverter.java, created Thu Mar 23 19:27:58 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.LightBasicBlocks;
 
@@ -13,8 +13,8 @@ import harpoon.Util.BasicBlocks.BBConverter;
  * <code>CachingLBBConverter</code> adds some caching to the
  <code>LBBConverter</code>.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CachingLBBConverter.java,v 1.1.2.2 2001-02-27 22:11:37 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: CachingLBBConverter.java,v 1.1.2.3 2001-06-17 22:37:13 cananian Exp $
  */
 public class CachingLBBConverter extends LBBConverter
     implements java.io.Serializable {

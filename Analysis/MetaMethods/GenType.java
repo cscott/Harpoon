@@ -1,5 +1,5 @@
 // GenType.java, created Tue Mar  7 18:32:52 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.MetaMethods;
 
@@ -18,8 +18,8 @@ import harpoon.Util.Util;
  (which correspond to a set of <code>HClass</code>es, a type cone
  rooted in a specific <code>HClass</code>)
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: GenType.java,v 1.1.2.2 2000-03-29 23:43:55 cananian Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: GenType.java,v 1.1.2.3 2001-06-17 22:30:32 cananian Exp $
  */
 public class GenType implements java.io.Serializable {
 

@@ -1,5 +1,5 @@
 // FieldSyncOracle.java, created Sun Jan 14 00:56:29 2001 by cananian
-// Copyright (C) 2000  <cananian@alumni.princeton.edu>
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
@@ -38,7 +38,7 @@ import java.util.Set;
  * memory optimizations are safe across a given method call.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldSyncOracle.java,v 1.1.2.1 2001-06-17 20:23:59 cananian Exp $
+ * @version $Id: FieldSyncOracle.java,v 1.1.2.2 2001-06-17 22:31:27 cananian Exp $
  */
 class FieldSyncOracle {
     final MultiMap fieldsRead, fieldsWritten;

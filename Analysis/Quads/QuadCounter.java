@@ -15,7 +15,7 @@ import harpoon.ClassFile.HMethod;
  * to create an accurate count:
  * <code>hcf = new CachingCodeFactory(new QuadCounter(hcf));</code>
  *
- * @author Wes Beebee <a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>
+ * @author Wes Beebee <wbeebee@mit.edu>
  */
 
 public class QuadCounter implements HCodeFactory, java.io.Serializable {

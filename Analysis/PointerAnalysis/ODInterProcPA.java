@@ -1,5 +1,5 @@
 // ODInterProcPA.java, created Tue Jan 18 11:04:20 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -52,8 +52,8 @@ import harpoon.Util.Util;
  * for the <code>this</code> <i>hidden</i> argument that would exist if all
  * those methods were in the <code>ODPointerAnalysis</code> class.
  * 
- * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ODInterProcPA.java,v 1.1.2.1 2000-12-11 22:58:49 vivien Exp $
+ * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+ * @version $Id: ODInterProcPA.java,v 1.1.2.2 2001-06-17 22:30:42 cananian Exp $
  */
 abstract class ODInterProcPA {
 

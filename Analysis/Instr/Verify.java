@@ -1,3 +1,6 @@
+// Verify.java, created Wed Jun 21  3:22:28 2000 by pnkfelix
+// Copyright (C) 2001 Felix S. Klock II <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
 import harpoon.Analysis.BasicBlock;
@@ -18,6 +21,9 @@ import java.util.Set;
 /** Verify uses the inherent definitions of the instruction
     stream to check that the register uses of the allocated
     instructions are coherent.
+
+    @author  Felix S. Klock II <pnkfelix@mit.edu>
+    @version $Id: Verify.java,v 1.1.2.11 2001-06-17 22:29:56 cananian Exp $
 */
 class Verify extends harpoon.IR.Assem.InstrVisitor {
     LocalCffRegAlloc lra;

@@ -1,5 +1,5 @@
 // LoopMap.java, created Thu Jun 17 16:11:41 1999 by root
-// Copyright (C) 1999 bdemsky <bdemsky@mit.edu>
+// Copyright (C) 1999 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.LowQuad.Loop;
 import harpoon.Temp.TempMap;
@@ -16,7 +16,7 @@ import java.util.Set;
  * <code>LoopMap</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopMap.java,v 1.1.2.4 2001-06-15 14:26:25 cananian Exp $
+ * @version $Id: LoopMap.java,v 1.1.2.5 2001-06-17 22:30:19 cananian Exp $
  */
 public class LoopMap implements TempMap {
     
