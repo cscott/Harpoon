@@ -17,7 +17,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.19 1998-09-14 02:49:16 cananian Exp $
+ * @version $Id: HMethod.java,v 1.20 1998-09-24 21:11:45 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -44,8 +44,9 @@ public class HMethod implements HMember {
       else if (methodinfo.attributes[i] instanceof AttributeSynthetic)
 	this.synthetic = (AttributeSynthetic) methodinfo.attributes[i];
     }
-    // Add the default code representation.
-    putCode(new harpoon.IR.Bytecode.Code(this, this.methodinfo));
+    // Add the default code representation, if method is not native.
+    if (!Modifier.isNative(getModifiers()))
+      putCode(new harpoon.IR.Bytecode.Code(this, this.methodinfo));
   }
   /** provide means for <code>HArrayMethod</code> to subclass. */
   HMethod(HClass parent) { this.hclass = parent; }
@@ -70,6 +71,7 @@ public class HMethod implements HMember {
    *                 you would like.
    * @return the code representation you requested, or <code>null</code>
    *         if no factory for the <code>codetype</code> can be found.
+   *         <code>null</code> is typically also returned for native methods.
    * @see putCode
    */
   public HCode getCode(String codetype) {

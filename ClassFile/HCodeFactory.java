@@ -13,7 +13,7 @@ import harpoon.ClassFile.*;
  * to cache the result.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeFactory.java,v 1.2 1998-09-14 02:49:15 cananian Exp $
+ * @version $Id: HCodeFactory.java,v 1.3 1998-09-24 21:11:44 cananian Exp $
  */
 
 public interface HCodeFactory  {
@@ -22,7 +22,12 @@ public interface HCodeFactory  {
      *  <code>m</code> to get the source representation for the
      *  conversion.  <code>HMethod.getCode()</code> will take
      *  care of properly caching the value <code>convert</code>
-     *  returns. */
+     *  returns. <p>
+     *  <code>convert</code> is allowed to return null if the requested
+     *  conversion is impossible; typically this is because it's attempt
+     *  to <code>getCode</code> a source representation failed -- for
+     *  example, because <code>m</code> is a native method.
+     */
     public HCode convert(HMethod m);
     /** Returns a string naming the type of the <code>HCode</code>
      *  that this factory produces.  <p>
