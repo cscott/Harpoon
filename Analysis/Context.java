@@ -5,6 +5,8 @@ package harpoon.Analysis;
 
 import java.util.Collections;
 import java.util.List;
+// USED IN Analysis/SizeOpt/BitWidthAnalysis.java
+//  and    Analysis/PointsToAnalysis.java
 /**
  * A <code>Context</code> object is an opaque representation of a
  * method's <i>calling context</i>, intended to make it easier to
@@ -33,16 +35,12 @@ import java.util.List;
  * <code>Quads.CALL</code> (or similar IR object) to
  * <code>addElement()</code>, to distinguish different call-sites
  * leaving to the same destination method.  <p>
- *
- * (It would be nice if Java had parametric polymorphism already so
- * that we could distinguish these two <code>Context</code>s at the
- * type level.)
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Context.java,v 1.1 2002-02-26 10:08:03 cananian Exp $
+ * @version $Id: Context.java,v 1.2 2003-06-17 16:44:56 cananian Exp $
  * @see GenericContextFactory
  */
-public abstract class Context {
+public abstract class Context<E> {
     protected Context() { }
     
     /** Add a new element to the end of this <code>Context</code>,
@@ -52,7 +50,7 @@ public abstract class Context {
      *  analyses may wish to implement a context cache.  Or not.
      *  Depends on how long you're planning on keeping those
      *  <code>Context</code> objects around, don't it. */
-    public abstract Context addElement(Object o);
+    public abstract Context<E> addElement(E o);
 
     /** Return the elements of this <code>Context</code> as a tuple,
      *  as represented by an unmodifiable <code>List</code>.
@@ -64,7 +62,7 @@ public abstract class Context {
      *  <p>
      *  The length of this <code>List</code> will usually be bounded by
      *  a small constant. */
-    public abstract List asList();
+    public abstract List<E> asList();
 
     // for convenience and hashmap good behaviour.
     /** @return <code>asList().hashCode()</code> */
@@ -81,10 +79,13 @@ public abstract class Context {
     public String toString() { return asList().toString(); }
 
     // some common cases.
+    // XXX bivariant.
     public final static Context CONTEXT_INSENSITIVE = new Context() {
 	    public Context addElement(Object o) { return this; }
 	    public List asList() { return Collections.EMPTY_LIST; }
 	};
+    // XXX empty list should be bivariant; adding something to it
+    // should make the context invariant.
     public final static Context CONTEXT_SENSITIVE_1 =
 	new GenericContextFactory(1, false).makeEmptyContext();
     public final static Context CONTEXT_SENSITIVE_2 =

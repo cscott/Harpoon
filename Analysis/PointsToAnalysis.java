@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 
@@ -15,9 +16,11 @@ import java.util.Set;
  * knowing the details of its implementation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PointsToAnalysis.java,v 1.2 2002-04-10 02:58:48 cananian Exp $
+ * @version $Id: PointsToAnalysis.java,v 1.3 2003-06-17 16:44:56 cananian Exp $
  */
-public abstract class PointsToAnalysis {
+public abstract class PointsToAnalysis<HCE extends HCodeElement,
+				       NODE extends Node<HCE>,
+				       CONTEXT extends Context> {
 
     /** Provides points-to information valid for all contexts in which
      *  <code>Temp</code> <code>t</code> defined at <code>defsite</code>
@@ -27,7 +30,7 @@ public abstract class PointsToAnalysis {
      *  <code>pointsTo(d1,t1)</code> and <code>pointsTo(d2,t2)</code>
      *  will have a non-empty intersection.
      */
-    public abstract Set<Node> pointsTo(HCodeElement defsite, Temp t);
+    public abstract Set<NODE> pointsTo(HCE defsite, Temp t);
     /** Provies points-to information valid only for a use of <code>t</code>
      *  (defined at <code>defsite</code> in the specific <code>Context</code>
      *  <code>c</code>.  You may be required to use the same
@@ -38,11 +41,13 @@ public abstract class PointsToAnalysis {
      *  <code>pointsTo(d1,t1,c1)</code> and <code>pointsTo(d2,t2,c2)</code>
      *  will have a non-empty intersection.
      */
-    public abstract Set<Node> pointsTo(HCodeElement defsite, Temp t,Context c);
+    public abstract Set<NODE> pointsTo(HCE defsite, Temp t, CONTEXT c);
 
     /** <code>PointsToAnalysis.Node</code> is just a marker interface for
      *  the nodes in the points-to graph returned by the
      *  <code>PointsToAnalysis</code> interface. */
-    public interface Node {
+    public static interface Node<HCE extends HCodeElement> {
+	public Set<HCE> allocationSites();
+	public Set<HClass> concreteTypes();
     }
 }

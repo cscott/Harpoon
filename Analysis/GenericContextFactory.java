@@ -15,50 +15,52 @@ import java.util.Map;
  * <code>GenericContextFactory</code>'s constructor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GenericContextFactory.java,v 1.2 2002-02-26 10:30:18 cananian Exp $
+ * @version $Id: GenericContextFactory.java,v 1.3 2003-06-17 16:44:56 cananian Exp $
  * @see Context
  */
-public class GenericContextFactory {
+public class GenericContextFactory<E> {
     private final int CONTEXT_SENSITIVITY;
-    private final Map cache;
-    private final Context root;
+    private final Map<Context<E>,Context<E>> cache;
+    private final Context<E> root;
     
     /** Creates a <code>GenericContextFactory</code>. */
     public GenericContextFactory(int context_sensitivity, boolean use_cache) {
 	this.CONTEXT_SENSITIVITY = context_sensitivity;
-	this.cache = use_cache ? new HashMap() : null;
+	this.cache = use_cache ? new HashMap<Context<E>,Context<E>>() : null;
 	this.root = new ContextImpl();
 	if (this.cache!=null)
 	    cache.put(this.root, this.root);
     }
-    public Context makeEmptyContext() { return root; }
+    // XXX should return a bivariant context; adding something to it
+    // will make the context invariant.
+    public Context<E> makeEmptyContext() { return root; }
     
-    private class ContextImpl extends Context {
-	final Object[] items;
-	List cached_list = null;
-	ContextImpl() { this(new Object[0]); }
-	ContextImpl(Object[] items) { this.items = items; }
-	public Context addElement(Object o) {
+    private class ContextImpl extends Context<E> {
+	final E[] items;
+	List<E> cached_list = null;
+	ContextImpl() { this(new E[0]); }
+	ContextImpl(E[] items) { this.items = items; }
+	public Context<E> addElement(E o) {
 	    // truncate context at CONTEXT_SENSITIVITY items.
-	    Object[] nitems =
-		new Object[Math.min(CONTEXT_SENSITIVITY, items.length+1)];
+	    E[] nitems =
+		new E[Math.min(CONTEXT_SENSITIVITY, items.length+1)];
 	    if (nitems.length>0)
 		nitems[nitems.length-1] = o;
 	    if (nitems.length>1)
 		System.arraycopy(items, items.length-(nitems.length-1),
 				 nitems, 0, nitems.length-1);
-	    Context nc = new ContextImpl(nitems);
+	    Context<E> nc = new ContextImpl(nitems);
 	    // maybe cache.
 	    if (cache!=null)
 		if (!cache.containsKey(nc))
 		    cache.put(nc, nc);
 		else
-		    nc = (Context) cache.get(nc);
+		    nc = cache.get(nc);
 	    // ta-da!
 	    return nc;
 	}
-	public List asList() {
-	    List l = cached_list;
+	public List<E> asList() {
+	    List<E> l = cached_list;
 	    if (l==null) {
 		l = Collections.unmodifiableList(Arrays.asList(items));
 		if (cache!=null)
