@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.153 $)dnl
+AC_REVISION($Revision: 1.154 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -711,11 +711,12 @@ fi
 AC_MSG_RESULT($with_init_check)
 
 dnl support for dynamic synchronization removal
-dnl should not hurt to turn on even if it is not needed.
+dnl default is 'yes' because it should not hurt to turn on even if it is
+dnl not needed.
 AC_MSG_CHECKING([for dynamic sync removal support])
 AC_ARG_WITH(dynamic-sync-removal,
-[  --with-dynamic-sync-removal	  build dynamic sync removal support],
-with_dynsync="$withval", with_dynsync=no) # default is 'no'
+[  --without-dynamic-sync-removal  don't include dynamic sync removal support],
+with_dynsync="$withval", with_dynsync=yes) # default is 'yes'
 if test "$with_dynsync" = yes; then
   AC_DEFINE(WITH_DYNAMIC_SYNC_REMOVAL, 1,
         [Define to build the dynamic sync removal support])
