@@ -30,7 +30,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.21 1999-08-07 11:17:21 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.22 1999-08-11 13:11:15 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  */
 public abstract class HClass extends HPointer implements java.io.Serializable {
@@ -799,7 +799,7 @@ public abstract class HClass extends HPointer implements java.io.Serializable {
    */
   public boolean isSuperinterfaceOf(HClass hc) {
     Util.assert(this.isInterface());
-    UniqueVector uv = new UniqueVector();
+    UniqueVector uv = new UniqueVector();//unique in case of circularity 
     for ( ; hc!=null; hc = hc.getSuperclass())
       uv.addElement(hc);
 
@@ -821,7 +821,9 @@ public abstract class HClass extends HPointer implements java.io.Serializable {
   public boolean isInstanceOf(HClass hc) {
     if (this.isArray()) {
       if (!hc.isArray()) 
+	// see http://java.sun.com/docs/books/jls/clarify.html
 	return (hc==HClass.forName("java.lang.Cloneable") ||
+		hc==HClass.forName("java.io.Serializable") ||
 		hc==HClass.forName("java.lang.Object"));
       HClass SC = this.getComponentType();
       HClass TC = hc.getComponentType();
