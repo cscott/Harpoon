@@ -35,7 +35,7 @@ import java.io.PrintWriter;
  * site from an instrumented program was executed.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationStatistics.java,v 1.2 2003-02-03 23:23:19 salcianu Exp $
+ * @version $Id: AllocationStatistics.java,v 1.3 2003-02-09 18:31:00 salcianu Exp $
  * @see InstrumentAllocs
  */
 public class AllocationStatistics {
@@ -49,12 +49,12 @@ public class AllocationStatistics {
 	@param instrumentationResultFileName name of the file that
 	holds the result of the instrumentation: for each unique ID,
 	the number of times the associated allocation site was
-	executed. */
+	executed and the total amount of memory allocated there. */
     public AllocationStatistics(AllocationNumberingInterf ani,
 				String instrumentationResultsFileName) {
 	try {
 	    this.ani = ani;
-	    this.allocID2count = 
+	    this.allocID2data = 
 		parseInstrumentationResults(instrumentationResultsFileName);
 	}
 	catch(IOException e) {
@@ -66,23 +66,23 @@ public class AllocationStatistics {
 
     /** Create a <code>AllocationStatistics</code>.
 
-     @param linker <code>Linker</code> used to load the classes.
-
-     @param allocNumberingFileName name of the file that stores the
-     textualized form of the <code>AllocationNumberingStub</code>
-     (that associates to each allocation site a unique integer ID).
-
-     @param instrumentationResultFileName name of the file that
-     holds the result of the instrumentation: for each unique ID,
-     the number of times the associated allocation site was
-     executed. */
+	@param linker <code>Linker</code> used to load the classes.
+	
+	@param allocNumberingFileName name of the file that stores the
+	textualized form of the <code>AllocationNumberingStub</code>
+	(that associates to each allocation site a unique integer ID).
+	
+	@param instrumentationResultFileName name of the file that
+	holds the result of the instrumentation: for each unique ID,
+	the number of times the associated allocation site was
+	executed. */
     public AllocationStatistics(Linker linker,
 				String allocNumberingFileName,
 				String instrumentationResultsFileName) {
 	try { 
 	    this.ani = 
 		new AllocationNumberingStub(linker, allocNumberingFileName);
-	    this.allocID2count = 
+	    this.allocID2data = 
 		parseInstrumentationResults(instrumentationResultsFileName);
 	}
 	catch(IOException e) {
@@ -91,10 +91,21 @@ public class AllocationStatistics {
 	}
     }
 
+    /** data computed by the instrumentation */
+    private static class AllocData {
+	public AllocData(final long objCount, final long memAmount) {
+	    this.objCount  = objCount;
+	    this.memAmount = memAmount;
+	}
+	public final long objCount;
+	public final long memAmount;
+    }
+
+
     // provides the map quad -> allocID (an integer)
     private AllocationNumberingInterf ani;
     // map allocID -> count
-    private Map/*<Integer,Integer>*/ allocID2count;
+    private Map/*<Integer,AllocData>*/ allocID2data;
 
 
     /** Return the number of times the allocation <code>alloc</code>
@@ -103,10 +114,23 @@ public class AllocationStatistics {
 	@param alloc allocation site
 
 	@return number of times <code>alloc</code> was executed */
-    public int getCount(Quad alloc) {
-	Integer count = 
-	    (Integer) allocID2count.get(new Integer(ani.allocID(alloc)));
-	return (count == null) ? 0 : count.intValue();
+    public long getCount(Quad alloc) {
+	AllocData ad = 
+	    (AllocData) allocID2data.get(new Integer(ani.allocID(alloc)));
+	return (ad == null) ? 0 : ad.objCount;
+    }
+
+
+    /** Return the total amount of memory allocated at the allocation
+        <code>alloc</code>.
+
+	@param alloc allocation site
+
+	@return total amount of memory allocated at <code>alloc</code> */
+    public long getMemAmount(Quad alloc) {
+	AllocData ad = 
+	    (AllocData) allocID2data.get(new Integer(ani.allocID(alloc)));
+	return (ad == null) ? 0 : ad.memAmount;
     }
 
 
@@ -120,36 +144,40 @@ public class AllocationStatistics {
     public void printStatistics(Collection allocs, QuadVisitor visitor) {
 
 	class SiteStat implements Comparable {
-	    public final Quad alloc_site;
-	    public final int  alloc_count;
-	    public SiteStat(Quad alloc_site, int alloc_count) {
-		this.alloc_site  = alloc_site;
-		this.alloc_count = alloc_count;
+	    public final Quad allocSite;
+	    public final long allocCount;
+	    public final long memAmount;
+	    public SiteStat(Quad allocSite,
+			    long allocCount, long memAmount) {
+		this.allocSite  = allocSite;
+		this.allocCount = allocCount;
+		this.memAmount  = memAmount;
 	    }
 	    public int compareTo(Object o) {
 		if(! (o instanceof SiteStat)) return -1;
 		SiteStat s2 = (SiteStat) o;
-		if (alloc_count < s2.alloc_count) return +1;
-		else if (alloc_count > s2.alloc_count) return -1;
+		if (allocCount < s2.allocCount) return +1;
+		else if (allocCount > s2.allocCount) return -1;
 		else return 0;
 	    }
 	};
 
 	int ss_size = 0;
 	for(Iterator it = allocs.iterator(); it.hasNext(); ) {
-	    Quad alloc_site = (Quad) it.next();
-	    if(getCount(alloc_site) != 0) ss_size++;
+	    Quad allocSite = (Quad) it.next();
+	    if(getCount(allocSite) != 0) ss_size++;
 	}
 	SiteStat[] ss = new SiteStat[ss_size];
 
 	long total_count = 0;
 	int i = 0;
 	for(Iterator it = allocs.iterator(); it.hasNext();) {
-	    Quad alloc_site  = (Quad) it.next();
-	    int  alloc_count = getCount(alloc_site);
-	    if(alloc_count != 0) {
-		total_count += alloc_count;
-		ss[i++] = new SiteStat(alloc_site, alloc_count);
+	    Quad allocSite  = (Quad) it.next();
+	    long allocCount = getCount(allocSite);
+	    if(allocCount != 0) {
+		total_count += allocCount;
+		ss[i++] = new SiteStat(allocSite, allocCount,
+				       getMemAmount(allocSite));
 	    }
 	}
 	Arrays.sort(ss);
@@ -157,13 +185,15 @@ public class AllocationStatistics {
 	long partial_count = 0;
 	System.out.println("Allocation Statistics BEGIN");
 	for(i = 0; i < ss.length; i++) {
-	    Quad site  = ss[i].alloc_site;
-	    int count  = ss[i].alloc_count;
+	    Quad site  = ss[i].allocSite;
+	    long count  = ss[i].allocCount;
 	    double frac = (count*100.0) / total_count;
 	    partial_count += count;
 	    System.out.println
-		(Debug.code2str(site) + "\n\t" + count +
-		 " object(s) \n\t" + Debug.doubleRep(frac, 5, 2) + "%\n\t" +
+		(Debug.code2str(site) + "\n\t" + 
+		 count + " object(s)\n\t" +
+		 ss[i].memAmount + " byte(s)\n\t" +
+		 Debug.doubleRep(frac, 5, 2) + "% of all objects\n\t" +
 		 site.getFactory().getMethod());
 	    if(visitor != null)
 		site.accept(visitor);
@@ -191,24 +221,31 @@ public class AllocationStatistics {
 	@param instrumentationResultsFileName name of the file holding the
 	instrumentation results
 	
-	@return map that attach to each unique ID the number of times the
-	corresponding allocation site was executed. */
-    public static Map/*<Integer,Integer>*/ parseInstrumentationResults
+	@return map that attaches to each unique ID the data collected
+	by the instrumentation for the corresponding allocation
+	site. */
+    public static Map/*<Integer,AllocData>*/ parseInstrumentationResults
 	(String instrumentationResultsFileName) throws IOException {
 	BufferedReader br = 
 	    new BufferedReader(new FileReader(instrumentationResultsFileName));
-	Map/*<Integer, Integer>*/ allocID2count = new HashMap();
+	Map/*<Integer, AllocData>*/ allocID2data = new HashMap();
 	int size = readInt(br);
 	for(int i = 0; i < size; i++) {
-	    int count = readInt(br);
-	    allocID2count.put(new Integer(i), new Integer(count));
+	    long objCount  = readLong(br);
+	    long memAmount = readLong(br);
+	    allocID2data.put
+		(new Integer(i), new AllocData(objCount, memAmount));
 	}
-	return allocID2count;
+	return allocID2data;
     }
 
 
     private static int readInt(BufferedReader br) throws IOException {
-	return new Integer(br.readLine()).intValue();
+	return Integer.parseInt(br.readLine());
+    }
+
+    private static long readLong(BufferedReader br) throws IOException {
+	return Long.parseLong(br.readLine());
     }
 
 

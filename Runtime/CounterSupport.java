@@ -10,12 +10,14 @@ import java.io.PrintStream;
  * using counters identified by integers.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: CounterSupport.java,v 1.3 2002-04-24 01:21:55 salcianu Exp $
- */
+ * @version $Id: CounterSupport.java,v 1.4 2003-02-09 18:31:23 salcianu Exp $ */
 public class CounterSupport {
-    static int size,sizesync;
+    static int sizesync;
     static int numbins, bincap;
-    static long[] array;
+    static long[] obj_count;
+    static int obj_count_length;
+    static long[] mem_amount;
+    static int mem_amount_length;
     static long[] arraysync;
     static Object[][] boundedkey;
     static int[][] boundedvalue;
@@ -47,8 +49,12 @@ public class CounterSupport {
 	threadoverflow=0;
 	overflow=0;
 	error=0;
-	size=10;
-	array=new long[size];
+
+	obj_count_length = 10;
+	obj_count = new long[obj_count_length];
+	mem_amount_length = obj_count_length;
+	mem_amount = new long[mem_amount_length];
+
 	sizesync=10;
 	arraysync=new long[sizesync];
 	size1=10;
@@ -58,52 +64,85 @@ public class CounterSupport {
 	setup=true;
     }
     
-    static void count(int value) {
-	if (setup)
-	synchronized(lock) {
-	    if (counton) {
-		boolean resize=false;
-		int nsize1=size1,nsize2=size2;
-		if (value>=size1) {
-		    nsize1=value*2;
-		    resize=true;
-		}
-		int thisthread=-1;
-		Thread t=Thread.currentThread();
-		for(int j=0;j<tsize;j++) {
-		    if (t==threadarray[j]) {
-			thisthread=j;
-			break;
-		    }
-		}
-		if (thisthread!=-1)
-		    if ((depth[thisthread]!=0)&&((depth[thisthread]-1)<csize))
-			if (callchain[depth[thisthread]-1][thisthread]>=size2) {
-			    nsize2=callchain[depth[thisthread]-1][thisthread]*2;
-			    resize=true;
-			}
-		if (resize) {
-		    int[][] newarray=new int[nsize1][nsize2];
-		    for(int i=0;i<size1;i++) {
-			System.arraycopy(alloccall[i],0,newarray[i],0,size2);
-		    }
-		    size1=nsize1;
-		    size2=nsize2;
-		    alloccall=newarray;
-		}
-		if (thisthread!=-1) {
-		    if ((depth[thisthread]!=0)&&((depth[thisthread]-1)<csize))
-			alloccall[value][callchain[depth[thisthread]-1][thisthread]]++;
-		} else alloccall[value][0]++;
 
-		if (value>=size) {
-		    long[] newarray=new long[value*2];
-		    System.arraycopy(array,0,newarray,0,size);
-		    array=newarray;
-		    size=value*2;
-		}
-		array[value]++;
+    static void count(int allocID) {
+	if (setup && counton)
+	    synchronized(lock) {
+		count_aux(allocID);
 	    }
+    }
+
+
+    static void count2(int allocID, int length) {
+	if (setup && counton)
+	    synchronized(lock) {
+		count_aux(allocID);
+		update_mem_amount(allocID, length);
+	    }
+    }
+
+    
+    static void update_mem_amount(int allocID, int length) {
+	// allocID == -1 stands for allocation sites that haven't
+	// received an unique integer ID 
+	if (allocID == -1) return;
+	if (allocID >= mem_amount_length) {
+	    long[] new_mem_amount = new long[allocID * 2];
+	    System.arraycopy(mem_amount, 0,
+			     new_mem_amount, 0,
+			     mem_amount_length);
+	    mem_amount = new_mem_amount;
+	    mem_amount_length = allocID * 2;
+	}
+	mem_amount[allocID]++;
+    }
+    
+
+    static void count_aux(int value) {
+	if (counton) {
+	    boolean resize=false;
+	    int nsize1=size1,nsize2=size2;
+	    if (value>=size1) {
+		nsize1=value*2;
+		resize=true;
+	    }
+	    int thisthread=-1;
+	    Thread t=Thread.currentThread();
+	    for(int j=0;j<tsize;j++) {
+		if (t==threadarray[j]) {
+		    thisthread=j;
+		    break;
+		}
+	    }
+	    if (thisthread!=-1)
+		if ((depth[thisthread]!=0)&&((depth[thisthread]-1)<csize))
+		    if (callchain[depth[thisthread]-1][thisthread]>=size2) {
+			nsize2=callchain[depth[thisthread]-1][thisthread]*2;
+			resize=true;
+		    }
+	    if (resize) {
+		int[][] newarray=new int[nsize1][nsize2];
+		for(int i=0;i<size1;i++) {
+		    System.arraycopy(alloccall[i],0,newarray[i],0,size2);
+		}
+		size1=nsize1;
+		size2=nsize2;
+		alloccall=newarray;
+	    }
+	    if (thisthread!=-1) {
+		if ((depth[thisthread]!=0)&&((depth[thisthread]-1)<csize))
+		    alloccall[value][callchain[depth[thisthread]-1][thisthread]]++;
+	    } else alloccall[value][0]++;
+	    
+	    if (value >= obj_count_length) {
+		long[] new_obj_count = new long[value*2];
+		System.arraycopy(obj_count, 0,
+				 new_obj_count, 0,
+				 obj_count_length);
+		obj_count = new_obj_count;
+		obj_count_length = value*2;
+	    }
+	    obj_count[value]++;
 	}
     }
 
@@ -228,9 +267,11 @@ public class CounterSupport {
 	System.out.println("Call stack thread overflow="+threadoverflow);
 
 	System.out.println("Allocation array BEGIN");
-	for(int i=0;i<size;i++)
-	    if (array[i]!=0)
-		System.out.println(i+"  "+array[i]);
+	for(int i = 0; i < obj_count_length; i++)
+	    if (obj_count[i] != 0)
+		System.out.println
+		    (i + "  " + obj_count[i] +
+		     ((i < mem_amount_length) ? mem_amount[i] : 0));
 	System.out.println("Allocation array END");
 
 
@@ -258,9 +299,11 @@ public class CounterSupport {
 	    PrintStream fos
 		= new java.io.PrintStream(new FileOutputStream("profile"));
 
-	    fos.println(size);
-	    for(int i=0;i<size;i++)
-		fos.println(array[i]);
+	    fos.println(obj_count_length);
+	    for(int i = 0; i < obj_count_length; i++) {
+		fos.println(obj_count[i]);
+		fos.println((i < mem_amount_length) ? mem_amount[i] : 0);
+	    }
 
 	    fos.println(sizesync);
 	    for(int i=0;i<sizesync;i++)
@@ -280,7 +323,3 @@ public class CounterSupport {
 	}
     }
 }
-
-
-
-
