@@ -14,7 +14,9 @@ public class Process {
 	    long lastid = 0;
 	    long li = 0;
 	    while ((st = buf.readLine())!=null) {
-		if (st.indexOf("Scheduler.sleep")!=-1) {
+		if (st.indexOf("--- ALL HERE ---")!=-1) {
+		    System.out.println("-------------------");
+		} else if (st.indexOf("Scheduler.sleep")!=-1) {
 		    System.out.print("s");
  		    for (int i = 0; i < width; i++) {
  			System.out.print(" ");
