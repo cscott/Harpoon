@@ -26,7 +26,7 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.14 2003-09-05 21:49:52 cananian Exp $
+ * @version $Id: Javap.java,v 1.15 2003-09-05 22:10:44 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
     /** Print out disassembled code. */
@@ -116,7 +116,6 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
                  "   -verbose   Print stack size, number of locals and args\n"+
 		 "              for methods\n"+
 		 */
-		 // also to do: translate <clinit> and <init> method names.
 		 "");
 	    return new String[0];
 	}
@@ -244,6 +243,10 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    // prototype compilers.  Java 1.5 will introduce a mask bit of
 	    // some kind to indicate varargs.
 	    boolean isVarArgs= (null!=findAttribute(mi.attributes, "Varargs"));
+	    // is this a static initializer?
+	    boolean isStaticInit = mi.name().equals("<clinit>");
+	    // is this a constructor?
+	    boolean isConstructor = mi.name().equals("<init>");
 	    // indent.
 	    if (INDENT) System.out.print("    ");
 	    // access flags
@@ -258,36 +261,45 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    // return type (skip to the end...)
 	    OffsetAndString ret_oas = munchTypeSig
 		(md.substring(md.indexOf(')')+1));
-	    System.out.print(ret_oas.string);
-	    System.out.print(" ");
-	    // method name!
-	    System.out.print(mi.name());
-	    // parameters.
-	    System.out.print('(');
-	    assert md.charAt(0)=='(';
-	    for (int off=1; md.charAt(off)!=')'; ) {
-		OffsetAndString param_oas = munchTypeSig(md.substring(off));
-		if (off!=1) System.out.print(", ");
-		if (isVarArgs &&
-		    md.charAt(off+param_oas.offset)==')' /* last arg */) {
-		    // print var arg parameter, omitting outermost array spec
-		    assert md.charAt(off)=='[';
-		    System.out.print(munchTypeSig(md.substring(off+1)).string);
-		    System.out.print("...");
-		} else // ordinary, non-vararg parameter
-		    System.out.print(param_oas.string);
-		off += param_oas.offset;
+	    if (!(isStaticInit || isConstructor)) {
+		System.out.print(ret_oas.string);
+		System.out.print(" ");
 	    }
-	    System.out.print(')');
-	    // 'throws' list.
-	    md = md.substring(md.indexOf(')')+1+ret_oas.offset);
-	    for (int off=0; off < md.length() && md.charAt(off)=='^'; ) {
-		off++;
-		OffsetAndString thr_oas = munchTypeSig(md.substring(off));
-		if (off==1) System.out.print(" throws ");
-		else System.out.print(", ");
-		System.out.print(thr_oas.string);
-		off += thr_oas.offset;
+	    // method name!
+	    if (isStaticInit)
+		System.out.print("{}");
+	    else if (isConstructor)
+		System.out.print(desc2name("L"+raw.this_class().name()+";"));
+	    else
+		System.out.print(mi.name());
+	    // parameters.
+	    if (!isStaticInit) {
+		System.out.print('(');
+		assert md.charAt(0)=='(';
+		for (int off=1; md.charAt(off)!=')'; ) {
+		    OffsetAndString param_oas = munchTypeSig(md.substring(off));
+		    if (off!=1) System.out.print(", ");
+		    if (isVarArgs &&
+			md.charAt(off+param_oas.offset)==')' /* last arg */) {
+			// print var arg parameter, omitting outermost array spec
+			assert md.charAt(off)=='[';
+			System.out.print(munchTypeSig(md.substring(off+1)).string);
+			System.out.print("...");
+		    } else // ordinary, non-vararg parameter
+			System.out.print(param_oas.string);
+		    off += param_oas.offset;
+		}
+		System.out.print(')');
+		// 'throws' list.
+		md = md.substring(md.indexOf(')')+1+ret_oas.offset);
+		for (int off=0; off < md.length() && md.charAt(off)=='^'; ) {
+		    off++;
+		    OffsetAndString thr_oas = munchTypeSig(md.substring(off));
+		    if (off==1) System.out.print(" throws ");
+		    else System.out.print(", ");
+		    System.out.print(thr_oas.string);
+		    off += thr_oas.offset;
+		}
 	    }
 	    // done!
 	    System.out.print(';');
