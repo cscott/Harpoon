@@ -14,7 +14,7 @@ public class TokenLiteralExpr extends LiteralExpr {
         this.token = token;
         td = ReservedTypeDescriptor.INT;
         
-        if (tokens.contains(token)) {
+        if (tokens.containsKey(token)) {
             num = (Integer) tokens.get(token);
         } else {
             num = new Integer(count++);

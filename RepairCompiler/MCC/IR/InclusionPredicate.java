@@ -23,6 +23,10 @@ public class InclusionPredicate extends Predicate {
     public Set getRequiredDescriptors() {
         return setexpr.getRequiredDescriptors();
     }
+
+    public void generate(CodeWriter writer, VarDescriptor dest) {
+        setexpr.generate_inclusion(writer, dest, var);
+    }
             
 }
     

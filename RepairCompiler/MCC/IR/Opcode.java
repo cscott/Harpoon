@@ -28,31 +28,31 @@ public class Opcode {
         Opcode opcode;
 
         if (opname.equals("add")) {
-            opcode = Opcode.ADD;
+            return Opcode.ADD;
         } else if (opname.equals("sub")) {
-            opcode = Opcode.SUB;
+            return Opcode.SUB;
         } else if (opname.equals("mult")) {
-            opcode = Opcode.MULT;
+            return Opcode.MULT;
         } else if (opname.equals("div")) {
-            opcode = Opcode.DIV;
+            return Opcode.DIV;
         } else if (opname.equals("and")) {
-            opcode = Opcode.AND;
+            return Opcode.AND;
         } else if (opname.equals("or")) {
-            opcode = Opcode.OR;
+            return Opcode.OR;
         } else if (opname.equals("not")) {
-            opcode = Opcode.NOT;
+            return Opcode.NOT;
         } else if (opname.equals("gt")) {
-            opcode = Opcode.GT;
+            return Opcode.GT;
         } else if (opname.equals("ge")) {
-            opcode = Opcode.GE;
+            return Opcode.GE;
         } else if (opname.equals("lt")) {
-            opcode = Opcode.LT;
+            return Opcode.LT;
         } else if (opname.equals("le")) {
-            opcode = Opcode.LE;
+            return Opcode.LE;
         } else if (opname.equals("eq")) {
-            opcode = Opcode.EQ;
+            return Opcode.EQ;
         } else if (opname.equals("ne")) {
-            opcode = Opcode.NE;
+            return Opcode.NE;
         } else {
             return null;
         }

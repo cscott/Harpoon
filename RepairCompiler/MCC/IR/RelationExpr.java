@@ -4,75 +4,36 @@ import java.util.*;
 
 public class RelationExpr extends Expr {
 
-    // #TBD#: right now i'm not sure if this is the best way to organize the relationexpr... it may be better
-    // to have one class represent each a.B.B'.B'' expression with a VarDescriptor for the a and a vector 
-    // for the list of B
-    RelationExpr subdomain;
-    VarDescriptor domain;
-
+    Expr expr;
     RelationDescriptor relation;
     boolean inverse;
 
-    public RelationExpr() {
-        this.domain = null;
-        this.subdomain = null;
-        this.relation = null;
-        this.inverse = false;
-    }
-
-    public RelationExpr(RelationExpr subdomain) {
-        this.subdomain = subdomain;
-        this.domain = null;
-        this.relation = null;
-        this.inverse = false;
-    }
-
-    public void setRelation(RelationDescriptor rd, boolean inverse) {
-        this.relation = rd;
+    public RelationExpr(Expr expr, RelationDescriptor relation, boolean inverse) {
+        this.expr = expr;
+        this.relation = relation;
         this.inverse = inverse;
     }
 
-    public void setDomain(VarDescriptor vd) {
-        this.domain = vd;
-    }
-
     public Set getRequiredDescriptors() {
-        HashSet v = new HashSet();
+        Set v = expr.getRequiredDescriptors();        
         v.add(relation);
-        if (subdomain != null) {
-            v.addAll(subdomain.getRequiredDescriptors());
-        }
         return v;
     }
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
-        if (domain != null) { /* base case */
-            writer.outputline(relation.getRange().getType().getSafeSymbol() + " " + dest.getSymbol() + " = " + relation.getSafeSymbol() + "_hash.getFirst(" + domain.getSafeSymbol() + ");");
-        } else {
-            VarDescriptor ld = VarDescriptor.makeNew();
-            subdomain.generate(writer, ld);
-            writer.outputline(relation.getRange().getType().getSafeSymbol() + " " + dest.getSymbol() + " = " + relation.getSafeSymbol() + "_hash.getFirst(" + ld.getSafeSymbol() + ");");
-        }            
-
+        VarDescriptor domain = VarDescriptor.makeNew("domain");
+        expr.generate(writer, domain);
+        writer.outputline(relation.getRange().getType().getSafeSymbol() + " " + dest.getSymbol() + " = " + relation.getSafeSymbol() + "_hash->get(" + domain.getSafeSymbol() + ");");
     }
 
     public void generate_set(CodeWriter writer, VarDescriptor dest) {
-        if (domain != null) { /* base case */
-            writer.outputline("Set " + dest.getSymbol() + " = " + relation.getSafeSymbol() + "_hash.get(" + domain.getSafeSymbol() + ");");
-        } else {
-            VarDescriptor ld = VarDescriptor.makeNew();
-            subdomain.generate(writer, ld);
-            writer.outputline("Set " + dest.getSymbol() + " = " + relation.getSafeSymbol() + "_hash.get(" + domain.getSafeSymbol() + ");");
-        }     
+        VarDescriptor domain = VarDescriptor.makeNew("domain");
+        expr.generate(writer, domain);
+        writer.outputline(relation.getRange().getType().getSafeSymbol() + " " + dest.getSymbol() + " = " + relation.getSafeSymbol() + "_hash->get(" + domain.getSafeSymbol() + ");");
     }
 
     public void prettyPrint(PrettyPrinter pp) {
-        if (subdomain != null) {
-            subdomain.prettyPrint(pp);
-        } else {
-            pp.output(domain.getSafeSymbol());
-        }
-
+        expr.prettyPrint(pp);
         pp.output(".");
         
         if (inverse) {
@@ -83,14 +44,9 @@ public class RelationExpr extends Expr {
     }
 
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {
-        TypeDescriptor type = null;
-        
-        if (domain != null) {
-            type = domain.getType();            
-        } else {
-            type = subdomain.typecheck(sa);
-        }
 
+        TypeDescriptor type = expr.typecheck(sa);
+        
         if (type == null) {
             return null;
         }

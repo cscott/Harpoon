@@ -57,6 +57,7 @@ public class DependencyBuilder {
             Rule rule = (Rule) rules.elementAt(i);
             GraphNode rulenode = (GraphNode) rulenodes.get(rule.getLabel());
             Set requiredsymbols = rule.getRequiredDescriptors();
+            requiredsymbols.addAll(rule.getInclusion().getRequiredDescriptors());
 
             for (int j = 0; j < rules.size(); j++) {
 

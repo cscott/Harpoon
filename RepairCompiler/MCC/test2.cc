@@ -1,3 +1,11 @@
+
+// Token values
+
+// Used = 100
+// Free = 101
+
+
+int __Success = 1;
 // creating hashtables 
 SimpleHash* __int___hash = new SimpleHash();
 SimpleHash* __FileBlock___hash = new SimpleHash();
@@ -35,11 +43,17 @@ __UsedInode___hash->addParent(__Inode___hash);
 __FreeInode___hash->addParent(__Inode___hash);
 __RootDirectoryInode___hash->addParent(__DirectoryInode___hash);
 SimpleHash* __referencecount___hash = new SimpleHash();
+SimpleHash* __referencecount___hashinv = new SimpleHash();
 SimpleHash* __filesize___hash = new SimpleHash();
+SimpleHash* __filesize___hashinv = new SimpleHash();
 SimpleHash* __inodeof___hash = new SimpleHash();
+SimpleHash* __inodeof___hashinv = new SimpleHash();
 SimpleHash* __contents___hash = new SimpleHash();
+SimpleHash* __contents___hashinv = new SimpleHash();
 SimpleHash* __inodestatus___hash = new SimpleHash();
+SimpleHash* __inodestatus___hashinv = new SimpleHash();
 SimpleHash* __blockstatus___hash = new SimpleHash();
+SimpleHash* __blockstatus___hashinv = new SimpleHash();
 
 
 // build rule1
@@ -308,286 +322,108 @@ SimpleHash* __blockstatus___hash = new SimpleHash();
 }
 
 
-// build rule12
-{
-  int __tempvar162__ = 0;
-  // __left165__ <-- d.s
-  // __left166__ <-- d
-  int __left166__ = (int) d;
-  // __left166__ = d
-  int __left165__ = (__left166__ + 0);
-  // __left165__ = d.s
-  // __offsetinbits167__ <-- 32 + 32 + 32 + 0
-  int __leftop168__ = 32;
-  int __leftop170__ = 32;
-  int __leftop172__ = 32;
-  int __rightop173__ = 0;
-  int __rightop171__ = __leftop172__ + __rightop173__;
-  int __rightop169__ = __leftop170__ + __rightop171__;
-  int __offsetinbits167__ = __leftop168__ + __rightop169__;
-  // __offsetinbits167__ = 32 + 32 + 32 + 0
-  int __offset174__ = __offsetinbits167__ >> 3;
-  int __shift175__ = __offsetinbits167__ - (__offset174__ << 3);
-  int __leftop164__ = ((*(int *)(__left165__ + __offset174__))  >> __shift175__) & 0xffffffff;
-  int __rightop176__ = 1;
-  int __tempvar163__ = __leftop164__ - __rightop176__;
-  for (int __j__ = __tempvar162__; __j__ <= __tempvar163__; __j__++) {
-    for (SimpleIterator* __ibb___iterator = __InodeBitmapBlock___hash->iterator(); __ibb___iterator->hasNext(); ) {
-      int __ibb__ = (int) __ibb___iterator->next();
-      //cast(__InodeBitmap__, d.b[ibb]).inodebitmap[j] == {false = 104}
-      // __left179__ <-- cast(__InodeBitmap__, d.b[ibb])
-      // __left181__ <-- d
-      int __left181__ = (int) d;
-      // __left181__ = d
-      // __offsetinbits182__ <-- 0 + 8 * d.s.blocksize + 0 * ibb
-      int __leftop183__ = 0;
-      int __leftop187__ = 8;
-      // __left189__ <-- d.s
-      // __left190__ <-- d
-      int __left190__ = (int) d;
-      // __left190__ = d
-      int __left189__ = (__left190__ + 0);
-      // __left189__ = d.s
-      // __offsetinbits191__ <-- 32 + 32 + 32 + 32 + 32 + 0
-      int __leftop192__ = 32;
-      int __leftop194__ = 32;
-      int __leftop196__ = 32;
-      int __leftop198__ = 32;
-      int __leftop200__ = 32;
-      int __rightop201__ = 0;
-      int __rightop199__ = __leftop200__ + __rightop201__;
-      int __rightop197__ = __leftop198__ + __rightop199__;
-      int __rightop195__ = __leftop196__ + __rightop197__;
-      int __rightop193__ = __leftop194__ + __rightop195__;
-      int __offsetinbits191__ = __leftop192__ + __rightop193__;
-      // __offsetinbits191__ = 32 + 32 + 32 + 32 + 32 + 0
-      int __offset202__ = __offsetinbits191__ >> 3;
-      int __shift203__ = __offsetinbits191__ - (__offset202__ << 3);
-      int __rightop188__ = ((*(int *)(__left189__ + __offset202__))  >> __shift203__) & 0xffffffff;
-      int __leftop186__ = __leftop187__ * __rightop188__;
-      int __rightop204__ = 0;
-      int __leftop185__ = __leftop186__ + __rightop204__;
-      int __rightop205__ = (int) __ibb__;
-      int __rightop184__ = __leftop185__ * __rightop205__;
-      int __offsetinbits182__ = __leftop183__ + __rightop184__;
-      // __offsetinbits182__ = 0 + 8 * d.s.blocksize + 0 * ibb
-      int __offset206__ = __offsetinbits182__ >> 3;
-      int __expr180__ = (__left181__ + __offset206__);
-      int __left179__ = (int) __expr180__;
-      // __left179__ = cast(__InodeBitmap__, d.b[ibb])
-      // __offsetinbits207__ <-- 0 + 1 * j
-      int __leftop208__ = 0;
-      int __leftop210__ = 1;
-      int __rightop211__ = (int) __j__;
-      int __rightop209__ = __leftop210__ * __rightop211__;
-      int __offsetinbits207__ = __leftop208__ + __rightop209__;
-      // __offsetinbits207__ = 0 + 1 * j
-      int __offset212__ = __offsetinbits207__ >> 3;
-      int __shift213__ = __offsetinbits207__ - (__offset212__ << 3);
-      int __leftop178__ = ((*(int *)(__left179__ + __offset212__))  >> __shift213__) & 0x1;
-      int __rightop214__ = 104;
-      int __tempvar177__ = __leftop178__ == __rightop214__;
-      if (__tempvar177__) {
-        int __leftele215__ = (int) __j__;
-        int __rightele216__ = 105;
-        __inodestatus___hash->add((int)__leftele215__, (int)__rightele216__);
-      }
-    }
-  }
-}
-
-
 // build rule5
 {
   //d.g.BlockBitmapBlock < d.s.NumberofBlocks
-  // __left219__ <-- d.g
-  // __left220__ <-- d
-  int __left220__ = (int) d;
-  // __left220__ = d
-  // __offsetinbits221__ <-- 0 + 8 * d.s.blocksize + 0 * 1
-  int __leftop222__ = 0;
-  int __leftop226__ = 8;
-  // __left228__ <-- d.s
-  // __left229__ <-- d
-  int __left229__ = (int) d;
-  // __left229__ = d
-  int __left228__ = (__left229__ + 0);
-  // __left228__ = d.s
-  // __offsetinbits230__ <-- 32 + 32 + 32 + 32 + 32 + 0
-  int __leftop231__ = 32;
-  int __leftop233__ = 32;
-  int __leftop235__ = 32;
-  int __leftop237__ = 32;
-  int __leftop239__ = 32;
-  int __rightop240__ = 0;
-  int __rightop238__ = __leftop239__ + __rightop240__;
-  int __rightop236__ = __leftop237__ + __rightop238__;
-  int __rightop234__ = __leftop235__ + __rightop236__;
-  int __rightop232__ = __leftop233__ + __rightop234__;
-  int __offsetinbits230__ = __leftop231__ + __rightop232__;
-  // __offsetinbits230__ = 32 + 32 + 32 + 32 + 32 + 0
-  int __offset241__ = __offsetinbits230__ >> 3;
-  int __shift242__ = __offsetinbits230__ - (__offset241__ << 3);
-  int __rightop227__ = ((*(int *)(__left228__ + __offset241__))  >> __shift242__) & 0xffffffff;
-  int __leftop225__ = __leftop226__ * __rightop227__;
-  int __rightop243__ = 0;
-  int __leftop224__ = __leftop225__ + __rightop243__;
-  int __rightop244__ = 1;
-  int __rightop223__ = __leftop224__ * __rightop244__;
-  int __offsetinbits221__ = __leftop222__ + __rightop223__;
-  // __offsetinbits221__ = 0 + 8 * d.s.blocksize + 0 * 1
-  int __offset245__ = __offsetinbits221__ >> 3;
-  int __left219__ = (__left220__ + __offset245__);
-  // __left219__ = d.g
-  int __leftop218__ = ((*(int *)(__left219__ + 0))  >> 0) & 0xffffffff;
-  // __left247__ <-- d.s
-  // __left248__ <-- d
-  int __left248__ = (int) d;
-  // __left248__ = d
-  int __left247__ = (__left248__ + 0);
-  // __left247__ = d.s
-  // __offsetinbits249__ <-- 32 + 32 + 0
-  int __leftop250__ = 32;
-  int __leftop252__ = 32;
-  int __rightop253__ = 0;
-  int __rightop251__ = __leftop252__ + __rightop253__;
-  int __offsetinbits249__ = __leftop250__ + __rightop251__;
-  // __offsetinbits249__ = 32 + 32 + 0
-  int __offset254__ = __offsetinbits249__ >> 3;
-  int __shift255__ = __offsetinbits249__ - (__offset254__ << 3);
-  int __rightop246__ = ((*(int *)(__left247__ + __offset254__))  >> __shift255__) & 0xffffffff;
-  int __tempvar217__ = __leftop218__ < __rightop246__;
-  if (__tempvar217__) {
-    // __left257__ <-- d.g
-    // __left258__ <-- d
-    int __left258__ = (int) d;
-    // __left258__ = d
-    // __offsetinbits259__ <-- 0 + 8 * d.s.blocksize + 0 * 1
-    int __leftop260__ = 0;
-    int __leftop264__ = 8;
-    // __left266__ <-- d.s
-    // __left267__ <-- d
-    int __left267__ = (int) d;
-    // __left267__ = d
-    int __left266__ = (__left267__ + 0);
-    // __left266__ = d.s
-    // __offsetinbits268__ <-- 32 + 32 + 32 + 32 + 32 + 0
-    int __leftop269__ = 32;
-    int __leftop271__ = 32;
-    int __leftop273__ = 32;
-    int __leftop275__ = 32;
-    int __leftop277__ = 32;
-    int __rightop278__ = 0;
-    int __rightop276__ = __leftop277__ + __rightop278__;
-    int __rightop274__ = __leftop275__ + __rightop276__;
-    int __rightop272__ = __leftop273__ + __rightop274__;
-    int __rightop270__ = __leftop271__ + __rightop272__;
-    int __offsetinbits268__ = __leftop269__ + __rightop270__;
-    // __offsetinbits268__ = 32 + 32 + 32 + 32 + 32 + 0
-    int __offset279__ = __offsetinbits268__ >> 3;
-    int __shift280__ = __offsetinbits268__ - (__offset279__ << 3);
-    int __rightop265__ = ((*(int *)(__left266__ + __offset279__))  >> __shift280__) & 0xffffffff;
-    int __leftop263__ = __leftop264__ * __rightop265__;
-    int __rightop281__ = 0;
-    int __leftop262__ = __leftop263__ + __rightop281__;
-    int __rightop282__ = 1;
-    int __rightop261__ = __leftop262__ * __rightop282__;
-    int __offsetinbits259__ = __leftop260__ + __rightop261__;
-    // __offsetinbits259__ = 0 + 8 * d.s.blocksize + 0 * 1
-    int __offset283__ = __offsetinbits259__ >> 3;
-    int __left257__ = (__left258__ + __offset283__);
-    // __left257__ = d.g
-    int __element256__ = ((*(int *)(__left257__ + 0))  >> 0) & 0xffffffff;
-    __BlockBitmapBlock___hash->add((int)__element256__, (int)__element256__);
-  }
-}
-
-
-// build rule13
-{
-  int __tempvar284__ = 0;
-  // __left287__ <-- d.s
-  // __left288__ <-- d
-  int __left288__ = (int) d;
-  // __left288__ = d
-  int __left287__ = (__left288__ + 0);
-  // __left287__ = d.s
-  // __offsetinbits289__ <-- 32 + 32 + 32 + 0
-  int __leftop290__ = 32;
-  int __leftop292__ = 32;
-  int __leftop294__ = 32;
-  int __rightop295__ = 0;
-  int __rightop293__ = __leftop294__ + __rightop295__;
-  int __rightop291__ = __leftop292__ + __rightop293__;
-  int __offsetinbits289__ = __leftop290__ + __rightop291__;
-  // __offsetinbits289__ = 32 + 32 + 32 + 0
-  int __offset296__ = __offsetinbits289__ >> 3;
-  int __shift297__ = __offsetinbits289__ - (__offset296__ << 3);
-  int __leftop286__ = ((*(int *)(__left287__ + __offset296__))  >> __shift297__) & 0xffffffff;
-  int __rightop298__ = 1;
-  int __tempvar285__ = __leftop286__ - __rightop298__;
-  for (int __j__ = __tempvar284__; __j__ <= __tempvar285__; __j__++) {
-    for (SimpleIterator* __ibb___iterator = __InodeBitmapBlock___hash->iterator(); __ibb___iterator->hasNext(); ) {
-      int __ibb__ = (int) __ibb___iterator->next();
-      //cast(__InodeBitmap__, d.b[ibb]).inodebitmap[j] == true
-      // __left301__ <-- cast(__InodeBitmap__, d.b[ibb])
-      // __left303__ <-- d
-      int __left303__ = (int) d;
-      // __left303__ = d
-      // __offsetinbits304__ <-- 0 + 8 * d.s.blocksize + 0 * ibb
-      int __leftop305__ = 0;
-      int __leftop309__ = 8;
-      // __left311__ <-- d.s
-      // __left312__ <-- d
-      int __left312__ = (int) d;
-      // __left312__ = d
-      int __left311__ = (__left312__ + 0);
-      // __left311__ = d.s
-      // __offsetinbits313__ <-- 32 + 32 + 32 + 32 + 32 + 0
-      int __leftop314__ = 32;
-      int __leftop316__ = 32;
-      int __leftop318__ = 32;
-      int __leftop320__ = 32;
-      int __leftop322__ = 32;
-      int __rightop323__ = 0;
-      int __rightop321__ = __leftop322__ + __rightop323__;
-      int __rightop319__ = __leftop320__ + __rightop321__;
-      int __rightop317__ = __leftop318__ + __rightop319__;
-      int __rightop315__ = __leftop316__ + __rightop317__;
-      int __offsetinbits313__ = __leftop314__ + __rightop315__;
-      // __offsetinbits313__ = 32 + 32 + 32 + 32 + 32 + 0
-      int __offset324__ = __offsetinbits313__ >> 3;
-      int __shift325__ = __offsetinbits313__ - (__offset324__ << 3);
-      int __rightop310__ = ((*(int *)(__left311__ + __offset324__))  >> __shift325__) & 0xffffffff;
-      int __leftop308__ = __leftop309__ * __rightop310__;
-      int __rightop326__ = 0;
-      int __leftop307__ = __leftop308__ + __rightop326__;
-      int __rightop327__ = (int) __ibb__;
-      int __rightop306__ = __leftop307__ * __rightop327__;
-      int __offsetinbits304__ = __leftop305__ + __rightop306__;
-      // __offsetinbits304__ = 0 + 8 * d.s.blocksize + 0 * ibb
-      int __offset328__ = __offsetinbits304__ >> 3;
-      int __expr302__ = (__left303__ + __offset328__);
-      int __left301__ = (int) __expr302__;
-      // __left301__ = cast(__InodeBitmap__, d.b[ibb])
-      // __offsetinbits329__ <-- 0 + 1 * j
-      int __leftop330__ = 0;
-      int __leftop332__ = 1;
-      int __rightop333__ = (int) __j__;
-      int __rightop331__ = __leftop332__ * __rightop333__;
-      int __offsetinbits329__ = __leftop330__ + __rightop331__;
-      // __offsetinbits329__ = 0 + 1 * j
-      int __offset334__ = __offsetinbits329__ >> 3;
-      int __shift335__ = __offsetinbits329__ - (__offset334__ << 3);
-      int __leftop300__ = ((*(int *)(__left301__ + __offset334__))  >> __shift335__) & 0x1;
-      int __rightop336__ = 1;
-      int __tempvar299__ = __leftop300__ == __rightop336__;
-      if (__tempvar299__) {
-        int __leftele337__ = (int) __j__;
-        int __rightele338__ = 106;
-        __inodestatus___hash->add((int)__leftele337__, (int)__rightele338__);
-      }
-    }
+  // __left164__ <-- d.g
+  // __left165__ <-- d
+  int __left165__ = (int) d;
+  // __left165__ = d
+  // __offsetinbits166__ <-- 0 + 8 * d.s.blocksize + 0 * 1
+  int __leftop167__ = 0;
+  int __leftop171__ = 8;
+  // __left173__ <-- d.s
+  // __left174__ <-- d
+  int __left174__ = (int) d;
+  // __left174__ = d
+  int __left173__ = (__left174__ + 0);
+  // __left173__ = d.s
+  // __offsetinbits175__ <-- 32 + 32 + 32 + 32 + 32 + 0
+  int __leftop176__ = 32;
+  int __leftop178__ = 32;
+  int __leftop180__ = 32;
+  int __leftop182__ = 32;
+  int __leftop184__ = 32;
+  int __rightop185__ = 0;
+  int __rightop183__ = __leftop184__ + __rightop185__;
+  int __rightop181__ = __leftop182__ + __rightop183__;
+  int __rightop179__ = __leftop180__ + __rightop181__;
+  int __rightop177__ = __leftop178__ + __rightop179__;
+  int __offsetinbits175__ = __leftop176__ + __rightop177__;
+  // __offsetinbits175__ = 32 + 32 + 32 + 32 + 32 + 0
+  int __offset186__ = __offsetinbits175__ >> 3;
+  int __shift187__ = __offsetinbits175__ - (__offset186__ << 3);
+  int __rightop172__ = ((*(int *)(__left173__ + __offset186__))  >> __shift187__) & 0xffffffff;
+  int __leftop170__ = __leftop171__ * __rightop172__;
+  int __rightop188__ = 0;
+  int __leftop169__ = __leftop170__ + __rightop188__;
+  int __rightop189__ = 1;
+  int __rightop168__ = __leftop169__ * __rightop189__;
+  int __offsetinbits166__ = __leftop167__ + __rightop168__;
+  // __offsetinbits166__ = 0 + 8 * d.s.blocksize + 0 * 1
+  int __offset190__ = __offsetinbits166__ >> 3;
+  int __left164__ = (__left165__ + __offset190__);
+  // __left164__ = d.g
+  int __leftop163__ = ((*(int *)(__left164__ + 0))  >> 0) & 0xffffffff;
+  // __left192__ <-- d.s
+  // __left193__ <-- d
+  int __left193__ = (int) d;
+  // __left193__ = d
+  int __left192__ = (__left193__ + 0);
+  // __left192__ = d.s
+  // __offsetinbits194__ <-- 32 + 32 + 0
+  int __leftop195__ = 32;
+  int __leftop197__ = 32;
+  int __rightop198__ = 0;
+  int __rightop196__ = __leftop197__ + __rightop198__;
+  int __offsetinbits194__ = __leftop195__ + __rightop196__;
+  // __offsetinbits194__ = 32 + 32 + 0
+  int __offset199__ = __offsetinbits194__ >> 3;
+  int __shift200__ = __offsetinbits194__ - (__offset199__ << 3);
+  int __rightop191__ = ((*(int *)(__left192__ + __offset199__))  >> __shift200__) & 0xffffffff;
+  int __tempvar162__ = __leftop163__ < __rightop191__;
+  if (__tempvar162__) {
+    // __left202__ <-- d.g
+    // __left203__ <-- d
+    int __left203__ = (int) d;
+    // __left203__ = d
+    // __offsetinbits204__ <-- 0 + 8 * d.s.blocksize + 0 * 1
+    int __leftop205__ = 0;
+    int __leftop209__ = 8;
+    // __left211__ <-- d.s
+    // __left212__ <-- d
+    int __left212__ = (int) d;
+    // __left212__ = d
+    int __left211__ = (__left212__ + 0);
+    // __left211__ = d.s
+    // __offsetinbits213__ <-- 32 + 32 + 32 + 32 + 32 + 0
+    int __leftop214__ = 32;
+    int __leftop216__ = 32;
+    int __leftop218__ = 32;
+    int __leftop220__ = 32;
+    int __leftop222__ = 32;
+    int __rightop223__ = 0;
+    int __rightop221__ = __leftop222__ + __rightop223__;
+    int __rightop219__ = __leftop220__ + __rightop221__;
+    int __rightop217__ = __leftop218__ + __rightop219__;
+    int __rightop215__ = __leftop216__ + __rightop217__;
+    int __offsetinbits213__ = __leftop214__ + __rightop215__;
+    // __offsetinbits213__ = 32 + 32 + 32 + 32 + 32 + 0
+    int __offset224__ = __offsetinbits213__ >> 3;
+    int __shift225__ = __offsetinbits213__ - (__offset224__ << 3);
+    int __rightop210__ = ((*(int *)(__left211__ + __offset224__))  >> __shift225__) & 0xffffffff;
+    int __leftop208__ = __leftop209__ * __rightop210__;
+    int __rightop226__ = 0;
+    int __leftop207__ = __leftop208__ + __rightop226__;
+    int __rightop227__ = 1;
+    int __rightop206__ = __leftop207__ * __rightop227__;
+    int __offsetinbits204__ = __leftop205__ + __rightop206__;
+    // __offsetinbits204__ = 0 + 8 * d.s.blocksize + 0 * 1
+    int __offset228__ = __offsetinbits204__ >> 3;
+    int __left202__ = (__left203__ + __offset228__);
+    // __left202__ = d.g
+    int __element201__ = ((*(int *)(__left202__ + 0))  >> 0) & 0xffffffff;
+    __BlockBitmapBlock___hash->add((int)__element201__, (int)__element201__);
   }
 }
 
@@ -595,67 +431,67 @@ SimpleHash* __blockstatus___hash = new SimpleHash();
 // build rule6
 {
   //d.s.RootDirectoryInode < d.s.NumberofInodes
-  // __left341__ <-- d.s
-  // __left342__ <-- d
-  int __left342__ = (int) d;
-  // __left342__ = d
-  int __left341__ = (__left342__ + 0);
-  // __left341__ = d.s
-  // __offsetinbits343__ <-- 32 + 32 + 32 + 32 + 0
-  int __leftop344__ = 32;
-  int __leftop346__ = 32;
-  int __leftop348__ = 32;
-  int __leftop350__ = 32;
-  int __rightop351__ = 0;
-  int __rightop349__ = __leftop350__ + __rightop351__;
-  int __rightop347__ = __leftop348__ + __rightop349__;
-  int __rightop345__ = __leftop346__ + __rightop347__;
-  int __offsetinbits343__ = __leftop344__ + __rightop345__;
-  // __offsetinbits343__ = 32 + 32 + 32 + 32 + 0
-  int __offset352__ = __offsetinbits343__ >> 3;
-  int __shift353__ = __offsetinbits343__ - (__offset352__ << 3);
-  int __leftop340__ = ((*(int *)(__left341__ + __offset352__))  >> __shift353__) & 0xffffffff;
-  // __left355__ <-- d.s
-  // __left356__ <-- d
-  int __left356__ = (int) d;
-  // __left356__ = d
-  int __left355__ = (__left356__ + 0);
-  // __left355__ = d.s
-  // __offsetinbits357__ <-- 32 + 32 + 32 + 0
-  int __leftop358__ = 32;
-  int __leftop360__ = 32;
-  int __leftop362__ = 32;
-  int __rightop363__ = 0;
-  int __rightop361__ = __leftop362__ + __rightop363__;
-  int __rightop359__ = __leftop360__ + __rightop361__;
-  int __offsetinbits357__ = __leftop358__ + __rightop359__;
-  // __offsetinbits357__ = 32 + 32 + 32 + 0
-  int __offset364__ = __offsetinbits357__ >> 3;
-  int __shift365__ = __offsetinbits357__ - (__offset364__ << 3);
-  int __rightop354__ = ((*(int *)(__left355__ + __offset364__))  >> __shift365__) & 0xffffffff;
-  int __tempvar339__ = __leftop340__ < __rightop354__;
-  if (__tempvar339__) {
-    // __left367__ <-- d.s
-    // __left368__ <-- d
-    int __left368__ = (int) d;
-    // __left368__ = d
-    int __left367__ = (__left368__ + 0);
-    // __left367__ = d.s
-    // __offsetinbits369__ <-- 32 + 32 + 32 + 32 + 0
-    int __leftop370__ = 32;
-    int __leftop372__ = 32;
-    int __leftop374__ = 32;
-    int __leftop376__ = 32;
-    int __rightop377__ = 0;
-    int __rightop375__ = __leftop376__ + __rightop377__;
-    int __rightop373__ = __leftop374__ + __rightop375__;
-    int __rightop371__ = __leftop372__ + __rightop373__;
-    int __offsetinbits369__ = __leftop370__ + __rightop371__;
-    // __offsetinbits369__ = 32 + 32 + 32 + 32 + 0
-    int __offset378__ = __offsetinbits369__ >> 3;
-    int __shift379__ = __offsetinbits369__ - (__offset378__ << 3);
-    int __element366__ = ((*(int *)(__left367__ + __offset378__))  >> __shift379__) & 0xffffffff;
-    __RootDirectoryInode___hash->add((int)__element366__, (int)__element366__);
+  // __left231__ <-- d.s
+  // __left232__ <-- d
+  int __left232__ = (int) d;
+  // __left232__ = d
+  int __left231__ = (__left232__ + 0);
+  // __left231__ = d.s
+  // __offsetinbits233__ <-- 32 + 32 + 32 + 32 + 0
+  int __leftop234__ = 32;
+  int __leftop236__ = 32;
+  int __leftop238__ = 32;
+  int __leftop240__ = 32;
+  int __rightop241__ = 0;
+  int __rightop239__ = __leftop240__ + __rightop241__;
+  int __rightop237__ = __leftop238__ + __rightop239__;
+  int __rightop235__ = __leftop236__ + __rightop237__;
+  int __offsetinbits233__ = __leftop234__ + __rightop235__;
+  // __offsetinbits233__ = 32 + 32 + 32 + 32 + 0
+  int __offset242__ = __offsetinbits233__ >> 3;
+  int __shift243__ = __offsetinbits233__ - (__offset242__ << 3);
+  int __leftop230__ = ((*(int *)(__left231__ + __offset242__))  >> __shift243__) & 0xffffffff;
+  // __left245__ <-- d.s
+  // __left246__ <-- d
+  int __left246__ = (int) d;
+  // __left246__ = d
+  int __left245__ = (__left246__ + 0);
+  // __left245__ = d.s
+  // __offsetinbits247__ <-- 32 + 32 + 32 + 0
+  int __leftop248__ = 32;
+  int __leftop250__ = 32;
+  int __leftop252__ = 32;
+  int __rightop253__ = 0;
+  int __rightop251__ = __leftop252__ + __rightop253__;
+  int __rightop249__ = __leftop250__ + __rightop251__;
+  int __offsetinbits247__ = __leftop248__ + __rightop249__;
+  // __offsetinbits247__ = 32 + 32 + 32 + 0
+  int __offset254__ = __offsetinbits247__ >> 3;
+  int __shift255__ = __offsetinbits247__ - (__offset254__ << 3);
+  int __rightop244__ = ((*(int *)(__left245__ + __offset254__))  >> __shift255__) & 0xffffffff;
+  int __tempvar229__ = __leftop230__ < __rightop244__;
+  if (__tempvar229__) {
+    // __left257__ <-- d.s
+    // __left258__ <-- d
+    int __left258__ = (int) d;
+    // __left258__ = d
+    int __left257__ = (__left258__ + 0);
+    // __left257__ = d.s
+    // __offsetinbits259__ <-- 32 + 32 + 32 + 32 + 0
+    int __leftop260__ = 32;
+    int __leftop262__ = 32;
+    int __leftop264__ = 32;
+    int __leftop266__ = 32;
+    int __rightop267__ = 0;
+    int __rightop265__ = __leftop266__ + __rightop267__;
+    int __rightop263__ = __leftop264__ + __rightop265__;
+    int __rightop261__ = __leftop262__ + __rightop263__;
+    int __offsetinbits259__ = __leftop260__ + __rightop261__;
+    // __offsetinbits259__ = 32 + 32 + 32 + 32 + 0
+    int __offset268__ = __offsetinbits259__ >> 3;
+    int __shift269__ = __offsetinbits259__ - (__offset268__ << 3);
+    int __element256__ = ((*(int *)(__left257__ + __offset268__))  >> __shift269__) & 0xffffffff;
+    __RootDirectoryInode___hash->add((int)__element256__, (int)__element256__);
   }
 }
 
@@ -666,314 +502,256 @@ SimpleHash* __blockstatus___hash = new SimpleHash();
     int __di__ = (int) __di___iterator->next();
     for (SimpleIterator* __itb___iterator = __InodeTableBlock___hash->iterator(); __itb___iterator->hasNext(); ) {
       int __itb__ = (int) __itb___iterator->next();
-      int __tempvar380__ = 0;
-      // __left384__ <-- d.s
-      // __left385__ <-- d
-      int __left385__ = (int) d;
-      // __left385__ = d
-      int __left384__ = (__left385__ + 0);
-      // __left384__ = d.s
-      // __offsetinbits386__ <-- 32 + 32 + 32 + 32 + 32 + 0
-      int __leftop387__ = 32;
-      int __leftop389__ = 32;
-      int __leftop391__ = 32;
-      int __leftop393__ = 32;
-      int __leftop395__ = 32;
-      int __rightop396__ = 0;
-      int __rightop394__ = __leftop395__ + __rightop396__;
-      int __rightop392__ = __leftop393__ + __rightop394__;
-      int __rightop390__ = __leftop391__ + __rightop392__;
-      int __rightop388__ = __leftop389__ + __rightop390__;
-      int __offsetinbits386__ = __leftop387__ + __rightop388__;
-      // __offsetinbits386__ = 32 + 32 + 32 + 32 + 32 + 0
-      int __offset397__ = __offsetinbits386__ >> 3;
-      int __shift398__ = __offsetinbits386__ - (__offset397__ << 3);
-      int __leftop383__ = ((*(int *)(__left384__ + __offset397__))  >> __shift398__) & 0xffffffff;
-      int __rightop399__ = 128;
-      int __leftop382__ = __leftop383__ / __rightop399__;
-      int __rightop400__ = 1;
-      int __tempvar381__ = __leftop382__ - __rightop400__;
-      for (int __j__ = __tempvar380__; __j__ <= __tempvar381__; __j__++) {
-        int __tempvar401__ = 0;
-        int __tempvar402__ = 11;
-        for (int __k__ = __tempvar401__; __k__ <= __tempvar402__; __k__++) {
+      int __tempvar270__ = 0;
+      // __left274__ <-- d.s
+      // __left275__ <-- d
+      int __left275__ = (int) d;
+      // __left275__ = d
+      int __left274__ = (__left275__ + 0);
+      // __left274__ = d.s
+      // __offsetinbits276__ <-- 32 + 32 + 32 + 32 + 32 + 0
+      int __leftop277__ = 32;
+      int __leftop279__ = 32;
+      int __leftop281__ = 32;
+      int __leftop283__ = 32;
+      int __leftop285__ = 32;
+      int __rightop286__ = 0;
+      int __rightop284__ = __leftop285__ + __rightop286__;
+      int __rightop282__ = __leftop283__ + __rightop284__;
+      int __rightop280__ = __leftop281__ + __rightop282__;
+      int __rightop278__ = __leftop279__ + __rightop280__;
+      int __offsetinbits276__ = __leftop277__ + __rightop278__;
+      // __offsetinbits276__ = 32 + 32 + 32 + 32 + 32 + 0
+      int __offset287__ = __offsetinbits276__ >> 3;
+      int __shift288__ = __offsetinbits276__ - (__offset287__ << 3);
+      int __leftop273__ = ((*(int *)(__left274__ + __offset287__))  >> __shift288__) & 0xffffffff;
+      int __rightop289__ = 128;
+      int __leftop272__ = __leftop273__ / __rightop289__;
+      int __rightop290__ = 1;
+      int __tempvar271__ = __leftop272__ - __rightop290__;
+      for (int __j__ = __tempvar270__; __j__ <= __tempvar271__; __j__++) {
+        int __tempvar291__ = 0;
+        int __tempvar292__ = 11;
+        for (int __k__ = __tempvar291__; __k__ <= __tempvar292__; __k__++) {
           //cast(__InodeTable__, d.b[itb]).itable[di].Blockptr[k] < d.s.NumberofBlocks
-          // __left405__ <-- cast(__InodeTable__, d.b[itb]).itable[di]
-          // __left406__ <-- cast(__InodeTable__, d.b[itb])
-          // __left408__ <-- d
-          int __left408__ = (int) d;
-          // __left408__ = d
-          // __offsetinbits409__ <-- 0 + 8 * d.s.blocksize + 0 * itb
-          int __leftop410__ = 0;
-          int __leftop414__ = 8;
-          // __left416__ <-- d.s
-          // __left417__ <-- d
-          int __left417__ = (int) d;
-          // __left417__ = d
-          int __left416__ = (__left417__ + 0);
-          // __left416__ = d.s
-          // __offsetinbits418__ <-- 32 + 32 + 32 + 32 + 32 + 0
-          int __leftop419__ = 32;
-          int __leftop421__ = 32;
-          int __leftop423__ = 32;
-          int __leftop425__ = 32;
-          int __leftop427__ = 32;
-          int __rightop428__ = 0;
-          int __rightop426__ = __leftop427__ + __rightop428__;
-          int __rightop424__ = __leftop425__ + __rightop426__;
-          int __rightop422__ = __leftop423__ + __rightop424__;
-          int __rightop420__ = __leftop421__ + __rightop422__;
-          int __offsetinbits418__ = __leftop419__ + __rightop420__;
-          // __offsetinbits418__ = 32 + 32 + 32 + 32 + 32 + 0
-          int __offset429__ = __offsetinbits418__ >> 3;
-          int __shift430__ = __offsetinbits418__ - (__offset429__ << 3);
-          int __rightop415__ = ((*(int *)(__left416__ + __offset429__))  >> __shift430__) & 0xffffffff;
-          int __leftop413__ = __leftop414__ * __rightop415__;
-          int __rightop431__ = 0;
-          int __leftop412__ = __leftop413__ + __rightop431__;
-          int __rightop432__ = (int) __itb__;
-          int __rightop411__ = __leftop412__ * __rightop432__;
-          int __offsetinbits409__ = __leftop410__ + __rightop411__;
-          // __offsetinbits409__ = 0 + 8 * d.s.blocksize + 0 * itb
-          int __offset433__ = __offsetinbits409__ >> 3;
-          int __expr407__ = (__left408__ + __offset433__);
-          int __left406__ = (int) __expr407__;
-          // __left406__ = cast(__InodeTable__, d.b[itb])
-          // __offsetinbits434__ <-- 0 + 32 + 32 * 12 + 32 + 0 * di
-          int __leftop435__ = 0;
-          int __leftop438__ = 32;
-          int __leftop441__ = 32;
-          int __rightop442__ = 12;
-          int __leftop440__ = __leftop441__ * __rightop442__;
-          int __leftop444__ = 32;
-          int __rightop445__ = 0;
-          int __rightop443__ = __leftop444__ + __rightop445__;
-          int __rightop439__ = __leftop440__ + __rightop443__;
-          int __leftop437__ = __leftop438__ + __rightop439__;
-          int __rightop446__ = (int) __di__;
-          int __rightop436__ = __leftop437__ * __rightop446__;
-          int __offsetinbits434__ = __leftop435__ + __rightop436__;
-          // __offsetinbits434__ = 0 + 32 + 32 * 12 + 32 + 0 * di
-          int __offset447__ = __offsetinbits434__ >> 3;
-          int __left405__ = (__left406__ + __offset447__);
-          // __left405__ = cast(__InodeTable__, d.b[itb]).itable[di]
-          // __offsetinbits448__ <-- 32 + 0 + 32 * k
-          int __leftop450__ = 32;
-          int __rightop451__ = 0;
-          int __leftop449__ = __leftop450__ + __rightop451__;
-          int __leftop453__ = 32;
-          int __rightop454__ = (int) __k__;
-          int __rightop452__ = __leftop453__ * __rightop454__;
-          int __offsetinbits448__ = __leftop449__ + __rightop452__;
-          // __offsetinbits448__ = 32 + 0 + 32 * k
-          int __offset455__ = __offsetinbits448__ >> 3;
-          int __shift456__ = __offsetinbits448__ - (__offset455__ << 3);
-          int __leftop404__ = ((*(int *)(__left405__ + __offset455__))  >> __shift456__) & 0xffffffff;
-          // __left458__ <-- d.s
-          // __left459__ <-- d
-          int __left459__ = (int) d;
-          // __left459__ = d
-          int __left458__ = (__left459__ + 0);
-          // __left458__ = d.s
-          // __offsetinbits460__ <-- 32 + 32 + 0
-          int __leftop461__ = 32;
-          int __leftop463__ = 32;
-          int __rightop464__ = 0;
-          int __rightop462__ = __leftop463__ + __rightop464__;
-          int __offsetinbits460__ = __leftop461__ + __rightop462__;
-          // __offsetinbits460__ = 32 + 32 + 0
-          int __offset465__ = __offsetinbits460__ >> 3;
-          int __shift466__ = __offsetinbits460__ - (__offset465__ << 3);
-          int __rightop457__ = ((*(int *)(__left458__ + __offset465__))  >> __shift466__) & 0xffffffff;
-          int __tempvar403__ = __leftop404__ < __rightop457__;
-          if (__tempvar403__) {
-            // __left468__ <-- cast(__DirectoryBlock__, d.b[cast(__InodeTable__, d.b[itb]).itable[di].Blockptr[k]])
-            // __left470__ <-- d
-            int __left470__ = (int) d;
-            // __left470__ = d
-            // __offsetinbits471__ <-- 0 + 8 * d.s.blocksize + 0 * cast(__InodeTable__, d.b[itb]).itable[di].Blockptr[k]
-            int __leftop472__ = 0;
-            int __leftop476__ = 8;
-            // __left478__ <-- d.s
-            // __left479__ <-- d
-            int __left479__ = (int) d;
-            // __left479__ = d
-            int __left478__ = (__left479__ + 0);
-            // __left478__ = d.s
-            // __offsetinbits480__ <-- 32 + 32 + 32 + 32 + 32 + 0
-            int __leftop481__ = 32;
-            int __leftop483__ = 32;
-            int __leftop485__ = 32;
-            int __leftop487__ = 32;
-            int __leftop489__ = 32;
-            int __rightop490__ = 0;
-            int __rightop488__ = __leftop489__ + __rightop490__;
-            int __rightop486__ = __leftop487__ + __rightop488__;
-            int __rightop484__ = __leftop485__ + __rightop486__;
-            int __rightop482__ = __leftop483__ + __rightop484__;
-            int __offsetinbits480__ = __leftop481__ + __rightop482__;
-            // __offsetinbits480__ = 32 + 32 + 32 + 32 + 32 + 0
-            int __offset491__ = __offsetinbits480__ >> 3;
-            int __shift492__ = __offsetinbits480__ - (__offset491__ << 3);
-            int __rightop477__ = ((*(int *)(__left478__ + __offset491__))  >> __shift492__) & 0xffffffff;
-            int __leftop475__ = __leftop476__ * __rightop477__;
-            int __rightop493__ = 0;
-            int __leftop474__ = __leftop475__ + __rightop493__;
-            // __left495__ <-- cast(__InodeTable__, d.b[itb]).itable[di]
-            // __left496__ <-- cast(__InodeTable__, d.b[itb])
-            // __left498__ <-- d
-            int __left498__ = (int) d;
-            // __left498__ = d
-            // __offsetinbits499__ <-- 0 + 8 * d.s.blocksize + 0 * itb
-            int __leftop500__ = 0;
-            int __leftop504__ = 8;
-            // __left506__ <-- d.s
-            // __left507__ <-- d
-            int __left507__ = (int) d;
-            // __left507__ = d
-            int __left506__ = (__left507__ + 0);
-            // __left506__ = d.s
-            // __offsetinbits508__ <-- 32 + 32 + 32 + 32 + 32 + 0
-            int __leftop509__ = 32;
-            int __leftop511__ = 32;
-            int __leftop513__ = 32;
-            int __leftop515__ = 32;
-            int __leftop517__ = 32;
-            int __rightop518__ = 0;
-            int __rightop516__ = __leftop517__ + __rightop518__;
-            int __rightop514__ = __leftop515__ + __rightop516__;
-            int __rightop512__ = __leftop513__ + __rightop514__;
-            int __rightop510__ = __leftop511__ + __rightop512__;
-            int __offsetinbits508__ = __leftop509__ + __rightop510__;
-            // __offsetinbits508__ = 32 + 32 + 32 + 32 + 32 + 0
-            int __offset519__ = __offsetinbits508__ >> 3;
-            int __shift520__ = __offsetinbits508__ - (__offset519__ << 3);
-            int __rightop505__ = ((*(int *)(__left506__ + __offset519__))  >> __shift520__) & 0xffffffff;
-            int __leftop503__ = __leftop504__ * __rightop505__;
-            int __rightop521__ = 0;
-            int __leftop502__ = __leftop503__ + __rightop521__;
-            int __rightop522__ = (int) __itb__;
-            int __rightop501__ = __leftop502__ * __rightop522__;
-            int __offsetinbits499__ = __leftop500__ + __rightop501__;
-            // __offsetinbits499__ = 0 + 8 * d.s.blocksize + 0 * itb
-            int __offset523__ = __offsetinbits499__ >> 3;
-            int __expr497__ = (__left498__ + __offset523__);
-            int __left496__ = (int) __expr497__;
-            // __left496__ = cast(__InodeTable__, d.b[itb])
-            // __offsetinbits524__ <-- 0 + 32 + 32 * 12 + 32 + 0 * di
-            int __leftop525__ = 0;
-            int __leftop528__ = 32;
-            int __leftop531__ = 32;
-            int __rightop532__ = 12;
-            int __leftop530__ = __leftop531__ * __rightop532__;
-            int __leftop534__ = 32;
-            int __rightop535__ = 0;
-            int __rightop533__ = __leftop534__ + __rightop535__;
-            int __rightop529__ = __leftop530__ + __rightop533__;
-            int __leftop527__ = __leftop528__ + __rightop529__;
-            int __rightop536__ = (int) __di__;
-            int __rightop526__ = __leftop527__ * __rightop536__;
-            int __offsetinbits524__ = __leftop525__ + __rightop526__;
-            // __offsetinbits524__ = 0 + 32 + 32 * 12 + 32 + 0 * di
-            int __offset537__ = __offsetinbits524__ >> 3;
-            int __left495__ = (__left496__ + __offset537__);
-            // __left495__ = cast(__InodeTable__, d.b[itb]).itable[di]
-            // __offsetinbits538__ <-- 32 + 0 + 32 * k
-            int __leftop540__ = 32;
-            int __rightop541__ = 0;
-            int __leftop539__ = __leftop540__ + __rightop541__;
-            int __leftop543__ = 32;
-            int __rightop544__ = (int) __k__;
-            int __rightop542__ = __leftop543__ * __rightop544__;
-            int __offsetinbits538__ = __leftop539__ + __rightop542__;
-            // __offsetinbits538__ = 32 + 0 + 32 * k
-            int __offset545__ = __offsetinbits538__ >> 3;
-            int __shift546__ = __offsetinbits538__ - (__offset545__ << 3);
-            int __rightop494__ = ((*(int *)(__left495__ + __offset545__))  >> __shift546__) & 0xffffffff;
-            int __rightop473__ = __leftop474__ * __rightop494__;
-            int __offsetinbits471__ = __leftop472__ + __rightop473__;
-            // __offsetinbits471__ = 0 + 8 * d.s.blocksize + 0 * cast(__InodeTable__, d.b[itb]).itable[di].Blockptr[k]
-            int __offset547__ = __offsetinbits471__ >> 3;
-            int __expr469__ = (__left470__ + __offset547__);
-            int __left468__ = (int) __expr469__;
-            // __left468__ = cast(__DirectoryBlock__, d.b[cast(__InodeTable__, d.b[itb]).itable[di].Blockptr[k]])
-            // __offsetinbits548__ <-- 0 + 32 + 8 * 124 + 0 * j
-            int __leftop549__ = 0;
-            int __leftop552__ = 32;
-            int __leftop555__ = 8;
-            int __rightop556__ = 124;
-            int __leftop554__ = __leftop555__ * __rightop556__;
-            int __rightop557__ = 0;
-            int __rightop553__ = __leftop554__ + __rightop557__;
-            int __leftop551__ = __leftop552__ + __rightop553__;
-            int __rightop558__ = (int) __j__;
-            int __rightop550__ = __leftop551__ * __rightop558__;
-            int __offsetinbits548__ = __leftop549__ + __rightop550__;
-            // __offsetinbits548__ = 0 + 32 + 8 * 124 + 0 * j
-            int __offset559__ = __offsetinbits548__ >> 3;
-            int __element467__ = (__left468__ + __offset559__);
-            __DirectoryEntry___hash->add((int)__element467__, (int)__element467__);
+          // __left295__ <-- cast(__InodeTable__, d.b[itb]).itable[di]
+          // __left296__ <-- cast(__InodeTable__, d.b[itb])
+          // __left298__ <-- d
+          int __left298__ = (int) d;
+          // __left298__ = d
+          // __offsetinbits299__ <-- 0 + 8 * d.s.blocksize + 0 * itb
+          int __leftop300__ = 0;
+          int __leftop304__ = 8;
+          // __left306__ <-- d.s
+          // __left307__ <-- d
+          int __left307__ = (int) d;
+          // __left307__ = d
+          int __left306__ = (__left307__ + 0);
+          // __left306__ = d.s
+          // __offsetinbits308__ <-- 32 + 32 + 32 + 32 + 32 + 0
+          int __leftop309__ = 32;
+          int __leftop311__ = 32;
+          int __leftop313__ = 32;
+          int __leftop315__ = 32;
+          int __leftop317__ = 32;
+          int __rightop318__ = 0;
+          int __rightop316__ = __leftop317__ + __rightop318__;
+          int __rightop314__ = __leftop315__ + __rightop316__;
+          int __rightop312__ = __leftop313__ + __rightop314__;
+          int __rightop310__ = __leftop311__ + __rightop312__;
+          int __offsetinbits308__ = __leftop309__ + __rightop310__;
+          // __offsetinbits308__ = 32 + 32 + 32 + 32 + 32 + 0
+          int __offset319__ = __offsetinbits308__ >> 3;
+          int __shift320__ = __offsetinbits308__ - (__offset319__ << 3);
+          int __rightop305__ = ((*(int *)(__left306__ + __offset319__))  >> __shift320__) & 0xffffffff;
+          int __leftop303__ = __leftop304__ * __rightop305__;
+          int __rightop321__ = 0;
+          int __leftop302__ = __leftop303__ + __rightop321__;
+          int __rightop322__ = (int) __itb__;
+          int __rightop301__ = __leftop302__ * __rightop322__;
+          int __offsetinbits299__ = __leftop300__ + __rightop301__;
+          // __offsetinbits299__ = 0 + 8 * d.s.blocksize + 0 * itb
+          int __offset323__ = __offsetinbits299__ >> 3;
+          int __expr297__ = (__left298__ + __offset323__);
+          int __left296__ = (int) __expr297__;
+          // __left296__ = cast(__InodeTable__, d.b[itb])
+          // __offsetinbits324__ <-- 0 + 32 + 32 * 12 + 32 + 0 * di
+          int __leftop325__ = 0;
+          int __leftop328__ = 32;
+          int __leftop331__ = 32;
+          int __rightop332__ = 12;
+          int __leftop330__ = __leftop331__ * __rightop332__;
+          int __leftop334__ = 32;
+          int __rightop335__ = 0;
+          int __rightop333__ = __leftop334__ + __rightop335__;
+          int __rightop329__ = __leftop330__ + __rightop333__;
+          int __leftop327__ = __leftop328__ + __rightop329__;
+          int __rightop336__ = (int) __di__;
+          int __rightop326__ = __leftop327__ * __rightop336__;
+          int __offsetinbits324__ = __leftop325__ + __rightop326__;
+          // __offsetinbits324__ = 0 + 32 + 32 * 12 + 32 + 0 * di
+          int __offset337__ = __offsetinbits324__ >> 3;
+          int __left295__ = (__left296__ + __offset337__);
+          // __left295__ = cast(__InodeTable__, d.b[itb]).itable[di]
+          // __offsetinbits338__ <-- 32 + 0 + 32 * k
+          int __leftop340__ = 32;
+          int __rightop341__ = 0;
+          int __leftop339__ = __leftop340__ + __rightop341__;
+          int __leftop343__ = 32;
+          int __rightop344__ = (int) __k__;
+          int __rightop342__ = __leftop343__ * __rightop344__;
+          int __offsetinbits338__ = __leftop339__ + __rightop342__;
+          // __offsetinbits338__ = 32 + 0 + 32 * k
+          int __offset345__ = __offsetinbits338__ >> 3;
+          int __shift346__ = __offsetinbits338__ - (__offset345__ << 3);
+          int __leftop294__ = ((*(int *)(__left295__ + __offset345__))  >> __shift346__) & 0xffffffff;
+          // __left348__ <-- d.s
+          // __left349__ <-- d
+          int __left349__ = (int) d;
+          // __left349__ = d
+          int __left348__ = (__left349__ + 0);
+          // __left348__ = d.s
+          // __offsetinbits350__ <-- 32 + 32 + 0
+          int __leftop351__ = 32;
+          int __leftop353__ = 32;
+          int __rightop354__ = 0;
+          int __rightop352__ = __leftop353__ + __rightop354__;
+          int __offsetinbits350__ = __leftop351__ + __rightop352__;
+          // __offsetinbits350__ = 32 + 32 + 0
+          int __offset355__ = __offsetinbits350__ >> 3;
+          int __shift356__ = __offsetinbits350__ - (__offset355__ << 3);
+          int __rightop347__ = ((*(int *)(__left348__ + __offset355__))  >> __shift356__) & 0xffffffff;
+          int __tempvar293__ = __leftop294__ < __rightop347__;
+          if (__tempvar293__) {
+            // __left358__ <-- cast(__DirectoryBlock__, d.b[cast(__InodeTable__, d.b[itb]).itable[di].Blockptr[k]])
+            // __left360__ <-- d
+            int __left360__ = (int) d;
+            // __left360__ = d
+            // __offsetinbits361__ <-- 0 + 8 * d.s.blocksize + 0 * cast(__InodeTable__, d.b[itb]).itable[di].Blockptr[k]
+            int __leftop362__ = 0;
+            int __leftop366__ = 8;
+            // __left368__ <-- d.s
+            // __left369__ <-- d
+            int __left369__ = (int) d;
+            // __left369__ = d
+            int __left368__ = (__left369__ + 0);
+            // __left368__ = d.s
+            // __offsetinbits370__ <-- 32 + 32 + 32 + 32 + 32 + 0
+            int __leftop371__ = 32;
+            int __leftop373__ = 32;
+            int __leftop375__ = 32;
+            int __leftop377__ = 32;
+            int __leftop379__ = 32;
+            int __rightop380__ = 0;
+            int __rightop378__ = __leftop379__ + __rightop380__;
+            int __rightop376__ = __leftop377__ + __rightop378__;
+            int __rightop374__ = __leftop375__ + __rightop376__;
+            int __rightop372__ = __leftop373__ + __rightop374__;
+            int __offsetinbits370__ = __leftop371__ + __rightop372__;
+            // __offsetinbits370__ = 32 + 32 + 32 + 32 + 32 + 0
+            int __offset381__ = __offsetinbits370__ >> 3;
+            int __shift382__ = __offsetinbits370__ - (__offset381__ << 3);
+            int __rightop367__ = ((*(int *)(__left368__ + __offset381__))  >> __shift382__) & 0xffffffff;
+            int __leftop365__ = __leftop366__ * __rightop367__;
+            int __rightop383__ = 0;
+            int __leftop364__ = __leftop365__ + __rightop383__;
+            // __left385__ <-- cast(__InodeTable__, d.b[itb]).itable[di]
+            // __left386__ <-- cast(__InodeTable__, d.b[itb])
+            // __left388__ <-- d
+            int __left388__ = (int) d;
+            // __left388__ = d
+            // __offsetinbits389__ <-- 0 + 8 * d.s.blocksize + 0 * itb
+            int __leftop390__ = 0;
+            int __leftop394__ = 8;
+            // __left396__ <-- d.s
+            // __left397__ <-- d
+            int __left397__ = (int) d;
+            // __left397__ = d
+            int __left396__ = (__left397__ + 0);
+            // __left396__ = d.s
+            // __offsetinbits398__ <-- 32 + 32 + 32 + 32 + 32 + 0
+            int __leftop399__ = 32;
+            int __leftop401__ = 32;
+            int __leftop403__ = 32;
+            int __leftop405__ = 32;
+            int __leftop407__ = 32;
+            int __rightop408__ = 0;
+            int __rightop406__ = __leftop407__ + __rightop408__;
+            int __rightop404__ = __leftop405__ + __rightop406__;
+            int __rightop402__ = __leftop403__ + __rightop404__;
+            int __rightop400__ = __leftop401__ + __rightop402__;
+            int __offsetinbits398__ = __leftop399__ + __rightop400__;
+            // __offsetinbits398__ = 32 + 32 + 32 + 32 + 32 + 0
+            int __offset409__ = __offsetinbits398__ >> 3;
+            int __shift410__ = __offsetinbits398__ - (__offset409__ << 3);
+            int __rightop395__ = ((*(int *)(__left396__ + __offset409__))  >> __shift410__) & 0xffffffff;
+            int __leftop393__ = __leftop394__ * __rightop395__;
+            int __rightop411__ = 0;
+            int __leftop392__ = __leftop393__ + __rightop411__;
+            int __rightop412__ = (int) __itb__;
+            int __rightop391__ = __leftop392__ * __rightop412__;
+            int __offsetinbits389__ = __leftop390__ + __rightop391__;
+            // __offsetinbits389__ = 0 + 8 * d.s.blocksize + 0 * itb
+            int __offset413__ = __offsetinbits389__ >> 3;
+            int __expr387__ = (__left388__ + __offset413__);
+            int __left386__ = (int) __expr387__;
+            // __left386__ = cast(__InodeTable__, d.b[itb])
+            // __offsetinbits414__ <-- 0 + 32 + 32 * 12 + 32 + 0 * di
+            int __leftop415__ = 0;
+            int __leftop418__ = 32;
+            int __leftop421__ = 32;
+            int __rightop422__ = 12;
+            int __leftop420__ = __leftop421__ * __rightop422__;
+            int __leftop424__ = 32;
+            int __rightop425__ = 0;
+            int __rightop423__ = __leftop424__ + __rightop425__;
+            int __rightop419__ = __leftop420__ + __rightop423__;
+            int __leftop417__ = __leftop418__ + __rightop419__;
+            int __rightop426__ = (int) __di__;
+            int __rightop416__ = __leftop417__ * __rightop426__;
+            int __offsetinbits414__ = __leftop415__ + __rightop416__;
+            // __offsetinbits414__ = 0 + 32 + 32 * 12 + 32 + 0 * di
+            int __offset427__ = __offsetinbits414__ >> 3;
+            int __left385__ = (__left386__ + __offset427__);
+            // __left385__ = cast(__InodeTable__, d.b[itb]).itable[di]
+            // __offsetinbits428__ <-- 32 + 0 + 32 * k
+            int __leftop430__ = 32;
+            int __rightop431__ = 0;
+            int __leftop429__ = __leftop430__ + __rightop431__;
+            int __leftop433__ = 32;
+            int __rightop434__ = (int) __k__;
+            int __rightop432__ = __leftop433__ * __rightop434__;
+            int __offsetinbits428__ = __leftop429__ + __rightop432__;
+            // __offsetinbits428__ = 32 + 0 + 32 * k
+            int __offset435__ = __offsetinbits428__ >> 3;
+            int __shift436__ = __offsetinbits428__ - (__offset435__ << 3);
+            int __rightop384__ = ((*(int *)(__left385__ + __offset435__))  >> __shift436__) & 0xffffffff;
+            int __rightop363__ = __leftop364__ * __rightop384__;
+            int __offsetinbits361__ = __leftop362__ + __rightop363__;
+            // __offsetinbits361__ = 0 + 8 * d.s.blocksize + 0 * cast(__InodeTable__, d.b[itb]).itable[di].Blockptr[k]
+            int __offset437__ = __offsetinbits361__ >> 3;
+            int __expr359__ = (__left360__ + __offset437__);
+            int __left358__ = (int) __expr359__;
+            // __left358__ = cast(__DirectoryBlock__, d.b[cast(__InodeTable__, d.b[itb]).itable[di].Blockptr[k]])
+            // __offsetinbits438__ <-- 0 + 32 + 8 * 124 + 0 * j
+            int __leftop439__ = 0;
+            int __leftop442__ = 32;
+            int __leftop445__ = 8;
+            int __rightop446__ = 124;
+            int __leftop444__ = __leftop445__ * __rightop446__;
+            int __rightop447__ = 0;
+            int __rightop443__ = __leftop444__ + __rightop447__;
+            int __leftop441__ = __leftop442__ + __rightop443__;
+            int __rightop448__ = (int) __j__;
+            int __rightop440__ = __leftop441__ * __rightop448__;
+            int __offsetinbits438__ = __leftop439__ + __rightop440__;
+            // __offsetinbits438__ = 0 + 32 + 8 * 124 + 0 * j
+            int __offset449__ = __offsetinbits438__ >> 3;
+            int __element357__ = (__left358__ + __offset449__);
+            __DirectoryEntry___hash->add((int)__element357__, (int)__element357__);
           }
         }
       }
-    }
-  }
-}
-
-
-// build rule15
-{
-  for (SimpleIterator* __de___iterator = __DirectoryEntry___hash->iterator(); __de___iterator->hasNext(); ) {
-    int __de__ = (int) __de___iterator->next();
-    //de.inodenumber < d.s.NumberofInodes
-    // __left562__ <-- de
-    int __left562__ = (int) __de__;
-    // __left562__ = de
-    // __offsetinbits563__ <-- 8 * 124 + 0
-    int __leftop565__ = 8;
-    int __rightop566__ = 124;
-    int __leftop564__ = __leftop565__ * __rightop566__;
-    int __rightop567__ = 0;
-    int __offsetinbits563__ = __leftop564__ + __rightop567__;
-    // __offsetinbits563__ = 8 * 124 + 0
-    int __offset568__ = __offsetinbits563__ >> 3;
-    int __shift569__ = __offsetinbits563__ - (__offset568__ << 3);
-    int __leftop561__ = ((*(int *)(__left562__ + __offset568__))  >> __shift569__) & 0xffffffff;
-    // __left571__ <-- d.s
-    // __left572__ <-- d
-    int __left572__ = (int) d;
-    // __left572__ = d
-    int __left571__ = (__left572__ + 0);
-    // __left571__ = d.s
-    // __offsetinbits573__ <-- 32 + 32 + 32 + 0
-    int __leftop574__ = 32;
-    int __leftop576__ = 32;
-    int __leftop578__ = 32;
-    int __rightop579__ = 0;
-    int __rightop577__ = __leftop578__ + __rightop579__;
-    int __rightop575__ = __leftop576__ + __rightop577__;
-    int __offsetinbits573__ = __leftop574__ + __rightop575__;
-    // __offsetinbits573__ = 32 + 32 + 32 + 0
-    int __offset580__ = __offsetinbits573__ >> 3;
-    int __shift581__ = __offsetinbits573__ - (__offset580__ << 3);
-    int __rightop570__ = ((*(int *)(__left571__ + __offset580__))  >> __shift581__) & 0xffffffff;
-    int __tempvar560__ = __leftop561__ < __rightop570__;
-    if (__tempvar560__) {
-      int __leftele582__ = (int) __de__;
-      // __left584__ <-- de
-      int __left584__ = (int) __de__;
-      // __left584__ = de
-      // __offsetinbits585__ <-- 8 * 124 + 0
-      int __leftop587__ = 8;
-      int __rightop588__ = 124;
-      int __leftop586__ = __leftop587__ * __rightop588__;
-      int __rightop589__ = 0;
-      int __offsetinbits585__ = __leftop586__ + __rightop589__;
-      // __offsetinbits585__ = 8 * 124 + 0
-      int __offset590__ = __offsetinbits585__ >> 3;
-      int __shift591__ = __offsetinbits585__ - (__offset590__ << 3);
-      int __rightele583__ = ((*(int *)(__left584__ + __offset590__))  >> __shift591__) & 0xffffffff;
-      __inodeof___hash->add((int)__leftele582__, (int)__rightele583__);
     }
   }
 }
@@ -984,70 +762,618 @@ SimpleHash* __blockstatus___hash = new SimpleHash();
   for (SimpleIterator* __de___iterator = __DirectoryEntry___hash->iterator(); __de___iterator->hasNext(); ) {
     int __de__ = (int) __de___iterator->next();
     //de.inodenumber < d.s.NumberofInodes && !de.inodenumber == 0
-    // __left595__ <-- de
-    int __left595__ = (int) __de__;
-    // __left595__ = de
-    // __offsetinbits596__ <-- 8 * 124 + 0
-    int __leftop598__ = 8;
-    int __rightop599__ = 124;
-    int __leftop597__ = __leftop598__ * __rightop599__;
-    int __rightop600__ = 0;
-    int __offsetinbits596__ = __leftop597__ + __rightop600__;
-    // __offsetinbits596__ = 8 * 124 + 0
-    int __offset601__ = __offsetinbits596__ >> 3;
-    int __shift602__ = __offsetinbits596__ - (__offset601__ << 3);
-    int __leftop594__ = ((*(int *)(__left595__ + __offset601__))  >> __shift602__) & 0xffffffff;
-    // __left604__ <-- d.s
-    // __left605__ <-- d
-    int __left605__ = (int) d;
-    // __left605__ = d
-    int __left604__ = (__left605__ + 0);
-    // __left604__ = d.s
-    // __offsetinbits606__ <-- 32 + 32 + 32 + 0
-    int __leftop607__ = 32;
-    int __leftop609__ = 32;
-    int __leftop611__ = 32;
-    int __rightop612__ = 0;
-    int __rightop610__ = __leftop611__ + __rightop612__;
-    int __rightop608__ = __leftop609__ + __rightop610__;
-    int __offsetinbits606__ = __leftop607__ + __rightop608__;
-    // __offsetinbits606__ = 32 + 32 + 32 + 0
-    int __offset613__ = __offsetinbits606__ >> 3;
-    int __shift614__ = __offsetinbits606__ - (__offset613__ << 3);
-    int __rightop603__ = ((*(int *)(__left604__ + __offset613__))  >> __shift614__) & 0xffffffff;
-    int __leftop593__ = __leftop594__ < __rightop603__;
-    // __left618__ <-- de
-    int __left618__ = (int) __de__;
-    // __left618__ = de
-    // __offsetinbits619__ <-- 8 * 124 + 0
-    int __leftop621__ = 8;
-    int __rightop622__ = 124;
-    int __leftop620__ = __leftop621__ * __rightop622__;
-    int __rightop623__ = 0;
-    int __offsetinbits619__ = __leftop620__ + __rightop623__;
-    // __offsetinbits619__ = 8 * 124 + 0
-    int __offset624__ = __offsetinbits619__ >> 3;
-    int __shift625__ = __offsetinbits619__ - (__offset624__ << 3);
-    int __leftop617__ = ((*(int *)(__left618__ + __offset624__))  >> __shift625__) & 0xffffffff;
-    int __rightop626__ = 0;
-    int __leftop616__ = __leftop617__ == __rightop626__;
-    int __rightop615__ = !__leftop616__;
-    int __tempvar592__ = __leftop593__ && __rightop615__;
-    if (__tempvar592__) {
-      // __left628__ <-- de
-      int __left628__ = (int) __de__;
-      // __left628__ = de
-      // __offsetinbits629__ <-- 8 * 124 + 0
-      int __leftop631__ = 8;
-      int __rightop632__ = 124;
-      int __leftop630__ = __leftop631__ * __rightop632__;
-      int __rightop633__ = 0;
-      int __offsetinbits629__ = __leftop630__ + __rightop633__;
-      // __offsetinbits629__ = 8 * 124 + 0
-      int __offset634__ = __offsetinbits629__ >> 3;
-      int __shift635__ = __offsetinbits629__ - (__offset634__ << 3);
-      int __element627__ = ((*(int *)(__left628__ + __offset634__))  >> __shift635__) & 0xffffffff;
-      __FileInode___hash->add((int)__element627__, (int)__element627__);
+    // __left453__ <-- de
+    int __left453__ = (int) __de__;
+    // __left453__ = de
+    // __offsetinbits454__ <-- 8 * 124 + 0
+    int __leftop456__ = 8;
+    int __rightop457__ = 124;
+    int __leftop455__ = __leftop456__ * __rightop457__;
+    int __rightop458__ = 0;
+    int __offsetinbits454__ = __leftop455__ + __rightop458__;
+    // __offsetinbits454__ = 8 * 124 + 0
+    int __offset459__ = __offsetinbits454__ >> 3;
+    int __shift460__ = __offsetinbits454__ - (__offset459__ << 3);
+    int __leftop452__ = ((*(int *)(__left453__ + __offset459__))  >> __shift460__) & 0xffffffff;
+    // __left462__ <-- d.s
+    // __left463__ <-- d
+    int __left463__ = (int) d;
+    // __left463__ = d
+    int __left462__ = (__left463__ + 0);
+    // __left462__ = d.s
+    // __offsetinbits464__ <-- 32 + 32 + 32 + 0
+    int __leftop465__ = 32;
+    int __leftop467__ = 32;
+    int __leftop469__ = 32;
+    int __rightop470__ = 0;
+    int __rightop468__ = __leftop469__ + __rightop470__;
+    int __rightop466__ = __leftop467__ + __rightop468__;
+    int __offsetinbits464__ = __leftop465__ + __rightop466__;
+    // __offsetinbits464__ = 32 + 32 + 32 + 0
+    int __offset471__ = __offsetinbits464__ >> 3;
+    int __shift472__ = __offsetinbits464__ - (__offset471__ << 3);
+    int __rightop461__ = ((*(int *)(__left462__ + __offset471__))  >> __shift472__) & 0xffffffff;
+    int __leftop451__ = __leftop452__ < __rightop461__;
+    // __left476__ <-- de
+    int __left476__ = (int) __de__;
+    // __left476__ = de
+    // __offsetinbits477__ <-- 8 * 124 + 0
+    int __leftop479__ = 8;
+    int __rightop480__ = 124;
+    int __leftop478__ = __leftop479__ * __rightop480__;
+    int __rightop481__ = 0;
+    int __offsetinbits477__ = __leftop478__ + __rightop481__;
+    // __offsetinbits477__ = 8 * 124 + 0
+    int __offset482__ = __offsetinbits477__ >> 3;
+    int __shift483__ = __offsetinbits477__ - (__offset482__ << 3);
+    int __leftop475__ = ((*(int *)(__left476__ + __offset482__))  >> __shift483__) & 0xffffffff;
+    int __rightop484__ = 0;
+    int __leftop474__ = __leftop475__ == __rightop484__;
+    int __rightop473__ = !__leftop474__;
+    int __tempvar450__ = __leftop451__ && __rightop473__;
+    if (__tempvar450__) {
+      // __left486__ <-- de
+      int __left486__ = (int) __de__;
+      // __left486__ = de
+      // __offsetinbits487__ <-- 8 * 124 + 0
+      int __leftop489__ = 8;
+      int __rightop490__ = 124;
+      int __leftop488__ = __leftop489__ * __rightop490__;
+      int __rightop491__ = 0;
+      int __offsetinbits487__ = __leftop488__ + __rightop491__;
+      // __offsetinbits487__ = 8 * 124 + 0
+      int __offset492__ = __offsetinbits487__ >> 3;
+      int __shift493__ = __offsetinbits487__ - (__offset492__ << 3);
+      int __element485__ = ((*(int *)(__left486__ + __offset492__))  >> __shift493__) & 0xffffffff;
+      __FileInode___hash->add((int)__element485__, (int)__element485__);
+    }
+  }
+}
+
+
+// build rule15
+{
+  for (SimpleIterator* __de___iterator = __DirectoryEntry___hash->iterator(); __de___iterator->hasNext(); ) {
+    int __de__ = (int) __de___iterator->next();
+    //de.inodenumber < d.s.NumberofInodes
+    // __left496__ <-- de
+    int __left496__ = (int) __de__;
+    // __left496__ = de
+    // __offsetinbits497__ <-- 8 * 124 + 0
+    int __leftop499__ = 8;
+    int __rightop500__ = 124;
+    int __leftop498__ = __leftop499__ * __rightop500__;
+    int __rightop501__ = 0;
+    int __offsetinbits497__ = __leftop498__ + __rightop501__;
+    // __offsetinbits497__ = 8 * 124 + 0
+    int __offset502__ = __offsetinbits497__ >> 3;
+    int __shift503__ = __offsetinbits497__ - (__offset502__ << 3);
+    int __leftop495__ = ((*(int *)(__left496__ + __offset502__))  >> __shift503__) & 0xffffffff;
+    // __left505__ <-- d.s
+    // __left506__ <-- d
+    int __left506__ = (int) d;
+    // __left506__ = d
+    int __left505__ = (__left506__ + 0);
+    // __left505__ = d.s
+    // __offsetinbits507__ <-- 32 + 32 + 32 + 0
+    int __leftop508__ = 32;
+    int __leftop510__ = 32;
+    int __leftop512__ = 32;
+    int __rightop513__ = 0;
+    int __rightop511__ = __leftop512__ + __rightop513__;
+    int __rightop509__ = __leftop510__ + __rightop511__;
+    int __offsetinbits507__ = __leftop508__ + __rightop509__;
+    // __offsetinbits507__ = 32 + 32 + 32 + 0
+    int __offset514__ = __offsetinbits507__ >> 3;
+    int __shift515__ = __offsetinbits507__ - (__offset514__ << 3);
+    int __rightop504__ = ((*(int *)(__left505__ + __offset514__))  >> __shift515__) & 0xffffffff;
+    int __tempvar494__ = __leftop495__ < __rightop504__;
+    if (__tempvar494__) {
+      int __leftele516__ = (int) __de__;
+      // __left518__ <-- de
+      int __left518__ = (int) __de__;
+      // __left518__ = de
+      // __offsetinbits519__ <-- 8 * 124 + 0
+      int __leftop521__ = 8;
+      int __rightop522__ = 124;
+      int __leftop520__ = __leftop521__ * __rightop522__;
+      int __rightop523__ = 0;
+      int __offsetinbits519__ = __leftop520__ + __rightop523__;
+      // __offsetinbits519__ = 8 * 124 + 0
+      int __offset524__ = __offsetinbits519__ >> 3;
+      int __shift525__ = __offsetinbits519__ - (__offset524__ << 3);
+      int __rightele517__ = ((*(int *)(__left518__ + __offset524__))  >> __shift525__) & 0xffffffff;
+      __inodeof___hash->add((int)__leftele516__, (int)__rightele517__);
+      __inodeof___hashinv->add((int)__rightele517__, (int)__leftele516__);
+    }
+  }
+}
+
+
+// build rule11
+{
+  for (SimpleIterator* __i___iterator = __UsedInode___hash->iterator(); __i___iterator->hasNext(); ) {
+    int __i__ = (int) __i___iterator->next();
+    for (SimpleIterator* __itb___iterator = __InodeTableBlock___hash->iterator(); __itb___iterator->hasNext(); ) {
+      int __itb__ = (int) __itb___iterator->next();
+      int __tempvar526__ = 0;
+      int __tempvar527__ = 11;
+      for (int __j__ = __tempvar526__; __j__ <= __tempvar527__; __j__++) {
+        //cast(__InodeTable__, d.b[itb]).itable[i].Blockptr[j] < d.s.NumberofBlocks && !cast(__InodeTable__, d.b[itb]).itable[i].Blockptr[j] == 0
+        // __left531__ <-- cast(__InodeTable__, d.b[itb]).itable[i]
+        // __left532__ <-- cast(__InodeTable__, d.b[itb])
+        // __left534__ <-- d
+        int __left534__ = (int) d;
+        // __left534__ = d
+        // __offsetinbits535__ <-- 0 + 8 * d.s.blocksize + 0 * itb
+        int __leftop536__ = 0;
+        int __leftop540__ = 8;
+        // __left542__ <-- d.s
+        // __left543__ <-- d
+        int __left543__ = (int) d;
+        // __left543__ = d
+        int __left542__ = (__left543__ + 0);
+        // __left542__ = d.s
+        // __offsetinbits544__ <-- 32 + 32 + 32 + 32 + 32 + 0
+        int __leftop545__ = 32;
+        int __leftop547__ = 32;
+        int __leftop549__ = 32;
+        int __leftop551__ = 32;
+        int __leftop553__ = 32;
+        int __rightop554__ = 0;
+        int __rightop552__ = __leftop553__ + __rightop554__;
+        int __rightop550__ = __leftop551__ + __rightop552__;
+        int __rightop548__ = __leftop549__ + __rightop550__;
+        int __rightop546__ = __leftop547__ + __rightop548__;
+        int __offsetinbits544__ = __leftop545__ + __rightop546__;
+        // __offsetinbits544__ = 32 + 32 + 32 + 32 + 32 + 0
+        int __offset555__ = __offsetinbits544__ >> 3;
+        int __shift556__ = __offsetinbits544__ - (__offset555__ << 3);
+        int __rightop541__ = ((*(int *)(__left542__ + __offset555__))  >> __shift556__) & 0xffffffff;
+        int __leftop539__ = __leftop540__ * __rightop541__;
+        int __rightop557__ = 0;
+        int __leftop538__ = __leftop539__ + __rightop557__;
+        int __rightop558__ = (int) __itb__;
+        int __rightop537__ = __leftop538__ * __rightop558__;
+        int __offsetinbits535__ = __leftop536__ + __rightop537__;
+        // __offsetinbits535__ = 0 + 8 * d.s.blocksize + 0 * itb
+        int __offset559__ = __offsetinbits535__ >> 3;
+        int __expr533__ = (__left534__ + __offset559__);
+        int __left532__ = (int) __expr533__;
+        // __left532__ = cast(__InodeTable__, d.b[itb])
+        // __offsetinbits560__ <-- 0 + 32 + 32 * 12 + 32 + 0 * i
+        int __leftop561__ = 0;
+        int __leftop564__ = 32;
+        int __leftop567__ = 32;
+        int __rightop568__ = 12;
+        int __leftop566__ = __leftop567__ * __rightop568__;
+        int __leftop570__ = 32;
+        int __rightop571__ = 0;
+        int __rightop569__ = __leftop570__ + __rightop571__;
+        int __rightop565__ = __leftop566__ + __rightop569__;
+        int __leftop563__ = __leftop564__ + __rightop565__;
+        int __rightop572__ = (int) __i__;
+        int __rightop562__ = __leftop563__ * __rightop572__;
+        int __offsetinbits560__ = __leftop561__ + __rightop562__;
+        // __offsetinbits560__ = 0 + 32 + 32 * 12 + 32 + 0 * i
+        int __offset573__ = __offsetinbits560__ >> 3;
+        int __left531__ = (__left532__ + __offset573__);
+        // __left531__ = cast(__InodeTable__, d.b[itb]).itable[i]
+        // __offsetinbits574__ <-- 32 + 0 + 32 * j
+        int __leftop576__ = 32;
+        int __rightop577__ = 0;
+        int __leftop575__ = __leftop576__ + __rightop577__;
+        int __leftop579__ = 32;
+        int __rightop580__ = (int) __j__;
+        int __rightop578__ = __leftop579__ * __rightop580__;
+        int __offsetinbits574__ = __leftop575__ + __rightop578__;
+        // __offsetinbits574__ = 32 + 0 + 32 * j
+        int __offset581__ = __offsetinbits574__ >> 3;
+        int __shift582__ = __offsetinbits574__ - (__offset581__ << 3);
+        int __leftop530__ = ((*(int *)(__left531__ + __offset581__))  >> __shift582__) & 0xffffffff;
+        // __left584__ <-- d.s
+        // __left585__ <-- d
+        int __left585__ = (int) d;
+        // __left585__ = d
+        int __left584__ = (__left585__ + 0);
+        // __left584__ = d.s
+        // __offsetinbits586__ <-- 32 + 32 + 0
+        int __leftop587__ = 32;
+        int __leftop589__ = 32;
+        int __rightop590__ = 0;
+        int __rightop588__ = __leftop589__ + __rightop590__;
+        int __offsetinbits586__ = __leftop587__ + __rightop588__;
+        // __offsetinbits586__ = 32 + 32 + 0
+        int __offset591__ = __offsetinbits586__ >> 3;
+        int __shift592__ = __offsetinbits586__ - (__offset591__ << 3);
+        int __rightop583__ = ((*(int *)(__left584__ + __offset591__))  >> __shift592__) & 0xffffffff;
+        int __leftop529__ = __leftop530__ < __rightop583__;
+        // __left596__ <-- cast(__InodeTable__, d.b[itb]).itable[i]
+        // __left597__ <-- cast(__InodeTable__, d.b[itb])
+        // __left599__ <-- d
+        int __left599__ = (int) d;
+        // __left599__ = d
+        // __offsetinbits600__ <-- 0 + 8 * d.s.blocksize + 0 * itb
+        int __leftop601__ = 0;
+        int __leftop605__ = 8;
+        // __left607__ <-- d.s
+        // __left608__ <-- d
+        int __left608__ = (int) d;
+        // __left608__ = d
+        int __left607__ = (__left608__ + 0);
+        // __left607__ = d.s
+        // __offsetinbits609__ <-- 32 + 32 + 32 + 32 + 32 + 0
+        int __leftop610__ = 32;
+        int __leftop612__ = 32;
+        int __leftop614__ = 32;
+        int __leftop616__ = 32;
+        int __leftop618__ = 32;
+        int __rightop619__ = 0;
+        int __rightop617__ = __leftop618__ + __rightop619__;
+        int __rightop615__ = __leftop616__ + __rightop617__;
+        int __rightop613__ = __leftop614__ + __rightop615__;
+        int __rightop611__ = __leftop612__ + __rightop613__;
+        int __offsetinbits609__ = __leftop610__ + __rightop611__;
+        // __offsetinbits609__ = 32 + 32 + 32 + 32 + 32 + 0
+        int __offset620__ = __offsetinbits609__ >> 3;
+        int __shift621__ = __offsetinbits609__ - (__offset620__ << 3);
+        int __rightop606__ = ((*(int *)(__left607__ + __offset620__))  >> __shift621__) & 0xffffffff;
+        int __leftop604__ = __leftop605__ * __rightop606__;
+        int __rightop622__ = 0;
+        int __leftop603__ = __leftop604__ + __rightop622__;
+        int __rightop623__ = (int) __itb__;
+        int __rightop602__ = __leftop603__ * __rightop623__;
+        int __offsetinbits600__ = __leftop601__ + __rightop602__;
+        // __offsetinbits600__ = 0 + 8 * d.s.blocksize + 0 * itb
+        int __offset624__ = __offsetinbits600__ >> 3;
+        int __expr598__ = (__left599__ + __offset624__);
+        int __left597__ = (int) __expr598__;
+        // __left597__ = cast(__InodeTable__, d.b[itb])
+        // __offsetinbits625__ <-- 0 + 32 + 32 * 12 + 32 + 0 * i
+        int __leftop626__ = 0;
+        int __leftop629__ = 32;
+        int __leftop632__ = 32;
+        int __rightop633__ = 12;
+        int __leftop631__ = __leftop632__ * __rightop633__;
+        int __leftop635__ = 32;
+        int __rightop636__ = 0;
+        int __rightop634__ = __leftop635__ + __rightop636__;
+        int __rightop630__ = __leftop631__ + __rightop634__;
+        int __leftop628__ = __leftop629__ + __rightop630__;
+        int __rightop637__ = (int) __i__;
+        int __rightop627__ = __leftop628__ * __rightop637__;
+        int __offsetinbits625__ = __leftop626__ + __rightop627__;
+        // __offsetinbits625__ = 0 + 32 + 32 * 12 + 32 + 0 * i
+        int __offset638__ = __offsetinbits625__ >> 3;
+        int __left596__ = (__left597__ + __offset638__);
+        // __left596__ = cast(__InodeTable__, d.b[itb]).itable[i]
+        // __offsetinbits639__ <-- 32 + 0 + 32 * j
+        int __leftop641__ = 32;
+        int __rightop642__ = 0;
+        int __leftop640__ = __leftop641__ + __rightop642__;
+        int __leftop644__ = 32;
+        int __rightop645__ = (int) __j__;
+        int __rightop643__ = __leftop644__ * __rightop645__;
+        int __offsetinbits639__ = __leftop640__ + __rightop643__;
+        // __offsetinbits639__ = 32 + 0 + 32 * j
+        int __offset646__ = __offsetinbits639__ >> 3;
+        int __shift647__ = __offsetinbits639__ - (__offset646__ << 3);
+        int __leftop595__ = ((*(int *)(__left596__ + __offset646__))  >> __shift647__) & 0xffffffff;
+        int __rightop648__ = 0;
+        int __leftop594__ = __leftop595__ == __rightop648__;
+        int __rightop593__ = !__leftop594__;
+        int __tempvar528__ = __leftop529__ && __rightop593__;
+        if (__tempvar528__) {
+          // __left650__ <-- cast(__InodeTable__, d.b[itb]).itable[i]
+          // __left651__ <-- cast(__InodeTable__, d.b[itb])
+          // __left653__ <-- d
+          int __left653__ = (int) d;
+          // __left653__ = d
+          // __offsetinbits654__ <-- 0 + 8 * d.s.blocksize + 0 * itb
+          int __leftop655__ = 0;
+          int __leftop659__ = 8;
+          // __left661__ <-- d.s
+          // __left662__ <-- d
+          int __left662__ = (int) d;
+          // __left662__ = d
+          int __left661__ = (__left662__ + 0);
+          // __left661__ = d.s
+          // __offsetinbits663__ <-- 32 + 32 + 32 + 32 + 32 + 0
+          int __leftop664__ = 32;
+          int __leftop666__ = 32;
+          int __leftop668__ = 32;
+          int __leftop670__ = 32;
+          int __leftop672__ = 32;
+          int __rightop673__ = 0;
+          int __rightop671__ = __leftop672__ + __rightop673__;
+          int __rightop669__ = __leftop670__ + __rightop671__;
+          int __rightop667__ = __leftop668__ + __rightop669__;
+          int __rightop665__ = __leftop666__ + __rightop667__;
+          int __offsetinbits663__ = __leftop664__ + __rightop665__;
+          // __offsetinbits663__ = 32 + 32 + 32 + 32 + 32 + 0
+          int __offset674__ = __offsetinbits663__ >> 3;
+          int __shift675__ = __offsetinbits663__ - (__offset674__ << 3);
+          int __rightop660__ = ((*(int *)(__left661__ + __offset674__))  >> __shift675__) & 0xffffffff;
+          int __leftop658__ = __leftop659__ * __rightop660__;
+          int __rightop676__ = 0;
+          int __leftop657__ = __leftop658__ + __rightop676__;
+          int __rightop677__ = (int) __itb__;
+          int __rightop656__ = __leftop657__ * __rightop677__;
+          int __offsetinbits654__ = __leftop655__ + __rightop656__;
+          // __offsetinbits654__ = 0 + 8 * d.s.blocksize + 0 * itb
+          int __offset678__ = __offsetinbits654__ >> 3;
+          int __expr652__ = (__left653__ + __offset678__);
+          int __left651__ = (int) __expr652__;
+          // __left651__ = cast(__InodeTable__, d.b[itb])
+          // __offsetinbits679__ <-- 0 + 32 + 32 * 12 + 32 + 0 * i
+          int __leftop680__ = 0;
+          int __leftop683__ = 32;
+          int __leftop686__ = 32;
+          int __rightop687__ = 12;
+          int __leftop685__ = __leftop686__ * __rightop687__;
+          int __leftop689__ = 32;
+          int __rightop690__ = 0;
+          int __rightop688__ = __leftop689__ + __rightop690__;
+          int __rightop684__ = __leftop685__ + __rightop688__;
+          int __leftop682__ = __leftop683__ + __rightop684__;
+          int __rightop691__ = (int) __i__;
+          int __rightop681__ = __leftop682__ * __rightop691__;
+          int __offsetinbits679__ = __leftop680__ + __rightop681__;
+          // __offsetinbits679__ = 0 + 32 + 32 * 12 + 32 + 0 * i
+          int __offset692__ = __offsetinbits679__ >> 3;
+          int __left650__ = (__left651__ + __offset692__);
+          // __left650__ = cast(__InodeTable__, d.b[itb]).itable[i]
+          // __offsetinbits693__ <-- 32 + 0 + 32 * j
+          int __leftop695__ = 32;
+          int __rightop696__ = 0;
+          int __leftop694__ = __leftop695__ + __rightop696__;
+          int __leftop698__ = 32;
+          int __rightop699__ = (int) __j__;
+          int __rightop697__ = __leftop698__ * __rightop699__;
+          int __offsetinbits693__ = __leftop694__ + __rightop697__;
+          // __offsetinbits693__ = 32 + 0 + 32 * j
+          int __offset700__ = __offsetinbits693__ >> 3;
+          int __shift701__ = __offsetinbits693__ - (__offset700__ << 3);
+          int __element649__ = ((*(int *)(__left650__ + __offset700__))  >> __shift701__) & 0xffffffff;
+          __FileBlock___hash->add((int)__element649__, (int)__element649__);
+        }
+      }
+    }
+  }
+}
+
+
+// build rule8
+{
+  int __tempvar702__ = 0;
+  // __left705__ <-- d.s
+  // __left706__ <-- d
+  int __left706__ = (int) d;
+  // __left706__ = d
+  int __left705__ = (__left706__ + 0);
+  // __left705__ = d.s
+  // __offsetinbits707__ <-- 32 + 32 + 0
+  int __leftop708__ = 32;
+  int __leftop710__ = 32;
+  int __rightop711__ = 0;
+  int __rightop709__ = __leftop710__ + __rightop711__;
+  int __offsetinbits707__ = __leftop708__ + __rightop709__;
+  // __offsetinbits707__ = 32 + 32 + 0
+  int __offset712__ = __offsetinbits707__ >> 3;
+  int __shift713__ = __offsetinbits707__ - (__offset712__ << 3);
+  int __leftop704__ = ((*(int *)(__left705__ + __offset712__))  >> __shift713__) & 0xffffffff;
+  int __rightop714__ = 1;
+  int __tempvar703__ = __leftop704__ - __rightop714__;
+  for (int __j__ = __tempvar702__; __j__ <= __tempvar703__; __j__++) {
+    //!j in? __UsedBlock__
+    int __element717__ = (int) __j__;
+    int __leftop716__ = __UsedBlock___hash->contains(__element717__);
+    int __tempvar715__ = !__leftop716__;
+    if (__tempvar715__) {
+      int __element718__ = (int) __j__;
+      __FreeBlock___hash->add((int)__element718__, (int)__element718__);
+    }
+  }
+}
+
+
+// build rule10
+{
+  for (SimpleIterator* __i___iterator = __UsedInode___hash->iterator(); __i___iterator->hasNext(); ) {
+    int __i__ = (int) __i___iterator->next();
+    for (SimpleIterator* __itb___iterator = __InodeTableBlock___hash->iterator(); __itb___iterator->hasNext(); ) {
+      int __itb__ = (int) __itb___iterator->next();
+      int __tempvar719__ = 0;
+      int __tempvar720__ = 11;
+      for (int __j__ = __tempvar719__; __j__ <= __tempvar720__; __j__++) {
+        //!cast(__InodeTable__, d.b[itb]).itable[i].Blockptr[j] == 0
+        // __left724__ <-- cast(__InodeTable__, d.b[itb]).itable[i]
+        // __left725__ <-- cast(__InodeTable__, d.b[itb])
+        // __left727__ <-- d
+        int __left727__ = (int) d;
+        // __left727__ = d
+        // __offsetinbits728__ <-- 0 + 8 * d.s.blocksize + 0 * itb
+        int __leftop729__ = 0;
+        int __leftop733__ = 8;
+        // __left735__ <-- d.s
+        // __left736__ <-- d
+        int __left736__ = (int) d;
+        // __left736__ = d
+        int __left735__ = (__left736__ + 0);
+        // __left735__ = d.s
+        // __offsetinbits737__ <-- 32 + 32 + 32 + 32 + 32 + 0
+        int __leftop738__ = 32;
+        int __leftop740__ = 32;
+        int __leftop742__ = 32;
+        int __leftop744__ = 32;
+        int __leftop746__ = 32;
+        int __rightop747__ = 0;
+        int __rightop745__ = __leftop746__ + __rightop747__;
+        int __rightop743__ = __leftop744__ + __rightop745__;
+        int __rightop741__ = __leftop742__ + __rightop743__;
+        int __rightop739__ = __leftop740__ + __rightop741__;
+        int __offsetinbits737__ = __leftop738__ + __rightop739__;
+        // __offsetinbits737__ = 32 + 32 + 32 + 32 + 32 + 0
+        int __offset748__ = __offsetinbits737__ >> 3;
+        int __shift749__ = __offsetinbits737__ - (__offset748__ << 3);
+        int __rightop734__ = ((*(int *)(__left735__ + __offset748__))  >> __shift749__) & 0xffffffff;
+        int __leftop732__ = __leftop733__ * __rightop734__;
+        int __rightop750__ = 0;
+        int __leftop731__ = __leftop732__ + __rightop750__;
+        int __rightop751__ = (int) __itb__;
+        int __rightop730__ = __leftop731__ * __rightop751__;
+        int __offsetinbits728__ = __leftop729__ + __rightop730__;
+        // __offsetinbits728__ = 0 + 8 * d.s.blocksize + 0 * itb
+        int __offset752__ = __offsetinbits728__ >> 3;
+        int __expr726__ = (__left727__ + __offset752__);
+        int __left725__ = (int) __expr726__;
+        // __left725__ = cast(__InodeTable__, d.b[itb])
+        // __offsetinbits753__ <-- 0 + 32 + 32 * 12 + 32 + 0 * i
+        int __leftop754__ = 0;
+        int __leftop757__ = 32;
+        int __leftop760__ = 32;
+        int __rightop761__ = 12;
+        int __leftop759__ = __leftop760__ * __rightop761__;
+        int __leftop763__ = 32;
+        int __rightop764__ = 0;
+        int __rightop762__ = __leftop763__ + __rightop764__;
+        int __rightop758__ = __leftop759__ + __rightop762__;
+        int __leftop756__ = __leftop757__ + __rightop758__;
+        int __rightop765__ = (int) __i__;
+        int __rightop755__ = __leftop756__ * __rightop765__;
+        int __offsetinbits753__ = __leftop754__ + __rightop755__;
+        // __offsetinbits753__ = 0 + 32 + 32 * 12 + 32 + 0 * i
+        int __offset766__ = __offsetinbits753__ >> 3;
+        int __left724__ = (__left725__ + __offset766__);
+        // __left724__ = cast(__InodeTable__, d.b[itb]).itable[i]
+        // __offsetinbits767__ <-- 32 + 0 + 32 * j
+        int __leftop769__ = 32;
+        int __rightop770__ = 0;
+        int __leftop768__ = __leftop769__ + __rightop770__;
+        int __leftop772__ = 32;
+        int __rightop773__ = (int) __j__;
+        int __rightop771__ = __leftop772__ * __rightop773__;
+        int __offsetinbits767__ = __leftop768__ + __rightop771__;
+        // __offsetinbits767__ = 32 + 0 + 32 * j
+        int __offset774__ = __offsetinbits767__ >> 3;
+        int __shift775__ = __offsetinbits767__ - (__offset774__ << 3);
+        int __leftop723__ = ((*(int *)(__left724__ + __offset774__))  >> __shift775__) & 0xffffffff;
+        int __rightop776__ = 0;
+        int __leftop722__ = __leftop723__ == __rightop776__;
+        int __tempvar721__ = !__leftop722__;
+        if (__tempvar721__) {
+          int __leftele777__ = (int) __i__;
+          // __left779__ <-- cast(__InodeTable__, d.b[itb]).itable[i]
+          // __left780__ <-- cast(__InodeTable__, d.b[itb])
+          // __left782__ <-- d
+          int __left782__ = (int) d;
+          // __left782__ = d
+          // __offsetinbits783__ <-- 0 + 8 * d.s.blocksize + 0 * itb
+          int __leftop784__ = 0;
+          int __leftop788__ = 8;
+          // __left790__ <-- d.s
+          // __left791__ <-- d
+          int __left791__ = (int) d;
+          // __left791__ = d
+          int __left790__ = (__left791__ + 0);
+          // __left790__ = d.s
+          // __offsetinbits792__ <-- 32 + 32 + 32 + 32 + 32 + 0
+          int __leftop793__ = 32;
+          int __leftop795__ = 32;
+          int __leftop797__ = 32;
+          int __leftop799__ = 32;
+          int __leftop801__ = 32;
+          int __rightop802__ = 0;
+          int __rightop800__ = __leftop801__ + __rightop802__;
+          int __rightop798__ = __leftop799__ + __rightop800__;
+          int __rightop796__ = __leftop797__ + __rightop798__;
+          int __rightop794__ = __leftop795__ + __rightop796__;
+          int __offsetinbits792__ = __leftop793__ + __rightop794__;
+          // __offsetinbits792__ = 32 + 32 + 32 + 32 + 32 + 0
+          int __offset803__ = __offsetinbits792__ >> 3;
+          int __shift804__ = __offsetinbits792__ - (__offset803__ << 3);
+          int __rightop789__ = ((*(int *)(__left790__ + __offset803__))  >> __shift804__) & 0xffffffff;
+          int __leftop787__ = __leftop788__ * __rightop789__;
+          int __rightop805__ = 0;
+          int __leftop786__ = __leftop787__ + __rightop805__;
+          int __rightop806__ = (int) __itb__;
+          int __rightop785__ = __leftop786__ * __rightop806__;
+          int __offsetinbits783__ = __leftop784__ + __rightop785__;
+          // __offsetinbits783__ = 0 + 8 * d.s.blocksize + 0 * itb
+          int __offset807__ = __offsetinbits783__ >> 3;
+          int __expr781__ = (__left782__ + __offset807__);
+          int __left780__ = (int) __expr781__;
+          // __left780__ = cast(__InodeTable__, d.b[itb])
+          // __offsetinbits808__ <-- 0 + 32 + 32 * 12 + 32 + 0 * i
+          int __leftop809__ = 0;
+          int __leftop812__ = 32;
+          int __leftop815__ = 32;
+          int __rightop816__ = 12;
+          int __leftop814__ = __leftop815__ * __rightop816__;
+          int __leftop818__ = 32;
+          int __rightop819__ = 0;
+          int __rightop817__ = __leftop818__ + __rightop819__;
+          int __rightop813__ = __leftop814__ + __rightop817__;
+          int __leftop811__ = __leftop812__ + __rightop813__;
+          int __rightop820__ = (int) __i__;
+          int __rightop810__ = __leftop811__ * __rightop820__;
+          int __offsetinbits808__ = __leftop809__ + __rightop810__;
+          // __offsetinbits808__ = 0 + 32 + 32 * 12 + 32 + 0 * i
+          int __offset821__ = __offsetinbits808__ >> 3;
+          int __left779__ = (__left780__ + __offset821__);
+          // __left779__ = cast(__InodeTable__, d.b[itb]).itable[i]
+          // __offsetinbits822__ <-- 32 + 0 + 32 * j
+          int __leftop824__ = 32;
+          int __rightop825__ = 0;
+          int __leftop823__ = __leftop824__ + __rightop825__;
+          int __leftop827__ = 32;
+          int __rightop828__ = (int) __j__;
+          int __rightop826__ = __leftop827__ * __rightop828__;
+          int __offsetinbits822__ = __leftop823__ + __rightop826__;
+          // __offsetinbits822__ = 32 + 0 + 32 * j
+          int __offset829__ = __offsetinbits822__ >> 3;
+          int __shift830__ = __offsetinbits822__ - (__offset829__ << 3);
+          int __rightele778__ = ((*(int *)(__left779__ + __offset829__))  >> __shift830__) & 0xffffffff;
+          __contents___hash->add((int)__leftele777__, (int)__rightele778__);
+          __contents___hashinv->add((int)__rightele778__, (int)__leftele777__);
+        }
+      }
+    }
+  }
+}
+
+
+// build rule7
+{
+  int __tempvar831__ = 0;
+  // __left834__ <-- d.s
+  // __left835__ <-- d
+  int __left835__ = (int) d;
+  // __left835__ = d
+  int __left834__ = (__left835__ + 0);
+  // __left834__ = d.s
+  // __offsetinbits836__ <-- 32 + 32 + 32 + 0
+  int __leftop837__ = 32;
+  int __leftop839__ = 32;
+  int __leftop841__ = 32;
+  int __rightop842__ = 0;
+  int __rightop840__ = __leftop841__ + __rightop842__;
+  int __rightop838__ = __leftop839__ + __rightop840__;
+  int __offsetinbits836__ = __leftop837__ + __rightop838__;
+  // __offsetinbits836__ = 32 + 32 + 32 + 0
+  int __offset843__ = __offsetinbits836__ >> 3;
+  int __shift844__ = __offsetinbits836__ - (__offset843__ << 3);
+  int __leftop833__ = ((*(int *)(__left834__ + __offset843__))  >> __shift844__) & 0xffffffff;
+  int __rightop845__ = 1;
+  int __tempvar832__ = __leftop833__ - __rightop845__;
+  for (int __j__ = __tempvar831__; __j__ <= __tempvar832__; __j__++) {
+    //!j in? __UsedInode__
+    int __element848__ = (int) __j__;
+    int __leftop847__ = __UsedInode___hash->contains(__element848__);
+    int __tempvar846__ = !__leftop847__;
+    if (__tempvar846__) {
+      int __element849__ = (int) __j__;
+      __FreeInode___hash->add((int)__element849__, (int)__element849__);
     }
   }
 }
@@ -1060,570 +1386,263 @@ SimpleHash* __blockstatus___hash = new SimpleHash();
     for (SimpleIterator* __itb___iterator = __InodeTableBlock___hash->iterator(); __itb___iterator->hasNext(); ) {
       int __itb__ = (int) __itb___iterator->next();
       //true
-      int __tempvar636__ = 1;
-      if (__tempvar636__) {
-        int __leftele637__ = (int) __j__;
-        // __left639__ <-- cast(__InodeTable__, d.b[itb]).itable[j]
-        // __left640__ <-- cast(__InodeTable__, d.b[itb])
-        // __left642__ <-- d
-        int __left642__ = (int) d;
-        // __left642__ = d
-        // __offsetinbits643__ <-- 0 + 8 * d.s.blocksize + 0 * itb
-        int __leftop644__ = 0;
-        int __leftop648__ = 8;
-        // __left650__ <-- d.s
-        // __left651__ <-- d
-        int __left651__ = (int) d;
-        // __left651__ = d
-        int __left650__ = (__left651__ + 0);
-        // __left650__ = d.s
-        // __offsetinbits652__ <-- 32 + 32 + 32 + 32 + 32 + 0
-        int __leftop653__ = 32;
-        int __leftop655__ = 32;
-        int __leftop657__ = 32;
-        int __leftop659__ = 32;
-        int __leftop661__ = 32;
-        int __rightop662__ = 0;
-        int __rightop660__ = __leftop661__ + __rightop662__;
-        int __rightop658__ = __leftop659__ + __rightop660__;
-        int __rightop656__ = __leftop657__ + __rightop658__;
-        int __rightop654__ = __leftop655__ + __rightop656__;
-        int __offsetinbits652__ = __leftop653__ + __rightop654__;
-        // __offsetinbits652__ = 32 + 32 + 32 + 32 + 32 + 0
-        int __offset663__ = __offsetinbits652__ >> 3;
-        int __shift664__ = __offsetinbits652__ - (__offset663__ << 3);
-        int __rightop649__ = ((*(int *)(__left650__ + __offset663__))  >> __shift664__) & 0xffffffff;
-        int __leftop647__ = __leftop648__ * __rightop649__;
-        int __rightop665__ = 0;
-        int __leftop646__ = __leftop647__ + __rightop665__;
-        int __rightop666__ = (int) __itb__;
-        int __rightop645__ = __leftop646__ * __rightop666__;
-        int __offsetinbits643__ = __leftop644__ + __rightop645__;
-        // __offsetinbits643__ = 0 + 8 * d.s.blocksize + 0 * itb
-        int __offset667__ = __offsetinbits643__ >> 3;
-        int __expr641__ = (__left642__ + __offset667__);
-        int __left640__ = (int) __expr641__;
-        // __left640__ = cast(__InodeTable__, d.b[itb])
-        // __offsetinbits668__ <-- 0 + 32 + 32 * 12 + 32 + 0 * j
-        int __leftop669__ = 0;
-        int __leftop672__ = 32;
-        int __leftop675__ = 32;
-        int __rightop676__ = 12;
-        int __leftop674__ = __leftop675__ * __rightop676__;
-        int __leftop678__ = 32;
-        int __rightop679__ = 0;
-        int __rightop677__ = __leftop678__ + __rightop679__;
-        int __rightop673__ = __leftop674__ + __rightop677__;
-        int __leftop671__ = __leftop672__ + __rightop673__;
-        int __rightop680__ = (int) __j__;
-        int __rightop670__ = __leftop671__ * __rightop680__;
-        int __offsetinbits668__ = __leftop669__ + __rightop670__;
-        // __offsetinbits668__ = 0 + 32 + 32 * 12 + 32 + 0 * j
-        int __offset681__ = __offsetinbits668__ >> 3;
-        int __left639__ = (__left640__ + __offset681__);
-        // __left639__ = cast(__InodeTable__, d.b[itb]).itable[j]
-        // __offsetinbits682__ <-- 32 * 12 + 32 + 0
-        int __leftop684__ = 32;
-        int __rightop685__ = 12;
-        int __leftop683__ = __leftop684__ * __rightop685__;
-        int __leftop687__ = 32;
-        int __rightop688__ = 0;
-        int __rightop686__ = __leftop687__ + __rightop688__;
-        int __offsetinbits682__ = __leftop683__ + __rightop686__;
-        // __offsetinbits682__ = 32 * 12 + 32 + 0
-        int __offset689__ = __offsetinbits682__ >> 3;
-        int __shift690__ = __offsetinbits682__ - (__offset689__ << 3);
-        int __rightele638__ = ((*(int *)(__left639__ + __offset689__))  >> __shift690__) & 0xffffffff;
-        __referencecount___hash->add((int)__leftele637__, (int)__rightele638__);
-      }
-    }
-  }
-}
-
-
-// build rule11
-{
-  for (SimpleIterator* __i___iterator = __UsedInode___hash->iterator(); __i___iterator->hasNext(); ) {
-    int __i__ = (int) __i___iterator->next();
-    for (SimpleIterator* __itb___iterator = __InodeTableBlock___hash->iterator(); __itb___iterator->hasNext(); ) {
-      int __itb__ = (int) __itb___iterator->next();
-      int __tempvar691__ = 0;
-      int __tempvar692__ = 11;
-      for (int __j__ = __tempvar691__; __j__ <= __tempvar692__; __j__++) {
-        //cast(__InodeTable__, d.b[itb]).itable[i].Blockptr[j] < d.s.NumberofBlocks && !cast(__InodeTable__, d.b[itb]).itable[i].Blockptr[j] == 0
-        // __left696__ <-- cast(__InodeTable__, d.b[itb]).itable[i]
-        // __left697__ <-- cast(__InodeTable__, d.b[itb])
-        // __left699__ <-- d
-        int __left699__ = (int) d;
-        // __left699__ = d
-        // __offsetinbits700__ <-- 0 + 8 * d.s.blocksize + 0 * itb
-        int __leftop701__ = 0;
-        int __leftop705__ = 8;
-        // __left707__ <-- d.s
-        // __left708__ <-- d
-        int __left708__ = (int) d;
-        // __left708__ = d
-        int __left707__ = (__left708__ + 0);
-        // __left707__ = d.s
-        // __offsetinbits709__ <-- 32 + 32 + 32 + 32 + 32 + 0
-        int __leftop710__ = 32;
-        int __leftop712__ = 32;
-        int __leftop714__ = 32;
-        int __leftop716__ = 32;
-        int __leftop718__ = 32;
-        int __rightop719__ = 0;
-        int __rightop717__ = __leftop718__ + __rightop719__;
-        int __rightop715__ = __leftop716__ + __rightop717__;
-        int __rightop713__ = __leftop714__ + __rightop715__;
-        int __rightop711__ = __leftop712__ + __rightop713__;
-        int __offsetinbits709__ = __leftop710__ + __rightop711__;
-        // __offsetinbits709__ = 32 + 32 + 32 + 32 + 32 + 0
-        int __offset720__ = __offsetinbits709__ >> 3;
-        int __shift721__ = __offsetinbits709__ - (__offset720__ << 3);
-        int __rightop706__ = ((*(int *)(__left707__ + __offset720__))  >> __shift721__) & 0xffffffff;
-        int __leftop704__ = __leftop705__ * __rightop706__;
-        int __rightop722__ = 0;
-        int __leftop703__ = __leftop704__ + __rightop722__;
-        int __rightop723__ = (int) __itb__;
-        int __rightop702__ = __leftop703__ * __rightop723__;
-        int __offsetinbits700__ = __leftop701__ + __rightop702__;
-        // __offsetinbits700__ = 0 + 8 * d.s.blocksize + 0 * itb
-        int __offset724__ = __offsetinbits700__ >> 3;
-        int __expr698__ = (__left699__ + __offset724__);
-        int __left697__ = (int) __expr698__;
-        // __left697__ = cast(__InodeTable__, d.b[itb])
-        // __offsetinbits725__ <-- 0 + 32 + 32 * 12 + 32 + 0 * i
-        int __leftop726__ = 0;
-        int __leftop729__ = 32;
-        int __leftop732__ = 32;
-        int __rightop733__ = 12;
-        int __leftop731__ = __leftop732__ * __rightop733__;
-        int __leftop735__ = 32;
-        int __rightop736__ = 0;
-        int __rightop734__ = __leftop735__ + __rightop736__;
-        int __rightop730__ = __leftop731__ + __rightop734__;
-        int __leftop728__ = __leftop729__ + __rightop730__;
-        int __rightop737__ = (int) __i__;
-        int __rightop727__ = __leftop728__ * __rightop737__;
-        int __offsetinbits725__ = __leftop726__ + __rightop727__;
-        // __offsetinbits725__ = 0 + 32 + 32 * 12 + 32 + 0 * i
-        int __offset738__ = __offsetinbits725__ >> 3;
-        int __left696__ = (__left697__ + __offset738__);
-        // __left696__ = cast(__InodeTable__, d.b[itb]).itable[i]
-        // __offsetinbits739__ <-- 32 + 0 + 32 * j
-        int __leftop741__ = 32;
-        int __rightop742__ = 0;
-        int __leftop740__ = __leftop741__ + __rightop742__;
-        int __leftop744__ = 32;
-        int __rightop745__ = (int) __j__;
-        int __rightop743__ = __leftop744__ * __rightop745__;
-        int __offsetinbits739__ = __leftop740__ + __rightop743__;
-        // __offsetinbits739__ = 32 + 0 + 32 * j
-        int __offset746__ = __offsetinbits739__ >> 3;
-        int __shift747__ = __offsetinbits739__ - (__offset746__ << 3);
-        int __leftop695__ = ((*(int *)(__left696__ + __offset746__))  >> __shift747__) & 0xffffffff;
-        // __left749__ <-- d.s
-        // __left750__ <-- d
-        int __left750__ = (int) d;
-        // __left750__ = d
-        int __left749__ = (__left750__ + 0);
-        // __left749__ = d.s
-        // __offsetinbits751__ <-- 32 + 32 + 0
-        int __leftop752__ = 32;
-        int __leftop754__ = 32;
-        int __rightop755__ = 0;
-        int __rightop753__ = __leftop754__ + __rightop755__;
-        int __offsetinbits751__ = __leftop752__ + __rightop753__;
-        // __offsetinbits751__ = 32 + 32 + 0
-        int __offset756__ = __offsetinbits751__ >> 3;
-        int __shift757__ = __offsetinbits751__ - (__offset756__ << 3);
-        int __rightop748__ = ((*(int *)(__left749__ + __offset756__))  >> __shift757__) & 0xffffffff;
-        int __leftop694__ = __leftop695__ < __rightop748__;
-        // __left761__ <-- cast(__InodeTable__, d.b[itb]).itable[i]
-        // __left762__ <-- cast(__InodeTable__, d.b[itb])
-        // __left764__ <-- d
-        int __left764__ = (int) d;
-        // __left764__ = d
-        // __offsetinbits765__ <-- 0 + 8 * d.s.blocksize + 0 * itb
-        int __leftop766__ = 0;
-        int __leftop770__ = 8;
-        // __left772__ <-- d.s
-        // __left773__ <-- d
-        int __left773__ = (int) d;
-        // __left773__ = d
-        int __left772__ = (__left773__ + 0);
-        // __left772__ = d.s
-        // __offsetinbits774__ <-- 32 + 32 + 32 + 32 + 32 + 0
-        int __leftop775__ = 32;
-        int __leftop777__ = 32;
-        int __leftop779__ = 32;
-        int __leftop781__ = 32;
-        int __leftop783__ = 32;
-        int __rightop784__ = 0;
-        int __rightop782__ = __leftop783__ + __rightop784__;
-        int __rightop780__ = __leftop781__ + __rightop782__;
-        int __rightop778__ = __leftop779__ + __rightop780__;
-        int __rightop776__ = __leftop777__ + __rightop778__;
-        int __offsetinbits774__ = __leftop775__ + __rightop776__;
-        // __offsetinbits774__ = 32 + 32 + 32 + 32 + 32 + 0
-        int __offset785__ = __offsetinbits774__ >> 3;
-        int __shift786__ = __offsetinbits774__ - (__offset785__ << 3);
-        int __rightop771__ = ((*(int *)(__left772__ + __offset785__))  >> __shift786__) & 0xffffffff;
-        int __leftop769__ = __leftop770__ * __rightop771__;
-        int __rightop787__ = 0;
-        int __leftop768__ = __leftop769__ + __rightop787__;
-        int __rightop788__ = (int) __itb__;
-        int __rightop767__ = __leftop768__ * __rightop788__;
-        int __offsetinbits765__ = __leftop766__ + __rightop767__;
-        // __offsetinbits765__ = 0 + 8 * d.s.blocksize + 0 * itb
-        int __offset789__ = __offsetinbits765__ >> 3;
-        int __expr763__ = (__left764__ + __offset789__);
-        int __left762__ = (int) __expr763__;
-        // __left762__ = cast(__InodeTable__, d.b[itb])
-        // __offsetinbits790__ <-- 0 + 32 + 32 * 12 + 32 + 0 * i
-        int __leftop791__ = 0;
-        int __leftop794__ = 32;
-        int __leftop797__ = 32;
-        int __rightop798__ = 12;
-        int __leftop796__ = __leftop797__ * __rightop798__;
-        int __leftop800__ = 32;
-        int __rightop801__ = 0;
-        int __rightop799__ = __leftop800__ + __rightop801__;
-        int __rightop795__ = __leftop796__ + __rightop799__;
-        int __leftop793__ = __leftop794__ + __rightop795__;
-        int __rightop802__ = (int) __i__;
-        int __rightop792__ = __leftop793__ * __rightop802__;
-        int __offsetinbits790__ = __leftop791__ + __rightop792__;
-        // __offsetinbits790__ = 0 + 32 + 32 * 12 + 32 + 0 * i
-        int __offset803__ = __offsetinbits790__ >> 3;
-        int __left761__ = (__left762__ + __offset803__);
-        // __left761__ = cast(__InodeTable__, d.b[itb]).itable[i]
-        // __offsetinbits804__ <-- 32 + 0 + 32 * j
-        int __leftop806__ = 32;
-        int __rightop807__ = 0;
-        int __leftop805__ = __leftop806__ + __rightop807__;
-        int __leftop809__ = 32;
-        int __rightop810__ = (int) __j__;
-        int __rightop808__ = __leftop809__ * __rightop810__;
-        int __offsetinbits804__ = __leftop805__ + __rightop808__;
-        // __offsetinbits804__ = 32 + 0 + 32 * j
-        int __offset811__ = __offsetinbits804__ >> 3;
-        int __shift812__ = __offsetinbits804__ - (__offset811__ << 3);
-        int __leftop760__ = ((*(int *)(__left761__ + __offset811__))  >> __shift812__) & 0xffffffff;
-        int __rightop813__ = 0;
-        int __leftop759__ = __leftop760__ == __rightop813__;
-        int __rightop758__ = !__leftop759__;
-        int __tempvar693__ = __leftop694__ && __rightop758__;
-        if (__tempvar693__) {
-          // __left815__ <-- cast(__InodeTable__, d.b[itb]).itable[i]
-          // __left816__ <-- cast(__InodeTable__, d.b[itb])
-          // __left818__ <-- d
-          int __left818__ = (int) d;
-          // __left818__ = d
-          // __offsetinbits819__ <-- 0 + 8 * d.s.blocksize + 0 * itb
-          int __leftop820__ = 0;
-          int __leftop824__ = 8;
-          // __left826__ <-- d.s
-          // __left827__ <-- d
-          int __left827__ = (int) d;
-          // __left827__ = d
-          int __left826__ = (__left827__ + 0);
-          // __left826__ = d.s
-          // __offsetinbits828__ <-- 32 + 32 + 32 + 32 + 32 + 0
-          int __leftop829__ = 32;
-          int __leftop831__ = 32;
-          int __leftop833__ = 32;
-          int __leftop835__ = 32;
-          int __leftop837__ = 32;
-          int __rightop838__ = 0;
-          int __rightop836__ = __leftop837__ + __rightop838__;
-          int __rightop834__ = __leftop835__ + __rightop836__;
-          int __rightop832__ = __leftop833__ + __rightop834__;
-          int __rightop830__ = __leftop831__ + __rightop832__;
-          int __offsetinbits828__ = __leftop829__ + __rightop830__;
-          // __offsetinbits828__ = 32 + 32 + 32 + 32 + 32 + 0
-          int __offset839__ = __offsetinbits828__ >> 3;
-          int __shift840__ = __offsetinbits828__ - (__offset839__ << 3);
-          int __rightop825__ = ((*(int *)(__left826__ + __offset839__))  >> __shift840__) & 0xffffffff;
-          int __leftop823__ = __leftop824__ * __rightop825__;
-          int __rightop841__ = 0;
-          int __leftop822__ = __leftop823__ + __rightop841__;
-          int __rightop842__ = (int) __itb__;
-          int __rightop821__ = __leftop822__ * __rightop842__;
-          int __offsetinbits819__ = __leftop820__ + __rightop821__;
-          // __offsetinbits819__ = 0 + 8 * d.s.blocksize + 0 * itb
-          int __offset843__ = __offsetinbits819__ >> 3;
-          int __expr817__ = (__left818__ + __offset843__);
-          int __left816__ = (int) __expr817__;
-          // __left816__ = cast(__InodeTable__, d.b[itb])
-          // __offsetinbits844__ <-- 0 + 32 + 32 * 12 + 32 + 0 * i
-          int __leftop845__ = 0;
-          int __leftop848__ = 32;
-          int __leftop851__ = 32;
-          int __rightop852__ = 12;
-          int __leftop850__ = __leftop851__ * __rightop852__;
-          int __leftop854__ = 32;
-          int __rightop855__ = 0;
-          int __rightop853__ = __leftop854__ + __rightop855__;
-          int __rightop849__ = __leftop850__ + __rightop853__;
-          int __leftop847__ = __leftop848__ + __rightop849__;
-          int __rightop856__ = (int) __i__;
-          int __rightop846__ = __leftop847__ * __rightop856__;
-          int __offsetinbits844__ = __leftop845__ + __rightop846__;
-          // __offsetinbits844__ = 0 + 32 + 32 * 12 + 32 + 0 * i
-          int __offset857__ = __offsetinbits844__ >> 3;
-          int __left815__ = (__left816__ + __offset857__);
-          // __left815__ = cast(__InodeTable__, d.b[itb]).itable[i]
-          // __offsetinbits858__ <-- 32 + 0 + 32 * j
-          int __leftop860__ = 32;
-          int __rightop861__ = 0;
-          int __leftop859__ = __leftop860__ + __rightop861__;
-          int __leftop863__ = 32;
-          int __rightop864__ = (int) __j__;
-          int __rightop862__ = __leftop863__ * __rightop864__;
-          int __offsetinbits858__ = __leftop859__ + __rightop862__;
-          // __offsetinbits858__ = 32 + 0 + 32 * j
-          int __offset865__ = __offsetinbits858__ >> 3;
-          int __shift866__ = __offsetinbits858__ - (__offset865__ << 3);
-          int __element814__ = ((*(int *)(__left815__ + __offset865__))  >> __shift866__) & 0xffffffff;
-          __FileBlock___hash->add((int)__element814__, (int)__element814__);
-        }
-      }
-    }
-  }
-}
-
-
-// build rule8
-{
-  int __tempvar867__ = 0;
-  // __left870__ <-- d.s
-  // __left871__ <-- d
-  int __left871__ = (int) d;
-  // __left871__ = d
-  int __left870__ = (__left871__ + 0);
-  // __left870__ = d.s
-  // __offsetinbits872__ <-- 32 + 32 + 0
-  int __leftop873__ = 32;
-  int __leftop875__ = 32;
-  int __rightop876__ = 0;
-  int __rightop874__ = __leftop875__ + __rightop876__;
-  int __offsetinbits872__ = __leftop873__ + __rightop874__;
-  // __offsetinbits872__ = 32 + 32 + 0
-  int __offset877__ = __offsetinbits872__ >> 3;
-  int __shift878__ = __offsetinbits872__ - (__offset877__ << 3);
-  int __leftop869__ = ((*(int *)(__left870__ + __offset877__))  >> __shift878__) & 0xffffffff;
-  int __rightop879__ = 1;
-  int __tempvar868__ = __leftop869__ - __rightop879__;
-  for (int __j__ = __tempvar867__; __j__ <= __tempvar868__; __j__++) {
-    //!j in? __UsedBlock__
-    int __element882__ = (int) __j__;
-    int __leftop881__ = __UsedBlock___hash->contains(__element882__);
-    int __tempvar880__ = !__leftop881__;
-    if (__tempvar880__) {
-      int __element883__ = (int) __j__;
-      __FreeBlock___hash->add((int)__element883__, (int)__element883__);
-    }
-  }
-}
-
-
-// build rule10
-{
-  for (SimpleIterator* __i___iterator = __UsedInode___hash->iterator(); __i___iterator->hasNext(); ) {
-    int __i__ = (int) __i___iterator->next();
-    for (SimpleIterator* __itb___iterator = __InodeTableBlock___hash->iterator(); __itb___iterator->hasNext(); ) {
-      int __itb__ = (int) __itb___iterator->next();
-      int __tempvar884__ = 0;
-      int __tempvar885__ = 11;
-      for (int __j__ = __tempvar884__; __j__ <= __tempvar885__; __j__++) {
-        //!cast(__InodeTable__, d.b[itb]).itable[i].Blockptr[j] == 0
-        // __left889__ <-- cast(__InodeTable__, d.b[itb]).itable[i]
-        // __left890__ <-- cast(__InodeTable__, d.b[itb])
-        // __left892__ <-- d
-        int __left892__ = (int) d;
-        // __left892__ = d
-        // __offsetinbits893__ <-- 0 + 8 * d.s.blocksize + 0 * itb
-        int __leftop894__ = 0;
-        int __leftop898__ = 8;
-        // __left900__ <-- d.s
-        // __left901__ <-- d
-        int __left901__ = (int) d;
-        // __left901__ = d
-        int __left900__ = (__left901__ + 0);
-        // __left900__ = d.s
-        // __offsetinbits902__ <-- 32 + 32 + 32 + 32 + 32 + 0
-        int __leftop903__ = 32;
-        int __leftop905__ = 32;
-        int __leftop907__ = 32;
-        int __leftop909__ = 32;
-        int __leftop911__ = 32;
-        int __rightop912__ = 0;
-        int __rightop910__ = __leftop911__ + __rightop912__;
-        int __rightop908__ = __leftop909__ + __rightop910__;
-        int __rightop906__ = __leftop907__ + __rightop908__;
-        int __rightop904__ = __leftop905__ + __rightop906__;
-        int __offsetinbits902__ = __leftop903__ + __rightop904__;
-        // __offsetinbits902__ = 32 + 32 + 32 + 32 + 32 + 0
-        int __offset913__ = __offsetinbits902__ >> 3;
-        int __shift914__ = __offsetinbits902__ - (__offset913__ << 3);
-        int __rightop899__ = ((*(int *)(__left900__ + __offset913__))  >> __shift914__) & 0xffffffff;
+      int __tempvar850__ = 1;
+      if (__tempvar850__) {
+        int __leftele851__ = (int) __j__;
+        // __left853__ <-- cast(__InodeTable__, d.b[itb]).itable[j]
+        // __left854__ <-- cast(__InodeTable__, d.b[itb])
+        // __left856__ <-- d
+        int __left856__ = (int) d;
+        // __left856__ = d
+        // __offsetinbits857__ <-- 0 + 8 * d.s.blocksize + 0 * itb
+        int __leftop858__ = 0;
+        int __leftop862__ = 8;
+        // __left864__ <-- d.s
+        // __left865__ <-- d
+        int __left865__ = (int) d;
+        // __left865__ = d
+        int __left864__ = (__left865__ + 0);
+        // __left864__ = d.s
+        // __offsetinbits866__ <-- 32 + 32 + 32 + 32 + 32 + 0
+        int __leftop867__ = 32;
+        int __leftop869__ = 32;
+        int __leftop871__ = 32;
+        int __leftop873__ = 32;
+        int __leftop875__ = 32;
+        int __rightop876__ = 0;
+        int __rightop874__ = __leftop875__ + __rightop876__;
+        int __rightop872__ = __leftop873__ + __rightop874__;
+        int __rightop870__ = __leftop871__ + __rightop872__;
+        int __rightop868__ = __leftop869__ + __rightop870__;
+        int __offsetinbits866__ = __leftop867__ + __rightop868__;
+        // __offsetinbits866__ = 32 + 32 + 32 + 32 + 32 + 0
+        int __offset877__ = __offsetinbits866__ >> 3;
+        int __shift878__ = __offsetinbits866__ - (__offset877__ << 3);
+        int __rightop863__ = ((*(int *)(__left864__ + __offset877__))  >> __shift878__) & 0xffffffff;
+        int __leftop861__ = __leftop862__ * __rightop863__;
+        int __rightop879__ = 0;
+        int __leftop860__ = __leftop861__ + __rightop879__;
+        int __rightop880__ = (int) __itb__;
+        int __rightop859__ = __leftop860__ * __rightop880__;
+        int __offsetinbits857__ = __leftop858__ + __rightop859__;
+        // __offsetinbits857__ = 0 + 8 * d.s.blocksize + 0 * itb
+        int __offset881__ = __offsetinbits857__ >> 3;
+        int __expr855__ = (__left856__ + __offset881__);
+        int __left854__ = (int) __expr855__;
+        // __left854__ = cast(__InodeTable__, d.b[itb])
+        // __offsetinbits882__ <-- 0 + 32 + 32 * 12 + 32 + 0 * j
+        int __leftop883__ = 0;
+        int __leftop886__ = 32;
+        int __leftop889__ = 32;
+        int __rightop890__ = 12;
+        int __leftop888__ = __leftop889__ * __rightop890__;
+        int __leftop892__ = 32;
+        int __rightop893__ = 0;
+        int __rightop891__ = __leftop892__ + __rightop893__;
+        int __rightop887__ = __leftop888__ + __rightop891__;
+        int __leftop885__ = __leftop886__ + __rightop887__;
+        int __rightop894__ = (int) __j__;
+        int __rightop884__ = __leftop885__ * __rightop894__;
+        int __offsetinbits882__ = __leftop883__ + __rightop884__;
+        // __offsetinbits882__ = 0 + 32 + 32 * 12 + 32 + 0 * j
+        int __offset895__ = __offsetinbits882__ >> 3;
+        int __left853__ = (__left854__ + __offset895__);
+        // __left853__ = cast(__InodeTable__, d.b[itb]).itable[j]
+        // __offsetinbits896__ <-- 32 * 12 + 32 + 0
+        int __leftop898__ = 32;
+        int __rightop899__ = 12;
         int __leftop897__ = __leftop898__ * __rightop899__;
-        int __rightop915__ = 0;
-        int __leftop896__ = __leftop897__ + __rightop915__;
-        int __rightop916__ = (int) __itb__;
-        int __rightop895__ = __leftop896__ * __rightop916__;
-        int __offsetinbits893__ = __leftop894__ + __rightop895__;
-        // __offsetinbits893__ = 0 + 8 * d.s.blocksize + 0 * itb
-        int __offset917__ = __offsetinbits893__ >> 3;
-        int __expr891__ = (__left892__ + __offset917__);
-        int __left890__ = (int) __expr891__;
-        // __left890__ = cast(__InodeTable__, d.b[itb])
-        // __offsetinbits918__ <-- 0 + 32 + 32 * 12 + 32 + 0 * i
-        int __leftop919__ = 0;
-        int __leftop922__ = 32;
-        int __leftop925__ = 32;
-        int __rightop926__ = 12;
-        int __leftop924__ = __leftop925__ * __rightop926__;
-        int __leftop928__ = 32;
-        int __rightop929__ = 0;
-        int __rightop927__ = __leftop928__ + __rightop929__;
-        int __rightop923__ = __leftop924__ + __rightop927__;
-        int __leftop921__ = __leftop922__ + __rightop923__;
-        int __rightop930__ = (int) __i__;
-        int __rightop920__ = __leftop921__ * __rightop930__;
-        int __offsetinbits918__ = __leftop919__ + __rightop920__;
-        // __offsetinbits918__ = 0 + 32 + 32 * 12 + 32 + 0 * i
-        int __offset931__ = __offsetinbits918__ >> 3;
-        int __left889__ = (__left890__ + __offset931__);
-        // __left889__ = cast(__InodeTable__, d.b[itb]).itable[i]
-        // __offsetinbits932__ <-- 32 + 0 + 32 * j
-        int __leftop934__ = 32;
-        int __rightop935__ = 0;
-        int __leftop933__ = __leftop934__ + __rightop935__;
-        int __leftop937__ = 32;
-        int __rightop938__ = (int) __j__;
-        int __rightop936__ = __leftop937__ * __rightop938__;
-        int __offsetinbits932__ = __leftop933__ + __rightop936__;
-        // __offsetinbits932__ = 32 + 0 + 32 * j
-        int __offset939__ = __offsetinbits932__ >> 3;
-        int __shift940__ = __offsetinbits932__ - (__offset939__ << 3);
-        int __leftop888__ = ((*(int *)(__left889__ + __offset939__))  >> __shift940__) & 0xffffffff;
-        int __rightop941__ = 0;
-        int __leftop887__ = __leftop888__ == __rightop941__;
-        int __tempvar886__ = !__leftop887__;
-        if (__tempvar886__) {
-          int __leftele942__ = (int) __i__;
-          // __left944__ <-- cast(__InodeTable__, d.b[itb]).itable[i]
-          // __left945__ <-- cast(__InodeTable__, d.b[itb])
-          // __left947__ <-- d
-          int __left947__ = (int) d;
-          // __left947__ = d
-          // __offsetinbits948__ <-- 0 + 8 * d.s.blocksize + 0 * itb
-          int __leftop949__ = 0;
-          int __leftop953__ = 8;
-          // __left955__ <-- d.s
-          // __left956__ <-- d
-          int __left956__ = (int) d;
-          // __left956__ = d
-          int __left955__ = (__left956__ + 0);
-          // __left955__ = d.s
-          // __offsetinbits957__ <-- 32 + 32 + 32 + 32 + 32 + 0
-          int __leftop958__ = 32;
-          int __leftop960__ = 32;
-          int __leftop962__ = 32;
-          int __leftop964__ = 32;
-          int __leftop966__ = 32;
-          int __rightop967__ = 0;
-          int __rightop965__ = __leftop966__ + __rightop967__;
-          int __rightop963__ = __leftop964__ + __rightop965__;
-          int __rightop961__ = __leftop962__ + __rightop963__;
-          int __rightop959__ = __leftop960__ + __rightop961__;
-          int __offsetinbits957__ = __leftop958__ + __rightop959__;
-          // __offsetinbits957__ = 32 + 32 + 32 + 32 + 32 + 0
-          int __offset968__ = __offsetinbits957__ >> 3;
-          int __shift969__ = __offsetinbits957__ - (__offset968__ << 3);
-          int __rightop954__ = ((*(int *)(__left955__ + __offset968__))  >> __shift969__) & 0xffffffff;
-          int __leftop952__ = __leftop953__ * __rightop954__;
-          int __rightop970__ = 0;
-          int __leftop951__ = __leftop952__ + __rightop970__;
-          int __rightop971__ = (int) __itb__;
-          int __rightop950__ = __leftop951__ * __rightop971__;
-          int __offsetinbits948__ = __leftop949__ + __rightop950__;
-          // __offsetinbits948__ = 0 + 8 * d.s.blocksize + 0 * itb
-          int __offset972__ = __offsetinbits948__ >> 3;
-          int __expr946__ = (__left947__ + __offset972__);
-          int __left945__ = (int) __expr946__;
-          // __left945__ = cast(__InodeTable__, d.b[itb])
-          // __offsetinbits973__ <-- 0 + 32 + 32 * 12 + 32 + 0 * i
-          int __leftop974__ = 0;
-          int __leftop977__ = 32;
-          int __leftop980__ = 32;
-          int __rightop981__ = 12;
-          int __leftop979__ = __leftop980__ * __rightop981__;
-          int __leftop983__ = 32;
-          int __rightop984__ = 0;
-          int __rightop982__ = __leftop983__ + __rightop984__;
-          int __rightop978__ = __leftop979__ + __rightop982__;
-          int __leftop976__ = __leftop977__ + __rightop978__;
-          int __rightop985__ = (int) __i__;
-          int __rightop975__ = __leftop976__ * __rightop985__;
-          int __offsetinbits973__ = __leftop974__ + __rightop975__;
-          // __offsetinbits973__ = 0 + 32 + 32 * 12 + 32 + 0 * i
-          int __offset986__ = __offsetinbits973__ >> 3;
-          int __left944__ = (__left945__ + __offset986__);
-          // __left944__ = cast(__InodeTable__, d.b[itb]).itable[i]
-          // __offsetinbits987__ <-- 32 + 0 + 32 * j
-          int __leftop989__ = 32;
-          int __rightop990__ = 0;
-          int __leftop988__ = __leftop989__ + __rightop990__;
-          int __leftop992__ = 32;
-          int __rightop993__ = (int) __j__;
-          int __rightop991__ = __leftop992__ * __rightop993__;
-          int __offsetinbits987__ = __leftop988__ + __rightop991__;
-          // __offsetinbits987__ = 32 + 0 + 32 * j
-          int __offset994__ = __offsetinbits987__ >> 3;
-          int __shift995__ = __offsetinbits987__ - (__offset994__ << 3);
-          int __rightele943__ = ((*(int *)(__left944__ + __offset994__))  >> __shift995__) & 0xffffffff;
-          __contents___hash->add((int)__leftele942__, (int)__rightele943__);
-        }
+        int __leftop901__ = 32;
+        int __rightop902__ = 0;
+        int __rightop900__ = __leftop901__ + __rightop902__;
+        int __offsetinbits896__ = __leftop897__ + __rightop900__;
+        // __offsetinbits896__ = 32 * 12 + 32 + 0
+        int __offset903__ = __offsetinbits896__ >> 3;
+        int __shift904__ = __offsetinbits896__ - (__offset903__ << 3);
+        int __rightele852__ = ((*(int *)(__left853__ + __offset903__))  >> __shift904__) & 0xffffffff;
+        __referencecount___hash->add((int)__leftele851__, (int)__rightele852__);
+        __referencecount___hashinv->add((int)__rightele852__, (int)__leftele851__);
       }
     }
   }
 }
 
 
-// build rule7
+// build rule13
 {
-  int __tempvar996__ = 0;
-  // __left999__ <-- d.s
-  // __left1000__ <-- d
-  int __left1000__ = (int) d;
-  // __left1000__ = d
-  int __left999__ = (__left1000__ + 0);
-  // __left999__ = d.s
-  // __offsetinbits1001__ <-- 32 + 32 + 32 + 0
-  int __leftop1002__ = 32;
-  int __leftop1004__ = 32;
-  int __leftop1006__ = 32;
-  int __rightop1007__ = 0;
-  int __rightop1005__ = __leftop1006__ + __rightop1007__;
-  int __rightop1003__ = __leftop1004__ + __rightop1005__;
-  int __offsetinbits1001__ = __leftop1002__ + __rightop1003__;
-  // __offsetinbits1001__ = 32 + 32 + 32 + 0
-  int __offset1008__ = __offsetinbits1001__ >> 3;
-  int __shift1009__ = __offsetinbits1001__ - (__offset1008__ << 3);
-  int __leftop998__ = ((*(int *)(__left999__ + __offset1008__))  >> __shift1009__) & 0xffffffff;
-  int __rightop1010__ = 1;
-  int __tempvar997__ = __leftop998__ - __rightop1010__;
-  for (int __j__ = __tempvar996__; __j__ <= __tempvar997__; __j__++) {
-    //!j in? __UsedInode__
-    int __element1013__ = (int) __j__;
-    int __leftop1012__ = __UsedInode___hash->contains(__element1013__);
-    int __tempvar1011__ = !__leftop1012__;
-    if (__tempvar1011__) {
-      int __element1014__ = (int) __j__;
-      __FreeInode___hash->add((int)__element1014__, (int)__element1014__);
+  int __tempvar905__ = 0;
+  // __left908__ <-- d.s
+  // __left909__ <-- d
+  int __left909__ = (int) d;
+  // __left909__ = d
+  int __left908__ = (__left909__ + 0);
+  // __left908__ = d.s
+  // __offsetinbits910__ <-- 32 + 32 + 32 + 0
+  int __leftop911__ = 32;
+  int __leftop913__ = 32;
+  int __leftop915__ = 32;
+  int __rightop916__ = 0;
+  int __rightop914__ = __leftop915__ + __rightop916__;
+  int __rightop912__ = __leftop913__ + __rightop914__;
+  int __offsetinbits910__ = __leftop911__ + __rightop912__;
+  // __offsetinbits910__ = 32 + 32 + 32 + 0
+  int __offset917__ = __offsetinbits910__ >> 3;
+  int __shift918__ = __offsetinbits910__ - (__offset917__ << 3);
+  int __leftop907__ = ((*(int *)(__left908__ + __offset917__))  >> __shift918__) & 0xffffffff;
+  int __rightop919__ = 1;
+  int __tempvar906__ = __leftop907__ - __rightop919__;
+  for (int __j__ = __tempvar905__; __j__ <= __tempvar906__; __j__++) {
+    for (SimpleIterator* __ibb___iterator = __InodeBitmapBlock___hash->iterator(); __ibb___iterator->hasNext(); ) {
+      int __ibb__ = (int) __ibb___iterator->next();
+      //cast(__InodeBitmap__, d.b[ibb]).inodebitmap[j] == true
+      // __left922__ <-- cast(__InodeBitmap__, d.b[ibb])
+      // __left924__ <-- d
+      int __left924__ = (int) d;
+      // __left924__ = d
+      // __offsetinbits925__ <-- 0 + 8 * d.s.blocksize + 0 * ibb
+      int __leftop926__ = 0;
+      int __leftop930__ = 8;
+      // __left932__ <-- d.s
+      // __left933__ <-- d
+      int __left933__ = (int) d;
+      // __left933__ = d
+      int __left932__ = (__left933__ + 0);
+      // __left932__ = d.s
+      // __offsetinbits934__ <-- 32 + 32 + 32 + 32 + 32 + 0
+      int __leftop935__ = 32;
+      int __leftop937__ = 32;
+      int __leftop939__ = 32;
+      int __leftop941__ = 32;
+      int __leftop943__ = 32;
+      int __rightop944__ = 0;
+      int __rightop942__ = __leftop943__ + __rightop944__;
+      int __rightop940__ = __leftop941__ + __rightop942__;
+      int __rightop938__ = __leftop939__ + __rightop940__;
+      int __rightop936__ = __leftop937__ + __rightop938__;
+      int __offsetinbits934__ = __leftop935__ + __rightop936__;
+      // __offsetinbits934__ = 32 + 32 + 32 + 32 + 32 + 0
+      int __offset945__ = __offsetinbits934__ >> 3;
+      int __shift946__ = __offsetinbits934__ - (__offset945__ << 3);
+      int __rightop931__ = ((*(int *)(__left932__ + __offset945__))  >> __shift946__) & 0xffffffff;
+      int __leftop929__ = __leftop930__ * __rightop931__;
+      int __rightop947__ = 0;
+      int __leftop928__ = __leftop929__ + __rightop947__;
+      int __rightop948__ = (int) __ibb__;
+      int __rightop927__ = __leftop928__ * __rightop948__;
+      int __offsetinbits925__ = __leftop926__ + __rightop927__;
+      // __offsetinbits925__ = 0 + 8 * d.s.blocksize + 0 * ibb
+      int __offset949__ = __offsetinbits925__ >> 3;
+      int __expr923__ = (__left924__ + __offset949__);
+      int __left922__ = (int) __expr923__;
+      // __left922__ = cast(__InodeBitmap__, d.b[ibb])
+      // __offsetinbits950__ <-- 0 + 1 * j
+      int __leftop951__ = 0;
+      int __leftop953__ = 1;
+      int __rightop954__ = (int) __j__;
+      int __rightop952__ = __leftop953__ * __rightop954__;
+      int __offsetinbits950__ = __leftop951__ + __rightop952__;
+      // __offsetinbits950__ = 0 + 1 * j
+      int __offset955__ = __offsetinbits950__ >> 3;
+      int __shift956__ = __offsetinbits950__ - (__offset955__ << 3);
+      int __leftop921__ = ((*(int *)(__left922__ + __offset955__))  >> __shift956__) & 0x1;
+      int __rightop957__ = 1;
+      int __tempvar920__ = __leftop921__ == __rightop957__;
+      if (__tempvar920__) {
+        int __leftele958__ = (int) __j__;
+        int __rightele959__ = 100;
+        __inodestatus___hash->add((int)__leftele958__, (int)__rightele959__);
+        __inodestatus___hashinv->add((int)__rightele959__, (int)__leftele958__);
+      }
+    }
+  }
+}
+
+
+// build rule12
+{
+  int __tempvar960__ = 0;
+  // __left963__ <-- d.s
+  // __left964__ <-- d
+  int __left964__ = (int) d;
+  // __left964__ = d
+  int __left963__ = (__left964__ + 0);
+  // __left963__ = d.s
+  // __offsetinbits965__ <-- 32 + 32 + 32 + 0
+  int __leftop966__ = 32;
+  int __leftop968__ = 32;
+  int __leftop970__ = 32;
+  int __rightop971__ = 0;
+  int __rightop969__ = __leftop970__ + __rightop971__;
+  int __rightop967__ = __leftop968__ + __rightop969__;
+  int __offsetinbits965__ = __leftop966__ + __rightop967__;
+  // __offsetinbits965__ = 32 + 32 + 32 + 0
+  int __offset972__ = __offsetinbits965__ >> 3;
+  int __shift973__ = __offsetinbits965__ - (__offset972__ << 3);
+  int __leftop962__ = ((*(int *)(__left963__ + __offset972__))  >> __shift973__) & 0xffffffff;
+  int __rightop974__ = 1;
+  int __tempvar961__ = __leftop962__ - __rightop974__;
+  for (int __j__ = __tempvar960__; __j__ <= __tempvar961__; __j__++) {
+    for (SimpleIterator* __ibb___iterator = __InodeBitmapBlock___hash->iterator(); __ibb___iterator->hasNext(); ) {
+      int __ibb__ = (int) __ibb___iterator->next();
+      //cast(__InodeBitmap__, d.b[ibb]).inodebitmap[j] == false
+      // __left977__ <-- cast(__InodeBitmap__, d.b[ibb])
+      // __left979__ <-- d
+      int __left979__ = (int) d;
+      // __left979__ = d
+      // __offsetinbits980__ <-- 0 + 8 * d.s.blocksize + 0 * ibb
+      int __leftop981__ = 0;
+      int __leftop985__ = 8;
+      // __left987__ <-- d.s
+      // __left988__ <-- d
+      int __left988__ = (int) d;
+      // __left988__ = d
+      int __left987__ = (__left988__ + 0);
+      // __left987__ = d.s
+      // __offsetinbits989__ <-- 32 + 32 + 32 + 32 + 32 + 0
+      int __leftop990__ = 32;
+      int __leftop992__ = 32;
+      int __leftop994__ = 32;
+      int __leftop996__ = 32;
+      int __leftop998__ = 32;
+      int __rightop999__ = 0;
+      int __rightop997__ = __leftop998__ + __rightop999__;
+      int __rightop995__ = __leftop996__ + __rightop997__;
+      int __rightop993__ = __leftop994__ + __rightop995__;
+      int __rightop991__ = __leftop992__ + __rightop993__;
+      int __offsetinbits989__ = __leftop990__ + __rightop991__;
+      // __offsetinbits989__ = 32 + 32 + 32 + 32 + 32 + 0
+      int __offset1000__ = __offsetinbits989__ >> 3;
+      int __shift1001__ = __offsetinbits989__ - (__offset1000__ << 3);
+      int __rightop986__ = ((*(int *)(__left987__ + __offset1000__))  >> __shift1001__) & 0xffffffff;
+      int __leftop984__ = __leftop985__ * __rightop986__;
+      int __rightop1002__ = 0;
+      int __leftop983__ = __leftop984__ + __rightop1002__;
+      int __rightop1003__ = (int) __ibb__;
+      int __rightop982__ = __leftop983__ * __rightop1003__;
+      int __offsetinbits980__ = __leftop981__ + __rightop982__;
+      // __offsetinbits980__ = 0 + 8 * d.s.blocksize + 0 * ibb
+      int __offset1004__ = __offsetinbits980__ >> 3;
+      int __expr978__ = (__left979__ + __offset1004__);
+      int __left977__ = (int) __expr978__;
+      // __left977__ = cast(__InodeBitmap__, d.b[ibb])
+      // __offsetinbits1005__ <-- 0 + 1 * j
+      int __leftop1006__ = 0;
+      int __leftop1008__ = 1;
+      int __rightop1009__ = (int) __j__;
+      int __rightop1007__ = __leftop1008__ * __rightop1009__;
+      int __offsetinbits1005__ = __leftop1006__ + __rightop1007__;
+      // __offsetinbits1005__ = 0 + 1 * j
+      int __offset1010__ = __offsetinbits1005__ >> 3;
+      int __shift1011__ = __offsetinbits1005__ - (__offset1010__ << 3);
+      int __leftop976__ = ((*(int *)(__left977__ + __offset1010__))  >> __shift1011__) & 0x1;
+      int __rightop1012__ = 0;
+      int __tempvar975__ = __leftop976__ == __rightop1012__;
+      if (__tempvar975__) {
+        int __leftele1013__ = (int) __j__;
+        int __rightele1014__ = 101;
+        __inodestatus___hash->add((int)__leftele1013__, (int)__rightele1014__);
+        __inodestatus___hashinv->add((int)__rightele1014__, (int)__leftele1013__);
+      }
     }
   }
 }
@@ -1700,6 +1719,7 @@ SimpleHash* __blockstatus___hash = new SimpleHash();
         // __left1018__ = cast(__InodeTable__, d.b[itb]).itable[j]
         int __rightele1017__ = ((*(int *)(__left1018__ + 0))  >> 0) & 0xffffffff;
         __filesize___hash->add((int)__leftele1016__, (int)__rightele1017__);
+        __filesize___hashinv->add((int)__rightele1017__, (int)__leftele1016__);
       }
     }
   }
@@ -1730,7 +1750,7 @@ SimpleHash* __blockstatus___hash = new SimpleHash();
   for (int __j__ = __tempvar1061__; __j__ <= __tempvar1062__; __j__++) {
     for (SimpleIterator* __bbb___iterator = __BlockBitmapBlock___hash->iterator(); __bbb___iterator->hasNext(); ) {
       int __bbb__ = (int) __bbb___iterator->next();
-      //cast(__BlockBitmap__, d.b[bbb]).blockbitmap[j] == {false = 107}
+      //cast(__BlockBitmap__, d.b[bbb]).blockbitmap[j] == false
       // __left1076__ <-- cast(__BlockBitmap__, d.b[bbb])
       // __left1078__ <-- d
       int __left1078__ = (int) d;
@@ -1781,12 +1801,13 @@ SimpleHash* __blockstatus___hash = new SimpleHash();
       int __offset1109__ = __offsetinbits1104__ >> 3;
       int __shift1110__ = __offsetinbits1104__ - (__offset1109__ << 3);
       int __leftop1075__ = ((*(int *)(__left1076__ + __offset1109__))  >> __shift1110__) & 0x1;
-      int __rightop1111__ = 107;
+      int __rightop1111__ = 0;
       int __tempvar1074__ = __leftop1075__ == __rightop1111__;
       if (__tempvar1074__) {
         int __leftele1112__ = (int) __j__;
-        int __rightele1113__ = 108;
+        int __rightele1113__ = 101;
         __blockstatus___hash->add((int)__leftele1112__, (int)__rightele1113__);
+        __blockstatus___hashinv->add((int)__rightele1113__, (int)__leftele1112__);
       }
     }
   }
@@ -1872,11 +1893,187 @@ SimpleHash* __blockstatus___hash = new SimpleHash();
       int __tempvar1127__ = __leftop1128__ == __rightop1164__;
       if (__tempvar1127__) {
         int __leftele1165__ = (int) __j__;
-        int __rightele1166__ = 109;
+        int __rightele1166__ = 100;
         __blockstatus___hash->add((int)__leftele1165__, (int)__rightele1166__);
+        __blockstatus___hashinv->add((int)__rightele1166__, (int)__leftele1165__);
       }
     }
   }
 }
 
 
+
+
+// checking c1
+{
+  for (SimpleIterator* __u___iterator = __UsedInode___hash->iterator(); __u___iterator->hasNext(); ) {
+    int __u__ = (int) __u___iterator->next();
+    int __relval1168__ = __inodestatus___hash->get(__u__);
+    int __exprval1169__ = 100;
+    int __constraintboolean1167__ = __relval1168__==__exprval1169__;
+    if (!__constraintboolean1167__) {
+      __Success = 0;
+      printf("fail. ");
+    }
+  }
+}
+
+
+// checking c2
+{
+  for (SimpleIterator* __f___iterator = __FreeInode___hash->iterator(); __f___iterator->hasNext(); ) {
+    int __f__ = (int) __f___iterator->next();
+    int __relval1171__ = __inodestatus___hash->get(__f__);
+    int __exprval1172__ = 101;
+    int __constraintboolean1170__ = __relval1171__==__exprval1172__;
+    if (!__constraintboolean1170__) {
+      __Success = 0;
+      printf("fail. ");
+    }
+  }
+}
+
+
+// checking c3
+{
+  for (SimpleIterator* __u___iterator = __UsedBlock___hash->iterator(); __u___iterator->hasNext(); ) {
+    int __u__ = (int) __u___iterator->next();
+    int __relval1174__ = __blockstatus___hash->get(__u__);
+    int __exprval1175__ = 100;
+    int __constraintboolean1173__ = __relval1174__==__exprval1175__;
+    if (!__constraintboolean1173__) {
+      __Success = 0;
+      printf("fail. ");
+    }
+  }
+}
+
+
+// checking c4
+{
+  for (SimpleIterator* __f___iterator = __FreeBlock___hash->iterator(); __f___iterator->hasNext(); ) {
+    int __f__ = (int) __f___iterator->next();
+    int __relval1177__ = __blockstatus___hash->get(__f__);
+    int __exprval1178__ = 101;
+    int __constraintboolean1176__ = __relval1177__==__exprval1178__;
+    if (!__constraintboolean1176__) {
+      __Success = 0;
+      printf("fail. ");
+    }
+  }
+}
+
+
+// checking c5
+{
+  for (SimpleIterator* __i___iterator = __UsedInode___hash->iterator(); __i___iterator->hasNext(); ) {
+    int __i__ = (int) __i___iterator->next();
+    int __relval1180__ = __referencecount___hash->get(__i__);
+    int __exprval1181__ = __inodeof___hashinv->count(__i__);
+    int __constraintboolean1179__ = __relval1180__==__exprval1181__;
+    if (!__constraintboolean1179__) {
+      __Success = 0;
+      printf("fail. ");
+    }
+  }
+}
+
+
+// checking c6
+{
+  for (SimpleIterator* __i___iterator = __UsedInode___hash->iterator(); __i___iterator->hasNext(); ) {
+    int __i__ = (int) __i___iterator->next();
+    int __relval1183__ = __filesize___hash->get(__i__);
+    int __leftop1185__ = __contents___hash->count(__i__);
+    int __rightop1186__ = 8192;
+    int __exprval1184__ = __leftop1185__ * __rightop1186__;
+    int __constraintboolean1182__ = __relval1183__<=__exprval1184__;
+    if (!__constraintboolean1182__) {
+      __Success = 0;
+      printf("fail. ");
+    }
+  }
+}
+
+
+// checking c7
+{
+  for (SimpleIterator* __b___iterator = __FileDirectoryBlock___hash->iterator(); __b___iterator->hasNext(); ) {
+    int __b__ = (int) __b___iterator->next();
+    int __size1188__ = __contents___hashinv->count(__b__);
+    int __constraintboolean1187__ = __size1188__==1;
+    if (!__constraintboolean1187__) {
+      __Success = 0;
+      printf("fail. ");
+    }
+  }
+}
+
+
+// checking c8
+{
+  int __size1190__ = __SuperBlock___hash->count();
+  int __constraintboolean1189__ = __size1190__==1;
+  if (!__constraintboolean1189__) {
+    __Success = 0;
+    printf("fail. ");
+  }
+}
+
+
+// checking c9
+{
+  int __size1192__ = __GroupBlock___hash->count();
+  int __constraintboolean1191__ = __size1192__==1;
+  if (!__constraintboolean1191__) {
+    __Success = 0;
+    printf("fail. ");
+  }
+}
+
+
+// checking c10
+{
+  int __size1194__ = __InodeTableBlock___hash->count();
+  int __constraintboolean1193__ = __size1194__==1;
+  if (!__constraintboolean1193__) {
+    __Success = 0;
+    printf("fail. ");
+  }
+}
+
+
+// checking c11
+{
+  int __size1196__ = __InodeBitmapBlock___hash->count();
+  int __constraintboolean1195__ = __size1196__==1;
+  if (!__constraintboolean1195__) {
+    __Success = 0;
+    printf("fail. ");
+  }
+}
+
+
+// checking c12
+{
+  int __size1198__ = __BlockBitmapBlock___hash->count();
+  int __constraintboolean1197__ = __size1198__==1;
+  if (!__constraintboolean1197__) {
+    __Success = 0;
+    printf("fail. ");
+  }
+}
+
+
+// checking c13
+{
+  int __size1200__ = __RootDirectoryInode___hash->count();
+  int __constraintboolean1199__ = __size1200__==1;
+  if (!__constraintboolean1199__) {
+    __Success = 0;
+    printf("fail. ");
+  }
+}
+
+
+if (__Success) { printf("all tests passed"); }

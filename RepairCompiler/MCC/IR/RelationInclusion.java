@@ -22,6 +22,8 @@ public class RelationInclusion extends Inclusion {
     public Set getRequiredDescriptors() {
         Set v = leftelementexpr.getRequiredDescriptors();
         v.addAll(rightelementexpr.getRequiredDescriptors());
+        v.add(relation.getDomain());
+        v.add(relation.getRange());
         return v;
     }
 
@@ -31,6 +33,7 @@ public class RelationInclusion extends Inclusion {
         VarDescriptor rd = VarDescriptor.makeNew("rightele");
         rightelementexpr.generate(writer, rd);
         writer.outputline(relation.getSafeSymbol() + "_hash->add((int)" + ld.getSafeSymbol() + ", (int)" + rd.getSafeSymbol() + ");");
+        writer.outputline(relation.getSafeSymbol() + "_hashinv->add((int)" + rd.getSafeSymbol() + ", (int)" + ld.getSafeSymbol() + ");");
         //writer.outputline("printf(\"" + relation.getSafeSymbol() + " (add): <%d, %d>\\n\", " + ld.getSafeSymbol() + ", " + rd.getSafeSymbol() + ");");
     }
 

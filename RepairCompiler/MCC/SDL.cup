@@ -142,6 +142,7 @@ parser code {:
 
     terminal IMPLIES;
     terminal TRUE;
+    terminal FALSE;
     terminal ISVALID;
     terminal FOR;
     terminal TO;

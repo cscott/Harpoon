@@ -4,48 +4,56 @@ import java.util.*;
 
 public class ComparisonPredicate extends Predicate {
 
-    public static final Comparison GT = new Comparison("GT");
-    public static final Comparison GE = new Comparison("GE");
-    public static final Comparison LT = new Comparison("LT");
-    public static final Comparison LE = new Comparison("LE");
-    public static final Comparison EQ = new Comparison("EQ");
-    private static final Comparison ALL[] = { GT, GE, LT, LE, EQ };               
-    
-    public static class Comparison {
-        private final String name;
-        private Comparison(String name) { this.name = name; }
-        public String toString() { return name; }
-        public static Comparison fromString(String name) {
-            if (name == null) {
-                throw new NullPointerException();
-            }
+    VarDescriptor quantifier;
+    RelationDescriptor relation;
+    Opcode opcode;
+    Expr expr;
 
-            for (int i = 0; i < ALL.length; i++) {
-                if (name.equalsIgnoreCase(ALL[i].toString())) {
-                    return ALL[i];
-                }
-            }
-
-            throw new IllegalArgumentException("Input not a valid comparison.");
-        }                
-    }
-    
-    Comparison comparison;
-    Expr left, right;
-
-    public ComparisonPredicate(String comparison, Expr left, Expr right) {
-        this.comparison = Comparison.fromString(comparison);
-        this.left = left;
-        this.right = right;
+    public ComparisonPredicate(VarDescriptor quantifier, RelationDescriptor relation, Opcode opcode, Expr expr) {
+        if (quantifier == null || relation == null || opcode == null || expr == null) {
+            throw new IllegalArgumentException();
+        } else if (opcode != Opcode.EQ &&
+                   opcode != Opcode.NE &&
+                   opcode != Opcode.GT &&
+                   opcode != Opcode.GE &&
+                   opcode != Opcode.LT &&
+                   opcode != Opcode.LE) {
+            throw new IllegalArgumentException("invalid operator type");
+        }
+       
+        this.quantifier = quantifier;
+        this.relation = relation;
+        this.opcode = opcode;
+        this.expr = expr;
     }
 
     public Set getRequiredDescriptors() {
-        assert left != null;
-        assert right != null;
-        Set v = left.getRequiredDescriptors();
-        v.addAll(right.getRequiredDescriptors());
+        assert expr != null;
+        Set v = expr.getRequiredDescriptors();
+        v.add(relation);
         return v;
     }
-            
+
+    public void generate(CodeWriter writer, VarDescriptor vd) {
+        // get (first) value for quantifer.relation ... then do comparison with expr... 
+        // can this be maybe? i guess if quantifer.relation is empty
+
+        String rv = (VarDescriptor.makeNew("relval")).getSafeSymbol();
+        writer.outputline("int " + rv + " = " + relation.getSafeSymbol() + "_hash->get(" + quantifier.getSafeSymbol() + ");");
+
+        // #TBD# deal with maybe (catch exception?)
+
+        VarDescriptor ev = VarDescriptor.makeNew("exprval");
+        expr.generate(writer, ev);
+
+        writer.outputline("int " + vd.getSafeSymbol() + " = " + rv + opcode.toString() + ev.getSafeSymbol() + ";");       
+    }
+
 }
     
+
+
+
+
+
+

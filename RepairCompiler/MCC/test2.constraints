@@ -64,19 +64,3 @@
 // C13
 // verify that there is one rootdirectoryinode
 [],sizeof(RootDirectoryInode)=literal(1);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -15,12 +15,48 @@ public class NaiveGenerator {
 
     public void generate(java.io.OutputStream output) {
         this.output = new java.io.PrintWriter(output, true); 
-
+        
+        generate_tokentable();
         generate_hashtables();
         generate_rules();
         generate_implicit_checks();
         generate_checks();
 
+    }
+
+    private void generate_tokentable() {
+
+        CodeWriter cr = new CodeWriter() {
+                
+                int indent = 0;
+                public void indent() { indent++; }
+                public void unindent() { indent--; assert indent >= 0; }
+                private void doindent() {
+                    for (int i = 0; i < indent; i++) { 
+                        output.print("  ");
+                    }
+                }
+                public void outputline(String s) {
+                    doindent();
+                    output.println(s);
+                }                                                             
+                public void output(String s) { throw new IRException(); }
+                public SymbolTable getSymbolTable() { throw new IRException(); }
+            };
+        
+        Iterator tokens = TokenLiteralExpr.tokens.keySet().iterator();        
+
+        cr.outputline("");
+        cr.outputline("// Token values");
+        cr.outputline("");
+
+        while (tokens.hasNext()) {
+            Object token = tokens.next();
+            cr.outputline("// " + token.toString() + " = " + TokenLiteralExpr.tokens.get(token).toString());            
+        }
+
+        cr.outputline("");
+        cr.outputline("");
     }
 
     private void generate_hashtables() {
@@ -42,6 +78,8 @@ public class NaiveGenerator {
                 public void output(String s) { throw new IRException(); }
                 public SymbolTable getSymbolTable() { throw new IRException(); }
             };
+
+        cr.outputline("int __Success = 1;");
         
         cr.outputline("// creating hashtables ");
         
@@ -77,11 +115,11 @@ public class NaiveGenerator {
         while (relations.hasNext()) {
             RelationDescriptor relation = (RelationDescriptor) relations.next();
             cr.outputline("SimpleHash* " + relation.getSafeSymbol() + "_hash = new SimpleHash();");
+            cr.outputline("SimpleHash* " + relation.getSafeSymbol() + "_hashinv = new SimpleHash();");
         } 
 
         cr.outputline("");
         cr.outputline("");
-
     }
 
     private void generate_rules() {
@@ -184,13 +222,86 @@ public class NaiveGenerator {
                 cr.outputline("");
             }
         }
-
     }
 
     private void generate_implicit_checks() {
 
+        // #STOPPED# : stop... modify relationdescriptor with flag to symbolize that
+        // static analysis has determined the relation to be type safe... for sets that 
+        // are not type safe do these tests in the 
+        // relation inclusion...
+
         /* do post checks */
-        //output.println("check to make sure all relations are well typed");
+
+        // check to make sure all relations are well typed
+        // for all relations (need to check reverse as well i guess) 
+        // make sure that each element is in the corresponding set for the domain and range
+        // use iterators
+        
+        CodeWriter cr = new CodeWriter() {
+                boolean linestarted = false;
+                int indent = 0;
+                public void indent() { indent++; }
+                public void unindent() { indent--; assert indent >= 0; }
+                private void doindent() {
+                    for (int i = 0; i < indent; i++) { 
+                        output.print("  ");
+                    }
+                    linestarted = true;
+                }
+                public void outputline(String s) {
+                    if (!linestarted) {
+                        doindent();
+                    }
+                    output.println(s);
+                    linestarted = false;
+                }                 
+                public void output(String s) {
+                    if (!linestarted) {
+                        doindent();
+                    }
+                    output.print(s);
+                    output.flush(); 
+                }
+                public SymbolTable getSymbolTable() { throw new IRException(); }
+            };
+          
+        /* build relations */
+        Iterator relations = state.stRelations.descriptors();
+
+        /* first pass create all the hash tables */
+        while (relations.hasNext()) {
+            RelationDescriptor relation = (RelationDescriptor) relations.next();
+
+            if (relation.testUsage(RelationDescriptor.IMAGE)) {
+                VarDescriptor x = VarDescriptor.makeNew("x");
+                VarDescriptor y = VarDescriptor.makeNew("y");
+
+                /* start iteration */
+                cr.outputline("for (SimpleIterator* " + x.getSafeSymbol() + "_iterator = " + relation.getSafeSymbol() + "_hash->iterator(); " + x.getSafeSymbol() + "_iterator->hasNext(); ) {");
+                cr.indent();
+                cr.outputline("int " + y.getSafeSymbol() + " = (" + x.getSafeSymbol() + "_iterator->next();");        
+                cr.outputline("int " + x.getSafeSymbol() + " = (" + x.getSafeSymbol() + "_iterator->key();");
+
+                SetDescriptor domain = relation.getDomain();
+                SetDescriptor range = relation.getRange();
+
+                // #TBD#: decide if this is bad and go back and do checks in relationinclusion.. (have flag set by static analysis which determines whether or not these tests need to be made or 
+                // not
+
+                cr.outputline("if (!domain.get(x)) { remove x from hashtable, remove current iterator }");
+                
+            } else if (relation.testUsage(RelationDescriptor.INVIMAGE)) {
+                throw new IRException("unsupported");
+            }
+            
+           
+        } 
+
+        cr.outputline("");
+        cr.outputline("");
+
+                           
         //output.println("check multiplicity");
 
     }
@@ -201,10 +312,83 @@ public class NaiveGenerator {
         Vector constraints = state.vConstraints;
 
         for (int i = 0; i < constraints.size(); i++) {
-            //output.println("check constraint " + (i + 1));
+
+            Constraint constraint = (Constraint) constraints.elementAt(i); 
+
+            {
+
+                final SymbolTable st = constraint.getSymbolTable();
+                
+                CodeWriter cr = new CodeWriter() {
+                        boolean linestarted = false;
+                        int indent = 0;
+                        public void indent() { indent++; }
+                        public void unindent() { indent--; assert indent >= 0; }
+                        private void doindent() {
+                            for (int i = 0; i < indent; i++) { 
+                                output.print("  ");
+                            }
+                            linestarted = true;
+                        }
+                        public void outputline(String s) {
+                            if (!linestarted) {
+                                doindent();
+                            }
+                            output.println(s);
+                            linestarted = false;
+                        }                 
+                        public void output(String s) {
+                            if (!linestarted) {
+                                doindent();
+                            }
+                            output.print(s);
+                            output.flush(); 
+                        }
+                        public SymbolTable getSymbolTable() { return st; }
+                    };
+                
+                cr.outputline("// checking " + constraint.getLabel());
+                cr.outputline("{");
+                cr.indent();
+
+                ListIterator quantifiers = constraint.quantifiers();
+
+                while (quantifiers.hasNext()) {
+                    Quantifier quantifier = (Quantifier) quantifiers.next();                   
+                    quantifier.generate_open(cr);
+                }            
+                        
+                /* now we have to generate the guard test */
+        
+                VarDescriptor constraintboolean = VarDescriptor.makeNew("constraintboolean");
+                constraint.getLogicStatement().generate(cr, constraintboolean);
+                
+                cr.outputline("if (!" + constraintboolean.getSafeSymbol() + ") {");
+
+                cr.indent();
+
+                cr.outputline("__Success = 0;");
+                cr.outputline("printf(\"fail. \");");
+
+                cr.unindent();
+
+                cr.outputline("}");
+
+                while (quantifiers.hasPrevious()) {
+                    Quantifier quantifier = (Quantifier) quantifiers.previous();
+                    cr.unindent();                    
+                    cr.outputline("}");
+                }
+
+                cr.unindent();
+                cr.outputline("}");
+                cr.outputline("");
+                cr.outputline("");
+            }
+            
         }
 
-        //output.println("report problems");
+        output.println("if (__Success) { printf(\"all tests passed\"); }");
     }    
 
 }

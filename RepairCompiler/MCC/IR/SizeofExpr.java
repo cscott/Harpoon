@@ -19,9 +19,7 @@ public class SizeofExpr extends Expr {
     }
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
-        VarDescriptor sd = VarDescriptor.makeNew();
-        setexpr.generate_set(writer, sd);
-        writer.outputline("int " + dest.getSafeSymbol() + " = " + sd.getSafeSymbol() + ".size();");
+        setexpr.generate_size(writer, dest);
     }
 
     public void prettyPrint(PrettyPrinter pp) {

@@ -20,13 +20,17 @@ public class SetExpr extends Expr {
         return v;
     }
 
-    public void generate(CodeWriter writer, VarDescriptor vd) {
+    public void generate(CodeWriter writer, VarDescriptor dest) {
         throw new IRException("unsupported");
     }
 
-    public void generate_set(CodeWriter writer, VarDescriptor vd) {
-        writer.outputline("Set " + vd.getSafeSymbol() + " = " + sd.getSafeSymbol() + "_hash;");
+    public void generate_inclusion(CodeWriter writer, VarDescriptor dest, VarDescriptor element) {
+        writer.outputline("int " + dest.getSafeSymbol() + " = " + sd.getSafeSymbol() + "_hash->contains(" + element.getSafeSymbol() + ");");
     }    
+
+    public void generate_size(CodeWriter writer, VarDescriptor dest) {
+        writer.outputline("int " + dest.getSafeSymbol() + " = " + sd.getSafeSymbol() + "_hash->count();");
+    }
 
     public void prettyPrint(PrettyPrinter pp) {
         pp.output(sd.getSafeSymbol());
@@ -38,3 +42,5 @@ public class SetExpr extends Expr {
     }
 
 }
+
+

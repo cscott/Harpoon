@@ -35,9 +35,6 @@ public class SemanticChecker {
 	this.state = state;
 	State.currentState = state;
 
-	// Don't clear the state!!  Do clear the IR-related state
-	this.state.stTypes = null;
-
 	if (er == null) {
 	    throw new IRException("IRBuilder.build: Received null ErrorReporter");
 	} else {
@@ -612,32 +609,66 @@ public class SemanticChecker {
 
             /* get comparison operator */
             String compareop = sizeof.getChild("compare").getTerminal();
-            Opcode opcode = Opcode.decodeFromString(opname);
+            Opcode opcode = Opcode.decodeFromString(compareop);
 
             if (opcode == null) {
-                er.report(pn, "Unsupported operation: " + opname);
+                er.report(pn, "Unsupported operation '" + compareop + "'");
+                return null;
+            } else if (opcode != Opcode.EQ &&
+                       opcode != Opcode.GE &&
+                       opcode != Opcode.LE) {
+                er.report(pn, "Invalid operation '" + compareop + "': Must be one of '=', '>=', '<='");
+                return null;
+            }
+            
+            /* get decimal */
+            String decimal = sizeof.getChild("decimal").getTerminal();
+            IntegerLiteralExpr cardinality = new IntegerLiteralExpr(Integer.parseInt(decimal));
+                       
+            return new SizeofPredicate(setexpr, opcode, cardinality);
+        } else if (pn.getChild("comparison") != null) {
+            ParseNode cn = pn.getChild("comparison");
+
+            /* get quantifier variable */
+            String varname = cn.getChild("quantifier").getTerminal();
+            String relation = cn.getChild("relation").getTerminal();            
+
+            if (!sts.peek().contains(varname)) {
+                er.report(pn, "Undefined quantifier '" + varname + "'");
+                return null;
+            } 
+
+            VarDescriptor vd = (VarDescriptor) sts.peek().get(varname);
+
+            if (!stRelations.contains(relation)) {
+                er.report(pn, "Undefined relation '" + varname + "'");
                 return null;
             }
 
+            RelationDescriptor rd = (RelationDescriptor) stRelations.get(relation);
 
-
-            return new InclusionPredicate(vd, setexpr);
-        } else if (pn.getChild("comparison") != null) {
-            ParseNode cn = pn.getChild("comparison");
-            
             /* get the expr's */
-            Expr left = parse_expr(cn.getChild("left").getChild("expr"));
-            Expr right = parse_expr(cn.getChild("right").getChild("expr"));
+            Expr expr = parse_expr(cn.getChild("expr"));
 
-            if ((left == null) || (right == null)) {
+            if (expr == null) {
                 return null;
             }
 
             /* get comparison operator */
-            String comparison = cn.getChild("compare").getTerminal();
-            assert comparison != null;
-                         
-            return new ComparisonPredicate(comparison, left, right);
+            String compareop = cn.getChild("compare").getTerminal();
+            Opcode opcode = Opcode.decodeFromString(compareop);
+
+            if (opcode == null) {
+                er.report(pn, "Unsupported operation '" + compareop + "'");
+                return null;
+            } else if (opcode != Opcode.EQ &&
+                       opcode != Opcode.GE &&
+                       opcode != Opcode.LE) {
+                er.report(pn, "Invalid operation '" + compareop + "': Must be one of '=', '>=', '<='");
+                return null;
+            }
+
+            return new ComparisonPredicate(vd, rd, opcode, expr);
         } else {
             throw new IRException();
         }       
@@ -1350,49 +1381,23 @@ public class SemanticChecker {
             return null;
         }
 
-        RelationExpr re = new RelationExpr();
+        String relname = pn.getChild("name").getTerminal();
+        boolean inverse = pn.getChild("inv") == null;
+        Expr expr = parse_expr(pn.getChild("expr"));        
 
-        /* get quantitifer var */
-        VarDescriptor vd = parse_quantifiervar(pn.getChild("quantifiervar"));
-        
-        if (vd == null) {
+        if (expr == null) {
             return null;
         }
-
-        // #TBD#: bad name
-        re.setDomain(vd);
-
-        /* grab list of relations */
-        ParseNodeVector relations = pn.getChild("relations").getChildren();
-        assert relations.size() >= 1;
-        
-        // #TBD#: verify that the relations are in the correct order and that the 
-        // first relation is getting the correct "inv" assigned from "expr"
-
-        /* lets verify that these relations are defined */
-        for (int i = 0; i < relations.size(); i++) {           
-            ParseNode rn = relations.elementAt(i);
-            String relname = rn.getLabel();
-            boolean inverse = rn.getChild("inv") != null;
+                    
+        RelationDescriptor relation = lookupRelation(relname);
             
-            RelationDescriptor relation = lookupRelation(relname);
-            
-            if (relation == null) {
-                /* Semantic Error: relation not definied" */
-                er.report(rn, "Undefined relation '" + relname + "'");
-                return null;
-            }                       
+        if (relation == null) {
+            /* Semantic Error: relation not definied" */
+            er.report(pn, "Undefined relation '" + relname + "'");
+            return null;
+        }                       
 
-            re.setRelation(relation, inverse);
-            
-            /* if we are not at end of list then create new relation and 
-               replace it to chain the relations */
-            if (i + 1 < relations.size()) {
-                re = new RelationExpr(re);  // should create relation with domain as older 're'
-            } 
-        }
-
-        return re;                  
+        return new RelationExpr(expr, relation, inverse);
     }
 
     private SizeofExpr parse_sizeof(ParseNode pn) {

@@ -40,8 +40,8 @@ public class Constraint {
         this.crash = crash;
     }
 
-    public Iterator quantifiers() {
-        return quantifiers.iterator();
+    public ListIterator quantifiers() {
+        return quantifiers.listIterator();
     }
 
     public Set getRequiredDescriptorsFromQuantifiers() {

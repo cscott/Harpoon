@@ -142,6 +142,7 @@ parser code {:
 
     terminal IMPLIES;
     terminal TRUE;
+    terminal FALSE;
     terminal ISVALID;
     terminal FOR;
     terminal TO;
@@ -503,6 +504,12 @@ literal ::=
 	{:
 	debugMessage(PRODSTRING);
 	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("boolean").addChild("true").getRoot();
+	:}
+	 
+	| FALSE
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("boolean").addChild("false").getRoot();
 	:}
 	 
 	| DECIMAL:dec

@@ -69,6 +69,7 @@ CHAR=(\\\"|\\\'|\\\\|\\t|\\n|[\x20-\x21\x23-\x26\x28-\x5B\x5D-\x7E])
 <YYINITIAL> param  			{ return tok(Sym.PARAM, yytext()); }
 <YYINITIAL> "=>"		        { return tok(Sym.IMPLIES, yytext()); }
 <YYINITIAL> true			{ return tok(Sym.TRUE, yytext()); }
+<YYINITIAL> false			{ return tok(Sym.FALSE, yytext()); }
 <YYINITIAL> isvalid			{ return tok(Sym.ISVALID, yytext()); }
 <YYINITIAL> for				{ return tok(Sym.FOR, yytext()); }
 <YYINITIAL> to				{ return tok(Sym.TO, yytext()); }

@@ -28,8 +28,21 @@ public class ImageSetExpr extends SetExpr {
         return v;
     }
 
-    public void generate(CodeWriter writer, VarDescriptor vd) {
+    public void generate(CodeWriter writer, VarDescriptor dest) {
         throw new IRException("not supported");
+    }
+
+    public void generate_inclusion(CodeWriter writer, VarDescriptor dest, VarDescriptor element) {
+        String hash = inverse ? "_hashinv->contains(" : "_hash->contains(" ;
+        writer.outputline("int " + dest.getSafeSymbol() + " = " + rd.getSafeSymbol() + hash + vd.getSafeSymbol() + ", " + element.getSafeSymbol() + ");");
+    }    
+
+    public void generate_size(CodeWriter writer, VarDescriptor dest) {
+        assert dest != null;
+        assert vd != null;
+        assert rd != null;
+        String hash = inverse ? "_hashinv->count(" : "_hash->count(" ;
+        writer.outputline("int " + dest.getSafeSymbol() + " = " + rd.getSafeSymbol() + hash + vd.getSafeSymbol() + ");");
     }
 
     public void prettyPrint(PrettyPrinter pp) {
