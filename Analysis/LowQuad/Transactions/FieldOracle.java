@@ -3,14 +3,14 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.LowQuad.Transactions;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HField;
 
 /**
  * A <code>FieldOracle</code> helps the <code>SyncTransformer</code>
  * decide which field references it can skip checks for.
  * 
  * @author   <cananian@alumni.princeton.edu>
- * @version $Id: FieldOracle.java,v 1.1.2.1 2000-11-15 23:48:37 cananian Exp $
+ * @version $Id: FieldOracle.java,v 1.1.2.2 2000-11-16 01:25:14 cananian Exp $
  */
 abstract class FieldOracle {
     /** Returns <code>true</code> if this field can be read within a
