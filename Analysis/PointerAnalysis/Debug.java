@@ -16,7 +16,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.4 2000-03-20 21:29:00 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.5 2000-03-22 05:23:07 salcianu Exp $
  */
 public abstract class Debug {
 
@@ -74,6 +74,43 @@ public abstract class Debug {
 		System.out.println((MetaMethod)itmm.next());
 	    }
 	}
+    }
+
+
+    // the powers of 10!!
+    private static double[] fact = 
+             {1.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0};
+
+
+    /** Returns the string representation of the double d, with a certain
+	number of decimals. Let me know if you know something better. */
+    public static String doubleRep(double d, int decimals){
+	double dfloor = Math.floor(d); // (double) integer part of d
+	double dfrac = d - dfloor;     // fractional part of d
+	int ifloor = (int) dfloor;     // integer part of d
+	// the last d decimals
+	int fracint = (int) Math.ceil(dfrac * fact[decimals]); 
+
+	StringBuffer fracstr = new StringBuffer(String.valueOf(fracint));
+	int missing_decs = decimals - fracstr.length();
+	for(int i = 0; i < missing_decs; i++)
+	    fracstr.append("0");
+
+	return String.valueOf(ifloor) + "." + fracstr.toString();
+    }
+
+    /** Returns the string representation of the double d, with a certain
+	number of decimals. Let me know if you know something better. */
+    public static String doubleRep(double d, int digits, int decimals){
+	StringBuffer buffer = new StringBuffer(Debug.doubleRep(d,decimals));
+	int desired_point = digits - decimals - 1;
+	int current_point = buffer.toString().indexOf(".");
+	int needed_spaces = desired_point - current_point;
+	if(needed_spaces == 0) return buffer.toString();
+	StringBuffer buffer2 = new StringBuffer();
+	for(int i = 0; i < needed_spaces; i++)
+	    buffer2.append(" ");
+	return buffer2.toString() + buffer.toString();
     }
 
 }

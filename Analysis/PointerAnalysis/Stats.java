@@ -23,7 +23,7 @@ import harpoon.Tools.Graphs.SCComponent;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.4 2000-03-18 05:24:31 salcianu Exp $
+ * @version $Id: Stats.java,v 1.1.2.5 2000-03-22 05:23:07 salcianu Exp $
  */
 abstract class Stats {
 
@@ -146,16 +146,21 @@ abstract class Stats {
 	System.out.println("Total nb. of SCCs            : " + total_sccs);
 
 	System.out.println("--AVERAGES--------------------------------");
+	double appmm = (double)total_passes/(double)nb_mmethods;
 	System.out.println("Average Passes/Meta-Method      : " +
-			   (double)total_passes/(double)nb_mmethods);
+			   Debug.doubleRep(appmm, 6, 2));
+	double aipmm = (double)total_instrs/(double)nb_mmethods;
 	System.out.println("Average Instrs/Meta-Method      : " +
-			   (double)total_instrs/(double)nb_mmethods);
+			   Debug.doubleRep(aipmm, 6, 2));
+	double abbpscc = (double)total_bbs/(double)total_sccs;
 	System.out.println("Average BB(s)/SCC               : " + 
-			   (double)total_bbs/(double)total_sccs);
+			   Debug.doubleRep(abbpscc, 6, 2));
+	double aipbb = (double)total_instrs/(double)total_bbs;
 	System.out.println("Average Instrs/BB               : " + 
-			   (double)total_instrs/(double)total_bbs);
+			   Debug.doubleRep(aipbb, 6, 2));
+	double aoppmm = (double)total_params/(double)nb_mmethods;
 	System.out.println("Average Obj. Params/Meta-Method : " + 
-			   (double)total_params/(double)nb_mmethods);
+			   Debug.doubleRep(aoppmm, 6, 2));
 
 	System.out.println("--EXTREMES--------------------------------");
 	System.out.println("Biggest nb of obj. params : " + maxim_nb_params);

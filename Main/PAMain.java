@@ -6,6 +6,7 @@ package harpoon.Main;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -49,16 +50,18 @@ import harpoon.Analysis.MetaMethods.SmartCallGraph;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.13 2000-03-22 00:26:17 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.14 2000-03-22 05:23:11 salcianu Exp $
  */
 public abstract class PAMain {
 
+    // use the real meta call graph
     private static boolean METAMETHODS = false;
+    // use FakeMetaCallGraph(SmartCallGraph)
     private static boolean SMART_CALL_GRAPH = true;
-
+    // debug the class hierarchy
     private static boolean DEBUG_CH = false;
 
-    private static String[] example ={
+    private static String[] examples ={
 	"java harpoon.Main.PAMain harpoon.Test.PA.Test1.complex multiplyAdd",
 	"java -Xmx200M harpoon.Main.PAMain harpoon.Test.PA.Test2.Server run",
 	"java harpoon.Main.PAMain harpoon.Test.PA.Test3.multiset " +
@@ -85,18 +88,18 @@ public abstract class PAMain {
 	     "([<class>].<analyzed_method>)*\n" +
 	     " If no class if given for the analyzed method, " +
 	     "<main_class> is taken by default.\n" + 
-	     "Examples:\n" +
-	     "\t" + example[0] + "\n" +
-	     "\t" + example[1] + "\n" +
-	     "\t" + example[2] + "\n" +
-	     "\t" + example[3] + "\n" +
-	     "\t" + example[4] + "\n" +
-	     "Suggestion:\n" +
+	     "Examples:");
+
+	    for(int i = 0; i < examples.length; i++)
+		System.out.println("\t" + examples[i]);
+
+	    System.out.println("Suggestion:\n" +
 	     "\tYou might consider the \"-Xmx\" flag of the JVM to satisfy\n" +
 	     "\tthe huge memory requirements of the pointer analysis.\n" +
 	     "Warning:\n\t\"Quite fast for small programs!\"" + 
 	     " [Moolly Sagiv]\n" +
 	     "\t\t... and only for them :-(");
+
 	    System.exit(1);
 	}
 
@@ -123,7 +126,23 @@ public abstract class PAMain {
 
 	HCodeFactory hcf  = 
 	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
-	    
+
+	Set root_methods = new HashSet();
+	root_methods.add(hroot);
+	root_methods.addAll(
+	    harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+
+	if(DEBUG_CH){
+	    System.out.println("Set of roots");
+	    for(Iterator it = root_methods.iterator(); it.hasNext(); ){
+		Object o = it.next();
+		if(o instanceof HMethod)
+		    System.out.println(" m: " + o);
+		else
+		    System.out.println(" c: " + o);
+	    }
+	}
+
 	System.out.print("ClassHierarchy ... ");
 	tstart = System.currentTimeMillis();
 	ClassHierarchy ch = 
@@ -161,7 +180,6 @@ public abstract class PAMain {
 	}
 	else{
 	    CallGraph cg = null;
-	    Set methods = null;
 	    if(SMART_CALL_GRAPH){ // smart call graph!
 		System.out.print("MetaCallGraph ... ");
 		tstart = System.currentTimeMillis();
@@ -171,19 +189,16 @@ public abstract class PAMain {
 
 		System.out.print("SmartCallGraph ... ");
 		tstart = System.currentTimeMillis();
-		SmartCallGraph scg = new SmartCallGraph(fmcg);
-		cg = scg;
-		methods = scg.getAllExecutableMethods();
+		cg = new SmartCallGraph(fmcg);
 		tstop  = System.currentTimeMillis();
 		System.out.println((tstop - tstart) + "ms");
 	    }
-	    else{
+	    else
 		cg = new CallGraphImpl(ch, hcf);
-		methods = ch.callableMethods();
-	    }
+
 	    System.out.print("FakeMetaCallGraph ... ");
 	    tstart = System.currentTimeMillis();
-	    mcg = new FakeMetaCallGraph(cg, methods);
+	    mcg = new FakeMetaCallGraph(cg, cg.callableMethods());
 	    tstop  = System.currentTimeMillis();
 	    System.out.println((tstop - tstart) + "ms");
 	    

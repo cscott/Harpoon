@@ -26,7 +26,7 @@ import java.util.Vector;
  This is the most conservative implementation of <code>CallGraph</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl.java,v 1.1.2.1 2000-03-21 22:21:35 salcianu Exp $
+ * @version $Id: CallGraphImpl.java,v 1.1.2.2 2000-03-22 05:23:09 salcianu Exp $
  */
 public class CallGraphImpl implements CallGraph  {
     final HCodeFactory hcf;
@@ -115,4 +115,11 @@ public class CallGraphImpl implements CallGraph  {
 	// finally, copy result vector to retval array.
 	return (HMethod[]) s.toArray(new HMethod[s.size()]);
     }
+
+    /** Returns the set of all the methods that can be called in the 
+	execution of the program. */
+    public Set callableMethods(){
+	return ch.callableMethods();
+    }
+
 }

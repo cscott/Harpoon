@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
+import java.util.Set;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CALL;
 
@@ -11,7 +12,7 @@ import harpoon.IR.Quads.CALL;
  implemented by a call graph.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CallGraph.java,v 1.1.2.5 2000-03-21 22:21:41 salcianu Exp $
+ * @version $Id: CallGraph.java,v 1.1.2.6 2000-03-22 05:23:09 salcianu Exp $
  */
 public interface CallGraph {
     
@@ -30,4 +31,8 @@ public interface CallGraph {
     /** Returns a list of all the <code>CALL</code>s quads in the code 
 	of <code>hm</code>. */
     public CALL[] getCallSites(final HMethod hm);
+
+    /** Returns the set of all the methods that can be called in the 
+	execution of the program. */
+    public Set callableMethods();
 }

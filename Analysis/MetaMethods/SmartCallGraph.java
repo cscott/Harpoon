@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * <code>SmartCallGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SmartCallGraph.java,v 1.1.2.2 2000-03-22 00:26:03 salcianu Exp $
+ * @version $Id: SmartCallGraph.java,v 1.1.2.3 2000-03-22 05:23:05 salcianu Exp $
  */
 public class SmartCallGraph implements CallGraph {
     
@@ -75,8 +75,9 @@ public class SmartCallGraph implements CallGraph {
 	return (CALL[]) css.toArray(new CALL[css.size()]);
     }
 
-    /** Returns the set of all the methods that can be executed. */
-    public Set getAllExecutableMethods(){
+    /** Returns the set of all the methods that can be called in the 
+	execution of the program. */
+    public Set callableMethods(){
 	return hm2callees.keySet();
     }
 
