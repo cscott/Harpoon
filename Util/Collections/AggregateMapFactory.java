@@ -24,7 +24,7 @@ import java.util.Set;
  * <code>HashMap</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AggregateMapFactory.java,v 1.1.2.1 2001-11-04 02:38:22 cananian Exp $
+ * @version $Id: AggregateMapFactory.java,v 1.1.2.2 2001-11-04 19:27:11 cananian Exp $
  */
 public class AggregateMapFactory extends MapFactory
     implements java.io.Serializable {
@@ -108,6 +108,17 @@ public class AggregateMapFactory extends MapFactory
 			    };
 		    }
 		    public int size() { return size; }
+		    public boolean add(Object o) {
+			if (contains(o)) return false; // already here.
+			if (!(o instanceof Map.Entry))
+			    throw new UnsupportedOperationException();
+			Map.Entry me = (Map.Entry) o;
+			if (AggregateMap.this.containsKey(me.getKey()))
+			    // this is not a multimap!
+			    throw new UnsupportedOperationException();
+			AggregateMap.this.put(me.getKey(), me.getValue());
+			return true;
+		    }
 		    public boolean contains(Object o) {
 			if (!(o instanceof Map.Entry)) return false;
 			Map.Entry me = (Map.Entry) o;
