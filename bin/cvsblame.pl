@@ -493,6 +493,8 @@ sub open_cvs_file {
     } else {
         $atticname = 'Attic/' . $pathname;
     }
+    # assume name is correct (file not in Attic)
+    $rcs_truename{$pathname}=$pathname;
     # Try remote repository access methods, if applicable.
     if ($pathname =~ m/^:([^:]*):([^:@]*)@([^:@]*):(.*)$/) {
         my ($method,$user,$host,$path) = ($1, $2, $3, $4);
@@ -500,15 +502,19 @@ sub open_cvs_file {
             my $rsh = $ENV{'CVS_RSH'};
             $rsh = "rsh" unless defined $rsh;
             $atticname =~ s/^:[^:]*:[^:]*://;
-            my $cmd="if [ -r $path ]; then cat $path; else cat $atticname; fi";
+            my $cmd="if [ -r $path ]; then echo foo; cat $path; else echo Attic; cat $atticname; fi";
             $cmd = "$rsh $host -l $user \"sh -c '$cmd'\"";
-            return open(HANDLE, $cmd." |");
+            open(HANDLE, $cmd." |") or return undef;
+            my $firstline = <HANDLE>;
+            $rcs_truename{$pathname}=$atticname if $firstname =~ m/Attic/;
+            return 1;
         }
         # remote access protocol not supported. <sigh>
-        return 0;
+        return undef;
     }
     # local access.
     return open(HANDLE, "< $pathname") if (-r $pathname);
+    $rcs_truename{$pathname}=$atticname;
     return open(HANDLE, "< $atticname"); # fall back to attic.
 }
 
@@ -801,7 +807,8 @@ sub show_annotated_cvs_file {
     my ($pathname) = @_;
     my (@output) = ();
 
-    $revision = &parse_cvs_file(&rcs_pathname_and_revision($pathname));
+    my ($rcs_pathname,$checked_out_rev)=&rcs_pathname_and_revision($pathname);
+    $revision = &parse_cvs_file($rcs_pathname,$checked_out_rev);
 
     @text = &extract_revision($revision);
     die "$progname: Internal consistency error" if ($#text != $#revision_map);
@@ -845,6 +852,16 @@ sub show_annotated_cvs_file {
         $annotation .= sprintf(" (%3s)",
                                int($revision_age{$revision})) if $opt_A;
 
+        # URL annotation.
+        my $partialpath = substr($rcs_truename{$rcs_pathname},
+                                 length($cvsroot));
+        $partialpath =~ s/,v$//;
+        my $prev_rev = $prev_revision{$revision};
+        $prev_rev = $revision unless defined $prev_rev;
+        $prev_rev = $revision = $checked_out_rev if $revision eq "LOCAL";
+        $annotation .= " $opt_u$partialpath.diff?".
+            "r1=$prev_rev&r2=$revision" if defined $opt_u;
+
         # -m (if-modified-since) annotion ?
         if ($opt_m && ($timestamp{$revision} < $opt_m_timestamp)) {
             $annotation = $blank_annotation;
@@ -880,12 +897,13 @@ sub usage {
 "      -m <# days>        Only annotate lines modified within last <# days>\n",
 "      -q                 Suppress original text (just print annotation)\n",
 "      -n                 Don't show local modifications\n",
+"      -u <base url>      Output a URL on each line for markup programs\n",
 "      -h                 Print help (this message)\n\n",
 "   (-a -v assumed, if none of -a, -v, -A, -d supplied)\n"
 ;
 }
 
-&usage if (!&getopts('r:m:Aadhlvwqn'));
+&usage if (!&getopts('r:m:Aadhlvwqnu:'));
 &usage if ($opt_h);             # help option
 
 $multiple_files_on_command_line = 1 if ($#ARGV != 0);
