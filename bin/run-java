@@ -36,4 +36,3 @@ if type -t cygpath > /dev/null ; then
 fi
 
 ${JAVA:=java} -${optprefix}mx${FLEXMEM:=768m} $javaopts -Dharpoon.class.path=$harpoonpath $*
-exit $?
