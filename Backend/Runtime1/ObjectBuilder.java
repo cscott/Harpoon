@@ -46,7 +46,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.7 2003-10-21 21:01:45 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.8 2004-02-08 03:20:58 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -167,8 +167,7 @@ public class ObjectBuilder
 	FieldMap cfm = ((TreeBuilder) runtime.getTreeBuilder()).cfm;
 	List<Stm> stmlist = new ArrayList<Stm>(2*fields.size());
 	int offset = startOffset;
-	for (Iterator<HField> it = fields.iterator(); it.hasNext(); ) {
-	    HField hf = it.next();
+	for (HField hf : fields) {
 	    int thisOffset = cfm.fieldOffset(hf);
 	    if (thisOffset<startOffset) continue; // ignore
 	    if (thisOffset>endOffset) break; // done.

@@ -22,7 +22,7 @@ import harpoon.IR.Quads.AGET;
  * <code>ArrayInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ArrayInfo.java,v 1.2 2002-02-25 21:09:36 cananian Exp $
+ * @version $Id: ArrayInfo.java,v 1.3 2004-02-08 03:22:00 cananian Exp $
  */
 public class ArrayInfo implements java.io.Serializable {
     
@@ -54,8 +54,8 @@ public class ArrayInfo implements java.io.Serializable {
 
 	Set retval = new HashSet();
 
-	for(Iterator it = set.iterator(); it.hasNext(); ){
-	    ExactTemp et = (ExactTemp) it.next();
+	for(Object etO : set){
+	    ExactTemp et = (ExactTemp) etO;
 	    if(ti.isArrayOfNonPrimitives(et))
 		retval.add(et.q);
 	}

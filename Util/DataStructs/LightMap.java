@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  the <code>java.util.Map</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: LightMap.java,v 1.2 2002-02-25 21:09:19 cananian Exp $
+ * @version $Id: LightMap.java,v 1.3 2004-02-08 03:21:50 cananian Exp $
  */
 public class LightMap implements Map, Cloneable, java.io.Serializable {
     // the number of mappings in this map
@@ -244,8 +244,8 @@ public class LightMap implements Map, Cloneable, java.io.Serializable {
 
     /** Copies all of the mappings from the specified map to this map. */
     public final void putAll(Map map) throws UnsupportedOperationException{
-	for(Iterator it = map.entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry entry = (Map.Entry) it.next();
+	for(Object entryO : map.entrySet()) {
+	    Map.Entry entry = (Map.Entry) entryO;
 	    put(entry.getKey(), entry.getValue());
 	}
     }

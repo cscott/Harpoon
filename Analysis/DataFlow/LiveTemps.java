@@ -26,7 +26,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.6 2004-02-08 01:51:05 cananian Exp $
+ * @version $Id: LiveTemps.java,v 1.7 2004-02-08 03:19:21 cananian Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -243,9 +243,8 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	HashSet temps = new HashSet();
 	while(blocks.hasNext()) {
 	    BasicBlock bb = (BasicBlock) blocks.next();
-	    Iterator useDefs = bb.statements().iterator();
-	    while(useDefs.hasNext()) {
-		HCodeElement h = (HCodeElement) useDefs.next();
+	    for (Object hO : bb.statements()) {
+		HCodeElement h = (HCodeElement) hO;
 		temps.addAll(ud.useC(h));
 		temps.addAll(ud.defC(h));
 	    }

@@ -35,8 +35,8 @@ public class Check {
 	    HashSet decreasingLiveAfter = new HashSet( liveAfter );
 	    decreasingLiveAfter.removeAll( initSet );
 	    Collection succs = (Collection) cfger.succElemC(lastStm);
-	    for(Iterator succI=succs.iterator(); succI.hasNext(); ) {
-		Instr succ = (Instr) succI.next();
+	    for(Object succO : succs) {
+		Instr succ = (Instr) succO;
 		HashSet liveBefore = new HashSet(liveTemps.getLiveBefore( succ ));
 		decreasingLiveAfter.removeAll( liveBefore );
 		liveBefore.removeAll( liveAfter );
@@ -75,8 +75,8 @@ public class Check {
 
 	    Collection succs = (Collection) cfger.succElemC(lastStm);
 	    
-	    for(Iterator temps = s.iterator(); temps.hasNext(); ){
-		Temp t = (Temp) temps.next();
+	    for(Object tO : s){
+		Temp t = (Temp) tO;
 				
 		// N.B. reaching-defs( lastStm, t ) alone would *NOT*
 		// be correct here, because we're getting the temps

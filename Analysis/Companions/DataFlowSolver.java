@@ -20,7 +20,7 @@ import java.util.Map;
  * subclasses contain code for forward and backward analyses, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataFlowSolver.java,v 1.4 2004-02-08 01:50:55 cananian Exp $
+ * @version $Id: DataFlowSolver.java,v 1.5 2004-02-08 03:19:17 cananian Exp $
  */
 public abstract class DataFlowSolver<N extends Graph.Node<N,E>,
 				     E extends Graph.Edge<N,E>,
@@ -80,8 +80,7 @@ public abstract class DataFlowSolver<N extends Graph.Node<N,E>,
 	    }
 	    // done!  but we want to return IN set, not OUT set.
 	    final Map<N,FACT> INresult = new HashMap<N,FACT>();
-	    for (Iterator<N> it=g.nodes().iterator(); it.hasNext(); ) {
-		N hce = it.next();
+	    for (N hce : g.nodes()) {
 		INresult.put(hce, computeIN(hce, OUTresult));
 	    }
 	    // now really done.

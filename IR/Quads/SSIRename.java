@@ -46,7 +46,7 @@ import java.util.Stack;
  * XXX: DERIVATION INFORMATION FOR PHI/SIGMAS IS CURRENTLY LOST. [CSA]
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.5 2004-02-08 01:55:25 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.6 2004-02-08 03:21:24 cananian Exp $
  */
 public class SSIRename {
     private static final boolean DEBUG = false;
@@ -137,9 +137,7 @@ public class SSIRename {
 	    this.derivmap= (oderiv==null) ? null : new HashMap<Temp,DerivType>();
 	    setup(c);
 
-	    for (Iterator<Edge> it=c.getRootElement().edgeC().iterator();
-		 it.hasNext(); ) {
-		Edge e = it.next();
+	    for (Edge e : c.getRootElement().edgeC()) {
 		We.push(e);
 	    }
 	    

@@ -41,7 +41,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.3 2004-02-08 01:51:58 cananian Exp $
+ * @version $Id: ToAsync.java,v 1.4 2004-02-08 03:19:30 cananian Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -108,8 +108,8 @@ public class ToAsync {
 	    //CHEAP MetaHack...
 	    //Real algorithm should work on a callsite basis.
 	    blockingcalls=new WorkSet();
-	    for (Iterator i=blockingmm.iterator();i.hasNext();) {
-		MetaMethod mm=(MetaMethod)i.next();
+	    for (Object mmO : blockingmm) {
+		MetaMethod mm = (MetaMethod) mmO;
 		blockingcalls.add(mm.getHMethod());
 	    }
 	}

@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.8 2004-02-08 01:55:51 cananian Exp $
+ * @version $Id: ToTree.java,v 1.9 2004-02-08 03:21:28 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -759,8 +759,8 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    addStmt(new ALIGN(m_tf, q, 8/* safe alignment*/));
 	    addStmt(new LABEL(m_tf, q, l3, false));
 	    int expected=min_key;
-	    for (Iterator it=cases.entrySet().iterator(); it.hasNext(); ) {
-		Map.Entry thiscase = (Map.Entry) it.next();
+	    for (Object thiscaseO : cases.entrySet()) {
+		Map.Entry thiscase = (Map.Entry) thiscaseO;
 		int thiskey = ((Integer)thiscase.getKey()).intValue();
 		Label thislabel = (Label)thiscase.getValue();
 		while (expected++ < thiskey)
@@ -1258,8 +1258,8 @@ static class TranslationVisitor extends LowQuadVisitor {
 	assert defSites.size() > 0: "undefined temp "+t+" : "+defSites;
 	
 	TypeBundle tb = null;
-	for (Iterator it=defSites.iterator(); it.hasNext(); ) {
-	    Quad def = (Quad) it.next();
+	for (Object defO : defSites) {
+	    Quad def = (Quad) defO;
 	    TypeBundle tb2 = (quadDeriv.typeMap(def, t)!=null) ?
 		new TypeBundle(quadDeriv.typeMap(def, t)) :
 		new TypeBundle(DList.rename(quadDeriv.derivation(def, t),m_ctm));

@@ -25,7 +25,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  * <code>MetaCallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphAbstr.java,v 1.6 2003-06-04 16:15:21 salcianu Exp $ */
+ * @version $Id: MetaCallGraphAbstr.java,v 1.7 2004-02-08 03:19:57 cananian Exp $ */
 public abstract class MetaCallGraphAbstr extends MetaCallGraph {
     // Map<MetaMethod,MetaMethod[]>
     protected final Map callees1_cmpct = new HashMap();
@@ -85,8 +85,8 @@ public abstract class MetaCallGraphAbstr extends MetaCallGraph {
     public Relation getSplitRelation(){
 	if(split != null) return split;
 	split = new RelationImpl();
-	for(Iterator it = getAllMetaMethods().iterator(); it.hasNext(); ){
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : getAllMetaMethods()){
+	    MetaMethod mm = (MetaMethod) mmO;
 	    split.add(mm.getHMethod(), mm);
 	}
 	return split;
@@ -103,14 +103,14 @@ public abstract class MetaCallGraphAbstr extends MetaCallGraph {
 
     /** Nice pretty-printer for debug purposes. */
     public void print(PrintStream ps, boolean detailed_view, MetaMethod root) {
-	for(Iterator itmm = getAllMetaMethods().iterator(); itmm.hasNext();) {
-	    MetaMethod mm = (MetaMethod) itmm.next();
+	for(Object mmO : getAllMetaMethods()) {
+	    MetaMethod mm = (MetaMethod) mmO;
 	    ps.println();
 	    ps.print(mm);
 	    if(detailed_view) {
 		ps.println();
-		for(Iterator itcs=getCallSites(mm).iterator();itcs.hasNext();){
-		    CALL cs = (CALL) itcs.next();
+		for(Object csO : getCallSites(mm)){
+		    CALL cs = (CALL) csO;
 		    HCodeElement hce = (HCodeElement) cs;
 		    MetaMethod[] callees = getCallees(mm,cs);
 		    ps.println(" " + hce.getSourceFile() + ":" + 

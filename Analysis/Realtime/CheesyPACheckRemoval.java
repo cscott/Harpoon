@@ -51,7 +51,7 @@ import harpoon.Util.Util;
  * <code>CheesyPACheckRemoval</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: CheesyPACheckRemoval.java,v 1.7 2003-06-04 18:45:42 salcianu Exp $
+ * @version $Id: CheesyPACheckRemoval.java,v 1.8 2004-02-08 03:20:13 cananian Exp $
  */
 public class CheesyPACheckRemoval implements CheckRemoval {
 
@@ -120,8 +120,8 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 				 linker, ch);
 	/*
 	// intrathread analysis of all the callable methods
-	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); ) {
-            MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : mcg.getAllMetaMethods()) {
+            MetaMethod mm = (MetaMethod) mmO;
             if(!analyzable(mm)) continue;
             pa.getIntParIntGraph(mm);
         }
@@ -148,8 +148,8 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 	from it. */
     private boolean uselessChecks() {
 	Set runs = new HashSet();
-	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); ) {
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : mcg.getAllMetaMethods()) {
+	    MetaMethod mm = (MetaMethod) mmO;
 	    if(mm.getHMethod().getName().equals("run"))
 		runs.add(mm);
 	}
@@ -160,8 +160,8 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 		System.out.println(((MetaMethod) it.next()).getHMethod());
 	}
 	
-	for(Iterator it = runs.iterator(); it.hasNext(); ) {
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : runs) {
+	    MetaMethod mm = (MetaMethod) mmO;
 
 	    HMethod hm  = mm.getHMethod();
 	    String cls_name = hm.getDeclaringClass().getName();
@@ -188,8 +188,8 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 
 	// if one of the elements of the set nodes is an INSIDE node,
 	// some objects are leaking out of the memory scope ...
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    if(node.type == PANode.INSIDE) return true;
 	}
 	// nothing escapes!

@@ -43,7 +43,7 @@ import java.util.Set;
  * set and clear the per-object bit for dynamic write barriers.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: DynamicWBInserter.java,v 1.1 2002-07-18 21:06:00 kkz Exp $ */
+ * @version $Id: DynamicWBInserter.java,v 1.2 2004-02-08 03:20:07 cananian Exp $ */
 public class DynamicWBInserter extends 
     harpoon.Analysis.Transformation.MethodMutator {
     
@@ -96,9 +96,8 @@ public class DynamicWBInserter extends
 		    BitClearAnalysis bca = new BitClearAnalysis(hc, q, true);
 		    Map call2exception = new HashMap();
 		    Map edge2temp = bca.needClear;
-		    for(Iterator it=edge2temp.keySet().iterator();
-			it.hasNext(); ) {
-			Edge edge = (Edge) it.next();
+		    for(Object edgeO : edge2temp.keySet()) {
+			Edge edge = (Edge) edgeO;
 			Temp dst = (Temp) edge2temp.get(edge);
 			//footer=insertClear((Quad)edge.to(), edge, dst, footer);
 			insertClear((Quad)edge.to(), edge, dst, call2exception);

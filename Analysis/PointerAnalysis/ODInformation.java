@@ -21,7 +21,7 @@ import harpoon.Util.DataStructs.LightMap;
  * relative to an on-demand analysis.
  *
  * @author  Frederic VIVIEN <vivien@lcs.mit.edu>
- * @version $Id: ODInformation.java,v 1.4 2002-04-10 03:00:42 cananian Exp $
+ * @version $Id: ODInformation.java,v 1.5 2004-02-08 03:20:02 cananian Exp $
  */
 
 public class ODInformation {
@@ -125,8 +125,8 @@ public class ODInformation {
 	Set skippedCS_org = new HashSet(skippedCS);
 	Set projected_skippedCS2 = new HashSet();
 
-	for(Iterator h2_it=odi2.skippedCS.iterator(); h2_it.hasNext(); ){
-	    MethodHole h2 = (MethodHole) h2_it.next();
+	for(Object h2O : odi2.skippedCS){
+	    MethodHole h2 = (MethodHole) h2O;
 	    // If this MethodHole is also a MethodHole of the first
 	    // ODInformation, we keep it like that.
 	    if(skippedCS.contains(h2)){
@@ -170,8 +170,8 @@ public class ODInformation {
 
     private void join_conservative(ODInformation odi2)
     {
-	for(Iterator h2_it=odi2.skippedCS.iterator(); h2_it.hasNext(); ){
-	    MethodHole h2 = (MethodHole) h2_it.next();
+	for(Object h2O : odi2.skippedCS){
+	    MethodHole h2 = (MethodHole) h2O;
 	    // If this MethodHole is also a MethodHole of the first
 	    // ODInformation, nothing to do.
 	    if(skippedCS.contains(h2)){
@@ -199,8 +199,8 @@ public class ODInformation {
 	LightRelation new_hist = new LightRelation();
 	Relation org_hist = odi.skippedCSHistory;
 	
-	for(Iterator first_it=org_hist.keys().iterator(); first_it.hasNext(); ){
-	    MethodHole org_first = (MethodHole) first_it.next();
+	for(Object org_firstO : org_hist.keys()){
+	    MethodHole org_first = (MethodHole) org_firstO;
 	    MethodHole new_first = (MethodHole) conversion.get(org_first);
 	    if (new_first==null){
 		System.err.println("joinHistories: No conversion for " 
@@ -212,10 +212,9 @@ public class ODInformation {
 		System.exit(1);
 	    }
 	    else{
-		for(Iterator second_it=org_hist.getValues(org_first).iterator();
-		    second_it.hasNext(); )
+		for(Object org_secondO : org_hist.getValues(org_first))
 		    {
-			MethodHole org_second = (MethodHole) second_it.next();
+			MethodHole org_second = (MethodHole) org_secondO;
 			MethodHole new_second = (MethodHole) conversion.get(org_second);
 			if (new_second==null){
 			    System.err.println("joinHistories (2): No conversion for " 
@@ -240,12 +239,11 @@ public class ODInformation {
 	LightRelation new_locks = new LightRelation();
 	Relation org_locks = odi.locks; 
 	
-	for(Iterator sync_it=org_locks.keys().iterator(); sync_it.hasNext(); ){
-	    PASync sync = (PASync) sync_it.next();
-	    for(Iterator mh_it=org_locks.getValues(sync).iterator();
-		mh_it.hasNext(); )
+	for(Object syncO : org_locks.keys()){
+	    PASync sync = (PASync) syncO;
+	    for(Object org_mhO : org_locks.getValues(sync))
 		{
-		    MethodHole org_mh = (MethodHole) mh_it.next();
+		    MethodHole org_mh = (MethodHole) org_mhO;
 		    if (org_mh==null) {
 			System.err.println("Null MethodHole in joinLocks...");
 			System.out.println("Null MethodHole in joinLocks...");
@@ -391,8 +389,8 @@ public class ODInformation {
 	    }
 
 	    // Removing mh from the locks field...
-	    for(Iterator it=locks.keys().iterator(); it.hasNext(); ){
-		PASync syncro = (PASync) it.next();
+	    for(Object syncroO : locks.keys()){
+		PASync syncro = (PASync) syncroO;
 		locks.remove(syncro, mh);
 	    }
 	}
@@ -466,10 +464,10 @@ public class ODInformation {
     {
 	if (!precise) return;
 	
-	for(Iterator it1=nodes1.iterator(); it1.hasNext(); ){
-	    PANode n1 = (PANode) it1.next();
-	    for(Iterator it2=nodes2.iterator(); it2.hasNext(); ){
-		PANode n2 = (PANode) it2.next();
+	for(Object n1O : nodes1){
+	    PANode n1 = (PANode) n1O;
+	    for(Object n2O : nodes2){
+		PANode n2 = (PANode) n2O;
 		inAlways.add(n1, f, n2, skippedCS);
 	    }
 	}
@@ -724,8 +722,8 @@ public class ODInformation {
     {
 	MethodHole new_mh;
 
-	for(Iterator it=holes.iterator(); it.hasNext(); ){
-	    MethodHole mh = (MethodHole) it.next();
+	for(Object mhO : holes){
+	    MethodHole mh = (MethodHole) mhO;
 	    int mh_id = mh.IsInAs(map, mapsize);
 	    if (mh_id<0){
 		new_mh=projection(mu,mh);
@@ -761,8 +759,8 @@ public class ODInformation {
 	    mapsize++;
 	}
 
-	for(Iterator it=holes.iterator(); it.hasNext(); ){
-	    MethodHole mh1 = (MethodHole) it.next();
+	for(Object mh1O : holes){
+	    MethodHole mh1 = (MethodHole) mh1O;
 	    int id = mh1.IsInAs(map, mapsize);
 	    if (id<0){
 		new_mh=projection(mu,mh1,depth,hole.callsitehistory());
@@ -791,8 +789,8 @@ public class ODInformation {
 	Set [] new_params = new Set[org_params.length];
 	for(int i = 0; i< org_params.length; i++){
 	    new_params[i] = new HashSet();
-	    for(Iterator j=org_params[i].iterator(); j.hasNext(); ){
-		PANode n = (PANode) j.next();
+	    for(Object nO : org_params[i]){
+		PANode n = (PANode) nO;
 		Set nodes = mu.getValues(n);
 		new_params[i].addAll(nodes);
 	    }
@@ -816,14 +814,13 @@ public class ODInformation {
 	if(hole==null)
 	    new_odi.skippedCSHistory = (Relation) caller_hist.clone();
 	else{
-	    for(Iterator it=caller_hist.keys().iterator(); it.hasNext(); ){
-		MethodHole mh = (MethodHole) it.next();
+	    for(Object mhO : caller_hist.keys()){
+		MethodHole mh = (MethodHole) mhO;
 
 		if (mh!=hole) {
 		    HashSet holes = new HashSet();
-		    for(Iterator h_it=caller_hist.getValues(mh).iterator(); 
-			h_it.hasNext(); ){
-			MethodHole mh_2 = (MethodHole) h_it.next();
+		    for(Object mh_2O : caller_hist.getValues(mh)){
+			MethodHole mh_2 = (MethodHole) mh_2O;
 
 			if (mh_2!=hole) {
 			    holes.add(map[mh_2.Id()]);
@@ -837,8 +834,8 @@ public class ODInformation {
 		}
 		else {
 		    HashSet holes = new HashSet();
-		    for(Iterator h_it=caller_hist.getValues(mh).iterator();h_it.hasNext(); ){
-			MethodHole mh_2 = (MethodHole) h_it.next();
+		    for(Object mh_2O : caller_hist.getValues(mh)){
+			MethodHole mh_2 = (MethodHole) mh_2O;
 			
 			if (mh_2!=hole) 
 			    holes.add(map[mh_2.Id()]);
@@ -858,13 +855,12 @@ public class ODInformation {
 	    }
 	}
 	
-	for(Iterator it=callee_hist.keys().iterator(); it.hasNext(); ){
-	    MethodHole mh = (MethodHole) it.next();
+	for(Object mhO : callee_hist.keys()){
+	    MethodHole mh = (MethodHole) mhO;
 	    HashSet holes = new HashSet();
 
-	    for(Iterator h_it=callee_hist.getValues(mh).iterator(); 
-		h_it.hasNext(); ){
-		MethodHole mh_2 = (MethodHole) h_it.next();
+	    for(Object mh_2O : callee_hist.getValues(mh)){
+		MethodHole mh_2 = (MethodHole) mh_2O;
 		holes.add(map[mh_2.Id()]);
 	    }
 	    new_odi.skippedCSHistory.addAll(map[mh.Id()], holes);
@@ -886,8 +882,8 @@ public class ODInformation {
 	if(hole==null)
 	    new_odi.skippedCSHistory = (Relation) caller_hist.clone();
 	else{
-	    for(Iterator it=caller_hist.keys().iterator(); it.hasNext(); ){
-		MethodHole mh = (MethodHole) it.next();
+	    for(Object mhO : caller_hist.keys()){
+		MethodHole mh = (MethodHole) mhO;
 
 		if (mh!=hole) {
 		    id1 = mh.Id(); 
@@ -900,9 +896,8 @@ public class ODInformation {
 			System.out.println(" in " + map);
 		    }
 		    new_mh = map[id1];
-		    for(Iterator h_it=caller_hist.getValues(mh).iterator(); 
-			h_it.hasNext(); ){
-			MethodHole mh_2 = (MethodHole) h_it.next();
+		    for(Object mh_2O : caller_hist.getValues(mh)){
+			MethodHole mh_2 = (MethodHole) mh_2O;
 
 			if (mh_2!=hole) {
 			    id2 = mh_2.Id();
@@ -923,8 +918,8 @@ public class ODInformation {
 		    }
 		}
 		else {
-		    for(Iterator h_it=caller_hist.getValues(mh).iterator();h_it.hasNext(); ){
-			MethodHole mh_2 = (MethodHole) h_it.next();
+		    for(Object mh_2O : caller_hist.getValues(mh)){
+			MethodHole mh_2 = (MethodHole) mh_2O;
 			
 			if (mh_2!=hole) {
 			    id2 = mh_2.Id();
@@ -954,8 +949,8 @@ public class ODInformation {
 	    }
 	}
 	
-	for(Iterator it=callee_hist.keys().iterator(); it.hasNext(); ){
-	    MethodHole mh = (MethodHole) it.next();
+	for(Object mhO : callee_hist.keys()){
+	    MethodHole mh = (MethodHole) mhO;
 	    id1 = mh.Id(); 
 	    if (id1<0){
 		System.err.println("Error in update (4), no available " 
@@ -966,9 +961,8 @@ public class ODInformation {
 	    }
 	    new_mh = map[mh.Id()];
 
-	    for(Iterator h_it=callee_hist.getValues(mh).iterator(); 
-		h_it.hasNext(); ){
-		MethodHole mh_2 = (MethodHole) h_it.next();
+	    for(Object mh_2O : callee_hist.getValues(mh)){
+		MethodHole mh_2 = (MethodHole) mh_2O;
 		id2 = mh_2.Id(); 
 		if (id2<0){
 		    System.err.println("Error in update (5), no available " 
@@ -991,23 +985,23 @@ public class ODInformation {
 		       MethodHole m_hole,
 		       Set toberemoved)
     {
-	for(Iterator in_n=edges_org.edges.keySet().iterator(); in_n.hasNext(); ){
-	    PANode n1 = (PANode) in_n.next();
+	for(Object n1O : edges_org.edges.keySet()){
+	    PANode n1 = (PANode) n1O;
 	    if (toberemoved.contains(n1)) {System.out.println("Useful toberemoved"); continue;}
 	    Map n1_map = (Map) edges_org.edges.get(n1);
 
-	    for(Iterator it_f=n1_map.keySet().iterator(); it_f.hasNext(); ){
-		String f = (String) it_f.next();
+	    for(Object fO : n1_map.keySet()){
+		String f = (String) fO;
 		Relation n1_f = (Relation) n1_map.get(f);
 
-		for(Iterator out_n=n1_f.keys().iterator(); out_n.hasNext(); ){
-		    PANode n2 = (PANode) out_n.next();
+		for(Object n2O : n1_f.keys()){
+		    PANode n2 = (PANode) n2O;
 		    if (toberemoved.contains(n2)) {System.out.println("Useful toberemoved"); continue;}
 		    Set holes = n1_f.getValues(n2);
 		    HashSet newholes = new HashSet();
 
-		    for(Iterator it_mh=holes.iterator(); it_mh.hasNext(); ){
-			MethodHole tmp_mh = (MethodHole) it_mh.next();
+		    for(Object tmp_mhO : holes){
+			MethodHole tmp_mh = (MethodHole) tmp_mhO;
 			if (tmp_mh==m_hole){
 			    newholes.addAll(mh_from_callee_new);
 			}
@@ -1028,23 +1022,23 @@ public class ODInformation {
 		       MethodHole m_hole,
 		       Set toberemoved)
     {
-	for(Iterator in_n=edges_org.edges.keySet().iterator(); in_n.hasNext(); ){
-	    PANode n1 = (PANode) in_n.next();
+	for(Object n1O : edges_org.edges.keySet()){
+	    PANode n1 = (PANode) n1O;
 	    if (toberemoved.contains(n1)) {System.out.println("Useful toberemoved"); continue;}
 	    Map n1_map = (Map) edges_org.edges.get(n1);
 
-	    for(Iterator it_f=n1_map.keySet().iterator(); it_f.hasNext(); ){
-		String f = (String) it_f.next();
+	    for(Object fO : n1_map.keySet()){
+		String f = (String) fO;
 		Relation n1_f = (Relation) n1_map.get(f);
 
-		for(Iterator out_n=n1_f.keys().iterator(); out_n.hasNext(); ){
-		    PANode n2 = (PANode) out_n.next();
+		for(Object n2O : n1_f.keys()){
+		    PANode n2 = (PANode) n2O;
 		    if (toberemoved.contains(n2)) {System.out.println("Useful toberemoved"); continue;}
 		    Set holes = n1_f.getValues(n2);
 		    HashSet newholes = new HashSet();
 
-		    for(Iterator it_mh=holes.iterator(); it_mh.hasNext(); ){
-			MethodHole tmp_mh = (MethodHole) it_mh.next();
+		    for(Object tmp_mhO : holes){
+			MethodHole tmp_mh = (MethodHole) tmp_mhO;
 			if (tmp_mh==m_hole){
 			    newholes.addAll(mh_from_callee_new);
 			}
@@ -1075,24 +1069,24 @@ public class ODInformation {
 				      MethodHole hole,
 				      Set toberemoved)
     {
-	for(Iterator in_n=addenda.edges.keySet().iterator(); in_n.hasNext(); ){
-	    PANode n1 = (PANode) in_n.next();
+	for(Object n1O : addenda.edges.keySet()){
+	    PANode n1 = (PANode) n1O;
 	    if (toberemoved.contains(n1)) continue;
 	    Map n1_map = (Map) addenda.edges.get(n1);
 	    
-	    for(Iterator it_f=n1_map.keySet().iterator(); it_f.hasNext(); ){
-		String f = (String) it_f.next(); 
+	    for(Object fO : n1_map.keySet()){
+		String f = (String) fO; 
 		Relation n1_f = (Relation) n1_map.get(f);
-		for(Iterator out_n=n1_f.keys().iterator(); out_n.hasNext(); ){
-		    PANode n2 = (PANode) out_n.next();
+		for(Object n2O : n1_f.keys()){
+		    PANode n2 = (PANode) n2O;
 		    if (toberemoved.contains(n2)) continue;
 		    Set holes = n1_f.getValues(n2);
 		    // We are not converting the hole we are removing...
 		    holes.remove(hole);
 		    HashSet new_holes = new HashSet();
 		    
-		    for(Iterator it_mh=holes.iterator(); it_mh.hasNext(); ){
-			MethodHole org_mh = (MethodHole)it_mh.next();
+		    for(Object org_mhO : holes){
+			MethodHole org_mh = (MethodHole) org_mhO;
 			new_holes.add(map[org_mh.Id()]);
 		    }
 		    edges.add(n1, f, n2, new_holes);
@@ -1108,24 +1102,24 @@ public class ODInformation {
 				      MethodHole hole,
 				      Set toberemoved)
     {
-	for(Iterator in_n=addenda.edges.keySet().iterator(); in_n.hasNext(); ){
-	    PANode n1 = (PANode) in_n.next();
+	for(Object n1O : addenda.edges.keySet()){
+	    PANode n1 = (PANode) n1O;
 	    if (toberemoved.contains(n1)) continue;
 	    Map n1_map = (Map) addenda.edges.get(n1);
 	    
-	    for(Iterator it_f=n1_map.keySet().iterator(); it_f.hasNext(); ){
-		String f = (String) it_f.next(); 
+	    for(Object fO : n1_map.keySet()){
+		String f = (String) fO; 
 		Relation n1_f = (Relation) n1_map.get(f);
-		for(Iterator out_n=n1_f.keys().iterator(); out_n.hasNext(); ){
-		    PANode n2 = (PANode) out_n.next();
+		for(Object n2O : n1_f.keys()){
+		    PANode n2 = (PANode) n2O;
 		    if (toberemoved.contains(n2)) continue;
 		    Set holes = n1_f.getValues(n2);
 		    // We are not converting the hole we are removing...
 		    holes.remove(hole);
 		    HashSet new_holes = new HashSet();
 
-		    for(Iterator it_mh=holes.iterator(); it_mh.hasNext(); ){
-			MethodHole org_mh = (MethodHole)it_mh.next();
+		    for(Object org_mhO : holes){
+			MethodHole org_mh = (MethodHole) org_mhO;
 			if (org_mh.Id()<0){
 			    System.err.println("BUG: no conversion available");
 			    System.out.println("BUG: no conversion available");
@@ -1176,15 +1170,15 @@ public class ODInformation {
 // 		}
 // 	}
 
-	    for(Iterator it=odi_org.locks.keys().iterator(); it.hasNext(); ){
-		PASync syncro = (PASync) it.next();
+	    for(Object syncroO : odi_org.locks.keys()){
+		PASync syncro = (PASync) syncroO;
 		Set mapped_syncro = syncro.project(second_mapping);
 		boolean parallel  = false;
 		
 		Set par_holes = odi_org.locks.getValues(syncro);
 		HashSet new_par_holes = new HashSet();
-		for(Iterator h_it=par_holes.iterator(); h_it.hasNext(); ){
-		    MethodHole mh = (MethodHole) h_it.next();
+		for(Object mhO : par_holes){
+		    MethodHole mh = (MethodHole) mhO;
 		    if (mh==hole){
 			new_par_holes.addAll(hole_substitute);
 			parallel = true;
@@ -1223,8 +1217,8 @@ public class ODInformation {
 	
 	Set holes_b4_callee = odi_org.predecessors(hole);
     HashSet new_holes_b4_callee = new HashSet();
-	for(Iterator it=holes_b4_callee.iterator(); it.hasNext(); ){
-	    MethodHole temp_mh = (MethodHole) it.next();
+	for(Object temp_mhO : holes_b4_callee){
+	    MethodHole temp_mh = (MethodHole) temp_mhO;
 	    if(temp_mh.Id()<0){
 		System.err.println("No conversion available in update_locks");
 		System.out.println("No conversion available in update_locks");
@@ -1232,15 +1226,15 @@ public class ODInformation {
 	    new_holes_b4_callee.add(mh_converter[temp_mh.Id()]);
 	}
 	// Update and add the callee locks
-	for(Iterator it=odi_callee.locks.keys().iterator(); it.hasNext(); ){
-	    PASync syncro = (PASync) it.next();
+	for(Object syncroO : odi_callee.locks.keys()){
+	    PASync syncro = (PASync) syncroO;
 	    Set mapped_syncro = syncro.project(first_mapping);
 	    
 	    Set par_holes = odi_callee.locks.getValues(syncro);
 	    HashSet new_par_holes = new HashSet();
 	    new_par_holes.addAll(new_holes_b4_callee);
-	    for(Iterator h_it=par_holes.iterator(); h_it.hasNext(); ){
-		MethodHole temp_mh = (MethodHole) h_it.next();
+	    for(Object temp_mhO : par_holes){
+		MethodHole temp_mh = (MethodHole) temp_mhO;
 		if(temp_mh.Id()<0){
 		    System.err.println("No conversion available in update_locks (2)");
 		    System.out.println("No conversion available in update_locks (2)");

@@ -90,7 +90,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.12 2004-02-08 01:54:21 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.13 2004-02-08 03:20:25 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -273,8 +273,7 @@ public class SyncTransformer
 	if (noFieldModification) this.bfn = null;
 	else {
 	  this.bfn = new BitFieldNumbering(l);
-	  for (Iterator<HClass> it=ch.classes().iterator(); it.hasNext(); ) {
-	    HClass hc = it.next();
+	  for (HClass hc : ch.classes()) {
 	    if (hc.isArray()) bfn.arrayBitField(hc);
 	  }
 	}
@@ -296,8 +295,7 @@ public class SyncTransformer
 	    }
 	});
 	// lookup WITH_TRANSACTION version of the transaction root methods
-	for (Iterator<HMethod> it=transRoots.iterator(); it.hasNext(); ) {
-	    HMethod hm = it.next();
+	for (HMethod hm : transRoots) {
 	    this.transRoots.add(select(hm, WITH_TRANSACTION));
 	}
     }
@@ -489,9 +487,7 @@ public class SyncTransformer
 	}
 	/** Fix up PHIs leading to abort handler after we're all done. */
 	void fixup() {
-	    for(Iterator<Map.Entry<PHI,List<THROW>>> it =
-		    fixupmap.entrySet().iterator(); it.hasNext(); ) {
-		Map.Entry<PHI,List<THROW>> me = it.next();
+	    for(Map.Entry<PHI,List<THROW>> me : fixupmap.entrySet()) {
 		PHI phi = me.getKey();
 		List<THROW> throwlist = me.getValue();
 		PHI nphi = new PHI(qf, phi, new Temp[0], throwlist.size());
@@ -1137,9 +1133,7 @@ public class SyncTransformer
 		}
 	    }
 	    // do field-read checks...
-	    for (Iterator<CheckOracle.RefAndField> it =
-		     co.checkFieldReads(q).iterator(); it.hasNext();) {
-		CheckOracle.RefAndField raf = it.next();
+	    for (CheckOracle.RefAndField raf : co.checkFieldReads(q)) {
 		// skip check for fields unaccessed outside a sync context.
 		if (!fo.isUnsyncRead(raf.field) &&
 		    !fo.isUnsyncWrite(raf.field)) {
@@ -1190,9 +1184,7 @@ public class SyncTransformer
 		*/
 	    }
 	    // do field-write checks...
-	    for (Iterator<CheckOracle.RefAndField> it =
-		     co.checkFieldWrites(q).iterator(); it.hasNext();) {
-		CheckOracle.RefAndField raf = it.next();
+	    for (CheckOracle.RefAndField raf : co.checkFieldWrites(q)) {
 		// skip check for fields unaccessed outside a sync context.
 		if (!fo.isUnsyncRead(raf.field) &&
 		    !fo.isUnsyncWrite(raf.field)) {

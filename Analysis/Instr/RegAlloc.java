@@ -83,7 +83,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.8 2004-02-08 01:52:07 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.9 2004-02-08 03:19:37 cananian Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -592,9 +592,8 @@ public abstract class RegAlloc  {
     }
 
     protected boolean allRegs(Collection c) {
-	Iterator temps = c.iterator();
-	while(temps.hasNext()) {
-	    Temp t = (Temp) temps.next();
+	for (Object tO : c) {
+	    Temp t = (Temp) tO;
 	    if (!isRegister(t)) {
 		return false;
 	    }
@@ -618,9 +617,8 @@ public abstract class RegAlloc  {
 	// memory references per InstrMEM...
 	class InstrReplacer extends InstrVisitor {
 	    private boolean allRegs(Collection c) {
-		Iterator temps = c.iterator();
-		while(temps.hasNext()) {
-		    Temp t = (Temp) temps.next();
+		for (Object tO : c) {
+		    Temp t = (Temp) tO;
 		    if (!frame.getRegFileInfo().isRegister(t)) {
 			return false;
 		    }
@@ -802,9 +800,8 @@ public abstract class RegAlloc  {
 
 	    public void visit(Instr i) {
 		// lookup CommonLocs for defs in 'i'
-		Iterator defs = i.defC().iterator();
-		while(defs.hasNext()) {
-		    Temp def = (Temp) defs.next();
+		for (Object defO : i.defC()) {
+		    Temp def = (Temp) defO;
 		    List dxi = Default.pair(def, i);
 		    if (isRegister(def)) {
 			tempXinstrToCommonLoc.add(dxi, def);
@@ -882,9 +879,8 @@ public abstract class RegAlloc  {
 	     <code>Temp</code>s, returns true.  Else returns false.
     */
     protected boolean hasRegister(Collection c) { 
-	Iterator temps = c.iterator();
-	while(temps.hasNext()) {
-	    Temp t = (Temp) temps.next();
+	for (Object tO : c) {
+	    Temp t = (Temp) tO;
 	    if (isRegister(t)) {
 		return true;
 	    }
@@ -996,9 +992,8 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 
 	
 	void foundLoad(RegAlloc.SpillLoad instr) {
-	    Iterator uses = instr.useC().iterator();
-	    while(uses.hasNext()) {
-		Temp t = (Temp) uses.next();
+	    for (Object tO : instr.useC()) {
+		Temp t = (Temp) tO;
 
 		assert t != null : "No nulls for Temps";
 		
@@ -1015,9 +1010,8 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	}
 		
 	void foundStore(RegAlloc.SpillStore instr) {
-	    Iterator defs = instr.defC().iterator();
-	    while(defs.hasNext()) {
-		Temp t = (Temp) defs.next();
+	    for (Object tO : instr.defC()) {
+		Temp t = (Temp) tO;
 
 		assert t != null : "No nulls for Temps";
 		
@@ -1089,9 +1083,8 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 
 	WebInfo webInfo = (WebInfo) bbInfoMap.get(b);
 	
-	Iterator inEntries = webInfo.in.entrySet().iterator();
-	while(inEntries.hasNext()) {
-	    Map.Entry entry = (Map.Entry) inEntries.next();
+	for (Object entryO : webInfo.in.entrySet()) {
+	    Map.Entry entry = (Map.Entry) entryO;
 	    Temp t = (Temp) entry.getKey();
 	    Web web = (Web) entry.getValue();
 	    Iterator instrs = webInfo.use.getValues(t).iterator();
@@ -1106,9 +1099,8 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    webInfo.out.put(t, web);
 	}
 	
-	Iterator defKeys = webInfo.def.keySet().iterator();
-	while(defKeys.hasNext()) {
-	    Temp t = (Temp) defKeys.next();
+	for (Object tO : webInfo.def.keySet()) {
+	    Temp t = (Temp) tO;
 	    Set instrs = (Set) webInfo.def.getValues(t);
 
 	    Web web = new Web(t, instrs);

@@ -53,7 +53,7 @@ import java.util.Set;
  * This pass is invoked in <code>harpoon.Main.SAMain</code>.
  *
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: MakeGCThreadSafe.java,v 1.5 2003-03-11 18:46:55 cananian Exp $
+ * @version $Id: MakeGCThreadSafe.java,v 1.6 2004-02-08 03:20:42 cananian Exp $
  */
 public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
     // hide constructor
@@ -102,9 +102,7 @@ public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
 	while(!worklist.isEmpty()) {
 	    Tree curr = worklist.pull();
 	    reachable.add(curr);
-	    for(Iterator<HCodeEdge<Tree>> it = cfgr.succC(curr).iterator();
-		it.hasNext(); ) {
-		HCodeEdge<Tree> succ = it.next();
+	    for(HCodeEdge<Tree> succ : cfgr.succC(curr)) {
 		if (!reachable.contains(succ.to()))
 		    worklist.push(succ.to());
 	    }

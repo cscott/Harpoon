@@ -21,7 +21,7 @@ import java.util.Set;
  * standard <code>ReachingDefsImpl</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSxReachingDefsImpl.java,v 1.5 2004-02-08 01:49:03 cananian Exp $
+ * @version $Id: SSxReachingDefsImpl.java,v 1.6 2004-02-08 03:19:12 cananian Exp $
  */
 public class SSxReachingDefsImpl<HCE extends HCodeElement>
     extends ReachingDefs<HCE> {
@@ -37,8 +37,7 @@ public class SSxReachingDefsImpl<HCE extends HCodeElement>
 	super(hc);
 	for (Iterator<HCE> it = hc.getElementsI(); it.hasNext(); ) {
 	    HCE hce = (HCE) it.next();
-	    for (Iterator<Temp> it2=ud.defC(hce).iterator(); it2.hasNext(); ) {
-		Temp t = it2.next();
+	    for (Temp t : ud.defC(hce)) {
 		assert !m.containsKey(t) : "not in SSA/SSI form!";
 		m.put(t, hce);
 	    }

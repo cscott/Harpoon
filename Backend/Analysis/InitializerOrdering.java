@@ -28,7 +28,7 @@ import java.util.Set;
  * in that case.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerOrdering.java,v 1.5 2004-02-08 01:57:24 cananian Exp $
+ * @version $Id: InitializerOrdering.java,v 1.6 2004-02-08 03:20:42 cananian Exp $
  */
 public class InitializerOrdering {
     public final List sorted;
@@ -36,8 +36,8 @@ public class InitializerOrdering {
     public InitializerOrdering(ClassHierarchy ch, CallGraph cg) {
 	List _sorted = new ArrayList();
 	Set touched = new HashSet(), added = new HashSet();
-        for (Iterator it=ch.classes().iterator(); it.hasNext(); ) {
-	    HClass hc = (HClass) it.next();
+        for (Object hcO : ch.classes()) {
+	    HClass hc = (HClass) hcO;
 	    if (!added.contains(hc))
 		examineClass(ch, cg, hc, touched, added, _sorted);
 	}

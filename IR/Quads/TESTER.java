@@ -12,7 +12,7 @@ import java.util.Set;
  * aren't reachable in the code.  For debugging purposes.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: TESTER.java,v 1.3 2004-02-08 01:55:25 cananian Exp $
+ * @version $Id: TESTER.java,v 1.4 2004-02-08 03:21:24 cananian Exp $
  */
 class TESTER {
     
@@ -26,16 +26,14 @@ class TESTER {
 	for(int i=1;i<m.arity();i++) {
 	    HANDLER hand=(HANDLER)m.next(i);
 	    Set s=hand.protectedSet();
-	    Iterator si=s.iterator();
-	    while(si.hasNext()) {
-		Quad q=(Quad)si.next();
+	    for (Object qO : s) {
+		Quad q = (Quad) qO;
 		if(!ws.contains(q))
 		    System.out.println("Found "+q+" in handler "+h+" edge "+i+ " that isn't reachable");
 	    }
 	}
-	Iterator itw=ws.iterator();
-	while(itw.hasNext()) {
-	    Quad q=(Quad)itw.next();
+	for (Object qO : ws) {
+	    Quad q = (Quad) qO;
 	    Edge[] next=q.nextEdge();
 	    for(int i=0;i<next.length;i++) {
 		if (next[i].from!=q)

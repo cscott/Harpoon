@@ -83,7 +83,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.16 2004-02-08 01:53:07 cananian Exp $
+ * @version $Id: PointerAnalysis.java,v 1.17 2004-02-08 03:20:03 cananian Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -1029,8 +1029,8 @@ public class PointerAnalysis implements java.io.Serializable {
 	    // create a new load node iff this set is non-empty
 	    Set set_E = new LinearSet();
 
-	    for(Iterator it = set_aux.iterator(); it.hasNext(); ) {
-		PANode node = (PANode) it.next();
+	    for(Object nodeO : set_aux) {
+		PANode node = (PANode) nodeO;
 
 		if((IGNORE_LOADS_FROM_NATIVES &&
 		    ((node.type == PANode.EXCEPT) ||
@@ -1188,9 +1188,8 @@ public class PointerAnalysis implements java.io.Serializable {
 
 	private void process_static_store(HField hf, Temp l2) {
 	    if(TOPLAS_PAPER) {
-		for(Iterator it = lbbpig.G.I.pointedNodes(l2).iterator();
-		    it.hasNext(); ) {
-		    PANode node = (PANode) it.next();
+		for(Object nodeO : lbbpig.G.I.pointedNodes(l2)) {
+		    PANode node = (PANode) nodeO;
 		    lbbpig.G.e.addNodeHole(node,
 					   NodeRepository.LOST_SUMMARY);
 		}
@@ -1242,9 +1241,8 @@ public class PointerAnalysis implements java.io.Serializable {
 	    Set set = lbbpig.G.I.pointedNodes(l);
 	    lbbpig.tau.incAll(set);
 	    
-	    Iterator it_nt = set.iterator();
-	    while(it_nt.hasNext()){
-		PANode nt = (PANode) it_nt.next();
+	    for (Object ntO : set){
+		PANode nt = (PANode) ntO;
 		lbbpig.G.e.addNodeHole(nt,nt);
 		lbbpig.G.propagate(Collections.singleton(nt));
 	    }
@@ -1300,9 +1298,8 @@ public class PointerAnalysis implements java.io.Serializable {
 	// Does the real processing for acquire/release statements.
 	private void process_acquire_release(Quad q, Temp l){
 	    Set active_threads = lbbpig.tau.activeThreadSet();
-	    Iterator it_nodes = lbbpig.G.I.pointedNodes(l).iterator();
-	    while(it_nodes.hasNext()) {
-		PANode node = (PANode) it_nodes.next();
+	    for (Object nodeO : lbbpig.G.I.pointedNodes(l)) {
+		PANode node = (PANode) nodeO;
 		PASync sync = new PASync(node,ActionRepository.THIS_THREAD, q);
 		lbbpig.ar.add_sync(sync, active_threads);
 	    }
@@ -1729,8 +1726,8 @@ public class PointerAnalysis implements java.io.Serializable {
 
     private Collection typeFilter(Set nodes, HClass hclass) {
 	List result = new LinkedList();
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    if(node.type != PANode.INSIDE) {
 		result.add(node);
 		continue;
@@ -1828,8 +1825,8 @@ public class PointerAnalysis implements java.io.Serializable {
 
     static Set/*<PANode>*/ selectNodesWithField(Set nodes, String f) {
 	Set result = new LinearSet();
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    if(hasField(node, f))
 		result.add(node);
 	}
@@ -1888,8 +1885,8 @@ public class PointerAnalysis implements java.io.Serializable {
 		if(gt.getHClass().getName().equals("java.lang.Object"))
 		    return true;
 		Set/*<HClass>*/ allClasses = getAllConcreteClasses(gt);
-		for(Iterator it = allClasses.iterator(); it.hasNext(); ) {
-		    HClass hclass = (HClass) it.next();
+		for(Object hclassO : allClasses) {
+		    HClass hclass = (HClass) hclassO;
 		    if(classHasField(hclass, f))
 			return true;
 		}
@@ -2024,8 +2021,8 @@ public class PointerAnalysis implements java.io.Serializable {
     static Set/*<PANode>*/ selectArraysOfObjs(Set/*<PANode>*/ nodes) {
 	Set result = new HashSet();
 
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    if(isArrayOfObjs(node))
 		result.add(node);
 	}

@@ -37,7 +37,7 @@ import java.util.Set;
  * field and method signatures.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFWidenType.java,v 1.8 2004-02-08 01:53:55 cananian Exp $
+ * @version $Id: MZFWidenType.java,v 1.9 2004-02-08 03:20:22 cananian Exp $
  */
 class MZFWidenType extends MethodMutator<Quad> {
     /** the linker to use */
@@ -61,9 +61,7 @@ class MZFWidenType extends MethodMutator<Quad> {
 	// widen parameter and return types of all callable methods.
 	// (also, of all interfaces which these callable methods implement,
 	//  and all superclass methods which these callable methods override)
-	for (Iterator<HMethod> it=allMethods(allClasses).iterator();
-	     it.hasNext(); ) {
-	    HMethod hm = it.next();
+	for (HMethod hm : allMethods(allClasses)) {
 	    hm.getMutator().setReturnType(widen(hm.getReturnType()));
 	    HClass[] paramTypes = hm.getParameterTypes();
 	    for (int i=0; i<paramTypes.length; i++)
@@ -71,8 +69,7 @@ class MZFWidenType extends MethodMutator<Quad> {
 		    hm.getMutator().setParameterType(i, widen(paramTypes[i]));
 	}
 	// widen types of all fields
-	for (Iterator<HClass> it=allClasses.iterator(); it.hasNext(); ) {
-	    HClass hc = it.next();
+	for (HClass hc : allClasses) {
 	    HField[] hfa = hc.getDeclaredFields();
 	    for (int i=0; i<hfa.length; i++)
 		if (widen(hfa[i].getType())!=hfa[i].getType())
@@ -81,8 +78,7 @@ class MZFWidenType extends MethodMutator<Quad> {
     }
     private Set<HMethod> allMethods(Set<HClass> allClasses) {
 	Set<HMethod> result = new HashSet<HMethod>();
-	for (Iterator<HClass> it=allClasses.iterator(); it.hasNext(); ) {
-	    HClass hc = it.next();
+	for (HClass hc : allClasses) {
 	    result.addAll(Arrays.asList(hc.getMethods()));
 	}
 	return result;

@@ -34,7 +34,7 @@ import net.cscott.jutil.UnmodifiableIterator;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.16 2004-02-08 01:58:03 cananian Exp $
+ * @version $Id: Loader.java,v 1.17 2004-02-08 03:21:10 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -173,8 +173,8 @@ public abstract class Loader {
    * @param name The filename of the resource to locate.
    */
   public static InputStream getResourceAsStream(String name) {
-    for (Iterator it = classpathList.iterator(); it.hasNext(); ) {
-      ClasspathElement cpe = (ClasspathElement) it.next();
+    for (Object cpeO : classpathList) {
+      ClasspathElement cpe = (ClasspathElement) cpeO;
       InputStream is = cpe.getResourceAsStream(name);
       if (is!=null) {
 	//System.err.println("[LOADING "+new File(cpe.toString(),name)+"]");

@@ -17,7 +17,7 @@ import java.util.Set;
  * before they are used.  It aids in debugging code transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDefChecker.java,v 1.2 2002-02-25 20:56:11 cananian Exp $
+ * @version $Id: UseDefChecker.java,v 1.3 2004-02-08 03:19:12 cananian Exp $
  */
 public class UseDefChecker implements HCodeFactory {
     HCodeFactory parent;
@@ -40,8 +40,8 @@ public class UseDefChecker implements HCodeFactory {
 	    ReachingDefs rd = rdf.makeReachingDefs(hc);
 	    for (Iterator it=hc.getElementsI(); it.hasNext(); ) {
 		UseDefable ud = (UseDefable) it.next();
-		for (Iterator it2=ud.useC().iterator(); it2.hasNext(); ) {
-		    Temp t = (Temp) it2.next();
+		for (Object tO : ud.useC()) {
+		    Temp t = (Temp) tO;
 		    if (rd.reachingDefs(ud, t).size()==0) {
 			hc.print(new java.io.PrintWriter(System.err));
 			throw new Error("Use of "+t+" in "+ud+" before def.");

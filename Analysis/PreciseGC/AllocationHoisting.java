@@ -42,7 +42,7 @@ import java.util.Set;
  * <code>AllocationHoisting</code>
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: AllocationHoisting.java,v 1.5 2002-04-10 03:00:52 cananian Exp $
+ * @version $Id: AllocationHoisting.java,v 1.6 2004-02-08 03:20:07 cananian Exp $
  */
 public class AllocationHoisting extends 
     harpoon.Analysis.Transformation.MethodSplitter {
@@ -276,8 +276,8 @@ public class AllocationHoisting extends
      *               not allocate Java-visible objects
      */
     private void setupiMap(String rName) {
-	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    // only consider initializers whose receiver
 	    // is always the most recently allocated object
 	    // on entry to the initializer

@@ -16,7 +16,7 @@ import net.cscott.jutil.LinearSet;
  * <code>LightRelation</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: LightRelation.java,v 1.3 2004-02-08 01:56:57 cananian Exp $
+ * @version $Id: LightRelation.java,v 1.4 2004-02-08 03:21:50 cananian Exp $
  */
 public class LightRelation extends AbstrRelationMapBased
     implements Serializable {
@@ -65,8 +65,8 @@ public class LightRelation extends AbstrRelationMapBased
     public Object clone() {
 	LightRelation newrel = (LightRelation) super.clone();
 	newrel.map = (Map) ((LightMap) map).clone();
-	for(Iterator it = newrel.map.entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry entry = (Map.Entry) it.next();
+	for(Object entryO : newrel.map.entrySet()) {
+	    Map.Entry entry = (Map.Entry) entryO;
 	    LinearSet newvals = 
 		(LinearSet) ((LinearSet) entry.getValue()).clone();
 	    entry.setValue(newvals);

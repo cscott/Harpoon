@@ -27,7 +27,7 @@ import harpoon.Util.DataStructs.Relation;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.8 2004-02-08 01:53:07 cananian Exp $
+ * @version $Id: PointsToGraph.java,v 1.9 2004-02-08 03:20:03 cananian Exp $
  */
 public class PointsToGraph implements Cloneable, java.io.Serializable{
 
@@ -269,8 +269,8 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 		// appear in the formalism; try without it
 		if(!mu.contains(node2, node2)) return;
 		Set mu_node1 = mu.getValues(node1);
-		for(Iterator it = mu_node1.iterator(); it.hasNext(); ) {
-		    PANode node1_img = (PANode) it.next();
+		for(Object node1_imgO : mu_node1) {
+		    PANode node1_img = (PANode) node1_imgO;
 		    if(PointerAnalysis.CONSIDER_TYPES &&
 		       !PointerAnalysis.hasField(node1_img, f)) continue;
 		    if(O.addEdge(node1_img, f, node2) && (ppgRoots != null))
@@ -290,8 +290,8 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 	    public void visit(PANode node1, String f, PANode node2) {
 		Set mu_node1 = mu.getValues(node1);
 		Set mu_node2 = mu.getValues(node2);
-		for(Iterator it = mu_node1.iterator(); it.hasNext(); ) {
-		    PANode node1_img = (PANode) it.next();
+		for(Object node1_imgO : mu_node1) {
+		    PANode node1_img = (PANode) node1_imgO;
 		    if(PointerAnalysis.CONSIDER_TYPES &&
 		       !PointerAnalysis.hasField(node1_img, f)) continue;
 		    if(I.addEdges(node1_img, f, mu_node2) && 
@@ -430,9 +430,8 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
     // dest. Forall node in source, addAll mu(node) to dest. source
     // and dest should both be sets of PANodes.
     private void insert_set(Set source, Relation mu, Set dest){
-	Iterator it = source.iterator();
-	while(it.hasNext()){
-	    PANode node = (PANode) it.next();
+	for (Object nodeO : source){
+	    PANode node = (PANode) nodeO;
 	    Set node_image = mu.getValues(node);
 	    dest.addAll(node_image);
 	}
@@ -576,8 +575,8 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
     /** Finds the static nodes that appear as source nodes in the set of
 	edges <code>E</code> and add them to <code>set</code> */
     private void grab_static_roots(PAEdgeSet E, Set set){
-	for(Iterator it = E.allSourceNodes().iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : E.allSourceNodes()) {
+	    PANode node = (PANode) nodeO;
 	    if(node.type == PANode.STATIC)
 		set.add(node);
 	}

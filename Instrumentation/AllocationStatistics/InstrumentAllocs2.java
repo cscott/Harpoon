@@ -55,7 +55,7 @@ import java.util.Map;
     identifier and the length of the memory allocated there.
 
     @author Alexandru Salcianu <salcianu@MIT.EDU>
-    @version $Id: InstrumentAllocs2.java,v 1.5 2004-02-08 01:58:06 cananian Exp $ */
+    @version $Id: InstrumentAllocs2.java,v 1.6 2004-02-08 03:21:32 cananian Exp $ */
 public class InstrumentAllocs2 extends MethodMutator
     implements java.io.Serializable {
     
@@ -127,8 +127,8 @@ public class InstrumentAllocs2 extends MethodMutator
 	    hc.setAllocationInformation(aim);
 	}
 
-	for(Iterator it = hc.selectAllocations().iterator(); it.hasNext(); ) {
-	    Quad alloc = (Quad)it.next();
+	for(Object allocO : hc.selectAllocations()) {
+	    Quad alloc = (Quad) allocO;
 	    final int allocID = an.allocID((Quad) ancestor.get(alloc));
 	    AllocationProperties formerAP = aim.query(alloc);
 	    aim.associate(alloc,

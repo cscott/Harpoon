@@ -74,7 +74,7 @@ import java.util.ArrayList;
  used since it needs to invalidate them on a function return.
  * 
  * @author  Emmett Witchel <witchel@mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.5 2004-02-08 01:54:28 cananian Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.6 2004-02-08 03:20:34 cananian Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -103,16 +103,16 @@ public class DominatingMemoryAccess {
       private void init_inout(Set nodes) {
          this.in  = new HashMap(nodes.size());
          this.out = new HashMap(nodes.size());
-         for(Iterator it = nodes.iterator(); it.hasNext();) {
-            HCodeElement hce = (HCodeElement) it.next();
+         for(Object hceO : nodes) {
+            HCodeElement hce = (HCodeElement) hceO;
             in.put(hce, bsf.makeSet());
             out.put(hce, bsf.makeSet());
          }
       }
       private void initStmMemMaps(final CFGrapher cfgr, final HCode code) {
          // Build the stm <-> MEM maps
-         for(Iterator it = cfgr.getElements(code).iterator(); it.hasNext(); ) {
-            Stm stm = (Stm) it.next();
+         for(Object stmO : cfgr.getElements(code)) {
+            Stm stm = (Stm) stmO;
             assert stm != null;
             doOne(stm, (Tree)stm);
          }
@@ -140,8 +140,8 @@ public class DominatingMemoryAccess {
             if(trace) {
                System.err.println("pass " + pass);
             }
-            for(Iterator it = cfgr.getElements(code).iterator();it.hasNext();) {
-               HCodeElement hce = (HCodeElement) it.next();
+            for(Object hceO : cfgr.getElements(code)) {
+               HCodeElement hce = (HCodeElement) hceO;
                inbs  = bsf.makeSet(out(hce));
                outbs = union_out(cfgr, hce);
                if(def(hce) != null)
@@ -224,8 +224,8 @@ public class DominatingMemoryAccess {
                System.err.print("\n");
             }
          }
-         for(Iterator it = succ.iterator(); it.hasNext(); ) {
-            HCodeElement suck = (HCodeElement)it.next();
+         for(Object suckO : succ) {
+            HCodeElement suck = (HCodeElement) suckO;
             if(trace)
                System.err.println( suck.hashCode()
                                    + " " + in(suck));
@@ -274,16 +274,16 @@ public class DominatingMemoryAccess {
       // All DA variables that are simultaneously live interfere with
       // each other
       private void addInter(Map inter, Set in) {
-         for(Iterator it = in.iterator(); it.hasNext();) {
-            HCodeElement me = (HCodeElement) it.next();
+         for(Object meO : in) {
+            HCodeElement me = (HCodeElement) meO;
             assert defUseMap.containsKey(me);
             Set interset = (Set)inter.get(me);
             if(interset == null) {
                interset = new HashSet();
                inter.put(me, interset);
             }
-            for(Iterator it2 = in.iterator(); it2.hasNext();) {
-               HCodeElement him = (HCodeElement) it2.next();
+            for(Object himO : in) {
+               HCodeElement him = (HCodeElement) himO;
                if(!me.equals(him)) {
                   interset.add(him);
                }
@@ -298,16 +298,16 @@ public class DominatingMemoryAccess {
       // This is an interference graph
       private Map interfereClasses() {
          Map inter = new HashMap(nodes.size()/4);
-         for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-            HCodeElement node = (HCodeElement)it.next();
+         for(Object nodeO : nodes) {
+            HCodeElement node = (HCodeElement) nodeO;
             addInter(inter, live.in(node));
             addInter(inter, live.out(node));
          }
          return inter;
       }
       private void removeEdgesTo(HCodeElement hce, Map interGrph) {
-         for(Iterator it = interGrph.values().iterator(); it.hasNext();) {
-            Set interset = (Set)it.next();
+         for(Object intersetO : interGrph.values()) {
+            Set interset = (Set) intersetO;
             interset.remove(hce);
          }
       }
@@ -323,8 +323,8 @@ public class DominatingMemoryAccess {
          assert defUseMap.containsKey(hce);
          int provides = ((Set)defUseMap.get(hce)).size();
          int prevents = 0;
-         for(Iterator it = interset.iterator(); it.hasNext();) {
-            HCodeElement inter = (HCodeElement)it.next();
+         for(Object interO : interset) {
+            HCodeElement inter = (HCodeElement) interO;
             prevents += ((Set)defUseMap.get(inter)).size();
          }
          return provides - prevents;
@@ -343,8 +343,8 @@ public class DominatingMemoryAccess {
                simpWorked = false;
                // Read-only copy for iteration
                Set nodesRO = new HashSet(nodes);
-               for(Iterator it = nodesRO.iterator();it.hasNext();) {
-                  HCodeElement hce = (HCodeElement)it.next();
+               for(Object hceO : nodesRO) {
+                  HCodeElement hce = (HCodeElement) hceO;
                   Set interset = (Set)interGrph.get(hce);
                   if(interset.size() < maxRegs) {
                      simpWorked = true;
@@ -358,8 +358,8 @@ public class DominatingMemoryAccess {
             // attractive, then restart the simplification process
             int lowest_score = 10000;
             HCodeElement spillme = null;
-            for(Iterator it = nodes.iterator(); it.hasNext();) {
-               HCodeElement hce = (HCodeElement)it.next();
+            for(Object hceO : nodes) {
+               HCodeElement hce = (HCodeElement) hceO;
                Set interset = (Set)interGrph.get(hce);
                if(interset.size() > maxRegs) {
                   done = false;
@@ -398,14 +398,14 @@ public class DominatingMemoryAccess {
             HCodeElement hce = (HCodeElement)interNodes.pop();
             Set interset = (Set)interGrph.get(hce);
             Set takenDA = new HashSet();
-            for(Iterator it = interset.iterator(); it.hasNext();) {
-               HCodeElement inter = (HCodeElement)it.next();
+            for(Object interO : interset) {
+               HCodeElement inter = (HCodeElement) interO;
                if(ref2dareg.containsKey(inter)) {
                   takenDA.add(new Integer(((daNum)ref2dareg.get(inter)).num()));
                }
             }
-            for(Iterator rit = regs.iterator(); rit.hasNext(); ) {
-               Integer danum = (Integer)rit.next();
+            for(Object danumO : regs) {
+               Integer danum = (Integer) danumO;
                // If all the danums are taken, just don't assign this
                // one a da reg.  No spilling.
                if(takenDA.contains(danum) == false) {
@@ -416,9 +416,8 @@ public class DominatingMemoryAccess {
                   daNum useda = new daNum(i, false);
                   usedDANum.add(danum);
                   ref2dareg.put(hce, defda);
-                  for(Iterator it = ((Set)defUseMap.get(hce)).iterator(); 
-                      it.hasNext();) {
-                     HCodeElement use = (HCodeElement) it.next();
+                  for(Object useO : ((Set)defUseMap.get(hce))) {
+                     HCodeElement use = (HCodeElement) useO;
                      assert ref2dareg.containsKey(use) == false;
                      ref2dareg.put(use, useda);
                   }
@@ -526,9 +525,8 @@ public class DominatingMemoryAccess {
                      if(live.in(hce).size() > 0) {
                         notlive = false;
                         pw.print(" LIVE IN { ");
-                        for(Iterator it = live.in(hce).iterator();
-                            it.hasNext();) {
-                           HCodeElement in = (HCodeElement)it.next();
+                        for(Object inO : live.in(hce)) {
+                           HCodeElement in = (HCodeElement) inO;
                            pw.print(in.hashCode() + " ");
                         }
                         pw.print("}");
@@ -536,9 +534,8 @@ public class DominatingMemoryAccess {
                      if(live.out(hce).size() > 0) {
                         notlive = false;
                         pw.print(" LIVE OUT { ");
-                        for(Iterator it = live.out(hce).iterator();
-                            it.hasNext();) {
-                           HCodeElement out = (HCodeElement)it.next();
+                        for(Object outO : live.out(hce)) {
+                           HCodeElement out = (HCodeElement) outO;
                            pw.print(out.hashCode() + " ");
                         }
                         pw.print("}");
@@ -561,8 +558,8 @@ public class DominatingMemoryAccess {
       Set useda = alloc.usedDANum();
       int tot_defs = defUseMap.keySet().size();
       int tot_uses = 0;
-      for(Iterator it = defUseMap.values().iterator(); it.hasNext();) {
-         Set uses = (Set)it.next();
+      for(Object usesO : defUseMap.values()) {
+         Set uses = (Set) usesO;
          tot_uses += uses.size();
       }
       float avg = tot_defs != 0 ? (float)tot_uses/tot_defs : 0;
@@ -572,8 +569,8 @@ public class DominatingMemoryAccess {
       }
       int alloc_def = 0;
       int alloc_use = 0;
-      for(Iterator it = ref2dareg.values().iterator(); it.hasNext(); ) {
-         daNum danum = (daNum)it.next();
+      for(Object danumO : ref2dareg.values()) {
+         daNum danum = (daNum) danumO;
          if(danum.isDef()) alloc_def++; else alloc_use++;
       }
       avg = alloc_def != 0 ? (float)alloc_use/alloc_def : 0;
@@ -583,8 +580,8 @@ public class DominatingMemoryAccess {
       }
       if(useda.size() > 1) {
          System.err.print(" ALLOC:");
-         for(Iterator it = useda.iterator(); it.hasNext(); ) {
-            Integer danum = (Integer)it.next();
+         for(Object danumO : useda) {
+            Integer danum = (Integer) danumO;
             System.err.print(" " + danum);
          }
       }

@@ -44,8 +44,8 @@ public class BasePointerPreservingUseDefer extends UseDefer {
     public Collection useC(HCodeElement hce) {
 	ArrayList c = new ArrayList(backUD.useC(hce));
 	ArrayList newElems = new ArrayList();
-	for(Iterator ci = c.iterator(); ci.hasNext();){
-	    Temp t = (Temp) ci.next();
+	for(Object tO : c){
+	    Temp t = (Temp) tO;
 	    Derivation.DList dlist = deriv(hce,t);
 	    while (dlist != null) {
 		newElems.add( dlist.base );

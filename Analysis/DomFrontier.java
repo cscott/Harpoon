@@ -29,7 +29,7 @@ import java.util.HashSet;
  * the <code>harpoon.IR.Properties.CFGraphable</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.8 2004-02-08 01:49:03 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.9 2004-02-08 03:19:12 cananian Exp $
  */
 
 public class DomFrontier  {
@@ -88,12 +88,12 @@ public class DomFrontier  {
 		DF.add(n, y);
 	}
 	// for each child c of n in the (post)dominator tree
-	for (Iterator it=new ArrayIterator(dt.children(n)); it.hasNext(); ) {
-	    HCodeElement c = (HCodeElement) it.next();
+	for (Object cO : dt.children(n)) {
+	    HCodeElement c = (HCodeElement) cO;
 	    computeDF(dt, c);
 	    // for each element w of DF[c]
-	    for (Iterator it2=DF.getValues(c).iterator(); it2.hasNext(); ) {
-		HCodeElement w = (HCodeElement) it2.next();
+	    for (Object wO : DF.getValues(c)) {
+		HCodeElement w = (HCodeElement) wO;
 		if (!n.equals( dt.idom(w) ))
 		    DF.add(n, w);
 	    }

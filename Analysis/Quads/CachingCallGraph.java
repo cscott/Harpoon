@@ -18,7 +18,7 @@ import harpoon.IR.Quads.CALL;
     some way that might invalidate the old call graph.
 
     @author  Alexandru SALCIANU <salcianu@MIT.EDU>
-    @version $Id: CachingCallGraph.java,v 1.4 2003-05-06 15:00:39 salcianu Exp $ */
+    @version $Id: CachingCallGraph.java,v 1.5 2004-02-08 03:20:10 cananian Exp $ */
 public class CachingCallGraph extends CallGraph {
     
     /** Creates a <code>CachingCallGraph</code> that caches the results
@@ -101,8 +101,8 @@ public class CachingCallGraph extends CallGraph {
     }
 
     public void load_caches() {
-	for(Iterator it = callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    
 	    if(m_cache || (cg instanceof CallGraphImpl)) calls(hm);
 	    if(cs_cache) {

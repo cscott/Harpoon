@@ -28,7 +28,7 @@ import java.util.Iterator;
  * <code>AllocSyncOptCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocSyncOptCompStage.java,v 1.3 2003-06-05 22:14:03 salcianu Exp $
+ * @version $Id: AllocSyncOptCompStage.java,v 1.4 2004-02-08 03:20:02 cananian Exp $
  */
 public class AllocSyncOptCompStage extends CompilerStageEZ {
 
@@ -182,8 +182,8 @@ public class AllocSyncOptCompStage extends CompilerStageEZ {
 	// before any optimization, allows us to time it accurately.
 	long g_tstart = time();
 	if(OPTIMIZE_ALL) {
-	    for(Iterator it = mms.iterator(); it.hasNext(); ) {
-		MetaMethod mm = (MetaMethod) it.next();
+	    for(Object mmO : mms) {
+		MetaMethod mm = (MetaMethod) mmO;
 		if(!analyzable(mm)) continue;
 		pa.getIntParIntGraph(mm);
 	    }
@@ -195,8 +195,8 @@ public class AllocSyncOptCompStage extends CompilerStageEZ {
 	
 	if (maio.USE_INTER_THREAD) {
 	    g_tstart = System.currentTimeMillis();
-	    for(Iterator it = mms.iterator(); it.hasNext(); ) {
-		MetaMethod mm = (MetaMethod) it.next();
+	    for(Object mmO : mms) {
+		MetaMethod mm = (MetaMethod) mmO;
 		if(!analyzable(mm)) continue;
 		    pa.getIntThreadInteraction(mm);
 	    }

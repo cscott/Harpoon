@@ -66,7 +66,7 @@ import java.util.Set;
  * <code>$clone$()</code> method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloneImplementer.java,v 1.7 2003-07-22 22:57:38 cananian Exp $
+ * @version $Id: CloneImplementer.java,v 1.8 2004-02-08 03:20:25 cananian Exp $
  * @see harpoon.IR.Quads.CloneSynthesizer */
 public class CloneImplementer implements HCodeFactory, java.io.Serializable {
     /** CONSTANTS */
@@ -101,8 +101,8 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	HClass HCobject = l.forName("java.lang.Object");
 	HClass HCcloneable = l.forName("java.lang.Cloneable");
 	/* okay, we need to add clone() methods to all of the knownClasses */
-	for (Iterator it=knownClasses.iterator(); it.hasNext(); ) {
-	    HClass hc = (HClass) it.next();
+	for (Object hcO : knownClasses) {
+	    HClass hc = (HClass) hcO;
 	    if (hc.isPrimitive() || hc.isInterface()) continue;
 	    if (!hc.equals(HCobject) && !hc.isInstanceOf(HCcloneable))
 		continue; // non-cloneable objects get the default impl.
@@ -292,8 +292,7 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	    Quad.addEdge(q0, 1, q1, 0);
 	    Quad.addEdge(q1, 0, q2, 0);
 	    Quad qq = q2;
-	    for (Iterator<HField> it=fields.iterator(); it.hasNext(); ) {
-		HField hf = it.next();
+	    for (HField hf : fields) {
 		Temp tT = new Temp(qf.tempFactory());
 		Quad q3 = new GET(qf, null, tT, hf, thisT);
 		Quad q4 = new SET(qf, null, hf, objT, tT);

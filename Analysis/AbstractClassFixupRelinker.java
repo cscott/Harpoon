@@ -27,7 +27,7 @@ import java.util.Set;
  * The <code>AbstractClassFixupRelinker</code> remedies the situation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractClassFixupRelinker.java,v 1.10 2004-02-08 01:49:03 cananian Exp $
+ * @version $Id: AbstractClassFixupRelinker.java,v 1.11 2004-02-08 03:19:12 cananian Exp $
  */
 public class AbstractClassFixupRelinker extends Relinker {
     
@@ -77,9 +77,7 @@ public class AbstractClassFixupRelinker extends Relinker {
 	    // mentioned in fields and methods of this one.
 
 	    // fix up classes mentioned in method signatures
-	    for (Iterator<HMethod> it=new ArrayIterator<HMethod>
-		     (hc.getDeclaredMethods()); it.hasNext(); ) {
-		HMethod hm = it.next();
+	    for (HMethod hm : hc.getDeclaredMethods()) {
 		resolve(hm.getReturnType());
 		for (Iterator<HClass> it2=new ArrayIterator<HClass>
 			 (hm.getParameterTypes()); it2.hasNext(); )
@@ -104,9 +102,7 @@ public class AbstractClassFixupRelinker extends Relinker {
 	assert !hc.isInterface();
 	assert anInterface.isInterface();
 	// get list of interface methods.
-	for (Iterator<HMethod> it=new ArrayIterator<HMethod>
-		 (anInterface.getDeclaredMethods()); it.hasNext(); ) {
-	    HMethod hm = it.next();
+	for (HMethod hm : anInterface.getDeclaredMethods()) {
 	    // could be a static initializer of the interface.
 	    if (hm instanceof HInitializer) continue;
 	    // otherwise this should be an interface method.

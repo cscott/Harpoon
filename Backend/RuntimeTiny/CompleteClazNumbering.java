@@ -27,7 +27,7 @@ import java.util.Map;
  * sorting and such).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CompleteClazNumbering.java,v 1.2 2002-04-10 03:03:42 cananian Exp $
+ * @version $Id: CompleteClazNumbering.java,v 1.3 2004-02-08 03:21:01 cananian Exp $
  */
 public class CompleteClazNumbering extends ClazNumbering {
     private final Map<HClass,Integer> map = new HashMap<HClass,Integer>();
@@ -39,9 +39,7 @@ public class CompleteClazNumbering extends ClazNumbering {
 	this.min = pocn.minNumber();
 	int n = pocn.maxNumber()+1;
 	// start with the instantiated classes.
-	for (Iterator<HClass> it=ch.instantiatedClasses().iterator();
-	     it.hasNext(); ) {
-	    HClass hc = it.next();
+	for (HClass hc : ch.instantiatedClasses()) {
 	    assert !hc.isInterface();
 	    if (HClassUtil.baseClass(hc).isInterface())
 		map.put(hc, new Integer(n++));
@@ -50,8 +48,7 @@ public class CompleteClazNumbering extends ClazNumbering {
 	}
 	assert map.size()==n-min;
 	// now do all the rest.
-	for (Iterator<HClass> it=ch.classes().iterator(); it.hasNext(); ) {
-	    HClass hc = it.next();
+	for (HClass hc : ch.classes()) {
 	    if (!map.containsKey(hc))
 		map.put(hc, new Integer(n++));
 	}

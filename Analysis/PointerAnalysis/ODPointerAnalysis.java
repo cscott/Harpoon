@@ -83,7 +83,7 @@ import harpoon.Util.DataStructs.LightMap;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPointerAnalysis.java,v 1.6 2003-06-04 18:44:32 salcianu Exp $
+ * @version $Id: ODPointerAnalysis.java,v 1.7 2004-02-08 03:20:02 cananian Exp $
  */
 public class ODPointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -1064,9 +1064,8 @@ public class ODPointerAnalysis {
 
 	    //System.out.println("PROCESS_LOAD ");
 
-	    Iterator it = set_aux.iterator();
-	    while(it.hasNext()){
-		PANode node = (PANode)it.next();
+	    for (Object nodeO : set_aux){
+		PANode node = (PANode) nodeO;
 		// hasEscaped instead of escaped (there is no problem
 		// with the nodes that *will* escape - the future cannot
 		// affect us).
@@ -1084,8 +1083,8 @@ public class ODPointerAnalysis {
 		    // update the action repository
 		    Set active_threads = lbbpig.tau.activeThreadSet();
 		    PANode load_node = null;		
-		    for(Iterator itE = set_E.iterator(); itE.hasNext(); ) {
-			PANode node = (PANode) itE.next();
+		    for(Object nodeO : set_E) {
+			PANode node = (PANode) nodeO;
 			Set a = lbbpig.G.O.pointedNodes(node, f);
 			if(a.isEmpty()) {
 			    if(load_node == null) {
@@ -1135,10 +1134,8 @@ public class ODPointerAnalysis {
 		    
 		    // update the action repository
 		    Set active_threads = lbbpig.tau.activeThreadSet();
-		    Iterator it_esc_nodes = set_E.iterator();
-
-		    while(it_esc_nodes.hasNext()){
-			PANode ne = (PANode) it_esc_nodes.next();
+		    for (Object neO : set_E){
+			PANode ne = (PANode) neO;
 			lbbpig.ar.add_ld(ne, f, load_node,
 					 ActionRepository.THIS_THREAD,
 					 active_threads);
@@ -1340,9 +1337,8 @@ public class ODPointerAnalysis {
 	    Set set = lbbpig.G.I.pointedNodes(l);
 	    lbbpig.tau.incAll(set);
 	    
-	    Iterator it_nt = set.iterator();
-	    while(it_nt.hasNext()){
-		PANode nt = (PANode) it_nt.next();
+	    for (Object ntO : set){
+		PANode nt = (PANode) ntO;
 		lbbpig.G.e.addNodeHole(nt,nt);
 		lbbpig.G.propagate(Collections.singleton(nt));
 	    }
@@ -1403,9 +1399,8 @@ public class ODPointerAnalysis {
 	private void process_acquire_release(Quad q, Temp l){
 	    //System.out.println("PROCESS_ACQUIRE_RELEASE " + q);	    
 	    Set active_threads = lbbpig.tau.activeThreadSet();
-	    Iterator it_nodes = lbbpig.G.I.pointedNodes(l).iterator();
-	    while(it_nodes.hasNext()){
-		PANode node = (PANode) it_nodes.next();
+	    for (Object nodeO : lbbpig.G.I.pointedNodes(l)){
+		PANode node = (PANode) nodeO;
 		PASync sync = new PASync(node,ActionRepository.THIS_THREAD, q);
 		lbbpig.ar.add_sync(sync, active_threads);
 		if (ODPointerAnalysis.ON_DEMAND_ANALYSIS)
@@ -1421,8 +1416,8 @@ public class ODPointerAnalysis {
 	// "set_touched_nodes" have been touched.
 	private void touch_threads(Set set_touched_nodes){
 	    //System.out.println("TOUCH_THREADS");	    
-	    for(Iterator it = set_touched_nodes.iterator(); it.hasNext();){
-		PANode touched_node = (PANode)it.next();
+	    for(Object touched_nodeO : set_touched_nodes){
+		PANode touched_node = (PANode) touched_nodeO;
 		if((touched_node.type == PANode.INSIDE) &&
 		   lbbpig.tau.isStarted(touched_node))
 		    lbbpig.touch_thread(touched_node);
@@ -1456,8 +1451,8 @@ public class ODPointerAnalysis {
 		    }
 		    if(hm.getExceptionTypes().length == 0){
 			HashSet faulty = new HashSet();
-			for(Iterator x_it= new_pig.G.excp.iterator(); x_it.hasNext(); ){
-			    PANode n = (PANode) x_it.next();
+			for(Object nO : new_pig.G.excp){
+			    PANode n = (PANode) nO;
 			    GenType[] types = n.getPossibleClasses();
 			    if ((types!=null)&&(types.length!=0)){
 				boolean false_excp = true;

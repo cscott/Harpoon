@@ -23,7 +23,7 @@ import java.util.Map;
  * spills.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationGenerator.java,v 1.5 2004-02-08 01:57:28 cananian Exp $
+ * @version $Id: DerivationGenerator.java,v 1.6 2004-02-08 03:20:48 cananian Exp $
  */
 public class DerivationGenerator implements Derivation {
     private Map dtM = new HashMap();
@@ -32,8 +32,8 @@ public class DerivationGenerator implements Derivation {
     public DerivationGenerator(Instr instrs, Derivation deriv) {
 	assert deriv!=null;
 	for (Instr in=instrs; in!=null; in=in.getNext()) {
-	    for (Iterator it=in.defC().iterator(); it.hasNext(); ) {
-		Temp d = (Temp) it.next();
+	    for (Object dO : in.defC()) {
+		Temp d = (Temp) dO;
 		HClass hc = deriv.typeMap(in, d);
 		DList dl  = deriv.derivation(in, d);
 		if (hc!=null)
@@ -62,8 +62,8 @@ public class DerivationGenerator implements Derivation {
     // private interface
     /** replace old instr with new instr, using specified temp map for defs */
     void update(Instr oldi, Instr newi, TempMap defmap) {
-	for (Iterator it=oldi.defC().iterator(); it.hasNext(); ) {
-	    Temp d = (Temp) it.next();
+	for (Object dO : oldi.defC()) {
+	    Temp d = (Temp) dO;
 	    TypeAndDerivation tad = 
 		(TypeAndDerivation) dtM.remove(Default.pair(oldi, d));
 	    dtM.put(Default.pair(newi, defmap.tempMap(d)), tad);

@@ -15,7 +15,7 @@ import java.util.List;
  * an array type.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassArraySyn.java,v 1.4 2002-04-10 03:04:12 cananian Exp $
+ * @version $Id: HClassArraySyn.java,v 1.5 2004-02-08 03:21:10 cananian Exp $
  */
 class HClassArraySyn extends HClassArray implements HClassMutator {
     final List declaredMethods = new ArrayList(4);
@@ -165,8 +165,8 @@ class HClassArraySyn extends HClassArray implements HClassMutator {
 	    this.dims = c.dims;
 	    this.modified = c.hasBeenModified;
 	    this.declaredMethods = new ArrayList(c.declaredMethods.size());
-	    for (Iterator it=c.declaredMethods.iterator(); it.hasNext(); ) {
-		HMethod hm = (HMethod) it.next();
+	    for (Object hmO : c.declaredMethods) {
+		HMethod hm = (HMethod) hmO;
 		this.declaredMethods.add(new HClassSyn.MethodStub(hm));
 	    }
 	}

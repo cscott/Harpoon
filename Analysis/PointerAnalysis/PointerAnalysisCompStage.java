@@ -57,7 +57,7 @@ import java.io.InputStreamReader;
  * <code>PointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysisCompStage.java,v 1.8 2004-02-08 01:53:07 cananian Exp $
+ * @version $Id: PointerAnalysisCompStage.java,v 1.9 2004-02-08 03:20:03 cananian Exp $
  */
 public class PointerAnalysisCompStage extends CompilerStageEZ {
 
@@ -323,9 +323,8 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
 	System.out.print("SCC LBB generation ... ");
 	long tstart = time();
 	
-	for(Iterator it = classHierarchy.callableMethods().iterator();
-	    it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : classHierarchy.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    HCode hcode = hcf.convert(hm);
 	    if(hcode != null)
 		scc_lbb_fact.computeSCCLBB(hm);
@@ -365,8 +364,7 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     
     
     private void do_analysis(PointerAnalysis pa, Set<String> methods) {
-	for(Iterator<String> it = methods.iterator(); it.hasNext(); ) {
-	    String m = it.next();
+	for(String m : methods) {
 	    display_pa4method(pa, m);
 	}
     }
@@ -466,14 +464,14 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
 	for(int i = 0; i < vcalls.length; i++)
 	    vcalls[i] = 0L;
 	
-	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext();) {
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : mcg.getAllMetaMethods()) {
+	    MetaMethod mm = (MetaMethod) mmO;
 	    HCode hcode = hcf.convert(mm.getHMethod());
 	    if(hcode == null) continue;
 	    Collection calls = ((Code) hcode).selectCALLs();
 	    
-	    for(Iterator it_calls = calls.iterator(); it_calls.hasNext(); ) {
-		CALL call = (CALL) it_calls.next();
+	    for(Object callO : calls) {
+		CALL call = (CALL) callO;
 		MetaMethod[] callees = mcg.getCallees(mm, call);
 		int nb_callees = callees.length;
 		if(callees.length == 0)

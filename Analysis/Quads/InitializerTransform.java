@@ -60,7 +60,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.5 2004-02-08 01:53:14 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.6 2004-02-08 03:20:10 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -381,8 +381,8 @@ public class InitializerTransform
 	    this.quads = q0;
 	    // now make the calls to the static initializers
 	    Quad last = q1;
-	    for (Iterator it=inits.iterator(); it.hasNext(); ) {
-		HInitializer hi = (HInitializer) it.next();
+	    for (Object hiO : inits) {
+		HInitializer hi = (HInitializer) hiO;
 		Quad qq = new CALL(qf, null, hi, new Temp[0], null, null,
 				   false, false, new Temp[0]);
 		Quad.addEdge(last, 0, qq, 0);

@@ -27,7 +27,7 @@ import java.util.Set;
  * the code is bloated by the specified amount.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SmallMethodInliner.java,v 1.6 2004-02-08 01:53:14 cananian Exp $
+ * @version $Id: SmallMethodInliner.java,v 1.7 2004-02-08 03:20:10 cananian Exp $
  */
 public class SmallMethodInliner extends MethodInliningCodeFactory {
     static final int NPERCENT= // default to 25 percent bloat.
@@ -46,8 +46,8 @@ public class SmallMethodInliner extends MethodInliningCodeFactory {
 	MultiMap callSites = new GenericMultiMap();
 	Map call2caller = new HashMap();
 
-	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    HCode hc = ccf.convert(hm);
 	    // determine method sizes
 	    if (hc==null) continue;
@@ -67,8 +67,8 @@ public class SmallMethodInliner extends MethodInliningCodeFactory {
 	}
 	Heap h = new BinaryHeap();
 	Map method2entry = new HashMap();
-	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    // compute score for hm.
 	    int score = score(hm, methodSize, callSites);
 	    // add to heap, and to method-to-entry map.

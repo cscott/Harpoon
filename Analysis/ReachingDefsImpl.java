@@ -31,7 +31,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.5 2004-02-08 01:49:03 cananian Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.6 2004-02-08 03:19:12 cananian Exp $
  */
 public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE> {
     final private CFGrapher<HCE> cfger;
@@ -92,8 +92,7 @@ public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE
 	Set<HCE> results = bsf.makeSet(m.get(t).get(IN));
 	// propagate in Set through the HCodeElements 
 	// of the BasicBlock in correct order
-	for(Iterator<HCE> it=b.statements().iterator(); it.hasNext(); ) {
-	    HCE curr = it.next();
+	for(HCE curr : b.statements()) {
 	    if (curr == hce) return results;
 	    Collection<Temp> defC = null;
 	    // special treatment of TYPECAST
@@ -118,11 +117,9 @@ public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE
 	// solve for fixed point
 	solve();
 	// store only essential information
-	for(Iterator<BasicBlock<HCE>> it=cache.keySet().iterator(); it.hasNext();) {
-	    BasicBlock<HCE> b = it.next();
+	for(BasicBlock<HCE> b : cache.keySet()) {
 	    Map<Temp,List<Set<HCE>>> m = cache.get(b);
-	    for(Iterator<Temp> temps=m.keySet().iterator(); temps.hasNext();) {
-		Temp t = temps.next();
+	    for(Temp t : m.keySet()) {
 		List<Set<HCE>> results = m.get(t);
 		m.put(t, Collections.singletonList( results.get(IN) ));
 	    }
@@ -131,8 +128,7 @@ public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE
     // create a mapping of Temps to a Set of possible definition points
     private Map<Temp,Set<HCE>> getDefPts() {
 	Map<Temp,Set<HCE>> m = new HashMap<Temp,Set<HCE>>();
-	for(Iterator<HCE> it=cfger.getElements(hc).iterator(); it.hasNext();) {
-	    HCE hce = it.next();
+	for(HCE hce : cfger.getElements(hc)) {
 	    StringBuffer strbuf = new StringBuffer();
 	    Temp[] tArray = null;
 	    report("Getting defs in: "+hce+" (defC:"+new java.util.ArrayList
@@ -177,8 +173,7 @@ public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE
     // create a mapping of Temps to BitSetFactories
     // using a mapping of Temps to Sets of definitions points
     private void getBitSets(Map<Temp,Set<HCE>> input) {
-	for(Iterator<Temp> it=input.keySet().iterator(); it.hasNext(); ) {
-	    Temp t = it.next();
+	for(Temp t : input.keySet()) {
 	    BitSetFactory<HCE> bsf = new BitSetFactory<HCE>(input.get(t));
 	    Temp_to_BitSetFactories.put(t, bsf);
 	}
@@ -195,13 +190,11 @@ public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE
     // 3 - out Set
     private void buildGenKillSets(Map<Temp,Set<HCE>> DefPts) {
 	// calculate Gen and Kill sets for each basic block 
-	for(Iterator<BasicBlock<HCE>> blocks=bbf.blockSet().iterator(); blocks.hasNext(); ) {
-	    BasicBlock<HCE> b = blocks.next();
+	for(BasicBlock<HCE> b : bbf.blockSet()) {
 	    Map<Temp,List<Set<HCE>>> Temp_to_BitSets =
 		new HashMap<Temp,List<Set<HCE>>>();
 	    // iterate through the instructions in the basic block
-	    for(Iterator<HCE> it=b.statements().iterator(); it.hasNext(); ) {
-		HCE hce = it.next();
+	    for(HCE hce : b.statements()) {
 		Temp[] tArray = null;
 		// special treatment of TYPECAST
 		if(check_typecast && (hce instanceof TYPECAST))
@@ -221,9 +214,7 @@ public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE
 		    bitSets.set(KILL, bsf.makeSet(kill));
 		    Temp_to_BitSets.put(t, bitSets);
 		}
-		for(Iterator<Temp> temps=DefPts.keySet().iterator(); 
-		    temps.hasNext(); ) {
-		    Temp t = temps.next();
+		for(Temp t : DefPts.keySet()) {
 		    List<Set<HCE>> bitSets = Temp_to_BitSets.get(t);
 		    BitSetFactory<HCE> bsf = Temp_to_BitSetFactories.get(t);
 		    if (bitSets == null) {
@@ -261,15 +252,13 @@ public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE
 	    revisits++;
 	    // get all the bitSets for this BasicBlock
 	    Map<Temp,List<Set<HCE>>> bitSets = cache.get(b);
-	    for(Iterator<Temp> it=bitSets.keySet().iterator(); it.hasNext();) {
-		Temp t = it.next();
+	    for(Temp t : bitSets.keySet()) {
 		List<Set<HCE>> bitSet = bitSets.get(t);
 		BitSetFactory bsf = Temp_to_BitSetFactories.get(t);
 		Set<HCE> oldIn, oldOut;
 		oldIn = bsf.makeSet(bitSet.get(IN)); // clone old in Set
 		bitSet.get(IN).clear();
-		for(Iterator<BasicBlock<HCE>> preds=b.prevSet().iterator(); preds.hasNext(); ) {
-		    BasicBlock<HCE> pred = preds.next();
+		for(BasicBlock<HCE> pred : b.prevSet()) {
 		    List<Set<HCE>> pBitSet = cache.get(pred).get(t);
 		    bitSet.get(IN).addAll(pBitSet.get(OUT)); // union
 		}
@@ -279,9 +268,7 @@ public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE
 		bitSet.get(OUT).addAll(bitSet.get(GEN));
 		if (oldIn.equals(bitSet.get(IN)) && oldOut.equals(bitSet.get(OUT)))
 		    continue;
-		for(Iterator<BasicBlock<HCE>> succs=b.nextSet().iterator();
-		    succs.hasNext();){
-		    BasicBlock<HCE> block = succs.next();
+		for(BasicBlock<HCE> block : b.nextSet()){
 		    worklist.addLast(block);
 		}
 	    }

@@ -47,7 +47,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.10 2004-02-08 01:57:40 cananian Exp $
+ * @version $Id: Frame.java,v 1.11 2004-02-08 03:20:54 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -175,8 +175,8 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 		    List stmlist = new ArrayList();
 		    stmlist.add(new SEGMENT(tf, null, SEGMENT.ZERO_DATA));
 				
-		    for (Iterator it=globals.iterator(); it.hasNext(); ) {
-			List pair = (List) it.next();
+		    for (Object pairO : globals) {
+			List pair = (List) pairO;
 			Label l = (Label) pair.get(0);
 			int  ty = ((Integer)pair.get(1)).intValue();
 

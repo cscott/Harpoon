@@ -38,7 +38,7 @@ import java.util.Set;
  * synchronized contexts.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GlobalFieldOracle.java,v 1.3 2004-02-08 01:54:21 cananian Exp $
+ * @version $Id: GlobalFieldOracle.java,v 1.4 2004-02-08 03:20:25 cananian Exp $
  */
 class GlobalFieldOracle extends FieldOracle {
     Set syncRead = new HashSet(); Set syncWrite = new HashSet();
@@ -53,8 +53,8 @@ class GlobalFieldOracle extends FieldOracle {
 			     HCodeFactory hcf) {
 	/* Add callable static initializers to the root set */
 	Set myroots = new HashSet(roots);
-	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    if (hm instanceof HInitializer)
 		myroots.add(hm);
 	}
@@ -83,8 +83,8 @@ class GlobalFieldOracle extends FieldOracle {
     MethodInfo analyzeMethods(ClassHierarchy ch, HCodeFactory hcf) {
 	MethodInfo result = new MethodInfo();
 	CallGraphImpl2 cg = new CallGraphImpl2(ch, hcf);
-	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    HCode hc = hcf.convert(hm);
 	    if (hc==null) continue;
 	    analyzeOneMethod(result, hm, hc, cg);
@@ -163,8 +163,8 @@ class GlobalFieldOracle extends FieldOracle {
 	    for (Iterator it=W.iterator(); it.hasNext(); )
 		if (((HMethod)it.next()) instanceof HInitializer)
 		    it.remove(); // and except static initializers.
-	    for (Iterator it=mi.calledSync.keySet().iterator(); it.hasNext();){
-		HMethod hm = (HMethod) it.next();
+	    for (Object hmO : mi.calledSync.keySet()){
+		HMethod hm = (HMethod) hmO;
 		W.addAll(mi.calledSync.getValues(hm));
 	    } // add all calledSync to worklist.
 	    while (!W.isEmpty()) {
@@ -182,21 +182,21 @@ class GlobalFieldOracle extends FieldOracle {
     void transCloseFields(MethodInfo mi, CallContextInfo cci) {
 	// ever accessed unsync?
 	//  in fields accessedUnsync list of method called unsync.
-	for (Iterator it=cci.calledUnsync.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : cci.calledUnsync) {
+	    HMethod hm = (HMethod) hmO;
 	    unsyncRead.addAll(mi.readUnsync.getValues(hm));
 	    unsyncWrite.addAll(mi.writeUnsync.getValues(hm));
 	}
 	// ever accessed sync?
 	//  in any accessedSync list
 	//  or in accessedUnsync list of a method called sync.
-	for (Iterator it=cci.calledUnsync.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : cci.calledUnsync) {
+	    HMethod hm = (HMethod) hmO;
 	    syncRead.addAll(mi.readSync.getValues(hm));
 	    syncWrite.addAll(mi.writeSync.getValues(hm));
 	}
-	for (Iterator it=cci.calledSync.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : cci.calledSync) {
+	    HMethod hm = (HMethod) hmO;
 	    syncRead.addAll(mi.readSync.getValues(hm));
 	    syncRead.addAll(mi.readUnsync.getValues(hm));
 	    syncWrite.addAll(mi.writeSync.getValues(hm));

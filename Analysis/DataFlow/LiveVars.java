@@ -49,7 +49,7 @@ import java.util.Iterator;
  * <code>UseDefer</code>s 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.4 2004-02-08 01:51:05 cananian Exp $ */
+ * @version $Id: LiveVars.java,v 1.5 2004-02-08 03:19:21 cananian Exp $ */
 public class LiveVars extends Liveness {
     
     protected static final boolean DEBUG = false; 
@@ -149,9 +149,8 @@ public class LiveVars extends Liveness {
 
     protected void initializeBBtoLVI(Set blockSet, SetFactory setFact) {
 	bbToLvi = new HashMap();
-	Iterator blocks = blockSet.iterator();
-	while(blocks.hasNext()) {
-	    BasicBlock bb = (BasicBlock) blocks.next();
+	for (Object bbO : blockSet) {
+	    BasicBlock bb = (BasicBlock) bbO;
 	    LiveVarInfo lvi = makeUseDef(bb, setFact);
 	    bbToLvi.put(bb, lvi);
 	}
@@ -243,9 +242,8 @@ public class LiveVars extends Liveness {
 
     public String dump(boolean dumpInstrs) {
 	StringBuffer s = new StringBuffer();
-	Iterator e = bbToLvi.keySet().iterator();
-	while (e.hasNext()) {
-	    BasicBlock bb = (BasicBlock)e.next();
+	for (Object bbO : bbToLvi.keySet()) {
+	    BasicBlock bb = (BasicBlock) bbO;
 	    s.append("BasicBlock " + bb);
 	    s.append(" pred:"+bb.prevSet()+" succ:"+bb.nextSet());
 	    LiveVarInfo lvi = (LiveVarInfo) bbToLvi.get(bb);

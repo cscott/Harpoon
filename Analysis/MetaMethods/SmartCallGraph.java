@@ -36,7 +36,7 @@ import harpoon.Util.DataStructs.RelationImpl;
     connected component in the call graph) decreased from 53 to 8.
 
     @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
-    @version $Id: SmartCallGraph.java,v 1.8 2003-05-06 15:00:41 salcianu Exp $
+    @version $Id: SmartCallGraph.java,v 1.9 2004-02-08 03:19:57 cananian Exp $
 */
 public class SmartCallGraph extends CallGraph {
     
@@ -134,8 +134,8 @@ public class SmartCallGraph extends CallGraph {
     private final void construct(final MetaCallGraph mcg) {
 	Relation split = mcg.getSplitRelation();
 
-	for(Iterator it_hm = split.keys().iterator(); it_hm.hasNext(); ) {
-	    HMethod hm = (HMethod) it_hm.next();
+	for(Object hmO : split.keys()) {
+	    HMethod hm = (HMethod) hmO;
 	    // ac stores all the callees of hm
 	    Set ac = new HashSet();
 	    // rel stores associations cs -> callees(cs)
@@ -143,12 +143,11 @@ public class SmartCallGraph extends CallGraph {
 	    Relation rel = new RelationImpl();
 
 	    // iterate over all metamethods corresponding to hm
-	    for(Iterator im = split.getValues(hm).iterator(); im.hasNext(); ) {
-		MetaMethod mm = (MetaMethod) im.next();
+	    for(Object mmO : split.getValues(hm)) {
+		MetaMethod mm = (MetaMethod) mmO;
 
-		for(Iterator it_cs = mcg.getCallSites(mm).iterator();
-		    it_cs.hasNext(); ) {
-		    CALL cs = (CALL) it_cs.next();
+		for(Object csO : mcg.getCallSites(mm)) {
+		    CALL cs = (CALL) csO;
 		    // get meta-methods called at cs
 		    MetaMethod[] callees = mcg.getCallees(mm, cs);
 		    for(int i = 0; i < callees.length; i++) {
@@ -165,8 +164,8 @@ public class SmartCallGraph extends CallGraph {
 	    // where cs is a call site from the code of hm
 	    Map map = new HashMap();
 	    // iterate over the call sites from hm to build "map"
-	    for(Iterator it_cs = rel.keys().iterator(); it_cs.hasNext(); ) {
-		CALL cs = (CALL) it_cs.next();
+	    for(Object csO : rel.keys()) {
+		CALL cs = (CALL) csO;
 		Set callees = rel.getValues(cs);
 		map.put(cs, callees.toArray(new HMethod[callees.size()]));
 	    }
@@ -174,8 +173,8 @@ public class SmartCallGraph extends CallGraph {
 	}
 
 	run_hms = new HashSet();
-	for(Iterator it = mcg.getRunMetaMethods().iterator(); it.hasNext(); ) {
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : mcg.getRunMetaMethods()) {
+	    MetaMethod mm = (MetaMethod) mmO;
 	    run_hms.add(mm.getHMethod());
 	}
     }
@@ -221,8 +220,8 @@ public class SmartCallGraph extends CallGraph {
     // Returns the set of static initializers of all the instanciated classes.
     private static Set get_static_initializers(ClassHierarchy ch) {
 	Set retval = new HashSet();
-	for(Iterator it = ch.classes().iterator(); it.hasNext(); ) {
-	    HClass hclass = (HClass) it.next();
+	for(Object hclassO : ch.classes()) {
+	    HClass hclass = (HClass) hclassO;
 	    HMethod hm = hclass.getClassInitializer();
 	    if(hm != null)
 		retval.add(hm);

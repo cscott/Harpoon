@@ -65,7 +65,7 @@ import harpoon.Util.Options.Option;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.24 2003-10-29 03:51:56 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.25 2004-02-08 03:19:53 cananian Exp $
  */
 public abstract class PreallocOpt {
 
@@ -300,9 +300,8 @@ public abstract class PreallocOpt {
 	// objects.  So, we allocate the same amount of space
 	// (maxSize) for all preallocated memory chunks.
 	int maxSize = 0;
-	for(Iterator it = ia.getCompatibleClasses().iterator();
-	    it.hasNext(); ) {
-	    Collection cc = (Collection) it.next();
+	for(Object ccO : ia.getCompatibleClasses()) {
+	    Collection cc = (Collection) ccO;
 	    int thisSize = sizeForCompatClass(frame, cc);	    
 	    maxSize = Math.max(thisSize, maxSize);
 	}
@@ -318,8 +317,8 @@ public abstract class PreallocOpt {
 	    label2size.put(label, new Integer(maxSize));
 	    //label2size.put(label, new Integer(sizeForCompatClass(frame,cc)));
 
-	    for(Iterator it_new = cc.iterator(); it_new.hasNext(); ) {
-		NEW site = (NEW) it_new.next();
+	    for(Object siteO : cc) {
+		NEW site = (NEW) siteO;
 		QuadSSI codeSSI = (QuadSSI) site.getFactory().getParent();
 		NEW siteNoSSA = (NEW) codeSSI.getQuadMapSSI2NoSSA().get(site);
 

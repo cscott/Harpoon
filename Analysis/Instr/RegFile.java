@@ -21,7 +21,7 @@ import java.util.Iterator;
  * most processor architectures for storing working sets of data.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFile.java,v 1.4 2002-04-10 02:59:47 cananian Exp $
+ * @version $Id: RegFile.java,v 1.5 2004-02-08 03:19:37 cananian Exp $
  */
 class RegFile {
 
@@ -158,9 +158,8 @@ class RegFile {
 	     it would make sense to assign preg multiple times.
      */
     public void assign(final Temp pseudoReg, final List regs, Instr src) { 
-	final Iterator regIter = regs.iterator();
-	while (regIter.hasNext()) {
-	    Temp reg = (Temp) regIter.next();
+	for (Object regO : regs) {
+	    Temp reg = (Temp) regO;
 
 	    
 	    assert !regToTmp.containsKey(reg) : ("non-empty reg: " /* +reg */);  
@@ -239,9 +238,8 @@ class RegFile {
     */
     public void remove(final Temp pseudoReg) {
 	List regs = ((RegListAndInstr)tmpToRegLst.remove(pseudoReg)).l;
-	final Iterator regIter = regs.iterator();
-	while(regIter.hasNext()) {
-	    Temp reg = (Temp) regIter.next();
+	for (Object regO : regs) {
+	    Temp reg = (Temp) regO;
 	    regToTmp.remove(reg);
 	}
 	dirtyTemps.remove(pseudoReg);

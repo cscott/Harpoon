@@ -39,7 +39,7 @@ import java.util.TreeSet;
  * <code>SingularOracle</code> for quad IRs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SingularFinder.java,v 1.5 2004-02-08 01:50:55 cananian Exp $
+ * @version $Id: SingularFinder.java,v 1.6 2004-02-08 03:19:17 cananian Exp $
  */
 public class SingularFinder implements SingularOracle<Quad> {
     private final HCodeFactory hcf;
@@ -64,16 +64,14 @@ public class SingularFinder implements SingularOracle<Quad> {
 	// mutually singular iff
 	//  \forall <v,s> \in svs : RDin[s](v)!=\bot &&
 	//              {} = (svs \intersect RUin[s][RDin[s](v)])
-	for (Iterator<StaticValue<Quad>> it=svs.iterator(); it.hasNext(); ) {
-	    StaticValue<Quad> sv = it.next();
+	for (StaticValue<Quad> sv : svs) {
 	    assert pmi.rdResult.containsKey(sv.right());
 	    // first condition.
 	    Set<DefPoint> dps = pmi.rdResult.get(sv.right()).get(sv.left());
 	    if (dps==null)
 		return null; // this static value is not singular!
 	    // second condition.  first, compute RUin[s] of all dp in dps.
-	    for (Iterator<DefPoint> it2=dps.iterator(); it2.hasNext(); ) {
-		DefPoint dp = it2.next();
+	    for (DefPoint dp : dps) {
 		Set<StaticValue<Quad>> ru=pmi.ruResult.get(sv.right()).get(dp);
 		// check that none are in svs
 		for (Iterator<StaticValue<Quad>> it3=ru.iterator();
@@ -102,8 +100,7 @@ public class SingularFinder implements SingularOracle<Quad> {
 	//  relevant keys in the ruResult's RUInfo.)
 	Map<Quad,RDInfo> _rdResult = new TreeMap<Quad,RDInfo>();
 	Map<Quad,RUInfo> _ruResult = new TreeMap<Quad,RUInfo>();
-	for (Iterator<QNode> it=qfg.nodes().iterator(); it.hasNext(); ) {
-	    QNode qn = it.next();
+	for (QNode qn : qfg.nodes()) {
 	    if (qn.isPhiEntrance() || qn.isSigmaExit()) continue;
 	    _rdResult.put(qn.baseQuad(), rdResult.get(qn));
 	    _ruResult.put(qn.baseQuad(), ruResult.get(qn));
@@ -295,13 +292,10 @@ public class SingularFinder implements SingularOracle<Quad> {
 		// use QNode's useC/defC for CALL/TYPESWITCH/SWITCH/CJMP
 		RDInfo rd = rdResult.get(qn);
 		// first, gen for uses.
-		for (Iterator<Temp> it=qn.useC().iterator(); it.hasNext(); ) {
-		    Temp u = it.next();
+		for (Temp u : qn.useC()) {
 		    Set<DefPoint> s = rd.get(u);
 		    if (s!=null)
-			for (Iterator<DefPoint> it2=s.iterator();
-			     it2.hasNext(); ) {
-			    DefPoint dp = it2.next();
+			for (DefPoint dp : s) {
 			    out = out.add(sf, dp, new StaticValue<Quad>(u, q));
 			}
 		}
@@ -329,8 +323,7 @@ public class SingularFinder implements SingularOracle<Quad> {
 						    Map<K,Set<V>> m1,
 						    Map<K,Set<V>> m2) {
 	Map<K,Set<V>> result = mf.makeMap(m1);
-	for (Iterator<K> it= m2.keySet().iterator(); it.hasNext(); ) {
-	    K key = it.next();
+	for (K key : m2.keySet()) {
 	    Set<V> s1 = result.get(key);
 	    Set<V> s2 = m2.get(key);
 	    assert m2.containsKey(key);

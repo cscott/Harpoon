@@ -17,7 +17,7 @@ import java.util.Set;
  * <code>Reachable</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Reachable.java,v 1.3 2004-02-08 01:49:03 cananian Exp $
+ * @version $Id: Reachable.java,v 1.4 2004-02-08 03:19:12 cananian Exp $
  */
 public final class Reachable<HCE extends HCodeElement> {
     public final Set<HCE> reachable;
@@ -35,9 +35,7 @@ public final class Reachable<HCE extends HCodeElement> {
 	    HCE hce = work.removeFirst();
 	    reachable.add(hce);
 	    
-	    for(Iterator<HCE> it = grapher.succElemC(hce).iterator();
-		it.hasNext(); ) {
-		HCE succ = it.next();
+	    for(HCE succ : grapher.succElemC(hce)) {
 		if (!reachable.contains(succ))
 		    work.add(succ);
 	    }

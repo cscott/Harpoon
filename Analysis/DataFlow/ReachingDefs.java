@@ -29,7 +29,7 @@ import java.util.Set;
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ReachingDefs.java,v 1.5 2004-02-08 01:51:05 cananian Exp $
+ * @version $Id: ReachingDefs.java,v 1.6 2004-02-08 03:19:21 cananian Exp $
  */
 public abstract class ReachingDefs { 
     
@@ -231,8 +231,8 @@ abstract static class BBVisitor extends ForwardDataFlowBasicBlockVisitor {
 
     public String dump() {
 	StringBuffer s = new StringBuffer();
-	for (Iterator i = this.bbToRdi.keySet().iterator(); i.hasNext(); ) { 
-	    BasicBlock bb = (BasicBlock)i.next();
+	for (Object bbO : this.bbToRdi.keySet()) { 
+	    BasicBlock bb = (BasicBlock) bbO;
 	    s.append("Basic block "+bb);
 	    ReachingDefInfo rdi = (ReachingDefInfo)this.bbToRdi.get(bb);
 	    s.append("\n"+rdi);

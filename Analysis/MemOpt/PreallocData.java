@@ -25,7 +25,7 @@ import java.util.Iterator;
  * <code>PreallocData</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocData.java,v 1.1 2003-03-03 23:26:47 salcianu Exp $
+ * @version $Id: PreallocData.java,v 1.2 2004-02-08 03:19:53 cananian Exp $
  */
 public class PreallocData extends harpoon.Backend.Runtime1.Data {
     
@@ -48,8 +48,8 @@ public class PreallocData extends harpoon.Backend.Runtime1.Data {
 	List stmList = new ArrayList();
 	stmList.add(new SEGMENT(tf, null, SEGMENT.INIT_DATA));
 
-	for(Iterator it = labels.iterator(); it.hasNext(); ) {
-	    Label label = (Label) it.next();
+	for(Object labelO : labels) {
+	    Label label = (Label) labelO;
 	    stmList.add(new ALIGN(tf, null, 4)); // word align
 	    // mark the beginning of the prealloc data segment
 	    if(first)

@@ -38,7 +38,7 @@ import java.util.Stack;
  * information about the bitfield-numbering of fields.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeDataFilter.java,v 1.3 2004-02-08 01:54:21 cananian Exp $
+ * @version $Id: TreeDataFilter.java,v 1.4 2004-02-08 03:20:25 cananian Exp $
  */
 public class TreeDataFilter extends FilterIterator.Filter<HData,HData> {
     final Frame f;
@@ -56,8 +56,7 @@ public class TreeDataFilter extends FilterIterator.Filter<HData,HData> {
 	this.tb = f.getRuntime().getTreeBuilder();
 	this.pointersAreLong = f.pointersAreLong();
 	// map fields to field info labels.
-	for (Iterator<HField> it=transFields.iterator(); it.hasNext(); ) {
-	    HField hf = it.next();
+	for (HField hf : transFields) {
 	    Label l = nm.label(hf, "info");
 	    label2field.put(l, hf);
 	}
@@ -67,9 +66,8 @@ public class TreeDataFilter extends FilterIterator.Filter<HData,HData> {
 	    // iterate through the Data, looking for the field info
 	    // table.
 	    int countdown=-1; HField which=null;
-	    for (Iterator<Stm> it=linearize((Stm)d.getRootElement())
-		     .iterator(); it.hasNext(); ) {
-		Stm s = it.next();
+	    for (Stm s : linearize((Stm)d.getRootElement())
+		) {
 		if (s instanceof LABEL &&
 		    label2field.containsKey(((LABEL)s).label)) {
 		    // hey, we're getting close!  it's the fifth datum

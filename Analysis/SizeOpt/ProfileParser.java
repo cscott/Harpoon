@@ -31,7 +31,7 @@ import java.util.Set;
  * by <code>SizeCounters</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ProfileParser.java,v 1.3 2004-02-08 01:53:55 cananian Exp $
+ * @version $Id: ProfileParser.java,v 1.4 2004-02-08 03:20:22 cananian Exp $
  */
 class ProfileParser {
     // lines are in the format: 'mzf_savedbytes_<classname>: <number>',
@@ -90,11 +90,10 @@ class ProfileParser {
      *  of allocated fields with mostly val exceeds 'thresholdPercent'. */
     Set fieldsAboveThresh(double thresholdPercent) {
 	Set result = new HashSet();
-	for (Iterator it=allocMap.keySet().iterator(); it.hasNext(); ) {
-	    HField hf = (HField) it.next();
-	    for (Iterator it2=allocMap(hf).keySet().iterator();
-		 it2.hasNext(); ) {
-		Number mostly = (Number) it2.next();
+	for (Object hfO : allocMap.keySet()) {
+	    HField hf = (HField) hfO;
+	    for (Object mostlyO : allocMap(hf).keySet()) {
+		Number mostly = (Number) mostlyO;
 		if (isPercentValid(hf, mostly.intValue()) &&
 		    percentIsMostly(hf, mostly.intValue()) > thresholdPercent)
 		    result.add(Default.pair(hf, mostly));

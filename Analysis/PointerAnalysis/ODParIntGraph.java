@@ -28,7 +28,7 @@ import harpoon.Util.DataStructs.LightMap;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODParIntGraph.java,v 1.4 2002-04-10 03:00:42 cananian Exp $
+ * @version $Id: ODParIntGraph.java,v 1.5 2004-02-08 03:20:02 cananian Exp $
  */
 public class ODParIntGraph {
 
@@ -452,8 +452,8 @@ public class ODParIntGraph {
 	all_nodes = null;
 	final Map map = new HashMap();
 	final Map total_map = new HashMap();
-	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
-	    PANode node = (PANode) itn.next();
+	for(Object nodeO : allNodes()){
+	    PANode node = (PANode) nodeO;
 	    if(node.type == PANode.INSIDE){
 		map.put(node, node.csSpecialize(call));
 		total_map.put(node, node.csSpecialize(call));
@@ -476,8 +476,8 @@ public class ODParIntGraph {
 	// contains mappings old node -> speciaized node; each unmapped
 	// node is supposed to be mapped to itself.
 	final Map map = new HashMap();
-	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
-	    PANode node  = (PANode) itn.next();
+	for(Object nodeO : allNodes()){
+	    PANode node = (PANode) nodeO;
 	    if((node.type != PANode.PARAM) && (node.type != PANode.STATIC)){
 		PANode node2 = node.tSpecialize(run);
 		map.put(node, node2);
@@ -498,8 +498,8 @@ public class ODParIntGraph {
 	// contains mappings old node -> speciaized node; each unmapped
 	// node is supposed to be mapped to itself.
 	final Map map = new HashMap();
-	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
-	    PANode node  = (PANode) itn.next();
+	for(Object nodeO : allNodes()){
+	    PANode node = (PANode) nodeO;
 	    if((node.type != PANode.PARAM) && (node.type != PANode.STATIC)){
 		PANode node2 = node.wtSpecialize();
 		map.put(node, node2);
@@ -556,9 +556,8 @@ public class ODParIntGraph {
 
 	remove(empty_loads);
 
-	Iterator it_edges = fake_outside_edges.iterator();
-	while(it_edges.hasNext()){
-	    PAEdge edge = (PAEdge) it_edges.next();
+	for (Object edgeO : fake_outside_edges){
+	    PAEdge edge = (PAEdge) edgeO;
 	    G.O.removeEdge(edge.n1,edge.f,edge.n2);
 	}
 
@@ -588,9 +587,8 @@ public class ODParIntGraph {
 
 	remove(empty_loads);
 
-	Iterator it_edges = fake_outside_edges.iterator();
-	while(it_edges.hasNext()){
-	    PAEdge edge = (PAEdge) it_edges.next();
+	for (Object edgeO : fake_outside_edges){
+	    PAEdge edge = (PAEdge) edgeO;
 	    G.O.removeEdge(edge.n1,edge.f,edge.n2);
 	}
 
@@ -622,9 +620,8 @@ public class ODParIntGraph {
     private String touchedToString(){
 	StringBuffer buffer = new StringBuffer();
 
-	Iterator it = touched_threads.iterator();
-	while(it.hasNext()){
-	    PANode nt = (PANode) it.next();
+	for (Object ntO : touched_threads){
+	    PANode nt = (PANode) ntO;
 	    if(G.captured(nt))
 		buffer.append(nt + " ");		
 	}

@@ -23,7 +23,7 @@ import java.util.Collections;
  * of the call graph for methods that fulfill a certain condition.
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: AllCallers.java,v 1.4 2003-05-06 15:36:28 salcianu Exp $
+ * @version $Id: AllCallers.java,v 1.5 2004-02-08 03:19:12 cananian Exp $
  */
 
 public class AllCallers {
@@ -53,8 +53,8 @@ public class AllCallers {
      */
     public Set getCallers(MethodSet ms) {
 	Worklist toadd = new WorkSet();
-	for (Iterator cm = callableMethods.iterator(); cm.hasNext(); ) {
-	    HMethod m = (HMethod) cm.next();
+	for (Object mO : callableMethods) {
+	    HMethod m = (HMethod) mO;
 	    if (ms.select(m)) {
 		toadd.push(m);
 	    }
@@ -64,10 +64,8 @@ public class AllCallers {
 	    HMethod callee = (HMethod)toadd.pull();
 	    retval.add(callee);
 	    if (this.g.containsKey(callee)) {
-		for (Iterator callers = 
-			 ((WorkSet)this.g.get(callee)).iterator(); 
-		     callers.hasNext(); ) {
-		    HMethod caller = (HMethod)callers.next();
+		for (Object callerO : ((WorkSet)this.g.get(callee))) {
+		    HMethod caller = (HMethod) callerO;
 		    if (!retval.contains(caller))
 			toadd.push(caller);
 		}
@@ -91,8 +89,8 @@ public class AllCallers {
      */
     private Hashtable buildGraph(CallGraph cg) {
 	Hashtable ht = new Hashtable();
-	for (Iterator cm = callableMethods.iterator(); cm.hasNext(); ) {
-	    HMethod m = (HMethod)cm.next();
+	for (Object mO : callableMethods) {
+	    HMethod m = (HMethod) mO;
 	    HMethod[] callees = cg.calls(m);
 	    for (int i = 0; i < callees.length; i++) {
 		if (!ht.containsKey(callees[i]))

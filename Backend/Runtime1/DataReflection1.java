@@ -46,7 +46,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection1.java,v 1.5 2003-10-21 02:11:02 cananian Exp $
+ * @version $Id: DataReflection1.java,v 1.6 2004-02-08 03:20:58 cananian Exp $
  */
 public class DataReflection1 extends Data {
     final NameMap m_nm;
@@ -107,8 +107,8 @@ public class DataReflection1 extends Data {
 	stmlist.add(new LABEL(tf, null,
 			      ls = new Label(m_nm.c_function_name
 					     ("name2class_start")), true));
-	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
-	    HClass hc = (HClass) it.next();
+	for (Object hcO : sorted) {
+	    HClass hc = (HClass) hcO;
 	    stmlist.add(_DATUM(m_nm.label(hc, "namestr")));
 	    stmlist.add(_DATUM(m_nm.label(hc, "classobj")));
 	}
@@ -130,8 +130,8 @@ public class DataReflection1 extends Data {
 	stmlist.add(new LABEL(tf, null,
 			      ls = new Label(m_nm.c_function_name
 					     ("class2info_start")), true));
-	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
-	    HClass hc = (HClass) it.next();
+	for (Object hcO : sorted) {
+	    HClass hc = (HClass) hcO;
 	    stmlist.add(_DATUM(m_nm.label(hc, "classobj")));
 	    stmlist.add(_DATUM(m_nm.label(hc, "classinfo")));
 	}
@@ -148,8 +148,8 @@ public class DataReflection1 extends Data {
     private Stm buildStrings(List sorted) {
 	List stmlist = new ArrayList(1+2*sorted.size());
 	// build actual c-style string data from UTF-8 encoded class name
-	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
-	    HClass hc = (HClass) it.next();
+	for (Object hcO : sorted) {
+	    HClass hc = (HClass) hcO;
 	    stmlist.add(new LABEL(tf, null, m_nm.label(hc, "namestr"), true));
 	    stmlist.add(emitUtf8String(hc.getName().replace('.','/')));
 	}

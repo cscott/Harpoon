@@ -54,7 +54,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>IAStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: IAStatistics.java,v 1.12 2003-03-16 16:38:42 salcianu Exp $
+ * @version $Id: IAStatistics.java,v 1.13 2004-02-08 03:19:53 cananian Exp $
  */
 public abstract class IAStatistics {
     
@@ -269,8 +269,8 @@ public abstract class IAStatistics {
 	 Collection allocs) {
 	Map hclass2stat = new HashMap();
 	
-	for(Iterator it = allocs.iterator(); it.hasNext(); ) {
-	    Quad q = (Quad) it.next();
+	for(Object qO : allocs) {
+	    Quad q = (Quad) qO;
 
 	    /*
 	    HMethod hm = q.getFactory().getMethod();

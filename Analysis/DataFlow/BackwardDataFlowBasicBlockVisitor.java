@@ -11,7 +11,7 @@ import net.cscott.jutil.WorkSet;
  * <code>BackwardDataFlowBasicBlockVisitor</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.5 2004-02-08 01:51:05 cananian Exp $
+ * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.6 2004-02-08 03:19:21 cananian Exp $
  */
 public abstract class BackwardDataFlowBasicBlockVisitor 
     extends DataFlowBasicBlockVisitor {
@@ -30,8 +30,8 @@ public abstract class BackwardDataFlowBasicBlockVisitor
        @see #merge(BasicBlock, BasicBlock)
     */
     public void addSuccessors(WorkSet W, BasicBlockInterf q) {
-	for (Iterator it = q.prevSet().iterator(); it.hasNext(); ) {
-	    BasicBlockInterf parent = (BasicBlockInterf) it.next();
+	for (Object parentO : q.prevSet()) {
+	    BasicBlockInterf parent = (BasicBlockInterf) parentO;
 	    if (DEBUG) 
 		System.out.println
 		    ("addSucc: merging from: " + q + 

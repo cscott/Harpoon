@@ -52,7 +52,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflectionMemberList.java,v 1.5 2003-10-21 02:11:02 cananian Exp $
+ * @version $Id: DataReflectionMemberList.java,v 1.6 2004-02-08 03:20:58 cananian Exp $
  */
 public class DataReflectionMemberList extends Data {
     final NameMap m_nm;
@@ -76,8 +76,8 @@ public class DataReflectionMemberList extends Data {
 	// methods.
 	List orderedMethods = new ArrayList(ch.callableMethods());
 	List orderedFields = new ArrayList();
-	for (Iterator it=ch.classes().iterator(); it.hasNext(); ) {
-	    HClass hc = (HClass) it.next();
+	for (Object hcO : ch.classes()) {
+	    HClass hc = (HClass) hcO;
 	    orderedFields.addAll(Arrays.asList(hc.getDeclaredFields()));
 	}
 
@@ -111,8 +111,8 @@ public class DataReflectionMemberList extends Data {
 	stmlist.add(new LABEL(tf, null,
 			      new Label(m_nm.c_function_name
 					(member+"2info_start")), true));
-	for (Iterator it=ordered.iterator(); it.hasNext(); ) {
-	    HMember hm = (HMember) it.next();
+	for (Object hmO : ordered) {
+	    HMember hm = (HMember) hmO;
 	    stmlist.add(new LABEL(tf, null,
 				  memberLabel(hm, "reflectinfo"), true));
 	    stmlist.add(_DATUM(memberLabel(hm, "obj")));

@@ -45,7 +45,7 @@ import java.util.Set;
  * really *are* mostly-zero, then the net will be a space savings.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFExternalize.java,v 1.7 2004-02-08 01:53:55 cananian Exp $
+ * @version $Id: MZFExternalize.java,v 1.8 2004-02-08 03:20:22 cananian Exp $
  */
 class MZFExternalize {
     public static final double THRESHOLD =
@@ -85,9 +85,8 @@ class MZFExternalize {
 	    ("ptrSET", "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V");
 	// okay, not collect a list of fields which we want to transform.
 	Map<HField,Number> myfields = new HashMap<HField,Number>();
-	for (Iterator it=pp.fieldsAboveThresh(THRESHOLD).iterator();
-	     it.hasNext(); ) {
-	    List pair = (List) it.next();
+	for (Object pairO : pp.fieldsAboveThresh(THRESHOLD)) {
+	    List pair = (List) pairO;
 	    HField hf = (HField) pair.get(0);
 	    Number mostly = (Number) pair.get(1);
 	    if (stoplist.contains(hf.getDeclaringClass())) continue;
@@ -101,8 +100,7 @@ class MZFExternalize {
 	hcf = f2m.codeFactory();
 	// except now we implement the getters/setters ourselves.
 	hcf = new CachingCodeFactory(hcf);
-	for (Iterator<HField> it=myfields.keySet().iterator(); it.hasNext(); ){
-	    HField hf = it.next();
+	for (HField hf : myfields.keySet()){
 	    HMethod getter = f2m.field2getter.get(hf);
 	    HMethod setter = f2m.field2setter.get(hf);
 	    Number mostly = myfields.get(hf);
@@ -112,8 +110,7 @@ class MZFExternalize {
 		(setter, makeSetter(hcf, setter, hf, mostly));
 	}
 	// okay, it should now be safe to go ahead and remove those fields.
-	for (Iterator<HField> it=myfields.keySet().iterator(); it.hasNext(); ){
-	    HField hf = it.next();
+	for (HField hf : myfields.keySet()){
 	    hf.getDeclaringClass().getMutator().removeDeclaredField(hf);//ta-da
 	}
 	// set the externally-visible code factory.

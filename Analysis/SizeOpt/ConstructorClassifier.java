@@ -37,7 +37,7 @@ import java.util.Set;
  * of several 'mostly-zero field' transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstructorClassifier.java,v 1.5 2004-02-08 01:53:55 cananian Exp $
+ * @version $Id: ConstructorClassifier.java,v 1.6 2004-02-08 03:20:22 cananian Exp $
  */
 public class ConstructorClassifier {
     private static final boolean STATISTICS=true;
@@ -74,16 +74,16 @@ public class ConstructorClassifier {
 	    // debug:
 	    System.out.println("BAD FIELDS: "+badFields);
 	    System.out.println("CONSTRUCTOR RESULTS:");
-	    for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
-		HMethod hm = (HMethod) it.next();
+	    for (Object hmO : ch.callableMethods()) {
+		HMethod hm = (HMethod) hmO;
 		if (!isConstructor(hm)) continue;
 		System.out.println(" "+hm+": "+classifyMethod(hm));
 	    }
 	}
 	// STATISTICS!
 	if (STATISTICS) {
-	    for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
-		HMethod hm = (HMethod) it.next();
+	    for (Object hmO : ch.callableMethods()) {
+		HMethod hm = (HMethod) hmO;
 		if (isConstructor(hm)) classifyMethod(hm);
 	    }
 	    System.out.println("CLASSIFIER: "+one_constructor+" constructors, "+one_const_field+" have a constant, and "+one_param_field+" have a parameter-dependent, field.");
@@ -99,8 +99,8 @@ public class ConstructorClassifier {
 	// get declared methods of class (should include all constructors)
 	List l = Arrays.asList(hf.getDeclaringClass().getDeclaredMethods());
 	// for each callable constructor...
-	for (Iterator it=l.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : l) {
+	    HMethod hm = (HMethod) hmO;
 	    if (!ch.callableMethods().contains(hm)) continue;
 	    if (!isConstructor(hm)) continue;
 	    // okay, hm is a callable constructor.
@@ -161,8 +161,8 @@ public class ConstructorClassifier {
     private Set findBadFields(HCodeFactory hcf, ClassHierarchy ch) {
 	Set badFields = new HashSet();
 	// for each callable method...
-	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    HCode hc = hcf.convert(hm);
 	    if (hc==null) continue; // xxx: native methods may write fields!
 	    // construct a must-param oracle for constructors.
@@ -309,8 +309,8 @@ public class ConstructorClassifier {
 			pc[i] = makeClassification(cm, mpo, qq, qq.params(i));
 		    // filter method's classifications through the mapping and
 		    // merge with our previous classifications.
-		    for (Iterator it2=m.entrySet().iterator(); it2.hasNext();){
-			Map.Entry me = (Map.Entry) it2.next();
+		    for (Object meO : m.entrySet()){
+			Map.Entry me = (Map.Entry) meO;
 			HField hf = (HField) me.getKey();
 			Classification oc = (Classification) map.get(hf);
 			Classification nc = (Classification) me.getValue();
@@ -328,8 +328,8 @@ public class ConstructorClassifier {
 	// collect statistics.
 	if (STATISTICS) {
 	    boolean has_const=false, has_param=false;
-	    for (Iterator it=map.values().iterator(); it.hasNext(); ) {
-		Classification c = (Classification) it.next();
+	    for (Object cO : map.values()) {
+		Classification c = (Classification) cO;
 		if (c.param!=-1) has_param=true;
 		if (c.isConstant) has_const=true;
 	    }

@@ -194,8 +194,8 @@ public class RegAlloc implements TempMap {
 	seen.add(hce); // keep track of touched hces.
 	// process *this*
 	//   for all uses, use current reaching def to determine 'extras'
-	for (Iterator it=ud.useC(hce).iterator(); it.hasNext(); ) {
-	    Temp u = (Temp) it.next();
+	for (Object uO : ud.useC(hce)) {
+	    Temp u = (Temp) uO;
 	    HCodeElement def = (HCodeElement) env.get(u);
 	    if (def==null) {
 		System.err.println("WARNING: no reaching def found for " + u +
@@ -207,8 +207,8 @@ public class RegAlloc implements TempMap {
 		extras.add(hce, dl.base);
 	}
 	//   for all defs, update reaching def environment.
-	for (Iterator it=ud.defC(hce).iterator(); it.hasNext(); ) {
-	    Temp d = (Temp) it.next();
+	for (Object dO : ud.defC(hce)) {
+	    Temp d = (Temp) dO;
 	    env.put(d, hce);
 	}
 	// recurse

@@ -49,7 +49,7 @@ import harpoon.Util.Util;
  * implementation of the <codE>CheckRemoval</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PACheckRemoval.java,v 1.7 2003-06-04 18:45:42 salcianu Exp $ */
+ * @version $Id: PACheckRemoval.java,v 1.8 2004-02-08 03:20:13 cananian Exp $ */
 public class PACheckRemoval implements CheckRemoval {
 
     PointerAnalysis pa = null;
@@ -92,8 +92,8 @@ public class PACheckRemoval implements CheckRemoval {
 				 new CachingSCCLBBFactory(lbbconv),
 				 linker, ch);
 	// intrathread analysis of all the callable methods
-	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); ) {
-            MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : mcg.getAllMetaMethods()) {
+            MetaMethod mm = (MetaMethod) mmO;
             if(!analyzable(mm)) continue;
             pa.getIntParIntGraph(mm);
         }
@@ -152,8 +152,8 @@ public class PACheckRemoval implements CheckRemoval {
 	
 	// the nodes that might by pointed to by a
 	Set nodes = pa.pointedNodes(instr, a);
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    // if any of them might escape, the check is needed
 	    if(!remainInMemScope(node, mm))
 		return false;

@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.5 2003-06-04 18:44:31 salcianu Exp $
+ * @version $Id: Debug.java,v 1.6 2004-02-08 03:20:02 cananian Exp $
  */
 public abstract class Debug implements java.io.Serializable {
 
@@ -79,8 +79,8 @@ public abstract class Debug implements java.io.Serializable {
 
     /** Displays a <i>split</i> relation (see the MetaCallGraph stuff). */
     public static void show_split(Relation split){
-	for(Iterator it = split.keys().iterator(); it.hasNext(); ){
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : split.keys()){
+	    HMethod hm = (HMethod) hmO;
 	    System.out.print(hm);
 	    System.out.println("  (" + split.getValues(hm).size() +
 			       " specialization(s))");

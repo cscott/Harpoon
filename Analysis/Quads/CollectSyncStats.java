@@ -29,7 +29,7 @@ import java.lang.reflect.Member;
  * instruments code to add calls to methods in this class.)
  * 
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: CollectSyncStats.java,v 1.2 2002-02-25 20:59:22 cananian Exp $
+ * @version $Id: CollectSyncStats.java,v 1.3 2004-02-08 03:20:10 cananian Exp $
  */
 
 public abstract class CollectSyncStats {
@@ -262,8 +262,8 @@ public abstract class CollectSyncStats {
 	    }
 	    public int hashCode() {
 		int h = 0;
-		for (Iterator i = hashEntrySet.iterator(); i.hasNext();) {
-		    Map.Entry ent = (Map.Entry)i.next();
+		for (Object entO : hashEntrySet) {
+		    Map.Entry ent = (Map.Entry) entO;
 		    WeakKey wk = (WeakKey)ent.getKey();
 		    Object v;
 		    if (wk == null) continue;
@@ -372,9 +372,8 @@ public abstract class CollectSyncStats {
 
     private static int dumpMap(String name, HashMap map) {
 	int badsyncs = 0;
-	Iterator i = map.keySet().iterator();
-	while (i.hasNext()) {
-	    Integer j = (Integer)i.next();
+	for (Object jO : map.keySet()) {
+	    Integer j = (Integer) jO;
 	    System.out.println(name+" id "+j+":");
 	    LinkedList ll = (LinkedList)map.get(j);
 	    java.util.Collections.sort(ll);

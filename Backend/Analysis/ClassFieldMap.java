@@ -23,7 +23,7 @@ import java.util.NoSuchElementException;
  * Results are cached for efficiency.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFieldMap.java,v 1.6 2004-02-08 01:57:24 cananian Exp $
+ * @version $Id: ClassFieldMap.java,v 1.7 2004-02-08 03:20:42 cananian Exp $
  */
 public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
     /** Creates a <code>ClassFieldMap</code>. */
@@ -34,10 +34,7 @@ public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
 	assert hf!=null && !hf.isStatic();
 	if (!cache.containsKey(hf)) {
 	    int offset=0;
-	    for (Iterator<HField> it =
-		     fieldList(hf.getDeclaringClass()).iterator();
-		 it.hasNext(); ) {
-		HField nexthf = it.next();
+	    for (HField nexthf : fieldList(hf.getDeclaringClass())) {
 		int align = fieldAlignment(nexthf);
 		assert align>0;
 		if ((offset % align) != 0)

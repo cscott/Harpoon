@@ -24,7 +24,7 @@ import harpoon.Util.PredicateWrapper;
  * lots of memory.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: RelationImpl.java,v 1.4 2003-06-04 16:06:31 salcianu Exp $
+ * @version $Id: RelationImpl.java,v 1.5 2004-02-08 03:21:50 cananian Exp $
  */
 public class RelationImpl implements Relation, java.io.Serializable {
     
@@ -212,9 +212,8 @@ public class RelationImpl implements Relation, java.io.Serializable {
 	the new relation won't affect the old one). */
     public Object clone(){
 	Hashtable new_hash = new Hashtable();
-	Iterator it = hash.entrySet().iterator();
-	while(it.hasNext()){
-	    Map.Entry entry = (Map.Entry) it.next();
+	for (Object entryO : hash.entrySet()){
+	    Map.Entry entry = (Map.Entry) entryO;
 	    new_hash.put(entry.getKey(),((HashSet)entry.getValue()).clone());
 	}
 	return new RelationImpl(new_hash);

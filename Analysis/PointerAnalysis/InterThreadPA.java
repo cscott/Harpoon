@@ -41,7 +41,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterThreadPA.java,v 1.6 2003-07-28 22:33:34 cananian Exp $
+ * @version $Id: InterThreadPA.java,v 1.7 2004-02-08 03:20:02 cananian Exp $
  */
 public abstract class InterThreadPA implements java.io.Serializable {
 
@@ -469,8 +469,8 @@ public abstract class InterThreadPA implements java.io.Serializable {
     }
     // aux method for map_static_nodes
     private static void process_STATICs(final Set set, final Relation mu) {
-	for(Iterator it = set.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : set) {
+	    PANode node = (PANode) nodeO;
 	    if(node.type == PANode.STATIC)
 		mu.add(node,node);
 	}
@@ -632,9 +632,8 @@ public abstract class InterThreadPA implements java.io.Serializable {
 	if(VERY_NEW_MAPPINGS) {
 	    // map each static node to itself
 	    for(int i = 0; i < 2; i++) {
-		for(Iterator it = pig[i].allNodes().iterator();
-		    it.hasNext(); ) {
-		    PANode node = (PANode) it.next();
+		for(Object nodeO : pig[i].allNodes()) {
+		    PANode node = (PANode) nodeO;
 		    if(node.type == PANode.STATIC)
 			mu[i].add(node, node);
 		}
@@ -646,8 +645,8 @@ public abstract class InterThreadPA implements java.io.Serializable {
 	// startee that will disappear after the thread interaction
 	//  a. first map node to node, \forall node
 	for(int i = 0; i < 2; i++) {
-	    for(Iterator it = pig[i].allNodes().iterator(); it.hasNext(); ) {
-		PANode node = (PANode) it.next();
+	    for(Object nodeO : pig[i].allNodes()) {
+		PANode node = (PANode) nodeO;
 		mu[i].add(node, node);
 	    }
 	}

@@ -23,7 +23,7 @@ import harpoon.Temp.Temp;
  * <code>LightPAEdgeSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: LightPAEdgeSet.java,v 1.7 2003-06-04 18:44:31 salcianu Exp $
+ * @version $Id: LightPAEdgeSet.java,v 1.8 2004-02-08 03:20:02 cananian Exp $
  */
 public class LightPAEdgeSet extends AbstrPAEdgeSet
     implements java.io.Serializable {
@@ -179,8 +179,8 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet
 	Relation rel = (Relation) node_edges.get(node);
 	if(rel == null) return;
 
-	for(Iterator itf = rel.keys().iterator(); itf.hasNext(); ) {
-	    String f = (String) itf.next();
+	for(Object fO : rel.keys()) {
+	    String f = (String) fO;
 	    Set nodes = rel.getValues(f);
 	    for(Iterator itn = nodes.iterator(); itn.hasNext(); )
 		visitor.visit(node, f, (PANode) itn.next());
@@ -218,8 +218,8 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet
 	for(Iterator it = set.iterator(); it.hasNext(); )
 	    removeEdges((PANode) it.next());
 	// 2.2 remove the edges ending in a node from set
-	for(Iterator it = node_edges.keySet().iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : node_edges.keySet()) {
+	    PANode node = (PANode) nodeO;
 	    Relation rel = (Relation) node_edges.get(node);
 	    rel.removeValues(predicate);
 	    if(rel.isEmpty())
@@ -239,8 +239,8 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet
 	var_edges.union(les2.var_edges);
 
 	// union of the node edges
-	for(Iterator it = les2.node_edges.keySet().iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : les2.node_edges.keySet()) {
+	    PANode node = (PANode) nodeO;
 	    LightRelation rel2 = (LightRelation) les2.node_edges.get(node);
 	    LightRelation rel1 = (LightRelation) node_edges.get(node);
 	    if(rel1 == null) {
@@ -285,8 +285,8 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet
 	    (LightRelation) var_edges.clone();
 	
 	LightMap new_nes = (LightMap) ((LightMap) node_edges).clone();
-	for(Iterator it = new_nes.entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry entry = (Map.Entry) it.next();
+	for(Object entryO : new_nes.entrySet()) {
+	    Map.Entry entry = (Map.Entry) entryO;
 	    LightRelation rel = 
 		(LightRelation) ((Relation) entry.getValue()).clone();
 	    entry.setValue(rel);

@@ -42,7 +42,7 @@ import harpoon.Util.Util;
  interation of the loop. 
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Matching.java,v 1.3 2002-11-27 18:29:53 salcianu Exp $
+ * @version $Id: Matching.java,v 1.4 2004-02-08 03:20:02 cananian Exp $
  */
 abstract class Matching implements java.io.Serializable {
 
@@ -57,22 +57,21 @@ abstract class Matching implements java.io.Serializable {
 	(Relation mu[], PAWorkList W[], Relation new_info[]) {
 	for(int i = 0; i < 2; i++) {
 	    int ib = 1-i;
-	    for(Iterator it_n1 = mu[i].keys().iterator(); it_n1.hasNext(); ) {
-		PANode n1 = (PANode) it_n1.next();
+	    for(Object n1O : mu[i].keys()) {
+		PANode n1 = (PANode) n1O;
 
 		Set new_n1 = new HashSet();
 
 		Set debug_n2s = new HashSet(mu[i].getValues(n1));
 
-		for(Iterator it_n2 = mu[i].getValues(n1).iterator();
-		    it_n2.hasNext(); ) {
-		    PANode n2 = (PANode) it_n2.next();
+		for(Object n2O : mu[i].getValues(n1)) {
+		    PANode n2 = (PANode) n2O;
 		    new_n1.addAll(mu[i].getValues(n2));
 		    new_n1.addAll(mu[ib].getValues(n2));
 		}
 		
-		for(Iterator it3 = new_n1.iterator(); it3.hasNext(); ) {
-		    PANode n3 = (PANode) it3.next();
+		for(Object n3O : new_n1) {
+		    PANode n3 = (PANode) n3O;
 		    if(mu[i].add(n1, n3)) {
 			if(DEBUG)
 			    System.out.println("rule0: " + n1 + " -> " + n3);
@@ -105,9 +104,8 @@ abstract class Matching implements java.io.Serializable {
 			   " i=" + i + " ib=" + ib);
 	*/
 
-	Iterator itf = pig[i].G.O.allFlagsForNode(node1).iterator();
-	while(itf.hasNext()) {
-	    String f = (String) itf.next();
+	for (Object fO : pig[i].G.O.allFlagsForNode(node1)) {
+	    String f = (String) fO;
 
 	    // nodes2 stands for all the nodes that could play
 	    // the role of n2 from the inference rule
@@ -121,11 +119,11 @@ abstract class Matching implements java.io.Serializable {
 
 	    // set up the relation mu[i] from any node from nodes2
 	    // to any node from nodes4
-	    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-		PANode node2 = (PANode) it2.next();
+	    for(Object node2O : nodes2) {
+		PANode node2 = (PANode) node2O;
 		boolean changed = false;
-		for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
-		    PANode node4 = (PANode) it4.next();
+		for(Object node4O : nodes4) {
+		    PANode node4 = (PANode) node4O;
 		    if(mu[i].add(node2, node4)) {
 			if(DEBUG)
 			    System.out.println
@@ -168,9 +166,8 @@ abstract class Matching implements java.io.Serializable {
 
 	out_edge.n1 = node1;
 
-	Iterator itf = pig[i].G.O.allFlagsForNode(node1).iterator();
-	while(itf.hasNext()) {
-	    String f = (String) itf.next();
+	for (Object fO : pig[i].G.O.allFlagsForNode(node1)) {
+	    String f = (String) fO;
 
 	    // nodes2 stands for all the nodes that could play
 	    // the role of n2 from the inference rule
@@ -178,8 +175,8 @@ abstract class Matching implements java.io.Serializable {
 	    if(nodes2.isEmpty()) continue;
 	    
 	    out_edge.f = f;
-	    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-		PANode node2 = (PANode) it2.next();
+	    for(Object node2O : nodes2) {
+		PANode node2 = (PANode) node2O;
 		out_edge.n2 = node2;
 
 		boolean changed = false;
@@ -227,9 +224,8 @@ abstract class Matching implements java.io.Serializable {
         // from the inference rule
         Set nodes3 = new_mappings_for_node1;
 
-        Iterator itf = pig[i].G.I.allFlagsForNode(node1).iterator();
-        while(itf.hasNext()) {
-            String f = (String) itf.next();
+        for (Object fO : pig[i].G.I.allFlagsForNode(node1)) {
+            String f = (String) fO;
             
             // nodes2 stands for all the nodes that could play
             // the role of n2 from the inference rule
@@ -243,11 +239,11 @@ abstract class Matching implements java.io.Serializable {
 
             // set up the relation mu[ib] from any node from nodes4
             // to any node from nodes2
-            for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
-                PANode node4 = (PANode) it4.next();
+            for(Object node4O : nodes4) {
+                PANode node4 = (PANode) node4O;
                 boolean changed = false;
-                for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-                    PANode node2 = (PANode) it2.next();
+                for(Object node2O : nodes2) {
+                    PANode node2 = (PANode) node2O;
                     if(mu[ib].add(node4, node2)){
                         changed = true;
                         new_info[ib].add(node4, node2);
@@ -280,9 +276,8 @@ abstract class Matching implements java.io.Serializable {
 
 	inside_edge.n1 = node1;
 
-	Iterator itf = pig[i].G.I.allFlagsForNode(node1).iterator();
-	while(itf.hasNext()) {
-	    String f = (String) itf.next();
+	for (Object fO : pig[i].G.I.allFlagsForNode(node1)) {
+	    String f = (String) fO;
 	    
 	    inside_edge.f  = f;
 	    out_edge.f = f;
@@ -292,17 +287,16 @@ abstract class Matching implements java.io.Serializable {
 	    Set nodes2 = pig[i].G.I.pointedNodes(node1,f);
 	    if(nodes2.isEmpty()) continue;
 	    
-	    for(Iterator it3 = nodes3.iterator(); it3.hasNext(); ) {
-		PANode node3 = (PANode) it3.next();
+	    for(Object node3O : nodes3) {
+		PANode node3 = (PANode) node3O;
 		out_edge.n1 = node3;
 
-		Iterator it4 = pig[i].G.O.pointedNodes(node3,f).iterator();
-		while(it4.hasNext()){
-		    PANode node4 = (PANode) it4.next();
+		for (Object node4O : pig[i].G.O.pointedNodes(node3,f)){
+		    PANode node4 = (PANode) node4O;
 		    out_edge.n2 = node4;
 		    
-		    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-			PANode node2 = (PANode) it2.next();
+		    for(Object node2O : nodes2) {
+			PANode node2 = (PANode) node2O;
 			inside_edge.n2 = node2;
 
 			if(PointerAnalysis.IGNORE_EO || 
@@ -325,15 +319,15 @@ abstract class Matching implements java.io.Serializable {
 	Relation um = new RelationImpl();
 	mu.revert(um);
 	
-	for(Iterator it = um.keys().iterator(); it.hasNext(); ) {
-	    PANode node5 = (PANode) it.next();
+	for(Object node5O : um.keys()) {
+	    PANode node5 = (PANode) node5O;
 	    Set n1n3 = um.getValues(node5);
 	    if(n1n3.size() < 2) continue;
 
-	    for(Iterator it1 = n1n3.iterator(); it1.hasNext(); ) {
-		PANode node1 = (PANode) it1.next();
-		for(Iterator it3 = n1n3.iterator(); it3.hasNext(); ) {
-		    PANode node3 = (PANode) it3.next();
+	    for(Object node1O : n1n3) {
+		PANode node1 = (PANode) node1O;
+		for(Object node3O : n1n3) {
+		    PANode node3 = (PANode) node3O;
 		    if(node1 == node3) continue;
 		    aliasingSameScopeRule(node1, node3, mu, pig, W, new_info);
 		}
@@ -352,9 +346,8 @@ abstract class Matching implements java.io.Serializable {
 	    System.out.println("aliasingSameScopeRule: node1 = " + node1 +
 			       " node3 = " + node3);
 
-	Iterator itf = pig.G.I.allFlagsForNode(node3).iterator();
-	while(itf.hasNext()) {
-	    String f = (String) itf.next();
+	for (Object fO : pig.G.I.allFlagsForNode(node3)) {
+	    String f = (String) fO;
 
 	    Set nodes2 = pig.G.O.pointedNodes(node1, f);
 	    if(nodes2.isEmpty()) continue;
@@ -363,16 +356,16 @@ abstract class Matching implements java.io.Serializable {
 	    if(nodes4.isEmpty()) continue;
 
 	    Set mu_nodes4 = new HashSet();
-	    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
-		PANode node4 = (PANode) it4.next();
+	    for(Object node4O : nodes4) {
+		PANode node4 = (PANode) node4O;
 		mu_nodes4.addAll(mu.getValues(node4));
 	    }
 
-	    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-		PANode node2 = (PANode) it2.next();
+	    for(Object node2O : nodes2) {
+		PANode node2 = (PANode) node2O;
 
-		for(Iterator it6 = mu_nodes4.iterator(); it6.hasNext(); ) {
-		    PANode node6 = (PANode) it6.next();
+		for(Object node6O : mu_nodes4) {
+		    PANode node6 = (PANode) node6O;
 		    if(mu.add(node2, node6)) {
 			if(DEBUG)
 			    System.out.println("  " + node2 + " -> " + node6);
@@ -383,8 +376,8 @@ abstract class Matching implements java.io.Serializable {
 
 
 		if(InterThreadPA.VERY_NEW_MAPPINGS) {
-		    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
-			PANode node4 = (PANode) it4.next();
+		    for(Object node4O : nodes4) {
+			PANode node4 = (PANode) node4O;
 			if(mu.add(node2, node4)) {
 			    if(DEBUG)
 				System.out.println

@@ -42,7 +42,7 @@ import java.util.Iterator;
  * which are mostly zero (or mostly 1, 2, etc).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MostlyZeroFinder.java,v 1.8 2004-02-08 01:53:55 cananian Exp $
+ * @version $Id: MostlyZeroFinder.java,v 1.9 2004-02-08 03:20:22 cananian Exp $
  */
 public class MostlyZeroFinder extends MethodMutator<Quad> {
     /** the mostly-zero analysis can actually find mostly-N fields.  this
@@ -100,9 +100,7 @@ public class MostlyZeroFinder extends MethodMutator<Quad> {
 	    if (hc==null) return e; // recursion termination condition.
 	    assert !hc.isInterface() && !hc.isArray();
 	    // one counter per declared non-static field.
-	    for (Iterator<HField> it=new ArrayIterator<HField>
-		     (hc.getDeclaredFields()); it.hasNext(); ) {
-		HField hf = it.next();
+	    for (HField hf : hc.getDeclaredFields()) {
 		assert hc==hf.getDeclaringClass();
 		if (hf.isStatic()) continue;
 		if (hf.getName().endsWith(suffix)) continue;//don't count bits

@@ -29,7 +29,7 @@ import harpoon.IR.Quads.CALL;
  <code>FakeMetaCallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: FakeMetaCallGraph.java,v 1.6 2003-06-05 22:13:46 salcianu Exp $
+ * @version $Id: FakeMetaCallGraph.java,v 1.7 2004-02-08 03:19:57 cananian Exp $
  */
 public class FakeMetaCallGraph extends MetaCallGraphAbstr {
 
@@ -60,8 +60,8 @@ public class FakeMetaCallGraph extends MetaCallGraphAbstr {
     // Create the HMethod -> MetaMethod one-to-one map.
     private Map create_map(Set methods){
 	Map map = new HashMap();
-	for(Iterator it = methods.iterator(); it.hasNext(); ){
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : methods){
+	    HMethod hm = (HMethod) hmO;
 	    MetaMethod mm = new MetaMethod(hm);
 	    map.put(hm, mm);
 	}
@@ -72,22 +72,22 @@ public class FakeMetaCallGraph extends MetaCallGraphAbstr {
     private void translate(CallGraph cg, Map map){
 
 	// set the all_meta_methods set
-	for(Iterator it = map.keySet().iterator(); it.hasNext(); ){
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : map.keySet()){
+	    HMethod hm = (HMethod) hmO;
 	    MetaMethod mm = (MetaMethod) map.get(hm);
 	    all_meta_methods.add(mm);
 	}
 	
 	// fill the callees1_cmpct map
-	for(Iterator it = map.keySet().iterator(); it.hasNext(); ){
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : map.keySet()){
+	    HMethod hm = (HMethod) hmO;
 	    MetaMethod mm = (MetaMethod) map.get(hm);
 	    MetaMethod[] mmc = hms2mms(cg.calls(hm),map);
 	    callees1_cmpct.put(mm,mmc);
 	}
 	// fill the callees2_cmpct map
-	for(Iterator it = map.keySet().iterator(); it.hasNext(); ){
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : map.keySet()){
+	    HMethod hm = (HMethod) hmO;
 	    MetaMethod mm = (MetaMethod) map.get(hm);
 	    CALL[] css = cg.getCallSites(hm);
 	    for(int i = 0; i < css.length; i++){

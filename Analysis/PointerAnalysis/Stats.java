@@ -28,7 +28,7 @@ import java.util.Comparator;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Stats.java,v 1.5 2003-02-12 19:03:34 salcianu Exp $
+ * @version $Id: Stats.java,v 1.6 2004-02-08 03:20:03 cananian Exp $
  */
 abstract class Stats implements java.io.Serializable {
 
@@ -61,8 +61,8 @@ abstract class Stats implements java.io.Serializable {
 	while(scc != null){
 	    nb_sccs++;
 	    nb_bbs += scc.nodeSet().size();
-	    for(Iterator it_bbs = scc.nodeSet().iterator(); it_bbs.hasNext();){
-		LightBasicBlock bbk = (LightBasicBlock) it_bbs.next();
+	    for(Object bbkO : scc.nodeSet()){
+		LightBasicBlock bbk = (LightBasicBlock) bbkO;
 		nb_instrs += bbk.getElements().length;
 	    }
 	    scc = scc.nextTopSort();
@@ -120,8 +120,8 @@ abstract class Stats implements java.io.Serializable {
 	maxim_nb_passes = -1;
 	maxim_nb_params = -1;
 
-	for(Iterator it = info.keySet().iterator(); it.hasNext(); ){
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : info.keySet()){
+	    MetaMethod mm = (MetaMethod) mmO;
 	    MetaMethodInfo mmi = (MetaMethodInfo) info.get(mm);
 
 	    methods.add(mm.getHMethod());
@@ -191,8 +191,8 @@ abstract class Stats implements java.io.Serializable {
 	int[] mwp = new int[maxim_nb_params + 1];
 	for(int i = 0; i < maxim_nb_params; i++) mwp[i] = 0;
 
-	for(Iterator it = info.keySet().iterator(); it.hasNext(); ){
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : info.keySet()){
+	    MetaMethod mm = (MetaMethod) mmO;
 	    MetaMethodInfo mmi = (MetaMethodInfo) info.get(mm);
 	    mwp[mmi.nb_params]++;
 	}
@@ -210,8 +210,8 @@ abstract class Stats implements java.io.Serializable {
 	int total = 0;
 	Set cls = new HashSet();
 	System.out.println("ANALYZED METHODS SIZE (IN BYTECODE INSTRS)");
-	for(Iterator it = methods.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : methods) {
+	    HMethod hm = (HMethod) hmO;
 	    HCode hcode = bcf.convert(hm);
 	    if(hcode == null) {
 		System.out.println("WARNING: " + hm + " has no HCode");
@@ -226,8 +226,8 @@ abstract class Stats implements java.io.Serializable {
 	System.out.println();
 
 	System.out.println("ANALYZED CLASSES:");
-	for(Iterator it = cls.iterator(); it.hasNext(); ) {
-	    HClass hclass = (HClass) it.next();
+	for(Object hclassO : cls) {
+	    HClass hclass = (HClass) hclassO;
 	    System.out.println("CLS " + hclass.getName());
 	    StringBuffer buff = new StringBuffer(hclass.getPackage());
 	    for(int i = 0; i < buff.length(); i++)
@@ -267,8 +267,8 @@ abstract class Stats implements java.io.Serializable {
 	System.out.println("Biggest method(s) :");
 	// 1. select the biggest method(s)
 	Set big_procs = new HashSet();
-	for(Iterator it = info.keySet().iterator(); it.hasNext(); ){
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : info.keySet()){
+	    MetaMethod mm = (MetaMethod) mmO;
 	    MetaMethodInfo mmi = (MetaMethodInfo) info.get(mm);
 	    if(mmi.nb_instrs >= (int) (0.5 * maxim_nb_instrs))
 		big_procs.add(new MethodInfo(mm.getHMethod(),mmi.nb_instrs));
@@ -297,8 +297,8 @@ abstract class Stats implements java.io.Serializable {
 	System.out.println("Most visited meta-method(s) :");
 	// 1. select the most visited methods
 	Set most_visited = new HashSet();
-	for(Iterator it = info.keySet().iterator(); it.hasNext(); ){
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : info.keySet()){
+	    MetaMethod mm = (MetaMethod) mmO;
 	    MetaMethodInfo mmi = (MetaMethodInfo) info.get(mm);
 	    if(mmi.nb_passes >= (int) (0.5 * maxim_nb_passes))
 		most_visited.add(mm);

@@ -40,7 +40,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.5 2003-10-21 02:11:02 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.6 2004-02-08 03:20:58 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -75,8 +75,8 @@ public class DataReflection2 extends Data {
 	// pointer to the end of the lookup table.
 	stmlist.add(_DATUM(m_nm.label(hc, "classinfo_end")));
 	// okay, now the sorted name, desc, offset table.
-	for (Iterator it=members.iterator(); it.hasNext(); ) {
-	    HMember hm = (HMember) it.next();
+	for (Object hmO : members) {
+	    HMember hm = (HMember) hmO;
 	    if (hm instanceof HMethod && !ch.callableMethods().contains(hm))
 		continue; // skip uncallable methods.
 	    if (hm.getDeclaringClass().equals(hc))//member info for decl'd only
@@ -102,8 +102,8 @@ public class DataReflection2 extends Data {
 	stmlist.add(_DATUM(m_nm.label(hc, "classinfo_end")));
 	// now make the actual string data bits.
 	// (only for members we actually declare)
-	for (Iterator it=members.iterator(); it.hasNext(); ) {
-	    HMember hm = (HMember) it.next();
+	for (Object hmO : members) {
+	    HMember hm = (HMember) hmO;
 	    if (hm instanceof HMethod && !ch.callableMethods().contains(hm))
 		continue; // skip uncallable methods.
 	    // only make string data for the members we declare
@@ -196,8 +196,8 @@ public class DataReflection2 extends Data {
 	for (HClass hcp=hc.getSuperclass();hcp!=null;hcp=hcp.getSuperclass()) {
 	    List l = new ArrayList(Arrays.asList(hcp.getDeclaredFields()));
 	    l.addAll(Arrays.asList(hcp.getDeclaredMethods()));
-	    for (Iterator it=l.iterator(); it.hasNext(); ) {
-		HMember hm = (HMember) it.next();
+	    for (Object hmO : l) {
+		HMember hm = (HMember) hmO;
 		if (Modifier.isPrivate(hm.getModifiers()))
 		    members.add(hm);
 	    }

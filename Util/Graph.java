@@ -41,7 +41,7 @@ import java.io.PrintWriter;
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.5 2002-09-03 15:18:44 cananian Exp $
+ * @version $Id: Graph.java,v 1.6 2004-02-08 03:21:41 cananian Exp $
  */
 
 public abstract class Graph  {
@@ -134,16 +134,16 @@ public abstract class Graph  {
 	pw.println(" layoutalgorithm: minbackward");
 	pw.println(" port_sharing: no");
 	pw.println(" arrowmode: free");
-	for (Iterator it = ch.classes().iterator(); it.hasNext(); ) {
-	    HClass c = (HClass) it.next();
+	for (Object cO : ch.classes()) {
+	    HClass c = (HClass) cO;
 	    pw.print(" node: { ");
 	    pw.print("title:\""+c.getName()+"\" ");
 	    pw.print("label:\""+c.getName()+ "\" ");
 	    pw.print("shape: box ");
 	    pw.println("}");
 	}	
-	for (Iterator it = ch.classes().iterator(); it.hasNext(); ) {
-	    HClass c = (HClass) it.next();
+	for (Object cO : ch.classes()) {
+	    HClass c = (HClass) cO;
 	    HClass sc= c.getSuperclass();
 	    if (sc!=null)
 		pw.println(" edge: { " +

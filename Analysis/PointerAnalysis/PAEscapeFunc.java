@@ -24,7 +24,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEscapeFunc.java,v 1.5 2003-10-26 17:09:30 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.6 2004-02-08 03:20:03 cananian Exp $
  */
 public class PAEscapeFunc implements java.io.Serializable {
 
@@ -172,8 +172,8 @@ public class PAEscapeFunc implements java.io.Serializable {
     public boolean escapesOnlyInCaller(PANode node) {
 	if(hasEscapedIntoAMethod(node))
 	    return false; // escapes into an unanalyzed method
-	for(Iterator it = nodeHolesSet(node).iterator(); it.hasNext(); ) {
-	    PANode hole_node = (PANode) it.next();
+	for(Object hole_nodeO : nodeHolesSet(node)) {
+	    PANode hole_node = (PANode) hole_nodeO;
 	    if(hole_node.type() != PANode.PARAM)
 		return false; // escapes into a thread or a static
 	}
@@ -184,8 +184,8 @@ public class PAEscapeFunc implements java.io.Serializable {
     /** Remove all the <code>PANode</code>s that appear in <code>set</code>
 	from <code>this</code> object. */
     public void remove(Set set){
-	for(Iterator it_nodes = set.iterator(); it_nodes.hasNext(); ){
-	    PANode node = (PANode) it_nodes.next();
+	for(Object nodeO : set){
+	    PANode node = (PANode) nodeO;
 	    rel_n.removeKey(node);
 	    //////// escaped_into_mh.remove(node);
 	    rel_m.removeKey(node);
@@ -202,8 +202,8 @@ public class PAEscapeFunc implements java.io.Serializable {
     public void union(PAEscapeFunc e2, Set/*<PANode>*/ ppgRoots) {
 	// rel_n.union(e2.rel_n) + collect in ppgRoots nodes whose
 	// escape info has changed
-	for(Iterator it = e2.rel_n.keys().iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : e2.rel_n.keys()) {
+	    PANode node = (PANode) nodeO;
 	    Set holes = e2.rel_n.getValues(node);
 	    if(rel_n.addAll(node, holes) && (ppgRoots != null))
 		ppgRoots.add(node);
@@ -246,8 +246,8 @@ public class PAEscapeFunc implements java.io.Serializable {
 		        Collections.singleton(origHole) :
 		        mu.getValues(origHole);
 		    Set nodes = mu.getValues(key);
-		    for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-			PANode node = (PANode) it.next();
+		    for(Object nodeO : nodes) {
+			PANode node = (PANode) nodeO;
 			if(addNodeHoles(node, holes) && (ppgRoots != null))
 			   ppgRoots.add(node);
 		    }
@@ -260,12 +260,12 @@ public class PAEscapeFunc implements java.io.Serializable {
 	/////    PANode node = (PANode) it.next();
 	/////    escaped_into_mh.addAll(mu.getValues(node));
 	///// }
-	for(Iterator it = e2.getEscapedIntoMH().iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : e2.getEscapedIntoMH()) {
+	    PANode node = (PANode) nodeO;
 	    Set imgs = mu.getValues(node);
 	    Set holes = e2.methodHolesSet(node);
-	    for(Iterator it_img = imgs.iterator(); it_img.hasNext(); ) {
-		PANode node_img = (PANode) it_img.next();
+	    for(Object node_imgO : imgs) {
+		PANode node_img = (PANode) node_imgO;
 		if(addMethodHoles(node_img, holes) && (ppgRoots != null))
 		    ppgRoots.add(node_img);
 	    }
@@ -276,8 +276,8 @@ public class PAEscapeFunc implements java.io.Serializable {
     public PAEscapeFunc specialize(Map map){
 	PAEscapeFunc e2 = new PAEscapeFunc();
 
-	for(Iterator itn = rel_n.keys().iterator(); itn.hasNext(); ){
-	    PANode node  = (PANode) itn.next();
+	for(Object nodeO : rel_n.keys()){
+	    PANode node = (PANode) nodeO;
 	    PANode node2 = PANode.translate(node, map);
 	    Iterator itnh = rel_n.getValues(node).iterator();
 	    while(itnh.hasNext())
@@ -289,8 +289,8 @@ public class PAEscapeFunc implements java.io.Serializable {
 	/////    PANode node = (PANode) it.next();
 	/////    e2.escaped_into_mh.add(PANode.translate(node, map));
 	///// }
-	for(Iterator it = getEscapedIntoMH().iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : getEscapedIntoMH()) {
+	    PANode node = (PANode) nodeO;
 	    PANode node2 = PANode.translate(node, map);
 	    e2.addMethodHoles(node2, methodHolesSet(node));
 	}	

@@ -30,7 +30,7 @@ import java.util.Set;
  * for <code>Temp</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadInterferenceGraph.java,v 1.4 2004-02-08 01:53:14 cananian Exp $
+ * @version $Id: QuadInterferenceGraph.java,v 1.5 2004-02-08 03:20:10 cananian Exp $
  */
 public class QuadInterferenceGraph implements InterferenceGraph {
     private final MultiMap<Temp,Temp> mm;
@@ -43,11 +43,8 @@ public class QuadInterferenceGraph implements InterferenceGraph {
         this.mm=new GenericMultiMap<Temp,Temp>(new AggregateSetFactory<Temp>());
 	for (Iterator<Quad> it=code.getElementsI(); it.hasNext(); ) {
 	    Quad q = it.next();
-	    for (Iterator<Temp> it2=live.getLiveOut(q).iterator();
-		 it2.hasNext(); ) {
-		Temp t = it2.next();
-		for (Iterator<Temp> it3=q.defC().iterator(); it3.hasNext(); ) {
-		    Temp d = it3.next();
+	    for (Temp t : live.getLiveOut(q)) {
+		for (Temp d : q.defC()) {
 		    if (!t.equals(d)) {
 			mm.add(t, d);
 			mm.add(d, t);

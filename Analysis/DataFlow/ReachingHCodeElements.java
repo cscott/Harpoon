@@ -25,7 +25,7 @@ import java.util.Set;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ReachingHCodeElements.java,v 1.4 2004-02-08 01:51:05 cananian Exp $ 
+ * @version $Id: ReachingHCodeElements.java,v 1.5 2004-02-08 03:19:21 cananian Exp $ 
  */
 public class ReachingHCodeElements extends ReachingDefs.BBVisitor { 
     private BasicBlock.Factory bbfactory;
@@ -114,9 +114,8 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
 
 	for (; blocks.hasNext(); ) {
 	    BasicBlock bb = (BasicBlock) blocks.next();
-	    Iterator hces = bb.statements().iterator(); 
-	    while(hces.hasNext()) { 
-		UseDefable udNext = (UseDefable)hces.next(); 
+	    for (Object udNextO : bb.statements()) { 
+		UseDefable udNext = (UseDefable) udNextO; 
 		if (udNext.def().length > 0) { 
 		    this.universe.add(udNext); 
 		}
@@ -148,9 +147,8 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
 	
 	while (blocks.hasNext()) { 
 	    BasicBlock bb = (BasicBlock)blocks.next(); 
-	    Iterator useDefs = bb.statements().iterator(); 
-	    while(useDefs.hasNext()) { 
-		UseDefable udNext = (UseDefable)useDefs.next(); 
+	    for (Object udNextO : bb.statements()) { 
+		UseDefable udNext = (UseDefable) udNextO; 
 		Temp[] defs   = udNext.def();
 		for (int i=0, n=defs.length; i<n; ++i) {
 		    Temp t    = defs[i];
@@ -179,9 +177,8 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
 
 	info.prsv.addAll(this.universe); 
 
-	Iterator useDefs = bb.statements().iterator(); 
-	while(useDefs.hasNext()) {
-	    UseDefable udNext = (UseDefable) useDefs.next(); 
+	for (Object udNextO : bb.statements()) {
+	    UseDefable udNext = (UseDefable) udNextO; 
 	    Temp[] defs   = udNext.def();
 	    for (int i=0, n=defs.length; i<n; ++i) {
 		Temp t    = defs[i];
@@ -224,9 +221,8 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
 	    // Starting from the first element in hce's basic block, traverse
 	    // the block until hce is reached.  Each step updates the
 	    // reaching def information.
-	    Iterator i = bb.statements().iterator(); 
-	    while(i.hasNext()) { 
-		UseDefable udCurrent = (UseDefable)i.next();
+	    for (Object udCurrentO : bb.statements()) { 
+		UseDefable udCurrent = (UseDefable) udCurrentO;
 		this.rdCache.put(udCurrent, reachBefore);
 		Temp[] defs = udCurrent.def(); 
 		for (int n=0; n<defs.length; n++) { 

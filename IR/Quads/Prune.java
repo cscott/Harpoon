@@ -21,7 +21,7 @@ import java.util.Set;
  * and gets most of the egregious dead vars.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Prune.java,v 1.7 2004-02-08 01:55:25 cananian Exp $
+ * @version $Id: Prune.java,v 1.8 2004-02-08 03:21:24 cananian Exp $
  */
 class Prune {
     private final static boolean DEBUG=false;
@@ -35,8 +35,8 @@ class Prune {
 	// the State object does the analysis.
 	State s = new State(hc);
 	// now trim out useless quads.
-	for (Iterator it=s.useless.iterator(); it.hasNext(); ) {
-	    Quad q = (Quad) it.next();
+	for (Object qO : s.useless) {
+	    Quad q = (Quad) qO;
 	    if (DEBUG) System.err.println("PRUNING: #"+q.getID()+" "+q);
 	    assert q.nextLength()==1 && q.prevLength()==1;
 	    Edge fromE = q.prevEdge(0), toE = q.nextEdge(0);

@@ -49,7 +49,7 @@ import java.util.Set;
  * <code>WriteBarrierTreePass</code> is also being used.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierStats.java,v 1.5 2002-06-25 18:16:22 kkz Exp $
+ * @version $Id: WriteBarrierStats.java,v 1.6 2004-02-08 03:20:07 cananian Exp $
  */
 public class WriteBarrierStats {
     
@@ -82,8 +82,8 @@ public class WriteBarrierStats {
 	this.tv = new CountBarrierVisitor(nm.label(arraySC), 
 					  nm.label(fieldSC), out);
 	// push all methods through
-	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    convertOne(ccf, tv, m, hm, out);
 	}
     }

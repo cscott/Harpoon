@@ -24,7 +24,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * method holes in a Parallel Interaction Graph.
  * 
  * @author  Frederic VIVIEN <vivien@lcs.mit.edu>
- * @version $Id: MethodHole.java,v 1.4 2002-04-10 03:00:42 cananian Exp $ */
+ * @version $Id: MethodHole.java,v 1.5 2004-02-08 03:20:02 cananian Exp $ */
 public class MethodHole implements java.io.Serializable {
     private static boolean DEBUG  = false;
     private static boolean DEBUG2  = false;
@@ -166,8 +166,8 @@ public class MethodHole implements java.io.Serializable {
 	    __ungroupedparameters[i] = new HashSet();
 	    Set params_i = ref.ungroupedparameters()[i];
 	    if ((params_i!=null)&&(!(params_i.isEmpty())))
-		for(Iterator j=params_i.iterator(); j.hasNext(); ){
-		    PANode n = (PANode) j.next();
+		for(Object nO : params_i){
+		    PANode n = (PANode) nO;
 		    PANode new_n = (PANode) nodemap.get(n);
 		    if (new_n==null) {
 			System.err.println("Node with null translation: " + n);
@@ -314,13 +314,13 @@ public class MethodHole implements java.io.Serializable {
     public static void reset(Set holes1, Set holes2)
     {
 	mapUpId++;
-	for(Iterator it=holes1.iterator(); it.hasNext(); ){
-	    MethodHole mh = (MethodHole) it.next();
+	for(Object mhO : holes1){
+	    MethodHole mh = (MethodHole) mhO;
 	    mh.id = -1;
 	    mh.mapup = mapUpId;
 	}
-	for(Iterator it=holes2.iterator(); it.hasNext(); ){
-	    MethodHole mh = (MethodHole) it.next();
+	for(Object mhO : holes2){
+	    MethodHole mh = (MethodHole) mhO;
 	    mh.id    = -1;
 	    mh.mapup = mapUpId;
 	}
@@ -344,9 +344,8 @@ public class MethodHole implements java.io.Serializable {
 
 	buffer.append("Par [");
 	for(int i=0; i< __ungroupedparameters.length; i++){
-	    for(Iterator parit = (__ungroupedparameters[i]).iterator(); 
-		parit.hasNext(); ){
-		PANode par = (PANode) parit.next();
+	    for(Object parO : (__ungroupedparameters[i])){
+		PANode par = (PANode) parO;
 		buffer.append(" " + par);		
 	    }
 	    if (i< __ungroupedparameters.length-1) buffer.append(";");
@@ -388,8 +387,8 @@ public class MethodHole implements java.io.Serializable {
     {
 	HashSet new_holes = new HashSet();
 
-	for(Iterator mh_it=org_holes.iterator(); mh_it.hasNext(); ){
-	    MethodHole org_mh = (MethodHole) mh_it.next();
+	for(Object org_mhO : org_holes){
+	    MethodHole org_mh = (MethodHole) org_mhO;
 	    if (org_mh!=null){
 		conversion.put(org_mh, org_mh);
 		new_holes.add(org_mh);
@@ -414,8 +413,8 @@ public class MethodHole implements java.io.Serializable {
     {
 	HashSet new_holes = new HashSet();
 
-	for(Iterator mh_it=org_holes.iterator(); mh_it.hasNext(); ){
-	    MethodHole org_mh = (MethodHole) mh_it.next();
+	for(Object org_mhO : org_holes){
+	    MethodHole org_mh = (MethodHole) org_mhO;
 	    if (org_mh!=null){
 		MethodHole new_mh = null;
 		new_mh = new MethodHole (org_mh, node_conversion);
@@ -440,8 +439,8 @@ public class MethodHole implements java.io.Serializable {
     {
 	LightRelation new_hist = new LightRelation();
 	
-	for(Iterator first_it=org_hist.keys().iterator(); first_it.hasNext(); ){
-	    MethodHole org_first = (MethodHole) first_it.next();
+	for(Object org_firstO : org_hist.keys()){
+	    MethodHole org_first = (MethodHole) org_firstO;
 	    MethodHole new_first = (MethodHole) conversion.get(org_first);
 	    if (new_first==null){
 		System.err.println("DuplicateHistory: No conversion for " 
@@ -457,9 +456,9 @@ public class MethodHole implements java.io.Serializable {
 
 	    Set holes = new HashSet();
 	    
-	    for(Iterator second_it=org_hist.getValues(org_first).iterator(); second_it.hasNext(); ){
+	    for(Object org_secondO : org_hist.getValues(org_first)){
 
-		MethodHole org_second = (MethodHole) second_it.next();
+		MethodHole org_second = (MethodHole) org_secondO;
 		MethodHole new_second = (MethodHole) conversion.get(org_second);
 		if (new_second==null){
 		    System.err.println("DuplicateHistory (2): No conversion for " 
@@ -487,12 +486,12 @@ public class MethodHole implements java.io.Serializable {
     {
 	LightRelation new_locks = new LightRelation();
 	
-	for(Iterator sync_it=org_locks.keys().iterator(); sync_it.hasNext(); ){
-	    PASync sync = (PASync) sync_it.next();
+	for(Object syncO : org_locks.keys()){
+	    PASync sync = (PASync) syncO;
 	    Set new_holes = new HashSet();
-	    for(Iterator mh_it=org_locks.getValues(sync).iterator(); mh_it.hasNext(); )
+	    for(Object org_mhO : org_locks.getValues(sync))
 		{
-		    MethodHole org_mh = (MethodHole) mh_it.next();
+		    MethodHole org_mh = (MethodHole) org_mhO;
 		    if (org_mh==null) {
 			System.err.println("Null MethodHole in DuplicateLocks...");
 			System.out.println("Null MethodHole in DuplicateLocks...");
@@ -522,8 +521,8 @@ public class MethodHole implements java.io.Serializable {
      */
     public MethodHole IsInAs(Set holeset)
     {
-	for(Iterator mh_it=holeset.iterator(); mh_it.hasNext(); ){
-	    MethodHole candidate = (MethodHole) mh_it.next();
+	for(Object candidateO : holeset){
+	    MethodHole candidate = (MethodHole) candidateO;
 	    if (strongEquals(candidate)) return candidate;
 	}
 	return null;

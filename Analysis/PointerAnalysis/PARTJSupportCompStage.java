@@ -38,7 +38,7 @@ import java.io.InputStreamReader;
  * <code>PARTJSupportCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PARTJSupportCompStage.java,v 1.1 2003-04-30 19:56:42 salcianu Exp $
+ * @version $Id: PARTJSupportCompStage.java,v 1.2 2004-02-08 03:20:03 cananian Exp $
  */
 public class PARTJSupportCompStage extends CompilerStageEZ {
     
@@ -223,8 +223,8 @@ public class PARTJSupportCompStage extends CompilerStageEZ {
 	    
 	    // if one of the elements of the set nodes is an INSIDE
 	    // node, some objects are leaking out of the memory scope.
-	    for(Iterator itn = esc_nodes.iterator(); itn.hasNext(); ) {
-		PANode node = (PANode) itn.next();
+	    for(Object nodeO : esc_nodes) {
+		PANode node = (PANode) nodeO;
 		if((node.type == PANode.INSIDE) && not_exception(node))
 		    esc_inside_nodes.add(node);
 	    }
@@ -293,8 +293,8 @@ public class PARTJSupportCompStage extends CompilerStageEZ {
     }
 
     private boolean can_remove_all_checks2() {
-	for(Iterator it = get_relevant_runs().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : get_relevant_runs()) {
+	    HMethod hm = (HMethod) hmO;
 	    if(!nothing_escapes(hm))
 		return false;
 	}
@@ -383,8 +383,8 @@ public class PARTJSupportCompStage extends CompilerStageEZ {
 		(children, "RTJ: Subclasses of javax.realtime.MemoryArea",
 		 "RTJ: ");
 
-	for(Iterator it = children.iterator(); it.hasNext(); ) {
-	    HClass  hclass = (HClass) it.next();
+	for(Object hclassO : children) {
+	    HClass hclass = (HClass) hclassO;
 	    HMethod[] hms = hclass.getMethods();
 	    for(int i = 0; i < hms.length; i++) {
 		if(hms[i].getName().equals("enter") &&
@@ -427,8 +427,8 @@ public class PARTJSupportCompStage extends CompilerStageEZ {
 	    if(DEBUG_RT)
 		Util.print_collection(types, "Possible types for "+et,"RTJ: ");
 
-	    for(Iterator it_t = types.iterator(); it_t.hasNext(); ) {
-		HClass hclass = (HClass) it_t.next();		
+	    for(Object hclassO : types) {
+		HClass hclass = (HClass) hclassO;		
 		Set children = new HashSet(classHierarchy.children(hclass));
 
 		children.add(hclass);
@@ -437,8 +437,8 @@ public class PARTJSupportCompStage extends CompilerStageEZ {
 		    Util.print_collection(children, "Children for " + hclass,
 					  "RTJ: ");
 
-		for(Iterator it_c = children.iterator(); it_c.hasNext(); ) {
-		    HClass child = (HClass) it_c.next();
+		for(Object childO : children) {
+		    HClass child = (HClass) childO;
 		    if(classHierarchy.instantiatedClasses().contains(child)) {
 			HMethod run = extract_run(child);
 			if(run != null)

@@ -53,7 +53,7 @@ import java.util.Set;
  * unused and constant fields from objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldReducer.java,v 1.7 2004-02-08 01:53:55 cananian Exp $
+ * @version $Id: FieldReducer.java,v 1.8 2004-02-08 03:20:22 cananian Exp $
  */
 public class FieldReducer extends MethodMutator<Quad> {
     private static final boolean no_mutate =
@@ -88,8 +88,7 @@ public class FieldReducer extends MethodMutator<Quad> {
 	for (Iterator<HField> it=flds.iterator(); it.hasNext(); )
 	    if (it.next().isStatic()) it.remove();
 	// now munge fields!
-	for (Iterator<HField> it=flds.iterator(); it.hasNext(); ) {
-	    HField hf = it.next();
+	for (HField hf : flds) {
 	    if (no_mutate) continue;
 	    // remove all unread and constant fields.
 	    // (which should have no more references in any HCode)

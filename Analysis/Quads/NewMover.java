@@ -46,7 +46,7 @@ import java.util.Set;
  * <code>NewMover</code> works best on <code>QuadWithTry</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NewMover.java,v 1.6 2004-02-08 01:53:14 cananian Exp $
+ * @version $Id: NewMover.java,v 1.7 2004-02-08 03:20:10 cananian Exp $
  */
 public class NewMover extends MethodMutator {
     /** If true, then the NewMover will attempt to move NEWs across SIGMAs.
@@ -102,8 +102,8 @@ public class NewMover extends MethodMutator {
 	    this.moving=new HashMap();
 	    this.aliases=new GenericInvertibleMultiMap(s.aliases);
 	    // copy/clone mappings from s.moving.
-	    for (Iterator it=s.moving.values().iterator(); it.hasNext(); ) {
-		NEW oldQ = (NEW) it.next();
+	    for (Object oldQO : s.moving.values()) {
+		NEW oldQ = (NEW) oldQO;
 		NEW newQ = (NEW) oldQ.clone();
 		newQ.addHandlers(oldQ.handlers());
 		this.moving.put(newQ.dst(), newQ);
@@ -167,9 +167,8 @@ public class NewMover extends MethodMutator {
 	    e = addAt(e, qN);
 	    // then dump all associated MOVEs.
 	    Temp src = qN.dst(); assert t.equals(src);
-	    for (Iterator it=state.aliases.getValues(src).iterator();
-		 it.hasNext(); ) {
-		Temp dst = (Temp) it.next();
+	    for (Object dstO : state.aliases.getValues(src)) {
+		Temp dst = (Temp) dstO;
 		if (src.equals(dst)) continue;
 		// no handler for the MOVE, but we don't care.
 		e = addAt(e, new MOVE(qN.getFactory(), qN, dst, src));
@@ -200,8 +199,8 @@ public class NewMover extends MethodMutator {
 		visitPhiSigma(q); // don't push past sigmas.
 	    else { // check for vars used by sigma.
 		Edge e = from;
-		for (Iterator it=q.useC().iterator(); it.hasNext(); ) {
-		    Temp t = (Temp) it.next();
+		for (Object tO : q.useC()) {
+		    Temp t = (Temp) tO;
 		    if (!state.aliases.values().contains(t)) continue;//boring.
 		    // unmap alias to canonical temp (defined by NEW)
 		    Temp src = (Temp) state.aliases.invert().get(t);
@@ -224,8 +223,8 @@ public class NewMover extends MethodMutator {
 	}
 	public void visit(FOOTER q) {
 	    // if we haven't used the MOVE/NEW by now, discard it.
-	    for (Iterator it=state.moving.values().iterator(); it.hasNext(); ){
-		NEW qN = (NEW) it.next();
+	    for (Object qNO : state.moving.values()){
+		NEW qN = (NEW) qNO;
 		// remove the NEW from any handler sets, too.
 		qN.removeHandlers(qN.handlers());
 	    }

@@ -43,7 +43,7 @@ import java.util.Set;
  * <code>RoleInference</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: RoleInference.java,v 1.3 2004-02-08 01:53:50 cananian Exp $
+ * @version $Id: RoleInference.java,v 1.4 2004-02-08 03:20:17 cananian Exp $
  */
 public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator {
     final Linker linker;
@@ -143,8 +143,8 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 		Set livein=liveness.getLiveIn(q);
 		livein.addAll(q.defC());//wanna do kills of useless locals
 		livein.removeAll(liveness.getLiveOut(q));
-		for(Iterator it=livein.iterator();it.hasNext();) {
-		    Temp t=(Temp)it.next();
+		for(Object tO : livein) {
+		    Temp t = (Temp) tO;
 		    Set possibletypes=ti.getType(new ExactTemp(q,t));
 		    boolean couldbeobject=false;
 		    for(Iterator typeit=possibletypes.iterator();typeit.hasNext();)
@@ -180,8 +180,8 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	    livein.addAll(q.defC());
 	    livein.removeAll(liveness.getLiveOut(q));
 	    //live in now contains newly dead local vars
-	    for(Iterator it=livein.iterator();it.hasNext();) {
-		Temp t=(Temp)it.next();
+	    for(Object tO : livein) {
+		Temp t = (Temp) tO;
 		exacttemps.add(new ExactTemp(q,t));
 	    }
 	    if (q instanceof MOVE) {

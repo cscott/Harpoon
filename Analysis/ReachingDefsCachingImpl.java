@@ -32,7 +32,7 @@ import java.util.HashMap;
  * over all the statements in the BasicBlock again.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsCachingImpl.java,v 1.4 2004-02-08 01:49:03 cananian Exp $
+ * @version $Id: ReachingDefsCachingImpl.java,v 1.5 2004-02-08 03:19:12 cananian Exp $
  */
 public class ReachingDefsCachingImpl<HCE extends HCodeElement>
     extends ReachingDefsAltImpl<HCE> {
@@ -96,8 +96,7 @@ public class ReachingDefsCachingImpl<HCE extends HCodeElement>
 	// propagate in Set through the HCodeElements 
 	// of the BasicBlock in correct order
 	// report("Propagating...");
-	for(Iterator<HCE> it=b.statements().iterator(); it.hasNext(); ) {
-	    HCE curr = it.next();
+	for(HCE curr : b.statements()) {
 	    hceToResults.put(curr, results);
 
 	    Collection<Temp> defC = null;

@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.5 2004-02-08 01:49:03 cananian Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.6 2004-02-08 03:19:12 cananian Exp $
  */
 public class ReachingDefsAltImpl<HCE extends HCodeElement>
     extends ReachingDefs<HCE> {
@@ -255,8 +255,7 @@ public class ReachingDefsAltImpl<HCE extends HCodeElement>
 	DefPtRecord dpr = new DefPtRecord(hceL.size());
 	Map<Temp,Set<Map.Entry<Temp,HCE>>> m = dpr.tempToPairs;
 	List multDefns = dpr.defpts;
-	for(Iterator<HCE> it=hceL.iterator(); it.hasNext(); ) {
-	    HCE hce = it.next();
+	for(HCE hce : hceL) {
 	    StringBuffer strbuf = new StringBuffer();
 	    Temp[] tArray = null;
 	    //report("Getting defs in: "+hce+" (defC:"+new java.util.ArrayList(ud.defC(hce))+")");
@@ -318,14 +317,12 @@ public class ReachingDefsAltImpl<HCE extends HCodeElement>
     // builds a BasicBlock -> Record mapping in `cache'
     private void buildGenKillSets(Map<Temp,Set<Map.Entry<Temp,HCE>>> Temp_To_Pairs) {
 	// calculate Gen and Kill sets for each basic block 
-	for(Iterator<BasicBlock<HCE>> blocks=bbf.blockSet().iterator(); blocks.hasNext(); ) {
-	    BasicBlock<HCE> b = blocks.next();
+	for(BasicBlock<HCE> b : bbf.blockSet()) {
 	    Record bitSets = new Record();
 	    cache.put(b, bitSets);
 
 	    // iterate through the instructions in the basic block
-	    for(Iterator<HCE> it=b.statements().iterator(); it.hasNext(); ) {
-		HCE hce = it.next();
+	    for(HCE hce : b.statements()) {
 		Temp[] tArray = null;
 		// special treatment of TYPECAST
 		if(check_typecast && (hce instanceof TYPECAST))
@@ -368,8 +365,8 @@ public class ReachingDefsAltImpl<HCE extends HCodeElement>
 	    Set oldIN, oldOUT;
 	    oldIN = bsf.makeSet(bitSet.IN); // clone old in Set
 	    bitSet.IN.clear();
-	    for(Iterator preds=b.prevSet().iterator(); preds.hasNext(); ) {
-		BasicBlock pred = (BasicBlock)preds.next();
+	    for(Object predO : b.prevSet()) {
+		BasicBlock pred = (BasicBlock) predO;
 		Record pBitSet = cache.get(pred);
 		bitSet.IN.addAll(pBitSet.OUT); // union
 	    }

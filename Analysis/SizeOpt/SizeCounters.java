@@ -35,7 +35,7 @@ import java.util.Iterator;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SizeCounters.java,v 1.5 2004-02-08 01:53:55 cananian Exp $
+ * @version $Id: SizeCounters.java,v 1.6 2004-02-08 03:20:22 cananian Exp $
  */
 public class SizeCounters extends MethodMutator<Quad> {
     final Frame frame;
@@ -131,9 +131,7 @@ public class SizeCounters extends MethodMutator<Quad> {
 	    // how many pointer words allocated in objects?
 	    int pntr = 0;
 	    for (HClass hc=q.hclass(); hc!=null; hc=hc.getSuperclass()) {
-		for (Iterator<HField> it=new ArrayIterator<HField>
-			 (hc.getDeclaredFields()); it.hasNext(); ) {
-		    HField hf = it.next();
+		for (HField hf : hc.getDeclaredFields()) {
 		    if (hf.isStatic() || hf.getType().isPrimitive()) continue;
 		    pntr++;
 		}
@@ -146,9 +144,7 @@ public class SizeCounters extends MethodMutator<Quad> {
 		int unread_bits=0, unread_rounded_bits=0;
 		int const_bits=0, const_rounded_bits=0;
 		for (HClass hc=q.hclass(); hc!=null; hc=hc.getSuperclass()) {
-		    for (Iterator<HField> it=new ArrayIterator<HField>
-			     (hc.getDeclaredFields()); it.hasNext(); ) {
-			HField hf = it.next();
+		    for (HField hf : hc.getDeclaredFields()) {
 			if (hf.isStatic()) continue;
 			int mybits;
 			if (hf.getType()==HClass.Float)

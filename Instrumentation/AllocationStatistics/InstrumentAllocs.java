@@ -40,7 +40,7 @@ import java.util.Map;
  * the program.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: InstrumentAllocs.java,v 1.4 2004-02-08 01:58:06 cananian Exp $ */
+ * @version $Id: InstrumentAllocs.java,v 1.5 2004-02-08 03:21:32 cananian Exp $ */
 public class InstrumentAllocs extends MethodMutator
     implements java.io.Serializable {
 
@@ -163,8 +163,8 @@ public class InstrumentAllocs extends MethodMutator
 	
 	instr_visitor.ancestor = input.ancestorElementMap();
 
-	for(Iterator setit = newset.iterator(); setit.hasNext(); ) {
-	    Quad q = (Quad) setit.next();
+	for(Object qO : newset) {
+	    Quad q = (Quad) qO;
 	    instr_visitor.qf = q.getFactory();
 	    instr_visitor.tf = instr_visitor.qf.tempFactory();
 	    q.accept(instr_visitor);
@@ -348,8 +348,8 @@ public class InstrumentAllocs extends MethodMutator
 	QuadFactory qf = ((Quad) hc.getRootElement()).getFactory();
 	TempFactory tf = qf.tempFactory();
 
-	for(Iterator setit = exitset.iterator(); setit.hasNext(); ) {
-	    Quad q = (Quad) setit.next();
+	for(Object qO : exitset) {
+	    Quad q = (Quad) qO;
 	    CALL qcall =
 		new CALL(qf, q, hm_instr_exit, new Temp[0], null, new Temp(tf),
 			 false, false, new Temp[0][2], new Temp[0]);
@@ -363,9 +363,8 @@ public class InstrumentAllocs extends MethodMutator
     // (the method that outputs the result of the instrumentation)
     static void instrumentProgramTermination
 	(HCode hcode, HMethod hm_exit, HMethod hm_instr_exit) {
-	for(Iterator it = ((Code) hcode).selectCALLs().iterator();
-	    it.hasNext(); ) {
-	    CALL call = (CALL) it.next();
+	for(Object callO : ((Code) hcode).selectCALLs()) {
+	    CALL call = (CALL) callO;
 	    if (call.method().equals(hm_exit)) {
 		QuadFactory qf = call.getFactory();
 		TempFactory tf = qf.tempFactory();

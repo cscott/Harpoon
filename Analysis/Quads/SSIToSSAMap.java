@@ -28,7 +28,7 @@ import java.util.Set;
  * to SSA is undesirable.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: SSIToSSAMap.java,v 1.3 2004-02-08 01:53:14 cananian Exp $
+ * @version $Id: SSIToSSAMap.java,v 1.4 2004-02-08 03:20:10 cananian Exp $
  */
 public class SSIToSSAMap implements TempMap {
     
@@ -62,9 +62,8 @@ public class SSIToSSAMap implements TempMap {
     void debug() {
 	//Print out the map
 	Set W=forward.keySet();
-	Iterator it=W.iterator();
-	while (it.hasNext()) {
-	    Temp t=(Temp)it.next();
+	for (Object tO : W) {
+	    Temp t = (Temp) tO;
 	    Temp tt=(Temp)forward.get(t);
 	    System.out.println(t.toString()+"--->"+tt.toString());
         }
@@ -143,10 +142,8 @@ public class SSIToSSAMap implements TempMap {
 			backward.remove(sigma.dst(i,j));
 
 			//Iterate through temps referencing us
-			Iterator fix=back.iterator();
-
-			while (fix.hasNext()) {
-    			    Temp t=(Temp)fix.next();
+			for (Object tO : back) {
+    			    Temp t = (Temp) tO;
 
 			    //Fix their forward map
 			    forward.put(t,tmpsrc);

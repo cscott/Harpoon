@@ -26,7 +26,7 @@ import java.util.ArrayList;
  * suggestRegAssignment(..) methods.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AccelRFInfo.java,v 1.4 2004-02-08 01:57:59 cananian Exp $
+ * @version $Id: AccelRFInfo.java,v 1.5 2004-02-08 03:21:04 cananian Exp $
  */
 class AccelRFInfo extends RegFileInfo {
     // rls stands for RegListSet
@@ -106,18 +106,16 @@ class AccelRFInfo extends RegFileInfo {
 		Temp t = reg[i];
 
 		Set conflictSetSW = rlsFactSW.makeSet();
-		Iterator iterSW = uniSW.iterator();
-		while(iterSW.hasNext()) {
-		    RegList rl = (RegList) iterSW.next();
+		for (Object rlO : uniSW) {
+		    RegList rl = (RegList) rlO;
 		    if (rl.contains(t)) 
 			conflictSetSW.add(rl);
 		}
 		regToRLSconflictSW.put(t, conflictSetSW);
 
 		Set conflictSetDW = rlsFactDW.makeSet();
-		Iterator iterDW = uniDW.iterator();
-		while(iterDW.hasNext()) {
-		    RegList rl = (RegList) iterDW.next();
+		for (Object rlO : uniDW) {
+		    RegList rl = (RegList) rlO;
 		    if (rl.contains(t)) 
 			conflictSetDW.add(rl);
 		}
@@ -133,16 +131,14 @@ class AccelRFInfo extends RegFileInfo {
 	Set regListSet;
 	if (t instanceof TwoWordTemp) {
 	    regListSet = rlsFactDW.makeFullSet();
-	    Iterator regs = regfile.keySet().iterator();
-	    while(regs.hasNext()) {
-		Temp r = (Temp) regs.next();
+	    for (Object rO : regfile.keySet()) {
+		Temp r = (Temp) rO;
 		regListSet.removeAll((Set)regToRLSconflictDW.get(r));
 	    }
 	} else {
 	    regListSet = rlsFactSW.makeFullSet();
-	    Iterator regs = regfile.keySet().iterator();
-	    while(regs.hasNext()) {
-		Temp r = (Temp) regs.next();
+	    for (Object rO : regfile.keySet()) {
+		Temp r = (Temp) rO;
 		regListSet.removeAll((Set)regToRLSconflictSW.get(r));
 	    }
 	}

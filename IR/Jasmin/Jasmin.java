@@ -61,7 +61,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.5 2004-02-08 01:55:14 cananian Exp $
+ * @version $Id: Jasmin.java,v 1.6 2004-02-08 03:21:15 cananian Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -1121,9 +1121,8 @@ public class Jasmin {
 
 	//Iterate through the temps we've placed so far
 
-	Iterator iterate=stacktemps.keySet().iterator();
-	while (iterate.hasNext()) {
-	    Temp next=(Temp)iterate.next();
+	for (Object nextO : stacktemps.keySet()) {
+	    Temp next = (Temp) nextO;
 
 	    //Only worry about the ones on the stack
 	    if (((TempInfo)stacktemps.get(next)).stack) {

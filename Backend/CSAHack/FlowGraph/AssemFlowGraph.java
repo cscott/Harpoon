@@ -66,8 +66,8 @@ public class AssemFlowGraph extends FlowGraph {
 		  (Node)instr2node.get(il.getNext()));
       }
       // handle jumps.
-      for (Iterator it = il.getTargets().iterator(); it.hasNext(); ) {
-	Label ll = (Label) it.next();
+      for (Object llO : il.getTargets()) {
+	Label ll = (Label) llO;
 	if (label2node.get(ll)==null)
 	    throw new Error("Non-existent label used in instruction list: "+
 			    ll.toString()+" used in "+il.toString());

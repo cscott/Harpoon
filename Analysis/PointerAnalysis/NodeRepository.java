@@ -31,7 +31,7 @@ import harpoon.Util.Util;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.9 2003-10-26 17:18:33 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.10 2004-02-08 03:20:02 cananian Exp $
  */
 public class NodeRepository implements java.io.Serializable {
 
@@ -541,8 +541,8 @@ public class NodeRepository implements java.io.Serializable {
     private void show_node_specs(PANode node, int ident){
 
 	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE){
-	    for(Iterator it = node.getAllCSSpecs().iterator(); it.hasNext(); ){
-		Map.Entry entry = (Map.Entry) it.next();
+	    for(Object entryO : node.getAllCSSpecs()){
+		Map.Entry entry = (Map.Entry) entryO;
 		CALL       q = (CALL) entry.getKey();
 		PANode snode = (PANode) entry.getValue();
 		
@@ -572,8 +572,8 @@ public class NodeRepository implements java.io.Serializable {
 	}
 
 	if(PointerAnalysis.THREAD_SENSITIVE)
-	    for(Iterator it = node.getAllTSpecs().iterator(); it.hasNext(); ){
-		Map.Entry entry = (Map.Entry) it.next();
+	    for(Object entryO : node.getAllTSpecs()){
+		Map.Entry entry = (Map.Entry) entryO;
 		MetaMethod  run = (MetaMethod) entry.getKey();
 		PANode    snode = (PANode) entry.getValue();
 		

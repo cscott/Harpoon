@@ -15,7 +15,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>PAEdge</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEdge.java,v 1.2 2002-02-25 20:58:40 cananian Exp $
+ * @version $Id: PAEdge.java,v 1.3 2004-02-08 03:20:03 cananian Exp $
  */
 public class PAEdge implements java.io.Serializable {
 
@@ -33,11 +33,10 @@ public class PAEdge implements java.io.Serializable {
     /* Project this edge through the relation <code>mu</code>. */
     public Set project(Relation mu){
 	Set edges = new HashSet();
-	for(Iterator it_n1 = mu.getValues(n1).iterator(); it_n1.hasNext(); ) {
-	    PANode new_n1 = (PANode) it_n1.next();
-	    for(Iterator it_n2 = mu.getValues(n2).iterator();
-		it_n2.hasNext(); ) {
-		PANode new_n2 = (PANode) it_n2.next();
+	for(Object new_n1O : mu.getValues(n1)) {
+	    PANode new_n1 = (PANode) new_n1O;
+	    for(Object new_n2O : mu.getValues(n2)) {
+		PANode new_n2 = (PANode) new_n2O;
 		edges.add(new PAEdge(new_n1, f, new_n2));
 	    }
 	}

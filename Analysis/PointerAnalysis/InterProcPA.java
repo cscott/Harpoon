@@ -61,7 +61,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterProcPA.java,v 1.11 2003-10-26 17:13:24 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.12 2004-02-08 03:20:02 cananian Exp $
  */
 public abstract class InterProcPA implements java.io.Serializable {
 
@@ -664,8 +664,8 @@ public abstract class InterProcPA implements java.io.Serializable {
 
     // aux method for get_initial_mapping
     private static void process_STATICs(final Set set, final Relation mu) {
-	for(Iterator it = set.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : set) {
+	    PANode node = (PANode) nodeO;
 	    if(node.type == PANode.STATIC)
 		mu.add(node, node);
 	}
@@ -695,9 +695,8 @@ public abstract class InterProcPA implements java.io.Serializable {
 	    HashSet nodes3 = new HashSet(new_info.getValues(node1));
 	    new_info.removeKey(node1);
 
-	    Iterator itf = pig_callee.G.O.allFlagsForNode(node1).iterator();
-	    while(itf.hasNext()) {
-		String f = (String) itf.next();
+	    for (Object fO : pig_callee.G.O.allFlagsForNode(node1)) {
+		String f = (String) fO;
 		// 1. matching outside edges/callee against inside edges/caller
 		// nodes2 stands for all the nodes that could play
 		// the role of n2 from the inference rule
@@ -710,11 +709,11 @@ public abstract class InterProcPA implements java.io.Serializable {
 		if(!nodes4.isEmpty()) {
 		    // set up the relation from any node from nodes2
 		    // to any node from nodes4
-		    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-			PANode node2 = (PANode)it2.next();
+		    for(Object node2O : nodes2) {
+			PANode node2 = (PANode) node2O;
 			boolean changed = false;
-			for(Iterator it4 = nodes4.iterator(); it4.hasNext();) {
-			    PANode node4 = (PANode)it4.next();
+			for(Object node4O : nodes4) {
+			    PANode node4 = (PANode) node4O;
 			    if(mu.add(node2,node4)){
 				changed = true;
 				new_info.add(node2, node4);
@@ -730,12 +729,12 @@ public abstract class InterProcPA implements java.io.Serializable {
 		if(!nodes4.isEmpty()) {
 		    // set up the relation from any node from nodes2
 		    // to any node from nodes4
-		    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-			PANode node2 = (PANode) it2.next();
+		    for(Object node2O : nodes2) {
+			PANode node2 = (PANode) node2O;
 			int type2 = node2.type();
 			boolean changed = false;
-			for(Iterator it4 = nodes4.iterator(); it4.hasNext();) {
-			    PANode node4 = (PANode) it4.next();
+			for(Object node4O : nodes4) {
+			    PANode node4 = (PANode) node4O;
 			    if(mu.add(node2, node4)) {
 				changed = true;
 				new_info.add(node2, node4);
@@ -864,16 +863,13 @@ public abstract class InterProcPA implements java.io.Serializable {
 		    Set eo_n1_set = mu.getValues(eo.n1);
 		    if(eo_n1_set.isEmpty()) return;
 
-		    Iterator it_ei_n1 = ei_n1_set.iterator();
-		    while(it_ei_n1.hasNext()){
-			PANode ei_n1 = (PANode) it_ei_n1.next();
-			Iterator it_ei_n2 = ei_n2_set.iterator();
-			while(it_ei_n2.hasNext()){
-			    PANode ei_n2 = (PANode) it_ei_n2.next();
+		    for (Object ei_n1O : ei_n1_set){
+			PANode ei_n1 = (PANode) ei_n1O;
+			for (Object ei_n2O : ei_n2_set){
+			    PANode ei_n2 = (PANode) ei_n2O;
 			    PAEdge new_ei = new PAEdge(ei_n1,ei.f,ei_n2);
-			    Iterator it_eo_n1 = eo_n1_set.iterator();
-			    while(it_eo_n1.hasNext()){
-				PANode eo_n1 = (PANode) it_eo_n1.next();
+			    for (Object eo_n1O : eo_n1_set){
+				PANode eo_n1 = (PANode) eo_n1O;
 				eo_caller.add(new PAEdge(eo_n1,ei.f,eo.n2),
 					      new_ei);
 			    }
@@ -937,8 +933,8 @@ public abstract class InterProcPA implements java.io.Serializable {
     // appearing in the types from the set "types".
     private static Set aux_clone_get_obj_fields(Set types){
 	Set retval = new HashSet();
-	for(Iterator it = types.iterator();it.hasNext(); ){
-	    HClass hclass = (HClass) it.next();
+	for(Object hclassO : types){
+	    HClass hclass = (HClass) hclassO;
 	    if(hclass.isArray()) {
 		System.out.println("CLONE: might be called for an array");
 		retval.add(PointerAnalysis.ARRAY_CONTENT);
@@ -1020,8 +1016,8 @@ public abstract class InterProcPA implements java.io.Serializable {
 	Iterator it = flags.iterator();
 	for(int i = 0; i < nb_flags; i++){
 	    String f = (String) it.next();
-	    for(Iterator it_src = srcs.iterator(); it_src.hasNext();){
-		PANode n_src = (PANode) it_src.next();
+	    for(Object n_srcO : srcs){
+		PANode n_src = (PANode) n_srcO;
 		aux_clone_treat_pseudo_ldst(q, f, n_R, n_src, pig_after0,
 					    node_rep);
 	    }
@@ -1088,8 +1084,8 @@ public abstract class InterProcPA implements java.io.Serializable {
 
 	Set set_E = new HashSet();
 	Set gtypes = new HashSet();
-	for(Iterator it = src_set.iterator(); it.hasNext(); ){
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : src_set){
+	    PANode node = (PANode) nodeO;
 	    if(pig_before.G.e.hasEscaped(node)) {
 		set_E.add(node);
 		Set compTypes = PointerAnalysis.getObjArrayComp(node);

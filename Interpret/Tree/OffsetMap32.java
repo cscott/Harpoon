@@ -73,7 +73,7 @@ import java.util.StringTokenizer;
  * 
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.5 2004-02-08 01:58:09 cananian Exp $
+ * @version  $Id: OffsetMap32.java,v 1.6 2004-02-08 03:21:34 cananian Exp $
  */
 class OffsetMap32 extends OffsetMap
 {
@@ -94,8 +94,8 @@ class OffsetMap32 extends OffsetMap
 	this.hci = new HClassInfo();
 
 	int _maxDepth = 0;
-	for (Iterator it=ch.classes().iterator();it.hasNext();){
-	    HClass hc    = (HClass)it.next();
+	for (Object hcO : ch.classes()){
+	    HClass hc = (HClass) hcO;
 	    int    depth = hci.depth(hc);
 	    _maxDepth    = (depth>_maxDepth) ? depth : _maxDepth;
 	}

@@ -57,7 +57,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.5 2004-02-07 21:28:44 cananian Exp $
+ * @version $Id: BasicGCInfo.java,v 1.6 2004-02-08 03:20:42 cananian Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -162,9 +162,8 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    instrs.hasNext(); )
 		    ((Instr)instrs.next()).accept(gcpf);
 		// put labels in
-		for(Iterator instrs = hce2label.keySet().iterator();
-		    instrs.hasNext(); ) {
-		    Instr i = (Instr)instrs.next();
+		for(Object iO : hce2label.keySet()) {
+		    Instr i = (Instr) iO;
 		    InstrLABEL label = (InstrLABEL)hce2label.get(i);
 		    // instr should only have one successor
 		    assert cfger.succC(i).size() == 1;

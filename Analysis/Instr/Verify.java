@@ -23,7 +23,7 @@ import java.util.Set;
     instructions are coherent.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: Verify.java,v 1.5 2004-02-08 01:52:07 cananian Exp $
+    @version $Id: Verify.java,v 1.6 2004-02-08 03:19:37 cananian Exp $
 */
 class Verify extends harpoon.IR.Assem.InstrVisitor {
     LocalCffRegAlloc lra;
@@ -59,9 +59,8 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 	List regs = regfile.getAssignment(use);
 	/*	
 	if (regs == null) { // search for alternate
-	    Iterator temps = regfile.tempSet().iterator();
-	    while(temps.hasNext()) {
-		Temp t = (Temp) temps.next();
+	    for (Object tO : regfile.tempSet()) {
+		Temp t = (Temp) tO;
 		if (lra.tempSets.getRep(t) == lra.tempSets.getRep(use)) {
 		    regs = regfile.getAssignment(t);
 		    break;
@@ -95,9 +94,8 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
     public void visit(final Instr i, boolean multAssignAllowed) {
 	// if (i.toString().equals("")) return;
 
-	Iterator uses = i.useC().iterator();
-	while(uses.hasNext()) {
-	    Temp use = (Temp) uses.next();
+	for (Object useO : i.useC()) {
+	    Temp use = (Temp) useO;
 	    if (lra.isRegister(use)) continue;
 	    
 	    Collection codeRegs = lra.getRegs(i, use);
@@ -186,9 +184,8 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
     private void assignP(final Temp def, Collection c, boolean multAssignAllowed) {
 	if (!multAssignAllowed) {
 	    // getting around multiple-assignment checker...
-	    Iterator redefs = c.iterator();
-	    while(redefs.hasNext()) {
-		Temp r = (Temp) redefs.next();
+	    for (Object rO : c) {
+		Temp r = (Temp) rO;
 		Temp t = regfile.getTemp(r);
 		if (regfile.hasAssignment(t)) regfile.remove(t);
 		

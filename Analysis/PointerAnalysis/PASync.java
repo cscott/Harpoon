@@ -18,7 +18,7 @@ import harpoon.Util.DataStructs.Relation;
  * <code>PASync</code> models a <code>sync</code> action.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PASync.java,v 1.2 2002-02-25 20:58:40 cananian Exp $
+ * @version $Id: PASync.java,v 1.3 2004-02-08 03:20:03 cananian Exp $
  */
 public class PASync implements java.io.Serializable {
     /** The node on which the <code>sync</code> is performed on. */
@@ -104,10 +104,10 @@ public class PASync implements java.io.Serializable {
 
 	Set retval = new HashSet();
 
-	for(Iterator it_n = set_n.iterator(); it_n.hasNext(); ){
-	    PANode new_n = (PANode) it_n.next();
-	    for(Iterator it_nt = set_nt.iterator(); it_nt.hasNext(); ){
-		PANode new_nt = (PANode) it_nt.next();
+	for(Object new_nO : set_n){
+	    PANode new_n = (PANode) new_nO;
+	    for(Object new_ntO : set_nt){
+		PANode new_nt = (PANode) new_ntO;
 		retval.add(new PASync(new_n, new_nt, hce, depth,
 				      call_path, wtspec_run));
 	    }

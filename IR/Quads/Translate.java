@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.9 2004-02-08 01:55:25 cananian Exp $
+ * @version $Id: Translate.java,v 1.10 2004-02-08 03:21:24 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -154,8 +154,8 @@ final class Translate { // not public.
 	public String toString() { return h.toString(); }
 
 	void fixupPhis() { // eliminate null limbs
-	    for (Iterator i=h.entrySet().iterator(); i.hasNext(); ) {
-		Map.Entry me = (Map.Entry) i.next();
+	    for (Object meO : h.entrySet()) {
+		Map.Entry me = (Map.Entry) meO;
 		InMerge in= (InMerge) ((List)me.getKey()).get(0);
 		PHI phi   = (PHI)     ((List)me.getValue()).get(0);
 		int arity =((Integer) ((List)me.getValue()).get(1)).intValue();

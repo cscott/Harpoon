@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  precomputed graph.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaAllCallers.java,v 1.4 2002-04-10 03:00:21 cananian Exp $
+ * @version $Id: MetaAllCallers.java,v 1.5 2004-02-08 03:19:57 cananian Exp $
  */
 public class MetaAllCallers implements java.io.Serializable {
 
@@ -71,9 +71,8 @@ public class MetaAllCallers implements java.io.Serializable {
 	// Relation<MetaMethod mm_callee, MetaMethod mm_caller>.
 	Relation callers = new LightRelation();
 
-	Iterator it_callers = mcg.getAllMetaMethods().iterator();
-	while(it_callers.hasNext()){
-	    MetaMethod mm_caller = (MetaMethod) it_callers.next();
+	for (Object mm_callerO : mcg.getAllMetaMethods()){
+	    MetaMethod mm_caller = (MetaMethod) mm_callerO;
 	    MetaMethod[] mms = mcg.getCallees(mm_caller);
 	    for(int i = 0 ; i < mms.length ; i++){
 		MetaMethod mm_callee = mms[i];
@@ -91,8 +90,8 @@ public class MetaAllCallers implements java.io.Serializable {
     // one (array based)
     private void compact(Relation callers){
 	callers_cmpct = new HashMap();
-	for(Iterator it = callers.keys().iterator(); it.hasNext(); ){
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : callers.keys()){
+	    MetaMethod mm = (MetaMethod) mmO;
 	    Set set = callers.getValues(mm);
 	    MetaMethod[] mms = 
 		(MetaMethod[]) set.toArray(new MetaMethod[set.size()]);

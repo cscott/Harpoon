@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>MyLowQuadNoSSA</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadNoSSA.java,v 1.4 2002-04-10 02:59:57 cananian Exp $
+ * @version $Id: MyLowQuadNoSSA.java,v 1.5 2004-02-08 03:19:44 cananian Exp $
  */
 
 public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
@@ -72,9 +72,8 @@ public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
 		}
 	    }
 	}
-	Iterator tempmapit=newtempmap.keySet().iterator();
-	while(tempmapit.hasNext()) {
-	    Temp newt=(Temp)tempmapit.next();
+	for (Object newtO : newtempmap.keySet()) {
+	    Temp newt = (Temp) newtO;
 	    Temp oldt=(Temp)newtempmap.get(newt);
 	    dT.put(newt, dT.get(oldt));
 	    tT.put(newt, tT.get(oldt));

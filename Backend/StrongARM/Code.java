@@ -27,7 +27,7 @@ import net.cscott.jutil.Util;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.5 2004-02-08 01:57:59 cananian Exp $
+ * @version $Id: Code.java,v 1.6 2004-02-08 03:21:04 cananian Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -249,9 +249,8 @@ class Code extends harpoon.Backend.Generic.Code {
     public void assignRegister(final Instr instr, 
 			       final Temp pseudoReg,
 			       final List regs) {
-	Iterator iter = regs.iterator();
-	while(iter.hasNext()) {
-	    Temp t = (Temp)iter.next();
+	for (Object tO : regs) {
+	    Temp t = (Temp) tO;
 	    assert regFileInfo.isRegister(t)
 		: "every element of "+regs+" should be register, but "+t+
 		"is not.";

@@ -40,7 +40,7 @@ import java.util.TreeSet;
  * <code>DataGC</code> outputs the tables needed by the garbage collector.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: DataGC.java,v 1.5 2003-10-21 02:11:02 cananian Exp $
+ * @version $Id: DataGC.java,v 1.6 2004-02-08 03:20:58 cananian Exp $
  */
 public class DataGC extends Data {
     final GCInfo m_gc;
@@ -131,8 +131,8 @@ public class DataGC extends Data {
 	stmlist.add(outputBaseTable(hm));
 	GCPoint prev = null; int i = 0;
 	// make entry for each GC point
-	for(Iterator it = gcps.iterator(); it.hasNext(); ) {
-	    GCPoint gcp = (GCPoint)it.next();
+	for(Object gcpO : gcps) {
+	    GCPoint gcp = (GCPoint) gcpO;
 	    // add index entry to GC_INDEX segment
 	    stmlist.add(new SEGMENT(tf, null, SEGMENT.GC_INDEX));
 	    // location of GC point
@@ -284,16 +284,16 @@ public class DataGC extends Data {
 	// number of derived pointers in stack
 	stmlist.add(_DATUM(new CONST(tf, null, stackDerivs.size())));
 	// handle derived pointers in registers
-	for(Iterator keys=regDerivs.keySet().iterator(); keys.hasNext(); ) {
-	    WrappedMachineRegLoc key = (WrappedMachineRegLoc)keys.next();
+	for(Object keyO : regDerivs.keySet()) {
+	    WrappedMachineRegLoc key = (WrappedMachineRegLoc) keyO;
 	    // location of derived pointer (int)
 	    stmlist.add(_DATUM(new CONST(tf, null, key.regIndex()))); 
 	    // derivation information
 	    stmlist.add(outputDLoc((GCInfo.DLoc)regDerivs.get(key)));
 	}
 	// handle derived pointers in stack
-	for (Iterator keys=stackDerivs.keySet().iterator(); keys.hasNext(); ) {
-	    WrappedStackOffsetLoc key = (WrappedStackOffsetLoc)keys.next();
+	for (Object keyO : stackDerivs.keySet()) {
+	    WrappedStackOffsetLoc key = (WrappedStackOffsetLoc) keyO;
 	    // location of derived pointer (int)
 	    stmlist.add(_DATUM(new CONST(tf, null, key.stackOffset())));
 	    // derivation information
@@ -348,9 +348,8 @@ public class DataGC extends Data {
 	//   00, 10 - no data
 	//       01 - register
 	//       11 - stack
-	for(Iterator keys=cSaved.keySet().iterator(); keys.hasNext(); ) {
-	    BackendDerivation.Register key = 
-		(BackendDerivation.Register)keys.next();
+	for(Object keyO : cSaved.keySet()) {
+	    BackendDerivation.Register key = (BackendDerivation.Register) keyO;
 	    CommonLoc location = (CommonLoc)cSaved.get(key);
 	    // make sure we have a valid register index
 	    assert key.regIndex() < numRegs;

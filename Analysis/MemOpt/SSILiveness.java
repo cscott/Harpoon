@@ -32,8 +32,8 @@ public class SSILiveness {
 
         liveOut = new GenericMultiMap(new AggregateSetFactory());
 
-        for (Iterator it = sorted.iterator(); it.hasNext();  ) {
-            Quad q = (Quad) it.next();
+        for (Object qO : sorted) {
+            Quad q = (Quad) qO;
 
             // compute this node's liveOut
             for (int j = 0; j<q.nextLength(); j++) {

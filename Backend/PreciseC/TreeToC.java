@@ -67,7 +67,7 @@ import java.util.TreeSet;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.21 2004-02-08 01:57:40 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.22 2004-02-08 03:20:54 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     // Support losing platforms (like, say, AIX) where multiple segments
@@ -712,8 +712,8 @@ public class TreeToC extends java.io.PrintWriter {
 	    // declare its aliases.
 	    String aliasdeclstr=protow.getBuffer()+
 		" __attribute__ ((alias (\""+label(e.getMethod())+"\"))));";
-	    for (Iterator it=lv.method_labels.iterator(); it.hasNext(); ) {
-		Label alias = (Label) it.next();
+	    for (Object aliasO : lv.method_labels) {
+		Label alias = (Label) aliasO;
 		sym2decl.put(alias,
 			     "DECLARE"+prologue+label(alias)+aliasdeclstr);
 	    }
@@ -858,8 +858,8 @@ public class TreeToC extends java.io.PrintWriter {
 	Map temp2K = new HashMap();
 	// emit an expression that saves the derivation of derived pointers.
 	private void emitHandleDerived(Set liveo, boolean isSave) {
-	    for (Iterator it=liveo.iterator(); it.hasNext(); ) {
-		Temp t = (Temp) it.next();
+	    for (Object tO : liveo) {
+		Temp t = (Temp) tO;
 		Derivation.DList dl=(Derivation.DList)tempv.objectTemps.get(t);
 		if (dl==null) continue; // not a derived temp.
 		// fetch name of temp in which to store derivation.
@@ -885,8 +885,8 @@ public class TreeToC extends java.io.PrintWriter {
 	private void emitPush(Set liveo) {
 	    pw.print("IFPRECISE(/*push*/(");
 	    // push base pointers
-	    for (Iterator it=liveo.iterator(); it.hasNext(); ) {
-		Temp t = (Temp) it.next();
+	    for (Object tO : liveo) {
+		Temp t = (Temp) tO;
 		Derivation.DList dl=(Derivation.DList)tempv.objectTemps.get(t);
 		if (dl!=null) continue; // only base pointers!
 		pw.print("PUSHOBJ("+t+"),");
@@ -917,8 +917,8 @@ public class TreeToC extends java.io.PrintWriter {
 		return Collections.EMPTY_SET; // bail out if no liveness info.
 	    // SAVE: (liveOut(e)-e.defs()) intersected w/ objectTemps
 	    Set lo = new TreeSet();//HashSet();
-	    for (Iterator it=live.getLiveOut(e).iterator(); it.hasNext(); ) {
-		Temp t = (Temp) it.next();
+	    for (Object tO : live.getLiveOut(e)) {
+		Temp t = (Temp) tO;
 		// filter out non-object temps.
 		if (!tempv.objectTemps.containsKey(t)) continue;
 		lo.add(t);

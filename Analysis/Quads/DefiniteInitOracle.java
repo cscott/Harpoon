@@ -45,7 +45,7 @@ import java.util.Set;
  * before its definite initialization point.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefiniteInitOracle.java,v 1.5 2004-02-08 01:53:14 cananian Exp $
+ * @version $Id: DefiniteInitOracle.java,v 1.6 2004-02-08 03:20:10 cananian Exp $
  */
 public class DefiniteInitOracle {
     private static final boolean DEBUG=true;
@@ -72,8 +72,8 @@ public class DefiniteInitOracle {
 	this.cg = new CallGraphImpl(ch, hcf);
 	this.fso = new FieldSyncOracle(hcf, ch, cg);
 	// for each constructor:
-	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    if (!isConstructor(hm)) continue;
 	    Set di = getNotDefInit(hm);
 	    notDefinitelyInitialized.addAll(di);
@@ -85,12 +85,10 @@ public class DefiniteInitOracle {
 	// done!
 	if (DEBUG) { // debugging:
 	    System.out.println("DEFINITELY INITIALIZED FIELDS:");
-	    for (Iterator it=ch.classes().iterator(); it.hasNext(); ) {
-		HClass hc = (HClass) it.next();
-		for (Iterator it2=Arrays.asList(hc.getDeclaredFields())
-			 .iterator();
-		     it2.hasNext(); ) {
-		    HField hf = (HField) it2.next();
+	    for (Object hcO : ch.classes()) {
+		HClass hc = (HClass) hcO;
+		for (Object hfO : hc.getDeclaredFields()) {
+		    HField hf = (HField) hfO;
 		    if (isDefinitelyInitialized(hf))
 			System.out.println(" "+hf);
 		}
@@ -128,10 +126,8 @@ public class DefiniteInitOracle {
 					  dt, mpo, mro, cache);
 		// add any fields which are *not* definitely initialized to
 		// our set.
-		Iterator it3=Arrays.asList
-		    (hm.getDeclaringClass().getDeclaredFields()).iterator();
-		while (it3.hasNext()) {
-		    HField hf = (HField) it3.next();
+		for (Object hfO : hm.getDeclaringClass().getDeclaredFields()) {
+		    HField hf = (HField) hfO;
 		    if (hf.isStatic()) continue;
 		    if (definit.contains(hf)) continue; // definitely init'd
 		    // not definitely init'd!
@@ -224,10 +220,8 @@ public class DefiniteInitOracle {
 			// have not been read-before.
 			Set ndi = getNotDefInit(q.method());
 			HClass hc = q.method().getDeclaringClass(); // 'this'
-			Iterator it=Arrays.asList
-			    (hc.getDeclaredFields()).iterator();
-			while (it.hasNext()) {
-			    HField hf = (HField) it.next();
+			for (Object hfO : hc.getDeclaredFields()) {
+			    HField hf = (HField) hfO;
 			    if (hf.isStatic()) continue;
 			    if (ndi.contains(hf)) continue; // not def init'd
 			    if (!readBefore.contains(hf))

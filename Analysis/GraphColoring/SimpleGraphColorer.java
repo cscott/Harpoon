@@ -27,7 +27,7 @@ import net.cscott.jutil.LinearSet;
  * <A href="http://ceylon.lcs.mit.edu/6035/lecture18/sld064.htm">lecture</A>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.3 2004-02-08 01:52:03 cananian Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.4 2004-02-08 03:19:33 cananian Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {
@@ -93,8 +93,8 @@ public class SimpleGraphColorer extends GraphColorer {
 		nColors.add(graph.getColor(nb));
 	    }
 	    
-	    for(Iterator cIter = colors.iterator(); cIter.hasNext();){
-		Color col = (Color) cIter.next();
+	    for(Object colO : colors){
+		Color col = (Color) colO;
 		if (!nColors.contains(col)) {
 		    try {
 			graph.setColor(n, col);

@@ -73,7 +73,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.6 2004-02-08 01:54:29 cananian Exp $ 
+ * @version $Id: TreeFolding.java,v 1.7 2004-02-08 03:20:35 cananian Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -281,8 +281,8 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 		    Set  defIDs = (Set)tempsToDefs.get(use);
 		    //assert tempsToDefs.containsKey(use);
 		    if (tempsToDefs.containsKey(use)) { 
-			for (Iterator k = defIDs.iterator(); k.hasNext();) { 
-			    Integer defID = (Integer)k.next();
+			for (Object defIDO : defIDs) { 
+			    Integer defID = (Integer) defIDO;
 			    if (bbIn.get(defID.intValue())) { 
 				Tuple defT=new Tuple(new Object[]{defID,use});
 				Tuple useT=new Tuple(new Object[]{useID,use});

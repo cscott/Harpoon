@@ -37,7 +37,7 @@ import java.util.Vector;
  * <code>CallGraphImpl2</code> only works on SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl2.java,v 1.6 2004-02-08 01:53:14 cananian Exp $
+ * @version $Id: CallGraphImpl2.java,v 1.7 2004-02-08 03:20:10 cananian Exp $
  */
 public class CallGraphImpl2 extends harpoon.Analysis.CallGraph  {
     final HCodeFactory hcf;
@@ -62,8 +62,8 @@ public class CallGraphImpl2 extends harpoon.Analysis.CallGraph  {
 	    if (hc==null) { cache.put(m,new HMethod[0]); return calls(m); }
 	    ExactTypeMap etm = new TypeInfo((harpoon.IR.Quads.QuadSSI)hc);
 	    ReachingDefs rd = new SSxReachingDefsImpl(hc);
-	    for (Iterator it=getCallSites(m, hc).iterator(); it.hasNext(); ) {
-		CALL q = (CALL) it.next();
+	    for (Object qO : getCallSites(m, hc)) {
+		CALL q = (CALL) qO;
 		HMethod cm = q.method();
 		if (s.contains(cm)) continue; // duplicate.
 		s.addAll(Arrays.asList(calls((CALL)q, rd, etm)));

@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * <code>ConstraintSolver</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ConstraintSolver.java,v 1.1 2002-04-11 04:25:19 salcianu Exp $
+ * @version $Id: ConstraintSolver.java,v 1.2 2004-02-08 03:21:48 cananian Exp $
  */
 public class ConstraintSolver {
 
@@ -186,8 +186,8 @@ public class ConstraintSolver {
 
     private void construct_data_structs() {
 	// initialize (partial) solution
-	for(Iterator it = master_vars.iterator(); it.hasNext(); ) {
-	    Var v = (Var) it.next();
+	for(Object vO : master_vars) {
+	    Var v = (Var) vO;
 
 	    //System.out.println("Master var: " + v);
 
@@ -307,17 +307,16 @@ public class ConstraintSolver {
 
 	    if(loops) new_delta = new HashSet();
 
-	    for(Iterator it = vv_const_out.getValues(v).iterator();
-		it.hasNext(); ) {
-		Constraint c = (Constraint) it.next();
+	    for(Object cO : vv_const_out.getValues(v)) {
+		Constraint c = (Constraint) cO;
 		
 		//System.out.println("    " + c);
 
 		c.action(sacc_scc);
 	    }
 
-	    for(Iterator it = subset_of(v).iterator(); it.hasNext(); ) {
-		Var v2 = (Var) it.next();
+	    for(Object v2O : subset_of(v)) {
+		Var v2 = (Var) v2O;
 		//System.out.println("    Apply " + v + " \\subseteq " + v2);
 		sacc_scc.updateSet(v2, sacc_scc.getDeltaSet(v));
 	    }
@@ -393,8 +392,8 @@ public class ConstraintSolver {
     // compute the mapping var v -> solution for v, \forall relevant v's
     private Map compute_final_solution(Set relevant_vars) {
 	Map v2sol = new HashMap();
-	for(Iterator it = relevant_vars.iterator(); it.hasNext(); ) {
-	    Var  v = (Var) it.next();
+	for(Object vO : relevant_vars) {
+	    Var v = (Var) vO;
 	    Var vm = (Var) v2master.get(v);
 	    Set  s = (Set) mv2sol.get(vm);
 	    v2sol.put(v, s);

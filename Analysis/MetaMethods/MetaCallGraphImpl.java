@@ -81,7 +81,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.11 2003-05-06 15:00:41 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.12 2004-02-08 03:19:57 cananian Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -240,8 +240,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// class of all callable methods.
 	instantiated_classes = new HashSet();
 	Set old_ic = ch.instantiatedClasses();
-	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    if(Modifier.isStatic(hm.getModifiers())) continue;
 	    HClass hclass = hm.getDeclaringClass();
 	    if(Modifier.isAbstract(hclass.getModifiers())) continue;
@@ -249,8 +249,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		instantiated_classes.add(hclass);
 	}
 	// however, there is an exception: the arrays (they are objects too) 
-	for(Iterator it = ch.instantiatedClasses().iterator(); it.hasNext();) {
-	    HClass hclass = (HClass) it.next();
+	for(Object hclassO : ch.instantiatedClasses()) {
+	    HClass hclass = (HClass) hclassO;
 	    if(hclass.isArray())
 		instantiated_classes.add(hclass);
 	}
@@ -269,8 +269,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // Converts the big format (Set oriented) into the compact one (arrays)
     // Takes the data from callees1(2) and puts it into callees1(2)_cmpct
     private void compact() {
-	for(Iterator it = callees1.keys().iterator(); it.hasNext();) {
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : callees1.keys()) {
+	    MetaMethod mm = (MetaMethod) mmO;
 	    Set callees = callees1.getValues(mm);
 	    MetaMethod[] mms = 
 		(MetaMethod[]) callees.toArray(new MetaMethod[callees.size()]);
@@ -279,14 +279,14 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    callees1_cmpct.put(mm, mms);
 	}
 
-	for(Iterator it = callees2.keySet().iterator(); it.hasNext();) {
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : callees2.keySet()) {
+	    MetaMethod mm = (MetaMethod) mmO;
 	    Relation  rel = (Relation) callees2.get(mm);
 	    Map map_cmpct = (Map) callees2_cmpct.get(mm);
 	    if(map_cmpct == null)
 		callees2_cmpct.put(mm,map_cmpct = new HashMap());
-	    for(Iterator it_cs = rel.keys().iterator(); it_cs.hasNext();){
-		CALL cs = (CALL) it_cs.next();
+	    for(Object csO : rel.keys()){
+		CALL cs = (CALL) csO;
 		// cees is the set of callees in "mm" at call site "cs".
 		Set cees = rel.getValues(cs);
 		MetaMethod[] mms =
@@ -638,8 +638,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	if(DEBUG_COLL_HACK)
 	    Util.print_collection(inst_colls, "Inst. collections");
 
-	for(Iterator it = inst_colls.iterator(); it.hasNext(); ) {
-	    HClass coll = (HClass) it.next();
+	for(Object collO : inst_colls) {
+	    HClass coll = (HClass) collO;
 	    if(!"java.util".equals(coll.getPackage())) {
 		System.out.println
 		    ("COLL_HACK: Non java.util collections created: " + 
@@ -687,8 +687,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	init_upcalls_sets();
 
-	for(Iterator it = all_meta_methods.iterator(); it.hasNext(); ) {
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : all_meta_methods) {
+	    MetaMethod mm = (MetaMethod) mmO;
 	    Set upcalls = allowed_upcalls_methods(mm.getHMethod());
 	    // upcalls == nulls means mm is not a collection method
 	    // any upcalls are possible
@@ -705,14 +705,14 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	Relation rel = (Relation) callees2.get(mm);
 	Set calls = new HashSet(rel.keys());
-	for(Iterator it_cs = calls.iterator(); it_cs.hasNext(); ) {
-	    CALL cs = (CALL) it_cs.next();
+	for(Object csO : calls) {
+	    CALL cs = (CALL) csO;
 	    // non-virtual call sites cannot be trimmed
 	    if(!cs.isVirtual())
 		continue;
 	    Set to_remove = new HashSet();
-	    for(Iterator it = rel.getValues(cs).iterator(); it.hasNext(); ) {
-		MetaMethod mm_callee = (MetaMethod) it.next();
+	    for(Object mm_calleeO : rel.getValues(cs)) {
+		MetaMethod mm_callee = (MetaMethod) mm_calleeO;
 		HMethod hm_callee = mm_callee.getHMethod();
 		if((hm_callee.getName().equals("equals") ||
 		    hm_callee.getName().equals("hashCode")) &&
@@ -724,8 +724,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	// computes in callees the set of all mm's callees
 	Set callees = new HashSet();
-	for(Iterator it_cs = calls.iterator(); it_cs.hasNext(); ) {
-	    CALL cs = (CALL) it_cs.next();
+	for(Object csO : calls) {
+	    CALL cs = (CALL) csO;
 	    callees.addAll(rel.getValues(cs));
 	}
 	
@@ -752,16 +752,16 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	coll_upcalls = new HashSet();
 	map_upcalls = new HashSet();
 
-	for(Iterator it = instantiated_classes.iterator(); it.hasNext(); ) {
-	    HClass hclass = (HClass) it.next();
+	for(Object hclassO : instantiated_classes) {
+	    HClass hclass = (HClass) hclassO;
 	    if(put_in_colls.contains(hclass)) {
 		coll_upcalls.add(hclass.getMethod("equals", one_obj));
 		coll_upcalls.add(hclass.getMethod("hashCode", empty_args));
 	    }
 	}
 
-	for(Iterator it = instantiated_classes.iterator(); it.hasNext(); ) {
-	    HClass hclass = (HClass) it.next();
+	for(Object hclassO : instantiated_classes) {
+	    HClass hclass = (HClass) hclassO;
 	    if(keys_put_in_maps.contains(hclass) ||
 	       values_put_in_maps.contains(hclass)) {
 		map_upcalls.add(hclass.getMethod("equals", one_obj));
@@ -1006,8 +1006,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	System.out.println("\nCOMPUTED TYPES:");
 	for(SCComponent scc = md.first_scc; scc != null; 
 	    scc = scc.nextTopSort())
-	    for(Iterator it = scc.nodeSet().iterator(); it.hasNext(); ) {
-		ExactTemp et = (ExactTemp) it.next();
+	    for(Object etO : scc.nodeSet()) {
+		ExactTemp et = (ExactTemp) etO;
 		System.out.println("< " + et.t + ", " + 
 				   ((et.ud == ExactTemp.USE)?"USE":"DEF") +
 				   ", " + Util.code2str(et.q) +
@@ -1032,8 +1032,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// implementation for the method hm
 	implementers.clear();
 	nb_cls = 0;
-	for(Iterator it = classes.iterator(); it.hasNext(); ) {
-	    HClass c = (HClass) it.next();
+	for(Object cO : classes) {
+	    HClass c = (HClass) cO;
 	    // fix some strange bug
 	    if(c.isPrimitive()) continue;
 	    HMethod callee = c.getMethod(hm.getName(), hm.getDescriptor());
@@ -1046,8 +1046,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	nb_big_calls++;
 
-	for(Iterator it = implementers.iterator(); it.hasNext(); ) {
-	    HClass c = (HClass) it.next();
+	for(Object cO : implementers) {
+	    HClass c = (HClass) cO;
 	    HMethod callee = c.getMethod(hm.getName(), hm.getDescriptor());
 
 	    nb_kids = 0;
@@ -1082,8 +1082,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	Set possible_classes = new HashSet();
 
-	for(Iterator it = children.iterator(); it.hasNext(); ) {
-	    HClass c = (HClass) it.next();
+	for(Object cO : children) {
+	    HClass c = (HClass) cO;
 	    if(Modifier.isAbstract(c.getModifiers()))
 		continue;
 	    boolean implemented = true;
@@ -1160,8 +1160,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // (the arguments of the CALLs from the code of the analyzed method).
     private final Set get_initial_set(ReachingDefs rdef, Collection calls) {
 	Set initial_set = new HashSet();
-	for(Iterator it = calls.iterator(); it.hasNext(); ) {
-	    CALL q = (CALL) it.next();
+	for(Object qO : calls) {
+	    CALL q = (CALL) qO;
 	    int nb_params = q.paramsLength();
 	    for(int i = 0; i < nb_params; i++)
 		if(!q.paramType(i).isPrimitive()) {
@@ -1286,8 +1286,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	    List to_remove = new LinkedList();
 
-	    for(Iterator it = gtypes.iterator() ; it.hasNext() ;){
-		GenType gt = (GenType) it.next();
+	    for(Object gtO : gtypes){
+		GenType gt = (GenType) gtO;
 		// no new information here
 		if(type.included(gt, ch))
 		    return;
@@ -1506,8 +1506,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		!reaching_defs.isEmpty() :
 		"Temp " + tdep + " in " + q + " has no reaching definition!";
 
-	    for(Iterator it = reaching_defs.iterator(); it.hasNext(); ) {
-		Quad qdef = (Quad) it.next();
+	    for(Object qdefO : reaching_defs) {
+		Quad qdef = (Quad) qdefO;
 		set.add(getExactTemp(tdep, qdef)); 
 	    }
 	}
@@ -1723,8 +1723,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	}
 
 	// now, put the predecessors in the ExactTemps
-	for(Iterator it = next_rel.keys().iterator(); it.hasNext(); ) {
-	    ExactTemp et = (ExactTemp) it.next();
+	for(Object etO : next_rel.keys()) {
+	    ExactTemp et = (ExactTemp) etO;
 	    Set next = next_rel.getValues(et);
 	    et.next = (ExactTemp[]) next.toArray(new ExactTemp[next.size()]);
 	}
@@ -1966,8 +1966,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	}
 
 	if(DEBUG)
-	    for(Iterator it = scc.nodeSet().iterator(); it.hasNext();){
-		ExactTemp et = (ExactTemp) it.next();
+	    for(Object etO : scc.nodeSet()){
+		ExactTemp et = (ExactTemp) etO;
 		System.out.println("\n##:< " + et.shortDescription() + 
 				   " -> " + et.getTypeSet() + " >\n");
 	    }

@@ -28,7 +28,7 @@ import net.cscott.jutil.LinearSet;
  * second stage, but this is parameterizable.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: OptimisticGraphColorer.java,v 1.5 2004-02-08 01:52:03 cananian Exp $
+ * @version $Id: OptimisticGraphColorer.java,v 1.6 2004-02-08 03:19:33 cananian Exp $
  */
 public class OptimisticGraphColorer extends GraphColorer {
 
@@ -185,8 +185,8 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    }
 	    
 	nextColor:
-	    for(Iterator cIter = colors.iterator(); cIter.hasNext();){
-		Color col = (Color) cIter.next();
+	    for(Object colO : colors){
+		Color col = (Color) colO;
 		if (!nColors.contains(col)) {
 		    try {
 			// MONITOR("trying "+col+" with "+n+"\n");

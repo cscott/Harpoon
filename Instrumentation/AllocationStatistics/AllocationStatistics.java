@@ -37,7 +37,7 @@ import java.io.PrintWriter;
  * site from an instrumented program was executed.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationStatistics.java,v 1.6 2003-02-22 04:42:23 salcianu Exp $
+ * @version $Id: AllocationStatistics.java,v 1.7 2004-02-08 03:21:32 cananian Exp $
  * @see InstrumentAllocs
  */
 public class AllocationStatistics {
@@ -171,16 +171,16 @@ public class AllocationStatistics {
 	};
 
 	int ss_size = 0;
-	for(Iterator it = allocs.iterator(); it.hasNext(); ) {
-	    Quad allocSite = (Quad) it.next();
+	for(Object allocSiteO : allocs) {
+	    Quad allocSite = (Quad) allocSiteO;
 	    if(getCount(allocSite) != 0) ss_size++;
 	}
 	SiteStat[] ss = new SiteStat[ss_size];
 
 	long total_count = 0;
 	int i = 0;
-	for(Iterator it = allocs.iterator(); it.hasNext();) {
-	    Quad allocSite  = (Quad) it.next();
+	for(Object allocSiteO : allocs) {
+	    Quad allocSite = (Quad) allocSiteO;
 	    long allocCount = getCount(allocSite);
 	    if(allocCount != 0) {
 		total_count += allocCount;
@@ -267,8 +267,8 @@ public class AllocationStatistics {
 	<code>methods</code> */
     public static Collection getAllocs(Set methods, HCodeFactory hcf) {
 	List allocs = new LinkedList();
-	for(Iterator it = methods.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : methods) {
+	    HMethod hm = (HMethod) hmO;
 	    Code code  = (Code) hcf.convert(hm);
 	    if(code != null)
 		allocs.addAll(code.selectAllocations());

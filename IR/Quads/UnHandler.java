@@ -23,7 +23,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.6 2004-02-08 01:55:25 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.7 2004-02-08 03:21:24 cananian Exp $
  */
 final class UnHandler {
     private static final boolean ARRAY_BOUNDS_CHECKS
@@ -137,13 +137,13 @@ final class UnHandler {
 	public TempInfo() { /* do nothing */ }
 	private TempInfo(Map h) {
 	    // copy types
-	    for (Iterator it=h.values().iterator(); it.hasNext(); ) {
-		AliasList al = (AliasList) it.next();
+	    for (Object alO : h.values()) {
+		AliasList al = (AliasList) alO;
 		this.put(al.temp, al.box.type);
 	    }
 	    // and copy aliases
-	    for (Iterator it=h.values().iterator(); it.hasNext(); ) {
-		AliasList al = (AliasList) it.next();
+	    for (Object alO : h.values()) {
+		AliasList al = (AliasList) alO;
 		if (al.prevAlias!=null)
 		    this.createAlias(al.temp, al.prevAlias.temp);
 	    }
@@ -282,8 +282,8 @@ final class UnHandler {
 	    METHOD newQm = (METHOD) newQh.next(1);
 
 	    // share exception-generation code
-	    for (Iterator it=Hehs.values().iterator(); it.hasNext(); ) {
-		List l = (List) it.next();
+	    for (Object lO : Hehs.values()) {
+		List l = (List) lO;
 		if (l.size() < 2) continue; // no fixup necessary.
 		PHI phi = new PHI(qf, (Quad)l.get(0), new Temp[0], l.size());
 		Edge ed = ((NEW)l.get(0)).prevEdge(0);
@@ -295,8 +295,8 @@ final class UnHandler {
 	    }
 	    
 	    // next do HandlerSets
-	    for (Iterator e=Hhs.keySet().iterator(); e.hasNext(); ) {
-		HandlerSet hs = (HandlerSet)e.next();
+	    for (Object hsO : Hhs.keySet()) {
+		HandlerSet hs = (HandlerSet) hsO;
 		List v = get(Hhs, hs);
 		assert v.size()>0; // should be!
 		PHI phi = new PHI(qf, (Quad)v.get(0),
@@ -350,8 +350,8 @@ final class UnHandler {
 		Quad.addEdge((THROW)e.next(), 0, newQf, j++);
 
 	    // FINALLY link to handlers
-	    for (Iterator e=Hhandler.keySet().iterator(); e.hasNext(); ) {
-		HANDLER h = (HANDLER) e.next();
+	    for (Object hO : Hhandler.keySet()) {
+		HANDLER h = (HANDLER) hO;
 		List v = get(Hhandler, h); // note that v can be size 0.
 		Edge ed; Quad tail;
 		// note that v.size() may be equal to zero.
@@ -386,8 +386,8 @@ final class UnHandler {
     private static final class InstanceOfFixupMap extends HashSet {
 	void put(CJMP cjmp, PHI phi) { this.add(Default.pair(cjmp, phi)); }
 	void fixup(StaticState ss) {
-	    for (Iterator it=this.iterator(); it.hasNext(); ) {
-		List pair = (List) it.next();
+	    for (Object pairO : this) {
+		List pair = (List) pairO;
 		CJMP cjmp = (CJMP) pair.get(0);
 		PHI phi = (PHI) pair.get(1);
 		// get new version of the cjmp.

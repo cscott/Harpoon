@@ -40,7 +40,7 @@ import java.util.Set;
  * MZF-compressed version of a class at run-time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFChooser.java,v 1.7 2004-02-08 01:53:55 cananian Exp $
+ * @version $Id: MZFChooser.java,v 1.8 2004-02-08 03:20:22 cananian Exp $
  */
 class MZFChooser extends MethodMutator<Quad> {
     /** an oracle to determine the properties of constructors. */
@@ -84,9 +84,7 @@ class MZFChooser extends MethodMutator<Quad> {
 	for (Iterator<Quad> it=hc.getElementsI(); it.hasNext(); )
 	    it.next().accept(qfinder);
 	// for each constructor:
-	for (Iterator<CALL> it=qfinder.constructors.iterator();
-	     it.hasNext(); ) {
-	    CALL qC = it.next();
+	for (CALL qC : qfinder.constructors) {
 	    assert !qC.isVirtual();
 	    // match it to a 'NEW'.
 	    NEW qN = qfinder.temp2new.get(qC.params(0));

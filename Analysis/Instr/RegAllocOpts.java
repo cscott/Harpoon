@@ -72,7 +72,7 @@ import java.util.StringTokenizer;
  * <code>RegAlloc.Factory</code>s
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAllocOpts.java,v 1.2 2002-02-25 20:57:31 cananian Exp $ */
+ * @version $Id: RegAllocOpts.java,v 1.3 2004-02-08 03:19:37 cananian Exp $ */
 public class RegAllocOpts {
     public static final boolean INFO = false;
     Filter disableReachingDefs;
@@ -200,8 +200,8 @@ public class RegAllocOpts {
 	    if (names.contains(name)) 
 		return true;
 	    
-	    for(Iterator pfs=prefixMatches.iterator();pfs.hasNext();){
-		String s = (String) pfs.next();
+	    for(Object sO : prefixMatches){
+		String s = (String) sO;
 		if (name.startsWith(s)) 
 		    return true;
 	    }

@@ -51,7 +51,7 @@ import harpoon.IR.Quads.CONST;
  extensions for the other quads).
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: TypeInference.java,v 1.4 2002-04-10 03:07:35 cananian Exp $
+ * @version $Id: TypeInference.java,v 1.5 2004-02-08 03:22:00 cananian Exp $
  */
 public class TypeInference implements java.io.Serializable {
     // switch on the debug messages
@@ -87,8 +87,8 @@ public class TypeInference implements java.io.Serializable {
     public boolean isArrayOfNonPrimitives(ExactTemp et){
 	Set set = getType(et);
 
-	for(Iterator it = getType(et).iterator(); it.hasNext(); ){
-	    HClass hclass = (HClass) it.next();
+	for(Object hclassO : getType(et)){
+	    HClass hclass = (HClass) hclassO;
 	    HClass comp  = hclass.getComponentType();
 	    if(comp == null) continue;
 	    if(DEBUG)
@@ -172,12 +172,11 @@ public class TypeInference implements java.io.Serializable {
 	// dependencies have not been explored yet.
 	final PAWorkList W2 = new PAWorkList();
 
-	for(Iterator it = ietemps.iterator(); it.hasNext(); ){
-	    ExactTemp et = (ExactTemp) it.next();
+	for(Object etO : ietemps){
+	    ExactTemp et = (ExactTemp) etO;
 
-	    Iterator it_rdef = rdef.reachingDefs(et.q, et.t).iterator();
-	    while(it_rdef.hasNext()){
-		Quad quad = (Quad) it_rdef.next();
+	    for (Object quadO : rdef.reachingDefs(et.q, et.t)){
+		Quad quad = (Quad) quadO;
 		ExactTemp et_def = new ExactTemp(quad, et.t);
 		if(seen.add(et_def))
 		    W2.add(et_def);
@@ -254,9 +253,8 @@ public class TypeInference implements java.io.Serializable {
 		}
 
 		public void put_deps(Quad q, Temp t){
-		    for(Iterator itq = rdef.reachingDefs(q,t).iterator();
-			itq.hasNext();){
-			Quad qdef = (Quad) itq.next();
+		    for(Object qdefO : rdef.reachingDefs(q,t)){
+			Quad qdef = (Quad) qdefO;
 			ExactTemp et_def = new ExactTemp(qdef,t);
 			dependencies.add(et_def, wrapper.et);
 			if(seen.add(et_def))
@@ -326,9 +324,8 @@ public class TypeInference implements java.io.Serializable {
 		public void visit(MOVE q){
 		    boolean modified = false;
 
-		    for(Iterator it = types.getValues(wrapper2.et1).iterator();
-			it.hasNext(); ){
-			HClass hclass = (HClass) it.next();
+		    for(Object hclassO : types.getValues(wrapper2.et1)){
+			HClass hclass = (HClass) hclassO;
 			if(types.add(wrapper2.et2, hclass))
 			    modified = true;
 		    }
@@ -339,9 +336,8 @@ public class TypeInference implements java.io.Serializable {
 		public void visit(AGET q){
 		    boolean modified = false;
 		    
-		    for(Iterator it = types.getValues(wrapper2.et1).iterator();
-			it.hasNext();){
-			HClass hclass = (HClass) it.next();
+		    for(Object hclassO : types.getValues(wrapper2.et1)){
+			HClass hclass = (HClass) hclassO;
 			HClass hcomp = hclass.getComponentType();
 			if(hcomp != null)
 			    if(types.add(wrapper2.et2, hcomp))
@@ -359,9 +355,8 @@ public class TypeInference implements java.io.Serializable {
 	while(!W.isEmpty()){
 	    ExactTemp et1 = (ExactTemp) W.remove();
 	    wrapper2.et1  = et1;
-	    Iterator it = dependencies.getValues(et1).iterator();
-	    while(it.hasNext()) {
-		ExactTemp et2 = (ExactTemp) it.next();
+	    for (Object et2O : dependencies.getValues(et1)) {
+		ExactTemp et2 = (ExactTemp) et2O;
 		wrapper2.et2   = et2;
 		et2.q.accept(type_calculator);
 	    }
@@ -372,12 +367,11 @@ public class TypeInference implements java.io.Serializable {
     private void compute_interesting_types(Set ietemps){
 	Relation types2 = new LightRelation();
 
-	for(Iterator it = ietemps.iterator(); it.hasNext(); ){
-	    ExactTemp et = (ExactTemp) it.next();
+	for(Object etO : ietemps){
+	    ExactTemp et = (ExactTemp) etO;
 
-	    for(Iterator it_rdef = rdef.reachingDefs(et.q, et.t).iterator();
-		it_rdef.hasNext(); ){
-		Quad q = (Quad) it_rdef.next();
+	    for(Object qO : rdef.reachingDefs(et.q, et.t)){
+		Quad q = (Quad) qO;
 		types2.addAll(et, types.getValues(new ExactTemp(q, et.t)));
 	    }
 	}

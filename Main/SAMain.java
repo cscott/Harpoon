@@ -67,7 +67,7 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.61 2004-02-08 01:58:13 cananian Exp $
+ * @version $Id: SAMain.java,v 1.62 2004-02-08 03:21:38 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -105,8 +105,7 @@ public class SAMain extends harpoon.IR.Registration {
 	
 	CompilerState cs = CompilerState.EMPTY_STATE;
 
-	for(Iterator<CompilerStage> it=stages.iterator(); it.hasNext(); ) {
-	    CompilerStage stage = it.next();
+	for(CompilerStage stage : stages) {
 	    if(stage.enabled()) {
 		System.out.println("Execute stage " + stage.name());
 		cs = stage.action(cs);
@@ -239,8 +238,7 @@ public class SAMain extends harpoon.IR.Registration {
     private static List<Option> getAllOptions() {
 	List<Option> opts = new LinkedList<Option>();
 	Map<String,String> opt2stage = new HashMap<String,String>();
-	for(Iterator<CompilerStage> it = stages.iterator(); it.hasNext();){
-	    CompilerStage stage = it.next();
+	for(CompilerStage stage : stages){
 	    addOptions(stage, opts, opt2stage);
 	}
 	return opts;
@@ -250,8 +248,7 @@ public class SAMain extends harpoon.IR.Registration {
     private static void addOptions(CompilerStage stage,
 				   List<Option> allOpts,
 				   Map<String,String> opt2stage) {
-	for(Iterator<Option> it=stage.getOptions().iterator(); it.hasNext();) {
-	    Option option = it.next();
+	for(Option option : stage.getOptions()) {
 	    String old_stage = 
 		opt2stage.put(option.optionName(), stage.name());
 	    if(old_stage != null) {
@@ -317,8 +314,7 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
     private static void printStageOptions(CompilerStage stage) {
-	for(Iterator<Option> it=stage.getOptions().iterator(); it.hasNext();) {
-	    Option option = it.next();
+	for(Option option : stage.getOptions()) {
 	    option.printHelp(System.out);
 	}
     }

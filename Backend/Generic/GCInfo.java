@@ -30,7 +30,7 @@ import java.util.Set;
  * the instruction stream.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: GCInfo.java,v 1.4 2002-04-10 03:02:44 cananian Exp $
+ * @version $Id: GCInfo.java,v 1.5 2004-02-08 03:20:50 cananian Exp $
  */
 public abstract class GCInfo {
     /** Creates an <code>IntermediateCodeFactory</code> that
@@ -115,12 +115,11 @@ public abstract class GCInfo {
 	private void filter(Map derivations) {
 	    regDerivations = new HashMap();
 	    stackDerivations = new HashMap();
-	    for(Iterator keys=derivations.keySet().iterator(); 
-		keys.hasNext(); ) {
-		Set key = (Set)keys.next();
+	    for(Object keyO : derivations.keySet()) {
+		Set key = (Set) keyO;
 		DLoc derivation = (DLoc)derivations.get(key);
-		for(Iterator it=key.iterator(); it.hasNext(); ) {
-		    CommonLoc loc = (CommonLoc)it.next();
+		for(Object locO : key) {
+		    CommonLoc loc = (CommonLoc) locO;
 		    switch(loc.kind()) {
 		    case StackOffsetLoc.KIND:
 			WrappedStackOffsetLoc wsol =
@@ -140,8 +139,8 @@ public abstract class GCInfo {
 	}
 	// Sorts the various locations by type
 	private void filter(Set locations) {
-	    for(Iterator it = locations.iterator(); it.hasNext(); ) {
-		CommonLoc loc = (CommonLoc)it.next();
+	    for(Object locO : locations) {
+		CommonLoc loc = (CommonLoc) locO;
 		switch(loc.kind()) {
 		case StackOffsetLoc.KIND:
 		    WrappedStackOffsetLoc wsol =

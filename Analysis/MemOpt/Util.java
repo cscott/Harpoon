@@ -29,7 +29,7 @@ import harpoon.Util.Graphs.Navigator;
  * <code>Util</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Util.java,v 1.9 2003-05-06 15:04:19 salcianu Exp $
+ * @version $Id: Util.java,v 1.10 2004-02-08 03:19:53 cananian Exp $
  */
 public abstract class Util {
 
@@ -54,8 +54,8 @@ public abstract class Util {
 	    harpoon.Util.Util.print_collection
 		(methods, "Methods called from recursive methods");
 
-	for(Iterator it = methods.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : methods) {
+	    HMethod hm = (HMethod) hmO;
 	    Code hcode = (Code) hcf.convert(hm);
             if (hcode != null) 
                 dnews.addAll(hcode.selectAllocations());

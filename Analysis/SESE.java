@@ -34,7 +34,7 @@ import java.util.Stack;
  * control regions in linear time" might also provide a useful reference.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SESE.java,v 1.6 2004-02-08 01:49:03 cananian Exp $
+ * @version $Id: SESE.java,v 1.7 2004-02-08 03:19:12 cananian Exp $
  */
 public class SESE  {
     /** Root of <code>Region</code> tree. */
@@ -50,8 +50,8 @@ public class SESE  {
 	// use cycle equivalence classes to determine canonical sese regions.
 	Map entryRegion= new HashMap();
         Map exitRegion = new HashMap();
-	for (Iterator it=ceq.cdClasses().iterator(); it.hasNext(); ) {
-	    List l = (List) it.next();
+	for (Object lO : ceq.cdClasses()) {
+	    List l = (List) lO;
 	    Object prev=null;
 	    for (Iterator lit=l.listIterator(); lit.hasNext(); ) {
 		Object o = lit.next();

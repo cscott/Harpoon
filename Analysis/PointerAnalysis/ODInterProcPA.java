@@ -53,7 +53,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>ODPointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODInterProcPA.java,v 1.6 2004-02-08 01:53:07 cananian Exp $
+ * @version $Id: ODInterProcPA.java,v 1.7 2004-02-08 03:20:02 cananian Exp $
  */
 abstract class ODInterProcPA {
 
@@ -838,10 +838,8 @@ abstract class ODInterProcPA {
 	if (verbose) {
 	    for(int i=0; i<callee_params.length;i++){ 
 		System.out.print("Param " + callee_params[i] + "->");
-		Iterator it_img = 
-		    first_mapping.getValues(callee_params[i]).iterator();
-		while(it_img.hasNext()) {
-		    PANode node_img = (PANode) it_img.next();
+		for (Object node_imgO : first_mapping.getValues(callee_params[i])) {
+		    PANode node_img = (PANode) node_imgO;
 		    System.out.print(" " + node_img);
 		}
 		System.out.println();
@@ -983,8 +981,8 @@ abstract class ODInterProcPA {
 		    ret_methodholes.remove(m_hole.callsite().method());
 		Set ret_nodesholes  = pig_caller.G.e.nodeHolesSet(m_hole.ret());
 
-		for(Iterator ret_it=pig_callee.G.r.iterator(); ret_it.hasNext(); ){
-		    PANode ret_n = (PANode) ret_it.next();
+		for(Object ret_nO : pig_callee.G.r){
+		    PANode ret_n = (PANode) ret_nO;
 		    pig_caller.G.e.addMethodHoles(ret_n, ret_methodholes);
 		    pig_caller.G.e.addNodeHoles(ret_n, ret_nodesholes);
 		}
@@ -995,8 +993,8 @@ abstract class ODInterProcPA {
 		if((!updateformalnodes)&&(ODInterProcPA.exc_strong_update))
 		    exc_methodholes.remove(m_hole.callsite().method());
 		Set exc_nodesholes  = pig_caller.G.e.nodeHolesSet(m_hole.exc());
-		for(Iterator excp_it=pig_callee.G.excp.iterator(); excp_it.hasNext(); ){
-		    PANode excp_n = (PANode) excp_it.next();
+		for(Object excp_nO : pig_callee.G.excp){
+		    PANode excp_n = (PANode) excp_nO;
 		    pig_caller.G.e.addMethodHoles(excp_n, exc_methodholes);
 		    pig_caller.G.e.addNodeHoles  (excp_n, exc_nodesholes); 
 		}
@@ -1067,8 +1065,8 @@ abstract class ODInterProcPA {
 	    // load nodes. (The second mapping is notbused later on,
 	    // we only update the seconde mapping extended which is
 	    // used).
-	    for(Iterator load_it = emptyloads.iterator(); load_it.hasNext(); ){
-		PANode n = (PANode) load_it.next();
+	    for(Object nO : emptyloads){
+		PANode n = (PANode) nO;
 		first_mapping.remove(n,n);
 		second_mapping_extended.remove(n,n);
 	    }
@@ -1448,8 +1446,8 @@ abstract class ODInterProcPA {
 	// map the actual arguments to themselves
 	for(int i = 0; i < args.length; i++)
 	    if(!q.paramType(i).isPrimitive())
-		for(Iterator node_it=caller_params[i].iterator(); node_it.hasNext();){
-		    PANode node = (PANode) node_it.next();
+		for(Object nodeO : caller_params[i]){
+		    PANode node = (PANode) nodeO;
 		    nu.add(node,node);
 		}
 
@@ -1474,14 +1472,14 @@ abstract class ODInterProcPA {
 
 	System.out.print("   " + org + "->");
 	if ((nodes!=null)&&(!nodes.isEmpty()))
-	    for(Iterator n_it=nodes.iterator(); n_it.hasNext();){
-		PANode n = (PANode) n_it.next();
+	    for(Object nO : nodes){
+		PANode n = (PANode) nO;
 		System.out.print(" " + n);
 	    }
 	System.out.print(" ->");
 	if ((mu_nodes!=null)&&(!mu_nodes.isEmpty()))
-	    for(Iterator m_it=mu_nodes.iterator(); m_it.hasNext();){
-		PANode m_n = (PANode) m_it.next();
+	    for(Object m_nO : mu_nodes){
+		PANode m_n = (PANode) m_nO;
 		System.out.print(" " + m_n);
 	    }
 	System.out.println(".");
@@ -1545,8 +1543,8 @@ abstract class ODInterProcPA {
     
     private static void map_mapping(Relation reference, Relation addenda){
 	Set keys = addenda.keys();
-	for(Iterator k_it = keys.iterator(); k_it.hasNext();){
-	    PANode mapped = (PANode) k_it.next();
+	for(Object mappedO : keys){
+	    PANode mapped = (PANode) mappedO;
 	    Set image = addenda.getValues(mapped);
 	    reference.addAll(mapped, projection(image, reference, new LinearSet()));
 	}
@@ -1590,8 +1588,8 @@ abstract class ODInterProcPA {
     
     // aux method for get_initial_mapping
     private static void process_STATICs(final Set set, final Relation mu) {
-	for(Iterator it = set.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : set) {
+	    PANode node = (PANode) nodeO;
 	    if(node.type == PANode.STATIC)
 		mu.add(node, node);
 	}
@@ -1623,9 +1621,8 @@ abstract class ODInterProcPA {
 	    HashSet nodes3 = new HashSet(new_info.getValues(node1));
 	    new_info.removeKey(node1);
 
-	    Iterator itf = pig_callee.G.O.allFlagsForNode(node1).iterator();
-	    while(itf.hasNext()) {
-		String f = (String) itf.next();
+	    for (Object fO : pig_callee.G.O.allFlagsForNode(node1)) {
+		String f = (String) fO;
 
 		// nodes2 stands for all the nodes that could play
 		// the role of n2 from the inference rule
@@ -1641,11 +1638,11 @@ abstract class ODInterProcPA {
 
 		// set up the relation from any node from nodes2
 		// to any node from nodes4
-		for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-		    PANode node2 = (PANode)it2.next();
+		for(Object node2O : nodes2) {
+		    PANode node2 = (PANode) node2O;
 		    boolean changed = false;
-		    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
-			PANode node4 = (PANode)it4.next();
+		    for(Object node4O : nodes4) {
+			PANode node4 = (PANode) node4O;
 			if(mu.add(node2,node4)){
 			    changed = true;
 			    new_info.add(node2,node4);
@@ -1805,9 +1802,8 @@ abstract class ODInterProcPA {
 	    HashSet nodes3 = new HashSet(new_info.getValues(node1));
 	    new_info.removeKey(node1);
 
-	    Iterator itf = pig_callee.G.O.allFlagsForNode(node1).iterator();
-	    while(itf.hasNext()) {
-		String f = (String) itf.next();
+	    for (Object fO : pig_callee.G.O.allFlagsForNode(node1)) {
+		String f = (String) fO;
 
 		// nodes2 stands for all the nodes that could play
 		// the role of n2 from the inference rule
@@ -1816,8 +1812,8 @@ abstract class ODInterProcPA {
 
 		// nodes4 stands for all the nodes that could play
 		// the role of n4 from the inference rule
-		for(Iterator n3_it = nodes3.iterator(); n3_it.hasNext(); ) {
-		    PANode node3 = (PANode) n3_it.next();
+		for(Object node3O : nodes3) {
+		    PANode node3 = (PANode) node3O;
 		    Set nodes4 = pig_caller.G.I.pointedNodes(node3,f);
 		    if ((nodes4==null)||(nodes4.isEmpty())) continue;
 
@@ -1843,8 +1839,8 @@ abstract class ODInterProcPA {
 			continue;
 		    }
 		    
-		    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
-			PANode node4 = (PANode)it4.next();
+		    for(Object node4O : nodes4) {
+			PANode node4 = (PANode) node4O;
 			Set node3_f_node4 = (Set) node3_f.getValues(node4);
 			
 			// The edge may preexist the call site to be
@@ -1853,8 +1849,8 @@ abstract class ODInterProcPA {
 			    // set up the relation from any node from
 			    // nodes2 to any node from nodes4
 
-			    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-				PANode node2 = (PANode)it2.next();
+			    for(Object node2O : nodes2) {
+				PANode node2 = (PANode) node2O;
 				if(mu.add(node2,node4)){
 				    new_info.add(node2,node4);
 				    // nodes with new info are put in the worklist
@@ -1868,8 +1864,8 @@ abstract class ODInterProcPA {
 		
 		// nodes6 stands for all the nodes that could play
 		// the role of n6 from the inference rule
-		for(Iterator n5_it = nodes3.iterator(); n5_it.hasNext(); ) {
-		    PANode node5 = (PANode) n5_it.next();
+		for(Object node5O : nodes3) {
+		    PANode node5 = (PANode) node5O;
 		    Set nodes6 = pig_caller.G.O.pointedNodes(node5,f);
 		    //		    if (nodes6==null) continue;
 		    if ((nodes6==null)||(nodes6.isEmpty())) continue;
@@ -1889,8 +1885,8 @@ abstract class ODInterProcPA {
 			continue;
 		    }
 
-		    for(Iterator it6 = nodes6.iterator(); it6.hasNext(); ) {
-			PANode node6 = (PANode)it6.next();
+		    for(Object node6O : nodes6) {
+			PANode node6 = (PANode) node6O;
 			Set node5_f_node6 = (Set) node5_f.getValues(node6);
 			
 			// The edge may preexist the call site to be
@@ -1899,8 +1895,8 @@ abstract class ODInterProcPA {
 			    // set up the relation from any node from
 			    // nodes2 to any node from nodes6
 
-			    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-				PANode node2 = (PANode)it2.next();
+			    for(Object node2O : nodes2) {
+				PANode node2 = (PANode) node2O;
 				if(mu.add(node2,node6)){
 				    new_info.add(node2,node6);
 				    // nodes with new info are put in the worklist
@@ -2081,8 +2077,8 @@ abstract class ODInterProcPA {
 	// In order to know which nodes in the caller are mapped to by
 	// nodes in the callee, we ``reverse'' the first mapping.
 	final Relation ancestor = new LightRelation();
-	for(Iterator key_it=first_mapping.keys().iterator(); key_it.hasNext(); ){
-	    PANode source = (PANode) key_it.next();
+	for(Object sourceO : first_mapping.keys()){
+	    PANode source = (PANode) sourceO;
 	    for(Iterator sinks_it=first_mapping.getValues(source).iterator();
 		sinks_it.hasNext(); )
 		ancestor.add(sinks_it.next(),source);
@@ -2153,9 +2149,8 @@ abstract class ODInterProcPA {
 		}
 	    }
 
-	    Iterator itf = O.allFlagsForNode(node1).iterator();
-	    while(itf.hasNext()) {
-		String f = (String) itf.next();
+	    for (Object fO : O.allFlagsForNode(node1)) {
+		String f = (String) fO;
 
 		if(precise){
 		    node1_f = (Relation) from_node1.get(f); 
@@ -2185,8 +2180,8 @@ abstract class ODInterProcPA {
 
 		// set up the relation from any node from nodes2
 		// to any node from nodes4
-		for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-		    PANode node2 = (PANode)it2.next();
+		for(Object node2O : nodes2) {
+		    PANode node2 = (PANode) node2O;
 
 		    // The edges must possibly have been created after
 		    // the call site to be considered
@@ -2195,8 +2190,8 @@ abstract class ODInterProcPA {
 
 		    boolean changed = false;
 
-		    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
-			PANode node4 = (PANode)it4.next();
+		    for(Object node4O : nodes4) {
+			PANode node4 = (PANode) node4O;
 			if(mu.add(node2,node4)){
 			    changed = true;
 			    new_info.add(node2,node4);
@@ -2234,9 +2229,8 @@ abstract class ODInterProcPA {
 	    HashSet nodes3 = new HashSet(new_info.getValues(node1));
 	    new_info.removeKey(node1);
 
-	    Iterator itf = candidate.allFlagsForNode(node1).iterator();
-	    while(itf.hasNext()) {
-		String f = (String) itf.next();
+	    for (Object fO : candidate.allFlagsForNode(node1)) {
+		String f = (String) fO;
 
 		// nodes2 stands for all the nodes that could play
 		// the role of n2 from the inference rule
@@ -2250,11 +2244,11 @@ abstract class ODInterProcPA {
 
 		// set up the relation from any node from nodes2
 		// to any node from nodes4
-		for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-		    PANode node2 = (PANode)it2.next();
+		for(Object node2O : nodes2) {
+		    PANode node2 = (PANode) node2O;
 		    boolean changed = false;
-		    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
-			PANode node4 = (PANode)it4.next();
+		    for(Object node4O : nodes4) {
+			PANode node4 = (PANode) node4O;
 			if(mu.add(node2,node4)){
 			    changed = true;
 			    new_info.add(node2,node4);
@@ -2485,14 +2479,14 @@ abstract class ODInterProcPA {
 				       )
     {
 	if (callee_odi.precise){
-	    for(Iterator in_n=callee_odi.outMaybe.edges.keySet().iterator(); in_n.hasNext(); ){
-		PANode n1 = (PANode) in_n.next();
+	    for(Object n1O : callee_odi.outMaybe.edges.keySet()){
+		PANode n1 = (PANode) n1O;
 		Map n1_map = (Map) callee_odi.outMaybe.edges.get(n1);
-		for(Iterator it_f=n1_map.keySet().iterator(); it_f.hasNext(); ){
-		    String f = (String) it_f.next(); 
+		for(Object fO : n1_map.keySet()){
+		    String f = (String) fO; 
 		    Relation n1_f = (Relation) n1_map.get(f);
-		    for(Iterator out_n=n1_f.keys().iterator(); out_n.hasNext(); ){
-			PANode n2 = (PANode) out_n.next();
+		    for(Object n2O : n1_f.keys()){
+			PANode n2 = (PANode) n2O;
 			if (n1_f.getValues(n2).contains(hole))
 			    ar.add_ld(mapping.getValues(n1), 
 				      f, 
@@ -2554,16 +2548,13 @@ abstract class ODInterProcPA {
 		    Set eo_n1_set = mu.getValues(eo.n1);
 		    if(eo_n1_set.isEmpty()) return;
 
-		    Iterator it_ei_n1 = ei_n1_set.iterator();
-		    while(it_ei_n1.hasNext()){
-			PANode ei_n1 = (PANode) it_ei_n1.next();
-			Iterator it_ei_n2 = ei_n2_set.iterator();
-			while(it_ei_n2.hasNext()){
-			    PANode ei_n2 = (PANode) it_ei_n2.next();
+		    for (Object ei_n1O : ei_n1_set){
+			PANode ei_n1 = (PANode) ei_n1O;
+			for (Object ei_n2O : ei_n2_set){
+			    PANode ei_n2 = (PANode) ei_n2O;
 			    PAEdge new_ei = new PAEdge(ei_n1,ei.f,ei_n2);
-			    Iterator it_eo_n1 = eo_n1_set.iterator();
-			    while(it_eo_n1.hasNext()){
-				PANode eo_n1 = (PANode) it_eo_n1.next();
+			    for (Object eo_n1O : eo_n1_set){
+				PANode eo_n1 = (PANode) eo_n1O;
 				eo_caller.add(new PAEdge(eo_n1,ei.f,eo.n2),
 					      new_ei);
 			    }
@@ -2627,8 +2618,8 @@ abstract class ODInterProcPA {
     // appearing in the types from the set "types".
     private static Set aux_clone_get_obj_fields(Set types){
 	Set retval = new HashSet();
-	for(Iterator it = types.iterator();it.hasNext(); ){
-	    HClass hclass = (HClass) it.next();
+	for(Object hclassO : types){
+	    HClass hclass = (HClass) hclassO;
 	    if(hclass.isArray())
 		System.out.println("CLONE: might be called for an array");
 	    HField[] hfields = hclass.getFields();
@@ -2661,8 +2652,8 @@ abstract class ODInterProcPA {
 	    f_set.add(n_L);
 	}
 
-	for(Iterator it = f_set.iterator(); it.hasNext();){
-	    PANode n = (PANode) it.next();
+	for(Object nO : f_set){
+	    PANode n = (PANode) nO;
 	    pig.G.I.addEdge(n_R, f, n);
 	    if (ODPointerAnalysis.ON_DEMAND_ANALYSIS){
 		pig.odi.addInsideEdges(n_R, f, n);
@@ -2707,8 +2698,8 @@ abstract class ODInterProcPA {
 	Iterator it = flags.iterator();
 	for(int i = 0; i < nb_flags; i++){
 	    String f = (String) it.next();
-	    for(Iterator it_src = srcs.iterator(); it_src.hasNext();){
-		PANode n_src = (PANode) it_src.next();
+	    for(Object n_srcO : srcs){
+		PANode n_src = (PANode) n_srcO;
 		aux_clone_treat_pseudo_ldst(q, f, n_R, n_src, pig_after0,
 					    node_rep);
 	    }
@@ -2771,8 +2762,8 @@ abstract class ODInterProcPA {
 	    pig_before.G.I.pointedNodes(src_set, f);
 
 	Set set_E = new HashSet();
-	for(Iterator it = src_set.iterator(); it.hasNext(); ){
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : src_set){
+	    PANode node = (PANode) nodeO;
 	    if(pig_before.G.e.hasEscaped(node))
 		set_E.add(node);
 	}
@@ -2895,12 +2886,12 @@ abstract class ODInterProcPA {
 
     public static void print_relation(Relation mu){
 	Set keys = mu.keys();
-	for(Iterator k_it = keys.iterator(); k_it.hasNext();){
-	    PANode source = (PANode) k_it.next();
+	for(Object sourceO : keys){
+	    PANode source = (PANode) sourceO;
 	    System.out.print("    " + source + " ->");
 	    Set sinks = mu.getValues(source);
-	    for(Iterator s_it = sinks.iterator(); s_it.hasNext();){
-		PANode sink = (PANode) s_it.next();
+	    for(Object sinkO : sinks){
+		PANode sink = (PANode) sinkO;
 		System.out.print(" " + sink);
 	    }
 	    System.out.println(".");
@@ -2926,8 +2917,8 @@ abstract class ODInterProcPA {
     private static Relation projection(Relation original, Relation projecting){
 	Relation mapping = new LightRelation();
 
-	for(Iterator org_it = original.keys().iterator(); org_it.hasNext(); ){
-	    PANode n_org = (PANode) org_it.next();
+	for(Object n_orgO : original.keys()){
+	    PANode n_org = (PANode) n_orgO;
 	    for(Iterator inter_it = original.getValues(n_org).iterator();
 		inter_it.hasNext(); )
 		mapping.addAll(n_org,projecting.getValues(inter_it.next()));
@@ -2949,8 +2940,8 @@ abstract class ODInterProcPA {
 		}
 	    });
 
-	for(Iterator n_it=toberemoved.iterator(); n_it.hasNext(); ) {
-	    PANode n = (PANode) n_it.next();
+	for(Object nO : toberemoved) {
+	    PANode n = (PANode) nO;
 	    mapping_extended.remove(n,n);
 	}
 

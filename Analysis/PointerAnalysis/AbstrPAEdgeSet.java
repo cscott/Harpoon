@@ -20,7 +20,7 @@ import harpoon.Temp.Temp;
  * <code>AbstrPAEdgeSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: AbstrPAEdgeSet.java,v 1.3 2003-06-04 18:44:31 salcianu Exp $
+ * @version $Id: AbstrPAEdgeSet.java,v 1.4 2004-02-08 03:20:02 cananian Exp $
  */
 public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
     
@@ -102,8 +102,8 @@ public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
 	for(Iterator it = allVariables().iterator(); it.hasNext(); )
 	    forAllPointedNodes((Temp) it.next(), visitor);
 
-	for(Iterator it = allSourceNodes().iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : allSourceNodes()) {
+	    PANode node = (PANode) nodeO;
 	    visitor.visit(node);
 	    forAllPointedNodes(node, visitor);
 	}

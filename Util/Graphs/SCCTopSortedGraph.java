@@ -21,7 +21,7 @@ import harpoon.Util.Util;
  * It uses a Depth First Search to do the sortting in linear time (see
  * <code>Section 23.4</code> in Cormen and co for the exact algorithm).
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCCTopSortedGraph.java,v 1.6 2003-05-06 14:53:39 salcianu Exp $
+ * @version $Id: SCCTopSortedGraph.java,v 1.7 2004-02-08 03:21:54 cananian Exp $
  */
 public class SCCTopSortedGraph implements Serializable {
     
@@ -92,9 +92,8 @@ public class SCCTopSortedGraph implements Serializable {
 	last_scc  = new SCComponent();
 	first_scc = last_scc;
 	// Depth First Search to sort the SCCs topologically
-	Iterator it_sccs = roots.iterator();
-	while(it_sccs.hasNext()) {
-	    SCComponent scc =(SCComponent) it_sccs.next();
+	for (Object sccO : roots) {
+	    SCComponent scc = (SCComponent) sccO;
 	    // TODO: eliminate this paranoic debug when the code is known
 	    // to be stable.
 	    assert !reached_sccs.contains(scc) : 

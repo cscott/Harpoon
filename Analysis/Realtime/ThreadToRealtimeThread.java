@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * <code>javax.realtime.RealtimeThread</code>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: ThreadToRealtimeThread.java,v 1.5 2002-08-14 20:51:45 wbeebee Exp $
+ * @version $Id: ThreadToRealtimeThread.java,v 1.6 2004-02-08 03:20:13 cananian Exp $
  */
 
 class ThreadToRealtimeThread extends ClassReplacer {
@@ -57,9 +57,8 @@ class ThreadToRealtimeThread extends ClassReplacer {
     static void updateClassHierarchy(Linker linker, ClassHierarchy ch) {
 	HClass thread = linker.forName("java.lang.Thread");
 	HClass realtimeThread = linker.forName("javax.realtime.RealtimeThread");
-	for (Iterator children = ch.children(thread).iterator(); 
-	     children.hasNext();) {
-	    HClass child = (HClass)children.next();
+	for (Object childO : ch.children(thread)) {
+	    HClass child = (HClass) childO;
 	    if (child != realtimeThread) {
 		assert child != null;
 		child.getMutator().setSuperclass(realtimeThread);

@@ -22,7 +22,7 @@ import java.util.Iterator;
    comments around that method for more info.
  
    @author  Alexandru Salcianu <salcianu@MIT.EDU>
-   @version $Id: ComputeInterProcMuClosure.java,v 1.5 2003-10-28 16:05:54 salcianu Exp $ */
+   @version $Id: ComputeInterProcMuClosure.java,v 1.6 2004-02-08 03:20:02 cananian Exp $ */
 public class ComputeInterProcMuClosure {
 
     static boolean DEBUG = false;
@@ -222,8 +222,8 @@ public class ComputeInterProcMuClosure {
     private void add_mappings(PANode source, Set targets) {
 	if(targets.isEmpty()) return;
 	boolean changed = false;
-	for(Iterator it = targets.iterator(); it.hasNext(); ) {
-	    PANode target = (PANode) it.next();
+	for(Object targetO : targets) {
+	    PANode target = (PANode) targetO;
 	    if(add_mapping_aux(source, target))
 		changed = true;
 	}
@@ -248,8 +248,8 @@ public class ComputeInterProcMuClosure {
 
 	NEWINFO = false;
 
-	for(Iterator it2 = node2s.iterator(); it2.hasNext(); ) {
-	    PANode node2 = (PANode) it2.next();
+	for(Object node2O : node2s) {
+	    PANode node2 = (PANode) node2O;
 	    add_mappings(node2, node4s);
 	}
 
@@ -263,14 +263,14 @@ public class ComputeInterProcMuClosure {
 	// We explore the set of possible elements in the set intersection
 	// from the formal rule 2.8; it is safe to look only at the
 	// the new mappings (plus node which is new in 1st iteration)
-	for(Iterator it = new_mu.getValues(node).iterator(); it.hasNext(); ) {
-	    PANode common = (PANode) it.next();
+	for(Object commonO : new_mu.getValues(node)) {
+	    PANode common = (PANode) commonO;
 	    callee_callee_grab_nodep(node, common, nodeps);
 	}
 	callee_callee_grab_nodep(node, node, nodeps);
 
-	for(Iterator itp = nodeps.iterator(); itp.hasNext(); ) {
-	    PANode node_prime = (PANode) itp.next();
+	for(Object node_primeO : nodeps) {
+	    PANode node_prime = (PANode) node_primeO;
 	    match_callee_callee(node, node_prime);
 	    match_callee_callee(node_prime, node);
 	}
@@ -293,15 +293,14 @@ public class ComputeInterProcMuClosure {
 		 (node1.type == PANode.LOST)) ) )
 	    return;
 
-	for(Iterator itf = pig_callee.G.O.allFlagsForNode(node1).iterator();
-	    itf.hasNext(); ) {
-	    String f = (String) itf.next();
+	for(Object fO : pig_callee.G.O.allFlagsForNode(node1)) {
+	    String f = (String) fO;
 	    Set node2s = pig_callee.G.O.pointedNodes(node1, f);
 	    Set node4s = pig_callee.G.I.pointedNodes(node3, f);
 	    if(node4s.isEmpty()) continue;
 
-	    for(Iterator it2 = node2s.iterator(); it2.hasNext(); ) {
-		PANode node2 = (PANode) it2.next();
+	    for(Object node2O : node2s) {
+		PANode node2 = (PANode) node2O;
 		for(Iterator it4 = node4s.iterator(); it4.hasNext(); ) {
 
 		    NEWINFO = false;

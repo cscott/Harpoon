@@ -54,7 +54,7 @@ import java.util.Set;
  * transformation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncRemover.java,v 1.5 2004-02-08 01:51:52 cananian Exp $
+ * @version $Id: SyncRemover.java,v 1.6 2004-02-08 03:19:25 cananian Exp $
  */
 public class SyncRemover
     extends harpoon.Analysis.Transformation.MethodMutator<Quad> {
@@ -95,8 +95,7 @@ public class SyncRemover
 	while (!toDo.isEmpty()) {
 	    Quad q = toDo.removeFirst();
 	    if (done.contains(q)) continue;
-	    for (Iterator<Edge> it=q.accept(munger).iterator(); it.hasNext();){
-		Edge e = it.next();
+	    for (Edge e : q.accept(munger)){
 		toDo.add(e.to());
 	    }
 	    done.add(q);
@@ -167,9 +166,7 @@ public class SyncRemover
 	    //        orig2                        PHI
 	    //                                     |
 	    //                                   orig2
-	    for (Iterator<CopyPair<MONITOREXIT>> it = ci.endList.iterator();
-		 it.hasNext(); ) {
-		CopyPair<MONITOREXIT> exit = it.next();
+	    for (CopyPair<MONITOREXIT> exit : ci.endList) {
 		PHI qP = new PHI(qf, exit.orig, new Temp[0], 2);
 		addAt(exit.orig.nextEdge(0), qP);
 		// now add edge from before copied monitorexit
@@ -229,9 +226,7 @@ public class SyncRemover
 		// now merge the info, including the mapping for q
 		copyMap.put(ci.start.orig, ci.start.copy);
 		// continue from the subgraph's exit points.
-		for (Iterator<CopyPair<MONITOREXIT>> it=ci.endList.iterator();
-		     it.hasNext(); ) {
-		    CopyPair<MONITOREXIT> exit = it.next();
+		for (CopyPair<MONITOREXIT> exit : ci.endList) {
 		    frontier.addAll(Arrays.asList(exit.orig.next()));
 		    toLink.addAll(exit.orig.succC());
 		    copyMap.put(exit.orig, exit.copy);
@@ -258,8 +253,7 @@ public class SyncRemover
 	    }
 	}
 	// now link all the outgoing edges.
-	for (Iterator<Edge> it = toLink.iterator(); it.hasNext(); ) {
-	    Edge e = it.next();
+	for (Edge e : toLink) {
 	    Quad.addEdge(copyMap.get(e.from()), e.which_succ(),
 			 copyMap.get(e.to()), e.which_pred());
 	}

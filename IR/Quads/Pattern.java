@@ -22,7 +22,7 @@ import java.util.Set;
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.6 2004-02-08 01:55:25 cananian Exp $
+ * @version $Id: Pattern.java,v 1.7 2004-02-08 03:21:24 cananian Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -199,8 +199,8 @@ public class Pattern {
 	// Also empties out phi edges that can't be reached.
 	ReHandler.PHVisitor v = new ReHandler.PHVisitor(code.qf, reachable, typemap);
 	WorkSet oldset=new WorkSet(reachable);
-	for (Iterator it = oldset.iterator(); it.hasNext();) {
-	    Quad q=(Quad)it.next();
+	for (Object qO : oldset) {
+	    Quad q = (Quad) qO;
 	    q.accept(v);
 	}
     }
@@ -225,9 +225,8 @@ public class Pattern {
 		}
 	    }
 	    change=false;
-	    Iterator iterateh=handlers.iterator();
-	    while (iterateh.hasNext()) {
-		HANDLER h=(HANDLER) iterateh.next();
+	    for (Object hO : handlers) {
+		HANDLER h = (HANDLER) hO;
 		if (!reachable.contains(h)) {
 		    Enumeration _enum_=h.protectedQuads();
 		    while (_enum_.hasMoreElements()) {

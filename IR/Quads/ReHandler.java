@@ -34,7 +34,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.6 2004-02-08 01:55:25 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.7 2004-02-08 03:21:24 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -89,10 +89,8 @@ final class ReHandler {
 	}
 
 	//Need to iterate through the call statements
-	Iterator iteratecall=callset.iterator();
-	    
-	while (iteratecall.hasNext()) {
-	    CALL call=(CALL)iteratecall.next();
+	for (Object callO : callset) {
+	    CALL call = (CALL) callO;
 	    boolean linkold=true;
 	    HandInfo next;
 	    //see if the call is covered by a handler
@@ -149,9 +147,8 @@ final class ReHandler {
 		}
 	    }
 	    change=false;
-	    Iterator iterate=ss.al.iterator();
-	    while (iterate.hasNext()) {
-		HANDLER h=(HANDLER) iterate.next();
+	    for (Object hO : ss.al) {
+		HANDLER h = (HANDLER) hO;
 		if (!reachable.contains(h)) {
 		    Enumeration _enum_=h.protectedQuads();
 		    while (_enum_.hasMoreElements()) {
@@ -194,8 +191,8 @@ final class ReHandler {
 	// Need to make NoSSA for QuadWithTry
 	// Also empties out phi edges that can't be reached.
 	PHVisitor v = new PHVisitor(qf, reachable, typemap);
-	for (Iterator it = phiset.iterator(); it.hasNext();) {
-	    Quad q=(Quad)it.next();
+	for (Object qO : phiset) {
+	    Quad q = (Quad) qO;
 	    if (reachable.contains(q))
 		q.accept(v);
 	}
@@ -425,9 +422,8 @@ final class ReHandler {
 		//if so, add in the necessary typecasts...
 		Set oldcasts=(Set)typecast.get(ql[i]);
 		Set newcasts=(Set)typecast.get(ql[i].next(j));
-		Iterator iterate=newcasts.iterator();
-		while (iterate.hasNext()) {
-		    Tuple cast=(Tuple)iterate.next();
+		for (Object castO : newcasts) {
+		    Tuple cast = (Tuple) castO;
 		    if (!oldcasts.contains(cast)) {
 			//gotta see if we have cast or not
 			Temp t=(Temp)cast.asList().get(0);
@@ -1008,9 +1004,8 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    Quad pred=q.prev(0);
 	    Set casts=(Set)typecast.get(pred);
 	    Set ourcasts=(Set)typecast.get(q);
-	    Iterator iterate=casts.iterator();
-	    while (iterate.hasNext()) {
-		Tuple cast=(Tuple)iterate.next();
+	    for (Object castO : casts) {
+		Tuple cast = (Tuple) castO;
 		if (!ourcasts.contains(cast)) {
 		    changed=true;
 		    ourcasts.add(cast);
@@ -1043,9 +1038,8 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    Quad pred=q.prev(0);
 	    Set casts=(Set)typecast.get(pred);
 	    Set ourcasts=(Set)typecast.get(q);
-	    Iterator iterate=casts.iterator();
-	    while (iterate.hasNext()) {
-		Tuple cast=(Tuple)iterate.next();
+	    for (Object castO : casts) {
+		Tuple cast = (Tuple) castO;
 		if (!ourcasts.contains(cast)) {
 		    changed=true;
 		    ourcasts.add(cast);
@@ -1065,9 +1059,8 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    Set parentcast=(Set)typecast.get(q.prev(0));
 	    WorkSet ourcasts=new WorkSet();
 	    typecast.put(q, ourcasts);
-	    Iterator iterate=parentcast.iterator();
-	    while (iterate.hasNext()) {
-		Tuple cast=(Tuple)iterate.next();
+	    for (Object castO : parentcast) {
+		Tuple cast = (Tuple) castO;
 		ourcasts.add(cast);
 		if (((Temp)cast.asList().get(0))==q.src())
 		    ourcasts.add(new Tuple(new Object[] {q.dst(), (HClass) cast.asList().get(1)}));
@@ -1093,9 +1086,8 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    Quad pred=q.prev(0);
 	    Set casts=(Set)typecast.get(pred);
 	    Set ourcasts=(Set)typecast.get(q);
-	    Iterator iterate=casts.iterator();
-	    while (iterate.hasNext()) {
-		Tuple cast=(Tuple)iterate.next();
+	    for (Object castO : casts) {
+		Tuple cast = (Tuple) castO;
 		if (!ourcasts.contains(cast)) {
 		    changed=true;
 		    ourcasts.add(cast);
@@ -1184,9 +1176,8 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    Quad pred=q.prev(0);
 	    Set casts=(Set)typecast.get(pred);
 	    Set ourcasts=(Set)typecast.get(q);
-	    Iterator iterate=casts.iterator();
-	    while (iterate.hasNext()) {
-		Tuple cast=(Tuple)iterate.next();
+	    for (Object castO : casts) {
+		Tuple cast = (Tuple) castO;
 		if (!ourcasts.contains(cast)) {
 		    changed=true;
 		    ourcasts.add(cast);
@@ -1267,9 +1258,8 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    Quad pred=q.prev(0);
 	    Set casts=(Set)typecast.get(pred);
 	    Set ourcasts=(Set)typecast.get(q);
-	    Iterator iterate=casts.iterator();
-	    while (iterate.hasNext()) {
-		Tuple cast=(Tuple)iterate.next();
+	    for (Object castO : casts) {
+		Tuple cast = (Tuple) castO;
 		if (!ourcasts.contains(cast)) {
 		    changed=true;
 		    ourcasts.add(cast);
@@ -1326,9 +1316,8 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    Quad pred=q.prev(0);
 	    Set casts=(Set)typecast.get(pred);
 	    Set ourcasts=(Set)typecast.get(q);
-	    Iterator iterate=casts.iterator();
-	    while (iterate.hasNext()) {
-		Tuple cast=(Tuple)iterate.next();
+	    for (Object castO : casts) {
+		Tuple cast = (Tuple) castO;
 		if (!ourcasts.contains(cast)) {
 		    changed=true;
 		    ourcasts.add(cast);
@@ -1395,9 +1384,8 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    Quad pred=q.prev(0);
 	    Set casts=(Set)typecast.get(pred);
 	    Set ourcasts=(Set)typecast.get(q);
-	    Iterator iterate=casts.iterator();
-	    while (iterate.hasNext()) {
-		Tuple cast=(Tuple)iterate.next();
+	    for (Object castO : casts) {
+		Tuple cast = (Tuple) castO;
 		if (!ourcasts.contains(cast)) {
 		    changed=true;
 		    ourcasts.add(cast);
@@ -1453,9 +1441,8 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    Quad pred=q.prev(0);
 	    Set casts=(Set)typecast.get(pred);
 	    Set ourcasts=(Set)typecast.get(q);
-	    Iterator iterate=casts.iterator();
-	    while (iterate.hasNext()) {
-		Tuple cast=(Tuple)iterate.next();
+	    for (Object castO : casts) {
+		Tuple cast = (Tuple) castO;
 		if (!ourcasts.contains(cast)) {
 		    changed=true;
 		    ourcasts.add(cast);
@@ -1509,9 +1496,8 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    Quad pred=q.prev(0);
 	    Set casts=(Set)typecast.get(pred);
 	    Set ourcasts=(Set)typecast.get(q);
-	    Iterator iterate=casts.iterator();
-	    while (iterate.hasNext()) {
-		Tuple cast=(Tuple)iterate.next();
+	    for (Object castO : casts) {
+		Tuple cast = (Tuple) castO;
 		if (!ourcasts.contains(cast)) {
 		    changed=true;
 		    ourcasts.add(cast);
@@ -1591,9 +1577,8 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	if (visited.contains(q)) {
 	    boolean changed=false;
 	    Set ourcasts=(Set)typecast.get(q);
-	    Iterator iterate=casts.iterator();
-	    while (iterate.hasNext()) {
-		Tuple cast=(Tuple)iterate.next();
+	    for (Object castO : casts) {
+		Tuple cast = (Tuple) castO;
 		if (!ourcasts.contains(cast)) {
 		    changed=true;
 		    ourcasts.add(cast);
@@ -1715,8 +1700,8 @@ static class CleanVisitor extends QuadVisitor {
 	this.handlerset=handlerset;
 	this.protectedquads=new WorkSet();
 	this.todo=todo;
-	for (Iterator i=handlerset.iterator();i.hasNext();) {
-	    HANDLER h=(HANDLER)i.next();
+	for (Object hO : handlerset) {
+	    HANDLER h = (HANDLER) hO;
 	    for (Enumeration _enum_=h.protectedQuads();
 		 _enum_.hasMoreElements();)
 		protectedquads.add(_enum_.nextElement());	    
@@ -1751,8 +1736,8 @@ static class CleanVisitor extends QuadVisitor {
 	    }
 	}
 	if (protectedquads.contains(q)) {
-	    for (Iterator hiterate=handlerset.iterator(); hiterate.hasNext();) {
-		HANDLER h=(HANDLER)hiterate.next();
+	    for (Object hO : handlerset) {
+		HANDLER h = (HANDLER) hO;
 		if (h.isProtected(q))
 		    if (in.containsKey(h)) {
 			WorkSet ini=(WorkSet) in.get(h);
@@ -1801,8 +1786,8 @@ static class CleanVisitor extends QuadVisitor {
 		}
 	    }
 	    if (protectedquads.contains(q)) {
-		for (Iterator hiterate=handlerset.iterator(); hiterate.hasNext();) {
-		    HANDLER h=(HANDLER)hiterate.next();
+		for (Object hO : handlerset) {
+		    HANDLER h = (HANDLER) hO;
 		    if (h.isProtected(q))
 			if (in.containsKey(h)) {
 			    WorkSet ini=(WorkSet) in.get(h);

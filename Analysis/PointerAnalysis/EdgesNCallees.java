@@ -167,8 +167,8 @@ public class EdgesNCallees implements java.io.Serializable {
  	if (from_head==null){
 	    from_head = new LightMap();
 	    Relation tail_rel = (Relation) new LightRelation();
-	    for(Iterator t_it=tails.iterator(); t_it.hasNext(); ){
-		PANode tail = (PANode) t_it.next();
+	    for(Object tailO : tails){
+		PANode tail = (PANode) tailO;
 		tail_rel.addAll(tail,holes);
 	    }
 	    from_head.put(f,tail_rel);
@@ -178,16 +178,16 @@ public class EdgesNCallees implements java.io.Serializable {
 	    Relation tail_rel = (Relation) from_head.get(f);
 	    if (tail_rel==null){
 		tail_rel = new LightRelation();
-		for(Iterator t_it=tails.iterator(); t_it.hasNext(); ){
-		    PANode tail = (PANode) t_it.next();
+		for(Object tailO : tails){
+		    PANode tail = (PANode) tailO;
 		    tail_rel.addAll(tail,holes);
 		}
 		from_head.put(f,tail_rel);
 	    }
 	    else{
 		if (strict){
-		    for(Iterator t_it=tails.iterator(); t_it.hasNext(); ){
-			PANode tail = (PANode) t_it.next();
+		    for(Object tailO : tails){
+			PANode tail = (PANode) tailO;
 			Set sites = tail_rel.getValues(tail);
 			if (sites==null){
 			    tail_rel.addAll(tail,holes);
@@ -327,14 +327,14 @@ public class EdgesNCallees implements java.io.Serializable {
     {
 	if (edges==null) return;
 
-	for(Iterator it_n1=edges.keySet().iterator();it_n1.hasNext(); ){
-	    PANode n1  = (PANode) it_n1.next();
+	for(Object n1O : edges.keySet()){
+	    PANode n1 = (PANode) n1O;
 	    Map n1_map = (Map) edges.get(n1);
-	    for(Iterator it_f=n1_map.keySet().iterator(); it_f.hasNext(); ){
-		String f = (String) it_f.next(); 
+	    for(Object fO : n1_map.keySet()){
+		String f = (String) fO; 
 		Relation n1_f = (Relation) n1_map.get(f);
-		for(Iterator it_n2=n1_f.keys().iterator(); it_n2.hasNext(); ){
-		    PANode n2 = (PANode) it_n2.next();
+		for(Object n2O : n1_f.keys()){
+		    PANode n2 = (PANode) n2O;
 		    n1_f.remove(n2,hole);
 		}
 	    }
@@ -350,16 +350,16 @@ public class EdgesNCallees implements java.io.Serializable {
 	assert strict==second.strict() : "Attempt to join to EdgesNCallees "
 		    + "of different types"; 
 	
-	for(Iterator it_n1=second.edges.keySet().iterator();it_n1.hasNext(); ){
-	    PANode n1  = (PANode) it_n1.next();
+	for(Object n1O : second.edges.keySet()){
+	    PANode n1 = (PANode) n1O;
 	    Map n1_map = (Map) second.edges.get(n1);
 
-	    for(Iterator it_f=n1_map.keySet().iterator(); it_f.hasNext(); ){
-		String f = (String) it_f.next(); 
+	    for(Object fO : n1_map.keySet()){
+		String f = (String) fO; 
 		Relation n1_f = (Relation) n1_map.get(f);
 		
-		for(Iterator it_n2=n1_f.keys().iterator(); it_n2.hasNext(); ){
-		    PANode n2 = (PANode) it_n2.next();
+		for(Object n2O : n1_f.keys()){
+		    PANode n2 = (PANode) n2O;
 		    if (strict){
 			HashSet callees_1 = (HashSet) callees(n1, f, n2);
 			if((callees_1==null)||(callees_1.isEmpty())){
@@ -407,16 +407,16 @@ public class EdgesNCallees implements java.io.Serializable {
 	assert strict==second.strict() : "Attempt to join to EdgesNCallees "
 		    + "of different types"; 
 	
-	for(Iterator it_n1=second.edges.keySet().iterator();it_n1.hasNext(); ){
-	    PANode n1  = (PANode) it_n1.next();
+	for(Object n1O : second.edges.keySet()){
+	    PANode n1 = (PANode) n1O;
 	    Map n1_map = (Map) second.edges.get(n1);
 
-	    for(Iterator it_f=n1_map.keySet().iterator(); it_f.hasNext(); ){
-		String f = (String) it_f.next(); 
+	    for(Object fO : n1_map.keySet()){
+		String f = (String) fO; 
 		Relation n1_f = (Relation) n1_map.get(f);
 		
-		for(Iterator it_n2=n1_f.keys().iterator(); it_n2.hasNext(); ){
-		    PANode n2 = (PANode) it_n2.next();
+		for(Object n2O : n1_f.keys()){
+		    PANode n2 = (PANode) n2O;
 		    if (strict){
 			// A real implementation should be more precise than that !
 			add(n1, f, n2, n1_f.getValues(n2));
@@ -439,16 +439,16 @@ public class EdgesNCallees implements java.io.Serializable {
 	assert strict==second.strict() : "Attempt to join to EdgesNCallees "
 		    + "of different types"; 
 	
-	for(Iterator it_n1=second.edges.keySet().iterator();it_n1.hasNext(); ){
-	    PANode n1  = (PANode) it_n1.next();
+	for(Object n1O : second.edges.keySet()){
+	    PANode n1 = (PANode) n1O;
 	    Map n1_map = (Map) second.edges.get(n1);
 
-	    for(Iterator it_f=n1_map.keySet().iterator(); it_f.hasNext(); ){
-		String f = (String) it_f.next(); 
+	    for(Object fO : n1_map.keySet()){
+		String f = (String) fO; 
 		Relation n1_f = (Relation) n1_map.get(f);
 		
-		for(Iterator it_n2=n1_f.keys().iterator(); it_n2.hasNext(); ){
-		    PANode n2 = (PANode) it_n2.next();
+		for(Object n2O : n1_f.keys()){
+		    PANode n2 = (PANode) n2O;
 		    if (strict){
 			if (VERY_PRECISE){
 			    HashSet callees_1 = (HashSet) calleessilent(n1, f, n2);
@@ -505,13 +505,13 @@ public class EdgesNCallees implements java.io.Serializable {
 
 	EdgesNCallees new_enc = new EdgesNCallees(strict);
 
-	for(Iterator it_n1=edges.keySet().iterator();it_n1.hasNext(); ){
-	    PANode n1  = (PANode) it_n1.next();
+	for(Object n1O : edges.keySet()){
+	    PANode n1 = (PANode) n1O;
 	    Map n1_map = (Map) edges.get(n1);
 	    Map new_n1_map = new LightMap();
 
-	    for(Iterator it_f=n1_map.keySet().iterator(); it_f.hasNext(); ){
-		String f = (String) it_f.next(); 
+	    for(Object fO : n1_map.keySet()){
+		String f = (String) fO; 
 		Relation n1_f = (Relation) n1_map.get(f);
 		Relation new_n1_f = new LightRelation();
 
@@ -537,21 +537,21 @@ public class EdgesNCallees implements java.io.Serializable {
 
 	EdgesNCallees new_enc = new EdgesNCallees(strict);
 
-	for(Iterator it_n1=edges.keySet().iterator();it_n1.hasNext(); ){
-	    PANode n1  = (PANode) it_n1.next();
+	for(Object n1O : edges.keySet()){
+	    PANode n1 = (PANode) n1O;
 	    Map n1_map = (Map) edges.get(n1);
 	    Map new_n1_map = new LightMap();
 
-	    for(Iterator it_f=n1_map.keySet().iterator(); it_f.hasNext(); ){
-		String f = (String) it_f.next(); 
+	    for(Object fO : n1_map.keySet()){
+		String f = (String) fO; 
 		Relation n1_f = (Relation) n1_map.get(f);
 		Relation new_n1_f = new LightRelation();
 
 		for(Iterator it_n2=n1_f.keys().iterator(); it_n2.hasNext(); ){
 		    Object obj = it_n2.next();
 		    PANode n2 = (PANode) obj;
-		    for(Iterator it_mh=n1_f.getValues(n2).iterator(); it_mh.hasNext(); ){
-			MethodHole mh = (MethodHole) it_mh.next();
+		    for(Object mhO : n1_f.getValues(n2)){
+			MethodHole mh = (MethodHole) mhO;
 			if (mh==ODPointerAnalysis.BottomHole)
 			    new_n1_f.add(n2,ODPointerAnalysis.BottomHole);
 			else {
@@ -587,8 +587,8 @@ public class EdgesNCallees implements java.io.Serializable {
 
 	EdgesNCallees new_enc = new EdgesNCallees(strict);
 
-	for(Iterator it_n1=edges.keySet().iterator();it_n1.hasNext(); ){
-	    PANode n1  = (PANode) it_n1.next();
+	for(Object n1O : edges.keySet()){
+	    PANode n1 = (PANode) n1O;
 	    PANode new_n1  = (PANode) node_conversion.get(n1);
 	    if (new_n1==null){
 		System.err.println("Error in EdgesNCallees.clone with node_conversion");
@@ -599,13 +599,13 @@ public class EdgesNCallees implements java.io.Serializable {
 	    Map n1_map = (Map) edges.get(n1);
 	    Map new_n1_map = new LightMap();
 
-	    for(Iterator it_f=n1_map.keySet().iterator(); it_f.hasNext(); ){
-		String f = (String) it_f.next(); 
+	    for(Object fO : n1_map.keySet()){
+		String f = (String) fO; 
 		Relation n1_f = (Relation) n1_map.get(f);
 		Relation new_n1_f = new LightRelation();
 
-		for(Iterator it_n2=n1_f.keys().iterator(); it_n2.hasNext(); ){
-		    PANode n2 = (PANode) it_n2.next();
+		for(Object n2O : n1_f.keys()){
+		    PANode n2 = (PANode) n2O;
 		    PANode new_n2 = (PANode) node_conversion.get(n2);
 		    if (new_n2==null){
 			System.err.println("Error in EdgesNCallees.clone " + 
@@ -616,8 +616,8 @@ public class EdgesNCallees implements java.io.Serializable {
 			System.out.println("Map: " + node_conversion);
 		    }
 
-		    for(Iterator it_mh=n1_f.getValues(n2).iterator(); it_mh.hasNext(); ){
-			MethodHole mh = (MethodHole) it_mh.next();
+		    for(Object mhO : n1_f.getValues(n2)){
+			MethodHole mh = (MethodHole) mhO;
 			if (mh==ODPointerAnalysis.BottomHole)
 			    new_n1_f.add(new_n2,ODPointerAnalysis.BottomHole);
 			else {
@@ -662,13 +662,13 @@ public class EdgesNCallees implements java.io.Serializable {
 	    return buffer.toString();
 	}
 
-	for(Iterator it_n1=edges.keySet().iterator();it_n1.hasNext(); ){
-	    PANode n1  = (PANode) it_n1.next();
+	for(Object n1O : edges.keySet()){
+	    PANode n1 = (PANode) n1O;
  	    buffer.append("\n" + n1 + "\t-> ");
 	    Map n1_map = (Map) edges.get(n1);
 	    boolean firstfield = true;
-	    for(Iterator it_f=n1_map.keySet().iterator(); it_f.hasNext(); ){
-		String f = (String) it_f.next(); 
+	    for(Object fO : n1_map.keySet()){
+		String f = (String) fO; 
 		Relation n1_f = (Relation) n1_map.get(f);
 		if (firstfield){
 		    buffer.append(f + "\t-> ");

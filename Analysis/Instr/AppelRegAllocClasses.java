@@ -25,7 +25,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.7 2004-02-08 01:52:07 cananian Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.8 2004-02-08 03:19:37 cananian Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;
@@ -172,8 +172,8 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	    case -1: return false;
 	    default:
 		{
-		    for(Iterator di = defs.iterator(); di.hasNext(); ) {
-			Instr d = (Instr) di.next();
+		    for(Object dO : defs) {
+			Instr d = (Instr) dO;
 			if (d instanceof RestoreProxy ||
 			    dontSpillTheseDefs.contains(d)) {
 			    spillable = -1;
@@ -516,8 +516,8 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 		System.out.println();
 		System.out.print("Switching on "+h.pairs.size()+" edge");
 		back = new NodePairSet__BitStrBased();
-		for(Iterator prs = h.pairs.iterator(); prs.hasNext();){
-		    List l = (List) prs.next();
+		for(Object lO : h.pairs){
+		    List l = (List) lO;
 		    back.add( (Node)l.get(0), (Node)l.get(1) );
 		}
 		System.out.println("!!!");

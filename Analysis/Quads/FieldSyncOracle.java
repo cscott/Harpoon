@@ -40,7 +40,7 @@ import java.util.Set;
  * other things).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldSyncOracle.java,v 1.3 2004-02-08 01:53:14 cananian Exp $
+ * @version $Id: FieldSyncOracle.java,v 1.4 2004-02-08 03:20:10 cananian Exp $
  */
 public class FieldSyncOracle {
     final MultiMap fieldsRead, fieldsWritten;
@@ -77,8 +77,8 @@ public class FieldSyncOracle {
     public FieldSyncOracle(HCodeFactory hcf, ClassHierarchy ch, CallGraph cg) {
 	Set s = new HashSet();
 	/* compute field universe */
-	for (Iterator it=ch.classes().iterator(); it.hasNext(); ) {
-	    HClass hc = (HClass) it.next();
+	for (Object hcO : ch.classes()) {
+	    HClass hc = (HClass) hcO;
 	    s.addAll(Arrays.asList(hc.getDeclaredFields()));
 	}
 	/* initialize maps. */
@@ -126,8 +126,8 @@ public class FieldSyncOracle {
     InvertibleMultiMap callGraphMap(ClassHierarchy ch, CallGraph cg) {
 	InvertibleMultiMap imm =
 	    new GenericInvertibleMultiMap(new AggregateSetFactory());
-	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    imm.addAll(hm, Arrays.asList(cg.calls(hm)));
 	}
 	return imm;
@@ -141,8 +141,8 @@ public class FieldSyncOracle {
 	while (!w.isEmpty()) {
 	    HMethod hm = (HMethod) w.pop();
 	    boolean changed = false;
-	    for (Iterator it=calls.getValues(hm).iterator(); it.hasNext(); ) {
-		HMethod callee = (HMethod) it.next();
+	    for (Object calleeO : calls.getValues(hm)) {
+		HMethod callee = (HMethod) calleeO;
 		// add all fields read/written by callee to this.
 		if (fieldsRead.addAll(hm, fieldsRead.getValues(callee)))
 		    changed = true;

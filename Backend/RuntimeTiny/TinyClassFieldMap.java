@@ -21,7 +21,7 @@ import java.util.Map;
  * alignment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TinyClassFieldMap.java,v 1.2 2002-04-10 03:03:43 cananian Exp $
+ * @version $Id: TinyClassFieldMap.java,v 1.3 2004-02-08 03:21:01 cananian Exp $
  */
 public abstract class TinyClassFieldMap extends ClassFieldMap {
     final int first_alignment;
@@ -120,10 +120,7 @@ public abstract class TinyClassFieldMap extends ClassFieldMap {
 	assert hf!=null && !hf.isStatic();
 	if (!cache2.containsKey(hf)) {
 	    int offset=first_alignment;
-	    for (Iterator<HField> it =
-		     fieldList(hf.getDeclaringClass()).iterator();
-		 it.hasNext(); ) {
-		HField nexthf = it.next();
+	    for (HField nexthf : fieldList(hf.getDeclaringClass())) {
 		// hack to protect the header boundary
 		if (offset<0 && offset+fieldSize(nexthf)>0)
 		    offset=0;

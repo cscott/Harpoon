@@ -18,7 +18,7 @@ import java.util.Arrays;
  * list of <code>CompilerStage</code>s.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompStagePipeline.java,v 1.5 2004-02-08 01:58:13 cananian Exp $ */
+ * @version $Id: CompStagePipeline.java,v 1.6 2004-02-08 03:21:38 cananian Exp $ */
 public class CompStagePipeline extends CompilerStage {
     
     /** Creates a <code>CompStagePipeline</code>. */
@@ -43,8 +43,7 @@ public class CompStagePipeline extends CompilerStage {
     private static String build_name(List<CompilerStage> stages) {
 	StringBuffer name = new StringBuffer("(");
 	boolean first = true;
-	for(Iterator<CompilerStage> it=stages.iterator(); it.hasNext(); ) {
-	    CompilerStage stage = it.next();
+	for(CompilerStage stage : stages) {
 	    if(!first) name.append(",");
 	    first = false;
 	    name.append(stage.name());
@@ -63,8 +62,7 @@ public class CompStagePipeline extends CompilerStage {
 
     public List<Option> getOptions() {
 	List<Option> opts = new LinkedList<Option>();
-	for(Iterator<CompilerStage> it=stages.iterator(); it.hasNext(); ) {
-	    CompilerStage stage = it.next();
+	for(CompilerStage stage : stages) {
 	    opts.addAll(stage.getOptions());
 	}
 	return opts;
@@ -73,8 +71,7 @@ public class CompStagePipeline extends CompilerStage {
     public boolean enabled() { return true; }
 
     public final CompilerState action(CompilerState cs) {
-	for(Iterator<CompilerStage> it=stages.iterator(); it.hasNext(); ) {
-	    CompilerStage stage = it.next();
+	for(CompilerStage stage : stages) {
 	    if(stage.enabled())
 		cs = stage.action(cs);
 	}

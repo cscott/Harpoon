@@ -29,7 +29,7 @@ import harpoon.Util.DataStructs.Relation;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.4 2002-04-10 03:00:42 cananian Exp $
+ * @version $Id: PAThreadMap.java,v 1.5 2004-02-08 03:20:03 cananian Exp $
  */
 public class PAThreadMap implements java.io.Serializable {
 
@@ -66,9 +66,8 @@ public class PAThreadMap implements java.io.Serializable {
     /** Convenient function that calls <code>inc</code> for all the
 	nodes from <code>set</code> */
     public void incAll(Set nodes){
-	Iterator it = nodes.iterator();
-	while(it.hasNext()){
-	    PANode node = (PANode) it.next();
+	for (Object nodeO : nodes){
+	    PANode node = (PANode) nodeO;
 	    inc(node);
 	}
     }
@@ -127,9 +126,8 @@ public class PAThreadMap implements java.io.Serializable {
     /** Remove all the <code>PANode</code>s that appear in <code>set</code>
 	from <code>this</code> thread map. */
     public void remove(Set set){
-	Iterator it_nodes = set.iterator();
-	while(it_nodes.hasNext()){
-	    PANode node = (PANode) it_nodes.next();
+	for (Object nodeO : set){
+	    PANode node = (PANode) nodeO;
 	    hash.remove(node);
 	}
     }
@@ -167,9 +165,8 @@ public class PAThreadMap implements java.io.Serializable {
 	while(e.hasMoreElements()){
 	    PANode node = (PANode) e.nextElement();
 	    int tau_node = tau2.getValue(node);
-	    Iterator it_new_node = mu.getValues(node).iterator();
-	    while(it_new_node.hasNext()){
-		PANode new_node = (PANode) it_new_node.next();
+	    for (Object new_nodeO : mu.getValues(node)){
+		PANode new_node = (PANode) new_nodeO;
 		add(new_node,tau_node);
 	    }
 	}
@@ -182,8 +179,8 @@ public class PAThreadMap implements java.io.Serializable {
     public PAThreadMap specialize(final Map map){
 	final PAThreadMap tau2 = new PAThreadMap();
 
-	for(Iterator it = hash.entrySet().iterator(); it.hasNext(); ){
-	    Map.Entry entry = (Map.Entry) it.next();
+	for(Object entryO : hash.entrySet()){
+	    Map.Entry entry = (Map.Entry) entryO;
 	    PANode node2 = PANode.translate((PANode) entry.getKey(), map);
 
 	    tau2.hash.put(node2, (Integer) entry.getValue());
@@ -209,9 +206,8 @@ public class PAThreadMap implements java.io.Serializable {
      * nodes that appear in <code>essential_nodes</code>. */
     public PAThreadMap keepTheEssential(Set essential_nodes){
 	Hashtable _hash = new Hashtable();
-	Iterator it = hash.entrySet().iterator();
-	while(it.hasNext()){
-	    Map.Entry entry = (Map.Entry)it.next();
+	for (Object entryO : hash.entrySet()){
+	    Map.Entry entry = (Map.Entry) entryO;
 	    PANode node = (PANode)entry.getKey();    
 	    if(essential_nodes.contains(node))
 		_hash.put(node,entry.getValue());
@@ -232,9 +228,8 @@ public class PAThreadMap implements java.io.Serializable {
 	    ///System.out.print("New " + this);
 	    return false;
 	}
-	Iterator it = set1.iterator();
-	while(it.hasNext()){
-	    PANode node = (PANode) it.next();
+	for (Object nodeO : set1){
+	    PANode node = (PANode) nodeO;
 	    // and assign the same values to them
 	    if(getValue(node)!=tau2.getValue(node)){
 		///System.out.println("PAThreadMap.equals(): " + 

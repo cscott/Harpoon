@@ -25,7 +25,7 @@ import java.util.Set;
  * our benchmarks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Sizer.java,v 1.6 2003-07-16 00:53:58 cananian Exp $
+ * @version $Id: Sizer.java,v 1.7 2004-02-08 03:21:38 cananian Exp $
  */
 public class Sizer extends harpoon.IR.Registration {
 
@@ -81,8 +81,8 @@ public class Sizer extends harpoon.IR.Registration {
 
 	long app_bytecode_size = 0, app_quad_size = 0;
 	long lib_bytecode_size = 0, lib_quad_size = 0;
-	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    HCode hcB = bytecode.convert(hm);
 	    int bsize = (hcB==null) ? 0 : hcB.getElementsL().size();
 	    HCode hcQ = hcf.convert(hm);

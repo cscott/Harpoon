@@ -35,7 +35,7 @@ import harpoon.IR.Quads.Code;
  * <i>textualized</i> to/from an ASCII file.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AllocationNumberingStub.java,v 1.3 2003-02-11 20:16:01 salcianu Exp $
+ * @version $Id: AllocationNumberingStub.java,v 1.4 2004-02-08 03:21:32 cananian Exp $
  */
 public class AllocationNumberingStub implements AllocationNumberingInterf {
 
@@ -172,8 +172,8 @@ public class AllocationNumberingStub implements AllocationNumberingInterf {
 	    new PrintWriter(new BufferedWriter(new FileWriter(filename)));
 	Relation method2allocs = getMethod2Allocs(an);
 	writeInt(pw, method2allocs.keys().size());
-	for(Iterator it = method2allocs.keys().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : method2allocs.keys()) {
+	    HMethod hm = (HMethod) hmO;
 	    writeMethodSignature(pw, hm);
 	    writeAllocs(an, pw, method2allocs.getValues(hm));
 	}
@@ -182,8 +182,8 @@ public class AllocationNumberingStub implements AllocationNumberingInterf {
 	if(linker != null) {
 	    AllocationNumberingStub ans = 
 		new AllocationNumberingStub(linker, filename);
-	    for(Iterator it = an.getAllocs().iterator(); it.hasNext(); ) {
-		Quad quad = (Quad) it.next();
+	    for(Object quadO : an.getAllocs()) {
+		Quad quad = (Quad) quadO;
 		assert 
 		    an.allocID(quad) == ans.allocID(quad) :
 		    "Textualization error";
@@ -194,8 +194,8 @@ public class AllocationNumberingStub implements AllocationNumberingInterf {
     // produce a relation method m -> allocations sites inside m
     private static Relation getMethod2Allocs(AllocationNumbering an) {
 	Relation method2allocs = new RelationImpl();
-	for(Iterator it = an.getAllocs().iterator(); it.hasNext(); ) {
-	    Quad quad  = (Quad) it.next();
+	for(Object quadO : an.getAllocs()) {
+	    Quad quad = (Quad) quadO;
 	    HMethod hm = quad.getFactory().getMethod();
 	    method2allocs.add(hm, quad);
 	}
@@ -221,8 +221,8 @@ public class AllocationNumberingStub implements AllocationNumberingInterf {
     private static void writeAllocs(AllocationNumbering an,
 				    PrintWriter pw, Collection allocs) {
 	writeInt(pw, allocs.size());
-	for(Iterator it = allocs.iterator(); it.hasNext(); ) {
-	    Quad quad = (Quad) it.next();
+	for(Object quadO : allocs) {
+	    Quad quad = (Quad) quadO;
 	    writeInt(pw, quad.getID());
 	    writeInt(pw, an.allocID(quad));
 	}

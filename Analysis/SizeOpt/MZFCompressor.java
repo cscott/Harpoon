@@ -51,7 +51,7 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.8 2004-02-08 01:53:55 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.9 2004-02-08 03:20:22 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
@@ -75,9 +75,7 @@ public class MZFCompressor {
 	Set<HField> flds = new HashSet<HField>();
 	Map<HClass,List<PairList<HField,Number>>> listmap =
 	    new HashMap<HClass,List<PairList<HField,Number>>>();
-	for (Iterator<HClass> it=ch.instantiatedClasses().iterator();
-	     it.hasNext(); ){
-	    HClass hc = it.next();
+	for (HClass hc : ch.instantiatedClasses()){
 	    if (stoplist.contains(hc)) continue; // skip this class.
 	    List<PairList<HField,Number>> sorted = sortFields(hc, pp, cc);
 	    if (sorted.size()>0) listmap.put(hc, sorted);
@@ -91,8 +89,7 @@ public class MZFCompressor {
 	// pull all callable constructors through the ConstructorClassifier
 	// to cache their results.
 	this.callable.addAll(ch.callableMethods());
-	for (Iterator<HMethod> it=callable.iterator(); it.hasNext(); ) {
-	    HMethod hm = it.next();
+	for (HMethod hm : callable) {
 	    if (isConstructor(hm)) cc.isGood(hm);
 	}
 	// make accessors for the 'good' fields.
@@ -102,11 +99,8 @@ public class MZFCompressor {
 	callable.addAll(f2m.getter2field.keySet());
 	callable.addAll(f2m.setter2field.keySet());
 	// pull every callable method of each relevant class through hcf
-	for (Iterator<HClass> it=listmap.keySet().iterator(); it.hasNext(); ) {
-	    HClass hc = it.next();
-	    for (Iterator<HMethod> it2=Arrays.asList(hc.getDeclaredMethods())
-		     .iterator(); it2.hasNext(); ) {
-		HMethod hm = it2.next();
+	for (HClass hc : listmap.keySet()) {
+	    for (HMethod hm : hc.getDeclaredMethods()) {
 		if (callable.contains(hm))
 		    hcf.convert(hm);
 	    }
@@ -114,8 +108,7 @@ public class MZFCompressor {
 	// okay.  foreach relevant class, split it.
 	Map<HField,HClass> field2class = new HashMap<HField,HClass>();
 	this.allClasses.addAll(ch.classes());
-	for (Iterator<HClass> it=listmap.keySet().iterator(); it.hasNext(); ) {
-	    HClass hc = it.next();
+	for (HClass hc : listmap.keySet()) {
 	    splitOne(linker, (CachingCodeFactory) hcf,
 		     hc, listmap.get(hc), f2m, field2class);
 	}
@@ -155,8 +148,8 @@ public class MZFCompressor {
 	// mostly-N entry.
 	HField[] flds = hc.getDeclaredFields();
 	List l = new ArrayList(flds.length);
-	for (Iterator it=Arrays.asList(flds).iterator(); it.hasNext(); ) {
-	    HField hf = (HField) it.next();
+	for (Object hfO : flds) {
+	    HField hf = (HField) hfO;
 	    // filter out 'bad' fields.
 	    if (!cc.isGood(hf)) continue;
 	    // some fields have no information?
@@ -183,8 +176,8 @@ public class MZFCompressor {
 	// (which we no longer need) and keeping only the field/mostlyN info.
 	List<PairList<HField,Number>> nl =
 	    new ArrayList<PairList<HField,Number>>(l.size());
-	for (Iterator it=l.iterator(); it.hasNext(); ) {
-	    List pair = (List) it.next();
+	for (Object pairO : l) {
+	    List pair = (List) pairO;
 	    HField hf = (HField) pair.get(0);
 	    Map.Entry me = (Map.Entry) pair.get(1);
 	    Number mostlyN = (Number) me.getKey();
@@ -240,10 +233,7 @@ public class MZFCompressor {
 	oldC.getMutator().removeAllInterfaces();
 	// fetch representations for everything callable before we start
 	// messing with the fields.
-	for (Iterator<HMethod> it =
-		 Arrays.asList(oldC.getDeclaredMethods()).iterator();
-	     it.hasNext(); ) {
-	    HMethod hm = it.next();
+	for (HMethod hm : oldC.getDeclaredMethods()) {
 	    if (callable.contains(hm))
 		hcf.convert(hm);
 	}

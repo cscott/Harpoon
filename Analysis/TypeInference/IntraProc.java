@@ -57,7 +57,7 @@ import java.util.Set;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.5 2002-09-03 15:18:04 cananian Exp $
+ * @version $Id: IntraProc.java,v 1.6 2004-02-08 03:20:38 cananian Exp $
  */
 
 public class IntraProc {
@@ -107,8 +107,8 @@ public class IntraProc {
 	if (m.isStatic()) return new HMethod[]{ m };
 	if (p[0]==null) return new HMethod[0];
 	Set sm = new HashSet();
-	for (Iterator e = p[0].iterator(); e.hasNext(); ) {
-	    HClass c = (HClass)e.next();
+	for (Object cO : p[0]) {
+	    HClass c = (HClass) cO;
 	    boolean notDone = true;
 	    HMethod nm = null;
 	    do {

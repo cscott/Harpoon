@@ -43,7 +43,7 @@ import harpoon.IR.Quads.FOOTER;
  * Otherwise, it is unnececessary and it will be removed at some point).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ComputeAnAe.java,v 1.5 2003-05-12 23:56:23 salcianu Exp $
+ * @version $Id: ComputeAnAe.java,v 1.6 2004-02-08 03:19:53 cananian Exp $
  */
 public class ComputeAnAe {
     
@@ -86,8 +86,8 @@ public class ComputeAnAe {
 
 
     private void create_vars() {
-	for(Iterator it = cg.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : cg.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    if(!isAnalyzable(hm)) continue;
 	    hm2vn.put(hm, new Var());
 	    hm2ve.put(hm, new Var());
@@ -96,8 +96,8 @@ public class ComputeAnAe {
     }
 
     private void add_constraints() {
-	for(Iterator it = cg.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : cg.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    if(!isAnalyzable(hm)) continue;
 
 	    System.out.println("Constraints for " + hm);

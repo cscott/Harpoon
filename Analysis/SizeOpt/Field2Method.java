@@ -45,7 +45,7 @@ import java.util.Set;
  * to accessor getter/setter methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Field2Method.java,v 1.6 2004-02-08 01:53:55 cananian Exp $
+ * @version $Id: Field2Method.java,v 1.7 2004-02-08 03:20:22 cananian Exp $
  */
 public class Field2Method {
     // xxx declarations below *should* be 'invertibleMap' but the
@@ -78,8 +78,7 @@ public class Field2Method {
      *  Quad-SSI form. */
     public Field2Method(final HCodeFactory hcf, Set<HField> fields2convert) {
 	// okay, create the appropriate new methods.
-	for (Iterator<HField> it=fields2convert.iterator(); it.hasNext(); ) {
-	    HField hf = it.next();
+	for (HField hf : fields2convert) {
 	    HClass hc = hf.getDeclaringClass();
 	    String name = "$$$"+
 		hf.getDeclaringClass().getName()+".."+hf.getName();
@@ -183,8 +182,7 @@ public class Field2Method {
 		FOOTER oldF = (FOOTER) ((HEADER)hc.getRootElement()).next(0);
 		FOOTER newF = oldF.resize(oldF.arity()+fixup.size());
 		int n = newF.arity();
-		for (Iterator<THROW> it=fixup.iterator(); it.hasNext(); ) {
-		    THROW thr = it.next();
+		for (THROW thr : fixup) {
 		    Quad.addEdge(thr, 0, newF, --n);
 		}
 	    }

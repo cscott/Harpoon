@@ -35,7 +35,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  correctly; speed was only a second issue.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: EdgeOrdering.java,v 1.2 2002-02-25 20:58:39 cananian Exp $
+ * @version $Id: EdgeOrdering.java,v 1.3 2004-02-08 03:20:02 cananian Exp $
  */
 public class EdgeOrdering implements java.io.Serializable {
 
@@ -86,15 +86,13 @@ public class EdgeOrdering implements java.io.Serializable {
     private boolean add(final Set outside_edges, PAEdgeSet I, String f){
 	boolean modified = false;
 
-	for(Iterator it1 = I.allSourceNodes().iterator(); it1.hasNext(); ) {
-	    PANode node1 = (PANode) it1.next();
-	    for(Iterator it2 = I.pointedNodes(node1, f).iterator();
-		it2.hasNext(); ) {
-		PANode node2 = (PANode) it2.next();
+	for(Object node1O : I.allSourceNodes()) {
+	    PANode node1 = (PANode) node1O;
+	    for(Object node2O : I.pointedNodes(node1, f)) {
+		PANode node2 = (PANode) node2O;
 		PAEdge ei = new PAEdge(node1, f, node2);
-		Iterator it_eo = outside_edges.iterator();
-		while(it_eo.hasNext()){
-		    PAEdge eo = (PAEdge) it_eo.next();
+		for (Object eoO : outside_edges){
+		    PAEdge eo = (PAEdge) eoO;
 		    if(add(eo,ei)) modified = true;
 		}
 	    }
@@ -112,9 +110,8 @@ public class EdgeOrdering implements java.io.Serializable {
 	this addition. */
     public boolean add(Set nodes1, String f, PANode node2, PAEdgeSet I){
 	Set outside_edges = new HashSet();
-	Iterator it_nodes1 = nodes1.iterator();
-	while(it_nodes1.hasNext()){
-	    PANode node1 = (PANode) it_nodes1.next();
+	for (Object node1O : nodes1){
+	    PANode node1 = (PANode) node1O;
 	    outside_edges.add(new PAEdge(node1,f,node2));
 	}
 	return add(outside_edges,I,f);
@@ -202,12 +199,10 @@ public class EdgeOrdering implements java.io.Serializable {
 
 		    if(ei_set.isEmpty() || eo_set.isEmpty()) return;
 
-		    Iterator it_eo = eo_set.iterator();
-		    while(it_eo.hasNext()){
-			PAEdge new_eo = (PAEdge) it_eo.next();
-			Iterator it_ei = ei_set.iterator();
-			while(it_ei.hasNext()){
-			    PAEdge new_ei = (PAEdge) it_ei.next();
+		    for (Object new_eoO : eo_set){
+			PAEdge new_eo = (PAEdge) new_eoO;
+			for (Object new_eiO : ei_set){
+			    PAEdge new_ei = (PAEdge) new_eiO;
 			    eo_dest.add(new_eo,new_ei);
 			}
 		    }

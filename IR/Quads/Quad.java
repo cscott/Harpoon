@@ -30,7 +30,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.12 2004-02-08 01:55:25 cananian Exp $
+ * @version $Id: Quad.java,v 1.13 2004-02-08 03:21:24 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -359,14 +359,11 @@ public abstract class Quad
 	// make new-to-old mappings from old-to-new mappings.
 	final Map<Quad,Quad> n2oQuad = new HashMap<Quad,Quad>();
 	final Map<Temp,Temp> n2oTemp = new HashMap<Temp,Temp>();
-	for (Iterator<Map.Entry<Quad,Quad>> it=qm.entrySet().iterator();
-	     it.hasNext(); ) {
-	    Map.Entry<Quad,Quad> me = it.next();
+	for (Map.Entry<Quad,Quad> me : qm.entrySet()) {
 	    Quad qO = me.getKey(), qN = me.getValue();
 	    n2oQuad.put(qN, qO);
 	}
-	for (Iterator<Map.Entry<Temp,Temp>> it=ctm.asMap().entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry<Temp,Temp> me = it.next();
+	for (Map.Entry<Temp,Temp> me : ctm.asMap().entrySet()) {
 	    Temp tO = me.getKey(), tN = me.getValue();
 	    n2oTemp.put(tN, tO);
 	}

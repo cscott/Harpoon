@@ -51,7 +51,7 @@ import harpoon.Temp.Label;
  * chunks of memory that are used by the unitary sites.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AddMemoryPreallocation.java,v 1.10 2003-03-03 23:28:58 salcianu Exp $ */
+ * @version $Id: AddMemoryPreallocation.java,v 1.11 2004-02-08 03:19:53 cananian Exp $ */
 class AddMemoryPreallocation implements HCodeFactory {
 
     /** Creates a <code>AddMemoryPreallocation</code> code factory: it
@@ -119,8 +119,8 @@ class AddMemoryPreallocation implements HCodeFactory {
 
 	Temp tmem = new Temp(start.getFactory().tempFactory(), "tmem");
 
-	for(Iterator it = label2size.entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry entry = (Map.Entry) it.next();
+	for(Object entryO : label2size.entrySet()) {
+	    Map.Entry entry = (Map.Entry) entryO;
 	    Label label = (Label) entry.getKey();
 	    int size    = ((Integer) entry.getValue()).intValue();
 	    // Generate code that (pre)-allocates space and puts

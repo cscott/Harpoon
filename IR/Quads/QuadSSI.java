@@ -27,7 +27,7 @@ import java.util.HashMap;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.9 2003-03-15 23:26:10 kkz Exp $
+ * @version $Id: QuadSSI.java,v 1.10 2004-02-08 03:21:24 cananian Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -108,9 +108,8 @@ public class QuadSSI extends Code /* which extends HCode */ {
         if (KEEP_QUAD_MAP_HACK) {
             mapNoSSA2SSI = rt0.quadMap;
 	    mapSSI2NoSSA = new HashMap();
-	    for(Iterator it = mapNoSSA2SSI.entrySet().iterator();
-		it.hasNext(); ) {
-		Map.Entry entry = (Map.Entry) it.next();
+	    for(Object entryO : mapNoSSA2SSI.entrySet()) {
+		Map.Entry entry = (Map.Entry) entryO;
 		mapSSI2NoSSA.put(entry.getValue(), entry.getKey());
 	    }
 	}

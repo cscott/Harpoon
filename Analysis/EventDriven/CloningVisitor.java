@@ -69,7 +69,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
  * <code>CloningVisitor</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: CloningVisitor.java,v 1.7 2004-02-08 01:51:58 cananian Exp $
+ * @version $Id: CloningVisitor.java,v 1.8 2004-02-08 03:19:30 cananian Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -442,8 +442,8 @@ public class CloningVisitor extends QuadVisitor {
 
 	//Build string of CONST's and GET's.
 	    
-	for (Iterator ii=livein.iterator();ii.hasNext();) {
-	    Temp t=(Temp)ii.next();
+	for (Object tO : livein) {
+	    Temp t = (Temp) tO;
 	    if (suppress == null || !suppress.equals(t)) {
 		Quad ng;
 		Temp ts=t;
@@ -544,9 +544,8 @@ public class CloningVisitor extends QuadVisitor {
     /**Shrinks PHI's as needed.*/
     
     private void fixphis() {
-	Iterator phiit=phiset.iterator();
-	while(phiit.hasNext()) {
-	    PHI phi=(PHI) phiit.next();
+	for (Object phiO : phiset) {
+	    PHI phi = (PHI) phiO;
 	    for (int i=phi.arity()-1;i>=0;i--)
 		if (phi.prevEdge(i)==null) {
 		    phi=phi.shrink(i);

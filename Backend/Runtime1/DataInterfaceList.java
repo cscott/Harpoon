@@ -29,7 +29,7 @@ import java.util.Set;
  * <code>DataInterfaceList</code> lays out the expanded list of interfaces.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataInterfaceList.java,v 1.3 2004-02-08 01:57:44 cananian Exp $
+ * @version $Id: DataInterfaceList.java,v 1.4 2004-02-08 03:20:58 cananian Exp $
  */
 public class DataInterfaceList extends Data {
     final TreeBuilder m_tb;
@@ -57,8 +57,8 @@ public class DataInterfaceList extends Data {
 	int dims = 0;
 	while (hc.isArray()) {
 	    hc = hc.getComponentType(); dims++;
-	    for (Iterator it = allInterfaces(hc).iterator(); it.hasNext(); ) {
-		HClass hcc = (HClass) it.next();
+	    for (Object hccO : allInterfaces(hc)) {
+		HClass hcc = (HClass) hccO;
 		in.add(HClassUtil.arrayClass(linker, hcc, dims));
 	    }
 	}
@@ -66,8 +66,8 @@ public class DataInterfaceList extends Data {
 	in.retainAll(ch.classes());
 	// and make a list of stms.
 	Set done = new HashSet();
-	for (Iterator it=in.iterator(); it.hasNext(); ) {
-	    HClass hcc = (HClass) it.next();
+	for (Object hccO : in) {
+	    HClass hcc = (HClass) hccO;
 	    if (done.add(hcc)) // if not already in done...
 		stmlist.add(_DATUM(m_nm.label(hcc)));
 	}
@@ -89,8 +89,8 @@ public class DataInterfaceList extends Data {
 	}
 	// now filter out those that aren't interfaces.
 	List result = new ArrayList(uv.size());
-	for (Iterator it=uv.iterator(); it.hasNext(); ) {
-	    HClass nhc = (HClass) it.next();
+	for (Object nhcO : uv) {
+	    HClass nhc = (HClass) nhcO;
 	    if (nhc.isInterface()) result.add(nhc);
 	}
 	return result;

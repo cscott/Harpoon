@@ -64,7 +64,7 @@ import net.cscott.jutil.WorkSet;
  * typed pointer in a Tree.  It is a dataflow analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AlignmentAnalysis.java,v 1.3 2004-02-08 01:54:28 cananian Exp $
+ * @version $Id: AlignmentAnalysis.java,v 1.4 2004-02-08 03:20:34 cananian Exp $
  */
 public class AlignmentAnalysis {
     
@@ -105,9 +105,7 @@ public class AlignmentAnalysis {
 	    for (Iterator<Tree> it=cfg.getElements(c).iterator();
 		 it.hasNext(); ) {
 		Stm s = (Stm) it.next();
-		for (Iterator<Temp> it2=udr.useC(s).iterator();
-		     it2.hasNext(); ) {
-		    Temp u = it2.next();
+		for (Temp u : udr.useC(s)) {
 		    for (Iterator<Tree> it3=rd.reachingDefs(s, u).iterator();
 			 it3.hasNext(); ) {
 			Stm d = (Stm) it3.next();

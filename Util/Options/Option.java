@@ -17,7 +17,7 @@ import java.io.PrintStream;
  * <code>Option</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Option.java,v 1.3 2003-07-09 21:11:20 cananian Exp $
+ * @version $Id: Option.java,v 1.4 2004-02-08 03:21:58 cananian Exp $
  */
 public abstract class Option {
 
@@ -124,8 +124,7 @@ public abstract class Option {
 						List<String> args) {
 	
 	Map<String,Option> arg2option = new HashMap<String,Option>();
-	for(Iterator<Option> it = options.iterator(); it.hasNext(); ) {
-	    Option option = it.next();
+	for(Option option : options) {
 	    arg2option.put(option.optionName(), option);
 	}
 

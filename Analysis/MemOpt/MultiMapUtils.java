@@ -131,8 +131,7 @@ public final class MultiMapUtils {
             if (relevantKeys == null ||
                 relevantKeys.contains(key)) {
 
-                for (Iterator it2 = oldMap.getValues(key).iterator(); it2.hasNext(); ) {
-                    Object value = (Object) it2.next();
+                for (Object value : oldMap.getValues(key)) {
                     if (relevantValues == null ||
                         relevantValues.contains(value)) {
                         newMap.add(key, value);

@@ -61,8 +61,8 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
 	assert ! rfi().isRegister(t);
 
 	int slots = rfi().occupancy( t );
-	for(Iterator webs=tempToWebs.getValues(t).iterator(); webs.hasNext();){
-	    Web web = (Web) webs.next();
+	for(Object webO : tempToWebs.getValues(t)){
+	    Web web = (Web) webO;
 	    Node node = new Node(initial, web);
 	    node.color = makeInitColors( slots );
 	    node.degree = slots - 1; // don't start w/ degree of zero necessarily
@@ -92,8 +92,8 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
 		live.addAll( defCN(i) );
 		for( NodeIter di = def(i); di.hasNext(); ){
 		    Node d = di.next();
-		    for( Iterator li=live.iterator(); li.hasNext(); ){
-			Node n = (Node) li.next();
+		    for(Object nO : live){
+			Node n = (Node) nO;
 			addEdge( n, d );
 		    }
 		}
@@ -109,9 +109,8 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
 	    Node n = (Node) nodes.next();
 	    if (n.web != null) {
 		Collection badRegsC = rfi().illegal(n.web.temp);
-		Iterator badRegs = badRegsC.iterator();
-		while(badRegs.hasNext()) {
-		    Temp badReg = (Temp) badRegs.next();
+		for (Object badRegO : badRegsC) {
+		    Temp badReg = (Temp) badRegO;
 		    Node regNode = (Node) webToNode.get(tempToWebs.get(badReg));
 		    addEdge( n, regNode );
 		}

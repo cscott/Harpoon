@@ -23,7 +23,7 @@ import java.util.Set;
  * thesis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.12 2004-02-08 01:49:03 cananian Exp $
+ * @version $Id: Place.java,v 1.13 2004-02-08 03:19:12 cananian Exp $
  */
 public class Place {
     private final MultiMap phis;
@@ -41,8 +41,8 @@ public class Place {
 	phis = new GenericMultiMap(new BitSetFactory(vars));
 	sigmas = new GenericMultiMap(new BitSetFactory(vars));
 	// for each variable v in G, do:
-	for (Iterator it=vars.iterator(); it.hasNext(); ) {
-	    Temp v = (Temp) it.next();
+	for (Object vO : vars) {
+	    Temp v = (Temp) vO;
 	    PlaceOne(sese.topLevel, v, live); // place phis and sigmas
 	}
     }
@@ -64,8 +64,8 @@ public class Place {
 
 	// add phis/sigmas to merges/splits where v may be live
 	if (flag) {
-	    for (Iterator it=r.nodes().iterator(); it.hasNext(); ) {
-		HCodeElement n = (HCodeElement) it.next();
+	    for (Object nO : r.nodes()) {
+		HCodeElement n = (HCodeElement) nO;
 		if (((CFGraphable)n).predC().size() > 1 && 
 		    live.getLiveIn(n).contains(v))
 		    phis.add(n, v);

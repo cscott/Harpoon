@@ -25,7 +25,7 @@ import java.util.Set;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.14 2004-02-08 01:49:03 cananian Exp $
+ * @version $Id: UseDef.java,v 1.15 2004-02-08 03:19:12 cananian Exp $
  */
 
 public class UseDef<HCE extends HCodeElement>
@@ -91,12 +91,10 @@ public class UseDef<HCE extends HCodeElement>
 	    associate(el[i], udl[i].def(), workDef, defined, all);
 	}
 	// replace UniqueVectors with HCodeElement arrays to save space.
-	for (Iterator<Temp> it = workUse.keySet().iterator(); it.hasNext(); ) {
-	    Temp u = it.next();
+	for (Temp u : workUse.keySet()) {
 	    useMap.put(u, set2hces(code,  workUse.get(u)));
 	}
-	for (Iterator<Temp> it = workDef.keySet().iterator(); it.hasNext(); ) {
-	    Temp d = it.next();
+	for (Temp d : workDef.keySet()) {
 	    defMap.put(d, set2hces(code, workDef.get(d)));
 	}
 	// store set of all temps & mark as analyzed.

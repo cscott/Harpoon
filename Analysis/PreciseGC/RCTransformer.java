@@ -55,7 +55,7 @@ import java.util.Set;
  * Also transforms the callers of these methods.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: RCTransformer.java,v 1.4 2002-04-10 03:00:53 cananian Exp $
+ * @version $Id: RCTransformer.java,v 1.5 2004-02-08 03:20:07 cananian Exp $
  */
 public class RCTransformer extends 
     harpoon.Analysis.Transformation.MethodSplitter {
@@ -166,9 +166,9 @@ public class RCTransformer extends
 	    // null out for GC
 	    ud = null;
 	    /*
-	    for(Iterator it = insertPts.keySet().iterator(); it.hasNext(); )
+	    for(Object keyO : insertPts.keySet())
 		{
-		    Quad key = (Quad) it.next();
+		    Quad key = (Quad) keyO;
 		    Quad[] value = (Quad[]) insertPts.get(key);
 		    System.out.println(key);
 		    for(int i = 0; i < value.length; i++) {
@@ -259,8 +259,8 @@ public class RCTransformer extends
     private void scanConstructors(HCodeFactory parent, ClassHierarchy ch,
 				  Linker lnkr) {
 	// first, find constructors that call themselves
-	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for(Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    // skip methods that are not constructors
 	    if (!hm.getName().equals("<init>")) continue;
 	    Code c = (Code) parent.convert(hm);
@@ -546,15 +546,15 @@ public class RCTransformer extends
 	}
 
 	public void visit(Quad q) {
- 	    for(Iterator it = q.useC().iterator(); it.hasNext(); ) {
-		Temp t = (Temp) it.next();
+ 	    for(Object tO : q.useC()) {
+		Temp t = (Temp) tO;
 		Temp m = (Temp) tMap.get(t);
 		t = (m == null) ? t : m;
 		if (!gen.contains(t))
 		    needs.add(t);
 	    }
-	    for(Iterator it = q.defC().iterator(); it.hasNext(); ) {
-		Temp t = (Temp) it.next();
+	    for(Object tO : q.defC()) {
+		Temp t = (Temp) tO;
 		if (protect.contains(t)) {
 		    safe = false;
 		    return;
@@ -644,8 +644,8 @@ public class RCTransformer extends
 			}
 		    }
 		}
-		for(Iterator it = savedGen.iterator(); it.hasNext(); ) {
-		    Temp t = (Temp) it.next();
+		for(Object tO : savedGen) {
+		    Temp t = (Temp) tO;
 		    gen.add(t);
 		    for(int j = 0; j < q.numSigmas(); j++) {
 			if (q.src(j).equals(t)) {
@@ -684,8 +684,8 @@ public class RCTransformer extends
 		// fixup gen
 		Set savedGen = gen;
 		gen = new HashSet();
-		for(Iterator it = savedGen.iterator(); it.hasNext(); ) {
-		    Temp t = (Temp) it.next();
+		for(Object tO : savedGen) {
+		    Temp t = (Temp) tO;
 		    gen.add(t);
 		    for(int i = 0; i < q.numPhis(); i++) {
 			if (q.src(i, nParam).equals(t)) {
@@ -702,8 +702,8 @@ public class RCTransformer extends
 
 	public void visit(Quad q) {
 	    // check dependencies
-	    for(Iterator it = q.useC().iterator(); it.hasNext(); ) {
-		Temp t = (Temp) it.next();
+	    for(Object tO : q.useC()) {
+		Temp t = (Temp) tO;
 		if (!gen.contains(t) && !t.equals(thisObj)) {
 		    //System.out.println(thisObj);
 		    safe = false;
@@ -734,8 +734,8 @@ public class RCTransformer extends
 		}
 		// fixup gen
 		gen = new HashSet();
-		for(Iterator it = savedGen.iterator(); it.hasNext(); ) {
-		    Temp t = (Temp) it.next();
+		for(Object tO : savedGen) {
+		    Temp t = (Temp) tO;
 		    gen.add(t);
 		    for(int j = 0; j < q.numSigmas(); j++) {
 			if (q.src(j).equals(t)) {
@@ -940,9 +940,8 @@ public class RCTransformer extends
 		// fixup tMap
 		Map savedTMap = tMap;
 		tMap = new HashMap();
-		for(Iterator it = savedTMap.keySet().iterator(); 
-		    it.hasNext(); ) {
-		    Temp from = (Temp) it.next();
+		for(Object fromO : savedTMap.keySet()) {
+		    Temp from = (Temp) fromO;
 		    Temp to = (Temp) savedTMap.get(from);
 		    tMap.put(from, to);
 		    for(int i = 0; i < q.numPhis(); i++) {
@@ -967,8 +966,8 @@ public class RCTransformer extends
 	    //System.out.println(insertPt + " :: " + q);
 	    // we don't handle uses here
 	    assert q.useC().isEmpty();
-	    for(Iterator it = tMap.keySet().iterator(); it.hasNext(); ) {
-		Temp from = (Temp) it.next();
+	    for(Object fromO : tMap.keySet()) {
+		Temp from = (Temp) fromO;
 		Temp to = (Temp) tMap.get(from);
 		if (q.defC().contains(from))
 		    tMap.remove(from);
@@ -1032,9 +1031,8 @@ public class RCTransformer extends
 	    for(int i = 0; i < q.arity(); i++) {
 		// fixup tMap
 		tMap = new HashMap();
-		for(Iterator it = savedTMap.keySet().iterator(); 
-		    it.hasNext(); ) {
-		    Temp from = (Temp) it.next();
+		for(Object fromO : savedTMap.keySet()) {
+		    Temp from = (Temp) fromO;
 		    Temp to = (Temp) savedTMap.get(from);
 		    tMap.put(from, to);
 		    if (q.kind() == QuadKind.CALL) {
@@ -1126,8 +1124,8 @@ public class RCTransformer extends
 		ex_pred = phi.arity();
 	    }
 	    // move things
-	    for(Iterator it = quad2quadA.keySet().iterator(); it.hasNext(); ) {
-		SIGMA sigma = (SIGMA) it.next();
+	    for(Object sigmaO : quad2quadA.keySet()) {
+		SIGMA sigma = (SIGMA) sigmaO;
 		Quad[] value = (Quad[]) quad2quadA.get(sigma);
 		for(int i = 0; i < sigma.arity(); i++) {
 		    if (sigma.kind() == QuadKind.CALL && i == 1)
@@ -1235,9 +1233,8 @@ public class RCTransformer extends
 		// HACK! repeat to make sure the Quads don't change
 		rcvrMap = (new mapTemp(thisObj, q, quad2quadA, 
 				       news)).quad2temp;
-		for(Iterator it = quad2quadA.keySet().iterator(); 
-		    it.hasNext(); ) {
-		    SIGMA sigma = (SIGMA) it.next();
+		for(Object sigmaO : quad2quadA.keySet()) {
+		    SIGMA sigma = (SIGMA) sigmaO;
 		    Quad[] value = (Quad[]) quad2quadA.get(sigma);
 		    for(int i = 0; i < sigma.arity(); i++) {
 			if (sigma.kind() == QuadKind.CALL && i == 1)
@@ -1381,9 +1378,8 @@ public class RCTransformer extends
 		// fix up quad2quadA
 		if (quad2quadA.containsKey(q))
 		    quad2quadA.put(nq, quad2quadA.remove(q));
-		for(Iterator it = quad2quadA.keySet().iterator(); 
-		    it.hasNext(); ) {
-		    Quad key = (Quad) it.next();
+		for(Object keyO : quad2quadA.keySet()) {
+		    Quad key = (Quad) keyO;
 		    Quad[] value = (Quad[]) quad2quadA.get(key);
 		    assert value != null : key;
 		    for(int j = 0; j < value.length; j++) {
@@ -1481,9 +1477,8 @@ public class RCTransformer extends
 		    quad2temp.remove(q);
 		    if (quad2quadA.containsKey(q))
 			quad2quadA.put(nq, quad2quadA.remove(q));
-		    for(Iterator it = quad2quadA.keySet().iterator(); 
-			it.hasNext(); ) {
-			Quad key = (Quad) it.next();
+		    for(Object keyO : quad2quadA.keySet()) {
+			Quad key = (Quad) keyO;
 			Quad[] value = (Quad[]) quad2quadA.get(key);
 			for(int j = 0; j < value.length; j++) {
 			    if (q.equals(value[j]))

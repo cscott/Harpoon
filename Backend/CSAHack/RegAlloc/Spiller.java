@@ -94,8 +94,8 @@ class Spiller {
       Instr.replace(il, ni);  il=ni;
       instrsToSkip.add(ni);
       // insert loads before any usespills.
-      for (Iterator it=usespill.entrySet().iterator(); it.hasNext(); ) {
-	  Map.Entry e = (Map.Entry) it.next();
+      for (Object eO : usespill.entrySet()) {
+	  Map.Entry e = (Map.Entry) eO;
 	  Temp olduse = (Temp) e.getKey(), newuse = (Temp) e.getValue();
 	  Access a = (Access) spills.get(olduse);
 	  for (Iterator it2=il.predC().iterator(); it2.hasNext(); ) {
@@ -115,8 +115,8 @@ class Spiller {
 	  }
       }
       // insert stores before any defspills.
-      for (Iterator it=defspill.entrySet().iterator(); it.hasNext(); ) {
-	  Map.Entry e = (Map.Entry) it.next();
+      for (Object eO : defspill.entrySet()) {
+	  Map.Entry e = (Map.Entry) eO;
 	  Temp olddef = (Temp) e.getKey(), newdef = (Temp) e.getValue();
 	  Access a = (Access) spills.get(olddef);
 	  for (Iterator it2=il.succC().iterator(); it2.hasNext(); ) {

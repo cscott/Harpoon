@@ -30,7 +30,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.8 2003-06-05 22:14:03 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.9 2004-02-08 03:20:03 cananian Exp $
  */
 public class ParIntGraph implements java.io.Serializable {
 
@@ -143,8 +143,8 @@ public class ParIntGraph implements java.io.Serializable {
     // Get the mapping "genuine node -> bar node" for node \in nodes
     private Map get_g2b_map(Set nodes) {
         Map g2b = new HashMap();
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    assert node.isGenuine() : node + " is not genuine!";
 	    PANode bar_node = node.getBarVersion();
 	    g2b.put(node, bar_node);
@@ -258,8 +258,8 @@ public class ParIntGraph implements java.io.Serializable {
 	int nb_return = 0;
 	int nb_except = 0;
 	int nb_other  = 0;
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    switch(node.type()) {
 	    case PANode.PARAM:  nb_param++; break;
 	    case PANode.INSIDE2:
@@ -362,15 +362,15 @@ public class ParIntGraph implements java.io.Serializable {
     // (i.e., no node is mapped to LOST except LOST itself).
     private Relation get_compression_map(final Set/*<PANode>*/ lost) {
 	// extend "lost" with newly discovered lost nodes
-	for(Iterator it = allNodes().iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : allNodes()) {
+	    PANode node = (PANode) nodeO;
 	    if(compressable_node(node))
 		lost.add(node);
 	}
 	// build the compression map mu
 	Relation mu = new LightRelation();
-	for(Iterator it = allNodes().iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : allNodes()) {
+	    PANode node = (PANode) nodeO;
 	    if(lost.contains(node))
 		mu.add(node, NodeRepository.LOST_SUMMARY);
 	    else
@@ -454,8 +454,8 @@ public class ParIntGraph implements java.io.Serializable {
 	// 4. active thread nodes +
 	roots.addAll(tau.activeThreadSet());
 	// 5. static nodes
-	for(Iterator it = allNodes().iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : allNodes()) {
+	    PANode node = (PANode) nodeO;
 	    if(node.type == PANode.STATIC)
 		roots.add(node);
 	}
@@ -484,8 +484,8 @@ public class ParIntGraph implements java.io.Serializable {
     
 
     private void add_pointed_by_vars(Set roots, PAEdgeSet E) {
-	for(Iterator it = E.allVariables().iterator(); it.hasNext(); ) {
-	    Temp v = (Temp) it.next();
+	for(Object vO : E.allVariables()) {
+	    Temp v = (Temp) vO;
 	    roots.addAll(E.pointedNodes(v));
 	}
     }
@@ -508,9 +508,8 @@ public class ParIntGraph implements java.io.Serializable {
 	while(!Q.isEmpty()) {
 	    PANode node = (PANode) Q.removeFirst();
 	    
-	    for(Iterator it = pred_rel.getValues(node).iterator();
-		it.hasNext(); ) {
-		PANode pred = (PANode) it.next();
+	    for(Object predO : pred_rel.getValues(node)) {
+		PANode pred = (PANode) predO;
 		if(useful_nodes.add(pred))
 		    Q.addLast(pred);
 	    }
@@ -536,8 +535,8 @@ public class ParIntGraph implements java.io.Serializable {
 
     private void init_queue(final LinkedList Q, final Set useful_nodes,
 			    final Set nodes) {
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    if(relevant_node(node))
 		if(useful_nodes.add(node))
 		    Q.addLast(node);
@@ -638,8 +637,8 @@ public class ParIntGraph implements java.io.Serializable {
 	/* contains mappings old node -> specialized node; each unmapped
 	   node is supposed to be mapped to itself. */
 	final Map map = new HashMap();
-	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
-	    PANode node = (PANode) itn.next();
+	for(Object nodeO : allNodes()){
+	    PANode node = (PANode) nodeO;
 	    if(node.type == PANode.INSIDE)
 		map.put(node, node.csSpecialize(call));
 	} 
@@ -662,8 +661,8 @@ public class ParIntGraph implements java.io.Serializable {
 	// contains mappings old node -> speciaized node; each unmapped
 	// node is supposed to be mapped to itself.
 	final Map map = new HashMap();
-	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
-	    PANode node  = (PANode) itn.next();
+	for(Object nodeO : allNodes()){
+	    PANode node = (PANode) nodeO;
 	    if((node.type != PANode.PARAM) && (node.type != PANode.STATIC)){
 		PANode node2 = node.tSpecialize(run);
 		map.put(node, node2);
@@ -685,8 +684,8 @@ public class ParIntGraph implements java.io.Serializable {
 	// contains mappings old node -> speciaized node; each unmapped
 	// node is supposed to be mapped to itself.
 	final Map map = new HashMap();
-	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
-	    PANode node  = (PANode) itn.next();
+	for(Object nodeO : allNodes()){
+	    PANode node = (PANode) nodeO;
 	    if((node.type != PANode.PARAM) && (node.type != PANode.STATIC)){
 		PANode node2 = node.wtSpecialize();
 		map.put(node, node2);
@@ -726,8 +725,8 @@ public class ParIntGraph implements java.io.Serializable {
 	final Set empty_loads = new HashSet();
 	final Set fake_outside_edges = new HashSet();
 	
-	for(Iterator it = allNodes().iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : allNodes()) {
+	    PANode node = (PANode) nodeO;
 	    if((node.type == PANode.LOAD) && !G.e.hasEscaped(node))
 		empty_loads.add(node);
 	}
@@ -747,9 +746,8 @@ public class ParIntGraph implements java.io.Serializable {
 
 	remove(empty_loads);
 
-	Iterator it_edges = fake_outside_edges.iterator();
-	while(it_edges.hasNext()){
-	    PAEdge edge = (PAEdge) it_edges.next();
+	for (Object edgeO : fake_outside_edges){
+	    PAEdge edge = (PAEdge) edgeO;
 	    G.O.removeEdge(edge.n1,edge.f,edge.n2);
 	}
 

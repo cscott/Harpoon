@@ -66,7 +66,7 @@ import java.util.Set;
  * <code>MRAFactory</code> generates <code>MRA</code>s.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: MRAFactory.java,v 1.8 2004-02-08 01:53:11 cananian Exp $
+ * @version $Id: MRAFactory.java,v 1.9 2004-02-08 03:20:07 cananian Exp $
  */
 public class MRAFactory {
     
@@ -222,8 +222,8 @@ public class MRAFactory {
 	// start with an empty map
 	Map safe = new HashMap();
 	// add methods unless we have no information about them
-	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    Code c = (Code) hcf.convert(hm);
 	    if (c != null) {
 		Set cls = new HashSet();
@@ -257,8 +257,8 @@ public class MRAFactory {
 	while(true) {
 	    boolean changed = false;
 	    boolean done = false;
-	    for (Iterator it = safe.keySet().iterator(); it.hasNext(); ) {
-		HMethod hm = (HMethod) it.next();
+	    for (Object hmO : safe.keySet()) {
+		HMethod hm = (HMethod) hmO;
 		// get all the call sites in hm
 		CALL[] calls = cg.getCallSites(hm);
 		for (int i = 0; i < calls.length; i++) {
@@ -298,8 +298,8 @@ public class MRAFactory {
 	// get a safe view of the keys
 	Set keys = Collections.unmodifiableSet(new HashSet(safer.keySet()));
 	// save results
-	for (Iterator it = keys.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : keys) {
+	    HMethod hm = (HMethod) hmO;
 	    safer.put(hm, Collections.unmodifiableSet((Set)safer.get(hm)));
 	}
 	return Collections.unmodifiableMap(safer);
@@ -321,8 +321,8 @@ public class MRAFactory {
 	// add methods unless we know they are unsafe because of 
 	// dynamic dispatch or if we have no information because 
 	// it is native or abstract
-	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    Code c = (Code) hcf.convert(hm);
 	    if (c != null) {
 		Set cls = new HashSet();
@@ -357,8 +357,8 @@ public class MRAFactory {
 	// are unsafe by calling unsafe methods
 	while(true) {
 	    boolean changed = false;
-	    for (Iterator it = safe.keySet().iterator(); it.hasNext(); ) {
-		HMethod hm = (HMethod) it.next();
+	    for (Object hmO : safe.keySet()) {
+		HMethod hm = (HMethod) hmO;
 		CALL[] calls = cg.getCallSites(hm);
 		for (int i = 0; i < calls.length; i++) {
 		    HMethod callee = calls[i].method();
@@ -390,8 +390,8 @@ public class MRAFactory {
 	// get a safe view of the keys
 	Set keys = Collections.unmodifiableSet(new HashSet(safer.keySet()));
 	// save results
-	for (Iterator it = keys.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : keys) {
+	    HMethod hm = (HMethod) hmO;
 	    safer.put(hm, Collections.unmodifiableSet((Set)safer.get(hm)));
 	}
 	return Collections.unmodifiableMap(safer);
@@ -405,8 +405,8 @@ public class MRAFactory {
     private void findSafeMethods() {
 	// start with the set of all analyzable methods
 	Set methods = new HashSet();
-	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : ch.callableMethods()) {
+	    HMethod hm = (HMethod) hmO;
 	    if (!hm.isStatic() && !hm.isInterfaceMethod()) {
 		Code c = (Code) hcf.convert(hm);
 		if (c != null)
@@ -420,9 +420,8 @@ public class MRAFactory {
 	// mra. Iterate until a fixed-point is reached.
 	while (true) {
 	    Set safe = new HashSet(safeMethods);
-	    for (Iterator it = ch.callableMethods().iterator(); 
-		 it.hasNext(); ) {
-		HMethod hm = (HMethod) it.next();
+	    for (Object hmO : ch.callableMethods()) {
+		HMethod hm = (HMethod) hmO;
 		Code c = (Code) hcf.convert(hm);
 		if (c != null) {
 		    MRA mra = mra(c);
@@ -460,8 +459,8 @@ public class MRAFactory {
 	    // save results
 	    safe = Collections.unmodifiableSet(safe);
 	    // newly-removed safe initializers must be re-analyzed
-	    for (Iterator it = safeMethods.iterator(); it.hasNext(); ) {
-		HMethod hm = (HMethod) it.next();
+	    for (Object hmO : safeMethods) {
+		HMethod hm = (HMethod) hmO;
 		if (!safe.contains(hm)) {
 		    Code c = (Code) hcf.convert(hm);
 		    assert c != null;
@@ -524,8 +523,8 @@ public class MRAFactory {
 				     new HashSet((Set)pre.proj(1)),
 				     (Quad)pre.proj(2),
 				     new HashSet((Set)pre.proj(3)) });
-	    for(Iterator it = bb.statements().iterator(); it.hasNext(); ) {
-		Quad curr = (Quad) it.next();
+	    for(Object currO : bb.statements()) {
+		Quad curr = (Quad) currO;
 		if (q.equals(curr))
 		    break;
 		// PHIs and LABELs (which are also PHIs) are 
@@ -602,8 +601,8 @@ public class MRAFactory {
 				    new HashSet((Set)pre.proj(1)),
 				    (Quad)pre.proj(2),
 		                    new HashSet((Set)pre.proj(3)) });
-		for(Iterator it = bb.statements().iterator(); it.hasNext(); ) {
-		    Quad q = (Quad) it.next();
+		for(Object qO : bb.statements()) {
+		    Quad q = (Quad) qO;
 		    // PHIs (which include LABELs) are handled implicitly 
 		    // in the call to getPre(). SIGMAs (which include  
 		    // CALLs, CJMPs, SWITCHes and TYPESWITCHes) are also 
@@ -951,8 +950,8 @@ public class MRAFactory {
     private static void intersect(Map m1, Map m2) {
 	// make a copy of the keys before modifying the map
 	Set keySet = new HashSet(m1.keySet());
-	for(Iterator it = keySet.iterator(); it.hasNext(); ) {
-	    Temp t = (Temp) it.next();
+	for(Object tO : keySet) {
+	    Temp t = (Temp) tO;
 	    if (m2.containsKey(t)) {
 		// both m1 and m2 contain a mapping for t
 		// compute join and put new mapping in m1

@@ -28,7 +28,7 @@ import java.util.HashMap;
  * their own extensions of <code>CodeGen</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaxMunchCG.java,v 1.5 2004-02-08 01:57:30 cananian Exp $ */
+ * @version $Id: MaxMunchCG.java,v 1.6 2004-02-08 03:20:52 cananian Exp $ */
 public abstract class MaxMunchCG extends CodeGen {
     
     /** Creates a <code>MaxMunchCG</code>. */
@@ -54,9 +54,8 @@ public abstract class MaxMunchCG extends CodeGen {
 	i.layout(last, null);
 	last = i;
 
-	java.util.Iterator defs = i.defC().iterator();
-	while(defs.hasNext()) {
-	    Temp t = (Temp) defs.next();
+	for (Object tO : i.defC()) {
+	    Temp t = (Temp) tO;
 	    TypeAndDerivation td = 
 		(TypeAndDerivation) tempToType.get(t);
 	    assert td != null : "Uh oh forgot to declare "+t+" before "+i;

@@ -82,9 +82,8 @@ public class SpillHeuristics {
 		Loops curr = (Loops) levelIter.next();
 		level.addAll( curr.nestedLoops() );
 		
-		Iterator instrs=curr.loopExcElements().iterator(); 
-		while( instrs.hasNext() ){
-		    Instr i = (Instr) instrs.next();
+		for (Object iO : curr.loopExcElements()){
+		    Instr i = (Instr) iO;
 		    assert ! depthMap.keySet().contains( i );
 		    depthMap.put( i , currDepth );
 		}
@@ -184,15 +183,15 @@ public class SpillHeuristics {
 	for(Iterator instrs = regalloc.instrs(); instrs.hasNext(); ){
 	    Instr i = (Instr) instrs.next();
 	    Collection liveAt = liveAt(i);
-	    for(Iterator temps = liveAt.iterator(); temps.hasNext();) {
-		Temp t = (Temp) temps.next();
+	    for(Object tO : liveAt) {
+		Temp t = (Temp) tO;
 		Collection rdefC = regalloc.rdefs.reachingDefs(i, t);
 		Collection webC = regalloc.tempToWebs.getValues( t );
-		for(Iterator webs=webC.iterator(); webs.hasNext(); ){
-		    Web w = (Web) webs.next();
+		for(Object wO : webC){
+		    Web w = (Web) wO;
 		    boolean intersect = false;
-		    for(Iterator rti = rdefC.iterator(); rti.hasNext(); ){
-			Instr def = (Instr) rti.next();
+		    for(Object defO : rdefC){
+			Instr def = (Instr) defO;
 			if(w.defs.contains( def )){
 			    intersect = true;
 			    break;
@@ -201,8 +200,8 @@ public class SpillHeuristics {
 		    if ( intersect ) {
 			// w has a def that reaches i, thus w is live-at i
 			Collection nodeC = (Collection) regalloc.nodesFor(w);
-			for(Iterator nodes=nodeC.iterator();nodes.hasNext();){
-			    Node n = (Node) nodes.next();
+			for(Object nO : nodeC){
+			    Node n = (Node) nO;
 			    nodeToLiveAt.add( n, i );
 			}
 		    }
@@ -261,12 +260,12 @@ public class SpillHeuristics {
 	
 	double chaitinCost( Node m ) {
 	    double sum = 0.0;
-	    for(Iterator ds = m.web.defs.iterator(); ds.hasNext(); ){
-		Instr i = (Instr) ds.next();
+	    for(Object iO : m.web.defs){
+		Instr i = (Instr) iO;
 		sum += Math.pow( 10.0, depth(i));
 	    }
-	    for(Iterator us = m.web.uses.iterator(); us.hasNext(); ){
-		Instr i = (Instr) us.next();
+	    for(Object iO : m.web.uses){
+		Instr i = (Instr) iO;
 		sum += Math.pow( 10.0, depth(i));
 	    }
 	    return sum;
@@ -282,8 +281,8 @@ public class SpillHeuristics {
 	    } else {
 		double sum = 0.0;
 		Collection instrC = nodeToLiveAt.getValues( m );
-		for(Iterator instrs = instrC.iterator(); instrs.hasNext(); ){
-		    Instr i = (Instr) instrs.next();
+		for(Object iO : instrC){
+		    Instr i = (Instr) iO;
 		    
 		    if (instrToAreaCache.containsKey(i)) {
 			sum += ((Double)instrToAreaCache.get(i)).doubleValue();

@@ -11,7 +11,7 @@ import net.cscott.jutil.WorkSet;
  * ForwardDataFlowBasicBlockVisitor
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: ForwardDataFlowBasicBlockVisitor.java,v 1.5 2004-02-08 01:51:05 cananian Exp $
+ * @version $Id: ForwardDataFlowBasicBlockVisitor.java,v 1.6 2004-02-08 03:19:21 cananian Exp $
  */
 
 public abstract class ForwardDataFlowBasicBlockVisitor extends DataFlowBasicBlockVisitor {
@@ -32,8 +32,8 @@ public abstract class ForwardDataFlowBasicBlockVisitor extends DataFlowBasicBloc
   public void addSuccessors(WorkSet W, BasicBlockInterf q) {
     if (DEBUG) db("adding successors of " + q + " to worklist");
 
-    for (Iterator it = q.nextSet().iterator(); it.hasNext(); ) {
-	BasicBlockInterf qn = (BasicBlockInterf) it.next();
+    for (Object qnO : q.nextSet()) {
+	BasicBlockInterf qn = (BasicBlockInterf) qnO;
 
 	if (DEBUG) db("looking at " + q + " -> " + qn);
 	

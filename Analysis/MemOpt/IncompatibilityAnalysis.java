@@ -303,8 +303,8 @@ public class IncompatibilityAnalysis {
      * classes.  */
     public Collection getCompatibleClasses() {
         LinkedList allocClasses = new LinkedList();
-        for (Iterator it = classes.iterator(); it.hasNext(); ) {
-            Collection thisClass = (Collection) it.next();
+        for (Object thisClassO : classes) {
+            Collection thisClass = (Collection) thisClassO;
             Collection newClass = new LinkedList();
             
             for (Iterator it2 = thisClass.iterator(); it2.hasNext(); ) {
@@ -329,8 +329,8 @@ public class IncompatibilityAnalysis {
     public Collection getCompatibleClasses(Collection allocs) {
         Set allocVars = new HashSet();
 
-        for (Iterator it = allocs.iterator(); it.hasNext(); ) {
-            Quad q = (Quad) it.next();
+        for (Object qO : allocs) {
+            Quad q = (Quad) qO;
             if (!(q instanceof NEW)) continue;
 
             Temp temp = ((NEW) q).dst();
@@ -344,8 +344,8 @@ public class IncompatibilityAnalysis {
         Collection classes = MyGraphColorer.colorGraph(allocVars, I);
         
         LinkedList allocClasses = new LinkedList();
-        for (Iterator it = classes.iterator(); it.hasNext(); ) {
-            Collection thisClass = (Collection) it.next();
+        for (Object thisClassO : classes) {
+            Collection thisClass = (Collection) thisClassO;
             Collection newClass = new LinkedList();
             
             for (Iterator it2 = thisClass.iterator(); it2.hasNext(); ) {
@@ -408,12 +408,12 @@ public class IncompatibilityAnalysis {
             
             allMethods.addFirst(method);
 
-            for (Iterator it = md.calls.keySet().iterator(); it.hasNext(); ) {
-                CALL qCall = (CALL) it.next();
+            for (Object qCallO : md.calls.keySet()) {
+                CALL qCall = (CALL) qCallO;
                 Collection possibleCalls = md.calls.getValues(qCall);
 
-                for (Iterator it2 = possibleCalls.iterator(); it2.hasNext();) {
-                    HMethod called = (HMethod) it2.next();
+                for (Object calledO : possibleCalls) {
+                    HMethod called = (HMethod) calledO;
 
                     if (STAY_IN_DECLARING_CLASS &&
                         !(called.getDeclaringClass().equals(entry.getDeclaringClass())))
@@ -655,13 +655,13 @@ public class IncompatibilityAnalysis {
 
         // retain the liveness info we need
         // i.e., for interestingTemps and interestingEdges, via valuesMap
-        for (Iterator it = interestingEdges.iterator(); it.hasNext(); ) {
-            Edge edge = (Edge) it.next();
+        for (Object edgeO : interestingEdges) {
+            Edge edge = (Edge) edgeO;
 
             Set lvOn = ssiLiveness.getLiveOn(edge);
 
-            for (Iterator it2 = lvOn.iterator(); it2.hasNext(); ) {
-                Temp temp = (Temp) it2.next();
+            for (Object tempO : lvOn) {
+                Temp temp = (Temp) tempO;
 
                 liveness.addAll(edge, valuesMap.getValues(temp));
                 if (interestingRoots.contains(temp)) {
@@ -694,8 +694,8 @@ public class IncompatibilityAnalysis {
         md.reachNormal = new HashSet();
         md.reachEx = new HashSet();
 
-        for (Iterator it = interestingEdges.iterator(); it.hasNext(); ) {
-            Edge edge = (Edge) it.next();
+        for (Object edgeO : interestingEdges) {
+            Edge edge = (Edge) edgeO;
             Quad q = edge.to();
 
             if (reachNormal.contains(q)) md.reachNormal.add(q);
@@ -723,8 +723,8 @@ public class IncompatibilityAnalysis {
         md.An = new HashSet();
         md.Ae = new HashSet();
 
-        for (Iterator it = allocationSites.iterator(); it.hasNext(); ) {
-            NEW qNew = (NEW) it.next();
+        for (Object qNewO : allocationSites) {
+            NEW qNew = (NEW) qNewO;
 
             if (reachNormal.contains(qNew)) md.An.add(qNew.dst());
             if (reachEx.contains(qNew)) md.Ae.add(qNew.dst());
@@ -732,8 +732,8 @@ public class IncompatibilityAnalysis {
 
         // simulate pointsTo info from what we have
         MultiMap pointsTo = new GenericMultiMap(new AggregateSetFactory());
-        for (Iterator it = externals.iterator(); it.hasNext(); ) {
-            Temp temp = (Temp) it.next();
+        for (Object tempO : externals) {
+            Temp temp = (Temp) tempO;
             pointsTo.add(temp, temp);
         }
 
@@ -786,8 +786,8 @@ public class IncompatibilityAnalysis {
             HMethod method = (HMethod) workset.removeFirst();
 
             if (recomputeInitialSets(method)) {
-                for (Iterator it = callees.getValues(method).iterator(); it.hasNext(); ) {
-                    HMethod callee = (HMethod) it.next();
+                for (Object calleeO : callees.getValues(method)) {
+                    HMethod callee = (HMethod) calleeO;
                     workset.addLast(callee);
                 }
             }
@@ -809,8 +809,8 @@ public class IncompatibilityAnalysis {
 
         // This is terribly, terribly inefficient
         // Should really be using deltas...
-        for (Iterator it = md.calls.keySet().iterator(); it.hasNext(); ) {
-            CALL qCall = (CALL) it.next();
+        for (Object qCallO : md.calls.keySet()) {
+            CALL qCall = (CALL) qCallO;
             boolean reachNN = md.reachNormal.contains(qCall.nextEdge(0).to());
             boolean reachNE = md.reachEx.contains(qCall.nextEdge(0).to());
             boolean reachEN = md.reachNormal.contains(qCall.nextEdge(1).to());
@@ -822,9 +822,8 @@ public class IncompatibilityAnalysis {
                 + Util.code2str(qCall)+")";
 
             
-            for (Iterator it2 = md.calls.getValues(qCall).iterator();
-                 it2.hasNext(); ) {
-                HMethod called = (HMethod) it2.next();
+            for (Object calledO : md.calls.getValues(qCall)) {
+                HMethod called = (HMethod) calledO;
                 MethodData mdCalled = (MethodData) mdCache.get(called);
 
                 if (mdCalled == null || mdCalled.isNative) continue;
@@ -894,16 +893,16 @@ public class IncompatibilityAnalysis {
                                  MultiMap internalPointsTo) {
 
         // add allocs & params
-        for (Iterator it = md.externals.iterator(); it.hasNext(); ) {
-            Temp temp = (Temp) it.next();
+        for (Object tempO : md.externals) {
+            Temp temp = (Temp) tempO;
             externalPointsTo.add(temp, temp);
         }
         
-        for (Iterator it = md.calls.keySet().iterator(); it.hasNext(); ) {
-            CALL qCall = (CALL) it.next();
+        for (Object qCallO : md.calls.keySet()) {
+            CALL qCall = (CALL) qCallO;
             Temp [] actParams = qCall.params();
-            for (Iterator it2 = md.calls.getValues(qCall).iterator(); it2.hasNext(); ) {
-                HMethod called = (HMethod) it2.next();
+            for (Object calledO : md.calls.getValues(qCall)) {
+                HMethod called = (HMethod) calledO;
                 MethodData mdCalled = (MethodData) mdCache.get(called);
                 
                 if (mdCalled == null || mdCalled.isNative) continue;
@@ -997,10 +996,9 @@ public class IncompatibilityAnalysis {
                         (Condition) md.conditions.get(assign);
 
                     // filter deltas through the condition
-                    for (Iterator it2 = thisDelta.iterator();
-                         it2.hasNext(); ) {
+                    for (Object tempO : thisDelta) {
                         
-                        Temp temp = (Temp) it2.next(); 
+                        Temp temp = (Temp) tempO; 
                         if (condition.isSatisfiedFor(temp)) 
                             changed = deltas.add(assign, temp) || changed;
                         else ; // print some debug stuff if you needto
@@ -1025,8 +1023,8 @@ public class IncompatibilityAnalysis {
 	if(SHOW_PROGRESS)
 	    System.out.print("Computing initial Is");
         
-        for (Iterator it = allMethods.iterator(); it.hasNext(); ) {
-            HMethod method = (HMethod) it.next();
+        for (Object methodO : allMethods) {
+            HMethod method = (HMethod) methodO;
 
             computeInitialI(method);
         }
@@ -1044,8 +1042,8 @@ public class IncompatibilityAnalysis {
             HMethod method = (HMethod) workset.removeFirst();
 
             if (recomputeI(method)) {
-                for (Iterator it = callees.getValues(method).iterator(); it.hasNext(); ) {
-                    HMethod callee = (HMethod) it.next();
+                for (Object calleeO : callees.getValues(method)) {
+                    HMethod callee = (HMethod) calleeO;
                     workset.addLast(callee);
                 }
             }
@@ -1089,8 +1087,8 @@ public class IncompatibilityAnalysis {
         // first, simple escapes
         // System.out.println("Simple escapes...");
         MultiMap escapes = new GenericMultiMap();
-        for (Iterator it = md.escapeSites.iterator(); it.hasNext(); ) {
-            Quad q = (Quad) it.next();
+        for (Object qO : md.escapeSites) {
+            Quad q = (Quad) qO;
             if (q.kind() == QuadKind.SET) {
                 SET qSet = (SET) q;
                 escapes.addAll(qSet, pointsTo.getValues(qSet.src()));
@@ -1102,13 +1100,12 @@ public class IncompatibilityAnalysis {
 
         // System.out.println("Escapes from calls...");
         // escapes from calls
-        for (Iterator it = md.calls.keySet().iterator(); it.hasNext(); ) {
-            CALL qCall = (CALL) it.next();
+        for (Object qCallO : md.calls.keySet()) {
+            CALL qCall = (CALL) qCallO;
             Temp[] actParams = qCall.params();
 
-            for (Iterator it2 = md.calls.getValues(qCall).iterator();
-                 it2.hasNext(); ) {
-                HMethod called = (HMethod) it2.next();
+            for (Object calledO : md.calls.getValues(qCall)) {
+                HMethod called = (HMethod) calledO;
                 MethodData mdCalled = (MethodData) mdCache.get(called);
 
                 if (mdCalled == null || mdCalled.isNative) continue;
@@ -1135,8 +1132,8 @@ public class IncompatibilityAnalysis {
 
         // System.out.println("Per meta alloc node...");
         // for each meta alloc node
-        for (Iterator it = interestingNodes.iterator(); it.hasNext(); ) {
-            Quad q = (Quad) it.next();
+        for (Object qO : interestingNodes) {
+            Quad q = (Quad) qO;
 
             Set allocs;
 
@@ -1156,8 +1153,8 @@ public class IncompatibilityAnalysis {
                 edgeAllocs[0]= new HashSet();
                 edgeAllocs[1] = new HashSet();
                 
-                for (Iterator it2 = md.calls.getValues(q).iterator(); it2.hasNext(); ) {
-                    HMethod called = (HMethod) it2.next();
+                for (Object calledO : md.calls.getValues(q)) {
+                    HMethod called = (HMethod) calledO;
                     MethodData mdCalled = (MethodData) mdCache.get(called);
 
                     if (mdCalled == null || mdCalled.isNative) continue;
@@ -1188,8 +1185,8 @@ public class IncompatibilityAnalysis {
                                                            canReachQ);
             /// System.out.println("   # escCanReachQ: " + escCanReachQ.size());
             
-            for (Iterator it2 = escCanReachQ.iterator(); it2.hasNext(); ) {
-                Temp escaped = (Temp) it2.next();
+            for (Object escapedO : escCanReachQ) {
+                Temp escaped = (Temp) escapedO;
                 if (params.contains(escaped)) {
                     md.Ip.addAll(escaped, allocs);
                 } else {
@@ -1219,8 +1216,8 @@ public class IncompatibilityAnalysis {
 
                 // all live objects become incompatible with allocs here
                 // again, a good ol' cartesian product
-                for (Iterator it2 = liveOverObjects.iterator(); it2.hasNext(); ) {
-                    Temp live = (Temp) it2.next();
+                for (Object liveO : liveOverObjects) {
+                    Temp live = (Temp) liveO;
 
                     if (params.contains(live)) {
                         md.Ip.addAll(live, edgeAllocs[i]);
@@ -1257,13 +1254,13 @@ public class IncompatibilityAnalysis {
         
         Collection params = Arrays.asList(md.header.params());
         
-        for (Iterator it = md.calls.keySet().iterator(); it.hasNext(); ) {
-            CALL qCall = (CALL) it.next();
+        for (Object qCallO : md.calls.keySet()) {
+            CALL qCall = (CALL) qCallO;
             Temp[] actParams = qCall.params();
 
             
-            for (Iterator it2 = md.calls.getValues(qCall).iterator(); it2.hasNext(); ) {
-                HMethod called = (HMethod) it2.next();
+            for (Object calledO : md.calls.getValues(qCall)) {
+                HMethod called = (HMethod) calledO;
                 MethodData mdCalled = (MethodData) mdCache.get(called);
 
                 if (mdCalled == null || mdCalled.isNative) continue;
@@ -1272,8 +1269,8 @@ public class IncompatibilityAnalysis {
                 // replace params
                 for (int i = 0; i<actParams.length; i++) {
                     if (mdCalled.Ip.containsKey(declParams[i])) {
-                        for (Iterator it3 = pointsTo.getValues(actParams[i]).iterator(); it3.hasNext(); ) {
-                            Temp temp = (Temp) it3.next();
+                        for (Object tempO : pointsTo.getValues(actParams[i])) {
+                            Temp temp = (Temp) tempO;
 
                             if (params.contains(temp)) {
                                 md.Ip.addAll(temp,
@@ -1302,8 +1299,8 @@ public class IncompatibilityAnalysis {
         selfIncompatible = new HashSet();
 
         // compute self-compatibles and self-incompatibles
-        for (Iterator it = globalAllocMap.keySet().iterator(); it.hasNext(); ) {
-            Temp alloc = (Temp) it.next();
+        for (Object allocO : globalAllocMap.keySet()) {
+            Temp alloc = (Temp) allocO;
 
             if (I.contains(alloc, alloc)) {
                 selfIncompatible.add(alloc);
@@ -1370,8 +1367,8 @@ public class IncompatibilityAnalysis {
 	    
 	    System.out.println("Class type statistics: ");
 	    int nclass = 0;
-	    for (Iterator it = classes.iterator(); it.hasNext(); ) {
-		Collection thisClass = (Collection) it.next();
+	    for (Object thisClassO : classes) {
+		Collection thisClass = (Collection) thisClassO;
 		nclass++;
 		
 		System.out.println(" *Class " + nclass);
@@ -1411,8 +1408,8 @@ public class IncompatibilityAnalysis {
 
         Collection allocClasses = getCompatibleClasses();
 
-        for (Iterator it = allocClasses.iterator(); it.hasNext(); ) {
-            Collection thisClass = (Collection) it.next();
+        for (Object thisClassO : allocClasses) {
+            Collection thisClass = (Collection) thisClassO;
 	    long max = 0L;
 	    for(Iterator itc = thisClass.iterator(); itc.hasNext(); ) {
 		HClass allocatedClass = ((NEW) itc.next()).hclass();
@@ -1454,8 +1451,8 @@ public class IncompatibilityAnalysis {
     private  int countTempIsA(Collection temps, HClass hclass) {
         int count = 0;
 
-        for (Iterator it = temps.iterator(); it.hasNext(); ) {
-            Temp temp = (Temp) it.next();
+        for (Object tempO : temps) {
+            Temp temp = (Temp) tempO;
 
             if (tempIsA(temp, hclass)) count ++;
         }
@@ -1470,8 +1467,8 @@ public class IncompatibilityAnalysis {
 
 
     private void printmap(Map map) {
-	for (Iterator it = map.entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry entry = (Map.Entry) it.next();
+	for (Object entryO : map.entrySet()) {
+	    Map.Entry entry = (Map.Entry) entryO;
 	    Quad from = (Quad) entry.getKey();
 	    Quad to = (Quad) entry.getValue();
 
@@ -1488,8 +1485,8 @@ public class IncompatibilityAnalysis {
     private Map getTypeCountMap(Collection temps) {
         Map count = new HashMap();
 
-        for (Iterator it = temps.iterator(); it.hasNext(); ) {
-            Temp temp = (Temp) it.next();
+        for (Object tempO : temps) {
+            Temp temp = (Temp) tempO;
             HClass type = ((NEW) globalAllocMap.get(temp)).hclass();
             if (count.containsKey(type)) {
                 Integer inMap = (Integer) count.get(type);
@@ -1543,8 +1540,8 @@ public class IncompatibilityAnalysis {
 
     public static long sizeStatistics(Collection methods, HCodeFactory factory) {
         long nElements = 0;
-        for (Iterator it = methods.iterator(); it.hasNext(); ) {
-            HMethod method = (HMethod) it.next();
+        for (Object methodO : methods) {
+            HMethod method = (HMethod) methodO;
             HCode hc = factory.convert(method);
 
             if (hc!=null)
@@ -1575,8 +1572,8 @@ public class IncompatibilityAnalysis {
 
 
     private void printTempCollection(Collection temps) {
-        for (Iterator it = temps.iterator(); it.hasNext(); ) {
-            Temp alloc = (Temp) it.next();
+        for (Object allocO : temps) {
+            Temp alloc = (Temp) allocO;
 
             if (I.getValues(alloc).isEmpty()) continue;
 

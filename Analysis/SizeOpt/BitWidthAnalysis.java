@@ -87,7 +87,7 @@ import net.cscott.jutil.Util;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.9 2004-02-08 01:53:55 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.10 2004-02-08 03:20:22 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -114,8 +114,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	analyze(roots, fieldRoots);
 	/* accounting: */
 	long before=0, before8=0, after=0, after8=0;
-	for (Iterator it=Vf.keySet().iterator(); it.hasNext(); ) {
-	    HField hf = (HField) it.next();
+	for (Object hfO : Vf.keySet()) {
+	    HField hf = (HField) hfO;
 	    HClass ty = hf.getType();
 	    if (ty==HClass.Byte) { before+=8+7; before8+=1; }
 	    else if (ty==HClass.Short) { before+=16+15; before8+=2; }
@@ -356,8 +356,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    if (hm!=null) root_methods.add(hm);
 	}
 	// put all root methods on the worklist & mark as executable.
-	for (Iterator it=root_methods.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : root_methods) {
+	    HMethod hm = (HMethod) hmO;
 	    scan_one(hm);
 	    METHOD method = (METHOD) methodMap.get(hm);
 	    if (method==null) continue; // native method in root set.
@@ -378,8 +378,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	// XXX: main method *could* use xClassExact on String[] arg.
 
 	// raise field root types.
-	for (Iterator it=my_fieldRoots.iterator(); it.hasNext(); ) {
-	    HField hf = (HField) it.next();
+	for (Object hfO : my_fieldRoots) {
+	    HField hf = (HField) hfO;
 	    HClass ty = hf.getType();
 	    mergeV(Wf, hf, ty.isPrimitive() ?
 		   new xClassNonNull( toInternal(ty) ) :
@@ -420,9 +420,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    if (!Wf.isEmpty()) { // grab field from Wf if possible.
 		HField hf = (HField) Wf.pull();
 		// for every read of hf...
-		for (Iterator it=fieldMap.getValues(hf).iterator();
-		     it.hasNext(); ) {
-		    List pair = (List) it.next();
+		for (Object pairO : fieldMap.getValues(hf)) {
+		    List pair = (List) pairO;
 		    visitor.context = (Context) pair.get(0);
 		    // check conditions 3-8
 		    ((Quad) pair.get(1)).accept(visitor);
@@ -441,8 +440,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	// going to hack some values into its fields to keep things going.
 	// NOTE that these values will never be used at runtime.
 	boolean changed = false;
-	for (Iterator it=diFields.iterator(); it.hasNext(); ) {
-	    HField hf = (HField) it.next();
+	for (Object hfO : diFields) {
+	    HField hf = (HField) hfO;
 	    if (get(hf)==null) { // STILL BOTTOM!
 		System.err.println("INFO: "+hf.getDeclaringClass()+
 				   " is uninstantiated!");
@@ -853,8 +852,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    // flag if any callable methods are native.
 	    boolean anyNative = false;
 	    Temp[] myparams = q.params();
-	    for (Iterator it=callable.iterator(); it.hasNext(); ) {
-		HMethod hmm = (HMethod) it.next();
+	    for (Object hmmO : callable) {
+		HMethod hmm = (HMethod) hmmO;
 		// create new context (using this call site)
 		Context nc = context.addElement(q);
 		// keep callMap updated.
@@ -881,9 +880,9 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		// quads) will raiseE on appropriate outgoing edge and
 		// raiseV on retval/retex.
 		// (only interested in returns with given callee context)
-		for (Iterator it2=returnMap.getValues(Default.pair(nc,hmm))
-			 .iterator(); it2.hasNext(); ) {
-		    RETURN r = (RETURN) it2.next();
+		for (Object rO : returnMap.getValues(Default.pair(nc,hmm))
+			) {
+		    RETURN r = (RETURN) rO;
 		    if (r.retval()!=null) {
 			LatticeVal v = get( nc, r.retval() );
 			if (v==null) continue;
@@ -891,9 +890,9 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    }
 		    raiseE(Ee, Eq, Wq, q.nextEdge(0) );
 		}
-		for (Iterator it2=throwMap.getValues(Default.pair(nc,hmm))
-			 .iterator(); it2.hasNext(); ) {
-		    THROW t = (THROW) it2.next();
+		for (Object tO : throwMap.getValues(Default.pair(nc,hmm))
+			) {
+		    THROW t = (THROW) tO;
 		    LatticeVal v = get( nc, t.throwable() );
 		    if (v==null) continue;
 		    mergeV(V, Wv, q.retex(), v);
@@ -1194,10 +1193,10 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    if (q.retval() != null && get( q.retval() )==null)
 		return; // wait for definition!
 	    // for all CALLs which may invoke this method in this context...
-	    for (Iterator it=callMap.getValues
+	    for (Object pairO : callMap.getValues
 		     (Default.pair(context, q.getFactory().getMethod()))
-		     .iterator(); it.hasNext(); ) {
-		List pair = (List) it.next();
+		) {
+		List pair = (List) pairO;
 		Context cc = (Context) pair.get(0); // caller's context
 		CALL call = (CALL) pair.get(1);
 		// mergeV on retval.
@@ -1289,10 +1288,10 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		( Default.pair(context, q.getFactory().getMethod()), q );
 	    if (get( q.throwable() )==null) return; // wait for definition!
 	    // for all CALLs which may invoke this method in this context...
-	    for (Iterator it=callMap.getValues
+	    for (Object pairO : callMap.getValues
 		     (Default.pair(context, q.getFactory().getMethod()))
-		     .iterator(); it.hasNext(); ) {
-		List pair = (List) it.next();
+		) {
+		List pair = (List) pairO;
 		Context cc = (Context) pair.get(0); //caller's context
 		CALL call = (CALL) pair.get(1);
 		// mergeV on retex.

@@ -54,7 +54,7 @@ import java.util.Set;
  * Operates on <code>QuadSSA</code> and <code>QuadSSI</code>.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: DynamicWBQuadPass.java,v 1.1 2002-06-25 18:16:22 kkz Exp $
+ * @version $Id: DynamicWBQuadPass.java,v 1.2 2004-02-08 03:20:07 cananian Exp $
  */
 public class DynamicWBQuadPass 
     extends harpoon.Analysis.Transformation.MethodMutator 
@@ -100,15 +100,15 @@ public class DynamicWBQuadPass
 	}
 	FOOTER footer = ((HEADER) hc.getRootElement()).footer();
 	// handle object allocations that are not arrays
-	for (Iterator it = iv.NEWs.iterator(); it.hasNext(); ) {
-	    NEW onew = (NEW) it.next();
+	for (Object onewO : iv.NEWs) {
+	    NEW onew = (NEW) onewO;
 	    if (DEBUG2) System.out.println("\nSET @ \t" + onew);
 	    associateAllocationProperties(onew, aim, true);
 	    ObjectAnalysisVisitor oav = 
 		new ObjectAnalysisVisitor(onew, iv.allTemps, hc);
 	    // insert clear after CALL to constructor
-	    for (Iterator it2 = oav.CALLs.iterator(); it2.hasNext(); ) {
-		CALL call = (CALL) it2.next();
+	    for (Object callO : oav.CALLs) {
+		CALL call = (CALL) callO;
 		if (DEBUG2) System.out.println("\tCLEAR @ \t" + call);
 		Temp dst = call.params(0);
 		footer = insertClearAfter(call, dst, footer);
@@ -118,8 +118,8 @@ public class DynamicWBQuadPass
 	// are not required
 	Set ignore = new HashSet();
 	// handle Object array allocations
-	for (Iterator it = iv.ANEWs.iterator(); it.hasNext(); ) {
-	    ANEW anew = (ANEW) it.next();
+	for (Object anewO : iv.ANEWs) {
+	    ANEW anew = (ANEW) anewO;
 	    ArrayAnalysisVisitor aav = 
 		new ArrayAnalysisVisitor(anew, iv.allTemps, hc);
 	    if (!aav.ARRAYINITs.isEmpty() || !aav.ASETs.isEmpty()) {
@@ -134,18 +134,16 @@ public class DynamicWBQuadPass
 			it2.hasNext(); )
 			System.out.println("\t" + it2.next());
 		    System.out.println("\nneedClear: ");
-		    for(Iterator it2 = aav.needClear.keySet().iterator(); 
-			it2.hasNext(); ) {
-			Edge key = (Edge) it2.next();
+		    for(Object keyO : aav.needClear.keySet()) {
+			Edge key = (Edge) keyO;
 			System.out.println("\t" + key.from() + " -> " + 
 					   key.to() + " (" +
 					   aav.needClear.get(key) + ")");
 		    }
 		    System.out.println("\n");
 		}
-		for (Iterator it2 = aav.needClear.keySet().iterator();
-		     it2.hasNext(); ) {
-		    Edge key = (Edge) it2.next();
+		for (Object keyO : aav.needClear.keySet()) {
+		    Edge key = (Edge) keyO;
 		    Temp dst = (Temp) aav.needClear.get(key);
 		    footer = insertClear((Quad) key.to(), key, dst, footer);
 		}
