@@ -28,7 +28,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.2 1999-11-17 00:15:31 kkz Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.3 1999-11-19 23:52:26 bdemsky Exp $
  */
 public class AsyncCode extends Code {
 
@@ -171,10 +171,36 @@ public class AsyncCode extends Code {
 
 	System.out.println("AsyncCode.buildCode() 8");
 
+	System.out.println("Attempting Access to "+toCall.getReturnType()+" "+
+			   cont);
+
+	//BCD start
+	HClass[] interfaces=cont.getInterfaces();
+	for (int cci=0;cci<interfaces.length;cci++)
+	    System.out.println("implements " + interfaces[cci]);
+	//BCD stop
+	if (cont.getSuperclass()!=null)
+	    System.out.println("super "+cont.getSuperclass());
+
 	// setNext(<continuation>);
-	HMethod setnextmethod = 
-	    toCall.getReturnType().getMethod("setNext", 
-					     new HClass[] {cont});
+
+	HMethod setnextmethod=null;
+	HMethod[] allMethods=toCall.getReturnType().getMethods();
+	for(int sMethod=0;sMethod<allMethods.length;sMethod++)
+	    if (allMethods[sMethod].getName().compareTo("setNext")==0)
+		//We found a possible method
+		if (allMethods[sMethod].getParameterTypes().length==1) {
+		    HClass param1=allMethods[sMethod].getParameterTypes()[0];
+		    if (param1.isAssignableFrom(cont)) {
+			setnextmethod=allMethods[sMethod];
+			break;
+		    }
+		}
+	Util.assert(setnextmethod!=null,"no setNext method found");
+
+	//HMethod setnextmethod = 
+	//    toCall.getReturnType().getMethod("setNext", 
+	//				     new HClass[] {cont});
 	// this is a tail call, but that's not supported yet,
 	// so we mark it as not a tail call.
 	curr = new CALL(this.qf, cc, setnextmethod, 
