@@ -17,6 +17,7 @@ import harpoon.ClassFile.HInitializer;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.NoSuchClassException;
+import harpoon.ClassFile.SerializableCodeFactory;
 import harpoon.IR.Quads.ANEW;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CJMP;
@@ -56,7 +57,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.13 2000-11-08 18:36:17 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.14 2000-11-08 20:15:48 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -103,7 +104,7 @@ public class InitializerTransform
 	this.dependentMethods = dependentMethods;
 	final HCodeFactory superfactory = super.codeFactory();
 	Util.assert(superfactory.getCodeName().equals(QuadWithTry.codename));
-	this.hcf = new CachingCodeFactory(new HCodeFactory() {
+	this.hcf = new CachingCodeFactory(new SerializableCodeFactory() {
 	    public String getCodeName() { return superfactory.getCodeName(); }
 	    public void clear(HMethod m) { superfactory.clear(m); }
 	    public HCode convert(HMethod m) {
