@@ -16,13 +16,18 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.15 1999-08-09 23:40:18 duncan Exp $
+ * @version $Id: CONST.java,v 1.1.2.16 1999-08-11 20:13:28 duncan Exp $
  */
-public class CONST extends Exp {
+public class CONST extends Exp implements PreciselyTyped {
     /** The constant value of this <code>CONST</code> expression. */
     public final Number value;
     /** The type of this <code>CONST</code> expression. */
     public final int type;
+
+    // Force access through the PreciselyTyped interface, so we can assert
+    // that type==SMALL.  
+    private int bitwidth   = -1;
+    private boolean signed = false;
 
     public CONST(TreeFactory tf, HCodeElement source, int ival) {
 	super(tf, source);
@@ -48,6 +53,24 @@ public class CONST extends Exp {
 	this.value = null;
     }
 
+    /** Creates a CONST with a precisely defined type.  
+     *  @param bitwidth    the width in bits of this <code>CONST</code>'s type.
+     *                     Fails unless <code>0 <= bitwidth < 32</code>.
+     *  @param signed      whether this <code>CONST</code> is signed
+     *  @param val         the value of this <code>CONST</code>.  
+     *                     Note that only the lower <code>bitwidth</code> bits
+     *                     of this parameter will actually be used.  
+     */
+    public CONST(TreeFactory tf, HCodeElement source, 
+		 int bitwidth, boolean signed, int val) { 
+	super(tf, source);
+	Util.assert((0<=bitwidth)&&(bitwidth<32), "Invalid bitwidth");
+	this.type     = SMALL;
+	this.bitwidth = bitwidth;
+	this.signed   = signed;
+	this.value    = new Integer(val & ((~0) >> (32-bitwidth)));
+    }
+
     private CONST(TreeFactory tf, HCodeElement source, 
 		  int type, Number value) {
         super(tf, source);
@@ -70,6 +93,10 @@ public class CONST extends Exp {
     // Typed interface.
     public int type() { return type; }
 
+    // PreciselyTyped interface.
+    public int bitwidth() { Util.assert(type==SMALL); return bitwidth; } 
+    public boolean signed() { Util.assert(type==SMALL); return signed; } 
+    
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
 
