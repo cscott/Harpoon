@@ -43,11 +43,33 @@ import java.util.Comparator;
 import java.util.Collection;
 
 /**
- * <code>DominatingMemoryAccess</code> is an analysis that determines
- * what memory access instructions need to do tag checks, and which don't
+ * <code>DominatingMemoryAccess</code> is an analysis that uses
+ information about memory operations to determine which of them need
+ to do cache tag checks, and which don't.  If one access dominates
+ another, and they are provably on the same cache line, we do not need
+ to check the later's tag.
+
+ We assume that the system allocator does not break objects over cache
+ lines.
+
+ We assign direct address register numbers to the most important
+ references.  The defining access set the register to point to the
+ cache location of the data, and the using accesses, um, use the data
+ at that cache location.  This is a standard register allocation
+ problem, but we 
+ don't spill, since the contents of a direct address register is a
+ hardware decoded cache location which is kept consistent in the face
+ of replacements by the hardware.  To restore an old value of the
+ register would potentially allow a process access into protected
+ data.  Anyway, there is no CPU interface to get at the contents of
+ direct address registers for precisely the reason that it shouldn't
+ use them.
+
+ The backend needs to know which direct address register numbers we
+ used since it needs to invalidate them on a function return.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.1.2.4 2001-06-05 07:48:24 witchel Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.1.2.5 2001-06-07 22:27:22 witchel Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -914,19 +936,44 @@ public class DominatingMemoryAccess {
 
    }
 
+   /**
+      Returns true if the MEM operation that returned this specifier
+      (from <code>harpoon.Backend.MIPS.Frame.daNum</code>) is the
+      defining access. 
+      A defining access does a tag check for the cache line it is on.
+    */
    static public boolean isDef(Object _danum) {
       daNum danum = (daNum) _danum;
       return danum.isDef();
    }
+   /**
+      Returns true if the MEM operation that returned this specifier
+      (from <code>harpoon.Backend.MIPS.Frame.daNum</code>) is a use.
+      A use memory access can skip the tag check, since it has been
+      done for this line.
+    */
    static public boolean isUse(Object _danum) {
       daNum danum = (daNum) _danum;
       return danum.isUse();
    }
+   /**
+      Returns the direct address register used by the MEM operation
+      that returned this specifier (from
+      <code>harpoon.Backend.MIPS.Frame.daNum</code>).  A direct
+      address register is 
+      an on-cache register that points to a specific cache location.
+      You can think of it as a cache line identifier.  A dominant
+      accesses might do the tag check and set direct address register
+      3.  A subordinate access can skip the tag check, and use direct
+      address register 3 instead.  The direct address register number
+      substitutes for the virtual address to identify the cache line.
+    */
    static public int num(Object _danum) {
       daNum danum = (daNum) _danum;
       return danum.num();
    }
 
+   /** Standard interface to run this analysis */
    public HCodeFactory codeFactory() {
       Util.assert(parent.getCodeName().equals(CanonicalTreeCode.codename));
       return new HCodeFactory() {
