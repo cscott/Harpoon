@@ -16,7 +16,7 @@ import java.util.List;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.47 2000-07-25 03:07:53 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.48 2000-07-28 03:09:34 pnkfelix Exp $
  */
 public abstract class Code extends harpoon.IR.Assem.Code {
 
@@ -88,7 +88,17 @@ public abstract class Code extends harpoon.IR.Assem.Code {
 	          non-SSI front end
 	<BR> The other issue here is I don't know when allowing the
 	flexibility of having different registers for a's def and use
-	will buy us anything...
+	will buy us anything... 
+	UPDATE: it does buy us something:
+	since it allows for smaller webs w/o move instructions.  we
+	can get around this problem relatively cheaply by maintaining
+	not just a Instr x Temp -> List<Reg> mapping, but instead two
+	mappings: 
+	   Instr x Use -> List<Reg> 
+	   Instr x Def -> List<Reg>.
+	i will implement this after preliminary Global Register 
+	Allocation is working. 
+	 
      */
     public abstract void assignRegister(Instr i,
 					Temp pseudoReg, 
