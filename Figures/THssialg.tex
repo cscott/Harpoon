@@ -1,0 +1,31 @@
+% algorithm for phi/sigma placement.
+\begin{verbatim}
+Procedure place (G:CFG)
+{
+  let r be the top-level region for G;
+
+  for each variable v in G, do
+    place(r, v);
+}
+
+Procedure place(r:region, v:variable):~boolean
+{
+  /* Post-order traversal */
+  flag:=false;
+  for each child region r', do
+     flag:=place(r', v) || flag;
+
+  for each node n in region r not contained in a child region, do
+     if n contains a use or definition of v, then
+        flag := true;
+
+  if flag=true, then
+    for each node n in region r not contained in a child region, do {
+      if the input arity of n exceeds 1, then
+        place a phi function for v at n;
+      if the output arity of n exceeds 1, then
+        place a sigma function for v at n;
+
+  return flag;
+}
+\end{verbatim}
