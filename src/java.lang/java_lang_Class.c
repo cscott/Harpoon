@@ -317,14 +317,15 @@ JNIEXPORT jint JNICALL Java_java_lang_Class_getModifiers
     return info->modifiers;
 }
 
-#if 0
 /*
  * Class:     java_lang_Class
  * Method:    getSigners
  * Signature: ()[Ljava/lang/Object;
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getSigners
-  (JNIEnv *, jobject);
+  (JNIEnv *env, jobject cls) {
+  assert(0/*unimplemented*/);
+}
 
 /*
  * Class:     java_lang_Class
@@ -332,8 +333,9 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getSigners
  * Signature: ([Ljava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_java_lang_Class_setSigners
-  (JNIEnv *, jobject, jobjectArray);
-#endif
+  (JNIEnv *env, jobject cls, jobjectArray signers) {
+  fprintf(stderr, "WARNING: Class.setSigners() unimplemented.\n");
+}
 
 /*
  * Class:     java_lang_Class
