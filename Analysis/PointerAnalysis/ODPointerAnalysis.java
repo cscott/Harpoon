@@ -64,7 +64,7 @@ import harpoon.Util.LightBasicBlocks.LBBConverter;
 import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.SCCTopSortedGraph;
+import harpoon.Util.Graphs.TopSortedCompDiGraph;
 import harpoon.Util.UComp;
 
 import harpoon.Util.Util;
@@ -83,7 +83,7 @@ import harpoon.Util.DataStructs.LightMap;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPointerAnalysis.java,v 1.7 2004-02-08 03:20:02 cananian Exp $
+ * @version $Id: ODPointerAnalysis.java,v 1.8 2004-03-04 22:32:19 salcianu Exp $
  */
 public class ODPointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -601,15 +601,16 @@ public class ODPointerAnalysis {
 	// the topologically sorted graph of strongly connected components
 	// composed of mutually recursive methods (the edges model the
 	// caller-callee interaction).
-	SCCTopSortedGraph mmethod_sccs = 
-	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(mm, mm_navigator));
+	TopSortedCompDiGraph mmethod_sccs = 
+	    new TopSortedCompDiGraph(Collections.singleton(mm),
+				     mm_navigator);
 
 	if(DEBUG_SCC || TIMING)
-	    display_mm_sccs(mmethod_sccs,
-			    System.currentTimeMillis() - begin_time);
+	    Debug.display_mm_sccs(mmethod_sccs, mcg,
+				  System.currentTimeMillis() - begin_time);
 
-	SCComponent scc = mmethod_sccs.getLast();
-	while(scc != null){
+	for(Object scc0 : mmethod_sccs.incrOrder()) {
+	    SCComponent scc = (SCComponent) scc0;
 	    analyze_inter_proc_scc(scc);
 
 	    if(SAVE_MEMORY) {
@@ -617,8 +618,6 @@ public class ODPointerAnalysis {
 		for(int i = 0; i < mms.length; i++)
 		    aamm.add((MetaMethod) mms[i]);
 	    }
-
-	    scc = scc.prevTopSort();
 	}
 
 	if(TIMING)
@@ -626,34 +625,6 @@ public class ODPointerAnalysis {
 			  (System.currentTimeMillis() - begin_time) + "ms");
     }
 
-
-    // Nice method for debug purposes
-    private void display_mm_sccs(SCCTopSortedGraph mmethod_sccs, long time) {
-	int counter  = 0;
-	int mmethods = 0;
-	SCComponent scc = mmethod_sccs.getFirst();
-	
-	if(DEBUG_SCC)
-	    System.out.println("===== SCCs of methods =====");
-	
-	while(scc != null){
-	    if(DEBUG_SCC){
-		System.out.print(scc.toString(mcg));
-	    }
-	    counter++;
-	    mmethods += scc.nodeSet().size();
-	    scc = scc.nextTopSort();
-	}
-	
-	if(DEBUG_SCC)
-	    System.out.println("===== END SCCs ============");
-	
-	if(TIMING)
-	    System.out.println(counter + " component(s); " +
-			       mmethods + " meta-method(s); " +
-			       time + "ms processing time");
-    }
-    
 
     // information about the interesting AGET quads
     CachingArrayInfo cai = new CachingArrayInfo();
@@ -677,7 +648,7 @@ public class ODPointerAnalysis {
 	    if(TIMING)
 		System.out.println(System.currentTimeMillis() - b_time + "ms");
 	    if(DEBUG)
-		System.out.println(scc.toString(mcg) + " is unanalyzable");
+		System.out.println(scc.toString() + " is unanalyzable");
 	    return;
 	}
 
@@ -773,15 +744,16 @@ public class ODPointerAnalysis {
 	current_intra_mmethod = mm;
 
 	// cut the method into SCCs of basic blocks
-	SCComponent scc = 
-	    scc_lbb_factory.computeSCCLBB(mm.getHMethod()).getFirst();
+	TopSortedCompDiGraph ts_lbbs = 
+	    scc_lbb_factory.computeSCCLBB(mm.getHMethod());
+	SCComponent scc = (SCComponent) ts_lbbs.decrOrder().iterator().next();
 
 	if(DEBUG2){
 	    System.out.println("THE CODE FOR :" + mm.getHMethod());
-	    Debug.show_lbb_scc(scc);
+	    Debug.show_lbb_scc(ts_lbbs);
 	}
 
-	if(STATS) Stats.record_mmethod(mm,scc);
+	if(STATS) Stats.record_mmethod(mm, ts_lbbs);
 
 	// construct the ODParIntGraph at the beginning of the method 
 	LightBasicBlock first_bb = (LightBasicBlock) scc.nodes()[0];
@@ -791,16 +763,13 @@ public class ODPointerAnalysis {
 // 	if (ODPointerAnalysis.ON_DEMAND_ANALYSIS)
 // 	    initialize_OD_fields(mm);
 
+	
 	// analyze the SCCs in decreasing topological order
-	while(scc != null){
-	    analyze_intra_proc_scc(scc);
-	    scc = scc.nextTopSort();
-	}
+	for(Object scc0 : ts_lbbs.decrOrder())
+	    analyze_intra_proc_scc((SCComponent) scc);
 
 	good_agets = null;
 	long end_time = System.currentTimeMillis();
-// 	System.err.println("Analysis time= " + (end_time - start_time) + 
-// 			   "ms for " + mm);
 	System.out.println("Analysis time= " + (end_time - start_time) + 
 			   "ms for " + mm);
     }

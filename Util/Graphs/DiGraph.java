@@ -31,8 +31,8 @@ import harpoon.Util.DataStructs.RelationImpl;
  * bi-directional <code>Navigator</code> (both successors and
  * predecessors).  For a given graph you should define at least one of
  * them, i.e., you should override at least one of the methods
- * <code>getDiGraphNavigator</code> and
- * <code>getDiGraphForwardNavigator</code>.  The standard
+ * <code>getNavigator</code> and
+ * <code>getForwardNavigator</code>.  The standard
  * implementation of these methods in this class is able to construct
  * the other navigator: a bi-directional navigator is trivially a
  * forward one too.  Also, if we know the root vertices and the successor
@@ -46,7 +46,7 @@ import harpoon.Util.DataStructs.RelationImpl;
  * Created: Sun May  4 20:56:57 2003
  *
  * @author Alexandru Salcianu <salcianu@mit.edu>
- * @version $Id: DiGraph.java,v 1.7 2004-02-08 04:53:35 cananian Exp $ 
+ * @version $Id: DiGraph.java,v 1.8 2004-03-04 22:32:29 salcianu Exp $ 
  */
 public abstract class DiGraph<Vertex extends Object> {
     
@@ -57,21 +57,21 @@ public abstract class DiGraph<Vertex extends Object> {
         navigating on their outgoing arcs (using the
         <code>next</code> method of the navigator).  It is OK to
         return ALL the vertices from the digraph. */
-    public abstract Set<Vertex> getDiGraphRoots();
+    public abstract Set<Vertex> getRoots();
 
     /** Returns a navigator that, together with the set of roots,
         defines <code>this</code> digraph.  By default, obtains the
         forward navigator (by calling
-        <code>getDiGraphForwardNavigator</code>), explores the entire
+        <code>getForwardNavigator</code>), explores the entire
         graph and constructs the predecessor relation.
 
 	<p><strong>Note:</strong> You MUST overwrite at least one of
-	<code>getDiGraphNavigator</code> and
-	<code>getDiGraphForwardNavigator</code>. */
-    public Navigator<Vertex> getDiGraphNavigator() {
+	<code>getNavigator</code> and
+	<code>getForwardNavigator</code>. */
+    public Navigator<Vertex> getNavigator() {
 	final Relation/*<Vertex,Vertex>*/ prevRel = 
 	    new RelationImpl/*<Vertex,Vertex>*/();
-	final ForwardNavigator<Vertex> fnav = getDiGraphForwardNavigator();
+	final ForwardNavigator<Vertex> fnav = getForwardNavigator();
 	
 	for(Vertex vertex : allVertices())
 	    for (Vertex next : fnav.next(vertex))
@@ -90,10 +90,24 @@ public abstract class DiGraph<Vertex extends Object> {
         defines <code>this</code> digraph. 
 	
 	<p><strong>Note:</strong> You MUST overwrite at least one of
-	<code>getDiGraphNavigator</code> and
-	<code>getDiGraphForwardNavigator</code>. */
-    public ForwardNavigator<Vertex> getDiGraphForwardNavigator() {
-	return getDiGraphNavigator();
+	<code>getNavigator</code> and
+	<code>getForwardNavigator</code>. */
+    public ForwardNavigator<Vertex> getForwardNavigator() {
+	return getNavigator();
+    }
+
+
+    /** Constructs a <code>DiGraph</code> object.
+	@param roots set of root vertices
+	@param navigator digraph navigator
+	@return digraph with appropriate roots and navigator
+     */
+    public static <Vertex> DiGraph<Vertex> diGraph
+	(final Set<Vertex> roots, final Navigator<Vertex> navigator) {
+	return new DiGraph<Vertex>() {
+	    public Set<Vertex> getRoots() { return roots; }
+	    public Navigator<Vertex> getNavigator() { return navigator; }
+	};
     }
 
 
@@ -106,7 +120,7 @@ public abstract class DiGraph<Vertex extends Object> {
     /** @return Set of all transitive and reflexive successors of the
         vertices from <code>roots</code>. */
     public Set<Vertex> transitiveSucc(Collection<Vertex> roots) {
-	return reachableVertices(roots, getDiGraphForwardNavigator());
+	return reachableVertices(roots, getForwardNavigator());
     }
 
     /** @return Set of all transitive and reflexive
@@ -118,8 +132,9 @@ public abstract class DiGraph<Vertex extends Object> {
     /** @return Set of all transitive and reflexive predecessors of
         the vertices from <code>roots</code>. */
     public Set<Vertex> transitivePred(Collection<Vertex> roots) {
-	return reachableVertices(roots, 
-				 new ReverseNavigator<Vertex>(getDiGraphNavigator()));
+	return reachableVertices
+	    (roots, 
+	     new ReverseNavigator<Vertex>(getNavigator()));
     }
 
 
@@ -199,27 +214,95 @@ public abstract class DiGraph<Vertex extends Object> {
 	to <code>dest</code>, along edges from <code>this</code>
 	graph; returns <code>null</code> if no such path exists.  */
     public List<Vertex> findPath(Vertex source, Vertex dest) {
-	return findPath(source, dest, getDiGraphForwardNavigator());
+	return findPath(source, dest, getForwardNavigator());
     }
 
     /** Interface for passing a method as parameter to a
      *  <code>forAllReachableVertices</code> object.
      *  @see forAllReachableVertices */
-    public static interface VertexAction<Vertex> {
+    public static interface VertexVisitor<Vertex> {
 	public void visit(Vertex obj);
+    }
+
+    /** DFS traversal of <code>this</code> digraph.
+
+	@param onEntry action executed when a node is first time
+	visited by the DFS traversal
+
+	@param onExit action executed after the DFS traversal of a
+	node finished */
+    public void dfs(VertexVisitor<Vertex> onEntry,
+		    VertexVisitor<Vertex> onExit) {
+	DiGraph.dfs(getRoots(), getForwardNavigator(),
+		    onEntry, onExit);
+    }
+
+    /** DFS traversal of a (sub) digraph.
+
+	@param roots set of root vertices, starting points for the traversal
+
+	@param navigator forward navigator through the digraph 
+
+	@param onEntry action executed when a node is first time
+	visited by the DFS traversal
+
+	@param onExit action executed after the DFS traversal of a
+	node finished */
+    public static <Vertex> void dfs(Collection<Vertex> roots,
+				    ForwardNavigator<Vertex> navigator,
+				    VertexVisitor<Vertex> onEntry,
+				    VertexVisitor<Vertex> onExit) {
+	(new ClosureDFS<Vertex>()).doIt(roots, navigator, onEntry, onExit);
+    }
+
+    private static class ClosureDFS<Vertex> {
+	private Set visited;
+	private VertexVisitor<Vertex>     onEntry;
+	private VertexVisitor<Vertex>     onExit;
+	private ForwardNavigator<Vertex> fnav;
+	
+	public void doIt(Collection<Vertex> roots,
+			 ForwardNavigator<Vertex> fnav,
+			 VertexVisitor<Vertex> onEntry,
+			 VertexVisitor<Vertex> onExit) {
+	    this.fnav    = fnav;
+	    this.onEntry = onEntry;
+	    this.onExit  = onExit;
+	    this.visited = new HashSet();
+
+	    for(Vertex root : roots ) {
+		dfs_visit(root);
+	    }
+	}
+
+	private void dfs_visit(Vertex v) {
+	    // skip already visited nodes
+	    if(visited.add(v)) return;
+
+	    if(onEntry != null)
+		onEntry.visit(v);
+
+	    Vertex[] next = fnav.next(v);
+	    int nb_next = next.length;
+	    for(int i = 0; i < nb_next; ) {
+		dfs_visit(next[i]);
+	    }
+
+	    if(onExit != null)
+		onExit.visit(v);
+	}
     }
 
 
     /** Executes an action exactly once for each vertex from
         <code>this</code> directed graph. */
-    public void forAllVertices(VertexAction<Vertex> action) {
+    public void forAllVertices(VertexVisitor<Vertex> action) {
 	// We could have invoked the static forAllReachableVertices.
 	// However, I think it's better to rely on allVertices
 	// instead: for immutable digraphs, the implementor might
 	// override allVertices to cache its result, thus resulting in
 	// improved efficiency.
-	for (Vertex vertex : allVertices() )
-	    action.visit(vertex);
+	dfs(action, null);
     }
     
 
@@ -242,10 +325,9 @@ public abstract class DiGraph<Vertex extends Object> {
     public static <Vertex> void forAllReachableVertices
 	(Collection<Vertex> roots,
 	 ForwardNavigator<Vertex> navigator,
-	 VertexAction<Vertex> action) {
+	 VertexVisitor<Vertex> action) {
 
-	for (Vertex vertex : reachableVertices(roots, navigator) )
-	    action.visit(vertex);
+	(new ClosureDFS()).doIt(roots, navigator, action, null);
     }
 
 
@@ -253,38 +335,22 @@ public abstract class DiGraph<Vertex extends Object> {
         &quot;component graph&quot; of a graph <code>G</code> is the
         directed, acyclic graph consisting of the strongly connected
         components of <code>G</code>.  */
-    public DiGraph<SCComponent/*<Vertex>*/> getComponentGraph() {
+    public DiGraph<SCComponent/*<Vertex>*/> getComponentDiGraph() {
 	final Set<SCComponent/*<Vertex>*/> sccs = SCComponent.buildSCC(this);
 	return new DiGraph<SCComponent/*<Vertex>*/>() {
-	    public Set<SCComponent/*<Vertex>*/> getDiGraphRoots() { 
+	    public Set<SCComponent/*<Vertex>*/> getRoots() {
 		return sccs;
 	    }
-	    public Navigator<SCComponent/*<Vertex>*/> getDiGraphNavigator() {
+	    public Navigator<SCComponent/*<Vertex>*/> getNavigator() {
 		return SCComponent.SCC_NAVIGATOR;
 	    }
 	};
     }
 
-    /** Constructs a top-down topologically sorted view of the
-        component graph for <code>this</code> digraph.  It starts with
-        a strongly connected component with no incoming arcs and ends
-        with the strongly connected component(s) with no outgoing
-        arcs.  */
-    public SCCTopSortedGraph getTopDownComponentView() {
-	return
-	    SCCTopSortedGraph.topSort
-	    (SCComponent.buildSCC(this));
-	// TODO: remove code redundancy (the call to buildSCC in both
-	// this method and the previous one).  We should have a method
-	// that topologicaly sorts an acyclic graph (or throws an
-	// errors if it finds a cycle); then, we get the component
-	// graph and pass it to that method.
-    }
-
     
     /** @return set of vertices from <code>this</code> directed graph. */
     public Set<Vertex> allVertices() {
-	return transitiveSucc(getDiGraphRoots());
+	return transitiveSucc(getRoots());
     }
 
     
@@ -294,16 +360,18 @@ public abstract class DiGraph<Vertex extends Object> {
         <code>this</code> graph contains an arc from <code>v2</code>
         to <code>v1</code>. */
     public DiGraph<Vertex> reverseGraph() {
+	final DiGraph<Vertex> origDiGraph = this;
 	return new DiGraph<Vertex>() {
-	    public Set<Vertex> getDiGraphRoots() {
-		return DiGraph.this.allVertices();
+	    public Set<Vertex> getRoots() {
+		return origDiGraph.allVertices();
 	    }
-	    public Navigator<Vertex> getDiGraphNavigator() {
-		return 
-		    new ReverseNavigator<Vertex>(DiGraph.this.getDiGraphNavigator());
+	    public Navigator<Vertex> getNavigator() {
+		return
+		    new ReverseNavigator<Vertex>
+		    (origDiGraph.getNavigator());
 	    }
 	    // the default implementation of
-	    // getDiGraphForwardNavigator() is precisely what we want.
+	    // getForwardNavigator() is precisely what we want.
 	};
     }
 }

@@ -66,7 +66,7 @@ import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Util.Graphs.Navigator;
 import harpoon.Util.Graphs.SCComponent;
-import harpoon.Util.Graphs.SCCTopSortedGraph;
+import harpoon.Util.Graphs.TopSortedCompDiGraph;
 
 import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.LightRelation;
@@ -76,7 +76,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.19 2004-02-08 05:09:36 cananian Exp $
+ * @version $Id: MAInfo.java,v 1.20 2004-03-04 22:32:18 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -372,17 +372,13 @@ public class MAInfo implements AllocationInformation, Serializable {
     // strongly connected component of the call graph have the same rang.
     private Map/*<HMethod,Integer>*/ get_hm2rang() {
 	if(DEBUG_IC)
-	    System.out.println("set_hm2rang");
-
-	SCCTopSortedGraph mmethod_sccs = mcg.getTopDownComponentView();
-	
-	if(DEBUG_IC)
-	    System.out.println("\n\nMethod rang:");
+	    System.out.println("set_hm2rang\n Method rank:");
 
 	Map/*<HMethod,Integer>*/hm2rang = new HashMap/*<HMethod,Integer>*/();
 	int counter = 0;
-	for(SCComponent scc = mmethod_sccs.getLast(); scc != null;
-	    scc = scc.prevTopSort()) {
+
+	for(Object scc0 : (new TopSortedCompDiGraph(mcg)).incrOrder()) {
+	    SCComponent scc = (SCComponent) scc0;
 	    Object[] mms = scc.nodes();
 	    for(int i = 0; i < mms.length; i++) {
 		HMethod hm = ((MetaMethod) mms[i]).getHMethod();
@@ -1068,10 +1064,10 @@ public class MAInfo implements AllocationInformation, Serializable {
     }
 
     private void extend_quad2scc(HMethod hm) {
-	SCCTopSortedGraph graph = 
+	TopSortedCompDiGraph graph = 
 	    caching_scc_lbb_factory.computeSCCLBB(hm);
-	for(SCComponent scc = graph.getFirst(); scc != null;
-	    scc = scc.nextTopSort()) {
+	for(Object scc0 : graph.decrOrder()) {
+	    SCComponent scc = (SCComponent) scc0;
 	    Object nodes[] = scc.nodes();
 	    for(int i = 0; i < nodes.length; i++) {
 		LightBasicBlock lbb = (LightBasicBlock) nodes[i];

@@ -12,9 +12,10 @@ import java.util.LinkedList;
 import java.util.Collection;
 
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
+import harpoon.Util.Graphs.DiGraph;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.SCCTopSortedGraph;
+import harpoon.Util.Graphs.TopSortedCompDiGraph;
 import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.RelationEntryVisitor;
 import harpoon.Util.DataStructs.RelationImpl;
@@ -27,7 +28,7 @@ import harpoon.Util.Util;
  * <code>ConstraintSolver</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ConstraintSolver.java,v 1.2 2004-02-08 03:21:48 cananian Exp $
+ * @version $Id: ConstraintSolver.java,v 1.3 2004-03-04 22:32:24 salcianu Exp $
  */
 public class ConstraintSolver {
 
@@ -85,14 +86,14 @@ public class ConstraintSolver {
 
 	// 2. compute SCCs of master vars according to the dependencies from
 	// all the constraints (simple + general)
-	SCComponent scc_last = construct_sccs(key_vars);
+	TopSortedCompDiGraph/*<Var>*/ ts_scc_vars = construct_sccs(key_vars);
 
 	// 3. process the SCC in topological order
 	// 3. 0 create data structs used by the fixed point
 	w_intra_scc = new PAWorkList();
 	// 3. 1 fixed point over each SCC
-	for(SCComponent scc = scc_last; scc != null; scc = scc.prevTopSort())
-	    solve_scc(scc);
+	for(Object scc0 : ts_scc_vars.incrOrder())
+	    solve_scc((SCComponent) scc0);
 
 	// 4. compute final solution
 	Map retval = compute_final_solution(relevant_vars);
@@ -166,20 +167,23 @@ public class ConstraintSolver {
 		}
 	    };
 
-	Object[] vars =
-	    relevant_vars.toArray(new Object[relevant_vars.size()]);
-	SCComponent scc = SCCTopSortedGraph.topSort
-	    (SCComponent.buildSCC(vars, nav)).getFirst(); 
-	
-	for( ; scc != null; scc = scc.nextTopSort()) {
-	    Object nodes[] = scc.nodes();
-	    // pick one "master" variable from each equivalence class
-	    Var master_v = (Var) nodes[0];
-	    master_vars.add(master_v);
-	    // map all vars from sccs to master_v
-	    for(int i = 0; i < nodes.length; i++)
-		v2master.put((Var) nodes[i], master_v);
-	}
+	// 1. construct inclusion digraph (relation);
+	DiGraph.diGraph(relevant_vars, nav).
+	    // 2. find its equivalence classes;
+	    getComponentDiGraph().
+	    forAllVertices
+	    (new DiGraph.VertexVisitor/*<SCComponent<Var>>*/() {
+		public void visit(Object/*SCComponent<Var>*/ scc0) {
+		    SCComponent scc = (SCComponent/*<Var>*/) scc0;
+		    Object nodes[] = scc.nodes();
+		    // 3. pick one "master" variable from each class
+		    Var master_v = (Var) nodes[0];
+		    master_vars.add(master_v);
+		    // 4. map all vars from sccs to master_v
+		    for(int i = 0; i < nodes.length; i++)
+			v2master.put((Var) nodes[i], master_v);
+		}
+	    });
     }
 
     Set master_vars;
@@ -266,7 +270,7 @@ public class ConstraintSolver {
     }
 
     // compute the sets of mutually dependent variables
-    private SCComponent construct_sccs(Set key_vars) {
+    private TopSortedCompDiGraph/*<Var>*/ construct_sccs(Set key_vars) {
 	Navigator nav = new Navigator() {
 		public Object[] next(Object node) {
 		    Var v = (Var) node;
@@ -281,9 +285,7 @@ public class ConstraintSolver {
 		}
 	    };
 
-	Object[] vars = key_vars.toArray(new Object[key_vars.size()]);
-	return SCCTopSortedGraph.topSort
-	    (SCComponent.buildSCC(vars, nav)).getLast(); 
+	return new TopSortedCompDiGraph/*<Var>*/(key_vars, nav);
     }
 
 

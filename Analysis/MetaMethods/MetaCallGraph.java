@@ -17,7 +17,6 @@ import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.Navigator;
 import harpoon.Util.Graphs.ForwardNavigator;
 import harpoon.Util.Graphs.DiGraph;
-import harpoon.Util.Graphs.SCCTopSortedGraph;
 
 /**
  * <code>MetaCallGraph</code> is for meta methods what <code>callGraph</code>
@@ -25,7 +24,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  methods are called by a given meta method [at a specific call site].
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraph.java,v 1.6 2003-06-04 16:15:21 salcianu Exp $
+ * @version $Id: MetaCallGraph.java,v 1.7 2004-03-04 22:32:15 salcianu Exp $
  */
 
 public abstract class MetaCallGraph extends DiGraph/*<MetaMethod>*/
@@ -64,7 +63,7 @@ public abstract class MetaCallGraph extends DiGraph/*<MetaMethod>*/
     public abstract void print(PrintStream ps, boolean detailed_view,
 			       MetaMethod root);
 
-    public Set/*<MetaMethod>*/ getDiGraphRoots() {
+    public Set/*<MetaMethod>*/ getRoots() {
 	// we conservatively return all meta-methods
 	return getAllMetaMethods();
     }
@@ -73,7 +72,7 @@ public abstract class MetaCallGraph extends DiGraph/*<MetaMethod>*/
 	<code>this</code> meta-callgraph.  Complexity: BIG; at least
 	linear in the number of nodes and edges in the call graph.
 	Therefore, we cache its result internally. */
-    public Navigator/*<MetaMethod>*/ getDiGraphNavigator() {
+    public Navigator/*<MetaMethod>*/ getNavigator() {
 	if(navigator == null) {
 	    final MetaAllCallers mac = new MetaAllCallers(this);   
 	    navigator = new Navigator/*<MetaMethod>*/() {
@@ -92,7 +91,7 @@ public abstract class MetaCallGraph extends DiGraph/*<MetaMethod>*/
 
     /** Returns a forward-only navigator through <code>this</code>
         meta-callgraph.  Complexity: O(1).*/
-    public ForwardNavigator/*<MetaMethod>*/ getDiGraphForwardNavigator() {
+    public ForwardNavigator/*<MetaMethod>*/ getForwardNavigator() {
 	return new ForwardNavigator/*<MetaMethod>*/() {
 	    public Object[] next(Object node) {
 		return getCallees((MetaMethod) node);

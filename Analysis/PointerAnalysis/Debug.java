@@ -10,10 +10,13 @@ import java.util.Collection;
 
 import harpoon.Util.UComp;
 
+import harpoon.Util.Graphs.TopSortedCompDiGraph;
+
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.Analysis.MetaMethods.MetaCallGraph;
 
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 import harpoon.Util.Graphs.SCComponent;
@@ -22,11 +25,12 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.DataStructs.Relation;
 
 
+
 /**
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.6 2004-02-08 03:20:02 cananian Exp $
+ * @version $Id: Debug.java,v 1.7 2004-03-04 22:32:18 salcianu Exp $
  */
 public abstract class Debug implements java.io.Serializable {
 
@@ -119,10 +123,11 @@ public abstract class Debug implements java.io.Serializable {
 	System.out.println("  }");
     }
 
-    public static void show_lbb_scc(SCComponent scc){
-	for(; scc != null; scc = scc.nextTopSort()){
-	    System.out.println("SCC" + scc.getId() + "{");
+    public static void show_lbb_scc(TopSortedCompDiGraph ts_sccs) {
+	for(Object scc0 : ts_sccs.decrOrder()) {
+	    SCComponent scc = (SCComponent) scc0;
 
+	    System.out.println("SCC" + scc.getId() + "{");
 	    Object nodes[] = scc.nodes();
 	    Arrays.sort(nodes, harpoon.Util.UComp.uc);
 	    for(int i = 0; i < nodes.length; i++) 
@@ -140,4 +145,75 @@ public abstract class Debug implements java.io.Serializable {
 	    hm.getName().equals(mthd) &&
 	    hm.getDeclaringClass().getName().equals(cls);
     }
+
+    /** Pretty print debug function for SCC's of <code>MetaMethod</code>s. */
+    public static String sccToString(SCComponent scc, MetaCallGraph mcg) {
+	StringBuffer buffer = new StringBuffer();
+
+	buffer.append("SCC" + scc.getId() + " (size " + scc.size() + ") {\n");
+
+	Object[] nodes_array = scc.nodes();
+	Set nodes = scc.nodeSet();
+
+	for(int i = 0; i < nodes_array.length; i++) {
+	    Object o = nodes_array[i];
+	    buffer.append(o);
+	    buffer.append("\n");
+	    Object[] next = mcg.getCallees((MetaMethod) o);
+	    for(int j = 0; j < next.length; j++)
+		if(nodes.contains(next[j]))
+		    buffer.append("  " + next[j] + "\n");
+	    buffer.append("\n");
+	}
+	buffer.append("}\n");
+
+	int nb_prev = scc.prevLength();
+	if(nb_prev > 0) {
+	    buffer.append("Prev:");
+	    for(int i = 0; i < nb_prev ; i++) {
+		buffer.append(" SCC" + scc.prev(i).getId());
+	    }
+	    buffer.append("\n");
+	}
+
+	int nb_next = scc.nextLength();
+	if(nb_next > 0) {
+	    buffer.append("Next:");
+	    for(int i = 0; i < nb_next ; i++) {
+		buffer.append(" SCC" + scc.next(i).getId());
+	    }
+	    buffer.append("\n");
+	}
+
+	return buffer.toString();
+    }
+
+
+    // Displays all stringly connected components of methods
+    static void display_mm_sccs
+	(TopSortedCompDiGraph ts_mmethods, MetaCallGraph mcg, long time) {
+	int counter  = 0;
+	int mmethods = 0;
+	
+	if(PointerAnalysis.DEBUG_SCC)
+	    System.out.println("===== SCCs of methods =====");
+	
+	for(Object scc0 : ts_mmethods.incrOrder()) {
+	    SCComponent scc = (SCComponent) scc0;
+	    if(PointerAnalysis.DEBUG_SCC) {
+		System.out.print(Debug.sccToString(scc, mcg));
+	    }
+	    counter++;
+	    mmethods += scc.nodeSet().size();
+	}
+	
+	if(PointerAnalysis.DEBUG_SCC)
+	    System.out.println("===== END SCCs ============");
+	
+	if(PointerAnalysis.TIMING)
+	    System.out.println(counter + " component(s); " +
+			       mmethods + " meta-method(s); " +
+			       time + "ms processing time");
+    }
+
 }

@@ -6,22 +6,20 @@ package harpoon.Util.Graphs;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
+import java.util.Collection;
 
 import java.io.Serializable;
 
-// TODO: These things allow me to obtain some nice debug messages for
-// my Pointer Analysis stuff. Remove them when the PointerAnalysis is
-// finished.
-import harpoon.Analysis.Quads.CallGraph;
-import harpoon.Analysis.MetaMethods.MetaMethod;
-import harpoon.Analysis.MetaMethods.MetaCallGraph;
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.RelationImpl;
 
 import harpoon.Util.UComp;
 
@@ -31,7 +29,7 @@ import harpoon.Util.Util;
  * <code>SCComponent</code> models a <i>Strongly connected component</i>
  * of a graph.
  * The only way to split a graph into <code>SCComponent</code>s is through
- * <code>buildSSC</code>.
+ * <code>buildSCC</code>.
  * That method is quite flexible: all it needs is a root node (or a set of
  * root nodes) and a <i>Navigator</i>: an object implementing the 
  * <code>Navigator</code> interface that provides the 
@@ -42,76 +40,43 @@ import harpoon.Util.Util;
  * case, the strongly connected components group together sets of mutually
  * recursive methods).
  * 
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCComponent.java,v 1.11 2004-02-09 19:56:27 cananian Exp $
+ * @author  Alexandru SALCIANU <salcianu@lcs.mit.edu>
+ * @version $Id: SCComponent.java,v 1.12 2004-03-04 22:32:29 salcianu Exp $
  */
 public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<Vertex>*/>, Serializable {
 
     /** Default navigator through a component graph (a dag of strongly
         connected components).  */
-    public static final Navigator<SCComponent> SCC_NAVIGATOR = new Navigator<SCComponent>() {
-	public SCComponent[] next(SCComponent node) {
-	    return node.next;
-	}
-	public SCComponent[] prev(SCComponent node) {
-	    return node.prev;
-	}
-    };
+    public static final Navigator<SCComponent> SCC_NAVIGATOR =
+	new Navigator<SCComponent>() {
+	    public SCComponent[] next(SCComponent node) {
+		return node.next;
+	    }
+	    public SCComponent[] prev(SCComponent node) {
+		return node.prev;
+	    }
+	};
+
 
     // THE FIRST PART CONTAINS JUST SOME STATIC METHODS & FIELDS
-
-    // The internal version of a SCC: basically the same as the external
-    // one, but using Sets instead of arrays; the idea is to use the most
-    // convenient format during the generation and next to convert everything
-    // to the small one to save some memory ...
-    private static class SCComponentInt{
-	// the nodes of this SCC
-	public Vector nodes = new Vector();
-	// the successors; kept as both a set (for quick membership testing)
-	// and a vector for uniquely ordered and fast iterations. 
-	public Set next = new HashSet();
-	public Vector next_vec = new Vector();
-	// the predecessors; similar to next, next_vec
-	public Set prev = new HashSet();
-	public Vector prev_vec = new Vector();
-	// the "economic format" component
-	public SCComponent comp = new SCComponent();
-	// is there any edge to itself?
-	public boolean loop = false;
-    }
-    
-    // the set of nodes that are reachable from the root object
-    private static Set reachable_nodes;
-    // the set of reached nodes (to avoid reanalyzing them "ad infinitum")
-    private static Set analyzed_nodes;  
-    // Mapping node (Object) -> Strongly Connected Component (SCComponentInt)
-    private static Hashtable node2scc;
-    // The vector of the reached nodes, in the order DFS finished them
-    private static Vector nodes_vector;
-    private static SCComponentInt current_scc_int;
-    // the navigator used in the DFS algorithm
-    private static Navigator nav;
-    // vector to put the generated SCCs in.
-    private static Vector scc_vector;
-
 
     /** Convenient version of
         <code>buildSCC(Object[],Navigator)</code>
 
 	@param graph directed graph
 
-	@return set of <code>graph</code>'s strongly connected
-	components */
-    public static final <Node> Set<SCComponent/*<Node>*/>
-	buildSCC(final DiGraph<Node> graph) {
-	return buildSCC(graph.getDiGraphRoots(), graph.getDiGraphNavigator());
+	@return set of top-level strongly connected components (ie,
+	SCCs that are not pointed to by anybody). */
+    public static final /*<Vertex>*/ Set<SCComponent/*<Vertex>*/>
+	buildSCC(final DiGraph/*<Vertex>*/ graph) {
+	return buildSCC(graph.getRoots(), graph.getNavigator());
     }
     
 
     /** Convenient version of
         <code>buildSCC(Object[],Navigator)</code>
 
-	@param roots a set of nodes that has the property that if we
+	@param roots set of nodes that has the property that if we
 	start at these nodes and (transitively) navigate on the
 	outgoing edges, we explore the entire graph.
 
@@ -119,260 +84,276 @@ public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<V
 
 	@return set of strongly connected components of the graph
 	defined by <code>roots</code> and <code>navigator</code> */
-    public static final <Node> Set<SCComponent/*<Node>*/>
-	buildSCC(final Set<Node> roots,
-		 final Navigator<Node> navigator) {
-	return buildSCC((Node[])roots.toArray(new Object[roots.size()]), navigator);
+    public static final /*<Vertex>*/ Set<SCComponent/*<Vertex>*/>
+	buildSCC(final Set/*<Vertex>*/ roots,
+		 final Navigator/*<Vertex>*/ navigator) {
+	return 
+	    buildSCC(/*(Vertex[])*/
+		     roots.toArray(new Object[roots.size()]), navigator);
     }
 
-    /** Convenient version for the single root case (see the other 
-	<code>buildSCC</code> for details). Returns the single element of
-	the set of top level SCCs. */
-    public static final <Node> SCComponent/*<Node>*/ buildSCC
-	(final Node root, final Navigator<Node> navigator) {
-	Set<SCComponent/*<Node>*/> set = buildSCC((Node[])new Object[]{root}, navigator);
+    /** Convenient version for the single root case (see the other
+	<code>buildSCC</code> for details).  Returns the single
+	element of the set of top level SCCs. */
+    public static final /*<Vertex>*/ SCComponent/*<Vertex>*/ buildSCC
+	(final Object/*Vertex*/ root, final Navigator/*<Vertex>*/ navigator) {
+	Set<SCComponent/*<Vertex>*/> set = 
+	    buildSCC(/*(Vertex[])*/new Object[]{root}, navigator);
 	if((set == null) || set.isEmpty()) return null;
-	assert set.size() <= 1 : "More than one root SCComponent " +
-		    "in a call with a a single root";
+	assert 
+	    set.size() != 1 : 
+	    "More than one root SCComponent in a call with a a single root";
 	// return the single element of the set of root SCComponents.
 	return set.iterator().next();
     }
 
 
-    /** Constructs the strongly connected components of the graph
-	containing all the nodes reachable on paths that originate in
-	nodes from <code>roots</code>. The edges are indicated by
-	<code>navigator</code>.  Returns the set of the root
-	<code>SCComponent</code>s, the components that are not pointed
-	by any other component. This constraint is actively used in
-	the topological sorting agorithm (see
-	<code>SCCTopSortedGraph</code>). */
-    public static final <Node> Set<SCComponent/*<Node>*/> buildSCC
-	(final Node[] roots, final Navigator<Node> navigator) {
-	scc_vector = new Vector();
-	// STEP 1: compute the finished time of each node in a DFS
-	// exploration.  At the end of this step, nodes_vector will
-	// contain all the reached nodes, in the order of their
-	// "finished" time.
-	nav = navigator;
-	analyzed_nodes = new HashSet();
-	nodes_vector   = new Vector();
-	for(int i = 0; i < roots.length; i++) {
-	    Object root = roots[i];
-	    // avoid reanalyzing nodes
-	    if(!analyzed_nodes.contains(root))
-		DFS_first(root);
+    /** Constructs the strongly connected components of the directed
+	graph containing all the nodes reachable on paths that
+	originate in nodes from <code>roots</code>.
+
+	@param roots     roots of the digraph
+	
+	@param navigator navigator that gives the edges of the digraph
+
+	@return set of the root <code>SCComponent</code>s, the
+	components that are not pointed to by any other
+	component.  */
+    public static final /*<Vertex>*/ Set<SCComponent/*<Vertex>*/> buildSCC
+	(final Object[]/*Vertex[]*/ roots,
+	 final Navigator/*<Vertex>*/ navigator) {
+	return (new BuildSCCClosure/*<Vertex>*/()).doIt(roots, navigator);
+    }
+
+
+    // OO programming is great, especially when one encodes functional
+    // programming into it :)
+    // BuildSCCClosure.doIt computes the strongly connected
+    // components, using a DFS-based algorithm from CLR (page 488).
+    private static class BuildSCCClosure/*<Vertex>*/ {
+	// set of nodes reachable from root
+	private Set/*<Vertex>*/ reachable_nodes;
+	// set of reached nodes (to avoid reanalyzing them "ad infinitum")
+	private Set/*<Vertex>*/ visited_nodes;
+	// Mapping vertex -> SCComponent
+	private HashMap/*<Vertex,SCComponent<Vertex>>*/ v2scc;
+	// The vector of the reached nodes, in the order DFS finished them
+	private Vector/*<Vertex>*/ nodes_vector;
+	// vector to put the generated SCCs in.
+	private Vector/*<SCComponent>*/ scc_vector;
+
+	// currently generated strongly connected component
+	private SCComponent current_scc = null;
+	// the navigator used in the DFS algorithm
+	private Navigator/*<Vertex>*/ nav = null;
+	// array of root vertices
+	private Object[]/*Vertex[]*/ roots;
+
+	// does the real work behind SCComponent.buildSCC
+	public final /*<Vertex>*/ Set<SCComponent/*<Vertex>*/> doIt
+	    (final Object[]/*Vertex[]*/ roots,
+	     final Navigator/*<Vertex>*/ navigator) {
+	    scc_vector     = new Vector();
+	    visited_nodes  = new HashSet();
+	    nodes_vector   = new Vector();
+	    v2scc          = new HashMap();
+	    this.roots     = roots;
+
+	    // STEP 1: DFS exploration; add all reached nodes in
+	    // "nodes_vector", in the order of their "finished" time.
+	    direct_dfs(navigator);
+
+	    // STEP 2. build the SCCs by doing a DFS in the reverse graph.
+	    reverse_dfs(navigator);
+
+	    // produce the final formal SCCs
+	    build_final_sccs(navigator);
+	    
+	    return get_root_sccs();
 	}
 
-	// STEP 2. build the SCCs by doing a DFS in the reverse graph.
-	node2scc = new Hashtable();
-	// "in reverse" navigator
-	nav = new Navigator<Node>() {
-		public Node[] next(Node node) {
-		    return navigator.prev(node);
-		}
-		public Node[] prev(Node node) {
-		    return navigator.next(node);
-		}
-	    };
 
-	// Explore the nodes in the decreasing order of their finishing time.
-	// This phase will create the SCCs (big format) and initialize the
-	// node2scc mapping (but it won't set the inter-SCC edges). Also,
-	// the SCCs are put in scc_vector.
-
-	// only the nodes reachable from root nodes count! :
-	// we make sure that navigator.prev cannot take us to strange places!
-	reachable_nodes = analyzed_nodes; 
-	analyzed_nodes = new HashSet();
-	for(int i = nodes_vector.size() - 1; i >= 0; i--){
-	    Object node = nodes_vector.elementAt(i);
-	    // explore nodes that are still unanalyzed
-	    if(node2scc.get(node) == null) {
-		current_scc_int = new SCComponentInt();
-		scc_vector.add(current_scc_int);
-		DFS_second(node);
+	private final void direct_dfs(Navigator/*<Vertex>*/ navigator) {
+	    nav = navigator;
+	    for(int i = 0; i < roots.length; i++) {
+		DFS_first(roots[i]);
 	    }
 	}
 
-	// Put the edges between the SCCs.
-	put_the_edges(navigator);
+	// DFS for the first step: the "forward" navigation
+	private final void DFS_first(Object node) {
+	    // skip already visited nodes
+	    if(visited_nodes.contains(node)) return;
 
-	// Convert the big format SCCs into the compressed format SCCs.
-	build_compressed_format(navigator);
+	    visited_nodes.add(node);
+	    
+	    Object[] next = nav.next(node);
+	    for(int i = 0 ; i < next.length ; i++)
+		DFS_first(next[i]);
+	    
+	    nodes_vector.add(node);
+	}
 
-	// Save the root SCComponents somewhere before activating the GC.
-	Set<SCComponent/*<Node>*/> root_sccs = new HashSet<SCComponent/*<Node>*/>();
-	List<SCComponent/*<Node>*/> root_sccs_vec = new ArrayList<SCComponent/*<Node>*/>();
-	for(int i = 0; i < roots.length; i++) {
-	    Object root = roots[i];
-	    SCComponent root_scc = ((SCComponentInt) node2scc.get(root)).comp;
-	    if(root_scc.prevLength() == 0) {
-		if(root_sccs.add(root_scc)) 
-		    root_sccs_vec.add(root_scc);
+
+	private final void reverse_dfs(Navigator/*<Vertex>*/ navigator) {
+	    // "in reverse" navigator
+	    nav = new ReverseNavigator/*<Vertex>*/(navigator);
+
+	    // Explore the vertices in the decreasing order of their
+	    // "finished" time.  For each unvisited vertex, grab all
+	    // vertices reachable on the reverse navigator.  No
+	    // inter-SCC edges yet.  Put SCCs in scc_vector.
+	    reachable_nodes = visited_nodes;
+	    visited_nodes = new HashSet();
+	    for(int i = nodes_vector.size() - 1; i >= 0; i--){
+		Object node = nodes_vector.elementAt(i);
+		// explore nodes that are still unanalyzed
+		if(!visited_nodes.contains(node)) {
+		    current_scc = new SCComponent();
+		    scc_vector.add(current_scc);
+		    DFS_second(node);
+		}
 	    }
 	}
 
-	nav             = null; // enable the GC
-	nodes_vector    = null;
-	reachable_nodes = null;
-	analyzed_nodes  = null;
-	node2scc        = null;
-	current_scc_int = null;
-	scc_vector      = null;
-	return root_sccs;
-    }
+	// DFS for the second step: the "backward" navigation.
+	private final void DFS_second(Object node) {
+	    // only nodes reachable from root nodes count: we make
+	    // sure that navigator.prev does not take us to strange
+	    // places!
+	    if(visited_nodes.contains(node) ||
+	       !reachable_nodes.contains(node)) return;
+	    
+	    visited_nodes.add(node);
 
-    // DFS for the first step: the "forward" navigation
-    private static final void DFS_first(Object node) {
-	// do not analyze nodes already reached
-	if(analyzed_nodes.contains(node)) return;
-
-	analyzed_nodes.add(node);
-
-	Object[] next = nav.next(node);
-	int nb_next = next.length;
-	for(int i = 0 ; i < nb_next ; i++)
-	    DFS_first(next[i]);
-
-	nodes_vector.add(node);
-    }
-
-    // DFS for the second step: the "backward" navigation.
-    private static final void DFS_second(Object node) {
-	if(analyzed_nodes.contains(node) ||
-	   !reachable_nodes.contains(node)) return;
-
-	analyzed_nodes.add(node);
-	node2scc.put(node, current_scc_int);
-	current_scc_int.nodes.add(node);
-
-	Object[] next = nav.next(node);
-	int nb_next = next.length;
-	for(int i = 0 ; i < nb_next ; i++)
-	    DFS_second(next[i]);
-    }
+	    v2scc.put(node, current_scc);
+	    current_scc.nodes.add(node);
+	    
+	    Object[] next = nav.next(node);
+	    for(int i = 0 ; i < next.length ; i++)
+		DFS_second(next[i]);
+	}
     
-    // put the edges between the SCCs: there is an edge from scc1 to scc2 iff
-    // there is at least one pair of nodes n1 in scc1 and n2 in scc2 such that
-    // there exists an edge from n1 to n2.
-    private static final void put_the_edges(final Navigator navigator) {
-	int nb_scc = scc_vector.size();
-	for(int i = 0; i < scc_vector.size(); i++){
-	    SCComponentInt compi = (SCComponentInt) scc_vector.elementAt(i);
-	    for(Iterator it = compi.nodes.iterator(); it.hasNext(); ) {
-		Object node = it.next();
-		Object[] edges = navigator.next(node);
 
-		for(int j = 0; j < edges.length; j++){
-		    Object node2 = edges[j];
-		    SCComponentInt compi2 = 
-			(SCComponentInt) node2scc.get(node2);
-		    
-		    if(compi2 == compi) compi.loop = true; 
-		    else {
-			if(compi.next.add(compi2.comp))
-			    compi.next_vec.add(compi2.comp);
-			if(compi2.prev.add(compi.comp))
-			    compi2.prev_vec.add(compi.comp);
+	// Build the final SCC.  This requires converting some sets to
+	// arrays (and sorting them in the deterministic case).
+	private final void build_final_sccs(Navigator/*<Vertex>*/ navigator) {
+	    nextRel        = new RelationImpl();
+	    prevRel        = new RelationImpl();
+	    scc2exits      = new RelationImpl();
+	    scc2entries    = new RelationImpl();
+
+	    // Put inter-SCCs edges.
+	    collect_edges(navigator);
+	    
+	    for(Iterator it = scc_vector.iterator(); it.hasNext(); ) {
+		SCComponent scc = (SCComponent) it.next();
+
+		scc.nodes_array = 
+		    scc.nodes.toArray(new Object[scc.nodes.size()]);
+		// add the edges
+		scc.next = toArraySCC(nextRel.getValues(scc));
+		scc.prev = toArraySCC(prevRel.getValues(scc));
+		// add the entries / exits
+		scc.entries = toArrayVertex(scc2entries.getValues(scc));
+		scc.exits   = toArrayVertex(scc2exits.getValues(scc));
+	    }
+	}
+
+	// relation vertex -> successor vertices
+	private Relation/*<SCComponent,SCComponent>*/ nextRel;
+	// scc -> set of exit vertices
+	private Relation/*<SCComponent,Vertex>*/ scc2exits;
+	// relation vertex -> predecessor vertices
+	private Relation/*<SCComponent,SCComponent>*/ prevRel;
+	// scc -> set of entry vertices
+	private Relation/*<SCComponent,Vertex>*/ scc2entries;
+
+
+	// Collect inter-SCCs edges in nextRel/prevRel: there is an
+	// edge from scc1 to scc2 iff there is at least one pair of
+	// nodes n1 in scc1 and n2 in scc2 such that there exists an
+	// edge from n1 to n2.
+	private final void collect_edges
+	    (final Navigator/*<Vertex>*/ navigator) {
+	    for(Iterator itscc = scc_vector.iterator(); itscc.hasNext(); ) {
+		SCComponent scc1 = (SCComponent) itscc.next();
+
+		for(Iterator itv = scc1.nodes.iterator(); itv.hasNext(); ) {
+		    Object v1 = itv.next();
+
+		    Object[] edges = navigator.next(v1);
+		    for(int j = 0; j < edges.length; j++) {
+			Object v2 = edges[j];
+
+			SCComponent scc2 = (SCComponent) v2scc.get(v2);
+			if(scc1 == scc2) {
+			    scc1.loop = true;
+			}
+			else {
+			    nextRel.add(scc1, scc2);
+			    prevRel.add(scc2, scc1);
+			    scc2exits.add(scc1, v1);
+			    scc2entries.add(scc2, v2);
+			}
 		    }
 		}
 	    }
 	}
-    }
 
-    // Build the compressed format attached to each "fat" SCComponentInt.
-    // This requires converting some sets to arrays (and sorting them in
-    // the deterministic case). 
-    private static final void build_compressed_format(Navigator nav) {
-	for(int i = 0; i < scc_vector.size(); i++){
-	    SCComponentInt compInt = (SCComponentInt) scc_vector.elementAt(i);
-	    SCComponent comp = compInt.comp;
-	    comp.loop  = compInt.loop;
-	    comp.nodes = new HashSet(compInt.nodes);
-	    comp.nodes_array = 
-		compInt.nodes.toArray(new Object[compInt.nodes.size()]);
-	    comp.next  = (SCComponent[]) compInt.next_vec.toArray(
-			      new SCComponent[compInt.next_vec.size()]);
-	    comp.prev  = (SCComponent[]) compInt.prev_vec.toArray(
-			      new SCComponent[compInt.prev_vec.size()]);
-	    comp.fillEntriesAndExits(nav);
+	private final SCComponent[] toArraySCC
+	    (final Collection/*<SCComponent>*/ c) {
+	    return (SCComponent[]) c.toArray(new SCComponent[c.size()]);
 	}
-    }
 
-
-    final void fillEntriesAndExits(Navigator nav) {
-	int size = this.size();
-
-	boolean isEntry[] = new boolean[size()];
-	boolean isExit[]  = new boolean[size()];
-	int nb_entries = 0;
-	int nb_exits = 0;
-	
-	for(int i = 0; i < size; i++) {
-	    Object node = nodes_array[i];
-
-	    Object[] next = nav.next(node);
-	    int nb_succs = next.length;
-	    for(int j = 0; j < nb_succs; j++)
-		if(!nodes.contains(next[j])) {
-		    isEntry[i] = true;
-		    nb_entries++;
-		    break;
-		}
-	    
-	    Object[] prev = nav.prev(node);
-	    int nb_preds = prev.length;
-	    for(int j = 0; j < nb_preds; j++)
-		if(!nodes.contains(prev[j])) {
-		    isExit[i] = true;
-		    nb_exits++;
-		    break;
-		}
+	private final Object[]/*Vertex[]*/ toArrayVertex
+	    (final Collection/*<Vertex>*/ c) {
+	    return /*(Vertex[])*/ c.toArray(new Object[c.size()]);
 	}
-	
-	entries = new Object[nb_entries];
-	exits   = new Object[nb_exits];
 
-	for(int i = 0, pentries = 0, pexits = 0; i < size; i++) {
-	    if(isEntry[i])
-		entries[pentries++] = nodes_array[i];
-	    if(isExit[i])
-		exits[pexits++] = nodes_array[i];
+	// Compute set of root SCCs.
+	private final Set<SCComponent/*<Vertex>*/> get_root_sccs() {
+	    Set<SCComponent/*<Vertex>*/> root_sccs = new HashSet();
+	    for(int i = 0; i < roots.length; i++) {
+		SCComponent scc = (SCComponent) v2scc.get(roots[i]);
+		if(scc.prevLength() == 0)
+		    root_sccs.add(scc);
+	    }
+	    return root_sccs;
 	}
     }
 
 
     // HERE STARTS THE REAL (i.e. NON STATIC) CLASS
 
+    // The only way to produce SCCs is through SCComponent.buildSSC !
+    private SCComponent() { id = count++; }
     private static int count = 0;
-    private int id;
 
     /** Returns the numeric ID of <code>this</code> <code>SCComponent</code>.
 	Just for debug purposes ... */
     public int getId(){ return id; }
+    private int id;
 
     // The nodes of this SCC (Strongly Connected Component).
-    Set nodes;
+    Set nodes = new TreeSet();
     Object[] nodes_array;
     // The successors.
     private SCComponent[] next;
     // The predecessors.
     private SCComponent[] prev;
 
-    // entries into this SCC
+    // entries/exists into this SCC
     private Object[] entries;
     private Object[] exits;
 
-    // is there any arc to itself?
-    private boolean loop;
     /** Checks whether <code>this</code> strongly connected component
 	corresponds to a loop, <i>ie</i> it has at least one arc to
 	itself. */
     public final boolean isLoop() { return loop; }
+    // is there any arc to itself?
+    private boolean loop;
 
-    //The only way to produce SCCs is through SCComponent.buildSSC !
-    SCComponent() { id = count++; }
 
     public int compareTo(SCComponent/*<Vertex>*/ scc2) {
 	int id2 = scc2.id;
@@ -407,32 +388,18 @@ public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<V
 
     /** Checks whether <code>node</code> belongs to <code>this</code> \
 	strongly connected component. */
-    public final boolean contains(Object node){
-	return nodes.contains(node);
-    }
+    public final boolean contains(Object node) { return nodes.contains(node); }
 
     /** Returns the entry nodes of <code>this</code> strongly
         connected component.  These are the nodes taht are reachable
         from outside the component. */
     public final Object[] entries() { return entries; }
+
     /** Returns the exit nodes of <code>this</code> strongly connected
         component.  These are the nodes that have arcs toward nodes
         outside the component. */
     public final Object[] exits()   { return exits; }
 
-
-    // the next and prev links in the double linked list of SCCs in
-    // decreasing topological order
-    SCComponent nextTopSort = null;
-    SCComponent prevTopSort = null;
-
-    /** Returns the next <code>SCComponent</code> according to the decreasing
-     * topological order */
-    public final SCComponent nextTopSort() { return nextTopSort; }
-
-    /** Returns the previous <code>SCComponent</code> according to the
-     * decreasing topological order */
-    public final SCComponent prevTopSort() { return prevTopSort; }
 
     /** Pretty print debug function. */
     public final String toString() {
@@ -443,63 +410,27 @@ public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<V
 	    buffer.append("\n");
 	}
 	buffer.append("}\n");
-	buffer.append(prevStringRepr());
-	buffer.append(nextStringRepr());
-	return buffer.toString();
-    }
-
-    // Returns a string representation of the "prev" links.
-    private String prevStringRepr() {
-	StringBuffer buffer = new StringBuffer();
+	// string representation of the "prev" links.
 	int nb_prev = prevLength();
-	if(nb_prev > 0){
+	if(nb_prev > 0) {
 	    buffer.append("Prev:");
-	    for(int i = 0; i < nb_prev ; i++){
-		buffer.append(" SCC" + prev(i).id);
-	    }
+	    for(int i = 0; i < nb_prev ; i++)
+		buffer.append(" SCC" + prev(i).getId());
 	    buffer.append("\n");
 	}
-	return buffer.toString();
-    }
-
-    // Returns a string representation of the "next" links.
-    private String nextStringRepr() {
-	StringBuffer buffer = new StringBuffer();
+	// string representation of the "next" links.
 	int nb_next = nextLength();
-	if(nb_next > 0){
+	if(nb_next > 0) {
 	    buffer.append("Next:");
-	    for(int i = 0; i < nb_next ; i++){
-		buffer.append(" SCC" + next(i).id);
-	    }
+	    for(int i = 0; i < nb_next ; i++)
+		buffer.append(" SCC" + next(i).getId());
 	    buffer.append("\n");
 	}
 	return buffer.toString();
     }
 
-    /** Pretty print debug function for SCC's of <code>MetaMethod</code>s. */
-    public final String toString(MetaCallGraph mcg) {
-	StringBuffer buffer = new StringBuffer();
-
-	boolean extended = size() > 1;
-
-	buffer.append("SCC" + id + " (size " + size() + ") {\n");
-
-	for(int i = 0; i < nodes_array.length; i++) {
-	    Object o = nodes_array[i];
-	    buffer.append(o);
-	    buffer.append("\n");
-	    if(extended){
-		Object[] next = mcg.getCallees((MetaMethod) o);
-		for(int j = 0; j < next.length; j++)
-		    if(nodes.contains(next[j]))
-		       buffer.append("  " + next[j] + "\n");
-		buffer.append("\n");
-	    }
-	}
-	buffer.append("}\n");
-	buffer.append(prevStringRepr());
-	buffer.append(nextStringRepr());
-	return buffer.toString();
+    // put some unit tests here
+    public void test() {
+	// TODO
     }
-
 }

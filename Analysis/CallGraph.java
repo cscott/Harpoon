@@ -5,8 +5,6 @@ package harpoon.Analysis;
 
 import harpoon.ClassFile.HMethod;
 
-import harpoon.Util.Graphs.SCCTopSortedGraph;
-import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.Navigator;
 import harpoon.Util.Graphs.ForwardNavigator;
 import harpoon.Util.Graphs.DiGraph;
@@ -20,7 +18,7 @@ import java.util.Set;
  * call-site information.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.5 2004-02-08 04:53:29 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.6 2004-03-04 22:31:44 salcianu Exp $
  */
 public abstract class CallGraph extends DiGraph {
     /** Returns an array containing all possible methods called by
@@ -41,7 +39,7 @@ public abstract class CallGraph extends DiGraph {
     }
 
 
-    public Set<HMethod> getDiGraphRoots() {
+    public Set<HMethod> getRoots() {
     	// we simply return all the nodes (i.e., methods)
     	return callableMethods();
     }
@@ -49,7 +47,7 @@ public abstract class CallGraph extends DiGraph {
 
     /** Returns a bi-directional top-down graph navigator through
         <code>this</code> callgraph.  Result is internally cached. */
-    public Navigator<HMethod> getDiGraphNavigator() {
+    public Navigator<HMethod> getNavigator() {
 	if(navigator == null) {
 	    final AllCallers ac = new AllCallers(this);
 	    navigator = new Navigator<HMethod>() {
@@ -69,7 +67,7 @@ public abstract class CallGraph extends DiGraph {
 
     /** Returns a forward-only top-down graph navigator through
         <code>this</code> callgraph. */
-    public ForwardNavigator<HMethod> getDiGraphForwardNavigator() {
+    public ForwardNavigator<HMethod> getForwardNavigator() {
 	return new ForwardNavigator<HMethod>() {
 	    public HMethod[] next(HMethod node) {
 		return calls(node);

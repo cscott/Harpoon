@@ -55,9 +55,10 @@ import harpoon.IR.Quads.Qop;
 
 import harpoon.Temp.Temp;
 
+import harpoon.Util.Graphs.DiGraph;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.SCCTopSortedGraph;
+import harpoon.Util.Graphs.TopSortedCompDiGraph;
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
 import harpoon.Analysis.PointerAnalysis.Debug;
 
@@ -81,7 +82,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.12 2004-02-08 03:19:57 cananian Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.13 2004-03-04 22:32:15 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -388,7 +389,6 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	if(Modifier.isNative(hm.getModifiers())) return;
 
 	MethodData  md  = get_method_data(hm);
-	SCComponent scc = md.first_scc;
 	ets2et = md.ets2et;
 	calls  = md.calls;
 
@@ -397,7 +397,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	set_parameter_types(mm_work, hcf.convert(hm));
 
-	compute_types(scc);
+	compute_types(md.sccs);
 	analyze_calls();
 
 	// before quiting this meta-method, remove the types we computed
@@ -406,8 +406,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// they can be shared by many meta-methods derived from the same
 	// HMethod. Of course, I don't want the next analyzed meta-method
 	// to use the types computed for this one.
-	for(SCComponent scc2 = scc; scc2 != null; scc2 = scc2.nextTopSort()) {
-	    Object[] ets = scc2.nodes();
+	for(Object scc0 : md.sccs) {
+	    SCComponent scc = (SCComponent) scc0;
+	    Object[] ets = scc.nodes();
 	    for(int i = 0; i < ets.length; i++)
 		((ExactTemp) ets[i]).clearTypeSet();
 	}
@@ -1004,18 +1005,19 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	System.out.println("\n\nDATA FOR " + mm_work + ":");
 	System.out.println(md);
 	System.out.println("\nCOMPUTED TYPES:");
-	for(SCComponent scc = md.first_scc; scc != null; 
-	    scc = scc.nextTopSort())
+	for(Object scc0 : md.sccs) {
+	    SCComponent scc = (SCComponent) scc0;
 	    for(Object etO : scc.nodeSet()) {
 		ExactTemp et = (ExactTemp) etO;
 		System.out.println("< " + et.t + ", " + 
-				   ((et.ud == ExactTemp.USE)?"USE":"DEF") +
+				   ((et.ud == ExactTemp.USE) ? "USE" : "DEF") +
 				   ", " + Util.code2str(et.q) +
 				   " > has type(s) {");
 		for(Iterator it2 = et.getTypes(); it2.hasNext(); )
 		    System.out.println("\t" + ((GenType) it2.next()));
 		System.out.println("}");
 	    }
+	}
 
 	System.out.println("\nCODE:");
 	HCode hcode = hcf.convert(hm);
@@ -1175,15 +1177,16 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
     // Data attached to a method
     private class MethodData {
-	// The first scc (in decreasing topological order)
-	SCComponent first_scc;
+	// The SCCs (in decreasing topological order)
+	List/*<SCComponent<??>>*/ sccs;
 	// The ets2et map for this method (see the comments around ets2et)
 	Map ets2et;
 	// The set of CALL quads occuring in the code of the method
 	Collection calls;
 
-	MethodData(SCComponent first_scc, Map ets2et, Collection calls) {
-	    this.first_scc = first_scc;
+	MethodData(List/*<SCComponent<>>*/ sccs,
+		   Map ets2et, Collection calls) {
+	    this.sccs     = sccs;
 	    this.ets2et   = ets2et;
 	    this.calls    = calls;
 	}
@@ -1191,8 +1194,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	public String toString() {
 	    StringBuffer buff = new StringBuffer();
 	    buff.append("SCC(s):\n" );
-	    for(SCComponent scc = first_scc; scc != null;
-		scc = scc.nextTopSort()) {
+	    for(Object scc0 : sccs) {
+		SCComponent scc = (SCComponent) scc0;
 		buff.append(scc.toString());
 	    }
 	    buff.append("CALL(s):");
@@ -1221,8 +1224,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    // initialize the ets2et map (see the comments near its definition)
 	    ets2et = new HashMap();
 	    ReachingDefs rdef = getReachingDefsImpl(hcode);
-	    Set initial_set = get_initial_set(rdef, calls);
-	    SCComponent scc = compute_scc(initial_set, rdef);
+	    List scc = compute_scc(get_initial_set(rdef, calls), rdef);
 	    md = new MethodData(scc, ets2et, calls);
 	    mh2md.put(hm, md);
 	}
@@ -1687,14 +1689,12 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // the end of "unique ExactTemp" code.
     
 
-    // Computes the topologically sorted list of strongly connected
+    // Computes the reverse topologically sorted list of strongly connected
     // components containing the definitions of the "interesting" temps.
     // The edges between this nodes models the relation
     // "the type of ExactType x influences the type of the ExactType y"
-    // Returns the first element of the sorted list
-    // (in reverse topological order)
-    // (the rest can be retrieved by navigating with nextTopSort())
-    private SCComponent compute_scc(Set initial_set, ReachingDefs rdef) {
+    private List/*<SCComponent>*/ compute_scc
+	(Set initial_set, ReachingDefs rdef) {
 	// 1. Compute the graph: ExactTemps, successors and predecessors.
 	// predecessors are put into the prev field of the ExactTemps;
 	// successors are not put into the ExactTemps, but into a separate
@@ -1743,12 +1743,10 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    }
 	};
 	
-	Object[] roots_for_scc =
-	    already_visited.toArray(new Object[already_visited.size()]);
-	Set scc_set = SCComponent.buildSCC(roots_for_scc, et_navigator);
-	SCCTopSortedGraph ts_scc = SCCTopSortedGraph.topSort(scc_set);
-
-	return ts_scc.getFirst();
+	return 
+	    (new TopSortedCompDiGraph
+	     (DiGraph.diGraph(already_visited, et_navigator))).
+	    decrOrder();
     }
 
 
@@ -1768,10 +1766,10 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
     // computes the types of the interesting ExactTemps, starting 
     // with those in the strongly connected component "scc".
-    private void compute_types(SCComponent scc) {
-	try{
-	    for( ; scc != null; scc = scc.nextTopSort())
-		process_scc(scc);
+    private void compute_types(List/*<SCComponent>*/ sccs) {
+	try {
+	    for(Object scc0 : sccs)
+		process_scc((SCComponent) scc0);
 	}
 	catch(AssertionError e) {
 	    display_mm_data(mm_work);

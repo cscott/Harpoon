@@ -54,12 +54,10 @@ import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
 import net.cscott.jutil.WorkSet;
 
-
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.SCCTopSortedGraph;
-
+import harpoon.Util.Graphs.TopSortedCompDiGraph;
 
 import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.LightRelation;
@@ -70,7 +68,7 @@ import harpoon.Util.DataStructs.LightMap;
  * <code>ODMAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODMAInfo.java,v 1.9 2004-02-08 05:09:36 cananian Exp $
+ * @version $Id: ODMAInfo.java,v 1.10 2004-03-04 22:32:18 salcianu Exp $
  */
 public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -1615,9 +1613,10 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
     }
 
     private void do_the_inlining(HCodeFactory hcf, Map ih){
-	SCComponent scc = reverse_top_sort_of_cs(ih);
-	Set toPrune=new WorkSet();
-	while(scc != null) {
+	Set toPrune = new WorkSet();
+
+	for(Object scc0 : reverse_top_sort_of_cs(ih).incrOrder()) {
+	    SCComponent scc = (SCComponent) scc0;
 	    if(DEBUG) {
 		System.out.println("Processed SCC:{");
 		Object[] nodes = scc.nodes();
@@ -1631,14 +1630,13 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		inline_call_site(cs, hcf, ih);
 		toPrune.add(cs.getFactory().getParent());
 	    }
-	    scc = scc.prevTopSort();
 	}
-	for(Iterator pit=toPrune.iterator();pit.hasNext();)
+	for(Iterator pit = toPrune.iterator();pit.hasNext();)
 	    Unreachable.prune((HEADER)((HCode)pit.next()).getRootElement());
     }
 
 
-    private SCComponent reverse_top_sort_of_cs(Map ih) {
+    private TopSortedCompDiGraph reverse_top_sort_of_cs(Map ih) {
 	final Relation m2csINm = new LightRelation();
 	final Relation m2csTOm = new LightRelation();
 	for(Object csO : ih.keySet()) {
@@ -1658,13 +1656,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		}
 	    };
 
-	Set cs_set = ih.keySet();
-	CALL[] cs_array = (CALL[]) cs_set.toArray(new CALL[cs_set.size()]);
-
-	SCCTopSortedGraph sccts =
-	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(cs_array, nav));
-
-	return sccts.getLast();
+	return
+	    new TopSortedCompDiGraph(ih.keySet(), nav);
     }
 
 

@@ -12,6 +12,7 @@ import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Util.Graphs.SCComponent;
+import harpoon.Util.Graphs.TopSortedCompDiGraph;
 
 import harpoon.Util.Util;
 
@@ -27,8 +28,8 @@ import java.util.Comparator;
 /**
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Stats.java,v 1.6 2004-02-08 03:20:03 cananian Exp $
+ * @author  Alexandru SALCIANU <salcianu@mit.edu>
+ * @version $Id: Stats.java,v 1.7 2004-03-04 22:32:19 salcianu Exp $
  */
 abstract class Stats implements java.io.Serializable {
 
@@ -51,21 +52,24 @@ abstract class Stats implements java.io.Serializable {
 	return mmi;
     }
 
-    public static void record_mmethod(MetaMethod mm, SCComponent scc){
+    public static void record_mmethod
+	(MetaMethod mm, TopSortedCompDiGraph/*<LBB>*/ ts_sccs) {
+
 	MetaMethodInfo mmi = getMetaMethodInfo(mm);
 
 	// grab statistics about the number of SCC and BB
 	int nb_sccs = 0;
 	int nb_bbs  = 0;
 	int nb_instrs = 0;
-	while(scc != null){
+
+	for(Object scc0 : ts_sccs.decrOrder()) {
+	    SCComponent scc = (SCComponent) scc0;
 	    nb_sccs++;
 	    nb_bbs += scc.nodeSet().size();
 	    for(Object bbkO : scc.nodeSet()){
 		LightBasicBlock bbk = (LightBasicBlock) bbkO;
 		nb_instrs += bbk.getElements().length;
 	    }
-	    scc = scc.nextTopSort();
 	}
 	Stats.record_mmethod_instrs(mm, nb_instrs);
 	Stats.record_mmethod_bbs(mm, nb_bbs);

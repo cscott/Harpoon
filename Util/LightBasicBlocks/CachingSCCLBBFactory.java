@@ -6,7 +6,7 @@ package harpoon.Util.LightBasicBlocks;
 import java.util.Map;
 import java.util.HashMap;
 import harpoon.ClassFile.HMethod;
-import harpoon.Util.Graphs.SCCTopSortedGraph;
+import harpoon.Util.Graphs.TopSortedCompDiGraph;
 
 
 /**
@@ -14,29 +14,26 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  <code>SCCLBBFactory</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: CachingSCCLBBFactory.java,v 1.2 2002-02-25 21:09:33 cananian Exp $
+ * @version $Id: CachingSCCLBBFactory.java,v 1.3 2004-03-04 22:32:31 salcianu Exp $
  */
 public class CachingSCCLBBFactory extends SCCLBBFactory
     implements java.io.Serializable {
-    
-    // The cache of previously computed results; mapping
-    //  HMethod -> SCCTopSortedGraph
-    private Map cache;
 
     /** Creates a <code>CachingSCCLBBFactory</code>. */
     public CachingSCCLBBFactory(LBBConverter lbbconv){
 	super(lbbconv);
-        cache = new HashMap();
     }
+
+    private Map/*<HMethod,TopSortedCompDiGraph<LBB>*/ cache = new HashMap();
 
     /** Computes the topologically sorted graph of all the light basic blocks
 	of the <code>hm</code> method. All the results are cached so that the
         computation occurs only once for each method (of course, unless 
         <code>clear</code> is called). */
-    public SCCTopSortedGraph computeSCCLBB(HMethod hm){
+    public TopSortedCompDiGraph computeSCCLBB(HMethod hm){
         if(cache.containsKey(hm))
-            return (SCCTopSortedGraph) cache.get(hm);
-        SCCTopSortedGraph sccg = super.computeSCCLBB(hm);
+            return (TopSortedCompDiGraph) cache.get(hm);
+        TopSortedCompDiGraph sccg = super.computeSCCLBB(hm);
         cache.put(hm,sccg);
         return sccg;
     }

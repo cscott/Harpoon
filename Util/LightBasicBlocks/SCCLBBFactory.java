@@ -3,11 +3,13 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.LightBasicBlocks;
 
+import java.util.Collections;
+
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.SCCTopSortedGraph;
+import harpoon.Util.Graphs.TopSortedCompDiGraph;
 
 
 /**
@@ -15,7 +17,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  graph of the light basic blocks containing the code of a method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCCLBBFactory.java,v 1.3 2003-05-06 15:04:18 salcianu Exp $
+ * @version $Id: SCCLBBFactory.java,v 1.4 2004-03-04 22:32:31 salcianu Exp $
  */
 public class SCCLBBFactory implements java.io.Serializable {
 
@@ -52,15 +54,11 @@ public class SCCLBBFactory implements java.io.Serializable {
 	<code>LightBasicBlock</code>s), build the strongly connected componnets
 	of <code>LightBasicBlock</code>s and sort them topologically.
 	Returns the sorted graph. */
-    public SCCTopSortedGraph computeSCCLBB(HMethod hm) {
-
-        LightBasicBlock.Factory lbbf = lbbconv.convert2lbb(hm);
-        LightBasicBlock lbb = lbbf.getRoot();
-
-        SCComponent scc = SCComponent.buildSCC(lbb, navigator);
-        SCCTopSortedGraph lbb_scc = SCCTopSortedGraph.topSort(scc);
-
-        return lbb_scc;
+    public TopSortedCompDiGraph computeSCCLBB(HMethod hm) {
+        LightBasicBlock rootLBB = lbbconv.convert2lbb(hm).getRoot();
+	return 
+	    new TopSortedCompDiGraph
+	    (Collections.singleton(rootLBB), navigator);
     }
 
 }
