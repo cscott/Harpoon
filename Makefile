@@ -25,7 +25,7 @@ JSOURCES=$(wildcard src/*.java src/graph/*.java src/util/*.java src/corba/*.java
 GJSOURCES1=imagerec/graph/*.java imagerec/corba/*.java FrameManip/*.java Img/*.java
 GJSOURCES=$(GJSOURCES1) omg/org/CosPropertyService/*.java ATRManip/*.java quo/*.java rss/*.java
 ICHANNEL_SOURCES=*.idl
-JCHANNEL_SOURCES=RtecBase/*.java RtecDefaultEventData/*.java RtecEventChannelAdmin/*.java RtecEventChannelAdmin/EventChannelPackage/*.java RtecEventComm/*.java RtecScheduler/*.java TimeBase/*.java
+JCHANNEL_SOURCES=RtecBase/*.java RtecDefaultEventData/*.java RtecEventChannelAdmin/*.java RtecEventChannelAdmin/EventChannelPackage/*.java RtecEventComm/*.java RtecScheduler/*.java TimeBase/*.java QualCon/*.java
 RTJSOURCES=$(wildcard src/rtj/*.java)
 STUBSOURCES=$(wildcard src/rtj/stubs/*.java)
 SOURCES=$(JSOURCES) $(ISOURCES) $(RTJSOURCES) $(STUBSOURCES)
@@ -38,7 +38,7 @@ SCRIPTS=$(wildcard script/*)
 CONTRIB=$(shell find contrib -type f | grep -v 'CVS' | grep -v '.cvsignore')
 RELEASE=$(SOURCES) README BUILDING COPYING CREDITS Makefile $(IMAGES) $(DSOURCES) 
 RELEASE += $(BISOURCES) $(MANIFEST) $(SCRIPTS)
-EVENTDIRS=com TimeBase RtecBase RtecDefaultEventData RtecEventChannelAdmin RtecEventComm RtecScheduler
+EVENTDIRS=com TimeBase RtecBase RtecDefaultEventData RtecEventChannelAdmin RtecEventComm RtecScheduler QualCon
 JDIRS=imagerec FrameManip omg ATRManip quo rss HTTPClient demo java_cup org ipaq Img
 ZDIRS=edu
 
@@ -220,7 +220,7 @@ ATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
 	@$(JAR) xf contrib/lm_eventChannel.jar
-	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(ICHANNEL_SOURCES) $(BISOURCES)
+	@$(IDLCC) -d . -I`pwd` -I$(UAVDIST) $(ICHANNEL_SOURCES) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES) $(JCHANNEL_SOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -235,7 +235,7 @@ ATR-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
 	@$(JAR) xf contrib/lm_eventChannel.jar
 #	@$(IDLCC_ZEN) -o . $(ZEN_IDLS) $(ZEN_CHANNEL_IDLS)
-	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(ICHANNEL_SOURCES) $(BISOURCES)
+	@$(IDLCC) -d . -I`pwd` -I$(UAVDIST) $(ICHANNEL_SOURCES) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES) $(JCHANNEL_SOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/zen.jar
@@ -524,7 +524,7 @@ jars: clean doc movie/tank.jar
 
 	@echo Generating ATR.jar file...
 	@$(JAR) xf contrib/lm_eventChannel.jar
-	@$(IDLCC) -d . $(ICHANNEL_SOURCES)
+	@$(IDLCC) -I`pwd` -d . $(ICHANNEL_SOURCES)
 	@$(JCC) -d . -g $(JCHANNEL_SOURCES)
 	@$(JAR) cfm ATR.jar src/manifest/ATR.jar.MF $(JDIRS) $(EVENTDIRS)
 	@rm -rf $(EVENTDIRS) *.idl
@@ -567,7 +567,7 @@ jars: clean doc movie/tank.jar
 	@echo Generating ATR-ZEN.jar file...
 	@$(JAR) xf contrib/lm_eventChannel.jar
 #	@$(IDLCC_ZEN) -o . $(ZEN_CHANNEL_IDLS)
-	@$(IDLCC) -d . $(ICHANNEL_SOURCES)
+	@$(IDLCC) -I`pwd` -d . $(ICHANNEL_SOURCES)
 	@$(JCC) -d . -g $(JCHANNEL_SOURCES)
 	@$(JAR) cfm ATR-ZEN.jar src/manifest/ATR-ZEN.jar.MF $(JDIRS) $(ZDIRS)
 	@rm -rf $(EVENTDIRS) *.idl $(JDIRS) $(ZDIRS) META-INF
