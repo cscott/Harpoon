@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.16 1999-08-11 20:13:28 duncan Exp $
+ * @version $Id: CONST.java,v 1.1.2.17 1999-08-11 20:38:09 duncan Exp $
  */
 public class CONST extends Exp implements PreciselyTyped {
     /** The constant value of this <code>CONST</code> expression. */
@@ -72,9 +72,10 @@ public class CONST extends Exp implements PreciselyTyped {
     }
 
     private CONST(TreeFactory tf, HCodeElement source, 
-		  int type, Number value) {
+		  int type, Number value, int bitwidth, boolean signed) {
         super(tf, source);
 	this.type = type; this.value = value;
+	this.bitwidth = bitwidth; this.signed = signed;
     }
     
     /** Return the constant value of this <code>CONST</code> expression. */
@@ -87,7 +88,7 @@ public class CONST extends Exp implements PreciselyTyped {
     public Exp build(ExpList kids) { return build(tf, kids); }
 
     public Exp build(TreeFactory tf, ExpList kids) {
-	return new CONST(tf, this, type, value);
+	return new CONST(tf, this, type, value, bitwidth, signed);
     }
 
     // Typed interface.
@@ -101,10 +102,12 @@ public class CONST extends Exp implements PreciselyTyped {
     public void visit(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new CONST(tf, this, type, value);
+        return new CONST(tf, this, type, value, bitwidth, signed);
     }
 
     public String toString() {
-        return "CONST<"+Type.toString(type)+">("+value+")";
+        return "CONST<"+Type.toString(type)+ 
+	    ((type==SMALL) ? (":" +  bitwidth + (signed ? "sext" : "")) : "") +
+	    ">("+value+")";
     }
 }

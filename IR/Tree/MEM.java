@@ -16,13 +16,19 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MEM.java,v 1.1.2.13 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: MEM.java,v 1.1.2.14 1999-08-11 20:38:09 duncan Exp $
  */
-public class MEM extends Exp {
+public class MEM extends Exp implements PreciselyTyped {
     /** A subexpression evaluating to a memory reference. */
     public final Exp exp;
     /** The type of this memory reference expression. */
     public final int type;
+
+    // Force access through the PreciselyTyped interface, so we can assert
+    // that type==SMALL.  
+    private int bitwidth   = -1;
+    private boolean signed = false;
+
     /** Constructor. */
     public MEM(TreeFactory tf, HCodeElement source,
 	       int type, Exp exp) {
@@ -31,6 +37,31 @@ public class MEM extends Exp {
 	Util.assert(Type.isValid(type) && exp!=null);
 	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
     }
+
+    /** Creates a MEM with a precisely defined type.  
+     *  @param bitwidth    the width in bits of this <code>MEM</code>'s type.
+     *                     Fails unless <code>0 <= bitwidth < 32</code>.
+     *  @param signed      whether this <code>MEM</code> is signed
+     *  @param exp         the location at which to load or store 
+     */
+    public MEM(TreeFactory tf, HCodeElement source, 
+	       int bitwidth, boolean signed, Exp exp) { 
+	super(tf, source);
+	this.type=SMALL; this.exp=exp; 
+	this.bitwidth=bitwidth; this.signed=signed;
+	Util.assert(exp!=null);
+	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
+    }
+    
+    private MEM(TreeFactory tf, HCodeElement source, int type, Exp exp, 
+		int bitwidth, boolean signed) { 
+	super(tf, source);
+	this.type=type; this.exp=exp; 
+	this.bitwidth=bitwidth; this.signed=signed;
+	Util.assert(exp!=null);
+	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
+    }
+
     public ExpList kids() {return new ExpList(exp,null);}
 
     public int kind() { return TreeKind.MEM; }
@@ -39,21 +70,28 @@ public class MEM extends Exp {
 
     public Exp build(TreeFactory tf, ExpList kids) {
 	Util.assert(tf == kids.head.tf);
-	return new MEM(tf, this, type, kids.head);
+	return new MEM(tf, this, type, kids.head, bitwidth, signed);
     }
 
     // Typed interface:
     public int type() { return type; }
+    
+    // PreciselyTyped interface:
+    public int bitwidth() { Util.assert(type==SMALL); return bitwidth; } 
+    public boolean signed() { Util.assert(type==SMALL); return signed; } 
 
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new MEM(tf, this, type, (Exp)exp.rename(tf, ctm));
+        return new MEM(tf, this, type, (Exp)exp.rename(tf, ctm), 
+		       bitwidth, signed);
     }
 
     public String toString() {
-        return "MEM<" + Type.toString(type) + ">(#" + exp.getID() + ")";
+        return "MEM<" + Type.toString(type) + 
+	    ((type==SMALL) ? (":" +  bitwidth + (signed ? "sext" : "")) : "") +
+	    ">(#" + exp.getID() + ")";
     }
 }
 
