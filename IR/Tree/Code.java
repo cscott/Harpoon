@@ -36,7 +36,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.46 2000-02-16 19:46:46 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.47 2000-02-16 22:40:19 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The Tree Objects composing this code view. */
@@ -102,7 +102,7 @@ public abstract class Code extends HCode {
      *  as defs; all instances of TEMP in any of the subtrees returned
      *  by the <code>kids()</code> method are considered uses. Not
      *  valid for non-canonical forms. */
-    public UseDefer getUseDefer() { return null/*new UseDefer(this)*/; }
+    public UseDefer getUseDefer() { return new TreeUseDefer(this); }
 
     /** Return the name of this code view. */
     public abstract String getName();
