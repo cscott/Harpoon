@@ -12,10 +12,10 @@ import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
+import harpoon.IR.Quads.ASET;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.CONST;
-import harpoon.IR.Quads.ASET;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.FOOTER;
@@ -23,6 +23,7 @@ import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
+import harpoon.IR.Quads.QuadKind;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.THROW;
@@ -32,6 +33,9 @@ import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
 
 import java.io.PrintStream;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * <code>WriteBarrierQuadPass</code> takes code in Quad form and
@@ -43,7 +47,7 @@ import java.io.PrintStream;
  * about the number of times the write-barrier is called.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierQuadPass.java,v 1.1.2.2 2001-10-01 20:34:56 kkz Exp $
+ * @version $Id: WriteBarrierQuadPass.java,v 1.1.2.3 2001-10-13 19:24:43 kkz Exp $
  */
 public class WriteBarrierQuadPass extends 
     harpoon.Analysis.Transformation.MethodMutator {
@@ -71,11 +75,24 @@ public class WriteBarrierQuadPass extends
 	Code hc = (Code)input.hcode();
 	// we should not have to update derivation information
 	Util.assert(hc.getDerivation() == null);
+	// first, run the MRA an the code
+	MRA mra = new MRA(hc);
+	// create a set of SETs and ASETs that can be ignored
+	Set ignore = new HashSet();
+	for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
+	    Quad q = (Quad)it.next();
+	    if (q.kind() == QuadKind.ASET) {
+		if (mra.mra_before(q).contains(((ASET)q).objectref()))
+		    ignore.add(q);
+	    } else if (q.kind() == QuadKind.SET) {
+		if (mra.mra_before(q).contains(((SET)q).objectref()))
+		    ignore.add(q);
+	    }
+	}
 	//hc.print(new java.io.PrintWriter(System.out), null);
 	HEADER header = (HEADER) hc.getRootElement();
 	FOOTER footer = (FOOTER) header.footer();
-	QuadVisitor qv = new WriteBarrierVisitor(JLT, JLRF, arraySC, 
-						 fieldSC, footer);
+	QuadVisitor qv = new WriteBarrierVisitor(footer, ignore);
 	// we put all elements in array to avoid screwing up the
 	// iterator as we mutate the quad graph in-place.
 	Quad[] allquads = (Quad[]) hc.getElements();
@@ -127,23 +144,21 @@ public class WriteBarrierQuadPass extends
 	return new WriteBarrierData(hc, f, wbs.getCount());
     }
 
-    private static class WriteBarrierVisitor extends QuadVisitor {
-	final HClass JLT;
-	final HClass JLRF;
-	final HMethod arraySC;
-	final HMethod fieldSC;
-	FOOTER footer;
-	WriteBarrierVisitor(HClass JLT, HClass JLRF, HMethod arraySC, 
-			    HMethod fieldSC, FOOTER footer) {
-	    this.JLT = JLT;
-	    this.JLRF = JLRF;
-	    this.arraySC = arraySC;
-	    this.fieldSC = fieldSC;
+    private class WriteBarrierVisitor extends QuadVisitor {
+	private FOOTER footer;
+	private final Set ignore;
+
+	/** Creates a <code>WriteBarrierVisitor</code>. */
+	WriteBarrierVisitor(FOOTER footer, Set ignore) {
 	    this.footer = footer;
+	    this.ignore = ignore;
 	}
+
 	public void visit(Quad q) { /* do nothing */ }
 	public void visit(ASET q) {
-	    if (!q.type().isPrimitive()) {
+	    // we are interested only in arrays containing pointers
+	    // we can ignore ASETs where the array is the mra object
+	    if (!q.type().isPrimitive() && !ignore.contains(q)) {
 		QuadFactory qf = (QuadFactory)q.getFactory();
 		TempFactory tf = qf.tempFactory();
 		// create Temps
@@ -166,7 +181,9 @@ public class WriteBarrierQuadPass extends
 	}
 	public void visit(SET q) {
 	    // we are interested only in non-static fields containing pointers
-	    if (!q.isStatic() && !q.field().getType().isPrimitive()) {
+	    // we can ignore SETs where the object is the mra object
+	    if (!q.isStatic() && !q.field().getType().isPrimitive() &&
+		!ignore.contains(q)) {
 		QuadFactory qf = (QuadFactory)q.getFactory();
 		TempFactory tf = qf.tempFactory();
 		// create needed Temps

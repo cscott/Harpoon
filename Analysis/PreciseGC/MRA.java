@@ -60,7 +60,7 @@ import java.util.Set;
  * recently allocated object at this program point?"
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: MRA.java,v 1.1.2.1 2001-10-13 00:21:35 kkz Exp $
+ * @version $Id: MRA.java,v 1.1.2.2 2001-10-13 19:24:43 kkz Exp $
  */
 public class MRA {
 
@@ -144,7 +144,6 @@ public class MRA {
 	    Set mra = new HashSet(pre);
 	    for(Iterator it = bb.statements().iterator() ; it.hasNext(); ) {
 		Quad q = (Quad) it.next();
-		System.out.println(q);
 		// PHIs and LABELs (which are also PHIs) are handled 
 		// specially. so are CJMPs, SWITCHs and TYPESWITCHs, 
 		// which are actually SIGMAs
@@ -154,8 +153,6 @@ public class MRA {
 		    q.kind() != QuadKind.SWITCH &&	
 		    q.kind() != QuadKind.TYPESWITCH)
 		    transfer(q, mra);
-		else
-		    System.out.println("\n");
 	    }
 	    // if the post-Set has changed, then update
 	    // the map and add successors to worklist
@@ -252,7 +249,6 @@ public class MRA {
     // objects prior to the Quad, and modifies the
     // Set accordingly
     private void transfer(Quad q, Set pre) {
-	System.out.print("  "+pre+" -> ");
 	int kind = q.kind();
 	if (kind == QuadKind.ANEW || kind == QuadKind.NEW) {
 	    // an ANEW or NEW creates a newly-allocated
@@ -307,7 +303,6 @@ public class MRA {
 	    // are not handled, but there should not be any
 	    throw new Error("Unknown QuadKind: "+q.kind()+" for "+q);
 	}
-	System.out.println(pre+"\n");
     }
 }
 
