@@ -1,0 +1,65 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: pldi99-tech.tex,v 1.1 1998-10-07 04:50:38 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Technical Content} % RENAME ME!
+% Technical Contents (definitions, algorithms, etc)
+%  Program Representation
+%   Sigmas, placement algorithms, theorems.
+%  Constraint extraction and framework.
+%  Contraint systems and resolution analysis (for example)
+%   Bitwidth
+%   Array bounds analysis, etc.
+
+\subsection{Definition of SSI Form}
+SSI form is an extension of the SSA form introduced in \cite{cytron89:ssa}.
+Building SSA form involves adding pseudo-assignments for a variable $V$:
+\begin{enumerate}
+\item[$(\phi)$] at a control-flow merge when disjoint paths from a
+conditional branch come together and at least one of the paths
+contains a definition of $V$; and
+\item[$(\sigma)$] at locations where control-flow splits and at least
+one of the disjoint paths from the split uses the value of $V$.
+\end{enumerate}
+
+\subsection{Criteria for inserting \sigfunction{s}}
+To minimize the number of \sigfunction{s}, there should be a
+\sigfunction{} for variable $a$ at node $z$ of the flowgraph exactly
+when:
+\begin{enumerate}
+\item block $x$ contains a use of $a$,
+\item block $y$ contains a use of $a$,
+\item there is a nonempty path $P_{zx}$ of edges from $z$ to $x$,
+\item there is a nonempty path $P_{zy}$ of edges from $z$ to $y$, and
+\item paths $P_{zx}$ and $P_{zy}$ do not have any node in common
+except $z$ (that is, $z$ is the point of divergence for these paths).
+\end{enumerate}
+We will call this the \textit{path-convergence criterion} for
+inserting \sigfunction{s}.  We consider the end node to contain an
+implicit definition of every variable.
+
+Note that this criterion is very similar to the path-con\-ver\-gence
+criterion for inserting \phifunction{s} described in
+\cite{appel:modern,cytron91:ssa}.  And, just in the \phifunction{}
+case, the above criterion is open-ended: since the \sigfunction{}
+itself counts as a use of $a$, we must iterate the above to determine
+the final set of \sigfunction{s}.
+
+Upon examination, we see that the path-con\-ver\-gence criteria for $\phi$- and
+\sigfunction{s} interact.  Since \sigfunction{s} are variable
+definitions and \phifunction{s} are variable uses, the set of
+equations defined by the respective criteria must be iterated together 
+in order to find the necessary function sets.  The total number of
+$\phi$- and \sigfunction{s} remains linear, however: we can only place 
+a single $\phi$- and/or \sigfunction{s} per variable at any given
+flowgraph node, so the total number of added functions is limited to 
+$2 \cdot N \cdot V$.
+
+Cytron et al.\ \cite{cytron91:ssa} has shown that the iterated
+path-con\-ver\-gence criterion for \phifunction{s} is equivalent to the
+\textit{iterated dominance frontier criterion}: whenever a node $x$
+contains a definition of a variable $a$, then any node $z$ in the
+dominance frontier of $x$ needs a \phifunction{} for a; nodes in the
+dominance frontier of any added \phifunction{} similarly need
+\phifunction{s}.  The equivalent statement for \sigfunction{s}
+references \textit{uses} of the variable $a$ and nodes in its
+post-dominance frontier. 
