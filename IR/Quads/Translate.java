@@ -38,7 +38,7 @@ import java.util.Vector;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.4 1998-12-27 21:26:55 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.5 1998-12-28 23:38:54 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -371,11 +371,8 @@ final class Translate { // not public.
 	    return hs;
 	}
 	void recordHandler(Instr orig, Quad start, Quad end) {
-	    for (Enumeration e = HandlerSet.elements(handlers(orig));
-		 e.hasMoreElements(); ) {
-		HANDLER h = (HANDLER) e.nextElement();
-		recordHandler(new Set(), start, end, (Set) h.protectedSet);
-	    }
+	    for (HandlerSet hs=handlers(orig); hs!=null; hs=hs.next)
+		recordHandler(new Set(), start, end, (Set) hs.h.protectedSet);
 	}
 	private void recordHandler(Set done, Quad start, Quad end, Set s) {
 	    s.union(start); done.union(start);
@@ -413,6 +410,8 @@ final class Translate { // not public.
 	implements ProtectedSet {
 	TransProtection() { super(); }
 	public boolean isProtected(Quad q) { return contains(q); }
+	public void remove(Quad q) { super.remove(q); }
+	public void insert(Quad q) { super.union(q); }
     }
 
     /** Return a <code>Quad</code> representation of the method code
@@ -1219,7 +1218,16 @@ final class Translate { // not public.
 	    {
 	    OpClass opd = (OpClass) in.getOperand(0);
 	    ns = s.pop().push();
-	    q = new INSTANCEOF(qf, in, ns.stack(0), s.stack(0), opd.value());
+	    Quad q0 = new INSTANCEOF(qf, in,
+				     ns.stack(0), s.stack(0), opd.value());
+	    Quad q1 = new CJMP(qf, in, ns.stack(0), new Temp[0]);
+	    Quad q2 = new CONST(qf, in, ns.stack(0),new Integer(0),HClass.Int);
+	    Quad q3 = new CONST(qf, in, ns.stack(0),new Integer(1),HClass.Int);
+	    Quad q4 = new PHI(qf, in, new Temp[0], 2);
+	    Quad.addEdges(new Quad[] { q0, q1, q2, q4 });
+	    Quad.addEdge(q1, 1, q3, 0);
+	    Quad.addEdge(q3, 0, q4, 1);
+	    q = q0; last = q4;
 	    break;
 	    }
 	case Op.INVOKEINTERFACE:

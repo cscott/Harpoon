@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * is the first parameter in the <code>params</code> array.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.7 1998-12-27 21:26:54 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.8 1998-12-28 23:38:54 cananian Exp $ 
  */
 public class CALL extends Quad {
     /** The method to invoke. */
@@ -118,6 +118,12 @@ public class CALL extends Quad {
     public Temp params(int i) { return params[i]; }
     /** Returns the number of parameters in the <code>params</code> array. */
     public int paramsLength() { return params.length; }
+    /** Returns the type of the specified parameter. */
+    public HClass paramType(int i) {
+	if (isStatic()) return method.getParameterTypes()[i];
+	else if (i==0) return method.getDeclaringClass();
+	else return method.getParameterTypes()[i-1];
+    }
     /** Returns the <code>Temp</code> which will hold the return value of
      *  the method, or the value <code>null</code> if the method returns
      *  no value. */

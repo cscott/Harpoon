@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.1.2.4 1998-12-23 22:18:48 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.5 1998-12-28 23:38:54 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
@@ -53,10 +53,9 @@ abstract class Print  {
 	    HandlerSet oldHS = hs; hs = handlers(qM, ql[i]);
 	    if (!HandlerSet.equals(oldHS, hs)) { // changed, print update.
 		StringBuffer sb=new StringBuffer("-- new handlers [");
-		for (Enumeration e=HandlerSet.elements(hs);
-		     e.hasMoreElements(); ) {
-		    sb.append(labels.get(e.nextElement()));
-		    if (e.hasMoreElements()) sb.append(", ");
+		for (HandlerSet hsp=hs; hsp!=null; hsp=hsp.next) {
+		    sb.append(labels.get(hsp.h));
+		    if (hsp.next!=null) sb.append(", ");
 		}
 		sb.append("] --");
 		indent(pw, null, sb.toString());

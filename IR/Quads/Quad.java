@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.8 1998-12-27 21:26:55 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.9 1998-12-28 23:38:54 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -204,8 +204,21 @@ public abstract class Quad
 	    addEdge((Quad) e.from(), e.which_succ(), newQ, i);
 	    oldQ.prev[i] = null;
 	}
+	// replace in HANDLERs.
+	for (HandlerSet hs=oldQ.handlers(); hs!=null; hs=hs.next) {
+	    hs.h.protectedSet.remove(oldQ);
+	    hs.h.protectedSet.insert(newQ);
+	}
     }
-
+    public final HandlerSet handlers() {
+	METHOD Qm = (METHOD)qf.getParent().quads.next(1);
+	HandlerSet hs=null;
+	Quad ql[] = Qm.next();
+	for (int i=ql.length-1; i > 0; i--)  // next(0) is not a HANDLER
+	    if (((HANDLER)ql[i]).isProtected(this))
+		hs=new HandlerSet((HANDLER)ql[i], hs);
+	return hs;
+    }
     //-----------------------------------------------------
     // support cloning.  The pred/succ quads are not cloned, but the
     // array holding them is.

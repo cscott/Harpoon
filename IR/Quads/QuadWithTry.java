@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.1 1998-12-27 21:26:55 cananian Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.2 1998-12-28 23:38:54 cananian Exp $
  * @see QuadNoSSA
  * @see QuadSSA
  */
@@ -22,6 +22,8 @@ public class QuadWithTry extends Code /* which extends HCode */ {
     QuadWithTry(harpoon.IR.Bytecode.Code bytecode) {
         super(bytecode.getMethod(), null);
 	quads = Translate.trans(bytecode, this);
+	Peephole.normalize(quads); // put variables where they belong.
+	Peephole.optimize(quads, true); //don't disrupt the handlers too much
     }
     private QuadWithTry(HMethod parent, Quad quads) {
 	super(parent, quads);

@@ -11,21 +11,21 @@ import java.util.NoSuchElementException;
  * both <code>Translate</code> and <code>Print</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HandlerSet.java,v 1.1.2.1 1998-12-23 22:18:48 cananian Exp $
+ * @version $Id: HandlerSet.java,v 1.1.2.2 1998-12-28 23:38:54 cananian Exp $
  */
-final class HandlerSet {
-    final private HANDLER h;
-    final private HandlerSet next;
+final public class HandlerSet {
+    final HANDLER h;
+    final HandlerSet next;
     HandlerSet(HANDLER h, HandlerSet next) {
 	Util.assert(h!=null /*&& !contains(next, h)*/);
 	this.h = h; this.next = next;
     }
     /** Determines if this <code>HandlerSet</code> contains a given
      *  <code>HANDLER</code>. */
-    public final boolean contains(HANDLER h) { return contains(this, h); }
+    final boolean contains(HANDLER h) { return contains(this, h); }
     /** Returns an enumeration of the <code>HANDLER</code>s in this
      *  <code>HandlerSet</code>. */
-    public final Enumeration elements() { return elements(this); }
+    final Enumeration elements() { return elements(this); }
     /** Determines if an object is equal to this <code>HandlerSet</code>. */
     public final boolean equals(Object o) {
 	return (o instanceof HandlerSet) ? equals(this, (HandlerSet)o) : false;
