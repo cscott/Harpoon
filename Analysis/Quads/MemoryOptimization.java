@@ -48,7 +48,7 @@ import java.util.Set;
  * It should be safe with respect to the revised Java memory model.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemoryOptimization.java,v 1.1.2.3 2001-06-18 14:31:59 cananian Exp $
+ * @version $Id: MemoryOptimization.java,v 1.1.2.4 2001-06-18 14:45:54 cananian Exp $
  */
 public final class MemoryOptimization
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -151,6 +151,8 @@ public final class MemoryOptimization
 	}
 	/** Edge -> set of moves */
 	final MultiMap moves = new GenericMultiMap();
+	/* set of phis we're adding moves for */
+	final Set phiadded = new HashSet();
 
 	Analysis(HCode hc) {
 	    BasicBlock.Factory bbF = new BasicBlock.Factory(hc);
@@ -178,8 +180,9 @@ public final class MemoryOptimization
 	    for (Iterator it=m.entrySet().iterator(); it.hasNext(); ) {
 		Map.Entry me = (Map.Entry) it.next();
 		Value v = ((Value)me.getKey()).map(ds, q, which_pred);
-		Temp t = (Temp) ds.find(me.getValue());
-		result.put(v, t); //note that t is *not* phi-maped.
+		Temp t = (Temp) ds.find(me.getValue());// not phi-mapped
+		Temp tt = Value.map(t, ds, q, which_pred);// phi-mapped.
+		result.put(v, new Temp[] { tt, t });
 	    }
 	    return result;
 	}
@@ -210,21 +213,27 @@ public final class MemoryOptimization
 	    if (merged!=null && allknown)
 		for (Iterator it=merged.iterator(); it.hasNext(); ) {
 		    Value v = (Value) it.next();
-		    Temp t=null;
-		    for (int i=0; i<pred.length; i++) {
-			if (prin[i]==null) continue; // no info.
-			t = (Temp) prin[i].get(v);
-			break;
+		    Temp t=null; boolean same=true;
+ 		    for (int i=0; i<pred.length; i++) {
+ 			if (prin[i]==null) continue; // no info.
+			// tt is the phi-mapped version of the temp.
+			Temp tt = ((Temp[]) prin[i].get(v))[0];
+			if (t==null) t=tt;
+			else if (!t.equals(tt)) same=false;
 		    }
-		    if (t!=null) {
+		    if (t==null) continue; // skip this.
+		    if (same && !phiadded.contains(Default.pair(bb, v)))
+			in.put(v, t);
+		    else {
 			Temp nt = (Temp) ds.find(tempgen(bb, v, t));
 			for (int i=0; i<pred.length; i++) {
 			    if (prin[i]==null) continue;
 			    // note that we use the un-phi-mapped temp here.
-			    Temp tt = (Temp) prin[i].get(v);
+			    Temp tt = ((Temp[]) prin[i].get(v))[1];
 			    moves.add(first.prevEdge(i), Default.pair(nt, tt));
 			}
 			in.put(v, nt);
+			phiadded.add(Default.pair(bb, v));
 		    }
 		}
 		    
