@@ -7,7 +7,7 @@ package harpoon.IR.Tree;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.1 1999-01-14 05:55:00 cananian Exp $
+ * @version $Id: SEQ.java,v 1.1.2.2 1999-01-15 17:56:41 duncan Exp $
  */
 public class SEQ extends Stm {
     /** The statement to evaluate first. */
@@ -18,5 +18,7 @@ public class SEQ extends Stm {
     public SEQ(Stm left, Stm right) { this.left=left; this.right=right; }
     public ExpList kids() {throw new Error("kids() not applicable to SEQ");}
     public Stm build(ExpList kids) {throw new Error("build() not applicable to SEQ");}
+    /** Accept a visitor */
+    public void visit(TreeVisitor v) { v.visit(this); }
 }
 

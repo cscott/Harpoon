@@ -9,7 +9,7 @@ import harpoon.Temp.Temp;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMPA.java,v 1.1.2.1 1999-01-15 01:17:36 cananian Exp $
+ * @version $Id: TEMPA.java,v 1.1.2.2 1999-01-15 17:56:41 duncan Exp $
  */
 public class TEMPA extends TEMP {
     private final boolean is64bitarch; // FIXME: make frame-dependent.
@@ -20,5 +20,7 @@ public class TEMPA extends TEMP {
 
     public boolean isDoubleWord() { return is64bitarch; }
     public boolean isFloatingPoint() { return false; }
+    /** Accept a visitor */
+    public void visit(TreeVisitor v) { v.visit(this); }
 }
 

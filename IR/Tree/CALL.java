@@ -9,7 +9,7 @@ package harpoon.IR.Tree;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.2 1999-01-15 04:00:23 cananian Exp $
+ * @version $Id: CALL.java,v 1.1.2.3 1999-01-15 17:56:39 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  */
 public class CALL extends Stm {
@@ -32,5 +32,7 @@ public class CALL extends Stm {
 			kids.tail.tail.head, // func
 			kids.tail.tail.tail); // args
     }
+    /** Accept a visitor */
+    public void visit(TreeVisitor v) { v.visit(this); }
 }
 

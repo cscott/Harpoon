@@ -7,7 +7,7 @@ package harpoon.IR.Tree;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.2 1999-01-15 00:50:27 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.3 1999-01-15 17:56:39 duncan Exp $
  */
 public abstract class CONST extends Exp implements Typed {
     /** Return the constant value of this <code>CONST</code> expression. */
@@ -19,5 +19,7 @@ public abstract class CONST extends Exp implements Typed {
     // Typed interface.
     public abstract boolean isDoubleWord();
     public abstract boolean isFloatingPoint();
+    /** Accept a visitor */
+    public void visit(TreeVisitor v) { v.visit(this); }
 }
 

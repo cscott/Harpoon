@@ -9,7 +9,7 @@ import harpoon.Temp.Label;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NAME.java,v 1.1.2.1 1999-01-14 05:55:00 cananian Exp $
+ * @version $Id: NAME.java,v 1.1.2.2 1999-01-15 17:56:40 duncan Exp $
  */
 public class NAME extends Exp {
     /** The label which this NAME refers to. */
@@ -18,5 +18,7 @@ public class NAME extends Exp {
     public NAME(Label label) { this.label=label; }
     public ExpList kids() { return null; }
     public Exp build(ExpList kids) { return this; }
+    /** Accept a visitor */
+    public void visit(TreeVisitor v) { v.visit(this); }
 }
 

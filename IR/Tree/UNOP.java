@@ -7,7 +7,7 @@ package harpoon.IR.Tree;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.1 1999-01-14 05:55:00 cananian Exp $
+ * @version $Id: UNOP.java,v 1.1.2.2 1999-01-15 17:56:41 duncan Exp $
  */
 public class UNOP extends OPER {
     /** The subexpression to be operated upon. */
@@ -21,5 +21,7 @@ public class UNOP extends OPER {
     public Exp build(ExpList kids) {
 	return new UNOP(op, kids.head);
     }
+    /** Accept a visitor */
+    public void visit(TreeVisitor v) { v.visit(this); }
 }
 

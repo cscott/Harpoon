@@ -10,187 +10,254 @@ import java.io.PrintStream;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.2 1999-01-14 06:04:58 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.3 1999-01-15 17:56:40 duncan Exp $
  */
-public class Print {
+public class Print 
+{
+  private PrintVisitor pv;
 
-    final PrintStream out;
-    final TempMap tmap;
+  public Print(PrintStream o)
+    {
+      this(o, null);
+    }
 
-    public Print(java.io.PrintStream o, TempMap t) {out=o; tmap=t;}
+  public Print(PrintStream o, TempMap t)
+    {
+      pv = new PrintVisitor(o, t);
+    }
 
-    public Print(java.io.PrintStream o) {out=o; tmap=null;}
+  public void prStm(Stm s)
+    {
+      s.visit(pv);
+    }
 
-    void indent(int d) {
+  public void prExp(Exp e)
+    {
+      e.visit(pv);
+    }
+
+  static class PrintVisitor extends TreeVisitor
+  {
+    private PrintStream m_out; 
+    private TempMap     m_tMap;
+    private int         m_indent;
+
+    public PrintVisitor(PrintStream out) { this(out, null); }
+
+    public PrintVisitor(PrintStream out, TempMap tMap)
+      {
+	m_out  = out;
+	m_tMap = tMap;
+      }
+    
+    private void indent(int d) 
+      {
 	for(int i=0; i<d; i++) 
-            out.print(' ');
-    }
+	  m_out.print(' ');
+      }
 
-    void say(String s) {
-	out.print(s);
-    }
+    private void printCONST(CONST e, String constStr)
+      {
+	indent(m_indent);
+	say(constStr + " "); say(String.valueOf(e.value()));
+      }
 
-    void sayln(String s) {
+    private void printMEM(MEM e, String memStr)
+      {
+	indent(m_indent++);
+	sayln(memStr + "("); visit(e.exp); say(")");
+	m_indent--;
+      }
+    
+    private void printTEMP(TEMP e, String tempStr)
+      {
+	indent(m_indent); say(tempStr + " ");
+	Temp t = (m_tMap==null)?e.temp:m_tMap.tempMap(e.temp);
+	say(t.toString());
+      }
+
+    private void say(String s) 
+      {
+	m_out.print(s);
+      }
+    
+    private void sayln(String s) 
+      {
 	say(s); say("\n");
-    }
+      }
 
-    void prStm(SEQ s, int d) {
-	indent(d); sayln("SEQ("); prStm(s.left,d+1); sayln(",");
-	prStm(s.right,d+1); say(")");
-    }
-
-    void prStm(LABEL s, int d) {
-	indent(d); say("LABEL "); say(s.label.toString());
-    }
-
-    void prStm(JUMP s, int d) {
-	indent(d); sayln("JUMP("); prExp(s.exp, d+1); say(")");
-    }
-
-    void prStm(CJUMP s, int d) {
-	indent(d); say("CJUMP("); prExp(s.test, d+1); sayln(",");
-	indent(d+1); say(s.iftrue.toString()); say(","); 
-	say(s.iffalse.toString()); say(")");
-    }
-
-    void prStm(MOVE s, int d) {
-	indent(d); sayln("MOVE("); prExp(s.dst,d+1); sayln(","); 
-	prExp(s.src,d+1); say(")");
-    }
-
-    void prStm(EXP s, int d) {
-	indent(d); sayln("EXP("); prExp(s.exp,d+1); say(")"); 
-    }
-
-    void prStm(Stm s, int d) {
-        if (s instanceof SEQ) prStm((SEQ)s, d);
-	else if (s instanceof LABEL) prStm((LABEL)s, d);
-	else if (s instanceof JUMP) prStm((JUMP)s, d);
-	else if (s instanceof CJUMP) prStm((CJUMP)s, d);
-	else if (s instanceof MOVE) prStm((MOVE)s, d);
-	else if (s instanceof EXP) prStm((EXP)s, d);
-	else throw new Error("Print.prStm");
-    }
-
-    void prExp(BINOP e, int d) {
-	indent(d); say("BINOP("); 
-	say("FIXME");/*
-	switch(e.op) {
-	case BINOP.PLUS: say("PLUS"); break;
-	case BINOP.MINUS: say("MINUS"); break;
-	case BINOP.MUL: say("MUL"); break;
-	case BINOP.DIV: say("DIV"); break;
-	case BINOP.AND: say("AND"); break;
-	case BINOP.OR: say("OR"); break;
-	case BINOP.LSHIFT: say("LSHIFT"); break;
-	case BINOP.RSHIFT: say("RSHIFT"); break;
-	case BINOP.ARSHIFT: say("ARSHIFT"); break;
-	case BINOP.XOR: say("XOR"); break;
-	default:
-	    throw new Error("Print.prExp.BINOP");
-	}
+    public void visit(BINOP e)
+      {
+	indent(m_indent++);
+	say("BINOP("); 
+	say("FIXME");
+	/*
+	  switch(e.op) {
+	  case BINOP.PLUS: say("PLUS"); break;
+	  case BINOP.MINUS: say("MINUS"); break;
+	  case BINOP.MUL: say("MUL"); break;
+	  case BINOP.DIV: say("DIV"); break;
+	  case BINOP.AND: say("AND"); break;
+	  case BINOP.OR: say("OR"); break;
+	  case BINOP.LSHIFT: say("LSHIFT"); break;
+	  case BINOP.RSHIFT: say("RSHIFT"); break;
+	  case BINOP.ARSHIFT: say("ARSHIFT"); break;
+	  case BINOP.XOR: say("XOR"); break;
+	  default:
+	  throw new Error("Print.prExp.BINOP");
+	  }
 	*/
 	sayln(",");
-	prExp(e.left,d+1); sayln(","); prExp(e.right,d+1); say(")");
-    }
+	visit(e.left); sayln(","); 
+	visit(e.right); say(")");
+	m_indent--;
+      }
 
-    void prExp(UNOP e, int d) {
-	indent(d); say("UNOP("); 
-	say("FIXME");/*
-	switch(e.op) {
-	case BINOP.PLUS: say("PLUS"); break;
-	case BINOP.MINUS: say("MINUS"); break;
-	case BINOP.MUL: say("MUL"); break;
-	case BINOP.DIV: say("DIV"); break;
-	case BINOP.AND: say("AND"); break;
-	case BINOP.OR: say("OR"); break;
-	case BINOP.LSHIFT: say("LSHIFT"); break;
-	case BINOP.RSHIFT: say("RSHIFT"); break;
-	case BINOP.ARSHIFT: say("ARSHIFT"); break;
-	case BINOP.XOR: say("XOR"); break;
-	default:
-	    throw new Error("Print.prExp.BINOP");
-	}
-	*/
-	sayln(",");
-	prExp(e.operand,d+1); say(")");
-    }
-
-    void prExp(MEM e, int d) {
-	indent(d);
-	sayln("MEM("); prExp(e.exp,d+1); say(")");
-    }
-
-    void prExp(LMEM e, int d) {
-	indent(d);
-	sayln("LMEM("); prExp(e.exp,d+1); say(")");
-    }
-
-    void prExp(TEMP e, int d) {
-	indent(d); say("TEMP ");
-	Temp t = (tmap==null)?e.temp:tmap.tempMap(e.temp);
-	say(t.toString());
-    }
-
-    void prExp(LTEMP e, int d) {
-	indent(d); say("LTEMP ");
-	Temp t = (tmap==null)?e.temp:tmap.tempMap(e.temp);
-	say(t.toString());
-    }
-
-    void prExp(ESEQ e, int d) {
-	indent(d); sayln("ESEQ("); prStm(e.stm,d+1); sayln(",");
-	prExp(e.exp,d+1); say(")");
-
-    }
-
-    void prExp(NAME e, int d) {
-	indent(d); say("NAME "); say(e.label.toString());
-    }
-
-    void prExp(ICONST e, int d) {
-	indent(d); say("ICONST "); say(String.valueOf(e.value));
-    }
-
-    void prExp(LCONST e, int d) {
-	indent(d); say("LCONST "); say(String.valueOf(e.value));
-    }
-
-    void prExp(FCONST e, int d) {
-	indent(d); say("FCONST "); say(String.valueOf(e.value));
-    }
-
-    void prExp(DCONST e, int d) {
-	indent(d); say("DCONST "); say(String.valueOf(e.value));
-    }
-
-    void prExp(CALL e, int d) {
-	indent(d); sayln("CALL(");
-	prExp(e.func,d+1);
-        for(ExpList a = e.args; a!=null; a=a.tail) {
-	    sayln(","); prExp(a.head,d+2); 
-        }
+    public void visit(CALL s)
+      {
+	indent(m_indent++); sayln("CALL(");
+	visit(s.func);
+	m_indent++;
+        for(ExpList a = s.args; a!=null; a=a.tail) 
+	  {
+	    sayln(","); visit(a.head);
+	  }
         say(")");
-    }
+	m_indent -= 2;
+      }
+    
+    public void visit(CONST e)  { printCONST(e, "CONST"); }
 
-    void prExp(Exp e, int d) {
-        if (e instanceof BINOP) prExp((BINOP)e, d);
-        else if (e instanceof UNOP) prExp((UNOP)e, d);
-	else if (e instanceof MEM) prExp((MEM)e, d);
-	else if (e instanceof LMEM) prExp((LMEM)e, d);
-	else if (e instanceof TEMP) prExp((TEMP)e, d);
-	else if (e instanceof LTEMP) prExp((LTEMP)e, d);
-	else if (e instanceof ESEQ) prExp((ESEQ)e, d);
-	else if (e instanceof NAME) prExp((NAME)e, d);
-	else if (e instanceof ICONST) prExp((ICONST)e, d);
-	else if (e instanceof LCONST) prExp((LCONST)e, d);
-	else if (e instanceof FCONST) prExp((FCONST)e, d);
-	else if (e instanceof DCONST) prExp((DCONST)e, d);
-	else if (e instanceof CALL) prExp((CALL)e, d);
-	else throw new Error("Print.prExp");
-    }
+    public void visit(CONSTD e) { printCONST(e, "CONSTD"); }
 
-    public void prStm(Stm s) {prStm(s,0); say("\n");}
-    public void prExp(Exp e) {prExp(e,0); say("\n");}
+    public void visit(CONSTF e) { printCONST(e, "CONSTF"); }
 
+    public void visit(CONSTI e) { printCONST(e, "CONSTI"); }
+
+    public void visit(CONSTL e) { printCONST(e, "CONSTL"); }
+
+    public void visit(CJUMP s)
+      {
+	indent(m_indent++);
+	say("CJUMP("); visit(s.test); sayln(",");
+	indent(m_indent--);
+	say(s.iftrue.toString()); say(","); 
+	say(s.iffalse.toString()); say(")");
+      }
+
+    public void visit(ESEQ e)
+      {
+	indent(m_indent++);
+	sayln("ESEQ("); visit(e.stm); sayln(",");
+	visit(e.exp); say(")");
+	m_indent--;
+      }
+
+    public void visit(EXP s)
+      {
+	indent(m_indent++);
+	sayln("EXP(");
+	visit(s.exp); say(")");
+	m_indent--;
+      }
+
+    public void visit(Exp e)
+      {
+	throw new Error("Print.visit(Exp e)");
+      }
+    
+    public void visit(JUMP s)
+      {
+	indent(m_indent++);
+	sayln("JUMP("); 
+	visit(s.exp); say(")");
+	m_indent--;
+      }
+
+    public void visit(LABEL s)
+      {
+	indent(m_indent);
+	say("LABEL "); say(s.label.toString());
+      }
+
+    public void visit(MEM e)  { printMEM(e, "MEM"); }
+
+    public void visit(MEMA e) { printMEM(e, "MEMA"); }
+
+    public void visit(MEMD e) { printMEM(e, "MEMD"); }
+
+    public void visit(MEMF e) { printMEM(e, "MEMF"); }
+
+    public void visit(MEMI e) { printMEM(e, "MEMI"); }
+
+    public void visit(MEML e) { printMEM(e, "MEML"); }
+
+    public void visit(MOVE s)
+      {
+	indent(m_indent++);
+	sayln("MOVE("); 
+	visit(s.dst); sayln(","); 
+	visit(s.src); sayln(")");
+	m_indent--;
+      }
+
+    public void visit(NAME e)
+      {
+	indent(m_indent); say("NAME "); say(e.label.toString());
+      }
+
+    public void visit(SEQ s)
+      {
+	indent(m_indent++);
+	sayln("SEQ("); 
+	visit(s.left); visit(s.right); say(")");
+	m_indent--;
+      }
+
+    public void visit(Stm s)
+      {
+	throw new Error("Print.visit(Stm s)");
+      }
+
+    public void visit(TEMP e)  { printTEMP(e, "TEMP"); }
+
+    public void visit(TEMPA e) { printTEMP(e, "TEMPA"); }
+
+    public void visit(TEMPD e) { printTEMP(e, "TEMPD"); }
+
+    public void visit(TEMPF e) { printTEMP(e, "TEMPF"); }
+
+    public void visit(TEMPI e) { printTEMP(e, "TEMPI"); }
+
+    public void visit(TEMPL e) { printTEMP(e, "TEMPL"); }
+
+    public void visit(UNOP e)
+      {
+	indent(m_indent++); say("UNOP("); 
+	say("FIXME");
+	/*
+	  switch(e.op) {
+	  case BINOP.PLUS: say("PLUS"); break;
+	  case BINOP.MINUS: say("MINUS"); break;
+	  case BINOP.MUL: say("MUL"); break;
+	  case BINOP.DIV: say("DIV"); break;
+	  case BINOP.AND: say("AND"); break;
+	  case BINOP.OR: say("OR"); break;
+	  case BINOP.LSHIFT: say("LSHIFT"); break;
+	  case BINOP.RSHIFT: say("RSHIFT"); break;
+	  case BINOP.ARSHIFT: say("ARSHIFT"); break;
+	  case BINOP.XOR: say("XOR"); break;
+	  default:
+	  throw new Error("Print.prExp.BINOP");
+	  }
+	*/
+	sayln(",");
+	visit(e.operand); say(")");
+	m_indent--;
+      }
+    
+  }
 }
+
+
+

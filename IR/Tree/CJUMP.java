@@ -9,7 +9,7 @@ import harpoon.Temp.Label;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CJUMP.java,v 1.1.2.1 1999-01-14 05:54:58 cananian Exp $
+ * @version $Id: CJUMP.java,v 1.1.2.2 1999-01-15 17:56:39 duncan Exp $
  */
 public class CJUMP extends Stm {
     /** An expression that evaluates into a boolean result. */
@@ -26,5 +26,7 @@ public class CJUMP extends Stm {
     public Stm build(ExpList kids) {
 	return new CJUMP(kids.head, iftrue, iffalse);
     }
+    /** Accept a visitor */
+    public void visit(TreeVisitor v) { v.visit(this); }
 }
 

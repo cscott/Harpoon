@@ -11,7 +11,7 @@ import harpoon.Temp.Label;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: LABEL.java,v 1.1.2.1 1999-01-14 05:54:59 cananian Exp $
+ * @version $Id: LABEL.java,v 1.1.2.2 1999-01-15 17:56:40 duncan Exp $
  */
 public class LABEL extends Stm { 
     /** The symbolic name to define. */
@@ -22,5 +22,7 @@ public class LABEL extends Stm {
     public Stm build(ExpList kids) {
 	return this;
     }
+    /** Accept a visitor */
+    public void visit(TreeVisitor v) { v.visit(this); }
 }
 

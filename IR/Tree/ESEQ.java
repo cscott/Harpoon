@@ -9,7 +9,7 @@ package harpoon.IR.Tree;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.1 1999-01-14 05:54:58 cananian Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.2 1999-01-15 17:56:40 duncan Exp $
  */
 public class ESEQ extends Exp {
     /** The statement to evaluate for side-effects. */
@@ -20,5 +20,7 @@ public class ESEQ extends Exp {
     public ESEQ(Stm stm, Exp exp) { this.stm=stm; this.exp=exp; }
     public ExpList kids() {throw new Error("kids() not applicable to ESEQ");}
     public Exp build(ExpList kids) {throw new Error("build() not applicable to ESEQ");}
+    /** Accept a visitor */
+    public void visit(TreeVisitor v) { v.visit(this); }
 }
 

@@ -13,7 +13,7 @@ public abstract class TreeVisitor
   public abstract void visit(Exp e);
   public abstract void visit(Stm e);
   public void visit(BINOP e)          { visit((OPER)e); }
-  public void visit(CALL e)           { visit((Exp)e); }
+  public void visit(CALL e)           { visit((Stm)e); }
   public void visit(CJUMP e)          { visit((Stm)e); }
   public void visit(CONST e)          { visit((Exp)e); }
   public void visit(CONSTD e)         { visit((CONST)e); }

@@ -10,7 +10,7 @@ import harpoon.Temp.LabelList;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: JUMP.java,v 1.1.2.1 1999-01-14 05:54:59 cananian Exp $
+ * @version $Id: JUMP.java,v 1.1.2.2 1999-01-15 17:56:40 duncan Exp $
  */
 public class JUMP extends Stm {
     /** An expression giving the address to jump to. */
@@ -28,5 +28,7 @@ public class JUMP extends Stm {
     public Stm build(ExpList kids) {
 	return new JUMP(kids.head,targets);
     }
+    /** Accept a visitor */
+    public void visit(TreeVisitor v) { v.visit(this); }
 }
 
