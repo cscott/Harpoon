@@ -3,11 +3,17 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.Analysis.Quads.DeadCode;
 import harpoon.Util.Util;
+import harpoon.Util.Tuple;
+import harpoon.Analysis.Maps.TypeMap;
+import harpoon.Temp.Temp;
+
 
 import java.util.Map;
 /**
@@ -15,14 +21,15 @@ import java.util.Map;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.20 1999-09-20 19:32:14 bdemsky Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.21 1999-09-20 20:31:03 bdemsky Exp $
  * @see QuadNoSSA
  * @see QuadSSI
  */
 public class QuadWithTry extends Code /* which extends HCode */ {
     /** The name of this code view. */
     public static final String codename = "quad-with-try";
-    
+    TypeMap typemap;
+
     /** Creates a <code>QuadWithTry</code> object from a
      *  <code>harpoon.IR.Bytecode.Code</code> object. */
     QuadWithTry(harpoon.IR.Bytecode.Code bytecode) {
@@ -34,21 +41,30 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 	// destroyed.  not sure how to make the optimization handler-safe.
 	// maybe don't allow moves past instructions that might throw
 	// exceptions?
+	this.typemap=null;
     }
 
     QuadWithTry(harpoon.IR.Quads.QuadSSI quad) {
         super(quad.getMethod(), null);
 	ReHandler.QuadMapPair qmp = ReHandler.rehandler(this.qf, quad);
 	quads = qmp.quad;
-	Map map=qmp.map;
+	final Map map=qmp.map;
 	Peephole.normalize(quads,map);
 	Peephole.optimize(quads, false, map);
+	//ReHandler.clean doesn't need map, it just eats quads...
 	ReHandler.clean(this);
-	Pattern.patternMatch(this);
+	Pattern.patternMatch(this,map);
+	
+	this.typemap=new TypeMap() {
+	    public HClass typeMap(HCodeElement hc, Temp t) {
+		return (HClass) map.get(new Tuple(new Object[]{hc,t}));
+	    }
+	};
     }
 
     private QuadWithTry(HMethod parent, Quad quads) {
 	super(parent, quads);
+	this.typemap=null;
     }
     /** Clone this code representation.  The clone has its own copy of
      *  the quad graph. */
@@ -98,6 +114,11 @@ public class QuadWithTry extends Code /* which extends HCode */ {
     public static HCodeFactory codeFactory() {
 	return codeFactory(harpoon.IR.Bytecode.Code.codeFactory());
     }
+    /** Returns a TypeMap if there is one, or null otherwise**/
+    public TypeMap typeMap() {
+	return typemap;
+    }
+    
     // obsolete.
     public static void register() {
 	HMethod.register(codeFactory());

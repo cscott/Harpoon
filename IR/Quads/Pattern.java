@@ -5,6 +5,7 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.HClass;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
+import harpoon.Util.Tuple;
 import harpoon.Util.WorkSet;
 import harpoon.Analysis.UseDef;
 
@@ -17,7 +18,7 @@ import java.util.Stack;
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.9 1999-09-19 16:17:32 cananian Exp $
+ * @version $Id: Pattern.java,v 1.1.2.10 1999-09-20 20:31:03 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -109,7 +110,7 @@ public class Pattern {
 	return null;
     }
 
-    public static void patternMatch(QuadWithTry code) {
+    public static void patternMatch(QuadWithTry code, Map typemap) {
 	Iterator iterate=code.getElementsI();
 	PatternVisitor pv=new PatternVisitor(code);
 	while(iterate.hasNext()) {
@@ -129,7 +130,9 @@ public class Pattern {
 		Quad.addEdge(hi.to().prev(0), hi.to().prevEdge(0).which_succ(), q, 0);
 		while (hi.needHandler()) {
 		    Object[] handler=hi.pophandler();
-		    HANDLER h=new HANDLER(q.getFactory(), q, new Temp(q.getFactory().tempFactory()), (HClass) handler[2] , new ReProtection(q));
+		    Temp Tex=new Temp(q.getFactory().tempFactory());
+		    HANDLER h=new HANDLER(q.getFactory(), q, Tex, (HClass) handler[2] , new ReProtection(q));
+		    typemap.put(new Tuple(new Object[]{h, Tex}), handler[2]);
 		    handlers.add(h);
 		    Quad.addEdge(h,0,(Quad)handler[0],((Integer)handler[1]).intValue());
 		}
@@ -138,6 +141,10 @@ public class Pattern {
 	//need to add handlers in now
 	METHOD m=(METHOD)((Quad)code.getRootElement()).next(1);
 	METHOD newm=new METHOD(m.getFactory(), m, m.params(),m.arity()+handlers.size());
+	for (int i=0;i<m.paramsLength();i++) {
+	    typemap.put(new Tuple(new Object[]{newm,m.params(i)}),
+			typemap.get(new Tuple(new Object[]{m,m.params(i)})));
+	}
 	Quad.addEdge((Quad)code.getRootElement(),1,newm, 0);
 	for (int i=0;i<handlers.size();i++) {
 	    Quad.addEdge(newm, i+1, (Quad)handlers.get(i), 0);
