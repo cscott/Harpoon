@@ -22,9 +22,9 @@ import harpoon.Util.Util;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.17 2000-05-17 20:24:18 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.18 2000-05-18 21:51:58 salcianu Exp $
  */
-public class Relation{
+public class Relation implements java.io.Serializable{
     
     /** The top-level <code>Hashtable</code>. */
     Hashtable hash;
