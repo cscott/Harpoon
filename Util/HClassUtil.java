@@ -7,7 +7,7 @@ import harpoon.ClassFile.*;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.1 1998-09-11 15:16:33 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.2 1998-09-11 17:01:03 cananian Exp $
  */
 
 public final class HClassUtil  {
@@ -40,5 +40,29 @@ public final class HClassUtil  {
 	StringBuffer sb = new StringBuffer();
 	return HClass.forDescriptor(Util.repeatString("[",dims)+
 				    hc.getDescriptor());
+    }
+    /** Create an array describing the inheritance of class hc.
+     * @return an array, where element 0 is the HClass for java.lang.Object,
+     *         an the last element is hc.
+     */
+    public static final HClass[] parents(HClass hc) {
+	int len=0;
+	for (HClass h=hc; h!=null; h=h.getSuperclass())
+	    len++;
+	HClass[] r = new HClass[len];
+	for (len--; len>=0 && hc!=null; hc=hc.getSuperclass(), len--)
+	    r[len] = hc;
+	return r;
+    }
+    /** Find an return the first common superclass of a pair of classes. */
+    public static final HClass commonSuper(HClass a, HClass b) {
+	HClass[] A = parents(a);
+	HClass[] B = parents(b);
+	Util.assert(A[0]==A[0]); // should be java.lang.Object.
+	int i;
+	for(i=1; i<A.length && i<B.length; i++)
+	    if (A[i] != B[i]) break;
+	// A[i] and B[i] now point to the first *different* parent.
+	return A[i-1];
     }
 }

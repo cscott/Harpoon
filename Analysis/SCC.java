@@ -12,7 +12,7 @@ import java.util.Hashtable;
  * analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCC.java,v 1.3 1998-09-11 13:12:50 cananian Exp $
+ * @version $Id: SCC.java,v 1.4 1998-09-11 17:01:02 cananian Exp $
  */
 
 public class SCC implements TypeMap, ConstMap {
@@ -223,15 +223,24 @@ public class SCC implements TypeMap, ConstMap {
 		    PHI Q = (PHI) q;
 		    for (int j=0; j<Q.dst.length; j++) {//for each phi-function
 			Value o = null;
+			Temp s[] = (Temp[]) Util.copy(Q.src[j]);
+			// skip unexecutable edges by scribbling null.
+			Quad p[] = Q.prev();
+			Util.assert(p.length==s.length);
+			for (int k=0; k<p.length; k++)
+			    if (!E.contains(p[k]))
+				s[k]=null; // scribble out this entry.
+
 			int k;
-			for (k=0; k<Q.src[j].length; k++) { // for each arg.
-			    Alphabet v = V.get(Q.src[j][k]);
+			for (k=0; k<s.length; k++) { // for each arg.
+			    if (s[k]==null) continue;
+			    Alphabet v = V.get(s[k]);
 			    if (v instanceof Value) {
 				Value val = (Value) v;
 				// RULE 5:
 				if (o!=null && !o.equals(val) ) {
 				    raiseV(V, Wv, Q.dst[j],
-					   new xClass( merge(V, Q.src[j]) ) );
+					   new xClass( merge(V, s) ) );
 				    break;
 				}
 				o = val;
@@ -239,11 +248,11 @@ public class SCC implements TypeMap, ConstMap {
 				       v instanceof Top) {
 				// RULE 6:
 				raiseV(V, Wv, Q.dst[j],
-				       new xClass( merge(V, Q.src[j]) ) );
+				       new xClass( merge(V, s) ) );
 				break;
 			    }
 			}
-			if (k==Q.src[j].length && o!=null) {
+			if (k==s.length && o!=null) {
 			    // RULE 7:
 			    raiseV(V, Wv, Q.dst[j], o);
 			}
@@ -320,7 +329,46 @@ public class SCC implements TypeMap, ConstMap {
     // Functions to merge two xClass values in a Phi.
 
     HClass merge(AlphaMap V, Temp[] src) {
-	return null; // XXX FIXME
+	HClass r = null;
+	for (int i=0; i<src.length; i++) {
+	    if (src[i]==null) continue; // skip null entries.
+	    Alphabet a = V.get(src[i]);
+	    HClass hc;
+	    if (a instanceof Value) {
+		hc = ((Value)a).type;
+	    } else if (a instanceof xClass) {
+		hc = ((xClass)a).type;
+	    } else continue; // skip bottoms and tops.
+	    if (r==null) r=hc;
+	    else r = merge(r, hc);
+	}
+	return r;
+    }
+    HClass merge(HClass a, HClass b) {
+	Util.assert(a!=null && b!=null);
+	if (a==b) return a; // take care of primitive types.
+
+	// Special case 'Void' Hclass, used for null constants.
+	if (a==HClass.Void && b != HClass.Void)
+	    return b;
+	if (b==HClass.Void) // covers case where both a and b are Void.
+	    return a;
+
+	// by this point better be array ref, not primitive type.
+	Util.assert((!a.isPrimitive()) && (!b.isPrimitive()));
+	int Adims = HClassUtil.dims(a);
+	int Bdims = HClassUtil.dims(b);
+	if (Adims==Bdims) {
+	    a = HClassUtil.baseClass(a);
+	    b = HClassUtil.baseClass(b);
+	    // merge base component classes, then reform array.
+	    return HClassUtil.arrayClass(HClassUtil.commonSuper(a, b), Adims);
+	} else { // dimensions not equal.
+	    int mindims = (Adims<Bdims)?Adims:Bdims;
+	    // make an Object array of the smaller dimension.
+	    return HClassUtil.arrayClass(HClass.forClass(Object.class), 
+					 mindims);
+	}
     }
 
     //---------------------------------------------------------
