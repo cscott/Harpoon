@@ -3259,7 +3259,6 @@ GC_bool is_ptrfree;
 /* Fill in the pc and argument information for up to NFRAMES of my	*/
 /* callers.  Ignore my frame and my callers frame.			*/
 
-#include <execinfo.h>
 #ifdef LINUX
 #   include <unistd.h>
 #endif
@@ -3270,6 +3269,8 @@ GC_bool is_ptrfree;
 
 #if NARGS == 0 && NFRAMES % 2 == 0 /* No padding */ \
     && defined(GC_HAVE_BUILTIN_BACKTRACE)
+
+#include <execinfo.h>
 
 void GC_save_callers (info) 
 struct callinfo info[NFRAMES];
