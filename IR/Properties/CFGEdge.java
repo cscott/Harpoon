@@ -4,18 +4,19 @@
 package harpoon.IR.Properties;
 
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Util.Collections.Graph;
 
 /**
  * An <code>CFGEdge</code> connects two <code>CFGraphable</code>s
  * in a graph structure.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: CFGEdge.java,v 1.5 2003-05-09 16:35:30 cananian Exp $
+ * @version $Id: CFGEdge.java,v 1.6 2003-05-09 20:38:45 cananian Exp $
  * @see CFGraphable
  */
 public abstract class CFGEdge<CFG extends CFGraphable<CFG,E>,
 			      E extends CFGEdge<CFG,E>>
-    implements harpoon.ClassFile.HCodeEdge<CFG> {
+    implements harpoon.ClassFile.HCodeEdge<CFG>, Graph.Edge<CFG,E> {
     /** Returns the source of this <code>CFGEdge</code>. 
      *  The return value is guaranteed to implement to 
      *  <code>CFGraphable</code> interface. */

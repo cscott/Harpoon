@@ -22,7 +22,7 @@ import java.util.List;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.7 2003-05-09 16:35:28 cananian Exp $
+ * @version $Id: Instr.java,v 1.8 2003-05-09 20:38:43 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -135,6 +135,8 @@ public abstract class Instr
   public Collection<InstrEdge> edgeC() { return Arrays.asList(edges()); }
   public Collection<InstrEdge> predC() { return Arrays.asList(pred()); }
   public Collection<InstrEdge> succC() { return Arrays.asList(succ()); }
+  public boolean isSucc(Instr i) { return next.contains(i); }
+  public boolean isPred(Instr i) { return prev.contains(i); }
 }
 class InstrEdge extends CFGEdge<Instr,InstrEdge> {
     final Instr from, to;

@@ -43,7 +43,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.7 2003-05-09 00:23:03 cananian Exp $ */
+ * @version $Id: Instr.java,v 1.8 2003-05-09 20:38:41 cananian Exp $ */
 public class Instr implements HCodeElement, UseDefable,
 			      CFGraphable<Instr,InstrEdge> {
     private static boolean PRINT_UPDATES_TO_IR = false;
@@ -830,6 +830,16 @@ public class Instr implements HCodeElement, UseDefable,
 						     succC().iterator() });
 	    }
 	};
+    }
+    public boolean isSucc(Instr i) {
+	for (Iterator<InstrEdge> it=succC().iterator(); it.hasNext(); )
+	    if (it.next().to().equals(i)) return true;
+	return false;
+    }
+    public boolean isPred(Instr i) {
+	for (Iterator<InstrEdge> it=predC().iterator(); it.hasNext(); )
+	    if (it.next().from().equals(i)) return true;
+	return false;
     }
 
     /** Returns the <I>control flow</I> predecessors of <code>this</code>.
