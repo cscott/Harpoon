@@ -43,7 +43,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.23 1999-08-04 06:30:56 cananian Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.24 1999-08-04 19:58:59 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -227,8 +227,16 @@ public class SAFrame extends Frame implements AllocationInfo {
     }
 
     /** Stub added by FSK */
-    public Iterator suggestRegAssignment(Temp t, Map regfile) {
-	Util.assert(false, "SAFrame.suggestRegAssigment() Not implemented yet");
+    public Iterator suggestRegAssignment(Temp t, final Map regfile) {
+	SATempVisitor visitor = new SATempVisitor(){
+	    public void visit(Temp temp) {
+		// single word, find one register
+	    }
+	    public void visit(TwoWordTemp temp) {
+		
+	    }
+	    
+	};
 	return null;
     }
 

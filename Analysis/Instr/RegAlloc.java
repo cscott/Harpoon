@@ -41,13 +41,14 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.17 1999-08-04 18:57:17 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.18 1999-08-04 19:58:58 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
     protected Code code;
     protected BasicBlock rootBlock;
 
+    /** Class for <code>RegAlloc</code> usage in loading registers. */
     protected class FskLoad extends InstrMEM {
 	FskLoad(InstrFactory inf, HCodeElement hce, 
 		String assem, Temp dst, Temp src) {
@@ -63,6 +64,7 @@ public abstract class RegAlloc  {
 	public void visit(RegInstrVisitor v) { v.visit(this); }
     }
 
+    /** Class for <code>RegAlloc</code> usage in spilling registers. */
     protected class FskStore extends InstrMEM {
 	FskStore(InstrFactory inf, HCodeElement hce, 
 		String assem, Temp dst, Temp src) {
@@ -77,7 +79,11 @@ public abstract class RegAlloc  {
 
 	public void visit(RegInstrVisitor v) { v.visit(this); }
     }
-    
+
+    /** extension of <code>InstrVisitor</code> with support for the
+	new <code>RegAlloc</code> specific <code>Instr</code>
+	extensions. 
+    */
     protected abstract class RegInstrVisitor extends InstrVisitor {
 	public void visit(FskStore i) { visit((InstrMEM) i); }
 	public void visit(FskLoad i) { visit((InstrMEM) i); }
@@ -104,7 +110,8 @@ public abstract class RegAlloc  {
 	     registers for the values defined and used in the code for
 	     <code>this</code>.  Values will be preserved in the code;
 	     any live value will be stored before its assigned
-	     register is overwritten.  Loads and Stores in general
+	     register is overwritten.  
+	     <BR> Loads and Stores in general
 	     are added in the form of <code>FskLoad</code>s and
 	     <code>FskStore</code>s; the main <code>RegAlloc</code>
 	     class will use <code>resolveOutstandingTemps(HCode</code> 
@@ -417,7 +424,18 @@ public abstract class RegAlloc  {
 			code.assignRegister(instr, preg, regList);
 		    }
 		} catch (Frame.SpillException e) {
-		    Util.assert(false, "One Instr uses/defines more "+
+		    // actually...this doesn't necessarily imply that
+		    // we have to fail; if a TwoWordTemp can't be
+		    // fitted, we could potentially shift the
+		    // register files contents around to make room for
+		    // it.   While we STILL shouldn't ever encounter
+		    // this problem (after all, we have an empty
+		    // register file and usually at most three pseudo
+		    // registers to assign) I should give some thought
+		    // on how to handle this case
+		
+		    Util.assert(false, "Either a TwoWordTemp screwed us, or "+
+				"One Instr uses/defines more "+
 				"registers than "+frame+" can accomidate "+
 				"in Register File!"); 
 		}

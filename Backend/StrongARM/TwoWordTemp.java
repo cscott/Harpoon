@@ -10,7 +10,7 @@ import harpoon.Temp.TempFactory;
  * <code>TwoWordTemp</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: TwoWordTemp.java,v 1.1.2.1 1999-07-22 22:38:20 pnkfelix Exp $
+ * @version $Id: TwoWordTemp.java,v 1.1.2.2 1999-08-04 19:58:59 pnkfelix Exp $
  */
 public class TwoWordTemp extends Temp {
     
@@ -36,5 +36,9 @@ public class TwoWordTemp extends Temp {
     */ 
     public Temp getHigh() {
 	return high; 
+    }
+
+    public void accept(SATempVisitor v) {
+	v.visit(this);
     }
 }

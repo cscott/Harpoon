@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.56 1999-08-03 21:30:08 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.57 1999-08-04 19:58:58 pnkfelix Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -274,11 +274,12 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	$(MUNGE) doc | \
 	  sed -e 's/<\([a-z]\+\)@\([a-z.]\+\).edu>/\&lt;\1@\2.edu\&gt;/g' \
 	      -e 's/<dd> "The,/<dd> /g' -e 's/<body>/<body bgcolor=white>/' | \
+		bin/annotate.perl -link $(JDKDOCLINK) | \
 		$(UNMUNGE)
 	cd doc; if [ -e $(JDOCIMAGES) ]; then ln -s $(JDOCIMAGES) images; fi
 	cd doc; if [ ! -f index.html ]; then ln -s packages.html index.html; fi
 	cd doc; if [ ! -f API_users_guide.html ]; then ln -s index.html API_users_guide.html; fi
-	$(MUNGE) doc | bin/annotate.perl -link $(JDKDOCLINK) | $(UNMUNGE)
+	#$(MUNGE) doc | bin/annotate.perl -link $(JDKDOCLINK) | $(UNMUNGE)
 	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	chmod -R a+rX doc
 
