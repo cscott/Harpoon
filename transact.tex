@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.11 2000-09-28 22:57:07 cananian Exp $
+% $Id: transact.tex,v 1.12 2000-09-28 22:58:51 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.11 $ $}
+\date{\today \\ $ $Revision: 1.12 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -231,14 +231,13 @@ $\text{Write}(\code{struct oobj *} o, \code{int } n,
 %    \STATE $v \gets v\text{'s replacement}$
     \STATE $v \gets v\ptr\code{next}$ \COMMENT{watch for races}
   \ENDWHILE
-  \STATE $v\ptr\code{field}[n] \gets x$
 \ELSIF{$x = \code{FLAG\_VALUE}$}
   \STATE \COMMENT{XXX: define CreateNewVersion (watch those races)}
   \STATE $v = \text{CreateNewVersion}(o, o, o\ptr\code{claz}\ptr\code{size})$
-  \STATE $v\ptr\code{field}[n] \gets x$
 \ELSE
-  \STATE $o\ptr\code{field}[n] \gets x$
-\ENDIF*
+  \STATE $v = o$
+\ENDIF
+\STATE $v\ptr\code{field}[n] \gets x$
 \end{myalgorithmic}
 \caption{Algorithm for non-transactional write of a field.}
 \label{fig:writenotrans}
