@@ -20,7 +20,7 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.9 1998-09-10 04:43:30 cananian Exp $
+ * @version $Id: OPER.java,v 1.10 1998-09-10 04:47:48 cananian Exp $
  */
 
 public class OPER extends Quad {
@@ -60,14 +60,14 @@ public class OPER extends Quad {
     //   Evaluation functions.
 
     /** Determines the result type of an <code>OPER</code>. */
-    HClass evalType() {
+    public HClass evalType() {
 	Method m = (Method) operMethods.get(opcode);
 	Util.assert(m!=null);
 	return HClass.forClass(m.getReturnType());
     }
     /** Evaluates a constant value for the result of an <code>OPER</code>, 
      *  given constant values for the operands. */
-    Object evalValue(Object[] opValues) {
+    public Object evalValue(Object[] opValues) {
 	Method m = (Method) operMethods.get(opcode);
 	Util.assert(m!=null);
 	try {
@@ -81,7 +81,7 @@ public class OPER extends Quad {
     /** Evaluates a value for the result of an <code>OPER</code>, given
      *  a mapping from the operand <code>Temp</code>s to constant
      *  values. */
-    Object evalValue(ConstMap cm) {
+    public Object evalValue(ConstMap cm) {
 	Object[] args = new Object[operands.length];
 	for (int i=0; i<operands.length; i++) {
 	    Util.assert(cm.isConst(operands[i]));
