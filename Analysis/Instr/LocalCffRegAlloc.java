@@ -69,7 +69,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.109 2000-07-19 11:23:16 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.110 2000-07-21 22:13:52 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -82,6 +82,8 @@ public class LocalCffRegAlloc extends RegAlloc {
     /** ASSERTDB => assertions should emit extra info when available. */
     private static final boolean ASSERTDB = false;
 
+    Collection genRegC;
+    Collection allRegC;
     Collection allRegisters;
 
     private LiveTemps liveTemps;
@@ -127,24 +129,27 @@ public class LocalCffRegAlloc extends RegAlloc {
     private ReachingDefs reachingDefs;
 
     // maps Temp:t -> Instr:i where `i' is removed and defined `t'
-    private Map tempToRemovedInstrs = new HashMap();
+    private Map tempToRemovedInstrs;
 
     /** Creates a <code>LocalCffRegAlloc</code>. */
     public LocalCffRegAlloc(Code code) {
         super(code);
-	allRegisters = frame.getRegFileInfo().getAllRegistersC();
+	allRegC = frame.getRegFileInfo().getAllRegistersC();
+	genRegC = frame.getRegFileInfo().getGeneralRegistersC();
+	allRegisters = allRegC;
 	instrToHTempMap = new HashMap();
 	backedInstrs = new HashMap();
-
+	tempToRemovedInstrs = new HashMap();
 	if (TIME) System.out.print("D");
 	// reachingDefs = new ReachingDefsCachingImpl(code);
 	reachingDefs = new ReachingDefsAltImpl(code);
     }
 
     private Instr definition(Instr i, Temp t) {
-	if (i.defC().contains(t)) 
+	if (i.defC().contains(t)) { 
+	    // System.out.print(" d");
 	    return i;
-	else {
+	} else {
 	    Set defset = reachingDefs.reachingDefs(i, t);
 	    Iterator defs = defset.iterator();
 	    return (Instr) defs.next();
@@ -245,14 +250,15 @@ public class LocalCffRegAlloc extends RegAlloc {
 		BasicBlock block = (BasicBlock) blocks.next();
 		Set liveOnExit = liveTemps.getLiveOnExit(block);
 		BlockAlloc la = new BlockAlloc(block, liveOnExit);
-		la.alloc();
+		la.emptyRegFile(la.alloc());
 	    }
-	} else { 
+	} else { // For all below, TIME == true
 	    // temporary method for profiling purposes
-	    if (TIME) System.out.print("B"); 
+	    System.out.print("B"); 
 	    Set blockSet = bbFact.blockSet();
 	    Iterator blocks = blockSet.iterator();
 	    List blockAllocList = new ArrayList(blockSet.size());
+	    Instr[] lastInstrs = new Instr[blockSet.size()];
 	    while(blocks.hasNext()) {
 		BasicBlock block = (BasicBlock) blocks.next();
 		Set liveOnExit = liveTemps.getLiveOnExit(block);
@@ -260,11 +266,42 @@ public class LocalCffRegAlloc extends RegAlloc {
 		blockAllocList.add(la);
 	    }
 
-	    if (TIME) System.out.print("A");
-	    Iterator blockAllocs = blockAllocList.iterator();
+	    Iterator blockAllocs;
+
+	    System.out.print("N"); 
+	    blockAllocs = blockAllocList.iterator();
 	    while(blockAllocs.hasNext()) {
 		BlockAlloc la = (BlockAlloc) blockAllocs.next();
-		la.alloc();
+		la.buildNextRef();
+	    }
+
+	    System.out.print("P"); 
+	    blockAllocs = blockAllocList.iterator();
+	    while(blockAllocs.hasNext()) {
+		BlockAlloc la = (BlockAlloc) blockAllocs.next();
+		la.buildPreassignMap();
+	    }
+
+	    System.out.print("T"); 
+	    blockAllocs = blockAllocList.iterator();
+	    while(blockAllocs.hasNext()) {
+		BlockAlloc la = (BlockAlloc) blockAllocs.next();
+		la.makeTempSets();
+		la.buildTempSets();
+	    }
+
+	    System.out.print("A");
+	    blockAllocs = blockAllocList.iterator();
+	    for(int i=0; blockAllocs.hasNext(); i++) {
+		BlockAlloc la = (BlockAlloc) blockAllocs.next();
+		lastInstrs[i] = la.alloc();
+	    }
+
+	    System.out.print("E");
+	    blockAllocs = blockAllocList.iterator();
+	    for(int i=0; blockAllocs.hasNext(); i++) {
+		BlockAlloc la = (BlockAlloc) blockAllocs.next();
+		la.emptyRegFile(lastInstrs[i]);
 	    }
 	}
     }
@@ -456,24 +493,24 @@ public class LocalCffRegAlloc extends RegAlloc {
 	final HTempMap coalescedTemps = new HTempMap();
 	final BasicBlock block;
 	final Set liveOnExit;
-	final RegFile regfile = new RegFile(allRegisters);
+	final RegFile regfile = new RegFile(allRegC);
 
 	// EqTempSets for this.block
-	final EqTempSets tempSets;
+	EqTempSets tempSets;
 	
 	// Temp:t currently in regfile -> Index of next ref to t
-	final Map evictables = new HashMap();
+	final Map evictables;
 	
 	// (Instr:i x Temp:t) -> Int:2 * index of next Instr w/ ref(t)
 	// [only defined for t's that have a future reference; else null]
-	final Map nextRef;
+	Map nextRef;
 
 	// Instr currently being alloc'd
 	Instr curr;
 
 	// maps Temp:t -> Set of Regs whose live regions interfere 
 	//                with t's live region 
-	final MultiMap preassignMap;
+	MultiMap preassignMap;
 
 	// maps Temp:s -> Temp:t where s := u) has been selected for
 	// removal and `u' == `t' or remappedTemps.get(`u') == `t' and
@@ -483,19 +520,37 @@ public class LocalCffRegAlloc extends RegAlloc {
 	BlockAlloc(BasicBlock b, Set lvOnExit) {
 	    block = b;
 	    liveOnExit = lvOnExit;
-	    nextRef = buildNextRef(b);
-	    preassignMap = 
-		buildPreassignMap(block, allRegisters, lvOnExit);
+	    evictables = new HashMap(b.statements().size());
+	    if (!TIME) {
+		buildNextRef();
+		buildPreassignMap();
+		makeTempSets();
+		buildTempSets();
+	    }
+	}
+
+	void buildNextRef() {
+	    nextRef = buildNextRef(block);
+	}
+	
+	void buildPreassignMap() {
+	    preassignMap = buildPreassignMap(block, allRegC, liveOnExit);
+	}
+
+	void makeTempSets() {
 	    tempSets = EqTempSets.make(LocalCffRegAlloc.this, false);
-	    buildTempSets(tempSets, b);
+	}
+	
+	void buildTempSets() {
+	    LocalCffRegAlloc.this.buildTempSets(tempSets, block);
 	}
 
 	private Map buildNextRef(BasicBlock b) {
 	    // Temp:t -> the last Instr referencing t
-	    Map tempToLastRef = new HashMap();
+	    Map tempToLastRef = new HashMap(b.statements().size());
 	    
 	    // (Temp:t, Instr:j) -> Int:index of Instr following j w/ ref(t)
-	    Map nextRef = new HashMap();
+	    Map nextRef = new HashMap(b.statements().size());
 	    
 	    Iterator instrs = b.statements().iterator();
 	    for(int c=0; instrs.hasNext(); c++) {
@@ -540,23 +595,24 @@ public class LocalCffRegAlloc extends RegAlloc {
 	*/
 	MultiMap buildPreassignMap(BasicBlock block, 
 				   Collection regs, Set liveOnExit) {
+	    // FSK: there are a lot of hacks strewn throughout this
+	    // method, but in the end we're probably STILL doing too
+	    // much redundant computation.  look into fixing either
+	    // preassignMap's construction (here) or changing the code
+	    // that uses it...
+
 	    List bl = block.statements();
-	    SetFactory regSetFact = 
-		new BitSetFactory(new LinearSet(new HashSet(regs)));
+	    // SetFactory regSetFact = 
+	    //		new BitSetFactory(new LinearSet(new HashSet(regs)));
+	    BitSetFactory regSetFact = 
+		new BitSetFactory((new HashSet(regs)));
 	    
 	    MultiMap tempToRegs = new 
-		GenericMultiMap(regSetFact,Factories.hashMapFactory) 
-	    {
-		public boolean addAll(Object k, Collection v) {
-		    if (PREASSIGN_INFO) 
-		    System.out.println("Adding "+k+"->"+v);
-		    return super.addAll(k, v);
-		}
-	    };
+		GenericMultiMap(regSetFact,Factories.hashMapFactory);
 	    
 	    HashSet liveTempSet = new HashSet(liveOnExit);
-	    final Set allRegs = regSetFact.makeSet(regs);
-
+	    liveTempSet.removeAll(allRegC);
+	    
 	    Set liveRegsOnExit = new HashSet(liveOnExit);
 	    liveRegsOnExit.retainAll(regs);
 
@@ -577,7 +633,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		boolean tmpchanged = false;
 		
 		// consider making `exceptions' a MultiMap...
-		HashMap exceptions = new HashMap();
+		HashMap exceptions = new HashMap(4);
 		if (i instanceof InstrMOVE) {
 		    List dl = expand(i.def()[0]);
 		    List ul = expand(i.use()[0]);
@@ -601,9 +657,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 		liveRegs = regSetFact.makeSet(liveRegs); 
 
 		{   // liveRegs: kill (regs /\ defs)
-		    Set defRegs = regSetFact.makeSet(allRegs);
+		    Set defRegs = regSetFact.makeFullSet();
 		    defRegs.retainAll(i.defC()); 
-		    regchanged |= liveRegs.removeAll(defRegs);
+		    liveRegs.removeAll(defRegs);
 		    
 		    // some regs are clobbered by routines, and thus
 		    // appear in a defset but are never used. We
@@ -616,10 +672,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 		}
 
 		liveTempSet.removeAll(i.defC()); // kill defs
-		tmpchanged |= liveTempSet.addAll(i.useC()); // add uses
+
+		Set usesNoRegs = new HashSet(i.useC());
+		usesNoRegs.removeAll(allRegC);
+		tmpchanged |= liveTempSet.addAll(usesNoRegs); // add uses
 
 		{   // liveRegs: add (regs /\ uses)
-		    Set useRegs = regSetFact.makeSet(allRegs);
+		    Set useRegs = regSetFact.makeFullSet();
 		    useRegs.retainAll(i.useC());
 		    regchanged |= liveRegs.addAll(useRegs);
 		}
@@ -655,11 +714,12 @@ public class LocalCffRegAlloc extends RegAlloc {
 	private void updateMapping(MultiMap tempToRegs, 
 				   Collection liveTempC, 
 				   Set liveRegs, Map excepts) {
-				   
-	    // System.out.println("adding "+liveRegs+" to conflicts for "+
-	    //                    liveTempC+" excluding ("+exceptT+" -> "+exceptR);
-
 	    if (liveRegs.isEmpty()) return;
+	    if (liveTempC.isEmpty()) return;
+
+	    if(false)System.out.println("\nadding "+liveRegs+" to conflicts for "+
+	                        liveTempC+" excluding "+excepts);
+
 	    Iterator titer = liveTempC.iterator();
 	    while(titer.hasNext()) {
 		Temp t = (Temp) titer.next();
@@ -677,7 +737,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	}
 
 	// runs once / block
-	void alloc() {
+	Instr alloc() {
 	    Iterator instrs = block.statements().iterator();
 	    InstrAlloc allocV = new InstrAlloc();
 	    while(instrs.hasNext()) {
@@ -700,7 +760,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		// System.out.println(curr + " ("+allocV.iloc+")");
 		if (false && TIME) System.out.print(".");
 	    }
-	    emptyRegFile(allocV.iloc);
+
+	    return allocV.iloc;
 	}
 	
 	private boolean instrHasRemappedTemps(Instr i) {
@@ -809,7 +870,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			 eviction from the register file. 
 	    */ 
 	    private Map takeUsesOutOfEvictables(Instr i) {
-		Map putBackLater = new HashMap();
+		Map putBackLater = new HashMap(i.useC().size());
 		Iterator uses = new FilterIterator(i.useC().iterator(),
 						   new MRegFilter());
 		while(uses.hasNext()) {
@@ -837,11 +898,11 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    private void assign(Temp t, Instr i, Map putBackLater) {
 		if (remappedTemps.keySet().contains(t)) {
 		    t = (Temp) remappedTemps.get(t);
-		    
 		}
 
 		if (regfile.hasAssignment(t)) {
 		    
+		    // System.out.print(" P");
 		    code.assignRegister(i, t, regfile.getAssignment(t));
 		    evictables.remove(t); // (`t' reinserted later)
 		    
@@ -901,7 +962,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    */
 	    private Set addPreassignments(final Temp t) {
 		Collection preassigns = preassignMap.getValues(t);
-		Set preassignTempSet = new HashSet();
+		Set preassignTempSet = new HashSet(preassigns.size());
 		
 		Util.assert(preassigns != null,
 			    "preassignMap is missing mappings");
@@ -1126,7 +1187,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			Set cand = (Set) spills.next();
 			
 
-			HashSet temps = new HashSet();
+			HashSet temps = new HashSet(5);
 			Iterator regs = cand.iterator();
 			
 			int cost=Integer.MAX_VALUE;
@@ -1240,8 +1301,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		}
 	    }
 	}
-	
-	private void emptyRegFile(Instr iloc) {
+
+	private void emptyRegFile(Instr lastInstr) {
 	    // System.out.println("live on exit from " + b + " :\n" + liveOnExit);
 	    Instr instr = curr;
 
@@ -1273,7 +1334,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    System.out.println("spilling "+val+
 					       " 'cause its live (0)");
 			chooseSpillSpot(val, instr, regfile, 
-					regfile.getSource(locval), iloc);
+					regfile.getSource(locval), lastInstr);
 		    }
 		}
 
@@ -1298,7 +1359,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			if (SPILL_INFO) 
 			    System.out.println("spilling "+locval+
 					       " 'cause its live ");
-			chooseSpillSpot(locval, instr, regfile, iloc);
+			chooseSpillSpot(locval, instr, regfile, lastInstr);
 		    } else {
 			if (false && SPILL_INFO)
 			    System.out.println("SKIPPING "+locval+

@@ -4,6 +4,7 @@
 package harpoon.Analysis.Instr;
 
 import harpoon.Analysis.Maps.Derivation;
+import harpoon.Analysis.ReachingDefs;
 import harpoon.Backend.Generic.Code;
 import harpoon.IR.Assem.Instr;
 import harpoon.Temp.Temp;
@@ -21,7 +22,7 @@ import java.util.Collections;
  * <code>GraphColoringRegAlloc</code>
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.2 2000-07-20 16:44:52 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.3 2000-07-21 22:13:52 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -47,10 +48,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	int sreg;
 	int disp;
 
-	WebRecord(Temp symbol, Set defSet, Set useSet, 
-		  boolean spll, int symReg, int displacement) {
+	WebRecord(Temp symbol, Set defSet, Set useSet) {
 	    sym = symbol; defs = defSet; uses = useSet;
-	    spill = spll; sreg = symReg; disp = displacement;
+	    spill = false; sreg = -1; disp = -1;
 	}
     }
 
@@ -104,7 +104,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	boolean success, coalesced;
 	do {
 	    do {
-		makeWebs(new HashMap()); // need to pass in DuChains here
+		makeWebs(null); // need to pass in ReachingDefs
 		buildAdjMatrix();
 		coalesced = coalesceRegs();
 	    } while (coalesced);
@@ -129,27 +129,30 @@ public class GraphColoringRegAlloc extends RegAlloc {
     // (which shouldn't hurt us much since we're dealing with post-SSA
     // form here...)
 
-    private void makeWebs(Map duchain) {
+    private void makeWebs(ReachingDefs rdefs) {
 	Set webSet = new HashSet(), tmp1, tmp2; // Set<WebRecord>
 	WebRecord web1, web2;
 	List sd; // [Symbol, Def]
 	int i, oldnwebs;
 	
 	nwebs = nregs;
-	Iterator symDefPairIter = duchain.keySet().iterator();
-	while(symDefPairIter.hasNext()) {
-	    sd = (List) symDefPairIter.next();
-	    nwebs++;
-	    webSet.add(new WebRecord((Temp) sd.get(0), 
-				     Collections.singleton(sd.get(1)), 
-				     (Set)duchain.get(sd), 
-				     false, -1, -1));
+	
+	for(Iterator instrs = code.getElementsI();instrs.hasNext();){ 
+	    Instr inst = (Instr) instrs.next();
+	    for(Iterator uses = inst.useC().iterator(); uses.hasNext();){ 
+		Temp t = (Temp) uses.next();
+		WebRecord web = 
+		    new WebRecord(t, rdefs.reachingDefs(inst,t), 
+				  new HashSet(Collections.singleton(t)));
+		webSet.add(web);
+		nwebs++;
+	    }
 	}
 	do {
 	    // combine du-chains for the same symbol and that have a
 	    // use in common to make webs  
 	    oldnwebs = nwebs;
-	    tmp1 = webSet;
+	    tmp1 = new HashSet(webSet);
 	    while(!tmp1.isEmpty()) {
 		web1 = (WebRecord) tmp1.iterator().next();
 		tmp1.remove(web1);
@@ -158,8 +161,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		    web2 = (WebRecord) tmp2.iterator().next();
 		    tmp2.remove(web2);
 		    if (web1.sym.equals(web2.sym)) {
-			Set ns = new HashSet(web1.uses);
-			ns.retainAll(web2.uses);
+			Set ns = new HashSet(web1.defs);
+			ns.retainAll(web2.defs);
 			if (!ns.isEmpty()) {
 			    web1.defs.addAll(web2.defs);
 			    web1.uses.addAll(web2.uses);
@@ -177,8 +180,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	for(i=1; i<=nregs; i++) {
 	    symReg.add(new WebRecord(intToReg(i),
-				     new HashSet(), new HashSet(),
-				     false, -1, -1));
+				     new HashSet(), new HashSet()));
 	}
 	// assign symbolic register numbers to webs
 	i = nregs;

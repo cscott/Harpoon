@@ -121,7 +121,8 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 		while(redefs.hasNext()) {
 		    final Temp r = (Temp) redefs.next();
 		    Util.assert(regfile.isEmpty(r), 
-				lra.lazyInfo("reg:"+r+" is not empty prior to assignment",block,i,def));
+				lra.lazyInfo("reg:"+r+" is not empty prior"+
+					     " to assignment",block,i,def));
 		}
 	    }
 	    
