@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.144 2001-05-18 18:49:17 bdemsky Exp $
+ * @version $Id: SAMain.java,v 1.1.2.145 2001-06-07 06:33:37 witchel Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -119,7 +119,10 @@ public class SAMain extends harpoon.IR.Registration {
     static final int MIPS_BACKEND = 1;
     static final int SPARC_BACKEND = 2;
     static final int PRECISEC_BACKEND = 3;
+    // MIPS with support for last line accesses is tag unchecked
     static final int MIPSYP_BACKEND = 4;
+    // MIPS with support for direct address registers
+    static final int MIPSDA_BACKEND = 5;
     static int     BACKEND = STRONGARM_BACKEND;
     
     static Linker linker = null; // can specify on the command-line.
@@ -368,6 +371,10 @@ public class SAMain extends harpoon.IR.Registration {
 	    frame = new harpoon.Backend.MIPS.Frame
 		(mainM, classHierarchy, callGraph, "yp");
 	    break;
+	case MIPSDA_BACKEND:
+	    frame = new harpoon.Backend.MIPS.Frame
+		(mainM, classHierarchy, callGraph, "da");
+	    break;
 	case PRECISEC_BACKEND:
 	    frame = new harpoon.Backend.PreciseC.Frame
 		(mainM, classHierarchy, callGraph);
@@ -403,7 +410,7 @@ public class SAMain extends harpoon.IR.Registration {
 		codeFactory(hcf, frame);
 	}
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-    if(BACKEND == MIPSYP_BACKEND) {
+    if(BACKEND == MIPSDA_BACKEND || BACKEND == MIPSYP_BACKEND) {
        hcf = new harpoon.Analysis.Tree.DominatingMemoryAccess(hcf, frame).codeFactory();
     }
     
@@ -606,6 +613,10 @@ public class SAMain extends harpoon.IR.Registration {
 	    frame = new harpoon.Backend.MIPS.Frame
 		(mainM, classHierarchy, callGraph, "yp");
 	    break;
+	case MIPSDA_BACKEND:
+	    frame = new harpoon.Backend.MIPS.Frame
+		(mainM, classHierarchy, callGraph, "da");
+	    break;
 	case PRECISEC_BACKEND:
 	    frame = new harpoon.Backend.PreciseC.Frame
 		(mainM, classHierarchy, callGraph);
@@ -641,7 +652,7 @@ public class SAMain extends harpoon.IR.Registration {
 		codeFactory(hcf, frame);
 	}
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-    if(BACKEND == MIPSYP_BACKEND) {
+    if(BACKEND == MIPSDA_BACKEND || BACKEND == MIPSYP_BACKEND) {
        hcf = new harpoon.Analysis.Tree.DominatingMemoryAccess(hcf, frame).codeFactory();
     }
     
@@ -1033,6 +1044,9 @@ public class SAMain extends harpoon.IR.Registration {
 		    BACKEND = MIPS_BACKEND;
 		if (backendName == "mipsyp") {
 		    BACKEND = MIPSYP_BACKEND;
+        }
+		if (backendName == "mipsda") {
+		    BACKEND = MIPSDA_BACKEND;
         }
 		if (backendName == "precisec")
 		    BACKEND = PRECISEC_BACKEND;
