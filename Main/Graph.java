@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.12.2.5 1999-02-11 20:56:45 cananian Exp $
+ * @version $Id: Graph.java,v 1.12.2.6 1999-02-25 21:13:35 cananian Exp $
  */
 
 public abstract class Graph extends harpoon.IR.Registration {
@@ -44,13 +44,15 @@ public abstract class Graph extends harpoon.IR.Registration {
 		m = hm[i]; n++;
 		break;
 	    }
-	if (m==null) throw new Error("Couldn't find method "+args[n]);
+	if (m==null) throw new Error("Couldn't find method "+args[n-1]);
 
 	HCode hc = hcf.convert(m);
 
 	String title = m.getName();
-	if ((args.length<=2)||(args[2].equals("CFG"))) harpoon.Util.Graph.printCFG(hc,out,title);
-	else if (args[2].equals("dom")) harpoon.Util.Graph.printDomTree(hc,out,title);
+	if ((args.length<=n)||(args[n].equals("CFG")))
+	    harpoon.Util.Graph.printCFG(hc,out,title);
+	else if (args[n].equals("dom"))
+	    harpoon.Util.Graph.printDomTree(hc,out,title);
 	else harpoon.Util.Graph.printDomTree(true,hc,out,title);
     }
 
