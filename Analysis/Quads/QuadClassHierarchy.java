@@ -10,6 +10,7 @@ import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import harpoon.Util.WorkSet;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -24,7 +25,7 @@ import java.util.TreeSet;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.1 1999-09-09 21:12:16 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.2 1999-10-13 18:27:01 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -96,10 +97,16 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	return sb.toString();
     }
 
+    // compatibility method.
+    /** @deprecated Use QuadClassHierarchy(Collections.singleton(root), hcf)
+     *              instead. */
+    public QuadClassHierarchy(HMethod root, HCodeFactory hcf) {
+	this(Collections.singleton(root), hcf);
+    }
     /** Creates a <code>ClassHierarchy</code> of all classes
      *  reachable/usable from method <code>root</code>.  <code>hcf</code>
      *  must be a code factory that generates quad form. */
-    public QuadClassHierarchy(HMethod root, HCodeFactory hcf) {
+    public QuadClassHierarchy(Collection roots, HCodeFactory hcf) {
 	// state.
 	Map classMethodsUsed = new HashMap(); // class->set map.
 	Map classKnownChildren = new HashMap(); // class->set map.
@@ -107,9 +114,12 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 
 	// worklist algorithm.
 	Worklist W = new WorkSet();
-	methodPush(root, W, classMethodsUsed);
-	discoverClass(root.getDeclaringClass(), W, done,
-		      classKnownChildren, classMethodsUsed);
+	for (Iterator it=roots.iterator(); it.hasNext(); ) {
+	    HMethod root = (HMethod) it.next();
+	    methodPush(root, W, classMethodsUsed);
+	    discoverClass(root.getDeclaringClass(), W, done,
+			  classKnownChildren, classMethodsUsed);
+	}
 	while (!W.isEmpty()) {
 	    HMethod m = (HMethod) W.pull();
 	    done.add(m); // mark us done with this method.
@@ -125,15 +135,23 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 		if(!m.getReturnType().isPrimitive())
 		    discoverClass(m.getReturnType(), W, done,
 				  classKnownChildren, classMethodsUsed);
-	    } else { // look for CALLs and NEWs
+	    } else { // look for CALLs, NEWs, and ANEWs
 		for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
 		    Quad Q = (Quad) it.next();
-		    if (Q instanceof NEW) {
-			NEW q = (NEW) Q;
-			instedClasses.add(q.hclass());
-			discoverClass(q.hclass(), W, done,
+		    HClass createdClass=null;
+		    if (Q instanceof ANEW)
+			createdClass = ((ANEW)Q).hclass();
+		    if (Q instanceof NEW)
+			createdClass = ((NEW)Q).hclass();
+		    if (Q instanceof CONST &&
+			!((CONST)Q).type().isPrimitive())
+			createdClass = ((CONST)Q).type();
+		    // handle creation of a (possibly-new) class.
+		    if (createdClass!=null) {
+			instedClasses.add(createdClass);
+			discoverClass(createdClass, W, done,
 				      classKnownChildren, classMethodsUsed);
-		    }
+		    }			
 		    if (Q instanceof CALL) {
 			CALL q = (CALL) Q;
 			if (q.isStatic() || !q.isVirtual())
