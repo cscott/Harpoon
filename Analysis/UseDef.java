@@ -3,7 +3,7 @@ package harpoon.Analysis;
 
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.*;
-import harpoon.Util.UniqueVector;
+import harpoon.Util.Set;
 import harpoon.Util.Util;
 
 import java.util.Hashtable;
@@ -16,7 +16,7 @@ import java.util.Enumeration;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.7 1998-09-15 21:38:07 cananian Exp $
+ * @version $Id: UseDef.java,v 1.8 1998-09-16 00:42:21 cananian Exp $
  */
 
 public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
@@ -36,24 +36,23 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
     }
 	
     void associate(HCodeElement hce, Temp[] tl,
-		   Hashtable map, UniqueVector allTemps) {
+		   Hashtable map, Set allTemps) {
 	for (int i=0; i<tl.length; i++) {
-	    UniqueVector v = (UniqueVector) map.get(tl[i]);
-	    if (v==null) v = new UniqueVector();
-	    v.addElement(hce);
-	    map.put(tl[i], v);
-	    allTemps.addElement(tl[i]);
+	    Set s = (Set) map.get(tl[i]);
+	    if (s==null) { s = new Set(); map.put(tl[i], s); }
+	    s.union(hce);
+	    allTemps.union(tl[i]);
 	}
     }
 
-    Temp[] vector2temps(UniqueVector v) {
-	Temp[] tl = new Temp[v.size()];
-	v.copyInto(tl);
+    Temp[] set2temps(Set s) {
+	Temp[] tl = new Temp[s.size()];
+	s.copyInto(tl);
 	return tl;
     }
-    HCodeElement[] vector2hces(UniqueVector v) {
-	HCodeElement[] hcel = new HCodeElement[v.size()];
-	v.copyInto(hcel);
+    HCodeElement[] set2hces(Set s) {
+	HCodeElement[] hcel = new HCodeElement[s.size()];
+	s.copyInto(hcel);
 	return hcel;
     }
 
@@ -72,8 +71,8 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 
 	Hashtable workUse = new Hashtable();
 	Hashtable workDef = new Hashtable();
-	UniqueVector defined = new UniqueVector();
-	UniqueVector used = new UniqueVector();
+	Set defined = new Set();
+	Set used    = new Set();
 
 	// Scan through and associate uses and defs with their HCodeElements
 	for (int i=0; i<el.length; i++) {
@@ -83,15 +82,15 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	// replace UniqueVectors with HCodeElement arrays to save space.
 	for (Enumeration e = workUse.keys(); e.hasMoreElements(); ) {
 	    Temp u = (Temp) e.nextElement();
-	    useMap.put(u, vector2hces((UniqueVector)workUse.get(u)));
+	    useMap.put(u, set2hces((Set)workUse.get(u)));
 	}
 	for (Enumeration e = workDef.keys(); e.hasMoreElements(); ) {
 	    Temp d = (Temp) e.nextElement();
-	    defMap.put(d, vector2hces((UniqueVector)workDef.get(d)));
+	    defMap.put(d, set2hces((Set)workDef.get(d)));
 	}
 	// store set of all temps & mark as analyzed.
-	analyzed.put(code, new allTempList(vector2temps(used),
-					   vector2temps(defined)));
+	analyzed.put(code, new allTempList(set2temps(used),
+					   set2temps(defined)));
     }
 
     /** Return the HCodeElements which define a given Temp. */

@@ -3,7 +3,7 @@ package harpoon.Analysis;
 
 import harpoon.ClassFile.*;
 import harpoon.IR.Properties.Edges;
-import harpoon.Util.UniqueVector;
+import harpoon.Util.Set;
 
 import java.util.Hashtable;
 /**
@@ -12,7 +12,7 @@ import java.util.Hashtable;
  * the <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.3 1998-09-15 21:38:07 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.4 1998-09-16 00:42:20 cananian Exp $
  */
 
 public class DomFrontier  {
@@ -74,14 +74,14 @@ public class DomFrontier  {
 	if (tempDT) dt = null; // free the dominator tree.
     }
     void computeDF(HCode hc, HCodeElement n) {
-	UniqueVector S = new UniqueVector();
+	Set S = new Set();
 	
 	// for every child y in succ[n]
 	HCodeEdge[] yl = (!isPost) ? ((Edges)n).succ() : ((Edges)n).pred();
 	for (int i=0; i < yl.length; i++) {
 	    HCodeElement y = (!isPost) ? yl[i].to() : yl[i].from();
 	    if (!n.equals( dt.idom(hc, y) ))
-		S.addElement(y);
+		S.union(y);
 	}
 	// for each child c of n in the (post)dominator tree
 	HCodeElement[] c = dt.children(hc, n);
@@ -91,7 +91,7 @@ public class DomFrontier  {
 	    HCodeElement[] w = (HCodeElement[]) DF.get(c[i]);
 	    for (int j=0; j < w.length; j++)
 		if (!n.equals( dt.idom(hc, w[j]) ))
-		    S.addElement(w[j]);
+		    S.union(w[j]);
 	}
 	// DF[n] <- S
 	HCodeElement dfn[] = new HCodeElement[S.size()];

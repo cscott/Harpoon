@@ -5,14 +5,14 @@ import harpoon.ClassFile.*;
 import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.Worklist;
-import harpoon.Util.UniqueFIFO;
+import harpoon.Util.Set;
 
 import java.util.Hashtable;
 /**
  * <code>Place</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.3 1998-09-15 21:38:07 cananian Exp $
+ * @version $Id: Place.java,v 1.4 1998-09-16 00:42:21 cananian Exp $
  */
 
 public class Place  {
@@ -23,6 +23,11 @@ public class Place  {
     /** Creates a <code>Place</code>. */
     public Place(boolean isPost) {
 	this.usedef = null;
+	this.df = null;
+	this.isPost = isPost;
+    }
+    public Place(UseDef usedef, boolean isPost) {
+	this.usedef = usedef;
 	this.df = null;
 	this.isPost = isPost;
     }
@@ -42,26 +47,29 @@ public class Place  {
     void analyze(HCode hc) {
 	if (hc == lastHCode) return; // quick exit for common case.
 	if (analyzed.get(hc)==null) {
-	    boolean tempObjects = (usedef==null && df==null);
-	    if (tempObjects) { // allocate analysis objects.
-		usedef = new UseDef(); df = new DomFrontier(isPost);
-	    }
+	    boolean tempUse = (usedef == null);
+	    boolean tempDF  = (df == null);
+	    if (tempUse) usedef = new UseDef();
+	    if (tempDF ) df     = new DomFrontier(isPost);
+
 	    placePhi(hc);
-	    if (tempObjects) { // free analysis objects.
-		usedef = null; df = null;
-	    }
+
+	    if (tempUse) usedef = null; // free analysis objects.
+	    if (tempDF ) df     = null;
+
 	    analyzed.put(hc, hc);
 	    lastHCode = hc;
 	}
     }
 
     void placePhi(HCode hc) {
+	System.err.println("Analyze: Place / "+hc.getMethod());
 	// for each defined variable a
 	Temp[] al = (!isPost) ? usedef.allDefs(hc) : usedef.allUses(hc);
 	for (int i=0; i < al.length; i++) {
 	    Temp a = al[i];
 
-	    Worklist W = new UniqueFIFO();
+	    Worklist W = new Set();
 	    // W <- defsites[a]
 	    HCodeElement el[] = 
 		(!isPost) ? usedef.defMap(hc, a) : usedef.useMap(hc, a);
@@ -95,29 +103,24 @@ public class Place  {
 	    remove(hce);
 	}
 	Temp[] getSet(HCodeElement hce) {
-	    if (!containsKey(hce)) return new Temp[0];
-	    return (Temp[]) get(hce);
+	    Set s = (Set) get(hce);
+	    if (s==null) return new Temp[0];
+	    Temp[] r = new Temp[s.size()];
+	    s.copyInto(r);
+	    return r;
 	}
 	boolean memberSet(HCodeElement hce, Temp t) {
-	    Temp[] set = getSet(hce);
-	    for (int i=0; i < set.length; i++)
-		if (set[i] == t) return true;
-	    return false;
+	    Set s = (Set) get(hce);
+	    if (s==null) return false;
+	    return s.contains(t);
 	}
 	void unionSet(HCodeElement hce, Temp Tnew) {
-	    if (!containsKey(hce)) {
-		put(hce, new Temp[] { Tnew });
-	    } else {
-		Temp[] oldset = (Temp[]) get(hce);
-		Temp[] newset = new Temp[oldset.length+1];
-		for (int i=0; i < oldset.length; i++)
-		    if (oldset[i] == Tnew)
-			return; // don't add; already present.
-		    else
-			newset[i] = oldset[i];
-		newset[oldset.length] = Tnew;
-		put(hce, newset);
+	    Set s = (Set) get(hce);
+	    if (s == null) {
+		s = new Set();
+		put(hce, s);
 	    }
+	    s.union(Tnew);
 	}
     }
 }
