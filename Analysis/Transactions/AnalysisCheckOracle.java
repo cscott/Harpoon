@@ -19,7 +19,7 @@ import java.util.Set;
  * do some analysis and store the results of the check oracle.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AnalysisCheckOracle.java,v 1.2.2.1 2002-03-04 20:36:02 cananian Exp $
+ * @version $Id: AnalysisCheckOracle.java,v 1.2.2.2 2002-04-07 20:41:38 cananian Exp $
  */
 abstract class AnalysisCheckOracle extends CheckOracle {
     final Map<HCodeElement,CheckSet> results =
@@ -138,7 +138,7 @@ abstract class AnalysisCheckOracle extends CheckOracle {
 	    this.elementReads.clear();
 	    this.elementWrites.clear();
 	}
-	public Object clone() { return new CheckSet(this); }
+	public CheckSet clone() { return new CheckSet(this); }
 	public String toString() {
 	    return "Rd: "+readVersions+" / Wr: "+writeVersions+" / "+
 		"FldR: "+fieldReads+" / FldW: "+fieldWrites+" / "+

@@ -9,6 +9,7 @@ import harpoon.IR.Quads.ARRAYINIT;
 import harpoon.IR.Quads.ASET;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.SET;
+import harpoon.Temp.Temp;
 
 import java.util.Collections;
 import java.util.Set;
@@ -17,7 +18,7 @@ import java.util.Set;
  * simple-minded implementation of <code>CheckOracle</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SimpleCheckOracle.java,v 1.2 2002-02-25 21:00:10 cananian Exp $
+ * @version $Id: SimpleCheckOracle.java,v 1.2.2.1 2002-04-07 20:41:38 cananian Exp $
  */
 class SimpleCheckOracle extends CheckOracle {
     private final boolean noArrayModification;
@@ -25,14 +26,14 @@ class SimpleCheckOracle extends CheckOracle {
     SimpleCheckOracle(boolean noArrayModification) {
 	this.noArrayModification = noArrayModification;
     }
-    public Set createReadVersions(HCodeElement hce) {
+    public Set<Temp> createReadVersions(HCodeElement hce) {
 	if (hce instanceof AGET && !noArrayModification)
 	    return Collections.singleton(((AGET)hce).objectref());
 	if (hce instanceof GET && !((GET)hce).isStatic())
 	    return Collections.singleton(((GET)hce).objectref());
 	return Collections.EMPTY_SET;
     }
-    public Set createWriteVersions(HCodeElement hce) {
+    public Set<Temp> createWriteVersions(HCodeElement hce) {
 	if (hce instanceof ARRAYINIT && !noArrayModification)
 	    return Collections.singleton(((ARRAYINIT)hce).objectref());
 	if (hce instanceof ASET && !noArrayModification)
@@ -41,19 +42,19 @@ class SimpleCheckOracle extends CheckOracle {
 	    return Collections.singleton(((SET)hce).objectref());
 	return Collections.EMPTY_SET;
     }
-    public Set checkFieldReads(HCodeElement hce) {
+    public Set<RefAndField> checkFieldReads(HCodeElement hce) {
 	if (hce instanceof GET && !((GET)hce).isStatic())
 	    return Collections.singleton
 		(new RefAndField(((GET)hce).objectref(),((GET)hce).field()));
 	return Collections.EMPTY_SET;
     }
-    public Set checkFieldWrites(HCodeElement hce) {
+    public Set<RefAndField> checkFieldWrites(HCodeElement hce) {
 	if (hce instanceof SET && !((SET)hce).isStatic())
 	    return Collections.singleton
 		(new RefAndField(((SET)hce).objectref(),((SET)hce).field()));
 	return Collections.EMPTY_SET;
     }
-    public Set checkArrayElementReads(HCodeElement hce) {
+    public Set<RefAndIndexAndType> checkArrayElementReads(HCodeElement hce) {
 	if (hce instanceof AGET && !noArrayModification) {
 	    AGET q = (AGET) hce;
 	    return Collections.singleton
@@ -61,7 +62,7 @@ class SimpleCheckOracle extends CheckOracle {
 	}
 	return Collections.EMPTY_SET;
     }
-    public Set checkArrayElementWrites(HCodeElement hce) {
+    public Set<RefAndIndexAndType> checkArrayElementWrites(HCodeElement hce) {
 	if (hce instanceof ASET && !noArrayModification) {
 	    ASET q = (ASET) hce;
 	    return Collections.singleton

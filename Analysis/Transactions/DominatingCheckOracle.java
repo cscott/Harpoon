@@ -19,7 +19,7 @@ import java.util.Set;
  * on the results of a client <code>CheckOracle</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DominatingCheckOracle.java,v 1.2 2002-02-25 21:00:09 cananian Exp $
+ * @version $Id: DominatingCheckOracle.java,v 1.2.2.1 2002-04-07 20:41:38 cananian Exp $
  */
 class DominatingCheckOracle extends AnalysisCheckOracle {
     /** Creates a <code>DominatingCheckOracle</code>. */
@@ -29,8 +29,9 @@ class DominatingCheckOracle extends AnalysisCheckOracle {
     DominatingCheckOracle(DomTree dt, CheckOracle co) {
 	/* okay, compute the proper check locations by propagating down
 	 * domtree */
-	for (Iterator it=new ArrayIterator(dt.roots()); it.hasNext(); )
-	    propagate((HCodeElement)it.next(), dt, co, new CheckSet());
+	for (Iterator<HCodeElement> it = new ArrayIterator<HCodeElement>
+		 (dt.roots()); it.hasNext(); )
+	    propagate(it.next(), dt, co, new CheckSet());
     }
     void propagate(HCodeElement hce, DomTree dt, CheckOracle co, CheckSet cs){
 	/* collect checks from client CheckOracle */
@@ -47,8 +48,9 @@ class DominatingCheckOracle extends AnalysisCheckOracle {
 	    checks.clear();
 	// XXX: nothing should pass Object.wait() either.
 	/* recurse down dom tree */
-	for (Iterator it=new ArrayIterator(dt.children(hce)); it.hasNext(); )
-	    propagate((HCodeElement)it.next(), dt, co, checks);
+	for (Iterator<HCodeElement> it = new ArrayIterator<HCodeElement>
+		 (dt.children(hce)); it.hasNext(); )
+	    propagate(it.next(), dt, co, checks);
 	/* done! */
     }
 }
