@@ -5,9 +5,7 @@
 
 extern long memorystat;
 
-#if WITH_THREADS
-extern flex_mutex_t memstat_mutex;
-#endif
+FLEX_MUTEX_DECLARE_EXTERN(memstat_mutex);
 
 extern long peakusage;
 extern long peakusagea;

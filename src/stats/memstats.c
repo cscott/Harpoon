@@ -6,12 +6,9 @@
 #include <time.h> /* time,localtime for time zone information */
 #include <sys/time.h> /* gettimeofday */
 #include <stdio.h>
-extern FILE *stderr;
 
+FLEX_MUTEX_DECLARE(memstat_mutex);
 long memorystat;
-#if WITH_THREADS
-flex_mutex_t memstat_mutex=FLEX_MUTEX_INITIALIZER;
-#endif
 long peakusage;
 long lastpeak;
 long peakusagea;
