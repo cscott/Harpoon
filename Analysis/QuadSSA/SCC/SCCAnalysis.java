@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.11 1998-09-25 17:08:13 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.12 1998-09-25 17:17:08 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -310,8 +310,20 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	}
 	public void visit(ASET q) { /* do nothing. */ }
 	public void visit(CALL q) {
-	    if (q.retval != null)
-		raiseV(V, Wv, q.retval, new xClass(q.method.getReturnType() ));
+	    if (q.retval != null) {
+		// in the bytecode world, everything's an int.
+		HClass ty = q.method.getReturnType();
+		LatticeVal v = new xClass(ty);
+		if (ty==HClass.Byte)
+		    v = new xBitWidth(HClass.Int,  8,  7);
+		else if (ty==HClass.Short)
+		    v = new xBitWidth(HClass.Int, 16, 15);
+		else if (ty==HClass.Char)
+		    v = new xBitWidth(HClass.Int,  0, 16);
+		else if (ty.isPrimitive())
+		    v = new xClassNonNull(ty);
+		raiseV(V, Wv, q.retval, v);
+	    }
 	    raiseV(V, Wv, q.retex, 
 		   new xClass( HClass.forClass(Throwable.class) ) );
 	}
