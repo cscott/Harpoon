@@ -15,9 +15,16 @@ public class StructureTypeDescriptor extends TypeDescriptor {
     Hashtable fields = new Hashtable(); /* fast lookups */
     Vector fieldlist = new Vector(); /* ordering information */
     Hashtable labels = new Hashtable();
+    int idnum;
+    static int counter=0;
+
+    public int getId() {
+	return idnum;
+    }
 
     public StructureTypeDescriptor(String name) {
         super(name);
+	idnum=counter++;
     }
 
     public TypeDescriptor getGenerateType() {
@@ -34,7 +41,10 @@ public class StructureTypeDescriptor extends TypeDescriptor {
     }
 
     public Expr getOffsetExpr(FieldDescriptor field) {
-	
+	/* Fix sizeof calculations */
+	if ((field==null)&&(subtype!=null))
+	    return subtype.getOFfsetExpr(field);
+
 	boolean aligned=true;
         Expr size = new IntegerLiteralExpr(0);
         
@@ -117,11 +127,11 @@ public class StructureTypeDescriptor extends TypeDescriptor {
         labels.put(ld.getSymbol(), ld);
     }
 
-    public TypeDescriptor getSubType() {
+    public TypeDescriptor getSuperType() {
         return subtype;
     }
 
-    public void setSubType(TypeDescriptor td) {
+    public void setSuperType(TypeDescriptor td) {
         subtype = td;
     }
 

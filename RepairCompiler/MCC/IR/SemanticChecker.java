@@ -859,7 +859,7 @@ public class SemanticChecker {
             } else if (t instanceof StructureTypeDescriptor) {
                 
                 StructureTypeDescriptor type = (StructureTypeDescriptor) t;
-                TypeDescriptor subtype = type.getSubType();
+                TypeDescriptor subtype = type.getSuperType();
 
                 // check that the subtype is valid
                 if (subtype instanceof MissingTypeDescriptor) {
@@ -870,7 +870,7 @@ public class SemanticChecker {
                         er.report(null, "Undefined subtype '" + subtype.getSymbol() + "'");
                         ok = false;
                     } else {
-                        type.setSubType(newtype);
+                        type.setSuperType(newtype);
                     }
                 }
 
@@ -939,7 +939,7 @@ public class SemanticChecker {
             } else if (t instanceof StructureTypeDescriptor) {
                 
                 StructureTypeDescriptor type = (StructureTypeDescriptor)t;
-                TypeDescriptor subtype = type.getSubType();
+                TypeDescriptor subtype = type.getSuperType();
                 Iterator fields = type.getFields();
 
                 while (fields.hasNext()) {
@@ -1038,7 +1038,7 @@ public class SemanticChecker {
             }
 
             /* lookup the type to get the type descriptor */
-            type.setSubType(lookupType(subtype, CREATE_MISSING));
+            type.setSuperType(lookupType(subtype, CREATE_MISSING));
         }
 
         // set the current type so that the recursive parses on the labels
