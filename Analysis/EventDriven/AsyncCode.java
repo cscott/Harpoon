@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.61 2000-04-06 18:51:33 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.62 2000-05-14 20:30:17 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -348,6 +348,7 @@ public class AsyncCode {
     {
 	//	final HMethod original = blocking.method();
 	HClass originalClass = original.getDeclaringClass();
+	System.out.println("Getting mutator for :"+originalClass);
 	HClassMutator originalMutator=originalClass.getMutator();
 	Util.assert(originalMutator!=null);
   
@@ -397,7 +398,7 @@ public class AsyncCode {
 							  newReturnType);
 	    HMethodMutator rmutator=replacement.getMutator();
 	    rmutator.setExceptionTypes(original.getExceptionTypes());
-	    rmutator.setModifiers(original.getModifiers());
+	    rmutator.setModifiers(original.getModifiers()^(original.getModifiers() & Modifier.NATIVE));
 	    rmutator.setParameterNames(original.getParameterNames());
 	    rmutator.setSynthetic(original.isSynthetic());
 	} else {
