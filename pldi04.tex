@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.25 2003-11-13 03:15:17 cananian Exp $
+% $Id: pldi04.tex,v 1.26 2003-11-13 04:41:47 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -35,7 +35,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-\date{\today \\ $ $Revision: 1.25 $ $}
+\date{\today \\ $ $Revision: 1.26 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -412,8 +412,6 @@ synchronized applications race-free.
 Imagine unsynchronized code directly altering the length field of
 StringBuffer.  This shouldn't make StringBuffer.append appear non-atomic.
 
-\subsecput{properties}{Properties of Transactions}
-
 Further, if the synchronization in this method is implemented with
 transactions, note that the call to \texttt{sb.getChars()} means that
 the size of the transaction for this method will grow like the length
@@ -424,19 +422,28 @@ the size of the string~\texttt{sb}.  This means that boundless
 transactions must be supported if this method is operate on arbitrary
 inputs.
 
+\subsecput{properties}{Properties of Transactions}
+
 \secput{efficient}{Designing Efficient Transactions}
-\subsection{Scales}
+\subsection{Field Flags}
+\note{Missing: performance numbers for adding check.  Use ``no trans''
+  version of transaction app and add check into the access functions.}
 Key idea is to allow safe access by non-transactional code, so as to
 allow transactification.
 
 \subsection{Object expansion}
 \epsfigput{bloat}{Application slowdown with increasing object bloat
 for the SPECjvm98 benchmark applications.}
+See \figref{bloat}.
 \subsection{Reads vs. Writes}
+See \secref{properties}.
 \subsection{Large objects}
-\subsection{Subsumption?}
+See \secref{properties}.
 
 \secput{algo}{Algorithms}
+
+\subsecput{herlihy}{Herlihy's algorithm}
+Or reader-less version?
 
 \figput{tr-multi-obj}{Implementing software transactions with version lists.}
 
@@ -649,28 +656,10 @@ block.
 \secput{related}{Related work}
 \subsecput{nb-sync}{Non-blocking synchronization}
 
-\begin{figure}
-{\ttfamily
-\begin{tabular}{l@{\hspace{1in}}l}
-Writer:        &Reader:                 \\
-~~v1++;        &~~do \{                 \\
-~~{\it write}; &~~~~temp = v2;          \\
-~~v2++;        &~~~~{\it read};         \\
-               &~~\} while (temp != v1);\\
-\end{tabular}
-}
-\caption{Lamport's single-writer multiple-reader non-blocking
-    synchronization algorithm \cite{Lamport77}.}
-% writes and reads to v1/v2 can be non-atomic if the subreads/subwrites
-% are done in the correct order; see original reference for details.
-\label{fig:lamport}
-\end{figure}
 Lamport presented the first alternative to synchronization via mutual
 exclusion in \cite{Lamport77}, for a limited situation involving a single
-writer and multiple readers.  Lamport's technique, presented in
-Figure~\ref{fig:lamport}, relies on reading
-guard elements $v_1$ and $v_2$ in an order opposite to that in which
-they are written,
+writer and multiple readers.  Lamport's technique relies on reading
+guard elements in an order opposite to that in which they are written,
 guaranteeing that a consistent data snapshot can be recognized.  The
 writer always completes its part of the algorithm in a constant number
 of steps; readers are guaranteed to complete only in the absence of
@@ -680,11 +669,8 @@ Herlihy formalized \emph{wait-free} implementations of
 concurrent data objects in \cite{Herlihy88}.  A wait-free implementation
 guarantees that any process can complete any operation in a finite
 number of steps, regardless of the activities of other processes.
-Lamport's algorithm, for example, is not wait-free
-because readers can be delayed indefinitely.  Wait-free algorithms
-typically involve ``recursive helping,'' whereby active processes can
-complete operations on behalf of stalled processes, ensuring that all
-operations are eventually completed.
+Lamport's algorithm is not wait-free
+because readers can be delayed indefinitely.
 
 Massalin and Pu introduced the term \emph{lock-free} to describe 
 algorithms with weaker progress guarantees.
@@ -707,11 +693,6 @@ to halt all progress in all threads
 indefinitely.  External mechanisms are used to reduce contention
 (thus, achieve progress) including backoff, queueing, or timestamping.
 
-Revisiting Lamport's algorithm, we conclude it is neither lock-free
-nor obstruction-free,
-because halting the writer between the guard increments will prevent
-readers from ever getting a consistent snapshot.
-
 We will use the term \emph{non-blocking} to describe
 generally any synchronization mechanism which doesn't rely on mutual
 exclusion or locking, including wait-free, lock-free,
@@ -728,6 +709,7 @@ We will be concerned mainly with lock-free algorithms.%
   \emph{non-blocking} for the general class.}
 
 \subsecput{nb-adv}{Advantages over mutual exclusion}
+\note{Put this in intro?}
 Non-blocking synchronization offers a number of advantages over mutual
 exclusion within critical regions.  Foremost for the concerns of this paper is
 fault-tolerance:  a process which fails while holding a lock within a
@@ -740,6 +722,7 @@ deadlock; if it dies while holding a kernel lock, the whole system may
 crash.  Although one can use external means to recognize orphaned
 locks and release them, it is in general not possible to restore the
 locked data structures to a consistent state after such a failure.
+\note{This is an important sentence.}
 Non-blocking synchronization offers a graceful means out of
 these troubles, as non-progress or failure of any one thread will not
 affect the progress or consistency of other threads or the system.
@@ -876,13 +859,12 @@ input and output locations touched by a transaction be known in
 advance, which limits its application.  It performs at least 10
 fetches and 4 stores per location accessed (not counting the loads and
 stores directly required by the computation).  The benchmarks
-presented were collected on a 64-processor machine; no performance
-numbers were shown for less than 10 processors.
+presented were run on between 10 and 64 processors.
 
 Rudys and Wallach \cite{RudysWa02} proposed a copying-based
 transaction system to allow rollback of hostile codelets.
 They shows an order of magnitude slowdown for field and array
-accessed, and 6x to 23x slowdown on their benchmarks.
+accesses, and 6x to 23x slowdown on their benchmarks.
 
 Herlihy, Luchango, Moss, and Scherer's scheme \cite{HerlihyLuMoSc03}
 allows transactions to touch a dynamic set of memory locations;
@@ -909,13 +891,12 @@ implementation on some microbenchmarks.  They benchmark on a
 4-processor as well as a 106-processor machine; their crossover point
 (at which the blocking overhead of locks matches the software
 transaction overhead) is around 4 processors.
+\note{No non-transactional support.}
 
 Programmers will be loathe to use transactions to synchronize their
 code when it results in their code running more slowly on the uniprocessor
 and small-SMP systems which are most common today.
-
-Programming with small non-blocking synchronization primitives alone
-is like using overlays instead of virtual memory.
+\note{Segue into hardware transactions writeup?}
 
 Our SPECjvm98 and Linux case studies indicate that
 transactional memory operations can be extremely common when
@@ -1025,6 +1006,11 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 
 
 \secput{concl}{Conclusions}
+
+\section*{Acknowledgments}
+Charles E. Leiserson suggested the ``network flow'' example in
+\secref{flow}.  Sean Lie adapted the hardware simulator which
+provided the timings in \figref{hw-timings}.
 
 \renewcommand{\baselinestretch}{1}
 \bibliographystyle{plain}
@@ -1140,32 +1126,6 @@ class Account \{\\
   illustrating the use of the \atomic modifier.}
 \label{fig:atomic}
 \end{figure}
-Language-based operating systems promise to allow even further
-reduction in micro-kernel design by removing even address spaces from the
-kernel.  Further, by providing correct and universal synchronization
-in the language, we hope to eliminate the difficulty of writing
-specific correct lock-free data structures, illustrated by Massalin
-and Pu's errors in Section~\ref{sec:bugs}.
-
-To that end, we propose some slight modifications to the Java
-language to better support its use for writing operating systems.
-We concentrate on synchronization in the language, eliding as
-orthogonal issues related to direct access to hardware.  We expect
-that slight extensions similar to those in Lisaac \cite{SonntagCo02} and
-JEPES \cite{SchultzBuChKn03} will be sufficient to support interrupt handlers
-and memory-mapped I/O.  We then present an efficient implementation
-technique for the synchronization primitives in the language, showing
-first how to synchronize single encapsulated objects, then operations
-on multiple objects, and finally present the lock-free functional
-array implementation which allows efficient large object
-synchronization.
-
-Our implementation will use the same DCAS primitive used in the Cache
-Kernel and in Synthesis.  This primitive can be emulated using
-architecture extensions to the popular LL/SC operations,
-or in software with OS support using Bershad's technique
-\cite{GreenwaldCh96,Bershad93}.
-
 \subsection{Synchronization in the language}
 The Emerald system \cite{BlackHuJuLe86,JulSt91} introduced
 \emph{monitored objects} for synchronization.  Emerald code to
@@ -1213,8 +1173,9 @@ synchronizing on locks, we simply require that the methods marked
 \atomic execute atomically with respect to other threads in the
 system; that is, that every execution of the program computes the same
 result as some execution where all atomic methods were run \emph{in
-  isolation} at a certain point in time between their invocation and return.
-This point is called the \emph{linearization point}.  Note that
+  isolation} at a certain point in time, called the
+\defn{linearization point}, between their invocation and return.
+Note that
 atomic methods invoked directly or indirectly from an atomic
 method are subsumed by it: if the outermost method appears atomic,
 then by definition all inner method invocations will also appear atomic.
@@ -1222,7 +1183,7 @@ Flanagan and Qadeer provide a more formal semantics in \cite{FlanaganQa03}.
 Atomic methods can be analyzed using sequential reasoning techniques, which
 significantly simplifies reasoning about program correctness.
 
-Atomic methods can be implemented using locks.  A simple if deadlock-prone 
+Atomic methods can be implemented using locks.  A simple if inefficient
 implementation would simply acquire a single global lock during
 the execution of every atomic method.  Flanagan and Qadeer
 \cite{FlanaganQa03} present a more sophisticated technique which proves that
