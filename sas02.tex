@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: sas02.tex,v 1.6 2002-05-11 07:51:03 cananian Exp $
+% $Id: sas02.tex,v 1.7 2002-05-11 09:00:49 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[oribibl]{llncs}
 %\usepackage[section,plain]{algorithm}
@@ -29,7 +29,7 @@ Cambridge, MA 02139 \\
 \email{\{cananian, rinard\}@lcs.mit.edu}
 }
 
-%\renewcommand{\baselinestretch}{0.88}
+\renewcommand{\baselinestretch}{0.93}
 \begin{document}
 \bibliographystyle{plain}
 %
@@ -74,11 +74,11 @@ analysis computes the range of values that the program
 may assign to each field. The compiler then transforms the program
 to reduce the size of the field to the smallest type
 capable of storing that range of values. 
-\item {\bf Unused, Unread, and Constant Field Elimination:} 
+\item {\bf Unread and Constant Field Elimination:} 
 If the bitwidth analysis finds that a field always holds
 the same constant value, the compiler eliminates the field. 
 It removes each write to the field, and replaces each read
-with the constant value.  Fields found to be unused or unread are
+with the constant value.  Fields without executable reads are
 also removed.
 \item {\bf Static Specialization:} Our analysis finds 
 classes with fields whose values do not change after initialization,
@@ -407,21 +407,21 @@ without the hash code and lock information fields in the header,
 then lazily creates the fields when necessary. 
 Specifically, if the program ever uses the hash code or lock information, 
 the generated code creates the hash code or lock information
-for the object, then stores this information in a hash table
-that maps objects to their hash code or lock information.%
-\footnote{A pointer to the object is used as the hashtable key when
+for the object, then stores this information in a table
+mapping objects to their hash code or lock information.%
+\footnote{The object's address is used as its key when
   field externalization is done.  The garbage-collector is responsible
   for updating the field entries if it moves objects, by rehashing on
-  the new key.}
+  the new address.}
 
 Note that, in general, this transformation (as well as field
 externalization) may actually increase space usage. But in
 practice, we have found that our set of benchmark programs
 rarely uses these fields. The overall result is a substantial
-space savings. Note that the combination of claz compression 
-and hash/lock elimination produces a common-case object header
+space savings. The combination of claz compression 
+and hash/lock elimination can produce a common-case object header
 size of one byte --- one byte for a claz index and no
-space at all for hash code or lock information. 
+space at all for hash code or lock.
 %
 \section{Analysis Algorithms}
 %
@@ -450,17 +450,15 @@ every object
 in the heap must belong to one of the instantiated class types.
 The size of the set of instantiated classes is quite small for a
 typical Java program, and all but two of the benchmarks in SPECjvm98
-have less than 256 instantiated class types.  We use this information
+have less than 256 instantiated class types.%
+\footnote{\emph{All} have more than 256 \emph{total} class types.}
+We use this information
 to replace the {\tt claz} pointer in the object header, which
 identifies the type of the object, with a one-byte {\it index} into a
 small lookup table.  The {\tt 202\_jess} and {\tt 213\_javac}
 benchmarks require more than one byte of index, but a two byte index
 amply suffices in these two cases.
-
-Note that all of our benchmarks would require two-byte {\tt claz}
-index fields if we did not differentiate between actually-instantiated
-and other class types in our analysis.
-
+%
 % Our implementation does claz numbering so that we can use the
 % claz index for a fast instanceof test, too!  But we don't
 % actually use it for that, yet, so I'm not going to describe it here.
@@ -480,44 +478,10 @@ negative and positive numbers, which we do by splitting the set of
 values into negative, zero, and positive parts, and describing the
 bitwidth of each individually.
 
-\subsubsection{Value Lattice}
-First consider extending the basic three level value lattice of Wegman and
-Zadeck (Figure~\ref{fig:wzlat}a) to allow the classification of
-negative, positive, or zero
-values, as illustrated in Figure~\ref{fig:scclat6}b.
-A join on two negative numbers yields the entry \code{(M\_\_)},
-indicating the set of all negative non-zero numbers; a
-join on a negative and a positive number yields \code{(M\_P)}, and so on.
-\begin{figure}[tp]%
-\begin{center}%
-\parbox[b]{6cm}{\centering%
-\renewcommand{\figscale}{0.4}\input{Figures/THlat1b}\\[.3cm]
-(a)}%
-\parbox[b]{6cm}{\centering%
-\renewcommand{\color}[2][rgb]{}%ignore color commands
-\renewcommand{\figscale}{0.4}\input{Figures/THlat6c}\\
-(b)}%
-\end{center}
-\caption{Dataflow analysis value lattices.
-(a) Wegman and Zadeck's SCC value lattice.
-(b) An integer lattice for signed integers.
-A classification into
-negative (M), positive (P), or zero (Z) is grafted onto the standard
-flat integer constant domain.}
-\label{fig:wzlat}\label{fig:scclat6}
-\end{figure}
-
-Now replace the \code{M} and \code{P} in these entries with integers
-$m$ and $p$, representing the
-widths of the absolute value of the negative and positive portion of
-the number.  Eliminate the \code{Z} entry by representing zero as
-$m=p=0$.
-Merging the constants $\mathbf{2}$ and $\mathbf{4}$ would
-result in the lattice
-value \tuple{0,3} ($m=0$ and $p=3$),
-for example, and merging $\mathbf{-4}$ with $\mathbf{4}$ would result
-in \tuple{3,3}, because three bits are required to represent
-$\left|\pm 4\right|$.
+We abstract sets of non-singleton integer values into a tuple
+\tuple{m,p} where $m\ge 1+\lfloor\log_2 N\rfloor$ for all negative $N$
+in the set, and $p\ge 1+\lfloor\log_2 N\rfloor$ for positive $N$.  We
+use $m=p=0$ to represent the constant zero.
 Some combination rules for arithmetic operations are
 shown in Figure~\ref{fig:bitrules}.  The rules for simple arithmetic
 operators should be self-evident upon examination (adding two $N$ bit
@@ -528,22 +492,21 @@ additional rules giving it greater precision for common special cases,
 such as multiplication by
 a one-bit quantity, division by a constant, or (as the figure shows)
 bitfield operations on positive numbers.
-\begin{figure}%[tp]
+\begin{figure}[tbp]
 \begin{eqnarray*}
--\tuple{M,P} &=& \tuple{P,M}\\
-\tuple{M_l,P_l} + \tuple{M_r,P_r} &=& \tuple{1+\max(M_l,M_r),1+\max(P_l,P_r)}\\
-%\tuple{M_l,P_l} \times \tuple{M_r,P_r} &=& \langle\max(M_l+P_r,P_l+M_r),\\
-%                                       &&  \max(M_l+M_r,P_l+P_r)\rangle\\
-\tuple{M_l,P_l} \times \tuple{M_r,P_r} &=&
-\tuple{\begin{array}{l}\max(M_l+P_r,P_l+M_r),\\
-                       \max(M_l+M_r,P_l+P_r)\end{array}}\\
-\tuple{0,P_l} \wedge \tuple{0,P_r} &=& \tuple{0,\min(P_l,P_r)}\\
-\tuple{M_l,P_l}\wedge \tuple{M_r,P_r} &=& \tuple{\max(M_l,M_r),\max(P_l,P_r)}
+-\tuple{m,p} &=& \tuple{p,m}\\
+\tuple{m_l,p_l} + \tuple{m_r,p_r} &=& \tuple{1+\max(m_l,m_r),1+\max(p_l,p_r)}\\
+%\tuple{m_l,p_l} \times \tuple{m_r,p_r} &=& \langle\max(m_l+p_r,p_l+m_r),\\
+%                                       &&  \max(m_l+m_r,p_l+p_r)\rangle\\
+\tuple{m_l,p_l} \times \tuple{m_r,p_r} &=&
+\tuple{\begin{array}{l}\max(m_l+p_r,p_l+m_r),\\
+                       \max(m_l+m_r,p_l+p_r)\end{array}}\\
+\tuple{0,p_l} \wedge \tuple{0,p_r} &=& \tuple{0,\min(p_l,p_r)}\\
+\tuple{m_l,p_l}\wedge \tuple{m_r,p_r} &=& \tuple{\max(m_l,m_r),\max(p_l,p_r)}
 \end{eqnarray*}%
-\caption{Some combination rules for bit-width analysis.  The \code{Z}
-  element indicating whether zero is a possible value has been omitted
-  for clarity.  Note that the penultimate entry is a
-  ``special-case'' rule that only applies if the neither of the
+\caption{Some combination rules for bit-width analysis.
+  Note that the penultimate entry is a
+  special-case rule that only applies if the neither of the
   arguments can be negative.}\label{fig:bitrules}
 \end{figure}
 
@@ -594,9 +557,9 @@ then, that the starting lattice value for every integer field should
 be $\mathbf{0}$.  This, however, prevents us from finding non-zero field
 constants in the program: a simple initialization statement like {\tt
   x=5} will assign {\tt x} the value $\mathbf{0}\meet\mathbf{5}$,
-which is not equal to $\mathbf{5}$!\footnote{On the lattice of
-  Figure~\ref{fig:scclat6}, $\mathbf{0}\meet\mathbf{5}=\text{\tt
-    (\_ZP)}$.}
+which is not equal to $\mathbf{5}$!\footnote{On the SCC lattice of
+\cite{wegman91:scc}, $\mathbf{0}\meet\mathbf{5}=\top$ (but see
+footnote \ref{ft:topbot}).}
 
 We perform a {\it definite initialization} analysis to remedy this
 problem and restore precision to our analysis.
@@ -608,7 +571,7 @@ we say that field {\tt f} is {\it definitely initialized} because
 every constructor of {\tt A} assigns a value to {\tt f} before
 returning or calling an unsafe method.
 Adding constructor {\tt A$_2$} allows the
-default $\mathbf{0}$ value of {\tt f} to be seen; {\tt f} is thus no longer
+default $\mathbf{0}$ value of {\tt f} to be seen; {\tt f} is then no longer
 definitely-initialized.
 
 We actually allow the constructor great flexibility in regard to
@@ -620,15 +583,19 @@ a transitive closure of this map over the call graph to determine
 a ``safe set'' of
 methods which the constructor may call before a definite
 initialization of {\tt f}.  As long as control flow may not pass to a
-method not in the safe set before {\tt f} is set, then {\tt f} is
+method not in the safe set before {\tt f} is written, then {\tt f} is
 definitely initialized.
 
 When performing bitwidth analysis,
 definitely-initialized fields are allowed to start at $\bot$ in the
-dataflow lattice.  All other fields must start at value
+dataflow lattice.%
+\footnote{We use $\bot$ for ``nothing known'' and $\top$ for
+  ``under-constrained''; another segment of the compiler community
+  commonly reverses these definitions.\label{ft:topbot}}
+  All other fields must start at value
 $\mathbf{0}$, which will make it impossible for the field to represent a
 non-zero constant value.  The results of the definite initialization
-analysis are also used to profile mostly-constant fields, as described
+analysis are also used when profiling mostly-constant fields, as described
 in the next section.
 %
 \begin{figure}[tp]
@@ -663,7 +630,7 @@ as if there is a single default value $N$ which we are looking for.
 Our instrumentation pass starts by
 adding a counter per class
 to record the number of times each exact class type is instantiated.
-We also add per-field counters which are incremented the \emph{first}
+We also add per-field counters which are incremented the first
 time a non-$N$ value is stored into a certain field.%
 \footnote{Note that this requires storing an additional bit per field
   during profiling
@@ -1084,6 +1051,7 @@ maximum heap required for a program by as much as 40\%.
 Our experimental results from our fully-implemented system validate the
 opportunity for space savings on typical object oriented programs.
 
+\renewcommand{\baselinestretch}{1}
 \bibliography{harpoon}
 
 %\appendix
