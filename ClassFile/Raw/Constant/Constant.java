@@ -8,7 +8,7 @@ import harpoon.ClassFile.Raw.*;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Constant.java,v 1.10 1998-08-02 03:19:40 cananian Exp $
+ * @version $Id: Constant.java,v 1.11 1998-08-02 07:36:59 cananian Exp $
  * @see ConstantUtf8
  * @see ConstantInteger
  * @see ConstantFloat
@@ -89,11 +89,6 @@ public abstract class Constant {
 
   /** Pretty-print this constant. */
   public void print(java.io.PrintWriter pw, int indent) {
-    indent(pw, indent, toString());
-  }
-  static void indent(java.io.PrintWriter pw, int indent, String s) {
-    for (int i=0; i<indent; i++)
-      pw.print("  ");
-    pw.println(s);
+    ClassFile.indent(pw, indent, toString());
   }
 }

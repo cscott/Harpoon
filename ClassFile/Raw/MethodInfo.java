@@ -8,7 +8,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodInfo.java,v 1.11 1998-08-02 03:19:30 cananian Exp $
+ * @version $Id: MethodInfo.java,v 1.12 1998-08-02 07:36:19 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.6"
  * @see ClassFile
  * @see harpoon.ClassFile.HMethod
@@ -100,18 +100,14 @@ public class MethodInfo {
   /** Pretty-print this method_info structure. */
   public void print(java.io.PrintWriter pw, int indent) {
     int in=indent;
-    indent(pw, in, "Access Flags: " + access_flags);
-    indent(pw, in, "Name: " + name() + " {"+name_index+"}");
-    indent(pw, in, "Descriptor: " + descriptor() + " {"+descriptor_index+"}");
-    indent(pw, in, "Attributes ["+attributes.length+"]:");
+    ClassFile.indent(pw, in, "Access Flags: " + access_flags);
+    ClassFile.indent(pw, in, "Name: " + name() + " {"+name_index+"}");
+    ClassFile.indent(pw, in, "Descriptor: " + 
+		     descriptor() + " {"+descriptor_index+"}");
+    ClassFile.indent(pw, in, "Attributes ["+attributes.length+"]:");
     for (int i=0; i<attributes.length; i++) {
-      indent(pw, in+1, "#"+i+":");
+      ClassFile.indent(pw, in+1, "#"+i+":");
       attributes[i].print(pw, in+2);
     }
-  }
-  private static void indent(java.io.PrintWriter pw, int indent, String s) {
-    for (int i=0; i<indent; i++)
-      pw.print("  ");
-    pw.println(s);
   }
 }

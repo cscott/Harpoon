@@ -7,7 +7,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.12 1998-08-02 03:19:29 cananian Exp $
+ * @version $Id: ClassFile.java,v 1.13 1998-08-02 07:36:18 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 
@@ -305,7 +305,13 @@ public class ClassFile {
     }
     indent(pw, in+0, "}");
   }
-  private static void indent(java.io.PrintWriter pw, int indent, String s) {
+  /** Output string <code>s</code> to PrintWriter <code>pw</code> at
+   *  the given indentation level <code>indent</code>.
+   *  @param pw the output destination.
+   *  @param indent the indentation level to use.
+   *  @param s the string to write.
+   */
+  public static void indent(java.io.PrintWriter pw, int indent, String s) {
     for (int i=0; i<indent; i++)
       pw.print("  ");
     pw.println(s);
