@@ -20,7 +20,7 @@ import harpoon.Temp.TempMap;
  * and its motivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.1 2000-01-31 22:14:45 cananian Exp $
+ * @version $Id: Derivation.java,v 1.1.2.2 2000-02-01 07:43:35 cananian Exp $
  */
 public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 
@@ -38,7 +38,24 @@ public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
     public DList derivation(HCodeElement hce, Temp t)
 	throws TypeNotKnownException;
 
-    /** Structure of the derivation information. */
+    /** Structure of the derivation information.<p>
+     *  Given three <code>Temp</code>s <code>t1</code>, <code>t2</code>,
+     *  and <code>t3</code>, a derived pointer <code>d</code> whose value
+     *  can be described by the equation:<pre>
+     *   d = K + t1 - t2 + t3
+     *  </pre> for some integer K at every point during runtime can be
+     *  represented as the <code>DList</code><pre>
+     *   new DList(t1, true, new DList(t2, false, new DList(t3, true)))
+     *  </pre>.<p>
+     * <b>NOTE</b> that the temporaries named in the <code>DList</code>
+     * refer to the <i>reaching definitions</i> of those temporaries at
+     * the <i>definition point</i> of the variable with the derived
+     * type.  In SSI/SSA forms, this does not matter, as every variable
+     * has exactly one reaching definition, but in other forms <b>it
+     * is the responsibility of the implementor</b> to ensure that the
+     * base pointers are not overwritten while the derived value is
+     * live.
+     */
     public static class DList {
 	/** Base pointer. */
 	public final Temp base;
