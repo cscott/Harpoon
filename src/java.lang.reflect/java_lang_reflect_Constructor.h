@@ -23,6 +23,41 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Constructor_getModifiers
 JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_newInstance
   (JNIEnv *, jobject, jobjectArray);
 
+#if !defined(WITHOUT_HACKED_REFLECTION) /* this is our hacked implementation */
+/*
+ * Class:     java_lang_reflect_Constructor
+ * Method:    getDeclaringClass
+ * Signature: ()Ljava/lang/Class;
+ */
+JNIEXPORT jclass JNICALL Java_java_lang_reflect_Constructor_getDeclaringClass
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     java_lang_reflect_Constructor
+ * Method:    getName
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_java_lang_reflect_Constructor_getName
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     java_lang_reflect_Constructor
+ * Method:    getParameterTypes
+ * Signature: ()[Ljava/lang/Class;
+ */
+JNIEXPORT jobjectArray JNICALL Java_java_lang_reflect_Constructor_getParameterTypes
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     java_lang_reflect_Constructor
+ * Method:    getExceptionTypes
+ * Signature: ()[Ljava/lang/Class;
+ */
+JNIEXPORT jobjectArray JNICALL Java_java_lang_reflect_Constructor_getExceptionTypes
+  (JNIEnv *, jobject);
+
+#endif /* !WITHOUT_HACKED_REFLECTION */
+
 #ifdef __cplusplus
 }
 #endif

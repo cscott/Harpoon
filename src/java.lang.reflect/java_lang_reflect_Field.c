@@ -24,6 +24,48 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Field_get
 
 /*
  * Class:     java_lang_reflect_Field
+ * Method:    set
+ * Signature: (Ljava/lang/Object;Ljava/lang/Object;)V
+ */
+JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set
+  (JNIEnv *, jobject, jobject, jobject);
+#endif /* 0 */
+
+#if !defined(WITHOUT_HACKED_REFLECTION) /* this is our hacked implementation */
+/*
+ * Class:     java_lang_reflect_Field
+ * Method:    getDeclaringClass
+ * Signature: ()Ljava/lang/Class;
+ */
+JNIEXPORT jclass JNICALL Java_java_lang_reflect_Field_getDeclaringClass
+  (JNIEnv *env, jobject obj) {
+  assert(0);
+}
+
+/*
+ * Class:     java_lang_reflect_Field
+ * Method:    getName
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_java_lang_reflect_Field_getName
+  (JNIEnv *env, jobject obj) {
+  assert(0);
+}
+/*
+ * Class:     java_lang_reflect_Field
+ * Method:    getType
+ * Signature: ()Ljava/lang/Class;
+ */
+JNIEXPORT jclass JNICALL Java_java_lang_reflect_Field_getType
+  (JNIEnv *env, jobject obj) {
+  assert(0);
+}
+
+#else /* this is the original Sun header */
+
+#if 0
+/*
+ * Class:     java_lang_reflect_Field
  * Method:    getBoolean
  * Signature: (Ljava/lang/Object;)Z
  */
@@ -85,14 +127,6 @@ JNIEXPORT jfloat JNICALL Java_java_lang_reflect_Field_getFloat
  */
 JNIEXPORT jdouble JNICALL Java_java_lang_reflect_Field_getDouble
   (JNIEnv *, jobject, jobject);
-
-/*
- * Class:     java_lang_reflect_Field
- * Method:    set
- * Signature: (Ljava/lang/Object;Ljava/lang/Object;)V
- */
-JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set
-  (JNIEnv *, jobject, jobject, jobject);
 
 /*
  * Class:     java_lang_reflect_Field
@@ -158,3 +192,5 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setFloat
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setDouble
   (JNIEnv *, jobject, jobject, jdouble);
 #endif /* 0 */
+
+#endif /* WITHOUT_HACKED_REFLECTION */
