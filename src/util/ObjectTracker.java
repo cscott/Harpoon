@@ -11,6 +11,9 @@ package imagerec.util;
 public class ObjectTracker {
     
     ObjectInfoWrapper[] objectInfoWrappers;
+    private GarbageCollector gc;
+
+    private static final long timeToForget = 10000;
 
     public ObjectTracker() {
 	init();
@@ -18,6 +21,7 @@ public class ObjectTracker {
 
     private void init() {
 	objectInfoWrappers = new ObjectInfoWrapper[0];
+	gc = new GarbageCollector();
     }
 
     /**
@@ -86,7 +90,7 @@ public class ObjectTracker {
 	return;	
     }   
 
-    private ObjectInfoWrapper getObjectInfoWrapper(int uniqueID) {
+    private synchronized ObjectInfoWrapper getObjectInfoWrapper(int uniqueID) {
 	int index;
 	for (index = 0; index < objectInfoWrappers.length; index++) {
 	    if (objectInfoWrappers[index].objectInfo.getUniqueID() == 
@@ -112,7 +116,7 @@ public class ObjectTracker {
 	return oiw.interesting;
     }
 
-    public ObjectInfo getClosestObject(int x, int y,
+    public synchronized ObjectInfo getClosestObject(int x, int y,
 				       int width, int height) {
 	int size = objectInfoWrappers.length;
 	int xLoc = x + width/2;
@@ -149,6 +153,43 @@ public class ObjectTracker {
 	ObjectInfoWrapper(ObjectInfo info) {
 	    this.objectInfo = info;
 	    this.interesting = true;
+	}
+    }
+
+    private class GarbageCollector implements Runnable {
+	GarbageCollector() {
+	    Thread t = new Thread(this);
+	    t.start();
+	}
+	public void run() {
+	    boolean keepGoing = true;
+	    while (keepGoing) {
+		try {
+		    Thread.currentThread().sleep(2000);
+		}
+		catch (InterruptedException e) {
+		}
+		synchronized(this) {
+		    int size = objectInfoWrappers.length;
+		    boolean[] remove = new boolean[size];
+		    long currentTime = System.currentTimeMillis();
+		    for (int count = 0; count < size; count++) {
+			ObjectDataPoint odp = objectInfoWrappers[count].objectInfo.getLastDataPoint();
+			if (currentTime - odp.getTime() > timeToForget) {
+			    remove[count] = true;
+			}
+		    }
+		    //backwards so that when an object is removed,
+		    //remaining indexes don't need to change
+		    for(int count = size-1; count >= 0; count--) {
+			if (remove[count]) {
+			    int uniqueID = objectInfoWrappers[count].objectInfo.getUniqueID();
+			    System.out.println("ObjectTracker: Disposing of object #"+uniqueID);
+			    ObjectTracker.this.remObjectInfo(uniqueID);
+			}
+		    }
+		}
+	    }
 	}
     }
 }
