@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.72 2002-05-02 22:17:41 salcianu Exp $
+# $Id: GNUmakefile,v 1.73 2002-06-09 01:18:40 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -31,7 +31,8 @@ UNMUNGE=bin/unmunge
 FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
-JDKDOCLINK = http://java.sun.com/products/jdk/1.2/docs/api
+JDKDOCLINK = http://java.sun.com/j2se/1.4/docs/api
+#JDKDOCLINK = http://java.sun.com/products/jdk/1.2/docs/api
 #JDKDOCLINK = http://palmpilot.lcs.mit.edu/~pnkfelix/jdk-javadoc/java.sun.com/products/jdk/1.2/docs/api
 CVSWEBLINK = http://flexc.lcs.mit.edu/Harpoon/cvsweb.cgi
 
