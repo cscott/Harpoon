@@ -30,6 +30,8 @@ public class Timer extends Node {
 	this.announce = announce;
     }
 
+    
+
     /** Either stamp, or read out the latency of the processing of 
      *  an image by the pipeline.
      *
@@ -44,6 +46,8 @@ public class Timer extends Node {
 	    total += id.time = time-id.time;
 	    if (announce) {
 		System.out.println("Time (ms): "+id.time);
+		//line below added by Benji 
+		System.out.println("Avg (ms) : "+(int)(getLatency()*1000));
 	    }
 	}
 	super.process(id);
