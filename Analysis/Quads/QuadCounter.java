@@ -16,7 +16,7 @@ import harpoon.ClassFile.HMethod;
  * <code>hcf = new CachingCodeFactory(new QuadCounter(hcf));</code>
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: QuadCounter.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: QuadCounter.java,v 1.3 2002-08-14 20:50:11 wbeebee Exp $
  */
 
 public class QuadCounter implements HCodeFactory, java.io.Serializable {
@@ -38,7 +38,7 @@ public class QuadCounter implements HCodeFactory, java.io.Serializable {
     public HCode convert(HMethod m) {
 	HCode hc = parent.convert(m);
 	if (hc != null) {
-	    numQuads += hc.getElements().length;
+	    numQuads += hc.getElementsL().size();
 	}
 	return hc;
     }
