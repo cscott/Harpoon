@@ -40,10 +40,11 @@ always:
 
 # Tex rules. [have to add explicit dependencies on appropriate bibtex files.]
 %.dvi %.aux: %.tex
-	latex $(basename $<)
+	latex $*
 	if egrep -q '^[^%]*\\bibliography' $< ; then bibtex $(basename $<); fi
-	latex $(basename $<)
-	latex $(basename $<)
+	if egrep -q 'Rerun to get cross-r' $*.log; then latex $*; fi
+	if egrep -q 'Rerun to get cross-r' $*.log; then latex $*; fi
+
 # Make annotation-visible versions of bibtex files.
 %_.bib : %.bib
 	sed -e "s/^  note =/  Xnote =/" -e "s/^  annote =/  note =/" \
