@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.168 2001-10-15 17:55:27 kkz Exp $
+ * @version $Id: SAMain.java,v 1.1.2.169 2001-10-18 23:56:07 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -209,7 +209,10 @@ public class SAMain extends harpoon.IR.Registration {
 		break;
 	    }
 	}
-	
+	Util.assert(mainM.getDescriptor().equals("([Ljava/lang/String;)V"),
+		    "main does not have the proper signature");
+	Util.assert(Modifier.isStatic(mainM.getModifiers()),
+		    "main is not static");
 	Util.assert(mainM != null, "Class " + className + 
 		    " has no main method");
 
@@ -409,6 +412,15 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 
 	if (OPTIMIZE) {
+	    /*
+	    hcf = new harpoon.Analysis.Quads.DispatchTreeTransformation
+		(hcf, classHierarchy).codeFactory();
+	    */
+	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
+	    hcf = harpoon.IR.Quads.QuadSSA.codeFactory(hcf);
+	    hcf = new harpoon.Analysis.Quads.SmallMethodInliner
+		(hcf, classHierarchy);
 	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
 	    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
