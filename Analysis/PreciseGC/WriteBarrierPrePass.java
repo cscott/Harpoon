@@ -16,7 +16,6 @@ import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.LowQuad.PCALL;
 import harpoon.IR.LowQuad.PMCONST;
 import harpoon.IR.LowQuad.PSET;
-import harpoon.IR.Quads.ASET;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.FOOTER;
@@ -24,8 +23,8 @@ import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
-import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.THROW;
+import harpoon.IR.Quads.Code;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 
@@ -36,7 +35,7 @@ import harpoon.Temp.TempFactory;
  * a real implementation in <code>WriteBarrierPostPass</code>.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierPrePass.java,v 1.1.2.1 2001-08-21 01:08:15 kkz Exp $
+ * @version $Id: WriteBarrierPrePass.java,v 1.1.2.2 2001-08-30 23:01:40 kkz Exp $
  */
 public class WriteBarrierPrePass extends 
     harpoon.Analysis.Transformation.MethodMutator {
@@ -59,8 +58,7 @@ public class WriteBarrierPrePass extends
 	HEADER header = (HEADER) hc.getRootElement();
 	FOOTER footer = (FOOTER) header.footer();
 	LowQuadVisitor qv = new WriteBarrierVisitor
-	    ((LowQuadFactory)header.getFactory(), 
-	     (DerivationMap)hc.getDerivation(), JLT, dummyHM, footer);
+	    ((DerivationMap)hc.getDerivation(), JLT, dummyHM, footer);
 	// we put all elements in array to avoid screwing up the
 	// iterator as we mutate the quad graph in-place.
 	Quad[] allquads = (Quad[]) hc.getElements();
@@ -84,8 +82,8 @@ public class WriteBarrierPrePass extends
 	final HClass JLT;
 	final HMethod dummyHM;
 	FOOTER footer;
-	WriteBarrierVisitor(LowQuadFactory qf, DerivationMap dm, 
-			    HClass JLT, HMethod dummyHM, FOOTER footer) {
+	WriteBarrierVisitor(DerivationMap dm, HClass JLT, HMethod dummyHM, 
+			    FOOTER footer) {
 	    this.dm = dm;
 	    this.JLT = JLT;
 	    this.dummyHM = dummyHM;
