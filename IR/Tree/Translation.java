@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * this sort of conditional context-sensitive expression resolution.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translation.java,v 1.1.4.5 2000-03-26 06:29:10 jwhaley Exp $
+ * @version $Id: Translation.java,v 1.1.4.6 2000-06-23 14:50:48 cananian Exp $
  */
 public abstract class Translation {
     /** The <code>Translation.Exp</code> class represents an expression
@@ -50,6 +50,9 @@ public abstract class Translation {
 							Label iftrue, 
 							Label iffalse);
     }
+    /** The <code>Translation.Ex</code> class is a <code>Translation.Exp</code>
+     *  representing a value expression.  It can be evaluated as an
+     *  expression, a conditional, or a side-effects-only statement. */
     public static class Ex extends Exp {
 	final harpoon.IR.Tree.Exp exp;
 	public Ex(harpoon.IR.Tree.Exp exp) { this.exp = exp; }
@@ -64,6 +67,10 @@ public abstract class Translation {
 	    return new CJUMP(tf, exp, exp, iftrue, iffalse);
 	}
     }
+    /** The <code>Translation.Nx</code> class is a <code>Translation.Exp</code>
+     *  representing a statement.  It can only be evaluated for side-effects;
+     *  any attempt to evaluate it as a value expression or conditional
+     *  will throw an <code>Error</code>. */
     public static class Nx extends Exp {
 	final harpoon.IR.Tree.Stm stm;
 	public Nx(harpoon.IR.Tree.Stm stm) { this.stm = stm; }
@@ -76,6 +83,9 @@ public abstract class Translation {
 	    throw new Error("Nx cannot be converted to Cx");
 	}
     }
+    /** The <code>Translation.Cx</code> abstract class specifies how to
+     *  evaluate a conditional as an expression or as a side-effects-only
+     *  statement. */
     public static abstract class Cx extends Exp {
 	protected harpoon.IR.Tree.Exp unExImpl(TreeFactory tf) {
 	    Temp  Tr = new Temp(tf.tempFactory(), "cx");
