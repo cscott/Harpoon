@@ -5,8 +5,8 @@ package harpoon.Analysis.SizeOpt;
 
 import harpoon.Analysis.Counters.CounterFactory;
 import harpoon.Analysis.Transformation.MethodMutator;
-import harpoon.Backend.Analysis.ClassFieldMap;
-import harpoon.Backend.Maps.FieldMap;
+import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Generic.Runtime;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
@@ -27,43 +27,15 @@ import java.util.List;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SizeCounters.java,v 1.1.2.1 2001-07-10 21:26:10 cananian Exp $
+ * @version $Id: SizeCounters.java,v 1.1.2.2 2001-07-11 06:26:23 cananian Exp $
  */
 public class SizeCounters extends MethodMutator {
-    final FieldMap cfm;
+    final Runtime.TreeBuilder tb;
     
     /** Creates a <code>SizeCounters</code>. */
-    public SizeCounters(HCodeFactory parent) {
+    public SizeCounters(HCodeFactory parent, Frame frame) {
 	super(parent);
-	// lifted from Runtime1/TreeBuilder.  this is a hack!
-	final int WORD_SIZE = 4;
-	final int LONG_WORD_SIZE = 8;
-	final int POINTER_SIZE = 4;
-	this.cfm = new harpoon.Backend.Analysis.ClassFieldMap() {
-	    public int fieldSize(HField hf) {
-		HClass type = hf.getType();
-		return (!type.isPrimitive()) ? POINTER_SIZE :
-		    (type==HClass.Double||type==HClass.Long) ? LONG_WORD_SIZE :
-		    (type==HClass.Int||type==HClass.Float) ? WORD_SIZE :
-		    (type==HClass.Short||type==HClass.Char) ? 2 : 1;
-	    }
-	    public int fieldAlignment(HField hf) {
-		// every field is aligned to its size
-		return fieldSize(hf);
-	    }
-	};
-    }
-    // lifted from Runtime1/TreeBuilder.  would like to use actual
-    // runtime/treebuilder here, but there is something of a chicken-and-egg
-    // problem.
-    public int objectSize(HClass hc) {
-	List l = cfm.fieldList(hc);
-	if (l.size()==0) return 0;
-	HField lastfield = (HField) l.get(l.size()-1);
-	return cfm.fieldOffset(lastfield) + cfm.fieldSize(lastfield);
-    }
-    public int headerSize(HClass hc) { // hc is ignored
-	return 8;//OBJECT_HEADER_SIZE;
+	this.tb = frame.getRuntime().getTreeBuilder();
     }
 
     protected HCode mutateHCode(HCodeAndMaps input) {
@@ -93,7 +65,7 @@ public class SizeCounters extends MethodMutator {
 	public void visit(NEW q) {
 	    Edge e = q.prevEdge(0);
 	    e = CounterFactory.spliceIncrement(qf, e, "object_count");
-	    int size = headerSize(q.hclass())+objectSize(q.hclass());
+	    int size = tb.headerSize(q.hclass())+tb.objectSize(q.hclass());
 	    e = CounterFactory.spliceIncrement(qf, e, "object_size", size);
 	    e = CounterFactory.spliceIncrement(qf, e, "object_size_"+size);
 	}
