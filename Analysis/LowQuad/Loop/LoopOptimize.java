@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.17 1999-07-13 20:52:17 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.18 1999-08-09 22:19:57 duncan Exp $
  */
 public final class LoopOptimize {
     
@@ -342,7 +342,7 @@ public final class LoopOptimize {
 		newquad=new POPER(((LowQuadFactory)header.getFactory()),header,
 				  LQop.PADD,newtemp2, sources);
 		if (hcnew.derivation(header, initial)==null)
-		    hcnew.addType(newtemp2, hcnew.typeMap(hcnew,initial));
+		    hcnew.addType(newtemp2, hcnew.typeMap(null,initial));
 		else
 		    hcnew.addType(newtemp2, 
 				  new Error("Cant type derived pointer: "+newtemp2));
@@ -366,7 +366,7 @@ public final class LoopOptimize {
 		    sources[0]=term;
 		    newtemp=new Temp(initial.tempFactory(),initial.name());
 		    if (hcnew.derivation(header, term)==null)
-			hcnew.addType(newtemp, hcnew.typeMap(hcnew, term));
+			hcnew.addType(newtemp, hcnew.typeMap(null, term));
 		    else
 			hcnew.addType(newtemp, 
 				      new Error("Cant type derived pointer: "+newtemp));
@@ -423,7 +423,7 @@ public final class LoopOptimize {
 		Quad newquad=new POPER(((LowQuadFactory)header.getFactory()),header,
 				       LQop.PNEG,newtemp, sources);
 		if (hcnew.derivation(newquad, initial)==null)
-		    hcnew.addType(newtemp, hcnew.typeMap(hcnew, initial));
+		    hcnew.addType(newtemp, hcnew.typeMap(null, initial));
 		else
 		    hcnew.addType(newtemp, 
 				  new Error("Cant type derived pointer: "+newtemp));
@@ -481,7 +481,7 @@ public final class LoopOptimize {
 		sources[1]=initial;
 		Temp newtemp3=new Temp(initial.tempFactory(),initial.name());
 		if (hcnew.derivation(newquad, newtemp3)==null)
-		    hcnew.addType(newtemp3, hcnew.typeMap(hcnew,initial));
+		    hcnew.addType(newtemp3, hcnew.typeMap(null,initial));
 		else
 		    hcnew.addType(newtemp3,
 				  new Error("Cant type derived pointer: "+newtemp3));
@@ -505,7 +505,7 @@ public final class LoopOptimize {
 		    sources[0]=term;
 		    term=new Temp(initial.tempFactory(),initial.name());
 		    if (hcnew.derivation(header, term)==null)
-			hcnew.addType(term, hcnew.typeMap(hcnew, sources[0]));
+			hcnew.addType(term, hcnew.typeMap(null, sources[0]));
 		    else
 			hcnew.addType(term, 
 				      new Error("Cant type derived pointer: "+term));
@@ -647,7 +647,7 @@ public final class LoopOptimize {
 			sources[1]=initial;
 			Temp newtemp2=new Temp(initial.tempFactory(),initial.name());
 			newquad=new POPER(((LowQuadFactory)header.getFactory()),header,Qop.IADD,newtemp2, sources);
-			hcnew.addType(newtemp2, hcnew.typeMap(hcnew, initial));
+			hcnew.addType(newtemp2, hcnew.typeMap(null, initial));
 			addquad.insert(newquad);
 			initial=newtemp2;
 		    }
@@ -671,7 +671,7 @@ public final class LoopOptimize {
 			    newquad=new POPER(((LowQuadFactory)header.getFactory()), header, LQop.IMUL, newtemp, sources);
 			else
 			   newquad=new POPER(((LowQuadFactory)header.getFactory()), header, LQop.IADD, newtemp, sources); 
-			hcnew.addType(newtemp, hcnew.typeMap(hcnew, initial));
+			hcnew.addType(newtemp, hcnew.typeMap(null, initial));
 			addquad.insert(newquad);
 			initial=newtemp;
 		    }
@@ -699,7 +699,7 @@ public final class LoopOptimize {
 			    sources[0]=term;
 			    newtemp=new Temp(initial.tempFactory(),initial.name());
 			    if (hcnew.derivation(header, term)==null)
-				hcnew.addType(newtemp, hcnew.typeMap(hcnew, term));
+				hcnew.addType(newtemp, hcnew.typeMap(null, term));
 			    else
 				hcnew.addType(newtemp, 
 					      new Error("Cant type derived pointer: "+newtemp));
@@ -770,7 +770,7 @@ public final class LoopOptimize {
 			    newquad=new POPER(((LowQuadFactory)header.getFactory()), header, LQop.IMUL, newtemp, sources);
 			else
 			    newquad=new POPER(((LowQuadFactory)header.getFactory()), header, LQop.IADD, newtemp, sources); 
-			hcnew.addType(newtemp, hcnew.typeMap(hcnew, initial));
+			hcnew.addType(newtemp, hcnew.typeMap(null, initial));
 			addquad.insert(newquad);
 			initial=newtemp;
 		    }
