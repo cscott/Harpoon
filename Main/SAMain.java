@@ -38,6 +38,7 @@ import harpoon.Util.Util;
 
 import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
 import harpoon.Analysis.PointerAnalysis.InstrumentAllocs;
+import harpoon.Analysis.Realtime.Realtime;
 
 import gnu.getopt.Getopt;
 
@@ -74,7 +75,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.112 2000-11-12 03:07:10 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.113 2000-11-12 19:47:40 wbeebee Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -145,6 +146,26 @@ public class SAMain extends harpoon.IR.Registration {
 
     public static void do_it() {
 
+      // Realtime Java support (WSB)
+      if (Realtime.REALTIME_JAVA) {
+        System.out.println("Hi mom!");
+        linker.forName("java.lang.Object").getMutator().addDeclaredField("memoryArea", 
+                                                                         linker.forName("realtime.MemoryArea"));
+        HClass oldThread = linker.forName("java.lang.Thread");
+        HClass newThread = linker.forName("realtime.RealtimeThread");
+        System.out.println(oldThread.getName());
+        System.out.println(newThread.getName());
+        ((Relinker)linker).relink(oldThread, newThread);
+        //newThread.getMutator().setSuperclass(oldThread);
+        System.out.println(oldThread.getName());
+        System.out.println(newThread.getName());
+        System.out.println(newThread.getSuperclass().getName());
+        Util.assert(newThread!=newThread.getSuperclass(), 
+                    "RealtimeThread should not inherit from itself."); 
+        System.out.println("Bye mom!");
+      }   
+
+
 	if (SAMain.startset!=null)
 	    hcf=harpoon.IR.Quads.ThreadInliner.codeFactory(hcf,SAMain.startset, SAMain.joinset);
 	
@@ -170,7 +191,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    // before the runtime's been created?
 	    // Punting on this question for now, and using a hard-coded
 	    // static method. [CSA 27-Oct-1999]
-	    Set roots =new java.util.HashSet
+	    Set roots = new java.util.HashSet
 		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 	    // and our main method is a root, too...
 	    roots.add(mainM);
@@ -183,7 +204,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    // okay, we've got the roots, make a rough class hierarchy.
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
-	    // use the rough class hierarchy to devirtualize as many call sites
+	    
+       // use the rough class hierarchy to devirtualize as many call sites
 	    // as possible.
 
 	    hcf=new harpoon.Analysis.Quads.Nonvirtualize
@@ -593,12 +615,16 @@ public class SAMain extends harpoon.IR.Registration {
     
     protected static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:IDOPFHR::LlABhq1::C:r:");
+	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:IDOPFHR::LlABthq1::C:r:");
 	
 	int c;
 	String arg;
 	while((c = g.getopt()) != -1) {
 	    switch(c) {
+       case 't': // Realtime Java extensions (WSB)
+         linker = new Relinker(Loader.systemLinker);
+         Realtime.REALTIME_JAVA = true;
+         break;
 	    case 's':
 		arg=g.getOptarg();
 		try {
@@ -739,6 +765,9 @@ public class SAMain extends harpoon.IR.Registration {
 	
 	out.println("-D");
 	out.println("\tOutputs DATA information for <class>");
+
+   out.println("-t");
+   out.println("\tTurns on Realtime Java extensions.");
 
 	out.println("-O");
 	out.println("\tOutputs Original Tree IR for <class>");
