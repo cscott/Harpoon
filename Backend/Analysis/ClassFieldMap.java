@@ -23,11 +23,15 @@ import java.util.NoSuchElementException;
  * Results are cached for efficiency.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFieldMap.java,v 1.1.4.1 1999-10-12 20:04:46 cananian Exp $
+ * @version $Id: ClassFieldMap.java,v 1.1.4.2 1999-11-01 06:20:18 cananian Exp $
  */
 public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
     /** Creates a <code>ClassFieldMap</code>. */
     public ClassFieldMap() { /* no special initialization. */ }
+
+    /* Override this method if you need the fields aligned in any special
+     * way.  Default implementation does no alignment. */
+    public int fieldAlignment(HField hf) { return 1; }
 
     // caching version of method inherited from superclass.
     public int fieldOffset(HField hf) {
@@ -37,6 +41,11 @@ public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
 	    for (Iterator it=fieldList(hf.getDeclaringClass()).iterator();
 		 it.hasNext(); ) {
 		HField nexthf = (HField) it.next();
+		int align = fieldAlignment(nexthf);
+		Util.assert(align>0);
+		if ((offset % align) != 0)
+		    offset += align - (offset%align);
+		Util.assert((offset % align) == 0);
 		if (!cache.containsKey(nexthf))
 		    cache.put(nexthf, new Integer(offset));
 		offset+=fieldSize(nexthf);

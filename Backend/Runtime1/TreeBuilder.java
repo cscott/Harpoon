@@ -15,6 +15,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Exp;
+import harpoon.IR.Tree.ExpList;
 import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.Uop;
 import harpoon.IR.Tree.Translation;
@@ -55,7 +56,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.8 1999-11-01 03:55:51 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.9 1999-11-01 06:20:17 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -108,6 +109,10 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		    (type==HClass.Double||type==HClass.Long) ? LONG_WORD_SIZE :
 		    (type==HClass.Int||type==HClass.Float) ? WORD_SIZE :
 		    (type==HClass.Short||type==HClass.Char) ? 2 : 1;
+	    }
+	    public int fieldAlignment(HField hf) {
+		// every field is aligned to its size
+		return fieldSize(hf);
 	    }
 	};
 	// ----------    INITIALIZE SIZES AND OFFSETS    -----------
@@ -425,11 +430,39 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     }
 
     public Translation.Exp objectNew(TreeFactory tf, HCodeElement source,
-				     HClass classType) {
+				     HClass classType, boolean initialize) {
 	Util.assert(!classType.isArray());
 	Util.assert(!classType.isPrimitive());
-	Exp length = new CONST(tf, source, objectSize(classType));
-	return new Translation.Ex(objAlloc(tf, source, classType, length));
+	int length = objectSize(classType);
+	Exp object = objAlloc(tf, source, classType,
+			      new CONST(tf, source, length));
+	if (initialize) {
+	    // use memset to initialize all fields to 0.
+	    final Temp t = new Temp(tf.tempFactory());
+	    object = new ESEQ
+		(tf, source,
+		 new SEQ
+		 (tf, source,
+		  new MOVE
+		  (tf, source,
+		   new TEMP(tf, source, Type.POINTER, t),
+		   object),
+		  new NATIVECALL
+		  (tf, source, null,
+		   new NAME(tf, source, new Label("_memset")),
+		   new ExpList
+		   (new BINOP
+		    (tf, source, Type.POINTER, Bop.ADD,
+		     new TEMP(tf, source, Type.POINTER, t),
+		     new CONST(tf, source, OBJ_FZERO_OFF)),
+		    new ExpList
+		    (new CONST(tf, source, 0),
+		     new ExpList
+		     (new CONST(tf, source, length),
+		      null))))),
+		 new TEMP(tf, source, Type.POINTER, t));
+	}
+	return new Translation.Ex(object);
     }
 
     public Translation.Exp stringConst(TreeFactory tf, HCodeElement source,

@@ -28,7 +28,7 @@ import java.util.List;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.6 1999-10-25 22:18:03 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.7 1999-11-01 06:20:17 cananian Exp $
  */
 public abstract class Runtime {
     /** A <code>NameMap</code> valid for this
@@ -123,11 +123,12 @@ public abstract class Runtime {
 
 	/** Return a <code>Translation.Exp</code> which will create a
 	 *  object of the given type, with length specified by the
-	 *  given expression.  Fields of the object are
-	 *  uninitialized; however the internal object header is created
+	 *  given expression.  Fields of the object are only initialized
+	 *  if the <code>initialize</code> parameter is <code>true</code>;
+	 *  however the internal object header is always created
 	 *  and initialized. */
 	public abstract Exp objectNew(TreeFactory tf, HCodeElement source,
-				      HClass classType);
+				      HClass classType, boolean initialize);
 
 	/** Return a <code>Translation.Exp</code> which represents
 	 *  a reference to a string constant.  Note that invoking
