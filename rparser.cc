@@ -42,7 +42,7 @@ char* RParser::parserelation()
 
 WorkSet* RParser::parseworkset()
 {
-#ifdef DEBUGMESSAGES
+#ifdef DEBUGMANYMESSAGES
   printf("Parsing a new workset... \n");
 #endif
 

@@ -409,7 +409,7 @@ void model::parserangefile(char *rangefile)
 
     if (relation != NULL)
       {
-#ifdef DEBUGMESSAGES
+#ifdef DEBUGMANYMESSAGES
 	printf("Reading relation: %s\n", relation);
 	fflush(NULL);
 #endif
@@ -423,7 +423,7 @@ void model::parserangefile(char *rangefile)
 	  }
 
 	WorkSet *ws = rp->parseworkset();
-#ifdef DEBUGMESSAGES
+#ifdef DEBUGMANYMESSAGES
 	printf("The range for %s is:\n", relation);
 	void *obj = ws->firstelement();
 	while (obj)

@@ -21,11 +21,15 @@ struct BlockBitmap bb;
 int bbbptr,ibbptr,itbptr,rdiptr;
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv) 
+{
+
   for(int i=0;i<MAXFILES;i++)
     files[i].used=false;
+
+
   switch(argv[1][0]) {
-    
+
   case '0': 
     //creates a disk
     createdisk(); 
@@ -36,6 +40,7 @@ int main(int argc, char **argv) {
     /* mounts the disk, creates NUMFILES files, and writes "buf" in each file 
        for 90 times */ 
     struct block * ptr=mountdisk("disk");
+
     for(int i=0; i<NUMFILES; i++) {
       char filename[10];
       sprintf(filename,"fil%d",i);
@@ -245,6 +250,8 @@ struct block * chmountdisk(char *filename) {
 
 void chunmountdisk(struct block *vptr) {
   int val=munmap(vptr,LENGTH);
+  if (val!=0)
+    printf("Error!\n");
 }
 
 
@@ -263,9 +270,14 @@ struct block * mountdisk(char *filename) {
   struct InodeBitmap *ibb=(struct InodeBitmap *) &ptr[ibbptr];
   for(int i=0;i<(NUMINODES/8+1);i++)
     ib.inode[i]=ibb->inode[i];
+
   struct BlockBitmap *bbb=(struct BlockBitmap *) &ptr[bbbptr];
   for(int i=0;i<(NUMBLOCK/8+1);i++)
     bb.blocks[i]=bbb->blocks[i];
+
+  printf("Disk mounted successfully from the file %s\n", filename);
+  fflush(NULL);
+
   return ptr;
 }
 
@@ -280,6 +292,8 @@ void unmountdisk(struct block *vptr) {
   for(int i=0;i<(NUMBLOCK/8+1);i++)
     bbb->blocks[i]=bb.blocks[i];
   int val=munmap(vptr,LENGTH);
+  if (val!=0)
+    printf("Error!\n");
 }
 
 
@@ -450,6 +464,7 @@ int readfile(struct block *ptr, int fd, char *buf, int len) {
   return len;
 }
 
+
 int openfile(struct block *ptr, char *filename) {
   /* Locate fd */
   int fd=-1;
@@ -589,5 +604,7 @@ void createdisk() {
   int val=munmap(vptr,LENGTH);
   if (val!=0)
     printf("Error!\n");
+
+  printf("Disk created successfully!\n");
 }
 
