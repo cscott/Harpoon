@@ -3,9 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.StrongARM;
 
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
-import harpoon.ClassFile.HCode;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
@@ -15,6 +15,7 @@ import harpoon.IR.Assem.InstrCALL;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrDIRECTIVE;
 import harpoon.IR.Assem.InstrFactory;
+import harpoon.IR.Tree.TreeDerivation;
 import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.Uop;
 import harpoon.IR.Tree.Type;
@@ -22,7 +23,6 @@ import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Typed;
 import harpoon.IR.Tree.PreciselyTyped;
 import harpoon.IR.Tree.ExpList;
-import harpoon.Backend.Generic.Code;
 import harpoon.Util.Util;
 import harpoon.Temp.TempList;
 import harpoon.Temp.Temp;
@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.135 2000-02-18 01:18:37 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.136 2000-02-18 03:30:39 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -376,38 +376,51 @@ import java.util.Iterator;
 	return "sub sp, sp, #"+stackOffset+"\n\t"+asmString;
       }
     }
+
+    private List buildTypeHCs(INVOCATION ROOT, TreeDerivation td) {
+	Iterator iter = ExpList.iterator(ROOT.getArgs());
+	List l = new ArrayList();
+	while(iter.hasNext()) {
+	    l.add(td.typeMap( (harpoon.IR.Tree.Exp) iter.next() ));
+	}
+	return l;
+    } 
     /** Helper for setting up registers/memory with the strongARM standard
      *  calling convention.  Returns the stack offset necessary,
      *  along with a set of registers used by the parameters. */
-    private CallState emitCallPrologue(INVOCATION ROOT, TempList list) {
+    private CallState emitCallPrologue(INVOCATION ROOT, 
+				       TempList list,
+				       List typeHCs) {
 	/** OUTPUT ARGUMENT ASSIGNMENTS IN REVERSE ORDER **/
       List callUses = new ArrayList(6);
       int stackOffset = 0;
       // reverse list and count # of words required
       TempList reverse=null;
       int index=0;
+      int tind = 0;
       for(TempList tl=list; tl!=null; tl=tl.tail) {
 	  reverse=new TempList(tl.head, reverse);
 	  index+=(tl.head instanceof TwoWordTemp) ? 2 : 1;
+	  tind++;
       }
       // add all registers up to and including r3 to callUses list.
       for (int i=0; i<index && i<4; i++)
 	callUses.add(frame.getRegFileInfo().getRegister(i));
       index--; // so index points to 'register #' of last argument.
       for (TempList tl = reverse; tl != null; tl = tl.tail) { 
-	Temp temp = tl.head;
+	Temp temp = tl.head; 
 	if (temp instanceof TwoWordTemp) {
 	  // arg takes up two words
 	  switch(index) {
 	  case 0: throw new Error("Not enough space!");
 	  case 1: case 2: case 3: // put in registers 
 	    // not certain an emitMOVE is legal with the l/h modifiers
-	    emit( ROOT, "mov `d0, `s0h",
-		  frame.getRegFileInfo().getRegister(index--) ,
-		  temp );
-	    emit( ROOT, "mov `d0, `s0l",
-		  frame.getRegFileInfo().getRegister(index--),
-		  temp );
+	    Temp rfirst = frame.getRegFileInfo().getRegister(index--);
+	    declare(rfirst, HClass.Void);
+	    Temp rsecnd = frame.getRegFileInfo().getRegister(index--);
+	    declare(rsecnd, HClass.Void);
+	    emit( ROOT, "mov `d0, `s0h", rfirst, temp );
+	    emit( ROOT, "mov `d0, `s0l", rsecnd, temp );
 	    break;			     
 	  case 4: // spread between regs and stack
 	    stackOffset += 4; index--;
@@ -416,9 +429,9 @@ import java.util.Iterator;
 			       new Temp[]{ SP }, // SP *implicitly* modified
 			       new Temp[]{ temp, SP })); 
 	    // not certain an emitMOVE is legal with the l/h modifiers
-	    emit( ROOT, "mov `d0, `s0l",
-		  frame.getRegFileInfo().getRegister(index--),
-		  temp );
+	    Temp rthird = frame.getRegFileInfo().getRegister(index--);
+	    declare( rthird, HClass.Void );
+	    emit( ROOT, "mov `d0, `s0l", rthird, temp );
 	    break;
 	  default: // start putting args in memory
 	    stackOffset += 4; index--;
@@ -436,8 +449,9 @@ import java.util.Iterator;
 	} else {
 	  // arg is one word
 	  if (index < 4) {
-	    emitMOVE( ROOT, "mov `d0, `s0", 
-		      frame.getRegFileInfo().getRegister(index--), temp);
+	    Temp reg = frame.getRegFileInfo().getRegister(index--); 
+	    declare( reg, (HClass) typeHCs.get(tind--));
+	    emitMOVE( ROOT, "mov `d0, `s0", reg, temp);
 	  } else {
 	    stackOffset += 4; index--;
 	    emit(new InstrMEM(
@@ -470,7 +484,8 @@ import java.util.Iterator;
     }
     /** Finish up a CALL or NATIVECALL. */
     private void emitCallEpilogue(INVOCATION ROOT,
-				  Temp retval, CallState cs) {
+				  Temp retval, HClass type, 
+				  CallState cs) {
       // this will break if stackOffset > 255 (ie >63 args)
       Util.assert( cs.stackOffset < 256, 
 		   "Update the spec file to handle large SP offsets");
@@ -481,10 +496,13 @@ import java.util.Iterator;
       } else if (ROOT.getRetval().isDoubleWord()) {
 	retval = makeTwoWordTemp(retval);
 	// not certain an emitMOVE is legal with the l/h modifiers
+
+	declare(retval, type);
 	emit( ROOT, "mov `d0l, `s0", retval, r0 );
 	emit( ROOT, "mov `d0h, `s0", retval, r1 );
       } else {
 	retval = makeTemp(retval);
+	declare(retval, type);
 	emitMOVE( ROOT, "mov `d0, `s0", retval, r0 );
       }  
     }
@@ -667,7 +685,8 @@ BINOP<l>(ADD, j, k) = i %{
 
 BINOP<f>(ADD, j, k) = i %{
     /* call auxillary fp routines */
-
+    declare(r1, HClass.Float);
+    declare(r0, HClass.Float);
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     emit2( ROOT, "bl ___addsf3",
@@ -677,7 +696,10 @@ BINOP<f>(ADD, j, k) = i %{
 
 BINOP<d>(ADD, j, k) = i %{
     /* call auxillary fp routines */
-
+    declare( r3, HClass.Void );
+    declare( r2, HClass.Void );
+    declare( r1, HClass.Void );
+    declare( r0, HClass.Void );
         // not certain an emitMOVE is legal with the l/h modifiers
     emit( ROOT, "mov `d0, `s0l", r2, k );
     emit( ROOT, "mov `d0, `s0h", r3, k );
@@ -725,6 +747,8 @@ BINOP<l>(ADD, j, UNOP<l>(NEG, k)) = i %{
 }%
 BINOP<f>(ADD, j, UNOP<l>(NEG, k)) = i %{
     /* call auxillary fp routines */
+    declare( r1, HClass.Float );
+    declare( r0, HClass.Float );
 
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
@@ -734,6 +758,10 @@ BINOP<f>(ADD, j, UNOP<l>(NEG, k)) = i %{
 }%
 BINOP<d>(ADD, j, UNOP<l>(NEG, k)) = i %{
     /* call auxillary fp routines */
+    declare( r3, HClass.Void );
+    declare( r2, HClass.Void );
+    declare( r1, HClass.Void );
+    declare( r0, HClass.Void );
 
         // not certain an emitMOVE is legal with the l/h modifiers
     emit( ROOT, "mov `d0, `s0l", r2, k );
@@ -811,7 +839,8 @@ BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 }%
   
 BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
-
+    declare( r1, HClass.Float );
+    declare( r0, HClass.Float );
     /* NOTE: the ___eqsf2 routine seems to be broken, as it returns
      * the exact same values as ___nesf2.  The return value makes sense
      * for ___nesf2, but are reversed from what you'd expect for
@@ -829,6 +858,10 @@ BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 }%
 
 BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
+    declare( r3, HClass.Void );
+    declare( r2, HClass.Void );
+    declare( r1, HClass.Void );
+    declare( r0, HClass.Void );
 
     /* NOTE: the ___eqdf2 routine seems to be broken, as it returns
      * the exact same values as ___nedf2.  The return value makes sense
@@ -872,6 +905,8 @@ BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 }%
 
 BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
+    declare( r1, HClass.Float );
+    declare( r0, HClass.Float );
 
     emitMOVE( ROOT, "mov `d0, `s0", r0, j);
     emitMOVE( ROOT, "mov `d0, `s0", r1, k);
@@ -886,6 +921,10 @@ BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 }%
 
 BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
+    declare( r3, HClass.Void );
+    declare( r2, HClass.Void );
+    declare( r1, HClass.Void );
+    declare( r0, HClass.Void );
 
     emit ( ROOT, "mov `d0, `s0l", r0, j);
     emit ( ROOT, "mov `d0, `s0h", r1, j);
@@ -926,6 +965,9 @@ BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 }%
 
 BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
+    declare( r1, HClass.Float );
+    declare( r0, HClass.Float );
+
     /* result from ___ge is inverted. */
     emitMOVE( ROOT, "mov `d0, `s0", r0, j);
     emitMOVE( ROOT, "mov `d0, `s0", r1, k);
@@ -940,6 +982,11 @@ BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 }%
 
 BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
+    declare( r3, HClass.Void );
+    declare( r2, HClass.Void );
+    declare( r1, HClass.Void );
+    declare( r0, HClass.Void );
+
     /* result from ___ge is inverted. */
     emit ( ROOT, "mov `d0, `s0l", r0, j);
     emit ( ROOT, "mov `d0, `s0h", r1, j);
@@ -980,6 +1027,9 @@ BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 }%
 
 BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
+    declare( r1, HClass.Float );
+    declare( r0, HClass.Float );
+    
     /* result from ___le is inverted. */
     emitMOVE( ROOT, "mov `d0, `s0", r0, j);
     emitMOVE( ROOT, "mov `d0, `s0", r1, k);
@@ -994,6 +1044,11 @@ BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 }%
 
 BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
+    declare( r3, HClass.Void );
+    declare( r2, HClass.Void );
+    declare( r1, HClass.Void );
+    declare( r0, HClass.Void );
+
     /* result from ___le is inverted. */
     emit ( ROOT, "mov `d0, `s0l", r0, j);
     emit ( ROOT, "mov `d0, `s0h", r1, j);
@@ -1033,6 +1088,8 @@ BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 }%
 
 BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
+    declare( r1, HClass.Float );
+    declare( r0, HClass.Float );
 
     emitMOVE( ROOT, "mov `d0, `s0", r0, j);
     emitMOVE( ROOT, "mov `d0, `s0", r1, k);
@@ -1047,6 +1104,10 @@ BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 }%
 
 BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
+    declare( r3, HClass.Void );
+    declare( r2, HClass.Void );
+    declare( r1, HClass.Void );
+    declare( r0, HClass.Void );
 
     emit ( ROOT, "mov `d0, `s0l", r0, j);
     emit ( ROOT, "mov `d0, `s0h", r1, j);
@@ -1100,6 +1161,9 @@ BINOP<p,i>(shiftop, j, CONST(c)) = i
 }%
 
 BINOP<l>(SHL, j, k) = i %{
+    declare( r2, HClass.Int );
+    declare( r1, HClass.Void );
+    declare( r0, HClass.Void );
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
@@ -1111,6 +1175,9 @@ BINOP<l>(SHL, j, k) = i %{
 }%
 
 BINOP<l>(SHR, j, k) = i %{
+    declare( r2, HClass.Int );
+    declare( r1, HClass.Void );
+    declare( r0, HClass.Void );
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
@@ -1122,6 +1189,9 @@ BINOP<l>(SHR, j, k) = i %{
 }%
 
 BINOP<l>(USHR, j, k) = i %{
+    declare( r2, HClass.Int );
+    declare( r1, HClass.Void );
+    declare( r0, HClass.Void );
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
@@ -1248,6 +1318,10 @@ BINOP<p,i>(ADD, l, BINOP<p,i>(MUL, j, k)) = i %{
 
 BINOP<l>(MUL, j, k) = i %{
     // TODO: use the SMULL instruction instead	     
+    declare( r3, HClass.Void );
+    declare( r2, HClass.Void );
+    declare( r1, HClass.Void );
+    declare( r0, HClass.Void );
 
     emit( ROOT, "mov `d0, `s0l", r2, k );
     emit( ROOT, "mov `d0, `s0h", r3, k );
@@ -1260,6 +1334,8 @@ BINOP<l>(MUL, j, k) = i %{
 }%
 
 BINOP<f>(MUL, j, k) = i %{
+    declare( r1, HClass.Float );
+    declare( r0, HClass.Float );
 
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
@@ -1269,6 +1345,10 @@ BINOP<f>(MUL, j, k) = i %{
 }%
 
 BINOP<d>(MUL, j, k) = i %{
+    declare( r3, HClass.Void );
+    declare( r2, HClass.Void );
+    declare( r1, HClass.Void );
+    declare( r0, HClass.Void );
 
     emit( ROOT, "mov `d0, `s0l", r2, k );
     emit( ROOT, "mov `d0, `s0h", r3, k );
@@ -1281,6 +1361,9 @@ BINOP<d>(MUL, j, k) = i %{
 }%
 
 BINOP<p,i>(DIV, j, k) = i %{
+
+    declare( r1, code.getTreeDerivation().typeMap(ROOT.getRight()));
+    declare( r0, code.getTreeDerivation().typeMap(ROOT.getLeft()));
 
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
@@ -1323,6 +1406,9 @@ BINOP<d>(DIV, j, k) = i %{
 }%
 
 BINOP<p,i>(REM, j, k) = i %{
+    declare( r1, code.getTreeDerivation().typeMap(ROOT.getRight()));
+    declare( r0, code.getTreeDerivation().typeMap(ROOT.getLeft()));
+
     // XXX is this correct?  mod-vs-rem
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
@@ -1972,7 +2058,8 @@ THROW(val, handler) %{
 CALL(retval, retex, func, arglist, handler)
 %pred %( !ROOT.isTailCall )%
 %{
-    CallState cs = emitCallPrologue(ROOT, arglist);
+    CallState cs = emitCallPrologue(ROOT, arglist, 
+				    buildTypeHCs(ROOT, code.getTreeDerivation()));
     Label rlabel = new Label(), elabel = new Label();
     retex = makeTemp(retex);
     // next two instructions are *not* InstrMOVEs, as they have side-effects
@@ -1990,7 +2077,9 @@ CALL(retval, retex, func, arglist, handler)
     emitHandlerStub(ROOT, retex, handler);
     // normal return
     emitLABEL( ROOT, rlabel+":", rlabel);
-    emitCallEpilogue(ROOT, retval, cs);
+    emitCallEpilogue(ROOT, retval,
+		     ((ROOT.getRetval()==null)?null:
+		      code.getTreeDerivation().typeMap(ROOT.getRetval())), cs);
     // emit fixup table.
     emitCallFixup(ROOT, rlabel, elabel);
 }%
@@ -1998,7 +2087,8 @@ CALL(retval, retex, func, arglist, handler)
 CALL(retval, retex, NAME(funcLabel), arglist, handler)
 %pred %( !ROOT.isTailCall )%
 %{
-    CallState cs = emitCallPrologue(ROOT, arglist);
+    CallState cs = emitCallPrologue(ROOT, arglist, 
+				    buildTypeHCs(ROOT, code.getTreeDerivation()));
     Label rlabel = new Label(), elabel = new Label();
     retex = makeTemp(retex);
     // do the call.  bl has a 24-bit offset field, which should be plenty.
@@ -2014,13 +2104,16 @@ CALL(retval, retex, NAME(funcLabel), arglist, handler)
     emitHandlerStub(ROOT, retex, handler);
     // normal return
     emitLABEL( ROOT, rlabel+":", rlabel);
-    emitCallEpilogue(ROOT, retval, cs);
+    emitCallEpilogue(ROOT, retval,
+		     ((ROOT.getRetval()==null)?null:
+		      code.getTreeDerivation().typeMap(ROOT.getRetval())), cs);
     // emit fixup table.
     emitCallFixup(ROOT, rlabel, elabel);
 }%
   // slow version when we don't know exactly which method we're calling.
 NATIVECALL(retval, func, arglist) %{
-    CallState cs = emitCallPrologue(ROOT, arglist);
+    CallState cs = emitCallPrologue(ROOT, arglist, 
+				    buildTypeHCs(ROOT, code.getTreeDerivation()));
     // next two instructions are *not* InstrMOVEs, as they have side-effects
     emit( ROOT, "mov `d0, `s0", LR, PC );
     // call uses 'func' as `s0
@@ -2032,11 +2125,14 @@ NATIVECALL(retval, func, arglist) %{
 	   (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
 	   true, null);
     // clean up.
-    emitCallEpilogue(ROOT, retval, cs);
+    emitCallEpilogue(ROOT, retval, 
+		     ((ROOT.getRetval()==null)?null:
+		      code.getTreeDerivation().typeMap(ROOT.getRetval())), cs);
 }%
   // optimized version when we know exactly which method we're calling.
 NATIVECALL(retval, NAME(funcLabel), arglist) %{
-    CallState cs = emitCallPrologue(ROOT, arglist);
+    CallState cs = emitCallPrologue(ROOT, arglist, 
+				    buildTypeHCs(ROOT, code.getTreeDerivation()));
     // do the call.  bl has a 24-bit offset field, which should be plenty.
     // note that r0-r3, LR and IP are clobbered by the call.
     emitNativeCall( ROOT, cs.prependSPOffset("bl "+funcLabel +
@@ -2045,7 +2141,9 @@ NATIVECALL(retval, NAME(funcLabel), arglist) %{
 	  (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
           true, null );
     // clean up.
-    emitCallEpilogue(ROOT, retval, cs);
+    emitCallEpilogue(ROOT, retval, 
+		     ((ROOT.getRetval()==null)?null:
+		      code.getTreeDerivation().typeMap(ROOT.getRetval())),  cs);
 }%
 
 DATUM(CONST<i,f>(exp)) %{
