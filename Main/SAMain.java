@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.143 2001-04-25 15:08:32 wbeebee Exp $
+ * @version $Id: SAMain.java,v 1.1.2.144 2001-05-18 18:49:17 bdemsky Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -109,6 +109,7 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean INSTRUMENT_ALLOCS = false;
     static String IFILE=null;
     static InstrumentAllocs insta = null;
+    static boolean ROLE_INFER= false;
 
 
     static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
@@ -122,7 +123,6 @@ public class SAMain extends harpoon.IR.Registration {
     static int     BACKEND = STRONGARM_BACKEND;
     
     static Linker linker = null; // can specify on the command-line.
-
     static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);
         
@@ -166,13 +166,12 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
     public static void do_it() {
-
-      if (Realtime.REALTIME_JAVA) { 
-        Realtime.setupObject(linker); 
-      }
-
-      MetaCallGraph mcg=null;
-
+	if (Realtime.REALTIME_JAVA) { 
+	    Realtime.setupObject(linker); 
+	}
+	
+	MetaCallGraph mcg=null;
+	
 	if (SAMain.startset!=null)
 	    hcf = harpoon.IR.Quads.ThreadInliner.codeFactory
 		(hcf,SAMain.startset, SAMain.joinset);
@@ -258,6 +257,12 @@ public class SAMain extends harpoon.IR.Registration {
 		
 	    }
 
+	    if (ROLE_INFER) {
+		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+		hcf=(new harpoon.Analysis.RoleInference.RoleInference(hcf,linker)).codeFactory();
+	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    }
+	
 
 	    if (INSTRUMENT_ALLOCS) {
 		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
@@ -920,7 +925,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     protected static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:EfpIDOPFHR::LlABt:hq1::C:r:Tm");
+	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Tm");
 	
 	int c;
 	String arg;
@@ -980,6 +985,9 @@ public class SAMain extends harpoon.IR.Registration {
 		break;
 	    case 'l':
 		LOOPOPTIMIZE=true;
+		break;
+	    case 'e':
+		ROLE_INFER=true;
 		break;
 	    case 'D':
 		OUTPUT_INFO = PRINT_DATA = true;
@@ -1077,11 +1085,14 @@ public class SAMain extends harpoon.IR.Registration {
 
     static final String usage = 
 	"usage is: -c <class>"+
-	" [-DOPRLABIhq] [-o <assembly output directory>]";
+	" [-eDOPRLABIhq] [-o <assembly output directory>]";
 
     protected static void printHelp() {
 	out.println("-c <class> (required)");
 	out.println("\tCompile <class>");
+	out.println();
+
+	out.println("-e Rol(e) Inference");
 	out.println();
 
 	out.println("-o <dir> (optional)");
