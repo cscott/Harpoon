@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.87 2000-07-15 14:14:27 rinard Exp $
+ * @version $Id: SAMain.java,v 1.1.2.88 2000-07-16 21:05:46 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -75,7 +75,7 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean PRE_REG_ALLOC = false;
     static boolean REG_ALLOC = false;
     static boolean ABSTRACT_REG_ALLOC = false;
-    static boolean HACKED_REG_ALLOC = true;
+    static boolean HACKED_REG_ALLOC = false;
     static boolean LIVENESS_TEST = false;
     static boolean OUTPUT_INFO = false;
     static boolean QUIET = false;
