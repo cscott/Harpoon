@@ -69,7 +69,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.21 2000-10-11 18:22:17 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.22 2000-10-11 20:28:27 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -267,14 +267,23 @@ import java.util.Iterator;
     }
     /** Single dest Single source Emit Helper. */
     private Instr emit( HCodeElement root, String assem, 
-		       Temp dst, Temp src) {
-	return emit2(root, assem, new Temp[]{ dst }, new Temp[]{ src });
+                        Temp dst, Temp src) {
+       if( dst == null && src == null )
+          return emit2(root, assem, new Temp[]{ }, new Temp[]{ });
+       else if (dst == null)
+          return emit2(root, assem, new Temp[]{ }, new Temp[]{ src });
+       else if (src == null)
+          return emit2(root, assem, new Temp[]{ }, new Temp[]{ src });
+       return emit2(root, assem, new Temp[]{ dst }, new Temp[]{ src });
     }
     /** Single dest Two source Emit Helper. */
     private Instr emit( HCodeElement root, String assem, 
-		       Temp dst, Temp src1, Temp src2) {
-	return emit2(root, assem, new Temp[]{ dst },
-			new Temp[]{ src1, src2 });
+                        Temp dst, Temp src1, Temp src2) {
+       if(dst == null)
+          return emit2(root, assem, new Temp[]{ },
+                       new Temp[]{ src1, src2 });
+       return emit2(root, assem, new Temp[]{ dst },
+                    new Temp[]{ src1, src2 });
     }
     /** Single dest Null source Emit Helper. */
     private Instr emit( HCodeElement root, String assem, Temp dst) {
@@ -291,13 +300,21 @@ import java.util.Iterator;
        return emit(new InstrMOVE( instrFactory, root, assem+"         # move",
                                   new Temp[]{ dst },
 			    new Temp[]{ src }));
-    }			         
+    }
+    // This is called before a compound instr that defines a long temp 
+    // It is intended to fool the global register allocator into not
+// believing that the destination long and a source long can be
+// allocated to the same registers
+    private Instr emitRegAllocDef( HCodeElement root, Temp t) {
+       Util.assert(t != null, t);
+       return emit2( root, "# Reg alloc def", new Temp[]{t}, null);
+    }
 
     /* Branching instruction emit helper. 
        Instructions emitted using this *can* fall through.
     */
     private Instr emit( HCodeElement root, String assem,
-		       Temp[] dst, Temp[] src, Label[] targets ) {
+                        Temp[] dst, Temp[] src, Label[] targets ) {
         return emit(new Instr( instrFactory, root, assem,
 			dst, src, true, Arrays.asList(targets)));
     }
@@ -731,8 +748,7 @@ import java.util.Iterator;
           // float retval passed in float registers.
           declare(retval, type); declare ( SP, HClass.Void );
           //emitMOVE( ROOT, "move `d0, `s0", retval, v0 );
-          // XXX does not use SP, but null trips an assert in Instr.java:checkForNull
-          emit( ROOT, "swc1 $f0, 0($sp)", SP, SP);
+          emit( ROOT, "swc1 $f0, 0($sp)", null, SP);
           emit2( ROOT, "lw   `d0, 0(`s0)", 
                  new Temp[]{retval,SP},new Temp[]{SP});
           //emit2(ROOT, "lw `d0, 4($sp)",new Temp[]{retval,SP},new Temp[]{SP});
@@ -744,8 +760,7 @@ import java.util.Iterator;
           //emit( ROOT, "move `d0h, `s0", retval, v0 );
           // emit( ROOT, "move `d0l, `s0", retval, v1 );
           // sdc1 is mips2
-          // XXX does not use SP, but null trips an assert in Instr.java:checkForNull
-          emit( ROOT, "sdc1 $f0, 0($sp)", SP, SP);
+          emit( ROOT, "sdc1 $f0, 0($sp)", null, SP);
           emit(ROOT, "lw `d0l, 4($sp)", retval, SP);
           emit(ROOT, "lw `d0h, 0($sp)", retval, SP);
        } else if (ROOT.getRetval().isDoubleWord()) {
