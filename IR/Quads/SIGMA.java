@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * They have the form: <code>&lt;t1, t2, ..., tn&gt; = sigma(t0)</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SIGMA.java,v 1.1.2.8 1999-01-22 23:06:01 cananian Exp $
+ * @version $Id: SIGMA.java,v 1.1.2.9 1999-02-25 16:52:22 cananian Exp $
  */
 public abstract class SIGMA extends Quad {
     /** dst[i][j] is the j'th element of the tuple on the left-hand side
@@ -71,7 +71,8 @@ public abstract class SIGMA extends Quad {
      *  sigma function. */
     public int arity() { return next.length; }
 
-    /** Removes a given sigma function from the block. */
+    /** Removes a given sigma function from the block.
+     *  @deprecated Does not preserve immutability. */
     public void removeSigma(int nSigma) {
 	Util.assert(0<=nSigma && nSigma<numSigmas());
 	src = (Temp[])   Util.shrink(Temp.arrayFactory,       src, nSigma);
