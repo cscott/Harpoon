@@ -375,7 +375,10 @@ public class RealtimeThread extends Thread implements Schedulable {
      *  to pending.
      */
     public void interrupt() {
-	// TODO
+	// We need to throw the generic exception here
+	// There seems to be some ambiguity as to whether we create it or throw it.
+	// This method does not work properly yet
+	// AsynchronouslyInterruptedException.getGeneric().pending = true;
 
 	super.interrupt();
     }

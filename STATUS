@@ -45,7 +45,7 @@ ScopedMemory			yes		yes		wbeebee
 SizeEstimator			yes		yes		wbeebee
 SporadicParameters		yes		no		cata
 Timed				no		no		dmitru
-Timer				yes		no		dmitru
+Timer				no		no		dmitru
 VTMemory			yes		yes		wbeebee
 VTPhysicalMemory		no		no		dmitru
 WaitFreeDequeue			yes		no		wbeebee, harveyj

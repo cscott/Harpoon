@@ -1,5 +1,5 @@
-// AsynchronouslyInterruptedException.java, created by Dumitru Daniliuc
-// Copyright (C) 2003 Dumitru Daniliuc
+// AsynchronouslyInterruptedException.java, created by Harvey Jones, documented by Dumitru Daniliuc
+// Copyright (C) 2003 Harvey Jones, Dumitru Daniliuc
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
@@ -51,9 +51,12 @@ package javax.realtime;
  *  <code>AsynchronouslyInterruptedException</code> which applications
  *  can identify and thus limit propagation.
  */
-public class AsynchronouslyInterruptedException extends InterruptedException {
 
+public class AsynchronouslyInterruptedException extends InterruptedException {
     private boolean enabled = true;
+    public boolean pending = false;
+    private boolean doingInterruptible = false;
+    private static AsynchronouslyInterruptedException generic;
 
     /** Create an instance of <code>AsynchronouslyInterruptedException</code>. */
     public AsynchronouslyInterruptedException() {}
@@ -70,11 +73,13 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
      *          and invoked within a call to <code>doInterruptable()</code> or
      *          invoked outside of a call to <code>doInterruptable()</code>.
      */
+    // I think this is OK
     public boolean disable() {
-	enabled = false;
-	// TODO
-
-	return false;
+	if(!doingInterruptible || this.enabled){
+	    return false;
+	}
+	this.enabled = false;
+	return true;
     }
 
     /** Execute the <code>run()</code> method of the given <code>Interruptible</code>.
@@ -87,10 +92,21 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
      *  @return True if the method call completed normally. False if another call to
      *          <code>doInterruptible()</code> has not completed.
      */
+    // This might be OK
     public boolean doInterruptible(Interruptible logic) {
-	// TODO
-
-	return false;
+	if(doingInterruptible){
+	    return false;
+	}
+	doingInterruptible = true;
+	try{
+	    logic.run(this);
+	} catch(AsynchronouslyInterruptedException aie){ // Think this will work
+	    aie.happened(false);
+	    logic.interruptAction(aie);
+	    return false;
+	}
+	doingInterruptible = false;
+	return true;
     }
 
     /** Enable the throwing of this exception. This method is valid only within a call
@@ -102,9 +118,15 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
      *          and invoked within a call to <code>doInterruptible()</code> or invoked
      *          outside of a call to <code>doInterruptible()</code>.
      */
+    // Umm, sure, why not?
     public boolean enable() {
-	enabled = true;
-	// TODO
+	if(!doingInterruptible){
+	    return false;
+	}
+
+	if(!enabled){
+	    return enabled = true;
+	}
 
 	return false;
     }
@@ -117,10 +139,16 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
      *          if there is already a current <code>doInterruptible()</code>, or if
      *          <code>disable()</code> has been called.
      */
+    // Mostly unimplemented
     public boolean fire() {
-	// TODO
-
-	return false;
+	boolean thisWasFired = true; // How do we check this?!
+	if(!doingInterruptible){
+	    return false;
+	}
+	
+	// TODO: Hey, it's the hard stuff!
+	
+	return thisWasFired;
     }
 
     /** Gets the system generic <code>AsynchronouslyInterruptedException</code>,
@@ -129,9 +157,7 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
      *  @return The generic <code>AsynchronouslyInterruptedException</code>.
      */
     public static AsynchronouslyInterruptedException getGeneric() {
-	// TODO
-
-	return null;
+	return generic;
     }
 
     /** Used with an instance of this exception to see if the current
@@ -143,10 +169,24 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
      *  @return True if this is the current exception. False if this is not the
      *          current exception.
      */
+    // Implement this algorighm from the Dibble book/spec. Go with the spec where there's a conflict
     public boolean happened(boolean propagate) {
-	// TODO
-
-	return false;
+	boolean match = (this == generic); // TODO: Figure out what the hell their match() semantics are.
+	if(getGeneric() == null){
+	    return false;
+	}
+	if(match){
+	    pending = false;
+	    return propagate;  // Book says return false, spec says return propagate.
+	} else {
+	    if(propagate){
+		propagate();
+		return true;
+	    } else {
+		return true;
+	    }
+	}
+	
     }
 
     /** Query the enabled status of this exception.
@@ -159,6 +199,6 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
 
     /** Cause the pending exception to continue up the stack. */
     public static void propagate() {
-	// TODO
+	// TODO: Deep VM magic. Here there be dragons.
     }
 }

@@ -1,5 +1,5 @@
-// Timed.java, created by Dumitru Daniliuc
-// Copyright (C) 2003 Dumitru Daniliuc
+// Timed.java, created by Dumitru Daniliuc, Harvey Jones
+// Copyright (C) 2003 Dumitru Daniliuc, Harvey Jones
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
@@ -19,6 +19,7 @@ package javax.realtime;
  *  <p>
  *  Usage: <code>new Timed(T).doInterruptible(interruptible);</code>
  */
+// Note: This will hook in with the scheduler in order to prevent the need for polling
 public class Timed extends AsynchronouslyInterruptedException {
 
     HighResolutionTime timeout;
@@ -44,13 +45,13 @@ public class Timed extends AsynchronouslyInterruptedException {
 	    Clock.getRealtimeClock().getTime(at);
 	    if ((a_time.getMilliseconds() * 1000000 + a_time.getNanoseconds()) <
 		(at.getMilliseconds() * 1000000 + a_time.getNanoseconds())) {
-		// DO SOMETHING...
+		this.fire();
 	    }
 	}
 	else {   // time should be instance of RelativeTime
 	    RelativeTime r_time = (RelativeTime)time;
 	    if ((r_time.getMilliseconds() * 1000000 + r_time.getNanoseconds()) < 0) {
-		// DO SOMETHING...
+		this.fire();
 	    }
 	}
     }
@@ -62,8 +63,8 @@ public class Timed extends AsynchronouslyInterruptedException {
      *               null nothing happens.
      */
     public boolean doInterruptible(Interruptible logic) {
-	// TODO
-
+	// TODO: Do we just need to fall through to AIE's doInterruptible here?
+	super.doInterruptible(logic);
 	return false;
     }
 
