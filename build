@@ -1,6 +1,6 @@
  #!/bin/bash
 g++ -Wno-deprecated -g -O0 -c *.cc
-gcc -Wno-deprecated -g -O0 -c *.c
+g++ -Wno-deprecated -g -O0 -c *.c
 
 g++ -Wno-deprecated -O0 -g *.o -o main
 
