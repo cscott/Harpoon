@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: quads.tex,v 1.9 1998-09-09 15:41:17 cananian Exp $
+% $Id: quads.tex,v 1.10 1998-09-09 16:35:37 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn,twoside]{article}
 
@@ -9,7 +9,7 @@
 
 \author{C.~Scott~Ananian}
 \title{\Harpoon\ Project Compiler Intermediate Representation}
-\date{\today \\ $ $Revision: 1.9 $ $}
+\date{\today \\ $ $Revision: 1.10 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -17,6 +17,7 @@
 \renewcommand{\ttdefault}{pcr}
 
 \newcommand{\phifunction}{$\phi$-function}
+\newcommand{\bp}{\hspace{0pt}}
 
 \begin{document}
 \bibliographystyle{alpha}
@@ -185,7 +186,7 @@ bytecode \texttt{athrow} is translated to an IR \texttt{THROW}.}
 
 The IR described in these notes is defined in the Java package
 \texttt{harpoon.IR.QuadSSA}.  Source code and binaries are available
-at {\tt\small http://lm.lcs.mit.edu/\~{}cananian/Harpoon}.
+at {\tt\small http://\bp lm.lcs.mit.edu/\bp \~{}cananian/\bp Harpoon}.
 
 The \texttt{harpoon.IR.QuadSSA.Code}
 class provides a means to access the QuadSSA form of a given method;
@@ -426,5 +427,3 @@ exactly to the names of the constructor arguments.}
 %\end{figure*}
 
 \end{document}
-
-

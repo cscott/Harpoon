@@ -33,21 +33,28 @@ readnote.dvi: unread_.bib
 	fi
 
 # latex2html
-html: design.dvi bibnote.dvi
+html: design.dvi bibnote.dvi quads.dvi
 	$(RM) -r html ; mkdir html
 	latex2html -local_icons -dir html/design design
 	latex2html -local_icons -dir html/biblio bibnote
+	latex2html -local_icons -dir html/quads  quads
 	date '+%-d-%b-%Y at %r %Z.' > html/design/TIMESTAMP
 	date '+%-d-%b-%Y at %r %Z.' > html/biblio/TIMESTAMP
-html-pdf: html design.pdf bibnote.pdf
-	$(RM) html/design/design.pdf html/biblio/bibnote.pdf
+	date '+%-d-%b-%Y at %r %Z.' > html/quads/TIMESTAMP
+html-pdf: html design.pdf bibnote.pdf quads.pdf
+	$(RM) html/design/design.pdf \
+	      html/biblio/bibnote.pdf \
+              html/quads/quads.pdf
 	ln design.pdf html/design
 	ln bibnote.pdf html/biblio 
+	ln quads.pdf html/quads
 html-install: html-pdf
 	chmod a+r html/*/* ; chmod a+rx html/*
-	ssh $(HOST) /bin/rm -rf public_html/Projects/Harpoon/design \
-		public_html/Projects/Harpoon/biblio
-	cd html; scp -r design biblio \
+	ssh $(HOST) /bin/rm -rf \
+		public_html/Projects/Harpoon/design \
+		public_html/Projects/Harpoon/biblio \
+		public_html/Projects/Harpoon/quads
+	cd html; scp -r design biblio quads \
 		$(HOST):public_html/Projects/Harpoon
 
 clean:
