@@ -192,6 +192,11 @@ static void * thread_startup_routine(void *closure) {
   /* This thread is alive! */
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_TRUE;
 #ifdef WITH_REALTIME_THREADS
+  /* this looks bogus, but pthread_mutex_lock() actually calls
+   * getCurrentThread, and thus needs *something* in the thread slot
+   * here.  We'll wrap the 'real' value for this slot in a second,
+   * but note that the localref for cls->thread can't be released
+   * until we signal on parampass_cond below. */
   ((struct FNI_Thread_State *)(env))->thread = cls->thread;
 #endif
   /* make sure creating thread is in cond_wait before proceeding. */
@@ -282,6 +287,12 @@ void fni_thread_start(JNIEnv *env, jobject _this) {
     { _this, PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
   int status;
 #ifdef WITH_INIT_CHECK
+  /* this is a hack to work around the fact that we've erroneously
+   * said that Method.invoke() (and friends) are init-safe.  In
+   * fact, they should invoke the $$initcheck versions of methods
+   * when called from init contexts.  This will ensure that
+   * reflected calls to Thread.start() will end up in the right
+   * place. */
   if (!initDone) {
     fni_thread_start_initcheck(env, _this);
     return;
