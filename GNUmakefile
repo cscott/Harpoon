@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.64.2.3 2002-03-04 20:43:21 cananian Exp $
+# $Id: GNUmakefile,v 1.64.2.4 2002-03-21 11:27:45 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -240,7 +240,8 @@ VERSIONS: $(TARSOURCE) # collect all the RCS version ID tags.
 
 ChangeLog: needs-cvs $(TARSOURCE) # not strictly accurate anymore.
 	-$(RM) ChangeLog
-	rcs2log > ChangeLog # used to include TARSOURCE on cmdline
+# used to include TARSOURCE on rcs2log cmdline
+	rcs2log | sed -e 's:/[^,]*/CVSROOT/Code/::g' > ChangeLog
 
 cvs-add: needs-cvs
 	-for dir in $(filter-out Test,$(ALLPKGS)); do \
