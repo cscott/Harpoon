@@ -49,3 +49,4 @@ RoleInference	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.ed
 Runtime	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
 SupportNP	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
 Tests	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
+BuildScripts	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@sinfor.lcs.mit.edu %s
