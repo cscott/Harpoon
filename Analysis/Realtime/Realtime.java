@@ -31,7 +31,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.1.2.33 2001-08-14 00:48:31 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.1.2.34 2001-08-15 21:15:08 wbeebee Exp $
  */
 
 public class Realtime {
@@ -282,8 +282,8 @@ public class Realtime {
 		  .getMethod("refInstance", new HClass[] {}));
 	roots.add(linker.forName("javax.realtime.MemAreaStack"));
 	roots.add(linker.forName("javax.realtime.MemAreaStack")
-		  .getConstructor(new HClass[] {
-		      linker.forName("javax.realtime.MemoryArea"),
+		  .getConstructor(new HClass[] { 
+		      memoryArea, memoryArea,
 		      linker.forName("javax.realtime.MemAreaStack")}));
 	if(REALTIME_THREADS)
 	    {
