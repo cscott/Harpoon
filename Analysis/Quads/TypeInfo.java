@@ -45,10 +45,10 @@ import java.util.Map;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.8 2000-01-17 11:10:13 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.9 2000-08-24 23:43:40 cananian Exp $
  */
 
-public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
+public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
     UseDefMap usedef;
     boolean verifierBehavior;
 
@@ -58,9 +58,7 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
      *  <code>HCode</code>.
      */
     public TypeInfo(harpoon.IR.Quads.QuadSSI hc, UseDefMap usedef) { 
-	this.usedef = usedef; 
-	this.verifierBehavior=false;
-	analyze(hc);
+	this(hc, usedef, false);
     }
 
     /** Creates a <code>TypeInfo</code> analyzer for the specified
@@ -84,8 +82,18 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
      */
     public TypeInfo(harpoon.IR.Quads.QuadSSI hc) { this(hc, new UseDef()); }
     
-    public HClass typeMap(HCodeElement hce, Temp t) { 
-	return (HClass) map.get(t); 
+    public HClass typeMap(HCodeElement hce, Temp t)
+	throws TypeNotKnownException { return exactType(hce, t).type; }
+    public boolean isExactType(HCodeElement hce, Temp t)
+	throws TypeNotKnownException { return exactType(hce, t).isExact; }
+    private ExactType exactType(HCodeElement hce, Temp t)
+	throws TypeNotKnownException {
+	if (hce==null || t==null) throw new NullPointerException();
+	if (!hasType(hce, t)) throw new TypeNotKnownException(hce, t);
+	return (ExactType) map.get(t);
+    }
+    private boolean hasType(HCodeElement hce, Temp t) {
+	return map.containsKey(t);
     }
 
     private void analyze(harpoon.IR.Quads.QuadSSI hc) {
@@ -140,53 +148,57 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	public void visit(Quad q) { modified = false; }
 
 	public void visit(AGET q) {
+	    if (!hasType(q, q.objectref())) { modified=false; return; }
 	    HClass ty = typeMap(q, q.objectref());
-	    if ((ty==null)||(ty==HClass.Void)) {modified=false; return; }
+	    if (ty==HClass.Void) { modified=false; return; }
 	    if (!verifierBehavior) {
 		Util.assert(ty.isArray());
-		modified = merge(q, q.dst(), toInternal(ty.getComponentType()));
+		modified = merge(q, q.dst(),
+				 inexact(toInternal(ty.getComponentType())));
 	    }
 	    else
-		if (ty.isArray())
-		    modified = merge(q, q.dst(), toInternal(ty.getComponentType()));
-		else
-		    modified = merge(q, q.dst(), toInternal(hclassObj));
-	    return;
+		modified = merge(q, q.dst(),
+				 inexact(toInternal(ty.isArray() ?
+						    ty.getComponentType() :
+						    hclassObj)));
 	}
 	public void visit(ALENGTH q) {
-	    modified = merge(q, q.dst(), HClass.Int);
+	    modified = merge(q, q.dst(), exact(HClass.Int));
 	}
 	public void visit(ANEW q) {
-	    modified = merge(q, q.dst(), q.hclass());
+	    modified = merge(q, q.dst(), exact(q.hclass()));
 	}
 	public void visit(CALL q) {
 	    boolean r1 = (q.retval()==null) ? false:
-		merge(q, q.retval(), toInternal(q.method().getReturnType()));
+		merge(q, q.retval(),
+		      inexact(toInternal(q.method().getReturnType())));
 	    // XXX specify class of exception better.
-	    boolean r2 = merge(q,q.retex(),linker.forClass(Throwable.class));
+	    boolean r2 = merge(q,q.retex(),
+			       inexact(linker.forName("java.lang.Throwable")));
 	    modified = r1 || r2;
 
 	    // deal with SIGMA functions in CALL
 	    for (int i=0; i<q.numSigmas(); i++) {
 		if (q.src(i)==null) continue;
-		HClass ty = typeMap(q, q.src(i));
-		if (ty==null) continue;
+		if (!hasType(q, q.src(i))) continue;
+		ExactType ty = exactType(q, q.src(i));
 		for (int j=0; j<q.arity(); j++)
 		    if (merge(q, q.dst(i,j), ty))
 			modified = true;
 	    }
 	}
 	public void visit(COMPONENTOF q) {
-	    modified = merge(q, q.dst(), toInternal(HClass.Boolean));
+	    modified = merge(q, q.dst(), exact(toInternal(HClass.Boolean)));
 	}
 	public void visit(CONST q) {
-	    modified = merge(q, q.dst(), toInternal(q.type()));
+	    modified = merge(q, q.dst(), exact(toInternal(q.type())));
 	}
 	public void visit(GET q) {
-	    modified = merge(q, q.dst(), toInternal(q.field().getType()));
+	    modified = merge(q, q.dst(),
+			     inexact(toInternal(q.field().getType())));
 	}
 	public void visit(INSTANCEOF q) {
-	    modified = merge(q, q.dst(), toInternal(HClass.Boolean));
+	    modified = merge(q, q.dst(), exact(toInternal(HClass.Boolean)));
 	}
 	public void visit(METHOD q) {
 	    boolean r = false;
@@ -194,31 +206,29 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	    HClass[] pt = m.getParameterTypes();
 	    int offset = m.isStatic()?0:1;
 	    for (int i=offset; i<q.paramsLength(); i++)
-		if (merge(q, q.params(i), toInternal(pt[i-offset]))) 
+		if (merge(q, q.params(i), inexact(toInternal(pt[i-offset])))) 
 		    r = true;
 	    if (!m.isStatic())
-		r = merge(q, q.params(0), m.getDeclaringClass()) || r;
+		r = merge(q, q.params(0), inexact(m.getDeclaringClass())) || r;
 	    modified = r;
 	}
 	public void visit(MOVE q) {
-	    HClass ty = typeMap(q, q.src());
-	    if (ty==null) { modified = false; return; }
-	    modified = merge(q, q.dst(), ty);
+	    if (!hasType(q, q.src())) { modified = false; return; }
+	    modified = merge(q, q.dst(), exactType(q, q.src()));
 	}
 	public void visit(NEW q) {
-	    modified = merge(q, q.dst(), q.hclass());
+	    modified = merge(q, q.dst(), exact(q.hclass()));
 	}
 	public void visit(OPER q) {
-	    modified = merge(q, q.dst(), toInternal(q.evalType()));
+	    modified = merge(q, q.dst(), exact(toInternal(q.evalType())));
 	}
 	public void visit(PHI q) {
 	    boolean r = false;
 	    for (int i=0; i<q.numPhis(); i++)
 		for (int j=0; j<q.arity(); j++) {
 		    if (q.src(i,j)==null) continue;
-		    HClass ty = typeMap(q, q.src(i,j));
-		    if (ty==null) continue;
-		    if (merge(q, q.dst(i), ty))
+		    if (!hasType(q, q.src(i,j))) continue;
+		    if (merge(q, q.dst(i), exactType(q, q.src(i,j))))
 			r = true;
 		}
 	    modified = r;
@@ -227,8 +237,8 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	    boolean r = false;
 	    for (int i=0; i<q.numSigmas(); i++) {
 		if (q.src(i)==null) continue;
-		HClass ty = typeMap(q, q.src(i));
-		if (ty==null) continue;
+		if (!hasType(q, q.src(i))) continue;
+		ExactType ty = exactType(q, q.src(i));
 		for (int j=0; j<q.arity(); j++)
 		    if (merge(q, q.dst(i,j), ty))
 			r = true;
@@ -249,31 +259,31 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	    boolean r = false;
 	    for (int i=0; i<q.numSigmas(); i++) {
 		if (q.src(i)==null) continue;
-		HClass ty = typeMap(q, q.src(i));
-		if (ty==null) continue;
+		if (!hasType(q, q.src(i))) continue;
+		ExactType ty = exactType(q, q.src(i));
 		for (int j=0; j<q.arity(); j++) {
 		    if (j==1) { // sometimes we gain info on true side of cjmp
 			if (idef != null && idef.src() == q.src(i)) {
 			    // test from INSTANCEOF.  we know class if true.
-			    r = merge(q, q.dst(i,j), idef.hclass()) || r;
+			    r= merge(q,q.dst(i,j),inexact(idef.hclass())) || r;
 			    continue;
 			}
 			if (odef != null && odef.opcode()==Qop.ACMPEQ) {
-			    // check to be sure we've got enough info:
+			  try { // check to be sure we've got enough info:
 			    HClass left = typeMap(odef, odef.operands(0));
 			    HClass right= typeMap(odef, odef.operands(1));
-			    if (left==null||right==null) continue;
 			    // ACMPEQ.  Types are identical if true.
 			    if (odef.operands(0) == q.src(i) &&
 				right == HClass.Void) {
-				r = merge(q, q.dst(i,j), right) || r;
+				r = merge(q, q.dst(i,j), exact(right)) || r;
 				continue;
 			    }
 			    if (odef.operands(1) == q.src(i) &&
 				left == HClass.Void) {
-				r = merge(q, q.dst(i,j), left) || r;
+				r = merge(q, q.dst(i,j), exact(left)) || r;
 				continue;
 			    }
+			  } catch (TypeNotKnownException tnke) { continue; }
 			}
 		    }
 		    // fall back
@@ -290,22 +300,25 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	    return HClass.Int;
 	return c;
     }
+    /* utility */
+    ExactType exact(HClass c) { return new ExactType(c, true); }
+    ExactType inexact(HClass c) { return new ExactType(c, false); }
 
-    boolean merge(HCodeElement hce, Temp t, HClass newType) {
-     	HClass oldType = typeMap(hce, t);
-	if (oldType==null) { map.put(t, newType); return true; }
-	if (oldType==newType) return false;
+    boolean merge(HCodeElement hce, Temp t, ExactType newType) {
+	if (!hasType(hce, t)) { map.put(t, newType); return true; }
+     	ExactType oldType = (ExactType) map.get(t);
+	if (oldType.equals(newType)) return false;
 	// special case 'Void' HClass, which is used for null constants.
-	if (oldType==HClass.Void && newType != HClass.Void) {
+	if (oldType.type==HClass.Void && newType.type != HClass.Void) {
 	    map.put(t, newType); return true;
-	} else if (newType == HClass.Void)
+	} else if (newType.type == HClass.Void)
 	    return false;
 	
 	// handle object types (possibly arrays)
-	HClass merged = HClassUtil.commonParent(oldType, newType);
+	HClass merged = HClassUtil.commonParent(oldType.type, newType.type);
 	// if the merged value is different from the old value, update...
-	if (merged==oldType) return false;
-	map.put(t, merged);
+	if (merged==oldType.type) return false;
+	map.put(t, new ExactType(merged, false/* merged type is not exact*/));
 	return true;
     }
 }
