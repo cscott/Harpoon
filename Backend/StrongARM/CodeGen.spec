@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.162 2000-09-11 21:33:30 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.163 2000-10-05 01:11:14 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -291,6 +291,19 @@ import java.util.Iterator;
 	case Bop.CMPGE: return "ge";
 	case Bop.CMPLE: return "le";
 	case Bop.CMPLT: return "lt";
+	default: throw new Error("Illegal compare operation");
+	}
+    }
+    // variants for unsigned compares, which we need for the low word of
+    // long integer comparisons.
+    private String cmpOp2StrUNSIGNED(int op) {
+	switch (op) {
+	case Bop.CMPEQ: return "eq";
+	case Bop.CMPNE: return "ne";
+	case Bop.CMPGT: return "hi";
+	case Bop.CMPGE: return "hs";
+	case Bop.CMPLE: return "ls";
+	case Bop.CMPLT: return "lo";
 	default: throw new Error("Illegal compare operation");
 	}
     }
@@ -912,16 +925,44 @@ BINOP(cmpop, j, k) = i
 		"mov"+cmpOp2Str(Bop.invert(cmpop))+" `d0, #0", i, j, k );
 }%
 
+    /* efficient four-instruction (in)equality test */
 BINOP(cmpop, j, k) = i
-%pred %( ROOT.operandType()==Type.LONG && isCmpOp(cmpop) )%
+%pred %( ROOT.operandType()==Type.LONG && isCmpOp(cmpop) &&
+	 (cmpop == Bop.CMPEQ || cmpop == Bop.CMPNE) )%
 %{
+    emit( ROOT, "cmp `s0h, `s1h\n"+
+		"cmpeq `s0l, `s1l\n"+
+		"mov `d0, #0\n"+
+		"mov"+cmpOp2Str(cmpop)+" `d0, #1", i, j, k);
+}%
+    /* less efficient six-instruction comparison: doesn't work for EQ/NE */
+BINOP(cmpop, j, k) = i
+%pred %( ROOT.operandType()==Type.LONG && isCmpOp(cmpop) &&
+	 (cmpop != Bop.CMPEQ && cmpop != Bop.CMPNE) )%
+%{
+    //ARGH: EVIL! We'd like to do conditional moves, but the first
+    //comparison should be *signed* and the second should be
+    //*unsigned*.  Felix and I can't figure out how to do this
+    // appropriately using only conditional moves, sigh. So we jump.
+
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit( ROOT, "cmp `s0h, `s1h\n"+
-		"cmpeq `s0l, `s1l\n"+
-		"mov"+cmpOp2Str(cmpop)+" `d0, #1\n"+
-		"mov"+cmpOp2Str(Bop.invert(cmpop))+" `d0, #0", i, j, k );
+
+    int cmpopNE = cmpop; // strip the 'equality' test for the high word
+    if (cmpop==Bop.CMPGE) cmpopNE=Bop.CMPGT;
+    if (cmpop==Bop.CMPLE) cmpopNE=Bop.CMPLT;
+    emit( ROOT, "mov `d0, #0\n"+
+	        "cmp `s0h, `s1h\n"+
+		"mov"+cmpOp2Str(cmpopNE)+" `d0, #1\n"+
+                "bne 1f\n"+
+	        "cmp `s0l, `s1l\n"+
+	        "mov"+cmpOp2StrUNSIGNED(cmpop)+" `d0, #1\n"+
+	        "1:", i, j, k);
+    // dummy use of `s0 and `s1 following the comparison to keep them live
+    // (otherwise the regalloc could allocate d0 over part of s0 or s1)
+    emit(new Instr( instrFactory, ROOT, "@ dummy use of `s0h `s0l `s1h `s1l",
+		    null, new Temp[] { j, k }));
 }%
   
 BINOP(cmpop, j, k) = i
