@@ -93,6 +93,7 @@ void print_statistics(void) {
 #ifdef WITH_MEMORYSTATISTICS
   printf("Malloc Memory usage: %ld\n", memorystat);
   printf("Peak Total Memory usage: %ld\n", peakusage);
+  printf("Peak Actual Memory usage: %ld\n", peakusagea);
   printf("Heap Memory usage: %ld\n", GC_get_heap_size());
 #endif
   fflush(stdout);
