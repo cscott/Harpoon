@@ -24,7 +24,7 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Run.java,v 1.2 2002-02-25 21:06:10 cananian Exp $
+ * @version $Id: Run.java,v 1.3 2003-07-10 02:01:38 cananian Exp $
  */
 public abstract class Run extends harpoon.IR.Registration {
     public static void main(String args[]) throws IOException {
@@ -39,7 +39,7 @@ public abstract class Run extends harpoon.IR.Registration {
 	for (; i < args.length ; i++) {
 	    if (args[i].startsWith("-pass")) {
 		if (++i < args.length)
-		    hf = Options.cfFromString(args[i], hf);
+		    hf = Options.cfFromString(args[i], hf, linker);
 		else throw new Error("-pass option needs codename");
 	    } else if (args[i].startsWith("-prof")) {
 		String filename = "./java.prof";

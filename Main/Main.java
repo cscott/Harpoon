@@ -19,7 +19,7 @@ import java.io.PrintWriter;
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.9 2002-02-25 21:06:05 cananian Exp $
+ * @version $Id: Main.java,v 1.10 2003-07-10 02:01:38 cananian Exp $
  */
 public abstract class Main extends harpoon.IR.Registration {
 
@@ -38,7 +38,7 @@ public abstract class Main extends harpoon.IR.Registration {
 	    if (args[n].startsWith("-pass")) {
 		if (++n >= args.length)
 		    throw new Error("-pass option needs codename");
-		hcf = Options.cfFromString(args[n], hcf);
+		hcf = Options.cfFromString(args[n], hcf, linker);
 	    } else if (args[n].startsWith("-stat")) {
 		String filename = "./phisig.data";
 		if (args[n].startsWith("-stat:"))

@@ -32,7 +32,7 @@ import harpoon.Util.Collections.WorkSet;
  * <code>JMain</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JMain.java,v 1.4 2003-03-28 20:20:19 salcianu Exp $
+ * @version $Id: JMain.java,v 1.5 2003-07-10 02:01:38 cananian Exp $
  */
 public abstract class JMain extends harpoon.IR.Registration {
 
@@ -55,7 +55,7 @@ public abstract class JMain extends harpoon.IR.Registration {
 	    if (args[n].startsWith("-pass")) {
 		if (++n >= args.length)
 		    throw new Error("-pass option needs codename");
-		hcf = Options.cfFromString(args[n], hcf);
+		hcf = Options.cfFromString(args[n], hcf, linker);
 	    } else if (args[n].startsWith("-stat")) {
 		String filename = "./phisig.data";
 		if (args[n].startsWith("-stat:"))

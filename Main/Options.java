@@ -6,6 +6,7 @@ package harpoon.Main;
 import harpoon.Backend.Backend;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -15,7 +16,7 @@ import java.util.HashMap;
  * environment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Options.java,v 1.7 2003-05-31 13:58:47 wbeebee Exp $
+ * @version $Id: Options.java,v 1.8 2003-07-10 02:01:38 cananian Exp $
  */
 public class Options {
     /** Stream for writing statistics. */
@@ -24,7 +25,8 @@ public class Options {
     public static java.io.PrintWriter profWriter = null;
 
     /** Make a code factory to implement a pass, given a string name. */
-    public static HCodeFactory cfFromString(String name, HCodeFactory hcf) {
+    public static HCodeFactory cfFromString(String name, HCodeFactory hcf,
+					    Linker linker) {
 	name = name.intern();
 	if (name=="none")
 	    return hcf;
@@ -50,6 +52,9 @@ public class Options {
 	    return new harpoon.Analysis.Quads.TypeSwitchRemover(hcf).codeFactory();
 	if (name=="new-mover")
 	    return new harpoon.Analysis.Quads.NewMover(hcf).codeFactory();
+	if (name=="dyn-sync-remover")
+	    return new harpoon.Analysis.DynamicSyncRemoval.SyncRemover
+		(hcf, linker).codeFactory();
 	else throw new Error("Unknown code factory type: "+name);
     }
 
