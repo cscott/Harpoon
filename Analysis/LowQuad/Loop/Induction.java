@@ -14,7 +14,7 @@ import java.util.Iterator;
  * <code>Induction</code>
  * 
  * @author  root <root@kikashi.lcs.mit.edu>
- * @version $Id: Induction.java,v 1.1.2.5 1999-07-12 16:42:45 bdemsky Exp $
+ * @version $Id: Induction.java,v 1.1.2.6 1999-07-12 17:09:53 bdemsky Exp $
  * This class allows us to store information on Basic/Derived Induction variables.
  */
 
@@ -159,8 +159,9 @@ public class Induction {
     public String toString() {
 	String temp;
 	temp=" iv: "+variable().toString()+" offset: ";
-	temp+=(new Integer(offset())).toString() +" intmultiplier: "+
-	    (new Integer(intmultiplier())).toString();
+	if (constant())
+	    temp+=(new Integer(offset())).toString() +" intmultiplier: "+
+		(new Integer(intmultiplier())).toString();
 	if (objectsize!=null)
 	    temp+=" os: "+objectsize.toString();
 	if (pointeroffset!=null)
