@@ -14,6 +14,7 @@ import java.util.LinkedList;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.ObjectOutputStream;
 import java.io.FileOutputStream;
@@ -34,6 +35,7 @@ import harpoon.ClassFile.Loader;
 
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.QuadWithTry;
 
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
@@ -48,6 +50,7 @@ import harpoon.Analysis.PointerAnalysis.ParIntGraph;
 import harpoon.Util.DataStructs.Relation;
 import harpoon.Analysis.PointerAnalysis.MAInfo;
 import harpoon.Analysis.PointerAnalysis.SyncElimination;
+import harpoon.Analysis.PointerAnalysis.InstrumentSyncOps;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
@@ -62,11 +65,14 @@ import harpoon.Util.LightBasicBlocks.LBBConverter;
 import harpoon.Util.LightBasicBlocks.CachingLBBConverter;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
+import harpoon.Util.WorkSet;
 
 import harpoon.Analysis.PointerAnalysis.Debug;
 import harpoon.Analysis.MetaMethods.SmartCallGraph;
 
 import harpoon.IR.Quads.CALL;
+
+import harpoon.IR.Jasmin.Jasmin;
 
 
 /**
@@ -74,7 +80,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.68 2000-07-03 02:27:28 jwhaley Exp $
+ * @version $Id: PAMain.java,v 1.1.2.69 2000-07-13 06:18:35 jwhaley Exp $
  */
 public abstract class PAMain {
 
@@ -113,6 +119,9 @@ public abstract class PAMain {
     private static String SAT_FILE = null;
 
     private static boolean ELIM_SYNCOPS = false;
+    private static boolean INST_SYNCOPS = false;
+
+    private static boolean DUMP_JAVA = false;
     
     // Load the preanalysis results from PRE_ANALYSIS_IN_FILE
     private static boolean LOAD_PRE_ANALYSIS = false;
@@ -177,7 +186,7 @@ public abstract class PAMain {
     // global variable used for timing measurements
     private static long g_tstart = 0L;
 
-    public static void main(String[] params){
+    public static void main(String[] params) throws IOException {
 	int optind = get_options(params);
 	int nbargs = params.length - optind;
 	if(nbargs < 1){
@@ -223,6 +232,9 @@ public abstract class PAMain {
 
 	if(SHOW_DETAILS)
 	    pa.print_stats();
+
+	if(DUMP_JAVA)
+	    dump_java(get_classes(pa.getMetaCallGraph().getAllMetaMethods()));
 	
     }
     
@@ -373,6 +385,9 @@ public abstract class PAMain {
 		}
 	    }
 
+	if (INST_SYNCOPS)
+	    do_inst_syncops(hmethod);
+	
 	if (ELIM_SYNCOPS)
 	    do_elim_syncops(hmethod);
     
@@ -426,6 +441,8 @@ public abstract class PAMain {
 	    new LongOpt("loadpre",   LongOpt.REQUIRED_ARGUMENT, null, 19),
 	    new LongOpt("savepre",   LongOpt.REQUIRED_ARGUMENT, null, 20),
 	    new LongOpt("syncelim",  LongOpt.NO_ARGUMENT,       null, 21),
+	    new LongOpt("instsync",  LongOpt.NO_ARGUMENT,       null, 22),
+	    new LongOpt("dumpjava",  LongOpt.NO_ARGUMENT,       null, 23),
 	};
 
 	Getopt g = new Getopt("PAMain", argv, "mscoa:i", longopts);
@@ -502,6 +519,12 @@ public abstract class PAMain {
 		break;		
 	    case 21:
 		ELIM_SYNCOPS = true;
+		break;
+	    case 22:
+		INST_SYNCOPS = true;
+		break;
+	    case 23:
+		DUMP_JAVA = true;
 		break;
 	    }
 
@@ -582,6 +605,12 @@ public abstract class PAMain {
 	if(DO_SAT)
 	    System.out.print(" DO_SAT (" + SAT_FILE + ")");
 
+	if(ELIM_SYNCOPS)
+	    System.out.print(" ELIM_SYNCOPS");
+	
+	if(INST_SYNCOPS)
+	    System.out.print(" INST_SYNCOPS");
+	
 	if(MAInfo.NO_TG)
 	    System.out.println(" NO_TG");
 
@@ -846,6 +875,86 @@ public abstract class PAMain {
 	    }
 	//} catch (IOException x) {}
 
+    }
+
+    static void do_inst_syncops(HMethod hm) {
+	System.out.println("\nInstrumenting synchronization operations.");
+	
+	InstrumentSyncOps se = new InstrumentSyncOps(pa);
+
+    	for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    se.addRoot(mm);
+	}
+	
+	se.calculate();
+	
+	HCodeFactory hcf_instsync = InstrumentSyncOps.codeFactory(hcf, se);
+	
+	//try {
+	    java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
+	    MetaCallGraph mcg = pa.getMetaCallGraph();
+	    Set allmm = mcg.getAllMetaMethods();
+	    Iterator it = allmm.iterator();
+	    while (it.hasNext()) {
+	        MetaMethod mm = (MetaMethod)it.next();
+	        HMethod m = mm.getHMethod();
+	        System.out.println("Transforming method "+m);
+	        HCode hcode = hcf_instsync.convert(m);
+	        if (hcode != null) hcode.print(out);
+	    }
+	//} catch (IOException x) {}
+
+    }
+    
+    static HClass[] get_classes(Set allmm) {
+	HashSet ll = new HashSet();
+	Iterator it = allmm.iterator();
+	while (it.hasNext()) {
+	    MetaMethod mm = (MetaMethod)it.next();
+	    HMethod m = mm.getHMethod();
+	    HClass hc = m.getDeclaringClass();
+	    if (hc.isArray()) continue;
+	    ll.add(hc);
+	}
+	return (HClass[])ll.toArray(new HClass[ll.size()]);
+    }
+    
+    static void dump_java(HClass[] interfaceClasses) 
+    throws IOException {
+
+	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
+	for (int i=0; i<interfaceClasses.length; i++) {
+	    HMethod hm1[] = interfaceClasses[i].getDeclaredMethods();
+	    WorkSet hmo=new WorkSet();
+	    System.out.println(interfaceClasses[i]+":");
+	    for (int ind=0;ind<hm1.length;ind++) {
+		hmo.add(hm1[ind]);
+	    }
+	    HMethod hm[] = new HMethod[hmo.size()];
+	    Iterator hmiter=hmo.iterator();
+	    int hindex=0;
+	    while (hmiter.hasNext()) {
+		hm[hindex++]=(HMethod)hmiter.next();
+		System.out.println(hm[hindex-1]);
+	    }
+
+	    HCode hc[] = new HCode[hm.length];
+	    HCodeFactory hcf2 = QuadWithTry.codeFactory(hcf);
+	    for (int j=0; j<hm.length; j++) {
+		hc[j] = hcf2.convert(hm[j]);
+		if (hc[j]!=null) hc[j].print(out);
+	    }
+	    Jasmin jasmin=new Jasmin(hc, hm, interfaceClasses[i]);
+	    FileOutputStream file;
+	    if (interfaceClasses.length!=1)
+		file=new FileOutputStream("out"+i+".j");
+	    else
+		file=new FileOutputStream("out.j");
+	    PrintStream tempstream=new PrintStream(file);
+	    jasmin.outputClass(tempstream);
+	    file.close();
+	}
     }
 
     private static String[] examples = {
