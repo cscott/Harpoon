@@ -14,37 +14,39 @@ function printOptions() {
     echo -e "Either \"yes\" or \"no\"."
     echo
     echo "Options: "
-    echo -e "  -all-tasks=[yes|no]          -- if set to yes, runs all tasks in \"tasks-all\" (default),"
-    echo -e "                                  if set to no, runs all tasks in \"tasks-selected\"."
-    echo -e "  -tasks-file=<file>           -- explicitly specifies the name of the file containing the tasks set (no default value)."
-    echo -e "  -all-machines=[yes|no]       -- if set to yes, runs the task set on all machines in \"machines-all\" (default),"
-    echo -e "                                  if set to no, runs the task set only on machines included in \"machines-selected\"."
-    echo -e "  -machines-file=<file>        -- explicitly specifies the name of the file containing the machines set (no default value)."
-    echo -e "  -update=[yes|no]             -- if set to yes, all machines are updated before starting running tasks on them (default),"
-    echo -e "                                  if set to no, no machine is updated before starting running the tasks."
-    echo -e "  -conf-each-test=[yes|no]     -- if set to yes, the remote machines are reconfigured for every test (default),"
-    echo -e "                                  if set to no, all tests use the remote machines' default configuration."
-    echo -e "  -compile=[yes|no]            -- if set to yes, the task is compiled (default),"
-    echo -e "                                  if set to no, the task is not compiled."
-    echo -e "  -compile-stats=[yes|no]      -- if set to yes, generates compiling statistics (default),"
-    echo -e "                                  if set to no, does not generate compiling statistics."
-    echo -e "  -long-compile-stats=[yes|no] -- if set to yes, generate a long compiling time report, in case of an error,"
-    echo -e "                                  if set to no, generate a short compiling time report, in case of an error (default)."
-    echo -e "  -run=[yes|no]                -- if set to yes, the task will be run (default),"
-    echo -e "                                  if set to no, the task will not be run."
-    echo -e "  -run-stats=[yes|no]          -- if set to yes, generates runtime statistics (default),"
-    echo -e "                                  if set to no, does not generate runtime statistics."
-    echo -e "  -long-runtime-stats=[yes|no] -- if set to yes, generate a long runtime report, in case of an error,"
-    echo -e "                                  if set to no, generate a short runtime report, in case of an error (default)."
-    echo -e "  -errors=[yes|no]             -- if set to yes, print all errors to a file (default),"
-    echo -e "                                  if set to no, does not print any error."
-    echo -e "  -diffs=[yes|no]              -- if set to yes, diffs the current versions of benchmarks with the previous ones (default),"
-    echo -e "                                  if set to no, no diffs are generated."
-    echo -e "  -mail-results=[yes|no]       -- if set to yes, mails results to people (default),"
-    echo -e "                                  if set to no, does not mail anything to anyone."
-    echo -e "  -mail-to-all=[yes|no]        -- if set to yes, mails results to all people in \"mail-all\" (default),"
-    echo -e "                                  if set to no, mails results only to people included in \"mail-selected\"."
-    echo -e "  -mailto-file=<file>          -- explicitly specifies the name of the file containing the list of people to be mailed (no default value)."
+    echo -e "  -all-tasks=[yes|no]            -- if set to yes, runs all tasks in \"tasks-all\" (default),"
+    echo -e "                                    if set to no, runs all tasks in \"tasks-selected\"."
+    echo -e "  -tasks-file=<file>             -- explicitly specifies the name of the file containing the tasks set (no default value)."
+    echo -e "  -all-machines=[yes|no]         -- if set to yes, runs the task set on all machines in \"machines-all\" (default),"
+    echo -e "                                    if set to no, runs the task set only on machines included in \"machines-selected\"."
+    echo -e "  -machines-file=<file>          -- explicitly specifies the name of the file containing the machines set (no default value)."
+    echo -e "  -update=[yes|no]               -- if set to yes, all machines are updated before starting running tasks on them (default),"
+    echo -e "                                    if set to no, no machine is updated before starting running the tasks."
+    echo -e "  -conf-each-test=[yes|no]       -- if set to yes, the remote machines are reconfigured for every test,"
+    echo -e "                                    if set to no, all tests use the remote machines' default configuration (default)."
+    echo -e "  -compile=[yes|no]              -- if set to yes, the task is compiled (default),"
+    echo -e "                                    if set to no, the task is not compiled."
+    echo -e "  -compile-stats=[yes|no]        -- if set to yes, generates compiling statistics (default),"
+    echo -e "                                    if set to no, does not generate compiling statistics."
+    echo -e "  -long-compile-stats=[yes|no]   -- if set to yes, generate a long compiling time report, in case of an error,"
+    echo -e "                                    if set to no, generate a short compiling time report, in case of an error (default)."
+    echo -e "  -run=[yes|no]                  -- if set to yes, the task will be run (default),"
+    echo -e "                                    if set to no, the task will not be run."
+    echo -e "  -run-stats=[yes|no]            -- if set to yes, generates runtime statistics (default),"
+    echo -e "                                    if set to no, does not generate runtime statistics."
+    echo -e "  -long-runtime-stats=[yes|no]   -- if set to yes, generate a long runtime report, in case of an error,"
+    echo -e "                                    if set to no, generate a short runtime report, in case of an error (default)."
+    echo -e "  -run-only-if-compiled=[yes|no] -- if set to yes, the task will not run if it was not compiled,"
+    echo -e "                                    if set to no, the task can be run even if it was not compiled (default)."
+    echo -e "  -errors=[yes|no]               -- if set to yes, print all errors to a file (default),"
+    echo -e "                                    if set to no, does not print any error."
+    echo -e "  -diffs=[yes|no]                -- if set to yes, diffs the current versions of benchmarks with the previous ones (default),"
+    echo -e "                                    if set to no, no diffs are generated."
+    echo -e "  -mail-results=[yes|no]         -- if set to yes, mails results to people (default),"
+    echo -e "                                    if set to no, does not mail anything to anyone."
+    echo -e "  -mail-to-all=[yes|no]          -- if set to yes, mails results to all people in \"mail-all\" (default),"
+    echo -e "                                    if set to no, mails results only to people included in \"mail-selected\"."
+    echo -e "  -mailto-file=<file>            -- explicitly specifies the name of the file containing the list of people to be mailed (no default value)."
 }
 
 # Beggining of script
@@ -62,6 +64,7 @@ else
     USED_MACHINES_LIST=   # The list of the machines that were used in this session
     TASKS_LIST=   # The list of the tasks to be done from tasks-all/tasks-selected
     MAILING_LIST=   # The list of the people whom the results should be mailed to
+    TASKS_CHANGED="Tasks changed:"   # the list of the tasks with changed output
     ERROR_FILE=errors_$DATE   # The name of the error file for this session
     ERROR_FILE_SHORT=$ERROR_FILE"_short"   # The name of the short error file (the contents of which will be mailed)
     DIFFS_SOURCES_FILE=diffs_sources_$DATE   # The name of the sources diffs file for this session
@@ -87,7 +90,7 @@ else
     TASKS_FILE=tasks-all
     MACHINES_FILE=machines-all
     UPDATE=yes
-    CONF_EACH_TEST=yes
+    CONF_EACH_TEST=no
     COMPILE=yes
     COMPILE_STATS=yes
     LONG_COMPILE_STATS=no
@@ -96,6 +99,7 @@ else
     RUN_STATS=yes
     LONG_RUN_STATS=no
     COLLECT_RUN_RESULTS=yes
+    RUN_ONLY_IF_COMPILED=no
     ERRORS=yes
     DIFFS=yes
     MAIL_RESULTS=yes
@@ -149,6 +153,10 @@ else
 		LONG_RUN_STATS=yes;;   # Generate long runtime reports
 	    -long-run-stats=no)
 		LONG_RUN_STATS=no;;   # Generate short runtime reports; Default option
+	    -run-only-if-compiled=yes)
+		RUN_ONLY_IF_COMPILED=yes;;   # Run the tasks only if it was previously compiled
+	    -run-only-if-compiled=no)
+		RUN_ONLY_IF_COMPILED=no;;   # The task can be run even if it wasn't compiled; Default option
 	    -errors=yes)
 		ERRORS=yes;;   # Report errors; Default option
 	    -errors=no)
@@ -374,7 +382,7 @@ else
 		fi
 		for machine in $WORKING_MACHINES_LIST; do
 		    if [ "`ssh $machine 'if [ -e $RUNNING_TASK_FILE ]; then cat $RUNNING_TASK_FILE; else echo 0; fi'`" != "1" ]; then   # this machine is not running anything, so the current task can be run on it
-			ssh -f $machine "cd \$MAIN_TESTING_DIR; ./run-benchmark $task -conf-each-test=$CONF_EACH_TEST -compile=$COMPILE -compile-stats=$COMPILE_STATS -long-compile-stats=$LONG_COMPILE_STATS -run=$RUN -run-stats=$RUN_STATS -long-run-stats=$LONG_RUN_STATS -errors=$ERRORS > /dev/null 2>&1"   # running the task in background
+			ssh -f $machine "cd \$MAIN_TESTING_DIR; ./run-benchmark $task -conf-each-test=$CONF_EACH_TEST -compile=$COMPILE -compile-stats=$COMPILE_STATS -long-compile-stats=$LONG_COMPILE_STATS -run=$RUN -run-stats=$RUN_STATS -long-run-stats=$LONG_RUN_STATS -run-only-if-compiled=$RUN_ONLY_IF_COMPILED -errors=$ERRORS > /dev/null 2>&1"   # running the task in background
 			sleep 5   # waiting 5 seconds for the remote machine to set up it's parameters
 			
 			MACHINE_ALREADY_USED=0   # this machine was not used before
@@ -466,11 +474,11 @@ else
 		tar zxvf $ARCHIVE_ERRORS_FILE -C $TEMP_DIR   # extracting existing error files to $TEMP_DIR
 		cp $ERROR_FILE $TEMP_DIR   # moving $ERROR_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz `\ls -A | grep -v CVS`  > `cd -; pwd`/$ARCHIVE_ERRORS_FILE   # adding this error file to the $ARCHIVE_ERRORS_FILE archive
+		tar cvz `\ls -A | grep -v CVS`  > `cd -; pwd`/$ARCHIVE_ERRORS_FILE   # adding this error file to the $ARCHIVE_ERRORS_FILE archive
 		rm -r `\ls -A | grep -v CVS`   # removing everything in $TEMP_DIR directory
 		cd -   # changing the directory back
 	    else
-		tar zxvf $ARCHIVE_ERRORS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting existing error files to $TEMP_DIR
+		tar zxf $ARCHIVE_ERRORS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting existing error files to $TEMP_DIR
 		cp -f $ERROR_FILE $TEMP_DIR   # moving $ERROR_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_ERRORS_FILE 2>/dev/null   # adding this error file to the $ARCHIVE_ERRORS_FILE archive
@@ -479,7 +487,7 @@ else
 	    fi
 	else
 	    if [ "$DEBUG" == "yes" ]; then
-		tar cz $ERROR_FILE > $ARCHIVE_ERRORS_FILE   # creating the $ARCHIVE_ERRORS_FILE archive
+		tar cvz $ERROR_FILE > $ARCHIVE_ERRORS_FILE   # creating the $ARCHIVE_ERRORS_FILE archive
 	    else	
 		tar cz $ERROR_FILE > $ARCHIVE_ERRORS_FILE 2>/dev/null   # creating the $ARCHIVE_ERRORS_FILE archive
 	    fi
@@ -502,11 +510,11 @@ else
 	    if [ "$DEBUG" == "yes" ]; then
 		tar zxvf $ARCHIVE_COMPILE_RESULTS_FILE -C $TEMP_DIR   # extracting files in $ARCHIVE_COMPILE_RESULTS_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_COMPILE_RESULTS_FILE   # adding new files to the $ARCHIVE_COMPILE_RESULTS_FILE archive
+		tar cvz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_COMPILE_RESULTS_FILE   # adding new files to the $ARCHIVE_COMPILE_RESULTS_FILE archive
 		rm -r `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
 		cd -   # changing the directory back
 	    else
-		tar zxvf $ARCHIVE_COMPILE_RESULTS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting files in $ARCHIVE_COMPILE_RESULTS_FILE to $TEMP_DIR
+		tar zxf $ARCHIVE_COMPILE_RESULTS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting files in $ARCHIVE_COMPILE_RESULTS_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_COMPILE_RESULTS_FILE 2>/dev/null   # adding new files to the $ARCHIVE_COMPILE_RESULTS_FILE archive
 		rm -rf `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
@@ -547,7 +555,7 @@ else
 		rm -r `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
 		cd -   # changing the directory back
 	    else
-		tar zxvf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting files in $ARCHIVE_RUN_RESULTS_FILE to $TEMP_DIR
+		tar zxf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting files in $ARCHIVE_RUN_RESULTS_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_RUN_RESULTS_FILE 2>/dev/null   # adding new files to the $ARCHIVE_RUN_RESULTS_FILE archive
 		rm -rf `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
@@ -556,7 +564,7 @@ else
 	else
 	    if [ "$DEBUG" == "yes" ]; then
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz $DATE > `cd -; pwd`/$ARCHIVE_RUN_RESULTS_FILE   # creating the $ARCHIVE_RUN_RESULTS_FILE archive
+		tar cvz $DATE > `cd -; pwd`/$ARCHIVE_RUN_RESULTS_FILE   # creating the $ARCHIVE_RUN_RESULTS_FILE archive
 		rm -r $DATE   # removing the $DATE directory
 		cd -   # changing the directory back
 	    else
@@ -591,16 +599,10 @@ else
 		echo "\$BENCHMARK = $BENCHMARK"
 	    fi
 
-	    echo $BENCHMARK >> $ERROR_FILE_SHORT
 	    if [ -f $JOURNAL_FILE ]; then   # does the file $JOURNAL_FILE exist?
 		LAST_RECORD=`cat $JOURNAL_FILE | grep $BENCHMARK:`   # getting the last record for this $BENCHMARK
 	    else
 		LAST_RECORD=""   # no record for this $BENCHMARK
-	    fi
-	    if [ "$LAST_RECORD" == "" ]; then   # no previous record for this benchmark
-		echo "   was: N/A" >> $ERROR_FILE_SHORT   # writing the previous record for this $BENCHMARK to $ERROR_FILE_SHORT
-	    else
-		echo $LAST_RECORD | sed s/$BENCHMARK/"   was"/ >> $ERROR_FILE_SHORT   # writing the previous record for this $BENCHMARK to $ERROR_FILE_SHORT
 	    fi
 
 	    if [ "$DEBUG" == "yes" ]; then   # printing some information
@@ -608,23 +610,55 @@ else
 	    fi
 
 	    CURRENT_RECORD="now:"$DATE":"`cat $file`   # making this session's record for this $BENCHMARK
-	    if [ "$RUN_STATS" == "yes" -a -f $CORRECT_RESULTS_DIR/$BENCHMARK ]; then   # found the file with the "correct" output
-		if [ "$DEBUG" == "yes" ]; then   # print some information
-		    tar zxvf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
-		    cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		    cp $DATE/run"_"$BENCHMARK run"_"$BENCHMARK"_"$DATE   # copy the only important file to $TEMP_DIR
-		    rm -r `\ls -A | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
-		    cd -   # changing directory back
-		else
-		    tar zxf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
-		    cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		    cp $DATE/run"_"$BENCHMARK ./run"_"$BENCHMARK"_"$DATE   # copy the only important file to $TEMP_DIR
-		    rm -rf `\ls -A 2>/dev/null | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
-		    cd -   # changing the directory back
-		fi
 
+	    # checking if the run_$BENCHMARK file was generated
+
+	    if [ "$DEBUG" == "yes" ]; then   # print some information
+		tar zxvf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		cp $DATE/run"_"$BENCHMARK run"_"$BENCHMARK"_"$DATE   # copy the only important file to $TEMP_DIR
+		rm -r `\ls -A | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+		cd -   # changing directory back
+	    else
+		tar zxf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		cp $DATE/run"_"$BENCHMARK ./run"_"$BENCHMARK"_"$DATE > /dev/null 2>&1   # copy the only important file to $TEMP_DIR
+		rm -rf `\ls -A 2>/dev/null | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+		cd -   # changing the directory back
+	    fi
+	    
+	    if [ -f $TEMP_DIR/run'_'$BENCHMARK'_'$DATE -a -f $CORRECT_RESULTS_DIR/$BENCHMARK ]; then   # found the file with the "correct" output
 		if [ "`diff $TEMP_DIR/run'_'$BENCHMARK'_'$DATE $CORRECT_RESULTS_DIR/$BENCHMARK`" == "" ]; then   # the output matches perfectly
-		    CURRENT_RECORD=$CURRENT_RECORD":correct"
+		    if [ "$LAST_RECORD" != "" ]; then   # do we have the result for this benchmark from the previous session?
+			LAST_DATE=`echo $LAST_RECORD | sed s/$BENCHMARK:// | sed s/:.*$//`
+			if [ "$DEBUG" == "yes" ]; then   # print some information
+			    tar zxvf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
+			    cd $TEMP_DIR   # changing directory to $TEMP_DIR
+			    cp $LAST_DATE/run"_"$BENCHMARK ./run"_"$BENCHMARK"_"$LAST_DATE   # copy one more important file to $TEMP_DIR
+			    rm -r `\ls -A | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+			    cd -   # changing directory back
+			else
+			    tar zxf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
+			    cd $TEMP_DIR   # changing directory to $TEMP_DIR
+			    cp $LAST_DATE/run"_"$BENCHMARK ./run"_"$BENCHMARK"_"$LAST_DATE > /dev/null 2>&1   # copy one more important file to $TEMP_DIR
+			    rm -rf `\ls -A 2>/dev/null | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+			    cd -   # changing directory back
+			fi
+
+			if [ -f $TEMP_DIR/run'_'$BENCHMARK'_'$LAST_DATE ]; then   # does the file $TEMP_DIR/run_$BENCHMARK_$LAST_DATE exist?
+			    if [ "`diff $TEMP_DIR/run'_'$BENCHMARK'_'$DATE $TEMP_DIR/run'_'$BENCHMARK'_'$LAST_DATE`" == "" ]; then   # nothing changed in the output since the last running of this benchmark
+				CURRENT_RECORD=$CURRENT_RECORD":correct (no changes)"
+			    else
+				CURRENT_RECORD=$CURRENT_RECORD":correct (changed)"
+				TASKS_CHANGED=$TASKS_CHANGE" $BENCHMARK"
+			    fi
+			else
+			    CURRENT_RECORD=$CURRENT_RECORD":correct (N/A)"
+			fi
+		    else
+			CURRENT_RECORD=$CURRENT_RECORD":correct (N/A)"
+			TASKS_CHANGED=$TASKS_CHANGED" $BENCHMARK"
+		    fi
 		else
 		    if [ "$LAST_RECORD" != "" ]; then   # do we have the result for this benchmark from the previous session?
 			LAST_DATE=`echo $LAST_RECORD | sed s/$BENCHMARK:// | sed s/:.*$//`
@@ -642,17 +676,29 @@ else
 			    cd -   # changing directory back
 			fi
 
-			if [ "`diff $TEMP_DIR/run'_'$BENCHMARK'_'$DATE $TEMP_DIR/run'_'$BENCHMARK'_'$LAST_DATE`" == "" ]; then   # nothing changed in the output since the last running of this benchmark
-			    CURRENT_RECORD=$CURRENT_RECORD":incorrect (no changes)"
+			if [ -f $TEMP_DIR/run'_'$BENCHMARK'_'$LAST_DATE ]; then   # does the file $TEMP_DIR/run_$BENCHMARK_$LAST_DATE exist?
+			    if [ "`diff $TEMP_DIR/run'_'$BENCHMARK'_'$DATE $TEMP_DIR/run'_'$BENCHMARK'_'$LAST_DATE`" == "" ]; then   # nothing changed in the output since the last running of this benchmark
+				CURRENT_RECORD=$CURRENT_RECORD":incorrect (no changes)"
+			    else
+				CURRENT_RECORD=$CURRENT_RECORD":incorrect (changed)"
+				TASKS_CHANGED=$TASKS_CHANGE" $BENCHMARK"
+			    fi
 			else
-			    CURRENT_RECORD=$CURRENT_RECORD":incorrect (but changed)"
+			    CURRENT_RECORD=$CURRENT_RECORD":incorrect (N/A)"
 			fi
 		    else
 			CURRENT_RECORD=$CURRENT_RECORD":incorrect (N/A)"
+			TASKS_CHANGED=$TASKS_CHANGED" $BENCHMARK"
 		    fi
 		fi
 	    else
 		CURRENT_RECORD=$CURRENT_RECORD":N/A"
+	    fi
+	    echo $BENCHMARK >> $ERROR_FILE_SHORT
+	    if [ "$LAST_RECORD" == "" ]; then
+		echo "   was:N/A" >> $ERROR_FILE_SHORT
+	    else
+		echo -e "   `echo $LAST_RECORD | sed s/$BENCHMARK/was/`" >> $ERROR_FILE_SHORT
 	    fi
 	    echo "   $CURRENT_RECORD" >> $ERROR_FILE_SHORT
 	    echo >> $ERROR_FILE_SHORT
@@ -662,7 +708,13 @@ else
 	    fi
 	    echo $CURRENT_RECORD | sed s/now/$BENCHMARK/ >> $JOURNAL_FILE
 	done
-	rm -rf $TEMP_DIR/$DATE
+	rm -rf `\ls -Ad $TEMP_DIR/* | grep -v CVS`
+
+	if [ "$TASKS_CHANGED" == "Tasks changed:" ]; then   # no tasks changed
+	    echo -e "No tasks changed.\n\n`cat $ERROR_FILE_SHORT`" > $ERROR_FILE_SHORT
+	else
+	    echo -e "$TASKS_CHANGED.\n\n`cat $ERROR_FILE_SHORT`" > $ERROR_FILE_SHORT
+	fi
 
 	if [ -e $ARCHIVE_ERRORS_SHORT_FILE ]; then   # do we have already an $ARCHIVE_ERRORS_SHORT_FILE?
 	    if [ "$DEBUG" == "yes" ]; then
@@ -701,20 +753,22 @@ else
 		scp $machine:$REMOTE_MACHINE_TASKS_RUN_FILE $TEMP_DIR/tasks-run > /dev/null 2>&1   # copying the $TASKS_RUN_ON_THIS_MACHINE_FILE from $machine
 	    fi
 
-	    NUMBER_LINES=`wc -l $TEMP_DIR/tasks-run | sed "s|$TEMP_DIR/tasks-run||g"`   # getting the number of lines in tasks-run
-	    n_line=1
-	    while [ $n_line -le $NUMBER_LINES ]; do   # getting the list or tasks run on this machine
-		file=`head -n $n_line $TEMP_DIR/tasks-run | tail -n 1`
-
-		if [ "$DEBUG" == "yes" ]; then
-		    scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/$file $TEMP_DIR/$DATE   # copying all executed programs from $machine
-		else
-		    scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/$file $TEMP_DIR/$DATE > /dev/null 2>&1  # copying all executed programs from $machine
-		fi
-		
-		n_line=$[$n_line+1]
-	    done
-	    rm -f $TEMP_DIR/tasks-run   # removing tasks-run file
+	    if [ -f $TEMP_DIR/tasks-run ]; then   # did this machine run any task?
+		NUMBER_LINES=`wc -l $TEMP_DIR/tasks-run | sed "s|$TEMP_DIR/tasks-run||g"`   # getting the number of lines in tasks-run
+		n_line=1
+		while [ $n_line -le $NUMBER_LINES ]; do   # getting the list or tasks run on this machine
+		    file=`head -n $n_line $TEMP_DIR/tasks-run | tail -n 1`
+		    
+		    if [ "$DEBUG" == "yes" ]; then
+			scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/$file $TEMP_DIR/$DATE   # copying all executed programs from $machine
+		    else
+			scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/$file $TEMP_DIR/$DATE > /dev/null 2>&1  # copying all executed programs from $machine
+		    fi
+		    
+		    n_line=$[$n_line+1]
+		done
+		rm -f $TEMP_DIR/tasks-run   # removing tasks-run file
+	    fi
 	done
 	
 	if [ -f $ARCHIVE_EXECUTABLES_FILE ]; then   # does the $ARCHIVE_EXECUTABLES_FILE exist?
