@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.91 2001-01-13 21:45:57 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.92 2001-06-05 20:56:30 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -119,6 +119,8 @@ class ToTree {
 		    .getName().equals("tree"));
 	if (ai==null)
 	    ai = harpoon.Analysis.DefaultAllocationInformation.SINGLETON;
+	// always wrap edge oracle in a sourcesimilaredgeoracle
+	eo = new ToTreeHelpers.SourceSimilarEdgeOracle(eo);
 	translate(tf, code, ai, eo, fn, rd);
     }
     

@@ -30,7 +30,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.23 2001-01-24 19:33:54 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.24 2001-06-05 20:56:15 cananian Exp $
  */
 public abstract class Code extends HCode implements java.io.Serializable {
     /** The method that this code view represents. */
@@ -155,8 +155,16 @@ public abstract class Code extends HCode implements java.io.Serializable {
 	    public Object next() {
 		if (s.empty()) throw new NoSuchElementException();
 		Quad q = (Quad) s.pop();
+		boolean forwards = false;
+		// prettiness hack! try to order elements in original source
+		// order. =)
+		if (q.nextLength()==2 &&
+		    q.next(1).getLineNumber() < q.next(0).getLineNumber())
+		    forwards = true;
 		// push successors on stack before returning.
-		for (int i=q.nextLength()-1; i>=0; i--) {
+		for (int i= forwards ? 0 : (q.nextLength()-1);
+		     forwards ? (i<q.nextLength()) : (i>=0);
+		     i = forwards ? (i+1) : (i-1)) {
 		    Util.assert(q.nextEdge(i)!=null, q);
 		    if (!visited.contains(q.next(i))) {
 			s.push(q.next(i));

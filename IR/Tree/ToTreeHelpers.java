@@ -38,7 +38,7 @@ import java.util.Set;
  * <code>ToTreeHelpers</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTreeHelpers.java,v 1.1.2.8 2000-06-27 19:53:55 cananian Exp $
+ * @version $Id: ToTreeHelpers.java,v 1.1.2.9 2001-06-05 20:56:30 cananian Exp $
  */
 abstract class ToTreeHelpers {
     //------------ EdgeOracle IMPLEMENTATIONS ------------------
@@ -48,6 +48,39 @@ abstract class ToTreeHelpers {
     static class DefaultEdgeOracle implements ToTree.EdgeOracle {
 	DefaultEdgeOracle() { }
 	public int defaultEdge(HCodeElement hce) { return 0; }
+    }
+    /** The <code>SourceSimilarEdgeOracle</code> tries to lay out code
+     *  in the same order as in the original java file, when it has the
+     *  information to do so.  Otherwide, it falls back on a provided
+     *  default edge oracle. */
+    static class SourceSimilarEdgeOracle implements ToTree.EdgeOracle {
+	final CFGrapher cfg;
+	final ToTree.EdgeOracle eo;
+	SourceSimilarEdgeOracle(ToTree.EdgeOracle eo) {
+	    this(CFGrapher.DEFAULT, eo);
+	}
+	SourceSimilarEdgeOracle(CFGrapher cfg, ToTree.EdgeOracle eo) {
+	    this.cfg = cfg;
+	    this.eo = eo;
+	}
+	public int defaultEdge(HCodeElement hce) {
+	    HCodeEdge[] succ = cfg.succ(hce);
+	    int ln[] = new int[succ.length];
+	    for (int i=0; i<succ.length; i++)
+		ln[i] = succ[i].to().getLineNumber();
+	    if (ln.length>0) {
+		int min = 0;
+		boolean ismin = true;
+		for (int i=1; i<ln.length; i++) {
+		    if (ln[i] == ln[min])
+			ismin=false;
+		    else if (ln[i] < ln[min]) { min=i; ismin=true; }
+		}
+		if (ismin) return min;
+	    }
+	    // no clear guidance.  fall back.
+	    return eo.defaultEdge(hce);
+	}
     }
 
     /** The <code>MinMaxEdgeOracle</code> lays code out according to the
