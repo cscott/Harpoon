@@ -40,7 +40,7 @@ import java.util.Set;
  * fields in object layouts.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.5 2002-03-21 00:18:25 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.6 2002-03-21 15:09:55 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Runtime1.Runtime {
     // options.
@@ -59,10 +59,10 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
     static {
 	// report the runtime settings, just to double-check w/ the user.
 	System.out.print("TINY RUNTIME: ");
-	if (clazShrink) System.out.print("CLAZ_SHR ");
-	if (hashlockShrink) System.out.println("HASH_SHR ");
-	if (byteAlign) System.out.println("BYTE_ALGN ");
-	if (fixAlign) System.out.println("FIX_ALGN ");
+	if (clazShrink) System.out.print("[CLAZ-SHRINK] ");
+	if (hashlockShrink) System.out.print("[HASH-SHRINK] ");
+	if (byteAlign) System.out.print("[BYTE-ALIGN] ");
+	if (fixAlign) System.out.print("[FIX-ALIGN] ");
 	System.out.println();
     }
 
