@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.27 2002-03-23 10:25:35 cananian Exp $
+% $Id: oopsla02.tex,v 1.28 2002-03-23 10:50:21 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -33,7 +33,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.27 $ $}{$ $Revision: 1.27 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.28 $ $}{$ $Revision: 1.28 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -773,9 +773,90 @@ classification step could yield good results.
 
 \section{Implementation Issues}
 
+In this section we will talk briefly about some of the practical
+issues arising in an implementation of our space-saving techniques.
+
+\subsection{Byte-packing}
+
+\begin{figure*}
+\centering
+\begin{tabular}{|l|}
+\hline
+Standard packing word-aligns the object and aligns each field to the
+width of its type (4-byte data is 4-byte aligned):\\
+\includegraphics[scale=0.7]{Figures/standardAlignment.eps}\\
+``Byte'' alignment byte-aligns the object and all fields:
+\hfill\raisebox{-1ex}[0pt][0pt]{\parbox[t]{3in}{
+\begin{samplecode}
+class A \{\\
+\>int x;  /* actual width 24 bits */\\
+\>byte y; /* actual width 5 bits */\\
+\>boolean z; /* actual width 1 bit */\\
+\}\\
+\end{samplecode}
+}}\\
+\includegraphics[scale=0.7]{Figures/byteAlignment.eps}\\
+``Bit'' alignment requires no alignment of objects or fields:\\
+\includegraphics[scale=0.7]{Figures/bitAlignment.eps}\\
+\hline
+\end{tabular}
+\caption{An example of different field packing scenarios.  The object
+  header has been omitted for clarity.}
+\label{fig:packing}
+\end{figure*}
+
+A typical Java implementation may waste large amounts of space by
+aligning fields for the most efficient memory access.
+Figure~\ref{fig:packing} illustrates how a class with an integer,
+byte, and boolean field is typically laid out.  Our implementation
+uses byte-packing to reduce the amount of wasted space in the object.
+It is worth noting that the information provided by our bitwidth
+analysis is sufficient to {\it bit}-pack the fields in the object,
+when space is truely at a premium.  However, our investigation
+indicates that the amount of space potentially gained by bit-packing 
+is typically only a few percent.  Our implemented compiler uses byte
+packing.
+
+Some architectures penalize unaligned accesses to fields.  It is
+worthwhile to {\it attempt} to align fields to their preferred
+alignment while not allowing this to cause the object size to grow.
+Further, there are often {\it forced} alignment constraints on
+(for example) pointers.  Our java runtime uses a conservative garbage
+collector; its efficiency decreases markedly if pointers are not
+word-aligned.
+
+We have developed a simple byte-packing heuristic that achieves
+tight packing of fields while respecting forced alignments.  Packing
+proceeds recursively through superclasses, and returns a list of
+free-space intervals available between the fields of the superclass.
+The algorithm first places all {\it forced-alignment} fields in
+the class, from largest to smallest.  The aim is for the
+alignment-induced spaces left by the large fields to be fillable by
+the following smaller fields.
+
+When there are no more forced-alignment fields, we attempt to allocate
+fields on their ``preferred'' alignment boundaries, largest first.
+At this stage fields are not allowed to introduce an alignment gap at
+the end of the object.  That is, if they cannot be placed flush
+against the last field of the object and be on their preferred
+alignment, they are skipped.
+
+Finally, when there are no more preferred-alignments available, we
+allocate the {\it smallest} available field, ignoring any preferred
+alignment.  The aim is that the small fields will fill space and nudge
+the end of the object out so that a larger field may be allocated on
+its preferred alignment.  After each small field is allocated
+unaligned, we try again to allocate fields on their preferred
+boundaries.
+
+This heuristic strategy has been observed to work well in practice,
+and the penalties for occasionally placing an unaligned field have not
+been observed to have a material adverse effect on performance (see
+Section~\ref{sec:byte-pack}). 
+
 % header optimizations.
 % java-vs-byte-vs-bit packing.
-byte-packing strategy.
+% byte-packing strategy.
 % garbage collection; dynamic methods.  conservative gc. ole aggeson's blah.
 % efficiency of field virtualization.
 % single-inheritance when splitting.
@@ -790,7 +871,8 @@ byte-packing strategy.
 
 \subsection{External hashtable implementation}
 \label{sec:extern-impl}
-Close attention to the implementation of this external map is
+Close attention to the implementation of the hashtable used to
+implement field and hash/lock externalization is
 necessary to realize the gains possible in theory.  In order to
 maximize space savings, it is necessary to utilize as little space
 per field stored in the table as possible.  The overhead of
@@ -802,7 +884,9 @@ all that is necessary is a key value and the empty space required to
 limit the load-factor.  A load factor of two-thirds and one-word keys
 and values yield an average space consumption of three words per
 field.  This implementation breaks even when the mostly-zero fields
-identified are zero over 66\% of the time.
+identified are zero over 66\% of the time.  This break-even point is
+compared to the profiling data to allow our field externalization
+transformation to intelligently chose targetted fields.
 
 Key-size reduction is an important component of the implementation:
 a na{\"\i}ve approach
@@ -814,9 +898,8 @@ object reference (up to the limit of its size) by small integers
 to discriminate the externalized fields of the object, which yields
 a single-word key.  This technique is
 subject to object-size-dependent limits on the number
-of class fields which may be externalized.  The pointer compression
-techniques of section \ref{sec:ptrcmp} may also be applied to the
-keys.
+of class fields which may be externalized, but these have not been an
+issue in practice.
 
 \section{Experimental Results}
 \label{sec:results}
@@ -915,6 +998,7 @@ allocations.
 \end{figure}
 
 \subsection{Execution Times} 
+\label{sec:byte-pack}
 
 We next evaluate the execution time impact of applying our space
 optimizations. Figure~\ref{fig:performance} presents the normalized execution 
