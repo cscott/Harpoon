@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.42 1999-11-12 00:37:56 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.43 1999-11-17 17:59:23 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -185,9 +185,8 @@ final class ReHandler {
 	Quad.addEdge(qM, 0, qm.getHead((Quad)e.to()), e.which_pred());
 	Iterator iterate=handlerset.iterator();
 	for (int i=1; iterate.hasNext();i++) {
-	    Object ij;
-	    System.out.println(ij=iterate.next());
-	    Quad.addEdge(qM, i, (Quad)ij,0);
+	    Quad ij=(Quad)iterate.next();
+	    Quad.addEdge(qM, i,ij,0);
 	    //	    Quad.addEdge(qM, i, (Quad)iterate.next(),0);
 	}
 
@@ -1622,12 +1621,12 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 			HClass tclass=(HClass)ctuple.get(1);
 			HClass tc=hclass;
 			while((tc!=null)&&(!tc.isAssignableFrom(tclass))) {
-			    System.out.println("=======");
-			    System.out.println(tclass);
-			    System.out.println(q);
-			    System.out.println(hclass);
-			    System.out.println(tc);
-			    System.out.println(tc.getSuperclass());
+			    //System.out.println("=======");
+			    //System.out.println(tclass);
+			    //System.out.println(q);
+			    //System.out.println(hclass);
+			    //System.out.println(tc);
+			    //System.out.println(tc.getSuperclass());
 			    tc=tc.getSuperclass();
 			}
 			//Its safe to assume object for interfaces...
@@ -1687,7 +1686,7 @@ public static void clean(QuadWithTry code) {
     while (iterate.hasNext()) {
 	Quad q=(Quad)iterate.next();
 	if (!useful.contains(q)) {
-	    System.out.println("Cleaning " + q);
+	    //System.out.println("Cleaning " + q);
 	    Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), q.next(0), q.nextEdge(0).which_pred());
 	}
     }

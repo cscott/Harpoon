@@ -20,11 +20,11 @@ import java.util.Set;
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.13 1999-11-03 17:19:30 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.14 1999-11-17 18:01:47 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
-	System.out.println("==="+q);
+	//System.out.println("==="+q);
 	ExcVisitor ev=new ExcVisitor();
 	while (ev.status()) {
 	    q.accept(ev);
@@ -32,7 +32,7 @@ public class Pattern {
 		return ev.hclass();
 	    q=q.next(0);
 	}
-	System.out.println("Failed on "+q);
+	//System.out.println("Failed on "+q);
 	return null;
     }
 
@@ -632,7 +632,7 @@ static class ExcVisitor extends QuadVisitor { // this is an inner class
     }
 
     public void visit(MOVE q) {
-	System.out.println("Match failed because of: "+q.toString());
+	//System.out.println("Match failed because of: "+q.toString());
 	status=-1;
     }
 }
