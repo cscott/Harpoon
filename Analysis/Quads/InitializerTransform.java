@@ -10,6 +10,7 @@ import harpoon.ClassFile.HClassMutator;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HFieldMutator;
 import harpoon.ClassFile.HInitializer;
@@ -19,6 +20,7 @@ import harpoon.ClassFile.NoSuchClassException;
 import harpoon.IR.Quads.ANEW;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.CONST;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.FOOTER;
@@ -54,7 +56,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.10 2000-10-22 01:01:47 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.11 2000-10-22 08:10:54 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -150,10 +152,12 @@ public class InitializerTransform
 	Quad q0 = new GET(qf, qM, tst, ifield, null);
 	Quad q1= new CJMP(qf, qM, tst, new Temp[0]);
 	Quad q2 = new RETURN(qf, qM, null);
+	Quad q3 = new CONST(qf, qM, tst, new Integer(1), HClass.Int);
+	Quad q4 = new SET(qf, qM, ifield, null, tst);
 	Edge splitedge = qM.nextEdge(0);
-	Quad.addEdges(new Quad[] { qM, q0, q1 });
+	Quad.addEdges(new Quad[] { qM, q0, q1, q3, q4 });
 	Quad.addEdge(q1, 1, q2, 0);
-	Quad.addEdge(q1, 0, (Quad)splitedge.to(), splitedge.which_pred());
+	Quad.addEdge(q4, 0, (Quad)splitedge.to(), splitedge.which_pred());
 	qF = qF.attach(q2, 0);
 	// done.
 	return hc;
@@ -248,7 +252,7 @@ public class InitializerTransform
 		addCheckBefore(q, q.hclass(), seenSet);
 	    }
 	    public void visit(CALL q) {
-		if (q.isStatic())
+		if (q.isStatic() || q.method() instanceof HConstructor)
 		    addCheckBefore(q, q.method().getDeclaringClass(), seenSet);
 		if ( (!isVirtual(q)) && isSafe(q.method()))
 		    return;
