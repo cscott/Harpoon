@@ -1,8 +1,11 @@
 #ifndef TABLE_SIZE
-#define TABLE_SIZE 102407
+#define TABLE_SIZE 10240709 /* a prime */
 #endif
 #ifndef HASH
 #define HASH(key,obj) ((((int)key)+((int)obj))%TABLE_SIZE)
+#endif
+#ifndef HASH2
+#define HASH2(key,obj) (TABLE_SIZE-2 -((((int)key)+((int)obj))%(TABLE_SIZE-2)))
 #endif
 
 /* #define MAKE_POINTER_VERSION to make a version that doesn't prevent
@@ -17,29 +20,32 @@ struct TABLE_ELEMENT {
 /* tombstone has obj==null, but key non-null. */
 /* (when MAKE_POINTER_VERSION, tombstone has value==null) */
 
+#define hideobj(x) ((void *) HIDE_POINTER(obj))
+
 #ifdef MAKE_POINTER_VERSION
-# define hideobj(x) ((void *) HIDE_POINTER(obj))
 # define TOMB value
 #else
-# define hideobj(x) x
 # define TOMB obj
 #endif
 
-/* quadratic hashing (i think that's what it is) */
+/* double hashing */
 
 static TYPE GET(void *key, void *obj, TYPE default_value) {
   struct TABLE_ELEMENT *t;
-  int hash = HASH(key, obj);
+  int hash = HASH(key, obj), ohash=hash;
+  int u = HASH2(key, obj);
   obj = hideobj(obj);
   for (t=&TABLE[hash]; t->key!=NULL; t=&TABLE[hash]) {
     if (t->key==key && t->obj==obj) return t->value;
-    hash = (hash*hash) % TABLE_SIZE;
+    hash = (hash+u) % TABLE_SIZE;
+    assert(hash!=ohash); /* table should not fill up */
   }
   return default_value;
 }
 static void REMOVE(void *key, void *obj) {
   struct TABLE_ELEMENT *t;
-  int hash = HASH(key, obj);
+  int hash = HASH(key, obj), ohash=hash;
+  int u = HASH2(key, obj);
   obj = hideobj(obj);
   for (t=&TABLE[hash]; t->key!=NULL; t=&TABLE[hash]) {
     if (t->key==key && t->obj==obj) { /* found it */
@@ -47,14 +53,15 @@ static void REMOVE(void *key, void *obj) {
       GC_unregister_disappearing_link(&(t->TOMB));
       return;
     }
-    hash = (hash*hash) % TABLE_SIZE;
+    hash = (hash+u) % TABLE_SIZE;
+    assert(hash!=ohash); /* table should not fill up */
   }
   /* not found */
   return;
 }
 static void SET(void *key, void *obj, TYPE newval, TYPE default_value) {
   struct TABLE_ELEMENT *t;
-  int hash;
+  int hash, ohash, u;
 #ifdef MAKE_POINTER_VERSION
   assert(default_value==NULL); /* doesn't work otherwise */
 #endif
@@ -62,9 +69,11 @@ static void SET(void *key, void *obj, TYPE newval, TYPE default_value) {
     REMOVE(key, obj);
     return;
   }
-  hash = HASH(key, obj);
+  hash = ohash = HASH(key, obj);
+  u = HASH2(key, obj);
   for (t=&TABLE[hash]; t->TOMB!=NULL; t=&TABLE[hash]) {
-    hash = (hash*hash) % TABLE_SIZE;
+    hash = (hash+u) % TABLE_SIZE;
+    assert(hash!=ohash); /* table should not fill up */
   }
   /* found either an empty spot or a tombstone */
   t->key = key; t->obj = hideobj(obj); t->value = newval;
