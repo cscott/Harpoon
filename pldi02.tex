@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.14 2001-11-16 21:59:26 cananian Exp $
+% $Id: pldi02.tex,v 1.15 2001-11-16 23:58:45 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.14 $ $}{$ $Revision: 1.14 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.15 $ $}{$ $Revision: 1.15 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -749,6 +749,18 @@ with $N$ an integer in the range $[-5,5]$.
 % results/discussion.
 %  present sum totals.
 %  compress doesn't do so hot: show why.
+\begin{figure*}
+\includegraphics[scale=0.65]{Figures/spaceopt.eps}
+\caption{results w/ byte alignment}
+\end{figure*}
+%\begin{figure*}
+%\includegraphics[scale=0.65]{Figures/spaceopt-bit.eps}
+%\caption{results w/ bit alignment}
+%\end{figure*}
+\begin{figure}
+\includegraphics[scale=0.32]{Figures/spec-space.eps}
+\caption{Total allocation in spec benchmarks}
+\end{figure}
 
 % discuss: why are there unused/constant fields in programs?
 

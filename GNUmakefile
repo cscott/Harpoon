@@ -29,6 +29,7 @@ pldi99.dvi: Figures/THussi.tex Figures/THv0.tex Figures/THscccomp.eps
 pldi02.dvi: Figures/ptrsize.tex Figures/THlat6.tex
 pldi02.dvi: Figures/standardAlignment.eps Figures/byteAlignment.eps
 pldi02.dvi: Figures/bitAlignment.eps
+pldi02.dvi: Figures/spec-space.eps Figures/spaceopt.eps
 
 
 # thesis figure dependencies
