@@ -6,6 +6,7 @@ package harpoon.Analysis;
 import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.Analysis.AllocationInformationMap;
 import harpoon.Analysis.DefaultAllocationInformation;
+import harpoon.IR.Quads.Quad;
 
 import harpoon.ClassFile.HCodeElement;
 
@@ -20,9 +21,9 @@ import harpoon.ClassFile.HCodeElement;
     <code>DefaultAllocationInformation</code>.
 
     @author  Alexandru Salcianu <salcianu@MIT.EDU>
-    @version $Id: DefaultAllocationInformationMap.java,v 1.1 2003-02-08 19:36:07 salcianu Exp $ */
-public class DefaultAllocationInformationMap extends AllocationInformationMap
-    implements java.io.Serializable {
+    @version $Id: DefaultAllocationInformationMap.java,v 1.2 2003-03-11 17:49:52 cananian Exp $ */
+public class DefaultAllocationInformationMap
+    extends AllocationInformationMap<Quad> implements java.io.Serializable {
     
     /** Creates a <code>DefaultAllocationInformationMap</code>. */
     public DefaultAllocationInformationMap() { }
@@ -30,7 +31,7 @@ public class DefaultAllocationInformationMap extends AllocationInformationMap
     /** Returns the <code>AllocationProperties</code> for an
         allocation site.  If no such object exists, it returns a
         default <code>AllocationProperties</code> object. */
-    public AllocationProperties query(HCodeElement allocationSite) {
+    public AllocationProperties query(Quad allocationSite) {
 	AllocationProperties ap = super.query(allocationSite);
 	if(ap == null)
 	    ap = DefaultAllocationInformation.SINGLETON.query(allocationSite);

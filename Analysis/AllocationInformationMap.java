@@ -21,32 +21,33 @@ import java.util.Map;
  * from a different <code>AllocationInformation</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformationMap.java,v 1.8 2003-03-03 23:41:27 salcianu Exp $
+ * @version $Id: AllocationInformationMap.java,v 1.9 2003-03-11 17:49:48 cananian Exp $
  */
-public class AllocationInformationMap
-    implements AllocationInformation, java.io.Serializable {
-    private final Map map = new HashMap();
+public class AllocationInformationMap<HCE extends HCodeElement>
+    implements AllocationInformation<HCE>, java.io.Serializable {
+    private final Map<HCE,AllocationProperties> map =
+	new HashMap<HCE,AllocationProperties>();
     
     /** Creates a <code>AllocationInformationMap</code>. */
     public AllocationInformationMap() { }
 
     /** Return the <code>AllocationProperties</code> for the given
      *  <code>allocationSite</code>. */
-    public AllocationProperties query(HCodeElement allocationSite) {
-	return (AllocationProperties) map.get(allocationSite);
+    public AllocationProperties query(HCE allocationSite) {
+	return map.get(allocationSite);
     }
     /** Associate the given <code>allocationSite</code> with the specified
      *  <code>AllocationProperties</code>. */
-    public void associate(HCodeElement allocationSite, AllocationProperties ap)
+    public void associate(HCE allocationSite, AllocationProperties ap)
     {
 	map.put(allocationSite, ap);
     }
     /** Transfer allocation information from the oldallocsite to newallocsite
      *  using the specified <code>TempMap</code> and old 
      *  <code>AllocationInformation</code>. */
-    public void transfer(HCodeElement newallocsite, HCodeElement oldallocsite,
-			 TempMap tm, AllocationInformation ai) {
-
+    public <HCE2 extends HCodeElement> void transfer
+			 (HCE newallocsite, HCE2 oldallocsite,
+			  TempMap tm, AllocationInformation<HCE2> ai) {
 	AllocationProperties ap = ai.query(oldallocsite);
 	associate(newallocsite, ap.allocationHeap()==null ? ap :
 		  new AllocationPropertiesImpl(ap, tm));

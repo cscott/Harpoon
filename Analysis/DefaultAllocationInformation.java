@@ -8,6 +8,7 @@ import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Quads.Quad;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -19,14 +20,14 @@ import harpoon.Util.Util;
  * that nothing can be stack or thread-locally allocated.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultAllocationInformation.java,v 1.8 2003-03-03 23:41:27 salcianu Exp $
+ * @version $Id: DefaultAllocationInformation.java,v 1.9 2003-03-11 17:49:51 cananian Exp $
  */
 public class DefaultAllocationInformation
-    implements AllocationInformation, java.io.Serializable {
+    implements AllocationInformation<Quad>, java.io.Serializable {
     
     /** A static instance of the singleton 
      *  <code>DefaultAllocationInformation</code> object. */
-    public static final AllocationInformation SINGLETON =
+    public static final AllocationInformation<Quad> SINGLETON =
 	new DefaultAllocationInformation();
 
     /** Creates a <code>DefaultAllocationInformation</code>. */
@@ -36,7 +37,7 @@ public class DefaultAllocationInformation
      *  allocation site.  The allocation site must be either a
      *  <code>harpoon.IR.Quads.NEW</code> or a
      *  <code>harpoon.IR.Quads.ANEW</code>. */
-    public AllocationProperties query(HCodeElement allocationSite) {
+    public AllocationProperties query(Quad allocationSite) {
 	if (allocationSite instanceof harpoon.IR.Quads.NEW)
 	    return _hasInteriorPointers
 		(((harpoon.IR.Quads.NEW)allocationSite).hclass());
