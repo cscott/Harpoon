@@ -4,33 +4,33 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadSSA;
 import harpoon.IR.Quads.ToNoSSA;
 
 import java.util.Hashtable;
 
 /**
  *
+ *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.2 1999-02-03 21:19:44 duncan Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.1 1999-02-03 21:19:45 duncan Exp $
  */
-public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
+public class LowQuadSSA extends Code
 {
   /** The name of this code view. */
-  public static final String codename  = "low-quad-no-ssa";
+  public static final String codename  = "low-quad-ssa";
 
   /** Creates a <code>LowQuadNoSSA</code> object from a LowQuad object */
-  LowQuadNoSSA(LowQuadSSA code)
+  LowQuadSSA(QuadSSA code)
     {
-      super(code.getMethod(), null);
-      hD       = (Hashtable)code.hD.clone();
-      quads    = ToNoSSA.translate(qf, hD, code); 
+      super(code);
     }
 
   /**
    * Create a new code object given a quadruple representation of the
    * method instructions.
    */
-  private LowQuadNoSSA(HMethod method, Quad quads)
+  private LowQuadSSA(HMethod method, Quad quads)
     {
       super(method, quads);
     }
@@ -39,33 +39,32 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
    * Clone this code representation.  The clone has its own copy of the
    * quad graph.
    */
-  public HCode  clone(HMethod newMethod)
+  public HCode clone(HMethod newMethod)
     {
-      LowQuadNoSSA lqns = new LowQuadNoSSA(newMethod, null);
-      lqns.quads        = Quad.clone(lqns.qf, quads);
-      return lqns;
+      LowQuadSSA lqs = new LowQuadSSA(newMethod, null);
+      lqs.quads      = Quad.clone(lqs.qf, quads);
+      return lqs;
     }
 
   /**
    * Return the name of this code view.
-   * @return the string <code>"low-quad-no-ssa"</code>
+   * @return the string <code>"low-quad-ssa"</code>
    */
   public String getName() { return codename; }
 
   /**
-   * Return a code factory for <code>LowQuadNoSSA</code>, given a 
-   * code factory for either <code>harpoon.IR.LowQuad.Code</code>, or
-   * <code>QuadSSA</code>.
+   * Return a code factory for <code>LowQuadSSA</code>, given a 
+   * code factory for <code>QuadSSA</code>.
    */
   public static HCodeFactory codeFactory(final HCodeFactory hcf)
     {
-      if (hcf.getCodeName().equals(LowQuadSSA.codename))
+      if (hcf.getCodeName().equals(QuadSSA.codename)) 
 	{
-	  return new HCodeFactory() { 
-	    public HCode convert(HMethod m) { 
+	  return new HCodeFactory() {
+	    public HCode convert(HMethod m) {
 	      HCode c = hcf.convert(m);
 	      return (c==null) ? null :
-		new LowQuadNoSSA((LowQuadSSA)c);
+		new LowQuadSSA((QuadSSA)c);
 	    }
 	    public void clear(HMethod m) { hcf.clear(m); }
 	    public String getCodeName() { return codename; }
@@ -82,6 +81,6 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
    */
   public static HCodeFactory codeFactory()
     {  
-      return codeFactory(LowQuadSSA.codeFactory());
+      return codeFactory(QuadSSA.codeFactory());
     }
 }
