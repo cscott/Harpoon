@@ -16,7 +16,7 @@ import java.util.Hashtable;
  * Each instance of this class represents a unique datatype.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BaseType.java,v 1.1 1998-07-29 00:56:45 cananian Exp $
+ * @version $Id: BaseType.java,v 1.2 1998-07-29 01:20:09 cananian Exp $
  * @see     Type
  * @see     Value
  */
@@ -73,6 +73,8 @@ public class BaseType extends Type {
 
   /** Instantiate this type with an integer constant.
    *  @param val the integer that this <code>Value</code> should represent.
+   *  @exception ValueException
+   *             see below.
    *  @exception ValueMethodException
    *             if this datatype cannot be constructed from an integer.
    *  @exception InvalidValueException
@@ -84,6 +86,8 @@ public class BaseType extends Type {
   /** Instantiate this type with a floating-point constant.
    *  @param val the floating-point number that this <code>Value</code> 
    *             should represent.
+   *  @exception ValueException
+   *             see below.
    *  @exception ValueMethodException
    *             if this datatype cannot be constructed from a floating-point
    *             number.
@@ -97,6 +101,8 @@ public class BaseType extends Type {
    *  This is used to initialize objects that do not map cleanly to
    *  a java built-in type (state machines, bignums, etc).
    *  @param val the string representing the value of this datatype.
+   *  @exception ValueException
+   *             see below.
    *  @exception ValueMethodException
    *             if this datatype cannot be constructed from a string
    *             representation.
@@ -115,6 +121,8 @@ public class BaseType extends Type {
    * @param operand an array of operand Values.
    * <BR>   Usually the operands will be of the same Type as this object.
    * @return the result of the computation.
+   * @exception ValueException
+   *            see below.
    * @exception InvalidValueException
    *            if both operands are not BaseValues.
    * @exception ValueException
@@ -153,6 +161,8 @@ public class BaseType extends Type {
    * @param opcode  the operation to perform.
    * @param operand an array of operand Types.
    * @return the type of the result.
+   * @exception ValueMethodException
+   *            if operands aren't of a <code>BaseType</code>.
    */
   public Type computeType(String opcode, Type operand[]) 
        throws ValueMethodException

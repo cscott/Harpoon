@@ -9,7 +9,7 @@ import java.util.Hashtable;
  * Each instance of this class represents a unique datatype.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayType.java,v 1.1 1998-07-29 00:56:45 cananian Exp $
+ * @version $Id: ArrayType.java,v 1.2 1998-07-29 01:20:09 cananian Exp $
  * @see     Type
  * @see     Value
  */
@@ -50,11 +50,7 @@ public class ArrayType extends Type {
   private static Hashtable typeTable = new Hashtable();
 
   /** Instantiate this type with an array of <code>Value</code> objects.
-   *  @param val the integer that this <code>Value</code> should represent.
-   *  @exception java.lang.NoSuchMethodException
-   *             if this datatype cannot be constructed from an integer.
-   *  @exception InvalidValueException
-   *             if the supplied constant cannot be represented.
+   *  @param valarr the array of values (of this type) to be represented.
    */
   public ArrayValue newValue(Value[] valarr)
   { return new ArrayValue(this, valarr); }
@@ -76,6 +72,7 @@ public class ArrayType extends Type {
    *        operation.</STRONG>
    * @return the appropriate element of the array.
    * @exception ValueException
+   *            see below.
    * @exception InvalidValueException
    *            if the operands are not an <code>ArrayValue</code> and 
    *            <code>BaseValue</code>, respectively.
@@ -117,6 +114,7 @@ public class ArrayType extends Type {
    *        The second must be a BaseType.</STRONG>
    * @return the appropriate element of the array.
    * @exception ValueException
+   *            see below.
    * @exception InvalidValueException
    *            if the operands are not an <code>ArrayType</code> and 
    *            <code>BaseType</code>, respectively.

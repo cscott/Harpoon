@@ -23,7 +23,7 @@ import java.lang.reflect.InvocationTargetException;
  * translated into an <code>InvalidValueException</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BaseValue.java,v 1.1 1998-07-29 00:56:45 cananian Exp $
+ * @version $Id: BaseValue.java,v 1.2 1998-07-29 01:20:09 cananian Exp $
  * @see     Type
  * @see     Value
  * @see     ValueException
@@ -38,6 +38,8 @@ public class BaseValue extends Value {
    * Create an instance of a datatype representing an integer constant.
    * @param type  the parent datatype.
    * @param value the integer constant.
+   * @exception ValueException
+   *            see below.
    * @exception ValueMethodException
    *            if the datatype does not support instantiation from an
    *            integer constant.
@@ -65,6 +67,8 @@ public class BaseValue extends Value {
    * Create an instance of a datatype representing an floating-point constant.
    * @param type  the parent datatype.
    * @param value the floating-point constant.
+   * @exception ValueException
+   *            see below.
    * @exception ValueMethodException
    *            if the datatype does not support instantiation from a
    *            floating-point constant.
@@ -93,6 +97,8 @@ public class BaseValue extends Value {
    * the desired constant.
    * @param type  the parent datatype.
    * @param value a string representation of the constant.
+   * @exception ValueException
+   *            see below.
    * @exception ValueMethodException
    *            if the datatype does not support instantiation from a
    *            string representation.
@@ -137,6 +143,12 @@ public class BaseValue extends Value {
 
   /** Returns an integer representation of the object by calling
    *  its intValue() method.
+   *  @exception InvalidValueException
+   *             if intValue() invocation on <code>this</code>
+   *             throws an exception (can't convert to int).
+   *  @exception ValueMethodException
+   *             if intValue() method of <code>this</code> either
+   *             doesn't exist or is protected.
    */
   public int intValue() throws InvalidValueException, ValueMethodException { 
     try {

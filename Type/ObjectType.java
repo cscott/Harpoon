@@ -9,7 +9,7 @@ import java.util.Hashtable;
  * Each instance of this class represents a unique datatype.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectType.java,v 1.1 1998-07-29 00:56:46 cananian Exp $
+ * @version $Id: ObjectType.java,v 1.2 1998-07-29 01:20:09 cananian Exp $
  * @see     Type
  * @see     Value
  */
@@ -50,11 +50,7 @@ public class ObjectType extends Type {
   private static Hashtable typeTable = new Hashtable();
 
   /** Instantiate this type with an array of <code>Value</code> objects.
-   *  @param val the integer that this <code>Value</code> should represent.
-   *  @exception java.lang.NoSuchMethodException
-   *             if this datatype cannot be constructed from an integer.
-   *  @exception InvalidValueException
-   *             if the supplied constant cannot be represented.
+   *  @param o the object that this <code>Value</code> should represent.
    */
   public ObjectValue newValue(Object o)
   { return new ObjectValue(this, o); }
@@ -68,6 +64,8 @@ public class ObjectType extends Type {
    * @param operand an array of operand Values.
    * <BR>   Usually the operands will be of the same Type as this object.
    * @return the result of the computation.
+   * @exception ValueException
+   *            see below.
    * @exception ValueMethodException
    *            if the desired operation cannot be performed.
    */
@@ -81,6 +79,8 @@ public class ObjectType extends Type {
    * @param opcode the operation to perform.
    * @param operand an array of operand types.
    * @return the type of the result of the computation.
+   * @exception ValueException
+   *            see below.
    * @exception ValueMethodException
    *            if the desired operation cannot be performed.
    */
