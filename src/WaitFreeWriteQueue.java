@@ -1,5 +1,5 @@
-// WaitFreeWriteQueue.java, created by Dumitru Daniliuc
-// Copyright (C) 2003 Dumitru Daniliuc
+// WaitFreeWriteQueue.java, created by Dumitru Daniliuc, rewritten by Harvey Jones
+// Copyright (C) 2003 Dumitru Daniliuc, Harvey Jones
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
@@ -22,12 +22,7 @@ package javax.realtime;
  *  This class is provided for compliance with the RTSJ, see
  *  <code>Queue</code> for details.
  */
-public class WaitFreeWriteQueue {
-
-    protected Object[] writeQueue = null;
-    protected int queueSize;
-    protected int currentIndex = 0;
-
+public class WaitFreeWriteQueue extends Queue{
     protected Thread writerThread = null, readerThread = null;
     protected MemoryArea memArea;
 
@@ -52,96 +47,18 @@ public class WaitFreeWriteQueue {
     public WaitFreeWriteQueue(Thread writer, Thread reader,
 			      int maximum, MemoryArea memory)
 	throws IllegalArgumentException {
+	super(maximum, reader, memory);
 	writerThread = writer;
 	readerThread = reader;
-	queueSize = maximum;
-	memArea = memory;
 
-	// TODO (?)
     }
 
-    /** Set <code>this</code> to empty. */
-    public void clear() {
-	currentIndex = 0;
+    public Object read() {
+	return super.blockingRead();
     }
-
-    /** Force this <code>java.lang.Object</code> to replace the last one.
-     *  If the reader should happen to have just removed the other
-     *  <code>java.lang.Object</code> just as we were updating it, we will
-     *  return false. False may mean that it just saw that we put in there.
-     *  Either way, the best thing to do is to just write again -- which
-     *  will succeed, and check on the readers side for consecutive
-     *  identical read values.
-     *
-     *  @return True, if an element was overwritten. False, if there is an
-     *          empty element into which the write occured.
-     *  @throws MemoryScopeException
-     */
-    public boolean force(Object object) throws MemoryScopeException {
-	if (!isFull()) return write(object);
-	else {
-	    writeQueue[currentIndex] = object;
-	    return true;
-	}
-    }
-
-    /** Queries the system to determine if <code>this</code> is empty.
-     *
-     *  @return True, if <code>this</code> is empty. False, if
-     *          <code>this</code> is not empty.
-     */
-    public boolean isEmpty() {
-	return (currentIndex == 0);
-    }
-
-    /** Queries the system to determine if <code>this</code> is full.
-     *
-     *  @return True, if <code>this</code> is full. False, if
-     *          <code>this</code> is not full.
-     */
-    public boolean isFull() {
-	return (currentIndex == queueSize - 1);
-    }
-
-    /** A synchronized read on the queue.
-     *
-     *  @return The <code>java.lang.Object</code> read or null if
-     *          <code>this</code> is empty.
-     */
-    public synchronized Object read() {
-	while (isEmpty())
-	    try {
-		Thread.sleep(100);
-	    } catch (Exception e) {};
-
-	Object temp = writeQueue[0];
-	for (int i = 0; i < currentIndex; i++)
-	    writeQueue[i] = writeQueue[i+1];
-	currentIndex--;
-	return temp;
-    }
-
-    /** Queries the system to determine the number of elements in
-     *  <code>this</code>.
-     *
-     *  @return An integer which is the number of non-empty positions in
-     *          <code>this</code>.
-     */
-    public int size() {
-	return currentIndex;
-    }
-
-    /** Attempt to insert an element into the queue.
-     *
-     *  @param object The <code>java.lang.Object</code> to insert.
-     *  @return True, if the write succeeded. False, if not.
-     *  @throws MemoryScopeException
-     */
-    public boolean write(Object object) throws MemoryScopeException {
-	if (isFull()) return false;
-	else {
-	    writeQueue[++currentIndex] = object;
-	    return true;
-	}
+    
+    public boolean write(Object data)
+	throws MemoryScopeException{
+	return super.nonBlockingWrite(data);
     }
 }

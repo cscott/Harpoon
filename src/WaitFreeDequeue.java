@@ -46,9 +46,13 @@ public class WaitFreeDequeue {
 	readerThread = reader;
 	queueSize = maximum;
 	memArea = area;
-
-	// TODO (?)
-    }
+	try{
+	    queue=(Object[])area.newArray(java.lang.Object.class, queueSize);
+	} catch (Exception e){
+	    System.out.println(e);
+	    System.exit(-1);
+	}
+   }
 
     /** Used to check if the queue is empty.
      *

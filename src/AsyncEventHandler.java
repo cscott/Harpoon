@@ -1,8 +1,10 @@
 // AsyncEventHandler.java, created by Dumitru Daniliuc
 // Copyright (C) 2003 Dumitru Daniliuc
 // Licensed under the terms of the GNU GPL; see COPYING for details.
+
 package javax.realtime;
 
+import java.util.concurrent.atomic.AtomicInteger;
 /** An asynchronous event handler encapsulates code that gets run
  *  at some time after an <code>AsyncEvent</code> occurs.
  *  <p>
@@ -48,7 +50,7 @@ package javax.realtime;
  */
 public class AsyncEventHandler implements Schedulable {
     
-    protected int fireCount = 0;
+    protected AtomicInteger fireCount = null;
     protected boolean nonheap = false;
     protected Runnable logic;
 
@@ -73,6 +75,7 @@ public class AsyncEventHandler implements Schedulable {
 	else scheduling = null;
 	release = null;
 	memParams = null;
+	fireCount = new AtomicInteger(0);
     }
 
     /** Create an instance of <code>AsyncEventHandler</code> whose
@@ -116,7 +119,7 @@ public class AsyncEventHandler implements Schedulable {
      *  parameters are inherited from the current thread, if the current
      *  thread is a <code>RealtimeThread</code>, or null, otherwise.
      *
-     *  @param lobic The <code>java.lang.Runnable</code> object whose
+     *  @param logic The <code>java.lang.Runnable</code> object whose
      *               <code>run()</code> method is executed by
      *               <code>handleAsyncEvent()</code>.
      *  @param nonheap A flag meaning, when true, that this will have
@@ -317,9 +320,7 @@ public class AsyncEventHandler implements Schedulable {
      *          the value to zero.
      */  
     protected final int getAndClearPendingFireCount() {
-	int x = fireCount;
-	fireCount = 0;
-	return x;
+	return fireCount.getAndSet(0);
     }
 
     /** This is an accessor method for <code>fireCount</code>. This method
@@ -343,8 +344,9 @@ public class AsyncEventHandler implements Schedulable {
      *
      *  @return The value held by <code>fireCount</code> prior to decrementing it by one.
      */
+    // TODO: Make this atomic. Not quite sure how. -harveyj
     protected int getAndDecrementPendingFireCount() {
-	if (fireCount > 0) return fireCount--;
+	if (fireCount.get() > 0) return fireCount.getAndDecrement();
 	else return 0;
     }
 
@@ -355,7 +357,7 @@ public class AsyncEventHandler implements Schedulable {
      *  @return The value held by <code>fireCount</code> prior to incrementing it by one.
      */
     protected int getAndIncrementPendingFireCount() {
-	return fireCount++;
+	return fireCount.getAndIncrement();
     }
 
     /** This is an accessor method for the intance of <code>MemoryArea</code>
@@ -385,7 +387,7 @@ public class AsyncEventHandler implements Schedulable {
      *  @return The value held by <code>fireCount</code>.
      */
     protected final int getPendingFireCount() {
-	return fireCount;
+	return fireCount.get();
     }
 
     /** Gets the processing group parameters associated with this intance of <code>Schedulable</code>.

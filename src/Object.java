@@ -37,6 +37,12 @@ public class Object {
 	return (this == obj);
     }
 
+    public void wait() {
+    }
+
+    public void notify() {
+    }
+
     // Borrowed from standart java.lang.Object;
     public final native void wait(long timeout) throws InterruptedException;
 
