@@ -34,6 +34,7 @@ import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.Default;
+import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 
 import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
@@ -75,7 +76,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.118 2000-11-15 19:51:13 wbeebee Exp $
+ * @version $Id: SAMain.java,v 1.1.2.119 2000-11-16 07:18:50 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -180,7 +181,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (rootSetFilename!=null) try {
 		addToRootSet(roots, rootSetFilename);
 	    } catch (IOException ex) {
-		System.err.println("Error reading "+rootSetFilename+".");
+		System.err.println("Error reading "+rootSetFilename+": "+ex);
 		System.exit(1);
 	    }
 	    // okay, we've got the roots, make a rough class hierarchy.
@@ -196,20 +197,12 @@ public class SAMain extends harpoon.IR.Registration {
 
 	    if (!USE_OLD_CLINIT_STRATEGY) {
 		// transform the class initializers using the class hierarchy.
-		java.util.Properties p = new java.util.Properties();
-		try {
-		    // XXX: same chicken-and-egg problem as before.  We really
-		    // want to get the safe-set from the Runtime (in the Frame)
-		    // but the Frame hasn't been constructed yet.[CSA 2-Nov-00]
-
-		    // FSK: switched from hackish hardcoded
-		    // relative-directory path to
-		    // slightly-less-hackish hardcoded class-based path 
-		    p.load(ClassLoader.getSystemResourceAsStream("harpoon/Backend/Runtime1/init-safe-set"));
-		    // p.load(new java.io.FileInputStream("Support/init-safe-set"));
-		} catch (java.io.IOException ex) { System.err.println(ex); }
+		// XXX: same chicken-and-egg problem as before.  We really
+		// want to get the safe-set path from the Runtime in the Frame
+		// but the Frame hasn't been constructed yet.[CSA 2-Nov-00]
+		String resource="harpoon/Backend/Runtime1/init-safe-set";
 		hcf=new harpoon.Analysis.Quads.InitializerTransform
-		    (hcf, classHierarchy, linker, p).codeFactory();
+		    (hcf, classHierarchy, linker, resource).codeFactory();
 		// recompute the hierarchy after transformation.
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
@@ -382,55 +375,17 @@ public class SAMain extends harpoon.IR.Registration {
 	}
     }
 
-    static void addToRootSet(Set roots, String filename) throws IOException {
-	LineNumberReader r = new LineNumberReader(new FileReader(filename));
-	String line;
-	while (null != (line=r.readLine())) {
-	    line = line.trim(); // remove white space from both sides.
-	    // allow comments and blank lines.
-	    if (line.startsWith("#") || line.length()==0) continue;
-	    // check if this is an 'include' directive.
-	    if (line.startsWith("include ")) {
-		String nfile = line.substring(7).trim();
-		try {
-		    addToRootSet(roots, nfile);
-		    continue;
-		} catch (IOException ex) {
-		    System.err.println("Error reading "+nfile+" on line "+
-				       r.getLineNumber()+" of "+filename);
-		    System.exit(1);
-		}
+    static void addToRootSet(final Set roots, String filename) 
+	throws IOException {
+	ParseUtil.readResource(filename, new ParseUtil.StringParser() {
+	    public void parseString(String s)
+		throws ParseUtil.BadLineException {
+		if (s.indexOf('(') < 0) // parse as class name.
+		    roots.add(ParseUtil.parseClass(linker, s));
+		else // parse as method name.
+		    roots.add(ParseUtil.parseMethod(linker, s));
 	    }
-	    int lparen = line.indexOf('(');
-	    if (lparen < 0 || line.indexOf(')', lparen) < 0) try {
-		// this is a class name.
-		roots.add(linker.forName(line));
-		continue;
-	    } catch (NoSuchClassException ex) {
-		System.err.println("Class "+line+" not found on line "+
-				   r.getLineNumber()+" of "+filename);
-		System.exit(1);
-	    }
-	    int dot = line.lastIndexOf('.', lparen);
-	    if (dot < 0) {
-		System.err.println("Illegal method name on line "+
-				   r.getLineNumber()+" of "+filename);
-		System.exit(1);
-	    }
-	    String desc = line.substring(lparen);
-	    String method = line.substring(dot+1, lparen);
-	    String classN = line.substring(0, dot);
-	    try {
-		roots.add(linker.forName(classN).getMethod(method, desc));
-		continue;
-	    } catch (NoSuchClassException ex) {
-	    } catch (NoSuchMethodError ex) {
-	    }
-	    System.err.println("Method "+line+" not found on line "+
-			       r.getLineNumber()+" of "+filename);
-	    System.exit(1);
-	}
-	r.close();
+	});
     }
 
     public static void outputMethod(final HMethod hmethod, 

@@ -40,6 +40,7 @@ import harpoon.Temp.Temp;
 import harpoon.Util.Default;
 import harpoon.Util.Environment;
 import harpoon.Util.HashEnvironment;
+import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
@@ -57,7 +58,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.15 2000-11-10 02:46:02 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.16 2000-11-16 07:18:27 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -79,11 +80,11 @@ public class InitializerTransform
 	this(parent, ch, Default.EMPTY_MAP);
     }
     /** Creates a <code>InitializerTransform</code> using the specified
-     *  <code>Properties</code> object to specify the safe and dependent
+     *  named resource to specify the safe and dependent
      *  native methods of this runtime. */
     public InitializerTransform(HCodeFactory parent, ClassHierarchy ch,
-				Linker linker, Properties methodProps) {
-	this(parent, ch, parseProperties(linker, methodProps));
+				Linker linker, String resourceName) {
+	this(parent, ch, parseProperties(linker, resourceName));
     }
     /** Creates a <code>InitializerTransform</code> using the given
      *  information about safe and dependent methods.
@@ -366,45 +367,39 @@ public class InitializerTransform
 	    // done!
 	} };
     }
-    private static Map parseProperties(Linker linker, Properties methodProps) {
-	Map result = new HashMap();
-	for (Enumeration e=methodProps.propertyNames(); e.hasMoreElements(); ){
-	    String propkey = ((String) e.nextElement()).trim();
-	    String propval = methodProps.getProperty(propkey).trim();
-	    int lparen = propkey.lastIndexOf('(');
-	    if (lparen<0) { bogus(propkey); continue; }
-	    int ldot = propkey.lastIndexOf('.', lparen);
-	    if (ldot<0) { bogus(propkey); continue; }
-	    String desc = propkey.substring(lparen);
-	    String mname= propkey.substring(ldot+1, lparen);
-	    String cname= propkey.substring(0, ldot);
-	    HMethod hm;
-	    try { hm=linker.forName(cname).getDeclaredMethod(mname, desc); }
-	    catch (NoSuchClassException ex) { bogus(propkey); continue; }
-	    catch (NoSuchMethodError ex) { bogus(propkey); continue; }
-	    Set dep = new HashSet();
-	    while (propval.length()>0) {
-		int space = propval.indexOf(' ');
-		if (space<0) space=propval.length();
-		String firstdep = propval.substring(0, space);
-		propval = propval.substring(space).trim();
-		HClass hc;
-		try { hc=linker.forName(firstdep); }
-		catch (NoSuchClassException ex) { bogus(propval); continue; }
-		HInitializer hi = hc.getClassInitializer();
-		if (hi!=null) dep.add(hi);
-	    }
-	    // if no dependencies, then it's a safe method.
-	    // (optimize for space by substituting a canonical EMPTY_SET)
-	    if (dep.size()==0) result.put(hm, Collections.EMPTY_SET);
-	    // otherwise, add set to dependent methods map.
-	    else result.put(hm, dep);
-	    // yay!
+    private static Map parseProperties(final Linker linker,
+				       String resourceName) {
+	final Map result = new HashMap();
+	try {
+	    ParseUtil.readResource(resourceName, new ParseUtil.StringParser() {
+		public void parseString(String s)
+		    throws ParseUtil.BadLineException {
+		    int equals = s.indexOf('=');
+		    String mname = (equals<0)? s:s.substring(0, equals).trim();
+		    HMethod hm = ParseUtil.parseMethod(linker, mname);
+		    final Set dep = new HashSet();
+		    String depstr = (equals<0) ? "" : s.substring(equals+1);
+		    ParseUtil.parseSet(depstr, new ParseUtil.StringParser() {
+			public void parseString(String ss)
+			    throws ParseUtil.BadLineException {
+			    HClass hc = ParseUtil.parseClass(linker, ss);
+			    HInitializer hi = hc.getClassInitializer();
+			    if (hi!=null) dep.add(hi);
+			}
+		    });
+		    // if no dependencies, then it's a safe method.
+		    // (optimize for space by using a canonical EMPTY_SET)
+		    if (dep.size()==0) result.put(hm, Collections.EMPTY_SET);
+		    // otherwise, add set to dependent methods map.
+		    else result.put(hm, dep);
+		    // yay!
+		}
+	    });
+	} catch (java.io.IOException ex) {
+	    System.err.println("ERROR READING PROPERTIES, SKIPPING.");
+	    System.err.println(ex.toString());
 	}
+	// done.
 	return result;
-    }
-    /** Flag an error, non-fatally. */
-    private static void bogus(String str) {
-	System.err.println("BAD RUNTIME METHOD PROPERTY, SKIPPING: "+str);
     }
 }
