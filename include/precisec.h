@@ -9,8 +9,27 @@ typedef void * jptr;
 #define LSHR(x,y) (((int64_t)(x))>>((y)&0x3f))
 #define LUSHR(x,y) (((u_int64_t)(x))>>((y)&0x3f))
 
+#ifdef WITH_PRECISE_GC
+# error WITH_PRECISE_GC not yet implemented.
+# define IFPRECISE(x) x
+  /* push an object onto the live vars stack */
+# define PUSHOBJ(t)
+  /* pop and return an object from the live vars stack */
+# define POPOBJ()
+  /* return the current top-of-stack pointer for the live vars stack */
+# define STACKTOP()
+  /* set the current top-of-stack for the live vars stack to x */
+# define SETSTACKTOP(x)
+#else /* !WITH_PRECISE_GC */
+  /* not doing precise garbage collection, just ignore all the precise stuff */
+# define IFPRECISE(x) /*no-op*/0
+#endif
+
 /* select which calling convention you'd like to use in the generated code */
-#define USE_GLOBAL_SETJMP
+#if !defined(USE_PAIR_RETURN) && !defined(USE_GLOBAL_SETJMP)
+  /* default is USE_GLOBAL_SETJMP */
+# define USE_GLOBAL_SETJMP
+#endif
 
 #ifdef USE_PAIR_RETURN /* ----------------------------------------------- */
 #define FIRST_DECL_ARG(x)
@@ -34,20 +53,22 @@ rettype ## _and_ex (*) argtypes
 void * (*) argtypes
 
 #define FIRST_CALL_ARG(x)
-#define CALL(rettype, retval, funcref, args, exv, handler)\
+#define CALL(rettype, retval, funcref, args, exv, handler, restoreexpr)\
 { rettype ## _and_ex __r = (funcref) args;\
+  restoreexpr;\
   if (__r.ex) { exv = __r.ex; goto handler; }\
   else retval = __r.value;\
 }
-#define CALLV(funcref, args, exv, handler)\
+#define CALLV(funcref, args, exv, handler, restoreexpr)\
 { void * __r = (funcref) args;\
+  restoreexpr;\
   if (__r) { exv = __r; goto handler; }\
 }
 /* no-handler case is same as handler case */
-#define CALL_NH(rettype, retval, funcref, args, exv, handler)\
-CALL(rettype, retval, funcref, args, exv, handler)
-#define CALLV_NH(funcref, args, exv, handler)\
-CALLV(funcref, args, exv, handler)
+#define CALL_NH(rettype, retval, funcref, args, exv, handler, restoreexpr)\
+CALL(rettype, retval, funcref, args, exv, handler, restoreexpr)
+#define CALLV_NH(funcref, args, exv, handler, restoreexpr)\
+CALLV(funcref, args, exv, handler, restoreexpr)
 
 /* <foo> and exception pairs */
 typedef struct {
@@ -99,29 +120,30 @@ rettype (*) argtypes
 void (*) argtypes
 
 #define FIRST_CALL_ARG(x)
-#define SETUP_HANDLER(exv, hlabel)\
+#define SETUP_HANDLER(exv, hlabel, restoreexpr)\
 { struct FNI_Thread_State *fts=(struct FNI_Thread_State *)FNI_GetJNIEnv();\
-  jptr _ex_;\
+  jptr _ex_; IFPRECISE(void *_top_=STACKTOP());\
   jmp_buf _jb_; memcpy(_jb_, fts->handler, sizeof(_jb_));\
   if ((_ex_=(jptr)setjmp(fts->handler))!=NULL) {\
-    exv=_ex_; memcpy(fts->handler, _jb_, sizeof(_jb_)); goto hlabel;\
+    exv=_ex_; memcpy(fts->handler, _jb_, sizeof(_jb_));\
+    IFPRECISE(SETSTACKTOP(_top_)); restoreexpr; goto hlabel;\
   }
 #define RESTORE_HANDLER\
   memcpy(fts->handler, _jb_, sizeof(_jb_));\
 }
 /* no-handler versions of calls */
-#define CALL_NH(rettype, retval, funcref, args, exv, handler)\
-retval = (funcref) args;
-#define CALLV_NH(funcref, args, exv, handler)\
-(funcref) args
+#define CALL_NH(rettype, retval, funcref, args, exv, handler, restoreexpr)\
+retval = (funcref) args; restoreexpr;
+#define CALLV_NH(funcref, args, exv, handler, restoreexpr)\
+(funcref) args; restoreexpr;
 
-#define CALL(rettype, retval, funcref, args, exv, handler)\
-SETUP_HANDLER(exv, handler)\
-CALL_NH(rettype, retval, funcref, args, exv, handler);\
+#define CALL(rettype, retval, funcref, args, exv, handler, restoreexpr)\
+SETUP_HANDLER(exv, handler, restoreexpr)\
+CALL_NH(rettype, retval, funcref, args, exv, handler, restoreexpr);\
 RESTORE_HANDLER
-#define CALLV(funcref, args, exv, handler)\
-SETUP_HANDLER(exv, handler)\
-CALLV_NH(funcref, args, exv, handler);\
+#define CALLV(funcref, args, exv, handler, restoreexpr)\
+SETUP_HANDLER(exv, handler, restoreexpr)\
+CALLV_NH(funcref, args, exv, handler, restoreexpr);\
 RESTORE_HANDLER
 
 #endif /* USE_GLOBAL_SETJMP ----------------------------------------- */
