@@ -340,16 +340,17 @@ jobject _fni_class_findMember
   return NULL;
 }
 
+struct field_closure {
+  const char *cname;
+};
+static int field_cmp(JNIEnv *env, union _jmemberID *ptr, void *cl) {
+  struct field_closure *c = (struct field_closure *) cl;
+  return 0==strcmp(ptr->f.name, c->cname);
+}
 static inline
 jobject fni_class_getField(JNIEnv *env, jclass cls, jstring name,
 			   enum _fni_class_restrictionType which) {
-  struct field_closure {
-    const char *cname;
-  } c;
-  static int field_cmp(JNIEnv *env, union _jmemberID *ptr, void *cl) {
-    struct field_closure *c = (struct field_closure *) cl;
-    return 0==strcmp(ptr->f.name, c->cname);
-  }
+  struct field_closure c;
   jobject result;
 
   c.cname = (*env)->GetStringUTFChars(env, name, NULL);
@@ -360,29 +361,30 @@ jobject fni_class_getField(JNIEnv *env, jclass cls, jstring name,
   return result;
 }
 
+struct method_closure {
+  const char *cname;
+  jobjectArray paramTypes;
+  int nparams;
+};
+static int method_cmp(JNIEnv *env, union _jmemberID *ptr, void *cl) {
+  struct method_closure *c = (struct method_closure *) cl;
+  int i; char *desc;
+  if (strcmp(ptr->m.name, c->cname)!=0) return 0;
+  for (i=0, desc=ptr->m.desc+1; desc!=NULL && *desc!=')';
+       desc = REFLECT_advanceDescriptor(desc), i++) {
+    if (i>=c->nparams) return 0; /* too many parameters */
+    if (!(*env)->IsSameObject
+	(env, REFLECT_parseDescriptor(env, desc),
+	 (*env)->GetObjectArrayElement(env, c->paramTypes, i)))
+      return 0;
+  }
+  return (i==c->nparams);
+}
 static inline
 jobject fni_class_getMethod(JNIEnv *env, jclass cls,
 			    jstring name, jobjectArray paramTypes,
 			    enum _fni_class_restrictionType which) {
-  struct method_closure {
-    const char *cname;
-    jobjectArray paramTypes;
-    int nparams;
-  } c;
-  static int method_cmp(JNIEnv *env, union _jmemberID *ptr, void *cl) {
-    struct method_closure *c = (struct method_closure *) cl;
-    int i; char *desc;
-    if (strcmp(ptr->m.name, c->cname)!=0) return 0;
-    for (i=0, desc=ptr->m.desc+1; desc!=NULL && *desc!=')';
-	 desc = REFLECT_advanceDescriptor(desc), i++) {
-      if (i>=c->nparams) return 0; /* too many parameters */
-      if (!(*env)->IsSameObject
-	  (env, REFLECT_parseDescriptor(env, desc),
-	   (*env)->GetObjectArrayElement(env, c->paramTypes, i)))
-	return 0;
-    }
-    return (i==c->nparams);
-  }
+  struct method_closure c;
   jobject result;
   c.cname = (*env)->GetStringUTFChars(env, name, NULL);
   c.paramTypes = paramTypes;
@@ -394,27 +396,28 @@ jobject fni_class_getMethod(JNIEnv *env, jclass cls,
   return result;
 }
 
+struct constructor_closure {
+  jobjectArray paramTypes;
+  int nparams;
+};
+static int constructor_cmp(JNIEnv *env, union _jmemberID *ptr, void *cl) {
+  struct constructor_closure *c = (struct constructor_closure *) cl;
+  int i; char *desc;
+  for (i=0, desc=ptr->m.desc+1; desc!=NULL && *desc!=')';
+       desc = REFLECT_advanceDescriptor(desc), i++) {
+    if (i>=c->nparams) return 0; /* too many parameters */
+    if (!(*env)->IsSameObject
+	(env, REFLECT_parseDescriptor(env, desc),
+	 (*env)->GetObjectArrayElement(env, c->paramTypes, i)))
+      return 0;
+  }
+  return (i==c->nparams);
+}
 static inline
 jobject fni_class_getConstructor(JNIEnv *env, jclass cls,
 				 jobjectArray paramTypes,
 				 enum _fni_class_restrictionType which) {
-  struct constructor_closure {
-    jobjectArray paramTypes;
-    int nparams;
-  } c;
-  static int constructor_cmp(JNIEnv *env, union _jmemberID *ptr, void *cl) {
-    struct constructor_closure *c = (struct constructor_closure *) cl;
-    int i; char *desc;
-    for (i=0, desc=ptr->m.desc+1; desc!=NULL && *desc!=')';
-	 desc = REFLECT_advanceDescriptor(desc), i++) {
-      if (i>=c->nparams) return 0; /* too many parameters */
-      if (!(*env)->IsSameObject
-	  (env, REFLECT_parseDescriptor(env, desc),
-	   (*env)->GetObjectArrayElement(env, c->paramTypes, i)))
-	return 0;
-    }
-    return (i==c->nparams);
-  }
+  struct constructor_closure c;
   /* note that paramTypes==null is equivalent to paramTypes=new Class[0] */
   c.paramTypes = paramTypes;
   c.nparams = paramTypes ? (*env)->GetArrayLength(env, paramTypes) : 0;
