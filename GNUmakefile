@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.41 1999-06-24 02:24:12 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.42 1999-06-24 21:27:17 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -67,8 +67,9 @@ JARPKGS := $(subst harpoon/Contrib,gnu, \
 			$(filter-out Test%,$(ALLPKGS))), harpoon/$(pkg)))
 PROPERTIES:=Contrib/getopt/MessagesBundle.properties \
 	    RunTime/Monitor.properties
-HTMLDESC:=$(foreach dir, $(ALLPKGS),\
-	    $(wildcard $(dir)/package.html) $(wildcard $(dir)/overview.html))
+PKGDESC:=$(wildcard overview.html) $(wildcard README) \
+	 $(foreach dir, $(ALLPKGS),\
+	    $(wildcard $(dir)/package.html) $(wildcard $(dir)/README))
 
 NONEMPTYPKGS := $(shell ls  $(filter-out GNUmakefile,$(TARSOURCE))  | \
 		sed -e 's|/*[A-Za-z0-9_]*\.[A-Za-z0-9_]*$$||' | sort -u)
@@ -190,8 +191,8 @@ Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
 	xvcg -psoutput $@ -paper 8x11 -color $(VCG_OPT) $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
-harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT) $(PROPERTIES) $(HTMLDESC) bin/test-collections $(MUNGE) $(UNMUNGE) mark-executable
-	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT) $(PROPERTIES) $(HTMLDESC) bin/test-collections $(MUNGE) $(UNMUNGE)
+harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) bin/test-collections $(MUNGE) $(UNMUNGE) mark-executable
+	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) bin/test-collections $(MUNGE) $(UNMUNGE)
 	date '+%-d-%b-%Y at %r %Z.' > harpoon.tgz.TIMESTAMP
 
 tar:	harpoon.tgz harpoon.tgz.TIMESTAMP
