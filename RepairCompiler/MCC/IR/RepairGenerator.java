@@ -760,8 +760,17 @@ public class RepairGenerator {
 
 	//        for (int i = 0; i < constraints.size(); i++) {
 	//            Constraint constraint = (Constraint) constraints.elementAt(i); 
-	for (Iterator i = termination.constraintdependence.computeOrdering().iterator(); i.hasNext();) {
-	    Constraint constraint = (Constraint) ((GraphNode)i.next()).getOwner();
+	Iterator i;
+	if (Compiler.REPAIR)
+	    i=termination.constraintdependence.computeOrdering().iterator();
+	else
+	    i=state.vConstraints.iterator();
+	for (; i.hasNext();) {
+	    Constraint constraint;
+	    if (Compiler.REPAIR)
+		constraint= (Constraint) ((GraphNode)i.next()).getOwner();
+	    else
+		constraint=(Constraint)i.next();
 	    
             {
 		final SymbolTable st = constraint.getSymbolTable();
