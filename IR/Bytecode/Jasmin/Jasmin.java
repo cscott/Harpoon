@@ -22,7 +22,7 @@ import java.util.Iterator;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.8 1999-08-05 23:38:06 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.9 1999-08-05 23:53:55 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -168,6 +168,7 @@ public class Jasmin {
 	    for (int i=0;i<q.dimsLength();i++)
 		load(q.dims(i));
 	    out.println("    multianewarray "+q.hclass().getName().replace('.','/') +" "+q.dimsLength());
+            store(q.dst());
 	}
 
 	public void visit(ASET q) {
