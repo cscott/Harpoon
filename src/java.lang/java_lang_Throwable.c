@@ -11,7 +11,7 @@ char *name_of_binary;
 
 /* Print the printf-style formatted string using the println() method of
  * java object 'sobj'. */
-void jprintf(JNIEnv *env, jobject sobj, char *format, ...) {
+void jprintln(JNIEnv *env, jobject sobj, char *format, ...) {
     jstring str; const jchar *ca; jcharArray chararr; jmethodID mid; jsize len;
     char buf[256];
     jcharArray jca;
@@ -36,7 +36,7 @@ void jprintf(JNIEnv *env, jobject sobj, char *format, ...) {
 /* The given object 'sobj' must have a void println(char[]) method */
 JNIEXPORT void JNICALL Java_java_lang_Throwable_printStackTrace0
   (JNIEnv *env, jobject thisobj, jobject sobj) {
-    jprintf(env, sobj, "printStackTrace() unimplemented.");
+    jprintln(env, sobj, "printStackTrace() unimplemented.");
 }
 JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace
   (JNIEnv *env, jobject thisobj) {
@@ -66,6 +66,13 @@ void free_stacktrace(void *stacktrace) {
     free(tr); /* free current */
     tr = next; /* loop */
   }
+}
+/* reverse a stack trace */
+StackTrace reverse_trace(StackTrace head, StackTrace *newhead) {
+  if (!head->next) { *newhead=head; return head; /* tail becomes the head */ }
+  reverse_trace(head->next, newhead)->next = head;
+  head->next = NULL;
+  return head;
 }
 
 /* comparison function for qsort-ing symtab_entrys */
@@ -133,11 +140,11 @@ static void printItem(JNIEnv *env, jobject sobj,
 	if (strcmp(item->name, strtab[i]) == 0) return;
       if (strstr(item->name, "__0003cinit_0003e__")) return;
 #endif
-      jprintf(env, sobj, "        at %s\n", item->name);
+      jprintln(env, sobj, "        at %s", item->name);
     }
   else
     /* if for some reason we cannot find the symbol, print the address */
-    jprintf(env, sobj, "        at %p\n", backup->retaddr);
+    jprintln(env, sobj, "        at %p", backup->retaddr);
 
 }
 
@@ -207,7 +214,6 @@ static int printStackTrace(JNIEnv *env, jobject sobj, StackTrace tr) {
 	compare_symtab_entry);
   
   curr = tr;
-  jprintf(env, sobj, "Exception in thread\n");
 
   while(curr != NULL) {
     symtab_entry *found = 
@@ -225,9 +231,8 @@ static int printStackTrace(JNIEnv *env, jobject sobj, StackTrace tr) {
 /* prints out return addresses */
 static void printNumericStackTrace(JNIEnv *env, jobject sobj, StackTrace tr) {
   StackTrace curr = tr;
-  jprintf(env, sobj, "Exception in thread\n");
   while(curr != NULL) {
-    jprintf(env, sobj, "        at %p\n", curr->retaddr);
+    jprintln(env, sobj, "        at %p", curr->retaddr);
     curr = curr->next;
   }
 }
@@ -282,6 +287,8 @@ JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace
     }
     fp = next_fp;
   }
+  /* linked list is built in reverse order, so reverse it to make it right */
+  reverse_trace(tr, &tr);
 
   FNI_SetJNIData(env, thisobj, tr, free_stacktrace);
   return thisobj;
