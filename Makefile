@@ -446,7 +446,7 @@ tee.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES) movie/tank.jar
 
 movie/tank.jar:
 	@echo Downloading the tank movie...
-	@wget -nv http://www.flex-compiler.lcs.mit.edu/Harpoon/ImageRec/tank.jar -O movie/tank.jar
+	@wget -q -O movie/tank.jar http://www.flex-compiler.csail.mit.edu/Harpoon/ImageRec/tank.jar
 
 jars: clean doc movie/tank.jar
 	@echo Generating imagerec.jar file...
