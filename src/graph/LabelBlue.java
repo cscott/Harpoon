@@ -3,6 +3,7 @@
 package imagerec.graph;
 
 import imagerec.util.ImageDataManip;
+import imagerec.util.CommonMemory;
 
 import java.util.Arrays;
 
@@ -27,9 +28,23 @@ import java.util.Arrays;
    where <code>myLabelBlue</code> is the name of a {@link LabelBlue} node. In this mode,
    processed {@link ImageData}s that are tagged with <code>Command.CALIBRATION_IMAGE</code> will
    be used for calibration and those with any other tag will be processed. Calibration images
-   will not be passed on to the next {@link Node}.
+   will not be passed on to the next {@link Node}.<br><br>
+
+   A {@link LabelBlue} node is also capable of "returning" a value (after the <code>process()</code> method)
+   by setting <code>true</code> or <code>false</code> to a value in {@link CommonMemory}.
+   If the value is set to <code>true</code>, then this {@link LabelBlue} node found blue in the image.
+   If the value is set to <code>false</code>, then the node found no blue.<br><br>
+
+   By default, {@link LabelBlue} does not set any variable in {@link CommonMemory},
+   but you may tell it to do so by calling the <code>setCommonMemory()</code> method
+   and specifiying the name of any {@link CommonMemory} variable.<br><br>
+
+   Remember that the boolean value of the variable in {@link CommonMemory}
+   is actually stored in a {@link Boolean} object wrapper.
+
 
    @see Command
+   @see CommonMemory
    @author Reuben Sterling <<a href="mailto:benster@mit.edu">benster@mit.edu</a>>
 */
 public class LabelBlue extends Node {
@@ -136,6 +151,39 @@ public class LabelBlue extends Node {
 
 
     /**
+       The name of the variable in {@link CommonMemory} that this
+       {@link LabelBlue} node will set with true or false
+       before it returns. If <code>memName</code> is null,
+       then this {@link LabelBlue} node will not set any
+       value in {@link CommonMemory}.<br><br>
+       If this variable is equal to <code>true</code>, this means that
+       the <code>process()</code> method found blue in the
+       image. If the variable is set to <code>false</code>, then
+       no blue was found.<br><br>
+       Remember that the boolean value of the variable in {@link CommonMemory}
+       is actually stored in a {@link Boolean} object wrapper.
+       @see CommonMemory
+     */
+    private String memName;
+
+    /**
+     * This method either tells the {@link LabelBlue} node to begin or stop
+     * setting a "return value" in {@link CommonMemory}.
+     * Specifying a name will ause the {@link LabelBlue} node to store either
+     * <code>true</code> or <code>false</code> in the variable who's name you specify
+     * depending on whether the <code>process()</code> method detects blue in an image.<br><br>
+     *
+     * By specifying a <code>null</code> name, you turn this feature off.
+     * @param name The name of the variable in {@link CommonMemory} where this {@link LabelBlue}
+     * node will store its "return value."
+     *
+     * @see CommonMemory
+     */
+    public void setCommonMemory(String name) {
+	this.memName = name;
+    }
+
+    /**
        Calculates the level of 'blueness' based on the given values of red, green and blue.
        @param r The red value [0-255]
        @param g The green value [0-255]
@@ -211,8 +259,8 @@ public class LabelBlue extends Node {
        and does not pass the {@link ImageData} onto the next node.
        @param imageData The {@link ImageData} to process.
     */
-    public synchronized void process(ImageData imageData) {
-
+    //public synchronized void process(ImageData imageData) {
+    public void process(ImageData imageData) {
 	//If this image is the calibration image,
 	//then calibrate this node, and return.
 	//Do not perform labeling or pass image onto subsequent nodes.
@@ -326,6 +374,10 @@ public class LabelBlue extends Node {
 
 	//if no objects are found
 	if (labelNumber == 255) {
+	    if (this.memName != null) {
+		//System.out.println("LabelBlue found no blue.");
+		CommonMemory.setValue(this.memName, new Boolean(false));
+	    }
 	    return;
 	    //mainXMin = 0;
 	    //mainXMax = 0;
@@ -333,6 +385,12 @@ public class LabelBlue extends Node {
 	    //mainYMax = 0;
 	    //System.out.println("******** NO OBJECTS FOUND *************");
 	}
+	
+	    if (this.memName != null) {
+		//System.out.println("LabelBlue found blue.");
+		CommonMemory.setValue(this.memName, new Boolean(true));
+	    }
+	
 
 	//now that pixels in 'labels' have been labeled, copy that to the requested channel
 	byte[] channel1;
