@@ -27,7 +27,9 @@ NATIVELIB=\
 else
 NATIVEDIR=classpath
 NATIVELIB=\
+	classpath/java.io/libjavaio.la \
 	classpath/java.lang/libjavalang.la \
+	classpath/java.lang.reflect/libjavalangreflect.la \
 	classpath/gnu.vm.stack/libgnuvmstack.la
 endif
 
@@ -99,7 +101,7 @@ libflexc1_la_SOURCES = config_checker.c
 libflexc1_la_LIBADD = \
 	../arch/@ARCHDIR@/libfooter.la \
 	java.lang/libjavalang-indep.la \
-	java.lang.reflect/libjavalangreflect.la \
+	java.lang.reflect/libjavalangreflect-indep.la \
 	$(NATIVELIB) \
 	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) stats/libstats.la cam/libcam.la servo/libservo.la $(USERLIB) \
 	transact/libtransact.la $(REALTIMELIB) $(RTJPERFLIB) $(ROLEINFERLIB) $(MZFLIB)
