@@ -24,7 +24,8 @@ pldi99.dvi: Figures/evil.tex
 # thesis figure dependencies
 thesis.dvi: Figures/THex1base.tex \
 	Figures/THex1ssa.tex Figures/THex1ssaPr.tex \
-	Figures/THex1ssi.tex Figures/THex1ssiPr.tex
+	Figures/THex1ssi.tex Figures/THex1ssiPr.tex \
+	Figures/THundir.tex
 # thesis figure rules
 Figures/%: always
 	$(MAKE) -C Figures $(notdir $@)
