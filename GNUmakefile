@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.89 2003-04-23 01:32:12 cananian Exp $
+# $Id: GNUmakefile,v 1.90 2003-05-07 22:50:58 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -15,7 +15,7 @@ JCC:=javac -J-mx64m -source 1.4
 # in your environment to skip the check.
 export JAVAC JIKES JCC
 JCC5?=$(shell chmod u+x bin/find-gj ; bin/find-gj) #-warnunchecked
-JDOC:=gjdoc
+JDOC:=sinjdoc
 JAR=jar
 JDOCFLAGS:=-J-mx128m -version -author -breakiterator \
   -overview overview.html -doctitle "FLEX API documentation"
