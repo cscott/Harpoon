@@ -3,22 +3,31 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 /**
  * A <code>CombineIterator</code> combines several different
  * <code>Iterator</code>s into one.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CombineIterator.java,v 1.1.2.2 1999-06-15 20:25:56 sportbilly Exp $
+ * @version $Id: CombineIterator.java,v 1.1.2.3 1999-09-12 15:55:23 cananian Exp $
  */
 
 public class CombineIterator implements Iterator {
     final Iterator[] ita;
     int i=0;
-    /** Creates a <code>CombineIterator</code>. */
+    /** Creates a <code>CombineIterator</code> from an array of Iterators. */
     public CombineIterator(Iterator[] ita) {
         this.ita = ita;
+    }
+    /** Creates a <code>CombineIterator</code> from an
+     *  Iterator over Iterators. */
+    public CombineIterator(Iterator it) {
+	List l = new ArrayList();
+	while (it.hasNext()) { l.add(it.next()); }
+	this.ita = (Iterator[]) l.toArray(new Iterator[l.size()]);
     }
     public Object next() {
 	while (i < ita.length && !ita[i].hasNext() )
