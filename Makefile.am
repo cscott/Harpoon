@@ -23,6 +23,10 @@ CVS_TAG=$(firstword $(shell cvs status Makefile.am | grep -v "(none)" | \
 		@AWK@ '/Sticky Tag/{print $$3}'))
 CVS_REVISION=$(patsubst %,-r %,$(CVS_TAG))
 
+# and sometimes we seem to out-smart automake and it doesn't define
+# this for us.
+LDFLAGS = @LDFLAGS@
+
 list:
 	@find . -path './Contrib' -prune -o "(" -name "*.[ch]" -o -name "*.java" ")" -print
 

@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.130 $)dnl
+AC_REVISION($Revision: 1.131 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -460,7 +460,7 @@ conservative)
 	AC_DEFINE(WITH_CONSERVATIVE_GC, 1,
 		[Define if you are using the plain (not semi) conservative gc])
 	if test $with_all_static = "yes"; then
-		CFLAGS="$CFLAGS -Wl,-defsym,_DYNAMIC=0" 
+		LDFLAGS="$LDFLAGS -Wl,-defsym,_DYNAMIC=0" 
 	fi
 	;;
 none)	AC_MSG_RESULT([no garbage collection])
