@@ -30,8 +30,9 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.23 1999-08-18 18:36:54 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.24 1999-09-09 03:52:00 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
+ * @see java.lang.Class
  */
 public abstract class HClass extends HPointer
   implements java.io.Serializable, java.lang.Comparable {
@@ -669,6 +670,10 @@ public abstract class HClass extends HPointer
    * interface represented by this object.
    * <p> If the class or interface implements no interfaces, the method
    * returns an array of length 0.
+   * <p><b>NOTE THAT the array returned does NOT contain interfaces
+   * implemented by superclasses.</b>  Thus the interface list may
+   * be incomplete.  This is pretty bogus behaviour, but it's what
+   * our prototype, <code>java.lang.Class</code>, does.
    * @return an array of interfaces implemented by this class.
    */
   public abstract HClass[] getInterfaces();
