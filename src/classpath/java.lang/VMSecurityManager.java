@@ -69,5 +69,6 @@ final class VMSecurityManager
    *
    * @return the current ClassLoader
    */
-  static native ClassLoader currentClassLoader();
+    // CSA hack: everything comes from the bootstrap loader!
+  static ClassLoader currentClassLoader() { return null; }
 }

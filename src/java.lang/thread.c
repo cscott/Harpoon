@@ -166,6 +166,20 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   assert(!((*env)->ExceptionOccurred(env)));
   (*env)->SetIntField(env, mainThr, priorityID, NORM_PRIORITY);
   // XXX: also set up the 'daemon' field?  but it defaults to the right thing.
+#ifdef CLASSPATH_VERSION
+  // for classpath, need to initialize InheritableThreadLocal before
+  // calling the constructor.
+  {
+    jclass itlCls; jmethodID itlInitID;
+    itlCls  = (*env)->FindClass(env, "java/lang/InheritableThreadLocal");
+    assert(!((*env)->ExceptionOccurred(env)));
+    itlInitID = /* hopefully clinit is idempotent! */
+      (*env)->GetStaticMethodID(env, itlCls, "<clinit>","()V");
+    assert(!((*env)->ExceptionOccurred(env)));
+    (*env)->CallStaticVoidMethod(env, itlCls, itlInitID);
+    assert(!((*env)->ExceptionOccurred(env)));
+  }
+#endif /* CLASSPATH_VERSION */
   /* finish constructing the thread object */
   (*env)->CallNonvirtualVoidMethod(env, mainThr, thrCls, thrConsID,
 				   mainThrGrp, NULL, mainStr);

@@ -15,14 +15,6 @@ extern "C" {
 JNIEXPORT jobjectArray JNICALL Java_java_lang_VMSecurityManager_getClassContext
   (JNIEnv *, jclass);
 
-/*
- * Class:     java_lang_VMSecurityManager
- * Method:    currentClassLoader
- * Signature: ()Ljava/lang/ClassLoader;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_VMSecurityManager_currentClassLoader
-  (JNIEnv *, jclass);
-
 #ifdef __cplusplus
 }
 #endif

@@ -139,6 +139,10 @@ public final class Class implements Serializable
   public static Class forName(String name)
     throws ClassNotFoundException
   {
+    if (ClassLoader.systemClassLoader==null)
+      // still doing initial startup
+      return VMClassLoader.loadClass(name, true);
+    // use real classloader chain.
     return forName(name, true, null); // CSA HACK! punt to system class loader
     /*
     return forName(name, true,
