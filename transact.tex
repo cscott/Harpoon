@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.8 2000-09-27 20:01:53 cananian Exp $
+% $Id: transact.tex,v 1.9 2000-09-28 22:18:02 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.8 $ $}
+\date{\today \\ $ $Revision: 1.9 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -181,21 +181,25 @@ $\text{Read}(\code{struct oobj *} o, \code{int } n)$ =
 \STATE $u \gets 0$ \COMMENT{count uncommitted transactions}
 \LOOP
   \ASSERT $v \neq \code{null}$
-  \IF{$\text{CommitP}(v \ptr \code{transid})$}
+  \MATCHING{$\text{StateP}(v \ptr \code{transid})$}
+   \CASE{\code{COMMITTED}}
     \ASSERT \small$\forall n,\: o \ptr \code{field}[n]=\code{FLAG\_VALUE}
              \Rightarrow  v \ptr \code{field}[n] \text{ is valid }$
     \STATE \COMMENT{this store should be atomic (but no one will read it)}
     \STATE $v\ptr\code{next} \gets \code{null}$
            \COMMENT{allow gc of other transactions}
-    \BREAK
-  \ELSIF{$\text{AbortP}(v \ptr \code{transid})$}
-  \STATE \COMMENT{XXX: potential race here --- v could be already removed}
+    \BREAK \textbf{loop}
+   \ENDCASE
+   \CASE{\code{ABORTED}}
+    \STATE \COMMENT{XXX: potential race here --- v could be already removed}
     \STATE remove $v$ from version list atomically
     \STATE $v \gets v\text{'s replacement}$
-  \ELSE
+   \ENDCASE
+   \CASEDEFAULT
     \STATE $u \gets u + 1$
     \STATE $v \gets v \ptr \code{next}$
-  \ENDIF
+   \ENDCASE
+  \ENDMATCHING
 \ENDLOOP*
 \STATE $x \gets v \ptr \code{field}[n]$
 \IF{$u=0 \wedge x \neq \code{FLAG\_VALUE}$}
