@@ -75,7 +75,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.92 2000-06-30 21:57:40 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.93 2000-06-30 23:09:00 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -131,9 +131,14 @@ public abstract class RegAlloc  {
 	// bug in the use/def properties for code produced by
 	// IntermediateCodeFactorys.  Need to review and document
 	// carefully 
-	public Collection defC() { return useC(); }
-	Temp[] my_def() { return super.def(); }
-	Collection my_defC() { return super.defC(); }
+	// public Collection defC() { return useC(); }
+
+
+	Temp[] my_def() { 
+	    Collection c = my_defC();
+	    return (Temp[]) c.toArray(new Temp[c.size()]);
+	}
+	Collection my_defC() { return Arrays.asList(dst); }
 
 	public String toString() {
 	    return super.toString() + 
@@ -158,6 +163,7 @@ public abstract class RegAlloc  {
 	
 	static SpillStore makeST(Instr i, String prefix, 
 				 Temp dst, Collection srcs) {
+	    //	    System.out.println("makeST:"+srcs);
 	    return new SpillStore(i, prefix+" "+dst+" "+srcs,dst,srcs); 
 	}
 
@@ -186,9 +192,15 @@ public abstract class RegAlloc  {
 	// bug in the use/def properties for code produced by
 	// IntermediateCodeFactorys.  Need to review and document
 	// carefully 
-	public Collection useC() { return defC(); }
-	Temp[] my_use() { return super.use(); }
-	Collection my_useC() { return super.useC(); }
+
+	// public Collection useC() { return defC(); }
+
+	Temp[] my_use() { 	    
+	    Collection c = my_useC();
+	    // System.out.println(this+" my_use:c:"+new ArrayList(c));
+	    return (Temp[]) c.toArray(new Temp[c.size()]);
+	}
+	Collection my_useC() { return Arrays.asList(src); }
     }
 
     /** Creates a <code>RegAlloc</code>.  <code>RegAlloc</code>s are
@@ -331,6 +343,18 @@ public abstract class RegAlloc  {
 	    }
 	};
     }
+
+    protected boolean allRegs(Collection c) {
+	Iterator temps = c.iterator();
+	while(temps.hasNext()) {
+	    Temp t = (Temp) temps.next();
+	    if (!isRegister(t)) {
+		return false;
+	    }
+	}
+	return true;
+    }
+
     
     /** Produces an <code>HCodeFactory</code> which will transform the
 	abstract spills into concrete spills.
@@ -346,6 +370,17 @@ public abstract class RegAlloc  {
 	// InstrMEM...for now will assume that there is only one
 	// memory references per InstrMEM...
 	class InstrReplacer extends InstrVisitor {
+	    private boolean allRegs(Collection c) {
+		Iterator temps = c.iterator();
+		while(temps.hasNext()) {
+		    Temp t = (Temp) temps.next();
+		    if (!frame.getRegFileInfo().isRegister(t)) {
+			return false;
+		    }
+		}
+		return true;
+	    }
+
 	    // Make these SMARTER: get rid of requirement that Loads
 	    // and Stores have only one references to memory (to
 	    // allow for StrongARMs ldm* instructions : starting doing
@@ -354,15 +389,19 @@ public abstract class RegAlloc  {
 	    // this. 
 	    private void visitStore(SpillStore m) {
 		StackOffsetTemp def = (StackOffsetTemp) m.def()[0];
+		List regs = Arrays.asList(m.my_use());
+		Util.assert(allRegs(regs));
 		List instrs = frame.getInstrBuilder().
-		    makeStore(Arrays.asList(m.my_use()), def.offset, m);
+		    makeStore(regs, def.offset, m);
 		Instr.replaceInstrList(m, instrs);		
 	    }
 	    
 	    private void visitLoad(SpillLoad m) {
 		StackOffsetTemp use = (StackOffsetTemp) m.use()[0];
+		List regs = Arrays.asList(m.my_def());
+		Util.assert(allRegs(regs));
 		List instrs = frame.getInstrBuilder().
-		    makeLoad(Arrays.asList(m.my_def()), use.offset, m);
+		    makeLoad(regs, use.offset, m);
 		Instr.replaceInstrList(m, instrs);
 	    }
 	    

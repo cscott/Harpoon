@@ -58,7 +58,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.91 2000-06-30 21:57:39 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.92 2000-06-30 23:08:59 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -1255,11 +1255,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	    Collection regs = 
 		regfile.getAssignment(remappedTemps.tempMap(val));
+
 	    Util.assert(regs != null, 
 			lazyInfo("must map to a set of registers\n"+
 				 "tempSets:"+tempSets,val,regfile)); 
 	    Util.assert(!regs.isEmpty(), 
 			lazyInfo("must map to non-empty set of registers",val,regfile));
+	    Util.assert(allRegs(regs));
 
 	    InstrMEM spillInstr = SpillStore.makeST(loc, "FSK-ST"+thread, val, regs);
 
