@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: quads.tex,v 1.8 1998-09-09 13:31:27 cananian Exp $
+% $Id: quads.tex,v 1.9 1998-09-09 15:41:17 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn,twoside]{article}
 
@@ -9,7 +9,7 @@
 
 \author{C.~Scott~Ananian}
 \title{\Harpoon\ Project Compiler Intermediate Representation}
-\date{\today \\ $ $Revision: 1.8 $ $}
+\date{\today \\ $ $Revision: 1.9 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -202,7 +202,7 @@ ought to be implemented for elements of any intermediate representation.
 
 An enumeration of
 \texttt{Quad} types and their uses is provided in figure
-\ref{fig:quads}.  It may be observed that the representation uses both
+\ref{fig:classes}.  It may be observed that the representation uses both
 header and footer nodes, in the \texttt{HEADER} and \texttt{FOOTER}
 classes.  \texttt{HEADER} nodes contain a special link to the
 \texttt{FOOTER} to allow this node to be easily identified, and a
@@ -290,54 +290,41 @@ if no exception is thrown, or setting $e$ to the thrown exception.
 Either $r$ or $e$ will be \texttt{null} on completion of the
 \texttt{CALL}.  Exception $e$ is not automatically thrown from the
 method containing the \texttt{CALL}: $e$ must be explicitly tested and
-its exception rethrown if that behaviour is desired.
+its exception rethrown if that behaviour is desired. $t$ is not needed
+for static methods.
 %
 \item[CONST($t$, $c$, $y$)] Assigns numeric or string constant $c$ of 
 type $y$ to variable $t$.
 %
 \item[GET($t_1$, $f$, $t_2$)] Puts the value of field $f$ of optional
-object $t_2$ in variable $t_1$.
+object $t_2$ in variable $t_1$. $t_2$ is not necessary for static fields.
 %
 \item[INSTANCEOF($t_1$, $t_2$, $c$)] Puts the boolean value
 \texttt{true} (1) in $t_1$ if object $t_2$ is an instance of class
 $c$, or \texttt{false} (0) otherwise.
+%
+\item[MOVE($t_1$, $t_2$)] Copys the value in $t_2$ into $t_1$.
+The current implementation makes \texttt{MOVE} a subclass of
+\texttt{OPER}, with opcode string \texttt{"move"}.
+%
+\item[NEW($t$, $c$)] Create a new uninitialized instance of class $c$,
+storing a reference in $t$.  A class constructor must be invoked using
+\texttt{CALL} in order to initialize the instance.
+%
+\item[NOP( )] Performs no operation.
+%
+\item[OPER($o$, $t$, $l$)] Performs operation $o$ on the variables in
+list $l$, storing the result in $t$.  The operation is represented as
+a string; figure \ref{fig:classes} lists all valid operation strings.
+The operations performed by the strings are identical to the
+operations performed by the java bytecode operation of the same name,
+except that no exceptions are ever thrown.  See \cite{jvm} for
+details.
+%
+\item[SET($f$, $t_1$, $t_2$)] Sets field $f$ of optional object $t_1$ to the
+value of $t_2$.  $t_1$ is not necessary for static fields.
 \end{description}
 
-
-\begin{figure*}[!p]
-\begin{tabular}{p{1.25in}p{4.5in}} 
-\small\bf Class Name & \small\bf Description \\ \hline
-\tt HEADER & Start node for control-flow graph.  Performs no operation.\\
-\tt METHODHEADER & Subclass of \texttt{HEADER} with additional 
-                   method-argument information.\\
-\tt FOOTER & End node for control-flow graph.  Performs no operation.\\ \hline
-\tt AGET & Fetch from an indexed array element.\\
-\tt ALENGTH & Access the length of an array. \\
-\tt ANEW & Create a new array object (uninitialized). \\
-\tt ASET & Assign a value to an indexed array element. \\
-\tt CALL & Invoke an object method. \\
-\tt CJMP & Conditional jump based on a boolean value. \\
-\tt CONST & Assign numeric or string constants to 
-            compiler temporary variables. \\
-\tt GET & Fetch the value of an object field. \\
-\tt INSTANCEOF & Determine whether an object reference is an instance of a
-                 given class; result is a boolean value. \\
-%MONITOR 
-\tt MOVE & Assign one compiler temporary to another. \\
-\tt NEW  & Create a new class object (uninitialized). \\
-\tt NOP  & Do nothing. \\
-\tt OPER & Perform a $n$-ary operation on set of compiler temporaries.\\
-\tt PHI  & \phifunction{} representation.\\
-\tt RETURN & Return a value for this method invocation.\\
-\tt SET  & Assign a value to an object field. \\
-\tt SWITCH & Jump to one of multiple targets, depending on a key value. \\
-\tt THROW & Return an exception for this method invocation. \\
-\hline
-\end{tabular}
-\caption{Class names of QuadSSA statement types.
-\small (Public classes in \texttt{harpoon.IR.QuadSSA})}
-\label{fig:quads}
-\end{figure*}
 
 \newcommand{\cls}[1]{{\normalfont\bf #1}}
 \newcommand{\expn}[1]{{\normalfont\it #1}}
@@ -366,7 +353,6 @@ $c$, or \texttt{false} (0) otherwise.
 	         Temp objectref)  \expn{// objectref may be null}
 \item[\cls{HEADER}](HCodeElement source, FOOTER footer)
 \item[\cls{INSTANCEOF}](HCodeElement source, Temp dst, Temp src, HClass hclass)
-\item[\cls{JMP}](HCodeElement source)
 \item[\cls{METHODHEADER}](HCodeElement source, FOOTER footer, Temp params[])
 \item[\cls{MOVE}](HCodeElement source, Temp dst, Temp src)
 \item[\cls{NEW}](HCodeElement source, Temp dst, HClass hclass)
@@ -403,4 +389,42 @@ exactly to the names of the constructor arguments.}
 
 \bibliography{harpoon}
 
+\onecolumn\appendix\section{Quick reference}
+%\begin{figure*}[!p]
+\label{sec:quads}
+\begin{tabular}{p{1.25in}p{4.5in}} 
+\small\bf Class Name & \small\bf Description \\ \hline
+\tt HEADER & Start node for control-flow graph.  Performs no operation.\\
+\tt METHODHEADER & Subclass of \texttt{HEADER} with additional 
+                   method-argument information.\\
+\tt FOOTER & End node for control-flow graph.  Performs no operation.\\ \hline
+\tt AGET & Fetch from an indexed array element.\\
+\tt ALENGTH & Access the length of an array. \\
+\tt ANEW & Create a new array object (uninitialized). \\
+\tt ASET & Assign a value to an indexed array element. \\
+\tt CALL & Invoke an object method. \\
+\tt CJMP & Conditional jump based on a boolean value. \\
+\tt CONST & Assign numeric or string constants to 
+            compiler temporary variables. \\
+\tt GET & Fetch the value of an object field. \\
+\tt INSTANCEOF & Determine whether an object reference is an instance of a
+                 given class; result is a boolean value. \\
+%MONITOR 
+\tt MOVE & Assign one compiler temporary to another. \\
+\tt NEW  & Create a new class object (uninitialized). \\
+\tt NOP  & Do nothing. \\
+\tt OPER & Perform a $n$-ary operation on set of compiler temporaries.\\
+\tt PHI  & \phifunction{} representation.\\
+\tt RETURN & Return a value for this method invocation.\\
+\tt SET  & Assign a value to an object field. \\
+\tt SWITCH & Jump to one of multiple targets, depending on a key value. \\
+\tt THROW & Return an exception for this method invocation. \\
+\hline
+\end{tabular}
+%\caption{Class names of QuadSSA statement types.
+%\small (Public classes in \texttt{harpoon.IR.QuadSSA})}
+%\end{figure*}
+
 \end{document}
+
+
