@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.30 $)dnl
+AC_REVISION($Revision: 1.31 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -141,7 +141,7 @@ precise)
 	AC_MSG_RESULT([precise gc])
 	AC_DEFINE(WITH_PRECISE_GC, 1,
 		  [Define if you want precise garbage collection])
-	GC_LIB="src/gc/libgc.la"
+dnl	GC_LIB="src/gc/libgc.la"
 	;;
 conservative)
 	AC_MSG_RESULT([B-D-W conservative gc])

@@ -43,7 +43,7 @@ libflexc1_la_LDFLAGS = -version-info 0:0:0
 if AOUT_BUILD
 LDADD = jni/libjni.la ../Java.a libflexc.la \
 	jni/jni-inflate.lo jni/jni-jnidata.lo \
-	$(foreach lib,@GC_LIB@,../$(lib))
+	$(foreach lib,@GC_LIB@,../$(lib)) $(PGCLIB)
 bin_PROGRAMS = startup # dump-fixup test-lookup test-gc static
 AOUTLIBRARY = libflexc.la
 endif
