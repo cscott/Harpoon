@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.20 1998-09-02 04:47:12 cananian Exp $
+ * @version $Id: Translate.java,v 1.21 1998-09-02 06:16:26 cananian Exp $
  */
 
 /* State holds state *after* execution of corresponding instr. */
@@ -176,13 +176,25 @@ class Translate  { // not public.
 	}
 	static private Object[] grow(Object[] src) { return grow(src,1); }
     }
-
-    /** Associates State objects with Instrs. */
-    static class StateMap {
+    /** Extended state to keep track of translation process. */
+    static class TransState {
+	State initialState;
+	Instr in;
+	Quad  header; 
+	int which_succ;
+	TransState(State initialState, Instr in, Quad header, int which_succ) {
+	    this.initialState = initialState;
+	    this.in = in;
+	    this.header = header;
+	    this.which_succ = which_succ;
+	}
+    }
+    /** Keep track of MERGE instrs and the PHI quads that they correspond to.*/
+    static class MergeMap {
 	Hashtable map;
-	StateMap() { map = new Hashtable(); }
-	void put(Instr in, State s) { map.put(in, s); }
-	State get(Instr in) { return (State) map.get(in); }
+	MergeMap() { map = new Hashtable(); }
+	void put(InMerge in, PHI phi) { map.put(in, phi); }
+	PHI get(InMerge in) { return (PHI) map.get(in); }
     }
 
     static final Quad trans(harpoon.ClassFile.Bytecode.Code bytecode) {
@@ -216,27 +228,14 @@ class Translate  { // not public.
 	return quads;
     }
 
-    static class TransState {
-	State initialState;
-	Instr in;
-	Quad  header; 
-	int which_succ;
-	TransState(State initialState, Instr in, Quad header, int which_succ) {
-	    this.initialState = initialState;
-	    this.in = in;
-	    this.header = header;
-	    this.which_succ = which_succ;
-	}
-    }
-
     static final void trans(State initialState, ExceptionEntry allTries[],
 			    Instr blockTop, Quad header, int which_succ) {
 	trans(new TransState(initialState, blockTop, 
 				    header, which_succ), allTries);
     }
-    static private final void trans(TransState ts0, ExceptionEntry allTries[]){
+    static final void trans(TransState ts0, ExceptionEntry allTries[]){
 	Stack todo = new Stack(); todo.push(ts0);
-	StateMap sm = new StateMap();
+	MergeMap mm = new MergeMap();
 
 	while (!todo.empty()) {
 	    TransState ts = (TransState) todo.pop();
@@ -351,7 +350,10 @@ class Translate  { // not public.
 	    }
 	    // None of the above.
 	    else {
-		//Quad q = transInstr(initialState, ts.in) // FIXME
+		TransState nts[] = transInstr(mm, ts);
+		for (int i=0; i<nts.length; i++)
+		    todo.push(nts[i]);
+		continue;
 	    }
 	}
 	// done.
@@ -392,13 +394,10 @@ class Translate  { // not public.
 	return newTry; // null if can't find.
     }
 
-    static final Instr[] transBasicBlock(StateMap s, Instr in) {
-	return null; // FIXME
-    }
-    static final Quad transInstr(StateMap s, Instr in) {
-	if (in instanceof InGen) return transInstr(s, (InGen) in);
-	if (in instanceof InCti) return transInstr(s, (InCti) in);
-	if (in instanceof InMerge) return transInstr(s, (InMerge) in);
+    static final TransState[] transInstr(MergeMap mm, TransState ts) {
+	if (ts.in instanceof InGen) return transInGen(ts);
+	if (ts.in instanceof InCti) return transInCti(ts);
+	if (ts.in instanceof InMerge) return transInMerge(mm, ts);
 	throw new Error("Unknown Instr type.");
     }
 
@@ -447,15 +446,9 @@ class Translate  { // not public.
 		      new HClass[] {HClass.Int, HClass.forClass(short.class)});
     }
 
-    static class Chunk {
-	Quad start, end;
-	State exitState;
-	Chunk(State exitState, Quad start, Quad end) {
-	    this.start = start; this.end = end;
-	    this.exitState = exitState;
-	}
-    }
-    static final Chunk transInstr(State s, InGen in) {
+    static final TransState[] transInGen(TransState ts) {
+	InGen in = (InGen) ts.in;
+	State s = ts.initialState;;
 	State ns;
 	Quad q;
 	Quad last = null;
@@ -959,11 +952,19 @@ class Translate  { // not public.
 	default:
 	    throw new Error("Unknown InGen opcode.");
 	}
-	// Okay.  Make a nice Chunk like a well-behaved method ought.
 	if (last == null) last = q;
-	return new Chunk(ns, q, last);
+	// make & return next translation state to hit.
+	if (q!=null) {
+	    // Link new quad if necessary.
+	    Quad.addEdge(ts.header, ts.which_succ, q, 0);
+	    return new TransState[] { 
+		new TransState(ns, in.next()[0], last, 0) };
+	} else {
+	    return new TransState[] { 
+		new TransState(ns, in.next()[0], ts.header, ts.which_succ) };
+	}
     }
-    static final Quad transInstr(StateMap s, InCti in) {
+    static final TransState[] transInCti(TransState ts) {
 	/*
 	if (in instanceof InSwitch) {
 	// LOOKUPSWITCH
@@ -996,7 +997,7 @@ class Translate  { // not public.
 	*/
 	return null;
     }
-    static final Quad transInstr(StateMap s, InMerge in) {
+    static final TransState[] transInMerge(MergeMap mm, TransState ts) {
 	return null;
     }
 
