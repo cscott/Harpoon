@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: quads.tex,v 1.5 1998-09-08 14:33:26 cananian Exp $
+% $Id: quads.tex,v 1.6 1998-09-08 14:34:02 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn,twoside]{article}
 
@@ -9,7 +9,7 @@
 
 \author{C.~Scott~Ananian}
 \title{\Harpoon\ Project Compiler Intermediate Representation}
-\date{\today \\ $ $Revision: 1.5 $ $}
+\date{\today \\ $ $Revision: 1.6 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -242,7 +242,7 @@ temporary variables at the start of method code.
 \label{fig:quads}
 \end{figure*}
 
-\newcommand{\cls}[1]{\item[\normalfont #1]}
+\newcommand{\cls}[1]{\item[\normalfont\bf #1]}
 \newcommand{\expn}[1]{{\normalfont\it #1}}
 \begin{figure*}
 \texttt{\small%
@@ -255,31 +255,31 @@ temporary variables at the start of method code.
 \item[]
 \item[] \expn{Quadruple statements}
 \item[] abstract class Quad implements HCodeElement
-\cls{AGET}(HCodeElement from, Temp dst, Temp objectref, Temp index)
-\cls{ALENGTH}(HCodeElement from, Temp dst, Temp objectref)
-\cls{ANEW}(HCodeElement from, Temp dst, HClass hclass, Temp dims[])
-\cls{ASET}(HCodeElement from, Temp objectref, Temp index, Temp src)
-\cls{CALL}(HCodeElement from, HMethod method, Temp objectref, Temp
+\cls{AGET}(HCodeElement source, Temp dst, Temp objectref, Temp index)
+\cls{ALENGTH}(HCodeElement source, Temp dst, Temp objectref)
+\cls{ANEW}(HCodeElement source, Temp dst, HClass hclass, Temp dims[])
+\cls{ASET}(HCodeElement source, Temp objectref, Temp index, Temp src)
+\cls{CALL}(HCodeElement source, HMethod method, Temp objectref, Temp
 params[], Temp retval, Temp retex) \expn{// objectref, retval may be null}
-\cls{CJMP}(HCodeElement from, Temp test)
-\cls{CONST}(HCodeElement from, Temp dst, Object value, HClass type)
-\cls{GET}(HCodeElement from, Temp dst, HField field, \\ Temp objectref)
+\cls{CJMP}(HCodeElement source, Temp test)
+\cls{CONST}(HCodeElement source, Temp dst, Object value, HClass type)
+\cls{GET}(HCodeElement source, Temp dst, HField field, \\ Temp objectref)
          \expn{// objectref may be null}
-\cls{HEADER}(HCodeElement from, FOOTER footer)
-\cls{INSTANCEOF}(HCodeElement from, Temp dst, Temp src, HClass hclass)
-\cls{JMP}(HCodeElement from)
-\cls{METHODHEADER}(HCodeElement from, FOOTER footer, Temp params[])
-\cls{MOVE}(HCodeElement from, Temp dst, Temp src)
-\cls{NEW}(HCodeElement from, Temp dst, HClass hclass)
-\cls{NOP}(HCodeElement from)
-\cls{OPER}(HCodeElement from, String opcode, Temp dst, Temp operands[])
-\cls{PHI}(HCodeElement from, Temp dst[], int arity)
-\cls{PHI}(HCodeElement from, Temp dst[], Temp src[][], int arity)
-\cls{RETURN}(HCodeElement from, Temp retval) \expn{// retval may be null}
-\cls{SET}(HCodeElement from, HField field, Temp objectref, \\ Temp src)
+\cls{HEADER}(HCodeElement source, FOOTER footer)
+\cls{INSTANCEOF}(HCodeElement source, Temp dst, Temp src, HClass hclass)
+\cls{JMP}(HCodeElement source)
+\cls{METHODHEADER}(HCodeElement source, FOOTER footer, Temp params[])
+\cls{MOVE}(HCodeElement source, Temp dst, Temp src)
+\cls{NEW}(HCodeElement source, Temp dst, HClass hclass)
+\cls{NOP}(HCodeElement source)
+\cls{OPER}(HCodeElement source, String opcode, Temp dst, Temp operands[])
+\cls{PHI}(HCodeElement source, Temp dst[], int arity)
+\cls{PHI}(HCodeElement source, Temp dst[], Temp src[][], int arity)
+\cls{RETURN}(HCodeElement source, Temp retval) \expn{// retval may be null}
+\cls{SET}(HCodeElement source, HField field, Temp objectref, \\ Temp src)
       \expn{// objectref may be null}
-\cls{SWITCH}(HCodeElement from, Temp index, int keys[])
-\cls{THROW}(HCodeElement from, Temp throwable)
+\cls{SWITCH}(HCodeElement source, Temp index, int keys[])
+\cls{THROW}(HCodeElement source, Temp throwable)
 \item[]
 \item[] \expn{String constants for} opcode \expn{field of} OPER
 \item[] \{  "acmpeq", "d2f", "d2i", "d2l", "dadd", "dcmpg",
