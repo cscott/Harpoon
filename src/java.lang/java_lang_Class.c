@@ -2,6 +2,8 @@
 #include <jni-private.h>
 #include "java_lang_Class.h"
 
+#include <assert.h>
+
 /*
  * Class:     java_lang_Class
  * Method:    forName
@@ -23,6 +25,37 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_forName
     return result;
 }
 
+// try to wrap currently active exception as the exception specified by
+// the exclsname parameter.  if this fails, just throw the original exception.
+static void wrapNthrow(JNIEnv *env, char *exclsname) {
+    jthrowable ex = (*env)->ExceptionOccurred(env), nex;
+    jobject descstr;
+    jclass exCls, nexCls;
+    jmethodID consID, toStrID;
+    assert(ex); // exception set on entrance.
+    (*env)->ExceptionClear(env);
+    exCls = (*env)->GetObjectClass(env, ex);
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    toStrID = (*env)->GetMethodID(env, exCls,
+				  "toString", "()Ljava/lang/String;");
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    descstr = (*env)->CallObjectMethod(env, ex, toStrID);
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    nexCls = (*env)->FindClass(env, exclsname);
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    consID = (*env)->GetMethodID(env, nexCls,
+				 "<init>", "(Ljava/lang/String;)V");
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    nex = (*env)->NewObject(env, nexCls, consID, descstr);
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    (*env)->Throw(env, nex);
+    return;
+ error: // throw original error.
+    (*env)->ExceptionClear(env);
+    (*env)->Throw(env, ex);
+    return;
+}
+
 /*
  * Class:     java_lang_Class
  * Method:    newInstance
@@ -30,9 +63,18 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_forName
  */
 JNIEXPORT jobject JNICALL Java_java_lang_Class_newInstance
   (JNIEnv *env, jobject cls) {
+    
+    jobject result;
     jmethodID methodID=(*env)->GetMethodID(env, (jclass) cls, "<init>", "()V");
-    /* should check for methodID==NULL here and throw proper exception */
-    return (*env)->NewObject(env, (jclass) cls, methodID);
+    /* if methodID=NULL, throw InstantiationException */
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    result = (*env)->NewObject(env, (jclass) cls, methodID);
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    return result;
+    
+  error:
+    wrapNthrow(env, "java/lang/InstantiationException");
+    return NULL;
 }
 
 /*
