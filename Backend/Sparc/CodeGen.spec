@@ -12,10 +12,10 @@ import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.Typed;
 import harpoon.Util.Util;
 /**
- * <code>CodeGen</code> is a code-generator for the Sparc architecture.
+ * <code>Sparc.CodeGen</code> is a code-generator for the Sparc architecture.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.5 1999-07-06 17:38:36 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.6 1999-09-11 17:57:59 cananian Exp $
  */
 %%
     // FIELDS

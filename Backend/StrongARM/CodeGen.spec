@@ -54,11 +54,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 /**
- * <code>CodeGen</code> is a code-generator for the ARM architecture.
+ * <code>StrongARM.CodeGen</code> is a code-generator for the ARM architecture.
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.47 1999-09-11 16:43:43 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.48 1999-09-11 17:58:00 cananian Exp $
  */
 %%
 

@@ -15,9 +15,9 @@ import java.io.PrintWriter;
  * generate an <code>HCode</code> in <code>Instr</code> form from a
  * <code>TreeCode</code>.  In short, a CGG generates a Code Generator.
  * 
- * @see harpoon.Backend.Generic.GenericCodeGen
+ * @see harpoon.Backend.Generic.CodeGen
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.16 1999-09-09 00:10:46 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.17 1999-09-11 17:58:01 cananian Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -90,7 +90,7 @@ public abstract class CodeGeneratorGenerator {
     public void outputJavaFile(PrintWriter out) {
 	out.println(spec.global_stms);
 	out.println("public class " + className + 
-		    " extends harpoon.Backend.Generic.GenericCodeGen { ");
+		    " extends harpoon.Backend.Generic.CodeGen { ");
 	out.println(spec.class_stms);
 	
 	out.println("\t/** Generates assembly code from a <code>" + TREE_Code + "</code>.");

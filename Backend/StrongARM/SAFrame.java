@@ -8,7 +8,6 @@ import harpoon.Backend.Allocation.AllocationInfo;
 import harpoon.Backend.Allocation.AllocationStrategy;
 import harpoon.Backend.Allocation.DefaultAllocationStrategy;
 import harpoon.Backend.Generic.Frame;
-import harpoon.Backend.Generic.GenericCodeGen;
 import harpoon.Backend.Generic.Runtime;
 import harpoon.Backend.Generic.RegFileInfo;
 import harpoon.Backend.Generic.RegFileInfo.SpillException;
@@ -54,7 +53,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.40 1999-09-11 06:12:44 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.41 1999-09-11 17:58:00 cananian Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     private AllocationStrategy mas;
@@ -63,7 +62,7 @@ public class SAFrame extends Frame implements AllocationInfo {
     private final SARegFileInfo regFileInfo; 
     private final SAInstrBuilder instrBuilder;
 
-    CodeGen codegen;
+    harpoon.Backend.Generic.CodeGen codegen;
     
     public SAFrame(ClassHierarchy ch) { 
 	super();
@@ -144,12 +143,12 @@ public class SAFrame extends Frame implements AllocationInfo {
     }
 
 
-    /** Returns a <code>StrongArm.CodeGen</code>. 
+    /** Returns a <code>StrongARM.CodeGen</code>. 
 	Since no state is maintained in the returned
-	<code>StrongArm.CodeGen</code>, the same one is returned on
+	<code>StrongARM.CodeGen</code>, the same one is returned on
 	every call to this method.
      */
-    public GenericCodeGen codegen() { 
+    public harpoon.Backend.Generic.CodeGen codegen() { 
 	return codegen;
     }
 

@@ -4,8 +4,8 @@ package harpoon.PACKAGE;
  * <code>NullCodeGen</code> does nothing.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NullCodeGen.template,v 1.1.2.4 1999-09-09 00:10:45 pnkfelix Exp $ */
-public class NullCodeGen extends harpoon.Backend.Generic.GenericCodeGen {
+ * @version $Id: NullCodeGen.template,v 1.1.2.5 1999-09-11 17:58:01 cananian Exp $ */
+public class NullCodeGen extends harpoon.Backend.Generic.CodeGen {
     // a constructor here corresponding to every type of codegen
     //  constructor we have
     public NullCodeGen() { }

@@ -41,11 +41,11 @@ class JouetteFrame extends DefaultFrame {
 // end of stub classes.
 
 /**
- * <code>CodeGen</code> is a code-generator for the Jouette architecture.
+ * <code>Jouette.CodeGen</code> is a code-generator for the Jouette architecture.
  * 
  * @see Appel, <U>Modern Compiler Implementation in Java</U>, pg. 196, 213-214 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.4 1999-09-11 17:19:45 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.5 1999-09-11 17:57:59 cananian Exp $
  */
 %%
 
