@@ -43,6 +43,8 @@ public class CarDemoIPAQMain2 {
 	Node hyst = new Hysteresis(null);
 	Label label = new Label(null, null);
 	Node confirm = new LabelConfirm(label);
+	//instructs Label to perform tracking and provides the
+	//location in CommonMemory to find the ObjectTracker object.
 	label.setObjectTracker("objectTracker");
 	Node thin = new Thinning(Thinning.BLUE, null);
 	Node range = new RangeFind(null);
@@ -125,6 +127,7 @@ public class CarDemoIPAQMain2 {
 	//imageSource = new Load("woodgrain.jar", "tank.gz", 533, null);
 	//imageSource = new Load("movie/tank.jar", "tank.gz", 533, null);
 	Camera imageSource = new Camera(null);
+	//iPAQ backpaq camera is mounted upside down
 	imageSource.flip();
 
 	/*
@@ -151,54 +154,26 @@ public class CarDemoIPAQMain2 {
 	
 	alertServer.linkL(alertDisp.linkL(car.linkL(servo)));
 	Thread t2 = new Thread(imageSource);
-	try {
-	    t2.start(); // calls imageSource.run();
-	}
-	catch (Exception e) {
-	    System.out.println("Embedded ATR thread died");
-	    System.out.println(e.getMessage());
-	    System.out.println(e.getStackTrace());
-	}
+	t2.start(); // calls imageSource.run();
+	    
   
 	
 	CameraControl cc = new CameraControl(imageSource);
 	System.out.println("Starting camera control server");
-	try {
-	    Server cameraControlServer = new Server(new Sockets(), args[2], cc);
-	    Thread t3 = new Thread(cameraControlServer);
-	    t3.start();
-	}
-	catch (Exception e) {
-	    System.out.println("Camera control thread died");
-	    System.out.println(e.getMessage());
-	    System.out.println(e.getStackTrace());
-	}
+	Server cameraControlServer = new Server(new Sockets(), args[2], cc);
+	Thread t3 = new Thread(cameraControlServer);
+	t3.start();
 
 	LabelControl lc = new LabelControl(label);
 	System.out.println("*** Starting label control server");
-	try {
-	    Server labelControlServer = new Server(new Sockets(), args[3], lc);
-	    Thread t4 = new Thread(labelControlServer);
-	    t4.start();
-	}
-	catch (Exception e) {
-	    System.out.println("Label control thread died");
-	    System.out.println(e.getMessage());
-	    System.out.println(e.getStackTrace());
-	}
+	Server labelControlServer = new Server(new Sockets(), args[3], lc);
+	Thread t4 = new Thread(labelControlServer);
+	t4.start();
 	
 	CarControllerControl ccc = new CarControllerControl(car);
 	System.out.println("****Starting car control server");
-	try {
-	    Server carControllerControlServer = new Server(new Sockets(), args[4], ccc);
-	    Thread t5 = new Thread(carControllerControlServer);
-	    t5.start();
-	}
-	catch (Exception e) {
-	    System.out.println("Car control thread died");
-	    System.out.println(e.getMessage());
-	    System.out.println(e.getStackTrace());
-	}
-	
+	Server carControllerControlServer = new Server(new Sockets(), args[4], ccc);
+	Thread t5 = new Thread(carControllerControlServer);
+	t5.start();
     }
 }
