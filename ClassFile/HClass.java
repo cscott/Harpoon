@@ -29,7 +29,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.34 2000-11-30 19:17:28 vivien Exp $
+ * @version $Id: HClass.java,v 1.41.2.35 2000-12-17 19:49:51 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -479,20 +479,20 @@ public abstract class HClass extends HPointer
    * If this <code>HClass</code> is a primitive type, return the
    * wrapper class for values of this type.  For example:<p>
    * <DL><DD><CODE>HClass.forDescriptor("I").getWrapper()</CODE></DL><p>
-   * will return <code>HClass.forName("java.lang.Integer")</code>.
+   * will return <code>l.forName("java.lang.Integer")</code>.
    * Calling <code>getWrapper</code> with a non-primitive <code>HClass</code>
    * will return the value <code>null</code>.
    */
-  public final HClass getWrapper() {
-    if (this==this.Boolean) return _linker.forName("java.lang.Boolean");
-    if (this==this.Byte)    return _linker.forName("java.lang.Byte");
-    if (this==this.Char)    return _linker.forName("java.lang.Character");
-    if (this==this.Double)  return _linker.forName("java.lang.Double");
-    if (this==this.Float)   return _linker.forName("java.lang.Float");
-    if (this==this.Int)     return _linker.forName("java.lang.Integer");
-    if (this==this.Long)    return _linker.forName("java.lang.Long");
-    if (this==this.Short)   return _linker.forName("java.lang.Short");
-    if (this==this.Void)    return _linker.forName("java.lang.Void");
+  public final HClass getWrapper(Linker l) {
+    if (this==this.Boolean) return l.forName("java.lang.Boolean");
+    if (this==this.Byte)    return l.forName("java.lang.Byte");
+    if (this==this.Char)    return l.forName("java.lang.Character");
+    if (this==this.Double)  return l.forName("java.lang.Double");
+    if (this==this.Float)   return l.forName("java.lang.Float");
+    if (this==this.Int)     return l.forName("java.lang.Integer");
+    if (this==this.Long)    return l.forName("java.lang.Long");
+    if (this==this.Short)   return l.forName("java.lang.Short");
+    if (this==this.Void)    return l.forName("java.lang.Void");
     return null; // not a primitive type;
   }
 

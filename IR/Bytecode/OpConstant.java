@@ -4,6 +4,7 @@
 package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.RawClass.Constant;
 import harpoon.IR.RawClass.ConstantValue;
 import harpoon.IR.RawClass.ConstantDouble;
@@ -23,7 +24,7 @@ import harpoon.Util.Util;
  * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.2.2.5 2000-01-13 23:47:53 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.2.2.6 2000-12-17 19:50:06 cananian Exp $
  * @see Operand
  * @see Instr
  * @see harpoon.IR.RawClass.ConstantDouble
@@ -41,9 +42,10 @@ public final class OpConstant extends Operand {
   }
   private void check() {
     // assert that value matches type.
-    HClass check = type.getLinker().forClass(value.getClass());
+    Linker l = type.getLinker(); // use a consistent linker, whichever that is.
+    HClass check = l.forClass(value.getClass());
     if ((!type.isPrimitive() && check!=type) ||
-	( type.isPrimitive() && check!=type.getWrapper()))
+	( type.isPrimitive() && check!=type.getWrapper(l)))
       throw new Error("value doesn't match type of OpConstant: " + 
 		      type + "/" + check);
   }
