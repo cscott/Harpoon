@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.31 1998-09-03 01:30:02 cananian Exp $
+ * @version $Id: Translate.java,v 1.32 1998-09-03 02:09:18 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -485,18 +485,13 @@ class Translate  { // not public.
 		//	    s.lv[opd.getIndex()]);
 		break;
 	    }
-	case Op.ANEWARRAY: // FIXME FIXME
+	case Op.ANEWARRAY:
 	    {
 		OpClass opd = (OpClass) in.getOperand(0);
 		HClass hc = HClass.forDescriptor("[" + 
 						 opd.value().getDescriptor());
 		ns = s.pop().push(new Temp());
-		q = new NEW(in, ns.stack[0], hc);
-		Quad.addEdge(q,
-			     new CALL(in, hc.getMethod("<init>","(I)V"),
-				      ns.stack[0], new Temp[] {s.stack[0]})
-			     );
-		last = q.next[0];
+		q = new ANEW(in, ns.stack[0], hc, new Temp[] { s.stack[0] });
 		break;
 	    }
 	case Op.ARRAYLENGTH:
@@ -889,8 +884,57 @@ class Translate  { // not public.
 	case Op.MONITOREXIT:
 	    Util.assert(false); // should be caught at higher level.
 	case Op.MULTIANEWARRAY:
+	    {
+		OpClass opd0 = (OpClass) in.getOperand(0);
+		OpConstant opd1 = (OpConstant) in.getOperand(1);
+		int dims = ((Integer) opd1.getValue()).intValue();
+		ns = s.pop(dims).push(new Temp());
+		Temp Tdims[] = new Temp[dims];
+		for (int i=0; i<dims; i++)
+		    Tdims[i] = s.stack[(dims-1)-i];
+		q = new ANEW(in, ns.stack[0], opd0.value(), Tdims);
+		break;
+	    }
 	case Op.NEWARRAY:
-	    throw new Error("I'm a lazy bum.");
+	    {
+		final byte T_BOOLEAN = 4;
+		final byte T_CHAR = 5;
+		final byte T_FLOAT = 6;
+		final byte T_DOUBLE = 7;
+		final byte T_BYTE = 8;
+		final byte T_SHORT = 9;
+		final byte T_INT = 10;
+		final byte T_LONG = 11;
+
+		OpConstant opd = (OpConstant) in.getOperand(0);
+		byte type = ((Byte) opd.getValue()).byteValue();
+		HClass arraytype;
+		switch(type) {
+		case T_BOOLEAN:
+		    arraytype = HClass.forDescriptor("[Z"); break;
+		case T_CHAR:
+		    arraytype = HClass.forDescriptor("[C"); break;
+		case T_FLOAT:
+		    arraytype = HClass.forDescriptor("[F"); break;
+		case T_DOUBLE:
+		    arraytype = HClass.forDescriptor("[D"); break;
+		case T_BYTE:
+		    arraytype = HClass.forDescriptor("[B"); break;
+		case T_SHORT:
+		    arraytype = HClass.forDescriptor("[S"); break;
+		case T_INT:
+		    arraytype = HClass.forDescriptor("[I"); break;
+		case T_LONG:
+		    arraytype = HClass.forDescriptor("[J"); break;
+		default:
+		    throw new Error("Illegal NEWARRAY component type: "+type);
+		}
+
+		ns = s.pop().push(new Temp());
+		q = new ANEW(in, ns.stack[0], arraytype, 
+			     new Temp[] { s.stack[0] });
+		break;
+	    }
 	case Op.NEW:
 	    {
 	    OpClass opd = (OpClass) in.getOperand(0);
