@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include "CalculateDominators.h"
 
+#define NOBORINGDOM 1
+
 struct referencelist * calculatedominators(struct genhashtable * dommapping,struct heap_object *ho) {
   struct referencelist *rl=ho->rl;
   struct referencelist *dominators=NULL;
@@ -59,6 +61,13 @@ int * minimaldominatorset(struct localvars * lv, struct globallist *gl, struct h
   struct referencelist *rl2=ho->rl;
   int * in=(int *) malloc(sizeof(int));
 
+#ifdef NOBORINGDOM
+  if (lv!=NULL&&isboring(lv)) {
+    *in=0;
+    return in;
+  }
+#endif
+      
   while (rl2!=NULL) {
     if((rl2->lv!=NULL)&&(includecurrent==0)&&(rl2->lv->m==heap->methodlist))
       ;
@@ -73,10 +82,21 @@ int * minimaldominatorset(struct localvars * lv, struct globallist *gl, struct h
   return in;
 }
 
+int isboring(struct localvars *lv) {
+  if ((lv->name[0]=='s') &&(lv->name[1]=='t')&&(lv->name[2]=='k'))
+    return 1;
+  else
+    return 0;
+}
 
 int dominates(struct localvars *lv1, struct globallist *gl1, struct localvars *lv2, struct globallist *gl2) {
   struct heap_object * destobj,* srcobj;
   int age1,age2;
+
+#ifdef NOBORINGDOM
+  if(lv1!=NULL&&isboring(lv1))
+    return 0;
+#endif
 
   if (lv2!=NULL) {
     destobj=lv2->object;

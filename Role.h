@@ -35,7 +35,7 @@ struct rolefieldlist {
   struct rolefieldlist * next;
 };
 
-void printrole(struct role * r);
+void printrole(struct role * r, char * rolename);
 void freerole(struct role * r);
 struct role * calculaterole(struct genhashtable * dommapping,struct heap_object *ho);
 struct identity_relation * find_identities(struct heap_object *ho);

@@ -33,6 +33,7 @@ struct method {
   struct method *caller;
   struct localvars *lv;
   struct heap_object ** params;
+  struct rolemethod * rm;
   int numobjectargs;
   short isStatic;
 };

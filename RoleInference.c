@@ -126,9 +126,10 @@ void doanalysis() {
 	      if (heap.methodlist->params[i]!=NULL) {
 		rolem->paramroles[i]=findrolestring(&heap, dommap, heap.methodlist->params[i]);
 	      }
-	      else printf("Role: Null Object Parameter\n");
 	    }
 	    methodassignhashcode(rolem);
+	    rolem=methodaddtable(&heap,rolem);
+	    heap.methodlist->rm=rolem;
 	    genfreekeyhashtable(dommap);
 	  }
 	}
@@ -145,8 +146,20 @@ void doanalysis() {
 	heap.methodlist=newmethod;
 	currentparam=0;
       }
-      if (currentparam==heap.methodlist->numobjectargs)
+      if (currentparam==heap.methodlist->numobjectargs) {
+	struct rolemethod * rolem=(struct rolemethod *) calloc(1, sizeof(struct rolemethod));
+	
+	rolem->classname=copystr(heap.methodlist->classname);
+	rolem->methodname=copystr(heap.methodlist->methodname);
+	rolem->signature=copystr(heap.methodlist->signature);
+	rolem->paramroles=(char **)calloc(heap.methodlist->numobjectargs, sizeof(char *));
+	rolem->numobjectargs=heap.methodlist->numobjectargs;
+	rolem->isStatic=heap.methodlist->isStatic;
+	methodassignhashcode(rolem);
+	rolem=methodaddtable(&heap,rolem);
+	heap.methodlist->rm=rolem;
 	printf("Calling Context for method %s.%s%s:\n", heap.methodlist->classname, heap.methodlist->methodname, heap.methodlist->signature);
+      }
       showmethodstack(&heap);
       break;
     case 'R':
@@ -202,6 +215,26 @@ void doanalysis() {
     }
     free(line);
   }
+
+  {
+    struct geniterator *it=gengetiterator(heap.methodtable);
+    while(1) {
+      struct rolemethod *method=(struct rolemethod *) gennext(it);
+      if (method==NULL)
+	break;
+      printrolemethod(method);
+    }
+    genfreeiterator(it);
+    it=gengetiterator(heap.roletable);
+    while(1) {
+      struct role *role=(struct role *) gennext(it);
+      char *rolename;
+      if (role==NULL)
+	break;
+      rolename=gengettable(heap.roletable, role);
+      printrole(role, rolename);
+    }
+  }
 }
 
 void doreturnmethodinference(struct heap_state *heap, long long uid, struct hashtable *ht) {
@@ -240,25 +273,23 @@ void doreturnmethodinference(struct heap_state *heap, long long uid, struct hash
   {
     int i=0;
     struct genhashtable * dommap=builddominatormappings(heap,1);
+    struct rolereturnstate *rrs=(struct rolereturnstate *)calloc(1, sizeof(struct rolereturnstate));
+    rrs->paramroles=(char **)calloc(heap->methodlist->numobjectargs, sizeof(char *));
+
     printf("Returning Context for method %s.%s%s:\n", heap->methodlist->classname, heap->methodlist->methodname, heap->methodlist->signature);
     for(;i<heap->methodlist->numobjectargs;i++) {
       if (heap->methodlist->params[i]!=NULL) {
-	struct role * r=calculaterole(dommap,heap->methodlist->params[i]);
-	printrole(r);
-	freerole(r);
-      } else printf("Role: Null Object Parameter\n");
+	rrs->paramroles[i]=findrolestring(heap, dommap, heap->methodlist->params[i]);
+      }
     }
     if (uid!=-1) {
-      struct role * r=calculaterole(dommap,gettable(ht,uid));
-      printf("Return object:\n");
-      printrole(r);
-      freerole(r);
+      rrs->returnrole=findrolestring(heap, dommap, gettable(ht,uid));
     }
+    addrolereturn(heap->methodlist->rm,rrs);
 
     genfreekeyhashtable(dommap);
   }
   freemethodlist(heap);
-  
 }
 
 void doarrayassignment(struct heap_state *heap, struct heap_object * src, int index, struct heap_object *dst) {

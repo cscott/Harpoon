@@ -7,9 +7,9 @@
 
 static long int rolenumber=0;
 
-void printrole(struct role *r) {
+void printrole(struct role *r, char * rolename) {
   struct rolereferencelist *dominators=r->dominatingroots;
-  printf("Role {\n");
+  printf("Role %s {\n",rolename);
   printf(" Class: %s\n", r->class);
   printf(" Dominated by:\n");
   while(dominators!=NULL) {
@@ -50,7 +50,7 @@ void printrole(struct role *r) {
       fl=fl->next;
     }
   }
-  printf("}\n");
+  printf("}\n\n");
 }
 
 int equivalentstrings(char *str1, char *str2) {
@@ -59,9 +59,9 @@ int equivalentstrings(char *str1, char *str2) {
       return 0;
     else
       return 1;
-  } else if ((str1==NULL)||(str2==NULL))
-    return 0;
-  else return 1;
+  } else if ((str1==NULL)&&(str2==NULL))
+    return 1;
+  else return 0;
 }
 
 int equivalentroles(struct role *role1, struct role *role2) {
@@ -141,6 +141,8 @@ int equivalentroles(struct role *role1, struct role *role2) {
 	return 0;
       if (!equivalentstrings(ri1->fieldname2,ri2->fieldname2))
 	return 0;
+      ri1=ri1->next;
+      ri2=ri2->next;
     }
     if (ri2!=NULL)
       return 0;
@@ -294,8 +296,9 @@ char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping
     int index=28;
     rolenumber++;
     buf[29]=0;
-
-    while(rn!=0) {
+    if(rn==0) {
+      buf[index--]='0';
+    } else while(rn!=0) {
       buf[index--]='0'+rn%10;
       rn=rn/10;
     }
@@ -303,7 +306,6 @@ char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping
     buf[index]='R';
     genputtable(heap->roletable, r, copystr(&buf[index]));
 
-    freerole(r);
     return copystr(&buf[index]);
   }
 }
