@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.3 2002-02-25 21:04:17 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.4 2003-10-03 17:41:47 cananian Exp $
  * @see Operand
  * @see Instr
  * @see harpoon.IR.RawClass.ConstantDouble
@@ -43,11 +43,15 @@ public final class OpConstant extends Operand {
   private void check() {
     // assert that value matches type.
     Linker l = type.getLinker(); // use a consistent linker, whichever that is.
+    if (!Boolean.getBoolean("harpoon.runtime1.minilib")) {
+	// skip this check for minilib, because it doesn't necessarily have
+	// all the wrapper classes necessary for type.getWrapper() to work.
     HClass check = l.forClass(value.getClass());
     if ((!type.isPrimitive() && check!=type) ||
 	( type.isPrimitive() && check!=type.getWrapper(l)))
       throw new Error("value doesn't match type of OpConstant: " + 
 		      type + "/" + check);
+    }
   }
   /** Make a new <code>OpConstant</code> from a 
    *  <code>constant_pool</code> entry. */
