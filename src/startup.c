@@ -1,7 +1,10 @@
 #include <jni.h>
 #include <jni-private.h>
 
-extern JNIEnv *FNI_JNIEnv; /* temporary hack. */
+/* these functions are defined in src/java.lang/java_lang_Thread.c but only
+ * used here. */
+void FNI_java_lang_Thread_setupMain(JNIEnv *env);
+void FNI_java_lang_Thread_finishMain(JNIEnv *env);
 
 #define CHECK_EXCEPTIONS(env) \
 if ((*env)->ExceptionOccurred(env)){ (*env)->ExceptionDescribe(env); exit(1); }
@@ -18,9 +21,11 @@ int main(int argc, char *argv[]) {
   char **namep;
   int i;
   
-  env = FNI_ThreadInit();
-  FNI_JNIEnv = env;
-
+  /* set up JNIEnv structures. */
+  FNI_InitJNIEnv();
+  env = FNI_CreateJNIEnv();
+  /* setup main thread info. */
+  FNI_java_lang_Thread_setupMain(env);
 
   /* initialize pre-System.initializeSystemClass() initializers. */
   for (i=0; firstclasses[i]!=NULL; i++) {
@@ -77,7 +82,11 @@ int main(int argc, char *argv[]) {
   mid = (*env)->GetStaticMethodID(env, cls, "main", "([Ljava/lang/String;)V");
   CHECK_EXCEPTIONS(env);
   (*env)->CallStaticVoidMethod(env, cls, mid, args);
+  // XXX on exception should call
+  //   Thread.currentThread().getThreadGroup().uncaughtException(thread, ex)
   CHECK_EXCEPTIONS(env);
   (*env)->DeleteLocalRef(env, args);
   (*env)->DeleteLocalRef(env, cls);
+  // XXX: should call Thread.currentThread().exit() at this point.
+  FNI_java_lang_Thread_finishMain(env);
 }
