@@ -11,7 +11,7 @@ import harpoon.Util.Util;
 /**
  * <code>PCALL</code> objects represent a method pointer dereference and
  * invocation.  Interpretation is similar to that of
- * <code>harpoon.IR.Quads.CALL.<p>
+ * <code>harpoon.IR.Quads.CALL</code>.<p>
  * If an exception is thrown by the called method, the <code>Temp</code>
  * specified by <code>retex</code> will be assigned the non-null 
  * reference to the thrown exception, and the <code>Temp</code>
@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * See also <code>IR.Quads.CALL</code> and <code>IR.Tree.CALL</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PCALL.java,v 1.1.2.8 2000-07-11 23:07:30 cananian Exp $
+ * @version $Id: PCALL.java,v 1.1.2.9 2000-07-12 14:34:19 cananian Exp $
  */
 public class PCALL extends harpoon.IR.Quads.SIGMA {
     /** The method pointer to dereference. */
