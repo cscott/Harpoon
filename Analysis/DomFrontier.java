@@ -12,26 +12,36 @@ import java.util.Hashtable;
  * the <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.1 1998-09-15 03:26:38 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.2 1998-09-15 03:40:05 cananian Exp $
  */
 
 public class DomFrontier  {
     DomTree dt;
     boolean isPost;
 
-    /** Creates a <code>DomFrontier</code>. */
+    /** Creates a <code>DomFrontier</code>, using a pre-existing
+     *  <code>DomTree</code>.*/
     public DomFrontier(DomTree dt) {
         this.dt = dt;
 	this.isPost = dt.isPost;
     }
+    /** Creates a <code>DomFrontier</code>; if <code>isPost</code> is
+     *  <code>false</code> creates the dominance frontier; otherwise
+     *  creates the postdominance frontier. */
     public DomFrontier(boolean isPost) {
 	this(new DomTree(isPost));
     }
+    /** Creates a <code>DomFrontier</code> representing the 
+     *  dominance frontier. */
     public DomFrontier() { this(false); }
 
     Hashtable DF = new Hashtable();
     Hashtable analyzed = new Hashtable();
 
+    /** Return the set of <code>HCodeElement</code>s in the (post)dominance
+     *  frontier of <code>n</code>.
+     *  @param hc the <code>HCode</code> containing <code>n</code.
+     */
     public HCodeElement[] DF(HCode hc, HCodeElement n) {
 	analyze(hc); 
 	HCodeElement[] r =  (HCodeElement[]) DF.get(n);

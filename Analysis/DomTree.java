@@ -12,7 +12,7 @@ import java.util.Vector;
  * <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.2 1998-09-15 02:17:23 cananian Exp $
+ * @version $Id: DomTree.java,v 1.3 1998-09-15 03:40:05 cananian Exp $
  */
 
 public class DomTree /*implements Graph*/ {
@@ -30,21 +30,21 @@ public class DomTree /*implements Graph*/ {
     public DomTree() {
 	this(false);
     }
-    /** Creates a new, empty <code>DomTree</code>. If <code>isPost</code> is
-     *  true, creates a postdominator tree. */
+    /** Creates a new, empty <code>DomTree</code>; if <code>isPost</code> is
+     *  true, creates a postdominator tree instead. */
     public DomTree(boolean isPost) {
 	this.isPost = isPost;
     }
 
-    /** Return the immediate dominator of an HCodeElement.
+    /** Return the immediate dominator of an <code>HCodeElement</code>.
      * @return the immediate dominator of <code>n</code>, or
      *         <code>null</code> if <code>n</code> is the root
      *         of the flow graph.  */
     public HCodeElement idom(HCode hc, HCodeElement n) {
 	analyze(hc); return (HCodeElement) idom.get(n);
     }
-    /** Return the children of an HCodeElement in the immediate dominator
-     *  tree. 
+    /** Return the children of an <code>HCodeElement</code> in the immediate
+     *  dominator tree. 
      *  @return an array with all the children of <code>n</code> in the
      *          immediate dominator tree, or a zero-length array if 
      *          <code>n</code> is a tree leaf. */
@@ -52,7 +52,7 @@ public class DomTree /*implements Graph*/ {
 	analyze(hc); return children.getSet(n);
     }
     
-    /** Analyze an HCode which implements Edges. */
+    /** Analyze an <code>HCode</code> which implements </code>Edges</code>. */
     void analyze(HCode hc) {
 	if (analyzed.get(hc) != null) return;
 	analyzed.put(hc, hc);
