@@ -7,12 +7,17 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
+import harpoon.Util.ArrayFactory;
 import harpoon.Util.ArrayIterator;
 import harpoon.Util.ArraySet;
+import harpoon.Util.Collections.AggregateSetFactory;
+import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Default;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -24,15 +29,15 @@ import java.util.HashSet;
  * the <code>harpoon.IR.Properties.CFGraphable</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.6.2.8 2000-11-10 21:56:05 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.6.2.9 2000-11-10 23:38:43 cananian Exp $
  */
 
 public class DomFrontier  {
-    final HCode hc;
+    final ArrayFactory af;
     /** Creates a <code>DomFrontier</code> using a pre-existing
      *  <code>DomTree</code>. */
     public DomFrontier(DomTree dt) {
-	this.hc = dt.hcode;
+	this.af = dt.hcode.elementArrayFactory();
 	analyze(dt);
     }
     /** Creates a <code>DomFrontier</code> for the given
@@ -52,27 +57,20 @@ public class DomFrontier  {
 	this(new DomTree(hcode, grapher, isPost));
     }
 
-    Hashtable DF = new Hashtable();
+    MultiMap DF = new GenericMultiMap(new AggregateSetFactory());
 
     /** Return an array of <code>HCodeElement</code>s in the (post)dominance
      *  frontier of <code>n</code>.
      */
     public HCodeElement[] df(HCodeElement n) {
-	HCodeElement[] r =  (HCodeElement[]) DF.get(n);
-	if (r==null)
-	    return (HCodeElement[]) hc.elementArrayFactory().newArray(0);
-	else
-	    return (HCodeElement[]) Util.safeCopy(hc.elementArrayFactory(), r);
+	Collection c = DF.getValues(n);
+	return (HCodeElement[]) c.toArray(af.newArray(c.size()));
     }
     /** Return an immutable <code>Set</code> of <code>HCodeElement</code>s
      *  in the (post)dominance frontier of <code>n</code>.
      */
     public Set dfS(HCodeElement n) {
-	HCodeElement[] r =  (HCodeElement[]) DF.get(n);
-	if (r==null)
-	    return Collections.EMPTY_SET;
-	else
-	    return new ArraySet(r);
+	return Collections.unmodifiableSet((Set)DF.getValues(n));
     }
 
     void analyze(DomTree dt) {
@@ -82,28 +80,23 @@ public class DomFrontier  {
     }
     void computeDF(DomTree dt, HCodeElement n) {
 	CFGrapher grapher = dt.grapher;
-	Set S = new WorkSet();
 	
 	// for every child y in succ[n]
 	for (Iterator it=grapher.succC(n).iterator(); it.hasNext(); ) {
 	    HCodeElement y = ((HCodeEdge)it.next()).to();
 	    if (!n.equals( dt.idom(y) ))
-		S.add(y);
+		DF.add(n, y);
 	}
 	// for each child c of n in the (post)dominator tree
 	for (Iterator it=new ArrayIterator(dt.children(n)); it.hasNext(); ) {
 	    HCodeElement c = (HCodeElement) it.next();
 	    computeDF(dt, c);
 	    // for each element w of DF[c]
-	    HCodeElement[] w = (HCodeElement[]) DF.get(c);
-	    for (int j=0; j < w.length; j++)
-		if (!n.equals( dt.idom(w[j]) ))
-		    S.add(w[j]);
+	    for (Iterator it2=DF.getValues(c).iterator(); it2.hasNext(); ) {
+		HCodeElement w = (HCodeElement) it2.next();
+		if (!n.equals( dt.idom(w) ))
+		    DF.add(n, w);
+	    }
 	}
-	// DF[n] <- S
-	HCodeElement dfn[] = 
-	    (HCodeElement[]) dt.hcode.elementArrayFactory().newArray(S.size());
-	S.toArray(dfn);
-	DF.put(n, dfn);
     }
 }

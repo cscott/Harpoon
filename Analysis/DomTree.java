@@ -9,10 +9,16 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.ArrayIterator;
+import harpoon.Util.Collections.AggregateSetFactory;
+import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Util;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Vector;
 /**
  * <code>DomTree</code> computes the dominator tree of a flowgraph-structured
@@ -20,7 +26,7 @@ import java.util.Vector;
  * <code>CFGrapher</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.8.2.7 2000-11-10 21:56:05 cananian Exp $
+ * @version $Id: DomTree.java,v 1.8.2.8 2000-11-10 23:38:43 cananian Exp $
  */
 
 public class DomTree /*implements Graph*/ {
@@ -196,42 +202,32 @@ public class DomTree /*implements Graph*/ {
 
 
     // Useful Hashtable extensions.
-    static class IntHTable extends Hashtable {
+    static class IntHTable {
+	private Map m = new HashMap();
 	void putInt(Object o, int n) {
-	    put(o, new Integer(n));
+	    m.put(o, new Integer(n));
 	}
 	int getInt(Object o) {
-	    if (!containsKey(o)) return 0;
-	    return ((Integer)get(o)).intValue();
+	    if (!m.containsKey(o)) return 0;
+	    return ((Integer)m.get(o)).intValue();
+	}
+	boolean containsKey(Object o) {
+	    return m.containsKey(o);
 	}
     }
-    static class SetHTable extends Hashtable {
+    static class SetHTable {
 	ArrayFactory af;
+	MultiMap mm = new GenericMultiMap(new AggregateSetFactory());
 	SetHTable(ArrayFactory af) { super(); this.af = af; }
 	void clearSet(HCodeElement hce) {
-	    remove(hce);
+	    mm.remove(hce);
 	}
 	HCodeElement[] getSet(HCodeElement hce) {
-	    HCodeElement[] r = (HCodeElement[]) get(hce);
-	    if (r == null) return (HCodeElement[]) af.newArray(0);
-	    return r;
+	    Collection c = mm.getValues(hce);
+	    return (HCodeElement[]) c.toArray(af.newArray(c.size()));
 	}
 	void unionSet(HCodeElement hce, HCodeElement newEl) {
-	    if (!containsKey(hce)) {
-		HCodeElement[] r = (HCodeElement[]) af.newArray(1);
-		r[0] = newEl;
-		put(hce, r);
-	    } else {
-		HCodeElement[] oldset = (HCodeElement[]) get(hce);
-		HCodeElement[] newset = (HCodeElement[]) af.newArray(oldset.length+1);
-		for (int i=0; i < oldset.length; i++)
-		    if (oldset[i] == newEl)
-			return; // don't add; already present.
-		    else
-			newset[i] = oldset[i];
-		newset[oldset.length] = newEl;
-		put(hce, newset);
-	    }
+	    mm.add(hce, newEl);
 	}
     }
 }
