@@ -4,6 +4,7 @@
 package harpoon.Analysis.PointerAnalysis;
 
 import harpoon.Analysis.Maps.AllocationInformation;
+import harpoon.ClassFile.HClass;
 import harpoon.Temp.Temp;
 
 import harpoon.Util.Util;
@@ -13,7 +14,7 @@ import harpoon.Util.Util;
  <code>AllocationProperties</code>. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MyAP.java,v 1.1.2.5 2000-05-17 21:04:06 salcianu Exp $
+ * @version $Id: MyAP.java,v 1.1.2.6 2000-06-07 20:19:39 kkz Exp $
  */
 public class MyAP implements AllocationInformation.AllocationProperties,
 			     java.io.Serializable {
@@ -34,8 +35,12 @@ public class MyAP implements AllocationInformation.AllocationProperties,
     // to indicate the current thread.
     public Temp ah = null;
 
+    private HClass actualClass;
+
     /** Creates a <code>MyAP</code>. */
-    public MyAP() {}
+    public MyAP(HClass actualClass) {
+	this.actualClass = actualClass;
+    }
 
 
     public boolean hasInteriorPointers(){
@@ -56,6 +61,10 @@ public class MyAP implements AllocationInformation.AllocationProperties,
 
     public Temp allocationHeap(){
 	return ah;
+    }
+
+    public HClass actualClass() {
+	return actualClass;
     }
 
     /** Pretty printer for debug. */

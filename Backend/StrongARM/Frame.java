@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.22 2000-04-04 00:56:36 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.23 2000-06-07 20:19:40 kkz Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -40,6 +40,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	linker = main.getDeclaringClass().getLinker();
 	regFileInfo = new RegFileInfo();
 	
+	System.out.println("AllocationStrategy: "+alloc_strategy);
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
 	    alloc_strategy.equalsIgnoreCase("nifty") ?
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
@@ -47,6 +48,9 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	    alloc_strategy.equalsIgnoreCase("bdw") ?
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.BDWAllocationStrategy(this) :
+	    alloc_strategy.equalsIgnoreCase("sp") ?
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
+	    new harpoon.Backend.Runtime1.SPAllocationStrategy(this) :	    
 	    // default, "malloc" strategy.
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,

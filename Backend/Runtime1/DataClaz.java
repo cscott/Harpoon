@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.17 2000-05-20 19:06:05 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.18 2000-06-07 20:19:27 kkz Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -97,45 +97,63 @@ public class DataClaz extends Data {
     /** Make gc bitmap or pointer to bitmap. */
     private Stm gc(Frame f, ClassHierarchy ch) {
 	if (hc.isArray()) { // arrays are special
-	    List stmlist = new ArrayList();
-	    long bitmap = hc.getComponentType().isPrimitive() ? 0 : 1;
-	    if (f.pointersAreLong())
+	    final List stmlist = new ArrayList();
+	    // bit 0 and bit 1 are set (pointers in the object header)
+	    // bit 2 is not set (array length field)
+	    // bit 3 is set if the component type is not primitive
+	    final long bitmap = 
+		hc.getComponentType().isPrimitive() ? 03L : 013L; 
+	    if (f.pointersAreLong()) {
+		//System.out.println("Array: " + Long.toBinaryString(bitmap));
 		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
-	    else
+	    } else {
+		//System.out.println("Array: " + 
+		//		   Integer.toBinaryString((int)bitmap));
 		stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
+	    }
 	    return Stm.toStm(stmlist);
 	}
-	final int MAX_SIZE = 8 * m_tb.WORD_SIZE * m_tb.POINTER_SIZE;
-	// in-line bitmap for small objects
-	if (m_tb.objectSize(hc) <= MAX_SIZE) { // use compact encoding
-	    List stmlist = new ArrayList();
+	// non-arrays
+	final int MAX_SIZE = 8 * m_tb.POINTER_SIZE * m_tb.POINTER_SIZE;
+	final int objectSize = m_tb.objectSize(hc) + m_tb.OBJECT_HEADER_SIZE;
+	//System.out.println("Size: " + objectSize);
+	if (objectSize > MAX_SIZE) { // auxiliary table for large objects
+	    return gcaux(f, ch);
+	} else { // in-line bitmap for small objects
+	    final List stmlist = new ArrayList();
 	    final List fields = m_tb.cfm.fieldList(hc);
-	    long bitmap = 0;
+	    // encode object header
+	    long bitmap = 03L; // octal
 	    for (Iterator it=fields.iterator(); it.hasNext(); ) {
-		HField hf = (HField)it.next();
-		HClass type = hf.getType();
-		if (m_tb.cfm.fieldOffset(hf)%m_tb.WORD_SIZE != 0) {
+		final HField hf = (HField)it.next();
+		final HClass type = hf.getType();
+		final int fieldOffset = 
+		    m_tb.cfm.fieldOffset(hf) + m_tb.OBJECT_HEADER_SIZE;
+		// non-aligned objects should never be pointers
+		if (fieldOffset%m_tb.POINTER_SIZE != 0) {
 		    Util.assert(type.isPrimitive());
 		    continue;
 		}
 		if (!type.isPrimitive()) {
-		    int i = m_tb.cfm.fieldOffset(hf) / m_tb.WORD_SIZE;
+		    final int i = fieldOffset/m_tb.POINTER_SIZE;
 		    Util.assert(i >= 0 && i < 8 * m_tb.POINTER_SIZE);
-		    bitmap |= (1 << (8 * m_tb.POINTER_SIZE - i - 1));
+		    bitmap |= (1 << i);
 		}
 	    }
-	    if (f.pointersAreLong())
+	    if (f.pointersAreLong()) {
+		//System.out.println("Compact: " + Long.toBinaryString(bitmap));
 		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
-	    else
+	    } else {
 		stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
+		//System.out.println("Compact: " + 
+		//		   Integer.toBinaryString((int)bitmap));
+	    }
 	    return Stm.toStm(stmlist);
 	}
-	// auxiliary table for large objects
-	return gcaux(f, ch);
     }
     // Make auxiliary gc bitmap
     private Stm gcaux(Frame f, ClassHierarchy ch) {
-	List stmlist = new ArrayList();
+	final List stmlist = new ArrayList();
 	// large object, encoded in auxiliary table
 	stmlist.add(_DATUM(m_nm.label(hc, "gc_aux")));
 	// switch to GC segment
@@ -143,31 +161,59 @@ public class DataClaz extends Data {
 	// align things on word boundary.
 	stmlist.add(new ALIGN(tf, null, 4));
 	stmlist.add(new LABEL(tf, null, m_nm.label(hc, "gc_aux"), true));
-	List fields = m_tb.cfm.fieldList(hc);
-	int bitmap = 0;
-	int begin = 0; // first offset represented in the current bitmap
-	final int ENTRY_SIZE = 8 * m_tb.WORD_SIZE * m_tb.WORD_SIZE; 
+	final List fields = m_tb.cfm.fieldList(hc);
+	long bitmap = 03L; // encode object header
+	int j = 0; // keep track of number of bitmaps created
+	final int MAX_SIZE = 8 * m_tb.POINTER_SIZE * m_tb.POINTER_SIZE;
 	for (Iterator it = fields.iterator(); it.hasNext(); ) {
 	    HField hf = (HField)it.next();
-	    if (m_tb.cfm.fieldOffset(hf) >= begin + ENTRY_SIZE) {
-		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
-		begin += ENTRY_SIZE;
-		bitmap = 0;
+	    final int fieldOffset =
+		m_tb.cfm.fieldOffset(hf) + m_tb.OBJECT_HEADER_SIZE;
+	    Util.assert(j <= fieldOffset/m_tb.POINTER_SIZE);
+	    // write out completed bitmaps
+	    while(j < fieldOffset/MAX_SIZE) {
+		if (f.pointersAreLong()) {
+		    //System.out.println("Aux: " + 
+		    //		       Long.toBinaryString(bitmap));
+		    stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
+		} else {
+		    //System.out.println("Aux: " + 
+		    //		       Integer.toBinaryString((int)bitmap));
+		    stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
+		}
+		bitmap = 0L; j++; // clear bitmap
 	    }
-	    HClass type = hf.getType();
-	    if (m_tb.cfm.fieldOffset(hf)%m_tb.WORD_SIZE != 0)  {
+	    final HClass type = hf.getType();
+	    // unaligned fields should never contain pointers
+	    if (fieldOffset%m_tb.POINTER_SIZE != 0)  {
 		Util.assert(type.isPrimitive());
 		continue;
 	    }
 	    if (!type.isPrimitive()) {
-		int i = (m_tb.cfm.fieldOffset(hf) - begin) / m_tb.WORD_SIZE;
+		final int i = 
+		    (fieldOffset/m_tb.POINTER_SIZE)%(8*m_tb.POINTER_SIZE);
 		Util.assert(i >= 0 && i < 8 * m_tb.POINTER_SIZE);
-		bitmap |= (1 << (8 * m_tb.POINTER_SIZE - i - 1));
+		bitmap |= (1 << i);
 	    }
 	}
-	stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
+	// write out remaining bitmaps
+	final int objectSize = m_tb.objectSize(hc) + m_tb.OBJECT_HEADER_SIZE;
+	while(j*MAX_SIZE < objectSize) {
+	    if (f.pointersAreLong()) {
+		//System.out.println("Aux: " + 
+		//		   Long.toBinaryString(bitmap));
+		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
+	    } else {
+		//System.out.println("Aux: " + 
+		//		   Integer.toBinaryString((int)bitmap));
+		stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
+	    }
+	    bitmap = 0L; j++; // clear bitmap
+	}
 	// switch back to CLASS segment
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.CLASS));
+	// align things on word boundary.
+	stmlist.add(new ALIGN(tf, null, 4));
 	return Stm.toStm(stmlist);
     }
 

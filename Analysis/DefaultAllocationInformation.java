@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * that nothing can be stack or thread-locally allocated.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultAllocationInformation.java,v 1.1.2.4 2000-05-17 17:28:58 cananian Exp $
+ * @version $Id: DefaultAllocationInformation.java,v 1.1.2.5 2000-06-07 20:19:34 kkz Exp $
  */
 public class DefaultAllocationInformation
     implements AllocationInformation, java.io.Serializable {
@@ -48,7 +48,12 @@ public class DefaultAllocationInformation
      *  type specified by the parameter. */
     private static AllocationProperties _hasInteriorPointers(HClass cls) {
 	return hasInteriorPointers(cls) ?
-	    HAS_INTERIOR_POINTERS : NO_INTERIOR_POINTERS;
+	    (AllocationProperties) new MyAP(cls) { 
+	        public boolean hasInteriorPointers() { return true; }
+	    } :
+	    (AllocationProperties) new MyAP(cls) {
+		public boolean hasInteriorPointers() { return false; }
+	    };
     }
     /** Return true iff the specified object type has no interior pointers;
      *  that is, iff all its fields are primitive. */
@@ -69,21 +74,20 @@ public class DefaultAllocationInformation
 	return SINGLETON; // maintain singleton.
     }
 
-    /* Statically allocate the two possible allocation properties. */
-    private static final AllocationProperties
-	HAS_INTERIOR_POINTERS = new MyAP() {
-	    public boolean hasInteriorPointers() { return true; }
-	},
-	NO_INTERIOR_POINTERS = new MyAP() {
-	    public boolean hasInteriorPointers() { return false; }
-	};
     /* convenience class for code reuse. */
     private static abstract class MyAP
 	implements AllocationProperties, java.io.Serializable {
+	private HClass actualClass;
+	public MyAP(HClass actualClass) { this.actualClass = actualClass; }
 	public abstract boolean hasInteriorPointers();
 	public boolean canBeStackAllocated() { return false; }
 	public boolean canBeThreadAllocated() { return false; }
 	public boolean makeHeap() { return false; }
 	public Temp allocationHeap() { return null; }
+	public HClass actualClass() { return actualClass; }
     }
 }
+
+
+
+

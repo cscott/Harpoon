@@ -50,7 +50,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.23 2000-06-07 04:28:38 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.24 2000-06-07 20:19:39 kkz Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -110,16 +110,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	this.node_rep = null;
     }
 
-
     // Map<NEW, AllocationProperties>
     private final Map aps = new HashMap();
     
-    // conservative allocation property: on the global heap
-    // (by default).
-    private final AllocationInformation.AllocationProperties 
-	cons_ap = new MyAP();
-    
-
     /** Returns the allocation policy for <code>allocationSite</code>. */
     public AllocationInformation.AllocationProperties query
 	(HCodeElement allocationSite){
@@ -131,7 +124,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	if(ap != null)
 	    return ap;
 
-	return cons_ap;
+	// conservative allocation property: on the global heap
+	// (by default).
+	return new MyAP(getAllocatedType(allocationSite));
     }
 
     // analyze all the methods
@@ -429,7 +424,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     private MyAP getAPObj(Quad q){
 	MyAP retval = (MyAP) aps.get(q);
 	if(retval == null)
-	    aps.put(q, retval = new MyAP());
+	    aps.put(q, retval = new MyAP(getAllocatedType(q)));
 	return retval;
     }
 

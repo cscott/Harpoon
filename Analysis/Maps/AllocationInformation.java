@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Maps;
 
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 /**
@@ -10,7 +11,7 @@ import harpoon.Temp.Temp;
  * to information about the allocation done at that site.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformation.java,v 1.1.2.4 2000-05-17 17:29:14 cananian Exp $
+ * @version $Id: AllocationInformation.java,v 1.1.2.5 2000-06-07 20:19:38 kkz Exp $
  */
 public interface AllocationInformation  {
     
@@ -56,6 +57,12 @@ public interface AllocationInformation  {
 	 * <code>canBeThreadAllocated()</code> should return <code>true</code>.
 	 */
 	public Temp    allocationHeap();
+	/** @return the <code>HClass</code> representing the
+	 * "actual" or instantiated class of the object for which
+	 * memory is being allocated (as opposed to the declared
+	 * class).
+	 */
+	public HClass actualClass();
     }
 
     /** Query the properties of the allocation at the specified site. */

@@ -4,6 +4,7 @@
 package harpoon.Analysis;
 
 import harpoon.Analysis.Maps.AllocationInformation;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
@@ -18,7 +19,7 @@ import java.util.Map;
  * from a different <code>AllocationInformation</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformationMap.java,v 1.1.2.6 2000-05-17 17:28:58 cananian Exp $
+ * @version $Id: AllocationInformationMap.java,v 1.1.2.7 2000-06-07 20:19:34 kkz Exp $
  */
 public class AllocationInformationMap
     implements AllocationInformation, java.io.Serializable {
@@ -55,11 +56,13 @@ public class AllocationInformationMap
 	final boolean canBeThreadAllocated;
 	final boolean makeHeap;
 	final Temp allocationHeap;
+	final HClass actualClass;
 	public AllocationPropertiesImpl(boolean hasInteriorPointers,
 					boolean canBeStackAllocated,
 					boolean canBeThreadAllocated,
 					boolean makeHeap,
-					Temp allocationHeap) {
+					Temp allocationHeap,
+					HClass actualClass) {
 	    Util.assert(!(allocationHeap!=null && !canBeThreadAllocated));
 	    Util.assert(!(allocationHeap!=null && makeHeap));
 	    this.hasInteriorPointers = hasInteriorPointers;
@@ -67,19 +70,23 @@ public class AllocationInformationMap
 	    this.canBeThreadAllocated= canBeThreadAllocated;
 	    this.makeHeap            = makeHeap;
 	    this.allocationHeap = allocationHeap;
+	    this.actualClass = actualClass;
 	}
-	public AllocationPropertiesImpl(AllocationProperties ap, TempMap tm) {
+	public AllocationPropertiesImpl(AllocationProperties ap, 
+					TempMap tm) {
 	    this(ap.hasInteriorPointers(),
 		 ap.canBeStackAllocated(),
 		 ap.canBeThreadAllocated(),
 		 ap.makeHeap(),
 		 ap.allocationHeap() != null ?
-		 tm.tempMap(ap.allocationHeap()) : null);
+		 tm.tempMap(ap.allocationHeap()) : null,
+		 ap.actualClass());
 	}
 	public boolean hasInteriorPointers() { return hasInteriorPointers; }
 	public boolean canBeStackAllocated() { return canBeStackAllocated; }
 	public boolean canBeThreadAllocated(){ return canBeThreadAllocated;}
 	public boolean makeHeap()            { return makeHeap; }
 	public Temp allocationHeap()         { return allocationHeap; }
+	public HClass actualClass()          { return actualClass; }
     }
 }
