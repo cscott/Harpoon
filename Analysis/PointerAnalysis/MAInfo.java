@@ -67,7 +67,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.34 2000-07-15 21:34:35 bdemsky Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.35 2000-07-15 21:54:14 bdemsky Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -966,7 +966,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    }
 
 	    public void finish() {
-		PHI returnphi=new PHI(cs.getFactory(),null, null,
+		PHI returnphi=new PHI(cs.getFactory(),null, new Temp[0],
 				      returnset.size());
 		int edge=0;
 		for(Iterator returnit=returnset.iterator();returnit.hasNext();)
@@ -974,7 +974,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		
 		Quad.addEdge(returnphi,0,cs.next(0),cs.nextEdge(0).which_pred());
 
-		PHI throwphi=new PHI(cs.getFactory(),null, null,
+		PHI throwphi=new PHI(cs.getFactory(),null, new Temp[0],
 				     throwset.size());
 		edge=0;
 		for(Iterator throwit=throwset.iterator();throwit.hasNext();)
