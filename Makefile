@@ -1,12 +1,24 @@
-JCC=javac
-JAR=jar
-JAVADOC=javadoc
+CYGWIN=$(shell grep -c 'CYGWIN' /proc/version)
+JAVA_HOME=$(shell if test $(CYGWIN) -eq 0; then echo `cd /usr/java/j2s*; pwd`; \
+		  else echo /cygdrive/c/j2*; \
+		  fi)
+JCC=$(JAVA_HOME)/bin/javac
+JAVAI=$(JAVA_HOME)/bin/java
+JAR=$(JAVA_HOME)/bin/jar
+JAVADOC=$(JAVA_HOME)/bin/javadoc
 SSH=ssh
 FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 SOURCES=$(wildcard src/*.java)
 RELEASE=$(SOURCES) README BUILDING COPYING Makefile ChangeLog 
+
+JAVA=$(JAVAI) -classpath .
+
+IDL_FLAGS=-Iidl
+IDLCC=$(JAVA) org.jacorb.idl.parser $(IDL_FLAGS) 
+
+ISOURCES=src/*.idl
 
 # figure out what the current CVS branch is, by looking at the Makefile
 CVS_TAG=$(firstword $(shell cvs status Makefile | grep -v "(none)" | \
@@ -35,9 +47,11 @@ realtime.jar: $(SOURCES)
 	@echo Generating realtime.jar file...
 	@rm -rf javax java
 	@mkdir -p javax/realtime java/lang java/util/concurrent/atomic
+	@$(JAR) xf support/jacorb.jar
+	@$(IDLCC) -d . $(ISOURCES)
 	@$(JCC) -d . -g $^
-	@jar -cf $@ javax/realtime java/util/concurrent 
-	@rm -rf javax java
+	@jar -cf $@ javax/realtime java/util/concurrent org
+	@rm -rf javax java org demo HTTPClient idl java_cup META-INF 
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
 realtime.tgz: $(RELEASE)
