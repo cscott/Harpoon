@@ -4,6 +4,8 @@
 package harpoon.Analysis.SizeOpt;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Context;
+import harpoon.Analysis.GenericContextFactory;
 import harpoon.Analysis.Maps.ConstMap;
 import harpoon.Analysis.Maps.ExactTypeMap;
 import harpoon.Analysis.Maps.ExecMap;
@@ -84,7 +86,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.2 2002-02-25 20:59:57 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.3 2002-02-26 10:08:31 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -147,7 +149,9 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     /*-----------------------------*/
     // Class state.
     /** Base Context */
-    final Context base = Context.makeNewContext();
+    final Context base =
+	new GenericContextFactory(CONTEXT_SENSITIVITY, true)
+	.makeEmptyContext();
     /** Set of all executable [edge,context] pairs. */
     final MultiMapSet Ee = (MultiMapSet)
 	new GenericMultiMap(new AggregateSetFactory()).entrySet();
@@ -2282,63 +2286,6 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    return v;
 	}
     };
-    /** The <code>Context</code> class abstracts the notion of
-     *  method context in a context-sensitive analysis.  The context
-     *  consists of the last 'n' "objects" (where in this case the objects
-     *  are call-sites, but the <code>Context</code> class doesn't have
-     *  to know this).  Only two operations are defined: we can make a
-     *  new (empty) context, and we can create a new context by adding
-     *  another element on to the end of an existing context.  Behind
-     *  the scenes, we keep a context cache to avoid creating more than
-     *  one (live) object representing a given context. */
-    static class Context {
-	// public interface.
-	public Context addElement(Object o) {
-	    return lookup(new Context(map, this, o));
-	}
-	static Context makeNewContext() { return new Context(); }
-	// private implementation.
-	private static final int DEPTH = CONTEXT_SENSITIVITY;
-	final Object[] list;
-	private Context() {
-	    this.map=new HashMap();
-	    this.list = new Object[0];
-	    lookup(this);// put this in the cache.
-	    Util.assert(lookup(this)==this);
-	}
-	private Context(Map map, Context c, Object o) {
-	    this.map = map;
-	    // truncate context's list length at DEPTH.
-	    list = new Object[Math.min(DEPTH, c.list.length+1)];
-	    if (list.length>0)
-		list[0] = o;
-	    if (list.length>1)
-		System.arraycopy(c.list, 0, this.list, 1, this.list.length-1);
-	}
-	public int hashCode() {
-	    int hash=1;
-	    for (int i=0; i<list.length; i++, hash*=31)
-		hash+=list[i].hashCode();
-	    return hash;
-	}
-	public boolean equals(Object o) {
-	    if (this==o) return true; // efficiency!
-	    if (!(o instanceof Context)) return false;
-	    Context c = (Context) o;
-	    if (list.length != c.list.length) return false;
-	    for (int i=0; i<list.length; i++)
-		if (!list[i].equals(c.list[i])) return false;
-	    return true;
-	}
-	public String toString() { return Arrays.asList(list).toString(); }
-	// context cache
-	private final Map map;
-	private Context lookup(Context c) {
-	    if (!map.containsKey(c))
-		map.put(c, c);
-	    return (Context) map.get(c);
-	}
-    }
 	
     private static Set parseResource(final Linker l, String resourceName) {
 	final Set result = new HashSet();
