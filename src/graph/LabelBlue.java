@@ -14,6 +14,9 @@ import java.util.Arrays;
    image is finally passed to the next {@link Node}. The 'blueness' of a pixel is determined
    using all three color channels.<br><br>
 
+   In the event that no acceptible blue is found, then the <code>process()</code> method simply
+   returns and does not 
+
    The default behavior of the <code>process()</code> method is to use each image it receives
    to calibrate its thresholds, perform the search for blue, then pass the
    resulting image onto the next {@link Node}. However, you can also instruct
@@ -27,7 +30,7 @@ import java.util.Arrays;
    will not be passed on to the next {@link Node}.
 
    @see Command
-   @author Reuben Sterling <<a href="mailto:wbeebee@mit.edu">benster@mit.edu</a>>
+   @author Reuben Sterling <<a href="mailto:benster@mit.edu">benster@mit.edu</a>>
 */
 public class LabelBlue extends Node {
     /**
@@ -275,7 +278,10 @@ public class LabelBlue extends Node {
     }
 
     /**
-       Processes the spcecified {@link ImageData} as described in the class description.
+       Processes the spcecified {@link ImageData} as described in the class description.<br><br>
+
+       In the event that this method does not find any suitable blue, then it simply returns
+       and does not pass the {@link ImageData} onto the next node.
        @param imageData The {@link ImageData} to process.
     */
     public synchronized void process(ImageData imageData) {
@@ -337,7 +343,7 @@ public class LabelBlue extends Node {
 		    if (yMin < mainYMin) mainYMin = yMin;
 		    if (yMax > mainYMax) mainYMax = yMax;
 		    //System.out.println("Found object: w = "+curW+"  h = "+curH);
-		    if (labelNumber == 4) {
+		    if (labelNumber == 2) {
 			done = true;
 			break;
 		    }
@@ -353,10 +359,11 @@ public class LabelBlue extends Node {
 
 	//if no objects are found
 	if (labelNumber == 255) {
-	    mainXMin = 0;
-	    mainXMax = 0;
-	    mainYMin = 0;
-	    mainYMax = 0;
+	    return;
+	    //mainXMin = 0;
+	    //mainXMax = 0;
+	    //mainYMin = 0;
+	    //mainYMax = 0;
 	    //System.out.println("******** NO OBJECTS FOUND *************");
 	}
 
