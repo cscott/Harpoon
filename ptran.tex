@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.54 2003-05-08 20:09:37 cananian Exp $
+% $Id: ptran.tex,v 1.55 2003-05-08 20:54:02 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.54 $ $}
+\date{\today \\ $ $Revision: 1.55 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -35,7 +35,7 @@ data are referenced by the return statement of \texttt{elementAt()},
 which is shared by all instances of Vector'' \cite[p. 75]{379676}.
 The underlying cause is over-conservative may-aliasing of the data
 structures backing the collection.  Context-sensitivity helps, but the
-cost is often too high: Figure~\ref{fig:lotsa_context} shows a typical
+cost is often too high: Figure~\ref{fig:vector} shows a typical
 code path in \texttt{java.util.Vector} which requires four levels of
 context-sensitivity to disambiguate.  This amount of
 context-sensitivity applied to an entire program would severely
@@ -64,6 +64,142 @@ of \newterm{singular values}.  We will then define an approximation to
 companionship based on approximated singularity.  We will then show
 how to construct a compositional pointer analysis which uses
 \newterm{possible companions} to guide its treatment of call sites.
+
+\begin{myfigure}\small
+\begin{samplecode}
+class Vector \{\\
+\>Object[] elements;\\
+\>int size;\\
+\>Vector() \{\\
+\>\>this.elements = new Object[10];\\
+\>\>this.size = 0;\\
+\>\}\\
+\>private void expand() \{\\
+\>\>Object[] nelements = new Object[elements.length*2];\\
+\>\>for (int i=0; i<elements.length; i++)\\
+\>\>\>nelements[i] = elements[i];\\
+\>\>this.elements = nelements;\\
+\>\}\\
+\>void add(Object o) \{\\
+\>\>if (size >= elements.length)\\
+\>\>\>expand();\\
+\>\>this.elements[size++] = o;\\
+\>\}\\
+\>void addAll(Collection c) \{\\
+\>\>for (Iterator it=c.iterator(); it.hasNext(); )\\
+\>\>\>add(it.next());\\
+\>\}\\
+\>int length() \{\\
+\>\>return size;\\
+\>\}\\
+\>Iterator iterator() \{\\
+\>\>return new Iterator() \{\\
+\>\>\>int i=0;\\
+\>\>\>public boolean hasNext() \{\\
+\>\>\>\>return i < size;\\
+\>\>\>\}\\
+\>\>\>public Object next() \{\\
+\>\>\>\>return elements[i++];\\
+\>\>\>\}\\
+\>\>\>public void remove() \{\\
+\>\>\>\>throw new UnsupportedOperationException();\\
+\>\>\>\}\\
+\>\>\};\\
+\>\}\\
+\}\\
+\end{samplecode}
+\caption{A client call to \texttt{addAll()} in \texttt{java.util.Vector}
+  requires four levels of context-sensitivity to disambiguate.}
+\label{fig:vector}
+\end{myfigure}
+
+\begin{myfigure}\small
+\begin{samplecode}
+import java.util.*;\\
+\\
+public class Tree \{\\
+\>Comparator c;\\
+\>Node root;\\
+\>Tree() \{\\
+\>\>this.root=null;\\
+\>\>this.c=new Comparator() \{\\
+\>\>\>public int compare(Object o1, Object o2) \{\\
+\>\>\>\>return ((Comparable)o1).compareTo(o2);\\
+\>\>\>\}\\
+\>\>\};\\
+\>\}\\
+\>void add(Object o) \{\\
+\>\>Node newnode = new Node(o);\\
+\>\>if (root==null) \{\\
+\>\>\>root=newnode;\\
+\>\>\>return;\\
+\>\>\}\\
+\>\>for (Node n=root; ;) \{\\
+\>\>\>if (c.compare(n.value, o) < 0) \{\\
+\>\>\>\>if (n.left==null) \{\\
+\>\>\>\>\>n.left=newnode;\\
+\>\>\>\>\>return;\\
+\>\>\>\>\} else n=n.left;\\
+\>\>\>\} else \{\\
+\>\>\>\>if (n.right==null) \{\\
+\>\>\>\>\>n.right=newnode;\\
+\>\>\>\>\>return;\\
+\>\>\>\>\} else n=n.right;\\
+\>\>\>\}\\
+\>\>\}\\
+\>\}\\
+\}\\
+class Node \{\\
+\>public Object value;\\
+\>public Node left, right;\\
+\>Node(Object value) \{\\
+\>\>this.value = value;\\
+\>\}\\
+\}\\
+\end{samplecode}
+\caption{An implementation of a tree-based collection.}
+\label{fig:tree}
+\end{myfigure}
+
+\begin{myfigure}\small
+\begin{samplecode}
+import java.util.*;\\
+\\
+class Tree2 extends Tree \{\\
+\>Iterator iterator() \{\\
+\>\>return new Iterator() \{\\
+\>\>\>List stack = null;\\
+\>\>\>\{ for (Node n=root; n!=null; n=n.left)\\
+\>\>\>\>stack = new List(n, stack);\\
+\>\>\>\}\\
+\>\>\>public boolean hasNext() \{ return stack==null; \}\\
+\>\>\>public Object next() \{\\
+\>\>\>\>Node n = (Node) stack.head;\\
+\>\>\>\>stack = stack.tail;\\
+\>\>\>\>// now recurse down the right-hand path.\\
+\>\>\>\>for (Node nn = n.right; nn!=null; nn=nn.left)\\
+\>\>\>\>\>stack = new List(nn, stack);\\
+\>\>\>\>// done.\\
+\>\>\>\>return n.value;\\
+\>\>\>\}\\
+\>\>\>public void remove() \{\\
+\>\>\>\>throw new UnsupportedOperationException();\\
+\>\>\>\}\\
+\>\>\};\\
+\>\}\\
+\}\\
+class List \{\\
+\>Object head;\\
+\>List tail;\\
+\>List(Object head, List tail) \{\\
+\>\>this.head = head; this.tail = tail;\\
+\>\}\\
+\}\\
+\end{samplecode}
+\caption{A typical iterator class.}
+\label{fig:iterator}
+\end{myfigure}
+
 
 \section{Companion objects}
 Given a heap $H: O\times F\times O$ consisting of tuples where
