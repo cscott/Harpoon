@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.15 1999-07-22 22:38:28 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.16 1999-07-28 04:41:18 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -156,6 +156,11 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() + ")");
 	    initStms.append(r.initStms.toString());
+
+	    // initialize arglist
+	    append(initStms, TREE_ExpList + " " + s.arglist + 
+			   " = ((" + TREE_CALL + ")"+stmPrefix + ").args;");
+	    
 	}
 
 	public void visit(Spec.StmCjump s) {
@@ -515,7 +520,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    // specification to refer back to items in the parsed
 	    // tree)
 	    append(exp, "// no check needed for ExpId children");
-	    append(initStms, TEMP_Temp +" "+ e.id +" = munchExp(" + expPrefix + ");");
+	    append(initStms, TEMP_Temp +" "+ e.id +" = munchExp(" + expPrefix + "); ");
 	    return;
 	}
 	public void visit(Spec.ExpMem e) { 

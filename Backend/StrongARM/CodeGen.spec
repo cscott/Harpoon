@@ -14,6 +14,7 @@ import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.Uop;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.Typed;
+import harpoon.IR.Tree.ExpList;
 import harpoon.Backend.Generic.DefaultFrame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Util.Util;
@@ -22,6 +23,7 @@ import harpoon.Temp.LabelList;
 
 import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.CALL;
+import harpoon.IR.Tree.INVOCATION;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.EXP;
@@ -44,7 +46,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.10 1999-07-28 03:04:09 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.11 1999-07-28 04:41:18 pnkfelix Exp $
  */
 %%
 
@@ -477,12 +479,15 @@ BINOP<l>(XOR, j, k) = i %{
 
 
 CONST<f>(c) = i %{
+    Temp i = makeTemp();		
     Util.assert(false, "Can't handle CONST of float type yet");
 }%
 CONST<d>(c) = i %{
+    Temp i = makeTemp();		
     Util.assert(false, "Can't handle CONST of double type yet");
 }%
 CONST<l>(c) = i %{
+    Temp i = makeTemp();		
     Util.assert(false, "Can't handle CONST of long type yet");
 }% 
 
@@ -490,44 +495,44 @@ CONST<i>(c) = i %{
     Temp i = makeTemp();		
     int val = ((CONST)ROOT).value.intValue();
     boolean b0, b1, b2, b3;
-    b0 = val & 0x000000FF != 0;
-    b1 = val & 0x0000FF00 != 0;
-    b2 = val & 0x00FF0000 != 0;
-    b3 = val & 0xFF000000 != 0;
+    b0 = ((val & 0x000000FF) != 0);
+    b1 = ((val & 0x0000FF00) != 0);
+    b2 = ((val & 0x00FF0000) != 0);
+    b3 = ((val & 0xFF000000) != 0);
     if (b0) { // start here
         emit(new Instr( inf, ROOT, 
-			"mov `d0, #"+val & 0xFF000000, 
+			"mov `d0, #"+(val & 0xFF000000), 
 			new Temp[]{ i }, null));
 	b0 = false;
     } else if (b1) {
         emit(new Instr( inf, ROOT, 
-			"mov `d0, #"+val & 0x00FF0000, 
+			"mov `d0, #"+(val & 0x00FF0000), 
 			new Temp[]{ i }, null));
 	b1 = false;
     } else if (b2) {
         emit(new Instr( inf, ROOT, 
-			"mov `d0, #"+val & 0x0000FF00, 
+			"mov `d0, #"+(val & 0x0000FF00), 
 			new Temp[]{ i }, null));
 	b2 = false;
     } else if (b3) {
         emit(new Instr( inf, ROOT, 
-			"mov `d0, #"+val & 0x000000FF, 
+			"mov `d0, #"+(val & 0x000000FF), 
 			new Temp[]{ i }, null));
 	b3 = false;
     } else {
         emit(new Instr( inf, ROOT, 
-			"mov `d0, #"+val & 0x00000000, 
+			"mov `d0, #"+(val & 0x00000000), 
 			new Temp[]{ i }, null));
     }
 
     if(b1) emit(new Instr( inf, ROOT, 
-			   "orr `d0, #"+val & 0x00FF0000, 
+			   "orr `d0, #"+(val & 0x00FF0000), 
 			   new Temp[]{ i }, null));
     if(b2) emit(new Instr( inf, ROOT, 
-			   "orr `d0, #"+val & 0x0000FF00, 
+			   "orr `d0, #"+(val & 0x0000FF00), 
 			   new Temp[]{ i }, null));
     if(b3) emit(new Instr( inf, ROOT, 
-			   "orr `d0, #"+val & 0x000000FF, 
+			   "orr `d0, #"+(val & 0x000000FF), 
 			   new Temp[]{ i }, null));
 }%
 
@@ -677,30 +682,39 @@ TEMP<l,d>(id) = i %{
 
 
 UNOP<l>(_2B, arg) = i %{
+    Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle long-to-byte conversion directly");
 }%
 UNOP<f>(_2B, arg) = i %{
+    Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle float-to-byte conversion directly");
 }%
 UNOP<d>(_2B, arg) = i %{
+    Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle double-to-byte conversion directly");
 }%
 UNOP<l>(_2C, arg) = i %{
+    Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle long-to-char conversion directly");
 }%
 UNOP<f>(_2C, arg) = i %{
+    Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle float-to-char conversion directly");
 }%
 UNOP<d>(_2C, arg) = i %{
+    Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle double-to-char conversion directly");
 }%
 UNOP<l>(_2S, arg) = i %{
+    Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle long-to-short conversion directly");
 }%
 UNOP<f>(_2S, arg) = i %{
+    Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle float-to-short conversion directly");
 }%
 UNOP<d>(_2S, arg) = i %{
+    Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle double-to-short conversion directly");
 }%
 
@@ -959,9 +973,8 @@ CALL(retval, retex, func, arglist) %{
 			      new Temp[]{ tempExp.temp }));
 	     index++;
 	     stackOffset += 4;
-	     emit(new InstrMEM( 
-		      inf, ROOT,
-		      "str `s0h, [`s1, #-4"]!",
+	     emit(new InstrMEM( inf, ROOT,
+		      "str `s0h, [`s1, #-4]!",
 		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
 		      new Temp[]{ tempExp.temp, SAFrame.SP })); 
 	     break;
@@ -972,8 +985,7 @@ CALL(retval, retex, func, arglist) %{
 			     new Temp[]{ SAFrame.SP, tempExp.temp }));
 	     index++;
 	     stackOffset += 4;
-	     emit(new InstrMEM( 
-		      inf, ROOT,
+	     emit(new InstrMEM( inf, ROOT,
 		      "str `s0h, [`s1, #-4]!",
 		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
 		      new Temp[]{ tempExp.temp, SAFrame.SP })); 
@@ -982,7 +994,6 @@ CALL(retval, retex, func, arglist) %{
 	   }
 	} else {
 	  // arg is one word
-	  switch(index) {
 	  if (index < 4) {
 	     emit( ROOT, "mov `d0, `s0", 
 		   frame.getAllRegisters()[index], tempExp.temp);
@@ -995,7 +1006,6 @@ CALL(retval, retex, func, arglist) %{
 	     stackOffset += 4;
 	  }
 	}	     
-
 	list = list.tail;    	
     }
 
@@ -1004,8 +1014,8 @@ CALL(retval, retex, func, arglist) %{
     // this will break if stackOffset > 255 (ie >63 args)
     Util.assert( stackOffset < 256, 
 		 "Update the spec file to handle large SP offsets");
-    emit( ROOT, "add `d0, `s0, #" + stackOffset ");
-    if (retval.isDoubleWord()) {
+    emit( ROOT, "add `d0, `s0, #" + stackOffset );
+    if (((INVOCATION) ROOT).retval.isDoubleWord()) {
         emit( ROOT, "mov `d0l, `s0", retval, r0 );
         emit( ROOT, "mov `d0h, `s0", retval, r1 );
     } else {
@@ -1042,9 +1052,8 @@ NATIVECALL(retval, retex, func, arglist) %{
 			      new Temp[]{ tempExp.temp }));
 	     index++;
 	     stackOffset += 4;
-	     emit(new InstrMEM( 
-		      inf, ROOT,
-		      "str `s0h, [`s1, #-4"]!",
+	     emit(new InstrMEM( inf, ROOT,
+		      "str `s0h, [`s1, #-4]!",
 		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
 		      new Temp[]{ tempExp.temp, SAFrame.SP })); 
 	     break;
@@ -1055,8 +1064,7 @@ NATIVECALL(retval, retex, func, arglist) %{
 			     new Temp[]{ SAFrame.SP, tempExp.temp }));
 	     index++;
 	     stackOffset += 4;
-	     emit(new InstrMEM( 
-		      inf, ROOT,
+	     emit(new InstrMEM( inf, ROOT,
 		      "str `s0h, [`s1, #-4]!",
 		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
 		      new Temp[]{ tempExp.temp, SAFrame.SP })); 
@@ -1065,7 +1073,6 @@ NATIVECALL(retval, retex, func, arglist) %{
 	   }
 	} else {
 	  // arg is one word
-	  switch(index) {
 	  if (index < 4) {
 	     emit( ROOT, "mov `d0, `s0", 
 		   frame.getAllRegisters()[index], tempExp.temp);
@@ -1077,16 +1084,15 @@ NATIVECALL(retval, retex, func, arglist) %{
 		      new Temp[]{ tempExp.temp, SAFrame.SP }));
 	     stackOffset += 4;
 	  }
-	}	     
-
+	}
 	list = list.tail;    	
     }
 
     emit( ROOT, "bl " + func );
 
     // this will break if stackOffset > 255 (ie >63 args)
-    emit( ROOT, "add `d0, `s0, #" + stackOffset ");
-    if (retval.isDoubleWord()) {
+    emit( ROOT, "add `d0, `s0, #" + stackOffset );
+    if (((INVOCATION) ROOT).retval.isDoubleWord()) {
         emit( ROOT, "mov `d0l, `s0", retval, r0 );
         emit( ROOT, "mov `d0h, `s0", retval, r1 );
     } else {
