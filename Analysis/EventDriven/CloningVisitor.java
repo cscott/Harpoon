@@ -65,7 +65,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.18 2000-03-24 19:14:17 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.19 2000-03-28 05:47:12 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -958,6 +958,12 @@ public class CloningVisitor extends QuadVisitor {
 	    Quad.addEdge(qphi,0,qthrow,0);
 	    linkFooters.add(qthrow);
 	    linkFooters.add(qret);
+	    if (!optimistic) {
+		//toss away the old phi...
+		THROW throwq=new THROW(qf,q,retex[0]);    
+		Quad.addEdge(cnext,1,throwq,0);
+		linkFooters.add(throwq);
+	    }
 	} else { 
 	    //---------------------------------------------------------------------
 	    //Build Environment NEW & CALL to init
@@ -1158,10 +1164,10 @@ public class CloningVisitor extends QuadVisitor {
 	    return ss.getDeclaredMethod("makeAsync", new HClass[0]);
 	if (old.equals(fis.getConstructor(new HClass[] {linker.forName("java.lang.String")}))||
 	    old.equals(fis.getConstructor(new HClass[] {linker.forName("java.io.FileDescriptor")})))
-	    return fis.getDeclaredMethod("makeAsync", new HClass[0]);
+	    return fis.getMethod("makeAsync", new HClass[0]);
 	//if (old.equals(fos.getConstructor(new HClass[] {linker.forName("java.lang.String"), HClass.Boolean}))||
 	    //old.equals(fos.getConstructor(new HClass[] {linker.forName("java.io.FileDescriptor")})))
-	    //return fos.getDeclaredMethod("makeAsync", new HClass[0]);
+	    //return fos.getMethod("makeAsync", new HClass[0]);
 	return null;
     }
     
