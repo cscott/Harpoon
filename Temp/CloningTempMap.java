@@ -11,7 +11,7 @@ import java.util.Hashtable;
  * <code>TempFactory</code> to equivalent <code>Temp</code>s in another.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloningTempMap.java,v 1.1.2.1 1999-02-04 23:10:09 cananian Exp $
+ * @version $Id: CloningTempMap.java,v 1.1.2.2 1999-02-12 21:44:08 pnkfelix Exp $
  */
 public class CloningTempMap implements TempMap {
     private Hashtable h = new Hashtable();
@@ -26,7 +26,7 @@ public class CloningTempMap implements TempMap {
     }
 
     public Temp tempMap(Temp t) {
-	Util.assert(t.tempFactory() == old_tf);
+	Util.assert(t.tempFactory() == old_tf, "TempFactories should match");
 	Temp r = (Temp) h.get(t);
 	if (r==null) {
 	    r = t.clone(new_tf);
