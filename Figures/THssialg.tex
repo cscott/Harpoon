@@ -1,16 +1,16 @@
 % algorithm for phi/sigma placement.
 
 Place($G$:CFG) =
-\begin{algorithmic}[1]
+\begin{myalgorithmic}
 \LET $r$ be the top-level region for $G$
 %  let r be the top-level region for G;
 \FOREACH{variable $v$ in $G$}
 \STATE PlaceOne($r$, $v$)
 \ENDFOR
-\end{algorithmic}
+\end{myalgorithmic}
 ~\\
 PlaceOne($r$:region, $v$:variable):~boolean =
-\begin{algorithmic}[1]
+\begin{myalgorithmic}
 \STATE \COMMENT{Post-order traversal}
 \STATE flag $\Leftarrow$ false
 \FOREACH{child region $r'$}
@@ -40,4 +40,4 @@ PlaceOne($r$:region, $v$:variable):~boolean =
 \ENDIF
                              \EMPTYLINE
 \RETURN flag
-\end{algorithmic}
+\end{myalgorithmic}

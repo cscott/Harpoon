@@ -1,18 +1,18 @@
 Init($G$:CFG) =
-\begin{algorithmic}[1]
+\begin{myalgorithmic}
 \STATE $E_e \gets \emptyset$
 \STATE $E_n \gets \emptyset$
 \FOREACH {variable $v$ in $G$}
  \IF{some node $n$ defines $v$}
   \STATE $V[v] \gets \bot$
  \ELSE
-  \STATE $V[v] \gets \top$
+  \STATE $V[v] \gets \top$ \COMMENT{Procedure arguments, etc.}
  \ENDIF
 \ENDFOR
-\end{algorithmic}
+\end{myalgorithmic}
 ~\\
 Analyze($G$:CFG) =
-\begin{algorithmic}[1]
+\begin{myalgorithmic}
 \LET $r$ be the start node of graph $G$
 \STATE $E_n \gets E_n \cup \{ r \}$
 \STATE $W_n \gets \{ r \}$
@@ -21,7 +21,7 @@ Analyze($G$:CFG) =
 \REPEAT
  \IF{$W_n$ is not empty}
   \STATE remove some node $n$ from $W_n$
-  \IF{$n$ has only one outgoing edge $e$ leading to some node $n'$}
+  \IF{$n$ has only one outgoing edge $e$}
    \STATE RaiseE($e$)
   \ENDIF
   \STATE Visit($n$)
@@ -33,4 +33,4 @@ Analyze($G$:CFG) =
   \ENDFOR
  \ENDIF
 \UNTIL{both $W_v$ and $W_n$ are empty}
-\end{algorithmic}
+\end{myalgorithmic}

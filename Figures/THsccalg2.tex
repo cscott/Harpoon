@@ -1,23 +1,23 @@
 RaiseE($e$:edge) =
-\begin{algorithmic}[1]
+\begin{myalgorithmic}
 \STATE $E_e \gets E_e \cup \{ e \}$
 \LET $n$ be the destination of edge $e$
 \IF{$n \not\in E_n$}
 \STATE $E_n \gets E_n \cup \{ n \}$
 \STATE $W_n \gets W_n \cup \{ n \}$
 \ENDIF
-\end{algorithmic}
+\end{myalgorithmic}
 ~\\
 RaiseV($v$:variable, $L$:lattice value) =
-\begin{algorithmic}[1]
-\IF{$V[v] \sqsupset L$}
+\begin{myalgorithmic}
+\IF{$V[v] \sqsubset L$}
 \STATE $V[v] \gets L$
 \STATE $W_v \gets W_v \cup \{ v \}$
 \ENDIF
-\end{algorithmic}
+\end{myalgorithmic}
 ~\\
 Visit($n$:node) =
-\begin{algorithmic}[1]
+\begin{myalgorithmic}
 \FOREACH{assignment ``$v \gets x \oplus y$'' in $n$}
  \STATE RaiseV($v$, $V[x] \oplus V[y]$)
  \COMMENT{binop rule: see table~\ref{tab:sccmeet1}}
@@ -46,4 +46,4 @@ Visit($n$:node) =
   \STATE RaiseE($e_2$)
  \ENDIF
 \ENDFOR
-\end{algorithmic}
+\end{myalgorithmic}
