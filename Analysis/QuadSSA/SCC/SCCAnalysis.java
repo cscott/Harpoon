@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.8 1998-09-24 21:24:10 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.9 1998-09-25 16:49:48 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -190,6 +190,15 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 
 	    // for every sigma source:
 	    for (int i=0; i < q.src.length; i++) {
+		// check if this is the CJMP condition.
+		if (q.test == q.src[i]) {
+		    raiseV(V, Wv, q.dst[i][0], 
+			   new xIntConstant(HClass.Boolean, 0));
+		    raiseV(V, Wv, q.dst[i][1],
+			   new xIntConstant(HClass.Boolean, 1));
+		    continue; // go on.
+		}
+
 		LatticeVal v = get( q.src[i] );
 		if (v == null) continue; // skip: insufficient info.
 
@@ -334,10 +343,18 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		    handleSigmas((CJMP) q, (OPER) def);
 		else // fallback.
 		    for (int i=0; i < q.src.length; i++) {
-			LatticeVal v2 = get ( q.src[i] );
-			if (v2 != null) {
-			    raiseV(V, Wv, q.dst[i][0], v2);
-			    raiseV(V, Wv, q.dst[i][1], v2);
+			// is this the CJMP condition?
+			if (q.src[i] == q.test) {
+			    raiseV(V, Wv, q.dst[i][0], 
+				   new xIntConstant(HClass.Boolean, 0));
+			    raiseV(V, Wv, q.dst[i][1],
+				   new xIntConstant(HClass.Boolean, 1));
+			} else {
+			    LatticeVal v2 = get ( q.src[i] );
+			    if (v2 != null) {
+				raiseV(V, Wv, q.dst[i][0], v2);
+				raiseV(V, Wv, q.dst[i][1], v2);
+			    }
 			}
 		    }
 	    }
