@@ -11,11 +11,10 @@ import java.lang.reflect.Modifier;
  * Instances of the class <code>HClassCls</code> represent modifiable
  * classes and interfaces of a java program.  Arrays and primitive types
  * are not modifiable, and thus are not represented by 
- * <code>HClassCls</code>.  <code>HClassCls</code> objects are assigned
- * unique names automagically on creation.
+ * <code>HClassCls</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassCls.java,v 1.1.2.9 2000-03-30 09:49:04 cananian Exp $
+ * @version $Id: HClassCls.java,v 1.1.2.10 2000-04-02 02:07:26 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 abstract class HClassCls extends HClassImpl {
