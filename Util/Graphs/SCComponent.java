@@ -32,7 +32,7 @@ import harpoon.Util.Util;
  * <code>buildSSC</code>.
  * That method is quite flexible: all it needs is a root node (or a set of
  * root nodes) and a <i>Navigator</i>: an object implementing the 
- * <code>SCCoomponent.Navigator</code> interface that provides the 
+ * <code>Navigator</code> interface that provides the 
  * edges coming into/going out of a given <code>Object</code>. So, it can
  * build strongly connected components even for graphs that are not built
  * up from <code>CFGraphable</code> nodes, a good example being the set of
@@ -41,16 +41,22 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCComponent.java,v 1.6 2002-04-10 23:56:27 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.7 2003-05-06 14:53:39 salcianu Exp $
  */
 public final class SCComponent implements Comparable, Serializable {
 
-    // THE FIRST PART CONTAINS JUST SOME STATIC METHODS & FIELDS
+    /** Default navigator through a component graph (a dag of strongly
+        connected components).  */
+    public static final Navigator SCC_NAVIGATOR = new Navigator() {
+	public Object[] next(Object node) {
+	    return ((SCComponent) node).next;
+	}
+	public Object[] prev(Object node) {
+	    return ((SCComponent) node).prev;
+	}
+    };
 
-    /** Indentical to <code>harpoon.Util.Graphs.Navigator</code>. Kept
-        here just for compatibility with old code. */
-    public static interface Navigator extends harpoon.Util.Graphs.Navigator {
-    }
+    // THE FIRST PART CONTAINS JUST SOME STATIC METHODS & FIELDS
 
     // The internal version of a SCC: basically the same as the external
     // one, but using Sets instead of arrays; the idea is to use the most
@@ -82,17 +88,46 @@ public final class SCComponent implements Comparable, Serializable {
     private static Vector nodes_vector;
     private static SCComponentInt current_scc_int;
     // the navigator used in the DFS algorithm
-    private static harpoon.Util.Graphs.Navigator nav;
+    private static Navigator nav;
     // vector to put the generated SCCs in.
     private static Vector scc_vector;
 
+
+    /** Convenient version of
+        <code>buildSCC(Object[],Navigator)</code>
+
+	@param graph directed graph
+
+	@return set of <code>graph</code>'s strongly connected
+	components */
+    public static final Set/*<SCComponent<Node>>*/
+	buildSCC(final DiGraph/*<Node>*/ graph) {
+	return buildSCC(graph.getDiGraphRoots(), graph.getDiGraphNavigator());
+    }
+    
+
+    /** Convenient version of
+        <code>buildSCC(Object[],Navigator)</code>
+
+	@param roots a set of nodes that has the property that if we
+	start at these nodes and (transitively) navigate on the
+	outgoing edges, we explore the entire graph.
+
+	@param navigator navigator for exploring the graph
+
+	@return set of strongly connected components of the graph
+	defined by <code>roots</code> and <code>navigator</code> */
+    public static final Set/*<SCComponent<Node>>*/
+	buildSCC(final Set/*<Node>*/ roots,
+		 final Navigator/*<Node>*/ navigator) {
+	return buildSCC(roots.toArray(new Object[roots.size()]), navigator);
+    }
 
     /** Convenient version for the single root case (see the other 
 	<code>buildSCC</code> for details). Returns the single element of
 	the set of top level SCCs. */
     public static final SCComponent buildSCC
-	(final Object root,
-	 final harpoon.Util.Graphs.Navigator navigator) {
+	(final Object root, final Navigator navigator) {
 	Set set = buildSCC(new Object[]{root}, navigator);
 	if((set == null) || set.isEmpty()) return null;
 	assert set.size() <= 1 : "More than one root SCComponent " +
@@ -102,20 +137,21 @@ public final class SCComponent implements Comparable, Serializable {
     }
 
 
-    /** Constructs the strongly connected components of the graph containing
-	all the nodes reachable on paths that originate in nodes from
-	<code>roots</code>. The edges are indicated by <code>navigator</code>.
-	Returns the set of the root <code>SCComponent</code>s, the components
-	that are not pointed by any other component. This constraint is
-	actively used in the topological sorting agorithm (see
+    /** Constructs the strongly connected components of the graph
+	containing all the nodes reachable on paths that originate in
+	nodes from <code>roots</code>. The edges are indicated by
+	<code>navigator</code>.  Returns the set of the root
+	<code>SCComponent</code>s, the components that are not pointed
+	by any other component. This constraint is actively used in
+	the topological sorting agorithm (see
 	<code>SCCTopSortedGraph</code>). */
     public static final Set buildSCC
-	(final Object[] roots,
-	 final harpoon.Util.Graphs.Navigator navigator) {
+	(final Object[] roots, final Navigator navigator) {
 	scc_vector = new Vector();
-	// STEP 1: compute the finished time of each node in a DFS exploration.
-	// At the end of this step, nodes_vector will contain all the reached
-	// nodes, in the order of their "finished" time. 
+	// STEP 1: compute the finished time of each node in a DFS
+	// exploration.  At the end of this step, nodes_vector will
+	// contain all the reached nodes, in the order of their
+	// "finished" time.
 	nav = navigator;
 	analyzed_nodes = new HashSet();
 	nodes_vector   = new Vector();
@@ -218,8 +254,7 @@ public final class SCComponent implements Comparable, Serializable {
     // put the edges between the SCCs: there is an edge from scc1 to scc2 iff
     // there is at least one pair of nodes n1 in scc1 and n2 in scc2 such that
     // there exists an edge from n1 to n2.
-    private static final void put_the_edges
-	(final harpoon.Util.Graphs.Navigator navigator) {
+    private static final void put_the_edges(final Navigator navigator) {
 	int nb_scc = scc_vector.size();
 	for(int i = 0; i < scc_vector.size(); i++){
 	    SCComponentInt compi = (SCComponentInt) scc_vector.elementAt(i);

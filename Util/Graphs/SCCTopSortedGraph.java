@@ -21,7 +21,7 @@ import harpoon.Util.Util;
  * It uses a Depth First Search to do the sortting in linear time (see
  * <code>Section 23.4</code> in Cormen and co for the exact algorithm).
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCCTopSortedGraph.java,v 1.5 2003-04-30 21:26:17 salcianu Exp $
+ * @version $Id: SCCTopSortedGraph.java,v 1.6 2003-05-06 14:53:39 salcianu Exp $
  */
 public class SCCTopSortedGraph implements Serializable {
     
@@ -80,7 +80,7 @@ public class SCCTopSortedGraph implements Serializable {
 	<b>Note:</b> the <code>roots</code> parameter must contain only
 	root <code>Sccomponent</code>s (ie <code>SCComponent</code>s without
 	any entering edge. */
-    public static SCCTopSortedGraph topSort(Set roots){
+    public static SCCTopSortedGraph topSort(Set roots) {
 	// sorting an empty component graph is realy easy!
 	if(roots.isEmpty())
 	    return new SCCTopSortedGraph(null,null);
