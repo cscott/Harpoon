@@ -14,14 +14,15 @@ import java.util.Enumeration;
  * A <code>HANDLER</code> quad marks an entry to an exception handler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HANDLER.java,v 1.1.2.2 1998-12-21 01:35:46 cananian Exp $
+ * @version $Id: HANDLER.java,v 1.1.2.3 1998-12-23 22:15:59 cananian Exp $
  * @see METHOD
  */
 public class HANDLER extends Quad {
     /** The <code>Temp</code> holding the caught exception on invocation of
      *  this <code>HANDLER</code>. */
     protected Temp exceptionTemp;
-    /** The exception caught by this <code>HANDLER</code>. */
+    /** The exception caught by this <code>HANDLER</code>,
+     *  or <code>null</code> for any exception. */
     protected HClass caughtException;
     /** The set of <code>Quad</code>s protected by this <code>HANDLER</code>.*/
     protected ProtectedSet protectedSet;
@@ -31,7 +32,8 @@ public class HANDLER extends Quad {
      *        the <code>Temp</code> holding the caught exception on
      *        invocation of this <code>HANDLER</code>.
      * @param caughtException
-     *        the exception type caught by this <code>HANDLER</code>.
+     *        the exception type caught by this <code>HANDLER</code>,
+     *        or <code>null</code> for any exception.
      * @param protectedSet
      *        the set of <code>Quad</code>s protected by this
      *        <code>HANDLER</code>.
@@ -42,16 +44,19 @@ public class HANDLER extends Quad {
 	this.exceptionTemp = exceptionTemp;
 	this.caughtException = caughtException;
 	this.protectedSet = protectedSet;
+	Util.assert(exceptionTemp!=null && protectedSet!=null);
     }
     /** Returns the <code>Temp</code> which will hold the exception on
      *  the invocation of this <code>HANDLER</code>. */
     public Temp exceptionTemp() { return exceptionTemp; }
     /** Returns the superclass of the exceptions caught by this
-     *  <code>HANDLER</code>. */
+     *  <code>HANDLER</code>, or <code>null</code> if any exception
+     *  is caught. */
     public HClass caughtException() { return caughtException; }
     /** Returns <code>true</code> if the given exception <code>HClass</code>
      *  is caught by this <code>HANDLER</code>. */
     public boolean isCaught(HClass hc) {
+	if (caughtException==null) return true; // any exception is caught.
 	return caughtException.isSuperclassOf(hc);
     }
     /** Returns <code>true</code> if the given <code>Quad</code> is
@@ -81,7 +86,8 @@ public class HANDLER extends Quad {
 
     /** Returns human-readable representation of this <Code>Quad</code>. */
     public String toString() {
-	return exceptionTemp.toString() + " = HANDLER for "+caughtException;
+	return exceptionTemp.toString() + " = HANDLER for " +
+	    ((caughtException==null)?"any":caughtException.toString());
     }
 
     public interface ProtectedSet {
