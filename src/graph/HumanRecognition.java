@@ -23,6 +23,8 @@ public class HumanRecognition extends Node {
     private Pair head;
     private int size;
 
+    private static final int confirmEvery = 10;
+
     MyDisplay currentSelected = null;
 
     public HumanRecognition() {
@@ -90,21 +92,36 @@ public class HumanRecognition extends Node {
 	}
        
 	if (foundIt) {
+	    currentPair.count++;
 	    MyDisplay d = currentPair.d;
-	    Frame f = d.getFrame();
-
-	    if (d == currentSelected) {
-		//System.out.println(f.getTitle()+" is selected.");
-		currentPair.d.process(id);
-		super.process(id);
-		if (this.memName != null) {
-		    CommonMemory.setValue(this.memName, new Boolean(true));
+	    if (currentPair.count == confirmEvery) {
+		currentPair.count = 0;
+		Frame f = d.getFrame();
+		
+		if (d == currentSelected) {
+		    //System.out.println(f.getTitle()+" is selected.");
+		    currentPair.d.process(id);
+		    super.process(id);
+		    if (this.memName != null) {
+			CommonMemory.setValue(this.memName, new Boolean(true));
+		    }
+		}
+		else {
+		    currentPair.d.process(id);
+		    if (this.memName != null) {
+			CommonMemory.setValue(this.memName, new Boolean(false));
+		    }
 		}
 	    }
 	    else {
-		currentPair.d.process(id);
 		if (this.memName != null) {
-		    CommonMemory.setValue(this.memName, new Boolean(false));
+		    if (d == currentSelected) {
+			super.process(id);
+			CommonMemory.setValue(this.memName, new Boolean(true));
+		    }
+		    else {
+			CommonMemory.setValue(this.memName, new Boolean(false));			
+		    }
 		}
 	    }
 	}
@@ -148,6 +165,7 @@ public class HumanRecognition extends Node {
 	MyDisplay d;
 	int targetID;
 	Pair next;
+	int count;
 	Pair(int targetID){
 	    init(targetID, null);
 	}
@@ -158,6 +176,7 @@ public class HumanRecognition extends Node {
 	    this.targetID = targetID;
 	    d = new MyDisplay("Target #"+targetID);
 	    this.next = next;
+	    count = 0;
 	}
     }
 
