@@ -5,12 +5,18 @@ package harpoon.Main;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Loader;
 import harpoon.Temp.Temp;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 /**
  * <code>Lint</code> is a quick Java code-checker.<p>
  * Currently it checks only two things:<ul>
@@ -26,20 +32,24 @@ import java.util.Iterator;
  * flagged as possibly incorrect.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Lint.java,v 1.1.2.2 1999-09-12 16:38:38 cananian Exp $
+ * @version $Id: Lint.java,v 1.1.2.3 1999-09-13 00:30:15 cananian Exp $
  */
 public abstract class Lint extends harpoon.IR.Registration {
     public static void main(String[] args) {
-	// Command-line should have list of packages
-	if (args.length==0) {
+	// Command-line should have list of packages, & opt. sourcepath
+	int s=0;
+	if (args.length>s && args[s].equals("-use")) { s++;
+	    if (args.length>s) SourceLineReader.sourcepath=args[s++];
+	}
+	if (!(args.length>s)) {
 	    System.err.println("Usage: java "+Lint.class.getName()+" "+
-			       "[package] {packages} ...");
+			       "{-use sourcepath} [package] {packages} ...");
 	    System.exit(1);
 	}
 	HCodeFactory hcf = harpoon.IR.Quads.QuadSSI.codeFactory();
 	hcf = new CheckLabels(hcf); // check uses of Label.toString()
 	hcf = new CheckEquals(hcf); // check usage of == for objects.
-	for (int i=0; i<args.length; i++) {
+	for (int i=s; i<args.length; i++) {
 	    System.err.println("CHECKING PACKAGE "+args[i]);
 	    for (Iterator it=Loader.listClasses(args[i]); it.hasNext(); ) {
 		HClass hc = HClass.forName((String)it.next());
@@ -52,6 +62,52 @@ public abstract class Lint extends harpoon.IR.Registration {
 	    }
 	}
     }
+    /** Allow reference to particular lines of a class file */
+    static class SourceLineReader {
+	public static String sourcepath=".";
+	private List linelist = new ArrayList();
+	SourceLineReader(HClass cls, String sourcefile) {
+	    String filesep = System.getProperty("file.separator");
+	    String packagepath =
+		cls.getPackage().replace('.',filesep.charAt(0));
+	    File f = new File(new File(sourcepath,packagepath),sourcefile);
+	    try {
+	    BufferedReader br = new BufferedReader(new FileReader(f));
+	    for (String line = br.readLine(); line!=null; line=br.readLine())
+		linelist.add(line);
+	    br.close();
+	    } catch (java.io.IOException e) { linelist=null; }
+	}
+	public String getLine(int lineno) {
+	    if (linelist==null || linelist.size()<lineno)
+		return "[--- unable to read file ---]";
+	    return (String) linelist.get(lineno-1);
+	}
+    }
+    /** method for caching sourcelinereaders */
+    public static SourceLineReader getSLR(HClass cls, String sourcefile) {
+	if (last_slr==null || last_cls!=cls || last_sourcefile!=sourcefile) {
+	    last_slr = new SourceLineReader(cls, sourcefile);
+	    last_cls = cls; last_sourcefile=sourcefile;
+	}
+	return last_slr;
+    }
+    static SourceLineReader last_slr = null;
+    static HClass last_cls = null;
+    static String last_sourcefile = null;
+    /** print out a standardized error message */
+    public static void printError(String msg, HMethod hm, HCodeElement hce) {
+	System.out.println("WARNING: "+msg+" in " +
+			   hm.getDeclaringClass().getName()+"."+hm.getName() +
+			   ":");
+	System.out.println(hce.getSourceFile()+"("+hce.getLineNumber()+"): " +
+			   getSLR(hm.getDeclaringClass(), hce.getSourceFile())
+			   .getLine(hce.getLineNumber()).trim());
+	System.out.println();
+    }
+
+    /////////// RULE-CHECKING CODE FACTORIES:
+
     /** Find all places where Label.toString() is called. */
     static class CheckLabels implements HCodeFactory {
 	final HCodeFactory hcf;
@@ -65,7 +121,8 @@ public abstract class Lint extends harpoon.IR.Registration {
 		harpoon.IR.Quads.Quad q = (harpoon.IR.Quads.Quad) it.next();
 		if (q instanceof harpoon.IR.Quads.CALL &&
 		    ((harpoon.IR.Quads.CALL)q).method().equals(label_toString))
-		    System.out.println("A\t"+q.getSourceFile()+"\t"+q.getLineNumber()+"\t"+hm.getDeclaringClass().getName()+"\t"+hm.getName());
+		    Lint.printError("Use of deprecated Label.toString() method",
+			       hm, q);
 	    }
 	    return c;
 	}
@@ -94,9 +151,13 @@ public abstract class Lint extends harpoon.IR.Registration {
 		Temp l=oper.operands(0), r=oper.operands(1);
 		if (tm.typeMap(q,l)==HClass.Void ||
 		    tm.typeMap(q,r)==HClass.Void) continue;
-		System.out.println("B\t"+q.getSourceFile()+"\t"+q.getLineNumber()+"\t"+hm.getDeclaringClass().getName()+"\t"+hm.getName());
+		if (refunique.isSuperinterfaceOf(tm.typeMap(q,l)) ||
+		    refunique.isSuperinterfaceOf(tm.typeMap(q,r))) continue;
+		Lint.printError("Possibly incorrect use of ==", hm, q);
 	    }
 	    return c;
 	}
+	private static final HClass refunique =
+	    HClass.forName("harpoon.Util.ReferenceUnique");
     }
 }
