@@ -21,7 +21,7 @@ import java.util.Set;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: ReachingHCodeElements.java,v 1.1.2.1 1999-12-03 06:47:33 duncan Exp $ 
+ * @version $Id: ReachingHCodeElements.java,v 1.1.2.2 1999-12-20 07:06:54 duncan Exp $ 
  */
 public class ReachingHCodeElements extends ReachingDefs { 
     private Map hceToBB;
@@ -146,6 +146,10 @@ public class ReachingHCodeElements extends ReachingDefs {
     protected void initializeGenPrsv(Iterator blocks, SetFactory sf) { 
 	tempsToPrsvs = new HashMap();
 
+	// Update the universe to use a compatible set factory. 
+	// This is usually much more efficient. 
+	this.universe = sf.makeSet(this.universe); 
+	
 	while (blocks.hasNext()) { 
 	    BasicBlock bb = (BasicBlock)blocks.next(); 
 	    for (Iterator useDefs = bb.iterator(); useDefs.hasNext(); ) { 
@@ -231,7 +235,7 @@ public class ReachingHCodeElements extends ReachingDefs {
      */
     public Set getReachingBefore(HCodeElement hce) {
 	Util.assert(this.hceToBB.containsKey(hce)); 
-
+	
 	BasicBlock  bb          = (BasicBlock)this.hceToBB.get(hce); 
 	Set         reachBefore = new HashSet(); 
 	CFGraphable current     = bb.getFirst(); 
@@ -274,6 +278,7 @@ public class ReachingHCodeElements extends ReachingDefs {
      */
     public Set getReachingAfter(HCodeElement hce) { 
 	Set reachAfter = this.getReachingBefore(hce); 
+	
 	Temp[] defs = ((UseDef)hce).def(); 
 	for (int i=0; i<defs.length; i++) { 
 	    reachAfter.retainAll((Set)this.tempsToPrsvs.get(defs[i])); 
