@@ -48,19 +48,22 @@ import java.util.Collection;
    <code>BasicBlock</code>s for a given <code>HCode</code>.
 
    <P> <B>NOTE:</B> right now <code>BasicBlock</code> only guarantees
-   that it preserves the Maximal Basic Block property (where the first
-   element is the entry point and the last element is the exit point)
-   if the graph of operations is not modified while the basic block is
-   in use.  However, other pieces of code WILL modify the Beginning
-   and End of a basic block (for example, the register allocator will
-   add LOADs to the beginning and STOREs to the end).  Perhaps we can
-   allow for some modification of the Control-Flow-Graph; check with
-   group. 
-
+   that it preserves the <i>Maximal Basic Block</i> property (where each
+   block is the longest sequence of instructions such that only the
+   first instruction may have more than one entry and only the last
+   instruction may have more than one exit) if the graph of operations
+   is not modified while the basic block is in use.  For that matter,
+   some methods of BasicBlock may implicitly rely on the intermediate
+   representation not changing while the blocks are in use.  However,
+   most <b>but not all</b> Intermediate Representations in the Flex
+   Compiler are immutable.  Therefore compilation passes modifying the
+   intermediate representation must reconstruct the BasicBlocks for
+   that intermediate representation if they wish to perform a second
+   analysis pass.
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.38 2000-07-19 01:02:09 pnkfelix Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.39 2000-07-19 11:17:57 pnkfelix Exp $ */
 public class BasicBlock implements java.io.Serializable {
     
     static final boolean DEBUG = false;

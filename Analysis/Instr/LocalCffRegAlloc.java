@@ -69,7 +69,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.107 2000-07-19 01:02:17 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.108 2000-07-19 11:18:00 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -129,6 +129,8 @@ public class LocalCffRegAlloc extends RegAlloc {
     // maps Temp:t -> Instr:i where `i' is removed and defined `t'
     private Map tempToRemovedInstrs = new HashMap();
 
+    private static final boolean doRD = false;
+
     /** Creates a <code>LocalCffRegAlloc</code>. */
     public LocalCffRegAlloc(Code code) {
         super(code);
@@ -138,11 +140,11 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	if (TIME) System.out.print("D");
 	// reachingDefs = new ReachingDefsCachingImpl(code);
-	reachingDefs = new ReachingDefsAltImpl(code);
+	reachingDefs = doRD?new ReachingDefsAltImpl(code):null;
     }
 
     private Instr definition(Instr i, Temp t) {
-	if (i.defC().contains(t)) 
+	if (!doRD || i.defC().contains(t)) 
 	    return i;
 	else {
 	    Set defset = reachingDefs.reachingDefs(i, t);
@@ -236,7 +238,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    liveTemps);
     }
 
-    private void allocationAnalysis() {
+    // runs once / code
+    private void allocationAnalysis() { 
 	if (!TIME) { 
 	    // old way (more space efficient, but harder to profile)
 	    Iterator blocks = bbFact.blockSet().iterator();
@@ -675,6 +678,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	}
 
+	// runs once / block
 	void alloc() {
 	    Iterator instrs = block.statements().iterator();
 	    InstrAlloc allocV = new InstrAlloc();
@@ -727,6 +731,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		}
 	    }
 
+	    // runs once / instr
 	    /** modifies: `regfile', `evictables'
 	     */
 	    public void visit(final Instr i) {
@@ -794,7 +799,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		
 		checked.add(i);
 	    }
-	    
+
+	    // runs once / instr
 	    /** Removes uses of i from `evictables'.
 		modifies: `evictables'
 		effects: Takes any temp used by `i' out of the keyset
@@ -818,6 +824,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		return putBackLater;
 	    }
 	    
+	    // runs once / ref / instr
 	    /** Assigns `t' in `i'.
 		modifies: `code', `evictables', `regfile', `putBackLater'
 		effects: 
@@ -881,6 +888,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		}
 	    }
 	    
+	    // runs once / ref / instr
 	    /** Adds conflicting preassigned registers to `regfile'.
 		modifies: `regfile'
 		effects: 
@@ -944,7 +952,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		
 		return X;
 	    }
-	    
+
+	    // runs once / instr	    
 	    public void visit(final InstrMOVE i) {
 		if (!COALESCE_MOVES) {
 		    super.visit(i);
@@ -1081,6 +1090,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	}
 	
+	// runs once / ref / instr
 	/** Gets an Iterator of suggested register assignments in
 	    <code>regfile</code> for <code>t</code>.  May insert
 	    load/spill code before <code>i</code>.  Uses
@@ -1113,8 +1123,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 		    Collection preasnRegs = preassignMap.getValues(t);
 
-		    final Map trackSpills = new HashMap();
-
 		    while(spills.hasNext()) {
 			boolean valid = true;
 			Set cand = (Set) spills.next();
@@ -1128,19 +1136,15 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    Temp reg = (Temp) regs.next();
 			    Temp preg = regfile.getTemp(reg);
 			    
-			    trackSpills.put(cand, "Allowed");
-
 			    // did reg previously hold a value?
 			    if (preg != null) {
 				temps.add(preg);
 				if (!evictables.containsKey(preg)) {
 				    // --> disallowed evicting preg
 				    valid = false;
-				    trackSpills.put(cand, "psuedo:"+preg+" for "+cand+" not in Evictables");
 				    break;
 				} else if (preasnRegs.contains(reg)) {
 				    valid = false;
-				    trackSpills.put(cand, "reg:"+reg+" for "+cand+" has conflicting preassignment"); 
 				    break;
 				}
 				Integer dist = (Integer) evictables.get(preg); 
@@ -1163,8 +1167,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    Util.assert(!weightedSpills.isEmpty(), 
 				ASSERTDB ? 
 				lazyInfo("\nneed at least one spill"
-					 +" of \n"+trackSpills+
-					 "\nEvictables:"+evictables 
+					 +"\nEvictables:"+evictables 
 					 ,i,t,regfile)
 				: "need at least one spill" );
 
@@ -1195,8 +1198,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    if (SPILL_INFO) System.out.print(" ; "+reg+" was empty");
 			    
 			} else { 
-
-
 
 			    // only bother to store if value is live *and* dirty
 			    if (regfile.isDirty(value)) {
@@ -1343,10 +1344,12 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	
 	
+	// runs once / ref / instr
 	private List chooseSuggestion(Iterator suggs, Temp t) {
 	    return chooseSuggestion(suggs, t, false);
 	}
-	
+
+	// runs once / ref / instr	
 	private List chooseSuggestion(Iterator suggs, Temp t, boolean pr) {
 	    Temp reg = tempSets.getReg(t);
 	    List suggL = null;
@@ -1434,7 +1437,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			: "must map to a nonempty set of registers");
 	    Util.assert(allRegs(regs));
 
-	    InstrMEM spillInstr = SpillStore.makeST(loc, "FSK-ST"+thread, val, regs);
+	    InstrMEM spillInstr = SpillStore.makeST(loc, "FSK-ST", val, regs);
 
 	    spillStores.add(spillInstr);
 	    spillStores.add(loc);

@@ -27,7 +27,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.24 2000-07-19 01:02:23 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.25 2000-07-19 11:18:03 pnkfelix Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -242,6 +242,7 @@ class Code extends harpoon.Backend.Generic.Code {
 	return (r <= 1) ;
     }
 
+    // runs once / ref / instr
     /** Assigns register(s) to the <code>Temp</code> pseudoReg. 
 	<BR><B>requires:</B> <code>regs</code> is one of the
 	    <code>List</code>s returned by
@@ -276,13 +277,13 @@ class Code extends harpoon.Backend.Generic.Code {
 	}
  
 	// Register Constraint check
-	if ((instr.getAssem().indexOf("mul ") != -1) ||
-	    (instr.getAssem().indexOf("mla ") != -1)) {
+	if (DEBUG && 
+	    ((instr.getAssem().indexOf("mul ") != -1) ||
+	     (instr.getAssem().indexOf("mla ") != -1))) {
 	    Object rm = get(instr, instr.use()[0]);
 	    Object rd = get(instr, instr.def()[0]);
-	    Util.assert(rm == null ||
-			!rm.equals(rd), true ? "rd & rm must differ"
-			: "rd:"+rd+" and rm:"+rm+" must be different in mul");
+	    Util.assert(rm == null || !rm.equals(rd), 
+			"rd:"+rd+" and rm:"+rm+" must be different in mul");
 	}			
     }
 

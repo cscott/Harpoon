@@ -29,7 +29,7 @@ import java.util.HashSet;
  *  called the Representative (or Rep for short).
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: EqTempSets.java,v 1.1.2.5 2000-07-18 22:32:07 pnkfelix Exp $
+ * @version $Id: EqTempSets.java,v 1.1.2.6 2000-07-19 11:18:00 pnkfelix Exp $
  */
 public abstract class EqTempSets {
     
@@ -98,8 +98,7 @@ public abstract class EqTempSets {
     */
     public void add(Temp t1, Temp t2) {
 	Util.assert( (!ra.isRegister(t1)) ||
-		     (!ra.isRegister(t2)) , 
-		     t1 + " or " + t2 + " must be non-register");
+		     (!ra.isRegister(t2)) , "need non-register");
 	
 	Temp rep1 = getRep(t1);
 	Temp rep2 = getRep(t2);
