@@ -18,7 +18,7 @@ import java.util.Stack;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.24 1998-09-22 02:32:15 cananian Exp $
+ * @version $Id: Code.java,v 1.25 1998-09-24 21:14:16 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -58,8 +58,8 @@ public class Code extends HCode {
     public static void register() {
 	HCodeFactory f = new HCodeFactory() {
 	    public HCode convert(HMethod m) {
-		return new Code( (harpoon.IR.Bytecode.Code)
-				 m.getCode("bytecode"));
+		HCode c = m.getCode("bytecode");
+		return (c==null)?null:new Code( (harpoon.IR.Bytecode.Code) c);
 	    }
 	    public String getCodeName() {
 		return codename;
