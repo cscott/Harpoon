@@ -88,6 +88,7 @@ public class RepairGenerator {
 	generate_call();
 	generate_start();
         generate_rules();
+	generate_print();
         generate_checks();
         generate_teardown();
 	CodeWriter crhead = new StandardCodeWriter(this.outputhead);
@@ -472,6 +473,52 @@ public class RepairGenerator {
     private void generate_teardown() {
 	CodeWriter cr = new StandardCodeWriter(outputaux);        
 	cr.endblock();
+    }
+
+    private void generate_print() {
+	
+	final SymbolTable st = new SymbolTable();
+
+	CodeWriter cr = new StandardCodeWriter(outputaux) {
+		public SymbolTable getSymbolTable() { return st; }
+	    };
+
+	cr.outputline("// printing sets!");
+	cr.outputline("printf(\"\\n\\nPRINTING SETS AND RELATIONS\\n\");");
+
+        Iterator setiterator = state.stSets.descriptors();
+	while (setiterator.hasNext()) {
+	    SetDescriptor sd = (SetDescriptor) setiterator.next();
+	    if (sd.getSymbol().equals("int") || sd.getSymbol().equals("token")) {
+		continue;
+	    }
+
+	    String setname = sd.getSafeSymbol();
+
+	    cr.startblock();
+	    cr.outputline("// printing set " + setname);
+	    cr.outputline("printf(\"\\nPrinting set " + sd.getSymbol() + " - %d elements \\n\", " + setname + "_hash->count());");
+	    cr.outputline("SimpleIterator __setiterator;");
+	    cr.outputline("" + setname + "_hash->iterator(__setiterator);");
+	    cr.outputline("while (__setiterator.hasNext())");
+	    cr.startblock();
+	    cr.outputline("int __setval = (int) __setiterator.next();");
+
+	    TypeDescriptor td = sd.getType();
+	    if (td instanceof StructureTypeDescriptor) {
+		StructureTypeDescriptor std = (StructureTypeDescriptor) td;
+		VarDescriptor vd = new VarDescriptor ("__setval", "__setval", td, false);
+		std.generate_printout(cr, vd);
+	    } else { // Missing type descriptor or reserved type, just print int
+		cr.outputline("printf(\"<%d> \", __setval);"); 	    		
+	    }
+
+
+	    cr.endblock();
+	    cr.endblock();
+	}
+
+	cr.outputline("printf(\"\\n\\n------------------- END PRINTING\\n\");");
     }
 
     Set ruleset=null;

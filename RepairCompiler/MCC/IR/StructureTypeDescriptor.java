@@ -138,4 +138,24 @@ public class StructureTypeDescriptor extends TypeDescriptor {
         }
     }
 
+    public void generate_printout(CodeWriter cr, VarDescriptor vd) {
+	// #TBD#: does not support printing out fields that have variable size, substructures, etc
+
+	cr.outputline("printf(\"" + getSymbol() + " %p: \", " + vd.getSafeSymbol() + ");");     
+	for (int i = 0; i < fieldlist.size(); i++) {
+	    FieldDescriptor fd = (FieldDescriptor) fieldlist.elementAt(i);							
+	    cr.outputline("printf(\"\\n\\t" + fd.getSymbol() + " = \");");
+	    if (fd.getPtr()) { 
+		cr.outputline("printf(\"(" + fd.getType().getSymbol() + ") %p \", ((int *)" + vd.getSafeSymbol() + ")[" + i + "]);");
+	    } else if ( fd.getType() instanceof ReservedTypeDescriptor) {
+		cr.outputline("printf(\"%d \", ((int *)" + vd.getSafeSymbol() + ")[" + i + "]);");		
+	    } else {
+		cr.outputline("printf(\"unsupported, breaking\");");
+		break;
+	    }
+	}
+	
+	cr.outputline("printf(\"\\n\");");
+    }
+
 }
