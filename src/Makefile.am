@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
-SUBDIRS = jni java.io java.lang java.util.zip $(GCDIR)
+SUBDIRS = jni java.io java.lang java.net java.util.zip $(GCDIR)
 
 # for precise gc, add gc to SUBDIRS
 if PRECISE_GC
@@ -23,6 +23,7 @@ libflexc1_la_SOURCES =
 libflexc1_la_LIBADD = \
 	../arch/@ARCHDIR@/libfooter.la \
 	java.io/libjavaio.la java.lang/libjavalang.la \
+	java.net/libjavanet.la \
 	java.util.zip/libjavautilzip.la
 libflexc1_la_LDFLAGS = -version-info 0:0:0
 
@@ -36,5 +37,6 @@ endif
 libflexc_la_SOURCES =
 libflexc_la_LIBADD = \
         java.io/libjavaio.la java.lang/libjavalang.la \
+	java.net/libjavanet.la \
         java.util.zip/libjavautilzip.la
 libflexc_la_LDFLAGS = -version-info 0:0:0
