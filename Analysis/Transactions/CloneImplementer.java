@@ -64,7 +64,7 @@ import java.util.Set;
  * <code>$clone$()</code> method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloneImplementer.java,v 1.1.2.1 2001-01-18 18:13:38 cananian Exp $
+ * @version $Id: CloneImplementer.java,v 1.1.2.2 2001-01-18 23:10:45 cananian Exp $
  * @see harpoon.IR.Quads.CloneSynthesizer */
 public class CloneImplementer implements HCodeFactory, java.io.Serializable {
     /** CONSTANTS */
@@ -94,6 +94,7 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	/* okay, we need to add clone() methods to all of the knownClasses */
 	for (Iterator it=knownClasses.iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
+	    if (hc.isPrimitive() || hc.isInterface()) continue;
 	    try {
 		HMethod hm =
 		    hc.getMutator().addDeclaredMethod(CLONEX_NAME, CLONE_DESC);
@@ -133,7 +134,7 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	}
 	return parent.convert(m); // not synthetic: use parent's code.
     }
-    /** this method just redirects to Object.clone$$ci() */
+    /** this method just redirects to Object.$clone$() */
     private static class CloneRedirectCode extends QuadSSI {
 	CloneRedirectCode(HMethod m) {
 	    super(m, null);
@@ -150,7 +151,7 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	    Quad q4 = new THROW(qf, null, retxT);
 	    Quad qF = new FOOTER(qf, null, 3);
 	    Quad.addEdge(q0, 0, qF, 0);
-	    Quad.addEdge(q0, 1, q1, 1);
+	    Quad.addEdge(q0, 1, q1, 0);
 	    Quad.addEdge(q1, 0, q2, 0);
 	    Quad.addEdge(q2, 0, q3, 0);
 	    Quad.addEdge(q2, 1, q4, 0);
@@ -201,7 +202,7 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	    Quad qC = new RETURN(qf, null, objT);
 	    Quad qF = new FOOTER(qf, null, 2);
 	    Quad.addEdge(q0, 0, qF, 0);
-	    Quad.addEdge(q0, 1, q1, 1);
+	    Quad.addEdge(q0, 1, q1, 0);
 	    Quad.addEdges(new Quad[] { q1, q2, q3, q4, q5, q6, q7, qC });
 	    Quad.addEdge(q7, 1, q8, 0);
 	    Quad.addEdge(qC, 0, qF, 1);
@@ -247,6 +248,11 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	    List l = new ArrayList(hc.getFields().length);
 	    for (; hc!=null; hc=hc.getSuperclass())
 		l.addAll(0, Arrays.asList(hc.getDeclaredFields()));
+	    // filter out static fields.
+	    for (Iterator it=l.iterator(); it.hasNext(); )
+		if (((HField) it.next()).isStatic())
+		    it.remove();
+	    // done.
 	    return l;
 	}
     }
