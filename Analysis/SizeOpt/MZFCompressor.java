@@ -49,7 +49,7 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.1.2.9 2001-11-14 01:34:40 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.1.2.10 2001-11-14 08:29:54 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
@@ -109,6 +109,10 @@ public class MZFCompressor {
 	// chain through MZFChooser to pick the appropriate superclass
 	// at each instantiation site.
 	hcf = new MZFChooser(hcf, cc, listmap, field2class).codeFactory();
+	// cache, to be safe.
+	hcf = new CachingCodeFactory(hcf);
+	// now delete fields which we can represent using an external hashtable
+	//hcf = new MZFExternalize(hcf,linker, pp, stoplist, flds).codeFactory();
 	// we should be done now.
 	this.parent = new CachingCodeFactory(hcf);
     }
@@ -119,7 +123,7 @@ public class MZFCompressor {
      *  the field; second element is the 'mostly value'. */
     List sortFields(HClass hc, ProfileParser pp, ConstructorClassifier cc) {
 	// make a comparator that operates on Map.Entries contained in the
-	// ProfileParser's valueInfo map, which sorts on 'saved bytes'.
+	// ProfileParser's savedBytesMap map, which sorts on 'saved bytes'.
 	final Comparator c = new Comparator() {
 		public int compare(Object o1, Object o2) {
 		    // compare based on values in the entry; these
@@ -137,14 +141,14 @@ public class MZFCompressor {
 	    // filter out 'bad' fields.
 	    if (!cc.isGood(hf)) continue;
 	    // some fields have no information?
-	    if (pp.valueInfo(hf).entrySet().size()==0)
+	    if (pp.savedBytesMap(hf).entrySet().size()==0)
 		// we can end up with no information about a field if it is
 		// instantiable but never actually instantiated in the program
 		// (typically because it is instantiated in native code).
 		continue; // skip these fields.
 	    // find the 'mostly value' which will save the most space.
 	    Map.Entry me = (Map.Entry)
-		Collections.max(pp.valueInfo(hf).entrySet(), c);
+		Collections.max(pp.savedBytesMap(hf).entrySet(), c);
 	    // add an entry to l for sorting.
 	    l.add(Default.pair(hf, me));
 	}

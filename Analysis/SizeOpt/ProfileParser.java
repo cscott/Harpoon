@@ -13,30 +13,35 @@ import harpoon.Util.Collections.Factories;
 import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MapSet;
 import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Collections.SetFactory;
 import harpoon.Util.Default;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.ParseUtil.BadLineException;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 /**
  * The <code>ProfileParser</code> class parses the output produced
  * by <code>SizeCounters</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ProfileParser.java,v 1.1.2.4 2001-11-14 01:39:25 cananian Exp $
+ * @version $Id: ProfileParser.java,v 1.1.2.5 2001-11-14 08:29:54 cananian Exp $
  */
 class ProfileParser {
-    // lines are in the format: 'mzf_savedbytes_<classname>: <number>'
+    // lines are in the format: 'mzf_savedbytes_<classname>: <number>',
+    // 'mzf_alloc_<classname>: <number>', or 'mzf_nonzero_<classname>: <num>'
     // the line 'MZF START CONSTANT <number>' indicates a new 'mostly-N'
     // section.
 
     
     /** Creates a <code>ProfileParser</code>. */
-    public ProfileParser(Linker linker, String resourcePath) {
+    ProfileParser(Linker linker, String resourcePath) {
 	try {
 	    ParseUtil.readResource(resourcePath, new ResourceParser(linker));
 	} catch (IOException ioex) {
@@ -45,13 +50,72 @@ class ProfileParser {
     }
     /** Returns a map from 'mostly values' (Integers) to how many
      *  bytes can be saved (Longs). */
-    Map valueInfo(HField hf) {
+    Map savedBytesMap(HField hf) {
 	return Collections.unmodifiableMap
-	    (((MapSet)results.getValues(hf)).asMap());
+	    (((MapSet)savedBytesMap.getValues(hf)).asMap());
     }
-    final MultiMap results = new GenericMultiMap
-	(Factories.mapSetFactory(new AggregateMapFactory()));
-    public String toString() { return results.toString(); }
+    /** Returns a map from 'mostly values' (Integers) to how many
+     *  times this field was allocated. */
+    Map allocMap(HField hf) {
+	return Collections.unmodifiableMap
+	    (((MapSet)allocMap.getValues(hf)).asMap());
+    }
+    /** Returns a map from 'mostly values' (Integers) to how many
+     *  times this field was *not* that value. */
+    Map notMostlyMap(HField hf) {
+	return Collections.unmodifiableMap
+	    (((MapSet)notMostlyMap.getValues(hf)).asMap());
+    }
+    /** Returns <code>true</code> iff there is enough profiling data to
+     *  return a valid percentage of allocated fields <code>hf</code>
+     *  with the unchanged value <code>mostly</code>.
+     */
+    boolean isPercentValid(HField hf, int mostly) {
+	Integer MI = new Integer(mostly);
+	Number alloc = (Number) allocMap(hf).get(MI);
+	Number notmostly = (Number) notMostlyMap(hf).get(MI);
+	if (alloc==null || notmostly==null) return false;
+	if (alloc.intValue()==0) return false;
+	return true;
+    }
+    /** For the specified field, returns the percentage of allocations
+     *  of the field whose values are *always* the given 'mostly' value. */
+    double percentIsMostly(HField hf, int mostly) {
+	Integer MI = new Integer(mostly);
+	long alloc = ((Number)allocMap(hf).get(MI)).longValue();
+	long notmostly = ((Number)notMostlyMap(hf).get(MI)).longValue();
+	return 100.0-((100.0*notmostly)/(double)alloc);
+    }
+    /** Return a set of <field, mostly val> pairs where the percentage
+     *  of allocated fields with mostly val exceeds 'thresholdPercent'. */
+    Set fieldsAboveThresh(double thresholdPercent) {
+	Set result = new HashSet();
+	for (Iterator it=allocMap.keySet().iterator(); it.hasNext(); ) {
+	    HField hf = (HField) it.next();
+	    for (Iterator it2=allocMap(hf).keySet().iterator();
+		 it2.hasNext(); ) {
+		Number mostly = (Number) it2.next();
+		if (isPercentValid(hf, mostly.intValue()) &&
+		    percentIsMostly(hf, mostly.intValue()) > thresholdPercent)
+		    result.add(Default.pair(hf, mostly));
+	    }
+	}
+	return Collections.unmodifiableSet(result);
+    }
+    final MultiMap savedBytesMap, allocMap, notMostlyMap;
+    {
+	SetFactory sf = Factories.mapSetFactory(new AggregateMapFactory());
+	savedBytesMap = new GenericMultiMap(sf);
+	allocMap = new GenericMultiMap(sf);
+	notMostlyMap = new GenericMultiMap(sf);
+    }
+    public String toString() {
+	Map m = new HashMap();
+	m.put("savedbytes", savedBytesMap);
+	m.put("alloc", allocMap);
+	m.put("nonzero", notMostlyMap);
+	return m.toString();
+    }
     class ResourceParser implements ParseUtil.StringParser {
 	final Linker linker;
 	ResourceParser(Linker linker) { this.linker = linker; }
@@ -68,13 +132,22 @@ class ProfileParser {
 		}
 		return;
 	    }
-	    // ignore any line which doesn't begin with 'mzf_savedbytes_'
-	    if (!s.startsWith("mzf_savedbytes_")) return;
+	    // we accept lines which start with 'mzf_savedbytes_',
+	    // 'mzf_alloc_' or 'mzf_nonzero_'.
+	    String which_prefix;
+	    MultiMap which_map;
+	    if (s.startsWith("mzf_savedbytes_")) {
+		which_prefix="mzf_savedbytes_"; which_map = savedBytesMap;
+	    } else if (s.startsWith("mzf_alloc_")) {
+		which_prefix="mzf_alloc_"; which_map = allocMap;
+	    } else if (s.startsWith("mzf_nonzero_")) {
+		which_prefix="mzf_nonzero_"; which_map = notMostlyMap;
+	    } else return; // wrong prefix; ignore this line.
 	    int colon = s.indexOf(':');
 	    if (colon<0) return; // ignore lines with no colon.
 	    if (!(colon+1<s.length()))
 		throw new BadLineException("No number part.");
-	    String fieldname = s.substring("mzf_savedbytes_".length(), colon);
+	    String fieldname = s.substring(which_prefix.length(), colon);
 	    String number = s.substring(colon+1).trim();
 	    long val;
 	    try {
@@ -87,9 +160,9 @@ class ProfileParser {
 		throw new BadLineException("No field part: "+fieldname);
 	    try {
 		HField hf = parseField(fieldname);
-		results.add(hf, Default.entry
+		which_map.add(hf, Default.entry
 			    (new Integer(constant), new Long(val)));
-		// in perl terms: $results{$hf}{$constant}=$val;
+		// in perl terms: $which_map{$hf}{$constant}=$val;
 	    } catch (BadLineException ble) {
 		/* assume that this field has been removed. */
 		System.err.println("WARNING: can't find "+fieldname);
