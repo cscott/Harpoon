@@ -14,9 +14,9 @@ import java.util.Collection;
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.1.2.3 2000-02-16 22:33:12 cananian Exp $
+ * @version $Id: CFGrapher.java,v 1.1.2.4 2000-06-27 19:28:14 salcianu Exp $
  */
-public abstract class CFGrapher {
+public abstract class CFGrapher implements java.io.Serializable {
     /** Returns the first <code>HCodeElement</code> to be executed; that is,
      *  the root of the control-flow graph. */
     public abstract HCodeElement getFirstElement(HCode hcode);

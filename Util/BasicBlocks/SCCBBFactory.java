@@ -22,9 +22,9 @@ import harpoon.Util.UComp;
  topollogically sorted component graph of <code>BasicBlock</code>s.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCBBFactory.java,v 1.1.2.4 2000-03-24 01:17:48 salcianu Exp $
+ * @version $Id: SCCBBFactory.java,v 1.1.2.5 2000-06-27 19:28:18 salcianu Exp $
  */
-public class SCCBBFactory {
+public class SCCBBFactory implements java.io.Serializable {
 
     /** The <code>BBConverter</code> used to generate the BasicBlock views 
 	of the methods */

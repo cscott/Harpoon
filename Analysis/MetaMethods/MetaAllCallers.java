@@ -20,9 +20,9 @@ import harpoon.Analysis.PointerAnalysis.Relation;
  precomputed graph.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaAllCallers.java,v 1.1.2.2 2000-03-21 20:28:50 salcianu Exp $
+ * @version $Id: MetaAllCallers.java,v 1.1.2.3 2000-06-27 19:28:11 salcianu Exp $
  */
-public class MetaAllCallers {
+public class MetaAllCallers implements java.io.Serializable {
 
     /** Creates a <code>MetaAllCallers</code>. Receives as parameter
 	the <code>MetaCallGraph</code> which computes the possible callees

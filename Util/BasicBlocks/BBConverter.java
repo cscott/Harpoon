@@ -14,9 +14,9 @@ import harpoon.IR.Properties.CFGrapher;
  * which returns a basic block view of the code of a method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: BBConverter.java,v 1.1.2.1 2000-03-23 21:29:08 salcianu Exp $
+ * @version $Id: BBConverter.java,v 1.1.2.2 2000-06-27 19:28:18 salcianu Exp $
  */
-public class BBConverter{
+public class BBConverter implements java.io.Serializable{
     // the HCode factory used to generate the code of the methods.
     private HCodeFactory hcf;
 

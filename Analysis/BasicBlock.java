@@ -59,8 +59,8 @@ import java.util.Collection;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.32 2000-06-27 17:52:28 pnkfelix Exp $ */
-public class BasicBlock {
+ * @version $Id: BasicBlock.java,v 1.1.2.33 2000-06-27 19:28:05 salcianu Exp $ */
+public class BasicBlock implements java.io.Serializable {
     
     static final boolean DEBUG = false;
     static final boolean TIME = false;
@@ -360,7 +360,7 @@ public class BasicBlock {
     /** Factory structure for generating BasicBlock views of
 	an <code>HCode</code>.  	
     */
-    public static class Factory { 
+    public static class Factory implements java.io.Serializable { 
 	// the underlying HCode
 	private final HCode hcode;
 

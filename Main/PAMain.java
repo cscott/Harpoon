@@ -17,8 +17,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.ObjectOutputStream;
 import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
-
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
@@ -72,7 +73,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.65 2000-06-27 15:38:29 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.66 2000-06-27 19:28:16 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -82,10 +83,6 @@ public abstract class PAMain {
     private static boolean SMART_CALL_GRAPH = false;
     // debug the class hierarchy
     private static boolean SHOW_CH = false;
-
-    // load the meta call graph from a file.
-    private static boolean LOAD_MCG = false;
-    private static String  MCG_FILE_NAME = "";
 
     // show the call graph
     private static boolean SHOW_CG = false;
@@ -114,6 +111,14 @@ public abstract class PAMain {
     private static boolean DO_SAT = false;
     private static String SAT_FILE = null;
 
+    // Load the preanalysis results from PRE_ANALYSIS_IN_FILE
+    private static boolean LOAD_PRE_ANALYSIS = false;
+    private static String PRE_ANALYSIS_IN_FILE = null;
+
+    // Save the preanalysis results into PRE_ANALYSIS_OUT_FILE
+    private static boolean SAVE_PRE_ANALYSIS = false;
+    private static String PRE_ANALYSIS_OUT_FILE = null;
+
     private static PointerAnalysis pa = null;
     // the main method
     private static HMethod hroot = null;
@@ -121,16 +126,30 @@ public abstract class PAMain {
     // list to maintain the methods to be analyzed
     private static List mm_to_analyze = new LinkedList();
     
-    private static class Method{
+    private static class Method implements java.io.Serializable {
 	String name  = null;
 	String declClass = null;
+	public boolean equals(Object o) {
+	    if((o == null) || !(o instanceof Method))
+		return false;
+	    Method m2 = (Method) o;
+	    return 
+		str_equals(name, m2.name) &&
+		str_equals(declClass, m2.declClass);
+	}
+	public static boolean str_equals(String s1, String s2) {
+	    return (s1 == null) ? (s2 == null) : s1.equals(s2); 
+	}
+	public String toString() {
+	    return declClass + "." + name;
+	}
     }
 
     private static Method root_method = new Method();
 
 
     private static Linker linker = Loader.systemLinker;
-    private static HCodeFactory hcf = null;
+    private static CachingCodeFactory hcf = null;
     private static MetaCallGraph  mcg = null;
     private static MetaAllCallers mac = null;
     private static Relation split_rel = null;
@@ -172,20 +191,13 @@ public abstract class PAMain {
 	System.out.println("Root method: " + root_method.declClass + "." +
 			   root_method.name);
 
-	g_tstart = System.currentTimeMillis();
-
-	hcf = new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory(),
-				     true);
-	bbconv = new CachingBBConverter(hcf);
-	lbbconv = new CachingLBBConverter(bbconv);
-
-	construct_class_hierarchy();
-	construct_mroots();
-	construct_meta_call_graph();
-	construct_split_relation();
-
-	System.out.println("Total pre-analysis time : " +
-			   (time() - g_tstart) + "ms");
+	if(LOAD_PRE_ANALYSIS)
+	    load_pre_analysis();
+	else {
+	    pre_analysis();
+	    if(SAVE_PRE_ANALYSIS)
+		save_pre_analysis();
+	}
 
 	/* JOIN STATS
 	   join_stats(lbbconv, mcg);
@@ -210,6 +222,97 @@ public abstract class PAMain {
 	    pa.print_stats();
     }
     
+
+    // Constructs some data structures used by the analysis: the code factory
+    // providing the code of the methods, the class hierarchy, call graph etc.
+    private static void pre_analysis() {
+	g_tstart = System.currentTimeMillis();
+	
+	hcf = new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory(),
+				     true);
+	bbconv = new CachingBBConverter(hcf);
+	lbbconv = new CachingLBBConverter(bbconv);
+	
+	construct_class_hierarchy();
+	construct_mroots();
+	construct_meta_call_graph();
+	construct_split_relation();
+	
+	System.out.println("Total pre-analysis time : " +
+			   (time() - g_tstart) + "ms");
+    }
+
+    // load the results of the preanalysis from the disk
+    private static void load_pre_analysis() {
+	try{
+	    System.out.print("Loading preanalysis results from " + 
+			     PRE_ANALYSIS_IN_FILE + " ... ");
+	    g_tstart = time();
+	    load_pre_analysis2();
+	    System.out.println((time() - g_tstart) + "ms");
+	} catch(Exception e){
+	    System.err.println("\nError while loading pre-analysis results!");
+	    System.err.println(e);
+	    System.exit(1);
+	}
+    }
+    
+    // do the real job behind load_pre_analysis
+    private static void load_pre_analysis2()
+	throws IOException, ClassNotFoundException {
+	ObjectInputStream ois = new ObjectInputStream
+	    (new FileInputStream(PRE_ANALYSIS_IN_FILE));
+	Method m2 = (Method) ois.readObject();
+	if((m2 == null) || !m2.equals(root_method)) {
+	    System.err.println("\nDifferent root method: " + m2 + "!");
+	    System.exit(1);
+	}
+	linker    = (Linker) ois.readObject();
+	hcf       = (CachingCodeFactory) ois.readObject();
+	bbconv    = (CachingBBConverter) ois.readObject();
+	lbbconv   = (LBBConverter) ois.readObject();
+	ch        = (ClassHierarchy) ois.readObject();
+	mroots    = (Set) ois.readObject();
+	mcg       = (MetaCallGraph) ois.readObject();
+	mac       = (MetaAllCallers) ois.readObject();
+	split_rel = (Relation) ois.readObject();
+	ois.close();
+    }
+
+
+    // save the results of the preanalysis for future use
+    private static void save_pre_analysis() {
+	try{
+	    System.out.print("Saving preanalysis results into " + 
+			     PRE_ANALYSIS_OUT_FILE + " ... ");
+	    g_tstart = time();
+	    save_pre_analysis2();
+	    System.out.println((time() - g_tstart) + "ms");
+	} catch(IOException e){
+	    System.err.println("\nError while saving pre-analysis results!");
+	    System.err.println(e);
+	    System.exit(1);
+	}
+    }
+
+    // do the real job  behind save_pre_analysis
+    private static void save_pre_analysis2() throws IOException {
+	ObjectOutputStream oos = new ObjectOutputStream
+	    (new FileOutputStream(PRE_ANALYSIS_OUT_FILE));
+	oos.writeObject(root_method);
+	oos.writeObject(linker);
+	oos.writeObject(hcf);
+	oos.writeObject(bbconv);
+	oos.writeObject(lbbconv);
+	oos.writeObject(ch);
+	oos.writeObject(mroots);
+	oos.writeObject(mcg);
+	oos.writeObject(mac);
+	oos.writeObject(split_rel);
+	oos.flush();
+	oos.close();
+    }
+
 
     // Finds the root method: the "main" method of "class".
     private static void get_root_method(String root_class) {
@@ -311,9 +414,12 @@ public abstract class PAMain {
 	    new LongOpt("noit",      LongOpt.NO_ARGUMENT,       null, 15),
 	    new LongOpt("inline",    LongOpt.NO_ARGUMENT,       null, 16),
 	    new LongOpt("sat",       LongOpt.REQUIRED_ARGUMENT, null, 17),
-	    new LongOpt("notg",      LongOpt.NO_ARGUMENT,       null, 18)};
+	    new LongOpt("notg",      LongOpt.NO_ARGUMENT,       null, 18),
+	    new LongOpt("loadpre",   LongOpt.REQUIRED_ARGUMENT, null, 19),
+	    new LongOpt("savepre",   LongOpt.REQUIRED_ARGUMENT, null, 20),
+	};
 
-	Getopt g = new Getopt("PAMain", argv, "l:mscoa:i", longopts);
+	Getopt g = new Getopt("PAMain", argv, "mscoa:i", longopts);
 
 	while((c = g.getopt()) != -1)
 	    switch(c){
@@ -334,11 +440,6 @@ public abstract class PAMain {
 		break;
 	    case 'i':
 		DO_INTERACTIVE_ANALYSIS = true;
-		break;
-	    case 'l':
-		LOAD_MCG = true;
-		SMART_CALL_GRAPH = false;
-		METAMETHODS = false;
 		break;
 	    case 5:
 		arg = g.getOptarg();
@@ -382,6 +483,14 @@ public abstract class PAMain {
 	    case 18:
 		MAInfo.NO_TG = true;
 		break;
+	    case 19:
+		LOAD_PRE_ANALYSIS = true;
+		PRE_ANALYSIS_IN_FILE = new String(g.getOptarg());
+		break;
+	    case 20:
+		SAVE_PRE_ANALYSIS = true;
+		PRE_ANALYSIS_OUT_FILE = new String(g.getOptarg());
+		break;		
 	    }
 
 	return g.getOptind();
@@ -394,8 +503,10 @@ public abstract class PAMain {
 	}
 	System.out.print("Execution options:");
 
-	if(LOAD_MCG)
-	    System.out.print(" Unsupported yet! LOAD_MCG");
+	if(LOAD_PRE_ANALYSIS)
+	    System.out.print("LOAD_PRE_ANALYSIS ("+PRE_ANALYSIS_IN_FILE+")");
+	if(SAVE_PRE_ANALYSIS)
+	    System.out.print("SAVE_PRE_ANALYSIS ("+PRE_ANALYSIS_OUT_FILE+")");
 	if(METAMETHODS)
 	    System.out.print(" METAMETHODS");
 	if(SMART_CALL_GRAPH)
@@ -520,6 +631,7 @@ public abstract class PAMain {
 	    oos.writeObject(hcf);
 	    // write the Linker on the disk
 	    oos.writeObject(linker);
+	    oos.flush();
 	    oos.close();
 	} catch(IOException e){ System.err.println(e); }
 	System.out.println((time() - g_tstart) + "ms");
@@ -571,7 +683,6 @@ public abstract class PAMain {
 			       nb_joins + " Joins " +
 			       nb_calls + " Calls ");
 	}
-
     }
 
 
@@ -709,35 +820,37 @@ public abstract class PAMain {
     };
 
     private static String[] options = {
-	"-m, --meta    Uses the real MetaMethods (unsupported yet).",
-	"-s, --smart   Uses the SmartCallGrapph.",
-	"-d, --dumb    Uses the simplest CallGraph (default).",
-	"-c, --showch  Shows debug info about ClassHierrachy.",
-	"-l file       Load a precomputed MetaCallGraph from a file.",
-	"--showcg      Shows the (meta) call graph.",
-	"--showsplit   Shows the split relation.",
-	"--details     Shows details/statistics: analyzed methods, nodes etc.",
-	"--ccs=depth   Activates call context sensitivity with a given",
-	"               maximum call chain depth.",
-	"--ts          Activates full thread sensitivity.",
-	"--wts         Activates weak thread sensitivity.",
-	"--ls          Activates loop sensitivity.",
-	"--mamaps=file Computes the allocation policy map and serializes",
-	"               the CachingCodeFactory (and implicitly the allocation",
-	"               map) and the linker to disk.",
-	"-a method     Analyzes he given method. If the method is in the",
-	"               same class as the main method, the name of the class",
-	"               can be ommited. More than one \"-a\" flags can be",
-	"               used on the same command line.",
-	"-i            Interactive analysis of methods.",
-	"--noit        Just interprocedural analysis, no interthread.",
-	"--inline      Use method inlining to enable more stack allocation",
-	"               (makes sense only with --mamaps).",
-	"--sat=file    Generates dummy sets of calls to .start() and .join()",
-	"               that must be changed (for the thread inlining).",
-	"               Don't try to use it seriously!",
-	"--notg        No thread group facility is necessary. In the future,",
-	"               this will be automatically generated by the analysis."
+	"-m, --meta      Uses the real MetaMethods (unsupported yet).",
+	"-s, --smart     Uses the SmartCallGrapph.",
+	"-d, --dumb      Uses the simplest CallGraph (default).",
+	"-c, --showch    Shows debug info about ClassHierrachy.",
+	"--loadpre file  Loads the precomputed preanalysis results from disk.",
+	"--savepre file  Saves the preanalysis results to disk.",
+	"--showcg        Shows the (meta) call graph.",
+	"--showsplit     Shows the split relation.",
+	"--details       Shows details/statistics.",
+	"--ccs=depth     Activates call context sensitivity with a given",
+	"                 maximum call chain depth.",
+	"--ts            Activates full thread sensitivity.",
+	"--wts           Activates weak thread sensitivity.",
+	"--ls            Activates loop sensitivity.",
+	"--mamaps=file   Computes the allocation policy map and serializes",
+	"                 the CachingCodeFactory (and implicitly the",
+	"                 allocation map) and the linker to disk.",
+	"-a method       Analyzes he given method. If the method is in the",
+	"                 same class as the main method, the name of the",
+	"                 class can be ommited. More than one \"-a\" flags",
+	"                 can be used on the same command line.",
+	"-i              Interactive analysis of methods.",
+	"--noit          Just interprocedural analysis, no interthread.",
+	"--inline        Use method inlining to enable more stack allocation",
+	"                 (makes sense only with --mamaps).",
+	"--sat=file      Generates dummy sets of calls to .start() and",
+	"                 .join() that must be changed (for the thread",
+	"                 inlining). Don't try to use it seriously!",
+	"--notg          No thread group facility is necessary. In the",
+	"                 future, this will be automatically detected by",
+	"                 the analysis."
     };
 
 

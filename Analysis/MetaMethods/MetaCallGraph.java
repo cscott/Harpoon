@@ -16,10 +16,10 @@ import harpoon.Analysis.PointerAnalysis.Relation;
  methods are called by a given meta method [at a specific call site].
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraph.java,v 1.1.2.4 2000-04-03 02:28:52 salcianu Exp $
+ * @version $Id: MetaCallGraph.java,v 1.1.2.5 2000-06-27 19:28:11 salcianu Exp $
  */
 
-public interface MetaCallGraph {
+public interface MetaCallGraph extends java.io.Serializable {
     
     /** Returns the meta methods that can be called by <code>mm</code>. */
     public MetaMethod[] getCallees(MetaMethod mm);

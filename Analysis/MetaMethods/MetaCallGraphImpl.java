@@ -60,9 +60,9 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.19 2000-06-27 04:36:10 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.20 2000-06-27 19:28:11 salcianu Exp $
  */
-public class MetaCallGraphImpl extends MetaCallGraphAbstr{
+public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
     private static boolean DEBUG = false;
     private static boolean DEBUG_CH = false;

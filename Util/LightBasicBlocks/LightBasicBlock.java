@@ -34,9 +34,9 @@ import harpoon.Util.UComp;
  (one method call per iteration!).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightBasicBlock.java,v 1.1.2.4 2000-06-07 23:06:21 salcianu Exp $
+ * @version $Id: LightBasicBlock.java,v 1.1.2.5 2000-06-27 19:28:20 salcianu Exp $
  */
-public class LightBasicBlock {
+public class LightBasicBlock implements java.io.Serializable {
 
     /** The user can place its annotations here. */
     public Object user_info = null;
@@ -104,7 +104,7 @@ public class LightBasicBlock {
     /** Converts the large, set based, basic blocks produced
 	by a <code>BasicBlock.Factory</code> into smaller, array based,
 	light basic blocks. */
-    public static class Factory{
+    public static class Factory implements java.io.Serializable {
 	
 	private int count = 0;
 

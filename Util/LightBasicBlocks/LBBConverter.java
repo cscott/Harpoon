@@ -11,9 +11,9 @@ import harpoon.Util.BasicBlocks.BBConverter;
  into <code>LightBasicBlock</code>s.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LBBConverter.java,v 1.1.2.3 2000-04-03 10:07:53 salcianu Exp $
+ * @version $Id: LBBConverter.java,v 1.1.2.4 2000-06-27 19:28:20 salcianu Exp $
  */
-public class LBBConverter {
+public class LBBConverter implements java.io.Serializable {
     
     BBConverter bbconv;
 
