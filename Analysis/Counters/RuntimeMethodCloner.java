@@ -32,7 +32,7 @@ import java.util.Set;
  * statistics as we're attempting to report them.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RuntimeMethodCloner.java,v 1.1.2.1 2001-11-02 04:53:59 cananian Exp $
+ * @version $Id: RuntimeMethodCloner.java,v 1.1.2.2 2001-11-03 19:16:14 cananian Exp $
  */
 public class RuntimeMethodCloner extends MethodMutator {
     private static final String classname = "harpoon.Runtime.Counters";
@@ -92,6 +92,7 @@ public class RuntimeMethodCloner extends MethodMutator {
 		    if (!badboys.contains(call.method()))
 			System.err.println("WARNING: can't relocate "+
 					   call.method()+" at "+
+					   hc.getMethod()+" "+
 					   call.getSourceFile()+":"+
 					   call.getLineNumber());
 		    badboys.add(call.method());
