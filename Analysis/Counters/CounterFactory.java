@@ -54,7 +54,7 @@ import java.util.Iterator;
  * the counters' actual name on output will be "foo_bar" and "foo_baz".
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CounterFactory.java,v 1.1.2.4 2001-03-02 04:04:07 cananian Exp $
+ * @version $Id: CounterFactory.java,v 1.1.2.5 2001-07-10 21:10:22 cananian Exp $
  */
 public final class CounterFactory {
     /** default status for all counters. */
@@ -113,15 +113,22 @@ public final class CounterFactory {
 	return spliceIncrement(qf,
 			       addAt(e, new CONST(qf, null, t, new Long(value),
 						  HClass.Long)),
-			       counter_name, t);
+			       counter_name, t, true);
     }
     /** Increment the named counter by the amount in the <code>Temp</code>
-     *  <code>Tvalue</code> (with type <code>long</code>) on the given edge. */
+     *  <code>Tvalue</code> on the given edge.  If <code>isLong</code>
+     *  is <code>true</code>, then <code>Tvalue</code> should have type
+     *  <code>long</code>; else it should have type <code>int</code>. */
     public static Edge spliceIncrement(QuadFactory qf,
 				       Edge e, String counter_name,
-				       Temp Tvalue) {
+				       Temp Tvalue, boolean isLong) {
 	Quad CJMP, PHI;
 	if (!isEnabled(counter_name)) return e;
+	if (!isLong) {
+	    Temp t = new Temp(qf.tempFactory());
+	    e = addAt(e, new OPER(qf, null, Qop.I2L, t, new Temp[]{ Tvalue }));
+	    Tvalue = t;
+	}
 	HField HFcounter = getCounterField(qf.getLinker(), counter_name);
 	HField HFlockobj = getLockField(qf.getLinker(), counter_name);
 	// first fetch the lock
