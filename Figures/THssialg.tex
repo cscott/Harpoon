@@ -19,12 +19,17 @@ Procedure place(r:region, v:variable):~boolean
      if n contains a use or definition of v, then
         flag := true;
 
-  if flag=true, then
+  /* add phis/sigmas to merges/splits where v may be live */
+  if flag=true, then {
     for each node n in region r not contained in a child region, do {
-      if the input arity of n exceeds 1, then
-        place a phi function for v at n;
-      if the output arity of n exceeds 1, then
-        place a sigma function for v at n;
+      if MaybeLive(n) = true, then {
+        if the input arity of n exceeds 1, then
+          place a phi function for v at n;
+        if the output arity of n exceeds 1, then
+          place a sigma function for v at n;
+      }
+    }
+  }
 
   return flag;
 }
