@@ -51,6 +51,7 @@ void *FNI_RawAlloc(JNIEnv *env, jsize length) {
 jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, struct claz *claz,
 		  void *(*allocfunc)(jsize length), jsize length) {
   struct oobj *newobj, *masked;
+  jobject result;
 
   assert(claz); /* info may be NULL.  claz may not be. */
   newobj = (allocfunc==NULL) ? FNI_RawAlloc(env,length) : (*allocfunc)(length);
@@ -67,5 +68,9 @@ jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, struct claz *claz,
    * from finalizing the object. */
   masked->hashunion.hashcode = 1 | (ptroff_t) masked; /* low bit always set */
   /* FIXME: register finalizer.  */
-  return FNI_WRAP(newobj);
+  result = FNI_WRAP(newobj);
+#if defined(WITH_REALTIME_JAVA) && defined(WITH_MEMORYAREA_TAGS)
+  RTJ_tagObject(env, result);
+#endif
+  return result;
 }

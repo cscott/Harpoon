@@ -26,5 +26,11 @@ inline struct MemBlock* MemBlock_currentMemBlock();
 inline void MemBlock_setCurrentMemBlock(JNIEnv* env, 
 					 jobject realtimeThread,
 					struct MemBlock* memBlock);
+#ifdef WITH_MEMORYAREA_TAGS
+jfieldID memoryAreaID;
+jobject heapMem;
+void RTJ_tagObject(JNIEnv* env, jobject obj);
+#endif
+
 
 #endif /* RTJmalloc_h__ */

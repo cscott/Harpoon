@@ -4,6 +4,9 @@
 
 #include "config.h"
 
+/* Tag natively-allocated objects with MemoryAreas */
+#define WITH_MEMORYAREA_TAGS
+
 #if (!defined(WITH_REALTIME_JAVA)) && (!defined(WITH_REALTIME_JAVA_STUBS))
 #error Must have either RTJ or RTJ stubs defined in order to include this file.
 #endif
