@@ -56,6 +56,7 @@ public class Cache extends Node {
     public synchronized void process(ImageData id) {
 	switch (Command.read(id)) {
 	case Command.GET_CROPPED_IMAGE:
+	    //no break, so continues onto next case
 	case Command.GET_IMAGE: {
 	    Node right = getRight();
 	    if (right!=null) {

@@ -62,6 +62,7 @@ public class Circle extends Node {
 	    break;
 	}
 	case Command.NONE: {
+	    //add node to front of WorkList linked list
 	    work = new WorkList(id, work);
 	    getRight().process(id);
 	    break;
