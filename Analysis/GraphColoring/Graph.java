@@ -24,7 +24,7 @@ import java.util.Collection;
  * (a performance drain).
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Graph.java,v 1.1.2.10 2000-07-20 21:05:37 pnkfelix Exp $
+ * @version $Id: Graph.java,v 1.1.2.11 2000-07-25 23:25:03 pnkfelix Exp $
  */
 
 public interface Graph  {
@@ -84,6 +84,8 @@ public interface Graph  {
 	<BR> <B>mandates:</B> <code>node</code> is not removed from 
 	     <code>this</code> while the returned
 	     <code>Collection</code> is in use. 
+        @throws IllegalArgumentException If <code>node</code> is not
+	     present in the node set for <code>this</code>.
      */
     Collection neighborsOf( Object node );
 

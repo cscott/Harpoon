@@ -10,7 +10,7 @@ import java.util.List;
  * algorithm.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColorer.java,v 1.1.2.10 2000-07-25 03:01:02 pnkfelix Exp $
+ * @version $Id: GraphColorer.java,v 1.1.2.11 2000-07-25 23:25:03 pnkfelix Exp $
  */
 
 public abstract class GraphColorer  {
@@ -28,13 +28,12 @@ public abstract class GraphColorer  {
 	     <code>graph</code> will be present in
 	     <code>graph</code>'s Node -> Color mapping, with no two
 	     interfering nodes sharing the same color.
-        @throws UncolorableGraphException A coloring cannot be found
+        @throws UnableToColorGraph A coloring cannot be found
 	     for <code>graph</code>.  <code>graph</code> is left with
 	     no hidden nodes and an empty Node -> Color mapping.  
      */
     public abstract void color(ColorableGraphImpl graph,
-			       List colors ) 
-	throws UncolorableGraphException;
+			       List colors ) throws UnableToColorGraph;
 			       
     /** Attempts to color <code>graph</code>.
 	<BR> <B>requires:</B> <code>colors</code> is a
@@ -46,14 +45,13 @@ public abstract class GraphColorer  {
 	     <code>graph</code> will be present in
 	     <code>graph</code>'s Node -> Color mapping, with no two 
 	     interfering nodes sharing the same color.
-        @throws UncolorableGraphException A coloring cannot be found
+        @throws UncolorableGraph A coloring cannot be found
 	     for <code>graph</code>.  <code>graph</code> may be left
 	     with some hidden nodes and an non-empty Node -> Color
 	     mapping, but can be returned to its original state with a
 	     call to <code>graph.resetGraph()</code>.
     */
     public abstract void color(ColorableGraph graph, 
-			       List colors)
-	throws UncolorableGraphException;
+			       List colors) throws UnableToColorGraph;
 
 }

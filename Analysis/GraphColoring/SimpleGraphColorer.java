@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * <code>SimpleGraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.10 2000-07-25 03:01:02 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.11 2000-07-25 23:25:03 pnkfelix Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {
@@ -28,7 +28,7 @@ public class SimpleGraphColorer extends GraphColorer {
     public SimpleGraphColorer() { }
     
     public final void color(ColorableGraph graph, List colors) 
-	throws UncolorableGraphException {
+	throws UnableToColorGraph {
 	// System.out.println("entered color("+graph+", "+colors+")");
 
 	boolean moreNodesToHide = false;
@@ -57,10 +57,7 @@ public class SimpleGraphColorer extends GraphColorer {
 	// colors.size(), in which case this algorithm can't color
 	// it without more colors.
 	if (!graph.nodeSet().isEmpty()) {
-	    throw new UncolorableGraphException
-		(graph + " could not be colored " + 
-		 "in this manner with " +
-		 colors.size() + " colors.");
+	    throw new UnableToColorGraph();
 	}
 	
 	for(Object n=graph.replace(); n!=null; n=graph.replace()){
@@ -96,8 +93,7 @@ public class SimpleGraphColorer extends GraphColorer {
 	( http://ceylon.lcs.mit.edu/6035/lecture18/sld064.htm ).
     */
     public final void color( ColorableGraphImpl graph, 
-			     List colors ) 
-	throws UncolorableGraphException {
+			     List colors ) throws UnableToColorGraph {
 	try {
 	    Stack hidden = new Stack();
 	    boolean moreNodesToHide = true;
@@ -135,10 +131,7 @@ public class SimpleGraphColorer extends GraphColorer {
 		    System.out.println
 			("Resetting Graph and attempting coloring with " + 
 			 (colors.size()+1) + " colors.");
-		throw new UncolorableGraphException
-		    (graph + " could not be colored " + 
-		     "in this manner with " +
-		     colors.size() + " colors.");
+		throw new UnableToColorGraph();
 	    }
 	    
 	    // at this point, we are assured that all of the nodes in the
@@ -188,13 +181,10 @@ public class SimpleGraphColorer extends GraphColorer {
 		// color should be guaranteed to have been assigned at
 		// this point.
 		if (color == null) {
-		    // ERROR condition:
-		    // put all the hidden nodes back
-		    graph.unhideAllNodes();
-		    graph.resetColors();
-		    throw new UncolorableGraphException
-			("Something is flawed in the code.  " + 
-			 "All nodes should have been assigned a color.");
+		    Util.assert(false, 
+				"Something is flawed in the code.  " + 
+				"All nodes should have been assigned "+
+				"a color.");
 		}
 		
 		try {

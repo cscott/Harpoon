@@ -4,21 +4,23 @@
 package harpoon.Analysis.GraphColoring;
 
 /**
- * <code>UncolorableGraphException</code>
+ * <code>UnableToColorGraph</code> is a control-flow construct for
+ * indicating the provided Graph Coloring algorithm failed to color a 
+ * given graph.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: UncolorableGraphException.java,v 1.1.2.3 2000-07-25 23:25:03 pnkfelix Exp $
+ * @version $Id: UnableToColorGraph.java,v 1.1.2.1 2000-07-25 23:25:03 pnkfelix Exp $
  */
 
-public class UncolorableGraphException extends Throwable {
+public class UnableToColorGraph extends Throwable {
     
     /** Creates a <code>UncolorableGraphException</code>. */
-    public UncolorableGraphException() {
+    public UnableToColorGraph() {
         super();
     }
 
     /** Creates a <code>UncolorableGraphException</code>. */
-    public UncolorableGraphException(String s) {
+    public UnableToColorGraph(String s) {
         super(s);
     }
     

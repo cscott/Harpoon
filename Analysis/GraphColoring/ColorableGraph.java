@@ -7,7 +7,8 @@ import java.util.Enumeration;
 import java.util.NoSuchElementException;
 
 /**
- * <code>ColorableGraph</code> extends <code>Graph</code> with methods
+ * <code>ColorableGraph</code> extends
+ * <code>GraphColoring.Graph</code> with methods 
  * that are useful for a graph-coloring system.  Two main pieces of
  * state are added:  
  * <OL>
@@ -25,7 +26,7 @@ import java.util.NoSuchElementException;
  * <code>addNode(Object)</code>.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableGraph.java,v 1.1.2.12 2000-07-25 03:01:02 pnkfelix Exp $ */
+ * @version $Id: ColorableGraph.java,v 1.1.2.13 2000-07-25 23:25:03 pnkfelix Exp $ */
 
 public interface ColorableGraph extends Graph {
 
