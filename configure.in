@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.101 $)dnl
+AC_REVISION($Revision: 1.102 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -392,6 +392,7 @@ if test $gc_type = copying -o $gc_type = marksweep -o $gc_type = generational; t
 		  [Define if you want support for precise garbage collection])
 fi
 AC_LINK_FILES(Contrib/gc/include/gc.h, include/gc.h)
+AC_LINK_FILES(Contrib/gc/include/gc_pthread_redirects.h, include/gc_pthread_redirects.h)
 AC_LINK_FILES(Contrib/gc/include/gc_typed.h, include/gc_typed.h)
 AC_LINK_FILES(Contrib/gc/include/private/gcconfig.h, include/gcconfig.h)
 AM_CONDITIONAL(CONSERVATIVE_GC,
