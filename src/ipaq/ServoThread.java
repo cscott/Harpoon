@@ -32,10 +32,15 @@ public class ServoThread extends Thread {
      */
     public synchronized void run() {
 	while (true) {
-	    wait();
-	    car.moveLocal(servo, start);
-	    sleep(time);
-	    car.moveLocal(servo, stop);
+	    try {
+		wait();
+		car.moveLocal(servo, start);
+		sleep(time);
+		car.moveLocal(servo, stop);
+	    } catch (InterruptedException e) {
+		System.out.println(e.toString());
+		/* Keep on goin' */
+	    }
 	}
     }
     

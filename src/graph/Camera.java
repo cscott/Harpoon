@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec.graph;
 
+import imagerec.util.ImageDataManip;
+
 import ipaq.IPaqVideo;
 
 /**
@@ -27,7 +29,7 @@ public class Camera extends Node {
      *  @param out The node to send images to.
      */
     public Camera(Node out) {
-	this(128, 128, 5, 0, 0, 0, 640, 480);
+	this((byte)128, (byte)128, (byte)5, (byte)0, false, false, 640, 480, out);
     }
 
     /** Construct a new {@link Camera} with the specified properties.
@@ -151,6 +153,8 @@ public class Camera extends Node {
 
     /** Process a node by generating a stream of {@link ImageData}'s 
      *  from the camera.
+     *
+     *  @param id This {@link ImageData} is ignored.
      */
     public void process(ImageData id) {
 	int size = width*height;
@@ -162,10 +166,10 @@ public class Camera extends Node {
 	    
 	    ipaq.capture(rvals, gvals, bvals);
 
-	    ImageData id = ImageDataManip.create(null, rvals, gvals, bvals, 
+	    ImageData newid = ImageDataManip.create(null, rvals, gvals, bvals, 
 						 width, height);
-	    id.id = num++;
-	    super.process(id);
+	    newid.id = num++;
+	    super.process(newid);
 	}
     }
 }
