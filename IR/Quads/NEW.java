@@ -13,9 +13,12 @@ import harpoon.Util.Util;
 
 /**
  * <code>NEW</code> represents an object creation operation.
+ * It creates an <b>uninitialized</b> instance of an object.  One of the
+ * object's constructors must then be called (using a non-virtual
+ * <code>Quads.CALL</code>) to complete the instantiation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NEW.java,v 1.1.2.7 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: NEW.java,v 1.1.2.8 1999-11-15 17:47:12 cananian Exp $
  */
 public class NEW extends Quad {
     /** The <code>Temp</code> in which to store the new object. */
