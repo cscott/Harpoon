@@ -298,7 +298,8 @@ static void _putProperty(JNIEnv *env, jobject propobj, jmethodID methodID,
 			 const char *ckey, const char *cvalue) {
   jstring key, value;
   if (cvalue==NULL) cvalue="";
-  key = (*env)->NewStringUTF(env, ckey);
-  value = (*env)->NewStringUTF(env, cvalue);
+  key = (*env)->NewStringUTF(env, ckey); assert(key);
+  value = (*env)->NewStringUTF(env, cvalue); assert(value);
   (*env)->CallObjectMethod(env, propobj, methodID, key, value);
+  assert(!(*env)->ExceptionOccurred(env));
 }
