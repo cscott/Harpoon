@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.82 1999-08-22 13:48:51 cananian Exp $
+% $Id: thesis.tex,v 1.83 1999-08-22 18:15:14 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.82 $ $}
+\date{\today \\ $ $Revision: 1.83 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.82 $ $}{$ $Revision: 1.82 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.83 $ $}{$ $Revision: 1.83 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -1169,7 +1169,7 @@ do \{\\
 \caption{An example illustrating the power of combined analysis.}
 \label{fig:combined}
 \end{myfigure}
-At this point, we can expand the value lattice a final time to allow
+At this point, we can expand the value lattice once more to allow
 elimination of unnecessary array-bounds and null-pointer checks, based
 on our constant-propagation algorithm.  The new lattice is shown in
 figure \ref{fig:scclat5}; we have split the ``Typed'' lattice entry to
@@ -1185,11 +1185,44 @@ Notice that we exploit the pre-existing integer-constant propagation to
 identify constant-length arrays, and that our integrated approach
 allows one-pass optimization of the program in figure \ref{fig:combined}.
 
+\begin{myfigure}\newcommand{\implicitcheck}[1]{\underline{#1}}
+\begin{samplecode}
+\implicitcheck{if (10 < 0)}\\
+\>\implicitcheck{throw new NegativeArraySizeException();}\\
+int[] A = new int[10]; \\
+\implicitcheck{if (0 < 0 || 0 >= A.length)}\\
+\>\implicitcheck{throw new ArrayIndexOutOfBoundsException();}\\
+A[0] = 1;\\
+for (int i=1; i < 10; i++) \{\\
+\>\implicitcheck{if (i < 0 || i >= A.length)}\\
+\>\>\implicitcheck{throw new ArrayIndexOutOfBoundsException();}\\
+\>A[i] = 0;\\
+\}\\
+\end{samplecode}
+\caption{Implicit bounds checks on Java array references.}\label{fig:induction}
+\end{myfigure}
 Note that the variable renaming performed by the SSI form at
-control-flow splits is essential in allowing SPTC to do 
-null-pointer check elimination.
+control-flow splits is essential in allowing the algorithm to do 
+null-pointer check elimination.  However, the lattice we are using
+can remove bound-checks from an expression $A[k]$ when $k$ is a
+constant, but not when $k$ is an bounded induction variable.
+In the example of figure~\vref{fig:induction}, the first two implicit
+checks are optimized away by this version of the algorithm, but the
+loop-borne test is not.  The next section will address this
+shortcoming, using the power of a predicated analysis to identify
+bounded constants.
 
 \subsubsection{Better techniques for array-bounds checks}
+A typical array-bounds check (as shown in figure~\ref{fig:induction})
+verifies that the index $i$ of the array reference satisfies the
+condition $0\leq i < n$, where $n$ is the length of the
+array.\footnote{Languages in which array indices start at 1 can be
+handled by slight modifications to the same techniques.} By
+identifying integer constants as either positive, negative, or zero
+the first half of the bounds check may be eliminated.  The
+restructured integer lattice is shown in figure~\ref{nothereyet}; only
+three levels are added to the lattice.\fixme{Write up binop rules for
+new integer levels and deal with upper bounds in an efficient manner.}
 
 \subsubsection{Experimental results}\label{sec:sptc_results}
 Some quantitative measure of the
