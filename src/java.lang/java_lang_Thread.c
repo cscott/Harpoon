@@ -411,3 +411,9 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_interrupt0
   (JNIEnv *env, jobject obj) {
     assert(0);
 }
+
+/* for compatibility with IBM JDK... */
+JNIEXPORT void JNICALL Java_java_lang_Thread_newThreadEvent0
+  (JNIEnv *env, jobject _this, jobject thread) {
+  fprintf(stderr, "WARNING: IBM JDK may not be fully supported.\n");
+}
