@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.20 1999-06-10 22:32:18 cananian Exp $
+% $Id: thesis.tex,v 1.21 1999-06-11 11:09:55 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.20 $ $}
+\date{\today \\ $ $Revision: 1.21 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.20 $ $}{$ $Revision: 1.20 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.21 $ $}{$ $Revision: 1.21 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -461,6 +461,11 @@ Procedure cycle_equiv (G: CFG)
 	 (corrected from \cite{johnson93:sese}).}
 \label{fig:CQalg}
 \end{myfigure}
+
+\textbf{Rest of algorithm: construct PST, then compute variable
+liveness.  Traverse the tree from bottom up, adding phi/sigmas if:
+the variable is used or defined inside the PST block, and the variable
+is live.}
 
 \subsection{Uses and applications}
 \textbf{Discuss predicated analysis, anticipatibility, PRE, etc.}
