@@ -79,15 +79,16 @@ class Spiller {
       // if no uses or defs of spilltemps, continue.
       if (defspill.size()==0 && usespill.size()==0) continue;
       // okay, rename the original instr with the new limited-lifespan temps.
-      Instr ni = il.rename(il.getFactory(), new TempMap() { // defmap
+      TempMap defMap =  new TempMap() { // defmap
 	  public Temp tempMap(Temp t) {
 	      return defspill.containsKey(t) ? (Temp)defspill.get(t) : t;
 	  }
-      }, new TempMap() { // usemap
+      }, useMap = new TempMap() { // usemap
 	  public Temp tempMap(Temp t) {
 	      return usespill.containsKey(t) ? (Temp)usespill.get(t) : t;
 	  }
-      });
+      };
+      Instr ni = il.rename(il.getFactory(), defMap, useMap);
       // replace old instr with new instr
       Instr.replace(il, ni);  il=ni;
       instrsToSkip.add(ni);
@@ -100,6 +101,16 @@ class Spiller {
 	    Instr loadi = a.makeLoad(il.getFactory(), il, newuse);
 	    loadi.insertAt((CFGEdge)it2.next());
 	    instrsToSkip.add(loadi);
+	  }
+      }
+      // treat next instruction and this one as atomic if next instr
+      // string contains '@ dummy'
+      if (il.succC().size()==1) {
+	  Instr dummy = (Instr) ((CFGEdge)il.succC().iterator().next()).to();
+	  if (dummy.getAssem().indexOf("@ dummy") >= 0) {
+	      ni = dummy.rename(dummy.getFactory(), defMap, useMap);
+	      Instr.replace(dummy, ni); il=ni;
+	      instrsToSkip.add(ni);
 	  }
       }
       // insert stores before any defspills.
