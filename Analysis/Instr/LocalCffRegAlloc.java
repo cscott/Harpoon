@@ -58,7 +58,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.84 2000-06-22 01:11:30 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.85 2000-06-23 07:04:02 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -66,7 +66,7 @@ public class LocalCffRegAlloc extends RegAlloc {
     private static boolean VERIFY = true;
 
     private static boolean SPILL_INFO = false;
-    private static boolean COALESCE_MOVES = false;
+    private static boolean COALESCE_MOVES = true;
 
     private Collection allRegisters;
 
@@ -179,7 +179,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	    // new way: replace "t4 <- r0" with a virtual InstrMOVE
 	    // (with an empty assembly string) that represents the
-	    // inherent assignment of t4 to r0...)
+	    // inherent allocation of r0 to t4...
 	    
 	    Util.assert(!isRegister(ir.use()[0]));
 	    Util.assert(!isRegister(ir.def()[0]));
