@@ -29,7 +29,5 @@ public class CharDoneContinuation extends CharContinuation implements VoidResult
 
     public void exception(Throwable t) {
     }
-    private Continuation link;
-    public final void setLink(Continuation c) { link= c; }
-    public final Continuation getLink() { return link; }
+
 }

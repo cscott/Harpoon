@@ -8,12 +8,9 @@ package harpoon.Analysis.ContBuilder;
  * deal with <code>Continuation</code>s together.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: Continuation.java,v 1.1 2000-03-15 17:56:03 bdemsky Exp $
+ * @version $Id: Continuation.java,v 1.2 2000-03-15 18:19:30 bdemsky Exp $
  */
 public interface Continuation {
     public void exception(Throwable t);
 
-    public void setLink(Continuation newLink);
-
-    public Continuation getLink();
 }
