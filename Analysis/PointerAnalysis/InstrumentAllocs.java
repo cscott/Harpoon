@@ -32,7 +32,7 @@ import java.util.Map;
  * <code>InstrumentAllocs</code> adds counters to each allocation site.
  * 
  * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: InstrumentAllocs.java,v 1.1.2.9 2000-11-17 00:40:13 bdemsky Exp $
+ * @version $Id: InstrumentAllocs.java,v 1.1.2.10 2000-12-06 19:45:33 bdemsky Exp $
  */
 public class InstrumentAllocs extends MethodMutator implements java.io.Serializable {
     int count;
@@ -67,7 +67,7 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 	    Iterator it=hc.getElementsI();
 	    while(it.hasNext()) {
 		Quad q=(Quad)it.next();
-		if ((q instanceof NEW)||(q instanceof ANEW)||(syncs&&(q instanceof MONITORENTER))||(callchains&&(q instanceof CALL)))
+		if ((q instanceof NEW)||(q instanceof ANEW)||(syncs&&(q instanceof MONITORENTER))||(q instanceof CALL))
 		    newset.add(q);
 	    }
 	    Iterator setit=newset.iterator();
@@ -93,33 +93,45 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 		    Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),qcall,0);
 		    Quad.addEdge(qphi,0,q,0);
 		} else if (q instanceof CALL) {
-		    try {
-			CONST qconst=new CONST(qf,q,tconst,new Integer(an.callID((Quad)ancestor.get(q))),HClass.Int);
-			CALL qcall=new CALL(qf, q, method4,new Temp[] {tconst}, null, texcept,false,false,new Temp[0][2],new Temp[0]);
+		    if (((CALL)q).method().equals(linker.forName("java.lang.System").getMethod("exit",new HClass[0]))) {
+			HMethod methode=linker.forName("harpoon.Runtime.CounterSupport").getMethod("exit",new HClass[0]);
+			Temp texc=new Temp(tf);
+			CALL qcall=new CALL(qf, q, methode,new Temp[0], null, texc,false,false,new Temp[0][2],new Temp[0]);
 			PHI qphi=new PHI(qf,q,new Temp[0],new Temp[0][2],2);
-			Quad.addEdge(qconst,0,qcall,0);
 			Quad.addEdge(qcall,0,qphi,0);
 			Quad.addEdge(qcall,1,qphi,1);
-			Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),qconst,0);
+			Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),qcall,0);
 			Quad.addEdge(qphi,0,q,0);
-
-			
-			CALL qcall2=new CALL(qf, q, method5,new Temp[] {}, null, texcept,false,false,new Temp[0][2],new Temp[0]);
-			PHI qphi2=new PHI(qf,q,new Temp[0],new Temp[0][2],2);
-			Quad.addEdge(qcall2,0,qphi2,0);
-			Quad.addEdge(qcall2,1,qphi2,1);
-			Quad.addEdge(qphi2,0,q.next(0),q.nextEdge(0).which_pred());
-			Quad.addEdge(q,0,qcall2,0);
-
-			
-			CALL qcall3=new CALL(qf, q, method5,new Temp[] {}, null, texcept,false,false,new Temp[0][2],new Temp[0]);
-			PHI qphi3=new PHI(qf,q,new Temp[0],new Temp[0][2],2);
-			Quad.addEdge(qcall3,0,qphi3,0);
-			Quad.addEdge(qcall3,1,qphi3,1);
-			Quad.addEdge(qphi3,0,q.next(1),q.nextEdge(1).which_pred());
-			Quad.addEdge(q,1,qcall3,0);
-		    } catch (Error e) {
-			//ignore
+		    }
+		    if (callchains) {
+			try {
+			    CONST qconst=new CONST(qf,q,tconst,new Integer(an.callID((Quad)ancestor.get(q))),HClass.Int);
+			    CALL qcall=new CALL(qf, q, method4,new Temp[] {tconst}, null, texcept,false,false,new Temp[0][2],new Temp[0]);
+			    PHI qphi=new PHI(qf,q,new Temp[0],new Temp[0][2],2);
+			    Quad.addEdge(qconst,0,qcall,0);
+			    Quad.addEdge(qcall,0,qphi,0);
+			    Quad.addEdge(qcall,1,qphi,1);
+			    Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),qconst,0);
+			    Quad.addEdge(qphi,0,q,0);
+			    
+			    
+			    CALL qcall2=new CALL(qf, q, method5,new Temp[] {}, null, texcept,false,false,new Temp[0][2],new Temp[0]);
+			    PHI qphi2=new PHI(qf,q,new Temp[0],new Temp[0][2],2);
+			    Quad.addEdge(qcall2,0,qphi2,0);
+			    Quad.addEdge(qcall2,1,qphi2,1);
+			    Quad.addEdge(qphi2,0,q.next(0),q.nextEdge(0).which_pred());
+			    Quad.addEdge(q,0,qcall2,0);
+			    
+			    
+			    CALL qcall3=new CALL(qf, q, method5,new Temp[] {}, null, texcept,false,false,new Temp[0][2],new Temp[0]);
+			    PHI qphi3=new PHI(qf,q,new Temp[0],new Temp[0][2],2);
+			    Quad.addEdge(qcall3,0,qphi3,0);
+			    Quad.addEdge(qcall3,1,qphi3,1);
+			    Quad.addEdge(qphi3,0,q.next(1),q.nextEdge(1).which_pred());
+			    Quad.addEdge(q,1,qcall3,0);
+			} catch (Error e) {
+			    //ignore
+			}
 		    }
 		} else {
 		    try {
