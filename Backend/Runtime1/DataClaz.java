@@ -5,11 +5,13 @@ package harpoon.Backend.Runtime1;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Maps.FieldMap;
 import harpoon.Backend.Maps.MethodMap;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HDataElement;
+import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.ALIGN;
@@ -36,7 +38,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.9 2000-01-13 23:47:40 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.10 2000-01-25 03:32:51 kkz Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -47,10 +49,10 @@ public class DataClaz extends Data {
         super("class-data", hc, f);
 	this.m_nm = f.getRuntime().nameMap;
 	this.m_tb = (TreeBuilder) f.getRuntime().treeBuilder;
-	this.root = build(hc, ch);
+	this.root = build(f, hc, ch);
     }
 
-    private HDataElement build(HClass hc, ClassHierarchy ch) {
+    private HDataElement build(Frame f, HClass hc, ClassHierarchy ch) {
 	List stmlist = new ArrayList();
 	// write the appropriate segment header
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.CLASS));
@@ -76,6 +78,8 @@ public class DataClaz extends Data {
 	// object size.
 	int size = m_tb.objectSize(hc) + m_tb.OBJECT_HEADER_SIZE;
 	stmlist.add(_DATUM(new CONST(tf, null, size)));
+	// bitmap for gc or pointer to bitmap
+      	stmlist.add(gc(f, ch));
 	// class depth.
 	int depth = m_tb.cdm.classDepth(hc);
 	stmlist.add(_DATUM(new CONST(tf, null, m_tb.POINTER_SIZE * depth)));
@@ -87,6 +91,82 @@ public class DataClaz extends Data {
 	    if (s!=null) stmlist.add(s);
 	}
 	return (HDataElement) Stm.toStm(stmlist);
+    }
+
+    /** Make gc bitmap or pointer to bitmap. */
+    private Stm gc(Frame f, ClassHierarchy ch) {
+	List stmlist = new ArrayList();
+	if (hc.isArray()) { // arrays are special
+	    long bitmap = hc.getComponentType().isPrimitive() ? 0 : 1;
+	    if (f.pointersAreLong())
+		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
+	    else
+		stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
+	    return Stm.toStm(stmlist);
+	}
+	final int MAX_SIZE = 8 * m_tb.WORD_SIZE * m_tb.POINTER_SIZE;
+	final List fields = m_tb.cfm.fieldList(hc);
+	// in-line bitmap for small objects
+	if (m_tb.objectSize(hc) <= MAX_SIZE) { // use compact encoding
+	    long bitmap = 0;
+	    for (Iterator it=fields.iterator(); it.hasNext(); ) {
+		HField hf = (HField)it.next();
+		HClass type = hf.getType();
+		if (m_tb.cfm.fieldOffset(hf)%m_tb.WORD_SIZE != 0) {
+		    Util.assert(type.isPrimitive());
+		    continue;
+		}
+		if (!type.isPrimitive()) {
+		    int i = m_tb.cfm.fieldOffset(hf) / m_tb.WORD_SIZE;
+		    Util.assert(i >= 0 && i < 8 * m_tb.POINTER_SIZE);
+		    bitmap |= (1 << (8 * m_tb.POINTER_SIZE - i - 1));
+		}
+	    }
+	    if (f.pointersAreLong())
+		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
+	    else
+		stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
+	    return Stm.toStm(stmlist);
+	}
+	// large object, encoded in auxiliary table
+	stmlist.add(_DATUM(m_nm.label(hc, "auxgc")));
+	// switch to GC segment
+	stmlist.add(new SEGMENT(tf, null, SEGMENT.GC));
+	// align things on word boundary.
+	stmlist.add(new ALIGN(tf, null, 4));
+	stmlist.add(new LABEL(tf, null, m_nm.label(hc, "auxgc"), true));
+	long bitmap = 0;
+	int begin = 0; // first offset represented in the current bitmap
+	for (Iterator it = fields.iterator(); it.hasNext(); ) {
+	    HField hf = (HField)it.next();
+	    if (m_tb.cfm.fieldOffset(hf) >= begin + MAX_SIZE) {
+		if (f.pointersAreLong())
+		    stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
+		else
+		    stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
+		begin += MAX_SIZE;
+		bitmap = 0;
+	    }
+	    HClass type = hf.getType();
+	    if (m_tb.cfm.fieldOffset(hf)%m_tb.WORD_SIZE != 0)  {
+		Util.assert(type.isPrimitive());
+		continue;
+	    }
+	    if (!type.isPrimitive()) {
+		int i = (m_tb.cfm.fieldOffset(hf) - begin) / m_tb.WORD_SIZE;
+		Util.assert(i >= 0 && i < 8 * m_tb.POINTER_SIZE);
+		bitmap |= (1 << (8 * m_tb.POINTER_SIZE - i - 1));
+	    }
+	}
+	if (f.pointersAreLong())
+	    stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
+	else
+	    stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
+	// switch back to CLASS segment
+	stmlist.add(new SEGMENT(tf, null, SEGMENT.CLASS));
+	// align things on word boundary.
+	stmlist.add(new ALIGN(tf, null, 4));
+	return Stm.toStm(stmlist);
     }
 
     /** Make class display table. */
