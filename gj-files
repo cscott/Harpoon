@@ -3,11 +3,13 @@ Util/ArrayFactory.java
 Util/ArrayIterator.java
 Util/ArraySet.java
 Util/BinaryRelation.java
+Util/BitString.java
 Util/CombineIterator.java
 Util/Default.java
 Util/EnumerationIterator.java
 Util/FilterIterator.java
 Util/Grapher.java
+Util/Indexer.java
 Util/IteratorEnumerator.java
 Util/UnmodifiableIterator.java
 Util/UnmodifiableListIterator.java
@@ -15,6 +17,7 @@ Util/Util.java
 Util/Worklist.java
 Util/Collections/AbstractMapEntry.java
 Util/Collections/AggregateSetFactory.java
+Util/Collections/BitSetFactory.java
 Util/Collections/CollectionFactory.java
 Util/Collections/CollectionWrapper.java
 Util/Collections/Factories.java
@@ -39,14 +42,23 @@ Util/Collections/UnmodifiableMultiMap.java
 Util/Collections/WorkSet.java
 
 # these have hairy dependencies.
+Analysis/BasicBlock.java
+Analysis/BasicBlockFactoryInterf.java
+Analysis/BasicBlockInterf.java
 Analysis/ClassHierarchy.java
 Analysis/DomTree.java
 Analysis/InterferenceGraph.java
 Analysis/PointsToAnalysis.java
 Analysis/Quads/QuadClassHierarchy.java
+Analysis/ReachingDefs.java
+Analysis/ReachingDefsAltImpl.java
+Analysis/ReachingDefsCachingImpl.java
+Analysis/ReachingDefsImpl.java
 Analysis/Realtime/RealtimeRuntime.java
+Analysis/SSxReachingDefsImpl.java
 Analysis/Transactions/AnalysisCheckOracle.java
 Analysis/Transactions/CheckOracle.java
+Analysis/Tree/AlignmentAnalysis.java
 Analysis/Tree/CacheEquivalence.java
 Backend/Analysis/ClassFieldMap.java
 Backend/Analysis/PackedClassFieldMap.java
