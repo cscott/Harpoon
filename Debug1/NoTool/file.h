@@ -5,7 +5,6 @@
 #define NUMBLOCK 1024
 #define LENGTH BLOCKSIZE*NUMBLOCK
 #define NUMINODES BLOCKSIZE/56
-#define NUMFILES 100
 
 struct block {
   char array[BLOCKSIZE];
@@ -48,7 +47,7 @@ struct Inode {
 };
 
 
-struct InodeBlock {
+struct InodeTable {
   struct Inode entries[NUMINODES];
 };
 
@@ -69,7 +68,7 @@ struct DirectoryBlock {
 
 
 
-void createdisk();
+struct block* createdisk();
 void createfile(struct block *ptr,char *filename, char *buf,int buflen);
 void addtode(struct block *ptr, int inode, char * filename);
 int getinode(struct block *ptr);
@@ -77,16 +76,16 @@ int getblock(struct block * ptr);
 
 void removefile(char *filename, struct block *ptr);
 void createlink(struct block *ptr,char *filename, char *linkname);
-struct block * chmountdisk(char *filename);
-void chunmountdisk(struct block *vptr);
-struct block * mountdisk(char *filename);
-void unmountdisk(struct block *vptr);
+
 void closefile(struct block *ptr, int fd);
 bool writefile(struct block *ptr, int fd, char *s);
 int writefile(struct block *ptr, int fd, char *s, int len);
 char readfile(struct block *ptr, int fd);
 int readfile(struct block *ptr, int fd, char *buf, int len);
 int openfile(struct block *ptr, char *filename);
+void printfile(char *filename, struct block *ptr);
+
+void calltool(char *text);
 
 
 #define MAXFILES 300
@@ -96,3 +95,4 @@ struct filedesc {
   bool used;
 };
 #endif
+
