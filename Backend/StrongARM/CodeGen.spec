@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.63 1999-10-14 07:14:17 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.64 1999-10-14 08:38:39 cananian Exp $
  */
 %%
 
@@ -225,6 +225,38 @@ import java.util.Iterator;
     private boolean is12BitOffset(Number n) {
 	if (n instanceof Double || n instanceof Float) return false;
 	else return is12BitOffset(n.longValue());
+    }
+    // helper for outputting constants
+    private String loadConst32(String reg, int val, String humanReadable) {
+	StringBuffer sb=new StringBuffer();
+	String MOV="mov ", ADD="add ";
+	// sometimes it is easier to load the complement of the number.
+	boolean invert = (steps(~val) < steps(val));
+	if (invert) { val=~val; MOV="mvn "; ADD="sub "; }
+	// continue until there are no more bits to load...
+	boolean first=true;
+	while (val!=0) {
+	  // get next eight-bit chunk
+	  int eight = val & (0xFF << Util.ffs(val)-1);
+	  if (first) {
+	    first=false;
+	    sb.append(MOV+reg+", #"+eight+
+		      " @ loading constant "+humanReadable);
+	  } else
+	    sb.append("\n"+ADD+reg+", "+reg+", #"+eight);
+	  // zero out the eight bit chunk we just loaded, and continue.
+	  val ^= eight;
+	}
+	if (first) return MOV+reg+", #0 @ loading constant "+humanReadable;
+	else return sb.toString();
+    }
+    /* returns the number of instructions it will take to load the
+     * specified constant. */
+    private int steps(int v) {
+	int r=0;
+	for ( ; v!=0; r++)
+	   v &= ~(0xFF << Util.ffs(v)-1);
+	return r;
     }
 %%
 %start with %{
@@ -649,98 +681,33 @@ BINOP<l>(XOR, j, k) = i %{
     emit( ROOT, "eor `d0h, `s0h, `s1h", i, j, k );
 }%
 
-
-CONST<f>(c) = i %{
-    // NOTE: this may be the wrong way to handle constants
-    Temp i = makeTemp();
-    float val = ROOT.value.floatValue();		
+CONST<l,d>(c) = i %{
+    Temp i = makeTwoWordTemp();
+    long val = (ROOT.type()==Type.LONG) ? ROOT.value.longValue()
+	: Double.doubleToLongBits(ROOT.value.doubleValue());
     emit(new Instr( instrFactory, ROOT,
-		    "mov `d0, #"+val,
+		    loadConst32("`d0l", (int)val, "lo("+ROOT.value+")"),
 		    new Temp[]{ i }, null));
-
-}%
-CONST<d>(c) = i %{
-    // NOTE: this is probably the wrong way to handle constants
-    Temp i = makeTwoWordTemp();		
-    double val = ROOT.value.doubleValue();		
+    val>>>=32;
     emit(new Instr( instrFactory, ROOT,
-		    "mov `d0l, #"+val,
+		    loadConst32("`d0h", (int)val, "hi("+ROOT.value+")"),
 		    new Temp[]{ i }, null));
-    emit(new Instr( instrFactory, ROOT,
-		    "mov `d0h, #"+val,
-		    new Temp[]{ i }, null));
-
-}%
-CONST<l>(c) = i %{
-    // NOTE: this may be the wrong way to handle constants
-    Temp i = makeTwoWordTemp();		
-    long val = ROOT.value.longValue();		
-    emit(new Instr( instrFactory, ROOT,
-		    "mov `d0l, #"+val,
-		    new Temp[]{ i }, null));
-    emit(new Instr( instrFactory, ROOT,
-		    "mov `d0h, #"+val,
-		    new Temp[]{ i }, null));
-
 }% 
 
-CONST<i>(c) = i %{
+CONST<f,i>(c) = i %{
     Temp i = makeTemp();		
-    int val = ROOT.value.intValue();
+    int val = (ROOT.type()==Type.INT) ? ROOT.value.intValue()
+	: Float.floatToIntBits(ROOT.value.floatValue());
     emit(new Instr( instrFactory, ROOT,
-		    "mov `d0, #"+val,
+		    loadConst32("`d0", val, ROOT.value.toString()),
 		    new Temp[]{ i }, null));
-
-    /*
-    boolean b0, b1, b2, b3;
-    b0 = ((val & 0x000000FF) != 0);
-    b1 = ((val & 0x0000FF00) != 0);
-    b2 = ((val & 0x00FF0000) != 0);
-    b3 = ((val & 0xFF000000) != 0);
-    if (b0) { // start here
-        emit(new Instr( instrFactory, ROOT, 
-			"mov `d0, #"+(val & 0xFF000000), 
-			new Temp[]{ i }, null));
-	b0 = false;
-    } else if (b1) {
-        emit(new Instr( instrFactory, ROOT, 
-			"mov `d0, #"+(val & 0x00FF0000), 
-			new Temp[]{ i }, null));
-	b1 = false;
-    } else if (b2) {
-        emit(new Instr( instrFactory, ROOT, 
-			"mov `d0, #"+(val & 0x0000FF00), 
-			new Temp[]{ i }, null));
-	b2 = false;
-    } else if (b3) {
-        emit(new Instr( instrFactory, ROOT, 
-			"mov `d0, #"+(val & 0x000000FF), 
-			new Temp[]{ i }, null));
-	b3 = false;
-    } else {
-        emit(new Instr( instrFactory, ROOT, 
-			"mov `d0, #"+(val & 0x00000000), 
-			new Temp[]{ i }, null));
-    }
-
-    if(b1) emit(new Instr( instrFactory, ROOT, 
-			   "orr `d0, #"+(val & 0x00FF0000), 
-			   new Temp[]{ i }, null));
-    if(b2) emit(new Instr( instrFactory, ROOT, 
-			   "orr `d0, #"+(val & 0x0000FF00), 
-			   new Temp[]{ i }, null));
-    if(b3) emit(new Instr( instrFactory, ROOT, 
-			   "orr `d0, #"+(val & 0x000000FF), 
-			   new Temp[]{ i }, null));
-*/
 }%
 
 CONST<p>(c) = i %{
     // the only CONST of type Pointer we should see is NULL
     Temp i = makeTemp();
-    int val = 0;
     emit(new Instr( instrFactory, ROOT, 
-		    "mov `d0, #0", new Temp[]{ i }, null));
+		    "mov `d0, #0 @ null", new Temp[]{ i }, null));
 }%
 
 BINOP<p,i>(MUL, j, k) = i %{
