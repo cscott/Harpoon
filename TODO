@@ -1,7 +1,8 @@
 ---- Aug-21-98
 Implement INSTANCEOF in the IR (special method? special Quad?  subclass OPER?)
 Implement CHECKCAST
-Make Temps into Leafs in Quad rep.
+O Make Temps into Leafs in Quad rep.
+  [made Leafs into Temps...]
 
 ---- Aug-7-98
 O Figure out how classes will be laid out in the JavaChip.
