@@ -14,7 +14,7 @@ import java.util.Properties;
  * <code>java.lang.System</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSystem.java,v 1.1.2.10 2000-10-18 21:47:00 cananian Exp $
+ * @version $Id: INSystem.java,v 1.1.2.11 2000-10-18 22:11:28 cananian Exp $
  */
 final class INSystem {
     static final void register(StaticState ss) {
@@ -82,8 +82,15 @@ final class INSystem {
 		ObjectRef obj = ss.makeThrowable(ss.HCarrayindexE);
 		return new InterpretedThrowable(obj, ss);
 	    }
+	    private InterpretedThrowable nul(StaticState ss)
+		throws InterpretedThrowable {
+		ObjectRef obj = ss.makeThrowable(ss.HCnullpointerE);
+		return new InterpretedThrowable(obj, ss);
+	    }
 	    Object invoke(StaticState ss, Object[] params)
 		throws InterpretedThrowable {
+		if (params[0]==null || params[2]==null)
+		    throw nul(ss); // null pointer exception
 		if (!( params[0] instanceof ArrayRef && 
 		       params[2] instanceof ArrayRef) )
 		    throw ase(ss); // array store exception
@@ -102,7 +109,6 @@ final class INSystem {
 		    src_position+length > src.length() ||
 		    dst_position+length > dst.length())
 		    throw aie(ss); // array index out of bounds
-		boolean backward = (src==dst && src_position < dst_position);
 		// arraycopy should never overwrite the stuff it's
 		// copying.  from the javadoc: "If the src and dst
 		// arguments refer to the same array object, then the
@@ -113,6 +119,7 @@ final class INSystem {
 		// array were copied into positions dstOffset through
 		// dstOffset+length-1 of the argument array." So
 		// sometimes we need to copy the array in reverse order.
+		boolean backward = (src==dst && src_position < dst_position);
 		for (int i= backward ? (length-1) : 0;
 		     backward ? (i >= 0) : (i < length);
 		     i = backward ? (i-1) : (i+1) ) {
