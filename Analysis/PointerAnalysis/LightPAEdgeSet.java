@@ -23,7 +23,7 @@ import harpoon.Temp.Temp;
  * <code>LightPAEdgeSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: LightPAEdgeSet.java,v 1.5 2002-11-27 18:29:53 salcianu Exp $
+ * @version $Id: LightPAEdgeSet.java,v 1.6 2003-05-06 15:23:50 salcianu Exp $
  */
 public class LightPAEdgeSet extends AbstrPAEdgeSet
     implements java.io.Serializable {
@@ -173,12 +173,12 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet
 
 
     public void copyEdges(PANode node, PAEdgeSet dest_es) {
-	// for efficiency reasons, treat only the homogeneous case
+	// for efficiency reasons, treat only the homogenous case
 	assert dest_es instanceof LightPAEdgeSet;
 	LightPAEdgeSet es2 = (LightPAEdgeSet) dest_es;
-	if(node_edges.containsKey(node)){
-	    LightRelation rel = (LightRelation) node_edges.get(node);
-	    es2.node_edges.put(node, rel);
+	if(node_edges.containsKey(node)) {
+	    es2.node_edges.put(node,
+			       ((LightRelation) node_edges.get(node)).clone());
 	}
     }
 
