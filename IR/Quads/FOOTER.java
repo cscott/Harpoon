@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.1.2.2 1998-12-11 22:21:04 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.1.2.3 1998-12-12 03:57:42 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW
@@ -44,6 +44,9 @@ public class FOOTER extends Quad {
     /** Remove an attachment from this FOOTER. */
     public void remove(int which_pred) {
 	prev = (Edge[]) Util.shrink(Edge.arrayFactory, prev, which_pred);
+	// CORRECT indices after shrink.  Fix by mfoltz.
+	for (int j=which_pred; j<prev.length; j++)
+	    prev[j].to_index--;
     }
 
     public int kind() { return QuadKind.FOOTER; }
