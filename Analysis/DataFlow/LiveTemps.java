@@ -26,7 +26,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.23 2001-01-13 21:45:17 cananian Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.24 2001-01-21 01:23:04 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -98,7 +98,8 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	Set universe = findUniverse(bbFact.blockSet());
 	universe.addAll(liveOnProcExit);
 	
-	mySetFactory = new BitSetFactory(universe);
+	// FSK: possible efficiency hack: change (uni) to (uni, Temp.INDEXER)
+	mySetFactory = new BitSetFactory(universe, Temp.INDEXER);
 
 	// KEY difference: set liveOnProcExit before calling initBBtoLVI
 	this.liveOnProcExit = liveOnProcExit;
@@ -274,5 +275,27 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	    }
 	}
 	return info;
+    }
+
+    /** Returns a String containing a human-readable version of the
+	analysis results.
+    */
+    public String dumpElems() {
+	StringBuffer sb = new StringBuffer();
+	sb.append("\t LIVE ON EXIT:"+liveOnProcExit+"\n");
+	
+	sb.append("\t START LiveVarInfos:\n"+ dump(false));
+
+
+	sb.append("\t FINIS LiveVarInfos");
+	int j = 0;
+	for(Iterator i=bbFact.getHCode().getElementsI(); i.hasNext();){
+	    HCodeElement h = (HCodeElement) i.next();
+	    sb.append(j+"\t"+h.toString()+"\n");
+	    sb.append("\t"+"USES:"+ud.useC(h)+"\tDEFS:"+ud.defC(h));
+	    sb.append("\t"+getLiveAfter(h)+"\n");
+	    j++;
+	}
+	return sb.toString();
     }
 }

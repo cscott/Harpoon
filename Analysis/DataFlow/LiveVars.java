@@ -48,16 +48,34 @@ import java.util.Iterator;
  * <code>UseDefer</code>s 
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.25 2001-01-13 21:45:18 cananian Exp $ */
+ * @version $Id: LiveVars.java,v 1.1.2.26 2001-01-21 01:23:05 pnkfelix Exp $ */
 public class LiveVars extends Liveness {
     
-    private static final boolean DEBUG = false; 
+    private static final boolean DEBUG = true; 
 
     LiveTemps lv;
 
     /** Constructs a new <code>LiveVars</code>.
 	Note that since the dataflow analysis is done during
+	construction, this can take a while.  
+	Uses the default <code>UseDefer</code> built into
+	<code>hc</code> for its analysis.  Requires that elements of
+	<code>hc</code> implement <code>UseDefable</code>.
+	@param hc Code to be analyzed
+	@param gr Represents control-flow information for hc
+	@param liveOnExit Set of Temps that are live on exit from hc
+     */
+    public LiveVars(HCode hc, CFGrapher gr, Set liveOnExit) {
+	this(hc, gr, UseDefer.DEFAULT, liveOnExit);
+    }
+
+    /** Constructs a new <code>LiveVars</code>.
+	Note that since the dataflow analysis is done during
 	construction, this can take a while.
+	@param hc Code to be analyzed
+	@param gr Represents control-flow information for hc
+	@param ud Represents use/def information for elements of hc
+	@param liveOnExit Set of Temps that are live on exit from hc
      */
     public LiveVars(HCode hc, CFGrapher gr, UseDefer ud, Set liveOnExit) {
 	super(hc);
@@ -220,7 +238,9 @@ public class LiveVars extends Liveness {
 	return lvi.lvOUT;
     }
 
-    public String dump() {
+    public String dump() { return dump(true); }
+
+    public String dump(boolean dumpInstrs) {
 	StringBuffer s = new StringBuffer();
 	Iterator e = bbToLvi.keySet().iterator();
 	while (e.hasNext()) {
@@ -228,9 +248,10 @@ public class LiveVars extends Liveness {
 	    s.append("BasicBlock " + bb);
 	    LiveVarInfo lvi = (LiveVarInfo) bbToLvi.get(bb);
 	    s.append("\n" + lvi);
-	    s.append(" -- " + bb + " INSTRS --\n" + 
-		     bb.dumpElems() + 
-		     " -- END " + bb + " --\n\n");
+	    if (dumpInstrs)
+		s.append(" -- " + bb + " INSTRS --\n" + 
+			 bb.dumpElems() + 
+			 " -- END " + bb + " --\n\n");
 	}
 	return s.toString();
     }
