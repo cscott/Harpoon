@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.7 1999-06-11 23:08:00 cananian Exp $
+% $Id: comdef.sty,v 1.8 1999-06-12 18:00:33 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -22,8 +22,12 @@
 \newlength{\vclength}\newsavebox{\vcbox}
 \newcommand{\vertcenter}[1]{%
   \savebox{\vcbox}{#1}\settowidth{\vclength}{\usebox{\vcbox}}%
-  \parbox[c]{\vclength}{\usebox{\vcbox}}%
-}
+  \parbox[c]{\vclength}{\usebox{\vcbox}}}
+% top-alignment
+\newlength{\vtlength}\newsavebox{\vtbox}
+\newcommand{\topalign}[1]{%
+  \savebox{\vtbox}{#1}\settowidth{\vtlength}{\usebox{\vtbox}}%
+  \parbox[t]{\vtlength}{\rule{0pt}{0pt}\\\usebox{\vtbox}}}
 
 % environment for code examples
 \ifthenelse{\boolean{@compatibility}}{}{% don't define this in 2.09 mode.
