@@ -19,7 +19,7 @@ import java.util.Set;
  * interface for non-<code>SEQ</code> <code>Stm</code>s of a tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeUseDefer.java,v 1.3.2.2 2002-03-14 01:13:27 cananian Exp $
+ * @version $Id: TreeUseDefer.java,v 1.3.2.3 2002-04-07 20:23:16 cananian Exp $
  */
 public class TreeUseDefer extends harpoon.IR.Properties.UseDefer<Tree> {
     private final Code code;
@@ -50,16 +50,10 @@ public class TreeUseDefer extends harpoon.IR.Properties.UseDefer<Tree> {
 		rt[i] = rT[i].temp;
 	    return Arrays.asList(rt);
 	}
-	/* XXX BUG IN JAVAC
 	if (tree instanceof MOVE && ((MOVE)tree).getDst() instanceof TEMP)
 	    return Collections.singleton(((TEMP) ((MOVE)tree).getDst()).temp);
 	// okay, no definitions then.
 	return Collections.EMPTY_SET;
-	*/ // SHOULD BE ABLE TO USE THE VERSION ABOVE, BUT JAVAC IS BROKEN.
-	Collection<Temp> c = new ArrayList<Temp>(1);
-	if (tree instanceof MOVE && ((MOVE)tree).getDst() instanceof TEMP)
-	    c.add(((TEMP) ((MOVE)tree).getDst()).temp);
-	return c;
     }
     /** Returns a collection of <code>Temp</code>s which are used by the
      *  statement/expression subtree rooted at <code>hce</code>. */

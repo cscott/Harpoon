@@ -32,7 +32,7 @@ import java.util.HashMap;
  * over all the statements in the BasicBlock again.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsCachingImpl.java,v 1.2.2.1 2002-03-14 19:47:33 cananian Exp $
+ * @version $Id: ReachingDefsCachingImpl.java,v 1.2.2.2 2002-04-07 20:22:49 cananian Exp $
  */
 public class ReachingDefsCachingImpl<HCE extends HCodeElement>
     extends ReachingDefsAltImpl<HCE> {
@@ -103,7 +103,7 @@ public class ReachingDefsCachingImpl<HCE extends HCodeElement>
 	    Collection<Temp> defC = null;
 	    // special treatment of TYPECAST
 	    if(check_typecast && (curr instanceof TYPECAST))
-		defC = Collections_singleton(((TYPECAST)curr).objectref());
+		defC = Collections.singleton(((TYPECAST)curr).objectref());
 	    else
 		defC = ud.defC(curr);
 
@@ -112,9 +112,5 @@ public class ReachingDefsCachingImpl<HCE extends HCodeElement>
 	}
 
 	return hceToResults.get(hce);
-    }
-    // XXX BUG IN JAVAC this is a workaround.
-    private <T> Set<T> Collections_singleton(T hce) {
-	return new harpoon.Util.ArraySet<T>(new T[] { hce } );
     }
 }

@@ -21,7 +21,7 @@ import java.util.Set;
  * standard <code>ReachingDefsImpl</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSxReachingDefsImpl.java,v 1.3.2.2 2002-03-14 19:47:33 cananian Exp $
+ * @version $Id: SSxReachingDefsImpl.java,v 1.3.2.3 2002-04-07 20:22:49 cananian Exp $
  */
 public class SSxReachingDefsImpl<HCE extends HCodeElement>
     extends ReachingDefs<HCE> {
@@ -29,8 +29,7 @@ public class SSxReachingDefsImpl<HCE extends HCodeElement>
     /** Create an <code>SSxReachingDefs</code> using the default
      *  <code>UseDefer</code>. */
     public SSxReachingDefsImpl(HCode<HCE> hc) {
-	// XXX BUG IN JAVAC cast to UseDefer shouldn't be needed.
-	this(hc, (UseDefer) UseDefer.DEFAULT);
+	this(hc, UseDefer.DEFAULT);
     }
     /** Create an <code>SSxReachingDefs</code> for <code>hc</code>
      *  using the specified <code>UseDefer</code>. */
@@ -46,11 +45,7 @@ public class SSxReachingDefsImpl<HCE extends HCodeElement>
 	}
     }
     public Set<HCE> reachingDefs(HCE hce, Temp t) {
-	/* XXX BUG IN JAVAC
 	if (!m.containsKey(t)) return Collections.EMPTY_SET;
 	return Collections.singleton(m.get(t));
-	*/
-	if (!m.containsKey(t)) return harpoon.Util.Default.EMPTY_SET();
-	return new harpoon.Util.ArraySet<HCE>(new HCE[] { m.get(t) });
     }
 }

@@ -29,7 +29,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.3.2.2 2002-03-14 19:47:33 cananian Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.3.2.3 2002-04-07 20:22:49 cananian Exp $
  */
 public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE> {
     final private CFGrapher<HCE> cfger;
@@ -46,8 +46,7 @@ public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE
 	This may take a while since the analysis is done at this time. 
     */
     public ReachingDefsImpl(HCode<HCE> hc, CFGrapher<HCE> cfger) {
-	// XXX BUG IN JAVAC cast to UseDefer shouldn't be needed.
-	this(hc, cfger, (UseDefer) UseDefer.DEFAULT);
+	this(hc, cfger, UseDefer.DEFAULT);
     }
     /** Creates a <code>ReachingDefsImpl</code> object for the
 	provided <code>HCode</code> using the provided 
@@ -69,8 +68,7 @@ public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE
 	This may take a while since the analysis is done at this time.
     */
     public ReachingDefsImpl(HCode<HCE> hc) {
-	// XXX BUG IN JAVAC cast to CFGrapher shouldn't be needed.
-	this(hc, (CFGrapher) CFGrapher.DEFAULT);
+	this(hc, CFGrapher.DEFAULT);
     }
     /** Returns the Set of <code>HCodeElement</code>s providing definitions
      *  of <code>Temp</code> <code>t</code> which reach 
@@ -81,8 +79,7 @@ public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE
 	BasicBlock<HCE> b = bbf.getBlock(hce);
 	if (b == null) {
 	    // dead code, no definitions reach
-	    //return java.util.Collections.EMPTY_SET; // XXX BUG IN JAVAC
-	    return Default.EMPTY_SET();
+	    return java.util.Collections.EMPTY_SET;
 	}
 	// get the map for the BasicBlock
 	Map<Temp,Set<HCE>[]> m = cache.get(b);
@@ -99,15 +96,11 @@ public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE
 	    Collection<Temp> defC = null;
 	    // special treatment of TYPECAST
 	    if(check_typecast && (curr instanceof TYPECAST))
-		// XXX BUG IN JAVAC
-		//defC = Collections.singleton(((TYPECAST)curr).objectref());
-		{ defC = new HashSet<Temp>(); defC.add(((TYPECAST)curr).objectref()); }
+		defC = Collections.singleton(((TYPECAST)curr).objectref());
 	    else
 		defC = ud.defC(curr);
 	    if (defC.contains(t)) 
-		// XXX BUG IN JAVAC
-		//results = bsf.makeSet(Collections.singleton(curr));
-		{ results = bsf.makeSet(); results.add(curr); }
+		results = bsf.makeSet(Collections.singleton(curr));
 	}
 	assert false;
 	return null; // should never happen
@@ -218,9 +211,7 @@ public class ReachingDefsImpl<HCE extends HCodeElement> extends ReachingDefs<HCE
 		    BitSetFactory<HCE> bsf 
 			= Temp_to_BitSetFactories.get(t);
 		    Set<HCE>[] bitSets =new Set<HCE>[4]; // 0 is Gen, 1 is Kill
-		    // XXX BUG IN JAVAC
-		    //bitSets[GEN] = bsf.makeSet(Collections.singleton(hce));
-		    { bitSets[GEN] = bsf.makeSet(); bitSets[GEN].add(hce); }
+		    bitSets[GEN] = bsf.makeSet(Collections.singleton(hce));
 		    Set<HCE> kill = new HashSet<HCE>(DefPts.get(t));
 		    kill.remove(hce);
 		    bitSets[KILL] = bsf.makeSet(kill);

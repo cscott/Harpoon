@@ -63,7 +63,7 @@ import java.util.Collection;
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BasicBlock.java,v 1.3.2.2 2002-03-14 10:20:18 cananian Exp $ */
+ * @version $Id: BasicBlock.java,v 1.3.2.3 2002-04-07 20:22:47 cananian Exp $ */
 public class BasicBlock<HCE extends HCodeElement>
     implements BasicBlockInterf<HCE,BasicBlock<HCE>>, java.io.Serializable {
     
@@ -531,8 +531,7 @@ public class BasicBlock<HCE extends HCodeElement>
 		 <code>this(code, CFGrapher.DEFAULT);</code> 
 	*/
 	public Factory(HCode<HCE> code) {
-	    // XXX BUG IN JAVAC cast to CFGrapher shouldn't be necessary.
-	    this(code, (CFGrapher) CFGrapher.DEFAULT);
+	    this(code, CFGrapher.DEFAULT);
 	}
 
 	/** Constructs a <code>BasicBlock.Factory</code> and generates
