@@ -35,12 +35,13 @@ import java.util.Set;
  * possibly access (either directly, or via a method call), and whether
  * the given method will ever acquire/release a lock (either directly, or
  * via a method call).  This analysis is useful for determining which
- * memory optimizations are safe across a given method call.
+ * memory optimizations are safe across a given method call (and
+ * other things).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldSyncOracle.java,v 1.1.2.3 2001-06-18 14:12:55 cananian Exp $
+ * @version $Id: FieldSyncOracle.java,v 1.1.2.4 2001-11-07 15:54:06 cananian Exp $
  */
-class FieldSyncOracle {
+public class FieldSyncOracle {
     final MultiMap fieldsRead, fieldsWritten;
     final Set syncMethods = new HashSet();
     /** Returns <code>true</code> if <code>HMethod</code>
