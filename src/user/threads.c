@@ -32,7 +32,7 @@ void context_switch()
     return;
   }
   gtl = gtl->next;
-  restorethread();
+  startnext();
 }
 
 void transfer() {
@@ -60,11 +60,17 @@ void transfer() {
     tl->next=tl;
     tl->prev=tl;
   }
+  startnext();
+}
+
+void startnext() {
   /* Moved threads...*/
   /*  if (gtl==NULL) */
+  if ((gtl==NULL)&&(ioptr==NULL))
+    exit(0);
   while(1) {
 #ifdef WITH_EVENT_DRIVEN
-    if ((ioptr!=NULL)&&(gtl==NULL))
+    if (ioptr!=NULL)
       doFDs();
 #endif
     if (gtl!=NULL)
@@ -93,7 +99,7 @@ void SchedulerAddWrite(int fd) {
 }
 
 void doFDs() {
-  int * fd=getFDsintSEL(1);/*1 for no timeout*/
+  int * fd=getFDsintSEL(0);/*1 for no timeout*/
   struct thread_list *tl=ioptr,*tmp;
   int start=0;
   while((tl!=ioptr)||(start==0)) {
@@ -154,8 +160,10 @@ void exitthread() {
     machdep_restore_float_state();
     machdep_restore_state();
     return;
-  } else
-    exit(0);
+  } else {
+    gtl=NULL;
+    startnext();
+  }
 }
 
 void inituser(int *bottom) {

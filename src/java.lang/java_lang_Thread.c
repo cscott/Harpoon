@@ -86,7 +86,7 @@ static void add_running_thread(const pthread_t thr) {
 static void remove_running_thread(void *cl) {
 }  
 static void wait_on_running_thread() {
-  while((gtl!=gtl->next)&&ioptr==NULL) {
+  while((gtl!=gtl->next)&&(ioptr!=NULL)) {
     context_switch();
   }
 }
