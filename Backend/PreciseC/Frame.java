@@ -41,7 +41,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.2 2000-06-29 23:39:50 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.3 2000-07-12 03:55:23 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -62,7 +62,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
 	    alloc_strategy.equalsIgnoreCase("nifty") ?
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new harpoon.Backend.Runtime1.NiftyAllocationStrategy(this) :
+	    new PGCNiftyAllocationStrategy(this) :
 	    alloc_strategy.equalsIgnoreCase("bdw") ?
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.BDWAllocationStrategy(this) :
