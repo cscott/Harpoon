@@ -467,6 +467,7 @@ jboolean fni_thread_isAlive(JNIEnv *env, jobject _this) {
 static inline
 jint fni_thread_countStackFrames(JNIEnv *env, jobject _this) {
   assert(0); /* unimplemented */
+  return 0; /* shut up the warning */
 }
 
 /*

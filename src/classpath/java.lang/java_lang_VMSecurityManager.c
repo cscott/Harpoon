@@ -13,6 +13,7 @@
 JNIEXPORT jobjectArray JNICALL Java_java_lang_VMSecurityManager_getClassContext
   (JNIEnv *env, jclass cls) {
     assert(0);
+    return NULL;
 }
 
 /*
@@ -23,4 +24,5 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_VMSecurityManager_getClassContext
 JNIEXPORT jobject JNICALL Java_java_lang_VMSecurityManager_currentClassLoader
   (JNIEnv *env, jclass cls) {
     assert(0);
+    return NULL;
 }

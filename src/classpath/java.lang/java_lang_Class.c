@@ -115,6 +115,7 @@ JNIEXPORT jint JNICALL Java_java_lang_Class_getModifiers
 JNIEXPORT jclass JNICALL Java_java_lang_Class_getDeclaringClass
   (JNIEnv *env, jobject cls) {
     assert(0); /* unimplemented */
+    return NULL;
 }
 
 /*
@@ -125,6 +126,7 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_getDeclaringClass
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getClasses
   (JNIEnv *env, jobject cls) {
     assert(0); /* unimplemented */
+    return NULL;
 }
 
 /*
@@ -196,6 +198,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_Class_getConstructor
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getDeclaredClasses
   (JNIEnv *env, jobject cls) {
     assert(0); /* unimplemented */
+    return NULL;
 }
 
 /*

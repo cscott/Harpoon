@@ -25,6 +25,7 @@ char REFLECT_getDescriptor(JNIEnv *env, jclass clazz) {
   case 'l': if (strcmp(info->name, "long")==0) return 'J';
   case 's': if (strcmp(info->name, "short")==0) return 'S';
   default: assert(0); /* not a valid primitive type name */
+    return 'X'; /* shut up warnings */
   }
 }
 
@@ -53,6 +54,7 @@ jclass REFLECT_parseDescriptor(JNIEnv *env, const char *desc) {
 	  return (*env)->FindClass(env, buf);
       }
     default: assert(0); /* illegal signature */
+      name="bad-sig";
     }
     /* it's a primitive class */
     return fni_class_getPrimitiveClass
@@ -95,6 +97,7 @@ jobject REFLECT_wrapPrimitive(JNIEnv *env, jvalue unwrapped, char type) {
   case 'F': classname="java/lang/Float"; break;
   case 'D': classname="java/lang/Double"; break;
   default: assert(0); /* not the signature of a primitive type! */
+    return NULL; /* shut up warnings */
   }
   /* look up wrapper class */
   wrapclaz = (*env)->FindClass(env, classname);
@@ -156,6 +159,7 @@ jvalue REFLECT_unwrapPrimitive(JNIEnv *env, jobject wrapped, char desiredsig) {
     goto error;
   default:
     assert(0); /* not a valid signature */
+    goto error;
   }
 
  character:
@@ -170,6 +174,7 @@ jvalue REFLECT_unwrapPrimitive(JNIEnv *env, jobject wrapped, char desiredsig) {
   case 'F': result.f = result.c; return result;
   case 'D': result.d = result.c; return result;
   default: assert(0); /* not a valid widening from character! */
+    goto error;
   }
 
  number:
@@ -188,6 +193,7 @@ jvalue REFLECT_unwrapPrimitive(JNIEnv *env, jobject wrapped, char desiredsig) {
   NUMBERCASE('D', "doubleValue","()D", d, Double);
 #undef NUMBERCASE
   default: assert(0); /* not a valid subtype of Number! */
+    goto error;
   }
 
  error:

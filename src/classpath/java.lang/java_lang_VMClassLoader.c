@@ -15,6 +15,7 @@ JNIEXPORT jclass JNICALL Java_java_lang_VMClassLoader_defineClass
   (JNIEnv *env, jclass cls, jobject cl, jstring name,
    jbyteArray data, jint offset, jint len, jobject pd) {
     assert(0); /* unimplemented */
+    return NULL;
 }
 
 /*
