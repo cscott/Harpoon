@@ -8,14 +8,16 @@
  * C. Scott Ananian, cananian@princeton.edu, COS320
  */
 
-package RegAlloc;
+package harpoon.Backend.CSAHack.RegAlloc;
 
-import Temp.Temp;
-import Temp.TempList;
+import harpoon.Temp.Temp;
+import harpoon.Temp.TempList;
 
-import Graph.Node;
-import Graph.NodeList;
-import FlowGraph.FlowGraph;
+import harpoon.Backend.CSAHack.Graph.Node;
+import harpoon.Backend.CSAHack.Graph.NodeList;
+import harpoon.Backend.CSAHack.FlowGraph.FlowGraph;
+
+import harpoon.Util.WorkSet;
 
 import java.util.Vector;
 import java.util.Hashtable;
@@ -40,8 +42,8 @@ public class Liveness extends InterferenceGraph {
    */
   public Liveness(FlowGraph flow) {
 
-    Vector worklist = new Vector();
-    DFS(flow.nodes().head, worklist); // add some nodes to worklist.
+    WorkSet worklist = new WorkSet();
+    DFS(flow.nodes().head, worklist, false); // add some nodes to worklist.
 
     // create table of TempSets to represent liveIn and liveOut
     Hashtable liveIn = new Hashtable();
@@ -53,8 +55,7 @@ public class Liveness extends InterferenceGraph {
 
     // Worklist algorithm for computing liveness.
     while(!worklist.isEmpty()) {
-      Node n = (Node) worklist.elementAt(0);
-      worklist.removeElementAt(0);
+      Node n = (Node) worklist.pop();
 
       TempSet out= (TempSet) liveOut.get(n);
       TempSet in = (TempSet) liveIn.get(n);
@@ -77,8 +78,7 @@ public class Liveness extends InterferenceGraph {
       if (in.hasChanged()) {
 	// add all the predecessors of this node to the worklist.
 	for (NodeList nl = n.pred(); nl!=null; nl=nl.tail)
-	  if (!worklist.contains(nl.head))
-	    worklist.addElement(nl.head);
+	    worklist.add(nl.head);
       }
     }
     // done!
@@ -115,22 +115,21 @@ public class Liveness extends InterferenceGraph {
 				tnode(flow.def(nl.head).head),
 				movelist);
   }
-  // do a depth-first search to find 'last' node(s)
-  private void DFS(Node n, Vector worklist) {
-    Set mark = new Set();
-    DFS(n, worklist, mark);
-  }
-  private void DFS(Node n, Vector worklist, Set mark) {
-    boolean lowermost = true;
 
+  // add all nodes in (reverse) DFS order.
+  private void DFS(Node n, WorkSet worklist, boolean reverse) {
+    Set mark = new Set();
+    DFS(n, worklist, mark, reverse);
+  }
+  private void DFS(Node n, WorkSet worklist, Set mark, boolean reverse) {
     mark.add(n);
+    if (!reverse) worklist.add(n);
     for (NodeList nl=n.succ(); nl!=null; nl=nl.tail) {
       if (!mark.contains(nl.head)) {
-	DFS(nl.head, worklist, mark); // add all lower nodes first.
-	lowermost = false;
+	DFS(nl.head, worklist, mark, reverse); // add all lower nodes.
       }
     }
-    if (lowermost) worklist.addElement(n); // add just lowermost nodes.
+    if (reverse) worklist.add(n);
   }
 
   // Create nodes and edges of interference graph from the liveness
@@ -233,11 +232,11 @@ public class Liveness extends InterferenceGraph {
 
 /**
  * Sub-class to associate a temporary with a Graph.Node.
- * @see Temp.Temp
+ * @see harpoon.Temp.Temp
  */
-class TempNode extends Graph.Node {
+class TempNode extends harpoon.Backend.CSAHack.Graph.Node {
   Temp temp;
-  TempNode(Graph.Graph g, Temp t) {
+  TempNode(harpoon.Backend.CSAHack.Graph.Graph g, Temp t) {
     super(g);
     temp = t;
   }

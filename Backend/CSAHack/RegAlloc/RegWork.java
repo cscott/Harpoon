@@ -5,10 +5,11 @@
  * C. Scott Ananian, cananian@princeton.edu, COS320
  */
 
-package RegAlloc;
+package harpoon.Backend.CSAHack.RegAlloc;
 
-import Graph.Node;
-import Graph.NodeList;
+import harpoon.Backend.CSAHack.Graph.Node;
+import harpoon.Backend.CSAHack.Graph.NodeList;
+import harpoon.Temp.TempList;
 
 import java.util.Hashtable;
 import java.util.Stack;
@@ -30,12 +31,12 @@ class NodeSet {
 
   int correctsize;
 
-  NodeSet(Temp.TempList registers, InterferenceGraph ig) {
+  NodeSet(TempList registers, InterferenceGraph ig) {
 //    precolored.live = initial.live = worklist.simplify.live =
 //      worklist.freeze.live = worklist.spill.live = spilled.live = 
 //	coalesced.live = colored.live = ig;
     // initialize sets. (only precolored and initial are non-empty)
-    for (Graph.NodeList nl = ig.nodes(); nl!=null; nl=nl.tail)
+    for (NodeList nl = ig.nodes(); nl!=null; nl=nl.tail)
       initial.add(nl.head);
     for ( ; registers!= null; registers=registers.tail) {
       Node n = ig.tnode(registers.head);
@@ -62,7 +63,7 @@ class Moves {
   Set worklist		= new Set("worklistMoves");
   Set active		= new Set("activeMoves");
 
-  Moves(FlowGraph.FlowGraph fg) {
+  Moves(harpoon.Backend.CSAHack.FlowGraph.FlowGraph fg) {
     for (NodeList nl = fg.nodes(); nl!=null; nl=nl.tail)
       if (fg.isMove(nl.head))
 	worklist.add(nl.head);

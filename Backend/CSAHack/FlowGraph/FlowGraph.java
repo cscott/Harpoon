@@ -1,8 +1,9 @@
-package FlowGraph;
-import Temp.TempList;
-import Temp.Temp;
-import Graph.NodeList;
-import Graph.Node;
+package harpoon.Backend.CSAHack.FlowGraph;
+
+import harpoon.Temp.TempList;
+import harpoon.Temp.Temp;
+import harpoon.Backend.CSAHack.Graph.NodeList;
+import harpoon.Backend.CSAHack.Graph.Node;
 
 /**
  * A control flow graph is a directed graph in which each edge
@@ -14,7 +15,7 @@ import Graph.Node;
  * @see AssemFlowGraph
  */
 
-public abstract class FlowGraph extends Graph.Graph {
+public abstract class FlowGraph extends harpoon.Backend.CSAHack.Graph.Graph {
  /**
   * The set of temporaries defined by this instruction or block 
   */

@@ -1,7 +1,7 @@
-package RegAlloc;
+package harpoon.Backend.CSAHack.RegAlloc;
 
-import Graph.Node;
-import Graph.NodeList;
+import harpoon.Backend.CSAHack.Graph.Node;
+import harpoon.Backend.CSAHack.Graph.NodeList;
 
 import java.util.Hashtable;
 import java.util.Stack;

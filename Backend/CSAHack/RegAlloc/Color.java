@@ -8,16 +8,16 @@
  * C. Scott Ananian, cananian@princeton.edu, COS320
  */
 
-package RegAlloc;
+package harpoon.Backend.CSAHack.RegAlloc;
 
-import Graph.Node;
-import Graph.NodeList;
+import harpoon.Backend.CSAHack.Graph.Node;
+import harpoon.Backend.CSAHack.Graph.NodeList;
 
-import Temp.Temp;
-import Temp.TempList;
-import Temp.TempMap;
+import harpoon.Temp.Temp;
+import harpoon.Temp.TempList;
+import harpoon.Temp.TempMap;
 
-import FlowGraph.FlowGraph;
+import harpoon.Backend.CSAHack.FlowGraph.FlowGraph;
 
 import java.util.Vector;
 import java.util.Hashtable;
@@ -28,7 +28,7 @@ import java.util.Hashtable;
  * @author	C. Scott Ananian
  * @see	RegAlloc.RegAlloc
  */
-class Color implements Temp.TempMap {
+class Color implements TempMap {
   FlowGraph flow;
   InterferenceGraph ig;
   TempList registers;
@@ -64,7 +64,7 @@ class Color implements Temp.TempMap {
     this.registers = registers;
     this.initial = initial;
     // Set K to the number of registers
-    for (Temp.TempList tl = registers; tl!=null; tl=tl.tail)
+    for (TempList tl = registers; tl!=null; tl=tl.tail)
       reg.addElement(tl.head);
     K = reg.size();
 
@@ -108,9 +108,9 @@ class Color implements Temp.TempMap {
     moveList = new Hashtable();
     for (NodeList nl = flow.nodes(); nl!=null; nl=nl.tail) {
       if (flow.isMove(nl.head)) {
-	for (Temp.TempList tl = merge(flow.use(nl.head),flow.def(nl.head));
+	for (TempList tl = merge(flow.use(nl.head),flow.def(nl.head));
 	     tl!=null; tl=tl.tail) {
-	  Graph.Node tempnode = ig.tnode(tl.head);
+	  Node tempnode = ig.tnode(tl.head);
 	  // quick error check hack
 	  if (tempnode == null) // this should never happen!
 	    throw new Error("Interference graph doesn't contain a node "+
@@ -268,10 +268,11 @@ class Color implements Temp.TempMap {
 //    }
   }
   int getColor(Temp w) {
+    harpoon.Util.Util.assert(color.get(w)!=null, "No color for "+w);
     return ((Integer)color.get(w)).intValue();
   }
 
-  public String tempMap(Temp t) {
+  public Temp tempMap(Temp t) {
     return initial.tempMap((Temp)reg.elementAt(getColor(t)));
   }
 
@@ -402,8 +403,8 @@ if (sets.worklist.spill.contains(m)) {
     }
     return r;
   }
-  Temp.TempList merge(Temp.TempList a, Temp.TempList b) {
-    Temp.TempList p, r=null;
+  TempList merge(TempList a, TempList b) {
+    TempList p, r=null;
     for (p=a; p!=null; p=p.tail) { 
       r=new TempList(p.head, r);
     }

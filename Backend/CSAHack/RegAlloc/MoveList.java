@@ -1,9 +1,11 @@
-package RegAlloc;
+package harpoon.Backend.CSAHack.RegAlloc;
+
+import harpoon.Backend.CSAHack.Graph.Node;
 
 public class MoveList {
-   public Graph.Node src, dst;
+   public Node src, dst;
    public MoveList tail;
-   public MoveList(Graph.Node s, Graph.Node d, MoveList t) {
+   public MoveList(Node s, Node d, MoveList t) {
 	src=s; dst=d; tail=t;
    }
 }

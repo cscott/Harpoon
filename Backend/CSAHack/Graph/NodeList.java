@@ -1,4 +1,4 @@
-package Graph;
+package harpoon.Backend.CSAHack.Graph;
 public class NodeList {
   public Node head;
   public NodeList tail;
