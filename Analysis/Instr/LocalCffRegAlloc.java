@@ -69,7 +69,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.117 2000-11-10 19:54:41 cananian Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.118 2000-11-14 22:45:19 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -77,6 +77,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 	new RegAlloc.Factory() {
 	    public RegAlloc makeRegAlloc(Code c) {
 		return new LocalCffRegAlloc(c);
+	    }
+	};
+
+    static RegAlloc.Factory RD_DISABLED_FACTORY = 
+	new RegAlloc.Factory() {
+	    public RegAlloc makeRegAlloc(Code c) {
+		return new LocalCffRegAlloc(c, false);
 	    }
 	};
 
@@ -111,6 +118,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 
     /** Creates a <code>LocalCffRegAlloc</code>. */
     public LocalCffRegAlloc(Code code) {
+	this(code, true);
+    }
+    private LocalCffRegAlloc(Code code, boolean enableRD) {
         super(code);
 	allRegC = frame.getRegFileInfo().getAllRegistersC();
 	genRegC = frame.getRegFileInfo().getGeneralRegistersC();
@@ -119,11 +129,14 @@ public class LocalCffRegAlloc extends RegAlloc {
 	tempToRemovedInstrs = new HashMap();
 	if (TIME) System.out.print("D");
 	// reachingDefs = new ReachingDefsCachingImpl(code);
-	reachingDefs = new ReachingDefsAltImpl(code);
+	if (enableRD) 
+	    reachingDefs = new ReachingDefsAltImpl(code);
     }
 
     private Instr definition(Instr i, Temp t) {
-	if (i.defC().contains(t)) { 
+	if (i.defC().contains(t) 
+	    || reachingDefs == null // FSK: yuck yuck yuck
+	    ) { 
 	    // System.out.print(" d");
 	    return i;
 	} else {
