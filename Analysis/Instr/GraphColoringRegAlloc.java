@@ -57,7 +57,7 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.31 2000-08-27 22:49:39 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.32 2000-08-28 06:29:29 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -69,7 +69,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     private static final boolean STATS = false;
 
-    private static final boolean COALESCE_STATS = true;
+    private static final boolean COALESCE_STATS = false;
 
     public static RegAlloc.Factory FACTORY =
 	new RegAlloc.Factory() {
@@ -260,7 +260,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    Instr orig = (Instr) replToOrig.get(repl);   
 	    Instr.replace(repl, orig);
 	}
+	replToOrig.clear();
 	willRemoveLater.clear();
+	webPrecolor.clear();
+	// remap = EqTempSets.make(this, false);
+	remap = new EqWebRecords();
     }
 
     protected Derivation getDerivation() {
@@ -270,6 +274,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		return getBack((Instr)h);
 	    }
 	    private Temp orig(HCodeElement h, Temp t) {
+		Util.assert(false);
 		Temp t2 = null;
 		Instr inst = (Instr) orig(h);
 		Iterator rs = new
@@ -277,7 +282,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 				    inst.useC().iterator());
 		while(rs.hasNext()) {
 		    t2 = (Temp) rs.next();
-		    if (remap.tempMap(t2).equals(t)) 
+		    // if (remap.tempMap(t2).equals(t)) 
 			break;
 		}
 		Util.assert(t2 != null);
@@ -293,7 +298,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		Temp t2 = orig(hce, t);
 		try {
 		    return Derivation.DList.rename
-			(oldD.derivation(hce2, t2), remap);
+			(oldD.derivation(hce2, t2), null); // remap);
 		} catch (TypeNotKnownException e) {
 		    System.out.println("called derivation("+hce+","+t+")");
 		    System.out.println("die on derivation("+hce2+","+t2+")");
@@ -522,6 +527,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		    doCoalescing = false;
 		    undoCoalescing();
 		} else {
+		    // doCoalescing = true;
 		    genSpillCode(u, graph);
 		}
 	    }
@@ -817,12 +823,18 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	return adjMtx;
     }
 
-    Set willRemoveLater;
-    EqTempSets remap = EqTempSets.make(this, false);
+    Set willRemoveLater = new HashSet(); // Set<Instr>
+    // EqTempSets remap = EqTempSets.make(this, false);
+    EqWebRecords remap = new EqWebRecords();
+
     /** returns the set of removed Instrs. */
     private Set coalesceRegs(AdjMtx adjMtx) { 
+	// RESET DATA STRUCTURES
 	HashSet willRemoveNow = new HashSet(); // Set<Instr>
-	willRemoveLater = new HashSet(); // Set<Instr> 
+	willRemoveLater.clear();
+	webPrecolor.clear();
+	// remap = EqTempSets.make(this, false);
+	remap = new EqWebRecords();
 
 	// ANALYZE
 	for(Iterator is=code.getElementsI(); is.hasNext();) {
@@ -860,7 +872,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 			webPrecolor.put(wDef, use);
 			willRemoveLater.add(i);
 		    } else {
-			remap.union(def, use);
+			remap.union(wDef, wUse);
 			willRemoveNow.add(i);
 		    }
 		}
@@ -872,18 +884,22 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    for(Iterator is=code.getElementsI(); is.hasNext();) {
 		Instr i= (Instr) is.next();
 		if (willRemoveNow.contains(i)) {
-		    replace(i, new InstrMOVEproxy(i).rename(remap)); 
+		    replace(i, new InstrMOVEproxy(remap.rename(i)));
 		} else {
 		    Iterator itr = new
 			CombineIterator(i.useC().iterator(),
 					i.defC().iterator());
 		    while(itr.hasNext()) {
 			Temp t = (Temp) itr.next();
-			if (!remap.tempMap(t).equals(t)) {
-			    Instr repl = i.rename(remap);
+			
+			//if (!remap.tempMap(t).equals(t)) {
+			if (remap.containsTemp(t)) {
+			    Instr repl = remap.rename(i);
 			    replace(i, repl);
-			    if (willRemoveLater.contains(i))
+			    if (willRemoveLater.contains(i)) {
+				willRemoveLater.remove(i);
 				willRemoveLater.add(repl);
+			    }
 			    break;
 			}
 		    }
@@ -971,8 +987,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	}
 	public Instr rename(InstrFactory inf,
 			    TempMap defMap, TempMap useMap) {
-	    return new SpillProxy(instr.rename(inf, defMap, useMap),
-				  useMap.tempMap(tmp));
+	    Instr i = new SpillProxy(instr,
+				     // instr.rename(inf, defMap, useMap),
+				     useMap.tempMap(tmp));
+	    System.out.println(this+".rename() => "+i);
+	    return i;
 	}
 	
     }
@@ -989,8 +1008,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	}
 	public Instr rename(InstrFactory inf,
 			    TempMap defMap, TempMap useMap){
-	    return new RestoreProxy(instr.rename(inf,defMap,useMap),
-				    defMap.tempMap(tmp));
+	    Instr i = new RestoreProxy(instr,
+				       //instr.rename(inf,defMap,useMap),
+				       defMap.tempMap(tmp));
+	    System.out.println(this+".rename() => "+i);
+	    return i;
 	}
     }
 
@@ -1754,6 +1776,30 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    else       return offset(y) + x;
 	}
 	private int offset(int x) { return (x * (x - 1)) / 2; }
+    }
+
+    // only defined for unions of WebRecords
+    class EqWebRecords extends harpoon.Util.DisjointSet {
+	private HashSet temps = new HashSet();
+	public boolean containsTemp(Temp t) {
+	    return temps.contains(t);
+	}
+	public Instr rename(final Instr i) {
+	    TempMap tmap = new TempMap() { 
+		public Temp tempMap(Temp tmp) {
+		    WebRecord wr = getWR(i,tmp);
+		    if (wr == null) return tmp;
+		    wr = (WebRecord) find(wr);
+		    return wr.temp();
+		}
+	    };
+	    return i.rename(tmap);
+	}
+	public void union(Object a, Object b) {
+	    temps.add( ((WebRecord)a).temp() );
+	    temps.add( ((WebRecord)b).temp() );
+	    super.union(a, b);
+	}
     }
 
 }
