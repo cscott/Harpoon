@@ -28,7 +28,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.26 2000-02-14 21:49:34 cananian Exp $
+ * @version $Id: Tree.java,v 1.1.2.27 2000-02-15 03:00:14 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
@@ -106,6 +106,7 @@ public abstract class Tree
      * siblings to the right of this node. 
      */ 
     public final Tree getSibling() {
+	Util.assert(parent!=null); // don't call getSibling() on the root!
 	Util.assert(this==parent.child[which_child_of_parent]);
 	int c = which_child_of_parent + 1;
 	return parent.child.length > c ? parent.child[c] : null;
