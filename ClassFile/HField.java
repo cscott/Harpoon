@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
-import gnu.bytecode.*;
 import java.lang.reflect.Modifier;
 
 /**
@@ -12,7 +11,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.15 1998-11-10 00:44:38 cananian Exp $
+ * @version $Id: HField.java,v 1.15.2.1 1998-11-22 02:35:34 cananian Exp $
  * @see HMember
  * @see HClass
  */
