@@ -75,7 +75,7 @@ public class RepairGenerator {
 	CodeWriter crhead = new StandardCodeWriter(this.outputhead);
 	CodeWriter craux = new StandardCodeWriter(this.outputaux);
 	crhead.outputline("};");
-	craux.outputline("};");
+	craux.outputline("}");
 	generate_updates();
     }
 
@@ -316,12 +316,6 @@ public class RepairGenerator {
     
     private void generate_teardown() {
 	CodeWriter cr = new StandardCodeWriter(outputaux);        
-	cr.outputline("if ("+repairtable.getSafeSymbol()+")");
-	cr.outputline("delete "+repairtable.getSafeSymbol()+";");
-	cr.outputline("if ("+oldmodel.getSafeSymbol()+")");
-	cr.outputline("delete "+oldmodel.getSafeSymbol()+";");
-	cr.outputline("delete "+newmodel.getSafeSymbol()+";");
-	cr.outputline("delete "+worklist.getSafeSymbol()+";");
 	cr.endblock();
     }
 
@@ -471,6 +465,7 @@ public class RepairGenerator {
         cr2.outputline("exit(1);");
         cr2.endblock();
         // end block created for worklist
+	cr2.outputline(worklist.getSafeSymbol()+"->pop();");
         cr2.endblock();
     }
 
@@ -542,8 +537,11 @@ public class RepairGenerator {
 		VarDescriptor mincost=VarDescriptor.makeNew("mincost");
 		VarDescriptor mincostindex=VarDescriptor.makeNew("mincostindex");
 		DNFConstraint dnfconst=constraint.dnfconstraint;
-		cr.outputline("int "+mincostindex.getSafeSymbol()+";");
+		if (dnfconst.size()<=1) {
+		    cr.outputline("int "+mincostindex.getSafeSymbol()+"=0;");
+		}
 		if (dnfconst.size()>1) {
+		    cr.outputline("int "+mincostindex.getSafeSymbol()+";");
 		    boolean first=true;
 		    for(int j=0;j<dnfconst.size();j++) {
 			Conjunction conj=dnfconst.get(j);
@@ -621,7 +619,7 @@ public class RepairGenerator {
 		cr.outputline("if ("+oldmodel.getSafeSymbol()+")");
 		cr.outputline("delete "+oldmodel.getSafeSymbol()+";");
 		cr.outputline(oldmodel.getSafeSymbol()+"="+newmodel.getSafeSymbol()+";");
-		cr.outputline("break;");  /* Rebuild model and all */
+		cr.outputline("goto rebuild;");  /* Rebuild model and all */
 
                 cr.endblock();
 
@@ -630,7 +628,17 @@ public class RepairGenerator {
                     cr.endblock();
                 }
 		cr.outputline("if ("+goodflag.getSafeSymbol()+")");
+		cr.startblock();
+		cr.outputline("if ("+repairtable.getSafeSymbol()+")");
+		cr.outputline("delete "+repairtable.getSafeSymbol()+";");
+		cr.outputline("if ("+oldmodel.getSafeSymbol()+")");
+		cr.outputline("delete "+oldmodel.getSafeSymbol()+";");
+		cr.outputline("delete "+newmodel.getSafeSymbol()+";");
+		cr.outputline("delete "+worklist.getSafeSymbol()+";");
 		cr.outputline("break;");
+		cr.endblock();
+		cr.outputline("rebuild:");
+		cr.outputline(";");
                 cr.endblock();
                 cr.outputline("");
                 cr.outputline("");

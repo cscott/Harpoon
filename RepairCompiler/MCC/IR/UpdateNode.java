@@ -219,7 +219,7 @@ class UpdateNode {
 	    VarDescriptor left=VarDescriptor.makeNew("left");
 	    u.getLeftExpr().generate(cr,left);
 	    Opcode op=u.getOpcode();
-	    cr.outputline("if ("+left.getSafeSymbol()+op+right.getSafeSymbol()+")");
+	    cr.outputline("if (!("+left.getSafeSymbol()+op+right.getSafeSymbol()+"))");
 	    cr.startblock();
 
 	    if (op==Opcode.GT)
