@@ -19,8 +19,9 @@ public class GameServer2 {
 	ServerSocket s= new ServerSocket(port);
 	
 	while(true) {
-	    GWorker w1= new GWorker(s.accept());
-	    GWorker w2= new GWorker(s.accept());
+	    Lock sema=new Lock();
+	    GWorker w1= new GWorker(s.accept(),sema);
+	    GWorker w2= new GWorker(s.accept(),sema);
 
 	    w1.init(w2, "Player 1");
 	    w2.init(w1, null);
@@ -30,23 +31,27 @@ public class GameServer2 {
 	}
     }
 
+    static class Lock {
+	public boolean lock;
+    }
+
     static class GWorker extends Thread 
     {
 	Socket s;
 	InputStream is;
 	OutputStream os;
 	PrintStream ps;
-
+	Lock lock;
 	GWorker partner;
 	
-	public GWorker(Socket s) 
+	public GWorker(Socket s, Lock sema) 
 	{
 	    this.s= s;
 	    try {
 		is= s.getInputStream();
 		os= s.getOutputStream();
 		ps= new PrintStream(os);
-
+		lock=sema;
 	    } catch (IOException e) {
 		System.err.print("Got: ");
 		e.printStackTrace(System.err);
@@ -66,21 +71,42 @@ public class GameServer2 {
 
 		while(true) {
 		    int length= is.read(buffer, 0, buflen);
-		    synchronized (this) {
-			if (length==-1 || partner == null) break;
-			partner.os.write(buffer, 0, length);
+		    synchronized (lock) {
+			lock.lock=true;
+		    }
+		    
+		    if (length==-1 || partner == null) break;
+		    partner.os.write(buffer, 0, length);
+
+		    synchronized (lock) {
+			lock.lock=false;
+			lock.notify();
 		    }
 		}
-		if (partner != null)
-		    synchronized(partner) {		
+
+		synchronized(lock) {		
+		    while(lock.lock==true)
+			try {
+			    lock.wait();
+			} catch (InterruptedException ee) {}
+		    if (partner != null)
 			partner.partner= null;
-		    }
+		}
 
 	        s.close();
 
 	    } catch (IOException e) {
-		System.err.print("Got: ");
-		e.printStackTrace(System.err);
+		synchronized(lock) {		
+		    while(lock.lock==true)
+			try {
+			    lock.wait();
+			} catch (InterruptedException ee) {}
+		    if (partner != null)
+			partner.partner= null;
+		}
+		try {
+		    s.close();
+		} catch (Exception ee) {}
 	    }
 	}
     }
