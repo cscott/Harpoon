@@ -16,7 +16,7 @@ import java.io.PrintWriter;
  * <code>TreeCode</code>.  In short, a CGG generates a Code Generator.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.7 1999-06-30 20:43:32 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.8 1999-06-30 20:47:56 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -114,7 +114,7 @@ public abstract class CodeGeneratorGenerator {
 	     <code>this.spec</code>, define variables for the action
 	     statements in the pattern to refer to.  These variables
 	     are:<OL>
-	     <LI>The <code>Spec.ExpId</code>objects defined in the
+	     <LI>The <code>Spec.ExpId</code> objects defined in the
   	         pattern.  Note that this does not include the
 		 <code>Spec.RuleExp.result_id</code> of the whole
 		 Pattern; it is the responsibility of the action code
