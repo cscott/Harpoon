@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.19 2000-01-07 19:34:47 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.20 2000-01-07 20:37:49 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -61,8 +61,8 @@ public class AsyncCode {
      *         the <code>Map</code> mapping blocking methods to the
      *         new Asynchronous version
      *  @param async_todo
-     *         the <code>Set</code> of methods to build HCodes for the 
-     *         asynchronous versions
+     *         the <code>Set</code> of old HCodes for methods to build HCodes 
+     *         for the asynchronous versions
      *  @param liveness
      *         results of liveness analysis
      *  @param blockingcalls
@@ -339,13 +339,12 @@ public class AsyncCode {
 		Temp oldrtemp=
 		    (resumeexception == 0) ?
 		    ((CALL)q).retval():((CALL)q).retex();
-		Temp newrtemp=ctmap.tempMap(oldrtemp);
 		Temp[] params=null;
 		if (oldrtemp==null)
 		    params=new Temp[1];
 		else {
 		    params=new Temp[2];
-		    params[1]=newrtemp;
+		    params[1]=ctmap.tempMap(oldrtemp);
 		}
 		params[0]=tthis;
 		HEADER header=new HEADER(qf,first);
@@ -438,11 +437,11 @@ public class AsyncCode {
 		HMethod resume=null;
 		if (hc.getMethod().getReturnType()!=HClass.Void)
 		    resume=
-			hfield.getType().getDeclaredMethod("resume",
-							   new HClass[] {hc.getMethod().getReturnType()});
+			hfield.getType().getMethod("resume",
+						   new HClass[] {hc.getMethod().getReturnType()});
 		else
-		    resume=hfield.getType().getDeclaredMethod("resume",
-							      new HClass[0]);
+		    resume=hfield.getType().getMethod("resume",
+						      new HClass[0]);
 		Temp tnext=new Temp(tf);
 		GET get=new GET(hcode.getFactory(),q,
 				tnext, hfield, tthis);
@@ -583,16 +582,16 @@ public class AsyncCode {
 	    if (blockingcalls.contains(q.method())) {
 		if (!cont_map.containsKey(q)) {
 		    cont_todo.add(q);
-		    HClass hclass=createContinuation(q.method(),  q,
+		    HClass hclass=createContinuation(hc.getMethod(),  q,
 						     ucf); 
 		    cont_map.put(q,hclass);
-		    HMethod hm=((CALL) q).method();
+		    HMethod hm=q.method();
 		    if (!old2new.containsKey(hm)) {
 			if (bm.swop(hm)!=null) {
 			    //handle actual blocking call swapping
 			    old2new.put(hm, bm.swop(hm));
 			} else {
-			    async_todo.add(hm);
+			    async_todo.add(ucf.convert(hm));
 			    HMethod temp=makeAsync(old2new, q.method(),
 						   ucf, classMap);
 			}
@@ -660,13 +659,9 @@ public class AsyncCode {
 				    tnext, hfield, tthis);
 		    Quad.addEdge(call3,0,get,0);
 		    //XXXX TEST
-		    System.out.println(hcode.getMethod());
 		    String pref2 =
 			ContBuilder.getPrefix(hc.getMethod().getReturnType());
 		    //Debug
-		    HMethod[] methods=contclass.getMethods();
-		    for (int ii=0;ii<methods.length;ii++)
-			System.out.println(methods[ii].toString());
 		    HMethod setnextmethod2=
 			contclass.getMethod("setNext",
 					    new HClass[] {HClass.forName("harpoon.Analysis.ContBuilder."+pref2+"ResultContinuation")});
