@@ -1,8 +1,6 @@
 import java.io.*; // Import the package names to be 
 import java.net.*; // used by this application. 
 import java.util.*; 
-import javax.realtime.RealtimeThread;
-import javax.realtime.CTMemory;
 
 /** 
 * This is an application which implements our stock 
@@ -27,13 +25,35 @@ public class QuoteServer {
     // A boolean used to keep the server looping until 
     // interrupted. 
     private boolean keepRunning = true; 
+    private static final int NO_RTJ = 0;
+    private static final int CT_MEMORY = 1;
+    private static final int VT_MEMORY = 2;
+    private static boolean stats = false;
+    private static int RTJ_alloc_method;
+    private static long ctsize;
 
     /** 
      * Starts up the application. 
      * @param args Ignored command line arguments. 
      */ 
     public static void main(String[] args) { 
-	QuoteServer.SERVER_PORT=Integer.parseInt(args[0]);
+	try {
+	    QuoteServer.SERVER_PORT=Integer.parseInt(args[0]);
+	    if (args[1].equalsIgnoreCase("noRTJ")) {
+		RTJ_alloc_method = NO_RTJ;
+	    } else if (args[1].equalsIgnoreCase("CT")) {
+		RTJ_alloc_method = CT_MEMORY;
+		QuoteServer.stats = args[2].equalsIgnoreCase("stats");
+		QuoteServer.ctsize = Long.parseLong(args[3]);
+	    } else if (args[1].equalsIgnoreCase("VT")) {
+		RTJ_alloc_method = VT_MEMORY;
+		QuoteServer.stats = args[2].equalsIgnoreCase("stats");
+	    }
+	} catch (Exception e) {
+	    System.out.println("java QuoteServer <port> <noRTJ | CT | VT> [stats | nostats] [ctsize]");
+	    System.exit(1);
+	}
+
 	QuoteServer server = new QuoteServer(); 
 	server.serveQuotes(); 
     } 
@@ -117,9 +137,10 @@ public class QuoteServer {
      */ 
     public void serveQuotes() { 
 	Socket clientSocket = null; 
-	
+	int numSockets = 0;
+
 	try { 
-	    while(keepRunning) { 
+	    while (keepRunning && ((!stats) || (numSockets < 2450))) { 
 		// Accept a new client. 
 		clientSocket = listenSocket.accept(); 
 		// Ensure that the data file hasn't changed; if 
@@ -134,18 +155,45 @@ public class QuoteServer {
 		startserver(clientSocket,stockInfo);
 	    } 
 	    listenSocket.close(); 
+	    if (stats) {
+		Thread.sleep(60000);
+		javax.realtime.Stats.print();
+		System.exit(1);
+	    }
 	} catch(IOException excpt) { 
 	    System.err.println("Failed I/O: "+ excpt); 
-	} 
-    } 
-
+	} catch(InterruptedException ex) {
+	    System.err.println("Interrupted while waiting for threads to finish.");
+	}
+    }
+    
     public static void startserver(Socket clientSocket, String[] stockInfo) {
-	StockQuoteHandler newHandler = new 
-	    StockQuoteHandler(clientSocket,stockInfo);
-	
-	RealtimeThread newHandlerThread = 
-	    new RealtimeThread(new CTMemory(100000), newHandler); 
+	StockQuoteHandler newHandler = 
+	    new StockQuoteHandler(clientSocket,stockInfo);
 
+	Thread newHandlerThread = null;
+	switch (RTJ_alloc_method) {
+	case NO_RTJ: {
+	    newHandlerThread = new Thread(newHandler);
+	    break;
+	}
+	case CT_MEMORY: {
+	    newHandlerThread = 
+		new javax.realtime.RealtimeThread(new javax.realtime.CTMemory(ctsize), 
+						  newHandler);
+	    break;
+	}
+	case VT_MEMORY: {
+	    newHandlerThread = 
+		new javax.realtime.RealtimeThread(new javax.realtime.VTMemory(1000, 1000), 
+						  newHandler);
+	    break;
+	}
+	default: {
+	    System.out.println("Wrong memory area type!");
+	    System.exit(-1);
+	}
+	}
 	newHandlerThread.start(); 
     }
 
