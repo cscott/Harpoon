@@ -2,6 +2,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Test.PA.Test20;
 
+import harpoon.Test.PA.Str2StrMap;
+
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.BufferedReader;
@@ -15,7 +17,7 @@ import java.net.Socket;
  * <code>PhoneWorker</code> process requests to the phone server.
  *
  * @author P.Govereau govereau@mit.edu
- * @version $Id: PhoneWorker.java,v 1.2 2000-04-02 23:01:25 govereau Exp $
+ * @version $Id: PhoneWorker.java,v 1.3 2000-04-03 00:49:42 govereau Exp $
  */
 public class PhoneWorker extends Thread {
 	private Str2StrMap theMap;

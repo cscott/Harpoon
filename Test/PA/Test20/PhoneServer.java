@@ -2,6 +2,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Test.PA.Test20;
 
+import harpoon.Test.PA.Str2StrMap;
+
 //import java.io.*;
 import java.io.IOException;
 import java.net.Socket;
@@ -12,7 +14,7 @@ import java.net.ServerSocket;
  * worker threads
  *
  * @author P.Govereau govereau@mit.edu
- * @version $Id: PhoneServer.java,v 1.1 2000-04-02 22:37:43 govereau Exp $
+ * @version $Id: PhoneServer.java,v 1.2 2000-04-03 00:49:42 govereau Exp $
  */
 public class PhoneServer extends Thread {
 	private ServerSocket socket;
