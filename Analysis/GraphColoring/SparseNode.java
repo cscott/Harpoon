@@ -5,14 +5,14 @@ import harpoon.Util.UniqueVector;
 import java.util.Enumeration;
 
 /**
- * <code>SparseNode</code> is an implementation of a ColorableNode for
+ * <code>SparseNode</code> is an extension of a ColorableNode for
  * use with the SparseGraph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseNode.java,v 1.1.2.4 1999-01-19 16:08:00 pnkfelix Exp $ 
+ * @version $Id: SparseNode.java,v 1.1.2.5 1999-01-21 23:16:18 pnkfelix Exp $ 
  */
 
-public class SparseNode extends ColorableNode {
+public abstract class SparseNode extends ColorableNode {
     
     private UniqueVector toNodes;
     private UniqueVector fromNodes;
