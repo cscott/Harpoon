@@ -53,7 +53,7 @@ void transfer() {
   if (ioptr!=NULL) {
     tl->next=ioptr;
     tl->prev=ioptr->prev;
-    ioptr->prev=tl;
+    tl->next->prev=tl;
     tl->prev->next=tl;
   } else {
     ioptr=tl;
@@ -93,7 +93,7 @@ void SchedulerAddWrite(int fd) {
 }
 
 void doFDs() {
-  int * fd=getFDsintSEL(0);/*1 for no timeout*/
+  int * fd=getFDsintSEL(1);/*1 for no timeout*/
   struct thread_list *tl=ioptr,*tmp;
   int start=0;
   while((tl!=ioptr)||(start==0)) {
@@ -104,7 +104,7 @@ void doFDs() {
       /*Make it active!*/
       /*Remove from io queue*/
       tmp=tl->next;
-      tmp->prev=tl->prev;
+      tl->next->prev=tl->prev;
       tl->prev->next=tmp;
 
       /* Add to execute queue */
@@ -184,7 +184,7 @@ void addwaitthread(user_mutex_t *x) {
   gtl->syncrdwr=0;
   gtl->lnext=x->tl;
   x->tl=gtl;
-  transfer();  
+  transfer();
 }
 
 void wakewaitthread(user_mutex_t *x) {
@@ -192,6 +192,15 @@ void wakewaitthread(user_mutex_t *x) {
   tl=x->tl;
   if (tl!=NULL) {
     x->tl=tl->lnext;
+    /*Remove from previous list*/
+    tl->prev->next=tl->next;
+    tl->next->prev=tl->prev;
+    if (ioptr==tl) {
+      if (tl->next==tl)
+	ioptr=NULL;
+      else
+	ioptr=tl->next;
+    }
     tl->next=gtl->next;
     tl->prev=gtl;
     tl->prev->next=tl;
@@ -251,6 +260,16 @@ void wakeacondthread(user_cond_t *x) {
   tl=x->tl;
   if (tl!=NULL) {
     x->tl=tl->lnext;
+    /*Remove from previous list*/
+    tl->prev->next=tl->next;
+    tl->next->prev=tl->prev;
+    if (ioptr==tl) {
+      if (tl->next==tl)
+	ioptr=NULL;
+      else
+	ioptr=tl->next;
+    }
+
     tl->next=gtl->next;
     tl->prev=gtl;
     tl->prev->next=tl;
@@ -263,6 +282,16 @@ void wakeallcondthread(user_cond_t *x) {
   tl=x->tl;
   while (tl!=NULL) {
     x->tl=tl->lnext;
+    /*Remove from previous list*/
+    tl->prev->next=tl->next;
+    tl->next->prev=tl->prev;
+    if (ioptr==tl) {
+      if (tl->next==tl)
+	ioptr=NULL;
+      else
+	ioptr=tl->next;
+    }
+
     tl->next=gtl->next;
     tl->prev=gtl;
     tl->prev->next=tl;
@@ -273,7 +302,6 @@ void wakeallcondthread(user_cond_t *x) {
 
 int user_cond_wait(user_cond_t *cond, user_mutex_t *mutex) {
   /*Only one thread so this will work...*/
-  long count=cond->counter;
   user_mutex_unlock(mutex);
   /*Previous 2 lines need to be atomic!!!!*/
   addcontthread(cond);
@@ -289,3 +317,5 @@ int user_cond_destroy(user_cond_t *cond) {
   return 0;
 }
 #endif
+
+

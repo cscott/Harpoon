@@ -86,7 +86,7 @@ static void add_running_thread(const pthread_t thr) {
 static void remove_running_thread(void *cl) {
 }  
 static void wait_on_running_thread() {
-  while(gtl!=gtl->next) {
+  while((gtl!=gtl->next)&&ioptr==NULL) {
     context_switch();
   }
 }
@@ -424,10 +424,10 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
 
 
 
-  //LOCK ON GTL
+  /*LOCK ON GTL*/
   tl->next=gtl->next;
   tl->prev=gtl;
-  gtl->next=tl;
+  tl->prev->next=tl;
   tl->next->prev=tl;
   
 
