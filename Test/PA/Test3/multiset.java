@@ -12,7 +12,7 @@ package harpoon.Test.PA.Test3;
  <code>multisetElement.insert</code> is the interesting method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: multiset.java,v 1.1.2.1 2000-02-24 23:57:34 salcianu Exp $
+ * @version $Id: multiset.java,v 1.1.2.2 2000-03-01 01:25:28 salcianu Exp $
  */
 public class multiset {
 
@@ -38,7 +38,6 @@ public class multiset {
 	ms.addElement(new Integer(1));
     }
 }
-
 
 class multisetElement{
     Object element;
