@@ -1,6 +1,6 @@
 #include "config.h"
-#include <assert.h>
 #ifdef WITH_USER_THREADS
+#include <assert.h>
 #include "threads.h"
 #include <errno.h>
 #include "memstats.h"
@@ -46,9 +46,8 @@ void transfer()
 void transfer(struct thread_queue_struct * mthread)
 #endif
 {
-  struct thread_list *tl;
-
 #ifndef WITH_REALTIME_THREADS
+  struct thread_list *tl;
   machdep_save_float_state(&(gtl->mthread));
   if (machdep_save_state()) {
     return;
@@ -282,7 +281,6 @@ void exitthread() {
 }
 
 void inituser(int *bottom) {
-  void * stack;
 #ifdef WITH_REALTIME_JAVA
   struct thread_list * tl = 
     (struct thread_list *)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct thread_list));
@@ -399,7 +397,22 @@ int user_mutex_trylock(user_mutex_t *x) {
   if (test==SEMAPHORE_CLEAR)
     return 0;
   else {
+#ifndef WITH_REALTIME_THREADS
+    // This is a tricky one -
+    // Without this, bdemsky's user threads can livelock in the
+    // following code: 
+    // while (try_lock) do stuff;
     context_switch();
+#else
+    // But with RTJ, we need to guarantee a thread's quanta as much as
+    // possible.  Therefore, RTJ may need to switch when the quanta is up or 
+    // when the thread is blocked - but at NO OTHER TIME.
+    //
+    // Perhaps the scheduler should be informed of this to make
+    // wise scheduling policy decisions - but I'm gonna wait until 
+    // I put the scheduler lock informing code in place...
+
+#endif
     return EBUSY;
   }
 }
@@ -453,9 +466,8 @@ void addcontthread(user_cond_t *x) {
 }
 
 void wakeacondthread(user_cond_t *x) {
-  struct thread_list *tl;
-
 #ifndef WITH_REALTIME_THREADS
+  struct thread_list *tl;
   tl=x->tl;
   if (tl!=NULL) {
     x->tl=tl->lnext;
@@ -490,8 +502,8 @@ void wakeacondthread(user_cond_t *x) {
 }
 
 void wakeallcondthread(user_cond_t *x) {
-  struct thread_list *tl;
 #ifndef WITH_REALTIME_THREADS
+  struct thread_list *tl;
   tl=x->tl;
   while (tl!=NULL) {
     x->tl=tl->lnext;
@@ -535,10 +547,11 @@ int user_cond_wait(user_cond_t *cond, user_mutex_t *mutex) {
   addcontthread(cond);
   /*grab the lock again*/
   user_mutex_lock(mutex);
+  return 0;
 }
 
 int user_cond_timedwait(user_cond_t *cond, user_mutex_t *mutex, const struct timespec *abstime) {
-  user_cond_wait(cond,mutex);
+  return user_cond_wait(cond,mutex);
 }
 
 int user_cond_destroy(user_cond_t *cond) {
