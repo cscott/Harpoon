@@ -217,5 +217,13 @@ class RefList {
 	    return s+"]";
 	}
     }
+
+    public void printNoAlloc() {
+	NoHeapRealtimeThread.print("[");
+	for (Elt newElt = elt; newElt != null; newElt = newElt.next) {
+	    NoHeapRealtimeThread.print(newElt.obj.toString());
+	}
+	NoHeapRealtimeThread.print("]");     
+    }
 }
 

@@ -53,8 +53,8 @@ package javax.realtime;
  *  </ul>
  */
 public abstract class ScopedMemory extends MemoryArea {
-    protected Object portal;
     private int count = 0;
+    public static final boolean checkPortals = false;
 
     /** <code>logic.run()</code> is executed when <code>enter()</code> is called. */
     protected Runnable logic;
@@ -66,8 +66,8 @@ public abstract class ScopedMemory extends MemoryArea {
      */
     public ScopedMemory(long size) {
 	super(size);
-	portal = null;
 	scoped = true;
+	setPortal(null);
     }
 
     /** Create a new <code>ScopedMemory</code> with the given parameters.
@@ -105,7 +105,6 @@ public abstract class ScopedMemory extends MemoryArea {
 
     public ScopedMemory(long minimum, long maximum) {
 	super(minimum, maximum);
-	portal = null;
 	scoped = true;
     }
 
@@ -154,8 +153,54 @@ public abstract class ScopedMemory extends MemoryArea {
      *
      *  @return A reference to the portal object or null if there is no portal object.
      */
-    public Object getPortal() {
-	return portal;
+  public Object getPortal() {
+        if (checkPortals && 
+	    (!checkPortalStacks(portalMemAreaStack, 
+				RealtimeThread.currentRealtimeThread().memAreaStack))) {
+	    throw new Error("Compressed MemAreaStacks do not agree");
+	}
+	return getPortalObj();
+    }
+
+    private MemAreaStack portalMemAreaStack = null;
+
+    private native void DECREF();
+    private native void INCREF();
+    private native void setPortalObj(Object o);
+    private native Object getPortalObj();
+
+    // Check this when I have time.
+    private static boolean checkPortalStacks(MemAreaStack memAreaStack1,
+					     MemAreaStack memAreaStack2) {
+	// It must be the case that 
+	// compressed(memAreaStack1)<=compressed(memAreaStack2)
+	if (memAreaStack1 == null) return true;
+
+	while (memAreaStack1 != null) {
+	    if (memAreaStack2 == null) {
+		return false;
+	    }
+	    if (memAreaStack1.next == null) {
+		while ((memAreaStack2 != null)&&
+		       (memAreaStack1.entry == memAreaStack2.entry)) {
+		    if (memAreaStack2.next == null) {
+			return true;
+		    }
+		    memAreaStack2 = memAreaStack2.next;
+		}
+		return false;
+	    }
+
+	    while (memAreaStack1.next.first(memAreaStack1.entry) != null) {
+		memAreaStack1 = memAreaStack1.next;
+	    }
+	    
+	    // hmmm...
+	    while (memAreaStack2.next.first(memAreaStack1.entry) != null)
+	    memAreaStack2 = memAreaStack2.first(memAreaStack1.entry);
+	    memAreaStack1 = memAreaStack1.next;
+	}
+	return memAreaStack2 == null;
     }
 
     /** Returns the reference count of this <code>ScopedMemory</code>. The reference
@@ -256,17 +301,35 @@ public abstract class ScopedMemory extends MemoryArea {
     }
 
     /** Set the argument to the portal object in the memory area represented by this instance
-     *  of <code>ScopedMemory</code>.
+     *  of <code>ScopedMemory</code>.  Note there is no synchronization
+     *  on this method.  It is assumed that synchronization will be done
+     *  at a higher level.
      *
      *  @param object The object which will become the portal for <code>this</code>. If null
      *                the previous portal object remains the portal object for <code>this</code>
      *                or if there was no previous portal object then there is still no
      *                portal object for <code>this</code>.
      */
-    public void setPortal(Object object) {
-	if (this.equals(MemoryArea.getMemoryArea(object))) portal = object;
+    public void setPortal(Object o) {
+//      This check requires tagging....
+//  	if (o.memoryArea!=this) {
+//  	    throw new Error("Portal object not allocated out of this.");
+//  	}
+	if ((portalMemAreaStack == null)&&(o != null)) {
+	    INCREF();
+	}
+	if ((portalMemAreaStack != null)&&(o == null)) {
+	    DECREF();
+	}
+	if (o != null) {
+	    portalMemAreaStack = 
+		RealtimeThread.currentRealtimeThread().memAreaStack;
+	} else {
+	    portalMemAreaStack = null;
+	}
+	setPortalObj(o);
     }
-
+    
     /** Returns a user-friendly representation of this <code>ScopedMemory</code>.
      *
      *  @return The string representation.

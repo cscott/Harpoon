@@ -86,5 +86,6 @@ public class NativeScheduler extends Scheduler {
 
     protected void waitForNextPeriod(RealtimeThread rt) {}
 
-
+    public void printNoAlloc() {
+    }
 }

@@ -19,7 +19,7 @@ public class DebugScheduler extends Scheduler {
 
     protected DebugScheduler() {
 	super();
-	setQuanta(1); // Start switching after a specified number of milliseconds
+	setQuanta(0); // Start switching after a specified number of milliseconds
     }
 
     /** Return an instance of a DebugScheduler */
@@ -76,7 +76,7 @@ public class DebugScheduler extends Scheduler {
     }
 
     protected long chooseThread(long currentTime) {
-	setQuanta(1); // Switch again after a specified number of milliseconds.
+	setQuanta(0); // Switch again after a specified number of milliseconds.
 	try {
 	    return ((Long)iterator.next()).longValue();
 	} catch (NoSuchElementException e) {
@@ -163,5 +163,13 @@ public class DebugScheduler extends Scheduler {
 
     public String toString() {
 	return "["+threadList+","+disabledThreads+"]";
+    }
+
+    public void printNoAlloc() {
+	NoHeapRealtimeThread.print("[");
+	threadList.printNoAlloc();
+	NoHeapRealtimeThread.print(",");
+	disabledThreads.printNoAlloc();
+	NoHeapRealtimeThread.print("]");
     }
 }

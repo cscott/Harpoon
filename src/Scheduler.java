@@ -62,7 +62,7 @@ public abstract class Scheduler {
      */
     public static Scheduler getDefaultScheduler() {
 	if (defaultScheduler == null) {
-	    setDefaultScheduler(NativeScheduler.instance());
+	    setDefaultScheduler(RoundRobinScheduler.instance());
 	    return getDefaultScheduler();
 	}
 	return defaultScheduler;
@@ -182,6 +182,9 @@ public abstract class Scheduler {
     /** Cause the thread to block until the next period */
     protected abstract void waitForNextPeriod(RealtimeThread rt);
 
+    /** Print out the scheduler without allocating from the heap. */
+    public abstract void printNoAlloc();
+
     /** Switch every <code>microsecs</code> microseconds */
     protected final native void setQuanta(long microsecs);
 
@@ -197,9 +200,10 @@ public abstract class Scheduler {
 	if (sched == null) {
 	    sched = Scheduler.getDefaultScheduler();
 	}
-	MemoryArea.startMem(vt);
-	NoHeapRealtimeThread.print("\n"+sched.getPolicyName()+": "+sched);
-	MemoryArea.stopMem();
+	NoHeapRealtimeThread.print("\n");
+	NoHeapRealtimeThread.print(sched.getPolicyName());
+	NoHeapRealtimeThread.print(": ");
+	sched.printNoAlloc();
     }
 
    /** Run the runnable in an atomic section */
@@ -254,7 +258,6 @@ public abstract class Scheduler {
 
     final static void jDisableThread(final RealtimeThread rt, 
 				     final long threadID) {
-	NoHeapRealtimeThread.print("\njDisableThread("+threadID+")");
 	disabledThreads++;
 	MemoryArea.startMem(vt);
 	Scheduler sched;
@@ -273,7 +276,6 @@ public abstract class Scheduler {
     
     final static void jEnableThread(final RealtimeThread rt, 
 				    final long threadID) {
-	NoHeapRealtimeThread.print("\njEnableThread("+threadID+")");
 	disabledThreads--;
 	MemoryArea.startMem(vt);
 	Scheduler sched;
@@ -305,7 +307,6 @@ public abstract class Scheduler {
 
     /** Return the total number of active threads in the system. */
     final static long jNumThreads() { 
-        NoHeapRealtimeThread.print("\nActive threads: "+(totalThreads-disabledThreads));
 	return totalThreads-disabledThreads;
     }
 

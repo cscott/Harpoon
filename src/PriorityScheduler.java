@@ -463,4 +463,7 @@ public class PriorityScheduler extends Scheduler {
     public String toString() {
 	return "";
     }
+
+    public void printNoAlloc() {
+    }
 }

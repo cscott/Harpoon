@@ -158,7 +158,8 @@ public abstract class MemoryArea {
 					     "just exited.");
 	    }
 	    current.exitMem();
-	    throw new ThrowBoundaryError(e.toString());
+//	    throw new ThrowBoundaryError(e.toString());
+	    throw new ThrowBoundaryError();
 	}
 	current.exitMem();
     }
@@ -444,8 +445,4 @@ public abstract class MemoryArea {
     public String toString() {
 	return String.valueOf(id);
     }
-
-    public void setPortal(Object o) {}
-    
-    public Object getPortal() { return this; }
 }
