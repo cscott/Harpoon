@@ -7,6 +7,8 @@ import harpoon.Util.Util;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.PreciseType;
 import harpoon.IR.Tree.SEGMENT;
+import harpoon.IR.Tree.Bop;
+import harpoon.IR.Tree.Uop;
 
 import java.io.PrintWriter;
 import java.util.Comparator;
@@ -26,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.33 1999-08-26 04:41:01 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.34 1999-08-26 04:50:12 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -50,6 +52,9 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
     private static final String TREE_TEMP = "harpoon.IR.Tree.TEMP";
     private static final String TREE_THROW = "harpoon.IR.Tree.THROW";
     private static final String TREE_UNOP = "harpoon.IR.Tree.UNOP";
+
+    private static final String TREE_BOP = "harpoon.IR.Tree.Bop";
+    private static final String TREE_UOP = "harpoon.IR.Tree.Uop";
 
     private static final String TREE_Tree = "harpoon.IR.Tree.Tree";
     private static final String TREE_ExpList = "harpoon.IR.Tree.ExpList";
@@ -485,7 +490,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		}
 		public void visit(Spec.LeafOp l) {
 		    append(exp, "// check opcode");
-		    append(exp, "&& ((" + TREE_BINOP + ")" + expPrefix + ").op == " + l.op);
+		    append(exp, "&& ((" + TREE_BINOP + ")" + expPrefix + ").op == " + TREE_BOP+"."+Bop.toString(l.op).toUpperCase());
 		}
 		public void visit(Spec.LeafId l) {
 		    append(initStms, "int " + l.id + " = ((" + TREE_BINOP + ") " + 
@@ -678,7 +683,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		}
 		public void visit(Spec.LeafOp l) {
 		    append(exp, "// check opcode");
-		    append(exp, "&& ((" + TREE_UNOP + ")" + expPrefix + ").op == " + l.op);
+		    append(exp, "&& ((" + TREE_UNOP + ")" + expPrefix + ").op == " + TREE_UOP+"."+Uop.toString(l.op).toUpperCase());
 		}
 		public void visit(Spec.LeafId l) {
 		    append(initStms, "int " + l.id + " = ((" + TREE_UNOP + ") " + 
