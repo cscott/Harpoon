@@ -11,7 +11,7 @@ for d in `\ls -A`; do   # looping through all directories
     if [ -d $d ]; then
 	cd $d
 	echo -e "\nUpdating $d...\n"
-	cvs update -A   # Updating each directory
+	cvs update -AP   # Updating each directory
 	cd ..
     fi
 done

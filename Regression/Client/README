@@ -33,6 +33,16 @@ REQUIRED FILES
 tasks-configure:
 ----------------
 
+	Each line of the file must have the following format: <task_name>:<config_line>
+
+		<task_name> -- The name of the task which requires a special configuration
+		<config_line> -- The usual "./configure [options]" lines, that you use when you recompile Runtime.
+
+		EXAMPLES:
+			tasks-configure:
+				HelloWorld:./configure  --with-precise-c --with-gc=copying --with-thread-model=user --with-event-driven --disable-shared --with-all-static -with-realtime-java=threads --with-rtj-perf
+				Hello:./configure --with-precise-c --with-gc=conservative --with-thread-model=heavy --disable-shared
+
 
 ----------------------------
 TEMPORARILY GENERATED FILES
@@ -41,46 +51,111 @@ TEMPORARILY GENERATED FILES
 results/run_*:
 --------------
 
+	Each file results/run_<task> contains the runtime output of task <task>, where <task> is a task run on this machine.
+
+
 results/compile_*:
 ------------------
+
+	Each file results/compile_<task> contains the compiling time output of task <task>, where <task> is a task compiled on this machine.
+
 
 results/errors_short_*:
 -----------------------
 
+	Each file results/errors_short_<task> contains a one line report about compilation and running of task <task>, where <task> is a task compiled or/and run on this machine. This file is copied later to the server and the information in this file is used to create the short report sent to people by email (See ../Driver/README).
+
 $TASKS_RUN_ON_THIS_MACHINE:
 ---------------------------
+
+	This variable is set in the .regtestrc file (which should be copied to user's $HOME directory, and MUST be executed whenever the user log in). The file $TASKS_RUN_ON_THIS_MACHINE contains the name of tasks run or/and compiled on this machine, one task pe line.
+
+	EXAMPLES:
+		HelloWorld
+		Task1
+		Script1
+
 
 $RUNNING_TASK_FILE:
 -------------------
 
+	This is a temporary file which acts as a "marker" (the value of $RUNNING_TASK_FILE is set in .regtestrc). It allows the server to determine whether or not a task is running on this machine. The file has a single character, which is either "1" or "0". "1" means that this machine is running something, and "0" means that this machine is free is can be assigned a new task.
+
+
 $UPDATING_FLEX_FILE:
 --------------------
+
+	This is a temporary file which acts as a "marker" (the value of $UPDATING_FLEX_FILE is set in .regtestrc). It allows the server to determine whether or not the remote machine is still updating. The file has a single character which is either "1" or "0". "1" means that this machine is still updating, and thus, the server cannot yet assign it a task, and "0" means that this machine finished updating and now is ready to run tasks.
+
 
 $UPDATED_SUCCESSFULLY_FILE:
 ---------------------------
 
+	This is a temporary file which acts as a "marker" (the value of $UPDATED_SUCCESSSFULLY_FILE is set in .regtestrc). It allows the server to determine whether or not the remote machine updated successfully (if it updated in general). The file has a single character which is either "1" or "0". "1" means that this machine updated successfully, and "0" means that an error was thrown while updating. If the machine did not update successfully, it will not be used for running any task in this session.
+
+
 $SSH_KEY_FILE:
 --------------
+
+	This variable is set in the .regtestrc file (which should be copied to user's $HOME directory and MUST be executed whenever the user log in). The file $SSH_KEY_FILE must contain a private ssh key, which allows this machine to log in to lesser-magoo.lcs.mit.edu. Since the whole process of running regression testing scripts should be non-interactive, the passphrase for this ssh key must be left blank (unless you do not plan to run this scripts in a period when you cannot introduce the passphrase).
 
 
 ========================
 3. "INSIDE" THE SCRIPTS
 ========================
 
-update-and-make:
-----------------
+update-and-make (called from ./run-benchmark):
+----------------------------------------------
 
-remake-everything:
-------------------
+1. Writes "1" to $UPDATING_FLEX_FILE and $UPDATED_SUCCESSFULLY_FILE (See Section 2 -- FILES USED).
+2. Tries to start the ssh-agent and add the $SSH_KEY_FILE (See Section 2 -- FILES USED).
+3. If this operation fails, writes "0" to $UPDATED_SUCCESSFULLY_FILE (See Section 2 -- FILES USED) and goes to the last line of the script.
+4. If the ssh-agent is working properly, calls ./cvs-update-all.
+5. If ./cvs-update-all throws an error, writes "0" to $UPDATED_SUCCESSFULLY_FILE (See Section 2 -- FILES USED) and goes to the last line of the script.
+6. If ./cvs-update-all did not throw any error, calls ./remake-everything (passing to it all command-line parameters).
+7. If ./remake-everything throws an error, writes "0" to $UPDTED_SUCCESSFULLY_FILE (See Section 2 -- FILES USED) and goes to the last line of the script.
+8. The last line of the script: writes "0" to $UPDATING_FLEX_FILE (See Section 2 -- FILES USED).
 
-cvs-update-all:
----------------
 
-generate-report:
-----------------
+remake-everything (called from ./update-and-make):
+--------------------------------------------------
 
-run-benchmark:
---------------
+1. Recompiles everything in FLEX (Code, Runtime and Realtime). If the -clean option is given, the script does a "hard clean" before remaking everything, i.e. instead of doing only "make" in Runtime, for examples, it does "./setup; ./configure [options]; make clean; make". If the -clean option is not given, then the scripts does only "make" in Code, Runtime and Realtime. If a -task=* option is given, the script tries to reconfigure FLEX according to the ./configure [options] line for this specific task, found in tasks-configure file. If the line for this task is missing in tasks-configure, or the script was not given the -task=* command-line parameter, the script reconfigures FLEX using the default options for ./configure.
+
+
+cvs-update-all (called from ./update-and-make):
+-----------------------------------------------
+
+1. cvs updates the entire FLEX (called from ./update-and-make).
+
+
+generate-report (called from ./run-benchmark):
+----------------------------------------------
+
+1. Generates a short or long compiling-time or runtime report for a specific task.
+
+
+run-benchmark (called by the main server script):
+-------------------------------------------------
+
+VARIABLES
+---------
+
+All variables in this script are also present in ../Driver/run-tasks. Their meaning is exactly the same, so you can read ../Driver/README --> Section 4 -- "INSIDE" THE SERVER for more information.
+
+
+HOW IT WORKS
+------------
+
+1. Writes "1" to $RUNNING_TASK_FILE, signifying that this machine is running a task right now, and cannot be assigned another task (See Section 2 -- FILES USED).
+2. Processes the command-line parameters given by the server.
+3. If the options saying that FLEX has to be reconfigured for every task is turned on, the script calls ./remake-everything.
+4. If the script was told to compile the current task, it tries to do so, considering $FLEX_DIR the current directory.
+5. If the script has to compile the task, and a compiling-time error occurs, and the script was told to generate a compiling-time errors report, then the script calls ./generate-report which creates such reports.
+6. If the script was told to run the current task, it tries to do so. First of all the script searches for a ./run<task> executable, considering $FLEX_DIR/../Runtime the current directory; if it fails to find a file ./run<task>, it tries to run a script ./<task>, also considering $FLEX_DIR/../Runtime the current directory; if it fails to find the script ./<task>, the script considers it to be an error.
+7. If the script has to run the task, and a runtime error occurs ("file not found" is also considered as a runtime error), and the script was told to generate a runtime errors report, then the script calls ./generate-report which create such reports.
+8. While compiling and running a task, the server creates a short one-line report about the status of compilation and running. This one-line file is later copied to the server and is used to create the email that is mailed at the end of the entire regression testing session.
+9. Writes "0" to $RUNNING_TASK_FILE, signifying that this machine is free now and can run another task (See Section 2 -- FILES USED).
 
 
 ---------------------------------------------------------------------
