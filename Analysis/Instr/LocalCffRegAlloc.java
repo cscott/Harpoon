@@ -66,7 +66,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.96 2000-07-12 21:32:59 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.97 2000-07-13 01:32:37 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -83,7 +83,11 @@ public class LocalCffRegAlloc extends RegAlloc {
 
     // maps Temp:c -> Temp:o where `c' was coalesced and references to
     // `c' have been replaced with references to `o'
-    private HTempMap coalescedTemps;
+    // maps Instr:i -> (Temp:c -> Temp:o) where `c' was coalesced in
+    // the BasicBlock containing `i' and references to `c' in the
+    // instructions of that BasicBlock have been replaced with
+    // references to `o'  
+    private Map instrToHTempMap;
 
     // maps Instr:n -> Instr:b where `n' is backed by `b' with respect
     // to Derivation information.
@@ -99,7 +103,7 @@ public class LocalCffRegAlloc extends RegAlloc {
     public LocalCffRegAlloc(Code code) {
         super(code);
 	allRegisters = frame.getRegFileInfo().getAllRegistersC();
-	coalescedTemps = new HTempMap();
+	instrToHTempMap = new HashMap();
 	backedInstrs = new HashMap();
 	reachingDefs = new ReachingDefsImpl(code);
     }
@@ -121,21 +125,27 @@ public class LocalCffRegAlloc extends RegAlloc {
 		return (backedInstrs.containsKey(h)) ?
 		    (HCodeElement) backedInstrs.get(h) : h;
 	    }
-	    private Temp orig(Temp t) {
+	    private Temp orig(HCodeElement h, Temp t) {
+		HTempMap coalescedTemps = (HTempMap) instrToHTempMap.get(h);
+		Util.assert(coalescedTemps != null, "no mapping for "+h);
 		return coalescedTemps.tempMap(t);
 	    }
 	    public HClass typeMap(HCodeElement hce, Temp t) {
-		hce = orig(hce); t = orig(t);
-		return oldD.typeMap(hce, t);
+		HCodeElement hce2 = orig(hce); 
+		Temp t2 = orig(hce, t);
+		return oldD.typeMap(hce2, t2);
 	    }
 	    public Derivation.DList derivation(HCodeElement hce, Temp t) {
-		hce = orig(hce); t = orig(t);
+		HTempMap coalescedTemps = (HTempMap)instrToHTempMap.get(hce);
+		Util.assert(coalescedTemps != null, "no mapping for "+hce);
+		HCodeElement hce2 = orig(hce); 
+		Temp t2 = orig(hce, t);
 		return Derivation.DList.rename
-		    (oldD.derivation(hce, t), coalescedTemps);
+		    (oldD.derivation(hce2, t2), coalescedTemps);
 	    }
 	    public BackendDerivation.Register
 		calleeSaveRegister(HCodeElement hce, Temp t) { 
-		hce = orig(hce); t = orig(t);
+		hce = orig(hce); t = orig(hce, t);
 		return ((BackendDerivation)oldD).calleeSaveRegister(hce, t);
 	    }
 	};
@@ -337,6 +347,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	while(instrs.hasNext()) {
 	    Instr i = (Instr) instrs.next();
 	    i.accept(verify);
+	    Util.assert(instrToHTempMap.keySet().contains(i), "not in:"+i);
 	}
     }
 
@@ -388,7 +399,8 @@ public class LocalCffRegAlloc extends RegAlloc {
     static Integer INFINITY = new Integer( Integer.MAX_VALUE - 1 );
 
     class BlockAlloc {
-
+	
+	final HTempMap coalescedTemps = new HTempMap();
 	final BasicBlock block;
 	final Set liveOnExit;
 	final RegFile regfile = new RegFile(allRegisters);
@@ -429,7 +441,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    // Temp:t -> the last Instr referencing t
 	    Map tempToLastRef = new HashMap();
 	    
-	    // (Temp:t x Instr:j) -> Int:index of Instr following j w/ ref(t)
+	    // (Temp:t, Instr:j) -> Int:index of Instr following j w/ ref(t)
 	    Map nextRef = new HashMap();
 	    
 	    Iterator instrs = b.statements().iterator();
@@ -628,6 +640,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    allocV.iloc = oldi;
 		}
 
+		instrToHTempMap.put(curr, coalescedTemps);
 		curr.accept(allocV);
 		// System.out.println(curr + " ("+allocV.iloc+")");
 		if (TIME) System.out.print(".");
@@ -783,6 +796,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			spillLoads.add(load);
 			spillLoads.add(iloc);
 			backedInstrs.put(load, i);
+			instrToHTempMap.put(load, coalescedTemps);
 		    }
 
 		    code.assignRegister(i, t, regList);
@@ -953,6 +967,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			Instr proxy = new InstrMOVEproxy(i);
 			instrsToReplace.add(proxy);
 			checked.add(proxy);
+			instrToHTempMap.put(proxy, coalescedTemps);
 			if (isRegister(u)) {
 			    code.assignRegister(proxy, d, list(u));
 			} else {
@@ -1366,6 +1381,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    spillStores.add(spillInstr);
 	    spillStores.add(loc);
 	    backedInstrs.put(spillInstr, src);
+	    instrToHTempMap.put(spillInstr, coalescedTemps);
 	}
 
 	// *** helper methods for debugging within BlockAlloc ***
