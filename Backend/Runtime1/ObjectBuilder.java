@@ -45,7 +45,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.3.2.2 2002-03-11 21:17:48 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.3.2.3 2002-03-15 23:36:45 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -88,13 +88,13 @@ public class ObjectBuilder
 	FieldMap cfm = ((TreeBuilder) runtime.getTreeBuilder()).cfm;
 	assert !info.type().isArray();
 	assert !info.type().isPrimitive();
-	List stmlist = new ArrayList();
+	List<Stm> stmlist = new ArrayList<Stm>();
 	// header
 	stmlist.add(makeHeader(tf, info, exported));
 	// fields, in field order
-	List l = cfm.fieldList(info.type());
-	for (Iterator it = l.iterator(); it.hasNext(); )
-	    stmlist.add(makeDatum(tf, lookup(info, (HField)it.next())));
+	List<HField> l = cfm.fieldList(info.type());
+	for (Iterator<HField> it = l.iterator(); it.hasNext(); )
+	    stmlist.add(makeDatum(tf, lookup(info, it.next())));
 	// done -- ta da!
 	return Stm.toStm(stmlist);
     }
@@ -107,13 +107,13 @@ public class ObjectBuilder
 	FieldMap cfm = ((TreeBuilder) runtime.getTreeBuilder()).cfm;
 	assert info.type().isArray();
 	HClass cType = info.type().getComponentType();
-	List stmlist = new ArrayList(info.length()+2);
+	List<Stm> stmlist = new ArrayList<Stm>(info.length()+2);
 	// header
 	stmlist.add(makeHeader(tf, info, exported));
 	// fields of java.lang.Object, in proper field order
-	List l = cfm.fieldList(HCobject);
-	for (Iterator it = l.iterator(); it.hasNext(); )
-	    stmlist.add(makeDatum(tf, lookup(info, (HField)it.next())));
+	List<HField> l = cfm.fieldList(HCobject);
+	for (Iterator<HField> it = l.iterator(); it.hasNext(); )
+	    stmlist.add(makeDatum(tf, lookup(info, it.next())));
 	// length
 	stmlist.add(_DATUM(tf, new CONST(tf, null, info.length())));
 	// data
@@ -129,7 +129,7 @@ public class ObjectBuilder
     }
     protected Stm makeHeader(TreeFactory tf, Info info, boolean exported)
     {
-	List stmlist = new ArrayList(4);
+	List<Stm> stmlist = new ArrayList<Stm>(4);
 	// align to word boundary.
 	stmlist.add(new ALIGN(tf, null, 4));
 	// label:
