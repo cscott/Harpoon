@@ -49,6 +49,7 @@ import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.ArrayIterator;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
@@ -58,6 +59,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 /**
@@ -66,7 +68,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.3.2.1 2002-02-27 08:32:38 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.3.2.2 2002-03-14 02:29:03 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -213,9 +215,10 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    if (!Wv.isEmpty()) { // grab temp from Wv is possible.
 		Temp t = (Temp) Wv.pull();
 		// for every use of t...
-		for (Enumeration e=udm.useMapE(hc, t); e.hasMoreElements(); )
+		for (Iterator it=new ArrayIterator(udm.useMap(hc, t));
+		     it.hasNext(); )
 		    // check conditions 3-8
-		    ((Quad) e.nextElement()).accept(visitor);
+		    ((Quad) it.next()).accept(visitor);
 	    }
 	} // end while loop.
     } // end analysis.

@@ -6,8 +6,9 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
-import harpoon.Util.ArrayEnumerator;
+import harpoon.Util.ArrayIterator;
 import harpoon.Util.Default;
+import harpoon.Util.IteratorEnumerator;
 import harpoon.Util.Util;
 
 import java.util.Enumeration;
@@ -24,7 +25,7 @@ import java.util.Set;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.11 2002-02-25 20:56:11 cananian Exp $
+ * @version $Id: UseDef.java,v 1.11.2.1 2002-03-14 02:28:33 cananian Exp $
  */
 
 public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
@@ -166,7 +167,10 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
     }
 	
     private Enumeration arrayEnumerator(Object[] ol) {
-	if (ol==null) return Default.nullEnumerator;
-	return new ArrayEnumerator(ol);
+	return new IteratorEnumerator(arrayIterator(ol));
+    }
+    private Iterator arrayIterator(Object[] ol) {
+	if (ol==null) return Default.nullIterator;
+	return new ArrayIterator(ol);
     }
 }

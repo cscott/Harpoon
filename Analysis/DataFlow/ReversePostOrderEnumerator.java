@@ -7,7 +7,7 @@ package harpoon.Analysis.DataFlow;
  * ReversePostOrderEnumerator
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: ReversePostOrderEnumerator.java,v 1.3.2.1 2002-02-27 08:30:38 cananian Exp $
+ * @version $Id: ReversePostOrderEnumerator.java,v 1.3.2.2 2002-03-14 02:28:43 cananian Exp $
  */
 
 import java.util.Enumeration;
@@ -15,9 +15,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
 import harpoon.Analysis.BasicBlock;
-import harpoon.Util.ArrayEnumerator;
-import harpoon.Util.Util;
 import harpoon.IR.Quads.Quad;
+import harpoon.Util.ArrayIterator;
+import harpoon.Util.IteratorEnumerator;
+import harpoon.Util.Util;
 
 public class ReversePostOrderEnumerator implements Enumeration {
 
@@ -95,4 +96,8 @@ public class ReversePostOrderEnumerator implements Enumeration {
   }
   private ReversePostOrderEnumerator() {}
 
+
+  private class ArrayEnumerator extends IteratorEnumerator {
+    ArrayEnumerator(Object[] oa) { super(new ArrayIterator(oa)); }
+  }
 }

@@ -22,10 +22,10 @@ import java.util.SortedSet;
 /**
  * <code>Default</code> contains one-off or 'standard, no-frills'
  * implementations of simple <code>Iterator</code>s,
- * <code>Enumeration</code>s, and <code>Comparator</code>s.
+ * <code>Collection</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.2.2.2 2002-03-04 20:22:13 cananian Exp $
+ * @version $Id: Default.java,v 1.2.2.3 2002-03-14 02:29:10 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -41,12 +41,6 @@ public abstract class Default  {
 	}
 	// this should always be a singleton.
 	private Object readResolve() { return Default.comparator; }
-    };
-    /** An <code>Enumerator</code> over the empty set.
-     * @deprecated Use nullIterator. */
-    public static final Enumeration nullEnumerator = new Enumeration() {
-	public boolean hasMoreElements() { return false; }
-	public Object nextElement() { throw new NoSuchElementException(); }
     };
     /** An <code>Iterator</code> over the empty set. */
     public static final Iterator nullIterator = nullIterator();
@@ -253,7 +247,7 @@ public abstract class Default  {
      *  than <code>List</code> (which would be 
      *  <code>31*(31+key.hashCode())+value.hashCode()</code> ). This is
      *  an annoying distinction; I wish the JDK API authors had made
-     *  these consistent. The <code>Map.Entry</code> returned is immuatable.
+     *  these consistent. The <code>Map.Entry</code> returned is immutable.
      */
     public static <K,V> Map.Entry<K,V> entry(final K key, final V value) {
 	return new AbstractMapEntry<K,V>() {
