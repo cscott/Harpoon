@@ -1,0 +1,9 @@
+	int u w x1 x2 y z
+
+	def(x1)
+	def(y)
+	def(w) use(x1,y)
+	def(z) use(x1)
+	def(u) use(x1,y)
+	def(r1)
+	def(x2) use(z)
