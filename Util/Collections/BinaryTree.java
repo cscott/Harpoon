@@ -15,6 +15,9 @@ import java.util.Comparator;
     be mutually comparable, either inherently or through an external
     <code>Comparator</code>.
     
+    <p><i>Unlike</i> a <code>TreeSet</code>, duplicate elements
+    <b>are</b> allowed in a <code>BinaryTree</code>.
+    
     <p> FSK: We should probably have a Tree interface by
     now... Sometimes you want to expose the fact that you're working
     with a Tree, instead of abstract it into a Set or what-have-you.
@@ -64,7 +67,11 @@ public class BinaryTree {
 	subclasses of <code>RedBlackTree</code> can associate new data
 	with their own nodes by extending the <code>Node</code> class
 	and overriding this method. 
-    
+	
+	<p> Note that makeNode <b>must</b> deal with the case when key
+	is <code>null</code>, regardless of whether the tree itself
+	allows null elements, because the NIL sentinel node has
+	<code>null</code> as its key.
     */
     protected Node makeNode(Object key) { return new Node(key); }
 
@@ -183,16 +190,22 @@ public class BinaryTree {
 	return n; 
     }
     public void remove(Object k) {
-	Node n = search(k);
+	Node n = search(root,k);
 	if (n != NIL) 
 	    deleteNode(n);
     }
-    public boolean contains(Object k) { return search(k) != NIL; }
-
+    /** Returns true if <code>k</code> is present in <code>this</code>. */
+    public boolean contains(Object k) { return search(root,k) != NIL; }
+    
+    /** Returns the minimum element of <code>this</code>. 
+	Requires: this is non-empty.
+     */
     public Object minimum() { return minimum(root).key; }
-    public Object maximum() { return maximum(root).key; }
 
-    public Node search(Object k) { return search(root, k); }
+    /** Returns the maximum element of <code>this</code>. 
+	Requires: this is non-empty.
+     */
+    public Object maximum() { return maximum(root).key; }
 
     /** Finds the Node n (in the subtree rooted at x) 
 	such that n.key = k.
