@@ -28,7 +28,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.3 1999-11-19 23:52:26 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.4 1999-11-20 00:34:51 bdemsky Exp $
  */
 public class AsyncCode extends Code {
 
@@ -217,17 +217,19 @@ public class AsyncCode extends Code {
 	System.out.println("AsyncCode.buildCode() 9");
 
 	// find FOOTER
-	Quad q = null;
-	for (Iterator i=hc.getElementsI(); i.hasNext(); ) {
-	    q = (Quad)i.next();
-	    if (q instanceof FOOTER)
-		break;
-	}
+	HEADER header = (HEADER) hc.getRootElement();
+	FOOTER q = (FOOTER) header.next(0);
+
 	FOOTER f = (FOOTER)quadmap.get(q); // cloned FOOTER
-	Quad.addEdge(prev, 0, f, f.arity());
+	FOOTER newf = f.attach(prev,0);
+
+	//Note that quadmap is now invalid for the footer...
+	//But it doesn't escape
+
 
 	System.out.println("AsyncCode.buildCode() 10");
 
+	//quadmap is still okay for header...
        	HEADER h = (HEADER)quadmap.get(root); // cloned HEADER
 	Unreachable.prune(h);
 	System.out.println("Leaving AsyncCode.buildCode()");
