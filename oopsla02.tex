@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.14 2002-03-22 23:50:51 cananian Exp $
+% $Id: oopsla02.tex,v 1.15 2002-03-23 01:43:09 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -29,33 +29,33 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.14 $ $}{$ $Revision: 1.14 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.15 $ $}{$ $Revision: 1.15 $ $}
 \bibliographystyle{plain}
 
 \maketitle
 
 % abstract
 \begin{abstract}
+We present a set of techniques for reducing the memory consumption of
+object-oriented programs. These techniques 
+include optimizations that eliminate fields with
+constant values, reduce the sizes of fields based on the range
+of values that can appear in each field, and use a variety of
+transformations to eliminate fields with common default values
+or usage patterns from the majority of objects that originally
+contained these fields. We can apply these optimizations both 
+to fields declared by the programmer and to fields in
+object headers. We use a variety of program analysis 
+algorithms to extract the information required to apply these
+optimizations. 
 
-{\bf\Large FIX ME! }
-This paper presents a set of Java optimizations targeted at
-memory-constrained embedded devices.  Using the FLEX compiler system,
-we aggressively transform
-programs using both source-level transformations and
-specializations of the runtime environment to save as much
-as 54\% of the storage requested by the allocator.
-
-Our techniques fall into three broad categories: header optimizations,
-bitwidth analyses, and mostly-zero field elimination.  Header
-optimizations reduce the size penalties associated with 
-Java's virtual dispatch, hashcode, and locking features.  Bitwidth
-analyses allow compile-time reduction of field sizes when the
-full range of a datatype is unused.  Mostly-zero field elimination
-attempts to factor out fields which are ``usually zero'' (as
-determined by profiling) to obtain savings.  Combined, these
-techniques allow the compiler to shoulder the burden of space accounting
-and allow the use of general-purpose software on extremely
-memory-constrained embedded devices.
+We have implemented these techniques in the MIT Flex compiler
+system and applied them to the programs in the SPECjvm98 
+benchmark suite. Our experimental results show that 
+our combined techniques can significantly reduce the amount
+of memory required to store the objects in our benchmark
+suite.  Some of the optimizations reduce the overall execution time;
+others impose modest performance penalties.
 
 \end{abstract}
 
