@@ -22,13 +22,14 @@ import harpoon.Analysis.PointerAnalysis.PAWorkList;
 
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
+import harpoon.Util.Graphs.Navigator;
 
 
 /**
  * <code>Util</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Util.java,v 1.8 2003-04-30 22:52:50 salcianu Exp $
+ * @version $Id: Util.java,v 1.9 2003-05-06 15:04:19 salcianu Exp $
  */
 public abstract class Util {
 
@@ -68,7 +69,7 @@ public abstract class Util {
 	// 1. construct the SCCs of the subgraph rooted in entry
 	final AllCallers ac = new AllCallers(cg);
 
-	SCComponent.Navigator nav = new SCComponent.Navigator() {
+	Navigator nav = new Navigator() {
 	    public Object[] next(Object node) {
 		return cg.calls((HMethod) node);
 	    }

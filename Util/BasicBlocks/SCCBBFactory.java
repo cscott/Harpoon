@@ -13,6 +13,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 
 import harpoon.Util.Graphs.SCComponent;
+import harpoon.Util.Graphs.Navigator;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Util.UComp;
 
@@ -21,7 +22,7 @@ import harpoon.Util.UComp;
  topollogically sorted component graph of <code>BasicBlock</code>s.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCCBBFactory.java,v 1.2 2002-02-25 21:08:59 cananian Exp $
+ * @version $Id: SCCBBFactory.java,v 1.3 2003-05-06 15:04:20 salcianu Exp $
  */
 public class SCCBBFactory implements java.io.Serializable {
 
@@ -42,8 +43,8 @@ public class SCCBBFactory implements java.io.Serializable {
     }
 
     // Navigator through the control flow graph of Basic Blocks.
-    private static final SCComponent.Navigator navigator = 
-	new SCComponent.Navigator(){
+    private static final Navigator navigator = 
+	new Navigator(){
 		public Object[] next(Object node){
 		    Set next_bb = ((BasicBlockInterf) node).nextSet();
 		    Object[] obj = next_bb.toArray(new Object[next_bb.size()]);

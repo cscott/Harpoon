@@ -6,6 +6,7 @@ package harpoon.Util.LightBasicBlocks;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 import harpoon.Util.Graphs.SCComponent;
+import harpoon.Util.Graphs.Navigator;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 
 
@@ -14,7 +15,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  graph of the light basic blocks containing the code of a method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCCLBBFactory.java,v 1.2 2002-02-25 21:09:33 cananian Exp $
+ * @version $Id: SCCLBBFactory.java,v 1.3 2003-05-06 15:04:18 salcianu Exp $
  */
 public class SCCLBBFactory implements java.io.Serializable {
 
@@ -34,8 +35,8 @@ public class SCCLBBFactory implements java.io.Serializable {
         return lbbconv;
     }
 
-    private static final SCComponent.Navigator navigator = 
-	new SCComponent.Navigator() {
+    private static final Navigator navigator = 
+	new Navigator() {
 		public Object[] next(Object node) {
 		    return ((LightBasicBlock) node).getNextLBBs();
 		}
