@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.StrongARM;
 
+import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
@@ -66,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.148 2000-02-28 20:50:49 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.149 2000-03-09 03:57:31 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -88,10 +89,14 @@ import java.util.Iterator;
     // whether to generate stabs debugging information in output (-g flag)
     private static final boolean stabsDebugging=true;
 
+    // NameMap for calling C functions.
+    NameMap nameMap;
+
     public CodeGen(Frame frame) {
 	super(frame);
 	last = null;
 	this.regfile = (RegFileInfo) frame.getRegFileInfo();
+	this.nameMap = frame.getRuntime().nameMap;
 	r0 = regfile.reg[0];
 	r1 = regfile.reg[1];
 	r2 = regfile.reg[2];
@@ -285,12 +290,12 @@ import java.util.Iterator;
     }
     private String cmpOp2Func(int op) {
 	switch (op) {
-	case Bop.CMPEQ: return "___ne";
-	case Bop.CMPNE: return "___ne";
-	case Bop.CMPGT: return "___gt";
-	case Bop.CMPGE: return "___lt";
-	case Bop.CMPLE: return "___gt";
-	case Bop.CMPLT: return "___lt";
+	case Bop.CMPEQ: return "__ne";
+	case Bop.CMPNE: return "__ne";
+	case Bop.CMPGT: return "__gt";
+	case Bop.CMPGE: return "__lt";
+	case Bop.CMPLE: return "__gt";
+	case Bop.CMPLT: return "__lt";
 	default: throw new Error("Illegal compare operation");
 	}
     }
@@ -519,7 +524,7 @@ import java.util.Iterator;
     public Instr procFixup(HMethod hm, Instr instr,
 			   int stackspace, Set usedRegisters) {
 	InstrFactory inf = instrFactory; // convenient abbreviation.
-	Label methodlabel = frame.getRuntime().nameMap.label(hm);
+	Label methodlabel = nameMap.label(hm);
 	// make list of callee-save registers we gotta save.
 	StringBuffer reglist = new StringBuffer();
 
@@ -699,7 +704,7 @@ BINOP<f>(ADD, j, k) = i %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     declareCALL();
     declare(r0, HClass.Float); // retval from call.
-    emit2( ROOT, "bl ___addsf3",
+    emit2( ROOT, "bl "+nameMap.c_function_name("__addsf3"),
 	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
@@ -718,7 +723,8 @@ BINOP<d>(ADD, j, k) = i %{
     declareCALL();
     declare(r0, HClass.Void); // retval from call.
     declare(r1, HClass.Void); // retval from call.
-    emit2(ROOT, "bl ___adddf3", // uses & stomps on these registers
+    emit2(ROOT, "bl "+nameMap.c_function_name("__adddf3"),
+	  // uses & stomps on these registers:
 	 new Temp[]{r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -767,7 +773,7 @@ BINOP<f>(ADD, j, UNOP<l>(NEG, k)) = i %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     declareCALL();
     declare( r0, HClass.Float ); // retval from call.
-    emit2( ROOT, "bl ___subsf3",
+    emit2( ROOT, "bl "+nameMap.c_function_name("__subsf3"),
 	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
@@ -786,7 +792,8 @@ BINOP<d>(ADD, j, UNOP<l>(NEG, k)) = i %{
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
-    emit2(ROOT, "bl ___subdf3", // uses & stomps on these registers
+    emit2(ROOT, "bl "+nameMap.c_function_name("__subdf3"),
+	  // uses & stomps on these registers:
 	 new Temp[]{r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -869,7 +876,7 @@ BINOP(cmpop, j, k) = i
     //     comparison function; we'll fixup the inverted value below.
     declareCALL();
     declare( r0, HClass.Int ); // retval from call.
-    emit2( ROOT, "bl "+cmpOp2Func(cmpop)+"sf2",
+    emit2( ROOT, "bl "+nameMap.c_function_name(cmpOp2Func(cmpop)+"sf2"),
 	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -899,7 +906,7 @@ BINOP(cmpop, j, k) = i
     //     comparison function; we'll fixup the inverted value below.
     declareCALL();
     declare( r0, HClass.Int ); // retval from call.
-    emit2( ROOT, "bl "+cmpOp2Func(cmpop)+"df2",
+    emit2( ROOT, "bl "+nameMap.c_function_name(cmpOp2Func(cmpop)+"df2"),
 	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -960,7 +967,7 @@ BINOP<l>(SHL, j, k) = i %{
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
-    emit2(ROOT, "bl ___ashldi3",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__ashldi3"),
 	  new Temp[]{r0,r1,r2,r3,IP,LR},new Temp[]{r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -977,7 +984,7 @@ BINOP<l>(SHR, j, k) = i %{
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
-    emit2(ROOT, "bl ___ashrdi3",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__ashrdi3"),
 	  new Temp[]{r0,r1,r2,r3,IP,LR},new Temp[]{r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -994,7 +1001,7 @@ BINOP<l>(USHR, j, k) = i %{
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
-    emit2(ROOT, "bl ___lshrdi3",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__lshrdi3"),
 	  new Temp[]{r0,r1,r2,r3,IP,LR},new Temp[]{r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -1129,7 +1136,8 @@ BINOP<l>(MUL, j, k) = i %{
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
-    emit2(ROOT, "bl ___muldi3", // uses & stomps on these registers
+    emit2(ROOT, "bl "+nameMap.c_function_name("__muldi3"),
+	  // uses & stomps on these registers:
 	 new Temp[]{r0,r1,r2,r3,IP,LR}, new Temp[]{r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -1143,7 +1151,7 @@ BINOP<f>(MUL, j, k) = i %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     declareCALL();
     declare( r0, HClass.Float ); // retval from call.
-    emit2(    ROOT, "bl ___mulsf3",
+    emit2(    ROOT, "bl "+nameMap.c_function_name("__mulsf3"),
 	      new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
@@ -1161,7 +1169,8 @@ BINOP<d>(MUL, j, k) = i %{
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
-    emit2(ROOT, "bl ___muldf3", // uses & stomps on these registers
+    emit2(ROOT, "bl "+nameMap.c_function_name("__muldf3"),
+	  // uses & stomps on these registers:
 	 new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -1176,7 +1185,7 @@ BINOP<p,i>(DIV, j, k) = i %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     declareCALL();
     declare( r0, HClass.Int ); // retval from call.
-    emit2(    ROOT, "bl ___divsi3",
+    emit2(    ROOT, "bl "+nameMap.c_function_name("__divsi3"),
 	      new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
@@ -1192,7 +1201,8 @@ BINOP<l>(DIV, j, k) = i %{
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
-    emit2(ROOT, "bl ___divdi3",	// uses and stomps on these registers
+    emit2(ROOT, "bl "+nameMap.c_function_name("__divdi3"),
+	  // uses and stomps on these registers:
 	 new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -1205,7 +1215,7 @@ BINOP<f>(DIV, j, k) = i %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     declareCALL();
     declare( r0, HClass.Float ); // retval from call.
-    emit2(    ROOT, "bl ___divsf3",
+    emit2(    ROOT, "bl "+nameMap.c_function_name("__divsf3"),
 	      new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
@@ -1221,7 +1231,7 @@ BINOP<d>(DIV, j, k) = i %{
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
-    emit2(ROOT, "bl ___divdf3",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__divdf3"),
 	 new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -1236,7 +1246,7 @@ BINOP<i>(REM, j, k) = i %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     declareCALL();
     declare( r0, HClass.Int ); // retval from call.
-    emit2(    ROOT, "bl ___modsi3",
+    emit2(    ROOT, "bl "+nameMap.c_function_name("__modsi3"),
 	      new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
@@ -1252,7 +1262,7 @@ BINOP<l>(REM, j, k) = i %{
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
-    emit2(ROOT, "bl ___moddi3",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__moddi3"),
 	 new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -1472,7 +1482,7 @@ UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
     declareCALL(); declare( r0, HClass.Void ); declare( r1, HClass.Void );
-    emit2(ROOT, "bl ___floatdidf",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__floatdidf"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -1482,7 +1492,7 @@ UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     declare( r0, HClass.Int );
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     declareCALL(); declare( r0, HClass.Void ); declare( r1, HClass.Void );
-    emit2(ROOT, "bl ___floatsidf",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__floatsidf"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -1492,7 +1502,7 @@ UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     declare( r0, HClass.Float );
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     declareCALL(); declare( r0, HClass.Void ); declare( r1, HClass.Void );
-    emit2(ROOT, "bl ___extendsfdf2",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__extendsfdf2"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -1513,7 +1523,7 @@ UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
     declareCALL(); declare( r0, HClass.Float );
-    emit2(ROOT, "bl ___floatdisf",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__floatdisf"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
@@ -1522,7 +1532,7 @@ UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     declare( r0, HClass.Int );
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     declareCALL(); declare( r0, HClass.Float );
-    emit2(    ROOT, "bl ___floatsisf",
+    emit2(    ROOT, "bl "+nameMap.c_function_name("__floatsisf"),
 	      new Temp[] {r0,r1,r2,r3,IP,LR},new Temp[] {r0} );   
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
@@ -1538,7 +1548,7 @@ UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
     declareCALL(); declare( r0, HClass.Float );
-    emit2(ROOT, "bl ___truncdfsf2",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__truncdfsf2"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR},new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
@@ -1556,7 +1566,7 @@ UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     declare( r0, HClass.Float );
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     declareCALL(); declare( r0, HClass.Int );
-    emit2(    ROOT, "bl ___fixsfsi",
+    emit2(    ROOT, "bl "+nameMap.c_function_name("__fixsfsi"),
 	      new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
@@ -1566,7 +1576,7 @@ UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
     declareCALL(); declare( r0, HClass.Int );
-    emit2(ROOT, "bl ___fixdfsi",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__fixdfsi"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
@@ -1588,7 +1598,7 @@ UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     declare( r0, HClass.Float );
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     declareCALL(); declare( r0, HClass.Void ); declare( r1, HClass.Void );
-    emit2(ROOT, "bl ___fixsfdi",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__fixsfdi"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -1599,7 +1609,7 @@ UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
     declareCALL(); declare( r0, HClass.Void ); declare( r1, HClass.Void );
-    emit2(ROOT, "bl ___fixdfdi",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__fixdfdi"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );	 
@@ -1625,7 +1635,7 @@ UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     declare( r0, HClass.Float );
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     declareCALL(); declare( r0, HClass.Float );
-    emit2(    ROOT, "bl ___negsf2",
+    emit2(    ROOT, "bl "+nameMap.c_function_name("__negsf2"),
 	      new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
@@ -1636,7 +1646,7 @@ UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )%
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
     declareCALL(); declare( r0, HClass.Void ); declare( r1, HClass.Void );
-    emit2(ROOT, "bl ___negdf2",
+    emit2(ROOT, "bl "+nameMap.c_function_name("__negdf2"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );	 
