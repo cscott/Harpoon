@@ -1,9 +1,13 @@
 
 package harpoon.Test.PA.Test10;
 
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 
 public class HTTPServices{
 

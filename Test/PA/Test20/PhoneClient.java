@@ -2,14 +2,20 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Test.PA.Test20;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.Socket;
 
 /**
  * <code>PhoneClient</code> process requests to the phone server.
  *
  * @author P.Govereau govereau@mit.edu
- * @version $Id: PhoneClient.java,v 1.2.2.2 2000-04-03 20:22:56 salcianu Exp $
+ * @version $Id: PhoneClient.java,v 1.2.2.3 2000-07-13 15:44:14 cananian Exp $
  */
 class PhoneClient {
     public static void main(String args[]) {

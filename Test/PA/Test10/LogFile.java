@@ -7,10 +7,13 @@
 package harpoon.Test.PA.Test10;
 
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.text.SimpleDateFormat;
-import java.net.*;
+import java.net.Socket;
 
 //****************************************************************************
 // Class:   logFile

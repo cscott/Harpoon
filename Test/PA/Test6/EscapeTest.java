@@ -3,8 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Test.PA.Test6;
 
-import java.util.*;
-import java.io.*;
 
 public class EscapeTest {
     

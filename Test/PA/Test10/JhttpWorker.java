@@ -6,9 +6,14 @@
 
 package harpoon.Test.PA.Test10;
 
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.net.Socket;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.util.StringTokenizer;
 
 //****************************************************************************
 // Class:   JhttpWorker

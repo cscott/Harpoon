@@ -15,9 +15,7 @@
  */
 
 package harpoon.Test.PA;
-import java.util.*;
 
-import java.io.*;
 
 /**
  * Hashtable collision list.

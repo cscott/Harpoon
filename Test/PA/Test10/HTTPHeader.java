@@ -6,9 +6,9 @@
 
 package harpoon.Test.PA.Test10;
 
-import java.net.*;
-import java.util.*;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
 
 //****************************************************************************
 // Class:   httpResponse

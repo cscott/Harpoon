@@ -6,8 +6,10 @@ package harpoon.Test.PA.Test10;
 // Date:       April 24, 1998
 //****************************************************************************
 
-import java.net.*;
-import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.io.IOException;
+import java.io.PrintStream;
 
 public class JhttpServer extends Thread{
 
