@@ -12,6 +12,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.CFGrapher; 
+import harpoon.IR.Properties.UseDefer;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.Util;
 import harpoon.Temp.LabelList;
@@ -35,7 +36,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.45 2000-02-15 19:02:05 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.46 2000-02-16 19:46:46 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The Tree Objects composing this code view. */
@@ -96,6 +97,12 @@ public abstract class Code extends HCode {
      *  should be re-invoked to acquire a new grapher.  
      */ 
     public CFGrapher getGrapher() { return new TreeGrapher(this); }
+    /** Returns a means to externally associate use/def information with
+     *  this tree code. MOVE(TEMP(t), ...) and CALL/NATIVECALLs are treated
+     *  as defs; all instances of TEMP in any of the subtrees returned
+     *  by the <code>kids()</code> method are considered uses. Not
+     *  valid for non-canonical forms. */
+    public UseDefer getUseDefer() { return null/*new UseDefer(this)*/; }
 
     /** Return the name of this code view. */
     public abstract String getName();
