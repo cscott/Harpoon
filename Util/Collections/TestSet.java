@@ -15,9 +15,9 @@ import java.util.Set;
  * implementations for correctness.  Large portions borrowed from Mauve.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestSet.java,v 1.1.2.2 2001-11-08 00:28:08 cananian Exp $
+ * @version $Id: TestSet.java,v 1.1.2.3 2001-11-08 00:40:02 cananian Exp $
  */
-public class TestSet {
+class TestSet {
     private final static boolean DEBUG=false;
     abstract static class Factory {
 	abstract Set build();
