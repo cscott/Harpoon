@@ -5,25 +5,29 @@ import harpoon.Util.Util;
  * <code>InMerge</code> is used to represent a node where
  * multiple control flows merge.  These are typically branch targets.
  * @author  C. Scott Ananian
- * @version $Id: InMerge.java,v 1.3 1998-08-03 08:38:28 cananian Exp $
+ * @version $Id: InMerge.java,v 1.4 1998-08-03 10:35:39 cananian Exp $
  * @see Instr
  */
 public class InMerge extends Instr {
-  public Instr prev[], next;
+  int arity;
 
-  public InMerge(String sourcefile, int linenumber,
-		 Instr[] prev, Instr next) {
+  public InMerge(String sourcefile, int linenumber, int arity) {
     super(sourcefile, linenumber);
-    this.prev = (Instr[]) Util.copy(prev);
-    this.next = next;
+    this.arity = arity;
   }
 
-  /** Return a list of all the <code>Instr</code>s that can precede
-   *  this one. */
-  public Instr[] prev() { return (Instr[]) Util.copy(prev); }
-  /** Return a list of all the possible <code>Instr</code>s that may
-   *  succeed this one. Always returns a one-element array. */
-  public Instr[] next() { return new Instr[] { next }; }
+  // Provide run-time checks on arity.
+  /** @see Instr#addPrev */
+  void addPrev(Instr prev) {
+    if (this.prev.size()>=arity) throw new Error("Exceeding arity of MERGE.");
+    super.addPrev(prev);
+  }
+  /** @see Instr#addNext */
+  void addNext(Instr next) {
+    if (this.next.size()>=1) 
+      throw new Error("MERGE should have only one successor.");
+    super.addNext(next);
+  }
 
   /** Return human-readable representation. */
   public String toString() { return "MERGE"; }
