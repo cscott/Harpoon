@@ -1,0 +1,8 @@
+#!/bin/bash
+mkdir $1
+mv roleinfer.mem $1
+mv temp-* $1
+mv atomic fields classes statechange $1
+mv webdiagram webmethod webrole webtransitions $1
+mv policy $1
+mv fs-* $1
