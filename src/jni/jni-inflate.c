@@ -34,7 +34,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 #else
 	malloc
 #endif
-	(sizeof(*infl));
+      (sizeof(*infl));
 #if (!defined(WITH_TRANSACTIONS)) || (!defined(BDW_CONSERVATIVE_GC))
     INCREMENT_MEM_STATS(sizeof(*infl));
 #endif

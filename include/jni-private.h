@@ -86,6 +86,10 @@ struct inflated_oobj {
   void *jni_data; /* information associated with this object by the JNI */
   void (*jni_cleanup_func)(void *jni_data);
   /* TRANSACTION SUPPORT */
+#ifdef WITH_REALTIME_JAVA
+  struct MemBlock* memBlock;
+  struct MemBlock* temp;
+#endif
 #if WITH_TRANSACTIONS
   struct vinfo *first_version; /* linked list of object versions */
 #endif
@@ -100,10 +104,6 @@ struct inflated_oobj {
 #ifdef WITH_CLUSTERED_HEAPS
   struct clustered_heap * heap;
   void (*heap_release)(struct clustered_heap *);
-#endif
-#ifdef WITH_REALTIME_JAVA
-  struct MemBlock* memBlock;
-  struct MemBlock* temp;
 #endif
 #ifdef BDW_CONSERVATIVE_GC
   /* for cleanup via finalization */
