@@ -20,7 +20,7 @@ import java.io.PrintStream;
  * data types.  Input is from named resource files.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ParseUtil.java,v 1.2 2002-02-25 21:08:45 cananian Exp $
+ * @version $Id: ParseUtil.java,v 1.3 2002-08-06 21:16:20 cananian Exp $
  */
 public abstract class ParseUtil {
     /** Reads from the given resource, ignoring '#' comments and blank lines,
@@ -51,6 +51,7 @@ public abstract class ParseUtil {
 	    } else try {
 		sp.parseString(line);
 	    } catch (BadLineException ex) {
+		ex.filename = resourceName;
 		ex.line = r.getLineNumber();
 		throw ex; // rethrow.
 	    }
@@ -165,10 +166,13 @@ public abstract class ParseUtil {
      *  to indicate an unparsable line in an input file. */
     public static class BadLineException extends IOException {
 	/** readResource will set this to the right value. */
+	String filename=null;
+	/** ditto. */
 	int line=0;
 	public BadLineException(String message) { super(message); }
 	public String toString() {
-	    return super.toString() + " (line "+line+")";
+	    if (filename==null) return super.toString();
+	    return super.toString() + " ("+filename+": line "+line+")";
 	}
     }
 }
