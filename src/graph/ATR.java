@@ -50,10 +50,10 @@ public class ATR extends Server {
     public void process(ImageData id) {
 	try {
 	    cm.runATRServer(name, new CommunicationsAdapter() {
-		public void process(ImageData id) {
-		    ATR.this.out.process(id);
-		}
-	    });
+		    public void process(ImageData id) {
+			ATR.this.out.process(id);
+		    }
+		});
 	} catch (Exception e) {
 	    throw new Error(e);
 	}
