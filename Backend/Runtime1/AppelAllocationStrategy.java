@@ -10,6 +10,7 @@ import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
+import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.JUMP;
@@ -31,7 +32,7 @@ import java.util.List;
  * A simple-minded version of Appel's fast-allocation strategy
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: AppelAllocationStrategy.java,v 1.1.2.2 1999-10-13 17:16:50 cananian Exp $
+ * @version  $Id: AppelAllocationStrategy.java,v 1.1.2.3 2000-02-16 06:18:09 cananian Exp $
  */
 public class AppelAllocationStrategy extends AllocationStrategy {
     final LocationFactory.Location memLimit;
@@ -47,7 +48,8 @@ public class AppelAllocationStrategy extends AllocationStrategy {
    *  Returns a <code>Stm</code> object which allocates a block of memory 
    *  of the specified size.   
    */
-    public Exp memAlloc(TreeFactory tf, HCodeElement src, Exp size)
+    public Exp memAlloc(TreeFactory tf, HCodeElement src,
+			DerivationGenerator dg, Exp size)
     {
 	LABEL        l0, l1, l2, l3, l4;
 	NAME         gc, exit_oom;

@@ -4,6 +4,7 @@
 package harpoon.Backend.Runtime1;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Maps.Derivation;
 import harpoon.Backend.Maps.ClassDepthMap;
 import harpoon.Backend.Maps.FieldMap;
 import harpoon.Backend.Maps.MethodMap;
@@ -11,6 +12,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Exp;
@@ -24,6 +26,7 @@ import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.DATUM;
+import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.EXP;
 import harpoon.IR.Tree.INVOCATION;
@@ -55,7 +58,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.19 2000-01-25 04:11:24 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.20 2000-02-16 06:18:09 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -86,6 +89,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     
     // helper maps.
     final Runtime runtime;
+    final Linker linker;
     final ClassDepthMap cdm;
     final MethodMap imm;
     final MethodMap cmm;
@@ -94,9 +98,10 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // set of string references made
     final Set stringSet = new HashSet();
 
-    TreeBuilder(Runtime runtime, ClassHierarchy ch,
+    TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
 		AllocationStrategy as, boolean pointersAreLong) {
 	this.runtime = runtime;
+	this.linker = linker;
 	this.as  = as;
 	this.cdm = new harpoon.Backend.Maps.DefaultClassDepthMap(ch);
 	this.imm = new harpoon.Backend.Analysis.InterfaceMethodMap(ch);
@@ -137,6 +142,22 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	CLAZ_DISPLAY_OFF = 4 * POINTER_SIZE + 2 * WORD_SIZE;
 	CLAZ_METHODS_OFF = CLAZ_DISPLAY_OFF + (1+cdm.maxDepth())*POINTER_SIZE;
     }
+    // type declaration helper methods
+    private static Exp DECLARE(DerivationGenerator dg, HClass hc, Exp exp) {
+	if (dg!=null) dg.putType(exp, hc);
+	return exp;
+    }
+    private static Exp DECLARE(DerivationGenerator dg, HClass hc, Temp t,
+			       Exp exp) {
+	if (dg!=null) dg.putTypeAndTemp(exp, hc, t);
+	return exp;
+    }
+    private static Exp DECLARE(DerivationGenerator dg, Derivation.DList dl,
+			       Exp exp) {
+	if (dg!=null) dg.putDerivation(exp, dl);
+	return exp;
+    }
+
     // use the field offset map to get the object size (not including header)
     int objectSize(HClass hc) {
 	List l = cfm.fieldList(hc);
@@ -148,6 +169,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocate 'length' bytes plus object header; fill in object header.
     // shift return pointer appropriately for an object reference.
     public Exp objAlloc(TreeFactory tf, HCodeElement source,
+			DerivationGenerator dg,
 			HClass objectType, Exp length) {
 	Temp Tobj = new Temp(tf.tempFactory(), "rt");
 	return new ESEQ
@@ -156,9 +178,10 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	     (tf, source,
 	      new MOVE // allocate memory; put pointer in Tobj.
 	      (tf, source,
-	       new TEMP(tf, source, Type.POINTER, Tobj),
+	       DECLARE(dg, HClass.Void/*not an obj yet*/, Tobj,
+	       new TEMP(tf, source, Type.POINTER, Tobj)),
 	       as.memAlloc
-	       (tf, source,
+	       (tf, source, dg,
 		new BINOP
 		(tf, source, Type.POINTER, Bop.ADD,
 		 length,
@@ -171,24 +194,31 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		(tf, source, Type.INT,
 		 new BINOP
 		 (tf, source, Type.POINTER, Bop.ADD,
-		  new TEMP(tf, source, Type.POINTER, Tobj),
+		  DECLARE(dg, HClass.Void/*not an obj yet*/, Tobj,
+		  new TEMP(tf, source, Type.POINTER, Tobj)),
 		  new CONST(tf, source, OBJ_HASH_OFF))),
 		new UNOP(tf, source, Type.POINTER, Uop._2I,
-			 new TEMP(tf, source, Type.POINTER, Tobj))),
+			 DECLARE(dg, HClass.Void/*not an obj yet*/, Tobj,
+			 new TEMP(tf, source, Type.POINTER, Tobj)))),
 	       new MOVE // assign the new object a class pointer.
 	       (tf, source,
-		new MEM
-		(tf, source, Type.POINTER,
-		 new BINOP
-		 (tf, source, Type.POINTER, Bop.ADD,
-		  new TEMP(tf, source, Type.POINTER, Tobj),
-		  new CONST(tf, source, OBJ_CLAZ_OFF))),
+		DECLARE
+		(dg, HClass.Void/*claz pointer*/,
+		 new MEM
+		 (tf, source, Type.POINTER,
+		  new BINOP
+		  (tf, source, Type.POINTER, Bop.ADD,
+		   DECLARE(dg, HClass.Void/*still not an obj*/, Tobj,
+			   new TEMP(tf, source, Type.POINTER, Tobj)),
+		   new CONST(tf, source, OBJ_CLAZ_OFF)))),
 		new NAME(tf, source, runtime.nameMap.label(objectType))))),
 	     // result of ESEQ is new object pointer
-	     new TEMP(tf, source, Type.POINTER, Tobj));
+	     DECLARE(dg, objectType/*finally an obj*/, Tobj,
+	     new TEMP(tf, source, Type.POINTER, Tobj)));
     }
 
     public Translation.Exp arrayLength(TreeFactory tf, HCodeElement source,
+				       DerivationGenerator dg,
 				       Translation.Exp arrayRef) {
 	return new Translation.Ex
 	   (new MEM  
@@ -200,6 +230,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	      (tf, source, OBJ_ALENGTH_OFF)))); // offset from array base ptr.
     }
     public Translation.Exp arrayNew(TreeFactory tf, HCodeElement source,
+				    DerivationGenerator dg,
 				    HClass arrayType, Translation.Exp length) {
 	Util.assert(arrayType.isArray());
 	// temporary storage for created array.
@@ -227,9 +258,10 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		length.unEx(tf)),
 	       new MOVE // save result in Tarr
 	       (tf, source,
-		new TEMP(tf, source, Type.POINTER, Tarr),
+		DECLARE(dg, HClass.Void/* not an obj yet*/, Tarr,
+			new TEMP(tf, source, Type.POINTER, Tarr)),
 		objAlloc // allocate array data
-		(tf, source, arrayType,
+		(tf, source, dg, arrayType,
 		 new BINOP // compute array data size:
 		 (tf, source, Type.INT, Bop.ADD,
 		  new BINOP // multiply...
@@ -246,49 +278,58 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	       (tf, source, Type.INT, // length field is of type INT.
 		new BINOP // offset array base to get location of length field
 		(tf, source, Type.POINTER, Bop.ADD,
-		 new TEMP(tf, source, Type.POINTER, Tarr),
+		 DECLARE(dg, HClass.Void/*not an obj yet*/, Tarr,
+			 new TEMP(tf, source, Type.POINTER, Tarr)),
 		 new CONST(tf, source, OBJ_ALENGTH_OFF))),
 	       new TEMP(tf, source, Type.INT, Tlen))), // length from Tlen
 	     // result of whole expression is the array pointer, in Tarr
-	     new TEMP(tf, source, Type.POINTER, Tarr)));
+	     DECLARE(dg, arrayType/*finally an obj*/, Tarr,
+		     new TEMP(tf, source, Type.POINTER, Tarr))));
     }
 
     public Translation.Exp componentOf(TreeFactory tf, HCodeElement source,
+				       DerivationGenerator dg,
 				       Translation.Exp arrayref,
 				       Translation.Exp componentref) {
 	// component clazz pointer of arrayref
-	Exp e0 = new MEM(tf, source, Type.POINTER,
+	Exp e0 = DECLARE(dg, HClass.Void/*component claz ptr*/,
+                 new MEM(tf, source, Type.POINTER,
 			 new BINOP // offset to get component type pointer
 			 (tf, source, Type.POINTER, Bop.ADD,
 			  new CONST(tf, source, CLAZ_COMPONENT_OFF),
 			  // dereference object to claz structure.
+			  DECLARE(dg, HClass.Void/*claz ptr*/,
 			  new MEM(tf, source, Type.POINTER,
 				  new BINOP // offset to get claz pointer
 				  (tf, source, Type.POINTER, Bop.ADD,
 				   arrayref.unEx(tf),
-				   new CONST(tf, source, OBJ_CLAZ_OFF)))));
+				   new CONST(tf, source, OBJ_CLAZ_OFF)))))));
 	// class pointer of componentref
-	Exp e1 = new MEM(tf, source, Type.POINTER,
+	Exp e1 = DECLARE(dg, HClass.Void/*claz ptr*/,
+                 new MEM(tf, source, Type.POINTER,
 			 new BINOP // offset to get claz pointer
 			 (tf, source, Type.POINTER, Bop.ADD,
 			  componentref.unEx(tf),
-			  new CONST(tf, source, OBJ_CLAZ_OFF)));
+			  new CONST(tf, source, OBJ_CLAZ_OFF))));
 	// move claz pointer of arrayref component to a temporary variable.
 	Temp Tac = new Temp(tf.tempFactory(), "rt");
 	Stm s0 = new MOVE(tf, source,
-			  new TEMP(tf, source, Type.POINTER, Tac),
+			  DECLARE(dg, HClass.Void/*component claz ptr*/, Tac,
+				  new TEMP(tf, source, Type.POINTER, Tac)),
 			  e0); // now use Tac instead of e0.
 	// class depth of arrayref component type.
 	Exp e2 = new MEM(tf, source, Type.INT,
 			 new BINOP // offset to class depth.
 			 (tf, source, Type.POINTER, Bop.ADD,
 			  new CONST(tf, source, CLAZ_DEPTH_OFF),
-			  new TEMP(tf, source, Type.POINTER, Tac)));
+			  DECLARE(dg, HClass.Void/*component claz ptr*/, Tac,
+				  new TEMP(tf, source, Type.POINTER, Tac))));
 	// we assert that MEM(e0+e2)==e0 by definition
 	// that is, element of class display at class_depth is the class itself
 	// so, the component-of check is just whether MEM(e1+e2)==e0
 	Exp e3 = new BINOP
 	    (tf, source, Type.POINTER, Bop.CMPEQ,
+	     DECLARE(dg, HClass.Void/*claz ptr in display*/,
 	     new MEM
 	     (tf, source, Type.POINTER,
 	      new BINOP
@@ -297,14 +338,16 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	       (tf, source, Type.POINTER, Bop.ADD,
 		new CONST(tf, source, CLAZ_DISPLAY_OFF),
 		e2),
-	       e1)),
-	     new TEMP(tf, source, Type.POINTER, Tac));
+	       e1))),
+	     DECLARE(dg, HClass.Void/*component claz ptr*/, Tac,
+		     new TEMP(tf, source, Type.POINTER, Tac)));
 
 	return new Translation.Ex(new ESEQ(tf, source, s0, e3));
     }
 
     public Translation.Exp instanceOf(final TreeFactory tf,
 				      final HCodeElement source,
+				      final DerivationGenerator dg,
 				      final Translation.Exp objref,
 				      final HClass classType)
     {
@@ -329,43 +372,53 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		    // initialize Til.
 		    Stm s0 = new MOVE
 			(tf, source,
-			 new TEMP(tf, source, Type.POINTER, Til),
+			 DECLARE(dg, HClass.Void/*interface list ptr*/,
+			 new TEMP(tf, source, Type.POINTER, Til)),
 			 // dereference claz structure for interface list ptr
+			 DECLARE(dg, HClass.Void/*interface list ptr*/,
 			 new MEM(tf, source, Type.POINTER,
 				 new BINOP // offset to get interface pointer
 				 (tf, source, Type.POINTER, Bop.ADD,
 				  // dereference object to claz structure.
+				  DECLARE(dg, HClass.Void/*claz ptr*/,
 				  new MEM(tf, source, Type.POINTER,
 					  new BINOP // offset to get claz ptr
 					  (tf, source, Type.POINTER, Bop.ADD,
 					   objref.unEx(tf),
 					   new CONST
-					   (tf, source, OBJ_CLAZ_OFF))),
-				  new CONST(tf, source, CLAZ_INTERFZ_OFF))));
+					   (tf, source, OBJ_CLAZ_OFF)))),
+				  new CONST(tf, source, CLAZ_INTERFZ_OFF)))));
 		    // loop body: test *il against Lclaz.
 		    Stm s1 = new CJUMP
 			(tf, source,
 			 new BINOP
 			 (tf, source, Type.POINTER, Bop.CMPEQ,
+			  DECLARE(dg, HClass.Void/*claz ptr for interface*/,
 			  new MEM(tf, source, Type.POINTER,
-				  new TEMP(tf, source, Type.POINTER, Til)),
-			  new NAME(tf, source, Lclaz)),
+				  DECLARE(dg, HClass.Void/*intrfce lst ptr*/,
+				  new TEMP(tf, source, Type.POINTER, Til)))),
+			  DECLARE(dg, HClass.Void/*hardwired claz ptr*/,
+			  new NAME(tf, source, Lclaz))),
 			 iftrue, Ladv);
 		    // advance il
 		    Stm s2 = new MOVE
 			(tf, source,
-			 new TEMP(tf, source, Type.POINTER, Til),
+			 DECLARE(dg, HClass.Void/*intrfce lst ptr*/, Til,
+			 new TEMP(tf, source, Type.POINTER, Til)),
 			 new BINOP
 			 (tf, source, Type.POINTER, Bop.ADD,
-			  new TEMP(tf, source, Type.POINTER, Til),
+			  DECLARE(dg, HClass.Void/*intrfce lst ptr*/, Til,
+			  new TEMP(tf, source, Type.POINTER, Til)),
 			  new CONST(tf, source, POINTER_SIZE)));
 		    // loop guard: test *il against null.
 		    Stm s3 = new CJUMP
 			(tf, source,
 			 new BINOP
 			 (tf, source, Type.POINTER, Bop.CMPEQ,
+			  DECLARE(dg, HClass.Void/*claz ptr, maybe null*/,
 			  new MEM(tf, source, Type.POINTER,
-				  new TEMP(tf, source, Type.POINTER, Til)),
+				  DECLARE(dg, HClass.Void/*in lst ptr*/, Til,
+				  new TEMP(tf, source, Type.POINTER, Til)))),
 			  new CONST(tf, source) /*null constant*/),
 			 iffalse, Ltop);
 		    // string 'em all together to make result stm.
@@ -401,38 +454,45 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	    return new Translation.Ex
 		(new BINOP
 		 (tf, source, Type.POINTER, Bop.CMPEQ,
-		  new NAME(tf, source, Lclaz), // claz pointer
+		  DECLARE(dg, HClass.Void/*hardwired claz ptr*/,
+		  new NAME(tf, source, Lclaz)), // claz pointer
 		  // dereference claz structure for class display ptr
+		  DECLARE(dg, HClass.Void/*claz ptr from display*/,
 		  new MEM(tf, source, Type.POINTER,
 			  new BINOP // offset to get display pointer
 			  (tf, source, Type.POINTER, Bop.ADD,
 			   new CONST(tf, source,CLAZ_DISPLAY_OFF+class_offset),
 			   // dereference object to claz structure.
+			   DECLARE(dg, HClass.Void/*claz ptr*/,
 			   new MEM(tf, source, Type.POINTER,
 				   new BINOP // offset to get claz pointer
 				   (tf, source, Type.POINTER, Bop.ADD,
 				    objref.unEx(tf),
-				    new CONST(tf, source, OBJ_CLAZ_OFF)))))));
+				    new CONST(tf, source, OBJ_CLAZ_OFF)))))))
+		  ));
 	}
     }
 
     // MONITORENTER NOT IMPLEMENTED
     public Translation.Exp monitorEnter(TreeFactory tf, HCodeElement source,
+					DerivationGenerator dg,
 					Translation.Exp objectref) {
 	return objectref; // nop
     }
     // MONITOREXIT NOT IMPLEMENTED
     public Translation.Exp monitorExit(TreeFactory tf, HCodeElement source,
+				       DerivationGenerator dg,
 				       Translation.Exp objectref) {
 	return objectref; // nop
     }
 
     public Translation.Exp objectNew(TreeFactory tf, HCodeElement source,
+				     DerivationGenerator dg,
 				     HClass classType, boolean initialize) {
 	Util.assert(!classType.isArray());
 	Util.assert(!classType.isPrimitive());
 	int length = objectSize(classType);
-	Exp object = objAlloc(tf, source, classType,
+	Exp object = objAlloc(tf, source, dg, classType,
 			      new CONST(tf, source, length));
 	if (initialize) {
 	    // use memset to initialize all fields to 0.
@@ -443,34 +503,41 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		 (tf, source,
 		  new MOVE
 		  (tf, source,
-		   new TEMP(tf, source, Type.POINTER, t),
+		   DECLARE(dg, classType, t,
+		   new TEMP(tf, source, Type.POINTER, t)),
 		   object),
 		  new NATIVECALL
 		  (tf, source, null,
-		   new NAME(tf, source, new Label("_memset")),
+		   DECLARE(dg, HClass.Void/*c library function*/,
+		   new NAME(tf, source, new Label("_memset"))),
 		   new ExpList
 		   (new BINOP
 		    (tf, source, Type.POINTER, Bop.ADD,
-		     new TEMP(tf, source, Type.POINTER, t),
+		     DECLARE(dg, classType, t,
+		     new TEMP(tf, source, Type.POINTER, t)),
 		     new CONST(tf, source, OBJ_FZERO_OFF)),
 		    new ExpList
 		    (new CONST(tf, source, 0),
 		     new ExpList
 		     (new CONST(tf, source, length),
 		      null))))),
-		 new TEMP(tf, source, Type.POINTER, t));
+		 DECLARE(dg, classType, t,
+		 new TEMP(tf, source, Type.POINTER, t)));
 	}
 	return new Translation.Ex(object);
     }
 
     public Translation.Exp stringConst(TreeFactory tf, HCodeElement source,
+				       DerivationGenerator dg,
 				       String stringData) {
 	stringSet.add(stringData);
 	Exp strref = new NAME(tf, source, runtime.nameMap.label(stringData));
+	DECLARE(dg, linker.forName("java.lang.String"), strref);
 	return new Translation.Ex(strref);
     }
 
     public Translation.Exp arrayBase(TreeFactory tf, HCodeElement source,
+				     DerivationGenerator dg,
 				     Translation.Exp objectref) {
 	return new Translation.Ex
 	    (new BINOP
@@ -479,6 +546,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	      new CONST(tf, source, OBJ_AZERO_OFF)));
     }
     public Translation.Exp arrayOffset(TreeFactory tf, HCodeElement source,
+				       DerivationGenerator dg,
 				       HClass arrayType, Translation.Exp index)
     {
 	Util.assert(arrayType.isArray());
@@ -500,6 +568,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	      new CONST(tf, source, elementsize)));
     }
     public Translation.Exp fieldBase(TreeFactory tf, HCodeElement source,
+				     DerivationGenerator dg,
 				     Translation.Exp objectref) {
 	return new Translation.Ex
 	    (new BINOP
@@ -508,25 +577,29 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	      new CONST(tf, source, OBJ_FZERO_OFF)));
     }
     public Translation.Exp fieldOffset(TreeFactory tf, HCodeElement source,
+					DerivationGenerator dg,
 				       HField field) {
 	Util.assert(!field.isStatic());
 	return new Translation.Ex
 	    (new CONST(tf, source, cfm.fieldOffset(field)));
     }
     public Translation.Exp methodBase(TreeFactory tf, HCodeElement source,
+					DerivationGenerator dg,
 				      Translation.Exp objectref) {
 	return new Translation.Ex
 	    (new BINOP
 	     (tf, source, Type.POINTER, Bop.ADD,
+	      DECLARE(dg, HClass.Void/*claz pointer*/,
 	      new MEM
 	      (tf, source, Type.POINTER,
 	       new BINOP
 	       (tf, source, Type.POINTER, Bop.ADD,
 		objectref.unEx(tf),
-		new CONST(tf, source, OBJ_CLAZ_OFF))),
+		new CONST(tf, source, OBJ_CLAZ_OFF)))),
 	      new CONST(tf, source, CLAZ_METHODS_OFF)));
     }
     public Translation.Exp methodOffset(TreeFactory tf, HCodeElement source,
+					DerivationGenerator dg,
 					HMethod method) {
 	Util.assert(!method.isStatic());
 	if (method.isInterfaceMethod()) {
