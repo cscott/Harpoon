@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.11 1999-05-28 01:45:28 cananian Exp $
+% $Id: thesis.tex,v 1.12 1999-06-04 17:48:40 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage,twoside]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.11 $ $}
+\date{\today \\ $ $Revision: 1.12 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.11 $ $}{$ $Revision: 1.11 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.12 $ $}{$ $Revision: 1.12 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -32,7 +32,8 @@ of implementation or understandibility without realizing the extent to
 which the IR influences the structure of the compiler.  Similarly, the
 theorist will derive proofs based upon intermediate representations
 (and languages) that are amenable to mathematical methods, without
-regard to current implementation practices.
+regard to current implementation practices.%
+\footnote{This paragraph will be revised to be less offensive, eventually.}
 
 This paper introduces yet another intermediate
 representation to the literature:  Static Single Information (SSI) form.
@@ -50,7 +51,7 @@ algorithms are linear in the size of the program.
 Our discussion of the Static Single Information form will be at times
 tied to the source language of the FLEX compiler, Java.  Unlike many
 abstract IRs, the choices made in the design of SSI form have been
-informed by the necessities of compiling a real-world imperative
+dictated by the necessities of compiling a real-world imperative
 language.  Java, however, has several theoretical properties that make
 mathematical analysis more tractable.  In particular, we
 will mention here Java's strict constraints on pointer variables.
@@ -64,7 +65,7 @@ integration of practical implementation and mathematical elegance.
 
 \section{Intermediate Representations}
 The first paper directly addressing an IR as a separate feature of a
-compiler was Foo and Bar in \cite{foobar}.
+compiler was Foo and Bar in \cite{foobar}.\footnote{FIXME}
 The Static Single Assignment (SSA) form introduced by Shapiro and
 Saint in \cite{shapiro70:ssa} is the foundation of most of the
 work we will discuss.  Alpern, Rosen, Wegman and Zadeck reintroduced
@@ -83,8 +84,9 @@ the Program Structure Tree \cite{johnson94:pst},
 DJ graphs \cite{sreedhar96:dj}, and Depedence Flow Graphs
 \cite{johnson93:dfg}.
 
-In comparison to these representations, the domaniant characteristics of
+In comparison to these representations, the dominant characteristics of
 our Static Single Information form may be summarized as follows:
+% EXPAND THESE BULLETS.  MORE INFORMATION.
 \begin{itemize}
 \item It is complete.  There exists an executable semantics
 for the IR that does not require the use of information external to
@@ -95,10 +97,11 @@ constructs; for example, Gated SSA form \cite{ballance90:pdw,tu95:gssa}
 has four different \phifunction{} variants.\footnote{$\phi$-functions,
 $\mu$-functions, $\gamma$-functions, and $\eta$-functions.}
 \item It is compact and efficient.  Construction should be fast, and
-space should be reasonable.
-\item Unnecessary control dependencies are eliminated.  Many IRs
+space should be reasonable.\footnote{Replace with actual numbers.}
+\item All explicit control dependencies are eliminated.  Many IRs
 require explicit control flow edges that serialize computation more
-than is strictly necessary.
+than is strictly necessary.\footnote{Explain better.}
+\item Efficient for both forward and backward dataflow analyses.
 \end{itemize}
 
 \textbf{Transition goes here: we are going to describe SSA form for
@@ -163,7 +166,7 @@ SSI form extends SSA form to achieve symmetry for both forward and
 reverse dataflow.   SSI form recognizes that information about
 variables is generated at branches and generates new names at these
 points.  This provides us with a one-to-one mapping between variable
-names and information about those variables which is independant of
+names and information about those variables which is independent of
 control-flow graph context.  Analyses can then associate information
 with variable names and propagate this information efficiently and
 directly both with and against the dataflow direction.
