@@ -79,7 +79,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.9 2001-09-18 22:10:53 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.10 2001-09-20 17:37:28 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -118,8 +118,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    int bytes = (Math.max(small.minusWidth(),small.plusWidth())+7)/8;
 	    after8 += bytes==3 ? 4 : bytes;
 	}
-	System.out.println("BITWIDTH RESULTS: "+before+"/"+after+" bits; "+
-			   before8+"/"+after8+" bytes");
+	System.out.println("BITWIDTH RESULTS: "+after+"/"+before+" bits; "+
+			   after8+"/"+before8+" bytes");
 	HashSet flds = new HashSet(5*ch.classes().size());
 	for (Iterator it=ch.classes().iterator(); it.hasNext(); )
 	    flds.addAll(Arrays.asList(((HClass)it.next()).getFields()));
