@@ -43,12 +43,9 @@ public class PriorityScheduler extends Scheduler {
     // and how long we've allowed that thread to run
     long runningThread = 0;
     RelativeTime runningTime = null;
-    
-    // Do not call this constructor; instead, call
-    // PriorityScheduler.getScheduler().
-    /** Construct an instance of <code>PriorityScheduler</code>. Applications
-     *  will likely not need any other instance other than the default instance.
-     */
+    static PriorityScheduler instance = null;
+
+    /** Constructor for the required scheduler. */
     protected PriorityScheduler() {
 	super();
 	if (thread == null) {
@@ -66,15 +63,18 @@ public class PriorityScheduler extends Scheduler {
 	}
     }
 
-    // This method is not thread-safe!
-    public static PriorityScheduler getScheduler() {
-	if (defaultScheduler == null) 
+    /** Return a reference to an instance of <code>PriorityScheduler</code>.
+     *
+     *  @return A reference to an instance of <code>PriorityScheduler</code>.
+     */
+    public static PriorityScheduler instance() {
+	if (instance == null) 
 	    ImmortalMemory.instance().enter(new Runnable() {
 		public void run() {
-		    PriorityScheduler.defaultScheduler = new PriorityScheduler();
+		    instance = new PriorityScheduler();
 		}
 	    });
-	return (PriorityScheduler)defaultScheduler;
+	return instance;
     }
     
     /** Inform the scheduler and cooperating facilities that the resource demands,
@@ -88,21 +88,13 @@ public class PriorityScheduler extends Scheduler {
      *  @param schedulable The instance of <code>Schedulable</code> for which the
      *                     changes are proposed.
      */
-    protected boolean addToFeasibility(final Schedulable schedulable) {
+    protected void addToFeasibility(final Schedulable schedulable) {
 	allThreads.add(schedulable);
 	thread[nThreads] = new ThreadConstraints();
-	thread[nThreads].threadID = ++nextThreadID;
+	thread[nThreads].threadID = schedulable.getUID();
 	thread[nThreads].schedulable = schedulable;
 	thread[nThreads].beginPeriod = null;
 	nThreads++;
-	
-	ImmortalMemory.instance().enter(new Runnable() {
-	    public void run() {
-		// Give the runtime system a chance to update its data structures
-		addThreadInC(schedulable, nextThreadID);
-	    }
-	});
-	return isFeasible();
     }
 
     protected native void addThreadInC(Schedulable t, long threadID);
@@ -190,15 +182,6 @@ public class PriorityScheduler extends Scheduler {
 	return "EDF";
     }
     
-    /** Return a reference to an instance of <code>PriorityScheduler</code>.
-     *
-     *  @return A reference to an instance of <code>PriorityScheduler</code>.
-     */
-    public static PriorityScheduler instance() {
-	if (defaultScheduler == null) defaultScheduler = new PriorityScheduler();
-	return (PriorityScheduler)defaultScheduler;
-    }
-
     /** Determines the load on the system. If the load is less then 1, the
      *  system is feasible. If the load is greater than or equal to 1, the
      *  system is not feasible.
@@ -257,62 +240,6 @@ public class PriorityScheduler extends Scheduler {
 	return (load(params) < 1.0);
     }
     
-    // This is Cata's stuff, which is not needed any more.
-
-//     // changeIfFeasible()
-//     //   This is where the actual feasibility decision is made.
-//     //   Algorithm: Plain EDF -- add up the fractions cost/period for
-//     //   periodic threads, cost/minInterarrival for sporadic threads.
-//     public boolean changeIfFeasible(Schedulable schedulable,
-// 				    ReleaseParameters release,
-// 				    MemoryParameters memory) {
-// 	if (schedulable != null &&
-// 	    !allThreads.contains(schedulable)) {
-// 	    return false; // We are not responsible for this thread.
-// 	}
-// 	int switchingState = stopSwitchingInC();
-// 	double load = 0.0;
-// 	HashSet groupsSeen = new HashSet();
-// 	for (Iterator i = allThreads.iterator(); i.hasNext(); ) {
-// 	    Schedulable s = (Schedulable) i.next();
-// 	    // Use the release parameters for each Schedulable, except for the one
-// 	    // we are trying to change, for which we'll use the newly proposed
-// 	    // parameters.
-// 	    ReleaseParameters rp = (s == schedulable) ?
-// 		release : s.getReleaseParameters();
-	    
-// 	    if (rp != null) // Main thread (and possibly other threads) have null rp
-// 		// Periodic threads already have a cost and a period
-// 		if (rp instanceof PeriodicParameters) {
-// 		    load += (double)((PeriodicParameters)rp).getCost().getMilliseconds()/
-// 			((PeriodicParameters)rp).getPeriod().getMilliseconds();
-// 		}
-// 		else if (rp instanceof SporadicParameters) {
-// 		    load += (double)((SporadicParameters)rp).getCost().getMilliseconds()/
-// 			((SporadicParameters)rp).getMinimumInterarrival().getMilliseconds();
-// 		}
-// 	    // We must look up the period in the ProcessingGroupParameters
-// 	    // of the thread.
-// 		else {
-// 		    ProcessingGroupParameters pgp = s.getProcessingGroupParameters();
-// 		    if (!groupsSeen.contains(pgp)) { // Haven't seen this group before
-// 			groupsSeen.add(pgp);
-// 			load += (double)pgp.getCost().getMilliseconds() /
-// 			    pgp.getPeriod().getMilliseconds();
-// 		    }
-// 		}
-// 	}
-	
-// 	System.out.println("Load = " + load);
-// 	if (load <= 1.0 && schedulable != null) {
-// 	    schedulable.setReleaseParameters(release);
-// 	    schedulable.setMemoryParameters(memory);
-// 	}
-	
-// 	restoreSwitchingInC(switchingState);
-// 	return (load <= 1.0);
-//     }
-
     /** Inform <code>this</code> and cooperating facilities that the
      *  <code>ReleaseParameters</code> of the ginve instance of <code>Schedulable</code>
      *  should <i>not</i> be considered in feasibility analysis until further notified.
@@ -323,8 +250,7 @@ public class PriorityScheduler extends Scheduler {
      *  @return True, if the removal was ssuccessful. False, if the removal was
      *          unsuccessful.
      */
-    protected boolean removeFromFeasibility(Schedulable schedulable) {
-	long threadID = removeThreadInC(schedulable);
+    protected void removeFromFeasibility(Schedulable schedulable) {
 	allThreads.remove(schedulable);
 	
 	int i = 0;
@@ -335,11 +261,7 @@ public class PriorityScheduler extends Scheduler {
 	    thread[i] = null; // To ensure deallocation
 	    thread[i] = thread[--nThreads];
 	}
-
-	return isFeasible();
     }
-    
-    protected native long removeThreadInC(Schedulable t);
     
     /** The method appears in many classe in the RTSJ and with various parameters.
      *  The parameters are either new scheduling characteristics for an instance
@@ -394,10 +316,8 @@ public class PriorityScheduler extends Scheduler {
     }
 
 
-    protected native void setQuantaInC(long microsecs);
-    
     /** Implements EDF (Earliest Deadline First) Algorithm */
-    public long chooseThread(long micros) {
+    protected long chooseThread(long micros) {
 	long microsBegin = RealtimeClock.getTimeInC();
 	invocations++;
 	AbsoluteTime now = new AbsoluteTime(0, (int)micros*1000);
@@ -504,7 +424,7 @@ public class PriorityScheduler extends Scheduler {
 	    else
 		runningTime.set(defaultQuanta.getMilliseconds(),
 				defaultQuanta.getNanoseconds());
-	    setQuantaInC(runningTime.getMilliseconds()*1000);
+	    setQuanta(runningTime.getMilliseconds()*1000);
 	    runningTimeMicros += RealtimeClock.getTimeInC() - microsBegin;
 	    return runningThread;
 	}
@@ -514,18 +434,15 @@ public class PriorityScheduler extends Scheduler {
 	return runningThread = 0;
     }
     
-    public void stopAll()	{
-    }
-    
-    public boolean noThreads() {
+    protected boolean noThreads() {
 	return nThreads == 0;
     }
     
-    public void disableThread(long threadID) {
+    protected void disableThread(long threadID) {
 	disabledThreads.add(new Long(threadID));
     }	
     
-    public void enableThread(long threadID) {
+    protected void enableThread(long threadID) {
 	disabledThreads.remove(new Long(threadID));
     }	
     
@@ -534,7 +451,10 @@ public class PriorityScheduler extends Scheduler {
 	    if (thread[i] != null && thread[i].schedulable == rt)
                 thread[i].workLeft.set(0,0);
     }
-    
-    protected static native int stopSwitchingInC();
-    protected static native int restoreSwitchingInC(int state);
+
+    public void addThread(RealtimeThread rt) {
+    }
+
+    public void removeThread(RealtimeThread rt) {
+    }   
 }

@@ -246,4 +246,8 @@ public interface Schedulable extends java.lang.Runnable {
 			     MemoryParameters memoryParameters,
 			     ProcessingGroupParameters processingGroup)
 	throws IllegalThreadStateException;
+
+    /** Return a UID for this Schedulable object. */
+    public long getUID();
+
 }

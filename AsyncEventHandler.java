@@ -56,6 +56,8 @@ public class AsyncEventHandler implements Schedulable {
     protected MemoryParameters memParams;
     protected MemoryArea memArea;
     protected ProcessingGroupParameters group;
+    private static long UID = 0;
+    private long myUID = ++UID;
 
     /** Create a handler whose <code>SchedulingParameters</code> are
      *  inherited from the current thread and does not have either
@@ -419,5 +421,9 @@ public class AsyncEventHandler implements Schedulable {
 // 	    setSchedulingParameters(old_scheduling);
 // 	    return false;
 // 	}
+    }
+
+    public long getUID() {
+	return myUID;
     }
 }

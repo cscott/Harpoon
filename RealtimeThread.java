@@ -56,6 +56,13 @@ public class RealtimeThread extends Thread implements Schedulable {
     
     private Runnable target;
 
+    private static long nextThreadID = 0;
+    long threadID = ++nextThreadID;
+
+    public long getUID() {
+	return threadID;
+    }
+
     static void checkInit() {
 	if (RTJ_init_in_progress) {
 	    System.out.println("Cannot use any MemoryArea except heap until" +
@@ -189,6 +196,10 @@ public class RealtimeThread extends Thread implements Schedulable {
 	noHeap = false;
 	heapMemCount = 0;
 	topStack = null;
+	initScheduler();
+    }
+
+    void initScheduler() {
 	if (!RTJ_init_in_progress) {
 	    currentScheduler = Scheduler.getDefaultScheduler();
 	}
@@ -671,8 +682,7 @@ public class RealtimeThread extends Thread implements Schedulable {
 	    enter(mem, original);
 	}
 	mem = getMemoryArea();
-	super.start();// When the run method is called, 
-	addToFeasibility();
+	super.start(); // Setup thread
     }
 
     /** Used by threads that have a reference to a <code>ReleaseParameters</code>
@@ -701,7 +711,7 @@ public class RealtimeThread extends Thread implements Schedulable {
      */
     public boolean waitForNextPeriod() throws IllegalThreadStateException {
 	if ((releaseParameters instanceof PeriodicParameters) && (!blocked))
-	    PriorityScheduler.getScheduler().waitForNextPeriod(this);
+	    currentScheduler.waitForNextPeriod(this);
 	return false;
     }
 
@@ -842,5 +852,19 @@ public class RealtimeThread extends Thread implements Schedulable {
     
     public String toString() {
 	return "RealtimeThread";
+    }
+
+    /** Schedule this on the thread lists */
+    final void schedule() {
+	if (currentScheduler != null) {
+	    currentScheduler.addThreadToLists(this);
+	}
+    }
+
+    /** Deschedule this from the thread lists */
+    final void unschedule() {
+	if (currentScheduler != null) {
+	    currentScheduler.removeThreadFromLists(this);
+	}
     }
 }

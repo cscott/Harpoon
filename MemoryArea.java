@@ -296,21 +296,25 @@ public abstract class MemoryArea {
 			      final Object[] parameters) 
 	throws IllegalAccessException, InstantiationException,
 	OutOfMemoryError {
-	RealtimeThread.checkInit();
-	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
-	Object o = new Object();
-	o.memoryArea = shadow;
-	rt.memoryArea().checkAccess(o);
 	try {
-	    Constructor c = type.getConstructor(parameterTypes);
-	    o = newInstance(rt, c, parameters);
-	} catch (NoSuchMethodException e) {
-	    throw new InstantiationException(e.getMessage());
-	} catch (InvocationTargetException e) {
-	    throw new InstantiationException(e.getMessage());
+	    RealtimeThread.checkInit();
+	    RealtimeThread rt = RealtimeThread.currentRealtimeThread();
+	    Object o = new Object();
+	    o.memoryArea = shadow;
+	    rt.memoryArea().checkAccess(o);
+	    try {
+		Constructor c = type.getConstructor(parameterTypes);
+		o = newInstance(rt, c, parameters);
+	    } catch (NoSuchMethodException e) {
+		throw new InstantiationException(e.getMessage());
+	    } catch (InvocationTargetException e) {
+		throw new InstantiationException(e.getMessage());
+	    }
+	    o.memoryArea = shadow;
+	    return o;
+	} catch (IllegalAssignmentError e) {
+	    throw new IllegalAccessException(e.toString());
 	}
-	o.memoryArea = shadow;
-	return o;
     }
     
     /** Allocate an object in this memory area.

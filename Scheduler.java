@@ -21,7 +21,9 @@ public abstract class Scheduler {
     protected static Scheduler defaultScheduler = null;
     
     /** Create an instance of <code>Scheduler</code>. */
-    protected Scheduler() {}
+    protected Scheduler() {
+	addToRootSet();
+    }
 
     /** Inform the scheduler and cooperating facilities that the resource
      *  demands (as expressed in the associated instances of
@@ -34,7 +36,7 @@ public abstract class Scheduler {
      *  @param schedulable A reference to the given instance of <code>Schedulable</code>.
      *  @return True, if the addition was successful. False, if not.
      */
-    protected abstract boolean addToFeasibility(Schedulable schedulable);
+    protected abstract void addToFeasibility(Schedulable schedulable);
 
     /** Trigger the execution of a schedulable object (like an
      *  <code>AsyncEventHandler</code>.
@@ -44,12 +46,19 @@ public abstract class Scheduler {
     public abstract void fireSchedulable(Schedulable schedulable);
 
     /** Gets a reference to the default scheduler.
+     *  In the RTJ spec, this is the PriorityScheduler, but we'll set it to whatever
+     *  we wish to focus on at the moment, since this is a hot research target.
+     *
+     *  Currently, there's a PriorityScheduler (for compliance), and a 
+     *  RoundRobinScheduler (for debugging).  Conceivably, one can put Schedulers 
+     *  in a containment hierarchy, and getDefaultScheduler() would
+     *  return the root.
      *
      *  @return A reference to the default scheduler.
      */
     public static Scheduler getDefaultScheduler() {
 	if (defaultScheduler == null) {
-	    setDefaultScheduler(PriorityScheduler.getScheduler());
+	    setDefaultScheduler(RoundRobinScheduler.instance());
 	    return getDefaultScheduler();
 	}
 	return defaultScheduler;
@@ -80,7 +89,7 @@ public abstract class Scheduler {
      *  @return True, if the removal was successful. False, if the removal
      *          was unsuccessful.
      */
-    protected abstract boolean removeFromFeasibility(Schedulable schedulable);
+    protected abstract void removeFromFeasibility(Schedulable schedulable);
 
     /** Set the default scheduler. This is the scheduler given to instances
      *  of <code>RealtimeThread</code> when they are constructed. The default
@@ -111,11 +120,9 @@ public abstract class Scheduler {
      *  @return True, if the resulting system is feasible and the changes are made.
      *          False, if the resulting system is not feasible and no changes are made.
      */
-    public boolean setIfFeasible(Schedulable schedulable,
-				 ReleaseParameters release,
-				 MemoryParameters memory) {
-	return false;
-    }
+    public abstract boolean setIfFeasible(Schedulable schedulable,
+					  ReleaseParameters release,
+					  MemoryParameters memory);
 
     /** This method appears in many classes in the RTSJ and with various parameters.
      *  The parameters are either new scheduling characteristics for an instance of
@@ -135,10 +142,119 @@ public abstract class Scheduler {
      *  @return True, if the resulting system is feasible and the changes are made.
      *          False, if the resulting system is not feasible and no changes are made.
      */
-    public boolean setIfFeasible(Schedulable schedulable,
-				 ReleaseParameters release,
-				 MemoryParameters memory,
-				 ProcessingGroupParameters group) {
-	return false;
+
+    public abstract boolean setIfFeasible(Schedulable schedulable,
+					  ReleaseParameters release,
+					  MemoryParameters memory,
+					  ProcessingGroupParameters group);
+
+    /** Chooses a thread to run */
+    protected abstract long chooseThread(long currentTime);
+
+    /** Adds a thread to the thread list */
+    protected abstract void addThread(RealtimeThread thread);
+
+    /** Removes a thread from the thread list */
+    protected abstract void removeThread(RealtimeThread thread);
+
+    /** Any threads running? */
+    protected abstract boolean noThreads();
+
+    /** Stop running <code>threadID</code> until enableThread - 
+     *  used in the lock implementation to wait on a lock.
+     */
+    protected abstract void disableThread(long threadID);
+
+    /** Enable <code>threadID</code>, allowing it run again - used in notify */
+    protected abstract void enableThread(long threadID);
+
+    /** Cause the thread to block until the next period */
+    protected abstract void waitForNextPeriod(RealtimeThread rt);
+
+    /** Switch every <code>microsecs</code> microseconds */
+    protected final native void setQuanta(long microsecs);
+
+    /** Run the runnable in an atomic section */
+    public final static void atomic(Runnable run) {
+	int state = beginAtomic();
+	run.run();
+	endAtomic(state);
+    }
+
+    private final void addToRootSet() {
+	if (Math.sqrt(4)==0) {
+	    chooseThread(0);
+	    noThreads();
+	    disableThread(0);
+	    enableThread(0);
+	    (new RealtimeThread()).schedule();
+	    (new RealtimeThread()).unschedule();
+	    new NoSuchMethodException();
+	    new NoSuchMethodException("");
+	}
+    }
+
+    final void addThreadToLists(final RealtimeThread thread) {
+	atomic(new Runnable() {
+	    public void run() {
+		addToFeasibility(thread);
+		ImmortalMemory.instance().enter(new Runnable() {
+		    public void run() {
+			addThreadInC(thread, thread.threadID);
+		    }
+		});
+		addThread(thread);
+	    }
+	});
+    }
+
+    final void removeThreadFromLists(final RealtimeThread thread) {
+	atomic(new Runnable() {
+	    public void run() {
+		removeThread(thread);
+		removeThreadInC(thread);
+		removeFromFeasibility(thread);
+	    }
+	});
+    }
+
+    private final native void addThreadInC(Schedulable t, long threadID);
+    private final native long removeThreadInC(Schedulable t);
+    private final native static int beginAtomic();
+    private final native static void endAtomic(int state);
+
+    final static void jDisableThread(final RealtimeThread rt, 
+				     final long threadID) {
+	atomic(new Runnable() {
+	    public void run() {
+		Scheduler sched;
+		if (rt != null) { // Is this really necessary?
+		    sched = rt.getScheduler();
+		} else {
+		    sched = getDefaultScheduler();
+		}
+		if (sched != null) {
+		    sched.disableThread(threadID);
+		} 
+	    }
+	});
+	
+    }
+    
+    final static void jEnableThread(final RealtimeThread rt, 
+				    final long threadID) {
+	atomic(new Runnable() {
+	    public void run() {
+		Scheduler sched;
+		if (rt != null) { // Is this really necessary?
+		    sched = rt.getScheduler();
+		} else {
+		    sched = getDefaultScheduler();
+		}
+		if (sched != null) {
+		    sched.enableThread(threadID);
+		}
+	    }	    
+	});
     }
 }
