@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.8 2002-03-22 17:23:34 cananian Exp $
+% $Id: oopsla02.tex,v 1.9 2002-03-22 18:17:55 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.8 $ $}{$ $Revision: 1.8 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.9 $ $}{$ $Revision: 1.9 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -390,6 +390,110 @@ these results.
 
 \subsection{Bitwidth Analysis}
 % this allows us to reduce fields and remove unused/const fields.
+We use a flow-sensitive interprocedural bitwidth analysis to
+find constants values, unused and constant fields, and to reduce
+field sizes where possible.  We use a dataflow framework with
+Wegman and Zadeck's Sparse Conditional Constant (SCC) propagation
+algorithm \cite{wegman91:scc} as a basis.  We then extend their
+analysis interprocedurally, add coverage of Java language features,
+and extend the value lattice to handle bitwidth.
+Since almost all types in Java are signed (with the exception of the
+16-bit {\tt char}), we must be able to describe bitwidths of both
+negative and positive numbers, which we do by splitting the set of
+values into negative, zero, and positive parts, and describing the
+bitwidth of each individually.
+
+\subsubsection{Value lattice}
+First consider extending the basic three level value lattice of Wegman and
+Zadeck (figure~\ref{fig:wzlat} to allow the classification of
+negative, positive, or zero
+values, as illustrated in figure~\ref{fig:scclat6}.
+A join on two negative numbers yields the entry \code{(M--)},
+indicating the set of all negative non-zero numbers; a
+join on a negative and a positive number yields \code{(M-P)}, and so on.
+\begin{figure}
+\centering\renewcommand{\figscale}{0.6}\input{Figures/THlat1b}
+\caption{Wegman and Zadeck's SCC value lattice.}
+\label{fig:wzlat}
+\end{figure}
+\begin{figure}
+\centering\renewcommand{\figscale}{0.6}\input{Figures/THlat6b}
+\caption[An integer lattice for signed integers.]
+{An integer lattice for signed integers. A classification into
+negative (M), positive (P), or zero (Z) is grafted onto the standard
+flat integer constant domain.}
+\label{fig:scclat6}
+\end{figure}
+
+Now substitute integers $M$ and $P$ into the tuples, to represent the
+widths of the absolute value of the negative and positive portion of
+the number.  Merging the constants $2$ and $4$ would result in the lattice
+value \code{(--3)},\footnote{Read this as \tuple{-,-,3} if you think
+  ``double-negation'' when seeing two dashes in a row.}
+for example, and merging $-4$ with $4$ would result in
+\code{(3-3)}.  Some combination rules for arithmetic operations are
+shown in figure~\ref{fig:bitrules}.  The rules for simple arithmetic
+operators should be obvious upon examination (adding two $N$ bit
+integers yields at most an $N+1$-bit integer, for example) although
+care must be taken to ensure that combinations of negative and
+positive integers are handled correctly.  Our implementation contains
+in addition rules for common special cases, such as multiplication by
+a one-bit quantity, division by constants, or bitfield operations on
+two positive numbers.
+\begin{figure}
+\begin{eqnarray*}
+-\tuple{M,P} &=& \tuple{P,M}\\
+\tuple{M_l,P_l} + \tuple{M_r,P_r} &=& \tuple{1+\max(M_l,M_r),1+\max(P_l,P_r)}\\
+%\tuple{M_l,P_l} \times \tuple{M_r,P_r} &=& \langle\max(M_l+P_r,P_l+M_r),\\
+%                                       &&  \max(M_l+M_r,P_l+P_r)\rangle\\
+\tuple{M_l,P_l} \times \tuple{M_r,P_r} &=&
+\tuple{\begin{array}{l}\max(M_l+P_r,P_l+M_r),\\
+                       \max(M_l+M_r,P_l+P_r)\end{array}}\\
+\tuple{0,P_l} \wedge \tuple{0,P_r} &=& \tuple{0,\min(P_l,P_r)}\\
+\tuple{M_l,P_l}\wedge \tuple{M_r,P_r} &=& \tuple{\max(M_l,M_r),\max(P_l,P_r)}
+\end{eqnarray*}%
+\caption{Some combination rules for bit-width analysis.  The \code{Z}
+  element indicating whether zero is a possible value has been omitted
+  for clarity.}\label{fig:bitrules}
+\end{figure}
+
+\subsubsection{Treatment of fields}
+Dataflow on this bitwidth lattice is performed on the entire Java
+program interprocedurally.  The analysis is what Heintze and Tardieu
+\cite{heintze01}
+would call {\it field-based}; that is, given a field $f$ defined in
+class $X$, and an instance of $X$ named $x$, we consider an assignment
+to $x.f$ to be an assignment to the field $X.f$ and ignore the base
+object $x$.\footnote{An obvious extension is to use pointer
+analysis to discriminate between fields allocated at different sites
+in the program.}  The result of the analysis is a bitwidth
+specification for each variable and field in the program.  As the
+analysis is based on SCC, we also identify constant variables and
+fields; reads of constant fields are replaced with their constant
+value and the field is eliminated.  Fields which we do not discover
+any reads of during our analysis are also removed as unused.
+
+\subsubsection{Other details}
+Our analysis handles method calls by merging the lattice values of the
+method parameters at the call-site with the formal parameters of the
+method.  Similarly, the return value of the method is propagated back
+to all call-sites.  Our compiler's intermediate representation handles
+thrown exceptions by treating the method return value as a tuple, and
+the call site as a conditional branch.  The ``return value'' is
+assigned and the first branch taken on a normal method return, and the
+``exception value'' is assigned and the second branch taken when an
+exception is thrown from the method.
+
+Our implementation of this analysis is actually context-sensitive,
+with a user-defined context length.  All results presented here were
+obtained with the context set to zero.
+
+Space does not permit us to describe the full extension of the value
+lattice to handle all Java types, the class hierarchy, {\tt
+  null} and {\tt String} constants, and fixed-length arrays.
+We refer the interested reader to \cite{ananian99:tech} for an
+exhaustive description.
+
 \subsection{Definite Initialization Analysis}
 The Java field semantics dictate that uninitialized fields must have
 the value zero (or {\tt null}, for pointer fields).  If a field is not
@@ -506,6 +610,27 @@ splitting is by magnitude of expected gain, from profiling.
 \caption{Total allocation in spec benchmarks}
 \label{fig:space}
 \end{figure}
+\begin{table}
+\begin{tabular}{lcccr@{.}l}
+&\bf total&&&\multicolumn{2}{c}{\bf\% alloc'ed}\\
+\bf Benchmark &\bf fields &\bf unread &\bf constant &
+\multicolumn{2}{c}{\bf space saved} \\\hline
+200\_check      & 279 &   79   &   35   &  2&6\% \\
+201\_compress   & 298 &   75   &   31   &  2&5\% \\
+202\_jess       & 485 &   91   &   43   &  9&9\% \\
+205\_raytrace   & 341 &   75   &   30   &  0&0\% \\
+209\_db         & 286 &   75   &   35   &  0&0\% \\
+213\_javac      & 531 &   85   &   34   &  0&6\% \\
+222\_mpegaudio  & 286 &   75   &   35   &  1&4\% \\
+227\_mtrt       & 341 &   75   &   30   &  0&0\% \\
+228\_jack       & 378 &   77   &   31   & 10&2\% \\
+\end{tabular}
+\caption{Number of unused and constant fields in SPEC benchmarks,
+  and the savings realized (in \% of total dynamic allocated bytes) by
+  removing them.}
+\label{tab:const-unused}
+\end{table}
+
 
 \section{Related work}
 
