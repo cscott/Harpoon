@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.22 1999-08-03 22:15:55 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.23 1999-08-05 15:48:01 cananian Exp $
  */
 public class Spec  {
 
@@ -244,6 +244,7 @@ public class Spec  {
 	public void visit(ExpId e) { visit((Exp)e); }
 	public void visit(ExpMem e) { visit((Exp)e); }
 	public void visit(ExpName e) { visit((Exp)e); }
+	public void visit(ExpNativeCall e) { visit((Exp)e); }
 	public void visit(ExpTemp e) { visit((Exp)e); }
 	public void visit(ExpUnop e) { visit((Exp)e); }
     }
@@ -394,6 +395,31 @@ public class Spec  {
 	public String toString() { return "NAME("+name+")"; }
     }
 
+    /** Extension of <code>Spec.Exp</code> that represents a 
+     *  c-calling convention function call.
+	@see IR.Tree.NATIVECALL
+    */
+    public static class ExpNativeCall extends Exp {
+	/** Function location expression. 
+	    @see IR.Tree.Exp
+	 */
+	public final Exp func;
+	/** Arguments being passed to procedure. 
+	    @see IR.Tree.ExpList
+	*/
+	public final String arglist;
+	/** Constructs a new <code>Spec.ExpNativeCall</code>.
+	    @param func Function location expression.
+	    @param arglist Arguments.
+	*/
+	public ExpNativeCall(Exp func, String arglist) {
+	    this.func = func;
+	    this.arglist = arglist;
+	}
+	public void accept(ExpVisitor v) { v.visit(this); }
+	public String toString() { return "NATIVECALL("+func+","+arglist+")"; }
+    }
+
     /** Extension of <code>Spec.Exp</code> that represents a Temporary
 	value in the code.
 	@see IR.Tree.TEMP
@@ -460,6 +486,7 @@ public class Spec  {
 	public void visit(StmExp s) { visit((Stm)s); }
 	public void visit(StmJump s) { visit((Stm)s); }
 	public void visit(StmLabel s) { visit((Stm)s); }
+	public void visit(StmMethod s) { visit((Stm)s); }
 	public void visit(StmMove s) { visit((Stm)s); }
 	public void visit(StmNativeCall s) { visit((Stm)s); }
 	public void visit(StmReturn s) { visit((Stm)s); }
@@ -618,6 +645,20 @@ public class Spec  {
 	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "LABEL("+name+")"; }
     }
+    /** Extension of <code>Spec.Stm</code> representing a method header.
+     *  @see IR.Tree.METHOD
+     */
+    public static class StmMethod extends Stm {
+	/** Identifier name to get params field of <code>Tree.METHOD</code>. */
+	public final String params;
+	/** Constructs a new <code>Spec.StmMethod</code>.
+	 *  @param params Identifier to get params field of 
+	 *                <code>Tree.METHOD</code>.
+	 */
+	public StmMethod(String params) { this.params = params; }
+	public void accept(StmVisitor v) { v.visit(this); }
+	public String toString() { return "METHOD("+params+")"; }
+    }
     /** Extension of <code>Spec.Stm</code> representing an expression
 	which moves a value from one place to another.
 	@see IR.Tree.MOVE
@@ -660,7 +701,6 @@ public class Spec  {
 	public final String arglist;
 	/** Constructs a new <code>Spec.StmNativeCall</code>.
 	    @param retval Return value destination expression.
-	    @param retex Exception value destination expression.
 	    @param func Function location expression.
 	    @param arglist Arguments.
 	*/
