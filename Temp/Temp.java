@@ -1,7 +1,6 @@
 package harpoon.Temp;
 
-import harpoon.Type.Type;
-import harpoon.Type.TypedObject;
+import harpoon.ClassFile.*;
 import java.util.Hashtable;
 
 /** 
@@ -10,20 +9,20 @@ import java.util.Hashtable;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.4 1998-08-01 22:55:17 cananian Exp $
+ * @version $Id: Temp.java,v 1.5 1998-08-05 12:14:10 cananian Exp $
  * @see TempList
  */
-public class Temp implements TypedObject {
+public class Temp {
   private static Hashtable table = new Hashtable();
 
   private String name;
-  private Type type;
+  private HClass type;
   private static final String prefix = "t";
 
   /** Creates a unique temporary with the specified type.
    *  @param type the type.
    */
-  public Temp(Type type) { 
+  public Temp(HClass type) { 
     this(null, type);
   }
   /** Creates a unique temporary with a suggested name and specified type.
@@ -32,7 +31,7 @@ public class Temp implements TypedObject {
    *                  If m_prefix is null, "t" will be used.
    *  @param type     the type.
    */
-  public Temp(String m_prefix, Type type) {
+  public Temp(String m_prefix, HClass type) {
     // if prefix is null, use default prefix
     if (m_prefix==null) m_prefix = this.prefix;
     // Strip trailing underscores.
@@ -52,7 +51,7 @@ public class Temp implements TypedObject {
   /** Returns the name of this temporary */
   public String name() { return name; }
   /** Returns the datatype of this temporary. */
-  public Type   type() { return type; }
+  public HClass   type() { return type; }
 
   /** Returns a string representation of this temporary. */
   public String toString() { return name(); }
