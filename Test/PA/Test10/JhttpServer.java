@@ -32,7 +32,7 @@ public class JhttpServer extends Thread{
 
     private void startWorker(Socket client) throws Exception {
 	(new JhttpWorker(client,logging)).start();
-	System.out.println("accepted connection.");
+	//	System.out.println("accepted connection.");
     }
 
     public void run(){
