@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.9 1999-06-30 05:50:18 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.10 1999-06-30 06:11:17 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -496,7 +496,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		    Util.assert(false, "Should never visit generic Leaf in ExpConst");
 		}
 		public void visit(Spec.LeafId l) {
-		    append(initStms, "Number " + l.id + " = ((" + TREE_BINOP + ") " + 
+		    append(initStms, "Number " + l.id + " = ((" + TREE_CONST + ") " + 
 			   expPrefix + ").value;");
 		}
 		public void visit(Spec.LeafNumber l) {
@@ -708,6 +708,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		//String matchStm = indent + "_matched_ =  (" + typeCheck + indent + ");";
 		expMatchActionPairs.add( new RuleTuple
 					 ( matchStm, r.action_str + 
+					   indent + "return " + r.result_id + ";\n" +
 					   indent + "}", recurse.degree ) );
 		
 	    }
@@ -744,6 +745,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    out.println("\t\t\t}");
 	}
 	
+	out.println("\t\tharpoon.Util.Util.assert(false, \"Uh oh... "+
+		    "maximal munch didn't match anything...SPEC file "+
+		    "is not complete enough for this program\");");
+	out.println("\t\treturn null; // doesn't matter, we're dead if we didn't match...");
 	out.println("\t\t }"); // end munchExp
 	
 
@@ -765,6 +770,9 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	out.println("\t\t }"); // end munchStm
 	
+	out.println("\t\tpublic void visit("+TREE_Tree+" tree){");
+	out.println("\t\t// umm, what was I doing again?");
+	out.println("\t\t}"); // end visit(Tree)
 	out.println("\t}"); // end CggVisitor
 	
 	
