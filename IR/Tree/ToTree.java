@@ -483,11 +483,12 @@ class TranslationVisitor extends LowQuadVisitor
       (new MOVE
        (m_tf, q, 
 	MAP(q.dst(), q),              
-	new MEM(m_tf, q, Type.POINTER,
-		new BINOP(m_tf, q, Type.INT, Bop.ADD, 
-			  MAP(q.objectref(), q), 
-			  new CONST(m_tf, q, 
-				    m_offm.classOffset(type(q.dst())))))));
+	new MEM
+	(m_tf, q, Type.POINTER,
+	 new BINOP
+	 (m_tf, q, Type.INT, Bop.ADD, 
+	  MAP(q.objectref(), q), 
+	  new CONST(m_tf, q, m_offm.classOffset(type(q.objectref())))))));
   }
 
   public void visit(PMOFFSET q) {
