@@ -8,11 +8,11 @@ import harpoon.Interpret.Quads.Method;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Run.java,v 1.1.2.1 1998-12-28 23:43:22 cananian Exp $
+ * @version $Id: Run.java,v 1.1.2.2 1998-12-30 04:42:50 cananian Exp $
  */
 
 public abstract class Run extends harpoon.IR.Registration {
-    public static final String codename="quad-no-ssa";
+    public static final String codename="quad-with-try";
     public static void main(String args[]) {
 	// arg[0] is class name.  Load it's main method.
 	if (args.length < 1) throw new Error("No class name.");
