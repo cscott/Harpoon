@@ -6,7 +6,7 @@ package harpoon.Temp;
  * <code>Temp</code>s within a given scope.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TempFactory.java,v 1.1.2.1 1998-12-17 21:38:39 cananian Exp $
+ * @version $Id: TempFactory.java,v 1.1.2.2 1999-02-17 07:15:12 andyb Exp $
  */
 public abstract class TempFactory  {
     /** Returns the static scope of this <code>TempFactory</code>.
@@ -18,7 +18,7 @@ public abstract class TempFactory  {
      *  Should be repeatable; that is, the n'th call to getUniqueID()
      *  with a given suggestion String for a given <code>TempFactory</code>
      *  should always return the same String. */
-    abstract String getUniqueID(String suggestion);
+    public abstract String getUniqueID(String suggestion);
     /** Human-readable representation of <code>TempFactory</code> */
     public String toString() { return "TempFactory["+getScope()+"]"; }
     /** Return a hashcode for this <code>TempFactory</code>. */

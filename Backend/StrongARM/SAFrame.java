@@ -15,45 +15,58 @@ import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.MEM;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Util.Util;
 
 /**
  * <code>SAFrame</code> contains the machine-dependant
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.1 1999-02-17 03:29:44 andyb Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.2 1999-02-17 07:15:12 andyb Exp $
  */
-public class SAFrame extends Frame implements DefaultAllocationInfo {
+public class SAFrame implements Frame, DefaultAllocationInfo {
     private static Temp[] reg = new Temp[16];
     /** TempFactory used to create register temps */
-    private TempFactory regtf;
+    private static TempFactory regtf;
     /** TempFactory used to create global temps needed for memory
      *  allocation and garbage collection */
     private TempFactory tf;
     private AllocationStrategy mas;
 
     {
-        //regtf = new TempFactory() {
-        //    /* create a temp factory here which will
-        //     * generate things like r0, r1, fp, yadda yadda yadda */
-        //};
+        regtf = new TempFactory() {
+            private int i = 0;
+            private final String scope = "strongarm-registers";
+            private final String[] names = {"r0", "r1", "r2", "r3", "r4", "r5",
+                                            "r6", "r7", "r8", "r9", "r10", 
+                                            "r11", "r12", "r13", "r14", "pc"};
+
+            public String getScope() { return scope; }
+            public synchronized String getUniqueID(String suggestion) {
+                Util.assert(i <= names.length);
+                return names[i++];
+            }
+        };
+        for (int i = 0; i < 16; i++) 
+            reg[i] = new Temp(regtf);
     }
 
-    SAFrame() {
+    public SAFrame() {
         mas = new DefaultAllocationStrategy(this);
         tf = Temp.tempFactory("global");
     }
 
     public boolean pointersAreLong() { return false; }
 
-    /* not yet implemented */
+    /* soon to go away */
     public Temp RV() { return null; }
 
+    /* soon to go away */
     public Temp RX() { return null; }
 
     public Temp FP() { return null; }
 
-    public Temp[] registers() { return null; }
+    public Temp[] registers() { return reg; }
 
     public Stm GC(TreeFactory tf, HCodeElement src) { return null; }
 

@@ -13,40 +13,40 @@ import harpoon.Temp.TempFactory;
  * needed for compilation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.6 1999-02-17 03:25:11 andyb Exp $
+ * @version $Id: Frame.java,v 1.1.2.7 1999-02-17 07:15:11 andyb Exp $
  */
-public abstract class Frame {
+public interface Frame {
 
     /** Returns a <code>Tree.Exp</code> object which represents a pointer
      *  to a newly allocated block of memory, of the specified size.  
      *  Generates code to handle garbage collection, and OutOfMemory errors.
      */
-    public abstract Exp malloc(Exp size);
+    public Exp malloc(Exp size);
     
     /** Returns the appropriate offset map for this frame */
-    public abstract OffsetMap offsetMap();
+    public OffsetMap offsetMap();
 
     /** Returns <code>false</code> if pointers can be represented in
      *  32 bits, or <code>true</code> otherwise. */
-    public abstract boolean pointersAreLong();
+    public boolean pointersAreLong();
 
     /** Returns a <code>Temp</code> to represent where return values
      *  for procedures will be stored. */
-    public abstract Temp RV();
+    public Temp RV();
 
     /** Returns a <code>Temp</code> to represent where exceptional return 
      *  values for procedures will be stored */
-    public abstract Temp RX();
+    public Temp RX();
 
     /** Returns a specially-named Temp to use for the frame pointer.
      */
-    public abstract Temp FP();
+    public Temp FP();
 
     /** Returns an array of <code>Temp</code>s which represent all
      *  the available registers on the machine. */
-    public abstract Temp[] registers();
+    public Temp[] registers();
 
     /** Returns the TempFactory used by this Frame */
-    public abstract TempFactory tempFactory();
+    public TempFactory tempFactory();
       
 }
