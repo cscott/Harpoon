@@ -39,7 +39,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.1.2.10 2000-11-14 21:53:29 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.1.2.11 2001-02-27 02:07:40 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -77,6 +77,7 @@ public class DataReflection2 extends Data {
 		stmlist.add(new LABEL(tf, null, memberLabel(hm,"info"), true));
 	    stmlist.add(_DATUM(memberLabel(hm, "namestr")));
 	    stmlist.add(_DATUM(memberLabel(hm, "descstr")));
+	    stmlist.add(_DATUM(memberLabel(hm, "reflectinfo")));
 	    if (!memberVirtual(hm))
 		stmlist.add(_DATUM(memberLabel(hm, null)));
 	    else if (pointersAreLong)

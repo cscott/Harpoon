@@ -51,7 +51,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflectionMemberList.java,v 1.1.2.1 2000-11-14 21:53:29 cananian Exp $
+ * @version $Id: DataReflectionMemberList.java,v 1.1.2.2 2001-02-27 02:07:40 cananian Exp $
  */
 public class DataReflectionMemberList extends Data {
     final NameMap m_nm;
@@ -109,8 +109,12 @@ public class DataReflectionMemberList extends Data {
 					(member+"2info_start")), true));
 	for (Iterator it=ordered.iterator(); it.hasNext(); ) {
 	    HMember hm = (HMember) it.next();
+	    stmlist.add(new LABEL(tf, null,
+				  memberLabel(hm, "reflectinfo"), true));
 	    stmlist.add(_DATUM(memberLabel(hm, "obj")));
 	    stmlist.add(_DATUM(memberLabel(hm, "info")));
+	    stmlist.add(_DATUM(m_nm.label(hm.getDeclaringClass(),"classobj")));
+	    stmlist.add(_DATUM(new CONST(tf, null, hm.getModifiers())));
 	}
 	stmlist.add(new LABEL(tf, null,
 			      new Label(m_nm.c_function_name
