@@ -12,12 +12,12 @@ import harpoon.Util.ArrayFactory;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.14.2.8 1999-02-17 21:14:10 andyb Exp $
+ * @version $Id: Temp.java,v 1.14.2.9 1999-02-25 19:01:27 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
  */
-public class Temp implements Cloneable {
+public class Temp implements Cloneable, Comparable {
   /*final*/ TempFactory tf;
   /*final*/ String name;
   /*final*/ int hashcode;
@@ -69,6 +69,11 @@ public class Temp implements Cloneable {
    *  The hashcode is formed from the scope name and the temporary name.
    */
   public int hashCode() { return hashcode; }
+
+  /** Comparable interface: sorted by fullname(). */
+  public int compareTo(Object o) {
+    return fullname().compareTo(((Temp)o).fullname());
+  }
 
   /** Returns a new <code>TempFactory</code> with the given scope. */
   public static TempFactory tempFactory(final String scope) {
