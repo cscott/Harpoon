@@ -6,7 +6,7 @@
 #include "Hashtable.h"
 /*#include <dmalloc.h>*/
 
-int puttable(struct hashtable *ht, long long key, struct heap_object * object) {
+int puttable(struct hashtable *ht, long long key, void * object) {
   int bin=hashfunction(key);
   struct pointerlist * newptrlist=(struct pointerlist *) calloc(1,sizeof(struct pointerlist));
   newptrlist->uid=key;
@@ -16,7 +16,7 @@ int puttable(struct hashtable *ht, long long key, struct heap_object * object) {
   return 1;
 }
 
-struct heap_object * gettable(struct hashtable *ht, long long key) {
+void * gettable(struct hashtable *ht, long long key) {
   struct pointerlist * ptr=ht->bins[hashfunction(key)];
   while(ptr!=NULL) {
     if (ptr->uid==key)
@@ -25,6 +25,16 @@ struct heap_object * gettable(struct hashtable *ht, long long key) {
   }
   printf("XXXXXXXXX: COULDN'T FIND ENTRY FOR KEY %lld\n",key);
   return NULL;
+}
+
+int contains(struct hashtable *ht, long long key) {
+  struct pointerlist * ptr=ht->bins[hashfunction(key)];
+  while(ptr!=NULL) {
+    if (ptr->uid==key)
+      return 1;
+    ptr=ptr->next;
+  }
+  return 0;
 }
 
 void freekey(struct hashtable *ht, long long key) {
@@ -62,6 +72,22 @@ void freehashtable(struct hashtable * ht) {
       struct pointerlist *genptr=ht->bins[i];
       while(genptr!=NULL) {
 	struct pointerlist *tmpptr=genptr->next;
+	free(genptr);
+	genptr=tmpptr;
+      }
+    }
+  }
+  free(ht);
+}
+
+void freedatahashtable(struct hashtable * ht, void (*freefunction)(void *)) {
+  int i;
+  for (i=0;i<numbins;i++) {
+    if (ht->bins[i]!=NULL) {
+      struct pointerlist *genptr=ht->bins[i];
+      while(genptr!=NULL) {
+	struct pointerlist *tmpptr=genptr->next;
+	freefunction(genptr->object);
 	free(genptr);
 	genptr=tmpptr;
       }

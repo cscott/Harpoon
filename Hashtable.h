@@ -10,15 +10,17 @@ struct hashtable {
 
 struct pointerlist {
   long long uid;
-  struct heap_object * object;
+  void * object;
   struct pointerlist * next;
 };
 
 
-int puttable(struct hashtable *, long long key, struct heap_object * object);
-struct heap_object * gettable(struct hashtable *, long long key);
+int puttable(struct hashtable *, long long key, void * object);
+void * gettable(struct hashtable *, long long key);
 int hashfunction(long long key);
 struct hashtable * allocatehashtable();
 void freehashtable(struct hashtable * ht);
+int contains(struct hashtable *ht, long long key);
 void freekey(struct hashtable *ht, long long key);
+void freedatahashtable(struct hashtable * ht, void (*freefunction)(void *));
 #endif

@@ -6,6 +6,8 @@
 #include "Hashtable.h"
 #include "GenericHashtable.h"
 
+#define EFFECTS
+
 
 struct heap_object {
   char *class;
@@ -36,6 +38,9 @@ struct method {
   struct rolemethod * rm;
   int numobjectargs;
   short isStatic;
+#ifdef EFFECTS
+  struct hashtable * pathtable;
+#endif
 };
 
 struct killtuplelist {

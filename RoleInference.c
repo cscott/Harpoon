@@ -9,6 +9,7 @@
 #include "CalculateDominators.h"
 #include "Role.h"
 #include "Method.h"
+#include "Effects.h"
 /*#include <dmalloc.h>*/
 
 
@@ -89,6 +90,38 @@ void doanalysis() {
 	removelvlist(&heap, buf, heap.methodlist );
       }
       break; 
+
+    case 'L':
+      /* Do Load */
+      {
+	struct localvars * lv=(struct localvars *) calloc(1, sizeof(struct localvars));
+	long long uid, objuid;
+	char fieldname[100];
+
+
+	sscanf(line,"LF: %s %ld %s %lld %s %lld",lv->name,&lv->linenumber, lv->sourcename, &objuid, fieldname, &uid);
+	lv->lvnumber=lvnumber(lv->name);
+	lv->age=pointerage++;
+	lv->m=heap.methodlist;
+	
+	if (uid!=-1) {
+	  lv->object=gettable(ht, uid);
+	  doaddlocal(&heap, lv);
+	  doaddfield(&heap,lv->object);
+	}
+
+#ifdef EFFECTS
+	if ((uid!=-1)&&(objuid!=-1)) {
+	  addpath(&heap, uid, fieldname ,objuid);
+	}
+#endif
+	
+	/* addtolvlist add's to K set */
+	addtolvlist(&heap, lv, heap.methodlist);
+      }
+      break;
+
+
     case 'M':
       /* Mark Local*/
       {
@@ -143,8 +176,10 @@ void doanalysis() {
 	    genfreekeyhashtable(dommap);
 	    }
 	  }
+
+	  freemethodlist(&heap);
 	}
-	freemethodlist(&heap);
+
       }
       break;
     case 'I':
@@ -152,6 +187,9 @@ void doanalysis() {
       {
 	struct method* newmethod=(struct method *) calloc(1,sizeof(struct method));
 	sscanf(line,"IM: %s %s %s %hd", newmethod->classname, newmethod->methodname, newmethod->signature, &newmethod->isStatic);
+#ifdef EFFECTS
+	newmethod->pathtable=allocatehashtable();
+#endif
 	calculatenumobjects(newmethod);
 	newmethod->caller=heap.methodlist;
 	heap.methodlist=newmethod;
@@ -309,7 +347,6 @@ void doreturnmethodinference(struct heap_state *heap, long long uid, struct hash
 
     genfreekeyhashtable(dommap);
   }
-  freemethodlist(heap);
 }
 
 void doarrayassignment(struct heap_state *heap, struct heap_object * src, int index, struct heap_object *dst) {
@@ -514,6 +551,9 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht) {
 void freemethodlist(struct heap_state *hs) {
   while(hs->freemethodlist!=NULL) {
     struct method *tmp=hs->freemethodlist->caller;
+#ifdef EFFECTS
+    freedatahashtable(hs->freemethodlist->pathtable,(void (*) (void*)) &freeeffects);
+#endif
     free(hs->freemethodlist->params);
     free(hs->freemethodlist);
     hs->freemethodlist=tmp;
