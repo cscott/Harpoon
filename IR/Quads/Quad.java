@@ -16,7 +16,7 @@ import java.util.Hashtable;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.17 1999-02-24 22:50:22 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.18 1999-02-25 03:05:51 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -111,6 +111,10 @@ public abstract class Quad
     public Quad next(int i) { return (Quad) next[i].to(); }
     /** Returns the <code>i</code>th predecessor of this quad. */
     public Quad prev(int i) { return (Quad) prev[i].from(); }
+    /** Return the number of successors of this quad. */
+    public int nextLength() { return next.length; }
+    /** Return the number of predecessors of this quad. */
+    public int prevLength() { return prev.length; }
 
     /** Returns an array containing all the successors of this quad,
      *  in order. */

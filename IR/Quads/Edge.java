@@ -6,6 +6,7 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.Util;
 /**
  * <code>Edge</code> objects connect <code>Quad</code> nodes in the
  * control-flow graph.  The <code>hashCode</code> and <code>equals</code>
@@ -14,7 +15,7 @@ import harpoon.Util.ArrayFactory;
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.1.2.2 1999-01-22 23:05:59 cananian Exp $
+ * @version $Id: Edge.java,v 1.1.2.3 1999-02-25 03:05:52 cananian Exp $
  */
 
 public class Edge implements HCodeEdge {
@@ -23,6 +24,9 @@ public class Edge implements HCodeEdge {
     
     /** Creates a <code>Edge</code>. */
     Edge(Quad from, int from_index, Quad to, int to_index) {
+	Util.assert(from!=null && to!=null);
+	Util.assert(0 <= from_index && from_index < from.next.length);
+	Util.assert(0 <= to_index   && to_index   <   to.prev.length);
 	this.from = from;
 	this.from_index = from_index;
 	this.to = to;
