@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.9 2000-01-15 01:12:31 cananian Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.10 2000-01-24 07:21:49 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -61,13 +61,28 @@ public class ToAsync {
 
 	WorkSet async_todo=new WorkSet();
 	async_todo.push(hc);
+	WorkSet other=new WorkSet();
+	WorkSet done_other=new WorkSet();
+	   
 	
-	while (!async_todo.isEmpty()) {
-	    HCode selone=(HCode) async_todo.pop();
+	
+	while (!async_todo.isEmpty()|!other.isEmpty()) {
+	    HCode selone=null;
+	    boolean status=false;
+	    if (async_todo.isEmpty()) {
+		HMethod hm=(HMethod) other.pop();
+		done_other.push(hm);
+		selone=ucf.convert(hm);
+		if (selone==null)
+		    continue;
+		status=true;
+	    } else
+		selone=(HCode) async_todo.pop();
 	    final QuadLiveness ql = new QuadLiveness(selone);
 	    System.out.println("ToAsync is running AsyncCode on "+selone);
 	    AsyncCode.buildCode(selone, old2new, async_todo,
-				ql,blockingcalls,ucf,  bm, hc.getMethod(), linker,ch);
+				ql,blockingcalls,ucf,  bm, hc.getMethod(), 
+				linker,ch,other, done_other,status);
 	}
 	return nhm;
     }

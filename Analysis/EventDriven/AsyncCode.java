@@ -60,7 +60,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.41 2000-01-22 08:39:12 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.42 2000-01-24 07:21:49 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -90,7 +90,9 @@ public class AsyncCode {
     public static void buildCode(HCode hc, Map old2new, Set async_todo, 
 			   QuadLiveness liveness,
 			   Set blockingcalls, 
-			   CachingCodeFactory ucf, ToAsync.BlockingMethods bm, HMethod mroot, Linker linker, ClassHierarchy ch) 
+			   CachingCodeFactory ucf, ToAsync.BlockingMethods bm,
+			   HMethod mroot, Linker linker, ClassHierarchy ch,
+			   Set other, Set done_other, boolean methodstatus) 
 	throws NoClassDefFoundError
     {
 	System.out.println("Entering AsyncCode.buildCode()");
@@ -115,7 +117,8 @@ public class AsyncCode {
 					   old2new, cont_map, 
 					   env_map, liveness,
 					   blockingcalls, hc.getMethod(), 
-					   hc, ucf,bm,mroot, linker,ch);
+					   hc, ucf,bm,mroot, linker,ch,
+					   other, done_other,methodstatus);
 	    quadc.accept(cv);
 	}
     }
@@ -130,7 +133,7 @@ public class AsyncCode {
 	QuadLiveness liveness;
 	CachingCodeFactory ucf;
 	Linker linker;
-
+	boolean methodstatus;
 
 	public ContVisitor(WorkSet cont_todo, Set async_todo, 
 			   Map old2new, Map cont_map, 
@@ -138,7 +141,8 @@ public class AsyncCode {
 			   Set blockingcalls, HMethod hmethod, 
 			   HCode hc, CachingCodeFactory ucf,
 			   ToAsync.BlockingMethods bm, HMethod mroot, 
-			   Linker linker, ClassHierarchy ch) {
+			   Linker linker, ClassHierarchy ch,
+			   Set other, Set done_other, boolean methodstatus) {
 	    this.liveness=liveness;
 	    this.env_map=env_map;
 	    this.cont_todo=cont_todo;
@@ -150,10 +154,12 @@ public class AsyncCode {
 	    this.header=false;
 	    this.ucf=ucf;
 	    this.linker=linker;
+	    this.methodstatus=methodstatus;
 	    this.clonevisit=new CloningVisitor(blockingcalls, cont_todo,
 					       cont_map, env_map, liveness,
 					       async_todo, old2new,
-					       hc,ucf,bm,mroot, linker,ch);
+					       hc,ucf,bm,mroot, linker,ch,
+					       other, done_other,methodstatus);
 	}
 
 	public void visit(Quad q) {
@@ -162,10 +168,9 @@ public class AsyncCode {
 
 	public void visit(HEADER q) {
 	    //Handles building HCode's for the HEADER quad...
-
 	    //need to build continuation for this Header...
 	    //nmh is the HMethod we wish to attach this HCode to
-	    HMethod nhm=(HMethod)old2new.get(hmethod);
+	    HMethod nhm=methodstatus?hmethod:(HMethod)old2new.get(hmethod);
 	    //mark header flag
 	    System.out.println("ContVisiting"+ q);
 	    header=true;
@@ -266,6 +271,8 @@ public class AsyncCode {
 	Linker linker;
 	ClassHierarchy ch;
 	Set makeasync;
+	Set other, done_other;
+	boolean methodstatus;
 	
 	public CloningVisitor(Set blockingcalls, Set cont_todo,
 			      Map cont_map, Map env_map, 
@@ -273,7 +280,9 @@ public class AsyncCode {
 			      Map old2new, 
 			      HCode hc, CachingCodeFactory ucf,
 			      ToAsync.BlockingMethods bm, HMethod mroot, 
-			      Linker linker, ClassHierarchy ch) {
+			      Linker linker, ClassHierarchy ch,
+			      Set other, Set done_other, 
+			      boolean methodstatus) {
 	    this.liveness=liveness;
 	    this.blockingcalls=blockingcalls;
 	    this.cont_todo=cont_todo;
@@ -287,6 +296,9 @@ public class AsyncCode {
 	    this.mroot=mroot;
 	    this.linker=linker;
 	    this.ch=ch;
+	    this.other=other;
+	    this.done_other=done_other;
+	    this.methodstatus=methodstatus;
 	}
 
 	public void reset(HMethod nhm, TempFactory otf, boolean isCont) {
@@ -492,7 +504,11 @@ public class AsyncCode {
 
 	public void visit(RETURN q) {
 	    TempFactory tf=hcode.getFactory().tempFactory();
-	    if (isCont) {
+	    if (methodstatus) {
+		Object nq=q.clone(hcode.getFactory(), ctmap);
+		quadmap.put(q, nq);
+		linkFooters.add(nq);
+	    } else if (isCont) {
 		HClass hclass=hcode.getMethod().getDeclaringClass();
 		HField hfield=hclass.getField("next");
 		HMethod resume=null;
@@ -594,7 +610,11 @@ public class AsyncCode {
 	
 	public void visit(THROW q) {
 	    TempFactory tf=hcode.getFactory().tempFactory();
-	    if (isCont) {
+	    if (methodstatus) {
+		Object nq=q.clone(hcode.getFactory(), ctmap);
+		quadmap.put(q, nq);
+		linkFooters.add(nq);
+	    } else if (isCont) {
 		HClass hclass=hcode.getMethod().getDeclaringClass();
 		HField hfield=hclass.getField("next");
 		HClass throwable=linker.forName("java.lang.Throwable");
@@ -690,7 +710,32 @@ public class AsyncCode {
 
 	public void visit(CALL q) {
 	    TempFactory tf=hcode.getFactory().tempFactory();
-	    if (blockingcalls.contains(q.method())) {
+	    if (!done_other.contains(q.method())) {
+		HMethod hm=q.method();
+		HClass hcl=hm.getDeclaringClass();
+		Set classes=ch.children(hcl);
+		Iterator childit=classes.iterator();
+		HMethod parent=q.method();
+		while (childit.hasNext()|(hm!=null)) {
+		    try {
+			if (hm==null) {
+			    HClass child=(HClass)childit.next();
+			    hm=child.getDeclaredMethod(parent.getName(),
+						       parent.getParameterTypes());
+			    if (done_other.contains(hm)) {
+				hm=null;
+				continue;
+			    }
+			}
+		    } catch (NoSuchMethodError e) {
+		    }
+		    if (hm!=null) {
+			other.add(hm);
+			hm=null;
+		    }
+		}
+	    }
+	    if ((methodstatus==false)&&blockingcalls.contains(q.method())) {
 		if (!cont_map.containsKey(q)) {
 		    cont_todo.add(q);
 		    HClass hclass=createContinuation(hc.getMethod(),  q,
