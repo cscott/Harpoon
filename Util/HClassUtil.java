@@ -11,7 +11,7 @@ import harpoon.ClassFile.Linker;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.9 2002-04-10 03:07:04 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.10 2002-07-26 19:53:39 cananian Exp $
  */
 public abstract class HClassUtil  {
     // Only static methods.
@@ -39,6 +39,7 @@ public abstract class HClassUtil  {
      *  The parameter <code>dims</code> is the number of array dimensions
      *  to add. */
     public static final HClass arrayClass(Linker linker, HClass hc, int dims) {
+	assert dims>=0;
 	StringBuffer sb = new StringBuffer();
 	return linker.forDescriptor(Util.repeatString("[",dims)+
 					    hc.getDescriptor());
@@ -90,7 +91,7 @@ public abstract class HClassUtil  {
 	assert !a.isPrimitive(); // getLinker() won't work in this case
 	return a.getLinker().forName("java.lang.Object");
     }
-    /** Find a class which is a common parent of both suppied classes.
+    /** Find a class which is a common parent of both supplied classes.
      *  Valid for array, interface, and primitive types.
      */
     public static final HClass commonParent(HClass a, HClass b) {
@@ -103,6 +104,14 @@ public abstract class HClassUtil  {
 	    int ad = dims(a), bd = dims(b), d = (ad<bd)?ad:bd;
 	    for (int i=0; i<d; i++)
 		{ a=a.getComponentType(); b=b.getComponentType(); }
+	    // merging two differing primitive arrays should result in
+	    // type 'Object'; e.g. float[][] merge int[][] = Object[]
+	    if (a.isPrimitive() && b.isPrimitive() && a!=b)
+		return arrayClass(linker,
+				  linker.forName("java.lang.Object"), d-1);
+	    // otherwise, find the commonParent of the components
+	    // (at least one is not an array now) and rebuild into array
+	    assert (!a.isArray()) || (!b.isArray());
 	    return arrayClass(linker, commonParent(a, b), d);
 	}
 	if (a.isInterface() && b.isInterface())
