@@ -122,7 +122,7 @@ none)   AC_MSG_RESULT([no thread support])
 esac
 
 
-INCLUDES=-I${srcdir}/include
+INCLUDES="-I${srcdir}/include -I../../include"
 THREADLIBS=
 case "$THREADS" in
  no | none | single)

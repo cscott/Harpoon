@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.140 $)dnl
+AC_REVISION($Revision: 1.141 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -426,7 +426,7 @@ case "$thread_model" in
 user)  AC_MSG_RESULT([user space threads])
 	AC_DEFINE(WITH_USER_THREADS, 1,
 		  [Define if you want to use user thread support])
-	CFLAGS="-DGC_USER_THREADS $CFLAGS"
+	CFLAGS="-DGC_USER_THREADS -D_REENTRANT $CFLAGS"
 	BDWFLAGS="$BDWFLAGS -DGC_USER_THREADS -D_REENTRANT -I../../src/user/"
 	;;
 heavy)  AC_MSG_RESULT([heavy-weight threads])
@@ -846,6 +846,23 @@ if test -f arch/${archdir}/stack.h ; then
 else
   AC_MSG_RESULT([no])
 fi
+
+dnl Determine whether default standard libraries or 
+dnl user-specified standard libraries are to be used.
+AC_MSG_CHECKING([for user-specified standard libraries])
+AC_ARG_WITH(stdlib,
+[  --with-stdlib           specify a non-standard directory for the standard libraries],
+with_stdlib="$withval", with_stdlib="no")
+case "$with_stdlib" in
+no)     AC_MSG_RESULT([no])
+        ;;
+*)      AC_MSG_RESULT([yes])
+	CFLAGS="$CFLAGS -nostdlib"
+	LIBS="-lc $LIBS `gcc -print-libgcc-file-name`"
+	LDFLAGS="-L$with_stdlib/lib $LDFLAGS"
+	IFLAGS="-I$with_stdlib/include $IFLAGS"
+	;;
+esac
 
 AC_MSG_CHECKING(link script for $target_cpu)
 CC="$CC" scripts/gen-link-script > arch/${archdir}/link-script
