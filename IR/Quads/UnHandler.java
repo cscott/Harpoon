@@ -21,7 +21,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.25 2000-01-30 09:27:11 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.26 2000-10-10 21:37:36 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -223,36 +223,40 @@ final class UnHandler {
 		    Quad.addEdge((Quad)ed.from(), ed.which_succ(), phi, i);
 		}
 		// now build instanceof tree. exception in Tex.
-		Quad head = phi; int which_succ = 0;
 		if (hs==null) { // this is common THROW for no-handler case
-		    THROW q0 = new THROW(qf, head, Tex);
-		    Quad.addEdge(head, which_succ, q0, 0);
+		    THROW q0 = new THROW(qf, phi, Tex);
+		    Quad.addEdge(phi, 0, q0, 0);
 		    register(q0);
-		} else for (Iterator ee=hs.iterator(); ee.hasNext(); ) {
-		    HANDLER h = (HANDLER)ee.next();
-		    HClass HCex = h.caughtException();
-		    if (HCex==null) {
-			// catch 'any'
-			NOP q0 = new NOP(qf, h);
-			Quad.addEdge(head, which_succ, q0, 0);
-			register(q0, h);
-			break; // no more uncaught exceptions.
-		    } else {
-			Quad q0 = new INSTANCEOF(qf, h, Textra, Tex, HCex);
-			Quad q1 = new CJMP(qf, h, Textra, new Temp[0]);
-			NOP  q2 = new NOP(qf, h);
-			Quad.addEdge(head, which_succ, q0, 0);
-			Quad.addEdge(q0, 0, q1, 0);
-			Quad.addEdge(q1, 1, q2, 0);
-			head = q1; which_succ = 0;
-			register(q2, h);
+		} else { // create TypeSwitch using each handler in handlerset
+		    /* count exception types and create keys array */
+		    ArrayList al = new ArrayList();
+		    for (Iterator ee=hs.iterator(); ee.hasNext(); ) {
+			HClass HCex = ((HANDLER)ee.next()).caughtException();
+			if (HCex==null) break; // this is the 'catch any' case.
+			al.add(HCex);
 		    }
-		    if (!ee.hasNext()) { // last handler; deal with uncaught
-			THROW q0 = new THROW(qf, h, Tex);
-			Quad.addEdge(head, which_succ, q0, 0);
+		    /* create TYPESWITCH */
+		    TYPESWITCH ts = new TYPESWITCH
+			(qf, phi, Tex,
+			 (HClass[]) al.toArray(new HClass[al.size()]),
+			 new Temp[0]);
+		    /* link up typeswitch */
+		    Quad.addEdge(phi, 0, ts, 0);
+		    int edge=0;
+		    for (Iterator ee=hs.iterator(); edge<ts.arity(); edge++) {
+			if (!ee.hasNext()) break; // no 'catch any' handler
+			HANDLER h = (HANDLER)ee.next();
+			NOP q0 = new NOP(qf, h);
+			Quad.addEdge(ts, edge, q0, 0);
+			register(q0, h);
+		    }
+		    if (edge<ts.arity()) { // add a 'rethrow' statement
+			THROW q0 = new THROW(qf, phi, Tex);
+			Quad.addEdge(ts, edge++, q0, 0);
 			register(q0);
 		    }
-		} // end 'for each handler in handler set'
+		    Util.assert(edge==ts.arity());
+		}
 	    } // end 'for each handler set'
 
 	    // attach end-of-the-line throws to footer.
