@@ -1005,9 +1005,37 @@ void BNDRY(double size) {
   }
 } 
 
+    private void INITIAH(double[] XT, double[] YT, double[] ZT,
+			 double XS, double NS,double ZERO,double WSIN, double WCOS) {
+	int mol = 0,i,j,k;
+	for(i=0; i < NS; i++) {
+	    XT[0]=XT[1]+WCOS;
+	    XT[2]=XT[0];
+	    YT[1]=ZERO;
+	    for(j=0; j < NS; j++) {
+		YT[0]=YT[1]+WSIN;
+		YT[2]=YT[1]-WSIN;
+		ZT[0]=ZT[1]=ZT[2]=ZERO;
+		for(k = 0; k < NS; k++) {
+		    molecule[mol].loadDirPos(C.XDIR,XT);
+		    molecule[mol].loadDirPos(C.YDIR,YT);
+		    molecule[mol].loadDirPos(C.ZDIR,ZT);
+		    mol++;
+		    ZT[0] += XS; ZT[1] += XS; ZT[2] += XS;
+		}
+		YT[1] += XS;
+	    }
+	    XT[1] += XS;
+	}
+	
+	if(numMol != mol) {
+	    System.out.print(" *** Error: Lattice number of mol mismatch \n");
+	}
+    }
+
 void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
   vec minimum;
-  double XS,ZERO,WCOS,WSIN,FAC,NS;
+  double XS,ZERO,WCOS,WSIN,NS;
   double XMAS[] = new double[C.NATOM];
   double XT[] = new double[C.NATOM];
   double YT[] = new double[C.NATOM];
@@ -1018,7 +1046,7 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
   vec SU = new vec();
   vec t1 = new vec();
 
-  int i, j, k, mol;
+  int i, j, k;
 
   BufferedReader random_numbers = new BufferedReader(new InputStreamReader(new FileInputStream("random.in")));
 
@@ -1030,108 +1058,90 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
 
      System.out.print("***** NEW RUN STARTING FROM REGULAR LATTICE *****\n");
      XT[1] = ZERO;
-     mol = 0;
-     for(i=0; i < NS; i++) {
-       XT[0]=XT[1]+WCOS;
-       XT[2]=XT[0];
-       YT[1]=ZERO;
-       for(j=0; j < NS; j++) {
-         YT[0]=YT[1]+WSIN;
-         YT[2]=YT[1]-WSIN;
-         ZT[0]=ZT[1]=ZT[2]=ZERO;
-         for(k = 0; k < NS; k++) {
-	   molecule[mol].loadDirPos(C.XDIR,XT);
-	   molecule[mol].loadDirPos(C.YDIR,YT);
-	   molecule[mol].loadDirPos(C.ZDIR,ZT);
-           mol++;
-           ZT[0] += XS; ZT[1] += XS; ZT[2] += XS;
-         }
-         YT[1] += XS;
-       }
-       XT[1] += XS;
+
+     INITIAH(XT,YT,ZT,XS,NS,ZERO,WSIN, WCOS);
+
+     /* ASSIGN RANDOM MOMENTA */
+     String s;
+     s = random_numbers.readLine();
+     SU.value[0] = new Double(s).doubleValue();
+     
+     SUM.clear();
+     for(i = 0; i < numMol; i++) {
+	 for (k = 0; k < 3; k++) { 
+	     s = random_numbers.readLine();
+	     t.value[k] = new Double(s).doubleValue();
+	 }
+	 
+	 molecule[i].loadH1Vel(t);
+	 SUM.add(t);
+	 for (k = 0; k < 3; k++) { 
+	     s = random_numbers.readLine();
+	     t.value[k] = new Double(s).doubleValue();
+	 }
+
+	 molecule[i].loadOVel(t);
+	 SUM.add(t);
+	 for (k = 0; k < 3; k++) { 
+	     s = random_numbers.readLine();
+	     t.value[k] = new Double(s).doubleValue();
+	 }
+	 
+	 molecule[i].loadH2Vel(t);
+	 SUM.add(t);
+     } 
+     /* .....FIND AVERAGE MOMENTA PER ATOM */
+     SUM.value[0] /= (C.NATOM*water.parms.getNMOL());
+     SUM.value[1] /= (C.NATOM*water.parms.getNMOL());
+     SUM.value[2] /= (C.NATOM*water.parms.getNMOL());
+     
+     /* FIND NORMALIZATION FACTOR SO THAT <K.E.>=KT/2 */
+     
+     SU.clear();
+     INITIAEND(i,SUM,SU,XMAS,t1,t);
+}
+
+    void INITIAEND(int i, vec SUM, vec SU,double[] XMAS, vec t1,vec t) {
+     for (i = 0; i < numMol; i++) {
+	 molecule[i].storeDirVel(C.XDIR,t);
+	 SU.value[0] += (Math.pow((t.value[0]-SUM.value[0]),2.0) + Math.pow((t.value[2]-SUM.value[0]),2.0))/C.HMAS 
+	     + Math.pow((t.value[1]-SUM.value[0]),2.0)/C.OMAS;
+	 molecule[i].storeDirVel(C.YDIR,t);
+	 SU.value[1] += (Math.pow((t.value[0]-SUM.value[1]),2.0) + Math.pow((t.value[2]-SUM.value[1]),2.0))/C.HMAS 
+	     + Math.pow((t.value[1]-SUM.value[1]),2.0)/C.OMAS;
+	 molecule[i].storeDirVel(C.ZDIR,t);
+	 SU.value[2] += (Math.pow((t.value[0]-SUM.value[2]),2.0) + Math.pow((t.value[2]-SUM.value[2]),2.0))/C.HMAS 
+	     + Math.pow((t.value[1]-SUM.value[2]),2.0)/C.OMAS;
      }
-
-     if(numMol != mol) {
-       System.out.print(" *** Error: Lattice number of mol mismatch \n");
-     }
-
-  /* ASSIGN RANDOM MOMENTA */
-  String s;
-  s = random_numbers.readLine();
-  SU.value[0] = new Double(s).doubleValue();
-
-  SUM.clear();
-  for(i = 0; i < numMol; i++) {
-    for (k = 0; k < 3; k++) { 
-      s = random_numbers.readLine();
-      t.value[k] = new Double(s).doubleValue();
-    }
-
-    molecule[i].loadH1Vel(t);
-    SUM.add(t);
-    for (k = 0; k < 3; k++) { 
-      s = random_numbers.readLine();
-      t.value[k] = new Double(s).doubleValue();
-    }
-
-    molecule[i].loadOVel(t);
-    SUM.add(t);
-    for (k = 0; k < 3; k++) { 
-      s = random_numbers.readLine();
-      t.value[k] = new Double(s).doubleValue();
-    }
-
-    molecule[i].loadH2Vel(t);
-    SUM.add(t);
-  } 
-  /* .....FIND AVERAGE MOMENTA PER ATOM */
-  SUM.value[0] /= (C.NATOM*water.parms.getNMOL());
-  SUM.value[1] /= (C.NATOM*water.parms.getNMOL());
-  SUM.value[2] /= (C.NATOM*water.parms.getNMOL());
-
-  /* FIND NORMALIZATION FACTOR SO THAT <K.E.>=KT/2 */
-
-  SU.clear();
-  for (i = 0; i < numMol; i++) {
-    molecule[i].storeDirVel(C.XDIR,t);
-    SU.value[0] += (Math.pow((t.value[0]-SUM.value[0]),2.0) + Math.pow((t.value[2]-SUM.value[0]),2.0))/C.HMAS 
-	+ Math.pow((t.value[1]-SUM.value[0]),2.0)/C.OMAS;
-    molecule[i].storeDirVel(C.YDIR,t);
-    SU.value[1] += (Math.pow((t.value[0]-SUM.value[1]),2.0) + Math.pow((t.value[2]-SUM.value[1]),2.0))/C.HMAS 
-	+ Math.pow((t.value[1]-SUM.value[1]),2.0)/C.OMAS;
-    molecule[i].storeDirVel(C.ZDIR,t);
-    SU.value[2] += (Math.pow((t.value[0]-SUM.value[2]),2.0) + Math.pow((t.value[2]-SUM.value[2]),2.0))/C.HMAS 
-	+ Math.pow((t.value[1]-SUM.value[2]),2.0)/C.OMAS;
-  }
-  FAC=water.parms.computeFAC();
-  SU.value[0]=Math.sqrt(FAC/SU.value[0]);
-  SU.value[1]=Math.sqrt(FAC/SU.value[1]);
-  SU.value[2]=Math.sqrt(FAC/SU.value[2]);
-  /* NORMALIZE INDIVIDUAL VELOCITIES SO THAT THERE IS NO BULK MOMENTA */
-
-  XMAS[0] = 1.0/C.HMAS;
-  XMAS[1] = 1.0/C.OMAS;
-  XMAS[2] = 1.0/C.HMAS;
-
-  for(i = 0; i < numMol; i++) {
-    molecule[i].storeH1Vel(t1);
-    t1.sub(SUM); 
-    t1.prod(SU); 
-    t1.scale(XMAS[0]);
-    molecule[i].loadH1Vel(t1);
-
-    molecule[i].storeOVel(t1);
-    t1.sub(SUM); 
-    t1.prod(SU); 
-    t1.scale(XMAS[1]);
-    molecule[i].loadOVel(t1);
-
-    molecule[i].storeH2Vel(t1);
-    t1.sub(SUM); 
-    t1.prod(SU); 
-    t1.scale(XMAS[2]);
-    molecule[i].loadH2Vel(t1);
-  } 
+     double FAC=water.parms.computeFAC();
+     SU.value[0]=Math.sqrt(FAC/SU.value[0]);
+     SU.value[1]=Math.sqrt(FAC/SU.value[1]);
+     SU.value[2]=Math.sqrt(FAC/SU.value[2]);
+     /* NORMALIZE INDIVIDUAL VELOCITIES SO THAT THERE IS NO BULK MOMENTA */
+     
+     XMAS[0] = 1.0/C.HMAS;
+     XMAS[1] = 1.0/C.OMAS;
+     XMAS[2] = 1.0/C.HMAS;
+     
+     for(i = 0; i < numMol; i++) {
+	 molecule[i].storeH1Vel(t1);
+	 t1.sub(SUM); 
+	 t1.prod(SU); 
+	 t1.scale(XMAS[0]);
+	 molecule[i].loadH1Vel(t1);
+	 
+	 molecule[i].storeOVel(t1);
+	 t1.sub(SUM); 
+	 t1.prod(SU); 
+	 t1.scale(XMAS[1]);
+	 molecule[i].loadOVel(t1);
+	 
+	 molecule[i].storeH2Vel(t1);
+	 t1.sub(SUM); 
+	 t1.prod(SU); 
+	 t1.scale(XMAS[2]);
+	 molecule[i].loadH2Vel(t1);
+     } 
 } 
 
 // ----------------------------------------------------------------------
