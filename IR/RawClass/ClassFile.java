@@ -8,7 +8,7 @@ package harpoon.IR.RawClass;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.1.2.1 1999-01-19 03:44:36 cananian Exp $
+ * @version $Id: ClassFile.java,v 1.1.2.2 1999-02-05 10:20:03 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class ClassFile {
@@ -125,7 +125,7 @@ public class ClassFile {
 
     constant_pool_count = in.read_u2();
     constant_pool = new Constant[constant_pool_count];
-    // FIXME initialize constant_pool[0] (jvm dependant; ignore)
+    // constant_pool[0] is jvm dependent; ignore it.
     for (int i=1; i<constant_pool_count; i++) {
       constant_pool[i] = Constant.read(this, in);
       if (constant_pool[i] instanceof ConstantLong ||
