@@ -4,7 +4,8 @@
 package harpoon.Util;
 
 /**
- * <code>BitString</code> implements a vector of bits that grows as needed;
+ * <code>BitString</code> implements a vector of bits
+ * <!--that grows as needed-->;
  * much like <code>java.util.BitSet</code>... except that this implementation
  * actually works.  Also, <code>BitString</code> has some groovy features
  * which <code>BitSet</code> doesn't; mostly related to efficient iteration
@@ -52,9 +53,13 @@ public final class BitString implements Cloneable, java.io.Serializable {
   /**
    * Creates an empty string of default length.
    */
+  // THIS IS DANGEROUS!
+  // YOU MUST SPECIFY LENGTH OF BITSTRING, SINCE IT DOESN'T GROW AUTOMATICALLY
+  /*
   public BitString() {
     this(1);
   }
+  */
   
   /**
    * Creates an empty string with the specified size.
@@ -66,13 +71,50 @@ public final class BitString implements Cloneable, java.io.Serializable {
     bits = new int[subscript(nbits + MASK)];
   }
 
+  /** Returns the first index in the bit string which is set, or
+   *  -1 if there is no such index.
+   */
+  public int firstSet() { return firstSet(-1); }
   /** Returns the first index greater than <code>where</code> in the
-      bit string which is set, or -1 if there is no such index.
-  */
+   *  bit string which is set, or -1 if there is no such index.
+   * @param where the starting point for the search.  May be negative.
+   */
   public int firstSet(int where) {
-    Util.assert(false);
+    // convert exclusive starting point to inclusive starting point
+    where = (where<-1) ? 0 : (where+1);
+    // search in first unit is masked.
+    int mask = (~0) << (where & MASK);
+    // search through units
+    for (int i=subscript(where); i<bits.length; i++, mask=~0) {
+      int unit = bits[i] & mask;
+      if (unit!=0) return (i << BITS_PER_UNIT) + (Util.ffs(unit) - 1);
+    }
     return -1;
   }
+  /** Returns the last index less than <code>where</code> in the
+   *  bit string which is set, or -1 if there is no such index.
+   * @param where the starting point for the search.
+   */
+  public int lastSet(int where) {
+    // convert exclusive starting point to inclusive starting point
+    if (--where < 0) return -1;
+    int start = (bits.length - 1), mask=~0;
+    if (subscript(where) < bits.length) {
+      // search in first unit is masked.
+      start = subscript(where);
+      mask = (~0) >>> (MASK - (where & mask));
+    }
+    // search through units
+    for (int i=start; i>=0; i--, mask=~0) {
+      int unit = bits[i] & mask;
+      if (unit!=0) return (i << BITS_PER_UNIT) + (Util.fls(unit) - 1);
+    }
+    return -1;
+  }
+  /** Returns the last index in the bit string which is set, or
+   *  -1 if there is no such index.
+   */
+  public int lastSet() { return lastSet(size()); }
 
   /**
    * Sets all bits.
@@ -266,13 +308,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
    * one.  Returns zero if the <code>BitString</code> contains no
    * set bits.
    */
-  public int length() {
-    int maxnonzero = bits.length - 1;
-    while (maxnonzero >= 0 && bits[maxnonzero]==0)
-      maxnonzero--;
-    if (maxnonzero < 0) return 0;
-    return Util.fls(bits[maxnonzero]) + (maxnonzero << BITS_PER_UNIT);
-  }
+  public int length() { return lastSet()+1; }
 
   /**
    * Returns the number of bits of space actually in use by this
@@ -335,17 +371,6 @@ public final class BitString implements Cloneable, java.io.Serializable {
   }
 
   private static int howManyOneBits(int x) {
-    /*
-    int number = 0;
-    while (x != 0) {
-      if ((x & 1) != 0) {
-	++number;
-	--x;
-      }
-      x >>>= 1;
-    }
-    return number;
-    */
     return Util.popcount(x);
   }
   
@@ -387,6 +412,35 @@ public final class BitString implements Cloneable, java.io.Serializable {
     return buffer.toString();
   }
 
+  /** Self-test function. */
+  public static void main(String argv[]) {
+    // NOT COMPLETE: just checking firstSet() and lastSet() for now.
+    BitString bs = new BitString(100);
+    Util.assert(bs.length()==0 && bs.firstSet()==-1 && bs.lastSet()==-1);
+    Util.assert(bs.firstSet(100)==-1 && bs.firstSet(-100)==-1);
+    Util.assert(bs.lastSet(100)==-1 && bs.lastSet(-100)==-1);
+    Util.assert(bs.size()>=bs.length());
+    bs.set(52); bs.set(53); bs.set(76); bs.set(77);
+    // test get()
+    Util.assert( bs.get(52) && bs.get(53) && bs.get(76) && bs.get(77));
+    Util.assert(!bs.get(51) &&!bs.get(54) &&!bs.get(75) &&!bs.get(78));
+    // test length()
+    Util.assert(bs.length()==78 && bs.size()>=bs.length());
+    // test firstSet()
+    Util.assert(bs.firstSet()==bs.firstSet(-100));
+    Util.assert(bs.firstSet(-1)==52 && bs.firstSet(52)==53);
+    Util.assert(bs.firstSet(53)==76 && bs.firstSet(76)==77);
+    Util.assert(bs.firstSet(77)==-1 && bs.firstSet(1000)==-1);
+    // test lastSet()
+    Util.assert(bs.lastSet()==bs.lastSet(99));
+    Util.assert(bs.lastSet(99)==77 && bs.lastSet(77)==76);
+    Util.assert(bs.lastSet(76)==53 && bs.lastSet(53)==52);
+    Util.assert(bs.lastSet(52)==-1 && bs.lastSet(-100)==-1);
+    // test toString()
+    Util.assert(bs.toString().equals("{52, 53, 76, 77}"));
+    // communicate success.
+    System.out.println("TESTS PASSED");
+  }
 }
 
 // set emacs indentation style.
