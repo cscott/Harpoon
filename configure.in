@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.57 $)dnl
+AC_REVISION($Revision: 1.58 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -237,6 +237,28 @@ with_event_driven=no)
 AC_MSG_RESULT($with_event_driven)
 AM_CONDITIONAL(EVENT_DRIVEN, test $with_event_driven = yes)
 
+dnl experimental support for camera code.
+AC_MSG_CHECKING([for experimental camera support])
+AC_ARG_WITH(camera,
+[  --with-camera	  build experimental camera support(see src/cam/README for licensing terms)], with_camera=yes, with_camera=no)
+AC_MSG_RESULT($with_camera)
+AM_CONDITIONAL(CAMERA, test "$with_camera" = "yes")
+if test "$with_camera" = "yes"; then
+	AC_DEFINE(WITH_CAMERA, 1,
+	    [Define if you want to build the experimental camera code support])
+	dnl Kernel header uses ulong typedef, ugh.
+	AC_MSG_CHECKING([whether sys/types.h defines ulong typedef])
+	AC_TRY_COMPILE([#include <sys/types.h>],[ulong blah;],
+			AC_MSG_RESULT([yes]),
+			dnl Try defining _GNU_SOURCE
+			oldcflags="$CFLAGS"
+			CFLAGS="$CFLAGS -D_GNU_SOURCE"
+			AC_TRY_COMPILE([#include <sys/types.h>],[ulong blah;],
+			AC_MSG_RESULT([-D_GNU_SOURCE needed.]),
+			AC_MSG_RESULT([no.])
+			AC_MSG_ERROR([Can't find a definition for ulong.])))
+fi
+
 dnl select whether to collect and print statistics
 AC_MSG_CHECKING([whether to collect and print statistics])
 AC_ARG_WITH(statistics,
@@ -294,7 +316,7 @@ AC_OUTPUT(Makefile arch/Makefile
 	  arch/arm32/Makefile arch/sparc32/Makefile arch/sparc64/Makefile
 	  arch/ix86/Makefile arch/mips/Makefile
 	  Contrib/Makefile Contrib/gc/Makefile
-	  src/Makefile src/jni/Makefile
+	  src/Makefile src/jni/Makefile src/cam/Makefile
 	  src/java.io/Makefile src/java.lang/Makefile
 	  src/java.net/Makefile
 	  src/java.util/Makefile src/java.util.zip/Makefile
