@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.2 2000-06-26 19:54:32 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.3 2000-06-26 20:18:02 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing cc
 // on MIPS IRIX64 lion 6.2 03131016 IP19.  
@@ -979,7 +979,7 @@ BINOP<l>(ADD, j, UNOP<l>(NEG, k)) = i %extra<i>{ extra }
    emit( ROOT, "sltu `d0, `s0l, `s1l", extra, i, k);
    emit( ROOT, "subu `d0l, `s0l, `s1l", i, j, k);
    emit( ROOT, "subu `d0h, `s0h, `s1h", i, j, k);
-   emit( ROOT, "subu `d0h, `s0, `s1h", i, i, extra);
+   emit( ROOT, "subu `d0h, `s0h, `s1", i, i, extra);
 }%
 
 BINOP<f>(ADD, j, UNOP<l>(NEG, k)) = i %{
