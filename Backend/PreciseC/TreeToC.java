@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.32 2001-11-02 22:20:06 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.33 2001-11-10 20:44:05 kkz Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -271,10 +271,14 @@ public class TreeToC extends java.io.PrintWriter {
 	  /* also, we need to use FNI_GetJNIEnv() at points. */
 	    sym2decl.put(new Label("FNI_GetJNIEnv"),
 			 "extern JNIEnv *FNI_GetJNIEnv(void);");
+	    sym2decl.put(new Label("generational_write_barrier"),
+			 "extern void generational_write_barrier"+
+			 "(jobject_unwrapped *);");
 	}
 	/** functions we have exact prototypes for */
 	static Set exactproto = new HashSet();
-	static { exactproto.add("memset"); exactproto.add("alloca"); }
+	static { exactproto.add("memset"); exactproto.add("alloca");
+	         exactproto.add("generational_write_barrier"); }
 	
 	/** these are the *local* labels which are defined *inside functions*
 	 *  in this file. */
@@ -672,7 +676,8 @@ public class TreeToC extends java.io.PrintWriter {
 	    // stack in the middle of setting it up.
 	    boolean nopush = "FNI_NewLocalRef".equals(funcname) ||
 		"FNI_DeleteLocalRef".equals(funcname) ||
-		"FNI_DeleteLocalRefsUpTo".equals(funcname);
+		"FNI_DeleteLocalRefsUpTo".equals(funcname) ||
+		"generational_write_barrier".equals(funcname);
 
 	    Set liveo = liveObjects(e);
 	    if (!nopush) { // "special" functions known not to be gc-points.
