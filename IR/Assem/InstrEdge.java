@@ -3,17 +3,17 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Assem;
 
-import harpoon.ClassFile.HCodeEdge;
-import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Properties.CFGEdge;
+import harpoon.IR.Properties.CFGraphable;
 
 /**
  * <code>InstrEdge</code> is an object representing an edge between
  * two <code>Instr</code>s. 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrEdge.java,v 1.1.2.4 1999-11-29 16:19:18 pnkfelix Exp $
+ * @version $Id: InstrEdge.java,v 1.1.2.5 2000-01-05 04:12:18 duncan Exp $
  */
-public class InstrEdge implements HCodeEdge {
+public class InstrEdge extends CFGEdge {
     
     public final Instr from;
     public final Instr to;
@@ -26,8 +26,8 @@ public class InstrEdge implements HCodeEdge {
 	this.to = to;
     }
     
-    public HCodeElement to() { return to; }
-    public HCodeElement from() { return from; }
+    public CFGraphable toCFG() { return to; }
+    public CFGraphable fromCFG() { return from; }
 
     public boolean equals(Object o) {
 	try {

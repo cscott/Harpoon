@@ -3,8 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Assem;
 
-import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Properties.CFGEdge;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.IR.Properties.UseDef;
 import harpoon.Temp.Label;
@@ -43,7 +43,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.65 1999-12-20 17:22:24 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.66 2000-01-05 04:12:18 duncan Exp $
  */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private final String assem; 
@@ -63,7 +63,7 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	<code>this</code>.  Should be <code>null</code> if
 	<code>this</code> is the first instruction in the method or if
 	<code>this</code> has not been inserted into an instruction
-	stream (ie. <code>insertAt(HCodeEdge)</code> has not been
+	stream (ie. <code>insertAt(CFGEdge)</code> has not been
 	called since the last call to <code>remove()</code> or since
 	construction). 
     */
@@ -73,7 +73,7 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	<code>this</code>.  Should be <code>null</code> if
 	<code>this</code> is the first instruction in the method or if
 	<code>this</code> has not been inserted into an instruction
-	stream (ie. <code>insertAt(HCodeEdge)</code> has not been
+	stream (ie. <code>insertAt(CFGEdge)</code> has not been
 	called since the last call to <code>remove()</code> or since
 	construction).
     */
@@ -85,7 +85,7 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	<code>this.canFallThrough</code>.  Should be <code>null</code>
 	if <code>this</code> is the last instruction in the method or
 	if <code>this</code> has not been inserted into an instruction
-	stream (ie. <code>insertAt(HCodeEdge)</code> has not been
+	stream (ie. <code>insertAt(CFGEdge)</code> has not been
 	called since the last call to <code>remove()</code> or since
 	construction).
     */
@@ -97,7 +97,7 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	<code>this.canFallThrough</code>.  Should be <code>null</code>
 	if <code>this</code> is the last instruction in the method or
 	if <code>this</code> has not been inserted into an instruction
-	stream (ie. <code>insertAt(HCodeEdge)</code> has not been
+	stream (ie. <code>insertAt(CFGEdge)</code> has not been
 	called since the last call to <code>remove()</code> or since
 	construction).
 	@see Instr#canFallThrough
@@ -348,13 +348,13 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
     }
     
     /** Not implemented yet. */
-    public static void insertInstrsAt(HCodeEdge edge, List instrs) {
+    public static void insertInstrsAt(CFGEdge edge, List instrs) {
 	Util.assert(false);
     }
 
     /** Inserts <code>this</code> at <code>edge</code>.  The purpose 
 	of this insertion is to modify <I>control flow</I>, rather than just
-	instruction layout.  See <code>layout(HCodeEdge)</code> for
+	instruction layout.  See <code>layout(CFGEdge)</code> for
 	direct modification of layout (which is less constrained than
 	this method but is not intended for generic program
 	transformation use.
@@ -391,7 +391,7 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	     <code>edge.to()</code>.
         @see Instr#remove
     */
-    public void insertAt(HCodeEdge edge) {
+    public void insertAt(CFGEdge edge) {
 	Util.assert(this.next == null &&
 		    this.prev == null, 
 		    "next and prev fields should be null");
@@ -448,7 +448,7 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	instruction layout.
 	<BR> <B>requires:</B> <code>this</code> has a current location
 	     in the instruction layout.
-	     (ie <code>insertAt(HCodeEdge)</code> or
+	     (ie <code>insertAt(CFGEdge)</code> or
 	     <code>layout(Instr, Instr)</code> has been called 
 	     since the last time <code>remove()</code> was called, or
 	     since construction if <code>remove()</code> has never
@@ -656,9 +656,9 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
-    public HCodeEdge[] edges() { 
+    public CFGEdge[] edges() { 
 	Collection c = edgeC();
-	return (HCodeEdge[]) c.toArray(new InstrEdge[c.size()]);
+	return (CFGEdge[]) c.toArray(new InstrEdge[c.size()]);
     }
     /** Returns the <I>control flow</I> edges of <code>this</code>.
 	Note that this returns edges according to <I>control flow</I>, not in
@@ -684,10 +684,10 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	
 	Uses <code>predC()</code> to get the necessary information.
     */
-    public HCodeEdge[] pred() {
+    public CFGEdge[] pred() {
 	Collection c = predC();
-	HCodeEdge[] edges = new HCodeEdge[c.size()];
-	return (HCodeEdge[]) c.toArray(edges);
+	CFGEdge[] edges = new CFGEdge[c.size()];
+	return (CFGEdge[]) c.toArray(edges);
     }
     /** Returns the <I>control flow</I> predecessors of <code>this</code>.
 	Note that this returns edges according to <I>control flow</I>, not in
@@ -724,10 +724,10 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
-    public HCodeEdge[] succ() { 
+    public CFGEdge[] succ() { 
 	Collection c = succC();
-	HCodeEdge[] edges = new HCodeEdge[c.size()];
-	return (HCodeEdge[]) c.toArray(edges);
+	CFGEdge[] edges = new CFGEdge[c.size()];
+	return (CFGEdge[]) c.toArray(edges);
     }
     /** Returns the <I>control flow</I> successors of <code>this</code>.
 	Note that this returns edges according to <I>control flow</I>, not in
