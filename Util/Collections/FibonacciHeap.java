@@ -15,7 +15,7 @@ import java.util.*;
  * Algorithms</i> by Cormen, Leiserson, and Riverst, in Chapter 21.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FibonacciHeap.java,v 1.1.2.1 2000-02-13 00:34:11 cananian Exp $
+ * @version $Id: FibonacciHeap.java,v 1.1.2.2 2000-02-13 01:02:45 cananian Exp $
  */
 public class FibonacciHeap extends AbstractHeap {
     private static final boolean debug = false;
@@ -152,10 +152,46 @@ public class FibonacciHeap extends AbstractHeap {
 	y.mark = false;
     }
 
-    public void decreaseKey(Map.Entry me, Object newkey)
-    { throw new Error("unimplemented"); }
-    public void delete(Map.Entry me)
-    { throw new Error("unimplemented"); }
+    public void decreaseKey(Map.Entry me, Object newkey) {
+	decreaseKey((Entry)me, newkey, false);
+    }
+    // if 'delete' is true, newkey is effectively -infinity.
+    private void decreaseKey(Entry entry, Object newkey, boolean delete) {
+	if (!delete && _keyCompare(newkey, entry.getKey()) > 0)
+	    throw new UnsupportedOperationException("New key is greater than "+
+						    "current key.");
+	entry._setKey(newkey);
+	Node x = entry.node;
+	Node y = x.parent;
+	if (y!=null && (delete || c.compare(x.entry, y.entry) < 0)) {
+	    _cut(x, y);
+	    _cascadingCut(y);
+	}
+	if (delete || c.compare(x.entry, min.entry) < 0)
+	    min = x;
+	// ta-da!
+    }
+    private void _cut(Node x, Node y) {
+	y.removeChild(x);
+	_concatenateListsContaining(x, min);
+	x.parent = null;
+	x.mark = false;
+    }
+    private void _cascadingCut(Node y) {
+	Node z = y.parent;
+	if (z==null) return;
+	if (y.mark == false) {
+	    y.mark = true;
+	} else {
+	    _cut(y, z);
+	    _cascadingCut(z);
+	}
+    }
+    public void delete(Map.Entry me) {
+	decreaseKey((Entry)me, null, true); // effectively key is -infinity
+	extractMinimum();
+	// now that wasn't too hard, was it?
+    }
 
     public int size() { return n; }
     public void clear() { min=null; n=0; }
@@ -221,6 +257,14 @@ public class FibonacciHeap extends AbstractHeap {
 	    c.parent = this;
 	    degree++;
 	}
+	void removeChild(Node c) {
+	    Util.assert(c.parent == this);
+	    if (this.child==c) this.child=c.right;
+	    _removeFromList(c);
+	    c.parent = null;
+	    degree--;
+	    if (degree==0) this.child=null;
+	}
 	public String toString() {
 	    return "<"+entry+", d:"+degree+", parent:"+_2s(parent)+
 		", child:"+_2s(child)+", left:"+_2s(left)+
@@ -251,6 +295,13 @@ public class FibonacciHeap extends AbstractHeap {
     }
     private final static double phi = (1 + Math.sqrt(5)) / 2.0;
     private final static double log_phi = Math.log(phi);
+
+    // convenience method for key comparisons (which are pretty rare)
+    private int _keyCompare(Object key1, Object key2) {
+	Comparator kc = comparator();
+	if (kc==null) kc = Default.comparator;
+	return kc.compare(key1, key2);
+    }
 
     /** Self-test method. */
     public static void main(String[] args) {
@@ -303,12 +354,14 @@ public class FibonacciHeap extends AbstractHeap {
 	    h.insert("M", "m"),
 	};
 	Util.assert(h.extractMinimum().getValue().equals("a"));
-	System.out.println(h);
+	System.out.println("1: "+h);
 	h.decreaseKey(me[3], "B"); // s2
+	System.out.println("2: "+h);
 	Util.assert(h.extractMinimum().getValue().equals("s2"));
 	h.delete(me[4]); // c2
+	System.out.println("3: "+h);
 	Util.assert(h.extractMinimum().getValue().equals("c1"));
-	System.out.println(h);
+	System.out.println("4: "+h);
 	// DONE.
 	System.out.println("PASSED.");
     }
