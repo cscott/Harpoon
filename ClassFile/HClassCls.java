@@ -14,7 +14,7 @@ import java.lang.reflect.Modifier;
  * <code>HClassCls</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassCls.java,v 1.1.2.10 2000-04-02 02:07:26 cananian Exp $
+ * @version $Id: HClassCls.java,v 1.1.2.11 2000-11-08 20:42:04 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 abstract class HClassCls extends HClassImpl {
@@ -117,7 +117,12 @@ abstract class HClassCls extends HClassImpl {
 	}
       }
     // didn't find a match.  Oh, well.
-    throw new NoSuchMethodError(name+" in "+this);
+    StringBuffer msg = new StringBuffer(getName());
+    msg.append('.'); msg.append(name); msg.append('(');
+    for (int i=0; i<parameterTypes.length; i++)
+      msg.append(parameterTypes[i].getDescriptor());
+    msg.append(')');
+    throw new NoSuchMethodError(msg.toString());
   }
   /**
    * Returns a <code>HMethod</code> object that reflects the specified 
@@ -138,7 +143,7 @@ abstract class HClassCls extends HClassImpl {
 	  declaredMethods[i].getDescriptor().equals(descriptor))
 	return declaredMethods[i];
     // didn't find a match.  Oh, well.
-    throw new NoSuchMethodError(name);
+    throw new NoSuchMethodError(getName()+"."+name+descriptor);
   }
   /**
    * Returns an array of <code>HMethod</code> objects reflecting all the
