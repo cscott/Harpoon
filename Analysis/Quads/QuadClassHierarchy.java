@@ -6,6 +6,7 @@ package harpoon.Analysis.Quads;
 import harpoon.ClassFile.*;
 import harpoon.IR.Quads.*;
 import harpoon.Util.ArraySet;
+import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import harpoon.Util.WorkSet;
@@ -25,7 +26,7 @@ import java.util.TreeSet;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.2 1999-10-13 18:27:01 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.3 1999-10-14 20:28:32 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -167,19 +168,33 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    }
 	} // END worklist.
 	
-	// now generate children set and method list from classKnownChildren.
+	// build method table from classMethodsUsed.
+	// sometimes only static methods will be used from a class
+	// (in which case it doesn't show up in the children list
+	//  because it's never instantiated); add entries to the
+	//  children list for these.
+	for (Iterator it = classMethodsUsed.keySet().iterator();
+	     it.hasNext(); ) {
+	    HClass c = (HClass) it.next();
+	    methods.addAll((Set) classMethodsUsed.get(c));
+	    // now add this class to classhierarchy.  no need to 'discover'
+	    // it, as it is never instantiated.
+	    HClass[] parents = HClassUtil.parents(c);
+	    for (int i=0; i<parents.length; i++) {
+		Set s = (Set) classKnownChildren.get(parents[i]);
+		if (s==null)
+		    classKnownChildren.put(parents[i], s=new HashSet());
+		if (i+1<parents.length)
+		    s.add(parents[i+1]);
+	    }
+	}
+	// now generate children set from classKnownChildren.
 	for (Iterator it = classKnownChildren.keySet().iterator();
 	     it.hasNext(); ) {
 	    HClass c = (HClass) it.next();
 	    Set s = (Set) classKnownChildren.get(c);
 	    HClass ch[] = (HClass[]) s.toArray(new HClass[s.size()]);
 	    children.put(c, ch);
-	    // now build method table.
-	    if (classMethodsUsed.containsKey(c))
-		methods.addAll((Set) classMethodsUsed.get(c));
-	    for (int i=0; i<ch.length; i++)
-		if (classMethodsUsed.containsKey(ch[i]))
-		    methods.addAll((Set)classMethodsUsed.get(ch[i]));
 	}
     }
 
@@ -267,6 +282,11 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     /* methods invoked with INVOKESPECIAL or INVOKESTATIC... */
     private void discoverSpecial(HMethod m, 
 			 Worklist W, Set done, Map ckc, Map cmu) {
+	// the class initializer of the declaring class is called.
+	HMethod ci = m.getDeclaringClass().getClassInitializer();
+	if ((ci!=null) && (!done.contains(ci)))
+	    methodPush(ci, W, cmu);
+	// okay, push this method if we need to.
 	if (!done.contains(m))
 	    methodPush(m, W, cmu);
     }
