@@ -5,16 +5,18 @@ package harpoon.Temp;
 
 import harpoon.Util.Util;
 
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 /**
  * A <code>CloningTempMap</code> maps <code>Temp</code>s from one
- * <code>TempFactory</code> to equivalent <code>Temp</code>s in another.
+ * <code>TempFactory</code> to equivalent <code>Temp</code>s in another,
+ * creating new <code>Temp</code>s as necessary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloningTempMap.java,v 1.1.2.3 1999-02-26 17:56:35 andyb Exp $
+ * @version $Id: CloningTempMap.java,v 1.1.2.4 1999-07-07 22:12:00 cananian Exp $
  */
 public class CloningTempMap implements TempMap {
-    private Hashtable h = new Hashtable();
+    private final Map h = new HashMap();
     private final TempFactory old_tf;
     private final TempFactory new_tf;
     
@@ -27,6 +29,10 @@ public class CloningTempMap implements TempMap {
         Util.assert(new_tf != null, "new temp factory is null");
     }
 
+    /** Return a <code>Temp</code> from the <code>new_tf</code>
+     *  <code>TempFactory</code> that corresponds to the specified
+     *  <code>Temp</code> <code>t</code> from the <code>old_tf</code>
+     *  <code>TempFactory</code>, creating it if necessary. */
     public Temp tempMap(Temp t) {
 	Util.assert(t.tempFactory() == old_tf, "TempFactories should match");
 	Temp r = (Temp) h.get(t);
@@ -36,5 +42,13 @@ public class CloningTempMap implements TempMap {
 	}
 	Util.assert(r.tempFactory() == new_tf);
 	return r;
+    }
+
+    /** Provide access to an unmodifiable version of this 
+     *  <code>TempMap</code. */
+    public TempMap unmodifiable() {
+	return new TempMap() {
+	    public Temp tempMap(Temp t) { return (Temp) h.get(t); }
+	};
     }
 }
