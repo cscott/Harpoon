@@ -1,0 +1,2 @@
+#!/bin/sh
+java  -classpath $JACORB_HOME/lib/idl.jar:$CLASSPATH org.jacorb.idl.parser  "$@"
