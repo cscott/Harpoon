@@ -4,6 +4,8 @@ package harpoon.Analysis;
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.*;
 import harpoon.Util.Set;
+import harpoon.Util.NullEnumerator;
+import harpoon.Util.ArrayEnumerator;
 import harpoon.Util.Util;
 
 import java.util.Hashtable;
@@ -16,7 +18,7 @@ import java.util.Enumeration;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.8 1998-09-16 00:42:21 cananian Exp $
+ * @version $Id: UseDef.java,v 1.9 1998-09-16 19:46:59 cananian Exp $
  */
 
 public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
@@ -30,18 +32,20 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
     static class allTempList {
 	Temp[] used;
 	Temp[] defined;
-	allTempList(Temp[] used, Temp[] defined) {
-	    this.used = used; this.defined = defined;
+	Temp[] all;
+	allTempList(Temp[] used, Temp[] defined, Temp[] all) {
+	    this.used = used; this.defined = defined; this.all = all;
 	}
     }
 	
     void associate(HCodeElement hce, Temp[] tl,
-		   Hashtable map, Set allTemps) {
+		   Hashtable map, Set allTemps1, Set allTemps2) {
 	for (int i=0; i<tl.length; i++) {
 	    Set s = (Set) map.get(tl[i]);
 	    if (s==null) { s = new Set(); map.put(tl[i], s); }
 	    s.union(hce);
-	    allTemps.union(tl[i]);
+	    allTemps1.union(tl[i]);
+	    allTemps2.union(tl[i]);
 	}
     }
 
@@ -73,11 +77,12 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	Hashtable workDef = new Hashtable();
 	Set defined = new Set();
 	Set used    = new Set();
+	Set all     = new Set();
 
 	// Scan through and associate uses and defs with their HCodeElements
 	for (int i=0; i<el.length; i++) {
-	    associate(el[i], udl[i].use(), workUse, used);
-	    associate(el[i], udl[i].def(), workDef, defined);
+	    associate(el[i], udl[i].use(), workUse, used, all);
+	    associate(el[i], udl[i].def(), workDef, defined, all);
 	}
 	// replace UniqueVectors with HCodeElement arrays to save space.
 	for (Enumeration e = workUse.keys(); e.hasMoreElements(); ) {
@@ -90,7 +95,8 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	}
 	// store set of all temps & mark as analyzed.
 	analyzed.put(code, new allTempList(set2temps(used),
-					   set2temps(defined)));
+					   set2temps(defined),
+					   set2temps(all)));
     }
 
     /** Return the HCodeElements which define a given Temp. */
@@ -101,6 +107,11 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	    new HCodeElement[0] : 
 	    (HCodeElement[]) Util.copy(r);
     }
+    /** Enumerate the HCodeElements which define a given Temp. */
+    public Enumeration defMapE(HCode hc, Temp t) {
+	analyze(hc);
+	return arrayEnumerator( (HCodeElement[]) defMap.get(t) );
+    }
     /** Return the HCodeElements which use a given Temp. */
     public HCodeElement[] useMap(HCode hc, Temp t) {
 	analyze(hc);
@@ -109,16 +120,50 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	    new HCodeElement[0] : 
 	    (HCodeElement[]) Util.copy(r);
     }
+    /** Enumerate the HCodeElements which use a given Temp. */
+    public Enumeration useMapE(HCode hc, Temp t) {
+	analyze(hc);
+	return arrayEnumerator( (HCodeElement[]) useMap.get(t) );
+    }
     /** Return an array of all Temps defined in a given HCode. */
     public Temp[] allDefs(HCode hc) {
 	analyze(hc);
 	allTempList atl = (allTempList) analyzed.get(hc);
 	return (Temp[]) Util.copy(atl.defined);
     }
+    /** Return an Enumeration of all Temps defined in a given HCode. */
+    public Enumeration allDefsE(HCode hc) {
+	analyze(hc);
+	allTempList atl = (allTempList) analyzed.get(hc);
+	return arrayEnumerator(atl.defined);
+    }
     /** Return an array of all Temps used in a given HCode. */
     public Temp[] allUses(HCode hc) {
 	analyze(hc);
 	allTempList atl = (allTempList) analyzed.get(hc);
 	return (Temp[]) Util.copy(atl.used);
+    }
+    /** Return an Enumeration of all Temps used in a given HCode. */
+    public Enumeration allUsesE(HCode hc) {
+	analyze(hc);
+	allTempList atl = (allTempList) analyzed.get(hc);
+	return arrayEnumerator(atl.used);
+    }
+    /** Return an array of all Temps used or defined in a given HCode. */
+    public Temp[] allTemps(HCode hc) {
+	analyze(hc);
+	allTempList atl = (allTempList) analyzed.get(hc);
+	return (Temp[]) Util.copy(atl.all);
+    }
+    /** Return an Enumeration of all Temps used or defined in a given HCode. */
+    public Enumeration allTempsE(HCode hc) {
+	analyze(hc);
+	allTempList atl = (allTempList) analyzed.get(hc);
+	return arrayEnumerator(atl.all);
+    }
+	
+    private Enumeration arrayEnumerator(Object[] ol) {
+	if (ol==null) return NullEnumerator.STATIC;
+	return new ArrayEnumerator(ol);
     }
 }

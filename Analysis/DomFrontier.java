@@ -4,15 +4,18 @@ package harpoon.Analysis;
 import harpoon.ClassFile.*;
 import harpoon.IR.Properties.Edges;
 import harpoon.Util.Set;
+import harpoon.Util.NullEnumerator;
+import harpoon.Util.ArrayEnumerator;
 
 import java.util.Hashtable;
+import java.util.Enumeration;
 /**
  * <code>DomFrontier</code> computes the dominance frontier of a 
  * flowgraph-structured IR.  The <code>HCodeElement</code>s must implement
  * the <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.4 1998-09-16 00:42:20 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.5 1998-09-16 19:46:59 cananian Exp $
  */
 
 public class DomFrontier  {
@@ -40,15 +43,27 @@ public class DomFrontier  {
     Hashtable DF = new Hashtable();
     Hashtable analyzed = new Hashtable();
 
-    /** Return the set of <code>HCodeElement</code>s in the (post)dominance
+    /** Return an array of <code>HCodeElement</code>s in the (post)dominance
      *  frontier of <code>n</code>.
      *  @param hc the <code>HCode</code> containing <code>n</code.
      */
-    public HCodeElement[] DF(HCode hc, HCodeElement n) {
+    public HCodeElement[] df(HCode hc, HCodeElement n) {
 	analyze(hc); 
 	HCodeElement[] r =  (HCodeElement[]) DF.get(n);
 	if (r==null) return new HCodeElement[0];
-	else return r;
+	else return (HCodeElement[]) r.clone();
+    }
+    /** Return an Enumeration of <code>HCodeElement</code>s in the 
+     *  (post)dominance frontier of <code>n</code>.
+     *  @param hc the <code>HCode</code> containing <code>n</code.
+     */
+    public Enumeration dfE(HCode hc, HCodeElement n) {
+	analyze(hc);
+	HCodeElement[] r =  (HCodeElement[]) DF.get(n);
+	if (r==null)
+	    return NullEnumerator.STATIC;
+	else
+	    return new ArrayEnumerator(r);
     }
 
     HCode lastHCode = null;
