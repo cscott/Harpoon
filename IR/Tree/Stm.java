@@ -20,7 +20,7 @@ import java.util.Stack;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Stm.java,v 1.1.2.15 2000-02-14 21:49:34 cananian Exp $
+ * @version $Id: Stm.java,v 1.1.2.16 2000-02-15 15:08:28 cananian Exp $
  */
 abstract public class Stm extends Tree {
     protected Stm(TreeFactory tf, HCodeElement source, int arity) {
@@ -35,8 +35,6 @@ abstract public class Stm extends Tree {
     // Overridden by MOVE and INVOCATION
     protected Set defSet() { return Collections.EMPTY_SET; }
     protected Set useSet() { return ExpList.useSet(kids()); }
-
-    public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);
 
     /** Returns a tree-based representation of <code>list</code>.  
      *

@@ -15,7 +15,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Exp.java,v 1.1.2.12 2000-02-14 21:49:33 cananian Exp $
+ * @version $Id: Exp.java,v 1.1.2.13 2000-02-15 15:08:28 cananian Exp $
  */
 abstract public class Exp extends Tree implements Typed {
     protected Exp(TreeFactory tf, HCodeElement source, int arity) {
@@ -34,8 +34,6 @@ abstract public class Exp extends Tree implements Typed {
      *  subexpressions. */
     public final Exp build(ExpList kids) { return build(this.tf, kids); }
     abstract public Exp build(TreeFactory tf, ExpList kids);
-
-    public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);
 
     // Typed interface:
     /** Result type. */
