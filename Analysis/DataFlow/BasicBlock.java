@@ -29,12 +29,31 @@ public class BasicBlock {
     int num;
     
     /** BasicBlock constructor.
-     */
+
+	<BR> <B>requires:</B> <code>f</code> is the first element of
+	                      the basic block and <code>l</code> is
+			      the last element of the BasicBlock.
+    */
     public BasicBlock (Edges f, Edges l) {
 	first = f; last = l; pred_bb = new HashSet(); succ_bb = new HashSet();
 	num = BBnum++;
     }
     
+    /** BasicBlock generator.
+	requires: All <code>HCodeEdge</code>s linked to by the set of
+	          <code>Edges</code> in the code body have
+		  <code>Edges</code> objects in their <code>to</code>
+		  and <code>from</code> fields.
+	effects:  Creates a set of BasicBlocks corresponding to the
+	          blocks implicitly contained in <code>head</code> and
+		  the <code>Edges</code> objects that
+		  <code>head</code> points to. 
+    */
+    public static BasicBlock computeBasicBlocks(Edges head) {
+	/* XXX not done yet */
+	return null;
+    }
+
     public Edges getFirst() { return first; }
     public Edges getLast() { return last; }
     
