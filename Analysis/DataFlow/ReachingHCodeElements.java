@@ -24,10 +24,10 @@ import java.util.Set;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: ReachingHCodeElements.java,v 1.1.2.7 2000-02-03 21:11:55 pnkfelix Exp $ 
+ * @version $Id: ReachingHCodeElements.java,v 1.1.2.8 2000-02-14 13:03:40 cananian Exp $ 
  */
 public class ReachingHCodeElements extends ReachingDefs.BBVisitor { 
-    private Map hceToBB;
+    private BasicBlock.Factory bbfactory;
     private Map tempsToPrsvs;
     private Set universe; 
     private Map rdCache = new HashMap(); 
@@ -35,68 +35,57 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
     
     /** 
      * Constructs a new <code>ReachingHCodeElements</code> for 
-     * <code>basicblocks</code>.
+     * the basic blocks in the supplied <code>BasicBlock.Factory</code>.
      * 
      * <BR><B>requires:</B> 
      * <OL>
-     *   <LI> <code>basicBlocks</code> is an <code>Iterator</code> of 
-     *        <code>BasicBlock</code>s,	       
+     *   <LI> <code>bbfactory</code> is a valid
+     *        <code>BasicBlock.Factory</code>.
      *   <LI> All of the instructions in <code>basicBlocks</code> implement
      *        <code>UseDef</code>, 
-     *   <LI> No element of <code>basicblocks</code> links to a
-     *        <code>BasicBlock</code> not contained within 
-     *        <code>basicBlocks</code>,
-     *   <LI> No <code>BasicBlock</code> is repeatedly iterated
-     *        by <code>basicBlocks</code> 
      * </OL>
-     * <BR> <B>modifies:</B> <code>basicBlocks</code>
      * <BR> <B>effects:</B> constructs a new <code>BasicBlockVisitor</code> 
      *   and initializes internal datasets for analysis of the 
-     *   <code>BasicBlock</code>s in <code>basicBlocks</code>, iterating over 
-     *   all of <code>basicBlocks</code> in the process.
+     *   <code>BasicBlock</code>s in <code>bbfactory</code>.
      *
-     * @param basicBlocks <code>Iterator</code> of <code>BasicBlock</code>s 
-     *                    to be analyzed.
+     * @param bbfactory <code>BasicBlock.Factory</code> of
+     *                  <code>BasicBlock</code>s to be analyzed.
      */	     
-    public ReachingHCodeElements(Iterator basicBlocks) {
-        super(basicBlocks); 
+    public ReachingHCodeElements(BasicBlock.Factory bbfactory) {
+        super(bbfactory.blocksIterator());
+	this.bbfactory = bbfactory;
     }
     
     /** 
      * Constructs a new <code>ReachingHCodeElements</code> for 
-     * <code>basicblocks</code>.  Allows the user to specify their own
-     * <code>SetFactory</code> for constructing sets of 
-     * <code>HCodeElements</code> in the analysis.  
+     * the basic blocks in the supplied <code>BasicBlock.Factory</code>.
+     * Allows the user to specify their own <code>SetFactory</code> for
+     * constructing sets of <code>HCodeElements</code> in the analysis.  
      * 
      * <BR><B>requires:</B> 
      * <OL>
-     *   <LI> <code>basicBlocks</code> is an <code>Iterator</code> of 
-     *        <code>BasicBlock</code>s,	       
+     *   <LI> <code>bbfactory</code> is a valid
+     *        <code>BasicBlock.Factory</code>.
      *   <LI> All of the instructions in <code>basicBlocks</code> implement
      *        <code>UseDef</code>, 
-     *   <LI> No element of <code>basicblocks</code> links to a
-     *        <code>BasicBlock</code> not contained within 
-     *        <code>basicBlocks</code>,
-     *   <LI> No <code>BasicBlock</code> is repeatedly iterated
-     *        by <code>basicBlocks</code> 
      *   <LI> All of the <code>HCodeElements</code> in <code>basicBlocks</code>
      *        which have non-empty def sets are members of the universe of
      *        <code>setFact</code>. 
      * </OL>
-     * <BR> <B>modifies:</B> <code>basicBlocks</code>
      * <BR> <B>effects:</B> constructs a new <code>BasicBlockVisitor</code> 
      *   and initializes internal datasets for analysis of the 
-     *   <code>BasicBlock</code>s in <code>basicBlocks</code>, iterating over 
-     *   all of <code>basicBlocks</code> in the process.
+     *   <code>BasicBlock</code>s in <code>bbfactory</code>.
      *
-     * @param basicBlocks <code>Iterator</code> of <code>BasicBlock</code>s 
-     *                    to be analyzed.
+     * @param bbfactory <code>BasicBlock.Factory</code> of
+     *                  <code>BasicBlock</code>s to be analyzed.
      * @param setFact     the <code>SetFactory</code> to be used in 
      *                    the construction of sets of 
      *                    <code>HCodeElements</code>. 
      */	     
-    public ReachingHCodeElements(Iterator basicBlocks, SetFactory setFact) {
-	super(basicBlocks, setFact);
+    public ReachingHCodeElements(BasicBlock.Factory bbfactory,
+				 SetFactory setFact) {
+	super(bbfactory.blocksIterator(), setFact);
+	this.bbfactory = bbfactory;
     }
 
 
@@ -224,10 +213,9 @@ public class ReachingHCodeElements extends ReachingDefs.BBVisitor {
      * entry to <code>hce</code>. 
      */
     public Set getReachingBefore(HCodeElement hce) {
-	Util.assert(this.hceToBB.containsKey(hce)); 
 
 	if (!this.rdCache.containsKey(hce)) { 
-	    BasicBlock  bb          = (BasicBlock)this.hceToBB.get(hce); 
+	    BasicBlock  bb          = bbfactory.getBlock(hce);
 	    Set         reachBefore = new HashSet(); 
 
 	    reachBefore.addAll(this.getReachingOnEntry(bb)); 
