@@ -37,10 +37,33 @@ public class ATRClient extends Client {
      */
     public ATRClient(CommunicationsModel cm, String name) {
 	super();
-	try {
-	    cs = cm.setupATRClient(name);
-	} catch (Exception e) {
-	    throw new Error(e);
+	long timeoutLength = 2000;
+	int triesTillFail = 500;
+	int count = 1;
+	boolean connectionMade = false;
+	while ((count <= triesTillFail) && !connectionMade) { 
+	    try {
+		cs = cm.setupATRClient(name);
+		connectionMade = true;
+	    } catch (org.omg.CosNaming.NamingContextPackage.NotFound e){
+		System.out.println("ATRClient/CORBA Exception: No matching server by the name '"+name+"'"+
+				   " was found.\n  Waiting and trying again. (Try #"+count+"/"+triesTillFail+")");
+		try {
+		    Thread.currentThread().sleep(timeoutLength);
+		}
+		catch (InterruptedException ie) {
+		}
+		count++;
+
+	    } catch (Exception e2) {
+		System.out.println("**** "+e2.getClass()+" ******");
+		throw new Error(e2);
+	    }
+	}
+
+	if (!connectionMade) {
+	    int minutes = (int)timeoutLength*triesTillFail/1000/60;
+	    throw new Error("ATR Client was unable to find a matching server after "+minutes+" minutes. Giving up.");
 	}
     }
 }
