@@ -1,10 +1,10 @@
-package ClassFile;
+package harpoon.ClassFile.Raw;
 
 /**
  * The <code>CONSTANT_Integer_info</code> structure represents
  * four-byte integer numeric constants.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantInteger.java,v 1.5 1998-07-30 11:59:00 cananian Exp $
+ * @version $Id: ConstantInteger.java,v 1.6 1998-07-31 05:51:09 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.4"
  * @see Constant
  * @see ConstantFloat

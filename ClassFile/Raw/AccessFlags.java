@@ -1,10 +1,10 @@
-package ClassFile;
+package harpoon.ClassFile.Raw;
 
 /** 
  * Represents a set of method or field access flags, containing
  * permissions and properties of a field or method.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AccessFlags.java,v 1.4 1998-07-30 11:59:00 cananian Exp $
+ * @version $Id: AccessFlags.java,v 1.5 1998-07-31 05:51:08 cananian Exp $
  * @see "The Java Virtual Machine Specification"
  * @see ClassFile
  * @see FieldInfo

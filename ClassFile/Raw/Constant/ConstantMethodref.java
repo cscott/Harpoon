@@ -1,9 +1,9 @@
-package ClassFile;
+package harpoon.ClassFile.Raw;
 
 /** 
  * The <code>CONSTANT_Methodref</code> structure represents a method.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantMethodref.java,v 1.4 1998-07-30 11:59:00 cananian Exp $
+ * @version $Id: ConstantMethodref.java,v 1.5 1998-07-31 05:51:10 cananian Exp $
  * @see "The Java Virtual Machine Specifications, section 4.4.2"
  * @see Constant
  * @see ConstantFieldref

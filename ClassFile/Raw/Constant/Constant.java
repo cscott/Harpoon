@@ -1,4 +1,4 @@
-package ClassFile;
+package harpoon.ClassFile.Raw;
 
 /**
  * The <code>Constant</code> class represents a single item in
@@ -7,7 +7,7 @@ package ClassFile;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Constant.java,v 1.4 1998-07-30 11:59:00 cananian Exp $
+ * @version $Id: Constant.java,v 1.5 1998-07-31 05:51:09 cananian Exp $
  * @see ConstantUtf8
  * @see ConstantInteger
  * @see ConstantFloat

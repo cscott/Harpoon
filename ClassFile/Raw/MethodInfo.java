@@ -1,11 +1,11 @@
-package ClassFile;
+package harpoon.ClassFile.Raw;
 
 /**
  * Each method, and each instance initialization method &lt;init&gt;,
  * is described by a variable-length <code>method_info</code>
  * structure.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodInfo.java,v 1.4 1998-07-30 11:59:01 cananian Exp $
+ * @version $Id: MethodInfo.java,v 1.5 1998-07-31 05:51:10 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.6"
  * @see ClassFile
  */
@@ -36,7 +36,7 @@ public class MethodInfo {
       for the <code>attributes</code> table of a
       <code>method_info</code> structure are the <code>Code</code> and
       <code>Exceptions</code> attributes. */
-  AttributeInfo attributes[];
+  Attribute attributes[];
   
   /** Read a single MethodInfo item from an input class bytecode file. */
   void read(ClassFile p, ClassDataInputStream in)
@@ -49,9 +49,9 @@ public class MethodInfo {
     descriptor_index = in.read_u2();
 
     int attributes_count = in.read_u2();
-    attributes = new AttributeInfo[attributes_count];
+    attributes = new Attribute[attributes_count];
     for (int i=0; i<attributes_count; i++)
-      attributes[i] = AttributeInfo.read(in, cp);
+      attributes[i] = Attribute.read(in, cp);
   }
 
   /** Constructor. */
@@ -62,7 +62,7 @@ public class MethodInfo {
   /** Constructor. */
   public MethodInfo(ClassFile parent, AccessFlags access_flags,
 		    int name_index, int descriptor_index,
-		    AttributeInfo attributes[]) {
+		    Attribute attributes[]) {
     this.parent = parent;
     this.access_flags = access_flags;
     this.name_index = name_index;

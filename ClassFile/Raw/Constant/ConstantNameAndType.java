@@ -1,11 +1,11 @@
-package ClassFile;
+package harpoon.ClassFile.Raw;
 
 /**
  * The <code>CONSTANT_NameAndType_info</code> structure is used to
  * represent a field or method, without indicating which class or
  * interface type it belongs to.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantNameAndType.java,v 1.4 1998-07-30 11:59:00 cananian Exp $
+ * @version $Id: ConstantNameAndType.java,v 1.5 1998-07-31 05:51:10 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.6"
  * @see Constant
  */

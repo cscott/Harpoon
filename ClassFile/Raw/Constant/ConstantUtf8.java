@@ -1,4 +1,4 @@
-package ClassFile;
+package harpoon.ClassFile.Raw;
 
 /**
  * The <code>CONSTANT_Utf8_info</code> structure is used to represent
@@ -7,7 +7,7 @@ package ClassFile;
  * be represented using only one byte per character, but characters of
  * up to 16 bits can be represented.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantUtf8.java,v 1.4 1998-07-30 11:59:01 cananian Exp $
+ * @version $Id: ConstantUtf8.java,v 1.5 1998-07-31 05:51:10 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.7"
  * @see Constant
  */

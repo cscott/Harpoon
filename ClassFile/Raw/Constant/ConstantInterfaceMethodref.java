@@ -1,4 +1,4 @@
-package ClassFile;
+package harpoon.ClassFile.Raw;
 
 /**
  * The <code>CONSTANT_InterfaceMethodref</code> structure represents

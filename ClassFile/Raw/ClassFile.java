@@ -1,11 +1,11 @@
-package ClassFile;
+package harpoon.ClassFile.Raw;
 
 /**
  * Represents a java bytecode class file.
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.4 1998-07-30 11:59:00 cananian Exp $
+ * @version $Id: ClassFile.java,v 1.5 1998-07-31 05:51:09 cananian Exp $
  */
 
 public class ClassFile {
@@ -104,7 +104,7 @@ public class ClassFile {
       The only attribute defined by this specification for the
       <code>attributes</code> table of a <code>ClassFile</code>
       structure is the <code>SourceFile</code> attribute. */
-  AttributeInfo attributes[];
+  Attribute attributes[];
 
   void read(ClassDataInputStream in) throws java.io.IOException {
     int constant_pool_count;
@@ -151,9 +151,9 @@ public class ClassFile {
       methods[i] = new MethodInfo(this, in);
 
     attributes_count = in.read_u2();
-    attributes = new AttributeInfo[attributes_count];
+    attributes = new Attribute[attributes_count];
     for (int i=0; i<attributes_count; i++)
-      attributes[i] = AttributeInfo.read(this, in);
+      attributes[i] = Attribute.read(this, in);
   }
 
   /** Write a class file object out to a java bytecode file. */

@@ -1,45 +1,72 @@
-package ClassFile;
+package harpoon.ClassFile.Raw;
 
-public class AttributeInfo {
+/**
+ * Attributes are used in the <code>ClassFile</code>,
+ * <code>field_info</code>, <code>method_info</code>, and
+ * <code>Code_attribute</code> structures of the <code>class</code> file
+ * format.  <code>Attribute</code> is the superclass of the different
+ * types of attribute information classes.
+ *
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: Attribute.java,v 1.4 1998-07-31 05:51:08 cananian Exp $
+ * @see "The Java Virtual Machine Specification, section 4.7"
+ * @see ClassFile
+ * @see FieldInfo
+ * @see MethodInfo
+ * @see AttributeCode
+ */
+public class Attribute {
+  /** ClassFile in which this attribute information is found. */
+  public Classfile parent;
+
+  /** The <code>attribute_name_index</code> must be a valid unsigned
+      16-bit index into the constant pool of the class.  The
+      <code>constant_pool</code> entry at
+      <code>attribute_name_index</code> must be a
+      <code>CONSTANT_Utf8</code> string representing the name of the
+      attribute. */
   int attribute_name_index;
-  long attribute_length;
-  String attribute_name;
+  /** The value of the <code>attribute_length</code> item indicates
+   *  the length of the attribute, excluding the initial six bytes. 
+   */ 
+  abstract long attribute_length();
 
-  AttributeInfo(int ani, long len, ConstantPoolInfo cp[]) {
-    attribute_name_index = ani;
-    attribute_length = len;
-    attribute_name = ((ConstantUtf8) cp[attribute_name_index]).val;
+  /** Constructor.  Meant for use only by subclasses. */
+  protected Attribute(ClassFile p, int attribute_name_index) {
+    this.parent = p;
+    this.attribute_name_index = attribute_name_index;
   }
 
-  static AttributeInfo read(ClassDataInputStream in, ConstantPoolInfo cp[])
+  /** Read an Attribute from a ClassDataInputStream. */
+  static Attribute read(ClassFile parent, ClassDataInputStream in)
        throws java.io.IOException {
     int attribute_name_index = in.read_u2();
-    String attribute_name = ((ConstantUtf8) cp[attribute_name_index]).val;
  
     if (attribute_name.equals("SourceFile"))
-      return new AttributeSourceFile(in, cp, attribute_name_index);
+      return new AttributeSourceFile(parent, in, attribute_name_index);
     if (attribute_name.equals("ConstantValue"))
-      return new AttributeConstantValue(in, cp, attribute_name_index);
+      return new AttributeConstantValue(parent, in, attribute_name_index);
     if (attribute_name.equals("Code"))
-      return new AttributeCode(in, cp, attribute_name_index);
+      return new AttributeCode(parent, in, attribute_name_index);
     if (attribute_name.equals("Exceptions"))
-      return new AttributeExceptions(in, cp, attribute_name_index);
+      return new AttributeExceptions(parent, in, attribute_name_index);
     if (attribute_name.equals("LineNumberTable"))
-      return new AttributeLineNumberTable(in, cp, attribute_name_index);
+      return new AttributeLineNumberTable(parent, in, attribute_name_index);
     if (attribute_name.equals("LocalVariableTable"))
-      return new AttributeLocalVariableTable(in, cp, attribute_name_index);
-
-    // We don't know this attribute type.  Discard.
-    System.err.println("Discarding attribute /"+attribute_name+"/");
-
-    long attribute_length = in.read_u4();
-    for (long l=0; l<attribute_length; l++)
-      in.read_u1();
-
-    return new AttributeInfo(attribute_name_index, attribute_length, cp);;
+      return new AttributeLocalVariableTable(parent, in, attribute_name_index);
+    // Unknown attribute type.
+    return new AttributeUnknown(parent, in, attribute_name_index);
   }
 
-  public String toString() { return "("+attribute_name+")"; }
-}
-
+  /** Write Attribute to bytecode file. */
+  abstract void write(ClassDataOutputStream out) throws java.io.IOException;
   
+  // convenience functions.
+  ConstantUtf8 attribute_name_index()
+  { return (ConstantUtf8) parent.constant_pool[attribute_name_index]; }
+  String attribute_name() { return attribute_name_index().val; }
+
+  /** Create a human-readable representation for the Attribute. */
+  public String toString()
+  { return "("+attribute_name()+" Attribute["+attribute_length()+"])"; }
+}
