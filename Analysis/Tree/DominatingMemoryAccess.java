@@ -71,7 +71,7 @@ import java.util.Collection;
  used since it needs to invalidate them on a function return.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.1.2.7 2001-06-11 23:27:32 cananian Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.1.2.8 2001-06-11 23:37:02 witchel Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -810,30 +810,6 @@ public class DominatingMemoryAccess {
       }
       return sz;
    }
-
-
-   private void tryDominate(Exp exp, final CacheEquivalence eqClasses,
-                            Map defUseMap, Map useDefMap) {
-      if(exp.kind() == TreeKind.MEM) {
-         MEM mem = (MEM)exp;
-         // XXX This shoud go away when Scott tells me the real way to
-         // do this. 
-         if(mem.kind() == TreeKind.TEMP
-            && getSize(mem, (TEMP)mem.getExp()) <= 32) {
-            if(eqClasses.needs_tag_check(mem) == false) {
-               // This is it, this use is dominated
-               MEM dom = eqClasses.whose_tag_check(mem);
-               ArrayList subs = (ArrayList)defUseMap.get(dom);
-               subs.add(mem);
-               Util.assert(useDefMap.containsKey(mem) == false);
-               useDefMap.put(mem, dom);
-            } else if(eqClasses.num_using_this_tag(mem) > 1) {
-               defUseMap.put(mem, new ArrayList(2));
-            }
-         }
-      }
-   }
-
    // For every access that dominates another access to the same base
    // pointer (memory equiv class), make the dominating access the Def
    // and the subordinate accesses uses
@@ -863,6 +839,27 @@ public class DominatingMemoryAccess {
       }
    }
 
+   private void tryDominate(Exp exp, final CacheEquivalence eqClasses,
+                            Map defUseMap, Map useDefMap) {
+      if(exp.kind() == TreeKind.MEM) {
+         MEM mem = (MEM)exp;
+         // XXX This shoud go away when Scott tells me the real way to
+         // do this. 
+         if(mem.kind() == TreeKind.TEMP
+            && getSize(mem, (TEMP)mem.getExp()) <= 32) {
+            if(eqClasses.needs_tag_check(mem) == false) {
+               // This is it, this use is dominated
+               MEM dom = eqClasses.whose_tag_check(mem);
+               ArrayList subs = (ArrayList)defUseMap.get(dom);
+               subs.add(mem);
+               Util.assert(useDefMap.containsKey(mem) == false);
+               useDefMap.put(mem, dom);
+            } else if(eqClasses.num_using_this_tag(mem) > 1) {
+               defUseMap.put(mem, new ArrayList(2));
+            }
+         }
+      }
+   }
    // For every access that dominates another access to the same base
    // pointer (memory equiv class), make the dominating access the Def
    // and the subordinate accesses uses
@@ -880,11 +877,6 @@ public class DominatingMemoryAccess {
          tryDominate(m.getSrc(), eqClasses, defUseMap, useDefMap);
          tryDominate(m.getDst(), eqClasses, defUseMap, useDefMap);
          break;
-      case TreeKind.CALL:
-      case TreeKind.NATIVECALL:
-      case TreeKind.THROW:
-         // Calls can clear DA state, but possibly not, so don't clear
-         // the active list
       }
       for(int i = 0; i < children.length; ++i) {
          findDADefUse(dt, children[i], code, cfgr, eqClasses, 
