@@ -1,0 +1,23 @@
+// SimpleArray.java, created Wed Feb 21 17:37:36 2001 by cananian
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+package harpoon.Runtime.AltArray;
+
+/**
+ * <code>SimpleArrayJavaType</code> is an abstract superclass for a candidate
+ * array implementation.
+ * 
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: SimpleArrayJavaType.jt,v 1.1.2.1 2001-02-23 06:34:39 cananian Exp $
+ */
+public final class SimpleArrayJavaType extends ArrayImplJavaType {
+    private final javaType[] a;
+    /* can't enforce this, but should have a constructor like the following */
+    public SimpleArrayJavaType(int length) { super(length);
+	this.a = new javaType[length];
+    }
+    public javaType get(int index) { return a[index]; }
+    public void set(int index, javaType value) {
+	a[index] = value;
+    }
+}

@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.90 2000-11-16 08:05:36 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.91 2001-02-23 06:34:31 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -74,10 +74,16 @@ SCRIPTS := bin/test-collections bin/annotate.perl $(MUNGE) $(UNMUNGE) \
 	   bin/source-markup.perl bin/cvsblame.pl
 
 MACHINE_SRC := Tools/PatMat/Lexer.jlex Tools/PatMat/Parser.cup \
-               Tools/Annotation/Java12.cup
+               Tools/Annotation/Java12.cup \
+	       $(wildcard Runtime/AltArray/*JavaType.jt)
 MACHINE_GEN := Tools/PatMat/Lexer.java Tools/PatMat/Parser.java \
                Tools/Annotation/Java12.java \
-               Tools/PatMat/Sym.java Tools/Annotation/Sym.java
+               Tools/PatMat/Sym.java Tools/Annotation/Sym.java \
+	       $(foreach file, $(patsubst %JavaType.jt,%,\
+				$(wildcard Runtime/AltArray/*JavaType.jt)),\
+		$(file)Boolean.java $(file)Byte.java $(file)Short.java\
+		$(file)Int.java $(file)Long.java $(file)Float.java\
+		$(file)Double.java $(file)Char.java $(file)Object.java)
 
 CGSPECS:=$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.spec))
 CGJAVA :=$(patsubst %.spec,%.java,$(CGSPECS))
@@ -268,6 +274,35 @@ update: needs-cvs
 
 # don't know how to automagically generate this dependency.
 Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
+
+# Generic Types
+%Boolean.java: %JavaType.jt
+	@echo Specializing $@.
+	@sed -e 's/JavaType/Boolean/g' -e 's/javaType/boolean/g' < $< > $@
+%Byte.java: %JavaType.jt
+	@echo Specializing $@.
+	@sed -e 's/JavaType/Byte/g' -e 's/javaType/byte/g' < $< > $@
+%Short.java: %JavaType.jt
+	@echo Specializing $@.
+	@sed -e 's/JavaType/Short/g' -e 's/javaType/short/g' < $< > $@
+%Int.java: %JavaType.jt
+	@echo Specializing $@.
+	@sed -e 's/JavaType/Int/g' -e 's/javaType/int/g' < $< > $@
+%Long.java: %JavaType.jt
+	@echo Specializing $@.
+	@sed -e 's/JavaType/Long/g' -e 's/javaType/long/g' < $< > $@
+%Float.java: %JavaType.jt
+	@echo Specializing $@.
+	@sed -e 's/JavaType/Float/g' -e 's/javaType/float/g' < $< > $@
+%Double.java: %JavaType.jt
+	@echo Specializing $@.
+	@sed -e 's/JavaType/Double/g' -e 's/javaType/double/g' < $< > $@
+%Char.java: %JavaType.jt
+	@echo Specializing $@.
+	@sed -e 's/JavaType/Char/g' -e 's/javaType/char/g' < $< > $@
+%Object.java: %JavaType.jt
+	@echo Specializing $@.
+	@sed -e 's/JavaType/Object/g' -e 's/javaType/Object/g' < $< > $@
 
 # print graphs
 %.ps : %.vcg
