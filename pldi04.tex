@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.20 2003-11-12 04:37:16 cananian Exp $
+% $Id: pldi04.tex,v 1.21 2003-11-12 06:22:21 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -35,7 +35,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-\date{\today \\ $ $Revision: 1.20 $ $}
+\date{\today \\ $ $Revision: 1.21 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -101,6 +101,19 @@ mutual-exclusion--based synchronization methods.
 %
 \secput{intro}{Introduction}
 
+\subsecput{intro-sync}{Non-blocking synchronization}
+
+\subsecput{intro-trans}{Transactions}
+A transaction can be thought of as a sequence of loads and stores
+performed as part of a program.  The intuition for transactions is
+that they either \defn{commit} or they \defn{abort}.  If a transaction
+commits, then all of the loads and stores appear to have run
+atomically with respect to other transactions.  That is, the
+transaction's operations are not interleaved with those of other
+transactions.  If a transaction aborts, then none of its stores take
+effect and the transaction must be restarted, typically using a
+backoff algorithm to preclude livelock.
+
 \subsecput{contrib}{Contributions}
 The contributions of this paper include:
 \begin{itemize}
@@ -128,26 +141,21 @@ The contributions of this paper include:
 \end{itemize}
 
 \secput{example}{Example and Motivation}
-This section illustrates how transactions can ease
-the programming of multithreaded applications.  In particular, we show
-that implementing mutual exclusion with locks can be quite
-complicated, even for simple code.  Moreover, the overheads of a
-locking solution can be significant, especially if the locks enforce
-mutual exclusion in a tight inner loop.
-
-A transaction can be thought of as a sequence of loads and stores
-performed as part of a program.  The intuition for transactions is
-that they either \defn{commit} or they \defn{abort}.  If a transaction
-commits, then all of the loads and stores appear to have run
-atomically with respect to other transactions.  That is, the
-transaction's operations are not interleaved with those of other
-transactions.  If a transaction aborts, then none of its stores take
-effect and the transaction must be restarted, typically using a
-backoff algorithm to preclude livelock.
-
+We present three examples in this section, illustrating how
+transactions can be used to simplify locking, provide a more intuitive
+means for specifying thread-safety properties, and support
+fault-tolerance and back-tracking.  The first two examples, involving
+a network flow algorithm and the \texttt{java.lang.StringBuffer} class
+from the Java standard libraries, illustrate the problems involved in
+using Java's existing monitor synchronization methodology to
+synchronize concurrent modifications to multiple objects.  A solution
+using transactions to implement atomic regions is given, which greatly
+simplifies the locking discipline required.
+The last example reformulates the transaction mechanism as
+exception-handling, illustrating this view with a destructive traversal
+algorithm. 
 
 \subsecput{flow}{Network flow}
-\note{Shows how we simplify locking discipline.}
 
 Consider a serial program for computing network flow (see, for
 example, \cite[Chapter 26]{CormenLeRi01}).  The inner loop of the code
@@ -188,11 +196,11 @@ This code is surprisingly complicated and slow compared to the
 original.  Space for each object's lock must be reserved.
 To avoid deadlock, the code must acquire the locks in
 a consistent linear order, resulting in an unpredictable branch in the
-code.
-In Java, we require the programmer to insert an \texttt{id} field into
-each vertex to maintain this order.
-Moreover, the time required to acquire the locks is
-an order of magnitude larger on today's processors than the time to
+code.  In our example, 
+we require the programmer to insert an \texttt{id} field into
+each vertex object to maintain a total ordering.
+Moreover, the time required to acquire the locks may be
+an order of magnitude larger than the time to
 modify the excess flow.
 \note{Using FLEX, the locking code is over 11x
   slower than the no-locks code.  With Sun's JVM, this overhead falls
@@ -220,17 +228,25 @@ void pushFlow(Vertex v1, Vertex v2, double flow) {
 \end{verbatim}
 } 
 
-This simple example is not meant to be a definitive defense of
-transactional memory.  Rather, its aim is to show the reader how
-convoluted locking protocol can be compared with transactions.  As we
-shall see in \secref{eval},\note{Sure would be nice if we could make
-good on this promise.} BTM can implement this code with essentially no
-overhead, allowing excess flows to be updated safely by multiple
-parallel threads. 
-
+This {\tt atomic} region can be implemented as a transaction.
+With an appropriately non-blocking implementation, the {\tt atomic}
+version of the code can scale better and be faster than the locking version
+\cite{AnanianAsKuLeLi04,HarrisFr03,GreenwaldCh96,MassalinPu91,HerlihyMo93,ShavitTo95}.
+Further, we can eliminate the convoluted locking protocol, which must
+be observed rigorously everywhere if deadlock is to be avoided.
 
 \subsecput{stringbuffer}{The \texttt{StringBuffer} class}
-\note{Shows how we fix race-conditions.}
+Java's monitor synchronization methodology implicitly associates an
+lock with each object.  As in its progenitor Emerald
+\cite{BlackHuJuLe86,JulSt91}, requiring a thread to acquire the
+object's lock before touching the object's shared fields prevents data
+races.  However, the lack of races is not sufficient to prevent unanticipated
+parallel behavior.
+
+Flanagan and Qadeer \cite{FlanaganQa03} demonstrated this with an
+actual bug they discovered in the Sun JDK 1.4.2 Java standard
+libraries.  The {\tt java.lang.StringBuffer} class,
+which implements a mutable string abstraction, is implemented as follows:
 \par {\footnotesize
 \samepage
 \begin{verbatim}
@@ -241,12 +257,12 @@ public final class StringBuffer ... {
   public synchronized
   StringBuffer append(StringBuffer sb) {
     ...
-    int len = sb.length(); // len may be stale.
+A:  int len = sb.length(); // len may be stale.
     int newcount = count + len; 
     if (newcount > value.length)
       expandCapacity(newcount);
     // next statement may use stale len
-    sb.getChars(0, len, value, count);
+B:  sb.getChars(0, len, value, count);
     count = newcount;
     return this;
   }
@@ -255,31 +271,23 @@ public final class StringBuffer ... {
 }
 \end{verbatim}
 }
+The documentation indicates that the methods of this class are meant
+to execute atomically, and the {\tt synchronized} modifiers on the
+methods are meant to accomplish this.
 
-This\note{This text is mostly just to get the ideas down for now.}  
-source code is from the \texttt{java.lang.StringBuffer} class in
-version 1.4.2 of Sun's Java standard library.  \texttt{StringBuffer}
-represents a mutable string of characters.  The documentation for the
-class states:
-\par{\footnotesize
-\begin{quote}
- String buffers are safe for use by multiple threads. The methods 
- are synchronized where necessary so that all the operations on any 
- particular instance behave as if they occur in some serial order 
- that is consistent with the order of the method calls made by each of 
- the individual threads involved. 
-\end{quote}
-}
-
-The \texttt{synchronized} modified on the \texttt{append()} method is
-meant to ensure that this method operates atomically.  But it does
-not: another thread can change the parameter \texttt{sb} between the
-call to \texttt{sb.length()} and the call to \texttt{sb.getChars()},
-causing incorrect data to be appended or a
-\texttt{StringIndexOutOfBoundException} to be thrown.  The calls to
+However, the {\tt append()} method is \emph{not} atomic.  Another
+thread may change the length of the parameter \texttt{sb} (by adding
+or removing characters) between the call to \texttt{sb.length()} at
+label A and the call to \texttt{sb.getChars(\ldots)} at label B.
+This non-atomicity may cause incorrect data to be appended to the
+target or a \texttt{StringIndexOutOfBoundException} to be thrown. 
+Although the calls to
 \texttt{sb.length()} and \texttt{sb.getChars()} are individually
 atomic, but they do not compose to form an atomic implementation of
-\texttt{append()}.  An \texttt{atomic} declaration (or running under
+\texttt{append()}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  An \texttt{atomic} declaration (or running under
 our transactions implementation) would fix this programmer error.
 [This bug was found by \cite{FlanaganQa03}.]
 \note{What about just saying \texttt{public synchronized Append} ? -Bradley}
