@@ -61,7 +61,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.22 1999-09-08 21:26:31 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.23 1999-09-09 00:10:44 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -268,7 +268,7 @@ public class SAMain extends harpoon.IR.Registration {
 	
 	final String scope = null;//data.getName(); // FIXME!
 	final Instr instr = 
-	    frame.codegen().gen(null/*data*/, new InstrFactory() {//FIXME!
+	    frame.codegen().gen((harpoon.IR.Tree.Data)null/*data*/, new InstrFactory() {//FIXME!
 		private final TempFactory tf = Temp.tempFactory(scope);
 		{ Util.assert(tf != null, "TempFactory cannot be null"); }
 		private int id = 0;

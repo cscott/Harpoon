@@ -17,11 +17,12 @@ import java.io.PrintWriter;
  * 
  * @see harpoon.Backend.Generic.GenericCodeGen
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.15 1999-08-10 17:52:57 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.16 1999-09-09 00:10:46 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
     private static final String TREE_Code = "harpoon.IR.Tree.Code";
+    private static final String TREE_Data = "harpoon.IR.Tree.Data";
     private static final String GENERIC_Code = "harpoon.Backend.Generic.Code";
     private static final String ASSEM_Instr = "harpoon.IR.Assem.Instr";
     private static final String ASSEM_InstrFactory = 
@@ -71,15 +72,18 @@ public abstract class CodeGeneratorGenerator {
 	     <BR>All of the output file is parameterized by
 	     <code>this.spec</code>, with the exception of  
 	     <OL> 
-	     <LI>class name.
+	     <LI>Class name.
 	         This is already defined by <code>this.className</code>.
-	     <LI>class signature.
+	     <LI>Class signature.
 	         This is already hardcoded as 
 		 <code>public class <u>this.className</u> extends
 		 harpoon.Backend.Generic.CodeGen</code>. 
-	     <LI>codegen method signature.  This is already hardcoded as 
-		 <code>public final Instr gen(harpoon.IR.Tree.TreeCode tree,
-		 harpoon.IR.Assem.InstrFactory inf)</code>. 
+	     <LI>Code-gen method signature.  This is already hardcoded as 
+		 <code>public final Instr gen(harpoon.IR.Tree.Code tree,
+		       harpoon.IR.Assem.InstrFactory inf)</code>. 
+	     <LI>Data-gen method signature.  This is already hardcoded as 
+		 <code>public final Instr gen(harpoon.IR.Tree.Data tree,
+		       harpoon.IR.Assem.InstrFactory inf)</code>. 
 	     </OL>
 	@param out Target output device for the Java source code.
     */
@@ -89,7 +93,7 @@ public abstract class CodeGeneratorGenerator {
 		    " extends harpoon.Backend.Generic.GenericCodeGen { ");
 	out.println(spec.class_stms);
 	
-	out.println("\t/** Generates assembly code from a <code>" + TREE_TreeCode + "</code>.");
+	out.println("\t/** Generates assembly code from a <code>" + TREE_Code + "</code>.");
 	out.println("\t    <BR> <B>modifies:</B> <code>this</code>");
 	out.println("\t    <BR> <B>effects:</B>");
 	out.println("\t         Scans <code>tree</code> to find a tiling of ");
@@ -108,7 +112,29 @@ public abstract class CodeGeneratorGenerator {
 
 	out.println(spec.method_epilogue_stms);
 
+	out.println("\t}"); // end Code-gen method
+
+	out.println("\t/** Generates assembly code from a <code>" + TREE_Data + "</code>.");
+	out.println("\t    <BR> <B>modifies:</B> <code>this</code>");
+	out.println("\t    <BR> <B>effects:</B>");
+	out.println("\t         Scans <code>tree</code> to define a layout of ");
+	out.println("\t         Instructions, calling auxillary methods");
+	out.println("\t         and data structures as defined in the .Spec file");
+	out.println("\t    @param tree Set of abstract <code>Tree</code> instructions ");
+	out.println("\t                that form the body of the data structure being compiled.");
+	out.println("\t*/");
+	out.println("\tpublic final "+ASSEM_Instr+" gen(" + 
+ 		    TREE_Data +" code, " + ASSEM_InstrFactory + 
+		    " inf) {"); // method start
+
+	out.println(spec.method_prologue_stms);
+
+	outputSelectionMethod(out);
+
+	out.println(spec.method_epilogue_stms);
+
 	out.println("\t}"); // end method
+
 	out.println("}"); // end class
 	out.flush();
     }
