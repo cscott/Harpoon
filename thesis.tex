@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.39 1999-06-13 19:55:54 cananian Exp $
+% $Id: thesis.tex,v 1.40 1999-06-14 03:49:26 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.39 $ $}
+\date{\today \\ $ $Revision: 1.40 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.39 $ $}{$ $Revision: 1.39 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.40 $ $}{$ $Revision: 1.40 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -335,6 +335,20 @@ A SESE region $\tuple{a,b}$ is \newterm{canonical} provided
 \end{tightenum}
 \end{definition}
 
+We will give time bounds in terms of $N$ and $E$, the number of nodes
+and edges of the control-flow graph, respectively.
+Placement of \phisigfunction{s}
+is also dependent on $V$, the number of variables in the program.
+Since SSI renaming increases the number of variables, we will use
+$V_0$ and $V_{SSI}$ to indicate the number of variables in the
+original program and SSI form, respectively.
+
+Note that $V$ is $O(N)$ at most, since our representation only allows
+a constant number of variable definitions per node.  Typically $V_0$
+will be much smaller than $N$, but $V_{SSI}$ need not be.  Also $E$
+may be as large as $O(N^2)$, but in most control-flow graphs is $O(N)$
+instead, as node arities are typically limited by a constant.
+
 \subsubsection{Cycle-equivalency}
 \newcommand{\cyceq}{\equiv_{cq}}%{\equiv_{CYC}}
 The identification of SESE regions begins by computing the
@@ -497,7 +511,7 @@ We can compute pruned SSI form if we have access to liveness
 information.
 We get this for free in our compiler framework.  There's also an
 $O(E+N^2)$ algorithm.  I hope to do better using the properties of the
-PST.  I want an $O(EV)$ algorithm, which means solving the
+PST.  I want an $O(E V_0)$ algorithm, which means solving the
 one-variable case in $O(E)$.  Argh.
 
 \subsubsection{Pruning SSI form}
@@ -512,23 +526,24 @@ sections of code whose results are never used.  Both are often called
 ``dead code elimination'' in the literature.}  is performed to remove
 the extra \phisigfunction{s} added.  Figures \ref{fig:deaddata} and
 \ref{fig:deadalg} present an algorithm to identify unused code in
-$O(NV)$ time, after which a simple $O(N)$ pass suffices to remove it.
+$O(N V_{SSI})$ time, after which a simple $O(N)$ pass suffices to remove it.
 The complexity analysis is simple: nodes and variables are visited at
 most once, raising their value in the analysis lattive from
 \emph{unused} to \emph{used}.  Nodes marked \emph{used} are never
 visted.  So \texttt{MarkNodeUseful} is invoked at most $N$ times, and
-\texttt{MarkVarUseful} is invoked at most $V$ times.  Each call to
+\texttt{MarkVarUseful} is invoked at most $V_{SSI}$ times.  Each call to
 \texttt{MarkNodeUseful} examines each variable used by the node; a
-node may use at most every variable, taking $O(NV)$ time.  Each call
+node may use at most every variable, taking $O(N V_{SSI})$ time.  Each call
 to \texttt{MarkVarUseful} examines at most one node (the single
 definition node for the variable, if it exists) and in constant time
-pushes at most one node on to the worklist for a total of $O(V)$ time.
-So the total run time of \texttt{FindUseful} is $O(NV+V)=O(NV)$, and
+pushes at most one node on to the worklist for a total of $O(V_{SSI})$ time.
+So the total run time of \texttt{FindUseful} is
+$O(N V_{SSI}+V_{SSI})=O(N V_{SSI})$, and
 in fact it is typically much less.\footnote{If the number of instruction
 operands and \phisigfunction{} arities are limited by a
 constant, we get a time bound of $O(N)$.}  The total runtime for SSI
 placement and subsequent pruning, including the time to construct the
-PST, remains $O(EV)$.
+PST, is $O(EV_0 + NV_{SSI})$.
 
 \begin{myfigure}\small
 \input{Figures/THdeaddata}
