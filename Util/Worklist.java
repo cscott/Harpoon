@@ -3,14 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
-import harpoon.ClassFile.*;
 /**
  * A <code>Worklist</code> is a unique set.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Worklist.java,v 1.2 1998-10-11 02:37:59 cananian Exp $
+ * @version $Id: Worklist.java,v 1.2.2.1 1999-01-22 23:34:00 cananian Exp $
  */
-
 public interface Worklist  {
     /** Pushes an item onto the Worklist if it is not already there. */
     public Object push(Object item);

@@ -3,8 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
-import harpoon.ClassFile.*;
-
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
 
@@ -13,7 +11,7 @@ import java.util.NoSuchElementException;
  * <code>Enumeration</code> to generate a new one.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FilterEnumerator.java,v 1.1.2.1 1998-12-23 22:14:18 cananian Exp $
+ * @version $Id: FilterEnumerator.java,v 1.1.2.2 1999-01-22 23:34:00 cananian Exp $
  */
 public class FilterEnumerator implements Enumeration {
     /*final*/ Enumeration e;

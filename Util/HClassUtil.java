@@ -3,15 +3,15 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+
 /**
  * <code>HClassUtil</code> contains various useful methods for dealing with
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.6.2.1 1998-12-03 04:55:45 marinov Exp $
+ * @version $Id: HClassUtil.java,v 1.6.2.2 1999-01-22 23:34:00 cananian Exp $
  */
-
 public abstract class HClassUtil  {
     // Only static methods.
     

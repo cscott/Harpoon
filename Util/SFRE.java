@@ -1,14 +1,14 @@
 // SFRE.java, created Wed Oct 21 17:29:49 1998 by marinov
 package harpoon.Util;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HField;
+
 /**
  * <code>SFRE</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: SFRE.java,v 1.1.2.1 1998-12-03 07:52:38 marinov Exp $
+ * @version $Id: SFRE.java,v 1.1.2.2 1999-01-22 23:34:00 cananian Exp $
  */
-
 public class SFRE  {
     
     boolean epsilon; // true if empty string is in the set

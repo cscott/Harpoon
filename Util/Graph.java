@@ -1,7 +1,9 @@
 // Graph.java, created Thu Oct 15 20:22:46 1998 by marinov
 package harpoon.Util;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Analysis.DomTree;
 import harpoon.Analysis.DomFrontier;
 import harpoon.IR.Properties.Edges;
@@ -10,7 +12,7 @@ import java.util.Enumeration;
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.2.2.2 1998-12-01 12:36:45 cananian Exp $
+ * @version $Id: Graph.java,v 1.2.2.3 1999-01-22 23:34:00 cananian Exp $
  */
 
 public abstract class Graph  {

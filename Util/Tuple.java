@@ -3,8 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
-import harpoon.ClassFile.*;
-
 import java.util.Enumeration;
 
 /**
@@ -12,7 +10,7 @@ import java.util.Enumeration;
  * properly in Hashtables & etc.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tuple.java,v 1.2.2.1 1998-12-09 21:44:30 cananian Exp $
+ * @version $Id: Tuple.java,v 1.2.2.2 1999-01-22 23:34:00 cananian Exp $
  */
 public class Tuple  {
     Object elements[];
