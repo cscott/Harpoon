@@ -8,6 +8,9 @@ import java.util.Set;
 import java.util.HashSet;
 
 import harpoon.IR.Quads.Code;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.QuadValueVisitor;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.CachingCodeFactory;
 
@@ -25,11 +28,21 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  * <code>Util</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Util.java,v 1.2 2002-05-11 03:25:33 salcianu Exp $
+ * @version $Id: Util.java,v 1.3 2002-05-11 03:42:13 salcianu Exp $
  */
 public abstract class Util {
 
     private static boolean DEBUG = true;
+
+    private static QuadValueVisitor<Boolean> new_visitor = 
+	new QuadValueVisitor<Boolean>() {
+	    public Boolean visit(NEW q) {
+		return Boolean.TRUE;
+	    }
+	    public Boolean visit(Quad q) {
+		return Boolean.FALSE;
+	    }
+	};
     
     public static Set getDNEWs(CachingCodeFactory hcf, ClassHierarchy ch,
 			       HMethod entry, CallGraph cg) {
@@ -43,7 +56,7 @@ public abstract class Util {
 	for(Iterator it = methods.iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
 	    Code hcode = (Code) hcf.convert(hm);
-	    dnews.addAll(hcode.selectAllocations());
+	    dnews.addAll(hcode.selectQuads(new_visitor));
 	}
 	return dnews;
     }

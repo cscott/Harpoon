@@ -68,6 +68,7 @@ Analysis/DomTree.java
 Analysis/Instr/RegAlloc.java
 Analysis/InterferenceGraph.java
 Analysis/Liveness.java
+Analysis/MemOpt/Util.java
 Analysis/PointsToAnalysis.java
 Analysis/Quads/QuadClassHierarchy.java
 Analysis/Quads/QuadInterferenceGraph.java
