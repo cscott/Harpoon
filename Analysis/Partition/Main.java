@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Sun Oct 25 12:37:16 1998> 
-// Time-stamp: <1998-11-20 14:42:17 mfoltz> 
+// Time-stamp: <1998-11-21 18:43:24 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.Partition;
@@ -104,6 +104,7 @@ public class Main  {
 
      } catch (Exception e) {
        System.err.println(e);
+       e.printStackTrace();
      }
       
   }
@@ -117,21 +118,33 @@ public class Main  {
     }
 
     public void update(Observable o, Object arg) {
-      Partition.exchange(_partition[0], _partition[1]);
-      System.err.println("Edge sum:  "+Partition.computeEdgeSum(_partition[0], _partition[1]));
-      WGNode node;
-      Enumeration enum = _partition[0].getNodes();
-      while (enum.hasMoreElements()) {
-	node = (WGNode) enum.nextElement();
-	if (!node._dummy) System.err.println("MACHINE 1 "+node._value);
-      }
-      enum = _partition[1].getNodes();
-      while (enum.hasMoreElements()) {
-	node = (WGNode) enum.nextElement();
-	if (!node._dummy) System.err.println("MACHINE 2 "+node._value);
-      }
 
+      try {
+	long gain;
+	gain = Partition.exchange(_partition[0], _partition[1]);
+	System.err.println("Edge sum:  "+Partition.computeEdgeSum(_partition[0], _partition[1]));
+	WGNode node;
+	Enumeration enum = _partition[0].getNodes();
+	while (enum.hasMoreElements()) {
+	  node = (WGNode) enum.nextElement();
+	  if (!node._dummy) System.err.println("MACHINE 0 "+node._value);
+	}
+	enum = _partition[1].getNodes();
+	while (enum.hasMoreElements()) {
+	  node = (WGNode) enum.nextElement();
+	  if (!node._dummy) System.err.println("MACHINE 1 "+node._value);
+	}
+	if (gain == 0) {
+	  System.err.println("Phase-1 optimal partition found.");
+	  System.exit(0);
+	}
+      } catch (Exception e) {
+	System.err.println(e);
+	e.printStackTrace();
+      }
+      
     }
+
   }
 
   public static WeightedGraph parseProfile(WeightedGraph g, BufferedReader in, WGNode[] pseudo_nodes) {
@@ -149,6 +162,7 @@ public class Main  {
 
       while (line != null) {
 	st = new StringTokenizer(line," ");
+	if (st.countTokens() == 0) break;
 	token = st.nextToken();
 	if (token.startsWith("NEW")) {
 	  creator = Long.parseLong(st.nextToken());
@@ -186,7 +200,7 @@ public class Main  {
 	  if (source == null || target == null || source == target) {
 	    System.err.println("IGNORING: "+line);
 	  } else {
-	    WeightedGraph.setEdge(source,target,g._infinity);
+	    WeightedGraph.setEdge(source,target,Long.MAX_VALUE);
 	  }
 	}
 	line = in.readLine();
@@ -194,6 +208,7 @@ public class Main  {
 
     } catch (Exception e) {
       System.err.println(e);
+      e.printStackTrace();
     }
 
     return g;
