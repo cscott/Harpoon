@@ -171,5 +171,6 @@ class AssemNode extends harpoon.Backend.CSAHack.Graph.Node
   public String tempMap(harpoon.Temp.Temp t) {
     return t.toString();
   }
+  public int hashCode() { return instr.hashCode(); }
 }
   
