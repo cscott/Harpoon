@@ -34,6 +34,10 @@ static inline jobject cloneHelper(JNIEnv *env, jobject obj, jsize len) {
   memcpy(FNI_UNWRAP_MASKED(clone)->field_start,
 	 FNI_UNWRAP_MASKED(obj  )->field_start,
 	 len - sizeof(struct oobj));
+#ifdef WITH_CLAZ_SHRINK
+  /* need to copy the non-hashcode header space, too */
+  memcpy(FNI_UNWRAP_MASKED(clone), FNI_UNWRAP_MASKED(obj), 4);
+#endif
 #ifdef WITH_ROLE_INFER
   NativeassignUID(env, clone, FNI_WRAP(FNI_CLAZ(FNI_UNWRAP(obj))->class_object));
   RoleInference_clone(env, obj, clone);
