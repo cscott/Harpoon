@@ -7,9 +7,17 @@ package MCC.IR;
  */
 
 public abstract class TypeDescriptor extends Descriptor {
+    static int counter=0;
+    int idnum;
+
+    public int getId() {
+	return idnum;
+    }
 
     public TypeDescriptor(String name) {
         super(name);
+	if (!(this instanceof MissingTypeDescriptor))
+	    idnum=counter++;
     }
 
     public boolean isSubtypeOf(TypeDescriptor td) {

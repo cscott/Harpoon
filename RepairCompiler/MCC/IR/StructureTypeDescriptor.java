@@ -15,16 +15,10 @@ public class StructureTypeDescriptor extends TypeDescriptor {
     Hashtable fields = new Hashtable(); /* fast lookups */
     Vector fieldlist = new Vector(); /* ordering information */
     Hashtable labels = new Hashtable();
-    int idnum;
-    static int counter=0;
 
-    public int getId() {
-	return idnum;
-    }
 
     public StructureTypeDescriptor(String name) {
         super(name);
-	idnum=counter++;
     }
 
     public TypeDescriptor getGenerateType() {
@@ -139,6 +133,8 @@ public class StructureTypeDescriptor extends TypeDescriptor {
         if (td == this) {
             return true;
         } else {
+	    if (subtype==null)
+		return false;
             return subtype.isSubtypeOf(td);
         }
     }

@@ -98,7 +98,7 @@ public class LogicStatement {
             left.generate(writer, leftd);
 
             writer.outputline("// 3-valued NOT");
-            writer.outputline("if (!maybe)");
+	    //            writer.outputline("if (!maybe)"); //this isn't really necessary
             writer.startblock();
             writer.outputline(dest.getSafeSymbol() + " =  !" + leftd.getSafeSymbol() + ";");
             writer.endblock();
@@ -109,7 +109,7 @@ public class LogicStatement {
             String lm = (VarDescriptor.makeNew("leftmaybe")).getSafeSymbol();
             left.generate(writer, leftd);
             writer.outputline("int " + lm + " = maybe;");
-            
+            writer.outputline("maybe=0;");
             VarDescriptor rightd = VarDescriptor.makeNew("rightboolean");
             String rm = (VarDescriptor.makeNew("rightmaybe")).getSafeSymbol();
             assert right != null;
@@ -144,7 +144,7 @@ public class LogicStatement {
                  * 1110  1 X
                  * 1111  1 X
                  *
-                 * M = (L*RM) + (R*LM) + (LM*RM)                 
+                 * M = (L*RM) + (R*LM) + (LM*RM)
                  * O = (L*R)
                  */
                

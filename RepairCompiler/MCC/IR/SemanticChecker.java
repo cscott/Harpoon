@@ -1014,7 +1014,7 @@ public class SemanticChecker {
             return false;
         }
 
-        stGlobals.add(new VarDescriptor(name, name, td));
+        stGlobals.add(new VarDescriptor(name, name, td,true));
         return true;
     }
 

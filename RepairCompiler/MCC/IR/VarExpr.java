@@ -3,6 +3,9 @@ package MCC.IR;
 import java.util.*;
 
 public class VarExpr extends Expr {
+    static boolean DOMEMCHECKS=true;
+    static boolean DOTYPECHECKS=false;
+    static boolean DONULL=false;
 
     String varname;
     VarDescriptor vd = null;
@@ -75,8 +78,22 @@ public class VarExpr extends Expr {
         assert vd.getType() != null;
         this.td = vd.getType();
 
+
         writer.outputline(vd.getType().getGenerateType().getSafeSymbol() + " " + dest.getSafeSymbol() + 
                           " = (" + vd.getType().getGenerateType().getSafeSymbol() + ") " + vd.getSafeSymbol() + "; //varexpr");
+	if (vd.isGlobal() && (DOTYPECHECKS||DOMEMCHECKS) && (td instanceof StructureTypeDescriptor)) {
+	    VarDescriptor typevar=VarDescriptor.makeNew("typechecks");
+	    if (DOTYPECHECKS)
+		writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + td.getId() + ");"); 
+	    else
+		writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + td.getId() + ");"); 
+	    writer.outputline("if (!"+typevar.getSafeSymbol()+")");
+	    writer.startblock();
+	    writer.outputline(dest.getSafeSymbol()+"=0;");
+	    if (DONULL)
+		writer.outputline(vd.getSafeSymbol()+"=0;");
+	    writer.endblock();
+	}
     }
 
     public void prettyPrint(PrettyPrinter pp) {

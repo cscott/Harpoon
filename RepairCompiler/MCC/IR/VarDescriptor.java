@@ -3,6 +3,7 @@ package MCC.IR;
 public class VarDescriptor extends Descriptor {
     
     private static int count = 0;
+    boolean isglobal=false;
 
     TypeDescriptor td = null;
 
@@ -15,11 +16,16 @@ public class VarDescriptor extends Descriptor {
         this.td = td;
     }
 
-    public VarDescriptor(String name, String safename, TypeDescriptor td) {
+    public VarDescriptor(String name, String safename, TypeDescriptor td, boolean global) {
         super(name, safename);
         this.td = td;
+	this.isglobal=global;
     }
 
+    public boolean isGlobal() {
+	return isglobal;
+    }
+    
     public void setType(TypeDescriptor td) {
         this.td = td;
     }

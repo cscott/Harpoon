@@ -36,11 +36,25 @@ public class RepairGenerator {
         togenerate.addAll(termination.conjunctions);
         togenerate.removeAll(removed);
         GraphNode.computeclosure(togenerate,removed);
-
 	cost=new Cost();
 	sources=new Sources(state);
 	Repair.repairgenerator=this;
     }
+
+    private void generatetypechecks(boolean flag) {
+	if (flag) {
+	    DotExpr.DOTYPECHECKS=true;
+	    VarExpr.DOTYPECHECKS=true;
+	    DotExpr.DONULL=true;
+	    VarExpr.DONULL=true;
+	} else {
+	    VarExpr.DOTYPECHECKS=false;
+	    DotExpr.DOTYPECHECKS=false;
+	    VarExpr.DONULL=true;
+	    DotExpr.DONULL=true;
+	}
+    }
+
 
     private void name_updates() {
 	int count=0;
@@ -63,7 +77,7 @@ public class RepairGenerator {
         this.outputhead = new java.io.PrintWriter(outputhead, true);
         headername=st;
 	name_updates();
-
+	generatetypechecks(true);
         generate_tokentable();
         generate_hashtables();
 	generate_stateobject();
@@ -76,7 +90,15 @@ public class RepairGenerator {
 	CodeWriter craux = new StandardCodeWriter(this.outputaux);
 	crhead.outputline("};");
 	craux.outputline("}");
+	generatetypechecks(false);
+	generate_computesizes();
+	generatetypechecks(true);
+	generate_recomputesizes();
+	generatetypechecks(false);
 	generate_updates();
+	StructureGenerator sg=new StructureGenerator(state,this);
+	sg.buildall();
+	crhead.outputline("#endif");
     }
 
     String ststate="state";
@@ -117,11 +139,13 @@ public class RepairGenerator {
 			craux.outputline("void "+methodname+"("+name+"_state * "+ststate+","+name+" * "+stmodel+", RepairHash * "+strepairtable+", int "+stleft+")");
 		    }
 		    craux.startblock();
+		    craux.outputline("int maybe=0;");
 		    final SymbolTable st = un.getRule().getSymbolTable();                
 		    CodeWriter cr = new StandardCodeWriter(outputaux) {
                         public SymbolTable getSymbolTable() { return st; }
                     };
 		    un.generate(cr, false, stleft,stright,this);
+		    craux.outputline("if (maybe) printf(\"REALLY BAD\");");
 		    craux.endblock();
 		    break;
 		case MultUpdateNode.REMOVE:
@@ -146,11 +170,13 @@ public class RepairGenerator {
 		    crhead.outputline(methodcall+";");
 		    craux.outputline(methodcall);
 		    craux.startblock();
+		    craux.outputline("int maybe=0;");
 		    final SymbolTable st2 = un.getRule().getSymbolTable();                
 		    CodeWriter cr2 = new StandardCodeWriter(outputaux) {
                         public SymbolTable getSymbolTable() { return st2; }
                     };
 		    un.generate(cr2, true, null,null,this);
+		    craux.outputline("if (maybe) printf(\"REALLY BAD\");");
 		    craux.endblock();
 		    break;
 		case MultUpdateNode.MODIFY:
@@ -206,12 +232,88 @@ public class RepairGenerator {
 	    VarDescriptor vd=(VarDescriptor) globals.next();
 	    crhead.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+";");
 	}
+	crhead.outputline("void computesizes(int *,int **);");
+	crhead.outputline("void recomputesizes();");
     }
+
+    private void generate_computesizes() {
+	int max=TypeDescriptor.counter;
+	TypeDescriptor[] tdarray=new TypeDescriptor[max];
+	for(Iterator it=state.stTypes.descriptors();it.hasNext();) {
+	    TypeDescriptor ttd=(TypeDescriptor)it.next();
+	    tdarray[ttd.getId()]=ttd;
+	}
+	CodeWriter cr=new StandardCodeWriter(outputaux);
+	cr.outputline("void "+name+"_state::computesizes(int *sizearray,int **numele) {");
+	for(int i=0;i<max;i++) {
+	    TypeDescriptor td=tdarray[i];
+	    Expr size=td.getSizeExpr();
+	    VarDescriptor vd=VarDescriptor.makeNew("size");
+	    size.generate(cr,vd);
+	    cr.outputline("sizearray["+i+"]="+vd.getSafeSymbol()+";");
+	}
+	for(int i=0;i<max;i++) {
+	    TypeDescriptor td=tdarray[i];
+	    if (td instanceof StructureTypeDescriptor) {
+		StructureTypeDescriptor std=(StructureTypeDescriptor) td;
+		for(int j=0;j<std.fieldlist.size();j++) {
+		    FieldDescriptor fd=(FieldDescriptor)std.fieldlist.get(j);
+		    if (fd instanceof ArrayDescriptor) {
+			ArrayDescriptor ad=(ArrayDescriptor)fd;
+			Expr index=ad.getIndexBound();
+			VarDescriptor vd=VarDescriptor.makeNew("index");
+			index.generate(cr,vd);
+			cr.outputline("numele["+i+"]["+j+"]="+vd.getSafeSymbol()+";");
+		    }
+		}
+	    }
+	}
+	cr.outputline("}");
+    }
+
+    private void generate_recomputesizes() {
+	int max=TypeDescriptor.counter;
+	TypeDescriptor[] tdarray=new TypeDescriptor[max];
+	for(Iterator it=state.stTypes.descriptors();it.hasNext();) {
+	    TypeDescriptor ttd=(TypeDescriptor)it.next();
+	    tdarray[ttd.getId()]=ttd;
+	}
+	CodeWriter cr=new StandardCodeWriter(outputaux);
+	cr.outputline("void "+name+"_state::recomputesizes() {");
+	for(int i=0;i<max;i++) {
+	    TypeDescriptor td=tdarray[i];
+	    Expr size=td.getSizeExpr();
+	    VarDescriptor vd=VarDescriptor.makeNew("size");
+	    size.generate(cr,vd);
+	}
+	for(int i=0;i<max;i++) {
+	    TypeDescriptor td=tdarray[i];
+	    if (td instanceof StructureTypeDescriptor) {
+		StructureTypeDescriptor std=(StructureTypeDescriptor) td;
+		for(int j=0;j<std.fieldlist.size();j++) {
+		    FieldDescriptor fd=(FieldDescriptor)std.fieldlist.get(j);
+		    if (fd instanceof ArrayDescriptor) {
+			ArrayDescriptor ad=(ArrayDescriptor)fd;
+			Expr index=ad.getIndexBound();
+			VarDescriptor vd=VarDescriptor.makeNew("index");
+			index.generate(cr,vd);
+		    }
+		}
+	    }
+	}
+	cr.outputline("}");
+    }
+
 
     private void generate_hashtables() {
         CodeWriter craux = new StandardCodeWriter(outputaux);
         CodeWriter crhead = new StandardCodeWriter(outputhead);
+	crhead.outputline("#ifndef "+name+"_h");
+	crhead.outputline("#define "+name+"_h");
         crhead.outputline("#include \"SimpleHash.h\"");
+	crhead.outputline("extern \"C\" {");
+        crhead.outputline("#include \"instrument.h\"");
+	crhead.outputline("}");
         crhead.outputline("#include <stdio.h>");
         crhead.outputline("#include <stdlib.h>");
 	crhead.outputline("class "+name+" {");
@@ -219,6 +321,7 @@ public class RepairGenerator {
 	crhead.outputline(name+"();");
 	crhead.outputline("~"+name+"();");
         craux.outputline("#include \""+headername+"\"");
+        craux.outputline("#include \"size.h\"");
 
         craux.outputline(name+"::"+name+"() {");
         craux.outputline("// creating hashtables ");
@@ -306,7 +409,10 @@ public class RepairGenerator {
 	repairtable=VarDescriptor.makeNew("repairtable");
 	crhead.outputline("void doanalysis();");
 	craux.outputline("void "+name +"_state::doanalysis()");
-	craux.startblock();
+  	craux.startblock();
+	craux.outputline("typeobject *typeobject1=gettypeobject();");
+	craux.outputline("typeobject1->computesizes(this);");
+	craux.outputline("recomputesizes();");
 	craux.outputline(name+ " * "+oldmodel.getSafeSymbol()+"=0;");
         craux.outputline("WorkList * "+worklist.getSafeSymbol()+" = new WorkList();");
 	craux.outputline("RepairHash * "+repairtable.getSafeSymbol()+"=0;");
@@ -360,12 +466,13 @@ public class RepairGenerator {
                     };
 		cr.outputline("// build " +escape(rule.toString()));
                 cr.startblock();
+		cr.outputline("int maybe=0;");
                 ListIterator quantifiers = rule.quantifiers();
                 while (quantifiers.hasNext()) {
                     Quantifier quantifier = (Quantifier) quantifiers.next();
                     quantifier.generate_open(cr);
                 }
-                        
+
                 /* pretty print! */
                 cr.output("//");
                 rule.getGuardExpr().prettyPrint(cr);
@@ -415,6 +522,7 @@ public class RepairGenerator {
                 cr.indent();
                 cr.outputline(elseladder + " ("+idvar.getSafeSymbol()+" == " + dispatchid + ")");
                 cr.startblock();
+		cr.outputline("int maybe=0;");
 		VarDescriptor typevar=VarDescriptor.makeNew("type");
 		VarDescriptor leftvar=VarDescriptor.makeNew("left");
 		VarDescriptor rightvar=VarDescriptor.makeNew("right");
@@ -586,7 +694,8 @@ public class RepairGenerator {
 		cr.outputline("switch("+mincostindex.getSafeSymbol()+") {");
 		for(int j=0;j<dnfconst.size();j++) {
 		    Conjunction conj=dnfconst.get(j);
-		    GraphNode gn=(GraphNode)termination.conjtonodemap.get(conj);		    if (removed.contains(gn))
+		    GraphNode gn=(GraphNode)termination.conjtonodemap.get(conj);
+		    if (removed.contains(gn))
 			continue;
 		    cr.outputline("case "+j+":");
 		    for(int k=0;k<conj.size();k++) {
@@ -612,7 +721,6 @@ public class RepairGenerator {
 			cr.endblock();
 		    }
 		    /* Update model */
-		    
 		    cr.outputline("break;");
 		}
 		cr.outputline("}");
@@ -637,6 +745,7 @@ public class RepairGenerator {
 		cr.outputline("delete "+oldmodel.getSafeSymbol()+";");
 		cr.outputline("delete "+newmodel.getSafeSymbol()+";");
 		cr.outputline("delete "+worklist.getSafeSymbol()+";");
+		cr.outputline("resettypemap();");
 		cr.outputline("break;");
 		cr.endblock();
 		cr.outputline("rebuild:");
@@ -646,7 +755,7 @@ public class RepairGenerator {
                 cr.outputline("");
             }
         }
-    }    
+    }
     
     private MultUpdateNode getmultupdatenode(Conjunction conj, DNFPredicate dpred, int repairtype) {
 	MultUpdateNode mun=null;
@@ -1347,6 +1456,3 @@ public class RepairGenerator {
 	cr.endblock();
     }
 }
-
-
-

@@ -27,5 +27,4 @@ public class ReservedTypeDescriptor extends TypeDescriptor {
     public String getSafeSymbol() {
         return getSymbol();
     }
-
 }

@@ -235,8 +235,16 @@ public class OpExpr extends Expr {
         VarDescriptor ld = VarDescriptor.makeNew("leftop");
         left.generate(writer, ld);        
         VarDescriptor rd = null;
+	VarDescriptor lm=VarDescriptor.makeNew("lm");
+	VarDescriptor rm=VarDescriptor.makeNew("rm");
 
         if (right != null) {
+	    if ((opcode==Opcode.OR)||
+		(opcode==Opcode.AND)) {
+		writer.outputline("int "+lm.getSafeSymbol()+"=maybe;");
+		writer.outputline("int maybe=0;");
+	    }
+
             rd = VarDescriptor.makeNew("rightop");
             right.generate(writer, rd);
         }
@@ -253,7 +261,17 @@ public class OpExpr extends Expr {
             assert rd != null;
             writer.outputline("int " + dest.getSafeSymbol() + " = " + 
                               ld.getSafeSymbol() + " " + opcode.toString() + " " + rd.getSafeSymbol() + ";");
-        } else {
+        } else if (opcode == Opcode.AND) {
+	    writer.outputline("int "+rm.getSafeSymbol()+"=maybe;");
+	    writer.outputline("maybe = (" + ld.getSafeSymbol() + " && " + rm.getSafeSymbol() + ") || (" + rd.getSafeSymbol() + " && " + lm.getSafeSymbol() + ") || (" + lm.getSafeSymbol() + " && " + rm.getSafeSymbol() + ");");
+	    writer.outputline(dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " && " + rd.getSafeSymbol() + ";");
+	} else if (opcode == Opcode.OR) {
+	    writer.outputline("int "+rm.getSafeSymbol()+"=maybe;");
+	    writer.outputline("maybe = (!" + ld.getSafeSymbol() + " && " + rm.getSafeSymbol() + ") || (!" + rd.getSafeSymbol() +
+			      " && " + lm.getSafeSymbol() + ") || (" + lm.getSafeSymbol() + " && " + rm.getSafeSymbol() + ");");
+	    writer.outputline(dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " || " + rd.getSafeSymbol() +
+			      ";");
+	} else {
             writer.outputline("int " + dest.getSafeSymbol() + " = !" + ld.getSafeSymbol() + ";");
         }
     }
