@@ -3,7 +3,9 @@
 #include <jni-private.h>
 #include "java_lang_Object.h"
 #include "asm/atomicity.h"
+
 #include "config.h"
+#include "fni-stats.h"
 #include "transact.h"
 
 /* deal with allocation variations */
@@ -12,6 +14,12 @@
 #else
 # define MALLOC malloc
 #endif
+
+/* statistics! */
+DECLARE_STATS_EXTERN(transact_versions_obj_num_alloc)
+DECLARE_STATS_EXTERN(transact_versions_arr_num_alloc)
+DECLARE_STATS_EXTERN(transact_versions_obj_bytes_alloc)
+DECLARE_STATS_EXTERN(transact_versions_arr_bytes_alloc)
 
 #define RACES 1 /* XXX: haven't gotten rid of them yet */
 
@@ -45,6 +53,11 @@ static struct vinfo *CreateNewVersion(struct inflated_oobj *infl,
     if (NULL != (cclaz=claz->component_claz)) { /* is an array */
 	int elsize = isPrimitive(cclaz) ? cclaz->size : sizeof(ptroff_t);
 	size += (elsize * ((struct aarray *)template)->length);
+	INCREMENT_STATS(transact_versions_arr_num_alloc, 1);
+	INCREMENT_STATS(transact_versions_arr_bytes_alloc, size);
+    } else {
+	INCREMENT_STATS(transact_versions_obj_num_alloc, 1);
+	INCREMENT_STATS(transact_versions_obj_bytes_alloc, size);
     }
     /** size includes header.  sizeof(struct vinfo) also includes header. */
     nv = MALLOC(size+sizeof(*nv)-sizeof(struct oobj));

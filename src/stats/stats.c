@@ -27,6 +27,12 @@ DECLARE_STATS_LOCAL(thr_bytes_overflow)
 DECLARE_STATS_LOCAL(thread_heaps_created)
 DECLARE_STATS_LOCAL(threads_created)
 #endif /* WITH_CLUSTERED_HEAPS */
+#ifdef WITH_TRANSACTIONS
+DECLARE_STATS_LOCAL(transact_versions_obj_num_alloc)
+DECLARE_STATS_LOCAL(transact_versions_arr_num_alloc)
+DECLARE_STATS_LOCAL(transact_versions_obj_bytes_alloc)
+DECLARE_STATS_LOCAL(transact_versions_arr_bytes_alloc)
+#endif /* WITH_TRANSACTIONS */
 
 #undef EXTRA_STATS
 #ifdef EXTRA_STATS
@@ -95,7 +101,15 @@ void print_statistics(void) {
   printf("Peak Total Memory usage: %ld\n", peakusage);
   printf("Peak Actual Memory usage: %ld\n", peakusagea);
   printf("Heap Memory usage: %ld\n", GC_get_heap_size());
-#endif
+#endif /* WITH_MEMORY_STATISTICS */
+#ifdef WITH_TRANSACTIONS
+  printf("Trans.Versions created:    %8llu bytes in %8llu objects\n"
+	 "                       and %8llu bytes in %8llu arrays\n",
+	 FS(transact_versions_obj_bytes_alloc),
+	 FS(transact_versions_obj_num_alloc),
+	 FS(transact_versions_arr_bytes_alloc),
+	 FS(transact_versions_arr_num_alloc));
+#endif /* WITH_TRANSACTIONS */
   fflush(stdout);
   
 
