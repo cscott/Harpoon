@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.56 1998-09-09 17:33:26 cananian Exp $
+ * @version $Id: Translate.java,v 1.57 1998-09-09 22:24:09 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -130,11 +130,12 @@ class Translate  { // not public.
 	    BlockContext ns[] = (BlockContext[]) shrink(this.nest);
 	    return new State(stack, lv, monitorDepth-1, ns, allTries);
 	}
-	/** Make new state by entering a JSR/RET block. */
-	State enterJSR() {
+	/** Make new state by entering a JSR/RET block. The "return address"
+	 *  <code>t</code> gets pushed on top of the stack. */
+	State enterJSR(Temp t) {
 	    BlockContext ns[] = (BlockContext[]) grow(this.nest);
 	    ns[0] = new BlockContext(BlockContext.JSR);
-	    return new State(stack, lv, monitorDepth, ns, allTries);
+	    return new State(stack, lv, monitorDepth, ns, allTries).push(t);
 	}
 	/** Make new state, as when exiting a JSR/RET block. */
 	State exitJSR() {
@@ -292,8 +293,10 @@ class Translate  { // not public.
 			todo.push(r[i]);
 		} else { // JSR/RET
 		    q = null;
-		    ns = s.enterJSR();
-		    trans(new TransState(ns, ts.in.next()[0], 
+		    ns = s.enterJSR(Tnull);
+		    Instr in = ts.in.next()[1];
+		    if (in instanceof InMerge) in = in.next()[0];
+		    trans(new TransState(ns, ts.in.next()[1].next()[0], 
 					 ts.header, ts.which_succ),
 			  Tzero, Tnull);
 		}
@@ -333,23 +336,27 @@ class Translate  { // not public.
 		    Quad.addEdge(q, 0, q0, 0);
 		    Quad.addEdge(q0,0, q1, 0);
 		    Quad.addEdge(q1,0, q2, 0);
+		    Instr in = tsi.in;
 		    if (isMonitor)
 			ns = tsi.initialState.exitMonitor();
-		    else // if (isJSR)
+		    else {// if (isJSR)
 			ns = tsi.initialState.exitJSR();
-		    
-		    todo.push(new TransState(ns, tsi.in, q2, 1));
+			in = ts.in.next()[0];
+		    }
+		    todo.push(new TransState(ns, in, q2, 1));
 		    q = q2;
 		}
 		// default branch.
 		TransState tsi = 
 		    (TransState) ns.nest[0].continuation.elementAt(i);
+		Instr in = tsi.in;
 		if (isMonitor)
 		    ns = tsi.initialState.exitMonitor();
-		else // if (isJSR)
+		else {// if (isJSR)
 		    ns = tsi.initialState.exitJSR();
-		
-		todo.push(new TransState(ns, tsi.in, q, 0));
+		    in = ts.in.next()[0];
+		}
+		todo.push(new TransState(ns, in, q, 0));
 		continue;
 	    }
 	    // Are we exiting a MONITOR or JSR block?
@@ -358,7 +365,10 @@ class Translate  { // not public.
 		       ts.in.getOpcode() == Op.MONITOREXIT) ||
 		      (s.nest[0].type == State.BlockContext.JSR &&
 		       ts.in.getOpcode() == Op.RET))) {
-		s.nest[0].continuation.addElement(ts);
+		State ns = (ts.in.getOpcode()==Op.MONITOREXIT)?s.pop():s;
+		s.nest[0].continuation.
+		    addElement(new TransState(ns, ts.in,
+					      ts.header, ts.which_succ));
 		// we'll fix up the dangling end later.
 		continue;
 	    }
@@ -381,6 +391,7 @@ class Translate  { // not public.
 					 MergeMap mm, MergeMap handlers,
 					 Temp Tzero, Temp Tnull) {
 	// Dispatch to correct specific function.
+	//System.out.println("Translating "+Op.toString(ts.in.getOpcode()));
 	if (ts.in instanceof InGen)    return transInGen(ts, handlers, 
 							 Tzero, Tnull);
 	if (ts.in instanceof InSwitch) return transInSwitch(ts);
