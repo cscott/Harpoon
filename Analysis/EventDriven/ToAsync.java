@@ -22,7 +22,6 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.Linker;
-import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadSSI;
@@ -42,7 +41,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.30 2000-07-02 08:37:20 salcianu Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.31 2001-01-11 19:56:09 cananian Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;

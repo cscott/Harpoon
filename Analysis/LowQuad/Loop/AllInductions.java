@@ -14,7 +14,6 @@ import harpoon.IR.LowQuad.POPER;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.IR.Quads.AGET;
 import harpoon.IR.Quads.ASET;
-import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CONST;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.HANDLER;
@@ -33,7 +32,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.1.2.12 2000-05-31 22:41:43 cananian Exp $
+ * @version $Id: AllInductions.java,v 1.1.2.13 2001-01-11 19:57:01 cananian Exp $
  */
 public class AllInductions {
     TempMap tm;

@@ -20,7 +20,6 @@ import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Tree.Exp;
-import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.MEM;
 import harpoon.IR.Tree.MOVE;
@@ -47,7 +46,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.4.16 2000-07-25 03:08:41 pnkfelix Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.4.17 2001-01-11 19:57:14 cananian Exp $
  */
 public class DefaultFrame extends harpoon.Backend.Generic.Frame
     implements AllocationInfo {

@@ -13,7 +13,6 @@ import harpoon.IR.Tree.ExpList;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.NAME;
-import harpoon.IR.Tree.NATIVECALL;
 import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Type;
 import harpoon.Temp.Label;
@@ -24,7 +23,7 @@ import harpoon.Temp.Temp;
  * to do the allocation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BDWAllocationStrategy.java,v 1.1.2.1 2000-04-04 00:38:15 cananian Exp $
+ * @version $Id: BDWAllocationStrategy.java,v 1.1.2.2 2001-01-11 19:57:10 cananian Exp $
  */
 public class BDWAllocationStrategy extends MallocAllocationStrategy {
 

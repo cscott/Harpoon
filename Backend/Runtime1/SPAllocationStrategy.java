@@ -18,7 +18,6 @@ import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.MEM;
 import harpoon.IR.Tree.MOVE;
 import harpoon.IR.Tree.NAME;
-import harpoon.IR.Tree.NATIVECALL;
 import harpoon.IR.Tree.SEQ;
 import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Type;
@@ -31,7 +30,7 @@ import harpoon.Util.Util;
  * precise information about pointer locations.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: SPAllocationStrategy.java,v 1.1.2.3 2000-06-30 01:33:57 cananian Exp $
+ * @version $Id: SPAllocationStrategy.java,v 1.1.2.4 2001-01-11 19:57:11 cananian Exp $
  */
 public class SPAllocationStrategy extends MallocAllocationStrategy {
     /** Creates a <code>SPAllocationStrategy</code>. */

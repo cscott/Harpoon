@@ -16,7 +16,6 @@ import harpoon.IR.LowQuad.POPER;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.IR.Quads.AGET;
 import harpoon.IR.Quads.ASET;
-import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.HANDLER;
 import harpoon.IR.Quads.OPER;
@@ -37,7 +36,7 @@ import java.util.Iterator;
  * <code>BasicInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInductions.java,v 1.1.2.9 2000-05-31 22:41:43 cananian Exp $
+ * @version $Id: BasicInductions.java,v 1.1.2.10 2001-01-11 19:57:01 cananian Exp $
  */
 public class BasicInductions {
     HCode hc;

@@ -9,7 +9,6 @@ import harpoon.Analysis.DataFlow.ReachingHCodeElements;
 import harpoon.Analysis.DataFlow.Solver; 
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDefer;
-import harpoon.IR.Tree.CALL; 
 import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.ESEQ; 
@@ -19,7 +18,6 @@ import harpoon.IR.Tree.INVOCATION;
 import harpoon.IR.Tree.METHOD; 
 import harpoon.IR.Tree.MOVE; 
 import harpoon.IR.Tree.NAME; 
-import harpoon.IR.Tree.NATIVECALL; 
 import harpoon.IR.Tree.SEQ; 
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TEMP; 
@@ -44,7 +42,7 @@ import java.util.Stack;
  * <p><b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: ConstantPropagation.java,v 1.1.2.15 2000-02-16 22:38:02 cananian Exp $
+ * @version $Id: ConstantPropagation.java,v 1.1.2.16 2001-01-11 19:57:07 cananian Exp $
  */
 public final class ConstantPropagation { 
 
