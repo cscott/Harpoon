@@ -5,10 +5,10 @@ package harpoon.Analysis.GraphColoring;
  * <code>EdgeNotPresentException</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: EdgeNotPresentException.java,v 1.1.2.2 1999-01-19 16:07:59 pnkfelix Exp $
+ * @version $Id: EdgeNotPresentException.java,v 1.1.2.3 1999-01-19 23:51:12 pnkfelix Exp $
  */
 
-public class EdgeNotPresentException extends Exception {
+public class EdgeNotPresentException extends RuntimeException {
     
     /** Creates a <code>EdgeNotPresentException</code>. */
     public EdgeNotPresentException() {

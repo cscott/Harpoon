@@ -5,10 +5,10 @@ package harpoon.Analysis.GraphColoring;
  * <code>NodeNotColoredException</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: NodeNotColoredException.java,v 1.1.2.2 1999-01-19 16:08:00 pnkfelix Exp $
+ * @version $Id: NodeNotColoredException.java,v 1.1.2.3 1999-01-19 23:51:12 pnkfelix Exp $
  */
 
-public class NodeNotColoredException extends Exception {
+public class NodeNotColoredException extends RuntimeException {
     
     /** Creates a <code>NodeNotColoredException</code>. */
     public NodeNotColoredException() {

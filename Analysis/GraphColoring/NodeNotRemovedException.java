@@ -5,10 +5,10 @@ package harpoon.Analysis.GraphColoring;
  * <code>NodeNotRemovedException</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: NodeNotRemovedException.java,v 1.1.2.2 1999-01-19 16:08:00 pnkfelix Exp $
+ * @version $Id: NodeNotRemovedException.java,v 1.1.2.3 1999-01-19 23:51:13 pnkfelix Exp $
  */
 
-public class NodeNotRemovedException extends Exception {
+public class NodeNotRemovedException extends RuntimeException {
     
     /** Creates a <code>NodeNotRemovedException</code>. */
     public NodeNotRemovedException() {

@@ -5,10 +5,10 @@ package harpoon.Analysis.GraphColoring;
  * <code>NodeAlreadyColoredException</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: NodeAlreadyColoredException.java,v 1.1.2.2 1999-01-19 16:08:00 pnkfelix Exp $
+ * @version $Id: NodeAlreadyColoredException.java,v 1.1.2.3 1999-01-19 23:51:12 pnkfelix Exp $
  */
 
-public class NodeAlreadyColoredException extends Exception {
+public class NodeAlreadyColoredException extends RuntimeException {
     
     /** Creates a <code>NodeAlreadyColoredException</code>. */
     public NodeAlreadyColoredException() {
