@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * <code>CodeGen</code> is a code-generator for the Sparc architecture.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.3 1999-06-29 06:39:41 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.4 1999-06-29 07:40:16 cananian Exp $
  */
 %%
     // FIELDS
@@ -121,13 +121,30 @@ MOVE(MEM(e1), e2) %{
 		   "\t st"+suffix((Typed)ROOT.dst)+" `s1, [`s0]\n", null,
 		   new Temp[] { e1, e2 }));
 }%
-// other MOVEs
+// load small constants
 MOVE(e1, CONST<i,p>(c)) %pred %( is13bit(c) )% %{
  emit(new Instr(if, ROOT, "\t mov "+c+", `d0\n",
 		new Temp[] { e1 }, null));
 }%
-MOVE(e1, e2) %{ /* catch-all */
+// other MOVEs
+MOVE<i,p>(e1, e2) %{ /* catch-all */
  emit(new Instr(if, ROOT, "\t mov `s0, `d0\n",
+		new Temp[] { e1 }, new Temp[] { e2 }));
+}%
+MOVE<l>(e1, e2) %{ /* long (pair of int) register move */
+ emit(new Instr(if, ROOT, "\t mov `s0l, `d0l\n",
+		new Temp[] { e1 }, new Temp[] { e2 }));
+ emit(new Instr(if, ROOT, "\t mov `s0h, `d0h\n",
+		new Temp[] { e1 }, new Temp[] { e2 }));
+}%
+MOVE<f>(e1, e2) %{ /* floating-point register move */
+ emit(new Instr(if, ROOT, "\t fmovs `s0, `d0\n",
+		new Temp[] { e1 }, new Temp[] { e2 }));
+}%
+MOVE<d>(e1, e2) %{ /* double (pair of fp) register move */
+ emit(new Instr(if, ROOT, "\t fmovs `s0l, `d0l\n",
+		new Temp[] { e1 }, new Temp[] { e2 }));
+ emit(new Instr(if, ROOT, "\t fmovs `s0h, `d0h\n",
 		new Temp[] { e1 }, new Temp[] { e2 }));
 }%
 
@@ -209,8 +226,64 @@ BINOP<i,p>(ADD, e1, UNOP(NEG, e2))=r /* subtraction */ %{
  emit(new Instr(if, ROOT, "\t sub `s0, `s1, `d0\n",
 		new Temp[] { r }, new Temp[] { e1, e2 }));
 }%
-/* FIXME: write MUL/DIV rules */
-/* FIXME: write long/float/double rules */
+/* FIXME: write integer MUL/DIV rules */
+/* FIXME: write long rules */
+/* floating-point binops: */
+BINOP<f,d>(ADD, e1, e2)=r %{
+ String s =(Type.isDoubleWord(ROOT.type()))?"d":"s";
+ emit(new Instr(if, ROOT, "\t fadd"+s+" `s0, `s1, `d0\n",
+		new Temp[] { r }, new Temp[] { e1, e2 }));
+}%
+BINOP<f,d>(ADD, e1, UNOP(NEG, e2))=r %{
+ String s =(Type.isDoubleWord(ROOT.type()))?"d":"s";
+ emit(new Instr(if, ROOT, "\t fsub"+s+" `s0, `s1, `d0\n",
+		new Temp[] { r }, new Temp[] { e1, e2 }));
+}%
+BINOP<f,d>(MUL, e1, e2)=r %{
+ String s =(Type.isDoubleWord(ROOT.type()))?"d":"s";
+ emit(new Instr(if, ROOT, "\t fmul"+s+" `s0, `s1, `d0\n",
+		new Temp[] { r }, new Temp[] { e1, e2 }));
+}%
+BINOP<f,d>(DIV, e1, e2)=r %{
+ String s =(Type.isDoubleWord(ROOT.type()))?"d":"s";
+ emit(new Instr(if, ROOT, "\t fdiv"+s+" `s0, `s1, `d0\n",
+		new Temp[] { r }, new Temp[] { e1, e2 }));
+}%
+/* FIXME: finish floating-point rules */
+
+UNOP<i,p>(NEG, e)=r %{
+ emit(new Instr(if, ROOT, "\t sub %g0, `s0, `d0\n",
+		new Temp[] { r }, new Temp[] { e }));
+}%
+UNOP<i,p>(_2B, e)=r %{ /* byte is 8-bit signed */
+ emit(new Instr(if, ROOT, "\t sll `s0, 24, `d0\n",
+		new Temp[] { r }, new Temp[] { e }));
+ emit(new Instr(if, ROOT, "\t sra `s0, 24, `d0\n",
+		new Temp[] { r } , new Temp[] { r }));
+}%
+UNOP<i,p>(_2S, e)=r %{ /* short is 16-bit signed */
+ emit(new Instr(if, ROOT, "\t sll `s0, 16, `d0\n",
+		new Temp[] { r }, new Temp[] { e }));
+ emit(new Instr(if, ROOT, "\t sra `s0, 16, `d0\n",
+		new Temp[] { r } , new Temp[] { r }));
+}%
+UNOP<i,p>(_2C, e)=r %{ /* character is 16-bit unsigned */
+ emit(new Instr(if, ROOT, "\t sll `s0, 16, `d0\n",
+		new Temp[] { r }, new Temp[] { e }));
+ emit(new Instr(if, ROOT, "\t srl `s0, 16, `d0\n",
+		new Temp[] { r } , new Temp[] { r }));
+}%
+UNOP<i,p>(_2L, e)=r %{ /* make 64-bit word. */
+ emit(new Instr(if, ROOT, "\t mov `s0, `d0l\n",
+		new Temp[] { r }, new Temp[] { e }));
+ emit(new Instr(if, ROOT, "\t sra `s0, 31, `d0h\n",
+		new Temp[] { r }, new Temp[] { e }));
+}%
+UNOP<i,p>(_2I, e)=r %{ /* do nothing */
+ emit(new Instr(if, ROOT, "\t mov `s0, `d0\n",
+		new Temp[] { r } , new Temp[] { e }));
+}%
+/* FIXME: finish UNOP rules */
 
 // patterns with MEM at root.
 MEM(BINOP(PLUS, CONST(c), e1))=r %pred %( is13bit(c) )% %{
