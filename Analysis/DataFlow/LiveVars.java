@@ -21,7 +21,7 @@ import java.util.Iterator;
  * rep instead of <code>Set</code>s of <code>Temp</code>s.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.1 1999-05-27 22:59:00 pnkfelix Exp $
+ * @version $Id: LiveVars.java,v 1.1.2.2 1999-05-28 01:47:49 pnkfelix Exp $
  */
 public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     
@@ -55,15 +55,18 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	}
     }
 
+
+    /** Merge (confluence) operator.
+	<BR> LVout(bb) = Union over (j elem Succ(bb)) of ( LVin(j) ) 
+    */
     public boolean merge(BasicBlock from, BasicBlock to) {
 	LiveVarInfo finfo = (LiveVarInfo) bbToLvi.get(from);
 	LiveVarInfo tinfo = (LiveVarInfo) bbToLvi.get(to);
 	return tinfo.lvOUT.addAll(finfo.lvIN);
     }
 
-    /** Visit (Transfer) function.  Updates the IN-set associated with 
-	<code>b</code> based on the OUT-set associated with
-	<code>b</code> and the instructions in <code>b</code>.
+    /** Visit (Transfer) function.  
+	<BR> LVin(bb) = ( LVout(bb) - DEF(bb) ) union USE(bb)
     */
     public void visit(BasicBlock b) {
 	LiveVarInfo info = (LiveVarInfo) bbToLvi.get(b);
@@ -102,6 +105,18 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	    }
 	}
 	return info;
+    }
+
+    /** Returns the <code>Set</code> of <code>Temp</code>s that are
+	live on entry to <code>b</code>
+	<BR> <B>requires:</B> A DataFlow Solver has been run to
+	     completion on the graph of <code>BasicBlock</code>s
+	     containing <code>b</code> with <code>this</code> as the
+	     <code>DataFlowBasicBlockVisitor</code>.
+    */
+    public Set getLiveOnEntry(BasicBlock b) {
+	LiveVarInfo lvi = (LiveVarInfo) bbToLvi.get(b);
+	return lvi.lvIN;
     }
 
     public String dump() {
