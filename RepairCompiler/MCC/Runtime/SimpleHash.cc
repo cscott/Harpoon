@@ -229,7 +229,15 @@ int SimpleHash::remove(int key, int data) {
     return 0;
 }
 
-
+void SimpleHash::addAll(SimpleHash * set) {
+  SimpleIterator it;
+  set->iterator(it);
+  while(it.hasNext()) {
+    int key=it.key();
+    int data=it.next();
+    add(key,data);
+  }
+}
 
 int SimpleHash::add(int key, int data) {
   /* Rehash code */
@@ -323,6 +331,20 @@ int SimpleHash::count(int key) {
         ptr = ptr->next;
     }
     return count;
+}
+
+SimpleHash * SimpleHash::imageSet(int key) {
+  SimpleHash * newset=new SimpleHash(count(key));
+  unsigned int hashkey = (unsigned int)key % size;
+  
+  struct SimpleNode *ptr = bucket[hashkey];
+  while (ptr) {
+    if (ptr->key == key) {
+      newset->add(ptr->data,ptr->data);
+    }
+    ptr = ptr->next;
+  }
+  return newset;
 }
 
 int SimpleHash::get(int key, int&data) {

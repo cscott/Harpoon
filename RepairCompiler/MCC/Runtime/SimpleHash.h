@@ -95,7 +95,8 @@ public:
         return numelements;
     }
     int count(int key);
-
+    void addAll(SimpleHash * set);
+    SimpleHash * imageSet(int key);
 };
 
 /* SimpleHashExcepion  *************************************************/
