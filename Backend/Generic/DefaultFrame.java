@@ -7,6 +7,7 @@ import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.CALL;
@@ -24,13 +25,15 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
 
+import java.util.List;
+
 /**
  *  The DefaultFrame class implements the abstract methods of the 
  *  Frame class.  It is intended mostly for testing purposes, and 
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.10 1999-05-25 16:45:58 andyb Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.11 1999-06-14 07:12:06 pnkfelix Exp $
  */
 public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
@@ -172,6 +175,17 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 				 Type.POINTER, new Temp(tf.tempFactory())), 
 		        new NAME(tf, src, new Label("RUNTIME_OOM")),
 			null); 
+    }
+
+
+    /** Stub added by FSK */
+    public List makeLoad(Temp reg, int offset) {
+	return null;
+    }
+
+    /** Stub added by FSK */
+    public List makeStore(Temp reg, int g) {
+	return null;
     }
 }
 

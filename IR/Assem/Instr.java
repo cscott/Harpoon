@@ -20,7 +20,7 @@ import java.util.*;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.15 1999-06-03 01:48:32 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.16 1999-06-14 07:12:07 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -131,6 +131,48 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 		dest.pred.removeElement(hce);
             }
         }
+    }
+
+    /** Replaces <code>oldi</code> in the Instruction Stream with
+	<code>newis/code>.  Don't know if this is the best way of
+	doing this, since it simply makes all the edges of the old
+	instr become the edges of the instruction list.  In any case,
+	both oldi and newi are modified: oldi loses its Edges and newi
+	loses its original Edges but gets oldi's old Edges 
+    */
+    public static void replaceInstrList(Instr oldi, List newis) {
+	// TODO
+    }
+
+    /** Replaces <code>oldi</code> in the Instruction Stream with
+	<code>newi</code>.   Don't know if this is the best way of
+	doing this, since it simply makes all the edges of the old
+	instr become the edges of the new instr.  In any case, both
+	oldi and newi are modified: oldi loses its Edges and newi
+	loses its original Edges but gets oldi's old Edges
+     */
+    public static void replaceInstr(Instr oldi, Instr newi) {
+	Util.assert(oldi != null && newi != null, "Null Arguments are bad");
+	
+	newi.pred = new Vector();
+	for(int i=0; i<oldi.pred.size(); i++) {
+	    Edge e = (Edge) oldi.pred.get(i);
+	    addEdge( e.from, newi );
+	}
+	for(int i=0; i<newi.pred.size(); i++) {
+	    Edge e = (Edge) newi.pred.get(i);
+	    removeEdge( e.from, oldi );
+	}
+	
+	newi.succ = new Vector();
+	for(int i=0; i<oldi.succ.size(); i++) {
+	    Edge e = (Edge) oldi.succ.get(i);
+	    addEdge( newi, e.to );
+	}
+	for(int i=0; i<newi.succ.size(); i++) {
+	    Edge e = (Edge) newi.succ.get(i);
+	    removeEdge( oldi, e.to );
+	}
     }
 
     /** Inserts <code>newi</code> as an Instr after <code>pre</code>, such

@@ -12,6 +12,7 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrDIRECTIVE;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrFactory;
@@ -30,12 +31,14 @@ import harpoon.Temp.Label;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Util;
 
+import java.util.List;
+
 /**
  * <code>SAFrame</code> contains the machine-dependant
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.8 1999-05-25 16:50:36 andyb Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.9 1999-06-14 07:12:06 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements DefaultAllocationInfo {
     private static Temp[] reg = new Temp[16];
@@ -193,4 +196,15 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
 
 	return dir1;
     }
+
+    /** Stub added by FSK */
+    public List makeLoad(Temp reg, int offset) {
+	return null;
+    }
+
+    /** Stub added by FSK */
+    public List makeStore(Temp reg, int g) {
+	return null;
+    }
+
 }

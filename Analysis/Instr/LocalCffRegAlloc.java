@@ -37,12 +37,12 @@ import java.util.Iterator;
     conservative-furthest-first algorithm laid out in the paper <A
     HREF="http://lm.lcs.mit.edu/~pnkfelix/OnLocalRegAlloc.ps.gz">
     "On Local Register Allocation"</A> and <A
-    HREF="http://lm.lcs.mit.edu/~pnkfelix/hardnessLRA.ps">Hardness and
-    Algorithms for Local Register Allocation</A> as the basis for the
+    HREF="http://lm.lcs.mit.edu/~pnkfelix/hardnessLRA.ps">"Hardness and
+    Algorithms for Local Register Allocation"</A> as the basis for the
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.15 1999-06-11 04:23:54 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.16 1999-06-14 07:12:05 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -226,7 +226,15 @@ public class LocalCffRegAlloc extends RegAlloc {
 			(CloneableIterator) instrs.clone();
 		    while (search.hasNext()) {
 			Instr jprime = (Instr) search.next();
-			if (false) { // jprime has a reference to l
+			// hasRef: jprime has a reference to l
+			boolean hasRef=false;
+			Iterator jPRefs = getReferences(jprime);
+			while (jPRefs.hasNext()) {
+			    if (l.equals(jPRefs.next())) {
+				hasRef = true; break;
+			    }
+			}
+			if (hasRef) { 
 			    nextRef.put(new TempInstrPair(l, j), 
 					new Integer(2*step));
 			    break;

@@ -5,6 +5,8 @@ package harpoon.Analysis.Instr;
 
 import harpoon.Temp.Temp;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrMEM;
+import harpoon.IR.Assem.InstrVisitor;
 import harpoon.IR.Properties.UseDef;
 import harpoon.IR.Properties.HasEdges;
 import harpoon.Backend.Generic.Frame;
@@ -20,6 +22,7 @@ import java.util.Hashtable;
 import java.util.Set;
 import java.util.Vector;
 import java.util.ListIterator;
+import java.util.Iterator;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
@@ -34,7 +37,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.5 1999-06-03 01:46:45 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.6 1999-06-14 07:12:05 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -105,10 +108,10 @@ public abstract class RegAlloc  {
 		HCode preAllocCode = parent.convert(m);
 		LocalCffRegAlloc localCode = 
 		    new LocalCffRegAlloc(frame, (Code) preAllocCode);
-		DemandDrivenRegAlloc globalCode =
-		    new DemandDrivenRegAlloc
-		    (frame, localCode.generateRegAssignment());		
-		return globalCode.generateRegAssignment();
+		//DemandDrivenRegAlloc globalCode = new DemandDrivenRegAlloc(frame, localCode.generateRegAssignment());		
+		//return globalCode.generateRegAssignment();
+
+		return localCode.resolveOutstandingTemps( localCode.generateRegAssignment() );
 	    }
 	    public String getCodeName() {
 		return parent.getCodeName();
@@ -118,6 +121,49 @@ public abstract class RegAlloc  {
 	    }
 	};
     }
+
+    
+    protected HCode resolveOutstandingTemps(HCode in) {
+	class TempFinder extends InstrVisitor {
+	    HashMap tempsToOffsets = new HashMap();
+	    int nextOffset = 1;
+
+	    public void visit(InstrMEM m) {
+		// look for non-Register Temps in use and def, adding
+		// them to internal map
+		for(int i=0; i<m.def().length; i++){
+		    if(!isTempRegister(m.def()[i]) &&
+		       tempsToOffsets.get(m.def()[i])==null){
+			tempsToOffsets.put
+			    (m.def()[i], new Integer(nextOffset));
+			nextOffset++;
+		    }
+		}
+		for(int i=0; i<m.use().length; i++){
+		    if(!isTempRegister(m.use()[i]) &&
+		       tempsToOffsets.get(m.use()[i])==null){
+			tempsToOffsets.put
+			    (m.use()[i], new Integer(nextOffset));
+		    }
+		}
+	    } 
+	    public void visit(Instr i) {
+		// do nothing
+	    }
+	}
+	
+	TempFinder tf = new TempFinder();
+	Iterator instrs = in.getElementsI();
+	while(instrs.hasNext()) {
+	    Instr i = (Instr) instrs.next();
+	    i.visit(tf);
+	}
+	// now tf should have a full map of Temps to needed Stack
+	// Offsets.
+
+	return null;
+    }
+    
 
     /** Checks if <code>t</code> is a register (Helper method).
 	<BR> <B>effects:</B> If <code>t</code> is a register for the

@@ -6,6 +6,7 @@ package harpoon.Backend.Generic;
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.Stm;
@@ -13,12 +14,14 @@ import harpoon.IR.Tree.TreeFactory;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Temp.TempFactory;
 
+import java.util.List;
+
 /**
  * A <code>Frame</code> encapsulates the machine-dependent information
  * needed for compilation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.12 1999-05-25 16:45:58 andyb Exp $
+ * @version $Id: Frame.java,v 1.1.2.13 1999-06-14 07:12:06 pnkfelix Exp $
  */
 public abstract class Frame {
 
@@ -65,7 +68,21 @@ public abstract class Frame {
 
     /** Returns the TempFactory of the register Temps in this Frame */
     public abstract TempFactory regTempFactory();
-    
+
+    /** Generates a new set of Instrs for memory traffic from RAM to
+	the register file. 'offset' is an ordinal number, it is NOT
+	meant to be a multiple of some byte size.  This frame should
+	perform the necessary magic to turn the number into an
+	appropriate stack offset. */
+    public abstract List makeLoad(Temp reg, int offset);
+
+    /** Generates a new set of Instrs for memory traffic from the
+	register file to RAM. 'offset' is an ordinal number, it is NOT
+	meant to be a multiple of some byte size.  This frame should
+	perform the necessary magic to turn the number into an
+	appropriate stack offset. */
+    public abstract List makeStore(Temp reg, int offset);
+
     /** Create a new Frame one level below the current one. */
     public abstract Frame newFrame(String scope);
 }

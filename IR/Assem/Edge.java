@@ -12,10 +12,10 @@ import harpoon.Util.Util;
  * <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Edge.java,v 1.1.2.1 1999-05-25 16:45:13 andyb Exp $
+ * @version $Id: Edge.java,v 1.1.2.2 1999-06-14 07:12:07 pnkfelix Exp $
  */
 public class Edge implements HCodeEdge {
-    private Instr from, to;
+    Instr from, to;
 
     /** Creates an <code>Edge</code>. */
     Edge(Instr from, Instr to) {
