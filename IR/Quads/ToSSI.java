@@ -16,7 +16,7 @@ import java.util.Map;
  * renames variables to convert to SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToSSI.java,v 1.1.2.2 1999-06-11 11:31:31 cananian Exp $
+ * @version $Id: ToSSI.java,v 1.1.2.3 1999-06-18 07:19:17 sportbilly Exp $
  */
 public class ToSSI  {
     
@@ -29,7 +29,7 @@ public class ToSSI  {
 	// WHICH MEANS WE NEED A FUNCTION TO ITERATE OVER ALL THE
 	// HCODEELEMENTS IN A GIVEN REGION.
 
-	SESE sese = new SESE(hc, true);
+	SESE sese = new SESE(hc);
 	// make sets for all regions
 	for (Iterator it=sese.topDown(); it.hasNext(); )
 	    info.put(it.next(), new PersistentSet());

@@ -28,7 +28,7 @@ import java.util.Stack;
  * from a cycle-equivalency set.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SESE.java,v 1.1.2.8 1999-06-18 01:47:56 cananian Exp $
+ * @version $Id: SESE.java,v 1.1.2.9 1999-06-18 07:19:14 sportbilly Exp $
  */
 public class SESE  {
     /** Root of <code>Region</code> tree. */
@@ -38,9 +38,9 @@ public class SESE  {
     public /*final*/ Map smallestSESE;
 
     /** Creates a <code>SESE</code> using a <code>CycleEq</code>. */
-    public SESE(HCode hc, boolean edgegraph) {
+    public SESE(HCode hc) {
 	// compute cycle equivalence.
-	CycleEq ceq = new CycleEq(hc, edgegraph);
+	CycleEq ceq = new CycleEq(hc);
 	// use cycle equivalence classes to determine canonical sese regions.
 	Map entryRegion= new HashMap();
         Map exitRegion = new HashMap();
@@ -69,7 +69,7 @@ public class SESE  {
 	    Object o = nodeS.pop(); // either an HCodeElement or an HCodeEdge
 	    Region cR= (Region) regionS.pop(); // currentRegion.
 	    // deal with region entry/exit.
-	    if (edgegraph==(o instanceof HCodeElement)) {
+	    if (true==(o instanceof HCodeElement)) {
 		// cR is smallest enclosing canonical SESE of o.
 		workSmallSESE.put(o, cR);
 		cR.nodes.add(o);

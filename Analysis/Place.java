@@ -20,7 +20,7 @@ import java.util.Set;
  * functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.10.2.5 1999-04-03 18:02:09 cananian Exp $
+ * @version $Id: Place.java,v 1.10.2.6 1999-06-18 07:19:14 sportbilly Exp $
  */
 public class Place  {
     /*final*/ SESE sese;
@@ -28,7 +28,7 @@ public class Place  {
     
     /** Creates a <code>Place</code>. */
     public Place(HCode hc) {
-        this.sese = new SESE(hc, true);
+        this.sese = new SESE(hc);
 	// make RegionInfos for all Regions
 	for (Iterator it=sese.topDown(); it.hasNext(); )
 	    info.put(it.next(), new RegionInfo());
