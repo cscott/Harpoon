@@ -33,7 +33,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.20 1999-07-30 18:45:13 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.21 1999-07-30 20:19:25 pnkfelix Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -88,6 +88,9 @@ public abstract class Frame {
     */
     public abstract TempFactory regTempFactory();
 
+    /** Checks if <code>t</code> is a element of the register file for
+	this backend. 
+    */
     public boolean isRegister(Temp t) {
 	return t.tempFactory() == regTempFactory();
     }

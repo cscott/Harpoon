@@ -43,7 +43,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.20 1999-07-29 01:49:14 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.21 1999-07-30 20:19:26 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -226,12 +226,6 @@ public class SAFrame extends Frame implements AllocationInfo {
     public Iterator suggestRegAssignment(Temp t, Map regfile) {
 	Util.assert(false, "SAFrame.suggestRegAssigment() Not implemented yet");
 	return null;
-    }
-    /** Not implemented. */    
-    public String getRegisterName(Temp val, String suffix, Map valToRegMap) {
-	Util.assert(false, "DefaultFrame.getRegisterName() Not implemented");
-	return null;
-
     }
 
     /** Returns a <code>StrongArm.CodeGen</code>. 
