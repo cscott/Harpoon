@@ -36,6 +36,8 @@ import harpoon.Util.CombineIterator;
 import harpoon.Util.Default;
 import harpoon.Util.Util;
 
+import harpoon.Analysis.PointerAnalysis.InstrumentateAllocs;
+
 import gnu.getopt.Getopt;
 
 import java.lang.reflect.Modifier;
@@ -71,7 +73,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.101 2000-11-02 23:05:44 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.102 2000-11-08 15:42:11 bdemsky Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -87,6 +89,10 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean OPTIMIZE = false;
     static boolean LOOPOPTIMIZE = false;
     static boolean USE_OLD_CLINIT_STRATEGY = false;
+    static boolean INSTRUMENTATE = false;
+    static String IFILE=null;
+    static InstrumentateAllocs insta = null;
+
 
     static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     static HClass  singleClass = null; // for testing single classes
@@ -195,7 +201,15 @@ public class SAMain extends harpoon.IR.Registration {
 		// recompute the hierarchy after transformation.
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
+	    if (INSTRUMENTATE) {
+		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+		insta=new InstrumentateAllocs(hcf, mainM, linker);
+		hcf=insta.codeFactory();
+		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    }
 	} // don't need the root set anymore.
+
+
 
 	if (OPTIMIZE) {
 	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
@@ -237,6 +251,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    //      LoopOptimize don't handle TYPESWITCHes. --CSA
 	    hcf=harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
 	    hcf=harpoon.Analysis.LowQuad.Loop.LoopOptimize.codeFactory(hcf);
+	    //hcf=harpoon.IR.LowQuad.DerivationChecker.codeFactory(hcf);
 	}
 	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
 	// XXX: ToTree doesn't handle TYPESWITCHes right now.
@@ -310,6 +325,21 @@ public class SAMain extends harpoon.IR.Registration {
 		    System.exit(1);
 		}
 	    }
+	    if (INSTRUMENTATE) {
+		System.out.println("Serializing Instrumentation to "+IFILE);
+		try {
+		    ObjectOutputStream ois =
+			new ObjectOutputStream(new FileOutputStream(IFILE));
+		    ois.writeObject(insta.parent());
+		    ois.writeObject(insta.toint());
+		    ois.writeObject(insta.toalloc());
+		    ois.close();
+		} catch (Exception e) {
+		    System.out.println(e + " was thrown");
+		    System.exit(1);
+		}
+	    }
+
 	    // put a proper makefile in the directory.
 	    File makefile = new File(ASSEM_DIR, "Makefile");
 	    InputStream templateStream;
@@ -553,7 +583,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     protected static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "i:s:b:c:o:IDOPFHR::LlABhq1::C:r:");
+	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:IDOPFHR::LlABhq1::C:r:");
 	
 	int c;
 	String arg;
@@ -587,6 +617,10 @@ public class SAMain extends harpoon.IR.Registration {
 		    System.out.println(e + " was thrown");
 		    System.exit(1);
 		}
+		break;
+	    case 'N':
+		INSTRUMENTATE=true;
+		IFILE=g.getOptarg();
 		break;
 	    case 'l':
 		LOOPOPTIMIZE=true;
@@ -716,6 +750,9 @@ public class SAMain extends harpoon.IR.Registration {
 
 	out.println("-i <filename>");
 	out.println("Read CodeFactory in from FileName");
+
+	out.println("-N <filename>");
+	out.println("Write out allocation Instrumentation to FileName");
 
 	out.println("-b <backend name>");
 	out.println("\t Supported backends are StrongARM (default), MIPS, " +
