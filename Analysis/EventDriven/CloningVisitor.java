@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.6 2000-02-14 05:30:21 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.7 2000-02-14 15:40:04 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -386,7 +386,9 @@ public class CloningVisitor extends QuadVisitor {
 	//-----------------------------------------------------------------
 	// Typecast the argument to resume if necessary
 
-	if (!((CALL)q).method().getReturnType().isPrimitive()) {
+	if (!((CALL)q).method().getReturnType().isPrimitive()&&
+	    !((CALL)q).method().getReturnType()
+	    .equals(linker.forName("java.lang.Object"))) {
 	    Temp tresult=new Temp(tf), tnull=new Temp(tf), tresultn=new Temp(tf);
 	   
 	    CONST cn = new CONST(qf, first, tnull,null, HClass.Void);
