@@ -74,7 +74,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.5 2002-04-17 04:49:03 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.6 2002-04-20 20:22:56 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -1113,10 +1113,14 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    Quad prev = q.prev(0);
 	    if(prev instanceof INSTANCEOF) {
 		INSTANCEOF inst = (INSTANCEOF) prev;
-		if(inst.dst().equals(q.test())) {
+		Temp tb = inst.dst();
+		if(tb.equals(q.test())) {
 		    Temp tested = inst.src();
 		    int i = getSigmaForTemp(q, tested);
-		    assert (i != -1) : t + " is not defined by " + q;
+
+		    if(i == -1) return null;
+		    //assert (i != -1) : tested + " is not defined by " + q;
+
 		    Temp dst[] = q.dst(i);
 		    if(t.equals(dst[1])) {
 			// this is actually a typecast !
