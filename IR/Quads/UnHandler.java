@@ -21,7 +21,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.32 2001-07-05 19:07:39 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.33 2001-07-19 16:35:49 cananian Exp $
  */
 final class UnHandler {
     private static final boolean ARRAY_BOUNDS_CHECKS
@@ -188,6 +188,8 @@ final class UnHandler {
 	    AliasList s0 = (AliasList) h.get(src);
 	    if (d0==null) h.put(dst, d0=new AliasList(dst, Type.top));
 	    if (s0==null) h.put(src, s0=new AliasList(src, Type.top));
+	    // if they're already aliases we're already done.
+	    if (d0.box==s0.box) return;
 	    // all boxes in dst must point to src.
 	    AliasList al=d0;
 	    do {
