@@ -31,7 +31,7 @@ import java.util.HashSet;
  *	 are passed on to 'mm'.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.1.2.11 2001-11-08 00:26:11 cananian Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.1.2.12 2001-11-08 20:34:58 cananian Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -101,7 +101,19 @@ public class GenericMultiMap implements MultiMap {
     }
 
     public int size() {
-	return size;
+	// XXX: this class contains code to calculate the size and update
+	// it on modifications, but it contains a critical hole: the caller
+	// can take the Collection returned by getValues(key) and modify
+	// it.  There's no way for us to intercept that modification
+	// and update the size field without wrapping the returned Collection
+	// -- but we can't do that without changing the actual type of the
+	// object returned (ie, if CollectionFactory returned Sets, we want
+	// getValues(key) to return Sets, as well).  So the size() method
+	// is now correct, but very slow.
+	int count=0;
+	for (Iterator it=internMap.values().iterator(); it.hasNext(); )
+	    count += ((Collection)it.next()).size();
+	return count;
     }
 
     public boolean isEmpty() {
@@ -342,6 +354,7 @@ public class GenericMultiMap implements MultiMap {
 	while(keys.hasNext()) {
 	    Object k = keys.next();
 	    Collection values = getValues(k);
+	    if (values.size()==0) continue;
 	    sb.append("< "+k+" -> "+values+" > ");
 	}
 	sb.append("]");
@@ -446,7 +459,7 @@ public class GenericMultiMap implements MultiMap {
 	    if (type==ENTRY)
 		Util.assert(this instanceof Set);
 	}
-	public int size() { return size; }
+	public int size() { return GenericMultiMap.this.size(); }
 	public Iterator iterator() {
 	    return new Iterator() {
 		    Iterator mapit = internMap.entrySet().iterator();
@@ -475,7 +488,7 @@ public class GenericMultiMap implements MultiMap {
 		    }
 		    void advance() {
 			lastit = setit;
-			if (!setit.hasNext() && mapit.hasNext()) {
+			while (!setit.hasNext() && mapit.hasNext()) {
 			    Map.Entry me = (Map.Entry) mapit.next();
 			    key = me.getKey();
 			    Collection c = (Collection) me.getValue();
