@@ -19,7 +19,7 @@ import java.util.Map;
  * to effect the change.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodMutator.java,v 1.1.2.5 2000-11-14 18:27:25 cananian Exp $
+ * @version $Id: MethodMutator.java,v 1.1.2.6 2001-10-31 03:36:57 cananian Exp $
  */
 public abstract class MethodMutator implements java.io.Serializable {
     /** This is the code factory which contains the representations of the
@@ -50,8 +50,8 @@ public abstract class MethodMutator implements java.io.Serializable {
 	return hc.clone(newmethod);
     }
     /** Returns a <code>HCodeFactory</code> containing representations for
-     *  the methods split by the <code>MethodSplitter</code>. */
-    public final HCodeFactory codeFactory() { return hcf; }
+     *  the methods altered by the <code>MethodMutator</code>. */
+    public HCodeFactory codeFactory() { return hcf; }
     /** This is the code factory which contains the representations of the
      *  new split methods. */
     private final HCodeFactory hcf = new SerializableCodeFactory() {
