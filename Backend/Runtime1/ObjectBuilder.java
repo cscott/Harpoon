@@ -20,6 +20,7 @@ import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.SEGMENT;
 import harpoon.Temp.Label;
+import harpoon.Util.ArrayIterator;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
@@ -30,23 +31,52 @@ import java.util.Random;
  * <code>ObjectBuilder</code> is an implementation of
  * <code>harpoon.Backend.Generic.Runtime.ObjectBuilder</code> for the
  * <code>Runtime1</code> runtime.
+ * <p>
+ * To accomodate transformations which add fields to
+ * <code>java.lang.Object</code>, this
+ * <code>Runtime.ObjectBuilder</code> initializes all fields of
+ * <code>Object</code> with <code>null</code>, rather than attempting
+ * to consult the given <code>Info</code> for them.  If other behavior
+ * is eventually needed, it is a custom <code>RootOracle</code> be
+ * defined and provided to the constructor which will be consulted on
+ * the value of every field *before* any <code>Info</code>.
+ * This provides for extensibility without direct code modifications
+ * to the various parts of <code>Runtime1</code> which use this
+ * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.4.9 2001-01-21 06:10:04 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.4.10 2001-01-21 06:59:53 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
     final boolean pointersAreLong;
     final NameMap nm;
     final FieldMap cfm;
+    final RootOracle ro;
     private final Random rnd;
+    private final HClass HCobject; // cache HClass for java.lang.Object
 
-    /** Creates a <code>ObjectBuilder</code>. */
+    /** Creates a <code>ObjectBuilder</code> with a <code>RootOracle</code>
+     *  which supplies <code>null</code> values to any field of
+     *  <code>java.lang.Object</code> (which there usually aren't any of).
+     */
     public ObjectBuilder(Runtime runtime) {
+	this(runtime, new RootOracle() {
+	    public Object get(HField hf, Info addlinfo) {
+	      if (hf.getDeclaringClass().getName().equals("java.lang.Object"))
+		  return null; // fields of Object initialized with null.
+	      else return NOT_A_VALUE;
+	    }
+	});
+    }
+    /** Creates a <code>ObjectBuilder</code>. */
+    public ObjectBuilder(Runtime runtime, RootOracle ro) {
 	this.pointersAreLong = runtime.frame.pointersAreLong();
 	this.nm = runtime.nameMap;
 	this.cfm= ((TreeBuilder) runtime.treeBuilder).cfm;
+	this.ro = ro;
 	this.rnd = new Random(runtime.frame.hashCode());//quasi-repeatable?
+	this.HCobject = runtime.frame.getLinker().forName("java.lang.Object");
     }
 
     public Stm buildObject(TreeFactory tf, ObjectInfo info,
@@ -59,9 +89,13 @@ public class ObjectBuilder
 	// fields, in field order
 	List l = cfm.fieldList(info.type());
 	for (Iterator it = l.iterator(); it.hasNext(); )
-	    stmlist.add(makeDatum(tf, info.get((HField)it.next())));
+	    stmlist.add(makeDatum(tf, lookup(info, (HField)it.next())));
 	// done -- ta da!
 	return Stm.toStm(stmlist);
+    }
+    private Object lookup(ObjectInfo info, HField hf) {
+	Object o = ro.get(hf, info);
+	return (o==ro.NOT_A_VALUE) ? info.get(hf) : o;
     }
     public Stm buildArray(TreeFactory tf, ArrayInfo info,
 			  boolean exported) {
@@ -70,6 +104,10 @@ public class ObjectBuilder
 	List stmlist = new ArrayList(info.length()+2);
 	// header
 	stmlist.add(makeHeader(tf, info, exported));
+	// fields of java.lang.Object
+	for (Iterator it = new ArrayIterator(HCobject.getDeclaredFields());
+	     it.hasNext(); )
+	    stmlist.add(makeDatum(tf, lookup(info, (HField)it.next())));
 	// length
 	stmlist.add(_DATUM(tf, new CONST(tf, null, info.length())));
 	// data
@@ -77,6 +115,11 @@ public class ObjectBuilder
 	    stmlist.add(makeDatum(tf, info.get(i)));
 	// done -- ta da!
 	return Stm.toStm(stmlist);
+    }
+    private Object lookup(ArrayInfo info, HField hf) {
+	Object o = ro.get(hf, info);
+	Util.assert(o != ro.NOT_A_VALUE, "field of array not given a value");
+	return o;
     }
     Stm makeHeader(TreeFactory tf, Info info, boolean exported)
     {
@@ -135,5 +178,31 @@ public class ObjectBuilder
     }
     DATUM _DATUM(TreeFactory tf, Label l) {
 	return new DATUM(tf,null,new NAME(tf,null,l));
+    }
+
+
+    /** A <code>RootOracle</code> allows a transformation to add
+     *  fields to <code>java.lang.Object</code> (or any other
+     *  class, really) and provide the initial values for that
+     *  field in the various runtime constant objects without
+     *  having to directly extend every <code>ObjectInfo</code>
+     *  used in this <code>Generic.Runtime</code> implementation.
+     *  The <code>RootOracle</code> will be consulted for the
+     *  value of every field *before* the <code>ObjectInfo</code>,
+     *  allowing an override -- if no override is desired, the
+     *  <code>RootOracle.get()</code> method should return
+     *  <code>NOT_A_VALUE</code>.
+     */
+    public static abstract class RootOracle {
+	/** This is the constant value returned which this
+	 *  oracle doesn't wish to override the given field. */
+	public static final Object NOT_A_VALUE = new Object();
+	/** Returns the override value of the given field <code>hf</code>
+	 *  (more information about the object in question is
+	 *   provided by <code>addlinfo</code>); if this
+	 *   <code>RootOracle</code> doesn't wish to override this
+	 *   field, it should return the constant <code>NOT_A_VALUE</code>.
+	 */
+	public abstract Object get(HField hf, Info addlinfo);
     }
 }
