@@ -79,8 +79,12 @@ int BeginNoHeap(JNIEnv *env);
 void EndNoHeap(JNIEnv *env, int state);
 #endif
 
-
+void Threads_init(JNIEnv *env);
 #endif
 
-
+#ifndef WITH_REALTIME_THREADS
+void transfer();
+#else
+void transfer(struct thread_queue_struct * mthread);
+#endif
 

@@ -6,6 +6,7 @@
 #define __BLOCK_H__
 
 #include <assert.h>
+#include <string.h> /* for memset */
 #include "RTJconfig.h"
 #include "flexthread.h"
 #include "asm/atomicity.h"

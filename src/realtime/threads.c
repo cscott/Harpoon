@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <string.h> /* for memset */
 #include "flexthread.h"
 #include "threads.h"
 #include "../user/threads.h"
@@ -35,6 +36,58 @@ jobject scheduler;
 static int mainStarted = 0;
 
 struct itimerval quanta;
+
+static jclass RealtimeThreadClaz;
+static jmethodID RealtimeThread_getScheduler;
+static jmethodID RealtimeThread_initScheduler;
+static jmethodID RealtimeThread_schedule;
+static jmethodID RealtimeThread_unschedule;
+
+static jclass SchedulerClaz;
+static jmethodID Scheduler_jAddCThread;
+static jmethodID Scheduler_jChooseThread;
+static jmethodID Scheduler_jDisableThread;
+static jmethodID Scheduler_jEnableThread;
+static jmethodID Scheduler_jNumThreads;
+static jmethodID Scheduler_jRemoveCThread;
+static jmethodID Scheduler_print;
+
+void Threads_init(JNIEnv *env) {
+  RealtimeThreadClaz = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
+  assert(!((*env)->ExceptionOccurred(env)));
+  RealtimeThreadClaz = (*env)->NewGlobalRef(env, RealtimeThreadClaz);
+  assert(!((*env)->ExceptionOccurred(env)));
+  RealtimeThread_getScheduler = (*env)->GetMethodID(env, RealtimeThreadClaz, "getScheduler",
+						    "()Ljavax/realtime/Scheduler;");
+  assert(!((*env)->ExceptionOccurred(env)));
+  RealtimeThread_initScheduler = (*env)->GetMethodID(env, RealtimeThreadClaz, "initScheduler", "()V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  RealtimeThread_schedule = (*env)->GetMethodID(env, RealtimeThreadClaz, "schedule", "()V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  RealtimeThread_unschedule = (*env)->GetMethodID(env, RealtimeThreadClaz, "unschedule", "()V");
+  assert(!((*env)->ExceptionOccurred(env)));
+
+  SchedulerClaz = (*env)->FindClass(env, "javax/realtime/Scheduler");
+  assert(!((*env)->ExceptionOccurred(env)));
+  SchedulerClaz = (*env)->NewGlobalRef(env, SchedulerClaz);
+  assert(!((*env)->ExceptionOccurred(env)));
+  Scheduler_jAddCThread = (*env)->GetStaticMethodID(env, SchedulerClaz, "jAddCThread", "(J)V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  Scheduler_jChooseThread = (*env)->GetMethodID(env, SchedulerClaz, "jChooseThread", "(J)J");
+  assert(!((*env)->ExceptionOccurred(env)));
+  Scheduler_jDisableThread = (*env)->GetStaticMethodID(env, SchedulerClaz, "jDisableThread", 
+						       "(Ljavax/realtime/RealtimeThread;J)V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  Scheduler_jEnableThread = (*env)->GetStaticMethodID(env, SchedulerClaz, "jEnableThread", 
+						      "(Ljavax/realtime/RealtimeThread;J)V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  Scheduler_jNumThreads = (*env)->GetStaticMethodID(env, SchedulerClaz, "jNumThreads", "()J");
+  assert(!((*env)->ExceptionOccurred(env)));
+  Scheduler_jRemoveCThread = (*env)->GetStaticMethodID(env, SchedulerClaz, "jRemoveCThread", "(J)V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  Scheduler_print = (*env)->GetStaticMethodID(env, SchedulerClaz, "print", "()V");
+  assert(!((*env)->ExceptionOccurred(env)));
+}
 
 void context_switch() {
   sigset_t empty_mask;
@@ -129,7 +182,7 @@ void setQuanta(jlong microsecs) {
 JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_setQuanta
 (JNIEnv* env, jobject _this, jlong microsecs) {
 #ifdef RTJ_DEBUG_THREADS
-  printf("\n  Scheduler.setQuanta(%08x, %08x, %lld)", env, 
+  printf("\n  Scheduler.setQuanta(%p, %p, %lld)", env, 
 	 _this, (long long)microsecs);
 #endif
   setQuanta(microsecs);
@@ -140,8 +193,8 @@ JNIEXPORT jlong JNICALL Java_javax_realtime_RealtimeClock_getTimeInC
   struct timeval time;
   gettimeofday(&time, NULL);
 #ifdef RTJ_DEBUG_THREADS
-  printf("\n  (%d s,%d us) = RealtimeClock.getTimeInC(%08x, %08x)", 
-	 time.tv_sec, time.tv_usec, env, _this);
+  printf("\n  (%d s,%d us) = RealtimeClock.getTimeInC(%p, %p)", 
+	 (int)time.tv_sec, (int)time.tv_usec, env, _this);
 #endif
   return time.tv_sec * 1000000 + time.tv_usec;
 }
@@ -152,20 +205,16 @@ void CheckQuanta(int signal)
   struct timeval time; //the current time
   JNIEnv* env;         //a JNI environment
   jobject ref_marker;
-  jclass schedClass, rttClass; //class of the scheduler & of the RealtimeThread
   jlong threadID; //threadID returned by the scheduler
   jobject scheduler; //scheduler object
   struct thread_queue_struct* threadq;
-  /* methods to choose a new thread, and to get the scheduler */
-  jmethodID chooseThreadMethod, getSchedMethod; 
-  struct inflated_oobj* infObj; //thread's inflated object
 #ifdef WITH_NOHEAP_SUPPORT
   int noheap;
 #endif
+  gettimeofday(&time, NULL);
 #ifdef RTJ_DEBUG_THREADS  
   printf("\nCheckQuanta()");
 #endif
-  gettimeofday(&time, NULL);
   
   env = (JNIEnv*)FNI_GetJNIEnv(); //get JNI environment
   ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
@@ -174,15 +223,8 @@ void CheckQuanta(int signal)
 #endif
 
   /* Get the current scheduler */
-  rttClass = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
-  assert(!((*env)->ExceptionOccurred(env)));
-  
-  getSchedMethod = (*env)->GetMethodID(env, rttClass,
-				       "getScheduler",
-				       "()Ljavax/realtime/Scheduler;");
-  assert(!((*env)->ExceptionOccurred(env)));      
   scheduler = (*env)->CallObjectMethod(env, ((struct FNI_Thread_State*)env)->thread, 
-				       getSchedMethod);
+				       RealtimeThread_getScheduler, NULL);
   assert(!((*env)->ExceptionOccurred(env)));
   if(scheduler == NULL) { //if there is no scheduler
     FNI_DeleteLocalRefsUpTo(env, ref_marker);
@@ -196,19 +238,13 @@ void CheckQuanta(int signal)
   }
   
   /* Choose the next thread */
-  schedClass = (*env)->GetObjectClass(env, scheduler);
-  assert(!((*env)->ExceptionOccurred(env)));
-  
-  chooseThreadMethod = (*env)->GetMethodID(env, schedClass, "jChooseThread", "(J)J");
-  assert(!((*env)->ExceptionOccurred(env)));
-  
   threadq = NULL;
-  threadID = (*env)->CallLongMethod(env, scheduler, chooseThreadMethod,
+  threadID = (*env)->CallLongMethod(env, scheduler, Scheduler_jChooseThread,
 				    time.tv_sec*1000000 + time.tv_usec);
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  %d = ChooseThread(%p, %p, (%d s, %d us))", 
 	 (int)threadID, env, FNI_UNWRAP_MASKED(scheduler), 
-	 time.tv_sec, time.tv_usec);
+	 (int)time.tv_sec, (int)time.tv_usec);
 #endif
   if((*env)->ExceptionOccurred(env))
     (*env)->ExceptionDescribe(env);
@@ -223,7 +259,6 @@ void CheckQuanta(int signal)
   }
   
   threadq = lookupThread(threadID);
-  
   assert(threadq != NULL); // invalid ID
   
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
@@ -251,7 +286,7 @@ void print_queue(struct thread_queue_struct* q, char* message) {
   struct thread_queue_struct* t = q;
   printf("\n  %s: (", message);
   while (t) {
-    printf("%d,", t->threadID);
+    printf("%lld,", (long long int)t->threadID);
     t = t->next;
   }
   printf(")");
@@ -267,7 +302,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_addThreadInC
     (struct inflated_oobj*)getInflatedObject(env, thread);
 
 #ifdef RTJ_DEBUG_THREADS
-  printf("\naddThreadInC(%d)",threadID);
+  printf("\naddThreadInC(%lld)", (long long int)threadID);
 #endif
 
   print_queue(thread_queue, "BEG addThreadInC queue");
@@ -278,7 +313,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_addThreadInC
 
 #ifdef RTJ_DEBUG_THREADS
   if(open_spot->mthread->start_argument == NULL) {
-    printf("\n!!!!mthread (%d) is null in ADD!!!!", threadID);
+    printf("\n!!!!mthread (%lld) is null in ADD!!!!", (long long int)threadID);
   }
 #endif
 
@@ -351,35 +386,19 @@ void DisableThread(struct thread_queue_struct* queue)
 {
   JNIEnv* env = FNI_GetJNIEnv();
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
-  jmethodID disableMethod;
-  jclass schedClass; 
-  int switching_state;
+  int switching_state = StopSwitching();
 #ifdef WITH_NOHEAP_SUPPORT
-  int noheap;
+  int noheap = BeginNoHeap(env);
 #endif
-  
-  if (queue == NULL || queue->threadID == 0) return;
-
 #ifdef RTJ_DEBUG_THREADS
-  printf("\nDisableThread %d", queue->threadID);
+  printf("\nDisableThread %lld", (long long int)queue->threadID);
 #endif
-  switching_state = StopSwitching();
-#ifdef WITH_NOHEAP_SUPPORT
-  noheap = BeginNoHeap(env);
-#endif  
-
   print_queue(thread_queue, "BEG disableThread queue");
-
-  schedClass = (*env)->FindClass(env, "javax/realtime/Scheduler");
+  (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_jDisableThread, 
+			       queue->jthread, queue->threadID);
   assert(!((*env)->ExceptionOccurred(env)));
-  disableMethod = (*env)->GetStaticMethodID(env, schedClass, "jDisableThread", "(Ljavax/realtime/RealtimeThread;J)V");
-  assert(!((*env)->ExceptionOccurred(env)));
-  (*env)->CallStaticVoidMethod(env, schedClass, disableMethod, queue->jthread, queue->threadID);
-  assert(!((*env)->ExceptionOccurred(env)));
-
   print_queue(thread_queue, "END disableThread queue");
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
-
 #ifdef WITH_NOHEAP_SUPPORT
   EndNoHeap(env, noheap);
 #endif
@@ -391,35 +410,20 @@ void EnableThread(struct thread_queue_struct* queue)
 {
   JNIEnv* env = FNI_GetJNIEnv();
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
-  jmethodID enableMethod;
-  jclass schedClass;
-  int switching_state;
+  int switching_state = StopSwitching();
 #ifdef WITH_NOHEAP_SUPPORT
-  int noheap;
+  int noheap = BeginNoHeap(env);
 #endif
-
 #ifdef RTJ_DEBUG_THREADS
-  printf("\nEnableThread %d", queue->threadID);
+  printf("\nEnableThread %lld", (long long int)queue->threadID);
 #endif
-  switching_state = StopSwitching();
-#ifdef WITH_NOHEAP_SUPPORT
-  noheap = BeginNoHeap(env);
-#endif
-
   print_queue(thread_queue, "BEG enableThread queue");
-
   if(queue == NULL || queue->threadID == 0) return;
-
-  schedClass = (*env)->FindClass(env, "javax/realtime/Scheduler");
+  (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_jEnableThread, 
+			       queue->jthread, queue->threadID);
   assert(!((*env)->ExceptionOccurred(env)));
-  enableMethod = (*env)->GetStaticMethodID(env, schedClass, "jEnableThread", "(Ljavax/realtime/RealtimeThread;J)V");
-  assert(!((*env)->ExceptionOccurred(env)));
-  (*env)->CallStaticVoidMethod(env, schedClass, enableMethod, queue->jthread, queue->threadID);
-  assert(!((*env)->ExceptionOccurred(env)));
-  
   print_queue(thread_queue, "END enableThread queue");
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
-
 #ifdef WITH_NOHEAP_SUPPORT
   EndNoHeap(env, noheap);
 #endif
@@ -440,27 +444,16 @@ void EnableThreadList(struct thread_queue_struct* queue)
 
 jlong realtime_num_threads(JNIEnv* env) {
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
-  jmethodID numMethod;
   jlong nThreads;
-  jclass schedClass = (*env)->FindClass(env, "javax/realtime/Scheduler");
-  int switching_state;
+  int switching_state = StopSwitching();
 #ifdef WITH_NOHEAP_SUPPORT
-  int noheap;
+  int noheap = BeginNoHeap(env);
 #endif
-
 #ifdef RTJ_DEBUG_THREADS
   printf("\nrealtime_num_threads(%p)", env);
 #endif
+  nThreads = (*env)->CallStaticLongMethod(env, SchedulerClaz, Scheduler_jNumThreads, NULL);
   assert(!((*env)->ExceptionOccurred(env)));
-  switching_state = StopSwitching();
-#ifdef WITH_NOHEAP_SUPPORT
-  noheap = BeginNoHeap(env);
-#endif
-  numMethod = (*env)->GetStaticMethodID(env, schedClass, "jNumThreads", "()J");
-  assert(!((*env)->ExceptionOccurred(env)));
-  nThreads = (*env)->CallStaticLongMethod(env, schedClass, numMethod, NULL);
-  assert(!((*env)->ExceptionOccurred(env)));
-
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
 #ifdef WITH_NOHEAP_SUPPORT
   EndNoHeap(env, noheap);
@@ -543,11 +536,6 @@ void FNI_java_lang_Thread_mainThreadSetup
 void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args,
 			    jclass thrCls) {
   /*methods to get the scheduler, and to add a thread to it*/
-  jobject scheduler; //scheduler object
-  jmethodID addThreadMethod, getSchedMethod;
-  int nest=0;
-  jboolean check;
-
 #ifdef RTJ_DEBUG_THREADS
   printf("\nstart_realtime_threads(%p, %p, %p, %p)", env, 
 	 FNI_UNWRAP_MASKED(mainthread), args, thrCls);
@@ -597,9 +585,9 @@ void* startMain(void* mclosure) {
   jclass claz; //the class of the main Java thread
   /* the main method id, id for getting the scheduler,
      and an id for removing threads */
-  jmethodID mid, removeThreadMethod;
+  jmethodID mid;
   /* an object for this thread, it's thread group, and the scheduler */
-  jobject thread, threadgroup, scheduler;
+  jobject thread, threadgroup;
   /* an exception thrown by the thread */
   jthrowable threadexc;
   /* cast the incoming argument to a main_closure_struct */
@@ -697,19 +685,19 @@ void* startMain(void* mclosure) {
 #endif
   RTJ_FREE(mcls); //free the closure structure
   destroyEnv();
+  /* pthreads return a value on join, 
+   * but Java doesn't do this - so we just return NULL */
+  return NULL;  
 }
 
 void realtime_schedule_thread(JNIEnv *env, jobject thread) {
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
   int switching_state = StopSwitching();
-  jmethodID addThreadMethod = 
-    (*env)->GetMethodID(env, (*env)->GetObjectClass(env, thread), "schedule", "()V");
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  realtime_schedule_thread(%p, %p)", env, thread);
 #endif
-  assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
-  (*env)->CallVoidMethod(env, thread, addThreadMethod, NULL);
+  (*env)->CallVoidMethod(env, thread, RealtimeThread_schedule, NULL);
   assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
@@ -720,14 +708,11 @@ void realtime_unschedule_thread(JNIEnv *env, jobject thread) {
   /* remove the thread from the scheduler */
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
   int switching_state = StopSwitching();
-  jmethodID removeThreadMethod =
-    (*env)->GetMethodID(env, (*env)->GetObjectClass(env, thread), "unschedule", "()V");
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  realtime_unschedule_thread(%p, %p)", env, thread);
 #endif
-  assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
-  (*env)->CallVoidMethod(env, thread, removeThreadMethod, NULL);
+  (*env)->CallVoidMethod(env, thread, RealtimeThread_unschedule, NULL);
   assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
@@ -736,38 +721,30 @@ void realtime_unschedule_thread(JNIEnv *env, jobject thread) {
 
 void realtime_schedule_ID(JNIEnv *env, jlong ID) {
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
-  jclass schedClaz = (*env)->FindClass(env, "javax/realtime/Scheduler");
-  jmethodID scheduleMethod;
+  int switching_state = StopSwitching();
 #ifdef RTJ_DEBUG_THREADS
-  printf("\n  realtime_schedule_ID(%p, %d)", env, ID);
+  printf("\n  realtime_schedule_ID(%p, %lld)", env, (long long int)ID);
 #endif
-  assert(!((*env)->ExceptionOccurred(env)));
-  scheduleMethod = 
-    (*env)->GetStaticMethodID(env, schedClaz, "jAddCThread", "(J)V");
-  assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
-  (*env)->CallStaticVoidMethod(env, schedClaz, scheduleMethod, ID);
+  (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_jAddCThread, ID);
   assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
+  RestoreSwitching(switching_state);
 }
 
 void realtime_unschedule_ID(JNIEnv *env, jlong ID) {
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
-  jclass schedClaz = (*env)->FindClass(env, "javax/realtime/Scheduler");
-  jmethodID scheduleMethod;
+  int switching_state = StopSwitching();
 #ifdef RTJ_DEBUG_THREADS
-  printf("\n  realtime_schedule_ID(%p, %d)", env, ID);
+  printf("\n  realtime_schedule_ID(%p, %lld)", env, (long long int)ID);
 #endif
-  assert(!((*env)->ExceptionOccurred(env)));
-  scheduleMethod = 
-    (*env)->GetStaticMethodID(env, schedClaz, "jRemoveCThread", "(J)V");
-  assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
-  (*env)->CallStaticVoidMethod(env, schedClaz, scheduleMethod, ID);
+  (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_jRemoveCThread, ID);
   assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
   FNI_DeleteLocalRefsUpTo(env, ref_marker);  
+  RestoreSwitching(switching_state);
 }
 
 void realtime_destroy_thread(JNIEnv *env, jobject thread, void *cls) {
@@ -779,20 +756,16 @@ void realtime_destroy_thread(JNIEnv *env, jobject thread, void *cls) {
   oldthread = currentThread;
   FNI_DeleteGlobalRef(env, thread); //remove the global ref to the thread
   RTJ_FREE(cls); //free the closure argument
-
   RestoreSwitching(switching_state);
   context_switch();
 }
 
 void initScheduler(JNIEnv *env, jobject thread) {
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
-  jmethodID setSchedID = (*env)->GetMethodID(env, (*env)->GetObjectClass(env, thread),
-					     "initScheduler", "()V");
 #ifdef RTJ_DEBUG_THREADS
-  printf("\n  initScheduler(%p, %p)");
+  printf("\n  initScheduler(%p, %p)", env, thread);
 #endif
-  assert(!((*env)->ExceptionOccurred(env)));
-  (*env)->CallVoidMethod(env, thread, setSchedID, NULL);
+  (*env)->CallVoidMethod(env, thread, RealtimeThread_initScheduler, NULL);
   assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
@@ -801,20 +774,17 @@ void initScheduler(JNIEnv *env, jobject thread) {
 void printScheduler() {
 #ifdef RTJ_DEBUG_THREADS
   JNIEnv* env = FNI_GetJNIEnv();
+  int switching_state = StopSwitching();
 #ifdef WITH_NOHEAP_SUPPORT
   int noheap = BeginNoHeap(env);
 #endif
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
-  jclass schedClass = (*env)->FindClass(env, "javax/realtime/Scheduler");
-  jmethodID printID;
-  assert(!((*env)->ExceptionOccurred(env)));
-  printID = (*env)->GetStaticMethodID(env, schedClass, "print", "()V");
-  assert(!((*env)->ExceptionOccurred(env)));
-  (*env)->CallStaticVoidMethod(env, schedClass, printID, NULL);
+  (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_print, NULL);
   assert(!((*env)->ExceptionOccurred(env)));
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
 #ifdef WITH_NOHEAP_SUPPORT
   EndNoHeap(env, noheap);
 #endif
+  RestoreSwitching(switching_state);
 #endif
 }

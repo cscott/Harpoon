@@ -7,6 +7,7 @@
 #ifndef __BLOCKALLOCATOR_H__
 #define __BLOCKALLOCATOR_H__
 
+/* Nothing uses this currently...
 #include "block.h"
 
 #define BLOCK_ALLOC_SIZE 1000000
@@ -25,5 +26,6 @@ static struct Block* BlockAllocator_splitBlock(struct Block* block,
 static struct Block* BlockAllocator_mergeBlocks(struct Block* left, 
 						struct Block* right);
 void BlockAllocator_freeAll();
+*/
 
 #endif /* __BLOCKALLOCATOR_H__ */

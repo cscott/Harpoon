@@ -45,11 +45,13 @@ void setup_GC_stats() {
 }
 
 void print_GC_stats() {
-  printf("Total GC time: %ds %dus\n", total_GC_time.tv_sec, total_GC_time.tv_nsec/1000);
-  printf("Max GC pause: %ds %dus\n", max_GC_time.tv_sec, max_GC_time.tv_nsec/1000);
+  printf("Total GC time: %lds %ldus\n", (long int)total_GC_time.tv_sec, 
+	 (long int)total_GC_time.tv_nsec/1000);
+  printf("Max GC pause: %lds %ldus\n", (long int)max_GC_time.tv_sec, 
+	 (long int)max_GC_time.tv_nsec/1000);
 #ifdef WITH_REALTIME_JAVA
-  printf("Total CT finalizer time: %ds %dus\n", total_finalize_time.tv_sec,
-	 total_finalize_time.tv_nsec/1000);
+  printf("Total CT finalizer time: %lds %ldus\n", (long int)total_finalize_time.tv_sec,
+	 (long int)total_finalize_time.tv_nsec/1000);
 #endif
 }
 

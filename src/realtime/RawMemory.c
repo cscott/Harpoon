@@ -3,7 +3,7 @@
 #define get(claz, type, name) \
 JNIEXPORT type JNICALL Java_javax_realtime_##claz##_get##name \
 (JNIEnv* env, jobject rawMemory, jlong offset) { \
-\
+  return (type)0; \
 } 
 
 #define getArray(claz, type, name) \
@@ -14,7 +14,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_##claz##_get##name##s \
 } 
 
 #define set(claz, type, name) \
-JNIEXPORT type JNICALL Java_javax_realtime_##claz##_set##name \
+JNIEXPORT void JNICALL Java_javax_realtime_##claz##_set##name \
 (JNIEnv* env, jobject rawMemory, jlong offset, type item) { \
 \
 }

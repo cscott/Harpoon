@@ -20,7 +20,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_##claz##_get##name##s \
  jint low, jint n);
 
 #define set(claz, type, name) \
-JNIEXPORT type JNICALL Java_javax_realtime_##claz##_set##name \
+JNIEXPORT void JNICALL Java_javax_realtime_##claz##_set##name \
 (JNIEnv* env, jobject rawMemory, jlong offset, type item);
 
 #define setArray(claz, type, name) \

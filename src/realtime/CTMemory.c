@@ -67,7 +67,7 @@ void* CTScope_MemBlock_alloc_alternative(struct MemBlock* mem, size_t size) {
     ptr = LListAllocator_alloc(mem->alloc_union.lls, size);
   }
   if (!ptr) {
-    printf("Ran out of space in MemoryArea: %d is not enough space.\n",
+    printf("Ran out of space in MemoryArea: %ld is not enough space.\n",
 	   ((bl->end)-(bl->begin))+(mem->alloc_union.lls->size));
     printf("Try increasing your MemoryArea size.\n");
   }

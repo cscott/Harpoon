@@ -4,10 +4,6 @@
 
 #include "RTJmalloc.h"
 
-void* RTJ_jmalloc(jsize size) {
-  return RTJ_malloc((size_t)size);
-}
-
 #ifdef RTJ_DEBUG_REF
 inline void* RTJ_malloc_ref(size_t size, const int line, const char *file) {
 #else
@@ -95,12 +91,18 @@ static jobject heapMem = NULL;
 
 inline void RTJ_preinit() {
   JNIEnv *env = FNI_GetJNIEnv();
+  jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
   jclass clazz = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
-  jclass memAreaStackClaz = (*env)->FindClass(env, "javax/realtime/MemAreaStack");
+  jclass memAreaStackClaz;
 #ifdef WITH_MEMORYAREA_TAGS
   jclass heapClaz;
   jmethodID methodID;
 #endif
+  checkException();
+#ifdef RTJ_DEBUG
+  printf("RTJ_preinit()\n");
+#endif
+  memAreaStackClaz = (*env)->FindClass(env, "javax/realtime/MemAreaStack");
   checkException();
   (*env)->SetStaticBooleanField(env, clazz,
 				(*env)->GetStaticFieldID(env, clazz, 
@@ -123,13 +125,16 @@ inline void RTJ_preinit() {
   heapMem = (*env)->NewGlobalRef(env, heapMem);
   checkException();
 #endif
-#ifdef RTJ_DEBUG
-  printf("RTJ_preinit()\n");
+  MemoryArea_init(env);
+#ifdef WITH_REALTIME_THREADS
+  Threads_init(env);
 #endif
+  FNI_DeleteLocalRefsUpTo(env, ref_marker);
 }
 
 inline void RTJ_init() {
   JNIEnv* env = FNI_GetJNIEnv();
+  jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
   jclass rtClazz = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
   jfieldID RTJinitID;
 #ifdef RTJ_DEBUG
@@ -146,6 +151,7 @@ inline void RTJ_init() {
   checkException();
   (*env)->SetStaticBooleanField(env, rtClazz, RTJinitID, JNI_FALSE);
   checkException();
+  FNI_DeleteLocalRefsUpTo(env, ref_marker);
 }
 
 #ifdef WITH_MEMORYAREA_TAGS

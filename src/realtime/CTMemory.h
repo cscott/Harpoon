@@ -6,6 +6,7 @@
 #ifndef _Included_CTMemory
 #define _Included_CTMemory
 #include "RTJmalloc.h"
+#include "block.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

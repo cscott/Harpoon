@@ -8,11 +8,12 @@
 #define _Included_MemoryArea
 #include "RTJmalloc.h"
 #include "jni-private.h"
-#include "../java.lang.reflect/java_lang_reflect_Array.h"
-#include "../java.lang.reflect/java_lang_reflect_Modifier.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+void MemoryArea_init(JNIEnv* env);
+
 /*
  * Class:     javax_realtime_MemoryArea
  * Method:    enterMemBlock

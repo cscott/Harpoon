@@ -6,6 +6,9 @@
 #include "config.h"
 #include "gc.h"
 #include <bits/time.h>
+#include <stdlib.h> /* for malloc */
+#include <stdio.h>  /* for printf */
+#include <string.h> /* for memset */
 
 #define WITH_REALTIME_CLOCK 1 
 

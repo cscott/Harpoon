@@ -8,6 +8,11 @@
 #include "MemBlock.h"
 #include "jni-private.h"
 #include "RTJconfig.h"
+#include "MemoryArea.h"
+
+#ifdef WITH_REALTIME_THREADS
+#include "threads.h"
+#endif
 
 inline void RTJ_preinit();
 inline void RTJ_init();
@@ -20,15 +25,11 @@ inline void* RTJ_malloc_ref(size_t size, const int line, const char *file);
 inline void* RTJ_malloc(size_t size);
 #endif
 
-void* RTJ_jmalloc(jsize size);
-
 inline struct MemBlock* MemBlock_currentMemBlock();
 inline void MemBlock_setCurrentMemBlock(JNIEnv* env, 
 					 jobject realtimeThread,
 					struct MemBlock* memBlock);
 #ifdef WITH_MEMORYAREA_TAGS
-static jfieldID memoryAreaID;
-static jobject heapMem;
 void RTJ_tagObject(JNIEnv* env, jobject obj);
 #endif
 

@@ -14,7 +14,6 @@ struct refCountAllocator* gc_info = NULL;
 
 inline void MemBlock_finalize(struct refCountAllocator* rc, void* obj) {
   struct MemBlock* memBlock = (struct MemBlock*)obj;
-  JNIEnv* env = FNI_GetJNIEnv();
 #ifdef RTJ_DEBUG
   printf("MemBlock_finalize(%p)\n", memBlock);
 #endif

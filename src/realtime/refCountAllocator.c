@@ -243,8 +243,8 @@ inline void RefCountAllocator_register_finalizer(void* obj,
 
 #define error_gc(str, foo) 0
 #define print_bitmap(str) 0
-#define COLLECT_NOPTR_STATS() 0
-#define COLLECT_LRGOBJ_STATS() 0
+#define COLLECT_NOPTR_STATS() {}
+#define COLLECT_LRGOBJ_STATS() {}
 
 #define traceFunc(obj) RefCountAllocator_oobj_trace(RefCountAllocator rc, obj)
 #define handleFunc(obj) RefCountAllocator_oobj_handle_reference(rc, obj)
