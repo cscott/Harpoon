@@ -138,7 +138,7 @@ void doanalysis() {
 	long long uid;
 	struct method* ptr=heap.methodlist;
 	sscanf(line,"RM: %lld",&uid);
-	doreturnmethodinference(&heap, uid);
+	doreturnmethodinference(&heap, uid, ht);
 	heap.methodlist=ptr->caller;
 	freemethod(&heap, ptr);
       }
@@ -184,10 +184,11 @@ void doanalysis() {
   }
 }
 
-void doreturnmethodinference(struct heap_state *heap, long long uid) {
+void doreturnmethodinference(struct heap_state *heap, long long uid, struct hashtable *ht) {
   struct localvars * lvptr, * lvptrn;
   struct method *m=heap->methodlist;
   lvptr=m->lv;
+  m->lv=NULL;
   while(lvptr!=NULL) {
     lvptrn=lvptr->next;
     
@@ -196,33 +197,44 @@ void doreturnmethodinference(struct heap_state *heap, long long uid) {
     
     lvptr=lvptrn;
   }
+
+
   /* Keep alive the return value */
   if (uid!=-1) {
     struct localvars * lv=(struct localvars *) calloc(1, sizeof(struct localvars));
-    lv->lvnumber=0;
+    lv->lvnumber=-1;
+    strcpy(lv->name,"$$return");
+    lv->linenumber=0;
+    strcpy(lv->sourcename,"$$NA");
     lv->age=pointerage+1;/*Lose to everything*/
-    lv->m=heap.methodlist;
+    lv->m=heap->methodlist;
     lv->object=gettable(ht,uid);
-    doaddlocal(&heap, lv);
-    doaddfield(&heap,lv->object);
-    addtolvlist(&heap, lv, heap.methodlist);
+    doaddlocal(heap, lv);
+    doaddfield(heap,lv->object);
+    addtolvlist(heap, lv, heap->methodlist);
+  }
 
-    doincrementalreachability(&heap,ht);
+  doincrementalreachability(heap,ht);
     
     //Lets show the roles!!!!
+  {
     int i=0;
-    {
-      struct genhashtable * dommap=builddominatormappings(&heap);
-      printf("Calling Context for method %s.%s%s:\n", heap.methodlist->classname, heap.methodlist->methodname, heap.methodlist->signature);
-      for(;i<heap.methodlist->numobjectargs;i++) {
-	if (heap.methodlist->params[i]!=NULL)
-	  printrole(dommap,heap.methodlist->params[i]);
-	else printf("Role: Null Object Parameter");
-      }
-      genfreekeyhashtable(dommap);
+    struct genhashtable * dommap=builddominatormappings(heap);
+    printf("Returning Context for method %s.%s%s:\n", heap->methodlist->classname, heap->methodlist->methodname, heap->methodlist->signature);
+    for(;i<heap->methodlist->numobjectargs;i++) {
+      if (heap->methodlist->params[i]!=NULL)
+	printrole(dommap,heap->methodlist->params[i]);
+      else printf("Role: Null Object Parameter");
     }
-    freemethodlist(&heap);
+    if (uid!=-1) {
+      printf("Return object:\n");
+      printrole(dommap, gettable(ht,uid));
+    }
+
+    genfreekeyhashtable(dommap);
   }
+  freemethodlist(heap);
+  
 }
 
 void doarrayassignment(struct heap_state *heap, struct heap_object * src, int index, struct heap_object *dst) {
@@ -933,7 +945,7 @@ char bufdata[bufsize];
 unsigned long buflength=0;
 unsigned long bufstart=0;
 
-char * copystr(char *buf) {
+char * copystr(const char *buf) {
   int i;
   for(i=0;;i++)
     if (buf[i]==0) {

@@ -113,7 +113,7 @@ void freemethod(struct heap_state *heap, struct method * m);
 void getfile();
 void doanalysis();
 char *getline();
-char * copystr(char *);
+char * copystr(const char *);
 void showmethodstack(struct heap_state * heap);
 void printmethod(struct method m);
 void dofieldassignment(struct heap_state *hs, struct heap_object * src, char * field, struct heap_object * dst);
@@ -136,4 +136,5 @@ void removereversearrayreference(struct arraylist * al);
 void removereversefieldreference(struct fieldlist * al);
 void freemethodlist(struct heap_state *hs);
 void calculatenumobjects(struct method * m);
+void doreturnmethodinference(struct heap_state *heap, long long uid, struct hashtable *ht);
 #endif
