@@ -22,7 +22,7 @@ import java.util.Map;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.24 2000-10-17 03:29:00 cananian Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.25 2000-10-20 23:30:56 cananian Exp $
  * @see QuadNoSSA
  * @see QuadSSI
  */
@@ -63,7 +63,7 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 	};
     }
 
-    private QuadWithTry(HMethod parent, Quad quads) {
+    protected QuadWithTry(HMethod parent, Quad quads) {
 	super(parent, quads);
 	this.typemap=null;
     }
@@ -85,7 +85,8 @@ public class QuadWithTry extends Code /* which extends HCode */ {
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
 	if (hcf.getCodeName().equals(codename)) return hcf;
 	if (hcf.getCodeName().equals(harpoon.IR.Bytecode.Code.codename)) {
-	    return new harpoon.ClassFile.SerializableCodeFactory() {
+	    return new CloneSynthesizer // synthesize codes for array.clone()
+		(new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
@@ -93,7 +94,7 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
-	    };
+	    });
 	} else if (hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSI.codename)) {
 	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
