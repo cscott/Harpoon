@@ -21,20 +21,19 @@ import java.util.Vector;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.1 1999-01-08 04:55:24 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.2 1999-01-11 04:44:56 cananian Exp $
  */
 
 public class CycleEq  {
     Hashtable equiv = new Hashtable();
     public CycleEq(HCode hc) {
-	Graph g = new Graph(hc);
+	Graph g = new ElementGraph(hc);
 	compute_cyeq(g);
-	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
-	    HCodeElement hce = (HCodeElement)e.nextElement();
-	    Node n = g.code2node(hce);
+	for (Enumeration e = g.primes(); e.hasMoreElements(); ) {
+	    Node n = (Node) e.nextElement();
 	    Set s = (Set) equiv.get(n.cd_class);
 	    if (s==null) { s = new Set(); equiv.put(n.cd_class, s); }
-	    s.union(hce);
+	    s.union(n.source());
 	}
 	// throw away all temp info now.
     }
@@ -91,12 +90,12 @@ public class CycleEq  {
 		Node d = (Node) ee.nextElement();
 		// "to n" is taken care of; make sure source is a descendant
 		if (d.dfs_num < n.dfs_num) continue; // not a descendant.
-		n.blist.delete(new Bracket(d, n));
+		n.blist.delete(d, n);
 	    }
 	    //  Also capping backedges:
-	    for (Enumeration ee=n.capping.elements(); ee.hasMoreElements(); ){
-		Node d = (Node) ee.nextElement();
-		n.blist.delete(new Bracket(d, n));
+	    for (NodeList nlp = n.capping; nlp!=null; nlp=nlp.next) {
+		Node d = nlp.n;
+		n.blist.delete(d, n);
 	    }
 	    //  for each backedge e from n to an ancestor of n, do
 	    for (Enumeration ee=n.backedges(); ee.hasMoreElements(); ){
@@ -113,12 +112,12 @@ public class CycleEq  {
 		n.blist.push(b);
 		recentSize.put(b, new Integer(-1));
 		// add edge to node.
-		b.ancestor.capping.union(n);
+		b.ancestor.capping = new NodeList(n, b.ancestor.capping);
 	    }
 
 	    // Compute Class(n)
 	    //  if n is a representative node
-	    if (n instanceof NodePrime) {
+	    if (n.isPrime()) {
 		Bracket tbn = n.blist.top();
 		int  sbn = n.blist.size();
 		if (sbn != ((Integer)recentSize.get(tbn)).intValue()) {
@@ -132,27 +131,109 @@ public class CycleEq  {
 	} // for each node
     } // procedure
     
-    // representation of node-split graph, with dedicated END->START edge.
-    static class Graph {
-	final StartNode start = new StartNode(this);
-	final EndNode end = new EndNode(this);
+    // ABSTRACT representation of Graphs and Nodes.
+    static abstract class Graph {
+	/** Entry node. */
+	public final Node start = _init_start();
+	/** Exit node. */
+	public final Node end = _init_end();
+	/** Constructor. */
+	public Graph() { }
+	/** Functions to initialize start and end. */
+	abstract Node _init_start();
+	abstract Node _init_end();
+	/** return the number of nodes in the graph. */
+	public abstract int size();
+	/** Get a particular node by its dfs order. */
+	public abstract Node byNum(int n);
+	/** Enumerate nodes in reverse depth-first search order. */
+	public Enumeration elements() {
+	    return new Enumeration() {
+		int i=size();
+		public boolean hasMoreElements() { return (i>0); }
+		public Object nextElement() {return byNum(--i);}
+	    };
+	}
+	/** Enumerated the primed nodes in reverse depth-first search order. */
+	public Enumeration primes() {
+	    FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
+		public boolean isElement(Object o) {
+		    return ((Node)o).isPrime();
+		}
+	    };
+	    return new FilterEnumerator(elements(), f);
+	}
+    }
+    static abstract class Node {
+	/** the depth-first search numbering of this node. */
+	int dfs_num;
+	/** list of brackets originating at this node. */
+	BracketList blist;
+	/** the lowest dfs_num reachable from this node. */
+	int hi;
+	/** the control-dependency class of this node. */
+	Object cd_class;
+	/** List of capping backedges from this node. */
+	NodeList capping = null;
+	/** Return the underlying object for this node. */
+	public abstract Object source();
+	/** Determine whether this node is prime. */
+	public abstract boolean isPrime();
+	/** Enumerate all adjacent nodes. */
+	public abstract Enumeration adj();
+	/** Enumerate all children of this node in depth-first traversal of
+	 *  the graph. */
+	public abstract Enumeration children();
+	/** Enumerate all adjacent nodes which are not parents or children of
+	 *  the node in a depth-first traversal (targets of backedges). */
+	public abstract Enumeration backedges();
+	/** Pretty-print this node. */
+	public String toString() { return "#"+dfs_num+": "+source(); }
 
-	Node newNode(HCodeElement hce) {
-	    Node n = new NodePrime(this, hce);
+	// ugly hack to keep track of list cell corresponding to a back
+	// edge.  The algorithm guys made me do this, honest.  I had no
+	// choice.
+	public final Hashtable be2lc = new Hashtable();
+    }
+    static class NodeList {
+	public final Node n;
+	public final NodeList next;
+	public NodeList(Node n, NodeList next) {
+	    this.n = n; this.next = next;
+	}
+	public static Enumeration elements(final NodeList nl) {
+	    return new Enumeration() {
+		NodeList nlp = nl;
+		public boolean hasMoreElements() { return nlp!=null; }
+		public Object nextElement() {
+		    Node n = nlp.n; nlp=nlp.next; return n;
+		}
+	    };
+	}
+    }
+
+    
+    // representation of node-split graph, with dedicated END->START edge.
+    static final class ElementGraph extends Graph{
+	Node _init_start() { return new EStartNode(); }
+	Node _init_end() { return new EEndNode(); }
+
+	ENode newNode(HCodeElement hce) {
+	    ENode n = new ENodePrime(hce);
 	    code2node.put(hce, n);
 	    return n;
 	}
-	HCodeElement node2code(Node n) {
+	HCodeElement node2code(ENode n) {
 	    return n.source;
 	}
-	Node code2node(HCodeElement hce) {
-	    Node n = (Node) code2node.get(hce);
+	ENode code2node(HCodeElement hce) {
+	    ENode n = (ENode) code2node.get(hce);
 	    return (n!=null)?n:newNode(hce);
 	}
 	final Hashtable code2node = new Hashtable();
 	final Set start_code = new Set();
 	final Set end_code = new Set();
-	Graph(HCode hc) {
+	ElementGraph(HCode hc) {
 	    start_code.union(hc.getRootElement());
 	    HCodeElement[] leaves = hc.getLeafElements();
 	    for (int i=0; i<leaves.length; i++)
@@ -162,15 +243,15 @@ public class CycleEq  {
 
 	// DFS ORDERING.
 	private void dfs_number() {
-	    dfs_number(this.start, new Set());
+	    dfs_number((ENode)start, new Set());
 	}
-	private void dfs_number(Node n, Set visited) {
+	private void dfs_number(ENode n, Set visited) {
 	    Util.assert(!visited.contains(n));
 	    visited.union(n); // kilroy was here.
 	    n.dfs_num = dfs_order.size();
 	    dfs_order.addElement(n);
 	    for (Enumeration e = n.adj(); e.hasMoreElements(); ) {
-		Node m = (Node) e.nextElement();
+		ENode m = (ENode) e.nextElement();
 		if (!visited.contains(m)) {
 		    n.treeedges.union(m);
 		    m.treeedges.union(n);
@@ -180,137 +261,122 @@ public class CycleEq  {
 	}
 	private final Vector dfs_order = new Vector();
 
-	// Enumerating graph elements in reverse depth-first order.
-	Enumeration elements() {
-	    return new Enumeration() {
-		int i=dfs_order.size();
-		public boolean hasMoreElements() { return (i>0); }
-		public Object nextElement() {return dfs_order.elementAt(--i);}
-	    };
-	}
-	int size() { return dfs_order.size(); }
-	Node byNum(int n) { return (Node) dfs_order.elementAt(n); }
-    }
-    // NODE TYPES
-    static abstract class Node { // abstract node types.
-	final Graph g;
-	final HCodeElement source;
-	public int dfs_num;
-	public Set treeedges = new Set();
-	public Object cd_class;
-	public BracketList blist;
-	public int hi;
-	public Set capping = new Set();
-	Node(Graph g, HCodeElement source) {
-	    this.g = g; this.source = source;
-	}
-	public abstract Enumeration adj();
-	public Enumeration children() {
-	    return new FilterEnumerator(adj(), new FilterEnumerator.Filter(){
-		public boolean isElement(Object o) {
-		    return (treeedges.contains((Node)o) &&  // a tree edge
-			    ((Node)o).dfs_num >= dfs_num);  // and a child.
-		}
-	    });
-	}
-	public Enumeration backedges() {
-	    return new FilterEnumerator(adj(), new FilterEnumerator.Filter(){
-		public boolean isElement(Object o) {
-		    return !treeedges.contains(o); // not a tree edge.
-		}
-	    });
-	}
+	public int size() { return dfs_order.size(); }
+	public Node byNum(int n) { return (Node) dfs_order.elementAt(n); }
 
-	// ugly hack to keep track of list cell corresponding to a back
-	// edge.  The algorithm guys made me do this, honest.  I had no
-	// choice.
-	public Hashtable be2lc = new Hashtable();
-	public String toString() { return "#"+dfs_num+": "+source; }
-	//public int hashCode() { return toString().hashCode(); }
-    }
-    static class StartNode extends Node {
-	StartNode(Graph g) { super(g, null); }
-	public Enumeration adj() {
-	    FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
-		public Object map(Object o) {
-		    return ((NodePrime)g.code2node((HCodeElement)o)).ni;
+	// NODE TYPES
+	abstract class ENode extends Node { // abstract node type.
+	    final HCodeElement source;
+	    Set treeedges = new Set();
+
+	    ENode(HCodeElement source) {
+		this.source = source;
+	    }
+	    public Object source() { return source; }
+	    public boolean isPrime() { return false; }
+	    public abstract Enumeration adj();
+	    public Enumeration children() {
+		return new FilterEnumerator(adj(),
+					    new FilterEnumerator.Filter(){
+		    public boolean isElement(Object o) {
+			return (treeedges.contains((ENode)o) && // a tree edge
+				((ENode)o).dfs_num >= dfs_num); // and a child.
+		    }
+		});
+	    }
+	    public Enumeration backedges() {
+		return new FilterEnumerator(adj(),
+					    new FilterEnumerator.Filter(){
+		    public boolean isElement(Object o) {
+			return !treeedges.contains(o); // not a tree edge.
+		    }
+		});
+	    }
+	}
+	class EStartNode extends ENode {
+	    EStartNode() { super(null); }
+	    public Enumeration adj() {
+		FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
+		    public Object map(Object o) {
+			return ((ENodePrime)code2node((HCodeElement)o)).ni;
 		}
 	    };
 	    return new CombineEnumerator(new Enumeration[] {
-		new FilterEnumerator(g.start_code.elements(), f),
-		new SingletonEnumerator(g.end) });
-	}
+		new FilterEnumerator(start_code.elements(), f),
+		new SingletonEnumerator(end) });
+	    }
 
-	public String toString() { return "#"+dfs_num+": start_node"; }
-    }
-    static class EndNode extends Node {
-	EndNode(Graph g) { super(g, null); }
-	public Enumeration adj() {
-	    FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
-		public Object map(Object o) {
-		    return ((NodePrime)g.code2node((HCodeElement)o)).no;
-		}
-	    };
-	    return new CombineEnumerator(new Enumeration[] {
-		new SingletonEnumerator(g.start),
-		new FilterEnumerator(g.end_code.elements(), f) });
+	    public String toString() { return "#"+dfs_num+": start_node"; }
 	}
-	public String toString() { return "#"+dfs_num+": end_node"; }
-    }
-    static class NodePrime extends Node { // represents a'
-	NodeIn  ni;
-	NodeOut no;
-	public Enumeration adj() { 
-	    return new ArrayEnumerator(new Node[] { no, ni });
-	}
-	NodePrime(Graph g, HCodeElement source) {
-	    super(g, source);
-	    this.ni = new NodeIn(g, source);
-	    this.no = new NodeOut(g, source);
-	}
-	public String toString() { return super.toString()+"'"; }
-    }
-    static class NodeIn extends Node { // represents a_i
-	public Enumeration adj() {
-	    Enumeration e = new ArrayEnumerator(((Edges)source).pred());
-	    FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
-		public Object map(Object o) {
-		    HCodeEdge hce = (HCodeEdge) o;
-		    return ((NodePrime)g.code2node(hce.from())).no;
-		}
-	    };
-	    e = new CombineEnumerator(new Enumeration[] {
-		new SingletonEnumerator(g.code2node(source)), // a' first.
-	        new FilterEnumerator(e, f) }); // then x_o where x in pred(a)
-	    if (!g.start_code.contains(source)) return e;
-	    else // link to start node, too.
+	class EEndNode extends ENode {
+	    EEndNode() { super(null); }
+	    public Enumeration adj() {
+		FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
+		    public Object map(Object o) {
+			return ((ENodePrime)code2node((HCodeElement)o)).no;
+		    }
+		};
 		return new CombineEnumerator(new Enumeration[] {
-		    e, new SingletonEnumerator(g.start) });
+		    new SingletonEnumerator(start),
+		    new FilterEnumerator(end_code.elements(), f) });
+	    }
+	    public String toString() { return "#"+dfs_num+": end_node"; }
 	}
-	NodeIn(Graph g, HCodeElement source) { super(g, source); }
-	public String toString() { return super.toString()+"_i"; }
-    }
-    static class NodeOut extends Node { // represents a_o
-	public Enumeration adj() {
-	    Enumeration e = new ArrayEnumerator(((Edges)source).succ());
-	    FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
-		public Object map(Object o) {
-		    HCodeEdge hce = (HCodeEdge) o;
-		    return ((NodePrime)g.code2node(hce.to())).ni;
-		}
-	    };
-	    e = new CombineEnumerator(new Enumeration[] {
-		new SingletonEnumerator(g.code2node(source)), // a' first.
-	        new FilterEnumerator(e, f) }); // then x_i where x in succ(a)
-	    if (!g.end_code.contains(source)) return e;
-	    else // link to end node, if necessary.
-		return new CombineEnumerator(new Enumeration[] {
-		    e, new SingletonEnumerator(g.end) });
+	class ENodePrime extends ENode { // represents a'
+	    ENodeIn  ni;
+	    ENodeOut no;
+	    public Enumeration adj() { 
+		return new ArrayEnumerator(new Node[] { no, ni });
+	    }
+	    ENodePrime(HCodeElement source) {
+		super(source);
+		this.ni = new ENodeIn(source);
+		this.no = new ENodeOut(source);
+	    }
+	    public boolean isPrime() { return true; }
+	    public String toString() { return super.toString()+"'"; }
 	}
-
-	NodeOut(Graph g, HCodeElement source) { super(g, source); }
-	public String toString() { return super.toString()+"_o"; }
-    }
+	class ENodeIn extends ENode { // represents a_i
+	    public Enumeration adj() {
+		Enumeration e = new ArrayEnumerator(((Edges)source).pred());
+		FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
+		    public Object map(Object o) {
+			HCodeEdge hce = (HCodeEdge) o;
+			return ((ENodePrime)code2node(hce.from())).no;
+		    }
+		};
+		e = new CombineEnumerator(new Enumeration[] {
+		    new SingletonEnumerator(code2node(source)), // a' first.
+		    new FilterEnumerator(e, f) });//then x_o where x in pred(a)
+		if (!start_code.contains(source)) return e;
+		else // link to start node, too.
+		    return new CombineEnumerator(new Enumeration[] {
+			e, new SingletonEnumerator(start) });
+	    }
+	    ENodeIn(HCodeElement source) { super(source); }
+	    public String toString() { return super.toString()+"_i"; }
+	}
+	class ENodeOut extends ENode { // represents a_o
+	    public Enumeration adj() {
+		Enumeration e = new ArrayEnumerator(((Edges)source).succ());
+		FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
+		    public Object map(Object o) {
+			HCodeEdge hce = (HCodeEdge) o;
+			return ((ENodePrime)code2node(hce.to())).ni;
+		    }
+		};
+		e = new CombineEnumerator(new Enumeration[] {
+		    new SingletonEnumerator(code2node(source)), // a' first.
+		    new FilterEnumerator(e, f) });//then x_i where x in succ(a)
+		if (!end_code.contains(source)) return e;
+		else // link to end node, if necessary.
+		    return new CombineEnumerator(new Enumeration[] {
+			e, new SingletonEnumerator(end) });
+	    }
+	    ENodeOut(HCodeElement source) { super(source); }
+	    public String toString() { return super.toString()+"_o"; }
+	}
+    } // end ElementGraph
     // ----------------
     // Brackets.
     static class Bracket {
@@ -357,8 +423,11 @@ public class CycleEq  {
 	    size++;
 	}
 	public Bracket top() { return first.b; }
-	public void delete(Bracket e) {
-	    ListCell lc = (ListCell) e.descendant.be2lc.get(e.ancestor);
+	public void delete(Node desc, Node ancs) {
+	    ListCell lc = (ListCell) desc.be2lc.get(ancs);
+	    delete(lc);
+	}
+	private void delete(ListCell lc) {
 	    if (first==lc) first=lc.next;
 	    else lc.prev.next = lc.next;
 	    if (last==lc) last = lc.prev;
