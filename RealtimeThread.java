@@ -161,10 +161,12 @@ public class RealtimeThread extends Thread implements Schedulable {
     }
 
     public boolean addToFeasibility() {
-	if(currentScheduler != null)
+	if(currentScheduler != null) {
 	    currentScheduler.addToFeasibility(this);
-
-	return currentScheduler.isFeasible();
+	    return currentScheduler.isFeasible();
+	} else {
+	    return false;
+	}
     }
     
     public static RealtimeThread currentRealtimeThread()
