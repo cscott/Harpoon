@@ -16,9 +16,10 @@ import java.util.Collections;
  * <code>ActionRepository</code> merges together the <code>alpha</code> and
  <code>pi</code> sets from the original paper of Martin Rinard & John Whaley.
  More specifically, an <code>ActionRepository</code> maintains information
- about the actions executed by the analyzed part of the program and about the
+ about the actions executed by the analyzed part of the program (that's the
+ meaning of alpha in the original paper) and about the
  ordering relation between these actions and the threads that are launched
- by the analyzed part.<br>
+ by the analyzed part (the pi structure).<br>
  Currently, only two kinds of actions are supported:
  <ul>
  <li><code>ld</code> - loading of a node by reading an outside edges;
@@ -30,12 +31,13 @@ import java.util.Collections;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.10 2000-02-25 01:06:12 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.11 2000-02-29 00:50:11 salcianu Exp $
  */
 public class ActionRepository {
     
-    /** Fake thread node used as the author thread for the actions done
-	by the main thread of the analyzed procedure, not by the one of
+    /** Fake thread node that stands for the main thread of the analyzed
+	scope. This is used as the author thread for the actions done
+	by the main thread of the analyzed procedure/scope, not by one of
 	the threads it is starting. */
     public static final PANode THIS_THREAD = new PANode(PANode.INSIDE);
 
@@ -53,33 +55,80 @@ public class ActionRepository {
     // Relation<PANode,PALoad>
     Relation pi_ld;
 
-    /** Adds a load action in parallel with all the 
-	<code>active_threads</code>. */
-    private void add_ld(PALoad load, Set active_threads){
+    // Relation<PANode,PANode>;   n -> nt (nt does a sync on n)
+    Relation  alpha_sync;
+    // Hashtable<PANode,Relation<PANode,PANode>>
+    // nt2 -> n -> nt1 (nt1 does a sync on n in // with the thread nt2)
+    Hashtable pi_sync;
+
+
+    // A. The most primitive operations on the action repository, they are
+    // designed to be used internally; the usage pattern of the user has
+    // been optimized into some specialized, high-level methods.
+
+    // A.1. Operations on alpha, the repository of actions
+    
+    // Adds a "ld" action.
+    private final void alpha_add_ld(PALoad load){
 	alpha_ld.add(load);
+    }
+
+    // Adds a "sync" action.
+    private final void alpha_add_sync(PANode n, PANode nt){
+	alpha_sync.add(n,nt);
+    }
+
+    // A.2. Operations on pi, the relation of parallelism
+    //  between actions and threads
+
+    // Adds a parallel relation between a "ld" action and a thread. 
+    private final void pi_add_ld(PALoad load, PANode nt){
+	pi_ld.add(nt,load);
+    }
+
+    // Adds a parallel relation between a "sync" action and a thread.
+    private final void pi_add_sync(PANode n, PANode nt, PANode nt2){
+	Relation rel = (Relation) pi_sync.get(nt2);
+	if(rel == null){
+	    rel = new Relation();
+	    pi_sync.put(nt2,rel);
+	}
+	rel.add(n,nt);
+    }
+
+    // B. User level function: usually when a user introduces an action,
+    // he also gives a set of threads that are running in parallel: in a
+    // single method, we update alpha and pi.
+
+    /** Adds a "ld" action in parallel with all the 
+	<code>active_threads</code>. */
+    private final void add_ld(PALoad load, Set active_threads){
+	alpha_add_ld(load);
 
 	if(active_threads == null) return;
 	
 	Iterator it = active_threads.iterator();
 	while(it.hasNext())
-	    pi_ld.add((PANode)it.next(), load);
+	    pi_add_ld(load, (PANode)it.next());
     }
 
     /** Adds a <code>ld</code> action.
 	The thread <code>nt</code> read the outside edge from <code>n1</code>
 	to <code>n2</code> through field <code>f</code>, in parallel with
 	all the threads from <code>active_threads</code>. */
-    public void add_ld(PANode n1, String f, PANode n2, PANode nt,
+    public final void add_ld(PANode n1, String f, PANode n2, PANode nt,
 		       Set active_threads){
 	add_ld(new PALoad(n1,f,n2,nt),active_threads);
     }
 
-    /** Convenient function.
+    /** Convenient function used in the intra-procedural analysis,
+	in the rule for a load operation.
 	It iterates over <code>set_n1</code>, repeatedly calling
 	<code>add_ld(n1,f,n2,nt,active_threads)</code> for each
 	<code>n1</code> in <code>set_n1</code>. */
-    public void add_ld(Set set_n1, String f, PANode n2, PANode nt,
+    public final void add_ld(Set set_n1, String f, PANode n2, PANode nt,
 		       Set active_threads){
+	if(set_n1.isEmpty()) return;
 	Iterator it_n1 = set_n1.iterator();
 	while(it_n1.hasNext()){
 	    PANode n1 = (PANode) it_n1.next();
@@ -87,19 +136,15 @@ public class ActionRepository {
 	}
     }
 
-    /** Convenient function.
+    /** Convenient function used by the inter-procedural and
+	inter-thread analysis (when a thread node can be mapped to
+	a set of nodes).
 	It iterates over <code>set_nt</code>, repeatedly calling
 	<code>add_ld(set_n1,f,n2,nt,active_threads)</code> for each
 	<code>nt</code> in <code>set_nt</code>. */
-    public void add_ld(Set set_n1, String f, PANode n2, Set set_nt,
+    public final void add_ld(Set set_n1, String f, PANode n2, Set set_nt,
 			Set active_threads){
-
-	//System.out.println("set_n1 = " + set_n1);
-	//System.out.println("f      = " + f);
-	//System.out.println("n2     = " + n2);
-	//System.out.println("set_nt = " + set_nt);
-	//System.out.println("active_threads = " + active_threads);
-
+	if(set_nt.isEmpty()) return;
 	Iterator it_nt = set_nt.iterator();
 	while(it_nt.hasNext()){
 	    PANode nt = (PANode) it_nt.next();
@@ -108,17 +153,11 @@ public class ActionRepository {
     }
 
 
-    // Relation<PANode,PANode>;   n -> nt (nt does a sync on n)
-    Relation  alpha_sync;
-    // Hashtable<PANode,Relation<PANode,PANode>>
-    // nt2 -> n -> nt1 (nt1 does a sync on n in // with the thread nt2)
-    Hashtable pi_sync;
-    
     /** Adds a <code>sync</code> action.
 	The thread <code>nt</code> synchronized on <code>n</code> in
 	parallel with all the threads from <code>active_threads</code>. */
-    public void add_sync(PANode n, PANode nt, Set active_threads){
-	alpha_sync.add(n,nt);
+    public final void add_sync(PANode n, PANode nt, Set active_threads){
+	alpha_add_sync(n,nt);
 	
 	if((active_threads == null) || active_threads.isEmpty()) return;
 
@@ -136,28 +175,19 @@ public class ActionRepository {
 	Iterator it = active_threads.iterator();
 	while(it.hasNext()){
 	    PANode nt2 = (PANode) it.next();
-	    
-	    Relation rel = (Relation) pi_sync.get(nt2);
-	    if(rel == null){
-		rel = new Relation();
-		pi_sync.put(nt2,rel);
-	    }
-
-	    rel.add(n,nt);
+	    pi_add_sync(n,nt,nt2);
 	}
     }
 
-    /** Convenient function.
+    /** Convenient function used in the inter-thread and the inter-procedural
+	analysis when a (thread) node can be mapped to a set of nodes.
 	It iterates over <code>set_n</code> and <code>set_nt</code>,
 	repeatedly calling <code>add_sync(n,nt,active_threads)</code> for each
 	<code>n</code> in <code>set_n</code> and each 
 	<code>nt</code> in <code>set_nt</code>. */ 
-    public void add_sync(Set set_n, Set set_nt, Set active_threads){
-
-	//System.out.println("set_n  = " + set_n);
-	//System.out.println("set_nt = " + set_nt);
-	//System.out.println("active_threads = " + active_threads);
-
+    public final void add_sync(Set set_n, Set set_nt, Set active_threads){
+	if(set_n.isEmpty() || set_nt.isEmpty() || active_threads.isEmpty())
+	    return;
 	Iterator it_n = set_n.iterator();
 	while(it_n.hasNext()){
 	    PANode n = (PANode) it_n.next();
@@ -169,8 +199,11 @@ public class ActionRepository {
 	}
     }
 
+    // END of the "add" functions
+
+
     /** Checks the equality of two <code>ActionRepository</code>s. */
-    public boolean equals(Object o){
+    public final boolean equals(Object o){
 	ActionRepository ar2 = (ActionRepository)o;
 	if (this == ar2) return true;
 	return
@@ -183,7 +216,7 @@ public class ActionRepository {
     /** Adds the information about actions and action-thread ordering from
 	<code>ar2</code> to <code>this</code> action repository.
 	This method is called in the control-flow join points. */
-    public void join(ActionRepository ar2){
+    public final void join(ActionRepository ar2){
 	// these first three are really easy
 	alpha_ld.addAll(ar2.alpha_ld);
 	pi_ld.union(ar2.pi_ld);
@@ -205,7 +238,7 @@ public class ActionRepository {
     /** Visits all the actions from this repository.
 	It calls <code>visitor.visit_ld</code> on the <code>ld</code> actions
 	and <code>visitor.visit_sync</code> on the <code>sync</code>. */
-    public void forAllActions(ActionVisitor visitor){
+    public final void forAllActions(ActionVisitor visitor){
 	// visit all the "ld" actions
 	Iterator it_ld = alpha_ld.iterator();
 	while(it_ld.hasNext()){
@@ -230,7 +263,7 @@ public class ActionRepository {
 	It calls <code>visitor.visit_par_ld</code> or 
 	<code>visitor.visit_par_sync</code> according to the type of the
 	<code>action</code>. */
-    public void forAllParActions(ParActionVisitor visitor){
+    public final void forAllParActions(ParActionVisitor visitor){
 	// visit all the "ld" || nt elements
 	Enumeration enum_nt2 = pi_ld.keys();
 	while(enum_nt2.hasMoreElements()){
@@ -261,14 +294,14 @@ public class ActionRepository {
 
     /** Returns an iterator over the set of loads that are performed in 
 	parallel with an <code>nt</code> thread. <code>O(1)</code> time. */
-    public Iterator parallelLoads(PANode nt){
+    public final Iterator parallelLoads(PANode nt){
 	return pi_ld.getValues(nt);
     }
 
 
     /** Removes all the information related to edges containing nodes from
 	<code>nodes</code>. */
-    public void removeNodes(final Set nodes){
+    public final void removeNodes(final Set nodes){
 
 	// clean alpha_ld
 	Iterator it_paload = alpha_ld.iterator();
@@ -312,7 +345,7 @@ public class ActionRepository {
     /** Removes all the information related to <code>ld</code> actions
 	using the edges from <code>edges</code>.
 	<code>edges</code> is supposed to be a set of <code>PAEdge</code>s. */
-    public void removeEdges(final Set edges){
+    public final void removeEdges(final Set edges){
 
 	// clean alpha_ld
 	Iterator it_paload = alpha_ld.iterator();
@@ -337,7 +370,7 @@ public class ActionRepository {
 	on it at the same time (i.e. they can simultaneously access it);
 	in this case, the synchonizations are really necessary and should
 	NOT be removed. */
-    public boolean independent(PANode n){
+    public final boolean independent(PANode n){
 	// Goes through all the threads nt2 that are synchronizing on n
 	Iterator it_threads = alpha_sync.getValues(n);
 	while(it_threads.hasNext()){
@@ -363,46 +396,44 @@ public class ActionRepository {
 	this.pi_sync    = pi_sync;
     }
 
-
-    // TODO: different internal function for add_alpha and add_pi
-    // (so that we don't rely on Colections.singleton) You will
-    // understand
-
     /** Produces an <code>ActionRepository</code> containing only the \
 	nodes that could be reached from the outside.
 	(i.e. via parameters,
 	class nodes, normally or exceptionally returned nodes or the
 	started thread nodes) */
-    private ActionRepository keepTheEssential(final Set remaining_nodes){
-	final ActionRepository _ar = new ActionRepository();
+    private final ActionRepository keepTheEssential(final Set remaining_nodes){
+	final ActionRepository ar2 = new ActionRepository();
 
+	// select only the actions referring only to remaining nodes
 	forAllActions(new ActionVisitor(){
 		public void visit_ld(PALoad load){
 		    if(load.isGood(remaining_nodes))
-			_ar.add_ld(load,Collections.EMPTY_SET);
+			ar2.alpha_add_ld(load);
 		}
 		public void visit_sync(PANode n, PANode nt){
 		    if(remaining_nodes.contains(n) &&
 		       remaining_nodes.contains(nt))
-			_ar.add_sync(n,nt,Collections.EMPTY_SET);
+			ar2.alpha_add_sync(n,nt);
 		}
 	    });
-	
+
+	// select only the parallel action info referring only to
+	// remaining nodes
 	forAllParActions(new ParActionVisitor(){
 		public void visit_par_ld(PALoad load, PANode nt2){
 		    if(load.isGood(remaining_nodes) &&
 		       remaining_nodes.contains(nt2))
-			_ar.add_ld(load,Collections.singleton(nt2));
+			ar2.pi_add_ld(load,nt2);
 		}
 		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
 		    if(remaining_nodes.contains(n) &&
 		       remaining_nodes.contains(nt1) &&
 		       remaining_nodes.contains(nt2))
-			_ar.add_sync(n,nt1,Collections.singleton(nt2));
+			ar2.pi_add_sync(n,nt1,nt2);
 		}
 	    });
 
-	return _ar;
+	return ar2;
     }
 
 
@@ -410,7 +441,7 @@ public class ActionRepository {
     /** Produce a copy of <code>this</code> object. 
 	The new object is totally independent from the old one: you can
 	add/remove actions to/from it without affecting the original. */ 
-    public Object clone(){
+    public final Object clone(){
 	HashSet  new_alpha_ld   = (HashSet) alpha_ld.clone();
 	Relation new_pi_ld      = (Relation) pi_ld.clone();
 	Relation new_alpha_sync = (Relation) alpha_sync.clone();
@@ -431,7 +462,7 @@ public class ActionRepository {
 
     /** Pretty-printer for debug purposes. 
 	<code>ar1.equals(ar2) <==> ar1.toString().equals(ar2.toString()).</code>*/
-    public String toString(){
+    public final String toString(){
 	StringBuffer buffer = new StringBuffer();
 	final Set strings = new HashSet();
 
