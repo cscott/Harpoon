@@ -3,6 +3,7 @@ MAINTAINERCLEANFILES = Makefile.in Runtime.a
 INCLUDES = @IFLAGS@
 SUBDIRS = jni java.io java.lang java.util.zip
 LDADD = jni/libjni.la ../Java.a libflexc.la
+LDADD += $(foreach lib,@GC_LIB@,../$(lib))
 
 bin_PROGRAMS = startup dump-fixup test-lookup
 
