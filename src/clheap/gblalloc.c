@@ -14,7 +14,9 @@
 /* allocate but don't update statistics: this is used in various places
  * when REALLY_DO_ALLOC is not defined. */
 void *NGBL_malloc_noupdate(size_t size) {
-#ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_PRECISE_GC
+  return precise_malloc(size);
+#elif defined(BDW_CONSERVATIVE_GC)
   return GC_malloc(size);
 #else
   return malloc(size);
@@ -23,7 +25,9 @@ void *NGBL_malloc_noupdate(size_t size) {
 /* allocate on the global heap. */
 void *NGBL_malloc(size_t size) {
   UPDATE_NIFTY_STATS(gbl, size);
-#ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_PRECISE_GC
+  return precise_malloc(size);
+#elif defined(BDW_CONSERVATIVE_GC)
   return GC_malloc(size);
 #else
   return malloc(size);
@@ -32,7 +36,9 @@ void *NGBL_malloc(size_t size) {
 /* allocate an object with no internal pointers on the global heap. */
 void *NGBL_malloc_atomic(size_t size) {
   UPDATE_NIFTY_STATS(gbl, size);
-#ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_PRECISE_GC
+  return precise_malloc(size);
+#elif defined(BDW_CONSERVATIVE_GC)
   return GC_malloc_atomic(size);
 #else
   return malloc(size);

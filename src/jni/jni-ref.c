@@ -66,7 +66,9 @@ jobject FNI_NewGlobalRef(JNIEnv * env, jobject obj) {
   assert(obj!=NULL);
   /* malloc away... */
   result = 
-#ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_PRECISE_GC
+    malloc
+#elif defined(BDW_CONSERVATIVE_GC)
     GC_malloc_uncollectable
 #else /* okay, use system-default malloc */
     malloc

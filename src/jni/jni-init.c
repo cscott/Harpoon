@@ -28,7 +28,9 @@ static JNIEnv * FNI_CreateThreadState(void) {
   env->localrefs_stack =
   env->localrefs_next =
   env->localrefs_end =
-#ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_PRECISE_GC
+    malloc
+#elif defined(BDW_CONSERVATIVE_GC)
     GC_malloc_uncollectable /* local ref stack has heap pointers */
 #else /* okay, use system-default malloc */
     malloc

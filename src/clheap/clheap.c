@@ -45,7 +45,9 @@ clheap_t clheap_create() {
   INCREMENT_STATS(thread_heaps_created, 1);
   clh = (clheap_t) malloc(sizeof(*clh));
   clh->heap_start =
-#ifdef BDW_CONSERVATIVE_GC
+#ifdef WITH_PRECISE_GC
+    malloc
+#elif defined(BDW_CONSERVATIVE_GC)
     GC_malloc_uncollectable
 #else
     malloc

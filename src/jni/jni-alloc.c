@@ -10,6 +10,9 @@
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
 #endif
+#ifdef WITH_PRECISE_GC
+#include "jni-gc.h"
+#endif
 #ifdef WITH_CLUSTERED_HEAPS
 #include "../clheap/alloc.h"
 #endif
@@ -18,6 +21,8 @@
 void *FNI_RawAlloc(JNIEnv *env, jsize length) {
 #if defined(WITH_CLUSTERED_HEAPS)
   return NGBL_malloc(length);
+#elif defined(WITH_PRECISE_GC)
+  return precise_malloc(length);
 #elif defined(BDW_CONSERVATIVE_GC)
   return GC_malloc(length);
 #else /* okay, use system-default... */
