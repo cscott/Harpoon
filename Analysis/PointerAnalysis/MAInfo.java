@@ -67,7 +67,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.33 2000-07-15 21:17:22 bdemsky Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.34 2000-07-15 21:34:35 bdemsky Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -980,7 +980,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		for(Iterator throwit=throwset.iterator();throwit.hasNext();)
 		    Quad.addEdge((Quad)throwit.next(),0,throwphi,edge++);
 		
-		Quad.addEdge(throwphi,0,cs.next(0),cs.nextEdge(0).which_pred());
+		Quad.addEdge(throwphi,0,cs.next(1),cs.nextEdge(1).which_pred());
 	    }
 
 	    public void visit(Quad q) {
