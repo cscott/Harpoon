@@ -17,7 +17,7 @@ import java.util.List;
  * compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Spec.java,v 1.1.2.6 1999-06-25 12:13:57 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.7 1999-06-25 16:39:53 cananian Exp $
  */
 public class Spec  {
 
@@ -586,7 +586,14 @@ public class Spec  {
     */
     public static abstract class Detail { }
 
-    /** TODO: Not sure what this does. */
+    /** Extension of <code>Spec.Detail</code> that requests an extra
+     *  temporary register for the use of the action clause.  For example,
+     *  if multiplying two 32-bit registers generates a 64-bit result on
+     *  the target architecture, you might need to request an extra
+     *  <code>Temp</code> to have a place to put the high word of the
+     *  result (before you throw it away). The <code>DetailExtra</code>
+     *  element contains a list of identifiers naming the working temps
+     *  that you are requesting. */
     public static class DetailExtra extends Detail {
 	public final IdList extras;
 	public DetailExtra(IdList extras) {
