@@ -6,8 +6,12 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-/** <code>MemoryArea</code>
- *
+/** <code>MemoryArea</code> represents an area of memory from which objects
+ *  can be allocated.  Use the "enter" method to pass in a Runnable which 
+ *  will run in this MemoryArea.  You can also .newinstance and .newArray
+ *  objects out of this MemoryArea and pass this MemoryArea to the constructor
+ *  of a RealtimeThread, indicating that the thread is to be run in the new
+ *  MemoryArea.  See the RTJ specification for more details.
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
@@ -92,8 +96,35 @@ public abstract class MemoryArea {
 
     public void enter(Runnable logic) {
 	RealtimeThread current = RealtimeThread.currentRealtimeThread();
+	MemoryArea oldMem = current.getMemoryArea();
 	current.enterFromMemArea(this);
-	logic.run();
+	try {
+	    logic.run();
+	} catch (Exception e) {
+	    try {
+		e.memoryArea = getMemoryArea(e);
+		oldMem.checkAccess(e);
+	    } catch (Exception checkException) {
+		current.exit();
+		throw new ThrowBoundaryError("An exception occurred that was "
+					     +"allocated in an inner scope that "
+					     +"just exited.");
+	    }
+	    current.exit();
+	    throw new ThrowBoundaryError(e.toString());
+	} catch (Error e) {
+	    try {
+		e.memoryArea = getMemoryArea(e);
+		oldMem.checkAccess(e);
+	    } catch (Exception checkException) {
+		current.exit();
+		throw new ThrowBoundaryError("An exception occurred that was "
+					     +"allocated in an inner scope that "
+					     +"just exited.");
+	    }
+	    current.exit();
+	    throw e;
+	}
 	current.exit();
     }
 

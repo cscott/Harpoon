@@ -25,7 +25,7 @@ public class LTMemory extends ScopedMemory {
 	initNative(size, reuse = false);
     }
     
-    /** An alternate constructor for CTMemory that allows you to specify whether
+    /** An alternate constructor for LTMemory that allows you to specify whether
 	you want to reuse the memory associated with the scope on reentry. */
 
     public LTMemory(long size, boolean reuse) {
@@ -33,10 +33,10 @@ public class LTMemory extends ScopedMemory {
 	initNative(size, this.reuse = reuse);
     }
     
-    /** Returns a representation of this CTMemory object */
+    /** Returns a representation of this LTMemory object */
     
     public String toString() {
-	return "CTMemory: " + super.toString();
+	return "LTMemory: " + super.toString();
     }
 
     /** Shadow the method called by MemoryArea, we want to specify
