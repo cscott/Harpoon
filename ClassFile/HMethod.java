@@ -17,7 +17,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.21 1998-09-29 17:00:33 cananian Exp $
+ * @version $Id: HMethod.java,v 1.22 1998-10-07 01:25:02 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -122,7 +122,8 @@ public class HMethod implements HMember {
 
   /**
    * Returns the Java language modifiers for the method represented by this
-   * <code>HMethod</code> object, as an integer.  The <code>Modifier</code>
+   * <code>HMethod</code> object, as an integer.  The 
+   * <code>java.lang.reflect.Modifier</code>
    * class should be used to decode the modifiers.
    * @see java.lang.reflect.Modifier
    */
