@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.72 1999-10-15 01:21:23 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.73 1999-10-15 02:40:53 cananian Exp $
  */
 %%
 
@@ -772,7 +772,7 @@ BINOP<f>(MUL, j, k) = i %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit2(    ROOT, "bl ___mulsf", new Temp[] {r0,r1}, new Temp[] {r0,r1});
+    emit2(    ROOT, "bl ___mulsf3", new Temp[] {r0,r1}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
