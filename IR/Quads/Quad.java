@@ -24,7 +24,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.22 1999-08-04 06:30:58 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.23 1999-09-03 15:35:10 pnkfelix Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -102,7 +102,8 @@ public abstract class Quad
     public Temp[] use() { return new Temp[0]; }
     /** Return all the Temps defined by this Quad. */
     public Temp[] def() { return new Temp[0]; }
-
+    public Collection useC() { return Arrays.asList(use()); }
+    public Collection defC() { return Arrays.asList(def()); }
     /*----------------------------------------------------------*/
     /** Array factory: returns <code>Quad[]</code>s */
     public static final ArrayFactory arrayFactory =

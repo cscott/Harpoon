@@ -25,7 +25,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.13 1999-08-05 19:29:00 duncan Exp $
+ * @version $Id: Tree.java,v 1.1.2.14 1999-09-03 15:35:11 pnkfelix Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
@@ -76,6 +76,8 @@ public abstract class Tree
 	Set useSet = useSet();
 	return (Temp[])useSet.toArray(new Temp[0]); 
     }
+    public Collection useC() { return Arrays.asList(use()); }
+    public Collection defC() { return Arrays.asList(def()); }
 
     abstract protected Set defSet();
     abstract protected Set useSet();   
