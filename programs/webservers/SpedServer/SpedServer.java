@@ -16,7 +16,7 @@ import harpoon.Analysis.ContBuilder.Scheduler;
  * Runs a Single Process Event Driven web server
  *
  * @author P.Govereau govereau@mit.edu
- * @version $Id: SpedServer.java,v 1.2 2000-03-22 09:09:13 govereau Exp $
+ * @version $Id: SpedServer.java,v 1.3 2000-03-24 02:03:28 govereau Exp $
  */
 public class SpedServer
     extends VoidContinuation
@@ -84,7 +84,7 @@ public class SpedServer
 			Response res = new Response((Socket)result);
 			res.start_Async();			
 
-			ObjectContinuation oc = env.listenSocket.acceptAsync();			
+			ObjectContinuation oc = env.listenSocket.acceptAsync();
 			oc.setNext(this);
 		}
 		catch (Throwable ex) {

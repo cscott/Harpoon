@@ -22,7 +22,7 @@ import harpoon.Analysis.ContBuilder.Scheduler;
  * <code>Response</code> handles http responses for SpedServer
  *
  * @author P.Govereau govereau@mit.edu
- * @version $Id: Response.java,v 1.2 2000-03-22 09:09:13 govereau Exp $
+ * @version $Id: Response.java,v 1.3 2000-03-24 02:03:28 govereau Exp $
  */
 public class Response extends Thread {
 
@@ -162,6 +162,7 @@ public class Response extends Thread {
 				ic.setNext(this);
 			} catch (Throwable ex) {
 				System.out.println(ex);
+				try { clientSocket.close(); } catch (Exception e) {}
 			}
 		}
 		
@@ -172,9 +173,9 @@ public class Response extends Thread {
 			try {
 				length = result;
 				if (length == -1) {
-					clientSocket.close();
 					env.in.close();
 					env.out.close();
+					clientSocket.close();
 					in.close();
 				} else {
 					env.out.write(buffer, 0, length);
