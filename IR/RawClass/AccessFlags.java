@@ -8,7 +8,7 @@ package harpoon.IR.RawClass;
  * permissions and properties of a field or method.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AccessFlags.java,v 1.2 2002-02-25 21:05:22 cananian Exp $
+ * @version $Id: AccessFlags.java,v 1.2.2.1 2002-03-27 21:29:19 cananian Exp $
  * @see "The Java Virtual Machine Specification"
  * @see ClassFile
  * @see FieldInfo
@@ -39,6 +39,8 @@ public class AccessFlags {
   static final int ACC_INTERFACE=0x200;
   /** No implementation is provided. */
   static final int ACC_ABSTRACT =0x400;
+  /** Floating-point mode is FP-strict. */
+  static final int ACC_STRICT   =0x800;
 
   public int access_flags;
 
@@ -67,12 +69,13 @@ public class AccessFlags {
   public boolean isAbstract() { return (access_flags & ACC_ABSTRACT) != 0; }
   public boolean isSuper()    { return (access_flags & ACC_SUPER) != 0; }
   public boolean isInterface(){ return (access_flags & ACC_INTERFACE) != 0; }
+  public boolean isStrict()   { return (access_flags & ACC_STRICT) != 0; }
 
   // ClassFile uses:  PUBLIC, FINAL, SUPER, INTERFACE, ABSTRACT.
   // FieldInfo uses:  PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, 
   //                  VOLATILE, TRANSIENT.
   // MethodInfo uses: PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL,
-  //                  SYNCHRONIZED, NATIVE, ABSTRACT.
+  //                  SYNCHRONIZED, NATIVE, ABSTRACT, STRICT.
 
   /**
    * Returns a string with the access flags in canonical order.
@@ -90,6 +93,7 @@ public class AccessFlags {
     if (isVolatile()) r.append("volatile ");
     if (isSynchronized()) r.append("synchronized ");
     if (isNative()) r.append("native ");
+    if (isStrict()) r.append("strictfp ");
     return r.toString().trim();
   }
 }
