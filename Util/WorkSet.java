@@ -12,11 +12,12 @@ import java.util.Iterator;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.1.2.5 1999-06-15 19:05:25 sportbilly Exp $
+ * @version $Id: WorkSet.java,v 1.1.2.6 2000-01-17 09:42:47 cananian Exp $
  */
 public class WorkSet extends java.util.AbstractSet implements Worklist{
     private /*final*/ HashMap hm;
-    private EntryList el = EntryList.init(); // header and footer nodes.
+    private EntryList listhead = EntryList.init(); // header and footer nodes.
+    private EntryList listfoot = listhead.next;
     private final boolean debug=false; // turn on consistency checks.
     
     /** Creates a new, empty <code>WorkSet</code> with a default capacity
@@ -45,7 +46,7 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
     /** Returns the last element added to the WorkSet, in constant-time. */
     public Object peek() {
 	if (isEmpty()) throw new java.util.NoSuchElementException();
-	return el.next.o;
+	return listhead.next.o;
     }
 
     /** Removes some item from this and return it (Worklist adaptor
@@ -65,9 +66,9 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
     /** Return and remove the last element added to the WorkSet. */
     public Object pop() {
 	if (isEmpty()) throw new java.util.NoSuchElementException();
-	Object o = el.next.o;
+	Object o = listhead.next.o;
 	hm.remove(o);
-	el.next.remove();
+	listhead.next.remove();
 	return o;
     }
 
@@ -87,14 +88,14 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 	if (o==null) throw new NullPointerException();
 	if (hm.containsKey(o)) return false;
 	EntryList nel = new EntryList(o);
-	el.add(nel);
+	listhead.add(nel);
 	hm.put(o, nel);
 	// verify list/set correspondence.
-	if (debug) Util.assert(EntryList.equals(el, hm.keySet()));
+	if (debug) Util.assert(EntryList.equals(listhead, hm.keySet()));
 	return true;
     }
     public void clear() {
-	hm.clear(); el = EntryList.init();
+	hm.clear(); listhead.next = listfoot;
     }
 
     /** Determines if this contains an item.
@@ -111,12 +112,12 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 	                     returns true.  Else returns false.
     */
     public boolean isEmpty() {
-	return (el.next.next == null);
+	return (listhead.next == listfoot);
     }
     /** Efficient set iterator. */
     public Iterator iterator() {
 	return new Iterator() {
-	    EntryList elp = el;
+	    EntryList elp = listhead;
 	    public boolean hasNext() {
 		return elp.next.next!=null; /* remember to skip FOOTER node */
 	    }
@@ -126,11 +127,11 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 		Object o=elp.next.o; elp=elp.next; return o;
 	    }
 	    public void remove() {
-		if (elp==el) throw new IllegalStateException();
+		if (elp==listhead) throw new IllegalStateException();
 		hm.remove(elp.o);
 		(elp = elp.prev).next.remove();
 		// verify list/set correspondence.
-		if (debug) Util.assert(EntryList.equals(el, hm.keySet()));
+		if (debug) Util.assert(EntryList.equals(listhead, hm.keySet()));
 	    }
 	};
     }
@@ -142,7 +143,7 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 	// remove from linked list.
 	elp.remove();
 	// verify list/set correspondence.
-	if (debug) Util.assert(EntryList.equals(el, hm.keySet()));
+	if (debug) Util.assert(EntryList.equals(listhead, hm.keySet()));
 	return true;
     }
     public int size() { return hm.size(); }
@@ -164,6 +165,7 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 	}
 	static boolean equals(EntryList el, java.util.Collection c) {
 	    int size=0;
+	    // remember that header and footer are skipped!
 	    for (EntryList elp=el.next; elp.next!=null; elp=elp.next, size++)
 		if (!c.contains(elp.o)) return false;
 	    if (size!=c.size()) return false;
