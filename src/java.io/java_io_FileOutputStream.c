@@ -46,7 +46,7 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_open
     if (!inited && !initializeFOS(env)) return; /* exception occurred; bail */
 
     cstr  = (*env)->GetStringUTFChars(env, jstr, 0);
-    fd    = open(cstr, O_WRONLY|O_CREAT|O_BINARY|O_TRUNC);
+    fd    = open(cstr, O_WRONLY|O_CREAT|O_BINARY|O_TRUNC, 0666);
     (*env)->ReleaseStringUTFChars(env, jstr, cstr);
     fdObj = (*env)->GetObjectField(env, obj, fdObjID);
     (*env)->SetIntField(env, fdObj, fdID, fd);
@@ -71,7 +71,7 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_openAppend
     if (!inited && !initializeFOS(env)) return; /* exception occurred; bail */
 
     cstr  = (*env)->GetStringUTFChars(env, jstr, 0);
-    fd    = open(cstr, O_WRONLY|O_CREAT|O_BINARY|O_APPEND);
+    fd    = open(cstr, O_WRONLY|O_CREAT|O_BINARY|O_APPEND, 0666);
     (*env)->ReleaseStringUTFChars(env, jstr, cstr);
     fdObj = (*env)->GetObjectField(env, obj, fdObjID);
     (*env)->SetIntField(env, fdObj, fdID, fd);
@@ -164,4 +164,3 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_close
     if (result==-1)
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
 }
-
