@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.57 1998-10-16 07:30:32 cananian Exp $
+# $Id: GNUmakefile,v 1.58 1998-10-16 11:42:41 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -15,7 +15,7 @@ FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
-ALLPKGS = $(shell find . -type d | grep -v CVS | \
+ALLPKGS = $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
 		sed -e "s|^[.]/*||")
 ALLSOURCE = $(filter-out .%.java, \
