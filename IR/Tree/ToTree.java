@@ -11,6 +11,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
+import harpoon.IR.LowQuad.LowQuadFactory;
 import harpoon.IR.LowQuad.LowQuadNoSSA;
 import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.LowQuad.LQop;
@@ -33,26 +34,33 @@ import harpoon.IR.Properties.Derivation.DList;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadFactory;
+import harpoon.IR.Quads.QuadKind;
+import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
-import harpoon.Util.HashSet;
-import harpoon.Util.Set;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.Stack;
 
 /**
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.22 1999-08-04 06:31:00 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.23 1999-08-05 03:51:20 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -63,7 +71,7 @@ public class ToTree implements Derivation, TypeMap {
     public ToTree(final TreeFactory tf, LowQuadNoSSA code) {
 	Util.assert(tf.getParent().getName().equals("tree"));
 
-	final Hashtable dT = new Hashtable();
+	final Map dT = new HashMap();
 	
 	m_tree = translate(tf, code, dT);
 	m_derivation = new Derivation() {
@@ -115,108 +123,120 @@ public class ToTree implements Derivation, TypeMap {
 	return m_typeMap.typeMap(hc, t);
     }
 
-    private Tree translate(TreeFactory tf, LowQuadNoSSA code, Hashtable dT) {
+    private Tree translate(TreeFactory tf, LowQuadNoSSA code, Map dT) {
+	Set                           handlers;
 	CloningTempMap                ctm;
 	LowQuadMap                    lqm;
 	LowQuadWithDerivationVisitor  dv;
+	Quad                          root;
 	Stm                           tree;
 	StmList                       stmList;
 	TranslationVisitor            tv;
 	
+	root = (Quad)code.getRootElement();
+	ctm = new CloningTempMap
+	    (root.getFactory().tempFactory(),tf.tempFactory());
+
+
 	// Clone the Quad graph
-	//
 	lqm = new LowQuadMap();
 	dv = new CloningVisitor(code, code, code, lqm);
-	for (Enumeration e = code.getElementsE(); e.hasMoreElements();)
-	    ((Quad)e.nextElement()).visit(dv);
+	for (Iterator i = code.getElementsI(); i.hasNext();)
+	    ((Quad)i.next()).visit(dv);
 	
-	for (Enumeration e = code.getElementsE(); e.hasMoreElements();) {
-	    Quad qTmp = (Quad)e.nextElement();
+	for (Iterator i = code.getElementsI(); i.hasNext();) { 
+	    Quad qTmp = (Quad)i.next();
 	    Edge[] el = qTmp.nextEdge();
-	    for (int i=0; i<el.length; i++) 
-		Quad.addEdge(lqm.get((Quad)el[i].from()),
-			     el[i].which_succ(),
-			     lqm.get((Quad)el[i].to()),
-			     el[i].which_pred());
+	    for (int n=0; n<el.length; n++) 
+		Quad.addEdge(lqm.get((Quad)el[n].from()),
+			     el[n].which_succ(),
+			     lqm.get((Quad)el[n].to()),
+			     el[n].which_pred());
 	}
 	
+	// *MODIFY* the cloned quad graph to have explicit labels at the
+	// destination of each branch.  
 	dv = new LabelingVisitor(dv.getDerivation(), code, dv.getTypeMap());
-	for (Enumeration e = code.getElementsE(); e.hasMoreElements();)
-	    lqm.get((Quad)e.nextElement()).visit(dv);
+	for (Iterator i = code.getElementsI(); i.hasNext();)
+	    lqm.get((Quad)i.next()).visit(dv);
+
+	// *MODIFY* the cloned (and labeled) quad graph to 
+	// a) Not explicitly check exceptional values.   
+	// b) Accept an LABEL to exception handling code as a parameter
+	dv = new CallConversionVisitor
+	    (dv.getDerivation(), code, dv.getTypeMap());
+	for (Iterator i=quadGraph(lqm.get(root)); i.hasNext();)
+	    ((Quad)i.next()).visit(dv);
 	
-	ctm = new CloningTempMap
-	    (((Quad)code.getRootElement()).getFactory().tempFactory(),
-	     tf.tempFactory());
-	
-	// pass in typemap/deriv explicitly
+	// Construct a list of harpoon.IR.Tree.Stm objects
+	handlers = ((CallConversionVisitor)dv).getHandlers();
 	tv = new TranslationVisitor(tf, dv.getDerivation(), code, 
-				    dv.getTypeMap(), ctm, dT);;
-	for (Enumeration e = quadGraph(lqm.get((Quad)code.getRootElement()), tv);
-	     e.hasMoreElements();)
-	    ((Quad)e.nextElement()).visit(tv);
+				    dv.getTypeMap(), ctm, dT);
+	for (Iterator i=quadGraph(lqm.get(root),handlers,true);i.hasNext();) 
+	    ((Quad)i.next()).visit(tv);
 	
-	stmList = tv.getStmtList();
-	
-	// Construct tree from StmList
-	//
-	if (stmList==null) return null;
-	else if (stmList.tail == null) { return stmList.head; }
-	else {
-	    tree = new SEQ(tf, stmList.tail.head, stmList.tail.head, stmList.head);
-	    stmList = stmList.tail.tail;
-	    while (stmList != null) {
-		tree  = new SEQ(tf, stmList.head, stmList.head, tree);
-		stmList = stmList.tail;
-	    }
-	}
-	return tree;
+	return tv.getTree();
     }
     
-    // Enumerates the Quad graph in depth-first order.  Additionally inserts
-    // JUMP nodes into the generated Tree in the appropriate places.  This
-    // is very hackish, and will be updated when I have more time.  
-    //
-    private Enumeration quadGraph(final Quad head, 
-				  final TranslationVisitor tv) {
-	return new Enumeration() {
-	    boolean addJump = false;
-	    harpoon.IR.Quads.LABEL jumpDst = null;
+    private Iterator quadGraph(final Quad head) {
+	return quadGraph(head, new HashSet(), false);
+    }
 
-	    final TranslationVisitor v = tv;
-	    Set  visited = new HashSet();
-	    Stack s = new Stack();
+    // Enumerates the Quad graph in depth-first order.  
+    // The handlers parameter refers to exception handling code not reachable
+    // from head through any set of edges, but referred to through the 
+    // "retex" parameter of a function.  
+    // If explicitJumps is true, adds a "JMP" quad (defined in this file)
+    // when quads connected by an edge are not 
+    //       a) iterated contiguously            
+    // AND   b) not connected by a SIGMA node
+    // 
+    private Iterator quadGraph(final Quad    head,
+			       final Set     handlers, 
+			       final boolean explicitJumps) { 
+	return new Iterator() {
+	    private QuadFactory qf      = head.getFactory();
+	    private Iterator    H       = handlers.iterator();
+	    private Set         visited = new HashSet();
+	    private Stack       s       = new Stack();
 	    { s.push(head); }
-	    public boolean hasMoreElements() { return !s.isEmpty(); }
-	    public Object nextElement() { 
-		if (s.isEmpty()) throw new NoSuchElementException();
-		Quad q = (Quad)s.pop();
-		if (addJump) {
-		    if (jumpDst==null) v.addEndJump(q);
-		    else v.addJump(q, jumpDst);
+	    public void remove() { throw new UnsupportedOperationException(); }
+	    public boolean hasNext() { return !s.isEmpty() || H.hasNext(); }
+	    public Object next() { 
+		if (s.isEmpty()) {
+		    if (!H.hasNext()) { throw new NoSuchElementException(); }
+		    else { 
+			Object l = H.next();
+			Util.assert(!visited.contains(l));
+			s.push(l); visited.add(l);
+		    }
 		}
-
+		Quad q = (Quad)s.pop();
 		Quad[] next = q.next();
 		for (int i=0; i<next.length; i++) {
 		    if (!visited.contains(next[i])) {
 			s.push(next[i]);
-			visited.union(next[i]);
-			addJump = false;
-			jumpDst = null;
+			visited.add(next[i]);
 		    }
-		    /* CHECK IF THIS IS VALID */
-		    else {
-			if (!(q instanceof harpoon.IR.Quads.SIGMA)) {
-			    addJump = true;
-			    if (q.next(0) instanceof harpoon.IR.Quads.LABEL) {
-				jumpDst = (harpoon.IR.Quads.LABEL)q.next(0);
+		    else if (explicitJumps) {
+			JMP                    jmp   = null;
+			harpoon.IR.Quads.SIGMA sig   = null;
+			harpoon.IR.Quads.LABEL label = null;
+			try { sig = (harpoon.IR.Quads.SIGMA)q; } 
+			catch (ClassCastException cce1) { 
+			    try { label = (harpoon.IR.Quads.LABEL)q.next(0); }
+			    catch (ClassCastException cce2) { 
+				Util.assert(q.next(0).kind()==QuadKind.FOOTER);
+				continue;
 			    }
-			    else {
-				Util.assert(q.next(0) instanceof 
-					    harpoon.IR.Quads.FOOTER);
+			    try { jmp = (JMP)q; }
+			    catch (ClassCastException cce2) { 
+				s.push(new JMP(qf, q, label));
+				continue;
 			    }
+			    continue;
 			}
 		    }
-			    
 		}
 		return q;
 	    }
@@ -224,26 +244,25 @@ public class ToTree implements Derivation, TypeMap {
     }
 }
   
-// Translates the LowQuadNoSSA code
+// Translates the LowQuadNoSSA code into tree form. 
 //
-class TranslationVisitor extends LowQuadVisitor {
+class TranslationVisitor extends ExtendedLowQuadVisitor {
 
-    private LABEL END;
     private LowQuadNoSSA      m_code;         // The codeview to translate
     private CloningTempMap    m_ctm;          // Clones Temps to new tf
     private Derivation        m_derivation;   // Old derivation info
-    private Hashtable         m_dT;           // Updated deriv & type info
+    private Map               m_dT;           // Updated deriv & type info
     private Frame             m_frame;        // The machine-specific Frame
-    private LabelMap          m_labelMap;     // Converts labes to Tree LABELs
+    private LabelMap          m_labelMap;     // Converts labels to Tree LABELs
     private OffsetMap         m_offm;         // Machine-specific offset map
-    private StmList           m_stmList;      // Holds translated statements
+    private List              m_stmList;      // Holds translated statements
     private TreeTempMap       m_tempMap;      // Maps Temps to Tree TEMPs
     private TreeFactory       m_tf;           // The new TreeFactory
     private TypeMap           m_typeMap;      // Old typing info
   
     public TranslationVisitor(TreeFactory tf, Derivation derivation, 
 			      LowQuadNoSSA code, TypeMap typeMap, 
-			      CloningTempMap ctm, Hashtable dT) {
+			      CloningTempMap ctm, Map dT) {
 	m_code         = code;
 	m_ctm          = ctm;
 	m_derivation   = derivation;
@@ -254,12 +273,10 @@ class TranslationVisitor extends LowQuadVisitor {
 	m_tempMap      = new TreeTempMap();
 	m_tf           = tf;
 	m_typeMap      = typeMap;
-	END = new LABEL(m_tf, m_code.getRootElement(), new Label());
-	m_stmList      = null;
-
+	m_stmList      = new ArrayList();
     }
 
-    public StmList getStmtList() { return new StmList(END, m_stmList); }
+    Tree getTree() { return Stm.toStm(m_stmList); } 
 
     public void visit(Quad q) { /* Dont translate other quads */  }
 
@@ -274,7 +291,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	       MAP(q.objectref(), q),
 	       new CONST(m_tf, q, m_offm.lengthOffset(type(q.objectref()))))));
 
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
     public void visit(harpoon.IR.Quads.ANEW q) {
@@ -410,7 +427,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	//
 	stms[instructionsPerIter*q.dimsLength()] = 
 	    new MOVE(m_tf,q,MAP(q.dst(),q),arrayRefs[0]);
-	addStmt(q, stms);
+	addStmt(Stm.toStm(Arrays.asList(stms)));
     }
 
     public void visit(harpoon.IR.Quads.ARRAYINIT q) {
@@ -431,12 +448,9 @@ class TranslationVisitor extends LowQuadVisitor {
 	      (m_tf, q, 
 	       m_offm.elementsOffset(type(q.objectref())))));
 
-	       //	       (q.value().length * 
-	       //		m_offm.size(q.type())))));
-
 	updateDT(nextPtr.temp, q, nextPtr, dl, null);
 	updateDT(q.objectref(), q, MAP(q.objectref(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     
 	for (int i=0; i<q.value().length; i++) {
 	    s0 = new MOVE
@@ -451,7 +465,7 @@ class TranslationVisitor extends LowQuadVisitor {
 		  nextPtr, 
 		  new CONST(m_tf, q, m_offm.size(q.type()))));
 
-	    addStmt(q, new Stm[] { s0, s1 });
+	    addStmt(Stm.toStm(Arrays.asList(new Stm[] { s0, s1 })));
 	}
     }
 
@@ -465,7 +479,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	     (MAP((harpoon.IR.Quads.LABEL)q.next(0))).label);
     
 	updateDT(q.test(), q, MAP(q.test(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
   
     public void visit(harpoon.IR.Quads.COMPONENTOF q) {
@@ -476,7 +490,7 @@ class TranslationVisitor extends LowQuadVisitor {
 			  type(q.arrayref()).getComponentType()));
 
 	updateDT(q.dst(), q, MAP(q.dst(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
     public void visit(harpoon.IR.Quads.CONST q) {
@@ -484,7 +498,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	    (m_tf, q, MAP(q.dst(), q), mapconst(q, q.value(), q.type()));
     
 	updateDT(q.dst(), q, MAP(q.dst(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
   
     public void visit(harpoon.IR.Quads.INSTANCEOF q) {
@@ -493,11 +507,15 @@ class TranslationVisitor extends LowQuadVisitor {
 	     isInstanceOf(q, q.src(), q.hclass()));
 
 	updateDT(q.dst(), q, MAP(q.dst(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
-  
+
+    public void visit(JMP q) { 
+	addStmt(new JUMP(m_tf, q, MAP(q.label).label));
+    }
+
     public void visit(harpoon.IR.Quads.LABEL q) {
-	addStmt(q, MAP(q));
+	addStmt(MAP(q));
     }
 
     public void visit(harpoon.IR.Quads.METHOD q) {
@@ -509,7 +527,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	    mappedTypes[i]  = TYPE(q, params[i]);
 	}
 	Stm s0 = m_frame.procPrologue(m_tf, q, mappedParams, mappedTypes);
-	if (s0 != null) addStmt(q, s0);
+	if (s0 != null) addStmt(s0);
     }
 
     public void visit(harpoon.IR.Quads.MONITORENTER q) {
@@ -525,7 +543,7 @@ class TranslationVisitor extends LowQuadVisitor {
 
 	updateDT(q.dst(), q, MAP(q.dst(), q));
 	updateDT(q.src(), q, MAP(q.src(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
     public void visit(harpoon.IR.Quads.NEW q) { 
@@ -562,7 +580,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	     new NAME(m_tf, q, m_offm.label(q.hclass())));
 	
 	updateDT(q.dst(), q, objectref);
-	addStmt(q, new Stm[] { s0, s1, s2 });
+	addStmt(Stm.toStm(Arrays.asList(new Stm[] { s0, s1, s2 })));
     }
 	
     public void visit(harpoon.IR.Quads.RETURN q) {
@@ -577,10 +595,10 @@ class TranslationVisitor extends LowQuadVisitor {
 	}
 
 	Stm s0 = new RETURN(m_tf, q, retval);    
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
-    /* Naive implementation */
+    // Naive implementation
     public void visit(harpoon.IR.Quads.SWITCH q) { 
 	Quad qNext;  CJUMP branch; LABEL lNext;
 	TEMP discriminant = MAP(q.index(), q);
@@ -595,9 +613,7 @@ class TranslationVisitor extends LowQuadVisitor {
 				    new CONST(m_tf, q, q.keys(i))),
 		 (MAP((harpoon.IR.Quads.LABEL)qNext)).label,
 		 lNext.label);
-	    //addStmt(q, new Stm[] { MAP((harpoon.IR.Quads.LABEL)qNext), 
-	    //		    branch });
-	    addStmt(q, new Stm[] { branch, lNext } );
+	    addStmt(Stm.toStm(Arrays.asList(new Stm[] { branch, lNext })));
 	}
 	updateDT(q.index(), q, discriminant);
     }
@@ -606,7 +622,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	Stm s0 = new THROW(m_tf, q, MAP(q.throwable(), q));
     
 	updateDT(q.throwable(), q, MAP(q.throwable(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
     public void visit(harpoon.IR.Quads.TYPECAST q) {
@@ -632,7 +648,7 @@ class TranslationVisitor extends LowQuadVisitor {
 
 	updateDT(q.dst(), q, MAP(q.dst(), q));
 	updateDT(q.index(), q, MAP(q.index(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
     public void visit(PARRAY q) {
@@ -640,10 +656,15 @@ class TranslationVisitor extends LowQuadVisitor {
 	    new MOVE(m_tf, q, MAP(q.dst(), q), MAP(q.objectref(), q));
 
 	updateDT(q.dst(), q, MAP(q.dst(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
-    public void visit(PCALL q) {
+
+    public void visit(PCALL q) { 
+	throw new Error("Should not have unlabeled PCALLs in the quad graph");
+    }
+
+    public void visit(PCALL_WITH_LABEL q) {
 	ExpList params; Temp[] qParams; TEMP retval, retex, func; 
 	Stm s0;
 
@@ -672,19 +693,21 @@ class TranslationVisitor extends LowQuadVisitor {
 	//
 	retex = MAP(q.retex(), q);
 	func  = MAP(q.ptr(), q);
-
+	    
 	qParams = q.params(); params = null; 
 	for (int i=qParams.length-1; i >= 0; i--) {
 	    params = new ExpList(MAP(qParams[i], q), params);      
 	    updateDT(qParams[i], q, MAP(qParams[i], q));
 	}
-      
-	// Should we dereference the method pointer here? 
-	s0 = new CALL(m_tf, q, retval, retex, func, params);      
+	    
+	s0 = new CALL
+	    (m_tf, q, 
+	     retval, 
+	     new NAME(m_tf, q, MAP(q.labelex).label),
+	     func, params);
 
-	updateDT(q.retex(), q, retex);
 	updateDT(q.ptr(), q, func);
-	addStmt(q, s0); 
+	addStmt(s0); 
     }
 
     public void visit(PFCONST q) {
@@ -695,7 +718,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	     new NAME(m_tf, q, m_offm.label(q.field())));
 
 	updateDT(q.dst(), q, MAP(q.dst(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
     public void visit(PFIELD q) { 
@@ -707,7 +730,7 @@ class TranslationVisitor extends LowQuadVisitor {
 
 	updateDT(q.dst(), q, MAP(q.dst(), q));
 	updateDT(q.objectref(), q, MAP(q.objectref(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
   
     public void visit(PFOFFSET q) {
@@ -718,7 +741,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	     new CONST(m_tf, q, m_offm.offset(q.field())));
 
 	updateDT(q.dst(), q, MAP(q.dst(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
     public void visit(PGET q) {
@@ -730,7 +753,7 @@ class TranslationVisitor extends LowQuadVisitor {
 
 	updateDT(q.dst(), q, MAP(q.dst(), q));
 	updateDT(q.ptr(), q, MAP(q.ptr(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
   
     public void visit(PMCONST q) { 
@@ -741,7 +764,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	     new NAME(m_tf, q, m_offm.label(q.method())));
 
 	updateDT(q.dst(), q, MAP(q.dst(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
     public void visit(PMETHOD q) {
@@ -764,7 +787,7 @@ class TranslationVisitor extends LowQuadVisitor {
     
 	updateDT(q.dst(), q, MAP(q.dst(), q));
 	updateDT(q.objectref(), q, MAP(q.objectref(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
     public void visit(PMOFFSET q) {
@@ -775,7 +798,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	     new CONST(m_tf, q, m_offm.offset(q.method())));
 
 	updateDT(q.dst(), q, ((MOVE)s0).dst);
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
     public void visit(POPER q) {
@@ -872,7 +895,7 @@ class TranslationVisitor extends LowQuadVisitor {
     
 	s0 = new MOVE(m_tf, q, MAP(q.dst(), q), oper);
 	updateDT(q.dst(), q, MAP(q.dst(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
     private void visitShiftOper(POPER q) { 
@@ -905,7 +928,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	
 	s0 = new MOVE(m_tf, q, MAP(q.dst(), q), oper);
 	updateDT(q.dst(), q, MAP(q.dst(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
   
     public void visit(PSET q) {
@@ -917,7 +940,7 @@ class TranslationVisitor extends LowQuadVisitor {
 
 	updateDT(q.src(), q, MAP(q.src(), q));
 	updateDT(q.ptr(), q, MAP(q.ptr(), q));
-	addStmt(q, s0);
+	addStmt(s0);
     }
 
     /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*
@@ -926,49 +949,8 @@ class TranslationVisitor extends LowQuadVisitor {
      *                                                          *
      *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-    void addJump(Quad q, harpoon.IR.Quads.LABEL l) {
-	m_stmList = new StmList(new JUMP(m_tf, q, MAP(l).label), m_stmList);
-    }
-
-    void addEndJump(Quad q) {
-	m_stmList = 
-	    new StmList(new RETURN(m_tf, q, new CONST(m_tf, q, 0)), m_stmList);
-    }
-
-    private void addStmt(Quad q, Stm stm) { 
-        m_stmList = new StmList(stm, m_stmList); 
-	if (!(q instanceof harpoon.IR.Quads.SIGMA)) {
-
-	    if (q.next(0) instanceof harpoon.IR.Quads.LABEL) {
-		m_stmList = new StmList
-		    (new JUMP
-		     (m_tf, q, MAP((harpoon.IR.Quads.LABEL)q.next(0)).label),
-		     m_stmList);
-	    }
-	}
-    }
-
-    private void addStmt(Quad q, Stm[] stm) { 
-	for (int i=0; i<stm.length-1; i++)
-	    m_stmList = new StmList(stm[i], m_stmList);
-	
-	addStmt(q, stm[stm.length-1]); 
-    }
-
-    private Stm toStm(Stm[] stm) {
-	if (stm.length==0) return null;
-	else if (stm.length==1) return stm[0];
-	else {
-	    Stm s = new SEQ
-		(m_tf, stm[stm.length-2], 
-		 stm[stm.length-2], 
-		 stm[stm.length-1]);
-
-	    for (int i=stm.length-3; i>=0; i--) 
-		s = new SEQ(m_tf, stm[i], stm[i], s);
-
-	    return s;
-	}
+    private void addStmt(Stm stm) { 
+        m_stmList.add(stm);
     }
 
     private TEMP extra(HCodeElement source, int type) {
@@ -1139,19 +1121,21 @@ class TranslationVisitor extends LowQuadVisitor {
     }
   	
     class LabelMap {
-	private final Hashtable h = new Hashtable();
+	private final Map h = new HashMap();
 	public LABEL labelMap(harpoon.IR.Quads.LABEL q) {
 	    if (q==null) return null;
 	    else if (h.containsKey(q)) return (LABEL)h.get(q);
 	    else {
-		h.put(q, new LABEL(m_tf, q, new Label()));
+		String s = ("_"+m_tf.getMethod().toString()+"_"+q.label()).
+		    replace(' ', '_');
+		h.put(q, new LABEL(m_tf, q, new Label(s)));
 		return (LABEL)h.get(q);
 	    }
 	}
     }
 
     class TreeTempMap {
-	private final Hashtable h = new Hashtable();
+	private final Map h = new HashMap();
 	public TEMP tempMap(Temp t, HCodeElement source, int type) {
 	    if (t==null) return null;
 	    else if (h.containsKey(t)) return (TEMP)h.get(t);
@@ -1219,7 +1203,9 @@ class TranslationVisitor extends LowQuadVisitor {
 	    Stm s6 = end;
 	    
 	    return new ESEQ
-	      (m_tf, q, toStm(new Stm[] {s0, s1, s2, s3, s4, s5, s6}), RESULT);
+	      (m_tf, q, 
+	       Stm.toStm(Arrays.asList(new Stm[] {s0,s1,s2,s3,s4,s5,s6})), 
+	       RESULT);
 	}
     }
   
@@ -1274,7 +1260,8 @@ class TranslationVisitor extends LowQuadVisitor {
 	      classLabel, 
 	      typeLabel));
 
-	return new ESEQ(m_tf, classPtr, toStm(new Stm[] { s0, s1 }), result);
+	return new ESEQ
+	    (m_tf,classPtr,Stm.toStm(Arrays.asList(new Stm[] {s0,s1})),result);
     }
 
     private Exp isImplemented(TEMP classPtr, HClass type) {
@@ -1371,8 +1358,8 @@ class TranslationVisitor extends LowQuadVisitor {
 
 	return new ESEQ
 	    (m_tf, classPtr, 
-	     toStm(new Stm[] 
-		   { s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12 }),
+	     Stm.toStm(Arrays.asList(new Stm[] 
+		   {s0,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12})),
 	     result);
 
     }
@@ -1508,7 +1495,7 @@ class TranslationVisitor extends LowQuadVisitor {
 
 	return new ESEQ
 	    (m_tf, q, 
-	     toStm(new Stm[] { s0, s1, s2, s3, s4, s5, end }), 
+	     Stm.toStm(Arrays.asList(new Stm[] {s0,s1,s2,s3,s4,s5,end})), 
 	     result);
     }
     
@@ -1518,13 +1505,19 @@ class TranslationVisitor extends LowQuadVisitor {
     }
 }
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+//                                                            //
+// The following classes are auxiliary translation passes,    //
+// required before the actual transformation into Tree form.  //
+//                                                            //
+ //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+
 // Abstract visitor class which preserves derivation and type information.
-// Currently only the LabelingVisitor and the CloningVisitor extend this
-// class, but eventually TranslationVisitor will as well.
+// This is used by all of the auxiliary translation visitors. 
 //
-abstract class LowQuadWithDerivationVisitor extends LowQuadVisitor {
-  
-    private Hashtable   m_dT;
+abstract class LowQuadWithDerivationVisitor extends ExtendedLowQuadVisitor {
+    private Map         m_dT;
     private Derivation  m_derivation;
     private HCode       m_code;
     private TypeMap     m_typeMap;
@@ -1532,7 +1525,7 @@ abstract class LowQuadWithDerivationVisitor extends LowQuadVisitor {
     protected LowQuadWithDerivationVisitor(Derivation derivation, 
 					   HCode code,
 					   TypeMap typeMap) {
-	m_dT         = new Hashtable();
+	m_dT         = new HashMap();
 	m_derivation = derivation;
 	m_code       = code;
 	m_typeMap    = typeMap;
@@ -1593,8 +1586,9 @@ abstract class LowQuadWithDerivationVisitor extends LowQuadVisitor {
     }
 }
 
-/* Clones the quad graph, while preserving type/derivation information
-     * for the new quads */
+
+// Clones the quad graph, while preserving type/derivation information
+// for the new quads
 class CloningVisitor extends LowQuadWithDerivationVisitor {
     private LowQuadMap m_lqm;
     public CloningVisitor(Derivation d, HCode hc, 
@@ -1608,16 +1602,103 @@ class CloningVisitor extends LowQuadWithDerivationVisitor {
 	updateDTInfo(q, qm);
     }
 }
+
+
+// Updates the CFG to remove explicit exception checks.  Additionally
+// converts PCALL quads into PCALL_WITH_LABEL quads.  The LABEL associated
+// with these quads is a pointer to the exception handling code of the
+// PCALL.  
+//
+// FIXME:  needs to deal with PCALLs that do not match this simple pattern
+//
+class CallConversionVisitor extends LowQuadWithDerivationVisitor { 
+    private Set                    handlers = new HashSet();
+    private PCALL                  pcall;
+    private harpoon.IR.Quads.CONST nconst;
+    private POPER                  acmpeq;
+    private harpoon.IR.Quads.CJMP  cjump;
+ 
+    public CallConversionVisitor(Derivation d, HCode hc, TypeMap t) { 
+	super(d, hc, t);
+    }
+
+    public void visit(harpoon.IR.Quads.Quad quad) { 
+	updateDTInfo(quad, quad);
+	this.pcall=null; this.nconst=null; this.acmpeq=null; this.cjump=null; 
+    }
+
+    public void visit(harpoon.IR.Quads.CJMP cjump) { 
+	updateDTInfo(cjump, cjump);
+	if ((acmpeq != null) && (this.acmpeq.dst() == cjump.test())) {
+	    this.cjump = cjump;
+	    replaceExceptionCheck();
+	}
+	this.pcall=null; this.nconst=null; this.acmpeq=null; this.cjump=null;
+    }
+
+    public void visit(harpoon.IR.Quads.CONST nconst) { 
+	updateDTInfo(nconst, nconst);
+	if ((this.pcall != null) && (nconst.value() == null)) { 
+	    this.nconst = nconst; 
+	    this.acmpeq = null; this.cjump = null;
+	}
+	else {   
+	    this.pcall=null; this.nconst=null; 
+	    this.acmpeq=null; this.cjump=null; 
+	}
+    }
+
+    public void visit(PCALL pcall) { 
+	updateDTInfo(pcall, pcall);
+	this.pcall = pcall;
+	this.nconst=null; this.acmpeq=null; this.cjump=null;
+    }
+
+    public void visit(POPER poper) { 
+	updateDTInfo(poper, poper);
+	if ((this.nconst != null)                       && 
+	    (poper.opcode() == Qop.ACMPEQ)              &&
+	    (this.pcall.retex() == poper.operands()[0]) &&
+	    (this.nconst.dst() == poper.operands()[1])) {
+	    this.acmpeq = poper;
+	    this.cjump  = null;
+	}
+	else { 	
+	    this.pcall=null; this.nconst=null;
+	    this.acmpeq=null; this.cjump = null; 
+	}
+    }
+
+    // Return a set of LABELs which precede each block of exception handling
+    // code. 
+    Set getHandlers() { return this.handlers; } 
+
+    // Convert   pcall --> nconst --> acmpeq --> cjump(-->true, -->false)
+    // to        pcall --> true
+    //             
+    private void replaceExceptionCheck() { 
+	PCALL newCall    = 
+	    new PCALL_WITH_LABEL((LowQuadFactory)pcall.getFactory(), pcall, 
+				 pcall.ptr(),pcall.params(), pcall.retval(), 
+				 pcall.retex(),
+				 (harpoon.IR.Quads.LABEL)cjump.next(0));
+	updateDTInfo(pcall, newCall);
+	Quad.replace(pcall, newCall);
+	Quad.addEdge(newCall, 0, 
+		     cjump.next()[1], cjump.nextEdge(1).which_pred());
+	handlers.add(cjump.next(0));
+    }
+}
     
-/* Adds LABELs to the destination of every branch.  This actually modifies
-     * the supplied Quad graph, so it is imperative that a previous 
-     * transformation clones the graph prior to using this visitor.    
-     */
+// Adds LABELs to the destination of every branch.  This actually modifies
+// the supplied Quad graph, so it is imperative that a previous 
+// transformation clones the graph prior to using this visitor.    
+//
 class LabelingVisitor extends LowQuadWithDerivationVisitor {  
-    private Hashtable m_QToL;
+    private Map m_QToL;
     public LabelingVisitor(Derivation d, HCode hc, TypeMap t) { 
 	super(d, hc, t);
-	m_QToL = new Hashtable(); 
+	m_QToL = new HashMap(); 
     }
     public void visit(Quad q) { updateDTInfo(q, q); } 
     public void visit(harpoon.IR.Quads.SIGMA q) {
@@ -1644,7 +1725,7 @@ class LabelingVisitor extends LowQuadWithDerivationVisitor {
 		m_QToL.put(q, label);  // Don't replace same quad twice!
 	    }
 	    else {
-		Quad newQ = (Quad)q.clone();  /* IS THIS CORRECT???? */
+		Quad newQ = (Quad)q.clone();  // IS THIS CORRECT????
 		updateDTInfo(q, newQ);
 
 		label = new harpoon.IR.Quads.LABEL
@@ -1665,13 +1746,77 @@ class LabelingVisitor extends LowQuadWithDerivationVisitor {
     }
 }
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+//                                                            //
+// The following are definitions of extra quads used by the   //
+// ToTree translator.  Additionally, a abstract visitor class //
+// is defined to allow for the incorporation of these new     //
+// quads into a visitor pattern.                              //
+//                                                            //
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+// A simple extension of PCALL, provides an additional field, labelex,
+// which is the location of the PCALL's exception handler.
+//
+class PCALL_WITH_LABEL extends PCALL { 
+    harpoon.IR.Quads.LABEL labelex;
+    PCALL_WITH_LABEL(LowQuadFactory qf, HCodeElement source,
+		     Temp ptr, Temp[] params, Temp retval, Temp retex, 
+		     harpoon.IR.Quads.LABEL labelex) {
+	super(qf, source, ptr, params, retval, retex);
+	this.labelex = labelex;
+    }
+    public int kind() { return QuadKind.min(); }  
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	throw new Error("Should not use this method");
+    }
+    public void visit(QuadVisitor v) { visit((ExtendedLowQuadVisitor)v); } 
+    public void visit(ExtendedLowQuadVisitor v) { v.visit(this); }
+    public String toString() {
+	return "PCALL_WITH_LABEL: "+labelex.toString()+"\n"+super.toString();
+    }
+}
+
+// Although explicit jump instructions are not necessary in quad form, 
+// they are necessary in tree form.  The JMP quad instructions indicates 
+// that a corresponding IR.Tree.JUMP instruction must be added in the 
+// Tree form.
+//
+class JMP extends harpoon.IR.Quads.Quad { 
+    harpoon.IR.Quads.LABEL label;
+    JMP(QuadFactory qf, HCodeElement source, harpoon.IR.Quads.LABEL label) { 
+	super(qf, source);
+	this.label = label;
+    }
+    public Quad[] next() { return new Quad[] { label }; } 
+    public Quad next(int i) { Util.assert(i==0); return label; } 
+    public int kind() { return QuadKind.min(); }
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	throw new Error("Should not use this method");
+    }
+    public void visit(QuadVisitor v) { visit((ExtendedLowQuadVisitor)v); } 
+    public void visit(ExtendedLowQuadVisitor v) { v.visit(this); }
+    public String toString() {return "JMP: " + label.toString();}
+}
+
+// An extension of LowQuadVisitor to handle the extra Quads
+//
+abstract class ExtendedLowQuadVisitor extends LowQuadVisitor { 
+    protected ExtendedLowQuadVisitor() { } 
+    public void visit(PCALL_WITH_LABEL q) { visit((PCALL)q); } 
+    public void visit(JMP q)              { visit((Quad)q); }
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+//                                                            //
+//                    Utility classes                         //
+//                                                            //
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
 class LowQuadMap {
-    final private Hashtable h = new Hashtable();
+    final private Map h = new HashMap();
     void put(Quad qOld, Quad qNew)  { h.put(qOld, qNew); }
     Quad get(Quad old)              { return (Quad)h.get(old); }
     boolean contains(Quad old)      { return h.containsKey(old); }
 }
-  
-
-
-
