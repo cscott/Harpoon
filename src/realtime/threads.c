@@ -253,6 +253,7 @@ void CheckQuanta(int signal)
   assert(!((*env)->ExceptionOccurred(env)));
   
   if(threadID == 0) { //if no thread was chosen
+    settimer();
     FNI_DeleteLocalRefsUpTo(env, ref_marker);
 #ifdef WITH_NOHEAP_SUPPORT
     EndNoHeap(env, noheap);
