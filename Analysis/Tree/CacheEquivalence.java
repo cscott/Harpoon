@@ -60,7 +60,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.15 2001-06-15 01:31:06 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.16 2001-06-16 22:49:06 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -73,6 +73,9 @@ public class CacheEquivalence {
 	TreeDerivation td = code.getTreeDerivation();
 	/* new analysis */
 	final Dataflow df = new Dataflow(code, cfg, udr, td);
+	/*- construct cache eq -*/
+	new TagDominate(code, cfg, td, df);
+	/* debugging information dump */
 	if (DEBUG) {
 	    harpoon.IR.Tree.Print.print(new java.io.PrintWriter(System.out),
 					code, new PrintCallback() {
@@ -85,11 +88,12 @@ public class CacheEquivalence {
 			    t = t.getParent();
 			pw.print(" [VAL: "+df.valueOf(e, (Stm)t)+"]");
 		    }
+		    if (hce instanceof MEM) {
+			pw.print(" [CQ: "+cache_equiv.get(hce)+"]");
+		    }
 		}
 	    });
 	}
-	/*- construct cache eq -*/
-	new TagDominate(code, cfg, td, df);
     }
     /* -------- cache equivalence pass ------- */
     private class TagDominate {
@@ -696,6 +700,9 @@ public class CacheEquivalence {
 	public final MEM first;
 	public final Set others = new HashSet();
 	public CacheEquivSet(MEM mem) { this.first = mem; }
+	public String toString() {
+	    return "<TAG DEF:"+first+"; USE:"+others+">";
+	}
     }
     final Map cache_equiv = new HashMap();
 
