@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR.java,v 1.3 1998-10-11 00:32:15 cananian Exp $
+ * @version $Id: IIR.java,v 1.4 1998-10-11 00:51:17 cananian Exp $
  *///
 
 //-----------------------------------------------------------
@@ -65,13 +65,12 @@ public abstract class IIR
     //MEMBERS:  
 
 // PROTECTED:
-    IIR_Identifier _file_name;
-    int _character_offset;
-    int _line_number;
+    IIR_Identifier _file_name = IIR_Identifier.get("unknown");
+    int _character_offset = -1;
+    int _line_number = -1;
     int _column_number;
     IIR_Identifier _sheet_name;
     int _x_coordinate;
     int _y_coordinate;
-    int _kind;
 } // END class
 
