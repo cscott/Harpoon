@@ -19,7 +19,7 @@ design.dvi: design.tex harpoon.bib
 		(xdvi $*.dvi &) ; \
 	fi
 clean:
-	$(RM) *.dvi *.log *.aux *.ps *.pdf
+	$(RM) *.dvi *.log *.aux *.bbl *.blg *.ps *.pdf
 wipe: clean
 	$(RM) *~ core
 
