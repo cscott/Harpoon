@@ -147,10 +147,13 @@ always:
 # dvi-to-postscript-to-acrobat chain.
 %.ps : %.dvi
 	dvips -P cmz -t letter -e 0 -o $@ $<
-%.pdf : %.dvi
-	dvipdf -dCompatibilityLevel=1.3 -dDoThumbnails=true $< $@
+# XXX dvipdf runs the dvips | ps2pdf chain, but without the required
+#     arguments to dvips.  For our LCTES paper, this made the margins
+#     screwy.  So just run the chain manually ourselves.
+#%.pdf : %.dvi
+#	dvipdf -dCompatibilityLevel=1.3 -dDoThumbnails=true $< $@
 %.pdf : %.ps
-	ps2pdf $< $@
+	ps2pdf13 -dDoThumbnails=true $< $@
 %-xdvi : %.dvi
 	@if ps w | grep -v grep | grep -q "xdvi $*.dvi" ; then \
 		echo "Xdvi already running." ; \
