@@ -27,6 +27,8 @@ public class ImplicitSchema {
     boolean needDR(RelationDescriptor rd,boolean isdomain) {
 	Vector rules=state.vRules;
 	SetDescriptor sd=isdomain?rd.getDomain():rd.getRange();
+	if (sd instanceof ReservedSetDescriptor)
+	    return false;
 	for(int i=0;i<rules.size();i++) {
 	    Rule r=(Rule)rules.get(i);
 	    if ((r.numQuantifiers()==1)&&

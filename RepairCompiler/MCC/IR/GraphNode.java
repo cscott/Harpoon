@@ -25,6 +25,7 @@ public class GraphNode {
         
         private String label;
         private GraphNode target;
+	private GraphNode source;
         private String dotnodeparams = new String();
 
         public Edge(String label, GraphNode target) {
@@ -35,6 +36,14 @@ public class GraphNode {
         public String getLabel() {
             return label;
         }
+
+	public void setSource(GraphNode s) {
+	    this.source=s;
+	}
+
+	public GraphNode getSource() {
+	    return source;
+	}
 
         public GraphNode getTarget() {
             return target;
@@ -55,7 +64,10 @@ public class GraphNode {
 
     int discoverytime = -1;
     int finishingtime = -1; /* used for searches */
+    int scc = -1;
+
     Vector edges = new Vector();  
+    Vector inedges = new Vector();
     String nodelabel;
     String textlabel;
     NodeStatus status = UNVISITED;    
@@ -136,29 +148,51 @@ public class GraphNode {
         return edges.iterator();
     }
 
+    public Iterator inedges() {
+        return inedges.iterator();
+    }
+
     public void addEdge(Edge newedge) {
+	newedge.setSource(this);
         edges.addElement(newedge);
+	GraphNode tonode=newedge.getTarget();
+	tonode.inedges.addElement(newedge);
     }
 
-    public void reset() {
-        discoverytime = -1;
-        finishingtime = -1;
-        status = UNVISITED;
+    void reset() {
+	    discoverytime = -1;
+	    finishingtime = -1;
+	    status = UNVISITED;
     }
 
-    public void discover(int time) {
-        discoverytime = time;
-        status = PROCESSING;
+    void resetscc() {
+	status = UNVISITED;
+	scc = -1;
     }
 
-    public void finish(int time) {
+    public int getSCC() {
+	return scc;
+    }
+
+    void setSCC(int s) {
+	scc=s;
+    }
+
+    void discover(int time) {
+	discoverytime = time;
+	status = PROCESSING;
+    }
+
+    void finish(int time) {
         assert status == PROCESSING;
-        finishingtime = time;
+	finishingtime = time;
         status = FINISHED;
     }
 
+    /** Returns finishing time for dfs */
+
     public int getFinishingTime() {
-        return finishingtime;
+	return finishingtime;
     }
 
 
@@ -270,17 +304,97 @@ public class GraphNode {
 	    return true; /* found cycle */
     }
     
+    public static class SCC {
+	boolean hascycles;
+	HashMap map;
+	int numscc;
+	public SCC(boolean hascycles, HashMap map,int numscc) {
+	    this.hascycles=hascycles;
+	    this.map=map;
+	    this.numscc=numscc;
+	}
+
+	public boolean hasCycles() {
+	    return hascycles;
+	}
+
+	public int numSCC() {
+	    return numscc;
+	}
+
+	public Set getSCC(int i) {
+	    Integer scc=new Integer(i);
+	    return (Set)map.get(scc);
+	}
+
+	boolean hascycle(int i) {
+	    Integer scc=new Integer(i);
+	    Set s=(Set)map.get(scc);
+	    if (s.size()>1)
+		return true;
+	    Object [] array=s.toArray();
+	    GraphNode gn=(GraphNode)array[0];
+	    for(Iterator it=gn.edges();it.hasNext();) {
+		Edge e=(Edge)it.next();
+		if (e.getTarget()==gn)
+		    return true; /* Self Cycle */
+	    }
+	    return false;
+	}
+    }
+
     /**
      * DFS encapsulates the depth first search algorithm 
      */
     public static class DFS {
 
         int time = 0;
+	int sccindex = 0;
         Collection nodes;
+	Vector finishingorder=null;
+	HashMap sccmap;
 
         private DFS(Collection nodes) { 
             this.nodes = nodes;
         }
+
+	public static SCC computeSCC(Collection nodes) {
+	    if (nodes==null) {
+		throw new NullPointerException();
+	    }
+	    DFS dfs=new DFS(nodes);
+	    dfs.sccmap=new HashMap();
+	    dfs.finishingorder=new Vector();
+	    boolean hascycles=dfs.go();
+            for (Iterator it = nodes.iterator();it.hasNext();) {
+                GraphNode gn = (GraphNode) it.next();
+                gn.resetscc();
+            }
+	    for(int i=dfs.finishingorder.size()-1;i>=0;i--) {
+		GraphNode gn=(GraphNode)dfs.finishingorder.get(i);
+		if (gn.getStatus() == UNVISITED) {
+		    dfs.dfsprev(gn);
+		    dfs.sccindex++; /* Increment scc index */
+		}
+	    }
+	    return new SCC(hascycles,dfs.sccmap,dfs.sccindex);
+	}
+
+	void dfsprev(GraphNode gn) {
+	    if (gn.getStatus()==FINISHED||!nodes.contains(gn))
+		return;
+	    gn.setStatus(FINISHED);
+	    gn.setSCC(sccindex);
+	    Integer i=new Integer(sccindex);
+	    if (!sccmap.containsKey(i))
+		sccmap.put(i,new HashSet());
+	    ((Set)sccmap.get(i)).add(gn);
+	    for(Iterator edgeit=gn.inedges();edgeit.hasNext();) {
+		Edge e=(Edge)edgeit.next();
+		GraphNode gn2=e.getSource();
+		dfsprev(gn2);
+	    }
+	}
 
         public static boolean depthFirstSearch(Collection nodes) {
             if (nodes == null) {
@@ -315,7 +429,7 @@ public class GraphNode {
 
         private boolean dfs(GraphNode gn) {
 	    boolean acyclic=true;
-            gn.discover(time++);            
+            gn.discover(time++);
             Iterator edges = gn.edges();
 
             while (edges.hasNext()) {
@@ -330,7 +444,8 @@ public class GraphNode {
 		    acyclic=false;
 		}
             }
-
+	    if (finishingorder!=null)
+		finishingorder.add(gn);
             gn.finish(time++);
 	    return acyclic;
         }

@@ -233,7 +233,7 @@ class UpdateNode {
 	    left=toe.left;
 	    right=toe.right;
 	    istuple=true;
-	} else if (abstractexpr instanceof TupleOfExpr) {
+	} else if (abstractexpr instanceof ElementOfExpr) {
 	    ElementOfExpr eoe=(ElementOfExpr) abstractexpr;
 	    d=eoe.set;
 	    left=eoe.element;
@@ -279,7 +279,7 @@ class UpdateNode {
 		    Rule r=(Rule)state.vRules.get(i);
 		    if (r.getInclusion().getTargetDescriptors().contains(sd)) {
 			for(int j=0;j<mun.numUpdates();j++) {
-			    UpdateNode un=mun.getUpdate(i);
+			    UpdateNode un=mun.getUpdate(j);
 			    if (un.getRule()==r) {
 				/* Update for rule rule r */
 				String name=(String)rg.updatenames.get(un);
@@ -324,6 +324,7 @@ class UpdateNode {
 	    VarDescriptor right=VarDescriptor.makeNew("right");
 	    if (u.getType()==Updates.ABSTRACT) {
 		generate_abstract(cr, removal, slot0, slot1, u, rg);
+		return;
 	    }
 
 	    switch(u.getType()) {

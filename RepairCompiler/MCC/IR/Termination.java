@@ -512,8 +512,11 @@ public class Termination {
 	}
 	return true;
     }
+    /** This method generates data structure updates to implement the
+     * 	abstract atomic modification specified by ar. */
 
     void generatemodifyrelation(GraphNode gn, AbstractRepair ar) {
+	
     }
 
 

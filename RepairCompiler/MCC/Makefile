@@ -18,31 +18,46 @@ COMPILER_CLASS = Compiler.class
 CLI_CLASS = CLI.class
 OTHER_CLASS = State.class LineCount.class Symbol.class
 
-IR_CLASS = IR/ParseNode.class IR/ParseNodeVector.class IR/ParseNodeDOTVisitor.class \
-IR/SemanticChecker.class IR/Expr.class IR/VarExpr.class IR/OpExpr.class IR/DotExpr.class \
-IR/LiteralExpr.class IR/IntegerLiteralExpr.class IR/BooleanLiteralExpr.class \
-IR/TokenLiteralExpr.class IR/Descriptor.class IR/TypeDescriptor.class IR/StructureTypeDescriptor.class \
-IR/MissingTypeDescriptor.class IR/ReservedTypeDescriptor.class IR/ArrayDescriptor.class \
-IR/FieldDescriptor.class IR/LabelDescriptor.class IR/ReservedFieldDescriptor.class \
-IR/SymbolTable.class IR/IRException.class IR/Opcode.class IR/SimpleIRErrorReporter.class \
-IR/IRErrorReporter.class IR/SetDescriptor.class IR/MissingSetDescriptor.class \
-IR/RelationDescriptor.class IR/ReservedSetDescriptor.class IR/TokenSetDescriptor.class \
-IR/Quantifier.class IR/SetQuantifier.class IR/ImageSetExpr.class \
-IR/CastExpr.class IR/SizeofExpr.class IR/SetExpr.class IR/VarDescriptor.class \
-IR/LogicStatement.class IR/Predicate.class IR/InclusionPredicate.class \
-IR/ExprPredicate.class IR/Constraint.class IR/RelationExpr.class \
-IR/RelationQuantifier.class IR/ForQuantifier.class IR/GraphNode.class \
-IR/DependencyBuilder.class IR/RelationInclusion.class IR/SetInclusion.class \
-IR/TupleOfExpr.class IR/ElementOfExpr.class IR/Rule.class IR/Inclusion.class \
-IR/NaiveGenerator.class IR/CodeWriter.class IR/SymbolTableStack.class \
-IR/StandardCodeWriter.class IR/WorklistGenerator.class IR/WorkList.class \
-IR/Optimizer.class IR/MetaInclusion.class IR/SizeofFunction.class \
-IR/RelationFunctionExpr.class
+IR_CLASS = IR/ParseNode.class IR/ParseNodeVector.class			\
+IR/ParseNodeDOTVisitor.class IR/SemanticChecker.class IR/Expr.class	\
+IR/VarExpr.class IR/OpExpr.class IR/DotExpr.class IR/LiteralExpr.class	\
+IR/IntegerLiteralExpr.class IR/BooleanLiteralExpr.class			\
+IR/TokenLiteralExpr.class IR/Descriptor.class IR/TypeDescriptor.class	\
+IR/StructureTypeDescriptor.class IR/MissingTypeDescriptor.class		\
+IR/ReservedTypeDescriptor.class IR/ArrayDescriptor.class		\
+IR/FieldDescriptor.class IR/LabelDescriptor.class			\
+IR/ReservedFieldDescriptor.class IR/SymbolTable.class			\
+IR/IRException.class IR/Opcode.class IR/SimpleIRErrorReporter.class	\
+IR/IRErrorReporter.class IR/SetDescriptor.class				\
+IR/MissingSetDescriptor.class IR/RelationDescriptor.class		\
+IR/ReservedSetDescriptor.class IR/TokenSetDescriptor.class		\
+IR/Quantifier.class IR/SetQuantifier.class IR/ImageSetExpr.class	\
+IR/CastExpr.class IR/SizeofExpr.class IR/SetExpr.class			\
+IR/VarDescriptor.class IR/LogicStatement.class IR/Predicate.class	\
+IR/InclusionPredicate.class IR/ExprPredicate.class IR/Constraint.class	\
+IR/RelationExpr.class IR/RelationQuantifier.class			\
+IR/ForQuantifier.class IR/GraphNode.class IR/DependencyBuilder.class	\
+IR/RelationInclusion.class IR/SetInclusion.class IR/TupleOfExpr.class	\
+IR/ElementOfExpr.class IR/Rule.class IR/Inclusion.class			\
+IR/NaiveGenerator.class IR/CodeWriter.class IR/SymbolTableStack.class	\
+IR/StandardCodeWriter.class IR/WorklistGenerator.class			\
+IR/WorkList.class IR/Optimizer.class IR/MetaInclusion.class		\
+IR/SizeofFunction.class IR/RelationFunctionExpr.class			\
+IR/RepairGenerator.class IR/AbstractInterferes.class			\
+IR/PrettyPrinter.class IR/AbstractRepair.class IR/Quantifiers.class	\
+IR/Binding.class IR/ConcreteInterferes.class IR/Conjunction.class	\
+IR/Repair.class IR/ConsequenceNode.class IR/Cost.class			\
+IR/DNFConstraint.class IR/DNFExpr.class IR/DNFPredicate.class		\
+IR/RuleConjunction.class IR/DNFRule.class IR/ScopeNode.class		\
+IR/SemanticAnalyzer.class IR/GraphAnalysis.class IR/SetAnalysis.class	\
+IR/Sources.class IR/StructureGenerator.class IR/ImplicitSchema.class	\
+IR/Termination.class IR/LinedMessage.class IR/TermNode.class		\
+IR/UpdateNode.class IR/MultUpdateNode.class IR/Updates.class		\
+IR/Walkable.class
 
-#MODEL_CLASS = Field.class Literal.class Quantifier.class 		\
-#Set.class TypeElement.class						\
-#MDElementExpr.class Rule.class Guard.class Type.class 			\
-#ParseException.class ModelInclusionConstraint.class
+#MODEL_CLASS = Field.class Literal.class Quantifier.class Set.class	\
+#TypeElement.class MDElementExpr.class Rule.class Guard.class		\
+#Type.class ParseException.class ModelInclusionConstraint.class
 
 ALL_CLASS = $(COMPILER_CLASS) $(CLI_CLASS) $(OTHER_CLASS) $(IR_CLASS)
 
@@ -92,5 +107,5 @@ $(SCANNER).java: $(SCANNER).lex.java
 	rm $(SCANNER).lex.java
 
 javadoc:
-	javadoc -package -d ../javadoc/ -windowtitle MCC $(ALLJAVA)
+	javadoc -source 1.4 -classpath ../ -package -d ../javadoc/ -windowtitle MCC $(ALLJAVA)
 

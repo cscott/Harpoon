@@ -118,16 +118,45 @@ public class GraphAnalysis {
 	    
 	    for(Iterator it=termination.conjunctions.iterator();it.hasNext();) {
 		GraphNode gn=(GraphNode)it.next();
-		if (!cantremove.contains(gn)) {
-		    cantremove.add(gn);
-		    Set cycle=GraphNode.findcycles(cantremove);
-		    if (cycle.contains(gn)) {
-			if (!mustremove.contains(gn)) {
-			    change=true;
-			    mustremove.add(gn);
+		boolean foundnocycle=false;
+
+		for (Iterator edgeit=gn.edges();edgeit.hasNext();) {
+		    GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
+		    GraphNode gn2=e.getTarget();
+		    TermNode tn2=(TermNode)gn2.getOwner();
+		    if (tn2.getType()!=TermNode.ABSTRACT)
+			continue;
+		    for (Iterator edgeit2=gn2.edges();edgeit2.hasNext();) {
+			GraphNode.Edge e2=(GraphNode.Edge)edgeit2.next();
+			GraphNode gn3=e2.getTarget();
+			TermNode tn3=(TermNode)gn3.getOwner();
+			if (tn3.getType()!=TermNode.UPDATE)
+			    continue;
+			boolean containsgn=cantremove.contains(gn);
+			boolean containsgn3=cantremove.contains(gn3);
+			cantremove.add(gn);
+			cantremove.add(gn3);
+			Set cycle=GraphNode.findcycles(cantremove);
+			if (cycle.contains(gn3)) {
+			    if (!mustremove.contains(gn3)) {
+				change=true;
+				mustremove.add(gn3);
+			    }
 			}
+			if (!mustremove.contains(gn3)&&!cycle.contains(gn)) {
+			    foundnocycle=true;
+			}
+			if (!containsgn)
+			    cantremove.remove(gn);
+			if (!containsgn3)
+			    cantremove.remove(gn3);
 		    }
-		    cantremove.remove(gn);
+		}
+		if(!foundnocycle) {
+		    if (!mustremove.contains(gn)) {
+			change=true;
+			mustremove.add(gn);
+		    }
 		}
 	    }
 	    couldremove.removeAll(mustremove);
@@ -140,7 +169,8 @@ public class GraphAnalysis {
 		continue; //recalculate
 
 	    System.out.println("Searching set of "+couldremove.size()+" nodes.");
-	    System.out.println("Eliminated "+mustremove.size()+" nodes");
+	    System.out.println("Eliminated must "+mustremove.size()+" nodes");
+	    System.out.println("Eliminated cant "+cantremove.size()+" nodes");
 	    System.out.println("Searching following set:");
 	    for(Iterator it=couldremove.iterator();it.hasNext();) {
 		GraphNode gn=(GraphNode)it.next();
