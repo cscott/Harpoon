@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.28 1998-09-03 00:29:28 cananian Exp $
+ * @version $Id: Translate.java,v 1.29 1998-09-03 00:47:25 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -588,8 +588,42 @@ class Translate  { // not public.
 	    //  if (obj!=null && !(obj instanceof class))
 	    //     throw new ClassCastException();
 	    {
-		// FIXME
-		throw new Error("CHECKCAST unimplemented as of yet.");
+		OpClass opd = (OpClass) in.getOperand(0);
+		Temp Tobj = s.stack[0];
+		Temp Tnull = new Temp("null");
+		Temp Tr0 = new Temp();
+		Temp Tr1 = new Temp();
+		Temp Tex = new Temp("checkcast");
+
+		HClass HCex = HClass.forClass(ClassCastException.class);
+
+		// make quads
+		Quad q0 = new CONST(in, Tnull, null, HClass.Void);
+		Quad q1 = new OPER(in, "acmp", Tr0, // equal is true
+				   new Temp[] { Tobj, Tnull } ); 
+		Quad q2 = new CJMP(in, Tr0);
+		Quad q3 = new INSTANCEOF(in, Tr1, Tobj, opd.value());
+		Quad q4 = new CJMP(in, Tr1);
+		Quad q5 = new NEW(in, Tex, HCex);
+		Quad q6 = new CALL(in, HCex.getConstructor(new HClass[0]),
+				   Tex, new Temp[0]);
+		Quad q7 = new THROW(in, Tex);
+		Quad q8 = new PHI(in, new Temp[0], 2);
+		// link quads.
+		Quad.addEdge(q0, 0, q1, 0);
+		Quad.addEdge(q1, 0, q2, 0);
+		Quad.addEdge(q2, 0, q3, 0);
+		Quad.addEdge(q2, 1, q8, 0);
+		Quad.addEdge(q3, 0, q4, 0);
+		Quad.addEdge(q4, 0, q5, 0);
+		Quad.addEdge(q4, 1, q8, 1);
+		Quad.addEdge(q5, 0, q6, 0);
+		Quad.addEdge(q6, 0, q7, 0);
+		// and setup the next state.
+		ns = s;
+		q = q0;
+		last = q8;
+		break;
 	    }
 	case Op.D2F:
 	case Op.D2I:
