@@ -85,7 +85,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_enterMemBlock_00024_00024i
 #ifdef RTJ_DEBUG
   printf("\nMemoryArea.enterMemBlock_initcheck");
 #endif
-  Java_javax_realtime_MemoryArea_enterMemBlock(memoryArea, realtimeThread, memAreaStack);
+  Java_javax_realtime_MemoryArea_enterMemBlock(env, memoryArea, realtimeThread, memAreaStack);
 }
 
 /*
@@ -177,7 +177,7 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realti
   return result;
 }
 
-JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2_3I
+JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2_3I_00024_00024initcheck
 (JNIEnv *env, jobject memoryArea, jobject realtimeThread,
  jclass componentClass, jintArray dims) {
 #ifdef RTJ_DEBUG
