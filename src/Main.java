@@ -48,17 +48,25 @@ public class Main {
 
 	    //set the window size for the Diplay node windows
 	    //that pop up
-	    Display.setDefaultSize(260, 200);
+	    Display.setDefaultSize(200, 150);
 	   						      
 	    //Node load = new Load ("/share/tank3.jar", "tank3.gz", 74, null);
 	    //Node load = new Load ("/share/tank2.jar", "tank2.gz", 77, null);
 	    //Node load = new Load("/share/tank1.jar", "tank1.gz", 125, null);
 	    //Node load = new Load("/share/tank.jar", "tank.gz", 554, null);
 	    Node load = new Load("/share/woodgrain.jar", "tank.gz", 533, null);
+	    //Node load = new Load("/share/woodgrain.jar", "tank.gz", 416, null);
+	    
 	    Node circle = new Circle(null, null);
+	    Node arrow = new DrawArrow(null, null);
 	    Node copy = new Copy(null);
 	    Node copy2 = new Copy(null);
+
+	    //these two store identical images, but
+	    //send them to different spots
 	    Node circleCache = new Cache(1, null, null);
+	    Node arrowCache = new Cache(1, null, null);
+
 	    Node cleanCache = new Cache(1, null, null);
 	    Node labelSmCache = new Cache(1, null, null);
 	    Node timer1 = new Timer(true, false, null);
@@ -99,8 +107,6 @@ public class Main {
 
 	    Node pause = new Pause(-1.0, 0, null);
 	    Node pause2 = new Pause(-1.0, 0, null);
-	    //Node pause = new Node();
-	    //Node pause2 = new Node();
 	    LabelBlue labelBlue = new LabelBlue(null, null);
 	    labelBlue.calibrateAndProcessSeparately(true);
 	    Node calibCmd = new Command(Command.CALIBRATION_IMAGE, null);
@@ -108,7 +114,9 @@ public class Main {
 	    Node noneCmd = new Command(Command.NONE, null);
 	    Node noneCmd2 = new Command(Command.NONE, null);
 	    Node retrCmd = new Command(Command.RETRIEVED_IMAGE, null);
+	    Node retr2Cmd = new Command(Command.RETRIEVED_IMAGE, null);
 	    Node getCmd = new Command(Command.GET_IMAGE, null);
+	    Node getCmd2 = new Command(Command.GET_IMAGE, null);
 	    Node getCropCmd = new Command(Command.GET_CROPPED_IMAGE, null);
 	    Node getLabelSmCmd = new Command(Command.GET_IMAGE, null);
 	    Node n = new Node();
@@ -125,20 +133,21 @@ public class Main {
 	    */
 	    ///*
 	    load.link(pause,
-		      origDisp.linkL(circleCache.link(timer1.linkL(cleanCache.link(n.link(calibCmd.linkL(labelBlue),
-											  noneCmd.linkL(copy.linkL(robCross.link(robDisp,
-																 thresh.link(threshDisp,
-																	     hyst.link(hystDisp,
-																		       label.link(labelDisp,
-																				  labelSmDisp.linkL(labelSmCache.link(getCropCmd.linkL(cleanCache),
-																								      thin.link(thinDisp,
-																										range.linkL(timer2))))))))))),
-										   n2.link(null,
-											   labelBlue.link(labelBlueDisp,
-													  getLabelSmCmd.link(labelSmCache,
-															     noneCmd2.linkL(circle.linkR(getCmd.linkL(circleCache)))))))),
-						      retrCmd.linkL(circle.linkL(endDisp.linkL(pause2))))));
-	    //*/
+		      origDisp.linkL(circleCache.link(arrowCache.link(timer1.linkL(cleanCache.link(n.link(calibCmd.linkL(labelBlue),
+													  noneCmd.linkL(copy.linkL(robCross.link(robDisp,
+																		 thresh.link(threshDisp,
+																			     hyst.link(hystDisp,
+																				       label.link(labelDisp,
+																						  labelSmDisp.linkL(labelSmCache.link(getCropCmd.linkL(cleanCache),
+																										      thin.link(thinDisp,
+																												range.linkL(timer2.linkL(arrow.linkR(getCmd2.linkL(arrowCache)))))))))))))),
+												   n2.link(null,
+													   labelBlue.link(labelBlueDisp,
+															  getLabelSmCmd.link(labelSmCache,
+																	     noneCmd2.linkL(circle.linkR(getCmd.linkL(circleCache)))))))),
+								      retr2Cmd.linkL(arrow.linkL(endDisp))),
+						      retrCmd.linkL(circle.linkL(endDisp)))));
+				     //*/
 	    /*
 	      //implements Wes's simple single-object tank finder
 	    label.findOneObject(true);
