@@ -39,7 +39,7 @@ void update_stats() {
     /* log the current peak value and zero it */
     if (initialclock==0)
       initialclock=t;
-    printf("time = %ld peak = %ld\n",t-initialclock,lastpeak);
+    printf("\n time= %ld peak= %ld\n",t-initialclock,lastpeak);
     lastpeak=0;
     lastpeaka=0;
     startclock=t;
