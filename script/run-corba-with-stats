@@ -1,0 +1,17 @@
+cd ..
+xterm -title "Name Service" -e java -server -jar ns.jar .jacorb &
+sleep 5
+
+exec 6>&1
+exec > raw-tracker-stats.txt
+java -server -jar trackerStub.jar timer "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb &
+exec 1>&6 6>&-
+sleep 5
+
+exec 6>&1
+exec > raw-stats.txt
+java -server -jar ATR.jar timer 2 "LMCO ATR" "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb &
+exec 1>&6 6>&-
+sleep 5
+
+xterm -hold -title "Sending to ATR" -e java -server -jar receiverStub.jar GUI.jar tank.gz 533 1 "LMCO ATR" -ORBInitRef NameService=file:/`pwd`/.jacorb &

@@ -1,0 +1,11 @@
+set multiplot
+set xrange [0:300]
+set yrange [0:300]
+set nokey      
+set label "processing = red, receiving = green, tracking = blue, total = purple" at graph 0.1, 0.9
+plot "../processing-stats.txt" lt 1 # processing is red
+plot"../receiving-stats.txt" lt 2   # receiving is green
+plot "../tracking-stats.txt" lt 3   # tracking is blue
+plot "../total-stats.txt" lt 4      # total is purple
+set nomultiplot
+pause -1
