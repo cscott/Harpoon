@@ -19,7 +19,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.9 1999-08-04 06:31:00 cananian Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.10 1999-08-09 22:11:13 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL
@@ -37,7 +37,12 @@ public abstract class INVOCATION extends Stm {
     /** Constructor. */
     protected INVOCATION(TreeFactory tf, HCodeElement source,
 			 Exp retval, Exp func, ExpList args) {
-	super(tf, source);
+	this(tf, source, retval, func, args, 1);
+    }
+
+    protected INVOCATION(TreeFactory tf, HCodeElement source,
+			 Exp retval, Exp func, ExpList args, int next_arity) {
+	super(tf, source, next_arity);
 	this.retval=retval; this.func=func; this.args=args;
 	Util.assert(retval!=null && func!=null);
 	Util.assert(func.tf == retval.tf, "Func and Retval must have same tree factory");

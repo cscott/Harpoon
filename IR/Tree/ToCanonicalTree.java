@@ -24,7 +24,7 @@ import java.util.Map;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.10 1999-08-04 06:31:00 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.11 1999-08-09 22:11:13 duncan Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -41,30 +41,23 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	Util.assert(tf.getParent().getName().equals("canonical-tree"));
 	
     	final Map dT = new HashMap();
+	final Map tT = new HashMap();
 
-	m_tree = translate(tf, code, dT);
+	m_tree = translate(tf, code, dT, tT);
 	m_derivation = new Derivation() {
 	    public DList derivation(HCodeElement hce, Temp t) {
-		if ((hce==null)||(t==null)) return null;
-		else {
-		    Object deriv = dT.get(new Tuple(new Object[] { hce, t }));
-		    if (deriv instanceof Error)
-		    throw (Error)((Error)deriv).fillInStackTrace();
-		    else
-		    return (DList)deriv;
-		}
+		Util.assert(hce!=null && t!=null);
+		return (DList)dT.get(new Tuple(new Object[] { hce, t }));
 	    }
 	};
 	m_typeMap = new TypeMap() {
-	    public HClass typeMap(HCode hc, Temp t) {
+	    public HClass typeMap(HCodeElement hce, Temp t) {
 		Util.assert(t.tempFactory()==tf.tempFactory());
-		if (t==null) return null;
-		else {
-		    Object type = dT.get(t);   // Ignores hc parameter
-		    if (type instanceof Error) 
+		Util.assert(hce!=null && t!=null);
+		Object type = tT.get(t);   // Ignores hc parameter
+		try { return (HClass)type; } 
+		catch (ClassCastException cce) { 
 		    throw (Error)((Error)type).fillInStackTrace();
-		    else                       
-		    return (HClass)type;
 		}
 	    }
 	};
@@ -87,19 +80,18 @@ public class ToCanonicalTree implements Derivation, TypeMap {
     /** Returns the updated type information for the specified
      *  <code>Temp</code>.  The <code>HCode</code> paramter is
      *  ignored. */
-    public HClass typeMap(HCode hc, Temp t) {
-	// Ignores HCode parameter
-	return m_typeMap.typeMap(hc, t);
+    public HClass typeMap(HCodeElement hce, Temp t) {
+	return m_typeMap.typeMap(hce, t);
     }
 
     // translate to canonical form
-    private Tree translate(TreeFactory tf, TreeCode code, Map dT) {
+    private Tree translate(TreeFactory tf, TreeCode code, Map dT, Map tT) {
 	CanonicalizingVisitor cv;    // Translates the TreeCode
 	Stm                   root;  // The root of "code"
 	TreeMap               tm;    // maps old trees to translated trees
 
 	tm   = new TreeMap();
-	cv   = new CanonicalizingVisitor(tf, tm, code, dT);
+	cv   = new CanonicalizingVisitor(tf, tm, code, dT, tT);
 	root = (Stm)code.getRootElement();
 
 	// This visitor recursively visits all relevant nodes on its own
@@ -117,14 +109,15 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	private TreeFactory tf; 
 	private TreeMap     treeMap;
 	private TypeMap     typeMap;
-	private Map         dT;
+	private Map         dT, tT;
 
 	public CanonicalizingVisitor(TreeFactory tf, TreeMap tm, 
-				     TreeCode code, Map dT) {
+				     TreeCode code, Map dT, Map tT) {
 	    this.code       = code;
 	    this.derivation = code;
 	    this.treeMap    = tm;
 	    this.dT         = dT;
+	    this.tT         = tT;
 	    this.tf         = tf;
 	    this.typeMap    = code;
 	    this.ctm        = new CloningTempMap
@@ -250,9 +243,10 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 		    (tNew.temp,new Error("*** Derived pointers have no type"));
 	    }
 	    else {
-		if (this.typeMap.typeMap(this.code, tOld.temp) != null) {
-		    dT.put
-			(tNew.temp,this.typeMap.typeMap(this.code, tOld.temp));
+		if (this.typeMap.typeMap(tOld, tOld.temp) != null) {
+		    tT.put
+			(new Tuple(new Object[] {tNew,tNew.temp}),
+			 this.typeMap.typeMap(tNew, tOld.temp));
 		}
 	    }
 	}

@@ -33,7 +33,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.24 1999-08-04 06:31:00 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.25 1999-08-09 22:11:13 duncan Exp $
  */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {
@@ -233,11 +233,10 @@ public abstract class Code extends HCode
      */
     public abstract DList derivation(HCodeElement hce, Temp t);
     
-
     /**
      * Implementation of the <code>TypeMap</code> interface.
      */
-    public abstract HClass typeMap(HCode hc, Temp t);
+    public abstract HClass typeMap(HCodeElement hc, Temp t);
 
     /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*
      *                                                           *
@@ -279,6 +278,37 @@ public abstract class Code extends HCode
 
 	public void visit(Tree t) { throw new Error("No defaults here."); }
 	public void visit(Exp e)  { /* Do nothing for Exps */ } 
+
+	public void visit(CALL s) { 
+	    switch (state) { 
+	    case COMPUTE_EDGE_SETS:
+		nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
+		Util.assert(labels.containsKey(s.retex.label));
+		Util.assert(nextNode!=null);
+		Util.assert(RS(nextNode)!=(Stm)labels.get(s.retex.label));
+		addEdge(s, RS(nextNode)); 
+		addEdge(s, (Stm)labels.get(s.retex.label));
+		break;
+	    case ALLOC_EDGE_ARRAYS:
+		visit((Stm)s); return;
+	    case ASSIGN_EDGE_DATA:
+		nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
+		if (successors.containsKey(s)) { 
+		    Stm ex   = (Stm)labels.get(s.retex.label);
+		    Set succ = (Set)successors.get(s);
+		    Util.assert(succ.size()==2);
+		    for (Iterator i = succ.iterator(); i.hasNext();) { 
+			Stm next     = (Stm)i.next();
+			Set nextPred = (Set)predecessors.get(next);
+			Tree.addEdge(s, next==ex?1:0, next, nextPred.size()-1);
+			nextPred.remove(s);
+		    }
+		    successors.remove(s);
+		}
+		break;
+	    default: throw new Error("Bad state: " + state);
+	    }
+	}
 
 	public void visit(CJUMP s) { 
 	    switch(state) { 
@@ -409,7 +439,6 @@ public abstract class Code extends HCode
 			    nextPred.remove(s);
 			}
 			succ.clear(); 
-			n=0;
 		    }
 		    break;
 		default:

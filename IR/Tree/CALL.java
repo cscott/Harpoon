@@ -27,7 +27,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.17 1999-08-04 05:52:29 cananian Exp $
+ * @version $Id: CALL.java,v 1.1.2.18 1999-08-09 22:11:13 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
@@ -35,12 +35,14 @@ import java.util.Set;
 public class CALL extends INVOCATION {
     /** Expression indicating the destination to which we should return
      *  if our caller throws an exception. */
-    public Exp retex;
+    public NAME retex;
 
     /** Create a <code>CALL</code> object. */
     public CALL(TreeFactory tf, HCodeElement source,
-		Exp retval, Exp retex, Exp func, ExpList args) {
-	super(tf, source, retval, func, args);
+		Exp retval, NAME retex, Exp func, ExpList args) {
+	super(tf, source, retval, func, args, 2); // this.next_arity()==2
+	Util.assert(retex != null);
+	Util.assert(retex.tf == tf);
 	this.retex = retex;
     }
   
@@ -63,7 +65,7 @@ public class CALL extends INVOCATION {
 	    Util.assert(tf == e.head.tf);
 	return new CALL(tf, this,
 			kids.head,            // retval
-			kids.tail.head,       // retex
+			(NAME)kids.tail.head, // retex
 			kids.tail.tail.head,  // func
 			kids.tail.tail.tail); // args
     }
@@ -74,20 +76,20 @@ public class CALL extends INVOCATION {
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new CALL(tf, this, 
 			(Exp)retval.rename(tf, ctm),
-			(Exp)retex.rename(tf, ctm), 
+			(NAME)retex.rename(tf, ctm), 
 			(Exp)func.rename(tf, ctm),
 			ExpList.rename(args, tf, ctm));
   }
 
     protected Set defSet() { 
 	Set def = super.defSet();
-	if (retex.kind()==TreeKind.TEMP)  def.add(((TEMP)retex).temp);
+	//if (retex.kind()==TreeKind.TEMP)  def.add(((TEMP)retex).temp);
 	return def;
     }
 
     protected Set useSet() { 
 	Set uses = super.useSet();
-	if (!(retex.kind()==TreeKind.TEMP))  uses.addAll(retex.useSet());
+	//if (!(retex.kind()==TreeKind.TEMP))  uses.addAll(retex.useSet());
 	return uses;
     }
 

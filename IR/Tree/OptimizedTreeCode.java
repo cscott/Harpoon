@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.8 1999-08-04 06:31:00 cananian Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.9 1999-08-09 22:11:13 duncan Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = "optimized-tree";
@@ -59,17 +59,9 @@ public class OptimizedTreeCode extends Code {
 	}
 	final CanonicalTreeCode optimizedCode = code;
 
-	this.derivation = new Derivation() { 
-	    public DList derivation(HCodeElement hce, Temp t) { 
-		return optimizedCode.derivation(hce, t);
-	    }
-	};
-	this.typeMap = new TypeMap() { 
-	    public HClass typeMap(HCode hc, Temp t) { 
-		return optimizedCode.typeMap(hc, t);
-	    }
-	};
-	this.tree = (Stm)code.getRootElement();
+	this.derivation = optimizedCode;
+	this.typeMap    = optimizedCode;
+	this.tree       = (Stm)optimizedCode.getRootElement();
 
 	this.edgeInitializer = new EdgeInitializer();
 	this.edgeInitializer.computeEdges();
@@ -87,13 +79,15 @@ public class OptimizedTreeCode extends Code {
 	
 	this.derivation = new Derivation() { 
 	    public DList derivation(HCodeElement hce, Temp t) { 
-		return code.derivation(hce, t==null?null:ctm.tempMap(t));
+		Util.assert(hce!=null && t!=null);
+		return code.derivation(hce, ctm.tempMap(t));
 	    }
 	};
 
 	this.typeMap    = new TypeMap() { 
-	    public HClass typeMap(HCode hc, Temp t) { 
-		return code.typeMap(hc, t==null?null:ctm.tempMap(t));
+	    public HClass typeMap(HCodeElement hce, Temp t) { 
+		Util.assert(hce!=null && t!=null);
+		return code.typeMap(hce, ctm.tempMap(t));
 	    }
 	};
     }
@@ -181,9 +175,8 @@ public class OptimizedTreeCode extends Code {
     /**
      * Implementation of the <code>Typemap<code> interface.
      */
-    public HClass typeMap(HCode hc, Temp t) {
-	// Ignores hc parameter
-	return typeMap.typeMap(this, t);
+    public HClass typeMap(HCodeElement hce, Temp t) {
+	return typeMap.typeMap(hce, t);
     }
 
     public interface TreeOptimizer { 

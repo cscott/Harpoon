@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * The tree form is based around Andrew Appel's tree form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: TreeCode.java,v 1.1.2.15 1999-08-07 04:35:21 cananian Exp $
+ * @version $Id: TreeCode.java,v 1.1.2.16 1999-08-09 22:11:13 duncan Exp $
  * 
  */
 public class TreeCode extends Code {
@@ -67,13 +67,15 @@ public class TreeCode extends Code {
 	tc.tree = (Tree)(Tree.clone(tc.tf, ctm, tree));
 	tc.derivation = new Derivation() { 
 	    public DList derivation(HCodeElement hce, Temp t) { 
-		return this.derivation(hce, t==null?null:ctm.tempMap(t));
+		Util.assert(hce!=null && t!=null);
+		return this.derivation(hce, ctm.tempMap(t));
 	    }
 	};
 
 	tc.typeMap    = new TypeMap() { 
-	    public HClass typeMap(HCode hc, Temp t) { 
-		return this.typeMap(hc, t==null?null:ctm.tempMap(t));
+	    public HClass typeMap(HCodeElement hce, Temp t) { 
+		Util.assert(hce!=null && t!=null);
+		return this.typeMap(hce, ctm.tempMap(t));
 	    }
 	};
 
@@ -152,8 +154,7 @@ public class TreeCode extends Code {
     /**
      * Implementation of the <code>TypeMap</code> interface.
      */
-    public HClass typeMap(HCode hc, Temp t) {
-	// Ignores hc parameter
-	return typeMap.typeMap(this, t);
+    public HClass typeMap(HCodeElement hce, Temp t) {
+	return typeMap.typeMap(hce, t);
     }
 }
