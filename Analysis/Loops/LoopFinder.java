@@ -10,7 +10,7 @@ import harpoon.Analysis.DomTree;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.CFGraphable;
+import harpoon.IR.Properties.CFGrapher;
 import harpoon.Util.Util;
 
 import java.util.Set;
@@ -20,7 +20,7 @@ import java.util.Iterator;
  * <code>LoopFinder</code> implements Dominator Tree Loop detection.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopFinder.java,v 1.1.2.9 2000-11-10 21:57:21 cananian Exp $
+ * @version $Id: LoopFinder.java,v 1.1.2.10 2001-05-15 05:01:26 pnkfelix Exp $
  */
 
 public class LoopFinder implements Loops {
@@ -30,7 +30,8 @@ public class LoopFinder implements Loops {
     WorkSet setofloops;
     Loop root;
     Loop ptr;
-    
+
+    CFGrapher grapher;
 
     /** Creates a new LoopFinder object. 
       * This call takes an HCode and returns a LoopFinder object
@@ -40,12 +41,25 @@ public class LoopFinder implements Loops {
       *        the <code> CFGraphable </code> interface.*/
     
     public LoopFinder(HCode hc) {
+	this(hc, CFGrapher.DEFAULT);
+    }
+    
+
+    /** Creates a new LoopFinder object. 
+      * This call takes an HCode and a CFGrapher
+      * and returns a LoopFinder object
+      * at the root level.  
+      *<BR> <B> Requires: </B> <code> grapher </code> is a
+      *        <code>CFGrapher</code> for <code> hc </code>.*/
+    
+    public LoopFinder(HCode hc, CFGrapher grapher) {
+	this.grapher = grapher;
 	this.hc=hc;
 	this.dominator=new DomTree(hc, false);
 	analyze();
 	this.ptr=root;    
     }
-    
+
     /**This method is for internal use only.
      *It returns a Loopfinder object at any level,
      *but it doesn't regenerate the internal tree
@@ -93,8 +107,8 @@ public class LoopFinder implements Loops {
 	Iterator iterate=ptr.entries.iterator();
 	while (iterate.hasNext()) {
 	    HCodeElement hce=(HCodeElement)iterate.next();
-	    for (int i=0;i<((CFGraphable)hce).succ().length;i++) {
-		if (((CFGraphable)hce).succ()[i].to()==ptr.header) {
+	    for (int i=0;i< grapher.succ(hce).length;i++) {
+		if (grapher.succ(hce)[i].to()==ptr.header) {
 		    A.push(hce);
 		    break;
 		}
@@ -112,8 +126,8 @@ public class LoopFinder implements Loops {
 	Iterator iterate=ptr.entries.iterator();
 	while (iterate.hasNext()) {
 	    HCodeElement hce=(HCodeElement)iterate.next();
-	    for (int i=0;i<((CFGraphable)hce).succ().length;i++) {
-		if (!ptr.entries.contains(((CFGraphable)hce).succ()[i].to())) {
+	    for (int i=0;i<grapher.succ(hce).length;i++) {
+		if (!ptr.entries.contains(grapher.succ(hce)[i].to())) {
 		    A.push(hce);
 		    break;
 		}
@@ -323,21 +337,21 @@ public class LoopFinder implements Loops {
 	WorkSet B=new WorkSet();
 
 	//Loop through all of our outgoing edges
-	for (int i=0;i<(((CFGraphable)q).succ()).length;i++) {
+	for (int i=0;i<grapher.succ(q).length;i++) {
 	    HCodeElement temp=q;
 	    
 	    //Go up the dominator tree until
 	    //we hit the root element or we
 	    //find the node we jump back too
 	    while ((temp!=(hc.getRootElement()))&&
-		   (((CFGraphable)q).succ()[i]).to()!=temp) {
+		   (grapher.succ(q)[i].to()!=temp)) {
 		temp=dominator.idom(temp);
 	    }
 
 	    //If we found the node we jumped back to
 	    //then build loop
 
-	    if (((CFGraphable)q).succ()[i].to()==temp) {
+	    if (grapher.succ(q)[i].to()==temp) {
 		
 		//found a loop
 		A.entries.push(temp); //Push the header
@@ -353,9 +367,9 @@ public class LoopFinder implements Loops {
 		    
 		    //Add all of the new incoming edges that we haven't already
 		    //visited
-		    for (int j=0;j<((CFGraphable)newnode).pred().length;j++) {
-			if (!A.entries.contains(((CFGraphable)newnode).pred()[j].from()))
-			    B.push(((CFGraphable)newnode).pred()[j].from());
+		    for (int j=0;j<grapher.pred(newnode).length;j++) {
+			if (!A.entries.contains(grapher.pred(newnode)[j].from()))
+			    B.push(grapher.pred(newnode)[j].from());
 		    }
 		    
 		    //push the new node on our list of nodes in the loop
