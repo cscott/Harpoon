@@ -1,3 +1,6 @@
+---- Sep-15-98
+Phi-placement analysis works, it just needs 'dead-code elimination'.
+ Remove any phi function that defines a variable that is never used.
 ---- Sep-14-98
 Make sure Test/zeroopt.java is properly optimized.
 SWITCH processing is still broken.
