@@ -32,9 +32,9 @@ import java.util.Map;
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContCode.java,v 1.1.2.5 1999-11-20 06:48:56 bdemsky Exp $
+ * @version $Id: ContCode.java,v 1.1.2.6 1999-11-22 21:00:35 bdemsky Exp $
  */
-public class ContCode extends Code {
+public class ContCode extends harpoon.IR.Quads.QuadNoSSA {
 
     /** Creates a <code>ContCode</code> for an <code>HMethod</code> using
      *  the <code>HCode</code> from which we want to build the continuation
