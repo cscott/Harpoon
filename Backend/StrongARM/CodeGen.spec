@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.83 1999-10-21 00:36:25 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.84 1999-10-21 00:46:45 cananian Exp $
  */
 %%
 
@@ -573,7 +573,7 @@ BINOP<p,i>(CMPGT, j, k) = i
     // reordering them
     emit(ROOT, "cmp `s0, `s1\n"+	
 	       "movgt `d0, #1\n"+	
-	       "movne `d0, #0", i, j, k );
+	       "movle `d0, #0", i, j, k );
 }%
 
 BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
