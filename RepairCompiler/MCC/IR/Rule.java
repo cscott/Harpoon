@@ -12,7 +12,8 @@ public class Rule {
     Expr guard = null;
     Inclusion inclusion = null;    
     SymbolTable st = new SymbolTable();
-    
+    DNFRule dnfguard=null,dnfnegguard=null;
+
     String label;
     
     int num;
@@ -22,6 +23,14 @@ public class Rule {
         label = new String("rule" + count++);
     }
     
+    public int numQuantifiers() {
+	return quantifiers.size();
+    }
+
+    public Quantifier getQuantifier(int i) {
+	return (Quantifier) quantifiers.get(i);
+    }
+
     public int getNum() {
         return num;
     }
@@ -48,10 +57,21 @@ public class Rule {
 
     public void setGuardExpr(Expr guard) {
         this.guard = guard;
+	dnfguard=guard.constructDNF();
+	OpExpr opexpr=new OpExpr(Opcode.NOT,guard,null);
+	dnfnegguard=opexpr.constructDNF();
     }
     
     public Expr getGuardExpr() {
         return guard;
+    }
+
+    public DNFRule getDNFGuardExpr() {
+        return dnfguard;
+    }
+
+    public DNFRule getDNFNegGuardExpr() {
+        return dnfnegguard;
     }
 
     public void setInclusion(Inclusion inclusion) {

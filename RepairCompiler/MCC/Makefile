@@ -82,6 +82,7 @@ parser: $(PARSERS) $(SCANNER).java
 
 %.class: %.java
 	javac -classpath ../ -source 1.4 $<
+#	jikes -classpath $(CLASSPATH):../ $<
 
 %.lex.java: %.lex
 	java -classpath ../ JLex.Main $<

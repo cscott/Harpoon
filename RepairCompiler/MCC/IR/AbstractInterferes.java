@@ -92,9 +92,93 @@ class AbstractInterferes {
 		    (neg2&&(op2==Opcode.LT)&&(size1a>=size2)))
 		    return false;
 	    } 
-
-
 	}
 	return true;
+    }
+
+    static public boolean interferes(Descriptor des, boolean satisfy, DNFPredicate dp) {
+	if ((des!=dp.getPredicate().getDescriptor()) &&
+	    ((des instanceof SetDescriptor)||
+	     !dp.getPredicate().usesDescriptor((RelationDescriptor)des)))
+	    return false;
+
+	/* This if handles all the c comparisons in the paper */
+	if (des==dp.getPredicate().getDescriptor()&&
+	    (satisfy)&&
+	    (dp.getPredicate() instanceof ExprPredicate)&&
+	    (((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.SIZE)) {
+	    boolean neg2=dp.isNegated();
+	    Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
+	    int size2=((ExprPredicate)dp.getPredicate()).leftsize();
+	    {
+		if ((!neg2&&(op2==Opcode.GE))||
+		    (!neg2&&(op2==Opcode.GT))||
+		    (neg2&&(op2==Opcode.LE))||
+		    (neg2&&(op2==Opcode.LT)))
+		    return false;
+	    }
+	}
+	/* This if handles all the c comparisons in the paper */
+	if (des==dp.getPredicate().getDescriptor()&&
+	    (!satisfy)&&
+	    (dp.getPredicate() instanceof ExprPredicate)&&
+	    (((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.SIZE)) {
+	    boolean neg2=dp.isNegated();
+	    Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
+	    int size2=((ExprPredicate)dp.getPredicate()).leftsize();
+	    {
+		if ((neg2&&(op2==Opcode.GE))||
+		    (neg2&&(op2==Opcode.GT))||
+		    (!neg2&&(op2==Opcode.LE))||
+		    (!neg2&&(op2==Opcode.LT)))
+		    return false;
+	    } 
+	}
+	return true;
+    }
+
+    static public boolean interferes(Descriptor des, boolean satisfy, Rule r, boolean satisfyrule) {
+	for(int i=0;i<r.numQuantifiers();i++) {
+	    Quantifier q=r.getQuantifier(i);
+	    if (q instanceof RelationQuantifier||q instanceof SetQuantifier) {
+		if (q.getRequiredDescriptors().contains(des)&&(satisfy==satisfyrule))
+		    return true;
+	    } else if (q instanceof ForQuantifier) {
+		if (q.getRequiredDescriptors().contains(des))
+		    return true;
+	    } else throw new Error("Unrecognized Quantifier");
+	}
+	/* Scan DNF form */
+	DNFRule drule=r.getDNFGuardExpr();
+	for(int i=0;i<drule.size();i++) {
+	    RuleConjunction rconj=drule.get(i);
+	    for(int j=0;j<rconj.size();j++) {
+		DNFExpr dexpr=rconj.get(j);
+		Expr expr=dexpr.getExpr();
+		boolean negated=dexpr.getNegation();
+		/*
+		  satisfy  negated
+		  Yes      No             Yes
+		  Yes      Yes            No
+		  No       No             No
+		  No       Yes            Yes
+		*/
+		boolean satisfiesrule=(satisfy^negated);/*XOR of these */
+		if (satisfiesrule==satisfyrule) {
+		    /* Effect is the one being tested for */
+		    /* Only expr's to be concerned with are TupleOfExpr and
+		       ElementOfExpr */
+		    if (expr.getRequiredDescriptors().contains(des)) {
+			if (((expr instanceof ElementOfExpr)||
+			    (expr instanceof TupleOfExpr))&&
+			    (expr.getRequiredDescriptors().size()==1))
+			    return true;
+			else
+			    throw new Error("Unrecognized EXPR");
+		    }
+		}
+	    }
+	}
+	return false;
     }
 }

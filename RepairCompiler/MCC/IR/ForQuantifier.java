@@ -14,13 +14,21 @@ public class ForQuantifier extends Quantifier {
         this.var = vd;
     }
 
+    public VarDescriptor getVar() {
+	return var;
+    }
+
+
     public void setBounds(Expr lower, Expr upper) {
         this.lower = lower;
         this.upper = upper;
     }
 
     public Set getRequiredDescriptors() {
-        return new HashSet();
+        HashSet set=new HashSet();
+	set.addAll(lower.getRequiredDescriptors());
+	set.addAll(upper.getRequiredDescriptors());
+	return set;
     }
 
     public String toString() {

@@ -5,14 +5,15 @@ class TermNode {
     public final static int ABSTRACT=2;
     public final static int UPDATE=3;
     public final static int RULESCOPE=4;
-    
+    public final static int CONSEQUENCE=5;
 
+    ConsequenceNode conseqnode;
     Constraint constr;
     Conjunction conj;
     int type;
     AbstractRepair repair;
     ScopeNode scope;
-
+    MultUpdateNode update;
 
     public TermNode(Constraint constr, Conjunction conj) {
 	this.constr=constr;
@@ -25,9 +26,26 @@ class TermNode {
 	type=ABSTRACT;
     }
 
+    public TermNode(ConsequenceNode cn) {
+	conseqnode=cn;
+	type=CONSEQUENCE;
+    }
+
     public TermNode(ScopeNode sn) {
 	scope=sn;
 	type=RULESCOPE;
+    }
+
+    public TermNode(MultUpdateNode un) {
+	update=un;
+	type=UPDATE;
+    }
+
+    public ConsequenceNode getConsequence() {
+	if (type!=CONSEQUENCE)
+	    throw new Error("Not Consequence Node!");
+	else
+	    return conseqnode;
     }
 
     public Conjunction getConjunction() {
@@ -35,6 +53,20 @@ class TermNode {
 	    throw new Error("Not Conjunction Node!");
 	else
 	    return conj;
+    }
+
+    public MultUpdateNode getUpdate() {
+	if (type!=UPDATE)
+	    throw new Error("Not Update Node!");
+	else
+	    return update;
+    }
+
+    public ScopeNode getScope() {
+	if (type!=RULESCOPE)
+	    throw new Error("Not Scope Node!");
+	else
+	    return scope;
     }
 
     public AbstractRepair getAbstract() {

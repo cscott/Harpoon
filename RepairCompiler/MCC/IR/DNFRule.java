@@ -63,7 +63,7 @@ public class DNFRule {
     public DNFRule not() {
 	DNFRule copy=copy();
 	for (int i=0;i<size();i++) {
-	    RuleConjunction conj=get(i);
+	    RuleConjunction conj=copy.get(i);
 	    for (int j=0;j<conj.size();j++) {
 		DNFExpr dp=conj.get(j);
 		dp.negatePred();

@@ -20,10 +20,29 @@ public class DotExpr extends Expr {
     }
     */
 
+    FieldDescriptor fd;
+    TypeDescriptor fieldtype;
+    Expr intindex;
+    
     public DotExpr(Expr left, String field, Expr index) {
         this.left = left;
         this.field = field;
         this.index = index;
+
+        FieldDescriptor fd = struct.getField(field);
+        LabelDescriptor ld = struct.getLabel(field);        
+       if (ld != null) { /* label */
+            assert fd == null;
+            fieldtype = ld.getType(); // d.s ==> Superblock, while,  d.b ==> Block
+            fd = ld.getField();
+            assert fd != null;
+            assert intindex == null;
+            intindex = ld.getIndex();
+        } else {
+            fieldtype = fd.getType();
+	    intindex=index;
+        }
+	this.fd=fd;
     }
 
     public Set getRequiredDescriptors() {
@@ -32,12 +51,19 @@ public class DotExpr extends Expr {
         if (index != null) {
             v.addAll(index.getRequiredDescriptors());
         }
-
         return v;
     }
 
     public Expr getExpr() {
         return left;
+    }
+
+    public FieldDescriptor getField() {
+	return fd;
+    }
+
+    public Expr getIndex() {
+	return intindex;
     }
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
@@ -54,22 +80,8 @@ public class DotExpr extends Expr {
         writer.outputline("");
       
         StructureTypeDescriptor struct = (StructureTypeDescriptor) left.getType();        
-        FieldDescriptor fd = struct.getField(field);
-        LabelDescriptor ld = struct.getLabel(field);        
-        TypeDescriptor fieldtype;
         Expr intindex = index;
         Expr offsetbits;
-
-        if (ld != null) { /* label */
-            assert fd == null;
-            fieldtype = ld.getType(); // d.s ==> Superblock, while,  d.b ==> Block
-            fd = ld.getField();
-            assert fd != null;
-            assert intindex == null;
-            intindex = ld.getIndex();
-        } else {
-            fieldtype = fd.getType();
-        }
 
         // #ATTN#: getOffsetExpr needs to be called with the fielddescriptor obect that is in teh vector list
         // this means that if the field is an arraydescriptor you have to call getOffsetExpr with the array 

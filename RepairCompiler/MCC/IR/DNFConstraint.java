@@ -63,7 +63,7 @@ public class DNFConstraint {
     public DNFConstraint not() {
 	DNFConstraint copy=copy();
 	for (int i=0;i<size();i++) {
-	    Conjunction conj=get(i);
+	    Conjunction conj=copy.get(i);
 	    for (int j=0;j<conj.size();j++) {
 		DNFPredicate dp=conj.get(j);
 		dp.negatePred();

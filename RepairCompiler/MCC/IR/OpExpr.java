@@ -16,6 +16,10 @@ public class OpExpr extends Expr {
         assert (right == null && opcode == Opcode.NOT) || (right != null);
     }
 
+    public Opcode getOpcode() {
+	return opcode;
+    }
+
     public DNFRule constructDNF() {
         if (opcode==Opcode.AND) {
             DNFRule leftd=left.constructDNF();
@@ -28,7 +32,7 @@ public class OpExpr extends Expr {
         } else if (opcode==Opcode.NOT) {
             DNFRule leftd=left.constructDNF();
             return leftd.not();
-        } else throw new Error();
+        } else return new DNFRule(this);
     }
 
     public boolean usesDescriptor(RelationDescriptor rd) {

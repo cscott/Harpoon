@@ -34,7 +34,7 @@ public class RuleConjunction {
 
     public RuleConjunction copy() {
 	Vector vector=new Vector();
-	for (int i=0;i<=size();i++) {
+	for (int i=0;i<size();i++) {
 	    DNFExpr dp=get(i);
 	    vector.add(new DNFExpr(dp));
 	}

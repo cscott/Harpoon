@@ -16,4 +16,12 @@ public class DNFExpr {
     void negatePred() {
 	negate=!negate;
     }
+
+    public Expr getExpr() {
+	return predicate;
+    }
+
+    public boolean getNegation() {
+	return negate;
+    }
 }
