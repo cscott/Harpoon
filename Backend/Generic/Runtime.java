@@ -32,7 +32,7 @@ import java.util.List;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.14 2001-07-10 22:49:16 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.15 2001-07-11 20:24:53 cananian Exp $
  */
 public abstract class Runtime {
     protected Runtime() { }
@@ -120,14 +120,18 @@ public abstract class Runtime {
 					Exp arrayRef);
 	/** Return a <code>Translation.Exp</code> which will create a
 	 *  array of the given type, with length specified by the
-	 *  given expression.  Elements of the array are
-	 *  uninitialized and only a single dimension of a multidimensional
-	 *  array will be created.  However, internal fields of the array
-	 *  (class pointer, length field) *are* initialized properly. */
+	 *  given expression.  Only a single dimension of a multidimensional
+	 *  array will be created. Elements of the array are only
+	 *  initialized if the <code>initialize</code> parameter is
+	 *  <code>true</code>; however the internal object header,
+	 *  length, and any internal fields of the array inherited
+	 *  from <code>java.lang.Object</code> are always initialized.
+	 */
 	public abstract Exp arrayNew(TreeFactory tf, HCodeElement source,
 				     DerivationGenerator dg,
 				     AllocationProperties ap,
-				     HClass arraytype, Exp length);
+				     HClass arraytype, Exp length,
+				     boolean initialize);
 
 	/** Return a <code>Translation.Exp</code> which tests the
 	 *  given object expression for membership in the component

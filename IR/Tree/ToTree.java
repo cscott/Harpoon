@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.95 2001-07-10 22:50:31 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.96 2001-07-11 20:24:39 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -320,21 +320,23 @@ static class TranslationVisitor extends LowQuadVisitor {
 	//  d1 = new array(ilen);
 	//  for (i=0; i<ilen; i++) {
 	//    d2 = d1[i] = new array(jlen);
+	//    /* call to 'new array' above *must* initialize all elements,
+	//       or else gc will get very unhappy when we alloc the subarray
+	//       (possibly causing gc) with the uninitialized array on the
+	//       heap */
+	//    <next step only if there are subarrays>
 	//    for (j=0; j<jlen; j++) {
-	//      d2[i] = 0;
+	//      d3 = d2[i] = new array(jlen);
+	//      ...
 	//    }
 	//  }
-	for (int i=0; i<=dl; i++) { // write the loop tops.
-	    Exp initializer;
-	    if (i==dl) // bottom out with elements set to zero/null.
-		initializer = constZero(q, arrayClasses[i]);
-	    else
-		initializer = m_rtb.arrayNew
+	for (int i=0; i<dl; i++) { // write the loop tops.
+	    Exp initializer = m_rtb.arrayNew
 		    (m_tf, q, treeDeriv,
 		     MAP(allocInfo.query(q)),
 		     arrayClasses[i],
 		     new Translation.Ex
-		     (_TEMP(q, HClass.Int, dimTemps[i]))).unEx(m_tf);
+		     (_TEMP(q, HClass.Int, dimTemps[i])), true).unEx(m_tf);
 	    // output: d1[i] = d2 = initializer.
 	    Stm s1 = new MOVE // d2 = initializer
 		(m_tf, q,
@@ -364,7 +366,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 		      
 	    addStmt(s1);
 	    // for (i=0; i<ilen; i++) ...
-	    if (i<dl) { // skip loop for innermost
+	    if (i<dl-1) { // skip loop for innermost
 		addStmt(new MOVE // i=0.
 			(m_tf, q,
 			 _TEMP(q, HClass.Int, indexTemps[i]),
@@ -374,7 +376,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    }
 	}
 	// okay, write the loop bottoms in reverse order.
-	for (int i=dl-1; i>=0; i--) {
+	for (int i=dl-2; i>=0; i--) {
 	    // increment the loop counter
 	    addStmt(new MOVE // i++
 		    (m_tf, q,

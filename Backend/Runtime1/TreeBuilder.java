@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.48 2001-07-10 22:49:52 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.49 2001-07-11 20:24:45 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -293,12 +293,15 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     public Translation.Exp arrayNew(TreeFactory tf, HCodeElement source,
 				    DerivationGenerator dg,
 				    AllocationProperties ap,
-				    HClass arrayType, Translation.Exp length) {
+				    HClass arrayType, Translation.Exp length,
+				    boolean initialize) {
 	Util.assert(arrayType.isArray());
 	// temporary storage for created array.
 	Temp Tarr = new Temp(tf.tempFactory(), "rt");
 	// temporary storage for supplied length
 	Temp Tlen = new Temp(tf.tempFactory(), "rt");
+	// temporary storage for length to be initialized.
+	Temp Tini = new Temp(tf.tempFactory(), "rt");
 	// type of array components
 	HClass comType = arrayType.getComponentType();
 	// size of elements in array
@@ -307,9 +310,27 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	    (comType==HClass.Byte || comType==HClass.Boolean) ? 1 :
 	    (comType==HClass.Char || comType==HClass.Short) ? 2 :
 	    WORD_SIZE;
+	Exp size =
+	    new BINOP // compute array data size:
+	    (tf, source, Type.INT, Bop.ADD,
+	     new BINOP // multiply...
+	     (tf, source, Type.INT, Bop.MUL,
+	      // ...array length by ...
+	      new TEMP(tf, source, Type.INT, Tlen),
+	      // ...element size...
+	      new CONST(tf, source, elementSize)),
+	     // and add WORD_SIZE (and more) for length field (and others)
+	     new CONST(tf, source, OBJ_AZERO_OFF - OBJ_FZERO_OFF));
+	if (initialize) // save the 'size' value for re-use (if needed)
+	    size =
+		new ESEQ
+		(tf, source,
+		 new MOVE // save 'size' in Tini
+		 (tf, source,
+		  new TEMP(tf, source, Type.INT, Tini),
+		  size),
+		 new TEMP(tf, source, Type.INT, Tini));
         Stm stm =
-	     new SEQ
-	     (tf, source,
 	      new SEQ
 	      (tf, source,
 	       new MOVE // save 'length' in Tlen.
@@ -322,31 +343,16 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 			new TEMP(tf, source, Type.POINTER, Tarr)),
 		objAlloc // allocate array data
 		(tf, source, dg, ap, arrayType,
-		 new BINOP // compute array data size:
-		 (tf, source, Type.INT, Bop.ADD,
-		  new BINOP // multiply...
-		  (tf, source, Type.INT, Bop.MUL,
-		   // ...array length by ...
-		   new TEMP(tf, source, Type.INT, Tlen),
-		   // ...element size...
-		   new CONST(tf, source, elementSize)),
-		  // and add WORD_SIZE (and more) for length field (and others)
-		  new CONST(tf, source, OBJ_AZERO_OFF - OBJ_FZERO_OFF))))),
-	      new MOVE // now set length field of newly-created array.
-	      (tf, source,
-	       new MEM
-	       (tf, source, Type.INT, // length field is of type INT.
-		new BINOP // offset array base to get location of length field
-		(tf, source, Type.POINTER, Bop.ADD,
-		fieldBase(tf, source, dg, new Translation.Ex
-			  (DECLARE(dg, arrayType/*not an obj yet*/, Tarr,
-			   new TEMP(tf, source, Type.POINTER, Tarr))))
-		.unEx(tf),
-		 new CONST(tf, source, OBJ_ALENGTH_OFF-OBJ_FZERO_OFF))),
-	       new TEMP(tf, source, Type.INT, Tlen))); // length from Tlen
-        /* now, if there are fields of java.lang.Object that need to be
-         * initialized, zero fill them. */
-        if (OBJ_ALENGTH_OFF != OBJ_FZERO_OFF) {
+		 size)));
+	// now initialize either just the object fields or the whole
+	// array, depending on the value of the 'initialize' boolean.
+	// (note this must happen before we set the length field, as
+	//  the length falls between the object fields and the rest of
+	//  the array)
+        if (initialize || OBJ_ALENGTH_OFF != OBJ_FZERO_OFF) {
+	    Exp initlen = initialize ?
+		(Exp) new TEMP(tf, source, Type.INT, Tini) :
+		(Exp) new CONST(tf, source, OBJ_ALENGTH_OFF-OBJ_FZERO_OFF);
             stm = new SEQ
                 (tf, source, stm,
                  new NATIVECALL
@@ -362,9 +368,25 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
                    new ExpList
                    (new CONST(tf, source, 0),
                     new ExpList
-                    (new CONST(tf, source, OBJ_ALENGTH_OFF-OBJ_FZERO_OFF),
+                    (initlen,
                      null)))));
-        }
+	}
+	// set length field of newly-created array.
+	stm = new SEQ
+	    (tf, source, stm,
+	      new MOVE
+	      (tf, source,
+	       new MEM
+	       (tf, source, Type.INT, // length field is of type INT.
+		new BINOP // offset array base to get location of length field
+		(tf, source, Type.POINTER, Bop.ADD,
+		fieldBase(tf, source, dg, new Translation.Ex
+			  (DECLARE(dg, arrayType/*not an obj yet*/, Tarr,
+			   new TEMP(tf, source, Type.POINTER, Tarr))))
+		.unEx(tf),
+		 new CONST(tf, source, OBJ_ALENGTH_OFF-OBJ_FZERO_OFF))),
+	       new TEMP(tf, source, Type.INT, Tlen))); // length from Tlen
+	// and make an expression with the value of the array pointer.
         return new Translation.Ex
             (new ESEQ
              (tf, source, stm,
