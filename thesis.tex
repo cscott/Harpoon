@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.115 1999-09-03 20:54:37 cananian Exp $
+% $Id: thesis.tex,v 1.116 1999-09-03 21:05:57 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 %\usepackage[light,first,bottomafter]{draftcopy}
@@ -41,16 +41,16 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ \ignore{$ $Revision: 1.115 $ $}}
+\date{\today \\ \ignore{$ $Revision: 1.116 $ $}}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 %\pagestyle{empty}
 %\maketitle
-\begin{titlepage}
 \newcommand{\nl}{\\[0.5\baselineskip]}
 \newcommand{\tight}{\\[-0.2\baselineskip]}
+\begin{titlepage}
 \vspace*{0.5cm}
 \begin{center}\large
 \textbf{\LARGE The Static Single Information Form}\\
@@ -84,12 +84,11 @@ Accepted by\hrulefill\\
 \end{flushright}
 \end{titlepage}\setcounter{page}{2}
 {% abstract page
-\newcommand{\nl}{\\[0.5\baselineskip]}
 \begin{center}
-The Static Single Information Form\\
-by\\
+The Static Single Information Form\tight
+by\tight
 C. Scott Ananian\nl
-Submmitted to the\\
+Submmitted to the\tight
 Department of Electrical Engineering and Computer Science\nl
 September 3, 1999\nl
 \end{center}
@@ -99,9 +98,9 @@ In partial fulfillment of the requirements for the Degree of Master of
 Engineering in Electrical Engineering and Computer Science.
 \end{flushleft}
 
-\vspace{0.4cm}
+\vspace{0.75cm}
 \centerline{\LARGE\textbf{Abstract}}
-\vspace{0.2cm}
+\vspace{0.3cm}
 
 The Static Single Information (SSI) form is a compiler intermediate
 representation that allows efficient sparse implementations of
@@ -117,7 +116,7 @@ and it has been used to implement several analyses and optimizations.
 Details on these predicated analysis techniques are presented, as well
 as data from the practical implementation.
 
-\vspace{0.3cm}
+\vspace{0.5cm}
 \begin{flushleft}
 Thesis Supervisor: Martin Rinard\\
 Title: Professor, Laboratory for Computer Science\\
