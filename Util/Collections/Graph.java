@@ -11,20 +11,21 @@ import java.util.Set;
  * This is a generic <code>Graph</code> implementation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.1 2003-05-09 20:35:20 cananian Exp $
+ * @version $Id: Graph.java,v 1.2 2003-05-09 21:04:42 cananian Exp $
  */
 public interface Graph<N extends Node<N,E>, E extends Edge<N,E>> {
     /** Return the set of nodes comprising this Graph. */
     Set<N> nodes();
 
     /** Find a path from start to end. */
-    List<E> findPath(N start, N end);
+    //XXX this method should be in a "GraphUtilities" class.
+    //List<E> findPath(N start, N end);
 
     /**
      * This class represents nodes in a <code>Graph</code>.
      *
      * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
-     * @version $Id: Graph.java,v 1.1 2003-05-09 20:35:20 cananian Exp $
+     * @version $Id: Graph.java,v 1.2 2003-05-09 21:04:42 cananian Exp $
      */
     public static interface Node<N extends Node<N,E>,E extends Edge<N,E>>
     {
@@ -44,7 +45,7 @@ public interface Graph<N extends Node<N,E>, E extends Edge<N,E>> {
      * <code>Graph</code>.
      *
      * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
-     * @version $Id: Graph.java,v 1.1 2003-05-09 20:35:20 cananian Exp $
+     * @version $Id: Graph.java,v 1.2 2003-05-09 21:04:42 cananian Exp $
      */
     public static interface Edge<N extends Node<N,E>,E extends Edge<N,E>>
     {
