@@ -39,7 +39,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.1.2.9 2000-03-28 11:39:12 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.1.2.10 2000-11-14 21:53:29 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -73,6 +73,8 @@ public class DataReflection2 extends Data {
 	    HMember hm = (HMember) it.next();
 	    if (hm instanceof HMethod && !ch.callableMethods().contains(hm))
 		continue; // skip uncallable methods.
+	    if (hm.getDeclaringClass().equals(hc))//member info for decl'd only
+		stmlist.add(new LABEL(tf, null, memberLabel(hm,"info"), true));
 	    stmlist.add(_DATUM(memberLabel(hm, "namestr")));
 	    stmlist.add(_DATUM(memberLabel(hm, "descstr")));
 	    if (!memberVirtual(hm))
@@ -179,6 +181,9 @@ public class DataReflection2 extends Data {
 		    members.add(hm);
 	    }
 	}
+	// add back 'length' field of arrays, which getFields() omits.
+	// [CSA FIX: 11-14-00]
+	if (hc.isArray()) members.add(hc.getDeclaredField("length"));
 	// okay, now sort members.
 	Collections.sort(members, new Comparator() {
 	    public int compare(Object o1, Object o2) {

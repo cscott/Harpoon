@@ -28,7 +28,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.31 2000-10-22 08:16:08 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.32 2000-11-14 21:53:29 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -128,6 +128,10 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    HCstring.getConstructor(new HClass[] { HCcharA }),
 	    HCstring.getMethod("length", "()I"),
 	    HCstring.getMethod("toCharArray","()[C"),
+	    // runtime's reflection implementation mentions these
+	    linker.forName("java.lang.Class"),
+	    linker.forName("java.lang.reflect.Field"),
+	    linker.forName("java.lang.reflect.Method"),
 
 	    // in java.io implementations
 	    linker.forName("java.io.IOException") 
@@ -180,8 +184,7 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	Set newStrings = new HashSet(tb.stringSet);
 	tb.stringSet.clear();
 
-	return (frame.getGCInfo() == null) ?
-	    Arrays.asList(new Data[] {
+	List r = Arrays.asList(new Data[] {
 	    new DataClaz(frame, hc, ch),
 	    new DataInterfaceList(frame, hc, ch),
 	    new DataStaticFields(frame, hc),
@@ -190,18 +193,13 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    new DataJavaMain(frame, hc, main),
 	    new DataReflection1(frame, hc, ch),
 	    new DataReflection2(frame, hc, ch, frame.pointersAreLong()),
-	    }) :
-	    Arrays.asList(new Data[] {
-	    new DataGC(frame, hc),
-	    new DataClaz(frame, hc, ch),
-	    new DataInterfaceList(frame, hc, ch),
-	    new DataStaticFields(frame, hc),
-	    new DataStrings(frame, hc, newStrings),
-	    new DataInitializers(frame, hc, staticInitializers),
-	    new DataJavaMain(frame, hc, main),
-	    new DataReflection1(frame, hc, ch),
-	    new DataReflection2(frame, hc, ch, frame.pointersAreLong()),
-	    }) ;
+	    new DataReflectionMemberList(frame, hc, ch),
+	});
+	if (frame.getGCInfo() != null) {
+	    r = new java.util.ArrayList(r);
+	    r.add(new DataGC(frame, hc));
+	}
+	return r;
     }
     final Set stringsSeen = new HashSet();
 }
