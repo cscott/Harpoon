@@ -86,9 +86,10 @@ int main(int argc, char *argv[]) {
   int top_of_stack; /* special variable holding the top-of-stack position */
   char *firstclasses[] = {
 #ifdef CLASSPATH_VERSION
-    /* no one's tried CLASSPATH w/o WITH_INIT_CHECK yet.  Whoever's the
-     * first will no doubt need to replace this comment with something
-     * useful. */
+    /* These are pre-initializations for String.intern().  They may well
+     * have to change if you try to compile CLASSPATH w/o WITH_INIT_CHECK.
+     * I wouldn't actually recommend doing that. */
+    "java/lang/String", "java/lang/ref/Reference", "java/util/WeakHashMap",
 #else
     "java/util/Properties", "java/io/FileDescriptor", "java/lang/System", 
     "java/io/BufferedWriter",
@@ -202,7 +203,8 @@ int main(int argc, char *argv[]) {
   CHECK_EXCEPTIONS(env);
 #endif
 
-  /* initialize pre-System.initializeSystemClass() initializers. */
+  /* initialize pre-System.initializeSystemClass()/String.intern()
+     initializers. */
   for (i=0; firstclasses[i]!=NULL; i++) {
     cls = (*env)->FindClass(env, firstclasses[i]);
     CHECK_EXCEPTIONS(env);
@@ -214,7 +216,28 @@ int main(int argc, char *argv[]) {
   }
 
 #ifdef CLASSPATH_VERSION
-  /* no special method to execute the initialize the library. */
+  /* classpath need only initialize the String.intern() table. */
+  cls = (*env)->FindClass(env, "java/lang/String");
+  CHECK_EXCEPTIONS(env);
+  mid = (*env)->GetMethodID(env, cls, "intern","()Ljava/lang/String;");
+  CHECK_EXCEPTIONS(env);
+  {
+    char *p;
+    int strsize = FNI_GetClassInfo(cls)->claz->size;
+    (*env)->DeleteLocalRef(env, cls);
+    for (p = (char*) &string_constants_start; 
+	 p < (char*) &string_constants_end;
+	 p += strsize) {
+      jobject s1, s2;
+      s1 = FNI_WRAP((struct oobj *)p);
+      CHECK_EXCEPTIONS(env);
+      s2 = (*env)->CallObjectMethod(env, s1, mid);
+      CHECK_EXCEPTIONS(env);
+      assert((*env)->IsSameObject(env, s1, s2));
+      (*env)->DeleteLocalRef(env, s2);
+      (*env)->DeleteLocalRef(env, s1);
+    }
+  }
 #else
   /* Execute java.lang.System.initializeSystemClass */
   cls = (*env)->FindClass(env, "java/lang/System");
