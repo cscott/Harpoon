@@ -10,15 +10,17 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 /**
- * <code>SWITCH</code> represents a switch construct.
+ * <code>TYPESWITCH</code> represents a multiple-way branch dependent on
+ * the class type of the argument.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TYPESWITCH.java,v 1.1.2.2 2000-10-07 01:59:03 cananian Exp $
+ * @version $Id: TYPESWITCH.java,v 1.1.2.3 2000-10-10 18:07:41 cananian Exp $
  */
 public class TYPESWITCH extends SIGMA {
-    /** The discriminant, compared against each value in <code>keys</code>.*/
+    /** The discriminant, of <code>Object</code> type, whose class is
+     *  compared against each class type in <code>keys[]</code>.*/
     protected Temp index;
-    /** Class type keys for switch cases. <p>
+    /** Class type keys for typeswitch cases. <p>
      *  <code>next(n)</code> is the jump target corresponding to
      *  <code>keys[n]</code> for <code>0 <= n < keys.length</code>. <p>
      *  <code>next(keys.length)</code> is the default target. */
@@ -58,7 +60,7 @@ public class TYPESWITCH extends SIGMA {
 	for (int i=0; i<keys.length; i++)
 	    Util.assert(keys[i]!=null);
     }
-    /** Creates a switch with arity defined by the keys array. */
+    /** Creates a typeswitch with arity defined by the keys array. */
     public TYPESWITCH(QuadFactory qf, HCodeElement source,
 		      Temp index, HClass keys[], Temp src[]) {
 	this(qf,source, index, keys, new Temp[src.length][keys.length+1], src);
