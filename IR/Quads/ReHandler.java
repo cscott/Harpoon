@@ -4,6 +4,8 @@
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
@@ -28,7 +30,7 @@ import java.util.Set;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.9 1999-08-12 17:55:46 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.10 1999-08-13 18:50:53 bdemsky Exp $
  */
 final class ReHandler {
     // entry point.
@@ -38,7 +40,8 @@ final class ReHandler {
 	
 	WorkSet callset=new WorkSet();
 	WorkSet throwset=new WorkSet();
-	HashMapList handlermap=analyze(ncode,callset,throwset);
+	WorkSet instanceset=new WorkSet();
+	HashMapList handlermap=analyze(ncode,callset,throwset, instanceset);
 
 	final QuadMap qm = new QuadMap();
 	final HEADER old_header = (HEADER)ncode.getRootElement();
@@ -48,7 +51,8 @@ final class ReHandler {
 	final ArrayList al = new ArrayList();
 	final StaticState ss = new StaticState(qf, qm, ctm, al);
 	WorkSet phiset=new WorkSet();
-	visitAll(new Visitor(ss, handlermap, phiset), old_header);
+	WorkSet cjmpset=new WorkSet();
+	visitAll(new Visitor(ss, handlermap, phiset, instanceset, cjmpset, ncode), old_header);
 	// now qm contains mappings from old to new, we just have to link them.
 
 	for (Iterator e = ncode.getElementsI(); e.hasNext(); ) {
@@ -172,9 +176,25 @@ final class ReHandler {
 			    Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
 			}
 		    }
-		}  
+		}
 	    }
 	}
+
+	//Add in TYPECAST
+	UseDef ud=new UseDef();
+
+	for (Iterator e = cjmpset.iterator(); e.hasNext(); ) {
+	    CJMP cjmp = (CJMP) e.next();
+	    HCodeElement[] hce=ud.defMap(ncode, cjmp.test());
+	    Util.assert(hce.length==1);
+	    INSTANCEOF iof=(INSTANCEOF) hce[0];
+	    HClass hclass=iof.hclass();
+	    CJMP cjmp2=(CJMP)qm.getFoot(cjmp);
+	    TYPECAST tc=new TYPECAST(cjmp2.getFactory(), cjmp2, Quad.map(ss.ctm, iof.src()),hclass);
+	    Quad.addEdge(tc, 0, cjmp2.next(1), cjmp2.nextEdge(1).which_pred());
+	    Quad.addEdge(cjmp2, 1, tc, 0);
+	}
+
 
 	//--------------------
 	// fixup try blocks.
@@ -198,9 +218,9 @@ final class ReHandler {
 	return qH;
     }
     
-    private static HashMapList analyze(final Code code, Set callset, Set throwset) {
+    private static HashMapList analyze(final Code code, Set callset, Set throwset, Set instanceset) {
 
-	CALLVisitor cv=new CALLVisitor(callset, throwset);
+	CALLVisitor cv=new CALLVisitor(callset, throwset, instanceset);
 	for (Iterator e =  code.getElementsI(); e.hasNext(); )
 	    ((Quad)e.next()).visit(cv);
 
@@ -272,15 +292,21 @@ final class ReHandler {
     private static final class CALLVisitor extends QuadVisitor {
 	Set callset;
 	Set throwset;
+	Set instanceset;
 
-	CALLVisitor(Set callset, Set throwset) {
+	CALLVisitor(Set callset, Set throwset, Set instanceset) {
 	    this.callset=callset;
 	    this.throwset=throwset;
+	    this.instanceset=instanceset;
 	}
 	public void visit(Quad q) {}
 
 	public void visit(THROW q) {
 	    throwset.add(q);
+	}
+	
+	public void visit(INSTANCEOF q) {
+	    instanceset.add(q);
 	}
 
 	public void visit(CALL q) {
@@ -298,18 +324,35 @@ final class ReHandler {
 	final StaticState ss;
 	final Set phiset;
 	final HashMapList handlermap;
+	final Set instanceset;
+	final Set cjmpset;
+	final HCode hc;
+	UseDef ud;
 
-	Visitor(StaticState ss, HashMapList handlermap, Set phiset) { 
+	Visitor(StaticState ss, HashMapList handlermap, Set phiset, Set instanceset, Set cjmpset, HCode hc) { 
 	    this.qf = ss.qf; 
 	    this.ss = ss; 
 	    this.handlermap=handlermap;
 	    this.phiset=phiset;
+	    this.instanceset=instanceset;
+	    this.cjmpset=cjmpset;
+	    this.ud=new UseDef();
+	    this.hc=hc;
 	}
 
 	/** By default, just clone and set all destinations to top. */
 	public void visit(Quad q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm);
 	    ss.qm.put(q, nq, nq);
+	}
+
+	public void visit(CJMP q) {
+	    Quad nq = (Quad) q.clone(qf, ss.ctm);
+	    ss.qm.put(q, nq, nq);
+	    HCodeElement[] hce=ud.defMap(hc, q.test());
+	    Util.assert(hce.length==1);
+	    if (instanceset.contains(hce[0]))
+		cjmpset.add(q);
 	}
 
 	public void visit(PHI q) {
@@ -612,7 +655,6 @@ class PHVisitor extends QuadVisitor
 	}
     }
   
-
     private void pushBack(PHI q, int dstIndex, int srcIndex)
     {
 	if (q.dst(dstIndex)!=q.src(dstIndex, srcIndex)) {
@@ -623,5 +665,4 @@ class PHVisitor extends QuadVisitor
 	    Quad.addEdge(m, 0, q, from.which_pred());
 	}
     }
-
 }
