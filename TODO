@@ -1,3 +1,7 @@
+---- Sep-23-98
+Make sure common
+ if (i=N; i>=0; i--)
+construct lets i dip to -1 properly.
 ---- Sep-21-98
 Finish bitwidth analysis in SCC.
 Write move/const collation pass to remove unnecesssary quads and collate MOVEs.
