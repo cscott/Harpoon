@@ -1,14 +1,15 @@
 # makefile.
 LATEX=latex
-BIBTEX=bibtex
+BIBTEX=bibtex --min-crossrefs=9999
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 export TEXINPUTS=/home/cananian/src/tex4ht//:
 
 ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99 pldi02 \
-	pldi03 oopsla02 oqe lctes03
+	pldi03 oopsla02 oqe lctes03 pldi04
 
-all: lctes03.ps lctes03-talk.pdf lctes03-talk-notes.ps
+default: pldi04.ps
+.PRECIOUS: %.dvi
 
 ## funky stuff for martin.
 put:
@@ -155,7 +156,7 @@ always:
 #%.pdf : %.dvi
 #	dvipdf -dCompatibilityLevel=1.3 -dDoThumbnails=true $< $@
 %.pdf : %.ps
-	ps2pdf13 -dDoThumbnails=true $< $@
+	ps2pdf14 -dDoThumbnails=true $< $@
 %-xdvi : %.dvi
 	@if ps w | grep -v grep | grep -q "xdvi $*.dvi" ; then \
 		echo "Xdvi already running." ; \
