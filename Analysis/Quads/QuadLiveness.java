@@ -23,7 +23,7 @@ import java.util.Set;
  * <code>QuadLiveness</code> if you have changed the <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: QuadLiveness.java,v 1.1.2.4.2.2 2000-01-13 08:24:46 bdemsky Exp $
+ * @version $Id: QuadLiveness.java,v 1.1.2.4.2.3 2000-01-13 08:35:36 bdemsky Exp $
  */
 public class QuadLiveness extends Liveness {
     final Hashtable livein;
@@ -93,7 +93,7 @@ public class QuadLiveness extends Liveness {
 
     public Temp[] getLiveInandOutArray(HCodeElement hce) {
 	if (tempinout.containsKey(hce))
-	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, (Temp[]) tempout.get(hce));
+	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, (Temp[]) tempinout.get(hce));
 	else {
 	    Set set=(Set) this.liveout.get((Quad) hce);
 	    Set setin=(Set) this.livein.get((Quad) hce);
