@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.154 2000-03-31 10:13:35 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.155 2000-04-02 09:03:09 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -376,7 +376,8 @@ import java.util.Iterator;
        *  expects it to be.) */
       String prependSPOffset(String asmString) {
 	// optimize for common case.
-	if (stackOffset==0) return asmString;
+	  // CSA: THIS ROUTINE NO LONGER NEEDED. we offset from FP now.
+	if (true || stackOffset==0) return asmString;
 	declare( SP, HClass.Void );
 	return "sub sp, sp, #"+stackOffset+"\n\t"+asmString;
       }
@@ -440,9 +441,10 @@ import java.util.Iterator;
 	    break;			     
 	  case 4: // spread between regs and stack
 	    stackOffset += 4; index--;
+	    declare( SP, HClass.Void );
 	    emit(new InstrMEM( instrFactory, ROOT,
-			       "str `s0h, [`s1, #-"+stackOffset+"]",
-			       new Temp[0],
+			       "str `s0h, [`s1, #-4]!",
+			       new Temp[] { SP },
 			       new Temp[]{ temp, SP })); 
 	    // not certain an emitMOVE is legal with the l/h modifiers
 	    Temp rthird = frame.getRegFileInfo().getRegister(index--);
@@ -451,14 +453,16 @@ import java.util.Iterator;
 	    break;
 	  default: // start putting args in memory
 	    stackOffset += 4; index--;
+	    declare( SP, HClass.Void );
 	    emit(new InstrMEM( instrFactory, ROOT,
-			       "str `s0h, [`s1, #-"+stackOffset+"]",
-			       new Temp[0],
+			       "str `s0h, [`s1, #-4]!",
+			       new Temp[]{ SP },
 			       new Temp[]{ temp, SP })); 
 	    stackOffset += 4; index--;
+	    declare( SP, HClass.Void );
 	    emit(new InstrMEM( instrFactory, ROOT,
-			       "str `s0l, [`s1, #-"+stackOffset+"]", 
-			       new Temp[0],
+			       "str `s0l, [`s1, #-4]!", 
+			       new Temp[]{ SP },
 			       new Temp[]{ temp, SP }));
 	    break;
 	  }
@@ -470,10 +474,11 @@ import java.util.Iterator;
 	    emitMOVE( ROOT, "mov `d0, `s0", reg, temp);
 	  } else {
 	    stackOffset += 4; index--;
+	    declare( SP, HClass.Void );
 	    emit(new InstrMEM(
 			      instrFactory, ROOT,
-			      "str `s0, [`s1, #-"+stackOffset+"]",
-			      new Temp[0],
+			      "str `s0, [`s1, #-4]!",
+			      new Temp[]{ SP },
 			      new Temp[]{ temp, SP }));
 	  }
 	}
