@@ -8,8 +8,8 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
-import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.Exp;
+import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Tree;
 import harpoon.IR.Tree.TreeDerivation;
 
@@ -19,7 +19,7 @@ import java.util.Iterator;
  * a <code>Tree.Code</code> have proper derivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationChecker.java,v 1.1.2.1 2001-06-29 18:18:40 cananian Exp $
+ * @version $Id: DerivationChecker.java,v 1.1.2.2 2001-06-30 18:04:53 cananian Exp $
  */
 public class DerivationChecker {
     
@@ -45,23 +45,31 @@ public class DerivationChecker {
 	harpoon.IR.Tree.Code c = (harpoon.IR.Tree.Code) hcode;
 	// look at the derivation for every lowquad.
 	TreeDerivation d = c.getTreeDerivation();
-	ASSERT(d!=null, "Checker found no derivation!");
+	ASSERT(d!=null, "Checker found no derivation! "+c);
 	for (Iterator it=c.getElementsI(); it.hasNext(); ) {
 	    Tree t = (Tree) it.next();
 	    if (!(t instanceof Exp)) continue;
 	    try {
 		HClass hc = d.typeMap((Exp)t);
 		Derivation.DList dl = d.derivation((Exp)t);
-		ASSERT(hc!=null ^ dl!=null, "BAD TYPE: "+hc+" / "+dl);
+		ASSERT(hc!=null ^ dl!=null, t, "BAD TYPE: "+hc+" / "+dl);
 	    } catch (Derivation.TypeNotKnownException tnke) {
-		ASSERT(false, tnke);
+		ASSERT(false, t, tnke);
+	    } catch (RuntimeException re) {
+		ASSERT(false, t, re);
 	    }
 	}
     }
     /** Simple assertion facility -- this is not intended to be
      *  "compiled away" or turned off for speed like the standard
      *  harpoon.Util.Util assertion facility. */
-    private static void ASSERT(boolean cond, Object errmsg) {
+    private static final void ASSERT(boolean cond, Object errmsg) {
 	if (!cond) throw new Error(errmsg.toString());
+    }
+    private static final void ASSERT(boolean cond, Tree t, Object errmsg) {
+	if (!cond) {
+	    while (!(t instanceof Stm)) t=t.getParent();
+	    throw new Error(errmsg + harpoon.IR.Tree.Print.print(t));
+	}
     }
 }
