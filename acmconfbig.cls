@@ -220,9 +220,9 @@
 \addtolength\oddsidemargin{-1in}    % Correct for LaTeX gratuittousness
 \setlength\evensidemargin{4.5pc}
 \addtolength\evensidemargin{-1in}   % Correct for LaTeX gratuittousness
-\setlength\marginparwidth{0\p@}     % Margin pars are not allowed.
-\setlength\marginparsep{11\p@}
-\setlength\marginparpush{5\p@}
+%\setlength\marginparwidth{11\p@}     % Margin pars are not allowed.
+\setlength\marginparsep{6\p@}
+%\setlength\marginparpush{5\p@}
 \setlength\topmargin{4.5pc}
 \addtolength\topmargin{-1in}         % Correct for LaTeX gratuitousness
 %

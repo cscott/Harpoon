@@ -1,5 +1,5 @@
 % -*-latex-*-
-% $Id: csaacmconfbig.cls,v 1.1 2004-07-13 03:11:27 cananian Exp $
+% $Id: csaacmconfbig.cls,v 1.2 2004-07-16 16:24:23 cananian Exp $
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -120,7 +120,7 @@
                                  \else$\mathop{\mathcode`-="702D\rm #1\mathcode`\-="2200}\nolimits$\fi}
 
 %% Margin notes - use \notesfalse to turn off notes.
-\setlength{\marginparwidth}{0.6in}
+\setlength{\marginparwidth}{0.45in}
 \reversemarginpar
 \newif\ifnotes
 \notestrue
@@ -178,7 +178,7 @@
 \newcommand{\secreftwo}[2]      {Sections \ref{sec:#1} and~\ref{sec:#2}}
 \newcommand{\secrefthree}[3]    {Sections \ref{sec:#1}, \ref{sec:#2}, and \ref{sec:#3}}
 \newcommand{\secreffour}[4]     {Sections \ref{sec:#1}, \ref{sec:#2}, \ref{sec:#3}, and~\ref{sec:#4}}
-\newcommand{\appref}[1]         {Appendix~\ref{app:#1}}
+\newcommand{\appref}[1]         {Appendix~\ref{sec:#1}}
 \newcommand{\figref}[1]         {Figure~\ref{fig:#1}}
 \newcommand{\figreftwo}[2]      {Figures \ref{fig:#1} and~\ref{fig:#2}}
 \newcommand{\tabref}[1]         {Table~\ref{tab:#1}}
