@@ -19,7 +19,7 @@ import java.util.Arrays;
     StrongARM architecture.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.8 2000-01-27 14:55:59 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.9 2000-03-23 23:33:03 kkz Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
@@ -226,6 +226,21 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
     public InstrLABEL makeLabel(Instr template) {
 	Label l = new Label();
+	InstrLABEL il = new InstrLABEL(template.getFactory(), 
+				       template,
+				       l.toString() + ":", l);
+	return il;
+    }
+
+    /** Returns a new <code>InstrLABEL</code> for generating new
+	arbitrary code blocks to branch to.
+	@param template An <code>Instr</code> to base the generated
+	                <code>InstrLABEL</code>.
+			<code>template</code> should be part of the
+			instruction stream that the returned
+			<code>InstrLABEL</code> is intended for. 
+    */
+    public InstrLABEL makeLabel(Label l, Instr template) {
 	InstrLABEL il = new InstrLABEL(template.getFactory(), 
 				       template,
 				       l.toString() + ":", l);
