@@ -10,3 +10,5 @@ set lib_classes=`unzip -l /usr/local/jdk/lib/classes.zip | cut -b28- | grep .cla
 set harpoon_classes=`find ~/Harpoon/Code/harpoon/ -type f -name "*.class" | sed -e 's|^.*Harpoon/Code/||g' -e 's|.class$||' -e 's|/|.|g'`
 set all_classes = ($harpoon_classes $lib_classes)
 complete java 'p/*/$all_classes/'
+complete javap 'p/*/$all_classes/'
+complete jdb 'p/*/$all_classes/'
