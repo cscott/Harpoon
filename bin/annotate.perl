@@ -100,10 +100,18 @@ sub annotate {
 	return $coded;
     }
 }
+sub srcdoc {
+    my $phrase = shift(@_);
+    return $phrase unless exists $cls2url{$phrase};
+    my $url = $cls2url{$phrase};
+    $url =~ s|^./|$currentbase."../srcdoc/"|e;
+    return "<A HREF=\"" . $url . "\">" . $phrase . ".java</A>";
+}
 
 $currentbase="./";
 while (<>) {
     if (m|\"([./]*)stylesheet.css\"|) { $currentbase=$1; }
     s|<code>([A-Za-z0-9_.]*)</code>|annotate($1)|egi;
+    s|(\$Id: annotate.perl,v 1.1.2.4 2001-06-15 03:48:08 cananian Exp $)|$1.srcdoc($2).$3|egi;
     print;
 }
