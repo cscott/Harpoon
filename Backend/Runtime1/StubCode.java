@@ -50,7 +50,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.11 2000-03-24 23:34:27 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.12 2000-03-27 01:11:54 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
@@ -64,6 +64,8 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
         super(method, null, frame, new DerivationGenerator());
 	this.m_nm = frame.getRuntime().nameMap;
 	this.m_tb = (TreeBuilder) frame.getRuntime().treeBuilder;
+	// keep this synchronized with struct FNI_Thread_State in
+	// Runtime/include/jni-private.h and TreeBuilder._call_FNI_Monitor()
 	this.EXC_OFFSET = 1 * m_tb.POINTER_SIZE;
 	this.REF_OFFSET = 3 * m_tb.POINTER_SIZE;
 	this.m_dg = (DerivationGenerator) getTreeDerivation();
@@ -107,6 +109,8 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 		     null/* no args*/));
 
 	// reset the exception field in the thread state.
+	/* CSA: i don't think we need to do this -- we clear the exception
+	 * when we return. [mar-26-2000]
 	stmlist.add(new MOVE(tf, null,
 			     _MEM(tf, null, HClass.Void,
 				     new BINOP(tf, null, Type.POINTER, Bop.ADD,
@@ -115,6 +119,7 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 					       new CONST(tf, null, EXC_OFFSET)
 					       )),
 			     new CONST(tf, null))); // set to null.
+	*/
 	// save the top of the local ref stack (so we can restore it later)
 	Temp refT = new Temp(tf.tempFactory(), "lref");
 	stmlist.add(new MOVE(tf, null,
