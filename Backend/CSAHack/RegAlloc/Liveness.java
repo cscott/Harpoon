@@ -243,6 +243,7 @@ class TempNode extends harpoon.Backend.CSAHack.Graph.Node {
   public String toString() {
     return temp.toString(); // +"("+super.toString()+")";
   }
+  public int hashCode() { return temp.hashCode(); }
 }
   
 /**
