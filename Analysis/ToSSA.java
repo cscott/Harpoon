@@ -15,7 +15,7 @@ import harpoon.IR.LowQuad.*;
  * Converts SSI to SSA.  Should work on LowQuads and Quads. 
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ToSSA.java,v 1.1.2.1 1999-07-06 02:12:12 bdemsky Exp $
+ * @version $Id: ToSSA.java,v 1.1.2.2 1999-07-09 17:58:31 bdemsky Exp $
  */
 
 public final class ToSSA {
@@ -32,6 +32,11 @@ public final class ToSSA {
 	return new HCodeFactory() {
 	    public HCode convert(HMethod m) {
 		HCode hc = parent.convert(m);
+		try {
+		hc = hc.clone(m);
+		} catch (CloneNotSupportedException e) {
+		    System.out.println("Error:  clone not supported on class handed to ToSSA");
+		}
 		if (hc!=null) {
 		    (new ToSSA(new SSITOSSAMap(hc))).optimize(hc);
 		}
