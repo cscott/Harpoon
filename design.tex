@@ -1,0 +1,59 @@
+% -*-latex-*- This is a LaTeX document.
+% $Id: design.tex,v 1.1 1998-04-08 02:57:10 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[10pt,notitlepage]{article}
+%twocolumn
+\author{C.~Scott~Ananian}
+\title{Turning Java into Hardware: \\ Caffinated Compiler Construction}
+\date{\today \\ $ $Revision: 1.1 $ $}
+
+% PDF-friendly fonts:
+\renewcommand{\rmdefault}{ptm}
+\renewcommand{\sfdefault}{phv}
+%\renewcommand{\ttdefault}{pcr}
+
+\begin{document}
+\bibliographystyle{alpha}
+\maketitle
+
+\section{Java}
+
+% Classes are hardware objects.  Allocations are static.
+% References may be external (memory port)
+% What subset we compile (dynamic allocation/dynamic types are evil)
+% Thread/Monitor model.  Interface model.
+% Exceptions???
+
+\section{Interface Description Language}
+% methods == ports
+% specifying timing constraints.
+
+\section{Steps}
+% Computing type information.
+% Creating a static allocation.
+% Analyzing methods for side-effects.
+% Useful optimizations:
+%   CSE, constant-*, PRE
+%   divide->multiply, multiply->add/rotate.
+%   exposing parallelism (removing control dependencies)
+% Bit-width analysis (type information?)
+% Branch->multiplexor. (control bit->selector)
+% Compiling aliased class families into hardware (more bits!)
+% Calculating 'go' signal from input timing
+% Adhering to an output timing spec.
+% Counting states. Unrolling loops.
+
+\section{IR}
+% Bytecode->quads.
+% Quads->ssa?
+% SSA->dataflow?
+% dataflow->logic functions?
+% logic functions->netlists?
+
+\nocite{*}
+\bibliography{harpoon}
+
+\end{document}
+
+
+

@@ -1,0 +1,275 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Various journal and conference string definitions:
+@string{CACM = {Communications of the ACM}}
+@string{ACM =  {ACM}}
+@string{IEEE = {IEEE}}
+@string{PLDI93 = "Proceedings of the {ACM} {SIGPLAN} '93 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI94 = "Proceedings of the {ACM} {SIGPLAN} '94 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI95 = "Proceedings of the {ACM} {SIGPLAN} '95 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI96 = "Proceedings of the {ACM} {SIGPLAN} '96 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI97 = "Proceedings of the {ACM} {SIGPLAN} '97 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{POPL94 = "Proceedings of the 21st {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{POPL98 = "Proceedings of the 25th {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{TOPLAS = "{ACM} Transactions on Programming Languages and Systems"}
+@string{CRYPTO97 = "Proc.\ CRYPTO 97"}
+@string{EUROCRYPT97 = {Proc.\ EUROCRYPT 97}}
+
+% papers read.
+
+@InProceedings{amagbegnon95:signal,
+  author = 	 {Pascalin Amagb{\'e}gnon and Lo{\"\i}c Besnard and
+                  Paul Le Guernic},
+  title = 	 {Implementation of the Data-flow Synchronous Language
+                  {SIGNAL}},
+  booktitle = 	 PLDI95,
+  year =	 1995,
+  address =	 {La Jolla, California},
+  month =	 Jun,
+  pages =	 {163--173},
+  url = 	 {http://www.acm.org/pubs/articles/proceedings/pldi/},
+  annote =	 {Not terribly useful.}
+}
+
+@InProceedings{weise94:vdg,
+  author = 	 {Daniel Weise and Roger F. Crew and Michael Ernst and
+                  Bjarne Steensgaard},
+  title = 	 {Value Dependence Graphs: Representation without Taxation},
+  booktitle = 	 POPL94,
+  year =	 1994,
+  address =	 {Portland, Oregon},
+  month =	 Jan,
+  pages =	 {297--310},
+  annote =	 {dataflow representation useful; also resursive/loop
+                  structure useful},
+  url = 	{ftp://research.microsoft.com/pub/papers/vdg.ps}
+}
+
+@InProceedings{hong93:realtime,
+  author = 	 {Seongsoo Hong and Richard Gerber},
+  title = 	 {Compiling Real-Time Programs into Schedulable Code},
+  booktitle = 	 PLDI93,
+  year =	 1993,
+  address =	 {Albuquerque, New Mexico},
+  month =	 jun,
+  pages =	 {166--176},
+  url = 	 {http://www.acm.org/pubs/articles/proceedings/pldi/},
+  annote =	 {code motion for timing optimization}
+}
+
+@InProceedings{duesterwald93:arrayflow,
+  author = 	 {Evelyn Duesterwald and Rajiv Gupta and Mary Lou Soffa},
+  title = 	 {A Practical Data Flow Framework for Array Reference
+                  Analysis and its Use in Optimizations},
+  booktitle = 	 PLDI93,
+  year =	 1993,
+  address =	 {Albuquerque, New Mexico},
+  month =	 jun,
+  pages =	 {68--77},
+  url = 	 {http://www.acm.org/pubs/articles/proceedings/pldi/},
+  annote =	 {not terribly useful.}
+}
+
+@InProceedings{click95:IR,
+  author =       {Cliff Click and Michael Paleczny},
+  title =        "A Simple Graph-Based Intermediate Representation",
+  booktitle =    "The First {ACM} {SIGPLAN} Workshop on Intermediate
+                 Representations",
+  address =      "San Francisco, California",
+  month =        jan,
+  year =         "1995",
+  url =          {http://www.cs.rice.edu/~mpal/IR95.ps},
+  annote =	 {interesting examples of C++ code, but light on
+                  optimization results.  We really want to peek at
+                  Cliff Click's PhD thesis.}
+}
+
+@InProceedings{sreedhar96:dj,
+  author = 	 {Vugranam C. Sreedhar and Guang R. Gao and {Yong-fong} Lee},
+  title = 	 {A New Framework for Exhaustive and Incremental Data
+                  Flow Analysis Using {DJ} Graphs},
+  booktitle = 	 PLDI96,
+  year =	 1996,
+  address =	 {Philadelphia, Pennsylvania},
+  month =	 may,
+  pages =	 {278--290},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/231379/p278-sreedhar/},
+  annote =	 {Emphasis on Incremental.  If we decide to use DJ
+                  graphs, this paper could be useful for its examples.
+                  Not much new, though.}
+}
+
+@InProceedings{granlund94:divopt,
+  author = 	 {Torbj{\"o}rn Granlund and Peter L. Montgomery},
+  title = 	 {Division by Invariant Integers using Multiplication},
+  booktitle = 	 PLDI94,
+  year =	 1994,
+  address =	 {Orlando, Florida},
+  month =	 jun,
+  pages =	 {61--72},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/178243/p61-granlund/},
+  annote =	 {*Very* useful for eliminating logic complexity. Also
+                  includes lots of references for deconstructing
+                  multiplies. In conjunction with induction variable
+                  analysis, some very powerful optimizations are possible.}
+}
+
+@InProceedings{defouw98:classanal,
+  author = 	 {Greg DeFouw and David Grove and Craig Chambers},
+  title = 	 {Fast Interprocedural Class Analysis},
+  booktitle = 	 POPL98,
+  year =	 1998,
+  address =	 {San Diego, California},
+  month =	 jan,
+  pages =	 {222--246},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/plan/268946/p222-defouw/},
+  annote =	 {This basically tells us that class/type analysis
+                  will be very slow.  We can make it faster, but we
+                  lose much precision.  In hardware compilation we
+                  don't care so much about speed, perhaps, so maybe we
+                  just suck up and deal.  Return to this paper before
+                  implementing our type inference engine.}
+}
+
+@InProceedings{click95:gcm_gvn,
+  author = 	 {Cliff Click},
+  title = 	 {Global Code Motion / Global Value Numbering},
+  booktitle = 	 PLDI95,
+  year =	 1995,
+  address =	 {La Jolla, California},
+  month =	 jun,
+  pages =	 {246--257},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/207110/p246-click/},
+  annote =	 {simple & works, but relies on heuristic to place,
+                  and seems overly wedded to basic blocks (which we
+                  want to eliminate).  I like SSAPRE better, even
+                  though it is *much* more complicated.}
+}
+
+@InProceedings{chow97:ssapre,
+  author = 	 {Fred Chow and Sun Chan and Robert Kennedy and
+                  {Shin-Ming} Liu and Raymond Lo and Peng Tu},
+  title = 	 {A New Algorithm for Partial Redundancy Elimination
+                  based on {SSA} Form},
+  booktitle = 	 PLDI97,
+  year =	 1997,
+  address =	 {Las Vegas, Nevada},
+  month =	 may,
+  pages =	 {273--286},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/258915/p273-chow/},
+  annote =	 {Powerful but very, very complicated. Probably worth
+                  implementing if we stay in SSA form, although
+                  dataflow-based methods (see Click's IR) may be
+                  simpler.  Also non-linear complexity for simple
+                  implementations.}
+}
+
+@Article{click95:combin,
+  author = 	 {Cliff Click and Keith D. Cooper},
+  title = 	 {Combining Analyses, Combining Optimizations},
+  journal = 	 TOPLAS,
+  volume =	 17,
+  number =	 2,
+  year =	 1995,
+  month =	 mar,
+  pages =	 {181--196},
+  url =          {http://www.acm.org/pubs/toc/Abstracts/0164-0925/201061.html},
+  annote =	 {Very theoretical==not terribly useful.}
+}
+
+% papers to read.
+
+@InProceedings{knobe98:arrayssa,
+  author = 	 {Kathleen Knobe and Vivek Sarkar},
+  title = 	 {Array {SSA} Form and its use in Parallelization},
+  booktitle = 	 POPL98,
+  year =	 1998,
+  address =	 {San Diego, California},
+  month =	 jan,
+  pages =	 {107--120},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/plan/268946/p107-knobe/},
+  annote =	 {haven't read}
+}
+
+@InProceedings{cytron93:mayalias,
+  author = 	 {Ron Cytron and Reid Gershbein},
+  title = 	 {Efficient Accomodation of May-Alias Information in
+                  {SSA} Form},
+  booktitle = 	 PLDI93,
+  year =	 1993,
+  address =	 {Albuquerque, New Mexico},
+  month =	 jun,
+  pages =	 {36--45},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/155090/p36-cytron/},
+  annote =	 {haven't read.}
+}
+
+@InProceedings{johnson93:depend,
+  author = 	 {Richard Johnson and Keshav Pingali},
+  title = 	 {Dependence-Based Program Analysis},
+  booktitle = 	 PLDI93,
+  year =	 1993,
+  address =	 {Albuquerque, New Mexico},
+  month =	 jun,
+  pages =	 {78--89},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/155090/p78-johnson/},
+  annote =	 {haven't read}
+}
+
+@InProceedings{johnson94:pst,
+  author = 	 {Richard Johnson and David Pearson and Keshav Pingali},
+  title = 	 {The Program Structure Tree: Computing Control
+                  Regions in Linear Time},
+  booktitle = 	 PLDI94,
+  year =	 1994,
+  address =	 {Orlando, Florida},
+  month =	 jun,
+  pages =	 {171--185},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/178243/p171-johnson/},
+  annote =	 {haven't read.}
+}
+
+@InProceedings{bilardi96:ctrldep,
+  author = 	 {Gianfranco Bilardi and Keshav Pingali},
+  title = 	 {A Framework for Generalized Control Dependence},
+  booktitle = 	 PLDI96,
+  year =	 1996,
+  address =	 {Philadelphia, Pennsylvania},
+  month =	 may,
+  pages =	 {291--300},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/231379/p291-bilardi/},
+  annote =	 {haven't read.}
+}
+
+@Article{gerlek95:inductssa,
+  author = 	 {Michael P. Gerlek and Eric Stoltz and Michael Wolfe},
+  title = 	 {Beyond Induction Variables: Detecting and
+                  Classifying Sequences Using a Demand-Driven {SSA} Form},
+  journal = 	 TOPLAS,
+  year = 	 1995,
+  volume =	 17,
+  number =	 1,
+  month =	 jan,
+  pages =	 {85--122},
+  url =		 {http://www.acm.org/pubs/citations/journals/toplas/1995-17-1/p85-gerlek/},
+  annote =	 {Haven't read.}
+}
+
+@InProceedings{chow96:hssa,
+  author = 	 {F. Chow and S. Chan and S. Liu and R. Lo and M Streich},
+  title = 	 {Effective Representation of Aliases and Indirect
+                  Memory Operations in {SSA} form},
+  booktitle = 	 {Proceedings of the Sixth International Conference on
+                  Compiler Construction},
+  year =	 1996,
+  month =	 apr,
+  pages =	 {253--267},
+  annote =	 {Haven't fetched from library yet.}
+}
+
