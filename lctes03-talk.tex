@@ -1,15 +1,9 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.18 2003-06-02 21:58:10 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.19 2003-06-02 22:35:04 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TO DO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%  X a slide to explain loops/our choice opposed to interval analysis KILL
-%  - Trim ``Intraprocedural analysis'': jump to bitwidth, focus on
-%    information gained, not process by which it is obtained
-%    kill example, define latice algebraically
-%  - Explain (spend more time on) how the *inter* procedural analysis
-%    works/how fields are treated.  A graphic here?
+%  - Write ``english language overview'' slides for intra/inter analysis.
 %  - Prettify the ``field packing'' slide.
-%  - Use solid colors on results slides.
 %  - Helvetica font on title slide
 %  - ``We'd love to do embedded benchmarks''
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -124,7 +118,7 @@ opportunities and applying transformations to effect the reduction.
   \item \bp{\yellow Reduce memory costs} of new devices.
  \end{itemize}
  \FromSlide{5}
- \item Performace:
+ \item Performance:
  \FromSlide{6}
  \begin{itemize}
   \item ``{\yellow Memory wall}'' getting higher.
@@ -318,6 +312,20 @@ compression?
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
+\begin{slide}{English overview}
+WRITE ME
+
+Dataflow analysis, blah blah
+
+Gives us the bitwidth of each value in the program, yadda yadda
+
+\end{slide}
+
+\begin{talknotes}
+\ldots And here is how we formalize this: @
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Bitwidth analysis domains}
 {\yellow Domains:}
 \begin{itemize}
@@ -331,7 +339,7 @@ compression?
 \begin{itemize}\yellow
 \item $\tuple{m,p}\in\mathcal{T}$
 \end{itemize}
-\item $\mathcal{L}:\left(\mathcal{C+T}\right)_\bot$, abstract value lattice
+\item $\mathcal{L}:\left(\mathcal{C}\cup\mathcal{T}\right)_\bot$, abstract value lattice
 \end{itemize}
 {\yellow Concretization: $\mathcal{L}\to 2^\mathcal{Z}$}
 \begin{eqnarray*}
@@ -339,7 +347,7 @@ compression?
 \mathbb{C}\left[\tuple{m,p}\right] &=&
    \left\{ -n | n\in\mathbb{N} \;\wedge\; \ln n < m\right\} \cup
    \left\{0\right\} \cup\\
-&& \quad\left\{  n | n\in\mathbb{N} \;\wedge\; \ln n < p\right\}\\
+&& \mspace{14mu}\left\{  n | n\in\mathbb{N} \;\wedge\; \ln n < p\right\}\\
 \end{eqnarray*}
 \end{slide}
 
@@ -522,6 +530,22 @@ The SSI form is a variant of SSA form which @ allows us to distinguish
 the values produced in the two different assignments to {\tt i} at the
 start of this example, as well as distinguish the possible values of
 {\tt i} at point {\it A} ($\tuple{0,6}$) and at point {\it B}.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{English overview}
+WRITE ME
+
+Extend to Interprocedural, field-based, blah blah.
+
+Gives us the bitwidth of each value {\it and field} in the program, yadda yadda
+
+Context-sensitivity.
+
+\end{slide}
+
+\begin{talknotes}
+\ldots And here is how we formalize this: @
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1396,34 +1420,25 @@ So how well does all this work?
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{8}{
 \begin{slide}{Experimental setup}
 \begin{itemize}
-\FromSlide{2}
 \item Implemented all analyses and transformations with
       MIT FLEX Java compiler infrastructure.
-\FromSlide{3}
 \begin{itemize}\yellow
 \item Whole-program static compiler.
-\FromSlide{4}
 \item Generates C or native code for ARM/MIPS/Sparc.
 \end{itemize}
-\FromSlide{5}
 \item SPECjvm98 benchmark suite with full input size.
-\FromSlide{6}
 \begin{itemize}\yellow
 \item JDK 1.1.8 class libraries.
 \end{itemize}
-\FromSlide{7}
 \item Benchmarks run on dual-processor 900 MHz
   Pentium III running Debian Linux.
-\FromSlide{8}
 \begin{itemize}\yellow
 \item C backend, GCC 2.95, -O9
 \end{itemize}
 \end{itemize}
 \end{slide}
-}
 
 \begin{talknotes}
 Read this slide.
