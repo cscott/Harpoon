@@ -21,7 +21,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.23 2000-05-25 15:41:52 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.24 2000-06-09 14:39:46 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -141,14 +141,21 @@ public class NodeRepository {
     }
 
 
-    /** Returns a <i>code</i>: a node associated with the
+    /** Returns a <i>code</i> node: a node associated with the
      * instruction <code>hce</code>: a load node 
      * (associated with a <code>GET</code> quad), a return node (associated
      * with a <code>CALL</code>) or an inside node (thread or not) associated
      * with a <code>NEW</code>). The node is automatically created if it
      * doesn't exist yet. The type of the node should be passed in the
      * <code>type</code> argument. */
-    public final PANode getCodeNode(HCodeElement hce,int type){
+    public final PANode getCodeNode(HCodeElement hce, int type) {
+	return getCodeNode(hce, type, true);
+    }
+
+    /** Returns a <i>code</i> node: a node associated with an instruction.
+	The boolean parameter <code>make</code> controls the generation of
+	such a node in case it doesn't exist yet. */
+    public final PANode getCodeNode(HCodeElement hce, int type, boolean make){
 	// we can have a RETURN node and an EXCEPT node associated to the
 	// same code instruction. This is the only case where we have
 	// two nodes associated with an instruction. We fix this by handling
@@ -156,9 +163,13 @@ public class NodeRepository {
 	if(type == PANode.EXCEPT) return getExceptNode(hce);
 
 	PANode node = (PANode) code_nodes.get(hce);
-	if(node == null){
+	if((node == null) && make){
 	    code_nodes.put(hce, node = getNewNode(type));
 	    node2code.put(node, hce);
+
+	    /// Debug stuff
+	    System.out.println("NEW CODE NODE: " + node + " " + 
+			       Debug.code2str(hce));
 	}
 	return node;
     }

@@ -21,7 +21,7 @@ import harpoon.ClassFile.HCodeElement;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.8 2000-06-08 17:25:35 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.9 2000-06-09 14:39:45 salcianu Exp $
  */
 public abstract class Debug {
 
@@ -160,4 +160,13 @@ public abstract class Debug {
 	return
 	    q.getSourceFile() + ":" + q.getLineNumber();
     }
+
+    /** Returns the string representation of the code instruction q
+	in the formay: <code>source_file:line_number instruction</code>. */
+    public static String code2str(HCodeElement q) {
+	return
+	    getLine(q)  + " " + q;
+    }
+
+
 }

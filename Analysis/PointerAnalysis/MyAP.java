@@ -14,10 +14,11 @@ import harpoon.Util.Util;
  <code>AllocationProperties</code>. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MyAP.java,v 1.1.2.6 2000-06-07 20:19:39 kkz Exp $
+ * @version $Id: MyAP.java,v 1.1.2.7 2000-06-09 14:39:46 salcianu Exp $
  */
 public class MyAP implements AllocationInformation.AllocationProperties,
-			     java.io.Serializable {
+			     java.io.Serializable,
+			     java.lang.Cloneable {
     
     // hasInteriorPointers
     public boolean hip = true;
@@ -65,6 +66,17 @@ public class MyAP implements AllocationInformation.AllocationProperties,
 
     public HClass actualClass() {
 	return actualClass;
+    }
+
+
+    public Object clone() {
+	try{
+	    return super.clone();
+	}
+	catch(CloneNotSupportedException excp){
+	    System.exit(1);
+	    return null; // should never happen
+	}
     }
 
     /** Pretty printer for debug. */

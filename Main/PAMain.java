@@ -68,7 +68,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.55 2000-06-07 23:06:19 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.56 2000-06-09 14:40:04 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -146,7 +146,9 @@ public abstract class PAMain {
 	"              same class as the main method, the name of the class",
 	"              can be ommited",
 	"-i             interactive analysis of methods",
-	"--noit        just interprocedural analysis, no interthread"
+	"--noit         just interprocedural analysis, no interthread",
+	"--inline       use method inlining to enable more stack allocation",
+	"              (makes sense only with --mamaps)"
     };
 
     private static PointerAnalysis pa = null;
@@ -498,7 +500,8 @@ public abstract class PAMain {
 	    new LongOpt("mastats",   LongOpt.NO_ARGUMENT,       null, 12),
 	    new LongOpt("holestats", LongOpt.NO_ARGUMENT,       null, 13),
 	    new LongOpt("mamaps",    LongOpt.REQUIRED_ARGUMENT, null, 14),
-	    new LongOpt("noit",      LongOpt.NO_ARGUMENT,       null, 15)};
+	    new LongOpt("noit",      LongOpt.NO_ARGUMENT,       null, 15),
+	    new LongOpt("inline",    LongOpt.NO_ARGUMENT,       null, 16)};
 
 	Getopt g = new Getopt("PAMain", argv, "l:mscoa:i", longopts);
 
@@ -564,6 +567,9 @@ public abstract class PAMain {
 		break;
 	    case 15:
 		USE_INTER_THREAD = false;
+		break;
+	    case 16:
+		MAInfo.DO_METHOD_INLINING = true;
 		break;
 	    }
 
@@ -633,8 +639,12 @@ public abstract class PAMain {
 	if(DO_INTERACTIVE_ANALYSIS)
 	    System.out.print(" DO_INTERACTIVE_ANALYSIS");
 
-	if(MA_MAPS)
-	    System.out.print(" MA_MAPS (" + MA_MAPS_OUTPUT_FILE + ")");
+	if(MA_MAPS){
+	    System.out.print(" MA_MAPS (");
+	    if(MAInfo.DO_METHOD_INLINING)
+		System.out.print("inline; ");
+	    System.out.print(MA_MAPS_OUTPUT_FILE + ")");
+	}
 
 	if(USE_INTER_THREAD)
 	    System.out.print(" USE_INTER_THREAD");

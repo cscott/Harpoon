@@ -39,6 +39,9 @@ import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.ANEW;
 import harpoon.IR.Quads.MOVE;
 import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.THROW;
+import harpoon.IR.Quads.NOP;
 import harpoon.IR.Quads.QuadFactory;
 
 import harpoon.Temp.Temp;
@@ -46,33 +49,39 @@ import harpoon.Temp.TempFactory;
 
 import harpoon.Util.Util;
 
+
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.Util.Graphs.SCComponent;
+import harpoon.Util.Graphs.SCCTopSortedGraph;
+
+
 /**
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.25 2000-06-08 17:25:35 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.26 2000-06-09 14:39:46 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
-    private static boolean DEBUG = false;
+    private static boolean DEBUG = true;
 
     /** Enabless the application of some method inlining to increase the
 	effectiveness of the stack allocation. Only inlinings that
 	increase the effectiveness of the stack allocation are done.
 	For the time being, only 1-level inlining is done. */
-    public boolean DO_METHOD_INLINING = false;
+    public static boolean DO_METHOD_INLINING = false;
 
     /** Only methods that have less than <code>MAX_INLINING_SIZE</code>
 	instructions can be inlined. Just a simple way of preventing
 	the code bloat. */
-    public int MAX_INLINING_SIZE = 50; 
+    public static int MAX_INLINING_SIZE = 50; 
 
     /** Enables the use of preallocation: if an object will be accessed only
 	by a thread (<i>ie</i> it is created just to pass some parameters
 	to a thread), it can be preallocated into the heap of that thread.
 	For the moment, it is potentially dangerous so it is deactivated by
 	default. */
-    public boolean DO_PREALLOCATION = false;
+    public static boolean DO_PREALLOCATION = false;
 
     private static Set good_holes = null;
     static {
@@ -87,8 +96,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    if("currentThread".equals(hms[i].getName()))
 		good_holes.add(hms[i]);
 
-	/* //B/ */if(DEBUG)
-	/* //B/ */    System.out.println("GOOD HOLES: " + good_holes);
+	if(DEBUG)
+	    System.out.println("GOOD HOLES: " + good_holes);
     }
 
     PointerAnalysis pa;
@@ -167,7 +176,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	}
 
 	if(DO_METHOD_INLINING) {
-	    do_the_inlining();
+	    do_the_inlining(hcf, ih);
 	    ih = null; // allow some GC
 	}
     }
@@ -202,6 +211,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	if(pig == null) return;
 	pig.G.flushCaches();
 	pig.G.e.removeMethodHoles(good_holes);
+
+	if(DEBUG)
+	    System.out.println("Parallel Interaction Graph:" + pig);
 
 	((harpoon.IR.Quads.Code) hcode).setAllocationInformation(this);
 
@@ -406,7 +418,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	insert_newq((METHOD) (((Quad)hcode.getRootElement()).next(1)), newq);
 
 	// since the object creation site for the thread node has been changed,
-	// we need to update the ndoe2code relation.
+	// we need to update the node2code relation.
 	node_rep.updateNode2Code(nt, newq);
 
 	// the thread object should be allocated in its own
@@ -456,6 +468,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 
     // returns the AllocationProperties object for the object creation site q
+    // if no such object exists, create a default one. 
     private MyAP getAPObj(Quad q){
 	MyAP retval = (MyAP) aps.get(q);
 	if(retval == null)
@@ -463,22 +476,28 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	return retval;
     }
 
+    // Set the allocation policy for q to be ap. Discard whatever allocation
+    // policy info was assigned to q before.
+    private void setAPObj(Quad q, MyAP ap) {
+	aps.put(q, ap);
+    }
+
     // checks whether "node" escapes only through the thread node "nt".
     private boolean escapes_only_in_thread(PANode node, PANode nt,
 					   ParIntGraph pig){
 	if(pig.G.e.hasEscapedIntoAMethod(node)){
-	    /* //B/ */if(DEBUG)
-	    /* //B/ */	System.out.println(node + " escapes into a method");
+	    if(DEBUG)
+		System.out.println(node + " escapes into a method");
 	    return false;
 	}
 	if(pig.G.getReachableFromR().contains(node)) {
-	    /* //B/ */if(DEBUG)
-	    /* //B/ */	System.out.println(node + " is reachable from R");
+	    if(DEBUG)
+		System.out.println(node + " is reachable from R");
 	    return false;
 	}
 	if(pig.G.getReachableFromExcp().contains(node)) {
-	    /* //B/ */if(DEBUG)
-	    /* //B/ */	System.out.println(node + " is reachable from Excp");
+	    if(DEBUG)
+		System.out.println(node + " is reachable from Excp");
 	    return false;
 	}
 	return true;
@@ -673,7 +692,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    MyAP ap   = (MyAP) aps.get(newq);
 	    HMethod hm = newq.getFactory().getMethod();
 	    HClass hclass = hm.getDeclaringClass();
-	    PANode node = node_rep.getCodeNode(newq, PANode.INSIDE);
+	    PANode node = node_rep.getCodeNode(newq, PANode.INSIDE, false);
 	    
 	    System.out.println(hclass.getPackage() + "." + 
 			       newq.getSourceFile() + ":" +
@@ -695,8 +714,14 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	Set A = new HashSet();
 	for(Iterator it = level0.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
-	    if(!pig.G.captured(node) && lostOnlyInCaller(node, pig))
-		A.add(node);
+	    if(!pig.G.captured(node) && lostOnlyInCaller(node, pig)) {
+		// we are not interested in stack allocating the exceptions
+		// since they  don't appear in normal case and so, they
+		// are not critical for the memory management
+		HClass hclass = getAllocatedType(node_rep.node2Code(node));
+		if(!java_lang_Throwable.isSuperclassOf(hclass))
+		    A.add(node);
+	    }
 	}
 
 	if(A.isEmpty()) return;
@@ -715,6 +740,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    }
 	}
     }
+    private static HClass java_lang_Throwable = 
+	Loader.systemLinker.forName("java.lang.Throwable");
 
     /* Normally, we should refuse to inline calls that are inside loops
        because that + stack allocation might lead to stack overflow errors.
@@ -752,15 +779,255 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	ih.put(cs, news_array);
 
 	if(DEBUG) {
-	    System.out.println("\nINLINING HINT: " + cs);
+	    System.out.println("\nINLINING HINT: " + Debug.code2str(cs));
 	    System.out.println("NEW STACK ALLOCATION SITES:");
 	    for(int i = 0; i < news_array.length; i++)
-		System.out.println(" " + news_array[i]);
+		System.out.println(" " + Debug.code2str(news_array[i]));
 	}
     }
 
-    private void do_the_inlining(){
-	// do nothing for the moment
+
+    private void do_the_inlining(HCodeFactory hcf, Map ih){
+	SCComponent scc = reverse_top_sort_of_cs(ih);
+	while(scc != null) {
+	    if(DEBUG) {
+		System.out.println("Processed SCC:{");
+		for(Iterator it= scc.nodes(); it.hasNext(); )
+		    System.out.println(" " + Debug.code2str((CALL) it.next()));
+		System.out.println("}");
+	    }
+	    for(Iterator it = scc.nodes(); it.hasNext(); )
+		inline_call_site((CALL) it.next(), hcf, ih);
+	    scc = scc.prevTopSort();
+	}
+    }
+
+
+    private SCComponent reverse_top_sort_of_cs(Map ih) {
+	final Relation m2csINm = new Relation();
+	final Relation m2csTOm = new Relation();
+	for(Iterator it = ih.keySet().iterator(); it.hasNext(); ) {
+	    CALL cs = (CALL) it.next();
+	    m2csINm.add(quad2method(cs), cs);
+	    m2csTOm.add(cs.method(), cs);
+	}
+
+	final SCComponent.Navigator nav = new SCComponent.Navigator() {
+		public Object[] next(final Object node) {
+		    Set set = m2csINm.getValuesSet(node);
+		    return set.toArray(new Object[set.size()]);
+		}
+		public Object[] prev(final Object node) {
+		    Set set = m2csTOm.getValuesSet(node);
+		    return set.toArray(new Object[set.size()]);
+		}
+	    };
+
+	Set cs_set = new HashSet(ih.keySet());
+	
+	SCCTopSortedGraph sccts =
+	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(cs_set, nav));
+
+	return sccts.getLast();
+    }
+
+
+    // given a quad q, returns the method q is part of 
+    private final HMethod quad2method(Quad q) {
+	return q.getFactory().getMethod();
+    }
+
+
+    private void inline_call_site(CALL cs, HCodeFactory hcf, Map ih) {
+	System.out.println("INLINING " + Debug.code2str(cs));
+	
+	HMethod caller = quad2method(cs);
+	
+	System.out.println("caller = " + caller);
+
+	Map old2new = new HashMap();
+
+	HEADER header_new = null;
+	try{
+	    header_new = get_cloned_code(cs, caller, old2new, hcf);
+	} catch(CloneNotSupportedException excp) { return; }
+
+	METHOD qm = (METHOD) (header_new.next(1));
+
+	// add the code for the parameter passing
+	add_entry_sequence(cs, qm);
+
+	modify_return_and_throw(cs, header_new);
+
+	translate_ap(old2new);
+	
+	extra_stack_allocation(cs, ih, old2new);
+    }
+
+
+    private void extra_stack_allocation(CALL cs, Map ih, Map old2new) {
+	Quad[] news = (Quad[]) ih.get(cs);
+	for(int i = 0; i < news.length; i++) {
+	    Quad q  = (Quad) old2new.get(news[i]);
+	    Util.assert(q != null, "no new Quad for " + news[i]);
+	    MyAP ap = new MyAP(getAllocatedType(q));
+	    ap.sa = true;
+	    setAPObj(q, ap);
+	}
+    }
+    
+
+    private void add_entry_sequence(CALL cs, METHOD qm) {
+	// TODO: put something better than null in the 2nd argument
+	Quad replace_cs = new NOP(cs.getFactory(), null);
+
+	move_pred_edges(cs, replace_cs);
+
+	Util.assert(cs.paramsLength() == qm.paramsLength(),
+		    " different nb. of parameters between CALL and METHOD");
+	
+	Quad previous = replace_cs;
+
+	int nb_params = cs.paramsLength();
+	for(int i = 0; i < nb_params; i++) {
+	    Temp formal = qm.params(i);
+	    Temp actual = cs.params(i);
+	    // emulate the Java parameter passing semantics
+	    MOVE move = new MOVE(cs.getFactory(), null, formal, actual);
+	    Quad.addEdge(previous, 0, move, 0);
+	    previous = move;
+	}
+
+	// the edge pointing to the first instruction of the method body
+	Edge edge = qm.nextEdge(0);
+	Quad.addEdge(previous, 0, (Quad) edge.toCFG(), edge.which_pred());
+    }
+
+    
+    private void modify_return_and_throw(final CALL cs, final HEADER header) {
+	QuadVisitor inlining_qv = new QuadVisitor() {
+		public void visit(Quad q) {
+		} 
+
+		public void visit(RETURN q) {
+		    Temp retVal = cs.retval(); 
+		    
+		    Quad replace;
+		    if(retVal != null)
+			replace = new MOVE
+			    (cs.getFactory(), null, retVal, q.retval());
+		    else
+			replace = new NOP(cs.getFactory(), null);
+		    
+		    // make the predecessors of q point to replace
+		    move_pred_edges(q, replace);
+
+		    // the only succesor of replace should now be the
+		    // 0-successor of the CALL instruction (normal return)
+		    Edge edge = cs.nextEdge(0);
+		    Quad.addEdge(replace, 0,
+				 (Quad) edge.toCFG(), edge.which_pred());
+		}
+
+		public void visit(THROW q) {
+		    Temp retEx = cs.retex(); 
+		    
+		    Quad replace;
+		    if(retEx != null)
+			replace = new MOVE
+			    (cs.getFactory(), null, retEx, q.throwable());
+		    else
+			replace = new NOP(cs.getFactory(), null);
+		    
+		    // make the predecessors of q point to replace
+		    move_pred_edges(q, replace);
+
+		    // the only succesor of replace should now be the
+		    // 1-successor of the CALL instruction (exception return)
+		    Edge edge = cs.nextEdge(1);
+		    Quad.addEdge(replace, 0,
+				 (Quad) edge.toCFG(), edge.which_pred());
+		}
+	    };
+	
+	apply_qv_to_tree(header, inlining_qv);
+    }
+
+
+    private static void apply_qv_to_tree(Quad q, QuadVisitor qv) {
+	recursive_apply_qv(q, qv, new HashSet());
+    }
+
+    private static void recursive_apply_qv(Quad q, QuadVisitor qv, Set seen) {
+	if(!seen.add(q)) return; // q has already been seen
+	
+	q.accept(qv);
+	
+	int nb_next = q.nextLength();
+	for(int i = 0; i < nb_next; i++)
+	    recursive_apply_qv(q.next(i), qv, seen);
+    }
+
+
+    // For any predecessor pred of oldq, replace the arc pred->oldq
+    // with old->newq. 
+    private static void move_pred_edges(Quad oldq, Quad newq) {
+	Edge[] edges = oldq.prevEdge();
+	for(int i = 0; i < edges.length; i++) {
+	    Edge e = edges[i];
+	    Quad.addEdge((Quad) e.fromCFG(), e.which_succ(),
+			 newq, e.which_pred());
+	}
+    }
+
+
+    private void translate_ap(Map old2new) {
+	for(Iterator it = old2new.entrySet().iterator(); it.hasNext(); ) {
+	    Map.Entry entry = (Map.Entry) it.next();
+	    Quad old_q = (Quad) entry.getKey();
+	    Quad new_q = (Quad) entry.getValue();
+	    setAPObj(new_q, (MyAP) (getAPObj(old_q).clone()));
+	}
+    }
+
+
+    private HEADER get_cloned_code(CALL cs, HMethod caller,
+				 Map old2new, HCodeFactory hcf)
+	throws CloneNotSupportedException {
+	HMethod hm = cs.method();
+	HCode hcode_orig = hcf.convert(hm);
+
+	System.out.println("caller = " + caller);
+
+	HEADER header_orig = 
+	    (HEADER) hcode_orig.getRootElement();
+	HEADER header_new  = 
+	    (HEADER) Quad.clone(cs.getFactory(), header_orig);
+
+	fill_the_map(header_orig, header_new, old2new, new HashSet());
+
+	return header_new;
+    }
+
+
+    // recursively explore two HCode's (the second is the clone of the first
+    // one) and set up a mapping "old NEW/ANEW -> new NEW/ANEW
+    private static void fill_the_map(Quad q1, Quad q2, Map map, Set seen) {
+	// avoid entering infinite loops: return when we meet a previously
+	// seen instruction 
+	if(!seen.add(q1)) return;
+
+	if((q1 instanceof NEW) || (q2 instanceof ANEW))
+	    map.put(q1, q2);
+
+	Quad[] next1 = q1.next();
+	Quad[] next2 = q2.next();
+
+	Util.assert(next1.length == next2.length,
+		    " Possible error in HCode.clone()");
+
+	for(int i = 0; i < next1.length; i++)
+	    fill_the_map(next1[i], next2[i], map, seen);
     }
 
 }
