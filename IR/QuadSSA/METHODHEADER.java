@@ -3,12 +3,13 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 /**
  * <code>METHODHEADER</code> is a header node used for methods to 
  * keep track of the temporary variable names used for method parameters.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHODHEADER.java,v 1.4 1998-09-09 23:31:40 cananian Exp $
+ * @version $Id: METHODHEADER.java,v 1.5 1998-09-10 19:44:55 cananian Exp $
  */
 
 public class METHODHEADER extends HEADER {
@@ -19,6 +20,9 @@ public class METHODHEADER extends HEADER {
         super(source, footer);
 	this.params = params;
     }
+
+    /** Returns the temps defined by this Quad. */
+    public Temp[] def() { return (Temp[]) Util.copy(params); }
 
     /** Returns a human-readable representation. */
     public String toString() {
