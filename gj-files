@@ -70,6 +70,7 @@ Analysis/ClassHierarchy.java
 Analysis/Companions/AbstractGraph.java
 Analysis/Companions/DataFlowSolver.java
 Analysis/Companions/Graph.java
+Analysis/Companions/MutableGraph.java
 Analysis/Companions/SingularFinder.java
 Analysis/Companions/SingularOracle.java
 Analysis/Companions/StaticValue.java

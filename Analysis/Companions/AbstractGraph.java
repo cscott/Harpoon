@@ -10,7 +10,7 @@ import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,24 +19,14 @@ import java.util.Set;
  * of the <code>Graph</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractGraph.java,v 1.3 2003-05-08 01:10:57 cananian Exp $
+ * @version $Id: AbstractGraph.java,v 1.4 2003-05-09 16:53:17 cananian Exp $
  */
-public abstract class AbstractGraph<T,N extends Node<T,N,E>,E extends Graph.Edge<T,N,E>> implements Graph<T,N,E> {
+public abstract class AbstractGraph<N extends Node<N,E>,E extends Graph.Edge<N,E>> implements MutableGraph<N,E> {
     final SetFactory<E> edgeSetFactory = new AggregateSetFactory<E>();
-    final Map<T,N> nodeMap = new LinkedHashMap<T,N>();
-    final Set<N> nodes = new AbstractSet<N>() { // unmodifiable.
-	final Collection<N> c =
-	  Collections.unmodifiableCollection(nodeMap.values());
-	public int size() { return c.size(); }
-	public Iterator<N> iterator() { return c.iterator(); }
-	public boolean contains(Object o) {
-	    if (!(o instanceof Node)) return false;
-	    Node n = (Node) o;
-	    return (AbstractGraph.this==n.parent);
-	}
-    };
-    public Set<N> nodes() { return nodes; }
-    public N findNode(T key) { return nodeMap.get(key); }
+    final Set<N> nodes = new LinkedHashSet<N>();
+    final Set<N> nodesRO = Collections.unmodifiableSet(nodes);
+    public Set<N> nodes() { return nodesRO; }
+
     public void summarize(Collection<N> nodesToRemove) {
 	for (Iterator<N> it=nodesToRemove.iterator(); it.hasNext(); )
 	    summarize(it.next());
@@ -44,18 +34,18 @@ public abstract class AbstractGraph<T,N extends Node<T,N,E>,E extends Graph.Edge
     public void summarize(N nodeToRemove) {
 	if (!nodes.contains(nodeToRemove)) return; // done already!
 	// remove self-loops.
-	for (Iterator<E> it=nodeToRemove.pred().iterator(); it.hasNext(); ) {
+	for (Iterator<E> it=nodeToRemove.predC().iterator(); it.hasNext(); ) {
 	    E edge = it.next();
 	    assert edge.to()==nodeToRemove;
 	    if (edge.from()==nodeToRemove)
 		removeEdge(edge);
 	}
 	// A->n->B becomes A->B
-	for (Iterator<E> it=nodeToRemove.pred().iterator(); it.hasNext(); ) {
+	for (Iterator<E> it=nodeToRemove.predC().iterator(); it.hasNext(); ) {
 	    N pred = it.next().from();
 	    assert pred!=nodeToRemove;
 	    // extend this edge to all successors.
-	    for (Iterator<E> it2=nodeToRemove.succ().iterator();
+	    for (Iterator<E> it2=nodeToRemove.succC().iterator();
 		 it2.hasNext(); ) {
 		N succ = it2.next().to();
 		assert succ!=nodeToRemove;
@@ -63,25 +53,22 @@ public abstract class AbstractGraph<T,N extends Node<T,N,E>,E extends Graph.Edge
 	    }
 	}
 	// remove original edges
-	for (Iterator<E> it=nodeToRemove.pred().iterator(); it.hasNext(); )
+	for (Iterator<E> it=nodeToRemove.predC().iterator(); it.hasNext(); )
 	    removeEdge(it.next());
-	for (Iterator<E> it=nodeToRemove.succ().iterator(); it.hasNext(); )
+	for (Iterator<E> it=nodeToRemove.succC().iterator(); it.hasNext(); )
 	    removeEdge(it.next());
 	// finally, remove the node.
-	N n = nodeMap.remove(nodeToRemove.value());
-	assert n == nodeToRemove;
-	nodeToRemove.parent=null;
+	boolean changed = nodes.remove(nodeToRemove);
+	assert changed;
 	assert !nodes.contains(nodeToRemove);
-	assert nodeToRemove.pred().size()==0;
-	assert nodeToRemove.succ().size()==0;
+	assert nodeToRemove.predC().size()==0;
+	assert nodeToRemove.succC().size()==0;
     }
-    public abstract N newNode(T key);
     public abstract E addEdge(N from, N to);
 
-    protected void addNode(N n) {
-	assert this==n.parent;
-	assert !nodeMap.containsKey(n.value());
-	nodeMap.put(n.value(), n);
+    public void addNode(N n) {
+	assert !nodes.contains(n);
+	nodes.add(n);
     }
     protected void addEdge(E e) {
 	e.from().succ.add(e);
@@ -99,23 +86,18 @@ public abstract class AbstractGraph<T,N extends Node<T,N,E>,E extends Graph.Edge
      * the <code>Graph.Node</code> interface.
      *
      * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
-     * @version $Id: AbstractGraph.java,v 1.3 2003-05-08 01:10:57 cananian Exp $
+     * @version $Id: AbstractGraph.java,v 1.4 2003-05-09 16:53:17 cananian Exp $
      */
-    public static class Node<T,N extends Node<T,N,E>,E extends Graph.Edge<T,N,E>> implements Graph.Node<T,N,E> {
-	AbstractGraph<T,N,E> parent; // set to null when unlinked.
-	final T value;
+    public static class Node<N extends Node<N,E>,E extends Graph.Edge<N,E>> implements Graph.Node<N,E> {
 	final Set<E> pred, succ, predRO, succRO;
-	public Node(AbstractGraph<T,N,E> parent, T value) {
-	    this.parent = parent;
-	    this.value = value;
+	public Node(AbstractGraph<N,E> parent) {
 	    this.pred = parent.edgeSetFactory.makeSet();
 	    this.succ = parent.edgeSetFactory.makeSet();
 	    this.predRO = Collections.unmodifiableSet(this.pred);
 	    this.succRO = Collections.unmodifiableSet(this.succ);
 	}
-	public T value() { return value; }
-	public Set<E> pred() { return predRO; }
-	public Set<E> succ() { return succRO; }
+	public Set<E> predC() { return predRO; }
+	public Set<E> succC() { return succRO; }
 	public boolean isSucc(N n) {
 	    for (Iterator<E> it=succ.iterator(); it.hasNext(); )
 		if (it.next().to().equals(n)) return true;
@@ -135,9 +117,9 @@ public abstract class AbstractGraph<T,N extends Node<T,N,E>,E extends Graph.Edge
      * prefer to use your own <code>Graph.Edge</code> implementation.
      *
      * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
-     * @version $Id: AbstractGraph.java,v 1.3 2003-05-08 01:10:57 cananian Exp $
+     * @version $Id: AbstractGraph.java,v 1.4 2003-05-09 16:53:17 cananian Exp $
      */
-    public static class Edge<T,N extends Node<T,N,E>,E extends Edge<T,N,E>> implements Graph.Edge<T,N,E> {
+    public static class Edge<N extends Node<N,E>,E extends Edge<N,E>> implements Graph.Edge<N,E> {
 	final N from;
 	final N to;
 	public Edge(N from, N to) { this.from=from; this.to=to; }
