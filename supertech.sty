@@ -197,7 +197,7 @@
 \newcommand{\figput}[2]{%
 \begin{figure}%
  \begin{center}%
-  \input{#1.pstex_t}%
+  \input{Figures/#1.pstex_t}%
  \end{center}%
 %\caption{\mbox{\tt (#1.eps)} #2}%
  \caption{#2}%
@@ -208,7 +208,7 @@
 \newcommand{\figputstar}[2]{%
 \begin{figure*}%
  \begin{center}%
-  \input{#1.pstex_t}%
+  \input{Figures/#1.pstex_t}%
  \end{center}%
 %\caption{\mbox{\tt (#1.eps)} #2}%
  \caption{#2}%
@@ -219,7 +219,7 @@
 \newcommand{\epsfigput}[2]{%
 \begin{figure}%
 \begin{center}%
-\includegraphics{#1.eps}%
+\includegraphics[width=3.25in,clip=true]{Figures/#1.eps}%
 \end{center}%
 \caption{#2}%
 \label{fig:#1}%
