@@ -45,13 +45,13 @@ import java.util.Set;
  * <code>NewMover</code> works best on <code>QuadWithTry</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NewMover.java,v 1.1.2.4 2001-11-08 20:52:11 cananian Exp $
+ * @version $Id: NewMover.java,v 1.1.2.5 2001-11-10 00:50:34 cananian Exp $
  */
 public class NewMover extends MethodMutator {
     /** If true, then the NewMover will attempt to move NEWs across SIGMAs.
      *  This yields better results when applied to QuadNoSSA form, but
      *  increases code size w/ no appreciable benefit on QuadWithTry form. */
-    private static final boolean movePastSigmas=true;
+    private static final boolean movePastSigmas=false;
     /** Creates a <code>NewMover</code> that uses the given
      *  <code>HCodeFactory</code> <code>hcf</code>. */
     public NewMover(HCodeFactory hcf) {
