@@ -73,7 +73,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.13 2001-01-31 21:57:14 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.14 2001-02-23 03:10:40 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -102,6 +102,8 @@ public class SyncTransformer
 	!Boolean.getBoolean("harpoon.synctrans.disabled");
     private final boolean noFieldModification = // only do monitorenter/exit
 	Boolean.getBoolean("harpoon.synctrans.nofieldmods");
+    private final boolean noArrayModification = // only do regular objects
+	Boolean.getBoolean("harpoon.synctrans.noarraymods");
     private final boolean useSmartFieldOracle = // dumb down field oracle
 	!Boolean.getBoolean("harpoon.synctrans.nofieldoracle");
     private final boolean useSmartCheckOracle = // dumb down check oracle
@@ -272,7 +274,7 @@ public class SyncTransformer
 	if (enabled &&
 	    ! ("harpoon.Runtime.Transactions".equals
 	       (hc.getMethod().getDeclaringClass().getPackage()))) {
-	    CheckOracle co = new SimpleCheckOracle();
+	    CheckOracle co = new SimpleCheckOracle(noArrayModification);
 	    if (useSmartCheckOracle) {
 		DomTree dt = new DomTree(hc, false);
 		co = new DominatingCheckOracle(dt, co);
@@ -516,7 +518,7 @@ public class SyncTransformer
 	}
 	public void visit(AGET q) {
 	    addChecks(q);
-	    if (noFieldModification) return;
+	    if (noFieldModification || noArrayModification) return;
 	    if (handlers==null) { // non-transactional read
 		Edge e = readNonTrans(q.nextEdge(0), q,
 				      q.dst(), q.objectref(), q.type());
@@ -596,7 +598,7 @@ public class SyncTransformer
 	}
 	public void visit(ASET q) {
 	    addChecks(q);
-	    if (noFieldModification) return;
+	    if (noFieldModification || noArrayModification) return;
 	    if (handlers==null) { // non-transactional write
 		Temp t0 = new Temp(tf, "oldval");
 		Edge in = q.prevEdge(0);
@@ -637,7 +639,7 @@ public class SyncTransformer
 	}
 	public void visit(ARRAYINIT q) {
 	    addChecks(q);
-	    if (noFieldModification) return;
+	    if (noFieldModification || noArrayModification) return;
 	    // XXX: we don't handle ARRAYINIT yet.
 	    Util.assert(false, "ARRAYINIT transformation unimplemented.");
 	}

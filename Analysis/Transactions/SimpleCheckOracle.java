@@ -17,20 +17,25 @@ import java.util.Set;
  * simple-minded implementation of <code>CheckOracle</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SimpleCheckOracle.java,v 1.1.2.2 2001-01-23 22:03:31 cananian Exp $
+ * @version $Id: SimpleCheckOracle.java,v 1.1.2.3 2001-02-23 03:10:40 cananian Exp $
  */
 class SimpleCheckOracle extends CheckOracle {
+    private final boolean noArrayModification;
+    SimpleCheckOracle() { this(false); }
+    SimpleCheckOracle(boolean noArrayModification) {
+	this.noArrayModification = noArrayModification;
+    }
     public Set createReadVersions(HCodeElement hce) {
-	if (hce instanceof AGET)
+	if (hce instanceof AGET && !noArrayModification)
 	    return Collections.singleton(((AGET)hce).objectref());
 	if (hce instanceof GET && !((GET)hce).isStatic())
 	    return Collections.singleton(((GET)hce).objectref());
 	return Collections.EMPTY_SET;
     }
     public Set createWriteVersions(HCodeElement hce) {
-	if (hce instanceof ARRAYINIT)
+	if (hce instanceof ARRAYINIT && !noArrayModification)
 	    return Collections.singleton(((ARRAYINIT)hce).objectref());
-	if (hce instanceof ASET)
+	if (hce instanceof ASET && !noArrayModification)
 	    return Collections.singleton(((ASET)hce).objectref());
 	if (hce instanceof SET && !((SET)hce).isStatic())
 	    return Collections.singleton(((SET)hce).objectref());
@@ -46,12 +51,12 @@ class SimpleCheckOracle extends CheckOracle {
 	return Collections.EMPTY_SET;
     }
     public Set checkArrayElement(HCodeElement hce) {
-	if (hce instanceof AGET) {
+	if (hce instanceof AGET && !noArrayModification) {
 	    AGET q = (AGET) hce;
 	    return Collections.singleton
 		(new RefAndIndexAndType(q.objectref(), q.index(), q.type()));
 	}
-	if (hce instanceof ASET) {
+	if (hce instanceof ASET && !noArrayModification) {
 	    ASET q = (ASET) hce;
 	    return Collections.singleton
 		(new RefAndIndexAndType(q.objectref(), q.index(), q.type()));
