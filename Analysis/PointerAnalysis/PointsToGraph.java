@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.23 2000-04-04 04:29:31 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.24 2000-04-04 07:05:14 salcianu Exp $
  */
 public class PointsToGraph {
 
@@ -100,7 +100,7 @@ public class PointsToGraph {
 
 
     /** Returns the set of nodes reachable from the exceptionally returned
-	nodes (including these returned nodes). */
+	nodes (including these exceptionally returned nodes). */
     public Set getReachableFromExcp(){
 	if(reachable_from_excp == null)
 	    reachable_from_excp = reachableNodes(excp);

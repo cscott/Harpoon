@@ -38,7 +38,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.2 2000-04-04 05:42:35 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.3 2000-04-04 07:05:14 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
     
@@ -157,6 +157,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    else{
 		if(depth == 0){
 		    Quad q = (Quad) node_rep.node2Code(node);
+		    Util.assert(q != null, "No quad for " + node);
 		    if(escapes_only_in_methods(node, pig)){
 			// objects that escape only in a method hole are
 			// considered to remain in this thread and so, they
@@ -188,7 +189,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	return true;
     }
 
-    // hope that this evil string really don't exsist anywhere else
+    // hope that this evil string really doesn't exist anywhere else
     private static String my_scope = "pa!";
     private static final TempFactory 
 	temp_factory = Temp.tempFactory(my_scope);
@@ -201,9 +202,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	PANode nt = (PANode) (active_threads.iterator().next());
 
 	// protect against some patological cases
-	Util.assert(nt.type == PANode.INSIDE, "Non-INSIDE thread node!");
-	Util.assert(nt.getCallChainDepth() == 0,
-		    "The thread object is not allocated in this method!");
+	if((nt.type != PANode.INSIDE) || (nt.getCallChainDepth() != 0))
+	    return;
 
 	// pray that no thread is allocated through an ANEW!
 	// (it seems quite a reasonable assumption)
@@ -226,8 +226,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		it.remove();
  	}
 
-	// grab into "news" the set of the NEW quads allocating objects that
-	// should be put into the heap of "nt".
+	// grab into "news" the set of the NEW/ANEW quads allocating objects
+	// that should be put into the heap of "nt".
 	Set news = new HashSet();
 	for(Iterator it = pointed.iterator(); it.hasNext(); ){
 	    PANode node = (PANode) it.next();
@@ -238,7 +238,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    // specially treat this simple case:
 	    // just allocate the thread node nt on its own heap
 	    MyAP ap = getAPObj(qnt);
-	    ap.uoh = true; // useOwnHeap for allocating this thread object
+	    ap.ta  = true; // allocate on thread specific heap
+	    ap.uoh = true; // useOwnHeap
 	    return;
 	}
 	
@@ -252,7 +253,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	Temp l2 = new Temp(temp_factory);
 	QuadFactory qf = (QuadFactory) hcf;
 	MOVE moveq = new MOVE(qf, null, qnt.dst(), l2);
-	NEW newq   = new  NEW(qf, null, l2, qnt.hclass());
+	NEW  newq  = new  NEW(qf, null, l2, qnt.hclass());
 
 	// insert the MOVE instead of the original allocation
 	Quad.replace(qnt, moveq);
@@ -273,7 +274,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	// the objects pointed by the thread node and which don't escape
 	// anywhere else are allocated on the heap of the thread node
 	for(Iterator it = news.iterator(); it.hasNext(); ){
-	    NEW cnewq = (NEW) it.next();
+	    Quad cnewq = (Quad) it.next();
 	    MyAP cnewq_ap = getAPObj(cnewq);
 	    cnewq_ap.ta = true;
 	    cnewq_ap.ah = l2;
@@ -284,7 +285,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    hcode.print(new java.io.PrintWriter(System.out, true));
 	    System.out.println("Thread specific NEW:");
 	    for(Iterator it = news.iterator(); it.hasNext(); ){
-		NEW new_site= (NEW) it.next();
+		Quad new_site = (Quad) it.next();
 		System.out.println(new_site.getSourceFile() + ":" + 
 				   new_site.getLineNumber() + " " + 
 				   new_site);
