@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>BasicInduction</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInduction.java,v 1.1.2.2 1999-06-29 17:24:24 bdemsky Exp $
+ * @version $Id: BasicInduction.java,v 1.1.2.3 1999-06-29 17:43:58 bdemsky Exp $
  */
 public class BasicInduction {
     HCode hc;
@@ -40,7 +40,7 @@ public class BasicInduction {
      *  <code>Induction</code> classes describing the induction variable. 
      *  This code only finds basic induction variables. */
 
-    Public HashMap doInduction(Loops lp, WorkSet invariants) {
+    public HashMap doInduction(Loops lp, WorkSet invariants) {
 	HashMap basicinductions=new HashMap();
 	
 	/*Get the loop header and
