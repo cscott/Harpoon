@@ -4,6 +4,10 @@
 extern struct JNINativeInterface FLEX_JNI_vtable;
 
 #include <stdlib.h>
+#include "config.h"
+#ifdef WITH_DMALLOC
+#include "dmalloc.h"
+#endif
 
 /* no global refs, initially. */
 struct _jobject FNI_globalrefs = { NULL, NULL };
