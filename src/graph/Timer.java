@@ -15,6 +15,7 @@ public class Timer extends Node {
     private boolean start;
     private boolean announce;
     private long total = 0;
+    private long squaresTotal = 0;
     private long frames = 0;
     private long max = 0;
     private long min = Long.MAX_VALUE;
@@ -47,6 +48,7 @@ public class Timer extends Node {
 	} else {
 	    long diff = time-id.time;
 	    total += id.time = diff;
+	    squaresTotal += Math.pow(diff, 2);
 	    if (diff > max)
 		max = diff;
 	    if (diff < min)
@@ -54,9 +56,10 @@ public class Timer extends Node {
 	    if (announce) {
 		System.out.print("Time (ms): "+diff);
 		//line below added by Benji 
-		System.out.print(" ** Avg (ms) : "+(int)(getLatency()*1000));
-		System.out.print(" ** Min (ms) : "+min);
-		System.out.println(" ** Max (ms) : "+max);
+		System.out.print(" ** Avg(ms):"+(int)(getLatency()*1000));
+		System.out.print(" ** Min:"+min);
+		System.out.print(" ** Max:"+max);
+		System.out.println(" ** StdDev:"+getStdDev());
 	    }
 	}
 	//if (id.lastImage) {
@@ -86,5 +89,21 @@ public class Timer extends Node {
      */
     public synchronized float getLatency() {
 	return ((float)total)/(1000*((float)frames));
+    }
+
+    /**
+     *  Get the standard deviation of the latency (in seconds) of the frames
+     *  that have passed through this point.
+    */
+    public synchronized float getStdDev() {
+	float avg = getLatency()*1000;
+	float avgSquared = (float)Math.pow(avg, 2);
+	float totalDeviation =
+	    squaresTotal
+	    - 2*avg*total
+	    + frames*avgSquared;
+	float variance = totalDeviation / frames;
+	float stdDev = (float)Math.sqrt(variance);
+        return stdDev ;
     }
 }
