@@ -28,66 +28,61 @@ public class StructureTypeDescriptor extends TypeDescriptor {
         return fields.keys();
     }
    
-    private Vector getFieldSizes() {
-        Vector fieldsizes = new Vector();
-                
-        for (int i = 0; i < fieldlist.size(); i++) {
-            FieldDescriptor fd = (FieldDescriptor) fieldlist.elementAt(i);
-            TypeDescriptor td = fd.getType();
-            boolean ptr = fd.getPtr();
-
-            Expr basesize; 
-            if (ptr) { /* ptrs are 32bits */
-                basesize = new IntegerLiteralExpr(32);
-            } else {
-                basesize = td.getSizeExpr();
-            }
-
-            if (fd instanceof ArrayDescriptor) {
-                Expr totalsize = new OpExpr(Opcode.MULT, basesize, ((ArrayDescriptor) fd).getIndexBound());
-                fieldsizes.addElement(totalsize);
-            } else {
-                fieldsizes.addElement(basesize);
-            }
-        }
-
-        return fieldsizes;
-    }
     
     public Expr getSizeExpr() {        
-        Vector fieldsizes = getFieldSizes();
-
-        /* we've got the field sizes! now return the addition! */
-        Expr size = new IntegerLiteralExpr(0);
-        
-        for (int i = 0; i < fieldsizes.size(); i++) {
-            Expr fieldsize = (Expr) fieldsizes.elementAt(i);
-            size = new OpExpr(Opcode.ADD, fieldsize, size);
-        }
-        
-        return size;
+        return getOffsetExpr(null);
     }
 
     public Expr getOffsetExpr(FieldDescriptor field) {
-        Vector fieldsizes = getFieldSizes();
-
-        // #ATTN#: getOffsetExpr needs to be called with the fielddescriptor obect that is in teh vector list
-        // this means that if the field is an arraydescriptor you have to call getOffsetExpr with the array 
-
-        /* we've got the field sizes! now return the addition! */
+	
+	boolean aligned=true;
         Expr size = new IntegerLiteralExpr(0);
         
-        for (int i = 0; i < fieldsizes.size(); i++) {
+        for (int i = 0; i < fieldlist.size(); i++) {
             FieldDescriptor fd = (FieldDescriptor)fieldlist.elementAt(i);
+
+            TypeDescriptor td = fd.getType();
+            boolean ptr = fd.getPtr();
+            Expr basesize; 
+            if (ptr) { /* ptrs are 32bits */
+		
+		basesize = new IntegerLiteralExpr(32);
+            } else {
+		basesize = td.getSizeExpr();
+            }
+	    Expr fieldsize;
+            if (fd instanceof ArrayDescriptor) {
+                Expr totalsize = new OpExpr(Opcode.MULT, basesize, ((ArrayDescriptor) fd).getIndexBound());
+		fieldsize=totalsize;
+            } else {
+                fieldsize=basesize;
+            }
+	    if (td instanceof ReservedTypeDescriptor) {
+		ReservedTypeDescriptor rtd=(ReservedTypeDescriptor) td;
+		if (rtd==ReservedTypeDescriptor.BIT) {
+		    aligned=false;
+		} else {
+		    if (!aligned) {
+			size=new OpExpr(Opcode.RND, size,null);
+			aligned=true;
+		    }
+		}
+	    } else {
+		if (!aligned) {
+		    size=new OpExpr(Opcode.RND, size,null);
+		    aligned=true;
+		}
+	    }
 
             if (fd == field) { /* stop, reached target field */
                 break; 
             }
 
-            Expr fieldsize = (Expr) fieldsizes.elementAt(i);
             size = new OpExpr(Opcode.ADD, fieldsize, size);
         }
-        
+
+        if ((field==null)&&(!aligned))
+	    return new OpExpr(Opcode.RND, size, null);
         return size;
     }
 

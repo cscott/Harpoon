@@ -8,12 +8,81 @@ public class OpExpr extends Expr {
     Expr right;
     Opcode opcode;
 
-    public OpExpr(Opcode opcode, Expr left, Expr right) {
-        this.opcode = opcode;
-        this.left = left;
-        this.right = right;
+    public static boolean isInt(Expr e) {
+	if ((e instanceof IntegerLiteralExpr)||
+	    ((e instanceof OpExpr)&&(((OpExpr)e).getLeftExpr() instanceof IntegerLiteralExpr)))
+	    return true;
+	return false;
+    }
 
-        assert (right == null && opcode == Opcode.NOT) || (right != null);
+    public static int getInt(Expr e) {
+	if (e instanceof IntegerLiteralExpr)
+	    return ((IntegerLiteralExpr)e).getValue();
+	else if ((e instanceof OpExpr) && (((OpExpr)e).getLeftExpr() instanceof IntegerLiteralExpr))
+	    return ((IntegerLiteralExpr)((OpExpr)e).getLeftExpr()).getValue();
+	else throw new Error();
+    }
+
+    public OpExpr(Opcode opcode, Expr left, Expr right) {
+	if ((isInt(left)&&isInt(right))||
+	    (isInt(left)&&(opcode==Opcode.NOT))||
+	    (isInt(left)&&(opcode==Opcode.RND))) {
+	    this.opcode=Opcode.NOP;
+	    this.right=null;
+	    int lint=getInt(left);
+	    int rint=getInt(right);
+	    int value=0;
+	    if (opcode==Opcode.ADD) {
+		value=lint+rint;
+	    } else if (opcode==Opcode.SUB) {
+		value=lint-rint;
+	    } else if (opcode==Opcode.SHL) {
+		value=lint<<rint;
+	    } else if (opcode==Opcode.SHR) {
+		value=lint>>rint;
+	    } else if (opcode==Opcode.MULT) {
+		value=lint*rint;
+	    } else if (opcode==Opcode.DIV) {
+		value=lint/rint;
+	    } else if (opcode==Opcode.GT) {
+		if (lint>rint)
+		    value=1;
+	    } else if (opcode==Opcode.GE) {
+		if (lint>=rint)
+		    value=1;
+	    } else if (opcode==Opcode.LT) {
+		if (lint<rint)
+		    value=1;
+	    } else if (opcode==Opcode.LE) {
+		if (lint<=rint)
+		    value=1;
+	    } else if (opcode==Opcode.EQ) {
+		if (lint==rint)
+		    value=1;
+	    } else if (opcode==Opcode.NE) {
+		if (lint!=rint)
+		    value=1;
+	    } else if (opcode==Opcode.AND) {
+		if ((lint!=0)&&(rint!=0))
+		    value=1;
+	    } else if (opcode==Opcode.OR) {
+		if ((lint!=0)||(rint!=0))
+		    value=1;
+	    } else if (opcode==Opcode.NOT) {
+		if (lint==0)
+		    value=1;
+	    } else if (opcode==Opcode.RND) {
+		value=((lint>>3)<<3);
+		if ((lint % 8)!=0)
+		    value+=8;
+	    } else throw new Error("Unrecognized Opcode");
+	    this.left=new IntegerLiteralExpr(value);
+	    } else {
+	    this.opcode = opcode;
+	    this.left = left;
+	    this.right = right;
+	    assert (right == null && (opcode == Opcode.NOT||opcode==Opcode.RND)) || (right != null);
+	}
     }
 
     public Expr getRightExpr() {
@@ -39,6 +108,10 @@ public class OpExpr extends Expr {
     public String name() {
 	if (opcode==Opcode.NOT)
 	    return "!("+left.name()+")";
+	if (opcode==Opcode.NOP)
+	    return left.name();
+	if (opcode==Opcode.RND)
+	    return "Round("+left.name()+")";
 	String name=left.name()+opcode.toString();
 	if (right!=null)
 	    name+=right.name();
@@ -60,7 +133,7 @@ public class OpExpr extends Expr {
 	    return false;
 	if (!left.equals(remap,oe.left))
 	    return false;
-	if (opcode!=Opcode.NOT)
+	if ((opcode!=Opcode.NOT)&&(opcode!=Opcode.RND)&&(opcode!=Opcode.NOP))
 	    if (!right.equals(remap,oe.right))
 		return false;
 	return true;
@@ -169,7 +242,14 @@ public class OpExpr extends Expr {
         }
 
         String code;
-        if (opcode != Opcode.NOT) { /* two operands */
+	if (opcode == Opcode.RND) {
+	    writer.outputline("int " +dest.getSafeSymbol() + " = (" +
+			      ld.getSafeSymbol() + ">>3)<<3; ");
+	    writer.outputline("if ("+ld.getSafeSymbol()+" % 8) "+dest.getSafeSymbol()+"+=8;");
+	} else if (opcode == Opcode.NOP) {
+	    writer.outputline("int " +dest.getSafeSymbol() + " = " +
+			      ld.getSafeSymbol() +"; ");
+	} else if (opcode != Opcode.NOT) { /* two operands */
             assert rd != null;
             writer.outputline("int " + dest.getSafeSymbol() + " = " + 
                               ld.getSafeSymbol() + " " + opcode.toString() + " " + rd.getSafeSymbol() + ";");
@@ -181,6 +261,12 @@ public class OpExpr extends Expr {
     public void prettyPrint(PrettyPrinter pp) {
         pp.output("(");
         if (opcode == Opcode.NOT) {
+	    pp.output("!");
+            left.prettyPrint(pp);
+	} else if (opcode == Opcode.NOP) {
+            left.prettyPrint(pp);
+	} else if (opcode == Opcode.RND) {
+	    pp.output("RND ");
             left.prettyPrint(pp);
         } else {           
             left.prettyPrint(pp);

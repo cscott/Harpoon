@@ -88,6 +88,13 @@ public class RepairGenerator {
 	String repairtable="repairtable";
 	String left="left";
 	String right="right";
+	/* Rewrite globals */
+
+	for (Iterator it=this.state.stGlobals.descriptors();it.hasNext();) {
+	    VarDescriptor vd=(VarDescriptor)it.next();
+	    craux.outputline("#define "+vd.getSafeSymbol()+" "+state+"->"+vd.getSafeSymbol());
+	}
+
 	for(Iterator it=termination.updatenodes.iterator();it.hasNext();) {
 	    GraphNode gn=(GraphNode) it.next();
 	    TermNode tn=(TermNode) gn.getOwner();
@@ -108,7 +115,11 @@ public class RepairGenerator {
 			craux.outputline("void "+methodname+"("+name+"_state * "+state+","+name+" * "+model+", RepairHash * "+repairtable+", int "+left+")");
 		    }
 		    craux.startblock();
-		    un.generate(craux, false, left,right);
+		    final SymbolTable st = un.getRule().getSymbolTable();                
+		    CodeWriter cr = new StandardCodeWriter(outputaux) {
+                        public SymbolTable getSymbolTable() { return st; }
+                    };
+		    un.generate(cr, false, left,right);
 		    craux.endblock();
 		    break;
 		case MultUpdateNode.REMOVE:
@@ -133,7 +144,11 @@ public class RepairGenerator {
 		    crhead.outputline(methodcall+";");
 		    craux.outputline(methodcall);
 		    craux.startblock();
-		    un.generate(craux, true, null,null);
+		    final SymbolTable st2 = un.getRule().getSymbolTable();                
+		    CodeWriter cr2 = new StandardCodeWriter(outputaux) {
+                        public SymbolTable getSymbolTable() { return st2; }
+                    };
+		    un.generate(cr2, true, null,null);
 		    craux.endblock();
 		    break;
 		case MultUpdateNode.MODIFY:

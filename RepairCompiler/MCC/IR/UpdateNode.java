@@ -240,11 +240,67 @@ class UpdateNode {
 		cr.outputline(vd.getSafeSymbol()+"="+right.getSafeSymbol()+";");
 	    } else if (u.isField()) {
 		/* NEED TO FIX */
+		Expr subexpr=((DotExpr)u.getLeftExpr()).getExpr();
+		Expr intindex=((DotExpr)u.getLeftExpr()).getIndex();
+		VarDescriptor subvd=VarDescriptor.makeNew("subexpr");
+		VarDescriptor indexvd=VarDescriptor.makeNew("index");
+		subexpr.generate(cr,subvd);
+		if (intindex!=null)
+		    intindex.generate(cr,indexvd);
+		FieldDescriptor fd=(FieldDescriptor)u.getDescriptor();
+		StructureTypeDescriptor std=(StructureTypeDescriptor)subexpr.getType();
+		if (fd instanceof ArrayDescriptor) {
+		    fd = ((ArrayDescriptor) fd).getField();
+		}
+
+		Expr offsetbits = std.getOffsetExpr(fd);
+		if (intindex != null) {
+		    Expr basesize = fd.getBaseSizeExpr();
+		    offsetbits = new OpExpr(Opcode.ADD, offsetbits, new OpExpr(Opcode.MULT, basesize, intindex));
+		}
+		Expr offsetbytes = new OpExpr(Opcode.SHR, offsetbits,new IntegerLiteralExpr(3));
+		Expr byteaddress=new OpExpr(Opcode.ADD, offsetbytes, subexpr);
+		VarDescriptor addr=VarDescriptor.makeNew("byteaddress");
+		byteaddress.generate(cr,addr);
+
+		if (fd.getType() instanceof ReservedTypeDescriptor && !fd.getPtr()) {
+		    ReservedTypeDescriptor rtd=(ReservedTypeDescriptor)fd.getType();
+		    if (rtd==ReservedTypeDescriptor.INT) {
+			cr.outputline("*((int *) "+addr.getSafeSymbol()+")="+right.getSafeSymbol()+";");
+		    } else if (rtd==ReservedTypeDescriptor.SHORT) {
+			cr.outputline("*((short *) "+addr.getSafeSymbol()+")="+right.getSafeSymbol()+";");
+		    } else if (rtd==ReservedTypeDescriptor.BYTE) {
+			cr.outputline("*((char *) "+addr.getSafeSymbol()+")="+right.getSafeSymbol()+";");
+		    } else if (rtd==ReservedTypeDescriptor.BIT) {
+			Expr tmp = new OpExpr(Opcode.SHL, offsetbytes, new IntegerLiteralExpr(3));
+			Expr offset=new OpExpr(Opcode.SUB, offsetbits, tmp);
+			Expr mask=new OpExpr(Opcode.SHR, new IntegerLiteralExpr(1), offset);
+			VarDescriptor maskvar=VarDescriptor.makeNew("mask");
+			mask.generate(cr,maskvar);
+			cr.outputline("*((char *) "+addr.getSafeSymbol()+")|="+maskvar.getSafeSymbol()+";");
+			cr.outputline("if (!"+right.getSafeSymbol()+")");
+			cr.outputline("*((char *) "+addr.getSafeSymbol()+")^="+maskvar.getSafeSymbol()+";");
+		    } else throw new Error();
+		} else {
+		    /* Pointer */
+		    cr.outputline("*((int *) "+addr.getSafeSymbol()+")="+right.getSafeSymbol()+";");
+		}
 	    }
  	    cr.endblock();
-	    
 	}
     }
+
+    private int bitmask(int bits) {
+        int mask = 0;
+        
+        for (int i = 0; i < bits; i++) {
+            mask <<= 1;
+            mask += 1;
+        }
+
+        return mask;            
+    }
+
     private void generate_bindings(CodeWriter cr, String slot0, String slot1) {
 	for(int i=0;i<bindings.size();i++) {
 	    Binding b=(Binding)bindings.get(i);

@@ -23,6 +23,10 @@ public class Opcode {
     public static final Opcode AND = new Opcode("&&");
     public static final Opcode OR = new Opcode("||");
     public static final Opcode NOT = new Opcode("!");
+    public static final Opcode RND = new Opcode("RND");
+    public static final Opcode NOP = new Opcode("NOP");
+    public static final Opcode SHL = new Opcode("<<");
+    public static final Opcode SHR = new Opcode(">>");
 
     public static Opcode decodeFromString(String opname) {
         Opcode opcode;

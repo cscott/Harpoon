@@ -212,7 +212,7 @@ public class DotExpr extends Expr {
                 writer.outputline("int " + dest.getSafeSymbol() + 
                                   " = " + ptr + "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ");");  
                 dotypecheck = true;
-            }            
+            }
         }
 
 
