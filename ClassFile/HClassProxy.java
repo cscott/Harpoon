@@ -16,7 +16,7 @@ import java.io.Serializable;
  * "redefined" after creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassProxy.java,v 1.1.4.7 2000-10-22 08:41:22 cananian Exp $
+ * @version $Id: HClassProxy.java,v 1.1.4.8 2000-11-12 03:09:43 cananian Exp $
  */
 class HClassProxy extends HClass implements HClassMutator, Serializable {
   Relinker relinker;
@@ -130,6 +130,10 @@ class HClassProxy extends HClass implements HClassMutator, Serializable {
   }
   public HClass getComponentType() {
     return wrap(proxy.getComponentType());
+  }
+  public boolean equals(Object o) {
+    return (o instanceof HClass &&
+	    ((HClass)o).getDescriptor().equals(getDescriptor()));
   }
   // HClassMutator interface
   public HField addDeclaredField(String name, HClass type)
