@@ -69,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.97 2000-10-13 21:02:47 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.98 2000-10-17 17:51:30 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -209,7 +209,7 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
 	// XXX: ToTree doesn't handle TYPESWITCHes right now.
-	hcf = new harpoon.IR.Quads.TypeSwitchRemover(hcf).codeFactory();
+	hcf = new harpoon.Analysis.Quads.TypeSwitchRemover(hcf).codeFactory();
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
 	hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);

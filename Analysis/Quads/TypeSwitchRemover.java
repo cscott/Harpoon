@@ -1,15 +1,15 @@
 // TypeSwitchRemover.java, created Tue Oct 10 13:32:03 2000 by cananian
 // Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.IR.Quads;
+package harpoon.Analysis.Quads;
 
 import harpoon.Analysis.Maps.Derivation;
-import harpoon.Analysis.Quads.Unreachable;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.IR.Quads.*;
 import harpoon.IR.LowQuad.DerivationMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
@@ -24,7 +24,7 @@ import java.util.List;
  * into chains of <code>INSTANCEOF</code> and <code>CJMP</code> quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeSwitchRemover.java,v 1.1.2.4 2000-10-17 00:28:38 cananian Exp $
+ * @version $Id: TypeSwitchRemover.java,v 1.1.2.1 2000-10-17 17:49:33 cananian Exp $
  */
 public final class TypeSwitchRemover
     extends harpoon.Analysis.Transformation.MethodMutator {

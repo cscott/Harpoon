@@ -9,7 +9,7 @@ import harpoon.ClassFile.HCodeFactory;
  * environment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Options.java,v 1.1.2.7 2000-10-16 23:52:38 cananian Exp $
+ * @version $Id: Options.java,v 1.1.2.8 2000-10-17 17:51:30 cananian Exp $
  */
 public class Options {
     /** Stream for writing statistics. */
@@ -37,7 +37,7 @@ public class Options {
 	if (name=="ssi-stats")
 	    return harpoon.Analysis.Quads.SSIStats.codeFactory(hcf);
 	if (name=="type-switch-remover")
-	    return new harpoon.IR.Quads.TypeSwitchRemover(hcf).codeFactory();
+	    return new harpoon.Analysis.Quads.TypeSwitchRemover(hcf).codeFactory();
 	else throw new Error("Unknown code factory type: "+name);
     }
 }
