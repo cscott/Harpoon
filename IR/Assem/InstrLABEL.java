@@ -11,20 +11,20 @@ import harpoon.Temp.Label;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.3 1999-04-05 21:36:36 pnkfelix Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.4 1999-05-25 16:45:13 andyb Exp $
  */
 public class InstrLABEL extends Instr {
-    public Label label;
+    private Label label;
 
     public InstrLABEL(InstrFactory inf, HCodeElement src, String a, Label l) {
         super(inf, src, a, null, null);
         label = l;
     } 
 
-    /** Accept a visitor. 
-	<BR> <B>NOTE:</B> for VISITOR pattern to work, all subclasses
-	                  must override this method with the body:
-			  { v.visit(this); }
-     */
+    /** Return the code label used in this. */
+    public Label getLabel() { return label; }
+    // should clone label!!!!!!!
+
+    /** Accept a visitor. */
     public void visit(InstrVisitor v) { v.visit(this); }
 }
