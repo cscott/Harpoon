@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.17 2003-11-11 06:29:55 cananian Exp $
+% $Id: pldi04.tex,v 1.18 2003-11-11 21:37:14 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -35,7 +35,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-\date{\today \\ $ $Revision: 1.17 $ $}
+\date{\today \\ $ $Revision: 1.18 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -282,7 +282,7 @@ atomic, but they do not compose to form an atomic implementation of
 \texttt{append()}.  An \texttt{atomic} declaration (or running under
 our transactions implementation) would fix this programmer error.
 [This bug was found by \cite{FlanaganQa03}.]
-\note{What about just saying \texttt{public synchronzied Append} ? -Bradley}
+\note{What about just saying \texttt{public synchronized Append} ? -Bradley}
 
 Further, if the synchronization in this method is implemented with
 transactions, note that the call to \texttt{sb.getChars()} means that
@@ -351,6 +351,7 @@ while(true) {
 
 \subsecput{backtrack}{Backtracking}
 Prolog-esque example?
+nqueens?
 
 %\subsecput{optcon}{Optimistic Concurrency} % not in this paper.
 
@@ -368,7 +369,7 @@ Writer:        &Reader:                 \\
 \end{tabular}
 }
 \caption{Lamport's single-writer multiple-reader non-blocking
-    synchronization algoritm \cite{Lamport77}.}
+    synchronization algorithm \cite{Lamport77}.}
 % writes and reads to v1/v2 can be non-atomic if the subreads/subwrites
 % are done in the correct order; see original reference for details.
 \label{fig:lamport}
@@ -529,7 +530,7 @@ method which avoids object copying \cite{Barnes93}.  He eliminates the
 need to store ``old'' object
 state in case of operation failure by having all threads cooperate to
 apply operations.  For example, if the first processor begins an operation
-and then halts, another processor will complete the first's operation
+and then halts, another processor will complete the operation of the first
 before applying its own.  Barnes proposes to accomplish the
 cooperation by creating a parallel state machine for each operation,
 so that each thread can independently try to advance the machine from state
@@ -598,8 +599,8 @@ however the user still has to explicitly \emph{open} every object touched
 before it can be used in a transaction.  This implementation is based
 on object copying, and so has poor performance for large objects and
 arrays.  Not including work necessary to copy objects involved in
-writes, they require $O(R(R+W))$ work to open R objects for reading
-and W objects for writing, which is quadratic in the number of objects
+writes, they require $O(R(R+W))$ work to open $R$ objects for reading
+and $W$ objects for writing, which may be quadratic in the number of objects
 involved in the transaction.   A list insertion benchmark which they
 present shows 9x slowdown over a locking scheme, they beat the locking
 implementation when more than 5-10 processors are active.  They
@@ -771,8 +772,8 @@ Benchmark                 &  Base       & Locks         & Trans              & T
 \caption{SPECjvm98 performance and overheads on a 1-processor UVSIM simulation. The {\em Base }
  time uses no synchronization.  The {\em Locks time} is the time using
  locks as a percentage of the base.  The {\em Trans time} is the time using BTM
- transactions as a perdentage of the base. The
- {\em time in Trans} is the fraction of the {\em Trans time} actualy
+ transactions as a percentage of the base. The
+ {\em time in Trans} is the fraction of the {\em Trans time} actually
  spent running a transaction.  The {\em
  Overflow overhead} column is fraction of the {\em Trans time}
  spent handling overflows.}
@@ -794,7 +795,7 @@ in {\texttt{228\_jack})}. %Put that {} around the texttt to prevent the jack fro
 For BTM, there are two main sources of
 overhead: The transactions may abort, wasting the cycles spent
 computing, and also executing the branch to the abort handler.  For
-these java programs, the transactions never abort because they are
+these Java programs, the transactions never abort because they are
 single-threaded programs.  The second overhead is the cost of handling
 overflows.
 
@@ -1604,4 +1605,5 @@ problem. [although starvation may still occur.]
 
 \end{document}
 
-% LocalWords:  csail mit edu AFRL
+% LocalWords:  csail mit edu AFRL LaMarca Alemany Felten Luchango Shavit JVM
+% LocalWords:  Touitou Okasaki
