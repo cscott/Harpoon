@@ -84,7 +84,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.18 2001-11-06 18:18:16 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.19 2001-11-07 18:40:10 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -505,10 +505,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	if (Modifier.isFinal(hf.getModifiers()))
 	    return null; // bottom
 	// definitely initialized fields can be bottom until initialization.
-	if (dio.isDefinitelyInitialized(hf)) {
-	    System.err.println("DEFINITELY INITIALIZED: "+hf);//will go away
+	if (dio.isDefinitelyInitialized(hf))
 	    return null; // bottom
-	}
 	// else assume that field is set to zero upon object creation.
 	if (!type.isPrimitive()) return new xNullConstant();
 	if (type==HClass.Float)
