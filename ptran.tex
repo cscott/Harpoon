@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.19 2002-07-24 18:06:59 cananian Exp $
+% $Id: ptran.tex,v 1.20 2002-07-24 18:28:26 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.19 $ $}
+\date{\today \\ $ $Revision: 1.20 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -72,6 +72,8 @@ does not pass through $z$.
 An infeasible path analysis \cite{267921} could be used to refine
 this predicate by excluding paths never traversed by any
 execution of the program.
+% note that a statement ... = a + b *could* however have a=b and still
+% be singular.  does this need to be fixed?
 
 \begin{myfigure}[p]
 \begin{samplecode}[2]%
@@ -237,10 +239,26 @@ non-singular reaching definitions.  Now we can define
     \left\{ p\in P_m | \tuple{v,p}\in \text{In}_\text{Gs}(n) \right\}
 \end{displaymath}
 
-A variable $v$ is singular at $n$ iff
-$\text{CondParam}(v,n)=\emptyset \wedge \neg\text{Ns}(v,n)$ and
-conditionally-singular at $n$ iff
-$\text{CondParam}(v,n)\neq\emptyset \wedge \neg\text{Ns}(v,n)$.
+A variable $v$ is conditionally-singular on $P$ at $n$ if
+$P=\text{CondParam}(v,n)$ and $\neg\text{Ns}(v,n)$.  This
+is identical to our former case of non-conditional singularity
+when $P=\emptyset$.  Statements $s_1$ and $s_2$ are conditionally
+singular on $P$ if
+\begin{eqnarray*}
+\neg\exists v_1\in\text{use}(s_1), v_2\in\text{use}(s_2),
+     d &:& \tuple{v_1, d} \in \text{In}_\text{Gs}(s_1) \wedge
+         \tuple{v_2, d} \in \text{In}_\text{Gs}(s_2) \wedge
+\\&&\quad
+\left(\text{Path}_{\mathcal{G}-d}(s_1, s_2) \vee
+      \text{Path}_{\mathcal{G}-d}(s_2, s_1) \right)
+\end{eqnarray*}
+as before, where $\mathcal{G}-d=\mathcal{G}$ if $d\notin\mathcal{S}$.
+In this case
+\begin{displaymath}
+P = \left(\bigcup_{v_1\in\text{use}(s_1)} \text{CondParam}(v_1,s_1)\right)
+         \cup
+    \left(\bigcup_{v_2\in\text{use}(s_2)} \text{CondParam}(v_2,s_2)\right)
+\end{displaymath}
 
 Now we can resolve conditional singularity at a callsite by
 examining actual parameters.
