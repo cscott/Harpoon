@@ -27,6 +27,7 @@ import harpoon.Util.Collections.SetFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -39,7 +40,7 @@ import java.util.Set;
  * other things).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldSyncOracle.java,v 1.1.2.4 2001-11-07 15:54:06 cananian Exp $
+ * @version $Id: FieldSyncOracle.java,v 1.1.2.5 2001-11-07 19:01:09 cananian Exp $
  */
 public class FieldSyncOracle {
     final MultiMap fieldsRead, fieldsWritten;
@@ -56,11 +57,21 @@ public class FieldSyncOracle {
     public boolean isRead(HMethod hm, HField hf) {
 	return fieldsRead.contains(hm, hf);
     }
+    /** Returns a <code>Set</code> of <code>HField</code>s read,
+     *  either directly or indirectly, by <code>HMethod</code> hm. */
+    public Set fieldsRead(HMethod hm) {
+	return Collections.unmodifiableSet((Set) fieldsRead.getValues(hm));
+    }
     /** Returns <code>true</code> if <code>HMethod</code>
-	<code>hm</code> will ever read <code>HField</code>
+	<code>hm</code> will ever write <code>HField</code>
 	<code>hf</code>, either directly or via a method call. */
     public boolean isWritten(HMethod hm, HField hf) {
 	return fieldsWritten.contains(hm, hf);
+    }
+    /** Returns a <code>Set</code> of <code>HField</code>s written,
+     *  either directly or indirectly, by <code>HMethod</code> hm. */
+    public Set fieldsWritten(HMethod hm) {
+	return Collections.unmodifiableSet((Set) fieldsWritten.getValues(hm));
     }
     /** Creates a <code>FieldSyncOracle</code>. */
     public FieldSyncOracle(HCodeFactory hcf, ClassHierarchy ch, CallGraph cg) {
