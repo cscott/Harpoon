@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.2 1998-12-28 23:38:54 cananian Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.3 1998-12-30 04:33:40 cananian Exp $
  * @see QuadNoSSA
  * @see QuadSSA
  */
@@ -23,7 +23,11 @@ public class QuadWithTry extends Code /* which extends HCode */ {
         super(bytecode.getMethod(), null);
 	quads = Translate.trans(bytecode, this);
 	Peephole.normalize(quads); // put variables where they belong.
-	Peephole.optimize(quads, true); //don't disrupt the handlers too much
+	Peephole.optimize(quads,false); //don't disrupt the handlers too much
+	// if we allow far moves, the state which the handlers expect is
+	// destroyed.  not sure how to make the optimization handler-safe.
+	// maybe don't allow moves past instructions that might throw
+	// exceptions?
     }
     private QuadWithTry(HMethod parent, Quad quads) {
 	super(parent, quads);
