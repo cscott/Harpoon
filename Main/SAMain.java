@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.8 2002-05-02 22:11:46 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.9 2002-06-25 15:35:44 wbeebee Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -207,7 +207,7 @@ public class SAMain extends harpoon.IR.Registration {
 	if (MULTITHREADED) {
 	    assert PRECISEGC || Realtime.REALTIME_JAVA : "Multi-threaded option is valid only "+
 			"for precise gc.";
-	    assert wbOptLevel != 0 : "Write barrier removal not supported "+
+	    assert wbOptLevel == 0 : "Write barrier removal not supported "+
 			"for multi-threaded programs.";
 	}
 	if (WRITEBARRIERS)
