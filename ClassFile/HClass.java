@@ -30,7 +30,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.10 1999-02-11 20:44:40 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.11 1999-06-21 04:54:27 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  */
 public abstract class HClass extends HPointer {
@@ -819,7 +819,9 @@ public abstract class HClass extends HPointer {
       if (hc.isInterface())
 	return hc.isSuperinterfaceOf(this);
       else // hc is class.
-	return hc.isSuperclassOf(this);
+	if (this.isInterface()) // in recursive eval of array instanceof.
+	  return (hc==HClass.forName("java.lang.Object"));
+	else return hc.isSuperclassOf(this);
     }
   }
 
