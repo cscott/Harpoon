@@ -69,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.96 2000-10-13 20:55:12 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.97 2000-10-13 21:02:47 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -319,6 +319,8 @@ public class SAMain extends harpoon.IR.Registration {
 	String line;
 	while (null != (line=r.readLine())) {
 	    line = line.trim(); // remove white space from both sides.
+	    // allow comments and blank lines.
+	    if (line.startsWith("#") || line.length()==0) continue;
 	    // check if this is an 'include' directive.
 	    if (line.startsWith("include ")) {
 		String nfile = line.substring(7).trim();
@@ -650,7 +652,7 @@ public class SAMain extends harpoon.IR.Registration {
 		}
 		break;
 	    case 'r':
-		String rootSetFilename = g.getOptarg();
+		rootSetFilename = g.getOptarg();
 		break;
 	    case '?':
 	    case 'h':
