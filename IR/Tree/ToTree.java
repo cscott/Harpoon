@@ -74,7 +74,7 @@ import java.util.Stack;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.82 2000-06-07 02:40:56 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.83 2000-06-23 23:05:56 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -490,7 +490,9 @@ static class TranslationVisitor extends LowQuadVisitor {
 	Util.assert(m_handler==null);
 	m_handler = new Temp(m_tf.tempFactory(), "handler");
 	mParams[0] = _TEMP(q, HClass.Void, m_handler);
-	method    = new METHOD(m_tf, q, mParams);
+	int rettype = (hm.getReturnType()==HClass.Void) ? -1 :
+	    TYPE(hm.getReturnType());
+	method    = new METHOD(m_tf, q, m_nm.label(hm), rettype, mParams);
 	addStmt(segment);
 	addStmt(method);
 	// deal with possible folding

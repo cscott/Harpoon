@@ -25,7 +25,7 @@ import java.util.HashSet;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.29 2000-03-26 06:29:10 jwhaley Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.30 2000-06-23 23:05:56 cananian Exp $
  */
 public class ToCanonicalTree {
     private Tree m_tree;
@@ -155,7 +155,8 @@ public class ToCanonicalTree {
 	    for(int i=0; i<pNew.length; i++) {
 		pNew[i] = _MAP(pOld[i]);
 	    }
-	    treeMap.map(e, new METHOD(tf, e, pNew));
+	    treeMap.map(e, new METHOD(tf, e, e.getMethod(), e.getReturnType(),
+				      pNew));
 	}
 	public void visit(CALL s) {
 	    if (!visited.add(s)) return;

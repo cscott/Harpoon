@@ -51,7 +51,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.14 2000-06-06 05:04:02 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.15 2000-06-23 23:05:38 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final HMethod otherNames[];
@@ -119,7 +119,9 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	    paramTemps[i+1] = new Temp(tf.tempFactory(), "param"+i);
 	    paramTEMPs[i+1] = _TEMP(tf, null, paramTypes[i], paramTemps[i+1]);
 	}
-	stmlist.add(new METHOD(tf, null, paramTEMPs));
+	int rtype = (method.getReturnType()==HClass.Void) ? -1 :
+	    class2type(method.getReturnType());
+	stmlist.add(new METHOD(tf,null,m_nm.label(method), rtype, paramTEMPs));
 	// get JNIEnv * (which is thread-local)
 	Temp envT = new Temp(tf.tempFactory(), "env");
 	stmlist.add(new NATIVECALL

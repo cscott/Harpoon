@@ -5,6 +5,7 @@ package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.TempMap;
+import harpoon.Temp.Label;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
@@ -21,11 +22,17 @@ import java.util.Set;
  * links to the exception handlers for the method. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: METHOD.java,v 1.1.2.14 2000-02-16 19:44:25 cananian Exp $
+ * @version $Id: METHOD.java,v 1.1.2.15 2000-06-23 23:05:56 cananian Exp $
  */
 public class METHOD extends Stm {
     private final int paramsLength;
+    private final int retType;
+    private final Label method;
     /** Creates a <code>Tree.METHOD</code> object. 
+     * @param method   label to mark the top of the method
+     * @param retType  integer enumeration (see <code>Typed</code>) of the
+     *                 return type of this method, or -1 if the method
+     *                 returns no value.
      * @param params   temporaries which map directly to the 
      *                 parameters of this <code>Tree.METHOD</code>.
      *                 The first element should be a pointer to the 
@@ -35,13 +42,24 @@ public class METHOD extends Stm {
      *                 elements of the array should be the formal parameters
      *                 of the method, in the order which they are declared. 
      */
-    public METHOD(TreeFactory tf, HCodeElement source, TEMP[] params) { 
+    public METHOD(TreeFactory tf, HCodeElement source,
+		  Label method, int retType, TEMP[] params) { 
         super(tf, source, params.length);
+	Util.assert(method!=null);
+	Util.assert(retType==-1 || Type.isValid(retType));
 	Util.assert(params!=null); Util.assert(params.length>0);
 	for (int i=0; i<params.length; i++) Util.assert(params[i].tf == tf);
+	this.method = method;
+	this.retType = retType;
 	this.paramsLength = params.length;
 	this.setParams(params);
     }
+    /** Return the label which should mark the top of the method. */
+    public Label getMethod() { return method; }
+    /** Return an integer enumeration (see <code>Typed</code>) of the
+     *  return type of the method.  Returns -1 if the method returns no
+     *  value. */
+    public int getReturnType() { return retType; }
 
     /** Return the temporary variables used for method formals. */
     public TEMP[] getParams() {
@@ -69,7 +87,7 @@ public class METHOD extends Stm {
     public Stm build(TreeFactory tf, ExpList kids) { 
 	Util.assert(kids==null);
 	Util.assert(tf==this.tf, "cloning Params not yet implemented");
-	return new METHOD(tf, this, getParams());
+	return new METHOD(tf, this, method, retType, getParams());
     }
 
     public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
@@ -77,7 +95,9 @@ public class METHOD extends Stm {
 	TEMP[] newTmps = new TEMP[params.length];
 	for (int i=0; i<params.length; i++) 
 	    newTmps[i] = (TEMP)params[i].rename(tf, tm, cb);
-	return cb.callback(this, new METHOD(tf,this,newTmps), tm);
+	return cb.callback(this,
+			   new METHOD(tf, this, method, retType, newTmps),
+			   tm);
     }
 
     /** Accept a visitor. */
