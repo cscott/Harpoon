@@ -40,7 +40,7 @@ public abstract class Expr {
 	return null;
     }
 
-    public boolean isValue() {
+    public boolean isValue(TypeDescriptor td) {
 	return false;
     }
 

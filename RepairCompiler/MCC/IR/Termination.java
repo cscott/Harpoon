@@ -88,6 +88,9 @@ public class Termination {
 	    e.printStackTrace();
 	    System.exit(-1);
 	}
+
+	generatedebuggraphs();
+
 	for(Iterator it=updatenodes.iterator();it.hasNext();) {
 	    GraphNode gn=(GraphNode)it.next();
 	    TermNode tn=(TermNode)gn.getOwner();
@@ -119,6 +122,24 @@ public class Termination {
 	    System.exit(-1);
 	}
 	constraintdependence.traversedependences(this);
+    }
+
+    void generatedebuggraphs() {
+	for (int i=0;i<Compiler.debuggraphs.size();i++) {
+	    DebugItem di=(DebugItem) Compiler.debuggraphs.get(i);
+	    Constraint constr=(Constraint)state.vConstraints.get(di.constraintnum);
+	    HashSet superset=new HashSet();
+	    superset.addAll((Set)conjunctionmap.get(constr));
+	    HashSet closureset=new HashSet();
+	    
+	    GraphNode.boundedcomputeclosure(superset,closureset,di.depth);
+	    try {
+		GraphNode.DOTVisitor.visit(new FileOutputStream("graph"+di.constraintnum+"-"+di.depth+".dot"),superset);
+	    } catch (Exception e) {
+		e.printStackTrace();
+		System.exit(-1);
+	    }
+	}
     }
 
 
@@ -682,8 +703,8 @@ public class Termination {
 		}
 		RelationInclusion ri=(RelationInclusion)r.getInclusion();
 		if (!(ri.getLeftExpr() instanceof VarExpr)) {
-		    if (ri.getLeftExpr().isValue()) {
-			Updates up=new Updates(ri.getLeftExpr(),leftindex);
+		    if (ri.getLeftExpr().isValue(ri.getRelation().getDomain().getType())) {
+			Updates up=new Updates(ri.getLeftExpr(),leftindex,ri.getRelation().getDomain().getType());
 			un.addUpdate(up);
 		    } else {
 			if (inverted)
@@ -693,14 +714,14 @@ public class Termination {
 		} else {
 		    VarDescriptor vd=((VarExpr)ri.getLeftExpr()).getVar();
 		    if (vd.isGlobal()) {
-			Updates up=new Updates(ri.getLeftExpr(),leftindex);
+			Updates up=new Updates(ri.getLeftExpr(),leftindex,null);
 			un.addUpdate(up);
 		    } else if (inverted)
 			goodflag=false;
 		}
 		if (!(ri.getRightExpr() instanceof VarExpr)) {
-		    if (ri.getRightExpr().isValue()) {
-			Updates up=new Updates(ri.getRightExpr(),rightindex);
+		    if (ri.getRightExpr().isValue(ri.getRelation().getRange().getType())) {
+			Updates up=new Updates(ri.getRightExpr(),rightindex,ri.getRelation().getRange().getType());
 			un.addUpdate(up);
 		    } else {
 			if (!inverted)
@@ -711,7 +732,7 @@ public class Termination {
 		} else {
 		    VarDescriptor vd=((VarExpr)ri.getRightExpr()).getVar();
 		    if (vd.isGlobal()) {
-			Updates up=new Updates(ri.getRightExpr(),rightindex);
+			Updates up=new Updates(ri.getRightExpr(),rightindex,null);
 			un.addUpdate(up);
 		    } else if (!inverted) 
 			goodflag=false;
@@ -761,8 +782,8 @@ public class Termination {
 		    if(inc instanceof SetInclusion) {
 			SetInclusion si=(SetInclusion)inc;
 			if (!(si.elementexpr instanceof VarExpr)) {
-			    if (si.elementexpr.isValue()) {
-				Updates up=new Updates(si.elementexpr,0);
+			    if (si.elementexpr.isValue(si.getSet().getType())) {
+				Updates up=new Updates(si.elementexpr,0,si.getSet().getType());
 				un.addUpdate(up);
 			    } else {
 				/* We're an add to set*/
@@ -788,15 +809,15 @@ public class Termination {
 			} else {
 			    VarDescriptor vd=((VarExpr)si.elementexpr).getVar();
 			    if (vd.isGlobal()) {
-				Updates up=new Updates(si.elementexpr,0);
+				Updates up=new Updates(si.elementexpr,0,null);
 				un.addUpdate(up);
 			    }
 			}
 		    } else if (inc instanceof RelationInclusion) {
 			RelationInclusion ri=(RelationInclusion)inc;
 			if (!(ri.getLeftExpr() instanceof VarExpr)) {
-			    if (ri.getLeftExpr().isValue()) {
-				Updates up=new Updates(ri.getLeftExpr(),0);
+			    if (ri.getLeftExpr().isValue(ri.getRelation().getDomain().getType())) {
+				Updates up=new Updates(ri.getLeftExpr(),0,ri.getRelation().getDomain().getType());
 				un.addUpdate(up);
 			    } else {
 				/* We don't handly relation modifies */
@@ -818,13 +839,13 @@ public class Termination {
 			} else {
 			    VarDescriptor vd=((VarExpr)ri.getLeftExpr()).getVar();
 			    if (vd.isGlobal()) {
-				Updates up=new Updates(ri.getLeftExpr(),0);
+				Updates up=new Updates(ri.getLeftExpr(),0,null);
 				un.addUpdate(up);
 			    }
      			}
 			if (!(ri.getRightExpr() instanceof VarExpr)) {
-			    if (ri.getRightExpr().isValue()) {
-				Updates up=new Updates(ri.getRightExpr(),1);
+			    if (ri.getRightExpr().isValue(ri.getRelation().getRange().getType())) {
+				Updates up=new Updates(ri.getRightExpr(),1,ri.getRelation().getRange().getType());
 				un.addUpdate(up);
 			    } else {
 				/* We don't handly relation modifies */
@@ -846,7 +867,7 @@ public class Termination {
 			} else {
 			    VarDescriptor vd=((VarExpr)ri.getRightExpr()).getVar();
 			    if (vd.isGlobal()) {
-				Updates up=new Updates(ri.getRightExpr(),1);
+				Updates up=new Updates(ri.getRightExpr(),1,null);
 				un.addUpdate(up);
 			    }
 			}
@@ -890,7 +911,7 @@ public class Termination {
 	    if (fd instanceof ArrayDescriptor) {
 		// We have an ArrayDescriptor!
 		Expr index=de.getIndex();
-		if (!index.isValue()) {/* Not assignable */
+		if (!index.isValue(null)) {/* Not assignable */
 		    System.out.println("ERROR:Index isn't assignable");
 		    return false;
 		}

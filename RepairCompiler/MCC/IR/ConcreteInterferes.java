@@ -252,7 +252,7 @@ public class ConcreteInterferes {
 	    else if ((update_e instanceof DotExpr)&&(e instanceof DotExpr)) {
 		DotExpr de1=(DotExpr)update_e;
 		DotExpr de2=(DotExpr)e;
-		if (de1.isValue()&&!firstfield)
+		if (de1.isValue(null)&&!firstfield)
 		    return true; /* Could have aliasing from this */
 		if (de1.getField()!=de2.getField())
 		    return true; /* Different fields: not comparible */

@@ -7,6 +7,14 @@ public class CastExpr extends Expr {
     TypeDescriptor type;
     Expr expr;
 
+    public boolean isValue(TypeDescriptor td) {
+	if (td==null) /* Don't know type */
+	    return false;
+	if (!td.isSubtypeOf(type)) /* Not subtype of us */
+	    return false;
+	return expr.isValue(td);
+    }
+
     public Set freeVars() {
 	return expr.freeVars();
     }

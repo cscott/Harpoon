@@ -113,6 +113,25 @@ public class GraphNode {
 	}
     }
 
+    public static void boundedcomputeclosure(Collection nodes, Collection removed,int depth) {
+	Stack tovisit=new Stack();
+	tovisit.addAll(nodes);
+	for(int i=0;i<depth&&!tovisit.isEmpty();i++) {
+	    GraphNode gn=(GraphNode)tovisit.pop();
+	    for(Iterator it=gn.edges();it.hasNext();) {
+		Edge edge=(Edge)it.next();
+		GraphNode target=edge.getTarget();
+		if (!nodes.contains(target)) {
+		    if ((removed==null)||
+			(!removed.contains(target))) {
+			nodes.add(target);
+			tovisit.push(target);
+		    }
+		}
+	    }
+	}
+    }
+
     public void setDotNodeParameters(String param) {
         if (param == null) {
             throw new NullPointerException();

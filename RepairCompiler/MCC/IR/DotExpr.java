@@ -340,7 +340,7 @@ public class DotExpr extends Expr {
         }
     }
 
-    public boolean isValue() {
+    public boolean isValue(TypeDescriptor td) {
 	FieldDescriptor tmpfd=fd;
 	if (tmpfd instanceof ArrayDescriptor)
 	    tmpfd=((ArrayDescriptor)tmpfd).getField();

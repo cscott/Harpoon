@@ -1,7 +1,7 @@
 package MCC;
 
-import java.util.Vector;
-import java.util.StringTokenizer;
+import java.util.*;
+import MCC.IR.DebugItem;
 
 /**
  * A generic command-line interface for 6.035 compilers.  This class
@@ -11,7 +11,7 @@ import java.util.StringTokenizer;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.8 2004-05-31 14:19:10 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.9 2004-07-18 19:19:57 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -98,12 +98,24 @@ public class CLI {
 
         opts = new boolean[optnames.length];
 
+	if (args.length==0) {
+	    System.out.println("-debugcompiler -- print out debug messages");
+	    System.out.println("-depth depthnum constraintnum -- generate dependency graph from constraintnum with depf of depthnum");
+	    System.out.println("-instrument -- generate instrumentation code");
+	    System.out.println("-aggressivesearch");
+	    System.out.println("-prunequantifiernodes");
+	    System.exit(-1);
+	}
+
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("-debugcompiler")) {
                 context = 0;
                 debug = true;
 	    } else if (args[i].equals("-checkonly")) {
                 Compiler.REPAIR=false;
+	    } else if (args[i].equals("-depth")) {
+		Compiler.debuggraphs.add(new DebugItem(Integer.parseInt(args[i+1]),Integer.parseInt(args[i+2])));
+		i+=2;
 	    } else if (args[i].equals("-debug")) {
                 Compiler.GENERATEDEBUGHOOKS=true;
 	    } else if (args[i].equals("-instrument")) {

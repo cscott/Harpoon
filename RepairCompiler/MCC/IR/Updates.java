@@ -26,7 +26,7 @@ class Updates {
     }
 
     public Updates(Expr lexpr, Expr rexpr, Opcode op, boolean negate) {
-	if (!lexpr.isValue())
+	if (!lexpr.isValue(null))
 	    System.out.println("Building invalid update");
 	leftexpr=lexpr;
 	type=Updates.EXPR;
@@ -38,7 +38,7 @@ class Updates {
     }
 
     public Updates(Expr lexpr, Expr rexpr) {
-	if (!lexpr.isValue())
+	if (!lexpr.isValue(null))
 	    System.out.println("Building invalid update");
 	leftexpr=lexpr;
 	rightexpr=rexpr;
@@ -46,8 +46,8 @@ class Updates {
 	opcode=Opcode.EQ;
     }
 
-    public Updates(Expr lexpr, int rpos) {
-	if (!lexpr.isValue())
+    public Updates(Expr lexpr, int rpos, TypeDescriptor td) {
+	if (!lexpr.isValue(td))
 	    System.out.println("Building invalid update");
 	leftexpr=lexpr;
 	rightposition=rpos;
@@ -83,10 +83,14 @@ class Updates {
     }
 
     Descriptor getDescriptor() {
+	Expr lexpr=leftexpr;
+	while (lexpr instanceof CastExpr)
+	    lexpr=((CastExpr)lexpr).getExpr();
+
 	if (isGlobal()) {
-	    return ((VarExpr)leftexpr).getVar();
+	    return ((VarExpr)lexpr).getVar();
 	} else if (isField()) {
-	    return ((DotExpr)leftexpr).getField();
+	    return ((DotExpr)lexpr).getField();
 	} else {
 	    System.out.println(toString());
 	    throw new Error("Unrecognized Update");
@@ -94,14 +98,22 @@ class Updates {
     }
 
     boolean isGlobal() {
-	if (leftexpr instanceof VarExpr)
+	Expr lexpr=leftexpr;
+	while (lexpr instanceof CastExpr)
+	    lexpr=((CastExpr)lexpr).getExpr();
+
+	if (lexpr instanceof VarExpr)
 	    return true;
 	else return false;
     }
 
     boolean isField() {
-	if (leftexpr instanceof DotExpr) {
-	    assert ((DotExpr)leftexpr).getIndex()==null;
+	Expr lexpr=leftexpr;
+	while (lexpr instanceof CastExpr)
+	    lexpr=((CastExpr)lexpr).getExpr();
+
+	if (lexpr instanceof DotExpr) {
+	    assert ((DotExpr)lexpr).getIndex()==null;
 	    return true;
 	} else
 	    return false;

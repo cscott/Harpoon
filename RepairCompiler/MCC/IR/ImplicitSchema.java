@@ -29,6 +29,9 @@ public class ImplicitSchema {
 	SetDescriptor sd=isdomain?rd.getDomain():rd.getRange();
 	if (sd instanceof ReservedSetDescriptor)
 	    return false;
+
+	/* See if there is a rule that adds the corresponding range or domain
+	   of the relation to the correct set */
 	for(int i=0;i<rules.size();i++) {
 	    Rule r=(Rule)rules.get(i);
 	    if ((r.numQuantifiers()==1)&&
@@ -45,8 +48,6 @@ public class ImplicitSchema {
 		    return false;
 	    }
 	}
-
-
 	for(int i=0;i<rules.size();i++) {
 	    Rule r=(Rule)rules.get(i);
 	    Inclusion inc=r.getInclusion();
@@ -55,9 +56,11 @@ public class ImplicitSchema {
 		boolean good=false;
 		RelationInclusion rinc=(RelationInclusion)inc;
 		Expr expr=isdomain?rinc.getLeftExpr():rinc.getRightExpr();
+		/* Check for varexpr's and quantification over */
 		if (expr instanceof VarExpr) {
 		    VarDescriptor vd=((VarExpr)expr).getVar();
 		    assert vd!=null;
+		    /* See if the var is from an appropriate quantifier */
 		    for (int j=0;j<r.numQuantifiers();j++) {
 			Quantifier q=r.getQuantifier(j);
 			if ((q instanceof SetQuantifier)&&
@@ -77,15 +80,15 @@ public class ImplicitSchema {
 			    good=true;
 			    break;
 			}
-			
 		    }
 		    if (good)
-			continue; /* Proved for this case */
+			continue; /* Checked for this case */
 		}
+		if (checkguard(r,isdomain))
+		    continue;
 		for(int j=0;j<rules.size();j++) {
 		    Rule r2=(Rule)rules.get(j);
 		    Inclusion inc2=r2.getInclusion();
-		    
 		    if (checkimplication(r,r2,isdomain)) {
 			good=true;
 			break;
@@ -94,10 +97,39 @@ public class ImplicitSchema {
 		if (good)
 		    continue;
 
-		return true; /* Couldn't prove we didn't need */
+		return true; /* Couldn't verify we didn't need */
 	    }
 	}
 	return false;
+    }
+
+    boolean checkguard(Rule r,boolean isdomain) {
+	RelationInclusion inc=(RelationInclusion) r.getInclusion();
+	RelationDescriptor rd=inc.getRelation();
+	SetDescriptor sd=isdomain?rd.getDomain():rd.getRange();
+	Expr expr=isdomain?inc.getLeftExpr():inc.getRightExpr();
+	DNFRule dnfGuard=r.getDNFGuardExpr();
+	for(int i=0;i<dnfGuard.size();i++) {
+	    RuleConjunction rconj=dnfGuard.get(i);
+	    boolean foundcheck=false;
+	    for(int j=0;j<rconj.size();j++) {
+		DNFExpr dexpr=rconj.get(j);
+		if (!dexpr.getNegation()&&
+		    dexpr.getExpr() instanceof ElementOfExpr) {
+		    ElementOfExpr eoe=(ElementOfExpr)dexpr.getExpr();
+		    
+		    if (eoe.set==sd&&
+			eoe.element.equals(null,expr)) {
+			foundcheck=true;
+			break;
+		    }
+		}
+	    }
+	    if (!foundcheck) {
+		return false;
+	    }
+	}
+	return true;
     }
 
     boolean checkimplication(Rule r1, Rule r2, boolean isdomain) {

@@ -24,6 +24,8 @@ public class Compiler {
     public static boolean GENERATEDEBUGHOOKS=false;
     public static boolean GENERATEDEBUGPRINT=false;
     public static boolean GENERATEINSTRUMENT=false;
+    
+    public static Vector debuggraphs=new Vector();
 
     public static void main(String[] args) {
         State state = null;
