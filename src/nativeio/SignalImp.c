@@ -2,7 +2,6 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include "flexthread.h" /* soft syscall mapping for select, etc, in GNU pth */
 
 /* Bit meanings for the contents of data[] */
 #define D_SIGNAL       1

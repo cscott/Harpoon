@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include "flexthread.h" /* soft syscall mapping for select, etc, in GNU pth */
 
 #define ERROR         -2
 #define TRYAGAIN         -3
@@ -388,18 +387,18 @@ JNIEXPORT void JNICALL Java_java_io_NativeIO_unregisterWrite
 /*      communicateSIG(env, readSet, writeSet);     */
 /*  } */
 
-JNIEXPORT jintArray JNICALL Java_java_io_NativeIO_getFDs
-  (JNIEnv *env, jobject obj)
+JNIEXPORT jint JNICALL Java_java_io_NativeIO_getFDs
+  (JNIEnv *env, jobject obj, jintArray array)
 {
-  return (schedulerModel==MOD_SELECT) ?
-    getFDsSEL(env,1):
-    getFDsSIG(env);    
+  //  return (schedulerModel==MOD_SELECT) ?
+    return getFDsSEL(env,1, array);
+      // getFDsSIG(env);    
 }
 
-JNIEXPORT jintArray JNICALL Java_java_io_NativeIO_getFDsSmart
-  (JNIEnv *env, jobject obj, jint blockMode)
+JNIEXPORT jint JNICALL Java_java_io_NativeIO_getFDsSmart
+  (JNIEnv *env, jobject obj, jint blockMode, jintArray array)
 {
-  return (schedulerModel==MOD_SELECT) ?
-    getFDsSEL(env,blockMode):
-    getFDsSIG(env);    
+  //  return (schedulerModel==MOD_SELECT) ?
+    return getFDsSEL(env,blockMode,array);
+    // getFDsSIG(env);    
 }

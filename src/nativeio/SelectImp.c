@@ -4,7 +4,6 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "flexthread.h" /* soft syscall mapping for select, etc, in GNU pth */
 
 typedef struct {
     int maxFD;             // The highest FD in the fd_set
@@ -110,9 +109,9 @@ void unregisterWriteSEL(jint fd)
 
 // knows when to block
 
-jintArray getFDsSEL(JNIEnv *env, jint blockMode)
+jint getFDsSEL(JNIEnv *env, jint blockMode, jintArray result)
 {
-    jintArray result;
+  //    jintArray result;
     jsize len;
     jint *cresult, *buf;
     int size=0, j;
@@ -141,12 +140,12 @@ jintArray getFDsSEL(JNIEnv *env, jint blockMode)
     while (!FD_ISSET(writeStruct.maxFD, &writeStruct.Interest) 
 	   && writeStruct.maxFD>0)
       writeStruct.maxFD--;
-    result=(*env)->NewIntArray(env, size);
-    len=(*env)->GetArrayLength(env, result);
+    //    result=(*env)->NewIntArray(env, size);
+    //   len=(*env)->GetArrayLength(env, result);
     cresult=(*env)->GetIntArrayElements(env, result, 0);
     memcpy(cresult, buf, sizeof(jint)*size);
     (*env)->ReleaseIntArrayElements(env, result, cresult, 0);
     free(buf);
-    return result;
+    return (jint)size;
 }
 
