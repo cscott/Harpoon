@@ -1,12 +1,12 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.3 2002-07-22 19:28:19 cananian Exp $
+% $Id: ptran.tex,v 1.4 2002-07-22 21:42:48 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage{comdef} % common definitions
 \usepackage{pdffonts} % PDF-friendly fonts
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.3 $ $}
+\date{\today \\ $ $Revision: 1.4 $ $}
 
 \begin{document}
 %\bibliographystyle{abbrv}
@@ -18,6 +18,14 @@ if $v$ will have a different value at every execution of $s$.  An
 allocation site \code{a = new A()} produces a value which is singular
 at the site; other defintions of $a$ might reach other statements in
 the program, so $a$ is not guaranteed to be singular there.
+
+A variable $v_1$ singular at a statement $s_1$ is
+\newterm{pairwise-singular} with a variable $v_2$ singular at a statement
+$s_2$ iff no value of $v_1$ at an execution $s_1$ is ever equal to any
+value of $v_2$ at an execution of $s_2$.
+
+
+
 
 We can compute singularity using a dataflow algorithm as follows.
 Let $\text{SIN}(P)$ be the set of variables which are singular
