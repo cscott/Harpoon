@@ -17,7 +17,7 @@ import java.io.PrintWriter;
  * 
  * @see harpoon.Backend.Generic.CodeGen
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.20 2000-02-13 02:41:13 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.21 2000-02-15 23:35:32 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -61,6 +61,14 @@ public abstract class CodeGeneratorGenerator {
 	this.className = className;
     }
     
+    /** Returns the fully qualified name of the superclass of the
+	generated <code>CodeGen</code>.
+	The superclass should be a subclass of
+	<code>Generic.CodeGen</code> (or <code>Generic.CodeGen</code>
+	itself.  
+    */
+    protected abstract String producedClassType();
+
     /** Writes the Code Generator to <code>out</code>.
 	<BR> <B>modifies:</B> <code>out</code>
 	<BR> <B>effects:</B> 
@@ -90,7 +98,7 @@ public abstract class CodeGeneratorGenerator {
     public void outputJavaFile(PrintWriter out) {
 	out.println(spec.global_stms);
 	out.println("public class " + className + 
-		    " extends harpoon.Backend.Generic.CodeGen { ");
+		    " extends "+producedClassType()+" { ");
 	out.println(spec.class_stms);
 	
 	out.println("\t/** Generates assembly code from a <code>" + TREE_Code + "</code>.");

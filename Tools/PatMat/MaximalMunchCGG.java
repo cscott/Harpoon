@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.54 2000-02-14 21:56:46 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.55 2000-02-15 23:35:32 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -90,6 +90,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
     */
     public MaximalMunchCGG(Spec s, String className) {
         super(s, className);
+    }
+
+    protected String producedClassType() {
+	return "harpoon.Backend.Generic.MaxMunchCG";
     }
 
     /** Abstract interface for 'appending visitors' */

@@ -14,7 +14,7 @@ import java.io.IOException;
 /* Main entry point for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.1.2.10 2000-02-13 02:41:13 pnkfelix Exp $
+ * @version $Id: Main.java,v 1.1.2.11 2000-02-15 23:35:32 pnkfelix Exp $
  */
 public class Main {
     private static boolean DEBUG_parser = false;
@@ -57,6 +57,10 @@ public class Main {
     static class TestCGG extends CodeGeneratorGenerator {
 	TestCGG(Spec s) {
 	    super(s, "TestCggClassDontUse");
+	}
+
+	public String producedClassType() {
+	    return "harpoon.Backend.Generic.CodeGen";
 	}
 
 	public void outputSelectionMethod(PrintWriter out, boolean isData) {

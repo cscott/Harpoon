@@ -16,7 +16,7 @@ import harpoon.Analysis.Maps.Derivation;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.10 2000-02-13 02:41:09 pnkfelix Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.11 2000-02-15 23:35:19 pnkfelix Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -25,24 +25,6 @@ public abstract class CodeGen {
     // variables (Register Temps, etc)   
     public final Frame frame;
 
-    // first = null OR first instr passed to emit(Instr)
-    protected Instr first;
-
-    // last = null OR last instr passed to emit(Instr)
-    protected Instr last; 
-    
-    // stores type information for Temps
-    protected TypeState TYPE_STATE = new TypeState();
-    
-    static public class TypeState {
-	public void declare(Temp t, HClass clz) {
-
-	}
-
-	public void declare(Temp t, Derivation.DList dl) {
-
-	}
-    }
     
     /** Creates a <code>Generic.CodeGen</code>. */
     public CodeGen(Frame frame) {
@@ -52,17 +34,8 @@ public abstract class CodeGen {
     /** Emits <code>i</code> as the next instruction in the
         instruction stream.
     */	
-    protected Instr emit(Instr i) {
-	debug( "Emitting "+i.toString() );
-	if (first == null) {
-	    first = i;
-	}
-	// its correct that last==null the first time this is called
-	i.layout(last, null);
-	last = i;
-	return i;
-    }
-    
+    protected abstract Instr emit(Instr i);
+
     /** Fixes up the procedure entry and exit code for a list of instrs, once
      *  it is known how many registers and how much stack space is used.
      */ // FIXME: is there a more abstract way to specify these 
