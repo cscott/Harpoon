@@ -1,0 +1,254 @@
+This is vmintegration.info, produced by makeinfo version 4.0b from
+vmintegration.texinfo.
+
+   This file contains important information you will need to know if you
+are going to write an interface between GNU Classpath and a Virtual
+Machine.
+
+   Copyright (C) 1998-2002 Free Software Foundation, Inc.
+
+
+File: vmintegration.info,  Node: Top,  Next: Introduction,  Prev: (dir),  Up: (dir)
+
+GNU Classpath Hacker's Guide
+****************************
+
+   This file contains important information you will need to know if you
+are going to write an interface between GNU Classpath and a Virtual
+Machine.
+
+   This document is incomplete, as we are still in alpha with the
+interface.
+
+* Menu:
+
+* Introduction::                An introduction to the Classpath project
+* Initialization::              Initializing the classes
+* Classpath Hooks::             Hooks from Classpath to the VM
+* VM Hooks::                    Hooks from the underlying VM to Classpath
+
+
+File: vmintegration.info,  Node: Introduction,  Next: Initialization,  Prev: Top,  Up: Top
+
+Introduction
+************
+
+   The Classpath Project's ambition to be a 100% clean room
+implementation of the standard Java class libraries cannot be fulfilled
+without some level of integration with the Virtual Machine, the
+underlying machinery that actually runs Java.
+
+   There are several VMs out there, here is a small list.
+
+   * Japhar (http://www.japhar.org) Japhar was the first VM to use GNU
+     Classpath.  Today you can see that sort of relationship in the
+     source tree which denotes several Japhar specific files as a
+     reference implementation of those pieces.  This VM has been
+     primarily tested against Linux and lacks garbage collections, a
+     JIT, and suffers recently from slow development.
+
+   * Intel's Open Runtime Platform
+     (http://www.intel.com/research/mrl/orp/) Intel surprised us not
+     long ago with the release of this rather advanced VM that uses GNU
+     Classpath for a set of class libraries and works on Linux and
+     Windows 2000.
+
+   * SableVM (http://www.sablevm.org/) The goal of this project is to
+     build an efficient Java virtual machine in C for the GNU/Linux
+     operating system. SableVM implements the Java virtual machine
+     specification, second edition, and like the Intel VM includes a
+     special version of the GNU Classpath libraries.
+
+   * Kaffe (http://www.kaffe.org) Kaffe is an advanced VM and together
+     with its own class libraries provides a Java 1.1 compatible
+     environment.
+
+   * Electrical Fire (http://www.mozilla.org/projects/ef) The
+     Electrical File VM continues to be listed as a Mozilla project
+     though development has been somewhat quiet.  A number of concepts
+     from EF were expected at one point to be rolled into Japhar, but
+     that development has not occured as of yet.
+
+   * LaTTe (http://latte.snu.ac.kr/) This VM project so far supports
+     only Sun UltraSparc processors using the proprietary Solaris 2.5.1
+     or higher operating system.  LaTTe was derived from Kaffe but
+     claims a number of improvements.
+
+   * GNU Compiler for Java (GCJ) (http://gcc.gnu.org/java/) This is a
+     portable, optimizing, ahead-of-time compiler for the Java
+     Programming Language. It can compile Java source code directly to
+     native machine code, Java source code to Java bytecode (class
+     files), and Java bytecode to native machine code. Compiled
+     applications are linked with the GCJ runtime, libgcj which is
+     based on the GNU Classpath code, which provides the core class
+     libraries, a garbage collector, and a bytecode interpreter.
+     libgcj can dynamically load and interpret class files, resulting
+     in mixed compiled/interpreted applications.  GCJ is part of the
+     GNU Compiler Collection (GCC (http://gcc.gnu.org/)).  On march 6
+     2000 the libgcj and GNU Classpath projects were officially merged
+     and there is active work on merging all the classes between the
+     projects.
+
+   * Kissme (http://kissme.sourceforge.net/) This is a free Java
+     Virtual Machine that is being developed on GNU/Linux and can run
+     console java applications.  kissme also provides support for
+     orthogonally persistent java.
+
+
+   In the past integration efforts were focused mainly on Japhar with
+an eye towards getting Electrical Fire to work.  Most information
+contained in this document is gleaned from these efforts. Recently more
+work has been done on getting gcj, orp and kissme to work out of the
+box with GNU Classpath but there is much to do before that becomes a
+reality.
+
+
+File: vmintegration.info,  Node: Initialization,  Next: Classpath Hooks,  Prev: Introduction,  Up: Top
+
+Initialization
+**************
+
+   The order of initialization, as far as I can tell, doesn't matter
+just yet.  However, when we move to 1.2 support, it probably will
+matter, so we'll have a note in here at that time.
+
+   The current initialization order is currently documented in the
+Runtime.java source file.
+
+
+File: vmintegration.info,  Node: Classpath Hooks,  Next: VM Hooks,  Prev: Initialization,  Up: Top
+
+Classpath Hooks
+***************
+
+   Several core classes must be implemented by the VM for Classpath to
+work.  These classes are:
+
+   * java.lang.Class
+
+   * java.lang.Runtime
+
+   * java.lang.Thread
+
+   * java.lang.reflect.Constructor
+
+   * java.lang.reflect.Method
+
+   * java.lang.reflect.Field
+
+   You also need to implement some helper classes in java.lang that
+classes from Classpath call out to to get certain VM-specific dirty
+work done:
+
+   * java.lang.VMObject is the bridge between the low level Object
+     facilities such as makeing a clone, getting the class of the
+     object and the wait/notify semantics.
+
+   * java.lang.VMClassLoader provides methods for defining and
+     resolving core and primitive classes.
+
+   * java.lang.VMSystem is used to initialize the System properties,
+     the System.arraycopy method and the identityHashCode of an Object.
+
+   * java.lang.VMSecurityManager provides the class context (stack
+     trace) of the currently executing thread and a way to get the
+     currently active ClassLoader.
+
+   * java.lang.VMThrowable used to hold the VM state of a throwable,
+     created when a Throwable is created or the fillInStacktrace()
+     method is called, when the actual stack trace is needed (a lot of
+     exceptions are never actually used), the getStackTrace() method is
+     used to create a real StackTraceElement array for the exception.
+
+   Some of the classes you implement for the VM will need to call back
+to package-private methods in Classpath:
+
+   * java.lang.ThreadGroup.addThread(Thread) Call this method from
+     Thread when a new Thread is created, to add it to the group.
+
+   * java.lang.ThreadGroup.removeThread(Thread) Call this method from
+     Thread when a Thread is stopped or destroyed.
+
+
+
+File: vmintegration.info,  Node: VM Hooks,  Prev: Classpath Hooks,  Up: Top
+
+VM Hooks
+********
+
+   VMs need to do some dirty work; there are some things in the VM that
+unfortunately are dependent on the internal structure of various
+classes.  This is a guide to all of the things the VM itself needs to
+know about classes.
+
+   * java.lang.Class
+     You, the VM, get to create this Class, so you may define the
+     internal structure any way you wish.  You probably have code
+     somewhere to translate your internal class structure into a Class
+     object.  That is the only known place where this matters.  Some
+     VMs do not create the Class object at the point where the class is
+     defined; instead, they wait until a Class object is actually used.
+
+   * Array Classes
+     When you are creating an array class, you should set the
+     ClassLoader of the array class to the ClassLoader of its component
+     type.  Whenever you add a class to a ClassLoader, you need to
+     notify the ClassLoader and add the new Class to its internal cache
+     of classes.  To do this, call
+     ClassLoader.addVMCreatedClass(Class).  _Note: this is written in
+     anticipation of 1.2 support and does not apply just yet._
+
+   * Primordial Class Loader
+     When the primordial class loader loads a class, it needs to tell
+     Classpath what it has done in order for security stuff to work
+     right.  To do this, call the static method
+     ClassLoader.newPrimordialClass(Class).
+
+     Even the first few core classes need to do this; in order to do it,
+     simply call this method _after_ the initial class loading has been
+     done.  No harm will come, as long as you follow the guidelines in
+     the *note Initialization:: section.
+
+     _Note: this is written in anticipation of 1.2 support and does not
+     apply just yet._
+
+   * Top-level Exception Handler
+     Exceptions take care of themselves in Classpath; all you need to
+     do in the top-level exception handler is call
+     Throwable.printStackTrace().
+
+   * Security and Traces
+     There will eventually be a feature in the 1.2 security that keeps
+     the AccessController from having to evaluate _all_ of the
+     ProtectionDomains every time a security check is made.  I think a
+     common case is a single method doing a lot of things that require
+     security checks.  However, I don't want to bog down the method
+     stack too much, so this feature of the VM will have the
+     AccessController for a thread calling out to the VM to tell it how
+     high it was on the stack when it made the last security request.
+     Every time the stack goes lower than that number, the VM will
+     decrement the number.  The AccessController will remember what the
+     accumulated protection status was at every stack level (an
+     AccessControlContext) and use that aggregated information to do
+     the check.  I am not sure, however, whether the savings are
+     substantial enough to outweigh the integer check and set after
+     every method call.  I will investigate.
+
+   * Threading
+     I figured I'd put this here because a VM guy might be wondering
+     about it.  We implement ThreadGroup, but that class is almost
+     entirely VM-independent.  The root ThreadGroup, a static field
+     called ThreadGroup.root, should be initialized by Classpath, but
+     if you wish to reinitialize it yourself, there should be no harm.
+
+
+
+
+Tag Table:
+Node: Top301
+Node: Introduction953
+Node: Initialization4578
+Node: Classpath Hooks4996
+Node: VM Hooks6859
+
+End Tag Table
