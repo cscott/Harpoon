@@ -82,6 +82,10 @@ void *NTHR_malloc_with_heap(size_t size) {
 #ifdef REALLY_DO_THR_ALLOC
   clh = next_clheap();
   result = clheap_alloc(clh, size+sizeof(clheap_t));
+  if (result==NULL) { /* oops!  our thread heap is full! allocate globally. */
+    thr_bytes_overflow+=size+sizeof(clheap_t);
+    result = NGBL_malloc_noupdate(size+sizeof(clheap_t));
+  }
   result->clheap = clh;
   return &(result->oobj);
 #else
