@@ -14,7 +14,7 @@ import java.util.Properties;
  * <code>java.lang.System</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSystem.java,v 1.1.2.5 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: INSystem.java,v 1.1.2.6 1999-08-07 06:59:53 cananian Exp $
  */
 final class INSystem extends HCLibrary {
     static final void register(StaticState ss) {
@@ -24,6 +24,8 @@ final class INSystem extends HCLibrary {
 	ss.register(setIn0());
 	ss.register(setOut0());
 	ss.register(setErr0());
+	// JDK 1.2 only
+	try { ss.register(registerNatives()); } catch (NoSuchMethodError e) { }
     }
     private static final NativeMethod currentTimeMillis() {
 	final HMethod hm=HCsystem.getMethod("currentTimeMillis","()J");
@@ -145,5 +147,11 @@ final class INSystem extends HCLibrary {
 		return null;
 	    }
 	};
+    }
+    // JDK 1.2 only: System.registerNatives()
+    private static final NativeMethod registerNatives() {
+	final HMethod hm =
+	    HCsystem.getMethod("registerNatives",new HClass[0]);
+	return new NullNativeMethod(hm);
     }
 }

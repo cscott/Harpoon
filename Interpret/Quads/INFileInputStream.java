@@ -15,7 +15,7 @@ import java.io.IOException;
  * methods in <code>java.io.FileInputStream</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFileInputStream.java,v 1.1.2.3 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: INFileInputStream.java,v 1.1.2.4 1999-08-07 06:59:53 cananian Exp $
  */
 final class INFileInputStream extends HCLibrary {
     static final void register(StaticState ss) {
@@ -26,6 +26,8 @@ final class INFileInputStream extends HCLibrary {
 	ss.register(readBytes());
 	ss.register(skip());
 	ss.register(available());
+	// JDK 1.2 only
+	try { ss.register(initIDs()); } catch (NoSuchMethodError e) { }
     }
     // associate shadow InputStream with every object.
 
@@ -57,10 +59,9 @@ final class INFileInputStream extends HCLibrary {
 					     new HClass[] { HCfiledesc });
 		    Method.invoke(ss, HMcr, new Object[] { fd_obj });
 		}
-		// get file descriptor int.
-		HField hf = HCfiledesc.getField("fd");
-		int fd = ((Integer)fd_obj.get(hf)).intValue();
-		if (fd==1) { // System.in
+		// compare supplied file descriptor to FileDescriptor.in
+		HField hf = HCfiledesc.getField("in");
+		if (fd_obj == ss.get(hf)) { // System.in
 		    obj.putClosure(System.in);
 		    HField hf0 = HCfistream.getField("fd");
 		    obj.update(hf0, fd_obj);
@@ -200,5 +201,11 @@ final class INFileInputStream extends HCLibrary {
 		}
 	    }
 	};
+    }
+    // "initialize JNI offsets" for JDK 1.2. Currently a NOP.
+    private static final NativeMethod initIDs() {
+	final HMethod hm =
+	    HCfistream.getMethod("initIDs", new HClass[0]);
+	return new NullNativeMethod(hm);
     }
 }

@@ -15,7 +15,7 @@ import java.io.IOException;
  * methods in <code>java.io.FileOutputStream</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFileOutputStream.java,v 1.1.2.4 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: INFileOutputStream.java,v 1.1.2.5 1999-08-07 06:59:53 cananian Exp $
  */
 final class INFileOutputStream extends HCLibrary {
     static final void register(StaticState ss) {
@@ -25,6 +25,8 @@ final class INFileOutputStream extends HCLibrary {
 	ss.register(close());
 	ss.register(write());
 	ss.register(writeBytes());
+	// JDK 1.2 only
+	try { ss.register(initIDs()); } catch (NoSuchMethodError e) { }
     }
     // associate shadow OutputStream with every object.
 
@@ -56,20 +58,17 @@ final class INFileOutputStream extends HCLibrary {
 					     new HClass[] { HCfiledesc });
 		    Method.invoke(ss, HMcw, new Object[] { fd_obj });
 		}
-		// get file descriptor int.
-		HField hf = HCfiledesc.getField("fd");
-		int fd = ((Integer)fd_obj.get(hf)).intValue();
-		switch (fd) {
-		case 2: // System.out
-		    obj.putClosure(System.out); break;
-		case 3: // System.err
-		    obj.putClosure(System.err); break;
-		default: // throw error
-		    {
+		// compare given file descriptor.
+		if (fd_obj == ss.get(HCfiledesc.getField("out"))) {
+		    // System.out
+		    obj.putClosure(System.out);
+		} else if (fd_obj == ss.get(HCfiledesc.getField("err"))) {
+		    // System.err
+		    obj.putClosure(System.err);
+		} else { // throw error
 		    ObjectRef ex_obj =
 			ss.makeThrowable(HCioE, "unsupported.");
 		    throw new InterpretedThrowable(ex_obj, ss);
-		    }
 		}
 		HField hf0 = HCfostream.getField("fd");
 		obj.update(hf0, fd_obj);
@@ -197,5 +196,12 @@ final class INFileOutputStream extends HCLibrary {
 		}
 	    }
 	};
+    }
+
+    // "initialize JNI offsets" for JDK 1.2. Currently a NOP.
+    private static final NativeMethod initIDs() {
+	final HMethod hm =
+	    HCfostream.getMethod("initIDs", new HClass[0]);
+	return new NullNativeMethod(hm);
     }
 }

@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * <code>java.lang.Class</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INClass.java,v 1.1.2.3 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: INClass.java,v 1.1.2.4 1999-08-07 06:59:53 cananian Exp $
  */
 public class INClass extends HCLibrary {
     static final void register(StaticState ss) {
@@ -30,6 +30,8 @@ public class INClass extends HCLibrary {
 	ss.register(newInstance());
 	// registry for name->class mapping
 	ss.putNativeClosure(HCclass, new Hashtable());
+	// JDK 1.2 only
+	try { ss.register(registerNatives()); } catch (NoSuchMethodError e) { }
     }
     static final ObjectRef forClass(StaticState ss, HClass hc)
 	throws InterpretedThrowable {
@@ -208,5 +210,11 @@ public class INClass extends HCLibrary {
 		return new Boolean(hc.isPrimitive());
 	    }
 	};
+    }
+    // JDK 1.2 only: Class.registerNatives()
+    private static final NativeMethod registerNatives() {
+	final HMethod hm =
+	    HCclass.getMethod("registerNatives",new HClass[0]);
+	return new NullNativeMethod(hm);
     }
 }

@@ -11,7 +11,7 @@ import harpoon.ClassFile.HMethod;
  * <code>Support</code> provides some native method implementations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Support.java,v 1.1.2.5 1999-08-04 05:52:31 cananian Exp $
+ * @version $Id: Support.java,v 1.1.2.6 1999-08-07 06:59:53 cananian Exp $
  */
 final class Support extends HCLibrary {
     static final void registerNative(StaticState ss) {
@@ -27,8 +27,13 @@ final class Support extends HCLibrary {
 	INFileOutputStream.register(ss);
 	INRandomAccessFile.register(ss);
 	// miscellaneous.
-	ss.register(initSystemFD());
 	ss.register(fillInStackTrace());
+	// JDK 1.1 only
+	try { ss.register(initSystemFD()); } catch (NoSuchMethodError e) { }
+	// JDK 1.2 only
+	try { ss.register(initIDs()); } catch (NoSuchMethodError e) { }
+	try { ss.register(doPrivileged()); } catch (NoClassDefFoundError e) { }
+	try { ss.register(registerNatives()); } catch (NoSuchMethodError e) { }
     }
 
     //--------------------------------------------------------
@@ -64,5 +69,34 @@ final class Support extends HCLibrary {
 		return obj;
 	    }
 	};
+    }
+    // "initialize JNI offsets" for JDK 1.2. Currently a NOP.
+    private static final NativeMethod initIDs() {
+	final HMethod hm =
+	    HCfiledesc.getMethod("initIDs", new HClass[0]);
+	return new NullNativeMethod(hm);
+    }
+    // do a privileged action.
+    private static final NativeMethod doPrivileged() {
+	final HClass HCsecAC=HClass.forName("java.security.AccessController");
+	final HClass HCprivA=HClass.forName("java.security.PrivilegedAction");
+	final HMethod hm = HCsecAC.getMethod("doPrivileged",
+					     new HClass[] { HCprivA });
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params) {
+		// invoke PrivilegedAction.run()
+		ObjectRef obj = (ObjectRef) params[0]; // PrivilegedAction
+		return Method.invoke(ss,
+				     obj.type.getMethod("run", new HClass[0]),
+				     new Object[] { obj } );
+	    }
+	};
+    }
+    // JDK 1.2 only: Thread.registerNatives()
+    private static final NativeMethod registerNatives() {
+	final HMethod hm = HClass.forName("java.lang.Thread")
+	    .getMethod("registerNatives",new HClass[0]);
+	return new NullNativeMethod(hm);
     }
 }

@@ -11,13 +11,15 @@ import harpoon.ClassFile.HMethod;
  * <code>java.lang.Object</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INObject.java,v 1.1.2.4 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: INObject.java,v 1.1.2.5 1999-08-07 06:59:53 cananian Exp $
  */
 public class INObject extends HCLibrary {
     static final void register(StaticState ss) {
 	ss.register(_getClass_());
 	ss.register(_hashCode_());
 	ss.register(_clone_());
+	// JDK 1.2 only
+	try { ss.register(registerNatives()); } catch (NoSuchMethodError e) { }
     }
     // Object.getClass()
     private static final NativeMethod _getClass_() {
@@ -57,5 +59,11 @@ public class INObject extends HCLibrary {
 		return obj.clone();
 	    }
 	};
+    }
+    // JDK 1.2 only: Object.registerNatives()
+    private static final NativeMethod registerNatives() {
+	final HMethod hm =
+	    HCobject.getMethod("registerNatives",new HClass[0]);
+	return new NullNativeMethod(hm);
     }
 }

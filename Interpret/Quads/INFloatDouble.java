@@ -11,7 +11,7 @@ import harpoon.ClassFile.HMethod;
  * in <code>java.lang.Float</code> and <code>java.lang.Double</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFloatDouble.java,v 1.1.2.4 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: INFloatDouble.java,v 1.1.2.5 1999-08-07 06:59:53 cananian Exp $
  */
 public class INFloatDouble extends HCLibrary {
     static final void register(StaticState ss) {
@@ -19,7 +19,9 @@ public class INFloatDouble extends HCLibrary {
 	ss.register(longBitsToDouble());
 	ss.register(floatToIntBits());
 	ss.register(doubleToLongBits());
+	try {
 	ss.register(valueOf0());
+	} catch (NoSuchMethodError e) { /* JDK 1.2 */ }
     }
     // convert int to float
     private static final NativeMethod intBitsToFloat() {
