@@ -193,7 +193,7 @@ const struct JNINativeInterface FLEX_JNI_vtable = {
   FNI_GetStringUTFChars,
   FNI_ReleaseStringUTFChars,
             
-  (typeof(&FNI_GetArrayLength)) FNI_Unimplemented,
+  FNI_GetArrayLength,
              
   (typeof(&FNI_NewObjectArray)) FNI_Unimplemented,
   (typeof(&FNI_GetObjectArrayElement)) FNI_Unimplemented,

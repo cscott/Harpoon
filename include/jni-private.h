@@ -54,6 +54,11 @@ struct oobj {
   struct claz *claz;
   /* fields below this point */
 };
+/** use this version of the oobj structure if you're looking at an array. */
+struct aarray {
+  struct oobj obj;
+  jsize length; /* first field in an array is the length */
+};
 /* use this version of the oobj structure if you need to get at the
  * hashcode value, which is stored *above* the pointed-at location.
  * remember to offset your pointer using the OOBJ_OFFSET macro.
