@@ -27,7 +27,7 @@ import java.util.AbstractCollection;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.30 1999-08-28 00:40:18 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.31 1999-08-28 00:45:55 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -318,7 +318,6 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 		Util.assert(false, 
 			    "edge shouldn't have null for both to and from");
 	    } else {
-		Util.assert(
 		Instr to = (Instr) edge.to();
 		
 	    }
