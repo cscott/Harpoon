@@ -21,6 +21,7 @@ import harpoon.Temp.TempList;
 import harpoon.Temp.TempMap;
 
 import harpoon.Backend.CSAHack.FlowGraph.FlowGraph;
+import harpoon.Util.Util;
 
 import java.util.Vector;
 import java.util.Hashtable;
@@ -192,12 +193,10 @@ class Color implements TempMap {
     sets.worklist.simplify.add(u);
     FreezeMoves(u);
   }
-  void FreezeMoves(Node u2) {
-    for (NodeList m = NodeMoves(u2); m!=null; m=m.tail) {
-      if (moves.active.contains(m.head))
-	moves.active.remove(m.head);
-      else
-	moves.worklist.remove(m.head);
+  void FreezeMoves(Node u) {
+    for (NodeList m = NodeMoves(u); m!=null; m=m.tail) {
+      Util.assert(moves.active.contains(m.head));
+      moves.active.remove(m.head);
       moves.frozen.add(m.head);
       
       if (!flow.isMove(m.head)) throw new Error("Internal error");
@@ -206,12 +205,13 @@ class Color implements TempMap {
       if (use.tail != null || def.tail != null)
 	throw new Error("Node supposed to be a MOVE");
       
-      Node u = ig.tnode(def.head);
-      Node v = ig.tnode(use.head);
-      if ( (NodeMoves(u)==null) && (Degree(u) < K) ) {
-	sets.worklist.freeze.remove(u);
-	sets.worklist.simplify.add(u);
-      }
+      Temp x = def.head, y = use.head;
+      Node v;
+      if (GetAlias(ig.tnode(y))==GetAlias(u))
+	  v = GetAlias(ig.tnode(x));
+      else
+	  v = GetAlias(ig.tnode(y));
+
       if ( (NodeMoves(v)==null) && (Degree(v) < K) ) {
 	sets.worklist.freeze.remove(v);
 	sets.worklist.simplify.add(v);
@@ -455,6 +455,13 @@ if (sets.worklist.spill.contains(m)) {
     if (debug) {
       sets.check();
       check(ig.nodes());
+      // check invariants
+      for (NodeList nl=sets.worklist.simplify.nodes(); nl!=null; nl=nl.tail)
+	Util.assert((Degree(nl.head) < K) && (NodeMoves(nl.head)==null));
+      for (NodeList nl=sets.worklist.freeze.nodes(); nl!=null; nl=nl.tail)
+	Util.assert((Degree(nl.head) < K) && (NodeMoves(nl.head)!=null));
+      for (NodeList nl=sets.worklist.spill.nodes(); nl!=null; nl=nl.tail)
+	Util.assert(Degree(nl.head) >= K);
     }
   }
 }
