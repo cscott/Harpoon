@@ -429,7 +429,8 @@ public class ImageDataManip {
 	    id.blueThreshold2 = is.readInt();
 	    id.scaleFactor = is.readFloat();
 	    id.trackedObjectUniqueID = is.readInt();
-	    id.header = is.readBoolean()?new ImageHeader(is.readLong(), is.readInt(), is.readInt()):null;
+	    id.header = is.readBoolean()?new ImageHeader(is.readLong(), is.readInt(), 
+							 is.readInt(), is.readInt()):null;
 	} catch (IOException e) {
 	    throw new Error(e.toString());
 	}
@@ -470,6 +471,7 @@ public class ImageDataManip {
 		out.writeLong(id.header.timestamp);
 		out.writeInt(id.header.importance);
 		out.writeInt(id.header.id);
+		out.writeInt(id.header.seq_num);
 	    }
 	    out.flush();
 	} catch (IOException e) {
@@ -530,7 +532,7 @@ public class ImageDataManip {
 				 x, y, width, height,
 				 0, 0, 0, 0, (float)0.0, (float)0.0, (float)0.0,
 				 false, (byte)0, false, 0, 0, 0, (float)0.0,
-				 -1, 0, 0, new ImageHeader((long)0, 0, 0));
+				 -1, 0, 0, new ImageHeader((long)0, 0, 0, 0));
 	}
     }
 
@@ -563,7 +565,7 @@ public class ImageDataManip {
 			     0, 0, 0, 0, time, 0, command, 0,
 			     (float)0.0, (float)0.0, (float)0.0, 
 			     false, (byte)0, false, 0, 0, 0, 0, -1, 0, 0, 
-			     new ImageHeader((long)0, 0, 0));
+			     new ImageHeader((long)0, 0, 0, 0));
     }
 
     /**

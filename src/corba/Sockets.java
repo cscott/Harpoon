@@ -117,6 +117,7 @@ public class Sockets implements CommunicationsModel {
 			    out.writeLong(header.timestamp);
 			    out.writeInt(header.importance);
 			    out.writeInt(header.id);
+			    out.writeInt(header.seq_num);
 			}
 			out.flush();
 		    } catch (IOException e) {
@@ -131,7 +132,8 @@ public class Sockets implements CommunicationsModel {
 	while (true) {
 	    try {
 		out.alert(is.readFloat(), is.readFloat(), is.readFloat(), is.readLong(), 
-			  is.readBoolean()?new ImageHeader(is.readLong(), is.readInt(), is.readInt()):null);
+			  is.readBoolean()?new ImageHeader(is.readLong(), is.readInt(), is.readInt(),
+							   is.readInt()):null);
 	    } catch (IOException e) {
 		throw new Error(e.toString());
 	    }
