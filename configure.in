@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.156 $)dnl
+AC_REVISION($Revision: 1.157 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -221,7 +221,7 @@ no|yes)  ;;
      AC_CHECK_LIB(javalang, Java_java_lang_Math_sin)
      AC_CHECK_LIB(javanet, Java_java_net_PlainSocketImpl_accept)
      dnl guess.
-     CFLAGS="$CFLAGS -DCLASSPATH_VERSION=0.05"
+     CFLAGS="$CFLAGS -DCLASSPATH_VERSION=0.06"
      with_classpath=yes dnl normalize.
      with_sunjdk=no
      ;;
@@ -425,8 +425,8 @@ esac
 dnl enable passing execution environment (e.g., MAX HEAP) arguments to the executable
 AC_MSG_CHECKING([enable command line execution environment arguments])
 AC_ARG_WITH(exec-env-args,
-[  --with-exec-env-args	 enable command line execution environment arguments],
-with_exec_env_args="$withval", with_exec_env_args="no")
+[  --without-exec-env-args	 disable command line execution environment arguments],
+with_exec_env_args="$withval", with_exec_env_args="yes")
 case "$with_exec_env_args" in
 yes)	AC_MSG_RESULT([yes])
 	AC_DEFINE(WITH_EXEC_ENV_ARGS, 1, [enable command line execution environment arguments])
