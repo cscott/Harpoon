@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.144 2000-02-23 19:51:48 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.145 2000-02-24 01:24:11 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -985,7 +985,7 @@ BINOP<l>(SHL, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emit( ROOT, "and `d0, `s0, #31 @ mask shift ", r2, k );
+    emit( ROOT, "and `d0, `s0, #63 @ mask shift ", r2, k );
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
@@ -1002,7 +1002,7 @@ BINOP<l>(SHR, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emit( ROOT, "and `d0, `s0, #31 @ mask shift ", r2, k );
+    emit( ROOT, "and `d0, `s0, #63 @ mask shift ", r2, k );
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
@@ -1019,7 +1019,7 @@ BINOP<l>(USHR, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emit( ROOT, "and `d0, `s0, #31 @ mask shift ", r2, k );
+    emit( ROOT, "and `d0, `s0, #63 @ mask shift ", r2, k );
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
