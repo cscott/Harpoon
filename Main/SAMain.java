@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.89 2000-07-20 21:22:50 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.90 2000-08-15 15:32:03 bdemsky Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -159,6 +159,8 @@ public class SAMain extends harpoon.IR.Registration {
 		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 	    // and our main method is a root, too...
 	    roots.add(mainM);
+	    roots.add(linker.forName("sun.rmi.registry.RegistryHandler").getMethod("<init>", new HClass[0]));
+	    roots.add(linker.forName("java.rmi.server.RemoteRef").getMethod("<clinit>", new HClass[0]));
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
@@ -194,7 +196,7 @@ public class SAMain extends harpoon.IR.Registration {
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
 	hcf = harpoon.Analysis.Tree.AlgebraicSimplification.codeFactory(hcf);
 	//hcf = harpoon.Analysis.Tree.DeadCodeElimination.codeFactory(hcf);
-	hcf = harpoon.Analysis.Tree.JumpOptimization.codeFactory(hcf);
+	//hcf = harpoon.Analysis.Tree.JumpOptimization.codeFactory(hcf);
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     
 	HCodeFactory sahcf = frame.getCodeFactory(hcf);
@@ -245,7 +247,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    if (ONLY_COMPILE_MAIN)
 			hms = Default.singletonIterator(mainM);
 		    message("\t");
-		    while(!hclass.isInterface() && hms.hasNext()) {
+		    while(hms.hasNext()) {
 			HMethod m = (HMethod) hms.next();
 			message(m.getName());
 			if (!Modifier.isAbstract(m.getModifiers()))
