@@ -904,7 +904,9 @@ void GC_thread_exit_proc(void *arg)
     } else {
 	me -> flags |= FINISHED;
     }
+#ifdef THREAD_LOCAL_ALLOC
     GC_remove_specific(GC_thread_key);
+#endif
     if (GC_incremental && GC_collection_in_progress()) {
 	int old_gc_no = GC_gc_no;
 
