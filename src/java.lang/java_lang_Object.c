@@ -64,7 +64,6 @@ PRIMITIVEARRAYCLONE(Long, jlong, J);
 PRIMITIVEARRAYCLONE(Float, jfloat, F);
 PRIMITIVEARRAYCLONE(Double, jdouble, D);
 
-#if WITH_HEAVY_THREADS
 /*
  * Class:     java_lang_Object
  * Method:    notify
@@ -93,5 +92,3 @@ JNIEXPORT void JNICALL Java_java_lang_Object_wait
   (JNIEnv *env, jobject _this, jlong val) {
   assert(0/*unimplemented*/);
 }
-
-#endif /* WITH_HEAVY_THREADS */

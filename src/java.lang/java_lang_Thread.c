@@ -355,7 +355,6 @@ JNIEXPORT jint JNICALL Java_java_lang_Thread_countStackFrames
   (JNIEnv *, jobject);
 #endif
 
-#ifdef WITH_HEAVY_THREADS
 /*
  * Class:     java_lang_Thread
  * Method:    setPriority0
@@ -363,6 +362,7 @@ JNIEXPORT jint JNICALL Java_java_lang_Thread_countStackFrames
  */
 JNIEXPORT void JNICALL Java_java_lang_Thread_setPriority0
   (JNIEnv *env, jobject obj, jint pri) {
+#ifdef WITH_HEAVY_THREADS
   struct sched_param param; int policy;
   struct FNI_Thread_State * threadenv = EXTRACT_OTHER_ENV(env, obj);
   if (threadenv == NULL) return; /* thread not yet started. */
@@ -371,8 +371,10 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_setPriority0
   param.sched_priority = java_priority_to_sched_priority(pri);
   pthread_setschedparam(threadenv->pthread, policy, &param);
   /* ta-da! */
-}
+#else
+  /* do nothing if no thread support. */
 #endif
+}
 
 #if 0
 /*
