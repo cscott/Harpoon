@@ -32,7 +32,7 @@
 #include "tmap.h"
 #include "string.h"
 #include "set.h"
-
+#include <sys/time.h>
 
 Hashtable * model::gethashtable() {
   return env;
@@ -117,6 +117,10 @@ Constraint * model::getconstraint(int i) {
 
 // processes the model definition rules
 void model::doabstraction() {
+  struct timeval begin,end;
+  unsigned long time;
+  gettimeofday(&begin,NULL);
+
   pa=new processabstract(this);
   bool clean=false;
   /* Process rules until we reach a fixpoint*/
@@ -145,6 +149,10 @@ void model::doabstraction() {
       }
     }
   } while(clean);
+  gettimeofday(&end,NULL);
+  time=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
+  printf("Time used for abstraction(us): %ld\n",time);
+
   pa->printstats();
 }
 
@@ -160,10 +168,18 @@ void model::triggerrule(Element *ele,char *set) {
 
 // processes the external constraints
 void model::doconcrete() {
+  struct timeval begin,end;
+  unsigned long time;
+  gettimeofday(&begin,NULL);
+
   processconcrete *pr=new processconcrete(this);
   for(int i=0;i<numconcrete;i++) {
     pr->processrule(concretearray[i]);
   }
+  gettimeofday(&end,NULL);
+  time=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
+  printf("Time used for concretization(us): %ld\n",time);
+
   pr->printstats();
   delete(pr);
 }
@@ -233,9 +249,13 @@ void model::inserterrors()
 // returns true only if no violated constraints were found
 bool model::docheck() 
 {
+  struct timeval begin,end;
+  unsigned long time;
   bool found=false;
   processobject *po=new processobject(this);
   bool t=false;
+  gettimeofday(&begin,NULL);
+
   do {
     t=false;
     /* Process rules until we reach a fixpoint*/
@@ -250,6 +270,9 @@ bool model::docheck()
 	}
     }
   } while(t);
+  gettimeofday(&end,NULL);
+  time=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
+  printf("Time used for check(us): %ld\n",time);
   po->printstats();
   delete(po);
   //printf("return from docheck()");
