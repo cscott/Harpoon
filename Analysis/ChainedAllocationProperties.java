@@ -6,7 +6,7 @@ package harpoon.Analysis;
 import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 
 import harpoon.ClassFile.HClass;
-import harpoon.ClassFile.HField;
+import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 
 /** <code>ChainedAllocationProperties</code> allows us to change
@@ -19,7 +19,7 @@ import harpoon.Temp.Temp;
     allocation properties attached with a specific allocation site.
 
     @author  Alexandru Salcianu <salcianu@MIT.EDU>
-    @version $Id: ChainedAllocationProperties.java,v 1.1 2003-02-08 23:13:27 salcianu Exp $ */
+    @version $Id: ChainedAllocationProperties.java,v 1.2 2003-03-03 23:41:27 salcianu Exp $ */
 public class ChainedAllocationProperties implements AllocationProperties {
 
     /** Createsv a new <code>ChainedAllocationProperties</code>
@@ -47,8 +47,8 @@ public class ChainedAllocationProperties implements AllocationProperties {
     public HClass actualClass() {return oap.actualClass(); }
     public boolean noSync() { return oap.noSync(); }
     public boolean setDynamicWBFlag() { return oap.setDynamicWBFlag(); }
-    public HField getMemoryChunkField() {
-	return oap.getMemoryChunkField();
+    public Label getLabelOfPtrToMemoryChunk() {
+	return oap.getLabelOfPtrToMemoryChunk();
     }
     public int getUniqueID() { return oap.getUniqueID(); }
 }

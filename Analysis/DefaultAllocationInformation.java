@@ -6,8 +6,9 @@ package harpoon.Analysis;
 import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.ClassFile.HClass;
-import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 /**
@@ -18,7 +19,7 @@ import harpoon.Util.Util;
  * that nothing can be stack or thread-locally allocated.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultAllocationInformation.java,v 1.7 2003-02-08 23:26:39 salcianu Exp $
+ * @version $Id: DefaultAllocationInformation.java,v 1.8 2003-03-03 23:41:27 salcianu Exp $
  */
 public class DefaultAllocationInformation
     implements AllocationInformation, java.io.Serializable {
@@ -88,7 +89,7 @@ public class DefaultAllocationInformation
 	public Temp allocationHeap() { return null; }
 	public HClass actualClass() { return actualClass; }
 	public boolean setDynamicWBFlag() { return false; }
-	public HField getMemoryChunkField() { return null; }
+	public Label getLabelOfPtrToMemoryChunk() { return null; }
 	public int getUniqueID() { return -1; }
     }
 }

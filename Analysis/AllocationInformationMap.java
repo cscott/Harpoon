@@ -6,8 +6,8 @@ package harpoon.Analysis;
 import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.ClassFile.HClass;
-import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -21,7 +21,7 @@ import java.util.Map;
  * from a different <code>AllocationInformation</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformationMap.java,v 1.7 2003-02-08 19:16:46 salcianu Exp $
+ * @version $Id: AllocationInformationMap.java,v 1.8 2003-03-03 23:41:27 salcianu Exp $
  */
 public class AllocationInformationMap
     implements AllocationInformation, java.io.Serializable {
@@ -62,7 +62,7 @@ public class AllocationInformationMap
 	final Temp allocationHeap;
 	final HClass actualClass;
 	final boolean setDynamicWBFlag;
-	final HField memoryChunkField;
+	final Label labelOfPtrToMemoryChunk;
 	final int uniqueID;
 	
 	public AllocationPropertiesImpl(boolean hasInteriorPointers,
@@ -87,7 +87,7 @@ public class AllocationInformationMap
 					Temp allocationHeap,
 					HClass actualClass,
 					boolean setDynamicWBFlag,
-					HField memoryChunkField,
+					Label labelOfPtrToMemoryChunk,
 					int uniqueID) {
 	    assert !(allocationHeap!=null && !canBeThreadAllocated);
 	    assert !(allocationHeap!=null && makeHeap);
@@ -99,7 +99,7 @@ public class AllocationInformationMap
 	    this.allocationHeap       = allocationHeap;
 	    this.actualClass          = actualClass;
 	    this.setDynamicWBFlag     = setDynamicWBFlag;
-	    this.memoryChunkField     = memoryChunkField;
+	    this.labelOfPtrToMemoryChunk = labelOfPtrToMemoryChunk;
 	    this.uniqueID             = uniqueID;
 	}
 	public AllocationPropertiesImpl(AllocationProperties ap, 
@@ -113,7 +113,7 @@ public class AllocationInformationMap
 		 tm.tempMap(ap.allocationHeap()) : null,
 		 ap.actualClass(),
 		 ap.setDynamicWBFlag(),
-		 ap.getMemoryChunkField(),
+		 ap.getLabelOfPtrToMemoryChunk(),
 		 ap.getUniqueID());
 	}
 	public boolean hasInteriorPointers() { return hasInteriorPointers; }
@@ -124,7 +124,8 @@ public class AllocationInformationMap
 	public Temp allocationHeap()         { return allocationHeap; }
 	public HClass actualClass()          { return actualClass; }
 	public boolean setDynamicWBFlag()    { return setDynamicWBFlag; }
-	public HField getMemoryChunkField()  { return memoryChunkField; }
+	public Label getLabelOfPtrToMemoryChunk() {
+	    return labelOfPtrToMemoryChunk; }
 	public int getUniqueID()             { return -1; }
     }
 }

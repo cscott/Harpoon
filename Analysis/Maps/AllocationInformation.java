@@ -4,15 +4,16 @@
 package harpoon.Analysis.Maps;
 
 import harpoon.ClassFile.HClass;
-import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
+
 /**
  * An <code>AllocationInformation</code> maps allocation sites
  * to information about the allocation done at that site.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformation.java,v 1.6 2003-02-08 23:26:44 salcianu Exp $
+ * @version $Id: AllocationInformation.java,v 1.7 2003-03-03 23:41:34 salcianu Exp $
  */
 public interface AllocationInformation<HCE extends HCodeElement>  {
     
@@ -74,11 +75,11 @@ public interface AllocationInformation<HCE extends HCodeElement>  {
 	 *  have been optimistically removed. */
 	public boolean setDynamicWBFlag();
 
-	/** @return an <code>HField</code> description of a static
-	    field that points (at runtime) to a preallocated memory
-	    chunk to be used for this allocation site.  Returns null
-	    if we cannot preallocate this allocation site. */
-	public HField getMemoryChunkField();
+	/** @return a <code>Label</code> for a pointer that points (at
+	    runtime) to a preallocated memory chunk to be used for
+	    this allocation site.  Returns <code>null</code> if we
+	    cannot preallocate this allocation site. */
+	public Label getLabelOfPtrToMemoryChunk();
 
 	/** @return an unique integer ID for the allocation site. 
 	    Useful for instrumentation purposes. */
