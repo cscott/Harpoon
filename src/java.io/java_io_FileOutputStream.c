@@ -116,7 +116,7 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
 (JNIEnv * env, jobject obj, jbyteArray buf, jint start, jint len) { 
     int              fd, result;
     jobject          fdObj;
-    jbyte *          nbuf;
+    jbyte            nbuf[len-start];
     int written = 0;
 
     /* If static data has not been loaded, load it now */
@@ -125,6 +125,7 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
     fd     = (*env)->GetIntField(env, fdObj, fdID);
     (*env)->GetByteArrayRegion(env, buf, start, len, nbuf); 
+    if ((*env)->ExceptionOccurred(env)) return; /* bail */
 
     while (written < len) {
 	result = write(fd, (void*)(nbuf+written), len-written);
