@@ -2,7 +2,7 @@
 
 echo "TODO: Write a more elegant version of me!"
 
-
+export CLASSPATH=$HOME/Harpoon/Code/SupportNP/classes.zip:$CLASSPATH
 
 # Building the RealTime Java benchmarks
 OLD_CLASSPATH=$CLASSPATH
@@ -29,8 +29,6 @@ export CLASSPATH=${OLD_CLASSPATH}
 ./buildone ETruc
 
 ./buildone db
-
-./buildone jess
 
 ./buildone Barnes/Barnes
 
@@ -64,4 +62,3 @@ gcc -o Time/Client/timemark Time/Client/timemark.c
 echo done
 
 ./buildone martin-raytrace
-

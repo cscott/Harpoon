@@ -3,8 +3,10 @@
 SCR_DIR=`dirname $0`
 source ${SCR_DIR}/elim_common
 
-BUILD_OUT_DIR=${CALL_DIR}/inter/${name}.inter
-MAMAPS_FILE=${CALL_DIR}/inter/analyze-${name}.inter
+il=$5
+
+BUILD_OUT_DIR=${CALL_DIR}/inter/${name}.inter.$il
+MAMAPS_FILE=${CALL_DIR}/inter/analyze-${name}.inter.$il
 
 rm -rf ${BUILD_OUT_DIR} 
 mkdir ${BUILD_OUT_DIR}
@@ -15,7 +17,9 @@ java -mx128m -oss100m \
     ${HARPOON_OPTIONS} \
 harpoon.Main.PAMain ${PREANALYSIS_OPT} \
     -s --ccs=$levels --wts \
-    --mamaps=${MAMAPS_FILE} --wit --ns 1 --inline 2 \
+    --mamaps=${MAMAPS_FILE} --wit \
+    --sa 1 --ta 1 --ns 1 \
+    --inline $il \
     --output ${BUILD_OUT_DIR} --backend precisec \
 $cls
 

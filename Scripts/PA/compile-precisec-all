@@ -1,5 +1,58 @@
 #!/bin/bash
 
+function build_normal_runtime() {
+    if [ `cat ${HARPOON_DIR}/Runtime/current_version` != "normal" ]
+    then
+	rm -f ${HARPOON_DIR}/Runtime/current_version && \
+	echo "Building the normal runtime (no clustered heaps)" && \
+	cd ${HARPOON_DIR}/Runtime && \
+	./configure \
+	    --with-precise-c --with-gc=conservative \
+	    --with-thread-model=heavy --disable-shared \
+	    --with-statistics && \
+	make && \
+	echo normal > ${HARPOON_DIR}/Runtime/current_version
+    else
+	echo Normal Runtime is already built!
+    fi
+}
+
+
+function build_with_clustered_heaps_runtime() {
+    if [ `cat ${HARPOON_DIR}/Runtime/current_version` != "clustered-heaps" ]
+    then
+	rm -f ${HARPOON_DIR}/Runtime/current_version && \
+	echo "Building with-clustered-heaps runtime" && \
+	cd ${HARPOON_DIR}/Runtime && \
+	./configure \
+	    --with-precise-c --with-gc=conservative \
+	    --with-thread-model=heavy --disable-shared \
+	    --with-clustered-heaps --with-statistics && \
+	make && \
+	echo clustered-heaps > ${HARPOON_DIR}/Runtime/current_version
+    else
+	echo With-clustered-heaps Runtime is already built!
+    fi
+}
+
+
+function build_executable() {
+    exec_name=$1
+    c_files_dir=$2
+
+    echo "Producing executable ${exec_name} from files in ${c_files_dir}" && \
+    ${SCR_DIR}/compile-precisec-one ${exec_name} ${c_files_dir} && \
+    mv \
+	${c_files_dir}/run${exec_name} \
+	${CALL_DIR}/execs/${exec_name} && \
+    echo Executable ${CALL_DIR}/execs/${exec_name} was created && \
+    ls -l ${CALL_DIR}/execs/${exec_name}
+}
+
+
+BUILDS="none"
+INLINING_LEVELS="2"
+
 SCR_DIR=`dirname $0`
 CALL_DIR=`pwd`
 
@@ -11,49 +64,85 @@ then
     mkdir ${CALL_DIR}/execs
 fi
 
+BUILD_NONE=""
+BUILD_INTRA=""
+BUILD_INTER=""
 
-
-echo "Building with-clustered-heaps runtime";
-
-cd ${HARPOON_DIR}/Runtime
-
-./configure \
-    --with-precise-c --with-gc=conservative \
-    --with-thread-model=heavy --disable-shared \
-    --with-clustered-heaps --with-statistics
-
-make
-
-cd ${CALL_DIR};
-
-#for opt in inter intra none; do
-for opt in inter intra none; do
-
- if [ $opt = none ]; then
-    echo "Building the normal runtime (no clustered heaps)"
-
-    cd ${HARPOON_DIR}/Runtime
-
-    ./configure \
-	--with-precise-c --with-gc=conservative \
-        --with-thread-model=heavy --disable-shared \
-	--with-statistics
-
-    make
-
-    cd ${CALL_DIR};
- fi
-
- for name in $APPLICATIONS; do
-    echo "Producing executable for ${name}.${opt}"
-    ${SCR_DIR}/compile-precisec-one \
-	${name}.${opt} \
-	${CALL_DIR}/${opt}/${name}.${opt};
-    ls -l ${CALL_DIR}/${opt}/${name}.${opt}/run${name}.${opt};
-    mv \
-	${CALL_DIR}/${opt}/${name}.${opt}/run${name}.${opt} \
-	${CALL_DIR}/execs/run${name}.${opt};	
-    ls -l execs
- done;
+for BUILD_VARIANT in $BUILDS; do
+    if [ ${BUILD_VARIANT} = "none" ]
+    then
+	BUILD_NONE="yes"
+    fi
+    if [ ${BUILD_VARIANT} = "intra" ]
+    then
+	BUILD_INTRA="yes"
+    fi
+    if [ ${BUILD_VARIANT} = "inter" ]
+    then
+	BUILD_INTER="yes"
+    fi
 done
 
+echo "BUILD_NONE  = ${BUILD_NONE}"
+echo "BUILD_INTRA = ${BUILD_INTRA}"
+echo "BUILD_INTER = ${BUILD_INTER}"
+
+if [ ! -f ${HARPOON_DIR}/Runtime/current_version ];
+then
+    echo no-version >> ${HARPOON_DIR}/Runtime/current_version;
+fi
+
+#build the NONE version (no optimization)
+if [ ${BUILD_NONE} ]
+then
+    echo CHECK
+
+    build_normal_runtime;
+
+    cd ${CALL_DIR}
+
+    for name in $APPLICATIONS; do
+	echo "Producing executable for ${name}.none" && \
+	${SCR_DIR}/compile-precisec-one \
+	    ${name}.none \
+	    ${CALL_DIR}/none/${name}.none && \
+	ls -l ${CALL_DIR}/none/${name}.none/run${name}.none && \
+	mv \
+	    ${CALL_DIR}/none/${name}.none/run${name}.none \
+	    ${CALL_DIR}/execs/run${name}.none && \
+	ls -l execs
+    done;
+fi 
+
+#build the INTRA version (only optimizations due to the intra-thread analysis)
+if [ ${BUILD_INTRA} ]
+then
+    build_with_clustered_heaps_runtime;
+
+    cd ${CALL_DIR}
+
+    for name in $APPLICATIONS; do
+	for il in ${INLINING_LEVELS}; do
+	    build_executable \
+		${name}.intra.$il \
+		${CALL_DIR}/intra/${name}.intra.$il;
+	done;
+    done;
+fi 
+
+
+#build the INTER version (optimizations due to the inter-thread analysis)
+if [ ${BUILD_INTER} ]
+then
+    build_with_clustered_heaps_runtime;
+
+    cd ${CALL_DIR}
+
+    for name in $APPLICATIONS; do
+	for il in ${INLINING_LEVELS}; do
+	    build_executable \
+		${name}.inter.$il \
+		${CALL_DIR}/inter/${name}.inter.$il;
+	done;
+    done;
+fi 

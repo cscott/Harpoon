@@ -12,3 +12,6 @@ APPLICATIONS="water"
 
 #APPLICATIONS="ETruc Nets GameServer2 JhttpServer PhoneServer QuoteServer Echo Time water barnes JLex JCUP"
  
+#APPLICATIONS="barnes"
+
+APPLICATIONS="db"

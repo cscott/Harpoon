@@ -8,12 +8,44 @@ name=$2
 dir=$3
 levels=$4
 
+ANALYZE_NONE=
+ANALYZE_INTRA=
+DANALYZE_INTER=
 
-#echo "1. elimInter($2)"
-#$SCR_DIR/elimInter $1 $2 $3 $4 | tee inter/$2.Inter.out
+for ANALYZE_VARIANT in ${DESIRED_ANALYSIS}; do
+    if [ ${ANALYZE_VARIANT} = "none" ]
+    then
+	ANALYZE_NONE="yes"
+    fi
+    if [ ${ANALYZE_VARIANT} = "intra" ]
+    then
+	ANALYZE_INTRA="yes"
+    fi
+    if [ ${ANALYZE_VARIANT} = "inter" ]
+    then
+	ANALYZE_INTER="yes"
+    fi
+done
 
-echo "2. elimIntra($2)"
-$SCR_DIR/elimIntra $1 $2 $3 $4 | tee intra/$2.Intra.out
 
-echo "3. elimNone($2)"
-$SCR_DIR/elimNone  $1 $2 $3 $4 | tee none/$2.None.out
+if [ ${ANALYZE_INTER} ]
+then
+    for il in ${INLINING_LEVELS}; do
+	echo "elimInter($2) inlining level = $il"
+	${SCR_DIR}/elimInter $1 $2 $3 $4 $il | tee inter/$2.Inter.$il.out
+    done;
+fi
+
+if [ ${ANALYZE_INTRA} ]    
+then
+    for il in ${INLINING_LEVELS}; do
+	echo "elimIntra($2) inlining level = $il";
+	${SCR_DIR}/elimIntra $1 $2 $3 $4 $il | tee intra/$2.Intra.$il.out;
+    done;
+fi
+
+if [ ${ANALYZE_NONE} ]
+then
+    echo "3. elimNone($2)"
+    ${SCR_DIR}/elimNone  $1 $2 $3 $4 | tee none/$2.None.out
+fi

@@ -50,5 +50,3 @@ HARPOON_OPTIONS=" -mx512m -oss100m \
     	          -Dharpoon.alloc.strategy=niftystats \
     	          -Dharpoon.target.elf=yes \
                   -Dharpoon.class.path=$stdPath:$dir"
-
-

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export INLINING_LEVELS="1"
+export DESIRED_ANALYSIS="none"
 
 # the directory where the scripts are located
 SCR_DIR=`dirname $0`
@@ -53,5 +55,8 @@ done
 
 # BIG BENCHMARKS
 
-${SCR_DIR}/elimOne  JLex.Main     JLex  ${HARPOON_DIR}/Code/Support/Lex.jar 2
-${SCR_DIR}/elimOne  java_cup.Main JCUP  ${HARPOON_DIR}/Code/Support/CUP.jar 2
+#${SCR_DIR}/elimOne  JLex.Main     JLex  ${HARPOON_DIR}/Code/Support/Lex.jar 2
+#${SCR_DIR}/elimOne  java_cup.Main JCUP  ${HARPOON_DIR}/Code/Support/CUP.jar 2
+
+# ADDITIONAL BENCHMARKS
+${SCR_DIR}/elimOne    Main        db    ${BENCHS_DIR}/martin-db            2
