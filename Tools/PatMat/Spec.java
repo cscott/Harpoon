@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.21 1999-08-03 22:02:41 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.22 1999-08-03 22:15:55 cananian Exp $
  */
 public class Spec  {
 
@@ -754,6 +754,7 @@ public class Spec  {
 	public abstract void visit(Leaf l);
 	public void visit(LeafId l) { visit((Leaf)l); }
 	public void visit(LeafOp l) { visit((Leaf)l); }
+	public void visit(LeafNull l) { visit((Leaf)l); }
 	public void visit(LeafNumber l) { visit((Leaf)l); }
 	public void visit(LeafSegType l) { visit((Leaf)l); }
     }
@@ -794,6 +795,13 @@ public class Spec  {
 	*/
 	public void accept(Spec.LeafVisitor v) { v.visit(this); }
 	public String toString() { return id; }
+    }
+    /** Extension of <code>Spec.Leaf</code> representing a null constant. */
+    public static class LeafNull extends Leaf {
+	/** Constructs a new <code>Spec.LeafNull</code>. */
+	public LeafNull() { }
+	public String toString() { return "null"; }
+	public void accept(Spec.LeafVisitor v) { v.visit(this); }
     }
     /** Extension of <code>Spec.Leaf</code> representing an opcode
      *  for <code>Uop</code> and/or <code>Bop</code>.  */

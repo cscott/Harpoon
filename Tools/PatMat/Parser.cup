@@ -19,6 +19,7 @@ import harpoon.Tools.PatMat.Spec.ExpUnop;
 import harpoon.Tools.PatMat.Spec.Leaf;
 import harpoon.Tools.PatMat.Spec.LeafId;
 import harpoon.Tools.PatMat.Spec.LeafOp;
+import harpoon.Tools.PatMat.Spec.LeafNull;
 import harpoon.Tools.PatMat.Spec.LeafNumber;
 import harpoon.Tools.PatMat.Spec.LeafSegType;
 import harpoon.Tools.PatMat.Spec.IdList;
@@ -46,7 +47,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.19 1999-08-03 22:02:41 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.20 1999-08-03 22:15:55 cananian Exp $
  */
 
 action code {:
@@ -99,6 +100,8 @@ terminal ADD, AND, CMPEQ, CMPGE, CMPGT, CMPLE, CMPLT;
 terminal DIV, MUL, OR, REM, SHL, SHR, USHR, XOR;
 // unops
 terminal _2B, _2C, _2D, _2F, _2I, _2L, _2S, NEG, NOT;
+// null constant
+terminal NULL;
 
 non terminal Spec	program;
 non terminal Rule	rule;
@@ -258,6 +261,8 @@ number ::=	INTEGER:i 	{: RESULT=i; :}
 
 sym_number ::=	ID:id
 		{: RESULT=new LeafId(id); :}
+	|	NULL
+		{: RESULT=new LeafNull(); :}
 	|	number:num
 		{: RESULT=new LeafNumber(num); :}
 	;
