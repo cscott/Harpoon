@@ -26,7 +26,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.17 2000-01-18 15:11:22 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.18 2000-01-26 04:38:42 cananian Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -38,20 +38,13 @@ public class Code extends harpoon.Backend.Generic.Code {
 
     /** Creates a <code>Code</code>. */
     public Code(harpoon.IR.Tree.Code treeCode) {
-        super(treeCode.getMethod(), 
-	      null,
-	      treeCode.getFrame());
+        super(treeCode);
 
 	// need to cast the return type to a StrongARM.RegFileInfo
-	regFileInfo = (RegFileInfo) treeCode.getFrame().getRegFileInfo();
+	regFileInfo = (RegFileInfo) this.frame.getRegFileInfo();
 	Util.assert(regFileInfo != null, "Need non-null regfileinfo");
 
-	// treeCode.print(new java.io.PrintWriter(System.out));
-	instrs = treeCode.getFrame().getCodeGen()
-	    .gen(treeCode, newINF(treeCode.getMethod()));
-	Util.assert(instrs != null);
 	tempInstrToRegisterMap = new HashMap();
-
     }
 
     public String getName() { return codename; }

@@ -43,7 +43,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.37 2000-01-18 15:23:39 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.38 2000-01-26 04:38:36 cananian Exp $
  */
 public abstract class Code extends HCode {
 
@@ -64,7 +64,7 @@ public abstract class Code extends HCode {
      *  @return         Returns a new instruction factory for the scope
      *                  of the parent method and this codeview.
      */
-    protected InstrFactory newINF(final HMethod parent) {
+    private InstrFactory newINF(final HMethod parent) {
         final String scope = parent.getDeclaringClass().getName() + "." +
             parent.getName() + parent.getDescriptor() + "/" + getName();
         return new InstrFactory() {
@@ -77,10 +77,12 @@ public abstract class Code extends HCode {
         };
     }
 
-    protected Code(final HMethod parent, final Instr instrs, 
-                   final Frame frame) {
-        this.parent = parent; this.instrs = instrs; this.frame = frame;
+    protected Code(harpoon.IR.Tree.Code treeCode) {
+	this.parent = treeCode.getMethod();
+	this.frame  = treeCode.getFrame();
         this.inf = newINF(parent);
+	this.instrs = this.frame.getCodeGen().gen(treeCode, this.inf);
+	Util.assert(instrs != null);
     }
     
     /**
