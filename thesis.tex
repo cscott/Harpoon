@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.79 1999-08-22 03:01:38 cananian Exp $
+% $Id: thesis.tex,v 1.80 1999-08-22 05:15:55 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.79 $ $}
+\date{\today \\ $ $Revision: 1.80 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.79 $ $}{$ $Revision: 1.79 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.80 $ $}{$ $Revision: 1.80 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -355,6 +355,7 @@ In most cases, the more regular properties of minimal SSA form
 outweigh the pruned form's slight increase in space efficiency.
 Choi, Cytron, and Ferrante \cite{ferrante91:pruned} give a formal
 definition and construction algorithm for pruned SSA.
+\fixme{Pruned form does not satisfy the given SSA criteria.}
 
 Figure~\vref{fig:prunedssa} compares minimal and pruned SSA form for
 our example program.
@@ -410,15 +411,29 @@ exist having only the node $Z$ where they converge in common,
 and nodes $X$ and $Y$ contain either assignments to a variable $V$ in the
 original program or a \phisigfunction[or] for $V$ in the new program,
 then a \phifunction{} for $V$ has been inserted at $Z$ in the new program.
+[Placement of \phifunction{s}.]
 \item If two nonnull paths $Z \pathplus X$ and $Z \pathplus Y$
 exist having only the node $Z$ where they diverge in common,
 and nodes $X$ and $Y$ contain either uses of a variable $V$ in the
 original program or a \phisigfunction[or] for $V$ in the new program,
 then a \sigfunction{} for $V$ has been inserted at $Z$ in the new program.
+[Placement of \sigfunction{s}.]
 \item There is exactly one reaching definition of $V$ at every
 non-$\phi$ use of $V$ in the new program.
-\item \textbf{FIXME: what's the equivalent condition for \sigfunction{s}?}
-% has something to do with cycle-equivalence.
+[Naming after \phifunction{s}.]
+\item For every pair of nodes $X$ and $Y$ containing uses of a
+variable $V$ defined at node $Z$ in the new program, either every path
+$Z \pathplus X$ must contain $Y$ or every path $Z \pathplus Y$ must
+contain $X$.
+[Naming after \sigfunction{s}.]
+\item For the purposes of this definition, the \code{START} node
+is assumed to contain a definition and the \code{END} node a use for every
+variable in the original program.  Every path $X \pathplus E$
+from a node $X$ containing a definition of a variable to the \code{END}
+node must contain every node $Y$ which is a use of that variable.
+[Boundary conditions.]
+\fixme{It would be nice to have a second set of eyes look over these
+criteria to ensure they are necessary and sufficient.}
 \end{enumerate}
 
 A \emph{pruned} SSI form would be the minimal form without any unused
