@@ -5,7 +5,11 @@ package harpoon.Analysis.Transactions;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.DomTree;
+import harpoon.Analysis.ReachingDefs;
+import harpoon.Analysis.SSxReachingDefsImpl;
 import harpoon.Analysis.Counters.CounterFactory;
+import harpoon.Analysis.Maps.TypeMap;
+import harpoon.Analysis.Quads.TypeInfo;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
@@ -29,7 +33,6 @@ import harpoon.IR.Quads.ASET;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CJMP;
 import harpoon.IR.Quads.CONST;
-import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.FOOTER;
 import harpoon.IR.Quads.GET;
@@ -47,11 +50,12 @@ import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadRSSx;
-import harpoon.IR.Quads.QuadSSA;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SIGMA;
+import harpoon.IR.Quads.SSIToSSA;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
@@ -71,12 +75,12 @@ import java.util.Map;
 import java.util.Set;
 /**
  * <code>SyncTransformer</code> transforms synchronized code to
- * atomic transactions.  Works on <code>QuadSSA</code> form.
+ * atomic transactions.  Works on <code>QuadSSI</code> form.
  * Use the <code>SyncTransformer.treeCodeFactory()</code> to clean 
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.20 2001-03-04 21:54:36 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.20.2.1 2001-03-05 00:35:58 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -168,8 +172,8 @@ public class SyncTransformer
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
 			   HMethod mainM, Set roots,
 			   Set safeMethods) {
-	// hcf should be SSI. our input is SSA...
-        super(harpoon.IR.Quads.QuadSSA.codeFactory(hcf), ch, false);
+	// hcf should be SSI.
+        super(hcf, ch, false);
 	// and output is NoSSA
 	Util.assert(hcf.getCodeName()
 		    .equals(harpoon.IR.Quads.QuadSSI.codename));
@@ -266,20 +270,68 @@ public class SyncTransformer
 	else return super.mutateDescriptor(hm, which);
     }
     protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
-	// make SSA into RSSx.
-	Util.assert(hc.getName().equals(QuadSSA.codename));
-	return MyRSSx.cloneToRSSx((harpoon.IR.Quads.Code)hc, newmethod);
+	// make SSI into SSA embedded in an RSSx.
+	Util.assert(hc.getName().equals(QuadSSI.codename));
+	return MyRSSx.cloneToRSSx((QuadSSI)hc, newmethod);
     }
     private static class MyRSSx extends QuadRSSx {
+	private HCodeAndMaps hcam=null;
+	private TypeMap otm=null;
 	private MyRSSx(HMethod m) { super(m, null); }
-	public static HCodeAndMaps cloneToRSSx(harpoon.IR.Quads.Code c,
+	public static HCodeAndMaps cloneToRSSx(QuadSSI c,
 					       HMethod m) {
 	    MyRSSx r = new MyRSSx(m);
-	    return r.cloneHelper(c, r);
+	    // type map comes from SSI source.
+	    r.otm = new TypeInfo(c);
+	    // copied from QuadSSA constructor.
+	    SSIToSSA ssi2ssa = new SSIToSSA(c, r.qf);
+	    r.quads = ssi2ssa.rootQuad;
+	    r.setAllocationInformation(ssi2ssa.allocInfo);
+	    // make mapping from new quads to old quads.
+	    Map ancestorElementMap = new HashMap();
+	    for (Iterator it = ssi2ssa.quadMap.entrySet().iterator();
+		 it.hasNext(); ) {
+		Map.Entry me = (Map.Entry) it.next();
+		ancestorElementMap.put(me.getValue(), me.getKey());
+	    }
+	    // make tidy HCodeAndMaps
+	    // note that we've got nulls in one place because there is not
+	    // a one-to-one mapping from new temps to old temps.
+	    r.hcam = new HCodeAndMaps(r, ssi2ssa.quadMap, ssi2ssa.tempMap,
+				      c, ancestorElementMap, null);
+	    return r.hcam;
 	}
+	// MyRSSx codes have a type map.
+	public HClass typeAtUse(Quad useSite, Temp t) {
+	    // look up old analog of useSite.
+	    Quad oldUser = (Quad) hcam.ancestorElementMap().get(useSite);
+	    Util.assert(oldUser!=null);
+	    // exactly one of Quad's uses will be named properly.
+	    for (Iterator it=oldUser.useC().iterator(); it.hasNext(); ) {
+		Temp oldTUsed = (Temp) it.next();
+		if (hcam.tempMap().tempMap(oldTUsed).equals(t)) // this is it!
+		    return otm.typeMap(oldUser/*XXX*/, oldTUsed);
+	    }
+	    throw new Error("Temp "+t+" used in "+useSite+" does not "+
+			    "correspond to any Temp in "+oldUser);
+	}
+	public HClass typeAtDef(Quad defSite, Temp t) {
+	    // look up old analog of defSite.
+	    Quad oldDefer = (Quad) hcam.ancestorElementMap().get(defSite);
+	    Util.assert(oldDefer!=null);
+	    // exactly one of Quad's defs will be named properly.
+	    for (Iterator it=oldDefer.defC().iterator(); it.hasNext(); ) {
+		Temp oldTDefed = (Temp) it.next();
+		if (hcam.tempMap().tempMap(oldTDefed).equals(t)) // this is it!
+		    return otm.typeMap(oldDefer, oldTDefed);
+	    }
+	    throw new Error("Temp "+t+" def'd in "+defSite+" does not "+
+			    "correspond to any Temp in "+oldDefer);
+	}
+	public void clear() { this.hcam=null; this.otm=null; }
     }
     protected String mutateCodeName(String codeName) {
-	Util.assert(codeName.equals(QuadSSA.codename));
+	Util.assert(codeName.equals(QuadSSI.codename));
 	return MyRSSx.codename;
     }
     protected HCode mutateHCode(HCodeAndMaps input, Token which) {
@@ -300,10 +352,13 @@ public class SyncTransformer
 		co = new HoistingCheckOracle
 		    (hc, CFGrapher.DEFAULT, UseDefer.DEFAULT, dt, co);
 	    }
-	    Tweaker tw = new Tweaker(co, qF, (which==WITH_TRANSACTION));
+	    ReachingDefs rd = new SSxReachingDefsImpl(hc, UseDefer.DEFAULT);
+	    Tweaker tw = new Tweaker(co, rd, qF, (which==WITH_TRANSACTION));
 	    tweak(new DomTree(hc, false), qM, tw);
 	    tw.fixup();
 	}
+	// free memory.
+	((MyRSSx)hc).clear();
 	// done!
 	return hc;
     }
@@ -334,14 +389,17 @@ public class SyncTransformer
 	private final Map fixupmap = new HashMap();
 	private final Set typecheckset = new HashSet();
 	final CheckOracle co;
+	final ReachingDefs rd;
 	final FieldOracle fo;
 	final TempSplitter ts=new TempSplitter();
 	// mutable.
 	FOOTER footer; // we attach new stuff to the footer.
 	ListList handlers = null; // points to current abort handler
-	Tweaker(CheckOracle co, FOOTER qF, boolean with_transaction) {
+	Tweaker(CheckOracle co, ReachingDefs rd,
+		FOOTER qF, boolean with_transaction) {
 	    this.co = co;
 	    this.fo = fieldOracle; // cache in this object.
+	    this.rd = rd;
 	    this.footer = qF;
 	    this.qf = qF.getFactory();
 	    this.tf = this.qf.tempFactory();
@@ -351,6 +409,14 @@ public class SyncTransformer
 		handlers = new ListList(null, handlers);
 	    this.currtrans = new Temp(tf, "transid");
 	    this.retex = new Temp(tf, "trabex"); // transaction abort exception
+	}
+	/** special helper to get type of temp t as used at quad q */
+	private HClass typeAtUse(Quad useSite, Temp t) {
+	    return ((MyRSSx)qf.getParent()).typeAtUse(useSite, t);
+	}
+	/** special helper to get type of temp t as defed at quad q */
+	private HClass typeAtDef(Quad defSite, Temp t) {
+	    return ((MyRSSx)qf.getParent()).typeAtDef(defSite, t);
 	}
 	/** helper routine to add a quad on an edge. */
 	private Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
@@ -410,6 +476,7 @@ public class SyncTransformer
 	}
 
 	public void visit(Quad q) { addChecks(q); }
+	// add counters to object creation sites.
 	public void visit(ANEW q) {
 	    CounterFactory.spliceIncrement
 		(qf, q.prevEdge(0), "synctrans.new_array");
@@ -418,6 +485,11 @@ public class SyncTransformer
 	public void visit(NEW q) {
 	    CounterFactory.spliceIncrement
 		(qf, q.prevEdge(0), "synctrans.new_object");
+	    visit((Quad)q);
+	}
+	// just assert that our input is in SSA form.
+	public void visit(SIGMA q) {
+	    Util.assert(q.numSigmas()==0);
 	    visit((Quad)q);
 	}
 
@@ -438,13 +510,6 @@ public class SyncTransformer
 	    addChecks(q);
 	    // if in a transaction, call the transaction version &
 	    // deal with possible abort.
-
-	    // hack around for object info loss if receiver came from transact.
-	    if (!q.isStatic())
-		addTypeCheck(q.prevEdge(0), q, q.params(0),
-			     q.method().getDeclaringClass());
-	    // end hack.
-
 	    if (handlers==null) return;
 	    if (safeMethods.contains(q.method()) && !q.isVirtual())
 		return; // it's safe. (this is an optimization)
@@ -538,13 +603,17 @@ public class SyncTransformer
 	    handlers = handlers.tail;
 	    if (handlers==null) q1.remove(); // unneccessary.
 	}
+	/* parentType is the type of the parent this field/element is being
+	 * read from.  childType is the type of the field/element being read.
+	 */
 	Edge readNonTrans(Edge out, HCodeElement src,
-			  Temp dst, Temp objectref, HClass type) {
+			  Temp dst, Temp objectref,
+			  HClass parentType, HClass childType) {
 	    out = CounterFactory.spliceIncrement(qf, out,
 						 "synctrans.read_nt");
 	    Temp t0 = new Temp(tf, "readnt");
-	    out = addAt(out, makeFlagConst(qf, src, t0, type));
-	    out = addAt(out, new OPER(qf, src, cmpop(type), t0,
+	    out = addAt(out, makeFlagConst(qf, src, t0, childType));
+	    out = addAt(out, new OPER(qf, src, cmpop(childType), t0,
 				      new Temp[]{ t0, dst }));
 	    Quad q0 = new CJMP(qf, src, t0, new Temp[0]);
 	    out = addAt(out, q0);
@@ -559,8 +628,11 @@ public class SyncTransformer
 	    Quad.addEdge(q2, 0, q1, 1);
 	    Quad.addEdge(q2, 1, q3, 0);
 	    footer = footer.attach(q3, 0); // add q4 to FOOTER
+	    Edge e = q2.nextEdge(0); // new READ goes on this edge.
+	    // type cast getReadCommitted() return value.
+	    e = addTypeCheck(e, q2, ts.versioned(objectref), parentType);
 	    // no check for abort because we are non-trans!
-	    return q2.nextEdge(0);// new READ goes on this edge.
+	    return e;
 	}
 	public void visit(AGET q) {
 	    addChecks(q);
@@ -570,14 +642,11 @@ public class SyncTransformer
 		CounterFactory.spliceIncrement
 		    (qf, q.prevEdge(0), "synctrans.read_nt_array");
 		Edge e = readNonTrans(q.nextEdge(0), q,
-				      q.dst(), q.objectref(), q.type());
-		e = addArrayTypeCheck(e, q, ts.versioned(q.objectref()),
-				      q.type());
+				      q.dst(), q.objectref(),
+				      typeAtUse(q, q.objectref()), q.type());
 		addAt(e, new AGET(qf, q, q.dst(),
 				  ts.versioned(q.objectref()),
 				  q.index(), q.type()));
-		// workaround for multi-dim arrays. yucky.
-		addArrayTypeCheck(q.prevEdge(0), q, q.objectref(), q.type());
 	    } else { // transactional read
 		CounterFactory.spliceIncrement
 		    (qf, q.prevEdge(0), "synctrans.read_t_array");
@@ -587,8 +656,6 @@ public class SyncTransformer
 				   ts.versioned(q.objectref()),
 				   q.index(), q.type());
 		Quad.replace(q, q0);
-		addArrayTypeCheck(q0.prevEdge(0), q0, q0.objectref(),
-				  q0.type());
 	    }
 	}
 	public void visit(GET q) {
@@ -612,6 +679,7 @@ public class SyncTransformer
 	    if (handlers==null) { // non-transactional read
 		Edge e = readNonTrans(q.nextEdge(0), q,
 				      q.dst(), q.objectref(),
+				      typeAtUse(q, q.objectref()),
 				      q.field().getType());
 		addAt(e, new GET(qf, q, q.dst(), q.field(),
 				 ts.versioned(q.objectref())));
@@ -622,17 +690,21 @@ public class SyncTransformer
 					ts.versioned(q.objectref())));
 	    }
 	}
+	/* parentType is the type of the parent this field/element is being
+	 * read from.  childType is the type of the field/element being read.
+	 */
 	void writeNonTrans(Edge out, HCodeElement src, Temp objectref,
-			   Temp oldval, Temp newval, HClass type) {
+			   Temp oldval, Temp newval,
+			   HClass parentType, HClass childType) {
 	    out = CounterFactory.spliceIncrement(qf, out,
 						 "synctrans.write_nt");
 	    Temp t0 = new Temp(tf, "writent");
-	    out = addAt(out, makeFlagConst(qf, src, t0, type));
-	    out = addAt(out, new OPER(qf, src, cmpop(type), oldval,
+	    out = addAt(out, makeFlagConst(qf, src, t0, childType));
+	    out = addAt(out, new OPER(qf, src, cmpop(childType), oldval,
 				      new Temp[]{ oldval, t0 }));
 	    Quad q0 = new CJMP(qf, src, oldval, new Temp[0]);
 	    out = addAt(out, q0);
-	    out = addAt(out, new OPER(qf, src, cmpop(type), oldval,
+	    out = addAt(out, new OPER(qf, src, cmpop(childType), oldval,
 				      new Temp[]{ newval, t0 }));
 	    Quad q1 = new CJMP(qf, src, oldval, new Temp[0]);
 	    out = addAt(out, q1);
@@ -650,6 +722,9 @@ public class SyncTransformer
 	    Quad.addEdge(q3, 0, q2, 1);
 	    Quad.addEdge(q3, 1, q4, 0);
 	    footer = footer.attach(q4, 0); // add q4 to FOOTER
+	    // type cast getWriteCommitted() return value.
+	    addTypeCheck(q3.nextEdge(0), q3, ts.versioned(objectref),
+			 parentType);
 	    // no check for abort because we are non-trans!
 	    Quad q5 = new CALL(qf, src, HMmkVersion,
 			       new Temp[] { objectref },
@@ -660,6 +735,9 @@ public class SyncTransformer
 	    Quad.addEdge(q5, 0, q2, 2);
 	    Quad.addEdge(q5, 1, q6, 0);
 	    footer = footer.attach(q6, 0); // add q6 to FOOTER.
+	    // type case makeCommittedVersion() return value.
+	    addTypeCheck(q5.nextEdge(0), q5, ts.versioned(objectref),
+			 parentType);
 	}
 	public void visit(ASET q) {
 	    addChecks(q);
@@ -670,10 +748,10 @@ public class SyncTransformer
 		    (qf, q.prevEdge(0), "synctrans.write_nt_array");
 		Temp t0 = new Temp(tf, "oldval");
 		Edge in = q.prevEdge(0);
-		in = addArrayTypeCheck(in, q, q.objectref(), q.type());//workaround
 		in = addAt(in, new AGET(qf, q, t0, q.objectref(),
 					q.index(), q.type()));
-		writeNonTrans(in, q, q.objectref(), t0, q.src(), q.type());
+		writeNonTrans(in, q, q.objectref(), t0, q.src(),
+			      typeAtUse(q, q.objectref()), q.type());
 	    } else {
 		CounterFactory.spliceIncrement
 		    (qf, q.prevEdge(0), "synctrans.write_t");
@@ -684,7 +762,6 @@ public class SyncTransformer
 	    ASET q0 = new ASET(qf, q, ts.versioned(q.objectref()),
 			       q.index(), q.src(), q.type());
 	    Quad.replace(q, q0);
-	    addArrayTypeCheck(q0.prevEdge(0), q0, q0.objectref(), q0.type());
 	}
 	public void visit(SET q) {
 	    addChecks(q);
@@ -709,6 +786,7 @@ public class SyncTransformer
 		Edge in = q.prevEdge(0);
 		in = addAt(in, new GET(qf, q, t0, q.field(), q.objectref()));
 		writeNonTrans(in, q, q.objectref(), t0, q.src(),
+			      typeAtUse(q, q.objectref()),
 			      q.field().getType());
 	    } else {
 		CounterFactory.spliceIncrement
@@ -726,12 +804,7 @@ public class SyncTransformer
 	    Util.assert(false, "ARRAYINIT transformation unimplemented.");
 	}
 	// add a type check to edge e so that TypeInfo later knows the
-	// component type of this array access.
-	Edge addArrayTypeCheck(Edge e, HCodeElement src, Temp t,
-				 HClass type) {
-	    HClass arraytype = HClassUtil.arrayClass(qf.getLinker(), type, 1);
-	    return addTypeCheck(e, src, t, arraytype);
-	}
+	// correct component type in array accesses.
 	Edge addTypeCheck(Edge e, HCodeElement src, Temp t, HClass type) {
 	    Quad q0 = new TYPESWITCH(qf, src, t, new HClass[] { type },
 				     new Temp[0], true);
@@ -774,6 +847,15 @@ public class SyncTransformer
 		    Quad.addEdge(q0, 1, q1, 0);
 		    footer = footer.attach(q1, 0);
 		    checkForAbort(q0.nextEdge(1), q, retex);
+		    // add type cast to get*Version() call.
+		    /* XXX: not strictly accurate: this is *defined* type;
+		     * type may narrow after definition in SSI form as a
+		     * result of typechecks. */
+		    Quad defSite =
+			(Quad) rd.reachingDefs(q, t).iterator().next();
+		    in = addTypeCheck(in, q0, ts.versioned(t),
+				      typeAtDef(defSite, t));
+		    // finally, add counter.
 		    in = CounterFactory.spliceIncrement
 			(qf, in,
 			 "synctrans."+((i==0)?"read":"write")+"_versions");
