@@ -238,10 +238,11 @@ class Thread implements Runnable {
      */
     private void init(ThreadGroup g, Runnable target, String name){
 	Thread parent = currentThread();
+
 	if (g == null) {
 	    /* Determine if it's an applet or not */
 	    SecurityManager security = System.getSecurityManager();
-	    
+
 	    /* If there is a security manager, ask the security manager
 	       what to do. */
 	    if (security != null) {
@@ -257,6 +258,7 @@ class Thread implements Runnable {
 
 	/* checkAccess regardless of whether or not threadgroup is
            explicitly passed in. */
+
 	g.checkAccess();	    
 
 	this.group = g;
@@ -1021,7 +1023,8 @@ class Thread implements Runnable {
 
 	    dead= true;
 	}
-	this.EDexit();
+	if (this!=Thread.currentThread())
+	    this.EDexit();
     }
 
 
