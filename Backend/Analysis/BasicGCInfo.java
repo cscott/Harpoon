@@ -49,7 +49,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.12 2000-03-02 05:33:00 kkz Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.13 2000-03-08 02:24:59 kkz Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -266,8 +266,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    // filter out non-pointers and derived pointers
 		    Set liveLocs = new HashSet();
 		    Map derivedPtrs = new HashMap();
-		    StackOffsetLoc[] calleeSaved = 
-			new StackOffsetLoc[f.getRegFileInfo().maxRegIndex()];
+		    Map calleeSaved = new HashMap();
 		    while(!live.isEmpty()) {
 			Temp t = (Temp)live.pull();
 			Instr[] defPts = 
@@ -286,15 +285,12 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 				// find out which register's contents we have
 				BackendDerivation.Register reg =
 				    bd.calleeSaveRegister(defPts[0], t);
-				int rindex = reg.regIndex();
 				Set locationSet = tl.locate(t, defPts[0]);
-				// this may be a bad assumption, but...
+				// the following may be a bad assumption
 				Util.assert(locationSet.size() == 1);
 				for (Iterator it=locationSet.iterator();
 				     it.hasNext(); ) {
-				    // another series of bad assumptions
-				    calleeSaved[rindex] = 
-					(StackOffsetLoc)it.next();
+				    calleeSaved.put(reg, (CommonLoc)it.next());
 				}
 			    } else if (!hclass.isPrimitive())
 				// a non-derived pointer: add all 
