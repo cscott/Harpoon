@@ -18,31 +18,40 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Run.java,v 1.1.2.5 1999-02-01 00:40:40 cananian Exp $
+ * @version $Id: Run.java,v 1.1.2.6 1999-02-09 03:59:30 cananian Exp $
  */
 public abstract class Run extends harpoon.IR.Registration {
     public static void main(String args[]) {
+	HCodeFactory hf = // default code factory.
+	    harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
+	    (harpoon.IR.Quads.QuadSSA.codeFactory());
 	int i=0; // count # of args/flags processed.
-	// check for "-prof" flag in arg[i]
+	// check for "-prof" and "-code" flags in arg[i]
 	PrintWriter prof = null;
-	if (args.length > i && args[i].startsWith("-prof")) {
-	    String filename = "./java.prof";
-	    if (args[i].startsWith("-prof:"))
-		filename = args[i].substring(6);
-	    try {
-		FileOutputStream fos = new FileOutputStream(filename);
-		prof = new PrintWriter(new GZIPOutputStream(fos));
-	    } catch (IOException e) {
-		throw new Error("Could not open "+filename+" for profiling: "+
-				e.toString());
-	    }
-	    i++;
+	for (; i < args.length ; i++) {
+	    if (args[i].startsWith("-code")) {
+		if (++i < args.length)
+		    hf = HMethod.getCodeFactory(args[i]);
+		else throw new Error("-code option needs codename");
+	    } else if (args[i].startsWith("-prof")) {
+		String filename = "./java.prof";
+		if (args[i].startsWith("-prof:"))
+		    filename = args[i].substring(6);
+		try {
+		    FileOutputStream fos = new FileOutputStream(filename);
+		    prof = new PrintWriter(new GZIPOutputStream(fos));
+		} catch (IOException e) {
+		    throw new Error("Could not open " + filename +
+				    " for profiling: "+ e.toString());
+		}
+	    } else break; // no more command-line options.
 	}
 	// arg[i] is class name.  Load its main method.
 	if (args.length < i) throw new Error("No class name.");
 	HClass cls = HClass.forName(args[i]);
-	HCodeFactory hf = new CachingCodeFactory(QuadWithTry.codeFactory());
 	i++;
+	// construct caching code factory.
+	hf = new CachingCodeFactory(hf);
 	//////////// now call interpreter with truncated args list.
 	String[] params = new String[args.length-i];
 	System.arraycopy(args, i, params, 0, params.length);

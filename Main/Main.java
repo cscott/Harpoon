@@ -13,23 +13,34 @@ import harpoon.ClassFile.HMethod;
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.8.2.5 1999-02-07 10:36:27 cananian Exp $
+ * @version $Id: Main.java,v 1.8.2.6 1999-02-09 03:59:30 cananian Exp $
  */
 public abstract class Main extends harpoon.IR.Registration {
 
-    /** The compiler should be invoked with the names of classes
-     *  extending <code>java.lang.Thread</code>.  These classes
-     *  define the external interface of the machine. */
+    /** The compiler should be invoked with the names of classes to view.
+     *  An optional "-code codename" option allows you to specify which
+     *  codeview to use.
+     */
     public static void main(String args[]) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
-	HCodeFactory hcf = new CachingCodeFactory
-	    (harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
+	HCodeFactory hcf = // default code factory.
+	    harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
 	    (harpoon.IR.Quads.QuadSSA.codeFactory()
-	     ));
-
-	HClass interfaceClasses[] = new HClass[args.length];
-	for (int i=0; i<args.length; i++)
-	    interfaceClasses[i] = HClass.forName(args[i]);
+	     );
+	int n=0;  // count # of args/flags processed.
+	for (; n < args.length ; n++) {
+	    if (args[n].startsWith("-code")) {
+		if (++n >= args.length)
+		    throw new Error("-code option needs codename");
+		hcf = HMethod.getCodeFactory(args[n]);
+		if (hcf==null)
+		    throw new Error("Invalid codename: "+args[n]);
+	    } else break; // no more command-line options.
+	}
+	// rest of command-line options are class names.
+	HClass interfaceClasses[] = new HClass[args.length-n];
+	for (int i=0; i<args.length-n; i++)
+	    interfaceClasses[i] = HClass.forName(args[n+i]);
 	// Do something intelligent with these classes. XXX
 	for (int i=0; i<interfaceClasses.length; i++) {
 	    HMethod hm[] = interfaceClasses[i].getDeclaredMethods();
