@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.4 2003-11-09 20:59:02 cananian Exp $
+% $Id: pldi04.tex,v 1.5 2003-11-09 21:03:31 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 \usepackage{times}
@@ -244,7 +244,7 @@ common to many non-blocking implementations; our solution is presented
 in Section~\ref{sec:proposal}.
 
 Barnes provided the first universal non-blocking implementation
-method which avoids object copying \cite{165265}.  He eliminates the
+method which avoids object copying \cite{Barnes93}.  He eliminates the
 need to store ``old'' object
 state in case of operation failure by having all threads cooperate to
 apply operations.  For example, if the first processor begins an operation
@@ -264,7 +264,7 @@ Furthermore, it does not protect against errors in the implementation
 of the operations, which could cause \emph{every} thread to fail in turn
 as one by one they attempt to execute a buggy operation.
 
-Alemany and Felten \cite{135446} identified two factors hindering the
+Alemany and Felten \cite{AlemanyFe92} identified two factors hindering the
 performance of non-blocking algorithms to date: resources wasted by operations
 that fail, and the cost of data copying.  Unfortunately, they
 proceeded to
@@ -275,7 +275,7 @@ I/O operations.  This works in some situations, but obviously suffers
 from a bootstrapping problem as the means to implement an operation system.
 
 Although lock-free implementations are usually assumed to be more
-efficient that wait-free implementations, LaMarca \cite{197975}
+efficient that wait-free implementations, LaMarca \cite{LaMarca94}
 showed experimental evidence that Herlihy's simple
 wait-free protocol scales very well on parallel machines.
 When more than about twenty threads are involved, the wait-free
@@ -289,6 +289,702 @@ protocols of LaMarca and Alemany and Felten, and a
 % Transactional memories?
 
 \section{Analyses and Implementation}
+
+\section{A proposal for a non-blocking Java OS}\label{sec:proposal}
+\begin{figure}[t]
+{\it
+\begin{tabular}{l}
+{\bf const} myDirectory == {\bf object} oneEntryDirectory\\
+~~{\bf export} Store, Lookup\\
+~~{\bf monitor}\\
+~~~~{\bf var} name : String\\
+~~~~{\bf var} AnObject : Any\\
+\\
+~~~~{\bf operation} Store [ n : String, o : Any ]\\
+~~~~~~name $\gets$ n\\
+~~~~~~AnObject $\gets$ o\\
+~~~~{\bf end} Store
+\\
+~~~~{\bf function} Lookup [ n : String ] $\to$ [ o : Any ]\\
+~~~~~~{\bf if} n = name\\
+~~~~~~~~{\bf then} o $\gets$ AnObject\\
+~~~~~~~~{\bf else} o $\gets$ {\bf nil}\\
+~~~~~~{\bf end if}\\
+~~~~{\bf end} Lookup\\
+\\
+~~~~{\bf initially}\\
+~~~~~~name $\gets$ {\bf nil}\\
+~~~~~~AnObject $\gets$ {\bf nil}\\
+~~~~{\bf end initially}\\
+\\
+~~{\bf end monitor}\\
+{\bf end} oneEntryDirectory
+\end{tabular}
+}
+\caption{A directory object in Emerald, from \cite{28706},
+  illustrating the use of monitor synchronization.}
+\label{fig:emerald-dir}
+\end{figure}
+
+\begin{figure}[t]
+{\ttfamily\small\vspace{.25in}
+\begin{tabular}{l}
+class Account \{\\
+\\
+~~int balance = 0;\\
+\\
+~~{\bf atomic} int deposit(int amt) \{\\
+~~~~int t = this.balance;\\
+~~~~t = t + amt;\\
+~~~~this.balance = t;\\
+~~~~return t;\\
+~~\}\\
+\\
+~~{\bf atomic} int readBalance() \{\\
+~~~~return this.balance;\\
+~~\}\\
+\\
+~~{\bf atomic} int withdraw(int amt) \{\\
+~~~~int t = this.balance;\\
+~~~~t = t - amt;\\
+~~~~this.balance = t;\\
+~~~~return t;\\
+~~\}\\
+\\
+\}\\
+\end{tabular}
+}\vspace{.2in}
+\caption{A simple bank account object, adapted from \cite{781169},
+  illustrating the use of the \atomic modifier.}
+\label{fig:atomic}
+\end{figure}
+Language-based operating systems promise to allow even further
+reduction in micro-kernel design by removing even address spaces from the
+kernel.  Further, by providing correct and universal synchronization
+in the language, we hope to eliminate the difficulty of writing
+specific correct lock-free data structures, illustrated by Massalin
+and Pu's errors in Section~\ref{sec:bugs}.
+
+To that end, we propose some slight modifications to the Java
+language to better support its use for writing operating systems.
+We concentrate on synchronization in the language, eliding as
+orthogonal issues related to direct access to hardware.  We expect
+that slight extensions similar to those in Lisaac \cite{564099} and
+JEPES \cite{780739} will be sufficient to support interrupt handlers
+and memory-mapped I/O.  We then present an efficient implementation
+technique for the synchronization primitives in the language, showing
+first how to synchronize single encapsulated objects, then operations
+on multiple objects, and finally present the lock-free functional
+array implementation which allows efficient large object
+synchronization.
+
+Our implementation will use the same DCAS primitive used in the Cache
+Kernel and in Synthesis.  This primitive can be emulated using
+architecture extensions to the popular LL/SC operations,
+or in software with OS support using Bershad's technique
+\cite{238767,bershad93:practical}.
+
+\subsection{Synchronization in the language}
+The Emerald system \cite{28706,jul91:emerald} introduced
+\emph{monitored objects} for synchronization.  Emerald code to
+implement a simple directory object is shown in
+Figure~\ref{fig:emerald-dir}.  Each object is associated with
+Hoare-style monitor, which provides mutual exclusion and process
+signalling.  Each Emerald object is divided into a monitored part and
+a non-monitored part.  Variables declared in the monitored part are
+shared, and access to them from methods in the non-monitored part is
+prohibited---although non-monitored methods may call monitored methods
+to effect the access.  Methods in the monitored part acquire the monitor lock
+associated with the receiver object before entry and release it on
+exit, providing for mutual exclusion and safe update of the shared
+variables.  Monitored objects naturally integrate synchronization into
+the object model.
+
+Unlike Emerald monitored objects, where methods can only acquire the
+monitor of their receiver and where restricted access to shared
+variables is enforced by the compiler, Java implements a loose
+variant where any monitor may be explicitly acquired and no shared
+variable protection exists.  As a default, however, Java methods
+declared with the {\tt synchronized} keyword behave like Emerald
+monitored methods,
+ensuring that the monitor lock of their receiver is held during execution.
+
+Java's synchronization primitives arguably allow for more efficient
+concurrent code than Emerald's---for example, Java objects can use
+multiple locks to
+protect disjoint sets of fields, and coarse-grain locks can be used
+which protect multiple objects---but Java is also more prone to programmer
+error.  However, even Emerald's restrictive
+monitored objects are not sufficient to prevent data races.  As a
+simple example, imagine that an object provided two monitored methods
+{\tt read} and {\tt write} which accessed a shared variable.
+Non-monitored code can call {\tt read}, increment the value returned,
+and then call {\tt write}, creating a classic race condition scenario.
+The atomicity of the parts is not sufficient to guarantee atomicity of
+the whole \cite{781169}.
+
+This suggests that a better model for synchronization in
+object-oriented systems is \emph{atomicity}.  Figure~\ref{fig:atomic}
+shows Java extended with an \atomic keyword to implement an
+object representing a bank account.  Rather than explicitly
+synchronizing on locks, we simply require that the methods marked
+\atomic execute atomically with respect to other threads in the
+system; that is, that every execution of the program computes the same
+result as some execution where all atomic methods were run \emph{in
+  isolation} at a certain point in time between their invocation and return.
+This point is called the \emph{linearization point}.  Note that
+atomic methods invoked directly or indirectly from an atomic
+method are subsumed by it: if the outermost method appears atomic,
+then by definition all inner method invocations will also appear atomic.
+Flanagan and Qadeer provide a more formal semantics in \cite{781169}.
+Atomic methods can be analyzed using sequential reasoning techniques, which
+significantly simplifies reasoning about program correctness.
+
+Atomic methods can be implemented using locks.  A simple if deadlock-prone 
+implementation would simply acquire a single global lock during
+the execution of every atomic method.  Flanagan and Qadeer
+\cite{781169} present a more sophisticated technique which proves that
+a given implementation using standard Java monitors correctly
+guarantees method atomicity.
+We will use non-blocking synchronization to implement atomic methods.
+
+\subsection{A simple implementation of functional arrays}
+Our atomic method implementation will use \emph{functional arrays} as
+a building block.  Functional arrays are \emph{persistent}; that is,
+after an element is updated both the new and the old contents of the
+array are available for use.  Since arrays are simply maps from
+integers (indexes) to values; any functional map datatype (for
+example, a functional balanced tree) can be used to implement
+functional arrays.
+
+However, the distinguishing characteristic of an imperative array is its
+theoretical complexity: $O(1)$ access or update of any element.
+Implementing functional arrays with a functional balanced tree yields
+$O(\lg n)$ worst-case access or update.
+% We will address this
+% discrepancy in Section~\ref{sec:large-obj}.
+
+For concreteness, functional arrays have the following three
+operations defined:
+\begin{itemize}
+\item $\func{FA-Create}(n)$: Return an array of size $n$.  The contents of
+  the array are initialized to zero.
+\item $\func{FA-Update}(A_j, i, v)$: Return an array $A_{j'}$ which is
+  functionally identical to array $A_j$ except that $A_{j'}(i)=v$.
+  Array $A_j$ is not destroyed and can be accessed further.
+\item $\func{FA-Read}(A_j, i)$: Return $A_j(i)$.
+\end{itemize}
+We allow any of these operations to \emph{fail}.  Failed operations
+can be safely retried, as all operations are idempotent by definition.
+
+For the moment, consider the following na{\"\i}ve implementation:
+\begin{itemize}
+\item $\func{FA-Create}(n)$: Return an ordinary imperative array of size
+  $n$.
+\item $\func{FA-Update}(A_j, i, v)$: Create a new imperative array
+  $A_{j'}$ and copy the contents of $A_j$ to $A_{j'}$.  Return $A_{j'}$.
+\item $\func{FA-Read}(A_j, i)$: Return $A_j[i]$.
+\end{itemize}
+This implementation has $O(1)$ read and $O(n)$ update, so it matches
+the performance of imperative arrays only when $n=O(1)$.  We will
+therefore call these \emph{small object functional arrays}.  Operations
+in this implementation never fail.  Every operation is non-blocking
+and no synchronization is necessary, since the imperative arrays are
+never mutated after they are created.
+
+\subsection{A single-object protocol}
+\begin{figure}\centering
+\includegraphics[width=3.25in,clip=true]{single-o.eps}
+\caption{Implementing non-blocking single-object concurrent operations
+  with functional arrays.}
+\label{fig:single-o}
+\end{figure}
+Given a non-blocking implementation of functional arrays, we can
+construct an implementation of \atomic for single objects.  In
+this implementation, fields of at most one object may be referenced
+during the execution of the atomic method.
+
+We will consider the following two operations on objects:
+\begin{itemize}
+\item $\func{Read}(o, f)$: Read field $f$ of $o$.  We will assume that
+  there is a constant mapping function which given a field name
+  returns an integer index.  We will write the result of mapping $f$
+  as \fref{f}{index}.  For simplicity, and without loss of generality,
+  we will assume all fields are of equal size.
+\item $\func{Write}(o, f, v)$: Write value $v$ to field $f$ of $o$.
+\end{itemize}
+All other operations on Java objects, such as method dispatch and type
+interrogation, can be performed using the immutable {\tt type}
+field in the object.  Because the {\tt type} field is never changed
+after object creation, non-blocking implementations of operations on
+the {\tt type} field are trivial.
+
+As Figure~\ref{fig:single-o} shows, our single-object implementation
+of \atomic represents objects as a pair, combining {\tt type} and a
+reference to a functional array.  When not inside an atomic
+method, object reads and writes are implemented using the
+corresponding functional array operation, with the array reference in
+the object being updated appropriately:
+\begin{itemize}
+\item $\func{Read}(o, f)$:
+  Return $\func{FA-Read}(\fref{o}{fields}, \fref{f}{index})$.
+\item $\func{Write}(o, f, v)$: Replace \fref{o}{fields} with the
+  result of $\func{FA-Update}(\fref{o}{fields}, \fref{f}{index}, v)$.
+\end{itemize}
+
+The interesting cases are reads and writes inside an atomic method.
+At entry to our atomic method which will access (only) object $o$, we
+store \fref{o}{fields} in a local variable $u$.  We create another
+local variable $u'$ which we initialize to $u$.  Then our read and
+write operations are implemented as:
+\begin{itemize}
+\item $\func{ReadAtomic}(o, f)$:
+  Return $\func{FA-Read}(u', \fref{f}{index})$.
+\item $\func{WriteAtomic}(o, f, v)$:
+  Update variable $u'$ to the result of
+  $\func{FA-Update}(u', \fref{f}{index}, v)$.
+\end{itemize}
+
+At the end of the atomic method, we use Compare-And-Swap to atomically
+set \fref{o}{fields} to $u'$ iff it contained $u$.  If the CAS fails,
+we back-off and retry.
+
+With our na{\"\i}ve ``small object'' functional arrays, this implementation is
+exactly the ``small object protocol'' of Herlihy \cite{161469}.
+Herlihy's protocol is rightly criticized for an excessive amount of
+copying.  We will address this with a better implementation of
+functional arrays in Section~\ref{sec:large-obj}.
+However, the restriction that only one object
+may be referenced within an atomic method is overly limiting.
+
+\subsection{Extension to multiple objects}
+\begin{figure}[t]\centering
+\includegraphics[width=3.25in,clip=true]{multi-o.eps}
+\caption{Data structures to support non-blocking multi-object
+  concurrent operations.  Objects point to a linked list of versions,
+  which reference operation identifiers.  Versions created within the
+  same execution of an atomic method share the same operation
+  identifier.  Version structure also contain pointers to functional
+  arrays, which record the values for the fields of the object.
+  If no modifications have been made to the object, multiple versions
+  in the list may share the same functional array.}
+\label{fig:multi-o}
+\end{figure}
+\begin{figure}[p]
+\renewcommand{\>}{~~}
+\newcommand{\com}[1]{\hfill [{\sl #1}]}
+\begin{tabular}{l}
+$\func{Read}(o, f)$:\\
+begin\\
+retry:\\
+\>$u \gets \fref{o}{versions}$ \\
+\>$u' \gets \fref{u}{next}$ \\
+\>$s  \gets \fref{\fref{u}{owner}}{status}$ \\
+\>if ($s=\text{\sl DISCARDED}$) \com{Delete DISCARDED?}\\
+\>\>CAS$(u, u', \addr{\fref{o}{versions}})$\\
+\>\>goto retry \\
+\>else if ($s=\text{\sl COMPLETE}$)\\
+\>\>$a \gets \fref{u}{fields}$ \com{$u$ is COMPLETE}\\
+\>\>$\fref{u}{next} \gets \text{\bf null}$ \com{Trim version list}\\
+\>else\\
+\>\>$a \gets \fref{u'}{fields}$ \com{$u'$ is COMPLETE}\\
+\>return $\func{FA-Read}(a, \fref{f}{index})$ \com{Do the read}\\
+end\\
+\\
+$\func{ReadAtomic}(o, f)$:\\
+begin\\
+\>$u \gets \fref{o}{versions}$\\
+\>if ($\var{oid} = \fref{u}{owner}$) \com{My OID should be first}\\
+\>\>return $\func{FA-Read}(\fref{u}{fields}, \fref{f}{index})$
+\com{Do the read}\\
+\>else \com{Make me first!}\\
+\>\>$u' \gets \fref{u}{next}$\\
+\>\>$s  \gets \fref{\fref{u}{owner}}{status}$\\
+\>\>if ($s=\text{\sl DISCARDED}$) \com{Delete DISCARDED?}\\
+\>\>\>CAS$(u, u', \addr{\fref{o}{versions}})$\\
+\>\>else if ($\fref{\var{oid}}{status}=\text{\sl DISCARDED}$)
+\com{Am I alive?}\\
+\>\>\>fail\\
+\>\>else if ($s=\text{\sl IN-PROGRESS}$) \com{Abort IN-PROGRESS?}\\
+\>\>\>CAS$(s, \text{\sl DISCARDED}, \addr{\fref{\fref{u}{owner}}{status}})$\\
+\>\>else \com{Link new version in:} \\
+\>\>\>$\fref{u}{next} \gets \text{\bf null}$ \com{Trim version list}\\
+\>\>\>$u' \gets \text{new \tt Version}(\var{oid}, u, \text{\bf null})$
+\com{Create new version}\\
+\>\>\>if (CAS$(u, u', \addr{\fref{o}{versions}}) \neq \text{\sl FAIL}$)\\
+\>\>\>\>$\fref{u'}{fields} \gets \fref{u}{fields}$ \com{Copy old fields}\\
+\>\>goto retry\\
+end\\
+\end{tabular}
+\caption{\func{Read} and \func{ReadAtomic} implementations for the
+  multi-object protocol.}\label{fig:reads}
+\end{figure}
+
+\begin{figure}[p]
+\renewcommand{\>}{~~}
+\newcommand{\com}[1]{\hfill [{\sl #1}]}
+\begin{tabular}{l}
+$\func{Write}(o, f, v)$:\\
+begin\\
+retry:\\
+\>$u  \gets \fref{o}{versions}$\\
+\>$u' \gets \fref{u}{next}$\\
+\>$s  \gets \fref{\fref{u}{owner}}{status}$\\
+\>if ($s=\text{\sl DISCARDED}$) \com{Delete DISCARDED?}\\
+\>\>CAS$(u, u', \addr{\fref{o}{versions}})$\\
+\>else if ($s=\text{\sl IN-PROGRESS}$) \com{Abort IN-PROGRESS?}\\
+\>\>CAS$(s, \text{\sl DISCARDED}, \addr{\fref{\fref{u}{owner}}{status}})$\\
+\>else \com{$u$ is COMPLETE}\\
+\>\>$\fref{u}{next} \gets \text{\bf null}$ \com{Trim version list}\\
+\>\>$a \gets \fref{u}{fields}$\\
+\>\>$a' \gets \func{FA-Update}(a, \fref{f}{index}, v)$\\
+\>\>if (CAS$(a, a', \addr{\fref{u}{fields}}) \neq \text{\sl FAIL}$)
+\com{Do the write}\\
+\>\>\>return \com{Success!}\\
+\>goto retry\\
+end\\
+\\
+$\func{WriteAtomic}(o, f, v)$:\\
+begin\\
+\>$u  \gets \fref{o}{versions}$\\
+\>if ($oid = \fref{u}{owner}$) \com{My OID should be first}\\
+\>\>$\fref{u}{fields} \gets \func{FA-Update}(\fref{u}{fields}, \fref{f}{index}, v)$\com{Do write}\\
+\>else \com{Make me first!}\\
+\>\>$u' \gets \fref{u}{next}$\\
+\>\>$s  \gets \fref{\fref{u}{owner}}{status}$\\
+\>\>if ($s=\text{\sl DISCARDED}$) \com{Delete DISCARDED?}\\
+\>\>\>CAS$(u, u', \addr{\fref{o}{versions}})$\\
+\>\>else if ($\fref{\var{oid}}{status}=\text{\sl DISCARDED}$)
+\com{Am I alive?}\\
+\>\>\>{\it fail}\\
+\>\>else if ($s=\text{\sl IN-PROGRESS}$) \com{Abort IN-PROGRESS?}\\
+\>\>\>CAS$(s, \text{\sl DISCARDED}, \addr{\fref{\fref{u}{owner}}{status}})$\\
+\>\>else \com{Link new version in:} \\
+\>\>\>$\fref{u}{next} \gets \text{\bf null}$ \com{Trim version list}\\
+\>\>\>$u' \gets \text{new \tt Version}(\var{oid}, u, \text{\bf null})$
+\com{Create new version}\\
+\>\>\>if (CAS$(u, u', \addr{\fref{o}{versions}}) \neq \text{\sl FAIL}$)\\
+\>\>\>\>$\fref{u'}{fields} \gets \fref{u}{fields}$ \com{Copy old fields}\\
+\>\>goto retry\\
+end\\
+\end{tabular}
+\caption{\func{Write} and \func{WriteAtomic} implementations for the
+  multi-object protocol.}\label{fig:writes}
+\end{figure}
+
+We now extend the implementation to allow the fields of any number of
+objects to be accessed during the atomic method.
+Figure~\ref{fig:multi-o} shows our new object representation.
+Objects consist of two slots, and the first represents the immutable
+{\tt type}, as before.  The second field, {\tt versions}, points to a
+linked list of {\tt Version} structures.  The {\tt Version} structures
+contain a pointer {\tt fields} to a functional array, and a pointer
+{\tt owner} to an \emph{operation identifier}.  The operation
+identifier contains a single field, {\tt status}, which can be set to
+one of three values: \textsl{COMPLETE}, \textsl{IN-PROGRESS}, or
+\textsl{DISCARDED}.  When the operation identifier is created, the
+status field is initialized to \textsl{IN-PROGRESS}, and it will be
+updated exactly once thereafter, to either \textsl{COMPLETE} or
+\textsl{DISCARDED}.  A \textsl{COMPLETE} operation identifier never
+later becomes \textsl{IN-PROGRESS} or \textsl{DISCARDED}, and
+a \textsl{DISCARDED} operation identifier never becomes
+\textsl{COMPLETE} or \textsl{IN-PROGRESS}.
+
+We create an operation identifier when we begin or restart an atomic
+method and place it in a local variable \emph{oid}.  At the end of the
+atomic method, we use CAS to set \fref{\var{oid}}{status} to
+{\sl COMPLETE} iff it was {\sl IN-PROGRESS}.  If the CAS is successful,
+the atomic method has also executed successfully; otherwise
+$\fref{\var{oid}}{status}=\text{\sl DISCARDED}$ and we must
+back-off and retry the atomic method.  All {\tt Version} structures
+created while in the atomic method will reference \emph{oid} in
+in their {\tt owner} field.
+
+Semantically, the current field values for the object will be given by
+the first version in 
+the versions list whose operation identifier is {\sl COMPLETE}.
+This allows us to link {\sl IN-PROGRESS} versions in at the head of
+multiple objects' versions lists and atomically change the values of
+all these objects by setting the one common operation identifier to
+{\sl COMPLETE}.  We only allow one {\sl IN-PROGRESS} version on the
+versions list, and it must be at the head, so
+Therefore, before we can link a new version at the head, we
+must ensure that every other version on the list is {\sl DISCARDED} or
+{\sl COMPLETE}.
+
+Since we will never look past the first {\sl COMPLETE} version in the
+versions list, we can free all versions past that point.  In our
+presentation of the algorithm, we do this by explicitly setting the
+{\tt next} field of every {\sl COMPLETE} version we see to {\bf null};
+this allows the versions past that point to be garbage collected.
+An optimization would be to have the garbage collector do the list
+trimming for us when it does a collection.
+% always must read u.next before u.owner.status to ensure we don't
+% get caught with a null pointer from a version that just committed.
+
+We don't want to inadvertently chase the null {\tt next} pointer
+of a {\sl COMPLETE} version, so we always load the {\tt next}
+field of a version \emph{before} we load {\tt owner.status}.  Since
+the writes occur in the reverse order ({\sl COMPLETE} to
+{\tt owner.status}, then {\bf null} to {\tt next}) we have ensured that
+our {\tt next} pointer is valid whenever the status is not {\sl COMPLETE}.
+
+We begin an atomic method with \func{AtomicEntry} and attempt to
+complete an atomic method with \func{AtomicExit}.  They are defined as
+follows:
+\begin{itemize}
+\item $\func{AtomicEntry}$: create a new operation identifier, with
+  its status initialized to {\sl IN-PROGRESS}.  Assign it to the
+  thread-local variable \var{oid}.
+\item $\func{AtomicExit}$:
+  If
+ $$\text{CAS}(\text{\sl IN-PROGRESS}, \text{\sl COMPLETE},
+             \addr{\fref{\var{oid}}{status}})$$
+  is successful, the atomic method as a whole has completed successfully,
+  and can be linearized at the location of the CAS.
+  Otherwise, the method has failed.  Back-off and retry from
+  \func{AtomicEntry}.
+\end{itemize}
+Pseudo-code describing \func{Read}, \func{Write}, \func{AtomicRead},
+and \func{AtomicWrite} is presented in Figures~\ref{fig:reads} and
+\ref{fig:writes}.  In the absence of contention, all operations take
+constant time plus an invocation of \func{FA-Read} or
+\func{FA-Update}.
+
+\subsection{Lock-free functional arrays}\label{sec:large-obj}
+\begin{figure*}\centering
+\includegraphics[width=7in,clip=true]{chuang.eps}
+\caption{Shallow binding scheme for functional arrays, from
+  \cite[Figure~1]{156779}.}
+\label{fig:chuang}
+\end{figure*}
+In this section we will present a lock-free implementation of functional
+arrays with $O(1)$ performance in the absence of contention.  This
+will complete our implementation of non-blocking \atomic methods for Java.
+
+There have been a number of proposed implementations of functional
+arrays, starting from the ``classical'' functional binary tree
+implementation.  O'Neill and Burton \cite{o'neill97:new} give a fairly
+inclusive overview.  Functional array implementations fall generally
+into one of three categories: \emph{tree-based}, \emph{fat-elements},
+or \emph{shallow-binding}.
+
+Tree-based implementations typically have a logarithmic term in their
+complexity.  The simplest is the persistent binary tree with $O(\ln
+n)$ look-up time; Chris Okasaki 
+\cite{224187} has implemented a purely-functional random-access list
+with $O(\ln i)$ expected lookup time, where $i$ is the index of the
+desired element.
+
+Fat-elements implementations have per-element data structures indexed
+by a master array. Cohen \cite{cohen84:multi} hangs a list of
+versions from each element in the master array.
+O'Neill and Burton \cite{o'neill97:new}, in a more sophisticated
+technique, hang a splay tree off each element and achieve $O(1)$
+operations for single-threaded use, $O(1)$ amortized cost when
+accesses to the array are ``uniform'', and $O(\ln n)$ amortized worst
+case time. 
+
+Shallow binding was introduced by Baker \cite{359566} as a method to
+achieve fast variable lookup in Lisp environments.  Baker clarified
+the relationship to functional arrays in \cite{122614}.  Shallow
+binding is also called \emph{version tree arrays}, \emph{trailer
+  arrays}, or \emph{reversible differential lists}.  A typical
+drawback of shallow binding is that reads may take $O(u)$ worst-case
+time, where $u$ is the number of updates made to the array.  Tyng-Ruey
+Chuang \cite{156779} uses randomized cuts to the version tree to limit
+the cost of a read to $O(n)$ in the worst case.  Single-threaded
+accesses are $O(1)$.
+
+Our use of functional arrays is single-threaded in the common case,
+when transactions do not abort.  Chuang's scheme is attractive because
+it limits the worst-case cost of an abort, with very little added
+complexity.   In this section we will present a lock-free version of
+Chuang's randomized algorithm.
+
+In shallow binding, only one version of the functional array (the
+\emph{root}) keeps its contents in an imperative array (the
+\emph{cache}).   Each of the other versions is represented as a path
+of \emph{differential nodes}, where each node describes the
+differences between the current array and the previous array.  The
+difference is represented as a pair \tuple{\text{\it index},\text{\it value}},
+representing the new value to be stored at the specified index.
+All paths lead to the root.  An update to the functional array is
+simply implemented by adding a differential node pointing to the array it is
+updating.
+
+The key to constant-time access for single-threaded use is provided by the read
+operation.  A read to the root simply reads the appropriate value from
+the cache.  However, a read to a differential node triggers a series
+of rotations which swap the direction of differential nodes and result
+in the current array acquiring the cache and becoming the new root.
+This sequence of rotations is called \emph{re-rooting}, and is
+illustrated in Figure~\ref{fig:chuang}.  Each rotation
+exchanges the root nodes for a differential node pointing to it, after
+which the differential node becomes the new root and the root becomes
+a differential node pointing to the new root. The cost of a read is
+proportional to its re-rooting length, but after the first read
+accesses to the same version are $O(1)$ until the array is re-rooted again.
+
+Shallow binding performs badly if read operations ping-pong between two
+widely separated versions of the array, as we will continually
+re-root the array from one version to the other.
+Chuang's contribution is to provide for \emph{cuts} to the chain of
+differential nodes: once in a while we clone the cache and create a
+new root instead of performing a rotation.  This operation takes
+$O(n)$ time, so we amortize it over $n$ operations by randomly
+choosing to perform a cut with probability $1/n$.
+
+\begin{figure*}\centering
+\includegraphics[width=7in,clip=true]{funarr.eps}
+\caption{Atomic steps in $\func{FA-Rotate}(B)$.  Time proceeds top-to-bottom
+  on the left hand side, and then top-to-bottom on the right.
+  Array $A$ is a root node, and $\func{FA-Read}(A, x)=z$.
+  Array $B$ has the almost the same contents as $A$, but
+  $\func{FA-Read}(B, x)=y$.}
+\label{fig:funarr}
+\end{figure*}
+
+\begin{figure*}\centering
+\renewcommand{\>}{~~}
+\newcommand{\com}[1]{\hfill [{\sl #1}]}
+\begin{tabular}{l}
+$\func{FA-Update}(A, i, v)$:\\
+begin\\
+\>$d \gets \text{new DiffNode}(i, v, A)$\\
+\>$A'\gets \text{new Array}(\fref{A}{size}, d)$\\
+\>return $A'$\\
+end\\
+\\
+$\func{FA-Read}(A, i)$:\\
+begin\\
+retry:\\
+\>$d_C \gets \fref{A}{node}$\\
+\>if $d_C$ is a cache, then\\
+\>\>$v \gets \fref{A}{node}[i]$\\
+\>\>if $(\fref{A}{node} \neq d_C)$\com{consistency check}\\
+\>\>\>goto retry\\
+\>\>return $v$\\
+\>else\\
+\>\>\func{FA-Rotate}(A)\\
+\>\>goto retry\\
+end\\
+\\
+$\func{FA-Rotate}(B)$:\\
+begin\\
+retry:\\
+\>$d_B \gets \fref{B}{node}$\com{step (1): assign names as per Figure~\ref{fig:funarr}.}\\
+\>$A \gets \fref{d_B}{array}$\\
+\>$x \gets \fref{d_B}{index}$\\
+\>$y \gets \fref{d_B}{value}$\\
+\>$z \gets \func{FA-Read}(A, x)$\com{rotates A as side effect}\\
+\\
+\>$d_C \gets \fref{A}{node}$\\
+\>if $d_C$ is not a cache, then \\
+\>\>goto retry\\
+\\
+\>if $(0 = (\text{random} \bmod \fref{A}{size}))$\com{random cut}\\
+\>\>$d_C' \gets \text{copy of }d_C$\\
+\>\>$d_C'[x] \gets y$\\
+\>\>$s\gets\text{DCAS}(d_C, d_C, \addr{\fref{A}{node}}, d_B, d_C', \addr{\fref{B}{node}})$\\
+\>\>if $(s \neq \text{\sl SUCCESS})$ goto retry\\
+\>\>else return\\
+\\
+\>$C \gets \text{new Array}(\fref{A}{size}, d_C)$\\
+\>$d_A \gets \text{new DiffNode}(x, z, C)$\\
+\\
+\>$s \gets \text{CAS}(d_C, d_A, \addr{\fref{A}{node}})$\com{step (2)}\\
+\>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
+\\
+\>$s\gets\text{CAS}(A, C, \addr{\fref{d_B}{array}})$\com{step (3)}\\
+\>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
+\\
+\>$s \gets\text{CAS}(C, B, \addr{\fref{d_A}{array}})$\com{step (4)}\\
+\>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
+\\
+\>$s \gets \text{DCAS}(z, y, \addr{d_C[x]},  d_C, d_C, \addr{\fref{C}{node}})$\com{step (5)}\\
+\>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
+\\
+\>$s \gets \text{DCAS}(d_B, d_C, \addr{\fref{B}{node}}, d_C, {\bf nil}, \addr{\fref{C}{node}})$\com{step (6)}\\
+\>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
+end\\
+\end{tabular}
+\caption{Implementation of lock-free functional array using shallow
+  binding and randomized cuts.}
+\label{fig:fun-impl}
+\end{figure*}
+
+Figure~\ref{fig:funarr} shows the data structures used for the
+functional array implementation, and the series of atomic steps used
+to implement a rotation.  The {\tt Array} class represents a
+functional array; it consists of a {\tt size} for the array and a
+pointer to a {\tt Node}.  There are two types of nodes: a {\tt
+  CacheNode} stores a value for every index in the array, and a {\tt
+  DiffNode} stores a single change to an array.  {\tt Array} objects
+which point to {\tt CacheNode}s are roots.
+
+In step 1 of the figure, we have a root array $A$ and an
+array $B$ whose differential node $d_B$ points to $A$.  The functional
+arrays $A$ and $B$ differ in one element: element $x$ of $A$ is $z$,
+while element $x$ of $B$ is $y$.  We are about to rotate $B$ to give
+it the cache, while linking a differential node to $A$.
+
+Step 2 shows our first atomic action.  We have created a new {\tt
+  DiffNode} $d_A$ and a new {\tt Array} $C$ and linked them between
+$A$ and its cache.  The {\tt DiffNode} $d_A$ contains the value for
+element $x$ contained in the cache, $z$, so there is no change in
+the value of $A$.
+
+We continue swinging pointers until step 5, when can finally set
+the element $x$ in the cache to $y$.  We perform this operation with a
+DCAS operation which checks that $\fref{C}{node}$ is still pointing to
+the cache as we expect.  Note that a concurrent rotation would swing
+$\fref{C}{node}$ in its step 1.  In general, therefore, the location
+pointing to the cache serves as a reservation on the cache.
+
+Thus in step 6 we need to again use DCAS to simultaneously swing
+$\fref{C}{node}$ away 
+from the cache as we swing $\fref{B}{node}$ to point to the cache.
+
+Figure~\ref{fig:fun-impl} presents pseudocode for \func{FA-Rotate},
+\func{FA-Read}, and \func{FA-Update}.  Note that \func{FA-Read} also
+uses the cache pointer as a reservation,
+double-checking the cache pointer after it finishes its read to ensure that the
+cache hasn't been stolen from it.
+
+Let us now consider cuts, where \func{FA-Read} clones the cache
+instead of performing a rotation.   Cuts also check the cache pointer
+to protect against concurrent rotations.  But what if the cut occurs
+while a rotation is mutating the cache in step 5?  In this case the
+only array adjacent to the root is $B$, so the cut must be occurring
+during an invocation of $\func{FA-Rotate}(B)$.  But then the
+differential node $d_B$ will be applied after the cache is copied,
+which will safely overwrite the mutation we were concerned about.
+
+Note that with hardware support for small transactions \cite{165164}
+we could cheaply perform the entire rotation atomically, instead of
+using this six-step approach.
+
+
+\dontfixme{
+\subsection{Optimizations}
+Re-rooting is the most complicated part of the functional array
+algorithm.  It can be optimized in a number of ways.  For example,
+
+%unsync rotate for transaction-local data.
+The first is to recognize that some array versions can only be seen by
+a single thread.  In particular, when we are working on an {\sl
+  IN-PROGRESS} operation, all array versions which it creates are
+unreachable from other threads until the operation is committed.
+We can add a field {\tt creator} to the {\tt Array} object which records what
+operation created that version.  If the {\tt creator} field of both
+$A$ and $B$ contains our own \var{oid} when we begin a rotate, we know
+that these versions are both thread local
+
+.. uh, no.  This doesn't work.
+
+% scales method of tagging fields.
+}
 
 \section{Experimental Results}
 
