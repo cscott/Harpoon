@@ -19,6 +19,7 @@ import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.DATUM;
 import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.EXP;
+import harpoon.IR.Tree.INVOCATION;
 import harpoon.IR.Tree.JUMP;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.MEM;
@@ -55,7 +56,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.28 2000-02-18 00:36:39 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.29 2000-02-28 17:34:32 andyb Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -110,7 +111,8 @@ import java.util.Set;
     }
 
     // emit instructions with targets and that cannot fall through to
-    // the next instruction - i.e. absolute jumps.
+    // the next instruction - i.e. absolute jumps without any sort
+    // of return address stored somewhere.
     private Instr emitNoFall(HCodeElement root, String assem,
                              Temp[] dst, Temp[] src, Label[] targets) {
         return emit(root, assem, dst, src, false, Arrays.asList(targets));
@@ -172,6 +174,12 @@ import java.util.Set;
         return newTemp;
     }
 
+    private void emitHandlerStub(INVOCATION ROOT, Temp retex, Label handler) {
+        emit (ROOT, "mov `s0, `d0", 
+		    new Temp[] { rego[0] }, new Temp[] { retex });
+        emitNoFall (ROOT, "ba " + handler, null, null, new Label[] { handler });
+    }
+
     public Instr procFixup(HMethod hm, Instr instr, int stackspace,
                            Set usedRegisters) {
 	InstrFactory inf = instrFactory; // convenient abbreviation.
@@ -203,8 +211,9 @@ import java.util.Set;
 		in1.layout(i, in2);
 		if (i == instr) instr = in1;
 		i.remove(); i = in1;
-	    } 
+	    }
 	    if (i instanceof InstrEXIT) { // exit stub
+		// ret == jmpl %i7 + 8, %g0
 		Instr in1 = new Instr(inf, i, "ret", 
 				      null, new Temp[] { regi[7] });
 
@@ -338,8 +347,6 @@ import java.util.Set;
        // time we do instruction selection on another
        // bit of TreeCode
 
-       first = null; 
-       last = null;
        this.instrFactory = inf;
        codeGenTempMap = new HashMap();
 }%
@@ -347,9 +354,6 @@ import java.util.Set;
 %end with %{
        // What to execute at the end of the instruction
        // selection method
-
-    //       Util.assert(first != null, "Should always generate some instrs");
-    //       return first;
 }%
 
 ALIGN(n) %{
@@ -760,7 +764,11 @@ CALL(retval, retex, NAME(func), arglist, handler)
 %{
     /* AAA - Move paramaters into place, et al. */
 
-    emitDIRECTIVE(ROOT, "\t! coming soon: CALL support");
+
+    emit (ROOT, "mov `s0, `d0",
+                new Temp[] { argo[0] },
+                new Temp[] { handler });
+    emitDIRECTIVE (ROOT, "\t! coming soon: CALL support");
 }%
 
 CALL(retval, retex, func, arglist, handler)
@@ -768,7 +776,11 @@ CALL(retval, retex, func, arglist, handler)
 %{
     /* AAA - move parameters into place, et al. */
 
-    emitDIRECTIVE(ROOT, "\t! coming soon: CALL support");
+
+    emit (ROOT, "mov `s0, `d0",
+		new Temp[] { argo[0] },
+		new Temp[] { handler });
+    emitDIRECTIVE (ROOT, "\t! coming soon: CALL support");
 }%
 
 // true_label and false_label are harpoon.Temp.Labels, not Exps...
@@ -946,8 +958,8 @@ METHOD(params) %{
     int loc = 0;
     emitENTRY(ROOT);
 
-    // skip param[0],the explicit 'exceptional return address'
-    for (int i = 1; i < params.length; i++) {
+    // don't skip params[0], because we don't do any fancy stuff with it.
+    for (int i = 0; i < params.length; i++) {
         if (tb.isTwoWord(params[i])) {
             if (loc < 6) { // first half in register
                 emit (ROOT, "mov `s0, `d0h",
@@ -1058,8 +1070,9 @@ NAME(s)=r %{
     emit (ROOT, "set " + s + ", `d0", new Temp[] { r }, null);
 }%
 
-/* AAA - to do */
 NATIVECALL(retval, func, arglist) %{
+    /* AAA - to do */
+
     emitDIRECTIVE(ROOT, "\t! coming soon: NATIVECALL support");
 }%    
 
@@ -1136,15 +1149,30 @@ TEMP<p,i,f,l,d>(id) = i %{
 }%
 
 THROW(val, handler) %{
+    // like the StrongARM backend, the exception handling is done
+    // by the caller.  we just have to make sure that we return to
+    // the right place so that the caller knows to use the exception handler.
+
     // again, assume non-leaf for now - might have to change registers
     // in procFixup
-//    emit (ROOT, "mov `s0, `d0", 
-//                new Temp[] { regi[0] }, /* %i0 */
-//                new Temp[] { val });
-//    emit (ROOT, "call _lookup",
-//                new Temp[] { }, /* AAA - need clobbers list */
-//                new Temp[] { }, /* AAA - need uses list */
-//                true, null);
+
+    // move exception value into correct registers
+    if (tb.isTwoWord(val)) {
+	emit (ROOT, "mov `s0h, `d0", 
+		    new Temp[] { regi[0] }, 
+		    new Temp[] { val });
+	emit (ROOT, "mov `s0l, `d0",
+		    new Temp[] { regi[1] },
+		    new Temp[] { val });
+    } else {
+	emit (ROOT, "mov `s0, `d0", new Temp[] { regi[0] }, new Temp[] { val });
+    }
+
+    // The point of lookup is to set %i7 to the correct value for the 
+    // returning jump
+    emit (ROOT, "call _lookup",
+                new Temp[] { regi[7] }, /* AAA - need clobbers list */
+                new Temp[] { }); /* AAA - need uses list */
     emitEXIT (ROOT);
 }%
 
