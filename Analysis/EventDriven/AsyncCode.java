@@ -63,7 +63,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.36 2000-01-14 22:35:06 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.37 2000-01-14 22:49:09 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -975,7 +975,7 @@ public class AsyncCode {
 	    newMethodName = "<init>";
 	} else {
 	    try {
-		newMethodName = methodNamePrefix + "___"; 
+		newMethodName = methodNamePrefix + "$$$"; 
 		originalClass.getDeclaredMethod(newMethodName, 
 					original.getParameterTypes());
 		throw new RuntimeException("Name collision with "+newMethodName+ " method");
