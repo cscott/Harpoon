@@ -1,6 +1,7 @@
 # makefile.
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
+export TEXINPUTS=/home/cananian/src/tex4ht//:
 
 ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99
 
