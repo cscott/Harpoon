@@ -17,7 +17,10 @@ void CheckTimeSwitch();
 #include "MemBlock.h"
 #include "../java.lang/threadlist.h" /* for add_running_thread */
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/select.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #ifdef WITH_PRECISE_GC
 #include "jni-gc.h"
@@ -706,9 +709,20 @@ void* startMain(void* mclosure) {
   pthread_mutex_unlock(&(mcls->parampass_mutex));
   /* okay, now start run() method */
 
+#ifdef WITH_REALTIME_THREADS
+  /* call doneInit to indicate done with static initializers */
+  claz = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
+  assert(!((*env)->ExceptionOccurred(env)));
+  mid = (*env)->GetStaticMethodID(env, claz, "doneInit", "()V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  (*env)->CallStaticVoidMethod(env, claz, mid, NULL);
+  assert(!((*env)->ExceptionOccurred(env)));
+#endif
+
   /* get the class of the main Java thead, and an id for the main method */
   claz = (*env)->FindClass(env, FNI_javamain);
   assert(!((*env)->ExceptionOccurred(env)));
+
   mid = (*env)->GetStaticMethodID(env, claz, "main",
 				  "([Ljava/lang/String;)V");
   assert(!((*env)->ExceptionOccurred(env)));
