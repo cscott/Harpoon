@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.77 2002-06-27 20:29:58 wbeebee Exp $
+# $Id: GNUmakefile,v 1.78 2002-07-06 00:12:50 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -161,8 +161,13 @@ Support/gjlib.jar: $(shell grep -v ^\# gj-files ) gj-files
 	$(RM) -rf gjlib
 
 # collect the names of all source files modified since last compile
-out-of-date:	$(ALLSOURCE) FORCE
-	@for f in $(filter-out FORCE,$?) ; do echo $$f >> $@ ; done
+out-of-date:	$(ALLSOURCE) FORCE .ignore
+	@for f in $(filter-out FORCE .ignore,$?) ; do echo $$f >> $@ ; done
+	@if [ x$(filter .ignore,$?) != x ]; then \
+	  echo ".ignore has changed; clearing old 'out-of-date' entries." ; \
+	  $(RM) -f $@ ; \
+	  for f in $(ALLSOURCE); do echo $$f >> $@ ; done ; \
+	fi
 	@if [ "$(REBUILD)" != "no" -a ! -s $@ ]; then \
 	  echo "No files are outdated.  Forcing rebuild of everything." ; \
 	  for f in $(ALLSOURCE); do echo $$f >> $@ ; done ; \
@@ -178,6 +183,8 @@ java:	$(PROPERTIES) out-of-date gj-files
 # two-compiler dependency problems.
 # [also don't build w/ GJ if there are no out-of-date GJ files, although
 #  the GJ compiler doesn't really seem to mind.]
+	@rm -f "##out-of-date##"
+	@touch "##out-of-date##"
 	@if [ -d harpoon -a -x $(firstword ${JCC5}) ]; then \
 	  if [ -n "$(filter $(shell grep -v '^#' gj-files), $(shell cat out-of-date))" ] ; then \
 	    echo Building with $(firstword ${JCC5}). ;\
@@ -204,14 +211,15 @@ java:	$(PROPERTIES) out-of-date gj-files
 	  $(RM) stubbed-out; \
 	fi 
 	@$(MAKE) --no-print-directory properties
-	@-rm out-of-date
-	@touch out-of-date
+	@mv -f "##out-of-date##" out-of-date
 
 jikes:	PASS = 1
 jikes: 	$(PROPERTIES) out-of-date gj-files
 	@echo JIKES DOESNT YET SUPPORT JAVA 1.5
 	@echo YOU MUST USE "'make java'"
 	@exit 1
+	@rm -f "##out-of-date##"
+	@touch "##out-of-date##"
 	@if [ -d harpoon -a -x $(firstword ${JCC5}) ]; then \
 	  if [ -n "$(filter $(shell grep -v '^#' gj-files), $(shell cat out-of-date))" ] ; then \
 	    echo Building with $(firstword ${JCC5}). ;\
@@ -239,8 +247,7 @@ jikes: 	$(PROPERTIES) out-of-date gj-files
 	  $(RM) stubbed-out; \
 	fi 
 	@$(MAKE) --no-print-directory properties
-	@-rm out-of-date
-	@touch out-of-date
+	@mv -f "##out-of-date##" out-of-date
 
 properties:
 	@echo -n Updating properties... ""
