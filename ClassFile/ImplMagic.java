@@ -25,7 +25,7 @@ import java.util.Map;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5.2.10 2000-01-30 23:27:09 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.11 2000-03-30 00:44:57 cananian Exp $
  */
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
@@ -42,7 +42,6 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	MagicClass(Linker linker, harpoon.IR.RawClass.ClassFile classfile) {
 	    super(linker);
 	    this.name = classfile.this_class().name().replace('/','.');
-	    this.hashcode = super.hashCode();
 	    this.superclass = (classfile.super_class == 0)?null:
 		new ClassPointer(linker,
 				 "L"+classfile.super_class().name()+";");
@@ -80,8 +79,11 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    if (isInterface()) this.superclass = null;
 	} 
 	// optimize hashcode.
-	private final int hashcode;
-	public int hashCode() { return hashcode; }
+	private transient int hashcode=0;
+	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
+	    if (hashcode==0) hashcode = super.hashCode();
+	    return hashcode;
+	}
     } // END MagicClass
     
     // utility function to initialize HMethod/HConstructor/HInitializer.
@@ -253,10 +255,12 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    for (int i=0; i<fieldinfo.attributes.length; i++)
 		if (fieldinfo.attributes[i] instanceof AttributeSynthetic)
 		    this.isSynthetic=true;
-	    hashcode = super.hashCode();
 	}
 	// optimize hashcode.
-	private final int hashcode;
-	public int hashCode() { return hashcode; }
+	private transient int hashcode=0;
+	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
+	    if (hashcode==0) hashcode = super.hashCode();
+	    return hashcode;
+	}
     } // END MagicField
 }
