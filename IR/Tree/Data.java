@@ -32,7 +32,7 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.10 1999-08-16 23:48:04 duncan Exp $
+ * @version $Id: Data.java,v 1.1.2.11 1999-08-18 19:25:32 duncan Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
@@ -62,25 +62,34 @@ public class Data extends Code implements HData {
 
 	// OffsetMap uses. 
 	OffsetMap offm   = frame.getOffsetMap();
+	int ws = offm.wordsize();
 
 	// Add interface list pointer
 	Label iListPtr = new Label();
-	add(offm.interfaceListOffset(cls), _DATA(iListPtr), up, down);
-	
+	add(offm.interfaceListOffset(cls)/ws, _DATA(iListPtr), up, down);
+
+	// Add component type 
+	add(offm.componentTypeOffset(cls)/ws, 
+	    cls.isArray() ? 
+	    _DATA(offm.label(cls.getComponentType())) :
+	    _DATA(new CONST(tf, null, 0)),
+	    up, 
+	    down);
+
 	// FIX: need to lay out GC tables
 	// FIX: need tables for reflection 
 	// FIX: need tables for static methods
 
 	// Construct null-terminated list of interfaces and
 	// add all interface methods
-	iList.add(new LABEL(tf, null, iListPtr));
 	HClass[] interfaces = cls.getInterfaces();
 	for (int i=0; i<interfaces.length; i++) { 
 	    HClass    iFace    = interfaces[i];
+	    System.out.println("Adding interface: " + iFace);
 	    HMethod[] iMethods = iFace.getMethods();
 	    iList.add(_DATA(offm.label(iFace)));  // Add to interface list
 	    for (int j=0; j<iMethods.length; j++) { 
-		add(offm.offset(iMethods[i]), 
+		add(offm.offset(iMethods[i])/ws, 
 		    _DATA(offm.label(cls.getMethod  // Point to class method
 				     (iMethods[i].getName(),
 				      iMethods[i].getParameterTypes()))),
@@ -89,33 +98,40 @@ public class Data extends Code implements HData {
 	    }
 	}
 	iList.add(_DATA(new CONST(tf, null, 0)));
+	iList.add(0, new LABEL(tf, null, iListPtr));
+	
 
 	// Add display to list
 	for (HClass sCls=cls; sCls!=null; sCls=sCls.getSuperclass()) 
-	    add(offm.offset(sCls),_DATA(offm.label(sCls)),up,down);
+	    add(offm.offset(sCls)/ws,_DATA(offm.label(sCls)),up,down);
 	
 	// Add non-static class methods to list 
 	HMethod[] methods = cls.getMethods();
 	for (int i=0; i<methods.length; i++) { 
-	    if (!methods[i].isStatic()) 
-		add(offm.offset(methods[i]),
+	    if (!methods[i].isStatic()) { 
+		System.out.println("Addign method: " + methods[i] + " at offset " + offm.offset(methods[i])/ws);
+		add(offm.offset(methods[i])/ws,
 		    _DATA(offm.label(methods[i])),up,down);
+	    }
 	}
 
 	// Reverse the upward list
 	Collections.reverse(up);
-
-	HField[] hfields  = cls.getDeclaredFields();
-	for (int i=0; i<hfields.length; i++) { 
-	    HField hfield = hfields[i];
-	    if (hfield.isStatic()) { 
-		if (hfield.getType().isPrimitive()) {
-		    spList.add(new LABEL(tf, null, offm.label(hfield)));
-		    spList.add(_DATA(new CONST(tf, null, 0)));
-		}
-		else { 
-		    soList.add(new LABEL(tf, null, offm.label(hfield)));
-		    soList.add(_DATA(new CONST(tf, null, 0)));
+	
+	for (HClass sCls = cls; sCls!=null; sCls=sCls.getSuperclass()) { 
+	    System.out.println("sCls: " + sCls);
+	    HField[] hfields  = sCls.getDeclaredFields();
+	    for (int i=0; i<hfields.length; i++) { 
+		HField hfield = hfields[i];
+		if (hfield.isStatic()) { 
+		    if (hfield.getType().isPrimitive()) {
+			spList.add(new LABEL(tf, null, offm.label(hfield)));
+			spList.add(_DATA(new CONST(tf, null, 0)));
+		    }
+		    else { 
+			soList.add(new LABEL(tf, null, offm.label(hfield)));
+			soList.add(_DATA(new CONST(tf, null, 0)));
+		    }
 		}
 	    }
 	}
@@ -215,22 +231,23 @@ public class Data extends Code implements HData {
      *                                                          *
      *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
+    
     private void add(int index, Tree elem, ArrayList up, ArrayList down) { 
-	int size;
+	int size, requiredSize;
 	if (index<0) { 
-	    size = (-index)+1;
-	    if (size > up.size()) { 
-		up.ensureCapacity((-index)+1);
-		for (int i=up.size(); i<=size; i++) 
+	    requiredSize = (-index);
+	    if (requiredSize > up.size()) { 
+		up.ensureCapacity(requiredSize);
+		for (int i=up.size(); i<requiredSize; i++) 
 		    up.add(new DATA(elem.getFactory(), elem));
 	    }	    
-	    up.set(-index, elem);
+	    up.set(-index-1, elem);
 	}
 	else {
-	    size = index+1;
-	    if (size > down.size()) { 
-		down.ensureCapacity(index+1);
-		for (int i=down.size(); i<=size; i++) 
+	    requiredSize = index+1;
+	    if (requiredSize > down.size()) { 
+		down.ensureCapacity(requiredSize);
+		for (int i=down.size(); i<requiredSize; i++) 
 		    down.add(new DATA(elem.getFactory(), elem));
 	    }	    
 	    down.set(index, elem);
