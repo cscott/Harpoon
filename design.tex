@@ -1,59 +1,107 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: design.tex,v 1.1 1998-04-08 02:57:10 cananian Exp $
+% $Id: design.tex,v 1.2 1998-04-08 03:14:00 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[10pt,notitlepage]{article}
 %twocolumn
 \author{C.~Scott~Ananian}
 \title{Turning Java into Hardware: \\ Caffinated Compiler Construction}
-\date{\today \\ $ $Revision: 1.1 $ $}
+\date{\today \\ $ $Revision: 1.2 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
 \renewcommand{\sfdefault}{phv}
 %\renewcommand{\ttdefault}{pcr}
 
+% Outline:
+% ~~~~~~~
+% I. Java/Hardware semantics.
+%    A. The rules.
+%       1. Classes are objects.
+%       2. Allocations are static.
+%       3. Threads/Monitors model inherent parallelism.
+%       4. Method calls form hardware interfaces.
+%       5. Exceptions are?
+%    B. A grammar for Java--.
+%       (this is the implemented grammar, which might be more restrictive
+%        than absolutely necessary. We might implement floating-point, more
+%        powerful allocation analysis, etc, later).
+%       1. No 'new' except in constructors.
+%          (or some less draconian rule to guarantee A.2 above)
+%       2. Floating-point is verboten.
+%       3. Throw and catch are not permitted?
+%       4. Other features we don't care to implement?
+%    C. An interface description language.
+%       (more details on how methods map to chip pin-outs and timing)
+%       1. Formal parameters map to chip ports.
+%       2. Timing constraints on external events map to constraints on
+%          class methods and executable code.
+%       3. Syntax/Grammar/Examples.
+% II. Useful analyses (compiler stages)
+%    A. Static type analysis.
+%    B. Static allocation.
+%    C. Analyzing methods for side-effects.
+%    D. Optimizations:
+%       1. Common subexpression, constant-folding/propagation/subexpression
+%       2. Partial Redundancy Elimination
+%       3. Strength reduction (divide->multiply, multiple->add/rotate)
+%       4. Exposing parallelism (removing control dependencies, loop analysis)
+%       5. Bit-width analysis (combine with type analysis?)
+%    E. Representation Transformations
+%       1. Java source -> bytecode (use javac for the foreseeable future)
+%       2. Java bytecode -> quads (remove stack abstraction)
+%       3. Quads -> SSA form? (best for optimizations?)
+%       4. SSA -> dataflow?  (get rid of control dependencies, more opts?)
+%       5. dataflow->logic functions (low-level hardware-(in)dependent stage)
+%       6. Logic function->Netlist (let others technology map, place and route)
+% III. More details on hardware synthesis.
+%    A. Dataflow/SSA to hardware
+%       1. Branches become multiplexors. 
+%          (control condition becomes selector bit)
+%       2. State machines for iteration, recursion.
+%       3. No memory stores. Value driven data flow.
+%    B. Interface timing.
+%       1. Computing 'go' signals from input timing constraints.
+%       2. Synthesizing logic to adhere to an output timing constraint.
+%    C. Object-orientation and inheritance.
+%       1. Handling aliased classes and overloaded methods (type bits)
+%       2. Parameterized classes (compile-time constructor evaluation)
+% IV. Related Research (useful stuff from other people)
+%    A. Various Intermediate Representations
+%    B. Compiling Real-Time Programs
+%    C. Array Analysis Techniques.
+%    D. Loop analysis techniques.
+%    E. Logic Synthesis (technology-independent timing, etc)
+% V. Conclusion
+%    Lots of work to keep me very busy for quite a while.
+
 \begin{document}
 \bibliographystyle{alpha}
 \maketitle
 
-\section{Java}
-
-% Classes are hardware objects.  Allocations are static.
-% References may be external (memory port)
-% What subset we compile (dynamic allocation/dynamic types are evil)
-% Thread/Monitor model.  Interface model.
-% Exceptions???
-
-\section{Interface Description Language}
-% methods == ports
-% specifying timing constraints.
-
-\section{Steps}
-% Computing type information.
-% Creating a static allocation.
-% Analyzing methods for side-effects.
-% Useful optimizations:
-%   CSE, constant-*, PRE
-%   divide->multiply, multiply->add/rotate.
-%   exposing parallelism (removing control dependencies)
-% Bit-width analysis (type information?)
-% Branch->multiplexor. (control bit->selector)
-% Compiling aliased class families into hardware (more bits!)
-% Calculating 'go' signal from input timing
-% Adhering to an output timing spec.
-% Counting states. Unrolling loops.
-
-\section{IR}
-% Bytecode->quads.
-% Quads->ssa?
-% SSA->dataflow?
-% dataflow->logic functions?
-% logic functions->netlists?
+\section{Introduction}
+\section{Java/Hardware Semantics}
+\subsection{The rules}
+\subsection{A Grammar for \textsc{Java--}}
+\subsection{An interface description language}
+\section{Compiler analyses}
+\subsection{Static analysis} % Type, Allocation
+\subsection{Functional Methods}
+\subsection{Optimizations}
+\subsection{Representations}
+\section{Hardware Synthesis Details}
+\subsection{Translating Dataflow/SSA into Hardware}
+\subsection{Interface Timing Issues}
+\subsection{Object-orientation and Inheritance}
+\section{Related Research}
+\subsection{Intermediate Representations}
+\subsection{Compiling Real-Time programs}
+\subsection{Array Analysis Techniques}
+\subsection{Loop Analysis Techniques}
+\subsection{Logic Synthesis}
+\section{Conclusion}
+Ack!
 
 \nocite{*}
 \bibliography{harpoon}
 
 \end{document}
-
-
-
