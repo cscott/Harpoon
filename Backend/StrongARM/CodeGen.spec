@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.84 1999-10-21 00:46:45 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.85 1999-10-21 13:32:52 cananian Exp $
  */
 %%
 
@@ -246,6 +246,14 @@ import java.util.Iterator;
 	if (n instanceof Double || n instanceof Float) return false;
 	else return is12BitOffset(n.longValue());
     }
+    // helper for operand2 immediates
+    private boolean isOpd2Imm(Number n) {
+	if (!(n instanceof Integer)) return false;
+	else return isOpd2Imm(n.intValue());
+    }
+    private boolean isOpd2Imm(int val) {
+	return (steps(val)<=1) || (steps(-val)<=1);
+    }
     // helper for outputting constants
     private String loadConst32(String reg, int val, String humanReadable) {
 	StringBuffer sb=new StringBuffer();
@@ -281,6 +289,9 @@ import java.util.Iterator;
 
     /** Helper for setting up registers/memory with the strongARM standard
      *  calling convention.  Returns the stack offset necessary. */
+    // XXX: change to only update the stack pointer immediately prior to
+    // the call, in hopes of preventing sp-addressed spills from
+    // being corrupted.
     private int emitCallPrologue(INVOCATION ROOT, TempList list) {
       int stackOffset = 0;
 
@@ -361,7 +372,8 @@ import java.util.Iterator;
       // this will break if stackOffset > 255 (ie >63 args)
       Util.assert( stackOffset < 256, 
 		   "Update the spec file to handle large SP offsets");
-      emit( ROOT, "add `d0, `s0, #" + stackOffset, SP , SP );
+      if (stackOffset!=0) // optimize for common case.
+	  emit( ROOT, "add `d0, `s0, #" + stackOffset, SP , SP );
       if (ROOT.retval.isDoubleWord()) {
 	retval = makeTwoWordTemp(retval);
 	// not certain an emitMOVE is legal with the l/h modifiers
@@ -459,6 +471,14 @@ import java.util.Iterator;
 BINOP<p,i>(ADD, j, k) = i %{		
     Temp i = makeTemp();		
     emit( ROOT, "add `d0, `s0, `s1", i, j, k);
+}%
+BINOP<p,i>(ADD, j, CONST<i,p>(c)) = i %pred %( isOpd2Imm(c) )% %{
+    Temp i = makeTemp();		
+    emit( ROOT, "add `d0, `s0, #"+c, i, j);
+}%
+BINOP<p,i>(ADD, CONST<i,p>(c), j) = i %pred %( isOpd2Imm(c) )% %{
+    Temp i = makeTemp();		
+    emit( ROOT, "add `d0, `s0, #"+c, i, j);
 }%
 
 BINOP<l>(ADD, j, k) = i %{
@@ -1548,6 +1568,9 @@ CALL(TEMP(retval), NAME(retex), func, arglist) %{
     // next two instructions are *not* InstrMOVEs, as they have side-effects
     emit( ROOT, "mov `d0, `s0", LR, PC );
     // note that r0-r3, LR and IP are clobbered by the call.
+    // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
+    // realloc doesn't clobber these between the time they are set and
+    // the time the call happens.
     emit( ROOT, "mov `d0, `s0", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
                 new Temp[]{ func }, new Label[] { retex } );
     // okay, clean up from call.
@@ -1559,6 +1582,9 @@ CALL(TEMP(retval), NAME(retex), NAME(funcLabel), arglist) %{
     int stackOffset = emitCallPrologue(ROOT, arglist);
     // do the call.  bl has a 24-bit offset field, which should be plenty.
     // note that r0-r3, LR and IP are clobbered by the call.
+    // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
+    // realloc doesn't clobber these between the time they are set and
+    // the time the call happens.
     emit( ROOT, "bl "+funcLabel, new Temp[] { r0,r1,r2,r3,IP,LR }, new Temp[0],
                 new Label[] { retex } );
     // okay, clean up from call.
@@ -1571,6 +1597,9 @@ NATIVECALL(TEMP(retval), func, arglist) %{
     // next two instructions are *not* InstrMOVEs, as they have side-effects
     emit( ROOT, "mov `d0, `s0", LR, PC );
     // note that r0-r3, LR and IP are clobbered by the call.
+    // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
+    // realloc doesn't clobber these between the time they are set and
+    // the time the call happens.
     emit( ROOT, "mov `d0, `s0", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
                 new Temp[]{ func }, null);
     // clean up.
@@ -1581,6 +1610,9 @@ NATIVECALL(TEMP(retval), NAME(funcLabel), arglist) %{
     int stackOffset = emitCallPrologue(ROOT, arglist);
     // do the call.  bl has a 24-bit offset field, which should be plenty.
     // note that r0-r3, LR and IP are clobbered by the call.
+    // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
+    // realloc doesn't clobber these between the time they are set and
+    // the time the call happens.
     emit( ROOT, "bl "+funcLabel, new Temp[] { r0,r1,r2,r3,IP,LR }, new Temp[0],
           true, null );
     // clean up.
