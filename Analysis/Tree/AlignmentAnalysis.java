@@ -63,7 +63,7 @@ import java.util.Set;
  * typed pointer in a Tree.  It is a dataflow analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AlignmentAnalysis.java,v 1.1.2.1 2002-03-14 19:55:08 cananian Exp $
+ * @version $Id: AlignmentAnalysis.java,v 1.1.2.2 2002-03-15 16:32:48 cananian Exp $
  */
 public class AlignmentAnalysis {
     
@@ -224,8 +224,8 @@ public class AlignmentAnalysis {
     // op rules: most specific is 'this'.  base ptrs more spec than consts.
     public static abstract class Value {  // bottom/noinfo.
 	abstract protected int specificity();
-	boolean isBaseKnown() { return false; }
-	boolean isOffsetKnown() { return false; }
+	public boolean isBaseKnown() { return false; }
+	public boolean isOffsetKnown() { return false; }
 	Value fillKGroup(Set defs, Temp t) { return this; }
 	final Value fillKGroup(Stm def, Temp t) {
 	    return fillKGroup(Collections.singleton(def), t);
@@ -289,7 +289,8 @@ public class AlignmentAnalysis {
     }
     public static class ConstantModuloN extends IntegerValue {
 	protected int specificity() { return 2; }
-	final long number; final long modulus; final KGroup kgroup;
+	public final long number; public final long modulus;
+	public final KGroup kgroup;
 	ConstantModuloN(long number, long modulus, KGroup kgroup) {
 	    this.number=number; this.modulus=modulus; this.kgroup=kgroup;
 	    assert modulus>1;
@@ -299,7 +300,7 @@ public class AlignmentAnalysis {
 	    assert this instanceof Constant;
 	    this.number=number; this.modulus=0; this.kgroup=null;
 	}
-	boolean isOffsetKnown() { return true; }
+	public boolean isOffsetKnown() { return true; }
 	Value fillKGroup(Set defs, Temp t) {
 	    if (kgroup!=null || this instanceof Constant)
 		return this;
@@ -448,8 +449,8 @@ public class AlignmentAnalysis {
     }
     public static class BaseAndOffset extends Value {
 	protected int specificity() { return 4; }
-	final DefPoint def;
-	final IntegerValue offset;
+	public final DefPoint def;
+	public final IntegerValue offset;
 	BaseAndOffset(DefPoint def, IntegerValue offset) {
 	    this.def = def; this.offset = offset;
 	}
@@ -457,8 +458,8 @@ public class AlignmentAnalysis {
 	BaseAndOffset(DefPoint def, long offset) {
 	    this(def, new Constant(offset));
 	}
-	boolean isBaseKnown() { return true; }
-	boolean isOffsetKnown() { return offset.isOffsetKnown(); }
+	public boolean isBaseKnown() { return true; }
+	public boolean isOffsetKnown() { return offset.isOffsetKnown(); }
 	Value fillKGroup(Set defs, Temp t) {
 	    return new BaseAndOffset(def, (IntegerValue)
 				     offset.fillKGroup(defs, t));
@@ -507,16 +508,16 @@ public class AlignmentAnalysis {
     /*------------------------------------------------------------- */
     /* both pointers in temps and pointer constants can be def points */
     public abstract class DefPoint {
-	abstract HClass type();
-	final boolean isWellTyped() {
+	public abstract HClass type();
+	public final boolean isWellTyped() {
 	    HClass hc=type();
 	    return hc!=null && !hc.isPrimitive();
 	}
     }
     public class TempDefPoint extends DefPoint {
-	final TEMP base; final Stm def;
+	public final TEMP base; public final Stm def;
 	TempDefPoint(TEMP base, Stm def) { this.base=base; this.def=def; }
-	HClass type() { return td.typeMap(base); }
+	public HClass type() { return td.typeMap(base); }
 	public boolean equals(Object o) {
 	    return o instanceof TempDefPoint &&
 		base.temp.equals(((TempDefPoint)o).base.temp) &&
@@ -528,13 +529,13 @@ public class AlignmentAnalysis {
 	public String toString() { return base.temp.toString(); }
     }
     public class NameDefPoint extends DefPoint {
-	final NAME name;
+	public final NAME name;
 	NameDefPoint(NAME name) { this.name = name; }
 	public boolean equals(Object o) {
 	    return o instanceof NameDefPoint &&
 		name.label.equals(((NameDefPoint)o).name.label);
 	}
-	HClass type() { return td.typeMap(name); }
+	public HClass type() { return td.typeMap(name); }
 	public int hashCode() { return name.label.hashCode(); }
 	public String toString() { return name.label.toString(); }
     }
