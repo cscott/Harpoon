@@ -14,11 +14,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.Stack;
+import java.util.Set;
 /**
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.10 1999-09-20 20:31:03 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.11 1999-10-13 18:36:38 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -94,7 +95,7 @@ public class Pattern {
 	    q.accept(cv);
 	    if (cv.success())
 		return new Object[] {q, cv.exchandler()};
-	    q=q.prev(0);
+	    q=q.prev(cv.hint);
 	}
 	return null;
     }
@@ -153,6 +154,15 @@ public class Pattern {
 	    Quad.addEdge(newm, i+handlers.size(), (Quad) m.next(i),0);
 	}
 	Quad.addEdge(newm, 0, m.next(0),m.nextEdge(0).which_pred());
+	Set rset=pv.removalSet();
+	iterate=rset.iterator();
+	while (iterate.hasNext()) {
+	    Object[] obj=(Object[])iterate.next();
+	    PHI phi=(PHI) obj[0];
+	    int edge=((Integer) obj[1]).intValue();
+	    Quad.addEdge(phi.prev(edge), phi.prevEdge(edge).which_succ(),
+			 phi.next(0), phi.nextEdge(0).which_pred());
+	}
     }
 
 
@@ -160,12 +170,19 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
     private Map map;
     QuadWithTry code;
     UseDef ud;
+    WorkSet phiremovalset;
+
     public PatternVisitor(QuadWithTry code) {
 	map=new HashMap();
 	this.code=code;
 	this.ud=new UseDef();
+	this.phiremovalset=new WorkSet();
     }
     
+    public Set removalSet() {
+	return phiremovalset;
+    }
+
     public Map map() {
 	return map;
     }
@@ -232,6 +249,27 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	}
     }
 
+    //broken
+    public void visit(INSTANCEOF q) {
+	Object[] nq=Pattern.nullCheck(q.prev(0), q.src(), code, ud);
+	if (nq!=null) {
+	    if (((Quad)((Object[]) nq[1])[0]).next(0)==q.next(0)) {
+		//got 
+		if (((Quad)((Object[]) nq[1])[0]).kind()==QuadKind.CONST)
+		    {
+			CONST cons=(CONST)((Object[]) nq[1])[0];
+			if ((cons.dst()==q.dst())&&
+			    (cons.type()==HClass.Int)&&
+			    (((Integer)cons.value()).intValue()==0)&&
+			    (((PHI)q.next(0)).arity()==2)) {
+			addmap(q, (Quad)nq[0]);
+			phiremovalset.add(new Object[] {q.next(0),new Integer(q.nextEdge(0).which_pred())});
+			}
+		    }
+	    }
+	}
+    }
+
     public void visit(ANEW q) {
 	Quad qd=q;
 	boolean flag=true;
@@ -283,6 +321,13 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 		       HClass.forName("java.lang.ArrayStoreException"));
 	    }
 	}
+	//componentof null check...
+	Object[] n11=Pattern.nullCheck(qd.prev(0),q.src(),code,ud);
+	if (n11!=null) {
+	    if (((Quad)((Object[])n11[1])[0])==q.prev(0))
+		qd=(Quad)n11[0];
+	}
+
 	Object[] n2=Pattern.boundCheck(qd.prev(0), q.objectref(), q.index(),code,ud);
 	if (n2!=null) {
 	    qd=(Quad)n2[0];
@@ -787,6 +832,7 @@ static class CompVisitor extends QuadVisitor { // this is an inner class
     Temp aref;
     QuadWithTry code;
     UseDef ud;
+    int hint;
 
     CompVisitor(Temp objectref, Temp arrayref,QuadWithTry code, UseDef ud) {
 	this.oref=objectref;
@@ -794,13 +840,14 @@ static class CompVisitor extends QuadVisitor { // this is an inner class
 	this.status=0;
 	this.code=code;
 	this.ud=ud;
+	this.hint=0;
     }
     public boolean status() {
 	return (status!=-1);
     }
 
     public boolean success() {
-	return (status==2);
+	return (status==3);
     }
 
     Object[] exchandler() {
@@ -814,23 +861,33 @@ static class CompVisitor extends QuadVisitor { // this is an inner class
     }
 
     public void visit(COMPONENTOF q) {
-	if ((status==1)&&
+	if ((status==2)&&
 	    (q.dst()==test)&&
 	    (q.arrayref()==aref)&&
 	    (q.objectref()==oref))
-	    status=2;
+	    status=3;
 	else
 	    status=-1;
 	if (ud.useMap(code,q.dst()).length!=1)
 	    status=-1;
     }
 
-    public void visit(CJMP q) {
+    public void visit(PHI q) {
 	if (status==0) {
+	    status=1;
+	    hint=1;
+	}
+	else 
+	    status=-1;
+    }
+
+    public void visit(CJMP q) {
+	if ((status==1)||(status==0)) {
 	    test=q.test();
 	    exchandler=q.next(0);
 	    excedge=q.nextEdge(0).which_pred();
-	    status=1;
+	    status=2;
+	    hint=0;
 	}
 	else 
 	    status=-1;
