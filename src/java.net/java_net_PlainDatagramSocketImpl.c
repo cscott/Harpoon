@@ -21,6 +21,8 @@ static jfieldID DP_addressID = 0; /* The field ID of DatagramPacket.address */
 static jfieldID DP_portID = 0; /* The field ID of DatagramPacket.port */
 static jfieldID IA_addrID  = 0; /* The field ID of InetAddress.address */
 static jfieldID IA_familyID= 0; /* The field ID of InetAddress.family */
+static jmethodID IA_consID  = 0; /* no-arg constructor for InetAddress */
+static jclass IACls = 0; /* The java/net/InetAddress class object */
 static jclass IOExcCls  = 0; /* The java/io/IOException class object */
 static jint jSO_BINDADDR, jSO_REUSEADDR, jSO_LINGER, jSO_TIMEOUT;
 static jint jTCP_NODELAY, jIP_MULTICAST_IF;
@@ -28,7 +30,7 @@ static int inited = 0; /* whether the above variables have been initialized */
 FLEX_MUTEX_DECLARE_STATIC(init_mutex);
 
 static int initializePDSI(JNIEnv *env) {
-    jclass PDSICls, DPCls, IACls;
+    jclass PDSICls, DPCls;
 
     FLEX_MUTEX_LOCK(&init_mutex);
     // other thread may win race to lock and init before we do.
@@ -59,7 +61,16 @@ static int initializePDSI(JNIEnv *env) {
     DP_portID = (*env)->GetFieldID(env, DPCls, "port", "I");
     if ((*env)->ExceptionOccurred(env)) goto done;
     IACls   = (*env)->FindClass(env, "java/net/InetAddress");
+    /* make IACls into a global reference for future use */
+    IACls = (*env)->NewGlobalRef(env, IACls);
     if ((*env)->ExceptionOccurred(env)) goto done;
+    IA_consID  = (*env)->GetMethodID(env, IACls, "<init>", "()V");
+    if ((*env)->ExceptionOccurred(env)) {
+      /* not entirely unexpected that this method might not be present. */
+      IA_consID = 0;
+      (*env)->ExceptionClear(env);
+      fprintf(stderr, "WARNING: constructor InetAddress() not found.\n");
+    }
     IA_addrID  = (*env)->GetFieldID(env, IACls, "address", "I");
     if ((*env)->ExceptionOccurred(env)) goto done;
     IA_familyID= (*env)->GetFieldID(env, IACls, "family", "I");
@@ -283,6 +294,15 @@ JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_receive
 
   /* get inetaddress object */
   addrObj = (*env)->GetObjectField(env, p, DP_addressID);
+  /* if null, create a new inetaddr object */
+  if (addrObj==NULL) {
+    if (IA_consID)
+      addrObj = (*env)->NewObject(env, IACls, IA_consID);
+    else
+      addrObj = (*env)->AllocObject(env, IACls); /* RISKY! */
+    (*env)->SetObjectField(env, p, DP_addressID, addrObj);
+  }
+  assert(addrObj);
 
   /* get message buffer */
   bufObj = (*env)->GetObjectField(env, p, DP_bufID);
@@ -304,11 +324,9 @@ JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_receive
   }
 
   /* fill in inetaddress/extract port */
-  if (addrObj) {
-    (*env)->SetIntField(env, addrObj, IA_familyID, sa.sin_family);
-    (*env)->SetIntField(env, addrObj, IA_addrID, ntohl(sa.sin_addr.s_addr));
-    (*env)->SetIntField(env, p, DP_portID, ntohs(sa.sin_port));
-  }
+  (*env)->SetIntField(env, addrObj, IA_familyID, sa.sin_family);
+  (*env)->SetIntField(env, addrObj, IA_addrID, ntohl(sa.sin_addr.s_addr));
+  (*env)->SetIntField(env, p, DP_portID, ntohs(sa.sin_port));
   /* set length of received datagram */
   (*env)->SetIntField(env, p, DP_lengthID, rc);
   return;
