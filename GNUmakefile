@@ -1,4 +1,4 @@
-# $Revision: 1.40 $
+# $Revision: 1.41 $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -14,7 +14,7 @@ UNMUNGE=bin/unmunge
 FORTUNE=/usr/games/fortune
 
 ALLPKGS = $(shell find . -type d | grep -v CVS | \
-		egrep -v "^[.]/(harpoon|silicon|doc|NOTES|bin)" | \
+		egrep -v "^[.]/(harpoon|silicon|doc|NOTES|bin|jdb)" | \
 		sed -e "s|^[.]/*||")
 ALLSOURCE = $(filter-out .%.java, \
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java)))
