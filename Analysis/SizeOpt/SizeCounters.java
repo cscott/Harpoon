@@ -34,7 +34,7 @@ import java.util.Iterator;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SizeCounters.java,v 1.1.2.7 2001-10-31 23:34:50 cananian Exp $
+ * @version $Id: SizeCounters.java,v 1.1.2.8 2001-11-05 02:18:21 cananian Exp $
  */
 public class SizeCounters extends MethodMutator {
     final Frame frame;
@@ -93,6 +93,10 @@ public class SizeCounters extends MethodMutator {
 		    (qf, e, arrayprefix(type)+".count", Tc, true/*long*/);
 		e = CounterFactory.spliceIncrement
 		    (qf, e, arrayprefix(type)+".length", Tl, true/*long*/);
+		// pointer bytes.
+		if (!type.isPrimitive()) // this is an object array
+		    e = CounterFactory.spliceIncrement
+			(qf, e, "sizecnt.array.pointer.words",Tl,true/*long*/);
 		// swap Tl and Tc
 		{ Temp t=Tl; Tl=Tc; Tc=t; }
 		// new type.
@@ -123,6 +127,18 @@ public class SizeCounters extends MethodMutator {
 		(qf, e, "sizecnt.count_by_type."+q.hclass().getName());
 	    e = CounterFactory.spliceIncrement
 		(qf, e, "sizecnt.bytes_by_type."+q.hclass().getName(), size);
+	    // how many pointer words allocated in objects?
+	    int pntr = 0;
+	    for (HClass hc=q.hclass(); hc!=null; hc=hc.getSuperclass()) {
+		for (Iterator it=new ArrayIterator(hc.getDeclaredFields());
+		     it.hasNext(); ) {
+		    HField hf = (HField) it.next();
+		    if (hf.isStatic() || hf.getType().isPrimitive()) continue;
+		    pntr++;
+		}
+	    }
+	    e = CounterFactory.spliceIncrement
+		(qf, e, "sizecnt.object.pointer.words", pntr);
 	    // special bitwidth-aware counters.
 	    if (bwa!=null) {
 		int bits=0, rounded_bits=0;
