@@ -9,11 +9,13 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.LabelList;
 import harpoon.Temp.Label;
 import harpoon.IR.Tree.INVOCATION;
+import harpoon.IR.Tree.METHOD;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.Typed;
 import harpoon.IR.Tree.PreciselyTyped;
 import harpoon.IR.Tree.MEM;
 import harpoon.IR.Tree.NAME;
+import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.ExpList;
 
 import java.util.ArrayList;
@@ -110,7 +112,7 @@ public class StackInfo {
     * Argument build are is the lowest region on the mips stack,
     * starting at 0(sp)
     */
-   public int argOffset(INVOCATION inv, int arg_idx) {
+   public int argOffset(Object inv, int arg_idx) {
       CallInfo ci = (CallInfo)inv2info.get(inv);
       return REGSIZE * ci.getArg2Word(arg_idx);
    }
@@ -118,7 +120,7 @@ public class StackInfo {
     * Give a higher offset.  If you are big endian, this is the least
     * signifigant word.
     */
-   public int argSecondOffset(INVOCATION inv, int arg_idx) {
+   public int argSecondOffset(Object inv, int arg_idx) {
       CallInfo ci = (CallInfo)inv2info.get(inv);
       Util.assert(ci.getArg2Word(arg_idx) + 1 < ci.getArg2Word(arg_idx + 1));
       return REGSIZE * (ci.getArg2Word(arg_idx) + 1);
@@ -128,10 +130,15 @@ public class StackInfo {
     * register, on the stack, or (for multi-word temporaries) split
     * between register and stack.
     */
-   public int argWhere(INVOCATION inv, int arg_idx) {
+   public int argWhere(Object inv, int arg_idx) {
       CallInfo ci = (CallInfo)inv2info.get(inv);
       if(trace) {
-         print(psout, inv);
+         if(inv instanceof INVOCATION) {
+            print(psout, (INVOCATION)inv);
+         } else {
+            Util.assert(inv instanceof METHOD);
+            print(psout, (METHOD)inv);
+         }
          ci.print(psout);
          psout.print("a" + arg_idx);
       }
@@ -142,10 +149,11 @@ public class StackInfo {
       if(trace) psout.println(" STK");
       return STACK;
    }
+
    /**
     * Return which argument register this argument goes in
     */
-   public Temp argReg(INVOCATION inv, int arg_idx) {
+   public Temp argReg(Object inv, int arg_idx) {
       Util.assert(argWhere(inv, arg_idx) == REGISTER);
       CallInfo ci = (CallInfo)inv2info.get(inv);
       return idx2ArgReg(ci.getArg2Word(arg_idx));
@@ -153,7 +161,7 @@ public class StackInfo {
    /**
     * Return the second argument register for a two word temporary.
     */
-   public Temp argSecondReg(INVOCATION inv, int arg_idx) {
+   public Temp argSecondReg(Object inv, int arg_idx) {
       Util.assert(argWhere(inv, arg_idx) == REGISTER);
       CallInfo ci = (CallInfo)inv2info.get(inv);
       Util.assert(ci.getArg2Word(arg_idx) + 1 < ci.getArg2Word(arg_idx + 1));
@@ -277,6 +285,47 @@ public class StackInfo {
             max_arg_words = words;
       inv2info.put(inv, ci);
    }
+   /**
+    * For callee argument information call <code>callInfo</code> with
+    * METHOD object, and we will interpret the parameter list.
+    */
+   public void callInfo(METHOD meth) {
+      // This code duplicates the algorithm from the INVOCATION
+      // version which annoys me, but merging them would also be
+      // annoying because of the differences between INVOCATION and
+      // METHOD 
+      CallInfo ci = new CallInfo();
+      int words = 0;
+      if(trace) {
+         print(psout, meth);
+      }
+      // skip param[0], which is the explicit 'exceptional return
+      // address'
+      int narg = 0;
+      for(int param_narg = 1; param_narg < meth.getParamsLength(); 
+          ++param_narg) {
+         // Like gcc we don't break doubles into one
+         // register and one stack word 
+         if(words == NARGREGS - 1 
+            && nWords(meth.getParams(param_narg)) == 2) {
+            words ++;
+         }
+         ci.setArg2Word(narg, words);
+         if(trace) {
+            psout.print(" Ma" + narg + "=" + words);
+         }
+         words += nWords(meth.getParams(param_narg));
+         narg++;
+      }
+      // Set the value after the last entry so we know the total number
+      ci.setArg2Word(narg, words);
+      if(trace) {
+         psout.print(" Ma" + narg + "=" + words);
+         psout.println(" MEND");
+      }
+      inv2info.put(meth, ci);
+   }
+
 
    private final int NARGREGS = 4; // how many arg regs
    private final int REGSIZE  = 4; // bytes per reg
@@ -300,6 +349,9 @@ public class StackInfo {
          ps.print("func=" + (MEM)inv.getFunc());
       else
          ps.print("Ufunc=" + inv.getFunc());
+   }
+   private void print(PrintStream ps, METHOD meth) {
+      ps.print("meth=" + meth.toString());
    }
 
    private Temp idx2ArgReg(int idx) {
