@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.18 1999-07-30 23:40:50 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.19 1999-08-03 21:35:47 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -274,14 +274,14 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+")");
 	    initStms.append(r.initStms.toString());
 
-	    // look at retex
-	    // NOTE: THIS WILL BREAK WHEN WE UPDATE EXCEPTION HANDLING 
-	    r = new TypeExpRecurse("(("+TREE_NATIVECALL+")"+stmPrefix + ").retex", 
-				   indentPrefix + "\t");
-	    s.retex.accept(r);
-	    degree += r.degree;
-	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+ ")");
-	    initStms.append(r.initStms.toString());
+//  	    // look at retex
+//  	    // NOTE: THIS WILL BREAK WHEN WE UPDATE EXCEPTION HANDLING 
+//  	    r = new TypeExpRecurse("(("+TREE_NATIVECALL+")"+stmPrefix + ").retex", 
+//  				   indentPrefix + "\t");
+//  	    s.retex.accept(r);
+//  	    degree += r.degree;
+//  	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+ ")");
+//  	    initStms.append(r.initStms.toString());
 
 	    // look at retval
 	    r = new TypeExpRecurse("(("+TREE_NATIVECALL+")"+stmPrefix + ").retval",
