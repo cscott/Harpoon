@@ -54,16 +54,19 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.39 1999-09-11 05:43:19 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.40 1999-09-11 06:12:44 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     private AllocationStrategy mas;
     private final OffsetMap offmap;
     private final Runtime   runtime;
+    private final SARegFileInfo regFileInfo; 
+    private final SAInstrBuilder instrBuilder;
 
     CodeGen codegen;
     
     public SAFrame(ClassHierarchy ch) { 
+	super();
         mas = new DefaultAllocationStrategy(this);
 	codegen = new CodeGen(this);
 	runtime = new harpoon.Backend.Runtime1.Runtime();
@@ -151,9 +154,7 @@ public class SAFrame extends Frame implements AllocationInfo {
     }
 
 
-    final SARegFileInfo regFileInfo;
     public RegFileInfo getRegFileInfo() { return regFileInfo; }
 
-    final SAInstrBuilder instrBuilder;
-    public InstrBuilder getInstrBuilder() { return null; }
+    public InstrBuilder getInstrBuilder() { return instrBuilder; }
 }

@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.45 1999-09-11 05:43:19 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.46 1999-09-11 06:12:44 pnkfelix Exp $
  */
 %%
 
@@ -84,10 +84,10 @@ import java.util.Iterator;
     public CodeGen(SAFrame frame) {
 	last = null;
 	this.frame = frame;
-	r0 = frame.getAllRegisters()[0];
-	r1 = frame.getAllRegisters()[1];
-	r2 = frame.getAllRegisters()[2];
-	r3 = frame.getAllRegisters()[3];
+	r0 = SARegFileInfo.reg[0];
+	r1 = SARegFileInfo.reg[1];
+	r2 = SARegFileInfo.reg[2];
+	r3 = SARegFileInfo.reg[3];
     }
 
     /** Emits <code>i</code> as the next instruction in the

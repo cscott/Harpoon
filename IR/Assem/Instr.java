@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.52 1999-09-11 05:43:19 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.53 1999-09-11 06:12:46 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -179,6 +179,11 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
         this.source_file = (source != null)?source.getSourceFile():"unknown";
         this.id = inf.getUniqueID();
         this.inf = inf;
+
+	// update tail for instrFactory
+	if (inf.cachedTail == null) {
+	    inf.cachedTail = this;
+	}
         this.assem = assem; this.dst = dst; this.src = src;
 
 	this.hashCode = (id<<5) + inf.hashCode();
@@ -416,11 +421,11 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	//          newBranch -> edge.to()
 	if (from != null &&
 	    from.next != edge.to()) {
-	    Instr last = this.inf.cachedTail;
+	    Util.assert(this.inf != null, "InstrFactory should never be null");
+	    Instr last = this.inf.getTail();
+	    Util.assert(last != null, "cachedTail should not be null");
 	    Util.assert(last.next == null, "last Instr: "+last+" should really be LAST, "+
 			"but it has next: " + last.next);
-	    Util.assert(last.succC().size() == 0, "last Instr: "+last+
-			"shouldn't have successors: "+Util.print(last.succC()));
 	    
 	    // Oh shit.  How should we design a way to insert
 	    // arbitrary code with a method in the *ARCHITECTURE

@@ -17,7 +17,7 @@ import java.util.Map;
  * generic <code>Assem.Instr</code>s used in code generation.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrFactory.java,v 1.1.2.17 1999-09-09 05:49:25 cananian Exp $
+ * @version $Id: InstrFactory.java,v 1.1.2.18 1999-09-11 06:12:46 pnkfelix Exp $
  */
 public abstract class InstrFactory {
     /** Maintains a
@@ -65,6 +65,13 @@ public abstract class InstrFactory {
 	code appending. 
     */     
     Instr cachedTail = null;
+    public Instr getTail() {
+	if (cachedTail == null) return null;
+	while(cachedTail.next != null) {
+	    cachedTail = cachedTail.next;
+	}
+	return cachedTail;
+    }
 
     /** Returns the <code>TempFactory</code> to use for creating
      *  <code>Temp</code>s which are used as arguments to <code>Instr</code>s
