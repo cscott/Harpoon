@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.84 $)dnl
+AC_REVISION($Revision: 1.85 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -149,6 +149,23 @@ yes)	AC_MSG_RESULT([yes])
 	;;
 esac
 AM_CONDITIONAL(REALTIME_JAVA, test $with_realtime_java = yes)
+
+dnl process option for RTJ stubs.
+AC_MSG_CHECKING([for RTJ stubs])
+AC_ARG_WITH(rtj-stubs,
+[  --with-rtj-stubs        incorporate stubs for RTJ support, but no real support],
+with_rtj_stubs="$withval", with_rtj_stubs="no")
+case "$with_rtj_stubs" in
+yes)    AC_MSG_RESULT([yes])
+	AC_DEFINE(WITH_RTJ_STUBS, 1,
+	[Define if you want to incorporate stubs for RTJ support, but no real support])
+	;;
+*)	AC_MSG_RESULT([no])
+;;	
+esac
+AM_CONDITIONAL(RTJ_STUBS, test $with_rtj_stubs = yes)
+AM_CONDITIONAL(RTJ_COMPILE, test $with_realtime_java = yes -o $with_rtj_stubs = yes)
+AM_CONDITIONAL(RTJ_STUBS_ONLY, test $with_realtime_java = no -a $with_rtj_stubs = yes)
 
 dnl process option to select full stack trace on exceptions.
 AC_MSG_CHECKING([stack trace verbosity])

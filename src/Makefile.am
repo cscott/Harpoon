@@ -51,10 +51,10 @@ TRANSACTDIR=transact
 TRANSACTLIB=transact/libtransact.la
 endif
 # for realtime java support, add realtime to SUBDIRS
-# if REALTIME_JAVA
+if RTJ_COMPILE
 REALTIMEDIR=realtime
 REALTIMELIB=realtime/librealtime.la
-# endif
+endif
 
 # see run% rule in top-level makefile to see how to generate a binary
 # executable from the Java.a file and these two libraries.

@@ -5,6 +5,9 @@ LIBS =
 
 noinst_LTLIBRARIES = librealtime.la
 
+if RTJ_STUBS_ONLY
+librealtime_la_SOURCES = RTJstubs.h GCstats.h GCstats.c
+else
 if REALTIME_JAVA
 librealtime_la_SOURCES = MemBlock.h MemBlock.c MemoryArea.c MemoryArea.h \
 RTJmalloc.h RTJmalloc.c blockAllocator.h blockAllocator.c heapMemory.h \
@@ -14,6 +17,6 @@ ImmortalMemory.c ImmortalPhysicalMemory.h ImmortalPhysicalMemory.c \
 LTMemory.h LTMemory.c NullMemoryArea.h NullMemoryArea.c ScopedPhysicalMemory.h \
 ScopedPhysicalMemory.c VTMemory.h VTMemory.c block.c block.h GCstats.c \
 GCstats.h
-else
-librealtime_la_SOURCES = GCstats.c GCstats.h
 endif
+endif
+
