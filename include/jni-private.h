@@ -43,9 +43,15 @@ struct claz {
   struct claz *component_claz;	/* component type, or NULL if non-array. */
   struct claz **interfaces; /* NULL terminated list of implemented interfaces*/
   u_int32_t size;		/* object size, including header */
+  struct aux_bitmap *gc_bitmap;        /* garbage collection field bitmap */  
   u_int32_t scaled_class_depth; /* sizeof(struct claz *) * class_depth */
   struct claz *display[0];	/* sized by FLEX */
   /* class method dispatch table after display */
+};
+
+/* the aux_bitmap structure stores large gc bitmaps */
+struct aux_bitmap {
+  void *bitmap[0];          /* variable size bitmap */
 };
 
 /* the oobj structure tells you what's inside the object layout. */
@@ -125,7 +131,7 @@ extern char *FNI_javamain;
 extern char *FNI_static_inits[];
 
 /* starts and ends of various segments */
-extern int *gc_start, *gc_end;
+/* extern int *gc_start, *gc_end; */
 extern int *static_objects_start, *static_objects_end;
 extern int *string_constants_start, *string_constants_end;
 extern int *code_start, *code_end;
