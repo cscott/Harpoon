@@ -15,7 +15,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.4 1999-01-22 23:53:19 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.5 1999-02-07 21:20:31 cananian Exp $
  */
 final class StaticState extends HCLibrary {
     /** which code representation to use. */
@@ -49,7 +49,7 @@ final class StaticState extends HCLibrary {
 	HField[] fl = cls.getDeclaredFields();
 	for (int i=0; i<fl.length; i++)
 	    if (fl[i].isStatic())
-		update(fl[i], ObjectRef.defaultValue(fl[i]));
+		update(fl[i], Ref.defaultValue(fl[i]));
 	// execute static initializer.
 	HMethod hm = cls.getClassInitializer();
 	if (hm!=null) Method.invoke(this, hm, new Object[0]);
@@ -161,6 +161,8 @@ final class StaticState extends HCLibrary {
 	nativeRegistry.put(nm.getMethod(), nm);
     }
     final NativeMethod findNative(HMethod hm) {
+	if (hm.getDeclaringClass().isArray() && hm.getName().equals("clone"))
+	    hm = HCobject.getMethod("clone", new HClass[0]);
 	return (NativeMethod) nativeRegistry.get(hm);
     }
     final Object getNativeClosure(HClass hc) {

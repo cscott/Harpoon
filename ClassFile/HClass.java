@@ -30,7 +30,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.8 1999-01-22 10:44:55 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.9 1999-02-07 21:20:33 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  */
 public abstract class HClass extends HPointer {
@@ -787,7 +787,10 @@ public abstract class HClass extends HPointer {
    */
   public boolean isSuperinterfaceOf(HClass hc) {
     Util.assert(this.isInterface());
-    UniqueVector uv = new UniqueVector(); uv.addElement(hc);
+    UniqueVector uv = new UniqueVector();
+    for ( ; hc!=null; hc = hc.getSuperclass())
+      uv.addElement(hc);
+
     for (int i=0; i<uv.size(); i++)
       if (uv.elementAt(i) == this) return true;
       else {
@@ -805,7 +808,9 @@ public abstract class HClass extends HPointer {
    */
   public boolean isInstanceOf(HClass hc) {
     if (this.isArray()) {
-      if (!hc.isArray()) return (hc==HClass.forName("java.lang.Object"));
+      if (!hc.isArray()) 
+	return (hc==HClass.forName("java.lang.Cloneable") ||
+		hc==HClass.forName("java.lang.Object"));
       HClass SC = this.getComponentType();
       HClass TC = hc.getComponentType();
       return ((SC.isPrimitive() && TC.isPrimitive() && SC==TC) ||
@@ -987,9 +992,18 @@ class HClassPrimitive extends HClass {
 class HClassArray extends HClass {
   HClass baseType;
   int dims;
+  HField lengthField;
+  HMethod cloneMethod;
+
   HClassArray(HClass baseType, int dims) {
     this.baseType = baseType; this.dims = dims;
     register();
+    this.lengthField = new HArrayField(this, "length", HClass.Int,
+				       Modifier.PUBLIC | Modifier.FINAL);
+    this.cloneMethod = new HArrayMethod(this, "clone",
+					Modifier.PUBLIC | Modifier.NATIVE,
+					HCobject, new HClass[0], new String[0],
+					new HClass[0], false);
   }
   public HClass getComponentType() {
     return forDescriptor(getDescriptor().substring(1));
@@ -1002,10 +1016,11 @@ class HClassArray extends HClass {
     return Util.repeatString("[", dims) + baseType.getDescriptor();
   }
   public HField [] getDeclaredFields () { 
-    return new HField[] { new HArrayField(this, "length", HClass.Int,
-					  Modifier.PUBLIC | Modifier.FINAL)};
+    return new HField[] { lengthField };
   }
-  public HMethod[] getDeclaredMethods() { return new HMethod[0]; }
+  public HMethod[] getDeclaredMethods() {
+    return new HMethod[] { cloneMethod };
+  }
   public int getModifiers() {throw new Error("No modifiers for an array.");}
   public HClass getSuperclass() { return HCobject; }
   public HClass[] getInterfaces() {
