@@ -8,7 +8,7 @@ package harpoon.IR.Assem;
  * pattern coupled to the Instr intermediate representation.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InstrVisitor.java,v 1.1.2.4 1999-08-03 03:38:38 pnkfelix Exp $ */
+ * @version $Id: InstrVisitor.java,v 1.1.2.5 1999-09-11 01:16:32 pnkfelix Exp $ */
 public abstract class InstrVisitor  {
     
     /** Creates a <code>InstrVisitor</code>. */
@@ -17,6 +17,7 @@ public abstract class InstrVisitor  {
     /** Visit an <code>Instr</code> i. */
     public abstract void visit(Instr i);
     public void visit(InstrDIRECTIVE i) { visit((Instr)i); }
+    public void visit(InstrJUMP i) { visit((Instr)i); }
     public void visit(InstrLABEL i) { visit((Instr)i); }
     public void visit(InstrMEM i) { visit((Instr)i); }
     public void visit(InstrMOVE i) { visit((Instr)i); }

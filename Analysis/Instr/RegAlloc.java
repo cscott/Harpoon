@@ -44,7 +44,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.34 1999-09-08 23:49:05 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.35 1999-09-11 01:16:31 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = true;
@@ -365,7 +365,7 @@ public abstract class RegAlloc  {
 	Iterator instrs = in.getElementsI();
 	while(instrs.hasNext()) {
 	    Instr i = (Instr) instrs.next();
-	    i.visit(tf);
+	    i.accept(tf);
 	}
 	// now tf should have a full map of Temps to needed Stack
 	// Offsets.
@@ -376,7 +376,7 @@ public abstract class RegAlloc  {
 	instrs = in.getElementsI();
 	while(instrs.hasNext()) {
 	    Instr i = (Instr) instrs.next();
-	    i.visit(ir);
+	    i.accept(ir);
 	}
 
 	return in;
@@ -540,7 +540,7 @@ class BrainDeadLocalAlloc extends RegAlloc {
 	InstrVisitor memVisitor = new BrainDeadInstrVisitor();
 	
 	while(instrs.hasNext()) {
-	    ((Instr)instrs.next()).visit(memVisitor);
+	    ((Instr)instrs.next()).accept(memVisitor);
 	}
 	
 	return code;

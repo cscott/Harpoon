@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.50 1999-09-10 22:26:05 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.51 1999-09-11 01:16:31 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -105,7 +105,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 
     /** Sets whether control flow can go to <code>this.next</code>.  
 	Note that if <code>
-	<pre>(!this.canFallThrough) && (this.targets == null)</pre>
+	<nobr>(!this.canFallThrough)</nobr> && 
+	<nobr>(this.targets == null)</nobr>
 	</code>
 	then <code>this</code> represents an exit point for the code
 	and should be treated as such for data flow analysis, etc.
@@ -339,7 +340,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     }
 
     /** Inserts <code>this</code> at <code>edge</code>.  The purpose 
-	of this insertion is to modify CONTROL FLOW, rather than just
+	of this insertion is to modify <I>control flow</I>, rather than just
 	instruction layout.  See <code>layout(HCodeEdge)</code> for
 	direct modification of layout (which is less constrained than
 	this method but is not intended for generic program
@@ -361,11 +362,12 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 		  <code>null</code> and
 		  <code>this.canFallThrough</code>). 
 	     <LI> <code>this</code> is not currently in an instruction
-	          stream (ie this.getPrev() == null and 
-		  this.getNext() == null).  This is true for newly
-		  created <code>Instr</code>s and for
-		  <code>Instr</code> which have just had their
-		  <code>remove()</code> method called.
+	          stream (ie <code>
+		  <nobr>this.getPrev() == null</nobr></code> and <code>
+		  <nobr>this.getNext() == null</nobr></code>).  This
+		  is true for newly created <code>Instr</code>s and
+		  for <code>Instr</code> which have just had their
+		  <code>remove()</code> method called. 
 	</OL>
 	<BR> <B>modifies:</B> <code>edge.from()</code>, 
 	     <code>edge.to()</code>, <code>this</code>
@@ -435,8 +437,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	     layout, not according to control flow) and setting the
 	     <code>this.prev</code> and <code>this.next</code> fields
 	     to <code>null</code>. 
-	Instr#insertAt
-	Instr#layout
+	@see Instr#insertAt
+	@see Instr#layout
     */    
     public void remove() {
 	if (this.next != null) {
@@ -461,8 +463,9 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 		  equals <code>to</code> and <code>to.getPrev()</code>
 		  equals <code>from</code>.
 	     <LI> <code>this</code> is not currently in an instruction
-	          stream (ie <nobr> this.getPrev() == null </nobr> and 
-		  <nobr> this.getNext() == null) </nobr>.  
+	          stream (ie <code><nobr> this.getPrev() == null
+		  </nobr></code> and <code><nobr> this.getNext() ==
+		  null) </nobr></code>. 
 		  This is true for newly created <code>Instr</code>s
 		  and for <code>Instr</code> which have just had their 
 		  <code>remove()</code> method called.
@@ -578,7 +581,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     // ******************** HasEdges interface
 
     /** Returns the control flow edges of <code>this</code>.
-	Note that this returns edges according to CONTROL FLOW, not in
+	Note that this returns edges according to <I>control flow</I>, not in
 	terms of instruction layout.  Look at <code>getNext()</code>
 	and <code>getPrev()</code> for information on instruction
 	layout. 
@@ -587,8 +590,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	Collection c = edgeC();
 	return (HCodeEdge[]) c.toArray(new InstrEdge[c.size()]);
     }
-    /** Returns the control flow edges of <code>this</code>.
-	Note that this returns edges according to CONTROL FLOW, not in
+    /** Returns the <I>control flow</I> edges of <code>this</code>.
+	Note that this returns edges according to <I>control flow</I>, not in
 	terms of instruction layout.  Look at <code>getNext()</code>
 	and <code>getPrev()</code> for information on instruction
 	layout. 
@@ -603,8 +606,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	};
     }
 
-    /** Returns the control flow predecessors of <code>this</code>.
-	Note that this returns edges according to CONTROL FLOW, not in
+    /** Returns the <I>control flow</I> predecessors of <code>this</code>.
+	Note that this returns edges according to <I>control flow</I>, not in
 	terms of instruction layout.  Look at <code>getNext()</code>
 	and <code>getPrev()</code> for information on instruction
 	layout.  
@@ -616,8 +619,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	HCodeEdge[] edges = new HCodeEdge[c.size()];
 	return (HCodeEdge[]) c.toArray(edges);
     }
-    /** Returns the control flow predecessors of <code>this</code>.
-	Note that this returns edges according to CONTROL FLOW, not in
+    /** Returns the <I>control flow</I> predecessors of <code>this</code>.
+	Note that this returns edges according to <I>control flow</I>, not in
 	terms of instruction layout.  Look at <code>getNext()</code>
 	and <code>getPrev()</code> for information on instruction
 	layout. 
@@ -645,8 +648,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	};
     }
 
-    /** Returns the control flow successors of <code>this</code>.
-	Note that this returns edges according to CONTROL FLOW, not in
+    /** Returns the <I>control flow</I> successors of <code>this</code>.
+	Note that this returns edges according to <I>control flow</I>, not in
 	terms of instruction layout.  Look at <code>getNext()</code>
 	and <code>getPrev()</code> for information on instruction
 	layout. 
@@ -656,8 +659,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	HCodeEdge[] edges = new HCodeEdge[c.size()];
 	return (HCodeEdge[]) c.toArray(edges);
     }
-    /** Returns the control flow successors of <code>this</code>.
-	Note that this returns edges according to CONTROL FLOW, not in
+    /** Returns the <I>control flow</I> successors of <code>this</code>.
+	Note that this returns edges according to <I>control flow</I>, not in
 	terms of instruction layout.  Look at <code>getNext()</code>
 	and <code>getPrev()</code> for information on instruction
 	layout. 
@@ -711,41 +714,54 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	arbitrary fixup code on edges between <code>Instr</code>s by
 	adding new branches and labels.  
 
-	<P> For example: <BR><code><pre>
-	       beq L0
-	       ...assembly code...
-	       L0:
-	</pre></code> <BR>
-	can be turned into: <BR><code><pre>
-	       beq L1
-	       ...assembly code...
-	       L1:
-	       ...fixup code...
-	       b L0
-	       L0:
-        </pre></code>
-	For those instructions, this method returns
+	<P> For example: <BR><code>
+	<TABLE CELLSPACING=0 CELLPADDING=0>
+	<TR><TD> [<I> code block 1 </I>] 
+	<TR><TD><code>beq L0</code></TD></TR>
+	<TR><TD>[<I> code block 2 </I>]</TD></TR>
+	<TR><TD><code>L0:</code></TD></TR>
+	<TR><TD>[<I> code block 3, which does not fall through</I>]</TD></TR>
+	</TABLE>
+	</code><BR>
+	can be turned into: <BR>
+	<TABLE CELLSPACING=0 CELLPADDING=0>
+	<TR><TD>[<I> code block 1 </I>]</TD></TR>
+	<TR><TD><code>beq L1</code></TD></TR>
+	<TR><TD>[<I> code block 2 </I>]</TD></TR>
+	<TR><TD><code>L0:</code></TD></TR>
+	<TR><TD>[<I> code block 3, which does not fall through </I>]</TD></TR>
+	<TR><TD><code>L1:</code></TD></TR>
+	<TR><TD>[<I> fixup code prefixing block 3 </I>]</TD></TR>
+	<TR><TD><code>b L0</code></TD></TR>
+	</TABLE>
+        </code><BR>
+	For such instructions, this method returns
 	<code>true</code>.  
 
 	<P> However, some instructions (such as computed branches)
-	cannot have their targets list modified in such a manner.
-	These instructions should be initialized with an anonymous
+	cannot have their targets list modified in such a manner  
+	(the only way to safely insert code between blocks is to first
+	ensure that a given computed branch is the only branch that
+	jumps to the target label, and then insert the fixup code at
+	the point of the label). 
+	
+	<P> Such instructions should be initialized with an anonymous 
 	inner class that overrides this method and returns
-	<code>false</code>. 
+	<code>false</code>.  
 
 	<P> An important invariant that must be preserved (and is high
 	level enough that Tree form implementors must take note of it)
 	is that 
 	
-	<P> for all n0, n1, n2 elem of Instr such that there exists an
-	edge <nobr> &lt n0, n1 &gt </nobr> and an edge <nobr> &lt n1,
-	n2 &gt </nobr>, 
-	n0 doesn't have modifiable targets implies the edge 
-	<nobr> &lt n0, n1 &gt </nobr> dominates the edge 
-	<nobr> &lt n1, n2 &gt </nobr>.
+	<P> for all <I>n0</I>, <I>n1</I>, <I>n2</I> elem of Instr such
+	that there exists an edge <nobr> &lt <I>n0</I>, <I>n1</I> &gt
+	</nobr> and an edge <nobr> &lt <I>n1</I>, <I>n2</I> &gt
+	</nobr>,  <I>n0</I> doesn't have modifiable targets implies
+	the edge <nobr> &lt <I>n0</I>, <I>n1</I> &gt </nobr> dominates
+	the edge <nobr> &lt <I>n1</I>, <I>n2</I> &gt </nobr>. 
 	
-	<P> In other words, <code>n1</code> should have no predecessors
-	other than <code>n0</code>.
+	<P> In other words, <I>n1</I> should have no predecessors
+	other than <I>n0</I>. 
      */
     public boolean hasModifiableTargets() {
 	return true;
