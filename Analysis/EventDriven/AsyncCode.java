@@ -60,7 +60,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.45 2000-01-25 20:56:34 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.46 2000-01-25 23:25:35 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -410,16 +410,18 @@ public class AsyncCode {
 		Quad prev = get;
 		HField[] envfields=getEnv(q).getDeclaredFields();
 		TypeMap map=((QuadNoSSA) this.hc).typeMap;
-		for(int i=0; i<liveout.length; i++) {
+		for(int i=0,j=0; i<liveout.length; i++) {
 		    if (suppress == null || !suppress.equals(liveout[i])) {
 			Quad ng =(map.typeMap(q, liveout[i])!=HClass.Void)? 
 			    ((Quad)new GET(qf, first, ctmap.tempMap(liveout[i]),
-				    envfields[i], tenv)):
+				    envfields[j], tenv)):
 			    ((Quad)new CONST(qf, first, ctmap.tempMap(liveout[i]),
 				      null, HClass.Void));
 			Quad.addEdge(prev, 0, ng, 0);
 			prev = ng;
 		    }
+		    if (map.typeMap(q,liveout[i])!=HClass.Void)
+			j++;
 		}
 
 		// typecast the argument if necessary
@@ -513,6 +515,7 @@ public class AsyncCode {
 		HField hfield=hclass.getField("next");
 		HMethod resume=null;
 		if (hc.getMethod().getReturnType()!=HClass.Void) {
+		    System.out.println(hc.getMethod().getReturnType());
 		    if (hc.getMethod().getReturnType().isPrimitive())
 			resume=
 			    hfield.getType().getMethod("resume",
