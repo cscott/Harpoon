@@ -51,7 +51,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.17 1999-06-16 02:34:59 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.18 1999-09-09 00:48:44 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -327,7 +327,7 @@ final class Translate { // not public.
 	    // lv is being rewritten either way, so remove lvTo from lv state.
 	    JSRStack jlvp = JSRStack.remove(jlv, lvTo);
 	    if (isRetAddrS(stkFrom))
-		jlvp = JSRStack.insert(jlv, lvTo, getJSRtargetS(stkFrom));
+		jlvp = JSRStack.insert(jlvp, lvTo, getJSRtargetS(stkFrom));
 	    return (jlv==jlvp) ? this :
 		new State(ss, stackSize, ls, js, jlvp, calls);
 	}
