@@ -43,7 +43,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.18 1999-07-29 00:38:35 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.19 1999-07-29 01:13:05 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -109,8 +109,11 @@ public class SAFrame extends Frame implements AllocationInfo {
         offmap = new OffsetMap32(null);
     }
 
+    CodeGen codegen;
+
     public SAFrame() { 
         mas = new DefaultAllocationStrategy(this);
+	codegen = new CodeGen();
     }
 
     /* "method" constructor, use for per-method initializations */
@@ -233,6 +236,7 @@ public class SAFrame extends Frame implements AllocationInfo {
 
     /** Not implemented. */
     public GenericCodeGen codegen() { 
+	
 	Util.assert(false, "DefaultFrame.codegen() Not implemented");
 	return null;
     }
