@@ -65,7 +65,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.120 2000-01-14 18:53:11 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.121 2000-01-25 15:16:13 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1246,8 +1246,8 @@ BINOP<l>(MUL, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l", r2, k );
     emit( ROOT, "mov `d0, `s0h", r3, k );
-    emit( ROOT, "mov `d0, `s0l", r1, j );
-    emit( ROOT, "mov `d0, `s0h", r0, j );
+    emit( ROOT, "mov `d0, `s0l", r0, j );
+    emit( ROOT, "mov `d0, `s0h", r1, j );
     emit2(ROOT, "bl ___muldi3", // uses & stomps on these registers
 	 new Temp[]{r0,r1,r2,r3,IP,LR}, new Temp[]{r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
