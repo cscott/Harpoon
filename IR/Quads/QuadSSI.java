@@ -15,6 +15,7 @@ import harpoon.Util.Util;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.HashMap;
 /**
  * <code>Quads.QuadSSI</code> is a code view in SSI form.
  * Quad form exposes the details of
@@ -26,7 +27,7 @@ import java.util.Map;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.5 2002-09-01 07:47:20 cananian Exp $
+ * @version $Id: QuadSSI.java,v 1.6 2002-11-30 05:13:43 salcianu Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -37,13 +38,48 @@ public class QuadSSI extends Code /* which extends HCode */ {
     */
     public static boolean KEEP_QUAD_MAP_HACK = false;
 
-    private Map quadMap;
+    /** Map from old no-ssa quads to new ssi quads. */
+    private Map mapNoSSA2SSI;
+    /** Map from new ssi quads to old no-ssa quads. */
+    private Map mapSSI2NoSSA;
 
-    public Map getQuadMap() {
+    /** Every QuadSSI is built from a QuadNoSSA.  This method returns
+	a map from the original NoSSA quads to the SSI quads of
+	<code>this</code> codeview.
+	
+	@return a map original NoSSA quads -> SSI quads
+
+	@see QuadSSI#getQuadMapSSI2NoSSA */
+    public Map getQuadMapNoSSA2SSI() {
         assert KEEP_QUAD_MAP_HACK
             : "You should set KEEP_QUAD_MAP_HACK if you need this";
+        return mapNoSSA2SSI;
+    }
 
-        return quadMap;
+    /** Returns the reverse of the map returned by
+        <code>getQuadMapNoSSA2SSI</code>. 
+
+	@return a map SSI quads -> original NoSSA quads
+
+	@see QuadSSI#getQuadMapNoSSA2SSI */
+    public Map getQuadMapSSI2NoSSA() {
+        assert KEEP_QUAD_MAP_HACK
+            : "You should set KEEP_QUAD_MAP_HACK if you need this";
+        return mapSSI2NoSSA;
+    }
+
+    /** Update the QuadNoSSA to QuadSSI mappings when the SSI quad
+	<code>oldquad</code> is replaced of <code>this</code> is
+	replaced with the new SSI quad <code>newquad</code>. */
+    public void notifyReplace(Quad oldquad, Quad newquad) {
+	if(mapSSI2NoSSA != null) { // mappings exist
+	    Quad quad_nossa = (Quad) mapSSI2NoSSA.get(oldquad);
+	    // replace quad_nossa <-> oldquad with 
+	    //         quad_nossa <-> newquad
+	    mapNoSSA2SSI.put(quad_nossa, newquad);
+	    mapSSI2NoSSA.remove(oldquad);
+	    mapSSI2NoSSA.put(newquad, quad_nossa);
+	}
     }
 
     /** Creates a <code>Code</code> object from a bytecode object. */
@@ -59,14 +95,16 @@ public class QuadSSI extends Code /* which extends HCode */ {
 	    new AllocationInformationMap();
 
         if (KEEP_QUAD_MAP_HACK) {
-            quadMap = rt0.quadMap;
-        }
+            mapNoSSA2SSI = rt0.quadMap;
+	    mapSSI2NoSSA = new HashMap();
+	    for(Iterator it = mapNoSSA2SSI.entrySet().iterator();
+		it.hasNext(); ) {
+		Map.Entry entry = (Map.Entry) it.next();
+		mapSSI2NoSSA.put(entry.getValue(), entry.getKey());
+	    }
+	}
 
-        // dead code opt will kill our mappings so don't run it
-        if (!KEEP_QUAD_MAP_HACK) {
-            DeadCode.optimize(this, aim);
-        }
-        
+	DeadCode.optimize(this, aim);
 	setAllocationInformation(aim);
     }
 

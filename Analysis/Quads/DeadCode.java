@@ -8,6 +8,8 @@ import harpoon.Analysis.AllocationInformationMap;
 import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.IR.Quads.Code;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.Edge;
@@ -68,7 +70,7 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.5 2002-07-18 17:25:11 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.6 2002-11-30 05:13:21 salcianu Exp $
  */
 
 public abstract class DeadCode  {
@@ -111,7 +113,7 @@ public abstract class DeadCode  {
 
 	// remove the useless stuff, including useless cjmps/phis
 	for (int i=0; i<ql.length; i++)
-		W.push(ql[i]);
+	    W.push(ql[i]);
 	v = new EraserVisitor(W, useful, useMap, nm);
 	while (!W.isEmpty()) {
 	    Quad q = (Quad) W.pull();
@@ -129,6 +131,7 @@ public abstract class DeadCode  {
     static void replace(Quad oldquad, Quad newquad,
 			AllocationInformation oldaim,
 			AllocationInformationMap newaim, TempMap tm) {
+	oldquad.getFactory().getParent().notifyReplace(oldquad, newquad);
 	Quad.replace(oldquad, newquad);
 	// update allocation properties, too.
 	if (newaim!=null && (oldquad instanceof ANEW||oldquad instanceof NEW))
