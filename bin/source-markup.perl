@@ -139,7 +139,7 @@ if ($isjava && !$opt_j) {
 # some URL and email address hackery
 for ($i=0; $i<=$#lines; $i++) {
     while ($lines[$i] =~
-	   m"(http://[/A-Za-z0-9_#,.?&=%:;+-]+)|(\w+@[A-Za-z0-9._]+)"g){
+	   m"(http://[/~A-Za-z0-9_#,.?&=%:;+-]+)|(\w+@[A-Za-z0-9._]+)"g){
 	my $endloc = pos $lines[$i];
 	my $startloc=$endloc - (defined($1)?length($1):length($2));
         &insertBefore($i,$startloc,"<A HREF=\"$1\">") if defined $1;
