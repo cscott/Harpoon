@@ -9,7 +9,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>CONSTANT_Class</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpClass.java,v 1.3 1998-08-05 00:52:25 cananian Exp $
+ * @version $Id: OpClass.java,v 1.4 1998-09-12 01:55:18 cananian Exp $
  * @see harpoon.ClassFile.Raw.Constant.ConstantClass
  */
 public class OpClass extends Operand {
@@ -22,7 +22,9 @@ public class OpClass extends Operand {
     if (!(c instanceof ConstantClass))
       throw new Error("OpClass not given CONSTANT_Class");
     String classname = ((ConstantClass) c).name();
-    hclass = HClass.forName(classname.replace('/','.'));
+    if (classname.charAt(0) != '[') // not a real descriptor yet.
+	classname = "L" + classname + ";";
+    hclass = HClass.forDescriptor(classname);
   }
   /** Return the class referenced. */
   public HClass value() { return hclass; }
