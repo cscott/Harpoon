@@ -9,11 +9,7 @@
 
 #ifdef JOLDEN_WRITE_BARRIER
 
-#ifdef WITH_THREADS
-extern flex_mutex_t intergen_mutex;
-#endif
-
-FLEX_MUTEX_DECLARE_STATIC(intergen_mutex);
+FLEX_MUTEX_DECLARE_EXTERN(intergen_mutex);/*defined in src/gc/generational.c*/
 
 #ifdef WITH_GENERATION_CHECK
 #include "../src/gc/ms_heap_struct.h"
