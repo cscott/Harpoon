@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.65 1999-09-13 01:35:47 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.66 1999-09-13 08:26:32 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -258,6 +258,18 @@ tar-install: tar
 	chmod a+r harpoon.tgz harpoon.tgz.TIMESTAMP
 	$(SCP) harpoon.tgz harpoon.tgz.TIMESTAMP \
 		$(INSTALLMACHINE):$(INSTALLDIR)
+
+srcdoc: $(ALLSOURCE)
+	make srcdoc-clean
+	for f in $(filter-out Test%,$(ALLSOURCE)); do \
+		echo $$f ; \
+		mkdir -p srcdoc/`dirname $$f`; \
+		bin/source-markup.perl $$f \
+		> srcdoc/`dirname $$f`/`basename $$f .java`.html; \
+	done
+
+srcdoc-clean:
+	-${RM} -r srcdoc
 
 doc:	doc/TIMESTAMP
 
