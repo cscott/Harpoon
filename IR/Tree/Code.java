@@ -67,6 +67,8 @@ public abstract class Code extends HCode
    *  belongs to.  */
   public HMethod getMethod() { return this.parent; }
 
+  public Frame getFrame() { return this.frame; }
+
   /** Returns the root of the Tree */
   public HCodeElement getRootElement() { return this.tree; }
 
