@@ -7,14 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/*
- * Class:     java_lang_VMSecurityManager
- * Method:    getClassContext
- * Signature: ()[Ljava/lang/Class;
- */
-JNIEXPORT jobjectArray JNICALL Java_java_lang_VMSecurityManager_getClassContext
-  (JNIEnv *, jclass);
-
 #ifdef __cplusplus
 }
 #endif

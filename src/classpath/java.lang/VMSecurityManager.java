@@ -57,7 +57,8 @@ final class VMSecurityManager
    *
    * @return an array of the declaring classes of each stack frame
    */
-  static native Class[] getClassContext();
+    // WSB hack: Nobody called me!
+  static Class[] getClassContext() { return new Class[0]; }
 
   /**
    * Get the current ClassLoader. This is the first non-null class loader
