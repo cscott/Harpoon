@@ -5,6 +5,7 @@ package harpoon.Backend.Generic;
 
 import harpoon.IR.Tree.Code;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Tree.Print;
 
 /**
  * <code>CodeGen</code> is a general class for specific Backends to
@@ -12,7 +13,7 @@ import harpoon.IR.Assem.Instr;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericCodeGen.java,v 1.1.2.5 1999-08-03 23:53:18 pnkfelix Exp $ */
+ * @version $Id: GenericCodeGen.java,v 1.1.2.6 1999-08-07 00:43:45 pnkfelix Exp $ */
 public abstract class GenericCodeGen {
 
     private static boolean DEBUG = false;
@@ -36,21 +37,7 @@ public abstract class GenericCodeGen {
     }
 
     protected String prettyPrint(harpoon.IR.Tree.Tree exp) {
-	final StringBuffer accum = new StringBuffer();
-	harpoon.IR.Tree.TreeVisitor visitor = new harpoon.IR.Tree.TreeVisitor(){
-	    public void visit(harpoon.IR.Tree.Tree t) {
-		accum.append(t.toString());
-	    }
-	    public void visit(harpoon.IR.Tree.MOVE t) {
-		accum.append("MOVE(");
-		t.dst.visit(this);
-		accum.append(", ");
-		t.src.visit(this);
-		accum.append(")");
-	    }
-	};
-	exp.visit(visitor);
-	return accum.toString();
+	return Print.print(exp);
     }
     
 } 

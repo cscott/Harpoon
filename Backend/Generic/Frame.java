@@ -35,7 +35,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.23 1999-08-04 17:57:14 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.24 1999-08-07 00:43:45 pnkfelix Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -126,6 +126,7 @@ public abstract class Frame {
 	       ability to incorporate additional information into the
 	       produced <code>List</code> of <code>Instr</code>s.
 	@see Frame#makeLoad(Temp, int, Instr)
+	@see Frame#getSize
     */ 
     public List makeLoad(List regs, int startingOffset, Instr template) { 
         ArrayList lists = new ArrayList();
@@ -164,6 +165,8 @@ public abstract class Frame {
 	       ability to incorporate additional information into the
 	       produced <code>List</code> of <code>Instr</code>s.
 	@see Frame#makeStore(Temp, int, Instr)
+	@see Frame#getSize
+
     */ 
     public List makeStore(List regs, int startingOffset, Instr template) { 
         ArrayList lists = new ArrayList();
@@ -189,8 +192,9 @@ public abstract class Frame {
 	       <code>template</code> gives <code>this</code> the
 	       ability to incorporate additional information into the
 	       produced <code>List</code> of <code>Instr</code>s.   
+	@see Frame#getSize
     */ 
-    public abstract List makeLoad(Temp reg, int offset, Instr template);
+    protected abstract List makeLoad(Temp reg, int offset, Instr template);
 
     /** Generates a new set of <code>Instr</code>s for memory traffic
 	from the register file to RAM. 
@@ -198,7 +202,7 @@ public abstract class Frame {
 	       the value that will be stored at <code>offset</code> in
 	       memory. 
 	@param <code>offset</code> The stack offset.  This is an
-	       ordinal number, it is NOT meant to be a multiple of
+	       abstract number, it is NOT necessarily a multiple of
 	       some byte size.  This frame should perform the
 	       necessary magic to turn the number into an appropriate
 	       stack offset. 
@@ -207,8 +211,29 @@ public abstract class Frame {
 	       <code>template</code> gives <code>this</code> the
 	       ability to incorporate additional information into the
 	       produced <code>List</code> of <code>Instr</code>s.   
+	@see Frame#getSize
     */ 
-    public abstract List makeStore(Temp reg, int offset, Instr template);
+    protected abstract List makeStore(Temp reg, int offset, Instr template);
+
+    /** Returns the size of <code>temp</code> on the stack.
+	<BR><B>effects:</B> Calculates the size that a value of the
+	    type of <code>temp</code> would have on the stack (in
+	    terms of the abstract number used for calculating stack
+	    offsets in <code>makeLoad()</code> and
+	    <code>makeStore()</code>).  
+	<BR> When constructing loads and stores, the register allocator
+	    should ensure that live values do not overlap on the
+	    stack.  Thus, given two temps <code>t1</code> and
+	    <code>t2</code>, <code>offset(t2)</code> should be at
+	    least <code>offset(t1) + getSize(t1)</code>
+	<BR> The default implementation simply returns 1; subclasses
+	     should override this and check for double word temps, etc.
+        @see Frame#makeLoad
+        @see Frame#makeStore
+    */
+    public int getSize(Temp temp) {
+	return 1;
+    }
 
     /** Create a new Frame one level below the current one. */
     public abstract Frame newFrame(String scope);

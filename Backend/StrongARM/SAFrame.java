@@ -45,7 +45,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.28 1999-08-06 19:39:57 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.29 1999-08-07 00:43:53 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -253,6 +253,14 @@ public class SAFrame extends Frame implements AllocationInfo {
 			     new Temp[]{ },
 			     new Temp[]{ r , SP });
 	    return Arrays.asList(new InstrMEM[] { store });
+	}
+    }
+
+    public int getSize(Temp temp) {
+	if (temp instanceof TwoWordTemp) {
+	    return 2;
+	} else {
+	    return 1;
 	}
     }
 

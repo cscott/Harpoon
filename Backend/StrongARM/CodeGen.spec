@@ -51,7 +51,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.22 1999-08-06 21:08:56 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.23 1999-08-07 00:43:53 pnkfelix Exp $
  */
 %%
 
@@ -574,6 +574,7 @@ CONST<i>(c) = i %{
 			   new Temp[]{ i }, null));
 }%
 
+/*
 CONST<p>(c) = i %{
     // the only CONST of type Pointer we should see is NULL
     Temp i = makeTemp();
@@ -581,6 +582,7 @@ CONST<p>(c) = i %{
     emit(new Instr( instrFactory, ROOT, 
 		    "mov `d0, #0", new Temp[]{ i }, null));
 }%
+*/
 
 BINOP<p,i>(MUL, j, k) = i %{
     Temp i = makeTemp();		
@@ -967,7 +969,7 @@ MOVE<d,l>(dst, src) %{
 		    "mov `d0h, `s0h", dst, src );
 }%
 
-MOVE<i>(dst, CONST(s)) %{
+MOVE<i>(dst, CONST<i>(s)) %{
     // TODO: this needs to be fixed, because StrongARM can't load more
     // than a byte of information at a time...
     emit(new Instr(instrFactory, ROOT,

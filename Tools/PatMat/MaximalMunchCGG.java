@@ -24,7 +24,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.24 1999-08-06 22:30:49 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.25 1999-08-07 00:43:54 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -795,7 +795,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	while(expPairsIter.hasNext()) {
 	    RuleTuple triplet = (RuleTuple) expPairsIter.next();
 	    out.println(triplet.matchStms);
-	    out.println("\t\t\t\tif (_matched_) { // action code!");
+	    out.println("\t\t\t\tif (_matched_) { // action code! degree: "+triplet.degree);
 	    out.println(triplet.actionStms);
 	    
 	    out.println("\t\t\t}");
@@ -804,22 +804,23 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	out.println("\t\tharpoon.Util.Util.assert(false, \"Uh oh...\\n"+
 		    "maximal munch didn't match anything...SPEC file\\n"+
 		    "is not complete enough for this program\\n"+
-		    "Died on \"+prettyPrint("+expArg+"));");
+		    "Died on \"+prettyPrint("+expArg+")+\" in \" + prettyPrint(globalStmArg));"); 
 	out.println("\t\treturn null; // doesn't matter, we're dead if we didn't match...");
 	out.println("\t\t }"); // end munchExp
 	
+	out.println("\t"+TREE_Stm +" globalStmArg=null;");
 
 	// for each rule for a statement we need to implement a
 	// clause in munchStm()
 	out.println("\t\t void munchStm("+TREE_Stm + " " + stmArg + ") {");
-	
+	out.println("\t\t\t globalStmArg = " + stmArg +";");
 	out.println("\t\t\tboolean _matched_ = false;");
 	
 	Iterator stmPairsIter = stmMatchActionPairs.iterator();
 	while(stmPairsIter.hasNext()) {
 	    RuleTuple triplet = (RuleTuple) stmPairsIter.next();
 	    out.println(triplet.matchStms);
-	    out.println("\t\t\t\tif (_matched_) { // action code!");
+	    out.println("\t\t\t\tif (_matched_) { // action code! : degree "+triplet.degree);
 	    out.println(triplet.actionStms);
 	    
 	    out.println("\t\t\t}");
@@ -884,7 +885,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	public int compare(Object o1, Object o2) {
 	    RuleTuple r1 = (RuleTuple) o1;
 	    RuleTuple r2 = (RuleTuple) o2;
-	    return r1.degree - r2.degree;
+	    return -(r1.degree - r2.degree);
 	}
     }
 
