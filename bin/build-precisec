@@ -3,11 +3,11 @@ name=$2
 cls=$1
 dir=as$name
 # check java version
-if if java -version 2>&1 | grep -q 'version "1.1'; then
-  echo "WARNING: YOU ARE USING JAVA 1.1. (JDK1.2 or above is preferred)"
+if java -version 2>&1 | grep -q 'version "1.1'; then
+  echo "WARNING: YOU ARE USING JAVA 1.1. (JDK1.2 or above is preferred)" 1>&2
 fi
 # ok.
-echo "Building $cls in $dir; result will be ${name}-Java.a"
+echo "Building $cls in $dir; result will be ${name}-Java.a" 1>&2
 if [ -d $dir ]; then
     /bin/rm -rf $dir
 fi
@@ -21,8 +21,9 @@ if [ -d ../Runtime/include ]; then
     make -C $dir CC="gcc -I../../Runtime/include -g -O9" && \
     mv -f $dir/Java.a ../Runtime/${name}-Java.a && \
     make -C ../Runtime run${name} && \
-    echo "EXECUTABLE left in ../Runtime/run${name}."
+    rm -f ../Runtime/${name}-Java.a && \
+    echo "EXECUTABLE left in ../Runtime/run${name}." 1>&2
 else
-    echo "ASSEMBLY FILES left in $dir; see $dir/Makefile to build."
+    echo "ASSEMBLY FILES left in $dir; see $dir/Makefile to build." 1>&2
 fi
 exit $?
