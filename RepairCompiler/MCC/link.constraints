@@ -1,6 +1,5 @@
 [], sizeof(Nodes) >= literal(1);
 [forall node in Nodes], sizeof(node.~nextnodes) <= literal(1);
-[forall node in Nodes], sizeof(node.~prevnodes) <= literal(1);
 [forall n in Nodes], 
 	sizeof(n.nextnodes) = literal(0) or n.nextnodes.prevnodes = n;
 

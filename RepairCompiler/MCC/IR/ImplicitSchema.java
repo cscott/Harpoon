@@ -11,7 +11,7 @@ public class ImplicitSchema {
     }
 
     public void update() {
-	//	updaterules();
+	updaterules();
 	updateconstraints();
 	updaterelationconstraints();
     }
@@ -101,12 +101,11 @@ public class ImplicitSchema {
 	   1. match up quantifiers
 	   2. check inclusion condition
 	   3. see if guard expr of set rule is more general */
-
 	RelationInclusion inc1=(RelationInclusion) r1.getInclusion();
 	RelationDescriptor rd=inc1.getRelation();
 	SetDescriptor sd=isdomain?rd.getDomain():rd.getRange();
 	Expr expr=isdomain?inc1.getLeftExpr():inc1.getRightExpr();
-
+	
 	Inclusion inc2=r2.getInclusion();
 	if (!(inc2 instanceof SetInclusion))
 	    return false;
@@ -294,7 +293,7 @@ public class ImplicitSchema {
 		    for(Iterator superit=supersets.iterator();superit.hasNext();) {
 			SetDescriptor sd1=(SetDescriptor)superit.next();
 			Rule nr=new Rule();
-			nr.guard=r.guard;
+			nr.setGuardExpr(r.getGuardExpr());
 			nr.quantifiers=r.quantifiers;
 			nr.isstatic=r.isstatic;
 			nr.isdelay=r.isdelay;

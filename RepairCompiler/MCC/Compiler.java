@@ -17,7 +17,7 @@ import MCC.IR.*;
  */
 
 public class Compiler {
-    public static boolean REPAIR=false;
+    public static boolean REPAIR=true;
     
     public static void main(String[] args) {
         State state = null;
@@ -54,10 +54,11 @@ public class Compiler {
 	    success = parse(state) || error(state, "Parsing failed, not attempting semantic analysis.");
 	    success = semantics(state) || error(state, "Semantic analysis failed, not attempting variable initialization.");
 
-	    /* Check partition constraints */
-	    (new ImplicitSchema(state)).update();
+
 
 	    if (REPAIR) {
+		/* Check partition constraints */
+		(new ImplicitSchema(state)).update();
 		Termination t=new Termination(state);
 	    }
             state.printall();

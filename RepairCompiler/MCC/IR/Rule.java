@@ -9,7 +9,7 @@ public class Rule implements Quantifiers {
     Vector quantifiers = new Vector();
     boolean isstatic = false;
     boolean isdelay = false;
-    Expr guard = null;
+    private Expr guard = null;
     Inclusion inclusion = null;    
     SymbolTable st = new SymbolTable();
     DNFRule dnfguard=null,dnfnegguard=null;

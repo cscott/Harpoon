@@ -9,7 +9,7 @@ class Updates {
     Expr rightexpr;
     Expr leftexpr;
     Opcode opcode;
-    boolean negate;
+    boolean negate=false;
 
     public String toString() {
 	String st="type="+type+"\n";
@@ -55,6 +55,7 @@ class Updates {
 	} else if (op==Opcode.EQ) {
 	    rightexpr=rexpr;
 	} else if (op==Opcode.NE) {
+	    rightexpr=rexpr;
 	    opcode=Opcode.NE;
 	}
     }
@@ -102,7 +103,7 @@ class Updates {
 	leftexpr=lexpr;
 	rightposition=rpos;
 	type=Updates.POSITION;
-	opcode=null;
+	opcode=Opcode.EQ;
     }
 
     boolean isAbstract() {

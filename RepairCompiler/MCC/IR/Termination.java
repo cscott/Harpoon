@@ -523,13 +523,13 @@ public class Termination {
 
     static int addtocount=0;
     void generateaddtosetrelation(GraphNode gn, AbstractRepair ar) {
-	System.out.println("Attempting to generate add to set");
-	System.out.println(ar.getPredicate().getPredicate().name());
-	System.out.println(ar.getPredicate().isNegated());
+	//	System.out.println("Attempting to generate add to set");
+	//System.out.println(ar.getPredicate().getPredicate().name());
+	//System.out.println(ar.getPredicate().isNegated());
 	for(int i=0;i<state.vRules.size();i++) {
 	    Rule r=(Rule) state.vRules.get(i);
 	    /* See if this is a good rule*/
-	    System.out.println(r.getGuardExpr().name());
+	    //System.out.println(r.getGuardExpr().name());
 	    if ((r.getInclusion() instanceof SetInclusion&&
 		ar.getDescriptor()==((SetInclusion)r.getInclusion()).getSet())||
 		(r.getInclusion() instanceof RelationInclusion&&
@@ -538,10 +538,10 @@ public class Termination {
 		/* First solve for quantifiers */
 		Vector bindings=new Vector();
 		/* Construct bindings */
-		System.out.println("Attempting to generate add to set: #2");
+		//System.out.println("Attempting to generate add to set: #2");
 		if (!constructbindings(bindings,r,false))
 		    continue;
-		System.out.println("Attempting to generate add to set: #3");
+		//System.out.println("Attempting to generate add to set: #3");
 		//Generate add instruction
 		DNFRule dnfrule=r.getDNFGuardExpr();
 		for(int j=0;j<dnfrule.size();j++) {
@@ -587,14 +587,14 @@ public class Termination {
 		    //Finally build necessary updates to satisfy conjunction
 		    RuleConjunction ruleconj=dnfrule.get(j);
 		    /* Add in updates for quantifiers */
-		    System.out.println("Attempting to generate add to set #4");
+		    //System.out.println("Attempting to generate add to set #4");
 		    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.ADD);
 		    TermNode tn=new TermNode(mun);
 		    GraphNode gn2=new GraphNode("UpdateAdd"+addtocount,tn);
 
 		    if (processquantifers(gn2,un, r)&&debugdd()&&
 			processconjunction(un,ruleconj)) {
-			System.out.println("Attempting to generate add to set #5");
+			//System.out.println("Attempting to generate add to set #5");
 			mun.addUpdate(un);
 			GraphNode.Edge e=new GraphNode.Edge("abstract"+addtocount,gn2);
 			addtocount++;
@@ -606,7 +606,7 @@ public class Termination {
     }
 
     boolean debugdd() {
-	System.out.println("Attempting to generate add to set DD");
+	//System.out.println("Attempting to generate add to set DD");
 	return true;
     }
 
