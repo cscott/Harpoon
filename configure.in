@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.32 $)dnl
+AC_REVISION($Revision: 1.33 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -176,7 +176,9 @@ dnl experimental support for event-driven code.
 AC_MSG_CHECKING([for experimental event-driven support])
 AC_ARG_WITH(event-driven,
 [  --with-event-driven	  build experimental event-driven support],
-with_event_driven=yes,
+with_event_driven=yes
+AC_DEFINE(WITH_EVENT_DRIVEN, 1,
+    [Define if you want to build the experimental event-driven code support]),
 with_event_driven=no)
 AC_MSG_RESULT($with_event_driven)
 AM_CONDITIONAL(EVENT_DRIVEN, test $with_event_driven = yes)
