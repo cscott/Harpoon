@@ -10,12 +10,23 @@ import java.util.List;
  * <code>Spec</code> represents the parsed specification.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Spec.java,v 1.1.2.3 1999-02-19 02:05:43 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.4 1999-06-25 04:10:56 pnkfelix Exp $
  */
 public class Spec  {
-    public /*final*/ String global_stms;
-    public /*final*/ String class_stms;
-    public /*final*/ RuleList rules;
+
+    /** Java code statements that are going to be placed outside class
+	body (package declaration, import statements).
+    */
+    public  String global_stms;
+
+    /** Java code statements that are going to be placed inside class
+	body (helper methods, fields, inner classes).
+    */
+    public String class_stms;
+
+    /** List of Instruction Patterns for this machine specification.
+     */
+    public RuleList rules;
     
     /** Creates a <code>Spec</code>. */
     public Spec(String global_stms, String class_stms, RuleList rules) {
@@ -27,22 +38,88 @@ public class Spec  {
 	return global_stms+"\n%%\n"+class_stms+"\n%%\n"+rules;
     }
 
-    // inner classes
+    // *** inner classes ***
+
+    /** Abstract immutable representation of an Instruction Pattern.
+	Contains a <code>Spec.DetailList</code> and a series of Java
+	code statements.
+     */
     public static abstract class Rule {
+	/** List of the extra details associated with
+	    <code>this</code> (speed-cost, size-cost, etc.).
+	*/
 	public final DetailList details;
+
+	/** Java code to execute if <code>this</code> fires (ie. this
+	    pattern is chosen as part of the optimal set).
+	*/
 	public final String action_str;
+	
+	/** Constructs a new <code>Spec.Rule</code>.
+	    <BR> <B>requires:</B> 
+	         <code>action_str</code> is a series of valid Java
+		 code statements. 
+	    <BR> <B>effects:</B> 
+	         constructs a new <code>Spec.Rule</code> object with
+		 associated <code>Spec.DetailList</code> and action to
+		 perform if <code>this</code> fires.
+	    @param details List of extra details associated with
+	                   <code>this</code> (speed-cost, size-cost,
+			   etc.).
+	    @param action_str Series of Java code statements that
+	                      represent the action to perform if
+			      <code>this</code> fires.
+	*/
 	public Rule(DetailList details, String action_str) {
 	    this.details = details; this.action_str = action_str;
 	}
+
 	public String toString() {
 	    String s = " %{" + action_str + "}%";
 	    if (details==null) return s;
 	    else return details.toString()+s;
 	}
     }
+
+    /** Extension of <code>Spec.Rule</code> that also contains a
+	<code>Spec.Exp</code> to match <code>Tree</code> expressions
+	and a tag to identify the result that <code>this</code>
+	?produces?.  (NOTE: Not sure if that's what result_id
+	is...check with Scott).
+	
+	<code>Spec.RuleExp</code>s match (sub)expressions in the code,
+	which is why it is necessary to associate a
+	<code>result_id</code>: expression matching is context
+	sensitive, depending on what the outerlying expression or
+	statement is expecting the nested expression to return.
+
+    */
     public static class RuleExp extends Rule {
+	/** Expression <code>this</code> matches. */
 	public final Exp exp;
+	/** Result type that <code>this</code> matches. */
 	public final String result_id;
+	
+	/** Constructs a new <code>Spec.RuleExp</code>.
+	    <BR> <B>requires:</B> 
+	         <code>action_str</code> is a series of valid Java
+		 code statements.
+	    <BR> <B>effects:</B> 
+	        constructs a new <code>Spec.RuleExp</code> object with
+		associated <code>Spec.Exp</code>,
+		<code>result_id</code>, <code>Spec.DetailList</code>,
+		and action to perform if <code>this</code> fires.
+	    @param exp <code>Spec.Exp</code> associated with
+	               <code>this</code>.
+	    @param result_id Tag identifying type of result that
+	                     <code>this</code> produces.
+	    @param details List of extra details associated with
+	                   <code>this</code> (speed-cost, size-cost,
+			   etc.). 
+	    @param action_str Series of Java code statements that
+	                      represent the action to perform if
+			      <code>this</code> fires.
+	*/
 	public RuleExp(Exp exp, String result_id,
 		       DetailList details, String action_str) {
 	    super(details, action_str);
@@ -52,8 +129,32 @@ public class Spec  {
 	    return exp + "=" + result_id +" " + super.toString();
 	}
     }
+    
+    /** Extension of <code>Spec.Rule</code> that also contains a
+	<code>Spec.Stm</code> to match <code>Tree</code> statements. 
+    */
     public static class RuleStm extends Rule {
+	/** Statement associated with <code>this</code>. */
 	public final Stm stm;
+
+	/** Constructs a new <code>Spec.RuleStm</code>.
+	    <BR> <B>requires:</B> 
+	         <code>action_str</code> is a series of valid Java
+		 code statements. 
+	    <BR> <B>effects:</B> 
+	         constructs a new <code>Spec.RuleStm</code> object
+		 with associated <code>Spec.Stm</code>,
+		 <code>Spec.DetailList</code>, and action to perform
+		 if <code>this</code> fires.
+	    @param stm <code>Spec.Stm</code> associated with
+    	               <code>this</code>. 
+	    @param details List of extra details associated with
+	                   <code>this</code> (speed-cost, size-cost,
+			   etc.). 
+	    @param action_str Series of Java code statements that
+	                      represent the action to perform if
+			      <code>this</code> fires.
+	*/
 	public RuleStm(Stm stm, DetailList details, String action_str) {
 	    super(details, action_str);
 	    this.stm = stm;
@@ -63,16 +164,34 @@ public class Spec  {
 	}
     }
 
+    /** Abstract immutable representation of an Expression in an
+	Instruction Pattern. 
+    */
     public static abstract class Exp { }
+    
+    /** Extension of <code>Spec.Exp</code> that represents an
+	Identifier in the code.  Essentially a wrapper around a
+	<code>String</code>.
+    */
     public static class ExpId extends Exp {
+	/** Identifier that <code>this</code> represents. */
 	public final String id;
 	public ExpId(String id) { this.id = id; }
 	public String toString() { return id; }
     }
+
+    /** Extension of <code>Spec.Exp</code> that represents a Binary
+	Operation in the code. 
+    */
     public static class ExpBinop extends Exp {
+	/** Types of values that <code>this</code> operates on. */
 	public final TypeSet types;
+	/** Opcode for <code>this</code>. */
 	public final Leaf opcode;
-	public final Exp left, right;
+	/** Expression on the left side of <code>this</code>. */
+	public final Exp left;
+
+	public final Exp right;
 	public ExpBinop(TypeSet types, Leaf opcode, Exp left, Exp right) {
 	    this.types = types; this.opcode = opcode;
 	    this.left = left;   this.right = right;

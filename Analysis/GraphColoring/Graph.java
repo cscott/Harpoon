@@ -10,7 +10,7 @@ import java.util.Enumeration;
  * for implementing a graph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Graph.java,v 1.1.2.4 1999-02-01 17:24:11 pnkfelix Exp $
+ * @version $Id: Graph.java,v 1.1.2.5 1999-06-25 04:10:53 pnkfelix Exp $
  */
 
 public abstract class Graph  {
@@ -22,7 +22,7 @@ public abstract class Graph  {
         nodes = new UniqueVector();
     }
     
-    /** Adds <code>node</code> to <code>this</code>
+    /** Adds <code>node</code> to <code>this</code>.
 	<BR> <B>requires:</B> <code>this</code> is modifiable, 
 	                     <code>node</code> is of the correct type
 	                     for the graph type implemented by

@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.9 1999-05-10 02:05:36 duncan Exp $
+ * @version $Id: UNOP.java,v 1.1.2.10 1999-06-25 04:10:56 pnkfelix Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
@@ -24,7 +24,11 @@ public class UNOP extends OPER {
 	this.operand = operand;
 	Util.assert(Uop.isValid(unop));
     }
-    // Unops defined in harpoon.IR.Tree.Uop
+
+    /** Returns an <code>int</code> identifying the TYPE that this
+	unary operation returns.
+	@see harpoon.IR.Tree.Uop 
+    */
     public int type() {
 	switch (op) {
 	case Uop._2B: case Uop._2C: case Uop._2S: case Uop._2I:
