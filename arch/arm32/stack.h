@@ -37,7 +37,7 @@
  * throw an exception. */
 
 #define lookup() \
-asm("bl _lookup" \
+asm("bl __lookup_handler" \
     : /* no outputs */ \
     : /* no inputs */ \
     : "r1", "r2", "r3", "lr", "cc", "memory");
