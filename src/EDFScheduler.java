@@ -106,8 +106,6 @@ public class EDFScheduler extends Scheduler {
  	    }
  	}
 	long minPeriod = Long.MAX_VALUE;
-	long minPeriodWithWork = Long.MAX_VALUE;
-	int tid = -1;
 	for (int threadID=OFFSET+1; threadID <= numThreads; threadID++) {
 	    long p = period[threadID];
 	    if (p == 0) continue;
@@ -115,11 +113,6 @@ public class EDFScheduler extends Scheduler {
 	    if (newPeriod < minPeriod) { 
 		// Find the time of the soonest period ender...
 		minPeriod = newPeriod;
-	    }
-	    if ((newPeriod < minPeriodWithWork)&&(enabled[threadID])&&(cost[threadID]!=0)&&(cost[threadID] > work[threadID])) { 
-		// Find the time of the soonest period ender with work left to be done...
-		minPeriodWithWork = newPeriod;
-		tid = threadID;
 	    }
 	}
 
@@ -144,11 +137,22 @@ public class EDFScheduler extends Scheduler {
 	    work[threadID]+= clock - lastTime; // I've done some work...
 	}
 	lastTime = clock;
-	return currentThreadID=chooseThread2(minPeriod, tid);
+	return currentThreadID=chooseThread2(minPeriod, currentTime);
     }
 
-    protected long chooseThread2(long nextPeriod, int tid) {
+    protected long chooseThread2(long nextPeriod, long currentTime) {
 	long minPeriod = Long.MAX_VALUE;
+	int tid = -1;
+
+	for (int threadID=OFFSET+1; threadID <= numThreads; threadID++) {
+	    long p = period[threadID];
+	    if ((p == 0)||(!enabled[threadID])||(cost[threadID] <= work[threadID])) continue;
+	    long newPeriod = (p+startPeriod[threadID])-currentTime;
+	    if (newPeriod < minPeriod) {
+		minPeriod = newPeriod; // Find minimum period thread with work.
+		tid = threadID;
+	    }
+	}
 
 	if (tid == -1) { // No periodic threads chosen
 	    // Iterate through the Java threads
