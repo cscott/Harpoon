@@ -84,13 +84,15 @@ import harpoon.IR.Quads.CALL;
 
 import harpoon.IR.Jasmin.Jasmin;
 
+import harpoon.Analysis.Realtime.Realtime;
+
 
 /**
  * <code>PAMain</code> is a simple Pointer Analysis top-level class.
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.92 2001-03-04 17:01:23 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.93 2001-03-04 21:36:52 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -157,6 +159,7 @@ public abstract class PAMain {
     private static String ANALYSIS_OUT_FILE = null;
 
     private static boolean RTJ_REMOVE_CHECKS = false;
+    private static boolean RTJ_SUPPORT = false;
 
     // the name of the file that contains additional roots
     private static String rootSetFilename = null;
@@ -231,6 +234,10 @@ public abstract class PAMain {
 	    System.exit(1);
 	}
 	print_options();
+
+	if(RTJ_SUPPORT) {
+	    Realtime.setupObject(linker);
+	}
 
 	get_root_method(params[optind]);
 	if(hroot == null) {
@@ -317,10 +324,19 @@ public abstract class PAMain {
 	    SAMain.linker = linker;
 	    SAMain.hcf = hcf;
 	    SAMain.className = root_method.declClass; // params[optind];
-	    SAMain.do_it();
+	    SAMain.rootSetFilename = rootSetFilename;
+
+	    if(RTJ_SUPPORT)
+		SAMain.do_it_nortj();
+	    else
+		SAMain.do_it();
+
 	    System.out.println("Backend time: " +
 			       (time() - g_tstart) + "ms");
 	}
+
+	if(RTJ_SUPPORT)
+	    Realtime.printStats();
     }
 
     private static final boolean USE_OLD_STYLE = true;
@@ -329,31 +345,44 @@ public abstract class PAMain {
     // providing the code of the methods, the class hierarchy, call graph etc.
     private static void pre_analysis() {
 	g_tstart = System.currentTimeMillis();
-	//We might have loaded in a code factory w/o a preanalysis.
-	if (hcf==null) {
-	    if(USE_OLD_STYLE) {
-		System.out.println("Use old style for class initializers!");
-		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
-		construct_class_hierarchy();
-	    }
-	    else {
-		System.out.println("Use new style for class initializers!");
 
-		hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
-		construct_class_hierarchy();
-		
-		String resource =
-		    "harpoon/Backend/Runtime1/init-safe.properties";
-		hcf = new harpoon.Analysis.Quads.InitializerTransform
-		    (hcf, ch, linker, resource).codeFactory();
-		
-		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-		construct_class_hierarchy();
-	    }
-	}
-	else
+	if(RTJ_SUPPORT) {
+	    // produce the HCodefactory that contains all the checks
+	    hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
 	    construct_class_hierarchy();
 
+	    hcf = Realtime.setupCode(linker, ch, hcf);
+	    ch  = new QuadClassHierarchy(linker, program_roots, hcf);
+	    hcf = Realtime.addChecks(linker, ch, hcf, program_roots);
+	    // convert to our favorite form, QuadNoSSA !
+	    // just to be on PointerAnalysis's taste :-)
+	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+	}
+	else {
+	    //We might have loaded in a code factory w/o a preanalysis.
+	    if (hcf==null) {
+		if(USE_OLD_STYLE) {
+		    System.out.println("Use old style class initializers!");
+		    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
+		    construct_class_hierarchy();
+		}
+		else {
+		    System.out.println("Use new style class initializers!");
+		    hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
+		    construct_class_hierarchy();
+		    
+		    String resource =
+			"harpoon/Backend/Runtime1/init-safe.properties";
+		    hcf = new harpoon.Analysis.Quads.InitializerTransform
+			(hcf, ch, linker, resource).codeFactory();
+		    
+		    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+		    construct_class_hierarchy();
+		}
+	    }
+	    else
+		construct_class_hierarchy();
+	}
 
 	hcf = new CachingCodeFactory(hcf, true);
 	bbconv = new CachingBBConverter(hcf);
@@ -704,7 +733,8 @@ public abstract class PAMain {
 	    new LongOpt("loadpa",        LongOpt.REQUIRED_ARGUMENT, null, 30),
 	    new LongOpt("savepa",        LongOpt.REQUIRED_ARGUMENT, null, 31),
 	    new LongOpt("prealloc",      LongOpt.NO_ARGUMENT,       null, 32),
-	    new LongOpt("rtjchecks",     LongOpt.NO_ARGUMENT,       null, 33)
+	    new LongOpt("rtjchecks",     LongOpt.NO_ARGUMENT,       null, 33),
+	    new LongOpt("rtj",           LongOpt.REQUIRED_ARGUMENT, null, 34)
 	};
 
 	Getopt g = new Getopt("PAMain", argv, "mscor:a:iIN:P:", longopts);
@@ -902,6 +932,21 @@ public abstract class PAMain {
 	    case 33:
 		RTJ_REMOVE_CHECKS = true;
 		break;
+	    case 34:
+		RTJ_SUPPORT = true;
+		Realtime.REALTIME_JAVA = true;
+		String option = g.getOptarg().toLowerCase();
+		if(option.equals("simple"))
+		    Realtime.ANALYSIS_METHOD = Realtime.SIMPLE;
+		else {
+		    if(option.equals("all"))
+			Realtime.ANALYSIS_METHOD = Realtime.ALL;
+		    else {
+			System.out.println("Unknown option " + option);
+			System.exit(1);
+		    }
+		}
+		break;
 	    }
 
 	return g.getOptind();
@@ -1016,6 +1061,19 @@ public abstract class PAMain {
 
 	if(RTJ_REMOVE_CHECKS)
 	    System.out.println("\tRTJ_REMOVE_CHECKS");
+
+	if(RTJ_SUPPORT) {
+	    System.out.print("\tRTJ_SUPPORT ");
+	    if(Realtime.ANALYSIS_METHOD == Realtime.SIMPLE)
+		System.out.println("keep all checks");
+	    else
+		if(Realtime.ANALYSIS_METHOD == Realtime.ALL)
+		    System.out.println("remove all checks");
+		else {
+		    System.out.println("unknown analysis method -> FAIL");
+		    System.exit(1);
+		}
+	}
 
 	System.out.println();
     }
@@ -1599,6 +1657,9 @@ public abstract class PAMain {
 	program_roots.addAll
 	    (harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 
+	if(RTJ_SUPPORT)
+	    program_roots.addAll(Realtime.getRoots(linker));
+
 	// load additional roots (if any)
 	if (rootSetFilename!=null) try {
 	    addToRootSet(program_roots, rootSetFilename);
@@ -1617,7 +1678,6 @@ public abstract class PAMain {
 		    System.out.println(" c: " + o);
 	    }
 	    System.out.println("}");
-
 	}
 
 	System.out.print("ClassHierarchy ... ");

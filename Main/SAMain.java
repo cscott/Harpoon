@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.140 2001-02-27 22:11:27 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.1.2.141 2001-03-04 21:36:52 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -174,7 +174,8 @@ public class SAMain extends harpoon.IR.Registration {
       MetaCallGraph mcg=null;
 
 	if (SAMain.startset!=null)
-	    hcf=harpoon.IR.Quads.ThreadInliner.codeFactory(hcf,SAMain.startset, SAMain.joinset);
+	    hcf = harpoon.IR.Quads.ThreadInliner.codeFactory
+		(hcf,SAMain.startset, SAMain.joinset);
 	
 
 	HClass hcl = linker.forName(className);
@@ -344,6 +345,241 @@ public class SAMain extends harpoon.IR.Registration {
 	    callGraph = new CallGraphImpl(classHierarchy, hcf);//less precise
 	}
 
+
+	switch(BACKEND) {
+	case STRONGARM_BACKEND:
+	    frame = new harpoon.Backend.StrongARM.Frame
+		(mainM, classHierarchy, callGraph);
+	    break;
+	case SPARC_BACKEND:
+	    frame = new harpoon.Backend.Sparc.Frame
+		(mainM, classHierarchy, callGraph);
+	    break;
+	case MIPS_BACKEND:
+	    frame = new harpoon.Backend.MIPS.Frame
+		(mainM, classHierarchy, callGraph);
+	    break;
+	case MIPSYP_BACKEND:
+	    frame = new harpoon.Backend.MIPS.Frame
+		(mainM, classHierarchy, callGraph, "yp");
+	    break;
+	case PRECISEC_BACKEND:
+	    frame = new harpoon.Backend.PreciseC.Frame
+		(mainM, classHierarchy, callGraph);
+	    break;
+	default: throw new Error("Unknown Backend: "+BACKEND);
+	}
+	callGraph=null;// memory management.
+ 
+	if (LOOPOPTIMIZE) {
+	    // XXX: you might have to add a TypeSwitchRemover here, if
+	    //      LoopOptimize don't handle TYPESWITCHes. --CSA
+	    System.out.println("Loop Optimizations On");
+	    hcf=harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
+	    hcf=harpoon.Analysis.LowQuad.Loop.LoopOptimize.codeFactory(hcf);
+	    hcf=harpoon.IR.LowQuad.DerivationChecker.codeFactory(hcf);
+	}
+	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
+	// XXX: ToTree doesn't handle TYPESWITCHes right now.
+	hcf = new harpoon.Analysis.Quads.TypeSwitchRemover(hcf).codeFactory();
+	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
+	hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
+	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
+	hcf = harpoon.Analysis.Tree.AlgebraicSimplification.codeFactory(hcf);
+	//hcf = harpoon.Analysis.Tree.DeadCodeElimination.codeFactory(hcf);
+	hcf = harpoon.Analysis.Tree.JumpOptimization.codeFactory(hcf);
+	if (DO_TRANSACTIONS) {
+	    hcf = syncTransformer.treeCodeFactory(frame, hcf);
+	}
+	if (BACKEND == PRECISEC_BACKEND && MULTITHREADED && System.getProperty
+	    ("harpoon.alloc.strategy", "malloc").equalsIgnoreCase("precise")) {
+	    /* pass to insert GC polling calls */
+	    hcf = harpoon.Backend.Analysis.MakeGCThreadSafe.
+		codeFactory(hcf, frame);
+	}
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+    if(BACKEND == MIPSYP_BACKEND) {
+       hcf = new harpoon.Analysis.Tree.DominatingMemoryAccess(hcf, frame).codeFactory();
+    }
+    
+    
+	HCodeFactory sahcf = frame.getCodeFactory(hcf);
+	if (sahcf!=null)
+	    sahcf = new harpoon.ClassFile.CachingCodeFactory(sahcf);
+
+	if (LOCAL_REG_ALLOC) 
+	    regAllocFactory = RegAlloc.LOCAL;
+	else 
+	    regAllocFactory = RegAlloc.GLOBAL;
+	regAllocFactory = (new RegAllocOpts
+			   (regAllocOptionsFilename)).factory(regAllocFactory);
+
+	Set methods = classHierarchy.callableMethods();
+	Iterator classes = new TreeSet(classHierarchy.classes()).iterator();
+
+	String filesuffix = (BACKEND==PRECISEC_BACKEND) ? ".c" : ".s";
+	if (ONLY_COMPILE_MAIN) classes=Default.singletonIterator(hcl);
+	if (singleClassStr!=null) {
+	    singleClass = linker.forName(singleClassStr);
+	    classes=Default.singletonIterator(singleClass);
+	}
+	if (true) { // this is only here because i don't want to re-indent
+	            // all the code below this point.
+	    while(classes.hasNext()) {
+		HClass hclass = (HClass) classes.next();
+		if (singleClass!=null && singleClass!=hclass) continue;//skip
+		messageln("Compiling: " + hclass.getName());
+		
+		try {
+		    String filename = frame.getRuntime().nameMap.mangle(hclass);
+		    out = new PrintWriter
+			(new BufferedWriter
+			 (new FileWriter
+			  (new File(ASSEM_DIR, filename + filesuffix))));
+		    if (BACKEND==PRECISEC_BACKEND)
+			out = new harpoon.Backend.PreciseC.TreeToC(out);
+		    
+		    HMethod[] hmarray = hclass.getDeclaredMethods();
+		    Set hmset = new TreeSet(Arrays.asList(hmarray));
+		    hmset.retainAll(methods);
+		    Iterator hms = hmset.iterator();
+		    if (ONLY_COMPILE_MAIN)
+			hms = Default.singletonIterator(mainM);
+		    message("\t");
+		    while(hms.hasNext()) {
+			HMethod m = (HMethod) hms.next();
+			message(m.getName());
+			if (!Modifier.isAbstract(m.getModifiers()))
+			    outputMethod(m, hcf, sahcf, out);
+			if (hms.hasNext()) message(", ");
+		    }
+		    messageln("");
+		    
+		    //out.println();
+		    messageln("Writing data for " + hclass.getName());
+		    outputClassData(hclass, out);
+		    
+		    out.close();
+		} catch (IOException e) {
+		    System.err.println("Error outputting class "+
+				       hclass.getName());
+		    System.exit(1);
+		}
+	    }
+
+	    if (Realtime.REALTIME_JAVA) {
+		Realtime.printStats();
+	    }
+
+	    // put a proper makefile in the directory.
+	    File makefile = new File(ASSEM_DIR, "Makefile");
+	    InputStream templateStream;
+	    String resourceName="harpoon/Support/nativecode-makefile.template";
+	    if (BACKEND==PRECISEC_BACKEND)
+		resourceName="harpoon/Support/precisec-makefile.template";
+	    if (makefile.exists())
+		System.err.println("WARNING: not overwriting pre-existing "+
+				   "file "+makefile);
+	    else if ((templateStream=ClassLoader.getSystemResourceAsStream
+		      (resourceName))==null)
+		System.err.println("WARNING: can't find Makefile template.");
+	    else try {
+		BufferedReader in = new BufferedReader
+		    (new InputStreamReader(templateStream));
+		out = new PrintWriter
+		    (new BufferedWriter(new FileWriter(makefile)));
+		String line;
+		while ((line=in.readLine()) != null)
+		    out.println(line);
+		in.close(); out.close();
+	    } catch (IOException e) {
+		System.err.println("Error writing "+makefile+".");
+		System.exit(1);
+	    }
+	}
+    }
+
+
+    // It was very mean to do this ... Just a desperate move to integrate
+    // the pointer analysis with the Realtime Java stuff.
+    public static void do_it_nortj() {
+	if (SAMain.startset!=null)
+	    hcf = harpoon.IR.Quads.ThreadInliner.codeFactory
+		(hcf, SAMain.startset, SAMain.joinset);
+
+	HClass hcl = linker.forName(className);
+	HMethod hm[] = hcl.getDeclaredMethods();
+	HMethod mainM = null;
+	for (int j=0; j<hm.length; j++) {
+	    if (hm[j].getName().equalsIgnoreCase("main")) {
+		mainM = hm[j];
+		break;
+	    }
+	}
+	
+	Util.assert(mainM != null, "Class " + className + 
+		    " has no main method");
+
+	{
+	    // XXX: this is non-ideal!  Really, we want to use a non-static
+	    // method in Frame.getRuntime() to initialize the class hierarchy
+	    // roots with.  *BUT* Frame requires a class hierarchy in its
+	    // constructor.  How do we ask the runtime which roots to use
+	    // before the runtime's been created?
+	    // Punting on this question for now, and using a hard-coded
+	    // static method. [CSA 27-Oct-1999]
+	    Set roots = new java.util.HashSet
+		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	    // and our main method is a root, too...
+	    roots.add(mainM);
+	    if (Realtime.REALTIME_JAVA) {
+	      roots.addAll(Realtime.getRoots(linker));
+	    }
+	    if (rootSetFilename!=null) try {
+		addToRootSet(roots, rootSetFilename);
+	    } catch (IOException ex) {
+		System.err.println("Error reading "+rootSetFilename+": "+ex);
+		System.exit(1);
+	    }
+	    // okay, we've got the roots, make a rough class hierarchy.
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    Util.assert(classHierarchy != null, "How the hell...");
+	    
+	    // use the rough class hierarchy to devirtualize as many call sites
+	    // as possible.
+
+	    hcf=new harpoon.Analysis.Quads.Nonvirtualize
+	    	(hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy),
+	    	 classHierarchy).codeFactory();
+
+	    if (!USE_OLD_CLINIT_STRATEGY) {
+		// transform the class initializers using the class hierarchy.
+		// XXX: same chicken-and-egg problem as before.  We really
+		// want to get the safe-set path from the Runtime in the Frame
+		// but the Frame hasn't been constructed yet.[CSA 2-Nov-00]
+		String resource =
+		    "harpoon/Backend/Runtime1/init-safe.properties";
+		hcf = new harpoon.Analysis.Quads.InitializerTransform
+		    (hcf, classHierarchy, linker, resource).codeFactory();
+		// recompute the hierarchy after transformation.
+		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    }
+	} // don't need the root set anymore.
+
+
+
+	if (OPTIMIZE) {
+	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	}
+
+	HMethod mconverted=null;
+	hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	callGraph = new CallGraphImpl2(classHierarchy, hcf);
 
 	switch(BACKEND) {
 	case STRONGARM_BACKEND:
