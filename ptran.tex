@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.39 2002-07-31 21:47:35 cananian Exp $
+% $Id: ptran.tex,v 1.40 2002-07-31 21:57:30 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.39 $ $}
+\date{\today \\ $ $Revision: 1.40 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -486,11 +486,12 @@ where
 $U=\bigcup_{s\in\func{c}(e_i)} \func{lhs}(s)$ for \newterm{from-companions} and
 $U=\bigcup_{s\in\func{c}(e_i)} \func{rhs}(s)$) for \newterm{to-companions}.
 We will say that an edge is a \newterm{companion edge} if it is a
-definite or possible companion.  Note that all remaining possible
-companions will become definite companions after we are done
-evaluating all the executable code in the program, as there will no
-longer be any ``outside'' code left which could do naughty
-companion-killing things. \textbf{XXX: unless we have unanalyzed methods!}
+definite or possible companion.  
+
+Once analysis is complete, $\func{escaped}(n)$ is true iff the node
+can be reached from unanalyzed (incl native) code.  So, at that point,
+``possibly companion'' nodes are companions unless the unanalyzed code
+kills them.
 
 \subsection{Inference rules}
 At the start of the analysis, we set $I=\emptyset$, $O=\emptyset$,
@@ -606,9 +607,12 @@ The inference rules for a skipped call-site are simple:
 \end{displaymath}
 \textbf{XXX: again, this is post-transitive form.}
 
-\textbf{What happens to possible companions?  They can now never
-  become definite companions; do we continue to treat them as if
-  they could?}
+Note that it will be impossible for some edges ever to become definite
+companions now, as we can never be certain that the unanalyzed call
+doesn't spoil the companion property.  However, we will be optimistic
+and continue to treat them as if they could become definite
+companions; that is, treat them as if we knew that the unanalyzed code
+doesn't spoil the companion.
 
 \subsection{Evaluating a call-site monomorphically}
 
