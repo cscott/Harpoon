@@ -4,7 +4,10 @@ import java.util.*;
 
 class RoleI {
     HashMap transitiontable;
+    HashMap viewtransitiontable;
     HashMap roletable;
+    HashMap reverseroletable;
+    int maxrole;
     FastScan classinfo;
     Set atomic;
     HashMap policymap;
@@ -14,6 +17,42 @@ class RoleI {
     Fields fields;
     Methods methods;
     Set excludedclasses;
+    View view;
+    HashMap rolecombmap;
+    HashMap revrolecombmap;
+    int maxrolecomb;
+    RoleUniverse constructuniverse;
+    ArrayList universes;
+    HashMap rolenames;
+
+    HashMap dommap;
+    HashMap revdommap;
+    int domcount;
+
+    HashMap fldreffrommap;
+    HashMap revfldreffrommap;
+    int fldreffromcount;
+
+    HashMap arrreffrommap;
+    HashMap revarrreffrommap;
+    int arrreffromcount;
+
+    HashMap identmap;
+    HashMap revidentmap;
+    int identcount;
+
+    HashMap fldreftomap;
+    HashMap revfldreftomap;
+    int fldreftocount;
+
+    HashMap arrreftomap;
+    HashMap revarrreftomap;
+    int arrreftocount;
+
+    HashMap methodsmap;
+    HashMap revmethodsmap;
+    int methodscount;
+	
 
     static final Integer P_NEVER=new Integer(0);
     static final Integer P_ONCEEVER=new Integer(1);
@@ -31,6 +70,17 @@ class RoleI {
 
     public RoleI() {
 	//	runanalysis();
+	rolenames=new HashMap();
+	universes=new ArrayList();
+	RoleUniverse completeuniverse=new RoleUniverse();
+	universes.add(completeuniverse);
+	view=new View(this,new RoleUniverse[] {completeuniverse});
+	maxrolecomb=0;
+	rolecombmap=new HashMap();
+	revrolecombmap=new HashMap();
+	constructuniverse=new RoleUniverse();
+
+	maxrole=0;
 	containers=false;
 	initializefastscan();
 	readtransitions();
@@ -47,6 +97,8 @@ class RoleI {
 	fields.buildfieldspage();
 	methods=new Methods(this);
 	methods.readentries();
+
+
     }
 
     void readclasses() {
@@ -67,7 +119,6 @@ class RoleI {
 	    System.out.println(e);
 	    System.exit(-1);
 	}
-
     }
 
     void writeclasses() {
@@ -241,6 +292,188 @@ class RoleI {
 	String file=filename.substring(dash+2);
 	char type=filename.charAt(dash+1);
 	switch(type) {
+	case '=':
+	    int dash2=filename.indexOf('-');
+	    rolenames.put(Integer.valueOf(file.substring(0,dash2)),file.substring(dash2+1));
+	    rebuildgraphs(true);
+	    gendiagram();
+	    genmergeddiagram();
+	    return "/index.html";
+	case 'B':
+	    char type2=filename.charAt(dash+2);
+	    boolean include=true;
+	    switch(type2) {
+	    case 'A':
+		return buildviewpage();
+	    case 'B':
+		include=false; /*use case C code now*/
+	    case 'C':
+		Integer universe=Integer.valueOf(filename.substring(dash+3));
+		ArrayList auniv=new ArrayList(java.util.Arrays.asList(view.universes));
+		if (include) {
+		    auniv.add(universes.get(universe.intValue()));
+		} else {
+		    int iremove=auniv.indexOf(universes.get(universe.intValue()));
+		    if (iremove>=0)
+			auniv.remove(iremove);
+		}
+		this.view=new View(this, (RoleUniverse[]) auniv.toArray(new RoleUniverse[auniv.size()]));
+		return buildviewpage();
+	    case 'D':
+		rebuildgraphs(true);
+		gendiagram();
+		genmergeddiagram();
+		return buildviewpage();
+	    }
+	case 'Q':
+	    type2=filename.charAt(dash+2);
+	    switch(type2) {
+	    case 'A':
+		return builduniversepage();
+	    case 'C':
+		if (filename.charAt(dash+3)=='1')
+		    constructuniverse.setclass(true);
+		else
+		    constructuniverse.setclass(false);
+		return builduniversepage();
+	    case 'D':
+		char type3=filename.charAt(dash+3);
+		switch(type3) {
+		case '0':
+		    /* Reference to Arrays*/
+		    return referencetoarray();
+		case '1':
+		    return referencetofield();
+		case '2':
+		    return referencefromarray();
+		case '3':
+		    return referencefromfield();
+		case '4':
+		    return identity();
+		case '5':
+		    return invokedmethods();
+		case '6':
+		    return dominators();
+		}
+	    case 'E':
+		type3=filename.charAt(dash+3);
+		switch(type3) {
+		case '0':
+		    constructuniverse.restrictarrayreferenceto=true;
+		    if (constructuniverse.allowedarrayto==null)
+			constructuniverse.allowedarrayto=new HashSet();
+		    return referencetoarray();
+		case '1':
+		    constructuniverse.restrictfieldreferenceto=true;
+		    if (constructuniverse.allowedfieldto==null)
+			constructuniverse.allowedfieldto=new HashSet();
+		    return referencetofield();
+		case '2':
+		    constructuniverse.restrictarrayreferencefrom=true;
+		    if (constructuniverse.allowedarrayfrom==null)
+			constructuniverse.allowedarrayfrom=new HashSet();
+		    return referencefromarray();
+		case '3':
+		    constructuniverse.restrictfieldreferencefrom=true;
+		    if (constructuniverse.allowedfieldfrom==null)
+			constructuniverse.allowedfieldfrom=new HashSet();
+		    return referencefromfield();
+		case '4':
+		    constructuniverse.restrictidentity=true;
+		    if (constructuniverse.allowedidentityfields==null)
+			constructuniverse.allowedidentityfields=new HashSet();
+		    return identity();
+		case '5':
+		    constructuniverse.restrictinvokedmethods=true;
+		    if (constructuniverse.allowedinvokedmethods==null)
+			constructuniverse.allowedinvokedmethods=new HashSet();
+		    return invokedmethods();
+		case '6':
+		    constructuniverse.restrictdominators=true;
+		    if (constructuniverse.alloweddominators==null)
+			constructuniverse.alloweddominators=new HashSet();
+		    return dominators();
+		}
+	    case 'F':
+		type3=filename.charAt(dash+3);
+		switch(type3) {
+		case '0':
+		    constructuniverse.restrictarrayreferenceto=false;
+		    return referencetoarray();
+		case '1':
+		    constructuniverse.restrictfieldreferenceto=false;
+		    return referencetofield();
+		case '2':
+		    constructuniverse.restrictarrayreferencefrom=false;
+		    return referencefromarray();
+		case '3':
+		    constructuniverse.restrictfieldreferencefrom=false;
+		    return referencefromfield();
+		case '4':
+		    constructuniverse.restrictidentity=false;
+		    return identity();
+		case '5':
+		    constructuniverse.restrictinvokedmethods=false;
+		    return invokedmethods();
+		case '6':
+		    constructuniverse.restrictdominators=false;
+		    return dominators();
+		}
+	    case 'R':
+		type3=filename.charAt(dash+3);
+		switch(type3) {
+		case '0':
+		    constructuniverse.allowedarrayto.remove(((Reference)revarrreftomap.get(Integer.valueOf(filename.substring(dash+4)))).desc());
+		    return referencetoarray();
+		case '1':
+		    constructuniverse.allowedfieldto.remove(((Reference)revfldreftomap.get(Integer.valueOf(filename.substring(dash+4)))).desc());
+		    return referencetofield();
+		case '2':
+		    constructuniverse.allowedarrayfrom.remove(((Reference)revarrreffrommap.get(Integer.valueOf(filename.substring(dash+4)))).desc());
+		    return referencefromarray();
+		case '3':
+		    constructuniverse.allowedfieldfrom.remove(((Reference)revfldreffrommap.get(Integer.valueOf(filename.substring(dash+4)))).desc());
+		    return referencefromfield();
+		case '4':
+		    constructuniverse.allowedidentityfields.remove(revidentmap.get(Integer.valueOf(filename.substring(dash+4))));
+		    return identity();
+		case '5':
+		    constructuniverse.allowedinvokedmethods.remove(revmethodsmap.get(Integer.valueOf(filename.substring(dash+4))));
+		    return invokedmethods();
+		case '6':
+		    constructuniverse.alloweddominators.remove(revdommap.get(Integer.valueOf(filename.substring(dash+4))));
+		    return dominators();
+		}
+	    case 'I':
+		type3=filename.charAt(dash+3);
+		switch(type3) {
+		case '0':
+		    constructuniverse.allowedarrayto.add(((Reference)revarrreftomap.get(Integer.valueOf(filename.substring(dash+4)))).desc());
+		    return referencetoarray();
+		case '1':
+		    constructuniverse.allowedfieldto.add(((Reference)revfldreftomap.get(Integer.valueOf(filename.substring(dash+4)))).desc());
+		    return referencetofield();
+		case '2':
+		    constructuniverse.allowedarrayfrom.add(((Reference)revarrreffrommap.get(Integer.valueOf(filename.substring(dash+4)))).desc());
+		    return referencefromarray();
+		case '3':
+		    constructuniverse.allowedfieldfrom.add(((Reference)revfldreffrommap.get(Integer.valueOf(filename.substring(dash+4)))).desc());
+		    return referencefromfield();
+		case '4':
+		    constructuniverse.allowedidentityfields.add(revidentmap.get(Integer.valueOf(filename.substring(dash+4))));
+		    return identity();
+		case '5':
+		    constructuniverse.allowedinvokedmethods.add(revmethodsmap.get(Integer.valueOf(filename.substring(dash+4))));
+		    return invokedmethods();
+		case '6':
+		    constructuniverse.alloweddominators.add(revdommap.get(Integer.valueOf(filename.substring(dash+4))));
+		    return dominators();
+		}
+	    case 'S':
+		universes.add(constructuniverse);
+		constructuniverse=new RoleUniverse();
+		return builduniversepage();
+	    }
 	case 'M':
 	    return buildmethodpage(file);
 	case 'N':
@@ -395,6 +628,8 @@ class RoleI {
 	ps.println("<a href=\"rolerelation.html\">Role Relation Diagram</a>");
 	ps.println("<a href=\"rolerelationmerged.html\">Merged Role Relation Diagram</a>");
 	ps.println("<a href=\"/fields.html\">Fields Page</a>");
+	ps.println("<a href=\"rm-BA\">Manage View</a>");
+	ps.println("<a href=\"rm-QA\">Edit Role Universe</a>");
 	ps.println("<a href=\"/index.html\">Main Page</a><p>");
     }
 
@@ -421,7 +656,290 @@ class RoleI {
 	}
 	return "/allmethods.html";
     }
+
+    synchronized String buildviewpage() {
+	String filename="view.html"; 
+	try {
+	    FileOutputStream fos=new FileOutputStream(filename);
+	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    for(int i=0;i<universes.size();i++) {
+		boolean included=false;
+		for (int j=0;j<view.universes.length;j++) {
+		    if (view.universes[j]==universes.get(i)) {
+			included=true;
+			break;
+		    }
+		}
+		if (included) {
+		    ps.println("Universe "+i+" Included in View<p>");
+		    ps.println("<a href=\"rm-BB"+i+"\">Exclude</a><p>");
+		} else {
+		    ps.println("Universe "+i+" Excluded from View<p>");
+		    ps.println("<a href=\"rm-BC"+i+"\">Include</a><p>");
+		}
+	    }
+	    ps.println("<a href=\"rm-BD\">Rebuild Graphs with new View</a><p>");
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+	return "/"+filename;
+    }
     
+    synchronized String builduniversepage() {
+	String filename="universe.html";
+	try {
+	    FileOutputStream fos=new FileOutputStream(filename);
+	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    if (constructuniverse.classmatters) {
+		ps.println("Class Matters<p>");
+		ps.println("<a href=\"rm-QC0\">Ignore Class</a><p>");
+	    } else {
+		ps.println("Class Ignored<p>");
+		ps.println("<a href=\"rm-QC1\">Class Matters</a><p>");
+	    }
+
+	    ps.println("<a href=\"rm-QD0\">Reference to Arrays</a><p>");
+	    ps.println("<a href=\"rm-QD1\">Reference to Fields</a><p>");	    
+	    ps.println("<a href=\"rm-QD2\">Reference from Arrays</a><p>");
+	    ps.println("<a href=\"rm-QD3\">Reference from Fields</a><p>");
+
+	    ps.println("<a href=\"rm-QD4\">Identity Relations</a><p>");
+	    ps.println("<a href=\"rm-QD5\">Invoked Methods</a><p>");
+
+	    ps.println("<a href=\"rm-QD6\">Dominators</a><p>");
+
+	    ps.println("<a href=\"rm-QS\">Save Universe as "+universes.size()+"</a><p>");
+ 
+	    ps.println("");
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+	return "/"+filename;
+    }
+
+    synchronized String referencetofield() {
+	String filename="reftofield.html";
+	try {
+	    FileOutputStream fos=new FileOutputStream(filename);
+	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    if (constructuniverse.restrictfieldreferenceto) {
+		ps.println("<a href=\"rm-QF1\">Unrestrict Field References</a><p>");
+		Iterator remiter=constructuniverse.allowedfieldto.iterator();
+		while(remiter.hasNext()) {
+		    Reference ref=(Reference)remiter.next();
+		    ps.println("<a href=\"rm-QR1"+fldreftomap.get(ref)+"\">Remove "+ref.classname+"."+ref.fieldname+"</a><p>");
+		}
+		Iterator additer=fldreftomap.keySet().iterator();
+		while(additer.hasNext()) {
+		    Reference ref=(Reference)additer.next();
+		    if (!constructuniverse.allowedfieldto.contains(ref))
+			ps.println("<a href=\"rm-QI1"+fldreftomap.get(ref)+"\">Add "+ref.classname+"."+ref.fieldname+"</a><p>");
+		}
+	    } else {
+		ps.println("<a href=\"rm-QE1\">Restrict Field References to list</a><p>");
+	    }
+	    
+	    
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+
+	return "/"+filename;
+    }
+
+    synchronized String referencetoarray() {
+	String filename="reftoarray.html";
+	try {
+	    FileOutputStream fos=new FileOutputStream(filename);
+	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    if (constructuniverse.restrictarrayreferenceto) {
+		ps.println("<a href=\"rm-QF0\">Unrestrict Array References</a><p>");
+		Iterator remiter=constructuniverse.allowedarrayto.iterator();
+		while(remiter.hasNext()) {
+		    Reference ref=(Reference)remiter.next();
+		    ps.println("<a href=\"rm-QR0"+arrreftomap.get(ref)+"\">Remove "+ref.classname+"</a><p>");
+		}
+		Iterator additer=arrreftomap.keySet().iterator();
+		while(additer.hasNext()) {
+		    Reference ref=(Reference)additer.next();
+		    if (!constructuniverse.allowedarrayto.contains(ref))
+			ps.println("<a href=\"rm-QI0"+arrreftomap.get(ref)+"\">Add "+ref.classname+"</a><p>");
+		}
+	    } else {
+		ps.println("<a href=\"rm-QE0\">Restrict Array References to list</a><p>");
+	    }
+	    
+	    
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+
+	return "/"+filename;
+    }
+
+    synchronized String referencefromarray() {
+	String filename="reffromarray.html";
+	try {
+	    FileOutputStream fos=new FileOutputStream(filename);
+	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    if (constructuniverse.restrictarrayreferencefrom) {
+		ps.println("<a href=\"rm-QF2\">Unrestrict Array References</a><p>");
+		Iterator remiter=constructuniverse.allowedarrayfrom.iterator();
+		while(remiter.hasNext()) {
+		    Reference ref=(Reference)remiter.next();
+		    ps.println("<a href=\"rm-QR2"+arrreffrommap.get(ref)+"\">Remove "+ref.classname+"</a><p>");
+		}
+		Iterator additer=arrreffrommap.keySet().iterator();
+		while(additer.hasNext()) {
+		    Reference ref=(Reference)additer.next();
+		    if (!constructuniverse.allowedarrayfrom.contains(ref))
+			ps.println("<a href=\"rm-QI2"+arrreffrommap.get(ref)+"\">Add "+ref.classname+"</a><p>");
+		}
+	    } else {
+		ps.println("<a href=\"rm-QE2\">Restrict Array References from list</a><p>");
+	    }
+	    
+	    
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+
+	return "/"+filename;
+    }
+
+    synchronized String referencefromfield() {
+	String filename="reffromfield.html";
+	try {
+	    FileOutputStream fos=new FileOutputStream(filename);
+	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    if (constructuniverse.restrictfieldreferencefrom) {
+		ps.println("<a href=\"rm-QF3\">Unrestrict Field References</a><p>");
+		Iterator remiter=constructuniverse.allowedfieldfrom.iterator();
+		while(remiter.hasNext()) {
+		    Reference ref=(Reference)remiter.next();
+		    ps.println("<a href=\"rm-QR3"+fldreffrommap.get(ref)+"\">Remove "+ref.classname+"."+ref.fieldname+"</a><p>");
+		}
+		Iterator additer=fldreffrommap.keySet().iterator();
+		while(additer.hasNext()) {
+		    Reference ref=(Reference)additer.next();
+		    if (!constructuniverse.allowedfieldfrom.contains(ref))
+			ps.println("<a href=\"rm-QI3"+fldreffrommap.get(ref)+"\">Add "+ref.classname+"."+ref.fieldname+"</a><p>");
+		}
+	    } else {
+		ps.println("<a href=\"rm-QE3\">Restrict Field References from list</a><p>");
+	    }
+	    
+	    
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+
+	return "/"+filename;
+    }
+
+    synchronized String identity() {
+	String filename="identity.html";
+	try {
+	    FileOutputStream fos=new FileOutputStream(filename);
+	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    if (constructuniverse.restrictidentity) {
+		ps.println("<a href=\"rm-QF4\">Unrestrict Identity</a><p>");
+		Iterator remiter=constructuniverse.allowedidentityfields.iterator();
+		while(remiter.hasNext()) {
+		    String ref=(String)remiter.next();
+		    ps.println("<a href=\"rm-QR4"+identmap.get(ref)+"\">Remove "+ref+"</a><p>");
+		}
+		Iterator additer=identmap.keySet().iterator();
+		while(additer.hasNext()) {
+		    String ref=(String)additer.next();
+		    if (!constructuniverse.allowedidentityfields.contains(ref))
+			ps.println("<a href=\"rm-QI4"+identmap.get(ref)+"\">Add "+ref+"</a><p>");
+		}
+	    } else {
+		ps.println("<a href=\"rm-QE4\">Restrict Identity from list</a><p>");
+	    }
+	    
+	    
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+
+	return "/"+filename;
+    }
+
+    synchronized String invokedmethods() {
+	String filename="invokedmethods.html";
+	try {
+	    FileOutputStream fos=new FileOutputStream(filename);
+	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    if (constructuniverse.restrictinvokedmethods) {
+		ps.println("<a href=\"rm-QF5\">Unrestrict Invoked Methods</a><p>");
+		Iterator remiter=constructuniverse.allowedinvokedmethods.iterator();
+		while(remiter.hasNext()) {
+		    String ref=(String)remiter.next();
+		    ps.println("<a href=\"rm-QR5"+methodsmap.get(ref)+"\">Remove "+ref+"</a><p>");
+		}
+		Iterator additer=methodsmap.keySet().iterator();
+		while(additer.hasNext()) {
+		    String ref=(String)additer.next();
+		    if (!constructuniverse.allowedinvokedmethods.contains(ref))
+			ps.println("<a href=\"rm-QI5"+methodsmap.get(ref)+"\">Add "+ref+"</a><p>");
+		}
+	    } else {
+		ps.println("<a href=\"rm-QE5\">Restrict Methods from list</a><p>");
+	    }
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+
+	return "/"+filename;
+    }
+
+    synchronized String dominators() {
+	String filename="dominators.html";
+	try {
+	    FileOutputStream fos=new FileOutputStream(filename);
+	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    if (constructuniverse.restrictdominators) {
+		ps.println("<a href=\"rm-QF6\">Unrestrict Invoked Dominators</a><p>");
+		Iterator remiter=constructuniverse.alloweddominators.iterator();
+		while(remiter.hasNext()) {
+		    Dominator ref=(Dominator)remiter.next();
+		    ps.println("<a href=\"rm-QR6"+dommap.get(ref)+"\">Remove "+ref+"</a><p>");
+		}
+		Iterator additer=dommap.keySet().iterator();
+		while(additer.hasNext()) {
+		    Dominator ref=(Dominator)additer.next();
+		    if (!constructuniverse.alloweddominators.contains(ref))
+			ps.println("<a href=\"rm-QI6"+dommap.get(ref)+"\">Add "+ref+"</a><p>");
+		}
+	    } else {
+		ps.println("<a href=\"rm-QE6\">Restrict Dominators from list</a><p>");
+	    }
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+	return "/"+filename;
+    }
+
     synchronized String buildmethodpage(String file) {
 	Integer methodnumber=Integer.valueOf(file);
 	String filename="M"+file+".html";
@@ -482,7 +1000,7 @@ class RoleI {
 	    System.out.println(fileprefix);
 	    String clss=(String) classinfo.revclasses.get(Integer.valueOf(fileprefix));
 	    System.out.println(clss);
-	    Set transitionset=(Set)transitiontable.get(clss);
+	    Set transitionset=(Set)viewtransitiontable.get(clss);
 	    Iterator it=transitionset.iterator();
    	    while(it.hasNext()) {
 		Transition trans=(Transition) it.next();
@@ -512,33 +1030,38 @@ class RoleI {
 	    System.exit(-1);
 	} else {
 	    /* We have a node */
-	    Integer rolenum=Integer.valueOf(parseclick);
-	    if (rolenum.intValue()==1) {
-		/* Garbage Role */
-		try {
-		    FileOutputStream fos=new FileOutputStream("R"+rolenum+".html");
-		    PrintStream ps=new PrintStream(fos);
-		    menuline(ps);
-		    ps.println("Garbage<p>");
-		    ps.close();
-		} catch (Exception e) {
-		    e.printStackTrace();
-		    System.exit(-1);
-		}
-		return "/R"+rolenum+".html";
-	    }
-	    Role role=(Role)roletable.get(rolenum);
+	    Integer rolenumc=Integer.valueOf(parseclick);
+	    RoleCombination rolec=(RoleCombination) revrolecombmap.get(rolenumc);
 	    try {
-		FileOutputStream fos=new FileOutputStream("R"+rolenum+".html");
-		PrintStream ps=new PrintStream(fos);
-		menuline(ps);
-		ps.println(role);
-		ps.close();
+		FileOutputStream fos1=new FileOutputStream("RC"+rolenumc+".html");
+		
+		PrintStream ps1=new PrintStream(fos1);
+		for(int i=0;i<rolec.roleidentifiers.length;i++) {
+		    int rolenum=rolec.roleidentifiers[i];
+		    if (rolenum==1) {
+			/* Garbage Role */
+			FileOutputStream fos=new FileOutputStream("R"+rolenum+".html");
+			PrintStream ps=new PrintStream(fos);
+			menuline(ps);
+			ps.println("Garbage<p>");
+			ps.close();
+			ps1.println("Garbage Role<p>");
+		    } else {
+			Role role=(Role)roletable.get(new Integer(rolenum));
+			FileOutputStream fos=new FileOutputStream("R"+rolenum+".html");
+			PrintStream ps=new PrintStream(fos);
+			menuline(ps);
+			ps.println(role);
+			ps.close();
+			ps1.println("<a href=\"R"+rolenum+".html\">"+role.shortname()+"</a><p>");
+		    }
+		}
+		ps1.close();
 	    } catch (Exception e) {
 		e.printStackTrace();
 		System.exit(-1);
 	    }
-	    return "/R"+rolenum+".html";
+	    return "/RC"+rolenumc+".html";
 	}
 	return null; /* Make compiler happy*/
     }
@@ -639,7 +1162,34 @@ class RoleI {
     }
 
     synchronized void writedotfile(String classname,String filename) {
-	Set transet=(Set) transitiontable.get(classname);
+	Set oldtranset=(Set) transitiontable.get(classname);
+	HashMap transmap=new HashMap();
+	Iterator it=oldtranset.iterator();
+
+	while(it.hasNext()) {
+	    Transition tr=(Transition) it.next();
+	    int rolefrom=tr.rolefrom;
+	    int roleto=tr.roleto;
+	    RoleCombination rcfrom=view.project((Role)roletable.get(new Integer(rolefrom)));
+	    RoleCombination rcto=view.project((Role)roletable.get(new Integer(roleto)));
+	    Transition ntr=new Transition(((Integer)rolecombmap.get(rcfrom)).intValue(),
+					  ((Integer)rolecombmap.get(rcto)).intValue(), 
+					  tr.type, tr.names);
+	    if (transmap.containsKey(ntr)) {
+		Transition otr=(Transition)transmap.get(ntr);
+		String[] nstr=new String[ntr.names.length+otr.names.length];
+		for(int i=0;i<otr.names.length;i++)
+		    nstr[i]=otr.names[i];
+		for(int i=0;i<ntr.names.length;i++)
+		    nstr[i+otr.names.length]=ntr.names[i];
+		otr.names=nstr;
+	    } else
+		transmap.put(ntr,ntr);
+	}
+	Set transet=transmap.keySet();
+
+	viewtransitiontable.put(classname, transet);
+	
 	FileOutputStream fos=null;
 	try {
 	    fos=new FileOutputStream(filename);
@@ -648,7 +1198,7 @@ class RoleI {
 	    System.exit(-1);
 	}
 	PrintStream ps=new PrintStream(fos);
-	Iterator it=transet.iterator();
+        it=transet.iterator();
 	ps.println("digraph \""+classname+"\" {");
 	ps.println("ratio=auto");
 	ps.println("size=\"40,40\"");
@@ -665,10 +1215,8 @@ class RoleI {
 		}
 	    }
 
-	    if (tr.roleto!=1)
-		ps.print("R"+tr.rolefrom+" -> R"+tr.roleto+" [URL=\""+tr.rolefrom+"-"+tr.roleto+"\",fontsize=10,fontcolor="+color+",label=\"");
-	    else
-		ps.print("R"+tr.rolefrom+" -> GARB [URL=\""+tr.rolefrom+"-"+tr.roleto+"\",fontsize=10,fontcolor="+color+",label=\"");
+	    ps.print("R"+tr.rolefrom+" -> R"+tr.roleto+" [URL=\""+tr.rolefrom+"-"+tr.roleto+"\",fontsize=10,fontcolor="+color+",label=\"");
+	    
 	    observedroles.add(new Integer(tr.rolefrom));
 	    observedroles.add(new Integer(tr.roleto));
 	    for(int i=0;i<tr.names.length;i++) {
@@ -685,18 +1233,50 @@ class RoleI {
 	Iterator iterator=observedroles.iterator();
 	while(iterator.hasNext()) {
 	    Integer role=(Integer) iterator.next();
-	    if (role.intValue()==1)
-		ps.println("GARB [URL=\""+role+"\"];");
-	    else
-		ps.println("R"+role+" [URL=\""+role+"\"];");
+	    ps.println("R"+role+" [label=\""+((RoleCombination)revrolecombmap.get(role)).shortname()+"\", URL=\""+role+"\"];");
 	}
 
 	ps.println("}");
 	ps.close();
     }
 
+    void initializemaps() {
+	dommap=new HashMap();
+	revdommap=new HashMap();
+	domcount=0;
+
+	fldreffrommap=new HashMap();
+	revfldreffrommap=new HashMap();
+	fldreffromcount=0;
+
+	arrreffrommap=new HashMap();
+	revarrreffrommap=new HashMap();
+	arrreffromcount=0;
+
+	identmap=new HashMap();
+	revidentmap=new HashMap();
+	identcount=0;
+	
+	fldreftomap=new HashMap();
+	revfldreftomap=new HashMap();
+	fldreftocount=0;
+
+	arrreftomap=new HashMap();
+	revarrreftomap=new HashMap();
+	arrreftocount=0;
+
+	methodsmap=new HashMap();
+	revmethodsmap=new HashMap();
+	methodscount=0;
+    }
+
     synchronized void readroles() {
 	roletable=new HashMap();
+	reverseroletable=new HashMap();
+	Role garbage=new Role(this, 1, null,false, new Dominator[0], new Reference[0], new Reference[0], new IdentityRelation[0], new Reference[0], new Reference[0], new String[0]);
+	roletable.put(new Integer(1),garbage);
+	reverseroletable.put(garbage, new Integer(1));
+	initializemaps();
 	FileReader fr=null;
 	try {
 	    fr=new FileReader("webrole");
@@ -731,7 +1311,14 @@ class RoleI {
 		    System.out.println("ERROR");System.exit(-1);}
 	    }
 	    Dominator[] dominators=(Dominator[])al.toArray(new Dominator[al.size()]);
-
+	    for (int i=0;i<dominators.length;i++) {
+		if (!dommap.containsKey(dominators[i])) {
+		    dommap.put(dominators[i],new Integer(domcount));
+		    revdommap.put(new Integer(domcount),dominators[i]);
+		    domcount++;
+		}
+	    }
+	    
 	    al=new ArrayList();
 	    while(true) {
 		String ffieldname=nexttoken(fr);
@@ -743,6 +1330,15 @@ class RoleI {
 		al.add(ref);
 	    }
 	    Reference[] rolefieldlist=(Reference[]) al.toArray(new Reference[al.size()]);
+	    for (int i=0;i<rolefieldlist.length;i++) {
+		if (!fldreftomap.containsKey(rolefieldlist[i])) {
+		    fldreftomap.put(rolefieldlist[i],new Integer(fldreftocount));
+		    revfldreftomap.put(new Integer(fldreftocount),rolefieldlist[i]);
+		    fldreftocount++;
+		}
+	    }
+
+
 	    al=new ArrayList();
 	    while(true) {
 		String fclassname=nexttoken(fr);
@@ -753,6 +1349,15 @@ class RoleI {
 		al.add(ref);
 	    }
 	    Reference[] rolearraylist=(Reference[]) al.toArray(new Reference[al.size()]);
+	    for (int i=0;i<rolearraylist.length;i++) {
+		if (!arrreftomap.containsKey(rolearraylist[i])) {
+		    arrreftomap.put(rolearraylist[i],new Integer(arrreftocount));
+		    revarrreftomap.put(new Integer(arrreftocount),rolearraylist[i]);
+		    arrreftocount++;
+		}
+	    }
+
+
 	    al=new ArrayList();
 	    while(true) {
 		String ffieldname1=nexttoken(fr);
@@ -764,6 +1369,15 @@ class RoleI {
 	    }
 	    IdentityRelation[] identityrelations=(IdentityRelation[]) al.toArray(new IdentityRelation[al.size()]);
 
+	    for (int i=0;i<identityrelations.length;i++) {
+		if (!identmap.containsKey(identityrelations[i])) {
+		    identmap.put(identityrelations[i].fieldname1, new Integer(identcount));
+		    revidentmap.put(new Integer(identcount), identityrelations[i].fieldname1);
+		    identcount++;
+		}
+	    }
+
+
 	    al=new ArrayList();
 	    while(true) {
 		String ffieldname=nexttoken(fr);
@@ -774,6 +1388,17 @@ class RoleI {
 		al.add(ref);
 	    }
 	    Reference[] nonnullfields=(Reference[]) al.toArray(new Reference[al.size()]);
+	    for (int i=0;i<nonnullfields.length;i++) {
+		Reference newref=new Reference(this, classname, nonnullfields[i].fieldname, 0);
+		
+		if (!fldreffrommap.containsKey(newref)) {
+		    fldreffrommap.put(newref,new Integer(fldreffromcount));
+		    revfldreffrommap.put(new Integer(fldreffromcount),newref);
+		    fldreffromcount++;
+		}
+	    }
+
+
 	    al=new ArrayList();
 	    while(true) {
 		String fclassname=nexttoken(fr);
@@ -785,6 +1410,15 @@ class RoleI {
 		al.add(ref);
 	    }
 	    Reference[] nonnullarrays=(Reference[]) al.toArray(new Reference[al.size()]); 
+	    for (int i=0;i<nonnullarrays.length;i++) {
+		if (!arrreffrommap.containsKey(nonnullarrays[i])) {
+		    arrreffrommap.put(nonnullarrays[i],new Integer(arrreffromcount));
+		    revarrreffrommap.put(new Integer(arrreffromcount),nonnullarrays[i]);
+		    arrreffromcount++;
+		}
+	    }
+
+
 	    al=new ArrayList();
 	    while(true) {
 		String fmethodname=nexttoken(fr);
@@ -795,9 +1429,21 @@ class RoleI {
 		al.add(fmethodname+" "+fparamname+" "+fparamnum);
 	    }
 	    String[] invokedmethods=(String[]) al.toArray(new String[al.size()]); 
-	    roletable.put(java.lang.Integer.valueOf(rolenumber),
-			  new Role(this, Integer.parseInt(rolenumber), classname,contained.equals("1"), dominators,
-				   rolefieldlist, rolearraylist, identityrelations, nonnullfields, nonnullarrays, invokedmethods));
+	    for(int i=0;i<invokedmethods.length;i++) {
+		if (!methodsmap.containsKey(invokedmethods[i])) {
+		    methodsmap.put(invokedmethods[i], new Integer(methodscount));
+		    revmethodsmap.put(new Integer(methodscount), invokedmethods[i]);
+		    methodscount++;
+		}
+	    }
+
+
+	    Role r=new Role(this, Integer.parseInt(rolenumber), classname,contained.equals("1"), dominators,
+			    rolefieldlist, rolearraylist, identityrelations, nonnullfields, nonnullarrays, invokedmethods);
+	    roletable.put(java.lang.Integer.valueOf(rolenumber),r);
+	    reverseroletable.put(r,java.lang.Integer.valueOf(rolenumber));
+	    if (java.lang.Integer.valueOf(rolenumber).intValue()>maxrole)
+		maxrole=java.lang.Integer.valueOf(rolenumber).intValue();
 	}
     }
 
@@ -889,25 +1535,37 @@ class RoleI {
 	ps.println("ratio=auto");
 	ps.println("size=\"40,40\"");
 	Set observedroles=new HashSet();
+	Set edges=new HashSet();
 
 	while(it.hasNext()) {
 	    Roleedge re=(Roleedge) it.next();
 	    String color="black";
 	    if (re.contained)
 		color="blue";
-	    ps.println("R"+re.srcrole+" -> R"+re.dstrole+" [fontsize=10,color="+color+",label=\""+re.fieldname+"\"];");
-	    observedroles.add(new Integer(re.srcrole));
-	    observedroles.add(new Integer(re.dstrole));
+	    int srcrole=((Integer)rolecombmap.get(view.project((Role)roletable.get(new Integer(re.srcrole))))).intValue();
+	    int dstrole=((Integer)rolecombmap.get(view.project((Role)roletable.get(new Integer(re.dstrole))))).intValue();
+
+	    Roleedge renew=new Roleedge(srcrole,dstrole, re.contained, re.fieldname);
+	    if (!edges.contains(renew)) {
+		edges.add(renew);
+		ps.println("R"+renew.srcrole+" -> R"+renew.dstrole+" [fontsize=10,color="+color+",label=\""+renew.fieldname+"\"];");
+		observedroles.add(new Integer(renew.srcrole));
+		observedroles.add(new Integer(renew.dstrole));
+	    }
 	}
 
 	Iterator iterator=observedroles.iterator();
 	while(iterator.hasNext()) {
 	    Integer role=(Integer) iterator.next();
 	    String color="black";
-	    Role rol=(Role)roletable.get(role);
-	    if (rol.contained)
-		color="blue";
-	    ps.println("R"+role+" [URL=\""+role+"\",color="+color+"];");
+	    //gotta get some role to see if this combination is contained...
+	    RoleCombination rc1=(RoleCombination)revrolecombmap.get(role);
+	    if (rc1.roleidentifiers.length>0) {
+		Role rol=(Role)roletable.get(new Integer(rc1.roleidentifiers[0]));
+		if (rol.contained)
+		    color="blue";
+	    }
+	    ps.println("R"+role+" [label=\""+((RoleCombination)revrolecombmap.get(role)).shortname()+"\", URL=\""+role+"\",color="+color+"];");
 	}
 	ps.println("}");
 	ps.close();
@@ -972,14 +1630,18 @@ class RoleI {
 		Iterator dstit=dstroles.iterator();
 		while (dstit.hasNext()) {
 		    Integer dstrole=(Integer)dstit.next();
-		    Roleedge renew=new Roleedge(srcrole.intValue(),dstrole.intValue(), re.contained, re.fieldname);
+		    int srcrolec=((Integer)rolecombmap.get(view.project((Role)roletable.get(srcrole)))).intValue();
+		    int dstrolec=((Integer)rolecombmap.get(view.project((Role)roletable.get(dstrole)))).intValue();
+		    
+
+		    Roleedge renew=new Roleedge(srcrolec,dstrolec, re.contained, re.fieldname);
 		    if (!edges.contains(renew)) {
 			edges.add(renew);
 			if (re.dstrole==dstrole.intValue()) {
-			    ps.println("R"+srcrole+" -> R"+dstrole+" [fontsize=10,color="+color+",label=\""+re.fieldname+"\"];");
-			    observedroles.add(dstrole);
+			    ps.println("R"+srcrolec+" -> R"+dstrolec+" [fontsize=10,color="+color+",label=\""+re.fieldname+"\"];");
+			    observedroles.add(new Integer(dstrolec));
 			}
-			observedroles.add(srcrole);
+			observedroles.add(new Integer(srcrolec));
 		    }
 		}
 	    }
@@ -989,10 +1651,14 @@ class RoleI {
 	while(iterator.hasNext()) {
 	    Integer role=(Integer) iterator.next();
 	    String color="black";
-	    Role rol=(Role)roletable.get(role);
-	    if (rol.contained)
-		color="blue";
-	    ps.println("R"+role+" [URL=\""+role+"\",color="+color+"];");
+	    //gotta get some role to see if this combination is contained...
+	    RoleCombination rc1=(RoleCombination)revrolecombmap.get(role);
+	    if (rc1.roleidentifiers.length>0) {
+		Role rol=(Role)roletable.get(new Integer(rc1.roleidentifiers[0]));
+		if (rol.contained)
+		    color="blue";
+	    }
+	    ps.println("R"+role+" [label=\""+((RoleCombination)revrolecombmap.get(role)).shortname()+"\", URL=\""+role+"\",color="+color+"];");
 	}
 	ps.println("}");
 	ps.close();
@@ -1034,6 +1700,7 @@ class RoleI {
     synchronized void readtransitions() {
 	FileReader fr=null;
 	transitiontable=new HashMap();
+	viewtransitiontable=new HashMap();
 	try {
 	    fr=new FileReader("webtransitions");
 	} catch (FileNotFoundException e) {

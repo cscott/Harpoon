@@ -8,6 +8,7 @@ class Transition {
 	this.type=type;
 	this.names=names;
     }
+
     static public String htmlreadable(String input) {
 	int start=0;
 	String retval="";
@@ -54,5 +55,22 @@ class Transition {
 	    return input.substring(firstpara);
 	else
 	    return input.substring(firstpara, secondpara);
+    }
+    public boolean equals(Object obj) {
+	if (obj instanceof Transition) {
+	    Transition tobj=(Transition) obj;
+	    if (tobj.rolefrom==rolefrom&&
+		tobj.roleto==roleto&&
+		tobj.type==type)
+		return true;
+	}
+	return false;
+    }
+    public int hashCode() {
+	int hashcode=0;
+	hashcode^=rolefrom;
+	hashcode^=roleto;
+	hashcode^=type;
+	return hashcode;
     }
 }
