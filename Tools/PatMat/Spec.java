@@ -22,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.32 1999-10-12 18:12:35 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.33 1999-10-14 06:04:43 cananian Exp $
  */
 public class Spec  {
 
@@ -322,6 +322,8 @@ public class Spec  {
 	public ExpBinop(TypeSet types, Leaf opcode, Exp left, Exp right) {
 	    this.types = types; this.opcode = opcode;
 	    this.left = left;   this.right = right;
+	    Util.assert(!types.containsSmall(),
+			"BINOP cannot be precisely typed: "+this);
 	}
 	public void accept(ExpVisitor v) { v.visit(this); }
 	public String toString() {
@@ -418,6 +420,8 @@ public class Spec  {
 	*/
 	public ExpTemp(TypeSet types, String name) {
 	    this.types = types; this.name = name;
+	    Util.assert(!types.containsSmall(),
+			"TEMP cannot be precisely typed: "+this);
 	}
 	public void accept(ExpVisitor v) { v.visit(this); }
 	public String toString() { return "TEMP"+types+"("+name+")"; }
@@ -441,6 +445,8 @@ public class Spec  {
 	public final Exp exp;
 	public ExpUnop(TypeSet types, Leaf opcode, Exp exp) {
 	    this.types = types; this.opcode = opcode; this.exp = exp;
+	    Util.assert(!types.containsSmall(),
+			"UNOP cannot be precisely typed: "+this);
 	}
 	public void accept(ExpVisitor v) { v.visit(this); }
 	public String toString() {
@@ -655,6 +661,8 @@ public class Spec  {
 	*/
 	public StmMove(TypeSet types, Exp dst, Exp src) {
 	    this.types = types; this.dst = dst; this.src = src;
+	    Util.assert(!types.containsSmall(),
+			"MOVE cannot be precisely typed: "+this);
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "MOVE"+types+"("+dst+","+src+")"; }
@@ -707,6 +715,8 @@ public class Spec  {
 	*/
 	public StmReturn(TypeSet types, Exp retval) {
 	    this.types = types; this.retval = retval;
+	    Util.assert(!types.containsSmall(),
+			"RETURN cannot be precisely typed: "+this);
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "RETURN"+types+"("+retval+")"; }
