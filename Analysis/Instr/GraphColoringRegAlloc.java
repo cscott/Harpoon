@@ -53,11 +53,11 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.24 2000-08-21 21:53:17 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.25 2000-08-21 22:56:58 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
-    private static final boolean TIME = false;
+    private static final boolean TIME = true;
 
     private static final boolean RESULTS = false;
 
@@ -249,6 +249,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		if(TIME)System.out.println("Building Matrix");
 
 		adjMtx = buildAdjMatrix();
+
 
 		if(TIME)System.out.println(((CachingLiveTemps)liveTemps).cachePerformance());
 
@@ -619,14 +620,23 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	AdjMtx adjMtx = new AdjMtx(webRecords);
 	int i, j;
 	int sz = webRecords.size();
+
+
 	for(i=0; i<sz; i++) {
 	    WebRecord wr1 = (WebRecord) webRecords.get(i);
 	    visited.add(wr1);
+
 	    for(j=i+1; j<sz; j++) {
 		WebRecord wr2 = (WebRecord) webRecords.get(j);
-		adjMtx.set(wr1.sreg(),wr2.sreg(),wr1.conflictsWith(wr2)); 
+		//adjMtx.set(wr1.sreg(),wr2.sreg(),wr1.conflictsWith(wr2)); 
+
+		int x=wr1.sreg();
+		int y=wr2.sreg();
+		boolean b=wr1.conflictsWith(wr2);
+		adjMtx.set(x,y,b);
 	    }
 	}
+
 	return adjMtx;
     }
     
@@ -1118,14 +1128,15 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		Instr d = (Instr) ins.next();
 		Set l= liveTemps.getLiveAfter(d);
 		if (l.contains(wr.temp())) {
-		    if (wr instanceof RegWebRecord) 
+		    if (wr instanceof RegWebRecord) {
 			return true;
-
+		    }
 		    HashSet wDefs = new HashSet
 			(rdefs.reachingDefs(d, wr.temp()));
 		    wDefs.retainAll(wr.defs());
-		    if (!wDefs.isEmpty())
+		    if (!wDefs.isEmpty()) {
 			return true;
+		    }
 		}
 	    }
 	    return false;
@@ -1164,7 +1175,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		Util.assert(false);
 		return !wr.temp().equals(this.reg);
 	    } else {
-		return super.conflictsWith(wr);
+		return super.conflictsWith1D(wr);
 	    }
 	}
     }
