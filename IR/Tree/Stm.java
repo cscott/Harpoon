@@ -2,8 +2,11 @@
 package harpoon.IR.Tree;
 
 import harpoon.Temp.CloningTempMap;
+import harpoon.Util.Util;
 
 import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 
 /**
@@ -12,7 +15,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Stm.java,v 1.1.2.7 1999-07-07 09:47:24 duncan Exp $
+ * @version $Id: Stm.java,v 1.1.2.8 1999-07-28 18:09:00 duncan Exp $
  */
 abstract public class Stm extends Tree {
     protected Stm(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
@@ -33,5 +36,32 @@ abstract public class Stm extends Tree {
     protected Set useSet() { return ExpList.useSet(kids()); }
 
     public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);
+
+    /** Returns a tree-based representation of <code>list</code>.  
+     *
+     * <br><b>Requires:</b> foreach element, <code>l</code>, of 
+     *                      <code>list</code>, <code>l instanceof Stm</code>.
+     * <br><b>Modifies:</b>
+     * <br><b>Effects: </b> returns a tree-based representation of 
+     *                      <code>list</code>.  If <code>list</code> is null,
+     *                      returns null.  
+     */
+    public static Stm toStm(List list) { 
+	if (list==null) return null;
+	int size = list.size();
+	if      (size==0) { return null; }
+	else if (size==1) { return (Stm)list.get(0); } 
+	else { 
+	    Stm          hce = (Stm)list.get(0); 
+	    TreeFactory  tf  = hce.getFactory();
+	    SEQ s=new SEQ(tf,hce,(Stm)list.get(size-1),(Stm)list.get(size-2));
+	    for (ListIterator li=list.listIterator(size-2);li.hasPrevious();) {
+		Stm previous = (Stm)li.previous();
+		Util.assert(previous.getFactory()==tf);
+		s = new SEQ(tf, hce, previous, s);
+	    }
+	    return s;
+	}		
+    }
 }
 
