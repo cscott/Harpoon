@@ -37,11 +37,6 @@ $opt_m = 0 unless (defined($opt_m));
 # Extract base part of this script's name
 ($progname = $0) =~ /([^\/]+)$/;
 
-&cvsblame_init;
-
-1;
-
-
 sub cvsblame_init {
     # Use default formatting options if none supplied
     if (!$opt_A && !$opt_a && !$opt_d && !$opt_v) {
@@ -59,9 +54,7 @@ sub cvsblame_init {
 # Generic traversal of a CVS tree.  Invoke callback function for
 # individual directories that contain CVS files.
 sub traverse_cvs_tree {
-    my $dir, $nlink;
-    local *callback;
-    ($dir, *callback, $nlink) = @_;
+    my ($dir, $callback, $nlink) = @_;
     my ($dev, $ino, $mode, $subcount);
 
     # Get $nlink for top-level directory
@@ -74,7 +67,7 @@ sub traverse_cvs_tree {
 
     return if ! -d "$dir/CVS";
 
-    &callback($dir);
+    &{$callback}($dir);
 
     # This dir has subdirs
     if ($nlink != 2) {
@@ -90,7 +83,7 @@ sub traverse_cvs_tree {
             next unless -d _;
             if (-x _ && -r _) {
                 print STDERR "$progname: Entering $name\n";
-                &traverse_cvs_tree($name, *callback, $nlink);
+                &traverse_cvs_tree($name, $callback, $nlink);
             } else {
                 warn("Couldn't chdir to $name");
             }
@@ -487,7 +480,7 @@ sub extract_revision {
 }
 
 sub parse_cvs_file {
-    my ($rcs_pathname) = @_;
+    my ($rcs_pathname, $checked_out_revision) = @_;
 
     # Args in:  $opt_r - requested revision
     #           $opt_m - time since modified
@@ -505,7 +498,10 @@ sub parse_cvs_file {
     &parse_rcs_file();
     close(RCSFILE);
 
-    if (!defined($opt_r) || $opt_r eq '' || $opt_r eq 'HEAD') {
+    if (!defined($opt_r)) {
+        # Use the checked-out revision.
+        $revision = $checked_out_revision;
+    } elsif ($opt_r eq '' || $opt_r eq 'HEAD') {
         # Explicitly specified topmost revision in tree
         $revision = $head_revision;
     } else {
@@ -668,7 +664,9 @@ sub read_cvs_entries
     return if !open(ENTRIES, "< $cvsdir/Entries");
     
     while(<ENTRIES>) {
-        chop;
+        chomp;
+        # ENTRIES STARTING WITH 'D' ARE DIRECTORIES, NOT FILES.
+        next unless ($_ =~ m:^/:);
         ($filename, $rev, $date, $idunno, $sticky) = split("/", substr($_, 1));
         ($pathname) = $directory . "/" . $filename;
         $cvs_revision{$pathname} = $rev;
@@ -680,16 +678,16 @@ sub read_cvs_entries
 
     return if !open(REPOSITORY, "< $cvsdir/Repository");
     $repository = <REPOSITORY>;
-    chop($repository);
+    chomp($repository);
     close(REPOSITORY);
     $repository{$directory} = $repository;
 }
 
 # Given path to file in CVS working directory, compute path to RCS
 # repository file.  Cache that info for future use.
+# CSA: also return checked-out revision, while we're at it.
 
-
-sub rcs_pathname {
+sub rcs_pathname_and_revision {
     ($pathname) = @_;
 
     if ($pathname =~ m@/@) {
@@ -702,25 +700,28 @@ sub rcs_pathname {
         &read_cvs_entries($directory);
     }
        
-    if (!defined($cvs_revision{$pathname})) {
+    my $checked_out_revision = $cvs_revision{$pathname};
+    if (!defined($checked_out_revision)) {
         die "$progname: error: File '$pathname' does not appear to be under" .
             " CVS control.\n"
     }
 
     print STDERR "file: $filename\n" if $debug;
     my ($rcs_path) = $repository{$directory} . '/' . $filename . ',v';
-    return $rcs_path if (-r $rcs_path);
+    return ($rcs_path,
+            $checked_out_revision) if (-r $rcs_path);
 
     # A file that exists only on the branch, not on the trunk, is found
     # in the Attic subdir.
-    return $repository{$directory} . '/Attic/' . $filename . ',v';
+    return ($repository{$directory} . '/Attic/' . $filename . ',v',
+            $checked_out_revision);
 }
 
 sub show_annotated_cvs_file {
     my ($pathname) = @_;
     my (@output) = ();
 
-    $revision = &parse_cvs_file($pathname);
+    $revision = &parse_cvs_file(&rcs_pathname_and_revision($pathname));
 
     @text = &extract_revision($revision);
     die "$progname: Internal consistency error" if ($#text != $#revision_map);
@@ -767,7 +768,8 @@ sub show_annotated_cvs_file {
         $annotation = $blank_annotation if $opt_w && ($text =~ /^\s*$/);
 
        printf "%4d ", $line if $opt_l;
-       print "$annotation - $text";
+       print "$annotation ";
+       print $opt_q ? "\n" : $text;
 #        push(@output, sprintf("%4d ", $line)) if $opt_l;
 #        push(@output, "$annotation - $text");
     }
@@ -790,12 +792,13 @@ sub usage {
 "      -l                 Annotate lines with line number\n",
 "      -w                 Don't annotate all-whitespace lines\n",
 "      -m <# days>        Only annotate lines modified within last <# days>\n",
+"      -q                 Suppress original text (just print annotation)\n",
 "      -h                 Print help (this message)\n\n",
 "   (-a -v assumed, if none of -a, -v, -A, -d supplied)\n"
 ;
 }
 
-&usage if (!&getopts('r:m:Aadhlvw'));
+&usage if (!&getopts('r:m:Aadhlvwq'));
 &usage if ($opt_h);             # help option
 
 $multiple_files_on_command_line = 1 if ($#ARGV != 0);
@@ -819,7 +822,8 @@ while ($#ARGV >= 0) {
     $pathname = shift @ARGV;
     # Is it a directory ?
     if (-d $pathname) {
-        &traverse_cvs_tree($pathname, *annotate_cvs_directory);
+        $multiple_files_on_command_line = 1;
+        &traverse_cvs_tree($pathname, \&annotate_cvs_directory);
 
     # No, it must be a file.
     } else {
