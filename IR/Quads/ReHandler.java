@@ -1,4 +1,4 @@
-// UnHandler.java, created Wed Dec 23 23:30:32 1998 by cananian
+// ReHandler.java, created Tue Aug 3 23:30:32 1999 by bdemsky
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HClass;
@@ -15,11 +15,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 /**
- * <code>ReHandler</code> make exception handling explicit and removes
+ * <code>ReHandler</code> make exception handling implicit and adds
  * the <code>HANDLER</code> quads from the graph.
  * 
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ReHandler.java,v 1.1.2.1 1999-07-30 22:05:08 bdemsky Exp $
+ * @author  Brian Demsky <bdemsky@mit.edu>
+ * @version $Id: ReHandler.java,v 1.1.2.2 1999-08-03 22:26:02 bdemsky Exp $
  */
 final class ReHandler {
     // entry point.
